@@ -386,6 +386,12 @@ public class ConnectionService {
         return entitiesToModels(repository.findByOrganizationId(organizationId), organizationId, false, false);
     }
 
+    public List<ConnectionConfig> listByOrganizationIdAndEnvironmentId(@NonNull Long organizationId,
+            @NonNull Long environmentId) {
+        return repository.findByOrganizationIdAndEnvironmentId(organizationId, environmentId).stream()
+                .map(mapper::entityToModel).collect(Collectors.toList());
+    }
+
     @Transactional(rollbackFor = Exception.class)
     @PreAuthenticate(hasAnyResourceRole = {"OWNER, DBA, DEVELOPER, SECURITY_ADMINISTRATOR"},
             resourceType = "ODC_PROJECT", indexOfIdParam = 0)

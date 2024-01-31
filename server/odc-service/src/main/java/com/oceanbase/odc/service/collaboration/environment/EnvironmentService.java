@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
+import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -84,11 +85,9 @@ public class EnvironmentService {
     private final List<Consumer<EnvironmentDeleteEvent>> preDeleteHooks = new ArrayList<>();
     private final List<Consumer<EnvironmentDisableEvent>> preDisableHooks = new ArrayList<>();
 
-
-
     @Transactional(rollbackFor = Exception.class)
     @PreAuthenticate(actions = "create", resourceType = "ODC_ENVIRONMENT", isForAll = true)
-    public Environment create(@NotNull CreateEnvironmentReq req) {
+    public Environment create(@NotNull @Valid CreateEnvironmentReq req) {
         PreConditions.validNoDuplicated(ResourceType.ODC_ENVIRONMENT, "name", req.getName(),
                 () -> exists(req.getName()));
 
@@ -140,7 +139,7 @@ public class EnvironmentService {
 
     @PreAuthenticate(actions = "update", resourceType = "ODC_ENVIRONMENT", indexOfIdParam = 0)
     @Transactional(rollbackFor = Exception.class)
-    public Environment update(@NotNull Long id, @NotNull UpdateEnvironmentReq req) {
+    public Environment update(@NotNull Long id, @NotNull @Valid UpdateEnvironmentReq req) {
         Environment environment = innerDetail(id);
         if (environment.getBuiltIn()) {
             throw new BadRequestException("Not allowed to update builtin environments");
@@ -153,7 +152,7 @@ public class EnvironmentService {
 
     @PreAuthenticate(actions = "update", resourceType = "ODC_ENVIRONMENT", indexOfIdParam = 0)
     @Transactional(rollbackFor = Exception.class)
-    public Boolean setEnabled(@NotNull Long id, @NotNull SetEnabledReq req) {
+    public Boolean setEnabled(@NotNull Long id, @NotNull @Valid SetEnabledReq req) {
         /**
          * ensure that the environment is not referenced by any data source before disabling it
          */

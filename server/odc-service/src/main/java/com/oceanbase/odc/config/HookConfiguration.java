@@ -22,6 +22,7 @@ import java.util.stream.Collectors;
 
 import javax.annotation.PostConstruct;
 
+import org.apache.commons.collections.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.i18n.LocaleContextHolder;
@@ -161,15 +162,13 @@ public class HookConfiguration {
     }
 
     private void checkDataSourceReference(Long id, Long organizationId) {
-        Set<ConnectionConfig> referencedConnections =
-                connectionService.listByOrganizationId(organizationId).stream()
-                        .filter(connection -> connection.getEnvironmentId().equals(id)).collect(Collectors.toSet());
-        if (!referencedConnections.isEmpty()) {
+        List<ConnectionConfig> dataSources = connectionService.listByOrganizationIdAndEnvironmentId(organizationId, id);
+        if (!CollectionUtils.isEmpty(dataSources)) {
             throw new BadRequestException(ErrorCodes.CannotOperateDueReference,
                     new Object[] {
                             AuditEventAction.DISABLE_ENVIRONMENT.getLocalizedMessage(),
                             ResourceType.ODC_ENVIRONMENT.getLocalizedMessage(), "name",
-                            String.join(referencedConnections.stream().map(ConnectionConfig::getName)
+                            String.join(dataSources.stream().map(ConnectionConfig::getName)
                                     .collect(Collectors.joining(", "))),
                             ResourceType.ODC_CONNECTION.getLocalizedMessage()},
                     "cannot disable the environment due to referenced by some data sources");
