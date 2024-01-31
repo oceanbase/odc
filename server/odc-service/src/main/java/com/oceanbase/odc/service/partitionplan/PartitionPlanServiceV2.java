@@ -202,18 +202,23 @@ public class PartitionPlanServiceV2 {
                 .map(PartitionPlanVariable::new).collect(Collectors.toList());
     }
 
-    public String generatePartitionName(@NonNull Connection connection,
-            @NonNull DialectType dialectType, @NonNull String schema,
-            @NonNull PartitionPlanTableConfig tableConfig) throws Exception {
-        AutoPartitionExtensionPoint autoPartitionExtensionPoint = TaskPluginUtil
-                .getAutoPartitionExtensionPoint(dialectType);
-        TableExtensionPoint tableExtensionPoint = SchemaPluginUtil
-                .getTableExtension(dialectType);
-        if (tableExtensionPoint == null || autoPartitionExtensionPoint == null) {
+    public String generatePartitionName(@NonNull Connection connection, @NonNull DialectType dialectType,
+            @NonNull String schema, @NonNull PartitionPlanTableConfig tableConfig) throws Exception {
+        TableExtensionPoint tableExtensionPoint = SchemaPluginUtil.getTableExtension(dialectType);
+        if (tableExtensionPoint == null) {
             throw new UnsupportedOperationException("Unsupported dialect " + dialectType);
         }
-        String tableName = tableConfig.getTableName();
-        DBTable dbTable = tableExtensionPoint.getDetail(connection, schema, tableName);
+        DBTable dbTable = tableExtensionPoint.getDetail(connection, schema, tableConfig.getTableName());
+        return generatePartitionName(connection, dialectType, dbTable, tableConfig);
+    }
+
+    public String generatePartitionName(@NonNull Connection connection, @NonNull DialectType dialectType,
+            @NonNull DBTable dbTable, @NonNull PartitionPlanTableConfig tableConfig) throws Exception {
+        AutoPartitionExtensionPoint autoPartitionExtensionPoint = TaskPluginUtil
+                .getAutoPartitionExtensionPoint(dialectType);
+        if (autoPartitionExtensionPoint == null) {
+            throw new UnsupportedOperationException("Unsupported dialect " + dialectType);
+        }
         DBTablePartition partition = dbTable.getPartition();
         if (partition == null || partition.getPartitionOption() == null) {
             throw new IllegalArgumentException("Partition is null");
@@ -221,8 +226,7 @@ public class PartitionPlanServiceV2 {
             throw new IllegalArgumentException("Unsupported partition type");
         }
         PartitionNameGenerator generator = autoPartitionExtensionPoint
-                .getPartitionNameGeneratorGeneratorByName(
-                        tableConfig.getPartitionNameInvoker());
+                .getPartitionNameGeneratorGeneratorByName(tableConfig.getPartitionNameInvoker());
         if (generator == null) {
             throw new IllegalStateException("Failed to get invoker by name, " + tableConfig.getPartitionNameInvoker());
         }
