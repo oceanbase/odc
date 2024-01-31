@@ -18,8 +18,10 @@ package com.oceanbase.odc.service.task.schedule;
 
 import java.text.MessageFormat;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
+import org.quartz.CronTrigger;
 import org.quartz.Job;
 import org.quartz.JobBuilder;
 import org.quartz.JobDetail;
@@ -68,10 +70,10 @@ public class StdJobScheduler implements JobScheduler {
         validConfiguration(configuration);
         JobConfigurationHolder.setJobConfiguration(configuration);
 
-        log.info("Job image name is {}", configuration.getJobImageNameProvider().provide());
         getEventPublisher().addEventListener(new DestroyExecutorListener(configuration));
         getEventPublisher().addEventListener(new DefaultJobCallerListener(this));
         initDaemonJob();
+        log.info("Start StdJobScheduler succeed.");
     }
 
 
@@ -175,14 +177,22 @@ public class StdJobScheduler implements JobScheduler {
             JobDetail detail = JobBuilder.newJob(jobClass)
                     .withIdentity(JobKey.jobKey(key, group))
                     .build();
-            if (scheduler.checkExists(triggerKey)) {
-                scheduler.deleteJob(jobKey);
-            }
+            checkTriggerChanged(triggerKey, jobKey, trigger);
             scheduler.scheduleJob(detail, trigger);
         } catch (JobException e) {
             log.warn("build trigger {} failed:", key, e);
         } catch (SchedulerException e) {
             log.warn("schedule job failed:", e);
+        }
+    }
+
+    private void checkTriggerChanged(TriggerKey triggerKey, JobKey jobKey, Trigger trigger) throws SchedulerException {
+        if (scheduler.checkExists(triggerKey) && scheduler.getTrigger(triggerKey) instanceof CronTrigger
+                && trigger instanceof CronTrigger) {
+            CronTrigger existCronTrigger = (CronTrigger) scheduler.getTrigger(triggerKey);
+            if (!Objects.equals(existCronTrigger.getCronExpression(), ((CronTrigger) trigger).getCronExpression())) {
+                scheduler.deleteJob(jobKey);
+            }
         }
     }
 

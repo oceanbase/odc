@@ -18,11 +18,16 @@ package com.oceanbase.odc.service.task.config;
 
 import java.io.IOException;
 
+import javax.sql.DataSource;
+
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Lazy;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
+import org.springframework.scheduling.quartz.SchedulerFactoryBean;
 
 import com.oceanbase.odc.service.common.util.ConditionalOnProperty;
 import com.oceanbase.odc.service.task.caller.K8sJobClient;
@@ -52,6 +57,20 @@ public class TaskFrameworkConfiguration {
             log.warn("Create NativeK8sJobClient occur error:", e);
             return null;
         }
+    }
+
+    @Lazy
+    @Bean("taskFrameworkSchedulerFactoryBean")
+    public SchedulerFactoryBean taskFrameworkSchedulerFactoryBean(DataSource dataSource,
+            TaskFrameworkProperties taskFrameworkProperties,
+            @Qualifier("taskFrameworkMonitorExecutor") ThreadPoolTaskExecutor executor) {
+        SchedulerFactoryBean schedulerFactoryBean = new SchedulerFactoryBean();
+        schedulerFactoryBean.setDataSource(dataSource);
+        String taskFrameworkSchedulerName = "TASK-FRAMEWORK-SCHEDULER";
+        schedulerFactoryBean.setSchedulerName(taskFrameworkSchedulerName);
+        schedulerFactoryBean.setStartupDelay(taskFrameworkProperties.getQuartzStartDelaySeconds());
+        schedulerFactoryBean.setTaskExecutor(executor);
+        return schedulerFactoryBean;
     }
 
     @Bean

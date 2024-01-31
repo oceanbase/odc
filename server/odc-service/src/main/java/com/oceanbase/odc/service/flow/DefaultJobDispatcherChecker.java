@@ -13,17 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.dispatch;
+package com.oceanbase.odc.service.flow;
 
 import java.util.Objects;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 
 import com.oceanbase.odc.common.util.SystemUtils;
 import com.oceanbase.odc.metadb.task.JobEntity;
 import com.oceanbase.odc.service.common.model.HostProperties;
+import com.oceanbase.odc.service.dispatch.JobDispatchChecker;
 import com.oceanbase.odc.service.task.caller.ExecutorIdentifier;
 import com.oceanbase.odc.service.task.caller.ExecutorIdentifierParser;
 import com.oceanbase.odc.service.task.util.JobUtils;
@@ -36,8 +36,7 @@ import lombok.NonNull;
  * @since 4.2.4
  */
 @Component
-@Profile("alipay")
-public class WebJobDispatcherChecker implements JobDispatchChecker {
+public class DefaultJobDispatcherChecker implements JobDispatchChecker {
 
     @Autowired
     private HostProperties hostProperties;

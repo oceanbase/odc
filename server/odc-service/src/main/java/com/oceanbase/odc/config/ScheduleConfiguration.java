@@ -20,6 +20,7 @@ import java.util.concurrent.ThreadPoolExecutor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 
@@ -198,12 +199,15 @@ public class ScheduleConfiguration {
         return executor;
     }
 
+
+    @Lazy
     @Bean(name = "taskResultPublisherExecutor")
     public ThreadPoolTaskExecutor taskResultPublisherExecutor() {
         ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
-        int poolSize = Math.max(SystemUtils.availableProcessors() * 8, 128);
-        executor.setCorePoolSize(poolSize);
-        executor.setMaxPoolSize(poolSize);
+        int corePoolSize = Math.max(SystemUtils.availableProcessors() * 2, 8);
+        int MaxPoolSize = Math.max(SystemUtils.availableProcessors() * 8, 128);
+        executor.setCorePoolSize(corePoolSize);
+        executor.setMaxPoolSize(MaxPoolSize);
         executor.setThreadNamePrefix("task-result-publish-");
         executor.setWaitForTasksToCompleteOnShutdown(true);
         executor.setAwaitTerminationSeconds(5);
@@ -214,12 +218,14 @@ public class ScheduleConfiguration {
         return executor;
     }
 
+    @Lazy
     @Bean(name = "taskFrameworkMonitorExecutor")
     public ThreadPoolTaskExecutor taskFrameworkMonitorExecutor() {
         ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
-        int poolSize = Math.max(SystemUtils.availableProcessors() * 8, 128);
-        executor.setCorePoolSize(poolSize);
-        executor.setMaxPoolSize(poolSize);
+        int corePoolSize = Math.max(SystemUtils.availableProcessors() * 2, 8);
+        int MaxPoolSize = Math.max(SystemUtils.availableProcessors() * 8, 16);
+        executor.setCorePoolSize(corePoolSize);
+        executor.setMaxPoolSize(MaxPoolSize);
         executor.setThreadNamePrefix("task-framework-monitoring-");
         executor.setWaitForTasksToCompleteOnShutdown(true);
         executor.setAwaitTerminationSeconds(5);

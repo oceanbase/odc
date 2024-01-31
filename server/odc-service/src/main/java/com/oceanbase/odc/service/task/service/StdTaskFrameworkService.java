@@ -30,6 +30,7 @@ import javax.persistence.criteria.Root;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.jpa.domain.Specification;
@@ -72,6 +73,7 @@ import lombok.extern.slf4j.Slf4j;
  * @date 2023-11-30
  * @since 4.2.4
  */
+@Lazy
 @Service
 @Slf4j
 @SkipAuthorize("odc internal usage")
