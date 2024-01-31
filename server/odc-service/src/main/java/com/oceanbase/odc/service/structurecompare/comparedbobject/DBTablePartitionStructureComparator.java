@@ -21,7 +21,6 @@ import org.springframework.beans.BeanUtils;
 
 import com.oceanbase.odc.service.structurecompare.model.ComparisonResult;
 import com.oceanbase.odc.service.structurecompare.model.DBObjectComparisonResult;
-import com.oceanbase.odc.service.structurecompare.util.StructureCompareUtil;
 import com.oceanbase.tools.dbbrowser.editor.DBTablePartitionEditor;
 import com.oceanbase.tools.dbbrowser.model.DBObjectType;
 import com.oceanbase.tools.dbbrowser.model.DBTablePartition;
@@ -60,25 +59,15 @@ public class DBTablePartitionStructureComparator implements DBObjectStructureCom
         if (DBTablePartitionType.NOT_PARTITIONED.equals(srcPartitionType)
                 && DBTablePartitionType.NOT_PARTITIONED.equals(tgtPartitionType)) {
             result.setComparisonResult(ComparisonResult.CONSISTENT);
-        } else if (DBTablePartitionType.NOT_PARTITIONED.equals(srcPartitionType)) {
-            // cannot cover partitioned table to non-partitioned table
-            result.setComparisonResult(ComparisonResult.UNSUPPORTED);
-            result.setChangeScript("/* Unsupported operation: Convert partitioned table to non-partitioned table */\n");
-        } else if (DBTablePartitionType.NOT_PARTITIONED.equals(tgtPartitionType)) {
-            // partition to be created
-            result.setComparisonResult(ComparisonResult.ONLY_IN_SOURCE);
-            result.setChangeScript(
-                    StructureCompareUtil.appendDelimiterIfNotExist(this.tgtPartitionEditor.generateCreateObjectDDL(
-                            copySrcPartitionWithTgtSchemaName(srcPartition, this.tgtSchemaName))));
         } else {
-            String ddl = this.tgtPartitionEditor.generateUpdateObjectDDL(tgtPartition,
+            String ddl = this.tgtPartitionEditor.generateShadowTableUpdateObjectDDL(tgtPartition,
                     copySrcPartitionWithTgtSchemaName(srcPartition, this.tgtSchemaName));
             if (ddl.isEmpty()) {
                 result.setComparisonResult(ComparisonResult.CONSISTENT);
             } else {
                 // partition to be updated
                 result.setComparisonResult(ComparisonResult.INCONSISTENT);
-                result.setChangeScript(StructureCompareUtil.appendDelimiterIfNotExist(ddl));
+                result.setChangeScript(ddl);
             }
         }
         return result;

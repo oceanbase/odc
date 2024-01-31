@@ -17,6 +17,8 @@ package com.oceanbase.odc.service.partitionplan.model;
 
 import org.springframework.context.i18n.LocaleContextHolder;
 
+import com.oceanbase.odc.plugin.task.api.partitionplan.model.PartitionPlanVariableKey;
+
 import lombok.NonNull;
 
 /**

@@ -48,6 +48,7 @@ import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.connection.model.QueryConnectionParams;
 import com.oceanbase.odc.service.db.DBIdentitiesService;
 import com.oceanbase.odc.service.db.DBSchemaService;
+import com.oceanbase.odc.service.iam.ProjectPermissionValidator;
 
 /**
  * @Author: Lebie
@@ -63,6 +64,9 @@ public class DatabaseServiceTest extends AuthorityTestEnv {
 
     @MockBean
     private ProjectService projectService;
+
+    @MockBean
+    private ProjectPermissionValidator projectPermissionValidator;
 
     @MockBean
     private EnvironmentService environmentService;
@@ -81,7 +85,9 @@ public class DatabaseServiceTest extends AuthorityTestEnv {
     public void setUp() {
         databaseRepository.deleteAll();
         Mockito.when(projectService.detail(Mockito.anyLong())).thenReturn(getProject());
-        Mockito.when(projectService.checkPermission(Mockito.anyLong(), Mockito.anyList())).thenReturn(true);
+        Mockito.doNothing().when(projectPermissionValidator).checkProjectRole(Mockito.anyLong(), Mockito.anyList());
+        Mockito.when(projectPermissionValidator.hasProjectRole(Mockito.anyLong(), Mockito.anyList())).thenReturn(true);
+        Mockito.when(projectPermissionValidator.hasProjectRole(Mockito.anyList(), Mockito.anyList())).thenReturn(true);
         Mockito.when(connectionService.checkPermission(Mockito.anyLong(), Mockito.anyList())).thenReturn(true);
         Mockito.when(projectService.list(QueryProjectParams.builder().build(), Pageable.unpaged()))
                 .thenReturn(Page.empty());
@@ -161,7 +167,7 @@ public class DatabaseServiceTest extends AuthorityTestEnv {
     @Test
     public void testTransfer_Success() {
         Mockito.when(connectionService.checkPermission(Mockito.anyList(), Mockito.anyList())).thenReturn(true);
-        Mockito.when(projectService.checkPermission(Mockito.anyList(), Mockito.anyList())).thenReturn(true);
+        Mockito.when(projectPermissionValidator.hasProjectRole(Mockito.anyList(), Mockito.anyList())).thenReturn(true);
         databaseRepository.saveAndFlush(getEntity());
         TransferDatabasesReq req = new TransferDatabasesReq();
         req.setDatabaseIds(Arrays.asList(1L));

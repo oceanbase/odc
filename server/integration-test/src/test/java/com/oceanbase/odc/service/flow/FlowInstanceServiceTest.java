@@ -15,6 +15,7 @@
  */
 package com.oceanbase.odc.service.flow;
 
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.when;
 
 import java.io.IOException;
@@ -95,6 +96,7 @@ import com.oceanbase.odc.service.iam.ResourceRoleService;
 import com.oceanbase.odc.service.iam.UserService;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.iam.model.User;
+import com.oceanbase.odc.service.permission.database.DatabasePermissionHelper;
 import com.oceanbase.odc.service.regulation.approval.ApprovalFlowConfigSelector;
 import com.oceanbase.odc.service.regulation.approval.model.ApprovalFlowConfig;
 import com.oceanbase.odc.service.regulation.approval.model.ApprovalNodeConfig;
@@ -171,6 +173,8 @@ public class FlowInstanceServiceTest extends ServiceTestEnv {
     public ExpectedException thrown = ExpectedException.none();
     @Autowired
     private UserTaskInstanceCandidateRepository userTaskInstanceCandidateRepository;
+    @MockBean
+    private DatabasePermissionHelper databasePermissionHelper;
 
     @Before
     public void setUp() {
@@ -193,6 +197,7 @@ public class FlowInstanceServiceTest extends ServiceTestEnv {
         when(databaseService.detail(Mockito.anyLong())).thenReturn(database);
         when(riskLevelService.findDefaultRiskLevel()).thenReturn(getRiskLevel());
         when(riskLevelService.list()).thenReturn(Arrays.asList(getRiskLevel(), getRiskLevel()));
+        doNothing().when(databasePermissionHelper).checkPermissions(Mockito.anyCollection(), Mockito.anyCollection());
     }
 
     @Test

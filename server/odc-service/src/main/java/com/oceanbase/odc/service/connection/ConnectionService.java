@@ -93,7 +93,6 @@ import com.oceanbase.odc.metadb.iam.UserRepository;
 import com.oceanbase.odc.service.collaboration.environment.EnvironmentService;
 import com.oceanbase.odc.service.collaboration.environment.model.Environment;
 import com.oceanbase.odc.service.collaboration.project.ProjectMapper;
-import com.oceanbase.odc.service.collaboration.project.ProjectService;
 import com.oceanbase.odc.service.collaboration.project.model.Project;
 import com.oceanbase.odc.service.common.model.Stats;
 import com.oceanbase.odc.service.common.response.CustomPage;
@@ -110,6 +109,7 @@ import com.oceanbase.odc.service.connection.util.ConnectionIdList;
 import com.oceanbase.odc.service.connection.util.ConnectionMapper;
 import com.oceanbase.odc.service.iam.HorizontalDataPermissionValidator;
 import com.oceanbase.odc.service.iam.PermissionService;
+import com.oceanbase.odc.service.iam.ProjectPermissionValidator;
 import com.oceanbase.odc.service.iam.UserPermissionService;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.iam.auth.AuthorizationFacade;
@@ -190,8 +190,7 @@ public class ConnectionService {
     private DatabaseService databaseService;
 
     @Autowired
-    @Lazy
-    private ProjectService projectService;
+    private ProjectPermissionValidator projectPermissionValidator;
 
     @Autowired
     private PlatformTransactionManager transactionManager;
@@ -476,6 +475,11 @@ public class ConnectionService {
         return connId2State;
     }
 
+    @SkipAuthorize("odc internal usage")
+    public ConnectionConfig getBasicWithoutPermissionCheck(@NonNull Long id) {
+        return repository.findById(id).map(mapper::entityToModel)
+                .orElseThrow(() -> new NotFoundException(ResourceType.ODC_CONNECTION, "id", id));
+    }
 
     @SkipAuthorize("odc internal usage")
     public List<ConnectionConfig> batchNullSafeGet(@NonNull Collection<Long> ids) {
@@ -809,9 +813,11 @@ public class ConnectionService {
         if (Objects.isNull(projectId)) {
             return;
         }
-        Project project = ProjectMapper.INSTANCE.entityToModel(projectService.nullSafeGet(projectId));
+        Project project = ProjectMapper.INSTANCE.entityToModel(projectRepository.findById(projectId)
+                .orElseThrow(() -> new NotFoundException(ResourceType.ODC_PROJECT, "id", projectId)));
         permissionValidator.checkCurrentOrganization(project);
-        projectService.checkPermission(projectId, Arrays.asList(ResourceRoleName.DBA, ResourceRoleName.OWNER));
+        projectPermissionValidator.checkProjectRole(projectId,
+                Arrays.asList(ResourceRoleName.DBA, ResourceRoleName.OWNER));
     }
 
     private void attachPermittedActions(ConnectionConfig connection) {

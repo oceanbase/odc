@@ -16,7 +16,6 @@
 package com.oceanbase.odc.core.sql.execute.mapper;
 
 import java.sql.SQLException;
-import java.sql.Timestamp;
 
 import com.oceanbase.tools.dbbrowser.model.datatype.DataType;
 
@@ -39,12 +38,11 @@ public class MySQLDatetimeMapper extends MySQLTimestampMapper {
 
     @Override
     public Object mapCell(@NonNull CellData data) throws SQLException {
-        Timestamp timestamp = data.getTimestamp();
+        byte[] timestamp = data.getBytes();
         if (timestamp == null) {
-            return data.getString();
+            return null;
         }
-        return super.mapCell(data);
+        return isValidTimestamp(data) ? new String(timestamp) : "0000-00-00 00:00:00";
     }
-
 }
 

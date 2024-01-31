@@ -186,6 +186,16 @@ public class OBColumnExtractorTest {
     }
 
     @Test
+    public void test_extract_OBMySQL_selectNestingCaseWhenCondition() {
+        String sql = TestColumnExtractorUtil.getTestSql(DialectType.OB_MYSQL, "select-nesting-case-when-condition");
+        LogicalTable result = obMySQLColumnExtractor.extract(obMySQLParser.parse(new StringReader(sql)));
+        List<String> actualLabels = getResultColumnLabels(result);
+        List<String> expectLabels = Arrays.asList("id", "name", "decade");
+        Assert.assertEquals(3, result.getColumnList().size());
+        Assert.assertEquals(expectLabels, actualLabels);
+    }
+
+    @Test
     public void test_extract_OBMySQL_selectSubquery() {
         String sql = TestColumnExtractorUtil.getTestSql(DialectType.OB_MYSQL, "select-subquery");
         LogicalTable result = obMySQLColumnExtractor.extract(obMySQLParser.parse(new StringReader(sql)));

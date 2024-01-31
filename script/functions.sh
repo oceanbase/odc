@@ -25,7 +25,7 @@ export ODC_OSS_CONFIG_FILE_NAME=$(echo ~/.odcossutilconfig)
 export ODC_CDN_BASE_URL=${odc_cdn_base_url:-}
 
 function log_info() {
-    echo 1>&2 "$(date +"%Y-%m-%dT%H:%M:%S.%Z") [INFO]" "$*"
+    echo "$(date +"%Y-%m-%dT%H:%M:%S.%Z") [INFO]" "$*"
 }
 
 function log_error() {

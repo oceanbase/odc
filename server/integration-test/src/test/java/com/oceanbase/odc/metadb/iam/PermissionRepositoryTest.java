@@ -24,6 +24,7 @@ import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import com.oceanbase.odc.ServiceTestEnv;
+import com.oceanbase.odc.common.util.TimeUtils;
 import com.oceanbase.odc.core.shared.constant.AuthorizationType;
 import com.oceanbase.odc.core.shared.constant.PermissionType;
 
@@ -42,13 +43,14 @@ public class PermissionRepositoryTest extends ServiceTestEnv {
     }
 
     @Test
-    public void test_deleteByExpireTimeBefore() {
+    public void test_findByExpireTimeBefore() {
         long currentTime = System.currentTimeMillis();
-        PermissionEntity entity = createPermissionEntity("query", "ODC_DATABASE:1", new Date(currentTime + 90 * 1000L));
-        createPermissionEntity("change", "ODC_DATABASE:2", new Date(currentTime + 30 * 1000L));
-        Assert.assertEquals(2, permissionRepository.findAll().size());
-        permissionRepository.deleteByExpireTimeBefore(new Date(currentTime + 60 * 1000L));
-        List<PermissionEntity> entities = permissionRepository.findAll();
+        PermissionEntity entity = createPermissionEntity("query", "ODC_DATABASE:1", new Date(currentTime - 90 * 1000L));
+        createPermissionEntity("change", "ODC_DATABASE:2", new Date(currentTime - 30 * 1000L));
+        createPermissionEntity("change", "ODC_DATABASE:3", TimeUtils.getMySQLMaxDatetime());
+        Assert.assertEquals(3, permissionRepository.findAllNoCareExpireTime().size());
+        List<PermissionEntity> entities =
+                permissionRepository.findByExpireTimeBefore(new Date(currentTime - 60 * 1000L));
         Assert.assertEquals(1, entities.size());
         Assert.assertEquals(entity.getId(), entities.get(0).getId());
     }
