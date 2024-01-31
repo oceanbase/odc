@@ -18,6 +18,7 @@ package com.oceanbase.odc.service.collaboration.environment.model;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 
+import lombok.Builder;
 import lombok.Data;
 
 /**
@@ -26,6 +27,7 @@ import lombok.Data;
  * @Description: []
  */
 @Data
+@Builder
 public class UpdateEnvironmentReq {
     @Size(max = 256, message = "The length of the environment description must be between 0 and 256")
     private String description;

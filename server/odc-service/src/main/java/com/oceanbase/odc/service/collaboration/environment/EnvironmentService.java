@@ -92,10 +92,10 @@ public class EnvironmentService {
         PreConditions.validNoDuplicated(ResourceType.ODC_ENVIRONMENT, "name", req.getName(),
                 () -> exists(req.getName()));
 
-        Ruleset saveedRuleset = rulesetService.create(buildRuleset(req.getName(), req.getDescription()));
+        Ruleset savedRuleset = rulesetService.create(buildRuleset(req.getName(), req.getDescription()));
         List<Rule> copiedRules = ruleService.list(req.getCopiedRulesetId(), new QueryRuleMetadataParams());
-        ruleService.create(saveedRuleset.getId(), copiedRules);
-        return entityToModel(environmentRepository.save(buildEnvironmentEntity(req, saveedRuleset.getId())));
+        ruleService.create(savedRuleset.getId(), copiedRules);
+        return entityToModel(environmentRepository.save(buildEnvironmentEntity(req, savedRuleset.getId())));
     }
 
 

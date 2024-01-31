@@ -42,6 +42,7 @@ import com.oceanbase.odc.metadb.connection.ConnectionEntity;
 import com.oceanbase.odc.metadb.connection.ConnectionHistoryRepository;
 import com.oceanbase.odc.service.collaboration.environment.EnvironmentService;
 import com.oceanbase.odc.service.collaboration.environment.model.Environment;
+import com.oceanbase.odc.service.collaboration.environment.model.QueryEnvironmentParam;
 import com.oceanbase.odc.service.connection.model.ConnectProperties;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.test.tool.TestRandom;
@@ -72,7 +73,8 @@ public class ConnectionConfigRecycleServiceTest extends ServiceTestEnv {
         when(connectProperties.getTempExpireAfterInactiveIntervalSeconds()).thenReturn(INTERVAL_SECONDS);
         when(authenticationFacade.currentUserId()).thenReturn(USER_ID);
         when(authenticationFacade.currentOrganizationId()).thenReturn(ORGANIZATION_ID);
-        when(environmentService.list(Mockito.anyLong())).thenReturn(createEnvironments());
+        when(environmentService.list(Mockito.anyLong(), QueryEnvironmentParam.builder().build()))
+                .thenReturn(createEnvironments());
         when(projectRepository.findByIdIn(Mockito.anyList())).thenReturn(createProjects());
     }
 

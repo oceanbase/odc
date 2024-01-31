@@ -42,6 +42,7 @@ import com.oceanbase.odc.metadb.collaboration.ProjectEntity;
 import com.oceanbase.odc.metadb.connection.ConnectionConfigRepository;
 import com.oceanbase.odc.service.collaboration.environment.EnvironmentService;
 import com.oceanbase.odc.service.collaboration.environment.model.Environment;
+import com.oceanbase.odc.service.collaboration.environment.model.QueryEnvironmentParam;
 import com.oceanbase.odc.service.connection.model.ConnectionPreviewBatchImportResp;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.iam.model.User;
@@ -86,7 +87,8 @@ public class ConnectionBatchImportPreviewerTest extends MockedAuthorityTestEnv {
         when(authenticationFacade.currentUser()).thenReturn(User.of(CREATOR_ID));
         when(authenticationFacade.currentUserId()).thenReturn(CREATOR_ID);
         when(authenticationFacade.currentOrganizationId()).thenReturn(ORGANIZATION_ID);
-        when(environmentService.list(Mockito.anyLong())).thenReturn(initEnvironments());
+        when(environmentService.list(Mockito.anyLong(), QueryEnvironmentParam.builder().build()))
+                .thenReturn(initEnvironments());
         connectionRepository.deleteAll();
         grantAllPermissions(ResourceType.ODC_CONNECTION, ResourceType.ODC_RESOURCE_GROUP, ResourceType.ODC_USER,
                 ResourceType.ODC_PRIVATE_CONNECTION);
