@@ -124,7 +124,7 @@ public class PreCheckRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Void> {
         if (preCheckTaskEntity == null) {
             throw new ServiceTaskError(new RuntimeException("Can not find task entity by id " + preCheckTaskId));
         }
-        this.creatorId = FlowTaskUtil.getTaskCreator(execution).getCreatorId();
+        this.creatorId = FlowTaskUtil.getTaskCreator(execution).getId();
         try {
             this.connectionConfig = FlowTaskUtil.getConnectionConfig(execution);
         } catch (VerifyException e) {

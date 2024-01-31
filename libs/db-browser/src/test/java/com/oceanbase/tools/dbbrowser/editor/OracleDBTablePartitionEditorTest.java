@@ -62,4 +62,30 @@ public class OracleDBTablePartitionEditorTest {
         });
     }
 
+    @Test
+    public void generateAddPartitionDefinitionDDL_onePartiElt_generateSucceed() {
+        String casesJson = DBObjectUtilsTest.loadAsString(BASE_DIR + "/update_multi_partition_test_cases.json");
+        List<DBObjectTupleTestCase<DBTablePartition>> cases = MySQLConstraintEditorTest.fromJson(casesJson,
+                new TypeReference<List<DBObjectTupleTestCase<DBTablePartition>>>() {});
+        cases.forEach(testCase -> {
+            DBTablePartition partition = testCase.getInput().getCurrent();
+            String actual = partitionEditor.generateAddPartitionDefinitionDDL(partition.getSchemaName(),
+                    partition.getTableName(), partition.getPartitionOption(), partition.getPartitionDefinitions());
+            Assert.assertEquals(testCase.getOutput(), actual);
+        });
+    }
+
+    @Test
+    public void generateDropPartitionDefinitionDDL_onePartiElt_generateSucceed() {
+        String casesJson = DBObjectUtilsTest.loadAsString(BASE_DIR + "/delete_multi_partition_test_cases.json");
+        List<DBObjectTupleTestCase<DBTablePartition>> cases = MySQLConstraintEditorTest.fromJson(casesJson,
+                new TypeReference<List<DBObjectTupleTestCase<DBTablePartition>>>() {});
+        cases.forEach(testCase -> {
+            DBTablePartition partition = testCase.getInput().getCurrent();
+            String actual = partitionEditor.generateDropPartitionDefinitionDDL(partition.getSchemaName(),
+                    partition.getTableName(), partition.getPartitionDefinitions());
+            Assert.assertEquals(testCase.getOutput(), actual);
+        });
+    }
+
 }
