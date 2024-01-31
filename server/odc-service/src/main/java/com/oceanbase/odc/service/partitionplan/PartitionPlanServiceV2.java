@@ -123,6 +123,11 @@ public class PartitionPlanServiceV2 {
         })).collect(Collectors.toList());
     }
 
+    public List<PartitionPlanVariable> getSupportedVariables() {
+        return Arrays.stream(PartitionPlanVariableKey.values())
+            .map(PartitionPlanVariable::new).collect(Collectors.toList());
+    }
+
     /**
      * generate the ddl of a partition plan
      */
@@ -205,11 +210,6 @@ public class PartitionPlanServiceV2 {
                     return Collections.emptyList();
             }
         }));
-    }
-
-    public List<PartitionPlanVariable> getSupportedVariables() {
-        return Arrays.stream(PartitionPlanVariableKey.values())
-                .map(PartitionPlanVariable::new).collect(Collectors.toList());
     }
 
     public String generatePartitionName(@NonNull Connection connection, @NonNull DialectType dialectType,
