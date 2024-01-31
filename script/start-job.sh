@@ -14,7 +14,7 @@ current_work_directory="$(pwd)"
 default_server_port=8989
 gc_basic_options="-XX:+UseG1GC -XX:+PrintAdaptiveSizePolicy -XX:+PrintGCDetails -XX:+PrintGCTimeStamps -XX:+PrintGCDateStamps"
 gc_log_options="-Xloggc:${install_directory}/log/task/gc.log -XX:+UseGCLogFileRotation -XX:GCLogFileSize=50M -XX:NumberOfGCLogFiles=5"
-default_heap_options="-XX:MaxRAMPercentage=80.0 -XX:InitialRAMPercentage=80.0"
+default_heap_options="-XX:MaxRAMPercentage=60.0 -XX:InitialRAMPercentage=60.0"
 default_gc_options="${gc_basic_options} ${gc_log_options}"
 default_oom_options="-XX:+ExitOnOutOfMemoryError"
 

@@ -212,7 +212,8 @@ public abstract class BaseODCFlowTaskDelegate<T> extends BaseRuntimeFlowableDele
 
     @Override
     protected Callable<T> initCallable(DelegateExecution execution) {
-        return () -> start(taskId, taskService, execution);
+        return () ->
+            start(taskId, taskService, execution);
     }
 
     abstract protected T start(Long taskId, TaskService taskService, DelegateExecution execution) throws Exception;
