@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 OceanBase.
+ * Copyright (c) 2024 OceanBase.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,11 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.dlm.model;
 
+package com.oceanbase.odc.service.schedule.job;
+
+import java.util.Date;
 import java.util.List;
 
-import com.oceanbase.odc.core.flow.model.TaskParameters;
+import com.oceanbase.odc.service.connection.model.ConnectionConfig;
+import com.oceanbase.odc.service.dlm.model.DataArchiveTableConfig;
+import com.oceanbase.odc.service.dlm.model.RateLimitConfiguration;
 import com.oceanbase.tools.migrator.common.enums.MigrationInsertAction;
 import com.oceanbase.tools.migrator.common.enums.ShardingStrategy;
 
@@ -25,33 +29,26 @@ import lombok.Data;
 
 /**
  * @Author：tinker
- * @Date: 2023/5/10 20:05
+ * @Date: 2024/1/31 15:43
  * @Descripition:
  */
+
 @Data
-public class DataArchiveParameters implements TaskParameters {
-
-    private String name;
-
-    private Long sourceDatabaseId;
-
-    private Long targetDataBaseId;
-
-    private String sourceDatabaseName;
-
-    private String targetDatabaseName;
-
-    private String sourceDataSourceName;
-
-    private String targetDataSourceName;
-
-    private List<OffsetConfig> variables;
+public class InnerDataArchiveJobParameters {
 
     private List<DataArchiveTableConfig> tables;
 
-    private boolean deleteAfterMigration = false;
+    private ConnectionConfig sourceDs;
 
-    private boolean needPrintSqlTrace = false;
+    private ConnectionConfig targetDs;
+
+    private boolean deleteAfterMigration;
+
+    private MigrationInsertAction migrationInsertAction;
+
+    private boolean needPrintSqlTrace;
+
+    private RateLimitConfiguration rateLimit;
 
     private int readThreadCount;
 
@@ -59,11 +56,8 @@ public class DataArchiveParameters implements TaskParameters {
 
     private int queryTimeout;
 
-    private int scanBatchSize;
-
-    private MigrationInsertAction migrationInsertAction = MigrationInsertAction.INSERT_NORMAL;
-
     private ShardingStrategy shardingStrategy;
 
-    private RateLimitConfiguration rateLimit;
+    private int scanBatchSize;
+
 }

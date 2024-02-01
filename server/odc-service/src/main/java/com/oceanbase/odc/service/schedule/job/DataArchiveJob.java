@@ -18,10 +18,13 @@ package com.oceanbase.odc.service.schedule.job;
 import java.util.List;
 
 import org.quartz.JobExecutionContext;
+import org.springframework.jdbc.core.JdbcOperations;
+import org.springframework.jdbc.support.rowset.SqlRowSet;
 
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionConstants;
+import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.shared.constant.TaskStatus;
 import com.oceanbase.odc.metadb.schedule.ScheduleTaskEntity;
 import com.oceanbase.odc.service.db.browser.DBSchemaAccessors;
@@ -29,6 +32,9 @@ import com.oceanbase.odc.service.dlm.model.DataArchiveParameters;
 import com.oceanbase.odc.service.dlm.model.DlmTask;
 import com.oceanbase.odc.service.session.factory.DefaultConnectSessionFactory;
 import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
+import com.oceanbase.tools.dbbrowser.util.MySQLSqlBuilder;
+import com.oceanbase.tools.dbbrowser.util.OracleSqlBuilder;
+import com.oceanbase.tools.dbbrowser.util.SqlBuilder;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -81,10 +87,14 @@ public class DataArchiveJob extends AbstractDlmJob {
         DefaultConnectSessionFactory sourceConnectionSessionFactory =
                 new DefaultConnectSessionFactory(dlmTask.getSourceDs());
         ConnectionSession srcSession = sourceConnectionSessionFactory.generateSession();
+        JdbcOperations jdbcOperations = srcSession.getSyncJdbcExecutor(ConnectionSessionConstants.CONSOLE_DS_KEY);
         String tableDDL;
         try {
-            DBSchemaAccessor sourceDsAccessor = DBSchemaAccessors.create(srcSession);
-            tableDDL = sourceDsAccessor.getTableDDL(dlmTask.getSourceDs().getDefaultSchema(), dlmTask.getTableName());
+            SqlRowSet sqlRowSet =
+                    jdbcOperations.queryForRowSet(getCreateTableDDL(dlmTask.getSourceDs().getDefaultSchema(),
+                            dlmTask.getTableName(), dlmTask.getSourceDs()
+                                    .getDialectType()));
+            tableDDL = sqlRowSet.getString(2);
         } finally {
             srcSession.expire();
         }
@@ -104,6 +114,15 @@ public class DataArchiveJob extends AbstractDlmJob {
         } finally {
             targetSession.expire();
         }
+    }
+
+    private String getCreateTableDDL(String schemaName, String tableName, DialectType dbType) {
+        SqlBuilder sb = dbType.isOracle() ? new OracleSqlBuilder() : new MySQLSqlBuilder();
+        sb.append("SHOW CREATE TABLE ");
+        sb.identifier(schemaName);
+        sb.append(".");
+        sb.identifier(tableName);
+        return sb.toString();
     }
 
 }
