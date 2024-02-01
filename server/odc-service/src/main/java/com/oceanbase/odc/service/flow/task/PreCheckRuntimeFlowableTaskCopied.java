@@ -227,6 +227,8 @@ public class PreCheckRuntimeFlowableTaskCopied extends BaseODCFlowTaskDelegate<V
         Map<String, String> parameters = new HashMap<>();
         parameters.put(JobParametersKeyConstants.TASK_PARAMETER_JSON_KEY,
                 JobUtils.toJson(buildPreCheckTaskParameters(taskEntity, connectionConfig, riskLevelDescriber)));
+        parameters.put(JobParametersKeyConstants.TASK_EXECUTION_TIMEOUT_MILLIS,
+                preCheckTaskProperties.getExecutionTimeoutMillis() + "");
         return DefaultJobDefinition.builder()
                 .jobClass(PreCheckTask.class)
                 .jobType(TaskType.PRE_CHECK.name())
