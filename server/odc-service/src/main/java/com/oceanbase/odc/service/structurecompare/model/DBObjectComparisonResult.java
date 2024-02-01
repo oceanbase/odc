@@ -82,13 +82,19 @@ public class DBObjectComparisonResult {
         entity.setSourceObjectDdl(sourceDdl);
         entity.setTargetObjectDdl(targetDdl);
 
+        /**
+         * DDL operations involving deletion of database objects are placed in comments
+         */
+        if (ComparisonResult.ONLY_IN_TARGET == comparisonResult) {
+            entity.setChangeSqlScript("/*\n " + changeScript + "*/\n");
+            return entity;
+        }
         StringBuilder totalSubScript = new StringBuilder();
         if (!subDBObjectComparisonResult.isEmpty()) {
             for (DBObjectComparisonResult subResult : subDBObjectComparisonResult) {
                 if (subResult.getChangeScript() == null || subResult.getChangeScript().isEmpty()) {
                     continue;
                 }
-                // DDL operations involving deletion of database objects are placed in comments
                 DBObjectType objectType = subResult.getDbObjectType();
                 if (subResult.getComparisonResult() == ComparisonResult.ONLY_IN_TARGET) {
                     totalSubScript.append("/*\n")
