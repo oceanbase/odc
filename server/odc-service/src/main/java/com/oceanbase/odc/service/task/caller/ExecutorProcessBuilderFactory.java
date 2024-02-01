@@ -21,6 +21,7 @@ import java.lang.management.RuntimeMXBean;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
 
 import com.oceanbase.odc.service.task.constants.JobConstants;
 import com.oceanbase.odc.service.task.constants.JobEnvKeyConstants;
@@ -33,6 +34,8 @@ import com.oceanbase.odc.service.task.util.JobUtils;
  */
 public class ExecutorProcessBuilderFactory {
 
+    private static final Pattern ODC_SERVER_EXECUTABLE_JAR = Pattern.compile("^.*odc-server-.*-executable\\.jar$");
+
     public ProcessBuilder getProcessBuilder(Map<String, String> environments, String executorName) {
         RuntimeMXBean runtimeMxBean = ManagementFactory.getRuntimeMXBean();
         ProcessBuilder pb = new ProcessBuilder();
@@ -41,11 +44,11 @@ public class ExecutorProcessBuilderFactory {
         commands.add("-D" + JobUtils.generateExecutorSelectorOnProcess(executorName));
         commands.addAll(jvmOptions(environments));
         int jarIndex;
-        if ((jarIndex = runtimeMxBean.getInputArguments().indexOf("-jar")) != -1) {
+        if (ODC_SERVER_EXECUTABLE_JAR.matcher(runtimeMxBean.getClassPath()).matches()) {
             // start odc executor by java -jar
             commands.add("-jar");
             // set jar package file name in commands
-            commands.add(runtimeMxBean.getInputArguments().get(jarIndex + 1));
+            commands.add(runtimeMxBean.getClassPath());
         } else {
             // start odc executor by java -classpath
             commands.add("-classpath");
