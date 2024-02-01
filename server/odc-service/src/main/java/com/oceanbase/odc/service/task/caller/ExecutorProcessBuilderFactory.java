@@ -34,7 +34,7 @@ import com.oceanbase.odc.service.task.util.JobUtils;
  */
 public class ExecutorProcessBuilderFactory {
 
-    private static final Pattern ODC_SERVER_EXECUTABLE_JAR = Pattern.compile("^.*odc-server-.*-executable\\.jar$");
+    private static final Pattern ODC_SERVER_EXECUTABLE_JAR = Pattern.compile("^.*odc-server-.*executable\\.jar$");
 
     public ProcessBuilder getProcessBuilder(Map<String, String> environments, String executorName) {
         RuntimeMXBean runtimeMxBean = ManagementFactory.getRuntimeMXBean();
@@ -43,7 +43,6 @@ public class ExecutorProcessBuilderFactory {
         commands.add("java");
         commands.add("-D" + JobUtils.generateExecutorSelectorOnProcess(executorName));
         commands.addAll(jvmOptions(environments));
-        int jarIndex;
         if (ODC_SERVER_EXECUTABLE_JAR.matcher(runtimeMxBean.getClassPath()).matches()) {
             // start odc executor by java -jar
             commands.add("-jar");

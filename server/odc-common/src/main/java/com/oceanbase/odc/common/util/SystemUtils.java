@@ -203,7 +203,7 @@ public abstract class SystemUtils {
                     "cmd.exe", "/c", "tasklist /FI \"PID eq " + pid + "\" | findstr \"" + processSelector + "\""};
         } else {
             // ps -p pid -o lstart= | xargs -i date -d {} +%s
-            command = new String[] {"sh", "-c", "ps -p " + pid + " | grep '" + processSelector + "'"};
+            command = new String[] {"sh", "-c", "ps -f -p " + pid + " | grep '" + processSelector + "'"};
         }
         return executeCommand(command, reader -> {
             boolean result = false;
