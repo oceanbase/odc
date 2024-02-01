@@ -82,11 +82,13 @@ public class DBTableStructureComparator implements DBObjectStructureComparator<D
         } else if (srcTables.isEmpty()) {
             this.totalTableCount = tgtTables.size();
             return buildOnlyInTargetResult(tgtTables.stream().map(DBTable::getName).collect(Collectors.toList()),
-                    new HashMap<>(), srcSchemaName, tgtSchemaName);
+                    tgtTables.stream().collect(Collectors.toMap(DBTable::getName, table -> table)), srcSchemaName,
+                    tgtSchemaName);
         } else if (tgtTables.isEmpty()) {
             this.totalTableCount = srcTables.size();
             return buildOnlyInSourceResult(srcTables.stream().map(DBTable::getName).collect(Collectors.toList()),
-                    new HashMap<>(), srcSchemaName, tgtSchemaName);
+                    srcTables.stream().collect(Collectors.toMap(DBTable::getName, table -> table)), srcSchemaName,
+                    tgtSchemaName);
         }
 
         String srcSchemaName = srcTables.get(0).getSchemaName();
