@@ -57,6 +57,10 @@ public class StartPreparingJob implements Job {
     public void execute(JobExecutionContext context) throws JobExecutionException {
         configuration = JobConfigurationHolder.getJobConfiguration();
         JobConfigurationValidator.validComponent();
+        if(isRunningJobFull()){
+            log.warn("Current system load is too bigger, wait next schedule.");
+           return;
+        }
         // scan preparing job
         TaskFrameworkService taskFrameworkService = configuration.getTaskFrameworkService();
         TaskFrameworkProperties taskFrameworkProperties = configuration.getTaskFrameworkProperties();
@@ -117,6 +121,16 @@ public class StartPreparingJob implements Job {
                 jobProperties.getJobExpiredIfNotRunningAfterSeconds(), TimeUnit.SECONDS);
 
     }
+
+    private boolean isRunningJobFull() {
+        TaskFrameworkProperties taskFrameworkProperties = getConfiguration().getTaskFrameworkProperties();
+
+        long count = getConfiguration().getTaskFrameworkService().countRunningNeverHeartJobs(
+            taskFrameworkProperties.getJobNeverHeartAfterStartedSeconds());
+
+        return count > taskFrameworkProperties.getSingleFetchPreparingJobRows();
+    }
+
 
     private JobConfiguration getConfiguration() {
         return configuration;

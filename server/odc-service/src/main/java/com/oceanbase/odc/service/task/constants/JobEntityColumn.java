@@ -28,6 +28,10 @@ public class JobEntityColumn {
 
     public static final String LAST_HEART_TIME = "lastHeartTime";
 
+    public static final String CREATE_TIME = "createTime";
+
+    public static final String STARTED_TIME = "startedTime";
+
     public static final String FINISHED_TIME = "finishedTime";
 
     public static final String CANCELLING_TIME = "cancellingTime";
