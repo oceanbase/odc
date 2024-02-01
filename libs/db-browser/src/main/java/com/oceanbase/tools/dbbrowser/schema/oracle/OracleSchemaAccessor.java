@@ -85,6 +85,7 @@ import com.oceanbase.tools.dbbrowser.util.DBSchemaAccessorUtil;
 import com.oceanbase.tools.dbbrowser.util.OracleDataDictTableNames;
 import com.oceanbase.tools.dbbrowser.util.OracleSqlBuilder;
 import com.oceanbase.tools.dbbrowser.util.PLObjectErrMsgUtils;
+import com.oceanbase.tools.dbbrowser.util.SqlBuilder;
 import com.oceanbase.tools.dbbrowser.util.StringUtils;
 
 import lombok.extern.slf4j.Slf4j;
@@ -897,7 +898,8 @@ public class OracleSchemaAccessor implements DBSchemaAccessor {
 
     @Override
     public Map<String, DBTablePartition> listTablePartitions(@NonNull String schemaName, List<String> candidates) {
-        String queryDefsSql = this.sqlMapper.getSql(Statements.LIST_PARTITIONS_DEFINITIONS);
+        String queryDefsSql = filterByValues(this.sqlMapper.getSql(Statements.LIST_PARTITIONS_DEFINITIONS),
+                "TABLE_NAME", candidates);
         List<Map<String, Object>> defRows = jdbcOperations.query(queryDefsSql, new Object[] {schemaName}, (rs, num) -> {
             Map<String, Object> rows = new HashMap<>();
             rows.put("TABLE_NAME", rs.getString("TABLE_NAME"));
@@ -906,36 +908,28 @@ public class OracleSchemaAccessor implements DBSchemaAccessor {
             rows.put("HIGH_VALUE", rs.getString("HIGH_VALUE"));
             return rows;
         });
-        String queryOptsSql = this.sqlMapper.getSql(Statements.LIST_PARTITIONS_OPTIONS);
+        String queryOptsSql = filterByValues(this.sqlMapper.getSql(Statements.LIST_PARTITIONS_OPTIONS),
+                "TABLE_NAME", candidates);
         List<Map<String, Object>> optRows = jdbcOperations.query(queryOptsSql, new Object[] {schemaName}, (rs, num) -> {
             Map<String, Object> rows = new HashMap<>();
             rows.put("TABLE_NAME", rs.getString("TABLE_NAME"));
             rows.put("PARTITIONING_TYPE", rs.getString("PARTITIONING_TYPE"));
             return rows;
         });
-        String queryColsSql = new OracleSqlBuilder().append("SELECT NAME, COLUMN_NAME FROM ")
+        SqlBuilder sqlBuilder = new OracleSqlBuilder().append("SELECT NAME, COLUMN_NAME FROM ")
                 .append(dataDictTableNames.PART_KEY_COLUMNS())
-                .append(" WHERE OWNER = ").value(schemaName).toString();
-        List<Map<String, Object>> colRows = jdbcOperations.query(queryColsSql, (rs, num) -> {
+                .append(" WHERE OWNER = ").value(schemaName);
+        if (CollectionUtils.isNotEmpty(candidates)) {
+            String tables = candidates.stream().map(s -> new OracleSqlBuilder().value(s).toString())
+                    .collect(Collectors.joining(","));
+            sqlBuilder.append(" AND NAME IN (").append(tables).append(")");
+        }
+        List<Map<String, Object>> colRows = jdbcOperations.query(sqlBuilder.toString(), (rs, num) -> {
             Map<String, Object> rows = new HashMap<>();
             rows.put("TABLE_NAME", rs.getString("NAME"));
             rows.put("COLUMN_NAME", rs.getString("COLUMN_NAME"));
             return rows;
         });
-        if (CollectionUtils.isNotEmpty(candidates)) {
-            defRows = defRows.stream().filter(stringObjectMap -> {
-                Object tableName = stringObjectMap.get("TABLE_NAME");
-                return tableName != null && CollectionUtils.containsAny(candidates, tableName.toString());
-            }).collect(Collectors.toList());
-            optRows = optRows.stream().filter(stringObjectMap -> {
-                Object tableName = stringObjectMap.get("TABLE_NAME");
-                return tableName != null && CollectionUtils.containsAny(candidates, tableName.toString());
-            }).collect(Collectors.toList());
-            colRows = colRows.stream().filter(stringObjectMap -> {
-                Object tableName = stringObjectMap.get("TABLE_NAME");
-                return tableName != null && CollectionUtils.containsAny(candidates, tableName.toString());
-            }).collect(Collectors.toList());
-        }
         Map<String, List<Map<String, Object>>> tblName2DefRows = defRows.stream().collect(
                 Collectors.groupingBy(m -> (String) m.get("TABLE_NAME")));
         Map<String, List<Map<String, Object>>> tblName2OptRows = optRows.stream().collect(
@@ -983,6 +977,18 @@ public class OracleSchemaAccessor implements DBSchemaAccessor {
             }
             return partition;
         }));
+    }
+
+    protected String filterByValues(String target, String colName, List<String> candidates) {
+        if (CollectionUtils.isEmpty(candidates)) {
+            return target;
+        }
+        String tables = candidates.stream().map(s -> new OracleSqlBuilder().value(s).toString())
+                .collect(Collectors.joining(","));
+        SqlBuilder sqlBuilder = new OracleSqlBuilder();
+        return sqlBuilder.append("SELECT * FROM (")
+                .append(target).append(") dbbrowser").append(" WHERE dbbrowser.").identifier(colName)
+                .append(" IN (").append(tables).append(")").toString();
     }
 
     private DBTablePartitionOption obtainPartitionOption(String schemaName, String tableName) {

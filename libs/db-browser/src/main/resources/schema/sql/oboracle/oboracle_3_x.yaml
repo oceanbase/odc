@@ -199,7 +199,7 @@ sqls:
       SYS.ALL_VIRTUAL_PART_REAL_AGENT p
       where d.database_name=? and t.table_name=? and d.tenant_id=t.tenant_id 
       and d.database_id=t.database_id and t.tenant_id=p.tenant_id and t.table_id=p.table_id
-      order by part_id asc;
+      order by part_id asc
   list-partitions: |-
     select
       t.table_name as TABLE_NAME,
@@ -222,7 +222,7 @@ sqls:
       SYS.ALL_VIRTUAL_PART_REAL_AGENT p
       where d.database_name=? and d.tenant_id=t.tenant_id
       and d.database_id=t.database_id and t.tenant_id=p.tenant_id and t.table_id=p.table_id
-      order by part_id asc;
+      order by part_id asc
   get-table-option: |-
     select
       t.*
@@ -231,7 +231,7 @@ sqls:
       SYS.ALL_VIRTUAL_TABLE_REAL_AGENT t
     where
       d.DATABASE_NAME = ? and t.TABLE_NAME = ?
-      and d.DATABASE_ID = t.DATABASE_ID;
+      and d.DATABASE_ID = t.DATABASE_ID
   list-database: |-
     select 
       USERNAME, 

@@ -24,7 +24,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.stream.Collectors;
 
-import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.jdbc.core.BeanPropertyRowMapper;
 import org.springframework.jdbc.core.JdbcOperations;
 
@@ -123,7 +122,7 @@ public class OBOracleLessThan400SchemaAccessor extends OBOracleSchemaAccessor {
 
     @Override
     public Map<String, DBTablePartition> listTablePartitions(@NonNull String schemaName, List<String> candidates) {
-        String sql = sqlMapper.getSql(Statements.LIST_PARTITIONS);
+        String sql = filterByValues(sqlMapper.getSql(Statements.LIST_PARTITIONS), "TABLE_NAME", candidates);
         List<Map<String, Object>> queryResult = jdbcOperations.query(sql, new Object[] {schemaName}, (rs, rowNum) -> {
             Map<String, Object> row = new HashMap<>();
             row.put("TABLE_NAME", rs.getString("TABLE_NAME"));
@@ -136,12 +135,6 @@ public class OBOracleLessThan400SchemaAccessor extends OBOracleSchemaAccessor {
             row.put("LIST_VALUE", rs.getString("LIST_VALUE"));
             return row;
         });
-        if (CollectionUtils.isNotEmpty(candidates)) {
-            queryResult = queryResult.stream().filter(stringObjectMap -> {
-                Object tableName = stringObjectMap.get("TABLE_NAME");
-                return tableName != null && CollectionUtils.containsAny(candidates, tableName.toString());
-            }).collect(Collectors.toList());
-        }
         Map<String, List<Map<String, Object>>> tableName2Rows = queryResult.stream()
                 .collect(Collectors.groupingBy(m -> (String) m.get("TABLE_NAME")));
         return tableName2Rows.entrySet().stream().collect(Collectors.toMap(Entry::getKey,

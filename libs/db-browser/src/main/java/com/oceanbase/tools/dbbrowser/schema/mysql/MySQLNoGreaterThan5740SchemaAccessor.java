@@ -831,7 +831,7 @@ public class MySQLNoGreaterThan5740SchemaAccessor implements DBSchemaAccessor {
 
     @Override
     public Map<String, DBTablePartition> listTablePartitions(@NonNull String schemaName, List<String> candidates) {
-        String sql = sqlMapper.getSql(Statements.LIST_PARTITIONS);
+        String sql = filterByValues(sqlMapper.getSql(Statements.LIST_PARTITIONS), "TABLE_NAME", candidates);
         List<Map<String, Object>> queryResult =
                 this.jdbcOperations.query(sql, new Object[] {schemaName}, (rs, rowNum) -> {
                     Map<String, Object> result = new HashMap<>();
@@ -846,12 +846,6 @@ public class MySQLNoGreaterThan5740SchemaAccessor implements DBSchemaAccessor {
                     result.put("SUBPARTITION_EXPRESSION", rs.getString("SUBPARTITION_EXPRESSION"));
                     return result;
                 });
-        if (CollectionUtils.isNotEmpty(candidates)) {
-            queryResult = queryResult.stream().filter(stringObjectMap -> {
-                Object tableName = stringObjectMap.get("TABLE_NAME");
-                return tableName != null && CollectionUtils.containsAny(candidates, tableName.toString());
-            }).collect(Collectors.toList());
-        }
         Map<String, List<Map<String, Object>>> tableName2Res = queryResult.stream().collect(
                 Collectors.groupingBy(m -> (String) m.get("TABLE_NAME")));
         return tableName2Res.entrySet().stream().collect(Collectors.toMap(Entry::getKey, e -> {
@@ -865,6 +859,18 @@ public class MySQLNoGreaterThan5740SchemaAccessor implements DBSchemaAccessor {
             }).collect(Collectors.toList());
             return getFromResultSet(group, schemaName, e.getKey());
         }));
+    }
+
+    protected String filterByValues(String target, String colName, List<String> candidates) {
+        if (CollectionUtils.isEmpty(candidates)) {
+            return target;
+        }
+        String tables = candidates.stream().map(s -> new MySQLSqlBuilder().value(s).toString())
+                .collect(Collectors.joining(","));
+        SqlBuilder sqlBuilder = new MySQLSqlBuilder();
+        return sqlBuilder.append("select * from (")
+                .append(target).append(") dbbrowser").append(" WHERE dbbrowser.").identifier(colName)
+                .append(" in (").append(tables).append(")").toString();
     }
 
     private DBTablePartition getFromResultSet(List<Map<String, Object>> rows, String schemaName, String tableName) {

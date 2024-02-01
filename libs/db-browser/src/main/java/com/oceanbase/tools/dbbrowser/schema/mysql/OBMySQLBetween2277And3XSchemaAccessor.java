@@ -23,7 +23,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.stream.Collectors;
 
-import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.jdbc.core.JdbcOperations;
 import org.springframework.lang.NonNull;
 
@@ -158,7 +157,7 @@ public class OBMySQLBetween2277And3XSchemaAccessor extends OBMySQLSchemaAccessor
 
     @Override
     public Map<String, DBTablePartition> listTablePartitions(@NonNull String schemaName, List<String> candidates) {
-        String sql = sqlMapper.getSql(Statements.LIST_PARTITIONS);
+        String sql = filterByValues(sqlMapper.getSql(Statements.LIST_PARTITIONS), "table_name", candidates);
         List<Map<String, Object>> queryResult = jdbcOperations.query(sql, new Object[] {schemaName}, (rs, rowNum) -> {
             Map<String, Object> row = new HashMap<>();
             row.put("table_name", rs.getString("table_name"));
@@ -175,12 +174,6 @@ public class OBMySQLBetween2277And3XSchemaAccessor extends OBMySQLSchemaAccessor
             row.put("sub_part_num", rs.getInt("sub_part_num"));
             return row;
         });
-        if (CollectionUtils.isNotEmpty(candidates)) {
-            queryResult = queryResult.stream().filter(stringObjectMap -> {
-                Object tableName = stringObjectMap.get("table_name");
-                return tableName != null && CollectionUtils.containsAny(candidates, tableName.toString());
-            }).collect(Collectors.toList());
-        }
         Map<String, List<Map<String, Object>>> tableName2Rows = queryResult.stream()
                 .collect(Collectors.groupingBy(m -> (String) m.get("table_name")));
         return tableName2Rows.entrySet().stream().collect(Collectors.toMap(Entry::getKey,
