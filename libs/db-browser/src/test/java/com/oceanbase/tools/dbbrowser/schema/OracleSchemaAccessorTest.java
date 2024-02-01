@@ -226,6 +226,15 @@ public class OracleSchemaAccessorTest extends BaseTestEnv {
     }
 
     @Test
+    public void listTablePartitions_noCandidates_listSucceed() {
+        Map<String, DBTablePartition> actual = accessor.listTablePartitions(getOracleSchema(),
+                Collections.singletonList("PART_HASH_TEST"));
+        DBTablePartition partiHash = actual.get("PART_HASH_TEST");
+        Assert.assertEquals(5L, partiHash.getPartitionOption().getPartitionsNum().longValue());
+        Assert.assertEquals(DBTablePartitionType.HASH, partiHash.getPartitionOption().getType());
+    }
+
+    @Test
     public void getView_Success() {
         DBView view = accessor.getView(getOracleSchema(), "VIEW_TEST");
         Assert.assertTrue(view != null && view.getColumns().size() == 2);
