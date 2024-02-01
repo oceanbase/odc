@@ -223,8 +223,8 @@ public class OBMySQLNoGreaterThan1479SchemaAccessor extends BaseOBMySQLLessThan2
     }
 
     @Override
-    public Map<String, List<DBTableColumn>> listTableColumns(String schemaName) {
-        Map<String, List<DBTableColumn>> tableName2Columns = super.listTableColumns(schemaName);
+    public Map<String, List<DBTableColumn>> listTableColumns(String schemaName, List<String> candidates) {
+        Map<String, List<DBTableColumn>> tableName2Columns = super.listTableColumns(schemaName, candidates);
         for (List<DBTableColumn> columnList : tableName2Columns.values()) {
             if (CollectionUtils.isNotEmpty(columnList)) {
                 columnList.forEach(this::fillPrecisionAndScale);

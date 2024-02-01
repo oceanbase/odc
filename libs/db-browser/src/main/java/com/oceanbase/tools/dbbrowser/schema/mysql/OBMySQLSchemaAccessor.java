@@ -142,13 +142,6 @@ public class OBMySQLSchemaAccessor extends MySQLNoGreaterThan5740SchemaAccessor 
         return columns;
     }
 
-    @Override
-    public Map<String, List<DBTableColumn>> listTableColumns(String schemaName) {
-        Map<String, List<DBTableColumn>> tableName2Columns = super.listTableColumns(schemaName);
-        tableName2Columns.forEach((tableName, columns) -> setStoredColumnByDDL(schemaName, tableName, columns));
-        return tableName2Columns;
-    }
-
     protected void setStoredColumnByDDL(String schemeName, String tableName, List<DBTableColumn> columns) {
         if (CollectionUtils.isEmpty(columns)) {
             return;

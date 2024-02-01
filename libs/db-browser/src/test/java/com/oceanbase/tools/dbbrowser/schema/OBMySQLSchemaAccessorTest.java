@@ -413,6 +413,13 @@ public class OBMySQLSchemaAccessorTest extends BaseTestEnv {
         Assert.assertEquals(3, columns.size());
     }
 
+    @Test
+    public void listTableColumns_filterByTableName_Success() {
+        Map<String, List<DBTableColumn>> table2Columns = accessor.listTableColumns(getOBMySQLDataBaseName(),
+                Arrays.asList("part_hash", "part_list"));
+        Assert.assertEquals(2, table2Columns.size());
+    }
+
     private static void initVerifyColumnAttributes() {
         columnAttributes.addAll(Arrays.asList(
                 ColumnAttributes.of("col1", false, false, true, null, "col1_comments"),

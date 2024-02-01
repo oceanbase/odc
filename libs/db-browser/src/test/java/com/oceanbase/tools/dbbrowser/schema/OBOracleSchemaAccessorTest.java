@@ -193,8 +193,16 @@ public class OBOracleSchemaAccessorTest extends BaseTestEnv {
 
     @Test
     public void listTableColumns_TestGetAllColumnInSchema_Success() {
-        Map<String, List<DBTableColumn>> table2Columns = accessor.listTableColumns(getOBOracleSchema());
+        Map<String, List<DBTableColumn>> table2Columns =
+                accessor.listTableColumns(getOBOracleSchema(), Collections.emptyList());
         Assert.assertTrue(table2Columns.size() > 0);
+    }
+
+    @Test
+    public void listTableColumns_filterByTableName_Success() {
+        Map<String, List<DBTableColumn>> table2Columns = accessor.listTableColumns(getOBOracleSchema(),
+                Arrays.asList("TEST_FK_PARENT", "TEST_PK_INDEX"));
+        Assert.assertEquals(2, table2Columns.size());
     }
 
     @Test

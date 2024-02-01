@@ -169,7 +169,7 @@ public interface DBSchemaAccessor {
     /**
      * Get all table columns in the specified schema
      */
-    Map<String, List<DBTableColumn>> listTableColumns(String schemaName);
+    Map<String, List<DBTableColumn>> listTableColumns(String schemaName, List<String> candidates);
 
     /**
      * Get all table columns in the specified schema and table

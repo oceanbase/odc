@@ -261,6 +261,13 @@ public class MySQLNoGreaterThan5740SchemaAccessorTest extends BaseTestEnv {
     }
 
     @Test
+    public void listTableColumns_filterByTableName_Success() {
+        Map<String, List<DBTableColumn>> table2Columns = accessor.listTableColumns(getMySQLDataBaseName(),
+                Arrays.asList("view_test2", "part_list"));
+        Assert.assertEquals(2, table2Columns.size());
+    }
+
+    @Test
     public void listTableOptions_Success() {
         Map<String, DBTableOptions> table2Options =
                 accessor.listTableOptions(getMySQLDataBaseName());

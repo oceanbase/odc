@@ -542,16 +542,15 @@ public class OracleSchemaAccessor implements DBSchemaAccessor {
     }
 
     @Override
-    public Map<String, List<DBTableColumn>> listTableColumns(String schemaName) {
-        String sql = this.sqlMapper.getSql(Statements.LIST_SCHEMA_COLUMNS);
-        List<DBTableColumn> tableColumns =
-                this.jdbcOperations.query(sql.toString(), new Object[] {schemaName},
-                        listColumnsRowMapper());
-        Map<String, List<DBTableColumn>> tableName2Columns =
-                tableColumns.stream().collect(Collectors.groupingBy(DBTableColumn::getTableName));
+    public Map<String, List<DBTableColumn>> listTableColumns(String schemaName, List<String> candidates) {
+        String sql = filterByValues(this.sqlMapper.getSql(Statements.LIST_SCHEMA_COLUMNS), "TABLE_NAME", candidates);
+        List<DBTableColumn> tableColumns = this.jdbcOperations
+                .query(sql, new Object[] {schemaName}, listColumnsRowMapper());
+        Map<String, List<DBTableColumn>> tableName2Columns = tableColumns.stream()
+                .collect(Collectors.groupingBy(DBTableColumn::getTableName));
         tableName2Columns.forEach((table, cols) -> {
             Map<String, String> name2Comments = mapColumnName2ColumnComments(schemaName, table);
-            cols.stream().forEach(col -> {
+            cols.forEach(col -> {
                 if (name2Comments.containsKey(col.getName())) {
                     col.setComment(name2Comments.get(col.getName()));
                 }
