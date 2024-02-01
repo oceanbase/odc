@@ -100,7 +100,7 @@ import lombok.extern.slf4j.Slf4j;
 @Builder
 @Slf4j
 public class DataTransferTask implements Callable<DataTransferTaskResult> {
-    private static final Set<String> OUTPUT_FILTER_FILES = new HashSet<>();
+    public static final Set<String> OUTPUT_FILTER_FILES = new HashSet<>();
     private static final Logger LOGGER = LoggerFactory.getLogger("DataTransferLogger");
 
     private final DataMaskingService maskingService;
@@ -290,31 +290,25 @@ public class DataTransferTask implements Callable<DataTransferTaskResult> {
         }
         File exportPath = Paths.get(workingDir.getPath(), "data").toFile();
         copyExportedFiles(result, exportPath.getPath());
-        File dest = new File(workingDir.getPath() + File.separator + workingDir.getName() + "_export_file.zip");
-        try {
-            ExportOutput output = new ExportOutput(exportPath);
-            output.toZip(dest, file -> !OUTPUT_FILTER_FILES.contains(file.getFileName()));
-            if (config.isMergeSchemaFiles()) {
+
+        if (config.isMergeSchemaFiles()) {
+            try {
+                ExportOutput output = new ExportOutput(exportPath);
                 File schemaFile =
                         new File(workingDir.getPath() + File.separator + workingDir.getName() + "_schema.sql");
-                try {
-                    ConnectType connectType = config.getConnectionInfo().getConnectType();
-                    SchemaMergeOperator operator =
-                            new SchemaMergeOperator(output, config.getSchemaName(), connectType.getDialectType());
-                    operator.mergeSchemaFiles(schemaFile, filename -> !OUTPUT_FILTER_FILES.contains(filename));
-                    // delete zip file if merge succeeded
-                    FileUtils.deleteQuietly(dest);
-                    dest = schemaFile;
-                } catch (Exception ex) {
-                    log.warn("merge schema failed, origin files will still be used, reason=", ex);
-                }
+                ConnectType connectType = config.getConnectionInfo().getConnectType();
+                SchemaMergeOperator operator =
+                        new SchemaMergeOperator(output, config.getSchemaName(), connectType.getDialectType());
+                operator.mergeSchemaFiles(schemaFile, filename -> !OUTPUT_FILTER_FILES.contains(filename));
+                // delete data file if merge succeeded
+                FileUtils.deleteQuietly(exportPath);
+                exportPath = schemaFile;
+            } catch (Exception ex) {
+                log.warn("merge schema failed, origin files will still be used, reason=", ex);
             }
-            result.setExportZipFilePath(dest.getName());
-        } finally {
-            boolean deleteRes = FileUtils.deleteQuietly(exportPath);
-            log.info("Delete export directory, dir={}, result={}", exportPath.getAbsolutePath(), deleteRes);
         }
-        adapter.afterHandle(config, result, dest);
+
+        adapter.afterHandle(config, result, exportPath);
     }
 
     private void validateSuccessful(DataTransferTaskResult result) {

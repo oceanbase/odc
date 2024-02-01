@@ -49,7 +49,7 @@ public abstract class DBTableIndexEditor implements DBObjectEditor<DBTableIndex>
         appendIndexColumns(index, sqlBuilder);
         sqlBuilder.append(")");
         appendIndexOptions(index, sqlBuilder);
-        return sqlBuilder.toString().trim();
+        return sqlBuilder.toString().trim() + ";\n";
     }
 
     @Override
@@ -98,8 +98,8 @@ public abstract class DBTableIndexEditor implements DBObjectEditor<DBTableIndex>
         SqlBuilder sqlBuilder = sqlBuilder();
         if (!Objects.equals(oldIndex, newIndex)) {
             String drop = generateDropObjectDDL(oldIndex);
-            sqlBuilder.append(drop).append(";").line()
-                    .append(generateCreateObjectDDL(newIndex)).append(";").line();
+            sqlBuilder.append(drop)
+                    .append(generateCreateObjectDDL(newIndex));
             return sqlBuilder.toString();
         }
         if (!StringUtils.equals(oldIndex.getName(), newIndex.getName())) {
@@ -114,13 +114,13 @@ public abstract class DBTableIndexEditor implements DBObjectEditor<DBTableIndex>
         SqlBuilder sqlBuilder = sqlBuilder();
         if (CollectionUtils.isEmpty(oldIndexes)) {
             if (CollectionUtils.isNotEmpty(newIndexes)) {
-                newIndexes.forEach(column -> sqlBuilder.append(generateCreateObjectDDL(column)).append(";\n"));
+                newIndexes.forEach(column -> sqlBuilder.append(generateCreateObjectDDL(column)));
             }
             return sqlBuilder.toString();
         }
         if (CollectionUtils.isEmpty(newIndexes)) {
             if (CollectionUtils.isNotEmpty(oldIndexes)) {
-                oldIndexes.forEach(column -> sqlBuilder.append(generateDropObjectDDL(column)).append(";\n"));
+                oldIndexes.forEach(column -> sqlBuilder.append(generateDropObjectDDL(column)));
             }
             return sqlBuilder.toString();
         }
@@ -136,7 +136,7 @@ public abstract class DBTableIndexEditor implements DBObjectEditor<DBTableIndex>
         for (DBTableIndex newIndex : newIndexes) {
             // ordinaryPosition is NULL means this is a new index
             if (Objects.isNull(newIndex.getOrdinalPosition())) {
-                sqlBuilder.append(generateCreateObjectDDL(newIndex)).append(";\n");
+                sqlBuilder.append(generateCreateObjectDDL(newIndex));
             } else if (position2OldIndex.containsKey(newIndex.getOrdinalPosition())) {
                 // this is an existing index
                 sqlBuilder.append(generateUpdateObjectDDL(position2OldIndex.get(newIndex.getOrdinalPosition()),
@@ -146,7 +146,7 @@ public abstract class DBTableIndexEditor implements DBObjectEditor<DBTableIndex>
         for (DBTableIndex oldIndex : oldIndexes) {
             // means this index should be dropped
             if (!position2NewIndex.containsKey(oldIndex.getOrdinalPosition())) {
-                sqlBuilder.append(generateDropObjectDDL(oldIndex)).append(";").line();
+                sqlBuilder.append(generateDropObjectDDL(oldIndex));
             }
         }
         return sqlBuilder.toString();
@@ -157,7 +157,7 @@ public abstract class DBTableIndexEditor implements DBObjectEditor<DBTableIndex>
         SqlBuilder sqlBuilder = sqlBuilder();
         sqlBuilder.append("ALTER TABLE ").append(getFullyQualifiedTableName(dbObject))
                 .append(" DROP INDEX ").identifier(dbObject.getName());
-        return sqlBuilder.toString();
+        return sqlBuilder.toString().trim() + ";\n";
     }
 
     protected abstract SqlBuilder sqlBuilder();

@@ -20,11 +20,15 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.oceanbase.odc.service.common.response.ListResponse;
 import com.oceanbase.odc.service.common.response.Responses;
 import com.oceanbase.odc.service.common.response.SuccessResponse;
+import com.oceanbase.odc.service.flow.task.model.DBObjectStructureComparisonResp;
+import com.oceanbase.odc.service.flow.task.model.DBStructureComparisonResp;
+import com.oceanbase.odc.service.flow.task.model.DBStructureComparisonResp.OperationType;
 import com.oceanbase.odc.service.shadowtable.ShadowTableComparingService;
 import com.oceanbase.odc.service.shadowtable.model.SetSkippedReq;
 import com.oceanbase.odc.service.shadowtable.model.ShadowTableSyncReq;
@@ -62,5 +66,17 @@ public class SchemaSyncController {
     public ListResponse<TableComparing> skipTableComparing(@PathVariable Long id,
             @RequestBody SetSkippedReq setSkippedReq) {
         return Responses.list(shadowTableComparingService.setSkipTableComparing(id, setSkippedReq));
+    }
+
+    @RequestMapping(value = "/structureComparison/{id}", method = RequestMethod.GET)
+    public SuccessResponse<DBStructureComparisonResp> listStructureComparisonResult(@PathVariable Long id,
+            @RequestParam OperationType operationType) {
+        throw new UnsupportedOperationException("structure comparison not supported yet");
+    }
+
+    @RequestMapping(value = "/structureComparison/{id}/{structureComparisonId}", method = RequestMethod.GET)
+    public SuccessResponse<DBObjectStructureComparisonResp> getStructureComparisonResult(@PathVariable Long id,
+            @PathVariable Long structureComparisonId) {
+        throw new UnsupportedOperationException("structure comparison not supported yet");
     }
 }

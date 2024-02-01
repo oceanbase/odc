@@ -532,6 +532,10 @@ INSERT INTO config_system_configuration(`key`, `value`, `description`) VALUES('o
  'CHANGE_ME', '云存储服务 RegionId') ON DUPLICATE KEY UPDATE `id`=`id`;
 INSERT INTO config_system_configuration(`key`, `value`, `description`) VALUES('odc.cloud.object-storage.endpoint',
  'CHANGE_ME', '云存储服务 Endpoint') ON DUPLICATE KEY UPDATE `id`=`id`;
+INSERT INTO config_system_configuration(`key`, `value`, `description`) (SELECT 'odc.cloud.object-storage.public-endpoint', `value`, '云存储服务公网 Endpoint' FROM config_system_configuration WHERE `key`='odc.cloud.object-storage.endpoint')
+ ON DUPLICATE KEY UPDATE `id`=`id`;
+INSERT INTO config_system_configuration(`key`, `value`, `description`) VALUES('odc.cloud.object-storage.internal-endpoint',
+ 'CHANGE_ME', '云存储服务内网 Endpoint') ON DUPLICATE KEY UPDATE `id`=`id`;
 INSERT INTO config_system_configuration(`key`, `value`, `description`) VALUES('odc.cloud.object-storage.access-key-id',
  'CHANGE_ME', '云存储服务 accessKeyId') ON DUPLICATE KEY UPDATE `id`=`id`;
 INSERT INTO config_system_configuration(`key`, `value`, `description`) VALUES('odc.cloud.object-storage.access-key-secret',
@@ -572,6 +576,8 @@ insert into `config_system_configuration` (`key`, `value`, `application`, `profi
 VALUES ('odc.notification.dequeue-created-notification-fixed-delay-millis', '20000', 'odc', 'default', 'master', '处理 CREATED 消息的定时任务周期，默认 20000 MS') ON DUPLICATE KEY update `id`=`id`;
 insert into `config_system_configuration` (`key`, `value`, `application`, `profile`, `label`, `description`)
 VALUES ('odc.notification.dequeue-failed-notification-fixed-delay-millis', '60000', 'odc', 'default', 'master', '处理 SENT_FAILED 消息的定时任务周期，默认 60000 MS') ON DUPLICATE KEY update `id`=`id`;
+insert into `config_system_configuration` (`key`, `value`, `application`, `profile`, `label`, `description`)
+VALUES ('odc.notification.dequeue-sending-notification-fixed-delay-millis', '120000', 'odc', 'default', 'master', '处理 SENDING 消息的最长时间，超过此时间未响应则重新发送，默认 120000 MS') ON DUPLICATE KEY update `id`=`id`;
 insert into `config_system_configuration` (`key`, `value`, `application`, `profile`, `label`, `description`)
 VALUES ('odc.notification.max-resend-times', '3', 'odc', 'default', 'master', '重新处理 SENT_FAILED 消息的最大重试次数，默认 3') ON DUPLICATE KEY
 update `id`=`id`;
@@ -715,3 +721,9 @@ INSERT INTO config_system_configuration ( `key`, `value`, `description` ) VALUES
 
 INSERT INTO config_system_configuration(`key`, `value`, `description`) VALUES('odc.task.pre-check.max-sql-content-bytes',
  '5242880', '预检查时所允许检查的 SQL 内容的最大长度，超过该上限将终止预检查并将检查结果置为最高风险等级。单位：字节，默认值：5242880（即 5MB），修改后重启生效') ON DUPLICATE KEY UPDATE `id`=`id`;
+
+---
+--- v4.2.4
+---
+INSERT INTO config_system_configuration(`key`, `value`, `description`) VALUES('odc.iam.permission.expired-retention-time-seconds',
+ '7776000', 'How long expired permissions are retained, in seconds, defaults to 90 days') ON DUPLICATE KEY UPDATE `id`=`id`;

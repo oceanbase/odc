@@ -1,4 +1,4 @@
-create table TEST_DATA_TYPE(
+create table TEST_COL_DATA_TYPE(
 	col1 int,
 	col2 number(22),
 	col3 char(10),
@@ -11,20 +11,6 @@ create table TEST_DATA_TYPE(
 	col10 timestamp with local time zone,
 	col11 raw(100),
 	col12 interval year to month,
-	col13 interval day to second,
-  col14 number
-);
-
-create table TEST_OTHER_THAN_DATA_TYPE(
-	col1 int NOT NULL,
-	col2 int,
-	col3 GENERATED ALWAYS AS (col1 + col2) VIRTUAL
-);
-comment on column TEST_OTHER_THAN_DATA_TYPE.col1 is 'col1_comments';
-
-CREATE TABLE TEST_DEFAULT_NULL (
-  COL1 NUMBER(*,0) DEFAULT NULL,
-  COL2 NUMBER(22) DEFAULT null,
-  COL3 CHAR(10) DEFAULT (null),
-  COL4 VARCHAR2(10) DEFAULT 'null'
-);
+	col13 interval day to second
+)
+/

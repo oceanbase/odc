@@ -95,7 +95,8 @@ import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.objectstorage.ObjectStorageFacade;
 import com.oceanbase.odc.service.objectstorage.cloud.CloudObjectStorageService;
 import com.oceanbase.odc.service.partitionplan.PartitionPlanService;
-import com.oceanbase.odc.service.permissionapply.project.ApplyProjectResult;
+import com.oceanbase.odc.service.permission.database.model.ApplyDatabaseResult;
+import com.oceanbase.odc.service.permission.project.ApplyProjectResult;
 import com.oceanbase.odc.service.schedule.flowtask.AlterScheduleResult;
 import com.oceanbase.odc.service.session.model.SqlExecuteResult;
 import com.oceanbase.odc.service.task.TaskService;
@@ -226,6 +227,8 @@ public class FlowTaskInstanceService {
             return getResultSetExportResult(taskEntity);
         } else if (taskEntity.getTaskType() == TaskType.APPLY_PROJECT_PERMISSION) {
             return getApplyProjectResult(taskEntity);
+        } else if (taskEntity.getTaskType() == TaskType.APPLY_DATABASE_PERMISSION) {
+            return getApplyDatabaseResult(taskEntity);
         } else {
             throw new UnsupportedException(ErrorCodes.Unsupported, new Object[] {ResourceType.ODC_TASK},
                     "Unsupported task type: " + taskEntity.getTaskType());
@@ -416,7 +419,7 @@ public class FlowTaskInstanceService {
             List<MockDataTaskResult> details = getMockDataResult(taskEntity);
             Verify.singleton(details, "MockDataDetail");
 
-            String objectName = ossTaskReferManager.get(taskEntity.getId() + "");
+            String objectName = details.get(0).getObjectName();
             PreConditions.validExists(ResourceType.ODC_FILE, "taskId", taskEntity.getId(),
                     () -> StringUtils.isNotBlank(objectName));
             URL url = generatePresignedUrl(objectName, expirationSecs);
@@ -428,8 +431,7 @@ public class FlowTaskInstanceService {
             List<DataTransferTaskResult> taskResults = getDataTransferResult(taskEntity);
             Verify.singleton(taskResults, "DataTransferTaskResult");
 
-            DataTransferTaskResult taskResult = taskResults.get(0);
-            String objectName = ossTaskReferManager.get(taskResult.getExportZipFilePath());
+            String objectName = taskResults.get(0).getExportZipFilePath();
             PreConditions.validExists(ResourceType.ODC_FILE, "taskId", taskEntity.getId(),
                     () -> StringUtils.isNotBlank(objectName));
             URL url = generatePresignedUrl(objectName, expirationSecs);
@@ -440,7 +442,7 @@ public class FlowTaskInstanceService {
         } else if (taskEntity.getTaskType() == TaskType.EXPORT_RESULT_SET) {
             List<ResultSetExportResult> results = getResultSetExportResult(taskEntity);
             Verify.singleton(results, "ResultSetExportResult");
-            String objectName = ossTaskReferManager.get(results.get(0).getFileName());
+            String objectName = results.get(0).getFileName();
             PreConditions.validExists(ResourceType.ODC_FILE, "taskId", taskEntity.getId(),
                     () -> StringUtils.isNotBlank(objectName));
             return Collections.singletonList(generatePresignedUrl(objectName, expirationSecs));
@@ -566,12 +568,13 @@ public class FlowTaskInstanceService {
             result.setRecords(Collections.emptyList());
         }
         if (StringUtils.isNotEmpty(result.getJsonFileName())) {
-            String jsonFileName = result.getJsonFileName();
-            File jsonFile = new File(String.format("%s/ASYNC/%s.json", FileManager.basePath, jsonFileName));
-            BasicFileAttributes attributes = Files.readAttributes(jsonFile.toPath(), BasicFileAttributes.class);
-            if (jsonFile.exists() && attributes.isRegularFile()) {
-                result.setResultPreviewMaxSizeBytes(resultPreviewMaxSizeBytes);
-                result.setJsonFileBytes(attributes.size());
+            File jsonFile = new File(String.format("%s/ASYNC/%s.json", FileManager.basePath, result.getJsonFileName()));
+            if (jsonFile.exists()) {
+                BasicFileAttributes attributes = Files.readAttributes(jsonFile.toPath(), BasicFileAttributes.class);
+                if (attributes.isRegularFile()) {
+                    result.setResultPreviewMaxSizeBytes(resultPreviewMaxSizeBytes);
+                    result.setJsonFileBytes(attributes.size());
+                }
             }
         }
         if (cloudObjectStorageService.supported()) {
@@ -616,6 +619,10 @@ public class FlowTaskInstanceService {
         return innerGetResult(taskEntity, ApplyProjectResult.class);
     }
 
+    private List<ApplyDatabaseResult> getApplyDatabaseResult(@NonNull TaskEntity taskEntity) {
+        return innerGetResult(taskEntity, ApplyDatabaseResult.class);
+    }
+
     private <T extends FlowTaskResult> List<T> innerGetResult(@NonNull TaskEntity taskEntity,
             @NonNull Class<T> clazz) {
         String resultJson = taskEntity.getResultJson();
@@ -648,7 +655,8 @@ public class FlowTaskInstanceService {
                         && instance.getTaskType() != TaskType.SQL_CHECK
                         && instance.getTaskType() != TaskType.PRE_CHECK
                         && instance.getTaskType() != TaskType.GENERATE_ROLLBACK
-                        && instance.getTaskType() != TaskType.APPLY_PROJECT_PERMISSION;
+                        && instance.getTaskType() != TaskType.APPLY_PROJECT_PERMISSION
+                        && instance.getTaskType() != TaskType.APPLY_DATABASE_PERMISSION;
             }
         });
     }

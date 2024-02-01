@@ -15,7 +15,6 @@
  */
 package com.oceanbase.odc.service.notification.helper;
 
-import java.util.HashMap;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
@@ -40,12 +39,14 @@ public class EventMapper {
         event.setId(entity.getId());
         event.setOrganizationId(entity.getOrganizationId());
         event.setCreatorId(entity.getCreatorId());
+        event.setProjectId(entity.getProjectId());
         event.setStatus(entity.getStatus());
         event.setTriggerTime(entity.getTriggerTime());
+        entity.setProjectId(entity.getProjectId());
+        EventLabels labels = new EventLabels();
+        event.setLabels(labels);
         if (CollectionUtils.isNotEmpty(entity.getLabels())) {
-            event.setLabels(new EventLabels().addLabels(
-                    entity.getLabels().stream().collect(HashMap::new, (k, v) -> k.put(v.getKey(), v.getValue()),
-                            HashMap::putAll)));
+            entity.getLabels().forEach(label -> labels.put(label.getKey(), label.getValue()));
         }
         return event;
     }
@@ -56,6 +57,7 @@ public class EventMapper {
         entity.setOrganizationId(event.getOrganizationId());
         entity.setStatus(event.getStatus());
         entity.setTriggerTime(event.getTriggerTime());
+        entity.setProjectId(event.getProjectId());
         if (Objects.nonNull(event.getLabels())) {
             entity.setLabels(event.getLabels().entrySet().stream().map(entry -> {
                 EventLabelEntity labelEntity = new EventLabelEntity();

@@ -40,11 +40,10 @@ import com.oceanbase.odc.metadb.notification.NotificationPolicyChannelRelationRe
 import com.oceanbase.odc.metadb.notification.NotificationPolicyRepository;
 import com.oceanbase.odc.service.notification.helper.ChannelMapper;
 import com.oceanbase.odc.service.notification.helper.EventMapper;
-import com.oceanbase.odc.service.notification.model.ChannelConfig;
+import com.oceanbase.odc.service.notification.model.Channel;
 import com.oceanbase.odc.service.notification.model.ChannelType;
 import com.oceanbase.odc.service.notification.model.Message;
 import com.oceanbase.odc.service.notification.model.MessageSendingStatus;
-import com.oceanbase.odc.service.notification.model.Notification;
 
 public class JdbcNotificationQueueTest extends ServiceTestEnv {
     public static final Long ORGANIZATION_ID = 1L;
@@ -94,7 +93,7 @@ public class JdbcNotificationQueueTest extends ServiceTestEnv {
 
     @Test
     public void testOffer_NotificationNotEmpty_Success() {
-        Assert.assertTrue(queue.offer(Arrays.asList(getNotification())));
+        Assert.assertTrue(queue.offer(Arrays.asList(getMessage())));
         List<MessageEntity> messages = messageRepository.findAll();
 
         Assert.assertEquals(1, messages.size());
@@ -106,9 +105,9 @@ public class JdbcNotificationQueueTest extends ServiceTestEnv {
 
         when(channelRepository.findById(anyLong()))
                 .thenReturn(Optional.of(getChannelEntity()));
-        List<Notification> notifications = queue.peek(1, MessageSendingStatus.CREATED);
+        List<Message> messages = queue.peek(1, MessageSendingStatus.CREATED);
 
-        Assert.assertEquals(MessageSendingStatus.CREATED, notifications.get(0).getMessage().getStatus());
+        Assert.assertEquals(MessageSendingStatus.CREATED, messages.get(0).getStatus());
     }
 
     @Test
@@ -117,24 +116,18 @@ public class JdbcNotificationQueueTest extends ServiceTestEnv {
 
         when(channelRepository.findById(anyLong()))
                 .thenReturn(Optional.empty());
-        List<Notification> notifications = queue.peek(1, MessageSendingStatus.CREATED);
+        List<Message> messages = queue.peek(1, MessageSendingStatus.CREATED);
 
-        Assert.assertEquals(0, notifications.size());
+        Assert.assertEquals(0, messages.size());
     }
 
-    private Notification getNotification() {
-        Notification notification = new Notification();
-        notification.setMessage(getMessage());
-        notification.setChannel(getChannel());
-        return notification;
-    }
-
-    private ChannelConfig getChannel() {
-        ChannelConfig channelConfig = new ChannelConfig();
-        channelConfig.setType(ChannelType.DingTalkGroupBot);
-        channelConfig.setName("testChannel");
-        channelConfig.setId(1L);
-        return channelConfig;
+    private Channel getChannel() {
+        Channel channel = new Channel();
+        channel.setType(ChannelType.DingTalk);
+        channel.setName("testChannel");
+        channel.setId(1L);
+        channel.setProjectId(1L);
+        return channel;
     }
 
     private ChannelEntity getChannelEntity() {
@@ -142,7 +135,8 @@ public class JdbcNotificationQueueTest extends ServiceTestEnv {
         entity.setId(1L);
         entity.setCreatorId(USER_ID);
         entity.setOrganizationId(ORGANIZATION_ID);
-        entity.setType(ChannelType.DingTalkGroupBot);
+        entity.setProjectId(1L);
+        entity.setType(ChannelType.DingTalk);
         entity.setName("test");
         return entity;
     }
@@ -151,15 +145,13 @@ public class JdbcNotificationQueueTest extends ServiceTestEnv {
         return Message.builder()
                 .title("test title")
                 .content("test content")
-                .channelId(1L)
-                .eventId(1L)
                 .retryTimes(0)
                 .maxRetryTimes(3)
                 .status(MessageSendingStatus.CREATED)
-                .toRecipients(Arrays.asList("1"))
-                .ccRecipients(Arrays.asList("2"))
                 .creatorId(USER_ID)
                 .organizationId(ORGANIZATION_ID)
+                .projectId(1L)
+                .channel(getChannel())
                 .build();
     }
 

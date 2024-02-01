@@ -37,4 +37,6 @@ public final class StatementsFiles {
 
     public static final String OBORACLE_3_x = "schema/sql/oboracle/oboracle_3_x.yaml";
 
+    public static final String ORACLE_11_g = "schema/sql/oracle/oracle_11g.yaml";
+
 }

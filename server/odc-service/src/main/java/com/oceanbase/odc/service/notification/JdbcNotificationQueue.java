@@ -33,7 +33,6 @@ import com.oceanbase.odc.metadb.notification.MessageRepository;
 import com.oceanbase.odc.service.notification.helper.ChannelMapper;
 import com.oceanbase.odc.service.notification.model.Message;
 import com.oceanbase.odc.service.notification.model.MessageSendingStatus;
-import com.oceanbase.odc.service.notification.model.Notification;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -56,38 +55,38 @@ public class JdbcNotificationQueue implements NotificationQueue {
     private ChannelMapper channelMapper;
 
     @Override
-    public boolean offer(List<Notification> notifications) {
-        if (CollectionUtils.isEmpty(notifications)) {
+    @Transactional
+    public boolean offer(List<Message> messages) {
+        if (CollectionUtils.isEmpty(messages)) {
             return true;
         }
-        List<MessageEntity> messageEntities = notifications.stream()
-                .map(notification -> notification.getMessage().toEntity()).collect(Collectors.toList());
-        messageRepository.saveAll(messageEntities);
+        List<MessageEntity> saved = messageRepository.saveAll(messages.stream()
+                .map(Message::toEntity).collect(Collectors.toList()));
+        log.info("offered {} messages finishied.", saved.size());
         return true;
     }
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public List<Notification> peek(int batchSize, MessageSendingStatus status) {
-        List<Notification> notifications = new ArrayList<>();
+    public List<Message> peek(int batchSize, MessageSendingStatus status) {
+        List<Message> messages = new ArrayList<>();
         List<MessageEntity> messageEntities = messageRepository.findNByStatusForUpdate(status, batchSize);
         if (CollectionUtils.isEmpty(messageEntities)) {
-            return notifications;
+            return messages;
         }
         messageEntities.forEach(messageEntity -> {
             Optional<ChannelEntity> channelOpt = channelRepository.findById(messageEntity.getChannelId());
             if (!channelOpt.isPresent()) {
                 messageRepository.updateStatusById(messageEntity.getId(), MessageSendingStatus.THROWN);
             } else {
-                messageRepository.updateStatusById(messageEntity.getId(), MessageSendingStatus.CONVERTING);
-                Notification notification = new Notification();
+                messageRepository.updateStatusById(messageEntity.getId(), MessageSendingStatus.SENDING);
                 ChannelEntity channel = channelOpt.get();
-                notification.setMessage(Message.fromEntity(messageEntity));
-                notification.setChannel(channelMapper.fromEntity(channel));
-                notifications.add(notification);
+                Message message = Message.fromEntity(messageEntity);
+                message.setChannel(channelMapper.fromEntityWithConfig(channel));
+                messages.add(message);
             }
         });
-        return notifications;
+        return messages;
     }
 
     @Override

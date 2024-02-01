@@ -99,6 +99,14 @@ public class JsonTest {
 
     }
 
+    @Test
+    public void test_object_to_map_with_null_values() {
+        CreateProjectRequest createProjectRequest = getCreateProjectRequest();
+        createProjectRequest.setName(null);
+        Map map = JsonUtils.fromJson(JsonUtils.toJsonUpperCamelCase(createProjectRequest), Map.class);
+        Assert.assertFalse(map.containsKey("name"));
+    }
+
     private CreateProjectRequest getCreateProjectRequest() {
         String datasourceId = "ds1";
         String dbName = "db1";

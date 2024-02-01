@@ -98,6 +98,7 @@ public class ResultSetExportFlowableTask extends BaseODCFlowTaskDelegate<ResultS
     protected void onTimeout(Long taskId, TaskService taskService) {
         log.warn("Result set export task timeout, taskId={}", taskId);
         taskService.fail(taskId, context == null ? 0.0 : context.progress(), "");
+        super.onTimeout(taskId, taskService);
     }
 
     @Override

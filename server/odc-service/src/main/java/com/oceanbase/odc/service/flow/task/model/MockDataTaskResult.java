@@ -52,6 +52,7 @@ public class MockDataTaskResult implements FlowTaskResult {
     private Long currentRecord;
     private Long totalGen;
     private String sessionName;
+    private String objectName;
     @NormalDialectTypeOutput
     private DialectType dbMode;
     @Deprecated
