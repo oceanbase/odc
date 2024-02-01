@@ -44,6 +44,7 @@ import com.oceanbase.odc.common.event.EventPublisher;
 import com.oceanbase.odc.common.jpa.SpecificationUtil;
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.common.trace.TraceContextHolder;
+import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.common.util.SystemUtils;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
@@ -158,9 +159,8 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
 
             Predicate processCondition = builder.and(
                     builder.equal(root.get(JobEntityColumn.RUN_MODE), TaskRunMode.PROCESS),
-                    builder.or(
-                            builder.like(root.get(JobEntityColumn.EXECUTOR_IDENTIFIER),
-                                    SystemUtils.getLocalIpAddress()),
+                    builder.or(builder.like(root.get(JobEntityColumn.EXECUTOR_IDENTIFIER),
+                            "%" + StringUtils.escapeLike(SystemUtils.getLocalIpAddress()) + "%"),
                             builder.isNull(root.get(JobEntityColumn.EXECUTOR_IDENTIFIER))));
 
             return builder.or(processCondition, k8sCondition);

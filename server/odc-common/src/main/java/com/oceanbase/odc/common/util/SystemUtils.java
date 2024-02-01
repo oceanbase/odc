@@ -169,11 +169,11 @@ public abstract class SystemUtils {
         if (-1 == pid) {
             throw new IllegalArgumentException("kill process by illegal argument pid: " + pid);
         }
-        String command = "";
+        String[] command;
         if (isOnWindows()) {
-            command = "cmd.exe /c taskkill /PID " + pid + " /F /T ";
+            command = new String[] {"cmd.exe", "/c", "taskkill /PID " + pid + " /F /T "};
         } else {
-            command = "kill -9 " + pid;
+            command = new String[] {"sh", "-c", "kill -9 " + pid};
         }
 
         return executeCommand(command, reader -> {
@@ -195,22 +195,20 @@ public abstract class SystemUtils {
         if (-1 == pid) {
             throw new IllegalArgumentException("query process by illegal argument pid: " + pid);
         }
-        String command = "";
+        String[] command;
         if (isOnWindows()) {
             // tasklist exit code is always 0. Parse output
             // findstr exit code 0 if found pid, 1 if it doesn't
-            command = "cmd.exe /c \"tasklist /FI \"PID eq " + pid + "\" | findstr " + processSelector + "\"";
+            command = new String[] {
+                    "cmd.exe", "/c", "tasklist /FI \"PID eq " + pid + "\" | findstr \"" + processSelector + "\""};
         } else {
             // ps -p pid -o lstart= | xargs -i date -d {} +%s
-            command = "ps -p " + pid + " grep '" + processSelector + "'";
+            command = new String[] {"sh", "-c", "ps -f -p " + pid + " | grep '" + processSelector + "'"};
         }
         return executeCommand(command, reader -> {
             boolean result = false;
             try {
-                String line;
-                if ((line = reader.readLine()) != null) {
-                    result = true;
-                }
+                result = (reader.readLine() != null);
             } catch (IOException e) {
                 log.warn("Reader from process output failed.", e);
             }
@@ -218,8 +216,7 @@ public abstract class SystemUtils {
         });
     }
 
-
-    private static <R> R executeCommand(String cmd, Function<BufferedReader, R> cmdResultReader) {
+    private static <R> R executeCommand(String[] cmd, Function<BufferedReader, R> cmdResultReader) {
 
         Process process = null;
         BufferedReader reader = null;
@@ -228,7 +225,7 @@ public abstract class SystemUtils {
             reader = new BufferedReader(new InputStreamReader(process.getInputStream(), StandardCharsets.UTF_8));
             return cmdResultReader.apply(reader);
         } catch (IOException e) {
-            log.warn("Execute command " + cmd + " failed.", e);
+            log.warn("Execute command " + String.join(" ", cmd) + " failed.", e);
             throw new IllegalArgumentException(e);
         } finally {
             if (process != null) {

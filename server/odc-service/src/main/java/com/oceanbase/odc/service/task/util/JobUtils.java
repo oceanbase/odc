@@ -49,8 +49,8 @@ public class JobUtils {
         return JobConstants.TEMPLATE_JOB_NAME_PREFIX + ji.getId() + "-" + LocalDateTime.now().format(DTF);
     }
 
-    public static String generateExecutorProcessProperties(String executorName) {
-        return "-D" + JobConstants.ODC_EXECUTOR_PROCESS_PROPERTIES_KEY + "=" + executorName;
+    public static String generateExecutorSelectorOnProcess(String executorName) {
+        return JobConstants.ODC_EXECUTOR_PROCESS_PROPERTIES_KEY + "=" + executorName;
     }
 
     public static String toJson(Object obj) {
