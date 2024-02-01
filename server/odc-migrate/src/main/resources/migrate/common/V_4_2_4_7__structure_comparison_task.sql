@@ -13,7 +13,8 @@ create table if not exists `structure_comparison`(
   KEY `idx_structure_comparison_id_structure_comparison_task_id`(`id`, `structure_comparison_task_id`),
   KEY `idx_structure_comparison_task_id`(`structure_comparison_task_id`),
   KEY `idx_structure_comparison_task_id_comparing_result`(`structure_comparison_task_id`, `comparing_result`),
-  KEY `idx_structure_comparison_task_id_database_object_type`(`structure_comparison_task_id`, `database_object_type`)
+  KEY `idx_structure_comparison_task_id_database_object_type`(`structure_comparison_task_id`, `database_object_type`),
+  KEY `idx_structure_comparison_task_id_database_object_name`(`structure_comparison_task_id`, `database_object_name`)
 );
 
 create table if not exists `structure_comparison_task`(

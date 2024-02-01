@@ -21,11 +21,11 @@ CREATE TABLE update_index (
     c1 INTEGER NOT NULL,
     c2 INTEGER NOT NULL,
     C3 INTEGER NOT NULL,
-    CONSTRAINT pk_update_index PRIMARY KEY (id),
-    INDEX idx1 (c1, c3),
-    INDEX idx_only_in_target (c2),
-    INDEX idx_c1_c2_c3 (c1,c2,c3)
+    CONSTRAINT pk_update_index PRIMARY KEY (id)
 );
+create index idx1 on update_index(c1, c3);
+create index idx_only_in_target on update_index(c2);
+create index idx_c1_c2_c3 on update_index (c1,c2,c3);
 
 -- 更新约束 case
 CREATE TABLE fk_parent (

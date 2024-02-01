@@ -49,10 +49,10 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 public class StructureComparisonTask implements Callable<DBStructureComparisonTaskResult> {
-    private DBStructureComparisonConfig srcConfig;
-    private DBStructureComparisonConfig tgtConfig;
-    private Long taskId;
-    private User user;
+    private final DBStructureComparisonConfig srcConfig;
+    private final DBStructureComparisonConfig tgtConfig;
+    private final Long taskId;
+    private final User user;
     private StructureComparisonRepository structureComparisonRepository;
     private StructureComparisonTaskRepository structureComparisonTaskRepository;
     private ObjectStorageFacade objectStorageFacade;
@@ -60,7 +60,7 @@ public class StructureComparisonTask implements Callable<DBStructureComparisonTa
     @Getter
     private volatile DBStructureComparisonTaskResult taskResult =
             new DBStructureComparisonTaskResult(TaskStatus.PREPARING);
-    private static final String STRUCTURE_COMPARISON_RESULT_FILE_NAME = "structure-comparison-result.sql";
+    private final String STRUCTURE_COMPARISON_RESULT_FILE_NAME = "structure-comparison-result.sql";
     private final String STRUCTURE_COMPARISON_BUCKET_NAME = "structure-comparison";
 
     public StructureComparisonTask(@NonNull DBStructureComparisonConfig srcConfig,

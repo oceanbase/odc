@@ -26,7 +26,6 @@ import com.oceanbase.odc.core.shared.constant.FlowStatus;
 import com.oceanbase.odc.core.shared.constant.TaskStatus;
 import com.oceanbase.odc.metadb.task.TaskEntity;
 import com.oceanbase.odc.service.flow.task.model.DBStructureComparisonParameter;
-import com.oceanbase.odc.service.flow.task.model.DBStructureComparisonTaskResult;
 import com.oceanbase.odc.service.flow.util.FlowTaskUtil;
 import com.oceanbase.odc.service.structurecompare.StructureComparisonContext;
 import com.oceanbase.odc.service.structurecompare.StructureComparisonService;
@@ -72,7 +71,7 @@ public class DBStructureComparisonFlowableTask extends BaseODCFlowTaskDelegate<V
         boolean result = context.cancel(true);
         log.info("structure comparison task has been cancelled, taskId={}, result={}", taskId, result);
         taskService.cancel(taskId, context.getStatus());
-        return true;
+        return result;
     }
 
     @Override
@@ -111,11 +110,10 @@ public class DBStructureComparisonFlowableTask extends BaseODCFlowTaskDelegate<V
     @Override
     protected void onFailure(Long taskId, TaskService taskService) {
         log.warn("Structure comparison task failed, taskId={}", taskId);
-        DBStructureComparisonTaskResult result = context.getStatus();
         if (context == null) {
-            taskService.fail(taskId, 0, result);
+            taskService.fail(taskId, 0, null);
         } else {
-            taskService.fail(taskId, context.getProgress(), result);
+            taskService.fail(taskId, context.getProgress(), context.getStatus());
         }
         super.onFailure(taskId, taskService);
 
