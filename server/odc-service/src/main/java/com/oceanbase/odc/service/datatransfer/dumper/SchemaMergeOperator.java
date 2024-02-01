@@ -112,7 +112,8 @@ public class SchemaMergeOperator {
     public SchemaMergeOperator(ExportOutput exportOutput, String schemaName, DialectType dialectType) throws Exception {
         this.dialectType = dialectType;
         this.exportOutput = exportOutput;
-        this.schemaName = (dialectType.isMysql() || dialectType.isDoris()) ? StringUtils.unquoteMySqlIdentifier(schemaName)
+        this.schemaName =
+                (dialectType.isMysql() || dialectType.isDoris()) ? StringUtils.unquoteMySqlIdentifier(schemaName)
                         : StringUtils.unquoteOracleIdentifier(schemaName);
         this.objectMap = getSchemaFileIdentifiers();
     }
