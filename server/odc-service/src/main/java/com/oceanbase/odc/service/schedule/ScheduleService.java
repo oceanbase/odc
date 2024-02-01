@@ -203,8 +203,8 @@ public class ScheduleService {
 
     @Transactional(rollbackFor = Exception.class)
     public void terminate(ScheduleEntity scheduleConfig) throws SchedulerException {
-        Trigger trigger = getScheduleTrigger(scheduleConfig);
-        quartzJobService.deleteJob(trigger.getJobKey());
+        JobKey jobKey = QuartzKeyGenerator.generateJobKey(scheduleConfig.getId(), scheduleConfig.getJobType());
+        quartzJobService.deleteJob(jobKey);
         scheduleRepository.updateStatusById(scheduleConfig.getId(), ScheduleStatus.TERMINATION);
     }
 
