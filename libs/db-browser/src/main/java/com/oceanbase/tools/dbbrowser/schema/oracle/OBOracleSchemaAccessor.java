@@ -240,7 +240,7 @@ public class OBOracleSchemaAccessor extends OracleSchemaAccessor {
     }
 
     @Override
-    protected RowMapper listColumnsRowMapper() {
+    protected RowMapper<DBTableColumn> listColumnsRowMapper() {
         final int[] hiddenColumnOrdinaryPosition = {-1};
         return (rs, romNum) -> {
             DBTableColumn tableColumn = new DBTableColumn();

@@ -24,6 +24,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
@@ -896,7 +897,92 @@ public class OracleSchemaAccessor implements DBSchemaAccessor {
 
     @Override
     public Map<String, DBTablePartition> listTablePartitions(@NonNull String schemaName, List<String> candidates) {
-        throw new UnsupportedOperationException("Unsupported yet");
+        String queryDefsSql = this.sqlMapper.getSql(Statements.LIST_PARTITIONS_DEFINITIONS);
+        List<Map<String, Object>> defRows = jdbcOperations.query(queryDefsSql, new Object[] {schemaName}, (rs, num) -> {
+            Map<String, Object> rows = new HashMap<>();
+            rows.put("TABLE_NAME", rs.getString("TABLE_NAME"));
+            rows.put("PARTITION_NAME", rs.getString("PARTITION_NAME"));
+            rows.put("PARTITION_POSITION", rs.getInt("PARTITION_POSITION"));
+            rows.put("HIGH_VALUE", rs.getString("HIGH_VALUE"));
+            return rows;
+        });
+        String queryOptsSql = this.sqlMapper.getSql(Statements.LIST_PARTITIONS_OPTIONS);
+        List<Map<String, Object>> optRows = jdbcOperations.query(queryOptsSql, new Object[] {schemaName}, (rs, num) -> {
+            Map<String, Object> rows = new HashMap<>();
+            rows.put("TABLE_NAME", rs.getString("TABLE_NAME"));
+            rows.put("PARTITIONING_TYPE", rs.getString("PARTITIONING_TYPE"));
+            return rows;
+        });
+        String queryColsSql = new OracleSqlBuilder().append("SELECT NAME, COLUMN_NAME FROM ")
+                .append(dataDictTableNames.PART_KEY_COLUMNS())
+                .append(" WHERE OWNER = ").value(schemaName).toString();
+        List<Map<String, Object>> colRows = jdbcOperations.query(queryColsSql, (rs, num) -> {
+            Map<String, Object> rows = new HashMap<>();
+            rows.put("TABLE_NAME", rs.getString("NAME"));
+            rows.put("COLUMN_NAME", rs.getString("COLUMN_NAME"));
+            return rows;
+        });
+        if (CollectionUtils.isNotEmpty(candidates)) {
+            defRows = defRows.stream().filter(stringObjectMap -> {
+                Object tableName = stringObjectMap.get("TABLE_NAME");
+                return tableName != null && CollectionUtils.containsAny(candidates, tableName.toString());
+            }).collect(Collectors.toList());
+            optRows = optRows.stream().filter(stringObjectMap -> {
+                Object tableName = stringObjectMap.get("TABLE_NAME");
+                return tableName != null && CollectionUtils.containsAny(candidates, tableName.toString());
+            }).collect(Collectors.toList());
+            colRows = colRows.stream().filter(stringObjectMap -> {
+                Object tableName = stringObjectMap.get("TABLE_NAME");
+                return tableName != null && CollectionUtils.containsAny(candidates, tableName.toString());
+            }).collect(Collectors.toList());
+        }
+        Map<String, List<Map<String, Object>>> tblName2DefRows = defRows.stream().collect(
+                Collectors.groupingBy(m -> (String) m.get("TABLE_NAME")));
+        Map<String, List<Map<String, Object>>> tblName2OptRows = optRows.stream().collect(
+                Collectors.groupingBy(m -> (String) m.get("TABLE_NAME")));
+        Map<String, List<Map<String, Object>>> tblName2ColRows = colRows.stream().collect(
+                Collectors.groupingBy(m -> (String) m.get("TABLE_NAME")));
+        return tblName2DefRows.entrySet().stream().collect(Collectors.toMap(Entry::getKey, e -> {
+            String tblName = e.getKey();
+            List<Map<String, Object>> subOptRows = tblName2OptRows.get(tblName);
+            if (subOptRows == null) {
+                throw new IllegalStateException("Failed to find partition option by table, " + tblName);
+            }
+            DBTablePartitionOption option = new DBTablePartitionOption();
+            option.setType(DBTablePartitionType.fromValue((String) subOptRows.get(0).get("PARTITIONING_TYPE")));
+            if (option.getType() == DBTablePartitionType.NOT_PARTITIONED) {
+                throw new IllegalStateException(
+                        "Unrecognized partition type, " + subOptRows.get(0).get("PARTITIONING_TYPE"));
+            }
+            List<Map<String, Object>> subColRows = tblName2ColRows.get(tblName);
+            if (subColRows == null) {
+                throw new IllegalStateException("Failed to find partition key by table, " + tblName);
+            }
+            List<String> columnNames =
+                    subColRows.stream().map(m -> (String) m.get("COLUMN_NAME")).collect(Collectors.toList());
+            if (option.getType().supportExpression()) {
+                option.setExpression(String.join(",", columnNames));
+            } else {
+                option.setColumnNames(columnNames);
+            }
+            DBTablePartition partition = new DBTablePartition();
+            partition.setSchemaName(schemaName);
+            partition.setTableName(tblName);
+            partition.setPartitionOption(option);
+            List<Map<String, Object>> subDefRows = tblName2DefRows.get(tblName);
+            partition.setPartitionDefinitions(subDefRows.stream().map(row -> {
+                DBTablePartitionDefinition partitionDefinition = new DBTablePartitionDefinition();
+                partitionDefinition.setName((String) row.get("PARTITION_NAME"));
+                partitionDefinition.setOrdinalPosition((Integer) row.get("PARTITION_POSITION"));
+                partitionDefinition.setType(option.getType());
+                partitionDefinition.fillValues((String) row.get("HIGH_VALUE"));
+                return partitionDefinition;
+            }).collect(Collectors.toList()));
+            if (CollectionUtils.isNotEmpty(partition.getPartitionDefinitions())) {
+                partition.getPartitionOption().setPartitionsNum(partition.getPartitionDefinitions().size());
+            }
+            return partition;
+        }));
     }
 
     private DBTablePartitionOption obtainPartitionOption(String schemaName, String tableName) {

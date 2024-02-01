@@ -161,7 +161,7 @@ sqls:
     FROM
       information_schema.partitions
     WHERE
-      TABLE_SCHEMA = ? AND PARTITION_NAME is not null;
+      TABLE_SCHEMA = ? AND PARTITION_NAME is not null
   list-schema-index: |-
     SELECT 
       TABLE_SCHEMA, 
