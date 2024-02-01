@@ -77,8 +77,8 @@ public class ProcessJobCaller extends BaseJobCaller {
     @Override
     protected void doDestroy(ExecutorIdentifier identifier) throws JobException {
         long pid = Long.parseLong(identifier.getNamespace());
-        String executorName = JobUtils.generateExecutorSelectorOnProcess(identifier.getExecutorName());
-        if (SystemUtils.isProcessRunning(pid, JobUtils.generateExecutorSelectorOnProcess(executorName))) {
+        if (SystemUtils.isProcessRunning(pid,
+                JobUtils.generateExecutorSelectorOnProcess(identifier.getExecutorName()))) {
             log.info("Found process, try kill it, pid={}.", pid);
             boolean result = SystemUtils.killProcessByPid(pid);
             if (result) {
