@@ -648,6 +648,15 @@
             <AppenderRef ref="OdcFileAppender"/>
         </Logger>
 
+        <Logger name="org.hibernate.SQL" level="debug" additivity="false">
+            <AppenderRef ref="OdcFileAppender"/>
+        </Logger>
+
+        <!-- Log JDBC parameters -->
+        <Logger name="org.hibernate.type.descriptor.sql.BasicBinder" level="trace" additivity="false">
+            <AppenderRef ref="OdcFileAppender"/>
+        </Logger>
+
         <!-- spring 框架日志输出，输出级别 INFO -->
         <Logger name="org.springframework" level="INFO" additivity="false">
             <AppenderRef ref="OdcFileAppender"/>
