@@ -199,7 +199,14 @@ public class OBMySQLAutoPartitionExtensionPoint implements AutoPartitionExtensio
         }).collect(Collectors.toList());
     }
 
-    protected void processPartitionKey(DBTablePartitionOption option) {}
+    protected void processPartitionKey(DBTablePartitionOption option) {
+        if (CollectionUtils.isNotEmpty(option.getColumnNames())) {
+            option.setColumnNames(option.getColumnNames().stream().map(String::trim).collect(Collectors.toList()));
+        }
+        if (StringUtils.isNotEmpty(option.getExpression())) {
+            option.setExpression(option.getExpression().trim());
+        }
+    }
 
     protected DBSchemaAccessor getDBSchemaAccessor(@NonNull Connection connection) {
         JdbcOperations jdbc = new JdbcTemplate(new SingleConnectionDataSource(connection, false));

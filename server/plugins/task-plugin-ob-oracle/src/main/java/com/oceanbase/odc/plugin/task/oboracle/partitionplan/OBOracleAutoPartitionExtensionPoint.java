@@ -158,6 +158,9 @@ public class OBOracleAutoPartitionExtensionPoint extends OBMySQLAutoPartitionExt
             option.setColumnNames(Arrays.stream(option.getExpression().split(","))
                     .map(String::trim).collect(Collectors.toList()));
         }
+        if (CollectionUtils.isNotEmpty(option.getColumnNames())) {
+            option.setColumnNames(option.getColumnNames().stream().map(String::trim).collect(Collectors.toList()));
+        }
     }
 
     @Override
