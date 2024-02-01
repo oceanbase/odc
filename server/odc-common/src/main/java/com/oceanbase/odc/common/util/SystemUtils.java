@@ -208,7 +208,7 @@ public abstract class SystemUtils {
         return executeCommand(command, reader -> {
             boolean result = false;
             try {
-                result = (reader.readLine()) != null;
+                result = (reader.readLine() != null);
             } catch (IOException e) {
                 log.warn("Reader from process output failed.", e);
             }
