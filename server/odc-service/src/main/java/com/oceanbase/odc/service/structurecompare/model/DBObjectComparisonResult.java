@@ -126,7 +126,11 @@ public class DBObjectComparisonResult {
                 }
             }
         }
-        entity.setChangeSqlScript(totalSubScript + "\n" + changeScript);
+        if (StringUtils.isNotEmpty(changeScript)) {
+            entity.setChangeSqlScript(totalSubScript + "\n" + changeScript);
+        } else {
+            entity.setChangeSqlScript(totalSubScript.toString());
+        }
         return entity;
     }
 
