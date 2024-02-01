@@ -15,6 +15,7 @@
  */
 package com.oceanbase.odc.plugin.connect.obmysql;
 
+import java.io.EOFException;
 import java.net.ConnectException;
 import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
@@ -158,6 +159,11 @@ public class OBMySQLConnectionExtension implements ConnectionExtensionPoint {
             } else if (rootCause instanceof UnknownHostException) {
                 /**
                  * 域名解析失败，未知主机错误
+                 */
+                return TestResult.unknownHost(host);
+            } else if (rootCause instanceof EOFException) {
+                /**
+                 * 连接Doris，域名或者ip不正确的时报unexpected end of stream, read 0 bytes from 4 (socket was closed by server)
                  */
                 return TestResult.unknownHost(host);
             } else if (StringUtils.containsIgnoreCase(rootCause.getMessage(), "Access denied")) {

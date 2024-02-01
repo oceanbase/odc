@@ -72,7 +72,8 @@ public class TestDBConfiguration {
         dataSource.setUrl(JdbcUtil.buildUrl(host, port, defaultDBName, type));
         dataSource.setUsername(JdbcUtil.buildUser(username, tenant, cluster));
         dataSource.setPassword(password);
-        String validationQuery = type == TestDBType.OB_MYSQL ? "select 1" : "select 1 from dual";
+        String validationQuery =
+                type == TestDBType.OB_MYSQL || type == TestDBType.DORIS ? "select 1" : "select 1 from dual";
         dataSource.setValidationQuery(validationQuery);
         dataSource.setTestWhileIdle(true);
         dataSource.setTimeBetweenEvictionRunsMillis(30000);

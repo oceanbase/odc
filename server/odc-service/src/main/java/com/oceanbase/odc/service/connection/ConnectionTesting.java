@@ -141,6 +141,8 @@ public class ConnectionTesting {
                 schema = null;
             } else if (type.getDialectType().isMysql()) {
                 schema = OBConsoleDataSourceFactory.getDefaultSchema(config);
+            } else if (type.getDialectType().isDoris()) {
+                schema = OBConsoleDataSourceFactory.getDefaultSchema(config);
             } else {
                 throw new UnsupportedOperationException("Unsupported type, " + type);
             }

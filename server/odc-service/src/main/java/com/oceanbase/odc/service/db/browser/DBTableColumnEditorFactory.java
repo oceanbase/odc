@@ -36,6 +36,7 @@ public class DBTableColumnEditorFactory extends DBObjectEditorFactory<DBTableCol
     public DBTableColumnEditor create() {
         switch (connectType) {
             case MYSQL:
+            case DORIS:
             case OB_MYSQL:
             case CLOUD_OB_MYSQL:
             case ODP_SHARDING_OB_MYSQL:

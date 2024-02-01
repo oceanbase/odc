@@ -28,7 +28,8 @@ public enum TestDBType {
             "odc.ob.default.mysql.sysUsername", "odc.ob.default.mysql.sysPassword"),
     OB_ORACLE("4.1.0.2", "odc.ob.default.oracle.commandline",
             "odc.ob.default.oracle.sysUsername", "odc.ob.default.oracle.sysPassword"),
-    MYSQL("5.7", "odc.mysql.default.commandline", null, null);
+    MYSQL("5.7", "odc.mysql.default.commandline", null, null),
+    DORIS("5.7", "odc.doris.default.commandline", null, null);
 
     /**
      * Test database version

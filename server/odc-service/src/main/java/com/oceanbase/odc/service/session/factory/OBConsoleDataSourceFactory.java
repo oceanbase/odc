@@ -268,6 +268,7 @@ public class OBConsoleDataSourceFactory implements CloneableDataSourceFactory {
                 return "\"" + schema + "\"";
             case OB_MYSQL:
             case MYSQL:
+            case DORIS:
             case ODP_SHARDING_OB_MYSQL:
                 return schema;
             default:
@@ -286,6 +287,7 @@ public class OBConsoleDataSourceFactory implements CloneableDataSourceFactory {
                 return getSchema(getDbUser(connectionConfig), connectionConfig.getDialectType());
             case OB_MYSQL:
             case MYSQL:
+            case DORIS:
             case ODP_SHARDING_OB_MYSQL:
                 if (StringUtils.isNotEmpty(defaultSchema)) {
                     return getSchema(defaultSchema, connectionConfig.getDialectType());

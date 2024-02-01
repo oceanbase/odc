@@ -26,6 +26,7 @@ import com.oceanbase.odc.core.shared.constant.ConnectType;
 import com.oceanbase.odc.core.shared.exception.UnsupportedException;
 import com.oceanbase.odc.core.sql.execute.SyncJdbcExecutor;
 import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
+import com.oceanbase.tools.dbbrowser.schema.doris.DorisSchemaAccessor;
 import com.oceanbase.tools.dbbrowser.schema.mysql.MySQLNoGreaterThan5740SchemaAccessor;
 import com.oceanbase.tools.dbbrowser.schema.mysql.OBMySQLBetween220And225XSchemaAccessor;
 import com.oceanbase.tools.dbbrowser.schema.mysql.OBMySQLBetween2260And2276SchemaAccessor;
@@ -109,6 +110,8 @@ public class DBSchemaAccessors {
             return new ODPOBMySQLSchemaAccessor(syncJdbcExecutor);
         } else if (connectType == ConnectType.MYSQL) {
             return new MySQLNoGreaterThan5740SchemaAccessor(syncJdbcExecutor);
+        } else if (connectType == ConnectType.DORIS) {
+            return new DorisSchemaAccessor(syncJdbcExecutor);
         } else if (connectType == ConnectType.ORACLE) {
             return new OracleSchemaAccessor(syncJdbcExecutor, new ALLDataDictTableNames());
         } else {

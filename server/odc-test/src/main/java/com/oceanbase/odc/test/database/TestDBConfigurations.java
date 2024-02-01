@@ -43,11 +43,23 @@ public class TestDBConfigurations {
     private static final String TEST_OB_MYSQL_DATABASE_NAME = IsolatedNameGenerator.generateLowerCase("ODC");
     private static final String TEST_OB_ORACLE_DATABASE_NAME = IsolatedNameGenerator.generateUpperCase("ODC");
     private static final String TEST_MYSQL_DATABASE_NAME = IsolatedNameGenerator.generateUpperCase("ODC");
+    private static final String TEST_DORIS_DATABASE_NAME = IsolatedNameGenerator.generateUpperCase("ODC");
 
     private TestDBConfigurations() {
         for (TestDBType type : TestDBType.values()) {
             connectType2ConfigurationMap.put(type, new TestDBConfiguration(getTestDBProperties(type)));
         }
+        dropTestDatabases();
+        createTestDatabasesAndUpdateConfig();
+        Thread shutdownHookThread = new Thread(this::expireResources);
+        shutdownHookThread.setDaemon(true);
+        shutdownHookThread.setName("thread-odc-unit-test-shutdown-hook");
+        Runtime.getRuntime().addShutdownHook(shutdownHookThread);
+        log.info("TestDBConfigurations initialized");
+    }
+
+    private TestDBConfigurations(TestDBType type) {
+        connectType2ConfigurationMap.put(type, new TestDBConfiguration(getTestDBProperties(type)));
         dropTestDatabases();
         createTestDatabasesAndUpdateConfig();
         Thread shutdownHookThread = new Thread(this::expireResources);
@@ -68,6 +80,17 @@ public class TestDBConfigurations {
         return instance;
     }
 
+    public static TestDBConfigurations getInstance(TestDBType type) {
+        if (instance == null) {
+            synchronized (TestDBConfigurations.class) {
+                if (instance == null) {
+                    instance = new TestDBConfigurations(type);
+                }
+            }
+        }
+        return instance;
+    }
+
     public TestDBConfiguration getTestOBMysqlConfiguration() {
         return connectType2ConfigurationMap.get(TestDBType.OB_MYSQL);
     }
@@ -78,6 +101,10 @@ public class TestDBConfigurations {
 
     public TestDBConfiguration getTestMysqlConfiguration() {
         return connectType2ConfigurationMap.get(TestDBType.MYSQL);
+    }
+
+    public TestDBConfiguration getTestDorisConfiguration() {
+        return connectType2ConfigurationMap.get(TestDBType.DORIS);
     }
 
     private Properties getTestDBProperties(TestDBType type) {
@@ -143,6 +170,14 @@ public class TestDBConfigurations {
                     v.setDefaultDBName(database);
                     DataSource newSource = createNewDataSource(v);
                     v.setDataSource(newSource);
+                } else if (k == TestDBType.DORIS) {
+                    String database = TEST_DORIS_DATABASE_NAME;
+                    String sql = String.format("CREATE DATABASE %s;", database);
+                    stmt.executeUpdate(sql);
+                    log.info("create test database for doris mode, database name: {}", database);
+                    v.setDefaultDBName(database);
+                    DataSource newSource = createNewDataSource(v);
+                    v.setDataSource(newSource);
                 }
             } catch (Exception e) {
                 log.error("create test database/user failed, connectType={}", k, e);
@@ -190,7 +225,9 @@ public class TestDBConfigurations {
         dataSource.setUrl(jdbcUrl);
         dataSource.setUsername(username);
         dataSource.setPassword(password);
-        String validationQuery = config.getType() == TestDBType.OB_MYSQL ? "select 1" : "select 1 from dual";
+        String validationQuery =
+                config.getType() == TestDBType.OB_MYSQL || config.getType() == TestDBType.DORIS ? "select 1"
+                        : "select 1 from dual";
         dataSource.setValidationQuery(validationQuery);
         dataSource.setTestWhileIdle(true);
         dataSource.setTimeBetweenEvictionRunsMillis(30000);

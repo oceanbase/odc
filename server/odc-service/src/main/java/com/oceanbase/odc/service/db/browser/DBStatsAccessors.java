@@ -74,6 +74,8 @@ public class DBStatsAccessors {
             }
         } else if (connectType == ConnectType.MYSQL) {
             return new MySQLNoGreaterThan5740StatsAccessor(syncJdbcExecutor);
+        } else if (connectType == ConnectType.DORIS) {
+            return new MySQLNoGreaterThan5740StatsAccessor(syncJdbcExecutor);
         } else if (connectType == ConnectType.ODP_SHARDING_OB_MYSQL) {
             return new ODPOBMySQLStatsAccessor(consoleConnectionId);
         } else {

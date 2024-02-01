@@ -338,6 +338,7 @@ public class ConnectionConfig
             case OB_ORACLE:
                 return ConnectionSessionUtil.getUserOrSchemaString(this.username, dialectType);
             case MYSQL:
+            case DORIS:
             case OB_MYSQL:
             case ODP_SHARDING_OB_MYSQL:
                 return OdcConstants.MYSQL_DEFAULT_SCHEMA;
