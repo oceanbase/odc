@@ -206,6 +206,17 @@ public class OBOracleAutoPartitionExtensionPointTest {
         }
     }
 
+    @Test
+    public void listAllPartitionedTables_listAll_listSucceed() throws SQLException {
+        TestDBConfiguration configuration = TestDBConfigurations.getInstance().getTestOBOracleConfiguration();
+        try (Connection connection = configuration.getDataSource().getConnection()) {
+            AutoPartitionExtensionPoint extensionPoint = new OBOracleAutoPartitionExtensionPoint();
+            List<DBTable> actual = extensionPoint.listAllPartitionedTables(connection,
+                    configuration.getDefaultDBName(), Collections.singletonList(RANGE_TABLE_NAME));
+            Assert.assertEquals(1, actual.size());
+        }
+    }
+
     private Map<String, Object> getDropPartitionParameters(int keepCount) {
         Map<String, Object> parameters = new HashMap<>();
         parameters.put(KeepMostRecentPartitionGenerator.KEEP_RECENT_COUNT_KEY, keepCount);

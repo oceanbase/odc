@@ -15,21 +15,29 @@
  */
 package com.oceanbase.odc.plugin.task.oboracle.partitionplan;
 
+import java.io.StringReader;
 import java.sql.Connection;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
+import org.antlr.v4.runtime.tree.ParseTree;
 import org.apache.commons.collections4.CollectionUtils;
 import org.pf4j.Extension;
+import org.springframework.jdbc.core.JdbcOperations;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.datasource.SingleConnectionDataSource;
 
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.session.ConnectionSessionUtil;
 import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.plugin.connect.api.InformationExtensionPoint;
 import com.oceanbase.odc.plugin.connect.oboracle.OBOracleInformationExtension;
+import com.oceanbase.odc.plugin.schema.oboracle.browser.DBSchemaAccessors;
 import com.oceanbase.odc.plugin.task.api.partitionplan.invoker.create.PartitionExprGenerator;
 import com.oceanbase.odc.plugin.task.api.partitionplan.invoker.partitionname.PartitionNameGenerator;
 import com.oceanbase.odc.plugin.task.obmysql.partitionplan.OBMySQLAutoPartitionExtensionPoint;
@@ -46,6 +54,12 @@ import com.oceanbase.tools.dbbrowser.model.DBTable;
 import com.oceanbase.tools.dbbrowser.model.DBTablePartition;
 import com.oceanbase.tools.dbbrowser.model.DBTablePartitionOption;
 import com.oceanbase.tools.dbbrowser.model.datatype.DataType;
+import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
+import com.oceanbase.tools.sqlparser.OBOracleSQLParser;
+import com.oceanbase.tools.sqlparser.adapter.oracle.OracleSubPartitionElementFactory;
+import com.oceanbase.tools.sqlparser.oboracle.OBParser;
+import com.oceanbase.tools.sqlparser.oboracle.OBParser.Range_expr_listContext;
+import com.oceanbase.tools.sqlparser.statement.Statement;
 
 import lombok.NonNull;
 
@@ -59,12 +73,6 @@ import lombok.NonNull;
  */
 @Extension
 public class OBOracleAutoPartitionExtensionPoint extends OBMySQLAutoPartitionExtensionPoint {
-
-    @Override
-    public List<DBTable> listAllPartitionedTables(@NonNull Connection connection,
-            @NonNull String schemaName, List<String> tableNames) {
-        return null;
-    }
 
     @Override
     public String unquoteIdentifier(@NonNull String identifier) {
@@ -129,6 +137,40 @@ public class OBOracleAutoPartitionExtensionPoint extends OBMySQLAutoPartitionExt
         candidates.add(new OBOracleExprBasedPartitionNameGenerator());
         return candidates.stream().filter(i -> Objects.equals(i.getName(), name)).findFirst()
                 .orElseThrow(() -> new IllegalArgumentException("Failed to find generator by name " + name));
+    }
+
+    @Override
+    protected List<String> flatMapMaxValues(List<String> maxValues) {
+        RangePartiExprParser parser = new RangePartiExprParser();
+        return maxValues.stream().filter(StringUtils::isNotEmpty).flatMap(s -> {
+            try {
+                Range_expr_listContext cxt = (Range_expr_listContext) parser.buildAst(new StringReader(s));
+                return OracleSubPartitionElementFactory.getRangePartitionExprs(cxt).stream().map(Statement::getText);
+            } catch (Exception e) {
+                return Stream.of(s);
+            }
+        }).collect(Collectors.toList());
+    }
+
+    @Override
+    protected void processPartitionKey(DBTablePartitionOption option) {
+        if (StringUtils.isNotEmpty(option.getExpression())) {
+            option.setColumnNames(Arrays.stream(option.getExpression().split(","))
+                    .map(String::trim).collect(Collectors.toList()));
+        }
+    }
+
+    @Override
+    protected DBSchemaAccessor getDBSchemaAccessor(@NonNull Connection connection) {
+        JdbcOperations jdbc = new JdbcTemplate(new SingleConnectionDataSource(connection, false));
+        return DBSchemaAccessors.create(jdbc, new OBOracleInformationExtension().getDBVersion(connection));
+    }
+
+    static private class RangePartiExprParser extends OBOracleSQLParser {
+        @Override
+        protected ParseTree doParse(OBParser parser) {
+            return parser.range_expr_list();
+        }
     }
 
 }

@@ -69,6 +69,7 @@ public class OBMySQLAutoPartitionExtensionPointTest {
     public static final String RANGE_MAX_VALUE_TABLE_NAME = "range_maxvalue_parti_ext_tbl";
     public static final String RANGE_COLUMNS_TABLE_NAME = "range_col_parti_ext_tbl";
     public static final String REAL_RANGE_TABLE_NAME = "real_range_parti_ext_tbl";
+    public static final String REAL_RANGE_COL_TABLE_NAME = "real_range_col_parti_ext_tbl";
 
     @BeforeClass
     public static void setUp() throws IOException {
@@ -87,6 +88,7 @@ public class OBMySQLAutoPartitionExtensionPointTest {
         oracle.execute("DROP TABLE " + RANGE_TABLE_NAME);
         oracle.execute("DROP TABLE " + REAL_RANGE_TABLE_NAME);
         oracle.execute("DROP TABLE " + RANGE_MAX_VALUE_TABLE_NAME);
+        oracle.execute("DROP TABLE " + REAL_RANGE_COL_TABLE_NAME);
     }
 
     @Test
@@ -255,6 +257,17 @@ public class OBMySQLAutoPartitionExtensionPointTest {
             List<String> expects = Collections.singletonList(String.format("ALTER TABLE %s.%s DROP PARTITION "
                     + "(p20220830, p20220829);\n", configuration.getDefaultDBName(), REAL_RANGE_TABLE_NAME));
             Assert.assertEquals(expects, actual);
+        }
+    }
+
+    @Test
+    public void listAllPartitionedTables_listAll_listSucceed() throws SQLException {
+        TestDBConfiguration configuration = TestDBConfigurations.getInstance().getTestOBMysqlConfiguration();
+        try (Connection connection = configuration.getDataSource().getConnection()) {
+            AutoPartitionExtensionPoint extensionPoint = new OBMySQLAutoPartitionExtensionPoint();
+            List<DBTable> actual = extensionPoint.listAllPartitionedTables(connection,
+                    configuration.getDefaultDBName(), null);
+            Assert.assertEquals(4, actual.size());
         }
     }
 
