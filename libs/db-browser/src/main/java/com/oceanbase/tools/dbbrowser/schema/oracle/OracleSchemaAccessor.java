@@ -19,7 +19,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -94,6 +93,7 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 public class OracleSchemaAccessor implements DBSchemaAccessor {
+
     private static final String ORACLE_TABLE_COMMENT_DDL_TEMPLATE =
             "COMMENT ON TABLE ${schemaName}.${tableName} IS ${comment}";
     private static final String ORACLE_COLUMN_COMMENT_DDL_TEMPLATE =
@@ -139,7 +139,7 @@ public class OracleSchemaAccessor implements DBSchemaAccessor {
 
     @Override
     public List<DBDatabase> listDatabases() {
-        List<DBDatabase> databases = new ArrayList();
+        List<DBDatabase> databases = new ArrayList<>();
         String sql = this.sqlMapper.getSql(Statements.LIST_DATABASE);
         this.jdbcOperations.query(sql, (rs) -> {
             DBDatabase database = new DBDatabase();
@@ -148,12 +148,12 @@ public class OracleSchemaAccessor implements DBSchemaAccessor {
             databases.add(database);
         });
         sql = "select value from v$nls_parameters where PARAMETER = 'NLS_CHARACTERSET'";
-        AtomicReference<String> charset = new AtomicReference();
+        AtomicReference<String> charset = new AtomicReference<>();
         this.jdbcOperations.query(sql, (rs) -> {
             charset.set(rs.getString(1));
         });
         sql = "SELECT value from v$nls_parameters where parameter = 'NLS_SORT'";
-        AtomicReference<String> collation = new AtomicReference();
+        AtomicReference<String> collation = new AtomicReference<>();
         this.jdbcOperations.query(sql, (rs) -> {
             collation.set(rs.getString(1));
         });
@@ -501,7 +501,6 @@ public class OracleSchemaAccessor implements DBSchemaAccessor {
                 type.setErrorMessage(errorText.get(type.getName()));
             }
         }
-
         return types;
     }
 
@@ -537,7 +536,6 @@ public class OracleSchemaAccessor implements DBSchemaAccessor {
         } else {
             throw new UnsupportedOperationException("Not supported Synonym type");
         }
-
         return jdbcOperations.query(sb.toString(), new BeanPropertyRowMapper<>(DBObjectIdentity.class));
     }
 
@@ -697,16 +695,6 @@ public class OracleSchemaAccessor implements DBSchemaAccessor {
     }
 
     @Override
-    public List<DBTablePartition> listTablePartitions(String tenantName, String schemaName, String tableName) {
-        throw new UnsupportedOperationException("Not supported yet");
-    }
-
-    @Override
-    public List<DBTablePartition> listTableRangePartitionInfo(String tenantName) {
-        throw new UnsupportedOperationException("Not supported yet");
-    }
-
-    @Override
     public List<DBTableSubpartitionDefinition> listSubpartitions(String schemaName, String tableName) {
         throw new UnsupportedOperationException("Not supported yet");
     }
@@ -759,7 +747,7 @@ public class OracleSchemaAccessor implements DBSchemaAccessor {
         return commentsMap;
     }
 
-    protected RowMapper listColumnsRowMapper() {
+    protected RowMapper<DBTableColumn> listColumnsRowMapper() {
         final int[] hiddenColumnOrdinaryPosition = {-1};
         return (rs, rowNum) -> {
             DBTableColumn tableColumn = new DBTableColumn();
@@ -771,7 +759,7 @@ public class OracleSchemaAccessor implements DBSchemaAccessor {
             tableColumn.setFullTypeName(rs.getString(OracleConstants.COL_DATA_TYPE));
             tableColumn.setCharUsed(CharUnit.fromString(rs.getString(OracleConstants.COL_CHAR_USED)));
             tableColumn.setOrdinalPosition(rs.getInt(OracleConstants.COL_COLUMN_ID));
-            tableColumn.setTypeModifiers(Arrays.asList(rs.getString(OracleConstants.COL_DATA_TYPE_MOD)));
+            tableColumn.setTypeModifiers(Collections.singletonList(rs.getString(OracleConstants.COL_DATA_TYPE_MOD)));
             tableColumn.setMaxLength(
                     rs.getLong(tableColumn.getCharUsed() == CharUnit.CHAR ? OracleConstants.COL_CHAR_LENGTH
                             : OracleConstants.COL_DATA_LENGTH));
@@ -805,10 +793,9 @@ public class OracleSchemaAccessor implements DBSchemaAccessor {
             }
             return tableColumn;
         };
-
     }
 
-    protected RowMapper listBasicColumnsRowMapper() {
+    protected RowMapper<DBTableColumn> listBasicColumnsRowMapper() {
         return (rs, rowNum) -> {
             DBTableColumn tableColumn = new DBTableColumn();
             tableColumn.setSchemaName(rs.getString(OracleConstants.CONS_OWNER));
@@ -856,7 +843,6 @@ public class OracleSchemaAccessor implements DBSchemaAccessor {
             if (Objects.nonNull(constraint.getColumnNames())) {
                 constraint.setColumnNames(constraint.getColumnNames().stream().filter(Objects::nonNull).distinct()
                         .collect(Collectors.toList()));
-
             }
         }
     }
@@ -908,6 +894,11 @@ public class OracleSchemaAccessor implements DBSchemaAccessor {
         return partition;
     }
 
+    @Override
+    public Map<String, DBTablePartition> listTablePartitions(@NonNull String schemaName, List<String> candidates) {
+        throw new UnsupportedOperationException("Unsupported yet");
+    }
+
     private DBTablePartitionOption obtainPartitionOption(String schemaName, String tableName) {
         DBTablePartitionOption option = new DBTablePartitionOption();
         String queryPartitionTypeSql = this.sqlMapper.getSql(Statements.GET_PARTITION_OPTION);
@@ -939,17 +930,15 @@ public class OracleSchemaAccessor implements DBSchemaAccessor {
             DBTablePartitionOption option) {
         String sql = this.sqlMapper.getSql(Statements.LIST_PARTITION_DEFINITIONS);
 
-        List<DBTablePartitionDefinition> partitionDefinitions =
-                jdbcOperations.query(sql, new Object[] {schemaName, tableName}, (rs, num) -> {
-                    DBTablePartitionDefinition partitionDefinition = new DBTablePartitionDefinition();
-                    partitionDefinition.setName(rs.getString("PARTITION_NAME"));
-                    partitionDefinition.setOrdinalPosition(num);
-                    partitionDefinition.setType(option.getType());
-                    String description = rs.getString("HIGH_VALUE");
-                    partitionDefinition.fillValues(description);
-                    return partitionDefinition;
-                });
-        return partitionDefinitions;
+        return jdbcOperations.query(sql, new Object[] {schemaName, tableName}, (rs, num) -> {
+            DBTablePartitionDefinition partitionDefinition = new DBTablePartitionDefinition();
+            partitionDefinition.setName(rs.getString("PARTITION_NAME"));
+            partitionDefinition.setOrdinalPosition(num);
+            partitionDefinition.setType(option.getType());
+            String description = rs.getString("HIGH_VALUE");
+            partitionDefinition.fillValues(description);
+            return partitionDefinition;
+        });
     }
 
     @Override
@@ -1129,7 +1118,6 @@ public class OracleSchemaAccessor implements DBSchemaAccessor {
             tableOptions.setCreateTime(rs.getTimestamp("CREATED"));
             tableOptions.setUpdateTime(rs.getTimestamp("LAST_DDL_TIME"));
         });
-
     }
 
     @Override

@@ -38,6 +38,8 @@ import com.oceanbase.tools.dbbrowser.model.DBType;
 import com.oceanbase.tools.dbbrowser.model.DBVariable;
 import com.oceanbase.tools.dbbrowser.model.DBView;
 
+import lombok.NonNull;
+
 /**
  * @author jingtian
  */
@@ -206,9 +208,7 @@ public interface DBSchemaAccessor {
 
     Map<String, DBTableOptions> listTableOptions(String schemaName);
 
-    List<DBTablePartition> listTablePartitions(String tenantName, String schemaName, String tableName);
-
-    List<DBTablePartition> listTableRangePartitionInfo(String tenantName);
+    Map<String, DBTablePartition> listTablePartitions(@NonNull String schemaName, List<String> candidates);
 
     List<DBTableSubpartitionDefinition> listSubpartitions(String schemaName, String tableName);
 

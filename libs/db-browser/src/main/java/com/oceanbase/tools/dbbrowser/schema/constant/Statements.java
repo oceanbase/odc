@@ -34,6 +34,7 @@ public final class Statements {
     public static final String LIST_SCHEMA_CONSTRAINTS = "list-schema-constraints";
 
     public static final String GET_PARTITION = "get-partition";
+    public static final String LIST_PARTITIONS = "list-partitions";
 
     public static final String GET_PARTITION_OPTION = "get-partition-option";
 
