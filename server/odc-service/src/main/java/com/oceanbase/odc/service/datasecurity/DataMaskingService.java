@@ -25,6 +25,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import javax.validation.Valid;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
@@ -56,8 +57,11 @@ import com.oceanbase.odc.service.datasecurity.extractor.model.LogicalTable;
 import com.oceanbase.odc.service.datasecurity.model.DataMaskingProperties;
 import com.oceanbase.odc.service.datasecurity.model.MaskingAlgorithm;
 import com.oceanbase.odc.service.datasecurity.model.SensitiveColumn;
+import com.oceanbase.odc.service.datasecurity.util.DataMaskingUtil;
 import com.oceanbase.odc.service.datasecurity.util.MaskingAlgorithmUtil;
 import com.oceanbase.odc.service.session.model.SqlExecuteResult;
+import com.oceanbase.odc.service.task.runtime.QuerySensitiveColumnReq;
+import com.oceanbase.odc.service.task.runtime.QuerySensitiveColumnResp;
 import com.oceanbase.tools.sqlparser.statement.Statement;
 
 import lombok.NonNull;
@@ -80,6 +84,18 @@ public class DataMaskingService {
 
     @Autowired
     private DataMaskingProperties maskingProperties;
+
+    @SkipAuthorize("odc internal usages")
+    public QuerySensitiveColumnResp querySensitiveColumn(@NotNull @Valid QuerySensitiveColumnReq req) {
+        List<Set<SensitiveColumn>> sensitiveColumns =
+                columnService.filterSensitiveColumns(req.getDataSourceId(), req.getTableRelatedDBColumns());
+        QuerySensitiveColumnResp resp = new QuerySensitiveColumnResp();
+        if (DataMaskingUtil.isSensitiveColumnExists(sensitiveColumns)) {
+            resp.setContainsSensitiveColumn(true);
+            resp.setMaskingAlgorithms(getResultSetMaskingAlgorithms(sensitiveColumns));
+        }
+        return resp;
+    }
 
     @SkipAuthorize("odc internal usages")
     public List<Set<SensitiveColumn>> getResultSetSensitiveColumns(@NotBlank String sql, ConnectionSession session) {

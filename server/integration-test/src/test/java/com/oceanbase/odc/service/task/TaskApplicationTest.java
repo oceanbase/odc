@@ -24,7 +24,6 @@ import org.junit.Ignore;
 import org.junit.Test;
 
 import com.oceanbase.odc.TestConnectionUtil;
-import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.core.shared.constant.ConnectType;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
@@ -48,7 +47,6 @@ import com.oceanbase.odc.service.task.schedule.DefaultJobContextBuilder;
 import com.oceanbase.odc.service.task.schedule.DefaultJobDefinition;
 import com.oceanbase.odc.service.task.schedule.JobDefinition;
 import com.oceanbase.odc.service.task.schedule.JobIdentity;
-import com.oceanbase.odc.service.task.util.JobUtils;
 
 /**
  * @author yaobin
@@ -105,10 +103,6 @@ public class TaskApplicationTest extends BaseJobTest {
 
         ConnectionConfig config = TestConnectionUtil.getTestConnectionConfig(ConnectType.OB_MYSQL);
         Map<String, String> jobData = new HashMap<>();
-        jobData.put(JobParametersKeyConstants.META_TASK_PARAMETER_JSON, JsonUtils.toJson(parameters));
-        jobData.put(JobParametersKeyConstants.CONNECTION_CONFIG, JobUtils.toJson(config));
-        jobData.put(JobParametersKeyConstants.FLOW_INSTANCE_ID, exceptedTaskId + "");
-        jobData.put(JobParametersKeyConstants.CURRENT_SCHEMA, config.getDefaultSchema());
         jobData.put(JobParametersKeyConstants.TASK_EXECUTION_TIMEOUT_MILLIS, 30 * 60 * 1000 + "");
         ObjectStorageConfiguration storageConfig = new ObjectStorageConfiguration();
         storageConfig.setCloudProvider(CloudProvider.NONE);
