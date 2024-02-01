@@ -134,7 +134,7 @@ public class PreCheckRuntimeFlowableTaskCopied extends BaseODCFlowTaskDelegate<V
             taskService.updateJobId(this.preCheckTaskId, jobId);
             try {
                 // Pre-check task has no timeout yet, set to max value (about 24 days)
-                jobScheduler.await(jobId, Integer.MAX_VALUE, TimeUnit.MILLISECONDS);
+                jobScheduler.await(jobId, preCheckTaskProperties.getExecutionTimeoutMillis(), TimeUnit.MILLISECONDS);
             } catch (Exception e) {
                 log.warn("Exception occurred while waiting for pre-check task to complete", e);
             }
