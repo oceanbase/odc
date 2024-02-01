@@ -56,7 +56,6 @@ function init_parameters() {
     # init parameters with default value
     app_log_directory="${ODC_LOG_DIR:-${install_directory}/log}"
     jar_file="${ODC_JAR_FILE:-${install_directory}/lib/odc-server-*.jar}"
-    main_class="com.oceanbase.odc.server.OdcServer"
     plugin_directory="${ODC_PLUGIN_DIR:-${install_directory}/plugins}"
     echo "init parameters done"
 }
@@ -140,8 +139,8 @@ main() {
     echo "Starting odc-job..."
 
     local cmd="${java_exec} ${remote_debug_options} ${spacev_java_agent_options} ${gc_options} ${heap_options} ${oom_options}
-    ${extra_options} ${app_options} -cp
-    ${jar_file} ${main_class} ${app_args}"
+    ${extra_options} ${app_options} -jar
+    ${jar_file} ${app_args}"
     echo "cmd=${cmd}"
     eval ${cmd}
     return $?

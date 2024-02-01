@@ -553,11 +553,16 @@ public class DatabaseService {
         if (CollectionUtils.isEmpty(databaseNames)) {
             return Collections.emptySet();
         }
-        Page<Database> databases = list(QueryDatabaseParams.builder().containsUnassigned(false).existed(true)
-                .dataSourceId(dataSourceId).build(), Pageable.unpaged());
-        Set<String> authorizedDatabaseNames = databases.stream().map(Database::getName).collect(Collectors.toSet());
+        Set<String> authorizedDatabaseNames = getAuthorizedDatabaseNames(dataSourceId);
         return databaseNames.stream().filter(name -> !authorizedDatabaseNames.contains(name))
                 .collect(Collectors.toSet());
+    }
+
+    @SkipAuthorize("internal authorized")
+    public Set<String> getAuthorizedDatabaseNames(@NonNull Long dataSourceId) {
+        Page<Database> databases = list(QueryDatabaseParams.builder().containsUnassigned(false).existed(true)
+                .dataSourceId(dataSourceId).build(), Pageable.unpaged());
+        return databases.stream().map(Database::getName).collect(Collectors.toSet());
     }
 
     @SkipAuthorize("internal authorized")

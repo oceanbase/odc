@@ -15,16 +15,12 @@
  */
 package com.oceanbase.odc.service.task;
 
-import java.io.File;
+import java.io.IOException;
 import java.lang.management.ManagementFactory;
 import java.lang.management.RuntimeMXBean;
 import java.nio.file.Paths;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.junit.Assert;
@@ -44,10 +40,11 @@ import com.oceanbase.odc.service.flow.task.model.DatabaseChangeParameters;
 import com.oceanbase.odc.service.objectstorage.cloud.model.ObjectStorageConfiguration;
 import com.oceanbase.odc.service.objectstorage.cloud.model.ObjectStorageConfiguration.CloudProvider;
 import com.oceanbase.odc.service.plugin.PluginProperties;
+import com.oceanbase.odc.service.task.caller.ExecutorProcessBuilderFactory;
 import com.oceanbase.odc.service.task.caller.JobContext;
 import com.oceanbase.odc.service.task.caller.JobEnvironmentEncryptor;
 import com.oceanbase.odc.service.task.caller.JobEnvironmentFactory;
-import com.oceanbase.odc.service.task.constants.JobConstants;
+import com.oceanbase.odc.service.task.constants.JobEnvKeyConstants;
 import com.oceanbase.odc.service.task.constants.JobParametersKeyConstants;
 import com.oceanbase.odc.service.task.enums.TaskRunMode;
 import com.oceanbase.odc.service.task.executor.task.DatabaseChangeTask;
@@ -76,57 +73,46 @@ public class ProcessModeTest extends BaseJobTest {
     }
 
     @Test
-    public void test_start_task_process_mode() {
+    public void test_start_task_process_mode() throws IOException {
         RuntimeMXBean runtimeMxBean = ManagementFactory.getRuntimeMXBean();
         String processId = runtimeMxBean.getName(); // return "pid@hostname"
         String pid = processId.split("@")[0]; // get process id
 
         log.info("Current Java PID: {}", pid);
 
-        ProcessBuilder pb = new ProcessBuilder();
-        List<String> commands = new ArrayList<>();
-        commands.add("java");
-        commands.addAll(runtimeMxBean.getInputArguments().stream()
-                .filter(c -> !c.startsWith("-agentlib") && !c.startsWith("-javaagent"))
-                .collect(Collectors.toList()));
-        commands.add(JobUtils.generateExecutorProcessProperties(
-                JobUtils.generateExecutorName(JobIdentity.of(exceptedTaskId))));
-        commands.add("-classpath");
-        commands.add(runtimeMxBean.getClassPath());
-        commands.add(JobConstants.ODC_SERVER_CLASS_NAME);
-        pb.directory(new File("."));
-
-        setEnvironments(pb);
-        pb.command(commands);
+        String executorName = JobUtils.generateExecutorName(JobIdentity.of(exceptedTaskId));
+        ProcessBuilder pb = new ExecutorProcessBuilderFactory().getProcessBuilder(
+                getEnvironments(), executorName);
         Process process = null;
         try {
             process = pb.start();
-            boolean exited = process.waitFor(50, TimeUnit.SECONDS);
-            Assert.assertFalse(exited);
-        } catch (Throwable ex) {
-            log.error("start odc server error:", ex);
+            long executorPid = SystemUtils.getProcessPid(process);
+            Assert.assertNotEquals(-1, executorPid);
+            boolean isRunning = SystemUtils.isProcessRunning(executorPid,
+                    JobUtils.generateExecutorSelectorOnProcess(executorName));
+            Assert.assertTrue(isRunning);
         } finally {
             if (process != null) {
-                log.info("Process id={}", SystemUtils.getProcessPid(process));
                 process.destroyForcibly();
             }
         }
     }
 
-    private void setEnvironments(ProcessBuilder pb) {
-        Map<String, String> environment = pb.environment();
+    private Map<String, String> getEnvironments() {
+        Map<String, String> environments = new HashMap<>();
         String pluginPath = Paths.get("").toAbsolutePath().getParent().getParent()
                 .resolve("distribution/plugins").toFile().getAbsolutePath();
-        environment.put(PluginProperties.PLUGIN_DIR_KEY, pluginPath);
+        environments.put(PluginProperties.PLUGIN_DIR_KEY, pluginPath);
+        environments.put(JobEnvKeyConstants.REPORT_ENABLED, Boolean.FALSE.toString());
 
-        Long exceptedTaskId = System.currentTimeMillis();
         JobIdentity jobIdentity = JobIdentity.of(exceptedTaskId);
         JobDefinition jd = buildJobDefinition();
         JobContext jc = new DefaultJobContextBuilder().build(jobIdentity, jd);
         Map<String, String> envMap = new JobEnvironmentFactory().getEnvironments(jc, TaskRunMode.PROCESS);
         new JobEnvironmentEncryptor().encrypt(envMap);
 
-        environment.putAll(envMap);
+        environments.putAll(envMap);
+        return environments;
     }
 
     private JobDefinition buildJobDefinition() {
