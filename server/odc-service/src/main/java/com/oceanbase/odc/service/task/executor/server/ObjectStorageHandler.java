@@ -29,6 +29,7 @@ import com.oceanbase.odc.service.objectstorage.cloud.CloudObjectStorageService;
 import com.oceanbase.odc.service.objectstorage.model.ObjectMetadata;
 import com.oceanbase.odc.service.objectstorage.model.StorageObject;
 import com.oceanbase.odc.service.objectstorage.operator.LocalFileOperator;
+import com.oceanbase.odc.service.objectstorage.util.ObjectStorageUtils;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -54,13 +55,21 @@ public class ObjectStorageHandler {
     }
 
     public StorageObject loadObject(ObjectMetadata metadata) {
+        Resource resource;
         try {
-            if (localFileOperator.isLocalFileAbsent(metadata)) {
-                log.info("File is absent in local, load file from oss, bucket={}, objectId={}",
-                        metadata.getBucketName(), metadata.getObjectId());
-                loadObjectFromOss(metadata);
+            if (cloudObjectStorageService.supported()) {
+                // OSS supported, load file from local if exists, otherwise load file from oss
+                if (localFileOperator.isLocalFileAbsent(metadata)) {
+                    log.info("File is absent in local, load file from oss, bucket={}, objectId={}",
+                            metadata.getBucketName(), metadata.getObjectId());
+                    loadObjectFromOss(metadata);
+                }
+                resource = localFileOperator.loadAsResource(metadata.getBucketName(), metadata.getObjectId());
+            } else {
+                // OSS not supported, load file from local
+                resource = localFileOperator.loadAsResource(metadata.getBucketName(),
+                        ObjectStorageUtils.concatObjectId(metadata.getObjectId(), metadata.getExtension()));
             }
-            Resource resource = localFileOperator.loadAsResource(metadata.getBucketName(), metadata.getObjectId());
             return StorageObject.builder().content(resource.getInputStream()).metadata(metadata).build();
         } catch (IOException ex) {
             log.warn("Load object failed, bucket={}, objectId={}", metadata.getBucketName(), metadata.getObjectId(),

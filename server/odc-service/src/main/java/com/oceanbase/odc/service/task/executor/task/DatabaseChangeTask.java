@@ -110,8 +110,7 @@ public class DatabaseChangeTask extends BaseTask<FlowTaskResult> {
     private boolean containQuery = false;
     private volatile boolean aborted = false;
     private volatile boolean canceled = false;
-    protected long taskId;
-    protected long flowInstanceId;
+    private long taskId;
 
     private static final Long DEFAULT_DATA_SOURCE_ID = 1L;
 
@@ -119,7 +118,6 @@ public class DatabaseChangeTask extends BaseTask<FlowTaskResult> {
     protected void doInit(JobContext context) {
         taskId = getJobContext().getJobIdentity().getId();
         log.info("Initiating database change task, taskId={}", taskId);
-        flowInstanceId = Long.parseLong(getJobParameters().get(JobParametersKeyConstants.FLOW_INSTANCE_ID));
         parameters = JsonUtils.fromJson(getJobParameters().get(JobParametersKeyConstants.META_TASK_PARAMETER_JSON),
                 DatabaseChangeParameters.class);
         log.info("Load database change task parameters successfully, taskId={}", taskId);
@@ -147,7 +145,8 @@ public class DatabaseChangeTask extends BaseTask<FlowTaskResult> {
             jsonFile = new File(jsonFilePath);
             zipFileId = StringUtils.uuid();
             zipFileRootPath = String.format("%s/%s", fileRootDir, zipFileId);
-            zipFileDownloadUrl = String.format("/api/v2/flow/flowInstances/%s/tasks/download", flowInstanceId);
+            zipFileDownloadUrl = String.format("/api/v2/flow/flowInstances/%s/tasks/download",
+                    Long.parseLong(getJobParameters().get(JobParametersKeyConstants.FLOW_INSTANCE_ID)));
         } catch (Exception exception) {
             throw new InternalServerError("Create database change task file dir failed", exception);
         }
