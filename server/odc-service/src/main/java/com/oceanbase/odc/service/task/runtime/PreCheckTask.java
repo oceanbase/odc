@@ -87,7 +87,8 @@ public class PreCheckTask extends BaseTask<FlowTaskResult> {
     private InputStream uploadFileInputStream;
     private SqlStatementIterator uploadFileSqlIterator;
     private long taskId;
-    private boolean overLimit = false;
+    private volatile boolean overLimit = false;
+    private volatile boolean success = false;
     private SqlCheckTaskResult sqlCheckResult = null;
     private DatabasePermissionCheckResult permissionCheckResult = null;
 
@@ -112,34 +113,32 @@ public class PreCheckTask extends BaseTask<FlowTaskResult> {
             List<CheckViolation> violations = new ArrayList<>();
             if (CollectionUtils.isNotEmpty(sqls)) {
                 violations.addAll(checkViolations(sqls));
+                log.info("SQL check successfully, taskId={}", taskId);
                 unauthorizedDatabaseNames.addAll(filterUnAuthorizedDatabaseNames(sqls));
+                log.info("Database permission check successfully, taskId={}", taskId);
             }
             this.permissionCheckResult = new DatabasePermissionCheckResult(unauthorizedDatabaseNames);
             this.sqlCheckResult = SqlCheckTaskResult.success(violations);
+            this.success = true;
+            log.info("Pre-check task end up running, task id: {}", taskId);
         } finally {
-            if (Objects.nonNull(this.uploadFileInputStream)) {
-                try {
-                    this.uploadFileInputStream.close();
-                } catch (IOException e) {
-                    // Ignore
-                }
-            }
+            tryCloseInputStream();
         }
     }
 
     @Override
     protected void doStop() throws Exception {
-        // Do nothing
+        tryCloseInputStream();
     }
 
     @Override
     protected void onFail(Throwable e) {
-        // Do nothing
+        tryCloseInputStream();
     }
 
     @Override
     public double getProgress() {
-        return 0;
+        return this.success ? 100D : 0D;
     }
 
     @Override
@@ -325,6 +324,16 @@ public class PreCheckTask extends BaseTask<FlowTaskResult> {
         }
         return databaseNames.stream().filter(name -> !authorizedDatabaseNames.contains(name))
                 .collect(Collectors.toSet());
+    }
+
+    private void tryCloseInputStream() {
+        if (Objects.nonNull(this.uploadFileInputStream)) {
+            try {
+                this.uploadFileInputStream.close();
+            } catch (IOException e) {
+                // Ignore
+            }
+        }
     }
 
 }
