@@ -16,6 +16,7 @@
 
 package com.oceanbase.odc.service.task.util;
 
+import java.io.File;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Objects;
@@ -24,6 +25,7 @@ import java.util.Optional;
 import com.google.gson.Gson;
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.common.util.SystemUtils;
+import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.objectstorage.cloud.model.ObjectStorageConfiguration;
 import com.oceanbase.odc.service.task.constants.JobConstants;
@@ -81,8 +83,9 @@ public class JobUtils {
     }
 
     public static String getExecutorDataPath() {
-        String userDir = SystemUtils.getEnvOrProperty("user.dir");
-        return userDir != null ? userDir : "./data";
+        String userDir = SystemUtils.getEnvOrProperty("user.home");
+        Verify.notBlank(userDir, "user.home is blank");
+        return userDir.concat(File.separator).concat("data").concat(File.separator).concat("files");
     }
 
     public static boolean isK8sRunMode(TaskRunMode runMode) {

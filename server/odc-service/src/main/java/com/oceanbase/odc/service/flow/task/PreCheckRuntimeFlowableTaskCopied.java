@@ -38,6 +38,7 @@ import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.common.unit.BinarySizeUnit;
 import com.oceanbase.odc.core.shared.constant.TaskType;
 import com.oceanbase.odc.core.shared.exception.VerifyException;
+import com.oceanbase.odc.metadb.task.JobEntity;
 import com.oceanbase.odc.metadb.task.TaskEntity;
 import com.oceanbase.odc.service.collaboration.environment.EnvironmentService;
 import com.oceanbase.odc.service.collaboration.environment.model.Environment;
@@ -66,6 +67,7 @@ import com.oceanbase.odc.service.sqlcheck.model.CheckResult;
 import com.oceanbase.odc.service.sqlcheck.model.CheckViolation;
 import com.oceanbase.odc.service.task.TaskService;
 import com.oceanbase.odc.service.task.constants.JobParametersKeyConstants;
+import com.oceanbase.odc.service.task.enums.JobStatus;
 import com.oceanbase.odc.service.task.model.ExecutorInfo;
 import com.oceanbase.odc.service.task.runtime.PreCheckTask;
 import com.oceanbase.odc.service.task.runtime.PreCheckTaskParameters;
@@ -136,18 +138,22 @@ public class PreCheckRuntimeFlowableTaskCopied extends BaseODCFlowTaskDelegate<V
             } catch (Exception e) {
                 log.warn("Exception occurred while waiting for pre-check task to complete", e);
             }
-            this.preCheckResult =
-                    JsonUtils.fromJson(taskFrameworkService.find(jobId).getResultJson(), PreCheckTaskResult.class);
-        }
-        if (Objects.nonNull(this.preCheckResult)) {
-            this.preCheckResult.setExecutorInfo(new ExecutorInfo(this.hostProperties));
-            storeTaskResultToFile(this.preCheckResult.getSqlCheckResult());
-            this.preCheckResult.getSqlCheckResult().setFileName(CHECK_RESULT_FILE_NAME);
-            if (isIntercepted(this.preCheckResult)) {
-                throw new ServiceTaskError(new RuntimeException());
+            JobEntity jobEntity = taskFrameworkService.find(jobId);
+            if (jobEntity.getStatus() != JobStatus.DONE) {
+                throw new ServiceTaskError(new RuntimeException("Pre-check task failed"));
             }
-            riskLevelDescriber.setSqlCheckResult(String.valueOf(this.preCheckResult.getSqlCheckResult().getMaxLevel()));
-            riskLevelDescriber.setOverLimit(this.preCheckResult.isOverLimit());
+            this.preCheckResult = JsonUtils.fromJson(jobEntity.getResultJson(), PreCheckTaskResult.class);
+            if (Objects.nonNull(this.preCheckResult)) {
+                this.preCheckResult.setExecutorInfo(new ExecutorInfo(this.hostProperties));
+                storeTaskResultToFile(this.preCheckResult.getSqlCheckResult());
+                this.preCheckResult.getSqlCheckResult().setFileName(CHECK_RESULT_FILE_NAME);
+                if (isIntercepted(this.preCheckResult)) {
+                    throw new ServiceTaskError(new RuntimeException());
+                }
+                riskLevelDescriber
+                        .setSqlCheckResult(String.valueOf(this.preCheckResult.getSqlCheckResult().getMaxLevel()));
+                riskLevelDescriber.setOverLimit(this.preCheckResult.isOverLimit());
+            }
         }
         try {
             RiskLevel riskLevel = approvalFlowConfigSelector.select(riskLevelDescriber);
