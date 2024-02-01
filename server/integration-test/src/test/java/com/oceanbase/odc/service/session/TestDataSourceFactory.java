@@ -107,7 +107,7 @@ public class TestDataSourceFactory implements CloneableDataSourceFactory {
 
     private String getUrl() {
         return ConnectionPluginUtil.getConnectionExtension(dialectType)
-                .generateJdbcUrl(new ConnectionPropertiesBuilder().port(this.port).port(this.port)
+                .generateJdbcUrl(new ConnectionPropertiesBuilder().host(this.host).port(this.port)
                         .defaultSchema(this.defaultSchema).build(), null);
     }
 
