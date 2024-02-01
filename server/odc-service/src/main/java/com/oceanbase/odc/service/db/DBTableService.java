@@ -16,6 +16,7 @@
 package com.oceanbase.odc.service.db;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -116,7 +117,8 @@ public class DBTableService {
             @NotEmpty List<String> tableNames) {
         DBSchemaAccessor schemaAccessor = DBSchemaAccessors.create(connectionSession);
         List<DBTable> tables = new ArrayList<>();
-        Map<String, List<DBTableColumn>> tableName2Columns = schemaAccessor.listTableColumns(schemaName);
+        Map<String, List<DBTableColumn>> tableName2Columns = schemaAccessor.listTableColumns(
+                schemaName, Collections.emptyList());
         Map<String, List<DBTableIndex>> tableName2Indexes = schemaAccessor.listTableIndexes(schemaName);
         Map<String, List<DBTableConstraint>> tableName2Constraints = schemaAccessor.listTableConstraints(schemaName);
         Map<String, DBTableOptions> tableName2Options = schemaAccessor.listTableOptions(schemaName);

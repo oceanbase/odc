@@ -18,6 +18,7 @@ package com.oceanbase.odc.service.structurecompare;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -157,7 +158,8 @@ public class DefaultDBStructureComparator implements DBStructureComparator {
         if (tableNames.isEmpty()) {
             return returnVal;
         }
-        Map<String, List<DBTableColumn>> tableName2Columns = accessor.listTableColumns(schemaName);
+        Map<String, List<DBTableColumn>> tableName2Columns = accessor.listTableColumns(
+                schemaName, Collections.emptyList());
         Map<String, List<DBTableIndex>> tableName2Indexes = accessor.listTableIndexes(schemaName);
         Map<String, List<DBTableConstraint>> tableName2Constraints = accessor.listTableConstraints(schemaName);
         Map<String, DBTableOptions> tableName2Options = accessor.listTableOptions(schemaName);
