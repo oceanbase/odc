@@ -26,6 +26,7 @@
         <module>task-plugin-mysql</module>
         <module>task-plugin-ob-mysql</module>
         <module>task-plugin-ob-oracle</module>
+        <module>task-plugin-oracle</module>
     </modules>
     <properties>
         <maven-assembly-plugin.version>2.4</maven-assembly-plugin.version>
@@ -72,6 +73,12 @@
             <dependency>
                 <groupId>com.oceanbase</groupId>
                 <artifactId>task-plugin-ob-mysql</artifactId>
+                <version>${project.version}</version>
+                <scope>provided</scope>
+            </dependency>
+            <dependency>
+                <groupId>com.oceanbase</groupId>
+                <artifactId>task-plugin-mysql</artifactId>
                 <version>${project.version}</version>
                 <scope>provided</scope>
             </dependency>

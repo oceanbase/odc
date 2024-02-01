@@ -64,8 +64,9 @@ import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferConfig;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferTaskResult;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferType;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.ObjectResult;
+import com.oceanbase.odc.plugin.task.mysql.datatransfer.job.factory.MySQLTransferJobFactory;
 import com.oceanbase.odc.plugin.task.mysql.datatransfer.job.AbstractJob;
-import com.oceanbase.odc.plugin.task.mysql.datatransfer.job.TransferJobFactory;
+import com.oceanbase.odc.plugin.task.mysql.datatransfer.job.factory.BaseTransferJobFactory;
 import com.oceanbase.tools.loaddump.common.model.ObjectStatus.Status;
 import com.zaxxer.hikari.HikariDataSource;
 
@@ -77,10 +78,10 @@ public class MySQLDataTransferJob implements DataTransferJob {
     private static final Logger LOGGER = LoggerFactory.getLogger("DataTransferLogger");
     private static final List<String> REPORT_HEADER = Arrays.asList("No.#", "Type", "Name", "Count", "Status");
 
-    private final DataTransferConfig baseConfig;
-    private final File workingDir;
-    private final File logDir;
-    private final List<URL> inputs;
+    protected final DataTransferConfig baseConfig;
+    protected final File workingDir;
+    protected final File logDir;
+    protected final List<URL> inputs;
     private final AtomicInteger finishedJobNum = new AtomicInteger(0);
     private final List<AbstractJob> schemaJobs = new LinkedList<>();
     private final List<AbstractJob> dataJobs = new LinkedList<>();
@@ -130,7 +131,7 @@ public class MySQLDataTransferJob implements DataTransferJob {
 
     @Override
     public DataTransferTaskResult call() throws Exception {
-        try (HikariDataSource dataSource = initDataSource()) {
+        try (HikariDataSource dataSource = getDataSource()) {
 
             initTransferJobs(dataSource, dataSource.getJdbcUrl());
 
@@ -158,7 +159,11 @@ public class MySQLDataTransferJob implements DataTransferJob {
         return new DataTransferTaskResult(getDataObjectsStatus(), getSchemaObjectsStatus());
     }
 
-    private HikariDataSource initDataSource() {
+    protected BaseTransferJobFactory getJobFactory() {
+        return new MySQLTransferJobFactory(baseConfig, workingDir, logDir, inputs);
+    }
+
+    protected HikariDataSource getDataSource() {
         ConnectionInfo connectionInfo = baseConfig.getConnectionInfo();
 
         Map<String, String> jdbcUrlParams = new HashMap<>();
@@ -182,10 +187,10 @@ public class MySQLDataTransferJob implements DataTransferJob {
     }
 
     private void initTransferJobs(DataSource dataSource, String jdbcUrl) {
-        TransferJobFactory factory = new TransferJobFactory(baseConfig, workingDir, logDir, inputs, jdbcUrl);
+        BaseTransferJobFactory factory = getJobFactory();
         try {
             if (baseConfig.isTransferDDL()) {
-                List<AbstractJob> jobs = factory.generateSchemaTransferJobs(dataSource);
+                List<AbstractJob> jobs = factory.generateSchemaTransferJobs(dataSource, jdbcUrl);
                 if (CollectionUtils.isNotEmpty(jobs)) {
                     schemaJobs.addAll(jobs);
                     transferJobNum += jobs.size();
@@ -193,7 +198,7 @@ public class MySQLDataTransferJob implements DataTransferJob {
                 LOGGER.info("Found {} schema jobs for database {}.", jobs.size(), baseConfig.getSchemaName());
             }
             if (baseConfig.isTransferData()) {
-                List<AbstractJob> jobs = factory.generateDataTransferJobs(dataSource);
+                List<AbstractJob> jobs = factory.generateDataTransferJobs(dataSource, jdbcUrl);
                 if (CollectionUtils.isNotEmpty(jobs)) {
                     dataJobs.addAll(jobs);
                     transferJobNum += jobs.size();

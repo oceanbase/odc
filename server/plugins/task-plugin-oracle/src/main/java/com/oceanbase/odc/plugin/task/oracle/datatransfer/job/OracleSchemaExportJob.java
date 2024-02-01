@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 OceanBase.
+ * Copyright (c) 2024 OceanBase.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.oceanbase.odc.plugin.task.mysql.datatransfer.job;
+package com.oceanbase.odc.plugin.task.oracle.datatransfer.job;
 
 import java.io.File;
 import java.sql.Connection;
@@ -24,44 +24,52 @@ import java.util.Set;
 
 import javax.sql.DataSource;
 
-import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.plugin.schema.mysql.MySQLFunctionExtension;
 import com.oceanbase.odc.plugin.schema.mysql.MySQLProcedureExtension;
 import com.oceanbase.odc.plugin.schema.mysql.MySQLTableExtension;
 import com.oceanbase.odc.plugin.schema.mysql.MySQLViewExtension;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferConfig;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.ObjectResult;
-import com.oceanbase.odc.plugin.task.mysql.datatransfer.common.Constants;
+import com.oceanbase.odc.plugin.task.mysql.datatransfer.job.BaseSchemaExportJob;
+import com.oceanbase.tools.loaddump.common.enums.ObjectType;
 
-public class MySQLSchemaExportJob extends BaseSchemaExportJob {
+/**
+ * @author liuyizhuo.lyz
+ * @date 2024/2/1
+ */
+public class OracleSchemaExportJob extends BaseSchemaExportJob {
     private static final Set<String> PL_OBJECTS = new HashSet<>();
 
     static {
         PL_OBJECTS.add("FUNCTION");
         PL_OBJECTS.add("PROCEDURE");
+        PL_OBJECTS.add("TRIGGER");
+        PL_OBJECTS.add("TYPE");
+        PL_OBJECTS.add("TYP_BODY");
+        PL_OBJECTS.add("PACKAGE");
+        PL_OBJECTS.add("PACKAGE_BODY");
     }
 
-    public MySQLSchemaExportJob(ObjectResult object, DataTransferConfig transferConfig, File workingDir,
+    public OracleSchemaExportJob(ObjectResult object, DataTransferConfig transferConfig, File workingDir,
             DataSource dataSource) {
         super(object, transferConfig, workingDir, dataSource);
     }
 
     @Override
     protected String getDropStatement() {
-        return String.format(Constants.DROP_OBJECT_FORMAT, object.getType(),
-                StringUtils.quoteMysqlIdentifier(object.getName()));
+        return String.format("DROP %s %s", ObjectType.valueOfName(object.getType()).getName(), object.getName());
     }
 
     @Override
     protected boolean isPlObject() {
-        return StringUtils.equalsIgnoreCase(object.getType(), "FUNCTION")
-                || StringUtils.equalsIgnoreCase(object.getType(), "PROCEDURE");
+        return PL_OBJECTS.contains(object.getType());
     }
 
     @Override
     protected String queryDdlForDBObject() throws SQLException {
         try (Connection conn = dataSource.getConnection()) {
             switch (object.getType()) {
+                // TODO: use OracleSchemaExtension
                 case "TABLE":
                     String ddl =
                             new MySQLTableExtension().getDetail(conn, object.getSchema(), object.getName()).getDDL();
@@ -84,5 +92,4 @@ public class MySQLSchemaExportJob extends BaseSchemaExportJob {
             }
         }
     }
-
 }
