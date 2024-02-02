@@ -103,6 +103,7 @@ import com.oceanbase.odc.service.plugin.SchemaPluginUtil;
 import com.oceanbase.odc.service.session.factory.DefaultConnectSessionFactory;
 import com.oceanbase.odc.service.session.factory.OBConsoleDataSourceFactory;
 import com.oceanbase.odc.service.session.model.SqlExecuteResult;
+import com.oceanbase.odc.service.task.runtime.PreCheckTaskParameters.AuthorizedDatabase;
 import com.oceanbase.tools.dbbrowser.model.DBDatabase;
 
 import lombok.NonNull;
@@ -624,11 +625,13 @@ public class DatabaseService {
         return unauthorizedDatabases;
     }
 
-    @SkipAuthorize("internal authorized")
-    public Set<String> getAuthorizedDatabaseNames(@NonNull Long dataSourceId) {
-        Page<Database> databases = list(QueryDatabaseParams.builder().containsUnassigned(false).existed(true)
-                .dataSourceId(dataSourceId).build(), Pageable.unpaged());
-        return databases.stream().map(Database::getName).collect(Collectors.toSet());
+    @SkipAuthorize("internal usage")
+    public List<AuthorizedDatabase> getAllAuthorizedDatabases(@NonNull Long dataSourceId) {
+        List<Database> databases = listDatabasesByConnectionIds(Collections.singleton(dataSourceId));
+        Map<Long, Set<DatabasePermissionType>> id2Types = databasePermissionHelper
+                .getPermissions(databases.stream().map(Database::getId).collect(Collectors.toList()));
+        return databases.stream().map(d -> new AuthorizedDatabase(d.getId(), d.getName(), id2Types.get(d.getId())))
+                .collect(Collectors.toList());
     }
 
     @SkipAuthorize("internal authorized")

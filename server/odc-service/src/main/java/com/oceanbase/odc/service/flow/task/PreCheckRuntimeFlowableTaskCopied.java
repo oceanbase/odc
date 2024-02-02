@@ -244,10 +244,10 @@ public class PreCheckRuntimeFlowableTaskCopied extends BaseODCFlowTaskDelegate<V
         parameters.setTaskType(taskEntity.getTaskType());
         parameters.setParameterJson(taskEntity.getParametersJson());
         parameters.setRiskLevelDescriber(riskLevelDescriber);
-        parameters.setEnvironment(environment);
         parameters.setRules(ruleService.list(environment.getRulesetId(), QueryRuleMetadataParams.builder().build()));
         parameters.setConnectionConfig(connectionConfig);
-        parameters.setAuthorizedDatabaseNames(databaseService.getAuthorizedDatabaseNames(connectionConfig.getId()));
+        parameters.setDefaultSchema(taskEntity.getDatabaseName());
+        parameters.setAuthorizedDatabase(databaseService.getAllAuthorizedDatabases(connectionConfig.getId()));
         parameters.setSqlFileObjectMetadatas(getSqlFileObjectMetadatas(taskEntity));
         return parameters;
     }
