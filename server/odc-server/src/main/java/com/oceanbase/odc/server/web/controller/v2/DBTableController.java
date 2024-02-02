@@ -27,13 +27,13 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.oceanbase.odc.core.session.ConnectionSession;
-import com.oceanbase.odc.core.shared.exception.NotImplementedException;
 import com.oceanbase.odc.service.common.response.ListResponse;
 import com.oceanbase.odc.service.common.response.Responses;
 import com.oceanbase.odc.service.common.response.SuccessResponse;
 import com.oceanbase.odc.service.db.DBTableService;
 import com.oceanbase.odc.service.db.model.GenerateTableDDLResp;
 import com.oceanbase.odc.service.db.model.GenerateUpdateTableDDLReq;
+import com.oceanbase.odc.service.partitionplan.PartitionPlanServiceV2;
 import com.oceanbase.odc.service.partitionplan.model.PartitionPlanDBTable;
 import com.oceanbase.odc.service.session.ConnectSessionService;
 import com.oceanbase.tools.dbbrowser.model.DBSchema;
@@ -47,6 +47,8 @@ public class DBTableController {
     private DBTableService tableService;
     @Autowired
     private ConnectSessionService sessionService;
+    @Autowired
+    private PartitionPlanServiceV2 partitionPlanServiceV2;
 
     @GetMapping(value = {"/{sessionId}/databases/{databaseName}/tables", "/{sessionId}/currentDatabase/tables"})
     public ListResponse<String> listTables(@PathVariable String sessionId,
@@ -93,7 +95,7 @@ public class DBTableController {
     @GetMapping(value = "/{sessionId}/databases/{databaseId}/candidatePartitionPlanTables")
     public ListResponse<PartitionPlanDBTable> listTables(@PathVariable String sessionId,
             @PathVariable Long databaseId) {
-        throw new NotImplementedException();
+        return Responses.list(this.partitionPlanServiceV2.listCandidateTables(sessionId, databaseId));
     }
 
 }
