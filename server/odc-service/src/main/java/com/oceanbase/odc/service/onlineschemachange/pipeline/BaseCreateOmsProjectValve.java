@@ -41,14 +41,14 @@ import com.oceanbase.odc.service.onlineschemachange.exception.OmsException;
 import com.oceanbase.odc.service.onlineschemachange.model.OnlineSchemaChangeScheduleTaskParameters;
 import com.oceanbase.odc.service.onlineschemachange.oms.enums.OmsOceanBaseType;
 import com.oceanbase.odc.service.onlineschemachange.oms.openapi.DataSourceOpenApiService;
-import com.oceanbase.odc.service.onlineschemachange.oms.openapi.ProjectOpenApiService;
+import com.oceanbase.odc.service.onlineschemachange.oms.openapi.OmsProjectOpenApiService;
 import com.oceanbase.odc.service.onlineschemachange.oms.request.CommonTransferConfig;
 import com.oceanbase.odc.service.onlineschemachange.oms.request.CreateOceanBaseDataSourceRequest;
-import com.oceanbase.odc.service.onlineschemachange.oms.request.CreateProjectRequest;
+import com.oceanbase.odc.service.onlineschemachange.oms.request.CreateOmsProjectRequest;
 import com.oceanbase.odc.service.onlineschemachange.oms.request.DatabaseTransferObject;
 import com.oceanbase.odc.service.onlineschemachange.oms.request.FullTransferConfig;
 import com.oceanbase.odc.service.onlineschemachange.oms.request.IncrTransferConfig;
-import com.oceanbase.odc.service.onlineschemachange.oms.request.ProjectControlRequest;
+import com.oceanbase.odc.service.onlineschemachange.oms.request.OmsProjectControlRequest;
 import com.oceanbase.odc.service.onlineschemachange.oms.request.SpecificTransferMapping;
 import com.oceanbase.odc.service.onlineschemachange.oms.request.TableTransferObject;
 import com.oceanbase.odc.service.quartz.QuartzJobService;
@@ -69,7 +69,7 @@ public abstract class BaseCreateOmsProjectValve extends BaseValve {
     @Autowired
     protected DataSourceOpenApiService dataSourceOpenApiService;
     @Autowired
-    private ProjectOpenApiService projectOpenApiService;
+    private OmsProjectOpenApiService projectOpenApiService;
 
     @Autowired
     private QuartzJobService quartzJobService;
@@ -102,7 +102,7 @@ public abstract class BaseCreateOmsProjectValve extends BaseValve {
 
         PreConditions.notNull(omsDsId, "Oms datasource id");
 
-        CreateProjectRequest createProjectRequest = getCreateProjectRequest(omsDsId,
+        CreateOmsProjectRequest createProjectRequest = getCreateProjectRequest(omsDsId,
                 context.getSchedule().getId(), context.getTaskParameter());
 
         String projectId = projectOpenApiService.createProject(createProjectRequest);
@@ -113,7 +113,7 @@ public abstract class BaseCreateOmsProjectValve extends BaseValve {
 
         scheduleTaskRepository.updateTaskParameters(taskId, JsonUtils.toJson(scheduleTaskParameters));
 
-        ProjectControlRequest request = new ProjectControlRequest();
+        OmsProjectControlRequest request = new OmsProjectControlRequest();
         request.setId(projectId);
         request.setUid(scheduleTaskParameters.getUid());
         try {
@@ -154,9 +154,9 @@ public abstract class BaseCreateOmsProjectValve extends BaseValve {
         return dataMap;
     }
 
-    private CreateProjectRequest getCreateProjectRequest(String omsDsId, Long scheduleId,
+    private CreateOmsProjectRequest getCreateProjectRequest(String omsDsId, Long scheduleId,
             OnlineSchemaChangeScheduleTaskParameters oscScheduleTaskParameters) {
-        CreateProjectRequest request = new CreateProjectRequest();
+        CreateOmsProjectRequest request = new CreateOmsProjectRequest();
         doCreateProjectRequest(omsDsId, scheduleId, oscScheduleTaskParameters, request);
         if (oscProperties.isEnableFullVerify()) {
             request.setEnableFullVerify(oscProperties.isEnableFullVerify());
@@ -217,5 +217,5 @@ public abstract class BaseCreateOmsProjectValve extends BaseValve {
             CreateOceanBaseDataSourceRequest request, OmsException ex);
 
     protected abstract void doCreateProjectRequest(String omsDsId, Long scheduleId,
-            OnlineSchemaChangeScheduleTaskParameters oscScheduleTaskParameters, CreateProjectRequest request);
+            OnlineSchemaChangeScheduleTaskParameters oscScheduleTaskParameters, CreateOmsProjectRequest request);
 }

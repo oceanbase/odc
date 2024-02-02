@@ -27,7 +27,8 @@ public class DefaultCloudEnvConfigurations implements CloudEnvConfigurations {
         ObjectStorageConfiguration configuration = new ObjectStorageConfiguration();
         configuration.setCloudProvider(cloudObjectStorageProperties.getProvider());
         configuration.setRegion(cloudObjectStorageProperties.getRegion());
-        configuration.setEndpoint(cloudObjectStorageProperties.getEndpoint());
+        configuration.setPublicEndpoint(cloudObjectStorageProperties.getPublicEndpoint());
+        configuration.setInternalEndpoint(cloudObjectStorageProperties.getInternalEndpoint());
         configuration.setAccessKeyId(cloudObjectStorageProperties.getAccessKeyId());
         configuration.setAccessKeySecret(cloudObjectStorageProperties.getAccessKeySecret());
         configuration.setBucketName(cloudObjectStorageProperties.getBucketName());

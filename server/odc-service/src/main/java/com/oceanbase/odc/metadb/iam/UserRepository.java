@@ -100,6 +100,11 @@ public interface UserRepository extends OdcJpaRepository<UserEntity, Long> {
 
     @Modifying
     @Transactional
+    @Query(value = "update iam_user u set u.name=:name Where u.id=:id", nativeQuery = true)
+    int updateUsernameById(@Param("id") Long id, @Param("name") String name);
+
+    @Modifying
+    @Transactional
     @Query(value = "update iam_user set name=:#{#user.name}, is_active=:#{#user.active}, is_enabled=:#{#user.enabled}, "
             + "description=:#{#user.description}, user_update_time=now() where id=:#{#user.id}",
             nativeQuery = true)

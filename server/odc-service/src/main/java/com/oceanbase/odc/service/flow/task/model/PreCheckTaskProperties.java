@@ -33,5 +33,6 @@ import lombok.Data;
 public class PreCheckTaskProperties {
 
     private long maxSqlContentBytes = 5 * 1024 * 1024;
+    private int executionTimeoutMillis = 60 * 60 * 1000;
 
 }

@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.oceanbase.tools.loaddump.common.enums.ObjectType;
 import com.oceanbase.tools.loaddump.common.model.ObjectStatus;
 
 import lombok.Data;
@@ -46,7 +47,7 @@ public class ObjectResult extends ObjectStatus {
 
     public static ObjectResult of(ObjectStatus that) {
         ObjectResult result = new ObjectResult();
-        result.setType(that.getType());
+        result.setType(ObjectType.valueOfName(that.getType()).name());
         result.setStatus(that.getStatus());
         result.setName(that.getName());
         result.setSchema(that.getSchema());

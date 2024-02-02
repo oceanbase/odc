@@ -60,12 +60,10 @@ import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferObject;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferTaskResult;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferType;
 import com.oceanbase.odc.service.common.util.FileConvertUtils;
-import com.oceanbase.odc.service.common.util.SpringContextUtil;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.datasecurity.model.MaskingAlgorithm;
 import com.oceanbase.odc.service.datasecurity.util.MaskingAlgorithmUtil;
 import com.oceanbase.odc.service.datatransfer.model.DataTransferProperties;
-import com.oceanbase.odc.service.flow.task.OssTaskReferManager;
 import com.oceanbase.odc.service.flow.task.model.ResultSetExportResult;
 import com.oceanbase.odc.service.objectstorage.cloud.CloudObjectStorageService;
 import com.oceanbase.odc.service.plugin.TaskPluginUtil;
@@ -149,7 +147,9 @@ public class ResultSetExportTask implements Callable<ResultSetExportResult> {
             }
 
             try {
-                handleExportFile(origin);
+                String returnVal = handleExportFile(origin);
+                LOGGER.info("ResultSetExportTask has been executed successfully");
+                return ResultSetExportResult.succeed(returnVal);
             } catch (Exception e) {
                 LOGGER.warn("Post processing export file failed.");
                 throw e;
@@ -158,8 +158,6 @@ public class ResultSetExportTask implements Callable<ResultSetExportResult> {
             LOGGER.warn("ResultSetExportTask failed.", e);
             throw e;
         }
-        LOGGER.info("ResultSetExportTask has been executed successfully");
-        return ResultSetExportResult.succeed(fileName);
     }
 
     private DataTransferConfig convertParam2TransferConfig(ResultSetExportTaskParameter parameter) {
@@ -302,12 +300,11 @@ public class ResultSetExportTask implements Callable<ResultSetExportResult> {
         return false;
     }
 
-    private void handleExportFile(File origin) throws Exception {
+    private String handleExportFile(File origin) throws Exception {
         try {
             if (cloudObjectStorageService.supported()) {
                 try {
-                    String objectName = cloudObjectStorageService.uploadTemp(fileName, origin);
-                    ((OssTaskReferManager) SpringContextUtil.getBean("ossTaskReferManager")).put(fileName, objectName);
+                    return cloudObjectStorageService.uploadTemp(fileName, origin);
                 } catch (Exception e) {
                     throw new UnexpectedException("upload result set export file to Object Storage failed", e);
                 }
@@ -317,6 +314,7 @@ public class ResultSetExportTask implements Callable<ResultSetExportResult> {
                     FileUtils.deleteQuietly(dest);
                 }
                 FileUtils.moveFile(origin, dest);
+                return dest.getName();
             }
         } finally {
             FileUtils.deleteQuietly(origin);

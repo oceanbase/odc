@@ -66,7 +66,7 @@ public class MockDataRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Void> {
         variables.putIfAbsent("mocktask.workspace", taskId + "");
         TraceContextHolder.span(variables);
         boolean isInterrupted = context.shutdown();
-        taskService.cancel(taskId, getResult());
+        taskService.cancel(taskId, getResult(taskId));
         TableTaskContext tableContext = context.getTables().get(0);
         log.info("The mock data task was cancelled, taskId={}, status={}, cancelResult={}", taskId,
                 tableContext == null ? null : tableContext.getStatus(), isInterrupted);
@@ -103,7 +103,7 @@ public class MockDataRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Void> {
             ObDataMocker mocker = factory.create(new CustomMockScheduler(taskId,
                     TraceContextHolder.getTraceContext(), ossTaskReferManager, cloudObjectStorageService));
             context = mocker.start();
-            taskService.start(taskId, getResult());
+            taskService.start(taskId, getResult(taskId));
             Verify.notNull(context, "MockContext can not be null");
             return null;
         } catch (Exception e) {
@@ -139,7 +139,7 @@ public class MockDataRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Void> {
         log.warn("Mock data task failed, taskId={}", taskId, thrown);
         if (context != null) {
             context.shutdown();
-            taskService.fail(taskId, context.getProgress(), getResult());
+            taskService.fail(taskId, context.getProgress(), getResult(taskId));
         } else {
             taskService.fail(taskId, 0, new MockDataTaskResult(connectionConfig));
         }
@@ -150,7 +150,7 @@ public class MockDataRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Void> {
     @Override
     protected void onSuccessful(Long taskId, TaskService taskService) {
         log.info("Mock data task succeed, taskId={}", taskId);
-        taskService.succeed(taskId, getResult());
+        taskService.succeed(taskId, getResult(taskId));
         updateFlowInstanceStatus(FlowStatus.EXECUTION_SUCCEEDED);
         context.shutdown();
         super.onSuccessful(taskId, taskService);
@@ -160,7 +160,7 @@ public class MockDataRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Void> {
     @Override
     protected void onTimeout(Long taskId, TaskService taskService) {
         log.warn("Mock data task timeout, taskId={}", taskId);
-        taskService.fail(taskId, context.getProgress(), getResult());
+        taskService.fail(taskId, context.getProgress(), getResult(taskId));
         context.shutdown();
         TraceContextHolder.clear();
     }
@@ -172,8 +172,10 @@ public class MockDataRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Void> {
         }
     }
 
-    private MockDataTaskResult getResult() {
-        return new MockDataTaskResult(connectionConfig, context);
+    private MockDataTaskResult getResult(Long taskId) {
+        MockDataTaskResult result = new MockDataTaskResult(connectionConfig, context);
+        result.setObjectName(ossTaskReferManager.get(taskId + ""));
+        return result;
     }
 
 }
