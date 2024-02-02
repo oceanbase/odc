@@ -414,10 +414,10 @@ public abstract class StringUtils extends org.apache.commons.lang3.StringUtils {
         for (int i = 0; i < targets.length && j < prefixes.length && matchLength < maxMatchLength;) {
             char iChar = targets[i];
             char jChar = prefixes[j];
-            if (iChar == ' ' || iChar == '\t' || iChar == '\n' || iChar == '\r') {
+            if (Character.isWhitespace(iChar)) {
                 i++;
                 continue;
-            } else if (jChar == ' ' || jChar == '\t' || jChar == '\n' || jChar == '\r') {
+            } else if (Character.isWhitespace(jChar)) {
                 j++;
                 continue;
             }

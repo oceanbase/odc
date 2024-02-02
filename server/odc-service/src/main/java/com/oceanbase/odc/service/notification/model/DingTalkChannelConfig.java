@@ -27,12 +27,8 @@ import lombok.EqualsAndHashCode;
  */
 @Data
 @EqualsAndHashCode(callSuper = true)
-public class DingTalkChannelConfig extends BaseChannelConfig {
-
-    private String webhook;
+public class DingTalkChannelConfig extends WebhookChannelConfig {
 
     private List<Long> atMobiles;
-
-    private String sign;
 
 }

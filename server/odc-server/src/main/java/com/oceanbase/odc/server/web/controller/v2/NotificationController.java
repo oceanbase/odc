@@ -36,11 +36,11 @@ import com.oceanbase.odc.service.notification.NotificationService;
 import com.oceanbase.odc.service.notification.model.Channel;
 import com.oceanbase.odc.service.notification.model.ChannelType;
 import com.oceanbase.odc.service.notification.model.Message;
+import com.oceanbase.odc.service.notification.model.MessageSendResult;
 import com.oceanbase.odc.service.notification.model.MessageSendingStatus;
 import com.oceanbase.odc.service.notification.model.NotificationPolicy;
 import com.oceanbase.odc.service.notification.model.QueryChannelParams;
 import com.oceanbase.odc.service.notification.model.QueryMessageParams;
-import com.oceanbase.odc.service.notification.model.TestChannelResult;
 
 import io.swagger.annotations.ApiOperation;
 
@@ -95,7 +95,7 @@ public class NotificationController {
 
     @ApiOperation(value = "testChannel", notes = "Test whether the channel is available")
     @RequestMapping(value = "/channels/test", method = RequestMethod.POST)
-    public SuccessResponse<TestChannelResult> testChannel(@PathVariable Long projectId, @RequestBody Channel channel) {
+    public SuccessResponse<MessageSendResult> testChannel(@PathVariable Long projectId, @RequestBody Channel channel) {
         return Responses.success(notificationService.testChannel(channel));
     }
 

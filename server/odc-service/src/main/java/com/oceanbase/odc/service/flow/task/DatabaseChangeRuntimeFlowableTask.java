@@ -156,6 +156,7 @@ public class DatabaseChangeRuntimeFlowableTask extends BaseODCFlowTaskDelegate<D
     @Override
     protected void onTimeout(Long taskId, TaskService taskService) {
         log.warn("Async task timeout, taskId={}", taskId);
+        super.onTimeout(taskId, taskService);
     }
 
     @Override

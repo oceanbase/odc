@@ -13,17 +13,31 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.notification;
+package com.oceanbase.odc.service.notification.model;
 
-import com.oceanbase.odc.service.notification.model.ChannelType;
-import com.oceanbase.odc.service.notification.model.Message;
+import lombok.Data;
 
 /**
  * @author liuyizhuo.lyz
  * @date 2024/1/4
  */
-public interface MessageChannel {
-    ChannelType type();
+@Data
+public class MessageSendResult {
 
-    boolean send(Message message);
+    private boolean active;
+    private String errorMessage;
+
+    public static MessageSendResult ofFail(String errorMessage) {
+        MessageSendResult result = new MessageSendResult();
+        result.setActive(false);
+        result.setErrorMessage(errorMessage);
+        return result;
+    }
+
+    public static MessageSendResult ofSuccess() {
+        MessageSendResult result = new MessageSendResult();
+        result.setActive(true);
+        return result;
+    }
+
 }
