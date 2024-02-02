@@ -1,0 +1,70 @@
+[
+  {
+    "id": 1,
+    "name": "case1",
+    "description": "主键约束",
+    "input": {
+      "current": {
+        "name": "",
+        "schemaName": "schema",
+        "tableName": "table",
+        "type": "PRIMARY_KEY",
+        "columnNames": [
+          "col1"
+        ],
+        "enabled": true,
+        "deferability": "NOT_DEFERRABLE"
+      }
+    },
+    "output": "ALTER TABLE `schema`.`table` DROP PRIMARY KEY;\n"
+  },
+  {
+    "id": 2,
+    "name": "case2",
+    "description": "唯一性约束，多列",
+    "input": {
+      "current": {
+        "name": "uk_col1",
+        "schemaName": "schema",
+        "tableName": "table",
+        "type": "UNIQUE_KEY",
+        "columnNames": [
+          "col1",
+          "col2"
+        ],
+        "enabled": true,
+        "deferability": "NOT_DEFERRABLE"
+      }
+    },
+    "output": "ALTER TABLE `schema`.`table` DROP KEY `uk_col1`;\n"
+  },
+  {
+    "id": 3,
+    "name": "case3",
+    "description": "外键约束, ",
+    "input": {
+      "current": {
+        "name": "fk_odc",
+        "schemaName": "schema",
+        "tableName": "table",
+        "type": "FOREIGN_KEY",
+        "columnNames": [
+          "col1",
+          "col2"
+        ],
+        "deferability": "NOT_DEFERRABLE",
+        "referenceSchemaName": "odc331",
+        "referenceTableName": "iam_user_role",
+        "referenceColumnNames": [
+          "col1",
+          "col2"
+        ],
+        "onDeleteRule": "CASCADE",
+        "onUpdateRule": "NO_ACTION",
+        "enabled": true
+      }
+    },
+    "output": "ALTER TABLE `schema`.`table` DROP FOREIGN KEY `fk_odc`;\n"
+  }
+]
+

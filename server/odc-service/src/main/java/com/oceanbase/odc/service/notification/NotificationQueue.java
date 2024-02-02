@@ -17,13 +17,13 @@ package com.oceanbase.odc.service.notification;
 
 import java.util.List;
 
+import com.oceanbase.odc.service.notification.model.Message;
 import com.oceanbase.odc.service.notification.model.MessageSendingStatus;
-import com.oceanbase.odc.service.notification.model.Notification;
 
 public interface NotificationQueue {
-    boolean offer(List<Notification> notifications);
+    boolean offer(List<Message> notifications);
 
-    List<Notification> peek(int batchSize, MessageSendingStatus status);
+    List<Message> peek(int batchSize, MessageSendingStatus status);
 
     int size();
 }

@@ -119,7 +119,8 @@ public enum ErrorCodes implements ErrorCode {
     FileSuffixNotAllowed,
 
     // Task
-    TaskNotTerminable,
+    RunningTaskNotTerminable,
+    FinishedTaskNotTerminable,
     TaskNotReadyForDownload,
     TaskSqlExecuteFailed,
     TaskLogNotFound,

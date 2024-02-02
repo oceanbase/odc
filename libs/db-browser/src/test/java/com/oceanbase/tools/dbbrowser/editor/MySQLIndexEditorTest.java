@@ -31,7 +31,7 @@ import com.oceanbase.tools.dbbrowser.model.DBTableIndex;
 public class MySQLIndexEditorTest {
 
     private DBTableIndexEditor indexEditor;
-    private final String BASE_DIR = "src/test/resources/table/operator/mysql/index";
+    private final String BASE_DIR = "src/test/resources/table/operator/ob/mysql/index";
 
     @Before
     public void setUp() throws Exception {

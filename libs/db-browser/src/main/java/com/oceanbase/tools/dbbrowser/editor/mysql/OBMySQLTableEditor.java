@@ -41,7 +41,7 @@ public class OBMySQLTableEditor extends MySQLTableEditor {
     }
 
     @Override
-    protected void appendMoreTableOptions(DBTable table, SqlBuilder sqlBuilder) {
+    protected void appendParticularTableOptions(DBTable table, SqlBuilder sqlBuilder) {
         if (Objects.isNull(table.getTableOptions())) {
             return;
         }

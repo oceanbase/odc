@@ -15,6 +15,8 @@
  */
 package com.oceanbase.tools.dbbrowser.schema.oracle;
 
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -24,6 +26,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
@@ -587,17 +590,110 @@ public class OracleSchemaAccessor implements DBSchemaAccessor {
 
     @Override
     public Map<String, List<DBTableIndex>> listTableIndexes(String schemaName) {
-        throw new UnsupportedOperationException("Not supported yet");
+        Map<String, List<DBTableIndex>> tableName2Indexes = new LinkedHashMap<>();
+        String sql = sqlMapper.getSql(Statements.LIST_SCHEMA_INDEX);
+        jdbcOperations.query(sql, new Object[] {schemaName}, (rs, num) -> {
+            String indexName = rs.getString(OracleConstants.INDEX_NAME);
+            String tableName = rs.getString(OracleConstants.INDEX_TABLE_NAME);
+            if (tableName2Indexes.containsKey(tableName)) {
+                List<DBTableIndex> tableIndexes = tableName2Indexes.get(tableName);
+                Optional<DBTableIndex> existingIndex = tableIndexes.stream()
+                        .filter(idx -> idx.getName().equals(indexName))
+                        .findFirst();
+                if (existingIndex.isPresent()) {
+                    List<String> columnNames = existingIndex.get().getColumnNames();
+                    columnNames.add(rs.getString("COLUMN_NAME"));
+                } else {
+                    tableIndexes.add(createIndexByResultSet(rs, num));
+                }
+            } else {
+                tableName2Indexes.put(tableName,
+                        new ArrayList<>(Collections.singletonList(createIndexByResultSet(rs, num))));
+            }
+            return null;
+        });
+        fillFunctionBasedIndexInfo(
+                tableName2Indexes.values().stream().flatMap(List::stream).collect(Collectors.toList()));
+        return tableName2Indexes;
+    }
+
+    private DBTableIndex createIndexByResultSet(ResultSet rs, int num) throws SQLException {
+        DBTableIndex index = new DBTableIndex();
+        index.setName(rs.getString(OracleConstants.INDEX_NAME));
+        index.setOrdinalPosition(num);
+        index.setSchemaName(rs.getString("TABLE_OWNER"));
+        index.setOwner(rs.getString("OWNER"));
+        index.setTableName(rs.getString(OracleConstants.INDEX_TABLE_NAME));
+        index.setNonUnique(!"UNIQUE".equalsIgnoreCase(rs.getString(OracleConstants.INDEX_UNIQUENESS)));
+        index.setType(DBIndexType.fromString(rs.getString(OracleConstants.INDEX_TYPE)));
+        index.setVisible("VISIBLE".equalsIgnoreCase(rs.getString("VISIBILITY")));
+        if (index.isNonUnique()) {
+            index.setType(DBIndexType.fromString(rs.getString(OracleConstants.INDEX_TYPE)));
+        } else {
+            index.setType(DBIndexType.UNIQUE);
+        }
+        index.setAlgorithm(DBIndexAlgorithm.fromString(rs.getString(OracleConstants.INDEX_TYPE)));
+        index.setCompressInfo(rs.getString(OracleConstants.INDEX_COMPRESSION));
+        index.setColumnNames(new ArrayList<>(Collections.singletonList(rs.getString("COLUMN_NAME"))));
+        index.setAvailable(isTableIndexAvailable(rs.getString(OracleConstants.INDEX_STATUS)));
+        if (judgeIndexGlobalOrLocalFromDataDict()) {
+            index.setGlobal("NO".equalsIgnoreCase(rs.getString("PARTITIONED")));
+        }
+        return index;
     }
 
     @Override
     public Map<String, List<DBTableConstraint>> listTableConstraints(String schemaName) {
-        throw new UnsupportedOperationException("Not supported yet");
+        String sql = this.sqlMapper.getSql(Statements.LIST_SCHEMA_CONSTRAINTS);
+        Map<String, List<DBTableConstraint>> tableName2Constraints = new LinkedHashMap<>();
+        jdbcOperations.query(sql, new Object[] {schemaName}, (rs, num) -> {
+            String tableName = rs.getString("TABLE_NAME");
+            String constraintName = rs.getString(OracleConstants.CONS_NAME);
+            if (tableName2Constraints.containsKey(tableName)) {
+                Map<String, DBTableConstraint> constraintName2Constraint =
+                        tableName2Constraints.get(tableName).stream().collect(
+                                Collectors.toMap(DBTableConstraint::getName, cons -> cons));
+                int currentPosition = constraintName2Constraint.size();
+                if (!constraintName2Constraint.containsKey(constraintName)) {
+                    constraintName2Constraint.put(constraintName, createConstraintByResultSet(rs, currentPosition + 1));
+                } else {
+                    constraintName2Constraint.get(constraintName).getColumnNames()
+                            .add(rs.getString("COLUMN_NAME"));
+                    constraintName2Constraint.get(constraintName).getReferenceColumnNames()
+                            .add(rs.getString(OracleConstants.CONS_R_COLUMN_NAME));
+                }
+            } else {
+                tableName2Constraints.put(tableName,
+                        new ArrayList<>(Collections.singletonList(createConstraintByResultSet(rs, 1))));
+            }
+            return constraintName;
+        });
+
+        filterConstraintColumns(
+                tableName2Constraints.values().stream().flatMap(List::stream).collect(Collectors.toList()));
+        return tableName2Constraints;
     }
 
     @Override
     public Map<String, DBTableOptions> listTableOptions(String schemaName) {
-        throw new UnsupportedOperationException("Not supported yet");
+        Map<String, DBTableOptions> tableName2Options = new LinkedHashMap<>();
+        OracleSqlBuilder sb = new OracleSqlBuilder();
+        sb.append("SELECT OWNER, TABLE_NAME, COMMENTS FROM ")
+                .append(dataDictTableNames.TAB_COMMENTS())
+                .append(" WHERE TABLE_TYPE='TABLE' AND OWNER=")
+                .value(schemaName)
+                .append(" ORDER BY OWNER, TABLE_NAME ASC");
+        jdbcOperations.query(sb.toString(), (rs, num) -> {
+            DBTableOptions options = new DBTableOptions();
+            options.setComment(rs.getString("COMMENTS"));
+            tableName2Options.put(rs.getString("TABLE_NAME"), options);
+            return null;
+        });
+
+        List<DBTableOptions> tableOptions = new ArrayList<>(tableName2Options.values());
+        obtainTableCharset(tableOptions);
+        obtainTableCollation(tableOptions);
+        return tableName2Options;
     }
 
     @Override
@@ -733,35 +829,8 @@ public class OracleSchemaAccessor implements DBSchemaAccessor {
         jdbcOperations.query(sql, new Object[] {schemaName, tableName}, (rs, num) -> {
             String constraintName = rs.getString(OracleConstants.CONS_NAME);
             if (!name2Constraint.containsKey(constraintName)) {
-                DBTableConstraint constraint = new DBTableConstraint();
-                constraint.setName(constraintName);
-                constraint.setOrdinalPosition(num);
-                constraint.setSchemaName(rs.getString(OracleConstants.CONS_OWNER));
-                constraint.setTableName(rs.getString(OracleConstants.COL_TABLE_NAME));
-                constraint.setOwner(rs.getString(OracleConstants.CONS_OWNER));
-                constraint.setValidate("VALIDATED".equalsIgnoreCase(rs.getString(OracleConstants.CONS_VALIDATED)));
-                constraint.setType(DBConstraintType.fromValue(rs.getString(OracleConstants.CONS_TYPE)));
-                constraint.setCheckClause(rs.getString("SEARCH_CONDITION"));
-                constraint.setEnabled("ENABLED".equalsIgnoreCase(rs.getString("STATUS")));
-                String deferrable = rs.getString(OracleConstants.CONS_DEFERRABLE);
-                if (StringUtils.equalsIgnoreCase(deferrable, "DEFERRABLE")) {
-                    constraint.setDeferability(DBConstraintDeferability.fromString(rs.getString("DEFERRED")));
-                } else {
-                    constraint.setDeferability(DBConstraintDeferability.NOT_DEFERRABLE);
-                }
-                List<String> columnNames = new ArrayList<>();
-                columnNames.add(rs.getString("COLUMN_NAME"));
-                constraint.setColumnNames(columnNames);
-                List<String> refColumnNames = new ArrayList<>();
-                constraint.setReferenceColumnNames(refColumnNames);
-                if (DBConstraintType.FOREIGN_KEY == constraint.getType()) {
-                    constraint.setReferenceTableName(rs.getString(OracleConstants.CONS_R_TABLE_NAME));
-                    constraint.setReferenceSchemaName(rs.getString(OracleConstants.CONS_R_OWNER));
-                    refColumnNames.add(rs.getString(OracleConstants.CONS_R_COLUMN_NAME));
-                    constraint.setOnDeleteRule(
-                            DBForeignKeyModifyRule.fromValue(rs.getString(OracleConstants.CONS_DELETE_RULE)));
-                }
-                name2Constraint.put(constraintName, constraint);
+                int currentPosition = name2Constraint.size();
+                name2Constraint.put(constraintName, createConstraintByResultSet(rs, currentPosition + 1));
             } else {
                 name2Constraint.get(constraintName).getColumnNames()
                         .add(rs.getString("COLUMN_NAME"));
@@ -770,10 +839,16 @@ public class OracleSchemaAccessor implements DBSchemaAccessor {
             }
             return constraintName;
         });
-        /**
-         * 三表联查的结果 ColumnNames 和 RefColumnNames 可能存在 NULL 或者重复值，这里做一个过滤
-         */
-        for (DBTableConstraint constraint : name2Constraint.values()) {
+
+        filterConstraintColumns(new ArrayList<>(name2Constraint.values()));
+        return new ArrayList<>(name2Constraint.values());
+    }
+
+    /**
+     * 三表联查的结果 ColumnNames 和 RefColumnNames 可能存在 NULL 或者重复值，这里做一个过滤
+     */
+    protected void filterConstraintColumns(List<DBTableConstraint> constraints) {
+        for (DBTableConstraint constraint : constraints) {
             if (Objects.nonNull(constraint.getReferenceColumnNames())) {
                 constraint.setReferenceColumnNames(constraint.getReferenceColumnNames().stream()
                         .filter(Objects::nonNull).distinct().collect(Collectors.toList()));
@@ -784,12 +859,45 @@ public class OracleSchemaAccessor implements DBSchemaAccessor {
 
             }
         }
-        return new ArrayList<>(name2Constraint.values());
+    }
+
+    protected DBTableConstraint createConstraintByResultSet(ResultSet rs, int num) throws SQLException {
+        DBTableConstraint constraint = new DBTableConstraint();
+        constraint.setName(rs.getString(OracleConstants.CONS_NAME));
+        constraint.setOrdinalPosition(num);
+        constraint.setSchemaName(rs.getString(OracleConstants.CONS_OWNER));
+        constraint.setTableName(rs.getString(OracleConstants.COL_TABLE_NAME));
+        constraint.setOwner(rs.getString(OracleConstants.CONS_OWNER));
+        constraint.setValidate("VALIDATED".equalsIgnoreCase(rs.getString(OracleConstants.CONS_VALIDATED)));
+        constraint.setType(DBConstraintType.fromValue(rs.getString(OracleConstants.CONS_TYPE)));
+        constraint.setEnabled("ENABLED".equalsIgnoreCase(rs.getString("STATUS")));
+        String deferrable = rs.getString(OracleConstants.CONS_DEFERRABLE);
+        if (StringUtils.equalsIgnoreCase(deferrable, "DEFERRABLE")) {
+            constraint.setDeferability(DBConstraintDeferability.fromString(rs.getString("DEFERRED")));
+        } else {
+            constraint.setDeferability(DBConstraintDeferability.NOT_DEFERRABLE);
+        }
+        List<String> columnNames = new ArrayList<>();
+        columnNames.add(rs.getString("COLUMN_NAME"));
+        constraint.setColumnNames(columnNames);
+        List<String> refColumnNames = new ArrayList<>();
+        constraint.setReferenceColumnNames(refColumnNames);
+        if (DBConstraintType.FOREIGN_KEY == constraint.getType()) {
+            constraint.setReferenceTableName(rs.getString(OracleConstants.CONS_R_TABLE_NAME));
+            constraint.setReferenceSchemaName(rs.getString(OracleConstants.CONS_R_OWNER));
+            refColumnNames.add(rs.getString(OracleConstants.CONS_R_COLUMN_NAME));
+            constraint.setOnDeleteRule(
+                    DBForeignKeyModifyRule.fromValue(rs.getString(OracleConstants.CONS_DELETE_RULE)));
+        }
+        constraint.setCheckClause(rs.getString("SEARCH_CONDITION"));
+        return constraint;
     }
 
     @Override
     public DBTablePartition getPartition(String schemaName, String tableName) {
         DBTablePartition partition = new DBTablePartition();
+        partition.setSchemaName(schemaName);
+        partition.setTableName(tableName);
         partition.setPartitionOption(obtainPartitionOption(schemaName, tableName));
         partition.setPartitionDefinitions(
                 obtainPartitionDefinition(schemaName, tableName, partition.getPartitionOption()));
@@ -847,23 +955,11 @@ public class OracleSchemaAccessor implements DBSchemaAccessor {
     @Override
     public List<DBTableIndex> listTableIndexes(String schemaName, String tableName) {
         List<DBTableIndex> indexList = obtainBasicIndexInfo(schemaName, tableName);
-        fillIndexColumn(indexList, schemaName, tableName);
+        fillFunctionBasedIndexInfo(indexList);
         return indexList;
     }
 
-    protected void fillIndexColumn(List<DBTableIndex> indexList, String schemaName, String tableName) {
-        String sql = this.sqlMapper.getSql(Statements.LIST_INDEX_COLUMNS);
-        jdbcOperations.query(sql, new Object[] {schemaName, tableName}, (rs, num) -> {
-            String indexName = rs.getString(OracleConstants.INDEX_NAME);
-            String columnName = rs.getString(OracleConstants.COL_COLUMN_NAME);
-            for (DBTableIndex index : indexList) {
-                if (StringUtils.equals(index.getName(), indexName)) {
-                    index.getColumnNames().add(columnName);
-                }
-            }
-            return columnName;
-        });
-
+    protected void fillFunctionBasedIndexInfo(List<DBTableIndex> indexList) {
         for (DBTableIndex index : indexList) {
             if (index.getType() == DBIndexType.FUNCTION_BASED_NORMAL
                     || index.getType() == DBIndexType.FUNCTION_BASED_BITMAP) {
@@ -874,8 +970,8 @@ public class OracleSchemaAccessor implements DBSchemaAccessor {
                 OracleSqlBuilder sqlBuilder = new OracleSqlBuilder();
                 sqlBuilder.append("SELECT COLUMN_POSITION, COLUMN_EXPRESSION FROM ")
                         .append(dataDictTableNames.IND_EXPRESSIONS())
-                        .append(" WHERE TABLE_OWNER=").value(schemaName)
-                        .append(" AND TABLE_NAME=").value(tableName)
+                        .append(" WHERE TABLE_OWNER=").value(index.getSchemaName())
+                        .append(" AND TABLE_NAME=").value(index.getTableName())
                         .append(" AND INDEX_NAME=").value(index.getName())
                         .append(" ORDER BY COLUMN_POSITION ASC");
                 jdbcOperations.query(sqlBuilder.toString(), (rs, num) -> {
@@ -890,27 +986,13 @@ public class OracleSchemaAccessor implements DBSchemaAccessor {
         String sql = this.sqlMapper.getSql(Statements.LIST_TABLE_INDEXES);
         Map<String, DBTableIndex> indexName2Index = new LinkedHashMap<>();
         jdbcOperations.query(sql, new Object[] {schemaName, tableName}, (rs, num) -> {
-            DBTableIndex index = new DBTableIndex();
-            index.setName(rs.getString(OracleConstants.INDEX_NAME));
-            index.setOrdinalPosition(num);
-            index.setOwner(rs.getString("OWNER"));
-            index.setNonUnique(!"UNIQUE".equalsIgnoreCase(rs.getString(OracleConstants.INDEX_UNIQUENESS)));
-            index.setType(DBIndexType.fromString(rs.getString(OracleConstants.INDEX_TYPE)));
-            index.setVisible("VISIBLE".equalsIgnoreCase(rs.getString("VISIBILITY")));
-            if (index.isNonUnique()) {
-                index.setType(DBIndexType.fromString(rs.getString(OracleConstants.INDEX_TYPE)));
+            String indexName = rs.getString(OracleConstants.INDEX_NAME);
+            if (indexName2Index.containsKey(indexName)) {
+                indexName2Index.get(indexName).getColumnNames().add(rs.getString("COLUMN_NAME"));
             } else {
-                index.setType(DBIndexType.UNIQUE);
+                indexName2Index.put(indexName, createIndexByResultSet(rs, num));
             }
-            index.setAlgorithm(DBIndexAlgorithm.fromString(rs.getString(OracleConstants.INDEX_TYPE)));
-            index.setCompressInfo(rs.getString(OracleConstants.INDEX_COMPRESSION));
-            index.setColumnNames(new ArrayList<>());
-            index.setAvailable(isTableIndexAvailable(rs.getString(OracleConstants.INDEX_STATUS)));
-            if (judgeIndexGlobalOrLocalFromDataDict()) {
-                index.setGlobal("NO".equalsIgnoreCase(rs.getString("PARTITIONED")));
-            }
-            indexName2Index.putIfAbsent(index.getName(), index);
-            return index;
+            return null;
         });
         return new ArrayList<>(indexName2Index.values());
     }
@@ -995,8 +1077,8 @@ public class OracleSchemaAccessor implements DBSchemaAccessor {
     @Override
     public DBTableOptions getTableOptions(String schemaName, String tableName) {
         DBTableOptions tableOptions = new DBTableOptions();
-        obtainTableCharset(tableOptions);
-        obtainTableCollation(tableOptions);
+        obtainTableCharset(Collections.singletonList(tableOptions));
+        obtainTableCollation(Collections.singletonList(tableOptions));
         obtainTableComment(schemaName, tableName, tableOptions);
         obtainTableCreateAndUpdateTime(schemaName, tableName, tableOptions);
         return tableOptions;
@@ -1007,17 +1089,19 @@ public class OracleSchemaAccessor implements DBSchemaAccessor {
         return getTableOptions(schemaName, tableName);
     }
 
-    protected void obtainTableCharset(DBTableOptions tableOptions) {
+    protected void obtainTableCharset(List<DBTableOptions> tableOptions) {
         String sql = "select value from v$nls_parameters where PARAMETER = 'NLS_CHARACTERSET'";
-        jdbcOperations.query(sql, t -> {
-            tableOptions.setCharsetName(t.getString(1));
+        String charset = jdbcOperations.queryForObject(sql, String.class);
+        tableOptions.forEach(option -> {
+            option.setCharsetName(charset);
         });
     }
 
-    protected void obtainTableCollation(DBTableOptions tableOptions) {
+    protected void obtainTableCollation(List<DBTableOptions> tableOptions) {
         String sql = "SELECT value from v$nls_parameters where parameter = 'NLS_SORT'";
-        jdbcOperations.query(sql, t -> {
-            tableOptions.setCollationName(t.getString(1));
+        String collation = jdbcOperations.queryForObject(sql, String.class);
+        tableOptions.forEach(option -> {
+            option.setCollationName(collation);
         });
     }
 

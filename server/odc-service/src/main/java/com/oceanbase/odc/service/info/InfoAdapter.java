@@ -33,7 +33,15 @@ public interface InfoAdapter {
 
     boolean isPasswordLoginEnabled();
 
+    default boolean isSSoLoginEnabled(HttpServletRequest request) {
+        return getLoginUrl(request) != null;
+    }
+
     default String ssoLoginName() {
+        return "";
+    }
+
+    default String ssoLoginType() {
         return "";
     }
 }

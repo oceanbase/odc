@@ -58,11 +58,11 @@ public class OBMySQLDataTransferExtension implements DataTransferExtensionPoint 
         if (config.getTransferType() == DataTransferType.IMPORT) {
             BaseParameterFactory<LoadParameter> factory = new LoadParameterFactory(config, workingDir, logDir);
             LoadParameter parameter = factory.generate();
-            return new OceanBaseImportJob(parameter, transferData, transferSchema, config.isUsePrepStmts());
+            return new OceanBaseImportJob(parameter, transferData, transferSchema);
         } else if (config.getTransferType() == DataTransferType.EXPORT) {
             BaseParameterFactory<DumpParameter> factory = new DumpParameterFactory(config, workingDir, logDir);
             DumpParameter parameter = factory.generate();
-            return new OceanBaseExportJob(parameter, transferData, transferSchema, config.isUsePrepStmts());
+            return new OceanBaseExportJob(parameter, transferData, transferSchema);
         }
 
         throw new IllegalArgumentException("Illegal transfer type " + config.getTransferType());

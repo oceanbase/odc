@@ -47,6 +47,10 @@ public interface NotificationPolicyRepository extends OdcJpaRepository<Notificat
     @Query(value = "select * from notification_policy where organization_id in (:organizationIds)", nativeQuery = true)
     List<NotificationPolicyEntity> findByOrganizationIds(@Param("organizationIds") Collection<Long> ids);
 
+    @Query(value = "select * from notification_policy where project_id in (:projectIds) and is_enabled = 1",
+            nativeQuery = true)
+    List<NotificationPolicyEntity> findEnabledByProjectIds(@Param("projectIds") Collection<Long> ids);
+
     boolean existsByOrganizationIdAndMatchExpression(Long organizationId, String matchExpression);
 
     List<NotificationPolicyEntity> findByProjectId(Long projectId);

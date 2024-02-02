@@ -31,7 +31,7 @@ import com.oceanbase.tools.dbbrowser.model.DBTablePartition;
 public class MySQLDBTablePartitionEditorTest {
 
     private DBTablePartitionEditor partitionEditor;
-    private final String BASE_DIR = "src/test/resources/table/operator/mysql/partition";
+    private final String BASE_DIR = "src/test/resources/table/operator/ob/mysql/partition";
 
     @Before
     public void setUp() {
@@ -110,6 +110,19 @@ public class MySQLDBTablePartitionEditorTest {
             String actual =
                     partitionEditor.generateUpdateObjectListDDL(testCase.getInput().getPrevious(),
                             testCase.getInput().getCurrent());
+            Assert.assertEquals(testCase.getOutput(), actual);
+        });
+    }
+
+    @Test
+    public void generateAddPartitionDefinitionDDL_normalInput_generateSucceed() {
+        String casesJson = DBObjectUtilsTest.loadAsString(BASE_DIR + "/update_multi_partition_test_cases.json");
+        List<DBObjectTupleTestCase<DBTablePartition>> cases = MySQLConstraintEditorTest.fromJson(casesJson,
+                new TypeReference<List<DBObjectTupleTestCase<DBTablePartition>>>() {});
+        cases.forEach(testCase -> {
+            DBTablePartition partition = testCase.getInput().getCurrent();
+            String actual = partitionEditor.generateAddPartitionDefinitionDDL(partition.getSchemaName(),
+                    partition.getTableName(), partition.getPartitionOption(), partition.getPartitionDefinitions());
             Assert.assertEquals(testCase.getOutput(), actual);
         });
     }
