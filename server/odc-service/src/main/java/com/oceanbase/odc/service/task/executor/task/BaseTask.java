@@ -93,7 +93,7 @@ public abstract class BaseTask<RESULT> implements Task<RESULT> {
     }
 
     @Override
-    public JobStatus getStatus() {
+    public final JobStatus getStatus() {
         return status;
     }
 
