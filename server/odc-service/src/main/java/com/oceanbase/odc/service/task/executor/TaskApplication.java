@@ -117,10 +117,7 @@ public class TaskApplication {
     }
 
     private void setLogPathSysProperty() {
-        if (System.getProperty(JobEnvKeyConstants.ODC_LOG_DIRECTORY) == null) {
-            System.setProperty(JobEnvKeyConstants.ODC_LOG_DIRECTORY,
-                    System.getenv(JobEnvKeyConstants.ODC_LOG_DIRECTORY));
-        }
+        JobUtils.putEnvToSysProperties(JobEnvKeyConstants.ODC_LOG_DIRECTORY);
     }
 
     private void setLog4JConfigXml() {
