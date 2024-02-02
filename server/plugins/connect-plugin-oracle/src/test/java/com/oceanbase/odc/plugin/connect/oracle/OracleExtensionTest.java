@@ -72,7 +72,7 @@ public class OracleExtensionTest extends BaseExtensionPointTest {
 
     private Properties getTestConnectionProperties() {
         return ConnectionPropertiesBuilder.getBuilder().user(configuration.getUsername())
-                .passWord(configuration.getPassword())
+                .password(configuration.getPassword())
                 .build();
     }
 

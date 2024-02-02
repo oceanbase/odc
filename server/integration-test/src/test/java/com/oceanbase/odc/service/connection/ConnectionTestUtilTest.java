@@ -135,7 +135,7 @@ public class ConnectionTestUtilTest {
     public ConnectionTestResult testConnectExtensionPoint(ConnectType type,
             String jdbcUrl, String username, String password) {
         TestResult result = ConnectionPluginUtil.getConnectionExtension(type.getDialectType())
-                .test(jdbcUrl, ConnectionPropertiesBuilder.getBuilder().user(username).passWord(password).build(), -1);
+                .test(jdbcUrl, ConnectionPropertiesBuilder.getBuilder().user(username).password(password).build(), -1);
         if (result.isActive()) {
             return ConnectionTestResult.success(type);
         } else {

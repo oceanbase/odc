@@ -86,7 +86,7 @@ public class OBOracleExtensionTest extends BaseExtensionPointTest {
 
     private Properties getTestConnectionProperties() {
         return ConnectionPropertiesBuilder.getBuilder().user(getUsername(configuration))
-                .passWord(configuration.getPassword())
+                .password(configuration.getPassword())
                 .build();
     }
 

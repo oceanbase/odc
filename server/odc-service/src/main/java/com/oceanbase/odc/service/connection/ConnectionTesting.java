@@ -155,10 +155,8 @@ public class ConnectionTesting {
             Properties testConnectionProperties = getTestConnectionProperties(config);
 
             TestResult result = connectionExtensionPoint.test(
-                    connectionExtensionPoint.generateJdbcUrl(
-                            jdbcUrlProperties),
-                    testConnectionProperties,
-                    queryTimeoutSeconds);
+                    connectionExtensionPoint.generateJdbcUrl(jdbcUrlProperties),
+                    testConnectionProperties, queryTimeoutSeconds);
             log.info("Test connection completed, result: {}", result);
             if (result.getErrorCode() != null) {
                 if (type != null && !type.isCloud()
@@ -174,8 +172,7 @@ public class ConnectionTesting {
             }
             ConnectType connectType = ConnectTypeUtil.getConnectType(
                     connectionExtensionPoint.generateJdbcUrl(jdbcUrlProperties),
-                    testConnectionProperties,
-                    queryTimeoutSeconds);
+                    testConnectionProperties, queryTimeoutSeconds);
             ConnectionTestResult testResult = new ConnectionTestResult(result, connectType);
             if (type != null && connectType != null && !Objects.equals(connectType, type)) {
                 return ConnectionTestResult.connectTypeMismatch(connectType);
@@ -201,7 +198,7 @@ public class ConnectionTesting {
 
     private Properties getTestConnectionProperties(ConnectionConfig config) {
         return ConnectionPropertiesBuilder.getBuilder().user(OBConsoleDataSourceFactory.getUsername(config))
-                .passWord(OBConsoleDataSourceFactory.getPassword(config)).userRole(config.getUserRole())
+                .password(OBConsoleDataSourceFactory.getPassword(config)).userRole(config.getUserRole())
                 .build();
     }
 

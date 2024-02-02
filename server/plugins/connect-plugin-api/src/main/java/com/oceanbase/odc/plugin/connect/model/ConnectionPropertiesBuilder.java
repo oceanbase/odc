@@ -45,7 +45,7 @@ public class ConnectionPropertiesBuilder {
         return this;
     }
 
-    public ConnectionPropertiesBuilder passWord(String passWord) {
+    public ConnectionPropertiesBuilder password(String passWord) {
         if (passWord != null) {
             properties.put(PASSWORD, passWord);
         } else {

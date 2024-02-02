@@ -28,11 +28,14 @@ import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.exception.BadRequestException;
 import com.oceanbase.odc.plugin.connect.api.InformationExtensionPoint;
 
+import lombok.extern.slf4j.Slf4j;
+
 /**
  * @author jingtian
  * @date 2023/11/8
  * @since ODC_release_4.2.4
  */
+@Slf4j
 @Extension
 public class OracleInformationExtension implements InformationExtensionPoint {
     private final String VERSION_REGEX = "\\b(\\d+(?:\\.\\d+)*)\\b";
@@ -58,8 +61,8 @@ public class OracleInformationExtension implements InformationExtensionPoint {
                 }
             }
         } catch (Exception e) {
-            throw new BadRequestException(ErrorCodes.QueryDBVersionFailed,
-                    new Object[] {e.getMessage()}, e.getMessage());
+            log.warn("Failed to get oracle version, will return a default version", e);
+            return "11.2.0.1.0";
         }
     }
 }
