@@ -43,5 +43,10 @@ public class QuerySensitiveColumnReq {
      */
     @NotNull
     private Long dataSourceId;
+    /**
+     * The ID of organization which the SQL query is executed in.
+     */
+    @NotNull
+    private Long organizationId;
 
 }

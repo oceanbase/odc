@@ -146,7 +146,7 @@ public class DatabaseChangeTask extends BaseTask<FlowTaskResult> {
     protected void doInit(JobContext context) {
         taskId = getJobContext().getJobIdentity().getId();
         log.info("Initiating database change task, taskId={}", taskId);
-        this.parameters = JsonUtils.fromJson(getJobParameters().get(JobParametersKeyConstants.TASK_PARAMETER_JSON_KEY),
+        this.parameters = JobUtils.fromJson(getJobParameters().get(JobParametersKeyConstants.TASK_PARAMETER_JSON_KEY),
                 DatabaseChangeTaskParameters.class);
         this.databaseChangeParameters =
                 JsonUtils.fromJson(this.parameters.getParameterJson(), DatabaseChangeParameters.class);
@@ -232,7 +232,7 @@ public class DatabaseChangeTask extends BaseTask<FlowTaskResult> {
                         if (GeneralSqlType.DQL == sqlType) {
                             containQuery = true;
                             if (this.parameters.isNeedDataMasking()) {
-                                doDataMasking(executeResult);
+                                tryDataMasking(executeResult);
                             }
                         }
                         queryResultSetBuffer.add(executeResult);
@@ -480,51 +480,35 @@ public class DatabaseChangeTask extends BaseTask<FlowTaskResult> {
         }
     }
 
-    private void doDataMasking(SqlExecuteResult result) {
-        List<Set<DBColumn>> tableRelatedDBColumns = extractDBColumnsFromSql(result.getExecuteSql(), connectionSession);
-        if (!DataMaskingUtil.isDBColumnExists(tableRelatedDBColumns)) {
-            return;
-        }
-        QuerySensitiveColumnReq req = new QuerySensitiveColumnReq();
-        req.setDataSourceId(this.parameters.getConnectionConfig().getId());
-        req.setTableRelatedDBColumns(tableRelatedDBColumns);
-        QuerySensitiveColumnResp resp = querySensitiveColumn(req);
-        if (resp.isContainsSensitiveColumn()) {
-            List<Algorithm> algorithms = new ArrayList<>();
-            for (MaskingAlgorithm a : resp.getMaskingAlgorithms()) {
-                if (Objects.nonNull(a)) {
-                    Algorithm algorithmMasker = AlgorithmFactory.createAlgorithm(
-                            AlgorithmEnum.valueOf(a.getType().name()), MaskingAlgorithmUtil.toAlgorithmParameters(a));
-                    algorithms.add(algorithmMasker);
-                } else {
-                    algorithms.add(null);
-                }
+    private void tryDataMasking(@NonNull SqlExecuteResult result) {
+        try {
+            List<Set<DBColumn>> tableRelatedDBColumns =
+                    extractDBColumnsFromSql(result.getExecuteSql(), connectionSession);
+            if (!DataMaskingUtil.isDBColumnExists(tableRelatedDBColumns)) {
+                return;
             }
-            maskRowsUsingAlgorithms(result, algorithms);
-        }
-    }
-
-    private QuerySensitiveColumnResp querySensitiveColumn(@NonNull QuerySensitiveColumnReq req) {
-        List<String> hostUrls = getJobContext().getHostUrls();
-        if (CollectionUtils.isEmpty(hostUrls)) {
-            log.warn("host url is empty");
-            return new QuerySensitiveColumnResp();
-        }
-        for (String host : hostUrls) {
-            try {
-                String hostWithUrl = host + JobUrlConstants.TASK_QUERY_SENSITIVE_COLUMN;
-                SuccessResponse<QuerySensitiveColumnResp> response = HttpUtil.request(hostWithUrl,
-                        JsonUtils.toJson(req), new TypeReference<SuccessResponse<QuerySensitiveColumnResp>>() {});
-                if (response != null && response.getSuccessful()) {
-                    log.info("Query sensitive column successfully, host is {}, response is {}.", host,
-                            JsonUtils.toJson(response));
-                    return response.getData();
+            QuerySensitiveColumnReq req = new QuerySensitiveColumnReq();
+            req.setDataSourceId(this.parameters.getConnectionConfig().getId());
+            req.setOrganizationId(this.parameters.getConnectionConfig().getOrganizationId());
+            req.setTableRelatedDBColumns(tableRelatedDBColumns);
+            QuerySensitiveColumnResp resp = querySensitiveColumn(req);
+            if (resp.isContainsSensitiveColumn()) {
+                List<Algorithm> algorithms = new ArrayList<>();
+                for (MaskingAlgorithm a : resp.getMaskingAlgorithms()) {
+                    if (Objects.nonNull(a)) {
+                        Algorithm algorithmMasker = AlgorithmFactory.createAlgorithm(
+                                AlgorithmEnum.valueOf(a.getType().name()),
+                                MaskingAlgorithmUtil.toAlgorithmParameters(a));
+                        algorithms.add(algorithmMasker);
+                    } else {
+                        algorithms.add(null);
+                    }
                 }
-            } catch (Exception e) {
-                log.warn("Query sensitive column failed, host is {}, details: ", host, e);
+                maskRowsUsingAlgorithms(result, algorithms);
             }
+        } catch (Exception e) {
+            log.warn("Data masking failed, details: ", e);
         }
-        return new QuerySensitiveColumnResp();
     }
 
     private List<Set<DBColumn>> extractDBColumnsFromSql(@NonNull String sql, @NonNull ConnectionSession session) {
@@ -548,13 +532,34 @@ public class DatabaseChangeTask extends BaseTask<FlowTaskResult> {
                     new OBColumnExtractor(dialectType, ConnectionSessionUtil.getCurrentSchema(session), accessor);
             table = extractor.extract(stmt);
         } catch (Exception e) {
-            log.warn("Extract sensitive columns failed, stmt={}", stmt, e);
+            log.warn("Extract columns failed, stmt={}", stmt, e);
             return Collections.emptyList();
         }
         if (Objects.isNull(table) || table.getColumnList().isEmpty()) {
             return Collections.emptyList();
         }
         return table.getTableRelatedDBColumns();
+    }
+
+    private QuerySensitiveColumnResp querySensitiveColumn(@NonNull QuerySensitiveColumnReq req) {
+        List<String> hostUrls = getJobContext().getHostUrls();
+        if (CollectionUtils.isEmpty(hostUrls)) {
+            log.warn("ODC server host url is empty");
+            return new QuerySensitiveColumnResp();
+        }
+        for (String host : hostUrls) {
+            try {
+                String hostWithUrl = host + JobUrlConstants.TASK_QUERY_SENSITIVE_COLUMN;
+                SuccessResponse<QuerySensitiveColumnResp> response = HttpUtil.request(hostWithUrl,
+                        JsonUtils.toJson(req), new TypeReference<SuccessResponse<QuerySensitiveColumnResp>>() {});
+                if (response != null && response.getSuccessful()) {
+                    return response.getData();
+                }
+            } catch (Exception e) {
+                log.warn("Query sensitive column failed, host is {}, details: ", host, e);
+            }
+        }
+        return new QuerySensitiveColumnResp();
     }
 
     public void maskRowsUsingAlgorithms(@NotNull SqlExecuteResult result, @NotEmpty List<Algorithm> algorithms) {

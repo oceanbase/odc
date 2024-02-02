@@ -59,6 +59,7 @@ import com.oceanbase.odc.service.datasecurity.model.MaskingAlgorithm;
 import com.oceanbase.odc.service.datasecurity.model.SensitiveColumn;
 import com.oceanbase.odc.service.datasecurity.util.DataMaskingUtil;
 import com.oceanbase.odc.service.datasecurity.util.MaskingAlgorithmUtil;
+import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.session.model.SqlExecuteResult;
 import com.oceanbase.odc.service.task.runtime.QuerySensitiveColumnReq;
 import com.oceanbase.odc.service.task.runtime.QuerySensitiveColumnResp;
@@ -85,6 +86,9 @@ public class DataMaskingService {
     @Autowired
     private DataMaskingProperties maskingProperties;
 
+    @Autowired
+    private AuthenticationFacade authenticationFacade;
+
     @SkipAuthorize("odc internal usages")
     public QuerySensitiveColumnResp querySensitiveColumn(@NotNull @Valid QuerySensitiveColumnReq req) {
         List<Set<SensitiveColumn>> sensitiveColumns =
@@ -92,7 +96,7 @@ public class DataMaskingService {
         QuerySensitiveColumnResp resp = new QuerySensitiveColumnResp();
         if (DataMaskingUtil.isSensitiveColumnExists(sensitiveColumns)) {
             resp.setContainsSensitiveColumn(true);
-            resp.setMaskingAlgorithms(getResultSetMaskingAlgorithms(sensitiveColumns));
+            resp.setMaskingAlgorithms(getResultSetMaskingAlgorithms(sensitiveColumns, req.getOrganizationId()));
         }
         return resp;
     }
@@ -131,10 +135,11 @@ public class DataMaskingService {
     }
 
     @SkipAuthorize("odc internal usages")
-    public List<MaskingAlgorithm> getResultSetMaskingAlgorithms(@NonNull List<Set<SensitiveColumn>> columnsList) {
+    public List<MaskingAlgorithm> getResultSetMaskingAlgorithms(@NonNull List<Set<SensitiveColumn>> columnsList,
+            @NonNull Long organizationId) {
         List<MaskingAlgorithm> result = new ArrayList<>();
-        Long defaultAlgorithmId = algorithmService.getSystemDefaultAlgorithmId();
-        Map<Long, MaskingAlgorithm> id2Algorithm = getId2MaskingAlgorithm();
+        Long defaultAlgorithmId = algorithmService.getDefaultAlgorithmIdByOrganizationId(organizationId);
+        Map<Long, MaskingAlgorithm> id2Algorithm = getId2MaskingAlgorithmByOrganizationId(organizationId);
         for (Set<SensitiveColumn> columns : columnsList) {
             if (columns.isEmpty()) {
                 result.add(null);
@@ -152,7 +157,8 @@ public class DataMaskingService {
     @SkipAuthorize("odc internal usages")
     public List<Algorithm> getResultSetMaskingAlgorithmMaskers(@NonNull List<Set<SensitiveColumn>> columnsList) {
         List<Algorithm> results = new ArrayList<>();
-        List<MaskingAlgorithm> maskingAlgorithms = getResultSetMaskingAlgorithms(columnsList);
+        List<MaskingAlgorithm> maskingAlgorithms =
+                getResultSetMaskingAlgorithms(columnsList, authenticationFacade.currentOrganizationId());
         for (MaskingAlgorithm a : maskingAlgorithms) {
             if (Objects.nonNull(a)) {
                 Algorithm algorithmMasker = AlgorithmFactory.createAlgorithm(AlgorithmEnum.valueOf(a.getType().name()),
@@ -224,7 +230,8 @@ public class DataMaskingService {
         Map<SensitiveColumn, MaskingAlgorithm> result = new HashMap<>();
         List<SensitiveColumn> columns =
                 columnService.listByDatabaseAndTable(Collections.singleton(databaseId), tableNames);
-        Map<Long, MaskingAlgorithm> id2Algorithm = getId2MaskingAlgorithm();
+        Map<Long, MaskingAlgorithm> id2Algorithm =
+                getId2MaskingAlgorithmByOrganizationId(authenticationFacade.currentOrganizationId());
         columns.forEach(column -> result.put(column, id2Algorithm.get(column.getMaskingAlgorithmId())));
         return result;
     }
@@ -235,8 +242,8 @@ public class DataMaskingService {
                 && columnService.existsInCurrentOrganization();
     }
 
-    private Map<Long, MaskingAlgorithm> getId2MaskingAlgorithm() {
-        List<MaskingAlgorithm> algorithms = algorithmService.getMaskingAlgorithms();
+    private Map<Long, MaskingAlgorithm> getId2MaskingAlgorithmByOrganizationId(@NonNull Long organizationId) {
+        List<MaskingAlgorithm> algorithms = algorithmService.getMaskingAlgorithmsByOrganizationId(organizationId);
         if (CollectionUtils.isEmpty(algorithms)) {
             return new HashMap<>();
         }
