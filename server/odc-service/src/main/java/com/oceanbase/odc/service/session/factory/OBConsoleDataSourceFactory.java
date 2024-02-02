@@ -40,7 +40,8 @@ import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.shared.constant.OdcConstants;
 import com.oceanbase.odc.plugin.connect.api.ConnectionExtensionPoint;
 import com.oceanbase.odc.plugin.connect.model.ConnectionPropertiesBuilder;
-import com.oceanbase.odc.plugin.connect.model.UserRole;
+import com.oceanbase.odc.plugin.connect.model.JdbcUrlProperty;
+import com.oceanbase.odc.plugin.connect.model.oracle.UserRole;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig.SSLConfig;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig.SSLFileEntry;
@@ -101,17 +102,12 @@ public class OBConsoleDataSourceFactory implements CloneableDataSourceFactory {
     }
 
     public String getJdbcUrl() {
-        return connectionExtensionPoint.generateJdbcUrl(getJdbcUrlProperties(), this.parameters);
+        return connectionExtensionPoint.generateJdbcUrl(getJdbcUrlProperties());
     }
 
-    private Properties getJdbcUrlProperties() {
-        return new ConnectionPropertiesBuilder()
-                .host(this.host)
-                .port(this.port)
-                .defaultSchema(this.defaultSchema)
-                .sid(this.sid)
-                .serviceName(this.serviceName)
-                .build();
+    private JdbcUrlProperty getJdbcUrlProperties() {
+        return new JdbcUrlProperty(this.host, this.port, this.defaultSchema, this.parameters, this.sid,
+                this.serviceName);
     }
 
     public static String getUsername(@NonNull ConnectionConfig connectionConfig) {
@@ -207,7 +203,6 @@ public class OBConsoleDataSourceFactory implements CloneableDataSourceFactory {
         properties.setProperty("allowUrlInLocalInfile", "false");
         properties.setProperty("allowLoadLocalInfileInPath", "");
         properties.setProperty("autoDeserialize", "false");
-        dataSource.setConnectionProperties(properties);
         if (autoCommit != null) {
             dataSource.setAutoCommit(autoCommit);
         }

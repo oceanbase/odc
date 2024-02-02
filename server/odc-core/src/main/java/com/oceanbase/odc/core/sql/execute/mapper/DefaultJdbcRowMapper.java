@@ -50,7 +50,7 @@ public class DefaultJdbcRowMapper extends BaseDialectBasedRowMapper {
             mapperList.add(new MySQLTimestampMapper());
             mapperList.add(new MySQLGeometryMapper());
             mapperList.add(new MySQLNumberMapper());
-        } else if (dialectType.isOracle()) {
+        } else if (dialectType == DialectType.OB_ORACLE) {
             mapperList.add(new OracleNlsFormatDateMapper(
                     ConnectionSessionUtil.getNlsDateFormat(session)));
             mapperList.add(new OracleNlsFormatTimestampTZMapper(
@@ -61,6 +61,12 @@ public class DefaultJdbcRowMapper extends BaseDialectBasedRowMapper {
             mapperList.add(new OracleIntervalMapper());
             mapperList.add(new OracleNlsFormatTimestampMapper(
                     ConnectionSessionUtil.getNlsTimestampFormat(session)));
+            mapperList.add(new OracleNumberMapper());
+            mapperList.add(new OracleBinaryNumberMapper());
+        } else if (dialectType == DialectType.ORACLE) {
+            mapperList.add(new OracleNlsFormatDateMapper(
+                    ConnectionSessionUtil.getNlsDateFormat(session)));
+            mapperList.add(new OracleIntervalMapper());
             mapperList.add(new OracleNumberMapper());
             mapperList.add(new OracleBinaryNumberMapper());
         }

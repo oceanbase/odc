@@ -48,7 +48,7 @@ public class RollBackPlanJdbcRowMapper extends BaseDialectBasedRowMapper {
             mapperList.add(new MySQLYearMapper());
             mapperList.add(new MySQLTimestampMapper());
             mapperList.add(new MySQLGeometryMapper());
-        } else if (dialectType.isOracle()) {
+        } else if (dialectType == DialectType.OB_ORACLE) {
             mapperList.add(new OracleGeneralDateMapper());
             mapperList.add(new OracleGeneralTimestampTZMapper());
             mapperList.add(new OracleGeneralTimestampLTZMapper(timeZone));

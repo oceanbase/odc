@@ -13,12 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.plugin.connect.model;
+package com.oceanbase.odc.plugin.connect.model.oracle;
 
 /**
  * @author jingtian
  * @date 2023/11/13
- * @since
  */
 public enum UserRole {
     NORMAL("normal"),

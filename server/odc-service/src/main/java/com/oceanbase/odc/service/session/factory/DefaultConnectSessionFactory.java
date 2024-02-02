@@ -98,7 +98,7 @@ public class DefaultConnectSessionFactory implements ConnectionSessionFactory {
         try {
             JdbcUrlParser urlParser = ConnectionPluginUtil
                     .getConnectionExtension(connectionConfig.getDialectType())
-                    .getConnectionInfo(dataSourceFactory.getJdbcUrl(), connectionConfig.getUsername());
+                    .getConnectionInfo(dataSourceFactory.getJdbcUrl(), dataSourceFactory.getUsername());
             String connectSchema = urlParser.getSchema();
             if (StringUtils.isNotBlank(connectSchema)) {
                 connectSchema = ConnectionSessionUtil.getUserOrSchemaString(connectSchema, session.getDialectType());

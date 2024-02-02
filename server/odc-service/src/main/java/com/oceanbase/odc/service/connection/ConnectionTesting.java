@@ -40,6 +40,7 @@ import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.plugin.connect.api.ConnectionExtensionPoint;
 import com.oceanbase.odc.plugin.connect.api.TestResult;
 import com.oceanbase.odc.plugin.connect.model.ConnectionPropertiesBuilder;
+import com.oceanbase.odc.plugin.connect.model.JdbcUrlProperty;
 import com.oceanbase.odc.service.connection.model.ConnectProperties;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.connection.model.ConnectionTestResult;
@@ -150,13 +151,12 @@ public class ConnectionTesting {
             ConnectionExtensionPoint connectionExtensionPoint = ConnectionPluginUtil.getConnectionExtension(
                     (type != null) ? type.getDialectType() : DialectType.OB_MYSQL);
 
-            Properties jdbcUrlProperties = getJdbcUrlProperties(config, schema);
+            JdbcUrlProperty jdbcUrlProperties = getJdbcUrlProperties(config, schema);
             Properties testConnectionProperties = getTestConnectionProperties(config);
 
             TestResult result = connectionExtensionPoint.test(
                     connectionExtensionPoint.generateJdbcUrl(
-                            jdbcUrlProperties,
-                            OBConsoleDataSourceFactory.getJdbcParams(config)),
+                            jdbcUrlProperties),
                     testConnectionProperties,
                     queryTimeoutSeconds);
             log.info("Test connection completed, result: {}", result);
@@ -172,23 +172,14 @@ public class ConnectionTesting {
                 }
                 return new ConnectionTestResult(result, null);
             }
-            ConnectType connectType;
-            if (type.isOceanBase()) {
-                // only check connect type when connect type is oceanbase
-                connectType = ConnectTypeUtil.getConnectType(
-                        connectionExtensionPoint.generateJdbcUrl(
-                                jdbcUrlProperties,
-                                OBConsoleDataSourceFactory.getJdbcParams(config)),
-                        testConnectionProperties,
-                        queryTimeoutSeconds);
-                if (type != null && connectType != null && !Objects.equals(connectType, type)) {
-                    return ConnectionTestResult.connectTypeMismatch(connectType);
-                }
-            } else {
-                connectType = type;
-            }
-
+            ConnectType connectType = ConnectTypeUtil.getConnectType(
+                    connectionExtensionPoint.generateJdbcUrl(jdbcUrlProperties),
+                    testConnectionProperties,
+                    queryTimeoutSeconds);
             ConnectionTestResult testResult = new ConnectionTestResult(result, connectType);
+            if (type != null && connectType != null && !Objects.equals(connectType, type)) {
+                return ConnectionTestResult.connectTypeMismatch(connectType);
+            }
             try {
                 testInitScript(connectionExtensionPoint, schema, config);
             } catch (Exception e) {
@@ -202,18 +193,14 @@ public class ConnectionTesting {
         }
     }
 
-    private Properties getJdbcUrlProperties(ConnectionConfig config, String schema) {
-        return new ConnectionPropertiesBuilder()
-                .host(config.getHost())
-                .port(config.getPort())
-                .defaultSchema(schema)
-                .sid(config.getSid())
-                .serviceName(config.getServiceName())
-                .build();
+    private JdbcUrlProperty getJdbcUrlProperties(ConnectionConfig config, String schema) {
+        return new JdbcUrlProperty(config.getHost(), config.getPort(), schema,
+                OBConsoleDataSourceFactory.getJdbcParams(config), config.getSid(),
+                config.getServiceName());
     }
 
     private Properties getTestConnectionProperties(ConnectionConfig config) {
-        return new ConnectionPropertiesBuilder().user(OBConsoleDataSourceFactory.getUsername(config))
+        return ConnectionPropertiesBuilder.getBuilder().user(OBConsoleDataSourceFactory.getUsername(config))
                 .passWord(OBConsoleDataSourceFactory.getPassword(config)).userRole(config.getUserRole())
                 .build();
     }
@@ -257,8 +244,7 @@ public class ConnectionTesting {
             return;
         }
         String jdbcUrl =
-                extensionPoint.generateJdbcUrl(getJdbcUrlProperties(config, schema),
-                        OBConsoleDataSourceFactory.getJdbcParams(config));
+                extensionPoint.generateJdbcUrl(getJdbcUrlProperties(config, schema));
 
         Properties properties = getTestConnectionProperties(config);
         properties.setProperty("socketTimeout", ConnectTypeUtil.REACHABLE_TIMEOUT_MILLIS + "");

@@ -17,62 +17,25 @@ package com.oceanbase.odc.plugin.connect.model;
 
 import java.util.Properties;
 
+import com.oceanbase.odc.plugin.connect.model.oracle.UserRole;
+
 /**
  * @author jingtian
  * @date 2024/1/31
  */
 public class ConnectionPropertiesBuilder {
-    public static final String HOST = "host";
-    public static final String PORT = "port";
-    public static final String DEFAULT_SCHEMA = "defaultSchema";
     public static final String USER = "user";
     public static final String PASSWORD = "password";
-
     /**
-     * For oracle only
-     */
-    public static final String SID = "sid";
-    public static final String SERVICE_NAME = "serviceName";
-    /**
-     * Specifies the administrative user for authentication in oracle JDBC, enumeration
-     * values：sysdba、sysoper、normal.
+     * Specifies the administrative user for authentication in oracle JDBC {@link UserRole}
      */
     public static final String USER_ROLE = "internal_logon";
     private final Properties properties = new Properties();
 
-    public ConnectionPropertiesBuilder host(String host) {
-        if (host != null) {
-            properties.put(HOST, host);
-        }
-        return this;
-    }
+    private ConnectionPropertiesBuilder() {}
 
-    public ConnectionPropertiesBuilder port(Integer port) {
-        if (port != null) {
-            properties.put(PORT, port);
-        }
-        return this;
-    }
-
-    public ConnectionPropertiesBuilder defaultSchema(String schema) {
-        if (schema != null) {
-            properties.put(DEFAULT_SCHEMA, schema);
-        }
-        return this;
-    }
-
-    public ConnectionPropertiesBuilder sid(String sid) {
-        if (sid != null) {
-            properties.put(SID, sid);
-        }
-        return this;
-    }
-
-    public ConnectionPropertiesBuilder serviceName(String serviceName) {
-        if (serviceName != null) {
-            properties.put(SERVICE_NAME, serviceName);
-        }
-        return this;
+    public static ConnectionPropertiesBuilder getBuilder() {
+        return new ConnectionPropertiesBuilder();
     }
 
     public ConnectionPropertiesBuilder user(String userName) {

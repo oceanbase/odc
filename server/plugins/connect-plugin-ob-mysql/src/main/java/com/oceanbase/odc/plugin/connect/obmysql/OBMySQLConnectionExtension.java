@@ -41,7 +41,7 @@ import com.oceanbase.odc.core.shared.jdbc.HostAddress;
 import com.oceanbase.odc.core.shared.jdbc.JdbcUrlParser;
 import com.oceanbase.odc.plugin.connect.api.ConnectionExtensionPoint;
 import com.oceanbase.odc.plugin.connect.api.TestResult;
-import com.oceanbase.odc.plugin.connect.model.ConnectionPropertiesBuilder;
+import com.oceanbase.odc.plugin.connect.model.JdbcUrlProperty;
 import com.oceanbase.odc.plugin.connect.obmysql.initializer.EnableTraceInitializer;
 
 import lombok.NonNull;
@@ -59,19 +59,18 @@ public class OBMySQLConnectionExtension implements ConnectionExtensionPoint {
     private static final Integer REACHABLE_TIMEOUT_MILLIS = 10000;
 
     @Override
-    public String generateJdbcUrl(@NonNull Properties properties, Map<String, String> jdbcParameters) {
-        String host = properties.getProperty(ConnectionPropertiesBuilder.HOST);
+    public String generateJdbcUrl(@NonNull JdbcUrlProperty properties) {
+        String host = properties.getHost();
         Validate.notEmpty(host, "host can not be empty");
-        Object portValue = properties.get(ConnectionPropertiesBuilder.PORT);
-        Integer port = (portValue instanceof Integer) ? (Integer) portValue : null;
+        Integer port = properties.getPort();
         Validate.notNull(port, "port can not be null");
-        String defaultSchema = properties.getProperty(ConnectionPropertiesBuilder.DEFAULT_SCHEMA);
+        String defaultSchema = properties.getDefaultSchema();
 
         StringBuilder jdbcUrl = new StringBuilder(String.format(getJdbcUrlPrefix(), host, port));
         if (StringUtils.isNotBlank(defaultSchema)) {
             jdbcUrl.append("/").append(defaultSchema);
         }
-        String parameters = getJdbcUrlParameters(jdbcParameters);
+        String parameters = getJdbcUrlParameters(properties.getJdbcParameters());
         if (StringUtils.isNotBlank(parameters)) {
             jdbcUrl.append("?").append(parameters);
         }

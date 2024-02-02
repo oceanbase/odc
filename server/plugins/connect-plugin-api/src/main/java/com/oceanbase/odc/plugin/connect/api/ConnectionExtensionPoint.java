@@ -17,7 +17,6 @@ package com.oceanbase.odc.plugin.connect.api;
 
 import java.sql.SQLException;
 import java.util.List;
-import java.util.Map;
 import java.util.Properties;
 
 import org.pf4j.ExtensionPoint;
@@ -25,6 +24,7 @@ import org.pf4j.ExtensionPoint;
 import com.oceanbase.odc.core.datasource.ConnectionInitializer;
 import com.oceanbase.odc.core.shared.jdbc.JdbcUrlParser;
 import com.oceanbase.odc.plugin.connect.model.ConnectionPropertiesBuilder;
+import com.oceanbase.odc.plugin.connect.model.JdbcUrlProperty;
 
 import lombok.NonNull;
 
@@ -37,12 +37,10 @@ public interface ConnectionExtensionPoint extends ExtensionPoint {
 
     /**
      * @param properties Properties required by jdbcURL, such as HOST, PORT and DEFAULT_SCHEMA, see
-     *        {@link ConnectionPropertiesBuilder}
-     * @param jdbcParameters jdbc parameters.
-     *
+     *        {@link JdbcUrlProperty}
      * @return jdbcURL
      */
-    String generateJdbcUrl(Properties properties, Map<String, String> jdbcParameters);
+    String generateJdbcUrl(JdbcUrlProperty properties);
 
     String getDriverClassName();
 

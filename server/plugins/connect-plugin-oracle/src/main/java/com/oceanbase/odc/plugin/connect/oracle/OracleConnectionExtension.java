@@ -36,7 +36,7 @@ import com.oceanbase.odc.core.shared.constant.OdcConstants;
 import com.oceanbase.odc.core.shared.exception.VerifyException;
 import com.oceanbase.odc.core.shared.jdbc.JdbcUrlParser;
 import com.oceanbase.odc.plugin.connect.api.TestResult;
-import com.oceanbase.odc.plugin.connect.model.ConnectionPropertiesBuilder;
+import com.oceanbase.odc.plugin.connect.model.JdbcUrlProperty;
 import com.oceanbase.odc.plugin.connect.obmysql.OBMySQLConnectionExtension;
 
 import lombok.NonNull;
@@ -51,16 +51,15 @@ import lombok.extern.slf4j.Slf4j;
 @Extension
 public class OracleConnectionExtension extends OBMySQLConnectionExtension {
     @Override
-    public String generateJdbcUrl(@NonNull Properties properties, Map<String, String> jdbcParameters) {
-        String host = properties.getProperty(ConnectionPropertiesBuilder.HOST);
-        Object portValue = properties.get(ConnectionPropertiesBuilder.PORT);
-        Integer port = (portValue instanceof Integer) ? (Integer) portValue : null;
+    public String generateJdbcUrl(@NonNull JdbcUrlProperty properties) {
+        String host = properties.getHost();
+        Integer port = properties.getPort();
         Validate.notEmpty(host, "host can not be empty");
         Validate.notNull(port, "port can not be null");
 
         StringBuilder jdbcUrl = new StringBuilder();
-        String sid = properties.getProperty(ConnectionPropertiesBuilder.SID);
-        String serviceName = properties.getProperty(ConnectionPropertiesBuilder.SERVICE_NAME);
+        String sid = properties.getSid();
+        String serviceName = properties.getServiceName();
         if (Objects.nonNull(sid)) {
             jdbcUrl.append("jdbc:oracle:thin:@").append(host).append(":").append(port).append(":").append(sid);
         } else if (Objects.nonNull(serviceName)) {
@@ -69,7 +68,7 @@ public class OracleConnectionExtension extends OBMySQLConnectionExtension {
         } else {
             throw new VerifyException("sid or service name must be set");
         }
-        String parameters = getJdbcUrlParameters(jdbcParameters);
+        String parameters = getJdbcUrlParameters(properties.getJdbcParameters());
         if (StringUtils.isNotBlank(parameters)) {
             jdbcUrl.append("?").append(parameters);
         }

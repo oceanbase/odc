@@ -19,11 +19,10 @@ package com.oceanbase.odc.plugin.task.obmysql.datatransfer.util;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Properties;
 
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.datasource.SingleConnectionDataSource;
-import com.oceanbase.odc.plugin.connect.model.ConnectionPropertiesBuilder;
+import com.oceanbase.odc.plugin.connect.model.JdbcUrlProperty;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.ConnectionInfo;
 
 public class ConnectionUtil {
@@ -46,12 +45,8 @@ public class ConnectionUtil {
             jdbcUrlParams.put("socksProxyPort", connectionInfo.getProxyPort() + "");
         }
         return PluginUtil.getConnectionExtension(connectionInfo)
-                .generateJdbcUrl(getJdbcUrlProperties(connectionInfo, schema), jdbcUrlParams);
-    }
-
-    private static Properties getJdbcUrlProperties(ConnectionInfo connectionInfo, String schema) {
-        return new ConnectionPropertiesBuilder().host(connectionInfo.getHost()).port(connectionInfo.getPort())
-                .defaultSchema(schema).build();
+                .generateJdbcUrl(
+                        new JdbcUrlProperty(connectionInfo.getHost(), connectionInfo.getPort(), schema, jdbcUrlParams));
     }
 
 }

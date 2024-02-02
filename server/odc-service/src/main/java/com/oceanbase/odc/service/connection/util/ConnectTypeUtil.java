@@ -101,6 +101,9 @@ public class ConnectTypeUtil {
             }
             String str = resultSet.getString("VALUE").toUpperCase();
             return DialectType.valueOf(StringUtils.startsWithIgnoreCase(str, "ob") ? str : "OB_" + str);
+        } catch (Exception e) {
+            // May not be oceanbase data source
+            return null;
         }
     }
 

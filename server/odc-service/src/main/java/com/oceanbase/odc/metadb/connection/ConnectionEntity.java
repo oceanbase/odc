@@ -36,7 +36,7 @@ import com.oceanbase.odc.core.shared.constant.Cipher;
 import com.oceanbase.odc.core.shared.constant.ConnectType;
 import com.oceanbase.odc.core.shared.constant.ConnectionVisibleScope;
 import com.oceanbase.odc.core.shared.constant.DialectType;
-import com.oceanbase.odc.plugin.connect.model.UserRole;
+import com.oceanbase.odc.plugin.connect.model.oracle.UserRole;
 
 import lombok.Data;
 import lombok.ToString;

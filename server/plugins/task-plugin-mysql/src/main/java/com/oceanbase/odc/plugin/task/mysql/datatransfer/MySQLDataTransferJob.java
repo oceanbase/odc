@@ -29,7 +29,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Properties;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -58,7 +57,7 @@ import com.oceanbase.odc.common.util.tableformat.CellStyle.NullStyle;
 import com.oceanbase.odc.common.util.tableformat.Table;
 import com.oceanbase.odc.core.shared.constant.OdcConstants;
 import com.oceanbase.odc.core.shared.constant.TaskStatus;
-import com.oceanbase.odc.plugin.connect.model.ConnectionPropertiesBuilder;
+import com.oceanbase.odc.plugin.connect.model.JdbcUrlProperty;
 import com.oceanbase.odc.plugin.connect.mysql.MySQLConnectionExtension;
 import com.oceanbase.odc.plugin.task.api.datatransfer.DataTransferJob;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.ConnectionInfo;
@@ -175,17 +174,13 @@ public class MySQLDataTransferJob implements DataTransferJob {
         }
         HikariDataSource dataSource = new HikariDataSource();
         dataSource.setJdbcUrl(
-                new MySQLConnectionExtension().generateJdbcUrl(getJdbcUrlProperties(connectionInfo), jdbcUrlParams));
+                new MySQLConnectionExtension().generateJdbcUrl(new JdbcUrlProperty(connectionInfo.getHost(),
+                        connectionInfo.getPort(), connectionInfo.getSchema(), jdbcUrlParams)));
         dataSource.setUsername(connectionInfo.getUserNameForConnect());
         dataSource.setPassword(connectionInfo.getPassword());
         dataSource.setDriverClassName(OdcConstants.MYSQL_DRIVER_CLASS_NAME);
         dataSource.setMaximumPoolSize(3);
         return dataSource;
-    }
-
-    private Properties getJdbcUrlProperties(ConnectionInfo connectionInfo) {
-        return new ConnectionPropertiesBuilder().host(connectionInfo.getHost()).port(connectionInfo.getPort())
-                .defaultSchema(connectionInfo.getSchema()).build();
     }
 
     private void initTransferJobs(DataSource dataSource, String jdbcUrl) {
