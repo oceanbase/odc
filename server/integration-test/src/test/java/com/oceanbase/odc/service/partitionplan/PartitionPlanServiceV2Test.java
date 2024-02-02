@@ -60,6 +60,7 @@ public class PartitionPlanServiceV2Test extends ServiceTestEnv {
 
     public static final String MYSQL_REAL_RANGE_TABLE_NAME = "range_svc_parti_tbl";
     public static final String MYSQL_OVERLAP_RANGE_TABLE_NAME = "range_svc_parti_overlap_tbl";
+    public static final String ORACLE_RANGE_TABLE_NAME = "RANGE_SVC_PARTI_TBL";
     @Autowired
     private PartitionPlanServiceV2 partitionPlanService;
 
@@ -68,6 +69,9 @@ public class PartitionPlanServiceV2Test extends ServiceTestEnv {
         JdbcTemplate mysql = new JdbcTemplate(TestDBConfigurations.getInstance()
                 .getTestOBMysqlConfiguration().getDataSource());
         getOBMysqlDdlContent().forEach(mysql::execute);
+        JdbcTemplate oracle = new JdbcTemplate(TestDBConfigurations.getInstance()
+                .getTestOBOracleConfiguration().getDataSource());
+        getOBOracleDdlContent().forEach(oracle::execute);
     }
 
     @AfterClass
@@ -76,6 +80,9 @@ public class PartitionPlanServiceV2Test extends ServiceTestEnv {
                 .getTestOBMysqlConfiguration().getDataSource());
         mysql.execute("DROP TABLE " + MYSQL_REAL_RANGE_TABLE_NAME);
         mysql.execute("DROP TABLE " + MYSQL_OVERLAP_RANGE_TABLE_NAME);
+        JdbcTemplate oracle = new JdbcTemplate(TestDBConfigurations.getInstance()
+                .getTestOBOracleConfiguration().getDataSource());
+        oracle.execute("DROP TABLE " + ORACLE_RANGE_TABLE_NAME);
     }
 
     @Test
@@ -166,6 +173,45 @@ public class PartitionPlanServiceV2Test extends ServiceTestEnv {
     }
 
     @Test
+    public void generatePartitionDdl_oracleBothCreateAndDropWithOverlap_generateSucceed() throws Exception {
+        PartitionPlanTableConfig tableConfig = new PartitionPlanTableConfig();
+        tableConfig.setTableName(ORACLE_RANGE_TABLE_NAME);
+        tableConfig.setPartitionNameInvoker("CUSTOM_PARTITION_NAME_GENERATOR");
+        SqlExprBasedGeneratorConfig config = new SqlExprBasedGeneratorConfig();
+        config.setGenerateExpr("CONCAT('P', TO_CHAR(TO_DATE('20240125', 'YYYYMMDD') + "
+                + PartitionPlanVariableKey.INTERVAL.getVariable() + ", 'YYYYMMDD'))");
+        config.setIntervalGenerateExpr("NUMTOYMINTERVAL(1, 'MONTH')");
+        tableConfig.setPartitionNameInvokerParameters(getSqlExprBasedNameGeneratorParameters(config));
+
+        int generateCount = 5;
+        PartitionPlanKeyConfig c1Create = getOraclec1CreateConfig(generateCount);
+        PartitionPlanKeyConfig c2Create = getOraclec2CreateConfig(generateCount);
+        PartitionPlanKeyConfig dropConfig = getDropConfig();
+        tableConfig.setPartitionKeyConfigs(Arrays.asList(c1Create, c2Create, dropConfig));
+
+        TestDBConfiguration configuration = TestDBConfigurations.getInstance().getTestOBOracleConfiguration();
+        try (Connection connection = configuration.getDataSource().getConnection()) {
+            Map<PartitionPlanStrategy, List<String>> actual = this.partitionPlanService.generatePartitionDdl(
+                    connection, DialectType.OB_ORACLE, configuration.getDefaultDBName(), tableConfig);
+            Map<PartitionPlanStrategy, List<String>> expect = new HashMap<>();
+            expect.put(PartitionPlanStrategy.DROP, Collections.singletonList(String.format(
+                    "ALTER TABLE %s.%s DROP PARTITION (P1, P0) UPDATE GLOBAL INDEXES;",
+                    configuration.getDefaultDBName(), ORACLE_RANGE_TABLE_NAME)));
+            expect.put(PartitionPlanStrategy.CREATE, Collections.singletonList(String.format("ALTER TABLE %s.%s ADD \n"
+                    + "\tPARTITION \"P20240225\" VALUES LESS THAN (TO_DATE(' 2024-01-25 00:00:00', "
+                    + "'SYYYY-MM-DD HH24:MI:SS', 'NLS_CALENDAR=GREGORIAN'),Timestamp '2025-12-31 23:59:59'),\n"
+                    + "\tPARTITION \"P20240325\" VALUES LESS THAN (TO_DATE(' 2024-01-26 00:00:00', "
+                    + "'SYYYY-MM-DD HH24:MI:SS', 'NLS_CALENDAR=GREGORIAN'),Timestamp '2026-12-31 23:59:59'),\n"
+                    + "\tPARTITION \"P20240525\" VALUES LESS THAN (TO_DATE(' 2024-01-28 00:00:00', "
+                    + "'SYYYY-MM-DD HH24:MI:SS', 'NLS_CALENDAR=GREGORIAN'),Timestamp '2028-12-31 23:59:59'),\n"
+                    + "\tPARTITION \"P20240625\" VALUES LESS THAN (TO_DATE(' 2024-01-29 00:00:00', "
+                    + "'SYYYY-MM-DD HH24:MI:SS', 'NLS_CALENDAR=GREGORIAN'),Timestamp '2029-12-31 23:59:59');\n",
+                    configuration.getDefaultDBName(), ORACLE_RANGE_TABLE_NAME)));
+            Assert.assertEquals(expect, actual);
+        }
+    }
+
+    @Test
     public void generatePartitionDdl_mysqlBothCreateAndDropWithOverlap_generateSucceed() throws Exception {
         PartitionPlanTableConfig tableConfig = new PartitionPlanTableConfig();
         tableConfig.setTableName(MYSQL_OVERLAP_RANGE_TABLE_NAME);
@@ -223,6 +269,20 @@ public class PartitionPlanServiceV2Test extends ServiceTestEnv {
         return c3Create;
     }
 
+    private PartitionPlanKeyConfig getOraclec1CreateConfig(int generateCount) {
+        PartitionPlanKeyConfig c1Create = new PartitionPlanKeyConfig();
+        c1Create.setPartitionKey("c1");
+        c1Create.setStrategy(PartitionPlanStrategy.CREATE);
+        c1Create.setPartitionKeyInvoker("TIME_INCREASING_GENERATOR");
+        TimeIncreaseGeneratorConfig config1 = new TimeIncreaseGeneratorConfig();
+        long current = 1706180200490L;// 2024-01-25 18:57
+        config1.setFromTimestampMillis(current);
+        config1.setInterval(1);
+        config1.setIntervalPrecision(TimeDataType.DAY);
+        c1Create.setPartitionKeyInvokerParameters(getTimeIncreaseGeneratorParameters(config1, generateCount, "c1"));
+        return c1Create;
+    }
+
     private PartitionPlanKeyConfig getMysqldatekeyCreateConfig(int generateCount) {
         PartitionPlanKeyConfig datekeyCreate = new PartitionPlanKeyConfig();
         datekeyCreate.setPartitionKey("`datekey`");
@@ -237,6 +297,20 @@ public class PartitionPlanServiceV2Test extends ServiceTestEnv {
         datekeyCreate.setPartitionKeyInvokerParameters(
                 getSqlExprBasedGeneratorParameters(config, generateCount, "`datekey`"));
         return datekeyCreate;
+    }
+
+    private PartitionPlanKeyConfig getOraclec2CreateConfig(int generateCount) {
+        PartitionPlanKeyConfig c2Create = new PartitionPlanKeyConfig();
+        c2Create.setPartitionKey("\"C2\"");
+        c2Create.setStrategy(PartitionPlanStrategy.CREATE);
+        c2Create.setPartitionKeyInvoker("CUSTOM_GENERATOR");
+        SqlExprBasedGeneratorConfig config = new SqlExprBasedGeneratorConfig();
+        config.setIntervalGenerateExpr("NUMTOYMINTERVAL(1, 'YEAR')");
+        config.setGenerateExpr(PartitionPlanVariableKey.LAST_PARTITION_VALUE.getVariable()
+                + " + " + PartitionPlanVariableKey.INTERVAL.getVariable());
+        c2Create.setPartitionKeyInvokerParameters(
+                getSqlExprBasedGeneratorParameters(config, generateCount, "c2"));
+        return c2Create;
     }
 
     private Map<String, Object> getSqlExprBasedNameGeneratorParameters(SqlExprBasedGeneratorConfig config) {
@@ -273,6 +347,17 @@ public class PartitionPlanServiceV2Test extends ServiceTestEnv {
         String delimiter = "\\$\\$\\s*";
         try (InputStream input = PartitionPlanServiceV2Test.class.getClassLoader()
                 .getResourceAsStream("partitionplan/obmysql/service_create_table.sql")) {
+            byte[] buffer = new byte[input.available()];
+            IOUtils.readFully(input, buffer);
+            StringSubstitutor substitutor = StringSubstitutor.createInterpolator();
+            return new ArrayList<>(Arrays.asList(substitutor.replace(new String(buffer)).split(delimiter)));
+        }
+    }
+
+    private static List<String> getOBOracleDdlContent() throws IOException {
+        String delimiter = "\\$\\$\\s*";
+        try (InputStream input = PartitionPlanServiceV2Test.class.getClassLoader()
+                .getResourceAsStream("partitionplan/oboracle/service_create_table.sql")) {
             byte[] buffer = new byte[input.available()];
             IOUtils.readFully(input, buffer);
             StringSubstitutor substitutor = StringSubstitutor.createInterpolator();

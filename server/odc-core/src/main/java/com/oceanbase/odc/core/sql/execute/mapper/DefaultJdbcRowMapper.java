@@ -18,7 +18,8 @@ package com.oceanbase.odc.core.sql.execute.mapper;
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Objects;
+
+import org.apache.commons.lang3.Validate;
 
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionUtil;
@@ -41,7 +42,8 @@ public class DefaultJdbcRowMapper extends BaseDialectBasedRowMapper {
     public DefaultJdbcRowMapper(@NonNull ConnectionSession session) {
         super(session.getDialectType());
         DialectType dialectType = session.getDialectType();
-        if (Objects.nonNull(dialectType) && dialectType.isMysql()) {
+        Validate.notNull(dialectType, "DialectType can not be null");
+        if (dialectType.isMysql()) {
             mapperList.add(new MySQLBitMapper());
             mapperList.add(new MySQLDatetimeMapper());
             mapperList.add(new MySQLYearMapper());
@@ -61,13 +63,19 @@ public class DefaultJdbcRowMapper extends BaseDialectBasedRowMapper {
                     ConnectionSessionUtil.getNlsTimestampFormat(session)));
             mapperList.add(new OracleNumberMapper());
             mapperList.add(new OracleBinaryNumberMapper());
-        } else if (Objects.nonNull(dialectType) && dialectType.isDoris()) {
+        } else if (dialectType == DialectType.isDoris()) {
             mapperList.add(new MySQLBitMapper());
             mapperList.add(new MySQLDatetimeMapper());
             mapperList.add(new MySQLYearMapper());
             mapperList.add(new MySQLTimestampMapper());
             mapperList.add(new MySQLGeometryMapper());
             mapperList.add(new MySQLNumberMapper());
+        } else if (dialectType == DialectType.ORACLE) {
+            mapperList.add(new OracleNlsFormatDateMapper(
+                    ConnectionSessionUtil.getNlsDateFormat(session)));
+            mapperList.add(new OracleIntervalMapper());
+            mapperList.add(new OracleNumberMapper());
+            mapperList.add(new OracleBinaryNumberMapper());
         }
         mapperList.add(new GeneralLobMapper());
     }

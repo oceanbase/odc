@@ -18,6 +18,8 @@ package com.oceanbase.odc.service.session.factory;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.Properties;
 
 import javax.sql.DataSource;
@@ -27,6 +29,7 @@ import com.oceanbase.odc.core.datasource.CloneableDataSourceFactory;
 import com.oceanbase.odc.core.datasource.ConnectionInitializer;
 import com.oceanbase.odc.core.datasource.DataSourceFactory;
 import com.oceanbase.odc.core.shared.jdbc.JdbcUrlParser;
+import com.oceanbase.odc.plugin.connect.model.ConnectionPropertiesBuilder;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.connection.util.ConnectionMapper;
 import com.oceanbase.odc.service.plugin.ConnectionPluginUtil;
@@ -60,6 +63,9 @@ public class DruidDataSourceFactory extends OBConsoleDataSourceFactory {
         dataSource.setUrl(jdbcUrl);
         dataSource.setUsername(username);
         dataSource.setPassword(password);
+        if (Objects.nonNull(this.userRole)) {
+            dataSource.setConnectProperties(ConnectionPropertiesBuilder.getBuilder().userRole(this.userRole).build());
+        }
         dataSource.setDriverClassName(connectionExtensionPoint.getDriverClassName());
         init(dataSource);
         return dataSource;
@@ -89,7 +95,7 @@ public class DruidDataSourceFactory extends OBConsoleDataSourceFactory {
         dataSource.setSocketTimeout(DEFAULT_TIMEOUT_MILLIS);
         dataSource.setConnectTimeout(DEFAULT_TIMEOUT_MILLIS);
         // fix arbitrary file reading vulnerability
-        Properties properties = new Properties();
+        Properties properties = Optional.ofNullable(dataSource.getConnectProperties()).orElseGet(Properties::new);
         properties.setProperty("allowLoadLocalInfile", "false");
         properties.setProperty("allowUrlInLocalInfile", "false");
         properties.setProperty("allowLoadLocalInfileInPath", "");
@@ -110,7 +116,7 @@ public class DruidDataSourceFactory extends OBConsoleDataSourceFactory {
 
     private void setConnectAndSocketTimeoutFromJdbcUrl(DruidDataSource dataSource) throws SQLException {
         JdbcUrlParser jdbcUrlParser = ConnectionPluginUtil
-                .getConnectionExtension(connectionConfig.getDialectType()).getJdbcUrlParser(getJdbcUrl());
+                .getConnectionExtension(connectionConfig.getDialectType()).getConnectionInfo(getJdbcUrl(), null);
         Object socketTimeout = jdbcUrlParser.getParameters().get("socketTimeout");
         Object connectTimeout = jdbcUrlParser.getParameters().get("connectTimeout");
         if (socketTimeout != null) {

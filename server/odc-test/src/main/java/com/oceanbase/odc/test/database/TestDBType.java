@@ -30,6 +30,10 @@ public enum TestDBType {
             "odc.ob.default.oracle.sysUsername", "odc.ob.default.oracle.sysPassword"),
     MYSQL("5.7", "odc.mysql.default.commandline", null, null),
     DORIS("5.7", "odc.doris.default.commandline", null, null);
+    ORACLE("11", new String[] {"odc.oracle.default.host", "odc.oracle.default.port", "odc.oracle.default.username",
+            "odc.oracle.default.password", "odc.oracle.default.sid", "odc.oracle.default.serviceName",
+            "odc.oracle.default.role"}, null,
+            null);
 
     /**
      * Test database version
@@ -39,7 +43,7 @@ public enum TestDBType {
     /**
      * Test database commandline key
      */
-    public final String commandlineKey;
+    public final String[] commandlineKey;
 
     /**
      * Test database system tenant username key (only used for OB_MYSQL and OB_ORACLE)
@@ -51,7 +55,7 @@ public enum TestDBType {
      */
     public final String sysUserPasswordKey;
 
-    TestDBType(@NonNull String version, @NonNull String commandlineKey, String sysUserNameKey,
+    TestDBType(@NonNull String version, @NonNull String[] commandlineKey, String sysUserNameKey,
             String sysUserPasswordKey) {
         this.version = version;
         this.commandlineKey = commandlineKey;
@@ -64,7 +68,7 @@ public enum TestDBType {
     }
 
     public boolean isOracleMode() {
-        return this == OB_ORACLE;
+        return this == OB_ORACLE || this == ORACLE;
     }
 
     public boolean isOBMode() {
