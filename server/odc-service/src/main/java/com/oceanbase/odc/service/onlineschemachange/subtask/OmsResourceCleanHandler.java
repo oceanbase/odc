@@ -21,10 +21,10 @@ import java.util.concurrent.Executors;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import com.oceanbase.odc.service.onlineschemachange.oms.enums.ProjectStatusEnum;
-import com.oceanbase.odc.service.onlineschemachange.oms.openapi.ProjectOpenApiService;
-import com.oceanbase.odc.service.onlineschemachange.oms.request.ProjectControlRequest;
-import com.oceanbase.odc.service.onlineschemachange.oms.response.ProjectProgressResponse;
+import com.oceanbase.odc.service.onlineschemachange.oms.enums.OmsProjectStatusEnum;
+import com.oceanbase.odc.service.onlineschemachange.oms.openapi.OmsProjectOpenApiService;
+import com.oceanbase.odc.service.onlineschemachange.oms.request.OmsProjectControlRequest;
+import com.oceanbase.odc.service.onlineschemachange.oms.response.OmsProjectProgressResponse;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -38,22 +38,22 @@ import lombok.extern.slf4j.Slf4j;
 public class OmsResourceCleanHandler {
 
     @Autowired
-    private ProjectOpenApiService projectOpenApiService;
+    private OmsProjectOpenApiService projectOpenApiService;
 
-    public boolean checkAndReleaseProject(ProjectControlRequest projectControl) {
+    public boolean checkAndReleaseProject(OmsProjectControlRequest projectControl) {
         if (projectControl.getId() == null) {
             return true;
         }
 
         boolean released = false;
         // todo project is not exists
-        ProjectControlRequest controlRequest = new ProjectControlRequest();
+        OmsProjectControlRequest controlRequest = new OmsProjectControlRequest();
         controlRequest.setId(projectControl.getId());
         controlRequest.setUid(projectControl.getUid());
-        ProjectProgressResponse progressResponse = projectOpenApiService.describeProjectProgress(controlRequest);
-        if (progressResponse.getStatus() == ProjectStatusEnum.RELEASED ||
-                progressResponse.getStatus() == ProjectStatusEnum.RELEASING ||
-                progressResponse.getStatus() == ProjectStatusEnum.DELETED) {
+        OmsProjectProgressResponse progressResponse = projectOpenApiService.describeProjectProgress(controlRequest);
+        if (progressResponse.getStatus() == OmsProjectStatusEnum.RELEASED ||
+                progressResponse.getStatus() == OmsProjectStatusEnum.RELEASING ||
+                progressResponse.getStatus() == OmsProjectStatusEnum.DELETED) {
             released = true;
         }
         if (!released) {
@@ -63,15 +63,16 @@ public class OmsResourceCleanHandler {
         return released;
     }
 
-    private void doReleaseOmsResource(ProjectControlRequest projectControlRequest) {
+    private void doReleaseOmsResource(OmsProjectControlRequest projectControlRequest) {
         if (projectControlRequest.getId() == null) {
             return;
         }
         Executors.newSingleThreadExecutor().submit(() -> {
             try {
 
-                ProjectProgressResponse response = projectOpenApiService.describeProjectProgress(projectControlRequest);
-                if (response.getStatus() == ProjectStatusEnum.RUNNING) {
+                OmsProjectProgressResponse response =
+                        projectOpenApiService.describeProjectProgress(projectControlRequest);
+                if (response.getStatus() == OmsProjectStatusEnum.RUNNING) {
                     projectOpenApiService.stopProject(projectControlRequest);
                 }
                 projectOpenApiService.releaseProject(projectControlRequest);

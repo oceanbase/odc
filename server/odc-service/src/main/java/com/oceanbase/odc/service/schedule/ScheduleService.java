@@ -203,8 +203,8 @@ public class ScheduleService {
 
     @Transactional(rollbackFor = Exception.class)
     public void terminate(ScheduleEntity scheduleConfig) throws SchedulerException {
-        Trigger trigger = getScheduleTrigger(scheduleConfig);
-        quartzJobService.deleteJob(trigger.getJobKey());
+        JobKey jobKey = QuartzKeyGenerator.generateJobKey(scheduleConfig.getId(), scheduleConfig.getJobType());
+        quartzJobService.deleteJob(jobKey);
         scheduleRepository.updateStatusById(scheduleConfig.getId(), ScheduleStatus.TERMINATION);
     }
 
@@ -423,15 +423,28 @@ public class ScheduleService {
 
     public String getLog(Long scheduleId, Long taskId, OdcTaskLogLevel logLevel) {
         nullSafeGetByIdWithCheckPermission(scheduleId);
+        ScheduleTaskEntity taskEntity = scheduleTaskService.nullSafeGetById(taskId);
+        ExecutorInfo executorInfo = JsonUtils.fromJson(taskEntity.getExecutor(), ExecutorInfo.class);
+        if (!dispatchChecker.isThisMachine(executorInfo)) {
+            try {
+                DispatchResponse response =
+                        requestDispatcher.forward(executorInfo.getHost(), executorInfo.getPort());
+                log.info("Remote get task log succeed,taskId={}", taskId);
+                return response.getContentByType(
+                        new TypeReference<SuccessResponse<String>>() {}).getData();
+            } catch (Exception e) {
+                log.warn("Remote get task log failed, taskId={}", taskId, e);
+                throw new UnexpectedException(String.format("Remote interrupt task failed, taskId=%s", taskId));
+            }
+        }
         return scheduleTaskService.getScheduleTaskLog(taskId, logLevel);
     }
 
     public boolean hasExecutingAsyncTask(ScheduleEntity schedule) {
-        Set<Long> executingTaskIds = serviceTaskRepository.findByScheduleIdAndTaskType(
-                schedule.getId(), TaskType.ASYNC).stream()
-                .filter(entity -> !FlowNodeStatus.isFinalStatus(entity.getStatus()))
-                .map(ServiceTaskInstanceEntity::getTargetTaskId).collect(
-                        Collectors.toSet());
+        Set<Long> executingTaskIds = serviceTaskRepository.findByScheduleIdAndTaskTypeAndStatusIn(schedule.getId(),
+                TaskType.ASYNC, FlowNodeStatus.getNotFinalStatuses()).stream().map(
+                        ServiceTaskInstanceEntity::getTargetTaskId)
+                .collect(Collectors.toSet());
         List<TaskEntity> taskEntities = taskRepository.findByIdIn(executingTaskIds);
         for (TaskEntity taskEntity : taskEntities) {
             Long timeoutMillis = JsonUtils.fromJson(taskEntity.getParametersJson(), DatabaseChangeParameters.class)

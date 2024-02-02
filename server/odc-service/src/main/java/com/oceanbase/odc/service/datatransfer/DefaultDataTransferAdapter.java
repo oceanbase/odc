@@ -24,7 +24,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferConfig;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferTaskResult;
-import com.oceanbase.odc.service.flow.task.OssTaskReferManager;
 import com.oceanbase.odc.service.objectstorage.cloud.CloudObjectStorageService;
 
 import lombok.extern.slf4j.Slf4j;
@@ -32,8 +31,6 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class DefaultDataTransferAdapter implements DataTransferAdapter {
 
-    @Autowired
-    private OssTaskReferManager taskReferManager;
     @Autowired
     private CloudObjectStorageService cloudObjectStorageService;
 
@@ -56,7 +53,7 @@ public class DefaultDataTransferAdapter implements DataTransferAdapter {
         try {
             String objectName = cloudObjectStorageService.uploadTemp(exportFile.getName(), exportFile);
             log.info("Upload the data file to the oss successfully, objectName={}", objectName);
-            taskReferManager.put(exportFile.getName(), objectName);
+            result.setExportZipFilePath(objectName);
         } finally {
             /**
              * 公有云模式下本地导出文件和目录都不必要保存，直接删除

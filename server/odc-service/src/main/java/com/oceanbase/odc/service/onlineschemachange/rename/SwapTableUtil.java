@@ -28,14 +28,11 @@ import com.oceanbase.odc.service.onlineschemachange.model.SwapTableType;
 public class SwapTableUtil {
 
     public static boolean isSwapTableEnable(SwapTableType swapTableType, TaskStatus taskStatus,
-            Double fullTransferProgressPercentage, FullVerificationResult fullVerificationResult,
-            boolean manualSwapTableStarted) {
+            Double fullTransferProgressPercentage, FullVerificationResult fullVerificationResult) {
         return swapTableType == SwapTableType.MANUAL &&
-                !manualSwapTableStarted &&
                 taskStatus == TaskStatus.RUNNING &&
                 fullTransferProgressPercentage.intValue() == 100 &&
                 (fullVerificationResult == FullVerificationResult.CONSISTENT ||
                         fullVerificationResult == FullVerificationResult.UNCHECK);
-
     }
 }

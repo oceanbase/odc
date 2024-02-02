@@ -96,6 +96,7 @@ public class OracleModePLParserListener extends PLParserBaseListener implements 
     @Override
     public void enterAnonymous_stmt(Anonymous_stmtContext ctx) {
         this.plType = DBObjectType.ANONYMOUS_BLOCK.getName();
+        this.sqlType = SqlType.OTHERS;
     }
 
     @Override
