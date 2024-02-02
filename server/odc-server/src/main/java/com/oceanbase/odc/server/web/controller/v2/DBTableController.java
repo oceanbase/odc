@@ -90,9 +90,9 @@ public class DBTableController {
         return Responses.success(tableService.generateUpdateDDL(session, req));
     }
 
-    @GetMapping(value = "/{sessionId}/databases/{databaseName}/candidatePartitionPlanTables")
+    @GetMapping(value = "/{sessionId}/databases/{databaseId}/candidatePartitionPlanTables")
     public ListResponse<PartitionPlanDBTable> listTables(@PathVariable String sessionId,
-            @PathVariable String databaseName) {
+            @PathVariable Long databaseId) {
         throw new NotImplementedException();
     }
 

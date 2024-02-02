@@ -15,6 +15,8 @@
  */
 package com.oceanbase.odc.metadb.partitionplan;
 
+import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 
 import org.junit.Assert;
@@ -49,6 +51,28 @@ public class PartitionPlanTableRepositoryTest extends ServiceTestEnv {
         actual = this.repository.save(actual);
         Optional<PartitionPlanTableEntity> expect = this.repository.findById(actual.getId());
         Assert.assertEquals(expect.get(), actual);
+    }
+
+    @Test
+    public void findByPartitionplanIdAndEnabled_noCandidate_returnNull() {
+        PartitionPlanTableEntity actual = createRoleEntity();
+        actual.setId(null);
+        actual.setEnabled(false);
+        actual = this.repository.save(actual);
+        List<PartitionPlanTableEntity> expect = this.repository.findByPartitionPlanIdInAndEnabled(
+                Collections.singletonList(actual.getPartitionPlanId()), true);
+        Assert.assertTrue(expect.isEmpty());
+    }
+
+    @Test
+    public void findByPartitionplanIdAndEnabled_candidateExists_returnNotNull() {
+        PartitionPlanTableEntity actual = createRoleEntity();
+        actual.setId(null);
+        actual.setEnabled(true);
+        actual = this.repository.save(actual);
+        List<PartitionPlanTableEntity> expect = this.repository.findByPartitionPlanIdInAndEnabled(
+                Collections.singletonList(actual.getPartitionPlanId()), true);
+        Assert.assertEquals(expect, Collections.singletonList(actual));
     }
 
     private PartitionPlanTableEntity createRoleEntity() {

@@ -15,6 +15,8 @@
  */
 package com.oceanbase.odc.metadb.partitionplan;
 
+import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 
 import org.junit.Assert;
@@ -49,6 +51,28 @@ public class PartitionPlanTablePartitionKeyRepositoryTest extends ServiceTestEnv
         actual = this.repository.save(actual);
         Optional<PartitionPlanTablePartitionKeyEntity> expect = this.repository.findById(actual.getId());
         Assert.assertEquals(expect.get(), actual);
+    }
+
+    @Test
+    public void findByPartitionplanTableIdInAndEnabled_noCandidate_returnNull() {
+        PartitionPlanTablePartitionKeyEntity actual = createRoleEntity();
+        actual.setId(null);
+        actual.setEnabled(false);
+        actual = this.repository.save(actual);
+        List<PartitionPlanTablePartitionKeyEntity> expect = this.repository.findByPartitionplanTableIdInAndEnabled(
+                Collections.singletonList(actual.getPartitionplanTableId()), true);
+        Assert.assertTrue(expect.isEmpty());
+    }
+
+    @Test
+    public void findByPartitionplanTableIdInAndEnabled_candidateExists_returnNotNull() {
+        PartitionPlanTablePartitionKeyEntity actual = createRoleEntity();
+        actual.setId(null);
+        actual.setEnabled(true);
+        actual = this.repository.save(actual);
+        List<PartitionPlanTablePartitionKeyEntity> expect = this.repository.findByPartitionplanTableIdInAndEnabled(
+                Collections.singletonList(actual.getPartitionplanTableId()), true);
+        Assert.assertEquals(expect, Collections.singletonList(actual));
     }
 
     private PartitionPlanTablePartitionKeyEntity createRoleEntity() {

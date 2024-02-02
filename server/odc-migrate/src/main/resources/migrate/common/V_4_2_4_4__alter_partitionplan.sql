@@ -8,7 +8,8 @@ CREATE TABLE IF NOT EXISTS `partitionplan` (
     `last_modifier_id` bigint(20) DEFAULT NULL COMMENT 'Last modifier id, references odc_user_info(id)',
     `database_id` bigint(20) NOT NULL COMMENT 'Related database id, reference connect_database(id)',
     CONSTRAINT `pk_partitionplan_id` PRIMARY KEY (`id`),
-    UNIQUE KEY `uk_partitionplan_flow_instance_id` (`flow_instance_id`)
+    UNIQUE KEY `uk_partitionplan_flow_instance_id` (`flow_instance_id`),
+    KEY `idx_partitionplan_database_id` (`database_id`)
 );
 
 CREATE TABLE IF NOT EXISTS `partitionplan_table` (
@@ -22,13 +23,14 @@ CREATE TABLE IF NOT EXISTS `partitionplan_table` (
     `schedule_id` bigint(20) NOT NULL COMMENT 'Related schedule id, reference schedule_schedule(id)',
   	`partitionplan_id` bigint(20) NOT NULL COMMENT 'Related partition plan id, reference partitionplan(id)',
     CONSTRAINT `pk_partitionplan_table_id` PRIMARY KEY (`id`),
-    UNIQUE KEY `uk_partitionplan_table_schedule_id_partitionplan_id_table_name` (`schedule_id`, `partitionplan_id`, `table_name`)
+    UNIQUE KEY `uk_partitionplan_table_schedule_id_partitionplan_id_table_name` (`partitionplan_id`, `schedule_id`, `table_name`)
 );
 
 CREATE TABLE IF NOT EXISTS `partitionplan_table_partitionkey` (
     `id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT 'Id for partition plan table',
     `partition_key` varchar(2048) NOT NULL COMMENT 'Target partition key',
     `strategy` varchar(64) NOT NULL COMMENT 'Partition strategy type, enumeration values: CREATE, DROP',
+    `is_enabled` tinyint(1) NOT NULL DEFAULT 1 COMMENT 'Flag bit, mark whether the partition key is enabled',
     `partition_key_invoker` varchar(64) NOT NULL COMMENT 'The name of the specific executor of the partition strategy needs to match invoker_input',
     `partition_key_invoker_parameters` varchar(1024) NOT NULL COMMENT 'The input of the specific executor of the partition strategy invoker',
   	`create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'Record insertion time',

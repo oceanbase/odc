@@ -24,7 +24,9 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.text.StringSubstitutor;
 import org.junit.AfterClass;
@@ -41,6 +43,12 @@ import com.oceanbase.odc.TestConnectionUtil;
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.shared.constant.ConnectType;
 import com.oceanbase.odc.core.shared.constant.DialectType;
+import com.oceanbase.odc.metadb.partitionplan.PartitionPlanEntity;
+import com.oceanbase.odc.metadb.partitionplan.PartitionPlanRepository;
+import com.oceanbase.odc.metadb.partitionplan.PartitionPlanTableEntity;
+import com.oceanbase.odc.metadb.partitionplan.PartitionPlanTablePartitionKeyEntity;
+import com.oceanbase.odc.metadb.partitionplan.PartitionPlanTablePartitionKeyRepository;
+import com.oceanbase.odc.metadb.partitionplan.PartitionPlanTableRepository;
 import com.oceanbase.odc.plugin.task.api.partitionplan.datatype.TimeDataType;
 import com.oceanbase.odc.plugin.task.api.partitionplan.invoker.create.PartitionExprGenerator;
 import com.oceanbase.odc.plugin.task.api.partitionplan.invoker.drop.KeepMostRecentPartitionGenerator;
@@ -48,6 +56,9 @@ import com.oceanbase.odc.plugin.task.api.partitionplan.invoker.partitionname.Sql
 import com.oceanbase.odc.plugin.task.api.partitionplan.model.PartitionPlanVariableKey;
 import com.oceanbase.odc.plugin.task.api.partitionplan.model.SqlExprBasedGeneratorConfig;
 import com.oceanbase.odc.plugin.task.api.partitionplan.model.TimeIncreaseGeneratorConfig;
+import com.oceanbase.odc.service.connection.database.DatabaseService;
+import com.oceanbase.odc.service.connection.database.model.Database;
+import com.oceanbase.odc.service.partitionplan.model.PartitionPlanDBTable;
 import com.oceanbase.odc.service.partitionplan.model.PartitionPlanKeyConfig;
 import com.oceanbase.odc.service.partitionplan.model.PartitionPlanPreViewResp;
 import com.oceanbase.odc.service.partitionplan.model.PartitionPlanStrategy;
@@ -55,6 +66,7 @@ import com.oceanbase.odc.service.partitionplan.model.PartitionPlanTableConfig;
 import com.oceanbase.odc.service.session.ConnectSessionService;
 import com.oceanbase.odc.test.database.TestDBConfiguration;
 import com.oceanbase.odc.test.database.TestDBConfigurations;
+import com.oceanbase.odc.test.tool.TestRandom;
 
 /**
  * Test cases for {@link PartitionPlanServiceV2}
@@ -70,8 +82,16 @@ public class PartitionPlanServiceV2Test extends ServiceTestEnv {
     public static final String ORACLE_RANGE_TABLE_NAME = "RANGE_SVC_PARTI_TBL";
     @MockBean
     private ConnectSessionService sessionService;
+    @MockBean
+    private DatabaseService databaseService;
     @Autowired
     private PartitionPlanServiceV2 partitionPlanService;
+    @Autowired
+    private PartitionPlanRepository partitionPlanRepository;
+    @Autowired
+    private PartitionPlanTableRepository partitionPlanTableRepository;
+    @Autowired
+    private PartitionPlanTablePartitionKeyRepository partitionPlanTablePartitionKeyRepository;
 
     @BeforeClass
     public static void setUp() throws IOException {
@@ -92,6 +112,55 @@ public class PartitionPlanServiceV2Test extends ServiceTestEnv {
         JdbcTemplate oracle = new JdbcTemplate(TestDBConfigurations.getInstance()
                 .getTestOBOracleConfiguration().getDataSource());
         oracle.execute("DROP TABLE " + ORACLE_RANGE_TABLE_NAME);
+    }
+
+    @Test
+    public void listCandidateTables_noPartitionPlanExists_returnNotEmpty() {
+        ConnectionSession session = TestConnectionUtil.getTestConnectionSession(ConnectType.OB_MYSQL);
+        Mockito.when(this.sessionService.nullSafeGet("id", true)).thenReturn(session);
+        TestDBConfiguration configuration = TestDBConfigurations.getInstance().getTestOBMysqlConfiguration();
+        Database database = new Database();
+        database.setName(configuration.getDefaultDBName());
+        Mockito.when(this.databaseService.detail(1L)).thenReturn(database);
+
+        List<PartitionPlanDBTable> actual = this.partitionPlanService.listCandidateTables("id", 1L);
+        Assert.assertTrue(actual.stream().anyMatch(p -> CollectionUtils.isEmpty(p.getStrategies())));
+    }
+
+    @Test
+    public void listCandidateTables_partitionPlanExists_returnNotEmpty() {
+        ConnectionSession session = TestConnectionUtil.getTestConnectionSession(ConnectType.OB_MYSQL);
+        Mockito.when(this.sessionService.nullSafeGet("id", true)).thenReturn(session);
+        TestDBConfiguration configuration = TestDBConfigurations.getInstance().getTestOBMysqlConfiguration();
+        Database database = new Database();
+        database.setName(configuration.getDefaultDBName());
+        Mockito.when(this.databaseService.detail(1L)).thenReturn(database);
+
+        PartitionPlanEntity p = TestRandom.nextObject(PartitionPlanEntity.class);
+        p.setId(null);
+        p.setEnabled(true);
+        p.setDatabaseId(1L);
+        p = this.partitionPlanRepository.save(p);
+
+        PartitionPlanTableEntity pt = TestRandom.nextObject(PartitionPlanTableEntity.class);
+        pt.setId(null);
+        pt.setEnabled(true);
+        pt.setTableName(MYSQL_OVERLAP_RANGE_TABLE_NAME);
+        pt.setPartitionPlanId(p.getId());
+        pt = this.partitionPlanTableRepository.save(pt);
+
+        PartitionPlanTablePartitionKeyEntity pptk = TestRandom.nextObject(PartitionPlanTablePartitionKeyEntity.class);
+        pptk.setId(null);
+        pptk.setEnabled(true);
+        pptk.setPartitionplanTableId(pt.getId());
+        pptk = this.partitionPlanTablePartitionKeyRepository.save(pptk);
+
+        List<PartitionPlanDBTable> tables = this.partitionPlanService.listCandidateTables("id", 1L);
+        PartitionPlanDBTable target = tables.stream()
+                .filter(t -> MYSQL_OVERLAP_RANGE_TABLE_NAME.equals(t.getName())).findFirst().get();
+        Set<PartitionPlanStrategy> actual = target.getStrategies();
+        Set<PartitionPlanStrategy> expect = Collections.singleton(pptk.getStrategy());
+        Assert.assertEquals(expect, actual);
     }
 
     @Test

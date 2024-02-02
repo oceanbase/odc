@@ -15,6 +15,8 @@
  */
 package com.oceanbase.odc.metadb.partitionplan;
 
+import java.util.List;
+
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 
@@ -27,4 +29,7 @@ import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
  */
 public interface PartitionPlanRepository extends JpaRepository<PartitionPlanEntity, Long>,
         JpaSpecificationExecutor<PartitionPlanEntity> {
+
+    List<PartitionPlanEntity> findByDatabaseIdAndEnabled(Long databaseId, Boolean enabled);
+
 }

@@ -67,6 +67,8 @@ public class PartitionPlanTableEntity {
     /**
      * Enabled or not
      */
+    @Column(name = "is_enabled", nullable = false)
+    private Boolean enabled;
     @Column(name = "partition_name_invoker", nullable = false)
     private Boolean partitionNameInvoker;
     @Column(name = "partition_name_invoker_parameters", nullable = false)
