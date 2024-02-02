@@ -28,6 +28,7 @@ import com.oceanbase.tools.dbbrowser.editor.oracle.OracleSequenceEditor;
 import com.oceanbase.tools.dbbrowser.model.DBObjectIdentity;
 import com.oceanbase.tools.dbbrowser.model.DBObjectType;
 import com.oceanbase.tools.dbbrowser.model.DBSequence;
+import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
 
 import lombok.NonNull;
 
@@ -41,13 +42,13 @@ public class OBOracleSequenceExtension implements SequenceExtensionPoint {
 
     @Override
     public List<DBObjectIdentity> list(@NonNull Connection connection, @NonNull String schemaName) {
-        return DBAccessorUtil.getSchemaAccessor(connection).listSequences(schemaName);
+        return getSchemaAccessor(connection).listSequences(schemaName);
     }
 
     @Override
     public DBSequence getDetail(@NonNull Connection connection, @NonNull String schemaName,
             @NonNull String sequenceName) {
-        return DBAccessorUtil.getSchemaAccessor(connection).getSequence(schemaName, sequenceName);
+        return getSchemaAccessor(connection).getSequence(schemaName, sequenceName);
     }
 
     @Override
@@ -66,5 +67,9 @@ public class OBOracleSequenceExtension implements SequenceExtensionPoint {
     public String generateUpdateDDL(@NonNull DBSequence oldSequence, @NonNull DBSequence newSequence) {
         OracleSequenceEditor editor = new OracleSequenceEditor();
         return editor.generateUpdateObjectDDL(oldSequence, newSequence);
+    }
+
+    protected DBSchemaAccessor getSchemaAccessor(Connection connection) {
+        return DBAccessorUtil.getSchemaAccessor(connection);
     }
 }
