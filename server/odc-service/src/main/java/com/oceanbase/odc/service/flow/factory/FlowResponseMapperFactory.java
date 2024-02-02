@@ -36,6 +36,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Component;
 
+import com.google.common.base.MoreObjects;
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.shared.constant.TaskType;
@@ -44,6 +45,7 @@ import com.oceanbase.odc.metadb.connection.ConnectionEntity;
 import com.oceanbase.odc.metadb.connection.ConnectionSpecs;
 import com.oceanbase.odc.metadb.flow.FlowInstanceEntity;
 import com.oceanbase.odc.metadb.flow.FlowInstanceRepository;
+import com.oceanbase.odc.metadb.flow.FlowInstanceRepository.ParentInstanceIdCount;
 import com.oceanbase.odc.metadb.flow.ServiceTaskInstanceEntity;
 import com.oceanbase.odc.metadb.flow.ServiceTaskInstanceRepository;
 import com.oceanbase.odc.metadb.flow.ServiceTaskInstanceSpecs;
@@ -282,8 +284,13 @@ public class FlowResponseMapperFactory {
                 .collect(Collectors.groupingBy(ServiceTaskInstanceEntity::getFlowInstanceId,
                         Collectors.mapping(ServiceTaskInstanceEntity::getStrategy, Collectors.toList())));
 
+        Map<Long, Integer> parentInstanceIdMap = flowInstanceRepository
+                .findByParentInstanceIdIn(flowInstanceIds)
+                .stream().collect(
+                        Collectors.toMap(ParentInstanceIdCount::getParentInstanceId, ParentInstanceIdCount::getCount));
+
         Map<Long, Boolean> flowInstanceId2Rollbackable = flowInstanceIds.stream().collect(Collectors
-                .toMap(Function.identity(), id -> flowInstanceRepository.findByParentInstanceId(id).size() == 0));
+                .toMap(Function.identity(), id -> MoreObjects.firstNonNull(parentInstanceIdMap.get(id), 0) == 0));
 
         /**
          * In order to improve the interface efficiency, it is necessary to find out the task entity

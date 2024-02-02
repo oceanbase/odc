@@ -625,6 +625,13 @@ public class DatabaseService {
     }
 
     @SkipAuthorize("internal authorized")
+    public Set<String> getAuthorizedDatabaseNames(@NonNull Long dataSourceId) {
+        Page<Database> databases = list(QueryDatabaseParams.builder().containsUnassigned(false).existed(true)
+                .dataSourceId(dataSourceId).build(), Pageable.unpaged());
+        return databases.stream().map(Database::getName).collect(Collectors.toSet());
+    }
+
+    @SkipAuthorize("internal authorized")
     public Page<DatabaseUser> listUserForOsc(Long dataSourceId) {
         ConnectionConfig config = connectionService.getForConnectionSkipPermissionCheck(dataSourceId);
         horizontalDataPermissionValidator.checkCurrentOrganization(config);

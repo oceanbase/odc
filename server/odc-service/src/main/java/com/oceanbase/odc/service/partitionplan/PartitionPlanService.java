@@ -313,8 +313,8 @@ public class PartitionPlanService {
                         log.info("Terminate old partition plan job success,scheduleId={}",
                                 oldPartitionPlan.get().getScheduleId());
                     } catch (Exception e) {
-                        log.warn("Terminate old partition plan job failed,scheduleId={}",
-                                oldPartitionPlan.get().getScheduleId());
+                        log.warn("Terminate old partition plan job failed,scheduleId={},errorMsg={}",
+                                oldPartitionPlan.get().getScheduleId(), e);
                     }
                 }
             } catch (Exception e) {

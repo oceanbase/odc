@@ -238,7 +238,7 @@ public class SqlConsoleInterceptor extends BaseTimeConsumingInterceptor {
                 basicResult.setSyntaxError(true);
             }
         }
-        if (Objects.nonNull(basicResult.getSqlType()) && basicResult.getSqlType() == SqlType.UNKNOWN) {
+        if (Objects.isNull(basicResult.getSqlType()) || basicResult.getSqlType() == SqlType.UNKNOWN) {
             basicResult.setSqlType(SqlType.OTHERS);
         }
         return basicResult;

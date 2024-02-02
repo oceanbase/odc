@@ -208,8 +208,8 @@ public class ScheduleService {
 
     @Transactional(rollbackFor = Exception.class)
     public void terminate(ScheduleEntity scheduleConfig) throws SchedulerException {
-        Trigger trigger = getScheduleTrigger(scheduleConfig);
-        quartzJobService.deleteJob(trigger.getJobKey());
+        JobKey jobKey = QuartzKeyGenerator.generateJobKey(scheduleConfig.getId(), scheduleConfig.getJobType());
+        quartzJobService.deleteJob(jobKey);
         scheduleRepository.updateStatusById(scheduleConfig.getId(), ScheduleStatus.TERMINATION);
     }
 
@@ -446,11 +446,10 @@ public class ScheduleService {
     }
 
     public boolean hasExecutingAsyncTask(ScheduleEntity schedule) {
-        Set<Long> executingTaskIds = serviceTaskRepository.findByScheduleIdAndTaskType(
-                schedule.getId(), TaskType.ASYNC).stream()
-                .filter(entity -> !FlowNodeStatus.isFinalStatus(entity.getStatus()))
-                .map(ServiceTaskInstanceEntity::getTargetTaskId).collect(
-                        Collectors.toSet());
+        Set<Long> executingTaskIds = serviceTaskRepository.findByScheduleIdAndTaskTypeAndStatusIn(schedule.getId(),
+                TaskType.ASYNC, FlowNodeStatus.getNotFinalStatuses()).stream().map(
+                        ServiceTaskInstanceEntity::getTargetTaskId)
+                .collect(Collectors.toSet());
         List<TaskEntity> taskEntities = taskRepository.findByIdIn(executingTaskIds);
         for (TaskEntity taskEntity : taskEntities) {
             Long timeoutMillis = JsonUtils.fromJson(taskEntity.getParametersJson(), DatabaseChangeParameters.class)

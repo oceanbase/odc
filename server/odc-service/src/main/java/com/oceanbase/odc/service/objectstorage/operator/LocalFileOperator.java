@@ -26,8 +26,6 @@ import java.nio.file.Paths;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
-import javax.annotation.PostConstruct;
-
 import org.apache.commons.io.FileUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
@@ -68,12 +66,12 @@ public class LocalFileOperator {
     private Path fileDirPath;
 
     public LocalFileOperator(
-            @Value("${odc.objectstorage.local.dir:#{systemProperties['user.home'].concat(T(java.io.File).separator).concat('data').concat"
-                    + "(T(java.io.File).separator).concat('files')}}") String localDir) {
+            @Value("${odc.objectstorage.local.dir:#{systemProperties['user.home'].concat(T(java.io.File).separator)"
+                    + ".concat('data').concat(T(java.io.File).separator).concat('files')}}") String localDir) {
         this.localDir = localDir;
+        init();
     }
 
-    @PostConstruct
     public void init() {
         fileDirPath = Paths.get(localDir).toAbsolutePath().normalize();
         try {

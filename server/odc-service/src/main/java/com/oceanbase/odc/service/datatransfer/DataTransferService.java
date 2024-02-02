@@ -351,7 +351,7 @@ public class DataTransferService {
         }
         DataTransferTaskResult result = new DataTransferTaskResult();
         List<ObjectResult> objects = config.getExportDbObjects().stream().map(
-                obj -> new ObjectResult(config.getSchemaName(), obj.getObjectName(), obj.getDbObjectType().getName()))
+                obj -> new ObjectResult(config.getSchemaName(), obj.getObjectName(), obj.getDbObjectType().name()))
                 .collect(Collectors.toList());
         if (config.isTransferDDL()) {
             result.setSchemaObjectsInfo(objects);

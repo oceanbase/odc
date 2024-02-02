@@ -37,7 +37,8 @@ public class RateLimitConfigurationServiceTest extends ServiceTestEnv {
     public void findByOrderIdOrElseDefaultConfig() {
         Long orderId = 1L;
         RateLimitConfiguration config = TestRandom.nextObject(RateLimitConfiguration.class);
-        limiterService.createAndBindToOrder(orderId, config);
+        config.setOrderId(orderId);
+        limiterService.create(config);
         RateLimitConfiguration result = limiterService.getByOrderIdOrElseDefaultConfig(orderId);
         Assert.equals(config, result);
         result = limiterService.getByOrderIdOrElseDefaultConfig(2L);
