@@ -134,14 +134,14 @@ public class PartitionPlanServiceV2 {
                 .execute((ConnectionCallback<List<DBTable>>) con -> extensionPoint
                         .listAllPartitionedTables(con, database.getName(), null));
         return dbTables.stream().map(dbTable -> {
-            PartitionPlanDBTable partitionPlanDBTable = new PartitionPlanDBTable();
-            partitionPlanDBTable.setName(dbTable.getName());
-            partitionPlanDBTable.setSchemaName(dbTable.getSchemaName());
-            partitionPlanDBTable.setColumns(dbTable.getColumns());
-            partitionPlanDBTable.setPartition(dbTable.getPartition());
-            partitionPlanDBTable.setDialectType(dialectType);
-            partitionPlanDBTable.setStrategies(tblName2Strategies.get(dbTable.getName()));
-            return partitionPlanDBTable;
+            PartitionPlanDBTable partitionPlanTable = new PartitionPlanDBTable();
+            partitionPlanTable.setName(dbTable.getName());
+            partitionPlanTable.setSchemaName(dbTable.getSchemaName());
+            partitionPlanTable.setColumns(dbTable.getColumns());
+            partitionPlanTable.setPartition(dbTable.getPartition());
+            partitionPlanTable.setDialectType(dialectType);
+            partitionPlanTable.setStrategies(tblName2Strategies.get(dbTable.getName()));
+            return partitionPlanTable;
         }).collect(Collectors.toList());
     }
 
