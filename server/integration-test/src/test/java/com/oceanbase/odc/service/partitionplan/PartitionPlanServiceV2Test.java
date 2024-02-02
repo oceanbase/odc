@@ -67,6 +67,8 @@ import com.oceanbase.odc.service.session.ConnectSessionService;
 import com.oceanbase.odc.test.database.TestDBConfiguration;
 import com.oceanbase.odc.test.database.TestDBConfigurations;
 import com.oceanbase.odc.test.tool.TestRandom;
+import com.oceanbase.tools.dbbrowser.model.datatype.DataType;
+import com.oceanbase.tools.dbbrowser.model.datatype.GeneralDataType;
 
 /**
  * Test cases for {@link PartitionPlanServiceV2}
@@ -112,6 +114,18 @@ public class PartitionPlanServiceV2Test extends ServiceTestEnv {
         JdbcTemplate oracle = new JdbcTemplate(TestDBConfigurations.getInstance()
                 .getTestOBOracleConfiguration().getDataSource());
         oracle.execute("DROP TABLE " + ORACLE_RANGE_TABLE_NAME);
+    }
+
+    @Test
+    public void getPartitionKeyDataTypes_mysqlMode_getSucceed() {
+        ConnectionSession session = TestConnectionUtil.getTestConnectionSession(ConnectType.OB_MYSQL);
+        Mockito.when(this.sessionService.nullSafeGet("id", true)).thenReturn(session);
+        TestDBConfiguration configuration = TestDBConfigurations.getInstance().getTestOBMysqlConfiguration();
+        List<DataType> actual = this.partitionPlanService.getPartitionKeyDataTypes("id",
+                configuration.getDefaultDBName(), MYSQL_OVERLAP_RANGE_TABLE_NAME);
+        List<DataType> expect = Arrays.asList(
+                new GeneralDataType(0, 0, "int"), new TimeDataType("date", TimeDataType.DAY));
+        Assert.assertEquals(expect, actual);
     }
 
     @Test

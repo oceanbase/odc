@@ -34,6 +34,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.ConnectionCallback;
+import org.springframework.jdbc.core.JdbcOperations;
 import org.springframework.stereotype.Service;
 
 import com.oceanbase.odc.core.session.ConnectionSession;
@@ -42,7 +43,6 @@ import com.oceanbase.odc.core.session.ConnectionSessionUtil;
 import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.core.shared.exception.NotFoundException;
-import com.oceanbase.odc.core.sql.execute.SyncJdbcExecutor;
 import com.oceanbase.odc.metadb.partitionplan.PartitionPlanEntity;
 import com.oceanbase.odc.metadb.partitionplan.PartitionPlanRepository;
 import com.oceanbase.odc.metadb.partitionplan.PartitionPlanTableEntity;
@@ -72,6 +72,7 @@ import com.oceanbase.tools.dbbrowser.model.DBTablePartition;
 import com.oceanbase.tools.dbbrowser.model.DBTablePartitionDefinition;
 import com.oceanbase.tools.dbbrowser.model.DBTablePartitionOption;
 import com.oceanbase.tools.dbbrowser.model.DBTablePartitionType;
+import com.oceanbase.tools.dbbrowser.model.datatype.DataType;
 
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
@@ -97,6 +98,40 @@ public class PartitionPlanServiceV2 {
     private PartitionPlanRepository partitionPlanRepository;
     @Autowired
     private PartitionPlanTablePartitionKeyRepository partitionPlanTablePartitionKeyRepository;
+
+    public List<DataType> getPartitionKeyDataTypes(@NonNull String sessionId,
+            @NonNull String schema, @NonNull String tableName) {
+        ConnectionSession connectionSession = sessionService.nullSafeGet(sessionId, true);
+        DialectType dialectType = connectionSession.getDialectType();
+        TableExtensionPoint tableExtensionPoint = SchemaPluginUtil.getTableExtension(dialectType);
+        if (tableExtensionPoint == null) {
+            throw new UnsupportedOperationException("Unsupported dialect " + dialectType);
+        }
+        DBTable dbTable = getJdbcOpt(connectionSession).execute((ConnectionCallback<DBTable>) con -> {
+            try {
+                return tableExtensionPoint.getDetail(con, schema, tableName);
+            } catch (Exception e) {
+                throw new IllegalStateException(e);
+            }
+        });
+        return getPartitionKeyDataTypes(sessionId, dbTable);
+    }
+
+    public List<DataType> getPartitionKeyDataTypes(@NonNull String sessionId, @NonNull DBTable dbTable) {
+        ConnectionSession connectionSession = sessionService.nullSafeGet(sessionId, true);
+        DialectType dialectType = connectionSession.getDialectType();
+        AutoPartitionExtensionPoint extensionPoint = TaskPluginUtil.getAutoPartitionExtensionPoint(dialectType);
+        if (extensionPoint == null) {
+            throw new UnsupportedOperationException("Unsupported dialect " + dialectType);
+        }
+        return getJdbcOpt(connectionSession).execute((ConnectionCallback<List<DataType>>) con -> {
+            try {
+                return extensionPoint.getPartitionKeyDataTypes(con, dbTable);
+            } catch (Exception e) {
+                throw new IllegalStateException(e);
+            }
+        });
+    }
 
     public List<PartitionPlanDBTable> listCandidateTables(@NonNull String sessionId, @NonNull Long databaseId) {
         ConnectionSession connectionSession = sessionService.nullSafeGet(sessionId, true);
@@ -130,8 +165,8 @@ public class PartitionPlanServiceV2 {
             tblName2Strategies = new HashMap<>();
         }
         Database database = this.databaseService.detail(databaseId);
-        List<DBTable> dbTables = connectionSession.getSyncJdbcExecutor(ConnectionSessionConstants.BACKEND_DS_KEY)
-                .execute((ConnectionCallback<List<DBTable>>) con -> extensionPoint
+        List<DBTable> dbTables =
+                getJdbcOpt(connectionSession).execute((ConnectionCallback<List<DBTable>>) con -> extensionPoint
                         .listAllPartitionedTables(con, database.getName(), null));
         return dbTables.stream().map(dbTable -> {
             PartitionPlanDBTable partitionPlanTable = new PartitionPlanDBTable();
@@ -156,7 +191,7 @@ public class PartitionPlanServiceV2 {
         List<String> tableNames = tableConfigs.stream().map(PartitionPlanTableConfig::getTableName)
                 .collect(Collectors.toList());
         String schema = ConnectionSessionUtil.getCurrentSchema(connectionSession);
-        SyncJdbcExecutor jdbc = connectionSession.getSyncJdbcExecutor(ConnectionSessionConstants.BACKEND_DS_KEY);
+        JdbcOperations jdbc = getJdbcOpt(connectionSession);
         Map<String, DBTable> name2Table =
                 jdbc.execute((ConnectionCallback<List<DBTable>>) con -> extensionPoint.listAllPartitionedTables(con,
                         schema, tableNames)).stream().collect(Collectors.toMap(DBTable::getName, dbTable -> dbTable));
@@ -402,6 +437,10 @@ public class PartitionPlanServiceV2 {
             }
             return false;
         });
+    }
+
+    private JdbcOperations getJdbcOpt(ConnectionSession connectionSession) {
+        return connectionSession.getSyncJdbcExecutor(ConnectionSessionConstants.BACKEND_DS_KEY);
     }
 
     private void checkPartitionKeyValue(
