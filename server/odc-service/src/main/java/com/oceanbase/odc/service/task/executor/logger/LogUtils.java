@@ -76,7 +76,7 @@ public class LogUtils {
 
 
     public static String getBaseLogPath() {
-        String logPath = SystemUtils.getEnvOrProperty(JobEnvKeyConstants.ODC_LOG_DIRECTORY);
+        String logPath = System.getProperty(JobEnvKeyConstants.ODC_LOG_DIRECTORY);
         return logPath == null ? "./log" : logPath;
     }
 

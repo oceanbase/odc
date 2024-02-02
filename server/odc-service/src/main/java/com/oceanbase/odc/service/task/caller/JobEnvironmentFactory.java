@@ -28,6 +28,7 @@ import com.oceanbase.odc.service.task.config.JobConfigurationHolder;
 import com.oceanbase.odc.service.task.constants.JobConstants;
 import com.oceanbase.odc.service.task.constants.JobEnvKeyConstants;
 import com.oceanbase.odc.service.task.enums.TaskRunMode;
+import com.oceanbase.odc.service.task.executor.logger.LogUtils;
 import com.oceanbase.odc.service.task.util.JobUtils;
 
 /**
@@ -50,9 +51,7 @@ public class JobEnvironmentFactory {
                     () -> JsonUtils.toJson(cloudEnvConfigurations.getObjectStorageConfiguration()));
         }
 
-        putEnv(JobEnvKeyConstants.ODC_LOG_DIRECTORY,
-                () -> Optional.ofNullable(SystemUtils.getEnvOrProperty(JobEnvKeyConstants.ODC_LOG_DIRECTORY))
-                        .orElse("./log"));
+        putEnv(JobEnvKeyConstants.ODC_LOG_DIRECTORY, LogUtils::getBaseLogPath);
         setDatabaseEnv();
         long userId = TraceContextHolder.getUserId() != null ? TraceContextHolder.getUserId() : -1;
         putEnv(JobEnvKeyConstants.ODC_EXECUTOR_USER_ID, () -> userId + "");
