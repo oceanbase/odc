@@ -98,8 +98,8 @@ public class TaskApplication {
                 SystemUtils.getEnvOrProperty(JobEnvKeyConstants.ODC_EXECUTOR_PORT),
                 SystemUtils.getEnvOrProperty(JobEnvKeyConstants.ODC_TASK_RUN_MODE),
                 context.getJobIdentity().getId(),
-                SystemUtils.getEnvOrProperty(JobEnvKeyConstants.ODC_LOG_DIRECTORY),
-                System.getProperty(JobEnvKeyConstants.ODC_EXECUTOR_USER_ID));
+                System.getProperty(JobEnvKeyConstants.ODC_LOG_DIRECTORY),
+                SystemUtils.getEnvOrProperty(JobEnvKeyConstants.ODC_EXECUTOR_USER_ID));
     }
 
     private void decryptEnvironments() {
