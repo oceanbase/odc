@@ -27,7 +27,6 @@ import com.oceanbase.odc.service.flow.task.DatabaseChangeRuntimeFlowableTaskCopi
 import com.oceanbase.odc.service.flow.task.MockDataRuntimeFlowableTask;
 import com.oceanbase.odc.service.flow.task.PartitionPlanTask;
 import com.oceanbase.odc.service.flow.task.PreCheckRuntimeFlowableTask;
-import com.oceanbase.odc.service.flow.task.PreCheckRuntimeFlowableTaskCopied;
 import com.oceanbase.odc.service.flow.task.RollbackPlanRuntimeFlowableTask;
 import com.oceanbase.odc.service.flow.task.ShadowtableSyncRuntimeFlowableTask;
 import com.oceanbase.odc.service.onlineschemachange.OnlineSchemaChangeFlowableTask;
@@ -72,8 +71,7 @@ public class OdcRuntimeDelegateMapper implements RuntimeDelegateMapper {
             case EXPORT_RESULT_SET:
                 return ResultSetExportFlowableTask.class;
             case PRE_CHECK:
-                return enableTaskFramework ? PreCheckRuntimeFlowableTaskCopied.class
-                        : PreCheckRuntimeFlowableTask.class;
+                return PreCheckRuntimeFlowableTask.class;
             case APPLY_PROJECT_PERMISSION:
                 return ApplyProjectFlowableTask.class;
             default:

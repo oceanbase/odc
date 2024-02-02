@@ -35,6 +35,8 @@ public interface TaskFrameworkProperties {
 
     int getJobNeverHeartAfterStartedSeconds();
 
+    int getJobNeverHeartAfterStartedLimitCount();
+
     int getJobCancelTimeoutSeconds();
 
     int getSingleFetchPreparingJobRows();

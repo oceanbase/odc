@@ -17,6 +17,7 @@
 package com.oceanbase.odc.service.task.executor.logger;
 
 import java.io.File;
+import java.util.Optional;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
@@ -77,8 +78,8 @@ public class LogUtils {
         return String.format(TASK_LOG_PATH_PATTERN, getBaseLogPath(), jobId, logType.getName().toLowerCase());
     }
 
-    private static String getBaseLogPath() {
-        return System.getProperty(JobEnvKeyConstants.ODC_LOG_DIRECTORY);
+    public static String getBaseLogPath() {
+        return Optional.ofNullable(System.getProperty(JobEnvKeyConstants.ODC_LOG_DIRECTORY)).orElse("./log");
     }
 
 }

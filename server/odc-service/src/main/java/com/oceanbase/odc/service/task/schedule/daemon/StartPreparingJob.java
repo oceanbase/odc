@@ -128,7 +128,7 @@ public class StartPreparingJob implements Job {
         long count = getConfiguration().getTaskFrameworkService().countRunningNeverHeartJobs(
                 taskFrameworkProperties.getJobNeverHeartAfterStartedSeconds());
 
-        return count > taskFrameworkProperties.getSingleFetchPreparingJobRows();
+        return count > taskFrameworkProperties.getJobNeverHeartAfterStartedLimitCount();
     }
 
 

@@ -51,6 +51,8 @@ public class DefaultTaskFrameworkProperties implements TaskFrameworkProperties {
     // job started but never send heart to odc server
     private int jobNeverHeartAfterStartedSeconds;
 
+    private int jobNeverHeartAfterStartedLimitCount;
+
     // job to be canceled timeout and current status is cancelling
     private int jobCancelTimeoutSeconds = 2 * 60;
 
