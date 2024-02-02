@@ -19,7 +19,6 @@ import org.springframework.beans.BeanUtils;
 
 import com.oceanbase.odc.service.structurecompare.model.ComparisonResult;
 import com.oceanbase.odc.service.structurecompare.model.DBObjectComparisonResult;
-import com.oceanbase.odc.service.structurecompare.util.StructureCompareUtil;
 import com.oceanbase.tools.dbbrowser.editor.DBTableConstraintEditor;
 import com.oceanbase.tools.dbbrowser.model.DBConstraintType;
 import com.oceanbase.tools.dbbrowser.model.DBObjectType;
@@ -46,8 +45,7 @@ public class DBTableConstraintStructureComparator extends AbstractDBObjectStruct
         DBObjectComparisonResult result = new DBObjectComparisonResult(DBObjectType.CONSTRAINT, tgtDbObject.getName(),
                 srcSchemaName, tgtDbObject.getSchemaName());
         result.setComparisonResult(ComparisonResult.ONLY_IN_TARGET);
-        result.setChangeScript(StructureCompareUtil
-                .appendDelimiterIfNotExist(this.tgtConstraintEditor.generateDropObjectDDL(tgtDbObject)));
+        result.setChangeScript(this.tgtConstraintEditor.generateDropObjectDDL(tgtDbObject));
         return result;
     }
 
@@ -61,8 +59,7 @@ public class DBTableConstraintStructureComparator extends AbstractDBObjectStruct
         if (copiedSrcCons.getType().equals(DBConstraintType.FOREIGN_KEY)) {
             copiedSrcCons.setReferenceSchemaName(tgtSchemaName);
         }
-        result.setChangeScript(StructureCompareUtil.appendDelimiterIfNotExist(
-                this.tgtConstraintEditor.generateCreateObjectDDL(copiedSrcCons)));
+        result.setChangeScript(this.tgtConstraintEditor.generateCreateObjectDDL(copiedSrcCons));
         return result;
     }
 
@@ -86,7 +83,7 @@ public class DBTableConstraintStructureComparator extends AbstractDBObjectStruct
         if (!ddl.isEmpty()) {
             // constraint to be updated
             result.setComparisonResult(ComparisonResult.INCONSISTENT);
-            result.setChangeScript(StructureCompareUtil.appendDelimiterIfNotExist(ddl));
+            result.setChangeScript(ddl);
         } else {
             result.setComparisonResult(ComparisonResult.CONSISTENT);
         }

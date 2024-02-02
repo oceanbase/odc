@@ -38,7 +38,6 @@ import com.oceanbase.odc.metadb.notification.NotificationPolicyEntity;
 import com.oceanbase.odc.metadb.notification.NotificationPolicyRepository;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.notification.helper.PolicyMapper;
-import com.oceanbase.odc.service.notification.model.BaseChannelConfig;
 import com.oceanbase.odc.service.notification.model.Channel;
 import com.oceanbase.odc.service.notification.model.ChannelType;
 import com.oceanbase.odc.service.notification.model.DingTalkChannelConfig;
@@ -66,8 +65,6 @@ public class NotificationServiceTest extends AuthorityTestEnv {
     private AuthenticationFacade authenticationFacade;
     @Autowired
     private NotificationPolicyRepository policyRepository;
-    @Autowired
-    private PolicyMapper policyMapper;
 
     @Before
     public void setUp() {
@@ -88,14 +85,15 @@ public class NotificationServiceTest extends AuthorityTestEnv {
         Channel saved = notificationService.createChannel(PROJECT_ID, getChannel());
         Assert.assertNotNull(saved);
         List<ChannelPropertyEntity> properties = channelPropertyRepository.findAllByChannelId(saved.getId());
-        Assert.assertEquals(1, properties.size());
+        Assert.assertEquals(2, properties.size());
     }
 
     @Test
     public void test_DetailChannel_withChannelConfig() {
         Channel saved = notificationService.createChannel(PROJECT_ID, getChannel());
         Channel channel = notificationService.detailChannel(PROJECT_ID, saved.getId());
-        Assert.assertEquals("test", ((DingTalkChannelConfig) channel.getChannelConfig()).getWebhook());
+        Assert.assertEquals("https://oapi.dingtalk.com/robot",
+                ((DingTalkChannelConfig) channel.getChannelConfig()).getWebhook());
     }
 
     @Test
@@ -115,8 +113,9 @@ public class NotificationServiceTest extends AuthorityTestEnv {
         Channel channel = getChannel();
         channel.getChannelConfig().setLanguage("zh-CN");
         Channel saved = notificationService.createChannel(PROJECT_ID, channel);
-        BaseChannelConfig config = new DingTalkChannelConfig();
+        DingTalkChannelConfig config = new DingTalkChannelConfig();
         config.setLanguage("en");
+        config.setWebhook("https://oapi.dingtalk.com/robot");
         saved.setChannelConfig(config);
         Channel updated = notificationService.updateChannel(PROJECT_ID, saved);
 
@@ -159,9 +158,9 @@ public class NotificationServiceTest extends AuthorityTestEnv {
     @Test
     public void test_BatchUpdatePolicies() {
         Channel channel = notificationService.createChannel(PROJECT_ID, getChannel());
-        NotificationPolicy saved = policyMapper.fromEntity(policyRepository.save(getPolicy()));
+        NotificationPolicy saved = PolicyMapper.fromEntity(policyRepository.save(getPolicy()));
         saved.setEnabled(false);
-        NotificationPolicy metaPolicy = policyMapper.fromEntity(getPolicy());
+        NotificationPolicy metaPolicy = PolicyMapper.fromEntity(getPolicy());
         metaPolicy.setPolicyMetadataId(2L);
         metaPolicy.setChannels(Collections.singletonList(channel));
         List<NotificationPolicy> toBeUpdated = Arrays.asList(saved, metaPolicy);
@@ -180,7 +179,7 @@ public class NotificationServiceTest extends AuthorityTestEnv {
         channel.setOrganizationId(ORGANIZATION_ID);
         channel.setCreatorId(ADMIN_USER_ID);
         DingTalkChannelConfig channelConfig = new DingTalkChannelConfig();
-        channelConfig.setWebhook("test");
+        channelConfig.setWebhook("https://oapi.dingtalk.com/robot");
         channel.setChannelConfig(channelConfig);
         return channel;
     }

@@ -16,6 +16,9 @@
 package com.oceanbase.odc.service.notification.model;
 
 import java.util.Date;
+import java.util.List;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -45,4 +48,7 @@ public class Event {
     private EventStatus status;
 
     private EventLabels labels;
+
+    @JsonIgnore
+    private List<NotificationPolicy> policies;
 }

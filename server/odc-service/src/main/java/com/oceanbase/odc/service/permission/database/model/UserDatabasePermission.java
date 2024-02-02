@@ -52,6 +52,9 @@ public class UserDatabasePermission {
     private Date expireTime;
 
     @JsonProperty(access = Access.READ_ONLY)
+    private ExpirationStatusFilter status;
+
+    @JsonProperty(access = Access.READ_ONLY)
     private Long creatorId;
 
     @JsonProperty(access = Access.READ_ONLY)
@@ -72,10 +75,10 @@ public class UserDatabasePermission {
     @JsonProperty(access = Access.READ_ONLY)
     private String dataSourceName;
 
-    @JsonProperty(access = Access.READ_ONLY)
-    private Long environmentId;
-
-    @JsonProperty(access = Access.READ_ONLY)
-    private String environmentName;
+    public static UserDatabasePermission from(Long permissionId) {
+        UserDatabasePermission permission = new UserDatabasePermission();
+        permission.setId(permissionId);
+        return permission;
+    }
 
 }

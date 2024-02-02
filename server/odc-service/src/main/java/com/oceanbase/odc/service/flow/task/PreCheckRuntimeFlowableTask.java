@@ -23,8 +23,10 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.HashSet;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -41,6 +43,7 @@ import com.oceanbase.odc.common.unit.BinarySizeUnit;
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.shared.constant.TaskType;
 import com.oceanbase.odc.core.shared.exception.VerifyException;
+import com.oceanbase.odc.core.sql.execute.model.SqlTuple;
 import com.oceanbase.odc.core.sql.split.OffsetString;
 import com.oceanbase.odc.core.sql.split.SqlStatementIterator;
 import com.oceanbase.odc.metadb.task.TaskEntity;
@@ -59,6 +62,8 @@ import com.oceanbase.odc.service.flow.task.model.SqlCheckTaskResult;
 import com.oceanbase.odc.service.flow.task.util.DatabaseChangeFileReader;
 import com.oceanbase.odc.service.flow.util.FlowTaskUtil;
 import com.oceanbase.odc.service.onlineschemachange.model.OnlineSchemaChangeParameters;
+import com.oceanbase.odc.service.permission.database.model.DatabasePermissionType;
+import com.oceanbase.odc.service.permission.database.model.UnauthorizedDatabase;
 import com.oceanbase.odc.service.regulation.approval.ApprovalFlowConfigSelector;
 import com.oceanbase.odc.service.regulation.risklevel.model.RiskLevel;
 import com.oceanbase.odc.service.regulation.risklevel.model.RiskLevelDescriber;
@@ -71,6 +76,7 @@ import com.oceanbase.odc.service.sqlcheck.model.CheckResult;
 import com.oceanbase.odc.service.sqlcheck.model.CheckViolation;
 import com.oceanbase.odc.service.task.TaskService;
 import com.oceanbase.odc.service.task.model.ExecutorInfo;
+import com.oceanbase.tools.dbbrowser.parser.constant.SqlType;
 
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
@@ -118,7 +124,7 @@ public class PreCheckRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Void> {
         if (preCheckTaskEntity == null) {
             throw new ServiceTaskError(new RuntimeException("Can not find task entity by id " + preCheckTaskId));
         }
-        this.creatorId = FlowTaskUtil.getTaskCreator(execution).getCreatorId();
+        this.creatorId = FlowTaskUtil.getTaskCreator(execution).getId();
         try {
             this.connectionConfig = FlowTaskUtil.getConnectionConfig(execution);
         } catch (VerifyException e) {
@@ -187,7 +193,6 @@ public class PreCheckRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Void> {
         } catch (Exception e) {
             log.warn("Failed to store task result", e);
         }
-        super.onFailure(taskId, taskService);
     }
 
     @Override
@@ -199,7 +204,6 @@ public class PreCheckRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Void> {
         } catch (Exception e) {
             log.warn("Failed to store task result", e);
         }
-        super.onSuccessful(taskId, taskService);
     }
 
     @Override
@@ -228,7 +232,7 @@ public class PreCheckRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Void> {
                     return;
                 }
             }
-            doSqlCheckAndDatabasePermissionCheck(preCheckTaskEntity, riskLevelDescriber);
+            doSqlCheckAndDatabasePermissionCheck(preCheckTaskEntity, riskLevelDescriber, taskType);
             if (isIntercepted(this.sqlCheckResult, this.permissionCheckResult)) {
                 throw new ServiceTaskError(new RuntimeException());
             }
@@ -250,25 +254,39 @@ public class PreCheckRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Void> {
             }
         }
         if (Objects.nonNull(permissionCheckResult)) {
-            return CollectionUtils.isNotEmpty(permissionCheckResult.getUnauthorizedDatabaseNames());
+            return CollectionUtils.isNotEmpty(permissionCheckResult.getUnauthorizedDatabases());
         }
         return false;
     }
 
-    private void doSqlCheckAndDatabasePermissionCheck(TaskEntity preCheckTaskEntity, RiskLevelDescriber describer) {
+    private void doSqlCheckAndDatabasePermissionCheck(TaskEntity preCheckTaskEntity, RiskLevelDescriber describer,
+            TaskType taskType) {
         List<OffsetString> sqls = new ArrayList<>();
         this.overLimit = getSqlContentUntilOverLimit(sqls, preCheckTaskProperties.getMaxSqlContentBytes());
-        Set<String> unauthorizedDatabaseNames = new HashSet<>();
+        List<UnauthorizedDatabase> unauthorizedDatabases = new ArrayList<>();
         List<CheckViolation> violations = new ArrayList<>();
         if (CollectionUtils.isNotEmpty(sqls)) {
             violations.addAll(this.sqlCheckService.check(Long.valueOf(describer.getEnvironmentId()),
                     describer.getDatabaseName(), sqls, connectionConfig));
-            unauthorizedDatabaseNames.addAll(databaseService.filterUnAuthorizedDatabaseNames(
-                    SchemaExtractor.listSchemaNames(sqls.stream().map(OffsetString::getStr)
-                            .collect(Collectors.toList()), this.connectionConfig.getDialectType()),
-                    connectionConfig.getId()));
+            Map<String, Set<SqlType>> schemaName2SqlTypes = SchemaExtractor.listSchemaName2SqlTypes(
+                    sqls.stream().map(e -> SqlTuple.newTuple(e.getStr())).collect(Collectors.toList()),
+                    preCheckTaskEntity.getDatabaseName(), this.connectionConfig.getDialectType());
+            Map<String, Set<DatabasePermissionType>> schemaName2PermissionTypes = new HashMap<>();
+            for (Entry<String, Set<SqlType>> entry : schemaName2SqlTypes.entrySet()) {
+                Set<SqlType> sqlTypes = entry.getValue();
+                if (CollectionUtils.isNotEmpty(sqlTypes)) {
+                    Set<DatabasePermissionType> permissionTypes = sqlTypes.stream().map(DatabasePermissionType::from)
+                            .filter(Objects::nonNull).collect(Collectors.toSet());
+                    permissionTypes.addAll(DatabasePermissionType.from(taskType));
+                    if (CollectionUtils.isNotEmpty(permissionTypes)) {
+                        schemaName2PermissionTypes.put(entry.getKey(), permissionTypes);
+                    }
+                }
+            }
+            unauthorizedDatabases =
+                    databaseService.filterUnauthorizedDatabases(schemaName2PermissionTypes, connectionConfig.getId());
         }
-        this.permissionCheckResult = new DatabasePermissionCheckResult(unauthorizedDatabaseNames);
+        this.permissionCheckResult = new DatabasePermissionCheckResult(unauthorizedDatabases);
         this.sqlCheckResult = SqlCheckTaskResult.success(violations);
         try {
             storeTaskResultToFile(preCheckTaskEntity.getId(), this.sqlCheckResult);

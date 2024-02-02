@@ -184,6 +184,7 @@ public class ApplyProjectFlowableTask extends BaseODCFlowTaskDelegate<ApplyProje
         TaskContextHolder.trace(getTaskCreatorId(taskId, taskService), taskId);
         log.warn("Apply project permission task timeout, taskId={}", taskId);
         TaskContextHolder.clear();
+        super.onTimeout(taskId, taskService);
     }
 
     @Override
@@ -191,7 +192,7 @@ public class ApplyProjectFlowableTask extends BaseODCFlowTaskDelegate<ApplyProje
 
     @Override
     protected boolean cancel(boolean mayInterruptIfRunning, Long taskId, TaskService taskService) {
-        throw new UnsupportedException(ErrorCodes.TaskNotTerminable, null,
+        throw new UnsupportedException(ErrorCodes.RunningTaskNotTerminable, null,
                 "The task is not terminable during execution");
     }
 

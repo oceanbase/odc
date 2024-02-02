@@ -98,11 +98,11 @@ public class DBSchemaAccessors {
             if (VersionUtils.isGreaterThanOrEqualsTo(obVersion, "4.0.0")) {
                 // OB 版本 >= 4.0.0
                 return new OBOracleSchemaAccessor(syncJdbcExecutor, new ALLDataDictTableNames());
-            } else if (VersionUtils.isGreaterThanOrEqualsTo(obVersion, "2.2.7")) {
-                // OB 版本为 [2.2.7, 4.0.0)
+            } else if (VersionUtils.isGreaterThanOrEqualsTo(obVersion, "2.2.70")) {
+                // OB 版本为 [2.2.70, 4.0.0)
                 return new OBOracleLessThan400SchemaAccessor(syncJdbcExecutor, new ALLDataDictTableNames());
             } else {
-                // OB 版本 < 2.2.7
+                // OB 版本 < 2.2.70
                 return new OBOracleLessThan2270SchemaAccessor(syncJdbcExecutor, new ALLDataDictTableNames());
             }
         } else if (connectType == ConnectType.ODP_SHARDING_OB_MYSQL) {

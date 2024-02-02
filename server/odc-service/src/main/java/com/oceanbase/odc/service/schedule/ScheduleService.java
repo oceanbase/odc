@@ -19,6 +19,7 @@ import java.io.File;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -67,6 +68,7 @@ import com.oceanbase.odc.service.dispatch.RequestDispatcher;
 import com.oceanbase.odc.service.dispatch.TaskDispatchChecker;
 import com.oceanbase.odc.service.flow.model.FlowNodeStatus;
 import com.oceanbase.odc.service.flow.task.model.DatabaseChangeParameters;
+import com.oceanbase.odc.service.iam.ProjectPermissionValidator;
 import com.oceanbase.odc.service.iam.UserService;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.iam.model.User;
@@ -132,6 +134,9 @@ public class ScheduleService {
 
     @Autowired
     private ProjectService projectService;
+
+    @Autowired
+    private ProjectPermissionValidator projectPermissionValidator;
 
     @Autowired
     private ApprovalFlowConfigSelector approvalFlowConfigSelector;
@@ -463,14 +468,17 @@ public class ScheduleService {
 
     public ScheduleEntity nullSafeGetByIdWithCheckPermission(Long id, boolean isWrite) {
         ScheduleEntity scheduleEntity = nullSafeGetById(id);
+        Long projectId = scheduleEntity.getProjectId();
         if (isWrite) {
             List<ResourceRoleName> resourceRoleNames = getApproverRoleNames(scheduleEntity);
-            if (!projectService.checkPermission(scheduleEntity.getProjectId(), resourceRoleNames)
-                    && authenticationFacade.currentUserId() != scheduleEntity.getCreatorId()) {
+            if ((Objects.nonNull(projectId) && !projectPermissionValidator.hasProjectRole(projectId, resourceRoleNames))
+                    && authenticationFacade.currentUserId() != projectId) {
                 throw new AccessDeniedException();
             }
         } else {
-            if (!projectService.checkPermission(scheduleEntity.getProjectId(), ResourceRoleName.all())) {
+
+            if (Objects.nonNull(projectId)
+                    && !projectPermissionValidator.hasProjectRole(projectId, ResourceRoleName.all())) {
                 throw new AccessDeniedException();
             }
         }

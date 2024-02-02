@@ -76,13 +76,13 @@ public class MySQLTableEditor extends DBTableEditor {
         if (StringUtils.isNotBlank(options.getCompressionOption())) {
             sqlBuilder.append("COMPRESSION = ").append(options.getCompressionOption()).space();
         }
-        appendMoreTableOptions(table, sqlBuilder);
+        appendParticularTableOptions(table, sqlBuilder);
         if (StringUtils.isNotEmpty(options.getComment())) {
             sqlBuilder.append("COMMENT = ").value(options.getComment()).space();
         }
     }
 
-    protected void appendMoreTableOptions(DBTable table, SqlBuilder sqlBuilder) {}
+    protected void appendParticularTableOptions(DBTable table, SqlBuilder sqlBuilder) {}
 
     @Override
     public void generateUpdateTableOptionDDL(@NonNull DBTable oldTable, @NonNull DBTable newTable,
@@ -90,13 +90,7 @@ public class MySQLTableEditor extends DBTableEditor {
         if (Objects.isNull(oldTable.getTableOptions()) || Objects.isNull(newTable.getTableOptions())) {
             return;
         }
-        if (!StringUtils.equals(oldTable.getTableOptions().getComment(), newTable.getTableOptions().getComment())) {
-            sqlBuilder.append("ALTER TABLE ")
-                    .append(getFullyQualifiedTableName(newTable))
-                    .append(" COMMENT = ")
-                    .value(newTable.getTableOptions().getComment())
-                    .append(";\n");
-        }
+        generateUpdateTableCommentDDL(oldTable, newTable, sqlBuilder);
         if (!StringUtils.equals(oldTable.getTableOptions().getCharsetName(),
                 newTable.getTableOptions().getCharsetName())) {
             sqlBuilder.append("ALTER TABLE ")
@@ -111,6 +105,17 @@ public class MySQLTableEditor extends DBTableEditor {
                     .append(getFullyQualifiedTableName(newTable))
                     .append(" COLLATE = ")
                     .append(newTable.getTableOptions().getCollationName())
+                    .append(";\n");
+        }
+    }
+
+    protected void generateUpdateTableCommentDDL(@NonNull DBTable oldTable, @NonNull DBTable newTable,
+            @NonNull SqlBuilder sqlBuilder) {
+        if (!StringUtils.equals(oldTable.getTableOptions().getComment(), newTable.getTableOptions().getComment())) {
+            sqlBuilder.append("ALTER TABLE ")
+                    .append(getFullyQualifiedTableName(newTable))
+                    .append(" COMMENT = ")
+                    .value(newTable.getTableOptions().getComment())
                     .append(";\n");
         }
     }

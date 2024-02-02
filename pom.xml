@@ -578,6 +578,10 @@
                         <groupId>com.oceanbase</groupId>
                         <artifactId>obkv-table-client</artifactId>
                     </exclusion>
+                    <exclusion>
+                        <groupId>com.oceanbase</groupId>
+                        <artifactId>obtools-dbdiff</artifactId>
+                    </exclusion>
                 </exclusions>
             </dependency>
 
@@ -1439,7 +1443,7 @@ limitations under the License.
                 </property>
             </activation>
             <properties>
-                <ob-loader-dumper.version>4.2.5-RELEASE</ob-loader-dumper.version>
+                <ob-loader-dumper.version>4.2.8-RELEASE</ob-loader-dumper.version>
             </properties>
         </profile>
     </profiles>

@@ -149,6 +149,26 @@ public class OracleSchemaAccessorTest extends BaseTestEnv {
     }
 
     @Test
+    public void listTableConstraint_listSchemaConstraints_Success() {
+        Map<String, List<DBTableConstraint>> tableName2Constraints = accessor.listTableConstraints(getOracleSchema());
+        Assert.assertEquals(4, tableName2Constraints.size());
+        Assert.assertEquals(1, tableName2Constraints.get("PART_HASH_TEST").size());
+        Assert.assertEquals(1, tableName2Constraints.get("TEST_FK_CHILD").size());
+        Assert.assertEquals(1, tableName2Constraints.get("TEST_FK_PARENT").size());
+        Assert.assertEquals(1, tableName2Constraints.get("TEST_PK_INDEX").size());
+    }
+
+    @Test
+    public void listTableOptions_listSchemaTableOptions_Success() {
+        Map<String, DBTableOptions> tableName2Options = accessor.listTableOptions(getOracleSchema());
+        Assert.assertFalse(tableName2Options.isEmpty());
+        tableName2Options.values().forEach(options -> {
+            Assert.assertNotNull(options.getCharsetName());
+            Assert.assertNotNull(options.getCollationName());
+        });
+    }
+
+    @Test
     public void listTableIndexes_TestPrimaryKeyIndex_Success() {
         List<DBTableIndex> indexes =
                 accessor.listTableIndexes(getOracleSchema(), "TEST_PK_INDEX");
@@ -175,6 +195,16 @@ public class OracleSchemaAccessorTest extends BaseTestEnv {
                 Assert.assertFalse(idx.getGlobal());
             }
         });
+    }
+
+    @Test
+    public void listTableIndex_listSchemaIndex_Success() {
+        Map<String, List<DBTableIndex>> tableName2Indexes = accessor.listTableIndexes(getOracleSchema());
+        Assert.assertEquals(4, tableName2Indexes.size());
+        Assert.assertEquals(2, tableName2Indexes.get("TEST_INDEX_TYPE").size());
+        Assert.assertEquals(3, tableName2Indexes.get("TEST_INDEX_RANGE").size());
+        Assert.assertEquals(1, tableName2Indexes.get("TEST_FK_PARENT").size());
+        Assert.assertEquals(1, tableName2Indexes.get("TEST_PK_INDEX").size());
     }
 
     @Test
