@@ -24,6 +24,7 @@ import org.pf4j.Extension;
 import com.oceanbase.jdbc.OceanBaseConnection;
 import com.oceanbase.odc.common.util.JdbcOperationsUtil;
 import com.oceanbase.odc.common.util.StringUtils;
+import com.oceanbase.odc.core.shared.exception.UnexpectedException;
 import com.oceanbase.odc.plugin.connect.api.SessionExtensionPoint;
 
 import lombok.extern.slf4j.Slf4j;
@@ -48,8 +49,16 @@ public class OBOracleSessionExtension implements SessionExtensionPoint {
         if (Objects.equals(currentSchema, schemaName)) {
             return;
         }
-        String alterSql = "ALTER SESSION SET CURRENT_SCHEMA=" + StringUtils.quoteOracleIdentifier(schemaName);
+        schemaName = isQuotedWithIdentifier(schemaName) ? schemaName : StringUtils.quoteOracleIdentifier(schemaName);
+        String alterSql = "ALTER SESSION SET CURRENT_SCHEMA=" + schemaName;
         JdbcOperationsUtil.getJdbcOperations(connection).update(alterSql);
+    }
+
+    public boolean isQuotedWithIdentifier(String text) {
+        if (text != null && text.length() >= 2) {
+            return text.startsWith("\"") && text.endsWith("\"");
+        }
+        return false;
     }
 
     @Override
@@ -70,5 +79,21 @@ public class OBOracleSessionExtension implements SessionExtensionPoint {
             }
         }
         return connectionId;
+    }
+
+    @Override
+    public String getVariable(Connection connection, String variableName) {
+        String querySql = "SHOW SESSION VARIABLES LIKE '" + variableName + "'";
+        try {
+            return JdbcOperationsUtil.getJdbcOperations(connection).query(querySql, rs -> {
+                if (rs.next()) {
+                    return rs.getString(2);
+                }
+                throw new UnexpectedException("variable does not exist: " + variableName);
+            });
+        } catch (Exception e) {
+            log.warn("Failed to get variable {}, message={}", variableName, e.getMessage());
+        }
+        return null;
     }
 }

@@ -27,6 +27,7 @@ import com.oceanbase.tools.dbbrowser.editor.oracle.OracleObjectOperator;
 import com.oceanbase.tools.dbbrowser.model.DBObjectType;
 import com.oceanbase.tools.dbbrowser.model.DBPLObjectIdentity;
 import com.oceanbase.tools.dbbrowser.model.DBTrigger;
+import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
 import com.oceanbase.tools.dbbrowser.template.DBObjectTemplate;
 import com.oceanbase.tools.dbbrowser.template.oracle.OracleTriggerTemplate;
 import com.oceanbase.tools.dbbrowser.util.OracleSqlBuilder;
@@ -44,13 +45,13 @@ public class OBOracleTriggerExtension implements TriggerExtensionPoint {
 
     @Override
     public List<DBPLObjectIdentity> list(@NonNull Connection connection, @NonNull String schemaName) {
-        return DBAccessorUtil.getSchemaAccessor(connection).listTriggers(schemaName);
+        return getSchemaAccessor(connection).listTriggers(schemaName);
     }
 
     @Override
     public DBTrigger getDetail(@NonNull Connection connection, @NonNull String schemaName,
             @NonNull String triggerName) {
-        return DBAccessorUtil.getSchemaAccessor(connection).getTrigger(schemaName, triggerName);
+        return getSchemaAccessor(connection).getTrigger(schemaName, triggerName);
     }
 
     @Override
@@ -81,5 +82,9 @@ public class OBOracleTriggerExtension implements TriggerExtensionPoint {
     public String generateCreateTemplate(@NonNull DBTrigger trigger) {
         DBObjectTemplate<DBTrigger> template = new OracleTriggerTemplate();
         return template.generateCreateObjectTemplate(trigger);
+    }
+
+    protected DBSchemaAccessor getSchemaAccessor(Connection connection) {
+        return DBAccessorUtil.getSchemaAccessor(connection);
     }
 }
