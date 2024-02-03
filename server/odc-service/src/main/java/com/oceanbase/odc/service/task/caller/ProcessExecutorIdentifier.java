@@ -13,28 +13,37 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.oceanbase.odc.service.task.caller;
 
-import java.util.List;
+import static com.oceanbase.odc.service.task.constants.JobConstants.ODC_EXECUTOR_FILED_DELIMITER;
+
+import java.util.Optional;
 
 import lombok.Data;
 
 /**
  * @author yaobin
- * @date 2023-11-16
+ * @date 2024-02-03
  * @since 4.2.4
  */
 @Data
-public class PodConfig {
+public class ProcessExecutorIdentifier implements ExecutorIdentifier {
 
-    private String region;
+    private String ipv4Address;
 
-    private String namespace;
+    private String physicalAddress;
 
-    private String image;
+    private Long pid;
 
-    private List<String> command;
+    private String executorName;
 
-    private PodParam podParam = new PodParam();
+    @Override
+    public String toString() {
+        return Optional.ofNullable(ipv4Address).orElse("") +
+                append(physicalAddress) + append(executorName) + append(pid + "");
+    }
+
+    private String append(String value) {
+        return ODC_EXECUTOR_FILED_DELIMITER + Optional.ofNullable(value).orElse("");
+    }
 }

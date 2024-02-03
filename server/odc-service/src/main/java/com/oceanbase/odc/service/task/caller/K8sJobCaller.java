@@ -42,13 +42,17 @@ public class K8sJobCaller extends BaseJobCaller {
 
     @Override
     public ExecutorIdentifier doStart(JobContext context) throws JobException {
-        String jobName = JobUtils.generateExecutorName(context.getJobIdentity());
+        String executorName = JobUtils.generateExecutorName(context.getJobIdentity());
 
-        String name = client.create(podConfig.getNamespace(), jobName, podConfig.getImage(),
+        String name = client.create(podConfig.getNamespace(), executorName, podConfig.getImage(),
                 podConfig.getCommand(), podConfig.getPodParam());
+        K8sExecutorIdentifier kei = new K8sExecutorIdentifier();
+        kei.setRegion(podConfig.getRegion());
+        kei.setNamespace(podConfig.getNamespace());
+        kei.setExecutorName(executorName);
+        kei.setPodIdentity(name);
 
-        return DefaultExecutorIdentifier.builder().namespace(podConfig.getNamespace())
-                .executorName(name).build();
+        return kei;
     }
 
     @Override
@@ -59,9 +63,11 @@ public class K8sJobCaller extends BaseJobCaller {
 
     @Override
     protected void doDestroy(ExecutorIdentifier identifier) throws JobException {
-        Optional<String> executorOptional = client.get(identifier.getNamespace(), identifier.getExecutorName());
+        K8sExecutorIdentifier kei = (K8sExecutorIdentifier) identifier;
+        Optional<String> executorOptional = client.get(kei.getNamespace(), kei.getPodIdentity());
         if (executorOptional.isPresent()) {
-            log.info("Found pod {}, delete it.", identifier.getExecutorName());
+            log.info("Found pod, delete it, executor name={}, pod identify={}.",
+                    kei.getExecutorName(), kei.getPodIdentity());
             client.delete(podConfig.getNamespace(), identifier.getExecutorName());
         }
     }

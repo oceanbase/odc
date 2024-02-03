@@ -26,6 +26,7 @@ import com.oceanbase.odc.service.common.model.HostProperties;
 import com.oceanbase.odc.service.dispatch.JobDispatchChecker;
 import com.oceanbase.odc.service.task.caller.ExecutorIdentifier;
 import com.oceanbase.odc.service.task.caller.ExecutorIdentifierParser;
+import com.oceanbase.odc.service.task.caller.ProcessExecutorIdentifier;
 import com.oceanbase.odc.service.task.util.JobUtils;
 
 import lombok.NonNull;
@@ -51,9 +52,11 @@ public class DefaultJobDispatcherChecker implements JobDispatchChecker {
             return true;
         }
 
-        ExecutorIdentifier ei = ExecutorIdentifierParser.parser(identifier);
+        ExecutorIdentifier ei = ExecutorIdentifierParser.parser(je.getRunMode(),
+                je.getExecutorIdentifier());
+
         String host =
                 hostProperties.getOdcHost() == null ? SystemUtils.getLocalIpAddress() : hostProperties.getOdcHost();
-        return Objects.equals(host, ei.getHost());
+        return Objects.equals(host, ((ProcessExecutorIdentifier) ei).getIpv4Address());
     }
 }

@@ -154,7 +154,7 @@ public abstract class BaseJobCaller implements JobCaller {
         }
         log.info("Preparing destroy,jobId={}, executorIdentifier={}.", ji.getId(), executorIdentifier);
 
-        destroy(ExecutorIdentifierParser.parser(executorIdentifier));
+        destroy(ExecutorIdentifierParser.parser(jobEntity.getRunMode(), executorIdentifier));
         int rows = taskFrameworkService.updateExecutorToDestroyed(ji.getId());
         if (rows > 0) {
             log.info("Destroy job {} executor {} succeed.", ji.getId(), executorIdentifier);

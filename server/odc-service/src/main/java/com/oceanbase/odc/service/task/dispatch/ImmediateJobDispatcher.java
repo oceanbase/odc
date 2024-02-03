@@ -93,6 +93,7 @@ public class ImmediateJobDispatcher implements JobDispatcher {
         K8sProperties k8s = taskFrameworkProperties.getK8sProperties();
 
         PodConfig podConfig = new PodConfig();
+        podConfig.setRegion(k8s.getRegion());
         podConfig.setNamespace(k8s.getNamespace());
         JobImageNameProvider jobImageNameProvider = JobConfigurationHolder.getJobConfiguration()
                 .getJobImageNameProvider();

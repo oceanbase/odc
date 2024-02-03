@@ -44,6 +44,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.stereotype.Service;
+import org.springframework.web.util.UriComponents;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.google.common.base.Charsets;
@@ -71,6 +72,7 @@ import com.oceanbase.odc.service.common.model.FileBucket;
 import com.oceanbase.odc.service.common.response.ListResponse;
 import com.oceanbase.odc.service.common.response.SuccessResponse;
 import com.oceanbase.odc.service.common.util.OdcFileUtil;
+import com.oceanbase.odc.service.common.util.UrlUtils;
 import com.oceanbase.odc.service.datatransfer.LocalFileManager;
 import com.oceanbase.odc.service.dispatch.DispatchResponse;
 import com.oceanbase.odc.service.dispatch.JobDispatchChecker;
@@ -102,8 +104,6 @@ import com.oceanbase.odc.service.permissionapply.project.ApplyProjectResult;
 import com.oceanbase.odc.service.schedule.flowtask.AlterScheduleResult;
 import com.oceanbase.odc.service.session.model.SqlExecuteResult;
 import com.oceanbase.odc.service.task.TaskService;
-import com.oceanbase.odc.service.task.caller.ExecutorIdentifier;
-import com.oceanbase.odc.service.task.caller.ExecutorIdentifierParser;
 import com.oceanbase.odc.service.task.config.TaskFrameworkProperties;
 import com.oceanbase.odc.service.task.constants.JobAttributeKeyConstants;
 import com.oceanbase.odc.service.task.constants.JobUrlConstants;
@@ -270,8 +270,8 @@ public class FlowTaskInstanceService {
         } else {
             // process mode when executor is not current host, forward to target
             if (!jobDispatchChecker.isExecutorOnThisMachine(jobEntity)) {
-                ExecutorIdentifier ei = ExecutorIdentifierParser.parser(jobEntity.getExecutorIdentifier());
-                DispatchResponse response = requestDispatcher.forward(ei.getHost(), ei.getPort());
+                UriComponents uc = UrlUtils.getUriComponents(jobEntity.getExecutorEndpoint());
+                DispatchResponse response = requestDispatcher.forward(uc.getHost(), uc.getPort());
                 return response.getContentByType(new TypeReference<String>() {});
             }
             String logFileStr = LogUtils.getTaskLogFileWithPath(jobEntity.getId(), level);

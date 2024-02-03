@@ -59,5 +59,6 @@ public class JobConstants {
 
     public static final String ODC_JOB_MONITORING = "odcJobMonitoring";
 
+    public static final String ODC_EXECUTOR_FILED_DELIMITER = ";";
 
 }

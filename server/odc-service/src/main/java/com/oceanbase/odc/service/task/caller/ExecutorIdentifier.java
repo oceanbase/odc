@@ -22,14 +22,5 @@ package com.oceanbase.odc.service.task.caller;
  */
 public interface ExecutorIdentifier {
 
-    String getProtocol();
-
-    String getHost();
-
-    int getPort();
-
-    String getNamespace();
-
     String getExecutorName();
-
 }

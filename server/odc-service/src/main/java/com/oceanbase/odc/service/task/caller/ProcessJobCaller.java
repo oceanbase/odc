@@ -65,10 +65,12 @@ public class ProcessJobCaller extends BaseJobCaller {
                     pid, executorName);
         }
 
-        // set process id as namespace
-        return DefaultExecutorIdentifier.builder().host(SystemUtils.getLocalIpAddress())
-                .namespace(pid + "")
-                .executorName(executorName).build();
+        ProcessExecutorIdentifier pei = new ProcessExecutorIdentifier();
+        pei.setIpv4Address(SystemUtils.getLocalIpAddress());
+        pei.setPid(pid);
+        pei.setExecutorName(executorName);
+
+        return pei;
     }
 
     @Override
@@ -76,16 +78,18 @@ public class ProcessJobCaller extends BaseJobCaller {
 
     @Override
     protected void doDestroy(ExecutorIdentifier identifier) throws JobException {
-        long pid = Long.parseLong(identifier.getNamespace());
+        ProcessExecutorIdentifier pei = (ProcessExecutorIdentifier) identifier;
+        long pid = pei.getPid();
         if (SystemUtils.isProcessRunning(pid,
                 JobUtils.generateExecutorSelectorOnProcess(identifier.getExecutorName()))) {
             log.info("Found process, try kill it, pid={}.", pid);
             boolean result = SystemUtils.killProcessByPid(pid);
             if (result) {
-                log.info("Destroy succeed by kill process, executorIdentifier={},  pid={}", identifier, pid);
+                log.info("Destroy succeed by kill process, executorName={}, pid={}", pei.getExecutorName(), pid);
             } else {
                 throw new JobException(
-                        "Destroy executor failed by kill process, identifier={0}, pid{1}=", identifier, pid);
+                        "Destroy executor failed by kill process, executorName={0}, pid{1}=",
+                        pei.getExecutorName(), pid);
             }
         }
     }

@@ -15,32 +15,58 @@
  */
 package com.oceanbase.odc.service.task.caller;
 
-import org.springframework.web.util.UriComponents;
+import static com.oceanbase.odc.service.task.constants.JobConstants.ODC_EXECUTOR_FILED_DELIMITER;
 
-import com.oceanbase.odc.service.common.util.UrlUtils;
-import com.oceanbase.odc.service.task.exception.TaskRuntimeException;
+import com.oceanbase.odc.common.util.StringUtils;
+import com.oceanbase.odc.core.shared.PreConditions;
+import com.oceanbase.odc.service.task.enums.TaskRunMode;
 
 /**
  * @author yaobin
- * @date 2023-12-25
+ * @date 2024-02-01
  * @since 4.2.4
  */
 public class ExecutorIdentifierParser {
 
-    public static ExecutorIdentifier parser(String identifierString) {
-        UriComponents uriComponents = UrlUtils.getUriComponents(identifierString);
-        String path = uriComponents.getPath();
-        int nameIndex = path.lastIndexOf("/");
-        if (nameIndex == -1) {
-            throw new TaskRuntimeException("Illegal executor name : " + path);
+    public static ExecutorIdentifier parser(TaskRunMode runMode, String executorIdentifierString) {
+        if (runMode == TaskRunMode.K8S) {
+            return parseK8sExecutorIdentifier(executorIdentifierString);
         }
-
-        String namespace = path.substring(0, nameIndex).replace("/", "");
-        return DefaultExecutorIdentifier.builder().host(uriComponents.getHost())
-                .port(uriComponents.getPort())
-                .protocol(uriComponents.getScheme())
-                .namespace(namespace.length() == 0 ? null : namespace)
-                .executorName(path.substring(nameIndex).replace("/", ""))
-                .build();
+        return parseProcessExecutorIdentifier(executorIdentifierString);
     }
+
+    private static K8sExecutorIdentifier parseK8sExecutorIdentifier(String executorIdentifierString) {
+        String[] fieldValues = executorIdentifierString.split(ODC_EXECUTOR_FILED_DELIMITER);
+        replaceBlankToNull(fieldValues);
+        K8sExecutorIdentifier kei = new K8sExecutorIdentifier();
+        kei.setCloudProvider(fieldValues[0]);
+        kei.setRegion(fieldValues[1]);
+        kei.setClusterName(fieldValues[2]);
+        kei.setNamespace(fieldValues[3]);
+        kei.setExecutorName(fieldValues[4]);
+        kei.setPodIdentity(fieldValues[5]);
+        return kei;
+    }
+
+    private static ProcessExecutorIdentifier parseProcessExecutorIdentifier(String executorIdentifierString) {
+        String[] fieldValues = executorIdentifierString.split(ODC_EXECUTOR_FILED_DELIMITER);
+        replaceBlankToNull(fieldValues);
+        ProcessExecutorIdentifier pei = new ProcessExecutorIdentifier();
+        pei.setIpv4Address(fieldValues[0]);
+        pei.setPhysicalAddress(fieldValues[1]);
+        pei.setExecutorName(fieldValues[2]);
+        PreConditions.notNull(fieldValues[3], "pid");
+        pei.setPid(Long.parseLong(fieldValues[3]));
+        return pei;
+    }
+
+
+    private static void replaceBlankToNull(String[] fieldValues) {
+        for (int i = 0; i < fieldValues.length; i++) {
+            if (StringUtils.isBlank(fieldValues[i])) {
+                fieldValues[i] = null;
+            }
+        }
+    }
+
 }
