@@ -66,7 +66,7 @@ public class ProcessJobCaller extends BaseJobCaller {
         }
 
         ProcessExecutorIdentifier pei = new ProcessExecutorIdentifier();
-        pei.setIpv4Address(SystemUtils.getLocalIpAddress());
+        pei.setIpAddress(SystemUtils.getLocalIpAddress());
         pei.setPid(pid);
         pei.setExecutorName(executorName);
 

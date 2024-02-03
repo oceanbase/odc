@@ -29,18 +29,19 @@ import lombok.Data;
 @Data
 public class ProcessExecutorIdentifier implements ExecutorIdentifier {
 
-    private String ipv4Address;
+    private String ipAddress;
 
     private String physicalAddress;
 
+    private String executorName;
+
     private Long pid;
 
-    private String executorName;
 
     @Override
     public String toString() {
-        return Optional.ofNullable(ipv4Address).orElse("") +
-                append(physicalAddress) + append(executorName) + append(pid + "");
+        return Optional.ofNullable(ipAddress).orElse("") +
+               append(physicalAddress) + append(executorName) + append(pid + "");
     }
 
     private String append(String value) {

@@ -37,7 +37,7 @@ public class ExecutorIdentifiersTest {
     public void test_ProcessExecutorIdentifierToString() throws JobException {
 
         ProcessExecutorIdentifier pei = new ProcessExecutorIdentifier();
-        pei.setIpv4Address("127.0.0.1");
+        pei.setIpAddress("127.0.0.1");
         pei.setPid(1L);
         pei.setExecutorName("test-task-1");
 

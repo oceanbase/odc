@@ -52,11 +52,11 @@ public class ExecutorIdentifierParser {
         String[] fieldValues = executorIdentifierString.split(ODC_EXECUTOR_FILED_DELIMITER);
         replaceBlankToNull(fieldValues);
         ProcessExecutorIdentifier pei = new ProcessExecutorIdentifier();
-        pei.setIpv4Address(fieldValues[0]);
+        pei.setIpAddress(fieldValues[0]);
         pei.setPhysicalAddress(fieldValues[1]);
         pei.setExecutorName(fieldValues[2]);
         PreConditions.notNull(fieldValues[3], "pid");
-        pei.setPid(Long.parseLong(fieldValues[3]));
+        pei.setPid(Long.parseLong(fieldValues[4]));
         return pei;
     }
 

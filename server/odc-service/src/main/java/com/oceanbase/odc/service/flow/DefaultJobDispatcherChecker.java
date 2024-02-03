@@ -57,6 +57,6 @@ public class DefaultJobDispatcherChecker implements JobDispatchChecker {
 
         String host =
                 hostProperties.getOdcHost() == null ? SystemUtils.getLocalIpAddress() : hostProperties.getOdcHost();
-        return Objects.equals(host, ((ProcessExecutorIdentifier) ei).getIpv4Address());
+        return Objects.equals(host, ((ProcessExecutorIdentifier) ei).getIpAddress());
     }
 }
