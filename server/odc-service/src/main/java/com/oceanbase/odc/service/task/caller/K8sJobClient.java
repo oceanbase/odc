@@ -37,7 +37,7 @@ public interface K8sJobClient {
      * @param name pod name
      * @param image image name
      * @param command image start command
-     * @param podConfig pod param
+     * @param podConfig pod config
      * @return job serial number
      * @throws JobException throws exception when create job failed
      */
