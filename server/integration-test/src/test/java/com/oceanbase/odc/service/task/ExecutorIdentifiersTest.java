@@ -23,7 +23,6 @@ import com.oceanbase.odc.service.task.caller.ExecutorIdentifierParser;
 import com.oceanbase.odc.service.task.caller.K8sExecutorIdentifier;
 import com.oceanbase.odc.service.task.caller.ProcessExecutorIdentifier;
 import com.oceanbase.odc.service.task.enums.TaskRunMode;
-import com.oceanbase.odc.service.task.exception.JobException;
 
 /**
  * @author yaobin
@@ -34,7 +33,7 @@ public class ExecutorIdentifiersTest {
 
 
     @Test
-    public void test_ProcessExecutorIdentifierToString() throws JobException {
+    public void test_ProcessExecutorIdentifierToString() {
 
         ProcessExecutorIdentifier pei = new ProcessExecutorIdentifier();
         pei.setIpAddress("127.0.0.1");
@@ -46,34 +45,34 @@ public class ExecutorIdentifiersTest {
     }
 
     @Test
-    public void test_K8sExecutorIdentifierToString() throws JobException {
+    public void test_K8sExecutorIdentifierToString() {
 
         K8sExecutorIdentifier kei = new K8sExecutorIdentifier();
         kei.setRegion("cn-hangzhou");
-        kei.setPodIdentity("iaas:cn-hangzhou:oceanbase:pod:p-UGd3iL");
+        kei.setPodIdentity("test:cn-hangzhou:pod:p-3iL");
         kei.setExecutorName("test-task-1");
 
-        Assert.assertEquals(";cn-hangzhou;;;test-task-1;iaas:cn-hangzhou:oceanbase:pod:p-UGd3iL", kei.toString());
+        Assert.assertEquals(";cn-hangzhou;;;test-task-1;test:cn-hangzhou:pod:p-3iL", kei.toString());
 
     }
 
 
     @Test
-    public void test_StringToK8sExecutorIdentifier() throws JobException {
+    public void test_StringToK8sExecutorIdentifier() {
 
-        String identifier = "aliyun;cn-hangzhou;;;test-task-1;iaas:cn-hangzhou:oceanbase:pod:p-UGd3iL";
+        String identifier = "aliyun;cn-hangzhou;;;test-task-1;test:cn-hangzhou:pod:p-3iL";
         K8sExecutorIdentifier kei = (K8sExecutorIdentifier) ExecutorIdentifierParser
                 .parser(TaskRunMode.K8S, identifier);
 
         Assert.assertEquals("aliyun", kei.getCloudProvider());
         Assert.assertEquals("cn-hangzhou", kei.getRegion());
-        Assert.assertEquals("iaas:cn-hangzhou:oceanbase:pod:p-UGd3iL", kei.getPodIdentity());
+        Assert.assertEquals("test:cn-hangzhou:pod:p-3iL", kei.getPodIdentity());
         Assert.assertNull(kei.getNamespace());
 
     }
 
     @Test
-    public void test_StringToProcessExecutorIdentifier() throws JobException {
+    public void test_StringToProcessExecutorIdentifier() {
 
         String identifier = "127.0.0.1;;test-task-1;1";
         ProcessExecutorIdentifier kei = (ProcessExecutorIdentifier) ExecutorIdentifierParser

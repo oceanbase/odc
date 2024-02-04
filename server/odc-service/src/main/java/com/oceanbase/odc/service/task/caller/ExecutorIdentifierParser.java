@@ -44,6 +44,7 @@ public class ExecutorIdentifierParser {
         kei.setClusterName(fieldValues[2]);
         kei.setNamespace(fieldValues[3]);
         kei.setExecutorName(fieldValues[4]);
+        PreConditions.notNull(fieldValues[5], "podIdentity");
         kei.setPodIdentity(fieldValues[5]);
         return kei;
     }
@@ -56,7 +57,7 @@ public class ExecutorIdentifierParser {
         pei.setPhysicalAddress(fieldValues[1]);
         pei.setExecutorName(fieldValues[2]);
         PreConditions.notNull(fieldValues[3], "pid");
-        pei.setPid(Long.parseLong(fieldValues[4]));
+        pei.setPid(Long.parseLong(fieldValues[3]));
         return pei;
     }
 

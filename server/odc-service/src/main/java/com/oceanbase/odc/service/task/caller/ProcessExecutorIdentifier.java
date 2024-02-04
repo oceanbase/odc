@@ -23,7 +23,7 @@ import lombok.Data;
 
 /**
  * @author yaobin
- * @date 2024-02-03
+ * @date 2024-02-01
  * @since 4.2.4
  */
 @Data
@@ -41,7 +41,7 @@ public class ProcessExecutorIdentifier implements ExecutorIdentifier {
     @Override
     public String toString() {
         return Optional.ofNullable(ipAddress).orElse("") +
-               append(physicalAddress) + append(executorName) + append(pid + "");
+                append(physicalAddress) + append(executorName) + append(pid + "");
     }
 
     private String append(String value) {

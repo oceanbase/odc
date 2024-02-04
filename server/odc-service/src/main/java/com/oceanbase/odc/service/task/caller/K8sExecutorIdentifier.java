@@ -23,7 +23,7 @@ import lombok.Data;
 
 /**
  * @author yaobin
- * @date 2024-02-03
+ * @date 2024-02-01
  * @since 4.2.4
  */
 @Data
@@ -52,6 +52,5 @@ public class K8sExecutorIdentifier implements ExecutorIdentifier {
     private String append(String value) {
         return ODC_EXECUTOR_FILED_DELIMITER + Optional.ofNullable(value).orElse("");
     }
-
 
 }
