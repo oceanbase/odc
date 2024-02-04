@@ -35,22 +35,22 @@ import lombok.extern.slf4j.Slf4j;
 public class DLMConfiguration {
 
     @Value("${odc.task.dlm.thread-pool-size:15}")
-    private int dlmThreadPoolSize;
+    public int dlmThreadPoolSize;
 
     @Value("${odc.task.dlm.single-task-read-write-ratio:0.5}")
-    private double readWriteRatio;
+    public double readWriteRatio;
 
     @Value("${odc.task.dlm.single-task-thread-pool-size:15}")
-    private int singleTaskThreadPoolSize;
+    public int singleTaskThreadPoolSize;
 
     @Value("${odc.task.dlm.task-connection-query-timeout-seconds:180}")
-    private int taskConnectionQueryTimeout;
+    public int taskConnectionQueryTimeout;
 
     @Value("${odc.task.dlm.sharding-strategy:FIXED_LENGTH}")
-    private ShardingStrategy shardingStrategy;
+    public ShardingStrategy shardingStrategy;
 
     @Value("${odc.task.dlm.default-scan-batch-size:10000}")
-    private int defaultScanBatchSize;
+    public int defaultScanBatchSize;
 
     @Bean
     public JobMetaFactory jobMetaFactory(IJobStore jobStore) {

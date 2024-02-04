@@ -18,7 +18,6 @@ package com.oceanbase.odc.service.dlm;
 
 import com.oceanbase.odc.service.schedule.job.InnerDataArchiveJobParameters;
 import com.oceanbase.odc.service.task.schedule.JobIdentity;
-import com.oceanbase.tools.migrator.common.configure.DataSourceInfo;
 import com.oceanbase.tools.migrator.common.configure.LogicTableConfig;
 import com.oceanbase.tools.migrator.common.dto.HistoryJob;
 import com.oceanbase.tools.migrator.common.enums.JobStatus;
@@ -59,16 +58,10 @@ public class JobMetaFactoryCopied extends AbstractJobMetaFactory {
         logicTableConfig.setWriterTaskCount(parameters.getWriteThreadCount());
         logicTableConfig.setGeneratorBatchSize(parameters.getScanBatchSize());
 
-        DataSourceInfo sourceInfo = DataSourceInfoBuilder.build(parameters.getSourceDs());
-        DataSourceInfo targetInfo = DataSourceInfoBuilder.build(parameters.getTargetDs());
-        sourceInfo.setConnectionCount(2 * (logicTableConfig.getReaderTaskCount()
-                + parameters.getReadThreadCount()));
-        targetInfo.setConnectionCount(2 * (logicTableConfig.getReaderTaskCount()
-                + parameters.getWriteThreadCount()));
-        sourceInfo.setQueryTimeout(parameters.getQueryTimeout());
-        targetInfo.setQueryTimeout(parameters.getQueryTimeout());
+
         JobReq req =
-                new JobReq(historyJob, logicTableConfig, sourceInfo, targetInfo, new ClusterMeta(),
+                new JobReq(historyJob, logicTableConfig, parameters.getSourceDs(), parameters.getTargetDs(),
+                        new ClusterMeta(),
                         new ClusterMeta(), new TenantMeta(), new TenantMeta());
         JobMeta jobMeta = super.create(req);
         jobMeta.setShardingStrategy(parameters.getShardingStrategy());

@@ -32,6 +32,7 @@ import com.oceanbase.odc.plugin.connect.api.InformationExtensionPoint;
 import com.oceanbase.odc.service.connection.database.DatabaseService;
 import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
+import com.oceanbase.odc.service.dlm.DLMConfiguration;
 import com.oceanbase.odc.service.dlm.DlmLimiterService;
 import com.oceanbase.odc.service.dlm.model.DataArchiveParameters;
 import com.oceanbase.odc.service.flow.model.CreateFlowInstanceReq;
@@ -69,6 +70,9 @@ public class DataArchivePreprocessor extends AbstractDlmJobPreprocessor {
     @Autowired
     private DlmLimiterService limiterService;
 
+    @Autowired
+    private DLMConfiguration dlmConfiguration;
+
     @Override
     public void process(CreateFlowInstanceReq req) {
         AlterScheduleParameters parameters = (AlterScheduleParameters) req.getParameters();
@@ -76,6 +80,7 @@ public class DataArchivePreprocessor extends AbstractDlmJobPreprocessor {
                 || parameters.getOperationType() == OperationType.UPDATE) {
             DataArchiveParameters dataArchiveParameters =
                     (DataArchiveParameters) parameters.getScheduleTaskParameters();
+            initDefaultConfig(dataArchiveParameters);
             // Throw exception when the specified database does not exist or the current user does not have
             // permission to access it.
             Database sourceDb = databaseService.detail(dataArchiveParameters.getSourceDatabaseId());
@@ -153,6 +158,19 @@ public class DataArchivePreprocessor extends AbstractDlmJobPreprocessor {
                         String.format("Unsupported data archiving link from %s to %s.", sourceDbType, targetDbType));
             }
         }
+    }
+
+    private void initDefaultConfig(DataArchiveParameters parameters) {
+        parameters.setReadThreadCount((int) (dlmConfiguration.singleTaskThreadPoolSize * dlmConfiguration.readWriteRatio
+                / (1 + dlmConfiguration.readWriteRatio)));
+        parameters.setWriteThreadCount(dlmConfiguration.dlmThreadPoolSize - parameters.getReadThreadCount());
+        parameters.setScanBatchSize(dlmConfiguration.defaultScanBatchSize);
+        parameters.setQueryTimeout(dlmConfiguration.taskConnectionQueryTimeout);
+        parameters.setShardingStrategy(dlmConfiguration.shardingStrategy);
+        // set default target table name.
+        parameters.getTables().forEach(tableConfig -> {
+            tableConfig.setTargetTableName(tableConfig.getTableName());
+        });
     }
 
 }

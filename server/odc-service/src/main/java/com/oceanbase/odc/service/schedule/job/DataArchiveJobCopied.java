@@ -25,6 +25,7 @@ import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.metadb.schedule.ScheduleTaskEntity;
 import com.oceanbase.odc.service.common.util.SpringContextUtil;
+import com.oceanbase.odc.service.dlm.DataSourceInfoBuilder;
 import com.oceanbase.odc.service.dlm.model.DataArchiveParameters;
 import com.oceanbase.odc.service.dlm.model.DataArchiveTableConfig;
 import com.oceanbase.odc.service.dlm.utils.DataArchiveConditionUtil;
@@ -33,6 +34,7 @@ import com.oceanbase.odc.service.task.constants.JobParametersKeyConstants;
 import com.oceanbase.odc.service.task.executor.task.DataArchiveTask;
 import com.oceanbase.odc.service.task.schedule.DefaultJobDefinition;
 import com.oceanbase.odc.service.task.schedule.JobScheduler;
+import com.oceanbase.tools.migrator.common.configure.DataSourceInfo;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -42,7 +44,7 @@ import lombok.extern.slf4j.Slf4j;
  * @Descripition:
  */
 @Slf4j
-public class CloudDataArchiveJob extends DataArchiveJob {
+public class DataArchiveJobCopied extends DataArchiveJob {
     @Override
     public void execute(JobExecutionContext context) {
 
@@ -58,19 +60,31 @@ public class CloudDataArchiveJob extends DataArchiveJob {
                             context.getFireTime())
                     : "");
         }
-        innerDataArchiveJobParameters
-                .setSourceDs(databaseService.findDataSourceForConnectById(dataArchiveParameters.getSourceDatabaseId()));
-        innerDataArchiveJobParameters
-                .setSourceDs(databaseService.findDataSourceForConnectById(dataArchiveParameters.getTargetDataBaseId()));
         innerDataArchiveJobParameters.setDeleteAfterMigration(dataArchiveParameters.isDeleteAfterMigration());
         innerDataArchiveJobParameters.setMigrationInsertAction(dataArchiveParameters.getMigrationInsertAction());
         innerDataArchiveJobParameters.setNeedPrintSqlTrace(dataArchiveParameters.isNeedPrintSqlTrace());
-        innerDataArchiveJobParameters.setRateLimit(dataArchiveParameters.getRateLimit());
+        innerDataArchiveJobParameters
+                .setRateLimit(limiterService.getByOrderIdOrElseDefaultConfig(Long.parseLong(taskEntity.getJobName())));
         innerDataArchiveJobParameters.setWriteThreadCount(dataArchiveParameters.getWriteThreadCount());
         innerDataArchiveJobParameters.setReadThreadCount(dataArchiveParameters.getReadThreadCount());
-        innerDataArchiveJobParameters.setQueryTimeout(dataArchiveParameters.getQueryTimeout());
         innerDataArchiveJobParameters.setShardingStrategy(dataArchiveParameters.getShardingStrategy());
         innerDataArchiveJobParameters.setScanBatchSize(dataArchiveParameters.getScanBatchSize());
+
+        DataSourceInfo sourceInfo = DataSourceInfoBuilder.build(
+                databaseService.findDataSourceForConnectById(dataArchiveParameters.getSourceDatabaseId()));
+        DataSourceInfo targetInfo = DataSourceInfoBuilder.build(
+                databaseService.findDataSourceForConnectById(dataArchiveParameters.getTargetDataBaseId()));
+        sourceInfo.setConnectionCount(2 * (innerDataArchiveJobParameters.getReadThreadCount()
+                + innerDataArchiveJobParameters.getWriteThreadCount()));
+        targetInfo.setConnectionCount(sourceInfo.getConnectionCount());
+        sourceInfo.setQueryTimeout(dataArchiveParameters.getQueryTimeout());
+        targetInfo.setQueryTimeout(dataArchiveParameters.getQueryTimeout());
+        sourceInfo.setDatabaseName(dataArchiveParameters.getSourceDatabaseName());
+        targetInfo.setDatabaseName(dataArchiveParameters.getTargetDatabaseName());
+        innerDataArchiveJobParameters
+                .setSourceDs(sourceInfo);
+        innerDataArchiveJobParameters
+                .setTargetDs(targetInfo);
 
         Map<String, String> jobData = new HashMap<>();
         jobData.put(JobParametersKeyConstants.META_TASK_PARAMETER_JSON,
@@ -82,6 +96,8 @@ public class CloudDataArchiveJob extends DataArchiveJob {
                 .build();
         JobScheduler jobScheduler = SpringContextUtil.getBean(JobScheduler.class);
         Long jobId = jobScheduler.scheduleJobNow(jobDefinition);
-
+        scheduleTaskRepository.updateJobIdById(taskEntity.getId(), jobId);
+        log.info("Publish data-archive job to task framework succeed,taskId={},jobIdentity={}", taskEntity.getId(),
+                jobId);
     }
 }

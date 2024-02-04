@@ -33,9 +33,15 @@ import lombok.extern.slf4j.Slf4j;
  */
 
 @Slf4j
-public class DataArchiveTask extends BaseTask<Void> {
+public class DataArchiveTask extends BaseTask<Boolean> {
 
     private JobMetaFactoryCopied jobMetaFactory;
+
+    private JobMeta runningJobMeta;
+
+    private boolean isFinish = false;
+
+    private double progress = 0.0;
 
     @Override
     protected void doInit(JobContext context) throws Exception {
@@ -52,23 +58,29 @@ public class DataArchiveTask extends BaseTask<Void> {
                 InnerDataArchiveJobParameters.class);
 
         for (int tableIndex = 0; tableIndex < parameters.getTables().size(); tableIndex++) {
-            JobMeta jobMeta = jobMetaFactory.create(tableIndex, context.getJobIdentity(), parameters);
-            log.info("Init data-archive job succeed,migrateJobId={}", jobMeta.getJobId());
-            MigrateJob migrateJob = new MigrateJob();
-            migrateJob.setJobMeta(jobMeta);
-            try {
-                migrateJob.run();
-                log.error("Data archive job finished,migrateJobId={}", jobMeta.getJobId());
-            } catch (Throwable e) {
-                log.error("Data archive job failed,migrateJobId={},errorMsg={}", jobMeta.getJobId(), e);
+            if (getStatus().isTerminated()) {
+                log.info("Job is terminated,jobIdentity={}", context.getJobIdentity());
+                break;
             }
+            runningJobMeta = jobMetaFactory.create(tableIndex, context.getJobIdentity(), parameters);
+            log.info("Init data-archive job succeed,migrateJobId={}", runningJobMeta.getJobId());
+            MigrateJob migrateJob = new MigrateJob();
+            migrateJob.setJobMeta(runningJobMeta);
+            try {
+                log.info("Data archive job start,migrateJobId={}", runningJobMeta.getJobId());
+                migrateJob.run();
+                log.info("Data archive job finished,migrateJobId={}", runningJobMeta.getJobId());
+            } catch (Throwable e) {
+                log.error("Data archive job failed,migrateJobId={},errorMsg={}", runningJobMeta.getJobId(), e);
+            }
+            progress = (tableIndex + 1.0) / parameters.getTables().size();
         }
-
+        isFinish = true;
     }
 
     @Override
     protected void doStop() throws Exception {
-
+        runningJobMeta.setToStop(true);
     }
 
     @Override
@@ -82,7 +94,7 @@ public class DataArchiveTask extends BaseTask<Void> {
     }
 
     @Override
-    public Void getTaskResult() {
-        return null;
+    public Boolean getTaskResult() {
+        return isFinish;
     }
 }
