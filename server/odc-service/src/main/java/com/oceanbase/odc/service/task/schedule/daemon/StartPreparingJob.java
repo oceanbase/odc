@@ -57,13 +57,15 @@ public class StartPreparingJob implements Job {
     public void execute(JobExecutionContext context) throws JobExecutionException {
         configuration = JobConfigurationHolder.getJobConfiguration();
         JobConfigurationValidator.validComponent();
-        if (isRunningJobFull()) {
-            log.warn("Current system load is too bigger, wait next schedule.");
+        TaskFrameworkProperties taskFrameworkProperties = configuration.getTaskFrameworkProperties();
+        if (isExecutorWaitingToRunExceed()) {
+            log.warn("Amount of executors waiting to run exceed to threshold, threshold={}.",
+                    taskFrameworkProperties.getThresholdExecutorWaitingToRunCount());
             return;
         }
         // scan preparing job
         TaskFrameworkService taskFrameworkService = configuration.getTaskFrameworkService();
-        TaskFrameworkProperties taskFrameworkProperties = configuration.getTaskFrameworkProperties();
+
         Page<JobEntity> jobs = taskFrameworkService.find(
                 Lists.newArrayList(JobStatus.PREPARING, JobStatus.RETRYING), 0,
                 taskFrameworkProperties.getSingleFetchPreparingJobRows());
@@ -122,13 +124,13 @@ public class StartPreparingJob implements Job {
 
     }
 
-    private boolean isRunningJobFull() {
+    private boolean isExecutorWaitingToRunExceed() {
         TaskFrameworkProperties taskFrameworkProperties = getConfiguration().getTaskFrameworkProperties();
 
         long count = getConfiguration().getTaskFrameworkService().countRunningNeverHeartJobs(
-                taskFrameworkProperties.getJobNeverHeartAfterStartedSeconds());
+                taskFrameworkProperties.getThresholdExecutorWaitingToRunSeconds());
 
-        return count > taskFrameworkProperties.getJobNeverHeartAfterStartedLimitCount();
+        return count > taskFrameworkProperties.getThresholdExecutorWaitingToRunCount();
     }
 
 
