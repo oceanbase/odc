@@ -57,6 +57,7 @@ import com.oceanbase.odc.common.util.tableformat.CellStyle.NullStyle;
 import com.oceanbase.odc.common.util.tableformat.Table;
 import com.oceanbase.odc.core.shared.constant.OdcConstants;
 import com.oceanbase.odc.core.shared.constant.TaskStatus;
+import com.oceanbase.odc.plugin.connect.model.JdbcUrlProperty;
 import com.oceanbase.odc.plugin.connect.mysql.MySQLConnectionExtension;
 import com.oceanbase.odc.plugin.task.api.datatransfer.DataTransferJob;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.ConnectionInfo;
@@ -177,8 +178,9 @@ public class MySQLDataTransferJob implements DataTransferJob {
             jdbcUrlParams.put("socksProxyPort", connectionInfo.getProxyPort() + "");
         }
         HikariDataSource dataSource = new HikariDataSource();
-        dataSource.setJdbcUrl(new MySQLConnectionExtension().generateJdbcUrl(connectionInfo.getHost(),
-                connectionInfo.getPort(), connectionInfo.getSchema(), jdbcUrlParams));
+        dataSource.setJdbcUrl(
+                new MySQLConnectionExtension().generateJdbcUrl(new JdbcUrlProperty(connectionInfo.getHost(),
+                        connectionInfo.getPort(), connectionInfo.getSchema(), jdbcUrlParams)));
         dataSource.setUsername(connectionInfo.getUserNameForConnect());
         dataSource.setPassword(connectionInfo.getPassword());
         dataSource.setDriverClassName(OdcConstants.MYSQL_DRIVER_CLASS_NAME);

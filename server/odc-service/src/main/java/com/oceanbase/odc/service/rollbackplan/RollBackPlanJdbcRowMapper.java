@@ -42,7 +42,7 @@ public class RollBackPlanJdbcRowMapper extends BaseDialectBasedRowMapper {
 
     public RollBackPlanJdbcRowMapper(@NonNull DialectType dialectType, String timeZone) {
         super(dialectType);
-        if (dialectType == DialectType.OB_MYSQL) {
+        if (dialectType.isMysql()) {
             mapperList.add(new MySQLBitMapper());
             mapperList.add(new MySQLDatetimeMapper());
             mapperList.add(new MySQLYearMapper());
