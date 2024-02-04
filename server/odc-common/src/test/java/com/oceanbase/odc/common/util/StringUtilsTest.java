@@ -362,4 +362,40 @@ public class StringUtilsTest {
         System.out.println(briefSql);
         Assert.assertEquals(briefSql.length(), 50);
     }
+
+    @Test
+    public void startWithIgnoreSpaceAndNewLines_ignoreCaseTargetsLongerThanPrefix_returnTrue() {
+        String target = "He\rllo,  Wo\nrl\td    ";
+        String prefix = "hello,";
+        Assert.assertTrue(StringUtils.startsWithIgnoreSpaceAndNewLines(target, prefix, true, Integer.MAX_VALUE));
+    }
+
+    @Test
+    public void startWithIgnoreSpaceAndNewLines_nonIgnoreCaseTargetsLongerThanPrefix_returnFalse() {
+        String target = "He\rllo,  Wo\nrl\td    ";
+        String prefix = "hello,";
+        Assert.assertFalse(StringUtils.startsWithIgnoreSpaceAndNewLines(target, prefix, false, Integer.MAX_VALUE));
+    }
+
+    @Test
+    public void startWithIgnoreSpaceAndNewLines_ignoreCaseTargetsSmallerThanPrefix_returnFalse() {
+        String target = "hello,";
+        String prefix = "He\rllo,  Wo\nrl\td    ";
+        Assert.assertFalse(StringUtils.startsWithIgnoreSpaceAndNewLines(target, prefix, true, Integer.MAX_VALUE));
+    }
+
+    @Test
+    public void startWithIgnoreSpaceAndNewLines_targetsNonStartingWithPrefix_returnFalse() {
+        String prefix = "ookip";
+        String target = "He\rllo,  Wo\nrl\td    ";
+        Assert.assertFalse(StringUtils.startsWithIgnoreSpaceAndNewLines(target, prefix, true, Integer.MAX_VALUE));
+    }
+
+    @Test
+    public void startWithIgnoreSpaceAndNewLines_targetsNonStartingWithPrefixWithMaxMatchLength_returnTrue() {
+        String prefix = "hepppoiu";
+        String target = "He\rllo,  Wo\nrl\td    ";
+        Assert.assertTrue(StringUtils.startsWithIgnoreSpaceAndNewLines(target, prefix, true, 2));
+    }
+
 }

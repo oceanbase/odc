@@ -18,13 +18,16 @@ package com.oceanbase.odc.service.notification.model;
 
 import java.util.List;
 
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+
 /**
  * @author liuyizhuo.lyz
  * @date 2024/1/4
  */
-public class WeComChannelConfig extends BaseChannelConfig {
-
-    private String webhook;
+@Data
+@EqualsAndHashCode(callSuper = true)
+public class WeComChannelConfig extends WebhookChannelConfig {
 
     private List<Long> atMobiles;
 

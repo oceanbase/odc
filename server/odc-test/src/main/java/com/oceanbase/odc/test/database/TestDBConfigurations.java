@@ -42,7 +42,8 @@ public class TestDBConfigurations {
     private static volatile TestDBConfigurations instance;
     private static final String TEST_OB_MYSQL_DATABASE_NAME = IsolatedNameGenerator.generateLowerCase("ODC");
     private static final String TEST_OB_ORACLE_DATABASE_NAME = IsolatedNameGenerator.generateUpperCase("ODC");
-    private static final String TEST_MYSQL_DATABASE_NAME = IsolatedNameGenerator.generateUpperCase("ODC");
+    private static final String TEST_MYSQL_DATABASE_NAME = IsolatedNameGenerator.generateLowerCase("ODC");
+    private static final String TEST_ORACLE_DATABASE_NAME = IsolatedNameGenerator.generateUpperCase("ODC");
 
     private TestDBConfigurations() {
         for (TestDBType type : TestDBType.values()) {
@@ -80,18 +81,41 @@ public class TestDBConfigurations {
         return connectType2ConfigurationMap.get(TestDBType.MYSQL);
     }
 
+    public TestDBConfiguration getTestOracleConfiguration() {
+        return connectType2ConfigurationMap.get(TestDBType.ORACLE);
+    }
+
     private Properties getTestDBProperties(TestDBType type) {
         Properties properties = new Properties();
-        properties.setProperty(TestDBConfiguration.DB_COMMANDLINE_KEY, TestProperties.getProperty(type.commandlineKey));
-        String sysUserNameKey = TestProperties.getProperty(type.sysUserNameKey);
-        if (sysUserNameKey != null) {
-            properties.setProperty(TestDBConfiguration.DB_SYS_USERNAME_KEY, sysUserNameKey);
-        }
-        String sysUserPasswordKey = TestProperties.getProperty(type.sysUserPasswordKey);
-        if (sysUserPasswordKey != null) {
-            properties.setProperty(TestDBConfiguration.DB_SYS_PASSWORD_KEY, sysUserPasswordKey);
-        }
         properties.setProperty(TestDBConfiguration.DB_TYPE_KEY, type.toString());
+        if (TestDBType.ORACLE.name().equals(type.toString())) {
+            properties.setProperty(TestDBConfiguration.DB_ORACLE_HOST_KEY,
+                    TestProperties.getProperty(type.commandlineKey[0]));
+            properties.setProperty(TestDBConfiguration.DB_ORACLE_PORT_KEY,
+                    TestProperties.getProperty(type.commandlineKey[1]));
+            properties.setProperty(TestDBConfiguration.DB_ORACLE_USER_KEY,
+                    TestProperties.getProperty(type.commandlineKey[2]));
+            properties.setProperty(TestDBConfiguration.DB_ORACLE_PASSWORD_KEY,
+                    TestProperties.getProperty(type.commandlineKey[3]));
+            properties.setProperty(TestDBConfiguration.DB_ORACLE_SID_KEY,
+                    TestProperties.getProperty(type.commandlineKey[4]));
+            properties.setProperty(TestDBConfiguration.DB_ORACLE_SERVICE_NAME_KEY,
+                    TestProperties.getProperty(type.commandlineKey[5]));
+            properties.setProperty(TestDBConfiguration.DB_ORACLE_ROLE_KEY,
+                    TestProperties.getProperty(type.commandlineKey[6]));
+            properties.setProperty(TestDBConfiguration.DB_ORACLE_OWNER_KEY, TEST_ORACLE_DATABASE_NAME);
+        } else {
+            properties.setProperty(TestDBConfiguration.DB_COMMANDLINE_KEY,
+                    TestProperties.getProperty(type.commandlineKey[0]));
+            String sysUserNameKey = TestProperties.getProperty(type.sysUserNameKey);
+            if (sysUserNameKey != null) {
+                properties.setProperty(TestDBConfiguration.DB_SYS_USERNAME_KEY, sysUserNameKey);
+            }
+            String sysUserPasswordKey = TestProperties.getProperty(type.sysUserPasswordKey);
+            if (sysUserPasswordKey != null) {
+                properties.setProperty(TestDBConfiguration.DB_SYS_PASSWORD_KEY, sysUserPasswordKey);
+            }
+        }
         return properties;
     }
 
@@ -143,6 +167,19 @@ public class TestDBConfigurations {
                     v.setDefaultDBName(database);
                     DataSource newSource = createNewDataSource(v);
                     v.setDataSource(newSource);
+                } else if (k == TestDBType.ORACLE) {
+                    String username = TEST_ORACLE_DATABASE_NAME;
+                    StringBuilder sql = new StringBuilder("CREATE USER " + username);
+                    if (StringUtils.isNotEmpty(v.getPassword())) {
+                        sql.append(" IDENTIFIED BY \"").append(v.getPassword()).append("\"");
+                    }
+                    stmt.executeUpdate(sql.toString());
+                    log.info("create test user for oracle mode, username: {}", username);
+                    sql = new StringBuilder("GRANT SYSDBA TO ").append(username);
+                    stmt.execute(sql.toString());
+                    log.info("grant sysdba to new created user, username: {}", username);
+                    v.setDefaultDBName(username);
+                    v.setUsername(username);
                 }
             } catch (Exception e) {
                 log.error("create test database/user failed, connectType={}", k, e);
@@ -171,6 +208,11 @@ public class TestDBConfigurations {
                     String sql = String.format("DROP DATABASE IF EXISTS %s;", database);
                     stmt.executeUpdate(sql);
                     log.info("drop test database for mysql mode, database name: {}", database);
+                } else if (k == TestDBType.ORACLE) {
+                    String username = TEST_ORACLE_DATABASE_NAME;
+                    String sql = String.format("DROP USER %s CASCADE", username);
+                    stmt.executeUpdate(sql);
+                    log.info("drop test user for oracle mode, username: {}", username);
                 }
             } catch (Exception e) {
                 log.warn("drop test database/user failed, may the user is not exists, connectType={}", k);

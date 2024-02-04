@@ -15,8 +15,6 @@
  */
 package com.oceanbase.odc.service.notification.helper;
 
-import org.springframework.stereotype.Component;
-
 import com.oceanbase.odc.metadb.notification.NotificationPolicyEntity;
 import com.oceanbase.odc.service.notification.model.NotificationPolicy;
 
@@ -24,10 +22,9 @@ import com.oceanbase.odc.service.notification.model.NotificationPolicy;
  * @author liuyizhuo.lyz
  * @date 2024/1/11
  */
-@Component
 public class PolicyMapper {
 
-    public NotificationPolicy fromEntity(NotificationPolicyEntity entity) {
+    public static NotificationPolicy fromEntity(NotificationPolicyEntity entity) {
         NotificationPolicy policy = new NotificationPolicy();
         policy.setId(entity.getId());
         policy.setTitleTemplate(entity.getTitleTemplate());

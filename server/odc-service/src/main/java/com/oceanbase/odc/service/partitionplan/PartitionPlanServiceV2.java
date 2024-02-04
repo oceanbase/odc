@@ -22,6 +22,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 import org.apache.commons.collections4.CollectionUtils;
@@ -65,28 +66,38 @@ public class PartitionPlanServiceV2 {
      * generate the ddl of a partition plan
      */
     public Map<PartitionPlanStrategy, List<String>> generatePartitionDdl(@NonNull Connection connection,
-            @NonNull DialectType dialectType, @NonNull String schema, @NonNull PartitionPlanTableConfig tableConfig) {
+            @NonNull DialectType dialectType, @NonNull String schema,
+            @NonNull PartitionPlanTableConfig tableConfig) throws Exception {
+        TableExtensionPoint tableExtensionPoint = SchemaPluginUtil.getTableExtension(dialectType);
+        if (tableExtensionPoint == null) {
+            throw new UnsupportedOperationException("Unsupported dialect " + dialectType);
+        }
+        DBTable dbTable = tableExtensionPoint.getDetail(connection, schema, tableConfig.getTableName());
+        return generatePartitionDdl(connection, dialectType, dbTable, tableConfig);
+    }
+
+    public Map<PartitionPlanStrategy, List<String>> generatePartitionDdl(@NonNull Connection connection,
+            @NonNull DialectType dialectType, @NonNull DBTable dbTable,
+            @NonNull PartitionPlanTableConfig tableConfig) throws Exception {
         AutoPartitionExtensionPoint autoPartitionExtensionPoint = TaskPluginUtil
                 .getAutoPartitionExtensionPoint(dialectType);
-        TableExtensionPoint tableExtensionPoint = SchemaPluginUtil.getTableExtension(dialectType);
-        if (tableExtensionPoint == null || autoPartitionExtensionPoint == null) {
+        if (autoPartitionExtensionPoint == null) {
             throw new UnsupportedOperationException("Unsupported dialect " + dialectType);
         }
         String tableName = tableConfig.getTableName();
-        DBTable dbTable = tableExtensionPoint.getDetail(connection, schema, tableName);
         List<DBTableColumn> columns = dbTable.getColumns();
         if (CollectionUtils.isEmpty(columns)) {
             throw new NotFoundException(ResourceType.OB_TABLE, "tableName", tableName);
         }
         DBTablePartition partition = dbTable.getPartition();
         if (partition == null || partition.getPartitionOption() == null) {
-            throw new IllegalArgumentException("Partition is null for " + schema + "." + tableName);
+            throw new IllegalArgumentException("Partition is null for " + tableName);
         } else {
             DBTablePartitionType partitionType = partition.getPartitionOption().getType();
             if (partitionType == DBTablePartitionType.UNKNOWN
                     || partitionType == DBTablePartitionType.NOT_PARTITIONED) {
-                throw new IllegalArgumentException("Table " + schema + "." + tableName + " is not partitioned");
-            } else if (autoPartitionExtensionPoint.supports(partition)) {
+                throw new IllegalArgumentException("Table " + tableName + " is not partitioned");
+            } else if (!autoPartitionExtensionPoint.supports(partition)) {
                 throw new IllegalArgumentException("Unsupported partition type, " + partitionType);
             }
         }
@@ -95,13 +106,13 @@ public class PartitionPlanServiceV2 {
         checkPartitionKeyValue(strategy2PartitionKeyConfigs);
         Map<String, Integer> key2Index = new HashMap<>();
         DBTablePartitionOption partitionOption = partition.getPartitionOption();
-        if (StringUtils.isNotEmpty(partitionOption.getExpression())) {
-            key2Index.put(autoPartitionExtensionPoint.unquoteIdentifier(partitionOption.getExpression()), 0);
-        } else if (CollectionUtils.isNotEmpty(partitionOption.getColumnNames())) {
+        if (CollectionUtils.isNotEmpty(partitionOption.getColumnNames())) {
             List<String> keys = partitionOption.getColumnNames();
             for (int i = 0; i < keys.size(); i++) {
                 key2Index.put(autoPartitionExtensionPoint.unquoteIdentifier(keys.get(i)), i);
             }
+        } else if (StringUtils.isNotEmpty(partitionOption.getExpression())) {
+            key2Index.put(autoPartitionExtensionPoint.unquoteIdentifier(partitionOption.getExpression()), 0);
         } else {
             throw new IllegalStateException("Unknown partition key");
         }
@@ -126,9 +137,9 @@ public class PartitionPlanServiceV2 {
         return strategyListMap.entrySet().stream().collect(Collectors.toMap(Entry::getKey, e -> {
             switch (e.getKey()) {
                 case DROP:
-                    return autoPartitionExtensionPoint.generateDropPartitionDdls(e.getValue(), true);
+                    return autoPartitionExtensionPoint.generateDropPartitionDdls(connection, e.getValue(), true);
                 case CREATE:
-                    return autoPartitionExtensionPoint.generateCreatePartitionDdls(e.getValue());
+                    return autoPartitionExtensionPoint.generateCreatePartitionDdls(connection, e.getValue());
                 default:
                     return Collections.emptyList();
             }
@@ -137,7 +148,7 @@ public class PartitionPlanServiceV2 {
 
     private Map<PartitionPlanStrategy, DBTablePartition> doPartitionPlan(Connection connection, DBTable dbTable,
             PartitionPlanTableConfig tableConfig, AutoPartitionExtensionPoint extensionPoint,
-            Map<PartitionPlanStrategy, List<PartitionPlanKeyConfig>> strategy2PartitionKeyConfigs) {
+            Map<PartitionPlanStrategy, List<PartitionPlanKeyConfig>> strategy2PartitionKeyConfigs) throws Exception {
         Map<Integer, List<String>> lineNum2CreateExprs = new HashMap<>();
         List<DBTablePartitionDefinition> droppedPartitions = new ArrayList<>();
         Map<PartitionPlanStrategy, List<DBTablePartitionDefinition>> strategyListMap = new HashMap<>();
@@ -166,14 +177,15 @@ public class PartitionPlanServiceV2 {
                         }
                         droppedPartitions.addAll(dropInvoker.invoke(connection, dbTable,
                                 config.getPartitionKeyInvokerParameters()));
+                        break;
                     default:
                         throw new UnsupportedOperationException("Unsupported partition strategy, " + strategy);
                 }
             }
         }
-        strategyListMap.put(PartitionPlanStrategy.CREATE, lineNum2CreateExprs.values().stream().map(s -> {
+        strategyListMap.put(PartitionPlanStrategy.CREATE, lineNum2CreateExprs.entrySet().stream().map(s -> {
             DBTablePartitionDefinition definition = new DBTablePartitionDefinition();
-            definition.setMaxValues(s);
+            definition.setMaxValues(s.getValue());
             PartitionNameGenerator invoker = extensionPoint
                     .getPartitionNameGeneratorGeneratorByName(tableConfig.getPartitionNameInvoker());
             if (invoker == null) {
@@ -181,20 +193,43 @@ public class PartitionPlanServiceV2 {
                         "Failed to get invoker by name, " + tableConfig.getPartitionNameInvoker());
             }
             Map<String, Object> parameters = tableConfig.getPartitionNameInvokerParameters();
-            parameters.putIfAbsent(PartitionNameGenerator.TARGET_PARTITION_DEF_KEY, definition);
-            definition.setName(invoker.invoke(connection, dbTable, parameters));
+            parameters.put(PartitionNameGenerator.TARGET_PARTITION_DEF_KEY, definition);
+            parameters.put(PartitionNameGenerator.TARGET_PARTITION_DEF_INDEX_KEY, s.getKey());
+            try {
+                definition.setName(invoker.invoke(connection, dbTable, parameters));
+            } catch (Exception e) {
+                throw new IllegalStateException(e);
+            }
             return definition;
-        }).collect(Collectors.toList()));
+        }).filter(d -> removeExistingPartitionElement(dbTable, d, extensionPoint)).collect(Collectors.toList()));
         strategyListMap.put(PartitionPlanStrategy.DROP, droppedPartitions);
         DBTablePartition partition = dbTable.getPartition();
-        return strategyListMap.entrySet().stream().collect(Collectors.toMap(Entry::getKey, e -> {
-            DBTablePartition dbTablePartition = new DBTablePartition();
-            dbTablePartition.setPartitionDefinitions(e.getValue());
-            dbTablePartition.setPartitionOption(partition.getPartitionOption());
-            dbTablePartition.setSchemaName(partition.getSchemaName());
-            dbTablePartition.setTableName(partition.getTableName());
-            return dbTablePartition;
-        }));
+        return strategyListMap.entrySet().stream().filter(e -> CollectionUtils.isNotEmpty(e.getValue()))
+                .collect(Collectors.toMap(Entry::getKey, e -> {
+                    DBTablePartition dbTablePartition = new DBTablePartition();
+                    dbTablePartition.setPartitionDefinitions(e.getValue());
+                    dbTablePartition.setTableName(dbTable.getName());
+                    dbTablePartition.setSchemaName(dbTable.getSchemaName());
+                    dbTablePartition.setPartitionOption(partition.getPartitionOption());
+                    return dbTablePartition;
+                }));
+    }
+
+    private boolean removeExistingPartitionElement(DBTable dbTable, DBTablePartitionDefinition definition,
+            AutoPartitionExtensionPoint extensionPoint) {
+        return dbTable.getPartition().getPartitionDefinitions().stream().noneMatch(i -> {
+            if (Objects.equals(extensionPoint.unquoteIdentifier(i.getName()),
+                    extensionPoint.unquoteIdentifier(definition.getName()))) {
+                return true;
+            }
+            int size = Math.min(i.getMaxValues().size(), definition.getMaxValues().size());
+            for (int k = 0; k < size; k++) {
+                if (Objects.equals(i.getMaxValues().get(k), definition.getMaxValues().get(k))) {
+                    return true;
+                }
+            }
+            return false;
+        });
     }
 
     private void checkPartitionKeyValue(

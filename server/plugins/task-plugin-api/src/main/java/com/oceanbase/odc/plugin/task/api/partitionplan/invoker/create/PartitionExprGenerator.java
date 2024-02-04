@@ -42,11 +42,12 @@ public interface PartitionExprGenerator extends AutoPartitionKeyInvoker<List<Str
     String GENERATOR_PARTITION_KEY = "partitionKey";
 
     List<String> generate(@NonNull Connection connection, @NonNull DBTable dbTable,
-            @NonNull String partitionKey, @NonNull Integer generateCount, @NonNull Map<String, Object> parameters);
+            @NonNull String partitionKey, @NonNull Integer generateCount,
+            @NonNull Map<String, Object> parameters) throws Exception;
 
     @Override
     default List<String> invoke(@NonNull Connection connection, @NonNull DBTable dbTable,
-            @NonNull Map<String, Object> parameters) {
+            @NonNull Map<String, Object> parameters) throws Exception {
         Integer generateCount = ParameterUtil.nullSafeExtract(parameters, GENERATE_COUNT_KEY, Integer.class);
         Validate.isTrue(generateCount > 0, "Partition generate count can not be smaller than 1");
         String partitionKey = ParameterUtil.nullSafeExtract(parameters, GENERATOR_PARTITION_KEY, String.class);

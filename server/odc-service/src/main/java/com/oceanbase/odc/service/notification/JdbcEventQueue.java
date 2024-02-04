@@ -19,10 +19,11 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import org.apache.commons.collections.ListUtils;
+import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.metadb.notification.EventEntity;
@@ -44,9 +45,10 @@ import lombok.extern.slf4j.Slf4j;
 public class JdbcEventQueue implements EventQueue {
     @Autowired
     private EventRepository eventRepository;
-
     @Autowired
     private EventMapper eventMapper;
+    @Autowired
+    private TransactionTemplate transactionTemplate;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -63,14 +65,16 @@ public class JdbcEventQueue implements EventQueue {
     }
 
     @Override
+    @Transactional
     public List<Event> peek(int batchSize, EventStatus status) {
-        try {
-            return eventRepository.findNByStatusForUpdate(status, batchSize)
-                    .stream().map(entity -> eventMapper.fromEntity(entity)).collect(Collectors.toList());
-        } catch (Exception ex) {
-            log.warn("peek events failed, ", ex);
-            return ListUtils.EMPTY_LIST;
+        List<Event> events = eventRepository.findNByStatusForUpdate(status, batchSize)
+                .stream().map(entity -> eventMapper.fromEntity(entity)).collect(Collectors.toList());
+        eventRepository.updateStatusByIds(EventStatus.CONVERTING,
+                events.stream().map(Event::getId).collect(Collectors.toSet()));
+        if (CollectionUtils.isNotEmpty(events)) {
+            log.info("poll {} events finished.", events.size());
         }
+        return events;
     }
 
     @Override

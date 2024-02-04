@@ -175,6 +175,12 @@ public class DatabaseService {
         return getDatabase(id);
     }
 
+    @SkipAuthorize("odc internal usage")
+    public Database getBasicSkipPermissionCheck(Long id) {
+        return databaseMapper.entityToModel(databaseRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException(ResourceType.ODC_DATABASE, "id", id)));
+    }
+
     private Database getDatabase(Long id) {
         Database database = entityToModel(databaseRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException(ResourceType.ODC_DATABASE, "id", id)));

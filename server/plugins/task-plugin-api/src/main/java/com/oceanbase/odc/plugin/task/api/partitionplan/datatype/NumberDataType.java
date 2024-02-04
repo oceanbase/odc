@@ -15,6 +15,10 @@
  */
 package com.oceanbase.odc.plugin.task.api.partitionplan.datatype;
 
+import org.springframework.context.i18n.LocaleContextHolder;
+
+import com.oceanbase.odc.common.i18n.I18n;
+import com.oceanbase.odc.common.i18n.Translatable;
 import com.oceanbase.tools.dbbrowser.model.datatype.GeneralDataType;
 
 import lombok.NonNull;
@@ -28,8 +32,13 @@ import lombok.NonNull;
  */
 public class NumberDataType extends GeneralDataType {
 
-    public NumberDataType(@NonNull Integer precision, @NonNull Integer scale) {
-        super(precision, scale, "NUMBER");
+    public NumberDataType(@NonNull String columnTypeName, @NonNull Integer precision, @NonNull Integer scale) {
+        super(precision, scale, columnTypeName);
+    }
+
+    public String getLocalizedMessage() {
+        String key = Translatable.I18N_KEY_PREFIX + "partitionplan." + this.getClass().getSimpleName();
+        return I18n.translate(key, new Object[] {}, key, LocaleContextHolder.getLocale());
     }
 
 }

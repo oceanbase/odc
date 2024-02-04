@@ -31,7 +31,7 @@ import lombok.ToString;
 @ToString
 public class SqlExprBasedGeneratorConfig {
 
+    private String generateExpr;
     private String intervalGenerateExpr;
-    private String partitionLowerBoundGenerateExpr;
 
 }
