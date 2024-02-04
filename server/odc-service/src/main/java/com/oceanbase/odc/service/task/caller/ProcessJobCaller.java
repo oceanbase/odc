@@ -87,11 +87,9 @@ public class ProcessJobCaller extends BaseJobCaller {
             if (result) {
                 log.info("Destroy succeed by kill process, executorName={}, pid={}", pei.getExecutorName(), pid);
             } else {
-                throw new JobException(
-                        "Destroy executor failed by kill process, executorName={0}, pid{1}=",
+                throw new JobException("Destroy executor failed by kill process, executorName={0}, pid={1}",
                         pei.getExecutorName(), pid);
             }
         }
     }
-
 }

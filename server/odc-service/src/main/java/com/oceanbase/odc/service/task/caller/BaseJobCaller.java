@@ -20,6 +20,7 @@ import java.io.IOException;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.oceanbase.odc.common.json.JsonUtils;
+import com.oceanbase.odc.common.validate.ValidatorUtils;
 import com.oceanbase.odc.metadb.task.JobEntity;
 import com.oceanbase.odc.service.common.response.SuccessResponse;
 import com.oceanbase.odc.service.task.config.JobConfiguration;
@@ -54,6 +55,7 @@ public abstract class BaseJobCaller implements JobCaller {
         JobIdentity ji = context.getJobIdentity();
         try {
             executorIdentifier = doStart(context);
+            ValidatorUtils.verifyField(executorIdentifier);
             int rows = taskFrameworkService.startSuccess(ji.getId(), executorIdentifier.toString());
             if (rows > 0) {
                 afterStartSucceed(executorIdentifier, ji);

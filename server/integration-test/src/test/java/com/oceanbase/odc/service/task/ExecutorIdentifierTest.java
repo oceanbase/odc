@@ -29,7 +29,7 @@ import com.oceanbase.odc.service.task.enums.TaskRunMode;
  * @date 2023-12-25
  * @since 4.2.4
  */
-public class ExecutorIdentifiersTest {
+public class ExecutorIdentifierTest {
 
 
     @Test

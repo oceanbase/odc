@@ -18,12 +18,12 @@ package com.oceanbase.odc.service.task.caller;
 import static com.oceanbase.odc.service.task.constants.JobConstants.ODC_EXECUTOR_FILED_DELIMITER;
 
 import com.oceanbase.odc.common.util.StringUtils;
-import com.oceanbase.odc.core.shared.PreConditions;
+import com.oceanbase.odc.common.validate.ValidatorUtils;
 import com.oceanbase.odc.service.task.enums.TaskRunMode;
 
 /**
  * @author yaobin
- * @date 2024-02-01
+ * @date 2023-12-25
  * @since 4.2.4
  */
 public class ExecutorIdentifierParser {
@@ -44,8 +44,8 @@ public class ExecutorIdentifierParser {
         kei.setClusterName(fieldValues[2]);
         kei.setNamespace(fieldValues[3]);
         kei.setExecutorName(fieldValues[4]);
-        PreConditions.notNull(fieldValues[5], "podIdentity");
         kei.setPodIdentity(fieldValues[5]);
+        ValidatorUtils.verifyField(kei);
         return kei;
     }
 
@@ -56,11 +56,10 @@ public class ExecutorIdentifierParser {
         pei.setIpAddress(fieldValues[0]);
         pei.setPhysicalAddress(fieldValues[1]);
         pei.setExecutorName(fieldValues[2]);
-        PreConditions.notNull(fieldValues[3], "pid");
         pei.setPid(Long.parseLong(fieldValues[3]));
+        ValidatorUtils.verifyField(pei);
         return pei;
     }
-
 
     private static void replaceBlankToNull(String[] fieldValues) {
         for (int i = 0; i < fieldValues.length; i++) {
@@ -69,5 +68,4 @@ public class ExecutorIdentifierParser {
             }
         }
     }
-
 }

@@ -19,6 +19,9 @@ import static com.oceanbase.odc.service.task.constants.JobConstants.ODC_EXECUTOR
 
 import java.util.Optional;
 
+import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.NotNull;
+
 import lombok.Data;
 
 /**
@@ -29,12 +32,15 @@ import lombok.Data;
 @Data
 public class ProcessExecutorIdentifier implements ExecutorIdentifier {
 
+    @NotBlank
     private String ipAddress;
 
     private String physicalAddress;
 
+    @NotBlank
     private String executorName;
 
+    @NotNull
     private Long pid;
 
 

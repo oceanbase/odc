@@ -19,6 +19,8 @@ import static com.oceanbase.odc.service.task.constants.JobConstants.ODC_EXECUTOR
 
 import java.util.Optional;
 
+import javax.validation.constraints.NotBlank;
+
 import lombok.Data;
 
 /**
@@ -31,14 +33,17 @@ public class K8sExecutorIdentifier implements ExecutorIdentifier {
 
     private String cloudProvider;
 
+    @NotBlank
     private String region;
 
     private String clusterName;
 
     private String namespace;
 
+    @NotBlank
     private String executorName;
 
+    @NotBlank
     private String podIdentity;
 
 

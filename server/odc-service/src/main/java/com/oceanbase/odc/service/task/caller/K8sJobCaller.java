@@ -43,7 +43,6 @@ public class K8sJobCaller extends BaseJobCaller {
     @Override
     public ExecutorIdentifier doStart(JobContext context) throws JobException {
         String executorName = JobUtils.generateExecutorName(context.getJobIdentity());
-
         String name = client.create(podConfig.getNamespace(), executorName, podConfig.getImage(),
                 podConfig.getCommand(), podConfig.getPodParam());
         K8sExecutorIdentifier kei = new K8sExecutorIdentifier();
@@ -51,15 +50,11 @@ public class K8sJobCaller extends BaseJobCaller {
         kei.setNamespace(podConfig.getNamespace());
         kei.setExecutorName(executorName);
         kei.setPodIdentity(name);
-
         return kei;
     }
 
     @Override
-    public void doStop(JobIdentity ji) throws JobException {
-
-
-    }
+    public void doStop(JobIdentity ji) throws JobException {}
 
     @Override
     protected void doDestroy(ExecutorIdentifier identifier) throws JobException {
