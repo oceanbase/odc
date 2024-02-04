@@ -61,9 +61,11 @@ public class K8sJobCaller extends BaseJobCaller {
         K8sExecutorIdentifier kei = (K8sExecutorIdentifier) identifier;
         Optional<String> executorOptional = client.get(kei.getNamespace(), kei.getPodIdentity());
         if (executorOptional.isPresent()) {
-            log.info("Found pod, delete it, executor name={}, pod identify={}.",
+            log.info("Found pod, try to delete it, executor name={}, pod identity={}.",
                     kei.getExecutorName(), kei.getPodIdentity());
             client.delete(podConfig.getNamespace(), identifier.getExecutorName());
+            log.info("Delete pod completed, executor name={}, pod identity={}.",
+                    kei.getExecutorName(), kei.getPodIdentity());
         }
     }
 }

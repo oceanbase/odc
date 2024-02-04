@@ -51,11 +51,8 @@ public class ExecutorIdentifierTest {
         kei.setRegion("cn-hangzhou");
         kei.setPodIdentity("test:cn-hangzhou:pod:p-3iL");
         kei.setExecutorName("test-task-1");
-
         Assert.assertEquals(";cn-hangzhou;;;test-task-1;test:cn-hangzhou:pod:p-3iL", kei.toString());
-
     }
-
 
     @Test
     public void test_StringToK8sExecutorIdentifier() {
@@ -68,7 +65,6 @@ public class ExecutorIdentifierTest {
         Assert.assertEquals("cn-hangzhou", kei.getRegion());
         Assert.assertEquals("test:cn-hangzhou:pod:p-3iL", kei.getPodIdentity());
         Assert.assertNull(kei.getNamespace());
-
     }
 
     @Test
@@ -82,7 +78,4 @@ public class ExecutorIdentifierTest {
         Assert.assertEquals("1", kei.getPid() + "");
 
     }
-
-
-
 }
