@@ -155,13 +155,15 @@ public class ConnectConsoleService {
                 .schemaPrefixIfNotBlank(req.getSchemaName()).identifier(req.getTableOrViewName()).append(" t");
 
         Integer queryLimit = checkQueryLimit(req.getQueryLimit());
-        if (connectionSession.getDialectType().isOracle()) {
+        if (DialectType.OB_ORACLE == connectionSession.getDialectType()) {
             String version = ConnectionSessionUtil.getVersion(connectionSession);
             if (VersionUtils.isGreaterThanOrEqualsTo(version, "2.2.50")) {
                 sqlBuilder.append(" FETCH FIRST ").append(queryLimit.toString()).append(" ROWS ONLY");
             } else {
                 sqlBuilder.append(" WHERE ROWNUM <= ").append(queryLimit.toString());
             }
+        } else if (DialectType.ORACLE == connectionSession.getDialectType()) {
+            sqlBuilder.append(" WHERE ROWNUM <= ").append(queryLimit.toString());
         } else {
             sqlBuilder.append(" LIMIT ").append(queryLimit.toString());
         }

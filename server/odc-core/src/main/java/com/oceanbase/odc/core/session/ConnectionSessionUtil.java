@@ -473,7 +473,7 @@ public class ConnectionSessionUtil {
         }
         Verify.notEmpty(sessionList, "DbSessions");
 
-        OdcDBSession session = sessionList.stream().filter(s -> Long.toString(s.getSessionId()).equals(connectionId))
+        OdcDBSession session = sessionList.stream().filter(s -> s.getSessionId().equals(connectionId))
                 .findFirst().orElseThrow(() -> new UnexpectedException("connectionId is not found, " + connectionId));
         String svrIp = session.getSvrIp();
         Verify.notEmpty(svrIp, "ObserverIp");
