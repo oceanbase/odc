@@ -16,6 +16,7 @@
 
 package com.oceanbase.odc.service.task.util;
 
+import java.io.File;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Objects;
@@ -24,6 +25,7 @@ import java.util.Optional;
 import com.google.gson.Gson;
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.common.util.SystemUtils;
+import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.objectstorage.cloud.model.ObjectStorageConfiguration;
 import com.oceanbase.odc.service.task.constants.JobConstants;
@@ -47,8 +49,8 @@ public class JobUtils {
         return JobConstants.TEMPLATE_JOB_NAME_PREFIX + ji.getId() + "-" + LocalDateTime.now().format(DTF);
     }
 
-    public static String generateExecutorProcessProperties(String executorName) {
-        return "-D" + JobConstants.ODC_EXECUTOR_PROCESS_PROPERTIES_KEY + "=" + executorName;
+    public static String generateExecutorSelectorOnProcess(String executorName) {
+        return JobConstants.ODC_EXECUTOR_PROCESS_PROPERTIES_KEY + "=" + executorName;
     }
 
     public static String toJson(Object obj) {
@@ -58,6 +60,13 @@ public class JobUtils {
         // todo replace by jackson ConnectionConfig serialize ignore by @JsonProperty(value = "password",
         // access = Access.WRITE_ONLY)
         return new Gson().toJson(obj);
+    }
+
+    public static <T> T fromJson(String json, Class<T> clazz) {
+        if (json == null) {
+            return null;
+        }
+        return new Gson().fromJson(json, clazz);
     }
 
     public static Optional<Integer> getExecutorPort() {
@@ -74,8 +83,9 @@ public class JobUtils {
     }
 
     public static String getExecutorDataPath() {
-        String userDir = SystemUtils.getEnvOrProperty("user.dir");
-        return userDir != null ? userDir : "./data";
+        String userDir = SystemUtils.getEnvOrProperty("user.home");
+        Verify.notBlank(userDir, "user.home is blank");
+        return userDir.concat(File.separator).concat("data").concat(File.separator).concat("files");
     }
 
     public static boolean isK8sRunMode(TaskRunMode runMode) {

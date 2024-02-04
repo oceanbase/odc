@@ -17,6 +17,7 @@ package com.oceanbase.odc.service.task.caller;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.Supplier;
 
 import com.oceanbase.odc.common.json.JsonUtils;
@@ -50,7 +51,8 @@ public class JobEnvironmentFactory {
         }
 
         putEnv(JobEnvKeyConstants.ODC_LOG_DIRECTORY,
-                () -> SystemUtils.getEnvOrProperty(JobEnvKeyConstants.ODC_LOG_DIRECTORY));
+                () -> Optional.ofNullable(SystemUtils.getEnvOrProperty(JobEnvKeyConstants.ODC_LOG_DIRECTORY))
+                        .orElse("./log"));
         setDatabaseEnv();
         long userId = TraceContextHolder.getUserId() != null ? TraceContextHolder.getUserId() : -1;
         putEnv(JobEnvKeyConstants.ODC_EXECUTOR_USER_ID, () -> userId + "");

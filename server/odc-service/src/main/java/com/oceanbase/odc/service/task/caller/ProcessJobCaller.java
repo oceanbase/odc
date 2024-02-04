@@ -17,7 +17,6 @@
 package com.oceanbase.odc.service.task.caller;
 
 import com.oceanbase.odc.common.util.SystemUtils;
-import com.oceanbase.odc.service.task.constants.JobConstants;
 import com.oceanbase.odc.service.task.exception.JobException;
 import com.oceanbase.odc.service.task.schedule.JobIdentity;
 import com.oceanbase.odc.service.task.util.JobUtils;
@@ -43,7 +42,7 @@ public class ProcessJobCaller extends BaseJobCaller {
 
         String executorName = JobUtils.generateExecutorName(context.getJobIdentity());
         ProcessBuilder pb = new ExecutorProcessBuilderFactory().getProcessBuilder(
-                processConfig.getEnvironments(), JobUtils.generateExecutorProcessProperties(executorName));
+                processConfig.getEnvironments(), JobUtils.generateExecutorSelectorOnProcess(executorName));
         Process process;
         try {
             process = pb.start();
@@ -55,6 +54,15 @@ public class ProcessJobCaller extends BaseJobCaller {
         if (pid == -1) {
             process.destroyForcibly();
             throw new JobException("Get pid failed, job id={0} ", context.getJobIdentity().getId());
+        }
+
+        boolean isProcessRunning =
+                SystemUtils.isProcessRunning(pid, JobUtils.generateExecutorSelectorOnProcess(executorName));
+
+        if (!isProcessRunning) {
+            process.destroyForcibly();
+            throw new JobException("Start process failed, not process found, pid={0},executorName={1}.",
+                    pid, executorName);
         }
 
         // set process id as namespace
@@ -69,8 +77,8 @@ public class ProcessJobCaller extends BaseJobCaller {
     @Override
     protected void doDestroy(ExecutorIdentifier identifier) throws JobException {
         long pid = Long.parseLong(identifier.getNamespace());
-        String executorName = JobConstants.ODC_EXECUTOR_PROCESS_PROPERTIES_KEY + "=" + identifier.getExecutorName();
-        if (SystemUtils.isProcessRunning(pid, executorName)) {
+        if (SystemUtils.isProcessRunning(pid,
+                JobUtils.generateExecutorSelectorOnProcess(identifier.getExecutorName()))) {
             log.info("Found process, try kill it, pid={}.", pid);
             boolean result = SystemUtils.killProcessByPid(pid);
             if (result) {
