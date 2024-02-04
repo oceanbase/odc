@@ -106,7 +106,8 @@ public class TestDBConfigurations {
 
     public TestDBConfiguration getTestDorisConfiguration() {
         return connectType2ConfigurationMap.get(TestDBType.DORIS);
-      
+    }
+
     public TestDBConfiguration getTestOracleConfiguration() {
         return connectType2ConfigurationMap.get(TestDBType.ORACLE);
     }

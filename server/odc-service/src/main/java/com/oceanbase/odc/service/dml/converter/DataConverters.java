@@ -41,7 +41,7 @@ public class DataConverters {
             initForOracleMode(serverTimeZoneId);
         } else if (dialectType.isMysql()) {
             initForMysqlMode();
-        } else if (Objects.nonNull(dialectType) && dialectType.isDoris()) {
+        } else if (dialectType.isDoris()) {
             initForMysqlMode();
         } else {
             throw new IllegalArgumentException("Illegal DialectType " + dialectType);
