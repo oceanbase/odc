@@ -18,19 +18,20 @@ package com.oceanbase.odc.service.task.dispatch;
 
 import java.util.Arrays;
 
+import com.oceanbase.odc.common.util.SystemUtils;
 import com.oceanbase.odc.core.shared.exception.UnsupportedException;
 import com.oceanbase.odc.service.task.caller.ExecutorIdentifier;
 import com.oceanbase.odc.service.task.caller.JobCaller;
 import com.oceanbase.odc.service.task.caller.JobCallerBuilder;
 import com.oceanbase.odc.service.task.caller.JobContext;
 import com.oceanbase.odc.service.task.caller.PodConfig;
-import com.oceanbase.odc.service.task.caller.PodParam;
 import com.oceanbase.odc.service.task.config.JobConfiguration;
 import com.oceanbase.odc.service.task.config.JobConfigurationHolder;
 import com.oceanbase.odc.service.task.config.JobConfigurationValidator;
 import com.oceanbase.odc.service.task.config.K8sProperties;
 import com.oceanbase.odc.service.task.config.TaskFrameworkProperties;
 import com.oceanbase.odc.service.task.constants.JobConstants;
+import com.oceanbase.odc.service.task.constants.JobEnvKeyConstants;
 import com.oceanbase.odc.service.task.enums.TaskRunMode;
 import com.oceanbase.odc.service.task.exception.JobException;
 import com.oceanbase.odc.service.task.schedule.JobIdentity;
@@ -97,18 +98,18 @@ public class ImmediateJobDispatcher implements JobDispatcher {
         JobImageNameProvider jobImageNameProvider = JobConfigurationHolder.getJobConfiguration()
                 .getJobImageNameProvider();
         podConfig.setImage(jobImageNameProvider.provide());
+        podConfig.setCommand(Arrays.asList("bash", "-c", "/opt/odc/bin/start-odc.sh"));
+        podConfig.setRegion(k8s.getRegion() != null ? k8s.getRegion()
+                : SystemUtils.getEnvOrProperty(JobEnvKeyConstants.OB_ARN_PARTITION));
 
-        podConfig.setCommand(Arrays.asList("bash", "c", "/opt/odc/bin/start-odc.sh"));
-
-        PodParam podParam = podConfig.getPodParam();
-        podParam.setRequestCpu(k8s.getRequestCpu());
-        podParam.setRequestMem(k8s.getRequestMem());
-        podParam.setLimitCpu(k8s.getLimitCpu());
-        podParam.setLimitMem(k8s.getLimitMem());
-        podParam.setEnableMount(k8s.getEnableMount());
-        podParam.setMountPath(
+        podConfig.setRequestCpu(k8s.getRequestCpu());
+        podConfig.setRequestMem(k8s.getRequestMem());
+        podConfig.setLimitCpu(k8s.getLimitCpu());
+        podConfig.setLimitMem(k8s.getLimitMem());
+        podConfig.setEnableMount(k8s.getEnableMount());
+        podConfig.setMountPath(
                 k8s.getMountPath() == null ? JobConstants.ODC_EXECUTOR_DEFAULT_MOUNT_PATH : k8s.getMountPath());
-        podParam.setMountDiskSize(k8s.getMountDiskSize());
+        podConfig.setMountDiskSize(k8s.getMountDiskSize());
         return podConfig;
     }
 
