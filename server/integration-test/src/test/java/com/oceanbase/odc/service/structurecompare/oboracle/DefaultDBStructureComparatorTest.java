@@ -46,7 +46,7 @@ import com.oceanbase.tools.dbbrowser.model.DBObjectType;
 /**
  * @author jingtian
  * @date 2024/1/26
- * @since
+ * @since ODC_release_4.2.4
  */
 public class DefaultDBStructureComparatorTest extends PluginTestEnv {
     private static final String BASE_PATH =

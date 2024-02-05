@@ -27,7 +27,7 @@ import lombok.EqualsAndHashCode;
 @Data
 @EqualsAndHashCode(
         exclude = {"name", "warning", "owner", "schemaName", "tableName", "createTime", "updateTime",
-                "ordinalPosition"})
+                "ordinalPosition", "ddl"})
 public class DBTableIndex implements DBObject, DBObjectWarningDescriptor {
     /**
      * 所属 schemaName
