@@ -650,7 +650,7 @@ public class DatabaseService {
         if (dialectType.isOracle()) {
             names.add("SYS");
         }
-        if (dialectType.isMysql()) {
+        if (dialectType.isMysql() || dialectType.isDoris()) {
             names.addAll(Arrays.asList("mysql", "information_schema", "test"));
         }
         if (dialectType.isOBMysql()) {

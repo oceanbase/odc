@@ -194,7 +194,7 @@ public class DBTableStructureComparator implements DBObjectStructureComparator<D
     }
 
     private SqlBuilder getTargetDBSqlBuilder() {
-        if (this.tgtDialectType.isMysql()) {
+        if (this.tgtDialectType.isMysql() || this.tgtDialectType.isDoris()) {
             return new MySQLSqlBuilder();
         } else {
             return new OracleSqlBuilder();

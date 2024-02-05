@@ -124,6 +124,9 @@ public class DBPLService {
         if (Objects.nonNull(session.getDialectType()) && session.getDialectType().isMysql()) {
             throw new UnsupportedException("Batch compile is not supported in mysql mode");
         }
+        if (Objects.nonNull(session.getDialectType()) && session.getDialectType().isDoris()) {
+            throw new UnsupportedException("Batch compile is not supported in doris mode");
+        }
         Validate.notNull(req.getScope(), "Parameter [scope] can not be null");
         List<DBPLObjectIdentity> identities = getPLList(session, req.getObjectType(), "INVALID".equals(req.getScope()));
         Set<String> plNamesSet = new HashSet<>();
@@ -155,6 +158,9 @@ public class DBPLService {
             String databaseName, @NonNull List<DBPLObjectIdentity> identities) {
         if (Objects.nonNull(session.getDialectType()) && session.getDialectType().isMysql()) {
             throw new UnsupportedException("Batch compile is not supported in mysql mode");
+        }
+        if (Objects.nonNull(session.getDialectType()) && session.getDialectType().isDoris()) {
+            throw new UnsupportedException("Batch compile is not supported in doris mode");
         }
         BatchCompileTaskCallable taskCallable = new BatchCompileTaskCallable(session, identities);
         Future<BatchCompileResp> handle;
@@ -207,6 +213,8 @@ public class DBPLService {
         if (DialectType.OB_ORACLE == session.getDialectType()) {
             result = PLParser.parseOracle(ddl);
         } else if (session.getDialectType().isMysql()) {
+            result = PLParser.parseObMysql(ddl);
+        } else if (session.getDialectType().isDoris()) {
             result = PLParser.parseObMysql(ddl);
         } else {
             throw new UnsupportedException(

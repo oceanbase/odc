@@ -17,15 +17,18 @@
         <module>connect-plugin-ob-oracle</module>
         <module>connect-plugin-ob-mysql</module>
         <module>connect-plugin-mysql</module>
+        <module>connect-plugin-doris</module>
         <module>connect-plugin-oracle</module>
         <module>schema-plugin-api</module>
         <module>schema-plugin-ob-mysql</module>
         <module>schema-plugin-ob-oracle</module>
         <module>schema-plugin-mysql</module>
+        <module>schema-plugin-doris</module>
         <module>schema-plugin-oracle</module>
         <module>schema-plugin-odp-sharding-ob-mysql</module>
         <module>task-plugin-api</module>
         <module>task-plugin-mysql</module>
+        <module>task-plugin-doris</module>
         <module>task-plugin-ob-mysql</module>
         <module>task-plugin-ob-oracle</module>
     </modules>
@@ -73,6 +76,12 @@
             </dependency>
             <dependency>
                 <groupId>com.oceanbase</groupId>
+                <artifactId>connect-plugin-doris</artifactId>
+                <version>${project.version}</version>
+                <scope>provided</scope>
+            </dependency>
+            <dependency>
+                <groupId>com.oceanbase</groupId>
                 <artifactId>connect-plugin-oracle</artifactId>
                 <version>${project.version}</version>
                 <scope>provided</scope>
@@ -85,6 +94,18 @@
             </dependency>
             <dependency>
                 <groupId>com.oceanbase</groupId>
+                <artifactId>task-plugin-mysql</artifactId>
+                <version>${project.version}</version>
+                <scope>provided</scope>
+            </dependency>
+            <dependency>
+                <groupId>com.oceanbase</groupId>
+                <artifactId>task-plugin-doris</artifactId>
+                <version>${project.version}</version>
+                <scope>provided</scope>
+            </dependency>
+            <dependency>
+                <groupId>com.oceanbase</groupId>
                 <artifactId>schema-plugin-ob-oracle</artifactId>
                 <version>${project.version}</version>
                 <scope>provided</scope>
@@ -92,6 +113,12 @@
             <dependency>
                 <groupId>com.oceanbase</groupId>
                 <artifactId>schema-plugin-mysql</artifactId>
+                <version>${project.version}</version>
+                <scope>provided</scope>
+            </dependency>
+            <dependency>
+                <groupId>com.oceanbase</groupId>
+                <artifactId>schema-plugin-doris</artifactId>
                 <version>${project.version}</version>
                 <scope>provided</scope>
             </dependency>

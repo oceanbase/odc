@@ -29,10 +29,12 @@ public enum TestDBType {
     OB_ORACLE("4.1.0.2", new String[] {"odc.ob.default.oracle.commandline"}, "odc.ob.default.oracle.sysUsername",
             "odc.ob.default.oracle.sysPassword"),
     MYSQL("5.7", new String[] {"odc.mysql.default.commandline"}, null, null),
+    DORIS("5.7", new String[] {"odc.doris.default.commandline"}, null, null),
     ORACLE("11", new String[] {"odc.oracle.default.host", "odc.oracle.default.port", "odc.oracle.default.username",
             "odc.oracle.default.password", "odc.oracle.default.sid", "odc.oracle.default.serviceName",
             "odc.oracle.default.role"}, null,
             null);
+
 
     /**
      * Test database version

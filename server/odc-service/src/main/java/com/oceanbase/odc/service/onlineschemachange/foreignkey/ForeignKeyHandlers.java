@@ -25,7 +25,8 @@ import com.oceanbase.odc.core.session.ConnectionSession;
 public class ForeignKeyHandlers {
 
     public static ForeignKeyHandler getForeignKeyHandler(ConnectionSession session) {
-        return session.getDialectType().isMysql() ? new OBMySQLForeignKeyHandler(session)
+        return session.getDialectType().isMysql() || session.getDialectType().isDoris()
+                ? new OBMySQLForeignKeyHandler(session)
                 : new OBOracleForeignKeyHandler(session);
     }
 }

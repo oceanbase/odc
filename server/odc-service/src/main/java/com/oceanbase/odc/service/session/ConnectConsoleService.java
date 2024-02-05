@@ -144,6 +144,8 @@ public class ConnectConsoleService {
             sqlBuilder = new MySQLSqlBuilder();
         } else if (dialectType.isOracle()) {
             sqlBuilder = new OracleSqlBuilder();
+        } else if (dialectType.isDoris()) {
+            sqlBuilder = new MySQLSqlBuilder();
         } else {
             throw new IllegalArgumentException("Unsupported dialect type, " + dialectType);
         }
