@@ -58,7 +58,7 @@ public class StartPreparingJob implements Job {
         configuration = JobConfigurationHolder.getJobConfiguration();
         JobConfigurationValidator.validComponent();
         TaskFrameworkProperties taskFrameworkProperties = configuration.getTaskFrameworkProperties();
-        if (isExecutorWaitingToRunExceed()) {
+        if (configuration.getStartJobRateLimiter().tryAcquire()) {
             log.warn("Amount of executors waiting to run exceed threshold, wait next schedule, threshold={}.",
                     taskFrameworkProperties.getExecutorWaitingToRunThresholdCount());
             return;
@@ -123,16 +123,6 @@ public class StartPreparingJob implements Job {
                 jobProperties.getJobExpiredIfNotRunningAfterSeconds(), TimeUnit.SECONDS);
 
     }
-
-    private boolean isExecutorWaitingToRunExceed() {
-        TaskFrameworkProperties taskFrameworkProperties = getConfiguration().getTaskFrameworkProperties();
-
-        long count = getConfiguration().getTaskFrameworkService().countRunningNeverHeartJobs(
-                taskFrameworkProperties.getExecutorWaitingToRunThresholdSeconds());
-
-        return count > taskFrameworkProperties.getExecutorWaitingToRunThresholdCount();
-    }
-
 
     private JobConfiguration getConfiguration() {
         return configuration;

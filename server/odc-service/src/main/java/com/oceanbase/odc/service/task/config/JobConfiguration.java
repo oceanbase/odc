@@ -16,6 +16,7 @@
 
 package com.oceanbase.odc.service.task.config;
 
+import org.apache.hadoop.thirdparty.com.google.common.util.concurrent.RateLimiter;
 import org.quartz.Scheduler;
 
 import com.oceanbase.odc.common.event.EventPublisher;
@@ -25,6 +26,7 @@ import com.oceanbase.odc.service.schedule.ScheduleTaskService;
 import com.oceanbase.odc.service.task.TaskService;
 import com.oceanbase.odc.service.task.caller.K8sJobClient;
 import com.oceanbase.odc.service.task.dispatch.JobDispatcher;
+import com.oceanbase.odc.service.task.schedule.StartJobRateLimiter;
 import com.oceanbase.odc.service.task.schedule.provider.HostUrlProvider;
 import com.oceanbase.odc.service.task.schedule.provider.JobImageNameProvider;
 import com.oceanbase.odc.service.task.service.TaskFrameworkService;
@@ -62,4 +64,6 @@ public interface JobConfiguration {
     JobImageNameProvider getJobImageNameProvider();
 
     TransactionManager getTransactionManager();
+
+    StartJobRateLimiter getStartJobRateLimiter();
 }

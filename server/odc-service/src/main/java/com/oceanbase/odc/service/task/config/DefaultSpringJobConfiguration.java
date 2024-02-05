@@ -32,6 +32,7 @@ import com.oceanbase.odc.service.schedule.ScheduleTaskService;
 import com.oceanbase.odc.service.task.TaskService;
 import com.oceanbase.odc.service.task.caller.K8sJobClient;
 import com.oceanbase.odc.service.task.dispatch.ImmediateJobDispatcher;
+import com.oceanbase.odc.service.task.schedule.MonitorExecutorStatusRateLimiter;
 import com.oceanbase.odc.service.task.schedule.provider.DefaultHostUrlProvider;
 import com.oceanbase.odc.service.task.schedule.provider.DefaultJobImageNameProvider;
 import com.oceanbase.odc.service.task.service.SpringTransactionManager;
@@ -69,6 +70,7 @@ public class DefaultSpringJobConfiguration extends DefaultJobConfiguration
         setTaskFrameworkService(tfs);
         setEventPublisher(publisher);
         setTransactionManager(new SpringTransactionManager(ctx.getBean(TransactionTemplate.class)));
+        setStartJobRateLimiter(new MonitorExecutorStatusRateLimiter());
     }
 
     @Override
