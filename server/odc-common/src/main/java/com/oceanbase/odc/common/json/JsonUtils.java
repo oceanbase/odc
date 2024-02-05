@@ -15,6 +15,7 @@
  */
 package com.oceanbase.odc.common.json;
 
+import java.lang.reflect.Type;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -26,6 +27,7 @@ import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.SerializationFeature;
@@ -70,6 +72,21 @@ public class JsonUtils {
         } catch (JsonProcessingException e) {
             return null;
         }
+    }
+
+    public static <T> T fromJson(String json, JavaType javaType) {
+        if (json == null) {
+            return null;
+        }
+        try {
+            return OBJECT_MAPPER.readValue(json, javaType);
+        } catch (JsonProcessingException e) {
+            return null;
+        }
+    }
+
+    public static JavaType constructType(Type type) {
+        return OBJECT_MAPPER.getTypeFactory().constructType(type);
     }
 
     public static <T> T fromJson(String json, TypeReference<T> valueTypeRef) {

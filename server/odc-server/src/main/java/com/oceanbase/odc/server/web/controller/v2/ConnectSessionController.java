@@ -63,6 +63,9 @@ import com.oceanbase.odc.service.session.model.SqlExecuteResult;
 import com.oceanbase.odc.service.sqlcheck.SqlCheckService;
 import com.oceanbase.odc.service.sqlcheck.model.CheckResult;
 import com.oceanbase.odc.service.sqlcheck.model.SqlCheckReq;
+import com.oceanbase.odc.service.state.StatefulRoute;
+import com.oceanbase.odc.service.state.StatefulRoute.StateIdProviderType;
+import com.oceanbase.odc.service.state.StatefulRoute.StateType;
 
 import io.swagger.annotations.ApiOperation;
 
@@ -75,6 +78,7 @@ import io.swagger.annotations.ApiOperation;
 @RestController
 @RequestMapping("/api/v2/datasource")
 public class ConnectSessionController {
+    private static final String STATE_NAME = "dbSessionId";
     @Autowired
     private ConnectSessionService sessionService;
     @Autowired
@@ -86,12 +90,14 @@ public class ConnectSessionController {
 
     @ApiOperation(value = "createSessionByDataSource", notes = "create connect session by a DataSource")
     @RequestMapping(value = "/datasources/{dataSourceId:[\\d]+}/sessions", method = RequestMethod.POST)
+    @StatefulRoute(type = StateType.CREATED, stateName = STATE_NAME, idProvider = StateIdProviderType.RESPONSE_BODY)
     public SuccessResponse<CreateSessionResp> createSessionByDataSource(@PathVariable Long dataSourceId) {
         return Responses.success(sessionService.createByDataSourceId(dataSourceId));
     }
 
     @ApiOperation(value = "createSessionByDatabase", notes = "create connect session by a Database")
     @RequestMapping(value = "/databases/{databaseId:[\\d]+}/sessions", method = RequestMethod.POST)
+    @StatefulRoute(type = StateType.CREATED, stateName = STATE_NAME, idProvider = StateIdProviderType.RESPONSE_BODY)
     public SuccessResponse<CreateSessionResp> createSessionByDatabase(@PathVariable Long databaseId) {
         return Responses.success(sessionService.createByDatabaseId(databaseId));
     }
@@ -107,6 +113,7 @@ public class ConnectSessionController {
      */
     @ApiOperation(value = "asyncSqlExecute", notes = "异步执行sql")
     @RequestMapping(value = {"/sessions/{sessionId}/sqls/asyncExecute"}, method = RequestMethod.POST)
+    @StatefulRoute(type = StateType.ROUTING, stateName = STATE_NAME, field = "sessionId")
     public SuccessResponse<SqlAsyncExecuteResp> asyncSqlExecute(@PathVariable String sessionId,
             @RequestBody SqlAsyncExecuteReq req) throws Exception {
         return Responses.success(consoleService.execute(SidUtils.getSessionId(sessionId), req));
@@ -120,6 +127,7 @@ public class ConnectSessionController {
      */
     @ApiOperation(value = "getAsyncSqlExecute", notes = "异步执行获取结果sql")
     @RequestMapping(value = "/sessions/{sessionId}/sqls/getResult", method = RequestMethod.GET)
+    @StatefulRoute(type = StateType.ROUTING, stateName = STATE_NAME, field = "sessionId")
     public SuccessResponse<List<SqlExecuteResult>> getAsyncSqlExecute(@PathVariable String sessionId,
             @RequestParam String requestId) {
         return Responses.success(consoleService.getAsyncResult(SidUtils.getSessionId(sessionId), requestId, null));
@@ -133,6 +141,7 @@ public class ConnectSessionController {
      */
     @ApiOperation(value = "sqlCheck", notes = "连接内对 sql 脚本的内容进行静态检查")
     @RequestMapping(value = "/sessions/{sessionId}/sqlCheck", method = RequestMethod.POST)
+    @StatefulRoute(type = StateType.ROUTING, stateName = STATE_NAME, field = "sessionId")
     public ListResponse<CheckResult> check(@PathVariable String sessionId, @RequestBody SqlCheckReq req) {
         ConnectionSession connectionSession = sessionService.nullSafeGet(SidUtils.getSessionId(sessionId), true);
         return Responses.list(this.sqlCheckService.check(connectionSession, req));
@@ -147,6 +156,7 @@ public class ConnectSessionController {
      */
     @ApiOperation(value = "getBinaryContent", notes = "大字段内容查看接口")
     @RequestMapping(value = "/sessions/{sessionId}/sqls/{sqlId}/content", method = RequestMethod.GET)
+    @StatefulRoute(type = StateType.ROUTING, stateName = STATE_NAME, field = "sessionId")
     public SuccessResponse<BinaryContent> getBinaryContent(@PathVariable String sessionId, @PathVariable String sqlId,
             @RequestParam Long row, @RequestParam Integer col,
             @RequestParam(required = false, defaultValue = "0") @Min(0) Long skip,
@@ -164,6 +174,7 @@ public class ConnectSessionController {
      */
     @ApiOperation(value = "download", notes = "下载二进制对象数据")
     @RequestMapping(value = "/sessions/{sessionId}/sqls/{sqlId}/download", method = RequestMethod.GET)
+    @StatefulRoute(type = StateType.ROUTING, stateName = STATE_NAME, field = "sessionId")
     public ResponseEntity<InputStreamResource> download(@PathVariable String sessionId, @PathVariable String sqlId,
             @RequestParam Long row, @RequestParam Integer col) {
         return consoleService.downloadBinaryContent(SidUtils.getSessionId(sessionId), sqlId, row, col);
@@ -178,6 +189,7 @@ public class ConnectSessionController {
      */
     @ApiOperation(value = "upload", notes = "session级别的通用文件上传接口，用于上传数据")
     @RequestMapping(value = "/sessions/{sessionId}/upload", method = RequestMethod.POST)
+    @StatefulRoute(type = StateType.ROUTING, stateName = STATE_NAME, field = "sessionId")
     public SuccessResponse<String> upload(@PathVariable String sessionId, @RequestBody MultipartFile file)
             throws IOException {
         return Responses.success(sessionService.uploadFile(SidUtils.getSessionId(sessionId), file.getInputStream()));
@@ -191,6 +203,7 @@ public class ConnectSessionController {
      */
     @ApiOperation(value = "kill query", notes = "停止执行sql接口")
     @RequestMapping(value = "/sessions/{sessionId}/killQuery", method = RequestMethod.PUT)
+    @StatefulRoute(type = StateType.ROUTING, stateName = STATE_NAME, field = "sessionId")
     public SuccessResponse<Boolean> killQuery(@PathVariable String sessionId) {
         return Responses.success(consoleService.killCurrentQuery(SidUtils.getSessionId(sessionId)));
     }
@@ -223,6 +236,7 @@ public class ConnectSessionController {
 
     @ApiOperation(value = "queryTableOrViewData", notes = "查询表或视图的数据")
     @RequestMapping(value = {"/sessions/{sessionId}/queryData"}, method = RequestMethod.POST)
+    @StatefulRoute(type = StateType.ROUTING, stateName = STATE_NAME, field = "sessionId")
     public SuccessResponse<SqlExecuteResult> queryTableOrViewData(@PathVariable String sessionId,
             @RequestBody QueryTableOrViewDataReq req) throws Exception {
         return Responses.success(consoleService.queryTableOrViewData(SidUtils.getSessionId(sessionId), req));
@@ -230,6 +244,7 @@ public class ConnectSessionController {
 
     @ApiOperation(value = "currentSessionStatus", notes = "查询当前数据库 Session 状态")
     @GetMapping(value = {"/sessions/{sessionId}/status"})
+    @StatefulRoute(type = StateType.ROUTING, stateName = STATE_NAME, field = "sessionId")
     public SuccessResponse<DBSessionResp> currentSessionStatus(@PathVariable String sessionId) {
         return Responses.success(sessionService.currentDBSession(sessionId));
     }

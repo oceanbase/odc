@@ -234,7 +234,7 @@ public class WebRequestUtils {
         return (T) value;
     }
 
-    private static ServletRequestAttributes getRequestAttributes() {
+    public static ServletRequestAttributes getRequestAttributes() {
         RequestAttributes requestAttributes = RequestContextHolder.getRequestAttributes();
         Verify.notNull(requestAttributes, "RequestAttributes");
         return (ServletRequestAttributes) requestAttributes;

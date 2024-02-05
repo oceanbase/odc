@@ -37,6 +37,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
@@ -111,6 +112,7 @@ public class RequestDispatcher {
             IOUtils.write(requestBody, clientRequest.getBody());
         }, clientResponse -> {
             responseHeaders.addAll(clientResponse.getHeaders());
+            //todo maybe oom
             return new ByteArrayInputStream(IOUtils.toByteArray(clientResponse.getBody()));
         });
         Verify.notNull(inputStream, "CallResult");

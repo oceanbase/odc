@@ -110,7 +110,7 @@ public class DispatchResponse {
         return JsonUtils.fromJson(responseBody, ErrorResponse.class);
     }
 
-    private String encodeContentToString() {
+    public String encodeContentToString() {
         MediaType contentType = responseHeaders.getContentType();
         Verify.notNull(contentType, "ContentType can not be null");
         if (!MediaType.APPLICATION_JSON.equalsTypeAndSubtype(contentType)) {

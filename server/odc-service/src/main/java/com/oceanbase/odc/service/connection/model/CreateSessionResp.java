@@ -19,6 +19,7 @@ import java.util.List;
 
 import com.oceanbase.odc.service.feature.VersionDiffConfigService.OBSupport;
 import com.oceanbase.odc.service.feature.model.DataTypeUnit;
+import com.oceanbase.odc.service.state.StateIdResponse;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -34,7 +35,7 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class CreateSessionResp {
+public class CreateSessionResp implements StateIdResponse {
     private String sessionId;
 
     private List<DataTypeUnit> dataTypeUnits;
@@ -44,4 +45,9 @@ public class CreateSessionResp {
     private List<String> charsets;
 
     private List<String> collations;
+
+    @Override
+    public String stateId() {
+        return sessionId;
+    }
 }
