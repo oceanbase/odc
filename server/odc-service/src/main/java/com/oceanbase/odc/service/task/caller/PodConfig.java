@@ -40,7 +40,7 @@ public class PodConfig {
 
     private List<String> command;
 
-    private Map<String, String> environments = new HashMap<>(2);
+    private Map<String, String> environments = new HashMap<>();
 
     private String imagePullPolicy = JobConstants.IMAGE_PULL_POLICY_ALWAYS;
 
