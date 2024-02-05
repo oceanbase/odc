@@ -222,6 +222,9 @@ public class OBOracleSchemaAccessor extends OracleSchemaAccessor {
                         DBSchemaAccessorUtil.fillWarning(index, index.type(), "parse index DDL failed");
                         index.setGlobal(true);
                     } else {
+                        if (index.getType() != DBIndexType.UNIQUE) {
+                            index.setDdl(indexDdl);
+                        }
                         // we get one single create index statement for each table index
                         // so here we should only get one index object from this statement
                         index.setGlobal("GLOBAL".equalsIgnoreCase(result.getIndexes().get(0).getRange().name()));

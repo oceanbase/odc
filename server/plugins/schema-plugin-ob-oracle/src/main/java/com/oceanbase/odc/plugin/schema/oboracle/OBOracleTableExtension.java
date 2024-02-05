@@ -24,6 +24,7 @@ import java.util.Objects;
 import org.apache.commons.lang3.Validate;
 import org.pf4j.Extension;
 
+import com.google.common.collect.Lists;
 import com.oceanbase.odc.common.util.VersionUtils;
 import com.oceanbase.odc.plugin.schema.obmysql.OBMySQLTableExtension;
 import com.oceanbase.odc.plugin.schema.oboracle.parser.OBOracleGetDBTableByParser;
@@ -91,7 +92,7 @@ public class OBOracleTableExtension extends OBMySQLTableExtension {
         return table;
     }
 
-    private String getTableDDL(Connection connection, String schemaName, String tableName,
+    public String getTableDDL(Connection connection, String schemaName, String tableName,
             OBOracleGetDBTableByParser parser, List<DBTableColumn> columns, DBTableOptions tableOptions) {
         CreateTable createTableStmt = parser.getCreateTableStmt();
         Validate.notNull(createTableStmt, "CreateTable statement can not be null");
@@ -135,6 +136,39 @@ public class OBOracleTableExtension extends OBMySQLTableExtension {
             }
         }
         return ddl.toString();
+    }
+
+    @Override
+    public Map<String, DBTable> listDetails(Connection connection, String schemaName) {
+        Map<String, DBTable> returnVal = new HashMap<>();
+        DBSchemaAccessor accessor = getSchemaAccessor(connection);
+        List<String> tableNames = accessor.showTables(schemaName);
+        if (tableNames.isEmpty()) {
+            return returnVal;
+        }
+        Map<String, List<DBTableColumn>> tableName2Columns = accessor.listTableColumns(schemaName);
+        Map<String, List<DBTableIndex>> tableName2Indexes = accessor.listTableIndexes(schemaName);
+        Map<String, List<DBTableConstraint>> tableName2Constraints = accessor.listTableConstraints(schemaName);
+        Map<String, DBTableOptions> tableName2Options = accessor.listTableOptions(schemaName);
+        for (String tableName : tableNames) {
+            if (!tableName2Columns.containsKey(tableName)) {
+                continue;
+            }
+            DBTable table = new DBTable();
+            table.setSchemaName(schemaName);
+            table.setOwner(schemaName);
+            table.setName(tableName);
+            List<DBTableColumn> columns = tableName2Columns.getOrDefault(tableName, Lists.newArrayList());
+            List<DBTableIndex> indexes = tableName2Indexes.getOrDefault(tableName, Lists.newArrayList());
+            table.setColumns(columns);
+            table.setIndexes(indexes);
+            table.setConstraints(tableName2Constraints.getOrDefault(tableName, Lists.newArrayList()));
+            table.setTableOptions(tableName2Options.getOrDefault(tableName, new DBTableOptions()));
+            table.setPartition(accessor.getPartition(schemaName, tableName));
+            table.setDDL(accessor.getTableDDL(schemaName, tableName, columns, indexes));
+            returnVal.put(tableName, table);
+        }
+        return returnVal;
     }
 
     @Override

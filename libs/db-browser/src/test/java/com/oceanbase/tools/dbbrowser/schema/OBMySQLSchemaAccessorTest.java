@@ -19,6 +19,7 @@ import static com.oceanbase.tools.dbbrowser.editor.DBObjectUtilsTest.loadAsStrin
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -188,6 +189,20 @@ public class OBMySQLSchemaAccessorTest extends BaseTestEnv {
     public void listTableIndex_Success() {
         Map<String, List<DBTableIndex>> indexes = accessor.listTableIndexes(getOBMySQLDataBaseName());
         Assert.assertTrue(indexes.size() > 0);
+    }
+
+    @Test
+    public void listTableIndex_WithTableDdl_TestIndexRange_Success() {
+        String ddl1 = accessor.getTableDDL(getOBMySQLDataBaseName(), "test_index_range");
+        String ddl2 = accessor.getTableDDL(getOBMySQLDataBaseName(), "test_index_range2");
+        Map<String, String> tableName2Ddl = new HashMap<>();
+        tableName2Ddl.put("test_index_range", ddl1);
+        tableName2Ddl.put("test_index_range2", ddl2);
+        Map<String, List<DBTableIndex>> actual = accessor.listTableIndexes(getOBMySQLDataBaseName(), tableName2Ddl);
+        Assert.assertTrue(actual.get("test_index_range").get(0).getGlobal());
+        Assert.assertFalse(actual.get("test_index_range").get(1).getGlobal());
+        Assert.assertTrue(actual.get("test_index_range2").get(0).getGlobal());
+        Assert.assertFalse(actual.get("test_index_range2").get(1).getGlobal());
     }
 
     @Test

@@ -617,6 +617,11 @@ public class OracleSchemaAccessor implements DBSchemaAccessor {
         return tableName2Indexes;
     }
 
+    @Override
+    public Map<String, List<DBTableIndex>> listTableIndexes(String schemaName, Map<String, String> tableName2Ddl) {
+        throw new UnsupportedOperationException("Not supported");
+    }
+
     private DBTableIndex createIndexByResultSet(ResultSet rs, int num) throws SQLException {
         DBTableIndex index = new DBTableIndex();
         index.setName(rs.getString(OracleConstants.INDEX_NAME));
@@ -1007,7 +1012,8 @@ public class OracleSchemaAccessor implements DBSchemaAccessor {
     }
 
     @Override
-    public String getTableDDL(String schemaName, String tableName) {
+    public String getTableDDL(String schemaName, String tableName, List<DBTableColumn> tableColumns,
+            List<DBTableIndex> tableIndexes) {
         StringBuilder ddl = new StringBuilder(getTableDDLOnly(schemaName, tableName));
         ddl.append(";\n");
         Map<String, String> variables = new HashMap<>();
@@ -1020,8 +1026,7 @@ public class OracleSchemaAccessor implements DBSchemaAccessor {
             String tableCommentDdl = StringUtils.replaceVariables(ORACLE_TABLE_COMMENT_DDL_TEMPLATE, variables);
             ddl.append(tableCommentDdl).append(";\n");
         }
-        List<DBTableColumn> columns = listTableColumns(schemaName, tableName);
-        for (DBTableColumn column : columns) {
+        for (DBTableColumn column : tableColumns) {
             if (StringUtils.isNotEmpty(column.getComment())) {
                 variables.put("columnName", StringUtils.quoteOracleIdentifier(column.getName()));
                 variables.put("comment", StringUtils.quoteOracleValue(column.getComment()));
@@ -1029,8 +1034,11 @@ public class OracleSchemaAccessor implements DBSchemaAccessor {
                 ddl.append(columnCommentDdl).append(";\n");
             }
         }
-        List<DBTableIndex> indexes = listTableIndexes(schemaName, tableName);
-        for (DBTableIndex index : indexes) {
+        for (DBTableIndex index : tableIndexes) {
+            if (StringUtils.isNotBlank(index.getDdl())) {
+                ddl.append("\n").append(index.getDdl());
+                continue;
+            }
             /**
              * 如果有唯一索引，则在表的 DDL 里已经包含了对应的唯一约束 这里就不需要再去获取索引的 DDL 了，否则会重复
              */
@@ -1062,6 +1070,12 @@ public class OracleSchemaAccessor implements DBSchemaAccessor {
         }
         return ddl.toString();
 
+    }
+
+    @Override
+    public String getTableDDL(String schemaName, String tableName) {
+        return getTableDDL(schemaName, tableName, listTableColumns(schemaName, tableName),
+                listTableIndexes(schemaName, tableName));
     }
 
     protected String getTableDDLOnly(String schemaName, String tableName) {

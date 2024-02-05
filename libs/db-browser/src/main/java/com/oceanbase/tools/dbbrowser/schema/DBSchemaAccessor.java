@@ -199,6 +199,8 @@ public interface DBSchemaAccessor {
      */
     Map<String, List<DBTableIndex>> listTableIndexes(String schemaName);
 
+    Map<String, List<DBTableIndex>> listTableIndexes(String schemaName, Map<String, String> tableName2Ddl);
+
     /**
      * Get all table constraints in the specified schema
      */
@@ -221,6 +223,9 @@ public interface DBSchemaAccessor {
     DBTablePartition getPartition(String schemaName, String tableName);
 
     List<DBTableIndex> listTableIndexes(String schemaName, String tableName);
+
+    String getTableDDL(String schemaName, String tableName, List<DBTableColumn> tableColumns,
+            List<DBTableIndex> tableIndexes);
 
     String getTableDDL(String schemaName, String tableName);
 

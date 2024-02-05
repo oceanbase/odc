@@ -611,6 +611,15 @@ public class OBOracleSchemaAccessorTest extends BaseTestEnv {
     }
 
     @Test
+    public void getTableDDL_Success() {
+        String schema = getOBOracleSchema();
+        String tableDDL =
+                accessor.getTableDDL(schema, "TEST_INDEX_TYPE", accessor.listTableColumns(schema, "TEST_INDEX_TYPE"),
+                        accessor.listTableIndexes(schema, "TEST_INDEX_TYPE"));
+        Assert.assertNotNull(tableDDL);
+    }
+
+    @Test
     public void listTableColumns_test_default_null_Success() {
         List<DBTableColumn> columns =
                 accessor.listTableColumns(getOBOracleSchema(), "TEST_DEFAULT_NULL");

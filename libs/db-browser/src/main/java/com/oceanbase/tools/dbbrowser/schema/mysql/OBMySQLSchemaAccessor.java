@@ -216,6 +216,19 @@ public class OBMySQLSchemaAccessor extends MySQLNoGreaterThan5740SchemaAccessor 
     }
 
     @Override
+    public Map<String, List<DBTableIndex>> listTableIndexes(String schemaName, Map<String, String> tableName2Ddl) {
+        Map<String, List<DBTableIndex>> tableName2Indexes = super.listTableIndexes(schemaName);
+        tableName2Indexes.keySet().forEach(tableName -> {
+            if (tableName2Ddl.containsKey(tableName)) {
+                parseIndexDdlToSetRange(tableName2Ddl.get(tableName), tableName2Indexes.get(tableName));
+            } else {
+                fillIndexRange(tableName2Indexes.get(tableName), schemaName, tableName);
+            }
+        });
+        return tableName2Indexes;
+    }
+
+    @Override
     protected boolean isIndexDistinguishesVisibility() {
         return true;
     }
@@ -236,20 +249,28 @@ public class OBMySQLSchemaAccessor extends MySQLNoGreaterThan5740SchemaAccessor 
             if (CollectionUtils.isEmpty(ddl) || StringUtils.isBlank(ddl.get(0))) {
                 fillWarning(indexList, DBObjectType.INDEX, "get index DDL failed");
             } else {
-                ParseSqlResult result = SqlParser.parseMysql(ddl.get(0));
-                if (CollectionUtils.isEmpty(result.getIndexes())) {
-                    fillWarning(indexList, DBObjectType.INDEX, "parse index DDL failed");
-                } else {
-                    indexList.forEach(index -> result.getIndexes().forEach(dbIndex -> {
-                        if (StringUtils.equals(index.getName(), dbIndex.getName())) {
-                            index.setGlobal("GLOBAL".equalsIgnoreCase(dbIndex.getRange().name()));
-                        }
-                    }));
-                }
+                parseIndexDdlToSetRange(ddl.get(0), indexList);
             }
         } catch (Exception e) {
             fillWarning(indexList, DBObjectType.INDEX, "query index ddl failed");
             log.warn("Fetch table index through ddl parsing failed", e);
+        }
+    }
+
+    private void parseIndexDdlToSetRange(String ddl, List<DBTableIndex> indexList) {
+        if (StringUtils.isBlank(ddl)) {
+            fillWarning(indexList, DBObjectType.INDEX, "table ddl is blank, can not set index range by parse ddl");
+            return;
+        }
+        ParseSqlResult result = SqlParser.parseMysql(ddl);
+        if (CollectionUtils.isEmpty(result.getIndexes())) {
+            fillWarning(indexList, DBObjectType.INDEX, "parse index DDL failed");
+        } else {
+            indexList.forEach(index -> result.getIndexes().forEach(dbIndex -> {
+                if (StringUtils.equals(index.getName(), dbIndex.getName())) {
+                    index.setGlobal("GLOBAL".equalsIgnoreCase(dbIndex.getRange().name()));
+                }
+            }));
         }
     }
 

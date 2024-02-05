@@ -621,6 +621,11 @@ public class MySQLNoGreaterThan5740SchemaAccessor implements DBSchemaAccessor {
         return tableName2Indexes;
     }
 
+    @Override
+    public Map<String, List<DBTableIndex>> listTableIndexes(String schemaName, Map<String, String> tableName2Ddl) {
+        return this.listTableIndexes(schemaName);
+    }
+
     protected boolean isIndexDistinguishesVisibility() {
         return false;
     }
@@ -979,6 +984,12 @@ public class MySQLNoGreaterThan5740SchemaAccessor implements DBSchemaAccessor {
             return null;
         });
         return new ArrayList<>(indexName2Index.values());
+    }
+
+    @Override
+    public String getTableDDL(String schemaName, String tableName, List<DBTableColumn> tableColumns,
+            List<DBTableIndex> tableIndexes) {
+        throw new UnsupportedOperationException("Not supported");
     }
 
     protected void handleIndexAvailability(DBTableIndex index, String availability) {

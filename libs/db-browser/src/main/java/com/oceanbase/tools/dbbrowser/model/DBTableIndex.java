@@ -95,6 +95,10 @@ public class DBTableIndex implements DBObject, DBObjectWarningDescriptor {
     private Long keyBlockSize;
 
     private String warning;
+    /**
+     * Oracle special
+     */
+    private String ddl;
 
     @Override
     public String name() {

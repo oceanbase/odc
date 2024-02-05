@@ -2,6 +2,7 @@ drop table if exists test_data_type;
 drop table if exists test_other_than_data_type;
 drop table if exists test_index_type;
 drop table if exists test_index_range;
+drop table if exists test_index_range2;
 drop table if exists test_fk_child;
 drop table if exists test_fk_parent;
 drop table if exists part_hash;
