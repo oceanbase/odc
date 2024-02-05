@@ -47,6 +47,7 @@ import com.oceanbase.odc.service.datasecurity.model.MaskingAlgorithm;
 import com.oceanbase.odc.service.datasecurity.model.SensitiveColumn;
 import com.oceanbase.odc.service.datasecurity.util.DataMaskingUtil;
 import com.oceanbase.odc.service.datatransfer.model.DataTransferProperties;
+import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.objectstorage.cloud.CloudObjectStorageService;
 import com.oceanbase.odc.service.session.factory.DefaultConnectSessionFactory;
 import com.oceanbase.odc.service.session.util.SqlRewriteUtil;
@@ -78,6 +79,9 @@ public class DumperResultSetExportTaskManager implements ResultSetExportTaskMana
 
     @Autowired
     private DataMaskingService maskingService;
+
+    @Autowired
+    private AuthenticationFacade authenticationFacade;
 
     @PostConstruct
     public void init() {
@@ -148,7 +152,8 @@ public class DumperResultSetExportTaskManager implements ResultSetExportTaskMana
         try {
             List<Set<SensitiveColumn>> sensitiveColumns = maskingService.getResultSetSensitiveColumns(sql, session);
             if (DataMaskingUtil.isSensitiveColumnExists(sensitiveColumns)) {
-                return maskingService.getResultSetMaskingAlgorithms(sensitiveColumns);
+                return maskingService.getResultSetMaskingAlgorithms(sensitiveColumns,
+                        authenticationFacade.currentOrganizationId());
             }
         } catch (Exception e) {
             // Eat exception and skip data masking
