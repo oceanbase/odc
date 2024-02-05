@@ -15,6 +15,7 @@
  */
 package com.oceanbase.odc.server.web.trace;
 
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.lang.reflect.InvocationHandler;
@@ -66,6 +67,8 @@ public class RequestBodyCopyFilter extends OncePerRequestFilter {
         private final HttpServletRequest target;
         private final static String TARGET_METHOD_NAME = "getInputStream";
 
+        private final BodyHolder bodyHolder = new BodyHolder();
+
         public ServletRequestInvocationHandler(@NonNull HttpServletRequest request) {
             this.target = request;
         }
@@ -75,19 +78,59 @@ public class RequestBodyCopyFilter extends OncePerRequestFilter {
             if (!TARGET_METHOD_NAME.equalsIgnoreCase(method.getName())) {
                 return method.invoke(target, args);
             }
-            return new CopyOnReadInputStreamProxy(target.getInputStream());
+            if (bodyHolder.cached) {
+                return new ByteArrayServletInputStream(bodyHolder.outputStream.toByteArray());
+            }
+
+            return new CopyOnReadInputStreamProxy(target.getInputStream(), bodyHolder);
         }
+    }
+
+
+    static class ByteArrayServletInputStream extends ServletInputStream {
+
+        private ByteArrayInputStream byteArrayInputStream;
+
+        public ByteArrayServletInputStream(byte[] data) {
+            this.byteArrayInputStream = new ByteArrayInputStream(data);
+        }
+
+        @Override
+        public int read() throws IOException {
+            return byteArrayInputStream.read();
+        }
+
+        @Override
+        public boolean isFinished() {
+            return byteArrayInputStream.available() <= 0;
+        }
+
+        @Override
+        public boolean isReady() {
+            return true;
+        }
+
+        @Override
+        public void setReadListener(ReadListener readListener) {
+            throw new UnsupportedOperationException("Not implemented");
+        }
+    }
+
+    static class BodyHolder {
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        boolean cached = false;
     }
 
     static class CopyOnReadInputStreamProxy extends ServletInputStream {
 
         private final ServletInputStream target;
-        private final ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        private final BodyHolder bodyHolder;
         private int currentSize = 0;
         private final static int MAX_CACHE_SIZE_BYTE = 2 * 1024 * 1024; // 2 MB
 
-        public CopyOnReadInputStreamProxy(@NonNull ServletInputStream target) {
+        public CopyOnReadInputStreamProxy(@NonNull ServletInputStream target, BodyHolder bodyHolder) {
             this.target = target;
+            this.bodyHolder = bodyHolder;
         }
 
         @Override
@@ -97,7 +140,7 @@ public class RequestBodyCopyFilter extends OncePerRequestFilter {
 
         @Override
         public boolean isReady() {
-            return target.isReady();
+            return bodyHolder.cached || target.isReady();
         }
 
         @Override
@@ -109,11 +152,12 @@ public class RequestBodyCopyFilter extends OncePerRequestFilter {
         public int read() throws IOException {
             int result = target.read();
             if (result != -1 && currentSize++ < MAX_CACHE_SIZE_BYTE) {
-                outputStream.write(result);
+                bodyHolder.outputStream.write(result);
             } else {
                 try {
-                    outputStream.close();
-                    setRequestBody(outputStream);
+                    bodyHolder.outputStream.close();
+                    bodyHolder.cached = true;
+                    setRequestBody(bodyHolder.outputStream);
                 } catch (Exception e) {
                     log.warn("Failed to set request body", e);
                 }

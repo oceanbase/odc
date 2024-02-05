@@ -31,6 +31,8 @@ import com.oceanbase.odc.service.common.util.SidUtils;
 import com.oceanbase.odc.service.db.DBIdentitiesService;
 import com.oceanbase.odc.service.db.model.SchemaIdentities;
 import com.oceanbase.odc.service.session.ConnectSessionService;
+import com.oceanbase.odc.service.state.StateName;
+import com.oceanbase.odc.service.state.StatefulRoute;
 import com.oceanbase.tools.dbbrowser.model.DBObjectType;
 
 @RestController
@@ -43,6 +45,7 @@ public class DBMetadataController {
     private ConnectSessionService sessionService;
 
     @GetMapping(value = {"/{sessionId}/metadata/identities"})
+    @StatefulRoute(stateName = StateName.DB_SESSION, stateIdExpression = "#sessionId")
     public ListResponse<SchemaIdentities> listIdentities(@PathVariable String sessionId,
             @RequestParam(required = false, name = "type") List<DBObjectType> types) {
         ConnectionSession session = sessionService.nullSafeGet(SidUtils.getSessionId(sessionId), true);

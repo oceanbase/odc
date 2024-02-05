@@ -21,7 +21,6 @@ import java.util.UUID;
 import org.apache.commons.lang3.RandomStringUtils;
 
 import com.oceanbase.odc.common.json.JsonUtils;
-import com.oceanbase.odc.common.util.SystemUtils;
 import com.oceanbase.odc.core.session.ConnectionSessionIdGenerator;
 import com.oceanbase.odc.service.connection.model.CreateSessionReq;
 
@@ -33,6 +32,7 @@ public class DefaultConnectSessionIdGenerator implements ConnectionSessionIdGene
 
     private Long databaseId;
     private String fixRealId;
+    private String host;
 
     @Override
     public String generateId(CreateSessionReq key) {
@@ -43,7 +43,7 @@ public class DefaultConnectSessionIdGenerator implements ConnectionSessionIdGene
         if (this.databaseId != null) {
             key.setDbId(databaseId);
         }
-        key.setFrom(SystemUtils.getHostName());
+        key.setFrom(host);
         return Base64.getUrlEncoder().encodeToString(JsonUtils.toJson(key).getBytes());
     }
 

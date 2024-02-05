@@ -33,6 +33,8 @@ import com.oceanbase.odc.service.db.DBTriggerService;
 import com.oceanbase.odc.service.db.model.CompileResult;
 import com.oceanbase.odc.service.db.model.DBTriggerReq;
 import com.oceanbase.odc.service.session.ConnectSessionService;
+import com.oceanbase.odc.service.state.StateName;
+import com.oceanbase.odc.service.state.StatefulRoute;
 import com.oceanbase.tools.dbbrowser.model.DBTrigger;
 
 import io.swagger.annotations.ApiOperation;
@@ -55,6 +57,7 @@ public class DBTriggerController {
 
     @ApiOperation(value = "list", notes = "查看触发器的列表，sid示例：sid:1000-1:d:db1")
     @RequestMapping(value = "/list/{sid:.*}", method = RequestMethod.GET)
+    @StatefulRoute(stateName = StateName.DB_SESSION, stateIdExpression = "#sid")
     public OdcResult<List<DBTrigger>> list(@PathVariable String sid) {
         ResourceIdentifier i = ResourceIDParser.parse(sid);
         return OdcResult.ok(triggerService.list(sessionService.nullSafeGet(i.getSid(), true), i.getDatabase()));
@@ -62,6 +65,7 @@ public class DBTriggerController {
 
     @ApiOperation(value = "detail", notes = "查看某一个特定的触发器细节，sid示例：sid:1000-1:tr:tr1")
     @RequestMapping(value = "/{sid:.*}", method = RequestMethod.GET)
+    @StatefulRoute(stateName = StateName.DB_SESSION, stateIdExpression = "#sid")
     public OdcResult<DBTrigger> detail(@PathVariable String sid) {
         ResourceIdentifier i = ResourceIDParser.parse(sid);
         return OdcResult.ok(triggerService.detail(
@@ -70,18 +74,21 @@ public class DBTriggerController {
 
     @ApiOperation(value = "update", notes = "修改触发器状态，sid示例：sid:1000-1:tr:tr1")
     @RequestMapping(value = "/{sid:.*}", method = RequestMethod.PATCH)
+    @StatefulRoute(stateName = StateName.DB_SESSION, stateIdExpression = "#sid")
     public OdcResult<DBTrigger> modify(@PathVariable String sid, @RequestBody DBTriggerReq body) {
         return OdcResult.ok(triggerService.alter(sessionService.nullSafeGet(SidUtils.getSessionId(sid), true), body));
     }
 
     @ApiOperation(value = "compile", notes = "编译一个特定的触发器，sid示例：sid:1000-1:tr:tr1")
     @RequestMapping(value = "/compile/{sid:.*}", method = RequestMethod.POST)
+    @StatefulRoute(stateName = StateName.DB_SESSION, stateIdExpression = "#sid")
     public OdcResult<CompileResult> compile(@PathVariable String sid) {
         throw new UnsupportedOperationException("Not supported yet");
     }
 
     @ApiOperation(value = "getCreateSql", notes = "获取触发器的创建sql，sid示例：sid:1000-1:tr:tr1")
     @RequestMapping(value = "/getCreateSql/{sid:.*}", method = RequestMethod.POST)
+    @StatefulRoute(stateName = StateName.DB_SESSION, stateIdExpression = "#sid")
     public OdcResult<ResourceSql> getCreateSql(@PathVariable String sid, @RequestBody DBTriggerReq resource) {
         return OdcResult.ok(ResourceSql.ofSql(triggerService.generateCreateSql(
                 sessionService.nullSafeGet(SidUtils.getSessionId(sid), true), resource)));

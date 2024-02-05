@@ -36,6 +36,8 @@ import com.oceanbase.odc.service.db.model.CompileResult;
 import com.oceanbase.odc.service.db.model.DBMSOutput;
 import com.oceanbase.odc.service.db.model.PLIdentity;
 import com.oceanbase.odc.service.session.ConnectSessionService;
+import com.oceanbase.odc.service.state.StateName;
+import com.oceanbase.odc.service.state.StatefulRoute;
 import com.oceanbase.tools.dbbrowser.model.DBPLObjectIdentity;
 
 import io.swagger.annotations.ApiOperation;
@@ -51,6 +53,7 @@ public class DBPLController {
 
     @ApiOperation(value = "compile", notes = "compile a pl object")
     @RequestMapping(value = "/compile/{sid}", method = RequestMethod.POST)
+    @StatefulRoute(stateName = StateName.DB_SESSION, stateIdExpression = "#sid")
     public SuccessResponse<CompileResult> compile(@PathVariable String sid, @RequestBody PLIdentity params) {
         return Responses.ok(this.plService.compile(this.sessionService.nullSafeGet(
                 SidUtils.getSessionId(sid), true), params));
@@ -58,6 +61,7 @@ public class DBPLController {
 
     @ApiOperation(value = "asyncCall", notes = "call a procedure")
     @RequestMapping(value = "/procedure/{sid}/asyncCall", method = RequestMethod.POST)
+    @StatefulRoute(stateName = StateName.DB_SESSION, stateIdExpression = "#sid")
     public SuccessResponse<String> callProcedure(
             @PathVariable String sid, @RequestBody CallProcedureReq req) {
         return Responses.ok(this.plService.callProcedure(this.sessionService.nullSafeGet(
@@ -66,6 +70,7 @@ public class DBPLController {
 
     @ApiOperation(value = "getResult", notes = "get the async result of a calling procedure")
     @RequestMapping(value = "/procedure/{sid}/getResult", method = RequestMethod.GET)
+    @StatefulRoute(stateName = StateName.DB_SESSION, stateIdExpression = "#sid")
     public SuccessResponse<CallProcedureResp> getCallProcedureResult(@PathVariable String sid,
             @RequestParam String resultId, @RequestParam(required = false) Integer timeoutSeconds) {
         return Responses.ok(this.plService.getAsyncCallingResult(
@@ -74,6 +79,7 @@ public class DBPLController {
 
     @ApiOperation(value = "asyncCall", notes = "call a function")
     @RequestMapping(value = "/function/{sid}/asyncCall", method = RequestMethod.POST)
+    @StatefulRoute(stateName = StateName.DB_SESSION, stateIdExpression = "#sid")
     public SuccessResponse<String> callFunction(@PathVariable String sid, @RequestBody CallFunctionReq req) {
         return Responses.ok(this.plService.callFunction(this.sessionService.nullSafeGet(
                 SidUtils.getSessionId(sid), true), req));
@@ -81,6 +87,7 @@ public class DBPLController {
 
     @ApiOperation(value = "getResult", notes = "get the async result of a calling function")
     @RequestMapping(value = "/function/{sid}/getResult", method = RequestMethod.GET)
+    @StatefulRoute(stateName = StateName.DB_SESSION, stateIdExpression = "#sid")
     public SuccessResponse<CallFunctionResp> getCallFunctionResult(@PathVariable String sid,
             @RequestParam String resultId, @RequestParam(required = false) Integer timeoutSeconds) {
         return Responses.ok(this.plService.getAsyncCallingResult(
@@ -89,12 +96,14 @@ public class DBPLController {
 
     @ApiOperation(value = "getLine", notes = "get dbms_output printing")
     @RequestMapping(value = "/getLine/{sid}", method = RequestMethod.GET)
+    @StatefulRoute(stateName = StateName.DB_SESSION, stateIdExpression = "#sid")
     public SuccessResponse<DBMSOutput> getLine(@PathVariable String sid) {
         return Responses.ok(this.plService.getLine(sessionService.nullSafeGet(SidUtils.getSessionId(sid))));
     }
 
     @ApiOperation(value = "parsePLNameType", notes = "get a pl's name ant type by parsing")
     @RequestMapping(value = "/parsePLNameType/{sid}", method = RequestMethod.POST)
+    @StatefulRoute(stateName = StateName.DB_SESSION, stateIdExpression = "#sid")
     public SuccessResponse<PLIdentity> getNameAndType(@PathVariable String sid, @RequestBody ResourceSql ddl) {
         DBPLObjectIdentity identity = this.plService.parsePLNameType(
                 this.sessionService.nullSafeGet(SidUtils.getSessionId(sid), true), ddl.getSql());
