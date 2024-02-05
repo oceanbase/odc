@@ -34,6 +34,8 @@ import com.oceanbase.odc.service.pldebug.model.PLDebugContextResp;
 import com.oceanbase.odc.service.pldebug.model.PLDebugVariable;
 import com.oceanbase.odc.service.pldebug.model.StartPLDebugReq;
 import com.oceanbase.odc.service.session.ConnectSessionService;
+import com.oceanbase.odc.service.state.StateName;
+import com.oceanbase.odc.service.state.StatefulRoute;
 
 import io.swagger.annotations.ApiOperation;
 
@@ -53,6 +55,7 @@ public class PLDebugController {
 
     @ApiOperation(value = "startDebug", notes = "开启调试")
     @RequestMapping(value = "/", method = RequestMethod.POST)
+    @StatefulRoute(stateName = StateName.DB_SESSION, stateIdExpression = "#request.sid")
     public SuccessResponse<String> start(@RequestBody StartPLDebugReq request)
             throws Exception {
         Validate.notEmpty(request.getSid(), "Sid can not be null for StartPLDebugReq");
@@ -62,12 +65,14 @@ public class PLDebugController {
 
     @ApiOperation(value = "endDebug", notes = "结束调试")
     @RequestMapping(value = "/{id}", method = RequestMethod.DELETE)
+    @StatefulRoute(stateName = StateName.PL_DEBUG_SESSION, stateIdExpression = "#id")
     public SuccessResponse<String> end(@PathVariable String id) {
         return Responses.success(plDebugService.end(id));
     }
 
     @ApiOperation(value = "setBreakpoints", notes = "设置断点")
     @RequestMapping(value = "/{id}/breakpoints/batchCreate", method = RequestMethod.POST)
+    @StatefulRoute(stateName = StateName.PL_DEBUG_SESSION, stateIdExpression = "#id")
     public SuccessResponse<List<PLDebugBreakpoint>> setBreakpoints(@PathVariable String id,
             @RequestBody List<PLDebugBreakpoint> breakpoints) {
         return Responses.success(plDebugService.setBreakpoints(id, breakpoints));
@@ -75,6 +80,7 @@ public class PLDebugController {
 
     @ApiOperation(value = "deleteBreakpoints", notes = "删除断点")
     @RequestMapping(value = "/{id}/breakpoints/batchDelete", method = RequestMethod.DELETE)
+    @StatefulRoute(stateName = StateName.PL_DEBUG_SESSION, stateIdExpression = "#id")
     public SuccessResponse<Boolean> deleteBreakpoints(@PathVariable String id,
             @RequestBody List<PLDebugBreakpoint> breakpoints) {
         return Responses.success(plDebugService.deleteBreakpoints(id, breakpoints));
@@ -82,48 +88,56 @@ public class PLDebugController {
 
     @ApiOperation(value = "listBreakpoints", notes = "获取断点列表")
     @RequestMapping(value = "/{id}/breakpoints", method = RequestMethod.GET)
+    @StatefulRoute(stateName = StateName.PL_DEBUG_SESSION, stateIdExpression = "#id")
     public SuccessResponse<List<PLDebugBreakpoint>> listBreakpoints(@PathVariable String id) {
         return Responses.success(plDebugService.listBreakpoints(id));
     }
 
     @ApiOperation(value = "getVariables", notes = "获取堆栈变量")
     @RequestMapping(value = "/{id}/variables", method = RequestMethod.GET)
+    @StatefulRoute(stateName = StateName.PL_DEBUG_SESSION, stateIdExpression = "#id")
     public SuccessResponse<List<PLDebugVariable>> getVariables(@PathVariable String id) {
         return Responses.success(plDebugService.getVariables(id));
     }
 
     @ApiOperation(value = "getContext", notes = "获取堆栈上下文")
     @RequestMapping(value = "/{id}/context", method = RequestMethod.GET)
+    @StatefulRoute(stateName = StateName.PL_DEBUG_SESSION, stateIdExpression = "#id")
     public SuccessResponse<PLDebugContextResp> getContext(@PathVariable String id) {
         return Responses.success(plDebugService.getContext(id));
     }
 
     @ApiOperation(value = "stepOver", notes = "单步执行")
     @RequestMapping(value = "/{id}/stepOver", method = RequestMethod.POST)
+    @StatefulRoute(stateName = StateName.PL_DEBUG_SESSION, stateIdExpression = "#id")
     public SuccessResponse<Boolean> stepOver(@PathVariable String id) {
         return Responses.success(plDebugService.stepOver(id));
     }
 
     @ApiOperation(value = "resume", notes = "恢复执行")
     @RequestMapping(value = "/{id}/resume", method = RequestMethod.POST)
+    @StatefulRoute(stateName = StateName.PL_DEBUG_SESSION, stateIdExpression = "#id")
     public SuccessResponse<Boolean> resume(@PathVariable String id) {
         return Responses.success(plDebugService.resume(id));
     }
 
     @ApiOperation(value = "stepIn", notes = "步入")
     @RequestMapping(value = "/{id}/stepIn", method = RequestMethod.POST)
+    @StatefulRoute(stateName = StateName.PL_DEBUG_SESSION, stateIdExpression = "#id")
     public SuccessResponse<Boolean> stepIn(@PathVariable String id) {
         return Responses.success(plDebugService.stepIn(id));
     }
 
     @ApiOperation(value = "stepOut", notes = "跳出")
     @RequestMapping(value = "/{id}/stepOut", method = RequestMethod.POST)
+    @StatefulRoute(stateName = StateName.PL_DEBUG_SESSION, stateIdExpression = "#id")
     public SuccessResponse<Boolean> stepOut(@PathVariable String id) {
         return Responses.success(plDebugService.stepOut(id));
     }
 
     @ApiOperation(value = "resumeIgnoreBreakpoints", notes = "恢复执行并忽略断点")
     @RequestMapping(value = "/{id}/resumeIgnoreBreakpoints", method = RequestMethod.POST)
+    @StatefulRoute(stateName = StateName.PL_DEBUG_SESSION, stateIdExpression = "#id")
     public SuccessResponse<Boolean> resumeIgnoreBreakpoints(@PathVariable String id) {
         return Responses.success(plDebugService.resumeIgnoreBreakpoints(id));
     }

@@ -34,6 +34,8 @@ import com.oceanbase.odc.service.db.DBViewService;
 import com.oceanbase.odc.service.db.model.AllTablesAndViews;
 import com.oceanbase.odc.service.db.model.DBViewResponse;
 import com.oceanbase.odc.service.session.ConnectSessionService;
+import com.oceanbase.odc.service.state.StateName;
+import com.oceanbase.odc.service.state.StatefulRoute;
 import com.oceanbase.tools.dbbrowser.model.DBView;
 
 import io.swagger.annotations.ApiOperation;
@@ -53,6 +55,7 @@ public class DBViewControllerV1 {
 
     @ApiOperation(value = "list", notes = "查看视图列表，sid示例：sid:1000-1:d:db1")
     @RequestMapping(value = "/list/{sid:.*}", method = RequestMethod.GET)
+    @StatefulRoute(stateName = StateName.DB_SESSION, stateIdExpression = "#sid")
     public OdcResult<List<DBView>> list(@PathVariable String sid) {
         // sid:1-1:d:database
         ResourceIdentifier i = ResourceIDParser.parse(sid);
@@ -61,6 +64,7 @@ public class DBViewControllerV1 {
 
     @ApiOperation(value = "detail", notes = "查看视图的详细信息，sid示例：sid:1000-1:d:db1:v:v1")
     @RequestMapping(value = "/{sid:.*}", method = RequestMethod.GET)
+    @StatefulRoute(stateName = StateName.DB_SESSION, stateIdExpression = "#sid")
     public OdcResult<DBViewResponse> detail(@PathVariable String sid) {
         // parse sid and view name, sid:1-1:d:database:v:v1
         ResourceIdentifier i = ResourceIDParser.parse(sid);
@@ -70,6 +74,7 @@ public class DBViewControllerV1 {
 
     @ApiOperation(value = "listAll", notes = "查看视图和表列表，sid示例：sid:1000-1:d:db1:v:v1")
     @RequestMapping(value = "/listAll/{sid}", method = RequestMethod.GET)
+    @StatefulRoute(stateName = StateName.DB_SESSION, stateIdExpression = "#sid")
     public OdcResult<AllTablesAndViews> listAll(@PathVariable String sid, @RequestParam String name) {
         return OdcResult.ok(viewService.listAllTableAndView(
                 sessionService.nullSafeGet(SidUtils.getSessionId(sid), true), name));
@@ -77,6 +82,7 @@ public class DBViewControllerV1 {
 
     @ApiOperation(value = "getCreateSql", notes = "获取创建视图的sql，sid示例：sid:1000-1:d:db1:v:v1")
     @RequestMapping(value = "/getCreateSql/{sid:.*}", method = RequestMethod.PATCH)
+    @StatefulRoute(stateName = StateName.DB_SESSION, stateIdExpression = "#sid")
     public OdcResult<ResourceSql> getCreateSql(@PathVariable String sid, @RequestBody DBView resource) {
         return OdcResult.ok(ResourceSql.ofSql(viewService.getCreateSql(
                 sessionService.nullSafeGet(SidUtils.getSessionId(sid), true), resource)));

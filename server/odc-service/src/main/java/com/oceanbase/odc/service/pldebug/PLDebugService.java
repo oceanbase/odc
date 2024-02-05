@@ -15,11 +15,13 @@
  */
 package com.oceanbase.odc.service.pldebug;
 
+import java.util.Base64;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ScheduledExecutorService;
@@ -31,6 +33,7 @@ import java.util.concurrent.TimeUnit;
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 
+import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.Validate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -38,6 +41,7 @@ import org.springframework.stereotype.Service;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.oceanbase.odc.common.concurrent.ExecutorUtils;
+import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.common.util.SystemUtils;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.session.ConnectionSession;
@@ -51,6 +55,7 @@ import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.pldebug.model.PLDebugBreakpoint;
 import com.oceanbase.odc.service.pldebug.model.PLDebugConstants;
 import com.oceanbase.odc.service.pldebug.model.PLDebugContextResp;
+import com.oceanbase.odc.service.pldebug.model.PLDebugSessionId;
 import com.oceanbase.odc.service.pldebug.model.PLDebugVariable;
 import com.oceanbase.odc.service.pldebug.model.StartPLDebugReq;
 import com.oceanbase.odc.service.pldebug.operator.DBPLOperators;
@@ -58,6 +63,7 @@ import com.oceanbase.odc.service.pldebug.session.PLDebugSession;
 import com.oceanbase.odc.service.regulation.ruleset.SqlConsoleRuleService;
 import com.oceanbase.odc.service.regulation.ruleset.model.SqlConsoleRules;
 import com.oceanbase.odc.service.session.SessionProperties;
+import com.oceanbase.odc.service.session.factory.StateHostGenerator;
 import com.oceanbase.tools.dbbrowser.model.DBObjectType;
 
 import lombok.NonNull;
@@ -92,6 +98,9 @@ public class PLDebugService {
 
     @Autowired
     private SqlConsoleRuleService sqlConsoleRuleService;
+
+    @Autowired
+    private StateHostGenerator stateHostGenerator;;
 
     @PostConstruct
     public void init() {
@@ -161,11 +170,19 @@ public class PLDebugService {
                     PLDebugConstants.PL_DEBUG_PACKAGE, ConnectionSessionUtil.getCurrentSchema(connectionSession), e);
             throw OBException.executeFailed(ErrorCodes.DebugPackageCreateFailed, e.getMessage());
         }
-        PLDebugSession plDebugSession = new PLDebugSession(authenticationFacade.currentUserId());
+        PLDebugSession plDebugSession =
+                new PLDebugSession(authenticationFacade.currentUserId(), this::generateSessionId);
         plDebugSession.setDbmsoutputMaxRows(sessionProperties.getDbmsOutputMaxRows());
         plDebugSession.start(connectionSession, debugSessionExecutor, req, sessionTimeoutSeconds, syncEnabled);
         debugId2Session.put(plDebugSession.getSessionId(), plDebugSession);
         return plDebugSession.getSessionId();
+    }
+
+    private String generateSessionId() {
+        PLDebugSessionId id = new PLDebugSessionId();
+        id.setRealId(RandomStringUtils.random(10, UUID.randomUUID().toString().replace("-", "")));
+        id.setFrom(stateHostGenerator.getHost());
+        return Base64.getEncoder().encodeToString(JsonUtils.toJson(id).getBytes());
     }
 
     private void validate(StartPLDebugReq req) {

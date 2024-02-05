@@ -29,6 +29,8 @@ import com.oceanbase.odc.service.db.DBPLService;
 import com.oceanbase.odc.service.db.model.BatchCompileResp;
 import com.oceanbase.odc.service.db.model.StartBatchCompileReq;
 import com.oceanbase.odc.service.session.ConnectSessionService;
+import com.oceanbase.odc.service.state.StateName;
+import com.oceanbase.odc.service.state.StatefulRoute;
 
 import io.swagger.annotations.ApiOperation;
 
@@ -49,6 +51,7 @@ public class PLController {
     @ApiOperation(value = "start batchCompile", notes = "发起一次批量编译")
     @RequestMapping(value = {"/{sessionId}/databases/{databaseName}/batchCompilations",
             "/{sessionId}/currentDatabase/batchCompilations"}, method = RequestMethod.POST)
+    @StatefulRoute(stateName = StateName.DB_SESSION, stateIdExpression = "#sessionId")
     public SuccessResponse<String> startBatchCompile(@PathVariable String sessionId,
             @PathVariable(required = false) String databaseName, @RequestBody StartBatchCompileReq req) {
         String sid = SidUtils.getSessionId(sessionId);
@@ -58,6 +61,7 @@ public class PLController {
     @ApiOperation(value = "end batchCompile", notes = "终止批量编译")
     @RequestMapping(value = {"/{sessionId}/databases/{databaseName}/batchCompilations/{id}",
             "/{sessionId}/currentDatabase/batchCompilations/{id}"}, method = RequestMethod.DELETE)
+    @StatefulRoute(stateName = StateName.DB_SESSION, stateIdExpression = "#sessionId")
     public SuccessResponse<Boolean> endBatchCompile(@PathVariable String id) {
         return Responses.success(plService.endBatchCompile(id));
     }
@@ -65,6 +69,7 @@ public class PLController {
     @ApiOperation(value = "get result for batchCompile", notes = "获取批量编译PL对象的结果")
     @RequestMapping(value = {"/{sessionId}/databases/{databaseName}/batchCompilations/{id}",
             "/{sessionId}/currentDatabase/batchCompilations/{id}"}, method = RequestMethod.GET)
+    @StatefulRoute(stateName = StateName.DB_SESSION, stateIdExpression = "#sessionId")
     public SuccessResponse<BatchCompileResp> getBatchCompileResult(@PathVariable String id) {
         return Responses.success(plService.getBatchCompileResult(id));
     }

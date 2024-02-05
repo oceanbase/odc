@@ -31,6 +31,8 @@ import com.oceanbase.odc.service.common.util.SidUtils;
 import com.oceanbase.odc.service.db.DBVariablesService;
 import com.oceanbase.odc.service.db.model.OdcDBVariable;
 import com.oceanbase.odc.service.session.ConnectSessionService;
+import com.oceanbase.odc.service.state.StateName;
+import com.oceanbase.odc.service.state.StatefulRoute;
 
 import io.swagger.annotations.ApiOperation;
 
@@ -48,6 +50,7 @@ public class DBVariablesController {
 
     @ApiOperation(value = "list", notes = "list all variables")
     @RequestMapping(value = "/list/{sid:.*}", method = RequestMethod.GET)
+    @StatefulRoute(stateName = StateName.DB_SESSION, stateIdExpression = "#sessionId")
     public ListResponse<OdcDBVariable> list(@PathVariable String sid) {
         ResourceIdentifier i = ResourceIDParser.parse(sid);
         return Responses.list(this.variablesService.list(
@@ -56,6 +59,7 @@ public class DBVariablesController {
 
     @ApiOperation(value = "update", notes = "update variable")
     @RequestMapping(value = "/update/{sid:.*}", method = RequestMethod.POST)
+    @StatefulRoute(stateName = StateName.DB_SESSION, stateIdExpression = "#sessionId")
     public SuccessResponse<Boolean> getUpdateSql(@PathVariable String sid, @RequestBody OdcDBVariable var) {
         var.setVariableScope(ResourceIDParser.parse(sid).getVariableScope());
         return Responses.ok(this.variablesService.update(

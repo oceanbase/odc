@@ -27,6 +27,7 @@ import java.util.Enumeration;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 
 import javax.servlet.http.HttpServletRequest;
@@ -38,16 +39,20 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
+import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.exception.BadRequestException;
 import com.oceanbase.odc.core.shared.exception.InternalServerError;
+import com.oceanbase.odc.service.common.util.WebRequestUtils;
 
 import lombok.NonNull;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -71,6 +76,12 @@ public class RequestDispatcher {
     @Autowired
     private DispatchProperties dispatchProperties;
 
+    @SneakyThrows
+    public static void setRequestBody(Object body){
+        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+        byteArrayOutputStream.write(JsonUtils.toJson(body).getBytes());
+        WebRequestUtils.setAttribute(HttpRequestProvider.REQUEST_BODY_KEY, byteArrayOutputStream);
+    }
 
     public DispatchResponse forward(@NonNull String endpoint) throws IOException {
         return forward(() -> endpoint);
@@ -113,6 +124,7 @@ public class RequestDispatcher {
         log.info("Request dispatch starts, uri={}", realUri);
         HttpHeaders responseHeaders = new HttpHeaders();
         RestTemplate restTemplate = dispatchRestTemplate();
+        AtomicReference<HttpStatus> statusCode = new AtomicReference<>();
         ByteArrayInputStream inputStream = restTemplate.execute(URI.create(realUri), method, clientRequest -> {
             clientRequest.getHeaders().addAll(headers);
             if (requestBody == null) {
@@ -121,12 +133,13 @@ public class RequestDispatcher {
             IOUtils.write(requestBody, clientRequest.getBody());
         }, clientResponse -> {
             responseHeaders.addAll(clientResponse.getHeaders());
+            statusCode.set(clientResponse.getStatusCode());
             return new ByteArrayInputStream(IOUtils.toByteArray(clientResponse.getBody()));
         });
         Verify.notNull(inputStream, "CallResult");
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         IOUtils.copy(inputStream, outputStream);
-        return DispatchResponse.of(outputStream.toByteArray(), responseHeaders);
+        return DispatchResponse.of(outputStream.toByteArray(), responseHeaders, statusCode.get());
     }
 
     public HttpHeaders getRequestHeaders() {

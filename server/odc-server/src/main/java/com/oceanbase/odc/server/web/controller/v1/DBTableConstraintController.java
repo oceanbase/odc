@@ -32,6 +32,8 @@ import com.oceanbase.odc.service.common.util.ResourceIDParser;
 import com.oceanbase.odc.service.common.util.SidUtils;
 import com.oceanbase.odc.service.db.DBTableConstraintService;
 import com.oceanbase.odc.service.session.ConnectSessionService;
+import com.oceanbase.odc.service.state.StateName;
+import com.oceanbase.odc.service.state.StatefulRoute;
 import com.oceanbase.tools.dbbrowser.model.DBTableConstraint;
 
 import io.swagger.annotations.ApiOperation;
@@ -50,6 +52,7 @@ public class DBTableConstraintController {
 
     @ApiOperation(value = "list", notes = "查询表的所有约束，sid示例：sid:1000-1:d:db1:t:tb1")
     @RequestMapping(value = "/list/{sid:.*}", method = RequestMethod.GET)
+    @StatefulRoute(stateName = StateName.DB_SESSION, stateIdExpression = "#sid")
     public OdcResult<List<DBTableConstraint>> list(@PathVariable String sid) {
         // sid:1-1:d:db1:t:tb1
         ResourceIdentifier i = ResourceIDParser.parse(sid);
@@ -59,6 +62,7 @@ public class DBTableConstraintController {
 
     @ApiOperation(value = "getDeleteSql", notes = "获取删除约束的sql，sid示例：sid:1000-1:d:db1:t:tb1")
     @RequestMapping(value = "/getDeleteSql/{sid:.*}", method = RequestMethod.PATCH)
+    @StatefulRoute(stateName = StateName.DB_SESSION, stateIdExpression = "#sid")
     public OdcResult<ResourceSql> getDeleteSql(@PathVariable String sid, @RequestBody DBTableConstraint constraint) {
         return OdcResult.ok(ResourceSql.ofSql(this.constraintService.getDeleteSql(
                 sessionService.nullSafeGet(SidUtils.getSessionId(sid), true), constraint)));

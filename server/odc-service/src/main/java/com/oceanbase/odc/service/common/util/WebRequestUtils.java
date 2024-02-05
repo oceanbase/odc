@@ -234,7 +234,7 @@ public class WebRequestUtils {
         return (T) value;
     }
 
-    private static ServletRequestAttributes getRequestAttributes() {
+    public static ServletRequestAttributes getRequestAttributes() {
         RequestAttributes requestAttributes = RequestContextHolder.getRequestAttributes();
         Verify.notNull(requestAttributes, "RequestAttributes");
         return (ServletRequestAttributes) requestAttributes;
@@ -320,4 +320,10 @@ public class WebRequestUtils {
         return null;
     }
 
+    public static void setAttribute(@NonNull String key, @NonNull Object value) {
+        RequestAttributes requestAttributes = RequestContextHolder.getRequestAttributes();
+        if (requestAttributes != null) {
+            requestAttributes.setAttribute(key, value, RequestAttributes.SCOPE_REQUEST);
+        }
+    }
 }

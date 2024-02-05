@@ -28,6 +28,8 @@ import com.oceanbase.odc.service.common.response.OdcResult;
 import com.oceanbase.odc.service.common.util.SidUtils;
 import com.oceanbase.odc.service.db.session.DBSessionService;
 import com.oceanbase.odc.service.session.ConnectSessionService;
+import com.oceanbase.odc.service.state.StateName;
+import com.oceanbase.odc.service.state.StatefulRoute;
 
 import io.swagger.annotations.ApiOperation;
 
@@ -45,6 +47,7 @@ public class DBSessionController {
 
     @ApiOperation(value = "list", notes = "查看所有数据库会话，sid示例：sid:1000-1:d:db1")
     @RequestMapping(value = "/list/{sid:.*}", method = RequestMethod.GET)
+    @StatefulRoute(stateName = StateName.DB_SESSION, stateIdExpression = "#sid")
     public OdcResult<List<OdcDBSession>> list(@PathVariable String sid) {
         return OdcResult.ok(dbSessionService.listAllSessions(
                 sessionService.nullSafeGet(SidUtils.getSessionId(sid), true)));

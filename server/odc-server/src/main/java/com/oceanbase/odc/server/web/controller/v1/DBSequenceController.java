@@ -27,6 +27,8 @@ import com.oceanbase.odc.service.common.util.ResourceIDParser;
 import com.oceanbase.odc.service.common.util.SidUtils;
 import com.oceanbase.odc.service.db.DBSequenceService;
 import com.oceanbase.odc.service.session.ConnectSessionService;
+import com.oceanbase.odc.service.state.StateName;
+import com.oceanbase.odc.service.state.StatefulRoute;
 import com.oceanbase.tools.dbbrowser.model.DBSequence;
 
 import io.swagger.annotations.ApiOperation;
@@ -45,6 +47,7 @@ public class DBSequenceController {
 
     @ApiOperation(value = "list", notes = "查看sequence列表，sid示例：sid:1000-1:d:db1")
     @RequestMapping(value = "/list/{sid:.*}", method = RequestMethod.GET)
+    @StatefulRoute(stateName = StateName.DB_SESSION, stateIdExpression = "#sid")
     public OdcResult<List<DBSequence>> list(@PathVariable String sid) {
         ResourceIdentifier i = ResourceIDParser.parse(sid);
         return OdcResult.ok(sequenceService.list(sessionService.nullSafeGet(i.getSid(), true), i.getDatabase()));
@@ -52,6 +55,7 @@ public class DBSequenceController {
 
     @ApiOperation(value = "detail", notes = "查看sequence的详细信息，sid示例：sid:1000-1:d:db1:s:seq1")
     @RequestMapping(value = "/{sid:.*}", method = RequestMethod.GET)
+    @StatefulRoute(stateName = StateName.DB_SESSION, stateIdExpression = "#sid")
     public OdcResult<DBSequence> detail(@PathVariable String sid) {
         // parse sid and sequence name, sid:1-1:d:database:s:s1
         ResourceIdentifier i = ResourceIDParser.parse(sid);
@@ -61,6 +65,7 @@ public class DBSequenceController {
 
     @ApiOperation(value = "getCreateSql", notes = "获取创建sequence的sql，sid示例：sid:1000-1:d:db1:s:s1")
     @RequestMapping(value = "/getCreateSql/{sid:.*}", method = RequestMethod.PATCH)
+    @StatefulRoute(stateName = StateName.DB_SESSION, stateIdExpression = "#sid")
     public OdcResult<ResourceSql> getCreateSql(@PathVariable String sid, @RequestBody DBSequence resource) {
         return OdcResult.ok(sequenceService.getCreateSql(
                 sessionService.nullSafeGet(SidUtils.getSessionId(sid), true), resource));
@@ -68,6 +73,7 @@ public class DBSequenceController {
 
     @ApiOperation(value = "getUpdateSql", notes = "获取修改sequence的sql，sid示例：sid:1000-1:d:db1:s:s1")
     @RequestMapping(value = "/getUpdateSql/{sid:.*}", method = RequestMethod.PATCH)
+    @StatefulRoute(stateName = StateName.DB_SESSION, stateIdExpression = "#sid")
     public OdcResult<ResourceSql> getUpdateSql(@PathVariable String sid, @RequestBody DBSequence resource) {
         ResourceIdentifier i = ResourceIDParser.parse(sid);
         resource.setName(i.getSequence());

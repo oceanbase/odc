@@ -27,6 +27,8 @@ import com.oceanbase.odc.service.common.response.Responses;
 import com.oceanbase.odc.service.common.util.SidUtils;
 import com.oceanbase.odc.service.db.DBViewService;
 import com.oceanbase.odc.service.session.ConnectSessionService;
+import com.oceanbase.odc.service.state.StateName;
+import com.oceanbase.odc.service.state.StatefulRoute;
 
 @RestController
 @RequestMapping("api/v2/connect/sessions")
@@ -38,6 +40,7 @@ public class DBViewController {
     private ConnectSessionService sessionService;
 
     @GetMapping(value = {"/{sessionId}/databases/{databaseName}/systemViews"})
+    @StatefulRoute(stateName = StateName.DB_SESSION, stateIdExpression = "#sessionId")
     public ListResponse<String> listTables(@PathVariable String sessionId, @PathVariable String databaseName) {
         ConnectionSession session = sessionService.nullSafeGet(SidUtils.getSessionId(sessionId), true);
         return Responses.list(viewService.listSystemViews(session, databaseName));
