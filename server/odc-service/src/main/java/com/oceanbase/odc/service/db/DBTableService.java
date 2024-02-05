@@ -109,10 +109,7 @@ public class DBTableService {
      * get all table details in a schema
      */
     public Map<String, DBTable> getTables(@NotNull ConnectionSession connectionSession, String schemaName) {
-        return connectionSession
-                .getSyncJdbcExecutor(ConnectionSessionConstants.BACKEND_DS_KEY)
-                .execute((ConnectionCallback<Map<String, DBTable>>) con -> getTableExtensionPoint(connectionSession)
-                        .listDetails(con, schemaName));
+        return DBSchemaAccessors.create(connectionSession).getTables(schemaName, null);
     }
 
     public List<DBTable> listTables(@NotNull ConnectionSession connectionSession, String schemaName) {

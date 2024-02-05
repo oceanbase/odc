@@ -58,6 +58,7 @@ import com.oceanbase.tools.dbbrowser.model.DBProcedure;
 import com.oceanbase.tools.dbbrowser.model.DBSequence;
 import com.oceanbase.tools.dbbrowser.model.DBSynonym;
 import com.oceanbase.tools.dbbrowser.model.DBSynonymType;
+import com.oceanbase.tools.dbbrowser.model.DBTable;
 import com.oceanbase.tools.dbbrowser.model.DBTable.DBTableOptions;
 import com.oceanbase.tools.dbbrowser.model.DBTableColumn;
 import com.oceanbase.tools.dbbrowser.model.DBTableColumn.CharUnit;
@@ -617,11 +618,6 @@ public class OracleSchemaAccessor implements DBSchemaAccessor {
         return tableName2Indexes;
     }
 
-    @Override
-    public Map<String, List<DBTableIndex>> listTableIndexes(String schemaName, Map<String, String> tableName2Ddl) {
-        throw new UnsupportedOperationException("Not supported");
-    }
-
     private DBTableIndex createIndexByResultSet(ResultSet rs, int num) throws SQLException {
         DBTableIndex index = new DBTableIndex();
         index.setName(rs.getString(OracleConstants.INDEX_NAME));
@@ -1011,7 +1007,6 @@ public class OracleSchemaAccessor implements DBSchemaAccessor {
         return true;
     }
 
-    @Override
     public String getTableDDL(String schemaName, String tableName, List<DBTableColumn> tableColumns,
             List<DBTableIndex> tableIndexes) {
         StringBuilder ddl = new StringBuilder(getTableDDLOnly(schemaName, tableName));
@@ -1618,6 +1613,11 @@ public class OracleSchemaAccessor implements DBSchemaAccessor {
         synonym.setDdl(getSynonymDDL(synonym));
 
         return synonym;
+    }
+
+    @Override
+    public Map<String, DBTable> getTables(String schemaName, List<String> tableNames) {
+        throw new UnsupportedOperationException("Not supported for oracle mode");
     }
 
     protected String getSynonymDDL(DBSynonym synonym) {

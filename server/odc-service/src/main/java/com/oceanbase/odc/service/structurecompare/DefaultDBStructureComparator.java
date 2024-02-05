@@ -24,12 +24,13 @@ import java.util.Set;
 
 import javax.sql.DataSource;
 
+import com.oceanbase.odc.common.util.JdbcOperationsUtil;
 import com.oceanbase.odc.core.shared.constant.ConnectType;
 import com.oceanbase.odc.core.shared.constant.DialectType;
+import com.oceanbase.odc.service.db.browser.DBSchemaAccessors;
 import com.oceanbase.odc.service.db.browser.DBTableEditorFactory;
 import com.oceanbase.odc.service.flow.task.model.DBStructureComparisonParameter.ComparisonScope;
 import com.oceanbase.odc.service.plugin.ConnectionPluginUtil;
-import com.oceanbase.odc.service.plugin.SchemaPluginUtil;
 import com.oceanbase.odc.service.structurecompare.comparedbobject.DBTableStructureComparator;
 import com.oceanbase.odc.service.structurecompare.model.ComparisonResult;
 import com.oceanbase.odc.service.structurecompare.model.DBObjectComparisonResult;
@@ -37,6 +38,7 @@ import com.oceanbase.odc.service.structurecompare.model.DBStructureComparisonCon
 import com.oceanbase.tools.dbbrowser.editor.DBTableEditor;
 import com.oceanbase.tools.dbbrowser.model.DBObjectType;
 import com.oceanbase.tools.dbbrowser.model.DBTable;
+import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
 
 import lombok.NoArgsConstructor;
 import lombok.NonNull;
@@ -69,19 +71,24 @@ public class DefaultDBStructureComparator implements DBStructureComparator {
         }
         checkUnsupportedConfiguration(srcConfig, tgtConfig);
 
+        String srcDbVersion = getDBVersion(srcConfig.getConnectType(), srcConfig.getDataSource());
         String tgtDbVersion = getDBVersion(tgtConfig.getConnectType(), tgtConfig.getDataSource());
+
+        DBSchemaAccessor srcAccessor =
+                getDBSchemaAccessor(srcConfig.getConnectType(), srcConfig.getDataSource(), srcDbVersion);
+        DBSchemaAccessor tgtAccessor =
+                getDBSchemaAccessor(tgtConfig.getConnectType(), tgtConfig.getDataSource(), tgtDbVersion);
+
         DBTableEditor tgtTableEditor = getDBTableEditor(tgtConfig.getConnectType(), tgtDbVersion);
 
         log.info(
                 "DefaultDBStructureComparator start to build source and target schema tables, source schema name={}, target schema name={}",
                 srcConfig.getSchemaName(), tgtConfig.getSchemaName());
         long startTimestamp = System.currentTimeMillis();
-        Map<String, DBTable> srcTableName2Table =
-                SchemaPluginUtil.getTableExtension(srcConfig.getConnectType().getDialectType())
-                        .listDetails(srcConfig.getDataSource().getConnection(), srcConfig.getSchemaName());
-        Map<String, DBTable> tgtTableName2Table =
-                SchemaPluginUtil.getTableExtension(tgtConfig.getConnectType().getDialectType())
-                        .listDetails(tgtConfig.getDataSource().getConnection(), tgtConfig.getSchemaName());
+        Map<String, DBTable> srcTableName2Table = buildSchemaTables(srcAccessor, srcConfig.getSchemaName(),
+                srcConfig.getConnectType().getDialectType(), srcDbVersion);
+        Map<String, DBTable> tgtTableName2Table = buildSchemaTables(tgtAccessor, tgtConfig.getSchemaName(),
+                tgtConfig.getConnectType().getDialectType(), tgtDbVersion);
         log.info(
                 "DefaultDBStructureComparator build source and target schema tables success, time consuming={} seconds",
                 (System.currentTimeMillis() - startTimestamp) / 1000);
@@ -120,6 +127,12 @@ public class DefaultDBStructureComparator implements DBStructureComparator {
         return returnVal;
     }
 
+    private DBSchemaAccessor getDBSchemaAccessor(ConnectType connectType, DataSource dataSource, String dbVersion)
+            throws SQLException {
+        return DBSchemaAccessors.create(JdbcOperationsUtil.getJdbcOperations(dataSource.getConnection()), null,
+                connectType, dbVersion, null);
+    }
+
     private DBTableEditor getDBTableEditor(ConnectType connectType, String dbVersion) {
         return new DBTableEditorFactory(connectType, dbVersion).create();
     }
@@ -145,6 +158,11 @@ public class DefaultDBStructureComparator implements DBStructureComparator {
                         "Unsupported database object type for schema structure comparison: " + dbObjectType);
             }
         });
+    }
+
+    private Map<String, DBTable> buildSchemaTables(DBSchemaAccessor accessor, String schemaName,
+            DialectType dialectType, String dbVersion) {
+        return accessor.getTables(schemaName, null);
     }
 
     @Override

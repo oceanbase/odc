@@ -17,7 +17,6 @@ package com.oceanbase.odc.plugin.schema.api;
 
 import java.sql.Connection;
 import java.util.List;
-import java.util.Map;
 
 import org.pf4j.ExtensionPoint;
 
@@ -34,8 +33,6 @@ import com.oceanbase.tools.dbbrowser.model.DBTable;
 public interface TableExtensionPoint extends ExtensionPoint {
 
     List<DBObjectIdentity> list(Connection connection, String schemaName);
-
-    Map<String, DBTable> listDetails(Connection connection, String schemaName);
 
     List<String> showNamesLike(Connection connection, String schemaName, String tableNameLike);
 

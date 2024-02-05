@@ -19,7 +19,6 @@ import static com.oceanbase.tools.dbbrowser.editor.DBObjectUtilsTest.loadAsStrin
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -38,6 +37,7 @@ import com.oceanbase.tools.dbbrowser.model.DBObjectIdentity;
 import com.oceanbase.tools.dbbrowser.model.DBObjectType;
 import com.oceanbase.tools.dbbrowser.model.DBPLObjectIdentity;
 import com.oceanbase.tools.dbbrowser.model.DBProcedure;
+import com.oceanbase.tools.dbbrowser.model.DBTable;
 import com.oceanbase.tools.dbbrowser.model.DBTable.DBTableOptions;
 import com.oceanbase.tools.dbbrowser.model.DBTableColumn;
 import com.oceanbase.tools.dbbrowser.model.DBTableConstraint;
@@ -189,20 +189,6 @@ public class OBMySQLSchemaAccessorTest extends BaseTestEnv {
     public void listTableIndex_Success() {
         Map<String, List<DBTableIndex>> indexes = accessor.listTableIndexes(getOBMySQLDataBaseName());
         Assert.assertTrue(indexes.size() > 0);
-    }
-
-    @Test
-    public void listTableIndex_WithTableDdl_TestIndexRange_Success() {
-        String ddl1 = accessor.getTableDDL(getOBMySQLDataBaseName(), "test_index_range");
-        String ddl2 = accessor.getTableDDL(getOBMySQLDataBaseName(), "test_index_range2");
-        Map<String, String> tableName2Ddl = new HashMap<>();
-        tableName2Ddl.put("test_index_range", ddl1);
-        tableName2Ddl.put("test_index_range2", ddl2);
-        Map<String, List<DBTableIndex>> actual = accessor.listTableIndexes(getOBMySQLDataBaseName(), tableName2Ddl);
-        Assert.assertTrue(actual.get("test_index_range").get(0).getGlobal());
-        Assert.assertFalse(actual.get("test_index_range").get(1).getGlobal());
-        Assert.assertTrue(actual.get("test_index_range2").get(0).getGlobal());
-        Assert.assertFalse(actual.get("test_index_range2").get(1).getGlobal());
     }
 
     @Test
@@ -392,6 +378,12 @@ public class OBMySQLSchemaAccessorTest extends BaseTestEnv {
     public void listTableColumns_test_in_mysql_schema_view_as_base_table_Success() {
         List<DBTableColumn> columns = accessor.listTableColumns("mysql", "time_zone_transition");
         Assert.assertEquals(3, columns.size());
+    }
+
+    @Test
+    public void getTables_success() {
+        Map<String, DBTable> tables = accessor.getTables(getOBMySQLDataBaseName(), null);
+        Assert.assertTrue(tables.size() > 0);
     }
 
     private static void initVerifyColumnAttributes() {

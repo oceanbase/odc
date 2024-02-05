@@ -29,7 +29,7 @@ public interface StructureComparisonTaskResultRepository
         extends JpaRepository<StructureComparisonTaskResultEntity, Long>,
         JpaSpecificationExecutor<StructureComparisonTaskResultEntity> {
 
-    @Query(value = "select * from structure_comparison where id=:id and structure_comparison_task_id=:comparisonTaskId",
+    @Query(value = "select * from structure_comparison_task_result where id=:id and structure_comparison_task_id=:comparisonTaskId",
             nativeQuery = true)
     StructureComparisonTaskResultEntity findByIdAndComparisonTaskId(@Param("id") Long id,
             @Param("comparisonTaskId") Long comparisonTaskId);

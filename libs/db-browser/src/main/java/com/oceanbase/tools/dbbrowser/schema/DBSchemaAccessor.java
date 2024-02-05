@@ -27,6 +27,7 @@ import com.oceanbase.tools.dbbrowser.model.DBProcedure;
 import com.oceanbase.tools.dbbrowser.model.DBSequence;
 import com.oceanbase.tools.dbbrowser.model.DBSynonym;
 import com.oceanbase.tools.dbbrowser.model.DBSynonymType;
+import com.oceanbase.tools.dbbrowser.model.DBTable;
 import com.oceanbase.tools.dbbrowser.model.DBTable.DBTableOptions;
 import com.oceanbase.tools.dbbrowser.model.DBTableColumn;
 import com.oceanbase.tools.dbbrowser.model.DBTableConstraint;
@@ -199,8 +200,6 @@ public interface DBSchemaAccessor {
      */
     Map<String, List<DBTableIndex>> listTableIndexes(String schemaName);
 
-    Map<String, List<DBTableIndex>> listTableIndexes(String schemaName, Map<String, String> tableName2Ddl);
-
     /**
      * Get all table constraints in the specified schema
      */
@@ -224,9 +223,6 @@ public interface DBSchemaAccessor {
 
     List<DBTableIndex> listTableIndexes(String schemaName, String tableName);
 
-    String getTableDDL(String schemaName, String tableName, List<DBTableColumn> tableColumns,
-            List<DBTableIndex> tableIndexes);
-
     String getTableDDL(String schemaName, String tableName);
 
     DBTableOptions getTableOptions(String schemaName, String tableName);
@@ -248,4 +244,6 @@ public interface DBSchemaAccessor {
     DBSequence getSequence(String schemaName, String sequenceName);
 
     DBSynonym getSynonym(String schemaName, String synonymName, DBSynonymType synonymType);
+
+    Map<String, DBTable> getTables(String schemaName, List<String> tableNames);
 }

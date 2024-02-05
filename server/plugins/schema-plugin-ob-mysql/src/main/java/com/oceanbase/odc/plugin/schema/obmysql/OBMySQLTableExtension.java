@@ -16,14 +16,11 @@
 package com.oceanbase.odc.plugin.schema.obmysql;
 
 import java.sql.Connection;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 
 import org.pf4j.Extension;
 
-import com.google.common.collect.Lists;
 import com.oceanbase.odc.common.unit.BinarySizeUnit;
 import com.oceanbase.odc.common.util.JdbcOperationsUtil;
 import com.oceanbase.odc.common.util.VersionUtils;
@@ -47,10 +44,6 @@ import com.oceanbase.tools.dbbrowser.editor.mysql.OBMySQLTableEditor;
 import com.oceanbase.tools.dbbrowser.model.DBObjectIdentity;
 import com.oceanbase.tools.dbbrowser.model.DBObjectType;
 import com.oceanbase.tools.dbbrowser.model.DBTable;
-import com.oceanbase.tools.dbbrowser.model.DBTable.DBTableOptions;
-import com.oceanbase.tools.dbbrowser.model.DBTableColumn;
-import com.oceanbase.tools.dbbrowser.model.DBTableConstraint;
-import com.oceanbase.tools.dbbrowser.model.DBTableIndex;
 import com.oceanbase.tools.dbbrowser.model.DBTableStats;
 import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
 import com.oceanbase.tools.dbbrowser.stats.DBStatsAccessor;
@@ -74,47 +67,6 @@ public class OBMySQLTableExtension implements TableExtensionPoint {
             identity.setName(item);
             return identity;
         }).collect(Collectors.toList());
-    }
-
-    @Override
-    public Map<String, DBTable> listDetails(Connection connection, String schemaName) {
-        Map<String, DBTable> returnVal = new HashMap<>();
-        DBSchemaAccessor accessor = getSchemaAccessor(connection);
-        String dbVersion = DBAccessorUtil.getDbVersion(connection);
-        List<String> tableNames = accessor.showTables(schemaName);
-        if (tableNames.isEmpty()) {
-            return returnVal;
-        }
-        Map<String, String> tableName2Ddl = new HashMap<>();
-        tableNames.stream()
-                .forEach(tableName -> tableName2Ddl.put(tableName, accessor.getTableDDL(schemaName, tableName)));
-        Map<String, List<DBTableColumn>> tableName2Columns = accessor.listTableColumns(schemaName);
-        Map<String, List<DBTableIndex>> tableName2Indexes = accessor.listTableIndexes(schemaName, tableName2Ddl);
-        Map<String, List<DBTableConstraint>> tableName2Constraints = accessor.listTableConstraints(schemaName);
-        Map<String, DBTableOptions> tableName2Options = accessor.listTableOptions(schemaName);
-        for (String tableName : tableNames) {
-            if (!tableName2Columns.containsKey(tableName)) {
-                continue;
-            }
-            DBTable table = new DBTable();
-            table.setSchemaName(schemaName);
-            table.setOwner(schemaName);
-            table.setName(tableName);
-            table.setColumns(tableName2Columns.getOrDefault(tableName, Lists.newArrayList()));
-            table.setIndexes(tableName2Indexes.getOrDefault(tableName, Lists.newArrayList()));
-            table.setConstraints(tableName2Constraints.getOrDefault(tableName, Lists.newArrayList()));
-            table.setTableOptions(tableName2Options.getOrDefault(tableName, new DBTableOptions()));
-            if (VersionUtils.isLessThanOrEqualsTo(dbVersion, "1.4.79")) {
-                // Remove dependence on sys account
-                OBMySQLGetDBTableByParser parser = new OBMySQLGetDBTableByParser(tableName2Ddl.get(tableName));
-                table.setPartition(parser.getPartition());
-            } else {
-                table.setPartition(accessor.getPartition(schemaName, tableName));
-            }
-            table.setDDL(tableName2Ddl.get(tableName));
-            returnVal.put(tableName, table);
-        }
-        return returnVal;
     }
 
     @Override

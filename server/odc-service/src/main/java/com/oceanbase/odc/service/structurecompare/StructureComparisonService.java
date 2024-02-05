@@ -102,9 +102,9 @@ public class StructureComparisonService {
     private ApprovalPermissionService approvalPermissionService;
     private final ConnectionMapper connectionMapper = ConnectionMapper.INSTANCE;
     /**
-     * Maximum number of bytes returned by total sql change script, default value 512M
+     * Maximum number of bytes returned by total sql change script, default value 1 MB
      */
-    private final Long MAX_TOTAL_SCRIPT_SIZE = 536870912L;
+    private final Long MAX_TOTAL_SCRIPT_SIZE = 1048576L;
 
 
     public StructureComparisonContext create(@NonNull DBStructureComparisonParameter parameters, @NonNull Long taskId,

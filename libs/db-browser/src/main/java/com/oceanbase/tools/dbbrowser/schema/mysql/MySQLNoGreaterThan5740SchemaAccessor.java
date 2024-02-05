@@ -64,6 +64,7 @@ import com.oceanbase.tools.dbbrowser.model.DBProcedure;
 import com.oceanbase.tools.dbbrowser.model.DBSequence;
 import com.oceanbase.tools.dbbrowser.model.DBSynonym;
 import com.oceanbase.tools.dbbrowser.model.DBSynonymType;
+import com.oceanbase.tools.dbbrowser.model.DBTable;
 import com.oceanbase.tools.dbbrowser.model.DBTable.DBTableOptions;
 import com.oceanbase.tools.dbbrowser.model.DBTableColumn;
 import com.oceanbase.tools.dbbrowser.model.DBTableColumn.KeyType;
@@ -621,11 +622,6 @@ public class MySQLNoGreaterThan5740SchemaAccessor implements DBSchemaAccessor {
         return tableName2Indexes;
     }
 
-    @Override
-    public Map<String, List<DBTableIndex>> listTableIndexes(String schemaName, Map<String, String> tableName2Ddl) {
-        return this.listTableIndexes(schemaName);
-    }
-
     protected boolean isIndexDistinguishesVisibility() {
         return false;
     }
@@ -986,12 +982,6 @@ public class MySQLNoGreaterThan5740SchemaAccessor implements DBSchemaAccessor {
         return new ArrayList<>(indexName2Index.values());
     }
 
-    @Override
-    public String getTableDDL(String schemaName, String tableName, List<DBTableColumn> tableColumns,
-            List<DBTableIndex> tableIndexes) {
-        throw new UnsupportedOperationException("Not supported");
-    }
-
     protected void handleIndexAvailability(DBTableIndex index, String availability) {
         if (StringUtils.isBlank(availability)) {
             index.setAvailable(true);
@@ -1264,5 +1254,36 @@ public class MySQLNoGreaterThan5740SchemaAccessor implements DBSchemaAccessor {
     @Override
     public DBSynonym getSynonym(String schemaName, String synonymName, DBSynonymType synonymType) {
         throw new UnsupportedOperationException("Not supported yet");
+    }
+
+    @Override
+    public Map<String, DBTable> getTables(@NonNull String schemaName, List<String> tableNames) {
+        // TODO: Only query the table information of tableNames passed upstream
+        Map<String, DBTable> returnVal = new HashMap<>();
+        tableNames = showTables(schemaName);
+        if (tableNames.isEmpty()) {
+            return returnVal;
+        }
+        Map<String, List<DBTableColumn>> tableName2Columns = listTableColumns(schemaName);
+        Map<String, List<DBTableIndex>> tableName2Indexes = listTableIndexes(schemaName);
+        Map<String, List<DBTableConstraint>> tableName2Constraints = listTableConstraints(schemaName);
+        Map<String, DBTableOptions> tableName2Options = listTableOptions(schemaName);
+        for (String tableName : tableNames) {
+            if (!tableName2Columns.containsKey(tableName)) {
+                continue;
+            }
+            DBTable table = new DBTable();
+            table.setSchemaName(schemaName);
+            table.setOwner(schemaName);
+            table.setName(tableName);
+            table.setColumns(tableName2Columns.getOrDefault(tableName, new ArrayList<>()));
+            table.setIndexes(tableName2Indexes.getOrDefault(tableName, new ArrayList<>()));
+            table.setConstraints(tableName2Constraints.getOrDefault(tableName, new ArrayList<>()));
+            table.setTableOptions(tableName2Options.getOrDefault(tableName, new DBTableOptions()));
+            table.setPartition(getPartition(schemaName, tableName));
+            table.setDDL(getTableDDL(schemaName, tableName));
+            returnVal.put(tableName, table);
+        }
+        return returnVal;
     }
 }

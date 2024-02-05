@@ -45,6 +45,7 @@ import com.oceanbase.tools.dbbrowser.model.DBProcedure;
 import com.oceanbase.tools.dbbrowser.model.DBSequence;
 import com.oceanbase.tools.dbbrowser.model.DBSynonym;
 import com.oceanbase.tools.dbbrowser.model.DBSynonymType;
+import com.oceanbase.tools.dbbrowser.model.DBTable;
 import com.oceanbase.tools.dbbrowser.model.DBTable.DBTableOptions;
 import com.oceanbase.tools.dbbrowser.model.DBTableColumn;
 import com.oceanbase.tools.dbbrowser.model.DBTableConstraint;
@@ -611,15 +612,6 @@ public class OBOracleSchemaAccessorTest extends BaseTestEnv {
     }
 
     @Test
-    public void getTableDDL_Success() {
-        String schema = getOBOracleSchema();
-        String tableDDL =
-                accessor.getTableDDL(schema, "TEST_INDEX_TYPE", accessor.listTableColumns(schema, "TEST_INDEX_TYPE"),
-                        accessor.listTableIndexes(schema, "TEST_INDEX_TYPE"));
-        Assert.assertNotNull(tableDDL);
-    }
-
-    @Test
     public void listTableColumns_test_default_null_Success() {
         List<DBTableColumn> columns =
                 accessor.listTableColumns(getOBOracleSchema(), "TEST_DEFAULT_NULL");
@@ -628,6 +620,12 @@ public class OBOracleSchemaAccessorTest extends BaseTestEnv {
         Assert.assertNull(columns.get(1).getDefaultValue());
         Assert.assertNull(columns.get(2).getDefaultValue());
         Assert.assertEquals("'null'", columns.get(3).getDefaultValue());
+    }
+
+    @Test
+    public void getTables_success() {
+        Map<String, DBTable> tables = accessor.getTables(getOBOracleSchema(), null);
+        Assert.assertTrue(tables.size() > 0);
     }
 
     private static void initVerifyColumnAttributes() {
