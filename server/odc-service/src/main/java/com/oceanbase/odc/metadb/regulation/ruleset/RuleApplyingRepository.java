@@ -26,6 +26,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.oceanbase.odc.common.jpa.InsertSqlTemplateBuilder;
+import com.oceanbase.odc.common.jpa.JsonListConverter;
 import com.oceanbase.odc.config.jpa.OdcJpaRepository;
 
 public interface RuleApplyingRepository extends OdcJpaRepository<RuleApplyingEntity, Long>,
@@ -53,19 +54,22 @@ public interface RuleApplyingRepository extends OdcJpaRepository<RuleApplyingEnt
 
     default List<RuleApplyingEntity> batchCreate(List<RuleApplyingEntity> entities) {
         String sql = InsertSqlTemplateBuilder.from("regulation_rule_applying")
-                .field(RuleApplyingEntity_.ORGANIZATION_ID)
-                .field(RuleApplyingEntity_.RULESET_ID)
-                .field(RuleApplyingEntity_.RULE_METADATA_ID)
-                .field(RuleApplyingEntity_.APPLIED_DIALECT_TYPES)
-                .field(RuleApplyingEntity_.ENABLED)
-                .field(RuleApplyingEntity_.LEVEL)
-                .field(RuleApplyingEntity_.PROPERTIES_JSON)
+                .field(RuleApplyingEntity_.organizationId)
+                .field(RuleApplyingEntity_.rulesetId)
+                .field(RuleApplyingEntity_.ruleMetadataId)
+                .field(RuleApplyingEntity_.appliedDialectTypes)
+                .field("is_enabled")
+                .field(RuleApplyingEntity_.level)
+                .field(RuleApplyingEntity_.propertiesJson)
                 .build();
         List<Function<RuleApplyingEntity, Object>> getter = valueGetterBuilder().add(
                 RuleApplyingEntity::getOrganizationId)
                 .add(RuleApplyingEntity::getRulesetId)
                 .add(RuleApplyingEntity::getRuleMetadataId)
-                .add(RuleApplyingEntity::getAppliedDialectTypes)
+                .add(entity -> {
+                    JsonListConverter converter = new JsonListConverter();
+                    return converter.convertToDatabaseColumn(entity.getAppliedDialectTypes());
+                })
                 .add(RuleApplyingEntity::getEnabled)
                 .add(RuleApplyingEntity::getLevel)
                 .add(RuleApplyingEntity::getPropertiesJson)

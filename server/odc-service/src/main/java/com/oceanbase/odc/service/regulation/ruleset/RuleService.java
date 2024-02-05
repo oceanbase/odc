@@ -167,6 +167,7 @@ public class RuleService {
     }
 
     @PreAuthenticate(actions = "update", resourceType = "ODC_RULESET", indexOfIdParam = 0)
+    @Transactional(rollbackFor = Exception.class)
     public Rule update(@NonNull Long rulesetId, @NonNull Long ruleId, @NonNull Rule rule) {
         Ruleset ruleset = rulesetService.detail(rulesetId);
         if (!ruleset.getBuiltin()) {

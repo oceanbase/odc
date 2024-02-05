@@ -15,9 +15,9 @@
  */
 package com.oceanbase.odc.metadb.collaboration;
 
-import java.util.Objects;
-
 import org.springframework.data.jpa.domain.Specification;
+
+import com.oceanbase.odc.common.jpa.SpecificationUtil;
 
 /**
  * @Author: Lebie
@@ -26,20 +26,10 @@ import org.springframework.data.jpa.domain.Specification;
  */
 public class EnvironmentSpecs {
     public static Specification<EnvironmentEntity> organizationIdEquals(Long organizationId) {
-        return columnEquals("organizationId", organizationId);
+        return SpecificationUtil.columnEqual("organizationId", organizationId);
     }
 
     public static Specification<EnvironmentEntity> enabledEquals(Boolean enabled) {
-        return columnEquals("enabled", enabled);
-    }
-
-    private static Specification<EnvironmentEntity> columnEquals(String column, Object value) {
-        return (root, query, builder) -> {
-            if (Objects.isNull(value)) {
-                return builder.conjunction();
-            } else {
-                return builder.equal(root.get(column), value);
-            }
-        };
+        return SpecificationUtil.columnEqual("enabled", enabled);
     }
 }
