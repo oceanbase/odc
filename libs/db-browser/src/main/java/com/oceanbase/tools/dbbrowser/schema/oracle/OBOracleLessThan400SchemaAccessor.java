@@ -22,10 +22,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import org.springframework.jdbc.core.BeanPropertyRowMapper;
 import org.springframework.jdbc.core.JdbcOperations;
 
-import com.oceanbase.tools.dbbrowser.model.DBObjectIdentity;
 import com.oceanbase.tools.dbbrowser.model.DBSynonymType;
 import com.oceanbase.tools.dbbrowser.model.DBTable.DBTableOptions;
 import com.oceanbase.tools.dbbrowser.model.DBTableColumn;
@@ -53,30 +51,6 @@ public class OBOracleLessThan400SchemaAccessor extends OBOracleSchemaAccessor {
             OracleDataDictTableNames dataDictTableNames) {
         super(jdbcOperations, dataDictTableNames);
         this.sqlMapper = DBSchemaAccessorSqlMappers.get(StatementsFiles.OBORACLE_3_x);
-    }
-
-    @Override
-    public List<DBObjectIdentity> listTables(String schemaName, String tableNameLike) {
-        OracleSqlBuilder sb = new OracleSqlBuilder();
-        sb.append("select\n"
-                + "  t1.DATABASE_NAME as schema_name,\n"
-                + "  t2.TABLE_NAME as name,\n"
-                + "  'TABLE' as type \n"
-                + "from \n"
-                + "  SYS.ALL_VIRTUAL_DATABASE_REAL_AGENT t1,\n"
-                + "  SYS.ALL_VIRTUAL_TABLE_REAL_AGENT t2\n"
-                + "where \n"
-                + "  t1.database_id=t2.database_id\n"
-                + "  and t2.table_type = 3\n");
-
-        if (StringUtils.isNotBlank(schemaName)) {
-            sb.append("  and t1.database_name = ").value(schemaName);
-        }
-        if (StringUtils.isNotBlank(tableNameLike)) {
-            sb.append("  and t2.table_name LIKE ").value(tableNameLike);
-        }
-        sb.append(" order by t1.database_name, t2.table_name");
-        return jdbcOperations.query(sb.toString(), new BeanPropertyRowMapper<>(DBObjectIdentity.class));
     }
 
     @Override

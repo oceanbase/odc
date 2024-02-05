@@ -391,6 +391,11 @@ public class ProjectService {
                 .collect(Collectors.toSet());
     }
 
+    @SkipAuthorize("odc internal usage")
+    public Project getBasicSkipPermissionCheck(Long id) {
+        return projectMapper.entityToModel(nullSafeGet(id));
+    }
+
     private Project entityToModel(ProjectEntity entity, List<UserResourceRole> userResourceRoles) {
         Project project = projectMapper.entityToModel(entity);
         project.setCreator(currentInnerUser());

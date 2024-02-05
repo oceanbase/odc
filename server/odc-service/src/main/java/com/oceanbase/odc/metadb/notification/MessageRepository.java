@@ -38,14 +38,21 @@ public interface MessageRepository extends OdcJpaRepository<MessageEntity, Long>
     @Query(value = "update notification_message set `status`=:#{#status.name()} where `id`=:id", nativeQuery = true)
     @Transactional
     @Modifying
-    int updateStatusById(@Param("id") Long id,
-            @Param("status") MessageSendingStatus status);
+    int updateStatusById(@Param("id") Long id, @Param("status") MessageSendingStatus status);
 
-    @Query(value = "update notification_message set `status`=:#{#status.name()}, retry_times=retry_times+1 where `id`=:id",
+    @Query(value = "update notification_message set `status`=:#{#status.name()}, `last_sent_time`=now() where `id`=:id",
             nativeQuery = true)
     @Transactional
     @Modifying
-    int updateStatusAndRetryTimesById(@Param("id") Long id, @Param("status") MessageSendingStatus status);
+    int updateStatusAndSentTimeById(@Param("id") Long id, @Param("status") MessageSendingStatus status);
+
+    @Query(value = "update notification_message set `status`=:#{#status.name()}, `error_message`=:errorMessage,"
+            + " `last_sent_time`=now(), `retry_times`=retry_times+1 where `id`=:id",
+            nativeQuery = true)
+    @Transactional
+    @Modifying
+    int updateStatusAndRetryTimesAndErrorMessageById(@Param("id") Long id, @Param("status") MessageSendingStatus status,
+            @Param("errorMessage") String errorMessage);
 
     @Query(value = "select * from notification_message where `status`=:#{#status.name()} and `retry_times`< `max_retry_times` limit "
             + ":limit for update nowait",

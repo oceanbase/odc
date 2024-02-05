@@ -24,11 +24,15 @@ import lombok.NonNull;
  */
 public enum TestDBType {
 
-    OB_MYSQL("4.1.0.2", "odc.ob.default.mysql.commandline",
-            "odc.ob.default.mysql.sysUsername", "odc.ob.default.mysql.sysPassword"),
-    OB_ORACLE("4.1.0.2", "odc.ob.default.oracle.commandline",
-            "odc.ob.default.oracle.sysUsername", "odc.ob.default.oracle.sysPassword"),
-    MYSQL("5.7", "odc.mysql.default.commandline", null, null);
+    OB_MYSQL("4.1.0.2", new String[] {"odc.ob.default.mysql.commandline"}, "odc.ob.default.mysql.sysUsername",
+            "odc.ob.default.mysql.sysPassword"),
+    OB_ORACLE("4.1.0.2", new String[] {"odc.ob.default.oracle.commandline"}, "odc.ob.default.oracle.sysUsername",
+            "odc.ob.default.oracle.sysPassword"),
+    MYSQL("5.7", new String[] {"odc.mysql.default.commandline"}, null, null),
+    ORACLE("11", new String[] {"odc.oracle.default.host", "odc.oracle.default.port", "odc.oracle.default.username",
+            "odc.oracle.default.password", "odc.oracle.default.sid", "odc.oracle.default.serviceName",
+            "odc.oracle.default.role"}, null,
+            null);
 
     /**
      * Test database version
@@ -38,7 +42,7 @@ public enum TestDBType {
     /**
      * Test database commandline key
      */
-    public final String commandlineKey;
+    public final String[] commandlineKey;
 
     /**
      * Test database system tenant username key (only used for OB_MYSQL and OB_ORACLE)
@@ -50,7 +54,7 @@ public enum TestDBType {
      */
     public final String sysUserPasswordKey;
 
-    TestDBType(@NonNull String version, @NonNull String commandlineKey, String sysUserNameKey,
+    TestDBType(@NonNull String version, @NonNull String[] commandlineKey, String sysUserNameKey,
             String sysUserPasswordKey) {
         this.version = version;
         this.commandlineKey = commandlineKey;
@@ -63,7 +67,7 @@ public enum TestDBType {
     }
 
     public boolean isOracleMode() {
-        return this == OB_ORACLE;
+        return this == OB_ORACLE || this == ORACLE;
     }
 
     public boolean isOBMode() {

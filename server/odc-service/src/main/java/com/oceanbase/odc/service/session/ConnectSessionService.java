@@ -220,15 +220,16 @@ public class ConnectSessionService {
         String schemaName;
         if (req.getDbId() != null) {
             // create session by database id
-            Map<Long, Set<DatabasePermissionType>> id2PermissionTypes =
-                    databasePermissionHelper.getPermissions(Collections.singleton(req.getDbId()));
-            if (!id2PermissionTypes.containsKey(req.getDbId()) || id2PermissionTypes.get(req.getDbId()).isEmpty()) {
-                throw new AccessDeniedException();
-            }
             Database database = databaseService.detail(req.getDbId());
-            if (Objects.isNull(database.getProject())
-                    && authenticationFacade.currentUser().getOrganizationType() == OrganizationType.TEAM) {
-                throw new AccessDeniedException();
+            if (authenticationFacade.currentUser().getOrganizationType() == OrganizationType.TEAM) {
+                if (Objects.isNull(database.getProject())) {
+                    throw new AccessDeniedException();
+                }
+                Map<Long, Set<DatabasePermissionType>> id2PermissionTypes =
+                        databasePermissionHelper.getPermissions(Collections.singleton(req.getDbId()));
+                if (!id2PermissionTypes.containsKey(req.getDbId()) || id2PermissionTypes.get(req.getDbId()).isEmpty()) {
+                    throw new AccessDeniedException();
+                }
             }
             schemaName = database.getName();
             dataSourceId = database.getDataSource().getId();

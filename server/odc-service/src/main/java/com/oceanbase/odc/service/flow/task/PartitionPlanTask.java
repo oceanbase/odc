@@ -104,6 +104,7 @@ public class PartitionPlanTask extends BaseODCFlowTaskDelegate<PartitionPlanTask
     @Override
     protected void onTimeout(Long taskId, TaskService taskService) {
         log.warn("Partition plan task timeout, taskId={}", taskId);
+        super.onTimeout(taskId, taskService);
     }
 
     @Override

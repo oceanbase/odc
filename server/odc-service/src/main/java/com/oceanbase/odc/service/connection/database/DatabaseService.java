@@ -56,7 +56,6 @@ import com.oceanbase.odc.core.authority.util.PreAuthenticate;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.shared.PreConditions;
-import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.constant.OrganizationType;
@@ -176,11 +175,18 @@ public class DatabaseService {
         return getDatabase(id);
     }
 
+    @SkipAuthorize("odc internal usage")
+    public Database getBasicSkipPermissionCheck(Long id) {
+        return databaseMapper.entityToModel(databaseRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException(ResourceType.ODC_DATABASE, "id", id)));
+    }
+
     private Database getDatabase(Long id) {
         Database database = entityToModel(databaseRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException(ResourceType.ODC_DATABASE, "id", id)));
-        Verify.notNull(database.getProject().getId(), "projectId");
-        projectPermissionValidator.checkProjectRole(database.getProject().getId(), ResourceRoleName.all());
+        if (Objects.nonNull(database.getProject()) && Objects.nonNull(database.getProject().getId())) {
+            projectPermissionValidator.checkProjectRole(database.getProject().getId(), ResourceRoleName.all());
+        }
         return database;
     }
 

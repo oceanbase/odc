@@ -137,6 +137,7 @@
         <isSkipIntegrationTest>false</isSkipIntegrationTest>
 
         <mysql.jdbc.version>8.0.30</mysql.jdbc.version>
+        <oracle.jdbc.version>21.1.0.0</oracle.jdbc.version>
 
         <micrometer-core.version>1.8.0</micrometer-core.version>
         <mariadb-java-client.version>2.7.11</mariadb-java-client.version>
@@ -577,6 +578,10 @@
                     <exclusion>
                         <groupId>com.oceanbase</groupId>
                         <artifactId>obkv-table-client</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>com.oceanbase</groupId>
+                        <artifactId>obtools-dbdiff</artifactId>
                     </exclusion>
                 </exclusions>
             </dependency>
@@ -1111,6 +1116,11 @@
                 <artifactId>mariadb-java-client</artifactId>
                 <version>${mariadb-java-client.version}</version>
             </dependency>
+            <dependency>
+                <groupId>com.oracle.database.jdbc</groupId>
+                <artifactId>ojdbc8</artifactId>
+                <version>${oracle.jdbc.version}</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
@@ -1439,7 +1449,7 @@ limitations under the License.
                 </property>
             </activation>
             <properties>
-                <ob-loader-dumper.version>4.2.5-RELEASE</ob-loader-dumper.version>
+                <ob-loader-dumper.version>4.2.8-RELEASE</ob-loader-dumper.version>
             </properties>
         </profile>
     </profiles>

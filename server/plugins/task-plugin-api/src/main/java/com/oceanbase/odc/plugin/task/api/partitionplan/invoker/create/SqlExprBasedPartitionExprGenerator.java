@@ -34,8 +34,9 @@ import lombok.NonNull;
  */
 public interface SqlExprBasedPartitionExprGenerator extends PartitionExprGenerator {
 
-    List<String> generate(@NonNull Connection connection, @NonNull DBTable dbTable, @NonNull String partitionKey,
-            @NonNull Integer generateCount, @NonNull SqlExprBasedGeneratorConfig config);
+    List<String> generate(@NonNull Connection connection, @NonNull DBTable dbTable,
+            @NonNull String partitionKey, @NonNull Integer generateCount,
+            @NonNull SqlExprBasedGeneratorConfig config) throws Exception;
 
     @Override
     default String getName() {
@@ -44,7 +45,8 @@ public interface SqlExprBasedPartitionExprGenerator extends PartitionExprGenerat
 
     @Override
     default List<String> generate(@NonNull Connection connection, @NonNull DBTable dbTable,
-            @NonNull String partitionKey, @NonNull Integer generateCount, @NonNull Map<String, Object> parameters) {
+            @NonNull String partitionKey, @NonNull Integer generateCount,
+            @NonNull Map<String, Object> parameters) throws Exception {
         return generate(connection, dbTable, partitionKey, generateCount,
                 ParameterUtil.nullSafeExtract(parameters, GENERATOR_PARAMETER_KEY, SqlExprBasedGeneratorConfig.class));
     }

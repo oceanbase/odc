@@ -37,11 +37,11 @@ public class DBSchemaAccessors {
         if (VersionUtils.isGreaterThanOrEqualsTo(dbVersion, "4.0.0")) {
             // OB 版本 >= 4.0.0
             return new OBOracleSchemaAccessor(jdbcOperations, new ALLDataDictTableNames());
-        } else if (VersionUtils.isGreaterThanOrEqualsTo(dbVersion, "2.2.7")) {
+        } else if (VersionUtils.isGreaterThanOrEqualsTo(dbVersion, "2.2.70")) {
             // OB 版本为 [2.2.7, 4.0.0)
             return new OBOracleLessThan400SchemaAccessor(jdbcOperations, new ALLDataDictTableNames());
         } else {
-            // OB 版本 < 2.2.7
+            // OB 版本 < 2.2.70
             return new OBOracleLessThan2270SchemaAccessor(jdbcOperations, new ALLDataDictTableNames());
         }
     }

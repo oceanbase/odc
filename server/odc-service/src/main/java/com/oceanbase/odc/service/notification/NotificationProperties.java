@@ -45,4 +45,6 @@ public class NotificationProperties {
 
     private int dequeueFailedNotificationFixedDelayMillis;
 
+    private int dequeueSendingNotificationFixedDelayMillis;
+
 }

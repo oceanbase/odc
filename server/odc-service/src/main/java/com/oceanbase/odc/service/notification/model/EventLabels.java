@@ -37,6 +37,17 @@ public class EventLabels extends TreeMap<String, String> {
         return this;
     }
 
+    public String putIfNonNull(String key, Object value) {
+        if (Objects.nonNull(value)) {
+            return put(key, value.toString());
+        }
+        return null;
+    }
+
+    public Long getLongFromString(String key) {
+        return Long.parseLong(get(key));
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {
