@@ -345,7 +345,15 @@ public class FlowTaskUtil {
             }
             MockTaskConfig taskConfig = mapper.readValue(mapper.writeValueAsString(map), MockTaskConfig.class);
             taskConfig.setLogDir(taskId + "");
-            taskConfig.setDialectType(session.getDialectType().isMysql() ? ObModeType.OB_MYSQL : ObModeType.OB_ORACLE);
+            switch (session.getDialectType()) {
+                case MYSQL:
+                case DORIS:
+                    taskConfig.setDialectType(ObModeType.OB_MYSQL);
+                    break;
+                default:
+                    taskConfig.setDialectType(ObModeType.OB_ORACLE);
+                    break;
+            }
             List<MockTableConfig> tableConfigList = taskConfig.getTables();
             PreConditions.notEmpty(tableConfigList, "tasks"); // table config list can not be null or empty
 
@@ -405,6 +413,9 @@ public class FlowTaskUtil {
             dbConfig.setUser("\"" + uname + "\"");
             dbConfig.setDefaultSchame("\"" + getSchemaName(execution) + "\"");
         } else if (Objects.nonNull(config.getDialectType()) && config.getDialectType().isMysql()) {
+            dbConfig.setUser(config.getUsername());
+            dbConfig.setDefaultSchame(config.getDefaultSchema());
+        } else if (Objects.nonNull(config.getDialectType()) && config.getDialectType().isDoris()) {
             dbConfig.setUser(config.getUsername());
             dbConfig.setDefaultSchame(config.getDefaultSchema());
         }

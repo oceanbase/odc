@@ -1,0 +1,3 @@
+rules:
+  mask: |-
+    record.setColumn({0}, new StringColumn("{1}"));

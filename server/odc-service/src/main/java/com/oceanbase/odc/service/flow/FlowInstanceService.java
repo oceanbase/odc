@@ -92,9 +92,12 @@ import com.oceanbase.odc.service.common.response.SuccessResponse;
 import com.oceanbase.odc.service.common.util.SqlUtils;
 import com.oceanbase.odc.service.config.SystemConfigService;
 import com.oceanbase.odc.service.config.model.Configuration;
+import com.oceanbase.odc.service.connection.CloudMetadataClient;
+import com.oceanbase.odc.service.connection.CloudMetadataClient.CloudPermissionAction;
 import com.oceanbase.odc.service.connection.ConnectionService;
 import com.oceanbase.odc.service.connection.database.DatabaseService;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
+import com.oceanbase.odc.service.connection.model.OBTenant;
 import com.oceanbase.odc.service.dispatch.DispatchResponse;
 import com.oceanbase.odc.service.dispatch.RequestDispatcher;
 import com.oceanbase.odc.service.dispatch.TaskDispatchChecker;
@@ -235,6 +238,8 @@ public class FlowInstanceService {
     private Broker broker;
     @Autowired
     private EventBuilder eventBuilder;
+    @Autowired
+    private CloudMetadataClient cloudMetadataClient;
 
     private final List<Consumer<DataTransferTaskInitEvent>> dataTransferTaskInitHooks = new ArrayList<>();
     private final List<Consumer<ShadowTableComparingUpdateEvent>> shadowTableComparingTaskHooks = new ArrayList<>();
@@ -276,6 +281,8 @@ public class FlowInstanceService {
     public List<FlowInstanceDetailResp> createIndividualFlowInstance(CreateFlowInstanceReq createReq) {
         Long connId = createReq.getConnectionId();
         ConnectionConfig conn = connectionService.getForConnect(connId);
+        cloudMetadataClient.checkPermission(OBTenant.of(conn.getClusterName(),
+                conn.getTenantName()), conn.getInstanceType(), false, CloudPermissionAction.READONLY);
         return Collections.singletonList(buildWithoutApprovalNode(createReq, conn));
     }
 
@@ -314,6 +321,8 @@ public class FlowInstanceService {
         ConnectionConfig conn = null;
         if (Objects.nonNull(createReq.getConnectionId())) {
             conn = connectionService.getForConnectionSkipPermissionCheck(createReq.getConnectionId());
+            cloudMetadataClient.checkPermission(OBTenant.of(conn.getClusterName(),
+                    conn.getTenantName()), conn.getInstanceType(), false, CloudPermissionAction.READONLY);
         }
         return Collections.singletonList(buildFlowInstance(riskLevels, createReq, conn));
     }
@@ -951,7 +960,7 @@ public class FlowInstanceService {
         FlowTaskUtil.setOrganizationId(variables, authenticationFacade.currentOrganizationId());
         FlowTaskUtil.setTaskSubmitter(variables, JsonUtils.fromJson(taskEntity.getSubmitter(), ExecutorInfo.class));
         FlowTaskUtil.setRiskLevelDescriber(variables, riskLevelDescriber);
-        FlowTaskUtil.setCloudMainAccountId(variables, authenticationFacade.currentUser().getUid());
+        FlowTaskUtil.setCloudMainAccountId(variables, authenticationFacade.currentUser().getParentUid());
     }
 
     private TemplateVariables buildTemplateVariables(CreateFlowInstanceReq flowInstanceReq, ConnectionConfig config) {

@@ -22,8 +22,10 @@ import org.springframework.stereotype.Component;
 import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.service.connection.model.CloudConnectionConfig;
 import com.oceanbase.odc.service.connection.model.OBDatabaseUser;
+import com.oceanbase.odc.service.connection.model.OBInstanceType;
 import com.oceanbase.odc.service.connection.model.OBTenant;
 import com.oceanbase.odc.service.connection.model.OBTenantEndpoint;
+import com.oceanbase.odc.service.connection.model.OBTenantMode;
 
 @Component
 public class ConnectionEnvironmentAdapter {
@@ -52,6 +54,13 @@ public class ConnectionEnvironmentAdapter {
                     OBTenant tenant = cloudMetadataClient.getTenant(clusterName, tenantName);
                     connectionConfig.setClusterName(tenant.getClusterInstanceId());
                     connectionConfig.setTenantName(tenant.getId());
+                    if (tenant.getTenantMode() == OBTenantMode.MYSQL) {
+                        connectionConfig.setInstanceType(OBInstanceType.MYSQL_TENANT);
+                    } else {
+                        connectionConfig.setInstanceType(OBInstanceType.ORACLE_TENANT);
+                    }
+                } else {
+                    connectionConfig.setInstanceType(OBInstanceType.CLUSTER);
                 }
             }
             if (cloudMetadataClient.needsOBTenantName()) {

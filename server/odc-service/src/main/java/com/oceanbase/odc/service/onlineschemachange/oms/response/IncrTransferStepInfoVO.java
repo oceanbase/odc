@@ -27,7 +27,7 @@ import lombok.Data;
  */
 @Data
 @JsonFormat(with = Feature.ACCEPT_CASE_INSENSITIVE_PROPERTIES)
-public class IncrTransferStepInfoVO extends BaseProjectStepInfoVO {
+public class IncrTransferStepInfoVO extends BaseOmsProjectStepInfoVO {
     /**
      * 位点时间，unix timestamp, 单位秒
      */

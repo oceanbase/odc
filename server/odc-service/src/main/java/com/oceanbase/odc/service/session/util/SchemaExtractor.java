@@ -115,7 +115,7 @@ public class SchemaExtractor {
     }
 
     private static Set<String> listSchemaNames(AbstractSyntaxTree ast, String defaultSchema, DialectType dialectType) {
-        if (dialectType.isMysql()) {
+        if (dialectType.isMysql() || dialectType.isDoris()) {
             OBMySQLRelationFactorVisitor visitor = new OBMySQLRelationFactorVisitor();
             visitor.visit(ast.getRoot());
             List<RelationFactor> relationFactorList = visitor.getRelationFactorList();

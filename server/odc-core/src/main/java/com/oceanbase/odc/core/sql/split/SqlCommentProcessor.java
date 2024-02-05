@@ -28,7 +28,6 @@ import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 import com.oceanbase.odc.common.lang.Holder;
 import com.oceanbase.odc.common.util.StringUtils;
@@ -166,6 +165,8 @@ public class SqlCommentProcessor {
                     addLineMysql(offsetStrings, buffer, bufferOrder, item);
                 } else if (Objects.nonNull(this.dialectType) && this.dialectType.isOracle()) {
                     addLineOracle(offsetStrings, buffer, bufferOrder, item);
+                } else if (Objects.nonNull(this.dialectType) && this.dialectType.isDoris()) {
+                    addLineMysql(offsetStrings, buffer, bufferOrder, item);
                 } else {
                     throw new IllegalArgumentException("dialect type is illegal");
                 }
@@ -633,11 +634,11 @@ public class SqlCommentProcessor {
      * 当前SQL是否是以分隔符开头
      */
     private boolean isPrefix(OrderChar[] line, int pos, String delim) {
-        boolean res = IntStream.range(pos, pos + delim.length())
-                .mapToObj(i -> line[i].getCh())
-                .collect(StringBuilder::new, StringBuilder::append, StringBuilder::append)
-                .toString().startsWith(delim);
-
+        StringBuilder builder = new StringBuilder();
+        for (int i = 0; i < line.length - pos; i++) {
+            builder.append(line[pos + i].getCh());
+        }
+        boolean res = builder.toString().startsWith(delim);
         if (!res || !"/".equals(delim) || line.length <= 1) {
             return res;
         }
@@ -790,6 +791,10 @@ public class SqlCommentProcessor {
                                 .collect(Collectors.toList()));
                     } else if (processor.dialectType.isOracle()) {
                         processor.addLineOracle(holder, buffer, bufferOrder, line.chars()
+                                .mapToObj(c -> new OrderChar((char) c, lastLineOrder++))
+                                .collect(Collectors.toList()));
+                    } else if (processor.dialectType.isDoris()) {
+                        processor.addLineMysql(holder, buffer, bufferOrder, line.chars()
                                 .mapToObj(c -> new OrderChar((char) c, lastLineOrder++))
                                 .collect(Collectors.toList()));
                     }
