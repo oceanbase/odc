@@ -28,7 +28,7 @@ import org.junit.Test;
 
 import com.oceanbase.odc.service.task.caller.K8sJobClient;
 import com.oceanbase.odc.service.task.caller.NativeK8sJobClient;
-import com.oceanbase.odc.service.task.caller.PodParam;
+import com.oceanbase.odc.service.task.caller.PodConfig;
 import com.oceanbase.odc.service.task.config.K8sProperties;
 import com.oceanbase.odc.service.task.exception.JobException;
 import com.oceanbase.odc.service.task.schedule.JobIdentity;
@@ -61,7 +61,7 @@ public class NativeK8sClientTest {
         String imageName = "perl:5.34.0";
         String exceptedJobName = JobUtils.generateExecutorName(jobIdentity);
         List<String> cmd = Arrays.asList("perl", "-Mbignum=bpi", "-wle", "print bpi(2000)");
-        PodParam podParam = new PodParam();
+        PodConfig podParam = new PodConfig();
         String generateJobOfName = k8sClient.create("default", exceptedJobName, imageName, cmd, podParam);
         Assert.assertEquals(exceptedJobName, generateJobOfName);
 
