@@ -51,44 +51,44 @@ public class DataArchiveJobCopied extends DataArchiveJob {
         ScheduleTaskEntity taskEntity = (ScheduleTaskEntity) context.getResult();
         DataArchiveParameters dataArchiveParameters = JsonUtils.fromJson(taskEntity.getParametersJson(),
                 DataArchiveParameters.class);
-        InnerDataArchiveJobParameters innerDataArchiveJobParameters = new InnerDataArchiveJobParameters();
-        innerDataArchiveJobParameters.setTables(dataArchiveParameters.getTables());
-        for (DataArchiveTableConfig tableConfig : innerDataArchiveJobParameters.getTables()) {
+        DLMJobParameters parameters = new DLMJobParameters();
+        parameters.setTables(dataArchiveParameters.getTables());
+        for (DataArchiveTableConfig tableConfig : parameters.getTables()) {
             tableConfig.setConditionExpression(StringUtils.isNotEmpty(tableConfig.getConditionExpression())
                     ? DataArchiveConditionUtil.parseCondition(tableConfig.getConditionExpression(),
                             dataArchiveParameters.getVariables(),
                             context.getFireTime())
                     : "");
         }
-        innerDataArchiveJobParameters.setDeleteAfterMigration(dataArchiveParameters.isDeleteAfterMigration());
-        innerDataArchiveJobParameters.setMigrationInsertAction(dataArchiveParameters.getMigrationInsertAction());
-        innerDataArchiveJobParameters.setNeedPrintSqlTrace(dataArchiveParameters.isNeedPrintSqlTrace());
-        innerDataArchiveJobParameters
+        parameters.setDeleteAfterMigration(dataArchiveParameters.isDeleteAfterMigration());
+        parameters.setMigrationInsertAction(dataArchiveParameters.getMigrationInsertAction());
+        parameters.setNeedPrintSqlTrace(dataArchiveParameters.isNeedPrintSqlTrace());
+        parameters
                 .setRateLimit(limiterService.getByOrderIdOrElseDefaultConfig(Long.parseLong(taskEntity.getJobName())));
-        innerDataArchiveJobParameters.setWriteThreadCount(dataArchiveParameters.getWriteThreadCount());
-        innerDataArchiveJobParameters.setReadThreadCount(dataArchiveParameters.getReadThreadCount());
-        innerDataArchiveJobParameters.setShardingStrategy(dataArchiveParameters.getShardingStrategy());
-        innerDataArchiveJobParameters.setScanBatchSize(dataArchiveParameters.getScanBatchSize());
+        parameters.setWriteThreadCount(dataArchiveParameters.getWriteThreadCount());
+        parameters.setReadThreadCount(dataArchiveParameters.getReadThreadCount());
+        parameters.setShardingStrategy(dataArchiveParameters.getShardingStrategy());
+        parameters.setScanBatchSize(dataArchiveParameters.getScanBatchSize());
 
         DataSourceInfo sourceInfo = DataSourceInfoBuilder.build(
                 databaseService.findDataSourceForConnectById(dataArchiveParameters.getSourceDatabaseId()));
         DataSourceInfo targetInfo = DataSourceInfoBuilder.build(
                 databaseService.findDataSourceForConnectById(dataArchiveParameters.getTargetDataBaseId()));
-        sourceInfo.setConnectionCount(2 * (innerDataArchiveJobParameters.getReadThreadCount()
-                + innerDataArchiveJobParameters.getWriteThreadCount()));
+        sourceInfo.setConnectionCount(2 * (parameters.getReadThreadCount()
+                + parameters.getWriteThreadCount()));
         targetInfo.setConnectionCount(sourceInfo.getConnectionCount());
         sourceInfo.setQueryTimeout(dataArchiveParameters.getQueryTimeout());
         targetInfo.setQueryTimeout(dataArchiveParameters.getQueryTimeout());
         sourceInfo.setDatabaseName(dataArchiveParameters.getSourceDatabaseName());
         targetInfo.setDatabaseName(dataArchiveParameters.getTargetDatabaseName());
-        innerDataArchiveJobParameters
+        parameters
                 .setSourceDs(sourceInfo);
-        innerDataArchiveJobParameters
+        parameters
                 .setTargetDs(targetInfo);
 
         Map<String, String> jobData = new HashMap<>();
         jobData.put(JobParametersKeyConstants.META_TASK_PARAMETER_JSON,
-                JsonUtils.toJson(innerDataArchiveJobParameters));
+                JsonUtils.toJson(parameters));
 
         DefaultJobDefinition jobDefinition = DefaultJobDefinition.builder().jobClass(DataArchiveTask.class)
                 .jobType(JobType.DATA_ARCHIVE.name())

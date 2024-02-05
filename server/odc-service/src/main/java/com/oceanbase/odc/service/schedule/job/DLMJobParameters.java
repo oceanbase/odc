@@ -16,7 +16,6 @@
 
 package com.oceanbase.odc.service.schedule.job;
 
-import java.util.Date;
 import java.util.List;
 
 import com.oceanbase.odc.service.dlm.model.DataArchiveTableConfig;
@@ -34,7 +33,7 @@ import lombok.Data;
  */
 
 @Data
-public class InnerDataArchiveJobParameters {
+public class DLMJobParameters {
 
     private List<DataArchiveTableConfig> tables;
 

@@ -33,6 +33,7 @@ import com.oceanbase.odc.service.dlm.model.DataArchiveParameters;
 import com.oceanbase.odc.service.dlm.model.DlmTask;
 import com.oceanbase.odc.service.session.factory.DefaultConnectSessionFactory;
 import com.oceanbase.odc.service.task.config.DefaultTaskFrameworkProperties;
+import com.oceanbase.odc.service.task.config.TaskFrameworkProperties;
 import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
 import com.oceanbase.tools.dbbrowser.util.MySQLSqlBuilder;
 import com.oceanbase.tools.dbbrowser.util.OracleSqlBuilder;
@@ -51,7 +52,7 @@ public class DataArchiveJob extends AbstractDlmJob {
     public void execute(JobExecutionContext context) {
 
         // execute in task framework.
-        DefaultTaskFrameworkProperties taskFrameworkProperties =
+        TaskFrameworkProperties taskFrameworkProperties =
                 SpringContextUtil.getBean(DefaultTaskFrameworkProperties.class);
         if (taskFrameworkProperties.isEnabled()) {
             DataArchiveJobCopied dataArchiveJobCopied = new DataArchiveJobCopied();

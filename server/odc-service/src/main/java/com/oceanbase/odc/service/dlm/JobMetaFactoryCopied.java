@@ -16,7 +16,7 @@
 
 package com.oceanbase.odc.service.dlm;
 
-import com.oceanbase.odc.service.schedule.job.InnerDataArchiveJobParameters;
+import com.oceanbase.odc.service.schedule.job.DLMJobParameters;
 import com.oceanbase.odc.service.task.schedule.JobIdentity;
 import com.oceanbase.tools.migrator.common.configure.LogicTableConfig;
 import com.oceanbase.tools.migrator.common.dto.HistoryJob;
@@ -37,7 +37,7 @@ import com.oceanbase.tools.migrator.task.CheckMode;
 public class JobMetaFactoryCopied extends AbstractJobMetaFactory {
 
 
-    public JobMeta create(int tableIndex, JobIdentity jobIdentity, InnerDataArchiveJobParameters parameters)
+    public JobMeta create(int tableIndex, JobIdentity jobIdentity, DLMJobParameters parameters)
             throws Exception {
         HistoryJob historyJob = new HistoryJob();
         historyJob.setId(String.format("%s-%s-%s", JobType.MIGRATE, jobIdentity, tableIndex));

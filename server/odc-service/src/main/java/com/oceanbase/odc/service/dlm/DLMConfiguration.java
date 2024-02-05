@@ -22,6 +22,7 @@ import org.springframework.context.annotation.Configuration;
 import com.oceanbase.tools.migrator.common.enums.ShardingStrategy;
 import com.oceanbase.tools.migrator.core.IJobStore;
 
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -31,26 +32,27 @@ import lombok.extern.slf4j.Slf4j;
  */
 
 @Slf4j
+@Getter
 @Configuration
 public class DLMConfiguration {
 
     @Value("${odc.task.dlm.thread-pool-size:15}")
-    public int dlmThreadPoolSize;
+    private int dlmThreadPoolSize;
 
     @Value("${odc.task.dlm.single-task-read-write-ratio:0.5}")
-    public double readWriteRatio;
+    private double readWriteRatio;
 
     @Value("${odc.task.dlm.single-task-thread-pool-size:15}")
-    public int singleTaskThreadPoolSize;
+    private int singleTaskThreadPoolSize;
 
     @Value("${odc.task.dlm.task-connection-query-timeout-seconds:180}")
-    public int taskConnectionQueryTimeout;
+    private int taskConnectionQueryTimeout;
 
     @Value("${odc.task.dlm.sharding-strategy:FIXED_LENGTH}")
-    public ShardingStrategy shardingStrategy;
+    private ShardingStrategy shardingStrategy;
 
     @Value("${odc.task.dlm.default-scan-batch-size:10000}")
-    public int defaultScanBatchSize;
+    private int defaultScanBatchSize;
 
     @Bean
     public JobMetaFactory jobMetaFactory(IJobStore jobStore) {

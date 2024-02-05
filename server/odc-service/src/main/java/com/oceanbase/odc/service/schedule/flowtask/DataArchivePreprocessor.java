@@ -161,12 +161,13 @@ public class DataArchivePreprocessor extends AbstractDlmJobPreprocessor {
     }
 
     private void initDefaultConfig(DataArchiveParameters parameters) {
-        parameters.setReadThreadCount((int) (dlmConfiguration.singleTaskThreadPoolSize * dlmConfiguration.readWriteRatio
-                / (1 + dlmConfiguration.readWriteRatio)));
-        parameters.setWriteThreadCount(dlmConfiguration.dlmThreadPoolSize - parameters.getReadThreadCount());
-        parameters.setScanBatchSize(dlmConfiguration.defaultScanBatchSize);
-        parameters.setQueryTimeout(dlmConfiguration.taskConnectionQueryTimeout);
-        parameters.setShardingStrategy(dlmConfiguration.shardingStrategy);
+        parameters.setReadThreadCount(
+                (int) (dlmConfiguration.getSingleTaskThreadPoolSize() * dlmConfiguration.getReadWriteRatio()
+                        / (1 + dlmConfiguration.getReadWriteRatio())));
+        parameters.setWriteThreadCount(dlmConfiguration.getDlmThreadPoolSize() - parameters.getReadThreadCount());
+        parameters.setScanBatchSize(dlmConfiguration.getDefaultScanBatchSize());
+        parameters.setQueryTimeout(dlmConfiguration.getTaskConnectionQueryTimeout());
+        parameters.setShardingStrategy(dlmConfiguration.getShardingStrategy());
         // set default target table name.
         parameters.getTables().forEach(tableConfig -> {
             tableConfig.setTargetTableName(tableConfig.getTableName());

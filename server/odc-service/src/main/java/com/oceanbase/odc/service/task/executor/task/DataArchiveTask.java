@@ -18,7 +18,7 @@ package com.oceanbase.odc.service.task.executor.task;
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.service.dlm.CloudDLMJobStore;
 import com.oceanbase.odc.service.dlm.JobMetaFactoryCopied;
-import com.oceanbase.odc.service.schedule.job.InnerDataArchiveJobParameters;
+import com.oceanbase.odc.service.schedule.job.DLMJobParameters;
 import com.oceanbase.odc.service.task.caller.JobContext;
 import com.oceanbase.odc.service.task.constants.JobParametersKeyConstants;
 import com.oceanbase.tools.migrator.core.meta.JobMeta;
@@ -54,8 +54,8 @@ public class DataArchiveTask extends BaseTask<Boolean> {
     protected void doStart(JobContext context) throws Exception {
 
         String taskParameters = context.getJobParameters().get(JobParametersKeyConstants.META_TASK_PARAMETER_JSON);
-        InnerDataArchiveJobParameters parameters = JsonUtils.fromJson(taskParameters,
-                InnerDataArchiveJobParameters.class);
+        DLMJobParameters parameters = JsonUtils.fromJson(taskParameters,
+                DLMJobParameters.class);
 
         for (int tableIndex = 0; tableIndex < parameters.getTables().size(); tableIndex++) {
             if (getStatus().isTerminated()) {
