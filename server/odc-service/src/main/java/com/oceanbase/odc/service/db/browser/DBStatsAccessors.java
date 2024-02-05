@@ -24,6 +24,7 @@ import com.oceanbase.odc.core.shared.constant.ConnectType;
 import com.oceanbase.odc.core.shared.exception.UnsupportedException;
 import com.oceanbase.odc.core.sql.execute.SyncJdbcExecutor;
 import com.oceanbase.tools.dbbrowser.stats.DBStatsAccessor;
+import com.oceanbase.tools.dbbrowser.stats.mysql.DorisStatsAccessor;
 import com.oceanbase.tools.dbbrowser.stats.mysql.MySQLNoGreaterThan5740StatsAccessor;
 import com.oceanbase.tools.dbbrowser.stats.mysql.OBMySQLNoLessThan400StatsAccessor;
 import com.oceanbase.tools.dbbrowser.stats.mysql.OBMySQLStatsAccessor;
@@ -76,7 +77,7 @@ public class DBStatsAccessors {
         } else if (connectType == ConnectType.MYSQL) {
             return new MySQLNoGreaterThan5740StatsAccessor(syncJdbcExecutor);
         } else if (connectType == ConnectType.DORIS) {
-            return new MySQLNoGreaterThan5740StatsAccessor(syncJdbcExecutor);
+            return new DorisStatsAccessor(syncJdbcExecutor);
         } else if (connectType == ConnectType.ODP_SHARDING_OB_MYSQL) {
             return new ODPOBMySQLStatsAccessor(consoleConnectionId);
         } else if (connectType == ConnectType.ORACLE) {
