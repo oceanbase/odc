@@ -70,6 +70,8 @@ public interface ConnectionConfigRepository
 
     List<ConnectionEntity> findByVisibleScope(ConnectionVisibleScope visibleScope);
 
+    List<ConnectionEntity> findByOrganizationIdAndEnvironmentId(Long organizationId, Long environmentId);
+
     @Transactional
     int deleteByVisibleScopeAndOwnerId(ConnectionVisibleScope visibleScope, Long ownerId);
 

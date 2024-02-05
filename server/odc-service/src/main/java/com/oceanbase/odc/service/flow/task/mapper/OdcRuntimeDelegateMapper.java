@@ -19,13 +19,16 @@ import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.core.shared.constant.TaskType;
 import com.oceanbase.odc.core.shared.exception.UnsupportedException;
+import com.oceanbase.odc.service.common.util.SpringContextUtil;
 import com.oceanbase.odc.service.flow.task.BaseRuntimeFlowableDelegate;
 import com.oceanbase.odc.service.flow.task.DBStructureComparisonFlowableTask;
 import com.oceanbase.odc.service.flow.task.DataTransferRuntimeFlowableTask;
 import com.oceanbase.odc.service.flow.task.DatabaseChangeRuntimeFlowableTask;
+import com.oceanbase.odc.service.flow.task.DatabaseChangeRuntimeFlowableTaskCopied;
 import com.oceanbase.odc.service.flow.task.MockDataRuntimeFlowableTask;
 import com.oceanbase.odc.service.flow.task.PartitionPlanTask;
 import com.oceanbase.odc.service.flow.task.PreCheckRuntimeFlowableTask;
+import com.oceanbase.odc.service.flow.task.PreCheckRuntimeFlowableTaskCopied;
 import com.oceanbase.odc.service.flow.task.RollbackPlanRuntimeFlowableTask;
 import com.oceanbase.odc.service.flow.task.ShadowtableSyncRuntimeFlowableTask;
 import com.oceanbase.odc.service.onlineschemachange.OnlineSchemaChangeFlowableTask;
@@ -33,6 +36,7 @@ import com.oceanbase.odc.service.permission.database.ApplyDatabaseFlowableTask;
 import com.oceanbase.odc.service.permission.project.ApplyProjectFlowableTask;
 import com.oceanbase.odc.service.resultset.ResultSetExportFlowableTask;
 import com.oceanbase.odc.service.schedule.flowtask.AlterScheduleTask;
+import com.oceanbase.odc.service.task.config.TaskFrameworkProperties;
 
 import lombok.NonNull;
 
@@ -45,12 +49,13 @@ import lombok.NonNull;
  * @see RuntimeDelegateMapper
  */
 public class OdcRuntimeDelegateMapper implements RuntimeDelegateMapper {
-
     @Override
     public Class<? extends BaseRuntimeFlowableDelegate<?>> map(@NonNull TaskType taskType) {
+        boolean enableTaskFramework = SpringContextUtil.getBean(TaskFrameworkProperties.class).isEnabled();
         switch (taskType) {
             case ASYNC:
-                return DatabaseChangeRuntimeFlowableTask.class;
+                return enableTaskFramework ? DatabaseChangeRuntimeFlowableTaskCopied.class
+                        : DatabaseChangeRuntimeFlowableTask.class;
             case MOCKDATA:
                 return MockDataRuntimeFlowableTask.class;
             case IMPORT:
@@ -69,7 +74,8 @@ public class OdcRuntimeDelegateMapper implements RuntimeDelegateMapper {
             case EXPORT_RESULT_SET:
                 return ResultSetExportFlowableTask.class;
             case PRE_CHECK:
-                return PreCheckRuntimeFlowableTask.class;
+                return enableTaskFramework ? PreCheckRuntimeFlowableTaskCopied.class
+                        : PreCheckRuntimeFlowableTask.class;
             case APPLY_PROJECT_PERMISSION:
                 return ApplyProjectFlowableTask.class;
             case APPLY_DATABASE_PERMISSION:

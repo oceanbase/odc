@@ -352,7 +352,17 @@ public class RestExceptionHandler {
     @ResponseBody
     @ResponseStatus(value = HttpStatus.FORBIDDEN)
     public ErrorResponse handleAccessDeniedException(AccessDeniedException ex, HandlerMethod handlerMethod) {
-        Error error = Error.of(ErrorCodes.AccessDenied);
+        Error error = Error.of(ErrorCodes.AccessDenied, new Object[] {ex.getMessage()});
+        error.addDetail(ex);
+        return buildResponse(HttpStatus.FORBIDDEN, error, ex, handlerMethod);
+    }
+
+    @ExceptionHandler(com.oceanbase.odc.core.shared.exception.AccessDeniedException.class)
+    @ResponseBody
+    @ResponseStatus(value = HttpStatus.FORBIDDEN)
+    public ErrorResponse handleSharedAccessDeniedException(
+            com.oceanbase.odc.core.shared.exception.AccessDeniedException ex, HandlerMethod handlerMethod) {
+        Error error = Error.of(ErrorCodes.AccessDenied, new Object[] {ex.getMessage()});
         error.addDetail(ex);
         return buildResponse(HttpStatus.FORBIDDEN, error, ex, handlerMethod);
     }

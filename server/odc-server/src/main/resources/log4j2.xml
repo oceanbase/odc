@@ -639,6 +639,11 @@
             <AppenderRef ref="WarnRoutingMockAppender"/>
         </Logger>
 
+        <Logger name="com.oceanbase.odc.service.flow.task.CustomMockScheduler" additivity="true">
+            <AppenderRef ref="InfoRoutingMockAppender"/>
+            <AppenderRef ref="WarnRoutingMockAppender"/>
+        </Logger>
+
         <!-- 模拟数据程序日志输出 -->
         <Logger name="com.oceanbase.tools.datamocker" level="INFO" additivity="true">
             <AppenderRef ref="InfoRoutingMockAppender"/>
@@ -706,7 +711,6 @@
         <Logger name="org.flowable" level="INFO" additivity="false">
             <AppenderRef ref="OdcFileAppender"/>
         </Logger>
-
         <!-- 其它程序日志输出，输出级别 WARN -->
         <Root level="WARN">
             <AppenderRef ref="OdcFileAppender"/>

@@ -82,6 +82,8 @@ public enum AuditEventType implements Translatable {
 
     DATABASE_PERMISSION_MANAGEMENT,
 
+    ENVIRONMENT_MANAGEMENT,
+
     ;
 
 
