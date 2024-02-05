@@ -1210,4 +1210,9 @@ public class DorisSchemaAccessor implements DBSchemaAccessor {
     public DBSynonym getSynonym(String schemaName, String synonymName, DBSynonymType synonymType) {
         throw new UnsupportedOperationException("Not supported yet");
     }
+
+    @Override
+    public Map<String, DBTable> getTables(String schemaName, List<String> tableNames) {
+        throw new UnsupportedOperationException("Not supported yet");
+    }
 }
