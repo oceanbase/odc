@@ -26,6 +26,8 @@ import lombok.Data;
 @Data
 public class RateLimitConfiguration {
 
+    private Long orderId;
+
     private Integer batchSize;
 
     private Integer rowLimit;

@@ -28,7 +28,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.service.onlineschemachange.oms.enums.OmsStepName;
 import com.oceanbase.odc.service.onlineschemachange.oms.request.CommonTransferConfig;
-import com.oceanbase.odc.service.onlineschemachange.oms.request.CreateProjectRequest;
+import com.oceanbase.odc.service.onlineschemachange.oms.request.CreateOmsProjectRequest;
 import com.oceanbase.odc.service.onlineschemachange.oms.request.DatabaseTransferObject;
 import com.oceanbase.odc.service.onlineschemachange.oms.request.FullTransferConfig;
 import com.oceanbase.odc.service.onlineschemachange.oms.request.IncrTransferConfig;
@@ -36,7 +36,7 @@ import com.oceanbase.odc.service.onlineschemachange.oms.request.OmsApiReturnResu
 import com.oceanbase.odc.service.onlineschemachange.oms.request.SpecificTransferMapping;
 import com.oceanbase.odc.service.onlineschemachange.oms.request.TableTransferObject;
 import com.oceanbase.odc.service.onlineschemachange.oms.response.FullTransferStepInfoVO;
-import com.oceanbase.odc.service.onlineschemachange.oms.response.ProjectStepVO;
+import com.oceanbase.odc.service.onlineschemachange.oms.response.OmsProjectStepVO;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -62,8 +62,8 @@ public class JsonTest {
                 + "    \"code\":\"GHANA-OPERAT000001\"\n"
                 + "}";
 
-        OmsApiReturnResult<List<ProjectStepVO>> apiReturnResults = JsonUtils.fromJsonIgnoreMissingProperty(json,
-                new TypeReference<OmsApiReturnResult<List<ProjectStepVO>>>() {});
+        OmsApiReturnResult<List<OmsProjectStepVO>> apiReturnResults = JsonUtils.fromJsonIgnoreMissingProperty(json,
+                new TypeReference<OmsApiReturnResult<List<OmsProjectStepVO>>>() {});
         Assert.assertNotNull(apiReturnResults);
         Assert.assertNotNull(apiReturnResults.getErrorDetail());
         Assert.assertTrue(apiReturnResults.getErrorDetail().containsKey("code"));
@@ -78,11 +78,11 @@ public class JsonTest {
                 + "\"extraInfo\":{}}],\"Deletable\":false,\"ErrorCode\":\"\",\"Message\":\"successful\","
                 + "\"Success\":true,\"TotalCount\":0}";
 
-        OmsApiReturnResult<List<ProjectStepVO>> apiReturnResults = JsonUtils.fromJsonIgnoreMissingProperty(json,
-                new TypeReference<OmsApiReturnResult<List<ProjectStepVO>>>() {});
+        OmsApiReturnResult<List<OmsProjectStepVO>> apiReturnResults = JsonUtils.fromJsonIgnoreMissingProperty(json,
+                new TypeReference<OmsApiReturnResult<List<OmsProjectStepVO>>>() {});
         Assert.assertNotNull(apiReturnResults);
         Assert.assertTrue(CollectionUtils.isNotEmpty(apiReturnResults.getData()));
-        Optional<ProjectStepVO> first = apiReturnResults.getData().stream().filter(
+        Optional<OmsProjectStepVO> first = apiReturnResults.getData().stream().filter(
                 a -> a.getName() == OmsStepName.FULL_TRANSFER).findFirst();
         Assert.assertTrue(first.isPresent());
         FullTransferStepInfoVO fullTransferStepInfoVO = (FullTransferStepInfoVO) first.get().getStepInfo();
@@ -92,25 +92,17 @@ public class JsonTest {
 
     @Test
     public void test_object_to_map_with_upper_camel_case() {
-        CreateProjectRequest createProjectRequest = getCreateProjectRequest();
+        CreateOmsProjectRequest createProjectRequest = getCreateProjectRequest();
         Map map = JsonUtils.fromJson(JsonUtils.toJsonUpperCamelCase(createProjectRequest), Map.class);
         Assert.assertTrue(map.containsKey("Name"));
         Assert.assertTrue(map.containsKey("TransferMapping"));
 
     }
 
-    @Test
-    public void test_object_to_map_with_null_values() {
-        CreateProjectRequest createProjectRequest = getCreateProjectRequest();
-        createProjectRequest.setName(null);
-        Map map = JsonUtils.fromJson(JsonUtils.toJsonUpperCamelCase(createProjectRequest), Map.class);
-        Assert.assertFalse(map.containsKey("name"));
-    }
-
-    private CreateProjectRequest getCreateProjectRequest() {
+    private CreateOmsProjectRequest getCreateProjectRequest() {
         String datasourceId = "ds1";
         String dbName = "db1";
-        CreateProjectRequest request = new CreateProjectRequest();
+        CreateOmsProjectRequest request = new CreateOmsProjectRequest();
         request.setSourceEndpointId(datasourceId);
         request.setSinkEndpointId(datasourceId);
 

@@ -173,6 +173,7 @@ public class ConnectConsoleService {
         // avoid rewrite while execute
         asyncExecuteReq.setAddROWID(false);
         asyncExecuteReq.setQueryLimit(queryLimit);
+        asyncExecuteReq.setShowTableColumnInfo(true);
 
         SqlAsyncExecuteResp resp = execute(sessionId, asyncExecuteReq, false);
         String requestId = resp.getRequestId();

@@ -299,6 +299,9 @@ public class ConnectionConfig
     private String OBTenantName;
 
     @JsonIgnore
+    private OBInstanceType instanceType;
+
+    @JsonIgnore
     private transient Map<String, Object> attributes;
 
     /**

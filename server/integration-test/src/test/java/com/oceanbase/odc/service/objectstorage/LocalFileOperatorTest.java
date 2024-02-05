@@ -25,7 +25,7 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
-import org.mockito.InjectMocks;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -44,7 +44,7 @@ public class LocalFileOperatorTest extends ServiceTestEnv {
 
     private static final String BUCKET = "test-bucket";
 
-    @InjectMocks
+    @Autowired
     private LocalFileOperator localFileOperator;
 
     @Before

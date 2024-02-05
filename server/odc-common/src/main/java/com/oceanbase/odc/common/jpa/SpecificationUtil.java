@@ -81,4 +81,14 @@ public class SpecificationUtil {
         };
     }
 
+    public static <T> Specification<T> columnIsNull(@NonNull String columnName) {
+        return (root, query, builder) -> builder.isNull(root.get(columnName));
+
+    }
+
+    public static <T> Specification<T> columnIsNotNull(@NonNull String columnName) {
+        return (root, query, builder) -> builder.isNotNull(root.get(columnName));
+
+    }
+
 }

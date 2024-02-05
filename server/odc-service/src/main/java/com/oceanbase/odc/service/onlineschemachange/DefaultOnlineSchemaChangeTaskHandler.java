@@ -67,8 +67,8 @@ import com.oceanbase.odc.service.onlineschemachange.model.OnlineSchemaChangePara
 import com.oceanbase.odc.service.onlineschemachange.model.OnlineSchemaChangeScheduleTaskParameters;
 import com.oceanbase.odc.service.onlineschemachange.model.OnlineSchemaChangeScheduleTaskResult;
 import com.oceanbase.odc.service.onlineschemachange.model.OnlineSchemaChangeSqlType;
-import com.oceanbase.odc.service.onlineschemachange.oms.openapi.ProjectOpenApiService;
-import com.oceanbase.odc.service.onlineschemachange.oms.request.ProjectControlRequest;
+import com.oceanbase.odc.service.onlineschemachange.oms.openapi.OmsProjectOpenApiService;
+import com.oceanbase.odc.service.onlineschemachange.oms.request.OmsProjectControlRequest;
 import com.oceanbase.odc.service.onlineschemachange.pipeline.BaseCreateOmsProjectValve;
 import com.oceanbase.odc.service.onlineschemachange.pipeline.DefaultLinkPipeline;
 import com.oceanbase.odc.service.onlineschemachange.pipeline.OscValveContext;
@@ -102,7 +102,7 @@ public class DefaultOnlineSchemaChangeTaskHandler implements OnlineSchemaChangeT
     @Autowired
     private ConnectionService connectionService;
     @Autowired
-    private ProjectOpenApiService projectOpenApiService;
+    private OmsProjectOpenApiService projectOpenApiService;
     @Autowired
     private ScheduleTaskService scheduleTaskService;
     @Autowired
@@ -283,7 +283,7 @@ public class DefaultOnlineSchemaChangeTaskHandler implements OnlineSchemaChangeT
             return true;
         }
 
-        ProjectControlRequest controlRequest = new ProjectControlRequest();
+        OmsProjectControlRequest controlRequest = new OmsProjectControlRequest();
         controlRequest.setId(omsProjectId);
         controlRequest.setUid(uid);
         log.info("Oms project {} has not released, try to release it.", omsProjectId);

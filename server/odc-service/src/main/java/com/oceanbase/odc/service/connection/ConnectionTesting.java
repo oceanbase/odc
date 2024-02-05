@@ -41,9 +41,11 @@ import com.oceanbase.odc.plugin.connect.api.ConnectionExtensionPoint;
 import com.oceanbase.odc.plugin.connect.api.TestResult;
 import com.oceanbase.odc.plugin.connect.model.ConnectionPropertiesBuilder;
 import com.oceanbase.odc.plugin.connect.model.JdbcUrlProperty;
+import com.oceanbase.odc.service.connection.CloudMetadataClient.CloudPermissionAction;
 import com.oceanbase.odc.service.connection.model.ConnectProperties;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.connection.model.ConnectionTestResult;
+import com.oceanbase.odc.service.connection.model.OBTenant;
 import com.oceanbase.odc.service.connection.model.OBTenantEndpoint;
 import com.oceanbase.odc.service.connection.model.OceanBaseAccessMode;
 import com.oceanbase.odc.service.connection.model.TestConnectionReq;
@@ -73,6 +75,8 @@ public class ConnectionTesting {
     private ConnectionEnvironmentAdapter environmentAdapter;
     @Autowired
     private ConnectionSSLAdaptor connectionSSLAdaptor;
+    @Autowired
+    private CloudMetadataClient cloudMetadataClient;
     @Value("${odc.sdk.test-connect.query-timeout-seconds:2}")
     private int queryTimeoutSeconds = 2;
 
@@ -82,6 +86,8 @@ public class ConnectionTesting {
                 ErrorCodes.ConnectionPasswordMissed, null, "password required for connection without password saved");
 
         environmentAdapter.adaptConfig(req);
+        cloudMetadataClient.checkPermission(OBTenant.of(req.getClusterName(),
+                req.getTenantName()), req.getInstanceType(), false, CloudPermissionAction.READONLY);
         connectionSSLAdaptor.adapt(req);
 
         PreConditions.validNotSqlInjection(req.getUsername(), "username");

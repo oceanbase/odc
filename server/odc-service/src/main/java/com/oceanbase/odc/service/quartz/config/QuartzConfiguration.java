@@ -20,6 +20,7 @@ import javax.sql.DataSource;
 import org.quartz.Scheduler;
 import org.quartz.SchedulerException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.scheduling.quartz.SchedulerFactoryBean;
@@ -40,7 +41,7 @@ public class QuartzConfiguration {
 
     private final String defaultSchedulerName = "ODC-SCHEDULER";
 
-    @Bean
+    @Bean("defaultSchedulerFactoryBean")
     public SchedulerFactoryBean schedulerFactoryBean(DataSource dataSource) {
         SchedulerFactoryBean schedulerFactoryBean = new SchedulerFactoryBean();
         schedulerFactoryBean.setDataSource(dataSource);
@@ -48,8 +49,10 @@ public class QuartzConfiguration {
         return schedulerFactoryBean;
     }
 
-    @Bean
-    public Scheduler scheduler(SchedulerFactoryBean schedulerFactoryBean) throws SchedulerException {
+    @Bean("defaultScheduler")
+    public Scheduler scheduler(
+            @Autowired @Qualifier("defaultSchedulerFactoryBean") SchedulerFactoryBean schedulerFactoryBean)
+            throws SchedulerException {
         Scheduler scheduler = schedulerFactoryBean.getScheduler();
         scheduler.getListenerManager().addJobListener(odcJobListener);
         return scheduler;
