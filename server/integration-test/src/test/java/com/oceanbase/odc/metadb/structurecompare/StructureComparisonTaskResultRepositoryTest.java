@@ -29,9 +29,9 @@ import com.oceanbase.odc.test.tool.TestRandom;
  * @author jingtian
  * @date 2024/1/16
  */
-public class StructureComparisonRepositoryTest extends ServiceTestEnv {
+public class StructureComparisonTaskResultRepositoryTest extends ServiceTestEnv {
     @Autowired
-    private StructureComparisonRepository repository;
+    private StructureComparisonTaskResultRepository repository;
 
     @Before
     public void setUp() throws Exception {
@@ -40,14 +40,14 @@ public class StructureComparisonRepositoryTest extends ServiceTestEnv {
 
     @Test
     public void save_saveOne_saveSucceed() {
-        StructureComparisonEntity actual = createEntity();
+        StructureComparisonTaskResultEntity actual = createEntity();
         actual.setId(null);
         actual = this.repository.save(actual);
-        Optional<StructureComparisonEntity> expect = this.repository.findById(actual.getId());
+        Optional<StructureComparisonTaskResultEntity> expect = this.repository.findById(actual.getId());
         Assert.assertEquals(expect.get(), actual);
     }
 
-    private StructureComparisonEntity createEntity() {
-        return TestRandom.nextObject(StructureComparisonEntity.class);
+    private StructureComparisonTaskResultEntity createEntity() {
+        return TestRandom.nextObject(StructureComparisonTaskResultEntity.class);
     }
 }

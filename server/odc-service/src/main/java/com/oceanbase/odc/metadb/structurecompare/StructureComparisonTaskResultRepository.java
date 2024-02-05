@@ -15,8 +15,6 @@
  */
 package com.oceanbase.odc.metadb.structurecompare;
 
-import java.util.List;
-
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
@@ -27,13 +25,12 @@ import org.springframework.data.repository.query.Param;
  * @date 2024/1/16
  * @since ODC_release_4.2.4
  */
-public interface StructureComparisonRepository extends JpaRepository<StructureComparisonEntity, Long>,
-        JpaSpecificationExecutor<StructureComparisonEntity> {
-
-    List<StructureComparisonEntity> findByComparisonTaskId(Long comparisonTaskId);
+public interface StructureComparisonTaskResultRepository
+        extends JpaRepository<StructureComparisonTaskResultEntity, Long>,
+        JpaSpecificationExecutor<StructureComparisonTaskResultEntity> {
 
     @Query(value = "select * from structure_comparison where id=:id and structure_comparison_task_id=:comparisonTaskId",
             nativeQuery = true)
-    StructureComparisonEntity findByIdAndComparisonTaskId(@Param("id") Long id,
+    StructureComparisonTaskResultEntity findByIdAndComparisonTaskId(@Param("id") Long id,
             @Param("comparisonTaskId") Long comparisonTaskId);
 }

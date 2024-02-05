@@ -27,7 +27,7 @@ import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.sql.parser.AbstractSyntaxTreeFactories;
 import com.oceanbase.odc.core.sql.parser.AbstractSyntaxTreeFactory;
 import com.oceanbase.odc.core.sql.split.SqlCommentProcessor;
-import com.oceanbase.odc.metadb.structurecompare.StructureComparisonEntity;
+import com.oceanbase.odc.metadb.structurecompare.StructureComparisonTaskResultEntity;
 import com.oceanbase.odc.service.common.util.SqlUtils;
 import com.oceanbase.tools.dbbrowser.model.DBObjectType;
 import com.oceanbase.tools.dbbrowser.parser.constant.SqlType;
@@ -72,9 +72,9 @@ public class DBObjectComparisonResult {
         this.targetSchemaName = targetSchemaName;
     }
 
-    public StructureComparisonEntity toEntity(@NonNull Long structureComparisonTaskId,
+    public StructureComparisonTaskResultEntity toEntity(@NonNull Long structureComparisonTaskId,
             @NonNull DialectType dialectType) {
-        StructureComparisonEntity entity = new StructureComparisonEntity();
+        StructureComparisonTaskResultEntity entity = new StructureComparisonTaskResultEntity();
         entity.setComparisonTaskId(structureComparisonTaskId);
         entity.setDatabaseObjectType(dbObjectType);
         entity.setDatabaseObjectName(dbObjectName);

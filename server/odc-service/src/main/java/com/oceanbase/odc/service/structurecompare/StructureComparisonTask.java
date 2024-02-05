@@ -25,9 +25,9 @@ import java.util.stream.Collectors;
 
 import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.shared.constant.TaskStatus;
-import com.oceanbase.odc.metadb.structurecompare.StructureComparisonEntity;
-import com.oceanbase.odc.metadb.structurecompare.StructureComparisonRepository;
 import com.oceanbase.odc.metadb.structurecompare.StructureComparisonTaskRepository;
+import com.oceanbase.odc.metadb.structurecompare.StructureComparisonTaskResultEntity;
+import com.oceanbase.odc.metadb.structurecompare.StructureComparisonTaskResultRepository;
 import com.oceanbase.odc.service.flow.task.model.DBStructureComparisonTaskResult;
 import com.oceanbase.odc.service.flow.task.model.DBStructureComparisonTaskResult.Comparing;
 import com.oceanbase.odc.service.iam.model.User;
@@ -53,7 +53,7 @@ public class StructureComparisonTask implements Callable<DBStructureComparisonTa
     private final DBStructureComparisonConfig tgtConfig;
     private final Long taskId;
     private final User user;
-    private StructureComparisonRepository structureComparisonRepository;
+    private StructureComparisonTaskResultRepository structureComparisonTaskResultRepository;
     private StructureComparisonTaskRepository structureComparisonTaskRepository;
     private ObjectStorageFacade objectStorageFacade;
     private DefaultDBStructureComparator comparator = new DefaultDBStructureComparator();
@@ -69,14 +69,14 @@ public class StructureComparisonTask implements Callable<DBStructureComparisonTa
             @NonNull Long structureComparisonTaskId,
             @NonNull User user,
             @NonNull StructureComparisonTaskRepository structureComparisonTaskRepository,
-            @NonNull StructureComparisonRepository structureComparisonRepository,
+            @NonNull StructureComparisonTaskResultRepository structureComparisonTaskResultRepository,
             @NonNull ObjectStorageFacade objectStorageFacade) {
         this.srcConfig = srcConfig;
         this.tgtConfig = tgtConfig;
         initTaskResult(structureComparisonTaskId);
         this.taskId = taskId;
         this.user = user;
-        this.structureComparisonRepository = structureComparisonRepository;
+        this.structureComparisonTaskResultRepository = structureComparisonTaskResultRepository;
         this.structureComparisonTaskRepository = structureComparisonTaskRepository;
         this.objectStorageFacade = objectStorageFacade;
     }
@@ -117,10 +117,10 @@ public class StructureComparisonTask implements Callable<DBStructureComparisonTa
     }
 
     private void saveComparisonResult(List<DBObjectComparisonResult> results, DialectType dialectType) {
-        List<StructureComparisonEntity> entities =
+        List<StructureComparisonTaskResultEntity> entities =
                 results.stream().map(result -> result.toEntity(taskResult.getTaskId(), dialectType)).collect(
                         Collectors.toList());
-        structureComparisonRepository.saveAll(entities);
+        structureComparisonTaskResultRepository.saveAll(entities);
 
         StringBuilder builder = new StringBuilder();
         entities.stream().filter(entity -> Objects.nonNull(entity.getChangeSqlScript()))
@@ -129,8 +129,7 @@ public class StructureComparisonTask implements Callable<DBStructureComparisonTa
         String totalChangeSqlScript = builder.toString();
         if (!totalChangeSqlScript.isEmpty()) {
             String objectId = putTotalChangeSqlScript(totalChangeSqlScript);
-            structureComparisonTaskRepository.updateTotalChangeSqlScriptAndStorageObjectIdById(taskResult.getTaskId(),
-                    totalChangeSqlScript, objectId);
+            structureComparisonTaskRepository.updateStorageObjectIdById(taskResult.getTaskId(), objectId);
         }
     }
 

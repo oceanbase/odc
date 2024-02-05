@@ -77,11 +77,6 @@ public class StructureComparisonTaskEntity {
     @Column(name = "target_connect_database_id", nullable = false, updatable = false)
     private Long targetConnectDatabaseId;
     /**
-     * Total change sql script to convert target database to source database
-     */
-    @Column(name = "total_change_sql_script")
-    private String totalChangeSqlScript;
-    /**
      * The storage object id of the total change script file, references
      * objectstorage_object_metadata(object_id)
      */

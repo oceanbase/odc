@@ -32,10 +32,9 @@ public interface StructureComparisonTaskRepository extends JpaRepository<Structu
         JpaSpecificationExecutor<StructureComparisonTaskEntity> {
 
     @Transactional
-    @Query(value = "update structure_comparison_task set total_change_sql_script=:changeSqlScript, storage_object_id=:storageObjectId where id=:id",
+    @Query(value = "update structure_comparison_task set storage_object_id=:storageObjectId where id=:id",
             nativeQuery = true)
     @Modifying
-    int updateTotalChangeSqlScriptAndStorageObjectIdById(@Param("id") Long id,
-            @Param("changeSqlScript") String changeSqlScript, @Param("storageObjectId") String storageObjectId);
+    int updateStorageObjectIdById(@Param("id") Long id, @Param("storageObjectId") String storageObjectId);
 
 }

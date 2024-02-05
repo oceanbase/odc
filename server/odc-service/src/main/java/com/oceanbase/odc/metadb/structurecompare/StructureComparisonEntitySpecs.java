@@ -32,16 +32,17 @@ public class StructureComparisonEntitySpecs {
     private static final String COMPARING_RESULT = "comparingResult";
     private static final String DB_OBJECT_NAME = "databaseObjectName";
 
-    public static Specification<StructureComparisonEntity> comparisonTaskIdEquals(@NonNull Long comparisonTaskId) {
+    public static Specification<StructureComparisonTaskResultEntity> comparisonTaskIdEquals(
+            @NonNull Long comparisonTaskId) {
         return (root, query, builder) -> builder.equal(root.get(STRUCTURE_COMPARISON_TASK_ID), comparisonTaskId);
     }
 
-    public static Specification<StructureComparisonEntity> comparisonResultEquals(
+    public static Specification<StructureComparisonTaskResultEntity> comparisonResultEquals(
             @NonNull ComparisonResult comparisonResult) {
         return (root, query, builder) -> builder.equal(root.get(COMPARING_RESULT), comparisonResult);
     }
 
-    public static Specification<StructureComparisonEntity> dbObjectNameLike(
+    public static Specification<StructureComparisonTaskResultEntity> dbObjectNameLike(
             @NonNull String dbObjectName) {
         return (root, query, builder) -> builder.like(root.get(DB_OBJECT_NAME),
                 "%" + StringUtils.escapeLike(dbObjectName) + "%");

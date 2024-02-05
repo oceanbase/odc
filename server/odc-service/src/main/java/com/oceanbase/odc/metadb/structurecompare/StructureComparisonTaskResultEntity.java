@@ -41,8 +41,8 @@ import lombok.Data;
  */
 @Data
 @Entity
-@Table(name = "structure_comparison")
-public class StructureComparisonEntity {
+@Table(name = "structure_comparison_task_result")
+public class StructureComparisonTaskResultEntity {
     @Id
     @Column(name = "id", nullable = false)
     @GeneratedValue(strategy = GenerationType.IDENTITY)

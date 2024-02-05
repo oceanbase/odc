@@ -15,7 +15,7 @@
  */
 package com.oceanbase.odc.service.flow.task.model;
 
-import com.oceanbase.odc.metadb.structurecompare.StructureComparisonEntity;
+import com.oceanbase.odc.metadb.structurecompare.StructureComparisonTaskResultEntity;
 import com.oceanbase.odc.service.common.response.PaginatedResponse;
 import com.oceanbase.odc.service.structurecompare.model.ComparisonResult;
 import com.oceanbase.tools.dbbrowser.model.DBObjectType;
@@ -38,6 +38,7 @@ public class DBStructureComparisonResp {
     private PaginatedResponse<ObjectComparisonResult> comparisonResults;
     private String totalChangeScript;
     private String storageObjectId;
+    private boolean isOverSizeLimit;
 
     @Data
     @NoArgsConstructor
@@ -50,7 +51,7 @@ public class DBStructureComparisonResp {
         private String dbObjectName;
         private OperationType operationType;
 
-        public static ObjectComparisonResult fromEntity(StructureComparisonEntity entity) {
+        public static ObjectComparisonResult fromEntity(StructureComparisonTaskResultEntity entity) {
             ObjectComparisonResult returnVal = new ObjectComparisonResult();
             returnVal.setStructureComparisonId(entity.getId());
             returnVal.setDbObjectName(entity.getDatabaseObjectName());

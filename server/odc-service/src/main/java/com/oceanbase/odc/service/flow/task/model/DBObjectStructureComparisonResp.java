@@ -15,7 +15,7 @@
  */
 package com.oceanbase.odc.service.flow.task.model;
 
-import com.oceanbase.odc.metadb.structurecompare.StructureComparisonEntity;
+import com.oceanbase.odc.metadb.structurecompare.StructureComparisonTaskResultEntity;
 import com.oceanbase.odc.service.flow.task.model.DBStructureComparisonResp.OperationType;
 import com.oceanbase.tools.dbbrowser.model.DBObjectType;
 
@@ -39,7 +39,7 @@ public class DBObjectStructureComparisonResp {
     private String targetObjectDdl;
     private String changeScript;
 
-    public static DBObjectStructureComparisonResp fromEntity(StructureComparisonEntity entity) {
+    public static DBObjectStructureComparisonResp fromEntity(StructureComparisonTaskResultEntity entity) {
         DBObjectStructureComparisonResp resp = new DBObjectStructureComparisonResp();
         resp.setId(entity.getId());
         resp.setDbObjectName(entity.getDatabaseObjectName());
