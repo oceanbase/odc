@@ -101,7 +101,7 @@ public class ShadowTableComparingTask implements Callable<Void> {
             Map<String, DBTable> tableName2Tables;
             try {
                 tableName2Tables =
-                        dbTableService.getSchemaTables(connectionSession, schemaName).entrySet().stream()
+                        dbTableService.getTables(connectionSession, schemaName).entrySet().stream()
                                 .filter(entry -> allRealTableNames.contains(entry.getKey()))
                                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
             } catch (Exception ex) {

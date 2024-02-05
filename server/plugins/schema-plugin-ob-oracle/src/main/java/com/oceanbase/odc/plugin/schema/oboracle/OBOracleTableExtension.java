@@ -92,7 +92,7 @@ public class OBOracleTableExtension extends OBMySQLTableExtension {
         return table;
     }
 
-    public String getTableDDL(Connection connection, String schemaName, String tableName,
+    private String getTableDDL(Connection connection, String schemaName, String tableName,
             OBOracleGetDBTableByParser parser, List<DBTableColumn> columns, DBTableOptions tableOptions) {
         CreateTable createTableStmt = parser.getCreateTableStmt();
         Validate.notNull(createTableStmt, "CreateTable statement can not be null");

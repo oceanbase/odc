@@ -220,7 +220,7 @@ public class OBMySQLSchemaAccessor extends MySQLNoGreaterThan5740SchemaAccessor 
         Map<String, List<DBTableIndex>> tableName2Indexes = super.listTableIndexes(schemaName);
         tableName2Indexes.keySet().forEach(tableName -> {
             if (tableName2Ddl.containsKey(tableName)) {
-                parseIndexDdlToSetRange(tableName2Ddl.get(tableName), tableName2Indexes.get(tableName));
+                parseDdlToSetIndexRange(tableName2Ddl.get(tableName), tableName2Indexes.get(tableName));
             } else {
                 fillIndexRange(tableName2Indexes.get(tableName), schemaName, tableName);
             }
@@ -249,7 +249,7 @@ public class OBMySQLSchemaAccessor extends MySQLNoGreaterThan5740SchemaAccessor 
             if (CollectionUtils.isEmpty(ddl) || StringUtils.isBlank(ddl.get(0))) {
                 fillWarning(indexList, DBObjectType.INDEX, "get index DDL failed");
             } else {
-                parseIndexDdlToSetRange(ddl.get(0), indexList);
+                parseDdlToSetIndexRange(ddl.get(0), indexList);
             }
         } catch (Exception e) {
             fillWarning(indexList, DBObjectType.INDEX, "query index ddl failed");
@@ -257,7 +257,7 @@ public class OBMySQLSchemaAccessor extends MySQLNoGreaterThan5740SchemaAccessor 
         }
     }
 
-    private void parseIndexDdlToSetRange(String ddl, List<DBTableIndex> indexList) {
+    private void parseDdlToSetIndexRange(String ddl, List<DBTableIndex> indexList) {
         if (StringUtils.isBlank(ddl)) {
             fillWarning(indexList, DBObjectType.INDEX, "table ddl is blank, can not set index range by parse ddl");
             return;

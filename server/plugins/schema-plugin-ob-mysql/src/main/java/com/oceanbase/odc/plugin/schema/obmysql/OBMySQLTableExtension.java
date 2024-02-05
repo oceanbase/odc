@@ -106,8 +106,7 @@ public class OBMySQLTableExtension implements TableExtensionPoint {
             table.setTableOptions(tableName2Options.getOrDefault(tableName, new DBTableOptions()));
             if (VersionUtils.isLessThanOrEqualsTo(dbVersion, "1.4.79")) {
                 // Remove dependence on sys account
-                String ddl = accessor.getTableDDL(schemaName, tableName);
-                OBMySQLGetDBTableByParser parser = new OBMySQLGetDBTableByParser(ddl);
+                OBMySQLGetDBTableByParser parser = new OBMySQLGetDBTableByParser(tableName2Ddl.get(tableName));
                 table.setPartition(parser.getPartition());
             } else {
                 table.setPartition(accessor.getPartition(schemaName, tableName));

@@ -105,7 +105,10 @@ public class DBTableService {
         }
     }
 
-    public Map<String, DBTable> getSchemaTables(@NotNull ConnectionSession connectionSession, String schemaName) {
+    /**
+     * get all table details in a schema
+     */
+    public Map<String, DBTable> getTables(@NotNull ConnectionSession connectionSession, String schemaName) {
         return connectionSession
                 .getSyncJdbcExecutor(ConnectionSessionConstants.BACKEND_DS_KEY)
                 .execute((ConnectionCallback<Map<String, DBTable>>) con -> getTableExtensionPoint(connectionSession)
