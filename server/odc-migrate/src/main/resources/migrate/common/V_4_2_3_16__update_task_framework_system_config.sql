@@ -1,0 +1,2 @@
+update config_system_configuration set `value`='0/1 * * * * ?' where `key` = 'odc.task-framework.do-canceling-job-cron-expression';
+update config_system_configuration set `value`='0/1 * * * * ?' where `key` = 'odc.task-framework.destroy-executor-job-cron-expression';
