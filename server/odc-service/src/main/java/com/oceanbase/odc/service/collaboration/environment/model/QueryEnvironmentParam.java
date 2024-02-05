@@ -15,22 +15,16 @@
  */
 package com.oceanbase.odc.service.collaboration.environment.model;
 
-public enum EnvironmentStyle {
-    GREEN,
+import lombok.Builder;
+import lombok.Data;
 
-    ORANGE,
-
-    RED,
-
-    GRAY,
-
-    MAGENTA,
-
-    CYAN,
-
-    BLUE,
-
-    GEEKBLUE,
-
-    PURPLE,
+/**
+ * @Author: Lebie
+ * @Date: 2024/1/30 18:53
+ * @Description: []
+ */
+@Data
+@Builder
+public class QueryEnvironmentParam {
+    private Boolean enabled;
 }

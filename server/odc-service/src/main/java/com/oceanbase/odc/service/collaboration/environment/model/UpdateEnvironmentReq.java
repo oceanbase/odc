@@ -15,22 +15,23 @@
  */
 package com.oceanbase.odc.service.collaboration.environment.model;
 
-public enum EnvironmentStyle {
-    GREEN,
+import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Size;
 
-    ORANGE,
+import lombok.Builder;
+import lombok.Data;
 
-    RED,
+/**
+ * @Author: Lebie
+ * @Date: 2024/1/12 14:40
+ * @Description: []
+ */
+@Data
+@Builder
+public class UpdateEnvironmentReq {
+    @Size(max = 256, message = "The length of the environment description must be between 0 and 256")
+    private String description;
 
-    GRAY,
-
-    MAGENTA,
-
-    CYAN,
-
-    BLUE,
-
-    GEEKBLUE,
-
-    PURPLE,
+    @NotNull
+    private EnvironmentStyle style;
 }

@@ -50,6 +50,7 @@ import com.oceanbase.odc.core.shared.constant.ConnectType;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.service.collaboration.environment.EnvironmentService;
 import com.oceanbase.odc.service.collaboration.environment.model.Environment;
+import com.oceanbase.odc.service.collaboration.environment.model.QueryEnvironmentParam;
 import com.oceanbase.odc.service.common.util.FileConvertUtils;
 import com.oceanbase.odc.service.connection.model.BatchImportConnection;
 import com.oceanbase.odc.service.connection.model.ConnectionPreviewBatchImportResp;
@@ -145,7 +146,8 @@ public class ConnectionBatchImportPreviewer {
         batchImportConnection.setPassword(password);
         String environment = map.get(DATASOURCE_ENVIRONMENT.getLocalizedMessage());
         String envString = envMap.get(environment);
-        List<Environment> environments = environmentService.list(organizationId);
+        List<Environment> environments =
+                environmentService.list(organizationId, QueryEnvironmentParam.builder().build());
         Long environmentId = -1L;
         for (Environment environment1 : environments) {
             if (environment1.getName().equals(envString)) {

@@ -26,10 +26,12 @@ import java.util.stream.Collectors;
 
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotEmpty;
+import javax.validation.constraints.NotNull;
 
 import org.apache.commons.collections.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
 
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -142,6 +144,16 @@ public class RuleService {
 
     @SkipAuthorize("internal authenticated")
     public Rule detail(@NonNull Long rulesetId, @NonNull Long ruleId) {
+        Ruleset ruleset = rulesetService.detail(rulesetId);
+        if (!ruleset.getBuiltin()) {
+            RuleApplyingEntity applyingEntity = ruleApplyingRepository.findById(ruleId).orElseThrow(
+                    () -> new UnexpectedException("rule applying not found, ruleId = " + ruleId));
+            Rule rule = entityToModel(applyingEntity);
+            rule.setRulesetId(rulesetId);
+            rule.setMetadata(metadataService.detail(applyingEntity.getRuleMetadataId()));
+            return rule;
+        }
+
         DefaultRuleApplyingEntity defaultApplying = defaultRuleApplyingRepository.findById(ruleId).orElseThrow(
                 () -> new UnexpectedException("default rule applying not found, ruleId = " + ruleId));
         Optional<RuleApplyingEntity> applyingEntityOpt =
@@ -155,7 +167,24 @@ public class RuleService {
     }
 
     @PreAuthenticate(actions = "update", resourceType = "ODC_RULESET", indexOfIdParam = 0)
+    @Transactional(rollbackFor = Exception.class)
     public Rule update(@NonNull Long rulesetId, @NonNull Long ruleId, @NonNull Rule rule) {
+        Ruleset ruleset = rulesetService.detail(rulesetId);
+        if (!ruleset.getBuiltin()) {
+            RuleApplyingEntity savedRuleApplyingOpt;
+            savedRuleApplyingOpt = ruleApplyingRepository.findById(ruleId).orElseThrow(
+                    () -> new UnexpectedException("rule applying not found, ruleId = " + ruleId));
+            savedRuleApplyingOpt.setLevel(rule.getLevel());
+            savedRuleApplyingOpt.setEnabled(rule.getEnabled());
+            savedRuleApplyingOpt.setPropertiesJson(JsonUtils.toJson(rule.getProperties()));
+            if (Objects.nonNull(rule.getAppliedDialectTypes())) {
+                savedRuleApplyingOpt.setAppliedDialectTypes(
+                        rule.getAppliedDialectTypes().stream().map(DialectType::name).collect(Collectors.toList()));
+            }
+            ruleApplyingRepository.save(savedRuleApplyingOpt);
+            rulesetId2RulesCache.invalidate(rulesetId);
+            return rule;
+        }
         DefaultRuleApplyingEntity defaultApplying = defaultRuleApplyingRepository.findById(ruleId).orElseThrow(
                 () -> new UnexpectedException("default rule applying not found, ruleId = " + ruleId));
         Optional<RuleApplyingEntity> savedOpt =
@@ -189,6 +218,28 @@ public class RuleService {
         return rule;
     }
 
+    @SkipAuthorize("internal usage")
+    @Transactional(rollbackFor = Exception.class)
+    public List<Rule> create(@NotNull Long rulesetId, @NotEmpty List<Rule> rules) {
+        List<RuleApplyingEntity> entities = rules.stream().map(rule -> {
+            RuleApplyingEntity entity = new RuleApplyingEntity();
+            entity.setOrganizationId(authenticationFacade.currentOrganizationId());
+            entity.setRulesetId(rulesetId);
+            entity.setRuleMetadataId(rule.getMetadata().getId());
+            entity.setLevel(rule.getLevel());
+            entity.setEnabled(rule.getEnabled());
+            entity.setPropertiesJson(JsonUtils.toJson(rule.getProperties()));
+            if (Objects.nonNull(rule.getAppliedDialectTypes())) {
+                entity.setAppliedDialectTypes(
+                        rule.getAppliedDialectTypes().stream().map(DialectType::name).collect(Collectors.toList()));
+            }
+            return entity;
+        }).collect(Collectors.toList());
+        ruleApplyingRepository.batchCreate(entities);
+        return rules;
+    }
+
+
     private List<Rule> internalList(@NonNull Long rulesetId, @NonNull QueryRuleMetadataParams params) {
         List<RuleMetadata> ruleMetadatas = metadataService.list(params);
         if (CollectionUtils.isEmpty(ruleMetadatas)) {
@@ -198,15 +249,26 @@ public class RuleService {
         Map<Long, List<DefaultRuleApplyingEntity>> metadataId2DefaultRuleApplying =
                 defaultRuleApplyingRepository.findByRulesetName(ruleset.getName()).stream()
                         .collect(Collectors.groupingBy(DefaultRuleApplyingEntity::getRuleMetadataId));
-        if (metadataId2DefaultRuleApplying.isEmpty()) {
-            throw new UnexpectedException("default rule applying not found, rulesetId = " + rulesetId);
-        }
         List<Rule> rules = new ArrayList<>();
         Map<Long, List<RuleApplyingEntity>> metadataId2RuleApplying =
                 ruleApplyingRepository
                         .findByOrganizationIdAndRulesetId(authenticationFacade.currentOrganizationId(), rulesetId)
                         .stream()
                         .collect(Collectors.groupingBy(RuleApplyingEntity::getRuleMetadataId));
+
+        // user-defined ruleset, just use user-defined rule values
+        if (!ruleset.getBuiltin()) {
+            ruleMetadatas.forEach(metadata -> {
+                RuleApplyingEntity userDefinedRuleApplying = metadataId2RuleApplying.get(metadata.getId()).get(0);
+                Verify.notNull(userDefinedRuleApplying, "userDefinedRuleApplying");
+                Rule rule = entityToModel(userDefinedRuleApplying);
+                rule.setRulesetId(rulesetId);
+                rule.setMetadata(metadata);
+                rules.add(rule);
+            });
+            return rules;
+        }
+        // builtin ruleset, merge default rule values and user-defined rule values
         ruleMetadatas.forEach(metadata -> {
             if (!metadataId2DefaultRuleApplying.containsKey(metadata.getId())) {
                 throw new UnexpectedException("default rule applying not found, ruleMetadataId = " + metadata.getId());
