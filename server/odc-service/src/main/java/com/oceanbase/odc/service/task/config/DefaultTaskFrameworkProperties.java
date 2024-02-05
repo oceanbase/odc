@@ -48,6 +48,10 @@ public class DefaultTaskFrameworkProperties implements TaskFrameworkProperties {
     // job will be timeout when last report time more than this duration
     private int jobHeartTimeoutSeconds;
 
+    private int executorWaitingToRunThresholdSeconds;
+
+    private int executorWaitingToRunThresholdCount;
+
     // job to be canceled timeout and current status is cancelling
     private int jobCancelTimeoutSeconds = 2 * 60;
 

@@ -9,7 +9,7 @@
              缺省为 odc 工作路径下的 log 目录，
              Linux 下更符合惯例的日志目录其实是 /var/log/odc
         -->
-        <Property name="LOG_DIRECTORY">${sys:odc.log.directory:-./log/task}</Property>
+        <Property name="LOG_DIRECTORY">${sys:odc.log.directory}/task</Property>
 
         <!-- 日志格式配置，注意 %class, %line 成本较高，可能会导致日志性能下降大约 80%，当日志数据规模较大时需优化。
              如果每个类的 log 对象都基于当前类生成，%logger 可作为 %class 的替代。
@@ -106,6 +106,9 @@
             <AppenderRef ref="ExecutorFileAppender"/>
         </Logger>
         <Logger name="com.oceanbase.odc.service.task.executor.logger" level="INFO" additivity="false">
+            <AppenderRef ref="ExecutorFileAppender"/>
+        </Logger>
+        <Logger name="com.oceanbase.odc.service.objectstorage.cloud" level="INFO" additivity="false">
             <AppenderRef ref="ExecutorFileAppender"/>
         </Logger>
         <!-- 接口日志输出 end -->
