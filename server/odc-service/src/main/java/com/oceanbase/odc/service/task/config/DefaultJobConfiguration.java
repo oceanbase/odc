@@ -67,5 +67,5 @@ public abstract class DefaultJobConfiguration implements JobConfiguration {
 
     protected TransactionManager transactionManager;
 
-    protected StartJobRateLimiter  startJobRateLimiter;
+    protected StartJobRateLimiter startJobRateLimiter;
 }

@@ -16,7 +16,6 @@
 
 package com.oceanbase.odc.service.task.config;
 
-import org.apache.hadoop.thirdparty.com.google.common.util.concurrent.RateLimiter;
 import org.quartz.Scheduler;
 
 import com.oceanbase.odc.common.event.EventPublisher;

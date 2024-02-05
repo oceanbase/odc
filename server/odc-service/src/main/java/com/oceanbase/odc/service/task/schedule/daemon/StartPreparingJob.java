@@ -58,7 +58,7 @@ public class StartPreparingJob implements Job {
         configuration = JobConfigurationHolder.getJobConfiguration();
         JobConfigurationValidator.validComponent();
         TaskFrameworkProperties taskFrameworkProperties = configuration.getTaskFrameworkProperties();
-        if (configuration.getStartJobRateLimiter().tryAcquire()) {
+        if (!configuration.getStartJobRateLimiter().tryAcquire()) {
             log.warn("Amount of executors waiting to run exceed threshold, wait next schedule, threshold={}.",
                     taskFrameworkProperties.getExecutorWaitingToRunThresholdCount());
             return;
