@@ -17,8 +17,13 @@ package com.oceanbase.odc.metadb.partitionplan;
 
 import java.util.List;
 
+import javax.transaction.Transactional;
+
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 /**
  * {@link PartitionPlanRepository}
@@ -31,5 +36,12 @@ public interface PartitionPlanRepository extends JpaRepository<PartitionPlanEnti
         JpaSpecificationExecutor<PartitionPlanEntity> {
 
     List<PartitionPlanEntity> findByDatabaseIdAndEnabled(Long databaseId, Boolean enabled);
+
+    @Transactional
+    @Query("update PartitionPlanEntity set enabled=:enabled,"
+            + "lastModifierId=:lastModifierId where databaseId=:databaseId")
+    @Modifying
+    int updateEnabledAndLastModifierIdByDatabaseId(@Param("databaseId") Long databaseId,
+            @Param("enabled") Boolean enabled, @Param("lastModifierId") Long lastModifierId);
 
 }

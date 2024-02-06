@@ -18,7 +18,12 @@ package com.oceanbase.odc.metadb.partitionplan;
 import java.util.List;
 import java.util.function.Function;
 
+import javax.transaction.Transactional;
+
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import com.oceanbase.odc.common.jpa.InsertSqlTemplateBuilder;
 import com.oceanbase.odc.config.jpa.OdcJpaRepository;
@@ -34,6 +39,12 @@ public interface PartitionPlanTableRepository extends OdcJpaRepository<Partition
         JpaSpecificationExecutor<PartitionPlanTableEntity> {
 
     List<PartitionPlanTableEntity> findByPartitionPlanIdInAndEnabled(List<Long> partitionPlanIds, Boolean enabled);
+
+    @Transactional
+    @Query("update PartitionPlanTableEntity set enabled=:enabled where partitionPlanId=:partitionPlanId")
+    @Modifying
+    int updateEnabledByPartitionPlanId(@Param("partitionPlanId") Long partitionPlanId,
+            @Param("enabled") Boolean enabled);
 
     default List<PartitionPlanTableEntity> batchCreate(List<PartitionPlanTableEntity> entities) {
         String sql = InsertSqlTemplateBuilder.from("partitionplan_table")

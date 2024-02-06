@@ -68,6 +68,8 @@ public class PartitionPlanTablePartitionKeyEntity {
     @Enumerated(value = EnumType.STRING)
     @Column(name = "strategy", nullable = false, updatable = false)
     private PartitionPlanStrategy strategy;
+    @Column(name = "partitionplan_id", nullable = false)
+    private long partitionPlanId;
     @Column(name = "partitionplan_table_id", nullable = false)
     private long partitionplanTableId;
     /**
