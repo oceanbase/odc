@@ -104,7 +104,7 @@ public class StructureComparisonService {
     /**
      * Maximum number of bytes returned by total sql change script, default value 1 MB
      */
-    private final Long MAX_TOTAL_SCRIPT_SIZE = 1048576L;
+    private final Long MAX_TOTAL_SCRIPT_SIZE_BYTES = 1048576L;
 
 
     public StructureComparisonContext create(@NonNull DBStructureComparisonParameter parameters, @NonNull Long taskId,
@@ -197,7 +197,7 @@ public class StructureComparisonService {
                             .concat(authenticationFacade.currentUserIdStr()), taskEntity.getStorageObjectId());
             Validate.notNull(storageObject, "StorageObject can not be null");
             Validate.notNull(storageObject.getMetadata(), "ObjectMetadata can not be null");
-            if (storageObject.getMetadata().getTotalLength() > MAX_TOTAL_SCRIPT_SIZE) {
+            if (storageObject.getMetadata().getTotalLength() > MAX_TOTAL_SCRIPT_SIZE_BYTES) {
                 resp.setOverSizeLimit(true);
             } else {
                 resp.setTotalChangeScript(

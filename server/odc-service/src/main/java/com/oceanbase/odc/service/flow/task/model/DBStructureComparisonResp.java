@@ -38,7 +38,7 @@ public class DBStructureComparisonResp {
     private PaginatedResponse<ObjectComparisonResult> comparisonResults;
     private String totalChangeScript;
     private String storageObjectId;
-    private boolean isOverSizeLimit;
+    private boolean overSizeLimit;
 
     @Data
     @NoArgsConstructor
