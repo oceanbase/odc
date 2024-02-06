@@ -95,11 +95,13 @@ public class ImmediateJobDispatcher implements JobDispatcher {
         K8sProperties k8s = taskFrameworkProperties.getK8sProperties();
 
         PodConfig podConfig = new PodConfig();
-        podConfig.setNamespace(StringUtils.isNotBlank(k8s.getNamespace()) ? k8s.getNamespace() : null);
+        if (StringUtils.isNotBlank(k8s.getNamespace())) {
+            podConfig.setNamespace(k8s.getNamespace());
+        }
         JobImageNameProvider jobImageNameProvider = JobConfigurationHolder.getJobConfiguration()
                 .getJobImageNameProvider();
         podConfig.setImage(jobImageNameProvider.provide());
-        podConfig.setCommand(Arrays.asList("sh", "-c", "/opt/odc/bin/start-odc.sh"));
+        podConfig.setCommand(Arrays.asList("sh", "-c", "/opt/odc/bin/start-job.sh"));
         podConfig.setRegion(StringUtils.isNotBlank(k8s.getRegion()) ? k8s.getRegion()
                 : SystemUtils.getEnvOrProperty(JobEnvKeyConstants.OB_ARN_PARTITION));
 
