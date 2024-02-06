@@ -18,9 +18,11 @@ package com.oceanbase.odc.metadb.partitionplan;
 import java.util.List;
 import java.util.function.Function;
 
+import javax.persistence.LockModeType;
 import javax.transaction.Transactional;
 
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -43,11 +45,13 @@ public interface PartitionPlanTablePartitionKeyRepository
             List<Long> partitionplanTableId, Boolean enabled);
 
     @Transactional
-    @Query("update PartitionPlanTablePartitionKeyEntity "
-            + "set enabled=:enabled where partitionPlanId in (:partitionPlanIds)")
+    @Lock(value = LockModeType.PESSIMISTIC_WRITE)
+    List<PartitionPlanTablePartitionKeyEntity> findByIdIn(List<Long> ids);
+
+    @Transactional
+    @Query("update PartitionPlanTablePartitionKeyEntity set enabled=:enabled where id in (:ids)")
     @Modifying
-    int updateEnabledByPartitionPlanIds(@Param("partitionPlanIds") List<Long> partitionPlanIds,
-            @Param("enabled") Boolean enabled);
+    int updateEnabledByIdIn(@Param("ids") List<Long> ids, @Param("enabled") Boolean enabled);
 
     default List<PartitionPlanTablePartitionKeyEntity> batchCreate(
             List<PartitionPlanTablePartitionKeyEntity> entities) {
@@ -55,7 +59,7 @@ public interface PartitionPlanTablePartitionKeyRepository
                 .field(PartitionPlanTablePartitionKeyEntity_.partitionKey)
                 .field(PartitionPlanTablePartitionKeyEntity_.strategy)
                 .field(PartitionPlanTablePartitionKeyEntity_.partitionplanTableId)
-                .field("partitionplan_id").field("is_enabled")
+                .field("is_enabled")
                 .field(PartitionPlanTablePartitionKeyEntity_.partitionKeyInvoker)
                 .field(PartitionPlanTablePartitionKeyEntity_.partitionKeyInvokerParameters)
                 .build();
@@ -63,7 +67,6 @@ public interface PartitionPlanTablePartitionKeyRepository
                 .add(PartitionPlanTablePartitionKeyEntity::getPartitionKey)
                 .add(p -> p.getStrategy().name())
                 .add(PartitionPlanTablePartitionKeyEntity::getPartitionplanTableId)
-                .add(PartitionPlanTablePartitionKeyEntity::getPartitionPlanId)
                 .add(PartitionPlanTablePartitionKeyEntity::getEnabled)
                 .add(PartitionPlanTablePartitionKeyEntity::getPartitionKeyInvoker)
                 .add(PartitionPlanTablePartitionKeyEntity::getPartitionKeyInvokerParameters)

@@ -17,10 +17,12 @@ package com.oceanbase.odc.metadb.partitionplan;
 
 import java.util.List;
 
+import javax.persistence.LockModeType;
 import javax.transaction.Transactional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -38,16 +40,13 @@ public interface PartitionPlanRepository extends JpaRepository<PartitionPlanEnti
     List<PartitionPlanEntity> findByDatabaseIdAndEnabled(Long databaseId, Boolean enabled);
 
     @Transactional
-    @Query("update PartitionPlanEntity set enabled=:enabled,"
-            + "lastModifierId=:lastModifierId where databaseId=:databaseId")
-    @Modifying
-    int updateEnabledAndLastModifierIdByDatabaseId(@Param("databaseId") Long databaseId,
-            @Param("enabled") Boolean enabled, @Param("lastModifierId") Long lastModifierId);
+    @Lock(value = LockModeType.PESSIMISTIC_WRITE)
+    List<PartitionPlanEntity> findByIdIn(List<Long> ids);
 
     @Transactional
     @Query("update PartitionPlanEntity set enabled=:enabled, lastModifierId=:lastModifierId where id in (:ids)")
     @Modifying
-    int updateEnabledAndLastModifierIdByIds(@Param("ids") List<Long> ids,
+    int updateEnabledAndLastModifierIdByIdIn(@Param("ids") List<Long> ids,
             @Param("enabled") Boolean enabled, @Param("lastModifierId") Long lastModifierId);
 
 }

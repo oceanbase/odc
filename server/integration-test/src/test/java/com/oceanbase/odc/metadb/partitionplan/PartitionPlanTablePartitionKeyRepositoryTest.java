@@ -97,12 +97,23 @@ public class PartitionPlanTablePartitionKeyRepositoryTest extends ServiceTestEnv
     }
 
     @Test
-    public void updateEnabledByDatabaseId_convertToFalse_concertSucceed() {
+    public void findByIdIn_candidateExists_returnNotNull() {
         PartitionPlanTablePartitionKeyEntity actual = createRoleEntity();
         actual.setId(null);
         actual.setEnabled(true);
         actual = this.repository.save(actual);
-        this.repository.updateEnabledByPartitionPlanIds(Collections.singletonList(actual.getPartitionPlanId()), false);
+        List<PartitionPlanTablePartitionKeyEntity> expect = this.repository
+                .findByIdIn(Collections.singletonList(actual.getId()));
+        Assert.assertEquals(expect, Collections.singletonList(actual));
+    }
+
+    @Test
+    public void updateEnabledByIdIn_convertToFalse_concertSucceed() {
+        PartitionPlanTablePartitionKeyEntity actual = createRoleEntity();
+        actual.setId(null);
+        actual.setEnabled(true);
+        actual = this.repository.save(actual);
+        this.repository.updateEnabledByIdIn(Collections.singletonList(actual.getId()), false);
         Optional<PartitionPlanTablePartitionKeyEntity> optional = this.repository.findById(actual.getId());
         Assert.assertFalse(optional.get().getEnabled());
     }
