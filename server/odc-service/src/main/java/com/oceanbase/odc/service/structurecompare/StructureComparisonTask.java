@@ -112,6 +112,13 @@ public class StructureComparisonTask implements Callable<DBStructureComparisonTa
                     (System.currentTimeMillis() - startTimestamp) / 1000);
             return taskResult;
         } finally {
+            try {
+                ((AutoCloseable) srcConfig.getDataSource()).close();
+                ((AutoCloseable) tgtConfig.getDataSource()).close();
+            } catch (Exception e) {
+                log.warn("Failed to close structureComparisonTask dataSource, structureComparisonTaskId={}",
+                        this.taskResult.getTaskId(), e);
+            }
             StructureComparisonTraceContextHolder.clear();
         }
     }

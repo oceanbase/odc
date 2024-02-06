@@ -26,6 +26,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -71,7 +72,6 @@ import com.oceanbase.odc.metadb.regulation.risklevel.RiskLevelRepository;
 import com.oceanbase.odc.metadb.task.TaskEntity;
 import com.oceanbase.odc.metadb.task.TaskRepository;
 import com.oceanbase.odc.metadb.task.TaskSpecs;
-import com.oceanbase.odc.service.collaboration.project.model.Project;
 import com.oceanbase.odc.service.connection.database.DatabaseService;
 import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
@@ -340,13 +340,23 @@ public class FlowResponseMapperFactory {
         if (CollectionUtils.isNotEmpty(databaseIds)) {
             id2Database = databaseService.listDatabasesByIds(databaseIds).stream()
                     .collect(Collectors.toMap(Database::getId, database -> database));
+
             // set project name for structure comparison task
+            Set<Long> projectIds = sourceDatabaseIdsInComparisonTask.stream()
+                    .map(id2Database::get)
+                    .filter(Objects::nonNull)
+                    .map(database -> database.getProject().getId())
+                    .collect(Collectors.toSet());
+            Map<Long, ProjectEntity> id2ProjectEntity = projectRepository.findByIdIn(projectIds).stream()
+                    .collect(Collectors.toMap(ProjectEntity::getId, Function.identity()));
+
             for (Long id : sourceDatabaseIdsInComparisonTask) {
+                Database database = id2Database.get(id);
                 if (Objects.nonNull(id2Database.get(id))) {
-                    Project project = id2Database.get(id).getProject();
-                    ProjectEntity projectEntity = projectRepository.findById(project.getId()).orElseThrow(
-                            () -> new NotFoundException(ResourceType.ODC_PROJECT, "projectId", project.getId()));
-                    project.setName(projectEntity.getName());
+                    Long projectId = database.getProject().getId();
+                    ProjectEntity projectEntity = Optional.ofNullable(id2ProjectEntity.get(projectId))
+                            .orElseThrow(() -> new NotFoundException(ResourceType.ODC_PROJECT, "projectId", projectId));
+                    database.getProject().setName(projectEntity.getName());
                 }
             }
         }

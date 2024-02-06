@@ -39,12 +39,9 @@ import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Service;
 
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
-import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.core.shared.exception.AccessDeniedException;
 import com.oceanbase.odc.core.shared.exception.NotFoundException;
-import com.oceanbase.odc.metadb.connection.DatabaseEntity;
-import com.oceanbase.odc.metadb.connection.DatabaseRepository;
 import com.oceanbase.odc.metadb.iam.UserEntity;
 import com.oceanbase.odc.metadb.structurecompare.StructureComparisonEntitySpecs;
 import com.oceanbase.odc.metadb.structurecompare.StructureComparisonTaskEntity;
@@ -53,6 +50,8 @@ import com.oceanbase.odc.metadb.structurecompare.StructureComparisonTaskResultEn
 import com.oceanbase.odc.metadb.structurecompare.StructureComparisonTaskResultRepository;
 import com.oceanbase.odc.service.common.response.Responses;
 import com.oceanbase.odc.service.connection.ConnectionService;
+import com.oceanbase.odc.service.connection.database.DatabaseService;
+import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.connection.util.ConnectionMapper;
 import com.oceanbase.odc.service.flow.ApprovalPermissionService;
@@ -89,8 +88,6 @@ public class StructureComparisonService {
     @Autowired
     private StructureComparisonTaskRepository structureComparisonTaskRepository;
     @Autowired
-    private DatabaseRepository databaseRepository;
-    @Autowired
     private StructureComparisonTaskResultRepository structureComparisonTaskResultRepository;
     @Autowired
     private ObjectStorageFacade objectStorageFacade;
@@ -99,13 +96,14 @@ public class StructureComparisonService {
     @Autowired
     private ConnectionService connectionService;
     @Autowired
+    private DatabaseService databaseService;
+    @Autowired
     private ApprovalPermissionService approvalPermissionService;
     private final ConnectionMapper connectionMapper = ConnectionMapper.INSTANCE;
     /**
      * Maximum number of bytes returned by total sql change script, default value 1 MB
      */
     private final Long MAX_TOTAL_SCRIPT_SIZE_BYTES = 1048576L;
-
 
     public StructureComparisonContext create(@NonNull DBStructureComparisonParameter parameters, @NonNull Long taskId,
             @NonNull Long creatorId, @NonNull Long flowInstanceId) {
@@ -129,8 +127,8 @@ public class StructureComparisonService {
     private DBStructureComparisonConfig initSourceComparisonConfig(DBStructureComparisonParameter parameters) {
         DBStructureComparisonConfig srcConfig = new DBStructureComparisonConfig();
 
-        DatabaseEntity database = getDatabaseEntityByDatabaseId(parameters.getSourceDatabaseId());
-        ConnectionConfig connectionConfig = getConnectionConfigByDatabaseEntity(database);
+        Database database = databaseService.detail((parameters.getSourceDatabaseId()));
+        ConnectionConfig connectionConfig = connectionService.getForConnect(database.getDataSource().getId());
 
         srcConfig.setSchemaName(database.getName());
         srcConfig.setConnectType(connectionConfig.getType());
@@ -148,30 +146,16 @@ public class StructureComparisonService {
     private DBStructureComparisonConfig initTargetComparisonConfig(DBStructureComparisonParameter parameters) {
         DBStructureComparisonConfig tgtConfig = new DBStructureComparisonConfig();
 
-        DatabaseEntity database = getDatabaseEntityByDatabaseId(parameters.getTargetDatabaseId());
-        ConnectionConfig connectionConfig = getConnectionConfigByDatabaseEntity(database);
+        Database database = databaseService.detail(parameters.getTargetDatabaseId());
+        ConnectionConfig connectionConfig = connectionService.getForConnect(database.getDataSource().getId());
         tgtConfig.setSchemaName(database.getName());
         tgtConfig.setConnectType(connectionConfig.getType());
         tgtConfig.setDataSource(new DruidDataSourceFactory(connectionConfig).getDataSource());
         return tgtConfig;
     }
 
-    private DatabaseEntity getDatabaseEntityByDatabaseId(Long databaseId) {
-        return databaseRepository.findById(databaseId).orElseThrow(
-                () -> new NotFoundException(ResourceType.ODC_DATABASE, "source database id", databaseId));
-    }
-
-    private ConnectionConfig getConnectionConfigByDatabaseEntity(DatabaseEntity databaseEntity) {
-        Long connectionId = databaseEntity.getConnectionId();
-        ConnectionConfig connectionConfig = connectionService.getForConnectionSkipPermissionCheck(
-                connectionId);
-        Verify.notNull(connectionConfig, "ConnectionConfig");
-        return connectionConfig;
-    }
-
     public DBStructureComparisonResp getDBStructureComparisonResult(@NonNull Long id, OperationType operationType,
-            String dbObjectName,
-            @NotNull Pageable pageable) {
+            String dbObjectName, @NotNull Pageable pageable) {
         StructureComparisonTaskEntity taskEntity = structureComparisonTaskRepository.findById(id).orElseThrow(
                 () -> new NotFoundException(ResourceType.ODC_STRUCTURE_COMPARISON_TASK, "id", id));
         checkPermission(taskEntity);
@@ -231,16 +215,14 @@ public class StructureComparisonService {
      * results: 1. The current user is the creator of the structure comparison task 2. The current user
      * is the approver of the structure comparison task
      */
-    private void checkPermission(StructureComparisonTaskEntity taskEntity) {
-        if (currentUserId().equals(taskEntity.getCreatorId())) {
+    private void checkPermission(@NonNull StructureComparisonTaskEntity taskEntity) {
+        if (Objects.equals(currentUserId(), taskEntity.getCreatorId())) {
             return;
         }
         Map<Long, Set<UserEntity>> flowInstanceId2Users = approvalPermissionService
                 .getApproverByFlowInstanceIds(Collections.singleton(taskEntity.getFlowInstanceId()));
-        Set<Long> approvalUserIds =
-                flowInstanceId2Users.get(taskEntity.getFlowInstanceId()).stream().filter(Objects::nonNull)
-                        .map(UserEntity::getId).collect(
-                                Collectors.toSet());
+        Set<Long> approvalUserIds = flowInstanceId2Users.get(taskEntity.getFlowInstanceId()).stream()
+                .filter(Objects::nonNull).map(UserEntity::getId).collect(Collectors.toSet());
         if (approvalUserIds.contains(currentUserId())) {
             return;
         }

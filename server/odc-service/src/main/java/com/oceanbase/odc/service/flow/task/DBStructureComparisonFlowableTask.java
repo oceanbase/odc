@@ -68,8 +68,9 @@ public class DBStructureComparisonFlowableTask extends BaseODCFlowTaskDelegate<V
         if (context == null) {
             throw new IllegalStateException("Context is null, structure comparison task may not be running");
         }
+        // TODO: fix the current termination operation will not take effect
         boolean result = context.cancel(true);
-        log.info("structure comparison task has been cancelled, taskId={}, result={}", taskId, result);
+        log.info("Structure comparison task has been cancelled, taskId={}, result={}", taskId, result);
         taskService.cancel(taskId, context.getStatus());
         return result;
     }
