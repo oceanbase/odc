@@ -352,11 +352,13 @@ public class FlowResponseMapperFactory {
 
             for (Long id : sourceDatabaseIdsInComparisonTask) {
                 Database database = id2Database.get(id);
-                if (Objects.nonNull(id2Database.get(id))) {
+                if (Objects.nonNull(database) && Objects.nonNull(database.getProject())) {
                     Long projectId = database.getProject().getId();
-                    ProjectEntity projectEntity = Optional.ofNullable(id2ProjectEntity.get(projectId))
-                            .orElseThrow(() -> new NotFoundException(ResourceType.ODC_PROJECT, "projectId", projectId));
-                    database.getProject().setName(projectEntity.getName());
+                    if (Objects.nonNull(projectId)) {
+                        ProjectEntity projectEntity = Optional.ofNullable(id2ProjectEntity.get(projectId)).orElseThrow(
+                                () -> new NotFoundException(ResourceType.ODC_PROJECT, "projectId", projectId));
+                        database.getProject().setName(projectEntity.getName());
+                    }
                 }
             }
         }
