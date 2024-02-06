@@ -16,6 +16,7 @@
 package com.oceanbase.odc.service.schedule;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -70,6 +71,7 @@ import com.oceanbase.odc.service.flow.task.model.DatabaseChangeParameters;
 import com.oceanbase.odc.service.iam.UserService;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.iam.model.User;
+import com.oceanbase.odc.service.logger.LoggerService;
 import com.oceanbase.odc.service.objectstorage.ObjectStorageFacade;
 import com.oceanbase.odc.service.quartz.QuartzJobService;
 import com.oceanbase.odc.service.quartz.util.ScheduleTaskUtils;
@@ -115,6 +117,9 @@ public class ScheduleService {
     private UserService userService;
     @Autowired
     private ObjectStorageFacade objectStorageFacade;
+
+    @Autowired
+    private LoggerService loggerService;
 
     @Autowired
     private TaskRepository taskRepository;
@@ -424,6 +429,14 @@ public class ScheduleService {
     public String getLog(Long scheduleId, Long taskId, OdcTaskLogLevel logLevel) {
         nullSafeGetByIdWithCheckPermission(scheduleId);
         ScheduleTaskEntity taskEntity = scheduleTaskService.nullSafeGetById(taskId);
+        if (taskEntity.getJobId() != null) {
+            try {
+                return loggerService.getLogByTaskFramework(logLevel, taskEntity.getJobId());
+            } catch (IOException e) {
+                log.warn("Copy input stream to file failed.", e);
+                throw new UnexpectedException("Copy input stream to file failed.");
+            }
+        }
         ExecutorInfo executorInfo = JsonUtils.fromJson(taskEntity.getExecutor(), ExecutorInfo.class);
         if (!dispatchChecker.isThisMachine(executorInfo)) {
             try {
