@@ -41,9 +41,9 @@ public interface PartitionPlanTableRepository extends OdcJpaRepository<Partition
     List<PartitionPlanTableEntity> findByPartitionPlanIdInAndEnabled(List<Long> partitionPlanIds, Boolean enabled);
 
     @Transactional
-    @Query("update PartitionPlanTableEntity set enabled=:enabled where partitionPlanId=:partitionPlanId")
+    @Query("update PartitionPlanTableEntity set enabled=:enabled where partitionPlanId in (:partitionPlanIds)")
     @Modifying
-    int updateEnabledByPartitionPlanId(@Param("partitionPlanId") Long partitionPlanId,
+    int updateEnabledByPartitionPlanIds(@Param("partitionPlanIds") List<Long> partitionPlanIds,
             @Param("enabled") Boolean enabled);
 
     default List<PartitionPlanTableEntity> batchCreate(List<PartitionPlanTableEntity> entities) {

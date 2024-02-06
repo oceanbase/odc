@@ -102,7 +102,7 @@ public class PartitionPlanTablePartitionKeyRepositoryTest extends ServiceTestEnv
         actual.setId(null);
         actual.setEnabled(true);
         actual = this.repository.save(actual);
-        this.repository.updateEnabledByPartitionPlanId(actual.getPartitionPlanId(), false);
+        this.repository.updateEnabledByPartitionPlanIds(Collections.singletonList(actual.getPartitionPlanId()), false);
         Optional<PartitionPlanTablePartitionKeyEntity> optional = this.repository.findById(actual.getId());
         Assert.assertFalse(optional.get().getEnabled());
     }

@@ -43,9 +43,10 @@ public interface PartitionPlanTablePartitionKeyRepository
             List<Long> partitionplanTableId, Boolean enabled);
 
     @Transactional
-    @Query("update PartitionPlanTablePartitionKeyEntity set enabled=:enabled where partitionPlanId=:partitionPlanId")
+    @Query("update PartitionPlanTablePartitionKeyEntity "
+            + "set enabled=:enabled where partitionPlanId in (:partitionPlanIds)")
     @Modifying
-    int updateEnabledByPartitionPlanId(@Param("partitionPlanId") Long partitionPlanId,
+    int updateEnabledByPartitionPlanIds(@Param("partitionPlanIds") List<Long> partitionPlanIds,
             @Param("enabled") Boolean enabled);
 
     default List<PartitionPlanTablePartitionKeyEntity> batchCreate(

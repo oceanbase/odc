@@ -84,6 +84,17 @@ public class PartitionPlanRepositoryTest extends ServiceTestEnv {
         Assert.assertFalse(optional.get().getEnabled());
     }
 
+    @Test
+    public void updateEnabledByIds_convertToFalse_concertSucceed() {
+        PartitionPlanEntity actual = createRoleEntity();
+        actual.setId(null);
+        actual.setEnabled(true);
+        actual = this.repository.save(actual);
+        this.repository.updateEnabledAndLastModifierIdByIds(Collections.singletonList(actual.getId()), false, 123L);
+        Optional<PartitionPlanEntity> optional = this.repository.findById(actual.getId());
+        Assert.assertFalse(optional.get().getEnabled());
+    }
+
     private PartitionPlanEntity createRoleEntity() {
         return TestRandom.nextObject(PartitionPlanEntity.class);
     }

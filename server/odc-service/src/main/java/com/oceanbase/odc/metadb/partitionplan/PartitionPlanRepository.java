@@ -44,4 +44,10 @@ public interface PartitionPlanRepository extends JpaRepository<PartitionPlanEnti
     int updateEnabledAndLastModifierIdByDatabaseId(@Param("databaseId") Long databaseId,
             @Param("enabled") Boolean enabled, @Param("lastModifierId") Long lastModifierId);
 
+    @Transactional
+    @Query("update PartitionPlanEntity set enabled=:enabled, lastModifierId=:lastModifierId where id in (:ids)")
+    @Modifying
+    int updateEnabledAndLastModifierIdByIds(@Param("ids") List<Long> ids,
+            @Param("enabled") Boolean enabled, @Param("lastModifierId") Long lastModifierId);
+
 }
