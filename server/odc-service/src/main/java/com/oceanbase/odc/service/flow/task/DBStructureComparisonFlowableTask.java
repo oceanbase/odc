@@ -51,6 +51,7 @@ import com.oceanbase.odc.service.flow.task.model.DBStructureComparisonTaskResult
 import com.oceanbase.odc.service.flow.task.model.DBStructureComparisonTaskResult.Comparing;
 import com.oceanbase.odc.service.flow.util.FlowTaskUtil;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
+import com.oceanbase.odc.service.iam.util.SecurityContextUtils;
 import com.oceanbase.odc.service.objectstorage.ObjectStorageFacade;
 import com.oceanbase.odc.service.objectstorage.model.ObjectMetadata;
 import com.oceanbase.odc.service.session.factory.DruidDataSourceFactory;
@@ -247,28 +248,44 @@ public class DBStructureComparisonFlowableTask extends BaseODCFlowTaskDelegate<V
 
     @Override
     protected void onTimeout(Long taskId, TaskService taskService) {
-        log.warn("Structure comparison task timeout, taskId={}", taskId);
+        SecurityContextUtils.setCurrentUser(authenticationFacade.currentUser());
+        StructureComparisonTraceContextHolder.trace(authenticationFacade.currentUser().getId(), taskId);
+        try {
+            log.warn("Structure comparison task timeout, taskId={}", taskId);
+        } finally {
+            StructureComparisonTraceContextHolder.clear();
+        }
     }
 
     @Override
     protected void onFailure(Long taskId, TaskService taskService) {
-        log.warn("Structure comparison task failed, taskId={}", taskId);
-        taskResult.setStatus(TaskStatus.FAILED);
-        taskService.fail(taskId, comparator.getProgress(), taskResult);
-        super.onFailure(taskId, taskService);
+        SecurityContextUtils.setCurrentUser(authenticationFacade.currentUser());
+        StructureComparisonTraceContextHolder.trace(authenticationFacade.currentUser().getId(), taskId);
+        try {
+            log.warn("Structure comparison task failed, taskId={}", taskId);
+            taskResult.setStatus(TaskStatus.FAILED);
+            taskService.fail(taskId, comparator.getProgress(), taskResult);
+            super.onFailure(taskId, taskService);
+        } finally {
+            StructureComparisonTraceContextHolder.clear();
+        }
 
     }
 
     @Override
     protected void onSuccessful(Long taskId, TaskService taskService) {
+        SecurityContextUtils.setCurrentUser(authenticationFacade.currentUser());
+        StructureComparisonTraceContextHolder.trace(authenticationFacade.currentUser().getId(), taskId);
         log.info("Structure comparison task succeed, taskId={}", taskId);
         try {
             taskService.succeed(taskId, taskResult);
             updateFlowInstanceStatus(FlowStatus.EXECUTION_SUCCEEDED);
+            super.onSuccessful(taskId, taskService);
         } catch (Exception e) {
-            log.warn("Failed to get structure comparison task result", e);
+            log.warn("Failed to record structure comparison task successful result", e);
+        } finally {
+            StructureComparisonTraceContextHolder.clear();
         }
-        super.onSuccessful(taskId, taskService);
     }
 
     @Override

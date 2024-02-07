@@ -25,5 +25,5 @@ create table if not exists `structure_comparison_task`(
   `target_connect_database_id` bigint(20) NOT NULL COMMENT 'Target connect database id, references connect_database(id)',
   `storage_object_id` varchar(1024) default NULL COMMENT 'The storage object id of the total change script file, references objectstorage_object_metadata(object_id)',
   CONSTRAINT `pk_structure_comparison_task_id` PRIMARY KEY(`id`),
-  CONSTRAINT `uk_structure_comparison_task_id_flow_instance_id` UNIQUE(`id`, `flow_instance_id`)
+  CONSTRAINT `uk_structure_comparison_task_flow_instance_id` UNIQUE(`flow_instance_id`)
 );
