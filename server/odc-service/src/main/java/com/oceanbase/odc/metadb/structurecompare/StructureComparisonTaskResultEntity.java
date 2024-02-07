@@ -65,7 +65,7 @@ public class StructureComparisonTaskResultEntity {
      * Related structure comparison task id, refer to structure_comparison_task(id)
      */
     @Column(name = "structure_comparison_task_id", nullable = false)
-    private long comparisonTaskId;
+    private long structureComparisonTaskId;
     /**
      * The type of the database object to be compared
      */
@@ -87,12 +87,12 @@ public class StructureComparisonTaskResultEntity {
      * Source database object DDL
      */
     @Column(name = "source_database_object_ddl")
-    private String sourceObjectDdl;
+    private String sourceDatabaseObjectDdl;
     /**
      * Target database object DDL
      */
     @Column(name = "target_database_object_ddl")
-    private String targetObjectDdl;
+    private String targetDatabaseObjectDdl;
     /**
      * Change sql script to convert target database object to source database object
      */

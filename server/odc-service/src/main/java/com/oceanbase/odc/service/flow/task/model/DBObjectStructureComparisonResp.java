@@ -45,8 +45,8 @@ public class DBObjectStructureComparisonResp {
         resp.setDbObjectName(entity.getDatabaseObjectName());
         resp.setDbObjectType(entity.getDatabaseObjectType());
         resp.setOperationType(OperationType.fromComparisonResult(entity.getComparingResult()));
-        resp.setSourceObjectDdl(entity.getSourceObjectDdl());
-        resp.setTargetObjectDdl(entity.getTargetObjectDdl());
+        resp.setSourceObjectDdl(entity.getSourceDatabaseObjectDdl());
+        resp.setTargetObjectDdl(entity.getTargetDatabaseObjectDdl());
         resp.setChangeScript(entity.getChangeSqlScript());
         return resp;
     }

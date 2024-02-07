@@ -18,12 +18,10 @@ package com.oceanbase.odc.service.structurecompare;
 import java.io.File;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 
 import javax.validation.constraints.NotNull;
@@ -31,14 +29,15 @@ import javax.validation.constraints.NotNull;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.Validate;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
-import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
+import com.oceanbase.odc.core.shared.constant.DialectType;
+import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.core.shared.exception.AccessDeniedException;
 import com.oceanbase.odc.core.shared.exception.NotFoundException;
@@ -49,26 +48,15 @@ import com.oceanbase.odc.metadb.structurecompare.StructureComparisonTaskReposito
 import com.oceanbase.odc.metadb.structurecompare.StructureComparisonTaskResultEntity;
 import com.oceanbase.odc.metadb.structurecompare.StructureComparisonTaskResultRepository;
 import com.oceanbase.odc.service.common.response.Responses;
-import com.oceanbase.odc.service.connection.ConnectionService;
-import com.oceanbase.odc.service.connection.database.DatabaseService;
-import com.oceanbase.odc.service.connection.database.model.Database;
-import com.oceanbase.odc.service.connection.model.ConnectionConfig;
-import com.oceanbase.odc.service.connection.util.ConnectionMapper;
 import com.oceanbase.odc.service.flow.ApprovalPermissionService;
 import com.oceanbase.odc.service.flow.task.model.DBObjectStructureComparisonResp;
-import com.oceanbase.odc.service.flow.task.model.DBStructureComparisonParameter;
-import com.oceanbase.odc.service.flow.task.model.DBStructureComparisonParameter.ComparisonScope;
-import com.oceanbase.odc.service.flow.task.model.DBStructureComparisonParameter.DBStructureComparisonMapper;
 import com.oceanbase.odc.service.flow.task.model.DBStructureComparisonResp;
 import com.oceanbase.odc.service.flow.task.model.DBStructureComparisonResp.ObjectComparisonResult;
 import com.oceanbase.odc.service.flow.task.model.DBStructureComparisonResp.OperationType;
-import com.oceanbase.odc.service.flow.task.model.DBStructureComparisonTaskResult;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.objectstorage.ObjectStorageFacade;
 import com.oceanbase.odc.service.objectstorage.model.StorageObject;
-import com.oceanbase.odc.service.session.factory.DruidDataSourceFactory;
-import com.oceanbase.odc.service.structurecompare.model.DBStructureComparisonConfig;
-import com.oceanbase.tools.dbbrowser.model.DBObjectType;
+import com.oceanbase.odc.service.structurecompare.model.DBObjectComparisonResult;
 
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
@@ -83,9 +71,6 @@ import lombok.extern.slf4j.Slf4j;
 @SkipAuthorize("permission check inside")
 public class StructureComparisonService {
     @Autowired
-    @Qualifier("structureComparisonTaskExecutor")
-    private ThreadPoolTaskExecutor executor;
-    @Autowired
     private StructureComparisonTaskRepository structureComparisonTaskRepository;
     @Autowired
     private StructureComparisonTaskResultRepository structureComparisonTaskResultRepository;
@@ -94,65 +79,11 @@ public class StructureComparisonService {
     @Autowired
     private AuthenticationFacade authenticationFacade;
     @Autowired
-    private ConnectionService connectionService;
-    @Autowired
-    private DatabaseService databaseService;
-    @Autowired
     private ApprovalPermissionService approvalPermissionService;
-    private final ConnectionMapper connectionMapper = ConnectionMapper.INSTANCE;
     /**
      * Maximum number of bytes returned by total sql change script, default value 1 MB
      */
     private final Long MAX_TOTAL_SCRIPT_SIZE_BYTES = 1048576L;
-
-    public StructureComparisonContext create(@NonNull DBStructureComparisonParameter parameters, @NonNull Long taskId,
-            @NonNull Long creatorId, @NonNull Long flowInstanceId) {
-        StructureComparisonTaskEntity structureComparisonTaskEntity = structureComparisonTaskRepository.saveAndFlush(
-                DBStructureComparisonMapper.ofTaskEntity(parameters, creatorId, flowInstanceId));
-
-        log.info("StructureComparisonService create a new structure comparison task entity, id={}",
-                structureComparisonTaskEntity.getId());
-        DBStructureComparisonConfig srcConfig = initSourceComparisonConfig(parameters);
-        DBStructureComparisonConfig tgtConfig = initTargetComparisonConfig(parameters);
-
-        StructureComparisonTask task =
-                new StructureComparisonTask(srcConfig, tgtConfig, taskId, structureComparisonTaskEntity.getId(),
-                        authenticationFacade.currentUser(), structureComparisonTaskRepository,
-                        structureComparisonTaskResultRepository, objectStorageFacade);
-        Future<DBStructureComparisonTaskResult> resultFuture = executor.submit(task);
-
-        return new StructureComparisonContext(task, resultFuture);
-    }
-
-    private DBStructureComparisonConfig initSourceComparisonConfig(DBStructureComparisonParameter parameters) {
-        DBStructureComparisonConfig srcConfig = new DBStructureComparisonConfig();
-
-        Database database = databaseService.detail((parameters.getSourceDatabaseId()));
-        ConnectionConfig connectionConfig = connectionService.getForConnect(database.getDataSource().getId());
-
-        srcConfig.setSchemaName(database.getName());
-        srcConfig.setConnectType(connectionConfig.getType());
-        srcConfig.setDataSource(new DruidDataSourceFactory(connectionConfig).getDataSource());
-        srcConfig.setToComparedObjectTypes(Collections.singleton(DBObjectType.TABLE));
-        if (parameters.getComparisonScope() == ComparisonScope.PART) {
-            Map<DBObjectType, Set<String>> blackListMap = new HashMap<>();
-            blackListMap.put(DBObjectType.TABLE, new HashSet<>(parameters.getTableNamesToBeCompared()));
-            srcConfig.setBlackListMap(blackListMap);
-        }
-
-        return srcConfig;
-    }
-
-    private DBStructureComparisonConfig initTargetComparisonConfig(DBStructureComparisonParameter parameters) {
-        DBStructureComparisonConfig tgtConfig = new DBStructureComparisonConfig();
-
-        Database database = databaseService.detail(parameters.getTargetDatabaseId());
-        ConnectionConfig connectionConfig = connectionService.getForConnect(database.getDataSource().getId());
-        tgtConfig.setSchemaName(database.getName());
-        tgtConfig.setConnectType(connectionConfig.getType());
-        tgtConfig.setDataSource(new DruidDataSourceFactory(connectionConfig).getDataSource());
-        return tgtConfig;
-    }
 
     public DBStructureComparisonResp getDBStructureComparisonResult(@NonNull Long id, OperationType operationType,
             String dbObjectName, @NotNull Pageable pageable) {
@@ -206,8 +137,16 @@ public class StructureComparisonService {
                         () -> new NotFoundException(ResourceType.ODC_STRUCTURE_COMPARISON_TASK, "id", id));
         checkPermission(taskEntity);
         StructureComparisonTaskResultEntity entity =
-                structureComparisonTaskResultRepository.findByIdAndComparisonTaskId(id, comparisonTaskId);
+                structureComparisonTaskResultRepository.findById(id).orElseThrow(() -> new NotFoundException(
+                        ErrorCodes.NotFound, null, "StructureComparisonTaskResultEntity not found, id=" + id));
         return DBObjectStructureComparisonResp.fromEntity(entity);
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    public List<StructureComparisonTaskResultEntity> batchCreateTaskResults(List<DBObjectComparisonResult> results,
+            DialectType dialectType, Long taskId) {
+        return structureComparisonTaskResultRepository.batchCreate(
+                results.stream().map(result -> result.toEntity(taskId, dialectType)).collect(Collectors.toList()));
     }
 
     /**

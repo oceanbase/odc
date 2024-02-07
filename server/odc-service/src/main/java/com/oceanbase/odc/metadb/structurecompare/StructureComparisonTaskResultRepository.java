@@ -15,10 +15,13 @@
  */
 package com.oceanbase.odc.metadb.structurecompare;
 
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
-import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.query.Param;
+import java.util.List;
+import java.util.function.Function;
+
+import org.springframework.transaction.annotation.Transactional;
+
+import com.oceanbase.odc.common.jpa.InsertSqlTemplateBuilder;
+import com.oceanbase.odc.config.jpa.OdcJpaRepository;
 
 /**
  * @author jingtian
@@ -26,11 +29,30 @@ import org.springframework.data.repository.query.Param;
  * @since ODC_release_4.2.4
  */
 public interface StructureComparisonTaskResultRepository
-        extends JpaRepository<StructureComparisonTaskResultEntity, Long>,
-        JpaSpecificationExecutor<StructureComparisonTaskResultEntity> {
+        extends OdcJpaRepository<StructureComparisonTaskResultEntity, Long> {
 
-    @Query(value = "select * from structure_comparison_task_result where id=:id and structure_comparison_task_id=:comparisonTaskId",
-            nativeQuery = true)
-    StructureComparisonTaskResultEntity findByIdAndComparisonTaskId(@Param("id") Long id,
-            @Param("comparisonTaskId") Long comparisonTaskId);
+    @Transactional(rollbackFor = Exception.class)
+    default List<StructureComparisonTaskResultEntity> batchCreate(List<StructureComparisonTaskResultEntity> entities) {
+        String sql = InsertSqlTemplateBuilder.from("structure_comparison_task_result")
+                .field(StructureComparisonTaskResultEntity_.structureComparisonTaskId)
+                .field(StructureComparisonTaskResultEntity_.databaseObjectName)
+                .field(StructureComparisonTaskResultEntity_.databaseObjectType)
+                .field(StructureComparisonTaskResultEntity_.comparingResult)
+                .field(StructureComparisonTaskResultEntity_.sourceDatabaseObjectDdl)
+                .field(StructureComparisonTaskResultEntity_.targetDatabaseObjectDdl)
+                .field((StructureComparisonTaskResultEntity_.changeSqlScript))
+                .build();
+
+        List<Function<StructureComparisonTaskResultEntity, Object>> getter = valueGetterBuilder()
+                .add(StructureComparisonTaskResultEntity::getStructureComparisonTaskId)
+                .add(StructureComparisonTaskResultEntity::getDatabaseObjectName)
+                .add((StructureComparisonTaskResultEntity e) -> e.getDatabaseObjectType().name())
+                .add((StructureComparisonTaskResultEntity e) -> e.getComparingResult().name())
+                .add(StructureComparisonTaskResultEntity::getSourceDatabaseObjectDdl)
+                .add(StructureComparisonTaskResultEntity::getTargetDatabaseObjectDdl)
+                .add(StructureComparisonTaskResultEntity::getChangeSqlScript)
+                .build();
+
+        return batchCreate(entities, sql, getter, StructureComparisonTaskResultEntity::setId);
+    }
 }

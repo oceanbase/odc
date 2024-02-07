@@ -149,23 +149,6 @@ public class ScheduleConfiguration {
         return executor;
     }
 
-    @Bean(name = "structureComparisonTaskExecutor")
-    public ThreadPoolTaskExecutor structureComparisonTaskExecutor() {
-        ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
-        int poolSize = Math.max(SystemUtils.availableProcessors(), 5);
-        executor.setCorePoolSize(poolSize);
-        executor.setMaxPoolSize(poolSize);
-        executor.setQueueCapacity(0);
-        executor.setThreadNamePrefix("structure-compare-");
-        executor.setWaitForTasksToCompleteOnShutdown(true);
-        executor.setAwaitTerminationSeconds(5);
-        executor.setTaskDecorator(new TraceDecorator<>());
-        executor.setRejectedExecutionHandler(new ThreadPoolExecutor.DiscardPolicy());
-        executor.initialize();
-        log.info("structureComparisonTaskExecutor initialized");
-        return executor;
-    }
-
     @Bean(name = "cloudLoadDataTaskExecutor")
     public ThreadPoolTaskExecutor cloudLoadDataTaskExecutor() {
         ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();

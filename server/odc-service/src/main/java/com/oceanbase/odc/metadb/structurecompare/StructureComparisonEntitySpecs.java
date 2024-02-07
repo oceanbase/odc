@@ -28,7 +28,7 @@ import lombok.NonNull;
  * @since ODC_release_4.2.4
  */
 public class StructureComparisonEntitySpecs {
-    private static final String STRUCTURE_COMPARISON_TASK_ID = "comparisonTaskId";
+    private static final String STRUCTURE_COMPARISON_TASK_ID = "structureComparisonTaskId";
     private static final String COMPARING_RESULT = "comparingResult";
     private static final String DB_OBJECT_NAME = "databaseObjectName";
 

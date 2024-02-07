@@ -75,12 +75,12 @@ public class DBObjectComparisonResult {
     public StructureComparisonTaskResultEntity toEntity(@NonNull Long structureComparisonTaskId,
             @NonNull DialectType dialectType) {
         StructureComparisonTaskResultEntity entity = new StructureComparisonTaskResultEntity();
-        entity.setComparisonTaskId(structureComparisonTaskId);
+        entity.setStructureComparisonTaskId(structureComparisonTaskId);
         entity.setDatabaseObjectType(dbObjectType);
         entity.setDatabaseObjectName(dbObjectName);
         entity.setComparingResult(comparisonResult);
-        entity.setSourceObjectDdl(sourceDdl);
-        entity.setTargetObjectDdl(targetDdl);
+        entity.setSourceDatabaseObjectDdl(sourceDdl);
+        entity.setTargetDatabaseObjectDdl(targetDdl);
 
         /**
          * DDL operations involving deletion of database objects are placed in comments

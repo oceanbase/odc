@@ -741,7 +741,7 @@
             <AppenderRef ref="WarnRoutingOnlineSchemaChangeAppender"/>
         </Logger>
         <!-- 结构比对任务日志输出 -->
-        <Logger name="com.oceanbase.odc.service.structurecompare.StructureComparisonTask" level="INFO" additivity="true">
+        <Logger name="com.oceanbase.odc.service.flow.task.DBStructureComparisonFlowableTask" level="INFO" additivity="true">
             <AppenderRef ref="AllRoutingStructureComparisonAppender"/>
             <AppenderRef ref="WarnRoutingStructureComparisonAppender"/>
         </Logger>

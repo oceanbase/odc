@@ -10,7 +10,6 @@ create table if not exists `structure_comparison_task_result`(
   `target_database_object_ddl` TEXT DEFAULT NULL COMMENT 'Target database object DDL',
   `change_sql_script` LONGTEXT DEFAULT NULL COMMENT 'Change sql script to convert target database object to source database object',
   CONSTRAINT `pk_structure_comparison_task_result_id` PRIMARY KEY(`id`),
-  KEY `idx_structure_comparison_id_structure_comparison_task_id`(`id`, `structure_comparison_task_id`),
   KEY `idx_structure_comparison_task_id_comparing_result`(`structure_comparison_task_id`, `comparing_result`),
   KEY `idx_structure_comparison_task_id_database_object_type`(`structure_comparison_task_id`, `database_object_type`),
   KEY `idx_structure_comparison_task_id_database_object_name`(`structure_comparison_task_id`, `database_object_name`)
@@ -26,5 +25,5 @@ create table if not exists `structure_comparison_task`(
   `target_connect_database_id` bigint(20) NOT NULL COMMENT 'Target connect database id, references connect_database(id)',
   `storage_object_id` varchar(1024) default NULL COMMENT 'The storage object id of the total change script file, references objectstorage_object_metadata(object_id)',
   CONSTRAINT `pk_structure_comparison_task_id` PRIMARY KEY(`id`),
-  CONSTRAINT `uk_id_flow_instance_id` UNIQUE(`id`, `flow_instance_id`)
+  CONSTRAINT `uk_structure_comparison_task_id_flow_instance_id` UNIQUE(`id`, `flow_instance_id`)
 );
