@@ -18,6 +18,7 @@ package com.oceanbase.odc.service.task.dispatch;
 
 import java.util.Arrays;
 
+import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.common.util.SystemUtils;
 import com.oceanbase.odc.core.shared.exception.UnsupportedException;
 import com.oceanbase.odc.service.task.caller.ExecutorIdentifier;
@@ -94,12 +95,14 @@ public class ImmediateJobDispatcher implements JobDispatcher {
         K8sProperties k8s = taskFrameworkProperties.getK8sProperties();
 
         PodConfig podConfig = new PodConfig();
-        podConfig.setNamespace(k8s.getNamespace());
+        if (StringUtils.isNotBlank(k8s.getNamespace())) {
+            podConfig.setNamespace(k8s.getNamespace());
+        }
         JobImageNameProvider jobImageNameProvider = JobConfigurationHolder.getJobConfiguration()
                 .getJobImageNameProvider();
         podConfig.setImage(jobImageNameProvider.provide());
-        podConfig.setCommand(Arrays.asList("sh", "-c", "/opt/odc/bin/start-odc.sh"));
-        podConfig.setRegion(k8s.getRegion() != null ? k8s.getRegion()
+        podConfig.setCommand(Arrays.asList("sh", "-c", "/opt/odc/bin/start-job.sh"));
+        podConfig.setRegion(StringUtils.isNotBlank(k8s.getRegion()) ? k8s.getRegion()
                 : SystemUtils.getEnvOrProperty(JobEnvKeyConstants.OB_ARN_PARTITION));
 
         podConfig.setRequestCpu(k8s.getRequestCpu());
@@ -108,7 +111,8 @@ public class ImmediateJobDispatcher implements JobDispatcher {
         podConfig.setLimitMem(k8s.getLimitMem());
         podConfig.setEnableMount(k8s.getEnableMount());
         podConfig.setMountPath(
-                k8s.getMountPath() == null ? JobConstants.ODC_EXECUTOR_DEFAULT_MOUNT_PATH : k8s.getMountPath());
+                StringUtils.isNotBlank(k8s.getMountPath()) ? k8s.getMountPath()
+                        : JobConstants.ODC_EXECUTOR_DEFAULT_MOUNT_PATH);
         podConfig.setMountDiskSize(k8s.getMountDiskSize());
         return podConfig;
     }
