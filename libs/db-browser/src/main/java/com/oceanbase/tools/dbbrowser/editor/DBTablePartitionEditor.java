@@ -65,7 +65,8 @@ public abstract class DBTablePartitionEditor implements DBObjectEditor<DBTablePa
 
     @Override
     public String generateCreateDefinitionDDL(@NotNull DBTablePartition partition) {
-        if (partition.getPartitionOption().getType() == DBTablePartitionType.NOT_PARTITIONED) {
+        if (partition.getPartitionOption().getType() == null
+                || partition.getPartitionOption().getType() == DBTablePartitionType.NOT_PARTITIONED) {
             return StringUtils.EMPTY;
         }
         SqlBuilder sqlBuilder = sqlBuilder();
@@ -79,6 +80,10 @@ public abstract class DBTablePartitionEditor implements DBObjectEditor<DBTablePa
         if (Objects.nonNull(partition.getPartitionOption().getPartitionsNum())) {
             sqlBuilder.append("\nPARTITIONS ")
                     .append(String.valueOf(partition.getPartitionOption().getPartitionsNum()));
+            if (partition.getPartitionOption().getType() == DBTablePartitionType.HASH
+                    || partition.getPartitionOption().getType() == DBTablePartitionType.KEY) {
+                return sqlBuilder.toString();
+            }
         }
         appendDefinitions(partition, sqlBuilder);
         return sqlBuilder.toString();

@@ -80,6 +80,7 @@ public class OBOracleLessThan400SchemaAccessor extends OBOracleSchemaAccessor {
         partition.setPartitionDefinitions(new ArrayList<>());
         partition.setSchemaName(schemaName);
         partition.setTableName(tableName);
+        partition.getPartitionOption().setType(DBTablePartitionType.NOT_PARTITIONED);
 
         String sql = this.sqlMapper.getSql(Statements.GET_TABLE_PARTITION);
 

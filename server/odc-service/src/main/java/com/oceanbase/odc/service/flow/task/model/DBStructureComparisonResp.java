@@ -15,11 +15,13 @@
  */
 package com.oceanbase.odc.service.flow.task.model;
 
-import java.util.List;
-
+import com.oceanbase.odc.metadb.structurecompare.StructureComparisonTaskResultEntity;
+import com.oceanbase.odc.service.common.response.PaginatedResponse;
+import com.oceanbase.odc.service.structurecompare.model.ComparisonResult;
 import com.oceanbase.tools.dbbrowser.model.DBObjectType;
 
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 /**
  * @author jingtian
@@ -27,16 +29,20 @@ import lombok.Data;
  * @since ODC_release_4.2.4
  */
 @Data
+@NoArgsConstructor
 public class DBStructureComparisonResp {
     /**
      * Refer to structure_comparison_task.id
      */
     private Long id;
-    private List<ComparisonResult> comparisonResults;
+    private PaginatedResponse<ObjectComparisonResult> comparisonResults;
     private String totalChangeScript;
     private String storageObjectId;
+    private boolean overSizeLimit;
 
-    private class ComparisonResult {
+    @Data
+    @NoArgsConstructor
+    public static class ObjectComparisonResult {
         /**
          * Refer to {@link DBObjectStructureComparisonResp#getId()}
          */
@@ -44,13 +50,52 @@ public class DBStructureComparisonResp {
         private DBObjectType dbObjectType;
         private String dbObjectName;
         private OperationType operationType;
+
+        public static ObjectComparisonResult fromEntity(StructureComparisonTaskResultEntity entity) {
+            ObjectComparisonResult returnVal = new ObjectComparisonResult();
+            returnVal.setStructureComparisonId(entity.getId());
+            returnVal.setDbObjectName(entity.getDatabaseObjectName());
+            returnVal.setDbObjectType(entity.getDatabaseObjectType());
+            returnVal.setOperationType(OperationType.fromComparisonResult(entity.getComparingResult()));
+            return returnVal;
+
+        }
     }
     public enum OperationType {
-        CREATE,
-        UPDATE,
-        DROP,
-        NO_ACTION,
-        SKIP,
-        UNSUPPORTED
+        CREATE(ComparisonResult.ONLY_IN_SOURCE),
+        UPDATE(ComparisonResult.INCONSISTENT),
+        DROP(ComparisonResult.ONLY_IN_TARGET),
+        NO_ACTION(ComparisonResult.CONSISTENT),
+        SKIP(ComparisonResult.MISSING_IN_SOURCE),
+        UNSUPPORTED(ComparisonResult.UNSUPPORTED);
+
+        private ComparisonResult comparisonResult;
+
+        OperationType(ComparisonResult comparisonResult) {
+            this.comparisonResult = comparisonResult;
+        }
+
+        public ComparisonResult getComparisonResult() {
+            return comparisonResult;
+        }
+
+        public static OperationType fromComparisonResult(ComparisonResult comparisonResult) {
+            switch (comparisonResult) {
+                case ONLY_IN_SOURCE:
+                    return CREATE;
+                case INCONSISTENT:
+                    return UPDATE;
+                case ONLY_IN_TARGET:
+                    return DROP;
+                case CONSISTENT:
+                    return NO_ACTION;
+                case MISSING_IN_SOURCE:
+                    return SKIP;
+                case UNSUPPORTED:
+                    return UNSUPPORTED;
+                default:
+                    throw new IllegalArgumentException("Unknown comparison result: " + comparisonResult);
+            }
+        }
     }
 }
