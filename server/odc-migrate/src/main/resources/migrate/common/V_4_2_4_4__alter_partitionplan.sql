@@ -28,7 +28,7 @@ CREATE TABLE IF NOT EXISTS `partitionplan_table` (
 
 CREATE TABLE IF NOT EXISTS `partitionplan_table_partitionkey` (
     `id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT 'Id for partition plan table',
-    `partition_key` varchar(2048) NOT NULL COMMENT 'Target partition key',
+    `partition_key` varchar(2048) DEFAULT NULL COMMENT 'Target partition key',
     `strategy` varchar(64) NOT NULL COMMENT 'Partition strategy type, enumeration values: CREATE, DROP',
     `is_enabled` tinyint(1) NOT NULL DEFAULT 1 COMMENT 'Flag bit, mark whether the partition key is enabled',
     `partition_key_invoker` varchar(64) NOT NULL COMMENT 'The name of the specific executor of the partition strategy needs to match invoker_input',
