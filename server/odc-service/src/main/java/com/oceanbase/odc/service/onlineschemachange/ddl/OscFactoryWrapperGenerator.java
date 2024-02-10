@@ -19,6 +19,9 @@ package com.oceanbase.odc.service.onlineschemachange.ddl;
 import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.exception.UnsupportedException;
+import com.oceanbase.tools.sqlparser.OBMySQLParser;
+import com.oceanbase.tools.sqlparser.OBOracleSQLParser;
+import com.oceanbase.tools.sqlparser.SQLParser;
 
 /**
  * @author yaobin
@@ -39,6 +42,19 @@ public class OscFactoryWrapperGenerator {
                     "unsupported dialect type");
         }
         oscFactoryWrapper.setOscDBAccessorFactory(new OscDBAccessorFactory());
+        oscFactoryWrapper.setSqlParser(getSqlParser(dialectType));
         return oscFactoryWrapper;
+    }
+
+    public static SQLParser getSqlParser(DialectType dialectType) {
+
+        if (dialectType.isMysql()) {
+            return new OBMySQLParser();
+        } else if (dialectType.isOracle()) {
+            return new OBOracleSQLParser();
+        } else {
+            throw new UnsupportedException(ErrorCodes.Unsupported, new Object[] {dialectType.name()},
+                    "unsupported dialect type");
+        }
     }
 }
