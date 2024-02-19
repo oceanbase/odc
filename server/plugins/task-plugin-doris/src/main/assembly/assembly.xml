@@ -11,9 +11,5 @@
             <directory>${project.build.directory}/classes</directory>
             <outputDirectory>/</outputDirectory>
         </fileSet>
-        <fileSet>
-            <directory>${project.parent.parent.basedir}/build-resource/datax/202312</directory>
-            <outputDirectory>/</outputDirectory>
-        </fileSet>
     </fileSets>
 </assembly>

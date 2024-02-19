@@ -12,7 +12,7 @@
             <outputDirectory>/</outputDirectory>
         </fileSet>
         <fileSet>
-            <directory>${project.parent.parent.basedir}/build-resource/datax/202312</directory>
+            <directory>${project.parent.parent.basedir}/build-resource/datax/202402</directory>
             <outputDirectory>/</outputDirectory>
         </fileSet>
     </fileSets>
