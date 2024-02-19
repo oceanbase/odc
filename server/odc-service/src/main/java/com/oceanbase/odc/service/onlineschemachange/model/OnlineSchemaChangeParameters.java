@@ -91,7 +91,7 @@ public class OnlineSchemaChangeParameters implements Serializable, TaskParameter
                     }
                 } else {
                     CreateIndex createIndex = (CreateIndex) statement;
-                    TableIdentity key = new TableIdentity(createIndex.getRelation().getSchema(),
+                    TableIdentity key = new TableIdentity(schema,
                             createIndex.getOn().getRelation());
                     taskParameters.get(key).getSqlsToBeExecuted().add(sql);
                 }
