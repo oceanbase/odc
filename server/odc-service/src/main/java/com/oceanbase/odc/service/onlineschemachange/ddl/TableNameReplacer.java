@@ -20,4 +20,6 @@ public interface TableNameReplacer {
     String replaceCreateStmt(String originCreateStmt, String newTableName);
 
     String replaceAlterStmt(String originAlterStmt, String newTableName);
+
+    String replaceCreateIndexStmt(String originCreateIndexStmt, String newTableName);
 }

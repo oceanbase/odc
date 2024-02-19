@@ -29,8 +29,12 @@ import com.oceanbase.odc.core.shared.model.TableIdentity;
 import com.oceanbase.odc.service.common.util.SqlUtils;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.onlineschemachange.ddl.DdlUtils;
+import com.oceanbase.odc.service.onlineschemachange.ddl.OBMysqlTableNameReplacer;
+import com.oceanbase.odc.service.onlineschemachange.ddl.OBOracleTableNameReplacer;
 import com.oceanbase.odc.service.onlineschemachange.ddl.OscFactoryWrapper;
 import com.oceanbase.odc.service.onlineschemachange.ddl.OscFactoryWrapperGenerator;
+import com.oceanbase.odc.service.onlineschemachange.ddl.TableNameDescriptor;
+import com.oceanbase.odc.service.onlineschemachange.ddl.TableNameReplacer;
 import com.oceanbase.odc.service.onlineschemachange.subtask.SubTaskParameterFactory;
 import com.oceanbase.tools.sqlparser.statement.Statement;
 import com.oceanbase.tools.sqlparser.statement.alter.table.AlterTable;
@@ -82,8 +86,10 @@ public class OnlineSchemaChangeParameters implements Serializable, TaskParameter
                 if (statement instanceof CreateTable || statement instanceof AlterTable) {
                     OnlineSchemaChangeScheduleTaskParameters parameter =
                             subTaskParameterFactory.generate(sql, sqlType, statement);
+                    TableNameDescriptor tableNameDescriptor = oscFactoryWrapper.getTableNameDescriptorFactory()
+                        .getTableNameDescriptor(parameter.getOriginTableName());
                     TableIdentity key = new TableIdentity(DdlUtils.getUnwrappedName(parameter.getDatabaseName()),
-                            DdlUtils.getUnwrappedName(parameter.getOriginTableName()));
+                        tableNameDescriptor.getOriginTableNameUnwrapped());
                     taskParameters.putIfAbsent(key, parameter);
                     if (sqlType == OnlineSchemaChangeSqlType.ALTER) {
                         String newAlterStmt = DdlUtils.replaceTableName(sql, parameter.getNewTableName(),
@@ -92,9 +98,16 @@ public class OnlineSchemaChangeParameters implements Serializable, TaskParameter
                     }
                 } else {
                     CreateIndex createIndex = (CreateIndex) statement;
+                    String tableName = createIndex.getOn().getRelation();
+                    TableNameDescriptor tableNameDescriptor = oscFactoryWrapper.getTableNameDescriptorFactory()
+                        .getTableNameDescriptor(tableName);
                     TableIdentity key = new TableIdentity(DdlUtils.getUnwrappedName(schema),
-                            DdlUtils.getUnwrappedName(createIndex.getOn().getRelation()));
-                    taskParameters.get(key).getSqlsToBeExecuted().add(sql);
+                        tableNameDescriptor.getOriginTableNameUnwrapped());
+                    TableNameReplacer rewriter = connectionConfig.getDialectType().isMysql() ?
+                        new OBMysqlTableNameReplacer() : new OBOracleTableNameReplacer();
+
+                    taskParameters.get(key).getSqlsToBeExecuted().add(
+                        rewriter.replaceCreateIndexStmt(sql, tableNameDescriptor.getNewTableName()));
                 }
 
             }

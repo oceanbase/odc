@@ -30,6 +30,7 @@ import org.antlr.v4.runtime.tree.TerminalNodeImpl;
 
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.shared.PreConditions;
+import com.oceanbase.odc.core.shared.exception.UnsupportedException;
 import com.oceanbase.tools.sqlparser.FastFailErrorListener;
 import com.oceanbase.tools.sqlparser.obmysql.OBLexer;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser;
@@ -55,6 +56,11 @@ public class OBMysqlTableNameReplacer implements TableNameReplacer {
     public String replaceAlterStmt(String originAlterStmt, String newTableName) {
         return getRewriteSql(originAlterStmt,
                 rewriter -> new WalkerOBParserReplaceStatementListener(rewriter, newTableName));
+    }
+
+    @Override
+    public String replaceCreateIndexStmt(String originCreateIndexStmt, String newTableName) {
+       return originCreateIndexStmt;
     }
 
     private static String getRewriteSql(String originCreateStmt,
