@@ -398,8 +398,10 @@ public class DefaultOnlineSchemaChangeTaskHandler implements OnlineSchemaChangeT
             taskParam.getSqlsToBeExecuted().forEach(executor::execute);
         }
         if (param.getSqlType() == OnlineSchemaChangeSqlType.ALTER) {
+
             // update new table ddl for display
             finalTableDdl = DdlUtils.queryOriginTableCreateDdl(session, taskParam.getNewTableName());
+
             String ddlForDisplay = DdlUtils.replaceTableName(finalTableDdl, taskParam.getOriginTableName(),
                     session.getDialectType(), OnlineSchemaChangeSqlType.CREATE);
             taskParam.setNewTableCreateDdlForDisplay(ddlForDisplay);

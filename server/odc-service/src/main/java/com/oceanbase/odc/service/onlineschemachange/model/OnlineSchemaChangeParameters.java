@@ -23,6 +23,8 @@ import java.util.List;
 import java.util.Map;
 
 import com.oceanbase.odc.core.flow.model.TaskParameters;
+import com.oceanbase.odc.core.shared.PreConditions;
+import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.constant.TaskErrorStrategy;
 import com.oceanbase.odc.core.shared.exception.UnexpectedException;
 import com.oceanbase.odc.core.shared.model.TableIdentity;
@@ -97,6 +99,8 @@ public class OnlineSchemaChangeParameters implements Serializable, TaskParameter
                         taskParameters.get(key).getSqlsToBeExecuted().add(newAlterStmt);
                     }
                 } else {
+                    PreConditions.validArgumentState(statement instanceof CreateIndex, ErrorCodes.IllegalArgument,
+                        new Object[]{}, "statement is not CreateIndex");
                     CreateIndex createIndex = (CreateIndex) statement;
                     String tableName = createIndex.getOn().getRelation();
                     TableNameDescriptor tableNameDescriptor = oscFactoryWrapper.getTableNameDescriptorFactory()
@@ -106,8 +110,12 @@ public class OnlineSchemaChangeParameters implements Serializable, TaskParameter
                     TableNameReplacer rewriter = connectionConfig.getDialectType().isMysql() ?
                         new OBMysqlTableNameReplacer() : new OBOracleTableNameReplacer();
 
-                    taskParameters.get(key).getSqlsToBeExecuted().add(
-                        rewriter.replaceCreateIndexStmt(sql, tableNameDescriptor.getNewTableName()));
+                    String createIndexOnNewTable = rewriter.replaceCreateIndexStmt(
+                        sql, tableNameDescriptor.getNewTableName());
+
+                    String displaySql = taskParameters.get(key).getNewTableCreateDdlForDisplay();
+                    taskParameters.get(key).setNewTableCreateDdlForDisplay( displaySql + "\n" + createIndexOnNewTable);
+                    taskParameters.get(key).getSqlsToBeExecuted().add(createIndexOnNewTable);
                 }
 
             }
