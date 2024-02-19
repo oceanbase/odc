@@ -27,7 +27,6 @@ import org.antlr.v4.runtime.tree.TerminalNode;
 
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.shared.PreConditions;
-import com.oceanbase.odc.service.onlineschemachange.ddl.OBMysqlTableNameReplacer.WalkerOBParserReplaceStatementListener;
 import com.oceanbase.tools.sqlparser.FastFailErrorListener;
 import com.oceanbase.tools.sqlparser.oboracle.OBLexer;
 import com.oceanbase.tools.sqlparser.oboracle.OBParser;
@@ -86,11 +85,11 @@ public class OBOracleTableNameReplacer implements TableNameReplacer {
     @Override
     public String replaceCreateIndexStmt(String originCreateIndexStmt, String newTableName) {
         return getRewriteSql(originCreateIndexStmt,
-            rewriter -> new CreateIndexOBParserReplaceStatementListener(rewriter, newTableName));
+                rewriter -> new CreateIndexOBParserReplaceStatementListener(rewriter, newTableName));
     }
 
     private static String getRewriteSql(String originCreateStmt,
-        Function<TokenStreamRewriter, OBParserBaseListener> obParserBaseListenerFunc) {
+            Function<TokenStreamRewriter, OBParserBaseListener> obParserBaseListenerFunc) {
         CharStream charStream = CharStreams.fromString(originCreateStmt);
         OBLexer lexer = new OBLexer(charStream);
 
@@ -106,11 +105,12 @@ public class OBOracleTableNameReplacer implements TableNameReplacer {
         return tokenStreamRewriter.getText();
     }
 
-    static class CreateIndexOBParserReplaceStatementListener extends OBParserBaseListener{
+    static class CreateIndexOBParserReplaceStatementListener extends OBParserBaseListener {
         private final TokenStreamRewriter tokenStreamRewriter;
         private final String newTableName;
 
-        public CreateIndexOBParserReplaceStatementListener(TokenStreamRewriter tokenStreamRewriter, String newTableName) {
+        public CreateIndexOBParserReplaceStatementListener(TokenStreamRewriter tokenStreamRewriter,
+                String newTableName) {
             this.tokenStreamRewriter = tokenStreamRewriter;
             this.newTableName = newTableName;
         }
@@ -122,7 +122,7 @@ public class OBOracleTableNameReplacer implements TableNameReplacer {
 
         private void relationFactorReplace(Relation_factorContext relation_factorContext) {
             Relation_nameContext relation_nameContext = relation_factorContext.normal_relation_factor()
-                .relation_name();
+                    .relation_name();
 
             PreConditions.notNull(relation_nameContext, "Table name");
 

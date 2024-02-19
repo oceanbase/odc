@@ -89,9 +89,9 @@ public class OnlineSchemaChangeParameters implements Serializable, TaskParameter
                     OnlineSchemaChangeScheduleTaskParameters parameter =
                             subTaskParameterFactory.generate(sql, sqlType, statement);
                     TableNameDescriptor tableNameDescriptor = oscFactoryWrapper.getTableNameDescriptorFactory()
-                        .getTableNameDescriptor(parameter.getOriginTableName());
+                            .getTableNameDescriptor(parameter.getOriginTableName());
                     TableIdentity key = new TableIdentity(DdlUtils.getUnwrappedName(parameter.getDatabaseName()),
-                        tableNameDescriptor.getOriginTableNameUnwrapped());
+                            tableNameDescriptor.getOriginTableNameUnwrapped());
                     taskParameters.putIfAbsent(key, parameter);
                     if (sqlType == OnlineSchemaChangeSqlType.ALTER) {
                         String newAlterStmt = DdlUtils.replaceTableName(sql, parameter.getNewTableName(),
@@ -100,21 +100,22 @@ public class OnlineSchemaChangeParameters implements Serializable, TaskParameter
                     }
                 } else {
                     PreConditions.validArgumentState(statement instanceof CreateIndex, ErrorCodes.IllegalArgument,
-                        new Object[]{}, "statement is not CreateIndex");
+                            new Object[] {}, "statement is not CreateIndex");
                     CreateIndex createIndex = (CreateIndex) statement;
                     String tableName = createIndex.getOn().getRelation();
                     TableNameDescriptor tableNameDescriptor = oscFactoryWrapper.getTableNameDescriptorFactory()
-                        .getTableNameDescriptor(tableName);
+                            .getTableNameDescriptor(tableName);
                     TableIdentity key = new TableIdentity(DdlUtils.getUnwrappedName(schema),
-                        tableNameDescriptor.getOriginTableNameUnwrapped());
-                    TableNameReplacer rewriter = connectionConfig.getDialectType().isMysql() ?
-                        new OBMysqlTableNameReplacer() : new OBOracleTableNameReplacer();
+                            tableNameDescriptor.getOriginTableNameUnwrapped());
+                    TableNameReplacer rewriter =
+                            connectionConfig.getDialectType().isMysql() ? new OBMysqlTableNameReplacer()
+                                    : new OBOracleTableNameReplacer();
 
                     String createIndexOnNewTable = rewriter.replaceCreateIndexStmt(
-                        sql, tableNameDescriptor.getNewTableName());
+                            sql, tableNameDescriptor.getNewTableName());
 
                     String displaySql = taskParameters.get(key).getNewTableCreateDdlForDisplay();
-                    taskParameters.get(key).setNewTableCreateDdlForDisplay( displaySql + "\n" + createIndexOnNewTable);
+                    taskParameters.get(key).setNewTableCreateDdlForDisplay(displaySql + "\n" + sql);
                     taskParameters.get(key).getSqlsToBeExecuted().add(createIndexOnNewTable);
                 }
 

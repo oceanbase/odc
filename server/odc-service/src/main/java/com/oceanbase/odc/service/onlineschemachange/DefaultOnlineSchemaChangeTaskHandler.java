@@ -394,7 +394,7 @@ public class DefaultOnlineSchemaChangeTaskHandler implements OnlineSchemaChangeT
         SyncJdbcExecutor executor = session.getSyncJdbcExecutor(ConnectionSessionConstants.BACKEND_DS_KEY);
         String finalTableDdl;
         executor.execute(taskParam.getNewTableCreateDdl());
-        if(CollectionUtils.isNotEmpty(taskParam.getSqlsToBeExecuted())){
+        if (CollectionUtils.isNotEmpty(taskParam.getSqlsToBeExecuted())) {
             taskParam.getSqlsToBeExecuted().forEach(executor::execute);
         }
         if (param.getSqlType() == OnlineSchemaChangeSqlType.ALTER) {
