@@ -27,6 +27,7 @@ public enum DialectType {
     ORACLE,
     MYSQL,
     ODP_SHARDING_OB_MYSQL,
+    DORIS,
     UNKNOWN,
     ;
 
@@ -47,6 +48,10 @@ public enum DialectType {
 
     public boolean isOracle() {
         return OB_ORACLE == this || ORACLE == this;
+    }
+
+    public boolean isDoris() {
+        return DORIS == this;
     }
 
     public boolean isOceanbase() {

@@ -92,6 +92,7 @@ import com.oceanbase.odc.metadb.iam.UserEntity;
 import com.oceanbase.odc.metadb.iam.UserRepository;
 import com.oceanbase.odc.service.collaboration.environment.EnvironmentService;
 import com.oceanbase.odc.service.collaboration.environment.model.Environment;
+import com.oceanbase.odc.service.collaboration.environment.model.QueryEnvironmentParam;
 import com.oceanbase.odc.service.collaboration.project.ProjectMapper;
 import com.oceanbase.odc.service.collaboration.project.model.Project;
 import com.oceanbase.odc.service.common.model.Stats;
@@ -383,6 +384,12 @@ public class ConnectionService {
     @SkipAuthorize("odc internal usage")
     public List<ConnectionConfig> listByOrganizationIdWithoutEnvironment(@NonNull Long organizationId) {
         return entitiesToModels(repository.findByOrganizationId(organizationId), organizationId, false, false);
+    }
+
+    public List<ConnectionConfig> listByOrganizationIdAndEnvironmentId(@NonNull Long organizationId,
+            @NonNull Long environmentId) {
+        return repository.findByOrganizationIdAndEnvironmentId(organizationId, environmentId).stream()
+                .map(mapper::entityToModel).collect(Collectors.toList());
     }
 
     @Transactional(rollbackFor = Exception.class)
@@ -855,7 +862,7 @@ public class ConnectionService {
         }
         Map<Long, Environment> id2Environment;
         if (withEnvironment) {
-            id2Environment = environmentService.list(organizationId).stream()
+            id2Environment = environmentService.list(organizationId, QueryEnvironmentParam.builder().build()).stream()
                     .collect(Collectors.toMap(Environment::getId, environment -> environment));
         } else {
             id2Environment = new HashMap<>();

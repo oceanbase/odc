@@ -34,7 +34,7 @@ public class RestrictAutoIncrementUnsignedFactory implements SqlCheckRuleFactory
 
     @Override
     public SqlCheckRule generate(@NonNull DialectType dialectType, Map<String, Object> parameters) {
-        return dialectType.isMysql() ? new MySQLRestrictAutoIncrementUnsigned() : null;
+        return (dialectType.isMysql() || dialectType.isDoris()) ? new MySQLRestrictAutoIncrementUnsigned() : null;
     }
 
 }

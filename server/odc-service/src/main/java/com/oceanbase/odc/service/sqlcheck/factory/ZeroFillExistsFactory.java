@@ -34,7 +34,7 @@ public class ZeroFillExistsFactory implements SqlCheckRuleFactory {
 
     @Override
     public SqlCheckRule generate(@NonNull DialectType dialectType, Map<String, Object> parameters) {
-        return dialectType.isMysql() ? new MySQLZeroFillExists() : null;
+        return (dialectType.isMysql() || dialectType.isDoris()) ? new MySQLZeroFillExists() : null;
     }
 
 }

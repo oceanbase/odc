@@ -62,7 +62,7 @@ public class EnvironmentEntity {
     @Column(name = "description")
     private String description;
 
-    @Column(name = "style")
+    @Column(name = "style", nullable = false)
     @Enumerated(value = EnumType.STRING)
     private EnvironmentStyle style;
 
@@ -73,7 +73,10 @@ public class EnvironmentEntity {
     private Long rulesetId;
 
     @Column(name = "is_builtin", nullable = false)
-    private Boolean builtin;
+    private Boolean builtIn;
+
+    @Column(name = "is_enabled", updatable = false, nullable = false)
+    private Boolean enabled;
 
     @Column(name = "organization_id", updatable = false, nullable = false)
     private Long organizationId;

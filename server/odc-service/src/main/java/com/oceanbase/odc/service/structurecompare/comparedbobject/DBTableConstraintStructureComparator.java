@@ -15,6 +15,8 @@
  */
 package com.oceanbase.odc.service.structurecompare.comparedbobject;
 
+import java.util.Collections;
+
 import org.springframework.beans.BeanUtils;
 
 import com.oceanbase.odc.service.structurecompare.model.ComparisonResult;
@@ -78,6 +80,20 @@ public class DBTableConstraintStructureComparator extends AbstractDBObjectStruct
                 this.srcSchemaName, this.tgtSchemaName);
 
         DBTableConstraint copiedSrcConstraint = copySrcConstraintWithTgtSchemaName(srcConstraint, this.tgtSchemaName);
+
+        /**
+         * sort column names and reference column names in order to avoid unequal judgment constraint due to
+         * different column name orders
+         */
+        Collections.sort(tgtConstraint.getColumnNames());
+        Collections.sort(copiedSrcConstraint.getColumnNames());
+        if (!tgtConstraint.getReferenceColumnNames().isEmpty()) {
+            Collections.sort(tgtConstraint.getReferenceColumnNames());
+        }
+        if (!copiedSrcConstraint.getReferenceColumnNames().isEmpty()) {
+            Collections.sort(copiedSrcConstraint.getReferenceColumnNames());
+        }
+
         String ddl = this.tgtConstraintEditor.generateUpdateObjectDDL(
                 tgtConstraint, copiedSrcConstraint);
         if (!ddl.isEmpty()) {

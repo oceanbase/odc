@@ -172,6 +172,7 @@ public enum ErrorCodes implements ErrorCode {
     OscUnsupportedForeignKeyTable,
     OscColumnNameInconsistent,
     OscDataCheckInconsistent,
+    OmsBindTargetNotFound,
     OmsDataCheckInconsistent,
     OmsGhanaOperateFailed,
     OmsParamError,

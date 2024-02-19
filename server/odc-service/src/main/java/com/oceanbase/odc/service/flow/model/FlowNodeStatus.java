@@ -16,12 +16,12 @@
 package com.oceanbase.odc.service.flow.model;
 
 import java.util.Arrays;
-import java.util.HashSet;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import com.oceanbase.odc.service.flow.instance.FlowTaskInstance;
 
-import lombok.NonNull;
+import lombok.Getter;
 
 /**
  * Process state, used to mark the execution state of process instance nodes, including process
@@ -31,58 +31,62 @@ import lombok.NonNull;
  * @date 2022-02-07 11:15
  * @since ODC_release_3.3.0
  */
+@Getter
 public enum FlowNodeStatus {
     /**
      * Process node has been created but has not started execution
      */
-    CREATED,
+    CREATED(false, false),
     /**
      * Process node is executing
      */
-    EXECUTING,
+    EXECUTING(false, true),
     /**
      * Only for {@link FlowTaskInstance}, instance is waitting for approval
      */
-    PENDING,
-    WAIT_FOR_CONFIRM,
+    PENDING(false, false),
+
+    WAIT_FOR_CONFIRM(false, true),
     /**
      * Process node is terminated
      */
-    CANCELLED,
+    CANCELLED(true, false),
     /**
      * Process node execution completes
      */
-    COMPLETED,
+    COMPLETED(true, false),
     /**
      * Process node execution expired
      */
-    EXPIRED,
+    EXPIRED(true, false),
     /**
      * Process node execution failed
      */
-    FAILED;
+    FAILED(true, false);
+
+    private final boolean finalStatus;
+    private final boolean executing;
+
+    FlowNodeStatus(boolean finalStatus, boolean executing) {
+        this.finalStatus = finalStatus;
+        this.executing = executing;
+    }
 
     public static Set<FlowNodeStatus> getExecutingStatuses() {
-        return new HashSet<>(Arrays.asList(FlowNodeStatus.EXECUTING, FlowNodeStatus.WAIT_FOR_CONFIRM));
+        return Arrays.stream(FlowNodeStatus.values()).filter(FlowNodeStatus::isExecuting).collect(Collectors.toSet());
     }
 
     public static Set<FlowNodeStatus> getExecutingAndFinalStatuses() {
-        Set<FlowNodeStatus> executingAndFinalStatuses = getExecutingStatuses();
-        executingAndFinalStatuses.addAll(getFinalStatuses());
-        return executingAndFinalStatuses;
+        return Arrays.stream(FlowNodeStatus.values()).filter(t -> t.isExecuting() || t.isFinalStatus()).collect(
+                Collectors.toSet());
     }
 
     public static Set<FlowNodeStatus> getFinalStatuses() {
-        return new HashSet<>(Arrays.asList(FlowNodeStatus.CANCELLED, FlowNodeStatus.COMPLETED, FlowNodeStatus.EXPIRED,
-                FlowNodeStatus.FAILED));
+        return Arrays.stream(FlowNodeStatus.values()).filter(t -> t.isFinalStatus()).collect(Collectors.toSet());
     }
 
-    public static boolean isFinalStatus(@NonNull FlowNodeStatus status) {
-        return getFinalStatuses().contains(status);
-    }
-
-    public boolean isFinalStatus() {
-        return getFinalStatuses().contains(this);
+    public static Set<FlowNodeStatus> getNotFinalStatuses() {
+        return Arrays.stream(FlowNodeStatus.values()).filter(t -> !t.isFinalStatus()).collect(Collectors.toSet());
     }
 
 }

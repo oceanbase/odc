@@ -285,7 +285,9 @@ public class FlowResponseMapperFactoryTest extends ServiceTestEnv {
     }
 
     private TaskEntity createTaskEntity() {
-        return TestRandom.nextObject(TaskEntity.class);
+        TaskEntity entity = TestRandom.nextObject(TaskEntity.class);
+        entity.setTaskType(TaskType.ASYNC);
+        return entity;
     }
 
     private FlowInstanceEntity createFlowInstanceEntity() {

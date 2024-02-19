@@ -122,6 +122,9 @@ public class TestConnectionReq implements CloudConnectionConfig, SSLConnectionCo
     @JsonIgnore
     private String OBTenantName;
 
+    @JsonIgnore
+    private OBInstanceType instanceType;
+
     /**
      * SSL 安全设置
      */

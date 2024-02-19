@@ -19,6 +19,8 @@ package com.oceanbase.odc.service.encryption;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import com.oceanbase.odc.core.authority.util.SkipAuthorize;
+
 /**
  * @author gaoda.xy
  * @date 2023/8/25 11:37
@@ -29,6 +31,7 @@ public class EncryptionService {
     @Autowired
     private SensitivePropertyHandler sensitivePropertyHandler;
 
+    @SkipAuthorize("no need to check authority")
     public String getPublicKey() {
         return sensitivePropertyHandler.publicKey();
     }

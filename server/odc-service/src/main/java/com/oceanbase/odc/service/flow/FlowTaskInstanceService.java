@@ -16,6 +16,7 @@
 package com.oceanbase.odc.service.flow;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.net.URL;
 import java.nio.file.Files;
@@ -60,6 +61,7 @@ import com.oceanbase.odc.core.shared.exception.InternalServerError;
 import com.oceanbase.odc.core.shared.exception.NotFoundException;
 import com.oceanbase.odc.core.shared.exception.UnsupportedException;
 import com.oceanbase.odc.metadb.flow.FlowInstanceRepository;
+import com.oceanbase.odc.metadb.task.JobEntity;
 import com.oceanbase.odc.metadb.task.TaskEntity;
 import com.oceanbase.odc.metadb.task.TaskRepository;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferConfig;
@@ -71,6 +73,7 @@ import com.oceanbase.odc.service.common.response.SuccessResponse;
 import com.oceanbase.odc.service.common.util.OdcFileUtil;
 import com.oceanbase.odc.service.datatransfer.LocalFileManager;
 import com.oceanbase.odc.service.dispatch.DispatchResponse;
+import com.oceanbase.odc.service.dispatch.JobDispatchChecker;
 import com.oceanbase.odc.service.dispatch.RequestDispatcher;
 import com.oceanbase.odc.service.dispatch.TaskDispatchChecker;
 import com.oceanbase.odc.service.flow.instance.FlowTaskInstance;
@@ -82,6 +85,7 @@ import com.oceanbase.odc.service.flow.model.FlowNodeStatus;
 import com.oceanbase.odc.service.flow.model.FlowNodeType;
 import com.oceanbase.odc.service.flow.model.PreCheckTaskResult;
 import com.oceanbase.odc.service.flow.task.OssTaskReferManager;
+import com.oceanbase.odc.service.flow.task.model.DBStructureComparisonTaskResult;
 import com.oceanbase.odc.service.flow.task.model.DatabaseChangeResult;
 import com.oceanbase.odc.service.flow.task.model.MockDataTaskResult;
 import com.oceanbase.odc.service.flow.task.model.MockProperties;
@@ -100,8 +104,17 @@ import com.oceanbase.odc.service.permission.project.ApplyProjectResult;
 import com.oceanbase.odc.service.schedule.flowtask.AlterScheduleResult;
 import com.oceanbase.odc.service.session.model.SqlExecuteResult;
 import com.oceanbase.odc.service.task.TaskService;
+import com.oceanbase.odc.service.task.caller.ExecutorIdentifier;
+import com.oceanbase.odc.service.task.caller.ExecutorIdentifierParser;
+import com.oceanbase.odc.service.task.config.TaskFrameworkProperties;
+import com.oceanbase.odc.service.task.constants.JobAttributeKeyConstants;
+import com.oceanbase.odc.service.task.constants.JobUrlConstants;
+import com.oceanbase.odc.service.task.executor.logger.LogUtils;
 import com.oceanbase.odc.service.task.model.ExecutorInfo;
 import com.oceanbase.odc.service.task.model.OdcTaskLogLevel;
+import com.oceanbase.odc.service.task.service.TaskFrameworkService;
+import com.oceanbase.odc.service.task.util.HttpUtil;
+import com.oceanbase.odc.service.task.util.JobUtils;
 
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
@@ -152,6 +165,17 @@ public class FlowTaskInstanceService {
     @Value("${odc.task.async.result-preview-max-size-bytes:5242880}")
     private long resultPreviewMaxSizeBytes;
 
+    @Autowired
+    private TaskFrameworkProperties taskFrameworkProperties;
+
+    @Autowired
+    private TaskFrameworkService taskFrameworkService;
+
+    @Autowired
+    private JobDispatchChecker jobDispatchChecker;
+    private final Set<String> supportedBucketName = new HashSet<>(Arrays.asList("async", "structure-comparison"));
+
+
     public FlowInstanceDetailResp executeTask(@NotNull Long id) throws IOException {
         List<FlowTaskInstance> instances =
                 filterTaskInstance(id, instance -> instance.getStatus() == FlowNodeStatus.PENDING);
@@ -187,6 +211,11 @@ public class FlowTaskInstanceService {
         if (taskEntity.getResultJson() == null) {
             return null;
         }
+
+        if (taskFrameworkProperties.isEnabled() && taskEntity.getJobId() != null) {
+            return getLogByTaskFramework(level, taskEntity.getJobId());
+        }
+
         if (!dispatchChecker.isTaskEntityOnThisMachine(taskEntity)) {
             /**
              * 任务不在当前机器上，需要进行 {@code RPC} 转发获取
@@ -196,6 +225,64 @@ public class FlowTaskInstanceService {
             return response.getContentByType(new TypeReference<SuccessResponse<String>>() {}).getData();
         }
         return taskService.getLog(taskEntity.getCreatorId(), taskEntity.getId() + "", taskEntity.getTaskType(), level);
+    }
+
+    private String getLogByTaskFramework(OdcTaskLogLevel level, Long jobId) throws IOException {
+        // forward to target host when task is not be executed on this machine or running in k8s pod
+        JobEntity jobEntity = taskFrameworkService.find(jobId);
+        PreConditions.notNull(jobEntity, "job not found by id " + jobId);
+
+        if (JobUtils.isK8sRunMode(jobEntity.getRunMode()) && cloudObjectStorageService.supported()) {
+
+            String logIdKey = level == OdcTaskLogLevel.ALL ? JobAttributeKeyConstants.LOG_STORAGE_ALL_OBJECT_ID
+                    : JobAttributeKeyConstants.LOG_STORAGE_WARN_OBJECT_ID;
+            String objId = taskFrameworkService.findByJobIdAndAttributeKey(jobEntity.getId(), logIdKey);
+            String bucketName = taskFrameworkService.findByJobIdAndAttributeKey(jobEntity.getId(),
+                    JobAttributeKeyConstants.LOG_STORAGE_BUCKET_NAME);
+
+            if (objId != null && bucketName != null) {
+                if (log.isDebugEnabled()) {
+                    log.debug("job: {} is finished, try to get log from local or oss.", jobEntity.getId());
+                }
+                // check log file is exist on current disk
+                String logFileStr = LogUtils.getTaskLogFileWithPath(jobEntity.getId(), level);
+                if (new File(logFileStr).exists()) {
+                    return LogUtils.getLogContent(logFileStr, LogUtils.MAX_LOG_LINE_COUNT, LogUtils.MAX_LOG_BYTE_COUNT);
+                }
+
+                File tempFile = cloudObjectStorageService.downloadToTempFile(objId);
+                try (FileInputStream inputStream = new FileInputStream(tempFile)) {
+                    FileUtils.copyInputStreamToFile(inputStream, new File(logFileStr));
+                } finally {
+                    FileUtils.deleteQuietly(tempFile);
+                }
+                return LogUtils.getLogContent(logFileStr, LogUtils.MAX_LOG_LINE_COUNT, LogUtils.MAX_LOG_BYTE_COUNT);
+
+            }
+        }
+        if (JobUtils.isK8sRunMode(jobEntity.getRunMode())) {
+            if (jobEntity.getExecutorDestroyedTime() == null && jobEntity.getExecutorEndpoint() != null) {
+                if (log.isDebugEnabled()) {
+                    log.debug("job: {} is not finished, try to get log from remote pod.", jobEntity.getId());
+                }
+                String hostWithUrl = jobEntity.getExecutorEndpoint() + String.format(JobUrlConstants.LOG_QUERY,
+                        jobEntity.getId()) + "?logType=" + level.getName();
+                SuccessResponse<String> response =
+                        HttpUtil.request(hostWithUrl, new TypeReference<SuccessResponse<String>>() {});
+                return response.getData();
+            }
+        } else {
+            // process mode when executor is not current host, forward to target
+            if (!jobDispatchChecker.isExecutorOnThisMachine(jobEntity)) {
+                ExecutorIdentifier ei = ExecutorIdentifierParser.parser(jobEntity.getExecutorIdentifier());
+                DispatchResponse response = requestDispatcher.forward(ei.getHost(), ei.getPort());
+                return response.getContentByType(new TypeReference<String>() {});
+            }
+            String logFileStr = LogUtils.getTaskLogFileWithPath(jobEntity.getId(), level);
+            return LogUtils.getLogContent(logFileStr, LogUtils.MAX_LOG_LINE_COUNT, LogUtils.MAX_LOG_BYTE_COUNT);
+        }
+        // if log not found then return description to user
+        return jobEntity.getDescription();
     }
 
     public List<? extends FlowTaskResult> getResult(@NotNull Long id) throws IOException {
@@ -229,6 +316,8 @@ public class FlowTaskInstanceService {
             return getApplyProjectResult(taskEntity);
         } else if (taskEntity.getTaskType() == TaskType.APPLY_DATABASE_PERMISSION) {
             return getApplyDatabaseResult(taskEntity);
+        } else if (taskEntity.getTaskType() == TaskType.STRUCTURE_COMPARISON) {
+            return getStructureComparisonResult(taskEntity);
         } else {
             throw new UnsupportedException(ErrorCodes.Unsupported, new Object[] {ResourceType.ODC_TASK},
                     "Unsupported task type: " + taskEntity.getTaskType());
@@ -452,7 +541,10 @@ public class FlowTaskInstanceService {
         }
     }
 
-    public List<String> getAsyncDownloadUrl(Long id, List<String> objectIds) {
+    public List<String> getAsyncDownloadUrl(Long id, List<String> objectIds, String bucket) {
+        if (!supportedBucketName.contains(bucket)) {
+            throw new IllegalArgumentException("Bucket name is illegal, bucket=" + bucket);
+        }
         Set<Long> creatorIdSet = flowInstanceRepository.findCreatorIdById(id);
         if (creatorIdSet.stream().anyMatch(creatorId -> creatorId == authenticationFacade.currentUserId())
                 || approvalPermissionService.getApprovableApprovalInstances()
@@ -460,7 +552,7 @@ public class FlowTaskInstanceService {
             List<String> downloadUrls = Lists.newArrayList();
             for (String objectId : objectIds) {
                 downloadUrls.add(objectStorageFacade.getDownloadUrl(
-                        "async".concat(File.separator).concat(creatorIdSet.iterator().next().toString()),
+                        bucket.concat(File.separator).concat(creatorIdSet.iterator().next().toString()),
                         objectId));
             }
             return downloadUrls;
@@ -621,6 +713,10 @@ public class FlowTaskInstanceService {
 
     private List<ApplyDatabaseResult> getApplyDatabaseResult(@NonNull TaskEntity taskEntity) {
         return innerGetResult(taskEntity, ApplyDatabaseResult.class);
+    }
+
+    private List<DBStructureComparisonTaskResult> getStructureComparisonResult(@NonNull TaskEntity taskEntity) {
+        return innerGetResult(taskEntity, DBStructureComparisonTaskResult.class);
     }
 
     private <T extends FlowTaskResult> List<T> innerGetResult(@NonNull TaskEntity taskEntity,

@@ -26,6 +26,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -36,14 +37,20 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Component;
 
+import com.google.common.base.MoreObjects;
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.common.util.StringUtils;
+import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.core.shared.constant.TaskType;
+import com.oceanbase.odc.core.shared.exception.NotFoundException;
+import com.oceanbase.odc.metadb.collaboration.ProjectEntity;
+import com.oceanbase.odc.metadb.collaboration.ProjectRepository;
 import com.oceanbase.odc.metadb.connection.ConnectionConfigRepository;
 import com.oceanbase.odc.metadb.connection.ConnectionEntity;
 import com.oceanbase.odc.metadb.connection.ConnectionSpecs;
 import com.oceanbase.odc.metadb.flow.FlowInstanceEntity;
 import com.oceanbase.odc.metadb.flow.FlowInstanceRepository;
+import com.oceanbase.odc.metadb.flow.FlowInstanceRepository.ParentInstanceIdCount;
 import com.oceanbase.odc.metadb.flow.ServiceTaskInstanceEntity;
 import com.oceanbase.odc.metadb.flow.ServiceTaskInstanceRepository;
 import com.oceanbase.odc.metadb.flow.ServiceTaskInstanceSpecs;
@@ -133,6 +140,8 @@ public class FlowResponseMapperFactory {
     private RiskLevelRepository riskLevelRepository;
     @Autowired
     private AuthenticationFacade authenticationFacade;
+    @Autowired
+    private ProjectRepository projectRepository;
     private final ConnectionMapper connectionMapper = ConnectionMapper.INSTANCE;
 
     private final RiskLevelMapper riskLevelMapper = RiskLevelMapper.INSTANCE;
@@ -282,8 +291,13 @@ public class FlowResponseMapperFactory {
                 .collect(Collectors.groupingBy(ServiceTaskInstanceEntity::getFlowInstanceId,
                         Collectors.mapping(ServiceTaskInstanceEntity::getStrategy, Collectors.toList())));
 
+        Map<Long, Integer> parentInstanceIdMap = flowInstanceRepository
+                .findByParentInstanceIdIn(flowInstanceIds)
+                .stream().collect(
+                        Collectors.toMap(ParentInstanceIdCount::getParentInstanceId, ParentInstanceIdCount::getCount));
+
         Map<Long, Boolean> flowInstanceId2Rollbackable = flowInstanceIds.stream().collect(Collectors
-                .toMap(Function.identity(), id -> flowInstanceRepository.findByParentInstanceId(id).size() == 0));
+                .toMap(Function.identity(), id -> MoreObjects.firstNonNull(parentInstanceIdMap.get(id), 0) == 0));
 
         /**
          * In order to improve the interface efficiency, it is necessary to find out the task entity
@@ -310,15 +324,43 @@ public class FlowResponseMapperFactory {
         Set<Long> databaseIds = new HashSet<>();
         databaseIds.addAll(taskId2TaskEntity.values().stream().map(TaskEntity::getDatabaseId).filter(Objects::nonNull)
                 .collect(Collectors.toSet()));
-        databaseIds.addAll(taskId2TaskEntity.values().stream()
+        Set<Long> sourceDatabaseIdsInComparisonTask = new HashSet<>();
+        Set<Long> targetDatabaseIdsInComparisonTask = new HashSet<>();
+
+        taskId2TaskEntity.values().stream()
                 .filter(task -> task.getTaskType().equals(TaskType.STRUCTURE_COMPARISON))
-                .map(taskEntity -> JsonUtils
-                        .fromJson(taskEntity.getParametersJson(), DBStructureComparisonParameter.class)
-                        .getTargetDatabaseId())
-                .collect(Collectors.toSet()));
+                .forEach(task -> {
+                    DBStructureComparisonParameter parameter = JsonUtils.fromJson(
+                            task.getParametersJson(), DBStructureComparisonParameter.class);
+                    sourceDatabaseIdsInComparisonTask.add(parameter.getSourceDatabaseId());
+                    targetDatabaseIdsInComparisonTask.add(parameter.getTargetDatabaseId());
+                });
+        databaseIds.addAll(targetDatabaseIdsInComparisonTask);
+
         if (CollectionUtils.isNotEmpty(databaseIds)) {
             id2Database = databaseService.listDatabasesByIds(databaseIds).stream()
                     .collect(Collectors.toMap(Database::getId, database -> database));
+
+            // set project name for structure comparison task
+            Set<Long> projectIds = sourceDatabaseIdsInComparisonTask.stream()
+                    .map(id2Database::get)
+                    .filter(Objects::nonNull)
+                    .map(database -> database.getProject().getId())
+                    .collect(Collectors.toSet());
+            Map<Long, ProjectEntity> id2ProjectEntity = projectRepository.findByIdIn(projectIds).stream()
+                    .collect(Collectors.toMap(ProjectEntity::getId, Function.identity()));
+
+            for (Long id : sourceDatabaseIdsInComparisonTask) {
+                Database database = id2Database.get(id);
+                if (Objects.nonNull(database) && Objects.nonNull(database.getProject())) {
+                    Long projectId = database.getProject().getId();
+                    if (Objects.nonNull(projectId)) {
+                        ProjectEntity projectEntity = Optional.ofNullable(id2ProjectEntity.get(projectId)).orElseThrow(
+                                () -> new NotFoundException(ResourceType.ODC_PROJECT, "projectId", projectId));
+                        database.getProject().setName(projectEntity.getName());
+                    }
+                }
+            }
         }
         /**
          * find the ConnectionConfig associated with each Database
