@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 OceanBase.
+ * Copyright (c) 2023 OceanBase.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.oceanbase.odc.plugin.task.oracle.datatransfer.job.factory;
 
 import java.io.File;
@@ -25,10 +24,15 @@ import java.util.List;
 
 import javax.sql.DataSource;
 
-import com.oceanbase.odc.plugin.schema.mysql.MySQLFunctionExtension;
-import com.oceanbase.odc.plugin.schema.mysql.MySQLProcedureExtension;
-import com.oceanbase.odc.plugin.schema.mysql.MySQLTableExtension;
-import com.oceanbase.odc.plugin.schema.mysql.MySQLViewExtension;
+import com.oceanbase.odc.plugin.schema.oracle.OracleFunctionExtension;
+import com.oceanbase.odc.plugin.schema.oracle.OraclePackageExtension;
+import com.oceanbase.odc.plugin.schema.oracle.OracleProcedureExtension;
+import com.oceanbase.odc.plugin.schema.oracle.OracleSequenceExtension;
+import com.oceanbase.odc.plugin.schema.oracle.OracleSynonymExtension;
+import com.oceanbase.odc.plugin.schema.oracle.OracleTableExtension;
+import com.oceanbase.odc.plugin.schema.oracle.OracleTriggerExtension;
+import com.oceanbase.odc.plugin.schema.oracle.OracleTypeExtension;
+import com.oceanbase.odc.plugin.schema.oracle.OracleViewExtension;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferConfig;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferObject;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.ObjectResult;
@@ -38,9 +42,12 @@ import com.oceanbase.odc.plugin.task.mysql.datatransfer.job.datax.model.JobConfi
 import com.oceanbase.odc.plugin.task.mysql.datatransfer.job.datax.model.JobContent.Parameter;
 import com.oceanbase.odc.plugin.task.mysql.datatransfer.job.datax.model.parameter.MySQLReaderPluginParameter;
 import com.oceanbase.odc.plugin.task.mysql.datatransfer.job.datax.model.parameter.MySQLWriterPluginParameter;
+import com.oceanbase.odc.plugin.task.mysql.datatransfer.job.datax.model.parameter.TxtWriterPluginParameter;
 import com.oceanbase.odc.plugin.task.mysql.datatransfer.job.factory.BaseTransferJobFactory;
 import com.oceanbase.odc.plugin.task.oracle.datatransfer.job.OracleSchemaExportJob;
 import com.oceanbase.odc.plugin.task.oracle.datatransfer.job.OracleSqlScriptImportJob;
+import com.oceanbase.tools.dbbrowser.model.DBSynonymType;
+import com.oceanbase.tools.dbbrowser.model.DBTableColumn;
 import com.oceanbase.tools.loaddump.common.enums.ObjectType;
 
 /**
@@ -54,18 +61,37 @@ public class OracleTransferJobFactory extends BaseTransferJobFactory {
     }
 
     @Override
+    protected List<DBTableColumn> queryTableColumns(Connection connection, ObjectResult table) {
+        return new OracleTableExtension()
+                .getDetail(connection, table.getSchema(), table.getName()).getColumns();
+    }
+
+    @Override
     protected List<DataTransferObject> queryTransferObjects(Connection connection, boolean transferDDL) {
-        // TODO: use OracleSchemaExtension
         List<DataTransferObject> objects = new ArrayList<>();
-        new MySQLTableExtension().list(connection, transferConfig.getSchemaName())
+        new OracleTableExtension().list(connection, transferConfig.getSchemaName())
                 .forEach(table -> objects.add(new DataTransferObject(ObjectType.TABLE, table.getName())));
         if (transferDDL) {
-            new MySQLViewExtension().list(connection, transferConfig.getSchemaName())
+            new OracleViewExtension().list(connection, transferConfig.getSchemaName())
                     .forEach(view -> objects.add(new DataTransferObject(ObjectType.VIEW, view.getName())));
-            new MySQLFunctionExtension().list(connection, transferConfig.getSchemaName())
+            new OracleFunctionExtension().list(connection, transferConfig.getSchemaName())
                     .forEach(func -> objects.add(new DataTransferObject(ObjectType.FUNCTION, func.getName())));
-            new MySQLProcedureExtension().list(connection, transferConfig.getSchemaName())
+            new OracleProcedureExtension().list(connection, transferConfig.getSchemaName())
                     .forEach(proc -> objects.add(new DataTransferObject(ObjectType.PROCEDURE, proc.getName())));
+            new OracleSequenceExtension().list(connection, transferConfig.getSchemaName())
+                    .forEach(seq -> objects.add(new DataTransferObject(ObjectType.SEQUENCE, seq.getName())));
+            new OracleTriggerExtension().list(connection, transferConfig.getSchemaName())
+                    .forEach(trg -> objects.add(new DataTransferObject(ObjectType.TRIGGER, trg.getName())));
+            new OraclePackageExtension().list(connection, transferConfig.getSchemaName())
+                    .forEach(pkg -> objects.add(new DataTransferObject(ObjectType.PACKAGE, pkg.getName())));
+            new OraclePackageExtension().listPackageBodies(connection, transferConfig.getSchemaName())
+                    .forEach(pkg -> objects.add(new DataTransferObject(ObjectType.PACKAGE_BODY, pkg.getName())));
+            new OracleSynonymExtension().list(connection, transferConfig.getSchemaName(), DBSynonymType.COMMON)
+                    .forEach(syn -> objects.add(new DataTransferObject(ObjectType.SYNONYM, syn.getName())));
+            new OracleSynonymExtension().list(connection, transferConfig.getSchemaName(), DBSynonymType.PUBLIC)
+                    .forEach(syn -> objects.add(new DataTransferObject(ObjectType.SYNONYM, syn.getName())));
+            new OracleTypeExtension().list(connection, transferConfig.getSchemaName())
+                    .forEach(typ -> objects.add(new DataTransferObject(ObjectType.TYPE, typ.getName())));
         }
         return objects;
     }
@@ -85,6 +111,9 @@ public class OracleTransferJobFactory extends BaseTransferJobFactory {
         Parameter writer = jobConfiguration.getContent()[0].getWriter();
         MySQLWriterPluginParameter parameter = (MySQLWriterPluginParameter) writer.getParameter();
         parameter.setSession(getSessionOptions());
+        parameter.setWriteMode(null);
+        parameter.setPreSql(null);
+        parameter.setPostSql(null);
         writer.setName("oraclewriter");
         return new DataXTransferJob(object, jobConfiguration, workingDir, logDir);
     }
@@ -92,17 +121,19 @@ public class OracleTransferJobFactory extends BaseTransferJobFactory {
     @Override
     protected AbstractJob generateDataXExportJob(ObjectResult object, JobConfiguration jobConfiguration) {
         Parameter reader = jobConfiguration.getContent()[0].getReader();
-        MySQLReaderPluginParameter parameter = (MySQLReaderPluginParameter) reader.getParameter();
-        parameter.setSession(getSessionOptions());
+        MySQLReaderPluginParameter readerParameter = (MySQLReaderPluginParameter) reader.getParameter();
+        readerParameter.setSession(getSessionOptions());
         reader.setName("oraclereader");
+        Parameter writer = jobConfiguration.getContent()[0].getWriter();
+        TxtWriterPluginParameter writerParameter = (TxtWriterPluginParameter) writer.getParameter();
+        writerParameter.setQuoteChar("\"");
         return new DataXTransferJob(object, jobConfiguration, workingDir, logDir);
     }
 
     private List<String> getSessionOptions() {
         return Arrays.asList(
                 "alter session set CURRENT_SCHEMA=" + transferConfig.getSchemaName(),
-                "alter session set NLS_DATE_FORMAT='yyyy-mm-dd hh24:mi:ss'",
-                "alter session set NLS_TIMESTAMP_FORMAT='yyyy-mm-dd hh24:mi:ss'",
-                "alter session set NLS_TIMESTAMP_TZ_FORMAT='yyyy-mm-dd hh24:mi:ss'");
+                "alter session set nls_date_format='YYYY-MM-DD HH24:MI:SS'",
+                "alter session set nls_timestamp_format='YYYY-MM-DD HH24:MI:SS:FF9'");
     }
 }

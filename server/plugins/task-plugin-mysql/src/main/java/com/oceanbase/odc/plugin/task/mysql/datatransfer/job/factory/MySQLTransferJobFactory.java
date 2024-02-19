@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 OceanBase.
+ * Copyright (c) 2023 OceanBase.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.oceanbase.odc.plugin.task.mysql.datatransfer.job.factory;
 
 import java.io.File;
@@ -36,6 +35,7 @@ import com.oceanbase.odc.plugin.task.mysql.datatransfer.job.MySQLSchemaExportJob
 import com.oceanbase.odc.plugin.task.mysql.datatransfer.job.MySQLSqlScriptImportJob;
 import com.oceanbase.odc.plugin.task.mysql.datatransfer.job.datax.DataXTransferJob;
 import com.oceanbase.odc.plugin.task.mysql.datatransfer.job.datax.model.JobConfiguration;
+import com.oceanbase.tools.dbbrowser.model.DBTableColumn;
 import com.oceanbase.tools.loaddump.common.enums.ObjectType;
 
 /**
@@ -47,6 +47,12 @@ public class MySQLTransferJobFactory extends BaseTransferJobFactory {
     public MySQLTransferJobFactory(DataTransferConfig transferConfig,
             File workingDir, File logDir, List<URL> inputs) {
         super(transferConfig, workingDir, logDir, inputs);
+    }
+
+    @Override
+    protected List<DBTableColumn> queryTableColumns(Connection connection, ObjectResult table) {
+        return new MySQLTableExtension()
+                .getDetail(connection, table.getSchema(), table.getName()).getColumns();
     }
 
     @Override

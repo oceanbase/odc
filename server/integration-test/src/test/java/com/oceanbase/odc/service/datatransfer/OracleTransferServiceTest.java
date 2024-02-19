@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 OceanBase.
+ * Copyright (c) 2024 OceanBase.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.oceanbase.odc.service.datatransfer;
 
 import com.oceanbase.odc.TestConnectionUtil;
@@ -21,24 +20,20 @@ import com.oceanbase.odc.core.shared.constant.ConnectType;
 import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 
-import lombok.extern.slf4j.Slf4j;
-
 /**
- * Due to the current single test on GitHub being executed by ob-farm, it is temporarily not
- * possible to obtain the lfs file. So this unit test will be temporarily skipped and manually
- * executed by the developer.
+ * @author liuyizhuo.lyz
+ * @date 2024/2/5
  */
-@Slf4j
-public class MySQLTransferServiceTest extends BaseTransferServiceTest {
+public class OracleTransferServiceTest extends BaseTransferServiceTest {
 
     @Override
     protected ConnectionConfig getConnectionConfig() {
-        return TestConnectionUtil.getTestConnectionConfig(ConnectType.from(DialectType.MYSQL));
+        return TestConnectionUtil.getTestConnectionConfig(ConnectType.from(DialectType.ORACLE));
     }
 
     @Override
     protected String getTableName() {
-        return "loader_dumper_test";
+        return "LOADER_DUMPER_TEST";
     }
 
 }

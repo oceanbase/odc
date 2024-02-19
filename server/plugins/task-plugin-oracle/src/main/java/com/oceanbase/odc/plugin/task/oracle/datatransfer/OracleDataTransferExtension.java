@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 OceanBase.
+ * Copyright (c) 2023 OceanBase.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.oceanbase.odc.plugin.task.oracle.datatransfer;
 
 import java.io.File;
@@ -28,7 +27,6 @@ import com.oceanbase.odc.plugin.task.api.datatransfer.DataTransferJob;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.ConnectionInfo;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferConfig;
 import com.oceanbase.odc.plugin.task.mysql.datatransfer.MySQLDataTransferExtension;
-import com.oceanbase.odc.plugin.task.mysql.datatransfer.MySQLDataTransferJob;
 import com.oceanbase.tools.loaddump.common.enums.ObjectType;
 
 import lombok.NonNull;
@@ -48,13 +46,13 @@ public class OracleDataTransferExtension extends MySQLDataTransferExtension {
     @Override
     public Set<ObjectType> getSupportedObjectTypes(ConnectionInfo connectionInfo) throws SQLException {
         Set<ObjectType> types = SetUtils.hashSet(
-            ObjectType.SEQUENCE,
-            ObjectType.TRIGGER,
-            ObjectType.PACKAGE,
-            ObjectType.PACKAGE_BODY,
-            ObjectType.SYNONYM,
-            ObjectType.PUBLIC_SYNONYM,
-            ObjectType.TYPE);
+                ObjectType.SEQUENCE,
+                ObjectType.TRIGGER,
+                ObjectType.PACKAGE,
+                ObjectType.PACKAGE_BODY,
+                ObjectType.SYNONYM,
+                ObjectType.PUBLIC_SYNONYM,
+                ObjectType.TYPE);
         return SetUtils.union(types, super.getSupportedObjectTypes(connectionInfo));
     }
 

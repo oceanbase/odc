@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 OceanBase.
+ * Copyright (c) 2023 OceanBase.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.oceanbase.odc.plugin.task.mysql.datatransfer.job.factory;
 
 import java.io.File;
@@ -32,7 +31,6 @@ import javax.sql.DataSource;
 import org.apache.commons.lang3.ArrayUtils;
 
 import com.oceanbase.odc.core.shared.Verify;
-import com.oceanbase.odc.plugin.schema.mysql.MySQLTableExtension;
 import com.oceanbase.odc.plugin.task.api.datatransfer.dumper.DataFile;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferConfig;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferFormat;
@@ -41,10 +39,10 @@ import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferType;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.ObjectResult;
 import com.oceanbase.odc.plugin.task.mysql.datatransfer.common.Constants;
 import com.oceanbase.odc.plugin.task.mysql.datatransfer.job.AbstractJob;
-import com.oceanbase.odc.plugin.task.mysql.datatransfer.job.MySQLSqlScriptImportJob;
 import com.oceanbase.odc.plugin.task.mysql.datatransfer.job.datax.ConfigurationResolver;
 import com.oceanbase.odc.plugin.task.mysql.datatransfer.job.datax.model.JobConfiguration;
 import com.oceanbase.tools.dbbrowser.model.DBTableColumn;
+import com.oceanbase.tools.loaddump.common.enums.ObjectType;
 
 public abstract class BaseTransferJobFactory {
 
@@ -75,7 +73,7 @@ public abstract class BaseTransferJobFactory {
                             String objectName = filename.substring(0, filename.indexOf(Constants.DDL_SUFFIX));
                             ObjectResult object = new ObjectResult(transferConfig.getSchemaName(), objectName,
                                     schemaFile.getParentFile().getName().toUpperCase());
-                            return new MySQLSqlScriptImportJob(object, transferConfig, url, dataSource);
+                            return generateSqlScriptImportJob(object, url, dataSource);
                         } catch (URISyntaxException e) {
                             throw new RuntimeException(e);
                         }
@@ -129,8 +127,7 @@ public abstract class BaseTransferJobFactory {
 
                 if (transferConfig.getDataTransferFormat() == DataTransferFormat.CSV) {
                     try (Connection conn = dataSource.getConnection()) {
-                        List<DBTableColumn> columns = new MySQLTableExtension()
-                                .getDetail(conn, object.getSchema(), object.getName()).getColumns();
+                        List<DBTableColumn> columns = queryTableColumns(conn, object);
                         jobs.add(generateDataXImportJob(object, ConfigurationResolver
                                 .buildJobConfigurationForImport(transferConfig, jdbcUrl, object, url, columns)));
                     }
@@ -151,6 +148,9 @@ public abstract class BaseTransferJobFactory {
                 objects = new ArrayList<>(transferConfig.getExportDbObjects());
             }
             for (DataTransferObject object : objects) {
+                if (ObjectType.TABLE != object.getDbObjectType()) {
+                    continue;
+                }
                 ObjectResult table = new ObjectResult(transferConfig.getSchemaName(), object.getObjectName(),
                         object.getDbObjectType().getName());
                 /*
@@ -160,8 +160,7 @@ public abstract class BaseTransferJobFactory {
                 if (Objects.nonNull(transferConfig.getQuerySql())) {
                     columns = transferConfig.getColumns();
                 } else {
-                    columns = new MySQLTableExtension()
-                            .getDetail(conn, table.getSchema(), table.getName()).getColumns();
+                    columns = queryTableColumns(conn, table);
                 }
                 AbstractJob job = generateDataXExportJob(table, ConfigurationResolver
                         .buildJobConfigurationForExport(workingDir, transferConfig, jdbcUrl, table.getName(), columns));
@@ -170,6 +169,8 @@ public abstract class BaseTransferJobFactory {
         }
         return jobs;
     }
+
+    abstract protected List<DBTableColumn> queryTableColumns(Connection connection, ObjectResult table);
 
     abstract protected List<DataTransferObject> queryTransferObjects(Connection connection, boolean transferDDL);
 

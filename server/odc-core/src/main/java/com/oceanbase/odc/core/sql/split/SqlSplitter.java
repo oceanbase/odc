@@ -111,6 +111,8 @@ public class SqlSplitter {
      */
     private final List<OffsetString> stmts = new ArrayList<>();
 
+    private final boolean addDelimiter;
+
     /**
      * 当前语句状态，初始为 SQL_STMT，进去 PL BLock 后切换到 PL_STMT 状态
      */
@@ -160,11 +162,16 @@ public class SqlSplitter {
     }
 
     public SqlSplitter(Class<? extends Lexer> lexerType, String delimiter) {
+        this(lexerType, delimiter, true);
+    }
+
+    public SqlSplitter(Class<? extends Lexer> lexerType, String delimiter, boolean addDelimiter) {
         PreConditions.notNull(lexerType, "lexerType");
         this.tokenDefinition = LexerTokenDefinitions.of(lexerType);
         this.lexerFactory = LexerFactories.of(lexerType);
         this.innerUtils = new InnerUtils();
         this.delimiter = delimiter;
+        this.addDelimiter = addDelimiter;
 
         LexerTokenDefinition definition = this.tokenDefinition;
         this.DEFAULT_PL_END_DELIMITER = definition.DIV();
@@ -367,7 +374,12 @@ public class SqlSplitter {
     }
 
     public static SqlStatementIterator iterator(InputStream in, Charset charset, String delimiter) {
-        return new SqlSplitterIterator(in, charset, delimiter);
+        return iterator(in, charset, delimiter, true);
+    }
+
+    public static SqlStatementIterator iterator(InputStream in, Charset charset, String delimiter,
+            boolean addDelimiter) {
+        return new SqlSplitterIterator(in, charset, delimiter, addDelimiter);
     }
 
     private void clear() {
@@ -381,16 +393,18 @@ public class SqlSplitter {
         String currentStmt = currentStmtBuilder.toString();
         boolean notDefaultSqlDelimiter = false;
         if (StringUtils.isNotBlank(currentStmt)) {
-            for (int cursor = pos - 1; cursor > 0; cursor--) {
-                Token token = tokens[cursor];
-                if (innerUtils.isEOF(token.getType()) || innerUtils.isBlankOrComment(token.getType())) {
-                    continue;
+            if (addDelimiter) {
+                for (int cursor = pos - 1; cursor > 0; cursor--) {
+                    Token token = tokens[cursor];
+                    if (innerUtils.isEOF(token.getType()) || innerUtils.isBlankOrComment(token.getType())) {
+                        continue;
+                    }
+                    notDefaultSqlDelimiter = !DEFAULT_SQL_DELIMITER.equals(token.getText());
+                    if (notDefaultSqlDelimiter) {
+                        currentStmt += DEFAULT_SQL_DELIMITER;
+                    }
+                    break;
                 }
-                notDefaultSqlDelimiter = !DEFAULT_SQL_DELIMITER.equals(token.getText());
-                if (notDefaultSqlDelimiter) {
-                    currentStmt += DEFAULT_SQL_DELIMITER;
-                }
-                break;
             }
             this.stmts.add(new OffsetString(currentOffset.getValue(), currentStmt.trim()));
             if (notDefaultSqlDelimiter) {
@@ -854,6 +868,7 @@ public class SqlSplitter {
         private final BufferedReader reader;
         private final StringBuilder buffer = new StringBuilder();
         private final LinkedList<OffsetString> holder = new LinkedList<>();
+        private final boolean addDelimiter;
 
         private OffsetString current;
         private String delimiter;
@@ -867,9 +882,10 @@ public class SqlSplitter {
         private static final String SQL_MULTI_LINE_COMMENT_PREFIX = "/*";
         private static final Set<Character> DELIMITER_CHARACTERS = new HashSet<>(Arrays.asList(';', '/', '$'));
 
-        public SqlSplitterIterator(InputStream input, Charset charset, String delimiter) {
+        public SqlSplitterIterator(InputStream input, Charset charset, String delimiter, boolean addDelimiter) {
             this.reader = new BufferedReader(new InputStreamReader(input, charset));
             this.delimiter = delimiter;
+            this.addDelimiter = addDelimiter;
         }
 
         @Override
@@ -969,7 +985,7 @@ public class SqlSplitter {
         }
 
         private SqlSplitter createSplitter() {
-            return new SqlSplitter(PlSqlLexer.class, this.delimiter);
+            return new SqlSplitter(PlSqlLexer.class, this.delimiter, addDelimiter);
         }
 
     }

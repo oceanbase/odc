@@ -41,6 +41,7 @@ import java.util.zip.ZipInputStream;
 import javax.sql.DataSource;
 
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.collections4.Predicate;
 import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -65,9 +66,10 @@ import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferConfig;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferTaskResult;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferType;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.ObjectResult;
-import com.oceanbase.odc.plugin.task.mysql.datatransfer.job.factory.MySQLTransferJobFactory;
+import com.oceanbase.odc.plugin.task.mysql.datatransfer.common.Constants;
 import com.oceanbase.odc.plugin.task.mysql.datatransfer.job.AbstractJob;
 import com.oceanbase.odc.plugin.task.mysql.datatransfer.job.factory.BaseTransferJobFactory;
+import com.oceanbase.odc.plugin.task.mysql.datatransfer.job.factory.MySQLTransferJobFactory;
 import com.oceanbase.tools.loaddump.common.model.ObjectStatus.Status;
 import com.zaxxer.hikari.HikariDataSource;
 
@@ -78,6 +80,8 @@ import lombok.extern.slf4j.Slf4j;
 public class MySQLDataTransferJob implements DataTransferJob {
     private static final Logger LOGGER = LoggerFactory.getLogger("DataTransferLogger");
     private static final List<String> REPORT_HEADER = Arrays.asList("No.#", "Type", "Name", "Count", "Status");
+    private static final String READER_PREFIX = "datax/plugin/reader/";
+    private static final String WRITER_PREFIX = "datax/plugin/writer/";
 
     protected final DataTransferConfig baseConfig;
     protected final File workingDir;
@@ -148,7 +152,14 @@ public class MySQLDataTransferJob implements DataTransferJob {
                         new ThreadFactoryBuilder().setNameFormat("datatransfer-schedule-%d").build());
                 try {
                     initSchedules(executor);
-                    unzipDataXToWorkingDir(workingDir);
+                    unzipDataXToWorkingDir(workingDir, name -> {
+                        if (name.startsWith(READER_PREFIX)) {
+                            return name.startsWith(READER_PREFIX + getReaderPluginName());
+                        } else if (name.startsWith(WRITER_PREFIX)) {
+                            return name.startsWith(WRITER_PREFIX + getWriterPluginName());
+                        }
+                        return true;
+                    });
                     runDataJobs();
                 } finally {
                     logSummary(dataJobs, "DATA");
@@ -186,6 +197,16 @@ public class MySQLDataTransferJob implements DataTransferJob {
         dataSource.setDriverClassName(OdcConstants.MYSQL_DRIVER_CLASS_NAME);
         dataSource.setMaximumPoolSize(3);
         return dataSource;
+    }
+
+    protected String getReaderPluginName() {
+        return baseConfig.getTransferType() == DataTransferType.IMPORT ? Constants.TXT_FILE_READER
+                : Constants.MYSQL_READER;
+    }
+
+    protected String getWriterPluginName() {
+        return baseConfig.getTransferType() == DataTransferType.IMPORT ? Constants.MYSQL_WRITER
+                : Constants.TXT_FILE_WRITER;
     }
 
     private void initTransferJobs(DataSource dataSource, String jdbcUrl) {
@@ -265,12 +286,16 @@ public class MySQLDataTransferJob implements DataTransferJob {
         }
     }
 
-    private synchronized static void unzipDataXToWorkingDir(File workingDir) throws IOException {
+    private synchronized static void unzipDataXToWorkingDir(File workingDir, Predicate<String> filter)
+            throws IOException {
         try (InputStream resource = MySQLDataTransferJob.class.getResourceAsStream("/datax.zip");
                 ZipInputStream zis = new ZipInputStream(resource)) {
             byte[] buffer = new byte[1024];
             ZipEntry entry;
             while ((entry = zis.getNextEntry()) != null) {
+                if (!filter.evaluate(entry.getName())) {
+                    continue;
+                }
                 File file = new File(workingDir, entry.getName());
                 if (entry.isDirectory()) {
                     file.mkdirs();

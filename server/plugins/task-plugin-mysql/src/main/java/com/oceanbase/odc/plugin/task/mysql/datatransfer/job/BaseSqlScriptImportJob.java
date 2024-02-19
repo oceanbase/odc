@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 OceanBase.
+ * Copyright (c) 2023 OceanBase.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,9 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.oceanbase.odc.plugin.task.mysql.datatransfer.job;
 
+import java.io.IOException;
 import java.net.URL;
 import java.nio.charset.Charset;
 import java.sql.Connection;
@@ -32,6 +32,7 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.sql.split.SqlCommentProcessor;
 import com.oceanbase.odc.core.sql.split.SqlStatementIterator;
@@ -79,6 +80,8 @@ public abstract class BaseSqlScriptImportJob extends AbstractJob {
 
     abstract protected boolean isObjectExists() throws SQLException;
 
+    abstract protected SqlStatementIterator getStmtIterator() throws IOException;
+
     abstract protected List<String> getPreSqlsForSchema();
 
     abstract protected List<String> getPreSqlsForData();
@@ -88,13 +91,13 @@ public abstract class BaseSqlScriptImportJob extends AbstractJob {
     abstract protected List<String> getPostSqlsForData();
 
     private void runExternalSqlScript() throws Exception {
-        DialectType dialectType = transferConfig.getConnectionInfo().getConnectType().getDialectType();
-        String charset = transferConfig.getEncoding().getAlias();
         try (Connection conn = dataSource.getConnection(); Statement stmt = conn.createStatement()) {
-            SqlStatementIterator iterator = SqlCommentProcessor.iterator(input.openStream(), Charset.forName(charset),
-                    new SqlCommentProcessor(dialectType, true, true, true));
+            SqlStatementIterator iterator = getStmtIterator();
             while (!isCanceled() && !Thread.currentThread().isInterrupted() && iterator.hasNext()) {
                 String sql = iterator.next().getStr();
+                if (StringUtils.isEmpty(sql.trim())) {
+                    continue;
+                }
                 try {
                     increaseTotal(1);
                     stmt.execute(sql);
@@ -137,7 +140,8 @@ public abstract class BaseSqlScriptImportJob extends AbstractJob {
                     new SqlCommentProcessor(dialectType, true, true, true));
             while (!Thread.currentThread().isInterrupted() && iterator.hasNext() && !isCanceled()) {
                 String sql = iterator.next().getStr();
-                if (firstLine && sql.startsWith("drop") || sql.startsWith("DROP")) {
+                if (StringUtils.isEmpty(sql.trim())
+                        || (firstLine && (sql.startsWith("drop") || sql.startsWith("DROP")))) {
                     continue;
                 }
                 firstLine = false;
