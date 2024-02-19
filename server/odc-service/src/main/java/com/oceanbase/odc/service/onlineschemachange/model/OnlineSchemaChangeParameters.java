@@ -82,7 +82,8 @@ public class OnlineSchemaChangeParameters implements Serializable, TaskParameter
                 if (statement instanceof CreateTable || statement instanceof AlterTable) {
                     OnlineSchemaChangeScheduleTaskParameters parameter =
                             subTaskParameterFactory.generate(sql, sqlType, statement);
-                    TableIdentity key = new TableIdentity(parameter.getDatabaseName(), parameter.getOriginTableName());
+                    TableIdentity key = new TableIdentity(DdlUtils.getUnwrappedName(parameter.getDatabaseName()),
+                            DdlUtils.getUnwrappedName(parameter.getOriginTableName()));
                     taskParameters.putIfAbsent(key, parameter);
                     if (sqlType == OnlineSchemaChangeSqlType.ALTER) {
                         String newAlterStmt = DdlUtils.replaceTableName(sql, parameter.getNewTableName(),
@@ -91,8 +92,8 @@ public class OnlineSchemaChangeParameters implements Serializable, TaskParameter
                     }
                 } else {
                     CreateIndex createIndex = (CreateIndex) statement;
-                    TableIdentity key = new TableIdentity(schema,
-                            createIndex.getOn().getRelation());
+                    TableIdentity key = new TableIdentity(DdlUtils.getUnwrappedName(schema),
+                            DdlUtils.getUnwrappedName(createIndex.getOn().getRelation()));
                     taskParameters.get(key).getSqlsToBeExecuted().add(sql);
                 }
 
