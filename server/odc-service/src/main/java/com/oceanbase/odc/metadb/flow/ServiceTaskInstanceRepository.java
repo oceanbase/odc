@@ -75,7 +75,7 @@ public interface ServiceTaskInstanceRepository extends OdcJpaRepository<ServiceT
     Optional<ServiceTaskInstanceEntity> findByInstanceTypeAndName(@Param("instanceType") FlowNodeType instanceType,
             @Param("name") String name, @Param("flowInstanceId") Long flowInstanceId);
 
-    Optional<ServiceTaskInstanceEntity> findByFlowInstanceId(Long flowInstanceId);
+    List<ServiceTaskInstanceEntity> findByFlowInstanceId(Long flowInstanceId);
 
     @Query(value = "select b.* from flow_instance a left join flow_instance_node_task b "
             + "on a.id = b.flow_instance_id "

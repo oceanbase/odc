@@ -94,7 +94,7 @@ public class SqlCheckService {
     }
 
     public List<CheckViolation> check(@NotNull Long environmentId, @NonNull String databaseName,
-            @NotNull List<OffsetString> sqls, @NotNull ConnectionConfig config) {
+            @NotNull List<OffsetString> sqls, @NotNull ConnectionConfig config, List<SqlCheckRule> defaultRules) {
         if (CollectionUtils.isEmpty(sqls)) {
             return Collections.emptyList();
         }
@@ -106,6 +106,9 @@ public class SqlCheckService {
         try (SingleConnectionDataSource dataSource = (SingleConnectionDataSource) factory.getDataSource()) {
             JdbcTemplate jdbc = new JdbcTemplate(dataSource);
             List<SqlCheckRule> checkRules = getRules(rules, config.getDialectType(), jdbc);
+            if (!CollectionUtils.isEmpty(defaultRules)) {
+                checkRules.addAll(defaultRules);
+            }
             DefaultSqlChecker sqlChecker = new DefaultSqlChecker(config.getDialectType(), null, checkRules);
             List<CheckViolation> checkViolations = new ArrayList<>();
             for (OffsetString sql : sqls) {

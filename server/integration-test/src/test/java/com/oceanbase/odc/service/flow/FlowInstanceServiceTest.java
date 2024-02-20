@@ -191,7 +191,7 @@ public class FlowInstanceServiceTest extends ServiceTestEnv {
         connectionConfig.setType(ConnectType.OB_MYSQL);
         Database database = TestRandom.nextObject(Database.class);
         connectionConfig.setVisibleScope(ConnectionVisibleScope.ORGANIZATION);
-        when(sqlCheckService.check(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any()))
+        when(sqlCheckService.check(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any()))
                 .thenReturn(Collections.emptyList());
         when(connectionService.getForConnectionSkipPermissionCheck(Mockito.anyLong())).thenReturn(connectionConfig);
         when(databaseService.findDataSourceForConnectById(Mockito.anyLong())).thenReturn(connectionConfig);

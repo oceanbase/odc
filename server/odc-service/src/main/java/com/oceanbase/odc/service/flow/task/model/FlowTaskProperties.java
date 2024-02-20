@@ -50,4 +50,7 @@ public class FlowTaskProperties {
 
     @Value("${odc.task.async.rollback.max-rollback-content-size-bytes:268435456}")
     private long maxRollbackContentSizeBytes;
+
+    @Value("${odc.task.async.index-change-max-timeout-millis:432000000}")
+    private long indexChangeMaxTimeoutMillisecond;
 }

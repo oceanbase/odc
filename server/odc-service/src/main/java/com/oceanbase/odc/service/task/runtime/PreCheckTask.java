@@ -70,6 +70,8 @@ import com.oceanbase.odc.service.sqlcheck.SqlCheckContext;
 import com.oceanbase.odc.service.sqlcheck.SqlCheckRule;
 import com.oceanbase.odc.service.sqlcheck.SqlCheckRuleFactory;
 import com.oceanbase.odc.service.sqlcheck.model.CheckViolation;
+import com.oceanbase.odc.service.sqlcheck.model.SqlCheckRuleType;
+import com.oceanbase.odc.service.sqlcheck.rule.IndexChangeTimeConsumingExists;
 import com.oceanbase.odc.service.sqlcheck.rule.SqlCheckRules;
 import com.oceanbase.odc.service.task.caller.JobContext;
 import com.oceanbase.odc.service.task.constants.JobParametersKeyConstants;
@@ -125,7 +127,15 @@ public class PreCheckTask extends BaseTask<FlowTaskResult> {
                 log.info("Database permission check successfully, taskId={}", taskId);
             }
             this.permissionCheckResult = new DatabasePermissionCheckResult(unauthorizedDatabases);
-            this.sqlCheckResult = SqlCheckTaskResult.success(violations);
+            if (violations.stream().filter(Objects::nonNull)
+                    .anyMatch(v -> v.getType() == SqlCheckRuleType.INDEX_CHANGE_TIME_CONSUMING_EXISTS)) {
+                violations = violations.stream()
+                        .filter(v -> v.getType() != SqlCheckRuleType.INDEX_CHANGE_TIME_CONSUMING_EXISTS)
+                        .collect(Collectors.toList());
+                this.sqlCheckResult = SqlCheckTaskResult.success(violations, true);
+            } else {
+                this.sqlCheckResult = SqlCheckTaskResult.success(violations, false);
+            }
             this.success = true;
             log.info("Pre-check task end up running, task id: {}", taskId);
         } finally {
@@ -273,6 +283,7 @@ public class PreCheckTask extends BaseTask<FlowTaskResult> {
         try (SingleConnectionDataSource dataSource = (SingleConnectionDataSource) factory.getDataSource()) {
             JdbcTemplate jdbc = new JdbcTemplate(dataSource);
             List<SqlCheckRule> checkRules = getRules(rules, config.getDialectType(), jdbc);
+            checkRules.add(new IndexChangeTimeConsumingExists());
             DefaultSqlChecker sqlChecker = new DefaultSqlChecker(config.getDialectType(), null, checkRules);
             List<CheckViolation> checkViolations = new ArrayList<>();
             for (OffsetString sql : sqls) {

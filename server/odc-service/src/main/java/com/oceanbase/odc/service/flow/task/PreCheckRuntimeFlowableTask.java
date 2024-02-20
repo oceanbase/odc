@@ -23,6 +23,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -74,6 +75,8 @@ import com.oceanbase.odc.service.session.util.SchemaExtractor;
 import com.oceanbase.odc.service.sqlcheck.SqlCheckService;
 import com.oceanbase.odc.service.sqlcheck.model.CheckResult;
 import com.oceanbase.odc.service.sqlcheck.model.CheckViolation;
+import com.oceanbase.odc.service.sqlcheck.model.SqlCheckRuleType;
+import com.oceanbase.odc.service.sqlcheck.rule.IndexChangeTimeConsumingExists;
 import com.oceanbase.odc.service.task.TaskService;
 import com.oceanbase.odc.service.task.model.ExecutorInfo;
 import com.oceanbase.tools.dbbrowser.parser.constant.SqlType;
@@ -267,7 +270,8 @@ public class PreCheckRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Void> {
         List<CheckViolation> violations = new ArrayList<>();
         if (CollectionUtils.isNotEmpty(sqls)) {
             violations.addAll(this.sqlCheckService.check(Long.valueOf(describer.getEnvironmentId()),
-                    describer.getDatabaseName(), sqls, connectionConfig));
+                    describer.getDatabaseName(), sqls, connectionConfig,
+                    Collections.singletonList(new IndexChangeTimeConsumingExists())));
             Map<String, Set<SqlType>> schemaName2SqlTypes = SchemaExtractor.listSchemaName2SqlTypes(
                     sqls.stream().map(e -> SqlTuple.newTuple(e.getStr())).collect(Collectors.toList()),
                     preCheckTaskEntity.getDatabaseName(), this.connectionConfig.getDialectType());
@@ -287,7 +291,15 @@ public class PreCheckRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Void> {
                     databaseService.filterUnauthorizedDatabases(schemaName2PermissionTypes, connectionConfig.getId());
         }
         this.permissionCheckResult = new DatabasePermissionCheckResult(unauthorizedDatabases);
-        this.sqlCheckResult = SqlCheckTaskResult.success(violations);
+        if (violations.stream().filter(Objects::nonNull)
+                .anyMatch(v -> v.getType() == SqlCheckRuleType.INDEX_CHANGE_TIME_CONSUMING_EXISTS)) {
+            violations =
+                    violations.stream().filter(v -> v.getType() != SqlCheckRuleType.INDEX_CHANGE_TIME_CONSUMING_EXISTS)
+                            .collect(Collectors.toList());
+            this.sqlCheckResult = SqlCheckTaskResult.success(violations, true);
+        } else {
+            this.sqlCheckResult = SqlCheckTaskResult.success(violations, false);
+        }
         try {
             storeTaskResultToFile(preCheckTaskEntity.getId(), this.sqlCheckResult);
             sqlCheckResult.setFileName(CHECK_RESULT_FILE_NAME);
