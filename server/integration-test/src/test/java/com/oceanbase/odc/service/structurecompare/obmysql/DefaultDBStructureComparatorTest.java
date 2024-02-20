@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.structurecompare;
+package com.oceanbase.odc.service.structurecompare.obmysql;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -38,6 +38,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 
 import com.oceanbase.odc.PluginTestEnv;
 import com.oceanbase.odc.core.shared.constant.ConnectType;
+import com.oceanbase.odc.service.structurecompare.DefaultDBStructureComparator;
 import com.oceanbase.odc.service.structurecompare.model.ComparisonResult;
 import com.oceanbase.odc.service.structurecompare.model.DBObjectComparisonResult;
 import com.oceanbase.odc.service.structurecompare.model.DBStructureComparisonConfig;
@@ -52,7 +53,7 @@ import com.oceanbase.tools.dbbrowser.model.DBObjectType;
  * @since ODC_release_4.2.4
  */
 public class DefaultDBStructureComparatorTest extends PluginTestEnv {
-    private static final String BASE_PATH = "src/test/resources/structurecompare/";
+    private static final String BASE_PATH = "src/test/resources/structurecompare/obmysql/";
     private static String sourceSchemaDdl = FileUtil.loadAsString(BASE_PATH + "source_schema_ddl.sql");
     private static String targetSchemaDdl = FileUtil.loadAsString(BASE_PATH + "target_schema_ddl.sql");
     private static final String sourceDrop = FileUtil.loadAsString(BASE_PATH + "source_drop.sql");

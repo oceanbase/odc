@@ -43,20 +43,27 @@ import com.oceanbase.tools.dbbrowser.model.DBConstraintType;
 import com.oceanbase.tools.dbbrowser.model.DBObjectType;
 import com.oceanbase.tools.dbbrowser.model.DBTable;
 import com.oceanbase.tools.dbbrowser.model.DBTableConstraint;
+import com.oceanbase.tools.dbbrowser.model.DBTableIndex;
 import com.oceanbase.tools.dbbrowser.util.MySQLSqlBuilder;
 import com.oceanbase.tools.dbbrowser.util.OracleSqlBuilder;
 import com.oceanbase.tools.dbbrowser.util.SqlBuilder;
+
+import lombok.NonNull;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * @author jingtian
  * @date 2024/1/4
  * @since ODC_release_4.2.4
  */
+@Slf4j
 public class DBTableStructureComparator implements DBObjectStructureComparator<DBTable> {
     private DBTableEditor tgtTableEditor;
     private DialectType tgtDialectType;
     private String srcSchemaName;
     private String tgtSchemaName;
+    private Integer totalTableCount = null;
+    private Integer completedTableCount = 0;
 
     public DBTableStructureComparator(DBTableEditor tgtTableEditor, DialectType tgtDialectType, String srcSchemaName,
             String tgtSchemaName) {
@@ -70,13 +77,18 @@ public class DBTableStructureComparator implements DBObjectStructureComparator<D
     public List<DBObjectComparisonResult> compare(List<DBTable> srcTables, List<DBTable> tgtTables) {
         List<DBObjectComparisonResult> returnVal = new LinkedList<>();
         if (srcTables.isEmpty() && tgtTables.isEmpty()) {
+            this.totalTableCount = 0;
             return returnVal;
         } else if (srcTables.isEmpty()) {
+            this.totalTableCount = tgtTables.size();
             return buildOnlyInTargetResult(tgtTables.stream().map(DBTable::getName).collect(Collectors.toList()),
-                    new HashMap<>(), srcSchemaName, tgtSchemaName);
+                    tgtTables.stream().collect(Collectors.toMap(DBTable::getName, table -> table)), srcSchemaName,
+                    tgtSchemaName);
         } else if (tgtTables.isEmpty()) {
+            this.totalTableCount = srcTables.size();
             return buildOnlyInSourceResult(srcTables.stream().map(DBTable::getName).collect(Collectors.toList()),
-                    new HashMap<>(), srcSchemaName, tgtSchemaName);
+                    srcTables.stream().collect(Collectors.toMap(DBTable::getName, table -> table)), srcSchemaName,
+                    tgtSchemaName);
         }
 
         String srcSchemaName = srcTables.get(0).getSchemaName();
@@ -101,15 +113,16 @@ public class DBTableStructureComparator implements DBObjectStructureComparator<D
                 toDroppedNames.add(tableName);
             }
         }
+        this.totalTableCount = toCreatedNames.size() + toComparedNames.size() + toDroppedNames.size();
 
         List<DBObjectComparisonResult> createdResults =
                 buildOnlyInSourceResult(toCreatedNames, srcTableName2Table, srcSchemaName, tgtSchemaName);
         List<DBObjectComparisonResult> dropResults =
                 buildOnlyInTargetResult(toDroppedNames, tgtTableName2Table, srcSchemaName, tgtSchemaName);
-
         List<DBObjectComparisonResult> comparedResults = new ArrayList<>();
         toComparedNames.forEach(name -> {
             comparedResults.add(compare(srcTableName2Table.get(name), tgtTableName2Table.get(name)));
+            this.completedTableCount++;
         });
 
         returnVal.addAll(createdResults);
@@ -117,6 +130,19 @@ public class DBTableStructureComparator implements DBObjectStructureComparator<D
         returnVal.addAll(dropResults);
 
         return returnVal;
+    }
+
+    private void filterNotNullCheckConstraint(@NonNull DBTable table) {
+        if (tgtDialectType != DialectType.OB_ORACLE) {
+            return;
+        }
+        // Filter out not null check constraints which will be compared in column comparison
+        List<DBTableConstraint> filteredConstraints = table.getConstraints().stream()
+                .filter(constraint -> !(constraint.getType() == DBConstraintType.CHECK &&
+                        constraint.getCheckClause() != null &&
+                        constraint.getCheckClause().endsWith("IS NOT NULL")))
+                .collect(Collectors.toList());
+        table.setConstraints(filteredConstraints);
     }
 
     private List<DBObjectComparisonResult> buildOnlyInSourceResult(List<String> toCreate,
@@ -133,13 +159,34 @@ public class DBTableStructureComparator implements DBObjectStructureComparator<D
             result.setComparisonResult(ComparisonResult.ONLY_IN_SOURCE);
             DBTable sourceTable = srcTableName2Table.get(name);
             result.setSourceDdl(sourceTable.getDDL());
-            DBTable targetTable = new DBTable();
-            BeanUtils.copyProperties(sourceTable, targetTable);
-            targetTable.setSchemaName(tgtSchemaName);
+            DBTable targetTable = copySourceTable(sourceTable);
             result.setChangeScript(this.tgtTableEditor.generateCreateObjectDDL(targetTable));
+            this.completedTableCount++;
             returnVal.add(result);
         });
         return returnVal;
+    }
+
+    private DBTable copySourceTable(DBTable srcTable) {
+        DBTable copiedSrcTable = new DBTable();
+        if (tgtDialectType == DialectType.OB_ORACLE) {
+            filterNotNullCheckConstraint(srcTable);
+            List<DBTableConstraint> pk = srcTable.getConstraints().stream().filter(
+                    cons -> cons.getType() == DBConstraintType.PRIMARY_KEY).collect(
+                            Collectors.toList());
+            if (pk.size() > 0) {
+                // Filter out primary key index which will be compared as a constraint
+                List<DBTableIndex> filteredIndexes = srcTable.getIndexes().stream()
+                        .filter(idx -> !idx.getName().equals(pk.get(0).getName())).collect(Collectors.toList());
+                srcTable.setIndexes(filteredIndexes);
+            }
+        }
+        srcTable.getConstraints().stream()
+                .filter(cons -> cons.getType() == DBConstraintType.FOREIGN_KEY)
+                .forEach(cons -> cons.setReferenceSchemaName(this.tgtSchemaName));
+        BeanUtils.copyProperties(srcTable, copiedSrcTable);
+        copiedSrcTable.setSchemaName(tgtSchemaName);
+        return copiedSrcTable;
     }
 
     private List<DBObjectComparisonResult> buildOnlyInTargetResult(List<String> toDrop,
@@ -160,6 +207,7 @@ public class DBTableStructureComparator implements DBObjectStructureComparator<D
             SqlBuilder sqlBuilder = getTargetDBSqlBuilder();
             result.setChangeScript(
                     GeneralSqlStatementBuilder.drop(sqlBuilder, DBObjectType.TABLE, tgtSchemaName, name) + ";\n");
+            this.completedTableCount++;
             returnVal.add(result);
         });
         return returnVal;
@@ -214,6 +262,8 @@ public class DBTableStructureComparator implements DBObjectStructureComparator<D
                     Collections.singletonMap(sourceTable.getName(), sourceTable), this.srcSchemaName,
                     this.tgtSchemaName).get(0);
         }
+        filterNotNullCheckConstraint(sourceTable);
+        filterNotNullCheckConstraint(targetTable);
 
         DBObjectComparisonResult result = new DBObjectComparisonResult(DBObjectType.TABLE, sourceTable.getName(),
                 this.srcSchemaName, this.tgtSchemaName);
@@ -282,5 +332,20 @@ public class DBTableStructureComparator implements DBObjectStructureComparator<D
                 (DBTablePartitionEditor) this.tgtTableEditor.getPartitionEditor(),
                 srcSchemaName, tgtSchemaName)
                         .compare(srcTable.getPartition(), tgtTable.getPartition());
+    }
+
+    /**
+     * Get comparison progress for DBTableStructureComparator#compare(List<DBTable> srcTables,
+     * List<DBTable> tgtTables) method
+     */
+    public Double getProgress() {
+        if (this.totalTableCount == null) {
+            return 0D;
+        } else if (this.totalTableCount == 0) {
+            return 100D;
+        } else {
+            double progress = completedTableCount * 100D / totalTableCount;
+            return Math.min(progress, 100.0D);
+        }
     }
 }

@@ -85,6 +85,7 @@ import com.oceanbase.odc.service.flow.model.FlowNodeStatus;
 import com.oceanbase.odc.service.flow.model.FlowNodeType;
 import com.oceanbase.odc.service.flow.model.PreCheckTaskResult;
 import com.oceanbase.odc.service.flow.task.OssTaskReferManager;
+import com.oceanbase.odc.service.flow.task.model.DBStructureComparisonTaskResult;
 import com.oceanbase.odc.service.flow.task.model.DatabaseChangeResult;
 import com.oceanbase.odc.service.flow.task.model.MockDataTaskResult;
 import com.oceanbase.odc.service.flow.task.model.MockProperties;
@@ -173,6 +174,8 @@ public class FlowTaskInstanceService {
 
     @Autowired
     private JobDispatchChecker jobDispatchChecker;
+    private final Set<String> supportedBucketName = new HashSet<>(Arrays.asList("async", "structure-comparison"));
+
 
     public FlowInstanceDetailResp executeTask(@NotNull Long id) throws IOException {
         List<FlowTaskInstance> instances =
@@ -314,6 +317,8 @@ public class FlowTaskInstanceService {
             return getApplyProjectResult(taskEntity);
         } else if (taskEntity.getTaskType() == TaskType.APPLY_DATABASE_PERMISSION) {
             return getApplyDatabaseResult(taskEntity);
+        } else if (taskEntity.getTaskType() == TaskType.STRUCTURE_COMPARISON) {
+            return getStructureComparisonResult(taskEntity);
         } else {
             throw new UnsupportedException(ErrorCodes.Unsupported, new Object[] {ResourceType.ODC_TASK},
                     "Unsupported task type: " + taskEntity.getTaskType());
@@ -558,7 +563,10 @@ public class FlowTaskInstanceService {
         }
     }
 
-    public List<String> getAsyncDownloadUrl(Long id, List<String> objectIds) {
+    public List<String> getAsyncDownloadUrl(Long id, List<String> objectIds, String bucket) {
+        if (!supportedBucketName.contains(bucket)) {
+            throw new IllegalArgumentException("Bucket name is illegal, bucket=" + bucket);
+        }
         Set<Long> creatorIdSet = flowInstanceRepository.findCreatorIdById(id);
         if (creatorIdSet.stream().anyMatch(creatorId -> creatorId == authenticationFacade.currentUserId())
                 || approvalPermissionService.getApprovableApprovalInstances()
@@ -566,7 +574,7 @@ public class FlowTaskInstanceService {
             List<String> downloadUrls = Lists.newArrayList();
             for (String objectId : objectIds) {
                 downloadUrls.add(objectStorageFacade.getDownloadUrl(
-                        "async".concat(File.separator).concat(creatorIdSet.iterator().next().toString()),
+                        bucket.concat(File.separator).concat(creatorIdSet.iterator().next().toString()),
                         objectId));
             }
             return downloadUrls;
@@ -727,6 +735,10 @@ public class FlowTaskInstanceService {
 
     private List<ApplyDatabaseResult> getApplyDatabaseResult(@NonNull TaskEntity taskEntity) {
         return innerGetResult(taskEntity, ApplyDatabaseResult.class);
+    }
+
+    private List<DBStructureComparisonTaskResult> getStructureComparisonResult(@NonNull TaskEntity taskEntity) {
+        return innerGetResult(taskEntity, DBStructureComparisonTaskResult.class);
     }
 
     private <T extends FlowTaskResult> List<T> innerGetResult(@NonNull TaskEntity taskEntity,
