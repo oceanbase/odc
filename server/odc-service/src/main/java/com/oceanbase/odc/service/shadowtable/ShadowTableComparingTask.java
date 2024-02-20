@@ -100,8 +100,10 @@ public class ShadowTableComparingTask implements Callable<Void> {
             });
             Map<String, DBTable> tableName2Tables;
             try {
-                tableName2Tables = dbTableService.listTables(connectionSession, schemaName, allRealTableNames).stream()
-                        .collect(Collectors.toMap(table -> table.getName(), table -> table, (k1, k2) -> k2));
+                tableName2Tables =
+                        dbTableService.getTables(connectionSession, schemaName).entrySet().stream()
+                                .filter(entry -> allRealTableNames.contains(entry.getKey()))
+                                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
             } catch (Exception ex) {
                 log.warn("fetch table meta information failed, ex={}", ex);
                 comparingEntities.forEach(tableComparingEntity -> {
