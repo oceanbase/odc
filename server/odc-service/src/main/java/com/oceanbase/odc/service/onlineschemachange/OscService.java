@@ -33,6 +33,8 @@ import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.core.shared.constant.TaskType;
+import com.oceanbase.odc.core.shared.exception.BadArgumentException;
+import com.oceanbase.odc.core.shared.exception.BadRequestException;
 import com.oceanbase.odc.core.shared.exception.NotFoundException;
 import com.oceanbase.odc.metadb.connection.DatabaseEntity;
 import com.oceanbase.odc.metadb.connection.DatabaseRepository;
@@ -143,8 +145,12 @@ public class OscService {
                 ErrorCodes.BadArgument, new Object[] {oscParameters.getSwapTableType()},
                 "Swap table type is not " + SwapTableType.MANUAL.name());
 
+        PreConditions.validArgumentState(!result.isManualSwapTableStarted(),
+            ErrorCodes.OscSwapTableStarted, new Object[] {},
+            "Swap table has started");
+
         PreConditions.validArgumentState(result.isManualSwapTableEnabled(),
-                ErrorCodes.BadArgument, new Object[] {result.isManualSwapTableEnabled()},
+                ErrorCodes.BadRequest, new Object[] {result.isManualSwapTableEnabled()},
                 "Manual Swap table type is not enable ");
 
         // close manual swap table
