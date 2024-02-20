@@ -163,31 +163,36 @@ public class AuditEventAspect {
 
     @AfterReturning(value = "getAsyncSqlExecuteResult()", returning = "returnValue")
     public void afterSqlExecute(Object returnValue) {
-        Object data = null;
-        if (returnValue instanceof SuccessResponse) {
-            data = ((SuccessResponse) returnValue).getData();
-        }
-        List<AuditEventEntity> events = new ArrayList<>();
-        for (Object obj : (List) data) {
-            SqlExecuteResult result = (SqlExecuteResult) obj;
-            AuditEventResult auditEventResult = getAuditEventResultFromResult(result);
-            if (AuditEventResult.UNFINISHED != auditEventResult) {
-                AuditEventAction action = AuditUtils.getSqlTypeFromResult(result.getSqlType());
-                String detail = truncateDetail(getDetailFromResult(result));
-                String taskId = result.getSqlId();
-                // The sql id of resultSet has suffix "-" + increment number, @See SqlTuple#softCopy
-                int last = result.getSqlId().lastIndexOf("-");
-                if (last > 0) {
-                    taskId = result.getSqlId().substring(0, last);
-                }
-                AuditEventEntity eventEntity =
-                        auditEventService.updateSqlExecuteEvent(taskId, action, detail, auditEventResult);
-                if (eventEntity != null) {
-                    events.add(eventEntity);
+        try {
+
+            Object data = null;
+            if (returnValue instanceof SuccessResponse) {
+                data = ((SuccessResponse) returnValue).getData();
+            }
+            List<AuditEventEntity> events = new ArrayList<>();
+            for (Object obj : (List) data) {
+                SqlExecuteResult result = (SqlExecuteResult) obj;
+                AuditEventResult auditEventResult = getAuditEventResultFromResult(result);
+                if (AuditEventResult.UNFINISHED != auditEventResult) {
+                    AuditEventAction action = AuditUtils.getSqlTypeFromResult(result.getSqlType());
+                    String detail = truncateDetail(getDetailFromResult(result));
+                    String taskId = result.getSqlId();
+                    // The sql id of resultSet has suffix "-" + increment number, @See SqlTuple#softCopy
+                    int last = result.getSqlId().lastIndexOf("-");
+                    if (last > 0) {
+                        taskId = result.getSqlId().substring(0, last);
+                    }
+                    AuditEventEntity eventEntity =
+                            auditEventService.updateSqlExecuteEvent(taskId, action, detail, auditEventResult);
+                    if (eventEntity != null) {
+                        events.add(eventEntity);
+                    }
                 }
             }
+            this.auditEventHandler.handle(events, servletRequest);
+        } catch (Exception ex) {
+            log.warn("update async sql execute audit events failed, ex=", ex);
         }
-        this.auditEventHandler.handle(events, servletRequest);
     }
 
     private AuditEventResult getAuditEventResultFromResult(SqlExecuteResult result) {
@@ -209,13 +214,18 @@ public class AuditEventAspect {
 
 
     private void saveAuditEvents(AuditEvent auditEvent, Object processResult) {
-        List<String> taskIds = parseTaskIds(auditEvent, processResult);
-        if (CollectionUtils.isNotEmpty(taskIds)) {
-            auditEventService.saveAsyncTaskEvent(auditEvent, taskIds);
-            this.auditEventHandler.handle(Collections.singletonList(mapper.modelToEntity(auditEvent)), servletRequest);
-            return;
+        try {
+            List<String> taskIds = parseTaskIds(auditEvent, processResult);
+            if (CollectionUtils.isNotEmpty(taskIds)) {
+                auditEventService.saveAsyncTaskEvent(auditEvent, taskIds);
+                this.auditEventHandler.handle(Collections.singletonList(mapper.modelToEntity(auditEvent)),
+                        servletRequest);
+                return;
+            }
+            saveAuditEventsWithResult(auditEvent, AuditEventResult.SUCCESS);
+        } catch (Exception ex) {
+            log.warn("save audit events failed, ex=", ex);
         }
-        saveAuditEventsWithResult(auditEvent, AuditEventResult.SUCCESS);
     }
 
     private List<String> parseTaskIds(AuditEvent auditEvent, Object processResult) {
@@ -258,10 +268,14 @@ public class AuditEventAspect {
     }
 
     private void saveAuditEventsWithResult(AuditEvent auditEvent, AuditEventResult result) {
-        auditEvent.setResult(result);
-        auditEvent.setEndTime(new Date());
-        auditEventService.record(auditEvent);
-        this.auditEventHandler.handle(Collections.singletonList(mapper.modelToEntity(auditEvent)), servletRequest);
+        try {
+            auditEvent.setResult(result);
+            auditEvent.setEndTime(new Date());
+            auditEventService.record(auditEvent);
+            this.auditEventHandler.handle(Collections.singletonList(mapper.modelToEntity(auditEvent)), servletRequest);
+        } catch (Exception ex) {
+            log.warn("save audit events failed, ex=", ex);
+        }
     }
 
     private AuditEvent createAuditEvent(Method method, Object[] args) {

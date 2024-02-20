@@ -57,7 +57,7 @@ abstract class BaseSqlChecker implements SqlChecker {
     @Override
     public List<CheckViolation> check(@NonNull String sqlScript) {
         List<OffsetString> sqls = null;
-        if (dialectType.isMysql()) {
+        if (dialectType.isMysql() || dialectType.isDoris()) {
             sqls = splitByCommentProcessor(sqlScript);
         } else if (dialectType == DialectType.OB_ORACLE) {
             if (DEFAULT_DELIMITER.equals(this.delimiter)) {

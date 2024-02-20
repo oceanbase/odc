@@ -15,17 +15,14 @@
  */
 package com.oceanbase.odc.service.db;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
 import javax.validation.constraints.NotBlank;
-import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
 
-import org.apache.commons.compress.utils.Lists;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -54,10 +51,6 @@ import com.oceanbase.odc.service.plugin.SchemaPluginUtil;
 import com.oceanbase.odc.service.session.ConnectConsoleService;
 import com.oceanbase.tools.dbbrowser.model.DBObjectIdentity;
 import com.oceanbase.tools.dbbrowser.model.DBTable;
-import com.oceanbase.tools.dbbrowser.model.DBTable.DBTableOptions;
-import com.oceanbase.tools.dbbrowser.model.DBTableColumn;
-import com.oceanbase.tools.dbbrowser.model.DBTableConstraint;
-import com.oceanbase.tools.dbbrowser.model.DBTableIndex;
 import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
 import com.oceanbase.tools.sqlparser.statement.Statement;
 import com.oceanbase.tools.sqlparser.statement.alter.table.AlterTable;
@@ -112,31 +105,11 @@ public class DBTableService {
         }
     }
 
-    public List<DBTable> listTables(@NotNull ConnectionSession connectionSession, String schemaName,
-            @NotEmpty List<String> tableNames) {
-        DBSchemaAccessor schemaAccessor = DBSchemaAccessors.create(connectionSession);
-        List<DBTable> tables = new ArrayList<>();
-        Map<String, List<DBTableColumn>> tableName2Columns = schemaAccessor.listTableColumns(schemaName);
-        Map<String, List<DBTableIndex>> tableName2Indexes = schemaAccessor.listTableIndexes(schemaName);
-        Map<String, List<DBTableConstraint>> tableName2Constraints = schemaAccessor.listTableConstraints(schemaName);
-        Map<String, DBTableOptions> tableName2Options = schemaAccessor.listTableOptions(schemaName);
-        for (String tableName : tableNames) {
-            if (!tableName2Columns.containsKey(tableName)) {
-                continue;
-            }
-            DBTable table = new DBTable();
-            table.setSchemaName(schemaName);
-            table.setOwner(schemaName);
-            table.setName(tableName);
-            table.setColumns(tableName2Columns.getOrDefault(tableName, Lists.newArrayList()));
-            table.setIndexes(tableName2Indexes.getOrDefault(tableName, Lists.newArrayList()));
-            table.setConstraints(tableName2Constraints.getOrDefault(tableName, Lists.newArrayList()));
-            table.setTableOptions(tableName2Options.getOrDefault(tableName, new DBTableOptions()));
-            table.setPartition(schemaAccessor.getPartition(schemaName, tableName));
-            table.setDDL(schemaAccessor.getTableDDL(schemaName, tableName));
-            tables.add(table);
-        }
-        return tables;
+    /**
+     * get all table details in a schema
+     */
+    public Map<String, DBTable> getTables(@NotNull ConnectionSession connectionSession, String schemaName) {
+        return DBSchemaAccessors.create(connectionSession).getTables(schemaName, null);
     }
 
     public List<DBTable> listTables(@NotNull ConnectionSession connectionSession, String schemaName) {

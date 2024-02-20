@@ -15,6 +15,7 @@
  */
 package com.oceanbase.odc.metadb.flow;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -78,9 +79,10 @@ public interface ServiceTaskInstanceRepository extends OdcJpaRepository<ServiceT
 
     @Query(value = "select b.* from flow_instance a left join flow_instance_node_task b "
             + "on a.id = b.flow_instance_id "
-            + "where a.parent_instance_id=:id and b.task_type=:#{#type.name()}", nativeQuery = true)
-    List<ServiceTaskInstanceEntity> findByScheduleIdAndTaskType(@Param("id") Long scheduleId,
-            @Param("type") TaskType type);
+            + "where a.parent_instance_id=:id and b.task_type=:#{#type.name()} and b.status in (:statuses)",
+            nativeQuery = true)
+    List<ServiceTaskInstanceEntity> findByScheduleIdAndTaskTypeAndStatusIn(@Param("id") Long scheduleId,
+            @Param("type") TaskType type, @Param("statuses") Collection<?> statuses);
 
     default List<ServiceTaskInstanceEntity> batchCreate(List<ServiceTaskInstanceEntity> entities) {
         String sql = InsertSqlTemplateBuilder.from("flow_instance_node_task")

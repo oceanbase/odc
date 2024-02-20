@@ -21,12 +21,12 @@ import java.util.Set;
 
 import javax.transaction.Transactional;
 
-import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import com.oceanbase.odc.config.jpa.OdcJpaRepository;
 import com.oceanbase.odc.core.shared.constant.FlowStatus;
 import com.oceanbase.odc.core.shared.constant.TaskType;
 
@@ -39,7 +39,7 @@ import com.oceanbase.odc.core.shared.constant.TaskType;
  * @see org.springframework.data.jpa.repository.JpaRepository
  */
 public interface FlowInstanceRepository
-        extends JpaRepository<FlowInstanceEntity, Long>, JpaSpecificationExecutor<FlowInstanceEntity> {
+        extends OdcJpaRepository<FlowInstanceEntity, Long>, JpaSpecificationExecutor<FlowInstanceEntity> {
 
     List<FlowInstanceEntity> findByIdIn(Collection<Long> ids);
 
@@ -103,4 +103,14 @@ public interface FlowInstanceRepository
             nativeQuery = true)
     Set<FlowInstanceEntity> findByScheduleIdAndStatus(@Param("scheduleIds") Set<Long> scheduleIds,
             @Param("status") FlowStatus status);
+
+    @Query("select e.parentInstanceId as parentInstanceId, count(1) as count from FlowInstanceEntity e where e.parentInstanceId in (?1) group by parentInstanceId")
+    List<ParentInstanceIdCount> findByParentInstanceIdIn(Collection<Long> parentInstanceId);
+
+    interface ParentInstanceIdCount {
+
+        Long getParentInstanceId();
+
+        Integer getCount();
+    }
 }

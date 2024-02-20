@@ -40,10 +40,15 @@ public class DBStructureComparisonConfig {
     private ConnectType connectType;
     @NotNull
     private DataSource dataSource;
+    /**
+     * Used to define the database object types for comparison in source comparison config Ignore in
+     * target comparison config
+     */
     @NotNull
     private Set<DBObjectType> toComparedObjectTypes;
     /**
-     * Used to compare specified database objects [Optional] If null or empty, ignore
+     * Used to compare specified database objects in source comparison config. Ignore in target
+     * comparison config [Optional] If null or empty, ignore
      */
     private Map<DBObjectType, Set<String>> blackListMap = new HashMap<>();
 }

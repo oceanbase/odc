@@ -15,6 +15,7 @@
  */
 package com.oceanbase.odc.core.flow.model;
 
+
 /**
  * Methodless interface for marking process task results
  *

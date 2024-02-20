@@ -40,6 +40,7 @@ import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.connection.model.OBTenantEndpoint;
 import com.oceanbase.odc.service.connection.model.OceanBaseAccessMode;
 import com.oceanbase.odc.service.db.browser.DBSchemaAccessors;
+import com.oceanbase.odc.service.flow.task.model.DBStructureComparisonParameter;
 import com.oceanbase.odc.service.flow.task.model.DatabaseChangeParameters;
 import com.oceanbase.odc.service.flow.task.model.MockProperties;
 import com.oceanbase.odc.service.flow.task.model.OdcMockTaskConfig;
@@ -128,6 +129,12 @@ public class FlowTaskUtil {
     public static ResultSetExportTaskParameter getResultSetExportTaskParameter(@NonNull DelegateExecution execution) {
         return internalGetParameter(execution, ResultSetExportTaskParameter.class).orElseThrow(
                 () -> new VerifyException("ResultSetExportTaskParameter is absent"));
+    }
+
+    public static DBStructureComparisonParameter getDBStructureComparisonParameter(
+            @NonNull DelegateExecution execution) {
+        return internalGetParameter(execution, DBStructureComparisonParameter.class).orElseThrow(
+                () -> new VerifyException("DBStructureComparisonParameter is absent"));
     }
 
     public static void setTaskSubmitter(@NonNull Map<String, Object> variables, ExecutorInfo submitter) {
@@ -338,7 +345,15 @@ public class FlowTaskUtil {
             }
             MockTaskConfig taskConfig = mapper.readValue(mapper.writeValueAsString(map), MockTaskConfig.class);
             taskConfig.setLogDir(taskId + "");
-            taskConfig.setDialectType(session.getDialectType().isMysql() ? ObModeType.OB_MYSQL : ObModeType.OB_ORACLE);
+            switch (session.getDialectType()) {
+                case MYSQL:
+                case DORIS:
+                    taskConfig.setDialectType(ObModeType.OB_MYSQL);
+                    break;
+                default:
+                    taskConfig.setDialectType(ObModeType.OB_ORACLE);
+                    break;
+            }
             List<MockTableConfig> tableConfigList = taskConfig.getTables();
             PreConditions.notEmpty(tableConfigList, "tasks"); // table config list can not be null or empty
 
@@ -398,6 +413,9 @@ public class FlowTaskUtil {
             dbConfig.setUser("\"" + uname + "\"");
             dbConfig.setDefaultSchame("\"" + getSchemaName(execution) + "\"");
         } else if (Objects.nonNull(config.getDialectType()) && config.getDialectType().isMysql()) {
+            dbConfig.setUser(config.getUsername());
+            dbConfig.setDefaultSchame(config.getDefaultSchema());
+        } else if (Objects.nonNull(config.getDialectType()) && config.getDialectType().isDoris()) {
             dbConfig.setUser(config.getUsername());
             dbConfig.setDefaultSchame(config.getDefaultSchema());
         }

@@ -215,9 +215,10 @@ public class FlowInstanceController {
         return Responses.list(flowTaskInstanceService.getExecuteResult(id));
     }
 
-    @RequestMapping(value = "/{id:[\\d]+}/tasks/async/batchGetDownloadUrl", method = RequestMethod.POST)
-    public ListResponse<String> getDownloadUrl(@PathVariable Long id, @RequestBody List<String> objectId) {
-        return Responses.list(flowTaskInstanceService.getAsyncDownloadUrl(id, objectId));
+    @RequestMapping(value = "/{id:[\\d]+}/tasks/{bucket}/batchGetDownloadUrl", method = RequestMethod.POST)
+    public ListResponse<String> getDownloadUrl(@PathVariable Long id, @RequestBody List<String> objectId,
+            @PathVariable String bucket) {
+        return Responses.list(flowTaskInstanceService.getAsyncDownloadUrl(id, objectId, bucket));
     }
 
     @GetMapping(value = "/{id:[\\d]+}/tasks/partitionPlans/getDetail")

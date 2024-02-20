@@ -63,6 +63,7 @@ public class DBTableEditorFactory extends DBObjectEditorFactory<DBTableEditor> {
                 }
                 return new OBMySQLTableEditor(indexEditorFactory.create(), columnEditorFactory.create(),
                         constraintEditorFactory.create(), partitionEditorFactory.create());
+            case DORIS:
             case MYSQL:
                 return new MySQLTableEditor(indexEditorFactory.create(), columnEditorFactory.create(),
                         constraintEditorFactory.create(), partitionEditorFactory.create());

@@ -334,6 +334,8 @@ public class OBUtils {
             return new MySQLSqlBuilder();
         } else if (dialectType.isOracle()) {
             return new OracleSqlBuilder();
+        } else if (dialectType.isDoris()) {
+            return new MySQLSqlBuilder();
         }
         throw new IllegalArgumentException("Unsupported dialect type, " + dialectType);
     }

@@ -321,6 +321,16 @@ public enum AuditEventAction implements Translatable {
 
     CREATE_PROJECT,
 
+    CREATE_ENVIRONMENT,
+
+    UPDATE_ENVIRONMENT,
+
+    ENABLE_ENVIRONMENT,
+
+    DISABLE_ENVIRONMENT,
+
+    DELETE_ENVIRONMENT,
+
     UPDATE_SQL_SECURITY_RULE,
 
     /**

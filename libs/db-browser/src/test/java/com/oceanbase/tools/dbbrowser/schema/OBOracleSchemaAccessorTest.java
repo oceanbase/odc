@@ -45,6 +45,7 @@ import com.oceanbase.tools.dbbrowser.model.DBProcedure;
 import com.oceanbase.tools.dbbrowser.model.DBSequence;
 import com.oceanbase.tools.dbbrowser.model.DBSynonym;
 import com.oceanbase.tools.dbbrowser.model.DBSynonymType;
+import com.oceanbase.tools.dbbrowser.model.DBTable;
 import com.oceanbase.tools.dbbrowser.model.DBTable.DBTableOptions;
 import com.oceanbase.tools.dbbrowser.model.DBTableColumn;
 import com.oceanbase.tools.dbbrowser.model.DBTableConstraint;
@@ -260,9 +261,9 @@ public class OBOracleSchemaAccessorTest extends BaseTestEnv {
         Assert.assertEquals(6, tableName2Constraints.size());
         Assert.assertEquals(1, tableName2Constraints.get("TEST_FK_CHILD").size());
         Assert.assertEquals(1, tableName2Constraints.get("TEST_FK_PARENT").size());
-        Assert.assertEquals(1, tableName2Constraints.get("TEST_INDEX_TYPE").size());
+        Assert.assertEquals(2, tableName2Constraints.get("TEST_INDEX_TYPE").size());
         Assert.assertEquals(1, tableName2Constraints.get("TEST_OTHER_THAN_DATA_TYPE").size());
-        Assert.assertEquals(1, tableName2Constraints.get("TEST_PK_INDEX").size());
+        Assert.assertEquals(2, tableName2Constraints.get("TEST_PK_INDEX").size());
         Assert.assertEquals(1, tableName2Constraints.get("part_hash").size());
     }
 
@@ -619,6 +620,12 @@ public class OBOracleSchemaAccessorTest extends BaseTestEnv {
         Assert.assertNull(columns.get(1).getDefaultValue());
         Assert.assertNull(columns.get(2).getDefaultValue());
         Assert.assertEquals("'null'", columns.get(3).getDefaultValue());
+    }
+
+    @Test
+    public void getTables_success() {
+        Map<String, DBTable> tables = accessor.getTables(getOBOracleSchema(), null);
+        Assert.assertTrue(tables.size() > 0);
     }
 
     private static void initVerifyColumnAttributes() {

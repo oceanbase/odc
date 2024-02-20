@@ -103,6 +103,7 @@ import com.oceanbase.odc.service.plugin.SchemaPluginUtil;
 import com.oceanbase.odc.service.session.factory.DefaultConnectSessionFactory;
 import com.oceanbase.odc.service.session.factory.OBConsoleDataSourceFactory;
 import com.oceanbase.odc.service.session.model.SqlExecuteResult;
+import com.oceanbase.odc.service.task.runtime.PreCheckTaskParameters.AuthorizedDatabase;
 import com.oceanbase.tools.dbbrowser.model.DBDatabase;
 
 import lombok.NonNull;
@@ -624,6 +625,15 @@ public class DatabaseService {
         return unauthorizedDatabases;
     }
 
+    @SkipAuthorize("internal usage")
+    public List<AuthorizedDatabase> getAllAuthorizedDatabases(@NonNull Long dataSourceId) {
+        List<Database> databases = listDatabasesByConnectionIds(Collections.singleton(dataSourceId));
+        Map<Long, Set<DatabasePermissionType>> id2Types = databasePermissionHelper
+                .getPermissions(databases.stream().map(Database::getId).collect(Collectors.toList()));
+        return databases.stream().map(d -> new AuthorizedDatabase(d.getId(), d.getName(), id2Types.get(d.getId())))
+                .collect(Collectors.toList());
+    }
+
     @SkipAuthorize("internal authorized")
     public Page<DatabaseUser> listUserForOsc(Long dataSourceId) {
         ConnectionConfig config = connectionService.getForConnectionSkipPermissionCheck(dataSourceId);
@@ -650,7 +660,7 @@ public class DatabaseService {
         if (dialectType.isOracle()) {
             names.add("SYS");
         }
-        if (dialectType.isMysql()) {
+        if (dialectType.isMysql() || dialectType.isDoris()) {
             names.addAll(Arrays.asList("mysql", "information_schema", "test"));
         }
         if (dialectType.isOBMysql()) {

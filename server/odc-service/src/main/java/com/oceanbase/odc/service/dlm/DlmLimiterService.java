@@ -15,23 +15,23 @@
  */
 package com.oceanbase.odc.service.dlm;
 
+import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.core.shared.exception.NotFoundException;
 import com.oceanbase.odc.metadb.dlm.DlmLimiterConfigEntity;
 import com.oceanbase.odc.metadb.dlm.DlmLimiterConfigRepository;
-import com.oceanbase.odc.service.dlm.model.DataArchiveParameters;
 import com.oceanbase.odc.service.dlm.model.RateLimitConfiguration;
 import com.oceanbase.odc.service.schedule.ScheduleService;
-import com.oceanbase.odc.service.schedule.utils.ScheduleTaskUtil;
 
 /**
  * @Author：tinker
@@ -65,10 +65,9 @@ public class DlmLimiterService {
     @Autowired
     private ScheduleService scheduleService;
 
-    public DlmLimiterConfigEntity createAndBindToOrder(Long orderId, RateLimitConfiguration config) {
+    public DlmLimiterConfigEntity create(RateLimitConfiguration config) {
         checkLimiterConfig(config);
         DlmLimiterConfigEntity entity = mapper.modelToEntity(config);
-        entity.setOrderId(orderId);
         return limiterConfigRepository.save(entity);
     }
 
@@ -79,6 +78,11 @@ public class DlmLimiterService {
         } else {
             return getDefaultLimiterConfig();
         }
+    }
+
+    public List<RateLimitConfiguration> findByOrderIds(Collection<Long> orderIds) {
+        return limiterConfigRepository.findByOrderIdIn(orderIds).stream().map(mapper::entityToModel)
+                .collect(Collectors.toList());
     }
 
     @Transactional(rollbackFor = Exception.class)
@@ -93,10 +97,6 @@ public class DlmLimiterService {
                     rateLimit.getBatchSize() == null ? entity.getBatchSize() : rateLimit.getBatchSize());
             entity.setDataSizeLimit(rateLimit.getDataSizeLimit() == null ? entity.getDataSizeLimit()
                     : rateLimit.getDataSizeLimit());
-            DataArchiveParameters parameters =
-                    ScheduleTaskUtil.getDataArchiveParameters(scheduleService.nullSafeGetById(orderId));
-            parameters.setRateLimit(mapper.entityToModel(entity));
-            scheduleService.updateJobParametersById(orderId, JsonUtils.toJson(parameters));
             return mapper.entityToModel(limiterConfigRepository.save(entity));
         } else {
             throw new NotFoundException(ResourceType.ODC_DLM_LIMITER_CONFIG, "Id", orderId);

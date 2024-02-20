@@ -17,6 +17,7 @@ package com.oceanbase.tools.dbbrowser.schema.oracle;
 
 import java.sql.ResultSetMetaData;
 import java.sql.Timestamp;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -49,9 +50,11 @@ import com.oceanbase.tools.dbbrowser.model.DBProcedure;
 import com.oceanbase.tools.dbbrowser.model.DBSequence;
 import com.oceanbase.tools.dbbrowser.model.DBSynonym;
 import com.oceanbase.tools.dbbrowser.model.DBSynonymType;
+import com.oceanbase.tools.dbbrowser.model.DBTable;
 import com.oceanbase.tools.dbbrowser.model.DBTable.DBTableOptions;
 import com.oceanbase.tools.dbbrowser.model.DBTableColumn;
 import com.oceanbase.tools.dbbrowser.model.DBTableColumn.CharUnit;
+import com.oceanbase.tools.dbbrowser.model.DBTableConstraint;
 import com.oceanbase.tools.dbbrowser.model.DBTableIndex;
 import com.oceanbase.tools.dbbrowser.model.DBTrigger;
 import com.oceanbase.tools.dbbrowser.model.DBType;
@@ -222,6 +225,9 @@ public class OBOracleSchemaAccessor extends OracleSchemaAccessor {
                         DBSchemaAccessorUtil.fillWarning(index, index.type(), "parse index DDL failed");
                         index.setGlobal(true);
                     } else {
+                        if (index.getType() != DBIndexType.UNIQUE) {
+                            index.setDdl(indexDdl);
+                        }
                         // we get one single create index statement for each table index
                         // so here we should only get one index object from this statement
                         index.setGlobal("GLOBAL".equalsIgnoreCase(result.getIndexes().get(0).getRange().name()));
@@ -960,4 +966,36 @@ public class OBOracleSchemaAccessor extends OracleSchemaAccessor {
         }
     }
 
+    @Override
+    public Map<String, DBTable> getTables(@NonNull String schemaName, List<String> tableNames) {
+        // TODO: Only query the table information of tableNames passed upstream
+        Map<String, DBTable> returnVal = new HashMap<>();
+        tableNames = showTables(schemaName);
+        if (tableNames.isEmpty()) {
+            return returnVal;
+        }
+        Map<String, List<DBTableColumn>> tableName2Columns = listTableColumns(schemaName);
+        Map<String, List<DBTableIndex>> tableName2Indexes = listTableIndexes(schemaName);
+        Map<String, List<DBTableConstraint>> tableName2Constraints = listTableConstraints(schemaName);
+        Map<String, DBTableOptions> tableName2Options = listTableOptions(schemaName);
+        for (String tableName : tableNames) {
+            if (!tableName2Columns.containsKey(tableName)) {
+                continue;
+            }
+            DBTable table = new DBTable();
+            table.setSchemaName(schemaName);
+            table.setOwner(schemaName);
+            table.setName(tableName);
+            List<DBTableColumn> columns = tableName2Columns.getOrDefault(tableName, new ArrayList<>());
+            List<DBTableIndex> indexes = tableName2Indexes.getOrDefault(tableName, new ArrayList<>());
+            table.setColumns(columns);
+            table.setIndexes(indexes);
+            table.setConstraints(tableName2Constraints.getOrDefault(tableName, new ArrayList<>()));
+            table.setTableOptions(tableName2Options.getOrDefault(tableName, new DBTableOptions()));
+            table.setPartition(getPartition(schemaName, tableName));
+            table.setDDL(getTableDDL(schemaName, tableName, columns, indexes));
+            returnVal.put(tableName, table);
+        }
+        return returnVal;
+    }
 }
