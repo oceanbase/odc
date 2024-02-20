@@ -28,14 +28,17 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.core.shared.PreConditions;
+import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.constant.FlowStatus;
 import com.oceanbase.odc.core.shared.constant.TaskType;
 import com.oceanbase.odc.metadb.task.JobEntity;
+import com.oceanbase.odc.metadb.task.TaskEntity;
 import com.oceanbase.odc.service.connection.model.ConnectProperties;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.flow.task.model.DatabaseChangeParameters;
 import com.oceanbase.odc.service.flow.task.model.DatabaseChangeResult;
+import com.oceanbase.odc.service.flow.task.model.RollbackPlanTaskResult;
 import com.oceanbase.odc.service.flow.util.FlowTaskUtil;
 import com.oceanbase.odc.service.objectstorage.ObjectStorageFacade;
 import com.oceanbase.odc.service.objectstorage.model.ObjectMetadata;
@@ -108,9 +111,14 @@ public class DatabaseChangeRuntimeFlowableTaskCopied extends BaseODCFlowTaskDele
     @Override
     protected DatabaseChangeResult start(Long taskId, TaskService taskService, DelegateExecution execution)
             throws JobException {
-        DatabaseChangeResult result;
         log.info("Async task starts, taskId={}, activityId={}", taskId, execution.getCurrentActivityId());
-
+        TaskEntity taskEntity = taskService.detail(taskId);
+        Verify.notNull(taskEntity, "taskEntity");
+        RollbackPlanTaskResult rollbackPlanTaskResult = null;
+        DatabaseChangeResult result = JsonUtils.fromJson(taskEntity.getResultJson(), DatabaseChangeResult.class);
+        if (result != null) {
+            rollbackPlanTaskResult = result.getRollbackPlanResult();
+        }
         JobDefinition jd = buildJobDefinition(execution);
         Long jobId = jobScheduler.scheduleJobNow(jd);
         jobEntity = taskFrameworkService.find(jobId);
@@ -123,13 +131,14 @@ public class DatabaseChangeRuntimeFlowableTaskCopied extends BaseODCFlowTaskDele
         }
         jobEntity = taskFrameworkService.find(jobId);
         result = JsonUtils.fromJson(jobEntity.getResultJson(), DatabaseChangeResult.class);
+        result.setRollbackPlanResult(rollbackPlanTaskResult);
         JobStatus status = jobEntity.getStatus();
         isSuccessful = status == JobStatus.DONE;
         isFailure = !isSuccessful;
+        taskService.succeed(taskId, result);
         log.info("Async task ends, taskId={}, activityId={}, returnVal={}, timeCost={}, jobId={}, jobStatus={}",
                 taskId, execution.getCurrentActivityId(), result,
                 System.currentTimeMillis() - getStartTimeMilliSeconds(), jobEntity.getId(), jobEntity.getStatus());
-
         return result;
     }
 
