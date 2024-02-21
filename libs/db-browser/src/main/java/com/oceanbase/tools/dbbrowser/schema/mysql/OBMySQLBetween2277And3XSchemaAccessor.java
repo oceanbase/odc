@@ -21,6 +21,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 import org.springframework.jdbc.core.JdbcOperations;
@@ -90,7 +91,9 @@ public class OBMySQLBetween2277And3XSchemaAccessor extends OBMySQLSchemaAccessor
     protected void fillIndexRange(List<DBTableIndex> indexList, String schemaName,
             String tableName) {
         setIndexRangeByDDL(indexList, schemaName, tableName);
-        setIndexRangeByQuery(indexList, schemaName, tableName);
+        if (indexList.stream().anyMatch(idx -> Objects.isNull(idx.getGlobal()))) {
+            setIndexRangeByQuery(indexList, schemaName, tableName);
+        }
     }
 
     protected void setIndexRangeByQuery(List<DBTableIndex> indexList, String schemaName, String tableName) {

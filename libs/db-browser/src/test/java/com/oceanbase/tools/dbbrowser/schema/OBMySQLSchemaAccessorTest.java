@@ -37,6 +37,7 @@ import com.oceanbase.tools.dbbrowser.model.DBObjectIdentity;
 import com.oceanbase.tools.dbbrowser.model.DBObjectType;
 import com.oceanbase.tools.dbbrowser.model.DBPLObjectIdentity;
 import com.oceanbase.tools.dbbrowser.model.DBProcedure;
+import com.oceanbase.tools.dbbrowser.model.DBTable;
 import com.oceanbase.tools.dbbrowser.model.DBTable.DBTableOptions;
 import com.oceanbase.tools.dbbrowser.model.DBTableColumn;
 import com.oceanbase.tools.dbbrowser.model.DBTableConstraint;
@@ -418,6 +419,12 @@ public class OBMySQLSchemaAccessorTest extends BaseTestEnv {
         Map<String, List<DBTableColumn>> table2Columns = accessor.listTableColumns(getOBMySQLDataBaseName(),
                 Arrays.asList("part_hash", "part_list"));
         Assert.assertEquals(2, table2Columns.size());
+    }
+
+    @Test
+    public void getTables_success() {
+        Map<String, DBTable> tables = accessor.getTables(getOBMySQLDataBaseName(), null);
+        Assert.assertTrue(tables.size() > 0);
     }
 
     private static void initVerifyColumnAttributes() {

@@ -411,7 +411,8 @@ public class FlowInstanceService {
                     TaskType.ALTER_SCHEDULE,
                     TaskType.EXPORT_RESULT_SET,
                     TaskType.APPLY_PROJECT_PERMISSION,
-                    TaskType.APPLY_DATABASE_PERMISSION);
+                    TaskType.APPLY_DATABASE_PERMISSION,
+                    TaskType.STRUCTURE_COMPARISON);
             specification = specification.and(FlowInstanceViewSpecs.taskTypeIn(types));
         }
 
@@ -843,6 +844,10 @@ public class FlowInstanceService {
     }
 
     private String generateFlowInstanceName(@NonNull CreateFlowInstanceReq req) {
+        if (req.getTaskType() == TaskType.STRUCTURE_COMPARISON) {
+            DBStructureComparisonParameter parameters = (DBStructureComparisonParameter) req.getParameters();
+            return "structure_comparison_" + parameters.getSourceDatabaseId() + "_" + parameters.getTargetDatabaseId();
+        }
         String schemaName = req.getDatabaseName();
         String connectionName = req.getConnectionId() == null ? "no_connection" : req.getConnectionId() + "";
         if (schemaName == null) {

@@ -27,6 +27,7 @@ import com.oceanbase.tools.dbbrowser.model.DBProcedure;
 import com.oceanbase.tools.dbbrowser.model.DBSequence;
 import com.oceanbase.tools.dbbrowser.model.DBSynonym;
 import com.oceanbase.tools.dbbrowser.model.DBSynonymType;
+import com.oceanbase.tools.dbbrowser.model.DBTable;
 import com.oceanbase.tools.dbbrowser.model.DBTable.DBTableOptions;
 import com.oceanbase.tools.dbbrowser.model.DBTableColumn;
 import com.oceanbase.tools.dbbrowser.model.DBTableConstraint;
@@ -243,4 +244,6 @@ public interface DBSchemaAccessor {
     DBSequence getSequence(String schemaName, String sequenceName);
 
     DBSynonym getSynonym(String schemaName, String synonymName, DBSynonymType synonymType);
+
+    Map<String, DBTable> getTables(String schemaName, List<String> tableNames);
 }

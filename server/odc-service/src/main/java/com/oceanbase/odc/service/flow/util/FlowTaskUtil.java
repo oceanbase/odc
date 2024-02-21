@@ -40,6 +40,7 @@ import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.connection.model.OBTenantEndpoint;
 import com.oceanbase.odc.service.connection.model.OceanBaseAccessMode;
 import com.oceanbase.odc.service.db.browser.DBSchemaAccessors;
+import com.oceanbase.odc.service.flow.task.model.DBStructureComparisonParameter;
 import com.oceanbase.odc.service.flow.task.model.DatabaseChangeParameters;
 import com.oceanbase.odc.service.flow.task.model.MockProperties;
 import com.oceanbase.odc.service.flow.task.model.OdcMockTaskConfig;
@@ -128,6 +129,12 @@ public class FlowTaskUtil {
     public static ResultSetExportTaskParameter getResultSetExportTaskParameter(@NonNull DelegateExecution execution) {
         return internalGetParameter(execution, ResultSetExportTaskParameter.class).orElseThrow(
                 () -> new VerifyException("ResultSetExportTaskParameter is absent"));
+    }
+
+    public static DBStructureComparisonParameter getDBStructureComparisonParameter(
+            @NonNull DelegateExecution execution) {
+        return internalGetParameter(execution, DBStructureComparisonParameter.class).orElseThrow(
+                () -> new VerifyException("DBStructureComparisonParameter is absent"));
     }
 
     public static void setTaskSubmitter(@NonNull Map<String, Object> variables, ExecutorInfo submitter) {

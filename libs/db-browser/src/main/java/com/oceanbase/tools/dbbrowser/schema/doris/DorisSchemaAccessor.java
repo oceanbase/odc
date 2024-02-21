@@ -688,7 +688,7 @@ public class DorisSchemaAccessor implements DBSchemaAccessor {
     }
 
     @Override
-    public Map<String, DBTablePartition> listTablePartitions(@lombok.NonNull String schemaName,
+    public Map<String, DBTablePartition> listTablePartitions(@NonNull String schemaName,
             List<String> candidates) {
         throw new UnsupportedOperationException("Not supported yet");
     }
@@ -1198,6 +1198,11 @@ public class DorisSchemaAccessor implements DBSchemaAccessor {
         return sqlBuilder.append("select * from (")
                 .append(target).append(") dbbrowser").append(" WHERE dbbrowser.").identifier(colName)
                 .append(" in (").append(tables).append(")").toString();
+    }
+
+    @Override
+    public Map<String, DBTable> getTables(String schemaName, List<String> tableNames) {
+        throw new UnsupportedOperationException("Not supported yet");
     }
 
 }

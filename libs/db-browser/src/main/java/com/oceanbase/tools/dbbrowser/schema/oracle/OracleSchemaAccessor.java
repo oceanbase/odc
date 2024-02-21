@@ -58,6 +58,7 @@ import com.oceanbase.tools.dbbrowser.model.DBProcedure;
 import com.oceanbase.tools.dbbrowser.model.DBSequence;
 import com.oceanbase.tools.dbbrowser.model.DBSynonym;
 import com.oceanbase.tools.dbbrowser.model.DBSynonymType;
+import com.oceanbase.tools.dbbrowser.model.DBTable;
 import com.oceanbase.tools.dbbrowser.model.DBTable.DBTableOptions;
 import com.oceanbase.tools.dbbrowser.model.DBTableColumn;
 import com.oceanbase.tools.dbbrowser.model.DBTableColumn.CharUnit;
@@ -654,7 +655,7 @@ public class OracleSchemaAccessor implements DBSchemaAccessor {
                                 Collectors.toMap(DBTableConstraint::getName, cons -> cons));
                 int currentPosition = constraintName2Constraint.size();
                 if (!constraintName2Constraint.containsKey(constraintName)) {
-                    constraintName2Constraint.put(constraintName, createConstraintByResultSet(rs, currentPosition + 1));
+                    tableName2Constraints.get(tableName).add(createConstraintByResultSet(rs, currentPosition + 1));
                 } else {
                     constraintName2Constraint.get(constraintName).getColumnNames()
                             .add(rs.getString("COLUMN_NAME"));
@@ -992,6 +993,7 @@ public class OracleSchemaAccessor implements DBSchemaAccessor {
 
     private DBTablePartitionOption obtainPartitionOption(String schemaName, String tableName) {
         DBTablePartitionOption option = new DBTablePartitionOption();
+        option.setType(DBTablePartitionType.NOT_PARTITIONED);
         String queryPartitionTypeSql = this.sqlMapper.getSql(Statements.GET_PARTITION_OPTION);
         jdbcOperations.query(queryPartitionTypeSql, new Object[] {schemaName, tableName}, (rs, num) -> {
             option.setType(DBTablePartitionType.fromValue(rs.getString("PARTITIONING_TYPE")));
@@ -1085,8 +1087,8 @@ public class OracleSchemaAccessor implements DBSchemaAccessor {
         return true;
     }
 
-    @Override
-    public String getTableDDL(String schemaName, String tableName) {
+    public String getTableDDL(String schemaName, String tableName, List<DBTableColumn> tableColumns,
+            List<DBTableIndex> tableIndexes) {
         StringBuilder ddl = new StringBuilder(getTableDDLOnly(schemaName, tableName));
         ddl.append(";\n");
         Map<String, String> variables = new HashMap<>();
@@ -1099,8 +1101,7 @@ public class OracleSchemaAccessor implements DBSchemaAccessor {
             String tableCommentDdl = StringUtils.replaceVariables(ORACLE_TABLE_COMMENT_DDL_TEMPLATE, variables);
             ddl.append(tableCommentDdl).append(";\n");
         }
-        List<DBTableColumn> columns = listTableColumns(schemaName, tableName);
-        for (DBTableColumn column : columns) {
+        for (DBTableColumn column : tableColumns) {
             if (StringUtils.isNotEmpty(column.getComment())) {
                 variables.put("columnName", StringUtils.quoteOracleIdentifier(column.getName()));
                 variables.put("comment", StringUtils.quoteOracleValue(column.getComment()));
@@ -1108,8 +1109,11 @@ public class OracleSchemaAccessor implements DBSchemaAccessor {
                 ddl.append(columnCommentDdl).append(";\n");
             }
         }
-        List<DBTableIndex> indexes = listTableIndexes(schemaName, tableName);
-        for (DBTableIndex index : indexes) {
+        for (DBTableIndex index : tableIndexes) {
+            if (StringUtils.isNotBlank(index.getDdl())) {
+                ddl.append("\n").append(index.getDdl());
+                continue;
+            }
             /**
              * 如果有唯一索引，则在表的 DDL 里已经包含了对应的唯一约束 这里就不需要再去获取索引的 DDL 了，否则会重复
              */
@@ -1141,6 +1145,12 @@ public class OracleSchemaAccessor implements DBSchemaAccessor {
         }
         return ddl.toString();
 
+    }
+
+    @Override
+    public String getTableDDL(String schemaName, String tableName) {
+        return getTableDDL(schemaName, tableName, listTableColumns(schemaName, tableName),
+                listTableIndexes(schemaName, tableName));
     }
 
     protected String getTableDDLOnly(String schemaName, String tableName) {
@@ -1682,6 +1692,11 @@ public class OracleSchemaAccessor implements DBSchemaAccessor {
         synonym.setDdl(getSynonymDDL(synonym));
 
         return synonym;
+    }
+
+    @Override
+    public Map<String, DBTable> getTables(String schemaName, List<String> tableNames) {
+        throw new UnsupportedOperationException("Not supported for oracle mode");
     }
 
     protected String getSynonymDDL(DBSynonym synonym) {

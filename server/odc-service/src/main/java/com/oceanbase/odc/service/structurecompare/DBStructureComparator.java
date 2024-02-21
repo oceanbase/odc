@@ -36,4 +36,11 @@ public interface DBStructureComparator {
      */
     List<DBObjectComparisonResult> compare(DBStructureComparisonConfig srcConfig,
             DBStructureComparisonConfig destConfig) throws SQLException;
+
+    /**
+     * Get comparison progress
+     *
+     * @return Compare progress
+     */
+    Double getProgress();
 }
