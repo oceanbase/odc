@@ -100,13 +100,13 @@ public class OnlineSchemaChangeParameters implements Serializable, TaskParameter
                         if (statement instanceof AlterTable && connectionConfig.getDialectType().isOracle()) {
                             List<ReplaceElement> replaceElements = parameter.getReplaceResult().getReplaceElements();
                             ReplaceResult result = new OBOracleTableNameReplacer().replaceStmtValue(
-                                OnlineSchemaChangeSqlType.ALTER, sql, replaceElements);
-                            sql = result.getNewSql();
+                                    OnlineSchemaChangeSqlType.ALTER, sql, replaceElements);
+                            taskParameters.get(key).getSqlsToBeExecuted().add(result.getNewSql());
+                        } else {
+                            String newAlterStmt = DdlUtils.replaceTableName(sql, parameter.getNewTableName(),
+                                    connectionConfig.getDialectType(), sqlType).getNewSql();
+                            taskParameters.get(key).getSqlsToBeExecuted().add(newAlterStmt);
                         }
-
-                        String newAlterStmt = DdlUtils.replaceTableName(sql, parameter.getNewTableName(),
-                                connectionConfig.getDialectType(), sqlType).getNewSql();
-                        taskParameters.get(key).getSqlsToBeExecuted().add(newAlterStmt);
                     }
 
                 } else {
