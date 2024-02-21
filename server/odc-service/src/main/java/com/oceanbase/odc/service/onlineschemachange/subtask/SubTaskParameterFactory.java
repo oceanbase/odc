@@ -93,7 +93,7 @@ public class SubTaskParameterFactory implements AutoCloseable {
             String originTableCreateDdl = DdlUtils.queryOriginTableCreateDdl(session, tableName);
             taskParameter.setOriginTableCreateDdl(originTableCreateDdl);
             TableNameDescriptor tableNameDescriptor = tableNameDescriptorFactory.getTableNameDescriptor(tableName);
-            ReplaceResult replaceResult = DdlUtils.replaceTableName(originTableCreateDdl,
+            ReplaceResult replaceResult = DdlUtils.replaceTableName(sql,
                     tableNameDescriptor.getNewTableName(), session.getDialectType(), OnlineSchemaChangeSqlType.CREATE);
             taskParameter.setNewTableCreateDdl(replaceResult.getNewSql());
             taskParameter.setNewTableCreateDdlForDisplay(sql);
