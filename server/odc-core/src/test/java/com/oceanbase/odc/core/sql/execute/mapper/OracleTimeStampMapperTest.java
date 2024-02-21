@@ -19,6 +19,7 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.Statement;
+import java.util.TimeZone;
 
 import javax.sql.DataSource;
 
@@ -67,7 +68,7 @@ public class OracleTimeStampMapperTest {
 
     @Test
     public void test_timeStampLTZ_datatype() throws Exception {
-        TimeFormatResult expect = new TimeFormatResult("03-03-22", 1646273042000L, 0, "Asia/Shanghai");
+        TimeFormatResult expect = new TimeFormatResult("03-03-22", 1646273042000L, 0, TimeZone.getDefault().getID());
         try (Connection conn = dataSource.getConnection()) {
             Statement statement = conn.createStatement();
             try (ResultSet rs = statement.executeQuery("select * from oracle_time_test")) {

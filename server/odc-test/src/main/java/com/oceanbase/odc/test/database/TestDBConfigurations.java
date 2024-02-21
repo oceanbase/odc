@@ -48,6 +48,9 @@ public class TestDBConfigurations {
 
     private TestDBConfigurations() {
         for (TestDBType type : TestDBType.values()) {
+            if (type == TestDBType.DORIS) {
+                continue;
+            }
             connectType2ConfigurationMap.put(type, new TestDBConfiguration(getTestDBProperties(type)));
         }
         dropTestDatabases();
