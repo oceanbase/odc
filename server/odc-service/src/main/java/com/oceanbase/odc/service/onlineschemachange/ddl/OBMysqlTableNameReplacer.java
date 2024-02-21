@@ -57,6 +57,11 @@ public class OBMysqlTableNameReplacer implements TableNameReplacer {
                 rewriter -> new WalkerOBParserReplaceStatementListener(rewriter, newTableName));
     }
 
+    @Override
+    public String replaceCreateIndexStmt(String originCreateIndexStmt, String newTableName) {
+        return originCreateIndexStmt;
+    }
+
     private static String getRewriteSql(String originCreateStmt,
             Function<TokenStreamRewriter, OBParserBaseListener> obParserBaseListenerFunc) {
         CharStream charStream = CharStreams.fromString(originCreateStmt);
