@@ -16,6 +16,7 @@
 package com.oceanbase.odc.metadb.partitionplan;
 
 import java.util.List;
+import java.util.Optional;
 
 import javax.persistence.LockModeType;
 import javax.transaction.Transactional;
@@ -26,6 +27,8 @@ import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+
+import lombok.NonNull;
 
 /**
  * {@link PartitionPlanRepository}
@@ -38,6 +41,8 @@ public interface PartitionPlanRepository extends JpaRepository<PartitionPlanEnti
         JpaSpecificationExecutor<PartitionPlanEntity> {
 
     List<PartitionPlanEntity> findByDatabaseIdAndEnabled(Long databaseId, Boolean enabled);
+
+    Optional<PartitionPlanEntity> findByFlowInstanceId(@NonNull Long flowInstanceId);
 
     @Transactional
     @Lock(value = LockModeType.PESSIMISTIC_WRITE)

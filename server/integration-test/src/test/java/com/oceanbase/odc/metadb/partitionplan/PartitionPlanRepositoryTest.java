@@ -94,6 +94,26 @@ public class PartitionPlanRepositoryTest extends ServiceTestEnv {
         Assert.assertFalse(optional.get().getEnabled());
     }
 
+    @Test
+    public void findByFlowInstanceId_recordExists_findSucceed() {
+        PartitionPlanEntity actual = createRoleEntity();
+        actual.setId(null);
+        actual.setEnabled(true);
+        actual = this.repository.save(actual);
+        Optional<PartitionPlanEntity> expect = this.repository.findByFlowInstanceId(actual.getFlowInstanceId());
+        Assert.assertEquals(expect.get(), actual);
+    }
+
+    @Test
+    public void findByFlowInstanceId_recordNonExists_findNothing() {
+        PartitionPlanEntity actual = createRoleEntity();
+        actual.setId(null);
+        actual.setEnabled(true);
+        actual = this.repository.save(actual);
+        Optional<PartitionPlanEntity> expect = this.repository.findByFlowInstanceId(actual.getFlowInstanceId() + 1);
+        Assert.assertFalse(expect.isPresent());
+    }
+
     private PartitionPlanEntity createRoleEntity() {
         return TestRandom.nextObject(PartitionPlanEntity.class);
     }
