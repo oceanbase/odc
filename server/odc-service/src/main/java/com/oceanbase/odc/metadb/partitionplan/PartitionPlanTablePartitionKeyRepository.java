@@ -41,6 +41,8 @@ public interface PartitionPlanTablePartitionKeyRepository
         extends OdcJpaRepository<PartitionPlanTablePartitionKeyEntity, Long>,
         JpaSpecificationExecutor<PartitionPlanTablePartitionKeyEntity> {
 
+    List<PartitionPlanTablePartitionKeyEntity> findByPartitionplanTableIdIn(List<Long> partitionplanTableId);
+
     List<PartitionPlanTablePartitionKeyEntity> findByPartitionplanTableIdInAndEnabled(
             List<Long> partitionplanTableId, Boolean enabled);
 

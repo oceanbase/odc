@@ -40,6 +40,8 @@ import com.oceanbase.odc.config.jpa.OdcJpaRepository;
 public interface PartitionPlanTableRepository extends OdcJpaRepository<PartitionPlanTableEntity, Long>,
         JpaSpecificationExecutor<PartitionPlanTableEntity> {
 
+    List<PartitionPlanTableEntity> findByPartitionPlanIdIn(List<Long> partitionPlanIds);
+
     List<PartitionPlanTableEntity> findByPartitionPlanIdInAndEnabled(List<Long> partitionPlanIds, Boolean enabled);
 
     @Transactional

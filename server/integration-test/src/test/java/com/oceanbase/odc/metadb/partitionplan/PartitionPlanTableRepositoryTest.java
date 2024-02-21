@@ -106,6 +106,17 @@ public class PartitionPlanTableRepositoryTest extends ServiceTestEnv {
     }
 
     @Test
+    public void findByPartitionPlanIdIn_candidateExists_returnNotNull() {
+        PartitionPlanTableEntity actual = createRoleEntity();
+        actual.setId(null);
+        actual.setEnabled(true);
+        actual = this.repository.save(actual);
+        List<PartitionPlanTableEntity> expect = this.repository.findByPartitionPlanIdIn(
+                Collections.singletonList(actual.getPartitionPlanId()));
+        Assert.assertEquals(expect, Collections.singletonList(actual));
+    }
+
+    @Test
     public void updateEnabledByIdIn_convertToFalse_concertSucceed() {
         PartitionPlanTableEntity actual = createRoleEntity();
         actual.setId(null);
