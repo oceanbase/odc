@@ -188,7 +188,18 @@ public class ConnectConsoleService {
                     .format("Query data failed, get result-set timeout, requestId=%s, sqlId=%s", requestId, sqlId));
         }
         Verify.verify(results.size() == 1, "Expect results.size=1, but " + results.size());
-        return results.get(0);
+        SqlExecuteResult result = results.get(0);
+        /**
+         * editable will always be false because ResultSetMetaData#getTableName will return blank in oracle
+         * JDBC, but the resultSet can be edited in this single-table query scenario, so we just set it to
+         * true.
+         */
+        if (DialectType.ORACLE == connectionSession.getDialectType()) {
+            if (result.getResultSetMetaData() != null) {
+                result.getResultSetMetaData().setEditable(true);
+            }
+        }
+        return result;
     }
 
     public SqlAsyncExecuteResp execute(@NotNull String sessionId, @NotNull @Valid SqlAsyncExecuteReq request)
