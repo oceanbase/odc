@@ -227,7 +227,7 @@ public class RollbackPlanRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Rol
                 this.isSuccess = true;
                 return RollbackPlanTaskResult.success(resultFileId, resultFileDownloadUrl);
             } catch (Exception e) {
-                log.warn("Failed to put generated rollback plan file for taskId={}", getTaskId());
+                log.warn("Failed to put generated rollback plan file for taskId={}", getTaskId(), e);
                 throw new UnexpectedException("Failed to put generated rollback plan file for taskId=" + getTaskId());
             }
         } else {
