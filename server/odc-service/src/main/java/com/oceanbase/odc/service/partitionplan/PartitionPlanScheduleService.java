@@ -15,6 +15,7 @@
  */
 package com.oceanbase.odc.service.partitionplan;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -28,7 +29,10 @@ import org.quartz.SchedulerException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.oceanbase.odc.common.json.JsonUtils;
+import com.oceanbase.odc.core.shared.constant.ResourceType;
+import com.oceanbase.odc.core.shared.exception.NotFoundException;
 import com.oceanbase.odc.metadb.partitionplan.PartitionPlanEntity;
 import com.oceanbase.odc.metadb.partitionplan.PartitionPlanRepository;
 import com.oceanbase.odc.metadb.partitionplan.PartitionPlanTableEntity;
@@ -38,6 +42,8 @@ import com.oceanbase.odc.metadb.partitionplan.PartitionPlanTableRepository;
 import com.oceanbase.odc.metadb.schedule.ScheduleEntity;
 import com.oceanbase.odc.service.connection.database.DatabaseService;
 import com.oceanbase.odc.service.connection.database.model.Database;
+import com.oceanbase.odc.service.flow.FlowInstanceService;
+import com.oceanbase.odc.service.flow.instance.FlowInstance;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.partitionplan.model.PartitionPlanConfig;
 import com.oceanbase.odc.service.partitionplan.model.PartitionPlanKeyConfig;
@@ -75,6 +81,52 @@ public class PartitionPlanScheduleService {
     private PartitionPlanRepository partitionPlanRepository;
     @Autowired
     private PartitionPlanTablePartitionKeyRepository partitionPlanTablePartitionKeyRepository;
+    @Autowired
+    private FlowInstanceService flowInstanceService;
+
+    public PartitionPlanConfig getPartitionPlan(@NonNull Long flowInstanceId) {
+        Long fId = this.flowInstanceService.mapFlowInstance(flowInstanceId, FlowInstance::getId, false);
+        PartitionPlanEntity pp = this.partitionPlanRepository.findByFlowInstanceId(fId)
+                .orElseThrow(() -> new NotFoundException(ResourceType.ODC_FLOW_INSTANCE, "id", flowInstanceId));
+        PartitionPlanConfig target = entityToModel(pp);
+        List<PartitionPlanTableConfig> tableConfigs = this.partitionPlanTableRepository
+                .findByPartitionPlanIdIn(Collections.singletonList(pp.getId())).stream()
+                .map(this::entityToModel).collect(Collectors.toList());
+        target.setPartitionTableConfigs(tableConfigs);
+        Map<Long, List<PartitionPlanTablePartitionKeyEntity>> pptId2KeyEntities =
+                this.partitionPlanTablePartitionKeyRepository.findByPartitionplanTableIdIn(tableConfigs.stream()
+                        .map(PartitionPlanTableConfig::getId).collect(Collectors.toList())).stream()
+                        .collect(Collectors.groupingBy(PartitionPlanTablePartitionKeyEntity::getPartitionplanTableId));
+        target.getPartitionTableConfigs().forEach(tableConfig -> {
+            List<PartitionPlanTablePartitionKeyEntity> pptks = pptId2KeyEntities.get(tableConfig.getId());
+            if (CollectionUtils.isEmpty(pptks)) {
+                return;
+            }
+            tableConfig.setPartitionKeyConfigs(pptks.stream().map(this::entityToModel).collect(Collectors.toList()));
+        });
+        return target;
+    }
+
+    public List<PartitionPlanTableConfig> getPartitionPlanTables(@NonNull List<Long> partitionPlanTableIds) {
+        List<PartitionPlanTableEntity> ppts = this.partitionPlanTableRepository.findByIdIn(partitionPlanTableIds);
+        if (CollectionUtils.isEmpty(ppts)) {
+            return Collections.emptyList();
+        }
+        List<PartitionPlanTableConfig> tableConfigs = ppts.stream()
+                .map(this::entityToModel).collect(Collectors.toList());
+        Map<Long, List<PartitionPlanTablePartitionKeyEntity>> pptId2KeyEntities =
+                this.partitionPlanTablePartitionKeyRepository.findByPartitionplanTableIdIn(tableConfigs.stream()
+                        .map(PartitionPlanTableConfig::getId).collect(Collectors.toList())).stream()
+                        .collect(Collectors.groupingBy(PartitionPlanTablePartitionKeyEntity::getPartitionplanTableId));
+        tableConfigs.forEach(tableConfig -> {
+            List<PartitionPlanTablePartitionKeyEntity> pptks = pptId2KeyEntities.get(tableConfig.getId());
+            if (CollectionUtils.isEmpty(pptks)) {
+                return;
+            }
+            tableConfig.setPartitionKeyConfigs(pptks.stream().map(this::entityToModel).collect(Collectors.toList()));
+        });
+        return tableConfigs;
+    }
 
     /**
      * submit a partition plan task
@@ -228,6 +280,37 @@ public class PartitionPlanScheduleService {
         entity.setPartitionNameInvokerParameters(JsonUtils.toJson(model.getPartitionNameInvokerParameters()));
         entity.setScheduleId(scheduleId);
         return entity;
+    }
+
+    private PartitionPlanConfig entityToModel(PartitionPlanEntity entity) {
+        PartitionPlanConfig target = new PartitionPlanConfig();
+        target.setId(entity.getId());
+        target.setEnabled(entity.getEnabled());
+        target.setDatabaseId(entity.getDatabaseId());
+        target.setFlowInstanceId(entity.getFlowInstanceId());
+        return target;
+    }
+
+    private PartitionPlanTableConfig entityToModel(PartitionPlanTableEntity entity) {
+        PartitionPlanTableConfig target = new PartitionPlanTableConfig();
+        target.setId(entity.getId());
+        target.setEnabled(entity.getEnabled());
+        target.setTableName(entity.getTableName());
+        target.setPartitionNameInvoker(entity.getPartitionNameInvoker());
+        target.setPartitionNameInvokerParameters(JsonUtils.fromJson(
+                entity.getPartitionNameInvokerParameters(), new TypeReference<Map<String, Object>>() {}));
+        return target;
+    }
+
+    private PartitionPlanKeyConfig entityToModel(PartitionPlanTablePartitionKeyEntity entity) {
+        PartitionPlanKeyConfig target = new PartitionPlanKeyConfig();
+        target.setId(entity.getId());
+        target.setPartitionKey(entity.getPartitionKey());
+        target.setStrategy(entity.getStrategy());
+        target.setPartitionKeyInvoker(entity.getPartitionKeyInvoker());
+        target.setPartitionKeyInvokerParameters(JsonUtils.fromJson(
+                entity.getPartitionKeyInvokerParameters(), new TypeReference<Map<String, Object>>() {}));
+        return target;
     }
 
     private PartitionPlanTablePartitionKeyEntity modelToEntity(PartitionPlanKeyConfig model,

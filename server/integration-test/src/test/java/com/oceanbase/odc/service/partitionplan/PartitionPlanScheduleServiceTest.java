@@ -49,6 +49,7 @@ import com.oceanbase.odc.plugin.task.api.partitionplan.model.SqlExprBasedGenerat
 import com.oceanbase.odc.plugin.task.api.partitionplan.model.TimeIncreaseGeneratorConfig;
 import com.oceanbase.odc.service.connection.database.DatabaseService;
 import com.oceanbase.odc.service.connection.database.model.Database;
+import com.oceanbase.odc.service.flow.FlowInstanceService;
 import com.oceanbase.odc.service.partitionplan.model.PartitionPlanConfig;
 import com.oceanbase.odc.service.partitionplan.model.PartitionPlanKeyConfig;
 import com.oceanbase.odc.service.partitionplan.model.PartitionPlanStrategy;
@@ -71,6 +72,8 @@ public class PartitionPlanScheduleServiceTest extends ServiceTestEnv {
     private ScheduleService scheduleService;
     @MockBean
     private DatabaseService databaseService;
+    @MockBean
+    private FlowInstanceService flowInstanceService;
     @Autowired
     private PartitionPlanServiceV2 partitionPlanService;
     @Autowired
@@ -256,6 +259,82 @@ public class PartitionPlanScheduleServiceTest extends ServiceTestEnv {
         Set<Long> scheduleIds = actuals.stream()
                 .map(PartitionPlanTableEntity::getScheduleId).collect(Collectors.toSet());
         Assert.assertEquals(scheduleIds.size(), 2);
+    }
+
+    @Test
+    public void getPartitionPlan_onlyCreateTrigger_getSucceed() throws ClassNotFoundException, SchedulerException {
+        PartitionPlanTableConfig tableConfig = new PartitionPlanTableConfig();
+        tableConfig.setTableName(MYSQL_REAL_RANGE_TABLE_NAME);
+        tableConfig.setPartitionNameInvoker("CUSTOM_PARTITION_NAME_GENERATOR");
+        SqlExprBasedGeneratorConfig config = new SqlExprBasedGeneratorConfig();
+        config.setGenerateExpr("concat('p', date_format(from_unixtime(unix_timestamp("
+                + "STR_TO_DATE(20240125, '%Y%m%d')) + "
+                + PartitionPlanVariableKey.INTERVAL.getVariable() + "), '%Y%m%d'))");
+        config.setIntervalGenerateExpr("86400");
+        tableConfig.setPartitionNameInvokerParameters(getSqlExprBasedNameGeneratorParameters(config));
+        PartitionPlanKeyConfig c3Create = getMysqlc3CreateConfig();
+        PartitionPlanKeyConfig datekeyCreate = getMysqldatekeyCreateConfig();
+        PartitionPlanKeyConfig dropConfig = getDropConfig();
+        tableConfig.setPartitionKeyConfigs(Arrays.asList(c3Create, datekeyCreate, dropConfig));
+
+        PartitionPlanConfig partitionPlanConfig = new PartitionPlanConfig();
+        partitionPlanConfig.setPartitionTableConfigs(Collections.singletonList(tableConfig));
+        partitionPlanConfig.setFlowInstanceId(1L);
+        partitionPlanConfig.setTimeoutMillis(180000L);
+        partitionPlanConfig.setDatabaseId(1L);
+        partitionPlanConfig.setCreationTrigger(TestRandom.nextObject(TriggerConfig.class));
+        Database database = TestRandom.nextObject(Database.class);
+        database.setId(1L);
+        Mockito.when(this.databaseService.detail(1L)).thenReturn(database);
+        Mockito.when(this.scheduleService.create(Mockito.any()))
+                .thenReturn(TestRandom.nextObject(ScheduleEntity.class));
+        Mockito.doNothing().when(this.scheduleService).enable(Mockito.isA(ScheduleEntity.class));
+        this.partitionPlanScheduleService.submit(partitionPlanConfig);
+        Mockito.when(this.flowInstanceService.mapFlowInstance(Mockito.any(), Mockito.any(), Mockito.any()))
+                .thenReturn(partitionPlanConfig.getFlowInstanceId());
+        PartitionPlanConfig expect = this.partitionPlanScheduleService
+                .getPartitionPlan(partitionPlanConfig.getFlowInstanceId());
+        Assert.assertEquals(1, expect.getPartitionTableConfigs().size());
+    }
+
+    @Test
+    public void getPartitionPlanTables_onlyCreateTrigger_getSucceed()
+            throws ClassNotFoundException, SchedulerException {
+        PartitionPlanTableConfig tableConfig = new PartitionPlanTableConfig();
+        tableConfig.setTableName(MYSQL_REAL_RANGE_TABLE_NAME);
+        tableConfig.setPartitionNameInvoker("CUSTOM_PARTITION_NAME_GENERATOR");
+        SqlExprBasedGeneratorConfig config = new SqlExprBasedGeneratorConfig();
+        config.setGenerateExpr("concat('p', date_format(from_unixtime(unix_timestamp("
+                + "STR_TO_DATE(20240125, '%Y%m%d')) + "
+                + PartitionPlanVariableKey.INTERVAL.getVariable() + "), '%Y%m%d'))");
+        config.setIntervalGenerateExpr("86400");
+        tableConfig.setPartitionNameInvokerParameters(getSqlExprBasedNameGeneratorParameters(config));
+        PartitionPlanKeyConfig c3Create = getMysqlc3CreateConfig();
+        PartitionPlanKeyConfig datekeyCreate = getMysqldatekeyCreateConfig();
+        PartitionPlanKeyConfig dropConfig = getDropConfig();
+        tableConfig.setPartitionKeyConfigs(Arrays.asList(c3Create, datekeyCreate, dropConfig));
+
+        PartitionPlanConfig partitionPlanConfig = new PartitionPlanConfig();
+        partitionPlanConfig.setPartitionTableConfigs(Collections.singletonList(tableConfig));
+        partitionPlanConfig.setFlowInstanceId(1L);
+        partitionPlanConfig.setTimeoutMillis(180000L);
+        partitionPlanConfig.setDatabaseId(1L);
+        partitionPlanConfig.setCreationTrigger(TestRandom.nextObject(TriggerConfig.class));
+        Database database = TestRandom.nextObject(Database.class);
+        database.setId(1L);
+        Mockito.when(this.databaseService.detail(1L)).thenReturn(database);
+        Mockito.when(this.scheduleService.create(Mockito.any()))
+                .thenReturn(TestRandom.nextObject(ScheduleEntity.class));
+        Mockito.doNothing().when(this.scheduleService).enable(Mockito.isA(ScheduleEntity.class));
+        this.partitionPlanScheduleService.submit(partitionPlanConfig);
+        Mockito.when(this.flowInstanceService.mapFlowInstance(Mockito.any(), Mockito.any(), Mockito.any()))
+                .thenReturn(partitionPlanConfig.getFlowInstanceId());
+        PartitionPlanConfig cfg = this.partitionPlanScheduleService
+                .getPartitionPlan(partitionPlanConfig.getFlowInstanceId());
+        List<PartitionPlanTableConfig> expects = this.partitionPlanScheduleService.getPartitionPlanTables(
+                cfg.getPartitionTableConfigs().stream()
+                        .map(PartitionPlanTableConfig::getId).collect(Collectors.toList()));
+        Assert.assertEquals(1, expects.size());
     }
 
     private Map<String, Object> getSqlExprBasedNameGeneratorParameters(SqlExprBasedGeneratorConfig config) {
