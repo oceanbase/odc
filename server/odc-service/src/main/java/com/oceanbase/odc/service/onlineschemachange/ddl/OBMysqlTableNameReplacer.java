@@ -74,7 +74,6 @@ public class OBMysqlTableNameReplacer implements TableNameReplacer {
         throw new UnsupportedException("unsupported");
     }
 
-
     @Override
     public String replaceCreateIndexStmt(String originCreateIndexStmt, String newTableName) {
         return originCreateIndexStmt;

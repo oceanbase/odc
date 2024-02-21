@@ -129,7 +129,6 @@ public class OnlineSchemaChangeParameters implements Serializable, TaskParameter
                     taskParameters.get(key).setNewTableCreateDdlForDisplay(displaySql + "\n" + sql);
                     taskParameters.get(key).getSqlsToBeExecuted().add(createIndexOnNewTable);
                 }
-
             }
             return new ArrayList<>(taskParameters.values());
         } catch (Exception e) {

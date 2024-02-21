@@ -118,6 +118,7 @@ public class OBOracleTableNameReplacer implements TableNameReplacer {
         return tokenStreamRewriter.getText();
     }
 
+
     static class CreateIndexOBParserReplaceStatementListener extends OBParserBaseListener {
         private final TokenStreamRewriter tokenStreamRewriter;
         private final String newTableName;
@@ -146,6 +147,8 @@ public class OBOracleTableNameReplacer implements TableNameReplacer {
             }
         }
     }
+
+
 
     static class AlterOBParserReplaceStatementListener extends OBParserBaseListener {
         private final TokenStreamRewriter tokenStreamRewriter;
@@ -203,15 +206,16 @@ public class OBOracleTableNameReplacer implements TableNameReplacer {
                             getReplaceElements(toReplaceElement, ReplaceType.CONSTRAINT_NAME);
                     Map<String, ReplaceElement> oldValueMap = replaceElements.stream().collect(
                             Collectors.toMap(ReplaceElement::getOldValue, v -> v));
-                    String newValue = oldValueMap.containsKey(terminalNode.toString())
-                            ? oldValueMap.get(terminalNode.toString()).getNewValue()
-                            : "A" + StringUtils.uuidNoHyphen();
-                    tokenStreamRewriter.replace(terminalNode.getSymbol(), newValue);
-                    ReplaceElement replaceElement = new ReplaceElement();
-                    replaceElement.setNewValue(newValue);
-                    replaceElement.setOldValue(terminalNode.toString());
-                    replaceElement.setReplaceType(ReplaceType.CONSTRAINT_NAME);
-                    replaceResult.getReplaceElements().add(replaceElement);
+                    // replace constraint name when sql is alter table drop constraint
+                    if (oldValueMap.containsKey(terminalNode.toString())) {
+                        String newValue = oldValueMap.get(terminalNode.toString()).getNewValue();
+                        tokenStreamRewriter.replace(terminalNode.getSymbol(), newValue);
+                        ReplaceElement replaceElement = new ReplaceElement();
+                        replaceElement.setNewValue(newValue);
+                        replaceElement.setOldValue(terminalNode.toString());
+                        replaceElement.setReplaceType(ReplaceType.CONSTRAINT_NAME);
+                        replaceResult.getReplaceElements().add(replaceElement);
+                    }
                 }
             }
         }

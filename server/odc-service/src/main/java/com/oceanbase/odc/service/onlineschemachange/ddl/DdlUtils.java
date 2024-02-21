@@ -18,7 +18,6 @@ package com.oceanbase.odc.service.onlineschemachange.ddl;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Optional;
-import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -81,10 +80,6 @@ public class DdlUtils {
                 dialectType.isMysql() ? new OBMysqlTableNameReplacer() : new OBOracleTableNameReplacer();
         return sqlType == OnlineSchemaChangeSqlType.CREATE ? rewriter.replaceCreateStmt(sql, newTableName)
                 : rewriter.replaceAlterStmt(sql, newTableName);
-    }
-
-    public static String getUUIDWithoutUnderline() {
-        return UUID.randomUUID().toString().replace("-", "");
     }
 
 
