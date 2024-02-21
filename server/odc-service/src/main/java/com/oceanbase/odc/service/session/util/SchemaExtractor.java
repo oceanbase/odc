@@ -280,16 +280,4 @@ public class SchemaExtractor {
 
     }
 
-    public static void main(String[] args) {
-        String sql = "CREATE OR REPLACE FUNCTION SCHEMA_NAME.INCREMENT_BY_ONE (INPUT_NUMBER IN NUMBER)\n"
-                + "RETURN NUMBER IS\n"
-                + "BEGIN\n"
-                + "  RETURN INPUT_NUMBER + 1;\n"
-                + "END INCREMENT_BY_ONE;";
-        AbstractSyntaxTreeFactory factory = AbstractSyntaxTreeFactories.getAstFactory(DialectType.OB_ORACLE, 0);
-        AbstractSyntaxTree ast = factory.buildAst(sql);
-        Set<String> schemaNames = listSchemaNames(ast, "schema_name2", DialectType.OB_ORACLE);
-        System.out.println(schemaNames);
-    }
-
 }
