@@ -28,11 +28,8 @@ import com.github.benmanes.caffeine.cache.LoadingCache;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.shared.exception.UnexpectedException;
 import com.oceanbase.odc.metadb.config.UserConfigDO;
-import com.oceanbase.odc.service.config.model.Configuration;
-import com.oceanbase.odc.service.config.model.OrganizationConfig;
 import com.oceanbase.odc.service.config.model.UserConfig;
 import com.oceanbase.odc.service.config.util.ConfigObjectUtil;
-import com.oceanbase.odc.service.config.util.OrganizationConfigUtil;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 
 import lombok.extern.slf4j.Slf4j;
@@ -54,9 +51,6 @@ public class UserConfigFacadeImpl implements UserConfigFacade {
      */
     @Autowired
     private UserConfigService service;
-
-    @Autowired
-    private OrganizationConfigService organizationConfigService;
 
     @Autowired
     private AuthenticationFacade authenticationFacade;
@@ -103,10 +97,7 @@ public class UserConfigFacadeImpl implements UserConfigFacade {
     @Override
     public UserConfig query(Long userId) throws UnexpectedException {
         List<UserConfigDO> settingsInDb = service.query(userId);
-        List<Configuration> organizationConfigDTO =
-                organizationConfigService.internalQuery(authenticationFacade.currentOrganizationId());
-        OrganizationConfig organizationConfig = OrganizationConfigUtil.convertToConfig(organizationConfigDTO);
-        UserConfig userConfig = new UserConfig(organizationConfig);
+        UserConfig userConfig = new UserConfig();
         return ConfigObjectUtil.setConfigObjectFromDO(settingsInDb, userConfig);
     }
 

@@ -15,11 +15,9 @@
  */
 package com.oceanbase.odc.server.web.controller.v1;
 
-import java.util.Collections;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -43,6 +41,7 @@ import io.swagger.annotations.ApiOperation;
  */
 @RestController
 @RequestMapping("/api/v1/users")
+@Deprecated
 public class UserConfigController {
     /**
      * User config facade
@@ -77,24 +76,4 @@ public class UserConfigController {
         return new OdcResult<>(ConfigObjectUtil.convertToDTO(config));
     }
 
-    /**
-     * Get all User configs
-     */
-    @ApiOperation(value = "query", notes = "Get all user Configs")
-    @RequestMapping(value = "/{userId}/configurations", method = RequestMethod.GET)
-    public OdcResult<List<Configuration>> queryByUserId(@PathVariable Long userId) {
-        // Todo search userconfig by input userId
-        return new OdcResult<>(Collections.emptyList());
-    }
-
-    /**
-     * Update user config
-     */
-    @ApiOperation(value = "update", notes = "Update user Config")
-    @RequestMapping(value = "/{userId}/configurations", method = RequestMethod.PATCH)
-    public OdcResult<List<Configuration>> updateByUserId(@RequestBody List<Configuration> configDTOList,
-            @PathVariable Long userId) {
-        // Todo search userconfig by input userId
-        return new OdcResult<>(Collections.emptyList());
-    }
 }

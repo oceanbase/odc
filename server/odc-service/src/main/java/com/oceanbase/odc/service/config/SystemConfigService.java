@@ -29,7 +29,7 @@ import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.metadb.config.SystemConfigDAO;
 import com.oceanbase.odc.metadb.config.SystemConfigEntity;
 import com.oceanbase.odc.service.config.model.Configuration;
-import com.oceanbase.odc.service.config.util.OrganizationConfigUtil;
+import com.oceanbase.odc.service.config.util.ConfigurationUtils;
 import com.oceanbase.odc.service.systemconfig.SystemConfigRefreshMatcher;
 
 import lombok.extern.slf4j.Slf4j;
@@ -108,7 +108,7 @@ public class SystemConfigService {
     @SkipAuthorize("odc internal usage")
     public List<Configuration> queryByKeyPrefix(String keyPrefix) {
         List<SystemConfigEntity> configEntities = systemConfigDAO.queryByKeyPrefix(keyPrefix);
-        return OrganizationConfigUtil.convertDO2DTO(configEntities);
+        return ConfigurationUtils.fromEntity(configEntities);
     }
 
     @SkipAuthorize("odc internal usage")

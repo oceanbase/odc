@@ -96,7 +96,4 @@ public class UserConfig {
 
     public UserConfig() {}
 
-    public UserConfig(OrganizationConfig organizationConfig) {
-        BeanUtils.copyProperties(organizationConfig, this);
-    }
 }
