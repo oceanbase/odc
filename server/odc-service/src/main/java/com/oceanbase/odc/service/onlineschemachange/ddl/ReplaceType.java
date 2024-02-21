@@ -15,19 +15,16 @@
  */
 package com.oceanbase.odc.service.onlineschemachange.ddl;
 
-import java.util.List;
+/**
+ * @author yaobin
+ * @date 2024-02-20
+ * @since 4.2.4
+ */
+public enum ReplaceType {
 
-import com.oceanbase.odc.service.onlineschemachange.model.OnlineSchemaChangeSqlType;
+    TABLE_NAME,
 
-public interface TableNameReplacer {
+    INDEX_NAME,
 
-    ReplaceResult replaceCreateStmt(String originCreateStmt, String newTableName);
-
-    ReplaceResult replaceAlterStmt(String originAlterStmt, String newTableName);
-
-    ReplaceResult replaceStmtValue(OnlineSchemaChangeSqlType sqlType, String originSql,
-            List<ReplaceElement> replaceElements);
-
-    String replaceCreateIndexStmt(String originCreateIndexStmt, String newTableName);
-
+    CONSTRAINT_NAME
 }

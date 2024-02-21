@@ -30,6 +30,8 @@ import org.antlr.v4.runtime.tree.TerminalNodeImpl;
 
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.shared.PreConditions;
+import com.oceanbase.odc.core.shared.exception.UnsupportedException;
+import com.oceanbase.odc.service.onlineschemachange.model.OnlineSchemaChangeSqlType;
 import com.oceanbase.tools.sqlparser.FastFailErrorListener;
 import com.oceanbase.tools.sqlparser.obmysql.OBLexer;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser;
@@ -46,16 +48,32 @@ public class OBMysqlTableNameReplacer implements TableNameReplacer {
     private static final String CONSTRAINT_KEYWORD = "CONSTRAINT";
     private static final String FOREIGN_KEYWORD = "FOREIGN";
 
-    public String replaceCreateStmt(String originCreateStmt, String newTableName) {
-        return getRewriteSql(originCreateStmt,
-                rewriter -> new CreateWalkerOBParserReplaceStatementListener(rewriter, newTableName));
+    public ReplaceResult replaceCreateStmt(String originCreateStmt, String newTableName) {
+        ReplaceResult result = new ReplaceResult();
+        String newSql = getRewriteSql(originCreateStmt,
+                rewriter -> new CreateWalkerOBParserReplaceStatementListener(rewriter, newTableName, result));
+
+        result.setNewSql(newSql);
+        result.setOldSql(originCreateStmt);
+        return result;
     }
 
     @Override
-    public String replaceAlterStmt(String originAlterStmt, String newTableName) {
-        return getRewriteSql(originAlterStmt,
-                rewriter -> new WalkerOBParserReplaceStatementListener(rewriter, newTableName));
+    public ReplaceResult replaceAlterStmt(String originAlterStmt, String newTableName) {
+        ReplaceResult result = new ReplaceResult();
+        String newSql = getRewriteSql(originAlterStmt,
+                rewriter -> new WalkerOBParserReplaceStatementListener(rewriter, newTableName, result));
+        result.setNewSql(newSql);
+        result.setOldSql(originAlterStmt);
+        return result;
     }
+
+    @Override
+    public ReplaceResult replaceStmtValue(OnlineSchemaChangeSqlType sqlType,
+            String originSql, List<ReplaceElement> replaceElements) {
+        throw new UnsupportedException("unsupported");
+    }
+
 
     @Override
     public String replaceCreateIndexStmt(String originCreateIndexStmt, String newTableName) {
@@ -82,10 +100,13 @@ public class OBMysqlTableNameReplacer implements TableNameReplacer {
     static class WalkerOBParserReplaceStatementListener extends OBParserBaseListener {
         protected final TokenStreamRewriter tokenStreamRewriter;
         protected final String newTableName;
+        protected final ReplaceResult replaceResult;
 
-        public WalkerOBParserReplaceStatementListener(TokenStreamRewriter tokenStreamRewriter, String newTableName) {
+        public WalkerOBParserReplaceStatementListener(TokenStreamRewriter tokenStreamRewriter,
+                String newTableName, ReplaceResult replaceResult) {
             this.tokenStreamRewriter = tokenStreamRewriter;
             this.newTableName = newTableName;
+            this.replaceResult = replaceResult;
         }
 
         @Override
@@ -104,6 +125,11 @@ public class OBMysqlTableNameReplacer implements TableNameReplacer {
             if (parseTree instanceof TerminalNode) {
                 TerminalNode terminalNode = (TerminalNode) parseTree;
                 tokenStreamRewriter.replace(terminalNode.getSymbol(), newTableName);
+                ReplaceElement replaceElement = new ReplaceElement();
+                replaceElement.setNewValue(newTableName);
+                replaceElement.setOldValue(terminalNode.toString());
+                replaceElement.setReplaceType(ReplaceType.TABLE_NAME);
+                replaceResult.getReplaceElements().add(replaceElement);
             }
         }
     }
@@ -112,8 +138,8 @@ public class OBMysqlTableNameReplacer implements TableNameReplacer {
         private final AtomicBoolean IS_CONSTRAINT_FOREIGN_KEY = new AtomicBoolean(false);
 
         public CreateWalkerOBParserReplaceStatementListener(TokenStreamRewriter tokenStreamRewriter,
-                String newTableName) {
-            super(tokenStreamRewriter, newTableName);
+                String newTableName, ReplaceResult replaceResult) {
+            super(tokenStreamRewriter, newTableName, replaceResult);
         }
 
         @Override
@@ -157,7 +183,13 @@ public class OBMysqlTableNameReplacer implements TableNameReplacer {
                 ParseTree childNode = relation_nameContext.getChild(0);
                 if (childNode instanceof TerminalNode) {
                     TerminalNode terminalNode = (TerminalNode) childNode;
-                    tokenStreamRewriter.replace(terminalNode.getSymbol(), "A" + StringUtils.uuidNoHyphen());
+                    String newValue = "A" + StringUtils.uuidNoHyphen();
+                    tokenStreamRewriter.replace(terminalNode.getSymbol(), newValue);
+                    ReplaceElement replaceElement = new ReplaceElement();
+                    replaceElement.setNewValue(newValue);
+                    replaceElement.setOldValue(terminalNode.toString());
+                    replaceElement.setReplaceType(ReplaceType.CONSTRAINT_NAME);
+                    replaceResult.getReplaceElements().add(replaceElement);
                 }
             }
         }

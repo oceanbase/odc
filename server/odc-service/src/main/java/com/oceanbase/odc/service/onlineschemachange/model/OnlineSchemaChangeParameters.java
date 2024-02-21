@@ -35,6 +35,8 @@ import com.oceanbase.odc.service.onlineschemachange.ddl.OBMysqlTableNameReplacer
 import com.oceanbase.odc.service.onlineschemachange.ddl.OBOracleTableNameReplacer;
 import com.oceanbase.odc.service.onlineschemachange.ddl.OscFactoryWrapper;
 import com.oceanbase.odc.service.onlineschemachange.ddl.OscFactoryWrapperGenerator;
+import com.oceanbase.odc.service.onlineschemachange.ddl.ReplaceElement;
+import com.oceanbase.odc.service.onlineschemachange.ddl.ReplaceResult;
 import com.oceanbase.odc.service.onlineschemachange.ddl.TableNameDescriptor;
 import com.oceanbase.odc.service.onlineschemachange.ddl.TableNameReplacer;
 import com.oceanbase.odc.service.onlineschemachange.subtask.SubTaskParameterFactory;
@@ -93,11 +95,20 @@ public class OnlineSchemaChangeParameters implements Serializable, TaskParameter
                     TableIdentity key = new TableIdentity(DdlUtils.getUnwrappedName(parameter.getDatabaseName()),
                             tableNameDescriptor.getOriginTableNameUnwrapped());
                     taskParameters.putIfAbsent(key, parameter);
+
                     if (sqlType == OnlineSchemaChangeSqlType.ALTER) {
+                        if (statement instanceof AlterTable && connectionConfig.getDialectType().isOracle()) {
+                            List<ReplaceElement> replaceElements = parameter.getReplaceResult().getReplaceElements();
+                            ReplaceResult result = new OBOracleTableNameReplacer().replaceStmtValue(
+                                OnlineSchemaChangeSqlType.ALTER, sql, replaceElements);
+                            sql = result.getNewSql();
+                        }
+
                         String newAlterStmt = DdlUtils.replaceTableName(sql, parameter.getNewTableName(),
-                                connectionConfig.getDialectType(), sqlType);
+                                connectionConfig.getDialectType(), sqlType).getNewSql();
                         taskParameters.get(key).getSqlsToBeExecuted().add(newAlterStmt);
                     }
+
                 } else {
                     PreConditions.validArgumentState(statement instanceof CreateIndex, ErrorCodes.IllegalArgument,
                             new Object[] {}, "statement is not CreateIndex");

@@ -75,7 +75,7 @@ public class DdlUtils {
         return ddl.get(0);
     }
 
-    public static String replaceTableName(String sql, String newTableName, DialectType dialectType,
+    public static ReplaceResult replaceTableName(String sql, String newTableName, DialectType dialectType,
             OnlineSchemaChangeSqlType sqlType) {
         TableNameReplacer rewriter =
                 dialectType.isMysql() ? new OBMysqlTableNameReplacer() : new OBOracleTableNameReplacer();

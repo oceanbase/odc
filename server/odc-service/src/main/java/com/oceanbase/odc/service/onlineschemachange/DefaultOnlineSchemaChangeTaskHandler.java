@@ -403,7 +403,7 @@ public class DefaultOnlineSchemaChangeTaskHandler implements OnlineSchemaChangeT
             finalTableDdl = DdlUtils.queryOriginTableCreateDdl(session, taskParam.getNewTableName());
 
             String ddlForDisplay = DdlUtils.replaceTableName(finalTableDdl, taskParam.getOriginTableName(),
-                    session.getDialectType(), OnlineSchemaChangeSqlType.CREATE);
+                    session.getDialectType(), OnlineSchemaChangeSqlType.CREATE).getNewSql();
             taskParam.setNewTableCreateDdlForDisplay(ddlForDisplay);
             scheduleTaskRepository.updateTaskResult(scheduleTaskId,
                     JsonUtils.toJson(new OnlineSchemaChangeScheduleTaskResult(taskParam)));
