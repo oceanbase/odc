@@ -109,6 +109,7 @@ public class DatabaseChangeRuntimeFlowableTaskCopied extends BaseODCFlowTaskDele
         JobDefinition jd = buildJobDefinition(execution);
         this.jobId = jobScheduler.scheduleJobNow(jd);
         taskService.updateJobId(taskId, this.jobId);
+        log.info("Database change task scheduled, taskId={}, jobId={}", taskId, this.jobId);
         try {
             jobScheduler.await(this.jobId, FlowTaskUtil.getExecutionExpirationIntervalMillis(execution).intValue(),
                     TimeUnit.MILLISECONDS);
@@ -118,7 +119,8 @@ public class DatabaseChangeRuntimeFlowableTaskCopied extends BaseODCFlowTaskDele
         JobEntity jobEntity = taskFrameworkService.find(this.jobId);
         isSuccessful = jobEntity.getStatus() == JobStatus.DONE;
         isFailure = !isSuccessful;
-        log.info("Database change task ends, taskId={}, activityId={}", taskId, execution.getCurrentActivityId());
+        log.info("Database change task ends, taskId={}, jobId={}, jobStatus={}", taskId, this.jobId,
+                jobEntity.getStatus());
         return JsonUtils.fromJson(jobEntity.getResultJson(), DatabaseChangeResult.class);
     }
 
@@ -175,6 +177,7 @@ public class DatabaseChangeRuntimeFlowableTaskCopied extends BaseODCFlowTaskDele
             taskParameters.setSqlFileObjectMetadatas(objectMetadatas);
         }
         taskParameters.setNeedDataMasking(dataMaskingService.isMaskingEnabled());
+        jobParameters.put(JobParametersKeyConstants.FLOW_INSTANCE_ID, getFlowInstanceId().toString());
         jobParameters.put(JobParametersKeyConstants.TASK_PARAMETER_JSON_KEY, JobUtils.toJson(taskParameters));
         jobParameters.put(JobParametersKeyConstants.TASK_EXECUTION_TIMEOUT_MILLIS, p.getTimeoutMillis() + "");
         return DefaultJobDefinition.builder().jobClass(DatabaseChangeTask.class)
