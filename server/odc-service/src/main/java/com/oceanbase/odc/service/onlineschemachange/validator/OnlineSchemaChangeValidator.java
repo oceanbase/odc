@@ -58,6 +58,7 @@ import com.oceanbase.tools.sqlparser.SQLParser;
 import com.oceanbase.tools.sqlparser.SyntaxErrorException;
 import com.oceanbase.tools.sqlparser.statement.Statement;
 import com.oceanbase.tools.sqlparser.statement.alter.table.AlterTable;
+import com.oceanbase.tools.sqlparser.statement.createindex.CreateIndex;
 import com.oceanbase.tools.sqlparser.statement.createtable.CreateTable;
 
 /**
@@ -135,9 +136,15 @@ public class OnlineSchemaChangeValidator {
                     connectionConfig.getDialectType().isMysql() ? new OBMySQLParser() : new OBOracleSQLParser();
             statements = sqls.stream().map(sql -> {
                 Statement statement = sqlParser.parse(new StringReader(sql));
-                validateType(sql, getSqlType(statement), parameter.getSqlType());
+                // skip valid type when statement is "create index"
+                if (statement instanceof CreateTable || statement instanceof AlterTable) {
+                    validateType(sql, getSqlType(statement), parameter.getSqlType());
+                } else {
+                    PreConditions.validArgumentState(statement instanceof CreateIndex,
+                            ErrorCodes.OscSqlTypeInconsistent, new Object[] {sql}, "Unsupported sql type");
+                }
                 return statement;
-            }).collect(Collectors.toList());
+            }).filter(statement -> !(statement instanceof CreateIndex)).collect(Collectors.toList());
         } catch (SyntaxErrorException ex) {
             throw new BadArgumentException(ErrorCodes.ObPreCheckDdlFailed, ex.getLocalizedMessage());
         }

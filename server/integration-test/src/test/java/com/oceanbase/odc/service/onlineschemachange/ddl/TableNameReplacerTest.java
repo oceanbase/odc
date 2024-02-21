@@ -35,6 +35,7 @@ public class TableNameReplacerTest {
     private static final String CREATE_ACCENT_STMT = "create table `t1` (id int);";
     private static final String ALTER_STMT = "alter table t1 add constraint constraint_t1_id unique (id);";
     private static final String ALTER_QUOTE_STMT = "alter table \"t1\" add constraint constraint_t1_id unique (id);";
+    private static final String CREATE_INDEX_STMT = "create index idx_t1 on t1(id);";
 
     @Test
     public void test_RewriteCreateStmt_Mysql() {
@@ -141,6 +142,14 @@ public class TableNameReplacerTest {
         String newSql =
                 new OBOracleTableNameReplacer().replaceAlterStmt(ALTER_QUOTE_STMT, getNewOracleTableName("\"t1\""));
         Assert.assertEquals("alter table \"t1_osc_new_\" add constraint constraint_t1_id unique (id);", newSql);
+
+    }
+
+    @Test
+    public void test_RewriteCreateIndexStmt_Oracle() {
+        String newSql =
+                new OBOracleTableNameReplacer().replaceCreateIndexStmt(CREATE_INDEX_STMT, getNewOracleTableName("t1"));
+        Assert.assertEquals("create index idx_t1 on t1_osc_new_(id);", newSql);
 
     }
 

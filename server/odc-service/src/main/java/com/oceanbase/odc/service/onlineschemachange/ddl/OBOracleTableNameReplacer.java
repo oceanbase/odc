@@ -15,6 +15,8 @@
  */
 package com.oceanbase.odc.service.onlineschemachange.ddl;
 
+import java.util.function.Function;
+
 import org.antlr.v4.runtime.CharStream;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
@@ -29,6 +31,7 @@ import com.oceanbase.tools.sqlparser.FastFailErrorListener;
 import com.oceanbase.tools.sqlparser.oboracle.OBLexer;
 import com.oceanbase.tools.sqlparser.oboracle.OBParser;
 import com.oceanbase.tools.sqlparser.oboracle.OBParser.Alter_table_stmtContext;
+import com.oceanbase.tools.sqlparser.oboracle.OBParser.Create_index_stmtContext;
 import com.oceanbase.tools.sqlparser.oboracle.OBParser.Create_table_stmtContext;
 import com.oceanbase.tools.sqlparser.oboracle.OBParser.Index_nameContext;
 import com.oceanbase.tools.sqlparser.oboracle.OBParser.Relation_factorContext;
@@ -77,6 +80,58 @@ public class OBOracleTableNameReplacer implements TableNameReplacer {
 
         new ParseTreeWalker().walk(eventParser, parser.sql_stmt());
         return tokenStreamRewriter.getText();
+    }
+
+    @Override
+    public String replaceCreateIndexStmt(String originCreateIndexStmt, String newTableName) {
+        return getRewriteSql(originCreateIndexStmt,
+                rewriter -> new CreateIndexOBParserReplaceStatementListener(rewriter, newTableName));
+    }
+
+    private static String getRewriteSql(String originCreateStmt,
+            Function<TokenStreamRewriter, OBParserBaseListener> obParserBaseListenerFunc) {
+        CharStream charStream = CharStreams.fromString(originCreateStmt);
+        OBLexer lexer = new OBLexer(charStream);
+
+        CommonTokenStream tokens = new CommonTokenStream(lexer);
+        OBParser parser = new OBParser(tokens);
+        parser.getInterpreter().clearDFA();
+        parser.removeErrorListeners();
+        parser.addErrorListener(new FastFailErrorListener());
+        parser.setTrace(false);
+
+        TokenStreamRewriter tokenStreamRewriter = new TokenStreamRewriter(tokens);
+        new ParseTreeWalker().walk(obParserBaseListenerFunc.apply(tokenStreamRewriter), parser.sql_stmt());
+        return tokenStreamRewriter.getText();
+    }
+
+    static class CreateIndexOBParserReplaceStatementListener extends OBParserBaseListener {
+        private final TokenStreamRewriter tokenStreamRewriter;
+        private final String newTableName;
+
+        public CreateIndexOBParserReplaceStatementListener(TokenStreamRewriter tokenStreamRewriter,
+                String newTableName) {
+            this.tokenStreamRewriter = tokenStreamRewriter;
+            this.newTableName = newTableName;
+        }
+
+        @Override
+        public void enterCreate_index_stmt(Create_index_stmtContext ctx) {
+            relationFactorReplace(ctx.relation_factor());
+        }
+
+        private void relationFactorReplace(Relation_factorContext relation_factorContext) {
+            Relation_nameContext relation_nameContext = relation_factorContext.normal_relation_factor()
+                    .relation_name();
+
+            PreConditions.notNull(relation_nameContext, "Table name");
+
+            ParseTree parseTree = relation_nameContext.getChild(relation_nameContext.getChildCount() - 1);
+            if (parseTree instanceof TerminalNode) {
+                TerminalNode terminalNode = (TerminalNode) parseTree;
+                tokenStreamRewriter.replace(terminalNode.getSymbol(), newTableName);
+            }
+        }
     }
 
     static class AlterOBParserReplaceStatementListener extends OBParserBaseListener {
