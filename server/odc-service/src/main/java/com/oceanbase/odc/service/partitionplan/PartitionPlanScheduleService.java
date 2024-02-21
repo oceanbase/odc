@@ -164,7 +164,6 @@ public class PartitionPlanScheduleService {
                     return strategy2Cfgs.values().stream().map(cfgs -> {
                         PartitionPlanTableConfig cfg = new PartitionPlanTableConfig();
                         cfg.setPartitionKeyConfigs(cfgs);
-                        cfg.setPartitionType(tableConfig.getPartitionType());
                         cfg.setTableName(tableConfig.getTableName());
                         cfg.setEnabled(tableConfig.isEnabled());
                         cfg.setPartitionNameInvoker(tableConfig.getPartitionNameInvoker());

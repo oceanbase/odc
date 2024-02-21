@@ -19,8 +19,6 @@ import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
 
-import com.oceanbase.tools.dbbrowser.model.DBTablePartitionType;
-
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
@@ -41,7 +39,6 @@ public class PartitionPlanTableConfig implements Serializable {
     private Long id;
     private boolean enabled;
     private String tableName;
-    private DBTablePartitionType partitionType;
     private List<PartitionPlanKeyConfig> partitionKeyConfigs;
     private String partitionNameInvoker;
     private Map<String, Object> partitionNameInvokerParameters;
