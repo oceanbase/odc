@@ -91,7 +91,7 @@ public class PartitionPlanScheduleService {
         disablePartitionPlan(database.getId());
         PartitionPlanEntity partitionPlanEntity = modelToEntity(partitionPlanConfig);
         partitionPlanEntity = this.partitionPlanRepository.save(partitionPlanEntity);
-        Validate.isTrue(partitionPlanConfig.getCreationTrigger() != null, "Create schedule can not be null");
+        Validate.isTrue(partitionPlanConfig.getCreationTrigger() != null, "Creation trigger can not be null");
         ScheduleEntity createScheduleEntity = createAndEnableSchedule(
                 database, partitionPlanConfig.getCreationTrigger());
         ScheduleEntity dropScheduleEntity = null;
