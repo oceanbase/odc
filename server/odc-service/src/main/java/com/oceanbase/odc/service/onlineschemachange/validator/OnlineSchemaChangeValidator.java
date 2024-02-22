@@ -34,6 +34,7 @@ import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.core.shared.exception.BadArgumentException;
 import com.oceanbase.odc.core.shared.exception.BadRequestException;
 import com.oceanbase.odc.core.shared.exception.UnsupportedException;
+import com.oceanbase.odc.core.sql.split.SqlCommentProcessor;
 import com.oceanbase.odc.service.common.util.SqlUtils;
 import com.oceanbase.odc.service.connection.ConnectionService;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
@@ -132,10 +133,12 @@ public class OnlineSchemaChangeValidator {
             ConnectionConfig connectionConfig, List<String> sqls) {
         List<Statement> statements = null;
         try {
+            SqlCommentProcessor processor = new SqlCommentProcessor(connectionConfig.getDialectType(),
+                false, false, false);
             SQLParser sqlParser =
                     connectionConfig.getDialectType().isMysql() ? new OBMySQLParser() : new OBOracleSQLParser();
             statements = sqls.stream().map(sql -> {
-                Statement statement = sqlParser.parse(new StringReader(sql));
+                Statement statement = sqlParser.parse(new StringReader(SqlUtils.removeComments(processor, sql)));
                 // skip valid type when statement is "create index"
                 if (statement instanceof CreateTable || statement instanceof AlterTable) {
                     validateType(sql, getSqlType(statement), parameter.getSqlType());
