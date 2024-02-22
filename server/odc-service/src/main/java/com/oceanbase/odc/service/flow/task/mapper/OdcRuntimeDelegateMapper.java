@@ -30,6 +30,7 @@ import com.oceanbase.odc.service.flow.task.PartitionPlanRuntimeFlowableTask;
 import com.oceanbase.odc.service.flow.task.PreCheckRuntimeFlowableTask;
 import com.oceanbase.odc.service.flow.task.PreCheckRuntimeFlowableTaskCopied;
 import com.oceanbase.odc.service.flow.task.RollbackPlanRuntimeFlowableTask;
+import com.oceanbase.odc.service.flow.task.RollbackPlanRuntimeFlowableTaskCopied;
 import com.oceanbase.odc.service.flow.task.ShadowtableSyncRuntimeFlowableTask;
 import com.oceanbase.odc.service.onlineschemachange.OnlineSchemaChangeFlowableTask;
 import com.oceanbase.odc.service.permission.database.ApplyDatabaseFlowableTask;
@@ -70,7 +71,8 @@ public class OdcRuntimeDelegateMapper implements RuntimeDelegateMapper {
             case ONLINE_SCHEMA_CHANGE:
                 return OnlineSchemaChangeFlowableTask.class;
             case GENERATE_ROLLBACK:
-                return RollbackPlanRuntimeFlowableTask.class;
+                return enableTaskFramework ? RollbackPlanRuntimeFlowableTaskCopied.class
+                        : RollbackPlanRuntimeFlowableTask.class;
             case EXPORT_RESULT_SET:
                 return ResultSetExportFlowableTask.class;
             case PRE_CHECK:

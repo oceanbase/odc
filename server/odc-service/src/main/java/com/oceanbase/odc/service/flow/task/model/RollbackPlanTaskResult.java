@@ -35,16 +35,20 @@ import lombok.ToString;
 @Setter
 @ToString
 public class RollbackPlanTaskResult implements Serializable, FlowTaskResult {
+
+    private static final long serialVersionUID = 7820083103430181147L;
+
     private boolean success;
     private boolean generated;
-    private String objectId;
+    private String resultFileId;
+    private String resultFileDownloadUrl;
     private String error;
 
-    public static RollbackPlanTaskResult success(@NonNull String objectId) {
+    public static RollbackPlanTaskResult success(@NonNull String resultFileId, @NonNull String resultFileDownloadUrl) {
         RollbackPlanTaskResult result = new RollbackPlanTaskResult();
         result.setSuccess(true);
-        result.setError(null);
-        result.setObjectId(objectId);
+        result.setResultFileId(resultFileId);
+        result.setResultFileDownloadUrl(resultFileDownloadUrl);
         result.setGenerated(true);
         return result;
     }
@@ -52,8 +56,6 @@ public class RollbackPlanTaskResult implements Serializable, FlowTaskResult {
     public static RollbackPlanTaskResult skip() {
         RollbackPlanTaskResult result = new RollbackPlanTaskResult();
         result.setSuccess(true);
-        result.setError(null);
-        result.setObjectId(null);
         result.setGenerated(false);
         return result;
     }
@@ -62,8 +64,8 @@ public class RollbackPlanTaskResult implements Serializable, FlowTaskResult {
         RollbackPlanTaskResult result = new RollbackPlanTaskResult();
         result.setSuccess(false);
         result.setError(message);
-        result.setObjectId(null);
         result.setGenerated(false);
         return result;
     }
+
 }

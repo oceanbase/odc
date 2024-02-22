@@ -205,6 +205,15 @@ public class FlowInstanceController {
                 new InputStreamResource(results.get(0).getInputStream()), (results.get(0).getName()));
     }
 
+    @ApiOperation(value = "downloadRollbackPlan", notes = "下载自动生成的回滚脚本文件")
+    @RequestMapping(value = "/{id:[\\d]+}/tasks/rollbackPlan/download", method = RequestMethod.GET)
+    public ResponseEntity<InputStreamResource> downloadRollbackPlan(@PathVariable Long id) throws IOException {
+        List<BinaryDataResult> results = flowTaskInstanceService.downRollbackPlanResult(id);
+        PreConditions.validExists(ResourceType.ODC_FILE, "id", id, () -> CollectionUtils.isNotEmpty(results));
+        return WebResponseUtils.getFileAttachmentResponseEntity(
+                new InputStreamResource(results.get(0).getInputStream()), (results.get(0).getName()));
+    }
+
     @ApiOperation(value = "status", notes = "获取实例的状态信息")
     @RequestMapping(value = "/status", method = RequestMethod.GET)
     public SuccessResponse<Map<Long, FlowStatus>> status(@RequestParam(name = "id") Set<Long> ids) {
