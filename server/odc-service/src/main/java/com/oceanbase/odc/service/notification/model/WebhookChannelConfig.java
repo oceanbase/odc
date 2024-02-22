@@ -15,6 +15,8 @@
  */
 package com.oceanbase.odc.service.notification.model;
 
+import org.springframework.http.HttpMethod;
+
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -29,5 +31,15 @@ public class WebhookChannelConfig extends BaseChannelConfig {
     private String webhook;
 
     private String sign;
+
+    private String httpProxy;
+
+    private HttpMethod httpMethod;
+
+    private String headersTemplate;
+
+    private String bodyTemplate;
+
+    private String responseValidation;
 
 }
