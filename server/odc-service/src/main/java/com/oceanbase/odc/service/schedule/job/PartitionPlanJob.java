@@ -114,6 +114,8 @@ public class PartitionPlanJob implements OdcJob {
             connectionSession = new DefaultConnectSessionFactory(conn).generateSession();
             List<PartitionPlanPreViewResp> resps = this.partitionPlanService.generatePartitionDdl(
                     connectionSession, tableConfigs, false);
+        } catch (Exception e) {
+            log.warn("Failed to execute a partition plan task", e);
         } finally {
             try {
                 if (connectionSession != null) {
