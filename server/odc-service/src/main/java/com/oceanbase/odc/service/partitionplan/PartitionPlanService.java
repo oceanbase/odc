@@ -15,7 +15,6 @@
  */
 package com.oceanbase.odc.service.partitionplan;
 
-import java.io.IOException;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -31,24 +30,19 @@ import org.springframework.transaction.annotation.Transactional;
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.session.ConnectionSession;
-import com.oceanbase.odc.core.shared.constant.TaskType;
-import com.oceanbase.odc.metadb.flow.ServiceTaskInstanceEntity;
 import com.oceanbase.odc.metadb.flow.ServiceTaskInstanceRepository;
 import com.oceanbase.odc.metadb.partitionplan.DatabasePartitionPlanEntity;
 import com.oceanbase.odc.metadb.partitionplan.DatabasePartitionPlanRepository;
 import com.oceanbase.odc.metadb.partitionplan.TablePartitionPlanEntity;
 import com.oceanbase.odc.metadb.partitionplan.TablePartitionPlanRepository;
 import com.oceanbase.odc.metadb.schedule.ScheduleEntity;
-import com.oceanbase.odc.metadb.task.TaskEntity;
 import com.oceanbase.odc.service.connection.database.DatabaseService;
 import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.db.browser.DBSchemaAccessors;
 import com.oceanbase.odc.service.flow.FlowInstanceService;
-import com.oceanbase.odc.service.flow.model.FlowNodeStatus;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.partitionplan.model.DatabasePartitionPlan;
-import com.oceanbase.odc.service.partitionplan.model.PartitionPlanTaskParameters;
 import com.oceanbase.odc.service.partitionplan.model.TablePartitionPlan;
 import com.oceanbase.odc.service.quartz.model.MisfireStrategy;
 import com.oceanbase.odc.service.schedule.ScheduleService;
@@ -120,75 +114,6 @@ public class PartitionPlanService {
                         : DatabasePartitionPlan.builder().databaseId(databaseId).build();
         returnValue.setTablePartitionPlans(findDatabaseTablePartitionPlan(database));
         return returnValue;
-    }
-
-    /**
-     * 确认策略：停用连接下原所有计划，生效当前 flowInstanceId 下的所有配置
-     */
-    @Transactional
-    public void updateTablePartitionPlan(DatabasePartitionPlan databasePartitionPlan) throws IOException {
-        // 更新连接配置
-        Optional<DatabasePartitionPlanEntity> databasePartitionPlanEntity =
-                databasePartitionPlanRepository.findByFlowInstanceId(databasePartitionPlan.getFlowInstanceId());
-        if (!databasePartitionPlanEntity.isPresent())
-            return;
-        databasePartitionPlanEntity.get().setInspectEnabled(databasePartitionPlan.isInspectEnable());
-        databasePartitionPlanEntity.get()
-                .setInspectTriggerStrategy(databasePartitionPlan.getInspectTriggerStrategy());
-        databasePartitionPlanEntity.get().setConfigEnabled(false);
-        databasePartitionPlanRepository.saveAndFlush(databasePartitionPlanEntity.get());
-        // 更新表分区配置
-        List<TablePartitionPlan> tablePartitionPlans = databasePartitionPlan.getTablePartitionPlans();
-        List<TablePartitionPlanEntity> tablePartitionPlanEntities =
-                tablePartitionPlanRepository.findValidPlanByDatabasePartitionPlanId(
-                        databasePartitionPlan.getId());
-        List<TablePartitionPlanEntity> updateEntities = new LinkedList<>();
-        tablePartitionPlans.forEach(tablePartitionPlan -> {
-            for (TablePartitionPlanEntity tablePartitionPlanEntity : tablePartitionPlanEntities) {
-                // 未修改的直接生效
-                tablePartitionPlanEntity.setFlowInstanceId(databasePartitionPlan.getFlowInstanceId());
-                tablePartitionPlanEntity.setIsConfigEnable(false);
-                tablePartitionPlanEntity.setModifierId(authenticationFacade.currentUserId());
-                if (tablePartitionPlanEntity.getSchemaName().equals(tablePartitionPlan.getSchemaName())
-                        && tablePartitionPlanEntity.getTableName().equals(tablePartitionPlan.getTableName())) {
-                    tablePartitionPlanEntity.setIsAutoPartition(tablePartitionPlan.getDetail().getIsAutoPartition());
-                    tablePartitionPlanEntity.setPreCreatePartitionCount(
-                            tablePartitionPlanEntity.getPreCreatePartitionCount());
-                    tablePartitionPlanEntity
-                            .setPartitionInterval(tablePartitionPlan.getDetail().getPartitionInterval());
-                    tablePartitionPlanEntity
-                            .setPartitionIntervalUnit(tablePartitionPlan.getDetail().getPartitionIntervalUnit());
-                    tablePartitionPlanEntity.setExpirePeriod(tablePartitionPlan.getDetail().getExpirePeriod());
-                    tablePartitionPlanEntity.setExpirePeriodUnit(tablePartitionPlan.getDetail().getExpirePeriodUnit());
-                    tablePartitionPlanEntity.setPartitionNamingPrefix(
-                            tablePartitionPlan.getDetail().getPartitionNamingPrefix());
-                    tablePartitionPlanEntity.setPartitionNamingSuffixExpression(
-                            tablePartitionPlan.getDetail().getPartitionNamingSuffixExpression());
-                }
-                updateEntities.add(tablePartitionPlanEntity);
-            }
-        });
-        // 更新配置
-        tablePartitionPlanRepository.saveAll(updateEntities);
-        PartitionPlanTaskParameters taskParameters = new PartitionPlanTaskParameters();
-        taskParameters.setConnectionPartitionPlan(databasePartitionPlan);
-        // 更新任务详情
-        List<ServiceTaskInstanceEntity> taskEntities = serviceTaskInstanceRepository.findByFlowInstanceId(
-                databasePartitionPlan.getFlowInstanceId());
-        if (taskEntities.size() > 0) {
-            taskEntities.stream()
-                    .filter(entity -> entity.getTaskType() == TaskType.PARTITION_PLAN
-                            && entity.getStatus() != FlowNodeStatus.CREATED)
-                    .forEach(
-                            entity -> {
-                                TaskEntity taskEntity = taskService.detail(entity.getTargetTaskId());
-                                taskEntity.setParametersJson(JsonUtils.toJson(taskParameters));
-                                taskService.updateParametersJson(taskEntity);
-                            });
-        }
-        // 推进流程节点
-        flowInstanceService.approve(databasePartitionPlan.getFlowInstanceId(), "approve update partition plan",
-                false);
     }
 
     /**
