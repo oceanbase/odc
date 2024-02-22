@@ -163,7 +163,7 @@ main() {
     if [[ "${ODC_BOOT_MODE}" == "TASK_EXECUTOR" ]]; then
         echo "start odc as ${ODC_BOOT_MODE}"
         sh -c "./start-job.sh"
-        return $?
+        exit $?
     fi
 
     if [[ "$1" == "--help" ]]; then
