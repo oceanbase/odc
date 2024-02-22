@@ -16,8 +16,6 @@
 
 package com.oceanbase.odc.service.task.dispatch;
 
-import java.util.Arrays;
-
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.common.util.SystemUtils;
 import com.oceanbase.odc.core.shared.exception.UnsupportedException;
