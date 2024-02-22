@@ -216,8 +216,11 @@ public class PartitionPlanServiceV2 {
         return tableConfigs.stream().map(i -> jdbc.execute((ConnectionCallback<PartitionPlanPreViewResp>) con -> {
             try {
                 String tableName = i.getTableName();
-                Map<PartitionPlanStrategy, List<String>> resp = generatePartitionDdl(
-                        con, dialectType, name2Table.get(tableName), i);
+                DBTable dbTable = name2Table.get(tableName);
+                if (dbTable == null) {
+                    throw new NotFoundException(ResourceType.OB_TABLE, "tableName", tableName);
+                }
+                Map<PartitionPlanStrategy, List<String>> resp = generatePartitionDdl(con, dialectType, dbTable, i);
                 PartitionPlanPreViewResp returnVal = new PartitionPlanPreViewResp();
                 returnVal.setTableName(tableName);
                 returnVal.setSqls(resp.values().stream().flatMap(Collection::stream).collect(Collectors.toList()));
