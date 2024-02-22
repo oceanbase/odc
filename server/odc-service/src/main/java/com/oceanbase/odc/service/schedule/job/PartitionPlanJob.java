@@ -80,7 +80,6 @@ public class PartitionPlanJob implements OdcJob {
         try {
             scheduleEntity = this.scheduleService.nullSafeGetById(ScheduleTaskUtils.getScheduleId(context));
         } catch (Exception e) {
-            log.warn("Failed to get schedule by id", e);
             return;
         }
         PartitionPlanConfig paramemters = JsonUtils.fromJson(
