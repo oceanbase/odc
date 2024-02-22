@@ -41,7 +41,7 @@ import lombok.extern.slf4j.Slf4j;
 public class PartitionPlanRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Void> {
 
     private volatile boolean isSuccessful = false;
-    private volatile boolean             isFailure = false;
+    private volatile boolean isFailure = false;
     @Autowired
     private PartitionPlanScheduleService partitionPlanScheduleService;
 
@@ -70,6 +70,11 @@ public class PartitionPlanRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Vo
     @Override
     protected boolean isSuccessful() {
         return this.isSuccessful;
+    }
+
+    @Override
+    public boolean isCancelled() {
+        return false;
     }
 
     @Override
@@ -106,11 +111,6 @@ public class PartitionPlanRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Vo
     @Override
     protected boolean cancel(boolean mayInterruptIfRunning, Long taskId, TaskService taskService) {
         throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public boolean isCancelled() {
-        return false;
     }
 
     private Map<String, Object> generateResult(boolean success) {
