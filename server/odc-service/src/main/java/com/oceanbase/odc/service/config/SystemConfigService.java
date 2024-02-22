@@ -19,7 +19,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 
-import org.apache.commons.compress.utils.Lists;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cloud.context.refresh.ContextRefresher;
 import org.springframework.stereotype.Service;
@@ -109,15 +108,6 @@ public class SystemConfigService {
     public List<Configuration> queryByKeyPrefix(String keyPrefix) {
         List<SystemConfigEntity> configEntities = systemConfigDAO.queryByKeyPrefix(keyPrefix);
         return ConfigurationUtils.fromEntity(configEntities);
-    }
-
-    @SkipAuthorize("odc internal usage")
-    public List<Configuration> queryByKeyPrefixes(List<String> keyPrefixes) {
-        List<Configuration> configurations = Lists.newArrayList();
-        for (String prefix : keyPrefixes) {
-            configurations.addAll(queryByKeyPrefix(prefix));
-        }
-        return configurations;
     }
 
     @SkipAuthorize("odc internal usage")

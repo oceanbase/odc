@@ -22,9 +22,7 @@ import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Pattern;
 import javax.validation.constraints.Pattern.Flag;
 
-import org.springframework.beans.BeanUtils;
-
-import com.oceanbase.odc.service.config.util.ConfigMetaInfo;
+import org.springframework.beans.factory.annotation.Value;
 
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
@@ -47,37 +45,40 @@ public class UserConfig {
      * Delimiter, default is ;
      */
     @NotBlank(message = "Delimiter for user config can not be blank")
-    @ConfigMetaInfo(prefix = "sqlexecute", description = "Delimiter for sql-execute")
+    @Value("${sqlexecute.defaultDelimiter:;}")
     private String defaultDelimiter = ";";
+
     /**
      * Auto commit setting for mysql mode eg. ON/OFF
      */
     @NotBlank(message = "Mysql auto commit mode can not be blank")
     @Pattern(regexp = "ON|OFF", flags = Flag.CASE_INSENSITIVE,
             message = "Mysql auto commit mode can only accept the value ON/OFF")
-    @ConfigMetaInfo(prefix = "sqlexecute", description = "Auto commit flag for OB-Mysql mode")
+    @Value("${sqlexecute.mysqlAutoCommitMode:ON}")
     private String mysqlAutoCommitMode = "ON";
+
     /**
      * Auto commit setting for oracle mode eg. ON/OFF
      */
     @NotBlank(message = "Oracle auto commit mode can not be blank")
     @Pattern(regexp = "ON|OFF", flags = Flag.CASE_INSENSITIVE,
             message = "Oracle auto commit mode can only accept the value ON/OFF")
-    @ConfigMetaInfo(prefix = "sqlexecute", description = "Auto commit flag for OB-Oracle mode")
+    @Value("${sqlexecute.oracleAutoCommitMode:OFF}")
     private String oracleAutoCommitMode = "ON";
+
     /**
      * Query limit, default is 1000
      */
     @Min(value = 0, message = "Query limit can not be negative")
     @Max(value = Integer.MAX_VALUE, message = "Query limit can not be bigger than " + Integer.MAX_VALUE)
     @NotNull(message = "Query limit can not be null")
-    @ConfigMetaInfo(prefix = "sqlexecute", description = "Count limit for resultSet")
+    @Value("${sqlexecute.defaultQueryLimit:1000}")
     private Integer defaultQueryLimit = 1000;
 
     @NotBlank(message = "Default object dragging option can not be blank")
     @Pattern(regexp = "object_name|select_stmt|insert_stmt|update_stmt|delete_stmt", flags = Flag.CASE_INSENSITIVE,
             message = "Default object dragging option can only accept the value object_name|select_stmt|insert_stmt|update_stmt|delete_stmt")
-    @ConfigMetaInfo(prefix = "sqlexecute", description = "Default object dragging option")
+    @Value("${sqlexecute.defaultObjectDraggingOption:object_name}")
     private String defaultObjectDraggingOption = "object_name";
 
     /**
@@ -91,9 +92,7 @@ public class UserConfig {
     @NotBlank(message = "Session mode can not be blank")
     @Pattern(regexp = "SingleSession|MultiSession", flags = Flag.CASE_INSENSITIVE,
             message = "Session mode can only accept the value SingleSession|MultiSession")
-    @ConfigMetaInfo(prefix = "connect", description = "Session mode for connection")
+    @Value("${connect.sessionMode:MultiSession}")
     private String sessionMode = "MultiSession";
-
-    public UserConfig() {}
 
 }

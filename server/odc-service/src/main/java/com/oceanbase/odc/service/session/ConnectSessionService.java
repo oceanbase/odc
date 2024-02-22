@@ -67,7 +67,6 @@ import com.oceanbase.odc.core.task.ExecuteMonitorTaskManager;
 import com.oceanbase.odc.metadb.collaboration.EnvironmentEntity;
 import com.oceanbase.odc.metadb.collaboration.EnvironmentRepository;
 import com.oceanbase.odc.service.common.util.SidUtils;
-import com.oceanbase.odc.service.config.UserConfigFacade;
 import com.oceanbase.odc.service.config.model.UserConfig;
 import com.oceanbase.odc.service.connection.CloudMetadataClient;
 import com.oceanbase.odc.service.connection.CloudMetadataClient.CloudPermissionAction;
@@ -110,8 +109,6 @@ public class ConnectSessionService {
 
     @Autowired
     private ConnectionService connectionService;
-    @Autowired
-    private UserConfigFacade userConfigFacade;
     @Autowired
     private AuthenticationFacade authenticationFacade;
     @Autowired
@@ -264,12 +261,13 @@ public class ConnectSessionService {
         if (!result.isActive() && result.getErrorCode() != ErrorCodes.ConnectionInitScriptFailed) {
             throw new VerifyException(result.getErrorMessage());
         }
-        UserConfig userConfig = userConfigFacade.queryByCache(authenticationFacade.currentUserId());
         SqlExecuteTaskManagerFactory factory =
                 new SqlExecuteTaskManagerFactory(this.monitorTaskManager, "console", 1);
         if (StringUtils.isNotEmpty(schemaName)) {
             connection.setDefaultSchema(schemaName);
         }
+        // TODO: query from use config service
+        UserConfig userConfig = new UserConfig();
         DefaultConnectSessionFactory sessionFactory = new DefaultConnectSessionFactory(
                 connection, getAutoCommit(connection, userConfig), factory);
         DefaultConnectSessionIdGenerator idGenerator = new DefaultConnectSessionIdGenerator();

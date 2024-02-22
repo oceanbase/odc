@@ -40,7 +40,7 @@ import com.oceanbase.odc.core.shared.constant.OdcConstants;
 import com.oceanbase.odc.service.common.util.SpringContextUtil;
 import com.oceanbase.odc.service.common.util.UrlUtils;
 import com.oceanbase.odc.service.common.util.WebRequestUtils;
-import com.oceanbase.odc.service.config.model.FeaturesProperties;
+import com.oceanbase.odc.config.FeaturesProperties;
 import com.oceanbase.odc.service.flow.task.model.FlowTaskProperties;
 import com.oceanbase.odc.service.flow.task.model.MockProperties;
 import com.oceanbase.odc.service.integration.IntegrationService;

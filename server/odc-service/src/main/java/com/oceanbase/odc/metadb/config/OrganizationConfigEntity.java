@@ -18,6 +18,7 @@ package com.oceanbase.odc.metadb.config;
 import javax.validation.constraints.NotNull;
 
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 /**
  * @Author: Lebie
@@ -25,19 +26,12 @@ import lombok.Data;
  * @Description: [Organization Configuration Data Object for DAO]
  */
 @Data
+@EqualsAndHashCode(callSuper = true)
 public class OrganizationConfigEntity extends ConfigEntity {
     /**
      * organizationId of this organization config
      */
     @NotNull
-    private long organizationId;
+    private Long organizationId;
 
-
-    public OrganizationConfigEntity() {
-        super();
-    }
-
-    public OrganizationConfigEntity(String key, Object value, String description) {
-        super(key, value, description);
-    }
 }

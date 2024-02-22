@@ -16,6 +16,7 @@
 package com.oceanbase.odc.metadb.config;
 
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 /**
  * @Author: Lebie
@@ -23,6 +24,7 @@ import lombok.Data;
  * @Description: []
  */
 @Data
+@EqualsAndHashCode(callSuper = true)
 public class SystemConfigEntity extends ConfigEntity {
 
     /**
@@ -35,12 +37,4 @@ public class SystemConfigEntity extends ConfigEntity {
      */
     private String profile;
 
-
-    public SystemConfigEntity() {
-        super();
-    }
-
-    public SystemConfigEntity(String key, Object value, String description) {
-        super(key, value, description);
-    }
 }
