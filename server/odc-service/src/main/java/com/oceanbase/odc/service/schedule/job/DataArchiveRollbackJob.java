@@ -27,6 +27,7 @@ import com.oceanbase.odc.metadb.schedule.ScheduleTaskEntity;
 import com.oceanbase.odc.service.dlm.model.DlmTask;
 import com.oceanbase.odc.service.dlm.utils.DlmJobIdUtil;
 import com.oceanbase.odc.service.schedule.model.DataArchiveRollbackParameters;
+import com.oceanbase.tools.migrator.common.configure.DataSourceInfo;
 import com.oceanbase.tools.migrator.common.enums.JobType;
 
 import lombok.extern.slf4j.Slf4j;
@@ -61,6 +62,25 @@ public class DataArchiveRollbackJob extends AbstractDlmJob {
 
         ScheduleTaskEntity dataArchiveTask = dataArchiveTaskOption.get();
 
+        // execute in task framework.
+        if (taskFrameworkProperties.isEnabled()) {
+            DLMJobParameters parameters = getDLMJobParameters(dataArchiveTask.getJobId());
+            parameters.setJobType(JobType.ROLLBACK);
+            DataSourceInfo tempDataSource = parameters.getSourceDs();
+            parameters.setSourceDs(parameters.getTargetDs());
+            parameters.setTargetDs(tempDataSource);
+            parameters.getTables().forEach(o -> {
+                String temp = o.getTableName();
+                o.setTableName(o.getTargetTableName());
+                o.setTargetTableName(temp);
+            });
+            Long jobId = publishJob(parameters);
+            log.info("Publish DLM job to task framework succeed,taskId={},jobIdentity={}", taskEntity.getId(),
+                    jobId);
+            scheduleTaskRepository.updateJobIdById(taskEntity.getId(), jobId);
+            scheduleTaskRepository.updateTaskResult(taskEntity.getId(), JsonUtils.toJson(parameters));
+            return;
+        }
         // prepare tasks for rollback
         List<DlmTask> taskUnits = JsonUtils.fromJson(dataArchiveTask.getResultJson(),
                 new TypeReference<List<DlmTask>>() {});

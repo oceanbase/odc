@@ -65,6 +65,18 @@ public class DataArchiveDeleteJob extends AbstractDlmJob {
             return;
         }
 
+        // execute in task framework.
+        if (taskFrameworkProperties.isEnabled()) {
+            DLMJobParameters parameters = getDLMJobParameters(dataArchiveTask.getJobId());
+            parameters.setJobType(JobType.DELETE);
+            Long jobId = publishJob(parameters);
+            log.info("Publish DLM job to task framework succeed,taskId={},jobIdentity={}", taskEntity.getId(),
+                    jobId);
+            scheduleTaskRepository.updateJobIdById(taskEntity.getId(), jobId);
+            scheduleTaskRepository.updateTaskResult(taskEntity.getId(), JsonUtils.toJson(parameters));
+            return;
+        }
+
         // prepare tasks for clear
         List<DlmTask> taskUnits = JsonUtils.fromJson(dataArchiveTask.getResultJson(),
                 new TypeReference<List<DlmTask>>() {});
