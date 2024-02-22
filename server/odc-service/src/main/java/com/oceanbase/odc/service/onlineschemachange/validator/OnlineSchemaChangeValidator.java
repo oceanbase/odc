@@ -79,11 +79,16 @@ public class OnlineSchemaChangeValidator {
         OnlineSchemaChangeParameters parameter = (OnlineSchemaChangeParameters) createReq.getParameters();
         PreConditions.notEmpty(parameter.getSqlContent(), "Input sql cant not bee empty");
 
+
         ConnectionConfig connectionConfig =
                 connectionService.getForConnectionSkipPermissionCheck(createReq.getConnectionId());
         connectionConfig.setDefaultSchema(createReq.getDatabaseName());
-        List<String> sqls = SqlUtils.split(connectionConfig.getDialectType(), parameter.getSqlContent(),
-                parameter.getDelimiter());;
+        SqlCommentProcessor processor = new SqlCommentProcessor(connectionConfig.getDialectType(),
+                false, false, false);
+
+        List<String> sqls = SqlUtils.split(connectionConfig.getDialectType(),
+                SqlUtils.removeComments(processor, parameter.getSqlContent()),
+                parameter.getDelimiter());
 
         PreConditions.notEmpty(sqls, "Parser sqls is empty");
         oscConnectionConfigValidator.valid(connectionConfig);
@@ -133,12 +138,10 @@ public class OnlineSchemaChangeValidator {
             ConnectionConfig connectionConfig, List<String> sqls) {
         List<Statement> statements = null;
         try {
-            SqlCommentProcessor processor = new SqlCommentProcessor(connectionConfig.getDialectType(),
-                false, false, false);
             SQLParser sqlParser =
                     connectionConfig.getDialectType().isMysql() ? new OBMySQLParser() : new OBOracleSQLParser();
             statements = sqls.stream().map(sql -> {
-                Statement statement = sqlParser.parse(new StringReader(SqlUtils.removeComments(processor, sql)));
+                Statement statement = sqlParser.parse(new StringReader(sql));
                 // skip valid type when statement is "create index"
                 if (statement instanceof CreateTable || statement instanceof AlterTable) {
                     validateType(sql, getSqlType(statement), parameter.getSqlType());
