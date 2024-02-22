@@ -313,7 +313,7 @@ public class DatabaseChangeTask extends BaseTask<FlowTaskResult> {
         taskResult.setJsonFileName(jsonFileName);
         taskResult.setContainQuery(containQuery);
         taskResult.setErrorRecordsFilePath(errorRecordsFilePath);
-        taskResult.setAutoModifyTimeout(false);
+        taskResult.setAutoModifyTimeout(parameters.isAutoModifyTimeout());
         return taskResult;
     }
 

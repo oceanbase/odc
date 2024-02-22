@@ -53,5 +53,9 @@ public class DatabaseChangeTaskParameters {
      * Whether data masking is needed
      */
     private boolean needDataMasking;
+    /**
+     * Whether the task's timeout period is automatically modified
+     */
+    private boolean autoModifyTimeout;
 
 }

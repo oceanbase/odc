@@ -86,7 +86,6 @@ public class DatabaseChangeRuntimeFlowableTaskCopied extends BaseODCFlowTaskDele
     private TaskRepository taskRepository;
     @Autowired
     private FlowTaskProperties flowTaskProperties;
-    private boolean autoModifyTimeout = false;
 
     private volatile Long jobId;
     private volatile boolean isSuccessful = false;
@@ -136,7 +135,7 @@ public class DatabaseChangeRuntimeFlowableTaskCopied extends BaseODCFlowTaskDele
                 rollbackPlanTaskResult = result.getRollbackPlanResult();
             }
 
-            JobDefinition jobDefinition = buildJobDefinition(execution);
+            JobDefinition jobDefinition = buildJobDefinition(execution, taskEntity);
             this.jobId = jobScheduler.scheduleJobNow(jobDefinition);
             taskService.updateJobId(taskId, jobId);
             log.info("Database change task is scheduled, taskId={}, jobId={}", taskId, this.jobId);
@@ -203,7 +202,7 @@ public class DatabaseChangeRuntimeFlowableTaskCopied extends BaseODCFlowTaskDele
 
     }
 
-    private JobDefinition buildJobDefinition(DelegateExecution execution) {
+    private JobDefinition buildJobDefinition(DelegateExecution execution, TaskEntity taskEntity) {
         Map<String, String> jobParameters = new HashMap<>();
         DatabaseChangeTaskParameters taskParameters = new DatabaseChangeTaskParameters();
         DatabaseChangeParameters p = FlowTaskUtil.getAsyncParameter(execution);
@@ -223,6 +222,7 @@ public class DatabaseChangeRuntimeFlowableTaskCopied extends BaseODCFlowTaskDele
             taskParameters.setSqlFileObjectMetadatas(objectMetadatas);
         }
         taskParameters.setNeedDataMasking(dataMaskingService.isMaskingEnabled());
+        modifyTimeoutIfInvolveIndexChange(execution, p, taskParameters, taskEntity);
         jobParameters.put(JobParametersKeyConstants.FLOW_INSTANCE_ID, getFlowInstanceId().toString());
         jobParameters.put(JobParametersKeyConstants.TASK_PARAMETER_JSON_KEY, JobUtils.toJson(taskParameters));
         jobParameters.put(JobParametersKeyConstants.TASK_EXECUTION_TIMEOUT_MILLIS, p.getTimeoutMillis() + "");
@@ -233,8 +233,7 @@ public class DatabaseChangeRuntimeFlowableTaskCopied extends BaseODCFlowTaskDele
     }
 
     private void modifyTimeoutIfInvolveIndexChange(DelegateExecution execution, DatabaseChangeParameters parameters,
-            Map<String, String> jobData) {
-        Long taskId = FlowTaskUtil.getTaskId(execution);
+            DatabaseChangeTaskParameters taskParameters, TaskEntity taskEntity) {
         Long preCheckTaskId = FlowTaskUtil.getPreCheckTaskId(execution);
         TaskEntity preCheckTask = taskRepository.findById(preCheckTaskId)
                 .orElseThrow(() -> new NotFoundException(ResourceType.ODC_TASK, "taskId", preCheckTaskId));
@@ -246,14 +245,12 @@ public class DatabaseChangeRuntimeFlowableTaskCopied extends BaseODCFlowTaskDele
         if (Objects.nonNull(preCheckResult.getSqlCheckResult())
                 && preCheckResult.getSqlCheckResult().isInvolveIndexChange()
                 && autoModifiedTimeout > parameters.getTimeoutMillis()) {
-            this.autoModifyTimeout = true;
             parameters.setTimeoutMillis(autoModifiedTimeout);
-            jobData.put(JobParametersKeyConstants.TASK_EXECUTION_TIMEOUT_MILLIS, autoModifiedTimeout + "");
-            TaskEntity databaseChangeTaskEntity = taskService.detail(taskId);
-            databaseChangeTaskEntity.setParametersJson(JsonUtils.toJson(parameters));
-            taskService.updateParametersJson(databaseChangeTaskEntity);
+            taskParameters.setAutoModifyTimeout(true);
+            taskEntity.setParametersJson(JsonUtils.toJson(parameters));
+            taskService.updateParametersJson(taskEntity);
         } else {
-            jobData.put(JobParametersKeyConstants.TASK_EXECUTION_TIMEOUT_MILLIS, parameters.getTimeoutMillis() + "");
+            taskParameters.setAutoModifyTimeout(false);
         }
     }
 
