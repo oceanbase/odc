@@ -43,7 +43,12 @@ import com.oceanbase.tools.sqlparser.obmysql.OBParser.Normal_relation_factorCont
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Relation_factorContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Relation_factor_with_starContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParserBaseVisitor;
+import com.oceanbase.tools.sqlparser.obmysql.PLParser.IdentContext;
+import com.oceanbase.tools.sqlparser.obmysql.PLParser.Sp_nameContext;
+import com.oceanbase.tools.sqlparser.obmysql.PLParserBaseVisitor;
 import com.oceanbase.tools.sqlparser.oboracle.OBParser;
+import com.oceanbase.tools.sqlparser.oboracle.PLParser.IdentifierContext;
+import com.oceanbase.tools.sqlparser.oboracle.PLParser.Pl_schema_nameContext;
 import com.oceanbase.tools.sqlparser.statement.common.RelationFactor;
 
 import lombok.Getter;
@@ -115,10 +120,18 @@ public class SchemaExtractor {
     }
 
     private static Set<String> listSchemaNames(AbstractSyntaxTree ast, String defaultSchema, DialectType dialectType) {
+        List<RelationFactor> relationFactorList;
+        BasicResult basicResult = ast.getParseResult();
         if (dialectType.isMysql() || dialectType.isDoris()) {
-            OBMySQLRelationFactorVisitor visitor = new OBMySQLRelationFactorVisitor();
-            visitor.visit(ast.getRoot());
-            List<RelationFactor> relationFactorList = visitor.getRelationFactorList();
+            if (basicResult.isPlDdl()) {
+                OBMySQLPLRelationFactorVisitor visitor = new OBMySQLPLRelationFactorVisitor();
+                visitor.visit(ast.getRoot());
+                relationFactorList = visitor.getRelationFactorList();
+            } else {
+                OBMySQLRelationFactorVisitor visitor = new OBMySQLRelationFactorVisitor();
+                visitor.visit(ast.getRoot());
+                relationFactorList = visitor.getRelationFactorList();
+            }
             return relationFactorList.stream()
                     .filter(r -> StringUtils.isBlank(r.getUserVariable()))
                     .map(r -> {
@@ -127,9 +140,15 @@ public class SchemaExtractor {
                     })
                     .filter(Objects::nonNull).collect(Collectors.toSet());
         } else if (dialectType.isOracle()) {
-            OBOracleRelationFactorVisitor visitor = new OBOracleRelationFactorVisitor();
-            visitor.visit(ast.getRoot());
-            List<RelationFactor> relationFactorList = visitor.getRelationFactorList();
+            if (basicResult.isPlDdl()) {
+                OBOraclePLRelationFactorVisitor visitor = new OBOraclePLRelationFactorVisitor();
+                visitor.visit(ast.getRoot());
+                relationFactorList = visitor.getRelationFactorList();
+            } else {
+                OBOracleRelationFactorVisitor visitor = new OBOracleRelationFactorVisitor();
+                visitor.visit(ast.getRoot());
+                relationFactorList = visitor.getRelationFactorList();
+            }
             return relationFactorList.stream()
                     .filter(r -> StringUtils.isBlank(r.getUserVariable()))
                     .map(r -> {
@@ -143,8 +162,9 @@ public class SchemaExtractor {
         return new HashSet<>();
     }
 
+    @Getter
     private static class OBMySQLRelationFactorVisitor extends OBParserBaseVisitor<RelationFactor> {
-        @Getter
+
         private final List<RelationFactor> relationFactorList = new ArrayList<>();
 
         @Override
@@ -185,9 +205,10 @@ public class SchemaExtractor {
         }
     }
 
+    @Getter
     private static class OBOracleRelationFactorVisitor extends
             com.oceanbase.tools.sqlparser.oboracle.OBParserBaseVisitor<RelationFactor> {
-        @Getter
+
         private final List<RelationFactor> relationFactorList = new ArrayList<>();
 
         @Override
@@ -215,6 +236,48 @@ public class SchemaExtractor {
             relationFactorList.add(relationFactor);
             return null;
         }
+    }
+
+
+    @Getter
+    private static class OBMySQLPLRelationFactorVisitor extends PLParserBaseVisitor<RelationFactor> {
+
+        private final List<RelationFactor> relationFactorList = new ArrayList<>();
+
+        @Override
+        public RelationFactor visitSp_name(Sp_nameContext ctx) {
+            List<IdentContext> idents = ctx.ident();
+            if (idents.size() == 1) {
+                relationFactorList.add(new RelationFactor(idents.get(0).getText()));
+            } else if (idents.size() == 2) {
+                RelationFactor relationFactor = new RelationFactor(idents.get(1).getText());
+                relationFactor.setSchema(idents.get(0).getText());
+                relationFactorList.add(relationFactor);
+            }
+            return null;
+        }
+
+    }
+
+    @Getter
+    private static class OBOraclePLRelationFactorVisitor
+            extends com.oceanbase.tools.sqlparser.oboracle.PLParserBaseVisitor<RelationFactor> {
+
+        private final List<RelationFactor> relationFactorList = new ArrayList<>();
+
+        @Override
+        public RelationFactor visitPl_schema_name(Pl_schema_nameContext ctx) {
+            List<IdentifierContext> identifiers = ctx.identifier();
+            if (identifiers.size() == 1) {
+                relationFactorList.add(new RelationFactor(identifiers.get(0).getText()));
+            } else if (identifiers.size() == 2) {
+                RelationFactor relationFactor = new RelationFactor(identifiers.get(1).getText());
+                relationFactor.setSchema(identifiers.get(0).getText());
+                relationFactorList.add(relationFactor);
+            }
+            return null;
+        }
+
     }
 
 }
