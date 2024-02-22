@@ -45,12 +45,6 @@ public class FlowTaskProperties {
     @Value("${odc.task.async.sql-content-max-length:10485760}")
     private int sqlContentMaxLength = 10485760;
 
-    @Value("${odc.task.async.rollback.total-max-change-lines:1000000}")
-    private int totalMaxChangeLines;
-
-    @Value("${odc.task.async.rollback.max-rollback-content-size-bytes:268435456}")
-    private long maxRollbackContentSizeBytes;
-
     @Value("${odc.task.async.index-change-max-timeout-millis:432000000}")
     private long indexChangeMaxTimeoutMillisecond;
 }

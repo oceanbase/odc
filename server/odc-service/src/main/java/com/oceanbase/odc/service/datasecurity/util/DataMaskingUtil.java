@@ -20,6 +20,7 @@ import java.util.Set;
 
 import org.apache.commons.collections4.CollectionUtils;
 
+import com.oceanbase.odc.service.datasecurity.extractor.model.DBColumn;
 import com.oceanbase.odc.service.datasecurity.model.SensitiveColumn;
 
 /**
@@ -33,6 +34,18 @@ public class DataMaskingUtil {
             return false;
         }
         for (Set<SensitiveColumn> columnSet : columns) {
+            if (CollectionUtils.isNotEmpty(columnSet)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public static boolean isDBColumnExists(List<Set<DBColumn>> columns) {
+        if (columns.isEmpty()) {
+            return false;
+        }
+        for (Set<DBColumn> columnSet : columns) {
             if (CollectionUtils.isNotEmpty(columnSet)) {
                 return true;
             }

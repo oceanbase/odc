@@ -24,10 +24,18 @@ import java.io.SequenceInputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
+import javax.validation.constraints.NotEmpty;
+import javax.validation.constraints.NotNull;
+
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.io.FileUtils;
 import org.springframework.jdbc.core.ConnectionCallback;
 import org.springframework.jdbc.core.JdbcOperations;
@@ -37,6 +45,10 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.common.util.CSVUtils;
 import com.oceanbase.odc.common.util.StringUtils;
+import com.oceanbase.odc.core.datamasking.algorithm.Algorithm;
+import com.oceanbase.odc.core.datamasking.algorithm.AlgorithmEnum;
+import com.oceanbase.odc.core.datamasking.algorithm.AlgorithmFactory;
+import com.oceanbase.odc.core.datamasking.data.metadata.MetadataFactory;
 import com.oceanbase.odc.core.datasource.ConnectionInitializer;
 import com.oceanbase.odc.core.flow.model.FlowTaskResult;
 import com.oceanbase.odc.core.session.ConnectionSession;
@@ -48,6 +60,8 @@ import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.constant.TaskErrorStrategy;
 import com.oceanbase.odc.core.shared.exception.InternalServerError;
 import com.oceanbase.odc.core.shared.exception.UnexpectedException;
+import com.oceanbase.odc.core.shared.exception.UnsupportedException;
+import com.oceanbase.odc.core.sql.execute.model.JdbcColumnMetaData;
 import com.oceanbase.odc.core.sql.execute.model.JdbcGeneralResult;
 import com.oceanbase.odc.core.sql.execute.model.SqlExecuteStatus;
 import com.oceanbase.odc.core.sql.execute.model.SqlTuple;
@@ -57,10 +71,18 @@ import com.oceanbase.odc.core.sql.split.SqlCommentProcessor;
 import com.oceanbase.odc.core.sql.split.SqlStatementIterator;
 import com.oceanbase.odc.service.common.FileManager;
 import com.oceanbase.odc.service.common.model.FileBucket;
+import com.oceanbase.odc.service.common.response.SuccessResponse;
 import com.oceanbase.odc.service.common.util.OdcFileUtil;
 import com.oceanbase.odc.service.common.util.SqlUtils;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.datasecurity.accessor.DatasourceColumnAccessor;
+import com.oceanbase.odc.service.datasecurity.extractor.ColumnExtractor;
+import com.oceanbase.odc.service.datasecurity.extractor.OBColumnExtractor;
+import com.oceanbase.odc.service.datasecurity.extractor.model.DBColumn;
+import com.oceanbase.odc.service.datasecurity.extractor.model.LogicalTable;
+import com.oceanbase.odc.service.datasecurity.model.MaskingAlgorithm;
+import com.oceanbase.odc.service.datasecurity.util.DataMaskingUtil;
+import com.oceanbase.odc.service.datasecurity.util.MaskingAlgorithmUtil;
 import com.oceanbase.odc.service.flow.task.model.DatabaseChangeParameters;
 import com.oceanbase.odc.service.flow.task.model.DatabaseChangeResult;
 import com.oceanbase.odc.service.objectstorage.cloud.CloudObjectStorageService;
@@ -72,12 +94,19 @@ import com.oceanbase.odc.service.session.initializer.ConsoleTimeoutInitializer;
 import com.oceanbase.odc.service.session.model.SqlExecuteResult;
 import com.oceanbase.odc.service.task.caller.JobContext;
 import com.oceanbase.odc.service.task.constants.JobParametersKeyConstants;
+import com.oceanbase.odc.service.task.constants.JobUrlConstants;
 import com.oceanbase.odc.service.task.executor.server.ObjectStorageHandler;
+import com.oceanbase.odc.service.task.runtime.DatabaseChangeTaskParameters;
+import com.oceanbase.odc.service.task.runtime.QuerySensitiveColumnReq;
+import com.oceanbase.odc.service.task.runtime.QuerySensitiveColumnResp;
+import com.oceanbase.odc.service.task.util.HttpUtil;
 import com.oceanbase.odc.service.task.util.JobUtils;
 import com.oceanbase.tools.dbbrowser.parser.ParserUtil;
 import com.oceanbase.tools.dbbrowser.parser.constant.GeneralSqlType;
+import com.oceanbase.tools.sqlparser.statement.Statement;
 
 import lombok.Data;
+import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -89,7 +118,8 @@ import lombok.extern.slf4j.Slf4j;
 public class DatabaseChangeTask extends BaseTask<FlowTaskResult> {
 
     private ConnectionSession connectionSession;
-    private DatabaseChangeParameters parameters;
+    private DatabaseChangeTaskParameters parameters;
+    private DatabaseChangeParameters databaseChangeParameters;
     private InputStream sqlInputStream;
     private SqlStatementIterator sqlIterator;
     private Integer failCount = 0;
@@ -112,21 +142,22 @@ public class DatabaseChangeTask extends BaseTask<FlowTaskResult> {
     private volatile boolean canceled = false;
     private long taskId;
 
-    private static final Long DEFAULT_DATA_SOURCE_ID = 1L;
-
     @Override
     protected void doInit(JobContext context) {
         taskId = getJobContext().getJobIdentity().getId();
         log.info("Initiating database change task, taskId={}", taskId);
-        parameters = JsonUtils.fromJson(getJobParameters().get(JobParametersKeyConstants.META_TASK_PARAMETER_JSON),
-                DatabaseChangeParameters.class);
+        this.parameters = JobUtils.fromJson(getJobParameters().get(JobParametersKeyConstants.TASK_PARAMETER_JSON_KEY),
+                DatabaseChangeTaskParameters.class);
+        this.databaseChangeParameters =
+                JsonUtils.fromJson(this.parameters.getParameterJson(), DatabaseChangeParameters.class);
         log.info("Load database change task parameters successfully, taskId={}", taskId);
         connectionSession = generateSession();
-        String delimiter = Objects.isNull(parameters.getDelimiter()) ? ";" : parameters.getDelimiter();
+        String delimiter = Objects.isNull(this.databaseChangeParameters.getDelimiter()) ? ";"
+                : this.databaseChangeParameters.getDelimiter();
         ConnectionSessionUtil.getSqlCommentProcessor(connectionSession).setDelimiter(delimiter);
         log.info("Generate connection session successfully, taskId={}", taskId);
-        if (StringUtils.isNotEmpty(parameters.getSqlContent())) {
-            byte[] sqlBytes = parameters.getSqlContent().getBytes(StandardCharsets.UTF_8);
+        if (StringUtils.isNotEmpty(this.databaseChangeParameters.getSqlContent())) {
+            byte[] sqlBytes = this.databaseChangeParameters.getSqlContent().getBytes(StandardCharsets.UTF_8);
             sqlInputStream = new ByteArrayInputStream(sqlBytes);
             sqlTotalBytes = sqlBytes.length;
         } else {
@@ -145,8 +176,8 @@ public class DatabaseChangeTask extends BaseTask<FlowTaskResult> {
             jsonFile = new File(jsonFilePath);
             zipFileId = StringUtils.uuid();
             zipFileRootPath = String.format("%s/%s", fileRootDir, zipFileId);
-            zipFileDownloadUrl = String.format("/api/v2/flow/flowInstances/%s/tasks/download",
-                    Long.parseLong(getJobParameters().get(JobParametersKeyConstants.FLOW_INSTANCE_ID)));
+            zipFileDownloadUrl =
+                    String.format("/api/v2/flow/flowInstances/%s/tasks/download", this.parameters.getFlowInstanceId());
         } catch (Exception exception) {
             throw new InternalServerError("Create database change task file dir failed", exception);
         }
@@ -171,17 +202,17 @@ public class DatabaseChangeTask extends BaseTask<FlowTaskResult> {
                 log.info("Database change sql: {}", sql);
                 try {
                     List<SqlTuple> sqlTuples = Collections.singletonList(SqlTuple.newTuple(sql));
-                    OdcStatementCallBack statementCallback =
-                            new OdcStatementCallBack(sqlTuples, connectionSession, true, parameters.getQueryLimit());
+                    OdcStatementCallBack statementCallback = new OdcStatementCallBack(sqlTuples, connectionSession,
+                            true, this.databaseChangeParameters.getQueryLimit());
                     statementCallback.setMaxCachedLines(0);
                     statementCallback.setMaxCachedSize(0);
                     statementCallback.setDbmsoutputMaxRows(0);
                     JdbcOperations executor =
                             connectionSession.getSyncJdbcExecutor(ConnectionSessionConstants.CONSOLE_DS_KEY);
-                    long timeoutUs = TimeUnit.MILLISECONDS.toMicros(parameters.getTimeoutMillis());
+                    long timeoutUs = TimeUnit.MILLISECONDS.toMicros(this.databaseChangeParameters.getTimeoutMillis());
                     if (timeoutUs < 0) {
                         throw new IllegalArgumentException(
-                                "Timeout settings is too large, " + parameters.getTimeoutMillis());
+                                "Timeout settings is too large, " + this.databaseChangeParameters.getTimeoutMillis());
                     }
                     ConnectionInitializer initializer = new ConsoleTimeoutInitializer(timeoutUs);
                     executor.execute((ConnectionCallback<Void>) con -> {
@@ -190,8 +221,8 @@ public class DatabaseChangeTask extends BaseTask<FlowTaskResult> {
                     });
                     List<JdbcGeneralResult> results =
                             executor.execute((StatementCallback<List<JdbcGeneralResult>>) stmt -> {
-                                stmt.setQueryTimeout(
-                                        (int) TimeUnit.MILLISECONDS.toSeconds(parameters.getTimeoutMillis()));
+                                stmt.setQueryTimeout((int) TimeUnit.MILLISECONDS
+                                        .toSeconds(this.databaseChangeParameters.getTimeoutMillis()));
                                 return statementCallback.doInStatement(stmt);
                             });
                     Verify.notEmpty(results, "resultList");
@@ -200,6 +231,9 @@ public class DatabaseChangeTask extends BaseTask<FlowTaskResult> {
                         SqlExecuteResult executeResult = new SqlExecuteResult(result);
                         if (GeneralSqlType.DQL == sqlType) {
                             containQuery = true;
+                            if (this.parameters.isNeedDataMasking()) {
+                                tryDataMasking(executeResult);
+                            }
                         }
                         queryResultSetBuffer.add(executeResult);
                     }
@@ -222,7 +256,7 @@ public class DatabaseChangeTask extends BaseTask<FlowTaskResult> {
                     if (success) {
                         successCount++;
                     } else {
-                        if (TaskErrorStrategy.ABORT.equals(parameters.getErrorStrategy())) {
+                        if (TaskErrorStrategy.ABORT.equals(this.databaseChangeParameters.getErrorStrategy())) {
                             aborted = true;
                             break;
                         }
@@ -232,7 +266,7 @@ public class DatabaseChangeTask extends BaseTask<FlowTaskResult> {
                     log.warn("Error occurs when executing sql={} :", sql, e);
                     // only record info of failed sql
                     addErrorRecordsToFile(index, sql, e.getMessage());
-                    if (TaskErrorStrategy.ABORT.equals(parameters.getErrorStrategy())) {
+                    if (TaskErrorStrategy.ABORT.equals(this.databaseChangeParameters.getErrorStrategy())) {
                         aborted = true;
                         break;
                     }
@@ -284,16 +318,12 @@ public class DatabaseChangeTask extends BaseTask<FlowTaskResult> {
     }
 
     private ConnectionSession generateSession() {
-        ConnectionConfig connectionConfig = JsonUtils
-                .fromJson(getJobParameters().get(JobParametersKeyConstants.CONNECTION_CONFIG), ConnectionConfig.class);
-        connectionConfig.setId(DEFAULT_DATA_SOURCE_ID);
-        connectionConfig.setDefaultSchema(getJobParameters().get(JobParametersKeyConstants.CURRENT_SCHEMA));
+        ConnectionConfig connectionConfig = this.parameters.getConnectionConfig();
         DefaultConnectSessionFactory sessionFactory = new DefaultConnectSessionFactory(connectionConfig);
-        sessionFactory.setSessionTimeoutMillis(parameters.getTimeoutMillis());
+        sessionFactory.setSessionTimeoutMillis(this.databaseChangeParameters.getTimeoutMillis());
         ConnectionSession connectionSession = sessionFactory.generateSession();
         if (connectionSession.getDialectType() == DialectType.OB_ORACLE) {
-            ConnectionSessionUtil.initConsoleSessionTimeZone(connectionSession,
-                    getJobParameters().get(JobParametersKeyConstants.SESSION_TIME_ZONE));
+            ConnectionSessionUtil.initConsoleSessionTimeZone(connectionSession, this.parameters.getSessionTimeZone());
         }
         SqlCommentProcessor processor = new SqlCommentProcessor(connectionConfig.getDialectType(), true, true);
         ConnectionSessionUtil.setSqlCommentProcessor(connectionSession, processor);
@@ -303,9 +333,7 @@ public class DatabaseChangeTask extends BaseTask<FlowTaskResult> {
 
     private InputStream readSqlFilesStream() throws IOException {
         InputStream inputStream = new ByteArrayInputStream(new byte[0]);
-        List<ObjectMetadata> objectMetadataList =
-                JsonUtils.fromJson(getJobParameters().get(JobParametersKeyConstants.OBJECT_METADATA),
-                        new TypeReference<List<ObjectMetadata>>() {});
+        List<ObjectMetadata> objectMetadataList = this.parameters.getSqlFileObjectMetadatas();
         for (ObjectMetadata objectMetadata : objectMetadataList) {
             StorageObject object =
                     new ObjectStorageHandler(getCloudObjectStorageService(), JobUtils.getExecutorDataPath())
@@ -450,6 +478,141 @@ public class DatabaseChangeTask extends BaseTask<FlowTaskResult> {
             } catch (Exception e) {
                 // eat exception
             }
+        }
+    }
+
+    private void tryDataMasking(@NonNull SqlExecuteResult result) {
+        try {
+            List<Set<DBColumn>> tableRelatedDBColumns =
+                    extractDBColumnsFromSql(result.getExecuteSql(), connectionSession);
+            if (!DataMaskingUtil.isDBColumnExists(tableRelatedDBColumns)) {
+                return;
+            }
+            QuerySensitiveColumnReq req = new QuerySensitiveColumnReq();
+            req.setDataSourceId(this.parameters.getConnectionConfig().getId());
+            req.setOrganizationId(this.parameters.getConnectionConfig().getOrganizationId());
+            req.setTableRelatedDBColumns(tableRelatedDBColumns);
+            QuerySensitiveColumnResp resp = querySensitiveColumn(req);
+            if (resp.isContainsSensitiveColumn()) {
+                List<Algorithm> algorithms = new ArrayList<>();
+                for (MaskingAlgorithm a : resp.getMaskingAlgorithms()) {
+                    if (Objects.nonNull(a)) {
+                        Algorithm algorithmMasker = AlgorithmFactory.createAlgorithm(
+                                AlgorithmEnum.valueOf(a.getType().name()),
+                                MaskingAlgorithmUtil.toAlgorithmParameters(a));
+                        algorithms.add(algorithmMasker);
+                    } else {
+                        algorithms.add(null);
+                    }
+                }
+                maskRowsUsingAlgorithms(result, algorithms);
+            }
+        } catch (Exception e) {
+            log.warn("Data masking failed, details: ", e);
+        }
+    }
+
+    private List<Set<DBColumn>> extractDBColumnsFromSql(@NonNull String sql, @NonNull ConnectionSession session) {
+        Statement stmt;
+        DialectType dialectType = session.getDialectType();
+        try {
+            AbstractSyntaxTreeFactory factory = AbstractSyntaxTreeFactories.getAstFactory(dialectType, 0);
+            if (factory == null) {
+                throw new UnsupportedException("Unsupported dialect type: " + dialectType);
+            }
+            stmt = factory.buildAst(sql).getStatement();
+        } catch (Exception e) {
+            log.warn("Parse sql failed, sql={}", sql, e);
+            throw new IllegalStateException("Parse sql failed, details=" + e.getMessage());
+        }
+        LogicalTable table;
+        try {
+            DatasourceColumnAccessor accessor =
+                    (DatasourceColumnAccessor) ConnectionSessionUtil.getColumnAccessor(session);
+            ColumnExtractor extractor =
+                    new OBColumnExtractor(dialectType, ConnectionSessionUtil.getCurrentSchema(session), accessor);
+            table = extractor.extract(stmt);
+        } catch (Exception e) {
+            log.warn("Extract columns failed, stmt={}", stmt, e);
+            return Collections.emptyList();
+        }
+        if (Objects.isNull(table) || table.getColumnList().isEmpty()) {
+            return Collections.emptyList();
+        }
+        return table.getTableRelatedDBColumns();
+    }
+
+    private QuerySensitiveColumnResp querySensitiveColumn(@NonNull QuerySensitiveColumnReq req) {
+        List<String> hostUrls = getJobContext().getHostUrls();
+        if (CollectionUtils.isEmpty(hostUrls)) {
+            log.warn("ODC server host url is empty");
+            return new QuerySensitiveColumnResp();
+        }
+        for (String host : hostUrls) {
+            try {
+                String hostWithUrl = host + JobUrlConstants.TASK_QUERY_SENSITIVE_COLUMN;
+                SuccessResponse<QuerySensitiveColumnResp> response = HttpUtil.request(hostWithUrl,
+                        JsonUtils.toJson(req), new TypeReference<SuccessResponse<QuerySensitiveColumnResp>>() {});
+                if (response != null && response.getSuccessful()) {
+                    return response.getData();
+                }
+            } catch (Exception e) {
+                log.warn("Query sensitive column failed, host is {}, details: ", host, e);
+            }
+        }
+        return new QuerySensitiveColumnResp();
+    }
+
+    public void maskRowsUsingAlgorithms(@NotNull SqlExecuteResult result, @NotEmpty List<Algorithm> algorithms) {
+        List<String> columnLabels = result.getColumnLabels();
+        List<List<Object>> rows = result.getRows();
+        List<JdbcColumnMetaData> fieldMetaDataList = result.getResultSetMetaData().getFieldMetaDataList();
+        int columnCount = rows.get(0).size();
+        Verify.equals(columnCount, algorithms.size(), "algorithms.size");
+        String dataType = "string";
+        int totalCount = 0;
+        int skippedCount = 0;
+        int failedCount = 0;
+        Map<String, Integer> failedColumn2FirstRow = new HashMap<>();
+        for (int i = 0; i < columnCount; i++) {
+            Algorithm algorithm = algorithms.get(i);
+            if (Objects.isNull(algorithm)) {
+                totalCount += rows.size();
+                skippedCount += rows.size();
+                continue;
+            }
+            if (algorithm.getType() == AlgorithmEnum.ROUNDING) {
+                dataType = "double";
+            }
+            com.oceanbase.odc.core.datamasking.data.Data before = com.oceanbase.odc.core.datamasking.data.Data.of(null,
+                    MetadataFactory.createMetadata(null, dataType));
+            for (int j = 0; j < rows.size(); j++) {
+                List<Object> rowData = rows.get(j);
+                totalCount++;
+                if (rowData.get(i) == null) {
+                    skippedCount++;
+                    continue;
+                }
+                before.setValue(rowData.get(i).toString());
+                com.oceanbase.odc.core.datamasking.data.Data masked;
+                try {
+                    masked = algorithm.mask(before);
+                } catch (Exception e) {
+                    // Eat exception
+                    failedCount++;
+                    failedColumn2FirstRow.putIfAbsent(columnLabels.get(i), j);
+                    continue;
+                }
+                rowData.set(i, masked.getValue());
+            }
+            fieldMetaDataList.get(i).setMasked(true);
+        }
+        log.info("Data masking finished, total: {}, skipped: {}, failed: {}.", totalCount, skippedCount, failedCount);
+        if (failedCount > 0) {
+            String msg = failedColumn2FirstRow.entrySet().stream()
+                    .map(e -> String.format("columnLabel: %s, columnIndex: %d", e.getKey(), e.getValue()))
+                    .collect(Collectors.joining("; "));
+            log.warn("Exception happened during data masking, position details: {}", msg);
         }
     }
 
