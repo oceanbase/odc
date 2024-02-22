@@ -85,11 +85,12 @@ public class SqlUtils {
                 Collectors.toList());
     }
 
-    public static List<String> split(DialectType dialectType, String sql, String delimiter, boolean removeCommentPrefix) {
+    public static List<String> split(DialectType dialectType, String sql, String delimiter,
+            boolean removeCommentPrefix) {
         SqlCommentProcessor processor = new SqlCommentProcessor(dialectType, true, true);
         processor.setDelimiter(delimiter);
         return split(dialectType, processor, sql, removeCommentPrefix).stream().map(OffsetString::getStr).collect(
-            Collectors.toList());
+                Collectors.toList());
     }
 
     public static List<OffsetString> splitWithOffset(DialectType dialectType, String sql, String delimiter) {

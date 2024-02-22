@@ -34,8 +34,6 @@ import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.core.shared.exception.BadArgumentException;
 import com.oceanbase.odc.core.shared.exception.BadRequestException;
 import com.oceanbase.odc.core.shared.exception.UnsupportedException;
-import com.oceanbase.odc.core.sql.split.OffsetString;
-import com.oceanbase.odc.core.sql.split.SqlCommentProcessor;
 import com.oceanbase.odc.service.common.util.SqlUtils;
 import com.oceanbase.odc.service.connection.ConnectionService;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
@@ -80,13 +78,12 @@ public class OnlineSchemaChangeValidator {
         OnlineSchemaChangeParameters parameter = (OnlineSchemaChangeParameters) createReq.getParameters();
         PreConditions.notEmpty(parameter.getSqlContent(), "Input sql cant not bee empty");
 
-
         ConnectionConfig connectionConfig =
                 connectionService.getForConnectionSkipPermissionCheck(createReq.getConnectionId());
         connectionConfig.setDefaultSchema(createReq.getDatabaseName());
 
         List<String> sqls = SqlUtils.split(connectionConfig.getDialectType(),
-            parameter.getSqlContent(), parameter.getDelimiter(), true);
+                parameter.getSqlContent(), parameter.getDelimiter(), true);
 
         PreConditions.notEmpty(sqls, "Parser sqls is empty");
         oscConnectionConfigValidator.valid(connectionConfig);
