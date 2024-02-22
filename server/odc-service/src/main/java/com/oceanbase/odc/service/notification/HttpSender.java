@@ -18,7 +18,9 @@ package com.oceanbase.odc.service.notification;
 import java.net.InetSocketAddress;
 import java.net.Proxy;
 import java.net.Proxy.Type;
+import java.util.Map;
 
+import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.text.StringSubstitutor;
 import org.springframework.http.HttpEntity;
@@ -31,6 +33,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 
 import com.google.common.collect.ImmutableMap;
+import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.service.notification.helper.MessageResponseValidator;
 import com.oceanbase.odc.service.notification.model.ChannelType;
 import com.oceanbase.odc.service.notification.model.Message;
@@ -56,8 +59,8 @@ public class HttpSender implements MessageSender {
         setProxyIfNeed(restTemplate, channelConfig);
         HttpMethod httpMethod = channelConfig.getHttpMethod() == null ? HttpMethod.POST : channelConfig.getHttpMethod();
         HttpEntity<String> request = new HttpEntity<>(getBody(message), getHeaders(message));
-        ResponseEntity<Object> response =
-                restTemplate.exchange(getUrl(message), httpMethod, request, Object.class);
+        ResponseEntity<Map> response =
+                restTemplate.exchange(getUrl(message), httpMethod, request, Map.class);
         return checkResponse(message, response);
     }
 
@@ -84,11 +87,10 @@ public class HttpSender implements MessageSender {
         WebhookChannelConfig channelConfig = (WebhookChannelConfig) message.getChannel().getChannelConfig();
         StringSubstitutor substitutor = new StringSubstitutor(ImmutableMap.of("message", message.getContent()));
         String bodyTemplate = channelConfig.getBodyTemplate();
-        substitutor.replace(bodyTemplate);
-        return bodyTemplate;
+        return substitutor.replace(bodyTemplate);
     }
 
-    protected MessageSendResult checkResponse(Message message, ResponseEntity response) {
+    protected MessageSendResult checkResponse(Message message, ResponseEntity<Map> response) {
         if (response.getStatusCode() != HttpStatus.OK) {
             String errorMessage =
                     response.getBody() == null ? "HttpCode:" + response.getStatusCode() : response.getBody().toString();
@@ -96,9 +98,9 @@ public class HttpSender implements MessageSender {
         }
         WebhookChannelConfig channelConfig = (WebhookChannelConfig) message.getChannel().getChannelConfig();
         String responseValidation = channelConfig.getResponseValidation();
-        String content = response.getBody() == null ? "" : response.getBody().toString();
+        String content = MapUtils.isEmpty(response.getBody()) ? "" : JsonUtils.toJson(response.getBody());
         if (StringUtils.isEmpty(responseValidation) || "{}".equals(responseValidation)
-                || MessageResponseValidator.validateMessage(response.getBody().toString(), responseValidation)) {
+                || MessageResponseValidator.validateMessage(content, responseValidation)) {
             return MessageSendResult.ofSuccess();
         }
         return MessageSendResult
