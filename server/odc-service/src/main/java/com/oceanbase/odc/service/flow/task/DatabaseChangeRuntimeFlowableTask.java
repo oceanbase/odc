@@ -29,11 +29,8 @@ import com.oceanbase.odc.core.session.ConnectionSessionUtil;
 import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.shared.constant.FlowStatus;
-import com.oceanbase.odc.core.shared.constant.ResourceType;
-import com.oceanbase.odc.core.shared.exception.NotFoundException;
 import com.oceanbase.odc.core.sql.split.SqlCommentProcessor;
 import com.oceanbase.odc.metadb.task.TaskEntity;
-import com.oceanbase.odc.metadb.task.TaskRepository;
 import com.oceanbase.odc.service.connection.model.ConnectProperties;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.datasecurity.DataMaskingService;
@@ -78,8 +75,6 @@ public class DatabaseChangeRuntimeFlowableTask extends BaseODCFlowTaskDelegate<D
     private DBSessionManageFacade sessionManageFacade;
     @Autowired
     private TaskService taskService;
-    @Autowired
-    private TaskRepository taskRepository;
     @Autowired
     private FlowTaskProperties flowTaskProperties;
     private boolean autoModifyTimeout = false;
@@ -211,14 +206,13 @@ public class DatabaseChangeRuntimeFlowableTask extends BaseODCFlowTaskDelegate<D
     private void modifyTimeoutIfInvolveIndexChange(DelegateExecution execution, DatabaseChangeParameters parameters) {
         Long taskId = FlowTaskUtil.getTaskId(execution);
         Long preCheckTaskId = FlowTaskUtil.getPreCheckTaskId(execution);
-        TaskEntity preCheckTask = taskRepository.findById(preCheckTaskId)
-                .orElseThrow(() -> new NotFoundException(ResourceType.ODC_TASK, "taskId", preCheckTaskId));
+        TaskEntity preCheckTask = taskService.detail(preCheckTaskId);
 
         PreCheckTaskResult preCheckResult = JsonUtils.fromJson(preCheckTask.getResultJson(), PreCheckTaskResult.class);
         Validate.notNull(preCheckResult, "Pre check task result can not be null");
         long autoModifiedTimeout = flowTaskProperties.getIndexChangeMaxTimeoutMillisecond();
         if (Objects.nonNull(preCheckResult.getSqlCheckResult())
-                && preCheckResult.getSqlCheckResult().isInvolveIndexChange()
+                && preCheckResult.getSqlCheckResult().isInvolveTimeConsumingSql()
                 && autoModifiedTimeout > parameters.getTimeoutMillis()) {
             this.autoModifyTimeout = true;
             parameters.setTimeoutMillis(autoModifiedTimeout);

@@ -32,12 +32,9 @@ import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.core.flow.exception.BaseFlowException;
 import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.core.shared.constant.FlowStatus;
-import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.core.shared.constant.TaskType;
-import com.oceanbase.odc.core.shared.exception.NotFoundException;
 import com.oceanbase.odc.metadb.task.JobEntity;
 import com.oceanbase.odc.metadb.task.TaskEntity;
-import com.oceanbase.odc.metadb.task.TaskRepository;
 import com.oceanbase.odc.service.connection.model.ConnectProperties;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.datasecurity.DataMaskingService;
@@ -82,8 +79,6 @@ public class DatabaseChangeRuntimeFlowableTaskCopied extends BaseODCFlowTaskDele
     private DataMaskingService dataMaskingService;
     @Autowired
     private TaskService taskService;
-    @Autowired
-    private TaskRepository taskRepository;
     @Autowired
     private FlowTaskProperties flowTaskProperties;
 
@@ -222,7 +217,7 @@ public class DatabaseChangeRuntimeFlowableTaskCopied extends BaseODCFlowTaskDele
             taskParameters.setSqlFileObjectMetadatas(objectMetadatas);
         }
         taskParameters.setNeedDataMasking(dataMaskingService.isMaskingEnabled());
-        modifyTimeoutIfInvolveIndexChange(execution, p, taskParameters, taskEntity);
+        modifyTimeoutIfTimeConsumingSqlExists(execution, p, taskParameters, taskEntity);
         jobParameters.put(JobParametersKeyConstants.FLOW_INSTANCE_ID, getFlowInstanceId().toString());
         jobParameters.put(JobParametersKeyConstants.TASK_PARAMETER_JSON_KEY, JobUtils.toJson(taskParameters));
         jobParameters.put(JobParametersKeyConstants.TASK_EXECUTION_TIMEOUT_MILLIS, p.getTimeoutMillis() + "");
@@ -232,18 +227,17 @@ public class DatabaseChangeRuntimeFlowableTaskCopied extends BaseODCFlowTaskDele
                 .build();
     }
 
-    private void modifyTimeoutIfInvolveIndexChange(DelegateExecution execution, DatabaseChangeParameters parameters,
+    private void modifyTimeoutIfTimeConsumingSqlExists(DelegateExecution execution, DatabaseChangeParameters parameters,
             DatabaseChangeTaskParameters taskParameters, TaskEntity taskEntity) {
         Long preCheckTaskId = FlowTaskUtil.getPreCheckTaskId(execution);
-        TaskEntity preCheckTask = taskRepository.findById(preCheckTaskId)
-                .orElseThrow(() -> new NotFoundException(ResourceType.ODC_TASK, "taskId", preCheckTaskId));
+        TaskEntity preCheckTask = taskService.detail(preCheckTaskId);
 
         PreCheckTaskResult preCheckResult = JsonUtils.fromJson(preCheckTask.getResultJson(), PreCheckTaskResult.class);
         Validate.notNull(preCheckResult, "Pre check task result can not be null");
         long autoModifiedTimeout = flowTaskProperties.getIndexChangeMaxTimeoutMillisecond();
 
         if (Objects.nonNull(preCheckResult.getSqlCheckResult())
-                && preCheckResult.getSqlCheckResult().isInvolveIndexChange()
+                && preCheckResult.getSqlCheckResult().isInvolveTimeConsumingSql()
                 && autoModifiedTimeout > parameters.getTimeoutMillis()) {
             parameters.setTimeoutMillis(autoModifiedTimeout);
             taskParameters.setAutoModifyTimeout(true);
