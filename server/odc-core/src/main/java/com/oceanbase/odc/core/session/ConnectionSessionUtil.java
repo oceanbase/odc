@@ -28,6 +28,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.TimeZone;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Future;
@@ -448,11 +449,16 @@ public class ConnectionSessionUtil {
     public static void initConsoleSessionTimeZone(@NonNull ConnectionSession connectionSession,
             @NonNull String defaultTimeZone) {
         try {
-            String timeZoneStr = getSyncJdbcExecutor(connectionSession).execute(
-                    (StatementCallback<String>) stmt -> ((OceanBaseConnection) stmt.getConnection())
-                            .getSessionTimeZone());
-            Verify.notNull(timeZoneStr, "TimeZone can not be null");
-            connectionSession.setAttribute(ConnectionSessionConstants.SESSION_TIME_ZONE, timeZoneStr);
+            if (DialectType.OB_ORACLE == connectionSession.getDialectType()) {
+                String timeZoneStr = getSyncJdbcExecutor(connectionSession).execute(
+                        (StatementCallback<String>) stmt -> ((OceanBaseConnection) stmt.getConnection())
+                                .getSessionTimeZone());
+                Verify.notNull(timeZoneStr, "TimeZone can not be null");
+                connectionSession.setAttribute(ConnectionSessionConstants.SESSION_TIME_ZONE, timeZoneStr);
+            } else if (DialectType.ORACLE == connectionSession.getDialectType()) {
+                connectionSession.setAttribute(ConnectionSessionConstants.SESSION_TIME_ZONE,
+                        TimeZone.getDefault().getID());
+            }
         } catch (Exception exception) {
             log.warn("Failed to get time zone, session={}", connectionSession, exception);
             connectionSession.setAttribute(ConnectionSessionConstants.SESSION_TIME_ZONE, defaultTimeZone);

@@ -197,6 +197,8 @@ public class ConnectConsoleService {
         if (DialectType.ORACLE == connectionSession.getDialectType()) {
             if (result.getResultSetMetaData() != null) {
                 result.getResultSetMetaData().setEditable(true);
+                result.getResultSetMetaData().getFieldMetaDataList()
+                        .forEach(jdbcColumnMetaData -> jdbcColumnMetaData.setEditable(true));
             }
         }
         return result;
