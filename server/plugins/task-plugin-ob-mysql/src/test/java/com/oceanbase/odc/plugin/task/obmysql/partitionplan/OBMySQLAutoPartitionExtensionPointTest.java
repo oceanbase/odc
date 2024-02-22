@@ -40,7 +40,7 @@ import com.oceanbase.odc.plugin.task.api.partitionplan.AutoPartitionExtensionPoi
 import com.oceanbase.odc.plugin.task.api.partitionplan.datatype.TimeDataType;
 import com.oceanbase.odc.plugin.task.api.partitionplan.invoker.create.PartitionExprGenerator;
 import com.oceanbase.odc.plugin.task.api.partitionplan.invoker.drop.DropPartitionGenerator;
-import com.oceanbase.odc.plugin.task.api.partitionplan.invoker.drop.KeepMostRecentPartitionGenerator;
+import com.oceanbase.odc.plugin.task.api.partitionplan.invoker.drop.KeepMostLatestPartitionGenerator;
 import com.oceanbase.odc.plugin.task.api.partitionplan.invoker.partitionname.PartitionNameGenerator;
 import com.oceanbase.odc.plugin.task.api.partitionplan.invoker.partitionname.SqlExprBasedPartitionNameGenerator;
 import com.oceanbase.odc.plugin.task.api.partitionplan.model.PartitionPlanVariableKey;
@@ -273,7 +273,7 @@ public class OBMySQLAutoPartitionExtensionPointTest {
 
     private Map<String, Object> getDropPartitionParameters(int keepCount) {
         Map<String, Object> parameters = new HashMap<>();
-        parameters.put(KeepMostRecentPartitionGenerator.KEEP_RECENT_COUNT_KEY, keepCount);
+        parameters.put(KeepMostLatestPartitionGenerator.KEEP_LATEST_COUNT_KEY, keepCount);
         return parameters;
     }
 

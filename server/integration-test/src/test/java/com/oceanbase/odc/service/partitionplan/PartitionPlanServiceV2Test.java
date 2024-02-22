@@ -51,7 +51,7 @@ import com.oceanbase.odc.metadb.partitionplan.PartitionPlanTablePartitionKeyRepo
 import com.oceanbase.odc.metadb.partitionplan.PartitionPlanTableRepository;
 import com.oceanbase.odc.plugin.task.api.partitionplan.datatype.TimeDataType;
 import com.oceanbase.odc.plugin.task.api.partitionplan.invoker.create.PartitionExprGenerator;
-import com.oceanbase.odc.plugin.task.api.partitionplan.invoker.drop.KeepMostRecentPartitionGenerator;
+import com.oceanbase.odc.plugin.task.api.partitionplan.invoker.drop.KeepMostLatestPartitionGenerator;
 import com.oceanbase.odc.plugin.task.api.partitionplan.invoker.partitionname.SqlExprBasedPartitionNameGenerator;
 import com.oceanbase.odc.plugin.task.api.partitionplan.model.PartitionPlanVariableKey;
 import com.oceanbase.odc.plugin.task.api.partitionplan.model.SqlExprBasedGeneratorConfig;
@@ -524,7 +524,7 @@ public class PartitionPlanServiceV2Test extends ServiceTestEnv {
 
     private Map<String, Object> getDropPartitionParameters(int keepCount) {
         Map<String, Object> parameters = new HashMap<>();
-        parameters.put(KeepMostRecentPartitionGenerator.KEEP_RECENT_COUNT_KEY, keepCount);
+        parameters.put(KeepMostLatestPartitionGenerator.KEEP_LATEST_COUNT_KEY, keepCount);
         return parameters;
     }
 

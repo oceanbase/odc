@@ -17,6 +17,7 @@ package com.oceanbase.odc.service.partitionplan.model;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -53,7 +54,7 @@ import lombok.Setter;
 public class PartitionPlanDBTable extends DBTable {
 
     private DialectType dialectType;
-    private Set<PartitionPlanStrategy> strategies;
+    private Set<PartitionPlanStrategy> strategies = new HashSet<>();
 
     public boolean isContainsCreateStrategy() {
         return CollectionUtils.containsAny(this.strategies, PartitionPlanStrategy.CREATE);
