@@ -27,14 +27,19 @@ import org.flowable.engine.delegate.DelegateExecution;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import com.oceanbase.odc.common.json.JsonUtils;
+import com.oceanbase.odc.core.flow.exception.BaseFlowException;
+import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.core.shared.constant.FlowStatus;
 import com.oceanbase.odc.core.shared.constant.TaskType;
 import com.oceanbase.odc.metadb.task.JobEntity;
+import com.oceanbase.odc.metadb.task.TaskEntity;
 import com.oceanbase.odc.service.connection.model.ConnectProperties;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.datasecurity.DataMaskingService;
+import com.oceanbase.odc.service.flow.exception.ServiceTaskError;
 import com.oceanbase.odc.service.flow.task.model.DatabaseChangeParameters;
 import com.oceanbase.odc.service.flow.task.model.DatabaseChangeResult;
+import com.oceanbase.odc.service.flow.task.model.RollbackPlanTaskResult;
 import com.oceanbase.odc.service.flow.util.FlowTaskUtil;
 import com.oceanbase.odc.service.objectstorage.ObjectStorageFacade;
 import com.oceanbase.odc.service.objectstorage.model.ObjectMetadata;
@@ -104,24 +109,51 @@ public class DatabaseChangeRuntimeFlowableTaskCopied extends BaseODCFlowTaskDele
 
     @Override
     protected DatabaseChangeResult start(Long taskId, TaskService taskService, DelegateExecution execution)
-            throws JobException {
-        log.info("Database change task starts, taskId={}, activityId={}", taskId, execution.getCurrentActivityId());
-        JobDefinition jd = buildJobDefinition(execution);
-        this.jobId = jobScheduler.scheduleJobNow(jd);
-        taskService.updateJobId(taskId, this.jobId);
-        log.info("Database change task scheduled, taskId={}, jobId={}", taskId, this.jobId);
+            throws Exception {
+        DatabaseChangeResult result;
         try {
+            log.info("Database change task starts, taskId={}, activityId={}", taskId, execution.getCurrentActivityId());
+            taskService.start(taskId);
+            TaskEntity taskEntity = taskService.detail(taskId);
+            Verify.notNull(taskEntity, "taskEntity");
+            RollbackPlanTaskResult rollbackPlanTaskResult = null;
+            result = JsonUtils.fromJson(taskEntity.getResultJson(), DatabaseChangeResult.class);
+            if (result != null) {
+                rollbackPlanTaskResult = result.getRollbackPlanResult();
+            }
+
+            JobDefinition jobDefinition = buildJobDefinition(execution);
+            this.jobId = jobScheduler.scheduleJobNow(jobDefinition);
+            taskService.updateJobId(taskId, jobId);
+            log.info("Database change task is scheduled, taskId={}, jobId={}", taskId, this.jobId);
             jobScheduler.await(this.jobId, FlowTaskUtil.getExecutionExpirationIntervalMillis(execution).intValue(),
                     TimeUnit.MILLISECONDS);
+
+            JobEntity jobEntity = taskFrameworkService.find(this.jobId);
+            result = JsonUtils.fromJson(jobEntity.getResultJson(), DatabaseChangeResult.class);
+            result.setRollbackPlanResult(rollbackPlanTaskResult);
+            if (jobEntity.getStatus() == JobStatus.DONE) {
+                isSuccessful = true;
+                taskService.succeed(taskId, result);
+            } else {
+                if (jobEntity.getStatus() == JobStatus.CANCELED) {
+                    isCanceled = true;
+                } else {
+                    isFailure = true;
+                }
+                taskService.fail(taskId, jobEntity.getProgressPercentage(), result);
+            }
+            log.info("Database change task ends, taskId={}, jobId={}, jobStatus={}", taskId, this.jobId,
+                    jobEntity.getStatus());
         } catch (Exception e) {
-            log.warn("Exception occurs while waiting job finished:", e);
+            log.error("Error occurs while database change task executing", e);
+            if (e instanceof BaseFlowException) {
+                throw e;
+            } else {
+                throw new ServiceTaskError(e);
+            }
         }
-        JobEntity jobEntity = taskFrameworkService.find(this.jobId);
-        isSuccessful = jobEntity.getStatus() == JobStatus.DONE;
-        isFailure = !isSuccessful;
-        log.info("Database change task ends, taskId={}, jobId={}, jobStatus={}", taskId, this.jobId,
-                jobEntity.getStatus());
-        return JsonUtils.fromJson(jobEntity.getResultJson(), DatabaseChangeResult.class);
+        return result;
     }
 
     @Override
