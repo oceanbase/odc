@@ -99,8 +99,6 @@ public class SqlUtils {
         return split(dialectType, processor, sql, false);
     }
 
-
-
     /**
      * for executing batch sql, and we need to split sql script by delimiter
      *
