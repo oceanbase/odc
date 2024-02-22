@@ -28,6 +28,7 @@ import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.constant.TaskErrorStrategy;
 import com.oceanbase.odc.core.shared.exception.UnexpectedException;
 import com.oceanbase.odc.core.shared.model.TableIdentity;
+import com.oceanbase.odc.core.sql.split.OffsetString;
 import com.oceanbase.odc.core.sql.split.SqlCommentProcessor;
 import com.oceanbase.odc.service.common.util.SqlUtils;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
@@ -81,10 +82,8 @@ public class OnlineSchemaChangeParameters implements Serializable, TaskParameter
 
     public List<OnlineSchemaChangeScheduleTaskParameters> generateSubTaskParameters(ConnectionConfig connectionConfig,
             String schema) {
-        SqlCommentProcessor processor = new SqlCommentProcessor(connectionConfig.getDialectType(),
-            false, false, false);
         List<String> sqls = SqlUtils.split(connectionConfig.getDialectType(),
-            SqlUtils.removeComments(processor, this.sqlContent), this.delimiter);
+            this.sqlContent, this.delimiter, true);
         OscFactoryWrapper oscFactoryWrapper = OscFactoryWrapperGenerator.generate(connectionConfig.getDialectType());
         try (SubTaskParameterFactory subTaskParameterFactory =
                 new SubTaskParameterFactory(connectionConfig, schema, oscFactoryWrapper)) {
