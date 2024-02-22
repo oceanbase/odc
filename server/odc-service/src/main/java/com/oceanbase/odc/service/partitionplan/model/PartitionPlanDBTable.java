@@ -57,10 +57,16 @@ public class PartitionPlanDBTable extends DBTable {
     private Set<PartitionPlanStrategy> strategies = new HashSet<>();
 
     public boolean isContainsCreateStrategy() {
+        if (CollectionUtils.isEmpty(this.strategies)) {
+            return false;
+        }
         return CollectionUtils.containsAny(this.strategies, PartitionPlanStrategy.CREATE);
     }
 
     public boolean isContainsDropStrategy() {
+        if (CollectionUtils.isEmpty(this.strategies)) {
+            return false;
+        }
         return CollectionUtils.containsAny(this.strategies, PartitionPlanStrategy.DROP);
     }
 
