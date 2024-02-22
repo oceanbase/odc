@@ -42,6 +42,7 @@ public class PartitionPlanConfig implements Serializable, TaskParameters {
     private boolean enabled;
     private Long databaseId;
     private Long flowInstanceId;
+    private Long taskId;
     private Long timeoutMillis;
     /**
      * (~, 0] -> ignore any errors (0, ~) -> meaningful value

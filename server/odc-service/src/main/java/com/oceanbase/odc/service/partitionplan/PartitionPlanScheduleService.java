@@ -153,6 +153,7 @@ public class PartitionPlanScheduleService {
         if (dropScheduleEntity == null) {
             createPartitionPlanTables(partitionPlanConfig.getPartitionTableConfigs(),
                     partitionPlanEntity.getId(), createScheduleEntity.getId(),
+                    partitionPlanConfig.getFlowInstanceId(), partitionPlanConfig.getTaskId(),
                     partitionPlanConfig.getMaxErrors(), partitionPlanConfig.getTimeoutMillis());
             return;
         }
@@ -173,9 +174,11 @@ public class PartitionPlanScheduleService {
                 }).collect(Collectors.groupingBy(cfg -> cfg.getPartitionKeyConfigs().get(0).getStrategy()));
         createPartitionPlanTables(strategy2TblCfgs.get(PartitionPlanStrategy.CREATE),
                 partitionPlanEntity.getId(), createScheduleEntity.getId(),
+                partitionPlanConfig.getFlowInstanceId(), partitionPlanConfig.getTaskId(),
                 partitionPlanConfig.getMaxErrors(), partitionPlanConfig.getTimeoutMillis());
         createPartitionPlanTables(strategy2TblCfgs.get(PartitionPlanStrategy.DROP),
                 partitionPlanEntity.getId(), dropScheduleEntity.getId(),
+                partitionPlanConfig.getFlowInstanceId(), partitionPlanConfig.getTaskId(),
                 partitionPlanConfig.getMaxErrors(), partitionPlanConfig.getTimeoutMillis());
     }
 
@@ -325,7 +328,8 @@ public class PartitionPlanScheduleService {
     }
 
     private void createPartitionPlanTables(List<PartitionPlanTableConfig> partitionPlanTableConfigs,
-            Long partitionPlanId, Long scheduleId, Integer maxErrors, Long timeoutMillis) {
+            Long partitionPlanId, Long scheduleId,
+            Long flowInstanceId, Long taskId, Integer maxErrors, Long timeoutMillis) {
         List<PartitionPlanTableEntity> ppts = partitionPlanTableConfigs.stream()
                 .map(t -> modelToEntity(t, partitionPlanId, scheduleId)).collect(Collectors.toList());
         Map<String, Long> tblName2Id = this.partitionPlanTableRepository.batchCreate(ppts).stream()
@@ -339,6 +343,8 @@ public class PartitionPlanScheduleService {
         parameter.setMaxErrors(maxErrors);
         parameter.setTimeoutMillis(timeoutMillis);
         parameter.setId(partitionPlanId);
+        parameter.setTaskId(taskId);
+        parameter.setFlowInstanceId(flowInstanceId);
         parameter.setPartitionTableConfigs(ppts.stream().map(i -> {
             PartitionPlanTableConfig cfg = new PartitionPlanTableConfig();
             cfg.setId(i.getId());

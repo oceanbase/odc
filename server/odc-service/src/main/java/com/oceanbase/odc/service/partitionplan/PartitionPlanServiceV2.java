@@ -180,9 +180,13 @@ public class PartitionPlanServiceV2 {
         }).collect(Collectors.toList());
     }
 
-    public List<PartitionPlanPreViewResp> preview(@NonNull String sessionId,
+    public List<PartitionPlanPreViewResp> generatePartitionDdl(@NonNull String sessionId,
             @NonNull List<PartitionPlanTableConfig> tableConfigs, Boolean onlyForPartitionName) {
-        ConnectionSession connectionSession = sessionService.nullSafeGet(sessionId, true);
+        return generatePartitionDdl(sessionService.nullSafeGet(sessionId, true), tableConfigs, onlyForPartitionName);
+    }
+
+    public List<PartitionPlanPreViewResp> generatePartitionDdl(@NonNull ConnectionSession connectionSession,
+            @NonNull List<PartitionPlanTableConfig> tableConfigs, Boolean onlyForPartitionName) {
         DialectType dialectType = connectionSession.getDialectType();
         AutoPartitionExtensionPoint extensionPoint = TaskPluginUtil.getAutoPartitionExtensionPoint(dialectType);
         if (extensionPoint == null) {

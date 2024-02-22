@@ -387,7 +387,8 @@ public class PartitionPlanServiceV2Test extends ServiceTestEnv {
         PartitionPlanKeyConfig datekeyCreate1 = getMysqldatekeyCreateConfig(generateCount);
         p2.setPartitionKeyConfigs(Arrays.asList(c3Create1, datekeyCreate1));
 
-        List<PartitionPlanPreViewResp> actual = this.partitionPlanService.preview("id", Arrays.asList(p1, p2), false);
+        List<PartitionPlanPreViewResp> actual = this.partitionPlanService.generatePartitionDdl(
+                "id", Arrays.asList(p1, p2), false);
         PartitionPlanPreViewResp r1 = new PartitionPlanPreViewResp();
         r1.setSqls(Collections.singletonList(String.format("ALTER TABLE %s.%s ADD PARTITION (\n"
                 + "\tPARTITION `p20240127` VALUES LESS THAN (20220802,'2024-01-26'),\n"
@@ -437,7 +438,8 @@ public class PartitionPlanServiceV2Test extends ServiceTestEnv {
         PartitionPlanKeyConfig datekeyCreate1 = getMysqldatekeyCreateConfig(generateCount);
         p2.setPartitionKeyConfigs(Arrays.asList(c3Create1, datekeyCreate1));
 
-        List<PartitionPlanPreViewResp> actual = this.partitionPlanService.preview("id", Arrays.asList(p1, p2), true);
+        List<PartitionPlanPreViewResp> actual = this.partitionPlanService.generatePartitionDdl(
+                "id", Arrays.asList(p1, p2), true);
         PartitionPlanPreViewResp r1 = new PartitionPlanPreViewResp();
         r1.setPartitionName("p20240126");
         r1.setTableName(MYSQL_OVERLAP_RANGE_TABLE_NAME);
