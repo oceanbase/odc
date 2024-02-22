@@ -26,11 +26,16 @@ import org.quartz.JobExecutionContext;
 
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.core.session.ConnectionSession;
+import com.oceanbase.odc.core.shared.constant.TaskType;
 import com.oceanbase.odc.metadb.schedule.ScheduleEntity;
 import com.oceanbase.odc.service.common.util.SpringContextUtil;
 import com.oceanbase.odc.service.connection.database.DatabaseService;
 import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
+import com.oceanbase.odc.service.flow.FlowInstanceService;
+import com.oceanbase.odc.service.flow.model.CreateFlowInstanceReq;
+import com.oceanbase.odc.service.flow.model.FlowTaskExecutionStrategy;
+import com.oceanbase.odc.service.flow.task.model.DatabaseChangeParameters;
 import com.oceanbase.odc.service.partitionplan.PartitionPlanScheduleService;
 import com.oceanbase.odc.service.partitionplan.PartitionPlanServiceV2;
 import com.oceanbase.odc.service.partitionplan.PartitionPlanTaskTraceContextHolder;
@@ -55,18 +60,15 @@ public class PartitionPlanJob implements OdcJob {
     private final ScheduleService scheduleService;
     private final PartitionPlanServiceV2 partitionPlanService;
     private final DatabaseService databaseService;
+    private final FlowInstanceService flowInstanceService;
     private final PartitionPlanScheduleService partitionPlanScheduleService;
 
     public PartitionPlanJob() {
         this.scheduleService = SpringContextUtil.getBean(ScheduleService.class);
         this.databaseService = SpringContextUtil.getBean(DatabaseService.class);
+        this.flowInstanceService = SpringContextUtil.getBean(FlowInstanceService.class);
         this.partitionPlanScheduleService = SpringContextUtil.getBean(PartitionPlanScheduleService.class);
         this.partitionPlanService = SpringContextUtil.getBean(PartitionPlanServiceV2.class);
-    }
-
-    @Override
-    public void interrupt() {
-        throw new UnsupportedOperationException();
     }
 
     @Override
@@ -74,6 +76,11 @@ public class PartitionPlanJob implements OdcJob {
 
     @Override
     public void after(JobExecutionContext context) {}
+
+    @Override
+    public void interrupt() {
+        throw new UnsupportedOperationException();
+    }
 
     @Override
     public void execute(JobExecutionContext context) {
@@ -114,6 +121,8 @@ public class PartitionPlanJob implements OdcJob {
             connectionSession = new DefaultConnectSessionFactory(conn).generateSession();
             List<PartitionPlanPreViewResp> resps = this.partitionPlanService.generatePartitionDdl(
                     connectionSession, tableConfigs, false);
+            submitSubDatabaseChangeTask(paramemters.getFlowInstanceId(), target.getDatabaseId(), resps.stream()
+                    .flatMap(i -> i.getSqls().stream()).collect(Collectors.toList()), target.getTimeoutMillis());
         } catch (Exception e) {
             log.warn("Failed to execute a partition plan task", e);
         } finally {
@@ -126,6 +135,25 @@ public class PartitionPlanJob implements OdcJob {
             }
             PartitionPlanTaskTraceContextHolder.clear();
         }
+    }
+
+    private void submitSubDatabaseChangeTask(Long parentFlowInstanceId,
+            Long databaseId, List<String> sqls, long timeoutMillis) {
+        DatabaseChangeParameters taskParameters = new DatabaseChangeParameters();
+        taskParameters.setErrorStrategy("ABORT");
+        StringBuilder sqlContent = new StringBuilder();
+        for (String sql : sqls) {
+            sqlContent.append(sql).append("\n");
+        }
+        taskParameters.setSqlContent(sqlContent.toString());
+        taskParameters.setTimeoutMillis(timeoutMillis);
+        CreateFlowInstanceReq flowInstanceReq = new CreateFlowInstanceReq();
+        flowInstanceReq.setParameters(taskParameters);
+        flowInstanceReq.setTaskType(TaskType.ASYNC);
+        flowInstanceReq.setDatabaseId(databaseId);
+        flowInstanceReq.setParentFlowInstanceId(parentFlowInstanceId);
+        flowInstanceReq.setExecutionStrategy(FlowTaskExecutionStrategy.AUTO);
+        this.flowInstanceService.createWithoutApprovalNode(flowInstanceReq);
     }
 
 }
