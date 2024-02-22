@@ -41,9 +41,9 @@ import lombok.extern.slf4j.Slf4j;
 public class PartitionPlanRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Void> {
 
     private volatile boolean isSuccessful = false;
-    private volatile boolean isFailure = false;
+    private volatile boolean             isFailure = false;
     @Autowired
-    private PartitionPlanScheduleService partitionPlanService;
+    private PartitionPlanScheduleService partitionPlanScheduleService;
 
     @Override
     protected Void start(Long taskId, TaskService taskService, DelegateExecution execution)
@@ -55,7 +55,7 @@ public class PartitionPlanRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Vo
             PartitionPlanConfig parameters = FlowTaskUtil.getPartitionPlanParameter(execution);
             parameters.setFlowInstanceId(getFlowInstanceId());
             parameters.setTaskId(taskId);
-            this.partitionPlanService.submit(parameters);
+            this.partitionPlanScheduleService.submit(parameters);
             this.isFailure = false;
             this.isSuccessful = true;
             return null;
