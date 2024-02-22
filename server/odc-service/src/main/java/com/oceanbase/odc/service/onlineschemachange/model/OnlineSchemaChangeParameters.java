@@ -80,7 +80,7 @@ public class OnlineSchemaChangeParameters implements Serializable, TaskParameter
 
     public List<OnlineSchemaChangeScheduleTaskParameters> generateSubTaskParameters(ConnectionConfig connectionConfig,
             String schema) {
-        List<String> sqls = SqlUtils.split(connectionConfig.getDialectType(), this.sqlContent, this.delimiter);
+        List<String> sqls = SqlUtils.split(connectionConfig.getDialectType(), this.sqlContent, this.delimiter, true);
         OscFactoryWrapper oscFactoryWrapper = OscFactoryWrapperGenerator.generate(connectionConfig.getDialectType());
         try (SubTaskParameterFactory subTaskParameterFactory =
                 new SubTaskParameterFactory(connectionConfig, schema, oscFactoryWrapper)) {

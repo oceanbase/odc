@@ -82,7 +82,7 @@ public class OnlineSchemaChangeValidator {
                 connectionService.getForConnectionSkipPermissionCheck(createReq.getConnectionId());
         connectionConfig.setDefaultSchema(createReq.getDatabaseName());
         List<String> sqls = SqlUtils.split(connectionConfig.getDialectType(), parameter.getSqlContent(),
-                parameter.getDelimiter());;
+                parameter.getDelimiter(), true);
 
         PreConditions.notEmpty(sqls, "Parser sqls is empty");
         oscConnectionConfigValidator.valid(connectionConfig);
