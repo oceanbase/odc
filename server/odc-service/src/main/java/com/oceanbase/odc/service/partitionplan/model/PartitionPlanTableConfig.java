@@ -19,6 +19,8 @@ import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.commons.collections4.CollectionUtils;
+
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
@@ -44,10 +46,16 @@ public class PartitionPlanTableConfig implements Serializable {
     private Map<String, Object> partitionNameInvokerParameters;
 
     public boolean isContainsCreateStrategy() {
+        if (CollectionUtils.isEmpty(this.partitionKeyConfigs)) {
+            return false;
+        }
         return this.partitionKeyConfigs.stream().anyMatch(i -> i.getStrategy() == PartitionPlanStrategy.CREATE);
     }
 
     public boolean isContainsDropStrategy() {
+        if (CollectionUtils.isEmpty(this.partitionKeyConfigs)) {
+            return false;
+        }
         return this.partitionKeyConfigs.stream().anyMatch(i -> i.getStrategy() == PartitionPlanStrategy.DROP);
     }
 

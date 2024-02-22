@@ -29,6 +29,7 @@ import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.metadb.schedule.ScheduleEntity;
 import com.oceanbase.odc.service.common.util.SpringContextUtil;
 import com.oceanbase.odc.service.connection.database.DatabaseService;
+import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.partitionplan.PartitionPlanScheduleService;
 import com.oceanbase.odc.service.partitionplan.PartitionPlanServiceV2;
@@ -107,7 +108,9 @@ public class PartitionPlanJob implements OdcJob {
                 log.warn("Failed to get any enabled partition plan tables, partitionPlanId={}", partitionPlanId);
                 return;
             }
-            ConnectionConfig conn = this.databaseService.findDataSourceForConnectById(paramemters.getDatabaseId());
+            Database database = this.databaseService.getBasicSkipPermissionCheck(target.getDatabaseId());
+            ConnectionConfig conn = this.databaseService.findDataSourceForConnectById(target.getDatabaseId());
+            conn.setDefaultSchema(database.getName());
             connectionSession = new DefaultConnectSessionFactory(conn).generateSession();
             List<PartitionPlanPreViewResp> resps = this.partitionPlanService.generatePartitionDdl(
                     connectionSession, tableConfigs, false);
