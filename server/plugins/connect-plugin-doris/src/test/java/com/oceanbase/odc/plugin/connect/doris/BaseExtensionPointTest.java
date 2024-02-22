@@ -22,7 +22,6 @@ import java.sql.SQLException;
 import org.junit.Assert;
 
 import com.oceanbase.odc.test.database.TestDBConfigurations;
-import com.oceanbase.odc.test.database.TestDBType;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -46,11 +45,9 @@ public class BaseExtensionPointTest {
         }
     }
 
-    protected Connection getConnection(TestDBType type) {
+    protected Connection getConnection() {
         try {
-            return TestDBConfigurations.getInstance(type)
-                    .getTestDorisConfiguration().getDataSource().getConnection();
-
+            return TestDBConfigurations.getInstance().getTestDorisConfiguration().getDataSource().getConnection();
         } catch (SQLException exception) {
             Assert.assertNull("Get connection from datasource occur exception " + exception.getMessage(), exception);
             return null;
