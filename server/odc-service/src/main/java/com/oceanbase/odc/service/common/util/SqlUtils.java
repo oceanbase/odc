@@ -86,9 +86,14 @@ public class SqlUtils {
     }
 
     public static List<OffsetString> splitWithOffset(DialectType dialectType, String sql, String delimiter) {
+        return splitWithOffset(dialectType, sql, delimiter, false);
+    }
+
+    public static List<OffsetString> splitWithOffset(DialectType dialectType, String sql, String delimiter,
+            boolean removeCommentPrefix) {
         SqlCommentProcessor processor = new SqlCommentProcessor(dialectType, true, true);
         processor.setDelimiter(delimiter);
-        return split(dialectType, processor, sql, false);
+        return split(dialectType, processor, sql, removeCommentPrefix);
     }
 
     /**
