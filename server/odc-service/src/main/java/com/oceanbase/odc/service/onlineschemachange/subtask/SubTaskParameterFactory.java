@@ -24,6 +24,7 @@ import com.oceanbase.odc.core.session.ConnectionSessionUtil;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.onlineschemachange.ddl.DdlUtils;
 import com.oceanbase.odc.service.onlineschemachange.ddl.OscFactoryWrapper;
+import com.oceanbase.odc.service.onlineschemachange.ddl.ReplaceResult;
 import com.oceanbase.odc.service.onlineschemachange.ddl.TableNameDescriptor;
 import com.oceanbase.odc.service.onlineschemachange.ddl.TableNameDescriptorFactory;
 import com.oceanbase.odc.service.onlineschemachange.model.OnlineSchemaChangeScheduleTaskParameters;
@@ -80,8 +81,10 @@ public class SubTaskParameterFactory implements AutoCloseable {
             TableNameDescriptor tableNameDescriptor = tableNameDescriptorFactory.getTableNameDescriptor(tableName);
             String originTableCreateDdl = DdlUtils.queryOriginTableCreateDdl(session, tableName);
             taskParameter.setOriginTableCreateDdl(originTableCreateDdl);
-            taskParameter.setNewTableCreateDdl(DdlUtils.replaceTableName(originTableCreateDdl,
-                    tableNameDescriptor.getNewTableName(), session.getDialectType(), OnlineSchemaChangeSqlType.CREATE));
+            ReplaceResult replaceResult = DdlUtils.replaceTableName(originTableCreateDdl,
+                    tableNameDescriptor.getNewTableName(), session.getDialectType(), OnlineSchemaChangeSqlType.CREATE);
+            taskParameter.setNewTableCreateDdl(replaceResult.getNewSql());
+            taskParameter.setReplaceResult(replaceResult);
 
             populateTaskParameter(tableNameDescriptor, taskParameter, tableName);
         } else {
@@ -90,9 +93,11 @@ public class SubTaskParameterFactory implements AutoCloseable {
             String originTableCreateDdl = DdlUtils.queryOriginTableCreateDdl(session, tableName);
             taskParameter.setOriginTableCreateDdl(originTableCreateDdl);
             TableNameDescriptor tableNameDescriptor = tableNameDescriptorFactory.getTableNameDescriptor(tableName);
-            taskParameter.setNewTableCreateDdl(DdlUtils.replaceTableName(sql,
-                    tableNameDescriptor.getNewTableName(), session.getDialectType(), OnlineSchemaChangeSqlType.CREATE));
+            ReplaceResult replaceResult = DdlUtils.replaceTableName(sql,
+                    tableNameDescriptor.getNewTableName(), session.getDialectType(), OnlineSchemaChangeSqlType.CREATE);
+            taskParameter.setNewTableCreateDdl(replaceResult.getNewSql());
             taskParameter.setNewTableCreateDdlForDisplay(sql);
+            taskParameter.setReplaceResult(replaceResult);
 
             populateTaskParameter(tableNameDescriptor, taskParameter, tableName);
         }

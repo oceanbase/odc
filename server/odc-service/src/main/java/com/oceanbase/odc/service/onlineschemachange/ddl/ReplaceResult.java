@@ -15,19 +15,23 @@
  */
 package com.oceanbase.odc.service.onlineschemachange.ddl;
 
+import java.util.ArrayList;
 import java.util.List;
 
-import com.oceanbase.odc.service.onlineschemachange.model.OnlineSchemaChangeSqlType;
+import lombok.Data;
 
-public interface TableNameReplacer {
+/**
+ * @author yaobin
+ * @date 2024-02-20
+ * @since 4.2.4
+ */
+@Data
+public class ReplaceResult {
 
-    ReplaceResult replaceCreateStmt(String originCreateStmt, String newTableName);
+    private String oldSql;
 
-    ReplaceResult replaceAlterStmt(String originAlterStmt, String newTableName);
+    private String newSql;
 
-    ReplaceResult replaceStmtValue(OnlineSchemaChangeSqlType sqlType, String originSql,
-            List<ReplaceElement> replaceElements);
-
-    String replaceCreateIndexStmt(String originCreateIndexStmt, String newTableName);
+    private List<ReplaceElement> replaceElements = new ArrayList<>();
 
 }
