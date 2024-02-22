@@ -83,7 +83,7 @@ public class OnlineSchemaChangeValidator {
                 connectionService.getForConnectionSkipPermissionCheck(createReq.getConnectionId());
         connectionConfig.setDefaultSchema(createReq.getDatabaseName());
         List<String> sqls = SqlUtils.splitWithOffset(connectionConfig.getDialectType(),
-            parameter.getSqlContent() + "\n",
+                parameter.getSqlContent() + "\n",
                 parameter.getDelimiter(), true).stream().map(OffsetString::getStr).collect(
                         Collectors.toList());
 
