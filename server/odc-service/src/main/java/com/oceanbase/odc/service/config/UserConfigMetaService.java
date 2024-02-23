@@ -15,6 +15,7 @@
  */
 package com.oceanbase.odc.service.config;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -28,19 +29,23 @@ import com.oceanbase.odc.service.config.model.ConfigurationMeta;
 
 @Service
 public class UserConfigMetaService {
-    private Map<String, ConfigurationMeta> keyToConfigMeta = new HashMap<>();
+    private Map<String, ConfigurationMeta> keyToConfigMetaMap = new HashMap<>();
 
     @PostConstruct
     public void init() {
         List<ConfigurationMeta> configurations =
                 YamlUtils.fromYamlList("user-config-meta.yml", ConfigurationMeta.class);
         for (ConfigurationMeta configuration : configurations) {
-            keyToConfigMeta.put(configuration.getKey(), configuration);
+            keyToConfigMetaMap.put(configuration.getKey(), configuration);
         }
     }
 
+    List<ConfigurationMeta> listAllConfigMetas() {
+        return new ArrayList<>(keyToConfigMetaMap.values());
+    }
+
     ConfigurationMeta getConfigMeta(String key) {
-        ConfigurationMeta configurationMeta = keyToConfigMeta.get(key);
+        ConfigurationMeta configurationMeta = keyToConfigMetaMap.get(key);
         if (configurationMeta == null) {
             throw new IllegalArgumentException("Invalid configuration key: " + key);
         }

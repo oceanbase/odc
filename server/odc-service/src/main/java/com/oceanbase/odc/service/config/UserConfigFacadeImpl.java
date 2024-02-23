@@ -15,9 +15,17 @@
  */
 package com.oceanbase.odc.service.config;
 
+import java.util.Map;
+import java.util.Objects;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import com.github.benmanes.caffeine.cache.Caffeine;
+import com.github.benmanes.caffeine.cache.LoadingCache;
+import com.oceanbase.odc.service.config.model.Configuration;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 
 @Service
@@ -27,28 +35,43 @@ public class UserConfigFacadeImpl implements UserConfigFacade {
     @Autowired
     private AuthenticationFacade authenticationFacade;
 
+    private final LoadingCache<Long, Map<String, Configuration>> userIdToConfigurationsMap = Caffeine.newBuilder()
+            .maximumSize(100).expireAfterWrite(60, TimeUnit.SECONDS)
+            .build(this::getUserConfigurations);
+
     @Override
     public String getUserConfig(String key) {
-        return userConfigService.getUserConfig(authenticationFacade.currentUserId(), key).getValue();
+        long currentUserId = authenticationFacade.currentUserId();
+        Map<String, Configuration> userIdToConfigurations = userIdToConfigurationsMap.get(currentUserId);
+        Configuration configuration = userIdToConfigurations.get(key);
+        if (Objects.isNull(configuration)) {
+            throw new IllegalStateException("User configuration not found: " + key);
+        }
+        return configuration.getValue();
     }
 
     @Override
     public String getDefaultDelimiter() {
-        return null;
+        return getUserConfig(UserConfigKeys.DEFAULT_DELIMITER);
     }
 
     @Override
     public String getMysqlAutoCommitMode() {
-        return null;
+        return getUserConfig(UserConfigKeys.DEFAULT_MYSQL_AUTO_COMMIT_MODE);
     }
 
     @Override
     public String getOracleAutoCommitMode() {
-        return null;
+        return getUserConfig(UserConfigKeys.DEFAULT_ORACLE_AUTO_COMMIT_MODE);
     }
 
     @Override
     public Integer getDefaultQueryLimit() {
-        return null;
+        return Integer.parseInt(getUserConfig(UserConfigKeys.DEFAULT_QUERY_LIMIT));
+    }
+
+    private Map<String, Configuration> getUserConfigurations(Long userId) {
+        return userConfigService.listUserConfigurations(userId).stream()
+                .collect(Collectors.toMap(Configuration::getKey, c -> c));
     }
 }

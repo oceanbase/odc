@@ -42,10 +42,10 @@ public class UserConfigDAO {
     public int batchUpsert(List<UserConfigEntity> entities) {
         PreConditions.notEmpty(entities, "entities");
         String sql = "INSERT INTO config_user_configuration(user_id, `key`, `value`, description)"
-                + " VALUES(?, ?, ?, ?) ON DUPLICATE KEY UPDATE `value` = ?, description = ?";
+                + " VALUES(?, ?, ?, ?) ON DUPLICATE KEY UPDATE `value` = ?";
         int[] rets = jdbcTemplate.batchUpdate(sql, entities.stream().map(
-                entity -> new Object[] {entity.getUserId(), entity.getKey(), entity.getValue(), entity.getDescription(),
-                        entity.getValue(), entity.getDescription()})
+                entity -> new Object[] {entity.getUserId(), entity.getKey(), entity.getValue(),
+                        entity.getDescription(), entity.getValue()})
                 .collect(Collectors.toList()));
         return Arrays.stream(rets).sum();
     }

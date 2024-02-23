@@ -13,7 +13,7 @@
   description: ''
 - id: 2
   category: 'user'
-  key: 'odc.sqlexecute.default.mysqlAutoCommitMode'
+  key: 'odc.sqlexecute.default.oracleAutoCommitMode'
   type: 'string'
   max_value: ~
   min_value: ~

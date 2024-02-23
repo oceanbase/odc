@@ -17,6 +17,8 @@ package com.oceanbase.odc.service.config.model;
 
 import javax.validation.constraints.NotBlank;
 
+import com.oceanbase.odc.metadb.config.UserConfigEntity;
+
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -38,5 +40,17 @@ public class Configuration {
      * Config value
      */
     private String value;
+
+    public static Configuration of(UserConfigEntity entity) {
+        return new Configuration(entity.getKey(), entity.getValue());
+    }
+
+    public UserConfigEntity toEntity(Long userId) {
+        UserConfigEntity entity = new UserConfigEntity();
+        entity.setUserId(userId);
+        entity.setKey(this.key);
+        entity.setValue(this.value);
+        return entity;
+    }
 
 }
