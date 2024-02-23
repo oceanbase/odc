@@ -47,6 +47,13 @@ public class UserConfigDAOTest extends ServiceTestEnv {
     }
 
     @Test
+    public void queryByUserIdAndKey() {
+        userConfigDAO.batchUpsert(Arrays.asList(createEntity()));
+        UserConfigEntity entity = userConfigDAO.queryByUserIdAndKey(USER_ID, "key1");
+        Assert.assertEquals("value1", entity.getValue());
+    }
+
+    @Test
     public void batchUpsert_NotExists_Insert() {
         userConfigDAO.batchUpsert(Arrays.asList(createEntity()));
         Assert.assertEquals(1, JdbcTestUtils.countRowsInTable(jdbcTemplate, "config_user_configuration"));

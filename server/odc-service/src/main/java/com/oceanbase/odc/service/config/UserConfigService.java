@@ -16,7 +16,7 @@
 package com.oceanbase.odc.service.config;
 
 import java.util.ArrayList;
-import java.util.Collections;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -31,7 +31,9 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
 
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
+import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.metadb.config.UserConfigDAO;
+import com.oceanbase.odc.metadb.config.UserConfigEntity;
 import com.oceanbase.odc.service.config.model.Configuration;
 import com.oceanbase.odc.service.config.model.ConfigurationMeta;
 
@@ -50,6 +52,7 @@ public class UserConfigService {
     private UserConfigDAO userConfigDAO;
 
     private List<Configuration> defaultConfigurations;
+    private Map<String, ConfigurationMeta> configKeyToConfigMeta;
 
     @PostConstruct
     public void init() {
@@ -57,6 +60,8 @@ public class UserConfigService {
         this.defaultConfigurations = allConfigMetas.stream().map(
                 meta -> new Configuration(meta.getKey(), meta.getDefaultValue()))
                 .collect(Collectors.toList());
+        this.configKeyToConfigMeta = allConfigMetas.stream()
+                .collect(Collectors.toMap(ConfigurationMeta::getKey, e -> e));
         log.info("Default user configurations: {}", defaultConfigurations);
     }
 
@@ -80,10 +85,30 @@ public class UserConfigService {
     @Transactional(rollbackFor = Exception.class)
     public List<Configuration> updateUserConfigurations(@NotNull Long userId,
             @NotEmpty List<Configuration> configurations) {
-        return Collections.emptyList();
+        for (Configuration configuration : configurations) {
+            validateConfiguration(configuration);
+        }
+        List<UserConfigEntity> entities = configurations.stream()
+                .map(c -> c.toEntity(userId)).collect(Collectors.toList());
+        int affectRows = userConfigDAO.batchUpsert(entities);
+        log.info("Update user configurations, userId={}, affectRows={}, configurations={}",
+                userId, affectRows, configurations);
+        return listUserConfigurations(userId);
     }
 
     public Configuration updateUserConfiguration(@NotNull Long userId, @NotNull Configuration configuration) {
-        return configuration;
+        validateConfiguration(configuration);
+        UserConfigEntity entity = configuration.toEntity(userId);
+        int affectRows = userConfigDAO.batchUpsert(Arrays.asList(entity));
+        log.info("Update user configuration, userId={}, affectRows={}, configuration={}",
+                userId, affectRows, configuration);
+        UserConfigEntity stored = userConfigDAO.queryByUserIdAndKey(userId, configuration.getKey());
+        return Configuration.of(stored);
+    }
+
+    private void validateConfiguration(Configuration configuration) {
+        ConfigurationMeta meta = configKeyToConfigMeta.get(configuration.getKey());
+        PreConditions.notNull(meta, "Invalid configuration key: " + configuration.getKey());
+        ConfigValueValidator.validate(meta, configuration.getValue());
     }
 }

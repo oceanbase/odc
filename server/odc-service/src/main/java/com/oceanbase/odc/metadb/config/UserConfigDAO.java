@@ -39,6 +39,14 @@ public class UserConfigDAO {
         return jdbcTemplate.query(sql, new BeanPropertyRowMapper<>(UserConfigEntity.class), userId);
     }
 
+    public UserConfigEntity queryByUserIdAndKey(Long userId, String key) {
+        PreConditions.notNull(userId, "userId");
+        PreConditions.notBlank(key, "key");
+        String sql = "SELECT user_id, `key`, `value`, create_time, update_time, description"
+                + " FROM config_user_configuration WHERE user_id = ? AND `key` = ?";
+        return jdbcTemplate.queryForObject(sql, new BeanPropertyRowMapper<>(UserConfigEntity.class), userId, key);
+    }
+
     public int batchUpsert(List<UserConfigEntity> entities) {
         PreConditions.notEmpty(entities, "entities");
         String sql = "INSERT INTO config_user_configuration(user_id, `key`, `value`, description)"
