@@ -15,19 +15,18 @@
  */
 package com.oceanbase.odc.service.quartz;
 
-import org.quartz.JobExecutionContext;
 import org.quartz.JobKey;
 import org.quartz.Trigger;
 import org.quartz.listeners.TriggerListenerSupport;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import com.oceanbase.odc.metadb.schedule.ScheduleTaskEntity;
+import com.oceanbase.odc.metadb.schedule.ScheduleEntity;
 import com.oceanbase.odc.service.notification.Broker;
 import com.oceanbase.odc.service.notification.NotificationProperties;
 import com.oceanbase.odc.service.notification.helper.EventBuilder;
 import com.oceanbase.odc.service.notification.model.Event;
-import com.oceanbase.odc.service.schedule.ScheduleTaskService;
+import com.oceanbase.odc.service.schedule.ScheduleService;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -40,7 +39,7 @@ import lombok.extern.slf4j.Slf4j;
 public class OdcTriggerListener extends TriggerListenerSupport {
 
     @Autowired
-    private ScheduleTaskService scheduleTaskService;
+    private ScheduleService scheduleService;
     @Autowired
     private NotificationProperties notificationProperties;
     @Autowired
@@ -54,20 +53,14 @@ public class OdcTriggerListener extends TriggerListenerSupport {
     }
 
     @Override
-    public void triggerFired(Trigger trigger, JobExecutionContext context) {
-        log.info("triggerfired, trigger:" + trigger);
-    }
-
-    @Override
     public void triggerMisfired(Trigger trigger) {
-        log.info("triggermisfired, trigger:" + trigger);
         if (!notificationProperties.isEnabled()) {
             return;
         }
         try {
             JobKey jobKey = trigger.getJobKey();
-            ScheduleTaskEntity scheduleTask = scheduleTaskService.nullSafeGetById(Long.parseLong(jobKey.getName()));
-            Event event = eventBuilder.ofFailedSchedule(scheduleTask);
+            ScheduleEntity schedule = scheduleService.nullSafeGetById(Long.parseLong(jobKey.getName()));
+            Event event = eventBuilder.ofFailedSchedule(schedule);
             broker.enqueueEvent(event);
         } catch (Exception e) {
             log.warn("Failed to enqueue event.", e);

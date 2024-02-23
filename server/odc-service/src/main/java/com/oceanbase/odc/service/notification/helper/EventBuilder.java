@@ -51,7 +51,6 @@ import com.oceanbase.odc.metadb.flow.FlowInstanceEntity;
 import com.oceanbase.odc.metadb.flow.FlowInstanceRepository;
 import com.oceanbase.odc.metadb.iam.UserEntity;
 import com.oceanbase.odc.metadb.schedule.ScheduleEntity;
-import com.oceanbase.odc.metadb.schedule.ScheduleTaskEntity;
 import com.oceanbase.odc.metadb.task.TaskEntity;
 import com.oceanbase.odc.service.collaboration.environment.EnvironmentService;
 import com.oceanbase.odc.service.collaboration.environment.model.Environment;
@@ -138,20 +137,20 @@ public class EventBuilder {
         return event;
     }
 
-    public Event ofSucceededTask(ScheduleTaskEntity scheduleTask) {
-        Event event = ofScheduleTask(scheduleTask, TaskEvent.EXECUTION_SUCCEEDED);
+    public Event ofSucceededTask(ScheduleEntity schedule) {
+        Event event = ofSchedule(schedule, TaskEvent.EXECUTION_SUCCEEDED);
         resolveLabels(event.getLabels());
         return event;
     }
 
-    public Event ofFailedTask(ScheduleTaskEntity scheduleTask) {
-        Event event = ofScheduleTask(scheduleTask, TaskEvent.EXECUTION_FAILED);
+    public Event ofFailedTask(ScheduleEntity schedule) {
+        Event event = ofSchedule(schedule, TaskEvent.EXECUTION_FAILED);
         resolveLabels(event.getLabels());
         return event;
     }
 
-    public Event ofFailedSchedule(ScheduleTaskEntity scheduleTask) {
-        Event event = ofScheduleTask(scheduleTask, TaskEvent.SCHEDULING_FAILED);
+    public Event ofFailedSchedule(ScheduleEntity schedule) {
+        Event event = ofSchedule(schedule, TaskEvent.SCHEDULING_FAILED);
         resolveLabels(event.getLabels());
         return event;
     }
@@ -197,26 +196,23 @@ public class EventBuilder {
                 .build();
     }
 
-    private Event ofScheduleTask(ScheduleTaskEntity scheduleTask, TaskEvent status) {
+    private Event ofSchedule(ScheduleEntity schedule, TaskEvent status) {
         EventLabels labels = new EventLabels();
         labels.putIfNonNull(TASK_STATUS, status.name());
         labels.putIfNonNull(TRIGGER_TIME, LocalDateTime.now().format(DATE_FORMATTER));
         labels.putIfNonNull(REGION, OB_ARN_PARTITION);
 
-        JobType jobType = JobType.valueOf(scheduleTask.getJobGroup());
-        switch (jobType) {
+        switch (schedule.getJobType()) {
             case DATA_ARCHIVE:
             case DATA_ARCHIVE_DELETE:
             case DATA_ARCHIVE_ROLLBACK:
                 labels.putIfNonNull(TASK_TYPE, JobType.DATA_ARCHIVE);
                 break;
             default:
-                labels.putIfNonNull(TASK_TYPE, jobType);
+                labels.putIfNonNull(TASK_TYPE, schedule.getJobType());
                 break;
         }
-        String scheduleId = scheduleTask.getJobName();
-        labels.putIfNonNull(TASK_ID, scheduleId);
-        ScheduleEntity schedule = scheduleService.nullSafeGetById(Long.parseLong(scheduleId));
+        labels.putIfNonNull(TASK_ID, schedule.getId());
         labels.putIfNonNull(CONNECTION_ID, schedule.getConnectionId());
         labels.putIfNonNull(CREATOR_ID, schedule.getCreatorId());
         labels.putIfNonNull(PROJECT_ID, schedule.getProjectId());
@@ -242,7 +238,8 @@ public class EventBuilder {
                         labels.getLongFromString(CONNECTION_ID));
                 labels.put(CLUSTER_NAME, connectionConfig.getClusterName());
                 labels.put(TENANT_NAME, connectionConfig.getTenantName());
-                Environment environment = environmentService.detail(connectionConfig.getEnvironmentId());
+                Environment environment =
+                        environmentService.detailSkipPermissionCheck(connectionConfig.getEnvironmentId());
                 labels.put(ENVIRONMENT, environment.getName());
             } catch (Exception e) {
                 log.warn("failed to query connection info.", e);
