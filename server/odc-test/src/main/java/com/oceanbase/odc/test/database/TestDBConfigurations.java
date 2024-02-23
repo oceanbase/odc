@@ -147,7 +147,7 @@ public class TestDBConfigurations {
                 }
                 stmt.executeUpdate(sql.toString());
                 log.info("create test user for oracle, username: {}", username);
-                sql = new StringBuilder("GRANT SYSDBA TO ").append(username);
+                sql = new StringBuilder("GRANT SYSDBA, RESOURCE, CREATE SESSION TO ").append(username);
                 stmt.execute(sql.toString());
                 log.info("grant sysdba to new created user, username: {}", username);
                 configuration.setDefaultDBName(username);

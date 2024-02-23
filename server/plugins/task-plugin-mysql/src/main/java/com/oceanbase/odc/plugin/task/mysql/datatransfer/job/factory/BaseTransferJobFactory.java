@@ -13,8 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-package com.oceanbase.odc.plugin.task.mysql.datatransfer.job;
+package com.oceanbase.odc.plugin.task.mysql.datatransfer.job.factory;
 
 import java.io.File;
 import java.net.URISyntaxException;
@@ -32,10 +31,6 @@ import javax.sql.DataSource;
 import org.apache.commons.lang3.ArrayUtils;
 
 import com.oceanbase.odc.core.shared.Verify;
-import com.oceanbase.odc.plugin.schema.mysql.MySQLFunctionExtension;
-import com.oceanbase.odc.plugin.schema.mysql.MySQLProcedureExtension;
-import com.oceanbase.odc.plugin.schema.mysql.MySQLTableExtension;
-import com.oceanbase.odc.plugin.schema.mysql.MySQLViewExtension;
 import com.oceanbase.odc.plugin.task.api.datatransfer.dumper.DataFile;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferConfig;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferFormat;
@@ -43,30 +38,27 @@ import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferObject;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferType;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.ObjectResult;
 import com.oceanbase.odc.plugin.task.mysql.datatransfer.common.Constants;
+import com.oceanbase.odc.plugin.task.mysql.datatransfer.job.AbstractJob;
 import com.oceanbase.odc.plugin.task.mysql.datatransfer.job.datax.ConfigurationResolver;
-import com.oceanbase.odc.plugin.task.mysql.datatransfer.job.datax.DataXTransferJob;
 import com.oceanbase.odc.plugin.task.mysql.datatransfer.job.datax.model.JobConfiguration;
 import com.oceanbase.tools.dbbrowser.model.DBTableColumn;
 import com.oceanbase.tools.loaddump.common.enums.ObjectType;
 
-public class TransferJobFactory {
+public abstract class BaseTransferJobFactory {
 
-    private final DataTransferConfig transferConfig;
-    private final File workingDir;
-    private final File logDir;
-    private final List<URL> inputs;
-    private final String jdbcUrl;
+    protected final DataTransferConfig transferConfig;
+    protected final File workingDir;
+    protected final File logDir;
+    protected final List<URL> inputs;
 
-    public TransferJobFactory(DataTransferConfig transferConfig, File workingDir, File logDir, List<URL> inputs,
-            String jdbcUrl) {
+    public BaseTransferJobFactory(DataTransferConfig transferConfig, File workingDir, File logDir, List<URL> inputs) {
         this.transferConfig = transferConfig;
         this.workingDir = workingDir;
         this.logDir = logDir;
         this.inputs = inputs;
-        this.jdbcUrl = jdbcUrl;
     }
 
-    public List<AbstractJob> generateSchemaTransferJobs(DataSource dataSource) throws Exception {
+    public List<AbstractJob> generateSchemaTransferJobs(DataSource dataSource, String jdbcUrl) throws Exception {
         List<AbstractJob> jobs = new ArrayList<>();
         /*
          * import
@@ -81,7 +73,7 @@ public class TransferJobFactory {
                             String objectName = filename.substring(0, filename.indexOf(Constants.DDL_SUFFIX));
                             ObjectResult object = new ObjectResult(transferConfig.getSchemaName(), objectName,
                                     schemaFile.getParentFile().getName().toUpperCase());
-                            return new SqlScriptImportJob(object, transferConfig, url, dataSource);
+                            return generateSqlScriptImportJob(object, url, dataSource);
                         } catch (URISyntaxException e) {
                             throw new RuntimeException(e);
                         }
@@ -104,13 +96,13 @@ public class TransferJobFactory {
         objects.forEach(o -> {
             ObjectResult object = new ObjectResult(transferConfig.getSchemaName(), o.getObjectName(),
                     o.getDbObjectType().getName());
-            AbstractJob job = new MySQLSchemaExportJob(object, transferConfig, workingDir, dataSource);
+            AbstractJob job = generateSchemaExportJob(object, dataSource);
             jobs.add(job);
         });
         return jobs;
     }
 
-    public List<AbstractJob> generateDataTransferJobs(DataSource dataSource) throws Exception {
+    public List<AbstractJob> generateDataTransferJobs(DataSource dataSource, String jdbcUrl) throws Exception {
         List<AbstractJob> jobs = new ArrayList<>();
         /*
          * import
@@ -135,14 +127,12 @@ public class TransferJobFactory {
 
                 if (transferConfig.getDataTransferFormat() == DataTransferFormat.CSV) {
                     try (Connection conn = dataSource.getConnection()) {
-                        List<DBTableColumn> columns = new MySQLTableExtension()
-                                .getDetail(conn, object.getSchema(), object.getName()).getColumns();
-                        JobConfiguration jobConf = ConfigurationResolver
-                                .buildJobConfigurationForImport(transferConfig, jdbcUrl, object, url, columns);
-                        jobs.add(new DataXTransferJob(object, jobConf, workingDir, logDir));
+                        List<DBTableColumn> columns = queryTableColumns(conn, object);
+                        jobs.add(generateDataXImportJob(object, ConfigurationResolver
+                                .buildJobConfigurationForImport(transferConfig, jdbcUrl, object, url, columns)));
                     }
                 } else {
-                    jobs.add(new SqlScriptImportJob(object, transferConfig, url, dataSource));
+                    jobs.add(generateSqlScriptImportJob(object, url, dataSource));
                 }
             }
             return jobs;
@@ -158,6 +148,9 @@ public class TransferJobFactory {
                 objects = new ArrayList<>(transferConfig.getExportDbObjects());
             }
             for (DataTransferObject object : objects) {
+                if (ObjectType.TABLE != object.getDbObjectType()) {
+                    continue;
+                }
                 ObjectResult table = new ObjectResult(transferConfig.getSchemaName(), object.getObjectName(),
                         object.getDbObjectType().getName());
                 /*
@@ -167,31 +160,26 @@ public class TransferJobFactory {
                 if (Objects.nonNull(transferConfig.getQuerySql())) {
                     columns = transferConfig.getColumns();
                 } else {
-                    columns = new MySQLTableExtension()
-                            .getDetail(conn, table.getSchema(), table.getName()).getColumns();
+                    columns = queryTableColumns(conn, table);
                 }
-                AbstractJob job = new DataXTransferJob(table, ConfigurationResolver
-                        .buildJobConfigurationForExport(workingDir, transferConfig, jdbcUrl, table.getName(), columns),
-                        workingDir, logDir);
+                AbstractJob job = generateDataXExportJob(table, ConfigurationResolver
+                        .buildJobConfigurationForExport(workingDir, transferConfig, jdbcUrl, table.getName(), columns));
                 jobs.add(job);
             }
         }
         return jobs;
     }
 
-    private List<DataTransferObject> queryTransferObjects(Connection connection, boolean transferDDL) {
-        List<DataTransferObject> objects = new ArrayList<>();
-        new MySQLTableExtension().list(connection, transferConfig.getSchemaName())
-                .forEach(table -> objects.add(new DataTransferObject(ObjectType.TABLE, table.getName())));
-        if (transferDDL) {
-            new MySQLViewExtension().list(connection, transferConfig.getSchemaName())
-                    .forEach(view -> objects.add(new DataTransferObject(ObjectType.VIEW, view.getName())));
-            new MySQLFunctionExtension().list(connection, transferConfig.getSchemaName())
-                    .forEach(func -> objects.add(new DataTransferObject(ObjectType.FUNCTION, func.getName())));
-            new MySQLProcedureExtension().list(connection, transferConfig.getSchemaName())
-                    .forEach(proc -> objects.add(new DataTransferObject(ObjectType.PROCEDURE, proc.getName())));
-        }
-        return objects;
-    }
+    abstract protected List<DBTableColumn> queryTableColumns(Connection connection, ObjectResult table);
+
+    abstract protected List<DataTransferObject> queryTransferObjects(Connection connection, boolean transferDDL);
+
+    abstract protected AbstractJob generateSqlScriptImportJob(ObjectResult object, URL url, DataSource dataSource);
+
+    abstract protected AbstractJob generateSchemaExportJob(ObjectResult object, DataSource dataSource);
+
+    abstract protected AbstractJob generateDataXImportJob(ObjectResult object, JobConfiguration jobConfiguration);
+
+    abstract protected AbstractJob generateDataXExportJob(ObjectResult object, JobConfiguration jobConfiguration);
 
 }
