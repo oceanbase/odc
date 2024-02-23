@@ -58,6 +58,8 @@ public class OmsResourceCleanHandler {
                 released = true;
             }
         } catch (OmsException e) {
+            // representative project has been deleted when message contain "GHANA-PROJECT000001"
+            // or "project is not exists",
             if (e.getMessage() != null && e.getMessage().contains("GHANA-PROJECT000001")) {
                 released = true;
             }
