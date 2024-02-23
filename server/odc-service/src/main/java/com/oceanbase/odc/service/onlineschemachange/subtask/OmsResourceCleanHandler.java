@@ -47,7 +47,6 @@ public class OmsResourceCleanHandler {
         }
 
         boolean released = false;
-        // todo project is not exists
         OmsProjectControlRequest controlRequest = new OmsProjectControlRequest();
         controlRequest.setId(projectControl.getId());
         controlRequest.setUid(projectControl.getUid());
