@@ -321,7 +321,7 @@ public class DatabaseChangeTask extends BaseTask<FlowTaskResult> {
         DefaultConnectSessionFactory sessionFactory = new DefaultConnectSessionFactory(connectionConfig);
         sessionFactory.setSessionTimeoutMillis(this.databaseChangeParameters.getTimeoutMillis());
         ConnectionSession connectionSession = sessionFactory.generateSession();
-        if (connectionSession.getDialectType() == DialectType.OB_ORACLE) {
+        if (connectionSession.getDialectType().isOracle()) {
             ConnectionSessionUtil.initConsoleSessionTimeZone(connectionSession, this.parameters.getSessionTimeZone());
         }
         SqlCommentProcessor processor = new SqlCommentProcessor(connectionConfig.getDialectType(), true, true);

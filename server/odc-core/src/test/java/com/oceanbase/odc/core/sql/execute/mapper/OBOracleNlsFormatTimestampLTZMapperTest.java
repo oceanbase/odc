@@ -29,19 +29,20 @@ import com.oceanbase.tools.dbbrowser.model.datatype.DataType;
 import com.oceanbase.tools.dbbrowser.model.datatype.DataTypeFactory;
 
 /**
- * Test cases for {@link OracleNlsFormatTimestampLTZMapper}
+ * Test cases for {@link OBOracleNlsFormatTimestampLTZMapper}
  *
  * @author yh263208
  * @date 2023-07-04 22:00
  * @since ODC-release_4.2.0
  */
-public class OracleNlsFormatTimestampLTZMapperTest {
+public class OBOracleNlsFormatTimestampLTZMapperTest {
 
     @Test
     public void mapCell_nonNullTimestampLTZ_returnRightValue() throws IOException, SQLException {
         DataTypeFactory factory = new CommonDataTypeFactory("timestamp(3) with time zone");
         DataType dataType = factory.generate();
-        OracleNlsFormatTimestampLTZMapper mapper = new OracleNlsFormatTimestampLTZMapper("DD-MM-RR", "Asia/Shanghai");
+        OBOracleNlsFormatTimestampLTZMapper mapper =
+                new OBOracleNlsFormatTimestampLTZMapper("DD-MM-RR", "Asia/Shanghai");
         Object actual = mapper.mapCell(new TimestampLTZCellData(new TIMESTAMPLTZ(), dataType));
         TimeFormatResult expect = new TimeFormatResult("01-01-70", -25139000L, 0, "Asia/Shanghai");
         Assert.assertEquals(expect, actual);
@@ -51,20 +52,23 @@ public class OracleNlsFormatTimestampLTZMapperTest {
     public void mapCell_nullTimestampLTZ_returnNull() throws IOException, SQLException {
         DataTypeFactory factory = new CommonDataTypeFactory("timestamp(3) with time zone");
         DataType dataType = factory.generate();
-        OracleNlsFormatTimestampLTZMapper mapper = new OracleNlsFormatTimestampLTZMapper("DD-MM-RR", "Asia/Shanghai");
+        OBOracleNlsFormatTimestampLTZMapper mapper =
+                new OBOracleNlsFormatTimestampLTZMapper("DD-MM-RR", "Asia/Shanghai");
         Assert.assertNull(mapper.mapCell(new TimestampLTZCellData(null, dataType)));
     }
 
     @Test
     public void supports_timestampTZ_Notsupports() throws IOException, SQLException {
-        OracleNlsFormatTimestampLTZMapper mapper = new OracleNlsFormatTimestampLTZMapper("DD-MM-RR", "Asia/Shanghai");
+        OBOracleNlsFormatTimestampLTZMapper mapper =
+                new OBOracleNlsFormatTimestampLTZMapper("DD-MM-RR", "Asia/Shanghai");
         DataTypeFactory factory = new CommonDataTypeFactory("timestamp(3) with time zone");
         Assert.assertFalse(mapper.supports(factory.generate()));
     }
 
     @Test
     public void supports_timestampLTZ_supports() throws IOException, SQLException {
-        OracleNlsFormatTimestampLTZMapper mapper = new OracleNlsFormatTimestampLTZMapper("DD-MM-RR", "Asia/Shanghai");
+        OBOracleNlsFormatTimestampLTZMapper mapper =
+                new OBOracleNlsFormatTimestampLTZMapper("DD-MM-RR", "Asia/Shanghai");
         DataTypeFactory factory = new CommonDataTypeFactory("timestamp(2) with local time zone");
         Assert.assertTrue(mapper.supports(factory.generate()));
     }

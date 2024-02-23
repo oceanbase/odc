@@ -401,7 +401,7 @@ public class ConnectSessionService {
 
         ConnectionSessionUtil.setQueryLimit(connectionSession, userConfig.getDefaultQueryLimit());
         ConnectionSessionUtil.setUserId(connectionSession, authenticationFacade.currentUserId());
-        if (connectionSession.getDialectType() == DialectType.OB_ORACLE) {
+        if (connectionSession.getDialectType().isOracle()) {
             ConnectionSessionUtil.initConsoleSessionTimeZone(connectionSession, connectProperties.getDefaultTimeZone());
         }
         Long envId = connectionConfig.getEnvironmentId();
