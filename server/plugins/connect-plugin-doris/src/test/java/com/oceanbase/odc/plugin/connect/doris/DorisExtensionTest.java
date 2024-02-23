@@ -42,7 +42,6 @@ import com.oceanbase.odc.plugin.connect.model.ConnectionPropertiesBuilder;
 import com.oceanbase.odc.plugin.connect.model.JdbcUrlProperty;
 import com.oceanbase.odc.test.database.TestDBConfiguration;
 import com.oceanbase.odc.test.database.TestDBConfigurations;
-import com.oceanbase.odc.test.database.TestDBType;
 
 /**
  * ClassName: DorisExtensionTest Package: com.oceanbase.odc.plugin.connect.doris Description:
@@ -62,7 +61,7 @@ public class DorisExtensionTest extends BaseExtensionPointTest {
 
     @BeforeClass
     public static void init() {
-        configuration = TestDBConfigurations.getInstance(TestDBType.DORIS).getTestDorisConfiguration();
+        configuration = TestDBConfigurations.getInstance().getTestDorisConfiguration();
         connectionExtensionPoint = getInstance(DorisConnectionExtension.class);
         sessionExtensionPoint = getInstance(DorisSessionExtension.class);
         informationExtensionPoint = getInstance(DorisInformationExtension.class);
@@ -132,7 +131,7 @@ public class DorisExtensionTest extends BaseExtensionPointTest {
     public void test_doris_connect_get_initializers() throws SQLException {
         List<ConnectionInitializer> connectionInitializers = connectionExtensionPoint.getConnectionInitializers();
         Assert.assertFalse(CollectionUtils.isEmpty(connectionInitializers));
-        try (Connection connection = getConnection(TestDBType.DORIS)) {
+        try (Connection connection = getConnection()) {
             connectionInitializers.forEach(initializer -> {
                 try {
                     initializer.init(connection);
@@ -145,7 +144,7 @@ public class DorisExtensionTest extends BaseExtensionPointTest {
 
     @Test
     public void test_doris_session_get_connect_id() throws SQLException {
-        try (Connection connection = getConnection(TestDBType.DORIS)) {
+        try (Connection connection = getConnection()) {
             String connectId = sessionExtensionPoint.getConnectionId(connection);
             Assert.assertNotNull("connectId is null", connectId);
         }
@@ -154,7 +153,7 @@ public class DorisExtensionTest extends BaseExtensionPointTest {
     @Test
     public void test_doris_session_switch_schema() {
         String targetSchema = "information_schema";
-        try (Connection connection = getConnection(TestDBType.DORIS)) {
+        try (Connection connection = getConnection()) {
             String originSchema = sessionExtensionPoint.getCurrentSchema(connection);
             sessionExtensionPoint.switchSchema(connection, targetSchema);
             String changedSchema = sessionExtensionPoint.getCurrentSchema(connection);
@@ -168,8 +167,8 @@ public class DorisExtensionTest extends BaseExtensionPointTest {
 
     @Test
     public void test_doris_session_kill_query() throws SQLException {
-        try (Connection connection = getConnection(TestDBType.DORIS);
-                Connection targetConnection = getConnection(TestDBType.DORIS)) {
+        try (Connection connection = getConnection();
+                Connection targetConnection = getConnection()) {
             String connectId = sessionExtensionPoint.getConnectionId(targetConnection);
             sessionExtensionPoint.killQuery(connection, connectId);
             Assert.assertTrue(targetConnection.isValid(3));
@@ -179,14 +178,14 @@ public class DorisExtensionTest extends BaseExtensionPointTest {
 
     @Test(expected = Exception.class)
     public void test_doris_session_kill_query_invalid_id() throws SQLException {
-        try (Connection connection = getConnection(TestDBType.DORIS)) {
+        try (Connection connection = getConnection()) {
             sessionExtensionPoint.killQuery(connection, "-1");
         }
     }
 
     @Test
     public void test_doris_get_sql_explain() throws SQLException {
-        try (Connection connection = getConnection(TestDBType.DORIS)) {
+        try (Connection connection = getConnection()) {
             Statement stmt = connection.createStatement();
             String tableDdl1 = "CREATE TABLE `tab1` (\n"
                     + "  `id` int(11) NOT NULL\n"
