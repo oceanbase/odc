@@ -231,7 +231,11 @@ public enum SqlCheckRuleType implements Translatable {
     /**
      * 限制被声明为 auto-increment 的列的类型
      */
-    RESTRICT_AUTO_INCREMENT_DATATYPES("restrict-auto-increment-datatypes");
+    RESTRICT_AUTO_INCREMENT_DATATYPES("restrict-auto-increment-datatypes"),
+    /**
+     * 表的 DDL 中涉及创建、修改索引的耗时操作
+     */
+    INDEX_CHANGE_TIME_CONSUMING_EXISTS("index-change-time-consuming-exists");
 
     private final String name;
     private static final String NAME_CODE = "name";

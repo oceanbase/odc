@@ -45,4 +45,6 @@ public class FlowTaskProperties {
     @Value("${odc.task.async.sql-content-max-length:10485760}")
     private int sqlContentMaxLength = 10485760;
 
+    @Value("${odc.task.async.index-change-max-timeout-millis:432000000}")
+    private long indexChangeMaxTimeoutMillisecond;
 }
