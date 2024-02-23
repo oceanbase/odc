@@ -40,7 +40,6 @@ import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.core.shared.exception.NotFoundException;
 import com.oceanbase.odc.metadb.iam.UserEntity;
-import com.oceanbase.odc.service.config.model.UserConfig;
 import com.oceanbase.odc.service.connection.ConnectionService;
 import com.oceanbase.odc.service.connection.ConnectionTesting;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
@@ -81,7 +80,6 @@ public class ConnectSessionServiceTest extends AuthorityTestEnv {
         UserEntity currentUserEntity = grantAllPermissions(ResourceType.ODC_CONNECTION);
         this.userId = currentUserEntity.getId();
         this.organizationId = currentUserEntity.getOrganizationId();
-        UserConfig userConfig = new UserConfig();
         when(authenticationFacade.currentUserId()).thenReturn(userId);
         when(authenticationFacade.currentOrganizationId()).thenReturn(organizationId);
         User user = new User();

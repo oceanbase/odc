@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 OceanBase.
+ * Copyright (c) 2024 OceanBase.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,30 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.config.model;
 
-import javax.validation.constraints.NotBlank;
+package com.oceanbase.odc.service.config;
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+public interface UserConfigFacade {
+    String getUserConfig(String key);
 
-/**
- * DTO for all configurations
- */
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
-public class Configuration {
-    /**
-     * Config key
-     */
-    @NotBlank(message = "Config key can not be null or blank")
-    private String key;
+    String getDefaultDelimiter();
 
-    /**
-     * Config value
-     */
-    private String value;
+    String getMysqlAutoCommitMode();
 
+    String getOracleAutoCommitMode();
+
+    Integer getDefaultQueryLimit();
 }
