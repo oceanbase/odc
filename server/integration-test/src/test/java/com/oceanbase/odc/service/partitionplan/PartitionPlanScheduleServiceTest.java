@@ -93,18 +93,6 @@ public class PartitionPlanScheduleServiceTest extends ServiceTestEnv {
     }
 
     @Test
-    public void disablePartitionPlanPartitionKeys_enableEntitiesExists_disableSucceed() {
-        PartitionPlanTablePartitionKeyEntity actual = TestRandom.nextObject(PartitionPlanTablePartitionKeyEntity.class);
-        actual.setId(null);
-        actual.setEnabled(true);
-        actual = this.partitionPlanTablePartitionKeyRepository.save(actual);
-        this.partitionPlanScheduleService.disablePartitionPlanPartitionKeys(Collections.singletonList(actual.getId()));
-        Optional<PartitionPlanTablePartitionKeyEntity> expect = this.partitionPlanTablePartitionKeyRepository
-                .findById(actual.getId());
-        Assert.assertFalse(expect.get().getEnabled());
-    }
-
-    @Test
     public void disablePartitionPlanTables_enableEntitiesExists_disableSucceed() throws SchedulerException {
         PartitionPlanTableEntity ppt = TestRandom.nextObject(PartitionPlanTableEntity.class);
         ppt.setId(null);
@@ -113,13 +101,11 @@ public class PartitionPlanScheduleServiceTest extends ServiceTestEnv {
 
         PartitionPlanTablePartitionKeyEntity pptk1 = TestRandom.nextObject(PartitionPlanTablePartitionKeyEntity.class);
         pptk1.setId(null);
-        pptk1.setEnabled(true);
         pptk1.setPartitionplanTableId(ppt.getId());
         pptk1 = this.partitionPlanTablePartitionKeyRepository.save(pptk1);
 
         PartitionPlanTablePartitionKeyEntity pptk2 = TestRandom.nextObject(PartitionPlanTablePartitionKeyEntity.class);
         pptk2.setId(null);
-        pptk2.setEnabled(true);
         pptk2.setPartitionplanTableId(ppt.getId());
         pptk2 = this.partitionPlanTablePartitionKeyRepository.save(pptk2);
         Mockito.when(this.scheduleService.nullSafeGetById(Mockito.anyLong()))
@@ -129,8 +115,7 @@ public class PartitionPlanScheduleServiceTest extends ServiceTestEnv {
         List<PartitionPlanTablePartitionKeyEntity> expect1 = this.partitionPlanTablePartitionKeyRepository
                 .findByIdIn(Arrays.asList(pptk1.getId(), pptk2.getId()));
         Optional<PartitionPlanTableEntity> optional = this.partitionPlanTableRepository.findById(ppt.getId());
-        Assert.assertTrue(Boolean.FALSE.equals(optional.get().getEnabled())
-                && expect1.stream().noneMatch(e -> Boolean.TRUE.equals(e.getEnabled())));
+        Assert.assertTrue(Boolean.FALSE.equals(optional.get().getEnabled()));
     }
 
     @Test
@@ -148,13 +133,11 @@ public class PartitionPlanScheduleServiceTest extends ServiceTestEnv {
 
         PartitionPlanTablePartitionKeyEntity pptk1 = TestRandom.nextObject(PartitionPlanTablePartitionKeyEntity.class);
         pptk1.setId(null);
-        pptk1.setEnabled(true);
         pptk1.setPartitionplanTableId(ppt.getId());
         pptk1 = this.partitionPlanTablePartitionKeyRepository.save(pptk1);
 
         PartitionPlanTablePartitionKeyEntity pptk2 = TestRandom.nextObject(PartitionPlanTablePartitionKeyEntity.class);
         pptk2.setId(null);
-        pptk2.setEnabled(true);
         pptk2.setPartitionplanTableId(ppt.getId());
         pptk2 = this.partitionPlanTablePartitionKeyRepository.save(pptk2);
         Mockito.when(this.scheduleService.nullSafeGetById(Mockito.anyLong()))
@@ -166,8 +149,7 @@ public class PartitionPlanScheduleServiceTest extends ServiceTestEnv {
         Optional<PartitionPlanTableEntity> optional = this.partitionPlanTableRepository.findById(ppt.getId());
         Optional<PartitionPlanEntity> optional1 = this.partitionPlanRepository.findById(pp.getId());
         Assert.assertTrue(Boolean.FALSE.equals(optional.get().getEnabled())
-                && Boolean.FALSE.equals(optional1.get().getEnabled())
-                && expect1.stream().noneMatch(e -> Boolean.TRUE.equals(e.getEnabled())));
+                && Boolean.FALSE.equals(optional1.get().getEnabled()));
     }
 
     @Test
@@ -191,6 +173,7 @@ public class PartitionPlanScheduleServiceTest extends ServiceTestEnv {
         partitionPlanConfig.setFlowInstanceId(1L);
         partitionPlanConfig.setTimeoutMillis(180000L);
         partitionPlanConfig.setDatabaseId(1L);
+        partitionPlanConfig.setEnabled(true);
         partitionPlanConfig.setCreationTrigger(TestRandom.nextObject(TriggerConfig.class));
         Database database = TestRandom.nextObject(Database.class);
         database.setId(1L);
@@ -225,6 +208,7 @@ public class PartitionPlanScheduleServiceTest extends ServiceTestEnv {
         partitionPlanConfig.setPartitionTableConfigs(Collections.singletonList(tableConfig));
         partitionPlanConfig.setFlowInstanceId(1L);
         partitionPlanConfig.setTimeoutMillis(180000L);
+        partitionPlanConfig.setEnabled(true);
         partitionPlanConfig.setDatabaseId(1L);
 
         long t1 = System.currentTimeMillis();
@@ -282,6 +266,7 @@ public class PartitionPlanScheduleServiceTest extends ServiceTestEnv {
         partitionPlanConfig.setFlowInstanceId(1L);
         partitionPlanConfig.setTimeoutMillis(180000L);
         partitionPlanConfig.setDatabaseId(1L);
+        partitionPlanConfig.setEnabled(true);
         partitionPlanConfig.setCreationTrigger(TestRandom.nextObject(TriggerConfig.class));
         Database database = TestRandom.nextObject(Database.class);
         database.setId(1L);
@@ -318,6 +303,7 @@ public class PartitionPlanScheduleServiceTest extends ServiceTestEnv {
         partitionPlanConfig.setPartitionTableConfigs(Collections.singletonList(tableConfig));
         partitionPlanConfig.setFlowInstanceId(1L);
         partitionPlanConfig.setTimeoutMillis(180000L);
+        partitionPlanConfig.setEnabled(true);
         partitionPlanConfig.setDatabaseId(1L);
         partitionPlanConfig.setCreationTrigger(TestRandom.nextObject(TriggerConfig.class));
         Database database = TestRandom.nextObject(Database.class);

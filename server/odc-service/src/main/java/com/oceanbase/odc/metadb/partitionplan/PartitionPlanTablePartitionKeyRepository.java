@@ -23,9 +23,6 @@ import javax.transaction.Transactional;
 
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Lock;
-import org.springframework.data.jpa.repository.Modifying;
-import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.query.Param;
 
 import com.oceanbase.odc.common.jpa.InsertSqlTemplateBuilder;
 import com.oceanbase.odc.config.jpa.OdcJpaRepository;
@@ -43,17 +40,9 @@ public interface PartitionPlanTablePartitionKeyRepository
 
     List<PartitionPlanTablePartitionKeyEntity> findByPartitionplanTableIdIn(List<Long> partitionplanTableId);
 
-    List<PartitionPlanTablePartitionKeyEntity> findByPartitionplanTableIdInAndEnabled(
-            List<Long> partitionplanTableId, Boolean enabled);
-
     @Transactional
     @Lock(value = LockModeType.PESSIMISTIC_WRITE)
     List<PartitionPlanTablePartitionKeyEntity> findByIdIn(List<Long> ids);
-
-    @Transactional
-    @Query("update PartitionPlanTablePartitionKeyEntity set enabled=:enabled where id in (:ids)")
-    @Modifying
-    int updateEnabledByIdIn(@Param("ids") List<Long> ids, @Param("enabled") Boolean enabled);
 
     default List<PartitionPlanTablePartitionKeyEntity> batchCreate(
             List<PartitionPlanTablePartitionKeyEntity> entities) {
@@ -61,7 +50,6 @@ public interface PartitionPlanTablePartitionKeyRepository
                 .field(PartitionPlanTablePartitionKeyEntity_.partitionKey)
                 .field(PartitionPlanTablePartitionKeyEntity_.strategy)
                 .field(PartitionPlanTablePartitionKeyEntity_.partitionplanTableId)
-                .field("is_enabled")
                 .field(PartitionPlanTablePartitionKeyEntity_.partitionKeyInvoker)
                 .field(PartitionPlanTablePartitionKeyEntity_.partitionKeyInvokerParameters)
                 .build();
@@ -69,7 +57,6 @@ public interface PartitionPlanTablePartitionKeyRepository
                 .add(PartitionPlanTablePartitionKeyEntity::getPartitionKey)
                 .add(p -> p.getStrategy().name())
                 .add(PartitionPlanTablePartitionKeyEntity::getPartitionplanTableId)
-                .add(PartitionPlanTablePartitionKeyEntity::getEnabled)
                 .add(PartitionPlanTablePartitionKeyEntity::getPartitionKeyInvoker)
                 .add(PartitionPlanTablePartitionKeyEntity::getPartitionKeyInvokerParameters)
                 .build();

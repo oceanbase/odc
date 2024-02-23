@@ -165,7 +165,6 @@ public class PartitionPlanServiceV2Test extends ServiceTestEnv {
 
         PartitionPlanTablePartitionKeyEntity pptk = TestRandom.nextObject(PartitionPlanTablePartitionKeyEntity.class);
         pptk.setId(null);
-        pptk.setEnabled(true);
         pptk.setPartitionplanTableId(pt.getId());
         pptk = this.partitionPlanTablePartitionKeyRepository.save(pptk);
 

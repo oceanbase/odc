@@ -70,11 +70,6 @@ public class PartitionPlanTablePartitionKeyEntity {
     private PartitionPlanStrategy strategy;
     @Column(name = "partitionplan_table_id", nullable = false)
     private long partitionplanTableId;
-    /**
-     * Enabled or not
-     */
-    @Column(name = "is_enabled", nullable = false)
-    private Boolean enabled;
     @Column(name = "partition_key_invoker", nullable = false)
     private String partitionKeyInvoker;
     @Column(name = "partition_key_invoker_parameters", nullable = false)

@@ -139,7 +139,7 @@ public class PartitionPlanServiceV2 {
     }
 
     public List<PartitionPlanDBTable> listCandidateTables(@NonNull String sessionId, @NonNull Long databaseId) {
-        ConnectionSession connectionSession = sessionService.nullSafeGet(sessionId, true);
+        ConnectionSession connectionSession = this.sessionService.nullSafeGet(sessionId, true);
         DialectType dialectType = connectionSession.getDialectType();
         AutoPartitionExtensionPoint extensionPoint = TaskPluginUtil.getAutoPartitionExtensionPoint(dialectType);
         if (extensionPoint == null) {
@@ -153,8 +153,8 @@ public class PartitionPlanServiceV2 {
                     .findByPartitionPlanIdInAndEnabled(ppEntities.stream()
                             .map(PartitionPlanEntity::getId).collect(Collectors.toList()), true);
             List<PartitionPlanTablePartitionKeyEntity> pptkEntities = this.partitionPlanTablePartitionKeyRepository
-                    .findByPartitionplanTableIdInAndEnabled(pptEntities.stream()
-                            .map(PartitionPlanTableEntity::getId).collect(Collectors.toList()), true);
+                    .findByPartitionplanTableIdIn(pptEntities.stream()
+                            .map(PartitionPlanTableEntity::getId).collect(Collectors.toList()));
             Map<Long, List<PartitionPlanTablePartitionKeyEntity>> pptId2PptkEntities = pptkEntities.stream()
                     .collect(Collectors.groupingBy(PartitionPlanTablePartitionKeyEntity::getPartitionplanTableId));
             tblName2Strategies = pptEntities.stream()

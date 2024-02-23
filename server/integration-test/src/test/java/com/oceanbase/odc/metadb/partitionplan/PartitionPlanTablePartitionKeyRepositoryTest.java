@@ -75,32 +75,9 @@ public class PartitionPlanTablePartitionKeyRepositoryTest extends ServiceTestEnv
     }
 
     @Test
-    public void findByPartitionplanTableIdInAndEnabled_noCandidate_returnNull() {
-        PartitionPlanTablePartitionKeyEntity actual = createRoleEntity();
-        actual.setId(null);
-        actual.setEnabled(false);
-        actual = this.repository.save(actual);
-        List<PartitionPlanTablePartitionKeyEntity> expect = this.repository.findByPartitionplanTableIdInAndEnabled(
-                Collections.singletonList(actual.getPartitionplanTableId()), true);
-        Assert.assertTrue(expect.isEmpty());
-    }
-
-    @Test
-    public void findByPartitionplanTableIdInAndEnabled_candidateExists_returnNotNull() {
-        PartitionPlanTablePartitionKeyEntity actual = createRoleEntity();
-        actual.setId(null);
-        actual.setEnabled(true);
-        actual = this.repository.save(actual);
-        List<PartitionPlanTablePartitionKeyEntity> expect = this.repository.findByPartitionplanTableIdInAndEnabled(
-                Collections.singletonList(actual.getPartitionplanTableId()), true);
-        Assert.assertEquals(expect, Collections.singletonList(actual));
-    }
-
-    @Test
     public void findByPartitionplanTableIdIn_candidateExists_returnNotNull() {
         PartitionPlanTablePartitionKeyEntity actual = createRoleEntity();
         actual.setId(null);
-        actual.setEnabled(true);
         actual = this.repository.save(actual);
         List<PartitionPlanTablePartitionKeyEntity> expect = this.repository.findByPartitionplanTableIdIn(
                 Collections.singletonList(actual.getPartitionplanTableId()));
@@ -111,24 +88,11 @@ public class PartitionPlanTablePartitionKeyRepositoryTest extends ServiceTestEnv
     public void findByIdIn_candidateExists_returnNotNull() {
         PartitionPlanTablePartitionKeyEntity actual = createRoleEntity();
         actual.setId(null);
-        actual.setEnabled(true);
         actual = this.repository.save(actual);
         List<PartitionPlanTablePartitionKeyEntity> expect = this.repository
                 .findByIdIn(Collections.singletonList(actual.getId()));
         Assert.assertEquals(expect, Collections.singletonList(actual));
     }
-
-    @Test
-    public void updateEnabledByIdIn_convertToFalse_concertSucceed() {
-        PartitionPlanTablePartitionKeyEntity actual = createRoleEntity();
-        actual.setId(null);
-        actual.setEnabled(true);
-        actual = this.repository.save(actual);
-        this.repository.updateEnabledByIdIn(Collections.singletonList(actual.getId()), false);
-        Optional<PartitionPlanTablePartitionKeyEntity> optional = this.repository.findById(actual.getId());
-        Assert.assertFalse(optional.get().getEnabled());
-    }
-
 
     private PartitionPlanTablePartitionKeyEntity createRoleEntity() {
         return TestRandom.nextObject(PartitionPlanTablePartitionKeyEntity.class);

@@ -224,25 +224,6 @@ public class PartitionPlanScheduleService {
         }
         log.info("Disable partition plan related tables succeed, ids={}, tableNames={}", pptIds, ppts.stream()
                 .map(PartitionPlanTableEntity::getTableName).collect(Collectors.toList()));
-        List<Long> pptkIds = this.partitionPlanTablePartitionKeyRepository
-                .findByPartitionplanTableIdInAndEnabled(pptIds, true).stream()
-                .map(PartitionPlanTablePartitionKeyEntity::getId).collect(Collectors.toList());
-        disablePartitionPlanPartitionKeys(pptkIds);
-    }
-
-    @Transactional(rollbackOn = Exception.class)
-    public void disablePartitionPlanPartitionKeys(@NonNull List<Long> partitionPlanTableKeyIds) {
-        List<PartitionPlanTablePartitionKeyEntity> pptks = this.partitionPlanTablePartitionKeyRepository
-                .findByIdIn(partitionPlanTableKeyIds).stream()
-                .filter(e -> Boolean.TRUE.equals(e.getEnabled())).collect(Collectors.toList());
-        if (CollectionUtils.isEmpty(pptks)) {
-            return;
-        }
-        List<Long> pptkIds = pptks.stream().map(PartitionPlanTablePartitionKeyEntity::getId)
-                .collect(Collectors.toList());
-        this.partitionPlanTablePartitionKeyRepository.updateEnabledByIdIn(pptkIds, false);
-        log.info("Disable partition plan related partition keys succeed, ids={}, pkNames={}", pptkIds, pptks.stream()
-                .map(PartitionPlanTablePartitionKeyEntity::getPartitionKey).collect(Collectors.toList()));
     }
 
     private ScheduleEntity createAndEnableSchedule(Database database, @NonNull TriggerConfig triggerConfig)
@@ -323,7 +304,6 @@ public class PartitionPlanScheduleService {
             @NonNull Long partitionPlanTableId) {
         PartitionPlanTablePartitionKeyEntity entity = new PartitionPlanTablePartitionKeyEntity();
         entity.setPartitionplanTableId(partitionPlanTableId);
-        entity.setEnabled(true);
         entity.setPartitionKey(model.getPartitionKey());
         entity.setPartitionKeyInvoker(model.getPartitionKeyInvoker());
         entity.setPartitionKeyInvokerParameters(JsonUtils.toJson(model.getPartitionKeyInvokerParameters()));
