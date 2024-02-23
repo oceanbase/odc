@@ -673,8 +673,8 @@ INSERT INTO config_system_configuration(`key`, `value`, `description`) VALUES('o
   'CHANGE_ME', 'oms region')
   ON DUPLICATE KEY UPDATE `id`=`id`;
 
-INSERT INTO config_system_configuration(`key`, `value`, `description`) VALUES('odc.osc.oms.check-project-failed-threshold-times',
-  '', '120')
+INSERT INTO config_system_configuration(`key`, `value`, `description`) VALUES('odc.osc.oms.check-project-step-failed-threshold-times',
+  '120', 'project oms check project step failed time threshold')
   ON DUPLICATE KEY UPDATE `id`=`id`;
 
 INSERT INTO config_system_configuration(`key`, `value`, `description`) VALUES('odc.features.task.osc.enabled', 'false',
