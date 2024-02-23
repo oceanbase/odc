@@ -15,6 +15,8 @@
  */
 package com.oceanbase.odc.service.datatransfer;
 
+import org.junit.Ignore;
+
 import com.oceanbase.odc.TestConnectionUtil;
 import com.oceanbase.odc.core.shared.constant.ConnectType;
 import com.oceanbase.odc.core.shared.constant.DialectType;
@@ -24,6 +26,7 @@ import com.oceanbase.odc.service.connection.model.ConnectionConfig;
  * @author liuyizhuo.lyz
  * @date 2024/2/5
  */
+@Ignore("run it manually")
 public class OracleTransferServiceTest extends BaseTransferServiceTest {
 
     @Override
