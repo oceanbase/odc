@@ -94,30 +94,41 @@ public class SqlCheckService {
     }
 
     public List<CheckViolation> check(@NotNull Long environmentId, @NonNull String databaseName,
-            @NotNull List<OffsetString> sqls, @NotNull ConnectionConfig config, List<SqlCheckRule> defaultRules) {
+            @NotNull List<OffsetString> sqls, @NotNull ConnectionConfig config) {
+        return check(environmentId, sqls, config, getRules(environmentId, databaseName, config));
+    }
+
+    public List<CheckViolation> check(@NotNull Long environmentId, @NotNull List<OffsetString> sqls,
+            @NotNull ConnectionConfig config, List<SqlCheckRule> checkRules) {
         if (CollectionUtils.isEmpty(sqls)) {
             return Collections.emptyList();
         }
-        Environment env = this.environmentService.detail(environmentId);
-        List<Rule> rules = this.ruleService.list(env.getRulesetId(), QueryRuleMetadataParams.builder().build());
+        List<Rule> rules = getRules(environmentId);
+        SqlCheckContext checkContext = new SqlCheckContext((long) sqls.size());
+        DefaultSqlChecker sqlChecker = new DefaultSqlChecker(config.getDialectType(), null, checkRules);
+        List<CheckViolation> checkViolations = new ArrayList<>();
+        for (OffsetString sql : sqls) {
+            List<CheckViolation> violations = sqlChecker.check(Collections.singletonList(sql), checkContext);
+            fullFillRiskLevel(rules, violations);
+            checkViolations.addAll(violations);
+        }
+        return checkViolations;
+    }
+
+    public List<SqlCheckRule> getRules(@NotNull Long environmentId, @NonNull String databaseName,
+            @NotNull ConnectionConfig config) {
+        List<Rule> rules = getRules(environmentId);
         OBConsoleDataSourceFactory factory = new OBConsoleDataSourceFactory(config, true, false);
         factory.resetSchema(origin -> OBConsoleDataSourceFactory.getSchema(databaseName, config.getDialectType()));
-        SqlCheckContext checkContext = new SqlCheckContext((long) sqls.size());
         try (SingleConnectionDataSource dataSource = (SingleConnectionDataSource) factory.getDataSource()) {
             JdbcTemplate jdbc = new JdbcTemplate(dataSource);
-            List<SqlCheckRule> checkRules = getRules(rules, config.getDialectType(), jdbc);
-            if (!CollectionUtils.isEmpty(defaultRules)) {
-                checkRules.addAll(defaultRules);
-            }
-            DefaultSqlChecker sqlChecker = new DefaultSqlChecker(config.getDialectType(), null, checkRules);
-            List<CheckViolation> checkViolations = new ArrayList<>();
-            for (OffsetString sql : sqls) {
-                List<CheckViolation> violations = sqlChecker.check(Collections.singletonList(sql), checkContext);
-                fullFillRiskLevel(rules, violations);
-                checkViolations.addAll(violations);
-            }
-            return checkViolations;
+            return getRules(rules, config.getDialectType(), jdbc);
         }
+    }
+
+    private List<Rule> getRules(@NotNull Long environmentId) {
+        Environment env = this.environmentService.detail(environmentId);
+        return this.ruleService.list(env.getRulesetId(), QueryRuleMetadataParams.builder().build());
     }
 
     public List<SqlCheckRule> getRules(List<Rule> rules, @NonNull ConnectionSession session) {

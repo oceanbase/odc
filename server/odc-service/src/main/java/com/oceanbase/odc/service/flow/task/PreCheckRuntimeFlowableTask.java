@@ -23,7 +23,6 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -72,6 +71,7 @@ import com.oceanbase.odc.service.resultset.ResultSetExportTaskParameter;
 import com.oceanbase.odc.service.schedule.flowtask.AlterScheduleParameters;
 import com.oceanbase.odc.service.schedule.model.JobType;
 import com.oceanbase.odc.service.session.util.SchemaExtractor;
+import com.oceanbase.odc.service.sqlcheck.SqlCheckRule;
 import com.oceanbase.odc.service.sqlcheck.SqlCheckService;
 import com.oceanbase.odc.service.sqlcheck.model.CheckResult;
 import com.oceanbase.odc.service.sqlcheck.model.CheckViolation;
@@ -269,9 +269,11 @@ public class PreCheckRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Void> {
         List<UnauthorizedDatabase> unauthorizedDatabases = new ArrayList<>();
         List<CheckViolation> violations = new ArrayList<>();
         if (CollectionUtils.isNotEmpty(sqls)) {
-            violations.addAll(this.sqlCheckService.check(Long.valueOf(describer.getEnvironmentId()),
-                    describer.getDatabaseName(), sqls, connectionConfig,
-                    Collections.singletonList(new IndexChangeTimeConsumingExists())));
+            Long environmentId = Long.valueOf(describer.getEnvironmentId());
+            List<SqlCheckRule> checkRules =
+                    this.sqlCheckService.getRules(environmentId, describer.getDatabaseName(), connectionConfig);
+            checkRules.add(new IndexChangeTimeConsumingExists());
+            violations.addAll(this.sqlCheckService.check(environmentId, sqls, connectionConfig, checkRules));
             Map<String, Set<SqlType>> schemaName2SqlTypes = SchemaExtractor.listSchemaName2SqlTypes(
                     sqls.stream().map(e -> SqlTuple.newTuple(e.getStr())).collect(Collectors.toList()),
                     preCheckTaskEntity.getDatabaseName(), this.connectionConfig.getDialectType());
