@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 OceanBase.
+ * Copyright (c) 2023 OceanBase.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,7 +32,6 @@ import com.oceanbase.odc.service.config.model.Configuration;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 
 import io.swagger.annotations.ApiOperation;
-
 
 @RestController
 @RequestMapping("/api/v2/config")

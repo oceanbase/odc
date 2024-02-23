@@ -3,161 +3,161 @@
 # - type options: string, integer, decimal, boolean, list
 - id: 1
   category: 'user'
-  config_key: 'odc.sqlexecute.default.mysqlAutoCommitMode'
+  key: 'odc.sqlexecute.default.mysqlAutoCommitMode'
   type: 'string'
   max_value: ~
   min_value: ~
-  allowed_values: 'ON,OFF'
+  allowed_values: [ 'ON','OFF' ]
   default_value: 'ON'
-  is_nullable: false
+  nullable: false
   description: ''
 - id: 2
   category: 'user'
-  config_key: 'odc.sqlexecute.default.mysqlAutoCommitMode'
+  key: 'odc.sqlexecute.default.mysqlAutoCommitMode'
   type: 'string'
   max_value: ~
   min_value: ~
-  allowed_values: 'ON,OFF'
+  allowed_values: [ 'ON','OFF' ]
   default_value: 'OFF'
-  is_nullable: false
+  nullable: false
   description: ''
 - id: 3
   category: 'user'
-  config_key: 'odc.sqlexecute.default.queryLimit'
+  key: 'odc.sqlexecute.default.queryLimit'
   type: 'integer'
   max_value: 1
   min_value: 100000
   allowed_values: ~
   default_value: '1000'
-  is_nullable: false
+  nullable: false
   description: ''
 - id: 4
   category: 'user'
-  config_key: 'odc.sqlexecute.default.fetchColumnInfo'
+  key: 'odc.sqlexecute.default.fetchColumnInfo'
   type: 'boolean'
   max_value: ~
   min_value: ~
-  allowed_values: 'true,false'
+  allowed_values: [ 'true','false' ]
   default_value: 'true'
-  is_nullable: false
+  nullable: false
   description: ''
 - id: 5
   category: 'user'
-  config_key: 'odc.sqlexecute.default.delimiter'
+  key: 'odc.sqlexecute.default.delimiter'
   type: 'string'
   max_value: ~
   min_value: ~
   allowed_values: ~
   default_value: ';'
-  is_nullable: false
+  nullable: false
   description: ''
 - id: 6
   category: 'user'
-  config_key: 'odc.sqlexecute.default.fullTraceDiagnosisEnabled'
+  key: 'odc.sqlexecute.default.fullTraceDiagnosisEnabled'
   type: 'boolean'
   max_value: ~
   min_value: ~
-  allowed_values: 'true,false'
+  allowed_values: [ 'true','false' ]
   default_value: 'true'
-  is_nullable: false
+  nullable: false
   description: ''
 - id: 7
   category: 'user'
-  config_key: 'odc.sqlexecute.default.continueExecutionOnError'
+  key: 'odc.sqlexecute.default.continueExecutionOnError'
   type: 'boolean'
   max_value: ~
   min_value: ~
-  allowed_values: 'true,false'
+  allowed_values: [ 'true','false' ]
   default_value: 'true'
-  is_nullable: false
+  nullable: false
   description: ''
 - id: 8
   category: 'user'
-  config_key: 'odc.sqlexecute.default.objectDraggingOption'
+  key: 'odc.sqlexecute.default.objectDraggingOption'
   type: 'string'
   max_value: ~
   min_value: ~
-  allowed_values: 'object_name,select_stmt,insert_stmt,update_stmt,delete_stmt'
+  allowed_values: [ 'object_name','select_stmt','insert_stmt','update_stmt','delete_stmt' ]
   default_value: 'object_name'
-  is_nullable: false
+  nullable: false
   description: ''
 - id: 9
   category: 'user'
-  config_key: 'odc.editor.style.theme'
+  key: 'odc.editor.style.theme'
   type: 'string'
   max_value: ~
   min_value: ~
-  allowed_values: 'OceanBase,VSCode'
+  allowed_values: [ 'OceanBase','VSCode' ]
   default_value: 'OceanBase'
-  is_nullable: false
+  nullable: false
   description: ''
 - id: 10
   category: 'user'
-  config_key: 'odc.editor.style.fontSize'
+  key: 'odc.editor.style.fontSize'
   type: 'string'
   max_value: ~
   min_value: ~
-  allowed_values: 'Small,Normal,Large'
+  allowed_values: [ 'Small','Normal' ,'Large' ]
   default_value: 'Normal'
-  is_nullable: false
+  nullable: false
   description: ''
 - id: 11
   category: 'user'
-  config_key: 'odc.editor.shortcut.executeStatement'
+  key: 'odc.editor.shortcut.executeStatement'
   type: 'string'
   max_value: ~
   min_value: ~
   allowed_values: ~
   default_value: '66'
-  is_nullable: false
+  nullable: false
   description: ''
 - id: 12
   category: 'user'
-  config_key: 'odc.editor.shortcut.executeCurrentStatement'
+  key: 'odc.editor.shortcut.executeCurrentStatement'
   type: 'string'
   max_value: ~
   min_value: ~
   allowed_values: ~
   default_value: '67'
-  is_nullable: false
+  nullable: false
   description: ''
 - id: 13
   category: 'user'
-  config_key: 'odc.appearance.scheme'
+  key: 'odc.appearance.scheme'
   type: 'string'
   max_value: ~
   min_value: ~
-  allowed_values: 'FollowSystem,White,Dark'
+  allowed_values: [ 'FollowSystem','White' ,'Dark' ]
   default_value: 'White'
-  is_nullable: false
+  nullable: false
   description: ''
 - id: 14
   category: 'user'
-  config_key: 'odc.appearance.language'
+  key: 'odc.appearance.language'
   type: 'string'
   max_value: ~
   min_value: ~
-  allowed_values: 'FollowSystem,en_US,zh_CN,zh_TW'
+  allowed_values: [ 'FollowSystem','en_US' ,'zh_CN' ,'zh_TW' ]
   default_value: 'FollowSystem'
-  is_nullable: false
+  nullable: false
   description: ''
 - id: 15
   category: 'user'
-  config_key: 'odc.account.defaultOrganizationType'
+  key: 'odc.account.defaultOrganizationType'
   type: 'string'
   max_value: ~
   min_value: ~
-  allowed_values: 'Team,Individual'
+  allowed_values: [ 'Team','Individual' ]
   default_value: 'Team'
-  is_nullable: false
+  nullable: false
   description: ''
 - id: 16
   category: 'user'
-  config_key: 'odc.account.userBehaviorAnalysisEnabled'
+  key: 'odc.account.userBehaviorAnalysisEnabled'
   type: 'boolean'
   max_value: ~
   min_value: ~
-  allowed_values: 'true,false'
+  allowed_values: [ 'true','false' ]
   default_value: 'false'
-  is_nullable: false
+  nullable: false
   description: ''

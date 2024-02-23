@@ -13,16 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.config;
+package com.oceanbase.odc.service.config.model;
 
-public interface UserConfigFacade {
-    String getUserConfig(String key);
+import java.math.BigDecimal;
+import java.util.List;
 
-    String getDefaultDelimiter();
+import lombok.Data;
 
-    String getMysqlAutoCommitMode();
-
-    String getOracleAutoCommitMode();
-
-    Integer getDefaultQueryLimit();
+@Data
+public class ConfigurationMeta {
+    private String category;
+    private String key;
+    private String type;
+    private BigDecimal maxValue;
+    private BigDecimal minValue;
+    private List<String> allowedValues;
+    private String defaultValue;
+    private boolean nullable;
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 OceanBase.
+ * Copyright (c) 2023 OceanBase.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package com.oceanbase.odc.service.config;
 import java.util.Collections;
 import java.util.List;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.oceanbase.odc.service.config.model.Configuration;
@@ -27,6 +28,10 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @Service
 public class UserConfigService {
+    @Autowired
+    private SystemConfigService systemConfigService;
+    @Autowired
+    private UserConfigMetaService userConfigMetaService;
 
     public List<Configuration> listDefaultUserConfigurations() {
         return Collections.emptyList();
