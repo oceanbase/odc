@@ -141,6 +141,10 @@ public class PartitionPlanScheduleService {
         // disable all related partition plan task
         Database database = this.databaseService.detail(databaseId);
         disablePartitionPlan(database.getId());
+        if (!partitionPlanConfig.isEnabled()) {
+            log.info("Partition plan is disabled, do nothing and return");
+            return;
+        }
         PartitionPlanEntity partitionPlanEntity = modelToEntity(partitionPlanConfig);
         partitionPlanEntity = this.partitionPlanRepository.save(partitionPlanEntity);
         Validate.isTrue(partitionPlanConfig.getCreationTrigger() != null, "Creation trigger can not be null");
