@@ -80,14 +80,15 @@ public class DataArchiveTask extends BaseTask<Boolean> {
                 syncTable(tableIndex, parameters);
             }
             runningJobMeta = jobMetaFactory.create(tableIndex, context.getJobIdentity(), parameters);
-            log.info("Init {} job succeed,jobId={}", runningJobMeta.getJobType(), runningJobMeta.getJobId());
+            log.info("Init {} job succeed,DLMJobId={}", runningJobMeta.getJobType(), runningJobMeta.getJobId());
             AbstractJob job = jobFactory.createJob(runningJobMeta);
             try {
-                log.info("{} job start,jobId={}", runningJobMeta.getJobType(), runningJobMeta.getJobId());
+                log.info("{} job start,DLMJobId={}", runningJobMeta.getJobType(), runningJobMeta.getJobId());
                 job.run();
-                log.info("{} job finished,jobId={}", runningJobMeta.getJobType(), runningJobMeta.getJobId());
+                log.info("{} job finished,DLMJobId={}", runningJobMeta.getJobType(), runningJobMeta.getJobId());
             } catch (Throwable e) {
-                log.error("{} job failed,jobId={},errorMsg={}", runningJobMeta.getJobType(), runningJobMeta.getJobId(),
+                log.error("{} job failed,DLMJobId={},errorMsg={}", runningJobMeta.getJobType(),
+                        runningJobMeta.getJobId(),
                         e);
             }
             progress = (tableIndex + 1.0) / parameters.getTables().size();
