@@ -51,10 +51,10 @@ public class OmsResourceCleanHandler {
         controlRequest.setId(projectControl.getId());
         controlRequest.setUid(projectControl.getUid());
         try {
-            OmsProjectProgressResponse  progressResponse = projectOpenApiService.describeProjectProgress(controlRequest);
+            OmsProjectProgressResponse progressResponse = projectOpenApiService.describeProjectProgress(controlRequest);
             if (progressResponse.getStatus() == OmsProjectStatusEnum.RELEASED ||
-                progressResponse.getStatus() == OmsProjectStatusEnum.RELEASING ||
-                progressResponse.getStatus() == OmsProjectStatusEnum.DELETED) {
+                    progressResponse.getStatus() == OmsProjectStatusEnum.RELEASING ||
+                    progressResponse.getStatus() == OmsProjectStatusEnum.DELETED) {
                 released = true;
             }
         } catch (OmsException e) {

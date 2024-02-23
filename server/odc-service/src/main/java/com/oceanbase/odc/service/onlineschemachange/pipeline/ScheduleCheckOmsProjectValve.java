@@ -142,6 +142,8 @@ public class ScheduleCheckOmsProjectValve extends BaseValve {
     private void continueHandleProjectStepResult(ProjectStepResult projectStepResult) {
         if (projectStepResult.getPreCheckResult() == PrecheckResult.FAILED) {
             throw new OscException(ErrorCodes.OmsPreCheckFailed, projectStepResult.getErrorMsg());
+        } else if (projectStepResult.getTaskStatus() == TaskStatus.FAILED) {
+            throw new OscException(ErrorCodes.OmsProjectExecutingFailed, projectStepResult.getErrorMsg());
         } else if (projectStepResult.getFullVerificationResult() == FullVerificationResult.INCONSISTENT) {
             throw new OscException(ErrorCodes.OmsDataCheckInconsistent,
                     "Task failed for origin table has inconsistent data with new table, result: "
