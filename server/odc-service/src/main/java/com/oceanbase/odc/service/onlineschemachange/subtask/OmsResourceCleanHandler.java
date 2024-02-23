@@ -51,9 +51,8 @@ public class OmsResourceCleanHandler {
         OmsProjectControlRequest controlRequest = new OmsProjectControlRequest();
         controlRequest.setId(projectControl.getId());
         controlRequest.setUid(projectControl.getUid());
-        OmsProjectProgressResponse progressResponse = null;
         try {
-            progressResponse = projectOpenApiService.describeProjectProgress(controlRequest);
+            OmsProjectProgressResponse  progressResponse = projectOpenApiService.describeProjectProgress(controlRequest);
             if (progressResponse.getStatus() == OmsProjectStatusEnum.RELEASED ||
                 progressResponse.getStatus() == OmsProjectStatusEnum.RELEASING ||
                 progressResponse.getStatus() == OmsProjectStatusEnum.DELETED) {
