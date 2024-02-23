@@ -79,12 +79,15 @@ public class ScheduleCheckOmsProjectValve extends BaseValve {
         if (log.isDebugEnabled()) {
             log.debug("Get project step list from projectOpenApiService is {} ", JsonUtils.toJson(projectSteps));
         }
+        OnlineSchemaChangeScheduleTaskResult lastResult = JsonUtils.fromJson(scheduleTask.getResultJson(),
+            OnlineSchemaChangeScheduleTaskResult.class);
 
         OmsProjectProgressResponse progress = projectOpenApiService.describeProjectProgress(projectRequest);
 
         ProjectStepResult projectStepResult = new ProjectStepResultChecker(progress, projectSteps,
                 onlineSchemaChangeProperties.isEnableFullVerify(),
-                onlineSchemaChangeProperties.getOms().getCheckProjectStepFailedThresholdTimes())
+                onlineSchemaChangeProperties.getOms().getCheckProjectStepFailedThresholdTimes(),
+              lastResult.getCheckFailedTimes())
                         .withCheckerVerifyResult(() -> listProjectFullVerifyResult(taskParameter.getOmsProjectId(),
                                 taskParameter.getDatabaseName(), taskParameter.getUid()))
                         .withResumeProject(() -> {
@@ -94,8 +97,7 @@ public class ScheduleCheckOmsProjectValve extends BaseValve {
                         .getCheckerResult();
 
         OnlineSchemaChangeScheduleTaskResult result = new OnlineSchemaChangeScheduleTaskResult(taskParameter);
-        OnlineSchemaChangeScheduleTaskResult lastResult = JsonUtils.fromJson(scheduleTask.getResultJson(),
-                OnlineSchemaChangeScheduleTaskResult.class);
+
         if (lastResult != null) {
             result.setManualSwapTableEnabled(lastResult.isManualSwapTableEnabled());
             result.setManualSwapTableStarted(lastResult.isManualSwapTableStarted());
@@ -175,6 +177,7 @@ public class ScheduleCheckOmsProjectValve extends BaseValve {
         result.setCurrentStep(projectStepResult.getCurrentStep());
         result.setCurrentStepStatus(projectStepResult.getCurrentStepStatus());
         result.setPrecheckResult(projectStepResult.getPreCheckResult());
+        result.setCheckFailedTimes(projectStepResult.getCheckFailedTimes());
     }
 
     private OmsProjectControlRequest getProjectRequest(OnlineSchemaChangeScheduleTaskParameters taskParam) {

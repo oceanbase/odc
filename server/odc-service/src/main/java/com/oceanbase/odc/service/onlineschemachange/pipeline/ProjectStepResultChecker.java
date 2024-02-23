@@ -59,14 +59,16 @@ public class ProjectStepResultChecker {
 
     private final boolean enableFullVerify;
     private final int checkProjectFailedThresholdTimes;
+    private final Map<OmsStepName, Integer> checkFailedTimes;
 
     public ProjectStepResultChecker(OmsProjectProgressResponse progressResponse, List<OmsProjectStepVO> projectSteps,
-            boolean enableFullVerify, int checkProjectFailedThresholdTimes) {
+            boolean enableFullVerify, int checkProjectFailedThresholdTimes,  Map<OmsStepName, Integer> checkFailedTimes ) {
         this.progressResponse = progressResponse;
         this.currentProjectStepMap = projectSteps.stream().collect(Collectors.toMap(OmsProjectStepVO::getName, a -> a));
         this.checkerResult = new ProjectStepResult();
         this.enableFullVerify = enableFullVerify;
         this.checkProjectFailedThresholdTimes = checkProjectFailedThresholdTimes;
+        this.checkFailedTimes = checkFailedTimes;
         this.toCheckSteps = Lists.newArrayList(OmsStepName.TRANSFER_INCR_LOG_PULL,
                 OmsStepName.FULL_TRANSFER, OmsStepName.INCR_TRANSFER);
         if (enableFullVerify) {
@@ -186,7 +188,7 @@ public class ProjectStepResultChecker {
                     checkerResult.setErrorMsg(currentProjectStepMap.get(stepName).getExtraInfo().getErrorMsg());
                 }
 
-                int failedTimes = checkerResult.getCheckFailedTimes().compute(stepName, (k, v) -> v == null ? 1 : ++v);
+                int failedTimes = checkFailedTimes.compute(stepName, (k, v) -> v == null ? 1 : ++v);
                 if (failedTimes > checkProjectFailedThresholdTimes) {
                     isProjectFailed = true;
                 }
@@ -267,6 +269,7 @@ public class ProjectStepResultChecker {
                         BigDecimal.valueOf(fullVerifyStep.getProgress()).doubleValue());
             }
         }
+        checkerResult.setCheckFailedTimes(this.checkFailedTimes);
 
     }
 
@@ -318,7 +321,7 @@ public class ProjectStepResultChecker {
          */
         private double taskPercentage;
 
-        private Map<OmsStepName, Integer> checkFailedTimes = new HashMap<>();
+        private Map<OmsStepName, Integer> checkFailedTimes;
 
     }
 }
