@@ -30,6 +30,7 @@ import org.quartz.Scheduler;
 import org.quartz.SchedulerException;
 import org.quartz.Trigger;
 import org.quartz.TriggerKey;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import com.google.common.collect.Lists;
 import com.oceanbase.odc.common.concurrent.Await;
@@ -46,6 +47,7 @@ import com.oceanbase.odc.service.task.exception.JobException;
 import com.oceanbase.odc.service.task.exception.TaskRuntimeException;
 import com.oceanbase.odc.service.task.listener.DefaultJobCallerListener;
 import com.oceanbase.odc.service.task.listener.DestroyExecutorListener;
+import com.oceanbase.odc.service.task.listener.JobTerminateNotifyListener;
 import com.oceanbase.odc.service.task.schedule.daemon.CheckRunningJob;
 import com.oceanbase.odc.service.task.schedule.daemon.DestroyExecutorJob;
 import com.oceanbase.odc.service.task.schedule.daemon.DoCancelingJob;
@@ -63,6 +65,8 @@ public class StdJobScheduler implements JobScheduler {
 
     private final Scheduler scheduler;
     private final JobConfiguration configuration;
+    @Autowired
+    private JobTerminateNotifyListener terminateNotifyListener;
 
     public StdJobScheduler(JobConfiguration configuration) {
         this.configuration = configuration;
@@ -72,6 +76,7 @@ public class StdJobScheduler implements JobScheduler {
 
         getEventPublisher().addEventListener(new DestroyExecutorListener(configuration));
         getEventPublisher().addEventListener(new DefaultJobCallerListener(this));
+        getEventPublisher().addEventListener(terminateNotifyListener);
         initDaemonJob();
         log.info("Start StdJobScheduler succeed.");
     }

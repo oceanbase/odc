@@ -26,6 +26,7 @@ import static com.oceanbase.odc.service.notification.constant.EventLabelKeys.DAT
 import static com.oceanbase.odc.service.notification.constant.EventLabelKeys.ENVIRONMENT;
 import static com.oceanbase.odc.service.notification.constant.EventLabelKeys.PROJECT_ID;
 import static com.oceanbase.odc.service.notification.constant.EventLabelKeys.PROJECT_NAME;
+import static com.oceanbase.odc.service.notification.constant.EventLabelKeys.REGION;
 import static com.oceanbase.odc.service.notification.constant.EventLabelKeys.TASK_ENTITY_ID;
 import static com.oceanbase.odc.service.notification.constant.EventLabelKeys.TASK_ID;
 import static com.oceanbase.odc.service.notification.constant.EventLabelKeys.TASK_STATUS;
@@ -42,11 +43,15 @@ import java.util.Objects;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.core.shared.Verify;
+import com.oceanbase.odc.core.shared.constant.TaskType;
+import com.oceanbase.odc.core.shared.exception.UnexpectedException;
 import com.oceanbase.odc.metadb.flow.FlowInstanceEntity;
 import com.oceanbase.odc.metadb.flow.FlowInstanceRepository;
 import com.oceanbase.odc.metadb.iam.UserEntity;
 import com.oceanbase.odc.metadb.schedule.ScheduleEntity;
+import com.oceanbase.odc.metadb.schedule.ScheduleTaskEntity;
 import com.oceanbase.odc.metadb.task.TaskEntity;
 import com.oceanbase.odc.service.collaboration.environment.EnvironmentService;
 import com.oceanbase.odc.service.collaboration.environment.model.Environment;
@@ -61,6 +66,8 @@ import com.oceanbase.odc.service.notification.model.Event;
 import com.oceanbase.odc.service.notification.model.EventLabels;
 import com.oceanbase.odc.service.notification.model.EventStatus;
 import com.oceanbase.odc.service.notification.model.TaskEvent;
+import com.oceanbase.odc.service.permission.database.model.ApplyDatabaseParameter;
+import com.oceanbase.odc.service.permission.project.ApplyProjectParameter;
 import com.oceanbase.odc.service.schedule.ScheduleService;
 import com.oceanbase.odc.service.schedule.model.JobType;
 
@@ -75,6 +82,8 @@ import lombok.extern.slf4j.Slf4j;
 public class EventBuilder {
     private static final DateTimeFormatter DATE_FORMATTER =
             DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+    private static final String OB_ARN_PARTITION = System.getenv("OB_ARN_PARTITION");
+
 
     @Autowired
     private ConnectionService connectionService;
@@ -129,6 +138,24 @@ public class EventBuilder {
         return event;
     }
 
+    public Event ofSucceededTask(ScheduleTaskEntity scheduleTask) {
+        Event event = ofScheduleTask(scheduleTask, TaskEvent.EXECUTION_SUCCEEDED);
+        resolveLabels(event.getLabels());
+        return event;
+    }
+
+    public Event ofFailedTask(ScheduleTaskEntity scheduleTask) {
+        Event event = ofScheduleTask(scheduleTask, TaskEvent.EXECUTION_FAILED);
+        resolveLabels(event.getLabels());
+        return event;
+    }
+
+    public Event ofFailedSchedule(ScheduleTaskEntity scheduleTask) {
+        Event event = ofScheduleTask(scheduleTask, TaskEvent.SCHEDULING_FAILED);
+        resolveLabels(event.getLabels());
+        return event;
+    }
+
     private Event ofTask(TaskEntity task, TaskEvent status) {
         EventLabels labels = new EventLabels();
         labels.putIfNonNull(TASK_TYPE, task.getTaskType().name());
@@ -137,18 +164,70 @@ public class EventBuilder {
         labels.putIfNonNull(CONNECTION_ID, task.getConnectionId());
         labels.putIfNonNull(CREATOR_ID, task.getCreatorId());
         labels.putIfNonNull(TRIGGER_TIME, LocalDateTime.now().format(DATE_FORMATTER));
+        labels.putIfNonNull(REGION, OB_ARN_PARTITION);
 
-        Verify.notNull(task.getDatabaseId(), "database id");
-        Database database = databaseService.getBasicSkipPermissionCheck(task.getDatabaseId());
-        labels.putIfNonNull(DATABASE_ID, database.id());
-        labels.putIfNonNull(DATABASE_NAME, database.getName());
-        labels.putIfNonNull(PROJECT_ID, database.getProject().id());
+        Long projectId;
+        if (Objects.nonNull(task.getDatabaseId())) {
+            Database database = databaseService.getBasicSkipPermissionCheck(task.getDatabaseId());
+            labels.putIfNonNull(DATABASE_ID, database.id());
+            labels.putIfNonNull(DATABASE_NAME, database.getName());
+            labels.putIfNonNull(PROJECT_ID, database.getProject().id());
+            projectId = database.getProject().id();
+        } else if (task.getTaskType() == TaskType.APPLY_DATABASE_PERMISSION) {
+            ApplyDatabaseParameter parameter = JsonUtils.fromJson(task.getParametersJson(),
+                    ApplyDatabaseParameter.class);
+            projectId = parameter.getProject().getId();
+            labels.putIfNonNull(PROJECT_ID, projectId);
+        } else if (task.getTaskType() == TaskType.APPLY_PROJECT_PERMISSION) {
+            ApplyProjectParameter parameter = JsonUtils.fromJson(task.getParametersJson(),
+                    ApplyProjectParameter.class);
+            projectId = parameter.getProject().getId();
+            labels.putIfNonNull(PROJECT_ID, projectId);
+        } else {
+            throw new UnexpectedException("task.databaseId should not be null");
+        }
 
         return Event.builder()
                 .status(EventStatus.CREATED)
                 .creatorId(task.getCreatorId())
                 .organizationId(task.getOrganizationId())
-                .projectId(database.getProject().id())
+                .projectId(projectId)
+                .triggerTime(new Date())
+                .labels(labels)
+                .build();
+    }
+
+    private Event ofScheduleTask(ScheduleTaskEntity scheduleTask, TaskEvent status) {
+        EventLabels labels = new EventLabels();
+        labels.putIfNonNull(TASK_STATUS, status.name());
+        labels.putIfNonNull(TRIGGER_TIME, LocalDateTime.now().format(DATE_FORMATTER));
+        labels.putIfNonNull(REGION, OB_ARN_PARTITION);
+
+        JobType jobType = JobType.valueOf(scheduleTask.getJobGroup());
+        switch (jobType) {
+            case DATA_ARCHIVE:
+            case DATA_ARCHIVE_DELETE:
+            case DATA_ARCHIVE_ROLLBACK:
+                labels.putIfNonNull(TASK_TYPE, JobType.DATA_ARCHIVE);
+                break;
+            default:
+                labels.putIfNonNull(TASK_TYPE, jobType);
+                break;
+        }
+        String scheduleId = scheduleTask.getJobName();
+        labels.putIfNonNull(TASK_ID, scheduleId);
+        ScheduleEntity schedule = scheduleService.nullSafeGetById(Long.parseLong(scheduleId));
+        labels.putIfNonNull(CONNECTION_ID, schedule.getConnectionId());
+        labels.putIfNonNull(CREATOR_ID, schedule.getCreatorId());
+        labels.putIfNonNull(PROJECT_ID, schedule.getProjectId());
+        labels.putIfNonNull(DATABASE_ID, schedule.getDatabaseId());
+        labels.putIfNonNull(DATABASE_NAME, schedule.getDatabaseName());
+
+        return Event.builder()
+                .status(EventStatus.CREATED)
+                .creatorId(schedule.getCreatorId())
+                .organizationId(schedule.getOrganizationId())
+                .projectId(schedule.getProjectId())
                 .triggerTime(new Date())
                 .labels(labels)
                 .build();
