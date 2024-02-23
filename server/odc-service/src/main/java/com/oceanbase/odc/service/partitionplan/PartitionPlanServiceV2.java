@@ -100,6 +100,11 @@ public class PartitionPlanServiceV2 {
     private PartitionPlanTablePartitionKeyRepository partitionPlanTablePartitionKeyRepository;
 
     public List<DataType> getPartitionKeyDataTypes(@NonNull String sessionId,
+            @NonNull Long databaseId, @NonNull String tableName) {
+        return getPartitionKeyDataTypes(sessionId, this.databaseService.detail(databaseId).getName(), tableName);
+    }
+
+    public List<DataType> getPartitionKeyDataTypes(@NonNull String sessionId,
             @NonNull String schema, @NonNull String tableName) {
         ConnectionSession connectionSession = sessionService.nullSafeGet(sessionId, true);
         DialectType dialectType = connectionSession.getDialectType();

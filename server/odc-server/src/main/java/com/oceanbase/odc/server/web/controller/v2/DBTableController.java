@@ -38,6 +38,7 @@ import com.oceanbase.odc.service.partitionplan.model.PartitionPlanDBTable;
 import com.oceanbase.odc.service.session.ConnectSessionService;
 import com.oceanbase.tools.dbbrowser.model.DBSchema;
 import com.oceanbase.tools.dbbrowser.model.DBTable;
+import com.oceanbase.tools.dbbrowser.model.datatype.DataType;
 
 @RestController
 @RequestMapping("api/v2/connect/sessions")
@@ -96,6 +97,13 @@ public class DBTableController {
     public ListResponse<PartitionPlanDBTable> listTables(@PathVariable String sessionId,
             @PathVariable Long databaseId) {
         return Responses.list(this.partitionPlanServiceV2.listCandidateTables(sessionId, databaseId));
+    }
+
+    @GetMapping(value = "/{sessionId}/databases/{databaseId}/candidatePartitionPlanTables/"
+            + "{tableName}/getPartitionKeyDataTypes")
+    public ListResponse<DataType> getPartitionKeyDataTypes(@PathVariable String sessionId,
+            @PathVariable Long databaseId, @PathVariable String tableName) {
+        return Responses.list(this.partitionPlanServiceV2.getPartitionKeyDataTypes(sessionId, databaseId, tableName));
     }
 
 }
