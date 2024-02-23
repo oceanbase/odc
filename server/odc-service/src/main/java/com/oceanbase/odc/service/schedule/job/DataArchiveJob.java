@@ -72,7 +72,7 @@ public class DataArchiveJob extends AbstractDlmJob {
                 DataArchiveParameters.class);
 
         if (taskStatus == TaskStatus.DONE && parameters.isDeleteAfterMigration()) {
-            log.info("Start to create clear job,taskId={}", taskEntity.getId());
+            log.info("Start to create clear job,scheduleTaskId={}", taskEntity.getId());
             scheduleService.dataArchiveDelete(Long.parseLong(taskEntity.getJobName()), taskEntity.getId());
             log.info("Clear job is created,");
         }
@@ -122,7 +122,8 @@ public class DataArchiveJob extends AbstractDlmJob {
         Long jobId = publishJob(parameters);
         scheduleTaskRepository.updateJobIdById(taskEntity.getId(), jobId);
         scheduleTaskRepository.updateTaskResult(taskEntity.getId(), JsonUtils.toJson(parameters));
-        log.info("Publish data-archive job to task framework succeed,taskId={},jobIdentity={}", taskEntity.getId(),
+        log.info("Publish data-archive job to task framework succeed,scheduleTaskId={},jobIdentity={}",
+                taskEntity.getId(),
                 jobId);
     }
 

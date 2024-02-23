@@ -54,7 +54,7 @@ public class DataArchiveRollbackJob extends AbstractDlmJob {
                 scheduleTaskRepository.findById(rollbackParameters.getDataArchiveTaskId());
 
         if (!dataArchiveTaskOption.isPresent()) {
-            log.warn("Data archive task not found,rollback task fast failed.dataArchiveTaskId={}",
+            log.warn("Data archive task not found,rollback task fast failed,scheduleTaskId={}",
                     rollbackParameters.getDataArchiveTaskId());
             scheduleTaskRepository.updateStatusById(taskEntity.getId(), TaskStatus.FAILED);
             return;
@@ -75,7 +75,7 @@ public class DataArchiveRollbackJob extends AbstractDlmJob {
                 o.setTargetTableName(temp);
             });
             Long jobId = publishJob(parameters);
-            log.info("Publish DLM job to task framework succeed,taskId={},jobIdentity={}", taskEntity.getId(),
+            log.info("Publish DLM job to task framework succeed,scheduleTaskId={},jobIdentity={}", taskEntity.getId(),
                     jobId);
             scheduleTaskRepository.updateJobIdById(taskEntity.getId(), jobId);
             scheduleTaskRepository.updateTaskResult(taskEntity.getId(), JsonUtils.toJson(parameters));

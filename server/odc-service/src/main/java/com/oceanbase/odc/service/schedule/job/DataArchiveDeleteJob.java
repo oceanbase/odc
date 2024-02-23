@@ -51,7 +51,7 @@ public class DataArchiveDeleteJob extends AbstractDlmJob {
                 scheduleTaskRepository.findById(dataArchiveClearParameters.getDataArchiveTaskId());
 
         if (!dataArchiveTaskOption.isPresent()) {
-            log.warn("Data archive task not found,rollback task fast failed.dataArchiveTaskId={}",
+            log.warn("Data archive task not found,rollback task fast failed.scheduleTaskId={}",
                     dataArchiveClearParameters.getDataArchiveTaskId());
             scheduleTaskRepository.updateStatusById(taskEntity.getId(), TaskStatus.FAILED);
             return;
@@ -60,7 +60,7 @@ public class DataArchiveDeleteJob extends AbstractDlmJob {
         ScheduleTaskEntity dataArchiveTask = dataArchiveTaskOption.get();
 
         if (dataArchiveTask.getStatus() != TaskStatus.DONE) {
-            log.warn("Data archive task do not finish,data archive task id = {}", dataArchiveTask.getId());
+            log.warn("Data archive task do not finish,scheduleTaskId = {}", dataArchiveTask.getId());
             scheduleTaskRepository.updateStatusById(taskEntity.getId(), TaskStatus.FAILED);
             return;
         }
@@ -70,7 +70,7 @@ public class DataArchiveDeleteJob extends AbstractDlmJob {
             DLMJobParameters parameters = getDLMJobParameters(dataArchiveTask.getJobId());
             parameters.setJobType(JobType.DELETE);
             Long jobId = publishJob(parameters);
-            log.info("Publish DLM job to task framework succeed,taskId={},jobIdentity={}", taskEntity.getId(),
+            log.info("Publish DLM job to task framework succeed,scheduleTaskId={},jobIdentity={}", taskEntity.getId(),
                     jobId);
             scheduleTaskRepository.updateJobIdById(taskEntity.getId(), jobId);
             scheduleTaskRepository.updateTaskResult(taskEntity.getId(), JsonUtils.toJson(parameters));
