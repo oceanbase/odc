@@ -674,7 +674,7 @@ INSERT INTO config_system_configuration(`key`, `value`, `description`) VALUES('o
   ON DUPLICATE KEY UPDATE `id`=`id`;
 
 INSERT INTO config_system_configuration(`key`, `value`, `description`) VALUES('odc.osc.oms.check-project-failed-threshold-times',
-  '', '60')
+  '', '120')
   ON DUPLICATE KEY UPDATE `id`=`id`;
 
 INSERT INTO config_system_configuration(`key`, `value`, `description`) VALUES('odc.features.task.osc.enabled', 'false',

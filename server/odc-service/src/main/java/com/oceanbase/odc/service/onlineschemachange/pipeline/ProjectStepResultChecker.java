@@ -16,6 +16,7 @@
 package com.oceanbase.odc.service.onlineschemachange.pipeline;
 
 import java.math.BigDecimal;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -94,9 +95,9 @@ public class ProjectStepResultChecker {
         }
 
         // todo 用户手动暂停了项目
-        if (checkProjectFinished()) {
+        if (isProjectFinished()) {
             checkerResult.setTaskStatus(TaskStatus.DONE);
-        } else if (checkProjectFailed()) {
+        } else if (isProjectFailed() || isProjectReleased()) {
             checkerResult.setTaskStatus(TaskStatus.FAILED);
         } else {
             checkerResult.setTaskStatus(TaskStatus.RUNNING);
@@ -137,7 +138,12 @@ public class ProjectStepResultChecker {
         }
     }
 
-    private boolean checkProjectFinished() {
+    private boolean isProjectReleased() {
+        return Arrays.asList(OmsProjectStatusEnum.DELETED, OmsProjectStatusEnum.RELEASED,
+                OmsProjectStatusEnum.RELEASING).contains(progressResponse.getStatus());
+    }
+
+    private boolean isProjectFinished() {
         return progressResponse.getStatus() == OmsProjectStatusEnum.FINISHED
                 || checkProjectStepFinished();
     }
@@ -168,7 +174,7 @@ public class ProjectStepResultChecker {
         }
     }
 
-    private boolean checkProjectFailed() {
+    private boolean isProjectFailed() {
         boolean isProjectFailed = false;
         for (OmsStepName stepName : toCheckSteps) {
             if (currentProjectStepMap.get(stepName) != null

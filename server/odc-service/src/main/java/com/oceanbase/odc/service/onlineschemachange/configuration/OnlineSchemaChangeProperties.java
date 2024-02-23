@@ -38,16 +38,16 @@ public class OnlineSchemaChangeProperties {
 
     private boolean enableFullVerify;
 
-    /**
-     * when check oms project failed times exceed this threshold times, osc task will be failed
-     */
-    private int checkProjectFailedThresholdTimes;
-
     @Data
     public static class OmsProperties {
         private String url;
         private String authorization;
         private String region;
+
+        /**
+         * when check oms project failed times exceed this threshold times, osc task will be failed
+         */
+        private int checkProjectFailedThresholdTimes;
     }
 
 }
