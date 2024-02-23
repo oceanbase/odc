@@ -13,24 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.oceanbase.odc.service.onlineschemachange.ddl;
-
-import com.oceanbase.tools.sqlparser.SQLParser;
 
 import lombok.Data;
 
 /**
  * @author yaobin
- * @date 2023-08-31
- * @since 4.2.0
+ * @date 2024-02-20
+ * @since 4.2.4
  */
 @Data
-public class OscFactoryWrapper {
+public class ReplaceElement {
 
-    private TableNameDescriptorFactory tableNameDescriptorFactory;
+    private ReplaceType replaceType;
 
-    private OscDBAccessorFactory oscDBAccessorFactory;
+    private String oldValue;
 
-    private SQLParser sqlParser;
+    private String newValue;
+
 }
