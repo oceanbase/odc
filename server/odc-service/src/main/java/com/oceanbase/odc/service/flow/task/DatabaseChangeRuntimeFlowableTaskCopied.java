@@ -237,7 +237,7 @@ public class DatabaseChangeRuntimeFlowableTaskCopied extends BaseODCFlowTaskDele
         long autoModifiedTimeout = flowTaskProperties.getIndexChangeMaxTimeoutMillisecond();
 
         if (Objects.nonNull(preCheckResult.getSqlCheckResult())
-                && preCheckResult.getSqlCheckResult().isInvolveTimeConsumingSql()
+                && preCheckResult.getSqlCheckResult().isTimeConsumingSqlExists()
                 && autoModifiedTimeout > parameters.getTimeoutMillis()) {
             parameters.setTimeoutMillis(autoModifiedTimeout);
             taskParameters.setAutoModifyTimeout(true);

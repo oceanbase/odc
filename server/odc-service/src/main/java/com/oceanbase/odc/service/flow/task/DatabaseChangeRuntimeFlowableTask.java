@@ -182,7 +182,7 @@ public class DatabaseChangeRuntimeFlowableTask extends BaseODCFlowTaskDelegate<D
     private DatabaseChangeThread generateOdcAsyncTaskThread(Long taskId, DelegateExecution execution) {
         Long creatorId = FlowTaskUtil.getTaskCreator(execution).getId();
         DatabaseChangeParameters parameters = FlowTaskUtil.getAsyncParameter(execution);
-        modifyTimeoutIfInvolveIndexChange(execution, parameters);
+        modifyTimeoutIfTimeConsumingSqlExists(execution, parameters);
         ConnectionConfig connectionConfig = FlowTaskUtil.getConnectionConfig(execution);
         connectionConfig.setQueryTimeoutSeconds((int) TimeUnit.MILLISECONDS.toSeconds(parameters.getTimeoutMillis()));
         DefaultConnectSessionFactory sessionFactory = new DefaultConnectSessionFactory(connectionConfig);
@@ -203,7 +203,8 @@ public class DatabaseChangeRuntimeFlowableTask extends BaseODCFlowTaskDelegate<D
         return returnVal;
     }
 
-    private void modifyTimeoutIfInvolveIndexChange(DelegateExecution execution, DatabaseChangeParameters parameters) {
+    private void modifyTimeoutIfTimeConsumingSqlExists(DelegateExecution execution,
+            DatabaseChangeParameters parameters) {
         Long taskId = FlowTaskUtil.getTaskId(execution);
         Long preCheckTaskId = FlowTaskUtil.getPreCheckTaskId(execution);
         TaskEntity preCheckTask = taskService.detail(preCheckTaskId);
@@ -212,7 +213,7 @@ public class DatabaseChangeRuntimeFlowableTask extends BaseODCFlowTaskDelegate<D
         Validate.notNull(preCheckResult, "Pre check task result can not be null");
         long autoModifiedTimeout = flowTaskProperties.getIndexChangeMaxTimeoutMillisecond();
         if (Objects.nonNull(preCheckResult.getSqlCheckResult())
-                && preCheckResult.getSqlCheckResult().isInvolveTimeConsumingSql()
+                && preCheckResult.getSqlCheckResult().isTimeConsumingSqlExists()
                 && autoModifiedTimeout > parameters.getTimeoutMillis()) {
             this.autoModifyTimeout = true;
             parameters.setTimeoutMillis(autoModifiedTimeout);
