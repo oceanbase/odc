@@ -345,15 +345,9 @@ public class FlowTaskUtil {
             }
             MockTaskConfig taskConfig = mapper.readValue(mapper.writeValueAsString(map), MockTaskConfig.class);
             taskConfig.setLogDir(taskId + "");
-            switch (session.getDialectType()) {
-                case MYSQL:
-                case DORIS:
-                    taskConfig.setDialectType(ObModeType.OB_MYSQL);
-                    break;
-                default:
-                    taskConfig.setDialectType(ObModeType.OB_ORACLE);
-                    break;
-            }
+            taskConfig.setDialectType(session.getDialectType().isMysql() || session.getDialectType().isDoris()
+                    ? ObModeType.OB_MYSQL
+                    : ObModeType.OB_ORACLE);
             List<MockTableConfig> tableConfigList = taskConfig.getTables();
             PreConditions.notEmpty(tableConfigList, "tasks"); // table config list can not be null or empty
 

@@ -13,26 +13,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.common.model;
+package com.oceanbase.odc.service.task.runtime;
+
+import java.util.List;
+
+import com.oceanbase.odc.service.datasecurity.model.MaskingAlgorithm;
+
+import lombok.Data;
 
 /**
- * @author wenniu.ly
- * @date 2021/3/25
+ * @author gaoda.xy
+ * @date 2024/1/31 16:10
  */
-public enum FileBucket {
-    IMPORT,
+@Data
+public class QuerySensitiveColumnResp {
 
-    OBCLIENT,
+    /**
+     * Whether the SQL query result set contains sensitive columns.
+     */
+    private boolean containsSensitiveColumn;
+    /**
+     * The masking algorithms of sensitive columns in SQL query result set.
+     */
+    private List<MaskingAlgorithm> maskingAlgorithms;
 
-    ASYNC,
-
-    RESULT_SET,
-
-    AUDIT,
-
-    SSL,
-
-    PRE_CHECK,
-
-    ROLLBACK_PLAN
 }
