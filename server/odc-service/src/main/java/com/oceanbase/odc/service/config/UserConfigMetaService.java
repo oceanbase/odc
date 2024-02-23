@@ -40,7 +40,7 @@ public class UserConfigMetaService {
         }
     }
 
-    List<ConfigurationMeta> listAllConfigMetas() {
+    public List<ConfigurationMeta> listAllConfigMetas() {
         return new ArrayList<>(keyToConfigMetaMap.values());
     }
 

@@ -27,8 +27,10 @@ import org.springframework.web.bind.annotation.RestController;
 import com.oceanbase.odc.service.common.response.ListResponse;
 import com.oceanbase.odc.service.common.response.Responses;
 import com.oceanbase.odc.service.common.response.SuccessResponse;
+import com.oceanbase.odc.service.config.UserConfigMetaService;
 import com.oceanbase.odc.service.config.UserConfigService;
 import com.oceanbase.odc.service.config.model.Configuration;
+import com.oceanbase.odc.service.config.model.ConfigurationMeta;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 
 import io.swagger.annotations.ApiOperation;
@@ -38,9 +40,16 @@ import io.swagger.annotations.ApiOperation;
 public class ConfigurationController {
     @Autowired
     private UserConfigService userConfigService;
-
+    @Autowired
+    private UserConfigMetaService userConfigMetaService;
     @Autowired
     private AuthenticationFacade authenticationFacade;
+
+    @ApiOperation(value = "listConfigurationMetas")
+    @RequestMapping(value = "/configurationMetas", method = RequestMethod.GET)
+    public ListResponse<ConfigurationMeta> listConfigurationMetas() {
+        return Responses.list(userConfigMetaService.listAllConfigMetas());
+    }
 
     @ApiOperation(value = "listDefaultUserConfigurations")
     @RequestMapping(value = "/users/default/configurations", method = RequestMethod.GET)

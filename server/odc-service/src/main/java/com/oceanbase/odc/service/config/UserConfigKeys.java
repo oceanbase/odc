@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 OceanBase.
+ * Copyright (c) 2023 OceanBase.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.oceanbase.odc.service.config;
 
 public class UserConfigKeys {
@@ -22,3 +21,4 @@ public class UserConfigKeys {
     public static final String DEFAULT_MYSQL_AUTO_COMMIT_MODE = "odc.sqlexecute.default.mysqlAutoCommitMode";
     public static final String DEFAULT_ORACLE_AUTO_COMMIT_MODE = "odc.sqlexecute.default.oracleAutoCommitMode";
 }
+
