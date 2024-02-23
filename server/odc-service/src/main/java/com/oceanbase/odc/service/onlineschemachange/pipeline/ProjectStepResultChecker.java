@@ -144,7 +144,7 @@ public class ProjectStepResultChecker {
         boolean result = Arrays.asList(OmsProjectStatusEnum.DELETED, OmsProjectStatusEnum.RELEASED,
                 OmsProjectStatusEnum.RELEASING).contains(progressResponse.getStatus());
         if (result) {
-            log.warn("Oms project has been released or deleted");
+            checkerResult.setErrorMsg("Oms project has been released, status=" + progressResponse.getStatus());
         }
         return result;
     }
