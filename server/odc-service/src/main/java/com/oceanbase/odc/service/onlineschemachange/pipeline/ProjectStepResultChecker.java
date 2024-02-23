@@ -16,6 +16,7 @@
 package com.oceanbase.odc.service.onlineschemachange.pipeline;
 
 import java.math.BigDecimal;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
@@ -56,13 +57,15 @@ public class ProjectStepResultChecker {
     private final OmsProjectProgressResponse progressResponse;
 
     private final boolean enableFullVerify;
+    private final int checkProjectFailedThresholdTimes;
 
     public ProjectStepResultChecker(OmsProjectProgressResponse progressResponse, List<OmsProjectStepVO> projectSteps,
-            boolean enableFullVerify) {
+            boolean enableFullVerify, int checkProjectFailedThresholdTimes) {
         this.progressResponse = progressResponse;
         this.currentProjectStepMap = projectSteps.stream().collect(Collectors.toMap(OmsProjectStepVO::getName, a -> a));
         this.checkerResult = new ProjectStepResult();
         this.enableFullVerify = enableFullVerify;
+        this.checkProjectFailedThresholdTimes = checkProjectFailedThresholdTimes;
         this.toCheckSteps = Lists.newArrayList(OmsStepName.TRANSFER_INCR_LOG_PULL,
                 OmsStepName.FULL_TRANSFER, OmsStepName.INCR_TRANSFER);
         if (enableFullVerify) {
@@ -93,17 +96,12 @@ public class ProjectStepResultChecker {
         // todo 用户手动暂停了项目
         if (checkProjectFinished()) {
             checkerResult.setTaskStatus(TaskStatus.DONE);
+        } else if (checkProjectFailed()) {
+            checkerResult.setTaskStatus(TaskStatus.FAILED);
         } else {
-            // try to resume oms project if oms project is failed
-            if (resumeProjectSupplier != null && checkStepFailed()) {
-                try {
-                    resumeProjectSupplier.get();
-                } catch (Exception ex) {
-                    log.warn("resume project error", ex);
-                }
-            }
             checkerResult.setTaskStatus(TaskStatus.RUNNING);
         }
+
         fillMigrateResult();
         checkerVerifyResult();
         evaluateTaskPercentage();
@@ -170,7 +168,7 @@ public class ProjectStepResultChecker {
         }
     }
 
-    private boolean checkStepFailed() {
+    private boolean checkProjectFailed() {
         boolean isProjectFailed = false;
         for (OmsStepName stepName : toCheckSteps) {
             if (currentProjectStepMap.get(stepName) != null
@@ -181,7 +179,11 @@ public class ProjectStepResultChecker {
                 if (currentProjectStepMap.get(stepName).getExtraInfo() != null) {
                     checkerResult.setErrorMsg(currentProjectStepMap.get(stepName).getExtraInfo().getErrorMsg());
                 }
-                isProjectFailed = true;
+
+                int failedTimes = checkerResult.getCheckFailedTimes().compute(stepName, (k, v) -> v == null ? 1 : ++v);
+                if (failedTimes > checkProjectFailedThresholdTimes) {
+                    isProjectFailed = true;
+                }
                 break;
             }
         }
@@ -309,6 +311,8 @@ public class ProjectStepResultChecker {
          * task percentage
          */
         private double taskPercentage;
+
+        private Map<OmsStepName, Integer> checkFailedTimes = new HashMap<>();
 
     }
 }

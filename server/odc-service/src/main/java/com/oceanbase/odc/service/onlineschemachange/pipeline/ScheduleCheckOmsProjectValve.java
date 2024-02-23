@@ -83,7 +83,8 @@ public class ScheduleCheckOmsProjectValve extends BaseValve {
         OmsProjectProgressResponse progress = projectOpenApiService.describeProjectProgress(projectRequest);
 
         ProjectStepResult projectStepResult = new ProjectStepResultChecker(progress, projectSteps,
-                onlineSchemaChangeProperties.isEnableFullVerify())
+                onlineSchemaChangeProperties.isEnableFullVerify(),
+                onlineSchemaChangeProperties.getCheckProjectFailedThresholdTimes())
                         .withCheckerVerifyResult(() -> listProjectFullVerifyResult(taskParameter.getOmsProjectId(),
                                 taskParameter.getDatabaseName(), taskParameter.getUid()))
                         .withResumeProject(() -> {
