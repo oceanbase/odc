@@ -27,6 +27,7 @@ import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.annotation.Pointcut;
 import org.aspectj.lang.reflect.MethodSignature;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.expression.EvaluationContext;
 import org.springframework.expression.Expression;
 import org.springframework.expression.ExpressionParser;
@@ -47,6 +48,7 @@ import lombok.extern.slf4j.Slf4j;
 @Component
 @Aspect
 @Slf4j
+@ConditionalOnProperty(value = {"odc.state.enabled"}, havingValue = "local")
 public class StateRouteAspect {
 
     @Autowired
@@ -72,18 +74,18 @@ public class StateRouteAspect {
             Object stateIdBySePL = parseStateIdFromParameter(proceedingJoinPoint, statefulRoute.stateIdExpression());
             stateManager = getStateManager(statefulRoute);
             routeInfo = stateManager.getRouteInfo(stateIdBySePL);
-            if (routeHealthManager.isHealthy(routeInfo)) {
-                DispatchResponse dispatchResponse =
-                        requestDispatcher.forward(routeInfo.getHostName(), routeInfo.getPort());
-                logTrace(method, stateIdBySePL, routeInfo);
-                StateRouteFilter.getContext().setDispatchResponse(dispatchResponse);
-                return null;
-            } else {
-                // means node changed
-                if (!routeInfo.isCurrentNode(properties)) {
+            if (!routeInfo.isCurrentNode(properties)) {
+                if (routeHealthManager.isHealthy(routeInfo)) {
+                    DispatchResponse dispatchResponse =
+                            requestDispatcher.forward(routeInfo.getHostName(), routeInfo.getPort());
+                    logTrace(method, stateIdBySePL, routeInfo);
+                    StateRouteFilter.getContext().setDispatchResponse(dispatchResponse);
+                    return null;
+                } else {
                     nodeChanged = true;
                     stateManager.preHandleBeforeNodeChange(proceedingJoinPoint, routeInfo);
                 }
+
             }
         }
         Object proceed = proceedingJoinPoint.proceed();

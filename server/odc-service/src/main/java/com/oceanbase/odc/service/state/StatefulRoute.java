@@ -20,15 +20,18 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-/**
- * Only work on public method of controller
- */
 @Target({ElementType.METHOD})
 @Retention(RetentionPolicy.RUNTIME)
 public @interface StatefulRoute {
 
     StateName stateName() default StateName.NONE;
 
+    /**
+     * Spring Expression Language (SpEL) expression for computing the StateId,which is used at
+     * {@link StateManager#getRouteInfo(Object)}
+     ** 
+     * @return
+     */
     String stateIdExpression();
 
     /**

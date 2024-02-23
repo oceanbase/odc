@@ -77,7 +77,7 @@ public class RequestDispatcher {
     private DispatchProperties dispatchProperties;
 
     @SneakyThrows
-    public static void setRequestBody(Object body){
+    public static void setRequestBody(Object body) {
         ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
         byteArrayOutputStream.write(JsonUtils.toJson(body).getBytes());
         WebRequestUtils.setAttribute(HttpRequestProvider.REQUEST_BODY_KEY, byteArrayOutputStream);

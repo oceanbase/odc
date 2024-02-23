@@ -15,7 +15,6 @@
  */
 package com.oceanbase.odc.service.state;
 
-import javax.annotation.Nullable;
 import javax.validation.constraints.NotNull;
 
 import org.aspectj.lang.ProceedingJoinPoint;
@@ -35,8 +34,7 @@ public interface StateManager {
      * @param targetRoute
      * @return true means do dispatch
      */
-    default void preHandleBeforeNodeChange(ProceedingJoinPoint proceedingJoinPoint, RouteInfo targetRoute) {
-    }
+    default void preHandleBeforeNodeChange(ProceedingJoinPoint proceedingJoinPoint, RouteInfo targetRoute) {}
 
     /**
      * called after the node changed
@@ -44,7 +42,6 @@ public interface StateManager {
      * @param targetRoute
      * @return true means do dispatch
      */
-    default void afterHandleBeforeNodeChange(ProceedingJoinPoint proceedingJoinPoint, RouteInfo targetRoute) {
-    }
+    default void afterHandleBeforeNodeChange(ProceedingJoinPoint proceedingJoinPoint, RouteInfo targetRoute) {}
 
 }
