@@ -81,6 +81,8 @@ jobs:
     steps:
       - name: Checkout workspace
         uses: actions/checkout@v3
+        with:
+          submodules: "recursive"
       - name: action by obfarm++odc_ut++COMMIT=${{ github.event.pull_request.head.sha }}
         uses: ./.github/obfarm/
         id: odc_ut

@@ -16,8 +16,6 @@
 
 package com.oceanbase.odc.service.datatransfer;
 
-import org.junit.Ignore;
-
 import com.oceanbase.odc.TestConnectionUtil;
 import com.oceanbase.odc.core.shared.constant.ConnectType;
 import com.oceanbase.odc.core.shared.constant.DialectType;
@@ -28,7 +26,6 @@ import com.oceanbase.odc.service.connection.model.ConnectionConfig;
  * possible to obtain the lfs file. So this unit test will be temporarily skipped and manually
  * executed by the developer.
  */
-@Ignore("run it manually")
 public class MySQLTransferServiceTest extends BaseTransferServiceTest {
 
     @Override
