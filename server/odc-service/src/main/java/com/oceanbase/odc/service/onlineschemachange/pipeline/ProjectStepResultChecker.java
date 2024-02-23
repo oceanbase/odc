@@ -17,7 +17,6 @@ package com.oceanbase.odc.service.onlineschemachange.pipeline;
 
 import java.math.BigDecimal;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
@@ -62,7 +61,8 @@ public class ProjectStepResultChecker {
     private final Map<OmsStepName, Integer> checkFailedTimes;
 
     public ProjectStepResultChecker(OmsProjectProgressResponse progressResponse, List<OmsProjectStepVO> projectSteps,
-            boolean enableFullVerify, int checkProjectFailedThresholdTimes,  Map<OmsStepName, Integer> checkFailedTimes ) {
+            boolean enableFullVerify, int checkProjectFailedThresholdTimes,
+            Map<OmsStepName, Integer> checkFailedTimes) {
         this.progressResponse = progressResponse;
         this.currentProjectStepMap = projectSteps.stream().collect(Collectors.toMap(OmsProjectStepVO::getName, a -> a));
         this.checkerResult = new ProjectStepResult();
@@ -190,6 +190,9 @@ public class ProjectStepResultChecker {
 
                 int failedTimes = checkFailedTimes.compute(stepName, (k, v) -> v == null ? 1 : ++v);
                 if (failedTimes > checkProjectFailedThresholdTimes) {
+                    log.warn(
+                            "Current step failed times exceed threshold, stepName={}, failedTimes={}, thresholdTimes={}",
+                            stepName, failedTimes, checkProjectFailedThresholdTimes);
                     isProjectFailed = true;
                 }
                 break;

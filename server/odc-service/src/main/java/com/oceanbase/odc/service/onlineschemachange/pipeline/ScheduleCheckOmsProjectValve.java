@@ -80,14 +80,14 @@ public class ScheduleCheckOmsProjectValve extends BaseValve {
             log.debug("Get project step list from projectOpenApiService is {} ", JsonUtils.toJson(projectSteps));
         }
         OnlineSchemaChangeScheduleTaskResult lastResult = JsonUtils.fromJson(scheduleTask.getResultJson(),
-            OnlineSchemaChangeScheduleTaskResult.class);
+                OnlineSchemaChangeScheduleTaskResult.class);
 
         OmsProjectProgressResponse progress = projectOpenApiService.describeProjectProgress(projectRequest);
 
         ProjectStepResult projectStepResult = new ProjectStepResultChecker(progress, projectSteps,
                 onlineSchemaChangeProperties.isEnableFullVerify(),
                 onlineSchemaChangeProperties.getOms().getCheckProjectStepFailedThresholdTimes(),
-              lastResult.getCheckFailedTimes())
+                lastResult.getCheckFailedTimes())
                         .withCheckerVerifyResult(() -> listProjectFullVerifyResult(taskParameter.getOmsProjectId(),
                                 taskParameter.getDatabaseName(), taskParameter.getUid()))
                         .withResumeProject(() -> {
