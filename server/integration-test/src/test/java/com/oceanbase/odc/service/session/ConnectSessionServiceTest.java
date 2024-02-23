@@ -15,7 +15,6 @@
  */
 package com.oceanbase.odc.service.session;
 
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
 import java.util.Collections;
