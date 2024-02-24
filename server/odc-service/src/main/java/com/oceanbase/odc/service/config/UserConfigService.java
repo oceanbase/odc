@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 import javax.annotation.PostConstruct;
@@ -31,7 +32,6 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
 
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
-import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.metadb.config.UserConfigDAO;
 import com.oceanbase.odc.metadb.config.UserConfigEntity;
 import com.oceanbase.odc.service.config.model.Configuration;
@@ -109,7 +109,9 @@ public class UserConfigService {
 
     private void validateConfiguration(Configuration configuration) {
         ConfigurationMeta meta = configKeyToConfigMeta.get(configuration.getKey());
-        PreConditions.notNull(meta, "Invalid configuration key: " + configuration.getKey());
+        if (Objects.isNull(meta)) {
+            throw new IllegalArgumentException("Invalid configuration key: " + configuration.getKey());
+        }
         ConfigValueValidator.validate(meta, configuration.getValue());
     }
 }
