@@ -29,24 +29,27 @@ public class ConfigValueValidator {
         PreConditions.notNull(meta, "meta");
         if (!meta.isNullable() && Objects.isNull(value)) {
             throw new IllegalArgumentException(
-                    String.format("Value is null for key '%s', but the configuration is not nullable", meta.getKey()));
+                    String.format("Value cannot be null for key '%s'", meta.getKey()));
         }
         if (CollectionUtils.isNotEmpty(meta.getAllowedValues())) {
             if (!meta.getAllowedValues().contains(value)) {
                 throw new IllegalArgumentException(
-                        String.format("Value is not allowed for key '%s'", meta.getKey()));
+                        String.format("Value is not allowed for key '%s', allowableValues are '%s'", meta.getKey(),
+                                String.join(",", meta.getAllowedValues())));
             }
         }
         if (Objects.nonNull(meta.getMaxValue())) {
             if (meta.getMaxValue().compareTo(new BigDecimal(value)) < 0) {
                 throw new IllegalArgumentException(
-                        String.format("Value is greater than max value for key '%s'", meta.getKey()));
+                        String.format("Value is greater than max value for key '%s', maxValue is '%s'",
+                                meta.getKey(), meta.getMaxValue()));
             }
         }
         if (Objects.nonNull(meta.getMinValue())) {
             if (meta.getMinValue().compareTo(new BigDecimal(value)) > 0) {
                 throw new IllegalArgumentException(
-                        String.format("Value is less than min value for key '%s'", meta.getKey()));
+                        String.format("Value is less than min value for key '%s', minValue is '%s'",
+                                meta.getKey(), meta.getMinValue()));
             }
         }
     }

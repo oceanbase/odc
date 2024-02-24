@@ -25,8 +25,8 @@
   category: 'user'
   key: 'odc.sqlexecute.default.queryLimit'
   type: 'integer'
-  max_value: 1
-  min_value: 100000
+  max_value: 100000
+  min_value: 1
   allowed_values: ~
   default_value: '1000'
   nullable: false
