@@ -96,6 +96,7 @@ public class UserConfigService {
         return listUserConfigurations(userId);
     }
 
+    @Transactional(rollbackFor = Exception.class)
     public Configuration updateUserConfiguration(@NotNull Long userId, @NotNull Configuration configuration) {
         validateConfiguration(configuration);
         UserConfigEntity entity = configuration.toEntity(userId);

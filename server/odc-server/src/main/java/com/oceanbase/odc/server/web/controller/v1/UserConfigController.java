@@ -45,7 +45,7 @@ public class UserConfigController {
     @ApiOperation(value = "query", notes = "Get all user Configs")
     @RequestMapping(value = "/me/configurations", method = RequestMethod.GET)
     public OdcResult<List<Configuration>> query() {
-        throw new UnsupportedException("please use /api/v2/users/me/configurations instead");
+        throw new UnsupportedException("please use /api/v2/config/users/me/configurations instead");
     }
 
     /**
@@ -54,7 +54,7 @@ public class UserConfigController {
     @ApiOperation(value = "update", notes = "Update user Config")
     @RequestMapping(value = "/me/configurations", method = RequestMethod.PATCH)
     public OdcResult<List<Configuration>> update(@RequestBody List<Configuration> configDTOList) {
-        throw new UnsupportedException("please use /api/v2/users/me/configurations instead");
+        throw new UnsupportedException("please use /api/v2/config/users/me/configurations instead");
     }
 
 }
