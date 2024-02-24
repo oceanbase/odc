@@ -61,6 +61,12 @@ public class ImmediateJobDispatcher implements JobDispatcher {
     }
 
     @Override
+    public void modify(JobIdentity ji, String jobParametersJson) throws JobException {
+        JobCaller jobCaller = getJobCaller(getJobRunMode(ji));
+        jobCaller.modify(ji, jobParametersJson);
+    }
+
+    @Override
     public void destroy(JobIdentity ji) throws JobException {
         JobCaller jobCaller = getJobCaller(getJobRunMode(ji));
         jobCaller.destroy(ji);

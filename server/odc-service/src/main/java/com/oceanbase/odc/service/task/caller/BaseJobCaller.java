@@ -17,8 +17,10 @@
 package com.oceanbase.odc.service.task.caller;
 
 import java.io.IOException;
+import java.util.concurrent.TimeUnit;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.oceanbase.odc.common.concurrent.Await;
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.metadb.task.JobEntity;
 import com.oceanbase.odc.service.common.response.SuccessResponse;
@@ -140,6 +142,51 @@ public abstract class BaseJobCaller implements JobCaller {
         log.info("Stop job {} failed.", ji.getId());
         publishEvent(new JobCallerEvent(ji, JobCallerAction.STOP, false, null));
         throw new JobException("job be stop failed, jobId={0}.", e, ji.getId());
+    }
+
+    @Override
+    public void modify(JobIdentity ji, String jobParametersJson) throws JobException {
+        JobConfigurationValidator.validComponent();
+        JobConfiguration jobConfiguration = JobConfigurationHolder.getJobConfiguration();
+        TaskFrameworkService taskFrameworkService = jobConfiguration.getTaskFrameworkService();
+        JobEntity jobEntity = taskFrameworkService.find(ji.getId());
+        String executorEndpoint = getExecutorPoint(ji, jobConfiguration, jobEntity);
+        String url = executorEndpoint + String.format(JobUrlConstants.MODIFY_JOB_PARAMETERS, ji.getId());
+        log.info("Try to modify job parameters, jobId={}.", ji.getId());
+        try {
+            SuccessResponse<Boolean> response =
+                    HttpUtil.request(url, jobParametersJson, new TypeReference<SuccessResponse<Boolean>>() {});
+            if (response != null && response.getSuccessful() && response.getData()) {
+                log.info("Modify job parameters success, jobId={}, response={}.", ji.getId(),
+                        JsonUtils.toJson(response));
+            } else {
+                throw new JobException("Modify job parameters not succeed, jobId={0}, response={1}", ji.getId(),
+                        response);
+            }
+        } catch (IOException e) {
+            throw new JobException("Modify job parameters not succeed, jobId={0}, response={1}", ji.getId(),
+                    JsonUtils.toJson(e.getMessage()));
+        }
+    }
+
+    private String getExecutorPoint(JobIdentity ji, JobConfiguration jobConfiguration, JobEntity jobEntity)
+            throws JobException {
+        String executorEndpoint = jobEntity.getExecutorEndpoint();
+        if (executorEndpoint == null) {
+            try {
+                Await.await().timeUnit(TimeUnit.SECONDS).timeout(30).period(1).periodTimeUnit(TimeUnit.SECONDS)
+                        .until(() -> jobConfiguration.getTaskFrameworkService().find(ji.getId())
+                                .getExecutorEndpoint() != null)
+                        .build().start();
+                executorEndpoint = jobConfiguration.getTaskFrameworkService().find(ji.getId()).getExecutorEndpoint();
+            } catch (Exception e) {
+                throw new JobException("Wait job report endpoint timeout, jobId={}", ji.getId());
+            }
+            if (executorEndpoint == null) {
+                throw new JobException("Wait job report endpoint timeout, jobId={}", ji.getId());
+            }
+        }
+        return executorEndpoint;
     }
 
     @Override

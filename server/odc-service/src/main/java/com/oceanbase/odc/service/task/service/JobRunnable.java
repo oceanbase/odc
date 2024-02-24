@@ -13,23 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.task.constants;
+package com.oceanbase.odc.service.task.service;
+
+import com.oceanbase.odc.service.task.exception.JobException;
 
 /**
  * @author yaobin
- * @date 2024-01-12
+ * @date 2024-02-23
  * @since 4.2.4
  */
-public class JobUrlConstants {
+@FunctionalInterface
+public interface JobRunnable {
 
-    public static final String TASK_RESULT_UPLOAD = "/api/v2/task/result";
-
-    public static final String TASK_HEART = "/api/v2/task/heart";
-
-    public static final String LOG_QUERY = "/api/v2/task/%s/log";
-
-    public static final String STOP_TASK = "/api/v2/task/%s/stop";
-
-    public static final String MODIFY_JOB_PARAMETERS = "/api/v2/task/%s/modifyJobParameters";
-
+    void run() throws JobException;
 }

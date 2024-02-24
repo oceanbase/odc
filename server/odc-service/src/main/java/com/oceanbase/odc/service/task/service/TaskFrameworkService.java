@@ -69,6 +69,8 @@ public interface TaskFrameworkService {
 
     int updateJobToCanceling(Long id, JobStatus oldStatus);
 
+    int updateJobParameters(Long id, String jobParametersJson);
+
     int updateExecutorToDestroyed(Long id);
 
     int updateStatusDescriptionByIdOldStatus(Long id, JobStatus oldStatus, JobStatus newStatus, String description);
