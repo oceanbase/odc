@@ -436,7 +436,7 @@ public class DefaultOnlineSchemaChangeTaskHandler implements OnlineSchemaChangeT
 
         if (!aMinusB.isEmpty()) {
             throw new UnsupportedException(ErrorCodes.OscColumnNameInconsistent,
-                    null, String.format("Column name %s is not found in new table.", String.join(",", aMinusB)));
+                    null, String.format("Column [%s] is not found in new table.", String.join(",", aMinusB)));
         }
 
         List<String> bMinusA = new ArrayList<>(newTableColumns);
@@ -450,7 +450,8 @@ public class DefaultOnlineSchemaChangeTaskHandler implements OnlineSchemaChangeT
                 .forEach(p -> {
                     if (new HashSet<>(bMinusA).containsAll(p.getColumnNames())) {
                         throw new UnsupportedException(ErrorCodes.OscAddPrimaryKeyColumnNotAllowed, null,
-                                "New primary key column name is " + String.join(",", p.getColumnNames()));
+                                String.format("Add primary key column [%s] in new table is not allowed.",
+                                        String.join(",", p.getColumnNames())));
                     }
                 });
 
