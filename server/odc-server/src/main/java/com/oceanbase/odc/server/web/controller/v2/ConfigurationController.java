@@ -73,7 +73,7 @@ public class ConfigurationController {
     }
 
     @ApiOperation(value = "updateCurrentUserConfiguration")
-    @RequestMapping(value = "/users/me/configurations/{key}", method = RequestMethod.PUT)
+    @RequestMapping(value = "/users/me/configurations/{key:[A-Za-z0-9.]+}", method = RequestMethod.PUT)
     public SuccessResponse<Configuration> updateCurrentUserConfiguration(@PathVariable("key") String key,
             @RequestBody Configuration configuration) {
         long currentUserId = authenticationFacade.currentUserId();
