@@ -52,7 +52,7 @@ import com.oceanbase.odc.service.db.session.KillSessionResult;
 import com.oceanbase.odc.service.dml.ValueEncodeType;
 import com.oceanbase.odc.service.partitionplan.PartitionPlanServiceV2;
 import com.oceanbase.odc.service.partitionplan.model.PartitionPlanPreViewResp;
-import com.oceanbase.odc.service.partitionplan.model.PartitionPlanTableConfig;
+import com.oceanbase.odc.service.partitionplan.model.PartitionPlanPreviewReq;
 import com.oceanbase.odc.service.session.ConnectConsoleService;
 import com.oceanbase.odc.service.session.ConnectSessionService;
 import com.oceanbase.odc.service.session.model.BinaryContent;
@@ -239,10 +239,10 @@ public class ConnectSessionController {
 
     @PostMapping(value = "/sessions/{sessionId}/partitionPlans/latest/preview")
     public ListResponse<PartitionPlanPreViewResp> getPreview(@PathVariable String sessionId,
-            @RequestBody List<PartitionPlanTableConfig> tableConfigs,
+            @RequestBody PartitionPlanPreviewReq req,
             @RequestParam(name = "onlyForPartitionName", defaultValue = "false") Boolean onlyForPartitionName) {
         return Responses.list(this.partitionPlanServiceV2.generatePartitionDdl(
-                SidUtils.getSessionId(sessionId), tableConfigs, onlyForPartitionName));
+                SidUtils.getSessionId(sessionId), req.getTableConfigs(), onlyForPartitionName));
     }
 
 }

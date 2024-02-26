@@ -26,6 +26,8 @@ import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.plugin.task.api.partitionplan.invoker.drop.KeepMostLatestPartitionGenerator;
 
 import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.NonNull;
 import lombok.Setter;
 import lombok.ToString;
 
@@ -39,6 +41,7 @@ import lombok.ToString;
 @Getter
 @Setter
 @ToString
+@NoArgsConstructor
 public class PartitionPlanTableConfig implements Serializable {
 
     private static final long serialVersionUID = 7099051008183574787L;
@@ -48,6 +51,15 @@ public class PartitionPlanTableConfig implements Serializable {
     private List<PartitionPlanKeyConfig> partitionKeyConfigs;
     private String partitionNameInvoker;
     private Map<String, Object> partitionNameInvokerParameters;
+
+    public PartitionPlanTableConfig(@NonNull PartitionPlanTableConfig tableConfig) {
+        this.id = tableConfig.id;
+        this.enabled = tableConfig.enabled;
+        this.tableName = tableConfig.tableName;
+        this.partitionKeyConfigs = tableConfig.partitionKeyConfigs;
+        this.partitionNameInvoker = tableConfig.partitionNameInvoker;
+        this.partitionNameInvokerParameters = tableConfig.partitionNameInvokerParameters;
+    }
 
     public boolean isContainsCreateStrategy() {
         if (CollectionUtils.isEmpty(this.partitionKeyConfigs)) {
