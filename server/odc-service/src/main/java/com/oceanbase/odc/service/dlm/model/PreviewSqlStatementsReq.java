@@ -25,7 +25,7 @@ import lombok.Data;
  * @Descripition:
  */
 @Data
-public class GetRealSqlListReq {
+public class PreviewSqlStatementsReq {
 
     private List<DataArchiveTableConfig> tables;
 

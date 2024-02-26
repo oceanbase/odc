@@ -15,18 +15,16 @@
  */
 package com.oceanbase.odc.server.web.controller.v2;
 
-import java.util.List;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.oceanbase.odc.service.common.response.ListResponse;
 import com.oceanbase.odc.service.common.response.Responses;
-import com.oceanbase.odc.service.common.response.SuccessResponse;
 import com.oceanbase.odc.service.dlm.DLMService;
-import com.oceanbase.odc.service.dlm.model.GetRealSqlListReq;
+import com.oceanbase.odc.service.dlm.model.PreviewSqlStatementsReq;
 
 /**
  * @Author：tinker
@@ -41,8 +39,8 @@ public class DLMController {
     @Autowired
     private DLMService dlmTaskPrepareService;
 
-    @RequestMapping(value = "/getRealSqlList", method = RequestMethod.POST)
-    public SuccessResponse<List<String>> getRealSqlList(@RequestBody GetRealSqlListReq req) {
-        return Responses.single(dlmTaskPrepareService.getRealSqlList(req));
+    @RequestMapping(value = "/previewSqlStatements", method = RequestMethod.POST)
+    public ListResponse<String> previewSqlStatements(@RequestBody PreviewSqlStatementsReq req) {
+        return Responses.list(dlmTaskPrepareService.previewSqlStatements(req));
     }
 }

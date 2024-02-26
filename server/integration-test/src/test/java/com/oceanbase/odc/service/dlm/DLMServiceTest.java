@@ -25,8 +25,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 import com.oceanbase.odc.ServiceTestEnv;
 import com.oceanbase.odc.service.dlm.model.DataArchiveTableConfig;
-import com.oceanbase.odc.service.dlm.model.GetRealSqlListReq;
 import com.oceanbase.odc.service.dlm.model.OffsetConfig;
+import com.oceanbase.odc.service.dlm.model.PreviewSqlStatementsReq;
 
 import cn.hutool.core.lang.Assert;
 
@@ -42,7 +42,7 @@ public class DLMServiceTest extends ServiceTestEnv {
 
     @Test
     public void getRealSqlList() {
-        GetRealSqlListReq req = new GetRealSqlListReq();
+        PreviewSqlStatementsReq req = new PreviewSqlStatementsReq();
         List<DataArchiveTableConfig> tableConfigs = new LinkedList<>();
         DataArchiveTableConfig config = new DataArchiveTableConfig();
         config.setTableName("test");
@@ -55,7 +55,7 @@ public class DLMServiceTest extends ServiceTestEnv {
         params.add(param);
         req.setTables(tableConfigs);
         req.setVariables(params);
-        List<String> realSqlList = dlmService.getRealSqlList(req);
+        List<String> realSqlList = dlmService.previewSqlStatements(req);
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
         String expect = String.format("select * from %s where create_time > '%s';", "test", sdf.format(new Date()));
         Assert.equals(realSqlList.get(0), expect);
@@ -63,13 +63,13 @@ public class DLMServiceTest extends ServiceTestEnv {
 
     @Test
     public void getRealSqlListNoCondition() {
-        GetRealSqlListReq req = new GetRealSqlListReq();
+        PreviewSqlStatementsReq req = new PreviewSqlStatementsReq();
         List<DataArchiveTableConfig> tableConfigs = new LinkedList<>();
         DataArchiveTableConfig config = new DataArchiveTableConfig();
         config.setTableName("test");
         tableConfigs.add(config);
         req.setTables(tableConfigs);
-        List<String> realSqlList = dlmService.getRealSqlList(req);
+        List<String> realSqlList = dlmService.previewSqlStatements(req);
         String expect = String.format("select * from test where 1=1;");
         Assert.equals(realSqlList.get(0), expect);
     }
