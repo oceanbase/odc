@@ -148,7 +148,7 @@
   max_value: ~
   min_value: ~
   allowed_values: [ 'TEAM','INDIVIDUAL' ]
-  default_value: 'Team'
+  default_value: 'TEAM'
   nullable: false
   description: ''
 - id: 16
