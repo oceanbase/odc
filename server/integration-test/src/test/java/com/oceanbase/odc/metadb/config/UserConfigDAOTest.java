@@ -66,6 +66,16 @@ public class UserConfigDAOTest extends ServiceTestEnv {
         Assert.assertEquals(1, JdbcTestUtils.countRowsInTable(jdbcTemplate, "config_user_configuration"));
     }
 
+    @Test
+    public void deleteByUserId_Exists_ReturnAffectRows() {
+        UserConfigEntity entity = createEntity();
+        userConfigDAO.batchUpsert(Arrays.asList(entity));
+
+        int affectRows = userConfigDAO.deleteByUserId(USER_ID);
+
+        Assert.assertEquals(1, affectRows);
+    }
+
     private UserConfigEntity createEntity() {
         UserConfigEntity entity = new UserConfigEntity();
         entity.setUserId(USER_ID);

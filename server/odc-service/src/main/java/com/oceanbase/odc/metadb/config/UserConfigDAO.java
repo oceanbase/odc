@@ -57,4 +57,10 @@ public class UserConfigDAO {
         return Arrays.stream(rets).sum();
     }
 
+    public int deleteByUserId(Long userId) {
+        PreConditions.notNull(userId, "userId");
+        String sql = "DELETE FROM config_user_configuration WHERE user_id = ?";
+        return jdbcTemplate.update(sql, userId);
+    }
+
 }

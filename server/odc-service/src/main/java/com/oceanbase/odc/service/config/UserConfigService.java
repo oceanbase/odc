@@ -69,6 +69,11 @@ public class UserConfigService {
         return new ArrayList<>(defaultConfigurations);
     }
 
+    public void deleteUserConfigurations(@NotNull Long userId) {
+        int affectRows = userConfigDAO.deleteByUserId(userId);
+        log.info("Delete user configurations, userId={}, affectRows={}", userId, affectRows);
+    }
+
     public List<Configuration> listUserConfigurations(@NotNull Long userId) {
         Map<String, Configuration> keyToConfiguration =
                 userConfigDAO.queryByUserId(userId).stream().map(Configuration::of)
