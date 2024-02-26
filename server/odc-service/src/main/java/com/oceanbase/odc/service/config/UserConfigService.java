@@ -45,8 +45,6 @@ import lombok.extern.slf4j.Slf4j;
 @SkipAuthorize("isolated by user")
 public class UserConfigService {
     @Autowired
-    private SystemConfigService systemConfigService;
-    @Autowired
     private UserConfigMetaService userConfigMetaService;
     @Autowired
     private UserConfigDAO userConfigDAO;

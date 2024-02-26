@@ -123,13 +123,6 @@ public class SessionProperties {
     private boolean addInternalRowId = true;
 
     /**
-     * 是否开启全链路诊断功能
-     */
-    @Value("${odc.session.full-link-trace.enabled:true}")
-    @Deprecated
-    private boolean enableFullLinkTrace = true;
-
-    /**
      * Timeout for querying full link trace
      */
     @Value("${odc.session.full-link-trace-timeout-seconds:60}")

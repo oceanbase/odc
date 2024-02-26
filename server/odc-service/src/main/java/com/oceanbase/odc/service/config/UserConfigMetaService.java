@@ -34,7 +34,7 @@ public class UserConfigMetaService {
     @PostConstruct
     public void init() {
         List<ConfigurationMeta> configurations =
-                YamlUtils.fromYamlList("user-config-meta.yml", ConfigurationMeta.class);
+                YamlUtils.fromYamlList("config-meta/user-config-meta.yml", ConfigurationMeta.class);
         for (ConfigurationMeta configuration : configurations) {
             keyToConfigMetaMap.put(configuration.getKey(), configuration);
         }
