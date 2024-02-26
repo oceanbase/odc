@@ -147,7 +147,7 @@
   type: 'string'
   max_value: ~
   min_value: ~
-  allowed_values: [ 'Team','Individual' ]
+  allowed_values: [ 'TEAM','INDIVIDUAL' ]
   default_value: 'Team'
   nullable: false
   description: ''
