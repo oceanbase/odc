@@ -26,6 +26,7 @@ import org.springframework.cache.caffeine.CaffeineCacheManager;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Lazy;
+import org.springframework.context.annotation.Primary;
 
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.LoadingCache;
@@ -79,11 +80,22 @@ public class CacheConfiguration {
     }
 
     @Bean("defaultCacheManager")
+    @Primary
     public CacheManager defaultCacheManager() {
         Caffeine<Object, Object> caffeine = Caffeine.newBuilder().maximumSize(1000).expireAfterWrite(
                 Duration.ofSeconds(600));
         CaffeineCacheManager cacheManager = new CaffeineCacheManager();
         cacheManager.setAllowNullValues(false);
+        cacheManager.setCaffeine(caffeine);
+        return cacheManager;
+    }
+
+    @Bean("allowNullCacheManager")
+    public CacheManager allowNullCacheManager() {
+        Caffeine<Object, Object> caffeine = Caffeine.newBuilder().maximumSize(1000).expireAfterWrite(
+                Duration.ofSeconds(600));
+        CaffeineCacheManager cacheManager = new CaffeineCacheManager();
+        cacheManager.setAllowNullValues(true);
         cacheManager.setCaffeine(caffeine);
         return cacheManager;
     }
