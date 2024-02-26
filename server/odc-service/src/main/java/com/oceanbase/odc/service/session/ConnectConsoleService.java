@@ -178,7 +178,7 @@ public class ConnectConsoleService {
         asyncExecuteReq.setQueryLimit(queryLimit);
         asyncExecuteReq.setShowTableColumnInfo(true);
         asyncExecuteReq.setContinueExecutionOnError(true);
-        asyncExecuteReq.setFullLinkATraceEnabled(false);
+        asyncExecuteReq.setFullLinkTraceEnabled(false);
 
         SqlAsyncExecuteResp resp = execute(sessionId, asyncExecuteReq, false);
         String requestId = resp.getRequestId();
@@ -265,7 +265,7 @@ public class ConnectConsoleService {
         statementCallBack.setDbmsoutputMaxRows(sessionProperties.getDbmsOutputMaxRows());
 
         boolean fullLinkTraceEnabled =
-                Objects.nonNull(request.getFullLinkATraceEnabled()) ? request.getFullLinkATraceEnabled()
+                Objects.nonNull(request.getFullLinkTraceEnabled()) ? request.getFullLinkTraceEnabled()
                         : userConfigFacade.isFullLinkTraceEnabled();
         statementCallBack.setUseFullLinkTrace(fullLinkTraceEnabled);
 
