@@ -124,6 +124,9 @@ public class OBMySQLSchemaAccessor extends MySQLNoGreaterThan5740SchemaAccessor 
         } catch (Exception e) {
             log.warn("List system tables from 'oceanbase' failed, reason={}", e.getMessage());
         }
+        String queryMysqlTable = "show full tables from `mysql`";
+        jdbcOperations.query(queryMysqlTable,
+                (rs, num) -> results.add(DBObjectIdentity.of("mysql", DBObjectType.TABLE, rs.getString(1))));
         return results;
     }
 
