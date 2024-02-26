@@ -39,6 +39,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.Date;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -66,6 +67,7 @@ import com.oceanbase.odc.service.notification.model.EventLabels;
 import com.oceanbase.odc.service.notification.model.EventStatus;
 import com.oceanbase.odc.service.notification.model.TaskEvent;
 import com.oceanbase.odc.service.permission.database.model.ApplyDatabaseParameter;
+import com.oceanbase.odc.service.permission.database.model.ApplyDatabaseParameter.ApplyDatabase;
 import com.oceanbase.odc.service.permission.project.ApplyProjectParameter;
 import com.oceanbase.odc.service.schedule.ScheduleService;
 import com.oceanbase.odc.service.schedule.model.JobType;
@@ -82,7 +84,8 @@ public class EventBuilder {
     private static final DateTimeFormatter DATE_FORMATTER =
             DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
     private static final String OB_ARN_PARTITION = System.getenv("OB_ARN_PARTITION");
-
+    private static final String AUTO_APPROVAL_KEY =
+            "${com.oceanbase.odc.builtin-resource.regulation.approval.flow.config.auto-approval.name}";
 
     @Autowired
     private ConnectionService connectionService;
@@ -173,13 +176,16 @@ public class EventBuilder {
             labels.putIfNonNull(PROJECT_ID, database.getProject().id());
             projectId = database.getProject().id();
         } else if (task.getTaskType() == TaskType.APPLY_DATABASE_PERMISSION) {
-            ApplyDatabaseParameter parameter = JsonUtils.fromJson(task.getParametersJson(),
-                    ApplyDatabaseParameter.class);
+            ApplyDatabaseParameter parameter =
+                    JsonUtils.fromJson(task.getParametersJson(), ApplyDatabaseParameter.class);
+            List<String> dbNames =
+                    parameter.getDatabases().stream().map(ApplyDatabase::getName).collect(Collectors.toList());
+            labels.putIfNonNull(DATABASE_NAME, dbNames);
             projectId = parameter.getProject().getId();
             labels.putIfNonNull(PROJECT_ID, projectId);
         } else if (task.getTaskType() == TaskType.APPLY_PROJECT_PERMISSION) {
-            ApplyProjectParameter parameter = JsonUtils.fromJson(task.getParametersJson(),
-                    ApplyProjectParameter.class);
+            ApplyProjectParameter parameter =
+                    JsonUtils.fromJson(task.getParametersJson(), ApplyProjectParameter.class);
             projectId = parameter.getProject().getId();
             labels.putIfNonNull(PROJECT_ID, projectId);
         } else {
@@ -254,11 +260,15 @@ public class EventBuilder {
             }
         }
         if (labels.containsKey(APPROVER_ID)) {
-            try {
-                UserEntity user = userService.nullSafeGet(labels.getLongFromString(APPROVER_ID));
-                labels.putIfNonNull(APPROVER_NAME, user.getName());
-            } catch (Exception e) {
-                log.warn("failed to query approver.", e);
+            if ("null".equals(labels.get(APPROVER_ID))) {
+                labels.putIfNonNull(APPROVER_NAME, AUTO_APPROVAL_KEY);
+            } else {
+                try {
+                    UserEntity user = userService.nullSafeGet(labels.getLongFromString(APPROVER_ID));
+                    labels.putIfNonNull(APPROVER_NAME, user.getName());
+                } catch (Exception e) {
+                    log.warn("failed to query approver.", e);
+                }
             }
         }
         if (labels.containsKey(TASK_ENTITY_ID)) {
@@ -267,12 +277,18 @@ public class EventBuilder {
                         flowInstanceRepository.findByTaskId(labels.getLongFromString(TASK_ENTITY_ID));
                 Verify.singleton(flowInstances, "flow instance");
                 Long parentInstanceId = flowInstances.get(0).getParentInstanceId();
-                if (Objects.nonNull(parentInstanceId)
-                        && "ASYNC".equals(labels.get(TASK_TYPE))) {
-                    // maybe sql plan or rollback
-                    ScheduleEntity scheduleEntity = scheduleService.nullSafeGetById(parentInstanceId);
-                    if (scheduleEntity.getJobType() == JobType.SQL_PLAN) {
-                        labels.putIfNonNull(TASK_TYPE, JobType.SQL_PLAN);
+                if (Objects.nonNull(parentInstanceId)) {
+                    if ("ASYNC".equals(labels.get(TASK_TYPE))) {
+                        ScheduleEntity scheduleEntity = scheduleService.nullSafeGetById(parentInstanceId);
+                        if (scheduleEntity.getJobType() == JobType.SQL_PLAN) {
+                            labels.putIfNonNull(TASK_TYPE, JobType.SQL_PLAN);
+                            labels.putIfNonNull(TASK_ID, parentInstanceId);
+                        } else {
+                            labels.putIfNonNull(TASK_ID, flowInstances.get(0).getId());
+                        }
+                    } else if ("ALTER_SCHEDULE".equals(labels.get(TASK_TYPE))) {
+                        ScheduleEntity scheduleEntity = scheduleService.nullSafeGetById(parentInstanceId);
+                        labels.putIfNonNull(TASK_TYPE, scheduleEntity.getJobType());
                         labels.putIfNonNull(TASK_ID, parentInstanceId);
                     } else {
                         labels.putIfNonNull(TASK_ID, flowInstances.get(0).getId());
