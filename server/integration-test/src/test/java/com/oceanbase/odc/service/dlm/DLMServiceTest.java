@@ -61,4 +61,17 @@ public class DLMServiceTest extends ServiceTestEnv {
         Assert.equals(realSqlList.get(0), expect);
     }
 
+    @Test
+    public void getRealSqlListNoCondition() {
+        GetRealSqlListReq req = new GetRealSqlListReq();
+        List<DataArchiveTableConfig> tableConfigs = new LinkedList<>();
+        DataArchiveTableConfig config = new DataArchiveTableConfig();
+        config.setTableName("test");
+        tableConfigs.add(config);
+        req.setTables(tableConfigs);
+        List<String> realSqlList = dlmService.getRealSqlList(req);
+        String expect = String.format("select * from test where 1=1;");
+        Assert.equals(realSqlList.get(0), expect);
+    }
+
 }

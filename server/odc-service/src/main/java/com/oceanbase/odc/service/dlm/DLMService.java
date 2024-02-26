@@ -21,6 +21,7 @@ import java.util.List;
 
 import org.springframework.stereotype.Service;
 
+import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.service.dlm.model.GetRealSqlListReq;
 import com.oceanbase.odc.service.dlm.utils.DataArchiveConditionUtil;
 
@@ -37,8 +38,10 @@ public class DLMService {
         String previewSqlTemp = "select * from %s where %s;";
         Date now = new Date();
         req.getTables().forEach(tableConfig -> {
-            returnValue.add(String.format(previewSqlTemp, tableConfig.getTableName(), DataArchiveConditionUtil
-                    .parseCondition(tableConfig.getConditionExpression(), req.getVariables(), now)));
+            returnValue.add(String.format(previewSqlTemp, tableConfig.getTableName(),
+                    StringUtils.isEmpty(tableConfig.getConditionExpression()) ? "1=1"
+                            : DataArchiveConditionUtil
+                                    .parseCondition(tableConfig.getConditionExpression(), req.getVariables(), now)));
         });
         return returnValue;
     }
