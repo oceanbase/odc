@@ -159,9 +159,9 @@ public class SqlUtils {
     private static SqlStatementIterator iterator(InputStream input, Charset charset, DialectType dialectType,
             SqlCommentProcessor processor) {
         PreConditions.notBlank(processor.getDelimiter(), "delimiter", "Empty or blank delimiter is not allowed");
-        if (DialectType.OB_ORACLE == dialectType
+        if (Objects.nonNull(dialectType) && dialectType.isOracle()
                 && (";".equals(processor.getDelimiter()) || "/".equals(processor.getDelimiter()))) {
-            return SqlSplitter.iterator(input, charset, processor.getDelimiter());
+            return SqlSplitter.iterator(input, charset, processor.getDelimiter(), false);
         } else {
             return SqlCommentProcessor.iterator(input, charset, processor);
         }
