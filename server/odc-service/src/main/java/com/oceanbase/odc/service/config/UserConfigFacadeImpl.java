@@ -35,14 +35,14 @@ public class UserConfigFacadeImpl implements UserConfigFacade {
     @Autowired
     private AuthenticationFacade authenticationFacade;
 
-    private final LoadingCache<Long, Map<String, Configuration>> userIdToConfigurationsMap = Caffeine.newBuilder()
-            .maximumSize(100).expireAfterWrite(60, TimeUnit.SECONDS)
+    private final LoadingCache<Long, Map<String, Configuration>> userIdToConfigurationsCache = Caffeine.newBuilder()
+            .maximumSize(500).expireAfterWrite(60, TimeUnit.SECONDS)
             .build(this::getUserConfigurations);
 
     @Override
     public String getUserConfig(String key) {
         long currentUserId = authenticationFacade.currentUserId();
-        Map<String, Configuration> userIdToConfigurations = userIdToConfigurationsMap.get(currentUserId);
+        Map<String, Configuration> userIdToConfigurations = userIdToConfigurationsCache.get(currentUserId);
         Configuration configuration = userIdToConfigurations.get(key);
         if (Objects.isNull(configuration)) {
             throw new IllegalStateException("User configuration not found: " + key);
@@ -68,6 +68,16 @@ public class UserConfigFacadeImpl implements UserConfigFacade {
     @Override
     public Integer getDefaultQueryLimit() {
         return Integer.parseInt(getUserConfig(UserConfigKeys.DEFAULT_QUERY_LIMIT));
+    }
+
+    @Override
+    public boolean isFullLinkTraceEnabled() {
+        return getUserConfig(UserConfigKeys.DEFAULT_FULL_LINK_TRACE_ENABLED).equalsIgnoreCase("true");
+    }
+
+    @Override
+    public boolean isContinueExecutionOnError() {
+        return getUserConfig(UserConfigKeys.DEFAULT_CONTINUE_EXECUTION_ON_ERROR).equalsIgnoreCase("true");
     }
 
     private Map<String, Configuration> getUserConfigurations(Long userId) {

@@ -126,6 +126,7 @@ public class SessionProperties {
      * 是否开启全链路诊断功能
      */
     @Value("${odc.session.full-link-trace.enabled:true}")
+    @Deprecated
     private boolean enableFullLinkTrace = true;
 
     /**

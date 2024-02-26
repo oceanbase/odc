@@ -53,7 +53,7 @@
   description: ''
 - id: 6
   category: 'user'
-  key: 'odc.sqlexecute.default.fullTraceDiagnosisEnabled'
+  key: 'odc.sqlexecute.default.fullLinkATraceEnabled'
   type: 'boolean'
   max_value: ~
   min_value: ~
