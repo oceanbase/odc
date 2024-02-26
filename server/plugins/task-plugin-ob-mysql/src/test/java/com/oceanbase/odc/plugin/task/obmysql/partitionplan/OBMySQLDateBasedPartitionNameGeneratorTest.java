@@ -50,6 +50,7 @@ public class OBMySQLDateBasedPartitionNameGeneratorTest {
         try (Connection connection = configuration.getDataSource().getConnection()) {
             DBTable dbTable = new DBTable();
             DateBasedPartitionNameGeneratorConfig config = new DateBasedPartitionNameGeneratorConfig();
+            config.setFromCurrentTime(true);
             config.setNamingPrefix("p");
             config.setNamingSuffixExpression("yyyyMMdd");
             config.setInterval(1);

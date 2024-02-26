@@ -43,7 +43,13 @@ public class OBMySQLDateBasedPartitionNameGenerator implements DateBasedPartitio
             @NonNull DateBasedPartitionNameGeneratorConfig config) {
         int precision = config.getIntervalPrecision();
         int interval = targetPartitionIndex * config.getInterval();
-        Date baseDate = TimeDataTypeUtil.getNextDate(new Date(), interval, precision);
+        Date from;
+        if (config.isFromCurrentTime()) {
+            from = new Date();
+        } else {
+            from = new Date(config.getFromTimestampMillis());
+        }
+        Date baseDate = TimeDataTypeUtil.getNextDate(from, interval, precision);
         DateFormat format = new SimpleDateFormat(config.getNamingSuffixExpression());
         return config.getNamingPrefix() + format.format(TimeDataTypeUtil.removeExcessPrecision(baseDate, precision));
     }
