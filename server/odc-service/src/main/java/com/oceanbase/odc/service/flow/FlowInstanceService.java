@@ -763,6 +763,7 @@ public class FlowInstanceService {
 
             Map<String, Object> variables = new HashMap<>();
             FlowTaskUtil.setTemplateVariables(variables, buildTemplateVariables(flowInstanceReq, connectionConfig));
+            FlowTaskUtil.setFlowInstanceId(variables, flowInstance.getId());
             initVariables(variables, taskEntity, null, connectionConfig, buildRiskLevelDescriber(flowInstanceReq));
             flowInstance.start(variables);
             if (taskType == TaskType.SHADOWTABLE_SYNC) {
