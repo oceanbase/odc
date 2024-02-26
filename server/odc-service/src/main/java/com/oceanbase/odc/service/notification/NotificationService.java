@@ -42,7 +42,6 @@ import org.springframework.context.annotation.DependsOn;
 import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
@@ -123,7 +122,7 @@ public class NotificationService {
 
     @PostConstruct
     public void init() {
-        metaPolicies = policyMetadataRepository.findAll(Sort.by("id")).stream()
+        metaPolicies = policyMetadataRepository.findAllOrderByCategoryAndName().stream()
                 .map(PolicyMetadataEntity::toPolicy)
                 .collect(Collectors.toMap(
                         NotificationPolicy::getPolicyMetadataId, policy -> policy, (p1, p2) -> p1, TreeMap::new));
