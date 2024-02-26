@@ -374,8 +374,8 @@ public class DatabaseService {
             return false;
         }
         saved.forEach(database -> checkPermission(database.getProjectId(), database.getConnectionId()));
-        databaseRepository.deleteAll(saved);
         deleteDatabasePermissionByIds(req.getDatabaseIds());
+        databaseRepository.deleteAll(saved);
         return true;
     }
 
