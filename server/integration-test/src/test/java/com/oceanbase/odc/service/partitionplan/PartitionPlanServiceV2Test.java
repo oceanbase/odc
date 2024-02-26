@@ -524,6 +524,7 @@ public class PartitionPlanServiceV2Test extends ServiceTestEnv {
     private Map<String, Object> getDropPartitionParameters(int keepCount) {
         Map<String, Object> parameters = new HashMap<>();
         parameters.put(KeepMostLatestPartitionGenerator.KEEP_LATEST_COUNT_KEY, keepCount);
+        parameters.put(KeepMostLatestPartitionGenerator.RELOAD_INDEXES, true);
         return parameters;
     }
 

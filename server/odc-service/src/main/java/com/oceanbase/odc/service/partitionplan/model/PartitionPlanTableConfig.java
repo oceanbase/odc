@@ -18,8 +18,12 @@ package com.oceanbase.odc.service.partitionplan.model;
 import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import org.apache.commons.collections4.CollectionUtils;
+
+import com.oceanbase.odc.common.json.JsonUtils;
+import com.oceanbase.odc.plugin.task.api.partitionplan.invoker.drop.KeepMostLatestPartitionGenerator;
 
 import lombok.Getter;
 import lombok.Setter;
@@ -57,6 +61,23 @@ public class PartitionPlanTableConfig implements Serializable {
             return false;
         }
         return this.partitionKeyConfigs.stream().anyMatch(i -> i.getStrategy() == PartitionPlanStrategy.DROP);
+    }
+
+    public Boolean getReloadIndexes() {
+        if (CollectionUtils.isEmpty(this.partitionKeyConfigs)) {
+            return null;
+        }
+        Optional<PartitionPlanKeyConfig> dropConfig = this.partitionKeyConfigs.stream()
+                .filter(p -> p.getStrategy() == PartitionPlanStrategy.DROP).findFirst();
+        if (!dropConfig.isPresent()) {
+            return null;
+        }
+        Map<String, Object> parameters = dropConfig.get().getPartitionKeyInvokerParameters();
+        Object value = parameters.get(KeepMostLatestPartitionGenerator.RELOAD_INDEXES);
+        if (value == null) {
+            return null;
+        }
+        return JsonUtils.fromJson(JsonUtils.toJson(value), Boolean.class);
     }
 
 }

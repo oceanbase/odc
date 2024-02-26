@@ -314,10 +314,12 @@ public class PartitionPlanServiceV2 {
         }
         Map<PartitionPlanStrategy, DBTablePartition> strategyListMap = doPartitionPlan(connection, dbTable,
                 tableConfig, autoPartitionExtensionPoint, strategy2PartitionKeyConfigs);
+        boolean reloadIndexes = Boolean.TRUE.equals(tableConfig.getReloadIndexes());
         return strategyListMap.entrySet().stream().collect(Collectors.toMap(Entry::getKey, e -> {
             switch (e.getKey()) {
                 case DROP:
-                    return autoPartitionExtensionPoint.generateDropPartitionDdls(connection, e.getValue(), true);
+                    return autoPartitionExtensionPoint.generateDropPartitionDdls(
+                            connection, e.getValue(), reloadIndexes);
                 case CREATE:
                     return autoPartitionExtensionPoint.generateCreatePartitionDdls(connection, e.getValue());
                 default:

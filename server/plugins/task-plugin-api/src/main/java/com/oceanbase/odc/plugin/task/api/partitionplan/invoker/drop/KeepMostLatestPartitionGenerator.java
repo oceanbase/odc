@@ -37,6 +37,7 @@ import lombok.NonNull;
 public interface KeepMostLatestPartitionGenerator extends DropPartitionGenerator {
 
     String KEEP_LATEST_COUNT_KEY = "keepLatestCount";
+    String RELOAD_INDEXES = "reloadIndexes";
 
     List<DBTablePartitionDefinition> generate(@NonNull Connection connection,
             @NonNull DBTable dbTable, @NonNull Integer keepCount) throws Exception;
