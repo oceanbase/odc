@@ -70,11 +70,11 @@ public class ApprovalStatusNotifyListener extends EmptyExecutionListener {
         }
         try {
             FlowApprovalInstance target = getTarget(execution);
-            TaskEntity taskEntity = flowInstanceService.getTaskByFlowInstanceId(target.getFlowInstanceId());
             if (target.isAutoApprove()) {
                 return;
             }
 
+            TaskEntity taskEntity = flowInstanceService.getTaskByFlowInstanceId(target.getFlowInstanceId());
             Set<Long> approverIds = null;
             Optional<FlowInstanceApprovalViewEntity> optional =
                     flowInstanceApprovalViewRepository.findById(target.getId());
