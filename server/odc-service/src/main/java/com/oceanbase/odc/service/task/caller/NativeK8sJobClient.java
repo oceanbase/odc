@@ -92,10 +92,10 @@ public class NativeK8sJobClient implements K8sJobClient {
 
     @Override
     public String create(@NonNull String namespace, @NonNull String name, @NonNull String image,
-            List<String> command, @NonNull PodParam podParam) throws JobException {
+            List<String> command, @NonNull PodConfig podConfig) throws JobException {
         validK8sProperties();
 
-        V1Pod job = getV1Pod(name, image, command, podParam);
+        V1Pod job = getV1Pod(name, image, command, podConfig);
         CoreV1Api api = new CoreV1Api();
         try {
             V1Pod createdJob = api.createNamespacedPod(namespace, job, null, null,
@@ -140,7 +140,7 @@ public class NativeK8sJobClient implements K8sJobClient {
         return pod.getMetadata().getName();
     }
 
-    private V1Pod getV1Pod(String jobName, String image, List<String> command, PodParam podParam) {
+    private V1Pod getV1Pod(String jobName, String image, List<String> command, PodConfig podParam) {
         V1Container container = new V1Container()
                 .name(jobName)
                 .image(image)

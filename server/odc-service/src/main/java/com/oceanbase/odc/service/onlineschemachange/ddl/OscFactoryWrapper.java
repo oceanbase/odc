@@ -16,6 +16,8 @@
 
 package com.oceanbase.odc.service.onlineschemachange.ddl;
 
+import com.oceanbase.tools.sqlparser.SQLParser;
+
 import lombok.Data;
 
 /**
@@ -29,4 +31,6 @@ public class OscFactoryWrapper {
     private TableNameDescriptorFactory tableNameDescriptorFactory;
 
     private OscDBAccessorFactory oscDBAccessorFactory;
+
+    private SQLParser sqlParser;
 }

@@ -41,6 +41,7 @@ import org.springframework.web.servlet.LocaleResolver;
 
 import com.github.benmanes.caffeine.cache.LoadingCache;
 import com.oceanbase.odc.common.trace.TraceContextHolder;
+import com.oceanbase.odc.common.util.ExceptionUtils;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.exception.AttemptLoginOverLimitException;
 import com.oceanbase.odc.core.shared.exception.OverLimitException;
@@ -83,8 +84,8 @@ public class CustomAuthenticationFailureHandler implements AuthenticationFailure
     @Override
     public void onAuthenticationFailure(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse,
             AuthenticationException exception) throws IOException {
-        log.info("Authentication failed for uri={}", httpServletRequest.getRequestURI(),
-                exception);
+        log.info("Authentication failed for uri={}, rootCause={}", httpServletRequest.getRequestURI(),
+                ExceptionUtils.getRootCauseReason(exception));
 
         FailedLoginAttemptLimiter failedLoginAttemptLimiter =
                 clientAddressLoginAttemptCache.get(WebRequestUtils.getClientAddress(httpServletRequest));

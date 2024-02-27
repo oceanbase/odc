@@ -53,6 +53,14 @@ public interface TaskFrameworkService {
 
     Page<JobEntity> findHeartTimeTimeoutJobs(int timeoutSeconds, int page, int size);
 
+    /**
+     * count the jobs started time before neverHeartSeconds which status is running and no heart
+     * 
+     * @param neverHeartSeconds job start seconds
+     * @return count
+     */
+    long countRunningNeverHeartJobs(int neverHeartSeconds);
+
     JobDefinition getJobDefinition(Long id);
 
     int startSuccess(Long id, String executorIdentifier);

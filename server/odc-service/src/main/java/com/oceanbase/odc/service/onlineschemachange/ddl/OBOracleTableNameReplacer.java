@@ -15,6 +15,12 @@
  */
 package com.oceanbase.odc.service.onlineschemachange.ddl;
 
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+
 import org.antlr.v4.runtime.CharStream;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
@@ -22,13 +28,16 @@ import org.antlr.v4.runtime.TokenStreamRewriter;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.ParseTreeWalker;
 import org.antlr.v4.runtime.tree.TerminalNode;
+import org.apache.commons.collections4.CollectionUtils;
 
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.shared.PreConditions;
+import com.oceanbase.odc.service.onlineschemachange.model.OnlineSchemaChangeSqlType;
 import com.oceanbase.tools.sqlparser.FastFailErrorListener;
 import com.oceanbase.tools.sqlparser.oboracle.OBLexer;
 import com.oceanbase.tools.sqlparser.oboracle.OBParser;
 import com.oceanbase.tools.sqlparser.oboracle.OBParser.Alter_table_stmtContext;
+import com.oceanbase.tools.sqlparser.oboracle.OBParser.Create_index_stmtContext;
 import com.oceanbase.tools.sqlparser.oboracle.OBParser.Create_table_stmtContext;
 import com.oceanbase.tools.sqlparser.oboracle.OBParser.Index_nameContext;
 import com.oceanbase.tools.sqlparser.oboracle.OBParser.Relation_factorContext;
@@ -37,8 +46,63 @@ import com.oceanbase.tools.sqlparser.oboracle.OBParserBaseListener;
 
 public class OBOracleTableNameReplacer implements TableNameReplacer {
 
-    public String replaceCreateStmt(String originCreateStmt, String newTableName) {
+    public ReplaceResult replaceCreateStmt(String originCreateStmt, String newTableName) {
 
+        ReplaceResult result = new ReplaceResult();
+        ReplaceElement toReplaceElement = new ReplaceElement();
+        toReplaceElement.setNewValue(newTableName);
+        toReplaceElement.setReplaceType(ReplaceType.TABLE_NAME);
+        String newSql = getRewriteSql(originCreateStmt,
+                rewriter -> new CreateOBParserReplaceStatementListener(rewriter,
+                        Collections.singletonList(toReplaceElement), result));
+
+        result.setNewSql(newSql);
+        result.setOldSql(originCreateStmt);
+        return result;
+    }
+
+    @Override
+    public ReplaceResult replaceAlterStmt(String originAlterStmt, String newTableName) {
+        ReplaceResult result = new ReplaceResult();
+        ReplaceElement toReplaceElement = new ReplaceElement();
+        toReplaceElement.setNewValue(newTableName);
+        toReplaceElement.setReplaceType(ReplaceType.TABLE_NAME);
+        String newSql = getRewriteSql(originAlterStmt,
+                rewriter -> new AlterOBParserReplaceStatementListener(rewriter,
+                        Collections.singletonList(toReplaceElement), result));
+
+        result.setNewSql(newSql);
+        result.setOldSql(originAlterStmt);
+        return result;
+    }
+
+    @Override
+    public ReplaceResult replaceStmtValue(OnlineSchemaChangeSqlType sqlType,
+            String originSql, List<ReplaceElement> replaceElements) {
+        ReplaceResult result = new ReplaceResult();
+        String newSql;
+        if (sqlType == OnlineSchemaChangeSqlType.ALTER) {
+            newSql = getRewriteSql(originSql,
+                    rewriter -> new AlterOBParserReplaceStatementListener(rewriter, replaceElements,
+                            result));
+        } else {
+            newSql = getRewriteSql(originSql,
+                    rewriter -> new CreateOBParserReplaceStatementListener(rewriter, replaceElements,
+                            result));
+        }
+        result.setNewSql(newSql);
+        result.setOldSql(originSql);
+        return result;
+    }
+
+    @Override
+    public String replaceCreateIndexStmt(String originCreateIndexStmt, String newTableName) {
+        return getRewriteSql(originCreateIndexStmt,
+                rewriter -> new CreateIndexOBParserReplaceStatementListener(rewriter, newTableName));
+    }
+
+    private static String getRewriteSql(String originCreateStmt,
+            Function<TokenStreamRewriter, OBParserBaseListener> obParserBaseListenerFunc) {
         CharStream charStream = CharStreams.fromString(originCreateStmt);
         OBLexer lexer = new OBLexer(charStream);
 
@@ -48,48 +112,25 @@ public class OBOracleTableNameReplacer implements TableNameReplacer {
         parser.removeErrorListeners();
         parser.addErrorListener(new FastFailErrorListener());
         parser.setTrace(false);
-        ParseTree parseTree = parser.sql_stmt();
 
         TokenStreamRewriter tokenStreamRewriter = new TokenStreamRewriter(tokens);
-
-        CreateOBParserReplaceStatementListener eventParser = new CreateOBParserReplaceStatementListener(
-                tokenStreamRewriter, newTableName);
-        ParseTreeWalker walker = new ParseTreeWalker();
-        walker.walk(eventParser, parseTree);
+        new ParseTreeWalker().walk(obParserBaseListenerFunc.apply(tokenStreamRewriter), parser.sql_stmt());
         return tokenStreamRewriter.getText();
     }
 
-    @Override
-    public String replaceAlterStmt(String originAlterStmt, String newTableName) {
-        CharStream charStream = CharStreams.fromString(originAlterStmt);
-        OBLexer lexer = new OBLexer(charStream);
 
-        CommonTokenStream tokens = new CommonTokenStream(lexer);
-        OBParser parser = new OBParser(tokens);
-        parser.getInterpreter().clearDFA();
-        parser.removeErrorListeners();
-        parser.addErrorListener(new FastFailErrorListener());
-        parser.setTrace(false);
-
-        TokenStreamRewriter tokenStreamRewriter = new TokenStreamRewriter(tokens);
-        AlterOBParserReplaceStatementListener eventParser = new AlterOBParserReplaceStatementListener(
-                tokenStreamRewriter, newTableName);
-
-        new ParseTreeWalker().walk(eventParser, parser.sql_stmt());
-        return tokenStreamRewriter.getText();
-    }
-
-    static class AlterOBParserReplaceStatementListener extends OBParserBaseListener {
+    static class CreateIndexOBParserReplaceStatementListener extends OBParserBaseListener {
         private final TokenStreamRewriter tokenStreamRewriter;
         private final String newTableName;
 
-        public AlterOBParserReplaceStatementListener(TokenStreamRewriter tokenStreamRewriter, String newTableName) {
+        public CreateIndexOBParserReplaceStatementListener(TokenStreamRewriter tokenStreamRewriter,
+                String newTableName) {
             this.tokenStreamRewriter = tokenStreamRewriter;
             this.newTableName = newTableName;
         }
 
         @Override
-        public void enterAlter_table_stmt(Alter_table_stmtContext ctx) {
+        public void enterCreate_index_stmt(Create_index_stmtContext ctx) {
             relationFactorReplace(ctx.relation_factor());
         }
 
@@ -105,16 +146,93 @@ public class OBOracleTableNameReplacer implements TableNameReplacer {
                 tokenStreamRewriter.replace(terminalNode.getSymbol(), newTableName);
             }
         }
+    }
+
+
+
+    static class AlterOBParserReplaceStatementListener extends OBParserBaseListener {
+        private final TokenStreamRewriter tokenStreamRewriter;
+        private final List<ReplaceElement> toReplaceElement;
+        private final ReplaceResult replaceResult;
+
+        public AlterOBParserReplaceStatementListener(TokenStreamRewriter tokenStreamRewriter,
+                List<ReplaceElement> toReplaceElement,
+                ReplaceResult replaceResult) {
+            this.tokenStreamRewriter = tokenStreamRewriter;
+            this.toReplaceElement = toReplaceElement;
+            this.replaceResult = replaceResult;
+        }
+
+        @Override
+        public void enterAlter_table_stmt(Alter_table_stmtContext ctx) {
+            relationFactorReplace(ctx.relation_factor());
+        }
+
+        private void relationFactorReplace(Relation_factorContext relation_factorContext) {
+            Relation_nameContext relation_nameContext = relation_factorContext.normal_relation_factor()
+                    .relation_name();
+
+            PreConditions.notNull(relation_nameContext, "Table name");
+
+            List<ReplaceElement> replaceElements = getReplaceElements(toReplaceElement, ReplaceType.TABLE_NAME);
+            if (replaceElements.isEmpty()) {
+                return;
+            }
+            ParseTree parseTree = relation_nameContext.getChild(relation_nameContext.getChildCount() - 1);
+            if (parseTree instanceof TerminalNode) {
+                TerminalNode terminalNode = (TerminalNode) parseTree;
+                tokenStreamRewriter.replace(terminalNode.getSymbol(), replaceElements.get(0).getNewValue());
+                ReplaceElement replaceElement = new ReplaceElement();
+                replaceElement.setNewValue(replaceElements.get(0).getNewValue());
+                replaceElement.setOldValue(terminalNode.toString());
+                replaceElement.setReplaceType(ReplaceType.TABLE_NAME);
+                replaceResult.getReplaceElements().add(replaceElement);
+            }
+        }
+
+        @Override
+        public void enterConstraint_name(OBParser.Constraint_nameContext ctx) {
+            if (ctx.getChildCount() == 0) {
+                return;
+            }
+            ParseTree parseTree = ctx.getChild(0);
+            if (parseTree instanceof Relation_nameContext) {
+
+                Relation_nameContext relation_nameContext = (Relation_nameContext) parseTree;
+                ParseTree childNode = relation_nameContext.getChild(0);
+                if (childNode instanceof TerminalNode) {
+                    TerminalNode terminalNode = (TerminalNode) childNode;
+                    List<ReplaceElement> replaceElements =
+                            getReplaceElements(toReplaceElement, ReplaceType.CONSTRAINT_NAME);
+                    Map<String, ReplaceElement> oldValueMap = replaceElements.stream().collect(
+                            Collectors.toMap(ReplaceElement::getOldValue, v -> v));
+                    // replace constraint name when sql is alter table drop constraint
+                    if (oldValueMap.containsKey(terminalNode.toString())) {
+                        String newValue = oldValueMap.get(terminalNode.toString()).getNewValue();
+                        tokenStreamRewriter.replace(terminalNode.getSymbol(), newValue);
+                        ReplaceElement replaceElement = new ReplaceElement();
+                        replaceElement.setNewValue(newValue);
+                        replaceElement.setOldValue(terminalNode.toString());
+                        replaceElement.setReplaceType(ReplaceType.CONSTRAINT_NAME);
+                        replaceResult.getReplaceElements().add(replaceElement);
+                    }
+                }
+            }
+        }
 
     }
 
     static class CreateOBParserReplaceStatementListener extends OBParserBaseListener {
         private final TokenStreamRewriter tokenStreamRewriter;
-        private final String newTableName;
+        private final List<ReplaceElement> toReplaceElement;
+        private final ReplaceResult replaceResult;
 
-        public CreateOBParserReplaceStatementListener(TokenStreamRewriter tokenStreamRewriter, String newTableName) {
+        public CreateOBParserReplaceStatementListener(TokenStreamRewriter tokenStreamRewriter,
+                List<ReplaceElement> toReplaceElement,
+                ReplaceResult replaceResult) {
             this.tokenStreamRewriter = tokenStreamRewriter;
-            this.newTableName = newTableName;
+            this.toReplaceElement = toReplaceElement;
+            this.replaceResult = replaceResult;
         }
 
         @Override
@@ -134,7 +252,13 @@ public class OBOracleTableNameReplacer implements TableNameReplacer {
                 ParseTree childNode = relation_nameContext.getChild(0);
                 if (childNode instanceof TerminalNode) {
                     TerminalNode terminalNode = (TerminalNode) childNode;
-                    tokenStreamRewriter.replace(terminalNode.getSymbol(), "A" + StringUtils.uuidNoHyphen());
+                    String newValue = "A" + StringUtils.uuidNoHyphen();
+                    tokenStreamRewriter.replace(terminalNode.getSymbol(), newValue);
+                    ReplaceElement replaceElement = new ReplaceElement();
+                    replaceElement.setNewValue(newValue);
+                    replaceElement.setOldValue(terminalNode.toString());
+                    replaceElement.setReplaceType(ReplaceType.CONSTRAINT_NAME);
+                    replaceResult.getReplaceElements().add(replaceElement);
                 }
             }
         }
@@ -151,8 +275,15 @@ public class OBOracleTableNameReplacer implements TableNameReplacer {
                 ParseTree childNode = relation_nameContext.getChild(0);
                 if (childNode instanceof TerminalNode) {
                     TerminalNode terminalNode = (TerminalNode) childNode;
-                    // replace constraints name
-                    tokenStreamRewriter.replace(terminalNode.getSymbol(), "A" + StringUtils.uuidNoHyphen());
+
+                    String newValue = "A" + StringUtils.uuidNoHyphen();
+                    tokenStreamRewriter.replace(terminalNode.getSymbol(), newValue);
+                    ReplaceElement replaceElement = new ReplaceElement();
+                    replaceElement.setNewValue(newValue);
+                    replaceElement.setOldValue(terminalNode.toString());
+                    replaceElement.setReplaceType(ReplaceType.INDEX_NAME);
+                    replaceResult.getReplaceElements().add(replaceElement);
+
                 }
             }
         }
@@ -164,10 +295,26 @@ public class OBOracleTableNameReplacer implements TableNameReplacer {
 
             ParseTree parseTree = relation_nameContext.getChild(relation_nameContext.getChildCount() - 1);
             if (parseTree instanceof TerminalNode) {
+                List<ReplaceElement> replaceElements = getReplaceElements(toReplaceElement, ReplaceType.TABLE_NAME);
+                if (replaceElements.isEmpty()) {
+                    return;
+                }
                 TerminalNode terminalNode = (TerminalNode) parseTree;
-                tokenStreamRewriter.replace(terminalNode.getSymbol(), newTableName);
+                tokenStreamRewriter.replace(terminalNode.getSymbol(), replaceElements.get(0).getNewValue());
+                ReplaceElement replaceElement = new ReplaceElement();
+                replaceElement.setNewValue(replaceElements.get(0).getNewValue());
+                replaceElement.setOldValue(terminalNode.toString());
+                replaceElement.setReplaceType(ReplaceType.TABLE_NAME);
+                replaceResult.getReplaceElements().add(replaceElement);
             }
         }
+    }
+
+    private static List<ReplaceElement> getReplaceElements(List<ReplaceElement> replaceElements, ReplaceType type) {
+        if (CollectionUtils.isNotEmpty(replaceElements)) {
+            return replaceElements.stream().filter(a -> a.getReplaceType() == type).collect(Collectors.toList());
+        }
+        return Collections.emptyList();
     }
 
 }
