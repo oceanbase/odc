@@ -26,12 +26,12 @@ import org.springframework.transaction.support.TransactionTemplate;
 import com.oceanbase.odc.common.event.LocalEventPublisher;
 import com.oceanbase.odc.service.common.model.HostProperties;
 import com.oceanbase.odc.service.connection.ConnectionService;
-import com.oceanbase.odc.service.info.InfoAdapter;
 import com.oceanbase.odc.service.objectstorage.cloud.model.CloudEnvConfigurations;
 import com.oceanbase.odc.service.schedule.ScheduleTaskService;
 import com.oceanbase.odc.service.task.TaskService;
 import com.oceanbase.odc.service.task.caller.K8sJobClient;
 import com.oceanbase.odc.service.task.dispatch.ImmediateJobDispatcher;
+import com.oceanbase.odc.service.task.schedule.MonitorExecutorStatusRateLimiter;
 import com.oceanbase.odc.service.task.enums.TaskRunMode;
 import com.oceanbase.odc.service.task.schedule.provider.DefaultHostUrlProvider;
 import com.oceanbase.odc.service.task.schedule.provider.DefaultJobImageNameProvider;
@@ -54,8 +54,7 @@ public class DefaultSpringJobConfiguration extends DefaultJobConfiguration
         setCloudEnvConfigurations(ctx.getBean(CloudEnvConfigurations.class));
         setHostUrlProvider(new DefaultHostUrlProvider(this::getTaskFrameworkProperties,
                 ctx.getBean(HostProperties.class)));
-        setJobImageNameProvider(new DefaultJobImageNameProvider(this::getTaskFrameworkProperties,
-                ctx.getBean(InfoAdapter.class)));
+        setJobImageNameProvider(new DefaultJobImageNameProvider(this::getTaskFrameworkProperties));
         setConnectionService(ctx.getBean(ConnectionService.class));
         setTaskService(ctx.getBean(TaskService.class));
         setScheduleTaskService(ctx.getBean(ScheduleTaskService.class));
@@ -72,6 +71,7 @@ public class DefaultSpringJobConfiguration extends DefaultJobConfiguration
         setTaskFrameworkService(tfs);
         setEventPublisher(publisher);
         setTransactionManager(new SpringTransactionManager(ctx.getBean(TransactionTemplate.class)));
+        setStartJobRateLimiter(new MonitorExecutorStatusRateLimiter());
     }
 
     @Override

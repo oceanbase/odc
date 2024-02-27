@@ -143,8 +143,12 @@ public class OscService {
                 ErrorCodes.BadArgument, new Object[] {oscParameters.getSwapTableType()},
                 "Swap table type is not " + SwapTableType.MANUAL.name());
 
+        PreConditions.validArgumentState(!result.isManualSwapTableStarted(),
+                ErrorCodes.OscSwapTableStarted, new Object[] {},
+                "Swap table has started");
+
         PreConditions.validArgumentState(result.isManualSwapTableEnabled(),
-                ErrorCodes.BadArgument, new Object[] {result.isManualSwapTableEnabled()},
+                ErrorCodes.BadRequest, new Object[] {result.isManualSwapTableEnabled()},
                 "Manual Swap table type is not enable ");
 
         // close manual swap table

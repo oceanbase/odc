@@ -141,4 +141,10 @@ public class JobUtils {
         String reportEnabledValue = SystemUtils.getEnvOrProperty(JobEnvKeyConstants.REPORT_ENABLED);
         return reportEnabledValue != null && Objects.equals(Boolean.valueOf(reportEnabledValue), Boolean.FALSE);
     }
+
+    public static void putEnvToSysProperties(String environmentKey) {
+        if (System.getenv(environmentKey) != null && System.getProperty(environmentKey) == null) {
+            System.setProperty(environmentKey, System.getenv(environmentKey));
+        }
+    }
 }

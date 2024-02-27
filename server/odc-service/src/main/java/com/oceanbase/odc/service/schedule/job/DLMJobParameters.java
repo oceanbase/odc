@@ -13,11 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.dlm.model;
+package com.oceanbase.odc.service.schedule.job;
 
 import java.util.List;
 
-import com.oceanbase.odc.core.flow.model.TaskParameters;
+import com.oceanbase.odc.service.dlm.model.DataArchiveTableConfig;
+import com.oceanbase.odc.service.dlm.model.RateLimitConfiguration;
+import com.oceanbase.tools.migrator.common.configure.DataSourceInfo;
 import com.oceanbase.tools.migrator.common.enums.MigrationInsertAction;
 import com.oceanbase.tools.migrator.common.enums.ShardingStrategy;
 
@@ -25,45 +27,33 @@ import lombok.Data;
 
 /**
  * @Author：tinker
- * @Date: 2023/5/10 20:05
+ * @Date: 2024/1/31 15:43
  * @Descripition:
  */
+
 @Data
-public class DataArchiveParameters implements TaskParameters {
-
-    private String name;
-
-    private Long sourceDatabaseId;
-
-    private Long targetDataBaseId;
-
-    private String sourceDatabaseName;
-
-    private String targetDatabaseName;
-
-    private String sourceDataSourceName;
-
-    private String targetDataSourceName;
-
-    private List<OffsetConfig> variables;
+public class DLMJobParameters {
 
     private List<DataArchiveTableConfig> tables;
 
-    private boolean deleteAfterMigration = false;
+    private DataSourceInfo sourceDs;
 
-    private boolean needPrintSqlTrace = false;
+    private DataSourceInfo targetDs;
+
+    private boolean deleteAfterMigration;
+
+    private MigrationInsertAction migrationInsertAction;
+
+    private boolean needPrintSqlTrace;
+
+    private RateLimitConfiguration rateLimit;
 
     private int readThreadCount;
 
     private int writeThreadCount;
 
-    private int queryTimeout;
+    private ShardingStrategy shardingStrategy;
 
     private int scanBatchSize;
 
-    private MigrationInsertAction migrationInsertAction = MigrationInsertAction.INSERT_NORMAL;
-
-    private ShardingStrategy shardingStrategy;
-
-    private RateLimitConfiguration rateLimit;
 }
