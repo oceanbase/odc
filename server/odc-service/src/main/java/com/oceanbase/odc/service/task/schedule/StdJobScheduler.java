@@ -172,13 +172,12 @@ public class StdJobScheduler implements JobScheduler {
         try {
             String group = JobConstants.ODC_JOB_MONITORING;
             TriggerKey triggerKey = TriggerKey.triggerKey(key, group);
-            JobKey jobKey = JobKey.jobKey(key, group);
+
             Trigger trigger = TriggerBuilder.build(triggerKey, config);
             JobDetail detail = JobBuilder.newJob(jobClass)
                     .withIdentity(JobKey.jobKey(key, group))
                     .build();
-            checkTriggerChanged(triggerKey, jobKey, trigger);
-            scheduler.scheduleJob(detail, trigger);
+            scheduleCronJob(triggerKey, trigger, detail);
         } catch (JobException e) {
             log.warn("build trigger {} failed:", key, e);
         } catch (SchedulerException e) {
@@ -186,13 +185,17 @@ public class StdJobScheduler implements JobScheduler {
         }
     }
 
-    private void checkTriggerChanged(TriggerKey triggerKey, JobKey jobKey, Trigger trigger) throws SchedulerException {
-        if (scheduler.checkExists(triggerKey) && scheduler.getTrigger(triggerKey) instanceof CronTrigger
-                && trigger instanceof CronTrigger) {
-            CronTrigger existCronTrigger = (CronTrigger) scheduler.getTrigger(triggerKey);
-            if (!Objects.equals(existCronTrigger.getCronExpression(), ((CronTrigger) trigger).getCronExpression())) {
-                scheduler.deleteJob(jobKey);
+    private void scheduleCronJob(TriggerKey triggerKey, Trigger trigger, JobDetail detail)
+            throws SchedulerException {
+        if (scheduler.checkExists(triggerKey)) {
+            if (scheduler.getTrigger(triggerKey) instanceof CronTrigger && trigger instanceof CronTrigger) {
+                if (!Objects.equals(((CronTrigger) scheduler.getTrigger(triggerKey)).getCronExpression(),
+                        ((CronTrigger) trigger).getCronExpression())) {
+                    scheduler.rescheduleJob(triggerKey, trigger);
+                }
             }
+        } else {
+            scheduler.scheduleJob(detail, trigger);
         }
     }
 
