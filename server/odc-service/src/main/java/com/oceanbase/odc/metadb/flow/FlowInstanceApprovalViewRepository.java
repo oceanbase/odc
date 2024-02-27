@@ -15,18 +15,9 @@
  */
 package com.oceanbase.odc.metadb.flow;
 
-import java.util.List;
-
-import org.springframework.data.jpa.repository.Query;
-
 /**
  * @author liuyizhuo.lyz
  * @date 2024/2/27
  */
 public interface FlowInstanceApprovalViewRepository extends ReadOnlyRepository<FlowInstanceApprovalViewEntity, Long> {
-
-    @Query(value = "select * from flow_instance_approval_view where flow_instance_id=?1 order by id desc",
-            nativeQuery = true)
-    List<FlowInstanceApprovalViewEntity> findByFlowInstanceId(Long flowInstanceId);
-
 }
