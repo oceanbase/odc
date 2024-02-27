@@ -52,7 +52,6 @@ import com.oceanbase.odc.core.shared.exception.UnexpectedException;
 import com.oceanbase.odc.metadb.flow.FlowInstanceEntity;
 import com.oceanbase.odc.metadb.flow.FlowInstanceRepository;
 import com.oceanbase.odc.metadb.iam.UserEntity;
-import com.oceanbase.odc.metadb.schedule.ScheduleEntity;
 import com.oceanbase.odc.metadb.schedule.ScheduleRepository;
 import com.oceanbase.odc.metadb.task.TaskEntity;
 import com.oceanbase.odc.service.collaboration.environment.EnvironmentService;
@@ -143,24 +142,6 @@ public class EventBuilder {
         return event;
     }
 
-    public Event ofSucceededTask(ScheduleEntity schedule) {
-        Event event = ofSchedule(schedule, TaskEvent.EXECUTION_SUCCEEDED);
-        resolveLabels(event.getLabels());
-        return event;
-    }
-
-    public Event ofFailedTask(ScheduleEntity schedule) {
-        Event event = ofSchedule(schedule, TaskEvent.EXECUTION_FAILED);
-        resolveLabels(event.getLabels());
-        return event;
-    }
-
-    public Event ofFailedSchedule(ScheduleEntity schedule) {
-        Event event = ofSchedule(schedule, TaskEvent.SCHEDULING_FAILED);
-        resolveLabels(event.getLabels());
-        return event;
-    }
-
     private Event ofTask(TaskEntity task, TaskEvent status) {
         EventLabels labels = new EventLabels();
         labels.putIfNonNull(TASK_TYPE, task.getTaskType().name());
@@ -200,39 +181,6 @@ public class EventBuilder {
                 .creatorId(task.getCreatorId())
                 .organizationId(task.getOrganizationId())
                 .projectId(projectId)
-                .triggerTime(new Date())
-                .labels(labels)
-                .build();
-    }
-
-    private Event ofSchedule(ScheduleEntity schedule, TaskEvent status) {
-        EventLabels labels = new EventLabels();
-        labels.putIfNonNull(TASK_STATUS, status.name());
-        labels.putIfNonNull(TRIGGER_TIME, LocalDateTime.now().format(DATE_FORMATTER));
-        labels.putIfNonNull(REGION, OB_ARN_PARTITION);
-
-        switch (schedule.getJobType()) {
-            case DATA_ARCHIVE:
-            case DATA_ARCHIVE_DELETE:
-            case DATA_ARCHIVE_ROLLBACK:
-                labels.putIfNonNull(TASK_TYPE, JobType.DATA_ARCHIVE);
-                break;
-            default:
-                labels.putIfNonNull(TASK_TYPE, schedule.getJobType());
-                break;
-        }
-        labels.putIfNonNull(TASK_ID, schedule.getId());
-        labels.putIfNonNull(CONNECTION_ID, schedule.getConnectionId());
-        labels.putIfNonNull(CREATOR_ID, schedule.getCreatorId());
-        labels.putIfNonNull(PROJECT_ID, schedule.getProjectId());
-        labels.putIfNonNull(DATABASE_ID, schedule.getDatabaseId());
-        labels.putIfNonNull(DATABASE_NAME, schedule.getDatabaseName());
-
-        return Event.builder()
-                .status(EventStatus.CREATED)
-                .creatorId(schedule.getCreatorId())
-                .organizationId(schedule.getOrganizationId())
-                .projectId(schedule.getProjectId())
                 .triggerTime(new Date())
                 .labels(labels)
                 .build();
