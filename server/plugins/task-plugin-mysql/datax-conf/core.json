@@ -6,7 +6,7 @@
     },
     "common": {
         "column": {
-            "datetimeFormat": "yyyy-MM-dd HH:mm:ss",
+            "datetimeFormat": "yyyy-MM-dd HH:mm:ss.SSS",
             "timeFormat": "HH:mm:ss",
             "dateFormat": "yyyy-MM-dd",
             "extraFormats":["yyyyMMdd"],

@@ -316,9 +316,6 @@ public class ConnectionService {
     @PreAuthenticate(actions = "delete", resourceType = "ODC_CONNECTION", indexOfIdParam = 0)
     public ConnectionConfig delete(@NotNull Long id) {
         ConnectionConfig connection = internalGet(id);
-        repository.deleteById(id);
-        permissionService.deleteResourceRelatedPermissions(id, ResourceType.ODC_CONNECTION,
-                PermissionType.PUBLIC_RESOURCE);
         log.info("Delete related permission entity, id={}", id);
         int affectRows = databaseService.deleteByDataSourceId(id);
         log.info("delete related databases successfully, affectRows={}, id={}", affectRows, id);
@@ -326,6 +323,9 @@ public class ConnectionService {
         log.info("delete related attributes successfully, affectRows={}, id={}", affectRows, id);
         affectRows = connectionHistoryRepository.deleteByConnectionId(id);
         log.info("delete related session access history successfully, affectRows={}, id={}", affectRows, id);
+        repository.deleteById(id);
+        permissionService.deleteResourceRelatedPermissions(id, ResourceType.ODC_CONNECTION,
+                PermissionType.PUBLIC_RESOURCE);
         return connection;
     }
 

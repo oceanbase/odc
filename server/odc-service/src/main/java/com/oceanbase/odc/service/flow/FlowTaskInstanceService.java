@@ -92,6 +92,7 @@ import com.oceanbase.odc.service.flow.task.model.MockProperties;
 import com.oceanbase.odc.service.flow.task.model.OnlineSchemaChangeTaskResult;
 import com.oceanbase.odc.service.flow.task.model.PartitionPlanTaskResult;
 import com.oceanbase.odc.service.flow.task.model.ResultSetExportResult;
+import com.oceanbase.odc.service.flow.task.model.RollbackPlanTaskResult;
 import com.oceanbase.odc.service.flow.task.model.ShadowTableSyncTaskResult;
 import com.oceanbase.odc.service.flow.task.model.SqlCheckTaskResult;
 import com.oceanbase.odc.service.flow.task.util.DatabaseChangeOssUrlCache;
@@ -380,25 +381,46 @@ public class FlowTaskInstanceService {
                 taskEntityOptional::isPresent);
         TaskEntity taskEntity = taskEntityOptional.get();
         if (!dispatchChecker.isTaskEntityOnThisMachine(taskEntity)) {
-            /**
-             * 任务不在该节点上，需要进行请求转发
-             */
-            ExecutorInfo executorInfo = JsonUtils.fromJson(taskEntity.getExecutor(), ExecutorInfo.class);
-            DispatchResponse dispatchResponse =
-                    requestDispatcher.forward(executorInfo.getHost(), executorInfo.getPort());
-            HttpHeaders headers = dispatchResponse.getResponseHeaders();
-            if (headers == null) {
-                return Collections
-                        .singletonList(new ByteArrayDataResult("download.data", dispatchResponse.getContent()));
-            }
-            String fileName = headers.getContentDisposition().getFilename();
-            if (fileName == null) {
-                return Collections
-                        .singletonList(new ByteArrayDataResult("download.data", dispatchResponse.getContent()));
-            }
-            return Collections.singletonList(new ByteArrayDataResult(fileName, dispatchResponse.getContent()));
+            // The task is not executing on current machine, need to forward the request
+            return dispatchRequest(taskEntity);
         }
         return internalDownload(taskEntity, targetFileName);
+    }
+
+    public List<BinaryDataResult> downRollbackPlanResult(@NonNull Long flowInstanceId) throws IOException {
+        Optional<TaskEntity> taskEntityOptional = getTaskEntity(flowInstanceId,
+                instance -> instance.getStatus().isFinalStatus() && instance.getTaskType() == TaskType.ASYNC);
+        PreConditions.validExists(ResourceType.ODC_FILE, "flowInstanceId", flowInstanceId,
+                taskEntityOptional::isPresent);
+        TaskEntity taskEntity = taskEntityOptional.get();
+        if (!dispatchChecker.isTaskEntityOnThisMachine(taskEntity)) {
+            // The task is not executing on current machine, need to forward the request
+            return dispatchRequest(taskEntity);
+        }
+        List<File> targetFiles = getAsyncResult(taskEntity).stream().map(value -> {
+            RollbackPlanTaskResult result = value.getRollbackPlanResult();
+            String fileId = result.getResultFileId();
+            String filePath = FileManager.generatePath(FileBucket.ROLLBACK_PLAN, fileId) + ".sql";
+            return new File(filePath);
+        }).collect(Collectors.toList());
+        return targetFiles.stream().map(FileBasedDataResult::new).collect(Collectors.toList());
+    }
+
+    private List<BinaryDataResult> dispatchRequest(@NonNull TaskEntity taskEntity) throws IOException {
+        ExecutorInfo executorInfo = JsonUtils.fromJson(taskEntity.getExecutor(), ExecutorInfo.class);
+        DispatchResponse dispatchResponse =
+                requestDispatcher.forward(executorInfo.getHost(), executorInfo.getPort());
+        HttpHeaders headers = dispatchResponse.getResponseHeaders();
+        if (headers == null) {
+            return Collections
+                    .singletonList(new ByteArrayDataResult("download.data", dispatchResponse.getContent()));
+        }
+        String fileName = headers.getContentDisposition().getFilename();
+        if (fileName == null) {
+            return Collections
+                    .singletonList(new ByteArrayDataResult("download.data", dispatchResponse.getContent()));
+        }
+        return Collections.singletonList(new ByteArrayDataResult(fileName, dispatchResponse.getContent()));
     }
 
     /**

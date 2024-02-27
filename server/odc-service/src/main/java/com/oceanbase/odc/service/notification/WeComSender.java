@@ -19,6 +19,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 
@@ -41,6 +43,13 @@ public class WeComSender extends HttpSender {
     }
 
     @Override
+    protected HttpHeaders getHeaders(Message message) {
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        return headers;
+    }
+
+    @Override
     protected String getBody(Message message) {
         Map<String, Object> params = new HashMap<>();
         // WeChat does not support @ user when using markdown
@@ -53,8 +62,12 @@ public class WeComSender extends HttpSender {
         return JsonUtils.toJsonIgnoreNull(params);
     }
 
-    protected MessageSendResult checkResponse(ResponseEntity response) {
+    @Override
+    protected MessageSendResult checkResponse(Message message, ResponseEntity response) {
         Map<String, Object> body = (Map) response.getBody();
+        if (Objects.isNull(body)) {
+            return MessageSendResult.ofFail("empty response from WeCom");
+        }
         if (Objects.equals(0, body.get("errcode"))) {
             return MessageSendResult.ofSuccess();
         }

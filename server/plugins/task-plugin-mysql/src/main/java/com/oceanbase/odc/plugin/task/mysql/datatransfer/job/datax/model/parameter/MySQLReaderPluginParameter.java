@@ -33,6 +33,7 @@ public class MySQLReaderPluginParameter implements PluginParameter {
     private List<String> column = Collections.singletonList("*");
     private List<DataXConnection> connection;
     // TODO private String splitPk;
+    private List<String> session;
 
     @Data
     @AllArgsConstructor

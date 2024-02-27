@@ -13,20 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.oceanbase.odc.plugin.task.mysql.datatransfer.job;
 
+import java.io.IOException;
 import java.net.URL;
 import java.nio.charset.Charset;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.stream.Collectors;
 
 import javax.sql.DataSource;
 
@@ -38,26 +36,24 @@ import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.sql.split.SqlCommentProcessor;
 import com.oceanbase.odc.core.sql.split.SqlStatementIterator;
-import com.oceanbase.odc.plugin.schema.mysql.MySQLFunctionExtension;
-import com.oceanbase.odc.plugin.schema.mysql.MySQLProcedureExtension;
-import com.oceanbase.odc.plugin.schema.mysql.MySQLTableExtension;
-import com.oceanbase.odc.plugin.schema.mysql.MySQLViewExtension;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferConfig;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.ObjectResult;
 import com.oceanbase.odc.plugin.task.mysql.datatransfer.common.Constants;
-import com.oceanbase.tools.dbbrowser.model.DBObjectIdentity;
-import com.oceanbase.tools.dbbrowser.model.DBObjectType;
 import com.oceanbase.tools.loaddump.common.model.ObjectStatus.Status;
 
-public class SqlScriptImportJob extends AbstractJob {
+/**
+ * @author liuyizhuo.lyz
+ * @date 2024/1/31
+ */
+public abstract class BaseSqlScriptImportJob extends AbstractJob {
     private static final Logger LOGGER = LoggerFactory.getLogger("DataTransferLogger");
 
-    private final DataTransferConfig transferConfig;
-    private final URL input;
-    private final DataSource dataSource;
-    private final AtomicLong failures = new AtomicLong(0);
+    protected final DataTransferConfig transferConfig;
+    protected final URL input;
+    protected final DataSource dataSource;
+    protected final AtomicLong failures = new AtomicLong(0);
 
-    public SqlScriptImportJob(ObjectResult object, DataTransferConfig transferConfig, URL input,
+    public BaseSqlScriptImportJob(ObjectResult object, DataTransferConfig transferConfig, URL input,
             DataSource dataSource) {
         super(object);
         this.transferConfig = transferConfig;
@@ -82,14 +78,26 @@ public class SqlScriptImportJob extends AbstractJob {
         }
     }
 
+    abstract protected boolean isObjectExists() throws SQLException;
+
+    abstract protected SqlStatementIterator getStmtIterator() throws IOException;
+
+    abstract protected List<String> getPreSqlsForSchema();
+
+    abstract protected List<String> getPreSqlsForData();
+
+    abstract protected List<String> getPostSqlsForSchema();
+
+    abstract protected List<String> getPostSqlsForData();
+
     private void runExternalSqlScript() throws Exception {
-        DialectType dialectType = transferConfig.getConnectionInfo().getConnectType().getDialectType();
-        String charset = transferConfig.getEncoding().getAlias();
         try (Connection conn = dataSource.getConnection(); Statement stmt = conn.createStatement()) {
-            SqlStatementIterator iterator = SqlCommentProcessor.iterator(input.openStream(), Charset.forName(charset),
-                    new SqlCommentProcessor(dialectType, true, true, true));
+            SqlStatementIterator iterator = getStmtIterator();
             while (!isCanceled() && !Thread.currentThread().isInterrupted() && iterator.hasNext()) {
                 String sql = iterator.next().getStr();
+                if (StringUtils.isEmpty(sql.trim())) {
+                    continue;
+                }
                 try {
                     increaseTotal(1);
                     stmt.execute(sql);
@@ -122,16 +130,7 @@ public class SqlScriptImportJob extends AbstractJob {
             return;
         }
 
-        List<String> preSqls = new LinkedList<>();
-        if (StringUtils.equalsIgnoreCase(object.getType(), "TABLE")) {
-            preSqls.add(Constants.DISABLE_FK);
-        }
-        if (transferConfig.isReplaceSchemaWhenExists()) {
-            preSqls.add(String.format(Constants.DROP_OBJECT_FORMAT, object.getType(),
-                    StringUtils.quoteMysqlIdentifier(object.getName())));
-            LOGGER.info("{} will be dropped.", object.getSummary());
-        }
-        executeWithoutResult(preSqls);
+        executeWithoutResult(getPreSqlsForSchema());
 
         boolean firstLine = true;
         DialectType dialectType = transferConfig.getConnectionInfo().getConnectType().getDialectType();
@@ -141,7 +140,8 @@ public class SqlScriptImportJob extends AbstractJob {
                     new SqlCommentProcessor(dialectType, true, true, true));
             while (!Thread.currentThread().isInterrupted() && iterator.hasNext() && !isCanceled()) {
                 String sql = iterator.next().getStr();
-                if (firstLine && sql.startsWith("drop") || sql.startsWith("DROP")) {
+                if (StringUtils.isEmpty(sql.trim())
+                        || (firstLine && (sql.startsWith("drop") || sql.startsWith("DROP")))) {
                     continue;
                 }
                 firstLine = false;
@@ -157,9 +157,7 @@ public class SqlScriptImportJob extends AbstractJob {
                 }
             }
         } finally {
-            if (StringUtils.equalsIgnoreCase(object.getType(), "TABLE")) {
-                executeWithoutResult(Constants.ENABLE_FK);
-            }
+            executeWithoutResult(getPostSqlsForSchema());
         }
         increaseCount(1);
         setStatus(Status.SUCCESS);
@@ -168,14 +166,7 @@ public class SqlScriptImportJob extends AbstractJob {
     private void runDataScript() throws Exception {
         int batchSize = transferConfig.getBatchCommitNum() == null ? Constants.DEFAULT_BATCH_SIZE
                 : Math.min(Math.max(transferConfig.getBatchCommitNum(), 10), 5000);
-        List<String> preSqls = new ArrayList<>();
-        preSqls.add(Constants.DISABLE_FK);
-        if (transferConfig.isTruncateTableBeforeImport()) {
-            preSqls.add(String.format(Constants.TRUNCATE_FORMAT, getObject().getSchema(),
-                    StringUtils.quoteMysqlIdentifier(getObject().getName())));
-            LOGGER.info("{} will be truncated.", object.getSummary());
-        }
-        executeWithoutResult(preSqls);
+        executeWithoutResult(getPreSqlsForData());
 
         DialectType dialectType = transferConfig.getConnectionInfo().getConnectType().getDialectType();
         String charset = transferConfig.getEncoding().getAlias();
@@ -194,7 +185,7 @@ public class SqlScriptImportJob extends AbstractJob {
                 }
             }
         } finally {
-            executeWithoutResult(Constants.ENABLE_FK);
+            executeWithoutResult(getPostSqlsForData());
         }
 
         if (failures.get() != 0L) {
@@ -203,13 +194,6 @@ public class SqlScriptImportJob extends AbstractJob {
                     + "Number of failed records: %d", failures.get()));
         }
         setStatus(Status.SUCCESS);
-    }
-
-
-    private void executeWithoutResult(String sql) throws SQLException {
-        try (Connection conn = dataSource.getConnection(); Statement stmt = conn.createStatement()) {
-            stmt.execute(sql);
-        }
     }
 
     private void executeWithoutResult(List<String> sqls) throws SQLException {
@@ -283,35 +267,6 @@ public class SqlScriptImportJob extends AbstractJob {
                 }
             }
         }
-    }
-
-    private boolean isObjectExists() throws SQLException {
-        DBObjectIdentity target =
-                DBObjectIdentity.of(object.getSchema(), DBObjectType.getEnumByName(object.getType()), object.getName());
-        List<DBObjectIdentity> objects;
-        try (Connection conn = dataSource.getConnection()) {
-            switch (object.getType()) {
-                case "TABLE":
-                    objects = new MySQLTableExtension().list(conn, object.getSchema());
-                    break;
-                case "VIEW":
-                    objects = new MySQLViewExtension().list(conn, object.getSchema());
-                    break;
-                case "FUNCTION":
-                    objects = new MySQLFunctionExtension().list(conn, object.getSchema()).stream()
-                            .map(obj -> DBObjectIdentity.of(obj.getSchemaName(), obj.getType(), obj.getName()))
-                            .collect(Collectors.toList());
-                    break;
-                case "PROCEDURE":
-                    objects = new MySQLProcedureExtension().list(conn, object.getSchema()).stream()
-                            .map(obj -> DBObjectIdentity.of(obj.getSchemaName(), obj.getType(), obj.getName()))
-                            .collect(Collectors.toList());
-                    break;
-                default:
-                    throw new UnsupportedOperationException();
-            }
-        }
-        return CollectionUtils.containsAny(objects, target);
     }
 
 }

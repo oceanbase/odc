@@ -15,13 +15,23 @@
  */
 package com.oceanbase.odc.service.notification;
 
+import java.nio.charset.StandardCharsets;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
+
+import org.apache.commons.codec.binary.Base64;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 
+import com.google.common.collect.ImmutableMap;
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.shared.exception.UnexpectedException;
@@ -43,10 +53,17 @@ public class FeishuSender extends HttpSender {
     }
 
     @Override
+    protected HttpHeaders getHeaders(Message message) {
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        return headers;
+    }
+
+    @Override
     protected String getBody(Message message) {
-        Map<String, String> params = new HashMap<>();
+        Map<String, Object> params = new HashMap<>();
         params.put("msg_type", "text");
-        params.put("content", message.getContent());
+        params.put("content", ImmutableMap.of("text", message.getContent()));
         WebhookChannelConfig channelConfig = (WebhookChannelConfig) message.getChannel().getChannelConfig();
         try {
             if (StringUtils.isNotEmpty(channelConfig.getSign())) {
@@ -60,12 +77,25 @@ public class FeishuSender extends HttpSender {
         return JsonUtils.toJsonIgnoreNull(params);
     }
 
-    protected MessageSendResult checkResponse(ResponseEntity response) {
+    @Override
+    protected MessageSendResult checkResponse(Message message, ResponseEntity response) {
         Map<String, Object> body = (Map) response.getBody();
+        if (Objects.isNull(body)) {
+            return MessageSendResult.ofFail("empty response from Feishu");
+        }
         if (Objects.equals("success", body.get("msg"))) {
             return MessageSendResult.ofSuccess();
         }
         return MessageSendResult.ofFail(String.format("Code: %s, message:%s", body.get("code"), body.get("msg")));
+    }
+
+    private String sign(Long timestamp, String secret) throws NoSuchAlgorithmException, InvalidKeyException {
+        String stringToSign = timestamp + "\n" + secret;
+
+        Mac mac = Mac.getInstance("HmacSHA256");
+        mac.init(new SecretKeySpec(stringToSign.getBytes(StandardCharsets.UTF_8), "HmacSHA256"));
+        byte[] signData = mac.doFinal(new byte[] {});
+        return new String(Base64.encodeBase64(signData));
     }
 
 }

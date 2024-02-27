@@ -752,3 +752,8 @@ INSERT INTO config_system_configuration(`key`, `value`, `description`) VALUES('o
  '7776000', 'How long expired permissions are retained, in seconds, defaults to 90 days') ON DUPLICATE KEY UPDATE `id`=`id`;
 INSERT INTO config_system_configuration(`key`, `value`, `description`) VALUES('odc.web.security.basic-authentication.enabled',
  'false', 'enable basic authentication or not, false by default') ON DUPLICATE KEY UPDATE `id`=`id`;
+
+INSERT INTO config_system_configuration ( `key`, `value`, `description` )
+VALUES
+  ( 'odc.task.async.index-change-max-timeout-millis', '432000000', 'If the change content of the database change task involves time-consuming index change operations, the timeout period for the automatically modified database change task, unit: milliseconds. Default value is 5 days.' )
+  ON DUPLICATE KEY UPDATE `id` = `id`;

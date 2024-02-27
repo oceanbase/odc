@@ -126,10 +126,11 @@ public class CommonSecurityProperties {
 
     public String[] getAuthWhitelist() {
         if (taskFrameworkEnabled) {
-            String[] copiedAuthWhitelist = new String[buildInAuthWhitelist.length + 2];
+            String[] copiedAuthWhitelist = new String[buildInAuthWhitelist.length + 3];
             System.arraycopy(buildInAuthWhitelist, 0, copiedAuthWhitelist, 0, buildInAuthWhitelist.length);
             copiedAuthWhitelist[copiedAuthWhitelist.length - 1] = "/api/v2/task/heart";
             copiedAuthWhitelist[copiedAuthWhitelist.length - 2] = "/api/v2/task/result";
+            copiedAuthWhitelist[copiedAuthWhitelist.length - 3] = "/api/v2/task/querySensitiveColumn";
             return ArrayUtils.addAll(copiedAuthWhitelist);
         }
         return ArrayUtils.addAll(buildInAuthWhitelist);

@@ -160,13 +160,15 @@ public class ConnectConsoleService {
                 .schemaPrefixIfNotBlank(req.getSchemaName()).identifier(req.getTableOrViewName()).append(" t");
 
         Integer queryLimit = checkQueryLimit(req.getQueryLimit());
-        if (connectionSession.getDialectType().isOracle()) {
+        if (DialectType.OB_ORACLE == connectionSession.getDialectType()) {
             String version = ConnectionSessionUtil.getVersion(connectionSession);
             if (VersionUtils.isGreaterThanOrEqualsTo(version, "2.2.50")) {
                 sqlBuilder.append(" FETCH FIRST ").append(queryLimit.toString()).append(" ROWS ONLY");
             } else {
                 sqlBuilder.append(" WHERE ROWNUM <= ").append(queryLimit.toString());
             }
+        } else if (DialectType.ORACLE == connectionSession.getDialectType()) {
+            sqlBuilder.append(" WHERE ROWNUM <= ").append(queryLimit.toString());
         } else {
             sqlBuilder.append(" LIMIT ").append(queryLimit.toString());
         }
@@ -191,7 +193,20 @@ public class ConnectConsoleService {
                     .format("Query data failed, get result-set timeout, requestId=%s, sqlId=%s", requestId, sqlId));
         }
         Verify.verify(results.size() == 1, "Expect results.size=1, but " + results.size());
-        return results.get(0);
+        SqlExecuteResult result = results.get(0);
+        /**
+         * editable will always be false because ResultSetMetaData#getTableName will return blank in oracle
+         * JDBC, but the resultSet can be edited in this single-table query scenario, so we just set it to
+         * true.
+         */
+        if (DialectType.ORACLE == connectionSession.getDialectType()) {
+            if (result.getResultSetMetaData() != null) {
+                result.getResultSetMetaData().setEditable(true);
+                result.getResultSetMetaData().getFieldMetaDataList()
+                        .forEach(jdbcColumnMetaData -> jdbcColumnMetaData.setEditable(true));
+            }
+        }
+        return result;
     }
 
     public SqlAsyncExecuteResp execute(@NotNull String sessionId, @NotNull @Valid SqlAsyncExecuteReq request)
