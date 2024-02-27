@@ -239,10 +239,9 @@ public class ConnectSessionController {
 
     @PostMapping(value = "/sessions/{sessionId}/partitionPlans/latest/preview")
     public ListResponse<PartitionPlanPreViewResp> getPreview(@PathVariable String sessionId,
-            @RequestBody PartitionPlanPreviewReq req,
-            @RequestParam(name = "onlyForPartitionName", defaultValue = "false") Boolean onlyForPartitionName) {
+            @RequestBody PartitionPlanPreviewReq req) {
         return Responses.list(this.partitionPlanServiceV2.generatePartitionDdl(
-                SidUtils.getSessionId(sessionId), req.getTableConfigs(), onlyForPartitionName));
+                SidUtils.getSessionId(sessionId), req.getTableConfigs(), req.isOnlyForPartitionName()));
     }
 
 }

@@ -34,6 +34,7 @@ public class PartitionPlanPreviewReq {
 
     private List<String> tableNames;
     private PartitionPlanTableConfig template;
+    private boolean onlyForPartitionName;
 
     public List<PartitionPlanTableConfig> getTableConfigs() {
         if (this.template == null || this.tableNames == null) {
