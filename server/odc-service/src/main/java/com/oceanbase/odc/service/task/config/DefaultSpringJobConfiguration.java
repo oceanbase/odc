@@ -32,6 +32,7 @@ import com.oceanbase.odc.service.schedule.ScheduleTaskService;
 import com.oceanbase.odc.service.task.TaskService;
 import com.oceanbase.odc.service.task.caller.K8sJobClient;
 import com.oceanbase.odc.service.task.dispatch.ImmediateJobDispatcher;
+import com.oceanbase.odc.service.task.enums.TaskRunMode;
 import com.oceanbase.odc.service.task.schedule.provider.DefaultHostUrlProvider;
 import com.oceanbase.odc.service.task.schedule.provider.DefaultJobImageNameProvider;
 import com.oceanbase.odc.service.task.service.SpringTransactionManager;
@@ -60,7 +61,9 @@ public class DefaultSpringJobConfiguration extends DefaultJobConfiguration
         setScheduleTaskService(ctx.getBean(ScheduleTaskService.class));
         setDaemonScheduler((Scheduler) ctx.getBean("taskFrameworkSchedulerFactoryBean"));
         setJobDispatcher(new ImmediateJobDispatcher());
-        setK8sJobClient(ctx.getBean(K8sJobClient.class));
+        if (getTaskFrameworkProperties().getRunMode() == TaskRunMode.K8S) {
+            setK8sJobClient(ctx.getBean(K8sJobClient.class));
+        }
         LocalEventPublisher publisher = new LocalEventPublisher();
         TaskFrameworkService tfs = ctx.getBean(TaskFrameworkService.class);
         if (tfs instanceof StdTaskFrameworkService) {

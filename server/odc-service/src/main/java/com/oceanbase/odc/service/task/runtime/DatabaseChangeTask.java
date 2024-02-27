@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.task.executor.task;
+package com.oceanbase.odc.service.task.runtime;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -95,10 +95,9 @@ import com.oceanbase.odc.service.session.model.SqlExecuteResult;
 import com.oceanbase.odc.service.task.caller.JobContext;
 import com.oceanbase.odc.service.task.constants.JobParametersKeyConstants;
 import com.oceanbase.odc.service.task.constants.JobUrlConstants;
+import com.oceanbase.odc.service.task.exception.JobException;
 import com.oceanbase.odc.service.task.executor.server.ObjectStorageHandler;
-import com.oceanbase.odc.service.task.runtime.DatabaseChangeTaskParameters;
-import com.oceanbase.odc.service.task.runtime.QuerySensitiveColumnReq;
-import com.oceanbase.odc.service.task.runtime.QuerySensitiveColumnResp;
+import com.oceanbase.odc.service.task.executor.task.BaseTask;
 import com.oceanbase.odc.service.task.util.HttpUtil;
 import com.oceanbase.odc.service.task.util.JobUtils;
 import com.oceanbase.tools.dbbrowser.parser.ParserUtil;
@@ -184,16 +183,12 @@ public class DatabaseChangeTask extends BaseTask<FlowTaskResult> {
     }
 
     @Override
-    protected void doStart(JobContext context) {
+    protected void doStart(JobContext context) throws JobException {
         try {
             int index = 0;
             while (sqlIterator.hasNext()) {
                 if (canceled) {
                     log.info("Accept cancel task request, taskId={}", taskId);
-                    break;
-                }
-                if (aborted) {
-                    log.info("Task is aborted, remaining sql will be skipped, taskId={}", taskId);
                     break;
                 }
                 String sql = sqlIterator.next().getStr();
@@ -273,6 +268,9 @@ public class DatabaseChangeTask extends BaseTask<FlowTaskResult> {
                 }
             }
             writeZipFile();
+            if (aborted) {
+                throw new JobException("There exists error sql, and the task is aborted");
+            }
             log.info("Database change task end up running, task id: {}", taskId);
         } finally {
             tryExpireConnectionSession();
@@ -563,7 +561,7 @@ public class DatabaseChangeTask extends BaseTask<FlowTaskResult> {
         return new QuerySensitiveColumnResp();
     }
 
-    public void maskRowsUsingAlgorithms(@NotNull SqlExecuteResult result, @NotEmpty List<Algorithm> algorithms) {
+    private void maskRowsUsingAlgorithms(@NotNull SqlExecuteResult result, @NotEmpty List<Algorithm> algorithms) {
         List<String> columnLabels = result.getColumnLabels();
         List<List<Object>> rows = result.getRows();
         List<JdbcColumnMetaData> fieldMetaDataList = result.getResultSetMetaData().getFieldMetaDataList();
@@ -620,7 +618,7 @@ public class DatabaseChangeTask extends BaseTask<FlowTaskResult> {
      * Record CSVFile name with its corresponding sql
      */
     @Data
-    static class CSVExecuteResult {
+    private static class CSVExecuteResult {
         private int sequence;
         private String sql;
         private String fileName;

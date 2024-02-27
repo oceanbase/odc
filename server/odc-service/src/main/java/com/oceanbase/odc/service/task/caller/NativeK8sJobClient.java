@@ -76,7 +76,7 @@ public class NativeK8sJobClient implements K8sJobClient {
                 KubeConfig kubeConfig = KubeConfig.loadKubeConfig(targetReader);
                 apiClient = ClientBuilder.kubeconfig(kubeConfig).build();
             }
-        } else {
+        } else if (StringUtils.isNotBlank(k8sProperties.getKubeUrl())) {
             apiClient = Config.defaultClient().setBasePath(k8sProperties.getKubeUrl());
         }
         Verify.notNull(apiClient, "k8s api client");
