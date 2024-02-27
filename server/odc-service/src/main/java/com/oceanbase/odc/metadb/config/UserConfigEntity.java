@@ -15,26 +15,16 @@
  */
 package com.oceanbase.odc.metadb.config;
 
+import javax.validation.constraints.NotNull;
+
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
-/**
- * @Author: Lebie
- * @Date: 2021/7/27 下午8:32
- * @Description: []
- */
 @Data
 @EqualsAndHashCode(callSuper = true)
-public class SystemConfigEntity extends ConfigEntity {
+public class UserConfigEntity extends ConfigEntity {
 
-    /**
-     * application name
-     */
-    private String application;
-
-    /**
-     * profile for Spring Cloud Config
-     */
-    private String profile;
+    @NotNull
+    private Long userId;
 
 }

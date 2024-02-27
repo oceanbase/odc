@@ -13,21 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.metadb.config;
+package com.oceanbase.odc.service.dlm.model;
 
 import java.util.List;
 
-import org.apache.ibatis.annotations.Param;
+import lombok.Data;
 
-public interface OrganizationConfigDAO {
-    List<OrganizationConfigEntity> listByOrganizationId(@Param("organizationId") Long organizationId);
+/**
+ * @Author：tinker
+ * @Date: 2024/2/23 11:49
+ * @Descripition:
+ */
+@Data
+public class PreviewSqlStatementsReq {
 
-    OrganizationConfigEntity getByIdAndKey(@Param("organizationId") Long organizationId, @Param("key") String key);
+    private List<DataArchiveTableConfig> tables;
 
-    int update(OrganizationConfigEntity organizationConfigEntity);
-
-
-    int insert(OrganizationConfigEntity organizationConfigEntity);
-
-
+    private List<OffsetConfig> variables;
 }

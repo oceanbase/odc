@@ -129,10 +129,6 @@ public class OdcStatementCallBack implements StatementCallback<List<JdbcGeneralR
     @Setter
     private Locale locale;
 
-    public OdcStatementCallBack(@NonNull List<SqlTuple> sqls, @NonNull ConnectionSession connectionSession) {
-        this(sqls, connectionSession, null, null);
-    }
-
     public OdcStatementCallBack(@NonNull List<SqlTuple> sqls, @NonNull ConnectionSession connectionSession,
             Boolean autoCommit, Integer queryLimit) {
         this(sqls, connectionSession, autoCommit, queryLimit, true);

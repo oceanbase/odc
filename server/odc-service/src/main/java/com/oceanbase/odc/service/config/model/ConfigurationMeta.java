@@ -13,28 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.metadb.config;
+package com.oceanbase.odc.service.config.model;
+
+import java.math.BigDecimal;
+import java.util.List;
 
 import lombok.Data;
-import lombok.EqualsAndHashCode;
 
-/**
- * @Author: Lebie
- * @Date: 2021/7/27 下午8:32
- * @Description: []
- */
 @Data
-@EqualsAndHashCode(callSuper = true)
-public class SystemConfigEntity extends ConfigEntity {
-
-    /**
-     * application name
-     */
-    private String application;
-
-    /**
-     * profile for Spring Cloud Config
-     */
-    private String profile;
-
+public class ConfigurationMeta {
+    private String category;
+    private String key;
+    private String type;
+    private BigDecimal maxValue;
+    private BigDecimal minValue;
+    private List<String> allowedValues;
+    private String defaultValue;
+    private boolean nullable;
 }
