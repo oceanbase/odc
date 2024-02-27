@@ -20,6 +20,7 @@ import static com.oceanbase.odc.service.notification.constant.Constants.CHANNEL_
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -118,14 +119,14 @@ public class NotificationService {
     @Autowired
     private ChannelConfigValidator validator;
 
-    private TreeMap<Long, NotificationPolicy> metaPolicies;
+    private Map<Long, NotificationPolicy> metaPolicies;
 
     @PostConstruct
     public void init() {
         metaPolicies = policyMetadataRepository.findAllOrderByCategoryAndName().stream()
                 .map(PolicyMetadataEntity::toPolicy)
                 .collect(Collectors.toMap(
-                        NotificationPolicy::getPolicyMetadataId, policy -> policy, (p1, p2) -> p1, TreeMap::new));
+                        NotificationPolicy::getPolicyMetadataId, policy -> policy, (p1, p2) -> p1, LinkedHashMap::new));
     }
 
     @PreAuthenticate(hasAnyResourceRole = {"OWNER"}, resourceType = "ODC_PROJECT", indexOfIdParam = 0)
