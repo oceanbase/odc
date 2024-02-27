@@ -15,11 +15,12 @@
  */
 package com.oceanbase.odc.service.iam.auth.ldap;
 
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import com.oceanbase.odc.service.iam.auth.AttemptableUsernamePasswordAuthenticationToken;
 
-public class LdapPasswordAuthenticationToken extends UsernamePasswordAuthenticationToken {
+public class LdapPasswordAuthenticationToken extends AttemptableUsernamePasswordAuthenticationToken {
 
-    public LdapPasswordAuthenticationToken(Object principal, Object credentials) {
-        super(principal, credentials);
+    public LdapPasswordAuthenticationToken(Object principal, Object credentials, String loginAttemptKey) {
+        super(principal, credentials, loginAttemptKey);
+
     }
 }

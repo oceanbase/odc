@@ -35,9 +35,11 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.web.authentication.SavedRequestAwareAuthenticationSuccessHandler;
 import org.springframework.stereotype.Component;
 
+import com.github.benmanes.caffeine.cache.LoadingCache;
 import com.oceanbase.odc.common.trace.TraceContextHolder;
 import com.oceanbase.odc.core.authority.SecurityManager;
 import com.oceanbase.odc.core.authority.exception.AuthenticationException;
+import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.core.shared.constant.OdcConstants;
 import com.oceanbase.odc.core.shared.constant.OrganizationType;
 import com.oceanbase.odc.metadb.iam.OrganizationRepository;
@@ -53,6 +55,7 @@ import com.oceanbase.odc.service.iam.OrganizationMapper;
 import com.oceanbase.odc.service.iam.model.LoginHistory;
 import com.oceanbase.odc.service.iam.model.Organization;
 import com.oceanbase.odc.service.iam.model.User;
+import com.oceanbase.odc.service.iam.util.FailedLoginAttemptLimiter;
 import com.oceanbase.odc.service.iam.util.SecurityContextUtils;
 
 import lombok.extern.slf4j.Slf4j;
@@ -71,6 +74,9 @@ public class CustomAuthenticationSuccessHandler extends SavedRequestAwareAuthent
     @Autowired
     @Qualifier("organizationResourceMigrator")
     private OrganizationResourceMigrator organizationResourceMigrator;
+
+    @Autowired
+    private LoadingCache<String, FailedLoginAttemptLimiter> clientAddressLoginAttemptCache;
 
     private final OrganizationMapper organizationMapper = OrganizationMapper.INSTANCE;
     private final SecurityManager securityManager;
@@ -130,6 +136,16 @@ public class CustomAuthenticationSuccessHandler extends SavedRequestAwareAuthent
             log.debug("Login successfully, principals={}",
                     subject.getPrincipals().stream().map(Principal::toString).collect(Collectors.joining(",")));
         }
+
+        if (authentication instanceof AttemptableUsernamePasswordAuthenticationToken) {
+            AttemptableUsernamePasswordAuthenticationToken attemptableUsernamePasswordAuthenticationToken =
+                    (AttemptableUsernamePasswordAuthenticationToken) authentication;
+            FailedLoginAttemptLimiter failedLoginAttemptLimiter = clientAddressLoginAttemptCache.get(
+                    attemptableUsernamePasswordAuthenticationToken.getLoginAttemptKey());
+            Verify.notNull(failedLoginAttemptLimiter, "failedLoginAttemptLimiter");
+            failedLoginAttemptLimiter.reset();
+        }
+
         // if odc data api, use json response
         String requestURI = httpServletRequest.getRequestURI();
         if (requestURI.startsWith("/api/v")) {

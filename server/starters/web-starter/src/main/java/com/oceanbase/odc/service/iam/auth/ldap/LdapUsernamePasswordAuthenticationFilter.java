@@ -108,7 +108,7 @@ public class LdapUsernamePasswordAuthenticationFilter extends UsernamePasswordAu
         LdapContext context = LdapContextHolder.getContext();
         String decrypt = sensitivePropertyHandler.decrypt(context.getPassword());
         LdapPasswordAuthenticationToken authRequest =
-                new LdapPasswordAuthenticationToken(context.getUsername(), decrypt);
+                new LdapPasswordAuthenticationToken(context.getUsername(), decrypt, ldapClientAddressKey(request));
         setDetails(request, authRequest);
         Authentication authenticate = this.getAuthenticationManager().authenticate(authRequest);
         authenticationHolder.setValue(authenticate);

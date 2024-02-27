@@ -31,7 +31,6 @@ import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.CredentialsExpiredException;
 import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.authentication.InternalAuthenticationServiceException;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -103,8 +102,9 @@ public class CustomLocalUsernamePasswordAuthenticationFilter extends UsernamePas
             final Holder<Authentication> authenticationHolder = new Holder<>();
             CustomLocalUsernamePasswordAuthenticationFilter that = this;
             failedLoginAttemptLimiter.attemptFailedByException(() -> {
-                UsernamePasswordAuthenticationToken token =
-                        new UsernamePasswordAuthenticationToken(username, password);
+                AttemptableUsernamePasswordAuthenticationToken token =
+                        new AttemptableUsernamePasswordAuthenticationToken(username, password,
+                                WebRequestUtils.getClientAddress(request));
                 that.setDetails(request, token);
                 Authentication authentication = that.getAuthenticationManager().authenticate(token);
                 authenticationHolder.setValue(authentication);

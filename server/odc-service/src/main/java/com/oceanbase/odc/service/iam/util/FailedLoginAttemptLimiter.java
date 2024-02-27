@@ -16,7 +16,7 @@
 package com.oceanbase.odc.service.iam.util;
 
 import java.util.List;
-import java.util.function.Supplier;
+import java.util.function.BooleanSupplier;
 
 import org.apache.commons.collections4.CollectionUtils;
 
@@ -37,14 +37,14 @@ public class FailedLoginAttemptLimiter {
     private final int maxFailedAttempt;
     private final long lockTimeoutMillis;
 
+    private volatile int failedAttempt = 0;
+    private volatile boolean isLocked = false;
+    private volatile long lastLockedMills = 0;
+
     public FailedLoginAttemptLimiter(int maxFailedAttempt, long lockTimeoutMillis) {
         this.maxFailedAttempt = maxFailedAttempt <= 0 ? Integer.MAX_VALUE : maxFailedAttempt;
         this.lockTimeoutMillis = lockTimeoutMillis;
     }
-
-    private volatile int failedAttempt = 0;
-    private volatile boolean isLocked = false;
-    private volatile long lastLockedMills = 0;
 
     public int getRemainAttempt() {
         if (isLocked) {
@@ -55,8 +55,14 @@ public class FailedLoginAttemptLimiter {
         return Math.max(0, maxFailedAttempt - failedAttempt);
     }
 
+    public synchronized void reset() {
+        this.failedAttempt = 0;
+        this.isLocked = false;
+        this.lastLockedMills = 0;
+    }
 
-    public synchronized Boolean attempt(Supplier<Boolean> attemptResultSupplier) {
+
+    public synchronized Boolean attempt(BooleanSupplier attemptResultSupplier) {
         long currentTimeMillis = System.currentTimeMillis();
         if (isLocked && (currentTimeMillis > lastLockedMills + lockTimeoutMillis || lockTimeoutMillis <= 0)) {
             isLocked = false;
@@ -70,7 +76,7 @@ public class FailedLoginAttemptLimiter {
         }
         Boolean result = null;
         try {
-            result = attemptResultSupplier.get();
+            result = attemptResultSupplier.getAsBoolean();
             return result;
         } finally {
             if (result == null || !result) {
