@@ -82,6 +82,9 @@ public interface FlowInstanceRepository
 
     List<FlowInstanceEntity> findByParentInstanceId(Long parentInstanceId);
 
+    @Query(value = "select distinct i.* from flow_instance i left join flow_instance_node_task t "
+            + "on i.id=t.flow_instance_id where t.task_task_id=:taskId", nativeQuery = true)
+    List<FlowInstanceEntity> findByTaskId(@Param("taskId") Long taskId);
 
     @Query(value = "select a.parent_instance_id from flow_instance a left join flow_instance_node_task b on a.id = b.flow_instance_id"
             + " where a.id=:id and task_task_id is not null and b.task_type='ALTER_SCHEDULE' LIMIT 1",

@@ -215,3 +215,39 @@ insert into odc_version_diff_config(config_key, db_mode, config_value, min_versi
 
 -- supports sys_refcursor
 insert into odc_version_diff_config(config_key, db_mode, config_value, min_version) values('column_data_type', 'OB_ORACLE', 'SYS_REFCURSOR:OBJECT', '2.2.76')  ON DUPLICATE KEY update `config_key`=`config_key`;
+
+-- support oracle datasource
+insert into `odc_version_diff_config`(`config_key`,`db_mode`,`config_value`,`min_version`,`gmt_create`) values('support_view','ORACLE','true','0',CURRENT_TIMESTAMP) ON DUPLICATE KEY update `config_key`=`config_key`;
+insert into `odc_version_diff_config`(`config_key`,`db_mode`,`config_value`,`min_version`,`gmt_create`) values('support_function','ORACLE','true','0',CURRENT_TIMESTAMP) ON DUPLICATE KEY update `config_key`=`config_key`;
+insert into `odc_version_diff_config`(`config_key`,`db_mode`,`config_value`,`min_version`,`gmt_create`) values('support_procedure','ORACLE','true','0',CURRENT_TIMESTAMP) ON DUPLICATE KEY update `config_key`=`config_key`;
+insert into `odc_version_diff_config`(`config_key`,`db_mode`,`config_value`,`min_version`,`gmt_create`) values('support_package','ORACLE','true','0',CURRENT_TIMESTAMP) ON DUPLICATE KEY update `config_key`=`config_key`;
+insert into `odc_version_diff_config`(`config_key`,`db_mode`,`config_value`,`min_version`,`gmt_create`) values('support_trigger','ORACLE','true','0',CURRENT_TIMESTAMP) ON DUPLICATE KEY update `config_key`=`config_key`;
+insert into `odc_version_diff_config`(`config_key`,`db_mode`,`config_value`,`min_version`,`gmt_create`) values('support_type','ORACLE','true','0',CURRENT_TIMESTAMP) ON DUPLICATE KEY update `config_key`=`config_key`;
+insert into `odc_version_diff_config`(`config_key`,`db_mode`,`config_value`,`min_version`,`gmt_create`) values('support_sequence','ORACLE','true','0',CURRENT_TIMESTAMP) ON DUPLICATE KEY update `config_key`=`config_key`;
+insert into `odc_version_diff_config`(`config_key`,`db_mode`,`config_value`,`min_version`,`gmt_create`) values('support_synonym','ORACLE','true','0',CURRENT_TIMESTAMP) ON DUPLICATE KEY update `config_key`=`config_key`;
+insert into `odc_version_diff_config`(`config_key`,`db_mode`,`config_value`,`min_version`,`gmt_create`) values('support_mock_data','ORACLE','false','0',CURRENT_TIMESTAMP) ON DUPLICATE KEY update `config_key`=`config_key`;
+insert into `odc_version_diff_config`(`config_key`,`db_mode`,`config_value`,`min_version`,`gmt_create`) values('support_sql_explain','ORACLE','false','0',CURRENT_TIMESTAMP) ON DUPLICATE KEY update `config_key`=`config_key`;
+insert into `odc_version_diff_config`(`config_key`,`db_mode`,`config_value`,`min_version`,`gmt_create`) values('support_sql_trace','ORACLE','false','0',CURRENT_TIMESTAMP) ON DUPLICATE KEY update `config_key`=`config_key`;
+insert into `odc_version_diff_config`(`config_key`,`db_mode`,`config_value`,`min_version`,`gmt_create`) values('support_partition_plan','ORACLE','false','0',CURRENT_TIMESTAMP) ON DUPLICATE KEY update `config_key`=`config_key`;
+insert into `odc_version_diff_config`(`config_key`,`db_mode`,`config_value`,`min_version`,`gmt_create`) values('support_constraint','ORACLE','true','0',CURRENT_TIMESTAMP) ON DUPLICATE KEY update `config_key`=`config_key`;
+insert into `odc_version_diff_config`(`config_key`,`db_mode`,`config_value`,`min_version`,`gmt_create`) values('support_constraint_modify','ORACLE','true','0',CURRENT_TIMESTAMP) ON DUPLICATE KEY update `config_key`=`config_key`;
+insert into `odc_version_diff_config`(`config_key`,`db_mode`,`config_value`,`min_version`,`gmt_create`) values('support_partition','ORACLE','true','0',CURRENT_TIMESTAMP) ON DUPLICATE KEY update `config_key`=`config_key`;
+insert into `odc_version_diff_config`(`config_key`,`db_mode`,`config_value`,`min_version`,`gmt_create`) values('support_partition_modify','ORACLE','true','0',CURRENT_TIMESTAMP) ON DUPLICATE KEY update `config_key`=`config_key`;
+insert into `odc_version_diff_config`(`config_key`,`db_mode`,`config_value`,`min_version`,`gmt_create`) values('support_shadowtable','ORACLE','false','0',CURRENT_TIMESTAMP) ON DUPLICATE KEY update `config_key`=`config_key`;
+insert into `odc_version_diff_config`(`config_key`,`db_mode`,`config_value`,`min_version`,`gmt_create`) values('support_show_foreign_key','ORACLE','true','0',CURRENT_TIMESTAMP) ON DUPLICATE KEY update `config_key`=`config_key`;
+insert into `odc_version_diff_config`(`config_key`,`db_mode`,`config_value`,`min_version`,`gmt_create`) values('support_data_export','ORACLE','false','0',CURRENT_TIMESTAMP) ON DUPLICATE KEY update `config_key`=`config_key`;
+insert into `odc_version_diff_config`(`config_key`,`db_mode`,`config_value`,`min_version`,`gmt_create`) values('support_db_import','ORACLE','false','0',CURRENT_TIMESTAMP) ON DUPLICATE KEY update `config_key`=`config_key`;
+insert into `odc_version_diff_config`(`config_key`,`db_mode`,`config_value`,`min_version`,`gmt_create`) values('support_db_export','ORACLE','false','0',CURRENT_TIMESTAMP) ON DUPLICATE KEY update `config_key`=`config_key`;
+insert into `odc_version_diff_config`(`config_key`,`db_mode`,`config_value`,`min_version`,`gmt_create`) values('support_kill_session','ORACLE','false','0',CURRENT_TIMESTAMP) ON DUPLICATE KEY update `config_key`=`config_key`;
+insert into `odc_version_diff_config`(`config_key`,`db_mode`,`config_value`,`min_version`,`gmt_create`) values('support_kill_query','ORACLE','false','0',CURRENT_TIMESTAMP) ON DUPLICATE KEY update `config_key`=`config_key`;
+insert into `odc_version_diff_config`(`config_key`,`db_mode`,`config_value`,`min_version`,`gmt_create`) values('support_rowid','ORACLE','true','0',CURRENT_TIMESTAMP) ON DUPLICATE KEY update `config_key`=`config_key`;
+insert into `odc_version_diff_config`(`config_key`,`db_mode`,`config_value`,`min_version`,`gmt_create`) values('support_recycle_bin','ORACLE','false','0',CURRENT_TIMESTAMP) ON DUPLICATE KEY update `config_key`=`config_key`;
+insert into `odc_version_diff_config`(`config_key`,`db_mode`,`config_value`,`min_version`,`gmt_create`) values('support_trigger_compile','ORACLE','true','0',CURRENT_TIMESTAMP) ON DUPLICATE KEY update `config_key`=`config_key`;
+insert into `odc_version_diff_config`(`config_key`,`db_mode`,`config_value`,`min_version`,`gmt_create`) values('support_trigger_ddl','ORACLE','true','0',CURRENT_TIMESTAMP) ON DUPLICATE KEY update `config_key`=`config_key`;
+insert into `odc_version_diff_config`(`config_key`,`db_mode`,`config_value`,`min_version`,`gmt_create`) values('support_trigger_references','ORACLE','true','0',CURRENT_TIMESTAMP) ON DUPLICATE KEY update `config_key`=`config_key`;
+insert into `odc_version_diff_config`(`config_key`,`db_mode`,`config_value`,`min_version`,`gmt_create`) values('support_trigger_alterstatus','ORACLE','true','0',CURRENT_TIMESTAMP) ON DUPLICATE KEY update `config_key`=`config_key`;
+insert into `odc_version_diff_config`(`config_key`,`db_mode`,`config_value`,`min_version`,`gmt_create`) values('support_pl_debug', 'ORACLE', 'false', '0', CURRENT_TIMESTAMP)  ON DUPLICATE KEY update `config_key`=`config_key`;
+insert into `odc_version_diff_config`(`config_key`,`db_mode`,`config_value`,`min_version`,`gmt_create`) values('column_data_type', 'ORACLE',
+'INTEGER:NUMERIC, NUMBER:NUMERIC, CHAR:TEXT, VARCHAR:TEXT, VARCHAR2:TEXT, BLOB:OBJECT, CLOB:OBJECT, DATE:DATE, TIMESTAMP:TIMESTAMP,
+ TIMESTAMP WITH TIME ZONE:TIMESTAMP, TIMESTAMP WITH LOCAL TIME ZONE:TIMESTAMP, RAW:TEXT, INTERVAL YEAR TO MONTH:TEXT, INTERVAL DAY TO SECOND:TEXT, NCHAR:TEXT, NVARCHAR2:TEXT,
+ FLOAT:NUMERIC, BINARY_FLOAT:NUMERIC, BINARY_DOUBLE:NUMERIC, ROWID:OBJECT, UROWID:OBJECT, JSON:OBJECT', '0', CURRENT_TIMESTAMP) ON DUPLICATE KEY update `config_key`=`config_key`;

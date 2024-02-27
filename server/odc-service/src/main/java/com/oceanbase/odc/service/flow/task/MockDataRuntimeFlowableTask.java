@@ -153,8 +153,8 @@ public class MockDataRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Void> {
         taskService.succeed(taskId, getResult(taskId));
         updateFlowInstanceStatus(FlowStatus.EXECUTION_SUCCEEDED);
         context.shutdown();
-        super.onSuccessful(taskId, taskService);
         TraceContextHolder.clear();
+        super.onSuccessful(taskId, taskService);
     }
 
     @Override
@@ -163,6 +163,7 @@ public class MockDataRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Void> {
         taskService.fail(taskId, context.getProgress(), getResult(taskId));
         context.shutdown();
         TraceContextHolder.clear();
+        super.onTimeout(taskId, taskService);
     }
 
     @Override

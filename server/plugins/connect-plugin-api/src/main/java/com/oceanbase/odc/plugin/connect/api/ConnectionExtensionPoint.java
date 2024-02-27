@@ -17,12 +17,14 @@ package com.oceanbase.odc.plugin.connect.api;
 
 import java.sql.SQLException;
 import java.util.List;
-import java.util.Map;
+import java.util.Properties;
 
 import org.pf4j.ExtensionPoint;
 
 import com.oceanbase.odc.core.datasource.ConnectionInitializer;
 import com.oceanbase.odc.core.shared.jdbc.JdbcUrlParser;
+import com.oceanbase.odc.plugin.connect.model.ConnectionPropertiesBuilder;
+import com.oceanbase.odc.plugin.connect.model.JdbcUrlProperty;
 
 import lombok.NonNull;
 
@@ -33,7 +35,12 @@ import lombok.NonNull;
  */
 public interface ConnectionExtensionPoint extends ExtensionPoint {
 
-    String generateJdbcUrl(String host, Integer port, String defaultSchema, Map<String, String> jdbcParameters);
+    /**
+     * @param properties Properties required by jdbcURL, such as HOST, PORT and DEFAULT_SCHEMA, see
+     *        {@link JdbcUrlProperty}
+     * @return jdbcURL
+     */
+    String generateJdbcUrl(JdbcUrlProperty properties);
 
     String getDriverClassName();
 
@@ -46,8 +53,21 @@ public interface ConnectionExtensionPoint extends ExtensionPoint {
      */
     List<ConnectionInitializer> getConnectionInitializers();
 
-    TestResult test(String jdbcUrl, String username, String password, int queryTimeout);
+    /**
+     * Get connection information based on jdbcUrl and the username of the current connection
+     *
+     * @param jdbcUrl jdbc url.
+     * @param userName jdbc url.
+     * @return {@link JdbcUrlParser}
+     */
+    JdbcUrlParser getConnectionInfo(@NonNull String jdbcUrl, String userName) throws SQLException;
 
-    JdbcUrlParser getJdbcUrlParser(@NonNull String jdbcUrl) throws SQLException;
-
+    /**
+     * @param properties Properties required by test connection, such as USER, PASSWORD, see
+     *        {@link ConnectionPropertiesBuilder}
+     * @param queryTimeout query timeout.
+     *
+     * @return test connection result
+     */
+    TestResult test(String jdbcUrl, Properties properties, int queryTimeout);
 }

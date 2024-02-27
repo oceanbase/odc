@@ -45,7 +45,7 @@ public class RestrictTableCharsetFactory implements SqlCheckRuleFactory {
         } else {
             allowCharsets = new HashSet<>((List<String>) parameters.get(key));
         }
-        return dialectType.isMysql() ? new MySQLRestrictTableCharset(allowCharsets) : null;
+        return (dialectType.isMysql() || dialectType.isDoris()) ? new MySQLRestrictTableCharset(allowCharsets) : null;
     }
 
 }

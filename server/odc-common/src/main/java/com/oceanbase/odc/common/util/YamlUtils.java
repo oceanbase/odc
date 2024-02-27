@@ -56,14 +56,13 @@ public class YamlUtils {
     public static <T> List<T> fromYamlList(String srcPath, Class classType) {
         URL url = ResourceUtils.class.getClassLoader().getResource(srcPath);
         if (url == null) {
-            return null;
+            throw new IllegalStateException("Failed to load resource: " + srcPath);
         }
         try {
             CollectionType javaType = OBJECT_MAPPER.getTypeFactory().constructCollectionType(List.class, classType);
             return OBJECT_MAPPER.readValue(url, javaType);
         } catch (IOException ex) {
-            log.warn("failed to read yaml file, reason={}", ex.getMessage());
-            return null;
+            throw new IllegalStateException("Failed to read yaml file: " + srcPath, ex);
         }
     }
 

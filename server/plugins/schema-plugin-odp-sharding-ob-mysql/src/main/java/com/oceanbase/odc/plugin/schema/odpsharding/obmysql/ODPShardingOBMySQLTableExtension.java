@@ -21,8 +21,6 @@ import org.pf4j.Extension;
 
 import com.oceanbase.odc.common.util.JdbcOperationsUtil;
 import com.oceanbase.odc.plugin.schema.obmysql.OBMySQLTableExtension;
-import com.oceanbase.tools.dbbrowser.editor.DBTablePartitionEditor;
-import com.oceanbase.tools.dbbrowser.editor.mysql.MySQLDBTablePartitionEditor;
 import com.oceanbase.tools.dbbrowser.model.DBTable;
 import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
 import com.oceanbase.tools.dbbrowser.schema.mysql.ODPOBMySQLSchemaAccessor;
@@ -58,10 +56,5 @@ public class ODPShardingOBMySQLTableExtension extends OBMySQLTableExtension {
     protected DBStatsAccessor getStatsAccessor(Connection consoleConnection) {
         // only use DBStatsAccessor.getTableStats() method in plugin, so we do not use connectionId
         return new ODPOBMySQLStatsAccessor("");
-    }
-
-    @Override
-    protected DBTablePartitionEditor getDBTablePartitionEditor(Connection connection) {
-        return new MySQLDBTablePartitionEditor();
     }
 }

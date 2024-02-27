@@ -17,20 +17,23 @@ package com.oceanbase.odc.metadb.iam;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.function.Function;
 
-import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.oceanbase.odc.common.jpa.InsertSqlTemplateBuilder;
+import com.oceanbase.odc.config.jpa.OdcJpaRepository;
+
 /**
  * @author gaoda.xy
  * @date 2022/12/15 14:59
  */
 public interface UserPermissionRepository
-        extends JpaRepository<UserPermissionEntity, Long>, JpaSpecificationExecutor<UserPermissionEntity> {
+        extends OdcJpaRepository<UserPermissionEntity, Long>, JpaSpecificationExecutor<UserPermissionEntity> {
 
     List<UserPermissionEntity> findByUserId(@Param("userId") Long userId);
 
@@ -74,5 +77,21 @@ public interface UserPermissionRepository
     @Transactional
     @Query(value = "delete from iam_user_permission up where up.permission_id in (:permissionIds)", nativeQuery = true)
     int deleteByPermissionIds(@Param("permissionIds") Collection<Long> permissionIds);
+
+    default List<UserPermissionEntity> batchCreate(List<UserPermissionEntity> entities) {
+        String sql = InsertSqlTemplateBuilder.from("iam_user_permission")
+                .field(UserPermissionEntity_.userId)
+                .field(UserPermissionEntity_.permissionId)
+                .field(UserPermissionEntity_.creatorId)
+                .field(UserPermissionEntity_.organizationId)
+                .build();
+        List<Function<UserPermissionEntity, Object>> getter = valueGetterBuilder()
+                .add(UserPermissionEntity::getUserId)
+                .add(UserPermissionEntity::getPermissionId)
+                .add(UserPermissionEntity::getCreatorId)
+                .add(UserPermissionEntity::getOrganizationId)
+                .build();
+        return batchCreate(entities, sql, getter, UserPermissionEntity::setId);
+    }
 
 }

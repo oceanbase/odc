@@ -15,6 +15,8 @@
  */
 package com.oceanbase.tools.dbbrowser.schema.mysql;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -29,7 +31,10 @@ import com.oceanbase.tools.dbbrowser.model.DBIndexAlgorithm;
 import com.oceanbase.tools.dbbrowser.model.DBObjectIdentity;
 import com.oceanbase.tools.dbbrowser.model.DBObjectType;
 import com.oceanbase.tools.dbbrowser.model.DBObjectWarningDescriptor;
+import com.oceanbase.tools.dbbrowser.model.DBTable;
+import com.oceanbase.tools.dbbrowser.model.DBTable.DBTableOptions;
 import com.oceanbase.tools.dbbrowser.model.DBTableColumn;
+import com.oceanbase.tools.dbbrowser.model.DBTableConstraint;
 import com.oceanbase.tools.dbbrowser.model.DBTableIndex;
 import com.oceanbase.tools.dbbrowser.parser.SqlParser;
 import com.oceanbase.tools.dbbrowser.parser.result.ParseSqlResult;
@@ -39,6 +44,7 @@ import com.oceanbase.tools.dbbrowser.util.DBSchemaAccessorUtil;
 import com.oceanbase.tools.dbbrowser.util.MySQLSqlBuilder;
 import com.oceanbase.tools.dbbrowser.util.StringUtils;
 
+import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -111,12 +117,29 @@ public class OBMySQLSchemaAccessor extends MySQLNoGreaterThan5740SchemaAccessor 
     public List<DBObjectIdentity> listTables(String schemaName, String tableNameLike) {
         List<DBObjectIdentity> results = super.listTables(schemaName, tableNameLike);
 
-        String querySystemTable = "show full tables from oceanbase where Table_type='BASE TABLE'";
-        try {
-            List<String> tables = jdbcOperations.query(querySystemTable, (rs, rowNum) -> rs.getString(1));
-            tables.forEach(name -> results.add(DBObjectIdentity.of("oceanbase", DBObjectType.TABLE, name)));
-        } catch (Exception e) {
-            log.warn("List system tables from 'oceanbase' failed, reason={}", e.getMessage());
+        if (StringUtils.isBlank(schemaName) || "oceanbase".equals(schemaName)) {
+            MySQLSqlBuilder querySystemTable = new MySQLSqlBuilder();
+            querySystemTable.append("show full tables from oceanbase where Table_type='BASE TABLE'");
+            if (StringUtils.isNotBlank(tableNameLike)) {
+                querySystemTable.append(" and tables_in_oceanbase like ").value("%" + tableNameLike + "%");
+            }
+            try {
+                List<String> tables =
+                        jdbcOperations.query(querySystemTable.toString(), (rs, rowNum) -> rs.getString(1));
+                tables.forEach(name -> results.add(DBObjectIdentity.of("oceanbase", DBObjectType.TABLE, name)));
+            } catch (Exception e) {
+                log.warn("List system tables from 'oceanbase' failed, reason={}", e.getMessage());
+            }
+        }
+
+        if (StringUtils.isBlank(schemaName) || "mysql".equals(schemaName)) {
+            MySQLSqlBuilder queryMysqlTable = new MySQLSqlBuilder();
+            queryMysqlTable.append("show full tables from `mysql` where Table_type='BASE TABLE'");
+            if (StringUtils.isNotBlank(tableNameLike)) {
+                queryMysqlTable.append(" and tables_in_mysql like ").value("%" + tableNameLike + "%");
+            }
+            jdbcOperations.query(queryMysqlTable.toString(),
+                    (rs, num) -> results.add(DBObjectIdentity.of("mysql", DBObjectType.TABLE, rs.getString(1))));
         }
         return results;
     }
@@ -215,6 +238,18 @@ public class OBMySQLSchemaAccessor extends MySQLNoGreaterThan5740SchemaAccessor 
         return tableName2Indexes;
     }
 
+    public Map<String, List<DBTableIndex>> listTableIndexes(String schemaName, Map<String, String> tableName2Ddl) {
+        Map<String, List<DBTableIndex>> tableName2Indexes = super.listTableIndexes(schemaName);
+        tableName2Indexes.keySet().forEach(tableName -> {
+            if (tableName2Ddl.containsKey(tableName)) {
+                parseDdlToSetIndexRange(tableName2Ddl.get(tableName), tableName2Indexes.get(tableName));
+            } else {
+                fillIndexRange(tableName2Indexes.get(tableName), schemaName, tableName);
+            }
+        });
+        return tableName2Indexes;
+    }
+
     @Override
     protected boolean isIndexDistinguishesVisibility() {
         return true;
@@ -236,20 +271,28 @@ public class OBMySQLSchemaAccessor extends MySQLNoGreaterThan5740SchemaAccessor 
             if (CollectionUtils.isEmpty(ddl) || StringUtils.isBlank(ddl.get(0))) {
                 fillWarning(indexList, DBObjectType.INDEX, "get index DDL failed");
             } else {
-                ParseSqlResult result = SqlParser.parseMysql(ddl.get(0));
-                if (CollectionUtils.isEmpty(result.getIndexes())) {
-                    fillWarning(indexList, DBObjectType.INDEX, "parse index DDL failed");
-                } else {
-                    indexList.forEach(index -> result.getIndexes().forEach(dbIndex -> {
-                        if (StringUtils.equals(index.getName(), dbIndex.getName())) {
-                            index.setGlobal("GLOBAL".equalsIgnoreCase(dbIndex.getRange().name()));
-                        }
-                    }));
-                }
+                parseDdlToSetIndexRange(ddl.get(0), indexList);
             }
         } catch (Exception e) {
             fillWarning(indexList, DBObjectType.INDEX, "query index ddl failed");
             log.warn("Fetch table index through ddl parsing failed", e);
+        }
+    }
+
+    private void parseDdlToSetIndexRange(String ddl, List<DBTableIndex> indexList) {
+        if (StringUtils.isBlank(ddl)) {
+            fillWarning(indexList, DBObjectType.INDEX, "table ddl is blank, can not set index range by parse ddl");
+            return;
+        }
+        ParseSqlResult result = SqlParser.parseMysql(ddl);
+        if (CollectionUtils.isEmpty(result.getIndexes())) {
+            fillWarning(indexList, DBObjectType.INDEX, "parse index DDL failed");
+        } else {
+            indexList.forEach(index -> result.getIndexes().forEach(dbIndex -> {
+                if (StringUtils.equals(index.getName(), dbIndex.getName())) {
+                    index.setGlobal("GLOBAL".equalsIgnoreCase(dbIndex.getRange().name()));
+                }
+            }));
         }
     }
 
@@ -275,4 +318,41 @@ public class OBMySQLSchemaAccessor extends MySQLNoGreaterThan5740SchemaAccessor 
                 Collectors.toList());
     }
 
+    @Override
+    public Map<String, DBTable> getTables(@NonNull String schemaName, List<String> tableNames) {
+        // TODO: Only query the table information of tableNames passed upstream
+        Map<String, DBTable> returnVal = new HashMap<>();
+        tableNames = showTables(schemaName);
+        if (tableNames.isEmpty()) {
+            return returnVal;
+        }
+        Map<String, String> tableName2Ddl = new HashMap<>();
+        tableNames.stream()
+                .forEach(tableName -> tableName2Ddl.put(tableName, getTableDDL(schemaName, tableName)));
+        Map<String, List<DBTableColumn>> tableName2Columns = listTableColumns(schemaName);
+        Map<String, List<DBTableIndex>> tableName2Indexes = listTableIndexes(schemaName, tableName2Ddl);
+        Map<String, List<DBTableConstraint>> tableName2Constraints = listTableConstraints(schemaName);
+        Map<String, DBTableOptions> tableName2Options = listTableOptions(schemaName);
+        for (String tableName : tableNames) {
+            if (!tableName2Columns.containsKey(tableName)) {
+                continue;
+            }
+            DBTable table = new DBTable();
+            table.setSchemaName(schemaName);
+            table.setOwner(schemaName);
+            table.setName(tableName);
+            table.setColumns(tableName2Columns.getOrDefault(tableName, new ArrayList<>()));
+            table.setIndexes(tableName2Indexes.getOrDefault(tableName, new ArrayList<>()));
+            table.setConstraints(tableName2Constraints.getOrDefault(tableName, new ArrayList<>()));
+            table.setTableOptions(tableName2Options.getOrDefault(tableName, new DBTableOptions()));
+            try {
+                table.setPartition(getPartition(schemaName, tableName));
+            } catch (Exception e) {
+                log.warn("Failed to set table partition", e);
+            }
+            table.setDDL(tableName2Ddl.get(tableName));
+            returnVal.put(tableName, table);
+        }
+        return returnVal;
+    }
 }

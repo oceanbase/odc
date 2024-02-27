@@ -25,6 +25,7 @@ import com.oceanbase.jdbc.OceanBaseConnection;
 import com.oceanbase.odc.common.util.JdbcOperationsUtil;
 import com.oceanbase.odc.common.util.ReflectionUtils;
 import com.oceanbase.odc.core.datasource.SingleConnectionDataSource.CloseIgnoreInvocationHandler;
+import com.oceanbase.odc.core.shared.exception.UnexpectedException;
 import com.oceanbase.odc.plugin.connect.api.SessionExtensionPoint;
 
 import lombok.extern.slf4j.Slf4j;
@@ -74,5 +75,21 @@ public class OBMySQLSessionExtension implements SessionExtensionPoint {
             }
         }
         return connectionId;
+    }
+
+    @Override
+    public String getVariable(Connection connection, String variableName) {
+        String querySql = "show session variables like '" + variableName + "'";
+        try {
+            return JdbcOperationsUtil.getJdbcOperations(connection).query(querySql, rs -> {
+                if (rs.next()) {
+                    return rs.getString(2);
+                }
+                throw new UnexpectedException("variable does not exist: " + variableName);
+            });
+        } catch (Exception e) {
+            log.warn("Failed to get variable {}, message={}", variableName, e.getMessage());
+        }
+        return null;
     }
 }

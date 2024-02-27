@@ -38,4 +38,5 @@ public class DatabaseChangeResult implements FlowTaskResult {
     private Long resultPreviewMaxSizeBytes;
     private String errorRecordsFilePath;
     private RollbackPlanTaskResult rollbackPlanResult;
+    private boolean autoModifyTimeout;
 }

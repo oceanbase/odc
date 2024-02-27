@@ -20,12 +20,13 @@ import java.util.List;
 import java.util.Set;
 
 import com.oceanbase.odc.core.shared.constant.TaskType;
-import com.oceanbase.odc.service.collaboration.environment.model.Environment;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.objectstorage.model.ObjectMetadata;
+import com.oceanbase.odc.service.permission.database.model.DatabasePermissionType;
 import com.oceanbase.odc.service.regulation.risklevel.model.RiskLevelDescriber;
 import com.oceanbase.odc.service.regulation.ruleset.model.Rule;
 
+import lombok.AllArgsConstructor;
 import lombok.Data;
 
 /**
@@ -54,10 +55,6 @@ public class PreCheckTaskParameters implements Serializable {
      */
     private RiskLevelDescriber riskLevelDescriber;
     /**
-     * The environment of the target database
-     */
-    private Environment environment;
-    /**
      * The rules to be checked according to the environment
      */
     private List<Rule> rules;
@@ -66,12 +63,28 @@ public class PreCheckTaskParameters implements Serializable {
      */
     private ConnectionConfig connectionConfig;
     /**
-     * The authorized database names according to the connectionConfig
+     * The default schema of the task
      */
-    private Set<String> authorizedDatabaseNames;
+    private String defaultSchema;
+    /**
+     * The authorized databases and their permissions of the connection config
+     */
+    private List<AuthorizedDatabase> authorizedDatabase;
     /**
      * The object storage metadata of the pre-check SQL file
      */
     private List<ObjectMetadata> sqlFileObjectMetadatas;
+
+    @Data
+    @AllArgsConstructor
+    public static class AuthorizedDatabase implements Serializable {
+
+        private static final long serialVersionUID = -4535323031261488874L;
+
+        private Long id;
+        private String name;
+        private Set<DatabasePermissionType> permissionTypes;
+
+    }
 
 }

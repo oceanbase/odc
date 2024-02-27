@@ -43,8 +43,8 @@ public class OracleConstraintEditor extends DBTableConstraintEditor {
             @NotNull DBTableConstraint newConstraint) {
         SqlBuilder sqlBuilder = sqlBuilder();
         String drop = generateDropObjectDDL(oldConstraint);
-        sqlBuilder.append(drop).append(";").line()
-                .append(generateCreateObjectDDL(newConstraint)).append(";").line();
+        sqlBuilder.append(drop)
+                .append(generateCreateObjectDDL(newConstraint));
         return sqlBuilder.toString();
     }
 
@@ -53,7 +53,7 @@ public class OracleConstraintEditor extends DBTableConstraintEditor {
         SqlBuilder sqlBuilder = sqlBuilder();
         sqlBuilder.append("ALTER TABLE ").append(getFullyQualifiedTableName(constraint))
                 .append(" DROP CONSTRAINT ").identifier(constraint.getName());
-        return sqlBuilder.toString();
+        return sqlBuilder.toString().trim() + ";\n";
     }
 
     @Override
