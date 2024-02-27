@@ -15,19 +15,16 @@
  */
 package com.oceanbase.odc.metadb.config;
 
-import java.util.List;
+import javax.validation.constraints.NotNull;
 
-import org.apache.ibatis.annotations.Param;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
 
-public interface OrganizationConfigDAO {
-    List<OrganizationConfigEntity> listByOrganizationId(@Param("organizationId") Long organizationId);
+@Data
+@EqualsAndHashCode(callSuper = true)
+public class UserConfigEntity extends ConfigEntity {
 
-    OrganizationConfigEntity getByIdAndKey(@Param("organizationId") Long organizationId, @Param("key") String key);
-
-    int update(OrganizationConfigEntity organizationConfigEntity);
-
-
-    int insert(OrganizationConfigEntity organizationConfigEntity);
-
+    @NotNull
+    private Long userId;
 
 }

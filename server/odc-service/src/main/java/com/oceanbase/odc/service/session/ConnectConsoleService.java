@@ -79,6 +79,7 @@ import com.oceanbase.odc.core.sql.parser.EmptyAstFactory;
 import com.oceanbase.odc.core.sql.split.OffsetString;
 import com.oceanbase.odc.service.common.util.SqlUtils;
 import com.oceanbase.odc.service.common.util.WebResponseUtils;
+import com.oceanbase.odc.service.config.UserConfigFacade;
 import com.oceanbase.odc.service.connection.ConnectionService;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.db.browser.DBSchemaAccessors;
@@ -134,6 +135,8 @@ public class ConnectConsoleService {
     private DefaultDBSessionManage defaultDbSessionManage;
     @Autowired
     private ConnectionService connectionService;
+    @Autowired
+    private UserConfigFacade userConfigFacade;
 
     public SqlExecuteResult queryTableOrViewData(@NotNull String sessionId,
             @NotNull @Valid QueryTableOrViewDataReq req) throws Exception {
@@ -176,6 +179,8 @@ public class ConnectConsoleService {
         asyncExecuteReq.setAddROWID(false);
         asyncExecuteReq.setQueryLimit(queryLimit);
         asyncExecuteReq.setShowTableColumnInfo(true);
+        asyncExecuteReq.setContinueExecutionOnError(true);
+        asyncExecuteReq.setFullLinkTraceEnabled(false);
 
         SqlAsyncExecuteResp resp = execute(sessionId, asyncExecuteReq, false);
         String requestId = resp.getRequestId();
@@ -265,10 +270,20 @@ public class ConnectConsoleService {
             }
         }
         Integer queryLimit = checkQueryLimit(request.getQueryLimit());
-        OdcStatementCallBack statementCallBack =
-                new OdcStatementCallBack(sqlTuples, connectionSession, request.getAutoCommit(), queryLimit);
+        boolean continueExecutionOnError =
+                Objects.nonNull(request.getContinueExecutionOnError()) ? request.getContinueExecutionOnError()
+                        : userConfigFacade.isContinueExecutionOnError();
+        boolean stopOnError = !continueExecutionOnError;
+        OdcStatementCallBack statementCallBack = new OdcStatementCallBack(sqlTuples, connectionSession,
+                request.getAutoCommit(), queryLimit, stopOnError);
+
         statementCallBack.setDbmsoutputMaxRows(sessionProperties.getDbmsOutputMaxRows());
-        statementCallBack.setUseFullLinkTrace(sessionProperties.isEnableFullLinkTrace());
+
+        boolean fullLinkTraceEnabled =
+                Objects.nonNull(request.getFullLinkTraceEnabled()) ? request.getFullLinkTraceEnabled()
+                        : userConfigFacade.isFullLinkTraceEnabled();
+        statementCallBack.setUseFullLinkTrace(fullLinkTraceEnabled);
+
         statementCallBack.setFullLinkTraceTimeout(sessionProperties.getFullLinkTraceTimeoutSeconds());
         statementCallBack.setMaxCachedSize(sessionProperties.getResultSetMaxCachedSize());
         statementCallBack.setMaxCachedLines(sessionProperties.getResultSetMaxCachedLines());
