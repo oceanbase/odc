@@ -24,10 +24,13 @@ import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionConstants;
 import com.oceanbase.odc.core.shared.constant.TaskStatus;
 import com.oceanbase.odc.metadb.schedule.ScheduleTaskEntity;
+import com.oceanbase.odc.service.common.util.SpringContextUtil;
 import com.oceanbase.odc.service.db.browser.DBSchemaAccessors;
 import com.oceanbase.odc.service.dlm.model.DataArchiveParameters;
 import com.oceanbase.odc.service.dlm.model.DlmTask;
 import com.oceanbase.odc.service.session.factory.DefaultConnectSessionFactory;
+import com.oceanbase.odc.service.task.config.DefaultTaskFrameworkProperties;
+import com.oceanbase.odc.service.task.config.TaskFrameworkProperties;
 import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
 
 import lombok.extern.slf4j.Slf4j;
@@ -42,6 +45,14 @@ public class DataArchiveJob extends AbstractDlmJob {
     @Override
     public void execute(JobExecutionContext context) {
 
+        // execute in task framework.
+        TaskFrameworkProperties taskFrameworkProperties =
+                SpringContextUtil.getBean(DefaultTaskFrameworkProperties.class);
+        if (taskFrameworkProperties.isEnabled()) {
+            DataArchiveJobCopied dataArchiveJobCopied = new DataArchiveJobCopied();
+            dataArchiveJobCopied.execute(context);
+            return;
+        }
         jobThread = Thread.currentThread();
 
         ScheduleTaskEntity taskEntity = (ScheduleTaskEntity) context.getResult();

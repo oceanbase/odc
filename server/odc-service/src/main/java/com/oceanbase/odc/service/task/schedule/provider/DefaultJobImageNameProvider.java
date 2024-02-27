@@ -17,15 +17,16 @@ package com.oceanbase.odc.service.task.schedule.provider;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Supplier;
 
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.common.util.SystemUtils;
 import com.oceanbase.odc.core.shared.PreConditions;
-import com.oceanbase.odc.service.info.InfoAdapter;
 import com.oceanbase.odc.service.task.config.K8sProperties;
 import com.oceanbase.odc.service.task.config.TaskFrameworkProperties;
 import com.oceanbase.odc.service.task.constants.JobEnvKeyConstants;
+import com.oceanbase.odc.service.task.exception.TaskRuntimeException;
 
 /**
  * @author yaobin
@@ -33,13 +34,10 @@ import com.oceanbase.odc.service.task.constants.JobEnvKeyConstants;
  * @since 4.2.4
  */
 public class DefaultJobImageNameProvider implements JobImageNameProvider {
-    private final InfoAdapter infoAdapter;
     private final Supplier<TaskFrameworkProperties> taskFrameworkProperties;
 
-    public DefaultJobImageNameProvider(Supplier<TaskFrameworkProperties> taskFrameworkProperties,
-            InfoAdapter infoAdapter) {
+    public DefaultJobImageNameProvider(Supplier<TaskFrameworkProperties> taskFrameworkProperties) {
         PreConditions.notNull(taskFrameworkProperties.get(), "taskFrameworkProperties");
-        this.infoAdapter = infoAdapter;
         this.taskFrameworkProperties = taskFrameworkProperties;
     }
 
@@ -48,10 +46,13 @@ public class DefaultJobImageNameProvider implements JobImageNameProvider {
         K8sProperties k8s = taskFrameworkProperties.get().getK8sProperties();
 
         List<String> candidateImages = new ArrayList<>();
-        candidateImages.add(SystemUtils.getEnvOrProperty(JobEnvKeyConstants.ODC_IMAGE_NAME));
         candidateImages.add(k8s.getPodImageName());
-        candidateImages.add("odc-server:" + infoAdapter.getBuildVersion());
+        candidateImages.add(SystemUtils.getEnvOrProperty(JobEnvKeyConstants.ODC_IMAGE_NAME));
 
-        return candidateImages.stream().filter(StringUtils::isNotBlank).findFirst().get();
+        Optional<String> imageNameOptional = candidateImages.stream().filter(StringUtils::isNotBlank).findFirst();
+        if (!imageNameOptional.isPresent()) {
+            throw new TaskRuntimeException("Odc image name is not found.");
+        }
+        return imageNameOptional.get();
     }
 }
