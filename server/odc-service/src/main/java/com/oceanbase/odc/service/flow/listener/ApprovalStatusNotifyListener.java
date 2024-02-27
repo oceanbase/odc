@@ -15,6 +15,7 @@
  */
 package com.oceanbase.odc.service.flow.listener;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -69,16 +70,18 @@ public class ApprovalStatusNotifyListener extends EmptyExecutionListener {
         }
         try {
             FlowApprovalInstance target = getTarget(execution);
+            TaskEntity taskEntity = flowInstanceService.getTaskByFlowInstanceId(target.getFlowInstanceId());
+            if (target.isAutoApprove()) {
+                return;
+            }
+
             Set<Long> approverIds = null;
-            TaskEntity taskEntity =
-                    flowInstanceService.getTaskByFlowInstanceId(target.getFlowInstanceId());
-            List<FlowInstanceApprovalViewEntity> approvals =
-                    flowInstanceApprovalViewRepository.findByFlowInstanceId(target.getFlowInstanceId());
-            if (CollectionUtils.isNotEmpty(approvals)) {
+            Optional<FlowInstanceApprovalViewEntity> optional =
+                    flowInstanceApprovalViewRepository.findById(target.getId());
+            if (optional.isPresent()) {
                 List<UserResourceRoleEntity> userResourceRoles =
                         userResourceRoleRepository.findByResourceIdsAndResourceRoleIdsIn(
-                                approvals.stream().map(FlowInstanceApprovalViewEntity::getResourceRoleIdentifier)
-                                        .collect(Collectors.toSet()));
+                                Collections.singleton(optional.get().getResourceRoleIdentifier()));
                 approverIds = CollectionUtils.isEmpty(userResourceRoles) ? null
                         : userResourceRoles.stream().map(UserResourceRoleEntity::getUserId).collect(Collectors.toSet());
             }

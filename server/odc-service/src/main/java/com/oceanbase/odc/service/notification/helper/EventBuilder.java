@@ -124,7 +124,7 @@ public class EventBuilder {
 
     public Event ofPendingApprovalTask(TaskEntity task, Collection<Long> approvers) {
         Event event = ofTask(task, TaskEvent.PENDING_APPROVAL);
-        event.getLabels().put(APPROVER_ID, JsonUtils.toJson(approvers));
+        event.getLabels().putIfNonNull(APPROVER_ID, JsonUtils.toJson(approvers));
         resolveLabels(event.getLabels());
         return event;
     }
@@ -263,20 +263,20 @@ public class EventBuilder {
             }
         }
         if (labels.containsKey(APPROVER_ID)) {
-            if ("null".equals(labels.get(APPROVER_ID))) {
-                labels.putIfNonNull(APPROVER_NAME, AUTO_APPROVAL_KEY);
-            } else if (labels.get(APPROVER_ID).startsWith("[")) {
-                List<Long> approverIds = JsonUtils.fromJsonList(labels.get(APPROVER_ID), Long.class);
-                List<User> approvers = userService.batchNullSafeGet(approverIds);
-                labels.putIfNonNull(APPROVER_NAME,
-                        String.join(" | ", approvers.stream().map(User::getName).collect(Collectors.toSet())));
-            } else {
-                try {
+            try {
+                if ("null".equals(labels.get(APPROVER_ID))) {
+                    labels.putIfNonNull(APPROVER_NAME, AUTO_APPROVAL_KEY);
+                } else if (labels.get(APPROVER_ID).startsWith("[")) {
+                    List<Long> approverIds = JsonUtils.fromJsonList(labels.get(APPROVER_ID), Long.class);
+                    List<User> approvers = userService.batchNullSafeGet(approverIds);
+                    labels.putIfNonNull(APPROVER_NAME,
+                            String.join(" | ", approvers.stream().map(User::getName).collect(Collectors.toSet())));
+                } else {
                     UserEntity user = userService.nullSafeGet(labels.getLongFromString(APPROVER_ID));
                     labels.putIfNonNull(APPROVER_NAME, user.getName());
-                } catch (Exception e) {
-                    log.warn("failed to query approver.", e);
                 }
+            } catch (Exception e) {
+                log.warn("failed to query approver.", e);
             }
         }
         if (labels.containsKey(TASK_ENTITY_ID)) {
