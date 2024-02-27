@@ -68,7 +68,7 @@
   max_value: ~
   min_value: ~
   allowed_values: [ 'true','false' ]
-  default_value: 'true'
+  default_value: 'false'
   nullable: false
   description: ''
 - id: 8
