@@ -314,6 +314,8 @@ public class PartitionPlanScheduleService {
     private void createPartitionPlanTables(List<PartitionPlanTableConfig> partitionPlanTableConfigs,
             Long partitionPlanId, Long scheduleId,
             Long flowInstanceId, Long taskId, Integer maxErrors, Long timeoutMillis) {
+        Validate.isTrue(CollectionUtils.isNotEmpty(partitionPlanTableConfigs),
+                "Partition plan table configs can't be empty");
         List<PartitionPlanTableEntity> ppts = partitionPlanTableConfigs.stream()
                 .map(t -> modelToEntity(t, partitionPlanId, scheduleId)).collect(Collectors.toList());
         Map<String, Long> tblName2Id = this.partitionPlanTableRepository.batchCreate(ppts).stream()
