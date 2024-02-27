@@ -425,7 +425,9 @@ public class OdcStatementCallBack implements StatementCallback<List<JdbcGeneralR
                 executeDetails = ConnectionPluginUtil.getTraceExtension(connectionSession.getDialectType())
                         .getExecuteDetail(statement, version);
                 executeDetails.setWithFullLinkTrace(false);
-                executeDetails.setTraceEmptyReason(ErrorCodes.ObFullLinkTraceNotSupported.getLocalizedMessage(null));
+                executeDetails.setTraceEmptyReason(
+                        useFullLinkTrace ? ErrorCodes.ObFullLinkTraceNotEnabled.getLocalizedMessage(null)
+                                : ErrorCodes.ObFullLinkTraceNotSupported.getLocalizedMessage(null));
             }
             cacheTraceSpan(executeDetails.getTraceSpan());
             setExecuteTraceStage(traceWatch, executeDetails, stopWatch);
