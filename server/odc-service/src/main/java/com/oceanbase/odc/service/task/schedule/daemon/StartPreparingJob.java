@@ -57,9 +57,15 @@ public class StartPreparingJob implements Job {
     public void execute(JobExecutionContext context) throws JobExecutionException {
         configuration = JobConfigurationHolder.getJobConfiguration();
         JobConfigurationValidator.validComponent();
+        TaskFrameworkProperties taskFrameworkProperties = configuration.getTaskFrameworkProperties();
+        if (!configuration.getStartJobRateLimiter().tryAcquire()) {
+            log.warn("Amount of executors waiting to run exceed threshold, wait next schedule, threshold={}.",
+                    taskFrameworkProperties.getExecutorWaitingToRunThresholdCount());
+            return;
+        }
         // scan preparing job
         TaskFrameworkService taskFrameworkService = configuration.getTaskFrameworkService();
-        TaskFrameworkProperties taskFrameworkProperties = configuration.getTaskFrameworkProperties();
+
         Page<JobEntity> jobs = taskFrameworkService.find(
                 Lists.newArrayList(JobStatus.PREPARING, JobStatus.RETRYING), 0,
                 taskFrameworkProperties.getSingleFetchPreparingJobRows());

@@ -38,12 +38,11 @@ public class JobCallerBuilder {
 
     public static JobCaller buildK8sJobCaller(K8sJobClient k8sJobClient, PodConfig podConfig, JobContext context) {
 
-        PodParam podParam = podConfig.getPodParam();
         Map<String, String> environments = new JobEnvironmentFactory().getEnvironments(context, TaskRunMode.K8S);
         new JobEnvironmentEncryptor().encrypt(environments);
 
-        podParam.setEnvironments(environments);
-        podParam.getEnvironments().putIfAbsent(JobEnvKeyConstants.ODC_LOG_DIRECTORY, podParam.getMountPath());
+        podConfig.setEnvironments(environments);
+        podConfig.getEnvironments().putIfAbsent(JobEnvKeyConstants.ODC_LOG_DIRECTORY, podConfig.getMountPath());
         return new K8sJobCaller(k8sJobClient, podConfig);
     }
 }

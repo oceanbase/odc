@@ -23,6 +23,7 @@ import javax.validation.constraints.NotNull;
 
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.shared.constant.DialectType;
+import com.oceanbase.odc.service.onlineschemachange.ddl.ReplaceResult;
 
 import lombok.Data;
 
@@ -91,6 +92,8 @@ public class OnlineSchemaChangeScheduleTaskParameters {
      * For ODC internal usage
      */
     private List<String> sqlsToBeExecuted = new ArrayList<>();
+
+    private ReplaceResult replaceResult;
 
     public String getOriginTableNameWithSchema() {
         return tableNameWithSchema(originTableName);
