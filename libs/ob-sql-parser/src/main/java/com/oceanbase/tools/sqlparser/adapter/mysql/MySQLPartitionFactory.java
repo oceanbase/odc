@@ -31,8 +31,8 @@ import com.oceanbase.tools.sqlparser.obmysql.OBParser.Key_partition_optionContex
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.List_partition_optionContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Opt_partition_optionContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Partition_optionContext;
+import com.oceanbase.tools.sqlparser.obmysql.OBParser.Partition_optionsContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Range_partition_optionContext;
-import com.oceanbase.tools.sqlparser.obmysql.OBParser.Subpartition_optionContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Vertical_column_nameContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParserBaseVisitor;
 import com.oceanbase.tools.sqlparser.statement.Expression;
@@ -104,8 +104,8 @@ public class MySQLPartitionFactory extends OBParserBaseVisitor<Partition> implem
                     .stream().map(c -> (HashPartitionElement) new MySQLPartitionElementFactory(c).generate())
                     .collect(Collectors.toList());
         }
-        Integer num = ctx.INTNUM() == null ? null : Integer.valueOf(ctx.INTNUM().getText());
-        return new HashPartition(ctx, targets, partitionElts, getSubPartitionOption(ctx.subpartition_option()), num);
+        return new HashPartition(ctx, targets, partitionElts, getSubPartitionOption(ctx.partition_options()),
+                getPartitionNum(ctx.partition_options()));
     }
 
     @Override
@@ -121,9 +121,8 @@ public class MySQLPartitionFactory extends OBParserBaseVisitor<Partition> implem
                 .list_partition_list().list_partition_element().stream()
                 .map(c -> (ListPartitionElement) new MySQLPartitionElementFactory(c).generate())
                 .collect(Collectors.toList());
-        Integer num = ctx.INTNUM() == null ? null : Integer.valueOf(ctx.INTNUM().getText());
-        return new ListPartition(ctx, targets, partitionElts, getSubPartitionOption(ctx.subpartition_option()), num,
-                ctx.COLUMNS() != null);
+        return new ListPartition(ctx, targets, partitionElts, getSubPartitionOption(ctx.partition_options()),
+                getPartitionNum(ctx.partition_options()), ctx.COLUMNS() != null);
     }
 
     @Override
@@ -139,8 +138,8 @@ public class MySQLPartitionFactory extends OBParserBaseVisitor<Partition> implem
                     .stream().map(c -> (HashPartitionElement) new MySQLPartitionElementFactory(c).generate())
                     .collect(Collectors.toList());
         }
-        Integer num = ctx.INTNUM() == null ? null : Integer.valueOf(ctx.INTNUM().getText());
-        return new KeyPartition(ctx, targets, partitionElts, getSubPartitionOption(ctx.subpartition_option()), num);
+        return new KeyPartition(ctx, targets, partitionElts, getSubPartitionOption(ctx.partition_options()),
+                getPartitionNum(ctx.partition_options()));
     }
 
     @Override
@@ -156,9 +155,8 @@ public class MySQLPartitionFactory extends OBParserBaseVisitor<Partition> implem
                 .range_partition_list().range_partition_element().stream()
                 .map(c -> (RangePartitionElement) new MySQLPartitionElementFactory(c).generate())
                 .collect(Collectors.toList());
-        Integer num = ctx.INTNUM() == null ? null : Integer.valueOf(ctx.INTNUM().getText());
-        return new RangePartition(ctx, targets, partitionElts, getSubPartitionOption(ctx.subpartition_option()), num,
-                ctx.COLUMNS() != null);
+        return new RangePartition(ctx, targets, partitionElts, getSubPartitionOption(ctx.partition_options()),
+                getPartitionNum(ctx.partition_options()), ctx.COLUMNS() != null);
     }
 
     @Override
@@ -197,8 +195,20 @@ public class MySQLPartitionFactory extends OBParserBaseVisitor<Partition> implem
                 .map(c -> new ColumnReference(c, null, null, c.getText())).collect(Collectors.toList());
     }
 
-    private SubPartitionOption getSubPartitionOption(Subpartition_optionContext context) {
-        return context == null ? null : new MySQLSubPartitionOptionFactory(context).generate();
+    private SubPartitionOption getSubPartitionOption(Partition_optionsContext context) {
+        if (context == null) {
+            return null;
+        }
+        return context.subpartition_option() == null ? null
+                : new MySQLSubPartitionOptionFactory(
+                        context.subpartition_option()).generate();
+    }
+
+    private Integer getPartitionNum(Partition_optionsContext context) {
+        if (context == null) {
+            return null;
+        }
+        return context.partition_num() == null ? null : Integer.valueOf(context.partition_num().INTNUM().getText());
     }
 
 }
