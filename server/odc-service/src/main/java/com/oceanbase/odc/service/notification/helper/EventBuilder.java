@@ -26,6 +26,7 @@ import static com.oceanbase.odc.service.notification.constant.EventLabelKeys.DAT
 import static com.oceanbase.odc.service.notification.constant.EventLabelKeys.ENVIRONMENT;
 import static com.oceanbase.odc.service.notification.constant.EventLabelKeys.PROJECT_ID;
 import static com.oceanbase.odc.service.notification.constant.EventLabelKeys.PROJECT_NAME;
+import static com.oceanbase.odc.service.notification.constant.EventLabelKeys.REGION;
 import static com.oceanbase.odc.service.notification.constant.EventLabelKeys.TASK_ENTITY_ID;
 import static com.oceanbase.odc.service.notification.constant.EventLabelKeys.TASK_ID;
 import static com.oceanbase.odc.service.notification.constant.EventLabelKeys.TASK_STATUS;
@@ -47,6 +48,7 @@ import com.oceanbase.odc.metadb.flow.FlowInstanceEntity;
 import com.oceanbase.odc.metadb.flow.FlowInstanceRepository;
 import com.oceanbase.odc.metadb.iam.UserEntity;
 import com.oceanbase.odc.metadb.schedule.ScheduleEntity;
+import com.oceanbase.odc.metadb.schedule.ScheduleRepository;
 import com.oceanbase.odc.metadb.task.TaskEntity;
 import com.oceanbase.odc.service.collaboration.environment.EnvironmentService;
 import com.oceanbase.odc.service.collaboration.environment.model.Environment;
@@ -61,7 +63,6 @@ import com.oceanbase.odc.service.notification.model.Event;
 import com.oceanbase.odc.service.notification.model.EventLabels;
 import com.oceanbase.odc.service.notification.model.EventStatus;
 import com.oceanbase.odc.service.notification.model.TaskEvent;
-import com.oceanbase.odc.service.schedule.ScheduleService;
 import com.oceanbase.odc.service.schedule.model.JobType;
 
 import lombok.extern.slf4j.Slf4j;
@@ -75,6 +76,7 @@ import lombok.extern.slf4j.Slf4j;
 public class EventBuilder {
     private static final DateTimeFormatter DATE_FORMATTER =
             DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+    private static final String OB_ARN_PARTITION = System.getenv("OB_ARN_PARTITION");
 
     @Autowired
     private ConnectionService connectionService;
@@ -87,7 +89,7 @@ public class EventBuilder {
     @Autowired
     private FlowInstanceRepository flowInstanceRepository;
     @Autowired
-    private ScheduleService scheduleService;
+    private ScheduleRepository scheduleRepository;
     @Autowired
     private ProjectService projectService;
 
@@ -129,6 +131,24 @@ public class EventBuilder {
         return event;
     }
 
+    public Event ofSucceededTask(ScheduleEntity schedule) {
+        Event event = ofSchedule(schedule, TaskEvent.EXECUTION_SUCCEEDED);
+        resolveLabels(event.getLabels());
+        return event;
+    }
+
+    public Event ofFailedTask(ScheduleEntity schedule) {
+        Event event = ofSchedule(schedule, TaskEvent.EXECUTION_FAILED);
+        resolveLabels(event.getLabels());
+        return event;
+    }
+
+    public Event ofFailedSchedule(ScheduleEntity schedule) {
+        Event event = ofSchedule(schedule, TaskEvent.SCHEDULING_FAILED);
+        resolveLabels(event.getLabels());
+        return event;
+    }
+
     private Event ofTask(TaskEntity task, TaskEvent status) {
         EventLabels labels = new EventLabels();
         labels.putIfNonNull(TASK_TYPE, task.getTaskType().name());
@@ -149,6 +169,39 @@ public class EventBuilder {
                 .creatorId(task.getCreatorId())
                 .organizationId(task.getOrganizationId())
                 .projectId(database.getProject().id())
+                .triggerTime(new Date())
+                .labels(labels)
+                .build();
+    }
+
+    private Event ofSchedule(ScheduleEntity schedule, TaskEvent status) {
+        EventLabels labels = new EventLabels();
+        labels.putIfNonNull(TASK_STATUS, status.name());
+        labels.putIfNonNull(TRIGGER_TIME, LocalDateTime.now().format(DATE_FORMATTER));
+        labels.putIfNonNull(REGION, OB_ARN_PARTITION);
+
+        switch (schedule.getJobType()) {
+            case DATA_ARCHIVE:
+            case DATA_ARCHIVE_DELETE:
+            case DATA_ARCHIVE_ROLLBACK:
+                labels.putIfNonNull(TASK_TYPE, JobType.DATA_ARCHIVE);
+                break;
+            default:
+                labels.putIfNonNull(TASK_TYPE, schedule.getJobType());
+                break;
+        }
+        labels.putIfNonNull(TASK_ID, schedule.getId());
+        labels.putIfNonNull(CONNECTION_ID, schedule.getConnectionId());
+        labels.putIfNonNull(CREATOR_ID, schedule.getCreatorId());
+        labels.putIfNonNull(PROJECT_ID, schedule.getProjectId());
+        labels.putIfNonNull(DATABASE_ID, schedule.getDatabaseId());
+        labels.putIfNonNull(DATABASE_NAME, schedule.getDatabaseName());
+
+        return Event.builder()
+                .status(EventStatus.CREATED)
+                .creatorId(schedule.getCreatorId())
+                .organizationId(schedule.getOrganizationId())
+                .projectId(schedule.getProjectId())
                 .triggerTime(new Date())
                 .labels(labels)
                 .build();
@@ -193,14 +246,14 @@ public class EventBuilder {
                 Long parentInstanceId = flowInstances.get(0).getParentInstanceId();
                 if (Objects.nonNull(parentInstanceId)
                         && "ASYNC".equals(labels.get(TASK_TYPE))) {
-                    // maybe sql plan or rollback
-                    ScheduleEntity scheduleEntity = scheduleService.nullSafeGetById(parentInstanceId);
-                    if (scheduleEntity.getJobType() == JobType.SQL_PLAN) {
-                        labels.putIfNonNull(TASK_TYPE, JobType.SQL_PLAN);
-                        labels.putIfNonNull(TASK_ID, parentInstanceId);
-                    } else {
-                        labels.putIfNonNull(TASK_ID, flowInstances.get(0).getId());
-                    }
+                    scheduleRepository.findById(parentInstanceId).ifPresent(schedule -> {
+                        if (schedule.getJobType() == JobType.SQL_PLAN) {
+                            labels.putIfNonNull(TASK_TYPE, JobType.SQL_PLAN);
+                            labels.putIfNonNull(TASK_ID, parentInstanceId);
+                        } else {
+                            labels.putIfNonNull(TASK_ID, flowInstances.get(0).getId());
+                        }
+                    });
                 } else {
                     labels.putIfNonNull(TASK_ID, flowInstances.get(0).getId());
                 }
