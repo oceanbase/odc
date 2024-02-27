@@ -35,7 +35,14 @@ public class TimestampCellData extends TestCellData {
     }
 
     public byte[] getBytes() {
-        return timestamp.toString().getBytes();
+        if (timestamp == null) {
+            return null;
+        }
+        String returnValue = timestamp.toString();
+        if (returnValue.endsWith(".0")) {
+            return returnValue.substring(0, returnValue.length() - 2).getBytes();
+        }
+        return returnValue.getBytes();
     }
 
     public String getString() {

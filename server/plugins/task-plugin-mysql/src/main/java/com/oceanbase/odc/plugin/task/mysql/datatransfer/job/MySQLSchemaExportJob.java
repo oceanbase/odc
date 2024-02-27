@@ -17,14 +17,12 @@
 package com.oceanbase.odc.plugin.task.mysql.datatransfer.job;
 
 import java.io.File;
-import java.nio.file.Paths;
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
 
 import javax.sql.DataSource;
-
-import org.apache.commons.io.FileUtils;
 
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.plugin.schema.mysql.MySQLFunctionExtension;
@@ -34,73 +32,34 @@ import com.oceanbase.odc.plugin.schema.mysql.MySQLViewExtension;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferConfig;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.ObjectResult;
 import com.oceanbase.odc.plugin.task.mysql.datatransfer.common.Constants;
-import com.oceanbase.tools.loaddump.common.model.ObjectStatus.Status;
 
-public class MySQLSchemaExportJob extends AbstractJob {
+public class MySQLSchemaExportJob extends BaseSchemaExportJob {
+    private static final Set<String> PL_OBJECTS = new HashSet<>();
 
-    private final DataTransferConfig transferConfig;
-    private final File workingDir;
-    private final DataSource dataSource;
+    static {
+        PL_OBJECTS.add("FUNCTION");
+        PL_OBJECTS.add("PROCEDURE");
+    }
 
     public MySQLSchemaExportJob(ObjectResult object, DataTransferConfig transferConfig, File workingDir,
             DataSource dataSource) {
-        super(object);
-        this.transferConfig = transferConfig;
-        this.workingDir = workingDir;
-        this.dataSource = dataSource;
+        super(object, transferConfig, workingDir, dataSource);
     }
 
     @Override
-    public void run() throws Exception {
-        increaseTotal(1);
-        /*
-         * build ddl
-         */
-        StringBuilder content = new StringBuilder();
-        // 1. append DROP statement
-        if (transferConfig.isWithDropDDL()) {
-            content.append(assembleDropStatement());
-        }
-        // 2. append DELIMITER if it is a PL SQL
-        if (isPlObject()) {
-            content.append(Constants.PL_DELIMITER_STMT);
-        }
-        // 3. append CREATE statement
-        content.append(queryDdlForDBObject());
-        // 4. append '$$' if it is a PL SQL; The end of sql assembling
-        if (isPlObject()) {
-            content.append(Constants.LINE_BREAKER).append(Constants.DEFAULT_PL_DELIMITER);
-        }
-        /*
-         * touch file
-         */
-        File output = Paths.get(workingDir.getPath(), "data", object.getSchema(), object.getType(),
-                object.getName() + Constants.DDL_SUFFIX).toFile();
-        if (!output.getParentFile().exists()) {
-            FileUtils.forceMkdir(output.getParentFile());
-        }
-        FileUtils.touch(output);
-        /*
-         * overwrite content
-         */
-        FileUtils.write(output, content.toString(), transferConfig.getEncoding().getAlias(), false);
-        object.setExportPaths(Collections.singletonList(output.toURI().toURL()));
-
-        setStatus(Status.SUCCESS);
-        increaseCount(1);
-    }
-
-    private boolean isPlObject() {
-        return StringUtils.equalsIgnoreCase("FUNCTION", object.getType())
-                || StringUtils.equalsIgnoreCase("PROCEDURE", object.getType());
-    }
-
-    private String assembleDropStatement() {
+    protected String getDropStatement() {
         return String.format(Constants.DROP_OBJECT_FORMAT, object.getType(),
                 StringUtils.quoteMysqlIdentifier(object.getName()));
     }
 
-    private String queryDdlForDBObject() throws SQLException {
+    @Override
+    protected boolean isPlObject() {
+        return StringUtils.equalsIgnoreCase(object.getType(), "FUNCTION")
+                || StringUtils.equalsIgnoreCase(object.getType(), "PROCEDURE");
+    }
+
+    @Override
+    protected String queryDdlForDBObject() throws SQLException {
         try (Connection conn = dataSource.getConnection()) {
             switch (object.getType()) {
                 case "TABLE":

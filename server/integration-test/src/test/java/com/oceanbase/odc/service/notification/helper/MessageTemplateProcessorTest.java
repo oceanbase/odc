@@ -16,6 +16,7 @@
 package com.oceanbase.odc.service.notification.helper;
 
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 
 import org.junit.Assert;
@@ -26,13 +27,13 @@ public class MessageTemplateProcessorTest {
     @Test
     public void testReplaceVariables_EmptyVariables_ReturnTemplate() {
         String template = "fake template";
-        String actual = MessageTemplateProcessor.replaceVariables(template, new HashMap<>());
+        String actual = MessageTemplateProcessor.replaceVariables(template, Locale.getDefault(), new HashMap<>());
         Assert.assertEquals(template, actual);
     }
 
     @Test
     public void testReplaceVariables_EmptyTemplate_ReturnEmptyString() {
-        String actual = MessageTemplateProcessor.replaceVariables("", new HashMap<>());
+        String actual = MessageTemplateProcessor.replaceVariables("", Locale.getDefault(), new HashMap<>());
         Assert.assertEquals("", actual);
     }
 
@@ -43,7 +44,7 @@ public class MessageTemplateProcessorTest {
         variables.put("name", "fake name");
 
         String expected = "this is a test template, name=fake name";
-        String actual = MessageTemplateProcessor.replaceVariables(template, variables);
+        String actual = MessageTemplateProcessor.replaceVariables(template, Locale.getDefault(), variables);
 
         Assert.assertEquals(expected, actual);
     }

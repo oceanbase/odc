@@ -34,6 +34,8 @@ public class AbstractSyntaxTreeFactories {
             return new OBOracleAstFactory(timeoutMillis);
         } else if (dialectType.isMysql()) {
             return new OBMySQLAstFactory(timeoutMillis);
+        } else if (dialectType.isDoris()) {
+            return new OBMySQLAstFactory(timeoutMillis);
         }
         return null;
     }

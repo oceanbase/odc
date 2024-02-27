@@ -30,7 +30,7 @@ import com.oceanbase.tools.dbbrowser.model.DBTablePartition;
 public class OracleDBTablePartitionEditorTest {
 
     private DBTablePartitionEditor partitionEditor;
-    private final String BASE_DIR = "src/test/resources/table/operator/oracle/partition";
+    private final String BASE_DIR = "src/test/resources/table/operator/ob/oracle/partition";
 
     @Before
     public void setUp() {
@@ -58,6 +58,32 @@ public class OracleDBTablePartitionEditorTest {
         cases.forEach(testCase -> {
             String actual = partitionEditor.generateUpdateObjectDDL(testCase.getInput().getPrevious(),
                     testCase.getInput().getCurrent());
+            Assert.assertEquals(testCase.getOutput(), actual);
+        });
+    }
+
+    @Test
+    public void generateAddPartitionDefinitionDDL_onePartiElt_generateSucceed() {
+        String casesJson = DBObjectUtilsTest.loadAsString(BASE_DIR + "/update_multi_partition_test_cases.json");
+        List<DBObjectTupleTestCase<DBTablePartition>> cases = MySQLConstraintEditorTest.fromJson(casesJson,
+                new TypeReference<List<DBObjectTupleTestCase<DBTablePartition>>>() {});
+        cases.forEach(testCase -> {
+            DBTablePartition partition = testCase.getInput().getCurrent();
+            String actual = partitionEditor.generateAddPartitionDefinitionDDL(partition.getSchemaName(),
+                    partition.getTableName(), partition.getPartitionOption(), partition.getPartitionDefinitions());
+            Assert.assertEquals(testCase.getOutput(), actual);
+        });
+    }
+
+    @Test
+    public void generateDropPartitionDefinitionDDL_onePartiElt_generateSucceed() {
+        String casesJson = DBObjectUtilsTest.loadAsString(BASE_DIR + "/delete_multi_partition_test_cases.json");
+        List<DBObjectTupleTestCase<DBTablePartition>> cases = MySQLConstraintEditorTest.fromJson(casesJson,
+                new TypeReference<List<DBObjectTupleTestCase<DBTablePartition>>>() {});
+        cases.forEach(testCase -> {
+            DBTablePartition partition = testCase.getInput().getCurrent();
+            String actual = partitionEditor.generateDropPartitionDefinitionDDL(partition.getSchemaName(),
+                    partition.getTableName(), partition.getPartitionDefinitions());
             Assert.assertEquals(testCase.getOutput(), actual);
         });
     }

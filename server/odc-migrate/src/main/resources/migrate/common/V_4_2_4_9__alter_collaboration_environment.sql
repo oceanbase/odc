@@ -1,0 +1,1 @@
+alter table `collaboration_environment` add column `is_enabled` tinyint(1) not null default '1' comment 'is the environemnt enabled';

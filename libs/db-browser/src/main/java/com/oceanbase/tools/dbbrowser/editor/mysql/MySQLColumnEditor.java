@@ -17,7 +17,6 @@ package com.oceanbase.tools.dbbrowser.editor.mysql;
 
 import java.util.Arrays;
 import java.util.List;
-import java.util.Locale;
 import java.util.Objects;
 
 import javax.validation.constraints.NotNull;
@@ -125,31 +124,11 @@ public class MySQLColumnEditor extends DBTableColumnEditor {
         @Override
         public void appendModifier(DBTableColumn column, SqlBuilder sqlBuilder) {
             String defaultValue = column.getDefaultValue();
-            if (StringUtils.isNotEmpty(defaultValue) && (Objects.isNull(column.getVirtual()) || !column.getVirtual())) {
-                sqlBuilder.append(" DEFAULT ");
-                if (isDefaultValueBuiltInFunction(column)) {
-                    // 默认值是 内置函数，则不需要用引号转义，直接拼接即可
-                    sqlBuilder.append(defaultValue);
-                } else {
-                    /**
-                     * 不是内置函数作为默认值的话，都可以用单引号包围，不是字符串类型的，也会被转义成对应的类型值。比如： col1 int(11) DEFAULT '2' 会被内核自动转换为 col1 int(11)
-                     * DEFAULT 2
-                     */
-                    sqlBuilder.append("'").append(defaultValue.replace("'", "''")).append("'");
+            if ((Objects.isNull(column.getVirtual()) || !column.getVirtual())) {
+                if (StringUtils.isNotEmpty(defaultValue)) {
+                    sqlBuilder.append(" DEFAULT " + defaultValue);
                 }
             }
         }
-    }
-
-    /**
-     * Check whether the data_default contain built in function. Any of the synonyms for
-     * CURRENT_TIMESTAMP have the same meaning as CURRENT_TIMESTAMP. These are CURRENT_TIMESTAMP(),
-     * NOW(), LOCALTIME, LOCALTIME(), LOCALTIMESTAMP, and LOCALTIMESTAMP().
-     */
-    private boolean isDefaultValueBuiltInFunction(DBTableColumn column) {
-        return StringUtils.isEmpty(column.getDefaultValue())
-                || (!DataTypeUtil.isStringType(column.getTypeName())
-                        && column.getDefaultValue().trim().toUpperCase(Locale.getDefault())
-                                .startsWith("CURRENT_TIMESTAMP"));
     }
 }

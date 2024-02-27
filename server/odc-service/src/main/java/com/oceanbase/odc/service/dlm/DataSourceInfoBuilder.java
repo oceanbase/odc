@@ -41,6 +41,7 @@ public class DataSourceInfoBuilder {
             dataSourceInfo.setPassword(connectionConfig.getPassword());
         }
         switch (connectionConfig.getDialectType()) {
+            case DORIS:
             case MYSQL: {
                 dataSourceInfo.setIp(connectionConfig.getHost());
                 dataSourceInfo.setPort(connectionConfig.getPort());

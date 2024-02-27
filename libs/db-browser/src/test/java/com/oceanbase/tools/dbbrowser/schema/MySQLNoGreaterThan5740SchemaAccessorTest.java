@@ -38,6 +38,7 @@ import com.oceanbase.tools.dbbrowser.model.DBIndexAlgorithm;
 import com.oceanbase.tools.dbbrowser.model.DBIndexType;
 import com.oceanbase.tools.dbbrowser.model.DBObjectIdentity;
 import com.oceanbase.tools.dbbrowser.model.DBProcedure;
+import com.oceanbase.tools.dbbrowser.model.DBTable;
 import com.oceanbase.tools.dbbrowser.model.DBTable.DBTableOptions;
 import com.oceanbase.tools.dbbrowser.model.DBTableColumn;
 import com.oceanbase.tools.dbbrowser.model.DBTableConstraint;
@@ -289,6 +290,12 @@ public class MySQLNoGreaterThan5740SchemaAccessorTest extends BaseTestEnv {
                 accessor.getTableOptions(getMySQLDataBaseName(), "test_data_type");
         Assert.assertTrue(Objects.nonNull(options.getCharsetName()));
         Assert.assertTrue(Objects.nonNull(options.getCollationName()));
+    }
+
+    @Test
+    public void getTables_success() {
+        Map<String, DBTable> tables = accessor.getTables(getMySQLDataBaseName(), null);
+        Assert.assertTrue(tables.size() > 0);
     }
 
     private static void initVerifyColumnAttributes() {

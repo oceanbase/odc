@@ -48,9 +48,10 @@ public class SqlCheckTaskResult implements Serializable, FlowTaskResult {
     private String error;
     private String fileName;
     private List<CheckResult> results = new ArrayList<>();
+    private boolean timeConsumingSqlExists;
 
-    public static SqlCheckTaskResult success(
-            @NonNull List<CheckViolation> violations) {
+    public static SqlCheckTaskResult success(@NonNull List<CheckViolation> violations,
+            @NonNull boolean timeConsumingSqlExists) {
         SqlCheckTaskResult result = new SqlCheckTaskResult();
         result.setSuccess(true);
         result.setIssueCount(violations.size());
@@ -59,6 +60,7 @@ public class SqlCheckTaskResult implements Serializable, FlowTaskResult {
         Optional<CheckViolation> v = violations.stream()
                 .max(Comparator.comparingInt(CheckViolation::getLevel));
         result.setMaxLevel(v.isPresent() ? v.get().getLevel() : 0);
+        result.setTimeConsumingSqlExists(timeConsumingSqlExists);
         return result;
     }
 

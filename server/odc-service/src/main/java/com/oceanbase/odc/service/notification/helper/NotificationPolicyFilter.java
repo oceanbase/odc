@@ -16,34 +16,39 @@
 
 package com.oceanbase.odc.service.notification.helper;
 
-import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
-import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.collections4.MapUtils;
+import org.springframework.context.expression.MapAccessor;
+import org.springframework.expression.EvaluationContext;
+import org.springframework.expression.Expression;
+import org.springframework.expression.spel.standard.SpelExpressionParser;
+import org.springframework.expression.spel.support.StandardEvaluationContext;
 
-import com.oceanbase.odc.common.json.JsonUtils;
-import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.metadb.notification.NotificationPolicyEntity;
 import com.oceanbase.odc.service.notification.model.EventLabels;
+import com.oceanbase.odc.service.notification.model.NotificationPolicy;
 
 public class NotificationPolicyFilter {
+    private static final SpelExpressionParser PARSER = new SpelExpressionParser();
 
-    public static List<NotificationPolicyEntity> filter(EventLabels labels, List<NotificationPolicyEntity> policies) {
-        List<NotificationPolicyEntity> filtered = new ArrayList<>();
-        if (CollectionUtils.isEmpty(policies) || MapUtils.isEmpty(labels)) {
-            return filtered;
+    public static List<NotificationPolicy> filter(EventLabels labels, List<NotificationPolicyEntity> policies) {
+        if (CollectionUtils.isEmpty(policies)) {
+            return Collections.emptyList();
         }
-        for (NotificationPolicyEntity policy : policies) {
-            Map<String, String> conditions =
-                    JsonUtils.fromJsonMap(policy.getMatchExpression(), String.class, String.class);
-            if (conditions.entrySet().stream().allMatch(entry -> labels.containsKey(entry.getKey())
-                    && StringUtils.equals(entry.getValue(), labels.get(entry.getKey())))) {
-                filtered.add(policy);
-            }
-        }
-        return filtered;
+        StandardEvaluationContext context = new StandardEvaluationContext(labels);
+        context.addPropertyAccessor(new MapAccessor());
+        return policies.stream()
+                .filter(policy -> evaluateExpression(policy.getMatchExpression(), context))
+                .map(PolicyMapper::fromEntity)
+                .collect(Collectors.toList());
+    }
+
+    private static Boolean evaluateExpression(String expr, EvaluationContext context) {
+        Expression expression = PARSER.parseExpression(expr);
+        return expression.getValue(context, Boolean.class);
     }
 
 }

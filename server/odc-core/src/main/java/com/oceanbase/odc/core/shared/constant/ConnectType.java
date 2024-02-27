@@ -29,6 +29,7 @@ public enum ConnectType {
     CLOUD_OB_ORACLE(DialectType.OB_ORACLE),
     ODP_SHARDING_OB_MYSQL(DialectType.ODP_SHARDING_OB_MYSQL),
     MYSQL(DialectType.MYSQL),
+    DORIS(DialectType.DORIS),
 
     // reserved for future version
     ODP_SHARDING_OB_ORACLE(DialectType.OB_ORACLE),

@@ -24,7 +24,7 @@ import com.oceanbase.tools.dbbrowser.util.SqlBuilder;
  * @Date: 2022/10/10 下午9:04
  * @Description: []
  */
-public class OBMySQLLessThan2277PartitionEditor extends MySQLDBTablePartitionEditor {
+public class OBMySQLLessThan2277PartitionEditor extends OBMySQLLessThan400DBTablePartitionEditor {
 
     @Override
     protected void appendDefinitions(DBTablePartition partition, SqlBuilder sqlBuilder) {

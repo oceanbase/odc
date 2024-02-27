@@ -31,6 +31,7 @@ import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.core.shared.constant.ConnectType;
 import com.oceanbase.odc.core.shared.constant.ConnectionAccountType;
 import com.oceanbase.odc.core.shared.constant.DialectType;
+import com.oceanbase.odc.plugin.connect.model.oracle.UserRole;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig.SSLConfig;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig.SSLFileEntry;
 
@@ -100,6 +101,21 @@ public class TestConnectionReq implements CloudConnectionConfig, SSLConnectionCo
     @SensitiveInput
     private String password;
 
+    /**
+     * Oracle 连接方式特有的参数，该参数表示一个数据库
+     */
+    private String serviceName;
+
+    /**
+     * Oracle 连接方式特有的参数，该参数表示数据库的一个实例
+     */
+    private String sid;
+
+    /**
+     * Oracle 连接方式特有的参数，该参数用户角色
+     */
+    private UserRole userRole;
+
     @JsonIgnore
     private transient OBTenantEndpoint endpoint;
 
@@ -157,6 +173,9 @@ public class TestConnectionReq implements CloudConnectionConfig, SSLConnectionCo
         }
         req.setSslConfig(connection.getSslConfig());
         req.setSslFileEntry(connection.getSslFileEntry());
+        req.setSid(connection.getSid());
+        req.setServiceName(connection.getServiceName());
+        req.setUserRole(connection.getUserRole());
         return req;
     }
 

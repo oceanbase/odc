@@ -15,14 +15,14 @@
  */
 package com.oceanbase.odc.service.session;
 
-import java.util.List;
+import java.sql.Connection;
 import java.util.Objects;
 
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 
-import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.ConnectionCallback;
 import org.springframework.jdbc.core.JdbcOperations;
 import org.springframework.stereotype.Service;
 import org.springframework.validation.annotation.Validated;
@@ -53,16 +53,13 @@ public class SessionSettingsService {
 
     public SessionSettings getSessionSettings(@NotNull ConnectionSession session) {
         JdbcOperations jdbcOperations = session.getSyncJdbcExecutor(ConnectionSessionConstants.CONSOLE_DS_KEY);
-        return jdbcOperations.query("show session variables like 'autocommit'", rs -> {
-            SessionSettings settings = new SessionSettings();
-            if (rs.next()) {
-                settings.setAutocommit("on".equalsIgnoreCase(rs.getString(2)));
-            }
-            settings.setObVersion(ConnectionSessionUtil.getVersion(session));
-            settings.setDelimiter(ConnectionSessionUtil.getSqlCommentProcessor(session).getDelimiter());
-            settings.setQueryLimit(ConnectionSessionUtil.getQueryLimit(session));
-            return settings;
-        });
+        Boolean autocommit = jdbcOperations.execute(Connection::getAutoCommit);
+        SessionSettings settings = new SessionSettings();
+        settings.setAutocommit(autocommit);
+        settings.setObVersion(ConnectionSessionUtil.getVersion(session));
+        settings.setDelimiter(ConnectionSessionUtil.getSqlCommentProcessor(session).getDelimiter());
+        settings.setQueryLimit(ConnectionSessionUtil.getQueryLimit(session));
+        return settings;
     }
 
     public SessionSettings setSessionSettings(@NotNull ConnectionSession session,
@@ -72,16 +69,12 @@ public class SessionSettingsService {
                     settings.getQueryLimit(), sessionProperties.getResultSetMaxRows());
         }
         JdbcOperations jdbcOperations = session.getSyncJdbcExecutor(ConnectionSessionConstants.CONSOLE_DS_KEY);
-        String sql = "show session variables like 'autocommit'";
-        List<String> lines = jdbcOperations.query(sql, (rs, rowNum) -> rs.getString(2));
-        boolean commitFlag = false;
-        if (CollectionUtils.isNotEmpty(lines)) {
-            String autocommit = lines.get(0);
-            commitFlag = "on".equalsIgnoreCase(autocommit);
-        }
-        if (commitFlag != settings.getAutocommit()) {
-            sql = String.format("set session autocommit='%s'", settings.getAutocommit() ? "ON" : "OFF");
-            jdbcOperations.execute(sql);
+        Boolean autocommit = jdbcOperations.execute(Connection::getAutoCommit);
+        if (!Objects.equals(autocommit, settings.getAutocommit())) {
+            jdbcOperations.execute((ConnectionCallback<Void>) conn -> {
+                conn.setAutoCommit(settings.getAutocommit());
+                return null;
+            });
         }
         SqlCommentProcessor processor = ConnectionSessionUtil.getSqlCommentProcessor(session);
         if (!settings.getDelimiter().equals(processor.getDelimiter())) {
