@@ -15,6 +15,7 @@
  */
 package com.oceanbase.odc.service.iam.auth.local;
 
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 
 public class LocalDaoAuthenticationProvider extends DaoAuthenticationProvider {
@@ -26,7 +27,7 @@ public class LocalDaoAuthenticationProvider extends DaoAuthenticationProvider {
 
     @Override
     public boolean supports(Class<?> authentication) {
-        return authentication.isAssignableFrom(LocalPasswordAuthenticationToken.class);
+        return authentication.isAssignableFrom(UsernamePasswordAuthenticationToken.class);
     }
 
 }

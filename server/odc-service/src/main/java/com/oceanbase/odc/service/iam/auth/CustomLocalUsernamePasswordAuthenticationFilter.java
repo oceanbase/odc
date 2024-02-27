@@ -16,6 +16,7 @@
 package com.oceanbase.odc.service.iam.auth;
 
 import java.io.IOException;
+import java.util.Arrays;
 
 import javax.servlet.FilterChain;
 import javax.servlet.ServletException;
@@ -26,10 +27,14 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.apache.commons.lang.Validate;
 import org.springframework.security.authentication.AuthenticationServiceException;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.CredentialsExpiredException;
+import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.authentication.InternalAuthenticationServiceException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 import com.github.benmanes.caffeine.cache.LoadingCache;
@@ -38,11 +43,14 @@ import com.oceanbase.odc.common.trace.TraceContextHolder;
 import com.oceanbase.odc.core.authority.DefaultLoginSecurityManager;
 import com.oceanbase.odc.core.authority.SecurityManager;
 import com.oceanbase.odc.core.authority.session.SecuritySession;
+import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.exception.AttemptLoginOverLimitException;
 import com.oceanbase.odc.core.shared.exception.OverLimitException;
+import com.oceanbase.odc.service.common.response.Error;
 import com.oceanbase.odc.service.common.util.WebRequestUtils;
 import com.oceanbase.odc.service.encryption.SensitivePropertyHandler;
 import com.oceanbase.odc.service.iam.util.FailedLoginAttemptLimiter;
+import com.oceanbase.odc.service.integration.password.LoginFailedLimitException;
 
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
@@ -52,13 +60,13 @@ import lombok.extern.slf4j.Slf4j;
  * @date 2021/8/4
  */
 @Slf4j
-public class CustomUsernamePasswordAuthenticationFilter extends UsernamePasswordAuthenticationFilter {
+public class CustomLocalUsernamePasswordAuthenticationFilter extends UsernamePasswordAuthenticationFilter {
 
     private final SecurityManager securityManager;
     private final LoadingCache<String, FailedLoginAttemptLimiter> clientAddressLoginAttemptCache;
     private final SensitivePropertyHandler sensitivePropertyHandler;
 
-    public CustomUsernamePasswordAuthenticationFilter(@NonNull SecurityManager securityManager,
+    public CustomLocalUsernamePasswordAuthenticationFilter(@NonNull SecurityManager securityManager,
             @NonNull LoadingCache<String, FailedLoginAttemptLimiter> clientAddressLoginAttemptCache,
             SensitivePropertyHandler sensitivePropertyHandler) {
         this.securityManager = securityManager;
@@ -89,19 +97,27 @@ public class CustomUsernamePasswordAuthenticationFilter extends UsernamePassword
         String username = request.getParameter("username");
         String password = sensitivePropertyHandler.decrypt(request.getParameter("password"));
         TraceContextHolder.setAccountName(username);
+        Validate.notNull(failedLoginAttemptLimiter, "Failed to get failedLoginAttemptLimiter");
+
         try {
-            Validate.notNull(failedLoginAttemptLimiter, "Failed to get failedLoginAttemptLimiter");
             final Holder<Authentication> authenticationHolder = new Holder<>();
-            CustomUsernamePasswordAuthenticationFilter that = this;
-            failedLoginAttemptLimiter.attempt(() -> {
+            CustomLocalUsernamePasswordAuthenticationFilter that = this;
+            failedLoginAttemptLimiter.attemptFailedByException(() -> {
                 UsernamePasswordAuthenticationToken token =
                         new UsernamePasswordAuthenticationToken(username, password);
                 that.setDetails(request, token);
                 Authentication authentication = that.getAuthenticationManager().authenticate(token);
                 authenticationHolder.setValue(authentication);
-                return true;
-            });
+            }, Arrays.asList(BadCredentialsException.class, UsernameNotFoundException.class, DisabledException.class));
             return authenticationHolder.getValue();
+        } catch (DisabledException | UsernameNotFoundException | BadCredentialsException
+                | CredentialsExpiredException e) {
+            Object remainTime = failedLoginAttemptLimiter.getRemainAttempt() < 0
+                    ? "unlimited"
+                    : failedLoginAttemptLimiter.getRemainAttempt();
+            ErrorCodes errorCodes = convertToErrorCodes(e);
+            Error error = Error.of(errorCodes, new Object[] {remainTime});
+            throw new LoginFailedLimitException(error);
         } catch (AuthenticationException e) {
             // if already AuthenticationException throw straightly
             throw e;
@@ -113,4 +129,18 @@ public class CustomUsernamePasswordAuthenticationFilter extends UsernamePassword
             throw new InternalAuthenticationServiceException("Authentication failed", e);
         }
     }
+
+    private ErrorCodes convertToErrorCodes(Exception exception) {
+        if (exception instanceof CredentialsExpiredException) {
+            return ErrorCodes.UserNotActive;
+        }
+        if (exception instanceof DisabledException) {
+            return ErrorCodes.UserNotEnabled;
+        }
+        if (exception instanceof UsernameNotFoundException || exception instanceof BadCredentialsException) {
+            return ErrorCodes.UserWrongPasswordOrNotFound;
+        }
+        throw new IllegalStateException();
+    }
+
 }

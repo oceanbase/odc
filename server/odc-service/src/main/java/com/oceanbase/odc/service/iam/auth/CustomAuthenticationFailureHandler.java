@@ -29,17 +29,12 @@ import org.apache.commons.lang.Validate;
 import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationServiceException;
-import org.springframework.security.authentication.BadCredentialsException;
-import org.springframework.security.authentication.CredentialsExpiredException;
-import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.core.AuthenticationException;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.web.authentication.AuthenticationFailureHandler;
 import org.springframework.security.web.authentication.preauth.PreAuthenticatedCredentialsNotFoundException;
 import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.LocaleResolver;
 
-import com.github.benmanes.caffeine.cache.LoadingCache;
 import com.oceanbase.odc.common.trace.TraceContextHolder;
 import com.oceanbase.odc.common.util.ExceptionUtils;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
@@ -50,11 +45,10 @@ import com.oceanbase.odc.service.captcha.CaptchaAuthenticationException;
 import com.oceanbase.odc.service.common.response.Error;
 import com.oceanbase.odc.service.common.response.ErrorResponse;
 import com.oceanbase.odc.service.common.response.Responses;
-import com.oceanbase.odc.service.common.util.WebRequestUtils;
 import com.oceanbase.odc.service.common.util.WebResponseUtils;
 import com.oceanbase.odc.service.iam.LoginHistoryService;
 import com.oceanbase.odc.service.iam.model.LoginHistory;
-import com.oceanbase.odc.service.iam.util.FailedLoginAttemptLimiter;
+import com.oceanbase.odc.service.integration.password.LoginFailedLimitException;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -66,17 +60,13 @@ import lombok.extern.slf4j.Slf4j;
 @Component
 public class CustomAuthenticationFailureHandler implements AuthenticationFailureHandler {
 
-    private final LoadingCache<String, FailedLoginAttemptLimiter> clientAddressLoginAttemptCache;
     private final LoginHistoryService loginHistoryService;
     private final LocaleResolver localeResolver;
 
     public CustomAuthenticationFailureHandler(
-            LoadingCache<String, FailedLoginAttemptLimiter> clientAddressLoginAttemptCache,
             LoginHistoryService loginHistoryService,
             LocaleResolver localeResolver) {
-        Validate.notNull(clientAddressLoginAttemptCache, "clientAddressLoginAttemptCache");
         Validate.notNull(loginHistoryService, "loginHistoryService");
-        this.clientAddressLoginAttemptCache = clientAddressLoginAttemptCache;
         this.loginHistoryService = loginHistoryService;
         this.localeResolver = localeResolver;
     }
@@ -86,11 +76,6 @@ public class CustomAuthenticationFailureHandler implements AuthenticationFailure
             AuthenticationException exception) throws IOException {
         log.info("Authentication failed for uri={}, rootCause={}", httpServletRequest.getRequestURI(),
                 ExceptionUtils.getRootCauseReason(exception));
-
-        FailedLoginAttemptLimiter failedLoginAttemptLimiter =
-                clientAddressLoginAttemptCache.get(WebRequestUtils.getClientAddress(httpServletRequest));
-        Validate.notNull(failedLoginAttemptLimiter, "Failed to get failedLoginAttemptLimiter");
-
         // init locale for error message i18n
         Locale currentLocale = LocaleContextHolder.getLocale();
         Locale locale = localeResolver.resolveLocale(httpServletRequest);
@@ -113,46 +98,25 @@ public class CustomAuthenticationFailureHandler implements AuthenticationFailure
             log.info("Test login success for uri#{}", httpServletRequest.getRequestURI());
             return;
         }
-        Object remainTime = failedLoginAttemptLimiter.getRemainAttempt() < 0
-                ? "unlimited"
-                : failedLoginAttemptLimiter.getRemainAttempt();
         if (cause instanceof OverLimitException) {
             errorResponse = Responses.error(HttpStatus.TOO_MANY_REQUESTS, Error.of((OverLimitException) cause));
         } else if (cause instanceof AttemptLoginOverLimitException) {
             errorResponse =
                     Responses.error(HttpStatus.TOO_MANY_REQUESTS, Error.of((AttemptLoginOverLimitException) cause));
-        } else if (cause instanceof CredentialsExpiredException) {
-            errorResponse = Responses.error(HttpStatus.UNAUTHORIZED,
-                    Error.of(ErrorCodes.UserNotActive, new Object[] {remainTime}));
-            // Credential expired means the user is not active, we skip failed attempt for this scenario
-            failedLoginAttemptLimiter.reduceFailedAttemptCount();
-        } else if (cause instanceof DisabledException) {
-            errorResponse = Responses.error(HttpStatus.UNAUTHORIZED,
-                    Error.of(ErrorCodes.UserNotEnabled, new Object[] {remainTime}));
-        } else if (cause instanceof UsernameNotFoundException) {
-            errorResponse = Responses.error(HttpStatus.NOT_FOUND,
-                    Error.of(ErrorCodes.UserWrongPasswordOrNotFound, new Object[] {remainTime}));
-        } else if (cause instanceof BadCredentialsException) {
-            errorResponse = Responses.error(HttpStatus.UNAUTHORIZED,
-                    Error.of(ErrorCodes.UserWrongPasswordOrNotFound, new Object[] {remainTime}));
+        } else if (cause instanceof LoginFailedLimitException) {
+            errorResponse = Responses.error(HttpStatus.UNAUTHORIZED, ((LoginFailedLimitException) cause).getError());
         } else if (cause instanceof AuthenticationServiceException) {
             errorResponse = Responses.error(HttpStatus.INTERNAL_SERVER_ERROR,
                     Error.of(ErrorCodes.ExternalServiceError, new Object[] {cause.getLocalizedMessage()}));
-            failedLoginAttemptLimiter.reduceFailedAttemptCount();
         } else if (cause instanceof PreAuthenticatedCredentialsNotFoundException) {
             errorResponse = Responses.error(HttpStatus.BAD_REQUEST,
                     Error.of(ErrorCodes.BadRequest, new Object[] {cause.getLocalizedMessage()}));
-            failedLoginAttemptLimiter.reduceFailedAttemptCount();
         } else if (cause instanceof IllegalArgumentException) {
             errorResponse = Responses.error(HttpStatus.BAD_REQUEST, Error.of(ErrorCodes.RequestFormatVersionNotMatch,
                     new Object[] {cause.getLocalizedMessage()}));
-            failedLoginAttemptLimiter.reduceFailedAttemptCount();
         } else if (cause instanceof CaptchaAuthenticationException) {
             errorResponse = Responses.error(HttpStatus.BAD_REQUEST,
                     Error.of(((CaptchaAuthenticationException) cause).getCode()));
-            failedLoginAttemptLimiter.reduceFailedAttemptCount();
-        } else {
-            failedLoginAttemptLimiter.reduceFailedAttemptCount();
         }
 
         errorResponse.getError().addDetail(exception);

@@ -21,9 +21,12 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.stereotype.Component;
 
+import com.github.benmanes.caffeine.cache.LoadingCache;
 import com.oceanbase.odc.service.encryption.SensitivePropertyHandler;
 import com.oceanbase.odc.service.iam.auth.CustomAuthenticationFailureHandler;
 import com.oceanbase.odc.service.iam.auth.CustomAuthenticationSuccessHandler;
+import com.oceanbase.odc.service.iam.util.FailedLoginAttemptLimiter;
+import com.oceanbase.odc.service.integration.ldap.LdapConfigRegistrationManager;
 import com.oceanbase.odc.service.integration.oauth2.TestLoginManager;
 
 @Component
@@ -41,12 +44,17 @@ public class LdapSecurityConfigureHelper {
     @Autowired
     private TestLoginManager testLoginManager;
 
+    @Autowired
+    private LoadingCache<String, FailedLoginAttemptLimiter> clientAddressLoginAttemptCache;
+
+    @Autowired
+    private LdapConfigRegistrationManager ldapConfigRegistrationManager;
 
     public void configure(HttpSecurity http, AuthenticationManager authenticationManager)
             throws Exception {
         LdapUsernamePasswordAuthenticationFilter ldapUsernamePasswordAuthenticationFilter =
                 new LdapUsernamePasswordAuthenticationFilter(sensitivePropertyHandler,
-                        authenticationManager);
+                        authenticationManager, clientAddressLoginAttemptCache, ldapConfigRegistrationManager);
         ldapUsernamePasswordAuthenticationFilter.setAuthenticationSuccessHandler(customAuthenticationSuccessHandler);
         ldapUsernamePasswordAuthenticationFilter.setAuthenticationFailureHandler(customAuthenticationFailureHandler);
         http.addFilterBefore(ldapUsernamePasswordAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);

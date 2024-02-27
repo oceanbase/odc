@@ -71,10 +71,10 @@ public class UsernamePasswordConfigureHelper {
         }
     }
 
-    private CustomUsernamePasswordAuthenticationFilter getCustomUsernamePasswordAuthenticationFilter(
+    private CustomLocalUsernamePasswordAuthenticationFilter getCustomUsernamePasswordAuthenticationFilter(
             AuthenticationManager authenticationManager) {
-        CustomUsernamePasswordAuthenticationFilter filter =
-                new CustomUsernamePasswordAuthenticationFilter(securityManager, clientAddressLoginAttemptCache,
+        CustomLocalUsernamePasswordAuthenticationFilter filter =
+                new CustomLocalUsernamePasswordAuthenticationFilter(securityManager, clientAddressLoginAttemptCache,
                         sensitivePropertyHandler);
         filter.setAuthenticationManager(authenticationManager);
         filter.setAuthenticationSuccessHandler(successHandler);

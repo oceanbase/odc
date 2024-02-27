@@ -47,11 +47,9 @@ public class LdapParameter implements SSOParameter {
 
     private String userSearchFilter;
 
-    private String groupSearchBase;
+    private Integer loginFailedLimit = 5;
 
-    private String groupSearchFilter;
-
-    private Boolean groupSearchSubtree = false;
+    private Long LockTimeSeconds = 600L;
 
     public DefaultSpringSecurityContextSource acquireContextSource() {
         DefaultSpringSecurityContextSource contextSource = new DefaultSpringSecurityContextSource(
