@@ -26,7 +26,6 @@ import com.oceanbase.odc.service.notification.Broker;
 import com.oceanbase.odc.service.notification.NotificationProperties;
 import com.oceanbase.odc.service.notification.helper.EventBuilder;
 import com.oceanbase.odc.service.schedule.ScheduleService;
-import com.oceanbase.odc.service.schedule.model.JobType;
 import com.oceanbase.odc.service.task.enums.JobStatus;
 import com.oceanbase.odc.service.task.service.TaskFrameworkService;
 
@@ -58,17 +57,14 @@ public class JobTerminateNotifyListener extends AbstractEventListener<JobTermina
         if (!notificationProperties.isEnabled()) {
             return;
         }
-        JobEntity jobEntity = taskFrameworkService.find(event.getJi().getId());
-        String jobType = jobEntity.getJobType();
-        if (!JobType.DATA_DELETE.name().equals(jobType) && !jobType.startsWith(JobType.DATA_ARCHIVE.name())) {
-            return;
-        }
         try {
-            scheduleTaskRepository.findByJobId(jobEntity.getId()).ifPresent(task -> {
-                ScheduleEntity schedule = scheduleService.nullSafeGetById(Long.parseLong(task.getJobName()));
-                broker.enqueueEvent(event.getStatus() == JobStatus.DONE ? eventBuilder.ofSucceededTask(schedule)
-                        : eventBuilder.ofFailedTask(schedule));
-            });
+            JobEntity jobEntity = taskFrameworkService.find(event.getJi().getId());
+            scheduleTaskRepository.findByJobId(jobEntity.getId())
+                    .ifPresent(task -> {
+                        ScheduleEntity schedule = scheduleService.nullSafeGetById(Long.parseLong(task.getJobName()));
+                        broker.enqueueEvent(event.getStatus() == JobStatus.DONE ? eventBuilder.ofSucceededTask(schedule)
+                                : eventBuilder.ofFailedTask(schedule));
+                    });
         } catch (Exception e) {
             log.warn("Failed to enqueue event.", e);
         }
