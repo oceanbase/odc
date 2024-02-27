@@ -21,12 +21,11 @@ import org.quartz.listeners.TriggerListenerSupport;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import com.oceanbase.odc.metadb.schedule.ScheduleEntity;
+import com.oceanbase.odc.metadb.schedule.ScheduleRepository;
 import com.oceanbase.odc.service.notification.Broker;
 import com.oceanbase.odc.service.notification.NotificationProperties;
 import com.oceanbase.odc.service.notification.helper.EventBuilder;
 import com.oceanbase.odc.service.notification.model.Event;
-import com.oceanbase.odc.service.schedule.ScheduleService;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -39,7 +38,7 @@ import lombok.extern.slf4j.Slf4j;
 public class OdcTriggerListener extends TriggerListenerSupport {
 
     @Autowired
-    private ScheduleService scheduleService;
+    private ScheduleRepository scheduleRepository;
     @Autowired
     private NotificationProperties notificationProperties;
     @Autowired
@@ -59,9 +58,11 @@ public class OdcTriggerListener extends TriggerListenerSupport {
         }
         try {
             JobKey jobKey = trigger.getJobKey();
-            ScheduleEntity schedule = scheduleService.nullSafeGetById(Long.parseLong(jobKey.getName()));
-            Event event = eventBuilder.ofFailedSchedule(schedule);
-            broker.enqueueEvent(event);
+            scheduleRepository.findById(Long.parseLong(jobKey.getName()))
+                    .ifPresent(schedule -> {
+                        Event event = eventBuilder.ofFailedSchedule(schedule);
+                        broker.enqueueEvent(event);
+                    });
         } catch (Exception e) {
             log.warn("Failed to enqueue event.", e);
         }
