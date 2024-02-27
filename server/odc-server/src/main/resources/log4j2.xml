@@ -731,10 +731,6 @@
             <AppenderRef ref="AllRoutingPartitionPlanAppender"/>
             <AppenderRef ref="WarnRoutingPartitionPlanAppender"/>
         </Logger>
-        <Logger name="com.oceanbase.odc.service.partitionplan" level="INFO" additivity="true">
-            <AppenderRef ref="AllRoutingPartitionPlanAppender"/>
-            <AppenderRef ref="WarnRoutingPartitionPlanAppender"/>
-        </Logger>
 
         <Logger name="com.oceanbase.odc.service.schedule" level="INFO" additivity="true">
             <AppenderRef ref="AllRoutingAlterScheduleAppender"/>
