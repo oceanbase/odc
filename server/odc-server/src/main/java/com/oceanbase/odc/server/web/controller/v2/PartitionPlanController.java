@@ -16,15 +16,19 @@
 package com.oceanbase.odc.server.web.controller.v2;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.oceanbase.odc.core.shared.exception.NotImplementedException;
+import com.oceanbase.odc.service.common.response.ListResponse;
 import com.oceanbase.odc.service.common.response.Responses;
 import com.oceanbase.odc.service.common.response.SuccessResponse;
 import com.oceanbase.odc.service.partitionplan.PartitionPlanService;
 import com.oceanbase.odc.service.partitionplan.model.DatabasePartitionPlan;
+import com.oceanbase.odc.service.partitionplan.model.PartitionPlanVariable;
 
 /**
  * @Author：tianke
@@ -48,6 +52,11 @@ public class PartitionPlanController {
     @RequestMapping(value = "/partitionPlans/exists", method = RequestMethod.GET)
     public SuccessResponse<Boolean> exist(@RequestParam("databaseId") Long databaseId) {
         return Responses.success(partitionPlanService.hasConnectionPartitionPlan(databaseId));
+    }
+
+    @GetMapping(value = "/supportedVariables")
+    public ListResponse<PartitionPlanVariable> getSupportedVariables() {
+        throw new NotImplementedException();
     }
 
 }

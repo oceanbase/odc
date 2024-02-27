@@ -39,6 +39,9 @@ import com.oceanbase.odc.core.shared.constant.ConnectType;
 import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.shared.constant.OdcConstants;
 import com.oceanbase.odc.plugin.connect.api.ConnectionExtensionPoint;
+import com.oceanbase.odc.plugin.connect.model.ConnectionPropertiesBuilder;
+import com.oceanbase.odc.plugin.connect.model.JdbcUrlProperty;
+import com.oceanbase.odc.plugin.connect.model.oracle.UserRole;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig.SSLConfig;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig.SSLFileEntry;
@@ -66,6 +69,9 @@ public class OBConsoleDataSourceFactory implements CloneableDataSourceFactory {
     private String host;
     private Integer port;
     private String defaultSchema;
+    private String sid;
+    private String serviceName;
+    protected UserRole userRole;
     private Map<String, String> parameters;
     protected final ConnectionConfig connectionConfig;
     private final Boolean autoCommit;
@@ -88,12 +94,20 @@ public class OBConsoleDataSourceFactory implements CloneableDataSourceFactory {
         this.host = connectionConfig.getHost();
         this.port = connectionConfig.getPort();
         this.defaultSchema = getDefaultSchema(connectionConfig);
+        this.sid = connectionConfig.getSid();
+        this.serviceName = connectionConfig.getServiceName();
+        this.userRole = connectionConfig.getUserRole();
         this.parameters = getJdbcParams(connectionConfig);
         this.connectionExtensionPoint = ConnectionPluginUtil.getConnectionExtension(connectionConfig.getDialectType());
     }
 
     public String getJdbcUrl() {
-        return connectionExtensionPoint.generateJdbcUrl(this.host, this.port, this.defaultSchema, this.parameters);
+        return connectionExtensionPoint.generateJdbcUrl(getJdbcUrlProperties());
+    }
+
+    private JdbcUrlProperty getJdbcUrlProperties() {
+        return new JdbcUrlProperty(this.host, this.port, this.defaultSchema, this.parameters, this.sid,
+                this.serviceName);
     }
 
     public static String getUsername(@NonNull ConnectionConfig connectionConfig) {
@@ -176,15 +190,19 @@ public class OBConsoleDataSourceFactory implements CloneableDataSourceFactory {
         dataSource.setUrl(jdbcUrl);
         dataSource.setUsername(username);
         dataSource.setPassword(password);
+
+        Properties properties = new Properties();
+        if (Objects.nonNull(this.userRole)) {
+            properties.put(ConnectionPropertiesBuilder.USER_ROLE, this.userRole.name());
+            dataSource.setConnectionProperties(properties);
+        }
         // Set datasource driver class
         dataSource.setDriverClassName(connectionExtensionPoint.getDriverClassName());
         // fix arbitrary file reading vulnerability
-        Properties properties = new Properties();
         properties.setProperty("allowLoadLocalInfile", "false");
         properties.setProperty("allowUrlInLocalInfile", "false");
         properties.setProperty("allowLoadLocalInfileInPath", "");
         properties.setProperty("autoDeserialize", "false");
-        dataSource.setConnectionProperties(properties);
         if (autoCommit != null) {
             dataSource.setAutoCommit(autoCommit);
         }
@@ -268,6 +286,7 @@ public class OBConsoleDataSourceFactory implements CloneableDataSourceFactory {
                 return "\"" + schema + "\"";
             case OB_MYSQL:
             case MYSQL:
+            case DORIS:
             case ODP_SHARDING_OB_MYSQL:
                 return schema;
             default:
@@ -286,6 +305,7 @@ public class OBConsoleDataSourceFactory implements CloneableDataSourceFactory {
                 return getSchema(getDbUser(connectionConfig), connectionConfig.getDialectType());
             case OB_MYSQL:
             case MYSQL:
+            case DORIS:
             case ODP_SHARDING_OB_MYSQL:
                 if (StringUtils.isNotEmpty(defaultSchema)) {
                     return getSchema(defaultSchema, connectionConfig.getDialectType());

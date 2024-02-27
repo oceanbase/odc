@@ -132,14 +132,12 @@ public class AlterScheduleTask extends BaseODCFlowTaskDelegate<AlterScheduleResu
     @Override
     protected void onFailure(Long taskId, TaskService taskService) {
         log.warn("Alter schedule failed, taskId={}", taskId);
-        super.onFailure(taskId, taskService);
     }
 
     @Override
     protected void onSuccessful(Long taskId, TaskService taskService) {
         log.info("Alter schedule succeed, taskId={}", taskId);
         updateFlowInstanceStatus(FlowStatus.EXECUTION_SUCCEEDED);
-        super.onSuccessful(taskId, taskService);
     }
 
     @Override

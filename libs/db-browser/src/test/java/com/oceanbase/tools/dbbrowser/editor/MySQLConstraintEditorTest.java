@@ -38,7 +38,7 @@ import com.oceanbase.tools.dbbrowser.model.DBTableConstraint;
 public class MySQLConstraintEditorTest {
 
     private DBTableConstraintEditor constraintEditor;
-    private final String BASE_DIR = "src/test/resources/table/operator/mysql/constraint";
+    private final String BASE_DIR = "src/test/resources/table/operator/ob/mysql/constraint";
     private static final ObjectMapper OBJECT_MAPPER = JsonMapper.builder()
             .enable(MapperFeature.SORT_PROPERTIES_ALPHABETICALLY)
             .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)

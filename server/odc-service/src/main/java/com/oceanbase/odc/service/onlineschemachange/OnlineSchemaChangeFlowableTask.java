@@ -152,6 +152,7 @@ public class OnlineSchemaChangeFlowableTask extends BaseODCFlowTaskDelegate<Void
     @Override
     protected void onTimeout(Long taskId, TaskService taskService) {
         log.warn("Online schema change task timeout, taskId={}", taskId);
+        super.onTimeout(taskId, taskService);
     }
 
     @Override

@@ -21,12 +21,15 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.oceanbase.odc.common.util.ExceptionUtils;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.metadb.notification.MessageRepository;
+import com.oceanbase.odc.metadb.notification.MessageSendingHistoryEntity;
+import com.oceanbase.odc.metadb.notification.MessageSendingHistoryRepository;
 import com.oceanbase.odc.service.notification.model.Event;
 import com.oceanbase.odc.service.notification.model.EventStatus;
+import com.oceanbase.odc.service.notification.model.Message;
 import com.oceanbase.odc.service.notification.model.MessageSendingStatus;
-import com.oceanbase.odc.service.notification.model.Notification;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -49,7 +52,7 @@ public class Broker {
     private Converter converter;
 
     @Autowired
-    private NotificationDispatcher notificationDispatcher;
+    private NotificationDispatcher dispatcher;
 
     @Autowired
     private NotificationQueue notificationQueue;
@@ -60,16 +63,22 @@ public class Broker {
     @Autowired
     private MessageRepository messageRepository;
 
-    @Transactional(rollbackFor = Exception.class)
+    @Autowired
+    private MessageSendingHistoryRepository sendingHistoryRepository;
+
     public void dequeueEvent(EventStatus eventStatus) {
-        // 从事件队列中拉取事件
-        List<Event> events = eventQueue.peek(notificationProperties.getEventDequeueBatchSize(), eventStatus);
-        // 过滤掉不需要发送通知的事件
-        List<Event> filtered = eventFilter.filter(events);
-        // 将事件转换为通知
-        List<Notification> notifications = converter.convert(filtered);
-        // 通知进入通知队列，等待异步发送
-        notificationQueue.offer(notifications);
+        try {
+            // 从事件队列中拉取事件
+            List<Event> events = eventQueue.peek(notificationProperties.getEventDequeueBatchSize(), eventStatus);
+            // 过滤掉不需要发送通知的事件
+            List<Event> filtered = eventFilter.filter(events);
+            // 将事件转换为通知
+            List<Message> messages = converter.convert(filtered);
+            // 通知进入通知队列，等待异步发送
+            notificationQueue.offer(messages);
+        } catch (Exception e) {
+            log.error("Failed to dequeue events.", e);
+        }
     }
 
     @Transactional(rollbackFor = Exception.class)
@@ -78,14 +87,16 @@ public class Broker {
     }
 
     public void dequeueNotification(MessageSendingStatus status) {
-        List<Notification> notifications =
+        List<Message> messages =
                 notificationQueue.peek(notificationProperties.getNotificationDequeueBatchSize(), status);
-        for (Notification notification : notifications) {
+        for (Message message : messages) {
             try {
-                notificationDispatcher.dispatch(notification);
+                dispatcher.dispatch(message);
             } catch (Exception e) {
-                messageRepository.updateStatusAndRetryTimesById(notification.getMessage().getId(),
-                        MessageSendingStatus.SENT_FAILED);
+                messageRepository.updateStatusAndRetryTimesAndErrorMessageById(message.getId(),
+                        MessageSendingStatus.SENT_FAILED, ExceptionUtils.getRootCauseMessage(e));
+                sendingHistoryRepository.save(new MessageSendingHistoryEntity(message.getId(),
+                        MessageSendingStatus.SENT_FAILED, ExceptionUtils.getRootCauseMessage(e)));
                 log.warn("Send notification failed.", e);
             }
         }

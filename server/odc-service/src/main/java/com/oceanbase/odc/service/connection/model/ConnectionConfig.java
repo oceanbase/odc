@@ -46,6 +46,7 @@ import com.oceanbase.odc.core.shared.constant.ConnectionVisibleScope;
 import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.shared.constant.OdcConstants;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
+import com.oceanbase.odc.plugin.connect.model.oracle.UserRole;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.ConnectionInfo;
 import com.oceanbase.odc.service.collaboration.environment.model.EnvironmentStyle;
 import com.oceanbase.odc.service.connection.ConnectionStatusManager.CheckState;
@@ -105,6 +106,21 @@ public class ConnectionConfig
     @Size(min = 1, max = 128, message = "Connection name is out of range [1,128]")
     @Name(message = "Connection name cannot start or end with whitespaces")
     private String name;
+
+    /**
+     * Oracle 连接方式特有的参数，该参数表示一个数据库
+     */
+    private String serviceName;
+
+    /**
+     * Oracle 连接方式特有的参数，该参数表示数据库的一个实例
+     */
+    private String sid;
+
+    /**
+     * Oracle 连接方式特有的参数，该参数用户角色
+     */
+    private UserRole userRole;
 
     /**
      * 连接类型
@@ -341,6 +357,7 @@ public class ConnectionConfig
             case OB_ORACLE:
                 return ConnectionSessionUtil.getUserOrSchemaString(this.username, dialectType);
             case MYSQL:
+            case DORIS:
             case OB_MYSQL:
             case ODP_SHARDING_OB_MYSQL:
                 return OdcConstants.MYSQL_DEFAULT_SCHEMA;
@@ -454,6 +471,11 @@ public class ConnectionConfig
         if (Objects.nonNull(endpoint)) {
             target.setProxyHost(endpoint.getProxyHost());
             target.setProxyPort(endpoint.getProxyPort());
+        }
+        target.setSid(sid);
+        target.setServiceName(serviceName);
+        if (Objects.nonNull(userRole)) {
+            target.setUserRole(userRole.name());
         }
         return target;
     }

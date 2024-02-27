@@ -15,6 +15,8 @@
  */
 package com.oceanbase.odc.test.util;
 
+import java.util.Objects;
+
 import org.apache.commons.lang3.StringUtils;
 
 import com.oceanbase.odc.test.database.TestDBType;
@@ -42,6 +44,20 @@ public class JdbcUtil {
         }
         return builder.toString();
     }
+
+    public static String buildUrl(String host, Integer port, String sid, String serviceName) {
+        StringBuilder jdbcUrl = new StringBuilder();
+        if (Objects.nonNull(sid)) {
+            jdbcUrl.append("jdbc:oracle:thin:@").append(host).append(":").append(port).append(":").append(sid);
+        } else if (Objects.nonNull(serviceName)) {
+            jdbcUrl.append("jdbc:oracle:thin:@//").append(host).append(":").append(port).append("/")
+                    .append(serviceName);
+        } else {
+            throw new UnsupportedOperationException("sid or service name must be set");
+        }
+        return jdbcUrl.toString();
+    }
+
 
     public static String buildUser(String username, String tenant, String cluster) {
         StringBuilder builder = new StringBuilder(username);

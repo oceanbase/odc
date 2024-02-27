@@ -32,7 +32,7 @@ public abstract class BaseOraclePLTemplate<T extends DBObject> extends BasePLTem
     @Override
     protected String generateInOutString(DBPLParamMode type) {
         if (DBPLParamMode.INOUT == type) {
-            return PLConstants.ORACLE_PL_INOUT_PARAM;
+            return PLConstants.OB_ORACLE_PL_INOUT_PARAM;
         } else if (DBPLParamMode.IN == type) {
             return PLConstants.PL_IN_PARAM;
         } else if (DBPLParamMode.OUT == type) {

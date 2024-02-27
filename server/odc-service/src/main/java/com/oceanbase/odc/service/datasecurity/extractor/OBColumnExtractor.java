@@ -549,6 +549,8 @@ public class OBColumnExtractor implements ColumnExtractor {
             return extractFunctionCallItem((FunctionCall) expr);
         } else if (expr instanceof IntervalExpression) {
             return extractIntervalExpression((IntervalExpression) expr);
+        } else if (expr instanceof CaseWhen) {
+            return extractCaseWhenItem((CaseWhen) expr);
         } else {
             throw new IllegalStateException("Unknown type of expression: " + expr);
         }
@@ -740,6 +742,12 @@ public class OBColumnExtractor implements ColumnExtractor {
                 return unquoted;
             }
             return StringUtils.checkOracleIdentifierQuoted(identifier) ? unquoted : unquoted.toUpperCase();
+        } else if (Objects.nonNull(dialectType) && dialectType.isDoris()) {
+            String unquoted = StringUtils.unquoteMySqlIdentifier(identifier);
+            if (StringUtils.isBlank(unquoted)) {
+                return unquoted;
+            }
+            return StringUtils.checkMysqlIdentifierQuoted(identifier) ? unquoted : unquoted.toLowerCase();
         } else {
             throw new IllegalStateException("Unknown dialect type: " + dialectType);
         }

@@ -26,6 +26,8 @@ public class JobUrlConstants {
 
     public static final String TASK_HEART = "/api/v2/task/heart";
 
+    public static final String TASK_QUERY_SENSITIVE_COLUMN = "/api/v2/task/querySensitiveColumn";
+
     public static final String LOG_QUERY = "/api/v2/task/%s/log";
 
     public static final String STOP_TASK = "/api/v2/task/%s/stop";

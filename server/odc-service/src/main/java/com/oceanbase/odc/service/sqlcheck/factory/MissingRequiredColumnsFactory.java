@@ -46,7 +46,8 @@ public class MissingRequiredColumnsFactory implements SqlCheckRuleFactory {
         } else {
             cols = new HashSet<>((List<String>) parameters.get(key));
         }
-        return dialectType.isMysql() ? new MySQLMissingRequiredColumns(cols) : new OracleMissingRequiredColumns(cols);
+        return (dialectType.isMysql() || dialectType.isDoris()) ? new MySQLMissingRequiredColumns(cols)
+                : new OracleMissingRequiredColumns(cols);
     }
 
 }

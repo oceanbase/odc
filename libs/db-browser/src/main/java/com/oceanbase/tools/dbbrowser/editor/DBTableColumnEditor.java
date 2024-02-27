@@ -54,7 +54,11 @@ public abstract class DBTableColumnEditor implements DBObjectEditor<DBTableColum
         appendColumnDefinition(column, sqlBuilder);
         sqlBuilder.append(";").line();
         generateColumnComment(column, sqlBuilder);
-        return sqlBuilder.toString();
+        String ddl = sqlBuilder.toString();
+        if (!ddl.trim().endsWith(";")) {
+            ddl += ";\n";
+        }
+        return ddl;
     }
 
     protected abstract boolean appendColumnKeyWord();

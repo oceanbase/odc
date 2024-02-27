@@ -15,26 +15,20 @@
  */
 package com.oceanbase.odc.service.config.model;
 
-import java.util.Set;
-
-import javax.validation.ConstraintViolation;
-import javax.validation.ConstraintViolationException;
 import javax.validation.constraints.NotBlank;
 
-import com.oceanbase.odc.common.validate.ValidatorBuilder;
+import com.oceanbase.odc.metadb.config.UserConfigEntity;
 
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.ToString;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 /**
  * DTO for all configurations
  */
-@Setter
-@Getter
-@ToString
-@EqualsAndHashCode
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
 public class Configuration {
     /**
      * Config key
@@ -47,21 +41,16 @@ public class Configuration {
      */
     private String value;
 
-    /**
-     * Default constructor for object
-     *
-     * @param configKey config key
-     * @param configValue configValue
-     */
-    public Configuration(String configKey, String configValue) {
-        this.key = configKey;
-        this.value = configValue;
-        Set<ConstraintViolation<Configuration>> result = ValidatorBuilder.buildFastFailValidator().validate(this);
-        if (result.size() != 0) {
-            throw new ConstraintViolationException(result);
-        }
+    public static Configuration of(UserConfigEntity entity) {
+        return new Configuration(entity.getKey(), entity.getValue());
     }
 
-    public Configuration() {}
+    public UserConfigEntity toEntity(Long userId) {
+        UserConfigEntity entity = new UserConfigEntity();
+        entity.setUserId(userId);
+        entity.setKey(this.key);
+        entity.setValue(this.value);
+        return entity;
+    }
 
 }

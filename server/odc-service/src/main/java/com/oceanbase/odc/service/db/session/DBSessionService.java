@@ -67,15 +67,15 @@ public class DBSessionService {
         return jdbcOperations.query("SHOW FULL PROCESSLIST", new OdcDBSessionRowMapper());
     }
 
-    public List<SessionIdKillSql> getKillSql(@NonNull ConnectionSession session, @NonNull List<Long> sessionIds,
+    public List<SessionIdKillSql> getKillSql(@NonNull ConnectionSession session, @NonNull List<String> sessionIds,
             String closeType) {
         List<OdcDBSession> allSession = list(session);
-        Map<Long, String> sessionId2SvrpIp =
+        Map<String, String> sessionId2SvrpIp =
                 allSession.stream().collect(
                         Collectors.toMap(OdcDBSession::getSessionId,
                                 s -> MoreObjects.firstNonNull(s.getSvrIp(), "")));
         return sessionIds.stream().map(sid -> {
-            PreConditions.notNegative(sid, "sessionId");
+            PreConditions.notNegative(Long.parseLong(sid), "sessionId");
             StringBuilder sqlBuilder = new StringBuilder();
             sqlBuilder.append("kill ");
             if (KILL_QUERY_TYPE.equalsIgnoreCase(closeType)) {
@@ -94,7 +94,7 @@ public class DBSessionService {
     @NoArgsConstructor
     @Data
     public static class SessionIdKillSql {
-        private Long sessionId;
+        private String sessionId;
         private String killSql;
     }
 

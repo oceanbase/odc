@@ -28,6 +28,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort.Direction;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -41,6 +42,7 @@ import com.oceanbase.odc.core.shared.constant.FlowStatus;
 import com.oceanbase.odc.core.shared.constant.OrganizationType;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.core.shared.constant.TaskType;
+import com.oceanbase.odc.core.shared.exception.NotImplementedException;
 import com.oceanbase.odc.service.common.response.ListResponse;
 import com.oceanbase.odc.service.common.response.PaginatedResponse;
 import com.oceanbase.odc.service.common.response.Responses;
@@ -55,6 +57,7 @@ import com.oceanbase.odc.service.flow.model.FlowInstanceDetailResp;
 import com.oceanbase.odc.service.flow.model.FlowMetaInfo;
 import com.oceanbase.odc.service.flow.model.QueryFlowInstanceParams;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
+import com.oceanbase.odc.service.partitionplan.model.PartitionPlanConfig;
 import com.oceanbase.odc.service.session.model.SqlExecuteResult;
 import com.oceanbase.odc.service.task.model.OdcTaskLogLevel;
 
@@ -200,6 +203,15 @@ public class FlowInstanceController {
                 new InputStreamResource(results.get(0).getInputStream()), (results.get(0).getName()));
     }
 
+    @ApiOperation(value = "downloadRollbackPlan", notes = "下载自动生成的回滚脚本文件")
+    @RequestMapping(value = "/{id:[\\d]+}/tasks/rollbackPlan/download", method = RequestMethod.GET)
+    public ResponseEntity<InputStreamResource> downloadRollbackPlan(@PathVariable Long id) throws IOException {
+        List<BinaryDataResult> results = flowTaskInstanceService.downRollbackPlanResult(id);
+        PreConditions.validExists(ResourceType.ODC_FILE, "id", id, () -> CollectionUtils.isNotEmpty(results));
+        return WebResponseUtils.getFileAttachmentResponseEntity(
+                new InputStreamResource(results.get(0).getInputStream()), (results.get(0).getName()));
+    }
+
     @ApiOperation(value = "status", notes = "获取实例的状态信息")
     @RequestMapping(value = "/status", method = RequestMethod.GET)
     public SuccessResponse<Map<Long, FlowStatus>> status(@RequestParam(name = "id") Set<Long> ids) {
@@ -212,8 +224,15 @@ public class FlowInstanceController {
         return Responses.list(flowTaskInstanceService.getExecuteResult(id));
     }
 
-    @RequestMapping(value = "/{id:[\\d]+}/tasks/async/batchGetDownloadUrl", method = RequestMethod.POST)
-    public ListResponse<String> getDownloadUrl(@PathVariable Long id, @RequestBody List<String> objectId) {
-        return Responses.list(flowTaskInstanceService.getAsyncDownloadUrl(id, objectId));
+    @RequestMapping(value = "/{id:[\\d]+}/tasks/{bucket}/batchGetDownloadUrl", method = RequestMethod.POST)
+    public ListResponse<String> getDownloadUrl(@PathVariable Long id, @RequestBody List<String> objectId,
+            @PathVariable String bucket) {
+        return Responses.list(flowTaskInstanceService.getAsyncDownloadUrl(id, objectId, bucket));
     }
+
+    @GetMapping(value = "/{id:[\\d]+}/tasks/partitionPlans/getDetail")
+    public SuccessResponse<PartitionPlanConfig> getPartitionPlan(@PathVariable Long flowInstanceId) {
+        throw new NotImplementedException();
+    }
+
 }

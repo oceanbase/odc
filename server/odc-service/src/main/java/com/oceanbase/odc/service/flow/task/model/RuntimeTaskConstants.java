@@ -29,6 +29,7 @@ public class RuntimeTaskConstants {
     public static final String PARAMETERS = "parameters";
     public static final String TASK_SUBMITTER = "taskSubmitter";
     public static final String TASK_CREATOR = "taskCreator";
+    public static final String TASK_ORGANIZATION_ID = "taskOrganizationId";
     public static final String INTERCEPT_TASK_ID = "interceptTaskId";
     public static final String INTERCEPT_SQL_STATUS = "interceptSqlStatus";
     public static final String INTEGRATION_TEMPLATE_VARIABLES = "integrationTemplateVariables";

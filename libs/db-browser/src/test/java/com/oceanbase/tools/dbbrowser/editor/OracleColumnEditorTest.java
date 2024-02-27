@@ -30,7 +30,7 @@ import com.oceanbase.tools.dbbrowser.model.DBTableColumn;
 public class OracleColumnEditorTest {
 
     private DBTableColumnEditor columnEditor;
-    private final String BASE_DIR = "src/test/resources/table/operator/oracle/column";
+    private final String BASE_DIR = "src/test/resources/table/operator/ob/oracle/column";
 
     @Before
     public void setUp() throws Exception {
