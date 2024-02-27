@@ -40,6 +40,7 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -52,6 +53,7 @@ import com.oceanbase.odc.core.shared.exception.UnexpectedException;
 import com.oceanbase.odc.metadb.flow.FlowInstanceEntity;
 import com.oceanbase.odc.metadb.flow.FlowInstanceRepository;
 import com.oceanbase.odc.metadb.iam.UserEntity;
+import com.oceanbase.odc.metadb.schedule.ScheduleEntity;
 import com.oceanbase.odc.metadb.schedule.ScheduleRepository;
 import com.oceanbase.odc.metadb.task.TaskEntity;
 import com.oceanbase.odc.service.collaboration.environment.EnvironmentService;
@@ -68,10 +70,10 @@ import com.oceanbase.odc.service.notification.model.Event;
 import com.oceanbase.odc.service.notification.model.EventLabels;
 import com.oceanbase.odc.service.notification.model.EventStatus;
 import com.oceanbase.odc.service.notification.model.TaskEvent;
-import com.oceanbase.odc.service.schedule.model.JobType;
 import com.oceanbase.odc.service.permission.database.model.ApplyDatabaseParameter;
 import com.oceanbase.odc.service.permission.database.model.ApplyDatabaseParameter.ApplyDatabase;
 import com.oceanbase.odc.service.permission.project.ApplyProjectParameter;
+import com.oceanbase.odc.service.schedule.model.JobType;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -286,14 +288,13 @@ public class EventBuilder {
                 Long parentInstanceId = flowInstances.get(0).getParentInstanceId();
                 if (Objects.nonNull(parentInstanceId)) {
                     if ("ASYNC".equals(labels.get(TASK_TYPE))) {
-                        scheduleRepository.findById(parentInstanceId).ifPresent(schedule -> {
-                            if (schedule.getJobType() == JobType.SQL_PLAN) {
-                                labels.putIfNonNull(TASK_TYPE, JobType.SQL_PLAN);
-                                labels.putIfNonNull(TASK_ID, parentInstanceId);
-                            } else {
-                                labels.putIfNonNull(TASK_ID, flowInstances.get(0).getId());
-                            }
-                        });
+                        Optional<ScheduleEntity> optional = scheduleRepository.findById(parentInstanceId);
+                        if (optional.isPresent() && optional.get().getJobType() == JobType.SQL_PLAN) {
+                            labels.putIfNonNull(TASK_TYPE, JobType.SQL_PLAN);
+                            labels.putIfNonNull(TASK_ID, parentInstanceId);
+                        } else {
+                            labels.putIfNonNull(TASK_ID, flowInstances.get(0).getId());
+                        }
                     } else if ("ALTER_SCHEDULE".equals(labels.get(TASK_TYPE))) {
                         scheduleRepository.findById(parentInstanceId).ifPresent(schedule -> {
                             labels.putIfNonNull(TASK_TYPE, schedule.getJobType());
