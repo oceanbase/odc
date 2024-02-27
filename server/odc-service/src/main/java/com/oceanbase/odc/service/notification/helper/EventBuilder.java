@@ -36,6 +36,7 @@ import static com.oceanbase.odc.service.notification.constant.EventLabelKeys.TRI
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 import java.util.Objects;
@@ -63,6 +64,7 @@ import com.oceanbase.odc.service.connection.database.DatabaseService;
 import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.iam.UserService;
+import com.oceanbase.odc.service.iam.model.User;
 import com.oceanbase.odc.service.notification.model.Event;
 import com.oceanbase.odc.service.notification.model.EventLabels;
 import com.oceanbase.odc.service.notification.model.EventStatus;
@@ -120,8 +122,9 @@ public class EventBuilder {
         return event;
     }
 
-    public Event ofPendingApprovalTask(TaskEntity task) {
+    public Event ofPendingApprovalTask(TaskEntity task, Collection<Long> approvers) {
         Event event = ofTask(task, TaskEvent.PENDING_APPROVAL);
+        event.getLabels().put(APPROVER_ID, JsonUtils.toJson(approvers));
         resolveLabels(event.getLabels());
         return event;
     }
@@ -262,6 +265,11 @@ public class EventBuilder {
         if (labels.containsKey(APPROVER_ID)) {
             if ("null".equals(labels.get(APPROVER_ID))) {
                 labels.putIfNonNull(APPROVER_NAME, AUTO_APPROVAL_KEY);
+            } else if (labels.get(APPROVER_ID).startsWith("[")) {
+                List<Long> approverIds = JsonUtils.fromJsonList(labels.get(APPROVER_ID), Long.class);
+                List<User> approvers = userService.batchNullSafeGet(approverIds);
+                labels.putIfNonNull(APPROVER_NAME,
+                        String.join(" | ", approvers.stream().map(User::getName).collect(Collectors.toSet())));
             } else {
                 try {
                     UserEntity user = userService.nullSafeGet(labels.getLongFromString(APPROVER_ID));

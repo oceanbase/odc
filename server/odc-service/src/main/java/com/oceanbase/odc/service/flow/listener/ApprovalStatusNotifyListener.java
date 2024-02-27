@@ -15,14 +15,20 @@
  */
 package com.oceanbase.odc.service.flow.listener;
 
+import java.util.List;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
+import org.apache.commons.collections4.CollectionUtils;
 import org.flowable.engine.delegate.DelegateExecution;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import com.oceanbase.odc.core.flow.util.EmptyExecutionListener;
-import com.oceanbase.odc.metadb.flow.FlowInstanceRepository;
-import com.oceanbase.odc.metadb.flow.UserTaskInstanceRepository;
+import com.oceanbase.odc.metadb.flow.FlowInstanceApprovalViewEntity;
+import com.oceanbase.odc.metadb.flow.FlowInstanceApprovalViewRepository;
+import com.oceanbase.odc.metadb.iam.resourcerole.UserResourceRoleEntity;
+import com.oceanbase.odc.metadb.iam.resourcerole.UserResourceRoleRepository;
 import com.oceanbase.odc.metadb.task.TaskEntity;
 import com.oceanbase.odc.service.flow.FlowInstanceService;
 import com.oceanbase.odc.service.flow.FlowableAdaptor;
@@ -42,10 +48,6 @@ import lombok.extern.slf4j.Slf4j;
 public class ApprovalStatusNotifyListener extends EmptyExecutionListener {
 
     @Autowired
-    private FlowInstanceRepository flowInstanceRepository;
-    @Autowired
-    private UserTaskInstanceRepository userTaskInstanceRepository;
-    @Autowired
     private NotificationProperties notificationProperties;
     @Autowired
     private EventBuilder eventBuilder;
@@ -55,6 +57,10 @@ public class ApprovalStatusNotifyListener extends EmptyExecutionListener {
     private FlowInstanceService flowInstanceService;
     @Autowired
     private FlowableAdaptor flowableAdaptor;
+    @Autowired
+    FlowInstanceApprovalViewRepository flowInstanceApprovalViewRepository;
+    @Autowired
+    UserResourceRoleRepository userResourceRoleRepository;
 
     @Override
     protected void onExecutiuonStart(DelegateExecution execution) {
@@ -62,9 +68,21 @@ public class ApprovalStatusNotifyListener extends EmptyExecutionListener {
             return;
         }
         try {
+            FlowApprovalInstance target = getTarget(execution);
+            Set<Long> approverIds = null;
             TaskEntity taskEntity =
-                    flowInstanceService.getTaskByFlowInstanceId(getTarget(execution).getFlowInstanceId());
-            Event event = eventBuilder.ofPendingApprovalTask(taskEntity);
+                    flowInstanceService.getTaskByFlowInstanceId(target.getFlowInstanceId());
+            List<FlowInstanceApprovalViewEntity> approvals =
+                    flowInstanceApprovalViewRepository.findByFlowInstanceId(target.getFlowInstanceId());
+            if (CollectionUtils.isNotEmpty(approvals)) {
+                List<UserResourceRoleEntity> userResourceRoles =
+                        userResourceRoleRepository.findByResourceIdsAndResourceRoleIdsIn(
+                                approvals.stream().map(FlowInstanceApprovalViewEntity::getResourceRoleIdentifier)
+                                        .collect(Collectors.toSet()));
+                approverIds = CollectionUtils.isEmpty(userResourceRoles) ? null
+                        : userResourceRoles.stream().map(UserResourceRoleEntity::getUserId).collect(Collectors.toSet());
+            }
+            Event event = eventBuilder.ofPendingApprovalTask(taskEntity, approverIds);
             broker.enqueueEvent(event);
         } catch (Exception e) {
             log.warn("Failed to enqueue event.", e);

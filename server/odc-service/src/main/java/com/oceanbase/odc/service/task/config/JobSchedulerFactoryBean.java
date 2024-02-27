@@ -18,9 +18,7 @@ package com.oceanbase.odc.service.task.config;
 
 import org.springframework.beans.factory.FactoryBean;
 import org.springframework.beans.factory.InitializingBean;
-import org.springframework.beans.factory.annotation.Autowired;
 
-import com.oceanbase.odc.service.task.listener.JobTerminateNotifyListener;
 import com.oceanbase.odc.service.task.schedule.JobScheduler;
 import com.oceanbase.odc.service.task.schedule.StdJobScheduler;
 
@@ -34,8 +32,6 @@ import lombok.Setter;
 public class JobSchedulerFactoryBean implements FactoryBean<JobScheduler>, InitializingBean {
 
     private JobScheduler jobScheduler;
-    @Autowired
-    private JobTerminateNotifyListener terminateNotifyListener;
 
     @Setter
     public JobConfiguration jobConfiguration;
@@ -53,6 +49,5 @@ public class JobSchedulerFactoryBean implements FactoryBean<JobScheduler>, Initi
     @Override
     public void afterPropertiesSet() throws Exception {
         jobScheduler = new StdJobScheduler(jobConfiguration);
-        jobScheduler.getEventPublisher().addEventListener(terminateNotifyListener);
     }
 }
