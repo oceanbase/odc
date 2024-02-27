@@ -15,22 +15,16 @@
  */
 package com.oceanbase.odc.server.web.controller.v1;
 
-import java.util.Collections;
 import java.util.List;
 
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.oceanbase.odc.core.shared.exception.UnsupportedException;
 import com.oceanbase.odc.service.common.response.OdcResult;
-import com.oceanbase.odc.service.config.UserConfigFacade;
 import com.oceanbase.odc.service.config.model.Configuration;
-import com.oceanbase.odc.service.config.model.UserConfig;
-import com.oceanbase.odc.service.config.util.ConfigObjectUtil;
-import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 
 import io.swagger.annotations.ApiOperation;
 
@@ -43,25 +37,15 @@ import io.swagger.annotations.ApiOperation;
  */
 @RestController
 @RequestMapping("/api/v1/users")
+@Deprecated
 public class UserConfigController {
-    /**
-     * User config facade
-     */
-    @Autowired
-    private UserConfigFacade userConfigFacade;
-
-    @Autowired
-    private AuthenticationFacade authenticationFacade;
-
     /**
      * Get all User configs
      */
     @ApiOperation(value = "query", notes = "Get all user Configs")
     @RequestMapping(value = "/me/configurations", method = RequestMethod.GET)
     public OdcResult<List<Configuration>> query() {
-        Long currentUserId = authenticationFacade.currentUserId();
-        UserConfig config = userConfigFacade.query(currentUserId);
-        return new OdcResult<>(ConfigObjectUtil.convertToDTO(config));
+        throw new UnsupportedException("please use /api/v2/config/users/me/configurations instead");
     }
 
     /**
@@ -70,31 +54,7 @@ public class UserConfigController {
     @ApiOperation(value = "update", notes = "Update user Config")
     @RequestMapping(value = "/me/configurations", method = RequestMethod.PATCH)
     public OdcResult<List<Configuration>> update(@RequestBody List<Configuration> configDTOList) {
-        Long currentUserId = authenticationFacade.currentUserId();
-        UserConfig userConfig1 = userConfigFacade.query(currentUserId);
-        UserConfig config = userConfigFacade.put(currentUserId,
-                ConfigObjectUtil.setConfigObjectFromDTO(configDTOList, userConfig1));
-        return new OdcResult<>(ConfigObjectUtil.convertToDTO(config));
+        throw new UnsupportedException("please use /api/v2/config/users/me/configurations instead");
     }
 
-    /**
-     * Get all User configs
-     */
-    @ApiOperation(value = "query", notes = "Get all user Configs")
-    @RequestMapping(value = "/{userId}/configurations", method = RequestMethod.GET)
-    public OdcResult<List<Configuration>> queryByUserId(@PathVariable Long userId) {
-        // Todo search userconfig by input userId
-        return new OdcResult<>(Collections.emptyList());
-    }
-
-    /**
-     * Update user config
-     */
-    @ApiOperation(value = "update", notes = "Update user Config")
-    @RequestMapping(value = "/{userId}/configurations", method = RequestMethod.PATCH)
-    public OdcResult<List<Configuration>> updateByUserId(@RequestBody List<Configuration> configDTOList,
-            @PathVariable Long userId) {
-        // Todo search userconfig by input userId
-        return new OdcResult<>(Collections.emptyList());
-    }
 }

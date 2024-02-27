@@ -22,6 +22,7 @@ import java.util.Objects;
 
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.datasource.SingleConnectionDataSource;
+import com.oceanbase.odc.plugin.connect.model.JdbcUrlProperty;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.ConnectionInfo;
 
 public class ConnectionUtil {
@@ -43,8 +44,9 @@ public class ConnectionUtil {
             jdbcUrlParams.put("socksProxyHost", connectionInfo.getProxyHost());
             jdbcUrlParams.put("socksProxyPort", connectionInfo.getProxyPort() + "");
         }
-        return PluginUtil.getConnectionExtension(connectionInfo).generateJdbcUrl(connectionInfo.getHost(),
-                connectionInfo.getPort(), schema, jdbcUrlParams);
+        return PluginUtil.getConnectionExtension(connectionInfo)
+                .generateJdbcUrl(
+                        new JdbcUrlProperty(connectionInfo.getHost(), connectionInfo.getPort(), schema, jdbcUrlParams));
     }
 
 }

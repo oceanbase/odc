@@ -17,6 +17,8 @@ package com.oceanbase.odc.common.util;
 
 import java.time.Duration;
 import java.time.temporal.Temporal;
+import java.util.Calendar;
+import java.util.Date;
 
 /**
  * @Author: Lebie
@@ -34,4 +36,43 @@ public class TimeUtils {
     public static long absMillisBetween(Temporal startInclusive, Temporal endExclusive) {
         return Duration.between(startInclusive, endExclusive).abs().toMillis();
     }
+
+    public static Date getMySQLMaxDatetime() {
+        Calendar calendar = Calendar.getInstance();
+        calendar.set(Calendar.YEAR, 9999);
+        calendar.set(Calendar.MONTH, Calendar.DECEMBER);
+        calendar.set(Calendar.DAY_OF_MONTH, 31);
+        calendar.set(Calendar.HOUR_OF_DAY, 23);
+        calendar.set(Calendar.MINUTE, 59);
+        calendar.set(Calendar.SECOND, 59);
+        calendar.set(Calendar.MILLISECOND, 0);
+        return calendar.getTime();
+    }
+
+    public static Date getStartOfDay(Date date) {
+        if (date == null) {
+            return null;
+        }
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTime(date);
+        calendar.set(Calendar.HOUR_OF_DAY, 0);
+        calendar.set(Calendar.MINUTE, 0);
+        calendar.set(Calendar.SECOND, 0);
+        calendar.set(Calendar.MILLISECOND, 0);
+        return calendar.getTime();
+    }
+
+    public static Date getEndOfDay(Date date) {
+        if (date == null) {
+            return null;
+        }
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTime(date);
+        calendar.set(Calendar.HOUR_OF_DAY, 23);
+        calendar.set(Calendar.MINUTE, 59);
+        calendar.set(Calendar.SECOND, 59);
+        calendar.set(Calendar.MILLISECOND, 0);
+        return calendar.getTime();
+    }
+
 }

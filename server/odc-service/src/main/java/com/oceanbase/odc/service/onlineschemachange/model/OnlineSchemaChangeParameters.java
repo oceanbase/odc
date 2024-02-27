@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import com.oceanbase.odc.core.flow.model.TaskParameters;
 import com.oceanbase.odc.core.shared.PreConditions;
@@ -28,6 +29,7 @@ import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.constant.TaskErrorStrategy;
 import com.oceanbase.odc.core.shared.exception.UnexpectedException;
 import com.oceanbase.odc.core.shared.model.TableIdentity;
+import com.oceanbase.odc.core.sql.split.OffsetString;
 import com.oceanbase.odc.service.common.util.SqlUtils;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.onlineschemachange.ddl.DdlUtils;
@@ -80,7 +82,11 @@ public class OnlineSchemaChangeParameters implements Serializable, TaskParameter
 
     public List<OnlineSchemaChangeScheduleTaskParameters> generateSubTaskParameters(ConnectionConfig connectionConfig,
             String schema) {
-        List<String> sqls = SqlUtils.split(connectionConfig.getDialectType(), this.sqlContent, this.delimiter);
+        List<String> sqls =
+                SqlUtils.splitWithOffset(connectionConfig.getDialectType(), this.sqlContent + "\n", this.delimiter,
+                        true)
+                        .stream().map(OffsetString::getStr).collect(Collectors.toList());;
+
         OscFactoryWrapper oscFactoryWrapper = OscFactoryWrapperGenerator.generate(connectionConfig.getDialectType());
         try (SubTaskParameterFactory subTaskParameterFactory =
                 new SubTaskParameterFactory(connectionConfig, schema, oscFactoryWrapper)) {

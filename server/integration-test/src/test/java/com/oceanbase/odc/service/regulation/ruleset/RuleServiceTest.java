@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.oceanbase.odc.service.regulation.ruleset;
 
 import java.util.Arrays;
@@ -137,6 +136,7 @@ public class RuleServiceTest extends ServiceTestEnv {
 
     private Ruleset getRuleset() {
         Ruleset ruleset = new Ruleset();
+        ruleset.setBuiltin(true);
         ruleset.setId(1L);
         ruleset.setName("${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-dev-ruleset.name}");
         return ruleset;

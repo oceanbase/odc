@@ -16,20 +16,28 @@
 package com.oceanbase.odc.server.web.controller.v2;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort.Direction;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.oceanbase.odc.service.common.response.ListResponse;
 import com.oceanbase.odc.service.common.response.Responses;
 import com.oceanbase.odc.service.common.response.SuccessResponse;
+import com.oceanbase.odc.service.flow.task.model.DBObjectStructureComparisonResp;
+import com.oceanbase.odc.service.flow.task.model.DBStructureComparisonResp;
+import com.oceanbase.odc.service.flow.task.model.DBStructureComparisonResp.OperationType;
 import com.oceanbase.odc.service.shadowtable.ShadowTableComparingService;
 import com.oceanbase.odc.service.shadowtable.model.SetSkippedReq;
 import com.oceanbase.odc.service.shadowtable.model.ShadowTableSyncReq;
 import com.oceanbase.odc.service.shadowtable.model.ShadowTableSyncResp;
 import com.oceanbase.odc.service.shadowtable.model.ShadowTableSyncResp.TableComparing;
+import com.oceanbase.odc.service.structurecompare.StructureComparisonService;
 
 /**
  * @Author: Lebie
@@ -41,6 +49,8 @@ import com.oceanbase.odc.service.shadowtable.model.ShadowTableSyncResp.TableComp
 public class SchemaSyncController {
     @Autowired
     private ShadowTableComparingService shadowTableComparingService;
+    @Autowired
+    private StructureComparisonService structureComparisonService;
 
     @RequestMapping(value = "/shadowTableSyncs", method = RequestMethod.POST)
     public SuccessResponse<String> createShadowTableSync(@RequestBody ShadowTableSyncReq shadowTableSyncReq) {
@@ -62,5 +72,22 @@ public class SchemaSyncController {
     public ListResponse<TableComparing> skipTableComparing(@PathVariable Long id,
             @RequestBody SetSkippedReq setSkippedReq) {
         return Responses.list(shadowTableComparingService.setSkipTableComparing(id, setSkippedReq));
+    }
+
+    @RequestMapping(value = "/structureComparison/{id}", method = RequestMethod.GET)
+    public SuccessResponse<DBStructureComparisonResp> listStructureComparisonResult(@PathVariable Long id,
+            @RequestParam(required = false) OperationType operationType,
+            @RequestParam(required = false, name = "dbObjectName") String dbObjectName,
+            @PageableDefault(size = Integer.MAX_VALUE, sort = {"id"}, direction = Direction.DESC) Pageable pageable) {
+        return Responses
+                .success(structureComparisonService.getDBStructureComparisonResult(id, operationType, dbObjectName,
+                        pageable));
+    }
+
+    @RequestMapping(value = "/structureComparison/{id}/{structureComparisonId}", method = RequestMethod.GET)
+    public SuccessResponse<DBObjectStructureComparisonResp> getObjectStructureComparisonResult(@PathVariable Long id,
+            @PathVariable Long structureComparisonId) {
+        return Responses
+                .success(structureComparisonService.getDBObjectStructureComparisonResult(id, structureComparisonId));
     }
 }

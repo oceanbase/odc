@@ -55,7 +55,7 @@ public class RestrictIndexDataTypesFactory implements SqlCheckRuleFactory {
         } else {
             types = new HashSet<>((List<String>) parameters.get(key));
         }
-        return dialectType.isMysql() ? new MySQLRestrictIndexDataTypes(jdbc, types)
+        return (dialectType.isMysql() || dialectType.isDoris()) ? new MySQLRestrictIndexDataTypes(jdbc, types)
                 : new OracleRestrictIndexDataTypes(jdbc, types);
     }
 

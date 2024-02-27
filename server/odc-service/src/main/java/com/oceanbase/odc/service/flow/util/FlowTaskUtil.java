@@ -40,6 +40,7 @@ import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.connection.model.OBTenantEndpoint;
 import com.oceanbase.odc.service.connection.model.OceanBaseAccessMode;
 import com.oceanbase.odc.service.db.browser.DBSchemaAccessors;
+import com.oceanbase.odc.service.flow.task.model.DBStructureComparisonParameter;
 import com.oceanbase.odc.service.flow.task.model.DatabaseChangeParameters;
 import com.oceanbase.odc.service.flow.task.model.MockProperties;
 import com.oceanbase.odc.service.flow.task.model.OdcMockTaskConfig;
@@ -50,7 +51,8 @@ import com.oceanbase.odc.service.iam.model.User;
 import com.oceanbase.odc.service.integration.model.TemplateVariables;
 import com.oceanbase.odc.service.onlineschemachange.model.OnlineSchemaChangeParameters;
 import com.oceanbase.odc.service.partitionplan.model.PartitionPlanTaskParameters;
-import com.oceanbase.odc.service.permissionapply.project.ApplyProjectParameter;
+import com.oceanbase.odc.service.permission.database.model.ApplyDatabaseParameter;
+import com.oceanbase.odc.service.permission.project.ApplyProjectParameter;
 import com.oceanbase.odc.service.plugin.ConnectionPluginUtil;
 import com.oceanbase.odc.service.regulation.risklevel.model.RiskLevelDescriber;
 import com.oceanbase.odc.service.resultset.ResultSetExportTaskParameter;
@@ -77,6 +79,11 @@ public class FlowTaskUtil {
 
     public static void setParameters(@NonNull Map<String, Object> variables, @NonNull String parametersJson) {
         variables.put(RuntimeTaskConstants.PARAMETERS, parametersJson);
+    }
+
+    public static ApplyDatabaseParameter getApplyDatabaseParameter(@NonNull DelegateExecution execution) {
+        return internalGetParameter(execution, ApplyDatabaseParameter.class).orElseThrow(
+                () -> new VerifyException("ApplyDatabaseParameter is absent"));
     }
 
     public static ApplyProjectParameter getApplyProjectParameter(@NonNull DelegateExecution execution) {
@@ -124,6 +131,12 @@ public class FlowTaskUtil {
                 () -> new VerifyException("ResultSetExportTaskParameter is absent"));
     }
 
+    public static DBStructureComparisonParameter getDBStructureComparisonParameter(
+            @NonNull DelegateExecution execution) {
+        return internalGetParameter(execution, DBStructureComparisonParameter.class).orElseThrow(
+                () -> new VerifyException("DBStructureComparisonParameter is absent"));
+    }
+
     public static void setTaskSubmitter(@NonNull Map<String, Object> variables, ExecutorInfo submitter) {
         variables.put(RuntimeTaskConstants.TASK_SUBMITTER, submitter);
     }
@@ -141,6 +154,15 @@ public class FlowTaskUtil {
     public static User getTaskCreator(@NonNull DelegateExecution execution) {
         Object value = execution.getVariables().get(RuntimeTaskConstants.TASK_CREATOR);
         return internalGet(value, User.class).orElseThrow(() -> new VerifyException("Task creator is absent"));
+    }
+
+    public static void setOrganizationId(@NonNull Map<String, Object> variables, @NonNull Long organizationId) {
+        variables.put(RuntimeTaskConstants.TASK_ORGANIZATION_ID, organizationId);
+    }
+
+    public static Long getOrganizationId(@NonNull DelegateExecution execution) {
+        Object value = execution.getVariables().get(RuntimeTaskConstants.TASK_ORGANIZATION_ID);
+        return internalGet(value, Long.class).orElseThrow(() -> new VerifyException("Task organization id is absent"));
     }
 
     public static void setInterceptTaskId(@NonNull Map<String, Object> variables, @NonNull String interceptTaskId) {
@@ -323,7 +345,9 @@ public class FlowTaskUtil {
             }
             MockTaskConfig taskConfig = mapper.readValue(mapper.writeValueAsString(map), MockTaskConfig.class);
             taskConfig.setLogDir(taskId + "");
-            taskConfig.setDialectType(session.getDialectType().isMysql() ? ObModeType.OB_MYSQL : ObModeType.OB_ORACLE);
+            taskConfig.setDialectType(session.getDialectType().isMysql() || session.getDialectType().isDoris()
+                    ? ObModeType.OB_MYSQL
+                    : ObModeType.OB_ORACLE);
             List<MockTableConfig> tableConfigList = taskConfig.getTables();
             PreConditions.notEmpty(tableConfigList, "tasks"); // table config list can not be null or empty
 
@@ -383,6 +407,9 @@ public class FlowTaskUtil {
             dbConfig.setUser("\"" + uname + "\"");
             dbConfig.setDefaultSchame("\"" + getSchemaName(execution) + "\"");
         } else if (Objects.nonNull(config.getDialectType()) && config.getDialectType().isMysql()) {
+            dbConfig.setUser(config.getUsername());
+            dbConfig.setDefaultSchame(config.getDefaultSchema());
+        } else if (Objects.nonNull(config.getDialectType()) && config.getDialectType().isDoris()) {
             dbConfig.setUser(config.getUsername());
             dbConfig.setDefaultSchame(config.getDefaultSchema());
         }

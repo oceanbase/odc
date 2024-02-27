@@ -117,34 +117,53 @@ sqls:
       COLUMN_ID ASC
   list-table-indexes: |-
     SELECT
-      OWNER,
-      INDEX_NAME,
-      INDEX_TYPE,
-      TABLE_OWNER,
-      TABLE_NAME,
-      UNIQUENESS,
-      COMPRESSION,
-      VISIBILITY,
-      STATUS
+      IDX.OWNER,
+      IDX.TABLE_OWNER,
+      IDX.TABLE_NAME,
+      IDX.INDEX_NAME,
+      IDX_COL.COLUMN_NAME,
+      IDX_COL.COLUMN_POSITION,
+      IDX.INDEX_TYPE,
+      IDX.UNIQUENESS,
+      IDX.COMPRESSION,
+      IDX.VISIBILITY,
+      IDX.STATUS
     FROM
-      SYS.ALL_INDEXES
+      SYS.ALL_IND_COLUMNS IDX_COL 
+      LEFT JOIN 
+        SYS.ALL_INDEXES IDX ON IDX_COL.TABLE_OWNER = IDX.TABLE_OWNER 
+        AND IDX_COL.TABLE_NAME = IDX.TABLE_NAME 
+        AND IDX_COL.INDEX_NAME = IDX.INDEX_NAME
     WHERE
-      OWNER = ? AND TABLE_NAME = ?
+      IDX.TABLE_OWNER = ? AND IDX.TABLE_NAME = ?
     ORDER BY
-      INDEX_NAME ASC
-  list-index-columns: |-
+      IDX.INDEX_NAME,
+      IDX_COL.COLUMN_POSITION ASC
+  list-schema-index: |-
     SELECT
-      TABLE_OWNER,
-      TABLE_NAME,
-      COLUMN_POSITION,
-      COLUMN_NAME,
-      INDEX_NAME
+      IDX.OWNER,
+      IDX.TABLE_OWNER,
+      IDX.TABLE_NAME,
+      IDX.INDEX_NAME,
+      IDX_COL.COLUMN_NAME,
+      IDX_COL.COLUMN_POSITION,
+      IDX.INDEX_TYPE,
+      IDX.UNIQUENESS,
+      IDX.COMPRESSION,
+      IDX.VISIBILITY,
+      IDX.STATUS
     FROM
-      SYS.ALL_IND_COLUMNS
+      SYS.ALL_IND_COLUMNS IDX_COL 
+      LEFT JOIN 
+        SYS.ALL_INDEXES IDX ON IDX_COL.TABLE_OWNER = IDX.TABLE_OWNER 
+        AND IDX_COL.TABLE_NAME = IDX.TABLE_NAME 
+        AND IDX_COL.INDEX_NAME = IDX.INDEX_NAME
     WHERE
-      TABLE_OWNER = ? AND TABLE_NAME = ?
+      IDX.TABLE_OWNER = ?
     ORDER BY
-      COLUMN_POSITION ASC
+      IDX.TABLE_NAME,
+      IDX.INDEX_NAME,
+      IDX_COL.COLUMN_POSITION ASC
   list-table-constraints: |-
     SELECT
       t1.OWNER,
@@ -173,6 +192,35 @@ sqls:
     ORDER BY
       t1.CONSTRAINT_NAME,
       t2.position ASC
+  list-schema-constraints: |-
+    SELECT
+      t1.OWNER,
+      t1.CONSTRAINT_NAME,
+      t1.CONSTRAINT_TYPE,
+      t1.TABLE_NAME,
+      t1.SEARCH_CONDITION,
+      t1.R_OWNER,
+      t1.R_CONSTRAINT_NAME,
+      t1.DELETE_RULE,
+      t1.STATUS,
+      t1.DEFERRABLE,
+      t1.DEFERRED,
+      t1.VALIDATED,
+      t2.TABLE_NAME as R_TABLE_NAME,
+      t2.COLUMN_NAME as R_COLUMN_NAME,
+      t3.position as POSITION,
+      t3.COLUMN_NAME as COLUMN_NAME
+    FROM
+      SYS.ALL_CONSTRAINTS t1
+      JOIN SYS.ALL_CONS_COLUMNS t3 on t1.CONSTRAINT_NAME = t3.CONSTRAINT_NAME and t1.OWNER = t3.OWNER
+      LEFT JOIN SYS.ALL_CONS_COLUMNS t2 on t2.CONSTRAINT_NAME = t1.R_CONSTRAINT_NAME
+      AND t2.OWNER = t1.R_OWNER
+    WHERE
+      t1.OWNER = ?
+    ORDER BY
+      t1.TABLE_NAME,
+      t1.CONSTRAINT_NAME,
+      t2.position ASC
   get-partition-option: |-
     SELECT
       PARTITIONING_TYPE
@@ -193,3 +241,17 @@ sqls:
       AND TABLE_NAME = ?
     ORDER BY
       PARTITION_POSITION ASC
+  list-database: |-
+    select 
+      USERNAME, 
+      USERID 
+    from 
+      ALL_USERS
+  get-database: |-
+    SELECT 
+      USERNAME, 
+      USERID 
+    from 
+      SYS.ALL_USERS
+    WHERE
+      USERNAME = ?

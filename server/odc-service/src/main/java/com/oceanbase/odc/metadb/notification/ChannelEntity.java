@@ -18,6 +18,7 @@ package com.oceanbase.odc.metadb.notification;
 import java.util.Date;
 import java.util.List;
 
+import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
@@ -28,6 +29,8 @@ import javax.persistence.Id;
 import javax.persistence.OneToMany;
 import javax.persistence.Table;
 
+import org.hibernate.annotations.Fetch;
+import org.hibernate.annotations.FetchMode;
 import org.hibernate.annotations.Generated;
 import org.hibernate.annotations.GenerationTime;
 
@@ -58,11 +61,16 @@ public class ChannelEntity {
     private Long creatorId;
     @Column(name = "organization_id", nullable = false)
     private Long organizationId;
+    @Column(name = "project_id", nullable = false)
+    private Long projectId;
     @Column(name = "name", nullable = false)
     private String name;
     @Enumerated(EnumType.STRING)
     @Column(name = "type", nullable = false)
     private ChannelType type;
-    @OneToMany(mappedBy = "channel")
+    @OneToMany(mappedBy = "channel", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Fetch(FetchMode.SUBSELECT)
     List<ChannelPropertyEntity> properties;
+    @Column(name = "description")
+    private String description;
 }

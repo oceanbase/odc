@@ -16,12 +16,15 @@
 
 package com.oceanbase.odc.service.datatransfer;
 
+import static com.oceanbase.odc.service.datatransfer.task.DataTransferTask.OUTPUT_FILTER_FILES;
+
 import java.io.File;
 import java.io.IOException;
 
 import org.apache.commons.io.FileUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 
+import com.oceanbase.odc.plugin.task.api.datatransfer.dumper.ExportOutput;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferConfig;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferTaskResult;
 import com.oceanbase.odc.service.objectstorage.cloud.CloudObjectStorageService;
@@ -47,19 +50,21 @@ public class DefaultDataTransferAdapter implements DataTransferAdapter {
     @Override
     public void afterHandle(DataTransferConfig config, DataTransferTaskResult result, File exportFile)
             throws IOException {
-        if (!cloudObjectStorageService.supported()) {
-            return;
+        File dest = exportFile;
+        if (exportFile.isDirectory()) {
+            File workingDir = exportFile.getParentFile();
+            dest = new File(workingDir.getPath() + File.separator + workingDir.getName() + "_export_file.zip");
+            result.setExportZipFilePath(dest.getName());
+            new ExportOutput(exportFile).toZip(dest, file -> !OUTPUT_FILTER_FILES.contains(file.getFileName()));
+            FileUtils.deleteQuietly(exportFile);
         }
-        try {
-            String objectName = cloudObjectStorageService.uploadTemp(exportFile.getName(), exportFile);
+        result.setExportZipFilePath(dest.getName());
+
+        if (cloudObjectStorageService.supported()) {
+            String objectName = cloudObjectStorageService.uploadTemp(dest.getName(), dest);
             log.info("Upload the data file to the oss successfully, objectName={}", objectName);
+            FileUtils.deleteQuietly(dest);
             result.setExportZipFilePath(objectName);
-        } finally {
-            /**
-             * 公有云模式下本地导出文件和目录都不必要保存，直接删除
-             */
-            boolean deleteRes = FileUtils.deleteQuietly(exportFile);
-            log.info("Temporary data file deleted, filePath={}, result={}", exportFile.getName(), deleteRes);
         }
     }
 

@@ -16,19 +16,19 @@
 package com.oceanbase.odc.service.integration;
 
 import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
 
-import org.apache.http.HttpEntity;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.config.RequestConfig;
-import org.apache.http.client.entity.EntityBuilder;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.client.methods.RequestBuilder;
+import org.apache.http.entity.StringEntity;
 import org.apache.http.message.BasicNameValuePair;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -105,8 +105,8 @@ public class HttpOperationService {
             if (type == BodyType.RAW) {
                 String json = variables.process((String) body.getContent());
                 String encryptedBody = EncryptionUtil.encrypt(json, encryption);
-                HttpEntity entity = EntityBuilder.create().setText(encryptedBody).build();
-                builder.setEntity(entity);
+                StringEntity stringEntity = new StringEntity(encryptedBody, StandardCharsets.UTF_8);
+                builder.setEntity(stringEntity);
             } else if (type == BodyType.FORM_DATA) {
                 Map<String, Object> formData = (Map<String, Object>) body.getContent();
                 List<NameValuePair> paramList = new ArrayList<>();

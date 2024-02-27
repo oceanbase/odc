@@ -42,7 +42,7 @@ public class RestrictPKAutoIncrementFactory implements SqlCheckRuleFactory {
 
     @Override
     public SqlCheckRule generate(@NonNull DialectType dialectType, Map<String, Object> parameters) {
-        return dialectType.isMysql() ? new MySQLRestrictPKAutoIncrement(this.jdbc) : null;
+        return (dialectType.isMysql() || dialectType.isDoris()) ? new MySQLRestrictPKAutoIncrement(this.jdbc) : null;
     }
 
 }

@@ -64,6 +64,7 @@ import com.oceanbase.tools.dbbrowser.model.DBProcedure;
 import com.oceanbase.tools.dbbrowser.model.DBSequence;
 import com.oceanbase.tools.dbbrowser.model.DBSynonym;
 import com.oceanbase.tools.dbbrowser.model.DBSynonymType;
+import com.oceanbase.tools.dbbrowser.model.DBTable;
 import com.oceanbase.tools.dbbrowser.model.DBTable.DBTableOptions;
 import com.oceanbase.tools.dbbrowser.model.DBTableColumn;
 import com.oceanbase.tools.dbbrowser.model.DBTableColumn.KeyType;
@@ -213,14 +214,7 @@ public class MySQLNoGreaterThan5740SchemaAccessor implements DBSchemaAccessor {
 
     @Override
     public List<DBObjectIdentity> listTables(String schemaName, String tableNameLike) {
-        List<DBObjectIdentity> results = new ArrayList<>();
-        try {
-            results.addAll(listBaseTables(schemaName, tableNameLike));
-        } catch (Exception e) {
-            log.warn("List base tables failed, reason={}", e.getMessage());
-        }
-
-        return results;
+        return listBaseTables(schemaName, tableNameLike);
     }
 
     protected List<DBObjectIdentity> listBaseTables(String schemaName, String tableNameLike)
@@ -849,6 +843,9 @@ public class MySQLNoGreaterThan5740SchemaAccessor implements DBSchemaAccessor {
         DBTablePartition partition = new DBTablePartition();
         DBTablePartition subPartition = new DBTablePartition();
         partition.setSubpartition(subPartition);
+        partition.setSchemaName(schemaName);
+        partition.setTableName(tableName);
+        subPartition.setSchemaName(schemaName);
 
         DBTablePartitionOption partitionOption = new DBTablePartitionOption();
         partitionOption.setType(DBTablePartitionType.NOT_PARTITIONED);
@@ -1250,5 +1247,36 @@ public class MySQLNoGreaterThan5740SchemaAccessor implements DBSchemaAccessor {
     @Override
     public DBSynonym getSynonym(String schemaName, String synonymName, DBSynonymType synonymType) {
         throw new UnsupportedOperationException("Not supported yet");
+    }
+
+    @Override
+    public Map<String, DBTable> getTables(@NonNull String schemaName, List<String> tableNames) {
+        // TODO: Only query the table information of tableNames passed upstream
+        Map<String, DBTable> returnVal = new HashMap<>();
+        tableNames = showTables(schemaName);
+        if (tableNames.isEmpty()) {
+            return returnVal;
+        }
+        Map<String, List<DBTableColumn>> tableName2Columns = listTableColumns(schemaName);
+        Map<String, List<DBTableIndex>> tableName2Indexes = listTableIndexes(schemaName);
+        Map<String, List<DBTableConstraint>> tableName2Constraints = listTableConstraints(schemaName);
+        Map<String, DBTableOptions> tableName2Options = listTableOptions(schemaName);
+        for (String tableName : tableNames) {
+            if (!tableName2Columns.containsKey(tableName)) {
+                continue;
+            }
+            DBTable table = new DBTable();
+            table.setSchemaName(schemaName);
+            table.setOwner(schemaName);
+            table.setName(tableName);
+            table.setColumns(tableName2Columns.getOrDefault(tableName, new ArrayList<>()));
+            table.setIndexes(tableName2Indexes.getOrDefault(tableName, new ArrayList<>()));
+            table.setConstraints(tableName2Constraints.getOrDefault(tableName, new ArrayList<>()));
+            table.setTableOptions(tableName2Options.getOrDefault(tableName, new DBTableOptions()));
+            table.setPartition(getPartition(schemaName, tableName));
+            table.setDDL(getTableDDL(schemaName, tableName));
+            returnVal.put(tableName, table);
+        }
+        return returnVal;
     }
 }

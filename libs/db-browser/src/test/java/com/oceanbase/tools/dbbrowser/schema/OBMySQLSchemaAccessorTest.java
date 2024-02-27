@@ -37,6 +37,7 @@ import com.oceanbase.tools.dbbrowser.model.DBObjectIdentity;
 import com.oceanbase.tools.dbbrowser.model.DBObjectType;
 import com.oceanbase.tools.dbbrowser.model.DBPLObjectIdentity;
 import com.oceanbase.tools.dbbrowser.model.DBProcedure;
+import com.oceanbase.tools.dbbrowser.model.DBTable;
 import com.oceanbase.tools.dbbrowser.model.DBTable.DBTableOptions;
 import com.oceanbase.tools.dbbrowser.model.DBTableColumn;
 import com.oceanbase.tools.dbbrowser.model.DBTableConstraint;
@@ -268,8 +269,20 @@ public class OBMySQLSchemaAccessorTest extends BaseTestEnv {
     }
 
     @Test
-    public void showTablelike_Success() {
+    public void listTables_Success() {
         List<DBObjectIdentity> tables = accessor.listTables(getOBMySQLDataBaseName(), null);
+        Assert.assertTrue(tables != null && tables.size() > 0);
+    }
+
+    @Test
+    public void listTables_inOceanbaseSchema_Success() {
+        List<DBObjectIdentity> tables = accessor.listTables("oceanbase", "job");
+        Assert.assertTrue(tables != null && tables.size() > 0);
+    }
+
+    @Test
+    public void listTables_inMySQLSchema_Success() {
+        List<DBObjectIdentity> tables = accessor.listTables("mysql", "time");
         Assert.assertTrue(tables != null && tables.size() > 0);
     }
 
@@ -377,6 +390,12 @@ public class OBMySQLSchemaAccessorTest extends BaseTestEnv {
     public void listTableColumns_test_in_mysql_schema_view_as_base_table_Success() {
         List<DBTableColumn> columns = accessor.listTableColumns("mysql", "time_zone_transition");
         Assert.assertEquals(3, columns.size());
+    }
+
+    @Test
+    public void getTables_success() {
+        Map<String, DBTable> tables = accessor.getTables(getOBMySQLDataBaseName(), null);
+        Assert.assertTrue(tables.size() > 0);
     }
 
     private static void initVerifyColumnAttributes() {

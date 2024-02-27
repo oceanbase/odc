@@ -43,13 +43,10 @@ public class TestDBConfigurations {
     private static final String TEST_OB_MYSQL_DATABASE_NAME = IsolatedNameGenerator.generateLowerCase("ODC");
     private static final String TEST_OB_ORACLE_DATABASE_NAME = IsolatedNameGenerator.generateUpperCase("ODC");
     private static final String TEST_MYSQL_DATABASE_NAME = IsolatedNameGenerator.generateUpperCase("ODC");
+    private static final String TEST_DORIS_DATABASE_NAME = IsolatedNameGenerator.generateUpperCase("ODC");
+    private static final String TEST_ORACLE_DATABASE_NAME = IsolatedNameGenerator.generateUpperCase("ODC");
 
     private TestDBConfigurations() {
-        for (TestDBType type : TestDBType.values()) {
-            connectType2ConfigurationMap.put(type, new TestDBConfiguration(getTestDBProperties(type)));
-        }
-        dropTestDatabases();
-        createTestDatabasesAndUpdateConfig();
         Thread shutdownHookThread = new Thread(this::expireResources);
         shutdownHookThread.setDaemon(true);
         shutdownHookThread.setName("thread-odc-unit-test-shutdown-hook");
@@ -69,114 +66,130 @@ public class TestDBConfigurations {
     }
 
     public TestDBConfiguration getTestOBMysqlConfiguration() {
-        return connectType2ConfigurationMap.get(TestDBType.OB_MYSQL);
+        return getTestDBConfiguration(TestDBType.OB_MYSQL);
     }
 
     public TestDBConfiguration getTestOBOracleConfiguration() {
-        return connectType2ConfigurationMap.get(TestDBType.OB_ORACLE);
+        return getTestDBConfiguration(TestDBType.OB_ORACLE);
     }
 
     public TestDBConfiguration getTestMysqlConfiguration() {
-        return connectType2ConfigurationMap.get(TestDBType.MYSQL);
+        return getTestDBConfiguration(TestDBType.MYSQL);
     }
 
-    private Properties getTestDBProperties(TestDBType type) {
-        Properties properties = new Properties();
-        properties.setProperty(TestDBConfiguration.DB_COMMANDLINE_KEY, TestProperties.getProperty(type.commandlineKey));
-        String sysUserNameKey = TestProperties.getProperty(type.sysUserNameKey);
-        if (sysUserNameKey != null) {
-            properties.setProperty(TestDBConfiguration.DB_SYS_USERNAME_KEY, sysUserNameKey);
+    public TestDBConfiguration getTestDorisConfiguration() {
+        return getTestDBConfiguration(TestDBType.DORIS);
+    }
+
+    public TestDBConfiguration getTestOracleConfiguration() {
+        return getTestDBConfiguration(TestDBType.ORACLE);
+    }
+
+    private TestDBConfiguration getTestDBConfiguration(TestDBType type) {
+        if (!connectType2ConfigurationMap.containsKey(type)) {
+            TestDBConfiguration configuration = new TestDBConfiguration(getTestDBProperties(type));
+            dropTestDatabases(type, configuration);
+            createTestDatabasesAndUpdateConfig(type, configuration);
+            connectType2ConfigurationMap.put(type, configuration);
         }
-        String sysUserPasswordKey = TestProperties.getProperty(type.sysUserPasswordKey);
-        if (sysUserPasswordKey != null) {
-            properties.setProperty(TestDBConfiguration.DB_SYS_PASSWORD_KEY, sysUserPasswordKey);
+        return connectType2ConfigurationMap.get(type);
+    }
+
+    private void createTestDatabasesAndUpdateConfig(TestDBType type, TestDBConfiguration configuration) {
+        try (Connection conn = configuration.getDataSource().getConnection(); Statement stmt = conn.createStatement()) {
+            if (type == TestDBType.OB_MYSQL) {
+                String database = TEST_OB_MYSQL_DATABASE_NAME;
+                String sql = String.format("CREATE DATABASE %s;", database);
+                stmt.executeUpdate(sql);
+                log.info("create test database for OB mysql mode, database name: {}", database);
+                configuration.setDefaultDBName(database);
+                DataSource newSource = createNewDataSource(configuration);
+                configuration.setDataSource(newSource);
+            } else if (type == TestDBType.OB_ORACLE) {
+                String username = TEST_OB_ORACLE_DATABASE_NAME;
+                StringBuilder sql = new StringBuilder("CREATE USER " + username);
+                if (StringUtils.isNotEmpty(configuration.getPassword())) {
+                    sql.append(" IDENTIFIED BY \"").append(configuration.getPassword()).append("\"");
+                }
+                sql.append(";");
+                stmt.executeUpdate(sql.toString());
+                log.info("create test user for OB oracle mode, username: {}", username);
+                sql = new StringBuilder("GRANT ALL PRIVILEGES TO ").append(username).append(";");
+                stmt.executeUpdate(sql.toString());
+                sql = new StringBuilder("GRANT SELECT ANY DICTIONARY TO ").append(username).append(";");
+                stmt.execute(sql.toString());
+                log.info("grant all privileges to new created user, username: {}", username);
+                configuration.setDefaultDBName(username);
+                configuration.setUsername(username);
+                DataSource newSource = createNewDataSource(configuration);
+                configuration.setDataSource(newSource);
+            } else if (type == TestDBType.MYSQL) {
+                String database = TEST_MYSQL_DATABASE_NAME;
+                String sql = String.format("CREATE DATABASE %s;", database);
+                stmt.executeUpdate(sql);
+                log.info("create test database for mysql, database name: {}", database);
+                configuration.setDefaultDBName(database);
+                DataSource newSource = createNewDataSource(configuration);
+                configuration.setDataSource(newSource);
+            } else if (type == TestDBType.DORIS) {
+                String database = TEST_DORIS_DATABASE_NAME;
+                String sql = String.format("CREATE DATABASE %s;", database);
+                stmt.executeUpdate(sql);
+                log.info("create test database for doris, database name: {}", database);
+                configuration.setDefaultDBName(database);
+                DataSource newSource = createNewDataSource(configuration);
+                configuration.setDataSource(newSource);
+            } else if (type == TestDBType.ORACLE) {
+                String username = TEST_ORACLE_DATABASE_NAME;
+                StringBuilder sql = new StringBuilder("CREATE USER " + username);
+                if (StringUtils.isNotEmpty(configuration.getPassword())) {
+                    sql.append(" IDENTIFIED BY \"").append(configuration.getPassword()).append("\"");
+                }
+                stmt.executeUpdate(sql.toString());
+                log.info("create test user for oracle, username: {}", username);
+                sql = new StringBuilder("GRANT SYSDBA, RESOURCE, CREATE SESSION TO ").append(username);
+                stmt.execute(sql.toString());
+                log.info("grant sysdba to new created user, username: {}", username);
+                configuration.setDefaultDBName(username);
+                configuration.setUsername(username);
+            }
+        } catch (Exception e) {
+            log.error("create test database/user failed, connectType={}", type, e);
+            throw new RuntimeException("create test database/user failed", e);
         }
-        properties.setProperty(TestDBConfiguration.DB_TYPE_KEY, type.toString());
-        return properties;
     }
 
-    private void expireResources() {
-        dropTestDatabases();
-        connectType2ConfigurationMap.forEach((k, v) -> {
-            if (Objects.nonNull(v) && Objects.nonNull(v.getDataSource())) {
-                DruidDataSource datasource = (DruidDataSource) v.getDataSource();
-                datasource.close();
+    private void dropTestDatabases(TestDBType type, TestDBConfiguration configuration) {
+        try (Connection conn = configuration.getDataSource().getConnection(); Statement stmt = conn.createStatement()) {
+            if (type == TestDBType.OB_MYSQL) {
+                String database = TEST_OB_MYSQL_DATABASE_NAME;
+                String sql = String.format("DROP DATABASE IF EXISTS %s;", database);
+                stmt.executeUpdate(sql);
+                log.info("drop test database for OB mysql mode, database name: {}", database);
+            } else if (type == TestDBType.OB_ORACLE) {
+                String username = TEST_OB_ORACLE_DATABASE_NAME;
+                String sql = String.format("DROP USER %s CASCADE;", username);
+                stmt.executeUpdate(sql);
+                log.info("drop test user for OB oracle mode, username: {}", username);
+            } else if (type == TestDBType.MYSQL) {
+                String database = TEST_MYSQL_DATABASE_NAME;
+                String sql = String.format("DROP DATABASE IF EXISTS %s;", database);
+                stmt.executeUpdate(sql);
+                log.info("drop test database for mysql, database name: {}", database);
+            } else if (type == TestDBType.ORACLE) {
+                String username = TEST_ORACLE_DATABASE_NAME;
+                String sql = String.format("DROP USER %s CASCADE", username);
+                stmt.executeUpdate(sql);
+                log.info("drop test user for oracle, username: {}", username);
+            } else if (type == TestDBType.DORIS) {
+                String database = TEST_DORIS_DATABASE_NAME;
+                String sql = String.format("DROP DATABASE IF EXISTS %s;", database);
+                stmt.executeUpdate(sql);
+                log.info("drop test database for doris, database name: {}", database);
             }
-        });
-    }
-
-    private void createTestDatabasesAndUpdateConfig() {
-        log.info("create test database/user start");
-        connectType2ConfigurationMap.forEach((k, v) -> {
-            try (Connection conn = v.getDataSource().getConnection(); Statement stmt = conn.createStatement()) {
-                if (k == TestDBType.OB_MYSQL) {
-                    String database = TEST_OB_MYSQL_DATABASE_NAME;
-                    String sql = String.format("CREATE DATABASE %s;", database);
-                    stmt.executeUpdate(sql);
-                    log.info("create test database for OB mysql mode, database name: {}", database);
-                    v.setDefaultDBName(database);
-                    DataSource newSource = createNewDataSource(v);
-                    v.setDataSource(newSource);
-                } else if (k == TestDBType.OB_ORACLE) {
-                    String username = TEST_OB_ORACLE_DATABASE_NAME;
-                    StringBuilder sql = new StringBuilder("CREATE USER " + username);
-                    if (StringUtils.isNotEmpty(v.getPassword())) {
-                        sql.append(" IDENTIFIED BY \"").append(v.getPassword()).append("\"");
-                    }
-                    sql.append(";");
-                    stmt.executeUpdate(sql.toString());
-                    log.info("create test user for OB oracle mode, username: {}", username);
-                    sql = new StringBuilder("GRANT ALL PRIVILEGES TO ").append(username).append(";");
-                    stmt.executeUpdate(sql.toString());
-                    sql = new StringBuilder("GRANT SELECT ANY DICTIONARY TO ").append(username).append(";");
-                    stmt.execute(sql.toString());
-                    log.info("grant all privileges to new created user, username: {}", username);
-                    v.setDefaultDBName(username);
-                    v.setUsername(username);
-                    DataSource newSource = createNewDataSource(v);
-                    v.setDataSource(newSource);
-                } else if (k == TestDBType.MYSQL) {
-                    String database = TEST_MYSQL_DATABASE_NAME;
-                    String sql = String.format("CREATE DATABASE %s;", database);
-                    stmt.executeUpdate(sql);
-                    log.info("create test database for mysql mode, database name: {}", database);
-                    v.setDefaultDBName(database);
-                    DataSource newSource = createNewDataSource(v);
-                    v.setDataSource(newSource);
-                }
-            } catch (Exception e) {
-                log.error("create test database/user failed, connectType={}", k, e);
-                throw new RuntimeException("create test database/user failed", e);
-            }
-        });
-        log.info("create test database/user done");
-    }
-
-    private void dropTestDatabases() {
-        log.info("drop test database/user start");
-        connectType2ConfigurationMap.forEach((k, v) -> {
-            try (Connection conn = v.getDataSource().getConnection(); Statement stmt = conn.createStatement()) {
-                if (k == TestDBType.OB_MYSQL) {
-                    String database = TEST_OB_MYSQL_DATABASE_NAME;
-                    String sql = String.format("DROP DATABASE IF EXISTS %s;", database);
-                    stmt.executeUpdate(sql);
-                    log.info("drop test database for OB mysql mode, database name: {}", database);
-                } else if (k == TestDBType.OB_ORACLE) {
-                    String username = TEST_OB_ORACLE_DATABASE_NAME;
-                    String sql = String.format("DROP USER %s CASCADE;", username);
-                    stmt.executeUpdate(sql);
-                    log.info("drop test user for OB oracle mode, username: {}", username);
-                } else if (k == TestDBType.MYSQL) {
-                    String database = TEST_MYSQL_DATABASE_NAME;
-                    String sql = String.format("DROP DATABASE IF EXISTS %s;", database);
-                    stmt.executeUpdate(sql);
-                    log.info("drop test database for mysql mode, database name: {}", database);
-                }
-            } catch (Exception e) {
-                log.warn("drop test database/user failed, may the user is not exists, connectType={}", k);
-            }
-        });
-        log.info("drop test database/user done");
+        } catch (Exception e) {
+            log.warn("drop test database/user failed, may the database/user is not exists, connectType={}", type);
+        }
     }
 
     private DataSource createNewDataSource(TestDBConfiguration config) {
@@ -190,7 +203,9 @@ public class TestDBConfigurations {
         dataSource.setUrl(jdbcUrl);
         dataSource.setUsername(username);
         dataSource.setPassword(password);
-        String validationQuery = config.getType() == TestDBType.OB_MYSQL ? "select 1" : "select 1 from dual";
+        String validationQuery =
+                config.getType() == TestDBType.OB_MYSQL || config.getType() == TestDBType.DORIS ? "select 1"
+                        : "select 1 from dual";
         dataSource.setValidationQuery(validationQuery);
         dataSource.setTestWhileIdle(true);
         dataSource.setTimeBetweenEvictionRunsMillis(30000);
@@ -198,6 +213,50 @@ public class TestDBConfigurations {
         dataSource.setMaxActive(5);
         dataSource.setInitialSize(2);
         return dataSource;
+    }
+
+    private void expireResources() {
+        connectType2ConfigurationMap.forEach(this::dropTestDatabases);
+        connectType2ConfigurationMap.forEach((k, v) -> {
+            if (Objects.nonNull(v) && Objects.nonNull(v.getDataSource())) {
+                DruidDataSource datasource = (DruidDataSource) v.getDataSource();
+                datasource.close();
+            }
+        });
+    }
+
+    private Properties getTestDBProperties(TestDBType type) {
+        Properties properties = new Properties();
+        properties.setProperty(TestDBConfiguration.DB_TYPE_KEY, type.toString());
+        if (TestDBType.ORACLE.name().equals(type.toString())) {
+            properties.setProperty(TestDBConfiguration.DB_ORACLE_HOST_KEY,
+                    TestProperties.getProperty(type.commandlineKey[0]));
+            properties.setProperty(TestDBConfiguration.DB_ORACLE_PORT_KEY,
+                    TestProperties.getProperty(type.commandlineKey[1]));
+            properties.setProperty(TestDBConfiguration.DB_ORACLE_USER_KEY,
+                    TestProperties.getProperty(type.commandlineKey[2]));
+            properties.setProperty(TestDBConfiguration.DB_ORACLE_PASSWORD_KEY,
+                    TestProperties.getProperty(type.commandlineKey[3]));
+            properties.setProperty(TestDBConfiguration.DB_ORACLE_SID_KEY,
+                    TestProperties.getProperty(type.commandlineKey[4]));
+            properties.setProperty(TestDBConfiguration.DB_ORACLE_SERVICE_NAME_KEY,
+                    TestProperties.getProperty(type.commandlineKey[5]));
+            properties.setProperty(TestDBConfiguration.DB_ORACLE_ROLE_KEY,
+                    TestProperties.getProperty(type.commandlineKey[6]));
+            properties.setProperty(TestDBConfiguration.DB_ORACLE_OWNER_KEY, TEST_ORACLE_DATABASE_NAME);
+        } else {
+            properties.setProperty(TestDBConfiguration.DB_COMMANDLINE_KEY,
+                    TestProperties.getProperty(type.commandlineKey[0]));
+            String sysUserNameKey = TestProperties.getProperty(type.sysUserNameKey);
+            if (sysUserNameKey != null) {
+                properties.setProperty(TestDBConfiguration.DB_SYS_USERNAME_KEY, sysUserNameKey);
+            }
+            String sysUserPasswordKey = TestProperties.getProperty(type.sysUserPasswordKey);
+            if (sysUserPasswordKey != null) {
+                properties.setProperty(TestDBConfiguration.DB_SYS_PASSWORD_KEY, sysUserPasswordKey);
+            }
+        }
+        return properties;
     }
 
 }

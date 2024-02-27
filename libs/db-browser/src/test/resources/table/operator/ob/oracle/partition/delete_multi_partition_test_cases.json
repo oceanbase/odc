@@ -1,0 +1,34 @@
+[
+  {
+    "id": 1,
+    "name": "case1",
+    "description": "新增一个分区",
+    "input": {
+      "current": {
+        "schemaName": "schema",
+        "tableName": "table",
+        "partitionOption": {
+          "type": "RANGE",
+          "expression": "col1"
+        },
+        "partitionDefinitions": [
+          {
+            "name": "p1",
+            "ordinalPosition": 1,
+            "maxValues": [
+              "1000"
+            ]
+          },
+          {
+            "name": "p2",
+            "ordinalPosition": null,
+            "maxValues": [
+              "2000"
+            ]
+          }
+        ]
+      }
+    },
+    "output": "ALTER TABLE schema.table DROP PARTITION (p1, p2);\n"
+  }
+]

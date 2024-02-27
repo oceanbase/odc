@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 import org.springframework.jdbc.core.JdbcOperations;
@@ -88,7 +89,9 @@ public class OBMySQLBetween2277And3XSchemaAccessor extends OBMySQLSchemaAccessor
     protected void fillIndexRange(List<DBTableIndex> indexList, String schemaName,
             String tableName) {
         setIndexRangeByDDL(indexList, schemaName, tableName);
-        setIndexRangeByQuery(indexList, schemaName, tableName);
+        if (indexList.stream().anyMatch(idx -> Objects.isNull(idx.getGlobal()))) {
+            setIndexRangeByQuery(indexList, schemaName, tableName);
+        }
     }
 
     protected void setIndexRangeByQuery(List<DBTableIndex> indexList, String schemaName, String tableName) {
@@ -137,6 +140,9 @@ public class OBMySQLBetween2277And3XSchemaAccessor extends OBMySQLSchemaAccessor
         DBTablePartitionOption partitionOption = new DBTablePartitionOption();
         partitionOption.setType(DBTablePartitionType.NOT_PARTITIONED);
         partition.setPartitionOption(partitionOption);
+        partition.setSchemaName(schemaName);
+        partition.setTableName(tableName);
+        subPartition.setSchemaName(schemaName);
 
         DBTablePartitionOption subPartitionOption = new DBTablePartitionOption();
         subPartitionOption.setType(DBTablePartitionType.NOT_PARTITIONED);
