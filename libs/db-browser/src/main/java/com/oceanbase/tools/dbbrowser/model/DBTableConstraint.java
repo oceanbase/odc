@@ -26,7 +26,7 @@ import lombok.EqualsAndHashCode;
 
 @Data
 @EqualsAndHashCode(
-        exclude = {"name", "warning", "schemaName", "tableName", "createTime", "updateTime", "ordinalPosition",
+        exclude = {"name", "warning", "schemaName", "owner", "tableName", "createTime", "updateTime", "ordinalPosition",
                 "enabled"})
 public class DBTableConstraint implements DBObject, DBObjectWarningDescriptor {
     /**

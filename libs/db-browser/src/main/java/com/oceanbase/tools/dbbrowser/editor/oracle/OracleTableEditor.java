@@ -73,7 +73,7 @@ public class OracleTableEditor extends DBTableEditor {
     }
 
     @Override
-    protected void generateUpdateTableOptionDDL(DBTable oldTable, DBTable newTable, SqlBuilder sqlBuilder) {
+    public void generateUpdateTableOptionDDL(DBTable oldTable, DBTable newTable, SqlBuilder sqlBuilder) {
         if (!StringUtils.equals(oldTable.getTableOptions().getComment(), newTable.getTableOptions().getComment())) {
             appendTableComment(newTable, sqlBuilder);
         }
@@ -85,7 +85,7 @@ public class OracleTableEditor extends DBTableEditor {
         sqlBuilder.append(super.generateCreateObjectDDL(table));
         if (CollectionUtils.isNotEmpty(excludePrimaryKeyIndex(table.getIndexes(), table.getConstraints()))) {
             for (DBTableIndex index : table.getIndexes()) {
-                sqlBuilder.append(indexEditor.generateCreateObjectDDL(index)).append(";").line();
+                sqlBuilder.append(indexEditor.generateCreateObjectDDL(index));
             }
         }
         return sqlBuilder.toString();

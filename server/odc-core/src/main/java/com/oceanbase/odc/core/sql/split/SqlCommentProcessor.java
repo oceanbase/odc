@@ -165,6 +165,8 @@ public class SqlCommentProcessor {
                     addLineMysql(offsetStrings, buffer, bufferOrder, item);
                 } else if (Objects.nonNull(this.dialectType) && this.dialectType.isOracle()) {
                     addLineOracle(offsetStrings, buffer, bufferOrder, item);
+                } else if (Objects.nonNull(this.dialectType) && this.dialectType.isDoris()) {
+                    addLineMysql(offsetStrings, buffer, bufferOrder, item);
                 } else {
                     throw new IllegalArgumentException("dialect type is illegal");
                 }
@@ -789,6 +791,10 @@ public class SqlCommentProcessor {
                                 .collect(Collectors.toList()));
                     } else if (processor.dialectType.isOracle()) {
                         processor.addLineOracle(holder, buffer, bufferOrder, line.chars()
+                                .mapToObj(c -> new OrderChar((char) c, lastLineOrder++))
+                                .collect(Collectors.toList()));
+                    } else if (processor.dialectType.isDoris()) {
+                        processor.addLineMysql(holder, buffer, bufferOrder, line.chars()
                                 .mapToObj(c -> new OrderChar((char) c, lastLineOrder++))
                                 .collect(Collectors.toList()));
                     }

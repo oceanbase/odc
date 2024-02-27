@@ -140,14 +140,10 @@ public class DataArchiveJob extends AbstractDlmJob {
         DefaultConnectSessionFactory sourceConnectionSessionFactory =
                 new DefaultConnectSessionFactory(dlmTask.getSourceDs());
         ConnectionSession srcSession = sourceConnectionSessionFactory.generateSession();
-        JdbcOperations jdbcOperations = srcSession.getSyncJdbcExecutor(ConnectionSessionConstants.CONSOLE_DS_KEY);
         String tableDDL;
         try {
-            SqlRowSet sqlRowSet =
-                    jdbcOperations.queryForRowSet(getCreateTableDDL(dlmTask.getSourceDs().getDefaultSchema(),
-                            dlmTask.getTableName(), dlmTask.getSourceDs()
-                                    .getDialectType()));
-            tableDDL = sqlRowSet.getString(2);
+            DBSchemaAccessor sourceDsAccessor = DBSchemaAccessors.create(srcSession);
+            tableDDL = sourceDsAccessor.getTableDDL(dlmTask.getSourceDs().getDefaultSchema(), dlmTask.getTableName());
         } finally {
             srcSession.expire();
         }
@@ -167,15 +163,6 @@ public class DataArchiveJob extends AbstractDlmJob {
         } finally {
             targetSession.expire();
         }
-    }
-
-    private String getCreateTableDDL(String schemaName, String tableName, DialectType dbType) {
-        SqlBuilder sb = dbType.isOracle() ? new OracleSqlBuilder() : new MySQLSqlBuilder();
-        sb.append("SHOW CREATE TABLE ");
-        sb.identifier(schemaName);
-        sb.append(".");
-        sb.identifier(tableName);
-        return sb.toString();
     }
 
 }

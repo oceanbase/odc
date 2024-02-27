@@ -18,9 +18,6 @@ package com.oceanbase.odc.metadb.config;
 import java.util.Date;
 
 import javax.validation.constraints.NotBlank;
-import javax.validation.constraints.NotNull;
-
-import org.apache.commons.lang.Validate;
 
 import lombok.Data;
 
@@ -31,17 +28,6 @@ import lombok.Data;
  */
 @Data
 public class ConfigEntity {
-    /**
-     * Unique id for each line of configuration
-     */
-    @NotNull
-    private long id;
-
-    /**
-     * Label of this configuration
-     */
-    private String label;
-
     /**
      * configuration key
      */
@@ -68,23 +54,4 @@ public class ConfigEntity {
      */
     private String description;
 
-    /**
-     * Configs creator's user ID
-     */
-    private long creatorId;
-
-    /**
-     * Last modifier's user ID
-     */
-    private long lastModifierId;
-
-    public ConfigEntity() {}
-
-    public ConfigEntity(String key, Object value, String description) {
-        Validate.notNull(key, "Key for ConfigEntity can not be null");
-        Validate.notNull(value, "Value for ConfigEntity can not be null");
-        this.key = key;
-        this.value = value.toString();
-        this.description = description;
-    }
 }

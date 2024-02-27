@@ -35,6 +35,7 @@ import com.oceanbase.odc.service.sqlcheck.rule.ColumnCharsetExists;
 import com.oceanbase.odc.service.sqlcheck.rule.ColumnCollationExists;
 import com.oceanbase.odc.service.sqlcheck.rule.ColumnNameInBlackList;
 import com.oceanbase.odc.service.sqlcheck.rule.ForeignConstraintExists;
+import com.oceanbase.odc.service.sqlcheck.rule.IndexChangeTimeConsumingExists;
 import com.oceanbase.odc.service.sqlcheck.rule.MySQLColumnCalculation;
 import com.oceanbase.odc.service.sqlcheck.rule.MySQLLeftFuzzyMatch;
 import com.oceanbase.odc.service.sqlcheck.rule.MySQLMissingRequiredColumns;
@@ -1299,6 +1300,20 @@ public class MySQLCheckerTest {
         List<CheckViolation> expect = Collections.singletonList(c1);
         Assert.assertEquals(expect, actual);
     }
+
+    @Test
+    public void check_timeConsumingIndexChangeExists_violationGenerated() {
+        String sql = "alter table tab add unique index uq_idx(c1)";
+        SqlChecker sqlChecker = new DefaultSqlChecker(DialectType.OB_MYSQL, ";",
+                Collections.singletonList(new IndexChangeTimeConsumingExists()));
+        List<CheckViolation> actual = sqlChecker.check(sql);
+
+        CheckViolation c = new CheckViolation(sql, 1, 0, 0, 42,
+                SqlCheckRuleType.INDEX_CHANGE_TIME_CONSUMING_EXISTS, 0, new Object[] {});
+        List<CheckViolation> expect = Collections.singletonList(c);
+        Assert.assertEquals(expect, actual);
+    }
+
 
     private String joinAndAppend(String[] sqls, String delimiter) {
         return String.join(delimiter, sqls) + delimiter;

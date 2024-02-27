@@ -133,7 +133,6 @@ public class PreCheckRuntimeFlowableTaskCopied extends BaseODCFlowTaskDelegate<V
             Long jobId = jobScheduler.scheduleJobNow(jobDefinition);
             taskService.updateJobId(this.preCheckTaskId, jobId);
             try {
-                // Pre-check task has no timeout yet, set to max value (about 24 days)
                 jobScheduler.await(jobId, preCheckTaskProperties.getExecutionTimeoutMillis(), TimeUnit.MILLISECONDS);
             } catch (Exception e) {
                 log.warn("Exception occurred while waiting for pre-check task to complete", e);
@@ -244,10 +243,10 @@ public class PreCheckRuntimeFlowableTaskCopied extends BaseODCFlowTaskDelegate<V
         parameters.setTaskType(taskEntity.getTaskType());
         parameters.setParameterJson(taskEntity.getParametersJson());
         parameters.setRiskLevelDescriber(riskLevelDescriber);
-        parameters.setEnvironment(environment);
         parameters.setRules(ruleService.list(environment.getRulesetId(), QueryRuleMetadataParams.builder().build()));
         parameters.setConnectionConfig(connectionConfig);
-        parameters.setAuthorizedDatabaseNames(databaseService.getAuthorizedDatabaseNames(connectionConfig.getId()));
+        parameters.setDefaultSchema(taskEntity.getDatabaseName());
+        parameters.setAuthorizedDatabase(databaseService.getAllAuthorizedDatabases(connectionConfig.getId()));
         parameters.setSqlFileObjectMetadatas(getSqlFileObjectMetadatas(taskEntity));
         return parameters;
     }
@@ -292,7 +291,7 @@ public class PreCheckRuntimeFlowableTaskCopied extends BaseODCFlowTaskDelegate<V
             }
         }
         if (Objects.nonNull(permissionCheckResult)) {
-            return CollectionUtils.isNotEmpty(permissionCheckResult.getUnauthorizedDatabaseNames());
+            return CollectionUtils.isNotEmpty(permissionCheckResult.getUnauthorizedDatabases());
         }
         return false;
     }

@@ -17,6 +17,7 @@ package com.oceanbase.odc.metadb.regulation.ruleset;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Function;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
@@ -24,8 +25,12 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.transaction.annotation.Transactional;
 
-public interface RuleApplyingRepository extends JpaRepository<RuleApplyingEntity, Long>,
-        JpaSpecificationExecutor<RuleApplyingEntity> {
+import com.oceanbase.odc.common.jpa.InsertSqlTemplateBuilder;
+import com.oceanbase.odc.common.jpa.JsonListConverter;
+import com.oceanbase.odc.config.jpa.OdcJpaRepository;
+
+public interface RuleApplyingRepository extends OdcJpaRepository<RuleApplyingEntity, Long>,
+        JpaRepository<RuleApplyingEntity, Long>, JpaSpecificationExecutor<RuleApplyingEntity> {
     List<RuleApplyingEntity> findByRulesetId(Long rulesetId);
 
     List<RuleApplyingEntity> findByOrganizationIdAndRulesetId(Long organizationId, Long rulesetId);
@@ -43,5 +48,33 @@ public interface RuleApplyingRepository extends JpaRepository<RuleApplyingEntity
     List<RuleApplyingEntity> findByOrganizationIdAndRuleMetadataName(@Param("organizationId") Long organizationId,
             @Param("name") String name);
 
+    @Transactional
+    int deleteByOrganizationIdAndRulesetId(Long organizationId, Long rulesetId);
+
+
+    default List<RuleApplyingEntity> batchCreate(List<RuleApplyingEntity> entities) {
+        String sql = InsertSqlTemplateBuilder.from("regulation_rule_applying")
+                .field(RuleApplyingEntity_.organizationId)
+                .field(RuleApplyingEntity_.rulesetId)
+                .field(RuleApplyingEntity_.ruleMetadataId)
+                .field(RuleApplyingEntity_.appliedDialectTypes)
+                .field("is_enabled")
+                .field(RuleApplyingEntity_.level)
+                .field(RuleApplyingEntity_.propertiesJson)
+                .build();
+        List<Function<RuleApplyingEntity, Object>> getter = valueGetterBuilder().add(
+                RuleApplyingEntity::getOrganizationId)
+                .add(RuleApplyingEntity::getRulesetId)
+                .add(RuleApplyingEntity::getRuleMetadataId)
+                .add(entity -> {
+                    JsonListConverter converter = new JsonListConverter();
+                    return converter.convertToDatabaseColumn(entity.getAppliedDialectTypes());
+                })
+                .add(RuleApplyingEntity::getEnabled)
+                .add(RuleApplyingEntity::getLevel)
+                .add(RuleApplyingEntity::getPropertiesJson)
+                .build();
+        return batchCreate(entities, sql, getter, RuleApplyingEntity::setId);
+    }
 }
 

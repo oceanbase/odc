@@ -21,6 +21,7 @@ import java.io.InputStream;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -67,7 +68,6 @@ import com.oceanbase.odc.metadb.collaboration.EnvironmentEntity;
 import com.oceanbase.odc.metadb.collaboration.EnvironmentRepository;
 import com.oceanbase.odc.service.common.util.SidUtils;
 import com.oceanbase.odc.service.config.UserConfigFacade;
-import com.oceanbase.odc.service.config.model.UserConfig;
 import com.oceanbase.odc.service.connection.CloudMetadataClient;
 import com.oceanbase.odc.service.connection.CloudMetadataClient.CloudPermissionAction;
 import com.oceanbase.odc.service.connection.ConnectionService;
@@ -88,6 +88,8 @@ import com.oceanbase.odc.service.iam.HorizontalDataPermissionValidator;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.iam.auth.AuthorizationFacade;
 import com.oceanbase.odc.service.lab.model.LabProperties;
+import com.oceanbase.odc.service.permission.database.DatabasePermissionHelper;
+import com.oceanbase.odc.service.permission.database.model.DatabasePermissionType;
 import com.oceanbase.odc.service.session.factory.DefaultConnectSessionFactory;
 import com.oceanbase.odc.service.session.factory.DefaultConnectSessionIdGenerator;
 
@@ -107,8 +109,6 @@ public class ConnectSessionService {
 
     @Autowired
     private ConnectionService connectionService;
-    @Autowired
-    private UserConfigFacade userConfigFacade;
     @Autowired
     private AuthenticationFacade authenticationFacade;
     @Autowired
@@ -142,7 +142,11 @@ public class ConnectSessionService {
     @Autowired
     private SecurityManager securityManager;
     @Autowired
+    private DatabasePermissionHelper databasePermissionHelper;
+    @Autowired
     private CloudMetadataClient cloudMetadataClient;
+    @Autowired
+    private UserConfigFacade userConfigFacade;
 
     @PostConstruct
     public void init() {
@@ -221,9 +225,15 @@ public class ConnectSessionService {
         if (req.getDbId() != null) {
             // create session by database id
             Database database = databaseService.detail(req.getDbId());
-            if (Objects.isNull(database.getProject())
-                    && authenticationFacade.currentUser().getOrganizationType() == OrganizationType.TEAM) {
-                throw new AccessDeniedException();
+            if (authenticationFacade.currentUser().getOrganizationType() == OrganizationType.TEAM) {
+                if (Objects.isNull(database.getProject())) {
+                    throw new AccessDeniedException();
+                }
+                Map<Long, Set<DatabasePermissionType>> id2PermissionTypes =
+                        databasePermissionHelper.getPermissions(Collections.singleton(req.getDbId()));
+                if (!id2PermissionTypes.containsKey(req.getDbId()) || id2PermissionTypes.get(req.getDbId()).isEmpty()) {
+                    throw new AccessDeniedException();
+                }
             }
             schemaName = database.getName();
             dataSourceId = database.getDataSource().getId();
@@ -253,14 +263,14 @@ public class ConnectSessionService {
         if (!result.isActive() && result.getErrorCode() != ErrorCodes.ConnectionInitScriptFailed) {
             throw new VerifyException(result.getErrorMessage());
         }
-        UserConfig userConfig = userConfigFacade.queryByCache(authenticationFacade.currentUserId());
         SqlExecuteTaskManagerFactory factory =
                 new SqlExecuteTaskManagerFactory(this.monitorTaskManager, "console", 1);
         if (StringUtils.isNotEmpty(schemaName)) {
             connection.setDefaultSchema(schemaName);
         }
+        // TODO: query from use config service
         DefaultConnectSessionFactory sessionFactory = new DefaultConnectSessionFactory(
-                connection, getAutoCommit(connection, userConfig), factory);
+                connection, getAutoCommit(connection), factory);
         DefaultConnectSessionIdGenerator idGenerator = new DefaultConnectSessionIdGenerator();
         idGenerator.setDatabaseId(req.getDbId());
         idGenerator.setFixRealId(StringUtils.isBlank(req.getRealId()) ? null : req.getRealId());
@@ -273,7 +283,7 @@ public class ConnectSessionService {
             throw new BadRequestException("Failed to create a session");
         }
         try {
-            initSession(session, connection, userConfig);
+            initSession(session, connection);
             log.info("Connect session created, connectionId={}, session={}", dataSourceId, session);
             return session;
         } catch (Exception e) {
@@ -375,22 +385,21 @@ public class ConnectSessionService {
                 .build();
     }
 
-    private Boolean getAutoCommit(ConnectionConfig connectionConfig, UserConfig userConfig) {
+    private Boolean getAutoCommit(ConnectionConfig connectionConfig) {
         if (DialectType.OB_ORACLE.equals(connectionConfig.getDialectType())) {
-            return "ON".equalsIgnoreCase(userConfig.getOracleAutoCommitMode());
+            return "ON".equalsIgnoreCase(userConfigFacade.getOracleAutoCommitMode());
         }
-        return "ON".equalsIgnoreCase(userConfig.getMysqlAutoCommitMode());
+        return "ON".equalsIgnoreCase(userConfigFacade.getMysqlAutoCommitMode());
     }
 
-    private void initSession(ConnectionSession connectionSession, ConnectionConfig connectionConfig,
-            UserConfig userConfig) {
+    private void initSession(ConnectionSession connectionSession, ConnectionConfig connectionConfig) {
         SqlCommentProcessor processor = new SqlCommentProcessor(connectionConfig.getDialectType(), true, true);
-        processor.setDelimiter(userConfig.getDefaultDelimiter());
+        processor.setDelimiter(userConfigFacade.getDefaultDelimiter());
         ConnectionSessionUtil.setSqlCommentProcessor(connectionSession, processor);
 
-        ConnectionSessionUtil.setQueryLimit(connectionSession, userConfig.getDefaultQueryLimit());
+        ConnectionSessionUtil.setQueryLimit(connectionSession, userConfigFacade.getDefaultQueryLimit());
         ConnectionSessionUtil.setUserId(connectionSession, authenticationFacade.currentUserId());
-        if (connectionSession.getDialectType() == DialectType.OB_ORACLE) {
+        if (connectionSession.getDialectType().isOracle()) {
             ConnectionSessionUtil.initConsoleSessionTimeZone(connectionSession, connectProperties.getDefaultTimeZone());
         }
         Long envId = connectionConfig.getEnvironmentId();

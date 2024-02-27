@@ -15,6 +15,8 @@
  */
 package com.oceanbase.odc.service.regulation.risklevel.model;
 
+import javax.validation.constraints.NotNull;
+
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 
@@ -37,4 +39,6 @@ public abstract class BaseTreeNode {
     public abstract boolean evaluate(@NonNull RiskLevelDescriber describer);
 
     public abstract NodeType getType();
+
+    public abstract boolean find(@NotNull String key, Object value);
 }

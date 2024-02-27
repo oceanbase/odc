@@ -34,9 +34,9 @@ public class OceanBaseImportJob extends BaseOceanBaseTransferJob<LoadParameter> 
 
     private final LoadClient loadClient;
 
-    public OceanBaseImportJob(@NotNull LoadParameter parameter, boolean transferData, boolean transferSchema,
-            boolean usePrepStmts) throws Exception {
-        super(parameter, transferData, transferSchema, usePrepStmts);
+    public OceanBaseImportJob(@NotNull LoadParameter parameter, boolean transferData, boolean transferSchema)
+            throws Exception {
+        super(parameter, transferData, transferSchema);
         loadClient = new LoadClient.Builder(parameter).build();
     }
 

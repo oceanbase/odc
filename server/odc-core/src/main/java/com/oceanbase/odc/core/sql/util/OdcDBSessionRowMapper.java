@@ -27,7 +27,7 @@ public class OdcDBSessionRowMapper implements RowMapper<OdcDBSession> {
     @Override
     public OdcDBSession mapRow(ResultSet rs, int rowNum) throws SQLException {
         OdcDBSession sess = new OdcDBSession();
-        sess.setSessionId(Long.parseLong(rs.getString("ID")));
+        sess.setSessionId(rs.getString("ID"));
         sess.setDbUser(rs.getString("USER"));
         sess.setSrcIp(rs.getString("HOST"));
         sess.setDatabase(rs.getString("DB"));

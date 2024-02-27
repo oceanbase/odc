@@ -70,8 +70,6 @@ public class OdcFlowInstanceConfigurer extends FlowInstanceConfigurer {
     @Override
     public FlowInstanceConfigurer next(@NonNull FlowTaskInstance nextNode) {
         if (nextNode.getTaskType() == TaskType.GENERATE_ROLLBACK) {
-            // sql-check/generate-rollback 任务不能阻塞正常的任务流程，这里做定制化处理：即使 sql-check/generate-rollback 任务失败流程依然会继续下去
-            // sql-check/generate-rollback 任务默认为自动执行，不存在手动执行和定时执行，因此也不必要设置
             return next(nextNode, s -> s.setAsynchronous(true), u -> {
             }, u -> {
             });

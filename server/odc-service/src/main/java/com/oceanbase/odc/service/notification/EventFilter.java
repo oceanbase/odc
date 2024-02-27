@@ -34,6 +34,9 @@ import com.oceanbase.odc.service.notification.helper.EventMapper;
 import com.oceanbase.odc.service.notification.helper.NotificationPolicyFilter;
 import com.oceanbase.odc.service.notification.model.Event;
 import com.oceanbase.odc.service.notification.model.EventStatus;
+import com.oceanbase.odc.service.notification.model.NotificationPolicy;
+
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * @Author: Lebie
@@ -41,6 +44,7 @@ import com.oceanbase.odc.service.notification.model.EventStatus;
  * @Description: []
  */
 @Service
+@Slf4j
 @SkipAuthorize("odc internal usage")
 public class EventFilter {
     @Autowired
@@ -58,17 +62,25 @@ public class EventFilter {
         if (CollectionUtils.isEmpty(events)) {
             return filtered;
         }
-        Set<Long> organizationIds = events.stream().map(Event::getOrganizationId).collect(Collectors.toSet());
+        Set<Long> projectIds = events.stream().map(Event::getProjectId).collect(Collectors.toSet());
         Map<Long, List<NotificationPolicyEntity>> policies = notificationPolicyRepository
-                .findByOrganizationIds(organizationIds).stream()
-                .collect(Collectors.groupingBy(NotificationPolicyEntity::getOrganizationId));
+                .findEnabledByProjectIds(projectIds).stream()
+                .collect(Collectors.groupingBy(NotificationPolicyEntity::getProjectId));
         List<Long> thrown = new ArrayList<>();
         for (Event event : events) {
-            List<NotificationPolicyEntity> matched = NotificationPolicyFilter.filter(event.getLabels(),
-                    policies.get(event.getOrganizationId()));
+            List<NotificationPolicy> matched;
+            try {
+                matched = NotificationPolicyFilter.filter(event.getLabels(),
+                        policies.get(event.getProjectId()));
+            } catch (Exception e) {
+                log.warn("failed to match event with id={}, it will be thrown", event.getId(), e);
+                thrown.add(event.getId());
+                continue;
+            }
             if (matched.isEmpty()) {
                 thrown.add(event.getId());
             } else {
+                event.setPolicies(matched);
                 filtered.add(event);
             }
         }
@@ -78,6 +90,7 @@ public class EventFilter {
         if (!CollectionUtils.isEmpty(filtered)) {
             eventRepository.updateStatusByIds(EventStatus.CONVERTED, filtered.stream().map(Event::getId).collect(
                     Collectors.toSet()));
+            log.info("filter {} events finished, {} were thrown.", filtered.size(), thrown.size());
         }
         return filtered;
     }

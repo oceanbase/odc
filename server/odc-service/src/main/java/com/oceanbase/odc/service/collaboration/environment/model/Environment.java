@@ -68,6 +68,9 @@ public class Environment implements SecurityResource, OrganizationIsolated, Seri
     private Boolean builtIn;
 
     @JsonProperty(access = Access.READ_ONLY)
+    private Boolean enabled;
+
+    @JsonProperty(access = Access.READ_ONLY)
     private Date createTime;
 
     @JsonProperty(access = Access.READ_ONLY)

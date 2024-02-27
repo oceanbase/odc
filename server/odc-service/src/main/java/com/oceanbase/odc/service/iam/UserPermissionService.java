@@ -27,7 +27,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
 
+import com.oceanbase.odc.common.util.TimeUtils;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
+import com.oceanbase.odc.core.shared.constant.AuthorizationType;
 import com.oceanbase.odc.core.shared.constant.PermissionType;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.core.shared.exception.NotFoundException;
@@ -109,6 +111,8 @@ public class UserPermissionService {
         permissionEntity.setOrganizationId(userEntity.getOrganizationId());
         permissionEntity.setCreatorId(creatorId);
         permissionEntity.setBuiltIn(false);
+        permissionEntity.setExpireTime(TimeUtils.getMySQLMaxDatetime());
+        permissionEntity.setAuthorizationType(AuthorizationType.USER_AUTHORIZATION);
         permissionRepository.saveAndFlush(permissionEntity);
 
         UserPermissionEntity userPermission = new UserPermissionEntity();
@@ -131,6 +135,8 @@ public class UserPermissionService {
             permission.setOrganizationId(organizationId);
             permission.setCreatorId(userId);
             permission.setBuiltIn(false);
+            permission.setExpireTime(TimeUtils.getMySQLMaxDatetime());
+            permission.setAuthorizationType(AuthorizationType.USER_AUTHORIZATION);
             PermissionEntity saved = permissionRepository.saveAndFlush(permission);
 
             UserPermissionEntity userPermission = new UserPermissionEntity();

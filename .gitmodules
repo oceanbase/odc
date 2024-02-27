@@ -1,7 +1,7 @@
 [submodule "client"]
 	path = client
 	url = https://github.com/oceanbase/odc-client.git
-	branch = dev-4.2.3
+	branch = dev-4.2.4
 [submodule "build-resource"]
 	path = build-resource
 	url = https://github.com/oceanbase/odc-build-resource.git
