@@ -26,7 +26,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
-import org.springframework.security.authentication.AuthenticationServiceException;
 import org.springframework.security.web.authentication.AuthenticationFailureHandler;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 import org.springframework.security.web.util.matcher.RequestMatcher;
@@ -36,9 +35,6 @@ import com.github.benmanes.caffeine.cache.LoadingCache;
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
-import com.oceanbase.odc.core.shared.exception.AttemptLoginOverLimitException;
-import com.oceanbase.odc.core.shared.exception.OverLimitException;
-import com.oceanbase.odc.service.common.util.WebRequestUtils;
 import com.oceanbase.odc.service.iam.util.FailedLoginAttemptLimiter;
 
 import lombok.extern.slf4j.Slf4j;
@@ -72,13 +68,7 @@ public class CaptchaAuthenticationProcessingFilter extends OncePerRequestFilter 
             throws IOException, ServletException {
         if (requiresAuthenticationRequestMatcher.matches(httpServletRequest)) {
             try {
-                FailedLoginAttemptLimiter failedLoginAttemptLimiter =
-                        clientAddressLoginAttemptCache.get(WebRequestUtils.getClientAddress(httpServletRequest));
-                failedLoginAttemptLimiter.attempt(() -> validate(httpServletRequest));
-            } catch (OverLimitException | AttemptLoginOverLimitException ex) {
-                authenticationFailureHandler.onAuthenticationFailure(httpServletRequest, httpServletResponse,
-                        new AuthenticationServiceException("AttemptAuthentication over limit", ex));
-                return;
+                validate(httpServletRequest);
             } catch (CaptchaAuthenticationException ex) {
                 // 验证码验证失败，调用失败处理器
                 authenticationFailureHandler.onAuthenticationFailure(httpServletRequest, httpServletResponse, ex);

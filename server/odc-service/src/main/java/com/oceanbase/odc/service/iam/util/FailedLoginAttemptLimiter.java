@@ -15,7 +15,10 @@
  */
 package com.oceanbase.odc.service.iam.util;
 
-import java.util.function.Supplier;
+import java.util.List;
+import java.util.function.BooleanSupplier;
+
+import org.apache.commons.collections4.CollectionUtils;
 
 import com.oceanbase.odc.core.shared.exception.AttemptLoginOverLimitException;
 
@@ -34,14 +37,14 @@ public class FailedLoginAttemptLimiter {
     private final int maxFailedAttempt;
     private final long lockTimeoutMillis;
 
+    private volatile int failedAttempt = 0;
+    private volatile boolean isLocked = false;
+    private volatile long lastLockedMills = 0;
+
     public FailedLoginAttemptLimiter(int maxFailedAttempt, long lockTimeoutMillis) {
         this.maxFailedAttempt = maxFailedAttempt <= 0 ? Integer.MAX_VALUE : maxFailedAttempt;
         this.lockTimeoutMillis = lockTimeoutMillis;
     }
-
-    private volatile int failedAttempt = 0;
-    private volatile boolean isLocked = false;
-    private volatile long lastLockedMills = 0;
 
     public int getRemainAttempt() {
         if (isLocked) {
@@ -52,13 +55,14 @@ public class FailedLoginAttemptLimiter {
         return Math.max(0, maxFailedAttempt - failedAttempt);
     }
 
-    public synchronized void reduceFailedAttemptCount() {
-        if (this.failedAttempt > 0) {
-            this.failedAttempt--;
-        }
+    public synchronized void reset() {
+        this.failedAttempt = 0;
+        this.isLocked = false;
+        this.lastLockedMills = 0;
     }
 
-    public synchronized Boolean attempt(Supplier<Boolean> attemptResultSupplier) {
+
+    public synchronized Boolean attempt(BooleanSupplier attemptResultSupplier) {
         long currentTimeMillis = System.currentTimeMillis();
         if (isLocked && (currentTimeMillis > lastLockedMills + lockTimeoutMillis || lockTimeoutMillis <= 0)) {
             isLocked = false;
@@ -72,7 +76,7 @@ public class FailedLoginAttemptLimiter {
         }
         Boolean result = null;
         try {
-            result = attemptResultSupplier.get();
+            result = attemptResultSupplier.getAsBoolean();
             return result;
         } finally {
             if (result == null || !result) {
@@ -84,6 +88,48 @@ public class FailedLoginAttemptLimiter {
                 }
             }
         }
+    }
+
+
+    public synchronized void attemptFailedByException(Runnable runnable,
+            List<Class<? extends Throwable>> attemptFailedException) {
+        long currentTimeMillis = System.currentTimeMillis();
+        if (isLocked && (currentTimeMillis > lastLockedMills + lockTimeoutMillis || lockTimeoutMillis <= 0)) {
+            isLocked = false;
+            failedAttempt = 0;
+        }
+        if (isLocked) {
+            long remainSeconds = (lastLockedMills + lockTimeoutMillis - currentTimeMillis) / 1000L;
+            throw new AttemptLoginOverLimitException((double) maxFailedAttempt, remainSeconds,
+                    String.format("failed attempt over limit, failedAttempt=%d, limit=%d, remainSeconds=%d",
+                            failedAttempt, maxFailedAttempt, remainSeconds));
+        }
+        try {
+            runnable.run();
+        } catch (Exception e) {
+            if (isAttemptFailed(e, attemptFailedException)) {
+                log.info("attempt failed, currentFailedAttempt={}", failedAttempt);
+                failedAttempt++;
+                if (failedAttempt >= maxFailedAttempt) {
+                    isLocked = true;
+                    lastLockedMills = currentTimeMillis;
+                }
+            }
+            throw e;
+        }
+    }
+
+
+    private boolean isAttemptFailed(Exception cause, List<Class<? extends Throwable>> attemptFailedException) {
+        if (CollectionUtils.isEmpty(attemptFailedException)) {
+            return false;
+        }
+        for (Class<? extends Throwable> e : attemptFailedException) {
+            if (e != null && cause.getClass().isAssignableFrom(e)) {
+                return true;
+            }
+        }
+        return false;
     }
 
 }

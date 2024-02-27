@@ -15,9 +15,15 @@
  */
 package com.oceanbase.odc.service.iam.auth.ldap;
 
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.ldap.authentication.LdapAuthenticationProvider;
 import org.springframework.security.ldap.authentication.LdapAuthenticator;
 import org.springframework.security.ldap.userdetails.UserDetailsContextMapper;
+
+import com.google.common.base.Preconditions;
+import com.oceanbase.odc.service.iam.auth.AttemptableUsernamePasswordAuthenticationToken;
 
 public class ODCLdapAuthenticationProvider extends LdapAuthenticationProvider {
 
@@ -32,5 +38,15 @@ public class ODCLdapAuthenticationProvider extends LdapAuthenticationProvider {
         return LdapPasswordAuthenticationToken.class.isAssignableFrom(authentication);
     }
 
+    @Override
+    protected Authentication createSuccessfulAuthentication(UsernamePasswordAuthenticationToken authentication,
+            UserDetails user) {
+        Authentication successfulAuthentication = super.createSuccessfulAuthentication(authentication, user);
+        Preconditions.checkArgument(successfulAuthentication instanceof UsernamePasswordAuthenticationToken);
+        Preconditions.checkArgument(authentication instanceof AttemptableUsernamePasswordAuthenticationToken);
+        return AttemptableUsernamePasswordAuthenticationToken.authenticated(
+                (UsernamePasswordAuthenticationToken) successfulAuthentication,
+                ((AttemptableUsernamePasswordAuthenticationToken) authentication).getLoginAttemptKey());
+    }
 
 }
