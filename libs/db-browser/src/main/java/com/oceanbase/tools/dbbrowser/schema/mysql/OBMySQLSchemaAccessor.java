@@ -53,7 +53,7 @@ import lombok.extern.slf4j.Slf4j;
  * @author jingtian
  */
 @Slf4j
-public class OBMySQLSchemaAccessor extends MySQLNoGreaterThan5740SchemaAccessor {
+public class OBMySQLSchemaAccessor extends MySQLNoLessThan5700SchemaAccessor {
 
     protected static final Set<String> ESCAPE_SCHEMA_SET = new HashSet<>(3);
 

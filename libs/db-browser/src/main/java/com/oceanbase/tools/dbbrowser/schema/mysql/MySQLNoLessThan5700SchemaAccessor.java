@@ -99,19 +99,19 @@ import com.oceanbase.tools.sqlparser.statement.createtable.TableOptions;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * {@link MySQLNoGreaterThan5740SchemaAccessor}
+ * {@link MySQLNoLessThan5700SchemaAccessor}
  *
- * 适配 MySQL 版本：(~, 5.7.40]
+ * 适配 MySQL 版本：[5.7.00, ~)
  */
 @Slf4j
-public class MySQLNoGreaterThan5740SchemaAccessor implements DBSchemaAccessor {
+public class MySQLNoLessThan5700SchemaAccessor implements DBSchemaAccessor {
 
     protected JdbcOperations jdbcOperations;
     protected DBSchemaAccessorSqlMapper sqlMapper;
 
-    public MySQLNoGreaterThan5740SchemaAccessor(@NonNull JdbcOperations jdbcOperations) {
+    public MySQLNoLessThan5700SchemaAccessor(@NonNull JdbcOperations jdbcOperations) {
         this.jdbcOperations = jdbcOperations;
-        this.sqlMapper = DBSchemaAccessorSqlMappers.get(StatementsFiles.MYSQL_5_7_40);
+        this.sqlMapper = DBSchemaAccessorSqlMappers.get(StatementsFiles.MYSQL_5_7_x);
     }
 
     @Override
@@ -496,7 +496,9 @@ public class MySQLNoGreaterThan5740SchemaAccessor implements DBSchemaAccessor {
             tableColumn.setComment(rs.getString(MySQLConstants.COL_COLUMN_COMMENT));
             tableColumn.fillDefaultValue(rs.getString(MySQLConstants.COL_COLUMN_DEFAULT));
             tableColumn.setNullable("YES".equalsIgnoreCase(rs.getString(MySQLConstants.COL_IS_NULLABLE)));
-            tableColumn.setGenExpression(rs.getString(MySQLConstants.COL_COLUMN_GENERATION_EXPRESSION));
+            if (supportGeneratedColumn()) {
+                tableColumn.setGenExpression(rs.getString(MySQLConstants.COL_COLUMN_GENERATION_EXPRESSION));
+            }
             tableColumn.setVirtual(StringUtils.isNotEmpty(tableColumn.getGenExpression()));
             tableColumn.setOrdinalPosition(rs.getInt(MySQLConstants.COL_ORDINAL_POSITION));
             String keyTypeName = rs.getString(MySQLConstants.COL_COLUMN_KEY);
@@ -531,6 +533,10 @@ public class MySQLNoGreaterThan5740SchemaAccessor implements DBSchemaAccessor {
             }
             return tableColumn;
         };
+    }
+
+    protected boolean supportGeneratedColumn() {
+        return true;
     }
 
     protected RowMapper listBasicTableColumnRowMapper() {

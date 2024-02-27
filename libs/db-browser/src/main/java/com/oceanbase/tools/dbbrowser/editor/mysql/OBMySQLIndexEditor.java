@@ -27,7 +27,7 @@ import com.oceanbase.tools.dbbrowser.util.StringUtils;
  * @Date: 2022/7/19 下午5:04
  * @Description: []
  */
-public class OBMySQLIndexEditor extends MySQLNoGreaterThan5740IndexEditor {
+public class OBMySQLIndexEditor extends MySQLNoLessThan5700IndexEditor {
 
 
     @Override
