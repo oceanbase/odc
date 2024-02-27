@@ -17,12 +17,12 @@
 package com.oceanbase.odc.service.task.executor.logger;
 
 import java.io.File;
+import java.util.Optional;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.LineIterator;
 
-import com.oceanbase.odc.common.util.SystemUtils;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.exception.UnexpectedException;
 import com.oceanbase.odc.service.task.constants.JobEnvKeyConstants;
@@ -74,14 +74,12 @@ public class LogUtils {
         }
     }
 
-
-    public static String getBaseLogPath() {
-        String logPath = SystemUtils.getEnvOrProperty(JobEnvKeyConstants.ODC_LOG_DIRECTORY);
-        return logPath == null ? "./log" : logPath;
+    public static String getTaskLogFileWithPath(Long jobId, OdcTaskLogLevel logType) {
+        return String.format(TASK_LOG_PATH_PATTERN, getBaseLogPath(), jobId, logType.getName().toLowerCase());
     }
 
-    public static String getTaskLogFileWithPath(Long jobId, OdcTaskLogLevel logType) {
-        return String.format(TASK_LOG_PATH_PATTERN, getBaseLogPath(), jobId, logType);
+    public static String getBaseLogPath() {
+        return Optional.ofNullable(System.getProperty(JobEnvKeyConstants.ODC_LOG_DIRECTORY)).orElse("./log");
     }
 
 }

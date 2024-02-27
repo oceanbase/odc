@@ -15,9 +15,19 @@
  */
 package com.oceanbase.odc.service.onlineschemachange.ddl;
 
+import java.util.List;
+
+import com.oceanbase.odc.service.onlineschemachange.model.OnlineSchemaChangeSqlType;
+
 public interface TableNameReplacer {
 
-    String replaceCreateStmt(String originCreateStmt, String newTableName);
+    ReplaceResult replaceCreateStmt(String originCreateStmt, String newTableName);
 
-    String replaceAlterStmt(String originAlterStmt, String newTableName);
+    ReplaceResult replaceAlterStmt(String originAlterStmt, String newTableName);
+
+    ReplaceResult replaceStmtValue(OnlineSchemaChangeSqlType sqlType, String originSql,
+            List<ReplaceElement> replaceElements);
+
+    String replaceCreateIndexStmt(String originCreateIndexStmt, String newTableName);
+
 }

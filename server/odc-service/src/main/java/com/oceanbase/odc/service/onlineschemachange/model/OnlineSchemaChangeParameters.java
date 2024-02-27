@@ -16,19 +16,36 @@
 package com.oceanbase.odc.service.onlineschemachange.model;
 
 import java.io.Serializable;
+import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import com.oceanbase.odc.core.flow.model.TaskParameters;
+import com.oceanbase.odc.core.shared.PreConditions;
+import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.constant.TaskErrorStrategy;
 import com.oceanbase.odc.core.shared.exception.UnexpectedException;
 import com.oceanbase.odc.core.shared.model.TableIdentity;
+import com.oceanbase.odc.core.sql.split.OffsetString;
 import com.oceanbase.odc.service.common.util.SqlUtils;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.onlineschemachange.ddl.DdlUtils;
+import com.oceanbase.odc.service.onlineschemachange.ddl.OBMysqlTableNameReplacer;
+import com.oceanbase.odc.service.onlineschemachange.ddl.OBOracleTableNameReplacer;
+import com.oceanbase.odc.service.onlineschemachange.ddl.OscFactoryWrapper;
+import com.oceanbase.odc.service.onlineschemachange.ddl.OscFactoryWrapperGenerator;
+import com.oceanbase.odc.service.onlineschemachange.ddl.ReplaceElement;
+import com.oceanbase.odc.service.onlineschemachange.ddl.ReplaceResult;
+import com.oceanbase.odc.service.onlineschemachange.ddl.TableNameDescriptor;
+import com.oceanbase.odc.service.onlineschemachange.ddl.TableNameReplacer;
 import com.oceanbase.odc.service.onlineschemachange.subtask.SubTaskParameterFactory;
+import com.oceanbase.tools.sqlparser.statement.Statement;
+import com.oceanbase.tools.sqlparser.statement.alter.table.AlterTable;
+import com.oceanbase.tools.sqlparser.statement.createindex.CreateIndex;
+import com.oceanbase.tools.sqlparser.statement.createtable.CreateTable;
 
 import lombok.Data;
 
@@ -65,18 +82,58 @@ public class OnlineSchemaChangeParameters implements Serializable, TaskParameter
 
     public List<OnlineSchemaChangeScheduleTaskParameters> generateSubTaskParameters(ConnectionConfig connectionConfig,
             String schema) {
-        List<String> sqls = SqlUtils.split(connectionConfig.getDialectType(), this.sqlContent, this.delimiter);
+        List<String> sqls =
+                SqlUtils.splitWithOffset(connectionConfig.getDialectType(), this.sqlContent + "\n", this.delimiter,
+                        true)
+                        .stream().map(OffsetString::getStr).collect(Collectors.toList());;
 
-        try (SubTaskParameterFactory subTaskParameterFactory = new SubTaskParameterFactory(connectionConfig, schema)) {
+        OscFactoryWrapper oscFactoryWrapper = OscFactoryWrapperGenerator.generate(connectionConfig.getDialectType());
+        try (SubTaskParameterFactory subTaskParameterFactory =
+                new SubTaskParameterFactory(connectionConfig, schema, oscFactoryWrapper)) {
             Map<TableIdentity, OnlineSchemaChangeScheduleTaskParameters> taskParameters = new LinkedHashMap<>();
             for (String sql : sqls) {
-                OnlineSchemaChangeScheduleTaskParameters parameter = subTaskParameterFactory.generate(sql, sqlType);
-                TableIdentity key = new TableIdentity(parameter.getDatabaseName(), parameter.getOriginTableName());
-                taskParameters.putIfAbsent(key, parameter);
-                if (sqlType == OnlineSchemaChangeSqlType.ALTER) {
-                    String newAlterStmt = DdlUtils.replaceTableName(sql, parameter.getNewTableName(),
-                            connectionConfig.getDialectType(), sqlType);
-                    taskParameters.get(key).getSqlsToBeExecuted().add(newAlterStmt);
+                Statement statement = oscFactoryWrapper.getSqlParser().parse(new StringReader(sql));
+                if (statement instanceof CreateTable || statement instanceof AlterTable) {
+                    OnlineSchemaChangeScheduleTaskParameters parameter =
+                            subTaskParameterFactory.generate(sql, sqlType, statement);
+                    TableNameDescriptor tableNameDescriptor = oscFactoryWrapper.getTableNameDescriptorFactory()
+                            .getTableNameDescriptor(parameter.getOriginTableName());
+                    TableIdentity key = new TableIdentity(DdlUtils.getUnwrappedName(parameter.getDatabaseName()),
+                            tableNameDescriptor.getOriginTableNameUnwrapped());
+                    taskParameters.putIfAbsent(key, parameter);
+
+                    if (sqlType == OnlineSchemaChangeSqlType.ALTER) {
+                        if (statement instanceof AlterTable && connectionConfig.getDialectType().isOracle()) {
+                            List<ReplaceElement> replaceElements = parameter.getReplaceResult().getReplaceElements();
+                            ReplaceResult result = new OBOracleTableNameReplacer().replaceStmtValue(
+                                    OnlineSchemaChangeSqlType.ALTER, sql, replaceElements);
+                            taskParameters.get(key).getSqlsToBeExecuted().add(result.getNewSql());
+                        } else {
+                            String newAlterStmt = DdlUtils.replaceTableName(sql, parameter.getNewTableName(),
+                                    connectionConfig.getDialectType(), sqlType).getNewSql();
+                            taskParameters.get(key).getSqlsToBeExecuted().add(newAlterStmt);
+                        }
+                    }
+
+                } else {
+                    PreConditions.validArgumentState(statement instanceof CreateIndex, ErrorCodes.IllegalArgument,
+                            new Object[] {}, "statement is not CreateIndex");
+                    CreateIndex createIndex = (CreateIndex) statement;
+                    String tableName = createIndex.getOn().getRelation();
+                    TableNameDescriptor tableNameDescriptor = oscFactoryWrapper.getTableNameDescriptorFactory()
+                            .getTableNameDescriptor(tableName);
+                    TableIdentity key = new TableIdentity(DdlUtils.getUnwrappedName(schema),
+                            tableNameDescriptor.getOriginTableNameUnwrapped());
+                    TableNameReplacer rewriter =
+                            connectionConfig.getDialectType().isMysql() ? new OBMysqlTableNameReplacer()
+                                    : new OBOracleTableNameReplacer();
+
+                    String createIndexOnNewTable = rewriter.replaceCreateIndexStmt(
+                            sql, tableNameDescriptor.getNewTableName());
+
+                    String displaySql = taskParameters.get(key).getNewTableCreateDdlForDisplay();
+                    taskParameters.get(key).setNewTableCreateDdlForDisplay(displaySql + "\n" + sql);
+                    taskParameters.get(key).getSqlsToBeExecuted().add(createIndexOnNewTable);
                 }
             }
             return new ArrayList<>(taskParameters.values());
