@@ -87,7 +87,7 @@
   type: 'string'
   max_value: ~
   min_value: ~
-  allowed_values: [ 'OceanBase','VSCode' ]
+  allowed_values: ~
   default_value: 'OceanBase'
   nullable: false
   description: ''
