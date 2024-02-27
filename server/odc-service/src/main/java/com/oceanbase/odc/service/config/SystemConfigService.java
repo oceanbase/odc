@@ -19,9 +19,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 
+import javax.validation.constraints.NotNull;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cloud.context.refresh.ContextRefresher;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
@@ -118,6 +121,11 @@ public class SystemConfigService {
         } else {
             log.debug("no system configuration changes detected");
         }
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    public void insert(@NotNull List<SystemConfigEntity> entities) {
+        entities.forEach(entity -> systemConfigDAO.insert(entity));
     }
 
     private boolean needRefresh() {
