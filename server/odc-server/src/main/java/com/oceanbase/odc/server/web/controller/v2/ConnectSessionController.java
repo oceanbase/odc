@@ -30,6 +30,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -38,6 +39,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.oceanbase.odc.core.session.ConnectionSession;
+import com.oceanbase.odc.core.shared.exception.NotImplementedException;
 import com.oceanbase.odc.service.common.response.ListResponse;
 import com.oceanbase.odc.service.common.response.Responses;
 import com.oceanbase.odc.service.common.response.SuccessResponse;
@@ -49,6 +51,8 @@ import com.oceanbase.odc.service.db.session.DBSessionService;
 import com.oceanbase.odc.service.db.session.KillSessionOrQueryReq;
 import com.oceanbase.odc.service.db.session.KillSessionResult;
 import com.oceanbase.odc.service.dml.ValueEncodeType;
+import com.oceanbase.odc.service.partitionplan.model.PartitionPlanPreViewResp;
+import com.oceanbase.odc.service.partitionplan.model.PartitionPlanTableConfig;
 import com.oceanbase.odc.service.session.ConnectConsoleService;
 import com.oceanbase.odc.service.session.ConnectSessionService;
 import com.oceanbase.odc.service.session.model.BinaryContent;
@@ -229,4 +233,11 @@ public class ConnectSessionController {
     public SuccessResponse<DBSessionResp> currentSessionStatus(@PathVariable String sessionId) {
         return Responses.success(sessionService.currentDBSession(sessionId));
     }
+
+    @PostMapping(value = "/sessions/{sessionId}/partitionPlans/latest/preview")
+    public ListResponse<PartitionPlanPreViewResp> getPreView(@RequestBody List<PartitionPlanTableConfig> tableConfigs,
+            @RequestParam(name = "onlyForPartitionName", defaultValue = "false") Boolean onlyForPartitionName) {
+        throw new NotImplementedException();
+    }
+
 }

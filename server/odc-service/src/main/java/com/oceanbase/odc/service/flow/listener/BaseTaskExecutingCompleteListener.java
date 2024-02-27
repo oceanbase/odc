@@ -23,9 +23,14 @@ import com.oceanbase.odc.core.flow.util.EmptyExecutionListener;
 import com.oceanbase.odc.core.shared.constant.FlowStatus;
 import com.oceanbase.odc.metadb.flow.FlowInstanceRepository;
 import com.oceanbase.odc.metadb.flow.UserTaskInstanceRepository;
+import com.oceanbase.odc.service.flow.FlowInstanceService;
 import com.oceanbase.odc.service.flow.FlowableAdaptor;
 import com.oceanbase.odc.service.flow.instance.FlowApprovalInstance;
 import com.oceanbase.odc.service.flow.model.FlowNodeStatus;
+import com.oceanbase.odc.service.notification.Broker;
+import com.oceanbase.odc.service.notification.NotificationProperties;
+import com.oceanbase.odc.service.notification.helper.EventBuilder;
+import com.oceanbase.odc.service.notification.model.Event;
 
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
@@ -46,12 +51,29 @@ public class BaseTaskExecutingCompleteListener extends BaseStatusModifyListener<
     private FlowInstanceRepository flowInstanceRepository;
     @Autowired
     private UserTaskInstanceRepository userTaskInstanceRepository;
+    @Autowired
+    private FlowInstanceService flowInstanceService;
+    @Autowired
+    private NotificationProperties notificationProperties;
+    @Autowired
+    private EventBuilder eventBuilder;
+    @Autowired
+    private Broker broker;
 
     @Override
     protected FlowNodeStatus doModifyStatusOnStart(FlowApprovalInstance target) {
         Boolean isWaitForConfirm = userTaskInstanceRepository.findConfirmById(target.getId());
         if (!isWaitForConfirm) {
             flowInstanceRepository.updateStatusById(target.getFlowInstanceId(), FlowStatus.APPROVING);
+            if (notificationProperties.isEnabled()) {
+                try {
+                    Event event = eventBuilder.ofPendingApprovalTask(
+                            flowInstanceService.getTaskByFlowInstanceId(target.getFlowInstanceId()));
+                    broker.enqueueEvent(event);
+                } catch (Exception e) {
+                    log.warn("Failed to enqueue event.", e);
+                }
+            }
             return internalModify(target, FlowNodeStatus.EXECUTING);
         } else {
             flowInstanceRepository.updateStatusById(target.getFlowInstanceId(), FlowStatus.WAIT_FOR_CONFIRM);

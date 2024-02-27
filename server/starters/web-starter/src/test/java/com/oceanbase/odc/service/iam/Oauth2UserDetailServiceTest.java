@@ -32,14 +32,14 @@ import com.oceanbase.odc.core.shared.exception.VerifyException;
 import com.oceanbase.odc.metadb.iam.OrganizationRepository;
 import com.oceanbase.odc.metadb.iam.UserEntity;
 import com.oceanbase.odc.metadb.iam.UserRepository;
+import com.oceanbase.odc.service.iam.auth.SsoUserDetailService;
 import com.oceanbase.odc.service.iam.auth.oauth2.MappingResult;
-import com.oceanbase.odc.service.iam.auth.oauth2.OAuth2UserDetailService;
 import com.oceanbase.odc.service.iam.model.Organization;
 
 public class Oauth2UserDetailServiceTest extends ServiceTestEnv {
 
     @Autowired
-    private OAuth2UserDetailService oAuth2UserDetailService;
+    private SsoUserDetailService SSOUserDetailService;
     @MockBean
     private OrganizationRepository organizationRepository;
     @MockBean
@@ -70,7 +70,7 @@ public class Oauth2UserDetailServiceTest extends ServiceTestEnv {
         mappingResult.setSourceUserInfoMap(userInfoMap);
         mappingResult.setOrganizationId(1L);
 
-        oAuth2UserDetailService.getOrCreateUser(mappingResult);
+        SSOUserDetailService.getOrCreateUser(mappingResult);
         Optional<UserEntity> user = userRepository.findByAccountName("test");
         Assert.assertTrue(user.isPresent());
     }
@@ -83,7 +83,7 @@ public class Oauth2UserDetailServiceTest extends ServiceTestEnv {
             mappingResult.setUserAccountName("test");
             mappingResult.setSourceUserInfoMap(userInfoMap);
             mappingResult.setOrganizationId(1L);
-            oAuth2UserDetailService.getOrCreateUser(mappingResult);
+            SSOUserDetailService.getOrCreateUser(mappingResult);
         } catch (VerifyException e) {
             Optional<UserEntity> user = userRepository.findByAccountName("test");
             // could not find user if transaction rollback

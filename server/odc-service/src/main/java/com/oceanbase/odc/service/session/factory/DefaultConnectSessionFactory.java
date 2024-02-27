@@ -17,9 +17,10 @@ package com.oceanbase.odc.service.session.factory;
 
 import java.sql.Connection;
 import java.sql.Statement;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.TimeUnit;
+
+import org.springframework.jdbc.core.ConnectionCallback;
 
 import com.oceanbase.odc.common.event.AbstractEventListener;
 import com.oceanbase.odc.common.event.EventPublisher;
@@ -32,7 +33,6 @@ import com.oceanbase.odc.core.session.ConnectionSessionFactory;
 import com.oceanbase.odc.core.session.ConnectionSessionIdGenerator;
 import com.oceanbase.odc.core.session.ConnectionSessionUtil;
 import com.oceanbase.odc.core.session.DefaultConnectionSession;
-import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.shared.jdbc.JdbcUrlParser;
 import com.oceanbase.odc.core.sql.execute.task.SqlExecuteTaskManager;
 import com.oceanbase.odc.core.task.TaskManagerFactory;
@@ -98,13 +98,13 @@ public class DefaultConnectSessionFactory implements ConnectionSessionFactory {
         try {
             JdbcUrlParser urlParser = ConnectionPluginUtil
                     .getConnectionExtension(connectionConfig.getDialectType())
-                    .getJdbcUrlParser(dataSourceFactory.getJdbcUrl());
+                    .getConnectionInfo(dataSourceFactory.getJdbcUrl(), dataSourceFactory.getUsername());
             String connectSchema = urlParser.getSchema();
             if (StringUtils.isNotBlank(connectSchema)) {
                 connectSchema = ConnectionSessionUtil.getUserOrSchemaString(connectSchema, session.getDialectType());
                 ConnectionSessionUtil.setConnectSchema(session, connectSchema);
-                ConnectionSessionUtil.setCurrentSchema(session, connectSchema);
             }
+            ConnectionSessionUtil.setCurrentSchema(session, connectionConfig.getDefaultSchema());
         } catch (Exception e) {
             if (StringUtils.isNotBlank(connectionConfig.getDefaultSchema())) {
                 ConnectionSessionUtil.setConnectSchema(session, connectionConfig.getDefaultSchema());
@@ -158,45 +158,27 @@ public class DefaultConnectSessionFactory implements ConnectionSessionFactory {
     }
 
     private static void setNlsFormat(ConnectionSession session) {
-        if (session.getDialectType() != DialectType.OB_ORACLE) {
+        if (!session.getDialectType().isOracle()) {
             return;
         }
-        Map<String, String> sessionVariables = new HashMap<>();
-        try {
-            sessionVariables = ConnectionSessionUtil.queryAllSessionVariables(session);
-        } catch (Exception e) {
-            log.warn("Failed to query all session variables", e);
-        }
-        try {
-            String format = sessionVariables.get("nls_date_format");
-            if (format == null) {
-                format = ConnectionSessionUtil.queryNlsDateFormat(session);
-            }
-            ConnectionSessionUtil.setNlsDateFormat(session, format);
-        } catch (Exception e) {
-            log.warn("Failed to query nls_date_format, use default instead", e);
-            ConnectionSessionUtil.setNlsDateFormat(session, "DD-MON-RR");
-        }
-        try {
-            String format = sessionVariables.get("nls_timestamp_format");
-            if (format == null) {
-                format = ConnectionSessionUtil.queryNlsTimestampFormat(session);
-            }
-            ConnectionSessionUtil.setNlsTimestampFormat(session, format);
-        } catch (Exception e) {
-            log.warn("Failed to query nls_timestamp_format, use default instead", e);
-            ConnectionSessionUtil.setNlsTimestampFormat(session, "DD-MON-RR");
-        }
-        try {
-            String format = sessionVariables.get("nls_timestamp_tz_format");
-            if (format == null) {
-                format = ConnectionSessionUtil.queryNlsTimestampTZFormat(session);
-            }
-            ConnectionSessionUtil.setNlsTimestampTZFormat(session, format);
-        } catch (Exception e) {
-            log.warn("Failed to query nls_timestamp_tz_format, use default instead", e);
-            ConnectionSessionUtil.setNlsTimestampTZFormat(session, "DD-MON-RR");
-        }
+        log.info("Begin to set nls format.");
+        String nlsDateFormat = session.getSyncJdbcExecutor(ConnectionSessionConstants.BACKEND_DS_KEY).execute(
+                (ConnectionCallback<String>) con -> ConnectionPluginUtil
+                        .getSessionExtension(session.getDialectType()).getVariable(con, "nls_date_format"));
+        ConnectionSessionUtil.setNlsDateFormat(session, Objects.isNull(nlsDateFormat) ? "DD-MON-RR" : nlsDateFormat);
+
+        String nlsTimestampFormat = session.getSyncJdbcExecutor(ConnectionSessionConstants.BACKEND_DS_KEY).execute(
+                (ConnectionCallback<String>) con -> ConnectionPluginUtil
+                        .getSessionExtension(session.getDialectType()).getVariable(con, "nls_timestamp_format"));
+        ConnectionSessionUtil.setNlsTimestampFormat(session,
+                Objects.isNull(nlsTimestampFormat) ? "DD-MON-RR" : nlsTimestampFormat);
+
+        String nlsTimestampTZFormat = session.getSyncJdbcExecutor(ConnectionSessionConstants.BACKEND_DS_KEY).execute(
+                (ConnectionCallback<String>) con -> ConnectionPluginUtil
+                        .getSessionExtension(session.getDialectType()).getVariable(con, "nls_timestamp_tz_format"));
+        ConnectionSessionUtil.setNlsTimestampTZFormat(session,
+                Objects.isNull(nlsTimestampTZFormat) ? "DD-MON-RR" : nlsTimestampTZFormat);
+
         log.info("Set nls format completed.");
     }
 

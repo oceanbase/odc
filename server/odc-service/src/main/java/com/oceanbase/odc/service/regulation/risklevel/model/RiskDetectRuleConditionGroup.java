@@ -62,4 +62,14 @@ public class RiskDetectRuleConditionGroup extends BaseTreeNode {
         }
         return validated;
     }
+
+    @Override
+    public boolean find(@NotNull String key, Object value) {
+        for (BaseTreeNode node : children) {
+            if (node.find(key, value)) {
+                return true;
+            }
+        }
+        return false;
+    }
 }

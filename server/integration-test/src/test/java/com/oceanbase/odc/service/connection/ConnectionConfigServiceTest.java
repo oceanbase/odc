@@ -58,6 +58,7 @@ import com.oceanbase.odc.metadb.iam.UserEntity;
 import com.oceanbase.odc.metadb.resourcegroup.ResourceGroupRepository;
 import com.oceanbase.odc.service.collaboration.environment.EnvironmentService;
 import com.oceanbase.odc.service.collaboration.environment.model.Environment;
+import com.oceanbase.odc.service.collaboration.environment.model.QueryEnvironmentParam;
 import com.oceanbase.odc.service.common.util.EmptyValues;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.connection.model.QueryConnectionParams;
@@ -123,7 +124,7 @@ public class ConnectionConfigServiceTest extends MockedAuthorityTestEnv {
         when(encryptionFacade.userEncryptor(eq(CREATOR_ID), eq(SALT))).thenReturn(mockEncryptor);
         when(encryptionFacade.organizationEncryptor(eq(ORGANIZATION_ID), eq(SALT))).thenReturn(mockEncryptor);
         Mockito.when(environmentService.detailSkipPermissionCheck(Mockito.anyLong())).thenReturn(getEnvironment());
-        Mockito.when(environmentService.list(Mockito.anyLong()))
+        when(environmentService.list(anyLong(), eq(QueryEnvironmentParam.builder().build())))
                 .thenReturn(Collections.singletonList(getEnvironment()));
         doNothing().when(userPermissionService).bindUserAndDataSourcePermission(eq(CREATOR_ID), eq(ORGANIZATION_ID),
                 any(Long.class), eq(Arrays.asList("read", "update", "delete")));

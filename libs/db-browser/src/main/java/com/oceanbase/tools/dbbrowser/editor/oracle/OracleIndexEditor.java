@@ -57,7 +57,7 @@ public class OracleIndexEditor extends DBTableIndexEditor {
     public String generateDropObjectDDL(@NotNull DBTableIndex index) {
         SqlBuilder sqlBuilder = sqlBuilder();
         sqlBuilder.append("DROP INDEX ").identifier(index.getName());
-        return sqlBuilder.toString();
+        return sqlBuilder.toString() + ";\n";
     }
 
     @Override

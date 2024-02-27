@@ -26,8 +26,11 @@ import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.service.common.response.Responses;
 import com.oceanbase.odc.service.common.response.SuccessResponse;
 import com.oceanbase.odc.service.common.util.ConditionalOnProperty;
+import com.oceanbase.odc.service.datasecurity.DataMaskingService;
 import com.oceanbase.odc.service.task.executor.server.HeartRequest;
 import com.oceanbase.odc.service.task.executor.task.DefaultTaskResult;
+import com.oceanbase.odc.service.task.runtime.QuerySensitiveColumnReq;
+import com.oceanbase.odc.service.task.runtime.QuerySensitiveColumnResp;
 import com.oceanbase.odc.service.task.service.TaskFrameworkService;
 
 import io.swagger.annotations.ApiOperation;
@@ -47,6 +50,9 @@ public class TaskController {
     @Autowired
     private TaskFrameworkService taskFrameworkService;
 
+    @Autowired
+    private DataMaskingService dataMaskingService;
+
     @ApiOperation(value = "updateResult", notes = "update task result")
     @RequestMapping(value = "/result", method = RequestMethod.POST)
     public SuccessResponse<String> updateResult(@RequestBody DefaultTaskResult taskResult) {
@@ -62,6 +68,12 @@ public class TaskController {
     public SuccessResponse<String> heart(@RequestBody HeartRequest heart) {
         taskFrameworkService.handleHeart(heart);
         return Responses.success("ok");
+    }
+
+    @ApiOperation(value = "querySensitiveColumn", notes = "query sensitive columns")
+    @RequestMapping(value = "/querySensitiveColumn", method = RequestMethod.POST)
+    public SuccessResponse<QuerySensitiveColumnResp> querySensitiveColumn(@RequestBody QuerySensitiveColumnReq req) {
+        return Responses.success(dataMaskingService.querySensitiveColumn(req));
     }
 
 }

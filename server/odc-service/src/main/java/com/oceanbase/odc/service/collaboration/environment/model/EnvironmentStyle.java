@@ -23,4 +23,14 @@ public enum EnvironmentStyle {
     RED,
 
     GRAY,
+
+    MAGENTA,
+
+    CYAN,
+
+    BLUE,
+
+    GEEKBLUE,
+
+    PURPLE,
 }
