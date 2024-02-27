@@ -394,13 +394,16 @@ public class DefaultOnlineSchemaChangeTaskHandler implements OnlineSchemaChangeT
         SyncJdbcExecutor executor = session.getSyncJdbcExecutor(ConnectionSessionConstants.BACKEND_DS_KEY);
         String finalTableDdl;
         executor.execute(taskParam.getNewTableCreateDdl());
-        if (param.getSqlType() == OnlineSchemaChangeSqlType.ALTER) {
+        if (CollectionUtils.isNotEmpty(taskParam.getSqlsToBeExecuted())) {
             taskParam.getSqlsToBeExecuted().forEach(executor::execute);
+        }
+        if (param.getSqlType() == OnlineSchemaChangeSqlType.ALTER) {
 
             // update new table ddl for display
             finalTableDdl = DdlUtils.queryOriginTableCreateDdl(session, taskParam.getNewTableName());
+
             String ddlForDisplay = DdlUtils.replaceTableName(finalTableDdl, taskParam.getOriginTableName(),
-                    session.getDialectType(), OnlineSchemaChangeSqlType.CREATE);
+                    session.getDialectType(), OnlineSchemaChangeSqlType.CREATE).getNewSql();
             taskParam.setNewTableCreateDdlForDisplay(ddlForDisplay);
             scheduleTaskRepository.updateTaskResult(scheduleTaskId,
                     JsonUtils.toJson(new OnlineSchemaChangeScheduleTaskResult(taskParam)));

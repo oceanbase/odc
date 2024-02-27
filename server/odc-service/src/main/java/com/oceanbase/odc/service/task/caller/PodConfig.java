@@ -16,7 +16,11 @@
 
 package com.oceanbase.odc.service.task.caller;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+
+import com.oceanbase.odc.service.task.constants.JobConstants;
 
 import lombok.Data;
 
@@ -28,11 +32,29 @@ import lombok.Data;
 @Data
 public class PodConfig {
 
+    private String region;
+
     private String namespace;
 
     private String image;
 
     private List<String> command;
 
-    private PodParam podParam = new PodParam();
+    private Map<String, String> environments = new HashMap<>();
+
+    private String imagePullPolicy = JobConstants.IMAGE_PULL_POLICY_ALWAYS;
+
+    private Double requestCpu;
+
+    private Long requestMem;
+
+    private Double limitCpu;
+
+    private Long limitMem;
+
+    private Boolean enableMount;
+
+    private String mountPath;
+
+    private Long mountDiskSize;
 }

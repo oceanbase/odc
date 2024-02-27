@@ -15,7 +15,6 @@
  */
 package com.oceanbase.odc.service.connection;
 
-import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -25,7 +24,6 @@ import com.oceanbase.odc.service.connection.model.OBDatabaseUser;
 import com.oceanbase.odc.service.connection.model.OBInstanceType;
 import com.oceanbase.odc.service.connection.model.OBTenant;
 import com.oceanbase.odc.service.connection.model.OBTenantEndpoint;
-import com.oceanbase.odc.service.connection.model.OBTenantMode;
 
 @Component
 public class ConnectionEnvironmentAdapter {
@@ -49,19 +47,14 @@ public class ConnectionEnvironmentAdapter {
             connectionConfig.setPort(endpoint.getVirtualPort());
 
             if (cloudMetadataClient.supportsTenantInstance()) {
-                // 集群名和租户名相同的话，则是租户实例，需要去查对应的集群 ID 作为集群名
-                if (StringUtils.isNotBlank(clusterName) && StringUtils.equalsIgnoreCase(clusterName, tenantName)) {
-                    OBTenant tenant = cloudMetadataClient.getTenant(clusterName, tenantName);
-                    connectionConfig.setClusterName(tenant.getClusterInstanceId());
-                    connectionConfig.setTenantName(tenant.getId());
-                    if (tenant.getTenantMode() == OBTenantMode.MYSQL) {
-                        connectionConfig.setInstanceType(OBInstanceType.MYSQL_TENANT);
-                    } else {
-                        connectionConfig.setInstanceType(OBInstanceType.ORACLE_TENANT);
-                    }
-                } else {
-                    connectionConfig.setInstanceType(OBInstanceType.CLUSTER);
-                }
+                // if supports tenant/serverless instance, then we need to get the clusterName
+                OBTenant tenant = cloudMetadataClient.getTenant(clusterName, tenantName);
+                connectionConfig.setClusterName(tenant.getClusterInstanceId());
+                connectionConfig.setTenantName(tenant.getId());
+                connectionConfig.setInstanceType(
+                        tenant.getInstanceType() == null ? OBInstanceType.CLUSTER : tenant.getInstanceType());
+            } else {
+                connectionConfig.setInstanceType(OBInstanceType.CLUSTER);
             }
             if (cloudMetadataClient.needsOBTenantName()) {
                 // 需要使用 observer 上真实的 tenantName 来建连，防止备库切主后无法连接

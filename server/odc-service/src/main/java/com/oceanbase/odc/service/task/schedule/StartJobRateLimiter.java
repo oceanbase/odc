@@ -13,24 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-package com.oceanbase.odc.service.onlineschemachange.ddl;
-
-import com.oceanbase.tools.sqlparser.SQLParser;
-
-import lombok.Data;
+package com.oceanbase.odc.service.task.schedule;
 
 /**
  * @author yaobin
- * @date 2023-08-31
- * @since 4.2.0
+ * @date 2024-02-05
+ * @since 4.2.4
  */
-@Data
-public class OscFactoryWrapper {
+public interface StartJobRateLimiter {
 
-    private TableNameDescriptorFactory tableNameDescriptorFactory;
-
-    private OscDBAccessorFactory oscDBAccessorFactory;
-
-    private SQLParser sqlParser;
+    boolean tryAcquire();
 }
