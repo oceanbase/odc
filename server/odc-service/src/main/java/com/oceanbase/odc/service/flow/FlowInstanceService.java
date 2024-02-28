@@ -806,7 +806,7 @@ public class FlowInstanceService {
         try {
             FlowTaskInstance riskDetectInstance = flowFactory.generateFlowTaskInstance(flowInstance.getId(), true,
                     false, TaskType.PRE_CHECK,
-                    ExecutionStrategyConfig.manualStrategy(flowTaskProperties.getDefaultExecutionExpirationIntervalHours(), TimeUnit.HOURS));
+                    ExecutionStrategyConfig.autoStrategy());
             riskDetectInstance.setTargetTaskId(preCheckTaskEntity.getId());
             FlowGatewayInstance riskLevelGateway =
                     flowFactory.generateFlowGatewayInstance(flowInstance.getId(), false, true);

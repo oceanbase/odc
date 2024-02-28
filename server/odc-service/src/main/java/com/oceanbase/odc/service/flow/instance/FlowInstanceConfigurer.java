@@ -44,6 +44,7 @@ import com.oceanbase.odc.core.flow.graph.GraphConfigurer;
 import com.oceanbase.odc.core.flow.model.FlowableElement;
 import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.core.shared.constant.ErrorCode;
+import com.oceanbase.odc.core.shared.constant.TaskType;
 import com.oceanbase.odc.service.flow.FlowableAdaptor;
 import com.oceanbase.odc.service.flow.listener.ApprovalTaskExpiredListener;
 import com.oceanbase.odc.service.flow.listener.BaseTaskBindUserTaskListener;
@@ -248,6 +249,9 @@ public class FlowInstanceConfigurer extends GraphConfigurer<FlowInstance, BaseFl
             taskBuilder.addTaskListener(BaseTaskBindUserTaskListener.class);
             return taskBuilder;
         });
+        if(nextNode.getTaskType() == TaskType.PRE_CHECK){
+            return this;
+        }
         return nextInternal(nextNode, serviceTaskBuilder, userManuTaskConsumer, userTimerTaskConsumer);
     }
 
