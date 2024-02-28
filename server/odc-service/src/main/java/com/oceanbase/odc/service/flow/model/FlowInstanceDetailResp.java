@@ -251,7 +251,7 @@ public class FlowInstanceDetailResp {
                 } else if (instance.getNodeType() == FlowNodeType.SERVICE_TASK) {
                     return true;
                 } else if (instance.getNodeType() == FlowNodeType.APPROVAL_TASK) {
-                    if ((!((FlowApprovalInstance) instance).isApproved()
+                    if (instance instanceof FlowApprovalInstance && (!((FlowApprovalInstance) instance).isApproved()
                             && instance.getStatus() == FlowNodeStatus.COMPLETED)
                             || instance.getStatus() == FlowNodeStatus.EXPIRED
                             || instance.getStatus() == FlowNodeStatus.CANCELLED) {
