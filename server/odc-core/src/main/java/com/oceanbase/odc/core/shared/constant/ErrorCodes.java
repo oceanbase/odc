@@ -30,6 +30,7 @@ public enum ErrorCodes implements ErrorCode {
     IllegalArgument,
     ArgumentValueAndTypeMismatched,
     DuplicatedExists,
+    UnavailableName,
     BadRequest,
     RequestFormatVersionNotMatch,
     NotFound,
