@@ -26,6 +26,7 @@ import org.quartz.JobExecutionContext;
 
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.core.session.ConnectionSession;
+import com.oceanbase.odc.core.shared.constant.TaskErrorStrategy;
 import com.oceanbase.odc.core.shared.constant.TaskType;
 import com.oceanbase.odc.metadb.schedule.ScheduleEntity;
 import com.oceanbase.odc.service.common.util.SpringContextUtil;
@@ -121,8 +122,9 @@ public class PartitionPlanJob implements OdcJob {
             connectionSession = new DefaultConnectSessionFactory(conn).generateSession();
             List<PartitionPlanPreViewResp> resps = this.partitionPlanService.generatePartitionDdl(
                     connectionSession, tableConfigs, false);
-            submitSubDatabaseChangeTask(paramemters.getFlowInstanceId(), target.getDatabaseId(), resps.stream()
-                    .flatMap(i -> i.getSqls().stream()).collect(Collectors.toList()), target.getTimeoutMillis());
+            submitSubDatabaseChangeTask(paramemters.getFlowInstanceId(), target.getDatabaseId(),
+                    resps.stream().flatMap(i -> i.getSqls().stream()).collect(Collectors.toList()),
+                    paramemters.getTimeoutMillis(), paramemters.getErrorStrategy());
         } catch (Exception e) {
             log.warn("Failed to execute a partition plan task", e);
         } finally {
@@ -137,10 +139,10 @@ public class PartitionPlanJob implements OdcJob {
         }
     }
 
-    private void submitSubDatabaseChangeTask(Long parentFlowInstanceId,
-            Long databaseId, List<String> sqls, long timeoutMillis) {
+    private void submitSubDatabaseChangeTask(Long parentFlowInstanceId, Long databaseId,
+            List<String> sqls, long timeoutMillis, TaskErrorStrategy errorStrategy) {
         DatabaseChangeParameters taskParameters = new DatabaseChangeParameters();
-        taskParameters.setErrorStrategy("ABORT");
+        taskParameters.setErrorStrategy(errorStrategy.name());
         StringBuilder sqlContent = new StringBuilder();
         for (String sql : sqls) {
             sqlContent.append(sql).append("\n");

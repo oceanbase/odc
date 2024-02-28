@@ -32,6 +32,7 @@ import org.springframework.stereotype.Service;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
+import com.oceanbase.odc.core.shared.constant.TaskErrorStrategy;
 import com.oceanbase.odc.core.shared.exception.NotFoundException;
 import com.oceanbase.odc.metadb.partitionplan.PartitionPlanEntity;
 import com.oceanbase.odc.metadb.partitionplan.PartitionPlanRepository;
@@ -161,7 +162,7 @@ public class PartitionPlanScheduleService {
             createPartitionPlanTables(partitionPlanConfig.getPartitionTableConfigs(),
                     partitionPlanEntity.getId(), createScheduleEntity.getId(),
                     partitionPlanConfig.getFlowInstanceId(), partitionPlanConfig.getTaskId(),
-                    partitionPlanConfig.getMaxErrors(), partitionPlanConfig.getTimeoutMillis());
+                    partitionPlanConfig.getErrorStrategy(), partitionPlanConfig.getTimeoutMillis());
             return;
         }
         Map<PartitionPlanStrategy, List<PartitionPlanTableConfig>> strategy2TblCfgs =
@@ -182,11 +183,11 @@ public class PartitionPlanScheduleService {
         createPartitionPlanTables(strategy2TblCfgs.get(PartitionPlanStrategy.CREATE),
                 partitionPlanEntity.getId(), createScheduleEntity.getId(),
                 partitionPlanConfig.getFlowInstanceId(), partitionPlanConfig.getTaskId(),
-                partitionPlanConfig.getMaxErrors(), partitionPlanConfig.getTimeoutMillis());
+                partitionPlanConfig.getErrorStrategy(), partitionPlanConfig.getTimeoutMillis());
         createPartitionPlanTables(strategy2TblCfgs.get(PartitionPlanStrategy.DROP),
                 partitionPlanEntity.getId(), dropScheduleEntity.getId(),
                 partitionPlanConfig.getFlowInstanceId(), partitionPlanConfig.getTaskId(),
-                partitionPlanConfig.getMaxErrors(), partitionPlanConfig.getTimeoutMillis());
+                partitionPlanConfig.getErrorStrategy(), partitionPlanConfig.getTimeoutMillis());
     }
 
     @Transactional(rollbackOn = Exception.class)
@@ -316,7 +317,7 @@ public class PartitionPlanScheduleService {
 
     private void createPartitionPlanTables(List<PartitionPlanTableConfig> partitionPlanTableConfigs,
             Long partitionPlanId, Long scheduleId,
-            Long flowInstanceId, Long taskId, Integer maxErrors, Long timeoutMillis) {
+            Long flowInstanceId, Long taskId, TaskErrorStrategy errorStrategy, Long timeoutMillis) {
         Validate.isTrue(CollectionUtils.isNotEmpty(partitionPlanTableConfigs),
                 "Partition plan table configs can't be empty");
         List<PartitionPlanTableEntity> ppts = partitionPlanTableConfigs.stream()
@@ -329,7 +330,7 @@ public class PartitionPlanScheduleService {
                 .collect(Collectors.toList());
         this.partitionPlanTablePartitionKeyRepository.batchCreate(pptks);
         PartitionPlanConfig parameter = new PartitionPlanConfig();
-        parameter.setMaxErrors(maxErrors);
+        parameter.setErrorStrategy(errorStrategy);
         parameter.setTimeoutMillis(timeoutMillis);
         parameter.setId(partitionPlanId);
         parameter.setTaskId(taskId);
