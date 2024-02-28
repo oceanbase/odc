@@ -64,6 +64,7 @@ public abstract class BaseStatusModifyListener<T extends BaseFlowNodeInstance> e
     private NodeInstanceEntityRepository nodeInstanceRepository;
     @Autowired
     private BeanCreator beanCreator;
+    @Autowired
 
 
     protected void onExecutiuonStart(DelegateExecution execution) {

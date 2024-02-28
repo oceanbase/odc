@@ -142,6 +142,7 @@ public class FlowInstanceConfigurer extends GraphConfigurer<FlowInstance, BaseFl
     public FlowInstanceConfigurer next(@NonNull FlowTaskInstance nextNode) {
         return next(nextNode, serviceTaskBuilder -> {
             serviceTaskBuilder.addExecutionListener(ServiceTaskExecutingCompleteListener.class);
+            serviceTaskBuilder.addExecutionListener(ServiceTaskPendingListener.class);
             serviceTaskBuilder.setAsynchronous(true);
         }, userTaskBuilder -> {
             userTaskBuilder.addExecutionListener(ServiceTaskPendingListener.class);
