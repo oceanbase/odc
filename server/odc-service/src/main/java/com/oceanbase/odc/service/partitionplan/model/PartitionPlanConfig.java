@@ -20,6 +20,8 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonProperty.Access;
 import com.oceanbase.odc.core.flow.model.TaskParameters;
 import com.oceanbase.odc.core.shared.constant.TaskErrorStrategy;
 import com.oceanbase.odc.service.quartz.util.QuartzCronExpressionUtils;
@@ -53,6 +55,7 @@ public class PartitionPlanConfig implements Serializable, TaskParameters {
     private TriggerConfig droppingTrigger;
     private List<PartitionPlanTableConfig> partitionTableConfigs;
 
+    @JsonProperty(access = Access.READ_ONLY)
     public List<Date> getCreateTriggerNextFireTimes() {
         if (this.creationTrigger == null) {
             return Collections.emptyList();
@@ -65,6 +68,7 @@ public class PartitionPlanConfig implements Serializable, TaskParameters {
         }
     }
 
+    @JsonProperty(access = Access.READ_ONLY)
     public List<Date> getDropTriggerNextFireTimes() {
         if (this.droppingTrigger == null) {
             return Collections.emptyList();

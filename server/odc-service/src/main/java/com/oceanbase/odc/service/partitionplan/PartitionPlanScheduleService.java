@@ -18,6 +18,7 @@ package com.oceanbase.odc.service.partitionplan;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -31,9 +32,7 @@ import org.springframework.stereotype.Service;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.oceanbase.odc.common.json.JsonUtils;
-import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.core.shared.constant.TaskErrorStrategy;
-import com.oceanbase.odc.core.shared.exception.NotFoundException;
 import com.oceanbase.odc.metadb.partitionplan.PartitionPlanEntity;
 import com.oceanbase.odc.metadb.partitionplan.PartitionPlanRepository;
 import com.oceanbase.odc.metadb.partitionplan.PartitionPlanTableEntity;
@@ -87,8 +86,11 @@ public class PartitionPlanScheduleService {
 
     public PartitionPlanConfig getPartitionPlan(@NonNull Long flowInstanceId) {
         Long fId = this.flowInstanceService.mapFlowInstance(flowInstanceId, FlowInstance::getId, false);
-        PartitionPlanEntity pp = this.partitionPlanRepository.findByFlowInstanceId(fId)
-                .orElseThrow(() -> new NotFoundException(ResourceType.ODC_FLOW_INSTANCE, "id", flowInstanceId));
+        Optional<PartitionPlanEntity> optional = this.partitionPlanRepository.findByFlowInstanceId(fId);
+        if (!optional.isPresent()) {
+            return null;
+        }
+        PartitionPlanEntity pp = optional.get();
         PartitionPlanConfig target = entityToModel(pp);
         List<PartitionPlanTableConfig> tableConfigs = this.partitionPlanTableRepository
                 .findByPartitionPlanIdIn(Collections.singletonList(pp.getId())).stream()

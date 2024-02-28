@@ -103,8 +103,8 @@ public class PartitionPlanJob implements OdcJob {
             }
             PartitionPlanConfig target = this.partitionPlanScheduleService.getPartitionPlan(
                     paramemters.getFlowInstanceId());
-            if (!target.isEnabled()) {
-                log.warn("Partition plan is disabled, partitionPlanId={}", partitionPlanId);
+            if (target == null || !target.isEnabled()) {
+                log.warn("Partition plan is null or disabled, partitionPlanId={}", partitionPlanId);
                 return;
             }
             Set<Long> tableConfigIds = paramemters.getPartitionTableConfigs().stream()
