@@ -33,14 +33,14 @@ public class IntegrationConfigurationValidatorDelegate {
     @Autowired
     private AuthenticationFacade authenticationFacade;
 
-    public void preProcessConfig(IntegrationConfig config) {
+    public void preProcessConfig(IntegrationConfig config, Long integrationId) {
         if (config.getType() == IntegrationType.APPROVAL) {
             configurationValidator.check(ApprovalProperties.from(config));
         } else if (config.getType() == IntegrationType.SQL_INTERCEPTOR) {
             configurationValidator.check(SqlInterceptorProperties.from(config));
         } else if (config.getType() == IntegrationType.SSO) {
             configurationValidator.checkAndFillConfig(config, authenticationFacade.currentOrganizationId(),
-                    config.getEnabled(), null);
+                    config.getEnabled(), integrationId);
         }
     }
 }
