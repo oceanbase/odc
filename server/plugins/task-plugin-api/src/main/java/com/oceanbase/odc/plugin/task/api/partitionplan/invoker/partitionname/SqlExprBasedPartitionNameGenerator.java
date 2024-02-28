@@ -34,8 +34,6 @@ import lombok.NonNull;
  */
 public interface SqlExprBasedPartitionNameGenerator extends PartitionNameGenerator {
 
-    String PARTITION_NAME_GEN_CONFIG_KEY = "partitionNameGenerateConfig";
-
     String generate(@NonNull Connection connection, @NonNull DBTable dbTable,
             @NonNull Integer targetPartitionIndex, @NonNull DBTablePartitionDefinition target,
             @NonNull SqlExprBasedGeneratorConfig config) throws Exception;
@@ -50,7 +48,7 @@ public interface SqlExprBasedPartitionNameGenerator extends PartitionNameGenerat
             @NonNull Integer targetPartitionIndex, @NonNull DBTablePartitionDefinition target,
             @NonNull Map<String, Object> parameters) throws Exception {
         return generate(connection, dbTable, targetPartitionIndex, target, ParameterUtil.nullSafeExtract(
-                parameters, PARTITION_NAME_GEN_CONFIG_KEY, SqlExprBasedGeneratorConfig.class));
+                parameters, PARTITION_NAME_GENERATOR_KEY, SqlExprBasedGeneratorConfig.class));
     }
 
 }
