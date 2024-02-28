@@ -118,12 +118,29 @@ public class OBMySQLSchemaAccessor extends MySQLNoGreaterThan5740SchemaAccessor 
     public List<DBObjectIdentity> listTables(String schemaName, String tableNameLike) {
         List<DBObjectIdentity> results = super.listTables(schemaName, tableNameLike);
 
-        String querySystemTable = "show full tables from oceanbase where Table_type='BASE TABLE'";
-        try {
-            List<String> tables = jdbcOperations.query(querySystemTable, (rs, rowNum) -> rs.getString(1));
-            tables.forEach(name -> results.add(DBObjectIdentity.of("oceanbase", DBObjectType.TABLE, name)));
-        } catch (Exception e) {
-            log.warn("List system tables from 'oceanbase' failed, reason={}", e.getMessage());
+        if (StringUtils.isBlank(schemaName) || "oceanbase".equals(schemaName)) {
+            MySQLSqlBuilder querySystemTable = new MySQLSqlBuilder();
+            querySystemTable.append("show full tables from oceanbase where Table_type='BASE TABLE'");
+            if (StringUtils.isNotBlank(tableNameLike)) {
+                querySystemTable.append(" and tables_in_oceanbase like ").value("%" + tableNameLike + "%");
+            }
+            try {
+                List<String> tables =
+                        jdbcOperations.query(querySystemTable.toString(), (rs, rowNum) -> rs.getString(1));
+                tables.forEach(name -> results.add(DBObjectIdentity.of("oceanbase", DBObjectType.TABLE, name)));
+            } catch (Exception e) {
+                log.warn("List system tables from 'oceanbase' failed, reason={}", e.getMessage());
+            }
+        }
+
+        if (StringUtils.isBlank(schemaName) || "mysql".equals(schemaName)) {
+            MySQLSqlBuilder queryMysqlTable = new MySQLSqlBuilder();
+            queryMysqlTable.append("show full tables from `mysql` where Table_type='BASE TABLE'");
+            if (StringUtils.isNotBlank(tableNameLike)) {
+                queryMysqlTable.append(" and tables_in_mysql like ").value("%" + tableNameLike + "%");
+            }
+            jdbcOperations.query(queryMysqlTable.toString(),
+                    (rs, num) -> results.add(DBObjectIdentity.of("mysql", DBObjectType.TABLE, rs.getString(1))));
         }
         return results;
     }

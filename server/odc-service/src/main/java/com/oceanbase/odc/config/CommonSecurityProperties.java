@@ -103,6 +103,10 @@ public class CommonSecurityProperties {
     @Value("${odc.web.security.cors.enabled:false}")
     private boolean corsEnabled;
 
+    @Getter
+    @Value("${odc.web.security.basic-authentication.enabled:false}")
+    private boolean basicAuthenticationEnabled;
+
     /**
      * CORS 允许的 origins domain 列表，当 odc.web.security.cors.enabled=true 时配置有效
      */

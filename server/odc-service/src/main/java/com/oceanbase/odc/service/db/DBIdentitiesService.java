@@ -47,6 +47,7 @@ public class DBIdentitiesService {
         if (types.contains(DBObjectType.TABLE)) {
             listTables(schemaAccessor, all);
         }
+        schemaAccessor.showDatabases().forEach(db -> all.computeIfAbsent(db, SchemaIdentities::of));
         return new ArrayList<>(all.values());
     }
 

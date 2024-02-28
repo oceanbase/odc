@@ -23,6 +23,12 @@ import org.pf4j.Extension;
 import com.oceanbase.odc.common.unit.BinarySizeUnit;
 import com.oceanbase.odc.plugin.schema.oboracle.OBOracleTableExtension;
 import com.oceanbase.odc.plugin.schema.oracle.utils.DBAccessorUtil;
+import com.oceanbase.tools.dbbrowser.editor.DBTableEditor;
+import com.oceanbase.tools.dbbrowser.editor.oracle.OracleColumnEditor;
+import com.oceanbase.tools.dbbrowser.editor.oracle.OracleConstraintEditor;
+import com.oceanbase.tools.dbbrowser.editor.oracle.OracleDBTablePartitionEditor;
+import com.oceanbase.tools.dbbrowser.editor.oracle.OracleIndexEditor;
+import com.oceanbase.tools.dbbrowser.editor.oracle.OracleTableEditor;
 import com.oceanbase.tools.dbbrowser.model.DBTable;
 import com.oceanbase.tools.dbbrowser.model.DBTableStats;
 import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
@@ -78,4 +84,9 @@ public class OracleTableExtension extends OBOracleTableExtension {
         return DBAccessorUtil.getStatsAccessor(connection);
     }
 
+    @Override
+    protected DBTableEditor getTableEditor(Connection connection) {
+        return new OracleTableEditor(new OracleIndexEditor(), new OracleColumnEditor(),
+                new OracleConstraintEditor(), new OracleDBTablePartitionEditor());
+    }
 }

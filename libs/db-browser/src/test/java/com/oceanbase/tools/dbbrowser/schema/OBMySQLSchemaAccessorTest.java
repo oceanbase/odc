@@ -269,8 +269,20 @@ public class OBMySQLSchemaAccessorTest extends BaseTestEnv {
     }
 
     @Test
-    public void showTablelike_Success() {
+    public void listTables_Success() {
         List<DBObjectIdentity> tables = accessor.listTables(getOBMySQLDataBaseName(), null);
+        Assert.assertTrue(tables != null && tables.size() > 0);
+    }
+
+    @Test
+    public void listTables_inOceanbaseSchema_Success() {
+        List<DBObjectIdentity> tables = accessor.listTables("oceanbase", "job");
+        Assert.assertTrue(tables != null && tables.size() > 0);
+    }
+
+    @Test
+    public void listTables_inMySQLSchema_Success() {
+        List<DBObjectIdentity> tables = accessor.listTables("mysql", "time");
         Assert.assertTrue(tables != null && tables.size() > 0);
     }
 

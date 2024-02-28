@@ -19,8 +19,10 @@ import java.sql.SQLException;
 import java.text.MessageFormat;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -83,8 +85,10 @@ import com.oceanbase.odc.service.schedule.ScheduleTaskService;
 import com.oceanbase.odc.service.schedule.model.JobType;
 import com.oceanbase.odc.service.schedule.model.QuartzKeyGenerator;
 import com.oceanbase.odc.service.session.factory.DefaultConnectSessionFactory;
+import com.oceanbase.tools.dbbrowser.model.DBConstraintType;
 import com.oceanbase.tools.dbbrowser.model.DBObjectType;
 import com.oceanbase.tools.dbbrowser.model.DBTableColumn;
+import com.oceanbase.tools.dbbrowser.model.DBTableConstraint;
 
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
@@ -394,13 +398,16 @@ public class DefaultOnlineSchemaChangeTaskHandler implements OnlineSchemaChangeT
         SyncJdbcExecutor executor = session.getSyncJdbcExecutor(ConnectionSessionConstants.BACKEND_DS_KEY);
         String finalTableDdl;
         executor.execute(taskParam.getNewTableCreateDdl());
-        if (param.getSqlType() == OnlineSchemaChangeSqlType.ALTER) {
+        if (CollectionUtils.isNotEmpty(taskParam.getSqlsToBeExecuted())) {
             taskParam.getSqlsToBeExecuted().forEach(executor::execute);
+        }
+        if (param.getSqlType() == OnlineSchemaChangeSqlType.ALTER) {
 
             // update new table ddl for display
             finalTableDdl = DdlUtils.queryOriginTableCreateDdl(session, taskParam.getNewTableName());
+
             String ddlForDisplay = DdlUtils.replaceTableName(finalTableDdl, taskParam.getOriginTableName(),
-                    session.getDialectType(), OnlineSchemaChangeSqlType.CREATE);
+                    session.getDialectType(), OnlineSchemaChangeSqlType.CREATE).getNewSql();
             taskParam.setNewTableCreateDdlForDisplay(ddlForDisplay);
             scheduleTaskRepository.updateTaskResult(scheduleTaskId,
                     JsonUtils.toJson(new OnlineSchemaChangeScheduleTaskResult(taskParam)));
@@ -423,10 +430,31 @@ public class DefaultOnlineSchemaChangeTaskHandler implements OnlineSchemaChangeT
                         DdlUtils.getUnwrappedName(taskParam.getNewTableNameUnwrapped())).stream()
                         .map(DBTableColumn::getName).collect(Collectors.toList());
 
-        if (!CollectionUtils.isEqualCollection(originTableColumns, newTableColumns)) {
+        // Check drop column
+        List<String> aMinusB = new ArrayList<>(originTableColumns);
+        aMinusB.removeAll(new ArrayList<>(newTableColumns));
+
+        if (!aMinusB.isEmpty()) {
             throw new UnsupportedException(ErrorCodes.OscColumnNameInconsistent,
-                    null, "Column name of origin table is inconsistent with new table.");
+                    null, String.format("Column [%s] is not found in new table.", String.join(",", aMinusB)));
         }
+
+        List<String> bMinusA = new ArrayList<>(newTableColumns);
+        bMinusA.removeAll(new ArrayList<>(originTableColumns));
+
+        // Check add primary key column
+        List<DBTableConstraint> constraints = DBSchemaAccessors.create(session)
+                .listTableConstraints(taskParam.getDatabaseName(), taskParam.getNewTableNameUnwrapped());
+        constraints.stream()
+                .filter(c -> c.getType() == DBConstraintType.PRIMARY_KEY)
+                .forEach(p -> {
+                    if (new HashSet<>(bMinusA).containsAll(p.getColumnNames())) {
+                        throw new UnsupportedException(ErrorCodes.OscAddPrimaryKeyColumnNotAllowed, null,
+                                String.format("Add primary key column [%s] in new table is not allowed.",
+                                        String.join(",", p.getColumnNames())));
+                    }
+                });
+
     }
 
     private void dropNewTableIfExits(OnlineSchemaChangeScheduleTaskParameters taskParam, ConnectionSession session) {

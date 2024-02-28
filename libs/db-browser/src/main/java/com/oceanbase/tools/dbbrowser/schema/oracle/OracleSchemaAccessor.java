@@ -1129,12 +1129,15 @@ public class OracleSchemaAccessor implements DBSchemaAccessor {
             try {
                 jdbcOperations.query(getIndexDDLSql.toString(), (rs, num) -> {
                     String indexDdl = rs.getString("DDL");
+                    if (StringUtils.isNotBlank(indexDdl) && !indexDdl.trim().endsWith(";")) {
+                        indexDdl = new StringBuilder(indexDdl.trim()).append(";").toString();
+                    }
                     /**
                      * OB 4.0，dbms_metadata.get_ddl 可能会返回表的 DDL，属于 内核的 bug <br>
                      * 这里判断下如果是 CREATE TABLE 开头，则跳过
                      */
                     if (StringUtils.isNotBlank(indexDdl) && !indexDdl.startsWith("CREATE TABLE")) {
-                        ddl.append("\n").append(rs.getString("DDL"));
+                        ddl.append("\n").append(indexDdl);
                     }
                     return ddl;
                 });
@@ -1160,8 +1163,7 @@ public class OracleSchemaAccessor implements DBSchemaAccessor {
                 .append(", ")
                 .value(schemaName)
                 .append(") as DDL from dual");
-
-        return jdbcOperations.queryForObject(sb.toString(), String.class);
+        return StringUtils.strip(jdbcOperations.queryForObject(sb.toString(), String.class));
     }
 
     @Override

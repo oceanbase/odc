@@ -38,6 +38,7 @@ import com.oceanbase.odc.metadb.collaboration.ProjectEntity;
 import com.oceanbase.odc.metadb.collaboration.ProjectRepository;
 import com.oceanbase.odc.service.collaboration.environment.EnvironmentService;
 import com.oceanbase.odc.service.collaboration.project.ProjectService;
+import com.oceanbase.odc.service.config.UserConfigService;
 import com.oceanbase.odc.service.connection.ConnectionService;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.iam.ResourceRoleService;
@@ -88,11 +89,15 @@ public class HookConfiguration {
     @Autowired
     private RiskDetectService riskDetectService;
 
+    @Autowired
+    private UserConfigService userConfigService;
+
     @PostConstruct
     public void init() {
         userService.addPostUserDeleteHook(event -> {
             Long userId = event.getUserId();
             projectService.deleteUserRelatedProjectRoles(userId);
+            userConfigService.deleteUserConfigurations(userId);
         });
         log.info("PostUserDeleteHook added");
 

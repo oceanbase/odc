@@ -45,7 +45,7 @@ public class K8sJobCaller extends BaseJobCaller {
         String jobName = JobUtils.generateExecutorName(context.getJobIdentity());
 
         String name = client.create(podConfig.getNamespace(), jobName, podConfig.getImage(),
-                podConfig.getCommand(), podConfig.getPodParam());
+                podConfig.getCommand(), podConfig);
 
         return DefaultExecutorIdentifier.builder().namespace(podConfig.getNamespace())
                 .executorName(name).build();

@@ -53,9 +53,9 @@ public class DefaultJdbcRowMapper extends BaseDialectBasedRowMapper {
         } else if (dialectType == DialectType.OB_ORACLE) {
             mapperList.add(new OracleNlsFormatDateMapper(
                     ConnectionSessionUtil.getNlsDateFormat(session)));
-            mapperList.add(new OracleNlsFormatTimestampTZMapper(
+            mapperList.add(new OBOracleNlsFormatTimestampTZMapper(
                     ConnectionSessionUtil.getNlsTimestampTZFormat(session)));
-            mapperList.add(new OracleNlsFormatTimestampLTZMapper(
+            mapperList.add(new OBOracleNlsFormatTimestampLTZMapper(
                     ConnectionSessionUtil.getNlsTimestampTZFormat(session),
                     ConnectionSessionUtil.getConsoleSessionTimeZone(session)));
             mapperList.add(new OracleIntervalMapper());
@@ -76,6 +76,12 @@ public class DefaultJdbcRowMapper extends BaseDialectBasedRowMapper {
             mapperList.add(new OracleIntervalMapper());
             mapperList.add(new OracleNumberMapper());
             mapperList.add(new OracleBinaryNumberMapper());
+            mapperList.add(new OracleNlsFormatTimestampMapper(
+                    ConnectionSessionUtil.getNlsTimestampFormat(session)));
+            mapperList.add(new OracleNlsFormatTimestampTZMapper(
+                    ConnectionSessionUtil.getNlsTimestampTZFormat(session)));
+            mapperList.add(new OracleNlsFormatTimestampLTZMapper(
+                    ConnectionSessionUtil.getNlsTimestampTZFormat(session)));
         }
         mapperList.add(new GeneralLobMapper());
     }

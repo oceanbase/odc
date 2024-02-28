@@ -216,14 +216,7 @@ public class MySQLNoGreaterThan5740SchemaAccessor implements DBSchemaAccessor {
 
     @Override
     public List<DBObjectIdentity> listTables(String schemaName, String tableNameLike) {
-        List<DBObjectIdentity> results = new ArrayList<>();
-        try {
-            results.addAll(listBaseTables(schemaName, tableNameLike));
-        } catch (Exception e) {
-            log.warn("List base tables failed, reason={}", e.getMessage());
-        }
-
-        return results;
+        return listBaseTables(schemaName, tableNameLike);
     }
 
     protected List<DBObjectIdentity> listBaseTables(String schemaName, String tableNameLike)

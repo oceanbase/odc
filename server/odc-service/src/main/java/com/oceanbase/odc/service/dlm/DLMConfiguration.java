@@ -22,6 +22,7 @@ import org.springframework.context.annotation.Configuration;
 import com.oceanbase.tools.migrator.common.enums.ShardingStrategy;
 import com.oceanbase.tools.migrator.core.IJobStore;
 
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -31,6 +32,7 @@ import lombok.extern.slf4j.Slf4j;
  */
 
 @Slf4j
+@Getter
 @Configuration
 public class DLMConfiguration {
 

@@ -59,7 +59,8 @@ public class OrganizationAuthenticationInterceptor implements HandlerInterceptor
             "/api/v2/aliyun/generic/**",
             "/api/v2/objectstorage/**",
             "/api/v2/connect/sessions/*/sqls/*/download",
-            "/api/v2/datasource/sessions/*/sqls/*/download"
+            "/api/v2/datasource/sessions/*/sqls/*/download",
+            "/api/v2/config/**"
     };
 
     @Autowired

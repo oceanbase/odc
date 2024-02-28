@@ -181,7 +181,12 @@ public class ConfigurationResolver {
         reader.setParameter(pluginParameter);
 
         // connection
-        pluginParameter.setUsername(baseConfig.getConnectionInfo().getUserNameForConnect());
+        String username = baseConfig.getConnectionInfo().getUserNameForConnect();
+        String userRole = baseConfig.getConnectionInfo().getUserRole();
+        if (StringUtils.isNotEmpty(userRole) && !"normal".equals(userRole)) {
+            username += " as " + userRole;
+        }
+        pluginParameter.setUsername(username);
         pluginParameter.setPassword(baseConfig.getConnectionInfo().getPassword());
         MySQLReaderPluginParameter.DataXConnection connection = new MySQLReaderPluginParameter.DataXConnection(
                 new String[] {url});
@@ -205,7 +210,12 @@ public class ConfigurationResolver {
 
         pluginParameter.setWriteMode("insert");
         // connection
-        pluginParameter.setUsername(baseConfig.getConnectionInfo().getUserNameForConnect());
+        String username = baseConfig.getConnectionInfo().getUserNameForConnect();
+        String userRole = baseConfig.getConnectionInfo().getUserRole();
+        if (StringUtils.isNotEmpty(userRole) && !"normal".equals(userRole)) {
+            username += " as " + userRole;
+        }
+        pluginParameter.setUsername(username);
         pluginParameter.setPassword(baseConfig.getConnectionInfo().getPassword());
         DataXConnection connection = new DataXConnection(url, new String[] {table});
         pluginParameter.setConnection(Collections.singletonList(connection));

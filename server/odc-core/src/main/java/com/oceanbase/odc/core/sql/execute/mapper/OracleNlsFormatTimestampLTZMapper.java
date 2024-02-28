@@ -19,64 +19,36 @@ import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.TimeZone;
 
-import org.springframework.context.i18n.LocaleContextHolder;
-
-import com.oceanbase.jdbc.extend.datatype.TIMESTAMPLTZ;
 import com.oceanbase.odc.core.sql.execute.model.TimeFormatResult;
-import com.oceanbase.odc.core.sql.util.OracleTimestampFormat;
-import com.oceanbase.odc.core.sql.util.TimeZoneUtil;
+import com.oceanbase.tools.dbbrowser.model.datatype.DataType;
 
 import lombok.NonNull;
 
 /**
  * {@link OracleNlsFormatTimestampLTZMapper}
  *
- * @author yh263208
- * @date 2023-07-04 21:01
- * @since ODC_release_4.2.0
+ * @author jingtian
+ * @date 2024/2/21
+ * @since ODC_release_4.2.4
  */
-public class OracleNlsFormatTimestampLTZMapper extends OracleGeneralTimestampLTZMapper {
+public class OracleNlsFormatTimestampLTZMapper extends OracleNlsFormatTimestampTZMapper {
 
-    private final OracleTimestampFormat format;
-
-    public OracleNlsFormatTimestampLTZMapper(@NonNull String pattern, String serverTimeZoneStr) {
-        super(serverTimeZoneStr);
-        if (serverTimeZoneStr == null) {
-            this.format = null;
-        } else if (TimeZoneUtil.isValid(serverTimeZoneStr)) {
-            this.format = new OracleTimestampFormat(pattern,
-                    TimeZone.getTimeZone(serverTimeZoneStr), LocaleContextHolder.getLocale(), true);
-        } else {
-            this.format = null;
-        }
+    public OracleNlsFormatTimestampLTZMapper(@NonNull String pattern) {
+        super(pattern);
     }
 
     @Override
     public Object mapCell(@NonNull CellData data) throws SQLException {
-        try {
-            return map(data);
-        } catch (Exception e) {
-            Object obj = super.mapCell(data);
-            return obj == null ? null : new TimeFormatResult(obj.toString());
-        }
-    }
-
-    private Object map(CellData cellData) throws SQLException {
-        Object obj = cellData.getObject();
-        if (obj == null) {
+        Timestamp timestamp = data.getTimestamp();
+        if (timestamp == null) {
             return null;
         }
-        if (this.format == null) {
-            Object cellObj = super.mapCell(cellData);
-            return cellObj == null ? null : new TimeFormatResult(cellObj.toString());
-        }
-        byte[] bytes = ((TIMESTAMPLTZ) obj).toBytes();
-        Long timestamp = getTimeMillis(bytes, serverTimeZoneStr);
-        Integer nano = getNanos(bytes);
-
-        Timestamp ts = new Timestamp(timestamp);
-        ts.setNanos(nano);
-        return new TimeFormatResult(format.format(ts), timestamp, nano, serverTimeZoneStr);
+        return new TimeFormatResult(this.format.format(timestamp), timestamp.getTime(), timestamp.getNanos(),
+                TimeZone.getDefault().getID());
     }
 
+    @Override
+    public boolean supports(@NonNull DataType dataType) {
+        return "TIMESTAMP WITH LOCAL TIME ZONE".equalsIgnoreCase(dataType.getDataTypeName());
+    }
 }
