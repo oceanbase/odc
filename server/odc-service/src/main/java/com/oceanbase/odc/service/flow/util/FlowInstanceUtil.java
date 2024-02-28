@@ -175,11 +175,11 @@ public class FlowInstanceUtil {
 
     private static void next(@NonNull FlowInstanceConfigurer configurer, @NonNull BaseFlowNodeInstance instance) {
         if (instance instanceof FlowApprovalInstance) {
-            configurer.next((FlowApprovalInstance) instance);
+            configurer.nextLogicTask((FlowApprovalInstance) instance);
         } else if (instance instanceof FlowGatewayInstance) {
-            configurer.next((FlowGatewayInstance) instance);
+            configurer.nextLogicTask((FlowGatewayInstance) instance);
         } else if (instance instanceof FlowTaskInstance) {
-            configurer.next((FlowTaskInstance) instance);
+            configurer.nextLogicTask((FlowTaskInstance) instance);
         } else {
             throw new IllegalStateException("Type for " + instance + " is illegal");
         }

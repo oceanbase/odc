@@ -127,8 +127,8 @@ public class FlowInstanceConfigurer extends GraphConfigurer<FlowInstance, BaseFl
         this.flowInstanceId = flowInstance.getId();
     }
 
-    public FlowInstanceConfigurer next(@NonNull FlowApprovalInstance nextNode) {
-        return next(nextNode, (Consumer<UserTaskBuilder>) userTaskBuilder -> {
+    public FlowInstanceConfigurer nextLogicTask(@NonNull FlowApprovalInstance nextNode) {
+        return nextLogicTask(nextNode, (Consumer<UserTaskBuilder>) userTaskBuilder -> {
             userTaskBuilder.addTaskListener(BaseTaskBindUserTaskListener.class);
             userTaskBuilder.addExecutionListener(BaseTaskExecutingCompleteListener.class);
             Integer expireIntervalSeconds = nextNode.getExpireIntervalSeconds();
@@ -140,8 +140,8 @@ public class FlowInstanceConfigurer extends GraphConfigurer<FlowInstance, BaseFl
         });
     }
 
-    public FlowInstanceConfigurer next(@NonNull FlowTaskInstance nextNode) {
-        return next(nextNode, serviceTaskBuilder -> {
+    public FlowInstanceConfigurer nextLogicTask(@NonNull FlowTaskInstance nextNode) {
+        return nextLogicTask(nextNode, serviceTaskBuilder -> {
             serviceTaskBuilder.addExecutionListener(ServiceTaskExecutingCompleteListener.class);
             serviceTaskBuilder.addExecutionListener(ServiceTaskPendingListener.class);
             serviceTaskBuilder.setAsynchronous(true);
@@ -159,8 +159,8 @@ public class FlowInstanceConfigurer extends GraphConfigurer<FlowInstance, BaseFl
         });
     }
 
-    public FlowInstanceConfigurer next(@NonNull FlowGatewayInstance nextNode) {
-        return next(nextNode, (Consumer<BaseProcessNodeBuilder<? extends Gateway>>) gatewayBuilder -> gatewayBuilder
+    public FlowInstanceConfigurer nextLogicTask(@NonNull FlowGatewayInstance nextNode) {
+        return nextLogicTask(nextNode, (Consumer<BaseProcessNodeBuilder<? extends Gateway>>) gatewayBuilder -> gatewayBuilder
                 .addExecutionListener(GatewayExecutingCompleteListener.class));
     }
 
@@ -203,7 +203,7 @@ public class FlowInstanceConfigurer extends GraphConfigurer<FlowInstance, BaseFl
         return this;
     }
 
-    protected FlowInstanceConfigurer next(@NonNull FlowApprovalInstance nextNode,
+    protected FlowInstanceConfigurer nextLogicTask(@NonNull FlowApprovalInstance nextNode,
             @NonNull Consumer<UserTaskBuilder> userTaskConsumer) {
         String userTaskName = FlowNodeType.APPROVAL_TASK.name() + "_user_task_" + getNameSuffix(nextNode);
         UserTaskBuilder userTaskBuilder = nullSafeGetNodeBuilder(userTaskName, nextNode, () -> {
@@ -234,10 +234,10 @@ public class FlowInstanceConfigurer extends GraphConfigurer<FlowInstance, BaseFl
             log.debug("Successfully set up the approval task node instance, instanceType={}, activityId={}, name={}",
                     nextNode.getNodeType(), userTaskBuilder.getGraphId(), userTaskBuilder.getName());
         }
-        return next(userTaskBuilder, nextNode);
+        return nextLogicTask(userTaskBuilder, nextNode);
     }
 
-    protected FlowInstanceConfigurer next(@NonNull FlowTaskInstance nextNode,
+    protected FlowInstanceConfigurer nextLogicTask(@NonNull FlowTaskInstance nextNode,
             @NonNull Consumer<UserTaskBuilder> userTaskBuilderConsumer,
             @NonNull Consumer<UserTaskBuilder> userManuTaskConsumer,
             @NonNull Consumer<UserTaskBuilder> userTimerTaskConsumer) {
@@ -255,7 +255,7 @@ public class FlowInstanceConfigurer extends GraphConfigurer<FlowInstance, BaseFl
         return nextInternal(nextNode, serviceTaskBuilder, userManuTaskConsumer, userTimerTaskConsumer);
     }
 
-    protected FlowInstanceConfigurer nextServiceTask(@NonNull FlowTaskInstance nextNode,
+    protected FlowInstanceConfigurer nextPhysicTask(@NonNull FlowTaskInstance nextNode,
             @NonNull Consumer<ServiceTaskBuilder> serviceTaskConsumer,
             @NonNull Consumer<UserTaskBuilder> userManuTaskConsumer,
             @NonNull Consumer<UserTaskBuilder> userTimerTaskConsumer) {
@@ -283,7 +283,7 @@ public class FlowInstanceConfigurer extends GraphConfigurer<FlowInstance, BaseFl
                 log.debug("Set up the service task succeed, activityId={}, name={}",
                         serviceTaskBuilder.getGraphId(), serviceTaskBuilder.getName());
             }
-            return next(serviceTaskBuilder, nextNode);
+            return nextLogicTask(serviceTaskBuilder, nextNode);
         }
         if (strategyConfig.getStrategy() == FlowTaskExecutionStrategy.TIMER) {
             if (log.isDebugEnabled()) {
@@ -324,7 +324,7 @@ public class FlowInstanceConfigurer extends GraphConfigurer<FlowInstance, BaseFl
                 log.debug("Set up the service task node succeed, activityId={}, name={}",
                         serviceTaskBuilder.getGraphId(), serviceTaskBuilder.getName());
             }
-            return next(serviceTaskBuilder, nextNode);
+            return nextLogicTask(serviceTaskBuilder, nextNode);
         }
 
         if (log.isDebugEnabled()) {
@@ -361,10 +361,10 @@ public class FlowInstanceConfigurer extends GraphConfigurer<FlowInstance, BaseFl
             log.debug("Set up the service task node succeed, activityId={}, name={}",
                     serviceTaskBuilder.getGraphId(), serviceTaskBuilder.getName());
         }
-        return next(serviceTaskBuilder, nextNode);
+        return nextLogicTask(serviceTaskBuilder, nextNode);
     }
 
-    protected FlowInstanceConfigurer next(@NonNull FlowGatewayInstance nextNode,
+    protected FlowInstanceConfigurer nextLogicTask(@NonNull FlowGatewayInstance nextNode,
             @NonNull Consumer<BaseProcessNodeBuilder<? extends Gateway>> gatewayConsumer) {
         String gatewayName = FlowNodeType.GATEWAY.name() + "_exclusive_gateway_" + getNameSuffix(nextNode);
         ExclusiveGatewayBuilder gatewayBuilder = nullSafeGetNodeBuilder(gatewayName, nextNode, () -> {
@@ -377,7 +377,7 @@ public class FlowInstanceConfigurer extends GraphConfigurer<FlowInstance, BaseFl
             log.debug("Set up the gateway node succeed, intanceType={}, activityId={}, name={}",
                     nextNode.getNodeType(), gatewayBuilder.getGraphId(), gatewayBuilder.getName());
         }
-        return next(gatewayBuilder, nextNode);
+        return nextLogicTask(gatewayBuilder, nextNode);
     }
 
     protected <T extends Task> TimerBoundaryEventBuilder setExpireSeconds(
@@ -441,7 +441,7 @@ public class FlowInstanceConfigurer extends GraphConfigurer<FlowInstance, BaseFl
         return errorBuilder;
     }
 
-    protected FlowInstanceConfigurer next(@NonNull BaseProcessNodeBuilder<?> nodeBuilder,
+    protected FlowInstanceConfigurer nextLogicTask(@NonNull BaseProcessNodeBuilder<?> nodeBuilder,
             @NonNull BaseFlowNodeInstance nextNode) {
         BaseFlowNodeInstance from = last();
         if (from != null && from.isEndEndPoint()) {

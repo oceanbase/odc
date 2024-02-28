@@ -68,14 +68,14 @@ public class OdcFlowInstanceConfigurer extends FlowInstanceConfigurer {
     }
 
     @Override
-    public FlowInstanceConfigurer next(@NonNull FlowTaskInstance nextNode) {
+    public FlowInstanceConfigurer nextLogicTask(@NonNull FlowTaskInstance nextNode) {
         if (nextNode.getTaskType() == TaskType.GENERATE_ROLLBACK) {
-            return next(nextNode, s -> s.setAsynchronous(true), u -> {
+            return nextLogicTask(nextNode, s -> s.setAsynchronous(true), u -> {
             }, u -> {
             });
         } else if (nextNode.getTaskType() == TaskType.SQL_CHECK
                 || nextNode.getTaskType() == TaskType.PRE_CHECK) {
-            return next(nextNode, s -> {
+            return nextLogicTask(nextNode, s -> {
                 s.setAsynchronous(true);
                 ErrorBoundaryEventBuilder failedErrBuilder =
                         setHandleableError(nextNode, s, ErrorCodes.FlowTaskInstanceFailed);
@@ -84,7 +84,7 @@ public class OdcFlowInstanceConfigurer extends FlowInstanceConfigurer {
             }, u -> {
             });
         }
-        return next(nextNode, serviceTaskBuilder -> {
+        return nextLogicTask(nextNode, serviceTaskBuilder -> {
             serviceTaskBuilder.addExecutionListener(ServiceTaskExecutingCompleteListener.class);
             serviceTaskBuilder.setAsynchronous(true);
             ErrorBoundaryEventBuilder cancelErrBuilder =

@@ -577,19 +577,19 @@ public class FlowInstance extends Graph implements SecurityResource, Organizatio
 
     public FlowInstanceConfigurer newFlowInstanceConfigurer(FlowApprovalInstance newNode) {
         FlowInstanceConfigurer configurer = newFlowInstanceConfigurer();
-        configurer.next(newNode);
+        configurer.nextLogicTask(newNode);
         return configurer;
     }
 
     public FlowInstanceConfigurer newFlowInstanceConfigurer(FlowTaskInstance newNode) {
         FlowInstanceConfigurer configurer = newFlowInstanceConfigurer();
-        configurer.next(newNode);
+        configurer.nextLogicTask(newNode);
         return configurer;
     }
 
     public FlowInstanceConfigurer newFlowInstanceConfigurer(FlowGatewayInstance newNode) {
         FlowInstanceConfigurer configurer = newFlowInstanceConfigurer();
-        configurer.next(newNode);
+        configurer.nextLogicTask(newNode);
         return configurer;
     }
 
@@ -607,11 +607,11 @@ public class FlowInstance extends Graph implements SecurityResource, Organizatio
         }
         for (FlowInstanceConfigurer configurer : configurerList) {
             if (to instanceof FlowGatewayInstance) {
-                configurer.next((FlowGatewayInstance) to);
+                configurer.nextLogicTask((FlowGatewayInstance) to);
             } else if (to instanceof FlowApprovalInstance) {
-                configurer.next((FlowApprovalInstance) to);
+                configurer.nextLogicTask((FlowApprovalInstance) to);
             } else if (to instanceof FlowTaskInstance) {
-                configurer.next((FlowTaskInstance) to);
+                configurer.nextLogicTask((FlowTaskInstance) to);
             } else {
                 throw new IllegalStateException("Illegal instance type " + to.getClass());
             }

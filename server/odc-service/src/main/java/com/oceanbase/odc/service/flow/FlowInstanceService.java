@@ -754,9 +754,9 @@ public class FlowInstanceService {
                 FlowTaskInstance rollbackPlanInstance =
                         flowFactory.generateFlowTaskInstance(flowInstance.getId(), true, false,
                                 TaskType.GENERATE_ROLLBACK, ExecutionStrategyConfig.autoStrategy());
-                taskConfigurer = flowInstance.newFlowInstance().next(rollbackPlanInstance).next(taskInstance);
+                taskConfigurer = flowInstance.newFlowInstance().nextLogicTask(rollbackPlanInstance).nextLogicTask(taskInstance);
             } else {
-                taskConfigurer = flowInstance.newFlowInstance().next(taskInstance);
+                taskConfigurer = flowInstance.newFlowInstance().nextLogicTask(taskInstance);
             }
             taskConfigurer.endFlowInstance();
             flowInstance.buildTopology();
@@ -811,7 +811,7 @@ public class FlowInstanceService {
             FlowGatewayInstance riskLevelGateway =
                     flowFactory.generateFlowGatewayInstance(flowInstance.getId(), false, true);
             FlowInstanceConfigurer startConfigurer =
-                    flowInstance.newFlowInstance().next(riskDetectInstance).next(riskLevelGateway);
+                    flowInstance.newFlowInstance().nextLogicTask(riskDetectInstance).nextLogicTask(riskLevelGateway);
             for (int i = 0; i < riskLevels.size(); i++) {
                 FlowInstanceConfigurer targetConfigurer = buildConfigurer(riskLevels.get(i).getApprovalFlowConfig(),
                         flowInstance, flowInstanceReq.getTaskType(), taskEntity.getId(),
@@ -881,7 +881,7 @@ public class FlowInstanceService {
             FlowGatewayInstance approvalGatewayInstance =
                     flowFactory.generateFlowGatewayInstance(flowInstance.getId(), false, true);
             configurer = flowInstance.newFlowInstanceConfigurer(approvalInstance);
-            configurer = configurer.next(approvalGatewayInstance).route(String.format("${!%s}",
+            configurer = configurer.nextLogicTask(approvalGatewayInstance).route(String.format("${!%s}",
                     FlowApprovalInstance.APPROVAL_VARIABLE_NAME), flowInstance.endFlowInstance());
             if (nodeSequence == nodeConfigs.size() - 1) {
                 ExecutionStrategyConfig strategyConfig = ExecutionStrategyConfig.from(flowInstanceReq,
@@ -895,7 +895,7 @@ public class FlowInstanceService {
                     FlowTaskInstance rollbackPlanInstance =
                             flowFactory.generateFlowTaskInstance(flowInstance.getId(), false, false,
                                     TaskType.GENERATE_ROLLBACK, ExecutionStrategyConfig.autoStrategy());
-                    taskConfigurer = flowInstance.newFlowInstanceConfigurer(rollbackPlanInstance).next(taskInstance);
+                    taskConfigurer = flowInstance.newFlowInstanceConfigurer(rollbackPlanInstance).nextLogicTask(taskInstance);
                 } else {
                     taskConfigurer = flowInstance.newFlowInstanceConfigurer(taskInstance);
                 }

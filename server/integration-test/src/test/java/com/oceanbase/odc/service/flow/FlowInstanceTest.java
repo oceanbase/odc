@@ -232,11 +232,11 @@ public class FlowInstanceTest extends ServiceTestEnv {
         FlowInstanceConfigurer firstRoute_3 =
                 flowInstance.newFlowInstanceConfigurer(first_route_task_1).endFlowInstance();
         FlowInstanceConfigurer firstRoute_2 =
-                flowInstance.newFlowInstanceConfigurer(first_route_approval_2).next(first_route_approval_2_gateway)
+                flowInstance.newFlowInstanceConfigurer(first_route_approval_2).nextLogicTask(first_route_approval_2_gateway)
                         .route(String.format("${%s}", FlowApprovalInstance.APPROVAL_VARIABLE_NAME), firstRoute_3)
                         .route(flowInstance.endFlowInstance());
         FlowInstanceConfigurer firstRoute_1 =
-                flowInstance.newFlowInstanceConfigurer(first_route_approval_1).next(first_route_approval_1_gateway)
+                flowInstance.newFlowInstanceConfigurer(first_route_approval_1).nextLogicTask(first_route_approval_1_gateway)
                         .route(String.format("${%s}", FlowApprovalInstance.APPROVAL_VARIABLE_NAME), firstRoute_2)
                         .route(flowInstance.endFlowInstance());
 
@@ -248,11 +248,11 @@ public class FlowInstanceTest extends ServiceTestEnv {
         FlowInstanceConfigurer secondRoute_2 =
                 flowInstance.newFlowInstanceConfigurer(second_route_task_1).endFlowInstance();
         FlowInstanceConfigurer secondRoute_1 =
-                flowInstance.newFlowInstanceConfigurer(second_route_approval_1).next(second_route_approval_1_gateway)
+                flowInstance.newFlowInstanceConfigurer(second_route_approval_1).nextLogicTask(second_route_approval_1_gateway)
                         .route(String.format("${%s}", FlowApprovalInstance.APPROVAL_VARIABLE_NAME), secondRoute_2)
                         .route(flowInstance.endFlowInstance());
 
-        flowInstance.newFlowInstance().next(gatewayInstance)
+        flowInstance.newFlowInstance().nextLogicTask(gatewayInstance)
                 .route("${level == 1}", secondRoute_1)
                 .route(firstRoute_1)
                 .and()
@@ -274,11 +274,11 @@ public class FlowInstanceTest extends ServiceTestEnv {
         FlowGatewayInstance convergedGatewayInstance = createGatewayInstance(flowInstance.getId(), false, true);
 
         FlowInstanceConfigurer firstRoute =
-                flowInstance.newFlowInstanceConfigurer(firstRouteApproval).next(firstRouteTask);
+                flowInstance.newFlowInstanceConfigurer(firstRouteApproval).nextLogicTask(firstRouteTask);
         FlowInstanceConfigurer secondRoute = flowInstance.newFlowInstanceConfigurer(secondRouteTask);
 
         flowInstance.newFlowInstance()
-                .next(gatewayInstance)
+                .nextLogicTask(gatewayInstance)
                 .route("${level == 1}", firstRoute)
                 .route(secondRoute).and()
                 .converge(Arrays.asList(firstRoute, secondRoute),
