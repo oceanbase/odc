@@ -176,12 +176,12 @@ public class FlowInstanceTest extends ServiceTestEnv {
         FlowInstance instance = createFlowInstanceWithTopo();
         BaseFlowNodeInstance nodeInstance = instance.getStartNodeInstance();
         List<BaseFlowNodeInstance> nodes =
-                instance.getNextNodeInstances(nodeInstance.getId(), nodeInstance.getNodeType());
+                instance.getNextNodeInstances(nodeInstance.getId(), nodeInstance.getNodeType(), nodeInstance.getCoreFlowableElementType());
         Assert.assertEquals(2, nodes.size());
 
         Set<FlowNodeType> actual =
                 nodes.stream().map(BaseFlowNodeInstance::getNodeType).collect(Collectors.toSet());
-        Assert.assertEquals(new HashSet<>(Arrays.asList(FlowNodeType.APPROVAL_TASK, FlowNodeType.SERVICE_TASK)),
+        Assert.assertEquals(new HashSet<>(Arrays.asList(FlowNodeType.APPROVAL_TASK)),
                 actual);
     }
 

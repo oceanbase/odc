@@ -44,6 +44,7 @@ import com.oceanbase.odc.core.flow.graph.Graph;
 import com.oceanbase.odc.core.flow.graph.GraphEdge;
 import com.oceanbase.odc.core.flow.graph.GraphVertex;
 import com.oceanbase.odc.core.flow.model.FlowableElement;
+import com.oceanbase.odc.core.flow.model.FlowableElementType;
 import com.oceanbase.odc.core.flow.util.FlowUtil;
 import com.oceanbase.odc.core.shared.OrganizationIsolated;
 import com.oceanbase.odc.core.shared.Verify;
@@ -430,8 +431,8 @@ public class FlowInstance extends Graph implements SecurityResource, Organizatio
     }
 
     public List<BaseFlowNodeInstance> getNextNodeInstances(@NonNull Long instanceId,
-            @NonNull FlowNodeType instanceType) {
-        Optional<BaseFlowNodeInstance> optional = findByIdAndInstanceType(instanceId, instanceType);
+            @NonNull FlowNodeType instanceType, FlowableElementType flowableElementType) {
+        Optional<BaseFlowNodeInstance> optional = findByIdAndInstanceType(instanceId, instanceType, flowableElementType);
         BaseFlowNodeInstance nodeInstance = optional.orElseThrow(
                 () -> new NullPointerException("Instance not fount by id " + instanceId + " and type " + instanceType));
         List<BaseFlowNodeInstance> returnVal = new LinkedList<>();
@@ -660,11 +661,12 @@ public class FlowInstance extends Graph implements SecurityResource, Organizatio
     }
 
     private Optional<BaseFlowNodeInstance> findByIdAndInstanceType(@NonNull Long instanceId,
-            @NonNull FlowNodeType instanceType) {
+            @NonNull FlowNodeType instanceType, FlowableElementType flowableElementType) {
         List<BaseFlowNodeInstance> nodeInstances = filterInstanceNode(
                 instance -> Objects.equals(instance.getNodeType(), instanceType)
-                        && Objects.equals(instance.getId(), instanceId));
-        Verify.verify(nodeInstances.size() <= 1, "Duplicate node, Id " + instanceId + ", type " + instanceType);
+                        && Objects.equals(instance.getId(), instanceId)
+                        && Objects.equals(instance.getCoreFlowableElementType(), flowableElementType));
+        Verify.verify(nodeInstances.size() <= 1, "Duplicate node, Id " + instanceId + ", type " + instanceType + ", flowElementType" + flowableElementType);
         if (nodeInstances.isEmpty()) {
             return Optional.empty();
         }
