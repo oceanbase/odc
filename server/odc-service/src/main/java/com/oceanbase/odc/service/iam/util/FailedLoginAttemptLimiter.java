@@ -55,12 +55,6 @@ public class FailedLoginAttemptLimiter {
         return Math.max(0, maxFailedAttempt - failedAttempt);
     }
 
-    public synchronized void reset() {
-        this.failedAttempt = 0;
-        this.isLocked = false;
-        this.lastLockedMills = 0;
-    }
-
 
     public synchronized Boolean attempt(BooleanSupplier attemptResultSupplier) {
         long currentTimeMillis = System.currentTimeMillis();

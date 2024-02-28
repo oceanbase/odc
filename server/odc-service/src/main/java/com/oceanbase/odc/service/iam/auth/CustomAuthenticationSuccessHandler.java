@@ -140,10 +140,7 @@ public class CustomAuthenticationSuccessHandler extends SavedRequestAwareAuthent
         if (authentication instanceof AttemptableUsernamePasswordAuthenticationToken) {
             AttemptableUsernamePasswordAuthenticationToken attemptableUsernamePasswordAuthenticationToken =
                     (AttemptableUsernamePasswordAuthenticationToken) authentication;
-            FailedLoginAttemptLimiter failedLoginAttemptLimiter = clientAddressLoginAttemptCache.get(
-                    attemptableUsernamePasswordAuthenticationToken.getLoginAttemptKey());
-            Verify.notNull(failedLoginAttemptLimiter, "failedLoginAttemptLimiter");
-            failedLoginAttemptLimiter.reset();
+            clientAddressLoginAttemptCache.invalidate(attemptableUsernamePasswordAuthenticationToken.getLoginAttemptKey());
         }
 
         // if odc data api, use json response
