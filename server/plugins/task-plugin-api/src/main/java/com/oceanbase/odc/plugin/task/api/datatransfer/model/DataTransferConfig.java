@@ -90,6 +90,7 @@ public class DataTransferConfig implements TaskParameters, Serializable {
     private int cursorFetchSize;
     @JsonIgnore
     private transient List<DBTableColumn> columns;
+    private Long executionTimeoutSeconds;
 
     public boolean isCompressed() {
         return StringUtils.equalsIgnoreCase("ZIP", fileType);

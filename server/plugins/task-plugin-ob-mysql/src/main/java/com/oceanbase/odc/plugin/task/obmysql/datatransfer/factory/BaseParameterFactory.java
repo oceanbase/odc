@@ -154,6 +154,11 @@ public abstract class BaseParameterFactory<T extends BaseParameter> {
         sessionConfig.setJdbcOption("useCursorFetch", transferConfig.isUsePrepStmts() + "");
         sessionConfig.setJdbcOption("zeroDateTimeBehavior", DEFAULT_ZERO_DATE_TIME_BEHAVIOR);
         sessionConfig.setJdbcOption("sendConnectionAttributes", "false");
+        Long connectTimeout = transferConfig.getExecutionTimeoutSeconds();
+        if (connectTimeout != null) {
+            sessionConfig.setJdbcOption("socketTimeout", connectTimeout * 1000 + "");
+            sessionConfig.setJdbcOption("connectTimeout", connectTimeout * 1000 + "");
+        }
 
         parameter.setSessionConfig(sessionConfig);
     }

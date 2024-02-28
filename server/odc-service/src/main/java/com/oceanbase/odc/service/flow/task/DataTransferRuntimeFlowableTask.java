@@ -88,6 +88,10 @@ public class DataTransferRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Voi
              */
             odcInternalFileService.getExternalImportFiles(taskEntity, submitter, config.getImportFileName());
         }
+        if (taskEntity.getExecutionExpirationIntervalSeconds() != null) {
+            config.setExecutionTimeoutSeconds(
+                    Integer.toUnsignedLong(taskEntity.getExecutionExpirationIntervalSeconds()));
+        }
         context = dataTransferService.create(taskId + "", config);
         taskService.start(taskId, context.getStatus());
         return null;
