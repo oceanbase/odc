@@ -240,10 +240,11 @@ public class FlowInstanceConfigurer extends GraphConfigurer<FlowInstance, BaseFl
             @NonNull Consumer<UserTaskBuilder> userManuTaskConsumer,
             @NonNull Consumer<UserTaskBuilder> userTimerTaskConsumer) {
 
-        String serviceTaskName = FlowNodeType.SERVICE_TASK.name() + "_logic_user_task_" + getNameSuffix(nextNode);
-        UserTaskBuilder serviceTaskBuilder = nullSafeGetNodeBuilder(serviceTaskName, nextNode, () -> {
-            UserTaskBuilder taskBuilder = new UserTaskBuilder(serviceTaskName);
+        String useTaskName = FlowNodeType.APPROVAL_TASK.name() + "_logic_user_task_" + getNameSuffix(nextNode);
+        UserTaskBuilder serviceTaskBuilder = nullSafeGetNodeBuilder(useTaskName, nextNode, () -> {
+            UserTaskBuilder taskBuilder = new UserTaskBuilder(useTaskName);
             userTaskBuilderConsumer.accept(taskBuilder);
+            taskBuilder.addTaskListener(BaseTaskBindUserTaskListener.class);
             return taskBuilder;
         });
         return nextInternal(nextNode, serviceTaskBuilder, userManuTaskConsumer, userTimerTaskConsumer);
