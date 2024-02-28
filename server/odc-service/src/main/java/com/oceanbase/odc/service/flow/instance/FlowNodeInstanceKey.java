@@ -17,6 +17,7 @@ package com.oceanbase.odc.service.flow.instance;
 
 import org.apache.commons.lang.Validate;
 
+import com.oceanbase.odc.core.flow.model.FlowableElementType;
 import com.oceanbase.odc.service.flow.model.FlowNodeType;
 
 import lombok.EqualsAndHashCode;
@@ -32,24 +33,30 @@ public class FlowNodeInstanceKey {
     private final String shortUniqueId;
     private final Long instanceId;
     private final FlowNodeType instanceType;
+    private final FlowableElementType flowableElementType;
 
     public FlowNodeInstanceKey(@NonNull BaseFlowNodeInstance instance) {
         Validate.notNull(instance.getId(), "Id for instance can not be null");
         this.instanceId = instance.getId();
         this.instanceType = instance.getNodeType();
-        this.shortUniqueId = instance.getShortUniqueId();
+        this.shortUniqueId = null;
+        this.flowableElementType = instance.getCoreFlowableElementType();
     }
 
-    public FlowNodeInstanceKey(@NonNull Long instanceId, @NonNull FlowNodeType instanceType) {
+    public FlowNodeInstanceKey(@NonNull Long instanceId, @NonNull FlowNodeType instanceType,
+            FlowableElementType flowableElementType) {
         this.instanceId = instanceId;
         this.instanceType = instanceType;
         this.shortUniqueId = null;
+        this.flowableElementType = flowableElementType;
     }
 
-    public FlowNodeInstanceKey(@NonNull String shortUniqueId, @NonNull FlowNodeType instanceType) {
+    public FlowNodeInstanceKey(@NonNull String shortUniqueId, @NonNull FlowNodeType instanceType,
+            FlowableElementType flowableElementType) {
         this.instanceId = null;
         this.instanceType = instanceType;
         this.shortUniqueId = shortUniqueId;
+        this.flowableElementType = flowableElementType;
     }
 
 }

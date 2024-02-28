@@ -180,7 +180,8 @@ public class FlowFactory {
                 entity.getSourceNodeInstanceId())).collect(Collectors.toSet());
         Map<Long, FlowNodeInstanceKey> nodeInstanceId2nodeInstanceKey = nodeRepository.findByIds(nodeInstanceIds)
                 .stream().collect(Collectors.toMap(NodeInstanceEntity::getId,
-                        entity -> new FlowNodeInstanceKey(entity.getInstanceId(), entity.getInstanceType())));
+                        entity -> new FlowNodeInstanceKey(entity.getInstanceId(), entity.getInstanceType(),
+                                entity.getFlowableElementType())));
         return entities.stream().map(entity -> {
             FlowNodeInstanceKey source = nodeInstanceId2nodeInstanceKey.get(entity.getSourceNodeInstanceId());
             FlowNodeInstanceKey target = nodeInstanceId2nodeInstanceKey.get(entity.getTargetNodeInstanceId());
