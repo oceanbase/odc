@@ -1,0 +1,35 @@
+# built-in snippet for Oracle
+- name: oracle create table
+  dialect_type: ORACLE
+  tags: [ 'developer','oracle', 'table', 'create' ]
+  type: DDL
+  description: 'Create a new table for Oracle'
+  prefix: create table
+  body: |
+    CREATE SEQUENCE TABLE_NAME_ID_SEQ START WITH 1 INCREMENT BY 1;
+    
+    CREATE TABLE TABLE_NAME (
+    ID         NUMBER PRIMARY KEY,
+    CREATE_TIME TIMESTAMP(6) DEFAULT SYSDATE NOT NULL,
+    UPDATE_TIME TIMESTAMP(6) NULL,
+    COLUMN_NAME VARCHAR2(64) NOT NULL
+    );
+    
+    CREATE OR REPLACE TRIGGER TABLE_NAME_INSERT_ID_TRIGGER
+    BEFORE INSERT ON table_name
+    FOR EACH ROW
+    BEGIN
+    SELECT TABLE_NAME_ID_SEQ.NEXTVAL INTO :NEW.id FROM DUAL;
+    END;
+    
+    CREATE OR REPLACE TRIGGER TABLE_NAME_UPDATE_TIME_TRIGGER
+    BEFORE UPDATE ON TABLE_NAME
+    FOR EACH ROW
+    BEGIN
+    :NEW.UPDATE_TIME := SYSTIMESTAMP;
+    END;
+    
+    COMMENT ON TABLE TABLE_NAME IS '';
+    COMMENT ON COLUMN TABLE_NAME.ID IS 'auto increment id';
+    COMMENT ON COLUMN TABLE_NAME.CREATE_TIME IS 'record create time';
+    COMMENT ON COLUMN TABLE_NAME.UPDATE_TIME IS 'record update time';
