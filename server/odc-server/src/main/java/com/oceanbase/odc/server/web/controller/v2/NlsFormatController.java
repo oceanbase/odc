@@ -27,8 +27,8 @@ import com.oceanbase.odc.service.common.model.NlsFormatReq;
 import com.oceanbase.odc.service.common.response.Responses;
 import com.oceanbase.odc.service.common.response.SuccessResponse;
 import com.oceanbase.odc.service.session.ConnectSessionService;
-import com.oceanbase.odc.service.state.StateName;
-import com.oceanbase.odc.service.state.StatefulRoute;
+import com.oceanbase.odc.service.state.model.StateName;
+import com.oceanbase.odc.service.state.model.StatefulRoute;
 
 import io.swagger.annotations.ApiOperation;
 

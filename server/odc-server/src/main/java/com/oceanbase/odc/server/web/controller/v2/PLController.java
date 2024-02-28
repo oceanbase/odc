@@ -29,8 +29,8 @@ import com.oceanbase.odc.service.db.DBPLService;
 import com.oceanbase.odc.service.db.model.BatchCompileResp;
 import com.oceanbase.odc.service.db.model.StartBatchCompileReq;
 import com.oceanbase.odc.service.session.ConnectSessionService;
-import com.oceanbase.odc.service.state.StateName;
-import com.oceanbase.odc.service.state.StatefulRoute;
+import com.oceanbase.odc.service.state.model.StateName;
+import com.oceanbase.odc.service.state.model.StatefulRoute;
 
 import io.swagger.annotations.ApiOperation;
 

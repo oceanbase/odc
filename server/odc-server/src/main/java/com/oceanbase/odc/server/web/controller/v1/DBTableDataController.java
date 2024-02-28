@@ -32,8 +32,8 @@ import com.oceanbase.odc.service.dml.TableDataService;
 import com.oceanbase.odc.service.dml.model.BatchDataModifyReq;
 import com.oceanbase.odc.service.dml.model.BatchDataModifyResp;
 import com.oceanbase.odc.service.session.ConnectSessionService;
-import com.oceanbase.odc.service.state.StateName;
-import com.oceanbase.odc.service.state.StatefulRoute;
+import com.oceanbase.odc.service.state.model.StateName;
+import com.oceanbase.odc.service.state.model.StatefulRoute;
 
 import io.swagger.annotations.ApiOperation;
 

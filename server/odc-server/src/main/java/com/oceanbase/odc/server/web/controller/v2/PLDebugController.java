@@ -34,8 +34,8 @@ import com.oceanbase.odc.service.pldebug.model.PLDebugContextResp;
 import com.oceanbase.odc.service.pldebug.model.PLDebugVariable;
 import com.oceanbase.odc.service.pldebug.model.StartPLDebugReq;
 import com.oceanbase.odc.service.session.ConnectSessionService;
-import com.oceanbase.odc.service.state.StateName;
-import com.oceanbase.odc.service.state.StatefulRoute;
+import com.oceanbase.odc.service.state.model.StateName;
+import com.oceanbase.odc.service.state.model.StatefulRoute;
 
 import io.swagger.annotations.ApiOperation;
 

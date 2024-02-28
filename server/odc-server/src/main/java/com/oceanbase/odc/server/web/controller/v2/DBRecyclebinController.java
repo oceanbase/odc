@@ -35,8 +35,8 @@ import com.oceanbase.odc.service.db.DBRecyclebinSettingsService.RecyclebinSettin
 import com.oceanbase.odc.service.db.DBRecyclebinSettingsService.UpdateRecyclebinSettingsReq;
 import com.oceanbase.odc.service.db.model.DBRecycleObject;
 import com.oceanbase.odc.service.session.ConnectSessionService;
-import com.oceanbase.odc.service.state.StateName;
-import com.oceanbase.odc.service.state.StatefulRoute;
+import com.oceanbase.odc.service.state.model.StateName;
+import com.oceanbase.odc.service.state.model.StatefulRoute;
 
 import io.swagger.annotations.ApiOperation;
 
@@ -103,7 +103,8 @@ public class DBRecyclebinController {
 
     @ApiOperation(value = "updateRecyclebinSettings", notes = "更新回收站设置，sid示例：sid:1000-1:d:db1")
     @RequestMapping(value = "/settings", method = RequestMethod.PATCH)
-    @StatefulRoute(stateName = StateName.DB_SESSION, stateIdExpression = "#sid")
+    @StatefulRoute(multiState = true, stateIdExpression = "#req.sessionIds",
+            stateManager = "dbRecyclebinUpdateStateManager")
     public SuccessResponse<RecyclebinSettings> updateRecyclebinSettings(@RequestBody UpdateRecyclebinSettingsReq req) {
         List<ConnectionSession> sessions = req.getSessionIds().stream().map(s -> {
             return sessionService.nullSafeGet(s, true);

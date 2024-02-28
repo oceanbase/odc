@@ -127,5 +127,4 @@ public class DispatchResponse {
         }
         return new String(getContent(), charset);
     }
-
 }

@@ -26,7 +26,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
@@ -39,8 +38,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.validation.annotation.Validated;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.oceanbase.odc.common.lang.Pair;
 import com.oceanbase.odc.common.util.SystemUtils;
 import com.oceanbase.odc.core.authority.SecurityManager;
 import com.oceanbase.odc.core.authority.exception.AccessDeniedException;
@@ -69,8 +66,6 @@ import com.oceanbase.odc.core.task.DefaultTaskManager;
 import com.oceanbase.odc.core.task.ExecuteMonitorTaskManager;
 import com.oceanbase.odc.metadb.collaboration.EnvironmentEntity;
 import com.oceanbase.odc.metadb.collaboration.EnvironmentRepository;
-import com.oceanbase.odc.service.common.model.HostProperties;
-import com.oceanbase.odc.service.common.response.SuccessResponse;
 import com.oceanbase.odc.service.common.util.SidUtils;
 import com.oceanbase.odc.service.config.UserConfigFacade;
 import com.oceanbase.odc.service.connection.CloudMetadataClient;
@@ -85,12 +80,9 @@ import com.oceanbase.odc.service.connection.model.ConnectionTestResult;
 import com.oceanbase.odc.service.connection.model.CreateSessionReq;
 import com.oceanbase.odc.service.connection.model.CreateSessionResp;
 import com.oceanbase.odc.service.connection.model.DBSessionResp;
-import com.oceanbase.odc.service.connection.model.MultiSessionsReq;
 import com.oceanbase.odc.service.connection.model.OBTenant;
 import com.oceanbase.odc.service.db.DBCharsetService;
 import com.oceanbase.odc.service.db.session.DBSessionService;
-import com.oceanbase.odc.service.dispatch.DispatchResponse;
-import com.oceanbase.odc.service.dispatch.RequestDispatcher;
 import com.oceanbase.odc.service.feature.VersionDiffConfigService;
 import com.oceanbase.odc.service.iam.HorizontalDataPermissionValidator;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
@@ -101,7 +93,6 @@ import com.oceanbase.odc.service.permission.database.model.DatabasePermissionTyp
 import com.oceanbase.odc.service.session.factory.DefaultConnectSessionFactory;
 import com.oceanbase.odc.service.session.factory.DefaultConnectSessionIdGenerator;
 import com.oceanbase.odc.service.session.factory.StateHostGenerator;
-import com.oceanbase.odc.service.state.RouteInfo;
 
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
@@ -160,15 +151,6 @@ public class ConnectSessionService {
 
     @Autowired
     private StateHostGenerator stateHostGenerator;
-
-    @Autowired
-    private ConnectSessionStateManager connectSessionStateManager;
-
-    @Autowired
-    private HostProperties hostProperties;
-
-    @Autowired
-    private RequestDispatcher requestDispatcher;
 
     @PostConstruct
     public void init() {
@@ -331,31 +313,12 @@ public class ConnectSessionService {
 
     public Set<String> close(@NotNull Set<String> sessionIds, long delay, @NotNull TimeUnit timeUnit) {
         Set<String> closedSessionIds = new HashSet<>();
-        Map<RouteInfo, Set<String>> routeInfoSidMap = sessionIds.stream().map(
-                sid -> new Pair<>(sid, connectSessionStateManager.getRouteInfo(sid)))
-                .collect(Collectors.groupingBy(r -> r.right, Collectors.mapping(
-                        r -> r.left, Collectors.toSet())));
-        routeInfoSidMap.forEach((routeInfo, sids) -> {
-            if (routeInfo.isCurrentNode(hostProperties)) {
-                sids.forEach(s -> {
-                    try {
-                        close(s, delay, timeUnit);
-                        closedSessionIds.add(s);
-                    } catch (Exception exception) {
-                        log.warn("Failed to close a session, sessionId={}", s, exception);
-                    }
-                });
-            } else {
-                try {
-                    MultiSessionsReq multiSessionsReq = new MultiSessionsReq();
-                    multiSessionsReq.setSessionIds(sids);
-                    RequestDispatcher.setRequestBody(multiSessionsReq);
-                    DispatchResponse response = requestDispatcher.forward(routeInfo.getHostName(), routeInfo.getPort());
-                    closedSessionIds.addAll(response.getContentByType(
-                            new TypeReference<SuccessResponse<Set<String>>>() {}).getData());
-                } catch (Exception exception) {
-                    log.warn("Failed dispatch to close a session, sessionIds={}", sids, exception);
-                }
+        sessionIds.forEach(s -> {
+            try {
+                close(s, delay, timeUnit);
+                closedSessionIds.add(s);
+            } catch (Exception e) {
+                log.warn("Failed to close a session, sessionId={}", s, e);
             }
         });
         return closedSessionIds;

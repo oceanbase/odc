@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.state;
+package com.oceanbase.odc.service.state.model;
 
 import java.time.Duration;
 import java.util.Objects;

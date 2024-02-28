@@ -36,8 +36,8 @@ import com.oceanbase.odc.service.db.model.CompileResult;
 import com.oceanbase.odc.service.db.model.DBMSOutput;
 import com.oceanbase.odc.service.db.model.PLIdentity;
 import com.oceanbase.odc.service.session.ConnectSessionService;
-import com.oceanbase.odc.service.state.StateName;
-import com.oceanbase.odc.service.state.StatefulRoute;
+import com.oceanbase.odc.service.state.model.StateName;
+import com.oceanbase.odc.service.state.model.StatefulRoute;
 import com.oceanbase.tools.dbbrowser.model.DBPLObjectIdentity;
 
 import io.swagger.annotations.ApiOperation;

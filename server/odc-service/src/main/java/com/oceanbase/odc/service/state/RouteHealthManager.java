@@ -32,6 +32,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
 import com.oceanbase.odc.common.concurrent.ExecutorUtils;
+import com.oceanbase.odc.service.state.model.RouteInfo;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -40,13 +41,13 @@ import lombok.extern.slf4j.Slf4j;
 
 @Component
 @Slf4j
-@ConditionalOnProperty(value = {"odc.state.enabled"}, havingValue = "true")
+@ConditionalOnProperty(value = {"odc.web.stateful-route.enabled"}, havingValue = "true")
 public class RouteHealthManager implements InitializingBean {
 
     private static final Map<RouteInfo, RouteManageInfo> ROUTE_HEALTHY_MAP = new ConcurrentHashMap<>();
     private final ScheduledExecutorService scheduledExecutorService = Executors.newScheduledThreadPool(1);
 
-    @Value("${odc.state.host.expire_seconds:3600}")
+    @Value("${odc.web.stateful-route.host.expire_seconds:3600}")
     private Integer expireSeconds;
 
     public boolean isHealthy(RouteInfo routeInfo) {
@@ -58,7 +59,7 @@ public class RouteHealthManager implements InitializingBean {
 
     @Override
     public void afterPropertiesSet() {
-        scheduledExecutorService.scheduleAtFixedRate(() -> {
+        scheduledExecutorService.scheduleWithFixedDelay(() -> {
             try {
                 doTest();
             } catch (Exception e) {

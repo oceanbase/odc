@@ -23,8 +23,8 @@ import com.oceanbase.odc.service.common.model.HostProperties;
 import com.oceanbase.odc.service.common.util.SidUtils;
 import com.oceanbase.odc.service.connection.model.CreateSessionReq;
 import com.oceanbase.odc.service.session.factory.DefaultConnectSessionIdGenerator;
-import com.oceanbase.odc.service.state.RouteInfo;
-import com.oceanbase.odc.service.state.StateManager;
+import com.oceanbase.odc.service.state.model.RouteInfo;
+import com.oceanbase.odc.service.state.model.StateManager;
 
 @Component
 public class ConnectSessionStateManager implements StateManager {

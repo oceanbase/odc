@@ -17,10 +17,19 @@ package com.oceanbase.odc.service.state;
 
 import static org.springframework.core.annotation.AnnotationUtils.findAnnotation;
 
+import java.io.ByteArrayOutputStream;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
+import java.util.concurrent.Future;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.stream.Collectors;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.validation.constraints.NotNull;
 
+import org.apache.commons.collections4.CollectionUtils;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
@@ -36,20 +45,28 @@ import org.springframework.expression.spel.support.StandardEvaluationContext;
 import org.springframework.stereotype.Component;
 
 import com.google.common.base.Preconditions;
+import com.oceanbase.odc.common.lang.Pair;
 import com.oceanbase.odc.common.trace.TraceContextHolder;
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.common.util.SystemUtils;
+import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.service.common.model.HostProperties;
 import com.oceanbase.odc.service.common.util.SpringContextUtil;
 import com.oceanbase.odc.service.dispatch.DispatchResponse;
+import com.oceanbase.odc.service.dispatch.HttpRequestProvider;
 import com.oceanbase.odc.service.dispatch.RequestDispatcher;
+import com.oceanbase.odc.service.state.model.RouteInfo;
+import com.oceanbase.odc.service.state.model.SingleNodeStateResponse;
+import com.oceanbase.odc.service.state.model.StateManager;
+import com.oceanbase.odc.service.state.model.StateName;
+import com.oceanbase.odc.service.state.model.StatefulRoute;
 
 import lombok.extern.slf4j.Slf4j;
 
 @Component
 @Aspect
 @Slf4j
-@ConditionalOnProperty(value = {"odc.state.enabled"}, havingValue = "true")
+@ConditionalOnProperty(value = {"odc.web.stateful-route.enabled"}, havingValue = "true")
 public class StateRouteAspect {
 
     @Autowired
@@ -60,7 +77,13 @@ public class StateRouteAspect {
     @Autowired
     private RequestDispatcher requestDispatcher;
 
-    @Pointcut("@annotation(com.oceanbase.odc.service.state.StatefulRoute)")
+    @Autowired
+    private HttpRequestProvider requestProvider;
+
+    @Autowired
+    private ThreadPoolExecutor stetefullRouteThreadPoolExecutor;
+
+    @Pointcut("@annotation(com.oceanbase.odc.service.state.model.StatefulRoute)")
     public void stateRouteMethods() {}
 
     @Around("stateRouteMethods()")
@@ -74,19 +97,24 @@ public class StateRouteAspect {
         if (statefulRoute != null) {
             Object stateIdBySePL = parseStateIdFromParameter(proceedingJoinPoint, statefulRoute.stateIdExpression());
             stateManager = getStateManager(statefulRoute);
-            routeInfo = stateManager.getRouteInfo(stateIdBySePL);
-            if (!routeInfo.isCurrentNode(properties)) {
-                if (routeHealthManager.isHealthy(routeInfo)) {
-                    DispatchResponse dispatchResponse =
-                            requestDispatcher.forward(routeInfo.getHostName(), routeInfo.getPort());
-                    logTrace(method, stateIdBySePL, routeInfo);
-                    StateRouteFilter.getContext().setDispatchResponse(dispatchResponse);
-                    return null;
-                } else {
-                    nodeChanged = true;
-                    stateManager.preHandleBeforeNodeChange(proceedingJoinPoint, routeInfo);
+            if (statefulRoute.multiState()) {
+                Preconditions.checkArgument(stateManager.supportMultiRoute(), "stateManager not support multi state");
+                return handleMultiState(stateManager, stateIdBySePL, proceedingJoinPoint);
+            } else {
+                routeInfo = stateManager.getRouteInfo(stateIdBySePL);
+                Verify.notNull(routeInfo, "routeInfo");
+                if (!routeInfo.isCurrentNode(properties)) {
+                    if (routeHealthManager.isHealthy(routeInfo)) {
+                        DispatchResponse dispatchResponse =
+                                requestDispatcher.forward(routeInfo.getHostName(), routeInfo.getPort());
+                        logTrace(method, stateIdBySePL, routeInfo);
+                        StateRouteFilter.getContext().setDispatchResponse(dispatchResponse);
+                        return null;
+                    } else {
+                        nodeChanged = true;
+                        stateManager.preHandleBeforeNodeChange(proceedingJoinPoint, routeInfo);
+                    }
                 }
-
             }
         }
         Object proceed = proceedingJoinPoint.proceed();
@@ -95,6 +123,46 @@ public class StateRouteAspect {
             stateManager.afterHandleBeforeNodeChange(proceedingJoinPoint, routeInfo);
         }
         return proceed;
+    }
+
+    private Object handleMultiState(StateManager stateManager, Object stateIdBySePL,
+            ProceedingJoinPoint proceedingJoinPoint) throws Throwable {
+        Set<RouteInfo> allRoutes = stateManager.getAllRoutes(stateIdBySePL);
+        List<SingleNodeStateResponse> allResponse = new ArrayList<>();
+
+        RouteInfo currentNode = allRoutes.stream().filter(r -> r.isCurrentNode(properties)).findFirst().orElse(null);
+        Object proceed = null;
+        if (currentNode != null) {
+            proceed = proceedingJoinPoint.proceed();
+        }
+        Set<RouteInfo> otherNodeRoute = allRoutes.stream().filter(r -> !r.isCurrentNode(properties)).collect(
+                Collectors.toSet());
+
+        if (CollectionUtils.isEmpty(otherNodeRoute)) {
+            return proceed;
+        }
+
+        if (CollectionUtils.isNotEmpty(otherNodeRoute)) {
+            final HttpServletRequest request = requestProvider.getRequest();
+            final ByteArrayOutputStream requestBody = requestProvider.getRequestBody();
+            List<Pair<RouteInfo, Future<DispatchResponse>>> routeResponse = otherNodeRoute.stream().map(r -> {
+                Future<DispatchResponse> future = stetefullRouteThreadPoolExecutor.submit(
+                        () -> requestDispatcher.forward(r.getHostName(), r.getPort(), request, requestBody));
+                return new Pair<>(r, future);
+            }).collect(Collectors.toList());
+            for (Pair<RouteInfo, Future<DispatchResponse>> rr : routeResponse) {
+                RouteInfo ri = rr.left;
+                Future<DispatchResponse> future = rr.right;
+                try {
+                    DispatchResponse dispatchResponse = future.get();
+                    allResponse.add(new SingleNodeStateResponse(stateIdBySePL, ri, dispatchResponse));
+                } catch (Exception e) {
+                    SingleNodeStateResponse error = SingleNodeStateResponse.error(stateIdBySePL, ri, e);
+                    allResponse.add(error);
+                }
+            }
+        }
+        return stateManager.handleMultiResponse(allResponse, currentNode);
     }
 
     private void logTrace(Method method, Object stateId, RouteInfo dispatchTo) {
@@ -118,10 +186,10 @@ public class StateRouteAspect {
         }
         if (StringUtils.isNotBlank(statefulRoute.stateManager())) {
             Object bean = SpringContextUtil.getBean(statefulRoute.stateManager());
-            Preconditions.checkArgument(bean instanceof StateManager, "illegal stateManager type");
+            Verify.verify(bean instanceof StateManager, "illegal stateManager type");
             stateManager = (StateManager) bean;
         }
-        Preconditions.checkNotNull(stateManager, "stateManager");
+        Verify.notNull(stateManager, "stateManager");
         return stateManager;
     }
 

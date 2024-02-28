@@ -24,8 +24,8 @@ import com.google.common.base.Preconditions;
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.service.common.model.HostProperties;
 import com.oceanbase.odc.service.pldebug.model.PLDebugSessionId;
-import com.oceanbase.odc.service.state.RouteInfo;
-import com.oceanbase.odc.service.state.StateManager;
+import com.oceanbase.odc.service.state.model.RouteInfo;
+import com.oceanbase.odc.service.state.model.StateManager;
 
 @Component
 public class PLDebugStateManager implements StateManager {

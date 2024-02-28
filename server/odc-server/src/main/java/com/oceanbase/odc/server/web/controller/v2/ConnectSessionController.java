@@ -63,8 +63,8 @@ import com.oceanbase.odc.service.session.model.SqlExecuteResult;
 import com.oceanbase.odc.service.sqlcheck.SqlCheckService;
 import com.oceanbase.odc.service.sqlcheck.model.CheckResult;
 import com.oceanbase.odc.service.sqlcheck.model.SqlCheckReq;
-import com.oceanbase.odc.service.state.StateName;
-import com.oceanbase.odc.service.state.StatefulRoute;
+import com.oceanbase.odc.service.state.model.StateName;
+import com.oceanbase.odc.service.state.model.StatefulRoute;
 
 import io.swagger.annotations.ApiOperation;
 
@@ -227,6 +227,8 @@ public class ConnectSessionController {
      */
     @ApiOperation(value = "closeSession", notes = "关闭数据库连接会话，sid示例：sid:1000-1")
     @RequestMapping(value = "/sessions", method = RequestMethod.DELETE)
+    @StatefulRoute(multiState = true, stateManager = "connectSessionCloseStateManager",
+            stateIdExpression = "#req.sessionIds")
     public SuccessResponse<Set<String>> closeSession(@RequestBody MultiSessionsReq req) {
         Set<String> sessionIds = req.getSessionIds().stream()
                 .map(SidUtils::getSessionId).collect(Collectors.toSet());

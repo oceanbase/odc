@@ -55,7 +55,7 @@ public class HostProperties {
      * The type of host is obtained. By default, the ip address is used. You can use hostName as host by
      * changing the value to 'hostName'
      */
-    @Value("${odc.state.host.type:ipAddress}")
+    @Value("${odc.web.stateful-route.host.type:ipAddress}")
     private String hostType;
 
 

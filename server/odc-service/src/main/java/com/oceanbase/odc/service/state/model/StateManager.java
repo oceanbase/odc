@@ -13,7 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.state;
+package com.oceanbase.odc.service.state.model;
+
+import java.util.List;
+import java.util.Set;
 
 import javax.validation.constraints.NotNull;
 
@@ -23,10 +26,31 @@ public interface StateManager {
 
     /**
      * @param stateId
-     * @return return null means use current node
+     * @return
+     */
+    RouteInfo getRouteInfo(Object stateId);
+
+    default boolean supportMultiRoute() {
+        return false;
+    }
+
+    /**
+     * @return same request will be forwarded to every routeInfo
+     */
+    default Set<RouteInfo> getAllRoutes(Object stateId) {
+        throw new UnsupportedOperationException("unsupported multi state");
+    }
+
+
+    /**
+     * @return handle multi dispatchResponse
      */
     @NotNull
-    RouteInfo getRouteInfo(Object stateId);
+    default Object handleMultiResponse(List<SingleNodeStateResponse> otherNodeResponse, Object currentNodeResult)
+            throws Throwable {
+        throw new UnsupportedOperationException("unsupported multi state");
+    }
+
 
     /**
      * called before the node changed
