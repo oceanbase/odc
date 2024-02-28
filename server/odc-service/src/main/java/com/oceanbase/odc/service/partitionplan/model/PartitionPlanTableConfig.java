@@ -22,6 +22,8 @@ import java.util.Optional;
 
 import org.apache.commons.collections4.CollectionUtils;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonProperty.Access;
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.plugin.task.api.partitionplan.invoker.drop.KeepMostLatestPartitionGenerator;
 
@@ -61,6 +63,7 @@ public class PartitionPlanTableConfig implements Serializable {
         this.partitionNameInvokerParameters = tableConfig.partitionNameInvokerParameters;
     }
 
+    @JsonProperty(access = Access.READ_ONLY)
     public boolean isContainsCreateStrategy() {
         if (CollectionUtils.isEmpty(this.partitionKeyConfigs)) {
             return false;
@@ -68,6 +71,7 @@ public class PartitionPlanTableConfig implements Serializable {
         return this.partitionKeyConfigs.stream().anyMatch(i -> i.getStrategy() == PartitionPlanStrategy.CREATE);
     }
 
+    @JsonProperty(access = Access.READ_ONLY)
     public boolean isContainsDropStrategy() {
         if (CollectionUtils.isEmpty(this.partitionKeyConfigs)) {
             return false;
@@ -75,6 +79,7 @@ public class PartitionPlanTableConfig implements Serializable {
         return this.partitionKeyConfigs.stream().anyMatch(i -> i.getStrategy() == PartitionPlanStrategy.DROP);
     }
 
+    @JsonProperty(access = Access.READ_ONLY)
     public Boolean getReloadIndexes() {
         if (CollectionUtils.isEmpty(this.partitionKeyConfigs)) {
             return null;
