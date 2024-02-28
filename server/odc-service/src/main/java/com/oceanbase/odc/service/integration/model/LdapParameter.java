@@ -49,7 +49,7 @@ public class LdapParameter implements SSOParameter {
 
     private Integer loginFailedLimit = 5;
 
-    private Long LockTimeSeconds = 600L;
+    private Long lockTimeSeconds = 600L;
 
     public DefaultSpringSecurityContextSource acquireContextSource() {
         DefaultSpringSecurityContextSource contextSource = new DefaultSpringSecurityContextSource(
