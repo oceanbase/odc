@@ -37,7 +37,7 @@ public class FlowNodeInstanceKey {
         Validate.notNull(instance.getId(), "Id for instance can not be null");
         this.instanceId = instance.getId();
         this.instanceType = instance.getNodeType();
-        this.shortUniqueId = null;
+        this.shortUniqueId = instance.getShortUniqueId();
     }
 
     public FlowNodeInstanceKey(@NonNull Long instanceId, @NonNull FlowNodeType instanceType) {
