@@ -15,6 +15,7 @@
  */
 package com.oceanbase.odc.service.flow.task;
 
+import java.io.IOException;
 import java.util.Date;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
@@ -32,6 +33,7 @@ import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.metadb.flow.ServiceTaskInstanceRepository;
 import com.oceanbase.odc.service.common.model.HostProperties;
 import com.oceanbase.odc.service.connection.ConnectionService;
+import com.oceanbase.odc.service.flow.FlowInstanceService;
 import com.oceanbase.odc.service.flow.exception.ServiceTaskCancelledException;
 import com.oceanbase.odc.service.flow.exception.ServiceTaskError;
 import com.oceanbase.odc.service.flow.exception.ServiceTaskExpiredException;
@@ -83,7 +85,9 @@ public abstract class BaseODCFlowTaskDelegate<T> extends BaseRuntimeFlowableDele
     @Autowired
     private ConnectionService connectionService;
     @Autowired
-    private EventBuilder eventBuilder;
+    private EventBuilder        eventBuilder;
+    @Autowired
+    private FlowInstanceService flowInstanceService;
 
     private void init(DelegateExecution execution) {
         this.taskId = FlowTaskUtil.getTaskId(execution);
@@ -240,6 +244,12 @@ public abstract class BaseODCFlowTaskDelegate<T> extends BaseRuntimeFlowableDele
      * The callback method when the task fails, which is used to update the status and other operations
      */
     protected void onFailure(Long taskId, TaskService taskService) {
+        try {
+            flowInstanceService.reject(getFlowInstanceId(), "task execute succeed.", true);
+        } catch (Exception e) {
+            log.warn("Failed to reject flow instance, flowInstanceId={}", getFlowInstanceId());
+        }
+
         if (notificationProperties.isEnabled()) {
             try {
                 Event event = eventBuilder.ofFailedTask(taskService.detail(taskId));
@@ -254,6 +264,12 @@ public abstract class BaseODCFlowTaskDelegate<T> extends BaseRuntimeFlowableDele
      * The callback method when the task is successful, used to update the status and other operations
      */
     protected void onSuccessful(Long taskId, TaskService taskService) {
+        try {
+            flowInstanceService.approve(getFlowInstanceId(), "task execute succeed.", true);
+        } catch (Exception e) {
+            log.warn("Failed to approve flow instance, flowInstanceId={}", getFlowInstanceId());
+        }
+
         if (notificationProperties.isEnabled()) {
             try {
                 Event event = eventBuilder.ofSucceededTask(taskService.detail(taskId));
@@ -269,6 +285,12 @@ public abstract class BaseODCFlowTaskDelegate<T> extends BaseRuntimeFlowableDele
      * operations
      */
     protected void onTimeout(Long taskId, TaskService taskService) {
+        try {
+            flowInstanceService.reject(getFlowInstanceId(), "task execute timeout.", true);
+        } catch (Exception e) {
+            log.warn("Failed to reject flow instance, flowInstanceId={}", getFlowInstanceId());
+        }
+
         if (notificationProperties.isEnabled()) {
             try {
                 Event event = eventBuilder.ofTimeoutTask(taskService.detail(taskId));

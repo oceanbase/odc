@@ -236,6 +236,34 @@ public class FlowInstanceConfigurer extends GraphConfigurer<FlowInstance, BaseFl
     }
 
     protected FlowInstanceConfigurer next(@NonNull FlowTaskInstance nextNode,
+        @NonNull Consumer<ServiceTaskBuilder> serviceTaskConsumer,
+        @NonNull Consumer<UserTaskBuilder> userManuTaskConsumer,
+        @NonNull Consumer<UserTaskBuilder> userTimerTaskConsumer) {
+
+        FlowInstanceConfigurer configurer = nextInternal(nextNode, serviceTaskConsumer,
+            userManuTaskConsumer, userTimerTaskConsumer);
+
+        String userTaskName = FlowNodeType.APPROVAL_TASK.name() + "_callback_task_" + getNameSuffix(nextNode);
+        UserTaskBuilder userTaskBuilder = nullSafeGetNodeBuilder(userTaskName, nextNode, () -> {
+           return new UserTaskBuilder(userTaskName);
+        });
+        targetExecution.next(userTaskBuilder);
+
+        String gatewayName = FlowNodeType.APPROVAL_TASK.name()
+                             + "_callback_gateway_" + getNameSuffix(nextNode);
+        ExclusiveGatewayBuilder gatewayBuilder = nullSafeGetNodeBuilder(gatewayName, nextNode,
+            () -> new ExclusiveGatewayBuilder(gatewayName));
+        targetExecution.next(userTaskBuilder).next(gatewayBuilder);
+        targetExecution.route(String.format("${!%s}", FlowApprovalInstance.APPROVAL_VARIABLE_NAME),
+            this.targetProcessBuilder.endProcess());
+        targetExecution.next(userTaskBuilder, new ConditionSequenceFlowBuilder(
+            gatewayBuilder.getGraphId() + " -> " ,
+            String.format("${%s}", FlowApprovalInstance.APPROVAL_VARIABLE_NAME)));
+
+        return configurer;
+    }
+
+    protected FlowInstanceConfigurer nextInternal(@NonNull FlowTaskInstance nextNode,
             @NonNull Consumer<ServiceTaskBuilder> serviceTaskConsumer,
             @NonNull Consumer<UserTaskBuilder> userManuTaskConsumer,
             @NonNull Consumer<UserTaskBuilder> userTimerTaskConsumer) {
