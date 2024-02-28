@@ -63,14 +63,16 @@ public class FlowInstanceUtil {
         returnVal.add(rootInstance);
 
         List<BaseFlowNodeInstance> nextInstances =
-                flowInstance.getNextNodeInstances(rootInstance.getId(), rootInstance.getNodeType(),rootInstance.getCoreFlowableElementType());
+                flowInstance.getNextNodeInstances(rootInstance.getId(), rootInstance.getNodeType(),
+                        rootInstance.getCoreFlowableElementType());
         while (!nextInstances.isEmpty()) {
             BaseFlowNodeInstance target = router.route(nextInstances);
             if (Objects.isNull(target)) {
                 break;
             }
             returnVal.add(target);
-            nextInstances = flowInstance.getNextNodeInstances(target.getId(), target.getNodeType(), rootInstance.getCoreFlowableElementType());
+            nextInstances = flowInstance.getNextNodeInstances(target.getId(), target.getNodeType(),
+                    rootInstance.getCoreFlowableElementType());
         }
         return returnVal;
     }

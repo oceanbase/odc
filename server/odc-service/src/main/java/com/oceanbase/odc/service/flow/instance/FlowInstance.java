@@ -432,7 +432,8 @@ public class FlowInstance extends Graph implements SecurityResource, Organizatio
 
     public List<BaseFlowNodeInstance> getNextNodeInstances(@NonNull Long instanceId,
             @NonNull FlowNodeType instanceType, FlowableElementType flowableElementType) {
-        Optional<BaseFlowNodeInstance> optional = findByIdAndInstanceType(instanceId, instanceType, flowableElementType);
+        Optional<BaseFlowNodeInstance> optional =
+                findByIdAndInstanceType(instanceId, instanceType, flowableElementType);
         BaseFlowNodeInstance nodeInstance = optional.orElseThrow(
                 () -> new NullPointerException("Instance not fount by id " + instanceId + " and type " + instanceType));
         List<BaseFlowNodeInstance> returnVal = new LinkedList<>();
@@ -666,7 +667,8 @@ public class FlowInstance extends Graph implements SecurityResource, Organizatio
                 instance -> Objects.equals(instance.getNodeType(), instanceType)
                         && Objects.equals(instance.getId(), instanceId)
                         && Objects.equals(instance.getCoreFlowableElementType(), flowableElementType));
-        Verify.verify(nodeInstances.size() <= 1, "Duplicate node, Id " + instanceId + ", type " + instanceType + ", flowElementType" + flowableElementType);
+        Verify.verify(nodeInstances.size() <= 1, "Duplicate node, Id " + instanceId + ", type " + instanceType
+                + ", flowElementType" + flowableElementType);
         if (nodeInstances.isEmpty()) {
             return Optional.empty();
         }
