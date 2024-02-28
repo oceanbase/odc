@@ -72,7 +72,7 @@ public class FlowInstanceUtil {
             }
             returnVal.add(target);
             nextInstances = flowInstance.getNextNodeInstances(target.getId(), target.getNodeType(),
-                    rootInstance.getCoreFlowableElementType());
+                    target.getCoreFlowableElementType());
         }
         return returnVal;
     }
