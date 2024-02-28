@@ -17,6 +17,7 @@
 package com.oceanbase.odc.service.task.service;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.data.domain.Page;
 
@@ -53,6 +54,14 @@ public interface TaskFrameworkService {
 
     Page<JobEntity> findHeartTimeTimeoutJobs(int timeoutSeconds, int page, int size);
 
+    /**
+     * count the jobs started time before neverHeartSeconds which status is running and no heart
+     * 
+     * @param neverHeartSeconds job start seconds
+     * @return count
+     */
+    long countRunningNeverHeartJobs(int neverHeartSeconds);
+
     JobDefinition getJobDefinition(Long id);
 
     int startSuccess(Long id, String executorIdentifier);
@@ -70,7 +79,7 @@ public interface TaskFrameworkService {
     int updateStatusDescriptionByIdOldStatusAndExecutorDestroyed(Long id, JobStatus oldStatus, JobStatus newStatus,
             String description);
 
-    String findByJobIdAndAttributeKey(Long jobId, String attributeKey);
+    Optional<String> findByJobIdAndAttributeKey(Long jobId, String attributeKey);
 
     boolean isJobFinished(Long id);
 }

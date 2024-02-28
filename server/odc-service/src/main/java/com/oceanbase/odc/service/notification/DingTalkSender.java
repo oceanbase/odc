@@ -31,7 +31,7 @@ import org.springframework.stereotype.Component;
 
 import com.dingtalk.api.DefaultDingTalkClient;
 import com.dingtalk.api.request.OapiRobotSendRequest;
-import com.dingtalk.api.request.OapiRobotSendRequest.Markdown;
+import com.dingtalk.api.request.OapiRobotSendRequest.Text;
 import com.dingtalk.api.response.OapiRobotSendResponse;
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.shared.Verify;
@@ -76,11 +76,11 @@ public class DingTalkSender implements MessageSender {
                     channelConfig.getAtMobiles().stream().map(Object::toString).collect(Collectors.toList()));
             request.setAt(at);
         }
-        request.setMsgtype("markdown");
-        Markdown markdown = new Markdown();
-        markdown.setTitle(message.getTitle());
-        markdown.setText(message.getContent());
-        request.setMarkdown(markdown);
+        // unable to at user when using Markdown format
+        request.setMsgtype("text");
+        Text text = new Text();
+        text.setContent(message.getContent());
+        request.setText(text);
         OapiRobotSendResponse response = client.execute(request);
         if (response.isSuccess()) {
             log.info("DingTalk Bot message sent successfully");

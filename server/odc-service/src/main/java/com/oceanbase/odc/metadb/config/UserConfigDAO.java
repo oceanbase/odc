@@ -15,59 +15,52 @@
  */
 package com.oceanbase.odc.metadb.config;
 
+import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
-import org.apache.ibatis.annotations.Param;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.BeanPropertyRowMapper;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 
-/**
- * dao for user config
- *
- * @author yh263208
- * @date 2021-05-17 19:31
- * @since ODC_release_2.4.2
- */
+import com.oceanbase.odc.core.shared.PreConditions;
+
 @Component
-public interface UserConfigDAO {
-    /**
-     * insert a user config
-     *
-     * @param userConfig user configuration
-     * @return effect row
-     */
-    int insert(UserConfigDO userConfig);
+public class UserConfigDAO {
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
 
-    /**
-     * select a user config item
-     *
-     * @param userId user id
-     * @param key config key
-     * @return configuration object
-     */
-    UserConfigDO get(@Param("userId") Long userId, @Param("key") String key);
+    public List<UserConfigEntity> queryByUserId(Long userId) {
+        PreConditions.notNull(userId, "userId");
+        String sql = "SELECT user_id, `key`, `value`, create_time, update_time, description"
+                + " FROM config_user_configuration WHERE user_id = ?";
+        return jdbcTemplate.query(sql, new BeanPropertyRowMapper<>(UserConfigEntity.class), userId);
+    }
 
-    /**
-     * select a user config list
-     *
-     * @param userId user id
-     * @return list of a configuration
-     */
-    List<UserConfigDO> listByUserId(@Param("userId") Long userId);
+    public UserConfigEntity queryByUserIdAndKey(Long userId, String key) {
+        PreConditions.notNull(userId, "userId");
+        PreConditions.notBlank(key, "key");
+        String sql = "SELECT user_id, `key`, `value`, create_time, update_time, description"
+                + " FROM config_user_configuration WHERE user_id = ? AND `key` = ?";
+        return jdbcTemplate.queryForObject(sql, new BeanPropertyRowMapper<>(UserConfigEntity.class), userId, key);
+    }
 
-    /**
-     * update a user configuration
-     *
-     * @param config config value
-     * @return effect row
-     */
-    int update(UserConfigDO config);
+    public int batchUpsert(List<UserConfigEntity> entities) {
+        PreConditions.notEmpty(entities, "entities");
+        String sql = "INSERT INTO config_user_configuration(user_id, `key`, `value`, description)"
+                + " VALUES(?, ?, ?, ?) ON DUPLICATE KEY UPDATE `value` = ?";
+        int[] rets = jdbcTemplate.batchUpdate(sql, entities.stream().map(
+                entity -> new Object[] {entity.getUserId(), entity.getKey(), entity.getValue(),
+                        entity.getDescription(), entity.getValue()})
+                .collect(Collectors.toList()));
+        return Arrays.stream(rets).sum();
+    }
 
-    /**
-     * delete a user configuration
-     *
-     * @param userId user id
-     * @param key configuration key
-     * @return effect row
-     */
-    int delete(@Param("userId") Long userId, @Param("key") String key);
+    public int deleteByUserId(Long userId) {
+        PreConditions.notNull(userId, "userId");
+        String sql = "DELETE FROM config_user_configuration WHERE user_id = ?";
+        return jdbcTemplate.update(sql, userId);
+    }
+
 }

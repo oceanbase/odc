@@ -38,6 +38,8 @@ public class SqlAsyncExecuteReq {
      */
     private Boolean addROWID;
     private Boolean showTableColumnInfo;
+    private Boolean fullLinkTraceEnabled;
+    private Boolean continueExecutionOnError;
 
     public boolean ifSplitSqls() {
         if (this.split == null) {

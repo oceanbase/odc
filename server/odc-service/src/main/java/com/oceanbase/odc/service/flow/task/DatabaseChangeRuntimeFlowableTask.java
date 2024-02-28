@@ -18,6 +18,7 @@ package com.oceanbase.odc.service.flow.task;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
+import org.apache.commons.lang3.Validate;
 import org.flowable.engine.delegate.DelegateExecution;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -26,7 +27,6 @@ import com.oceanbase.odc.core.flow.exception.BaseFlowException;
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionUtil;
 import com.oceanbase.odc.core.shared.Verify;
-import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.shared.constant.FlowStatus;
 import com.oceanbase.odc.core.sql.split.SqlCommentProcessor;
 import com.oceanbase.odc.metadb.task.TaskEntity;
@@ -37,8 +37,10 @@ import com.oceanbase.odc.service.datasecurity.accessor.DatasourceColumnAccessor;
 import com.oceanbase.odc.service.flow.exception.ServiceTaskCancelledException;
 import com.oceanbase.odc.service.flow.exception.ServiceTaskError;
 import com.oceanbase.odc.service.flow.exception.ServiceTaskExpiredException;
+import com.oceanbase.odc.service.flow.model.PreCheckTaskResult;
 import com.oceanbase.odc.service.flow.task.model.DatabaseChangeParameters;
 import com.oceanbase.odc.service.flow.task.model.DatabaseChangeResult;
+import com.oceanbase.odc.service.flow.task.model.FlowTaskProperties;
 import com.oceanbase.odc.service.flow.task.model.RollbackPlanTaskResult;
 import com.oceanbase.odc.service.flow.util.FlowTaskUtil;
 import com.oceanbase.odc.service.objectstorage.ObjectStorageFacade;
@@ -70,6 +72,11 @@ public class DatabaseChangeRuntimeFlowableTask extends BaseODCFlowTaskDelegate<D
     private ObjectStorageFacade objectStorageFacade;
     @Autowired
     private DBSessionManageFacade sessionManageFacade;
+    @Autowired
+    private TaskService taskService;
+    @Autowired
+    private FlowTaskProperties flowTaskProperties;
+    private boolean autoModifyTimeout = false;
 
     @Override
     public boolean cancel(boolean mayInterruptIfRunning, Long taskId, TaskService taskService) {
@@ -101,6 +108,7 @@ public class DatabaseChangeRuntimeFlowableTask extends BaseODCFlowTaskDelegate<D
             }
             result = asyncTaskThread.getResult();
             result.setRollbackPlanResult(rollbackPlanTaskResult);
+            result.setAutoModifyTimeout(this.autoModifyTimeout);
             if (asyncTaskThread.isAbort()) {
                 isFailure = true;
                 taskService.fail(taskId, asyncTaskThread.getProgressPercentage(), result);
@@ -173,12 +181,13 @@ public class DatabaseChangeRuntimeFlowableTask extends BaseODCFlowTaskDelegate<D
     private DatabaseChangeThread generateOdcAsyncTaskThread(Long taskId, DelegateExecution execution) {
         Long creatorId = FlowTaskUtil.getTaskCreator(execution).getId();
         DatabaseChangeParameters parameters = FlowTaskUtil.getAsyncParameter(execution);
+        modifyTimeoutIfTimeConsumingSqlExists(execution, parameters);
         ConnectionConfig connectionConfig = FlowTaskUtil.getConnectionConfig(execution);
         connectionConfig.setQueryTimeoutSeconds((int) TimeUnit.MILLISECONDS.toSeconds(parameters.getTimeoutMillis()));
         DefaultConnectSessionFactory sessionFactory = new DefaultConnectSessionFactory(connectionConfig);
         sessionFactory.setSessionTimeoutMillis(parameters.getTimeoutMillis());
         ConnectionSession connectionSession = sessionFactory.generateSession();
-        if (connectionSession.getDialectType() == DialectType.OB_ORACLE) {
+        if (connectionSession.getDialectType().isOracle()) {
             ConnectionSessionUtil.initConsoleSessionTimeZone(connectionSession, connectProperties.getDefaultTimeZone());
         }
         SqlCommentProcessor processor = new SqlCommentProcessor(connectionConfig.getDialectType(), true, true);
@@ -193,4 +202,23 @@ public class DatabaseChangeRuntimeFlowableTask extends BaseODCFlowTaskDelegate<D
         return returnVal;
     }
 
+    private void modifyTimeoutIfTimeConsumingSqlExists(DelegateExecution execution,
+            DatabaseChangeParameters parameters) {
+        Long taskId = FlowTaskUtil.getTaskId(execution);
+        Long preCheckTaskId = FlowTaskUtil.getPreCheckTaskId(execution);
+        TaskEntity preCheckTask = taskService.detail(preCheckTaskId);
+
+        PreCheckTaskResult preCheckResult = JsonUtils.fromJson(preCheckTask.getResultJson(), PreCheckTaskResult.class);
+        Validate.notNull(preCheckResult, "Pre check task result can not be null");
+        long autoModifiedTimeout = flowTaskProperties.getIndexChangeMaxTimeoutMillisecond();
+        if (Objects.nonNull(preCheckResult.getSqlCheckResult())
+                && preCheckResult.getSqlCheckResult().isTimeConsumingSqlExists()
+                && autoModifiedTimeout > parameters.getTimeoutMillis()) {
+            this.autoModifyTimeout = true;
+            parameters.setTimeoutMillis(autoModifiedTimeout);
+            TaskEntity databaseChangeTaskEntity = taskService.detail(taskId);
+            databaseChangeTaskEntity.setParametersJson(JsonUtils.toJson(parameters));
+            taskService.updateParametersJson(databaseChangeTaskEntity);
+        }
+    }
 }

@@ -103,7 +103,8 @@ public class DataXTransferJob extends AbstractJob {
                 setStatus(Status.SUCCESS);
             } else {
                 setStatus(Status.FAILURE);
-                throw new RuntimeException(String.format("DataX task failed. Number of failed records: %d .", failed));
+                throw new RuntimeException(String.format(
+                        "DataX task failed. Number of failed records: %d . Please get details in %s", failed, logDir));
             }
         } finally {
             if (process != null && process.isAlive()) {

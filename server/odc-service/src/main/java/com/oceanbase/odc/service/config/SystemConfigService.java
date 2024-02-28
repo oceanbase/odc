@@ -19,17 +19,19 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 
-import org.apache.commons.compress.utils.Lists;
+import javax.validation.constraints.NotNull;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cloud.context.refresh.ContextRefresher;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.metadb.config.SystemConfigDAO;
 import com.oceanbase.odc.metadb.config.SystemConfigEntity;
 import com.oceanbase.odc.service.config.model.Configuration;
-import com.oceanbase.odc.service.config.util.OrganizationConfigUtil;
+import com.oceanbase.odc.service.config.util.ConfigurationUtils;
 import com.oceanbase.odc.service.systemconfig.SystemConfigRefreshMatcher;
 
 import lombok.extern.slf4j.Slf4j;
@@ -108,16 +110,7 @@ public class SystemConfigService {
     @SkipAuthorize("odc internal usage")
     public List<Configuration> queryByKeyPrefix(String keyPrefix) {
         List<SystemConfigEntity> configEntities = systemConfigDAO.queryByKeyPrefix(keyPrefix);
-        return OrganizationConfigUtil.convertDO2DTO(configEntities);
-    }
-
-    @SkipAuthorize("odc internal usage")
-    public List<Configuration> queryByKeyPrefixes(List<String> keyPrefixes) {
-        List<Configuration> configurations = Lists.newArrayList();
-        for (String prefix : keyPrefixes) {
-            configurations.addAll(queryByKeyPrefix(prefix));
-        }
-        return configurations;
+        return ConfigurationUtils.fromEntity(configEntities);
     }
 
     @SkipAuthorize("odc internal usage")
@@ -128,6 +121,11 @@ public class SystemConfigService {
         } else {
             log.debug("no system configuration changes detected");
         }
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    public void insert(@NotNull List<SystemConfigEntity> entities) {
+        entities.forEach(entity -> systemConfigDAO.insert(entity));
     }
 
     private boolean needRefresh() {
