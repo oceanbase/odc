@@ -39,7 +39,6 @@ import com.github.benmanes.caffeine.cache.LoadingCache;
 import com.oceanbase.odc.common.trace.TraceContextHolder;
 import com.oceanbase.odc.core.authority.SecurityManager;
 import com.oceanbase.odc.core.authority.exception.AuthenticationException;
-import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.core.shared.constant.OdcConstants;
 import com.oceanbase.odc.core.shared.constant.OrganizationType;
 import com.oceanbase.odc.metadb.iam.OrganizationRepository;
@@ -140,7 +139,8 @@ public class CustomAuthenticationSuccessHandler extends SavedRequestAwareAuthent
         if (authentication instanceof AttemptableUsernamePasswordAuthenticationToken) {
             AttemptableUsernamePasswordAuthenticationToken attemptableUsernamePasswordAuthenticationToken =
                     (AttemptableUsernamePasswordAuthenticationToken) authentication;
-            clientAddressLoginAttemptCache.invalidate(attemptableUsernamePasswordAuthenticationToken.getLoginAttemptKey());
+            clientAddressLoginAttemptCache
+                    .invalidate(attemptableUsernamePasswordAuthenticationToken.getLoginAttemptKey());
         }
 
         // if odc data api, use json response
