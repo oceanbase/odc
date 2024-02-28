@@ -710,15 +710,7 @@ public class FlowTaskInstanceService {
     }
 
     private List<PartitionPlanTaskResult> getPartitionPlanResult(@NonNull TaskEntity taskEntity) {
-        List<PartitionPlanTaskResult> partitionPlanTaskResults = innerGetResult(taskEntity,
-                PartitionPlanTaskResult.class);
-        if (partitionPlanTaskResults.isEmpty()) {
-            return null;
-        }
-        Long flowInstanceId = partitionPlanTaskResults.get(0).getFlowInstanceId();
-        partitionPlanTaskResults.get(0).setDatabasePartitionPlan(
-                partitionPlanService.findDatabasePartitionPlanByFlowInstanceId(flowInstanceId));
-        return partitionPlanTaskResults;
+        return innerGetResult(taskEntity, PartitionPlanTaskResult.class);
     }
 
     private List<AlterScheduleResult> getAlterScheduleResult(@NonNull TaskEntity taskEntity) {

@@ -93,6 +93,9 @@ public class PartitionPlanScheduleService {
                 .findByPartitionPlanIdIn(Collections.singletonList(pp.getId())).stream()
                 .map(this::entityToModel).collect(Collectors.toList());
         target.setPartitionTableConfigs(tableConfigs);
+        if (CollectionUtils.isEmpty(tableConfigs)) {
+            return target;
+        }
         Map<Long, List<PartitionPlanTablePartitionKeyEntity>> pptId2KeyEntities =
                 this.partitionPlanTablePartitionKeyRepository.findByPartitionplanTableIdIn(tableConfigs.stream()
                         .map(PartitionPlanTableConfig::getId).collect(Collectors.toList())).stream()
@@ -141,12 +144,12 @@ public class PartitionPlanScheduleService {
         // disable all related partition plan task
         Database database = this.databaseService.detail(databaseId);
         disablePartitionPlan(database.getId());
+        PartitionPlanEntity partitionPlanEntity = modelToEntity(partitionPlanConfig);
+        partitionPlanEntity = this.partitionPlanRepository.save(partitionPlanEntity);
         if (!partitionPlanConfig.isEnabled()) {
             log.info("Partition plan is disabled, do nothing and return");
             return;
         }
-        PartitionPlanEntity partitionPlanEntity = modelToEntity(partitionPlanConfig);
-        partitionPlanEntity = this.partitionPlanRepository.save(partitionPlanEntity);
         Validate.isTrue(partitionPlanConfig.getCreationTrigger() != null, "Creation trigger can not be null");
         ScheduleEntity createScheduleEntity = createAndEnableSchedule(
                 database, partitionPlanConfig.getCreationTrigger());
@@ -249,7 +252,7 @@ public class PartitionPlanScheduleService {
     private PartitionPlanEntity modelToEntity(PartitionPlanConfig model) {
         PartitionPlanEntity entity = new PartitionPlanEntity();
         entity.setDatabaseId(model.getDatabaseId());
-        entity.setEnabled(true);
+        entity.setEnabled(model.isEnabled());
         Validate.notNull(model.getFlowInstanceId(), "Flow instance id can not be null");
         entity.setFlowInstanceId(model.getFlowInstanceId());
         entity.setLastModifierId(null);

@@ -15,14 +15,12 @@
  */
 package com.oceanbase.odc.service.flow.task;
 
-import java.util.HashMap;
-import java.util.Map;
-
 import org.flowable.engine.delegate.DelegateExecution;
 import org.quartz.SchedulerException;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import com.oceanbase.odc.core.shared.constant.FlowStatus;
+import com.oceanbase.odc.service.flow.task.model.PartitionPlanTaskResult;
 import com.oceanbase.odc.service.flow.util.FlowTaskUtil;
 import com.oceanbase.odc.service.partitionplan.PartitionPlanScheduleService;
 import com.oceanbase.odc.service.partitionplan.PartitionPlanTaskTraceContextHolder;
@@ -51,7 +49,7 @@ public class PartitionPlanRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Vo
         PartitionPlanTaskTraceContextHolder.trace(taskId);
         log.info("Partition plan task starts, taskId={}", taskId);
         try {
-            taskService.start(taskId);
+            taskService.start(taskId, generateResult(false));
             PartitionPlanConfig parameters = FlowTaskUtil.getPartitionPlanParameter(execution);
             parameters.setFlowInstanceId(getFlowInstanceId());
             parameters.setTaskId(taskId);
@@ -113,9 +111,9 @@ public class PartitionPlanRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Vo
         throw new UnsupportedOperationException();
     }
 
-    private Map<String, Object> generateResult(boolean success) {
-        Map<String, Object> result = new HashMap<>();
-        result.put("success", success);
+    private PartitionPlanTaskResult generateResult(boolean success) {
+        PartitionPlanTaskResult result = new PartitionPlanTaskResult();
+        result.setSuccess(success);
         return result;
     }
 
