@@ -39,6 +39,7 @@ public class BuiltinSnippet extends Snippet {
         snippet.setDescription(this.getDescription());
         snippet.setId(this.getId());
         snippet.setPrefix(this.getPrefix());
+        snippet.setType(this.getType());
         return snippet;
     }
 }
