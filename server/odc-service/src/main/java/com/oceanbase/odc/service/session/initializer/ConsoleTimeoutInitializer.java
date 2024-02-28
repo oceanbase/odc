@@ -51,20 +51,18 @@ public class ConsoleTimeoutInitializer implements ConnectionInitializer {
     @Override
     public void init(Connection connection) throws SQLException {
         if (DialectType.ORACLE.equals(this.dialectType)) {
-            try {
-                try (Statement stmt = connection.createStatement();
-                        ResultSet resultSet = stmt.executeQuery(
-                                "SELECT LIMIT FROM DBA_PROFILES WHERE PROFILE = (SELECT PROFILE FROM DBA_USERS WHERE USERNAME = USER) AND RESOURCE_NAME = 'IDLE_TIME'")) {
-                    while (resultSet.next()) {
-                        String limitMinute = resultSet.getString(1);
-                        if ("UNLIMITED".equals(limitMinute) || (StringUtils.isNotBlank(limitMinute) && Long.parseLong(
-                                limitMinute) * 60 * 1000 * 1000 > timeoutUs)) {
-                            return;
-                        } else {
-                            log.info(
-                                    "The current session timeout in oracle mode is less than the specified timeout, the specified timeout is {}, the current timeout is {}",
-                                    timeoutUs, limitMinute);
-                        }
+            try (Statement stmt = connection.createStatement()) {
+                ResultSet resultSet = stmt.executeQuery(
+                        "SELECT LIMIT FROM DBA_PROFILES WHERE PROFILE = (SELECT PROFILE FROM DBA_USERS WHERE USERNAME = USER) AND RESOURCE_NAME = 'IDLE_TIME'");
+                while (resultSet.next()) {
+                    String limitMinute = resultSet.getString(1);
+                    if ("UNLIMITED".equals(limitMinute) || (StringUtils.isNotBlank(limitMinute)
+                            && Long.parseLong(limitMinute) * 60 * 1000 * 1000 > timeoutUs)) {
+                        return;
+                    } else {
+                        log.info(
+                                "The current session timeout in oracle mode is less than the specified timeout, the specified timeout is {}, the current timeout is {}",
+                                timeoutUs, limitMinute);
                     }
                 }
             } catch (Exception e) {

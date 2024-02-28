@@ -63,7 +63,6 @@ import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.flow.model.TaskParameters;
 import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.core.shared.Verify;
-import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.constant.FlowStatus;
 import com.oceanbase.odc.core.shared.constant.LimitMetric;
@@ -325,7 +324,6 @@ public class FlowInstanceService {
             cloudMetadataClient.checkPermission(OBTenant.of(conn.getClusterName(),
                     conn.getTenantName()), conn.getInstanceType(), false, CloudPermissionAction.READONLY);
         }
-        setDefaultSchemaIfNeed(createReq, conn);
         return Collections.singletonList(buildFlowInstance(riskLevels, createReq, conn));
     }
 
@@ -744,7 +742,6 @@ public class FlowInstanceService {
         ExecutionStrategyConfig strategyConfig = ExecutionStrategyConfig.from(flowInstanceReq,
                 ExecutionStrategyConfig.INVALID_EXPIRE_INTERVAL_SECOND);
         try {
-            setDefaultSchemaIfNeed(flowInstanceReq, connectionConfig);
             TaskParameters parameters = flowInstanceReq.getParameters();
             FlowInstanceConfigurer taskConfigurer;
             boolean addRollbackPlanNode = (taskType == TaskType.ASYNC
@@ -1000,12 +997,6 @@ public class FlowInstanceService {
             variables.setAttribute(Variable.ODC_SITE_URL, configurations.get(0).getValue());
         }
         return variables;
-    }
-
-    private void setDefaultSchemaIfNeed(CreateFlowInstanceReq req, ConnectionConfig config) {
-        if (req.getTaskType() == TaskType.ASYNC && config.getDialectType() == DialectType.ORACLE) {
-            config.setDefaultSchema(databaseService.detail(req.getDatabaseId()).getName());
-        }
     }
 
     private void cancelAllRelatedExternalInstance(@NonNull FlowInstance flowInstance) {

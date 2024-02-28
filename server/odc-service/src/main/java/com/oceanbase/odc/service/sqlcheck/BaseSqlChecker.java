@@ -70,7 +70,7 @@ abstract class BaseSqlChecker implements SqlChecker {
                 sqls = splitByCommentProcessor(sqlScript);
             }
         } else {
-            throw new IllegalStateException("Unsupported dialect type for sql Check, " + dialectType);
+            throw new IllegalStateException("Unsupported dialect type for sql check, " + dialectType);
         }
         return check(sqls, null);
     }
