@@ -38,6 +38,7 @@ import com.oceanbase.odc.core.shared.constant.FlowStatus;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.core.shared.constant.TaskType;
 import com.oceanbase.odc.metadb.flow.FlowInstanceRepository;
+import com.oceanbase.odc.service.flow.FlowInstanceService;
 import com.oceanbase.odc.service.flow.FlowableAdaptor;
 import com.oceanbase.odc.service.flow.event.ServiceTaskStartedEvent;
 import com.oceanbase.odc.service.flow.event.TaskInstanceCreatedListener;
@@ -77,6 +78,10 @@ public abstract class BaseRuntimeFlowableDelegate<T> extends BaseFlowableDelegat
     private EventPublisher eventPublisher;
     @Autowired
     private FlowInstanceRepository flowInstanceRepository;
+    @Getter
+    @Autowired
+    private FlowInstanceService flowInstanceService;
+
     private volatile T returnObject = null;
     private volatile Exception thrown = null;
     private volatile boolean done = false;
@@ -117,9 +122,11 @@ public abstract class BaseRuntimeFlowableDelegate<T> extends BaseFlowableDelegat
         try {
             preHandle(execution);
             returnObject = callable.call();
+            flowInstanceService.approve(flowInstanceId, "Approved by task execute succeed", true);
         } catch (Exception e) {
             log.warn("Service task execution failed", e);
             thrown = e;
+            flowInstanceService.reject(flowInstanceId, "Approved by task execute failed", true);
             throw e;
         } finally {
             done = true;

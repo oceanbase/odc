@@ -236,32 +236,20 @@ public class FlowInstanceConfigurer extends GraphConfigurer<FlowInstance, BaseFl
     }
 
     protected FlowInstanceConfigurer next(@NonNull FlowTaskInstance nextNode,
-        @NonNull Consumer<ServiceTaskBuilder> serviceTaskConsumer,
-        @NonNull Consumer<UserTaskBuilder> userManuTaskConsumer,
-        @NonNull Consumer<UserTaskBuilder> userTimerTaskConsumer) {
+            @NonNull Consumer<UserTaskBuilder> userTaskBuilderConsumer,
+            @NonNull Consumer<UserTaskBuilder> userManuTaskConsumer,
+            @NonNull Consumer<UserTaskBuilder> userTimerTaskConsumer) {
 
-        FlowInstanceConfigurer configurer = nextInternal(nextNode, serviceTaskConsumer, userManuTaskConsumer,
-            userTimerTaskConsumer);
-        String userTaskName = FlowNodeType.APPROVAL_TASK.name() + "_user_task_" + getNameSuffix(nextNode);
-        UserTaskBuilder userTaskBuilder = nullSafeGetNodeBuilder(userTaskName, nextNode, () -> {
-            UserTaskBuilder builder = new UserTaskBuilder(userTaskName);
-            return builder;
+        String serviceTaskName = FlowNodeType.SERVICE_TASK.name() + "_logic_user_task_" + getNameSuffix(nextNode);
+        UserTaskBuilder serviceTaskBuilder = nullSafeGetNodeBuilder(serviceTaskName, nextNode, () -> {
+            UserTaskBuilder taskBuilder = new UserTaskBuilder(serviceTaskName);
+            userTaskBuilderConsumer.accept(taskBuilder);
+            return taskBuilder;
         });
-
-        String gatewayName = FlowNodeType.APPROVAL_TASK.name()
-                             + "_external_approval_gateway_" + getNameSuffix(nextNode);
-        ExclusiveGatewayBuilder gatewayBuilder = nullSafeGetNodeBuilder(gatewayName, nextNode,
-            () -> new ExclusiveGatewayBuilder(gatewayName));
-        targetExecution.next(userTaskBuilder).next(gatewayBuilder);
-        targetExecution.route(String.format("${!%s}", RuntimeTaskConstants.TASK_NODE_EXECUTE_COMPLETED),
-            this.targetProcessBuilder.endProcess());
-        targetExecution.next(userTaskBuilder, new ConditionSequenceFlowBuilder(
-            gatewayBuilder.getGraphId() + "->",
-            String.format("${%s}", RuntimeTaskConstants.TASK_NODE_EXECUTE_COMPLETED)));
-
-        return configurer;
+        return nextInternal(nextNode, serviceTaskBuilder, userManuTaskConsumer, userTimerTaskConsumer);
     }
-    protected FlowInstanceConfigurer nextInternal(@NonNull FlowTaskInstance nextNode,
+
+    protected FlowInstanceConfigurer nextServiceTask(@NonNull FlowTaskInstance nextNode,
             @NonNull Consumer<ServiceTaskBuilder> serviceTaskConsumer,
             @NonNull Consumer<UserTaskBuilder> userManuTaskConsumer,
             @NonNull Consumer<UserTaskBuilder> userTimerTaskConsumer) {
@@ -274,6 +262,13 @@ public class FlowInstanceConfigurer extends GraphConfigurer<FlowInstance, BaseFl
             serviceTaskConsumer.accept(taskBuilder);
             return taskBuilder;
         });
+        return nextInternal(nextNode, serviceTaskBuilder, userManuTaskConsumer, userTimerTaskConsumer);
+    }
+
+    protected <T extends FlowNode> FlowInstanceConfigurer nextInternal(@NonNull FlowTaskInstance nextNode,
+            @NonNull BaseProcessNodeBuilder<T> serviceTaskBuilder,
+            @NonNull Consumer<UserTaskBuilder> userManuTaskConsumer,
+            @NonNull Consumer<UserTaskBuilder> userTimerTaskConsumer) {
 
         ExecutionStrategyConfig strategyConfig = nextNode.getStrategyConfig();
         if (strategyConfig.getStrategy() == FlowTaskExecutionStrategy.AUTO) {
@@ -414,8 +409,8 @@ public class FlowInstanceConfigurer extends GraphConfigurer<FlowInstance, BaseFl
         return timerBuilder;
     }
 
-    protected ErrorBoundaryEventBuilder setHandleableError(@NonNull FlowTaskInstance nextNode,
-            @NonNull ServiceTaskBuilder builder, @NonNull ErrorCode errorCode) {
+    protected <T extends Task> ErrorBoundaryEventBuilder setHandleableError(@NonNull FlowTaskInstance nextNode,
+            @NonNull BaseTaskBuilder<T> builder, @NonNull ErrorCode errorCode) {
         if (log.isDebugEnabled()) {
             log.debug("Start defining service task error handling logic, intanceType={}, errorCode={}",
                     nextNode.getNodeType(), errorCode);

@@ -15,18 +15,30 @@
  */
 package com.oceanbase.odc.service.flow.listener;
 
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.Executors;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
+import org.apache.commons.collections4.CollectionUtils;
 import org.flowable.engine.delegate.DelegateExecution;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import com.oceanbase.odc.common.util.RetryExecutor;
+import com.oceanbase.odc.core.flow.model.FlowableElementType;
 import com.oceanbase.odc.core.flow.util.EmptyExecutionListener;
+import com.oceanbase.odc.metadb.flow.NodeInstanceEntity;
+import com.oceanbase.odc.metadb.flow.NodeInstanceEntityRepository;
+import com.oceanbase.odc.metadb.flow.ServiceTaskInstanceEntity;
+import com.oceanbase.odc.metadb.flow.ServiceTaskInstanceRepository;
 import com.oceanbase.odc.service.flow.FlowableAdaptor;
 import com.oceanbase.odc.service.flow.instance.BaseFlowNodeInstance;
 import com.oceanbase.odc.service.flow.model.FlowNodeStatus;
+import com.oceanbase.odc.service.flow.model.FlowNodeType;
+import com.oceanbase.odc.service.flow.task.BaseRuntimeFlowableDelegate;
+import com.oceanbase.odc.service.flow.task.mapper.OdcRuntimeDelegateMapper;
 
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
@@ -46,8 +58,14 @@ public abstract class BaseStatusModifyListener<T extends BaseFlowNodeInstance> e
     @Autowired
     private FlowableAdaptor flowableAdaptor;
     private final RetryExecutor retryExecutor = RetryExecutor.builder().retryIntervalMillis(1000).retryTimes(3).build();
+    @Autowired
+    private ServiceTaskInstanceRepository serviceTaskInstanceRepository;
+    @Autowired
+    private NodeInstanceEntityRepository nodeInstanceRepository;
+    @Autowired
+    private BeanCreator beanCreator;
 
-    @Override
+
     protected void onExecutiuonStart(DelegateExecution execution) {
         super.onExecutiuonStart(execution);
         internalModifyStatus(execution, this::doModifyStatusOnStart);
@@ -71,11 +89,49 @@ public abstract class BaseStatusModifyListener<T extends BaseFlowNodeInstance> e
                     "Can not find flow instance id by process definition id " + processDefinitionId);
         }
         Long flowInstanceId = retryOptional.get().get();
+
         Optional<T> targetOptional = getTargetByActivityId(activityId, flowInstanceId, flowableAdaptor);
         if (!targetOptional.isPresent()) {
             log.warn("Flow node instance does not exist, activityId={}, flowInstanceId={}", activityId, flowInstanceId);
             throw new IllegalStateException("Can not find instance by activityId " + activityId);
         }
+
+        List<NodeInstanceEntity> nodeInstanceEntities =
+                nodeInstanceRepository.findByFlowInstanceId(flowInstanceId)
+                        .stream().filter(n -> Objects.equals(n.getActivityId(), execution.getCurrentActivityId()))
+                        .collect(Collectors.toList());
+        if (CollectionUtils.isEmpty(nodeInstanceEntities)) {
+            log.warn("Flow node instance does not exist, activityId={}, flowInstanceId={}", activityId, flowInstanceId);
+            throw new IllegalStateException("Can not find instance by activityId " + activityId);
+        }
+
+        if (nodeInstanceEntities.size() >= 2) {
+            log.warn("Duplicate records are found, id={}, nodeType={}, coreType={} ", flowInstanceId,
+                    FlowNodeType.APPROVAL_TASK, FlowableElementType.USER_TASK);
+            throw new IllegalStateException("Duplicate records are found");
+        }
+        if (nodeInstanceEntities.get(0).getInstanceType() == FlowNodeType.APPROVAL_TASK) {
+            Optional<ServiceTaskInstanceEntity> serviceTaskInstanceEntity =
+                    serviceTaskInstanceRepository.findByInstanceTypeAndActivityId(FlowNodeType.APPROVAL_TASK,
+                            activityId, flowInstanceId);
+
+            if (serviceTaskInstanceEntity.isPresent()) {
+
+                Class<? extends BaseRuntimeFlowableDelegate<?>> taskClass =
+                        new OdcRuntimeDelegateMapper().map(serviceTaskInstanceEntity.get().getTaskType());
+                try {
+                    final BaseRuntimeFlowableDelegate<?> flowableDelegate =
+                            (BaseRuntimeFlowableDelegate<?>) beanCreator.createBeanWithDependencies(taskClass);
+                    Executors.newSingleThreadExecutor().submit(() -> flowableDelegate.execute(execution));
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
+
+            }
+
+        }
+
+
         T target = targetOptional.get();
         try {
             Optional<FlowNodeStatus> optional = this.retryExecutor.run(() -> {

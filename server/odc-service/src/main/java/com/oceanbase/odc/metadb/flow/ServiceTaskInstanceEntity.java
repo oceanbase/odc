@@ -108,4 +108,5 @@ public class ServiceTaskInstanceEntity {
      */
     @Column(name = "execution_time")
     private Date executionTime;
+
 }
