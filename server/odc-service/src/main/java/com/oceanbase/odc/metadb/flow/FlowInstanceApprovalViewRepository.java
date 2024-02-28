@@ -13,12 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.metadb.config;
+package com.oceanbase.odc.metadb.flow;
 
-import java.util.List;
-
-public interface SystemConfigDAO {
-    List<SystemConfigEntity> queryByKeyPrefix(String keyPrefix);
-
-    void insert(SystemConfigEntity systemConfigEntity);
+/**
+ * @author liuyizhuo.lyz
+ * @date 2024/2/27
+ */
+public interface FlowInstanceApprovalViewRepository extends ReadOnlyRepository<FlowInstanceApprovalViewEntity, Long> {
 }

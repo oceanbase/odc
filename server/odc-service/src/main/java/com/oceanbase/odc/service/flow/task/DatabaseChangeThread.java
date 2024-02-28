@@ -165,7 +165,8 @@ public class DatabaseChangeThread extends Thread {
                         throw new IllegalArgumentException(
                                 "Timeout settings is too large, " + parameters.getTimeoutMillis());
                     }
-                    ConnectionInitializer initializer = new ConsoleTimeoutInitializer(timeoutUs);
+                    ConnectionInitializer initializer =
+                            new ConsoleTimeoutInitializer(timeoutUs, connectionSession.getDialectType());
                     executor.execute((ConnectionCallback<Void>) con -> {
                         initializer.init(con);
                         return null;

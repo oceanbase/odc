@@ -15,8 +15,11 @@
  */
 package com.oceanbase.odc.metadb.notification;
 
+import java.util.List;
+
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.jpa.repository.Query;
 
 /**
  * @author liuyizhuo.lyz
@@ -24,4 +27,9 @@ import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
  */
 public interface PolicyMetadataRepository extends JpaRepository<PolicyMetadataEntity, Long>,
         JpaSpecificationExecutor<PolicyMetadataEntity> {
+
+    @Query(value = "select * from notification_policy_metadata order by id=1 DESC, event_category, event_name",
+            nativeQuery = true)
+    List<PolicyMetadataEntity> findAllOrderByCategoryAndName();
+
 }

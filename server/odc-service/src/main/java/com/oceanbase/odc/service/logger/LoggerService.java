@@ -18,6 +18,7 @@ package com.oceanbase.odc.service.logger;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.util.Optional;
 
 import org.apache.commons.io.FileUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -80,11 +81,11 @@ public class LoggerService {
 
             String logIdKey = level == OdcTaskLogLevel.ALL ? JobAttributeKeyConstants.LOG_STORAGE_ALL_OBJECT_ID
                     : JobAttributeKeyConstants.LOG_STORAGE_WARN_OBJECT_ID;
-            String objId = taskFrameworkService.findByJobIdAndAttributeKey(jobEntity.getId(), logIdKey);
-            String bucketName = taskFrameworkService.findByJobIdAndAttributeKey(jobEntity.getId(),
+            Optional<String> objId = taskFrameworkService.findByJobIdAndAttributeKey(jobEntity.getId(), logIdKey);
+            Optional<String> bucketName = taskFrameworkService.findByJobIdAndAttributeKey(jobEntity.getId(),
                     JobAttributeKeyConstants.LOG_STORAGE_BUCKET_NAME);
 
-            if (objId != null && bucketName != null) {
+            if (objId.isPresent() && bucketName.isPresent()) {
                 if (log.isDebugEnabled()) {
                     log.debug("job: {} is finished, try to get log from local or oss.", jobEntity.getId());
                 }
@@ -94,7 +95,7 @@ public class LoggerService {
                     return LogUtils.getLogContent(logFileStr, LogUtils.MAX_LOG_LINE_COUNT, LogUtils.MAX_LOG_BYTE_COUNT);
                 }
 
-                File tempFile = cloudObjectStorageService.downloadToTempFile(objId);
+                File tempFile = cloudObjectStorageService.downloadToTempFile(objId.get());
                 try (FileInputStream inputStream = new FileInputStream(tempFile)) {
                     FileUtils.copyInputStreamToFile(inputStream, new File(logFileStr));
                 } finally {

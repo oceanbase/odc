@@ -184,7 +184,6 @@ public class DatabaseChangeRuntimeFlowableTaskCopied extends BaseODCFlowTaskDele
     protected void onSuccessful(Long taskId, TaskService taskService) {
         log.info("Database change task succeed, taskId={}", taskId);
         updateFlowInstanceStatus(FlowStatus.EXECUTION_SUCCEEDED);
-        super.onSuccessful(taskId, taskService);
     }
 
     @Override

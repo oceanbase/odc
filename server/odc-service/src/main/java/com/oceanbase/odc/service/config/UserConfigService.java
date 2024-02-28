@@ -63,8 +63,15 @@ public class UserConfigService {
         log.info("Default user configurations: {}", defaultConfigurations);
     }
 
+    /**
+     * deep copy for avoid dirty value in return list
+     */
     public List<Configuration> listDefaultUserConfigurations() {
-        return new ArrayList<>(defaultConfigurations);
+        List<Configuration> configurations = new ArrayList<>(defaultConfigurations.size());
+        for (Configuration configuration : defaultConfigurations) {
+            configurations.add(new Configuration(configuration.getKey(), configuration.getValue()));
+        }
+        return configurations;
     }
 
     public void deleteUserConfigurations(@NotNull Long userId) {

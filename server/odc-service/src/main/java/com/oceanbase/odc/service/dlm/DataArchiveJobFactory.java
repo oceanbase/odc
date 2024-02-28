@@ -24,25 +24,29 @@ import com.oceanbase.tools.migrator.job.MigrateJob;
 import com.oceanbase.tools.migrator.job.QuickDeleteJob;
 import com.oceanbase.tools.migrator.job.RollbackJob;
 
+import lombok.NoArgsConstructor;
+
 /**
  * @Author：tinker
  * @Date: 2023/5/9 14:38
  * @Descripition:
  */
+@NoArgsConstructor
 public class DataArchiveJobFactory {
 
-    private final JobMetaFactory jobMetaFactory;
+    private JobMetaFactory jobMetaFactory;
 
     public DataArchiveJobFactory(JobMetaFactory jobMetaFactory) {
         this.jobMetaFactory = jobMetaFactory;
     }
 
     public AbstractJob createJob(DlmTask parameters) throws Exception {
+        return createJob(jobMetaFactory.create(parameters));
+    }
 
-        JobMeta jobMeta = jobMetaFactory.create(parameters);
-
+    public AbstractJob createJob(JobMeta jobMeta) throws Exception {
         AbstractJob job;
-        switch (parameters.getJobType()) {
+        switch (jobMeta.getJobType()) {
             case MIGRATE: {
                 job = new MigrateJob();
                 break;

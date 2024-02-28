@@ -45,6 +45,7 @@ import com.oceanbase.odc.core.flow.model.FlowableElement;
 import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.core.shared.constant.ErrorCode;
 import com.oceanbase.odc.service.flow.FlowableAdaptor;
+import com.oceanbase.odc.service.flow.listener.ApprovalStatusNotifyListener;
 import com.oceanbase.odc.service.flow.listener.ApprovalTaskExpiredListener;
 import com.oceanbase.odc.service.flow.listener.BaseTaskBindUserTaskListener;
 import com.oceanbase.odc.service.flow.listener.BaseTaskExecutingCompleteListener;
@@ -130,6 +131,7 @@ public class FlowInstanceConfigurer extends GraphConfigurer<FlowInstance, BaseFl
         return next(nextNode, (Consumer<UserTaskBuilder>) userTaskBuilder -> {
             userTaskBuilder.addTaskListener(BaseTaskBindUserTaskListener.class);
             userTaskBuilder.addExecutionListener(BaseTaskExecutingCompleteListener.class);
+            userTaskBuilder.addExecutionListener(ApprovalStatusNotifyListener.class);
             Integer expireIntervalSeconds = nextNode.getExpireIntervalSeconds();
             if (expireIntervalSeconds == null || expireIntervalSeconds <= 0) {
                 return;
