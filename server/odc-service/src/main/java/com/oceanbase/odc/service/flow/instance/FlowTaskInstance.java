@@ -88,18 +88,7 @@ public class FlowTaskInstance extends BaseFlowNodeInstance {
             @NonNull NodeInstanceEntityRepository nodeRepository,
             @NonNull SequenceInstanceRepository sequenceRepository,
             @NonNull ServiceTaskInstanceRepository serviceTaskRepository) {
-        this(entity, convertor, flowableAdaptor, eventPublisher, taskService, nodeRepository, sequenceRepository,
-                serviceTaskRepository, FlowNodeType.APPROVAL_TASK);
-    }
-
-    public FlowTaskInstance(@NonNull ServiceTaskInstanceEntity entity, @NonNull RuntimeDelegateMapper convertor,
-            @NonNull FlowableAdaptor flowableAdaptor,
-            @NonNull EventPublisher eventPublisher,
-            @NonNull TaskService taskService,
-            @NonNull NodeInstanceEntityRepository nodeRepository,
-            @NonNull SequenceInstanceRepository sequenceRepository,
-            @NonNull ServiceTaskInstanceRepository serviceTaskRepository, FlowNodeType flowNodeType) {
-        super(flowNodeType, entity.getId(), entity.getOrganizationId(), entity.getStatus(),
+        super(FlowNodeType.SERVICE_TASK, entity.getId(), entity.getOrganizationId(), entity.getStatus(),
                 entity.getFlowInstanceId(), entity.getCreateTime(), entity.getUpdateTime(), entity.isStartEndpoint(),
                 entity.isEndEndpoint(), flowableAdaptor, nodeRepository, sequenceRepository);
         setTargetTaskId(entity.getTargetTaskId());
@@ -122,22 +111,7 @@ public class FlowTaskInstance extends BaseFlowNodeInstance {
             @NonNull NodeInstanceEntityRepository nodeRepository,
             @NonNull SequenceInstanceRepository sequenceRepository,
             @NonNull ServiceTaskInstanceRepository serviceTaskRepository) {
-        this(taskType, organizationId, flowInstanceId, strategyConfig, startEndpoint, endEndPoint,
-                convertor, flowableAdaptor, eventPublisher, taskService,
-                nodeRepository, sequenceRepository, serviceTaskRepository,
-                FlowNodeType.APPROVAL_TASK);
-    }
-
-    public FlowTaskInstance(@NonNull TaskType taskType, @NonNull Long organizationId, @NonNull Long flowInstanceId,
-            @NonNull ExecutionStrategyConfig strategyConfig, boolean startEndpoint, boolean endEndPoint,
-            @NonNull RuntimeDelegateMapper convertor,
-            @NonNull FlowableAdaptor flowableAdaptor,
-            @NonNull EventPublisher eventPublisher,
-            @NonNull TaskService taskService,
-            @NonNull NodeInstanceEntityRepository nodeRepository,
-            @NonNull SequenceInstanceRepository sequenceRepository,
-            @NonNull ServiceTaskInstanceRepository serviceTaskRepository, FlowNodeType flowNodeType) {
-        super(flowNodeType, organizationId, flowInstanceId, startEndpoint, endEndPoint,
+        super(FlowNodeType.SERVICE_TASK, organizationId, flowInstanceId, startEndpoint, endEndPoint,
                 flowableAdaptor, nodeRepository, sequenceRepository);
         this.strategyConfig = strategyConfig;
         this.taskService = taskService;
