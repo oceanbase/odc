@@ -23,6 +23,8 @@ import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import com.oceanbase.odc.core.shared.constant.ErrorCodes;
+import com.oceanbase.odc.core.shared.exception.BadRequestException;
 import com.oceanbase.odc.plugin.task.api.partitionplan.datatype.TimeDataType;
 import com.oceanbase.odc.plugin.task.api.partitionplan.invoker.create.TimeIncreasePartitionExprGenerator;
 import com.oceanbase.odc.plugin.task.api.partitionplan.model.TimeIncreaseGeneratorConfig;
@@ -53,15 +55,18 @@ public class OBMySQLTimeIncreasePartitionExprGenerator implements TimeIncreasePa
             @NonNull TimeIncreaseGeneratorConfig config) throws IOException, SQLException {
         DataType dataType = getPartitionKeyDataType(connection, dbTable, partitionKey);
         if (!(dataType instanceof TimeDataType)) {
-            throw new IllegalArgumentException("Time increment can only be applied to time types, actual: " + dataType);
+            throw new BadRequestException(ErrorCodes.PartitionKeyDataTypeMismatch,
+                    new Object[] {partitionKey, dataType.getDataTypeName(), TimeDataType.getLocalizedName()},
+                    "Time increment can only be applied to time types, actual: " + dataType);
         } else if (dataType.getPrecision() < config.getIntervalPrecision()) {
-            throw new IllegalArgumentException("Illegal precision, interval precision > data type's precision");
+            throw new BadRequestException(ErrorCodes.TimeDataTypePrecisionMismatch, new Object[] {partitionKey},
+                    "Illegal precision, interval precision > data type's precision");
         }
         Date baseTime;
         if (config.isFromCurrentTime()) {
             baseTime = new Date();
-        } else if (config.getFromTimestampMillis() > 0) {
-            baseTime = new Date(config.getFromTimestampMillis());
+        } else if (config.getBaseTimestampMillis() > 0) {
+            baseTime = new Date(config.getBaseTimestampMillis());
         } else {
             throw new IllegalArgumentException("Base time is missing");
         }

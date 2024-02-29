@@ -96,7 +96,7 @@ public class OBOracleTimeIncreasePartitionExprGeneratorTest {
             AutoPartitionKeyInvoker<List<String>> generator = new OBOracleTimeIncreasePartitionExprGenerator();
             TimeIncreaseGeneratorConfig config = new TimeIncreaseGeneratorConfig();
             long current = System.currentTimeMillis();
-            config.setFromTimestampMillis(current);
+            config.setBaseTimestampMillis(current);
             config.setInterval(5);
             config.setIntervalPrecision(TimeDataType.HOUR);
             List<String> actuals = generator.invoke(connection, dbTable, getParameters(config, 5, "C2"));
@@ -126,7 +126,7 @@ public class OBOracleTimeIncreasePartitionExprGeneratorTest {
             AutoPartitionKeyInvoker<List<String>> generator = new OBOracleTimeIncreasePartitionExprGenerator();
             TimeIncreaseGeneratorConfig config = new TimeIncreaseGeneratorConfig();
             long current = System.currentTimeMillis();
-            config.setFromTimestampMillis(current);
+            config.setBaseTimestampMillis(current);
             config.setInterval(5);
             config.setIntervalPrecision(TimeDataType.MONTH);
             List<String> actuals = generator.invoke(connection, dbTable, getParameters(config, 5, "C1"));
@@ -156,7 +156,7 @@ public class OBOracleTimeIncreasePartitionExprGeneratorTest {
             AutoPartitionKeyInvoker<List<String>> generator = new OBOracleTimeIncreasePartitionExprGenerator();
             TimeIncreaseGeneratorConfig config = new TimeIncreaseGeneratorConfig();
             long current = System.currentTimeMillis();
-            config.setFromTimestampMillis(current);
+            config.setBaseTimestampMillis(current);
             config.setInterval(5);
             config.setIntervalPrecision(TimeDataType.SECOND);
             generator.invoke(connection, dbTable, getParameters(config, 5, "C5"));

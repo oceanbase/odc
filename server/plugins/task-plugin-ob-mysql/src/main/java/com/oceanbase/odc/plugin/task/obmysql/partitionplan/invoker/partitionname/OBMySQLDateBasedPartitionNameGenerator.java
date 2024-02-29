@@ -47,7 +47,7 @@ public class OBMySQLDateBasedPartitionNameGenerator implements DateBasedPartitio
         if (config.isFromCurrentTime()) {
             from = new Date();
         } else {
-            from = new Date(config.getFromTimestampMillis());
+            from = new Date(config.getBaseTimestampMillis());
         }
         Date baseDate = TimeDataTypeUtil.getNextDate(from, interval, precision);
         DateFormat format = new SimpleDateFormat(config.getNamingSuffixExpression());

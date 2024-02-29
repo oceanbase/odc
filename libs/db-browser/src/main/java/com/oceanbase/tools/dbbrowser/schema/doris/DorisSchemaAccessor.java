@@ -373,8 +373,8 @@ public class DorisSchemaAccessor implements DBSchemaAccessor {
     }
 
     @Override
-    public Map<String, List<DBTableColumn>> listTableColumns(String schemaName, List<String> candidates) {
-        String querySql = filterByValues(getListTableColumnsSql(schemaName), "TABLE_NAME", candidates);
+    public Map<String, List<DBTableColumn>> listTableColumns(String schemaName, List<String> tableNames) {
+        String querySql = filterByValues(getListTableColumnsSql(schemaName), "TABLE_NAME", tableNames);
         List<DBTableColumn> tableColumns = jdbcOperations.query(querySql, listTableRowMapper());
         return tableColumns.stream().collect(Collectors.groupingBy(DBTableColumn::getTableName));
     }
@@ -689,7 +689,12 @@ public class DorisSchemaAccessor implements DBSchemaAccessor {
 
     @Override
     public Map<String, DBTablePartition> listTablePartitions(@NonNull String schemaName,
-            List<String> candidates) {
+            List<String> tableNames) {
+        throw new UnsupportedOperationException("Not supported yet");
+    }
+
+    @Override
+    public List<DBTablePartition> listTableRangePartitionInfo(String tenantName) {
         throw new UnsupportedOperationException("Not supported yet");
     }
 

@@ -409,8 +409,8 @@ public class MySQLNoGreaterThan5740SchemaAccessor implements DBSchemaAccessor {
     }
 
     @Override
-    public Map<String, List<DBTableColumn>> listTableColumns(String schemaName, List<String> candidates) {
-        String querySql = filterByValues(getListTableColumnsSql(schemaName), "TABLE_NAME", candidates);
+    public Map<String, List<DBTableColumn>> listTableColumns(String schemaName, List<String> tableNames) {
+        String querySql = filterByValues(getListTableColumnsSql(schemaName), "TABLE_NAME", tableNames);
         List<DBTableColumn> tableColumns = jdbcOperations.query(querySql, listTableRowMapper());
         return tableColumns.stream().collect(Collectors.groupingBy(DBTableColumn::getTableName));
     }
@@ -824,8 +824,8 @@ public class MySQLNoGreaterThan5740SchemaAccessor implements DBSchemaAccessor {
     }
 
     @Override
-    public Map<String, DBTablePartition> listTablePartitions(@NonNull String schemaName, List<String> candidates) {
-        String sql = filterByValues(sqlMapper.getSql(Statements.LIST_PARTITIONS), "TABLE_NAME", candidates);
+    public Map<String, DBTablePartition> listTablePartitions(@NonNull String schemaName, List<String> tableNames) {
+        String sql = filterByValues(sqlMapper.getSql(Statements.LIST_PARTITIONS), "TABLE_NAME", tableNames);
         List<Map<String, Object>> queryResult =
                 this.jdbcOperations.query(sql, new Object[] {schemaName}, (rs, rowNum) -> {
                     Map<String, Object> result = new HashMap<>();
@@ -853,6 +853,11 @@ public class MySQLNoGreaterThan5740SchemaAccessor implements DBSchemaAccessor {
             }).collect(Collectors.toList());
             return getFromResultSet(group, schemaName, e.getKey());
         }));
+    }
+
+    @Override
+    public List<DBTablePartition> listTableRangePartitionInfo(String tenantName) {
+        throw new UnsupportedOperationException("Not supported yet");
     }
 
     protected String filterByValues(String target, String colName, List<String> candidates) {

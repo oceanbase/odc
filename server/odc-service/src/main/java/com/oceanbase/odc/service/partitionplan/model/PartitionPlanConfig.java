@@ -61,7 +61,7 @@ public class PartitionPlanConfig implements Serializable, TaskParameters {
             return Collections.emptyList();
         }
         try {
-            return QuartzCronExpressionUtils.getNextFireTimes(
+            return QuartzCronExpressionUtils.getNextFiveFireTimes(
                     this.creationTrigger.getCronExpression());
         } catch (Exception e) {
             return Collections.emptyList();
@@ -74,7 +74,7 @@ public class PartitionPlanConfig implements Serializable, TaskParameters {
             return Collections.emptyList();
         }
         try {
-            return QuartzCronExpressionUtils.getNextFireTimes(
+            return QuartzCronExpressionUtils.getNextFiveFireTimes(
                     this.droppingTrigger.getCronExpression());
         } catch (Exception e) {
             return Collections.emptyList();

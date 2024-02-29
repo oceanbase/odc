@@ -200,7 +200,7 @@ public class OBMySQLAutoPartitionExtensionPointTest {
                     .getPartitionExpressionGeneratorByName("TIME_INCREASING_GENERATOR");
             TimeIncreaseGeneratorConfig config1 = new TimeIncreaseGeneratorConfig();
             long current = 1706180200490L;// 2024-01-25 18:57
-            config1.setFromTimestampMillis(current);
+            config1.setBaseTimestampMillis(current);
             config1.setInterval(1);
             config1.setIntervalPrecision(TimeDataType.DAY);
             List<String> pk2Values = pk2.invoke(connection, dbTable,

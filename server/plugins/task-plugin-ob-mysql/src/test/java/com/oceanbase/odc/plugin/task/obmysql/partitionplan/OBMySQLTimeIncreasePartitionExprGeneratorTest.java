@@ -98,7 +98,7 @@ public class OBMySQLTimeIncreasePartitionExprGeneratorTest {
             AutoPartitionKeyInvoker<List<String>> generator = new OBMySQLTimeIncreasePartitionExprGenerator();
             TimeIncreaseGeneratorConfig config = new TimeIncreaseGeneratorConfig();
             long current = System.currentTimeMillis();
-            config.setFromTimestampMillis(current);
+            config.setBaseTimestampMillis(current);
             config.setInterval(5);
             config.setIntervalPrecision(TimeDataType.HOUR);
             List<String> actuals = generator.invoke(connection, dbTable, getParameters(config, 5, "c3"));
@@ -128,7 +128,7 @@ public class OBMySQLTimeIncreasePartitionExprGeneratorTest {
             AutoPartitionKeyInvoker<List<String>> generator = new OBMySQLTimeIncreasePartitionExprGenerator();
             TimeIncreaseGeneratorConfig config = new TimeIncreaseGeneratorConfig();
             long current = System.currentTimeMillis();
-            config.setFromTimestampMillis(current);
+            config.setBaseTimestampMillis(current);
             config.setInterval(5);
             config.setIntervalPrecision(TimeDataType.DAY);
             List<String> actuals = generator.invoke(connection, dbTable, getParameters(config, 5, "c3"));
@@ -157,7 +157,7 @@ public class OBMySQLTimeIncreasePartitionExprGeneratorTest {
             AutoPartitionKeyInvoker<List<String>> generator = new OBMySQLTimeIncreasePartitionExprGenerator();
             TimeIncreaseGeneratorConfig config = new TimeIncreaseGeneratorConfig();
             long current = System.currentTimeMillis();
-            config.setFromTimestampMillis(current);
+            config.setBaseTimestampMillis(current);
             config.setInterval(5);
             config.setIntervalPrecision(TimeDataType.YEAR);
             List<String> actuals = generator.invoke(connection, dbTable, getParameters(config, 5, "c3"));
@@ -184,7 +184,7 @@ public class OBMySQLTimeIncreasePartitionExprGeneratorTest {
             AutoPartitionKeyInvoker<List<String>> generator = new OBMySQLTimeIncreasePartitionExprGenerator();
             TimeIncreaseGeneratorConfig config = new TimeIncreaseGeneratorConfig();
             long current = System.currentTimeMillis();
-            config.setFromTimestampMillis(current);
+            config.setBaseTimestampMillis(current);
             config.setInterval(5);
             config.setIntervalPrecision(TimeDataType.SECOND);
             generator.invoke(connection, dbTable, getParameters(config, 5, "c3"));
@@ -201,7 +201,7 @@ public class OBMySQLTimeIncreasePartitionExprGeneratorTest {
             AutoPartitionKeyInvoker<List<String>> generator = new OBMySQLTimeIncreasePartitionExprGenerator();
             TimeIncreaseGeneratorConfig config = new TimeIncreaseGeneratorConfig();
             long current = System.currentTimeMillis();
-            config.setFromTimestampMillis(current);
+            config.setBaseTimestampMillis(current);
             config.setInterval(5);
             config.setIntervalPrecision(TimeDataType.SECOND);
             generator.invoke(connection, dbTable, getParameters(config, 5, "c2"));

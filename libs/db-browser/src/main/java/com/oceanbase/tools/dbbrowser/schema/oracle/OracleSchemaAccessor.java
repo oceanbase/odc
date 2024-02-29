@@ -543,8 +543,8 @@ public class OracleSchemaAccessor implements DBSchemaAccessor {
     }
 
     @Override
-    public Map<String, List<DBTableColumn>> listTableColumns(String schemaName, List<String> candidates) {
-        String sql = filterByValues(this.sqlMapper.getSql(Statements.LIST_SCHEMA_COLUMNS), "TABLE_NAME", candidates);
+    public Map<String, List<DBTableColumn>> listTableColumns(String schemaName, List<String> tableNames) {
+        String sql = filterByValues(this.sqlMapper.getSql(Statements.LIST_SCHEMA_COLUMNS), "TABLE_NAME", tableNames);
         List<DBTableColumn> tableColumns = this.jdbcOperations
                 .query(sql, new Object[] {schemaName}, listColumnsRowMapper());
         Map<String, List<DBTableColumn>> tableName2Columns = tableColumns.stream()
@@ -897,9 +897,9 @@ public class OracleSchemaAccessor implements DBSchemaAccessor {
     }
 
     @Override
-    public Map<String, DBTablePartition> listTablePartitions(@NonNull String schemaName, List<String> candidates) {
+    public Map<String, DBTablePartition> listTablePartitions(@NonNull String schemaName, List<String> tableNames) {
         String queryDefsSql = filterByValues(this.sqlMapper.getSql(Statements.LIST_PARTITIONS_DEFINITIONS),
-                "TABLE_NAME", candidates);
+                "TABLE_NAME", tableNames);
         List<Map<String, Object>> defRows = jdbcOperations.query(queryDefsSql, new Object[] {schemaName}, (rs, num) -> {
             Map<String, Object> rows = new HashMap<>();
             rows.put("TABLE_NAME", rs.getString("TABLE_NAME"));
@@ -909,7 +909,7 @@ public class OracleSchemaAccessor implements DBSchemaAccessor {
             return rows;
         });
         String queryOptsSql = filterByValues(this.sqlMapper.getSql(Statements.LIST_PARTITIONS_OPTIONS),
-                "TABLE_NAME", candidates);
+                "TABLE_NAME", tableNames);
         List<Map<String, Object>> optRows = jdbcOperations.query(queryOptsSql, new Object[] {schemaName}, (rs, num) -> {
             Map<String, Object> rows = new HashMap<>();
             rows.put("TABLE_NAME", rs.getString("TABLE_NAME"));
@@ -919,8 +919,8 @@ public class OracleSchemaAccessor implements DBSchemaAccessor {
         SqlBuilder sqlBuilder = new OracleSqlBuilder().append("SELECT NAME, COLUMN_NAME FROM ")
                 .append(dataDictTableNames.PART_KEY_COLUMNS())
                 .append(" WHERE OWNER = ").value(schemaName);
-        if (CollectionUtils.isNotEmpty(candidates)) {
-            String tables = candidates.stream().map(s -> new OracleSqlBuilder().value(s).toString())
+        if (CollectionUtils.isNotEmpty(tableNames)) {
+            String tables = tableNames.stream().map(s -> new OracleSqlBuilder().value(s).toString())
                     .collect(Collectors.joining(","));
             sqlBuilder.append(" AND NAME IN (").append(tables).append(")");
         }
@@ -977,6 +977,11 @@ public class OracleSchemaAccessor implements DBSchemaAccessor {
             }
             return partition;
         }));
+    }
+
+    @Override
+    public List<DBTablePartition> listTableRangePartitionInfo(String tenantName) {
+        throw new UnsupportedOperationException("Not supported yet");
     }
 
     protected String filterByValues(String target, String colName, List<String> candidates) {

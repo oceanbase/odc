@@ -145,6 +145,7 @@ public class PartitionPlanJob implements OdcJob {
             return;
         }
         DatabaseChangeParameters taskParameters = new DatabaseChangeParameters();
+        taskParameters.setModifyTimeoutIfTimeConsumingSqlExists(false);
         taskParameters.setErrorStrategy(errorStrategy.name());
         StringBuilder sqlContent = new StringBuilder();
         for (String sql : sqls) {

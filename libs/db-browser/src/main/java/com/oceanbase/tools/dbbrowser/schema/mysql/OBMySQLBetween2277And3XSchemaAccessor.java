@@ -159,8 +159,8 @@ public class OBMySQLBetween2277And3XSchemaAccessor extends OBMySQLSchemaAccessor
     }
 
     @Override
-    public Map<String, DBTablePartition> listTablePartitions(@NonNull String schemaName, List<String> candidates) {
-        String sql = filterByValues(sqlMapper.getSql(Statements.LIST_PARTITIONS), "table_name", candidates);
+    public Map<String, DBTablePartition> listTablePartitions(@NonNull String schemaName, List<String> tableNames) {
+        String sql = filterByValues(sqlMapper.getSql(Statements.LIST_PARTITIONS), "table_name", tableNames);
         List<Map<String, Object>> queryResult = jdbcOperations.query(sql, new Object[] {schemaName}, (rs, rowNum) -> {
             Map<String, Object> row = new HashMap<>();
             row.put("table_name", rs.getString("table_name"));

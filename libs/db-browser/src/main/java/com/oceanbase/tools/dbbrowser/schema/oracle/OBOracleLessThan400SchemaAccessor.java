@@ -95,8 +95,8 @@ public class OBOracleLessThan400SchemaAccessor extends OBOracleSchemaAccessor {
     }
 
     @Override
-    public Map<String, DBTablePartition> listTablePartitions(@NonNull String schemaName, List<String> candidates) {
-        String sql = filterByValues(sqlMapper.getSql(Statements.LIST_PARTITIONS), "TABLE_NAME", candidates);
+    public Map<String, DBTablePartition> listTablePartitions(@NonNull String schemaName, List<String> tableNames) {
+        String sql = filterByValues(sqlMapper.getSql(Statements.LIST_PARTITIONS), "TABLE_NAME", tableNames);
         List<Map<String, Object>> queryResult = jdbcOperations.query(sql, new Object[] {schemaName}, (rs, rowNum) -> {
             Map<String, Object> row = new HashMap<>();
             row.put("TABLE_NAME", rs.getString("TABLE_NAME"));

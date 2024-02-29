@@ -170,7 +170,7 @@ public interface DBSchemaAccessor {
     /**
      * Get all table columns in the specified schema
      */
-    Map<String, List<DBTableColumn>> listTableColumns(String schemaName, List<String> candidates);
+    Map<String, List<DBTableColumn>> listTableColumns(String schemaName, List<String> tableNames);
 
     /**
      * Get all table columns in the specified schema and table
@@ -209,7 +209,14 @@ public interface DBSchemaAccessor {
 
     Map<String, DBTableOptions> listTableOptions(String schemaName);
 
-    Map<String, DBTablePartition> listTablePartitions(@NonNull String schemaName, List<String> candidates);
+    Map<String, DBTablePartition> listTablePartitions(@NonNull String schemaName, List<String> tableNames);
+
+    /**
+     * you can use {@link DBSchemaAccessor#listTablePartitions(String, List)} instead we will delete it
+     * soon
+     */
+    @Deprecated
+    List<DBTablePartition> listTableRangePartitionInfo(String tenantName);
 
     List<DBTableSubpartitionDefinition> listSubpartitions(String schemaName, String tableName);
 

@@ -121,8 +121,8 @@ public class OBMySQLNoGreaterThan1479SchemaAccessor extends BaseOBMySQLLessThan2
     }
 
     @Override
-    public Map<String, DBTablePartition> listTablePartitions(@NonNull String schemaName, List<String> candidates) {
-        String sql = filterByValues(sqlMapper.getSql(Statements.LIST_PARTITIONS), "table_name", candidates);
+    public Map<String, DBTablePartition> listTablePartitions(@NonNull String schemaName, List<String> tableNames) {
+        String sql = filterByValues(sqlMapper.getSql(Statements.LIST_PARTITIONS), "table_name", tableNames);
         List<Map<String, Object>> queryResult =
                 jdbcOperations.query(sql, new Object[] {tenantName, schemaName}, (rs, rowNum) -> {
                     Map<String, Object> row = new HashMap<>();
@@ -223,8 +223,8 @@ public class OBMySQLNoGreaterThan1479SchemaAccessor extends BaseOBMySQLLessThan2
     }
 
     @Override
-    public Map<String, List<DBTableColumn>> listTableColumns(String schemaName, List<String> candidates) {
-        Map<String, List<DBTableColumn>> tableName2Columns = super.listTableColumns(schemaName, candidates);
+    public Map<String, List<DBTableColumn>> listTableColumns(String schemaName, List<String> tableNames) {
+        Map<String, List<DBTableColumn>> tableName2Columns = super.listTableColumns(schemaName, tableNames);
         for (List<DBTableColumn> columnList : tableName2Columns.values()) {
             if (CollectionUtils.isNotEmpty(columnList)) {
                 columnList.forEach(this::fillPrecisionAndScale);
