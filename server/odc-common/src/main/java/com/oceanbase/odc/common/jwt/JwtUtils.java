@@ -196,27 +196,7 @@ public class JwtUtils {
 
     }
 
-    public static void main(String[] args) throws InterruptedException {
-        Map<String, Object> map = new HashMap<>();
-        map.put("userId", "123456");
-        map.put("rose", "admin");
-        map.put("integer", 1111);
-        map.put("double", 112.222);
-        map.put("Long", 112L);
-        map.put("bool", true);
-        map.put("date", new Date());
-        String token = sign(map); // 生成token
-        System.out.println(token);
-        System.out.println(verify(token));// 验证token是否正确
-        String dd = getClaims(token).get("userId").asString(); // 使用方法
-        System.out.println(dd);
-        System.out.println("获取签发token时间：" + getIssuedAt(token));
-        System.out.println("获取过期时间：" + getExpiresAt(token));
-        // Thread.sleep(1000*40);
-        System.out.println("检查是否已过期：" + isExpired(getExpiresAt(token)));
-        System.out.println("获取头" + getHeaderByBase64(token));
-        System.out.println("获取负荷" + getPayloadByBase64(token));
-    }
+
 
 }
 
