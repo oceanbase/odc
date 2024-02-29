@@ -21,6 +21,7 @@ import static org.awaitility.Awaitility.await;
 import java.io.File;
 import java.io.FileReader;
 import java.io.LineNumberReader;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Paths;
 
 import org.apache.commons.io.FileUtils;
@@ -123,6 +124,7 @@ public class DumperResultSetExportTaskManagerTest extends ServiceTestEnv {
         await().atMost(30, SECONDS).until(context::isDone);
         log.info(JsonUtils.toJson(context.getTask().getJob().getDataObjectsStatus()));
         File file = Paths.get(basePath, taskId, fileName + req.getFileFormat().getExtension()).toFile();
+        log.info(FileUtils.readFileToString(file, StandardCharsets.UTF_8));
         LineNumberReader lineNumberReader = new LineNumberReader(new FileReader(file));
         lineNumberReader.skip(Long.MAX_VALUE);
         Assert.assertEquals(4, lineNumberReader.getLineNumber());
