@@ -34,6 +34,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.springframework.jdbc.core.JdbcTemplate;
 
+import com.oceanbase.odc.core.shared.exception.BadRequestException;
 import com.oceanbase.odc.plugin.schema.oboracle.OBOracleTableExtension;
 import com.oceanbase.odc.plugin.task.api.partitionplan.datatype.TimeDataType;
 import com.oceanbase.odc.plugin.task.api.partitionplan.invoker.AutoPartitionKeyInvoker;
@@ -146,7 +147,7 @@ public class OBOracleTimeIncreasePartitionExprGeneratorTest {
         }
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test(expected = BadRequestException.class)
     public void generate_illegalDataType_failed() throws Exception {
         TestDBConfiguration configuration = TestDBConfigurations.getInstance().getTestOBOracleConfiguration();
         try (Connection connection = configuration.getDataSource().getConnection()) {
