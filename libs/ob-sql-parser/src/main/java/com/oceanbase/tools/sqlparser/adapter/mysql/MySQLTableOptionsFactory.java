@@ -178,6 +178,15 @@ public class MySQLTableOptionsFactory extends OBParserBaseVisitor<TableOptions>
             target.setFormat(formatMap);
         } else if (ctx.PATTERN() != null) {
             target.setPattern(ctx.STRING_VALUE().getText());
+        } else if (ctx.TTL() != null) {
+            target.setTtls(ctx.ttl_definition().ttl_expr().stream()
+                    .map(c -> new MySQLExpressionFactory().visit(c)).collect(Collectors.toList()));
+        } else if (ctx.KV_ATTRIBUTES() != null) {
+            target.setKvAttributes(ctx.STRING_VALUE().getText());
+        } else if (ctx.DEFAULT_LOB_INROW_THRESHOLD() != null) {
+            target.setDefaultLobInRowThreshold(Integer.valueOf(ctx.INTNUM().getText()));
+        } else if (ctx.LOB_INROW_THRESHOLD() != null) {
+            target.setLobInRowThreshold(Integer.valueOf(ctx.INTNUM().getText()));
         }
         return target;
     }
