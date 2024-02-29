@@ -137,7 +137,7 @@
   body: |
     -- The SQL Plan Monitor collects all relevant information pertaining to the execution of a SQL statement.
     --
-    -- manual sql plan monitor steps
+    -- manual collect sql plan monitor data steps
     -- 1. add /*+ monitor */ HINT for the sql statement you want to trace by sql plan monitor.
     -- 2. then execute the target sql statement.
     -- 3. collect summary and details information use below 2 query.
