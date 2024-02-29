@@ -1159,7 +1159,7 @@ public class OracleSchemaAccessor implements DBSchemaAccessor {
         jdbcOperations.query(getDDL.toString(), rs -> {
             view.setDdl(rs.getString(1));
         });
-
+        fullFillComment(view);
         OracleSqlBuilder getColumns = new OracleSqlBuilder();
         getColumns.append(
                 "SELECT COLUMN_NAME, DATA_TYPE, NULLABLE, DATA_DEFAULT, COMMENTS FROM SYS.ALL_TAB_COLS NATURAL JOIN SYS.ALL_COL_COMMENTS WHERE OWNER = ")
@@ -1168,6 +1168,7 @@ public class OracleSchemaAccessor implements DBSchemaAccessor {
             DBTableColumn column = new DBTableColumn();
             column.setName(rs.getString("COLUMN_NAME"));
             column.setTypeName(rs.getString("DATA_TYPE"));
+            column.setComment(rs.getString("COMMENTS"));
             column.setNullable("Y".equalsIgnoreCase(rs.getString("NULLABLE")));
             column.setDefaultValue(rs.getString("DATA_DEFAULT"));
             column.setOrdinalPosition(rowNum);
@@ -1176,6 +1177,22 @@ public class OracleSchemaAccessor implements DBSchemaAccessor {
         });
         view.setColumns(columns);
         return view;
+    }
+
+    protected void fullFillComment(DBView view) {
+        OracleSqlBuilder sb = new OracleSqlBuilder();
+        sb.append("SELECT OWNER, TABLE_NAME, COMMENTS FROM ")
+                .append(this.dataDictTableNames.TAB_COMMENTS())
+                .append(" WHERE TABLE_TYPE='VIEW' AND OWNER=").value(view.getSchemaName())
+                .append(" AND TABLE_NAME=").value(view.getViewName());
+        try {
+            this.jdbcOperations.query(sb.toString(), (rs, num) -> {
+                view.setComment(rs.getString("COMMENTS"));
+                return null;
+            });
+        } catch (Exception e) {
+            log.warn("Failed to query view's comment, viewName={}, errMessage={}", view.getViewName(), e.getMessage());
+        }
     }
 
     @Override

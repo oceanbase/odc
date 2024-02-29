@@ -32,6 +32,7 @@ import com.oceanbase.tools.sqlparser.obmysql.OBLexer;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Create_table_stmtContext;
 import com.oceanbase.tools.sqlparser.statement.Expression;
+import com.oceanbase.tools.sqlparser.statement.Operator;
 import com.oceanbase.tools.sqlparser.statement.common.CharacterType;
 import com.oceanbase.tools.sqlparser.statement.common.DataType;
 import com.oceanbase.tools.sqlparser.statement.createtable.ColumnDefinition;
@@ -43,7 +44,9 @@ import com.oceanbase.tools.sqlparser.statement.createtable.TableOptions;
 import com.oceanbase.tools.sqlparser.statement.expression.BoolValue;
 import com.oceanbase.tools.sqlparser.statement.expression.CollectionExpression;
 import com.oceanbase.tools.sqlparser.statement.expression.ColumnReference;
+import com.oceanbase.tools.sqlparser.statement.expression.CompoundExpression;
 import com.oceanbase.tools.sqlparser.statement.expression.ConstExpression;
+import com.oceanbase.tools.sqlparser.statement.expression.IntervalExpression;
 import com.oceanbase.tools.sqlparser.statement.select.NameReference;
 import com.oceanbase.tools.sqlparser.statement.select.Projection;
 import com.oceanbase.tools.sqlparser.statement.select.Select;
@@ -277,7 +280,7 @@ public class MySQLCreateTableFactoryTest {
     @Test
     public void generate_comment_succeed() {
         Create_table_stmtContext context =
-                getCreateTableContext("create table abcd (id varchar(64)) comment 'aaaaa'");
+                getCreateTableContext("create table abcd (id varchar(64)) lob_inrow_threshold=456 comment 'aaaaa'");
         StatementFactory<CreateTable> factory = new MySQLCreateTableFactory(context);
         CreateTable actual = factory.generate();
 
@@ -287,6 +290,7 @@ public class MySQLCreateTableFactoryTest {
                 Collections.singletonList(new ColumnDefinition(new ColumnReference(null, null, "id"), dataType)));
         TableOptions tableOptions = new TableOptions();
         tableOptions.setComment("'aaaaa'");
+        tableOptions.setLobInRowThreshold(456);
         expect.setTableOptions(tableOptions);
         Assert.assertEquals(expect, actual);
     }
@@ -294,7 +298,7 @@ public class MySQLCreateTableFactoryTest {
     @Test
     public void generate_physicalAttrs_succeed() {
         Create_table_stmtContext context = getCreateTableContext(
-                "create table abcd (id varchar(64)) pctfree=12 tablespace abc");
+                "create table abcd (id varchar(64)) default_lob_inrow_threshold=123 pctfree=12 tablespace abc");
         StatementFactory<CreateTable> factory = new MySQLCreateTableFactory(context);
         CreateTable actual = factory.generate();
 
@@ -305,6 +309,7 @@ public class MySQLCreateTableFactoryTest {
         TableOptions tableOptions = new TableOptions();
         tableOptions.setPctFree(12);
         tableOptions.setTableSpace("abc");
+        tableOptions.setDefaultLobInRowThreshold(123);
         expect.setTableOptions(tableOptions);
         Assert.assertEquals(expect, actual);
     }
@@ -312,7 +317,7 @@ public class MySQLCreateTableFactoryTest {
     @Test
     public void generate_formatTableOp_succeed() {
         Create_table_stmtContext context = getCreateTableContext(
-                "create table abcd (id varchar(64)) format=(ENCODING='aaaa',LINE_DELIMITER=123,SKIP_HEADER=12,EMPTY_FIELD_AS_NULL=true,NULL_IF_EXETERNAL=(1,2,3))");
+                "create table abcd (id varchar(64)) kv_attributes='12' format=(ENCODING='aaaa',LINE_DELIMITER=123,SKIP_HEADER=12,EMPTY_FIELD_AS_NULL=true,NULL_IF_EXETERNAL=(1,2,3))");
         StatementFactory<CreateTable> factory = new MySQLCreateTableFactory(context);
         CreateTable actual = factory.generate();
 
@@ -332,6 +337,7 @@ public class MySQLCreateTableFactoryTest {
         map.put("NULL_IF_EXETERNAL", es);
         map.put("LINE_DELIMITER", new ConstExpression("123"));
         tableOptions.setFormat(map);
+        tableOptions.setKvAttributes("'12'");
         expect.setTableOptions(tableOptions);
         Assert.assertEquals(expect, actual);
     }
@@ -339,7 +345,7 @@ public class MySQLCreateTableFactoryTest {
     @Test
     public void generate_ob40NewTableOptions_succeed() {
         Create_table_stmtContext context = getCreateTableContext(
-                "create table abcd (id varchar(64)) delay_key_write=12 avg_row_length=13 checksum=15 auto_increment_mode='aaa' enable_extended_rowid=true");
+                "create table abcd (id varchar(64)) delay_key_write=12 avg_row_length=13 checksum=15 auto_increment_mode='aaa' enable_extended_rowid=true ttl(12 + interval 12 year, 13 + interval 45 day)");
         StatementFactory<CreateTable> factory = new MySQLCreateTableFactory(context);
         CreateTable actual = factory.generate();
 
@@ -353,6 +359,11 @@ public class MySQLCreateTableFactoryTest {
         tableOptions.setChecksum(15);
         tableOptions.setAutoIncrementMode("'aaa'");
         tableOptions.setEnableExtendedRowId(true);
+        tableOptions.setTtls(Arrays.asList(
+                new CompoundExpression(new ConstExpression("12"),
+                        new IntervalExpression(new ConstExpression("12"), "year"), Operator.ADD),
+                new CompoundExpression(new ConstExpression("13"),
+                        new IntervalExpression(new ConstExpression("45"), "day"), Operator.ADD)));
         expect.setTableOptions(tableOptions);
         Assert.assertEquals(expect, actual);
     }
