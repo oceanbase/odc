@@ -4,7 +4,7 @@
   tags: [ 'developer','mysql', 'table', 'create' ]
   type: DDL
   description: 'Create a new table for MySQL'
-  prefix: create table
+  prefix: create_table
   body: |
     CREATE TABLE IF NOT EXISTS table_name (
       id bigint AUTO_INCREMENT NOT NULL COMMENT 'auto increment id',

@@ -28,12 +28,16 @@ public class BuiltinSnippet extends Snippet {
     private String name;
     private DialectType dialectType;
     private Set<String> tags;
+    private String minVersion;
+    private String maxVersion;
 
     public BuiltinSnippet copy() {
         BuiltinSnippet snippet = new BuiltinSnippet();
-        snippet.setName(name);
-        snippet.setDialectType(dialectType);
-        snippet.setTags(tags);
+        snippet.setName(this.name);
+        snippet.setDialectType(this.dialectType);
+        snippet.setTags(this.tags);
+        snippet.setMinVersion(this.minVersion);
+        snippet.setMaxVersion(this.maxVersion);
         snippet.setBody(this.getBody());
         snippet.setDescription(this.getDescription());
         snippet.setId(this.getId());

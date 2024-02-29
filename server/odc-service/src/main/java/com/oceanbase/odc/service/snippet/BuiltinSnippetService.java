@@ -17,6 +17,7 @@ package com.oceanbase.odc.service.snippet;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -30,6 +31,7 @@ import com.oceanbase.odc.common.util.ResourceUtils;
 import com.oceanbase.odc.common.util.ResourceUtils.ResourceInfo;
 import com.oceanbase.odc.common.util.YamlUtils;
 import com.oceanbase.odc.core.session.ConnectionSession;
+import com.oceanbase.odc.core.session.ConnectionSessionUtil;
 import com.oceanbase.odc.core.shared.constant.ConnectType;
 import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.service.session.ConnectSessionService;
@@ -64,8 +66,17 @@ public class BuiltinSnippetService {
 
     public List<BuiltinSnippet> listBySession(String sessionId) {
         ConnectionSession connectionSession = sessionService.nullSafeGet(sessionId, true);
-        ConnectType connectType = connectionSession.getConnectType();
-        return listByConnectType(connectType);
+        String tenantName = ConnectionSessionUtil.getTenantName(connectionSession);
+        String version = ConnectionSessionUtil.getVersion(connectionSession);
+        Set<DialectType> supportsDialectTypes = supportsDialectTypes(connectionSession.getConnectType());
+        return listAll().stream()
+                .filter(snippet -> supportsDialectTypes.contains(snippet.getDialectType()))
+                .filter(snippet -> "sys".equals(tenantName) == snippet.getTags().contains("sys"))
+                .filter(snippet -> Objects.isNull(snippet.getMinVersion())
+                        || snippet.getMinVersion().compareTo(version) <= 0)
+                .filter(snippet -> Objects.isNull(snippet.getMaxVersion())
+                        || snippet.getMaxVersion().compareTo(version) >= 0)
+                .collect(Collectors.toList());
     }
 
     List<BuiltinSnippet> listByConnectType(ConnectType connectType) {
