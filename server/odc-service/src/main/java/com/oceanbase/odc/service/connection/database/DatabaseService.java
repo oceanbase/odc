@@ -374,8 +374,8 @@ public class DatabaseService {
             return false;
         }
         saved.forEach(database -> checkPermission(database.getProjectId(), database.getConnectionId()));
-        databaseRepository.deleteAll(saved);
         deleteDatabasePermissionByIds(req.getDatabaseIds());
+        databaseRepository.deleteAll(saved);
         return true;
     }
 
@@ -574,12 +574,24 @@ public class DatabaseService {
     @Transactional(rollbackFor = Exception.class)
     @SkipAuthorize("internal usage")
     public int deleteByDataSourceIds(@NonNull Set<Long> dataSourceId) {
+        List<Long> databaseIds = databaseRepository.findByConnectionIdIn(dataSourceId).stream()
+                .map(DatabaseEntity::getId).collect(Collectors.toList());
+        if (CollectionUtils.isEmpty(databaseIds)) {
+            return 0;
+        }
+        deleteDatabasePermissionByIds(databaseIds);
         return databaseRepository.deleteByConnectionIds(dataSourceId);
     }
 
     @Transactional(rollbackFor = Exception.class)
     @SkipAuthorize("internal usage")
     public int deleteByDataSourceId(@NonNull Long dataSourceId) {
+        List<Long> databaseIds = databaseRepository.findByConnectionId(dataSourceId).stream().map(DatabaseEntity::getId)
+                .collect(Collectors.toList());
+        if (CollectionUtils.isEmpty(databaseIds)) {
+            return 0;
+        }
+        deleteDatabasePermissionByIds(databaseIds);
         return databaseRepository.deleteByConnectionId(dataSourceId);
     }
 

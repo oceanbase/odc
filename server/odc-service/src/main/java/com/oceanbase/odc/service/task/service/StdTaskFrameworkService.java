@@ -20,10 +20,13 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 
 import javax.persistence.EntityManager;
 import javax.persistence.LockModeType;
 import javax.persistence.criteria.CriteriaBuilder;
+import javax.persistence.criteria.CriteriaQuery;
 import javax.persistence.criteria.CriteriaUpdate;
 import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
@@ -147,37 +150,60 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
     @Override
     public Page<JobEntity> findHeartTimeTimeoutJobs(int timeoutSeconds, int page, int size) {
         Specification<JobEntity> condition = Specification.where(getRecentDaySpec(RECENT_DAY))
-                .and(getTimeoutOnColumnSpec(JobEntityColumn.LAST_HEART_TIME, timeoutSeconds))
                 .and(SpecificationUtil.columnEqual(JobEntityColumn.STATUS, JobStatus.RUNNING))
+                .and((root, query, cb) -> getHeartTimeoutPredicate(root, cb, timeoutSeconds))
                 .and(getExecutorSpec());
         return page(condition, page, size);
     }
 
+
+    @Override
+    public long countRunningNeverHeartJobs(int neverHeartSeconds) {
+        CriteriaBuilder cb = entityManager.getCriteriaBuilder();
+        CriteriaQuery<Long> query = cb.createQuery(Long.class);
+
+        // sql like:
+        // select count(*) from job_job where
+        // create_time > now() - 30d
+        // and last_heart_time is null
+        // and status = 'RUNNING'
+        // and started_time < now() - neverHeartSeconds
+        Root<JobEntity> root = query.from(JobEntity.class);
+        query.select(cb.count(root));
+        query.where(
+                cb.greaterThan(root.get(JobEntityColumn.CREATE_TIME),
+                        JobDateUtils.getCurrentDateSubtractDays(RECENT_DAY)),
+                cb.isNull(root.get(JobEntityColumn.LAST_HEART_TIME)),
+                cb.equal(root.get(JobEntityColumn.STATUS), JobStatus.RUNNING),
+                cb.lessThan(root.get(JobEntityColumn.STARTED_TIME),
+                        JobDateUtils.getCurrentDateSubtractSeconds(neverHeartSeconds)),
+                executorPredicate(root, cb));
+
+        return entityManager.createQuery(query).getSingleResult();
+    }
+
     private Specification<JobEntity> getExecutorSpec() {
-        return (root, query, builder) -> {
-            Predicate k8sCondition = builder.equal(root.get(JobEntityColumn.RUN_MODE), TaskRunMode.K8S);
+        return (root, query, cb) -> executorPredicate(root, cb);
+    }
 
-            Predicate processCondition = builder.and(
-                    builder.equal(root.get(JobEntityColumn.RUN_MODE), TaskRunMode.PROCESS),
-                    builder.or(builder.like(root.get(JobEntityColumn.EXECUTOR_IDENTIFIER),
-                            "%" + StringUtils.escapeLike(SystemUtils.getLocalIpAddress()) + "%"),
-                            builder.isNull(root.get(JobEntityColumn.EXECUTOR_IDENTIFIER))));
+    private Predicate executorPredicate(Root<JobEntity> root, CriteriaBuilder cb) {
+        Predicate k8sCondition = cb.equal(root.get(JobEntityColumn.RUN_MODE), TaskRunMode.K8S);
 
-            return builder.or(processCondition, k8sCondition);
-        };
+        Predicate processCondition = cb.and(
+                cb.equal(root.get(JobEntityColumn.RUN_MODE), TaskRunMode.PROCESS),
+                cb.or(cb.like(root.get(JobEntityColumn.EXECUTOR_IDENTIFIER),
+                        "%" + StringUtils.escapeLike(SystemUtils.getLocalIpAddress()) + "%"),
+                        cb.isNull(root.get(JobEntityColumn.EXECUTOR_IDENTIFIER))));
+
+        return cb.or(processCondition, k8sCondition);
     }
 
     private Page<JobEntity> page(Specification<JobEntity> specification, int page, int size) {
         return jobRepository.findAll(specification, PageRequest.of(page, size));
     }
 
-    private Specification<JobEntity> getTimeoutOnColumnSpec(String referenceColumn, int timeoutSeconds) {
-        return SpecificationUtil.columnBefore(referenceColumn,
-                JobDateUtils.getCurrentDateSubtractSeconds(timeoutSeconds));
-    }
-
     private Specification<JobEntity> getRecentDaySpec(int days) {
-        return SpecificationUtil.columnLate("createTime", JobDateUtils.getCurrentDateSubtractDays(days));
+        return SpecificationUtil.columnLate(JobEntityColumn.CREATE_TIME, JobDateUtils.getCurrentDateSubtractDays(days));
     }
 
     @SuppressWarnings("unchecked")
@@ -221,8 +247,6 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
         jobEntity.setExecutorIdentifier(executorIdentifier);
         // increment executionTimes
         jobEntity.setExecutionTimes(jobEntity.getExecutionTimes() + 1);
-        // set current date as first heart time
-        jobEntity.setLastHeartTime(currentDate);
         jobEntity.setStartedTime(currentDate);
         if (jobEntity.getExecutorDestroyedTime() != null) {
             jobEntity.setExecutorDestroyedTime(null);
@@ -338,17 +362,37 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
 
         CriteriaBuilder cb = entityManager.getCriteriaBuilder();
         CriteriaUpdate<JobEntity> update = cb.createCriteriaUpdate(JobEntity.class);
-        Root<JobEntity> e = update.from(JobEntity.class);
+        Root<JobEntity> root = update.from(JobEntity.class);
         update.set(JobEntityColumn.STATUS, JobStatus.CANCELED);
         update.set(JobEntityColumn.FINISHED_TIME, JobDateUtils.getCurrentDate());
         update.set(JobEntityColumn.DESCRIPTION, description);
 
-        update.where(cb.equal(e.get(JobEntityColumn.ID), id),
-                cb.lessThan(e.get(JobEntityColumn.LAST_HEART_TIME),
-                        JobDateUtils.getCurrentDateSubtractSeconds(heartTimeoutSeconds)));
+        update.where(cb.equal(root.get(JobEntityColumn.ID), id),
+                cb.and(getHeartTimeoutPredicate(root, cb, heartTimeoutSeconds)));
 
         return entityManager.createQuery(update).executeUpdate();
     }
+
+
+    // condition like:
+    // and status = 'RUNNING'
+    // and (
+    // (last_heart_time is not null and last_heart_time < now()- ?) or
+    // (last_heart_time is null and started_time < now()- ?)
+    // )
+    private Predicate getHeartTimeoutPredicate(Root<JobEntity> root, CriteriaBuilder cb, int heartTimeoutSeconds) {
+        return cb.and(
+                cb.equal(root.get(JobEntityColumn.STATUS), JobStatus.RUNNING),
+                cb.or(
+                        cb.and(cb.isNotNull(root.get(JobEntityColumn.LAST_HEART_TIME)),
+                                cb.lessThan(root.get(JobEntityColumn.LAST_HEART_TIME),
+                                        JobDateUtils.getCurrentDateSubtractSeconds(heartTimeoutSeconds))),
+
+                        cb.and(cb.isNull(root.get(JobEntityColumn.LAST_HEART_TIME)),
+                                cb.lessThan(root.get(JobEntityColumn.STARTED_TIME),
+                                        JobDateUtils.getCurrentDateSubtractSeconds(heartTimeoutSeconds)))));
+    }
+
 
     @Transactional(rollbackFor = Exception.class)
     @Override
@@ -409,8 +453,8 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
     }
 
     @Override
-    public String findByJobIdAndAttributeKey(Long jobId, String attributeKey) {
+    public Optional<String> findByJobIdAndAttributeKey(Long jobId, String attributeKey) {
         JobAttributeEntity attributeEntity = jobAttributeRepository.findByJobIdAndAttributeKey(jobId, attributeKey);
-        return attributeEntity.getAttributeValue();
+        return Objects.isNull(attributeEntity) ? Optional.empty() : Optional.of(attributeEntity.getAttributeValue());
     }
 }

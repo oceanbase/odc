@@ -37,12 +37,12 @@ public interface K8sJobClient {
      * @param name pod name
      * @param image image name
      * @param command image start command
-     * @param podParam pod param
+     * @param podConfig pod config
      * @return job serial number
      * @throws JobException throws exception when create job failed
      */
     String create(String namespace, String name, String image, List<String> command,
-            PodParam podParam) throws JobException;
+            PodConfig podConfig) throws JobException;
 
     /**
      * get job by serial number in k8s namespace

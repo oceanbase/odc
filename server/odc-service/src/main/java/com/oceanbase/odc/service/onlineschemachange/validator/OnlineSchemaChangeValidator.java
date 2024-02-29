@@ -34,6 +34,7 @@ import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.core.shared.exception.BadArgumentException;
 import com.oceanbase.odc.core.shared.exception.BadRequestException;
 import com.oceanbase.odc.core.shared.exception.UnsupportedException;
+import com.oceanbase.odc.core.sql.split.OffsetString;
 import com.oceanbase.odc.service.common.util.SqlUtils;
 import com.oceanbase.odc.service.connection.ConnectionService;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
@@ -58,6 +59,7 @@ import com.oceanbase.tools.sqlparser.SQLParser;
 import com.oceanbase.tools.sqlparser.SyntaxErrorException;
 import com.oceanbase.tools.sqlparser.statement.Statement;
 import com.oceanbase.tools.sqlparser.statement.alter.table.AlterTable;
+import com.oceanbase.tools.sqlparser.statement.createindex.CreateIndex;
 import com.oceanbase.tools.sqlparser.statement.createtable.CreateTable;
 
 /**
@@ -80,8 +82,10 @@ public class OnlineSchemaChangeValidator {
         ConnectionConfig connectionConfig =
                 connectionService.getForConnectionSkipPermissionCheck(createReq.getConnectionId());
         connectionConfig.setDefaultSchema(createReq.getDatabaseName());
-        List<String> sqls = SqlUtils.split(connectionConfig.getDialectType(), parameter.getSqlContent(),
-                parameter.getDelimiter());;
+        List<String> sqls = SqlUtils.splitWithOffset(connectionConfig.getDialectType(),
+                parameter.getSqlContent() + "\n",
+                parameter.getDelimiter(), true).stream().map(OffsetString::getStr).collect(
+                        Collectors.toList());
 
         PreConditions.notEmpty(sqls, "Parser sqls is empty");
         oscConnectionConfigValidator.valid(connectionConfig);
@@ -135,9 +139,15 @@ public class OnlineSchemaChangeValidator {
                     connectionConfig.getDialectType().isMysql() ? new OBMySQLParser() : new OBOracleSQLParser();
             statements = sqls.stream().map(sql -> {
                 Statement statement = sqlParser.parse(new StringReader(sql));
-                validateType(sql, getSqlType(statement), parameter.getSqlType());
+                // skip valid type when statement is "create index"
+                if (statement instanceof CreateTable || statement instanceof AlterTable) {
+                    validateType(sql, getSqlType(statement), parameter.getSqlType());
+                } else {
+                    PreConditions.validArgumentState(statement instanceof CreateIndex,
+                            ErrorCodes.OscSqlTypeInconsistent, new Object[] {sql}, "Unsupported sql type");
+                }
                 return statement;
-            }).collect(Collectors.toList());
+            }).filter(statement -> !(statement instanceof CreateIndex)).collect(Collectors.toList());
         } catch (SyntaxErrorException ex) {
             throw new BadArgumentException(ErrorCodes.ObPreCheckDdlFailed, ex.getLocalizedMessage());
         }

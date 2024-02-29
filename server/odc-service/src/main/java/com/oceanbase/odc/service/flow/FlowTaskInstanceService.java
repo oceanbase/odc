@@ -16,7 +16,6 @@
 package com.oceanbase.odc.service.flow;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.net.URL;
 import java.nio.file.Files;
@@ -61,7 +60,6 @@ import com.oceanbase.odc.core.shared.exception.InternalServerError;
 import com.oceanbase.odc.core.shared.exception.NotFoundException;
 import com.oceanbase.odc.core.shared.exception.UnsupportedException;
 import com.oceanbase.odc.metadb.flow.FlowInstanceRepository;
-import com.oceanbase.odc.metadb.task.JobEntity;
 import com.oceanbase.odc.metadb.task.TaskEntity;
 import com.oceanbase.odc.metadb.task.TaskRepository;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferConfig;
@@ -92,10 +90,12 @@ import com.oceanbase.odc.service.flow.task.model.MockProperties;
 import com.oceanbase.odc.service.flow.task.model.OnlineSchemaChangeTaskResult;
 import com.oceanbase.odc.service.flow.task.model.PartitionPlanTaskResult;
 import com.oceanbase.odc.service.flow.task.model.ResultSetExportResult;
+import com.oceanbase.odc.service.flow.task.model.RollbackPlanTaskResult;
 import com.oceanbase.odc.service.flow.task.model.ShadowTableSyncTaskResult;
 import com.oceanbase.odc.service.flow.task.model.SqlCheckTaskResult;
 import com.oceanbase.odc.service.flow.task.util.DatabaseChangeOssUrlCache;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
+import com.oceanbase.odc.service.logger.LoggerService;
 import com.oceanbase.odc.service.objectstorage.ObjectStorageFacade;
 import com.oceanbase.odc.service.objectstorage.cloud.CloudObjectStorageService;
 import com.oceanbase.odc.service.partitionplan.PartitionPlanService;
@@ -104,17 +104,10 @@ import com.oceanbase.odc.service.permission.project.ApplyProjectResult;
 import com.oceanbase.odc.service.schedule.flowtask.AlterScheduleResult;
 import com.oceanbase.odc.service.session.model.SqlExecuteResult;
 import com.oceanbase.odc.service.task.TaskService;
-import com.oceanbase.odc.service.task.caller.ExecutorIdentifier;
-import com.oceanbase.odc.service.task.caller.ExecutorIdentifierParser;
 import com.oceanbase.odc.service.task.config.TaskFrameworkProperties;
-import com.oceanbase.odc.service.task.constants.JobAttributeKeyConstants;
-import com.oceanbase.odc.service.task.constants.JobUrlConstants;
-import com.oceanbase.odc.service.task.executor.logger.LogUtils;
 import com.oceanbase.odc.service.task.model.ExecutorInfo;
 import com.oceanbase.odc.service.task.model.OdcTaskLogLevel;
 import com.oceanbase.odc.service.task.service.TaskFrameworkService;
-import com.oceanbase.odc.service.task.util.HttpUtil;
-import com.oceanbase.odc.service.task.util.JobUtils;
 
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
@@ -169,6 +162,7 @@ public class FlowTaskInstanceService {
     private TaskFrameworkProperties taskFrameworkProperties;
 
     @Autowired
+    private LoggerService loggerService;
     private TaskFrameworkService taskFrameworkService;
 
     @Autowired
@@ -213,7 +207,7 @@ public class FlowTaskInstanceService {
         }
 
         if (taskFrameworkProperties.isEnabled() && taskEntity.getJobId() != null) {
-            return getLogByTaskFramework(level, taskEntity.getJobId());
+            return loggerService.getLogByTaskFramework(level, taskEntity.getJobId());
         }
 
         if (!dispatchChecker.isTaskEntityOnThisMachine(taskEntity)) {
@@ -225,64 +219,6 @@ public class FlowTaskInstanceService {
             return response.getContentByType(new TypeReference<SuccessResponse<String>>() {}).getData();
         }
         return taskService.getLog(taskEntity.getCreatorId(), taskEntity.getId() + "", taskEntity.getTaskType(), level);
-    }
-
-    private String getLogByTaskFramework(OdcTaskLogLevel level, Long jobId) throws IOException {
-        // forward to target host when task is not be executed on this machine or running in k8s pod
-        JobEntity jobEntity = taskFrameworkService.find(jobId);
-        PreConditions.notNull(jobEntity, "job not found by id " + jobId);
-
-        if (JobUtils.isK8sRunMode(jobEntity.getRunMode()) && cloudObjectStorageService.supported()) {
-
-            String logIdKey = level == OdcTaskLogLevel.ALL ? JobAttributeKeyConstants.LOG_STORAGE_ALL_OBJECT_ID
-                    : JobAttributeKeyConstants.LOG_STORAGE_WARN_OBJECT_ID;
-            String objId = taskFrameworkService.findByJobIdAndAttributeKey(jobEntity.getId(), logIdKey);
-            String bucketName = taskFrameworkService.findByJobIdAndAttributeKey(jobEntity.getId(),
-                    JobAttributeKeyConstants.LOG_STORAGE_BUCKET_NAME);
-
-            if (objId != null && bucketName != null) {
-                if (log.isDebugEnabled()) {
-                    log.debug("job: {} is finished, try to get log from local or oss.", jobEntity.getId());
-                }
-                // check log file is exist on current disk
-                String logFileStr = LogUtils.getTaskLogFileWithPath(jobEntity.getId(), level);
-                if (new File(logFileStr).exists()) {
-                    return LogUtils.getLogContent(logFileStr, LogUtils.MAX_LOG_LINE_COUNT, LogUtils.MAX_LOG_BYTE_COUNT);
-                }
-
-                File tempFile = cloudObjectStorageService.downloadToTempFile(objId);
-                try (FileInputStream inputStream = new FileInputStream(tempFile)) {
-                    FileUtils.copyInputStreamToFile(inputStream, new File(logFileStr));
-                } finally {
-                    FileUtils.deleteQuietly(tempFile);
-                }
-                return LogUtils.getLogContent(logFileStr, LogUtils.MAX_LOG_LINE_COUNT, LogUtils.MAX_LOG_BYTE_COUNT);
-
-            }
-        }
-        if (JobUtils.isK8sRunMode(jobEntity.getRunMode())) {
-            if (jobEntity.getExecutorDestroyedTime() == null && jobEntity.getExecutorEndpoint() != null) {
-                if (log.isDebugEnabled()) {
-                    log.debug("job: {} is not finished, try to get log from remote pod.", jobEntity.getId());
-                }
-                String hostWithUrl = jobEntity.getExecutorEndpoint() + String.format(JobUrlConstants.LOG_QUERY,
-                        jobEntity.getId()) + "?logType=" + level.getName();
-                SuccessResponse<String> response =
-                        HttpUtil.request(hostWithUrl, new TypeReference<SuccessResponse<String>>() {});
-                return response.getData();
-            }
-        } else {
-            // process mode when executor is not current host, forward to target
-            if (!jobDispatchChecker.isExecutorOnThisMachine(jobEntity)) {
-                ExecutorIdentifier ei = ExecutorIdentifierParser.parser(jobEntity.getExecutorIdentifier());
-                DispatchResponse response = requestDispatcher.forward(ei.getHost(), ei.getPort());
-                return response.getContentByType(new TypeReference<String>() {});
-            }
-            String logFileStr = LogUtils.getTaskLogFileWithPath(jobEntity.getId(), level);
-            return LogUtils.getLogContent(logFileStr, LogUtils.MAX_LOG_LINE_COUNT, LogUtils.MAX_LOG_BYTE_COUNT);
-        }
-        // if log not found then return description to user
-        return jobEntity.getDescription();
     }
 
     public List<? extends FlowTaskResult> getResult(@NotNull Long id) throws IOException {
@@ -380,25 +316,46 @@ public class FlowTaskInstanceService {
                 taskEntityOptional::isPresent);
         TaskEntity taskEntity = taskEntityOptional.get();
         if (!dispatchChecker.isTaskEntityOnThisMachine(taskEntity)) {
-            /**
-             * 任务不在该节点上，需要进行请求转发
-             */
-            ExecutorInfo executorInfo = JsonUtils.fromJson(taskEntity.getExecutor(), ExecutorInfo.class);
-            DispatchResponse dispatchResponse =
-                    requestDispatcher.forward(executorInfo.getHost(), executorInfo.getPort());
-            HttpHeaders headers = dispatchResponse.getResponseHeaders();
-            if (headers == null) {
-                return Collections
-                        .singletonList(new ByteArrayDataResult("download.data", dispatchResponse.getContent()));
-            }
-            String fileName = headers.getContentDisposition().getFilename();
-            if (fileName == null) {
-                return Collections
-                        .singletonList(new ByteArrayDataResult("download.data", dispatchResponse.getContent()));
-            }
-            return Collections.singletonList(new ByteArrayDataResult(fileName, dispatchResponse.getContent()));
+            // The task is not executing on current machine, need to forward the request
+            return dispatchRequest(taskEntity);
         }
         return internalDownload(taskEntity, targetFileName);
+    }
+
+    public List<BinaryDataResult> downRollbackPlanResult(@NonNull Long flowInstanceId) throws IOException {
+        Optional<TaskEntity> taskEntityOptional = getTaskEntity(flowInstanceId,
+                instance -> instance.getStatus().isFinalStatus() && instance.getTaskType() == TaskType.ASYNC);
+        PreConditions.validExists(ResourceType.ODC_FILE, "flowInstanceId", flowInstanceId,
+                taskEntityOptional::isPresent);
+        TaskEntity taskEntity = taskEntityOptional.get();
+        if (!dispatchChecker.isTaskEntityOnThisMachine(taskEntity)) {
+            // The task is not executing on current machine, need to forward the request
+            return dispatchRequest(taskEntity);
+        }
+        List<File> targetFiles = getAsyncResult(taskEntity).stream().map(value -> {
+            RollbackPlanTaskResult result = value.getRollbackPlanResult();
+            String fileId = result.getResultFileId();
+            String filePath = FileManager.generatePath(FileBucket.ROLLBACK_PLAN, fileId) + ".sql";
+            return new File(filePath);
+        }).collect(Collectors.toList());
+        return targetFiles.stream().map(FileBasedDataResult::new).collect(Collectors.toList());
+    }
+
+    private List<BinaryDataResult> dispatchRequest(@NonNull TaskEntity taskEntity) throws IOException {
+        ExecutorInfo executorInfo = JsonUtils.fromJson(taskEntity.getExecutor(), ExecutorInfo.class);
+        DispatchResponse dispatchResponse =
+                requestDispatcher.forward(executorInfo.getHost(), executorInfo.getPort());
+        HttpHeaders headers = dispatchResponse.getResponseHeaders();
+        if (headers == null) {
+            return Collections
+                    .singletonList(new ByteArrayDataResult("download.data", dispatchResponse.getContent()));
+        }
+        String fileName = headers.getContentDisposition().getFilename();
+        if (fileName == null) {
+            return Collections
+                    .singletonList(new ByteArrayDataResult("download.data", dispatchResponse.getContent()));
+        }
+        return Collections.singletonList(new ByteArrayDataResult(fileName, dispatchResponse.getContent()));
     }
 
     /**

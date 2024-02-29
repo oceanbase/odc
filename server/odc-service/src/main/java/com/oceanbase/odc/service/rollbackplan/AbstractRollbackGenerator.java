@@ -147,7 +147,10 @@ public abstract class AbstractRollbackGenerator implements GenerateRollbackPlan 
         JdbcQueryResult jdbcQueryResult = this.jdbcOperations.execute(new StatementCallback<JdbcQueryResult>() {
             @Override
             public JdbcQueryResult doInStatement(Statement stmt) throws SQLException, DataAccessException {
-                ResultSet resultSet = stmt.executeQuery(sql);
+                String querySql = (needRemoveDelimiter() && StringUtils.isNotBlank(sql) && sql.trim().endsWith(";"))
+                        ? sql.trim().substring(0, sql.length() - 1)
+                        : sql;
+                ResultSet resultSet = stmt.executeQuery(querySql);
                 JdbcQueryResult jdbcQueryResult = new JdbcQueryResult(resultSet.getMetaData(), jdbcRowMapper);
                 while (resultSet.next()) {
                     try {
@@ -163,6 +166,10 @@ public abstract class AbstractRollbackGenerator implements GenerateRollbackPlan 
             throw new IllegalStateException("The number of data change rows is 0");
         }
         return jdbcQueryResult;
+    }
+
+    protected boolean needRemoveDelimiter() {
+        return false;
     }
 
     protected void parseMetadata(JdbcQueryResult result, List<String> columnNames, Map<String, String> typeNames) {

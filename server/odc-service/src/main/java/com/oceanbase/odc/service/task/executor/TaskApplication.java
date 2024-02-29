@@ -88,7 +88,9 @@ public class TaskApplication {
         context = JobContextProviderFactory.create().provide();
         // 4 step: trace taskId in log4j2 context
         trace(context.getJobIdentity().getId());
-        // 5 step: set log4j2.xml
+        // 5 step: set log path in system properties
+        setLogPathSysProperty();
+        // 6 step: set log4j2.xml
         setLog4JConfigXml();
 
         log.info("Task executor start info, ip={}, port={}, runMode={}, taskId={}, logPath={}, userId={}.",
@@ -96,7 +98,7 @@ public class TaskApplication {
                 SystemUtils.getEnvOrProperty(JobEnvKeyConstants.ODC_EXECUTOR_PORT),
                 SystemUtils.getEnvOrProperty(JobEnvKeyConstants.ODC_TASK_RUN_MODE),
                 context.getJobIdentity().getId(),
-                SystemUtils.getEnvOrProperty(JobEnvKeyConstants.ODC_LOG_DIRECTORY),
+                System.getProperty(JobEnvKeyConstants.ODC_LOG_DIRECTORY),
                 SystemUtils.getEnvOrProperty(JobEnvKeyConstants.ODC_EXECUTOR_USER_ID));
     }
 
@@ -112,6 +114,10 @@ public class TaskApplication {
         TraceContextHolder.trace();
         // mock userId
         TaskContextHolder.trace(JobUtils.getUserId(), taskId);
+    }
+
+    private void setLogPathSysProperty() {
+        JobUtils.putEnvToSysProperties(JobEnvKeyConstants.ODC_LOG_DIRECTORY);
     }
 
     private void setLog4JConfigXml() {
@@ -134,6 +140,7 @@ public class TaskApplication {
         validNotBlank(JobEnvKeyConstants.ENCRYPT_SALT);
         validNotBlank(JobEnvKeyConstants.ENCRYPT_KEY);
         validNotBlank(JobEnvKeyConstants.ODC_EXECUTOR_USER_ID);
+        validNotBlank(JobEnvKeyConstants.ODC_LOG_DIRECTORY);
     }
 
     private void validNotBlank(String envKey) {
