@@ -37,6 +37,7 @@ import org.springframework.jdbc.core.ConnectionCallback;
 import org.springframework.jdbc.core.JdbcOperations;
 import org.springframework.stereotype.Service;
 
+import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionConstants;
 import com.oceanbase.odc.core.session.ConnectionSessionUtil;
@@ -86,6 +87,7 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 @Service
+@SkipAuthorize("odc internal usage")
 public class PartitionPlanServiceV2 {
 
     @Autowired

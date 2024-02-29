@@ -32,6 +32,7 @@ import org.springframework.stereotype.Service;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.oceanbase.odc.common.json.JsonUtils;
+import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.shared.constant.TaskErrorStrategy;
 import com.oceanbase.odc.metadb.partitionplan.PartitionPlanEntity;
 import com.oceanbase.odc.metadb.partitionplan.PartitionPlanRepository;
@@ -67,6 +68,7 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 @Service
+@SkipAuthorize("odc internal usage")
 public class PartitionPlanScheduleService {
 
     @Autowired
