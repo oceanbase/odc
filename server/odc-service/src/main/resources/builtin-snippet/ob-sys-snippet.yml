@@ -63,7 +63,7 @@
       ROUND(DATA_DISK_ALLOCATED / 1024 / 1024 / 1024) DATA_DISK_ALLOCATED_GB,
       DATA_DISK_ABNORMAL_TIME
     FROM
-      GV$OB_SERVERS
+      oceanbase.GV\$OB_SERVERS
     ORDER BY
      ZONE, SVR_IP;
 - name: oceanbase sys create resource unit, pool and tenant
