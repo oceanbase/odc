@@ -690,6 +690,17 @@ public class MySQLAlterTableActionFactoryTest {
         Assert.assertEquals(expect, actual);
     }
 
+    @Test
+    public void generate_removePartitioning_succeed() {
+        StatementFactory<AlterTableAction> factory = new MySQLAlterTableActionFactory(
+                getActionContext("remove partitioning"));
+        AlterTableAction actual = factory.generate();
+
+        AlterTableAction expect = new AlterTableAction();
+        expect.setRemovePartitioning(true);
+        Assert.assertEquals(expect, actual);
+    }
+
     private Alter_table_actionContext getActionContext(String action) {
         OBLexer lexer = new OBLexer(CharStreams.fromString(action));
         CommonTokenStream tokens = new CommonTokenStream(lexer);
