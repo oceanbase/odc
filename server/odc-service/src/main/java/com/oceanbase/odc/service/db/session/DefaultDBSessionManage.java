@@ -183,7 +183,7 @@ public class DefaultDBSessionManage implements DBSessionManageFacade {
         List<SqlTupleSessionId> sqlTupleSessionIds = killSessionSqls.stream().map(
                 s -> new SqlTupleSessionId(SqlTuple.newTuple(s.getKillSql()), s.getSessionId()))
                 .collect(Collectors.toList());
-        Map<String, Long> sqlId2SessionId = sqlTupleSessionIds.stream().collect(
+        Map<String, String> sqlId2SessionId = sqlTupleSessionIds.stream().collect(
                 Collectors.toMap(s -> s.getSqlTuple().getSqlId(), SqlTupleSessionId::getSessionId));
 
         List<SqlTuple> sqlTuples =
@@ -333,6 +333,6 @@ public class DefaultDBSessionManage implements DBSessionManageFacade {
     @NoArgsConstructor
     class SqlTupleSessionId {
         private SqlTuple sqlTuple;
-        private Long sessionId;
+        private String sessionId;
     }
 }

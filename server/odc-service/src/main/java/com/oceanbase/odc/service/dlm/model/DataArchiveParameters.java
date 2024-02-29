@@ -19,6 +19,7 @@ import java.util.List;
 
 import com.oceanbase.odc.core.flow.model.TaskParameters;
 import com.oceanbase.tools.migrator.common.enums.MigrationInsertAction;
+import com.oceanbase.tools.migrator.common.enums.ShardingStrategy;
 
 import lombok.Data;
 
@@ -50,7 +51,19 @@ public class DataArchiveParameters implements TaskParameters {
 
     private boolean deleteAfterMigration = false;
 
+    private boolean needPrintSqlTrace = false;
+
+    private int readThreadCount;
+
+    private int writeThreadCount;
+
+    private int queryTimeout;
+
+    private int scanBatchSize;
+
     private MigrationInsertAction migrationInsertAction = MigrationInsertAction.INSERT_NORMAL;
+
+    private ShardingStrategy shardingStrategy;
 
     private RateLimitConfiguration rateLimit;
 }

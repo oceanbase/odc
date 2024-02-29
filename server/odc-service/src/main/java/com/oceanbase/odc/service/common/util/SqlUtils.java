@@ -86,9 +86,14 @@ public class SqlUtils {
     }
 
     public static List<OffsetString> splitWithOffset(DialectType dialectType, String sql, String delimiter) {
+        return splitWithOffset(dialectType, sql, delimiter, false);
+    }
+
+    public static List<OffsetString> splitWithOffset(DialectType dialectType, String sql, String delimiter,
+            boolean removeCommentPrefix) {
         SqlCommentProcessor processor = new SqlCommentProcessor(dialectType, true, true);
         processor.setDelimiter(delimiter);
-        return split(dialectType, processor, sql, false);
+        return split(dialectType, processor, sql, removeCommentPrefix);
     }
 
     /**
@@ -117,9 +122,9 @@ public class SqlUtils {
     private static List<OffsetString> split(DialectType dialectType, SqlCommentProcessor processor, String sql,
             boolean removeCommentPrefix) {
         PreConditions.notBlank(processor.getDelimiter(), "delimiter", "Empty or blank delimiter is not allowed");
-        if (DialectType.OB_ORACLE == dialectType
+        if (dialectType.isOracle()
                 && (";".equals(processor.getDelimiter()) || "/".equals(processor.getDelimiter()))) {
-            SqlSplitter sqlSplitter = new SqlSplitter(PlSqlLexer.class, processor.getDelimiter());
+            SqlSplitter sqlSplitter = new SqlSplitter(PlSqlLexer.class, processor.getDelimiter(), false);
             sqlSplitter.setRemoveCommentPrefix(removeCommentPrefix);
             List<OffsetString> sqls = sqlSplitter.split(sql);
             processor.setDelimiter(sqlSplitter.getDelimiter());
@@ -159,9 +164,9 @@ public class SqlUtils {
     private static SqlStatementIterator iterator(InputStream input, Charset charset, DialectType dialectType,
             SqlCommentProcessor processor) {
         PreConditions.notBlank(processor.getDelimiter(), "delimiter", "Empty or blank delimiter is not allowed");
-        if (DialectType.OB_ORACLE == dialectType
+        if (Objects.nonNull(dialectType) && dialectType.isOracle()
                 && (";".equals(processor.getDelimiter()) || "/".equals(processor.getDelimiter()))) {
-            return SqlSplitter.iterator(input, charset, processor.getDelimiter());
+            return SqlSplitter.iterator(input, charset, processor.getDelimiter(), false);
         } else {
             return SqlCommentProcessor.iterator(input, charset, processor);
         }

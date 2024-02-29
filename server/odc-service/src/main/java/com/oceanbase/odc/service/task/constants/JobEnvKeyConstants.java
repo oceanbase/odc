@@ -41,6 +41,8 @@ public class JobEnvKeyConstants {
 
     public static final String ODC_IMAGE_NAME = "ODC_IMAGE_NAME";
 
+    public static final String OB_ARN_PARTITION = "OB_ARN_PARTITION";
+
     public static final String ODC_EXECUTOR_USER_ID = "ODC_EXECUTOR_USER_ID";
 
     public static final String ODC_OBJECT_STORAGE_CONFIGURATION = "ODC_OBJECT_STORAGE_CONFIGURATION";

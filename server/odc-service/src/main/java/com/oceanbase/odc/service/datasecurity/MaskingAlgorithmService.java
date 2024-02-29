@@ -199,8 +199,7 @@ public class MaskingAlgorithmService {
     }
 
     @SkipAuthorize("odc internal usages")
-    public Long getSystemDefaultAlgorithmId() {
-        Long organizationId = authenticationFacade.currentOrganizationId();
+    public Long getDefaultAlgorithmIdByOrganizationId(@NonNull Long organizationId) {
         List<MaskingAlgorithmEntity> entities =
                 algorithmRepository.findByNameAndOrganizationId(SYSTEM_DEFAULT_ALGORITHM_NAME, organizationId);
         Verify.singleton(entities, "maskingAlgorithmEntities");
@@ -208,8 +207,8 @@ public class MaskingAlgorithmService {
     }
 
     @SkipAuthorize("odc internal usages")
-    public List<MaskingAlgorithm> getMaskingAlgorithms() {
-        return organizationId2Algorithms.get(authenticationFacade.currentOrganizationId());
+    public List<MaskingAlgorithm> getMaskingAlgorithmsByOrganizationId(@NonNull Long organizationId) {
+        return organizationId2Algorithms.get(organizationId);
     }
 
     private MaskingAlgorithm internalTest(@NotNull MaskingAlgorithm algorithm) {

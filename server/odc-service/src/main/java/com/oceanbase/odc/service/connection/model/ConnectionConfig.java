@@ -472,6 +472,11 @@ public class ConnectionConfig
             target.setProxyHost(endpoint.getProxyHost());
             target.setProxyPort(endpoint.getProxyPort());
         }
+        target.setSid(sid);
+        target.setServiceName(serviceName);
+        if (Objects.nonNull(userRole)) {
+            target.setUserRole(userRole.name());
+        }
         return target;
     }
 

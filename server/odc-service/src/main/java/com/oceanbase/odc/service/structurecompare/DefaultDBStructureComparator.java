@@ -85,10 +85,8 @@ public class DefaultDBStructureComparator implements DBStructureComparator {
                 "DefaultDBStructureComparator start to build source and target schema tables, source schema name={}, target schema name={}",
                 srcConfig.getSchemaName(), tgtConfig.getSchemaName());
         long startTimestamp = System.currentTimeMillis();
-        Map<String, DBTable> srcTableName2Table = buildSchemaTables(srcAccessor, srcConfig.getSchemaName(),
-                srcConfig.getConnectType().getDialectType(), srcDbVersion);
-        Map<String, DBTable> tgtTableName2Table = buildSchemaTables(tgtAccessor, tgtConfig.getSchemaName(),
-                tgtConfig.getConnectType().getDialectType(), tgtDbVersion);
+        Map<String, DBTable> srcTableName2Table = srcAccessor.getTables(srcConfig.getSchemaName(), null);
+        Map<String, DBTable> tgtTableName2Table = tgtAccessor.getTables(tgtConfig.getSchemaName(), null);
         log.info(
                 "DefaultDBStructureComparator build source and target schema tables success, time consuming={} seconds",
                 (System.currentTimeMillis() - startTimestamp) / 1000);
@@ -158,11 +156,6 @@ public class DefaultDBStructureComparator implements DBStructureComparator {
                         "Unsupported database object type for schema structure comparison: " + dbObjectType);
             }
         });
-    }
-
-    private Map<String, DBTable> buildSchemaTables(DBSchemaAccessor accessor, String schemaName,
-            DialectType dialectType, String dbVersion) {
-        return accessor.getTables(schemaName, null);
     }
 
     @Override
