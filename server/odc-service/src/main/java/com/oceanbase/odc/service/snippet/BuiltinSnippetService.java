@@ -78,9 +78,14 @@ public class BuiltinSnippetService {
     public Set<DialectType> supportsDialectTypes(ConnectType connectType) {
         switch (connectType) {
             case OB_ORACLE:
+            case CLOUD_OB_ORACLE:
                 return Sets.newHashSet(DialectType.ORACLE, DialectType.OB_ORACLE);
             case OB_MYSQL:
+            case CLOUD_OB_MYSQL:
+            case ODP_SHARDING_OB_MYSQL:
                 return Sets.newHashSet(DialectType.MYSQL, DialectType.OB_MYSQL);
+            case DORIS:
+                return Sets.newHashSet(DialectType.DORIS, DialectType.MYSQL);
             default:
                 return Sets.newHashSet(connectType.getDialectType());
         }
