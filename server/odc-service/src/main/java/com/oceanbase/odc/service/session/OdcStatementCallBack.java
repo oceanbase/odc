@@ -129,10 +129,6 @@ public class OdcStatementCallBack implements StatementCallback<List<JdbcGeneralR
     @Setter
     private Locale locale;
 
-    public OdcStatementCallBack(@NonNull List<SqlTuple> sqls, @NonNull ConnectionSession connectionSession) {
-        this(sqls, connectionSession, null, null);
-    }
-
     public OdcStatementCallBack(@NonNull List<SqlTuple> sqls, @NonNull ConnectionSession connectionSession,
             Boolean autoCommit, Integer queryLimit) {
         this(sqls, connectionSession, autoCommit, queryLimit, true);
@@ -429,7 +425,9 @@ public class OdcStatementCallBack implements StatementCallback<List<JdbcGeneralR
                 executeDetails = ConnectionPluginUtil.getTraceExtension(connectionSession.getDialectType())
                         .getExecuteDetail(statement, version);
                 executeDetails.setWithFullLinkTrace(false);
-                executeDetails.setTraceEmptyReason(ErrorCodes.ObFullLinkTraceNotSupported.getLocalizedMessage(null));
+                executeDetails.setTraceEmptyReason(
+                        useFullLinkTrace ? ErrorCodes.ObFullLinkTraceNotSupported.getLocalizedMessage(null)
+                                : ErrorCodes.ObFullLinkTraceNotEnabled.getLocalizedMessage(null));
             }
             cacheTraceSpan(executeDetails.getTraceSpan());
             setExecuteTraceStage(traceWatch, executeDetails, stopWatch);

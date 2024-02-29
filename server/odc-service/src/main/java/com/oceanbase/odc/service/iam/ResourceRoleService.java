@@ -126,8 +126,6 @@ public class ResourceRoleService {
 
     @SkipAuthorize
     public Map<Long, Set<ResourceRoleName>> getProjectId2ResourceRoleNames(Long userId) {
-        //Map<Long, ResourceRole> id2ResourceRoles = listResourceRoles().stream().collect(Collectors
-        //        .toMap(ResourceRole::getId, resourceRole -> resourceRole, (existingValue, newValue) -> newValue));
         Map<Long, ResourceRole> id2ResourceRoles = resourceRoleRepository.findAll().stream().map(resourceRoleMapper::entityToModel).collect(Collectors
             .toMap(ResourceRole::getId, resourceRole -> resourceRole, (existingValue, newValue) -> newValue));
         return userResourceRoleRepository.findByUserId(userId).stream()

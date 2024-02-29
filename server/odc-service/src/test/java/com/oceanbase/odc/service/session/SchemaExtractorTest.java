@@ -88,4 +88,52 @@ public class SchemaExtractorTest {
         Assert.assertTrue(actual.isEmpty());
     }
 
+    @Test
+    public void testMySQL_ListSchemaNames_PL_Function() {
+        String sql = "create function `schema_name`.`func` (\n"
+                + "\t`str1` varchar ( 45 ),\n"
+                + "\t`str2` varchar ( 45 )) returns varchar ( 128 ) begin\n"
+                + "return ( select concat( str1, str2 ) from dual );\n"
+                + "end;";
+        Set<String> actual = SchemaExtractor.listSchemaNames(Arrays.asList(sql), DialectType.OB_MYSQL, "default");
+        Set<String> expect = Collections.singleton("schema_name");
+        Assert.assertEquals(expect, actual);
+    }
+
+    @Test
+    public void testMySQL_ListSchemaNames_PL_Function_UseDefaultSchema() {
+        String sql = "CREATE FUNCTION `func` (\n"
+                + "\t`str1` VARCHAR ( 45 ),\n"
+                + "\t`str2` VARCHAR ( 45 )) RETURNS VARCHAR ( 128 ) BEGIN\n"
+                + "RETURN ( SELECT concat( str1, str2 ) FROM DUAL );\n"
+                + "END;";
+        Set<String> actual = SchemaExtractor.listSchemaNames(Arrays.asList(sql), DialectType.OB_MYSQL, "default");
+        Set<String> expect = Collections.singleton("default");
+        Assert.assertEquals(expect, actual);
+    }
+
+    @Test
+    public void testOracle_ListSchemaNames_PL_Function() {
+        String sql = "CREATE OR REPLACE FUNCTION SCHEMA_NAME.INCREMENT_BY_ONE (INPUT_NUMBER IN NUMBER)\n"
+                + "RETURN NUMBER IS\n"
+                + "BEGIN\n"
+                + "  RETURN INPUT_NUMBER + 1;\n"
+                + "END INCREMENT_BY_ONE;";
+        Set<String> actual = SchemaExtractor.listSchemaNames(Arrays.asList(sql), DialectType.OB_ORACLE, "DEFAULT");
+        Set<String> expect = Collections.singleton("SCHEMA_NAME");
+        Assert.assertEquals(expect, actual);
+    }
+
+    @Test
+    public void testOracle_ListSchemaNames_PL_Function_UseDefaultSchema() {
+        String sql = "CREATE OR REPLACE FUNCTION INCREMENT_BY_ONE (INPUT_NUMBER IN NUMBER)\n"
+                + "RETURN NUMBER IS\n"
+                + "BEGIN\n"
+                + "  RETURN INPUT_NUMBER + 1;\n"
+                + "END INCREMENT_BY_ONE;";
+        Set<String> actual = SchemaExtractor.listSchemaNames(Arrays.asList(sql), DialectType.OB_ORACLE, "DEFAULT");
+        Set<String> expect = Collections.singleton("DEFAULT");
+        Assert.assertEquals(expect, actual);
+    }
+
 }

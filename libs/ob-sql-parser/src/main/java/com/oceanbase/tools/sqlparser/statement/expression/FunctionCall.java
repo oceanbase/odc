@@ -62,6 +62,7 @@ public class FunctionCall extends BaseExpression {
     private KeepClause keep;
     private WindowSpec window;
     private OrderBy withinGroup;
+    private String userVariable;
 
     public FunctionCall(@NonNull ParserRuleContext context,
             @NonNull String functionName,
@@ -100,6 +101,9 @@ public class FunctionCall extends BaseExpression {
     @Override
     public String doToString() {
         StringBuilder builder = new StringBuilder(this.functionName);
+        if (this.userVariable != null) {
+            builder.append(this.userVariable);
+        }
         builder.append("(");
         if (getAggregator() != null) {
             builder.append(getAggregator()).append(" ");

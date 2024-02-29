@@ -28,6 +28,8 @@ public class DataArchiveTableConfig {
 
     private String tableName;
 
+    private String targetTableName;
+
     // the sql condition such as "gmt_create < '2023-01-01'"
     private String conditionExpression;
 }

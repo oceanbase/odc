@@ -57,6 +57,7 @@ public class InsertTable extends BaseStatement {
     private List<SetColumn> setColumns = Collections.emptyList();
     private List<ColumnReference> columns = Collections.emptyList();
     private List<List<Expression>> values = Collections.emptyList();
+    private List<String> aliasColumns;
     private final SelectBody select;
     private final RelationFactor table;
 
@@ -109,7 +110,7 @@ public class InsertTable extends BaseStatement {
         } else if (this.select != null) {
             builder.append(" (").append(this.select).append(")");
         }
-        if (this.alias != null) {
+        if (this.alias != null && CollectionUtils.isEmpty(this.aliasColumns)) {
             builder.append(" ").append(this.alias);
         }
         if (this.nologging) {
@@ -137,6 +138,10 @@ public class InsertTable extends BaseStatement {
         } else if (CollectionUtils.isNotEmpty(this.setColumns)) {
             builder.append(" SET ").append(this.setColumns.stream()
                     .map(SetColumn::toString).collect(Collectors.joining(",")));
+        }
+        if (this.alias != null && CollectionUtils.isNotEmpty(this.aliasColumns)) {
+            builder.append(" AS ").append(this.alias).append("(").append(String.join(",", this.aliasColumns))
+                    .append(")");
         }
         return builder.toString();
     }

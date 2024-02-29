@@ -27,6 +27,9 @@ import com.oceanbase.odc.core.authority.SecurityManager;
 import com.oceanbase.odc.service.encryption.SensitivePropertyHandler;
 import com.oceanbase.odc.service.iam.util.FailedLoginAttemptLimiter;
 
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
 public class UsernamePasswordConfigureHelper {
 
     private final SecurityManager securityManager;
@@ -62,8 +65,11 @@ public class UsernamePasswordConfigureHelper {
                     .loginPage(commonSecurityProperties.getLoginPage()).permitAll()
                     .loginProcessingUrl(commonSecurityProperties.getLoginUri());
         }
+        if (commonSecurityProperties.isBasicAuthenticationEnabled()) {
+            log.info("Basic authentication is enabled, it is not recommended in production environment.");
+            http.httpBasic();
+        }
     }
-
 
     private CustomUsernamePasswordAuthenticationFilter getCustomUsernamePasswordAuthenticationFilter(
             AuthenticationManager authenticationManager) {

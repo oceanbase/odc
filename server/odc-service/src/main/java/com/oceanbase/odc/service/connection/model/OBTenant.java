@@ -52,6 +52,8 @@ public class OBTenant {
     @JsonAlias("instanceId")
     private String clusterInstanceId;
 
+    private OBInstanceType instanceType;
+
     public static OBTenant of(String clusterInstanceId, String tenantId) {
         OBTenant obTenant = new OBTenant();
         obTenant.setClusterInstanceId(clusterInstanceId);

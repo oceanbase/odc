@@ -48,15 +48,19 @@ public class DefaultTaskFrameworkProperties implements TaskFrameworkProperties {
     // job will be timeout when last report time more than this duration
     private int jobHeartTimeoutSeconds;
 
+    private int executorWaitingToRunThresholdSeconds;
+
+    private int executorWaitingToRunThresholdCount;
+
     // job to be canceled timeout and current status is cancelling
     private int jobCancelTimeoutSeconds = 2 * 60;
 
     // single fetch job rows for schedule
     private int singleFetchPreparingJobRows = 10;
 
-    private int singleFetchCancelingJobRows = 100;
+    private int singleFetchCancelingJobRows = 30;
 
-    private int singleFetchDestroyExecutorJobRows = 100;
+    private int singleFetchDestroyExecutorJobRows = 30;
 
     // single fetch job rows to check report timeout or not
     private int singleFetchCheckHeartTimeoutJobRows = 1000;

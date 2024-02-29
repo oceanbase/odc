@@ -23,4 +23,9 @@
         WHERE `application`='odc' AND `profile`='default' AND `label`='master' AND `key` LIKE concat(#{keyPrefix}, '%')
     </select>
 
+    <insert id="insert" parameterType="com.oceanbase.odc.metadb.config.SystemConfigEntity">
+        insert into
+        <include refid="table_name"></include>
+        (`key`, `value`, `description`) VALUES(#{key}, #{value}, #{description}) ON DUPLICATE KEY UPDATE `id`=`id`
+    </insert>
 </mapper>
