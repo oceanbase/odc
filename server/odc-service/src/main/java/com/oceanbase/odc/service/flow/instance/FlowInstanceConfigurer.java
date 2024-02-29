@@ -257,6 +257,7 @@ public class FlowInstanceConfigurer extends GraphConfigurer<FlowInstance, BaseFl
             () -> new ExclusiveGatewayBuilder(gatewayName));
         targetExecution.next(gatewayBuilder);
 
+        // save as next GraphEdge
         this.sequenceFlowBuilder = new ConditionSequenceFlowBuilder(
             gatewayBuilder.getGraphId() + " -> " ,
             String.format("${%s}", FlowApprovalInstance.APPROVAL_VARIABLE_NAME));
@@ -378,12 +379,7 @@ public class FlowInstanceConfigurer extends GraphConfigurer<FlowInstance, BaseFl
             gatewayConsumer.accept(builder);
             return builder;
         });
-        if (sequenceFlowBuilder != null) {
-            targetExecution.next(gatewayBuilder, this.sequenceFlowBuilder);
-            sequenceFlowBuilder = null;
-        }else {
-            targetExecution.next(gatewayBuilder);
-        }
+        targetExecution.next(gatewayBuilder);
         if (log.isDebugEnabled()) {
             log.debug("Set up the gateway node succeed, intanceType={}, activityId={}, name={}",
                     nextNode.getNodeType(), gatewayBuilder.getGraphId(), gatewayBuilder.getName());
@@ -463,6 +459,11 @@ public class FlowInstanceConfigurer extends GraphConfigurer<FlowInstance, BaseFl
         }
         if (nextNode.getName() == null) {
             nextNode.setName(nodeBuilder.getName());
+        }
+        if (sequenceFlowBuilder != null) {
+            FlowInstanceConfigurer  c =  (FlowInstanceConfigurer)super.next(nextNode, this.sequenceFlowBuilder);
+            sequenceFlowBuilder = null;
+            return c;
         }
         return (FlowInstanceConfigurer) super.next(nextNode, DEFAULT_EDGE_WEIGHT);
     }
