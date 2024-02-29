@@ -37,6 +37,10 @@ public class AccessDeniedException extends HttpException implements NonTransient
         super(errorCode, null, message);
     }
 
+    public AccessDeniedException(ErrorCode errorCode, Object[] args, String message) {
+        super(errorCode, args, message);
+    }
+
     @Override
     public HttpStatus httpStatus() {
         return HttpStatus.UNAUTHORIZED;

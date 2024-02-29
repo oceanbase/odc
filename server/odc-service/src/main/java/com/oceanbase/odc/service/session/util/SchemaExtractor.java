@@ -26,6 +26,8 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import org.apache.commons.collections4.CollectionUtils;
+
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.sql.execute.model.SqlTuple;
@@ -34,6 +36,8 @@ import com.oceanbase.odc.core.sql.parser.AbstractSyntaxTreeFactories;
 import com.oceanbase.odc.core.sql.parser.AbstractSyntaxTreeFactory;
 import com.oceanbase.tools.dbbrowser.parser.constant.SqlType;
 import com.oceanbase.tools.dbbrowser.parser.result.BasicResult;
+import com.oceanbase.tools.dbbrowser.parser.result.ParseMysqlPLResult;
+import com.oceanbase.tools.dbbrowser.parser.result.ParseOraclePLResult;
 import com.oceanbase.tools.sqlparser.adapter.mysql.MySQLFromReferenceFactory;
 import com.oceanbase.tools.sqlparser.adapter.oracle.OracleFromReferenceFactory;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Create_database_stmtContext;
@@ -44,9 +48,13 @@ import com.oceanbase.tools.sqlparser.obmysql.OBParser.Relation_factorContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Relation_factor_with_starContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParserBaseVisitor;
 import com.oceanbase.tools.sqlparser.obmysql.PLParser.IdentContext;
+import com.oceanbase.tools.sqlparser.obmysql.PLParser.Sp_call_nameContext;
 import com.oceanbase.tools.sqlparser.obmysql.PLParser.Sp_nameContext;
 import com.oceanbase.tools.sqlparser.obmysql.PLParserBaseVisitor;
 import com.oceanbase.tools.sqlparser.oboracle.OBParser;
+import com.oceanbase.tools.sqlparser.oboracle.OBParser.Relation_nameContext;
+import com.oceanbase.tools.sqlparser.oboracle.OBParser.Routine_nameContext;
+import com.oceanbase.tools.sqlparser.oboracle.OBParser.Var_nameContext;
 import com.oceanbase.tools.sqlparser.oboracle.PLParser.IdentifierContext;
 import com.oceanbase.tools.sqlparser.oboracle.PLParser.Pl_schema_nameContext;
 import com.oceanbase.tools.sqlparser.statement.common.RelationFactor;
@@ -88,22 +96,6 @@ public class SchemaExtractor {
         return schemaName2SqlTypes;
     }
 
-    public static Set<String> listSchemaNames(List<SqlTuple> sqlTuples, String defaultSchema, DialectType dialectType) {
-        return sqlTuples.stream().flatMap(sqlTuple -> {
-            try {
-                AbstractSyntaxTree ast = sqlTuple.getAst();
-                if (ast == null) {
-                    sqlTuple.initAst(AbstractSyntaxTreeFactories.getAstFactory(dialectType, 0));
-                    ast = sqlTuple.getAst();
-                }
-                return listSchemaNames(ast, defaultSchema, dialectType).stream();
-            } catch (Exception e) {
-                // just eat exception due to parse failed
-                return Stream.empty();
-            }
-        }).collect(Collectors.toSet());
-    }
-
     public static Set<String> listSchemaNames(List<String> sqls, DialectType dialectType, String defaultSchema) {
         AbstractSyntaxTreeFactory factory = AbstractSyntaxTreeFactories.getAstFactory(dialectType, 0);
         if (factory == null) {
@@ -123,7 +115,7 @@ public class SchemaExtractor {
         List<RelationFactor> relationFactorList;
         BasicResult basicResult = ast.getParseResult();
         if (dialectType.isMysql() || dialectType.isDoris()) {
-            if (basicResult.isPlDdl()) {
+            if (basicResult.isPlDdl() || basicResult instanceof ParseMysqlPLResult) {
                 OBMySQLPLRelationFactorVisitor visitor = new OBMySQLPLRelationFactorVisitor();
                 visitor.visit(ast.getRoot());
                 relationFactorList = visitor.getRelationFactorList();
@@ -140,7 +132,7 @@ public class SchemaExtractor {
                     })
                     .filter(Objects::nonNull).collect(Collectors.toSet());
         } else if (dialectType.isOracle()) {
-            if (basicResult.isPlDdl()) {
+            if (basicResult.isPlDdl() || basicResult instanceof ParseOraclePLResult) {
                 OBOraclePLRelationFactorVisitor visitor = new OBOraclePLRelationFactorVisitor();
                 visitor.visit(ast.getRoot());
                 relationFactorList = visitor.getRelationFactorList();
@@ -236,8 +228,31 @@ public class SchemaExtractor {
             relationFactorList.add(relationFactor);
             return null;
         }
-    }
 
+        @Override
+        public RelationFactor visitRoutine_access_name(OBParser.Routine_access_nameContext ctx) {
+            List<Var_nameContext> varNames = ctx.var_name();
+            Routine_nameContext routineName = ctx.routine_name();
+            RelationFactor relationFactor = new RelationFactor(routineName.getText());
+            if (CollectionUtils.isNotEmpty(varNames)) {
+                // If there exists only one var_name, we can not determine weather it is a schema or a package name.
+                // The provisional program is ignoring the package name and always treat it as schema name.
+                relationFactor.setSchema(varNames.get(0).getText());
+            }
+            relationFactorList.add(relationFactor);
+            return null;
+        }
+
+        @Override
+        public RelationFactor visitCurrent_schema(OBParser.Current_schemaContext ctx) {
+            Relation_nameContext relationName = ctx.relation_name();
+            RelationFactor relationFactor = new RelationFactor(ctx, "");
+            relationFactor.setSchema(relationName.getText());
+            relationFactorList.add(relationFactor);
+            return null;
+        }
+
+    }
 
     @Getter
     private static class OBMySQLPLRelationFactorVisitor extends PLParserBaseVisitor<RelationFactor> {
@@ -249,8 +264,24 @@ public class SchemaExtractor {
             List<IdentContext> idents = ctx.ident();
             if (idents.size() == 1) {
                 relationFactorList.add(new RelationFactor(idents.get(0).getText()));
-            } else if (idents.size() == 2) {
-                RelationFactor relationFactor = new RelationFactor(idents.get(1).getText());
+            } else {
+                RelationFactor relationFactor = new RelationFactor(idents.get(idents.size() - 1).getText());
+                relationFactor.setSchema(idents.get(0).getText());
+                relationFactorList.add(relationFactor);
+            }
+            return null;
+        }
+
+        @Override
+        public RelationFactor visitSp_call_name(Sp_call_nameContext ctx) {
+            List<IdentContext> idents = ctx.ident();
+            if (idents.size() == 1) {
+                relationFactorList.add(new RelationFactor(idents.get(0).getText()));
+            } else {
+                // If there exists two idents, we can not determine weather it is a schema or a package (because OB
+                // MySQL holds system package such as `dbms_stats`) name. The provisional program is ignoring the
+                // package name and always treat it as schema name.
+                RelationFactor relationFactor = new RelationFactor(idents.get(idents.size() - 1).getText());
                 relationFactor.setSchema(idents.get(0).getText());
                 relationFactorList.add(relationFactor);
             }

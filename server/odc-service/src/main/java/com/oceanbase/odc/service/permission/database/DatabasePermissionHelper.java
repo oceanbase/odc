@@ -28,6 +28,7 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.constant.OrganizationType;
 import com.oceanbase.odc.core.shared.constant.ResourceRoleName;
 import com.oceanbase.odc.core.shared.exception.AccessDeniedException;
@@ -86,15 +87,14 @@ public class DatabasePermissionHelper {
         for (Long databaseId : toCheckDatabaseIds) {
             // TODO: may use Permission#implies() to check permission
             Set<DatabasePermissionType> authorized = id2PermissionTypes.get(databaseId);
-            if (CollectionUtils.isEmpty(authorized)) {
-                throw new AccessDeniedException(String.format("No permission for the database with id %s", databaseId));
-            }
             Set<DatabasePermissionType> unAuthorized =
-                    permissionTypes.stream().filter(e -> !authorized.contains(e)).collect(Collectors.toSet());
+                    permissionTypes.stream().filter(e -> CollectionUtils.isEmpty(authorized) || !authorized.contains(e))
+                            .collect(Collectors.toSet());
             if (CollectionUtils.isNotEmpty(unAuthorized)) {
-                throw new AccessDeniedException(String.format("No %s permission for the database with id %s",
-                        unAuthorized.stream().map(DatabasePermissionType::name).collect(Collectors.joining(",")),
-                        databaseId));
+                throw new AccessDeniedException(ErrorCodes.DatabaseAccessDenied,
+                        new Object[] {unAuthorized.stream().map(DatabasePermissionType::getLocalizedMessage)
+                                .collect(Collectors.joining(","))},
+                        "Lack permission for the database with id " + databaseId);
             }
         }
     }
