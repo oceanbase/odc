@@ -192,7 +192,8 @@ public class ProjectService {
     public Project detail(@NotNull Long id) {
         ProjectEntity entity = repository.findByIdAndOrganizationId(id, currentOrganizationId())
                 .orElseThrow(() -> new NotFoundException(ResourceType.ODC_PROJECT, "id", id));
-        List<UserResourceRole> userResourceRoles = resourceRoleService.listByResourceTypeAndId(ResourceType.ODC_PROJECT,entity.getId());
+        List<UserResourceRole> userResourceRoles =
+                resourceRoleService.listByResourceTypeAndId(ResourceType.ODC_PROJECT, entity.getId());
         return entityToModel(entity, userResourceRoles);
     }
 
@@ -211,7 +212,8 @@ public class ProjectService {
          * not allowed to update a built-in project or an archived project
          */
         if (previous.getBuiltin() || previous.getArchived()) {
-            return entityToModel(previous, resourceRoleService.listByResourceTypeAndId(ResourceType.ODC_PROJECT,previous.getId()));
+            return entityToModel(previous,
+                    resourceRoleService.listByResourceTypeAndId(ResourceType.ODC_PROJECT, previous.getId()));
         }
 
         previous.setLastModifierId(authenticationFacade.currentUserId());
@@ -222,7 +224,8 @@ public class ProjectService {
          * save project
          */
         ProjectEntity saved = repository.save(previous);
-        return entityToModel(saved, resourceRoleService.listByResourceTypeAndId(ResourceType.ODC_PROJECT,saved.getId()));
+        return entityToModel(saved,
+                resourceRoleService.listByResourceTypeAndId(ResourceType.ODC_PROJECT, saved.getId()));
     }
 
     @PreAuthenticate(hasAnyResourceRole = {"OWNER"}, resourceType = "ODC_PROJECT", indexOfIdParam = 0)
@@ -257,7 +260,8 @@ public class ProjectService {
         params.setUserId(currentUserId());
         Page<ProjectEntity> projectEntities = innerList(params, pageable, UserResourceRole::isProjectMember);
         return projectEntities.map(project -> {
-            List<UserResourceRole> members = resourceRoleService.listByResourceTypeAndId(ResourceType.ODC_PROJECT,project.getId());
+            List<UserResourceRole> members =
+                    resourceRoleService.listByResourceTypeAndId(ResourceType.ODC_PROJECT, project.getId());
             return entityToModel(project, members);
         });
     }
@@ -344,7 +348,7 @@ public class ProjectService {
         ProjectEntity project = repository.findByIdAndOrganizationId(projectId, currentOrganizationId())
                 .orElseThrow(() -> new NotFoundException(ResourceType.ODC_PROJECT, "id", projectId));
         Map<Long, List<UserResourceRole>> userId2ResourceRoles =
-                resourceRoleService.listByResourceTypeAndId(ResourceType.ODC_PROJECT,project.getId()).stream()
+                resourceRoleService.listByResourceTypeAndId(ResourceType.ODC_PROJECT, project.getId()).stream()
                         .collect(Collectors.groupingBy(UserResourceRole::getUserId));
         if (CollectionUtils.isEmpty(userId2ResourceRoles.keySet())) {
             return false;

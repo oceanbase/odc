@@ -338,7 +338,8 @@ public class IamController {
         if (resourceType == null || resourceType.isEmpty()) {
             resourceType.add("ODC_PROJECT");
         }
-        List<ResourceType> resourceTypes = resourceType.stream().map(ResourceType::valueOf).collect(Collectors.toList());
+        List<ResourceType> resourceTypes =
+                resourceType.stream().map(ResourceType::valueOf).collect(Collectors.toList());
         return Responses.list(resourceRoleService.listResourceRoles(resourceTypes));
     }
 

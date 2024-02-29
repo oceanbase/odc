@@ -378,10 +378,9 @@ public class DatabaseService {
 
         // Delete the original owner
         req.getDatabaseIds().forEach(
-            databaseId -> {
-                resourceRoleService.deleteByResourceTypeAndId(ResourceType.ODC_DATABASE,databaseId);
-            }
-        );
+                databaseId -> {
+                    resourceRoleService.deleteByResourceTypeAndId(ResourceType.ODC_DATABASE, databaseId);
+                });
 
         // Add new owner
         req.getDatabaseIds().forEach(databaseId -> {
@@ -416,10 +415,9 @@ public class DatabaseService {
 
         // Delete the original owner
         req.getDatabaseIds().forEach(
-            databaseId -> {
-                resourceRoleService.deleteByResourceTypeAndId(ResourceType.ODC_DATABASE,databaseId);
-            }
-        );
+                databaseId -> {
+                    resourceRoleService.deleteByResourceTypeAndId(ResourceType.ODC_DATABASE, databaseId);
+                });
         return true;
     }
 
@@ -727,17 +725,16 @@ public class DatabaseService {
 
     @Transactional(rollbackFor = Exception.class)
     @PreAuthenticate(hasAnyResourceRole = {"OWNER", "DBA"}, resourceType = "ODC_PROJECT", indexOfIdParam = 0)
-    public boolean modifyDatabasesOwner(@NotNull Long projectId,@NotNull @Valid ModifyDatabaseOwnerReq req) {
+    public boolean modifyDatabasesOwner(@NotNull Long projectId, @NotNull @Valid ModifyDatabaseOwnerReq req) {
         Set<Long> projectIds = projectService.getMemberProjectIds(authenticationFacade.currentUserId());
         if (!projectIds.contains(projectId)) {
             throw new AccessDeniedException();
         }
         // Delete the original owner
         req.getDatabaseIds().forEach(
-            databaseId -> {
-                resourceRoleService.deleteByResourceTypeAndId(ResourceType.ODC_DATABASE,databaseId);
-            }
-        );
+                databaseId -> {
+                    resourceRoleService.deleteByResourceTypeAndId(ResourceType.ODC_DATABASE, databaseId);
+                });
 
         // Add new owner
         req.getDatabaseIds().forEach(databaseId -> {
@@ -754,27 +751,27 @@ public class DatabaseService {
         return true;
     }
 
-    public GetDatabaseOwnerResp getDatabasesOwner(@NotNull Long projectId, @NotNull Long databaseId){
+    public GetDatabaseOwnerResp getDatabasesOwner(@NotNull Long projectId, @NotNull Long databaseId) {
         List<UserResourceRole> userResourceRoles = resourceRoleService.listByResourceTypeAndId(
-            ResourceType.ODC_DATABASE, databaseId);
+                ResourceType.ODC_DATABASE, databaseId);
 
         // 如果userResourceRoles是空的，就查询ODC_PROJECT表，获取项目的owner
         if (CollectionUtils.isEmpty(userResourceRoles)) {
             userResourceRoles = resourceRoleService.getUserIdsByProjectIdAndResourceRole(
-                projectId, ResourceType.ODC_PROJECT, "OWNER");
+                    projectId, ResourceType.ODC_PROJECT, "OWNER");
 
         }
 
         List<Member> members = userResourceRoles.stream()
-            .map(userResourceRole -> {
-                User user = userService.detailWithoutPermissionCheck(userResourceRole.getUserId());
-                Member member = new Member();
-                member.setId(user.getId());
-                member.setName(user.getName());
-                member.setAccountName(user.getAccountName());
-                return member;
-            })
-            .collect(Collectors.toList());
+                .map(userResourceRole -> {
+                    User user = userService.detailWithoutPermissionCheck(userResourceRole.getUserId());
+                    Member member = new Member();
+                    member.setId(user.getId());
+                    member.setName(user.getName());
+                    member.setAccountName(user.getAccountName());
+                    return member;
+                })
+                .collect(Collectors.toList());
 
         GetDatabaseOwnerResp getDatabaseOwnerResp = new GetDatabaseOwnerResp();
         getDatabaseOwnerResp.setDatabaseId(databaseId);
@@ -865,7 +862,7 @@ public class DatabaseService {
 
             // Set the owner of the database
             List<UserResourceRole> userResourceRoles = resourceRoleService.listByResourceTypeAndId(
-                ResourceType.ODC_DATABASE, entity.getId());
+                    ResourceType.ODC_DATABASE, entity.getId());
 
             List<Database.Owner> owners = userResourceRoles.stream().map(userResourceRole -> {
                 User user = userService.detailWithoutPermissionCheck(userResourceRole.getUserId());

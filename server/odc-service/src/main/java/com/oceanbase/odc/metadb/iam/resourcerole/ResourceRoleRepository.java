@@ -30,6 +30,6 @@ public interface ResourceRoleRepository
     List<ResourceRoleEntity> findByResourceType(ResourceType resourceType);
 
     @Query(value = "select * from iam_resource_role where resource_type in (:resourceType)",
-        nativeQuery = true)
+            nativeQuery = true)
     List<ResourceRoleEntity> findInResourceType(@Param("resourceType") List<String> resourceType);
 }

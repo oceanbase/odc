@@ -980,7 +980,7 @@ public class FlowInstanceService {
         TaskType taskType = flowInstanceReq.getTaskType();
         variables.setAttribute(Variable.TASK_TYPE, taskType.getLocalizedMessage());
         variables.setAttribute(Variable.TASK_DETAILS, JsonUtils.toJson(flowInstanceReq.getParameters()));
-        variables.setAttribute(Variable.TASK_DESCRIPTION,flowInstanceReq.getDescription());
+        variables.setAttribute(Variable.TASK_DESCRIPTION, flowInstanceReq.getDescription());
         // set connection related variables
         if (Objects.nonNull(config)) {
             variables.setAttribute(Variable.CONNECTION_NAME, config.getName());
@@ -990,27 +990,29 @@ public class FlowInstanceService {
             }
         }
         Database database = databaseService.detail(flowInstanceReq.getDatabaseId());
-        if (Objects.nonNull(database)){
+        if (Objects.nonNull(database)) {
             String environmentName = database.getEnvironment().getName();
-            environmentName = I18n.translate(environmentName.substring(2, environmentName.length() - 1),null,Locale.US);
-            variables.setAttribute(Variable.ENVIRONMENT_NAME,environmentName);
-            variables.setAttribute(Variable.DATABASE_NAME,database.getName());
-            GetDatabaseOwnerResp databasesOwner = databaseService.getDatabasesOwner(flowInstanceReq.getProjectId(),database.getId());
+            environmentName =
+                    I18n.translate(environmentName.substring(2, environmentName.length() - 1), null, Locale.US);
+            variables.setAttribute(Variable.ENVIRONMENT_NAME, environmentName);
+            variables.setAttribute(Variable.DATABASE_NAME, database.getName());
+            GetDatabaseOwnerResp databasesOwner =
+                    databaseService.getDatabasesOwner(flowInstanceReq.getProjectId(), database.getId());
 
             List<Long> ownerIds = databasesOwner.getMembers().stream().map(member -> {
                 return member.getId();
             }).collect(Collectors.toList());
-            variables.setAttribute(Variable.DATABASE_OWNERS_IDS,JsonUtils.toJson(ownerIds));
+            variables.setAttribute(Variable.DATABASE_OWNERS_IDS, JsonUtils.toJson(ownerIds));
 
             List<String> ownerAccount = databasesOwner.getMembers().stream().map(member -> {
                 return member.getAccountName();
             }).collect(Collectors.toList());
-            variables.setAttribute(Variable.DATABASE_OWNERS_ACCOUNTS,JsonUtils.toJson(ownerAccount));
+            variables.setAttribute(Variable.DATABASE_OWNERS_ACCOUNTS, JsonUtils.toJson(ownerAccount));
 
             List<String> ownerNames = databasesOwner.getMembers().stream().map(member -> {
                 return member.getName();
             }).collect(Collectors.toList());
-            variables.setAttribute(Variable.DATABASE_OWNERS_NAMES,JsonUtils.toJson(ownerNames));
+            variables.setAttribute(Variable.DATABASE_OWNERS_NAMES, JsonUtils.toJson(ownerNames));
 
         }
         // set SQL content if task type is DatabaseChange

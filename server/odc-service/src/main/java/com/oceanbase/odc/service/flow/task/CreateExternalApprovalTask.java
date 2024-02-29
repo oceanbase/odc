@@ -91,8 +91,10 @@ public class CreateExternalApprovalTask extends BaseFlowableDelegate {
             TemplateVariables variables = FlowTaskUtil.getTemplateVariables(execution.getVariables());
 
             // add riskLevel to variables
-            String riskLevelNameKey = riskLevelService.findRawById(Long.valueOf(FlowTaskUtil.getRiskLevel(execution))).get().getName();
-            String riskLevelName = I18n.translate(riskLevelNameKey.substring(2, riskLevelNameKey.length() - 1),null, Locale.US);
+            String riskLevelNameKey =
+                    riskLevelService.findRawById(Long.valueOf(FlowTaskUtil.getRiskLevel(execution))).get().getName();
+            String riskLevelName =
+                    I18n.translate(riskLevelNameKey.substring(2, riskLevelNameKey.length() - 1), null, Locale.US);
             variables.setAttribute(Variable.RISK_LEVEL, riskLevelName);
 
             String externalFlowInstanceId = approvalClient.start(properties, variables);

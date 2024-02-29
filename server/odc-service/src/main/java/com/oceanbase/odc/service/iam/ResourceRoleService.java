@@ -126,8 +126,10 @@ public class ResourceRoleService {
 
     @SkipAuthorize
     public Map<Long, Set<ResourceRoleName>> getProjectId2ResourceRoleNames(Long userId) {
-        Map<Long, ResourceRole> id2ResourceRoles = resourceRoleRepository.findAll().stream().map(resourceRoleMapper::entityToModel).collect(Collectors
-            .toMap(ResourceRole::getId, resourceRole -> resourceRole, (existingValue, newValue) -> newValue));
+        Map<Long, ResourceRole> id2ResourceRoles = resourceRoleRepository.findAll().stream()
+                .map(resourceRoleMapper::entityToModel).collect(Collectors
+                        .toMap(ResourceRole::getId, resourceRole -> resourceRole,
+                                (existingValue, newValue) -> newValue));
         return userResourceRoleRepository.findByUserId(userId).stream()
                 .collect(Collectors.groupingBy(UserResourceRoleEntity::getResourceId, Collectors.mapping(
                         e -> id2ResourceRoles.get(e.getResourceRoleId()).getRoleName(), Collectors.toSet())));
@@ -140,8 +142,9 @@ public class ResourceRoleService {
 
     @Transactional(rollbackFor = Exception.class)
     @SkipAuthorize("internal usage")
-    public List<UserResourceRole> listByResourceTypeAndId(ResourceType resourceType,Long resourceId) {
-        List<UserResourceRoleEntity> entities = userResourceRoleRepository.listByResourceTypeAndId(resourceType.toString(),resourceId);
+    public List<UserResourceRole> listByResourceTypeAndId(ResourceType resourceType, Long resourceId) {
+        List<UserResourceRoleEntity> entities =
+                userResourceRoleRepository.listByResourceTypeAndId(resourceType.toString(), resourceId);
         return entities.stream().map(e -> {
             ResourceRoleEntity resourceRole = resourceRoleRepository
                     .findById(e.getResourceRoleId())
@@ -169,7 +172,7 @@ public class ResourceRoleService {
     @Transactional(rollbackFor = Exception.class)
     @SkipAuthorize("internal usage")
     public int deleteByResourceTypeAndId(ResourceType resourceType, Long resourceId) {
-        return userResourceRoleRepository.deleteByResourceTypeAndId(resourceType.toString(),resourceId);
+        return userResourceRoleRepository.deleteByResourceTypeAndId(resourceType.toString(), resourceId);
     }
 
     @Transactional(rollbackFor = Exception.class)
@@ -191,7 +194,8 @@ public class ResourceRoleService {
 
     @SkipAuthorize("internal usage")
     public List<ResourceRole> listResourceRoles(List<ResourceType> resourceType) {
-        return resourceRoleRepository.findInResourceType(resourceType.stream().map(r -> r.toString()).collect(Collectors.toList())).stream()
+        return resourceRoleRepository
+                .findInResourceType(resourceType.stream().map(r -> r.toString()).collect(Collectors.toList())).stream()
                 .map(resourceRoleMapper::entityToModel).collect(Collectors.toList());
     }
 
@@ -228,15 +232,15 @@ public class ResourceRoleService {
         return model;
     }
 
-    public List<UserResourceRole>  getUserIdsByProjectIdAndResourceRole(Long resourceId, ResourceType resourceType,String roleName) {
-        List<UserResourceRoleEntity> entities
-            = userResourceRoleRepository.findByProjectIdAndResourceRole(resourceId,
-            resourceType.toString(),
-            roleName);
+    public List<UserResourceRole> getUserIdsByProjectIdAndResourceRole(Long resourceId, ResourceType resourceType,
+            String roleName) {
+        List<UserResourceRoleEntity> entities = userResourceRoleRepository.findByProjectIdAndResourceRole(resourceId,
+                resourceType.toString(),
+                roleName);
         return entities.stream().map(e -> {
             ResourceRoleEntity resourceRole = resourceRoleRepository
-                .findById(e.getResourceRoleId())
-                .orElseThrow(() -> new UnexpectedException("resource role not found, id=" + e.getResourceRoleId()));
+                    .findById(e.getResourceRoleId())
+                    .orElseThrow(() -> new UnexpectedException("resource role not found, id=" + e.getResourceRoleId()));
             return fromEntity(e, resourceRole);
         }).collect(Collectors.toList());
     }

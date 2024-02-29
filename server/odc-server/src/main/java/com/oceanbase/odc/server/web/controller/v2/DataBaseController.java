@@ -108,14 +108,16 @@ public class DataBaseController {
 
     @ApiOperation(value = "modifyDatabasesOwner", notes = "modify database owner")
     @RequestMapping(value = "/databases/owner/{projectId:[\\d]+}", method = RequestMethod.PUT)
-    public SuccessResponse<Boolean> modifyDatabasesOwner(@PathVariable Long projectId, @RequestBody ModifyDatabaseOwnerReq req) {
-        return Responses.success(databaseService.modifyDatabasesOwner(projectId,req));
+    public SuccessResponse<Boolean> modifyDatabasesOwner(@PathVariable Long projectId,
+            @RequestBody ModifyDatabaseOwnerReq req) {
+        return Responses.success(databaseService.modifyDatabasesOwner(projectId, req));
     }
 
     @ApiOperation(value = "getDatabasesOwner", notes = "get database owner")
     @RequestMapping(value = "/databases/owner/{projectId:[\\d]+}/{databaseId:[\\d]+}", method = RequestMethod.GET)
-    public SuccessResponse<GetDatabaseOwnerResp> getDatabasesOwner(@PathVariable Long projectId, @PathVariable Long databaseId) {
-        return Responses.success(databaseService.getDatabasesOwner(projectId,databaseId));
+    public SuccessResponse<GetDatabaseOwnerResp> getDatabasesOwner(@PathVariable Long projectId,
+            @PathVariable Long databaseId) {
+        return Responses.success(databaseService.getDatabasesOwner(projectId, databaseId));
     }
 
 }
