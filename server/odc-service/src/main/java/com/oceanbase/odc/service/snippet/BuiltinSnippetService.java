@@ -50,7 +50,9 @@ public class BuiltinSnippetService {
 
     @PostConstruct
     public void init() {
-        List<ResourceInfo> resourceInfos = ResourceUtils.listResourcesFromDirectory(BUILTIN_SNIPPET_DIR);
+        List<ResourceInfo> resourceInfos = ResourceUtils.listResourcesFromDirectory(BUILTIN_SNIPPET_DIR).stream()
+                .filter(r -> r.getResourceName().endsWith(".yml"))
+                .collect(Collectors.toList());
         for (ResourceInfo resourceInfo : resourceInfos) {
             String fileName = BUILTIN_SNIPPET_DIR + "/" + resourceInfo.getResourceName();
             List<BuiltinSnippet> snippets = YamlUtils.fromYamlList(fileName, BuiltinSnippet.class);
