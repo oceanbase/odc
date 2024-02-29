@@ -452,7 +452,7 @@ public class OBOracleSchemaAccessor extends OracleSchemaAccessor {
             view.setDefiner(rs.getString("OWNER"));
             partDdl.set(rs.getClob("TEXT").toString());
         });
-
+        fullFillComment(view);
         boolean updatable = fillOracleUpdatableInfo(view);
         String ddl = String.format("CREATE VIEW %s AS %s",
                 StringUtils.quoteOracleIdentifier(viewName), partDdl);
@@ -490,10 +490,21 @@ public class OBOracleSchemaAccessor extends OracleSchemaAccessor {
     }
 
     private DBView fillColumnInfoByDesc(DBView view) {
+        Map<String, List<DBTableColumn>> name2Cols = new HashMap<>();
+        try {
+            List<DBTableColumn> columns = listBasicTableColumns(view.getSchemaName(), view.getViewName());
+            if (CollectionUtils.isNotEmpty(columns)) {
+                name2Cols = columns.stream().collect(Collectors.groupingBy(DBTableColumn::getName));
+            }
+        } catch (Exception e) {
+            log.warn("Failed to query view column comments, viewName={}, errorMessage={}", view.getViewName(),
+                    e.getMessage());
+        }
         OracleSqlBuilder sb = new OracleSqlBuilder();
         sb.append("desc ");
         sb.identifier(view.getViewName());
 
+        Map<String, List<DBTableColumn>> finalName2Cols = name2Cols;
         List<DBTableColumn> columns = jdbcOperations.query(sb.toString(), (rs, rowNum) -> {
             DBTableColumn column = new DBTableColumn();
             column.setName(rs.getString("FIELD"));
@@ -502,6 +513,10 @@ public class OBOracleSchemaAccessor extends OracleSchemaAccessor {
             column.setDefaultValue(rs.getString("DEFAULT"));
             column.setOrdinalPosition(rowNum);
             column.setTableName(view.getViewName());
+            List<DBTableColumn> cols = finalName2Cols.get(column.getName());
+            if (CollectionUtils.isNotEmpty(cols)) {
+                column.setComment(cols.get(0).getComment());
+            }
             return column;
         });
         view.setColumns(columns);

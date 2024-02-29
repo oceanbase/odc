@@ -13,25 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.snippet;
+package com.oceanbase.odc.metadb.flow;
 
-import java.sql.Timestamp;
-
-import javax.validation.constraints.Size;
-
-import lombok.Data;
-
-@Data
-public class Snippet {
-
-    private Long id;
-    private Long userId;
-    private String prefix;
-    @Size(max = 65535, message = "Snippet body is out of range [0, 65535]")
-    private String body;
-    private String description;
-    private String type;
-    private Timestamp createTime;
-    private Timestamp modifyTime;
-
+/**
+ * @author liuyizhuo.lyz
+ * @date 2024/2/27
+ */
+public interface FlowInstanceApprovalViewRepository extends ReadOnlyRepository<FlowInstanceApprovalViewEntity, Long> {
 }

@@ -360,6 +360,23 @@ public class MySQLExpressionFactoryTest {
     }
 
     @Test
+    public void generate_st_asmvt_generateFunctionCallSucceed() {
+        ExprContext context = getExprContext("_st_asmvt(a.b, 'abcd', 12, -34, null)");
+        StatementFactory<Expression> factory = new MySQLExpressionFactory(context);
+        Expression actual = factory.generate();
+
+        List<FunctionParam> params = new ArrayList<>();
+        params.add(new ExpressionParam(new ColumnReference(null, "a", "b")));
+        params.add(new ExpressionParam(new ConstExpression("'abcd'")));
+        params.add(new ExpressionParam(new ConstExpression("12")));
+        params.add(new ExpressionParam(new CompoundExpression(new ConstExpression("34"), null, Operator.SUB)));
+        params.add(new ExpressionParam(new NullExpression()));
+
+        FunctionCall expect = new FunctionCall("_st_asmvt", params);
+        Assert.assertEquals(expect, actual);
+    }
+
+    @Test
     public void generate_stddevPopExpr_generateFunctionCallSucceed() {
         ExprContext context = getExprContext("STDDEV_POP(all 1)");
         StatementFactory<Expression> factory = new MySQLExpressionFactory(context);
