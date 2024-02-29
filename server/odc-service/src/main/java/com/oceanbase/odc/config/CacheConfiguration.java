@@ -26,7 +26,9 @@ import org.springframework.cache.caffeine.CaffeineCacheManager;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Lazy;
+import org.springframework.security.core.Authentication;
 
+import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.LoadingCache;
 import com.oceanbase.odc.service.iam.OrganizationService;
@@ -86,6 +88,14 @@ public class CacheConfiguration {
         cacheManager.setAllowNullValues(false);
         cacheManager.setCaffeine(caffeine);
         return cacheManager;
+    }
+
+    @Bean("authenticationCache")
+    public Cache<Long, Authentication> authenticationCache() {
+        return Caffeine.newBuilder()
+                .maximumSize(1000)
+                .expireAfterWrite(Duration.ofMinutes(15))
+                .build();
     }
 
 }

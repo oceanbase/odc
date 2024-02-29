@@ -20,6 +20,7 @@ import static com.oceanbase.odc.service.automation.model.TriggerEvent.LOGIN_SUCC
 import java.io.IOException;
 import java.security.Principal;
 import java.time.OffsetDateTime;
+import java.util.HashMap;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -35,6 +36,9 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.web.authentication.SavedRequestAwareAuthenticationSuccessHandler;
 import org.springframework.stereotype.Component;
 
+import com.github.benmanes.caffeine.cache.Cache;
+import com.oceanbase.odc.common.json.JsonUtils;
+import com.oceanbase.odc.common.jwt.JwtUtils;
 import com.oceanbase.odc.common.trace.TraceContextHolder;
 import com.oceanbase.odc.core.authority.SecurityManager;
 import com.oceanbase.odc.core.authority.exception.AuthenticationException;
@@ -50,6 +54,7 @@ import com.oceanbase.odc.service.common.util.WebRequestUtils;
 import com.oceanbase.odc.service.common.util.WebResponseUtils;
 import com.oceanbase.odc.service.iam.LoginHistoryService;
 import com.oceanbase.odc.service.iam.OrganizationMapper;
+import com.oceanbase.odc.service.iam.model.JwtProperties;
 import com.oceanbase.odc.service.iam.model.LoginHistory;
 import com.oceanbase.odc.service.iam.model.Organization;
 import com.oceanbase.odc.service.iam.model.User;
@@ -72,6 +77,9 @@ public class CustomAuthenticationSuccessHandler extends SavedRequestAwareAuthent
     @Qualifier("organizationResourceMigrator")
     private OrganizationResourceMigrator organizationResourceMigrator;
 
+    @Autowired
+    @Qualifier("authenticationCache")
+    private Cache<Long, Authentication> authenticationCache;
     private final OrganizationMapper organizationMapper = OrganizationMapper.INSTANCE;
     private final SecurityManager securityManager;
     private final LoginHistoryService loginHistoryService;
@@ -137,6 +145,18 @@ public class CustomAuthenticationSuccessHandler extends SavedRequestAwareAuthent
             // not affect BUC(/login/oauth2/code/buc)
             if (requestURI.contains("/login")) {
                 SuccessResponse<String> successResponse = Responses.success("ok");
+                /**
+                 * todo 在这里将authentication对象生成token，放在响应头中传回前端。
+                 */
+                HashMap<String, Object> hashMap = new HashMap<>();
+                User user = (User) authentication.getPrincipal();
+                hashMap.put(JwtProperties.ID, user.getId());
+                hashMap.put(JwtProperties.PRINCIPAL, user.getAccountName());
+                hashMap.put(JwtProperties.ORGANIZATION_ID, user.getOrganizationId());
+                hashMap.put(JwtProperties.ORGANIZATION_TYPE, JsonUtils.toJson(user.getOrganizationType()));
+                String token = JwtUtils.sign(hashMap);
+                httpServletResponse.setHeader(JwtProperties.TOKEN, token);
+                authenticationCache.put(user.getId(), authentication);
                 WebResponseUtils.writeJsonObjectWithOkStatus(successResponse, httpServletRequest, httpServletResponse);
             } else {
                 log.info("Login from non-login API, requestURI={}", requestURI);

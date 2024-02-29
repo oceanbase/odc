@@ -27,6 +27,7 @@ import org.springframework.security.config.annotation.web.builders.WebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.context.SecurityContextRepository;
 import org.springframework.web.servlet.LocaleResolver;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -36,8 +37,8 @@ import com.oceanbase.odc.service.captcha.CaptchaAuthenticationProcessingFilter;
 import com.oceanbase.odc.service.iam.auth.CustomAuthenticationEntryPoint;
 import com.oceanbase.odc.service.iam.auth.CustomAuthenticationFailureHandler;
 import com.oceanbase.odc.service.iam.auth.CustomAuthenticationSuccessHandler;
-import com.oceanbase.odc.service.iam.auth.CustomInvalidSessionStrategy;
 import com.oceanbase.odc.service.iam.auth.CustomLogoutSuccessHandler;
+import com.oceanbase.odc.service.iam.auth.JwtSecurityContextRepository;
 import com.oceanbase.odc.service.iam.auth.UsernamePasswordConfigureHelper;
 import com.oceanbase.odc.service.iam.auth.bastion.BastionAuthenticationProcessingFilter;
 import com.oceanbase.odc.service.iam.auth.bastion.BastionAuthenticationProvider;
@@ -116,6 +117,9 @@ public class WebSecurityConfiguration extends WebSecurityConfigurerAdapter {
     @Autowired
     private LdapConfigRegistrationManager ldapConfigRegistrationManager;
 
+    @Autowired
+    private JwtSecurityContextRepository jwtSecurityContextRepository;
+
     private BastionAuthenticationProvider bastionAuthenticationProvider() {
         return new BastionAuthenticationProvider(bastionUserDetailService);
     }
@@ -144,6 +148,14 @@ public class WebSecurityConfiguration extends WebSecurityConfigurerAdapter {
         oauth2SecurityConfigureHelper.configure(http);
         ldapSecurityConfigureHelper.configure(http, authenticationManager());
 
+        http.setSharedObject(SecurityContextRepository.class, jwtSecurityContextRepository);
+
+        /**
+         * todo 取消session
+         */
+        http.sessionManagement()
+                .sessionCreationPolicy(SessionCreationPolicy.STATELESS);
+
         // @formatter:off
         http.exceptionHandling()
                 .authenticationEntryPoint(new CustomAuthenticationEntryPoint(commonSecurityProperties.getLoginPage(),localeResolver))
@@ -156,14 +168,13 @@ public class WebSecurityConfiguration extends WebSecurityConfigurerAdapter {
                 .logoutSuccessHandler(new CustomLogoutSuccessHandler())
                 .deleteCookies(commonSecurityProperties.getSessionCookieKey())
                 .invalidateHttpSession(true).permitAll()
-            .and()
+/*            .and()
                 .sessionManagement()
                 // SessionCreationPolicy.ALWAYS --> SessionCreationPolicy.IF_REQUIRED，防止登出后再次访问页面生成session造成无法跳转至登录页
                 .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
                 .sessionFixation()
                 .migrateSession()
-                .invalidSessionStrategy(new CustomInvalidSessionStrategy(commonSecurityProperties.getLoginPage(), localeResolver));
-
+                .invalidSessionStrategy(new CustomInvalidSessionStrategy(commonSecurityProperties.getLoginPage(), localeResolver))*/;
         // @formatter:on
         csrfConfigureHelper.configure(http);
 
@@ -176,7 +187,6 @@ public class WebSecurityConfiguration extends WebSecurityConfigurerAdapter {
             http.addFilterBefore(getCaptchaAuthenticationProcessingFilter(),
                     UsernamePasswordAuthenticationFilter.class);
         }
-
     }
 
     private CaptchaAuthenticationProcessingFilter getCaptchaAuthenticationProcessingFilter() {

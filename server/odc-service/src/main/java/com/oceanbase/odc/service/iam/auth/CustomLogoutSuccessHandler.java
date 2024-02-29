@@ -21,12 +21,17 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.web.authentication.logout.LogoutSuccessHandler;
 
+import com.github.benmanes.caffeine.cache.Cache;
 import com.oceanbase.odc.service.common.response.Responses;
 import com.oceanbase.odc.service.common.response.SuccessResponse;
 import com.oceanbase.odc.service.common.util.WebResponseUtils;
+import com.oceanbase.odc.service.iam.model.JwtProperties;
+import com.oceanbase.odc.service.iam.model.User;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -36,12 +41,22 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 public class CustomLogoutSuccessHandler implements LogoutSuccessHandler {
+    @Autowired
+    @Qualifier("authenticationCache")
+    private Cache<Long, Authentication> authenticationCache;
 
     public CustomLogoutSuccessHandler() {}
 
     @Override
     public void onLogoutSuccess(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse,
             Authentication authentication) throws IOException, ServletException {
+
+        httpServletResponse.setHeader(JwtProperties.TOKEN, JwtProperties.AUTHENTICATION_BLANK_VALUE);
+        User user = (User) authentication.getPrincipal();
+        if(authenticationCache.getIfPresent(user.getId())!=null){
+            authenticationCache.invalidate(user.getId());
+        }
+
         if (authentication != null && authentication.getDetails() != null) {
             try {
                 httpServletRequest.getSession().invalidate();
