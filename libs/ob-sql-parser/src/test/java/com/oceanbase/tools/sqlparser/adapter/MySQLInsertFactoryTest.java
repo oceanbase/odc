@@ -134,6 +134,46 @@ public class MySQLInsertFactoryTest {
         Assert.assertEquals(actual, expect);
     }
 
+    @Test
+    public void generate_valuesWithAlias_succeed() {
+        StatementFactory<Insert> factory = new MySQLInsertFactory(
+                getInsertContext("insert a.b values(1,default) as new(a,b)"));
+        Insert actual = factory.generate();
+
+        RelationFactor factor = new RelationFactor("b");
+        factor.setSchema("a");
+        InsertTable insertTable = new InsertTable(factor);
+        List<List<Expression>> values = new ArrayList<>();
+        values.add(Arrays.asList(new ConstExpression("1"), new ConstExpression("default")));
+        insertTable.setValues(values);
+        insertTable.setAlias("new");
+        insertTable.setAliasColumns(Arrays.asList("a", "b"));
+        Insert expect = new Insert(Collections.singletonList(insertTable), null);
+        Assert.assertEquals(actual, expect);
+    }
+
+    @Test
+    public void generate_setColumnWithAlias_succeed() {
+        StatementFactory<Insert> factory = new MySQLInsertFactory(
+                getInsertContext(
+                        "insert ignore into a.b partition (p1,p2) set tb.col2=default as new(c,d) on duplicate key update tb.col1='abcd'"));
+        Insert actual = factory.generate();
+
+        RelationFactor factor = new RelationFactor("b");
+        factor.setSchema("a");
+        InsertTable insertTable = new InsertTable(factor);
+        insertTable.setAlias("new");
+        insertTable.setAliasColumns(Arrays.asList("c", "d"));
+        insertTable.setSetColumns(Collections.singletonList(
+                new SetColumn(new ColumnReference(null, "tb", "col2"), new ConstExpression("default"))));
+        insertTable.setPartitionUsage(new PartitionUsage(PartitionType.PARTITION, Arrays.asList("p1", "p2")));
+        Insert expect = new Insert(Collections.singletonList(insertTable), null);
+        expect.setIgnore(true);
+        SetColumn setColumn = new SetColumn(new ColumnReference(null, "tb", "col1"), new ConstExpression("'abcd'"));
+        expect.setOnDuplicateKeyUpdateColumns(Collections.singletonList(setColumn));
+        Assert.assertEquals(actual, expect);
+    }
+
     private Insert_stmtContext getInsertContext(String expr) {
         OBLexer lexer = new OBLexer(CharStreams.fromString(expr));
         CommonTokenStream tokens = new CommonTokenStream(lexer);

@@ -172,6 +172,7 @@ public enum ErrorCodes implements ErrorCode {
     OscLockUserRequired,
     OscUnsupportedForeignKeyTable,
     OscColumnNameInconsistent,
+    OscAddPrimaryKeyColumnNotAllowed,
     OscDataCheckInconsistent,
     OscSwapTableStarted,
     OmsBindTargetNotFound,
@@ -234,6 +235,7 @@ public enum ErrorCodes implements ErrorCode {
     ObGetPlanExplainEmpty,
     ObGetFullLinkTraceFailed,
     ObFullLinkTraceNotSupported,
+    ObFullLinkTraceNotEnabled,
 
     ObPreCheckDdlFailed,
     ObCopySchemaFailed,

@@ -624,7 +624,6 @@ public class FlowInstanceService {
             DispatchResponse response = requestDispatcher.forward(executorInfo.getHost(), executorInfo.getPort());
             return response.getContentByType(new TypeReference<SuccessResponse<FlowInstanceDetailResp>>() {}).getData();
         }
-        completeApprovalInstance(id, instance -> instance.approve(message, !skipAuth), skipAuth);
         if (notificationProperties.isEnabled()) {
             try {
                 Event event =
@@ -634,11 +633,21 @@ public class FlowInstanceService {
                 log.warn("Failed to enqueue event.", e);
             }
         }
+        completeApprovalInstance(id, instance -> instance.approve(message, !skipAuth), skipAuth);
         return FlowInstanceDetailResp.withIdAndType(id, taskEntity.getTaskType());
     }
 
     @Transactional(rollbackFor = Exception.class)
     public FlowInstanceDetailResp reject(@NotNull Long id, String message, Boolean skipAuth) {
+        if (notificationProperties.isEnabled()) {
+            try {
+                Event event =
+                        eventBuilder.ofRejectedTask(getTaskByFlowInstanceId(id), authenticationFacade.currentUserId());
+                broker.enqueueEvent(event);
+            } catch (Exception e) {
+                log.warn("Failed to enqueue event.", e);
+            }
+        }
         completeApprovalInstance(id, instance -> {
             instance.disApprove(message, !skipAuth);
             flowInstanceRepository.updateStatusById(instance.getFlowInstanceId(), FlowStatus.REJECTED);
@@ -649,15 +658,6 @@ public class FlowInstanceService {
         FlowInstance flowInstance =
                 optional.orElseThrow(() -> new NotFoundException(ResourceType.ODC_FLOW_INSTANCE, "id", id));
         cancelAllRelatedExternalInstance(flowInstance);
-        if (notificationProperties.isEnabled()) {
-            try {
-                Event event =
-                        eventBuilder.ofRejectedTask(getTaskByFlowInstanceId(id), authenticationFacade.currentUserId());
-                broker.enqueueEvent(event);
-            } catch (Exception e) {
-                log.warn("Failed to enqueue event.", e);
-            }
-        }
         return FlowInstanceDetailResp.withIdAndType(id, getTaskByFlowInstanceId(id).getTaskType());
     }
 
