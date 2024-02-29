@@ -28,7 +28,7 @@
       STATUS,
       CREATE_TIME
     FROM
-      GV$OB_UNITS;
+      oceanbase.GV$OB_UNITS;
 - name: oceanbase mysql query cluster info
   dialect_type: OB_MYSQL
   tags: [ 'dba','oceanbase' ]
@@ -38,8 +38,11 @@
   description: 'Query OceanBase cluster information'
   prefix: query_cluster_info
   body: |
-    select NAME, VALUE from GV$OB_PARAMETERS 
-    WHERE NAME IN ('cluster', 'cluster_id');
+    SELECT NAME, VALUE 
+    FROM 
+      oceanbase.GV$OB_PARAMETERS 
+    WHERE 
+      NAME IN ('cluster', 'cluster_id');
 - name: oceanbase mysql query major compaction
   dialect_type: OB_MYSQL
   tags: [ 'dba','oceanbase' ]
@@ -50,18 +53,18 @@
   prefix: query_major_compaction
   body: |
     SELECT
-    FROZEN_SCN,
-    FROZEN_TIME,
-    GLOBAL_BROADCAST_SCN,
-    LAST_SCN,
-    LAST_FINISH_TIME,
-    START_TIME,
-    STATUS,
-    IS_ERROR,
-    IS_SUSPENDED,
-    INFO
+      FROZEN_SCN,
+      FROZEN_TIME,
+      GLOBAL_BROADCAST_SCN,
+      LAST_SCN,
+      LAST_FINISH_TIME,
+      START_TIME,
+      STATUS,
+      IS_ERROR,
+      IS_SUSPENDED,
+      INFO
     FROM
-    DBA_OB_MAJOR_COMPACTION;
+      oceanbase.DBA_OB_MAJOR_COMPACTION;
 - name: oceanbase mysql query tenant information
   dialect_type: OB_MYSQL
   tags: [ 'dba','oceanbase' ]
@@ -83,4 +86,4 @@
       IN_RECYCLEBIN,
       TIMESTAMPDIFF(SECOND,CREATE_TIME,NOW()) AS EXIST_SECONDS
     FROM
-      DBA_OB_TENANTS;
+      oceanbase.DBA_OB_TENANTS;

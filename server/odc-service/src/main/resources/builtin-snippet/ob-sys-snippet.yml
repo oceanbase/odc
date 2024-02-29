@@ -11,7 +11,7 @@
     SELECT
       ZONE, CREATE_TIME, MODIFY_TIME, STATUS, IDC, REGION, TYPE
     FROM 
-      DBA_OB_ZONES;
+      oceanbase.DBA_OB_ZONES;
 - name: oceanbase sys query server list
   dialect_type: OB_MYSQL
   tags: [ 'dba', 'oceanbase', 'sys' ]
@@ -31,6 +31,6 @@
       STATUS,
       SUBSTR(BUILD_VERSION, 1, INSTR(BUILD_VERSION, '-') - 1) AS BUILD_VERSION
     FROM 
-      DBA_OB_SERVERS
+      oceanbase.DBA_OB_SERVERS
     ORDER BY
       ZONE, SVR_IP;
