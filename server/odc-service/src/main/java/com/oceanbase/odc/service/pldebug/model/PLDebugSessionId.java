@@ -19,6 +19,6 @@ import lombok.Data;
 
 @Data
 public class PLDebugSessionId {
-    private String realId;
+    private String uuid;
     private String from;
 }

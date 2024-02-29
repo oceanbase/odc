@@ -180,7 +180,7 @@ public class PLDebugService {
 
     private String generateSessionId() {
         PLDebugSessionId id = new PLDebugSessionId();
-        id.setRealId(RandomStringUtils.random(10, UUID.randomUUID().toString().replace("-", "")));
+        id.setUuid(RandomStringUtils.random(10, UUID.randomUUID().toString().replace("-", "")));
         id.setFrom(stateHostGenerator.getHost());
         return Base64.getEncoder().encodeToString(JsonUtils.toJson(id).getBytes());
     }
