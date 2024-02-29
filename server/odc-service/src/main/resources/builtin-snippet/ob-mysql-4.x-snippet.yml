@@ -149,7 +149,7 @@
     -- * If the value is NULL, it indicates that either no first row has been emitted or OB_ITER_END has not been emitted.
     
     
-    set @target_trace_id='${1:target_trace_id}
+    set @target_trace_id='${1:target_trace_id}'
 
     -- query summary
     select
