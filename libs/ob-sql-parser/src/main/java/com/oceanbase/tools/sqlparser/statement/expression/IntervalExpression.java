@@ -16,6 +16,7 @@
 package com.oceanbase.tools.sqlparser.statement.expression;
 
 import org.antlr.v4.runtime.ParserRuleContext;
+import org.antlr.v4.runtime.tree.TerminalNode;
 
 import com.oceanbase.tools.sqlparser.statement.Expression;
 
@@ -40,6 +41,13 @@ public class IntervalExpression extends BaseExpression {
     public IntervalExpression(@NonNull ParserRuleContext context,
             @NonNull Expression target, @NonNull String dateUnit) {
         super(context);
+        this.target = target;
+        this.dateUnit = dateUnit;
+    }
+
+    public IntervalExpression(TerminalNode beginNode, ParserRuleContext endRule,
+            @NonNull Expression target, @NonNull String dateUnit) {
+        super(beginNode, endRule);
         this.target = target;
         this.dateUnit = dateUnit;
     }

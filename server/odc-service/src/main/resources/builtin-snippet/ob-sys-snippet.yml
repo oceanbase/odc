@@ -1,0 +1,36 @@
+# built-in snippet for OceanBase sys tenant
+- name: oceanbase sys query zone list
+  dialect_type: OB_MYSQL
+  tags: [ 'dba', 'oceanbase', 'sys' ]
+  type: DQL
+  min_version: 4.0.0
+  max_version: ~
+  description: 'Query all zones for OceanBase cluster'
+  prefix: query_zone_list
+  body: |
+    SELECT
+      ZONE, CREATE_TIME, MODIFY_TIME, STATUS, IDC, REGION, TYPE
+    FROM 
+      oceanbase.DBA_OB_ZONES;
+- name: oceanbase sys query server list
+  dialect_type: OB_MYSQL
+  tags: [ 'dba', 'oceanbase', 'sys' ]
+  type: DQL
+  min_version: 4.0.0
+  max_version: ~
+  description: 'Query all servers for OceanBase cluster'
+  prefix: query_server_list
+  body: |
+    SELECT
+      ZONE,
+      SVR_IP,
+      SVR_PORT,
+      WITH_ROOTSERVER,
+      START_SERVICE_TIME,
+      STOP_TIME,
+      STATUS,
+      SUBSTR(BUILD_VERSION, 1, INSTR(BUILD_VERSION, '-') - 1) AS BUILD_VERSION
+    FROM 
+      oceanbase.DBA_OB_SERVERS
+    ORDER BY
+      ZONE, SVR_IP;

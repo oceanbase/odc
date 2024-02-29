@@ -109,7 +109,10 @@ public class OracleDataTypeFactory extends OBParserBaseVisitor<DataType> impleme
 
     @Override
     public DataType visitData_type(Data_typeContext ctx) {
-        if (ctx.STRING_VALUE() != null || ctx.JSON() != null || ctx.XMLTYPE() != null) {
+        if (ctx.STRING_VALUE() != null
+                || ctx.JSON() != null
+                || ctx.XMLTYPE() != null
+                || ctx.SDO_GEOMETRY() != null) {
             return new GeneralDataType(ctx, ctx.getChild(0).getText(), null);
         } else if (ctx.character_type_i() != null) {
             CharacterType type = new CharacterType(ctx, (CharacterType) visit(ctx.character_type_i()));
