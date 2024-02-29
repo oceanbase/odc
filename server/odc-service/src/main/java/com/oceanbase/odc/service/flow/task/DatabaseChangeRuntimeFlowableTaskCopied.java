@@ -228,21 +228,26 @@ public class DatabaseChangeRuntimeFlowableTaskCopied extends BaseODCFlowTaskDele
 
     private void modifyTimeoutIfTimeConsumingSqlExists(DelegateExecution execution, DatabaseChangeParameters parameters,
             DatabaseChangeTaskParameters taskParameters, TaskEntity taskEntity) {
-        Long preCheckTaskId = FlowTaskUtil.getPreCheckTaskId(execution);
-        TaskEntity preCheckTask = taskService.detail(preCheckTaskId);
+        try {
+            Long preCheckTaskId = FlowTaskUtil.getPreCheckTaskId(execution);
+            TaskEntity preCheckTask = taskService.detail(preCheckTaskId);
 
-        PreCheckTaskResult preCheckResult = JsonUtils.fromJson(preCheckTask.getResultJson(), PreCheckTaskResult.class);
-        Validate.notNull(preCheckResult, "Pre check task result can not be null");
-        long autoModifiedTimeout = flowTaskProperties.getIndexChangeMaxTimeoutMillisecond();
+            PreCheckTaskResult preCheckResult =
+                    JsonUtils.fromJson(preCheckTask.getResultJson(), PreCheckTaskResult.class);
+            Validate.notNull(preCheckResult, "Pre check task result can not be null");
+            long autoModifiedTimeout = flowTaskProperties.getIndexChangeMaxTimeoutMillisecond();
 
-        if (Objects.nonNull(preCheckResult.getSqlCheckResult())
-                && preCheckResult.getSqlCheckResult().isTimeConsumingSqlExists()
-                && autoModifiedTimeout > parameters.getTimeoutMillis()) {
-            parameters.setTimeoutMillis(autoModifiedTimeout);
-            taskParameters.setAutoModifyTimeout(true);
-            taskEntity.setParametersJson(JsonUtils.toJson(parameters));
-            taskService.updateParametersJson(taskEntity);
-        } else {
+            if (Objects.nonNull(preCheckResult.getSqlCheckResult())
+                    && preCheckResult.getSqlCheckResult().isTimeConsumingSqlExists()
+                    && autoModifiedTimeout > parameters.getTimeoutMillis()) {
+                parameters.setTimeoutMillis(autoModifiedTimeout);
+                taskParameters.setAutoModifyTimeout(true);
+                taskEntity.setParametersJson(JsonUtils.toJson(parameters));
+                taskService.updateParametersJson(taskEntity);
+            } else {
+                taskParameters.setAutoModifyTimeout(false);
+            }
+        } catch (Exception e) {
             taskParameters.setAutoModifyTimeout(false);
         }
     }
