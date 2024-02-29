@@ -140,7 +140,7 @@
     -- manual sql plan monitor steps
     -- 1. add /*+ monitor */ HINT for the sql statement you want to trace by sql plan monitor.
     -- 2. then execute the target sql statement.
-    -- 3. collect summary and details informations use below 2 query.
+    -- 3. collect summary and details information use below 2 query.
     -- 4. export collect data, transfer to OceanBase support team.
     --
     -- Operator explanation:
