@@ -87,3 +87,42 @@
       TIMESTAMPDIFF(SECOND,CREATE_TIME,NOW()) AS EXIST_SECONDS
     FROM
       oceanbase.DBA_OB_TENANTS;
+- name: oceanbase mysql query module memory usage
+  dialect_type: OB_MYSQL
+  tags: [ 'dba','oceanbase' ]
+  type: DQL
+  min_version: 4.0.0
+  max_version: ~
+  description: Query module memory usage for OceanBase mysql mode tenant
+  prefix: query_module_memory_usage
+  body: |
+    SELECT
+      TENANT_ID,
+      SVR_IP,
+      SVR_PORT,
+      MOD_NAME,
+      ROUND(SUM(USED) / 1024 / 1024, 2) AS USED_MB
+    FROM
+      OCEANBASE.GV\$OB_MEMORY
+    GROUP BY MOD_NAME, SVR_IP
+    ORDER BY USED DESC;
+- name: oceanbase mysql query module memory usage
+  dialect_type: OB_MYSQL
+  tags: [ 'dba','oceanbase' ]
+  type: DQL
+  min_version: 4.0.0
+  max_version: ~
+  description: Query memstore information for OceanBase mysql mode tenant
+  prefix: query_memstore_information
+  body: |
+    SELECT
+      SVR_IP,
+      SVR_PORT,
+      TENANT_ID,
+      ROUND(ACTIVE_SPAN / 1024 / 1024 / 1024, 2) ACTIVE_GB,
+      ROUND(FREEZE_TRIGGER / 1024 / 1024 / 1024, 2) FREEZE_TRIGGER_GB,
+      ROUND(MEMSTORE_LIMIT / 1024 / 1024 / 1024, 2) MEMSTORE_LIMIT_GB,
+      ROUND(MEMSTORE_USED / 1024 / 1024 / 1024, 2) MEMSTORE_USED_GB,
+      FREEZE_CNT
+    FROM
+     oceanbase.GV\$OB_MEMSTORE;
