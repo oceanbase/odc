@@ -40,7 +40,6 @@ import com.oceanbase.odc.core.shared.exception.NotFoundException;
 import com.oceanbase.odc.metadb.regulation.risklevel.RiskDetectRuleEntity;
 import com.oceanbase.odc.metadb.regulation.risklevel.RiskDetectRuleRepository;
 import com.oceanbase.odc.metadb.regulation.risklevel.RiskDetectRuleSpecs;
-import com.oceanbase.odc.service.common.model.InnerUser;
 import com.oceanbase.odc.service.iam.UserService;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.regulation.risklevel.model.QueryRiskDetectRuleParams;
@@ -171,7 +170,6 @@ public class RiskDetectService {
         rule.setRiskLevel(
                 riskLevelService.findById(ruleEntity.getRiskLevelId()).orElseThrow(() -> new NotFoundException(
                         ResourceType.ODC_RISK_LEVEL, "id", ruleEntity.getRiskLevelId())));
-        rule.setCreator(new InnerUser(userService.nullSafeGet(ruleEntity.getCreatorId())));
         return rule;
     }
 

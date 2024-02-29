@@ -113,7 +113,7 @@ public class V42412AddDefaultRiskDetectRules implements JdbcMigratable {
                 InnerRiskDetectRule rule = rules.get(i);
                 ps.setString(1, DEFAULT_HIGH_RISK_DETECT_NAME);
                 ps.setLong(2, rule.getRiskLevelId());
-                ps.setLong(3, 1L);
+                ps.setLong(3, -1L);
                 ps.setLong(4, rule.getOrganizationId());
                 ps.setString(5, DEFAULT_HIGH_RISK_DETECT_RULE_VALUE);
             }
