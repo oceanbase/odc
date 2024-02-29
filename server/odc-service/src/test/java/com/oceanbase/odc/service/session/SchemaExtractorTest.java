@@ -19,6 +19,7 @@ package com.oceanbase.odc.service.session;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 import org.junit.Assert;
@@ -103,6 +104,22 @@ public class SchemaExtractorTest {
         Assert.assertEquals(expect, actual);
     }
 
+    @Test
+    public void testMySQL_ExtractSwitchedSchemaName() {
+        String sql = "use `schema_name`;";
+        Optional<String> actual =
+                SchemaExtractor.extractSwitchedSchemaName(Arrays.asList(SqlTuple.newTuple(sql)), DialectType.OB_MYSQL);
+        Assert.assertEquals("schema_name", actual.get());
+    }
+
+    @Test
+    public void testMySQL_ExtractSwitchedSchemaName_NotExist() {
+        String sql = "select 1 from dual;";
+        Optional<String> actual =
+                SchemaExtractor.extractSwitchedSchemaName(Arrays.asList(SqlTuple.newTuple(sql)), DialectType.OB_MYSQL);
+        Assert.assertFalse(actual.isPresent());
+    }
+
 
     @Test
     public void testOracle_listSchemaName2SqlTypes() {
@@ -182,6 +199,22 @@ public class SchemaExtractorTest {
         Set<String> actual = SchemaExtractor.listSchemaNames(Arrays.asList(sql), DialectType.OB_ORACLE, "DEFAULT");
         Set<String> expect = Collections.singleton("OTHER_SCHEMA");
         Assert.assertEquals(expect, actual);
+    }
+
+    @Test
+    public void testOracle_ExtractSwitchedSchemaName() {
+        String sql = "ALTER SESSION SET CURRENT_SCHEMA = OTHER_SCHEMA";
+        Optional<String> actual =
+                SchemaExtractor.extractSwitchedSchemaName(Arrays.asList(SqlTuple.newTuple(sql)), DialectType.OB_ORACLE);
+        Assert.assertEquals("OTHER_SCHEMA", actual.get());
+    }
+
+    @Test
+    public void testOracle_ExtractSwitchedSchemaName_NotExist() {
+        String sql = "SELECT 1 FROM DUAL;";
+        Optional<String> actual =
+                SchemaExtractor.extractSwitchedSchemaName(Arrays.asList(SqlTuple.newTuple(sql)), DialectType.OB_ORACLE);
+        Assert.assertFalse(actual.isPresent());
     }
 
 }

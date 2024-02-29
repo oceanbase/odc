@@ -32,6 +32,7 @@ import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.constant.OrganizationType;
 import com.oceanbase.odc.core.shared.constant.ResourceRoleName;
 import com.oceanbase.odc.core.shared.exception.AccessDeniedException;
+import com.oceanbase.odc.core.shared.exception.BadRequestException;
 import com.oceanbase.odc.metadb.connection.DatabaseEntity;
 import com.oceanbase.odc.metadb.connection.DatabaseRepository;
 import com.oceanbase.odc.metadb.iam.UserDatabasePermissionEntity;
@@ -91,7 +92,7 @@ public class DatabasePermissionHelper {
                     permissionTypes.stream().filter(e -> CollectionUtils.isEmpty(authorized) || !authorized.contains(e))
                             .collect(Collectors.toSet());
             if (CollectionUtils.isNotEmpty(unAuthorized)) {
-                throw new AccessDeniedException(ErrorCodes.DatabaseAccessDenied,
+                throw new BadRequestException(ErrorCodes.DatabaseAccessDenied,
                         new Object[] {unAuthorized.stream().map(DatabasePermissionType::getLocalizedMessage)
                                 .collect(Collectors.joining(","))},
                         "Lack permission for the database with id " + databaseId);

@@ -22,6 +22,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -67,6 +68,30 @@ import lombok.Getter;
  * @Description: []
  */
 public class SchemaExtractor {
+
+    public static Optional<String> extractSwitchedSchemaName(List<SqlTuple> sqlTuples, DialectType dialectType) {
+        Optional<String> schemaName = Optional.empty();
+        for (SqlTuple sqlTuple : sqlTuples) {
+            try {
+                AbstractSyntaxTree ast = sqlTuple.getAst();
+                if (ast == null) {
+                    sqlTuple.initAst(AbstractSyntaxTreeFactories.getAstFactory(dialectType, 0));
+                    ast = sqlTuple.getAst();
+                }
+                BasicResult basicResult = ast.getParseResult();
+                if (((dialectType.isMysql() || dialectType.isDoris()) && basicResult.getSqlType() == SqlType.USE_DB)
+                        || (dialectType.isOracle() && basicResult.getSqlType() == SqlType.ALTER)) {
+                    Set<String> schemaNames = listSchemaNames(ast, null, dialectType);
+                    if (CollectionUtils.isNotEmpty(schemaNames)) {
+                        schemaName = Optional.of(schemaNames.iterator().next());
+                    }
+                }
+            } catch (Exception e) {
+                // just eat exception due to parse failed
+            }
+        }
+        return schemaName;
+    }
 
     public static Map<String, Set<SqlType>> listSchemaName2SqlTypes(List<SqlTuple> sqlTuples, String defaultSchema,
             DialectType dialectType) {
