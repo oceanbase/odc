@@ -17,6 +17,8 @@ package com.oceanbase.odc.service.rollbackplan;
 
 import java.io.StringReader;
 
+import org.apache.commons.lang3.Validate;
+
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionConstants;
 import com.oceanbase.odc.core.shared.constant.ConnectType;
@@ -27,6 +29,8 @@ import com.oceanbase.odc.service.rollbackplan.obmysql.OBMySqlDeleteRollbackGener
 import com.oceanbase.odc.service.rollbackplan.obmysql.OBMySqlUpdateRollbackGenerator;
 import com.oceanbase.odc.service.rollbackplan.oboracle.OBOracleDeleteRollbackGenerator;
 import com.oceanbase.odc.service.rollbackplan.oboracle.OBOracleUpdateRollbackGenerator;
+import com.oceanbase.odc.service.rollbackplan.oracle.OracleDeleteRollbackGenerator;
+import com.oceanbase.odc.service.rollbackplan.oracle.OracleUpdateRollbackGenerator;
 import com.oceanbase.tools.sqlparser.OBMySQLParser;
 import com.oceanbase.tools.sqlparser.OBOracleSQLParser;
 import com.oceanbase.tools.sqlparser.statement.Statement;
@@ -47,34 +51,60 @@ public class RollbackGeneratorFactory {
     public static GenerateRollbackPlan create(@NonNull String sql, @NonNull RollbackProperties rollbackProperties,
             @NonNull ConnectionSession connectionSession, Long timeOutMilliSeconds) {
         ConnectType connectType = connectionSession.getConnectType();
+        Validate.notNull(connectType, "ConnectType can not be null");
         SyncJdbcExecutor syncJdbcExecutor =
                 connectionSession.getSyncJdbcExecutor(ConnectionSessionConstants.BACKEND_DS_KEY);
+
+        Statement statement;
         if (connectType.getDialectType().isMysql()) {
-            OBMySQLParser parser = new OBMySQLParser();
-            Statement statement = parser.parse(new StringReader(sql));
-            if (statement instanceof Update) {
-                return new OBMySqlUpdateRollbackGenerator(sql, (Update) statement, syncJdbcExecutor,
-                        rollbackProperties, timeOutMilliSeconds);
-            } else if (statement instanceof Delete) {
-                return new OBMySqlDeleteRollbackGenerator(sql, (Delete) statement, syncJdbcExecutor,
-                        rollbackProperties, timeOutMilliSeconds);
-            } else {
-                throw new UnsupportedSqlTypeForRollbackPlanException("Unsupported sql type, sql: " + sql);
-            }
-        } else if (connectType.getDialectType().equals(DialectType.OB_ORACLE)) {
-            OBOracleSQLParser parser = new OBOracleSQLParser();
-            Statement statement = parser.parse(new StringReader(sql));
-            if (statement instanceof Update) {
-                return new OBOracleUpdateRollbackGenerator(sql, (Update) statement, syncJdbcExecutor,
-                        rollbackProperties, timeOutMilliSeconds);
-            } else if (statement instanceof Delete) {
-                return new OBOracleDeleteRollbackGenerator(sql, (Delete) statement, syncJdbcExecutor,
-                        rollbackProperties, timeOutMilliSeconds);
-            } else {
-                throw new UnsupportedSqlTypeForRollbackPlanException("Unsupported sql type, sql: " + sql);
-            }
+            statement = new OBMySQLParser().parse(new StringReader(sql));
+        } else if (connectType.getDialectType().isOracle()) {
+            statement = new OBOracleSQLParser().parse(new StringReader(sql));
         } else {
-            throw new UnsupportedOperationException("Unsupported dialect type");
+            throw new UnsupportedOperationException("Unsupported dialect type: " + connectType.getDialectType());
+        }
+
+        return getRollbackPlan(connectType.getDialectType(), sql, statement, syncJdbcExecutor,
+                rollbackProperties, timeOutMilliSeconds);
+    }
+
+    private static GenerateRollbackPlan getRollbackPlan(DialectType dialectType, String sql, Statement statement,
+            SyncJdbcExecutor syncJdbcExecutor, RollbackProperties rollbackProperties, Long timeOutMilliSeconds) {
+        switch (dialectType) {
+            case MYSQL:
+            case OB_MYSQL:
+            case ODP_SHARDING_OB_MYSQL:
+                if (statement instanceof Update) {
+                    return new OBMySqlUpdateRollbackGenerator(sql, (Update) statement, syncJdbcExecutor,
+                            rollbackProperties, timeOutMilliSeconds);
+                } else if (statement instanceof Delete) {
+                    return new OBMySqlDeleteRollbackGenerator(sql, (Delete) statement, syncJdbcExecutor,
+                            rollbackProperties, timeOutMilliSeconds);
+                } else {
+                    throw new UnsupportedSqlTypeForRollbackPlanException("Unsupported sql type, sql: " + sql);
+                }
+            case OB_ORACLE:
+                if (statement instanceof Update) {
+                    return new OBOracleUpdateRollbackGenerator(sql, (Update) statement, syncJdbcExecutor,
+                            rollbackProperties, timeOutMilliSeconds);
+                } else if (statement instanceof Delete) {
+                    return new OBOracleDeleteRollbackGenerator(sql, (Delete) statement, syncJdbcExecutor,
+                            rollbackProperties, timeOutMilliSeconds);
+                } else {
+                    throw new UnsupportedSqlTypeForRollbackPlanException("Unsupported sql type, sql: " + sql);
+                }
+            case ORACLE:
+                if (statement instanceof Update) {
+                    return new OracleUpdateRollbackGenerator(sql, (Update) statement, syncJdbcExecutor,
+                            rollbackProperties, timeOutMilliSeconds);
+                } else if (statement instanceof Delete) {
+                    return new OracleDeleteRollbackGenerator(sql, (Delete) statement, syncJdbcExecutor,
+                            rollbackProperties, timeOutMilliSeconds);
+                } else {
+                    throw new UnsupportedSqlTypeForRollbackPlanException("Unsupported sql type, sql: " + sql);
+                }
+            default:
+                throw new UnsupportedOperationException("Unsupported dialect type: " + dialectType);
         }
     }
 
