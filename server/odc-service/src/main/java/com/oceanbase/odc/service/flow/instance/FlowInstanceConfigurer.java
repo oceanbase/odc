@@ -381,8 +381,9 @@ public class FlowInstanceConfigurer extends GraphConfigurer<FlowInstance, BaseFl
         if (sequenceFlowBuilder != null) {
             targetExecution.next(gatewayBuilder, this.sequenceFlowBuilder);
             sequenceFlowBuilder = null;
+        }else {
+            targetExecution.next(gatewayBuilder);
         }
-        targetExecution.next(gatewayBuilder);
         if (log.isDebugEnabled()) {
             log.debug("Set up the gateway node succeed, intanceType={}, activityId={}, name={}",
                     nextNode.getNodeType(), gatewayBuilder.getGraphId(), gatewayBuilder.getName());
