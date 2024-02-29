@@ -89,6 +89,7 @@ public class EnvironmentService {
     private final List<Consumer<EnvironmentDeleteEvent>> preDeleteHooks = new ArrayList<>();
     private final List<Consumer<EnvironmentDisableEvent>> preDisableHooks = new ArrayList<>();
     private final Set<String> DEFAULT_ENV_NAMES = new HashSet<>();
+
     @PostConstruct
     public void init() {
         DEFAULT_ENV_NAMES.add("开发");
@@ -110,7 +111,8 @@ public class EnvironmentService {
     public Environment create(@NotNull @Valid CreateEnvironmentReq req) {
         PreConditions.validNoDuplicated(ResourceType.ODC_ENVIRONMENT, "name", req.getName(),
                 () -> exists(req.getName()));
-        PreConditions.validArgumentState(!DEFAULT_ENV_NAMES.contains(req.getName()), ErrorCodes.UnavailableName, new Object[]{req.getName()}, "The environment name is not allowed");
+        PreConditions.validArgumentState(!DEFAULT_ENV_NAMES.contains(req.getName()), ErrorCodes.UnavailableName,
+                new Object[] {req.getName()}, "The environment name is not allowed");
 
         Ruleset savedRuleset = rulesetService.create(buildRuleset(req.getName(), req.getDescription()));
         List<Rule> copiedRules = ruleService.list(req.getCopiedRulesetId(), new QueryRuleMetadataParams());

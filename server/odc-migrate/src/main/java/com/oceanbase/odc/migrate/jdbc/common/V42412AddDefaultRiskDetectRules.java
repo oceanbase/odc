@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 OceanBase.
+ * Copyright (c) 2023 OceanBase.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.oceanbase.odc.migrate.jdbc.common;
 
 import java.sql.PreparedStatement;
@@ -21,10 +20,8 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import javax.sql.DataSource;
 
@@ -50,7 +47,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @Migratable(version = "4.2.4.12", description = "add default risk level detect rules")
 public class V42412AddDefaultRiskDetectRules implements JdbcMigratable {
-    private static final String DEFAULT_HIGH_RISK_DETECT_RULE_VALUE        =
+    private static final String DEFAULT_HIGH_RISK_DETECT_RULE_VALUE =
             "{\"booleanOperator\":\"OR\",\"children\":[{\"expression\":\"ENVIRONMENT_NAME\",\"operator\":\"EQUALS\",\"type\":\"CONDITION\",\"value\":\"${com.oceanbase.odc.builtin-resource.collaboration.environment.prod.name}\"},{\"expression\":\"TASK_TYPE\",\"operator\":\"IN\",\"type\":\"CONDITION\",\"value\":[\"APPLY_PROJECT_PERMISSION\",\"APPLY_DATABASE_PERMISSION\"]}],\"type\":\"CONDITION_GROUP\"}";
     private static final String DEFAULT_HIGH_RISK_DETECT_NAME = "default high risk level detect rule";
 
@@ -94,7 +91,7 @@ public class V42412AddDefaultRiskDetectRules implements JdbcMigratable {
 
     private List<InnerRiskDetectRule> getOrgId2HighRiskLevelIdMap(List<Long> organizationIds) {
         String sql =
-            "select id, organization_id from regulation_risklevel where level = 3 and organization_id in (:organizationIds)";
+                "select id, organization_id from regulation_risklevel where level = 3 and organization_id in (:organizationIds)";
         Map<String, List<Long>> params = Collections.singletonMap("organizationIds", organizationIds);
         return namedParameterJdbcTemplate.query(sql, params, rs -> {
             List<InnerRiskDetectRule> rules = new ArrayList<>();
@@ -109,7 +106,7 @@ public class V42412AddDefaultRiskDetectRules implements JdbcMigratable {
     private void batchInsertRules(List<InnerRiskDetectRule> rules) {
         log.info("start to batch insert default risk detect rules");
         String sql =
-            "INSERT INTO regulation_riskdetect_rule (create_time, update_time, name, risk_level_id, is_builtin, creator_id, organization_id, value_json) values (now(), now(), ?, ?, 1, ?, ?, ?) on duplicate key update id = id";
+                "INSERT INTO regulation_riskdetect_rule (create_time, update_time, name, risk_level_id, is_builtin, creator_id, organization_id, value_json) values (now(), now(), ?, ?, 1, ?, ?, ?) on duplicate key update id = id";
         int[] affectedRows = jdbcTemplate.batchUpdate(sql, new BatchPreparedStatementSetter() {
             @Override
             public void setValues(PreparedStatement ps, int i) throws SQLException {
@@ -120,13 +117,14 @@ public class V42412AddDefaultRiskDetectRules implements JdbcMigratable {
                 ps.setLong(4, rule.getOrganizationId());
                 ps.setString(5, DEFAULT_HIGH_RISK_DETECT_RULE_VALUE);
             }
+
             @Override
             public int getBatchSize() {
                 return rules.size();
             }
         });
         log.info("batch insert default risk detect rules finished, affected rows: {}",
-            Arrays.stream(affectedRows).sum());
+                Arrays.stream(affectedRows).sum());
     }
 
     @Data
