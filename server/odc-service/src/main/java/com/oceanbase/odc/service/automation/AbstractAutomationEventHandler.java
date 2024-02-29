@@ -15,6 +15,8 @@
  */
 package com.oceanbase.odc.service.automation;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -29,6 +31,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.oceanbase.odc.common.lang.Pair;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
+import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.service.automation.model.AutomationAction;
 import com.oceanbase.odc.service.automation.model.AutomationCondition;
 import com.oceanbase.odc.service.automation.model.AutomationRule;
@@ -125,9 +128,10 @@ public abstract class AbstractAutomationEventHandler implements TriggerEventHand
     }
 
     protected void bindProjectRole(Long userId, AutomationAction action) {
+        ArrayList<ResourceType> resourceTypes = new ArrayList<>(Arrays.asList(ResourceType.ODC_PROJECT));
         Long projectId = ((Integer) action.getArguments().get("projectId")).longValue();
         List<Integer> roleIds = (List<Integer>) action.getArguments().get("roles");
-        List<ProjectMember> members = resourceRoleService.listResourceRoles().stream()
+        List<ProjectMember> members = resourceRoleService.listResourceRoles(resourceTypes).stream()
                 .filter(resourceRole -> roleIds.contains(resourceRole.getId().intValue()))
                 .map(resourceRole -> {
                     ProjectMember member = new ProjectMember();

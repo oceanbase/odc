@@ -16,16 +16,19 @@
 
 package com.oceanbase.odc.service.flow.task;
 
+import java.util.Locale;
 import java.util.Optional;
 
 import org.flowable.engine.delegate.DelegateExecution;
 import org.springframework.beans.factory.annotation.Autowired;
 
+import com.oceanbase.odc.common.i18n.I18n;
 import com.oceanbase.odc.common.util.RetryExecutor;
 import com.oceanbase.odc.core.flow.BaseFlowableDelegate;
 import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.core.shared.constant.FlowStatus;
 import com.oceanbase.odc.metadb.flow.FlowInstanceRepository;
+import com.oceanbase.odc.metadb.regulation.risklevel.RiskLevelRepository;
 import com.oceanbase.odc.service.flow.FlowableAdaptor;
 import com.oceanbase.odc.service.flow.instance.FlowApprovalInstance;
 import com.oceanbase.odc.service.flow.model.FlowNodeStatus;
@@ -36,6 +39,8 @@ import com.oceanbase.odc.service.integration.client.ApprovalClient;
 import com.oceanbase.odc.service.integration.model.ApprovalProperties;
 import com.oceanbase.odc.service.integration.model.IntegrationConfig;
 import com.oceanbase.odc.service.integration.model.TemplateVariables;
+import com.oceanbase.odc.service.integration.model.TemplateVariables.Variable;
+import com.oceanbase.odc.service.regulation.risklevel.RiskLevelService;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -54,6 +59,11 @@ public class CreateExternalApprovalTask extends BaseFlowableDelegate {
     private ApprovalClient approvalClient;
     @Autowired
     private FlowInstanceRepository flowInstanceRepository;
+    @Autowired
+    private RiskLevelService riskLevelService;
+
+    @Autowired
+    RiskLevelRepository riskLevelRepository;
     private final RetryExecutor retryExecutor = RetryExecutor.builder().retryIntervalMillis(1000).retryTimes(3).build();
 
     @Override
@@ -79,6 +89,12 @@ public class CreateExternalApprovalTask extends BaseFlowableDelegate {
             IntegrationConfig config = integrationService.detailWithoutPermissionCheck(externalApprovalId);
             ApprovalProperties properties = ApprovalProperties.from(config);
             TemplateVariables variables = FlowTaskUtil.getTemplateVariables(execution.getVariables());
+
+            // add riskLevel to variables
+            String riskLevelNameKey = riskLevelService.findRawById(Long.valueOf(FlowTaskUtil.getRiskLevel(execution))).get().getName();
+            String riskLevelName = I18n.translate(riskLevelNameKey.substring(2, riskLevelNameKey.length() - 1),null, Locale.US);
+            variables.setAttribute(Variable.RISK_LEVEL, riskLevelName);
+
             String externalFlowInstanceId = approvalClient.start(properties, variables);
             flowApprovalInstance.setExternalFlowInstanceId(externalFlowInstanceId);
             flowApprovalInstance.update();

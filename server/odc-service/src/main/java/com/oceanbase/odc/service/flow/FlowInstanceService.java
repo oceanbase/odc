@@ -24,6 +24,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
@@ -56,6 +57,7 @@ import org.springframework.validation.annotation.Validated;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.oceanbase.odc.common.event.EventPublisher;
+import com.oceanbase.odc.common.i18n.I18n;
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.common.lang.Holder;
 import com.oceanbase.odc.common.util.StringUtils;
@@ -96,6 +98,8 @@ import com.oceanbase.odc.service.connection.CloudMetadataClient;
 import com.oceanbase.odc.service.connection.CloudMetadataClient.CloudPermissionAction;
 import com.oceanbase.odc.service.connection.ConnectionService;
 import com.oceanbase.odc.service.connection.database.DatabaseService;
+import com.oceanbase.odc.service.connection.database.model.Database;
+import com.oceanbase.odc.service.connection.database.model.GetDatabaseOwnerResp;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.connection.model.OBTenant;
 import com.oceanbase.odc.service.dispatch.DispatchResponse;
@@ -245,6 +249,7 @@ public class FlowInstanceService {
     private final List<Consumer<ShadowTableComparingUpdateEvent>> shadowTableComparingTaskHooks = new ArrayList<>();
     private static final long MAX_EXPORT_OBJECT_COUNT = 10000;
     private static final String ODC_SITE_URL = "odc.site.url";
+    private String environmentName;
 
     @PostConstruct
     public void init() {
@@ -829,6 +834,7 @@ public class FlowInstanceService {
         Map<String, Object> variables = new HashMap<>();
         FlowTaskUtil.setFlowInstanceId(variables, flowInstance.getId());
         FlowTaskUtil.setTemplateVariables(variables, buildTemplateVariables(flowInstanceReq, connectionConfig));
+
         initVariables(variables, taskEntity, preCheckTaskEntity, connectionConfig,
                 buildRiskLevelDescriber(flowInstanceReq));
         flowInstance.start(variables);
@@ -973,6 +979,7 @@ public class FlowInstanceService {
         TaskType taskType = flowInstanceReq.getTaskType();
         variables.setAttribute(Variable.TASK_TYPE, taskType.getLocalizedMessage());
         variables.setAttribute(Variable.TASK_DETAILS, JsonUtils.toJson(flowInstanceReq.getParameters()));
+        variables.setAttribute(Variable.TASK_DESCRIPTION,flowInstanceReq.getDescription());
         // set connection related variables
         if (Objects.nonNull(config)) {
             variables.setAttribute(Variable.CONNECTION_NAME, config.getName());
@@ -980,6 +987,30 @@ public class FlowInstanceService {
             for (Entry<String, String> entry : config.getProperties().entrySet()) {
                 variables.setAttribute(Variable.CONNECTION_PROPERTIES, entry.getKey(), entry.getValue());
             }
+        }
+        Database database = databaseService.detail(flowInstanceReq.getDatabaseId());
+        if (Objects.nonNull(database)){
+            String environmentName = database.getEnvironment().getName();
+            environmentName = I18n.translate(environmentName.substring(2, environmentName.length() - 1),null,Locale.US);
+            variables.setAttribute(Variable.ENVIRONMENT_NAME,environmentName);
+            variables.setAttribute(Variable.DATABASE_NAME,database.getName());
+            GetDatabaseOwnerResp databasesOwner = databaseService.getDatabasesOwner(flowInstanceReq.getProjectId(),database.getId());
+
+            List<Long> ownerIds = databasesOwner.getMembers().stream().map(member -> {
+                return member.getId();
+            }).collect(Collectors.toList());
+            variables.setAttribute(Variable.DATABASE_OWNERS_IDS,JsonUtils.toJson(ownerIds));
+
+            List<String> ownerAccount = databasesOwner.getMembers().stream().map(member -> {
+                return member.getAccountName();
+            }).collect(Collectors.toList());
+            variables.setAttribute(Variable.DATABASE_OWNERS_ACCOUNTS,JsonUtils.toJson(ownerAccount));
+
+            List<String> ownerNames = databasesOwner.getMembers().stream().map(member -> {
+                return member.getName();
+            }).collect(Collectors.toList());
+            variables.setAttribute(Variable.DATABASE_OWNERS_NAMES,JsonUtils.toJson(ownerNames));
+
         }
         // set SQL content if task type is DatabaseChange
         if (taskType == TaskType.ASYNC) {

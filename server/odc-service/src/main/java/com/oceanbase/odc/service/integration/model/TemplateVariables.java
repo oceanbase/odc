@@ -61,7 +61,15 @@ public class TemplateVariables implements Serializable {
         CONNECTION_TENANT("connection.tenant"),
         CONNECTION_PROPERTIES("connection.properties"),
         SQL_CONTENT("sql.content"),
-        SQL_CONTENT_JSON_ARRAY("sql.content.json.array");
+        SQL_CONTENT_JSON_ARRAY("sql.content.json.array"),
+        DATABASE_OWNERS_IDS("database.owner.ids"),
+        DATABASE_OWNERS_ACCOUNTS("database.owner.accounts"),
+        DATABASE_OWNERS_NAMES("database.owner.names"),
+        DATABASE_NAME("database.name"),
+        ENVIRONMENT_NAME("environment.name"),
+        TASK_DESCRIPTION("task.description"),
+        RISK_LEVEL("risk.level");
+
 
         private final String key;
 

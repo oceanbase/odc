@@ -20,6 +20,7 @@ import static com.oceanbase.odc.service.captcha.CaptchaConstants.SESSION_KEY_VER
 import java.io.IOException;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 import javax.servlet.http.HttpServletRequest;
 
@@ -39,6 +40,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
+import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.core.shared.exception.BadRequestException;
 import com.oceanbase.odc.service.captcha.CaptchaService;
 import com.oceanbase.odc.service.captcha.VerificationCode;
@@ -331,8 +333,13 @@ public class IamController {
 
     @ApiOperation(value = "listResourceRoles", notes = "list resource roles")
     @RequestMapping(value = "/resourceRoles", method = RequestMethod.GET)
-    public ListResponse<ResourceRole> listResourceRoles() {
-        return Responses.list(resourceRoleService.listResourceRoles());
+    public ListResponse<ResourceRole> listResourceRoles(@RequestParam("resourceType") List<String> resourceType) {
+        // 如果resourceType为空，则设置默认值为ODC_PROJECT
+        if (resourceType == null || resourceType.isEmpty()) {
+            resourceType.add("ODC_PROJECT");
+        }
+        List<ResourceType> resourceTypes = resourceType.stream().map(ResourceType::valueOf).collect(Collectors.toList());
+        return Responses.list(resourceRoleService.listResourceRoles(resourceTypes));
     }
 
     /**

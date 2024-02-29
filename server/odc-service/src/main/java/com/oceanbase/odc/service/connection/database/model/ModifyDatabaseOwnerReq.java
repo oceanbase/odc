@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 OceanBase.
+ * Copyright (c) 2024 OceanBase.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,33 +13,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.oceanbase.odc.service.connection.database.model;
 
-import java.util.List;
 import java.util.Set;
 
 import javax.validation.constraints.NotEmpty;
+import javax.validation.constraints.NotNull;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Data;
-import lombok.NoArgsConstructor;
 
 /**
- * @Author: Lebie
- * @Date: 2023/4/13 11:46
- * @Description: []
+ * ClassName: ModifyDatabaseOwnerReq
+ * Package: com.oceanbase.odc.service.connection.database.model
+ * Description:
+ *
+ * @Author: fenghao
+ * @Create 2024/2/23 18:27
+ * @Version 1.0
  */
-
 @Data
-@Builder
-@NoArgsConstructor(force = true)
-@AllArgsConstructor
-public class TransferDatabasesReq {
-    @NotEmpty
-    private List<Long> databaseIds;
-
-    private Long projectId;
+public class ModifyDatabaseOwnerReq {
+    @NotNull
+    private Set<Long> databaseIds;
 
     private Set<Long> ownerIds;
 }

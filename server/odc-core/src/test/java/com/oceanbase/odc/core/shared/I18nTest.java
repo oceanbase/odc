@@ -29,6 +29,7 @@ import com.oceanbase.odc.common.i18n.I18n;
 public class I18nTest {
     @Rule
     public ExpectedException thrown = ExpectedException.none();
+    private Object[] args;
 
     @Test
     public void translate_HasMessage_Match() {
@@ -39,7 +40,7 @@ public class I18nTest {
 
     @Test
     public void translate_LocaleMissMessage_UseDefault() {
-        String message = I18n.translate("com.oceanbase.odc.ErrorCodes.Success", (Object[]) null, Locale.US);
+        String message = I18n.translate("com.oceanbase.odc.ErrorCodes.Success", args, Locale.US);
         Assert.assertEquals("Success", message);
     }
 

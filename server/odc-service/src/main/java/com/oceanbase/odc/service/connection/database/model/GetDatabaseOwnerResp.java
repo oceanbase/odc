@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 OceanBase.
+ * Copyright (c) 2024 OceanBase.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,33 +13,45 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.oceanbase.odc.service.connection.database.model;
 
 import java.util.List;
-import java.util.Set;
 
-import javax.validation.constraints.NotEmpty;
+import com.oceanbase.odc.core.shared.constant.ResourceRoleName;
 
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 /**
- * @Author: Lebie
- * @Date: 2023/4/13 11:46
- * @Description: []
+ * ClassName: GetDatabaseOwnerResp
+ * Package: com.oceanbase.odc.service.connection.database.model
+ * Description:
+ *
+ * @Author: fenghao
+ * @Create 2024/2/26 15:40
+ * @Version 1.0
  */
-
 @Data
-@Builder
-@NoArgsConstructor(force = true)
+@NoArgsConstructor
 @AllArgsConstructor
-public class TransferDatabasesReq {
-    @NotEmpty
-    private List<Long> databaseIds;
+public class GetDatabaseOwnerResp {
+
+    private Long databaseId;
 
     private Long projectId;
 
-    private Set<Long> ownerIds;
+    private List<Member> members;
+
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class Member {
+        private Long id;
+
+        private String accountName;
+
+        private String name;
+    }
 }
