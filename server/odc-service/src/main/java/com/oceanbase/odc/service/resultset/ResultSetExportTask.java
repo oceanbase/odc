@@ -16,6 +16,7 @@
 package com.oceanbase.odc.service.resultset;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.URL;
 import java.nio.file.Paths;
@@ -128,7 +129,8 @@ public class ResultSetExportTask implements Callable<ResultSetExportResult> {
              */
             File origin = new File(localResultSetFilePath);
             if (!origin.exists()) {
-                FileUtils.touch(origin);
+                // FileUtils.touch(origin);
+                throw new FileNotFoundException("result file not found!");
             }
 
             /*
