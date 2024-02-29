@@ -48,6 +48,8 @@ public class UserConfigService {
     private UserConfigMetaService userConfigMetaService;
     @Autowired
     private UserConfigDAO userConfigDAO;
+    @Autowired
+    private UserConfigFacadeImpl userConfigFacade;
 
     private List<Configuration> defaultConfigurations;
     private Map<String, ConfigurationMeta> configKeyToConfigMeta;
@@ -76,6 +78,7 @@ public class UserConfigService {
 
     public void deleteUserConfigurations(@NotNull Long userId) {
         int affectRows = userConfigDAO.deleteByUserId(userId);
+        userConfigFacade.evictCache(userId);
         log.info("Delete user configurations, userId={}, affectRows={}", userId, affectRows);
     }
 
@@ -103,6 +106,7 @@ public class UserConfigService {
         int affectRows = userConfigDAO.batchUpsert(entities);
         log.info("Update user configurations, userId={}, affectRows={}, configurations={}",
                 userId, affectRows, configurations);
+        userConfigFacade.evictCache(userId);
         return listUserConfigurations(userId);
     }
 
@@ -114,6 +118,7 @@ public class UserConfigService {
         log.info("Update user configuration, userId={}, affectRows={}, configuration={}",
                 userId, affectRows, configuration);
         UserConfigEntity stored = userConfigDAO.queryByUserIdAndKey(userId, configuration.getKey());
+        userConfigFacade.evictCache(userId);
         return Configuration.of(stored);
     }
 

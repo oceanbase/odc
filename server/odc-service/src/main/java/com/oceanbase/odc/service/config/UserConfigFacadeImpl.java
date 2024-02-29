@@ -20,14 +20,20 @@ import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
+import javax.validation.constraints.NotNull;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.LoadingCache;
+import com.oceanbase.odc.common.util.ExceptionUtils;
 import com.oceanbase.odc.service.config.model.Configuration;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
 @Service
 public class UserConfigFacadeImpl implements UserConfigFacade {
     @Autowired
@@ -78,6 +84,15 @@ public class UserConfigFacadeImpl implements UserConfigFacade {
     @Override
     public boolean isContinueExecutionOnError() {
         return getUserConfig(UserConfigKeys.DEFAULT_CONTINUE_EXECUTION_ON_ERROR).equalsIgnoreCase("true");
+    }
+
+    public void evictCache(@NotNull Long userId) {
+        try {
+            userIdToConfigurationsCache.invalidate(userId);
+        } catch (Exception e) {
+            log.warn("Failed to evict cache, userId={}, reason={}",
+                    userId, ExceptionUtils.getRootCauseReason(e));
+        }
     }
 
     private Map<String, Configuration> getUserConfigurations(Long userId) {
