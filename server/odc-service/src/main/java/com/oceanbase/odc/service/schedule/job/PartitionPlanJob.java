@@ -141,6 +141,9 @@ public class PartitionPlanJob implements OdcJob {
 
     private void submitSubDatabaseChangeTask(Long parentFlowInstanceId, Long databaseId,
             List<String> sqls, long timeoutMillis, TaskErrorStrategy errorStrategy) {
+        if (CollectionUtils.isEmpty(sqls)) {
+            return;
+        }
         DatabaseChangeParameters taskParameters = new DatabaseChangeParameters();
         taskParameters.setErrorStrategy(errorStrategy.name());
         StringBuilder sqlContent = new StringBuilder();
