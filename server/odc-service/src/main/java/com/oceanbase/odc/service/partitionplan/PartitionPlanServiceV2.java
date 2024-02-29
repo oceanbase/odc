@@ -281,8 +281,14 @@ public class PartitionPlanServiceV2 {
                 throw new IllegalArgumentException("Unsupported partition type, " + partitionType);
             }
         }
-        Map<PartitionPlanStrategy, List<PartitionPlanKeyConfig>> strategy2PartitionKeyConfigs = tableConfig
-                .getPartitionKeyConfigs().stream().collect(Collectors.groupingBy(PartitionPlanKeyConfig::getStrategy));
+        Map<PartitionPlanStrategy, List<PartitionPlanKeyConfig>> strategy2PartitionKeyConfigs;
+        if (CollectionUtils.isNotEmpty(tableConfig.getPartitionKeyConfigs())) {
+            strategy2PartitionKeyConfigs = tableConfig
+                    .getPartitionKeyConfigs().stream()
+                    .collect(Collectors.groupingBy(PartitionPlanKeyConfig::getStrategy));
+        } else {
+            strategy2PartitionKeyConfigs = new HashMap<>();
+        }
         checkPartitionKeyValue(strategy2PartitionKeyConfigs);
         Map<String, Integer> key2Index = new HashMap<>();
         DBTablePartitionOption partitionOption = partition.getPartitionOption();
