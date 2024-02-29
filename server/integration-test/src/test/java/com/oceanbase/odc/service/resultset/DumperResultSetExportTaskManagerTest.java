@@ -16,7 +16,6 @@
 package com.oceanbase.odc.service.resultset;
 
 import static java.util.concurrent.TimeUnit.SECONDS;
-
 import static org.awaitility.Awaitility.await;
 
 import java.io.File;
@@ -33,6 +32,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 import com.oceanbase.odc.ServiceTestEnv;
 import com.oceanbase.odc.TestConnectionUtil;
+import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionConstants;
 import com.oceanbase.odc.core.session.ConnectionSessionUtil;
@@ -43,6 +43,9 @@ import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.flow.task.model.ResultSetExportResult;
 import com.oceanbase.odc.service.resultset.ResultSetExportTaskParameter.CSVFormat;
 
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
 public class DumperResultSetExportTaskManagerTest extends ServiceTestEnv {
     private static ConnectionSession mysqlSession;
     private static ConnectionSession oracleSession;
@@ -108,8 +111,17 @@ public class DumperResultSetExportTaskManagerTest extends ServiceTestEnv {
         CSVFormat csvFormat = new CSVFormat();
         csvFormat.setColumnDelimiter('"');
         req.setCsvFormat(csvFormat);
+        log.info("startTask_ExportCSV_GenerateFileSuccess");
+        log.info(JsonUtils.toJson(req));
+        mysqlSession.getSyncJdbcExecutor(ConnectionSessionConstants.CONSOLE_DS_KEY).query(req.getSql(),
+                rs -> {
+                    while (rs.next()) {
+                        log.info(rs.getString(1));
+                    }
+                });
         ResultSetExportTaskContext context = manager.start(mysqlConnecitonConfig, req, taskId);
         await().atMost(30, SECONDS).until(context::isDone);
+        log.info(JsonUtils.toJson(context.getTask().getJob().getDataObjectsStatus()));
         File file = Paths.get(basePath, taskId, fileName + req.getFileFormat().getExtension()).toFile();
         LineNumberReader lineNumberReader = new LineNumberReader(new FileReader(file));
         lineNumberReader.skip(Long.MAX_VALUE);
