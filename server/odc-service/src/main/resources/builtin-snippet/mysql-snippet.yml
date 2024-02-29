@@ -6,9 +6,9 @@
   description: 'Create a new table for MySQL'
   prefix: create_table
   body: |
-    CREATE TABLE IF NOT EXISTS table_name (
+    CREATE TABLE IF NOT EXISTS ${1:table_name} (
       id bigint AUTO_INCREMENT NOT NULL COMMENT 'auto increment id',
       create_time DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL COMMENT 'record create time',
       update_time DATETIME ON UPDATE CURRENT_TIMESTAMP NULL COMMENT 'record update time',
-      column_name data_type COMMENT '',
+      ${2:column_name} ${3:data_type} COMMENT '',
     ) COMMENT '';
