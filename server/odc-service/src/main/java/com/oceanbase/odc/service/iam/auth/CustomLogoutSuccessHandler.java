@@ -53,7 +53,7 @@ public class CustomLogoutSuccessHandler implements LogoutSuccessHandler {
 
         httpServletResponse.setHeader(JwtProperties.TOKEN, JwtProperties.AUTHENTICATION_BLANK_VALUE);
         User user = (User) authentication.getPrincipal();
-        if(authenticationCache.getIfPresent(user.getId())!=null){
+        if (authenticationCache.getIfPresent(user.getId()) != null) {
             authenticationCache.invalidate(user.getId());
         }
 
