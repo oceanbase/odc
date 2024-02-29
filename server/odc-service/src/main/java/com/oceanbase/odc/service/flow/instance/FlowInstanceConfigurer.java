@@ -37,6 +37,7 @@ import com.oceanbase.odc.core.flow.builder.EndEventBuilder;
 import com.oceanbase.odc.core.flow.builder.ErrorBoundaryEventBuilder;
 import com.oceanbase.odc.core.flow.builder.ExclusiveGatewayBuilder;
 import com.oceanbase.odc.core.flow.builder.FlowableProcessBuilder;
+import com.oceanbase.odc.core.flow.builder.SequenceFlowBuilder;
 import com.oceanbase.odc.core.flow.builder.ServiceTaskBuilder;
 import com.oceanbase.odc.core.flow.builder.TimerBoundaryEventBuilder;
 import com.oceanbase.odc.core.flow.builder.UserTaskBuilder;
@@ -244,7 +245,6 @@ public class FlowInstanceConfigurer extends GraphConfigurer<FlowInstance, BaseFl
 
         FlowInstanceConfigurer configurer = nextInternal(nextNode, serviceTaskConsumer,
             userManuTaskConsumer, userTimerTaskConsumer);
-
         String userTaskName = FlowNodeType.APPROVAL_TASK.name() + "_callback_task_" + getNameSuffix(nextNode);
         UserTaskBuilder userTaskBuilder = nullSafeGetNodeBuilder(userTaskName, nextNode, () -> {
            return new UserTaskBuilder(userTaskName);
@@ -255,16 +255,19 @@ public class FlowInstanceConfigurer extends GraphConfigurer<FlowInstance, BaseFl
                              + "_callback_gateway_" + getNameSuffix(nextNode);
         ExclusiveGatewayBuilder gatewayBuilder = nullSafeGetNodeBuilder(gatewayName, nextNode,
             () -> new ExclusiveGatewayBuilder(gatewayName));
-        targetExecution.next(userTaskBuilder).next(gatewayBuilder);
+        targetExecution.next(gatewayBuilder);
+
+        this.sequenceFlowBuilder = new ConditionSequenceFlowBuilder(
+            gatewayBuilder.getGraphId() + " -> " ,
+            String.format("${%s}", FlowApprovalInstance.APPROVAL_VARIABLE_NAME));
+
         targetExecution.route(String.format("${!%s}", FlowApprovalInstance.APPROVAL_VARIABLE_NAME),
             this.targetProcessBuilder.endProcess());
-        targetExecution.next(userTaskBuilder, new ConditionSequenceFlowBuilder(
-            gatewayBuilder.getGraphId() + " -> " ,
-            String.format("${%s}", FlowApprovalInstance.APPROVAL_VARIABLE_NAME)));
 
         return configurer;
     }
 
+    private SequenceFlowBuilder sequenceFlowBuilder;
     protected FlowInstanceConfigurer nextInternal(@NonNull FlowTaskInstance nextNode,
             @NonNull Consumer<ServiceTaskBuilder> serviceTaskConsumer,
             @NonNull Consumer<UserTaskBuilder> userManuTaskConsumer,
@@ -375,6 +378,10 @@ public class FlowInstanceConfigurer extends GraphConfigurer<FlowInstance, BaseFl
             gatewayConsumer.accept(builder);
             return builder;
         });
+        if (sequenceFlowBuilder != null) {
+            targetExecution.next(gatewayBuilder, this.sequenceFlowBuilder);
+            sequenceFlowBuilder = null;
+        }
         targetExecution.next(gatewayBuilder);
         if (log.isDebugEnabled()) {
             log.debug("Set up the gateway node succeed, intanceType={}, activityId={}, name={}",

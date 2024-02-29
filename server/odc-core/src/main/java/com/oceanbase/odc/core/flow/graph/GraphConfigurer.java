@@ -55,6 +55,28 @@ public class GraphConfigurer<T extends Graph, V extends GraphVertex> {
         return next(nextNode, weight, null);
     }
 
+    /**
+     * add edge on last vertex
+     * @param graphEdge add graph edge
+     * @return new graph configurer
+     * @param <E>
+     */
+    public <E extends GraphEdge> GraphConfigurer<T, V> next(@NonNull E graphEdge) {
+        V from = last();
+        if (from != null) {
+
+            if (graphEdge == null) {
+                target.insertEdge(from, nextNode, weight);
+            } else {
+                target.insertEdge(from, nextNode, graphEdge);
+            }
+        } else if (!target.contains(nextNode)) {
+            target.insertVertex(nextNode);
+        }
+        graphVertex.add(nextNode);
+        return this;
+    }
+
     public <E extends GraphEdge> GraphConfigurer<T, V> next(@NonNull V nextNode, @NonNull E graphEdge) {
         return next(nextNode, 1, graphEdge);
     }
