@@ -368,8 +368,10 @@ public class SchemaExtractor {
             List<IdentifierContext> identifiers = ctx.identifier();
             if (identifiers.size() == 1) {
                 relationFactorList.add(new RelationFactor(identifiers.get(0).getText()));
-            } else if (identifiers.size() == 2) {
-                RelationFactor relationFactor = new RelationFactor(identifiers.get(1).getText());
+            } else {
+                // If there exists two identifiers, we can not determine weather it is a schema or a package name.
+                // The provisional program is ignoring the package name and always treat it as schema name.
+                RelationFactor relationFactor = new RelationFactor(identifiers.get(identifiers.size() - 1).getText());
                 relationFactor.setSchema(identifiers.get(0).getText());
                 relationFactorList.add(relationFactor);
             }
