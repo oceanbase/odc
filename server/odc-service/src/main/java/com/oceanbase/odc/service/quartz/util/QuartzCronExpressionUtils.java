@@ -106,15 +106,14 @@ public class QuartzCronExpressionUtils {
         return sb.toString();
     }
 
-    public static List<Date> getNextFireTimes(String cronExpression) {
-        return getNextFireTimes(cronExpression, 5);
+    public static List<Date> getNextFiveFireTimes(String cronExpression) {
+        return getNextFiveFireTimes(cronExpression, 5);
     }
 
-    public static List<Date> getNextFireTimes(String cronExpression, int count) {
+    public static List<Date> getNextFiveFireTimes(String cronExpression, int count) {
         try {
             String cron = adaptCronExpression(cronExpression);
-            CronExpression generator =
-                    new CronExpression(cron);
+            CronExpression generator = new CronExpression(cron);
             List<Date> nextFireTimes = new LinkedList<>();
             Date next = generator.getNextValidTimeAfter(new Date());
             while (count > 0) {

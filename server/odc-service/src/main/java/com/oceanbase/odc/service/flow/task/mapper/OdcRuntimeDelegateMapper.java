@@ -24,7 +24,7 @@ import com.oceanbase.odc.service.flow.task.DBStructureComparisonFlowableTask;
 import com.oceanbase.odc.service.flow.task.DataTransferRuntimeFlowableTask;
 import com.oceanbase.odc.service.flow.task.DatabaseChangeRuntimeFlowableTask;
 import com.oceanbase.odc.service.flow.task.MockDataRuntimeFlowableTask;
-import com.oceanbase.odc.service.flow.task.PartitionPlanTask;
+import com.oceanbase.odc.service.flow.task.PartitionPlanRuntimeFlowableTask;
 import com.oceanbase.odc.service.flow.task.PreCheckRuntimeFlowableTask;
 import com.oceanbase.odc.service.flow.task.RollbackPlanRuntimeFlowableTask;
 import com.oceanbase.odc.service.flow.task.ShadowtableSyncRuntimeFlowableTask;
@@ -58,7 +58,7 @@ public class OdcRuntimeDelegateMapper implements RuntimeDelegateMapper {
             case SHADOWTABLE_SYNC:
                 return ShadowtableSyncRuntimeFlowableTask.class;
             case PARTITION_PLAN:
-                return PartitionPlanTask.class;
+                return PartitionPlanRuntimeFlowableTask.class;
             case ALTER_SCHEDULE:
                 return AlterScheduleTask.class;
             case ONLINE_SCHEMA_CHANGE:

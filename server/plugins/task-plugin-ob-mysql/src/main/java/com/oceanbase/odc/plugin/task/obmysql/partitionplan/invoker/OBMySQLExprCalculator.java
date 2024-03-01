@@ -23,6 +23,8 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.SingleConnectionDataSource;
 
 import com.oceanbase.odc.core.shared.Verify;
+import com.oceanbase.odc.core.shared.constant.ErrorCodes;
+import com.oceanbase.odc.core.shared.exception.BadRequestException;
 import com.oceanbase.odc.core.sql.execute.mapper.CellData;
 import com.oceanbase.odc.plugin.task.obmysql.partitionplan.datatype.OBMySQLJdbcDataTypeFactory;
 import com.oceanbase.odc.plugin.task.obmysql.partitionplan.mapper.CellDataProcessor;
@@ -66,7 +68,8 @@ public class OBMySQLExprCalculator implements SqlExprCalculator {
             });
         } catch (Exception e) {
             log.warn("Failed to calculate an expression, sql={}", sql, e);
-            throw e;
+            throw new BadRequestException(ErrorCodes.InvalidSqlExpression,
+                    new Object[] {expression, e.getMessage()}, "Sql expression is invalid");
         }
     }
 

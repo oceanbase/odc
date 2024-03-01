@@ -228,6 +228,47 @@ public class MySQLNoGreaterThan5740SchemaAccessorTest extends BaseTestEnv {
     }
 
     @Test
+    public void listTablePartitions_noCandidates_listSucceed() {
+        Map<String, DBTablePartition> actual = accessor.listTablePartitions(getMySQLDataBaseName(), null);
+        DBTablePartition partiHash = actual.get("part_hash");
+        Assert.assertEquals(5L, partiHash.getPartitionOption().getPartitionsNum().longValue());
+        Assert.assertEquals(DBTablePartitionType.HASH, partiHash.getPartitionOption().getType());
+
+        DBTablePartition partiList = actual.get("part_list");
+        Assert.assertEquals(5L, partiList.getPartitionOption().getPartitionsNum().longValue());
+        Assert.assertEquals(DBTablePartitionType.LIST, partiList.getPartitionOption().getType());
+        Assert.assertEquals(2, partiList.getPartitionDefinitions().get(0).getValuesList().size());
+
+        DBTablePartition partiRange = actual.get("part_range");
+        Assert.assertEquals(3L, partiRange.getPartitionOption().getPartitionsNum().longValue());
+        Assert.assertEquals(DBTablePartitionType.RANGE, partiRange.getPartitionOption().getType());
+        Assert.assertEquals("10", partiRange.getPartitionDefinitions().get(0).getMaxValues().get(0));
+    }
+
+    @Test
+    public void listTablePartitions_candidatesExists_listSucceed() {
+        Map<String, DBTablePartition> actual = accessor.listTablePartitions(getMySQLDataBaseName(),
+                Arrays.asList("part_hash", "part_list"));
+        DBTablePartition partiHash = actual.get("part_hash");
+        Assert.assertEquals(5L, partiHash.getPartitionOption().getPartitionsNum().longValue());
+        Assert.assertEquals(DBTablePartitionType.HASH, partiHash.getPartitionOption().getType());
+
+        DBTablePartition partiList = actual.get("part_list");
+        Assert.assertEquals(5L, partiList.getPartitionOption().getPartitionsNum().longValue());
+        Assert.assertEquals(DBTablePartitionType.LIST, partiList.getPartitionOption().getType());
+        Assert.assertEquals(2, partiList.getPartitionDefinitions().get(0).getValuesList().size());
+
+        Assert.assertNull(actual.get("part_range"));
+    }
+
+    @Test
+    public void listTableColumns_filterByTableName_Success() {
+        Map<String, List<DBTableColumn>> table2Columns = accessor.listTableColumns(getMySQLDataBaseName(),
+                Arrays.asList("view_test2", "part_list"));
+        Assert.assertEquals(2, table2Columns.size());
+    }
+
+    @Test
     public void listTableOptions_Success() {
         Map<String, DBTableOptions> table2Options =
                 accessor.listTableOptions(getMySQLDataBaseName());
