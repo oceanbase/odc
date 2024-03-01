@@ -87,7 +87,7 @@ public class TaskService {
     private static final String SHADOWTABLE_LOG_PATH_PATTERN = "%s/shadowtable/%d/%s/shadowtable.%s";
 
     private static final String ALTER_SCHEDULE_LOG_PATH_PATTERN = "%s/alterschedule/%d/%s/alterschedule.%s";
-    private static final String PARTITIONPLAN_LOG_PATH_PATTERN = "%s/partitionplan/%d/%s/partitionplan.%s";
+    private static final String PARTITIONPLAN_LOG_PATH_PATTERN = "%s/partition-plan/%s/partition-plan.%s";
     private static final long MAX_LOG_LINE_COUNT = 10000;
     private static final long MAX_LOG_BYTE_COUNT = 1024 * 1024;
     private static final String ONLINE_SCHEMA_CHANGE_LOG_PATH_PATTERN =
@@ -195,7 +195,7 @@ public class TaskService {
                         logLevel.name().toLowerCase());
                 break;
             case PARTITION_PLAN:
-                filePath = String.format(PARTITIONPLAN_LOG_PATH_PATTERN, logFilePrefix, userId, taskId,
+                filePath = String.format(PARTITIONPLAN_LOG_PATH_PATTERN, logFilePrefix, taskId,
                         logLevel.name().toLowerCase());
                 break;
             case ALTER_SCHEDULE:

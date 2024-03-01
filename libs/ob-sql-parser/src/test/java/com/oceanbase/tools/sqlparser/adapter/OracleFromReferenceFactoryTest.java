@@ -15,6 +15,7 @@
  */
 package com.oceanbase.tools.sqlparser.adapter;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -32,6 +33,7 @@ import com.oceanbase.tools.sqlparser.oboracle.OBParser.Table_referenceContext;
 import com.oceanbase.tools.sqlparser.statement.Expression.ReferenceOperator;
 import com.oceanbase.tools.sqlparser.statement.JoinType;
 import com.oceanbase.tools.sqlparser.statement.Operator;
+import com.oceanbase.tools.sqlparser.statement.common.NumberType;
 import com.oceanbase.tools.sqlparser.statement.expression.ColumnReference;
 import com.oceanbase.tools.sqlparser.statement.expression.CompoundExpression;
 import com.oceanbase.tools.sqlparser.statement.expression.ConstExpression;
@@ -57,6 +59,8 @@ import com.oceanbase.tools.sqlparser.statement.select.oracle.Pivot.ExpressionIte
 import com.oceanbase.tools.sqlparser.statement.select.oracle.Pivot.FunctionItem;
 import com.oceanbase.tools.sqlparser.statement.select.oracle.UnPivot;
 import com.oceanbase.tools.sqlparser.statement.select.oracle.UnPivot.InItem;
+import com.oceanbase.tools.sqlparser.statement.select.oracle.XmlNamespaces;
+import com.oceanbase.tools.sqlparser.statement.select.oracle.XmlNamespaces.XmlNamespace;
 
 /**
  * {@link OracleFromReferenceFactoryTest}
@@ -90,6 +94,84 @@ public class OracleFromReferenceFactoryTest {
         p2.addOption(new ConstExpression("FOR ORDINALITY"));
         f.addOption(p2);
         ExpressionReference expect = new ExpressionReference(f, "ass");
+        Assert.assertEquals(expect, actual);
+    }
+
+    @Test
+    public void generate_simpleXmlTable_generateNameRefSucceed() {
+        Table_referenceContext context = getTableReferenceContext("select a from xmltable()");
+        StatementFactory<FromReference> factory = new OracleFromReferenceFactory(context);
+        FromReference actual = factory.generate();
+
+        FunctionCall f = new FunctionCall("xmltable", Collections.emptyList());
+        ExpressionReference expect = new ExpressionReference(f, null);
+        Assert.assertEquals(expect, actual);
+    }
+
+    @Test
+    public void generate_fullXmlTable_generateNameRefSucceed() {
+        Table_referenceContext context = getTableReferenceContext("select a from xmltable("
+                + "xmlnamespaces ('abcd' as col, default 'dddd'), "
+                + "path '/default/abcd/ddd' "
+                + "passing by value 123 "
+                + "returning sequence by ref) abc");
+        StatementFactory<FromReference> factory = new OracleFromReferenceFactory(context);
+        FromReference actual = factory.generate();
+
+        List<FunctionParam> params = new ArrayList<>();
+        XmlNamespace n1 = new XmlNamespace("'abcd'");
+        n1.setAlias("col");
+        XmlNamespace n2 = new XmlNamespace("'dddd'");
+        n2.setDefaultValue(true);
+        params.add(new ExpressionParam(new XmlNamespaces(Arrays.asList(n1, n2))));
+        params.add(new ExpressionParam(new ConstExpression("'/default/abcd/ddd'")));
+        FunctionCall f = new FunctionCall("xmltable", params);
+        f.addOption(new ConstExpression("123"));
+        f.addOption(new ConstExpression("returning sequence by ref"));
+        ExpressionReference expect = new ExpressionReference(f, "abc");
+        Assert.assertEquals(expect, actual);
+    }
+
+    @Test
+    public void generate_fullColClauseXmlTable_generateNameRefSucceed() {
+        Table_referenceContext context = getTableReferenceContext("select a from xmltable("
+                + "xmlnamespaces ('abcd' as col, default 'dddd'), "
+                + "'/default/abcd/ddd' "
+                + "passing 123 "
+                + "returning sequence by ref "
+                + "columns col1 for ordinality, "
+                + "col2 int 'opt/log' default 'ggh', "
+                + "col3 xmltype (sequence) by ref path 'opt/log/dir1' default 'ppp') abc");
+        StatementFactory<FromReference> factory = new OracleFromReferenceFactory(context);
+        FromReference actual = factory.generate();
+
+        List<FunctionParam> params = new ArrayList<>();
+        XmlNamespace n1 = new XmlNamespace("'abcd'");
+        n1.setAlias("col");
+        XmlNamespace n2 = new XmlNamespace("'dddd'");
+        n2.setDefaultValue(true);
+        params.add(new ExpressionParam(new XmlNamespaces(Arrays.asList(n1, n2))));
+        params.add(new ExpressionParam(new ConstExpression("'/default/abcd/ddd'")));
+        FunctionCall f = new FunctionCall("xmltable", params);
+        f.addOption(new ConstExpression("123"));
+        f.addOption(new ConstExpression("returning sequence by ref"));
+        FunctionParam op1 = new ExpressionParam(new ColumnReference(null, null, "col1"));
+        op1.addOption(new ConstExpression("for ordinality"));
+        f.addOption(op1);
+
+        FunctionParam op2 = new ExpressionParam(new ColumnReference(null, null, "col2"));
+        op2.addOption(new NumberType("int", null, null));
+        op2.addOption(new ConstExpression("'opt/log'"));
+        op2.addOption(new ConstExpression("'ggh'"));
+        f.addOption(op2);
+
+        FunctionParam op3 = new ExpressionParam(new ColumnReference(null, null, "col3"));
+        op3.addOption(new ConstExpression("xmltype"));
+        op3.addOption(new ConstExpression("(sequence) by ref"));
+        op3.addOption(new ConstExpression("'opt/log/dir1'"));
+        op3.addOption(new ConstExpression("'ppp'"));
+        f.addOption(op3);
+        ExpressionReference expect = new ExpressionReference(f, "abc");
         Assert.assertEquals(expect, actual);
     }
 

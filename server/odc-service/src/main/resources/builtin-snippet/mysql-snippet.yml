@@ -1,0 +1,14 @@
+# built-in snippet for mysql
+- name: mysql create table
+  dialect_type: MYSQL
+  tags: [ 'developer','mysql', 'table', 'create' ]
+  type: DDL
+  description: 'Create a new table for MySQL'
+  prefix: create_table
+  body: |
+    CREATE TABLE IF NOT EXISTS ${1:table_name} (
+      id BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT 'auto increment id',
+      create_time DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL COMMENT 'record create time',
+      update_time DATETIME ON UPDATE CURRENT_TIMESTAMP NULL COMMENT 'record update time',
+      ${2:column_name} ${3:data_type} COMMENT ''
+    ) COMMENT '';

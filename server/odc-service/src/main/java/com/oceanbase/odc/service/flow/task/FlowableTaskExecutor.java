@@ -68,6 +68,7 @@ public class FlowableTaskExecutor implements JavaDelegate {
         } catch (Exception e) {
             throw new TaskRuntimeException(e);
         }
+       // DelegateExecution will be changed when current thread return, so use facade class to save properties
         DelegateExecution executionFacade = new ExecutionEntityFacade(execution);
         threadPoolTaskExecutor.submit(() -> {
             try {

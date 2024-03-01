@@ -133,6 +133,7 @@ stmt
     | method_opt
     | switchover_tenant_stmt
     | recover_tenant_stmt
+    | transfer_partition_stmt
     ;
 
 pl_expr_stmt
@@ -158,6 +159,18 @@ recover_point_clause
     | UNTIL SCN COMP_EQ INTNUM
     | UNTIL UNLIMITED
     | CANCEL
+    ;
+
+transfer_partition_stmt
+    : ALTER SYSTEM transfer_partition_clause tenant_name?
+    ;
+
+transfer_partition_clause
+    : TRANSFER PARTITION part_info TO LS INTNUM
+    ;
+
+part_info
+    : TABLE_ID opt_equal_mark INTNUM Comma OBJECT_ID opt_equal_mark INTNUM
     ;
 
 expr_list
@@ -454,6 +467,19 @@ func_expr
     | func_name=MULTIPOLYGON LeftParen expr_list RightParen # simple_func_expr
     | func_name=GEOMETRYCOLLECTION LeftParen expr_list? RightParen # simple_func_expr
     | func_name=GEOMCOLLECTION LeftParen expr_list? RightParen # simple_func_expr
+    | func_name=ST_ASMVT LeftParen column_ref RightParen # simple_func_expr
+    | func_name=ST_ASMVT LeftParen column_ref Comma mvt_param RightParen # simple_func_expr
+    | func_name=ST_ASMVT LeftParen column_ref Comma mvt_param Comma mvt_param RightParen # simple_func_expr
+    | func_name=ST_ASMVT LeftParen column_ref Comma mvt_param Comma mvt_param Comma mvt_param RightParen # simple_func_expr
+    | func_name=ST_ASMVT LeftParen column_ref Comma mvt_param Comma mvt_param Comma mvt_param Comma mvt_param RightParen # simple_func_expr
+    ;
+
+mvt_param
+    : STRING_VALUE
+    | Minus? INTNUM
+    | NULLX
+    | NAME_OB
+    | unreserved_keyword
     ;
 
 sys_interval_func
@@ -1046,6 +1072,7 @@ geo_type_i
     | MULTILINESTRING
     | MULTIPOLYGON
     | GEOMETRYCOLLECTION
+    | GEOMCOLLECTION
     ;
 
 datetime_type_i [boolean in_cast_data_type]
@@ -1183,11 +1210,32 @@ table_option
     | LOCATION COMP_EQ? STRING_VALUE
     | FORMAT COMP_EQ? LeftParen external_file_format_list RightParen
     | PATTERN COMP_EQ? STRING_VALUE
+    | TTL LeftParen ttl_definition RightParen
+    | KV_ATTRIBUTES COMP_EQ? STRING_VALUE
+    | DEFAULT_LOB_INROW_THRESHOLD COMP_EQ? INTNUM
+    | LOB_INROW_THRESHOLD COMP_EQ? INTNUM
     ;
 
 parallel_option
     : PARALLEL COMP_EQ? INTNUM
     | NOPARALLEL
+    ;
+
+ttl_definition
+    : ttl_expr (Comma ttl_expr)*
+    ;
+
+ttl_expr
+    : simple_expr Plus INTERVAL INTNUM ttl_unit
+    ;
+
+ttl_unit
+    : SECOND
+    | MINUTE
+    | HOUR
+    | DAY
+    | MONTH
+    | YEAR
     ;
 
 relation_name_or_string
@@ -1232,21 +1280,30 @@ auto_range_type
     ;
 
 hash_partition_option
-    : PARTITION BY HASH LeftParen expr RightParen subpartition_option? (PARTITIONS INTNUM)? opt_hash_partition_list?
+    : PARTITION BY HASH LeftParen expr RightParen partition_options? opt_hash_partition_list?
     ;
 
 list_partition_option
-    : PARTITION BY BISON_LIST LeftParen expr RightParen subpartition_option? (PARTITIONS INTNUM)? opt_list_partition_list
-    | PARTITION BY BISON_LIST COLUMNS LeftParen column_name_list RightParen subpartition_option? (PARTITIONS INTNUM)? opt_list_partition_list
+    : PARTITION BY BISON_LIST LeftParen expr RightParen partition_options? opt_list_partition_list
+    | PARTITION BY BISON_LIST COLUMNS LeftParen column_name_list RightParen partition_options? opt_list_partition_list
     ;
 
 key_partition_option
-    : PARTITION BY KEY LeftParen column_name_list? RightParen subpartition_option? (PARTITIONS INTNUM)? opt_hash_partition_list?
+    : PARTITION BY KEY LeftParen column_name_list? RightParen partition_options? opt_hash_partition_list?
     ;
 
 range_partition_option
-    : PARTITION BY RANGE LeftParen expr RightParen subpartition_option? (PARTITIONS INTNUM)? opt_range_partition_list
-    | PARTITION BY RANGE COLUMNS LeftParen column_name_list RightParen subpartition_option? (PARTITIONS INTNUM)? opt_range_partition_list
+    : PARTITION BY RANGE LeftParen expr RightParen partition_options? opt_range_partition_list
+    | PARTITION BY RANGE COLUMNS LeftParen column_name_list RightParen partition_options? opt_range_partition_list
+    ;
+
+partition_options
+    : partition_num? subpartition_option
+    | subpartition_option? partition_num
+    ;
+
+partition_num
+    : PARTITIONS INTNUM
     ;
 
 opt_column_partition_option
@@ -1607,12 +1664,12 @@ insert_stmt
     ;
 
 single_table_insert
-    : dml_table_name (SET update_asgn_list|values_clause)
+    : dml_table_name (SET update_asgn_list (AS table_subquery_alias)?|values_clause)
     | dml_table_name LeftParen column_list? RightParen values_clause
     ;
 
 values_clause
-    : value_or_values insert_vals_list
+    : value_or_values insert_vals_list (AS table_subquery_alias)?
     | select_stmt
     ;
 
@@ -2203,8 +2260,9 @@ row_value
 
 analyze_stmt
     : ANALYZE TABLE relation_factor UPDATE HISTOGRAM ON column_name_list WITH INTNUM BUCKETS
-    | ANALYZE TABLE relation_factor DROP HISTOGRAM ON column_name_list
+    | ANALYZE TABLE relation_factor (DROP|UPDATE) HISTOGRAM ON column_name_list
     | ANALYZE TABLE relation_factor use_partition? analyze_statistics_clause
+    | ANALYZE TABLE table_list
     ;
 
 analyze_statistics_clause
@@ -2317,9 +2375,9 @@ format_name
     ;
 
 show_stmt
-    : SHOW FULL? TABLES (from_or_in database_factor)? ((LIKE STRING_VALUE) | (LIKE STRING_VALUE ESCAPE STRING_VALUE) | (WHERE expr))?
+    : SHOW (FULL | EXTENDED | (EXTENDED FULL))? TABLES (from_or_in database_factor)? ((LIKE STRING_VALUE) | (LIKE STRING_VALUE ESCAPE STRING_VALUE) | (WHERE expr))?
     | SHOW databases_or_schemas STATUS? ((LIKE STRING_VALUE) | (LIKE STRING_VALUE ESCAPE STRING_VALUE) | (WHERE expr))?
-    | SHOW FULL? columns_or_fields from_or_in relation_factor (from_or_in database_factor)? ((LIKE STRING_VALUE) | (LIKE STRING_VALUE ESCAPE STRING_VALUE) | (WHERE expr))?
+    | SHOW (FULL | EXTENDED | (EXTENDED FULL))? columns_or_fields from_or_in relation_factor (from_or_in database_factor)? ((LIKE STRING_VALUE) | (LIKE STRING_VALUE ESCAPE STRING_VALUE) | (WHERE expr))?
     | SHOW (TABLE|PROCEDURE|FUNCTION|TRIGGERS) STATUS (from_or_in database_factor)? ((LIKE STRING_VALUE) | (LIKE STRING_VALUE ESCAPE STRING_VALUE) | (WHERE expr))?
     | SHOW SERVER STATUS ((LIKE STRING_VALUE) | (LIKE STRING_VALUE ESCAPE STRING_VALUE) | (WHERE expr))?
     | SHOW (GLOBAL | SESSION | LOCAL)? VARIABLES ((LIKE STRING_VALUE) | (LIKE STRING_VALUE ESCAPE STRING_VALUE) | (WHERE expr))?
@@ -2332,7 +2390,7 @@ show_stmt
     | SHOW charset_key ((LIKE STRING_VALUE) | (LIKE STRING_VALUE ESCAPE STRING_VALUE) | (WHERE expr))?
     | SHOW (TRACE|COLLATION|PARAMETERS|TABLEGROUPS) ((LIKE STRING_VALUE) | (LIKE STRING_VALUE ESCAPE STRING_VALUE) | (WHERE expr))?
     | SHOW TRACE FORMAT COMP_EQ STRING_VALUE ((LIKE STRING_VALUE) | (LIKE STRING_VALUE ESCAPE STRING_VALUE) | (WHERE expr))?
-    | SHOW index_or_indexes_or_keys from_or_in relation_factor (from_or_in database_factor)? (WHERE opt_hint_value expr)?
+    | SHOW EXTENDED? index_or_indexes_or_keys from_or_in relation_factor (from_or_in database_factor)? (WHERE opt_hint_value expr)?
     | SHOW FULL? PROCESSLIST
     | SHOW (GLOBAL | SESSION | LOCAL)? STATUS ((LIKE STRING_VALUE) | (LIKE STRING_VALUE ESCAPE STRING_VALUE) | (WHERE expr))?
     | SHOW TENANT STATUS?
@@ -2493,8 +2551,8 @@ user_specification_list
 
 user_specification
     : user USER_VARIABLE?
-    | user USER_VARIABLE? IDENTIFIED BY password
-    | user USER_VARIABLE? IDENTIFIED BY PASSWORD password
+    | user USER_VARIABLE? IDENTIFIED ((WITH STRING_VALUE) | (WITH NAME_OB))? BY password
+    | user USER_VARIABLE? IDENTIFIED ((WITH STRING_VALUE) | (WITH NAME_OB))? BY PASSWORD password
     ;
 
 require_specification
@@ -2550,7 +2608,7 @@ user_list
 set_password_stmt
     : SET PASSWORD (FOR user opt_host_name)? COMP_EQ STRING_VALUE
     | SET PASSWORD (FOR user opt_host_name)? COMP_EQ PASSWORD LeftParen password RightParen
-    | ALTER USER user_with_host_name IDENTIFIED BY password
+    | ALTER USER user_with_host_name IDENTIFIED ((WITH STRING_VALUE) | (WITH NAME_OB))? BY password
     | ALTER USER user_with_host_name require_specification
     | ALTER USER user_with_host_name WITH resource_option_list
     ;
@@ -2686,7 +2744,7 @@ kill_stmt
     ;
 
 grant_stmt
-    : GRANT grant_privileges ON priv_level TO user_specification_list grant_options
+    : GRANT grant_privileges ON object_type? priv_level TO user_specification_list grant_options
     ;
 
 grant_privileges
@@ -2718,7 +2776,15 @@ priv_type
     | ALTER SYSTEM
     | REPLICATION SLAVE
     | REPLICATION CLIENT
-    | CREATE DATABASE LINK
+    | CREATE (DATABASE LINK|ROUTINE)
+    | EXECUTE
+    | ALTER ROUTINE
+    ;
+
+object_type
+    : TABLE
+    | PROCEDURE
+    | FUNCTION
     ;
 
 priv_level
@@ -2733,6 +2799,7 @@ grant_options
 
 revoke_stmt
     : REVOKE grant_privileges ON priv_level FROM user_list
+    | REVOKE grant_privileges ON object_type priv_level FROM user_list
     | REVOKE ALL PRIVILEGES? Comma GRANT OPTION FROM user_list
     ;
 
@@ -2953,6 +3020,7 @@ alter_partition_option
     | modify_partition_info
     | REORGANIZE PARTITION name_list INTO opt_partition_range_or_list
     | TRUNCATE (PARTITION|SUBPARTITION) name_list
+    | REMOVE PARTITIONING
     ;
 
 opt_partition_range_or_list
@@ -3047,7 +3115,7 @@ dump_memory_stmt
 
 alter_system_stmt
     : ALTER SYSTEM BOOTSTRAP (CLUSTER cluster_role)? server_info_list (PRIMARY_CLUSTER_ID INTNUM PRIMARY_ROOTSERVICE_LIST STRING_VALUE)?
-    | ALTER SYSTEM FLUSH cache_type CACHE sql_id_expr? databases_expr? (TENANT COMP_EQ tenant_name_list)? flush_scope
+    | ALTER SYSTEM FLUSH cache_type CACHE namespace_expr? sql_id_or_schema_id_expr? databases_expr? (TENANT COMP_EQ tenant_name_list)? flush_scope
     | ALTER SYSTEM FLUSH SQL cache_type (TENANT COMP_EQ tenant_name_list)? flush_scope
     | ALTER SYSTEM FLUSH KVCACHE tenant_name? cache_name?
     | ALTER SYSTEM FLUSH DAG WARNINGS
@@ -3330,6 +3398,15 @@ baseline_id_expr
 
 sql_id_expr
     : SQL_ID COMP_EQ? STRING_VALUE
+    ;
+
+sql_id_or_schema_id_expr
+    : sql_id_expr
+    | SCHEMA_ID COMP_EQ? INTNUM
+    ;
+
+namespace_expr
+    : NAMESPACE COMP_EQ? STRING_VALUE
     ;
 
 baseline_asgn_factor
@@ -3827,6 +3904,7 @@ unreserved_keyword_normal
     | DUPLICATE_SCOPE
     | DYNAMIC
     | DEFAULT_TABLEGROUP
+    | DEFAULT_LOB_INROW_THRESHOLD
     | EFFECTIVE
     | EMPTY
     | EMPTY_FIELD_AS_NULL
@@ -3942,6 +4020,7 @@ unreserved_keyword_normal
     | KEY_BLOCK_SIZE
     | KEY_VERSION
     | LAG
+    | LATERAL
     | LANGUAGE
     | LAST
     | LAST_VALUE
@@ -3958,6 +4037,7 @@ unreserved_keyword_normal
     | LIST_
     | LISTAGG
     | LN
+    | LOB_INROW_THRESHOLD
     | LOCAL
     | LOCALITY
     | LOCKED
@@ -4235,6 +4315,7 @@ unreserved_keyword_normal
     | SQL_BUFFER_RESULT
     | SQL_CACHE
     | SQL_ID
+    | SCHEMA_ID
     | SQL_NO_CACHE
     | SQL_THREAD
     | SQL_TSI_DAY
@@ -4246,6 +4327,7 @@ unreserved_keyword_normal
     | SQL_TSI_WEEK
     | SQL_TSI_YEAR
     | SRID
+    | ST_ASMVT
     | STACKED
     | STANDBY
     | START
@@ -4264,6 +4346,7 @@ unreserved_keyword_normal
     | STOP
     | STORAGE
     | STORAGE_FORMAT_VERSION
+    | STORE
     | STORING
     | STRONG
     | STRING
@@ -4285,6 +4368,7 @@ unreserved_keyword_normal
     | SYSTEM
     | SYSTEM_USER
     | SYSDATE
+    | SLOG
     | TABLE_CHECKSUM
     | TABLE_MODE
     | TABLEGROUPS
@@ -4405,6 +4489,9 @@ unreserved_keyword_normal
     | MY_NAME
     | CONNECT
     | STATEMENT_ID
+    | KV_ATTRIBUTES
+    | OBJECT_ID
+    | TRANSFER
     ;
 
 unreserved_keyword_special

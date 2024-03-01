@@ -19,6 +19,7 @@ import static com.oceanbase.tools.dbbrowser.editor.DBObjectUtilsTest.loadAsStrin
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -193,8 +194,16 @@ public class OBOracleSchemaAccessorTest extends BaseTestEnv {
 
     @Test
     public void listTableColumns_TestGetAllColumnInSchema_Success() {
-        Map<String, List<DBTableColumn>> table2Columns = accessor.listTableColumns(getOBOracleSchema());
+        Map<String, List<DBTableColumn>> table2Columns =
+                accessor.listTableColumns(getOBOracleSchema(), Collections.emptyList());
         Assert.assertTrue(table2Columns.size() > 0);
+    }
+
+    @Test
+    public void listTableColumns_filterByTableName_Success() {
+        Map<String, List<DBTableColumn>> table2Columns = accessor.listTableColumns(getOBOracleSchema(),
+                Arrays.asList("TEST_FK_PARENT", "TEST_PK_INDEX"));
+        Assert.assertEquals(2, table2Columns.size());
     }
 
     @Test
@@ -292,6 +301,31 @@ public class OBOracleSchemaAccessorTest extends BaseTestEnv {
                 accessor.getPartition(getOBOracleSchema(), "part_hash");
         Assert.assertEquals(5L, partition.getPartitionOption().getPartitionsNum().longValue());
         Assert.assertEquals(DBTablePartitionType.HASH, partition.getPartitionOption().getType());
+    }
+
+    @Test
+    public void listTablePartitions_noCandidates_listSucceed() {
+        Map<String, DBTablePartition> actual = accessor.listTablePartitions(getOBOracleSchema(), null);
+        DBTablePartition partiHash = actual.get("part_hash");
+        Assert.assertEquals(5L, partiHash.getPartitionOption().getPartitionsNum().longValue());
+        Assert.assertEquals(DBTablePartitionType.HASH, partiHash.getPartitionOption().getType());
+
+        DBTablePartition partiRange = actual.get("RANGE_PARTI_TIME_TYPE");
+        Assert.assertEquals(1L, partiRange.getPartitionOption().getPartitionsNum().longValue());
+        Assert.assertEquals(DBTablePartitionType.RANGE, partiRange.getPartitionOption().getType());
+        Assert.assertEquals(Collections.singletonList("TO_DATE(' 2022-12-31 23:59:59', 'SYYYY-MM-DD HH24:MI:SS', "
+                + "'NLS_CALENDAR=GREGORIAN'),Timestamp '2022-12-31 23:59:59.000000000'"),
+                partiRange.getPartitionDefinitions().get(0).getMaxValues());
+    }
+
+    @Test
+    public void listTablePartitions_candidatesExists_listSucceed() {
+        Map<String, DBTablePartition> actual =
+                accessor.listTablePartitions(getOBOracleSchema(), Collections.singletonList("part_hash"));
+        DBTablePartition partiHash = actual.get("part_hash");
+        Assert.assertEquals(5L, partiHash.getPartitionOption().getPartitionsNum().longValue());
+        Assert.assertEquals(DBTablePartitionType.HASH, partiHash.getPartitionOption().getType());
+        Assert.assertNull(actual.get("RANGE_PARTI_TIME_TYPE"));
     }
 
     @Test

@@ -1,0 +1,222 @@
+# built-in snippet for OceanBase MySQL compatible mode
+- name: oceanbase mysql query unit list
+  dialect_type: OB_MYSQL
+  tags: [ 'dba','oceanbase' ]
+  type: DQL
+  min_version: 4.0.0
+  max_version: ~
+  description: 'Query unit list for OceanBase MySQL compatible mode'
+  prefix: query_unit_list
+  body: |
+    SELECT
+      SVR_IP,
+      SVR_PORT,
+      UNIT_ID,
+      TENANT_ID,
+      ZONE,
+      ZONE_TYPE,
+      REGION,
+      MAX_CPU,
+      MIN_CPU,
+      round(memory_size / 1024 / 1024 / 1024) memory_size_gb,
+      MAX_IOPS,
+      MIN_IOPS,
+      IOPS_WEIGHT,
+      round(log_disk_size / 1024 / 1024 / 1024) log_disk_size_gb,
+      round(LOG_DISK_IN_USE / 1024 / 1024 / 1024) LOG_DISK_IN_USE_GB,
+      round(DATA_DISK_IN_USE / 1024 / 1024 / 1024) DATA_DISK_IN_USE_GB,
+      STATUS,
+      CREATE_TIME
+    FROM
+      oceanbase.GV\$OB_UNITS;
+- name: oceanbase mysql query cluster info
+  dialect_type: OB_MYSQL
+  tags: [ 'dba','oceanbase' ]
+  type: DQL
+  min_version: 4.0.0
+  max_version: ~
+  description: 'Query OceanBase cluster information'
+  prefix: query_cluster_info
+  body: |
+    SELECT NAME, VALUE 
+    FROM 
+      oceanbase.GV\$OB_PARAMETERS 
+    WHERE 
+      NAME IN ('cluster', 'cluster_id');
+- name: oceanbase mysql query major compaction
+  dialect_type: OB_MYSQL
+  tags: [ 'dba','oceanbase' ]
+  type: DQL
+  min_version: 4.0.0
+  max_version: ~
+  description: 'Query OceanBase cluster information'
+  prefix: query_major_compaction
+  body: |
+    SELECT
+      FROZEN_SCN,
+      FROZEN_TIME,
+      GLOBAL_BROADCAST_SCN,
+      LAST_SCN,
+      LAST_FINISH_TIME,
+      START_TIME,
+      STATUS,
+      IS_ERROR,
+      IS_SUSPENDED,
+      INFO
+    FROM
+      oceanbase.DBA_OB_MAJOR_COMPACTION;
+- name: oceanbase mysql query tenant information
+  dialect_type: OB_MYSQL
+  tags: [ 'dba','oceanbase' ]
+  type: DQL
+  min_version: 4.0.0
+  max_version: ~
+  description: 'Query OceanBase tenant information'
+  prefix: query_tenant_information
+  body: |
+    SELECT
+      TENANT_ID,
+      TENANT_NAME,
+      TENANT_TYPE,
+      PRIMARY_ZONE,
+      LOCALITY,
+      COMPATIBILITY_MODE,
+      STATUS,
+      LOCKED,
+      IN_RECYCLEBIN,
+      TIMESTAMPDIFF(SECOND,CREATE_TIME,NOW()) AS EXIST_SECONDS
+    FROM
+      oceanbase.DBA_OB_TENANTS;
+- name: oceanbase mysql query module memory usage
+  dialect_type: OB_MYSQL
+  tags: [ 'dba','oceanbase' ]
+  type: DQL
+  min_version: 4.0.0
+  max_version: ~
+  description: Query module memory usage for OceanBase mysql mode tenant
+  prefix: query_module_memory_usage
+  body: |
+    SELECT
+      TENANT_ID,
+      SVR_IP,
+      SVR_PORT,
+      MOD_NAME,
+      ROUND(SUM(USED) / 1024 / 1024, 2) AS USED_MB
+    FROM
+      OCEANBASE.GV\$OB_MEMORY
+    GROUP BY MOD_NAME, SVR_IP
+    ORDER BY USED DESC;
+- name: oceanbase mysql query module memory usage
+  dialect_type: OB_MYSQL
+  tags: [ 'dba','oceanbase' ]
+  type: DQL
+  min_version: 4.0.0
+  max_version: ~
+  description: Query memstore information for OceanBase mysql mode tenant
+  prefix: query_memstore_information
+  body: |
+    SELECT
+      SVR_IP,
+      SVR_PORT,
+      TENANT_ID,
+      ROUND(ACTIVE_SPAN / 1024 / 1024 / 1024, 2) ACTIVE_GB,
+      ROUND(FREEZE_TRIGGER / 1024 / 1024 / 1024, 2) FREEZE_TRIGGER_GB,
+      ROUND(MEMSTORE_LIMIT / 1024 / 1024 / 1024, 2) MEMSTORE_LIMIT_GB,
+      ROUND(MEMSTORE_USED / 1024 / 1024 / 1024, 2) MEMSTORE_USED_GB,
+      FREEZE_CNT
+    FROM
+     oceanbase.GV\$OB_MEMSTORE;
+- name: oceanbase mysql collect sql plan monitor
+  dialect_type: OB_MYSQL
+  tags: [ 'dba','oceanbase' ]
+  type: DQL
+  min_version: 4.0.0
+  max_version: ~
+  description: Collect sql plan monitor information for OceanBase MySQL mode
+  prefix: collect_sql_plan_monitor
+  body: |
+    -- The SQL Plan Monitor collects all relevant information pertaining to the execution of a SQL statement.
+    --
+    -- manual collect sql plan monitor data steps
+    -- 1. add /*+ monitor */ HINT for the sql statement you want to trace by sql plan monitor.
+    -- 2. then execute the target sql statement.
+    -- 3. collect summary and details information use below 2 query.
+    -- 4. export collect data, transfer to OceanBase support team.
+    --
+    -- Operator explanation:
+    -- * open_dt signifies the time interval between the operator's Open and Close.
+    -- * row_dt represents the time interval from when the operator emits its first row to when it emits the OB_ITER_END marker.
+    -- * If the value is NULL, it indicates that either no first row has been emitted or OB_ITER_END has not been emitted.
+    
+    
+    set @target_trace_id='${1:target_trace_id}';
+
+    -- query summary
+    select
+      op_id,
+      op,
+      rows,
+      rescan,
+      threads,
+      (close_time - open_time) open_dt,
+      (last_row_eof_time - first_row_time) row_dt,
+      open_time,
+      close_time,
+      first_row_time,
+      last_row_eof_time
+    FROM
+      (
+        select
+          plan_line_id op_id,
+          concat(lpad('', plan_depth, ' '), plan_operation) op,
+          sum(output_rows) rows,
+          sum(STARTS) rescan,
+          min(first_refresh_time) open_time,
+          max(last_refresh_time) close_time,
+          min(first_change_time) first_row_time,
+          max(last_change_time) last_row_eof_time,
+          count(1) threads
+        from
+          oceanbase.gv\$sql_plan_monitor
+        where
+          trace_id = @target_trace_id
+        group by
+          plan_line_id,
+          plan_operation
+        order by
+          plan_line_id
+      ) spm;
+
+    -- query details
+    select
+      op_id,
+      thread,
+      op,
+      rows,
+      rescan,
+      (close_time - open_time) open_dt,
+      (last_row_eof_time - first_row_time) row_dt,
+      open_time,
+      close_time,
+      first_row_time,
+      last_row_eof_time
+    FROM
+      (
+        select
+          plan_line_id op_id,
+          PROCESS_NAME thread,
+          concat(lpad('', plan_depth, ' '), plan_operation) op,
+          output_rows rows,
+          STARTS rescan,
+          first_refresh_time open_time,
+          last_refresh_time close_time,
+          first_change_time first_row_time,
+          last_change_time last_row_eof_time
+        from
+          oceanbase.gv\$sql_plan_monitor
+        where
+          trace_id =  @target_trace_id
+        order by
+          plan_line_id,
+          PROCESS_NAME
+      ) spm;

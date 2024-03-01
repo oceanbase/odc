@@ -19,12 +19,12 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
@@ -86,6 +86,7 @@ import com.oceanbase.tools.dbbrowser.util.DBSchemaAccessorUtil;
 import com.oceanbase.tools.dbbrowser.util.OracleDataDictTableNames;
 import com.oceanbase.tools.dbbrowser.util.OracleSqlBuilder;
 import com.oceanbase.tools.dbbrowser.util.PLObjectErrMsgUtils;
+import com.oceanbase.tools.dbbrowser.util.SqlBuilder;
 import com.oceanbase.tools.dbbrowser.util.StringUtils;
 
 import lombok.extern.slf4j.Slf4j;
@@ -95,6 +96,7 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 public class OracleSchemaAccessor implements DBSchemaAccessor {
+
     private static final String ORACLE_TABLE_COMMENT_DDL_TEMPLATE =
             "COMMENT ON TABLE ${schemaName}.${tableName} IS ${comment}";
     private static final String ORACLE_COLUMN_COMMENT_DDL_TEMPLATE =
@@ -140,7 +142,7 @@ public class OracleSchemaAccessor implements DBSchemaAccessor {
 
     @Override
     public List<DBDatabase> listDatabases() {
-        List<DBDatabase> databases = new ArrayList();
+        List<DBDatabase> databases = new ArrayList<>();
         String sql = this.sqlMapper.getSql(Statements.LIST_DATABASE);
         this.jdbcOperations.query(sql, (rs) -> {
             DBDatabase database = new DBDatabase();
@@ -149,12 +151,12 @@ public class OracleSchemaAccessor implements DBSchemaAccessor {
             databases.add(database);
         });
         sql = "select value from v$nls_parameters where PARAMETER = 'NLS_CHARACTERSET'";
-        AtomicReference<String> charset = new AtomicReference();
+        AtomicReference<String> charset = new AtomicReference<>();
         this.jdbcOperations.query(sql, (rs) -> {
             charset.set(rs.getString(1));
         });
         sql = "SELECT value from v$nls_parameters where parameter = 'NLS_SORT'";
-        AtomicReference<String> collation = new AtomicReference();
+        AtomicReference<String> collation = new AtomicReference<>();
         this.jdbcOperations.query(sql, (rs) -> {
             collation.set(rs.getString(1));
         });
@@ -502,7 +504,6 @@ public class OracleSchemaAccessor implements DBSchemaAccessor {
                 type.setErrorMessage(errorText.get(type.getName()));
             }
         }
-
         return types;
     }
 
@@ -538,21 +539,21 @@ public class OracleSchemaAccessor implements DBSchemaAccessor {
         } else {
             throw new UnsupportedOperationException("Not supported Synonym type");
         }
-
         return jdbcOperations.query(sb.toString(), new BeanPropertyRowMapper<>(DBObjectIdentity.class));
     }
 
     @Override
-    public Map<String, List<DBTableColumn>> listTableColumns(String schemaName) {
-        String sql = this.sqlMapper.getSql(Statements.LIST_SCHEMA_COLUMNS);
-        List<DBTableColumn> tableColumns =
-                this.jdbcOperations.query(sql.toString(), new Object[] {schemaName},
-                        listColumnsRowMapper());
-        Map<String, List<DBTableColumn>> tableName2Columns =
-                tableColumns.stream().collect(Collectors.groupingBy(DBTableColumn::getTableName));
+    public Map<String, List<DBTableColumn>> listTableColumns(String schemaName, List<String> tableNames) {
+        List<DBTableColumn> tableColumns = DBSchemaAccessorUtil.partitionFind(tableNames,
+                DBSchemaAccessorUtil.OB_MAX_IN_SIZE, names -> {
+                    String sql = filterByValues(sqlMapper.getSql(Statements.LIST_SCHEMA_COLUMNS), "TABLE_NAME", names);
+                    return jdbcOperations.query(sql, new Object[] {schemaName}, listColumnsRowMapper());
+                });
+        Map<String, List<DBTableColumn>> tableName2Columns = tableColumns.stream()
+                .collect(Collectors.groupingBy(DBTableColumn::getTableName));
         tableName2Columns.forEach((table, cols) -> {
             Map<String, String> name2Comments = mapColumnName2ColumnComments(schemaName, table);
-            cols.stream().forEach(col -> {
+            cols.forEach(col -> {
                 if (name2Comments.containsKey(col.getName())) {
                     col.setComment(name2Comments.get(col.getName()));
                 }
@@ -698,16 +699,6 @@ public class OracleSchemaAccessor implements DBSchemaAccessor {
     }
 
     @Override
-    public List<DBTablePartition> listTablePartitions(String tenantName, String schemaName, String tableName) {
-        throw new UnsupportedOperationException("Not supported yet");
-    }
-
-    @Override
-    public List<DBTablePartition> listTableRangePartitionInfo(String tenantName) {
-        throw new UnsupportedOperationException("Not supported yet");
-    }
-
-    @Override
     public List<DBTableSubpartitionDefinition> listSubpartitions(String schemaName, String tableName) {
         throw new UnsupportedOperationException("Not supported yet");
     }
@@ -760,7 +751,7 @@ public class OracleSchemaAccessor implements DBSchemaAccessor {
         return commentsMap;
     }
 
-    protected RowMapper listColumnsRowMapper() {
+    protected RowMapper<DBTableColumn> listColumnsRowMapper() {
         final int[] hiddenColumnOrdinaryPosition = {-1};
         return (rs, rowNum) -> {
             DBTableColumn tableColumn = new DBTableColumn();
@@ -772,7 +763,7 @@ public class OracleSchemaAccessor implements DBSchemaAccessor {
             tableColumn.setFullTypeName(rs.getString(OracleConstants.COL_DATA_TYPE));
             tableColumn.setCharUsed(CharUnit.fromString(rs.getString(OracleConstants.COL_CHAR_USED)));
             tableColumn.setOrdinalPosition(rs.getInt(OracleConstants.COL_COLUMN_ID));
-            tableColumn.setTypeModifiers(Arrays.asList(rs.getString(OracleConstants.COL_DATA_TYPE_MOD)));
+            tableColumn.setTypeModifiers(Collections.singletonList(rs.getString(OracleConstants.COL_DATA_TYPE_MOD)));
             tableColumn.setMaxLength(
                     rs.getLong(tableColumn.getCharUsed() == CharUnit.CHAR ? OracleConstants.COL_CHAR_LENGTH
                             : OracleConstants.COL_DATA_LENGTH));
@@ -806,10 +797,9 @@ public class OracleSchemaAccessor implements DBSchemaAccessor {
             }
             return tableColumn;
         };
-
     }
 
-    protected RowMapper listBasicColumnsRowMapper() {
+    protected RowMapper<DBTableColumn> listBasicColumnsRowMapper() {
         return (rs, rowNum) -> {
             DBTableColumn tableColumn = new DBTableColumn();
             tableColumn.setSchemaName(rs.getString(OracleConstants.CONS_OWNER));
@@ -857,7 +847,6 @@ public class OracleSchemaAccessor implements DBSchemaAccessor {
             if (Objects.nonNull(constraint.getColumnNames())) {
                 constraint.setColumnNames(constraint.getColumnNames().stream().filter(Objects::nonNull).distinct()
                         .collect(Collectors.toList()));
-
             }
         }
     }
@@ -909,6 +898,112 @@ public class OracleSchemaAccessor implements DBSchemaAccessor {
         return partition;
     }
 
+    @Override
+    public Map<String, DBTablePartition> listTablePartitions(@NonNull String schemaName, List<String> tableNames) {
+        List<Map<String, Object>> defRows = DBSchemaAccessorUtil.partitionFind(tableNames,
+                DBSchemaAccessorUtil.OB_MAX_IN_SIZE, names -> {
+                    String queryDefsSql = filterByValues(sqlMapper.getSql(Statements.LIST_PARTITIONS_DEFINITIONS),
+                            "TABLE_NAME", names);
+                    return jdbcOperations.query(queryDefsSql, new Object[] {schemaName}, (rs, num) -> {
+                        Map<String, Object> rows = new HashMap<>();
+                        rows.put("TABLE_NAME", rs.getString("TABLE_NAME"));
+                        rows.put("PARTITION_NAME", rs.getString("PARTITION_NAME"));
+                        rows.put("PARTITION_POSITION", rs.getInt("PARTITION_POSITION"));
+                        rows.put("HIGH_VALUE", rs.getString("HIGH_VALUE"));
+                        return rows;
+                    });
+                });
+        List<Map<String, Object>> optRows = DBSchemaAccessorUtil.partitionFind(tableNames,
+                DBSchemaAccessorUtil.OB_MAX_IN_SIZE, names -> {
+                    String queryOptsSql =
+                            filterByValues(sqlMapper.getSql(Statements.LIST_PARTITIONS_OPTIONS), "TABLE_NAME", names);
+                    return jdbcOperations.query(queryOptsSql, new Object[] {schemaName}, (rs, num) -> {
+                        Map<String, Object> rows = new HashMap<>();
+                        rows.put("TABLE_NAME", rs.getString("TABLE_NAME"));
+                        rows.put("PARTITIONING_TYPE", rs.getString("PARTITIONING_TYPE"));
+                        return rows;
+                    });
+                });
+        SqlBuilder sqlBuilder = new OracleSqlBuilder().append("SELECT NAME, COLUMN_NAME FROM ")
+                .append(dataDictTableNames.PART_KEY_COLUMNS())
+                .append(" WHERE OWNER = ").value(schemaName);
+        if (CollectionUtils.isNotEmpty(tableNames)) {
+            String tables = tableNames.stream().map(s -> new OracleSqlBuilder().value(s).toString())
+                    .collect(Collectors.joining(","));
+            sqlBuilder.append(" AND NAME IN (").append(tables).append(")");
+        }
+        List<Map<String, Object>> colRows = jdbcOperations.query(sqlBuilder.toString(), (rs, num) -> {
+            Map<String, Object> rows = new HashMap<>();
+            rows.put("TABLE_NAME", rs.getString("NAME"));
+            rows.put("COLUMN_NAME", rs.getString("COLUMN_NAME"));
+            return rows;
+        });
+        Map<String, List<Map<String, Object>>> tblName2DefRows = defRows.stream().collect(
+                Collectors.groupingBy(m -> (String) m.get("TABLE_NAME")));
+        Map<String, List<Map<String, Object>>> tblName2OptRows = optRows.stream().collect(
+                Collectors.groupingBy(m -> (String) m.get("TABLE_NAME")));
+        Map<String, List<Map<String, Object>>> tblName2ColRows = colRows.stream().collect(
+                Collectors.groupingBy(m -> (String) m.get("TABLE_NAME")));
+        return tblName2DefRows.entrySet().stream().collect(Collectors.toMap(Entry::getKey, e -> {
+            String tblName = e.getKey();
+            List<Map<String, Object>> subOptRows = tblName2OptRows.get(tblName);
+            if (subOptRows == null) {
+                throw new IllegalStateException("Failed to find partition option by table, " + tblName);
+            }
+            DBTablePartitionOption option = new DBTablePartitionOption();
+            option.setType(DBTablePartitionType.fromValue((String) subOptRows.get(0).get("PARTITIONING_TYPE")));
+            if (option.getType() == DBTablePartitionType.NOT_PARTITIONED) {
+                throw new IllegalStateException(
+                        "Unrecognized partition type, " + subOptRows.get(0).get("PARTITIONING_TYPE"));
+            }
+            List<Map<String, Object>> subColRows = tblName2ColRows.get(tblName);
+            if (subColRows == null) {
+                throw new IllegalStateException("Failed to find partition key by table, " + tblName);
+            }
+            List<String> columnNames =
+                    subColRows.stream().map(m -> (String) m.get("COLUMN_NAME")).collect(Collectors.toList());
+            if (option.getType().supportExpression()) {
+                option.setExpression(String.join(",", columnNames));
+            } else {
+                option.setColumnNames(columnNames);
+            }
+            DBTablePartition partition = new DBTablePartition();
+            partition.setSchemaName(schemaName);
+            partition.setTableName(tblName);
+            partition.setPartitionOption(option);
+            List<Map<String, Object>> subDefRows = tblName2DefRows.get(tblName);
+            partition.setPartitionDefinitions(subDefRows.stream().map(row -> {
+                DBTablePartitionDefinition partitionDefinition = new DBTablePartitionDefinition();
+                partitionDefinition.setName((String) row.get("PARTITION_NAME"));
+                partitionDefinition.setOrdinalPosition((Integer) row.get("PARTITION_POSITION"));
+                partitionDefinition.setType(option.getType());
+                partitionDefinition.fillValues((String) row.get("HIGH_VALUE"));
+                return partitionDefinition;
+            }).collect(Collectors.toList()));
+            if (CollectionUtils.isNotEmpty(partition.getPartitionDefinitions())) {
+                partition.getPartitionOption().setPartitionsNum(partition.getPartitionDefinitions().size());
+            }
+            return partition;
+        }));
+    }
+
+    @Override
+    public List<DBTablePartition> listTableRangePartitionInfo(String tenantName) {
+        throw new UnsupportedOperationException("Not supported yet");
+    }
+
+    protected String filterByValues(String target, String colName, List<String> candidates) {
+        if (CollectionUtils.isEmpty(candidates)) {
+            return target;
+        }
+        String tables = candidates.stream().map(s -> new OracleSqlBuilder().value(s).toString())
+                .collect(Collectors.joining(","));
+        SqlBuilder sqlBuilder = new OracleSqlBuilder();
+        return sqlBuilder.append("SELECT * FROM (")
+                .append(target).append(") dbbrowser").append(" WHERE dbbrowser.").identifier(colName)
+                .append(" IN (").append(tables).append(")").toString();
+    }
+
     private DBTablePartitionOption obtainPartitionOption(String schemaName, String tableName) {
         DBTablePartitionOption option = new DBTablePartitionOption();
         option.setType(DBTablePartitionType.NOT_PARTITIONED);
@@ -941,17 +1036,15 @@ public class OracleSchemaAccessor implements DBSchemaAccessor {
             DBTablePartitionOption option) {
         String sql = this.sqlMapper.getSql(Statements.LIST_PARTITION_DEFINITIONS);
 
-        List<DBTablePartitionDefinition> partitionDefinitions =
-                jdbcOperations.query(sql, new Object[] {schemaName, tableName}, (rs, num) -> {
-                    DBTablePartitionDefinition partitionDefinition = new DBTablePartitionDefinition();
-                    partitionDefinition.setName(rs.getString("PARTITION_NAME"));
-                    partitionDefinition.setOrdinalPosition(num);
-                    partitionDefinition.setType(option.getType());
-                    String description = rs.getString("HIGH_VALUE");
-                    partitionDefinition.fillValues(description);
-                    return partitionDefinition;
-                });
-        return partitionDefinitions;
+        return jdbcOperations.query(sql, new Object[] {schemaName, tableName}, (rs, num) -> {
+            DBTablePartitionDefinition partitionDefinition = new DBTablePartitionDefinition();
+            partitionDefinition.setName(rs.getString("PARTITION_NAME"));
+            partitionDefinition.setOrdinalPosition(num);
+            partitionDefinition.setType(option.getType());
+            String description = rs.getString("HIGH_VALUE");
+            partitionDefinition.fillValues(description);
+            return partitionDefinition;
+        });
     }
 
     @Override
@@ -1141,7 +1234,6 @@ public class OracleSchemaAccessor implements DBSchemaAccessor {
             tableOptions.setCreateTime(rs.getTimestamp("CREATED"));
             tableOptions.setUpdateTime(rs.getTimestamp("LAST_DDL_TIME"));
         });
-
     }
 
     @Override
@@ -1159,7 +1251,7 @@ public class OracleSchemaAccessor implements DBSchemaAccessor {
         jdbcOperations.query(getDDL.toString(), rs -> {
             view.setDdl(rs.getString(1));
         });
-
+        fullFillComment(view);
         OracleSqlBuilder getColumns = new OracleSqlBuilder();
         getColumns.append(
                 "SELECT COLUMN_NAME, DATA_TYPE, NULLABLE, DATA_DEFAULT, COMMENTS FROM SYS.ALL_TAB_COLS NATURAL JOIN SYS.ALL_COL_COMMENTS WHERE OWNER = ")
@@ -1168,6 +1260,7 @@ public class OracleSchemaAccessor implements DBSchemaAccessor {
             DBTableColumn column = new DBTableColumn();
             column.setName(rs.getString("COLUMN_NAME"));
             column.setTypeName(rs.getString("DATA_TYPE"));
+            column.setComment(rs.getString("COMMENTS"));
             column.setNullable("Y".equalsIgnoreCase(rs.getString("NULLABLE")));
             column.setDefaultValue(rs.getString("DATA_DEFAULT"));
             column.setOrdinalPosition(rowNum);
@@ -1176,6 +1269,22 @@ public class OracleSchemaAccessor implements DBSchemaAccessor {
         });
         view.setColumns(columns);
         return view;
+    }
+
+    protected void fullFillComment(DBView view) {
+        OracleSqlBuilder sb = new OracleSqlBuilder();
+        sb.append("SELECT OWNER, TABLE_NAME, COMMENTS FROM ")
+                .append(this.dataDictTableNames.TAB_COMMENTS())
+                .append(" WHERE TABLE_TYPE='VIEW' AND OWNER=").value(view.getSchemaName())
+                .append(" AND TABLE_NAME=").value(view.getViewName());
+        try {
+            this.jdbcOperations.query(sb.toString(), (rs, num) -> {
+                view.setComment(rs.getString("COMMENTS"));
+                return null;
+            });
+        } catch (Exception e) {
+            log.warn("Failed to query view's comment, viewName={}, errMessage={}", view.getViewName(), e.getMessage());
+        }
     }
 
     @Override
