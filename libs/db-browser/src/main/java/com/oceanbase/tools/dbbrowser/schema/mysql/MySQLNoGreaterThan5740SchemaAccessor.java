@@ -410,8 +410,11 @@ public class MySQLNoGreaterThan5740SchemaAccessor implements DBSchemaAccessor {
 
     @Override
     public Map<String, List<DBTableColumn>> listTableColumns(String schemaName, List<String> tableNames) {
-        String querySql = filterByValues(getListTableColumnsSql(schemaName), "TABLE_NAME", tableNames);
-        List<DBTableColumn> tableColumns = jdbcOperations.query(querySql, listTableRowMapper());
+        List<DBTableColumn> tableColumns = DBSchemaAccessorUtil.partitionFind(tableNames,
+                DBSchemaAccessorUtil.OB_MAX_IN_SIZE, names -> {
+                    String querySql = filterByValues(getListTableColumnsSql(schemaName), "TABLE_NAME", names);
+                    return jdbcOperations.query(querySql, listTableRowMapper());
+                });
         return tableColumns.stream().collect(Collectors.groupingBy(DBTableColumn::getTableName));
     }
 
@@ -825,20 +828,22 @@ public class MySQLNoGreaterThan5740SchemaAccessor implements DBSchemaAccessor {
 
     @Override
     public Map<String, DBTablePartition> listTablePartitions(@NonNull String schemaName, List<String> tableNames) {
-        String sql = filterByValues(sqlMapper.getSql(Statements.LIST_PARTITIONS), "TABLE_NAME", tableNames);
-        List<Map<String, Object>> queryResult =
-                this.jdbcOperations.query(sql, new Object[] {schemaName}, (rs, rowNum) -> {
-                    Map<String, Object> result = new HashMap<>();
-                    result.put("TABLE_NAME", rs.getString("TABLE_NAME"));
-                    result.put("PARTITION_EXPRESSION", rs.getString("PARTITION_EXPRESSION"));
-                    result.put("PARTITION_NAME", rs.getString("PARTITION_NAME"));
-                    result.put("PARTITION_ORDINAL_POSITION", rs.getInt("PARTITION_ORDINAL_POSITION"));
-                    result.put("PARTITION_METHOD", rs.getString("PARTITION_METHOD"));
-                    result.put("PARTITION_DESCRIPTION", rs.getString("PARTITION_DESCRIPTION"));
-                    result.put("SUBPARTITION_NAME", rs.getString("SUBPARTITION_NAME"));
-                    result.put("SUBPARTITION_METHOD", rs.getString("SUBPARTITION_METHOD"));
-                    result.put("SUBPARTITION_EXPRESSION", rs.getString("SUBPARTITION_EXPRESSION"));
-                    return result;
+        List<Map<String, Object>> queryResult = DBSchemaAccessorUtil.partitionFind(tableNames,
+                DBSchemaAccessorUtil.OB_MAX_IN_SIZE, names -> {
+                    String sql = filterByValues(sqlMapper.getSql(Statements.LIST_PARTITIONS), "TABLE_NAME", names);
+                    return jdbcOperations.query(sql, new Object[] {schemaName}, (rs, rowNum) -> {
+                        Map<String, Object> result = new HashMap<>();
+                        result.put("TABLE_NAME", rs.getString("TABLE_NAME"));
+                        result.put("PARTITION_EXPRESSION", rs.getString("PARTITION_EXPRESSION"));
+                        result.put("PARTITION_NAME", rs.getString("PARTITION_NAME"));
+                        result.put("PARTITION_ORDINAL_POSITION", rs.getInt("PARTITION_ORDINAL_POSITION"));
+                        result.put("PARTITION_METHOD", rs.getString("PARTITION_METHOD"));
+                        result.put("PARTITION_DESCRIPTION", rs.getString("PARTITION_DESCRIPTION"));
+                        result.put("SUBPARTITION_NAME", rs.getString("SUBPARTITION_NAME"));
+                        result.put("SUBPARTITION_METHOD", rs.getString("SUBPARTITION_METHOD"));
+                        result.put("SUBPARTITION_EXPRESSION", rs.getString("SUBPARTITION_EXPRESSION"));
+                        return result;
+                    });
                 });
         Map<String, List<Map<String, Object>>> tableName2Res = queryResult.stream().collect(
                 Collectors.groupingBy(m -> (String) m.get("TABLE_NAME")));

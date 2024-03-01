@@ -40,6 +40,7 @@ import com.oceanbase.tools.dbbrowser.model.DBView;
 import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessorSqlMappers;
 import com.oceanbase.tools.dbbrowser.schema.constant.Statements;
 import com.oceanbase.tools.dbbrowser.schema.constant.StatementsFiles;
+import com.oceanbase.tools.dbbrowser.util.DBSchemaAccessorUtil;
 import com.oceanbase.tools.dbbrowser.util.MySQLSqlBuilder;
 import com.oceanbase.tools.dbbrowser.util.StringUtils;
 
@@ -160,23 +161,26 @@ public class OBMySQLBetween2277And3XSchemaAccessor extends OBMySQLSchemaAccessor
 
     @Override
     public Map<String, DBTablePartition> listTablePartitions(@NonNull String schemaName, List<String> tableNames) {
-        String sql = filterByValues(sqlMapper.getSql(Statements.LIST_PARTITIONS), "table_name", tableNames);
-        List<Map<String, Object>> queryResult = jdbcOperations.query(sql, new Object[] {schemaName}, (rs, rowNum) -> {
-            Map<String, Object> row = new HashMap<>();
-            row.put("table_name", rs.getString("table_name"));
-            row.put("partition_method", rs.getString("partition_method"));
-            row.put("part_num", rs.getInt("part_num"));
-            row.put("part_func_expr", rs.getString("part_func_expr"));
-            row.put("is_sub_part_template", rs.getInt("is_sub_part_template"));
-            row.put("part_name", rs.getString("part_name"));
-            row.put("part_id", rs.getInt("part_id"));
-            row.put("list_val", rs.getString("list_val"));
-            row.put("high_bound_val", rs.getString("high_bound_val"));
-            row.put("subpartition_method", rs.getString("subpartition_method"));
-            row.put("sub_part_func_expr", rs.getString("sub_part_func_expr"));
-            row.put("sub_part_num", rs.getInt("sub_part_num"));
-            return row;
-        });
+        List<Map<String, Object>> queryResult = DBSchemaAccessorUtil.partitionFind(tableNames,
+                DBSchemaAccessorUtil.OB_MAX_IN_SIZE, names -> {
+                    String sql = filterByValues(sqlMapper.getSql(Statements.LIST_PARTITIONS), "table_name", names);
+                    return jdbcOperations.query(sql, new Object[] {schemaName}, (rs, rowNum) -> {
+                        Map<String, Object> row = new HashMap<>();
+                        row.put("table_name", rs.getString("table_name"));
+                        row.put("partition_method", rs.getString("partition_method"));
+                        row.put("part_num", rs.getInt("part_num"));
+                        row.put("part_func_expr", rs.getString("part_func_expr"));
+                        row.put("is_sub_part_template", rs.getInt("is_sub_part_template"));
+                        row.put("part_name", rs.getString("part_name"));
+                        row.put("part_id", rs.getInt("part_id"));
+                        row.put("list_val", rs.getString("list_val"));
+                        row.put("high_bound_val", rs.getString("high_bound_val"));
+                        row.put("subpartition_method", rs.getString("subpartition_method"));
+                        row.put("sub_part_func_expr", rs.getString("sub_part_func_expr"));
+                        row.put("sub_part_num", rs.getInt("sub_part_num"));
+                        return row;
+                    });
+                });
         Map<String, List<Map<String, Object>>> tableName2Rows = queryResult.stream()
                 .collect(Collectors.groupingBy(m -> (String) m.get("table_name")));
         return tableName2Rows.entrySet().stream().collect(Collectors.toMap(Entry::getKey,

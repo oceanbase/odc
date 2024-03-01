@@ -544,9 +544,11 @@ public class OracleSchemaAccessor implements DBSchemaAccessor {
 
     @Override
     public Map<String, List<DBTableColumn>> listTableColumns(String schemaName, List<String> tableNames) {
-        String sql = filterByValues(this.sqlMapper.getSql(Statements.LIST_SCHEMA_COLUMNS), "TABLE_NAME", tableNames);
-        List<DBTableColumn> tableColumns = this.jdbcOperations
-                .query(sql, new Object[] {schemaName}, listColumnsRowMapper());
+        List<DBTableColumn> tableColumns = DBSchemaAccessorUtil.partitionFind(tableNames,
+                DBSchemaAccessorUtil.OB_MAX_IN_SIZE, names -> {
+                    String sql = filterByValues(sqlMapper.getSql(Statements.LIST_SCHEMA_COLUMNS), "TABLE_NAME", names);
+                    return jdbcOperations.query(sql, new Object[] {schemaName}, listColumnsRowMapper());
+                });
         Map<String, List<DBTableColumn>> tableName2Columns = tableColumns.stream()
                 .collect(Collectors.groupingBy(DBTableColumn::getTableName));
         tableName2Columns.forEach((table, cols) -> {
@@ -898,24 +900,30 @@ public class OracleSchemaAccessor implements DBSchemaAccessor {
 
     @Override
     public Map<String, DBTablePartition> listTablePartitions(@NonNull String schemaName, List<String> tableNames) {
-        String queryDefsSql = filterByValues(this.sqlMapper.getSql(Statements.LIST_PARTITIONS_DEFINITIONS),
-                "TABLE_NAME", tableNames);
-        List<Map<String, Object>> defRows = jdbcOperations.query(queryDefsSql, new Object[] {schemaName}, (rs, num) -> {
-            Map<String, Object> rows = new HashMap<>();
-            rows.put("TABLE_NAME", rs.getString("TABLE_NAME"));
-            rows.put("PARTITION_NAME", rs.getString("PARTITION_NAME"));
-            rows.put("PARTITION_POSITION", rs.getInt("PARTITION_POSITION"));
-            rows.put("HIGH_VALUE", rs.getString("HIGH_VALUE"));
-            return rows;
-        });
-        String queryOptsSql = filterByValues(this.sqlMapper.getSql(Statements.LIST_PARTITIONS_OPTIONS),
-                "TABLE_NAME", tableNames);
-        List<Map<String, Object>> optRows = jdbcOperations.query(queryOptsSql, new Object[] {schemaName}, (rs, num) -> {
-            Map<String, Object> rows = new HashMap<>();
-            rows.put("TABLE_NAME", rs.getString("TABLE_NAME"));
-            rows.put("PARTITIONING_TYPE", rs.getString("PARTITIONING_TYPE"));
-            return rows;
-        });
+        List<Map<String, Object>> defRows = DBSchemaAccessorUtil.partitionFind(tableNames,
+                DBSchemaAccessorUtil.OB_MAX_IN_SIZE, names -> {
+                    String queryDefsSql = filterByValues(sqlMapper.getSql(Statements.LIST_PARTITIONS_DEFINITIONS),
+                            "TABLE_NAME", names);
+                    return jdbcOperations.query(queryDefsSql, new Object[] {schemaName}, (rs, num) -> {
+                        Map<String, Object> rows = new HashMap<>();
+                        rows.put("TABLE_NAME", rs.getString("TABLE_NAME"));
+                        rows.put("PARTITION_NAME", rs.getString("PARTITION_NAME"));
+                        rows.put("PARTITION_POSITION", rs.getInt("PARTITION_POSITION"));
+                        rows.put("HIGH_VALUE", rs.getString("HIGH_VALUE"));
+                        return rows;
+                    });
+                });
+        List<Map<String, Object>> optRows = DBSchemaAccessorUtil.partitionFind(tableNames,
+                DBSchemaAccessorUtil.OB_MAX_IN_SIZE, names -> {
+                    String queryOptsSql =
+                            filterByValues(sqlMapper.getSql(Statements.LIST_PARTITIONS_OPTIONS), "TABLE_NAME", names);
+                    return jdbcOperations.query(queryOptsSql, new Object[] {schemaName}, (rs, num) -> {
+                        Map<String, Object> rows = new HashMap<>();
+                        rows.put("TABLE_NAME", rs.getString("TABLE_NAME"));
+                        rows.put("PARTITIONING_TYPE", rs.getString("PARTITIONING_TYPE"));
+                        return rows;
+                    });
+                });
         SqlBuilder sqlBuilder = new OracleSqlBuilder().append("SELECT NAME, COLUMN_NAME FROM ")
                 .append(dataDictTableNames.PART_KEY_COLUMNS())
                 .append(" WHERE OWNER = ").value(schemaName);

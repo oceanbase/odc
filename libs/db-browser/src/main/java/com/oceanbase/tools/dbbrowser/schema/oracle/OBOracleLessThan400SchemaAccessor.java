@@ -36,6 +36,7 @@ import com.oceanbase.tools.dbbrowser.model.DBTablePartitionType;
 import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessorSqlMappers;
 import com.oceanbase.tools.dbbrowser.schema.constant.Statements;
 import com.oceanbase.tools.dbbrowser.schema.constant.StatementsFiles;
+import com.oceanbase.tools.dbbrowser.util.DBSchemaAccessorUtil;
 import com.oceanbase.tools.dbbrowser.util.OracleDataDictTableNames;
 import com.oceanbase.tools.dbbrowser.util.OracleSqlBuilder;
 import com.oceanbase.tools.dbbrowser.util.StringUtils;
@@ -96,19 +97,22 @@ public class OBOracleLessThan400SchemaAccessor extends OBOracleSchemaAccessor {
 
     @Override
     public Map<String, DBTablePartition> listTablePartitions(@NonNull String schemaName, List<String> tableNames) {
-        String sql = filterByValues(sqlMapper.getSql(Statements.LIST_PARTITIONS), "TABLE_NAME", tableNames);
-        List<Map<String, Object>> queryResult = jdbcOperations.query(sql, new Object[] {schemaName}, (rs, rowNum) -> {
-            Map<String, Object> row = new HashMap<>();
-            row.put("TABLE_NAME", rs.getString("TABLE_NAME"));
-            row.put("PARTITION_METHOD", rs.getString("PARTITION_METHOD"));
-            row.put("PART_NUM", rs.getInt("PART_NUM"));
-            row.put("EXPRESSION", rs.getString("EXPRESSION"));
-            row.put("PART_NAME", rs.getString("PART_NAME"));
-            row.put("PART_ID", rs.getInt("PART_ID"));
-            row.put("MAX_VALUE", rs.getString("MAX_VALUE"));
-            row.put("LIST_VALUE", rs.getString("LIST_VALUE"));
-            return row;
-        });
+        List<Map<String, Object>> queryResult = DBSchemaAccessorUtil.partitionFind(tableNames,
+                DBSchemaAccessorUtil.OB_MAX_IN_SIZE, names -> {
+                    String sql = filterByValues(sqlMapper.getSql(Statements.LIST_PARTITIONS), "TABLE_NAME", names);
+                    return jdbcOperations.query(sql, new Object[] {schemaName}, (rs, rowNum) -> {
+                        Map<String, Object> row = new HashMap<>();
+                        row.put("TABLE_NAME", rs.getString("TABLE_NAME"));
+                        row.put("PARTITION_METHOD", rs.getString("PARTITION_METHOD"));
+                        row.put("PART_NUM", rs.getInt("PART_NUM"));
+                        row.put("EXPRESSION", rs.getString("EXPRESSION"));
+                        row.put("PART_NAME", rs.getString("PART_NAME"));
+                        row.put("PART_ID", rs.getInt("PART_ID"));
+                        row.put("MAX_VALUE", rs.getString("MAX_VALUE"));
+                        row.put("LIST_VALUE", rs.getString("LIST_VALUE"));
+                        return row;
+                    });
+                });
         Map<String, List<Map<String, Object>>> tableName2Rows = queryResult.stream()
                 .collect(Collectors.groupingBy(m -> (String) m.get("TABLE_NAME")));
         return tableName2Rows.entrySet().stream().collect(Collectors.toMap(Entry::getKey,

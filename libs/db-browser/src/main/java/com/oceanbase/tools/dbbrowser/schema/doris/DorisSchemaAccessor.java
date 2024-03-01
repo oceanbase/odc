@@ -374,8 +374,11 @@ public class DorisSchemaAccessor implements DBSchemaAccessor {
 
     @Override
     public Map<String, List<DBTableColumn>> listTableColumns(String schemaName, List<String> tableNames) {
-        String querySql = filterByValues(getListTableColumnsSql(schemaName), "TABLE_NAME", tableNames);
-        List<DBTableColumn> tableColumns = jdbcOperations.query(querySql, listTableRowMapper());
+        List<DBTableColumn> tableColumns = DBSchemaAccessorUtil.partitionFind(tableNames,
+                DBSchemaAccessorUtil.OB_MAX_IN_SIZE, names -> {
+                    String querySql = filterByValues(getListTableColumnsSql(schemaName), "TABLE_NAME", names);
+                    return jdbcOperations.query(querySql, listTableRowMapper());
+                });
         return tableColumns.stream().collect(Collectors.groupingBy(DBTableColumn::getTableName));
     }
 
