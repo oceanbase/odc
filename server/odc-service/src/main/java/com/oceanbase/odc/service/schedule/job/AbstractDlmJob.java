@@ -72,11 +72,11 @@ public class AbstractDlmJob implements OdcJob {
     public final ScheduleService scheduleService;
     public final DlmLimiterService limiterService;
 
-    public final JobScheduler jobScheduler;
+    public JobScheduler jobScheduler;
 
     public final TaskFrameworkProperties taskFrameworkProperties;
 
-    public final TaskFrameworkService taskFrameworkService;
+    public TaskFrameworkService taskFrameworkService;
     public Thread jobThread;
 
     private AbstractJob job;
@@ -88,9 +88,11 @@ public class AbstractDlmJob implements OdcJob {
         databaseService = SpringContextUtil.getBean(DatabaseService.class);
         scheduleService = SpringContextUtil.getBean(ScheduleService.class);
         limiterService = SpringContextUtil.getBean(DlmLimiterService.class);
-        jobScheduler = SpringContextUtil.getBean(JobScheduler.class);
         taskFrameworkProperties = SpringContextUtil.getBean(DefaultTaskFrameworkProperties.class);
-        taskFrameworkService = SpringContextUtil.getBean(TaskFrameworkService.class);
+        if (taskFrameworkProperties.isEnabled()) {
+            jobScheduler = SpringContextUtil.getBean(JobScheduler.class);
+            taskFrameworkService = SpringContextUtil.getBean(TaskFrameworkService.class);
+        }
     }
 
     public void executeTask(Long taskId, List<DlmTask> taskUnits) {
