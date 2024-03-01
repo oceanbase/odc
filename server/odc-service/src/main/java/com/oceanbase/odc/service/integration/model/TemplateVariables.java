@@ -68,7 +68,11 @@ public class TemplateVariables implements Serializable {
         DATABASE_NAME("database.name"),
         ENVIRONMENT_NAME("environment.name"),
         TASK_DESCRIPTION("task.description"),
-        RISK_LEVEL("risk.level");
+        RISK_LEVEL("risk.level"),
+        PROJECT_OWNER_IDS("project.owner.ids"),
+        PROJECT_OWNER_ACCOUNTS("project.owner.accounts"),
+        PROJECT_OWNER_NAMES("project.owner.names"),
+        ODC_TASK_URL("odc.task.url");
 
 
         private final String key;

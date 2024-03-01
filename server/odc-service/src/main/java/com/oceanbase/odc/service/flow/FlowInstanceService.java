@@ -139,6 +139,7 @@ import com.oceanbase.odc.service.iam.ResourceRoleService;
 import com.oceanbase.odc.service.iam.UserService;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.iam.model.User;
+import com.oceanbase.odc.service.iam.model.UserResourceRole;
 import com.oceanbase.odc.service.integration.IntegrationService;
 import com.oceanbase.odc.service.integration.client.ApprovalClient;
 import com.oceanbase.odc.service.integration.model.ApprovalProperties;
@@ -826,6 +827,8 @@ public class FlowInstanceService {
                         targetConfigurer);
             }
             flowInstance.buildTopology();
+
+            flowInstanceReq.setId(flowInstance.getId());
         } catch (Exception e) {
             log.warn("Failed to build FlowInstance, flowInstanceReq={}", flowInstanceReq, e);
             throw e;
@@ -972,6 +975,11 @@ public class FlowInstanceService {
 
     private TemplateVariables buildTemplateVariables(CreateFlowInstanceReq flowInstanceReq, ConnectionConfig config) {
         TemplateVariables variables = new TemplateVariables();
+        // set task url
+        String odcTaskUrl = String.format(
+            "#/task?taskId=%d&taskType=%s&organizationId=%s",
+            flowInstanceReq.getId(), flowInstanceReq.getTaskType().toString(), authenticationFacade.currentOrganizationId());
+        variables.setAttribute(Variable.ODC_TASK_URL, odcTaskUrl);
         // set user related variables
         variables.setAttribute(Variable.USER_ID, authenticationFacade.currentUserId());
         variables.setAttribute(Variable.USER_NAME, authenticationFacade.currentUsername());
@@ -989,8 +997,33 @@ public class FlowInstanceService {
                 variables.setAttribute(Variable.CONNECTION_PROPERTIES, entry.getKey(), entry.getValue());
             }
         }
-        Database database = databaseService.detail(flowInstanceReq.getDatabaseId());
-        if (Objects.nonNull(database)) {
+        // set project owner related variables
+        List<UserResourceRole> projectUserResourceRole = resourceRoleService.getUserIdsByProjectIdAndResourceRole(
+                flowInstanceReq.getProjectId(), ResourceType.ODC_PROJECT,
+                "OWNER");
+        List<User> projectOwnerUsers = projectUserResourceRole.stream()
+                .map(userResourceRole -> {
+                    User user = userService.detailWithoutPermissionCheck(userResourceRole.getUserId());
+                    return user;
+                })
+                .collect(Collectors.toList());
+        List<Long> projectOwnerIds = new ArrayList<>();
+        List<String> projectOwnerAccounts = new ArrayList<>();
+        List<String> projectOwnerNames = new ArrayList<>();
+        projectOwnerUsers.forEach(user -> {
+            projectOwnerIds.add(user.getId());
+            projectOwnerAccounts.add(user.getAccountName());
+            projectOwnerNames.add(user.getName());
+        });
+        variables.setAttribute(Variable.PROJECT_OWNER_IDS, JsonUtils.toJson(projectOwnerIds));
+        variables.setAttribute(Variable.PROJECT_OWNER_ACCOUNTS, JsonUtils.toJson(projectOwnerAccounts));
+        variables.setAttribute(Variable.PROJECT_OWNER_NAMES, JsonUtils.toJson(projectOwnerNames));
+        // set database owner related variables
+        Database database = new Database();
+        if (flowInstanceReq.getDatabaseId() != null) {
+            database = databaseService.detail(flowInstanceReq.getDatabaseId());
+        }
+        if (database != null && database.getId() != null) {
             String environmentName = database.getEnvironment().getName();
             environmentName =
                     I18n.translate(environmentName.substring(2, environmentName.length() - 1), null, Locale.US);

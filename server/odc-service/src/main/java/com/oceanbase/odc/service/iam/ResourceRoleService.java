@@ -77,8 +77,10 @@ public class ResourceRoleService {
             return Collections.emptyList();
         }
         List<UserResourceRole> userResourceRoles = new ArrayList<>();
+        ArrayList<String> resourceTypes = new ArrayList<>();
+        resourceTypes.add(ResourceType.ODC_PROJECT.toString());
         Map<ResourceRoleName, ResourceRoleEntity> resourceRoleEntities =
-                resourceRoleRepository.findAll().stream().collect(Collectors.toMap(
+                resourceRoleRepository.findInResourceType(resourceTypes).stream().collect(Collectors.toMap(
                         ResourceRoleEntity::getRoleName, v -> v, (existingValue, newValue) -> newValue));
 
         List<UserResourceRoleEntity> entities = userResourceRoleList.stream().map(i -> {
