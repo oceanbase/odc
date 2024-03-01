@@ -20,8 +20,6 @@ import java.util.Set;
 
 import javax.validation.constraints.NotNull;
 
-import org.aspectj.lang.ProceedingJoinPoint;
-
 public interface StateManager {
 
     /**
