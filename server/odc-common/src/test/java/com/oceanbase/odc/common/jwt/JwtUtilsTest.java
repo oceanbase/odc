@@ -25,8 +25,6 @@ import org.junit.Test;
 import com.auth0.jwt.interfaces.Claim;
 
 public class JwtUtilsTest {
-    private static final long BUFFER_TIME = 3 * 60 * 1000;
-
     @Test
     public void testSignPositive() {
         Map<String, Object> map = new HashMap<>();
@@ -90,7 +88,7 @@ public class JwtUtilsTest {
 
     @Test
     public void testIsRenew() {
-        Date expiration = new Date(System.currentTimeMillis() + JwtUtilsTest.BUFFER_TIME - 1000);
+        Date expiration = new Date(System.currentTimeMillis() + JwtUtils.BUFFER_TIME - 1000);
         Assert.assertTrue(JwtUtils.isRenew(expiration));
     }
 

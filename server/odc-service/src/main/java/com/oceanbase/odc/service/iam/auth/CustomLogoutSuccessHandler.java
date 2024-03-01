@@ -18,6 +18,7 @@ package com.oceanbase.odc.service.iam.auth;
 import java.io.IOException;
 
 import javax.servlet.ServletException;
+import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
@@ -25,6 +26,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.web.authentication.logout.LogoutSuccessHandler;
+import org.springframework.stereotype.Component;
 
 import com.github.benmanes.caffeine.cache.Cache;
 import com.oceanbase.odc.service.common.response.Responses;
@@ -40,6 +42,7 @@ import lombok.extern.slf4j.Slf4j;
  * @date 2021/8/4
  */
 @Slf4j
+@Component
 public class CustomLogoutSuccessHandler implements LogoutSuccessHandler {
     @Autowired
     @Qualifier("authenticationCache")
@@ -51,7 +54,13 @@ public class CustomLogoutSuccessHandler implements LogoutSuccessHandler {
     public void onLogoutSuccess(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse,
             Authentication authentication) throws IOException, ServletException {
 
-        httpServletResponse.setHeader(JwtProperties.TOKEN, JwtProperties.AUTHENTICATION_BLANK_VALUE);
+        // httpServletResponse.setHeader(JwtProperties.TOKEN, JwtProperties.AUTHENTICATION_BLANK_VALUE);
+        Cookie cookie = new Cookie(JwtProperties.TOKEN, JwtProperties.AUTHENTICATION_BLANK_VALUE);
+        cookie.setMaxAge(24 * 60 * 60);
+        cookie.setMaxAge(0);
+        cookie.setPath("/");
+        cookie.setHttpOnly(true);
+        httpServletResponse.addCookie(cookie);
         User user = (User) authentication.getPrincipal();
         if (authenticationCache.getIfPresent(user.getId()) != null) {
             authenticationCache.invalidate(user.getId());

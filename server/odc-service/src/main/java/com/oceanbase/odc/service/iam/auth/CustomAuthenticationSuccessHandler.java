@@ -26,6 +26,7 @@ import java.util.stream.Collectors;
 
 import javax.security.auth.Subject;
 import javax.servlet.ServletException;
+import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
@@ -155,7 +156,13 @@ public class CustomAuthenticationSuccessHandler extends SavedRequestAwareAuthent
                 hashMap.put(JwtProperties.ORGANIZATION_ID, user.getOrganizationId());
                 hashMap.put(JwtProperties.ORGANIZATION_TYPE, JsonUtils.toJson(user.getOrganizationType()));
                 String token = JwtUtils.sign(hashMap);
-                httpServletResponse.setHeader(JwtProperties.TOKEN, token);
+                Cookie cookie = new Cookie(JwtProperties.TOKEN, token);
+                cookie.setPath("/");
+                cookie.setMaxAge(24 * 60 * 60);
+                cookie.setHttpOnly(true);
+                httpServletResponse.addCookie(cookie);
+
+                // httpServletResponse.setHeader(JwtProperties.TOKEN, token);
                 authenticationCache.put(user.getId(), authentication);
                 WebResponseUtils.writeJsonObjectWithOkStatus(successResponse, httpServletRequest, httpServletResponse);
             } else {

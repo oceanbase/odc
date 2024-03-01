@@ -31,9 +31,9 @@ import com.auth0.jwt.interfaces.Claim;
 
 public class JwtUtils {
     // 过期时间 15分钟
-    private static final long EXPIRE_TIME = 15 * 60 * 1000;
+    public static final long EXPIRE_TIME = 15 * 60 * 1000;
     // 缓冲时间 3分钟
-    private static final long BUFFER_TIME = 3 * 60 * 1000;
+    public static final long BUFFER_TIME = 3 * 60 * 1000;
     // 私钥
     private static final String TOKEN_SECRET = "privateKey1234567890nfjkasfnjkhfknf@#$^&*(8(&**^$%$!~";
 

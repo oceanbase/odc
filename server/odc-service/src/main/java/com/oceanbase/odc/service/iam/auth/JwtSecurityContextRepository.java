@@ -19,6 +19,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
+import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
@@ -73,11 +74,30 @@ public class JwtSecurityContextRepository implements SecurityContextRepository {
 
     @Override
     public SecurityContext loadContext(HttpRequestResponseHolder requestResponseHolder) {
+
         HttpServletRequest request = requestResponseHolder.getRequest();
         HttpServletResponse response = requestResponseHolder.getResponse();
 
-        String token = request.getHeader(JwtProperties.TOKEN);
+        // String token = request.getHeader(JwtProperties.TOKEN);
         SecurityContext context = SecurityContextHolder.createEmptyContext();
+        Cookie[] cookies = request.getCookies();
+        String token = null;
+
+        if (cookies == null) {
+            if (this.logger.isTraceEnabled()) {
+                this.logger
+                        .trace(LogMessage.format("Created %s because there was no cookie", context));
+            }
+            return context;
+        }
+
+        for (Cookie cookie : cookies) {
+            if (JwtProperties.TOKEN.equals(cookie.getName())) {
+                token = cookie.getValue();
+                break;
+            }
+        }
+
         if (!StringUtils.hasText(token) || !JwtUtils.verify(token)) {
             if (this.logger.isTraceEnabled()) {
                 this.logger
@@ -138,7 +158,12 @@ public class JwtSecurityContextRepository implements SecurityContextRepository {
             hashMap.put(JwtProperties.ORGANIZATION_ID, user.getOrganizationId());
             hashMap.put(JwtProperties.ORGANIZATION_TYPE, JsonUtils.toJson(user.getOrganizationType()));
             String renewToken = JwtUtils.sign(hashMap);
-            response.setHeader(JwtProperties.TOKEN, renewToken);
+            Cookie cookie = new Cookie(JwtProperties.TOKEN, renewToken);
+            cookie.setPath("/");
+            cookie.setMaxAge(24 * 60 * 60);
+            cookie.setHttpOnly(true);
+            response.addCookie(cookie);
+            // response.setHeader(JwtProperties.TOKEN, renewToken);
         }
 
         return context;
