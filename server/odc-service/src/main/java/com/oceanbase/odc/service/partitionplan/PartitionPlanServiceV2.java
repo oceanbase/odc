@@ -43,6 +43,7 @@ import com.oceanbase.odc.core.session.ConnectionSessionConstants;
 import com.oceanbase.odc.core.session.ConnectionSessionUtil;
 import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
+import com.oceanbase.odc.core.shared.exception.HttpException;
 import com.oceanbase.odc.core.shared.exception.NotFoundException;
 import com.oceanbase.odc.metadb.partitionplan.PartitionPlanEntity;
 import com.oceanbase.odc.metadb.partitionplan.PartitionPlanRepository;
@@ -118,6 +119,9 @@ public class PartitionPlanServiceV2 {
             try {
                 return tableExtensionPoint.getDetail(con, schema, tableName);
             } catch (Exception e) {
+                if (e instanceof HttpException) {
+                    throw (HttpException) e;
+                }
                 throw new IllegalStateException(e);
             }
         });
@@ -135,6 +139,9 @@ public class PartitionPlanServiceV2 {
             try {
                 return extensionPoint.getPartitionKeyDataTypes(con, dbTable);
             } catch (Exception e) {
+                if (e instanceof HttpException) {
+                    throw (HttpException) e;
+                }
                 throw new IllegalStateException(e);
             }
         });
@@ -216,6 +223,9 @@ public class PartitionPlanServiceV2 {
                     return returnVal;
                 } catch (Exception e) {
                     log.warn("Failed to generate partition name", e);
+                    if (e instanceof HttpException) {
+                        throw (HttpException) e;
+                    }
                     throw new IllegalStateException(e);
                 }
             })).collect(Collectors.toList());
@@ -234,6 +244,9 @@ public class PartitionPlanServiceV2 {
                 return returnVal;
             } catch (Exception e) {
                 log.warn("Failed to generate partition ddl", e);
+                if (e instanceof HttpException) {
+                    throw (HttpException) e;
+                }
                 throw new IllegalStateException(e);
             }
         })).collect(Collectors.toList());
