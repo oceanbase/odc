@@ -69,11 +69,12 @@ public class BuiltinSnippetService {
     public List<BuiltinSnippet> listBySession(String sessionId) {
         ConnectionSession connectionSession = sessionService.nullSafeGet(sessionId, true);
         String tenantName = ConnectionSessionUtil.getTenantName(connectionSession);
+        boolean isSysTenant = "sys".equals(tenantName);
         String version = ConnectionSessionUtil.getVersion(connectionSession);
         Set<DialectType> supportsDialectTypes = supportsDialectTypes(connectionSession.getConnectType());
         return listAll().stream()
                 .filter(snippet -> supportsDialectTypes.contains(snippet.getDialectType()))
-                .filter(snippet -> "sys".equals(tenantName) == snippet.getTags().contains("sys"))
+                .filter(snippet -> !snippet.isForSysTenantOnly() || isSysTenant)
                 .filter(snippet -> Objects.isNull(snippet.getMinVersion())
                         || snippet.getMinVersion().compareTo(version) <= 0)
                 .filter(snippet -> Objects.isNull(snippet.getMaxVersion())
