@@ -17,17 +17,10 @@ package com.oceanbase.odc.service.config;
 
 import java.util.Map;
 import java.util.Objects;
-import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
-
-import javax.validation.constraints.NotNull;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import com.github.benmanes.caffeine.cache.Caffeine;
-import com.github.benmanes.caffeine.cache.LoadingCache;
-import com.oceanbase.odc.common.util.ExceptionUtils;
 import com.oceanbase.odc.service.config.model.Configuration;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 
@@ -41,14 +34,11 @@ public class UserConfigFacadeImpl implements UserConfigFacade {
     @Autowired
     private AuthenticationFacade authenticationFacade;
 
-    private final LoadingCache<Long, Map<String, Configuration>> userIdToConfigurationsCache = Caffeine.newBuilder()
-            .maximumSize(500).expireAfterWrite(60, TimeUnit.SECONDS)
-            .build(this::getUserConfigurations);
-
     @Override
     public String getUserConfig(String key) {
         long currentUserId = authenticationFacade.currentUserId();
-        Map<String, Configuration> userIdToConfigurations = userIdToConfigurationsCache.get(currentUserId);
+        Map<String, Configuration> userIdToConfigurations =
+                userConfigService.getUserConfigurationsFromCache(currentUserId);
         Configuration configuration = userIdToConfigurations.get(key);
         if (Objects.isNull(configuration)) {
             throw new IllegalStateException("User configuration not found: " + key);
@@ -86,17 +76,4 @@ public class UserConfigFacadeImpl implements UserConfigFacade {
         return getUserConfig(UserConfigKeys.DEFAULT_CONTINUE_EXECUTION_ON_ERROR).equalsIgnoreCase("true");
     }
 
-    public void evictCache(@NotNull Long userId) {
-        try {
-            userIdToConfigurationsCache.invalidate(userId);
-        } catch (Exception e) {
-            log.warn("Failed to evict cache, userId={}, reason={}",
-                    userId, ExceptionUtils.getRootCauseReason(e));
-        }
-    }
-
-    private Map<String, Configuration> getUserConfigurations(Long userId) {
-        return userConfigService.listUserConfigurations(userId).stream()
-                .collect(Collectors.toMap(Configuration::getKey, c -> c));
-    }
 }
