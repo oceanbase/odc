@@ -50,6 +50,7 @@ import com.oceanbase.odc.service.flow.listener.ApprovalStatusNotifyListener;
 import com.oceanbase.odc.service.flow.listener.ApprovalTaskExpiredListener;
 import com.oceanbase.odc.service.flow.listener.BaseTaskBindUserTaskListener;
 import com.oceanbase.odc.service.flow.listener.BaseTaskExecutingCompleteListener;
+import com.oceanbase.odc.service.flow.listener.BindingCallbackTaskExecutingCompleteListener;
 import com.oceanbase.odc.service.flow.listener.GatewayExecutingCompleteListener;
 import com.oceanbase.odc.service.flow.listener.ServiceTaskExecutingCompleteListener;
 import com.oceanbase.odc.service.flow.listener.ServiceTaskPendingExpiredListener;
@@ -248,7 +249,8 @@ public class FlowInstanceConfigurer extends GraphConfigurer<FlowInstance, BaseFl
         String userTaskName = FlowNodeType.APPROVAL_TASK.name() + "_callback_task_" + getNameSuffix(nextNode);
         UserTaskBuilder userTaskBuilder = nullSafeGetNodeBuilder(userTaskName, nextNode, () -> {
             UserTaskBuilder utb = new UserTaskBuilder(userTaskName);
-            utb.addExecutionListener(BaseTaskExecutingCompleteListener.class);
+            utb.addExecutionListener(BindingCallbackTaskExecutingCompleteListener.class);
+            utb.addTaskListener(BaseTaskBindUserTaskListener.class);
             return utb;
         });
         targetExecution.next(userTaskBuilder);

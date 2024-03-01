@@ -265,7 +265,7 @@ public class FlowApprovalInstance extends BaseFlowUserTaskInstance {
             }
             Map<String, Object> variables = new HashMap<>();
             variables.putIfAbsent(APPROVAL_VARIABLE_NAME, approved);
-            if (approvalVariables != null && approvalVariables.isEmpty()) {
+            if (approvalVariables != null && !approvalVariables.isEmpty()) {
                 variables.putAll(approvalVariables);
             }
             complete(variables);

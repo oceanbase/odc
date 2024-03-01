@@ -176,7 +176,7 @@ public class PreCheckRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Void> {
             long executionExpirationIntervalMilliSecs =
                     TimeUnit.MILLISECONDS.convert(executionExpirationSeconds, TimeUnit.SECONDS);
             riskLevelResult.put(RuntimeTaskConstants.TIMEOUT_MILLI_SECONDS, executionExpirationIntervalMilliSecs);
-            riskLevelResult.put(RuntimeTaskConstants.RISKLEVEL, riskLevel);
+            riskLevelResult.put(RuntimeTaskConstants.RISKLEVEL, riskLevel.getLevel());
             success = true;
         } catch (Exception ex) {
             log.warn("risk detect failed, ", ex);
