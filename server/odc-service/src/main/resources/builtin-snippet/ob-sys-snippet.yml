@@ -34,3 +34,143 @@
       oceanbase.DBA_OB_SERVERS
     ORDER BY
       ZONE, SVR_IP;
+- name: oceanbase sys query server resource stats
+  dialect_type: OB_MYSQL
+  tags: [ 'dba', 'oceanbase', 'sys' ]
+  type: DQL
+  min_version: 4.0.0
+  max_version: ~
+  description: 'Query all servers resource stats for OceanBase cluster'
+  prefix: query_server_resource_stats
+  body: |
+    SELECT
+      SVR_IP,
+      SVR_PORT,
+      ZONE,
+      SQL_PORT,
+      CPU_CAPACITY,
+      CPU_CAPACITY_MAX,
+      CPU_ASSIGNED,
+      CPU_ASSIGNED_MAX,
+      ROUND(MEM_CAPACITY / 1024 / 1024 / 1024) MEM_CAPACITY_GB,
+      ROUND(MEM_ASSIGNED / 1024 / 1024 / 1024) MEM_ASSIGNED_GB,
+      ROUND(LOG_DISK_CAPACITY / 1024 / 1024 / 1024) LOG_DISK_CAPACITY_GB,
+      ROUND(LOG_DISK_ASSIGNED / 1024 / 1024 / 1024) LOG_DISK_ASSIGNED_GB,
+      ROUND(LOG_DISK_IN_USE / 1024 / 1024 / 1024) LOG_DISK_IN_USE_GB,
+      ROUND(DATA_DISK_CAPACITY / 1024 / 1024 / 1024) DATA_DISK_CAPACITY_GB,
+      ROUND(DATA_DISK_IN_USE / 1024 / 1024 / 1024) DATA_DISK_IN_USE_GB,
+      ROUND(DATA_DISK_HEALTH_STATUS / 1024 / 1024 / 1024) DATA_DISK_HEALTH_STATUS_GB,
+      ROUND(DATA_DISK_ALLOCATED / 1024 / 1024 / 1024) DATA_DISK_ALLOCATED_GB,
+      DATA_DISK_ABNORMAL_TIME
+    FROM
+      oceanbase.GV\$OB_SERVERS
+    ORDER BY
+     ZONE, SVR_IP;
+- name: oceanbase sys create resource unit, pool and tenant
+  dialect_type: OB_MYSQL
+  tags: [ 'dba', 'oceanbase', 'sys' ]
+  type: DCL
+  min_version: ~
+  max_version: ~
+  description: 'Create resource unit, pool and tenant'
+  prefix: create_unit_pool_tenant
+  body: |
+    CREATE RESOURCE UNIT ${1:tenantname}_unit_config_01
+                    MEMORY_SIZE = '4G',
+                    MAX_CPU = 2, MIN_CPU = 2;
+    
+    CREATE RESOURCE POOL ${1:tenantname}_resource_pool_01
+                    UNIT='${1:tenantname}_unit_config_01',
+                    UNIT_NUM=1,
+                    ZONE_LIST=('${2:zonelist}');
+    
+    CREATE TENANT IF NOT EXISTS ${1:tenantname}
+            PRIMARY_ZONE='${2:zonelist}',
+            RESOURCE_POOL_LIST=('${1:tenantname}_resource_pool_01')
+            SET ob_compatibility_mode='mysql', OB_TCP_INVITED_NODES='%';
+- name: oceanbase sys create resource unit
+  dialect_type: OB_MYSQL
+  tags: [ 'dba', 'oceanbase', 'sys' ]
+  type: DCL
+  min_version: ~
+  max_version: ~
+  description: 'Create resource unit'
+  prefix: create_resource_unit
+  body: |
+    CREATE RESOURCE UNIT ${1:unit_config_name}
+                    MEMORY_SIZE = '4G',
+                    MAX_CPU = 2, MIN_CPU = 2;
+- name: oceanbase sys create resource pool
+  dialect_type: OB_MYSQL
+  tags: [ 'dba', 'oceanbase', 'sys' ]
+  type: DCL
+  min_version: ~
+  max_version: ~
+  description: 'Create resource pool'
+  prefix: create_resource_pool
+  body: |
+    CREATE RESOURCE POOL ${1:resource_pool_name}
+                    UNIT='${2:unit_config_name}',
+                    UNIT_NUM=1,
+                    ZONE_LIST=('${3:zone_list}');
+- name: oceanbase sys create tenant
+  dialect_type: OB_MYSQL
+  tags: [ 'dba', 'oceanbase', 'sys' ]
+  type: DCL
+  min_version: ~
+  max_version: ~
+  description: 'Create tenant'
+  prefix: create_tenant
+  body: |
+    CREATE TENANT IF NOT EXISTS ${1:tenant_name}
+            PRIMARY_ZONE='${2:primary_zone_list}',
+            RESOURCE_POOL_LIST=('${3:resource_pool_name}')
+            SET ob_compatibility_mode='mysql', OB_TCP_INVITED_NODES='%';
+- name: oceanbase sys query unused unit
+  dialect_type: OB_MYSQL
+  tags: [ 'dba', 'oceanbase', 'sys' ]
+  type: DCL
+  min_version: 4.0.0
+  max_version: ~
+  description: 'Query unused unit'
+  prefix: query_unused_unit
+  body: |
+    SELECT
+      t1.UNIT_ID,
+      t1.RESOURCE_POOL_ID,
+      t1.ZONE,
+      t1.SVR_IP,
+      t1.SVR_PORT,
+      t1.STATUS,
+      t2.REPLICA_TYPE,
+      NULL AS TENANT_ID,
+      NULL AS TENANT_NAME,
+      t2.NAME AS RESOURCE_POOL_NAME,
+      t2.MODIFY_TIME AS RESOURCE_POOL_UPDATE_TIME,
+      t1.MIGRATE_FROM_SVR_IP,
+      t1.MIGRATE_FROM_SVR_PORT,
+      t1.MANUAL_MIGRATE
+    FROM
+      oceanbase.DBA_OB_UNITS AS t1 JOIN oceanbase.DBA_OB_RESOURCE_POOLS AS t2
+      ON t1.RESOURCE_POOL_ID = t2.RESOURCE_POOL_ID
+    WHERE
+      t2.TENANT_ID IS NULL;
+- name: oceanbase sys query parameters for cluster
+  dialect_type: OB_MYSQL
+  tags: [ 'dba', 'oceanbase', 'sys' ]
+  type: DQL
+  min_version: ~
+  max_version: ~
+  description: 'Query parameters for cluster'
+  prefix: query_parameters_for_cluster
+  body: |
+    SELECT
+      ZONE,
+      SVR_IP,
+      SVR_PORT,
+      NAME,
+      VALUE
+    FROM
+      oceanbase.GV\$OB_PARAMETERS
+    WHERE
+      SCOPE = 'CLUSTER';

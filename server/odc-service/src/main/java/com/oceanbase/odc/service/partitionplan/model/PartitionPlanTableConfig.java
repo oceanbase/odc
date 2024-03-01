@@ -18,10 +18,18 @@ package com.oceanbase.odc.service.partitionplan.model;
 import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
-import com.oceanbase.tools.dbbrowser.model.DBTablePartitionType;
+import org.apache.commons.collections4.CollectionUtils;
+
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonProperty.Access;
+import com.oceanbase.odc.common.json.JsonUtils;
+import com.oceanbase.odc.plugin.task.api.partitionplan.invoker.drop.KeepMostLatestPartitionGenerator;
 
 import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.NonNull;
 import lombok.Setter;
 import lombok.ToString;
 
@@ -35,23 +43,58 @@ import lombok.ToString;
 @Getter
 @Setter
 @ToString
+@NoArgsConstructor
 public class PartitionPlanTableConfig implements Serializable {
 
     private static final long serialVersionUID = 7099051008183574787L;
     private Long id;
     private boolean enabled;
     private String tableName;
-    private DBTablePartitionType partitionType;
     private List<PartitionPlanKeyConfig> partitionKeyConfigs;
     private String partitionNameInvoker;
     private Map<String, Object> partitionNameInvokerParameters;
 
+    public PartitionPlanTableConfig(@NonNull PartitionPlanTableConfig tableConfig) {
+        this.id = tableConfig.id;
+        this.enabled = tableConfig.enabled;
+        this.tableName = tableConfig.tableName;
+        this.partitionKeyConfigs = tableConfig.partitionKeyConfigs;
+        this.partitionNameInvoker = tableConfig.partitionNameInvoker;
+        this.partitionNameInvokerParameters = tableConfig.partitionNameInvokerParameters;
+    }
+
+    @JsonProperty(access = Access.READ_ONLY)
     public boolean isContainsCreateStrategy() {
+        if (CollectionUtils.isEmpty(this.partitionKeyConfigs)) {
+            return false;
+        }
         return this.partitionKeyConfigs.stream().anyMatch(i -> i.getStrategy() == PartitionPlanStrategy.CREATE);
     }
 
+    @JsonProperty(access = Access.READ_ONLY)
     public boolean isContainsDropStrategy() {
+        if (CollectionUtils.isEmpty(this.partitionKeyConfigs)) {
+            return false;
+        }
         return this.partitionKeyConfigs.stream().anyMatch(i -> i.getStrategy() == PartitionPlanStrategy.DROP);
+    }
+
+    @JsonProperty(access = Access.READ_ONLY)
+    public Boolean getReloadIndexes() {
+        if (CollectionUtils.isEmpty(this.partitionKeyConfigs)) {
+            return null;
+        }
+        Optional<PartitionPlanKeyConfig> dropConfig = this.partitionKeyConfigs.stream()
+                .filter(p -> p.getStrategy() == PartitionPlanStrategy.DROP).findFirst();
+        if (!dropConfig.isPresent()) {
+            return null;
+        }
+        Map<String, Object> parameters = dropConfig.get().getPartitionKeyInvokerParameters();
+        Object value = parameters.get(KeepMostLatestPartitionGenerator.RELOAD_INDEXES);
+        if (value == null) {
+            return null;
+        }
+        return JsonUtils.fromJson(JsonUtils.toJson(value), Boolean.class);
     }
 
 }

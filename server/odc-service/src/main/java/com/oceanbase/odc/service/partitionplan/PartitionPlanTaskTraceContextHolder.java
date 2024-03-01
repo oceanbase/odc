@@ -18,30 +18,23 @@ package com.oceanbase.odc.service.partitionplan;
 import org.slf4j.MDC;
 
 /**
- * @Author: tianke
- * @Date: 2022/9/26 下午2:29
- * @Description: []
+ * @author yh263208
+ * @author tianke
+ * @date 2024-02-22 10:25
+ * @since ODC_release_4.2.4
  */
 public final class PartitionPlanTaskTraceContextHolder {
 
     public static final String TASK_ID = "taskId";
-    public static final String TASK_WORK_SPACE = "partitionplanWorkSpace";
 
     private PartitionPlanTaskTraceContextHolder() {}
 
-    /**
-     * 请求入口处，将任务日志meta信息写入上下文
-     */
-    public static void trace(long userId, long taskId) {
-        MDC.put(TASK_WORK_SPACE, String.valueOf(userId));
+    public static void trace(long taskId) {
         MDC.put(TASK_ID, String.valueOf(taskId));
     }
 
-    /**
-     * 清除任务日志meta信息上下文
-     */
     public static void clear() {
-        MDC.remove(TASK_WORK_SPACE);
         MDC.remove(TASK_ID);
     }
+
 }

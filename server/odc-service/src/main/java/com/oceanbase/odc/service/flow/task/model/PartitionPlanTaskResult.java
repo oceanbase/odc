@@ -16,17 +16,18 @@
 package com.oceanbase.odc.service.flow.task.model;
 
 import com.oceanbase.odc.core.flow.model.FlowTaskResult;
-import com.oceanbase.odc.service.partitionplan.model.DatabasePartitionPlan;
 
-import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 
 /**
- * @Author：tianke
- * @Date: 2022/9/20 01:19
- * @Descripition:
+ * @author tianke
+ * @author yh263208
+ * @date 2024-02-28 11:25
+ * @since ODC_release_4.2.4
  */
-@Data
+@Getter
+@Setter
 public class PartitionPlanTaskResult implements FlowTaskResult {
-    private Long flowInstanceId;
-    private DatabasePartitionPlan databasePartitionPlan;
+    private boolean success;
 }

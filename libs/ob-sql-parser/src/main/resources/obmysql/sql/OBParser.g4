@@ -3020,6 +3020,7 @@ alter_partition_option
     | modify_partition_info
     | REORGANIZE PARTITION name_list INTO opt_partition_range_or_list
     | TRUNCATE (PARTITION|SUBPARTITION) name_list
+    | REMOVE PARTITIONING
     ;
 
 opt_partition_range_or_list
