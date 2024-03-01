@@ -34,6 +34,8 @@ import org.springframework.transaction.annotation.Transactional;
 import com.oceanbase.odc.core.authority.util.Authenticated;
 import com.oceanbase.odc.core.authority.util.PreAuthenticate;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
+import com.oceanbase.odc.core.shared.PreConditions;
+import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.core.shared.exception.BadRequestException;
 import com.oceanbase.odc.core.shared.exception.NotFoundException;
@@ -114,9 +116,9 @@ public class RiskDetectService {
             throw new BadRequestException("rule conditions cannot be empty");
         }
         Long organizationId = authenticationFacade.currentOrganizationId();
-        if (!riskLevelService.exists(organizationId, rule.getRiskLevelId())) {
-            throw new BadRequestException("invalid risk level");
-        }
+        PreConditions.validArgumentState(!riskLevelService.isDefaultRiskLevel(
+                authenticationFacade.currentOrganizationId(), rule.getRiskLevelId()), ErrorCodes.BadRequest, null,
+                "cannot update default risk level detect rule");
         RiskDetectRuleEntity entity = ruleMapper.modelToEntity(rule);
         entity.setCreatorId(authenticationFacade.currentUserId());
         entity.setOrganizationId(organizationId);
@@ -128,6 +130,9 @@ public class RiskDetectService {
     @PreAuthenticate(actions = "update", resourceType = "ODC_RISK_DETECT_RULE", indexOfIdParam = 0)
     @Transactional(rollbackFor = Exception.class)
     public RiskDetectRule update(@NonNull Long id, @NonNull RiskDetectRule rule) {
+        PreConditions.validArgumentState(!riskLevelService.isDefaultRiskLevel(
+                authenticationFacade.currentOrganizationId(), rule.getRiskLevelId()), ErrorCodes.BadRequest, null,
+                "cannot update default risk level detect rule");
         RiskDetectRuleEntity updateEntity = modelToEntity(rule);
         RiskDetectRuleEntity savedRule = findByOrganizationIdAndId(authenticationFacade.currentOrganizationId(), id);
         savedRule.setName(updateEntity.getName());
