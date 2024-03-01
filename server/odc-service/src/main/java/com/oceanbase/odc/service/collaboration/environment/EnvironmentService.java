@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
@@ -88,7 +89,7 @@ public class EnvironmentService {
 
     private final List<Consumer<EnvironmentDeleteEvent>> preDeleteHooks = new ArrayList<>();
     private final List<Consumer<EnvironmentDisableEvent>> preDisableHooks = new ArrayList<>();
-    private final Set<String> DEFAULT_ENV_NAMES = new HashSet<>();
+    private final Set<String> DEFAULT_ENV_NAMES = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
 
     @PostConstruct
     public void init() {
@@ -111,7 +112,7 @@ public class EnvironmentService {
     public Environment create(@NotNull @Valid CreateEnvironmentReq req) {
         PreConditions.validNoDuplicated(ResourceType.ODC_ENVIRONMENT, "name", req.getName(),
                 () -> exists(req.getName()));
-        PreConditions.validArgumentState(!DEFAULT_ENV_NAMES.contains(req.getName()), ErrorCodes.UnavailableName,
+        PreConditions.validArgumentState(!DEFAULT_ENV_NAMES.contains(req.getName()), ErrorCodes.ReservedName,
                 new Object[] {req.getName()}, "The environment name is not allowed");
 
         Ruleset savedRuleset = rulesetService.create(buildRuleset(req.getName(), req.getDescription()));
