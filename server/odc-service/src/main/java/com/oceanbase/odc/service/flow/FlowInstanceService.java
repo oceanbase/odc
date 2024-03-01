@@ -732,6 +732,10 @@ public class FlowInstanceService {
             ConnectionConfig connectionConfig) {
         log.info("Start creating flow instance, flowInstanceReq={}", flowInstanceReq);
         TaskType taskType = flowInstanceReq.getTaskType();
+        if (taskType == TaskType.ASYNC) {
+            DatabaseChangeParameters taskParameters = (DatabaseChangeParameters) flowInstanceReq.getParameters();
+            taskParameters.setModifyTimeoutIfTimeConsumingSqlExists(false);
+        }
         TaskEntity taskEntity = taskService.create(flowInstanceReq, (int) TimeUnit.SECONDS
                 .convert(flowTaskProperties.getDefaultExecutionExpirationIntervalHours(), TimeUnit.HOURS));
         Verify.notNull(taskEntity.getId(), "TaskId can not be null");
