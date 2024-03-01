@@ -35,6 +35,7 @@ public interface PartitionNameGenerator extends AutoPartitionKeyInvoker<String> 
 
     String TARGET_PARTITION_DEF_KEY = "targetPartition";
     String TARGET_PARTITION_DEF_INDEX_KEY = "targetPartitionIndex";
+    String PARTITION_NAME_GENERATOR_KEY = "partitionNameGeneratorConfig";
 
     String generate(@NonNull Connection connection, @NonNull DBTable dbTable,
             @NonNull Integer targetPartitionIndex, @NonNull DBTablePartitionDefinition target,

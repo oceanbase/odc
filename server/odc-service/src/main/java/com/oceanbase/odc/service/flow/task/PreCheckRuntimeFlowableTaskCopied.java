@@ -202,7 +202,6 @@ public class PreCheckRuntimeFlowableTaskCopied extends BaseODCFlowTaskDelegate<V
         } catch (Exception e) {
             log.warn("Failed to store task result", e);
         }
-        super.onSuccessful(taskId, taskService);
     }
 
     @Override

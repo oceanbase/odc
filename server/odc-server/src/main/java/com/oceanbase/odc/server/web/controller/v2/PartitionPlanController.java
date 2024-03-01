@@ -22,11 +22,11 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.oceanbase.odc.core.shared.exception.NotImplementedException;
 import com.oceanbase.odc.service.common.response.ListResponse;
 import com.oceanbase.odc.service.common.response.Responses;
 import com.oceanbase.odc.service.common.response.SuccessResponse;
 import com.oceanbase.odc.service.partitionplan.PartitionPlanService;
+import com.oceanbase.odc.service.partitionplan.PartitionPlanServiceV2;
 import com.oceanbase.odc.service.partitionplan.model.DatabasePartitionPlan;
 import com.oceanbase.odc.service.partitionplan.model.PartitionPlanVariable;
 
@@ -41,6 +41,8 @@ public class PartitionPlanController {
 
     @Autowired
     private PartitionPlanService partitionPlanService;
+    @Autowired
+    private PartitionPlanServiceV2 partitionPlanServiceV2;
 
     @RequestMapping(value = "/partitionPlans", method = RequestMethod.GET)
     public SuccessResponse<DatabasePartitionPlan> getPartitionPlans(@RequestParam Long databaseId,
@@ -56,7 +58,7 @@ public class PartitionPlanController {
 
     @GetMapping(value = "/supportedVariables")
     public ListResponse<PartitionPlanVariable> getSupportedVariables() {
-        throw new NotImplementedException();
+        return Responses.list(this.partitionPlanServiceV2.getSupportedVariables());
     }
 
 }

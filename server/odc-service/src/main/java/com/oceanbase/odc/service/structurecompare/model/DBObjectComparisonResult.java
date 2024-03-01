@@ -156,7 +156,8 @@ public class DBObjectComparisonResult {
         if (stmt instanceof AlterTable) {
             return ((AlterTable) stmt).getAlterTableActions().stream().filter(Objects::nonNull)
                     .anyMatch(action -> !getSafeList(action.getDropPartitionNames()).isEmpty()
-                            || !getSafeList(action.getDropSubPartitionNames()).isEmpty());
+                            || !getSafeList(action.getDropSubPartitionNames()).isEmpty()
+                            || Boolean.TRUE.equals(action.getRemovePartitioning()));
         }
         return false;
     }

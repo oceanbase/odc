@@ -16,9 +16,6 @@
 package com.oceanbase.odc.plugin.task.oboracle.partitionplan;
 
 import java.sql.Connection;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-import java.util.Calendar;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -26,7 +23,6 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import com.oceanbase.odc.plugin.task.api.partitionplan.invoker.partitionname.PartitionNameGenerator;
-import com.oceanbase.odc.plugin.task.api.partitionplan.invoker.partitionname.SqlExprBasedPartitionNameGenerator;
 import com.oceanbase.odc.plugin.task.api.partitionplan.model.PartitionPlanVariableKey;
 import com.oceanbase.odc.plugin.task.api.partitionplan.model.SqlExprBasedGeneratorConfig;
 import com.oceanbase.odc.plugin.task.obmysql.partitionplan.invoker.partitionname.OBMySQLExprBasedPartitionNameGenerator;
@@ -52,15 +48,11 @@ public class OBOracleExprBasedPartitionNameGeneratorTest {
             DBTable dbTable = new DBTable();
             PartitionNameGenerator generator = new OBMySQLExprBasedPartitionNameGenerator();
             SqlExprBasedGeneratorConfig config = new SqlExprBasedGeneratorConfig();
-            config.setGenerateExpr("CONCAT('P', TO_CHAR(SYSDATE + "
+            config.setGenerateExpr("CONCAT('P', TO_CHAR(TO_DATE('2022-01-01 12:00:00', 'YYYY-MM-DD HH24:MI:SS') + "
                     + PartitionPlanVariableKey.INTERVAL.getVariable() + ", 'YYYYMMDD'))");
             config.setIntervalGenerateExpr("NUMTOYMINTERVAL(1, 'YEAR')");
             String actual = generator.invoke(connection, dbTable, getParameters(0, config));
-            DateFormat dateFormat = new SimpleDateFormat("yyyyMMdd");
-            Calendar calendar = Calendar.getInstance();
-            calendar.add(Calendar.YEAR, 1);
-            String expect = "P" + dateFormat.format(calendar.getTime());
-            Assert.assertEquals(expect, actual);
+            Assert.assertEquals("P20230101", actual);
         }
     }
 
@@ -68,7 +60,7 @@ public class OBOracleExprBasedPartitionNameGeneratorTest {
         Map<String, Object> parameters = new HashMap<>();
         parameters.put(PartitionNameGenerator.TARGET_PARTITION_DEF_KEY, new DBTablePartitionDefinition());
         parameters.put(PartitionNameGenerator.TARGET_PARTITION_DEF_INDEX_KEY, index);
-        parameters.put(SqlExprBasedPartitionNameGenerator.PARTITION_NAME_GEN_CONFIG_KEY, config);
+        parameters.put(PartitionNameGenerator.PARTITION_NAME_GENERATOR_KEY, config);
         return parameters;
     }
 }

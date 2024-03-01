@@ -34,8 +34,6 @@ import lombok.NonNull;
  */
 public interface DateBasedPartitionNameGenerator extends PartitionNameGenerator {
 
-    String PARTITION_NAME_GENERATOR_KEY = "partitionNameGeneratorConfig";
-
     String generate(@NonNull Connection connection, @NonNull DBTable dbTable,
             @NonNull Integer targetPartitionIndex, @NonNull DBTablePartitionDefinition target,
             @NonNull DateBasedPartitionNameGeneratorConfig config) throws Exception;

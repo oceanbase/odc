@@ -13,30 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.partitionplan.model;
-
-import java.util.List;
-
-import com.oceanbase.tools.dbbrowser.model.DBTablePartition;
-import com.oceanbase.tools.dbbrowser.model.datatype.DataType;
-
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
-import lombok.Setter;
+package com.oceanbase.odc.metadb.flow;
 
 /**
- * {@link PartitionPlanDBTablePartition}
- *
- * @author yh263208
- * @date 2024-01-09 14:12
- * @since ODC_release_4.2.4
- * @see DBTablePartition
+ * @author liuyizhuo.lyz
+ * @date 2024/2/27
  */
-@Getter
-@Setter
-@EqualsAndHashCode(callSuper = true)
-public class PartitionPlanDBTablePartition extends DBTablePartition {
-
-    private List<DataType> partitionKeyTypes;
-
+public interface FlowInstanceApprovalViewRepository extends ReadOnlyRepository<FlowInstanceApprovalViewEntity, Long> {
 }

@@ -15,6 +15,9 @@
  */
 package com.oceanbase.odc.metadb.partitionplan;
 
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 
 import org.junit.Assert;
@@ -49,6 +52,79 @@ public class PartitionPlanTableRepositoryTest extends ServiceTestEnv {
         actual = this.repository.save(actual);
         Optional<PartitionPlanTableEntity> expect = this.repository.findById(actual.getId());
         Assert.assertEquals(expect.get(), actual);
+    }
+
+    @Test
+    public void batchCreate_saveAll_saveSucceed() {
+        PartitionPlanTableEntity p1 = createRoleEntity();
+        p1.setId(null);
+        PartitionPlanTableEntity p2 = createRoleEntity();
+        p2.setId(null);
+        List<PartitionPlanTableEntity> actual = this.repository.batchCreate(Arrays.asList(p1, p2));
+        List<PartitionPlanTableEntity> expect = this.repository.findAll();
+        actual.forEach(p -> {
+            p.setCreateTime(null);
+            p.setUpdateTime(null);
+        });
+        expect.forEach(p -> {
+            p.setCreateTime(null);
+            p.setUpdateTime(null);
+        });
+        Assert.assertEquals(expect, actual);
+    }
+
+    @Test
+    public void findByPartitionplanIdAndEnabled_noCandidate_returnNull() {
+        PartitionPlanTableEntity actual = createRoleEntity();
+        actual.setId(null);
+        actual.setEnabled(false);
+        actual = this.repository.save(actual);
+        List<PartitionPlanTableEntity> expect = this.repository.findByPartitionPlanIdInAndEnabled(
+                Collections.singletonList(actual.getPartitionPlanId()), true);
+        Assert.assertTrue(expect.isEmpty());
+    }
+
+    @Test
+    public void findByIdIn_candidateExists_returnNotNull() {
+        PartitionPlanTableEntity actual = createRoleEntity();
+        actual.setId(null);
+        actual.setEnabled(false);
+        actual = this.repository.save(actual);
+        List<PartitionPlanTableEntity> expect = this.repository.findByIdIn(Collections.singletonList(actual.getId()));
+        Assert.assertEquals(expect, Collections.singletonList(actual));
+    }
+
+    @Test
+    public void findByPartitionplanIdAndEnabled_candidateExists_returnNotNull() {
+        PartitionPlanTableEntity actual = createRoleEntity();
+        actual.setId(null);
+        actual.setEnabled(true);
+        actual = this.repository.save(actual);
+        List<PartitionPlanTableEntity> expect = this.repository.findByPartitionPlanIdInAndEnabled(
+                Collections.singletonList(actual.getPartitionPlanId()), true);
+        Assert.assertEquals(expect, Collections.singletonList(actual));
+    }
+
+    @Test
+    public void findByPartitionPlanIdIn_candidateExists_returnNotNull() {
+        PartitionPlanTableEntity actual = createRoleEntity();
+        actual.setId(null);
+        actual.setEnabled(true);
+        actual = this.repository.save(actual);
+        List<PartitionPlanTableEntity> expect = this.repository.findByPartitionPlanIdIn(
+                Collections.singletonList(actual.getPartitionPlanId()));
+        Assert.assertEquals(expect, Collections.singletonList(actual));
+    }
+
+    @Test
+    public void updateEnabledByIdIn_convertToFalse_concertSucceed() {
+        PartitionPlanTableEntity actual = createRoleEntity();
+        actual.setId(null);
+        actual.setEnabled(true);
+        actual = this.repository.save(actual);
+        this.repository.updateEnabledByIdIn(Collections.singletonList(actual.getId()), false);
+        Optional<PartitionPlanTableEntity> optional = this.repository.findById(actual.getId());
+        Assert.assertFalse(optional.get().getEnabled());
     }
 
     private PartitionPlanTableEntity createRoleEntity() {

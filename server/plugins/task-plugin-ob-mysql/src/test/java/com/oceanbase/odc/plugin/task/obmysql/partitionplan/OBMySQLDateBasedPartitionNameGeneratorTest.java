@@ -26,7 +26,6 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import com.oceanbase.odc.plugin.task.api.partitionplan.datatype.TimeDataType;
-import com.oceanbase.odc.plugin.task.api.partitionplan.invoker.partitionname.DateBasedPartitionNameGenerator;
 import com.oceanbase.odc.plugin.task.api.partitionplan.invoker.partitionname.PartitionNameGenerator;
 import com.oceanbase.odc.plugin.task.api.partitionplan.model.DateBasedPartitionNameGeneratorConfig;
 import com.oceanbase.odc.plugin.task.obmysql.partitionplan.invoker.partitionname.OBMySQLDateBasedPartitionNameGenerator;
@@ -50,6 +49,7 @@ public class OBMySQLDateBasedPartitionNameGeneratorTest {
         try (Connection connection = configuration.getDataSource().getConnection()) {
             DBTable dbTable = new DBTable();
             DateBasedPartitionNameGeneratorConfig config = new DateBasedPartitionNameGeneratorConfig();
+            config.setFromCurrentTime(true);
             config.setNamingPrefix("p");
             config.setNamingSuffixExpression("yyyyMMdd");
             config.setInterval(1);
@@ -66,7 +66,7 @@ public class OBMySQLDateBasedPartitionNameGeneratorTest {
         Map<String, Object> parameters = new HashMap<>();
         parameters.put(PartitionNameGenerator.TARGET_PARTITION_DEF_KEY, new DBTablePartitionDefinition());
         parameters.put(PartitionNameGenerator.TARGET_PARTITION_DEF_INDEX_KEY, 0);
-        parameters.put(DateBasedPartitionNameGenerator.PARTITION_NAME_GENERATOR_KEY, config);
+        parameters.put(PartitionNameGenerator.PARTITION_NAME_GENERATOR_KEY, config);
         return parameters;
     }
 

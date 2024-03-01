@@ -204,11 +204,14 @@ public class DatabaseChangeRuntimeFlowableTask extends BaseODCFlowTaskDelegate<D
 
     private void modifyTimeoutIfTimeConsumingSqlExists(DelegateExecution execution,
             DatabaseChangeParameters parameters) {
+        if (!parameters.isModifyTimeoutIfTimeConsumingSqlExists()) {
+            return;
+        }
         Long taskId = FlowTaskUtil.getTaskId(execution);
         Long preCheckTaskId = FlowTaskUtil.getPreCheckTaskId(execution);
         TaskEntity preCheckTask = taskService.detail(preCheckTaskId);
-
-        PreCheckTaskResult preCheckResult = JsonUtils.fromJson(preCheckTask.getResultJson(), PreCheckTaskResult.class);
+        PreCheckTaskResult preCheckResult =
+                JsonUtils.fromJson(preCheckTask.getResultJson(), PreCheckTaskResult.class);
         Validate.notNull(preCheckResult, "Pre check task result can not be null");
         long autoModifiedTimeout = flowTaskProperties.getIndexChangeMaxTimeoutMillisecond();
         if (Objects.nonNull(preCheckResult.getSqlCheckResult())
@@ -221,4 +224,5 @@ public class DatabaseChangeRuntimeFlowableTask extends BaseODCFlowTaskDelegate<D
             taskService.updateParametersJson(databaseChangeTaskEntity);
         }
     }
+
 }

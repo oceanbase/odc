@@ -55,6 +55,10 @@ ACCESS
     : ( A C C E S S )
     ;
 
+OBJECT_ID
+    : O B J E C T '_' I D
+    ;
+
 ADD
     : ( A D D )
     ;
@@ -933,6 +937,10 @@ LANGUAGE
     : ( L A N G U A G E )
     ;
 
+LATERAL
+    : L A T E R A L
+    ;
+
 LEADING
     : ( L E A D I N G )
     ;
@@ -1746,6 +1754,10 @@ COLUMNS
     : C O L U M N S
     ;
 
+LS
+    : L S
+    ;
+
 MIGRATION
     : M I G R A T I O N
     ;
@@ -2000,6 +2012,18 @@ DUPLICATE
 
 XMLTYPE
     : X M L T Y P E
+    ;
+
+XMLTABLE
+    : X M L T A B L E
+    ;
+
+XMLNAMESPACES
+    : X M L N A M E S P A C E S
+    ;
+
+SDO_GEOMETRY
+    : S D O '_' G E O M E T R Y
     ;
 
 USAGE
@@ -3318,8 +3342,20 @@ EXTRACT
     : E X T R A C T
     ;
 
+INSERTCHILDXML
+    : I N S E R T C H I L D X M L
+    ;
+
+DELETEXML
+    : D E L E T E X M L
+    ;
+
 PERCENTILE_DISC
     : P E R C E N T I L E '_' D I S C
+    ;
+
+XMLSEQUENCE
+    : X M L S E Q U E N C E
     ;
 
 XMLCAST
@@ -3508,6 +3544,10 @@ PERCENT_RANK
 
 ENUM
     : E N U M
+    ;
+
+TRANSFER
+    : T R A N S F E R
     ;
 
 NATIONAL
@@ -3756,6 +3796,10 @@ FAULTS
 
 HOUR
     : H O U R
+    ;
+
+REF
+    : R E F
     ;
 
 REFRESH

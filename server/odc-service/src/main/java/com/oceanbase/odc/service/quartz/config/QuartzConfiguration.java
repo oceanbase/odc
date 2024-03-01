@@ -26,6 +26,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.scheduling.quartz.SchedulerFactoryBean;
 
 import com.oceanbase.odc.service.quartz.OdcJobListener;
+import com.oceanbase.odc.service.quartz.OdcTriggerListener;
 
 /**
  * @Author：tinker
@@ -38,6 +39,8 @@ public class QuartzConfiguration {
 
     @Autowired
     private OdcJobListener odcJobListener;
+    @Autowired
+    private OdcTriggerListener odcTriggerListener;
 
     private final String defaultSchedulerName = "ODC-SCHEDULER";
 
@@ -55,6 +58,7 @@ public class QuartzConfiguration {
             throws SchedulerException {
         Scheduler scheduler = schedulerFactoryBean.getScheduler();
         scheduler.getListenerManager().addJobListener(odcJobListener);
+        scheduler.getListenerManager().addTriggerListener(odcTriggerListener);
         return scheduler;
     }
 }

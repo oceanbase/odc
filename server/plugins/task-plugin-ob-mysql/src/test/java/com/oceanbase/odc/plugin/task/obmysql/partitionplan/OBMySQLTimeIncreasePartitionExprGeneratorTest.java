@@ -34,6 +34,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.springframework.jdbc.core.JdbcTemplate;
 
+import com.oceanbase.odc.core.shared.exception.BadRequestException;
 import com.oceanbase.odc.plugin.schema.obmysql.OBMySQLTableExtension;
 import com.oceanbase.odc.plugin.task.api.partitionplan.datatype.TimeDataType;
 import com.oceanbase.odc.plugin.task.api.partitionplan.invoker.AutoPartitionKeyInvoker;
@@ -98,7 +99,7 @@ public class OBMySQLTimeIncreasePartitionExprGeneratorTest {
             AutoPartitionKeyInvoker<List<String>> generator = new OBMySQLTimeIncreasePartitionExprGenerator();
             TimeIncreaseGeneratorConfig config = new TimeIncreaseGeneratorConfig();
             long current = System.currentTimeMillis();
-            config.setFromTimestampMillis(current);
+            config.setBaseTimestampMillis(current);
             config.setInterval(5);
             config.setIntervalPrecision(TimeDataType.HOUR);
             List<String> actuals = generator.invoke(connection, dbTable, getParameters(config, 5, "c3"));
@@ -128,7 +129,7 @@ public class OBMySQLTimeIncreasePartitionExprGeneratorTest {
             AutoPartitionKeyInvoker<List<String>> generator = new OBMySQLTimeIncreasePartitionExprGenerator();
             TimeIncreaseGeneratorConfig config = new TimeIncreaseGeneratorConfig();
             long current = System.currentTimeMillis();
-            config.setFromTimestampMillis(current);
+            config.setBaseTimestampMillis(current);
             config.setInterval(5);
             config.setIntervalPrecision(TimeDataType.DAY);
             List<String> actuals = generator.invoke(connection, dbTable, getParameters(config, 5, "c3"));
@@ -157,7 +158,7 @@ public class OBMySQLTimeIncreasePartitionExprGeneratorTest {
             AutoPartitionKeyInvoker<List<String>> generator = new OBMySQLTimeIncreasePartitionExprGenerator();
             TimeIncreaseGeneratorConfig config = new TimeIncreaseGeneratorConfig();
             long current = System.currentTimeMillis();
-            config.setFromTimestampMillis(current);
+            config.setBaseTimestampMillis(current);
             config.setInterval(5);
             config.setIntervalPrecision(TimeDataType.YEAR);
             List<String> actuals = generator.invoke(connection, dbTable, getParameters(config, 5, "c3"));
@@ -174,7 +175,7 @@ public class OBMySQLTimeIncreasePartitionExprGeneratorTest {
         }
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test(expected = BadRequestException.class)
     public void generate_illegalPrec_failed() throws Exception {
         TestDBConfiguration configuration = TestDBConfigurations.getInstance().getTestOBMysqlConfiguration();
         try (Connection connection = configuration.getDataSource().getConnection()) {
@@ -184,14 +185,14 @@ public class OBMySQLTimeIncreasePartitionExprGeneratorTest {
             AutoPartitionKeyInvoker<List<String>> generator = new OBMySQLTimeIncreasePartitionExprGenerator();
             TimeIncreaseGeneratorConfig config = new TimeIncreaseGeneratorConfig();
             long current = System.currentTimeMillis();
-            config.setFromTimestampMillis(current);
+            config.setBaseTimestampMillis(current);
             config.setInterval(5);
             config.setIntervalPrecision(TimeDataType.SECOND);
             generator.invoke(connection, dbTable, getParameters(config, 5, "c3"));
         }
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test(expected = BadRequestException.class)
     public void generate_illegalDataType_failed() throws Exception {
         TestDBConfiguration configuration = TestDBConfigurations.getInstance().getTestOBMysqlConfiguration();
         try (Connection connection = configuration.getDataSource().getConnection()) {
@@ -201,7 +202,7 @@ public class OBMySQLTimeIncreasePartitionExprGeneratorTest {
             AutoPartitionKeyInvoker<List<String>> generator = new OBMySQLTimeIncreasePartitionExprGenerator();
             TimeIncreaseGeneratorConfig config = new TimeIncreaseGeneratorConfig();
             long current = System.currentTimeMillis();
-            config.setFromTimestampMillis(current);
+            config.setBaseTimestampMillis(current);
             config.setInterval(5);
             config.setIntervalPrecision(TimeDataType.SECOND);
             generator.invoke(connection, dbTable, getParameters(config, 5, "c2"));

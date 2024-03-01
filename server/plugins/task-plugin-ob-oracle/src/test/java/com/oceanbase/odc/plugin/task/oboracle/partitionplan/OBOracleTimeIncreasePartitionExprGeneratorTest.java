@@ -34,6 +34,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.springframework.jdbc.core.JdbcTemplate;
 
+import com.oceanbase.odc.core.shared.exception.BadRequestException;
 import com.oceanbase.odc.plugin.schema.oboracle.OBOracleTableExtension;
 import com.oceanbase.odc.plugin.task.api.partitionplan.datatype.TimeDataType;
 import com.oceanbase.odc.plugin.task.api.partitionplan.invoker.AutoPartitionKeyInvoker;
@@ -96,7 +97,7 @@ public class OBOracleTimeIncreasePartitionExprGeneratorTest {
             AutoPartitionKeyInvoker<List<String>> generator = new OBOracleTimeIncreasePartitionExprGenerator();
             TimeIncreaseGeneratorConfig config = new TimeIncreaseGeneratorConfig();
             long current = System.currentTimeMillis();
-            config.setFromTimestampMillis(current);
+            config.setBaseTimestampMillis(current);
             config.setInterval(5);
             config.setIntervalPrecision(TimeDataType.HOUR);
             List<String> actuals = generator.invoke(connection, dbTable, getParameters(config, 5, "C2"));
@@ -126,7 +127,7 @@ public class OBOracleTimeIncreasePartitionExprGeneratorTest {
             AutoPartitionKeyInvoker<List<String>> generator = new OBOracleTimeIncreasePartitionExprGenerator();
             TimeIncreaseGeneratorConfig config = new TimeIncreaseGeneratorConfig();
             long current = System.currentTimeMillis();
-            config.setFromTimestampMillis(current);
+            config.setBaseTimestampMillis(current);
             config.setInterval(5);
             config.setIntervalPrecision(TimeDataType.MONTH);
             List<String> actuals = generator.invoke(connection, dbTable, getParameters(config, 5, "C1"));
@@ -146,7 +147,7 @@ public class OBOracleTimeIncreasePartitionExprGeneratorTest {
         }
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test(expected = BadRequestException.class)
     public void generate_illegalDataType_failed() throws Exception {
         TestDBConfiguration configuration = TestDBConfigurations.getInstance().getTestOBOracleConfiguration();
         try (Connection connection = configuration.getDataSource().getConnection()) {
@@ -156,7 +157,7 @@ public class OBOracleTimeIncreasePartitionExprGeneratorTest {
             AutoPartitionKeyInvoker<List<String>> generator = new OBOracleTimeIncreasePartitionExprGenerator();
             TimeIncreaseGeneratorConfig config = new TimeIncreaseGeneratorConfig();
             long current = System.currentTimeMillis();
-            config.setFromTimestampMillis(current);
+            config.setBaseTimestampMillis(current);
             config.setInterval(5);
             config.setIntervalPrecision(TimeDataType.SECOND);
             generator.invoke(connection, dbTable, getParameters(config, 5, "C5"));

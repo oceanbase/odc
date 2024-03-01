@@ -18,15 +18,19 @@ package com.oceanbase.odc.service.dlm;
 import java.sql.SQLException;
 import java.util.List;
 
+import com.oceanbase.odc.service.dlm.model.RateLimitConfiguration;
 import com.oceanbase.tools.migrator.common.dto.JobStatistic;
 import com.oceanbase.tools.migrator.common.dto.TableSizeInfo;
 import com.oceanbase.tools.migrator.common.dto.TaskGenerator;
 import com.oceanbase.tools.migrator.common.exception.JobException;
 import com.oceanbase.tools.migrator.common.exception.JobSqlException;
 import com.oceanbase.tools.migrator.common.exception.TaskGeneratorNotFoundException;
+import com.oceanbase.tools.migrator.common.meta.TableMeta;
 import com.oceanbase.tools.migrator.core.IJobStore;
+import com.oceanbase.tools.migrator.core.meta.ClusterMeta;
 import com.oceanbase.tools.migrator.core.meta.JobMeta;
 import com.oceanbase.tools.migrator.core.meta.TaskMeta;
+import com.oceanbase.tools.migrator.core.meta.TenantMeta;
 
 /**
  * @Author：tinker
@@ -81,6 +85,34 @@ public class CloudDLMJobStore implements IJobStore {
 
     @Override
     public void updateLimiter(JobMeta jobMeta) throws SQLException {
+        RateLimitConfiguration rateLimit = new RateLimitConfiguration();
+        rateLimit.setRowLimit(50000);
+        rateLimit.setDataSizeLimit(10 * 1024 * 1024L);
 
+        setClusterLimitConfig(jobMeta.getSourceCluster(), rateLimit.getDataSizeLimit());
+        setClusterLimitConfig(jobMeta.getTargetCluster(), rateLimit.getDataSizeLimit());
+        setTenantLimitConfig(jobMeta.getSourceTenant(), rateLimit.getDataSizeLimit());
+        setTenantLimitConfig(jobMeta.getTargetTenant(), rateLimit.getDataSizeLimit());
+        setTableLimitConfig(jobMeta.getSourceTableMeta(), rateLimit.getRowLimit());
+        setTableLimitConfig(jobMeta.getTargetTableMeta(), rateLimit.getRowLimit());
+    }
+
+    private void setClusterLimitConfig(ClusterMeta clusterMeta, long dataSizeLimit) {
+        clusterMeta.setReadSizeLimit(dataSizeLimit);
+        clusterMeta.setWriteSizeLimit(dataSizeLimit);
+        clusterMeta.setWriteUsedQuota(1);
+        clusterMeta.setReadUsedQuota(1);
+    }
+
+    private void setTenantLimitConfig(TenantMeta tenantMeta, long dataSizeLimit) {
+        tenantMeta.setReadSizeLimit(dataSizeLimit);
+        tenantMeta.setWriteSizeLimit(dataSizeLimit);
+        tenantMeta.setWriteUsedQuota(1);
+        tenantMeta.setReadUsedQuota(1);
+    }
+
+    private void setTableLimitConfig(TableMeta tableMeta, int rowLimit) {
+        tableMeta.setReadRowCountLimit(rowLimit);
+        tableMeta.setWriteRowCountLimit(rowLimit);
     }
 }

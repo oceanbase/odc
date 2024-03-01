@@ -25,6 +25,7 @@ import com.oceanbase.tools.sqlparser.obmysql.OBParser.Insert_stmtContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Insert_valsContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Insert_vals_listContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Single_table_insertContext;
+import com.oceanbase.tools.sqlparser.obmysql.OBParser.Table_subquery_aliasContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Update_asgn_listContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Values_clauseContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParserBaseVisitor;
@@ -93,11 +94,30 @@ public class MySQLInsertFactory extends OBParserBaseVisitor<Insert> implements S
                 values.add(Collections.singletonList(new MySQLSelectFactory(vCtx.select_stmt()).generate()));
             }
             insertTable.setValues(values);
+            insertTable.setAlias(getAlias(vCtx.table_subquery_alias()));
+            insertTable.setAliasColumns(getAliasColumns(vCtx.table_subquery_alias()));
         }
         if (ctx.update_asgn_list() != null) {
             insertTable.setSetColumns(getSetColumns(ctx.update_asgn_list()));
+            insertTable.setAlias(getAlias(ctx.table_subquery_alias()));
+            insertTable.setAliasColumns(getAliasColumns(ctx.table_subquery_alias()));
         }
         return new Insert(ctx, Collections.singletonList(insertTable), null);
+    }
+
+    private List<String> getAliasColumns(Table_subquery_aliasContext context) {
+        if (context == null || context.alias_name_list() == null) {
+            return null;
+        }
+        return context.alias_name_list().column_alias_name().stream()
+                .map(c -> c.column_name().getText()).collect(Collectors.toList());
+    }
+
+    private String getAlias(Table_subquery_aliasContext context) {
+        if (context == null) {
+            return null;
+        }
+        return context.relation_name().getText();
     }
 
     private List<SetColumn> getSetColumns(Update_asgn_listContext ctx) {

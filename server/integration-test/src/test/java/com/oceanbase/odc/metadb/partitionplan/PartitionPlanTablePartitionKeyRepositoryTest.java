@@ -15,6 +15,9 @@
  */
 package com.oceanbase.odc.metadb.partitionplan;
 
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 
 import org.junit.Assert;
@@ -49,6 +52,46 @@ public class PartitionPlanTablePartitionKeyRepositoryTest extends ServiceTestEnv
         actual = this.repository.save(actual);
         Optional<PartitionPlanTablePartitionKeyEntity> expect = this.repository.findById(actual.getId());
         Assert.assertEquals(expect.get(), actual);
+    }
+
+    @Test
+    public void batchCreate_saveAll_saveSucceed() {
+        PartitionPlanTablePartitionKeyEntity p1 = createRoleEntity();
+        p1.setId(null);
+
+        PartitionPlanTablePartitionKeyEntity p2 = createRoleEntity();
+        p2.setId(null);
+        List<PartitionPlanTablePartitionKeyEntity> actual = this.repository.batchCreate(Arrays.asList(p1, p2));
+        List<PartitionPlanTablePartitionKeyEntity> expect = this.repository.findAll();
+        actual.forEach(p -> {
+            p.setCreateTime(null);
+            p.setUpdateTime(null);
+        });
+        expect.forEach(p -> {
+            p.setCreateTime(null);
+            p.setUpdateTime(null);
+        });
+        Assert.assertEquals(expect, actual);
+    }
+
+    @Test
+    public void findByPartitionplanTableIdIn_candidateExists_returnNotNull() {
+        PartitionPlanTablePartitionKeyEntity actual = createRoleEntity();
+        actual.setId(null);
+        actual = this.repository.save(actual);
+        List<PartitionPlanTablePartitionKeyEntity> expect = this.repository.findByPartitionplanTableIdIn(
+                Collections.singletonList(actual.getPartitionplanTableId()));
+        Assert.assertEquals(expect, Collections.singletonList(actual));
+    }
+
+    @Test
+    public void findByIdIn_candidateExists_returnNotNull() {
+        PartitionPlanTablePartitionKeyEntity actual = createRoleEntity();
+        actual.setId(null);
+        actual = this.repository.save(actual);
+        List<PartitionPlanTablePartitionKeyEntity> expect = this.repository
+                .findByIdIn(Collections.singletonList(actual.getId()));
+        Assert.assertEquals(expect, Collections.singletonList(actual));
     }
 
     private PartitionPlanTablePartitionKeyEntity createRoleEntity() {
