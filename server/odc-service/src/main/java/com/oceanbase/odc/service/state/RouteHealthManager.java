@@ -65,7 +65,7 @@ public class RouteHealthManager implements InitializingBean {
             } catch (Exception e) {
                 log.info("test host error", e);
             }
-        }, 1, 2, TimeUnit.SECONDS);
+        }, 1, 10, TimeUnit.SECONDS);
     }
 
     @PreDestroy

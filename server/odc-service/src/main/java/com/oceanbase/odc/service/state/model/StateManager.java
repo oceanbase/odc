@@ -52,20 +52,4 @@ public interface StateManager {
     }
 
 
-    /**
-     * called before the node changed
-     * 
-     * @param targetRoute
-     * @return true means do dispatch
-     */
-    default void preHandleBeforeNodeChange(ProceedingJoinPoint proceedingJoinPoint, RouteInfo targetRoute) {}
-
-    /**
-     * called after the node changed
-     *
-     * @param targetRoute
-     * @return true means do dispatch
-     */
-    default void afterHandleBeforeNodeChange(ProceedingJoinPoint proceedingJoinPoint, RouteInfo targetRoute) {}
-
 }

@@ -91,7 +91,6 @@ public class StateRouteAspect {
         MethodSignature signature = (MethodSignature) proceedingJoinPoint.getSignature();
         Method method = signature.getMethod();
         StatefulRoute statefulRoute = findAnnotation(method, StatefulRoute.class);
-        boolean nodeChanged = false;
         StateManager stateManager = null;
         RouteInfo routeInfo = null;
         if (statefulRoute != null) {
@@ -103,26 +102,16 @@ public class StateRouteAspect {
             } else {
                 routeInfo = stateManager.getRouteInfo(stateIdBySePL);
                 Verify.notNull(routeInfo, "routeInfo");
-                if (!routeInfo.isCurrentNode(properties)) {
-                    if (routeHealthManager.isHealthy(routeInfo)) {
-                        DispatchResponse dispatchResponse =
-                                requestDispatcher.forward(routeInfo.getHostName(), routeInfo.getPort());
-                        logTrace(method, stateIdBySePL, routeInfo);
-                        StateRouteFilter.getContext().setDispatchResponse(dispatchResponse);
-                        return null;
-                    } else {
-                        nodeChanged = true;
-                        stateManager.preHandleBeforeNodeChange(proceedingJoinPoint, routeInfo);
-                    }
+                if (!routeInfo.isCurrentNode(properties) && routeHealthManager.isHealthy(routeInfo)) {
+                    DispatchResponse dispatchResponse =
+                            requestDispatcher.forward(routeInfo.getHostName(), routeInfo.getPort());
+                    logTrace(method, stateIdBySePL, routeInfo);
+                    StateRouteFilter.getContext().setDispatchResponse(dispatchResponse);
+                    return null;
                 }
             }
         }
-        Object proceed = proceedingJoinPoint.proceed();
-        if (nodeChanged) {
-            Preconditions.checkNotNull(stateManager);
-            stateManager.afterHandleBeforeNodeChange(proceedingJoinPoint, routeInfo);
-        }
-        return proceed;
+        return proceedingJoinPoint.proceed();
     }
 
     private Object handleMultiState(StateManager stateManager, Object stateIdBySePL,

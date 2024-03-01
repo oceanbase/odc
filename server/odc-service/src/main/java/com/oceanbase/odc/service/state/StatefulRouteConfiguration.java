@@ -47,9 +47,9 @@ public class StatefulRouteConfiguration {
                 60L,
                 TimeUnit.SECONDS,
                 new LinkedBlockingQueue<>(capacity),
-                new TraceDecoratorThreadFactory(r -> new Thread(r, "stateful route threadPool-" + r.hashCode())),
+                new TraceDecoratorThreadFactory(r -> new Thread(r, "stateful-route-threadPool-" + r.hashCode())),
                 (r, executor) -> {
-                    throw new RuntimeException("stateful route threadPool- is EXHAUSTED!");
+                    throw new RuntimeException("stateful route threadPool is EXHAUSTED!");
                 });
     }
 }

@@ -15,13 +15,13 @@
  */
 package com.oceanbase.odc.service.pldebug;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
-import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ScheduledExecutorService;
@@ -33,7 +33,6 @@ import java.util.concurrent.TimeUnit;
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 
-import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.Validate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -42,6 +41,7 @@ import org.springframework.stereotype.Service;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.oceanbase.odc.common.concurrent.ExecutorUtils;
 import com.oceanbase.odc.common.json.JsonUtils;
+import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.common.util.SystemUtils;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.session.ConnectionSession;
@@ -180,9 +180,9 @@ public class PLDebugService {
 
     private String generateSessionId() {
         PLDebugSessionId id = new PLDebugSessionId();
-        id.setUuid(RandomStringUtils.random(10, UUID.randomUUID().toString().replace("-", "")));
+        id.setUuid(StringUtils.uuidNoHyphen());
         id.setFrom(stateHostGenerator.getHost());
-        return Base64.getEncoder().encodeToString(JsonUtils.toJson(id).getBytes());
+        return Base64.getEncoder().encodeToString(JsonUtils.toJson(id).getBytes(StandardCharsets.UTF_8));
     }
 
     private void validate(StartPLDebugReq req) {
