@@ -40,13 +40,16 @@ import com.oceanbase.tools.dbbrowser.parser.result.BasicResult;
 import com.oceanbase.tools.dbbrowser.parser.result.ParseMysqlPLResult;
 import com.oceanbase.tools.dbbrowser.parser.result.ParseOraclePLResult;
 import com.oceanbase.tools.sqlparser.adapter.mysql.MySQLFromReferenceFactory;
+import com.oceanbase.tools.sqlparser.adapter.oracle.OracleExpressionFactory;
 import com.oceanbase.tools.sqlparser.adapter.oracle.OracleFromReferenceFactory;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Create_database_stmtContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Database_factorContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Dot_relation_factorContext;
+import com.oceanbase.tools.sqlparser.obmysql.OBParser.Function_nameContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Normal_relation_factorContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Relation_factorContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Relation_factor_with_starContext;
+import com.oceanbase.tools.sqlparser.obmysql.OBParser.Simple_func_exprContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParserBaseVisitor;
 import com.oceanbase.tools.sqlparser.obmysql.PLParser.IdentContext;
 import com.oceanbase.tools.sqlparser.obmysql.PLParser.Sp_call_nameContext;
@@ -58,7 +61,10 @@ import com.oceanbase.tools.sqlparser.oboracle.OBParser.Routine_nameContext;
 import com.oceanbase.tools.sqlparser.oboracle.OBParser.Var_nameContext;
 import com.oceanbase.tools.sqlparser.oboracle.PLParser.IdentifierContext;
 import com.oceanbase.tools.sqlparser.oboracle.PLParser.Pl_schema_nameContext;
+import com.oceanbase.tools.sqlparser.statement.Expression;
 import com.oceanbase.tools.sqlparser.statement.common.RelationFactor;
+import com.oceanbase.tools.sqlparser.statement.expression.FunctionCall;
+import com.oceanbase.tools.sqlparser.statement.expression.RelationReference;
 
 import lombok.Getter;
 
@@ -220,6 +226,21 @@ public class SchemaExtractor {
         public RelationFactor visitCreate_database_stmt(Create_database_stmtContext ctx) {
             return null;
         }
+
+        @Override
+        public RelationFactor visitSimple_func_expr(Simple_func_exprContext ctx) {
+            Function_nameContext functionName = ctx.function_name();
+            com.oceanbase.tools.sqlparser.obmysql.OBParser.Relation_nameContext relationName = ctx.relation_name();
+            if (Objects.nonNull(functionName) && StringUtils.isNotBlank(functionName.getText())) {
+                RelationFactor relationFactor = new RelationFactor(functionName.getText());
+                if (Objects.nonNull(relationName) && StringUtils.isNotBlank(relationName.getText())) {
+                    relationFactor.setSchema(relationName.getText());
+                }
+                relationFactorList.add(relationFactor);
+            }
+            return null;
+        }
+
     }
 
     @Getter
@@ -274,6 +295,27 @@ public class SchemaExtractor {
             RelationFactor relationFactor = new RelationFactor(ctx, "");
             relationFactor.setSchema(relationName.getText());
             relationFactorList.add(relationFactor);
+            return null;
+        }
+
+        @Override
+        public RelationFactor visitObj_access_ref(OBParser.Obj_access_refContext ctx) {
+            OracleExpressionFactory expressionFactory = new OracleExpressionFactory(ctx);
+            Expression expr = expressionFactory.generate();
+            if (expr instanceof RelationReference) {
+                Expression e = expr;
+                while (Objects.nonNull(e.getReference())) {
+                    e = e.getReference();
+                }
+                if (e instanceof FunctionCall) {
+                    RelationFactor relationFactor = new RelationFactor(((FunctionCall) e).getFunctionName());
+                    relationFactor.setSchema(((RelationReference) expr).getRelationName());
+                    relationFactorList.add(relationFactor);
+                }
+            } else if (expr instanceof FunctionCall) {
+                RelationFactor relationFactor = new RelationFactor(((FunctionCall) expr).getFunctionName());
+                relationFactorList.add(relationFactor);
+            }
             return null;
         }
 

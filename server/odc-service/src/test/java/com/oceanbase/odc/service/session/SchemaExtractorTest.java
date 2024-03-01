@@ -81,6 +81,22 @@ public class SchemaExtractorTest {
     }
 
     @Test
+    public void testMySQL_ListSchemaNames_SelectFunction() {
+        String sql = "select user_schema.user_function(4) from dual;";
+        Set<String> actual = SchemaExtractor.listSchemaNames(Arrays.asList(sql), DialectType.OB_MYSQL, "default");
+        Set<String> expect = Collections.singleton("user_schema");
+        Assert.assertEquals(expect, actual);
+    }
+
+    @Test
+    public void testMySQL_ListSchemaNames_SelectFunction_UseDefaultSchema() {
+        String sql = "select user_function(4) from dual;";
+        Set<String> actual = SchemaExtractor.listSchemaNames(Arrays.asList(sql), DialectType.OB_MYSQL, "default");
+        Set<String> expect = Collections.singleton("default");
+        Assert.assertEquals(expect, actual);
+    }
+
+    @Test
     public void testMySQL_ListSchemaNames_CallProcedure() {
         String sql = "call `schema_name`.`user_procedure`();";
         Set<String> actual = SchemaExtractor.listSchemaNames(Arrays.asList(sql), DialectType.OB_MYSQL, "default");
@@ -172,6 +188,22 @@ public class SchemaExtractorTest {
                 + "BEGIN\n"
                 + "  RETURN INPUT_NUMBER + 1;\n"
                 + "END INCREMENT_BY_ONE;";
+        Set<String> actual = SchemaExtractor.listSchemaNames(Arrays.asList(sql), DialectType.OB_ORACLE, "DEFAULT");
+        Set<String> expect = Collections.singleton("DEFAULT");
+        Assert.assertEquals(expect, actual);
+    }
+
+    @Test
+    public void testOracle_ListSchemaNames_SelectFunction() {
+        String sql = "SELECT USER_SCHEMA.USER_FUNCTION(4) FROM DUAL;";
+        Set<String> actual = SchemaExtractor.listSchemaNames(Arrays.asList(sql), DialectType.OB_ORACLE, "DEFAULT");
+        Set<String> expect = Collections.singleton("USER_SCHEMA");
+        Assert.assertEquals(expect, actual);
+    }
+
+    @Test
+    public void testOracle_ListSchemaNames_SelectFunction_UseDefaultSchema() {
+        String sql = "SELECT USER_FUNCTION(4) FROM DUAL;";
         Set<String> actual = SchemaExtractor.listSchemaNames(Arrays.asList(sql), DialectType.OB_ORACLE, "DEFAULT");
         Set<String> expect = Collections.singleton("DEFAULT");
         Assert.assertEquals(expect, actual);
