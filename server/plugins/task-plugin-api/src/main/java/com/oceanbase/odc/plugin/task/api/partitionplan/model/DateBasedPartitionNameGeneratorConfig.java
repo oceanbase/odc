@@ -40,5 +40,7 @@ public class DateBasedPartitionNameGeneratorConfig {
      * ref {@link TimeDataType#getPrecision()}
      */
     private int intervalPrecision;
+    private long baseTimestampMillis;
+    private boolean fromCurrentTime;
 
 }

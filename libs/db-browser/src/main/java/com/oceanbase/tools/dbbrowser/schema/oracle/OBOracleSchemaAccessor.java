@@ -19,6 +19,7 @@ import java.sql.ResultSetMetaData;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -246,7 +247,7 @@ public class OBOracleSchemaAccessor extends OracleSchemaAccessor {
     }
 
     @Override
-    protected RowMapper listColumnsRowMapper() {
+    protected RowMapper<DBTableColumn> listColumnsRowMapper() {
         final int[] hiddenColumnOrdinaryPosition = {-1};
         return (rs, romNum) -> {
             DBTableColumn tableColumn = new DBTableColumn();
@@ -989,7 +990,7 @@ public class OBOracleSchemaAccessor extends OracleSchemaAccessor {
         if (tableNames.isEmpty()) {
             return returnVal;
         }
-        Map<String, List<DBTableColumn>> tableName2Columns = listTableColumns(schemaName);
+        Map<String, List<DBTableColumn>> tableName2Columns = listTableColumns(schemaName, Collections.emptyList());
         Map<String, List<DBTableIndex>> tableName2Indexes = listTableIndexes(schemaName);
         Map<String, List<DBTableConstraint>> tableName2Constraints = listTableConstraints(schemaName);
         Map<String, DBTableOptions> tableName2Options = listTableOptions(schemaName);

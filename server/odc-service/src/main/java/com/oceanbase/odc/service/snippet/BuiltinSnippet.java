@@ -15,6 +15,7 @@
  */
 package com.oceanbase.odc.service.snippet;
 
+import java.util.Objects;
 import java.util.Set;
 
 import com.oceanbase.odc.core.shared.constant.DialectType;
@@ -30,6 +31,13 @@ public class BuiltinSnippet extends Snippet {
     private Set<String> tags;
     private String minVersion;
     private String maxVersion;
+
+    public boolean isForSysTenantOnly() {
+        if (Objects.isNull(this.tags)) {
+            return false;
+        }
+        return this.tags.contains("sys");
+    }
 
     public BuiltinSnippet copy() {
         BuiltinSnippet snippet = new BuiltinSnippet();

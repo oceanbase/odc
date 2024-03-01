@@ -72,7 +72,6 @@ public class SqlCheckInterceptor extends BaseTimeConsumingInterceptor {
     @Autowired
     private AuthenticationFacade authenticationFacade;
 
-
     @Override
     public boolean doPreHandle(@NonNull SqlAsyncExecuteReq request, @NonNull SqlAsyncExecuteResp response,
             @NonNull ConnectionSession session, @NonNull Map<String, Object> context) {
@@ -84,7 +83,6 @@ public class SqlCheckInterceptor extends BaseTimeConsumingInterceptor {
             return true;
         }
     }
-
 
     private boolean handle(@NonNull SqlAsyncExecuteReq request, @NonNull SqlAsyncExecuteResp response,
             @NonNull ConnectionSession session, @NonNull Map<String, Object> context) {

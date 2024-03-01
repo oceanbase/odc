@@ -35,7 +35,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 
 import com.oceanbase.odc.plugin.schema.obmysql.OBMySQLTableExtension;
 import com.oceanbase.odc.plugin.task.api.partitionplan.invoker.drop.DropPartitionGenerator;
-import com.oceanbase.odc.plugin.task.api.partitionplan.invoker.drop.KeepMostRecentPartitionGenerator;
+import com.oceanbase.odc.plugin.task.api.partitionplan.invoker.drop.KeepMostLatestPartitionGenerator;
 import com.oceanbase.odc.plugin.task.obmysql.partitionplan.invoker.drop.OBMySQLKeepLatestPartitionGenerator;
 import com.oceanbase.odc.test.database.TestDBConfiguration;
 import com.oceanbase.odc.test.database.TestDBConfigurations;
@@ -85,7 +85,7 @@ public class OBMySQLKeepLatestPartitionGeneratorTest {
 
     private Map<String, Object> getParameters(int keepCount) {
         Map<String, Object> parameters = new HashMap<>();
-        parameters.put(KeepMostRecentPartitionGenerator.KEEP_RECENT_COUNT_KEY, keepCount);
+        parameters.put(KeepMostLatestPartitionGenerator.KEEP_LATEST_COUNT_KEY, keepCount);
         return parameters;
     }
 

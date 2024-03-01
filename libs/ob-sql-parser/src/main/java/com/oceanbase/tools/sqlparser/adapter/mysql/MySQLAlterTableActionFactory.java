@@ -203,6 +203,8 @@ public class MySQLAlterTableActionFactory extends OBParserBaseVisitor<AlterTable
         } else if (ctx.REORGANIZE() != null) {
             alterTableAction.reorganizePartition(getNames(ctx.name_list()),
                     getPartitionElements(ctx.opt_partition_range_or_list()));
+        } else if (ctx.REMOVE() != null && ctx.PARTITIONING() != null) {
+            alterTableAction.setRemovePartitioning(true);
         }
         return alterTableAction;
     }

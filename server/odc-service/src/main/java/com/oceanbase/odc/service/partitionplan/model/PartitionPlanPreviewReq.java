@@ -16,27 +16,35 @@
 package com.oceanbase.odc.service.partitionplan.model;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
-import com.oceanbase.tools.dbbrowser.model.DBTablePartition;
-import com.oceanbase.tools.dbbrowser.model.datatype.DataType;
-
-import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
 
 /**
- * {@link PartitionPlanDBTablePartition}
+ * {@link PartitionPlanPreviewReq}
  *
  * @author yh263208
- * @date 2024-01-09 14:12
+ * @date 2024-02-26 19:50
  * @since ODC_release_4.2.4
- * @see DBTablePartition
  */
 @Getter
 @Setter
-@EqualsAndHashCode(callSuper = true)
-public class PartitionPlanDBTablePartition extends DBTablePartition {
+public class PartitionPlanPreviewReq {
 
-    private List<DataType> partitionKeyTypes;
+    private List<String> tableNames;
+    private PartitionPlanTableConfig template;
+    private boolean onlyForPartitionName;
+
+    public List<PartitionPlanTableConfig> getTableConfigs() {
+        if (this.template == null || this.tableNames == null) {
+            throw new IllegalStateException("Partition plan template or table names is null");
+        }
+        return this.tableNames.stream().map(s -> {
+            PartitionPlanTableConfig target = new PartitionPlanTableConfig(template);
+            target.setTableName(s);
+            return target;
+        }).collect(Collectors.toList());
+    }
 
 }
