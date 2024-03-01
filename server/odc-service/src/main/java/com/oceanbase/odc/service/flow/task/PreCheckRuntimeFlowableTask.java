@@ -41,6 +41,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.common.unit.BinarySizeUnit;
 import com.oceanbase.odc.common.util.StringUtils;
+import com.oceanbase.odc.core.shared.PreConditions;
+import com.oceanbase.odc.core.shared.constant.TaskStatus;
 import com.oceanbase.odc.core.shared.constant.TaskType;
 import com.oceanbase.odc.core.shared.exception.VerifyException;
 import com.oceanbase.odc.core.sql.execute.model.SqlTuple;
@@ -58,6 +60,7 @@ import com.oceanbase.odc.service.flow.model.PreCheckTaskResult;
 import com.oceanbase.odc.service.flow.task.model.DatabaseChangeParameters;
 import com.oceanbase.odc.service.flow.task.model.DatabasePermissionCheckResult;
 import com.oceanbase.odc.service.flow.task.model.PreCheckTaskProperties;
+import com.oceanbase.odc.service.flow.task.model.RuntimeTaskConstants;
 import com.oceanbase.odc.service.flow.task.model.SqlCheckTaskResult;
 import com.oceanbase.odc.service.flow.task.util.DatabaseChangeFileReader;
 import com.oceanbase.odc.service.flow.util.FlowTaskUtil;
@@ -114,6 +117,7 @@ public class PreCheckRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Void> {
     private PreCheckTaskProperties preCheckTaskProperties;
 
     private static final String CHECK_RESULT_FILE_NAME = "sql-check-result.json";
+    private final Map<String, Object> riskLevelResult = new HashMap<>();
 
     @Override
     protected Void start(Long taskId, TaskService taskService, DelegateExecution execution) throws Exception {
@@ -165,9 +169,14 @@ public class PreCheckRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Void> {
             taskEntity.setExecutionExpirationIntervalSeconds(
                     riskLevel.getApprovalFlowConfig().getExecutionExpirationIntervalSeconds());
             taskService.update(taskEntity);
-            FlowTaskUtil.setExecutionExpirationInterval(execution,
-                    riskLevel.getApprovalFlowConfig().getExecutionExpirationIntervalSeconds(), TimeUnit.SECONDS);
-            FlowTaskUtil.setRiskLevel(execution, riskLevel.getLevel());
+
+            Integer executionExpirationSeconds = riskLevel.getApprovalFlowConfig()
+                    .getExecutionExpirationIntervalSeconds();
+            PreConditions.notNegative(executionExpirationSeconds, "ExecutionExpirationSeconds");
+            long executionExpirationIntervalMilliSecs =
+                    TimeUnit.MILLISECONDS.convert(executionExpirationSeconds, TimeUnit.SECONDS);
+            riskLevelResult.put(RuntimeTaskConstants.TIMEOUT_MILLI_SECONDS, executionExpirationIntervalMilliSecs);
+            riskLevelResult.put(RuntimeTaskConstants.RISKLEVEL, riskLevel);
             success = true;
         } catch (Exception ex) {
             log.warn("risk detect failed, ", ex);
@@ -188,6 +197,11 @@ public class PreCheckRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Void> {
     }
 
     @Override
+    public void callback(long flowInstanceId, long taskId, TaskStatus taskStatus) {
+        FlowableTaskCallBackApprovalUtils.approval(flowInstanceId, taskId, taskStatus, riskLevelResult);
+    }
+
+    @Override
     protected void onFailure(Long taskId, TaskService taskService) {
         log.warn("RiskLevel Detect task failed, taskId={}", this.preCheckTaskId);
         try {
@@ -196,6 +210,7 @@ public class PreCheckRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Void> {
         } catch (Exception e) {
             log.warn("Failed to store task result", e);
         }
+        callback(getFlowInstanceId(), getTaskId(), TaskStatus.FAILED);
     }
 
     @Override
@@ -207,10 +222,13 @@ public class PreCheckRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Void> {
         } catch (Exception e) {
             log.warn("Failed to store task result", e);
         }
+        callback(getFlowInstanceId(), getTaskId(), TaskStatus.DONE);
     }
 
     @Override
-    protected void onTimeout(Long taskId, TaskService taskService) {}
+    protected void onTimeout(Long taskId, TaskService taskService) {
+        callback(getFlowInstanceId(), getTaskId(), TaskStatus.FAILED);
+    }
 
     @Override
     protected void onProgressUpdate(Long taskId, TaskService taskService) {}

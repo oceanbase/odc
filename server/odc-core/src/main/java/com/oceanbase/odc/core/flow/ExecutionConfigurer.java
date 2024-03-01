@@ -25,6 +25,7 @@ import com.oceanbase.odc.core.flow.builder.SequenceFlowBuilder;
 import com.oceanbase.odc.core.flow.graph.GraphConfigurer;
 
 import lombok.NonNull;
+import lombok.Setter;
 
 /**
  * Impl of {@link ExecutionConfigurer}
@@ -36,6 +37,9 @@ import lombok.NonNull;
  */
 public class ExecutionConfigurer extends GraphConfigurer<FlowableProcessBuilder, BaseProcessNodeBuilder<?>> {
 
+    @Setter
+    private SequenceFlowBuilder previousSequence;
+
     public ExecutionConfigurer(@NonNull FlowableProcessBuilder target) {
         super(target);
     }
@@ -45,9 +49,14 @@ public class ExecutionConfigurer extends GraphConfigurer<FlowableProcessBuilder,
         if (from instanceof EndEventBuilder) {
             throw new IllegalStateException("Can not append node after EndEvent");
         }
-        return (ExecutionConfigurer) super.next(nextNode,
-                new SequenceFlowBuilder(from == null ? "" : from.getGraphId() + " -> " + nextNode.getGraphId()));
+        ExecutionConfigurer executionConfigurer = (ExecutionConfigurer) super.next(nextNode,
+                previousSequence != null ? previousSequence
+                        : new SequenceFlowBuilder(
+                                from == null ? "" : from.getGraphId() + " -> " + nextNode.getGraphId()));
+        previousSequence = null;
+        return executionConfigurer;
     }
+
 
     public ExecutionConfigurer route(@NonNull String expr, @NonNull ExecutionConfigurer configurer) {
         BaseProcessNodeBuilder<?> to = configurer.first();
