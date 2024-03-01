@@ -162,6 +162,11 @@ public enum ErrorCodes implements ErrorCode {
     AlterScheduleExists,
     InvalidCronExpression,
 
+    // Partition plan
+    InvalidSqlExpression,
+    PartitionKeyDataTypeMismatch,
+    TimeDataTypePrecisionMismatch,
+
     // Import & Export
     ExportExcelFileFailed,
 

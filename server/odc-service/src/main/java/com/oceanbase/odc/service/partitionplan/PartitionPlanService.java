@@ -15,6 +15,7 @@
  */
 package com.oceanbase.odc.service.partitionplan;
 
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -29,7 +30,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
-import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.metadb.flow.ServiceTaskInstanceRepository;
 import com.oceanbase.odc.metadb.partitionplan.DatabasePartitionPlanEntity;
 import com.oceanbase.odc.metadb.partitionplan.DatabasePartitionPlanRepository;
@@ -38,8 +38,6 @@ import com.oceanbase.odc.metadb.partitionplan.TablePartitionPlanRepository;
 import com.oceanbase.odc.metadb.schedule.ScheduleEntity;
 import com.oceanbase.odc.service.connection.database.DatabaseService;
 import com.oceanbase.odc.service.connection.database.model.Database;
-import com.oceanbase.odc.service.connection.model.ConnectionConfig;
-import com.oceanbase.odc.service.db.browser.DBSchemaAccessors;
 import com.oceanbase.odc.service.flow.FlowInstanceService;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.partitionplan.model.DatabasePartitionPlan;
@@ -50,10 +48,8 @@ import com.oceanbase.odc.service.schedule.model.JobType;
 import com.oceanbase.odc.service.schedule.model.PartitionPlanJobParameters;
 import com.oceanbase.odc.service.schedule.model.ScheduleStatus;
 import com.oceanbase.odc.service.schedule.model.TriggerConfig;
-import com.oceanbase.odc.service.session.factory.DefaultConnectSessionFactory;
 import com.oceanbase.odc.service.task.TaskService;
 import com.oceanbase.tools.dbbrowser.model.DBTablePartition;
-import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
 import com.oceanbase.tools.migrator.common.exception.UnExpectedException;
 
 import lombok.extern.slf4j.Slf4j;
@@ -167,24 +163,25 @@ public class PartitionPlanService {
     }
 
     private List<DBTablePartition> listTableRangePartitionInfo(Database database) {
-        ConnectionConfig connectionConfig = database.getDataSource();
-        DefaultConnectSessionFactory factory = new DefaultConnectSessionFactory(connectionConfig);
-        ConnectionSession connectionSession = factory.generateSession();
-        DBSchemaAccessor accessor = DBSchemaAccessors.create(connectionSession);
-        List<DBTablePartition> dbTablePartitions;
-        try {
-            dbTablePartitions = accessor.listTableRangePartitionInfo(
-                    database.getDataSource().getTenantName()).stream()
-                    .filter(o -> o.getSchemaName().equals(database.getName())).collect(
-                            Collectors.toList());
-        } finally {
-            try {
-                connectionSession.expire();
-            } catch (Exception e) {
-                // eat exception
-            }
-        }
-        return dbTablePartitions;
+        return Collections.emptyList();
+        // ConnectionConfig connectionConfig = database.getDataSource();
+        // DefaultConnectSessionFactory factory = new DefaultConnectSessionFactory(connectionConfig);
+        // ConnectionSession connectionSession = factory.generateSession();
+        // DBSchemaAccessor accessor = DBSchemaAccessors.create(connectionSession);
+        // List<DBTablePartition> dbTablePartitions;
+        // try {
+        // dbTablePartitions = accessor.listTableRangePartitionInfo(
+        // database.getDataSource().getTenantName()).stream()
+        // .filter(o -> o.getSchemaName().equals(database.getName())).collect(
+        // Collectors.toList());
+        // } finally {
+        // try {
+        // connectionSession.expire();
+        // } catch (Exception e) {
+        // // eat exception
+        // }
+        // }
+        // return dbTablePartitions;
     }
 
     @Transactional

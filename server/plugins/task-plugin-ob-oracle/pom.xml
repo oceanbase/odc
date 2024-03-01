@@ -29,22 +29,20 @@
             <artifactId>connect-plugin-ob-oracle</artifactId>
         </dependency>
         <dependency>
+            <groupId>com.oceanbase</groupId>
+            <artifactId>schema-plugin-ob-oracle</artifactId>
+        </dependency>
+        <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
         </dependency>
         <dependency>
             <groupId>com.oceanbase</groupId>
             <artifactId>odc-test</artifactId>
-            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>com.oceanbase</groupId>
             <artifactId>schema-plugin-ob-mysql</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.oceanbase</groupId>
-            <artifactId>schema-plugin-ob-oracle</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>
@@ -53,7 +51,7 @@
         <root-project.basedir>${project.parent.parent.basedir}</root-project.basedir>
         <plugin.class>com.oceanbase.odc.plugin.task.oboracle.OBOracleTaskPlugin</plugin.class>
         <plugin.dependencies>
-            task-plugin-ob-mysql,connect-plugin-ob-mysql,connect-plugin-ob-oracle
+            task-plugin-ob-mysql,connect-plugin-ob-mysql,connect-plugin-ob-oracle,schema-plugin-ob-oracle
         </plugin.dependencies>
     </properties>
 

@@ -40,9 +40,8 @@ import com.oceanbase.odc.plugin.task.api.partitionplan.AutoPartitionExtensionPoi
 import com.oceanbase.odc.plugin.task.api.partitionplan.datatype.TimeDataType;
 import com.oceanbase.odc.plugin.task.api.partitionplan.invoker.create.PartitionExprGenerator;
 import com.oceanbase.odc.plugin.task.api.partitionplan.invoker.drop.DropPartitionGenerator;
-import com.oceanbase.odc.plugin.task.api.partitionplan.invoker.drop.KeepMostRecentPartitionGenerator;
+import com.oceanbase.odc.plugin.task.api.partitionplan.invoker.drop.KeepMostLatestPartitionGenerator;
 import com.oceanbase.odc.plugin.task.api.partitionplan.invoker.partitionname.PartitionNameGenerator;
-import com.oceanbase.odc.plugin.task.api.partitionplan.invoker.partitionname.SqlExprBasedPartitionNameGenerator;
 import com.oceanbase.odc.plugin.task.api.partitionplan.model.PartitionPlanVariableKey;
 import com.oceanbase.odc.plugin.task.api.partitionplan.model.SqlExprBasedGeneratorConfig;
 import com.oceanbase.odc.plugin.task.api.partitionplan.model.TimeIncreaseGeneratorConfig;
@@ -69,6 +68,7 @@ public class OBMySQLAutoPartitionExtensionPointTest {
     public static final String RANGE_MAX_VALUE_TABLE_NAME = "range_maxvalue_parti_ext_tbl";
     public static final String RANGE_COLUMNS_TABLE_NAME = "range_col_parti_ext_tbl";
     public static final String REAL_RANGE_TABLE_NAME = "real_range_parti_ext_tbl";
+    public static final String REAL_RANGE_COL_TABLE_NAME = "real_range_col_parti_ext_tbl";
 
     @BeforeClass
     public static void setUp() throws IOException {
@@ -87,6 +87,7 @@ public class OBMySQLAutoPartitionExtensionPointTest {
         oracle.execute("DROP TABLE " + RANGE_TABLE_NAME);
         oracle.execute("DROP TABLE " + REAL_RANGE_TABLE_NAME);
         oracle.execute("DROP TABLE " + RANGE_MAX_VALUE_TABLE_NAME);
+        oracle.execute("DROP TABLE " + REAL_RANGE_COL_TABLE_NAME);
     }
 
     @Test
@@ -199,7 +200,7 @@ public class OBMySQLAutoPartitionExtensionPointTest {
                     .getPartitionExpressionGeneratorByName("TIME_INCREASING_GENERATOR");
             TimeIncreaseGeneratorConfig config1 = new TimeIncreaseGeneratorConfig();
             long current = 1706180200490L;// 2024-01-25 18:57
-            config1.setFromTimestampMillis(current);
+            config1.setBaseTimestampMillis(current);
             config1.setInterval(1);
             config1.setIntervalPrecision(TimeDataType.DAY);
             List<String> pk2Values = pk2.invoke(connection, dbTable,
@@ -258,9 +259,20 @@ public class OBMySQLAutoPartitionExtensionPointTest {
         }
     }
 
+    @Test
+    public void listAllPartitionedTables_listAll_listSucceed() throws SQLException {
+        TestDBConfiguration configuration = TestDBConfigurations.getInstance().getTestOBMysqlConfiguration();
+        try (Connection connection = configuration.getDataSource().getConnection()) {
+            AutoPartitionExtensionPoint extensionPoint = new OBMySQLAutoPartitionExtensionPoint();
+            List<DBTable> actual = extensionPoint.listAllPartitionedTables(connection,
+                    configuration.getDefaultDBName(), null);
+            Assert.assertEquals(4, actual.size());
+        }
+    }
+
     private Map<String, Object> getDropPartitionParameters(int keepCount) {
         Map<String, Object> parameters = new HashMap<>();
-        parameters.put(KeepMostRecentPartitionGenerator.KEEP_RECENT_COUNT_KEY, keepCount);
+        parameters.put(KeepMostLatestPartitionGenerator.KEEP_LATEST_COUNT_KEY, keepCount);
         return parameters;
     }
 
@@ -268,7 +280,7 @@ public class OBMySQLAutoPartitionExtensionPointTest {
         Map<String, Object> parameters = new HashMap<>();
         parameters.put(PartitionNameGenerator.TARGET_PARTITION_DEF_KEY, new DBTablePartitionDefinition());
         parameters.put(PartitionNameGenerator.TARGET_PARTITION_DEF_INDEX_KEY, index);
-        parameters.put(SqlExprBasedPartitionNameGenerator.PARTITION_NAME_GEN_CONFIG_KEY, config);
+        parameters.put(PartitionNameGenerator.PARTITION_NAME_GENERATOR_KEY, config);
         return parameters;
     }
 

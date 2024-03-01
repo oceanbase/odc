@@ -396,8 +396,8 @@
             <Routes pattern="${ctx:taskId}">
                 <Route>
                     <RollingFile name="Rolling-${ctx:taskId}"
-                                 fileName="${LOG_DIRECTORY}/partitionplan/${ctx:partitionplanWorkSpace}/${ctx:taskId}/partitionplan.all"
-                                 filePattern="${LOG_DIRECTORY}/partitionplan/${ctx:partitionplanWorkSpace}/${ctx:taskId}/${date:yyyy-MM}/partitionplan-task-%d{yyyy-MM-dd}-%i.all.gz">
+                                 fileName="${LOG_DIRECTORY}/partition-plan/${ctx:taskId}/partition-plan.all"
+                                 filePattern="${LOG_DIRECTORY}/partition-plan/${ctx:taskId}/${date:yyyy-MM}/partition-plan-%d{yyyy-MM-dd}-%i.all.gz">
                         <PatternLayout>
                             <pattern>%d{yyyy-MM-dd HH:mm:ss} %p %c{1.} - %m%n</pattern>
                         </PatternLayout>
@@ -418,8 +418,8 @@
             <Routes pattern="${ctx:taskId}">
                 <Route>
                     <RollingFile name="Rolling-${ctx:taskId}"
-                                 fileName="${LOG_DIRECTORY}/partitionplan/${ctx:partitionplanWorkSpace}/${ctx:taskId}/partitionplan.warn"
-                                 filePattern="${LOG_DIRECTORY}/partitionplan/${ctx:partitionplanWorkSpace}/${ctx:taskId}/${date:yyyy-MM}/partitionplan-%d{yyyy-MM-dd}-%i.warn.gz">
+                                 fileName="${LOG_DIRECTORY}/partition-plan/${ctx:taskId}/partition-plan.warn"
+                                 filePattern="${LOG_DIRECTORY}/partition-plan/${ctx:taskId}/${date:yyyy-MM}/partition-plan-%d{yyyy-MM-dd}-%i.warn.gz">
                         <PatternLayout>
                             <pattern>%d{yyyy-MM-dd HH:mm:ss} %p %c{1.} - %m%n</pattern>
                         </PatternLayout>
@@ -723,14 +723,15 @@
         </Logger>
 
         <!-- 分区计划任务日志输出 -->
-        <Logger name="com.oceanbase.odc.service.flow.task.PartitionPlanTask" level="INFO" additivity="true">
+        <Logger name="com.oceanbase.odc.service.flow.task.PartitionPlanRuntimeFlowableTask" level="INFO" additivity="true">
             <AppenderRef ref="AllRoutingPartitionPlanAppender"/>
             <AppenderRef ref="WarnRoutingPartitionPlanAppender"/>
         </Logger>
-        <Logger name="com.oceanbase.odc.service.partitionplan" level="INFO" additivity="true">
+        <Logger name="com.oceanbase.odc.service.schedule.job.PartitionPlanJob" level="INFO" additivity="true">
             <AppenderRef ref="AllRoutingPartitionPlanAppender"/>
             <AppenderRef ref="WarnRoutingPartitionPlanAppender"/>
         </Logger>
+
         <Logger name="com.oceanbase.odc.service.schedule" level="INFO" additivity="true">
             <AppenderRef ref="AllRoutingAlterScheduleAppender"/>
             <AppenderRef ref="WarnRoutingAlterScheduleAppender"/>
