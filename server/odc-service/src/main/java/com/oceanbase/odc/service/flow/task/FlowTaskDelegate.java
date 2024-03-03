@@ -30,7 +30,6 @@ import com.oceanbase.odc.service.flow.FlowableAdaptor;
 import com.oceanbase.odc.service.flow.instance.FlowTaskInstance;
 import com.oceanbase.odc.service.flow.task.mapper.OdcRuntimeDelegateMapper;
 import com.oceanbase.odc.service.flow.util.FlowTaskUtil;
-import com.oceanbase.odc.service.task.exception.TaskRuntimeException;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -68,10 +67,10 @@ public class FlowTaskDelegate implements JavaDelegate {
         try {
             delegateInstance = flowableTaskBeanFactory.createBeanWithDependencies(delegateClass);
         } catch (Exception e) {
-            throw new TaskRuntimeException(e);
+            throw new IllegalStateException("Create delegate task instance occur error: ", e);
         }
         // DelegateExecution will be changed when current thread return,
-        // so use execution facade class to save properties
+        // so use execution facade class to save execution properties
         DelegateExecution executionFacade = new ExecutionEntityFacade(execution);
         threadPoolTaskExecutor.submit(() -> {
             try {
