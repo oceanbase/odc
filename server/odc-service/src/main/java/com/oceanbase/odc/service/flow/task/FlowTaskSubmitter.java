@@ -40,11 +40,10 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 @Component
-public class FlowTaskDelegate implements JavaDelegate {
+public class FlowTaskSubmitter implements JavaDelegate {
 
     @Autowired
     private FlowTaskBeanFactory flowableTaskBeanFactory;
-
     @Qualifier("flowTaskExecutor")
     @Autowired
     private ThreadPoolTaskExecutor threadPoolTaskExecutor;
@@ -53,7 +52,19 @@ public class FlowTaskDelegate implements JavaDelegate {
 
     @Override
     public void execute(DelegateExecution execution) {
+        // DelegateExecution will be changed when current thread return,
+        // so use execution facade class to save execution properties
+        DelegateExecution executionFacade = new ExecutionEntityFacade(execution);
+        threadPoolTaskExecutor.submit(() -> {
+            try {
+                getaDelegateInstance(executionFacade).execute(executionFacade);
+            } catch (Throwable e) {
+                log.warn("Delegate task instance execute occur error.", e);
+            }
+        });
+    }
 
+    private BaseRuntimeFlowableDelegate<?> getaDelegateInstance(DelegateExecution execution) throws Exception {
         Optional<FlowTaskInstance> flowTaskInstance = flowableAdaptor.getTaskInstanceByActivityId(
                 execution.getCurrentActivityId(), FlowTaskUtil.getFlowInstanceId(execution));
         PreConditions.validExists(ResourceType.ODC_FLOW_TASK_INSTANCE, "activityId",
@@ -63,24 +74,7 @@ public class FlowTaskDelegate implements JavaDelegate {
         Class<? extends BaseRuntimeFlowableDelegate<?>> delegateClass =
                 mapper.map(flowTaskInstance.get().getTaskType());
         flowTaskInstance.get().dealloc();
-        BaseRuntimeFlowableDelegate<?> delegateInstance;
-        try {
-            delegateInstance = flowableTaskBeanFactory.createBeanWithDependencies(delegateClass);
-        } catch (Exception e) {
-            throw new IllegalStateException("Create delegate task instance occur error: ", e);
-        }
-        // DelegateExecution will be changed when current thread return,
-        // so use execution facade class to save execution properties
-        DelegateExecution executionFacade = new ExecutionEntityFacade(execution);
-        threadPoolTaskExecutor.submit(() -> {
-            try {
-                delegateInstance.execute(executionFacade);
-            } catch (Throwable e) {
-                log.warn("Delegate task instance execute occur error.", e);
-            }
-        });
-
+        return flowableTaskBeanFactory.createBeanWithDependencies(delegateClass);
     }
-
 
 }
