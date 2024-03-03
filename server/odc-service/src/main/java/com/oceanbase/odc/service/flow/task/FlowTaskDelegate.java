@@ -41,12 +41,12 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 @Component
-public class FlowTaskExecutor implements JavaDelegate {
+public class FlowTaskDelegate implements JavaDelegate {
 
     @Autowired
     private FlowTaskBeanFactory flowableTaskBeanFactory;
 
-    @Qualifier("autoApprovalExecutor")
+    @Qualifier("flowTaskExecutor")
     @Autowired
     private ThreadPoolTaskExecutor threadPoolTaskExecutor;
     @Autowired
@@ -71,7 +71,7 @@ public class FlowTaskExecutor implements JavaDelegate {
             throw new TaskRuntimeException(e);
         }
         // DelegateExecution will be changed when current thread return,
-        // so use facade class to save properties
+        // so use execution facade class to save properties
         DelegateExecution executionFacade = new ExecutionEntityFacade(execution);
         threadPoolTaskExecutor.submit(() -> {
             try {

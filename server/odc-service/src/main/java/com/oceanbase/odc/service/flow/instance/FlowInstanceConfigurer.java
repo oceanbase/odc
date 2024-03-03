@@ -58,7 +58,7 @@ import com.oceanbase.odc.service.flow.model.ExecutionStrategyConfig;
 import com.oceanbase.odc.service.flow.model.FlowNodeType;
 import com.oceanbase.odc.service.flow.model.FlowTaskExecutionStrategy;
 import com.oceanbase.odc.service.flow.task.CreateExternalApprovalTask;
-import com.oceanbase.odc.service.flow.task.FlowTaskExecutor;
+import com.oceanbase.odc.service.flow.task.FlowTaskDelegate;
 import com.oceanbase.odc.service.flow.task.model.RuntimeTaskConstants;
 
 import lombok.Getter;
@@ -276,7 +276,7 @@ public class FlowInstanceConfigurer extends GraphConfigurer<FlowInstance, BaseFl
 
         String serviceTaskName = FlowNodeType.SERVICE_TASK.name() + "_service_task_" + getNameSuffix(nextNode);
         ServiceTaskBuilder serviceTaskBuilder = nullSafeGetNodeBuilder(serviceTaskName, nextNode, () -> {
-            ServiceTaskBuilder taskBuilder = new ServiceTaskBuilder(serviceTaskName, FlowTaskExecutor.class);
+            ServiceTaskBuilder taskBuilder = new ServiceTaskBuilder(serviceTaskName, FlowTaskDelegate.class);
             serviceTaskConsumer.accept(taskBuilder);
             return taskBuilder;
         });

@@ -115,6 +115,23 @@ public class ScheduleConfiguration {
         return executor;
     }
 
+    @Bean(name = "flowTaskExecutor")
+    public ThreadPoolTaskExecutor flowTaskExecutor() {
+        ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
+        int poolSize = Math.max(SystemUtils.availableProcessors(), 64);
+        executor.setCorePoolSize(poolSize);
+        executor.setMaxPoolSize(poolSize);
+        executor.setQueueCapacity(0);
+        executor.setThreadNamePrefix("flow-task-executor-");
+        executor.setWaitForTasksToCompleteOnShutdown(true);
+        executor.setAwaitTerminationSeconds(5);
+        executor.setTaskDecorator(new TraceDecorator<>());
+        executor.setRejectedExecutionHandler(new ThreadPoolExecutor.AbortPolicy());
+        executor.initialize();
+        log.info("flowTaskExecutor initialized");
+        return executor;
+    }
+
     @Bean(name = "shadowTableComparingExecutor")
     public ThreadPoolTaskExecutor shadowTableComparingExecutor() {
         ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
