@@ -67,8 +67,9 @@ public class FlowTaskCallBackApprovalService {
             Map<String, Object> approvalVariables) {
 
         if (!taskStatus.isTerminated()) {
-            log.warn("Task is not terminated, callback failed, flowInstanceId={}, flowTaskInstanceId={}, taskStatus={}.",
-                    flowInstanceId, flowTaskInstanceId,taskStatus);
+            log.warn(
+                    "Task is not terminated, callback failed, flowInstanceId={}, flowTaskInstanceId={}, taskStatus={}.",
+                    flowInstanceId, flowTaskInstanceId, taskStatus);
             return;
         }
         FlowInstanceEntity flowInstance = getFlowInstance(flowInstanceId);
