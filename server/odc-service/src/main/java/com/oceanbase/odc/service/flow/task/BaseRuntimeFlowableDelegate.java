@@ -59,8 +59,7 @@ import lombok.extern.slf4j.Slf4j;
  * @since ODC_release_3.3.0
  */
 @Slf4j
-public abstract class BaseRuntimeFlowableDelegate<T> extends BaseFlowableDelegate implements Future<T>,
-        FlowableTaskCallBack {
+public abstract class BaseRuntimeFlowableDelegate<T> extends BaseFlowableDelegate implements Future<T>, FlowTaskCallBack {
 
     @Getter
     private String activityId;

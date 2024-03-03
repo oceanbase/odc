@@ -218,10 +218,6 @@ public class FlowApprovalInstance extends BaseFlowUserTaskInstance {
         internalOperate(false, comment, requireOperator);
     }
 
-    public void approve(String comment, boolean requireOperator, Map<String, Object> approvalVariables) {
-        internalOperate(true, comment, requireOperator, approvalVariables);
-    }
-
     public void approve() {
         approve(null, true);
     }
@@ -242,11 +238,6 @@ public class FlowApprovalInstance extends BaseFlowUserTaskInstance {
     }
 
     private void internalOperate(boolean approved, String comment, boolean requireOperator) {
-        internalOperate(approved, comment, requireOperator, null);
-    }
-
-    private void internalOperate(boolean approved, String comment, boolean requireOperator,
-            Map<String, Object> approvalVariables) {
         boolean originApproved = isApproved();
         String originComment = getComment();
         Long originOperatorId = getOperatorId();
@@ -265,9 +256,6 @@ public class FlowApprovalInstance extends BaseFlowUserTaskInstance {
             }
             Map<String, Object> variables = new HashMap<>();
             variables.putIfAbsent(APPROVAL_VARIABLE_NAME, approved);
-            if (approvalVariables != null && !approvalVariables.isEmpty()) {
-                variables.putAll(approvalVariables);
-            }
             complete(variables);
         } catch (Exception e) {
             Long operatorId = null;

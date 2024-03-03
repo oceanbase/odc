@@ -23,13 +23,14 @@ import com.oceanbase.odc.core.shared.constant.TaskStatus;
  * @since 4.2.4
  */
 @FunctionalInterface
-public interface FlowableTaskCallBack {
+public interface FlowTaskCallBack {
 
     /**
      * approval next task in this flow instance id, decide process continue or not
      * 
      * @param flowInstanceId flow instance id
+     * @param flowTaskInstanceId reference FlowTaskInstance#id
      * @param taskStatus task status
      */
-    void callback(long flowInstanceId, long taskId, TaskStatus taskStatus);
+    void callback(long flowInstanceId, long flowTaskInstanceId, TaskStatus taskStatus);
 }

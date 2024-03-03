@@ -87,6 +87,8 @@ public abstract class BaseODCFlowTaskDelegate<T> extends BaseRuntimeFlowableDele
     private ConnectionService connectionService;
     @Autowired
     private EventBuilder eventBuilder;
+    @Autowired
+    protected FlowTaskCallBackApprovalService flowTaskCallBackApprovalService;
 
     private void init(DelegateExecution execution) {
         this.taskId = FlowTaskUtil.getTaskId(execution);
@@ -240,15 +242,15 @@ public abstract class BaseODCFlowTaskDelegate<T> extends BaseRuntimeFlowableDele
     protected abstract boolean isFailure();
 
     @Override
-    public void callback(@NotNull long flowInstanceId, @NotNull long taskId, @NotNull TaskStatus taskStatus) {
-        FlowableTaskCallBackApprovalUtils.approval(flowInstanceId, taskId, taskStatus);
+    public void callback(@NotNull long flowInstanceId, @NotNull long flowTaskInstanceId, @NotNull TaskStatus taskStatus) {
+        flowTaskCallBackApprovalService.approval(flowInstanceId, flowTaskInstanceId, taskStatus);
     }
 
     /**
      * The callback method when the task fails, which is used to update the status and other operations
      */
     protected void onFailure(Long taskId, TaskService taskService) {
-        callback(getFlowInstanceId(), getTaskId(), TaskStatus.FAILED);
+        callback(getFlowInstanceId(),  getTargetTaskInstanceId(), TaskStatus.FAILED);
         if (notificationProperties.isEnabled()) {
             try {
                 Event event = eventBuilder.ofFailedTask(taskService.detail(taskId));
@@ -263,7 +265,7 @@ public abstract class BaseODCFlowTaskDelegate<T> extends BaseRuntimeFlowableDele
      * The callback method when the task is successful, used to update the status and other operations
      */
     protected void onSuccessful(Long taskId, TaskService taskService) {
-        callback(getFlowInstanceId(), getTaskId(), TaskStatus.DONE);
+        callback(getFlowInstanceId(), getTargetTaskInstanceId(), TaskStatus.DONE);
         if (notificationProperties.isEnabled()) {
             try {
                 Event event = eventBuilder.ofSucceededTask(taskService.detail(taskId));
@@ -279,7 +281,7 @@ public abstract class BaseODCFlowTaskDelegate<T> extends BaseRuntimeFlowableDele
      * operations
      */
     protected void onTimeout(Long taskId, TaskService taskService) {
-        callback(getFlowInstanceId(), getTaskId(), TaskStatus.FAILED);
+        callback(getFlowInstanceId(),  getTargetTaskInstanceId(), TaskStatus.FAILED);
         if (notificationProperties.isEnabled()) {
             try {
                 Event event = eventBuilder.ofTimeoutTask(taskService.detail(taskId));

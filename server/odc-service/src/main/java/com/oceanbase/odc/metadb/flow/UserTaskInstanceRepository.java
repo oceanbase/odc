@@ -84,11 +84,6 @@ public interface UserTaskInstanceRepository
     int updateUserTaskIdById(@Param("id") Long id, @Param("userTaskId") String userTaskId);
 
     @Transactional
-    @Query(value = "update flow_instance_node_approval set is_auto_approve=:isAutoApprove where id=:id", nativeQuery = true)
-    @Modifying
-    int updateApprovedById(@Param("id") Long id, @Param("isAutoApprove") boolean isAutoApprove);
-
-    @Transactional
     @Query(value = "update flow_instance_node_approval set status=:#{#status.name()} where id=:id", nativeQuery = true)
     @Modifying
     int updateStatusById(@Param("id") Long id, @Param("status") FlowNodeStatus status);
@@ -105,17 +100,9 @@ public interface UserTaskInstanceRepository
             @Param("activityId") String activityId, @Param("flowInstanceId") Long flowInstanceId);
 
     @Query(value = "select na.* from flow_instance_node_approval as na inner join flow_instance_node as n on na.id=n.instance_id "
-                   + "where n.instance_type=:#{#instanceType.name()} and n.instance_id=:instanceId and n.flow_instance_id=:flowInstanceId "
-                   + "and n.flowable_element_type=:#{#flowableElementType.name()}",
-        nativeQuery = true)
-    Optional<UserTaskInstanceEntity> findByInstanceTypeAndInstanceId(@Param("instanceType") FlowNodeType instanceType,
-        @Param("instanceId") Long instanceId, @Param("flowInstanceId") Long flowInstanceId, @Param("flowableElementType")
-    FlowableElementType flowableElementType);
-
-    @Query(value = "select na.* from flow_instance_node_approval as na inner join flow_instance_node as n on na.id=n.instance_id "
-            + "where n.name=:name and n.flow_instance_id=:flowInstanceId",
+            + "where n.instance_type=:#{#instanceType.name()} and n.name=:name and n.flow_instance_id=:flowInstanceId",
             nativeQuery = true)
-    Optional<UserTaskInstanceEntity> findByInstanceTypeAndName(
+    Optional<UserTaskInstanceEntity> findByInstanceTypeAndName(@Param("instanceType") FlowNodeType instanceType,
             @Param("name") String name, @Param("flowInstanceId") Long flowInstanceId);
 
     @Query(value = "select wait_for_confirm from flow_instance_node_approval where id =:id limit 1", nativeQuery = true)

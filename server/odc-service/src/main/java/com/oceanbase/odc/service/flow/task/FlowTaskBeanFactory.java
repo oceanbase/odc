@@ -42,7 +42,7 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Component
 @Slf4j
-public class FlowableTaskBeanFactory {
+public class FlowTaskBeanFactory {
 
     public <T> T createBeanWithDependencies(Class<T> beanClass)
             throws Exception {

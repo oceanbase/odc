@@ -197,9 +197,7 @@ public class PreCheckRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Void> {
     }
 
     @Override
-    public void callback(long flowInstanceId, long taskId, TaskStatus taskStatus) {
-        FlowableTaskCallBackApprovalUtils.approval(flowInstanceId, taskId, taskStatus, riskLevelResult);
-    }
+    public void callback(long flowInstanceId, long flowTaskInstanceId, TaskStatus taskStatus) {}
 
     @Override
     protected void onFailure(Long taskId, TaskService taskService) {
@@ -210,7 +208,9 @@ public class PreCheckRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Void> {
         } catch (Exception e) {
             log.warn("Failed to store task result", e);
         }
-        callback(getFlowInstanceId(), getTaskId(), TaskStatus.FAILED);
+        flowTaskCallBackApprovalService.approval(getFlowInstanceId(), getTargetTaskInstanceId(),
+                TaskStatus.FAILED, riskLevelResult);
+
     }
 
     @Override
@@ -222,12 +222,16 @@ public class PreCheckRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Void> {
         } catch (Exception e) {
             log.warn("Failed to store task result", e);
         }
-        callback(getFlowInstanceId(), getTaskId(), TaskStatus.DONE);
+        flowTaskCallBackApprovalService.approval(getFlowInstanceId(), getTargetTaskInstanceId(),
+                TaskStatus.DONE, riskLevelResult);
+
     }
 
     @Override
     protected void onTimeout(Long taskId, TaskService taskService) {
-        callback(getFlowInstanceId(), getTaskId(), TaskStatus.FAILED);
+        flowTaskCallBackApprovalService.approval(getFlowInstanceId(), getTargetTaskInstanceId(),
+                TaskStatus.FAILED, riskLevelResult);
+
     }
 
     @Override

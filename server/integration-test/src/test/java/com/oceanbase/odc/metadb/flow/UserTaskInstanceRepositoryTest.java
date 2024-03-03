@@ -103,7 +103,7 @@ public class UserTaskInstanceRepositoryTest extends ServiceTestEnv {
         repository.save(entity);
 
         NodeInstanceEntity nodeInstanceEntity = createNodeEntity(entity.getFlowInstanceId(), entity.getId());
-        Optional<UserTaskInstanceEntity> optional = repository.findByInstanceTypeAndName(
+        Optional<UserTaskInstanceEntity> optional = repository.findByInstanceTypeAndName(FlowNodeType.APPROVAL_TASK,
                 nodeInstanceEntity.getName(), entity.getFlowInstanceId());
         Assert.assertTrue(optional.isPresent());
     }

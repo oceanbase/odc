@@ -208,7 +208,7 @@ public class FlowableAdaptorImpl implements FlowableAdaptor {
     public Optional<FlowApprovalInstance> getApprovalInstanceByName(@NonNull String name,
             @NonNull Long flowInstanceId) {
         Optional<UserTaskInstanceEntity> optional =
-                userTaskInstanceRepository.findByInstanceTypeAndName(name, flowInstanceId);
+                userTaskInstanceRepository.findByInstanceTypeAndName(FlowNodeType.APPROVAL_TASK, name, flowInstanceId);
         return innerConvert(optional, this,
                 (entity, flowService) -> new FlowApprovalInstance(entity, flowService, taskService, formService,
                         eventPublisher, authenticationFacade, nodeInstanceRepository, sequenceRepository,

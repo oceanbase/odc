@@ -24,7 +24,8 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Component;
 
-import com.oceanbase.odc.core.shared.Verify;
+import com.oceanbase.odc.core.shared.PreConditions;
+import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.service.flow.FlowableAdaptor;
 import com.oceanbase.odc.service.flow.instance.FlowTaskInstance;
 import com.oceanbase.odc.service.flow.task.mapper.OdcRuntimeDelegateMapper;
@@ -40,10 +41,10 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 @Component
-public class FlowableTaskExecutor implements JavaDelegate {
+public class FlowTaskExecutor implements JavaDelegate {
 
     @Autowired
-    private FlowableTaskBeanFactory flowableTaskBeanFactory;
+    private FlowTaskBeanFactory flowableTaskBeanFactory;
 
     @Qualifier("autoApprovalExecutor")
     @Autowired
@@ -56,7 +57,8 @@ public class FlowableTaskExecutor implements JavaDelegate {
 
         Optional<FlowTaskInstance> flowTaskInstance = flowableAdaptor.getTaskInstanceByActivityId(
                 execution.getCurrentActivityId(), FlowTaskUtil.getFlowInstanceId(execution));
-        Verify.verify(flowTaskInstance.isPresent(), "flowTaskInstance is null.");
+        PreConditions.validExists(ResourceType.ODC_FLOW_TASK_INSTANCE, "activityId",
+                execution.getCurrentActivityId(), flowTaskInstance::isPresent);
 
         OdcRuntimeDelegateMapper mapper = new OdcRuntimeDelegateMapper();
         Class<? extends BaseRuntimeFlowableDelegate<?>> delegateClass =
@@ -68,7 +70,8 @@ public class FlowableTaskExecutor implements JavaDelegate {
         } catch (Exception e) {
             throw new TaskRuntimeException(e);
         }
-       // DelegateExecution will be changed when current thread return, so use facade class to save properties
+        // DelegateExecution will be changed when current thread return,
+        // so use facade class to save properties
         DelegateExecution executionFacade = new ExecutionEntityFacade(execution);
         threadPoolTaskExecutor.submit(() -> {
             try {

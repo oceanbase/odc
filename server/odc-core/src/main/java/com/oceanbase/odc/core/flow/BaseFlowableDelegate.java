@@ -45,7 +45,6 @@ public abstract class BaseFlowableDelegate implements JavaDelegate {
      */
     protected abstract void run(DelegateExecution execution) throws Exception;
 
-
     @Override
     public void execute(DelegateExecution execution) {
         try {

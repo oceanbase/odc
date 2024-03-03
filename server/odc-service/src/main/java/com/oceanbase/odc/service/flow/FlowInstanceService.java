@@ -610,11 +610,6 @@ public class FlowInstanceService {
     }
 
     public FlowInstanceDetailResp approve(@NotNull Long id, String message, Boolean skipAuth) throws IOException {
-        return approve(id, message, skipAuth, null);
-    }
-
-    public FlowInstanceDetailResp approve(@NotNull Long id, String message, Boolean skipAuth,
-            Map<String, Object> approvalVariables) throws IOException {
         TaskEntity taskEntity = getTaskByFlowInstanceId(id);
         if (taskEntity.getTaskType() == TaskType.IMPORT && !dispatchChecker.isTaskEntityOnThisMachine(taskEntity)) {
             /**
@@ -634,7 +629,7 @@ public class FlowInstanceService {
                 log.warn("Failed to enqueue event.", e);
             }
         }
-        completeApprovalInstance(id, instance -> instance.approve(message, !skipAuth, approvalVariables), skipAuth);
+        completeApprovalInstance(id, instance -> instance.approve(message, !skipAuth), skipAuth);
         return FlowInstanceDetailResp.withIdAndType(id, taskEntity.getTaskType());
     }
 
@@ -944,7 +939,8 @@ public class FlowInstanceService {
     }
 
     private void initVariables(Map<String, Object> variables, TaskEntity taskEntity, TaskEntity preCheckTaskEntity,
-            ConnectionConfig config, RiskLevelDescriber riskLevelDescriber) {
+            ConnectionConfig config,
+            RiskLevelDescriber riskLevelDescriber) {
         FlowTaskUtil.setTaskId(variables, taskEntity.getId());
         if (Objects.nonNull(preCheckTaskEntity)) {
             FlowTaskUtil.setPreCheckTaskId(variables, preCheckTaskEntity.getId());
