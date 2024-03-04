@@ -19,4 +19,6 @@ import java.util.List;
 
 public interface SystemConfigDAO {
     List<SystemConfigEntity> queryByKeyPrefix(String keyPrefix);
+
+    void insert(SystemConfigEntity systemConfigEntity);
 }

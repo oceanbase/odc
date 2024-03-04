@@ -17,9 +17,11 @@ package com.oceanbase.odc.service.partitionplan.model;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.apache.commons.collections4.CollectionUtils;
@@ -30,7 +32,6 @@ import com.oceanbase.odc.plugin.task.api.partitionplan.AutoPartitionExtensionPoi
 import com.oceanbase.odc.service.plugin.TaskPluginUtil;
 import com.oceanbase.tools.dbbrowser.model.DBTable;
 import com.oceanbase.tools.dbbrowser.model.DBTableColumn;
-import com.oceanbase.tools.dbbrowser.model.DBTableIndex;
 import com.oceanbase.tools.dbbrowser.model.DBTablePartition;
 import com.oceanbase.tools.dbbrowser.model.DBTablePartitionOption;
 import com.oceanbase.tools.dbbrowser.model.DBTablePartitionType;
@@ -53,22 +54,19 @@ import lombok.Setter;
 public class PartitionPlanDBTable extends DBTable {
 
     private DialectType dialectType;
-    private boolean inTablegroup;
-    private List<PartitionPlanStrategy> strategies;
-
-    public boolean isContainsGlobalIndexes() {
-        List<DBTableIndex> indexList = getIndexes();
-        if (CollectionUtils.isEmpty(indexList)) {
-            return false;
-        }
-        return indexList.stream().anyMatch(i -> Boolean.TRUE.equals(i.getGlobal()));
-    }
+    private Set<PartitionPlanStrategy> strategies = new HashSet<>();
 
     public boolean isContainsCreateStrategy() {
+        if (CollectionUtils.isEmpty(this.strategies)) {
+            return false;
+        }
         return CollectionUtils.containsAny(this.strategies, PartitionPlanStrategy.CREATE);
     }
 
     public boolean isContainsDropStrategy() {
+        if (CollectionUtils.isEmpty(this.strategies)) {
+            return false;
+        }
         return CollectionUtils.containsAny(this.strategies, PartitionPlanStrategy.DROP);
     }
 

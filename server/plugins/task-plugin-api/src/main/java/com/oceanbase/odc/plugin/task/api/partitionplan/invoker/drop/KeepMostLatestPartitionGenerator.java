@@ -28,15 +28,16 @@ import com.oceanbase.tools.dbbrowser.model.DBTablePartitionDefinition;
 import lombok.NonNull;
 
 /**
- * {@link KeepMostRecentPartitionGenerator}
+ * {@link KeepMostLatestPartitionGenerator}
  *
  * @author yh263208
  * @date 2024-01-19 17:49
  * @since ODC_release_4.2.4
  */
-public interface KeepMostRecentPartitionGenerator extends DropPartitionGenerator {
+public interface KeepMostLatestPartitionGenerator extends DropPartitionGenerator {
 
-    String KEEP_RECENT_COUNT_KEY = "keepRecentCount";
+    String KEEP_LATEST_COUNT_KEY = "keepLatestCount";
+    String RELOAD_INDEXES = "reloadIndexes";
 
     List<DBTablePartitionDefinition> generate(@NonNull Connection connection,
             @NonNull DBTable dbTable, @NonNull Integer keepCount) throws Exception;
@@ -49,7 +50,7 @@ public interface KeepMostRecentPartitionGenerator extends DropPartitionGenerator
     @Override
     default List<DBTablePartitionDefinition> invoke(@NonNull Connection connection,
             @NonNull DBTable dbTable, @NonNull Map<String, Object> parameters) throws Exception {
-        Integer keepCount = ParameterUtil.nullSafeExtract(parameters, KEEP_RECENT_COUNT_KEY, Integer.class);
+        Integer keepCount = ParameterUtil.nullSafeExtract(parameters, KEEP_LATEST_COUNT_KEY, Integer.class);
         Validate.isTrue(keepCount > 0, "Keep count can not be smaller than 1");
         return generate(connection, dbTable, keepCount);
     }

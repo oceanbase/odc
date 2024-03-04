@@ -36,12 +36,14 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.Validate;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.BadSqlGrammarException;
@@ -407,12 +409,13 @@ public class MySQLNoLessThan5700SchemaAccessor implements DBSchemaAccessor {
     }
 
     @Override
-    public Map<String, List<DBTableColumn>> listTableColumns(String schemaName) {
-        List<DBTableColumn> tableColumns =
-                jdbcOperations.query(getListTableColumnsSql(schemaName), listTableRowMapper());
-        Map<String, List<DBTableColumn>> tableName2Columns =
-                tableColumns.stream().collect(Collectors.groupingBy(DBTableColumn::getTableName));
-        return tableName2Columns;
+    public Map<String, List<DBTableColumn>> listTableColumns(String schemaName, List<String> tableNames) {
+        List<DBTableColumn> tableColumns = DBSchemaAccessorUtil.partitionFind(tableNames,
+                DBSchemaAccessorUtil.OB_MAX_IN_SIZE, names -> {
+                    String querySql = filterByValues(getListTableColumnsSql(schemaName), "TABLE_NAME", names);
+                    return jdbcOperations.query(querySql, listTableRowMapper());
+                });
+        return tableColumns.stream().collect(Collectors.groupingBy(DBTableColumn::getTableName));
     }
 
     @Override
@@ -448,7 +451,7 @@ public class MySQLNoLessThan5700SchemaAccessor implements DBSchemaAccessor {
         sb.append(
                 "select TABLE_NAME, TABLE_SCHEMA, ORDINAL_POSITION, COLUMN_NAME, DATA_TYPE, COLUMN_TYPE, NUMERIC_SCALE, "
                         + "NUMERIC_PRECISION, "
-                        + "DATETIME_PRECISION, NUMERIC_SCALE, CHARACTER_MAXIMUM_LENGTH, EXTRA, CHARACTER_SET_NAME, "
+                        + "DATETIME_PRECISION, CHARACTER_MAXIMUM_LENGTH, EXTRA, CHARACTER_SET_NAME, "
                         + "COLLATION_NAME, COLUMN_COMMENT, COLUMN_DEFAULT, IS_NULLABLE, GENERATION_EXPRESSION, "
                         + "COLUMN_KEY from information_schema.columns where TABLE_SCHEMA = ");
         sb.value(schemaName);
@@ -456,7 +459,7 @@ public class MySQLNoLessThan5700SchemaAccessor implements DBSchemaAccessor {
         return sb.toString();
     }
 
-    protected RowMapper listTableRowMapper() {
+    protected RowMapper<DBTableColumn> listTableRowMapper() {
         return (rs, romNum) -> {
             DBTableColumn tableColumn = new DBTableColumn();
             tableColumn.setSchemaName(rs.getString(MySQLConstants.COL_TABLE_SCHEMA));
@@ -539,7 +542,7 @@ public class MySQLNoLessThan5700SchemaAccessor implements DBSchemaAccessor {
         return true;
     }
 
-    protected RowMapper listBasicTableColumnRowMapper() {
+    protected RowMapper<DBTableColumn> listBasicTableColumnRowMapper() {
         return (rs, romNum) -> {
             DBTableColumn tableColumn = new DBTableColumn();
             tableColumn.setSchemaName(rs.getString(MySQLConstants.COL_TABLE_SCHEMA));
@@ -686,10 +689,8 @@ public class MySQLNoLessThan5700SchemaAccessor implements DBSchemaAccessor {
                         .collect(Collectors.toList()));
             }
         }
-        Map<String, List<DBTableConstraint>> tableName2Constraints =
-                fullConstraintName2Constraint.values().stream()
-                        .collect(Collectors.groupingBy(DBTableConstraint::getTableName));
-        return tableName2Constraints;
+        return fullConstraintName2Constraint.values().stream()
+                .collect(Collectors.groupingBy(DBTableConstraint::getTableName));
     }
 
     @Override
@@ -705,15 +706,9 @@ public class MySQLNoLessThan5700SchemaAccessor implements DBSchemaAccessor {
         });
 
         Map<String, DBTableOptions> tableName2TableOptions = new LinkedHashMap<>();
-        String sql =
-                new MySQLSqlBuilder().append(
-                        "select `TABLE_NAME`, `CREATE_TIME`, `UPDATE_TIME`, `AUTO_INCREMENT`, `TABLE_COLLATION`, "
-                                + "`TABLE_COMMENT` from "
-                                + "`information_schema`"
-                                + ".`tables`"
-                                + " where table_schema=")
-                        .value(schemaName)
-                        .toString();
+        String sql = new MySQLSqlBuilder().append("select `TABLE_NAME`, `CREATE_TIME`, `UPDATE_TIME`, `AUTO_INCREMENT`,"
+                + " `TABLE_COLLATION`, `TABLE_COMMENT` from `information_schema`.`tables` where table_schema=")
+                .value(schemaName).toString();
         jdbcOperations.query(sql, t -> {
             String tableName = t.getString("TABLE_NAME");
             DBTableOptions options = new DBTableOptions();
@@ -732,32 +727,6 @@ public class MySQLNoLessThan5700SchemaAccessor implements DBSchemaAccessor {
     }
 
     @Override
-    public List<DBTablePartition> listTablePartitions(String tenantName, String schemaName, String tableName) {
-        throw new UnsupportedOperationException("Not supported yet");
-    }
-
-    @Override
-    public List<DBTablePartition> listTableRangePartitionInfo(String tenantName) {
-        String sql =
-                "select t1.TABLE_NAME,t1.TABLE_SCHEMA,t2.PARTITION_EXPRESSION,COUNT(1) from "
-                        + " information_schema.tables t1 left join information_schema.partitions t2 "
-                        + " on t1.TABLE_NAME = t2.TABLE_NAME and t1.TABLE_SCHEMA = t2.TABLE_SCHEMA "
-                        + " where t2.PARTITION_METHOD = 'RANGE' OR t2.PARTITION_METHOD = 'RANGE COLUMNS' group by t1.TABLE_NAME,"
-                        + "t1.TABLE_SCHEMA;";
-        List<DBTablePartition> dbTablePartitions = jdbcOperations.query(sql, (rs, rowNum) -> {
-            DBTablePartition tablePartition = new DBTablePartition();
-            tablePartition.setTableName(rs.getString(1));
-            tablePartition.setSchemaName(rs.getString(2));
-            DBTablePartitionOption option = new DBTablePartitionOption();
-            option.setExpression(rs.getString(3));
-            option.setPartitionsNum(rs.getInt(4));
-            tablePartition.setPartitionOption(option);
-            return tablePartition;
-        });
-        return dbTablePartitions;
-    }
-
-    @Override
     public List<DBTableSubpartitionDefinition> listSubpartitions(String schemaName, String tableName) {
         throw new UnsupportedOperationException("Not supported yet");
     }
@@ -771,10 +740,9 @@ public class MySQLNoLessThan5700SchemaAccessor implements DBSchemaAccessor {
          * https://www.oceanbase.com/docs/enterprise-oceanbase-database-cn-10000000000362989
          */
         try {
-            jdbcOperations.query(
-                    "show variables like 'lower_case_table_names'", t -> {
-                        isLowerCaseTableName.set(t.getInt("Value") != 0);
-                    });
+            jdbcOperations.query("show variables like 'lower_case_table_names'", t -> {
+                isLowerCaseTableName.set(t.getInt("Value") != 0);
+            });
         } catch (Exception ex) {
             log.warn("get variable lower_case_table_names failed, will use default value, reason=", ex);
         }
@@ -846,6 +814,76 @@ public class MySQLNoLessThan5700SchemaAccessor implements DBSchemaAccessor {
 
     @Override
     public DBTablePartition getPartition(String schemaName, String tableName) {
+        String sql = sqlMapper.getSql(Statements.GET_PARTITION);
+        List<Map<String, Object>> queryResult =
+                this.jdbcOperations.query(sql, new Object[] {schemaName, tableName}, (rs, rowNum) -> {
+                    Map<String, Object> result = new HashMap<>();
+                    result.put("SUB_NUM", rs.getInt("SUB_NUM"));
+                    result.put("PARTITION_EXPRESSION", rs.getString("PARTITION_EXPRESSION"));
+                    result.put("PARTITION_NAME", rs.getString("PARTITION_NAME"));
+                    result.put("PARTITION_ORDINAL_POSITION", rs.getInt("PARTITION_ORDINAL_POSITION"));
+                    result.put("PARTITION_METHOD", rs.getString("PARTITION_METHOD"));
+                    result.put("PARTITION_DESCRIPTION", rs.getString("PARTITION_DESCRIPTION"));
+                    result.put("SUBPARTITION_NAME", rs.getString("SUBPARTITION_NAME"));
+                    result.put("SUBPARTITION_METHOD", rs.getString("SUBPARTITION_METHOD"));
+                    result.put("SUBPARTITION_EXPRESSION", rs.getString("SUBPARTITION_EXPRESSION"));
+                    return result;
+                });
+        return getFromResultSet(queryResult, schemaName, tableName);
+    }
+
+    @Override
+    public Map<String, DBTablePartition> listTablePartitions(@NonNull String schemaName, List<String> tableNames) {
+        List<Map<String, Object>> queryResult = DBSchemaAccessorUtil.partitionFind(tableNames,
+                DBSchemaAccessorUtil.OB_MAX_IN_SIZE, names -> {
+                    String sql = filterByValues(sqlMapper.getSql(Statements.LIST_PARTITIONS), "TABLE_NAME", names);
+                    return jdbcOperations.query(sql, new Object[] {schemaName}, (rs, rowNum) -> {
+                        Map<String, Object> result = new HashMap<>();
+                        result.put("TABLE_NAME", rs.getString("TABLE_NAME"));
+                        result.put("PARTITION_EXPRESSION", rs.getString("PARTITION_EXPRESSION"));
+                        result.put("PARTITION_NAME", rs.getString("PARTITION_NAME"));
+                        result.put("PARTITION_ORDINAL_POSITION", rs.getInt("PARTITION_ORDINAL_POSITION"));
+                        result.put("PARTITION_METHOD", rs.getString("PARTITION_METHOD"));
+                        result.put("PARTITION_DESCRIPTION", rs.getString("PARTITION_DESCRIPTION"));
+                        result.put("SUBPARTITION_NAME", rs.getString("SUBPARTITION_NAME"));
+                        result.put("SUBPARTITION_METHOD", rs.getString("SUBPARTITION_METHOD"));
+                        result.put("SUBPARTITION_EXPRESSION", rs.getString("SUBPARTITION_EXPRESSION"));
+                        return result;
+                    });
+                });
+        Map<String, List<Map<String, Object>>> tableName2Res = queryResult.stream().collect(
+                Collectors.groupingBy(m -> (String) m.get("TABLE_NAME")));
+        return tableName2Res.entrySet().stream().collect(Collectors.toMap(Entry::getKey, e -> {
+            Map<String, List<Map<String, Object>>> partiName2Res = e.getValue().stream()
+                    .collect(Collectors.groupingBy(m -> (String) m.get("PARTITION_NAME")));
+            List<Map<String, Object>> group = partiName2Res.keySet().stream().map(partiName -> {
+                List<Map<String, Object>> rows = partiName2Res.get(partiName);
+                Map<String, Object> row = rows.get(0);
+                row.put("SUB_NUM", rows.size() == 1 ? 0 : rows.size());
+                return row;
+            }).collect(Collectors.toList());
+            return getFromResultSet(group, schemaName, e.getKey());
+        }));
+    }
+
+    @Override
+    public List<DBTablePartition> listTableRangePartitionInfo(String tenantName) {
+        throw new UnsupportedOperationException("Not supported yet");
+    }
+
+    protected String filterByValues(String target, String colName, List<String> candidates) {
+        if (CollectionUtils.isEmpty(candidates)) {
+            return target;
+        }
+        String tables = candidates.stream().map(s -> new MySQLSqlBuilder().value(s).toString())
+                .collect(Collectors.joining(","));
+        SqlBuilder sqlBuilder = new MySQLSqlBuilder();
+        return sqlBuilder.append("select * from (")
+                .append(target).append(") dbbrowser").append(" WHERE dbbrowser.").identifier(colName)
+                .append(" in (").append(tables).append(")").toString();
+    }
+
+    private DBTablePartition getFromResultSet(List<Map<String, Object>> rows, String schemaName, String tableName) {
         DBTablePartition partition = new DBTablePartition();
         DBTablePartition subPartition = new DBTablePartition();
         partition.setSubpartition(subPartition);
@@ -867,10 +905,9 @@ public class MySQLNoLessThan5700SchemaAccessor implements DBSchemaAccessor {
         subPartition.setPartitionDefinitions(subPartitionDefinitions);
 
         Set<String> partitionNames = new HashSet<>();
-        String sql = sqlMapper.getSql(Statements.GET_PARTITION);
-        jdbcOperations.query(sql, new Object[] {schemaName, tableName}, rs -> {
-            partitionOption.setType(DBTablePartitionType.fromValue(rs.getString("PARTITION_METHOD")));
-            String expression = rs.getString("PARTITION_EXPRESSION");
+        for (Map<String, Object> row : rows) {
+            partitionOption.setType(DBTablePartitionType.fromValue((String) row.get("PARTITION_METHOD")));
+            String expression = (String) row.get("PARTITION_EXPRESSION");
             if (StringUtils.isNotEmpty(expression)) {
                 if (partitionOption.getType().supportExpression()) {
                     partitionOption.setExpression(expression);
@@ -878,20 +915,21 @@ public class MySQLNoLessThan5700SchemaAccessor implements DBSchemaAccessor {
                     partitionOption.setColumnNames(Arrays.asList(expression.split(",")));
                 }
             }
-            String partitionName = rs.getString("PARTITION_NAME");
+            String partitionName = (String) row.get("PARTITION_NAME");
             if (StringUtils.isNotEmpty(partitionName) && !partitionNames.contains(partitionName)) {
                 partitionNames.add(partitionName);
                 DBTablePartitionDefinition partitionDefinition = new DBTablePartitionDefinition();
                 partitionDefinition.setName(partitionName);
-                partitionDefinition.setOrdinalPosition(rs.getInt("PARTITION_ORDINAL_POSITION"));
-                partitionDefinition.setType(DBTablePartitionType.fromValue(rs.getString("PARTITION_METHOD")));
-                String description = rs.getString("PARTITION_DESCRIPTION");
+                partitionDefinition.setOrdinalPosition((Integer) row.get("PARTITION_ORDINAL_POSITION"));
+                partitionDefinition.setType(DBTablePartitionType.fromValue((String) row.get("PARTITION_METHOD")));
+                String description = (String) row.get("PARTITION_DESCRIPTION");
                 partitionDefinition.fillValues(description);
                 partitionDefinitions.add(partitionDefinition);
             }
-            String subPartitionName = rs.getString("SUBPARTITION_NAME");
-            DBTablePartitionType subPartitionType = DBTablePartitionType.fromValue(rs.getString("SUBPARTITION_METHOD"));
-            String subPartExpression = rs.getString("SUBPARTITION_EXPRESSION");
+            String subPartitionName = (String) row.get("SUBPARTITION_NAME");
+            DBTablePartitionType subPartitionType =
+                    DBTablePartitionType.fromValue((String) row.get("SUBPARTITION_METHOD"));
+            String subPartExpression = (String) row.get("SUBPARTITION_EXPRESSION");
 
             // 二级分区
             if (StringUtils.isNotEmpty(subPartitionName)) {
@@ -899,7 +937,7 @@ public class MySQLNoLessThan5700SchemaAccessor implements DBSchemaAccessor {
                 if (subPartitionType == DBTablePartitionType.HASH || subPartitionType == DBTablePartitionType.KEY) {
                     partition.setSubpartitionTemplated(true);
                     subPartitionOption.setType(subPartitionType);
-                    subPartitionOption.setPartitionsNum(rs.getInt("SUB_NUM"));
+                    subPartitionOption.setPartitionsNum((Integer) row.get("SUB_NUM"));
                     if (StringUtils.isNotEmpty(subPartExpression)) {
                         if (subPartitionType.supportExpression()) {
                             subPartitionOption.setExpression(subPartExpression);
@@ -911,8 +949,7 @@ public class MySQLNoLessThan5700SchemaAccessor implements DBSchemaAccessor {
                     partition.setWarning("Only support HASH/KEY subpartition currently, please check comparing ddl");
                 }
             }
-        });
-
+        }
         partitionOption.setPartitionsNum(partitionNames.size());
         // OB 字典表不兼容的 bug，即使是非分区表，PARTITION_METHOD 也会是 HASH
         // 这里判断下如果是 HASH 分区，且分区数为 0 的话，认为是非分区表
@@ -1043,9 +1080,8 @@ public class MySQLNoLessThan5700SchemaAccessor implements DBSchemaAccessor {
             dbTableOptions.setReplicaNum(options.getReplicaNum());
             dbTableOptions.setBlockSize(options.getBlockSize());
             dbTableOptions.setUseBloomFilter(options.getUseBloomFilter());
-            dbTableOptions
-                    .setTabletSize(
-                            Objects.nonNull(options.getTabletSize()) ? options.getTabletSize().longValue() : null);
+            dbTableOptions.setTabletSize(
+                    Objects.nonNull(options.getTabletSize()) ? options.getTabletSize().longValue() : null);
         }
     }
 
@@ -1263,7 +1299,7 @@ public class MySQLNoLessThan5700SchemaAccessor implements DBSchemaAccessor {
         if (tableNames.isEmpty()) {
             return returnVal;
         }
-        Map<String, List<DBTableColumn>> tableName2Columns = listTableColumns(schemaName);
+        Map<String, List<DBTableColumn>> tableName2Columns = listTableColumns(schemaName, Collections.emptyList());
         Map<String, List<DBTableIndex>> tableName2Indexes = listTableIndexes(schemaName);
         Map<String, List<DBTableConstraint>> tableName2Constraints = listTableConstraints(schemaName);
         Map<String, DBTableOptions> tableName2Options = listTableOptions(schemaName);

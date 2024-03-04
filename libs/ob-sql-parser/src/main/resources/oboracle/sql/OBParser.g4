@@ -138,6 +138,7 @@ stmt
     | drop_context_stmt
     | switchover_tenant_stmt
     | recover_tenant_stmt
+    | transfer_partition_stmt
     ;
 
 drop_package_stmt
@@ -370,6 +371,7 @@ simple_expr
     | MULTISET select_with_parens
     | column_ref Dot column_ref USER_VARIABLE
     | column_ref Dot column_ref Dot column_ref USER_VARIABLE
+    | dblink_func_expr
     | {this.is_pl_parse_}? QUESTIONMARK Dot column_name
     ;
 
@@ -647,8 +649,11 @@ xml_function
     : xmlparse_expr
     | xml_element_expr
     | xml_extract_expr
+    | delete_xml
+    | insert_child_xml
     | xmlserialize_expr
     | xmlcast_expr
+    | xml_sequence_expr
     ;
 
 single_row_function
@@ -798,6 +803,12 @@ access_func_expr
     | function_name LeftParen DISTINCT func_param_list RightParen
     | function_name LeftParen UNIQUE func_param_list RightParen
     | exists_function_name LeftParen func_param_list? RightParen
+    ;
+
+dblink_func_expr
+    : column_ref USER_VARIABLE LeftParen func_param_list? RightParen
+    | column_ref Dot column_ref USER_VARIABLE LeftParen func_param_list? RightParen
+    | column_ref Dot column_ref Dot column_ref USER_VARIABLE LeftParen func_param_list? RightParen
     ;
 
 func_param_list
@@ -1314,6 +1325,7 @@ data_type
     | STRING_VALUE
     | JSON
     | XMLTYPE
+    | SDO_GEOMETRY
     | interval_type_i
     | rowid_type_i
     ;
@@ -2544,6 +2556,7 @@ table_factor
     | TABLE LeftParen simple_expr RightParen relation_name?
     | select_function relation_name?
     | json_table_expr (AS? relation_name)?
+    | xml_table_expr (AS? relation_name)?
     ;
 
 select_function
@@ -4168,6 +4181,18 @@ recover_point_clause
     | CANCEL
     ;
 
+transfer_partition_stmt
+    : ALTER SYSTEM transfer_partition_clause tenant_name?
+    ;
+
+transfer_partition_clause
+    : TRANSFER PARTITION part_info TO LS INTNUM
+    ;
+
+part_info
+    : TABLE_ID COMP_EQ? INTNUM Comma OBJECT_ID COMP_EQ? INTNUM
+    ;
+
 create_savepoint_stmt
     : SAVEPOINT var_name
     ;
@@ -4447,6 +4472,75 @@ opt_response_query
     | NULLX
     ;
 
+xml_table_expr
+    : XMLTABLE LeftParen (opt_xml_table_ns Comma)? opt_xml_table_path? opt_xml_passing_clause? opt_sequence_by_ref? opt_columns_clause? RightParen
+    ;
+
+opt_columns_clause
+    : COLUMNS xml_table_columns_list
+    ;
+
+opt_sequence_by_ref
+    : RETURNING SEQUENCE BY REF
+    ;
+
+opt_xml_passing_clause
+    : PASSING simple_expr
+    | PASSING BY VALUE simple_expr
+    ;
+
+opt_xml_table_path
+    : PATH complex_string_literal
+    | complex_string_literal
+    ;
+
+opt_xml_table_ns
+    : XMLNAMESPACES LeftParen xml_ns_list RightParen
+    ;
+
+xml_ns_list
+    : xml_ns (Comma xml_ns)*
+    ;
+
+xml_ns
+    : STRING_VALUE AS xml_identifier
+    | DEFAULT STRING_VALUE
+    ;
+
+xml_identifier
+    : relation_name
+    ;
+
+xml_table_columns_list
+    : xml_table_column (Comma xml_table_column)*
+    ;
+
+xml_table_column
+    : xml_table_ordinality_column_def
+    | xml_table_value_column_def
+    | xml_table_query_column_def
+    ;
+
+xml_table_ordinality_column_def
+    : column_name FOR ORDINALITY
+    ;
+
+xml_table_value_column_def
+    : column_name cast_data_type? opt_xml_table_path? opt_xml_table_default_value?
+    ;
+
+xml_table_query_column_def
+    : column_name XMLTYPE opt_seq_by_ref_with_bracket? opt_xml_table_path? opt_xml_table_default_value?
+    ;
+
+opt_seq_by_ref_with_bracket
+    : LeftParen SEQUENCE RightParen BY REF
+    ;
+
+opt_xml_table_default_value
+    : DEFAULT bit_expr
+    ;
+
 opt_json_table_on_error_on_empty
     : json_table_on_error
     | json_table_on_empty
@@ -4586,21 +4680,11 @@ entry_obj
 regular_entry_obj
     : JSON_OBJECT_VALUE
     | KEY? json_obj_literal_expr VALUE json_obj_literal_expr
-    | (json_obj_literal_key Colon)? json_obj_literal_expr
+    | json_obj_literal_expr (Colon json_obj_literal_expr)?
     ;
 
 json_obj_literal_expr
     : bit_expr
-    ;
-
-json_obj_literal_key
-    : complex_string_literal
-    | DATE_VALUE
-    | TIMESTAMP_VALUE
-    | INTNUM
-    | APPROXNUM
-    | DECIMAL_VAL
-    | INTERVAL_VALUE
     ;
 
 js_on_null
@@ -4670,6 +4754,18 @@ attributes_name_value
 
 xml_attributes_value
     : attributes_name_value ((AS EVALNAME bit_expr) | (AS relation_name))?
+    ;
+
+xml_sequence_expr
+    : XMLSEQUENCE LeftParen bit_expr RightParen
+    ;
+
+insert_child_xml
+    : INSERTCHILDXML LeftParen bit_expr Comma bit_expr Comma bit_expr Comma bit_expr (Comma bit_expr)? RightParen
+    ;
+
+delete_xml
+    : DELETEXML LeftParen bit_expr Comma bit_expr (Comma bit_expr)? RightParen
     ;
 
 xml_extract_expr
@@ -4816,6 +4912,7 @@ oracle_unreserved_keyword
     | INSTANCE
     | INT
     | KEY
+    | LATERAL
     | LANGUAGE
     | LAYER
     | LINK
@@ -5050,6 +5147,7 @@ unreserved_keyword_normal
     | DELAY
     | DELAYED
     | DELAY_KEY_WRITE
+    | DELETEXML
     | DELETING
     | DEPTH
     | DESCRIPTION
@@ -5105,6 +5203,7 @@ unreserved_keyword_normal
     | EXPORT
     | EXTENDED
     | EXTENDED_NOADDR
+    | ENABLE_EXTENDED_ROWID
     | EXTENT_SIZE
     | EXTRA
     | EXTRACT
@@ -5187,6 +5286,7 @@ unreserved_keyword_normal
     | INNER_PARSE
     | INOUT
     | INSENSITIVE
+    | INSERTCHILDXML
     | INSERTING
     | INSERT_METHOD
     | INSTALL
@@ -5444,6 +5544,7 @@ unreserved_keyword_normal
     | REDOFILE
     | REDUNDANCY
     | REDUNDANT
+    | REF
     | REFRESH
     | REGEXP_LIKE
     | REGION
@@ -5502,6 +5603,7 @@ unreserved_keyword_normal
     | SCHEMAS
     | SCHEMA_NAME
     | SCOPE
+    | SDO_GEOMETRY
     | SEARCH
     | SECOND
     | SECOND_MICROSECOND
@@ -5701,8 +5803,12 @@ unreserved_keyword_normal
     | XOR
     | XMLELEMENT
     | XMLATTRIBUTES
+    | XMLNAMESPACES
+    | XMLSEQUENCE
     | XMLSERIALIZE
+    | XMLTABLE
     | XMLTYPE
+    | XMLCAST
     | YEAR_MONTH
     | ZEROFILL
     | PERCENT
@@ -5722,6 +5828,9 @@ unreserved_keyword_normal
     | SKEWONLY
     | NAMESPACE
     | LIB
+    | OBJECT_ID
+    | LS
+    | TRANSFER
     ;
 
 empty

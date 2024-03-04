@@ -58,6 +58,7 @@ public class AlterTableAction extends BaseStatement {
 
     private TableOptions tableOptions;
     private Boolean moveNoCompress;
+    private Boolean removePartitioning;
     private String moveCompress;
     private List<ColumnDefinition> addColumns;
     private List<ColumnReference> dropColumns;
@@ -402,6 +403,9 @@ public class AlterTableAction extends BaseStatement {
         }
         if (this.refresh) {
             builder.append(" REFRESH");
+        }
+        if (Boolean.TRUE.equals(this.removePartitioning)) {
+            builder.append(" REMOVE PARTITIONING");
         }
         return builder.length() == 0 ? "" : builder.substring(1);
     }

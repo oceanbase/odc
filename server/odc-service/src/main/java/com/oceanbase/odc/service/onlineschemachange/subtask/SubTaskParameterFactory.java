@@ -24,14 +24,13 @@ import com.oceanbase.odc.core.session.ConnectionSessionUtil;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.onlineschemachange.ddl.DdlUtils;
 import com.oceanbase.odc.service.onlineschemachange.ddl.OscFactoryWrapper;
-import com.oceanbase.odc.service.onlineschemachange.ddl.OscFactoryWrapperGenerator;
+import com.oceanbase.odc.service.onlineschemachange.ddl.ReplaceResult;
 import com.oceanbase.odc.service.onlineschemachange.ddl.TableNameDescriptor;
 import com.oceanbase.odc.service.onlineschemachange.ddl.TableNameDescriptorFactory;
 import com.oceanbase.odc.service.onlineschemachange.model.OnlineSchemaChangeScheduleTaskParameters;
 import com.oceanbase.odc.service.onlineschemachange.model.OnlineSchemaChangeSqlType;
 import com.oceanbase.odc.service.session.factory.DefaultConnectSessionFactory;
-import com.oceanbase.tools.sqlparser.OBMySQLParser;
-import com.oceanbase.tools.sqlparser.OBOracleSQLParser;
+import com.oceanbase.tools.sqlparser.SQLParser;
 import com.oceanbase.tools.sqlparser.statement.Statement;
 import com.oceanbase.tools.sqlparser.statement.alter.table.AlterTable;
 import com.oceanbase.tools.sqlparser.statement.createtable.CreateTable;
@@ -43,19 +42,21 @@ public class SubTaskParameterFactory implements AutoCloseable {
     protected final ConnectionSession session;
     private final String schema;
     private final TableNameDescriptorFactory tableNameDescriptorFactory;
+    private final SQLParser sqlParser;
 
-    public SubTaskParameterFactory(ConnectionConfig connectionConfig, String schema) {
+    public SubTaskParameterFactory(ConnectionConfig connectionConfig, String schema,
+            OscFactoryWrapper oscFactoryWrapper) {
         this.connectionId = connectionConfig.id();
         this.connectionConfig = connectionConfig;
         this.session = new DefaultConnectSessionFactory(connectionConfig).generateSession();
         ConnectionSessionUtil.setCurrentSchema(session, schema);
         this.schema = schema;
-        OscFactoryWrapper oscFactoryWrapper = OscFactoryWrapperGenerator.generate(connectionConfig.getDialectType());
         this.tableNameDescriptorFactory = oscFactoryWrapper.getTableNameDescriptorFactory();
-
+        this.sqlParser = oscFactoryWrapper.getSqlParser();
     }
 
-    public OnlineSchemaChangeScheduleTaskParameters generate(String sql, OnlineSchemaChangeSqlType sqlType)
+    public OnlineSchemaChangeScheduleTaskParameters generate(String sql, OnlineSchemaChangeSqlType sqlType,
+            Statement statement)
             throws SQLException {
         OnlineSchemaChangeScheduleTaskParameters taskParameter = createNewParameter(sql, sqlType);
         taskParameter.setDialectType(connectionConfig.getDialectType());
@@ -80,8 +81,10 @@ public class SubTaskParameterFactory implements AutoCloseable {
             TableNameDescriptor tableNameDescriptor = tableNameDescriptorFactory.getTableNameDescriptor(tableName);
             String originTableCreateDdl = DdlUtils.queryOriginTableCreateDdl(session, tableName);
             taskParameter.setOriginTableCreateDdl(originTableCreateDdl);
-            taskParameter.setNewTableCreateDdl(DdlUtils.replaceTableName(originTableCreateDdl,
-                    tableNameDescriptor.getNewTableName(), session.getDialectType(), OnlineSchemaChangeSqlType.CREATE));
+            ReplaceResult replaceResult = DdlUtils.replaceTableName(originTableCreateDdl,
+                    tableNameDescriptor.getNewTableName(), session.getDialectType(), OnlineSchemaChangeSqlType.CREATE);
+            taskParameter.setNewTableCreateDdl(replaceResult.getNewSql());
+            taskParameter.setReplaceResult(replaceResult);
 
             populateTaskParameter(tableNameDescriptor, taskParameter, tableName);
         } else {
@@ -90,9 +93,11 @@ public class SubTaskParameterFactory implements AutoCloseable {
             String originTableCreateDdl = DdlUtils.queryOriginTableCreateDdl(session, tableName);
             taskParameter.setOriginTableCreateDdl(originTableCreateDdl);
             TableNameDescriptor tableNameDescriptor = tableNameDescriptorFactory.getTableNameDescriptor(tableName);
-            taskParameter.setNewTableCreateDdl(DdlUtils.replaceTableName(sql,
-                    tableNameDescriptor.getNewTableName(), session.getDialectType(), OnlineSchemaChangeSqlType.CREATE));
+            ReplaceResult replaceResult = DdlUtils.replaceTableName(sql,
+                    tableNameDescriptor.getNewTableName(), session.getDialectType(), OnlineSchemaChangeSqlType.CREATE);
+            taskParameter.setNewTableCreateDdl(replaceResult.getNewSql());
             taskParameter.setNewTableCreateDdlForDisplay(sql);
+            taskParameter.setReplaceResult(replaceResult);
 
             populateTaskParameter(tableNameDescriptor, taskParameter, tableName);
         }
@@ -113,9 +118,9 @@ public class SubTaskParameterFactory implements AutoCloseable {
     }
 
     private Statement parse(String sql) {
-        return (session.getDialectType().isMysql() ? new OBMySQLParser() : new OBOracleSQLParser())
-                .parse(new StringReader(sql));
+        return sqlParser.parse(new StringReader(sql));
     }
+
 
     private String unquote(String value) {
         return session.getDialectType().isMysql() ? StringUtils.unquoteMySqlIdentifier(value)
