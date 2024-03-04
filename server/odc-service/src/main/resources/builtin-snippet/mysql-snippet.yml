@@ -12,3 +12,43 @@
       update_time DATETIME ON UPDATE CURRENT_TIMESTAMP NULL COMMENT 'record update time',
       ${2:column_name} ${3:data_type} COMMENT ''
     ) COMMENT '';
+- name: mysql generate doc for all table columns
+  dialect_type: MYSQL
+  tags: [ 'developer','mysql', 'table', 'doc' ]
+  type: DDL
+  description: 'Generate doc all tables for current schema in MySQL'
+  prefix: doc_all_tables_for_current_schema
+  body: |
+    SELECT 
+        c.TABLE_NAME AS TABLE_NAME,
+        c.COLUMN_NAME AS COLUMN_NAME,
+        c.COLUMN_COMMENT AS DESCRIPTION,
+        c.DATA_TYPE AS TYPE,
+        CASE 
+            WHEN c.DATA_TYPE IN ('blob', 'blob', 'raw', 'longblob','mediumblob', 'tinyblob') THEN c.CHARACTER_OCTET_LENGTH
+            WHEN c.DATA_TYPE IN ('char', 'varchar', 'text', 'tinytext', 'longtext','mediumtext','json', 'xml', 'varbinary') THEN c.CHARACTER_MAXIMUM_LENGTH
+            WHEN c.DATA_TYPE IN ('bit', 'tynyint','smallint', '','decimal', 'numeric', 'int', 'bigint', 'float', 'double') THEN CONCAT(c.NUMERIC_PRECISION, ',', c.NUMERIC_SCALE)
+            WHEN c.DATA_TYPE IN ('datetime', 'timestamp', 'date', 'time', 'year') THEN c.DATETIME_PRECISION
+            WHEN c.DATA_TYPE IN ('enum', 'set') THEN 255
+            ELSE 'N/A' 
+        END AS `LENGTH/PRICISION`,
+        CASE WHEN c.IS_NULLABLE = 'YES' THEN 'Y' ELSE 'N' END AS IS_NULLABLE, 
+        CASE WHEN pk.CONSTRAINT_TYPE IS NOT NULL THEN 'Y' ELSE 'N' END AS IS_PRIMARY_KEY
+    FROM INFORMATION_SCHEMA.COLUMNS c
+    LEFT JOIN (
+        SELECT 
+            kcu.TABLE_SCHEMA,
+            kcu.TABLE_NAME,
+            kcu.COLUMN_NAME,
+            tc.CONSTRAINT_TYPE
+        FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE kcu
+        JOIN INFORMATION_SCHEMA.TABLE_CONSTRAINTS tc
+          ON kcu.CONSTRAINT_SCHEMA = tc.CONSTRAINT_SCHEMA
+          AND kcu.TABLE_NAME = tc.TABLE_NAME
+          AND kcu.CONSTRAINT_NAME = tc.CONSTRAINT_NAME
+          AND tc.CONSTRAINT_TYPE = 'PRIMARY KEY'
+    ) pk ON c.TABLE_SCHEMA = pk.TABLE_SCHEMA 
+        AND c.TABLE_NAME = pk.TABLE_NAME 
+        AND c.COLUMN_NAME = pk.COLUMN_NAME
+    WHERE c.TABLE_SCHEMA = DATABASE()
+    ORDER BY c.TABLE_SCHEMA ASC, c.TABLE_NAME ASC, c.ORDINAL_POSITION ASC;
