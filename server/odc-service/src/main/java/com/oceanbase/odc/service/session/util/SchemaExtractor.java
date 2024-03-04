@@ -24,6 +24,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -39,24 +40,26 @@ import com.oceanbase.tools.dbbrowser.parser.constant.SqlType;
 import com.oceanbase.tools.dbbrowser.parser.result.BasicResult;
 import com.oceanbase.tools.dbbrowser.parser.result.ParseMysqlPLResult;
 import com.oceanbase.tools.dbbrowser.parser.result.ParseOraclePLResult;
+import com.oceanbase.tools.sqlparser.adapter.mysql.MySQLExpressionFactory;
 import com.oceanbase.tools.sqlparser.adapter.mysql.MySQLFromReferenceFactory;
 import com.oceanbase.tools.sqlparser.adapter.oracle.OracleExpressionFactory;
 import com.oceanbase.tools.sqlparser.adapter.oracle.OracleFromReferenceFactory;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Create_database_stmtContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Database_factorContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Dot_relation_factorContext;
-import com.oceanbase.tools.sqlparser.obmysql.OBParser.Function_nameContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Normal_relation_factorContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Relation_factorContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Relation_factor_with_starContext;
-import com.oceanbase.tools.sqlparser.obmysql.OBParser.Simple_func_exprContext;
+import com.oceanbase.tools.sqlparser.obmysql.OBParser.Relation_nameContext;
+import com.oceanbase.tools.sqlparser.obmysql.OBParser.Simple_exprContext;
+import com.oceanbase.tools.sqlparser.obmysql.OBParser.Use_database_stmtContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParserBaseVisitor;
 import com.oceanbase.tools.sqlparser.obmysql.PLParser.IdentContext;
 import com.oceanbase.tools.sqlparser.obmysql.PLParser.Sp_call_nameContext;
 import com.oceanbase.tools.sqlparser.obmysql.PLParser.Sp_nameContext;
 import com.oceanbase.tools.sqlparser.obmysql.PLParserBaseVisitor;
 import com.oceanbase.tools.sqlparser.oboracle.OBParser;
-import com.oceanbase.tools.sqlparser.oboracle.OBParser.Relation_nameContext;
+import com.oceanbase.tools.sqlparser.oboracle.OBParser.Current_schemaContext;
 import com.oceanbase.tools.sqlparser.oboracle.OBParser.Routine_nameContext;
 import com.oceanbase.tools.sqlparser.oboracle.OBParser.Var_nameContext;
 import com.oceanbase.tools.sqlparser.oboracle.PLParser.IdentifierContext;
@@ -84,12 +87,17 @@ public class SchemaExtractor {
                     sqlTuple.initAst(AbstractSyntaxTreeFactories.getAstFactory(dialectType, 0));
                     ast = sqlTuple.getAst();
                 }
-                BasicResult basicResult = ast.getParseResult();
-                if (((dialectType.isMysql() || dialectType.isDoris()) && basicResult.getSqlType() == SqlType.USE_DB)
-                        || (dialectType.isOracle() && basicResult.getSqlType() == SqlType.ALTER)) {
-                    Set<String> schemaNames = listSchemaNames(ast, null, dialectType);
-                    if (CollectionUtils.isNotEmpty(schemaNames)) {
-                        schemaName = Optional.of(schemaNames.iterator().next());
+                if (dialectType.isMysql() || dialectType.isDoris()) {
+                    OBMySQLUseDatabaseStmtVisitor visitor = new OBMySQLUseDatabaseStmtVisitor();
+                    visitor.visit(ast.getRoot());
+                    if (!visitor.getSchemaSet().isEmpty()) {
+                        schemaName = Optional.of(visitor.getSchemaSet().iterator().next());
+                    }
+                } else if (dialectType.isOracle()) {
+                    OBOracleCurrentSchemaVisitor visitor = new OBOracleCurrentSchemaVisitor();
+                    visitor.visit(ast.getRoot());
+                    if (!visitor.getSchemaSet().isEmpty()) {
+                        schemaName = Optional.of(visitor.getSchemaSet().iterator().next());
                     }
                 }
             } catch (Exception e) {
@@ -228,13 +236,15 @@ public class SchemaExtractor {
         }
 
         @Override
-        public RelationFactor visitSimple_func_expr(Simple_func_exprContext ctx) {
-            Function_nameContext functionName = ctx.function_name();
-            com.oceanbase.tools.sqlparser.obmysql.OBParser.Relation_nameContext relationName = ctx.relation_name();
-            if (Objects.nonNull(functionName) && StringUtils.isNotBlank(functionName.getText())) {
-                RelationFactor relationFactor = new RelationFactor(functionName.getText());
-                if (Objects.nonNull(relationName) && StringUtils.isNotBlank(relationName.getText())) {
-                    relationFactor.setSchema(relationName.getText());
+        public RelationFactor visitSimple_expr(Simple_exprContext ctx) {
+            MySQLExpressionFactory expressionFactory = new MySQLExpressionFactory();
+            Expression expr = expressionFactory.visit(ctx);
+            if (expr instanceof FunctionCall) {
+                String relationName = ((FunctionCall) expr).getFunctionName();
+                RelationFactor relationFactor = new RelationFactor(relationName);
+                if (relationName.contains(".")) {
+                    String[] names = relationName.split("\\.");
+                    relationFactor.setSchema(names[0]);
                 }
                 relationFactorList.add(relationFactor);
             }
@@ -291,7 +301,7 @@ public class SchemaExtractor {
 
         @Override
         public RelationFactor visitCurrent_schema(OBParser.Current_schemaContext ctx) {
-            Relation_nameContext relationName = ctx.relation_name();
+            OBParser.Relation_nameContext relationName = ctx.relation_name();
             RelationFactor relationFactor = new RelationFactor(ctx, "");
             relationFactor.setSchema(relationName.getText());
             relationFactorList.add(relationFactor);
@@ -375,6 +385,35 @@ public class SchemaExtractor {
                 relationFactor.setSchema(identifiers.get(0).getText());
                 relationFactorList.add(relationFactor);
             }
+            return null;
+        }
+
+    }
+
+    @Getter
+    private static class OBMySQLUseDatabaseStmtVisitor extends OBParserBaseVisitor<Void> {
+
+        private final Set<String> schemaSet = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
+
+        @Override
+        public Void visitUse_database_stmt(Use_database_stmtContext ctx) {
+            Relation_nameContext relationName = ctx.database_factor().relation_name();
+            schemaSet.add(StringUtils.unquoteMySqlIdentifier(relationName.getText()));
+            return null;
+        }
+
+    }
+
+    @Getter
+    private static class OBOracleCurrentSchemaVisitor
+            extends com.oceanbase.tools.sqlparser.oboracle.OBParserBaseVisitor<Void> {
+
+        private final Set<String> schemaSet = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
+
+        @Override
+        public Void visitCurrent_schema(Current_schemaContext ctx) {
+            OBParser.Relation_nameContext relationName = ctx.relation_name();
+            schemaSet.add(StringUtils.unquoteOracleIdentifier(relationName.getText()));
             return null;
         }
 
