@@ -46,6 +46,9 @@ public class DefaultHostUrlProvider implements HostUrlProvider {
     @Override
     public List<String> hostUrl() {
 
+        if (taskFrameworkProperties.get().getRunMode().isProcess()) {
+            return Collections.singletonList("http://127.0.0.1:" + configProperties.getPort());
+        }
         if (StringUtils.isNotBlank(taskFrameworkProperties.get().getOdcUrl())) {
             return Collections.singletonList(taskFrameworkProperties.get().getOdcUrl());
         }
@@ -57,10 +60,10 @@ public class DefaultHostUrlProvider implements HostUrlProvider {
         }
 
         String host =
-                configProperties.getOdcHost() == null ? SystemUtils.getLocalIpAddress() : configProperties.getOdcHost();
+                configProperties.getOdcHost() == null ? SystemUtils.getLocalIpAddress()
+                        : configProperties.getOdcHost();
         int port = Integer.parseInt(configProperties.getPort());
         return Collections.singletonList("http://" + host + ":" + port);
-
     }
 
 }

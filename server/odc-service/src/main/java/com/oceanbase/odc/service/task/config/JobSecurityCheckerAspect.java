@@ -15,42 +15,19 @@
  */
 package com.oceanbase.odc.service.task.config;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-
 import javax.servlet.http.HttpServletRequest;
 
 import org.aspectj.lang.JoinPoint;
 import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.annotation.Before;
 import org.aspectj.lang.annotation.Pointcut;
-import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
 import com.oceanbase.odc.core.shared.PreConditions;
-import com.oceanbase.odc.core.shared.constant.OrganizationType;
-import com.oceanbase.odc.core.shared.constant.TaskType;
-import com.oceanbase.odc.core.shared.exception.BadRequestException;
-import com.oceanbase.odc.metadb.schedule.ScheduleEntity;
-import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferConfig;
-import com.oceanbase.odc.service.connection.database.DatabaseService;
-import com.oceanbase.odc.service.connection.database.model.Database;
-import com.oceanbase.odc.service.flow.model.CreateFlowInstanceReq;
-import com.oceanbase.odc.service.flow.processor.FlowTaskPreprocessor;
-import com.oceanbase.odc.service.flow.processor.Preprocessor;
-import com.oceanbase.odc.service.flow.processor.ScheduleTaskPreprocessor;
-import com.oceanbase.odc.service.flow.task.model.DBStructureComparisonParameter;
-import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
-import com.oceanbase.odc.service.order.utils.DescriptionGenerator;
-import com.oceanbase.odc.service.schedule.ScheduleService;
-import com.oceanbase.odc.service.schedule.flowtask.AlterScheduleParameters;
-import com.oceanbase.odc.service.schedule.flowtask.OperationType;
-import com.oceanbase.odc.service.schedule.model.JobType;
+import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -65,7 +42,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @Aspect
 @Component
-public class JobSecurityCheckerAspect{
+public class JobSecurityCheckerAspect {
 
     @Autowired
     private TaskFrameworkProperties taskFrameworkProperties;
@@ -73,20 +50,24 @@ public class JobSecurityCheckerAspect{
     @Pointcut("@annotation(com.oceanbase.odc.service.task.config.JobSecurityChecker)")
     public void beforeRequest() {}
 
-
     @Before("beforeRequest()")
-    public void checkRequestAddress(JoinPoint point) throws Throwable {
-        ServletRequestAttributes attributes = (ServletRequestAttributes) RequestContextHolder.currentRequestAttributes();
+    public void checkRemoteAddress(JoinPoint point) {
+        if (taskFrameworkProperties.getRunMode().isK8s()) {
+            return;
+        }
+        ServletRequestAttributes attributes =
+                (ServletRequestAttributes) RequestContextHolder.currentRequestAttributes();
         HttpServletRequest request = attributes.getRequest();
 
-        String ipAddress = request.getRemoteAddr();
-        if (request.getHeader("X-Forwarded-For") != null) {
-            ipAddress = request.getHeader("X-Forwarded-For");
+        String remoteAddr = request.getRemoteAddr();
+        if (remoteAddr != null && request.getHeader("X-Forwarded-For") != null) {
+            remoteAddr = request.getHeader("X-Forwarded-For");
         }
 
-        // Now you have the IP address and you can log it or do something else
-        System.out.println("Request IP: " + ipAddress);
-
+        boolean isLocalhost = "127.0.0.1".equals(remoteAddr) || "0:0:0:0:0:0:0:1".equals(remoteAddr)
+                || "localhost".equalsIgnoreCase(remoteAddr);
+        PreConditions.validHasPermission(isLocalhost, ErrorCodes.AccessDenied,
+                "Request access denied, ip=" + remoteAddr);
     }
 
 }
