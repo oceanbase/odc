@@ -29,6 +29,8 @@ public interface EnvironmentMapper {
 
     @Mapping(source = "creatorId", target = "creator.id")
     @Mapping(source = "lastModifierId", target = "lastModifier.id")
+    @Mapping(source = "name", target = "name")
+    @Mapping(source = "name", target = "originalName")
     Environment entityToModel(EnvironmentEntity entity);
 
     @InheritInverseConfiguration
