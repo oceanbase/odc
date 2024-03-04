@@ -28,9 +28,11 @@ import com.oceanbase.tools.dbbrowser.util.SqlBuilder;
 import com.oceanbase.tools.dbbrowser.util.StringUtils;
 
 /**
+ * 适配 MySQL 版本：[5.7.00, ~)
+ * 
  * @author jingtian
  */
-public class MySQLNoGreaterThan5740IndexEditor extends DBTableIndexEditor {
+public class MySQLNoLessThan5700IndexEditor extends DBTableIndexEditor {
 
     @Override
     protected void appendIndexColumnModifiers(DBTableIndex index, SqlBuilder sqlBuilder) {}

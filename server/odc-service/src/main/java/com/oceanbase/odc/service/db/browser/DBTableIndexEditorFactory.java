@@ -19,7 +19,7 @@ import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.core.shared.constant.ConnectType;
 import com.oceanbase.odc.core.shared.exception.UnsupportedException;
 import com.oceanbase.tools.dbbrowser.editor.DBTableIndexEditor;
-import com.oceanbase.tools.dbbrowser.editor.mysql.MySQLNoGreaterThan5740IndexEditor;
+import com.oceanbase.tools.dbbrowser.editor.mysql.MySQLNoLessThan5700IndexEditor;
 import com.oceanbase.tools.dbbrowser.editor.mysql.OBMySQLIndexEditor;
 import com.oceanbase.tools.dbbrowser.editor.oracle.OBOracleIndexEditor;
 import com.oceanbase.tools.dbbrowser.editor.oracle.OracleIndexEditor;
@@ -44,7 +44,7 @@ public class DBTableIndexEditorFactory extends DBObjectEditorFactory<DBTableInde
             case ODP_SHARDING_OB_MYSQL:
                 return new OBMySQLIndexEditor();
             case MYSQL:
-                return new MySQLNoGreaterThan5740IndexEditor();
+                return new MySQLNoLessThan5700IndexEditor();
             case ORACLE:
                 return new OracleIndexEditor();
             case CLOUD_OB_ORACLE:
