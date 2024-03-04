@@ -23,6 +23,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.validation.annotation.Validated;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
+import com.oceanbase.odc.common.i18n.Internationalizable;
 import com.oceanbase.odc.service.regulation.risklevel.operator.OperatorFactory;
 
 import lombok.Data;
@@ -62,6 +63,7 @@ public class RiskDetectRuleCondition extends BaseTreeNode {
      */
     @NotEmpty
     @Valid
+    @Internationalizable
     private Object value;
 
     @Override
