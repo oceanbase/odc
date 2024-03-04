@@ -56,7 +56,7 @@
 /server/odc-service/**/service/info/                  @yhilmare @yizhouxw
 /server/odc-service/**/service/integration/           @smallsheeeep @ungreat
 /server/odc-service/**/service/lab/                   @LuckyPickleZZ @ungreat
-/server/odc-service/**/service/monitor/               @@ungreat @yizhouxw
+/server/odc-service/**/service/monitor/               @ungreat @yizhouxw
 /server/odc-service/**/service/notification/          @LuckyPickleZZ @MarkPotato777
 /server/odc-service/**/service/objectstorage/         @MarkPotato777 @yizhouxw
 /server/odc-service/**/service/onlineschemachange/    @krihy @LuckyPickleZZ
@@ -124,5 +124,5 @@
 /docs/                      @Jane201510 @yhilmare @yizhouxw
 CHANGELOG.md                @Jane201510 @yhilmare @yizhouxw
 CHANGELOG-zh-CN.md          @Jane201510 @yhilmare @yizhouxw
-README.md                   @JessieWuJiexi @Jane201510 @yizhouxw
-README-zh.md                @JessieWuJiexi @Jane201510 @yizhouxw
+README.md                   @Jane201510 @yizhouxw
+README-zh.md                @Jane201510 @yizhouxw
