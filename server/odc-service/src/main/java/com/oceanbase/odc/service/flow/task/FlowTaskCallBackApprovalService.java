@@ -27,7 +27,7 @@ import org.flowable.engine.TaskService;
 import org.flowable.task.api.Task;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.flow.model.FlowableElement;
@@ -69,13 +69,13 @@ public class FlowTaskCallBackApprovalService {
     private ServiceTaskInstanceRepository serviceTaskRepository;
     @Autowired
     private ScheduleService scheduleService;
+    @Autowired
+    private TransactionTemplate transactionTemplate;
 
-    @Transactional(rollbackFor = Exception.class)
     public void approval(long flowInstanceId, long flowTaskInstanceId, FlowNodeStatus flowNodeStatus) {
         approval(flowInstanceId, flowTaskInstanceId, flowNodeStatus, null);
     }
 
-    @Transactional(rollbackFor = Exception.class)
     public void approval(long flowInstanceId, long flowTaskInstanceId, FlowNodeStatus flowNodeStatus,
             Map<String, Object> approvalVariables) {
 
@@ -93,8 +93,10 @@ public class FlowTaskCallBackApprovalService {
         if (approvalVariables != null && !approvalVariables.isEmpty()) {
             variables.putAll(approvalVariables);
         }
-        updateFlowInstance(flowInstanceId, flowTaskInstanceId, flowNodeStatus);
-        flowableTaskService.complete(task.getId(), variables);
+        transactionTemplate.executeWithoutResult(action -> {
+            updateFlowInstance(flowInstanceId, flowTaskInstanceId, flowNodeStatus);
+            flowableTaskService.complete(task.getId(), variables);
+        });
     }
 
     private void updateFlowInstance(long flowInstanceId, long flowTaskInstanceId, FlowNodeStatus flowNodeStatus) {
