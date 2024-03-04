@@ -16,12 +16,24 @@
 
 package com.oceanbase.odc.service.task.config;
 
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+
 /**
+ * mark class/method check request ip source, <br>
+ * class/method will be checked when task-framework is process mode
+ * 
  * @author yaobin
  * @date 2024-03-04
  * @since 4.2.4
  */
-public @interface SecurityChecker {
-
-
+@Target(value = {ElementType.TYPE, ElementType.METHOD})
+@Retention(RetentionPolicy.RUNTIME)
+public @interface JobSecurityChecker {
+    /**
+     * @return reason of skip authorization, default `empty`
+     */
+    String value() default "";
 }

@@ -25,8 +25,8 @@ import org.springframework.web.bind.annotation.RestController;
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.service.common.response.Responses;
 import com.oceanbase.odc.service.common.response.SuccessResponse;
-import com.oceanbase.odc.service.common.util.ConditionalOnProperty;
 import com.oceanbase.odc.service.datasecurity.DataMaskingService;
+import com.oceanbase.odc.service.task.config.JobSecurityChecker;
 import com.oceanbase.odc.service.task.executor.server.HeartRequest;
 import com.oceanbase.odc.service.task.executor.task.DefaultTaskResult;
 import com.oceanbase.odc.service.task.runtime.QuerySensitiveColumnReq;
@@ -44,6 +44,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @RestController
 @RequestMapping("/api/v2/task")
+@JobSecurityChecker
 public class TaskController {
 
     @Autowired
