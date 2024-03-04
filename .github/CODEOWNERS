@@ -1,0 +1,5 @@
+# ODC code owners, refer to https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+*                       @yhilmare @yizhouxw
+/.github/               @smallsheeeep @yhilmare @yizhouxw
+/server/odc-test/       @smallsheeeep @yhilmare @yizhouxw
