@@ -755,6 +755,11 @@ public class OracleSchemaAccessor implements DBSchemaAccessor {
         final int[] hiddenColumnOrdinaryPosition = {-1};
         return (rs, rowNum) -> {
             DBTableColumn tableColumn = new DBTableColumn();
+            /**
+             * All LONG or LONG RAW columns have to be retrieved from the ResultSet prior to all the other
+             * columns or oracle jdbc will throw “Stream has already been closed” Exception
+             */
+            String defaultValue = rs.getString(OracleConstants.COL_DATA_DEFAULT);
             tableColumn.setSchemaName(rs.getString(OracleConstants.CONS_OWNER));
             tableColumn.setTableName(rs.getString(OracleConstants.COL_TABLE_NAME));
             tableColumn.setName(rs.getString(OracleConstants.COL_COLUMN_NAME));
@@ -790,8 +795,7 @@ public class OracleSchemaAccessor implements DBSchemaAccessor {
                 hiddenColumnOrdinaryPosition[0]--;
             }
             tableColumn.setVirtual("YES".equalsIgnoreCase(rs.getString(OracleConstants.COL_VIRTUAL_COLUMN)));
-            tableColumn.setDefaultValue("NULL".equals(rs.getString(OracleConstants.COL_DATA_DEFAULT)) ? null
-                    : rs.getString(OracleConstants.COL_DATA_DEFAULT));
+            tableColumn.setDefaultValue("NULL".equals(defaultValue) ? null : defaultValue);
             if (tableColumn.getVirtual()) {
                 tableColumn.setGenExpression(rs.getString(OracleConstants.COL_DATA_DEFAULT));
             }
