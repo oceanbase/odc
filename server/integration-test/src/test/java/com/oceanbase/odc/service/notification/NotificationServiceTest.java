@@ -168,7 +168,11 @@ public class NotificationServiceTest extends AuthorityTestEnv {
 
         List<NotificationPolicy> policies = notificationService.listPolicies(PROJECT_ID);
         Assert.assertFalse(policies.get(0).isEnabled());
-        Assert.assertEquals(channel.getId(), policies.get(1).getChannels().get(0).getId());
+        for (NotificationPolicy policy : policies) {
+            if (policy.getPolicyMetadataId() == 2) {
+                Assert.assertEquals(channel.getId(), policy.getChannels().get(0).getId());
+            }
+        }
     }
 
     private Channel getChannel() {
