@@ -27,6 +27,7 @@ import com.oceanbase.odc.service.flow.FlowInstanceService;
 import com.oceanbase.odc.service.flow.model.CreateFlowInstanceReq;
 import com.oceanbase.odc.service.flow.task.model.DatabaseChangeParameters;
 import com.oceanbase.odc.service.schedule.ScheduleService;
+import com.oceanbase.odc.service.schedule.model.JobType;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -53,9 +54,11 @@ public class SqlPlanJob implements OdcJob {
             }
         }
 
+        DatabaseChangeParameters taskParameters = JSON.parseObject(scheduleEntity.getJobParametersJson(),
+                DatabaseChangeParameters.class);
+        taskParameters.setParentTaskType(JobType.SQL_PLAN.name());
         CreateFlowInstanceReq flowInstanceReq = new CreateFlowInstanceReq();
-        flowInstanceReq
-                .setParameters(JSON.parseObject(scheduleEntity.getJobParametersJson(), DatabaseChangeParameters.class));
+        flowInstanceReq.setParameters(taskParameters);
         flowInstanceReq.setTaskType(TaskType.ASYNC);
         flowInstanceReq.setParentFlowInstanceId(Long.parseLong(context.getJobDetail().getKey().getName()));
         flowInstanceReq.setDatabaseId(scheduleEntity.getDatabaseId());
