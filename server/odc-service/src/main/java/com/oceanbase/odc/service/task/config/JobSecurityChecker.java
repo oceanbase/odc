@@ -21,8 +21,8 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Method marked by ${@link JobSecurityChecker} will be checked remote ip when task-framework is running in process mode.
- * reference ${@link JobSecurityCheckerAspect}
+ * Method marked by ${@link JobSecurityChecker} will be checked remote ip when task-framework is
+ * running in process mode. reference ${@link JobSecurityCheckerAspect}
  * 
  * @author yaobin
  * @date 2024-03-04
