@@ -70,7 +70,7 @@ public class JobSecurityCheckerAspect{
     @Autowired
     private TaskFrameworkProperties taskFrameworkProperties;
 
-    @Pointcut("@annotation(com.oceanbase.odc.service.flow.processor.EnablePreprocess)")
+    @Pointcut("@annotation(com.oceanbase.odc.service.task.config.JobSecurityChecker)")
     public void beforeRequest() {}
 
 
