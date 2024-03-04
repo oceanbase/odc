@@ -21,6 +21,7 @@ import javax.sql.DataSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.cloud.context.config.annotation.RefreshScope;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Lazy;
@@ -38,7 +39,6 @@ import lombok.extern.slf4j.Slf4j;
  * @date 2023-11-21
  * @since 4.2.4
  */
-@ConditionalOnProperty(prefix = "odc.task-framework", name = "enabled", havingValues = "true")
 @Configuration
 @Slf4j
 public class TaskFrameworkConfiguration {
@@ -46,6 +46,7 @@ public class TaskFrameworkConfiguration {
     @Lazy
     @Bean
     @ConditionalOnMissingBean(K8sJobClient.class)
+    @RefreshScope
     public K8sJobClient k8sJobClient(@Autowired TaskFrameworkProperties taskFrameworkProperties) {
         try {
             log.info("k8s url is {}", taskFrameworkProperties.getK8sProperties().getKubeUrl());
