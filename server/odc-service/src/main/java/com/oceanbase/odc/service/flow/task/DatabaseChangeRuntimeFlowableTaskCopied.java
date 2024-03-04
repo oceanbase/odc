@@ -250,30 +250,44 @@ public class DatabaseChangeRuntimeFlowableTaskCopied extends BaseODCFlowTaskDele
         }
         List<OffsetString> userInputSqls = null;
         SqlStatementIterator uploadFileSqlIterator = null;
-        if (StringUtils.isNotBlank(parameters.getSqlContent())) {
-            userInputSqls = SqlUtils.splitWithOffset(dialectType, parameters.getSqlContent(),
-                    parameters.getDelimiter());
-        }
-        if (CollectionUtils.isNotEmpty(parameters.getSqlObjectIds())) {
-            String bucketName = "async".concat(File.separator).concat(creatorId.toString());
-            InputStream uploadFileInputStream =
-                    databaseChangeFileReader.readInputStreamFromSqlObjects(parameters, bucketName, -1);
-            if (uploadFileInputStream != null) {
-                uploadFileSqlIterator = SqlUtils.iterator(dialectType, parameters.getDelimiter(), uploadFileInputStream,
-                        StandardCharsets.UTF_8);
+        InputStream uploadFileInputStream = null;
+        try {
+            taskParameters.setAutoModifyTimeout(false);
+            if (StringUtils.isNotBlank(parameters.getSqlContent())) {
+                userInputSqls = SqlUtils.splitWithOffset(dialectType, parameters.getSqlContent(),
+                        parameters.getDelimiter(), true);
             }
-        }
-        taskParameters.setAutoModifyTimeout(false);
-        while (CollectionUtils.isNotEmpty(userInputSqls)
-                || (uploadFileSqlIterator != null && uploadFileSqlIterator.hasNext())) {
-            String sql = CollectionUtils.isNotEmpty(userInputSqls) ? userInputSqls.remove(0).getStr()
-                    : uploadFileSqlIterator.next().getStr();
-            if (checkTimeConsumingSql(SqlCheckUtil.parseSingleSql(dialectType, sql))) {
-                parameters.setTimeoutMillis(autoModifiedTimeout);
-                taskParameters.setAutoModifyTimeout(true);
-                taskEntity.setParametersJson(JsonUtils.toJson(parameters));
-                taskService.updateParametersJson(taskEntity);
-                break;
+            if (CollectionUtils.isNotEmpty(parameters.getSqlObjectIds())) {
+                String bucketName = "async".concat(File.separator).concat(creatorId.toString());
+                uploadFileInputStream =
+                        databaseChangeFileReader.readInputStreamFromSqlObjects(parameters, bucketName, -1);
+                if (uploadFileInputStream != null) {
+                    uploadFileSqlIterator = SqlUtils.iterator(dialectType, parameters.getDelimiter(),
+                            uploadFileInputStream,
+                            StandardCharsets.UTF_8);
+                }
+            }
+            while (CollectionUtils.isNotEmpty(userInputSqls)
+                    || (uploadFileSqlIterator != null && uploadFileSqlIterator.hasNext())) {
+                String sql = CollectionUtils.isNotEmpty(userInputSqls) ? userInputSqls.remove(0).getStr()
+                        : uploadFileSqlIterator.next().getStr();
+                if (checkTimeConsumingSql(SqlCheckUtil.parseSingleSql(dialectType, sql))) {
+                    parameters.setTimeoutMillis(autoModifiedTimeout);
+                    taskParameters.setAutoModifyTimeout(true);
+                    taskEntity.setParametersJson(JsonUtils.toJson(parameters));
+                    taskService.updateParametersJson(taskEntity);
+                    break;
+                }
+            }
+        } catch (Exception e) {
+            log.error("Error occurs while modify database change task timeout if time-consuming SQL exists", e);
+        } finally {
+            if (uploadFileInputStream != null) {
+                try {
+                    uploadFileInputStream.close();
+                } catch (Exception e) {
+                    // ignore
+                }
             }
         }
     }

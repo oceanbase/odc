@@ -49,8 +49,7 @@ public class SqlCheckTaskResult implements Serializable, FlowTaskResult {
     private String fileName;
     private List<CheckResult> results = new ArrayList<>();
 
-    public static SqlCheckTaskResult success(
-            @NonNull List<CheckViolation> violations) {
+    public static SqlCheckTaskResult success(@NonNull List<CheckViolation> violations) {
         SqlCheckTaskResult result = new SqlCheckTaskResult();
         result.setSuccess(true);
         result.setIssueCount(violations.size());
@@ -62,8 +61,7 @@ public class SqlCheckTaskResult implements Serializable, FlowTaskResult {
         return result;
     }
 
-    public static SqlCheckTaskResult fail(
-            @NonNull Exception e) {
+    public static SqlCheckTaskResult fail(@NonNull Exception e) {
         SqlCheckTaskResult result = new SqlCheckTaskResult();
         result.setSuccess(false);
         result.setIssueCount(null);

@@ -227,31 +227,44 @@ public class DatabaseChangeRuntimeFlowableTask extends BaseODCFlowTaskDelegate<D
         }
         List<OffsetString> userInputSqls = null;
         SqlStatementIterator uploadFileSqlIterator = null;
-        String delimiter = parameters.getDelimiter();
-        if (StringUtils.isNotBlank(parameters.getSqlContent())) {
-            userInputSqls = SqlUtils.splitWithOffset(dialectType, parameters.getSqlContent(), delimiter);
-        }
-        if (CollectionUtils.isNotEmpty(parameters.getSqlObjectIds())) {
-            String bucketName = "async".concat(File.separator).concat(creatorId.toString());
-            InputStream uploadFileInputStream =
-                    databaseChangeFileReader.readInputStreamFromSqlObjects(parameters, bucketName, -1);
-            if (uploadFileInputStream != null) {
-                uploadFileSqlIterator =
-                        SqlUtils.iterator(dialectType, delimiter, uploadFileInputStream, StandardCharsets.UTF_8);
+        InputStream uploadFileInputStream = null;
+        try {
+            String delimiter = parameters.getDelimiter();
+            if (StringUtils.isNotBlank(parameters.getSqlContent())) {
+                userInputSqls = SqlUtils.splitWithOffset(dialectType, parameters.getSqlContent(), delimiter, true);
             }
-        }
-        while (CollectionUtils.isNotEmpty(userInputSqls)
-                || (uploadFileSqlIterator != null && uploadFileSqlIterator.hasNext())) {
-            String sql = CollectionUtils.isNotEmpty(userInputSqls) ? userInputSqls.remove(0).getStr()
-                    : uploadFileSqlIterator.next().getStr();
-            if (checkTimeConsumingSql(SqlCheckUtil.parseSingleSql(dialectType, sql))) {
-                this.autoModifyTimeout = true;
-                parameters.setTimeoutMillis(autoModifiedTimeout);
-                Long taskId = FlowTaskUtil.getTaskId(execution);
-                TaskEntity databaseChangeTaskEntity = taskService.detail(taskId);
-                databaseChangeTaskEntity.setParametersJson(JsonUtils.toJson(parameters));
-                taskService.updateParametersJson(databaseChangeTaskEntity);
-                break;
+            if (CollectionUtils.isNotEmpty(parameters.getSqlObjectIds())) {
+                String bucketName = "async".concat(File.separator).concat(creatorId.toString());
+                uploadFileInputStream =
+                        databaseChangeFileReader.readInputStreamFromSqlObjects(parameters, bucketName, -1);
+                if (uploadFileInputStream != null) {
+                    uploadFileSqlIterator =
+                            SqlUtils.iterator(dialectType, delimiter, uploadFileInputStream, StandardCharsets.UTF_8);
+                }
+            }
+            while (CollectionUtils.isNotEmpty(userInputSqls)
+                    || (uploadFileSqlIterator != null && uploadFileSqlIterator.hasNext())) {
+                String sql = CollectionUtils.isNotEmpty(userInputSqls) ? userInputSqls.remove(0).getStr()
+                        : uploadFileSqlIterator.next().getStr();
+                if (checkTimeConsumingSql(SqlCheckUtil.parseSingleSql(dialectType, sql))) {
+                    this.autoModifyTimeout = true;
+                    parameters.setTimeoutMillis(autoModifiedTimeout);
+                    Long taskId = FlowTaskUtil.getTaskId(execution);
+                    TaskEntity databaseChangeTaskEntity = taskService.detail(taskId);
+                    databaseChangeTaskEntity.setParametersJson(JsonUtils.toJson(parameters));
+                    taskService.updateParametersJson(databaseChangeTaskEntity);
+                    break;
+                }
+            }
+        } catch (Exception e) {
+            log.error("Error occurs while modify database change task timeout if time-consuming SQL exists", e);
+        } finally {
+            if (uploadFileInputStream != null) {
+                try {
+                    uploadFileInputStream.close();
+                } catch (Exception e) {
+                    // ignore
+                }
             }
         }
 
