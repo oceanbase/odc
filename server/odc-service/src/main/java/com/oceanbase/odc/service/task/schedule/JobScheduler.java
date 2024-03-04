@@ -18,7 +18,6 @@ package com.oceanbase.odc.service.task.schedule;
 
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Consumer;
 
 import com.oceanbase.odc.common.event.EventPublisher;
 import com.oceanbase.odc.service.task.exception.JobException;
@@ -48,13 +47,14 @@ public interface JobScheduler {
     void cancelJob(Long jobId) throws JobException;
 
     /**
-     * modify job parameters, new parameters will be delivery to executor if job is running
+     * modify job parameters to replace old parameters in JobDefinition, new parameters will be delivery
+     * to executor if job is running
      *
      * @param jobId job id
-     * @param jobParameters job parameters
+     * @param jobParameters new job parameters
      * @throws JobException throw JobException if job is terminated
      */
-    void modifyJobParameters(Long jobId, Consumer<Map<String, String>> jobParameters) throws JobException;
+    void modifyJobParameters(Long jobId, Map<String, String> jobParameters) throws JobException;
 
     /**
      * await job to be completed

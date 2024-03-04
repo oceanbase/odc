@@ -17,10 +17,8 @@
 package com.oceanbase.odc.service.task.caller;
 
 import java.io.IOException;
-import java.util.concurrent.TimeUnit;
 
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.oceanbase.odc.common.concurrent.Await;
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.metadb.task.JobEntity;
 import com.oceanbase.odc.service.common.response.SuccessResponse;
@@ -150,7 +148,7 @@ public abstract class BaseJobCaller implements JobCaller {
         JobConfiguration jobConfiguration = JobConfigurationHolder.getJobConfiguration();
         TaskFrameworkService taskFrameworkService = jobConfiguration.getTaskFrameworkService();
         JobEntity jobEntity = taskFrameworkService.find(ji.getId());
-        String executorEndpoint = getExecutorPoint(ji, jobConfiguration, jobEntity);
+        String executorEndpoint = getExecutorPoint(jobEntity);
         String url = executorEndpoint + String.format(JobUrlConstants.MODIFY_JOB_PARAMETERS, ji.getId());
         log.info("Try to modify job parameters, jobId={}.", ji.getId());
         try {
@@ -169,22 +167,11 @@ public abstract class BaseJobCaller implements JobCaller {
         }
     }
 
-    private String getExecutorPoint(JobIdentity ji, JobConfiguration jobConfiguration, JobEntity jobEntity)
+    private String getExecutorPoint(JobEntity jobEntity)
             throws JobException {
         String executorEndpoint = jobEntity.getExecutorEndpoint();
         if (executorEndpoint == null) {
-            try {
-                Await.await().timeUnit(TimeUnit.SECONDS).timeout(30).period(1).periodTimeUnit(TimeUnit.SECONDS)
-                        .until(() -> jobConfiguration.getTaskFrameworkService().find(ji.getId())
-                                .getExecutorEndpoint() != null)
-                        .build().start();
-                executorEndpoint = jobConfiguration.getTaskFrameworkService().find(ji.getId()).getExecutorEndpoint();
-            } catch (Exception e) {
-                throw new JobException("Wait job report endpoint timeout, jobId={}", ji.getId());
-            }
-            if (executorEndpoint == null) {
-                throw new JobException("Wait job report endpoint timeout, jobId={}", ji.getId());
-            }
+            throw new JobException("Executor point is null, cannot modify executor point, jobId={}", jobEntity.getId());
         }
         return executorEndpoint;
     }

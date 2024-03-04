@@ -19,7 +19,6 @@ package com.oceanbase.odc.service.task.schedule;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Consumer;
 
 import org.quartz.CronTrigger;
 import org.quartz.Job;
@@ -53,6 +52,7 @@ import com.oceanbase.odc.service.task.schedule.daemon.StartPreparingJob;
 import com.oceanbase.odc.service.task.service.JobRunnable;
 import com.oceanbase.odc.service.task.util.JobUtils;
 
+import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -98,7 +98,7 @@ public class StdJobScheduler implements JobScheduler {
     }
 
     @Override
-    public void modifyJobParameters(Long jobId, Consumer<Map<String, String>> jobParameters) throws JobException {
+    public void modifyJobParameters(Long jobId, Map<String, String> jobParameters) throws JobException {
         doInTransaction(() -> doModifyJobParameters(jobId, jobParameters));
     }
 
@@ -117,15 +117,15 @@ public class StdJobScheduler implements JobScheduler {
 
     }
 
-    private void doModifyJobParameters(Long jobId, Consumer<Map<String, String>> jobParameters) throws JobException {
+    private void doModifyJobParameters(Long jobId, @NonNull Map<String, String> jobParameters) throws JobException {
         JobEntity jobEntity = configuration.getTaskFrameworkService().findWithPessimisticLock(jobId);
+        if (jobEntity == null) {
+            throw new JobException("Job is not found by id, jobId={0}.", jobId);
+        }
         if (!jobEntity.getStatus().isExecuting()) {
             throw new JobException("Job is not executing, jobId={0}, jobStatus={1}.", jobId, jobEntity.getStatus());
         }
-        Map<String, String> originJobParameters = JobUtils.fromJsonToMap(jobEntity.getJobPropertiesJson());
-        // accept job parameters to be modified
-        jobParameters.accept(originJobParameters);
-        String newJobParametersJson = JobUtils.toJson(originJobParameters);
+        String newJobParametersJson = JobUtils.toJson(jobParameters);
         configuration.getTaskFrameworkService().updateJobParameters(jobId, newJobParametersJson);
 
         if (jobEntity.getStatus() == JobStatus.PREPARING) {
