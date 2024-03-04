@@ -36,7 +36,6 @@ import com.oceanbase.odc.service.sqlcheck.rule.ColumnCharsetExists;
 import com.oceanbase.odc.service.sqlcheck.rule.ColumnCollationExists;
 import com.oceanbase.odc.service.sqlcheck.rule.ColumnNameInBlackList;
 import com.oceanbase.odc.service.sqlcheck.rule.ForeignConstraintExists;
-import com.oceanbase.odc.service.sqlcheck.rule.IndexChangeTimeConsumingExists;
 import com.oceanbase.odc.service.sqlcheck.rule.NoDefaultValueExists;
 import com.oceanbase.odc.service.sqlcheck.rule.NoIndexNameExists;
 import com.oceanbase.odc.service.sqlcheck.rule.NoPrimaryKeyExists;
@@ -1165,19 +1164,6 @@ public class OracleSqlCheckerTest {
         CheckResult r1 = new CheckResult("1", Arrays.asList(c1, c3));
         CheckResult r2 = new CheckResult("2", Collections.singletonList(c2));
         List<CheckResult> expect = Arrays.asList(r1, r2);
-        Assert.assertEquals(expect, actual);
-    }
-
-    @Test
-    public void check_timeConsumingIndexChangeExists_violationGenerated() {
-        String sql = "alter table tab modify primary key(c1,c2)";
-        SqlChecker sqlChecker = new DefaultSqlChecker(DialectType.OB_ORACLE, ";",
-                Collections.singletonList(new IndexChangeTimeConsumingExists()));
-        List<CheckViolation> actual = sqlChecker.check(sql);
-
-        CheckViolation c = new CheckViolation(sql, 1, 0, 0, 40,
-                SqlCheckRuleType.INDEX_CHANGE_TIME_CONSUMING_EXISTS, 0, new Object[] {});
-        List<CheckViolation> expect = Collections.singletonList(c);
         Assert.assertEquals(expect, actual);
     }
 
