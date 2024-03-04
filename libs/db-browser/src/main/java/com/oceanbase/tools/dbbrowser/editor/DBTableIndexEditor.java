@@ -105,6 +105,18 @@ public abstract class DBTableIndexEditor implements DBObjectEditor<DBTableIndex>
         if (!StringUtils.equals(oldIndex.getName(), newIndex.getName())) {
             sqlBuilder.append(generateRenameObjectDDL(oldIndex, newIndex)).append(";").line();
         }
+        sqlBuilder.append(generateUpdateVisibility(oldIndex, newIndex));
+        return sqlBuilder.toString();
+    }
+
+    private String generateUpdateVisibility(@NotNull DBTableIndex oldIndex, @NotNull DBTableIndex newIndex) {
+        if (Objects.equals(oldIndex.getVisible(), newIndex.getVisible())) {
+            return "";
+        }
+        SqlBuilder sqlBuilder = sqlBuilder();
+        String visibility = Boolean.FALSE.equals(newIndex.getVisible()) ? "INVISIBLE" : "VISIBLE";
+        sqlBuilder.append("ALTER TABLE ").append(getFullyQualifiedTableName(newIndex)).append(" ALTER INDEX ")
+                .identifier(newIndex.getName()).space().append(visibility).append(";").line();
         return sqlBuilder.toString();
     }
 
