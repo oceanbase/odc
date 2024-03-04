@@ -32,8 +32,8 @@ import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * mark class/method check request ip source, <br>
- * class/method will be checked when task-framework is process mode
+ * check remote address is valid when task running in process mode
+ *
  *
  * @author yaobin
  * @date 2024-03-04

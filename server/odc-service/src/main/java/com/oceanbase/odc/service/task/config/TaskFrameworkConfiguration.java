@@ -28,7 +28,6 @@ import org.springframework.context.annotation.Lazy;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.scheduling.quartz.SchedulerFactoryBean;
 
-import com.oceanbase.odc.service.common.util.ConditionalOnProperty;
 import com.oceanbase.odc.service.task.caller.K8sJobClient;
 import com.oceanbase.odc.service.task.caller.NativeK8sJobClient;
 
