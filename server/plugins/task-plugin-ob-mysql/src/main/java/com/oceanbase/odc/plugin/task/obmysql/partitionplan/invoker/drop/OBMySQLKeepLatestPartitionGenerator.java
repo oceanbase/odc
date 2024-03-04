@@ -23,7 +23,7 @@ import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.Validate;
 
-import com.oceanbase.odc.plugin.task.api.partitionplan.invoker.drop.KeepMostRecentPartitionGenerator;
+import com.oceanbase.odc.plugin.task.api.partitionplan.invoker.drop.KeepMostLatestPartitionGenerator;
 import com.oceanbase.tools.dbbrowser.model.DBTable;
 import com.oceanbase.tools.dbbrowser.model.DBTablePartitionDefinition;
 
@@ -35,9 +35,9 @@ import lombok.NonNull;
  * @author yh263208
  * @date 2024-01-24 15:50
  * @since ODC_release_4.2.4
- * @see KeepMostRecentPartitionGenerator
+ * @see KeepMostLatestPartitionGenerator
  */
-public class OBMySQLKeepLatestPartitionGenerator implements KeepMostRecentPartitionGenerator {
+public class OBMySQLKeepLatestPartitionGenerator implements KeepMostLatestPartitionGenerator {
 
     @Override
     public List<DBTablePartitionDefinition> generate(@NonNull Connection connection,

@@ -50,7 +50,7 @@ import com.oceanbase.odc.service.flow.task.util.MockDataTypeUtil;
 import com.oceanbase.odc.service.iam.model.User;
 import com.oceanbase.odc.service.integration.model.TemplateVariables;
 import com.oceanbase.odc.service.onlineschemachange.model.OnlineSchemaChangeParameters;
-import com.oceanbase.odc.service.partitionplan.model.PartitionPlanTaskParameters;
+import com.oceanbase.odc.service.partitionplan.model.PartitionPlanConfig;
 import com.oceanbase.odc.service.permission.database.model.ApplyDatabaseParameter;
 import com.oceanbase.odc.service.permission.project.ApplyProjectParameter;
 import com.oceanbase.odc.service.plugin.ConnectionPluginUtil;
@@ -106,8 +106,8 @@ public class FlowTaskUtil {
                 () -> new VerifyException("MockTaskConfig is absent"));
     }
 
-    public static PartitionPlanTaskParameters getPartitionPlanParameter(@NonNull DelegateExecution execution) {
-        return internalGetParameter(execution, PartitionPlanTaskParameters.class).orElseThrow(
+    public static PartitionPlanConfig getPartitionPlanParameter(@NonNull DelegateExecution execution) {
+        return internalGetParameter(execution, PartitionPlanConfig.class).orElseThrow(
                 () -> new VerifyException("PartitionPlan is absent"));
     }
 

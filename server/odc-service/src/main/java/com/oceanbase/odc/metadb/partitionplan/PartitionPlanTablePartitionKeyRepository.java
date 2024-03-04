@@ -15,8 +15,17 @@
  */
 package com.oceanbase.odc.metadb.partitionplan;
 
-import org.springframework.data.jpa.repository.JpaRepository;
+import java.util.List;
+import java.util.function.Function;
+
+import javax.persistence.LockModeType;
+import javax.transaction.Transactional;
+
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.jpa.repository.Lock;
+
+import com.oceanbase.odc.common.jpa.InsertSqlTemplateBuilder;
+import com.oceanbase.odc.config.jpa.OdcJpaRepository;
 
 /**
  * {@link PartitionPlanTablePartitionKeyRepository}
@@ -26,6 +35,32 @@ import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
  * @since ODC_release_4.2.4
  */
 public interface PartitionPlanTablePartitionKeyRepository
-        extends JpaRepository<PartitionPlanTablePartitionKeyEntity, Long>,
+        extends OdcJpaRepository<PartitionPlanTablePartitionKeyEntity, Long>,
         JpaSpecificationExecutor<PartitionPlanTablePartitionKeyEntity> {
+
+    List<PartitionPlanTablePartitionKeyEntity> findByPartitionplanTableIdIn(List<Long> partitionplanTableId);
+
+    @Transactional
+    @Lock(value = LockModeType.PESSIMISTIC_WRITE)
+    List<PartitionPlanTablePartitionKeyEntity> findByIdIn(List<Long> ids);
+
+    default List<PartitionPlanTablePartitionKeyEntity> batchCreate(
+            List<PartitionPlanTablePartitionKeyEntity> entities) {
+        String sql = InsertSqlTemplateBuilder.from("partitionplan_table_partitionkey")
+                .field(PartitionPlanTablePartitionKeyEntity_.partitionKey)
+                .field(PartitionPlanTablePartitionKeyEntity_.strategy)
+                .field(PartitionPlanTablePartitionKeyEntity_.partitionplanTableId)
+                .field(PartitionPlanTablePartitionKeyEntity_.partitionKeyInvoker)
+                .field(PartitionPlanTablePartitionKeyEntity_.partitionKeyInvokerParameters)
+                .build();
+        List<Function<PartitionPlanTablePartitionKeyEntity, Object>> getter = valueGetterBuilder()
+                .add(PartitionPlanTablePartitionKeyEntity::getPartitionKey)
+                .add(p -> p.getStrategy().name())
+                .add(PartitionPlanTablePartitionKeyEntity::getPartitionplanTableId)
+                .add(PartitionPlanTablePartitionKeyEntity::getPartitionKeyInvoker)
+                .add(PartitionPlanTablePartitionKeyEntity::getPartitionKeyInvokerParameters)
+                .build();
+        return batchCreate(entities, sql, getter, PartitionPlanTablePartitionKeyEntity::setId);
+    }
+
 }

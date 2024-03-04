@@ -173,9 +173,12 @@ public class OracleFromReferenceFactory extends OBParserBaseVisitor<FromReferenc
                     new OracleExpressionFactory(ctx.simple_expr()).generate(), alias);
         } else if (ctx.select_function() != null) {
             return new ExpressionReference(ctx, visitSelectFunction(ctx.select_function()), alias);
+        } else if (ctx.json_table_expr() != null) {
+            return new ExpressionReference(ctx, new OracleExpressionFactory()
+                    .visitJson_table_expr(ctx.json_table_expr()), alias);
         }
         return new ExpressionReference(ctx, new OracleExpressionFactory()
-                .visitJson_table_expr(ctx.json_table_expr()), alias);
+                .visitXml_table_expr(ctx.xml_table_expr()), alias);
     }
 
     private Expression visitSelectFunction(Select_functionContext ctx) {

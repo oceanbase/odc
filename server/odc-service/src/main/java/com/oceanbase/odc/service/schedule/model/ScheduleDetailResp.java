@@ -178,7 +178,7 @@ public class ScheduleDetailResp implements OrganizationIsolated {
             resp.setJobParameters(getJobParameters(entity));
             resp.setTriggerConfig(entity.getTriggerConfigJson());
             resp.setNextFireTimes(
-                    QuartzCronExpressionUtils.getNextFireTimes(JsonUtils.fromJson(entity.getTriggerConfigJson(),
+                    QuartzCronExpressionUtils.getNextFiveFireTimes(JsonUtils.fromJson(entity.getTriggerConfigJson(),
                             TriggerConfig.class).getCronExpression()));
             UserEntity user = getUserById.apply(entity.getCreatorId());
             if (user != null) {

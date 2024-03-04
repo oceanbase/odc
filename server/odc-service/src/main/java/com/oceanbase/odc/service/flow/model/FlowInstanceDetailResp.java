@@ -54,7 +54,7 @@ import com.oceanbase.odc.service.flow.task.model.OdcMockTaskConfig;
 import com.oceanbase.odc.service.flow.task.model.ShadowTableSyncTaskParameter;
 import com.oceanbase.odc.service.flow.util.FlowInstanceUtil;
 import com.oceanbase.odc.service.onlineschemachange.model.OnlineSchemaChangeParameters;
-import com.oceanbase.odc.service.partitionplan.model.PartitionPlanTaskParameters;
+import com.oceanbase.odc.service.partitionplan.model.PartitionPlanConfig;
 import com.oceanbase.odc.service.permission.database.model.ApplyDatabaseParameter;
 import com.oceanbase.odc.service.permission.project.ApplyProjectParameter;
 import com.oceanbase.odc.service.regulation.risklevel.model.RiskLevel;
@@ -297,7 +297,7 @@ public class FlowInstanceDetailResp {
                     resp.setParameters(JsonUtils.fromJson(parameterJson, ShadowTableSyncTaskParameter.class));
                     break;
                 case PARTITION_PLAN:
-                    resp.setParameters(JsonUtils.fromJson(parameterJson, PartitionPlanTaskParameters.class));
+                    resp.setParameters(JsonUtils.fromJson(parameterJson, PartitionPlanConfig.class));
                     break;
                 case ALTER_SCHEDULE:
                     resp.setParameters(JsonUtils.fromJson(parameterJson, AlterScheduleParameters.class));

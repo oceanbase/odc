@@ -17,6 +17,7 @@
 package com.oceanbase.odc.service.task.service;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.data.domain.Page;
 
@@ -80,7 +81,7 @@ public interface TaskFrameworkService {
     int updateStatusDescriptionByIdOldStatusAndExecutorDestroyed(Long id, JobStatus oldStatus, JobStatus newStatus,
             String description);
 
-    String findByJobIdAndAttributeKey(Long jobId, String attributeKey);
+    Optional<String> findByJobIdAndAttributeKey(Long jobId, String attributeKey);
 
     boolean isJobFinished(Long id);
 }

@@ -18,6 +18,8 @@ package com.oceanbase.tools.dbbrowser.schema;
 
 import static com.oceanbase.tools.dbbrowser.editor.DBObjectUtilsTest.loadAsString;
 
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -115,8 +117,16 @@ public class OracleSchemaAccessorTest extends BaseTestEnv {
 
     @Test
     public void listTableColumns_TestGetAllColumnInSchema_Success() {
-        Map<String, List<DBTableColumn>> table2Columns = accessor.listTableColumns(getOracleSchema());
+        Map<String, List<DBTableColumn>> table2Columns =
+                accessor.listTableColumns(getOracleSchema(), Collections.emptyList());
         Assert.assertTrue(table2Columns.size() > 0);
+    }
+
+    @Test
+    public void listTableColumns_filterByTableName_Success() {
+        Map<String, List<DBTableColumn>> table2Columns = accessor.listTableColumns(getOracleSchema(),
+                Arrays.asList("TEST_FK_PARENT", "TEST_PK_INDEX"));
+        Assert.assertEquals(2, table2Columns.size());
     }
 
     @Test
@@ -213,6 +223,15 @@ public class OracleSchemaAccessorTest extends BaseTestEnv {
                 accessor.getPartition(getOracleSchema(), "PART_HASH_TEST");
         Assert.assertEquals(5L, partition.getPartitionOption().getPartitionsNum().longValue());
         Assert.assertEquals(DBTablePartitionType.HASH, partition.getPartitionOption().getType());
+    }
+
+    @Test
+    public void listTablePartitions_noCandidates_listSucceed() {
+        Map<String, DBTablePartition> actual = accessor.listTablePartitions(getOracleSchema(),
+                Collections.singletonList("PART_HASH_TEST"));
+        DBTablePartition partiHash = actual.get("PART_HASH_TEST");
+        Assert.assertEquals(5L, partiHash.getPartitionOption().getPartitionsNum().longValue());
+        Assert.assertEquals(DBTablePartitionType.HASH, partiHash.getPartitionOption().getType());
     }
 
     @Test

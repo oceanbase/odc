@@ -214,7 +214,8 @@ public class DatabaseChangeTask extends BaseTask<FlowTaskResult> {
                         throw new IllegalArgumentException(
                                 "Timeout settings is too large, " + this.databaseChangeParameters.getTimeoutMillis());
                     }
-                    ConnectionInitializer initializer = new ConsoleTimeoutInitializer(timeoutUs);
+                    ConnectionInitializer initializer =
+                            new ConsoleTimeoutInitializer(timeoutUs, connectionSession.getDialectType());
                     executor.execute((ConnectionCallback<Void>) con -> {
                         initializer.init(con);
                         return null;

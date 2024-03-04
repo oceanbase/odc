@@ -20,6 +20,7 @@ import java.util.List;
 import com.oceanbase.odc.service.dlm.model.DataArchiveTableConfig;
 import com.oceanbase.odc.service.dlm.model.RateLimitConfiguration;
 import com.oceanbase.tools.migrator.common.configure.DataSourceInfo;
+import com.oceanbase.tools.migrator.common.enums.JobType;
 import com.oceanbase.tools.migrator.common.enums.MigrationInsertAction;
 import com.oceanbase.tools.migrator.common.enums.ShardingStrategy;
 
@@ -35,6 +36,8 @@ import lombok.Data;
 public class DLMJobParameters {
 
     private List<DataArchiveTableConfig> tables;
+
+    private JobType jobType;
 
     private DataSourceInfo sourceDs;
 
