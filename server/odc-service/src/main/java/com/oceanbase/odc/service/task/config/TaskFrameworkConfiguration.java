@@ -16,8 +16,6 @@
 
 package com.oceanbase.odc.service.task.config;
 
-import java.io.IOException;
-
 import javax.sql.DataSource;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -53,7 +51,7 @@ public class TaskFrameworkConfiguration {
             log.info("k8s url is {}", taskFrameworkProperties.getK8sProperties().getKubeUrl());
             log.info("k8s namespace is {}", taskFrameworkProperties.getK8sProperties().getNamespace());
             return new NativeK8sJobClient(taskFrameworkProperties.getK8sProperties());
-        } catch (IOException e) {
+        } catch (Exception e) {
             log.warn("Create NativeK8sJobClient occur error:", e);
             return null;
         }
