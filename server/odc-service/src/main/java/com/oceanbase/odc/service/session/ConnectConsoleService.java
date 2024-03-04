@@ -88,6 +88,8 @@ import com.oceanbase.odc.service.db.session.KillSessionOrQueryReq;
 import com.oceanbase.odc.service.db.session.KillSessionResult;
 import com.oceanbase.odc.service.dml.ValueEncodeType;
 import com.oceanbase.odc.service.feature.AllFeatures;
+import com.oceanbase.odc.service.permission.database.model.DatabasePermissionType;
+import com.oceanbase.odc.service.permission.database.model.UnauthorizedDatabase;
 import com.oceanbase.odc.service.session.interceptor.SqlCheckInterceptor;
 import com.oceanbase.odc.service.session.interceptor.SqlConsoleInterceptor;
 import com.oceanbase.odc.service.session.interceptor.SqlExecuteInterceptorService;
@@ -181,10 +183,18 @@ public class ConnectConsoleService {
         asyncExecuteReq.setShowTableColumnInfo(true);
         asyncExecuteReq.setContinueExecutionOnError(true);
         asyncExecuteReq.setFullLinkTraceEnabled(false);
-
         SqlAsyncExecuteResp resp = execute(sessionId, asyncExecuteReq, false);
-        String requestId = resp.getRequestId();
 
+        List<UnauthorizedDatabase> unauthorizedDatabases = resp.getUnauthorizedDatabases();
+        if (CollectionUtils.isNotEmpty(unauthorizedDatabases)) {
+            UnauthorizedDatabase unauthorizedDatabase = unauthorizedDatabases.get(0);
+            throw new BadRequestException(ErrorCodes.DatabaseAccessDenied,
+                    new Object[] {unauthorizedDatabase.getUnauthorizedPermissionTypes().stream()
+                            .map(DatabasePermissionType::getLocalizedMessage).collect(Collectors.joining(","))},
+                    "Lack permission for the database with id " + unauthorizedDatabase.getId());
+        }
+
+        String requestId = resp.getRequestId();
         ConnectionConfig connConfig = (ConnectionConfig) ConnectionSessionUtil.getConnectionConfig(connectionSession);
         List<SqlExecuteResult> results = getAsyncResult(sessionId, requestId, connConfig.queryTimeoutSeconds());
         if (CollectionUtils.isEmpty(results)) {
