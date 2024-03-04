@@ -58,14 +58,13 @@ public class JobSecurityCheckerAspect {
         ServletRequestAttributes attributes =
                 (ServletRequestAttributes) RequestContextHolder.currentRequestAttributes();
         HttpServletRequest request = attributes.getRequest();
-
         String remoteAddr = request.getRemoteAddr();
-        if (remoteAddr != null && request.getHeader("X-Forwarded-For") != null) {
+        if (remoteAddr == null && request.getHeader("X-Forwarded-For") != null) {
             remoteAddr = request.getHeader("X-Forwarded-For");
         }
 
         boolean isLocalhost = "127.0.0.1".equals(remoteAddr) || "0:0:0:0:0:0:0:1".equals(remoteAddr)
-                || "localhost".equalsIgnoreCase(remoteAddr);
+                || "::1".equals(remoteAddr) || "localhost".equalsIgnoreCase(remoteAddr);
         PreConditions.validHasPermission(isLocalhost, ErrorCodes.AccessDenied,
                 "Request access denied, ip=" + remoteAddr);
     }
