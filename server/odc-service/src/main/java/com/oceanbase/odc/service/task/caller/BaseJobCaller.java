@@ -143,6 +143,40 @@ public abstract class BaseJobCaller implements JobCaller {
     }
 
     @Override
+    public void modify(JobIdentity ji, String jobParametersJson) throws JobException {
+        JobConfigurationValidator.validComponent();
+        JobConfiguration jobConfiguration = JobConfigurationHolder.getJobConfiguration();
+        TaskFrameworkService taskFrameworkService = jobConfiguration.getTaskFrameworkService();
+        JobEntity jobEntity = taskFrameworkService.find(ji.getId());
+        String executorEndpoint = getExecutorPoint(jobEntity);
+        String url = executorEndpoint + String.format(JobUrlConstants.MODIFY_JOB_PARAMETERS, ji.getId());
+        log.info("Try to modify job parameters, jobId={}.", ji.getId());
+        try {
+            SuccessResponse<Boolean> response =
+                    HttpUtil.request(url, jobParametersJson, new TypeReference<SuccessResponse<Boolean>>() {});
+            if (response != null && response.getSuccessful() && response.getData()) {
+                log.info("Modify job parameters success, jobId={}, response={}.", ji.getId(),
+                        JsonUtils.toJson(response));
+            } else {
+                throw new JobException("Modify job parameters not succeed, jobId={0}, response={1}", ji.getId(),
+                        response);
+            }
+        } catch (IOException e) {
+            throw new JobException("Modify job parameters not succeed, jobId={0}, response={1}", ji.getId(),
+                    JsonUtils.toJson(e.getMessage()));
+        }
+    }
+
+    private String getExecutorPoint(JobEntity jobEntity)
+            throws JobException {
+        String executorEndpoint = jobEntity.getExecutorEndpoint();
+        if (executorEndpoint == null) {
+            throw new JobException("Executor point is null, cannot modify executor point, jobId={}", jobEntity.getId());
+        }
+        return executorEndpoint;
+    }
+
+    @Override
     public void destroy(JobIdentity ji) throws JobException {
         JobConfigurationValidator.validComponent();
         JobConfiguration jobConfiguration = JobConfigurationHolder.getJobConfiguration();

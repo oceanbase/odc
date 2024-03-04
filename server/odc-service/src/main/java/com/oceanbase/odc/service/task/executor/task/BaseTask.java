@@ -18,10 +18,12 @@ package com.oceanbase.odc.service.task.executor.task;
 
 import java.util.Collections;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 
 import com.oceanbase.odc.service.objectstorage.cloud.CloudObjectStorageService;
 import com.oceanbase.odc.service.objectstorage.cloud.model.ObjectStorageConfiguration;
+import com.oceanbase.odc.service.task.caller.DefaultJobContext;
 import com.oceanbase.odc.service.task.caller.JobContext;
 import com.oceanbase.odc.service.task.enums.JobStatus;
 import com.oceanbase.odc.service.task.executor.server.TaskMonitor;
@@ -38,14 +40,13 @@ public abstract class BaseTask<RESULT> implements Task<RESULT> {
 
     private JobContext context;
     private Map<String, String> jobParameters;
-
     private volatile JobStatus status = JobStatus.PREPARING;
     private CloudObjectStorageService cloudObjectStorageService;
 
     @Override
     public void start(JobContext context) {
         this.context = context;
-        this.jobParameters = Collections.unmodifiableMap(getJobContext().getJobParameters());
+        this.jobParameters = Collections.unmodifiableMap(context.getJobParameters());
         initCloudObjectStorageService();
         TaskMonitor taskMonitor = new TaskMonitor(this, cloudObjectStorageService);
         try {
@@ -55,10 +56,15 @@ public abstract class BaseTask<RESULT> implements Task<RESULT> {
             doStart(context);
             updateStatus(JobStatus.DONE);
         } catch (Throwable e) {
-            log.info("Task failed, id={}.", context.getJobIdentity().getId(), e);
+            log.info("Task failed, id={}.", getJobId(), e);
             updateStatus(JobStatus.FAILED);
             onFail(e);
         } finally {
+            try {
+                doFinal();
+            } catch (Throwable e) {
+                // do nothing
+            }
             log.info("Task be completed, id={}, status={}.", getJobId(), getStatus());
             taskMonitor.finalWork();
         }
@@ -67,21 +73,36 @@ public abstract class BaseTask<RESULT> implements Task<RESULT> {
     @Override
     public boolean stop() {
         if (getStatus().isTerminated()) {
-            log.warn("Task is already finished and cannot be canceled, id={}",
-                    getJobContext().getJobIdentity().getId());
+            log.warn("Task is already finished and cannot be canceled, id={}", getJobId());
             return true;
         }
         try {
             doStop();
         } catch (Throwable e) {
-            log.warn("stop task failed, id={}", getJobContext().getJobIdentity().getId(), e);
+            log.warn("stop task failed, id={}", getJobId(), e);
             return false;
         }
         updateStatus(JobStatus.CANCELED);
-        log.info("Task be canceled, id={}", getJobContext().getJobIdentity().getId());
+        log.info("Task be canceled, id={}", getJobId());
         return true;
     }
 
+    @Override
+    public boolean modify(Map<String, String> jobParameters) {
+        if (Objects.isNull(jobParameters) || jobParameters.isEmpty()) {
+            log.warn("Job parameter cannot be null, id={}", getJobId());
+            return false;
+        }
+        if (getStatus().isTerminated()) {
+            log.warn("Task is already finished, cannot modify parameters, id={}", getJobId());
+            return false;
+        }
+        DefaultJobContext ctx = (DefaultJobContext) getJobContext();
+        // change the value in job context
+        ctx.setJobParameters(jobParameters);
+        this.jobParameters = Collections.unmodifiableMap(jobParameters);
+        return true;
+    }
 
     private void initCloudObjectStorageService() {
         Optional<ObjectStorageConfiguration> storageConfig = JobUtils.getObjectStorageConfiguration();
@@ -119,6 +140,9 @@ public abstract class BaseTask<RESULT> implements Task<RESULT> {
     protected abstract void doStart(JobContext context) throws Exception;
 
     protected abstract void doStop() throws Exception;
+
+    // this method be invoked finally to release resource
+    protected void doFinal() {};
 
     protected abstract void onFail(Throwable e);
 

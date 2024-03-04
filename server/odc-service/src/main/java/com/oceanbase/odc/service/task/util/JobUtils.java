@@ -17,12 +17,15 @@
 package com.oceanbase.odc.service.task.util;
 
 import java.io.File;
+import java.lang.reflect.Type;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
 import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.common.util.SystemUtils;
 import com.oceanbase.odc.core.shared.Verify;
@@ -68,6 +71,22 @@ public class JobUtils {
         }
         return new Gson().fromJson(json, clazz);
     }
+
+    public static <T> T fromJson(String json, Type type) {
+        if (json == null) {
+            return null;
+        }
+        return new Gson().fromJson(json, type);
+    }
+
+    public static Map<String, String> fromJsonToMap(String json) {
+        if (json == null) {
+            return null;
+        }
+        Type mapType = new TypeToken<Map<String, String>>() {}.getType();
+        return new Gson().fromJson(json, mapType);
+    }
+
 
     public static Optional<Integer> getExecutorPort() {
         String port = SystemUtils.getEnvOrProperty(JobEnvKeyConstants.ODC_EXECUTOR_PORT);

@@ -432,6 +432,16 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
 
     }
 
+    @Override
+    public int updateJobParameters(Long id, String jobParametersJson) {
+        CriteriaBuilder cb = entityManager.getCriteriaBuilder();
+        CriteriaUpdate<JobEntity> update = cb.createCriteriaUpdate(JobEntity.class);
+        Root<JobEntity> e = update.from(JobEntity.class);
+        update.set(JobEntityColumn.JOB_PARAMETERS_JSON, jobParametersJson);
+        update.where(cb.equal(e.get(JobEntityColumn.ID), id));
+        return entityManager.createQuery(update).executeUpdate();
+    }
+
     @Transactional(rollbackFor = Exception.class)
     @Override
     public int updateExecutorToDestroyed(Long id) {
