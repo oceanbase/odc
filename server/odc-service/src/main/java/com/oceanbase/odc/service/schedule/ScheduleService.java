@@ -52,6 +52,8 @@ import com.oceanbase.odc.core.shared.exception.AccessDeniedException;
 import com.oceanbase.odc.core.shared.exception.NotFoundException;
 import com.oceanbase.odc.core.shared.exception.UnexpectedException;
 import com.oceanbase.odc.core.shared.exception.UnsupportedException;
+import com.oceanbase.odc.metadb.collaboration.EnvironmentEntity;
+import com.oceanbase.odc.metadb.collaboration.EnvironmentRepository;
 import com.oceanbase.odc.metadb.flow.FlowInstanceRepository;
 import com.oceanbase.odc.metadb.flow.ServiceTaskInstanceEntity;
 import com.oceanbase.odc.metadb.flow.ServiceTaskInstanceRepository;
@@ -148,6 +150,9 @@ public class ScheduleService {
 
     @Autowired
     private DatabaseService databaseService;
+
+    @Autowired
+    private EnvironmentRepository environmentRepository;
 
     @Autowired
     private TaskDispatchChecker dispatchChecker;
@@ -537,10 +542,12 @@ public class ScheduleService {
 
     private List<ResourceRoleName> getApproverRoleNames(ScheduleEntity entity) {
         Database database = databaseService.detail(entity.getDatabaseId());
+        EnvironmentEntity environment = environmentRepository.findById(database.getEnvironment().getId()).orElse(null);
         RiskLevelDescriber riskLevelDescriber = new RiskLevelDescriber();
         riskLevelDescriber.setDatabaseName(database.getName());
         riskLevelDescriber.setProjectName(database.getProject().getName());
         riskLevelDescriber.setEnvironmentId(database.getEnvironment().getId().toString());
+        riskLevelDescriber.setEnvironmentName(environment == null ? null : environment.getName());
         riskLevelDescriber.setTaskType(TaskType.ALTER_SCHEDULE.name());
         RiskLevel riskLevel = approvalFlowConfigSelector.select(riskLevelDescriber);
         return riskLevel.getApprovalFlowConfig().getNodes().stream().filter(node -> node.getResourceRoleName() != null)

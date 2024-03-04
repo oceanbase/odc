@@ -33,7 +33,7 @@ import com.oceanbase.tools.dbbrowser.util.StringUtils;
 /**
  * @author jingtian
  */
-public class ODPOBMySQLSchemaAccessor extends MySQLNoGreaterThan5740SchemaAccessor {
+public class ODPOBMySQLSchemaAccessor extends MySQLNoLessThan5700SchemaAccessor {
 
     public ODPOBMySQLSchemaAccessor(JdbcOperations jdbcOperations) {
         super(jdbcOperations);

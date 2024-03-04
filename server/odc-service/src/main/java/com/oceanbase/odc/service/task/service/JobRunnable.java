@@ -13,21 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.tools.dbbrowser.stats.mysql;
+package com.oceanbase.odc.service.task.service;
 
-import org.springframework.jdbc.core.JdbcOperations;
-
-import lombok.NonNull;
+import com.oceanbase.odc.service.task.exception.JobException;
 
 /**
- * ClassName: DorisStatsAccessor Package: com.oceanbase.tools.dbbrowser.stats.mysql Description:
- *
- * @Author: fenghao
- * @Create 2024/2/5 16:23
- * @Version 1.0
+ * @author yaobin
+ * @date 2024-02-23
+ * @since 4.2.4
  */
-public class DorisStatsAccessor extends MySQLNoLessThan5700StatsAccessor {
-    public DorisStatsAccessor(@NonNull JdbcOperations jdbcOperations) {
-        super(jdbcOperations);
-    }
+@FunctionalInterface
+public interface JobRunnable {
+
+    void run() throws JobException;
 }
