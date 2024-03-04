@@ -21,8 +21,8 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * mark class/method check request ip source, <br>
- * class/method will be checked when task-framework is process mode
+ * Method marked by ${@link JobSecurityChecker} will be checked remote ip when task-framework is running in process mode.
+ * reference ${@link JobSecurityCheckerAspect}
  * 
  * @author yaobin
  * @date 2024-03-04
@@ -31,8 +31,4 @@ import java.lang.annotation.Target;
 @Target(value = {ElementType.TYPE, ElementType.METHOD})
 @Retention(RetentionPolicy.RUNTIME)
 public @interface JobSecurityChecker {
-    /**
-     * @return reason of skip authorization, default `empty`
-     */
-    String value() default "";
 }
