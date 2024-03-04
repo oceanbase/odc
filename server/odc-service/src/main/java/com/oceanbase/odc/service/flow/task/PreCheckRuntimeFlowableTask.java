@@ -42,7 +42,6 @@ import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.common.unit.BinarySizeUnit;
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.shared.PreConditions;
-import com.oceanbase.odc.core.shared.constant.TaskStatus;
 import com.oceanbase.odc.core.shared.constant.TaskType;
 import com.oceanbase.odc.core.shared.exception.VerifyException;
 import com.oceanbase.odc.core.sql.execute.model.SqlTuple;
@@ -196,8 +195,6 @@ public class PreCheckRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Void> {
         return false;
     }
 
-    @Override
-    public void callback(long flowInstanceId, long flowTaskInstanceId, TaskStatus taskStatus) {}
 
     @Override
     protected void onFailure(Long taskId, TaskService taskService) {
@@ -209,7 +206,7 @@ public class PreCheckRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Void> {
             log.warn("Failed to store task result", e);
         }
         flowTaskCallBackApprovalService.approval(getFlowInstanceId(), getTargetTaskInstanceId(),
-                TaskStatus.FAILED, riskLevelResult);
+                FlowNodeStatus.FAILED, riskLevelResult);
 
     }
 
@@ -223,14 +220,14 @@ public class PreCheckRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Void> {
             log.warn("Failed to store task result", e);
         }
         flowTaskCallBackApprovalService.approval(getFlowInstanceId(), getTargetTaskInstanceId(),
-                TaskStatus.DONE, riskLevelResult);
+                FlowNodeStatus.COMPLETED, riskLevelResult);
 
     }
 
     @Override
     protected void onTimeout(Long taskId, TaskService taskService) {
         flowTaskCallBackApprovalService.approval(getFlowInstanceId(), getTargetTaskInstanceId(),
-                TaskStatus.FAILED, riskLevelResult);
+                FlowNodeStatus.EXPIRED, riskLevelResult);
 
     }
 

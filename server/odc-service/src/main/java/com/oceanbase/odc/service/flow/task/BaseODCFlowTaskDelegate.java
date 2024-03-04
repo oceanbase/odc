@@ -31,7 +31,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.oceanbase.odc.core.flow.exception.BaseFlowException;
 import com.oceanbase.odc.core.shared.Verify;
-import com.oceanbase.odc.core.shared.constant.TaskStatus;
 import com.oceanbase.odc.metadb.flow.ServiceTaskInstanceRepository;
 import com.oceanbase.odc.service.common.model.HostProperties;
 import com.oceanbase.odc.service.connection.ConnectionService;
@@ -39,6 +38,7 @@ import com.oceanbase.odc.service.flow.exception.ServiceTaskCancelledException;
 import com.oceanbase.odc.service.flow.exception.ServiceTaskError;
 import com.oceanbase.odc.service.flow.exception.ServiceTaskExpiredException;
 import com.oceanbase.odc.service.flow.model.ExecutionStrategyConfig;
+import com.oceanbase.odc.service.flow.model.FlowNodeStatus;
 import com.oceanbase.odc.service.flow.model.FlowTaskExecutionStrategy;
 import com.oceanbase.odc.service.flow.task.model.RuntimeTaskConstants;
 import com.oceanbase.odc.service.flow.util.FlowTaskUtil;
@@ -243,15 +243,15 @@ public abstract class BaseODCFlowTaskDelegate<T> extends BaseRuntimeFlowableDele
 
     @Override
     public void callback(@NotNull long flowInstanceId, @NotNull long flowTaskInstanceId,
-            @NotNull TaskStatus taskStatus) {
-        flowTaskCallBackApprovalService.approval(flowInstanceId, flowTaskInstanceId, taskStatus);
+            @NotNull FlowNodeStatus flowNodeStatus) {
+        flowTaskCallBackApprovalService.approval(flowInstanceId, flowTaskInstanceId, flowNodeStatus);
     }
 
     /**
      * The callback method when the task fails, which is used to update the status and other operations
      */
     protected void onFailure(Long taskId, TaskService taskService) {
-        callback(getFlowInstanceId(), getTargetTaskInstanceId(), TaskStatus.FAILED);
+        callback(getFlowInstanceId(), getTargetTaskInstanceId(), FlowNodeStatus.FAILED);
         if (notificationProperties.isEnabled()) {
             try {
                 Event event = eventBuilder.ofFailedTask(taskService.detail(taskId));
@@ -266,7 +266,7 @@ public abstract class BaseODCFlowTaskDelegate<T> extends BaseRuntimeFlowableDele
      * The callback method when the task is successful, used to update the status and other operations
      */
     protected void onSuccessful(Long taskId, TaskService taskService) {
-        callback(getFlowInstanceId(), getTargetTaskInstanceId(), TaskStatus.DONE);
+        callback(getFlowInstanceId(), getTargetTaskInstanceId(), FlowNodeStatus.COMPLETED);
         if (notificationProperties.isEnabled()) {
             try {
                 Event event = eventBuilder.ofSucceededTask(taskService.detail(taskId));
@@ -282,7 +282,7 @@ public abstract class BaseODCFlowTaskDelegate<T> extends BaseRuntimeFlowableDele
      * operations
      */
     protected void onTimeout(Long taskId, TaskService taskService) {
-        callback(getFlowInstanceId(), getTargetTaskInstanceId(), TaskStatus.FAILED);
+        callback(getFlowInstanceId(), getTargetTaskInstanceId(), FlowNodeStatus.EXPIRED);
         if (notificationProperties.isEnabled()) {
             try {
                 Event event = eventBuilder.ofTimeoutTask(taskService.detail(taskId));
@@ -300,7 +300,11 @@ public abstract class BaseODCFlowTaskDelegate<T> extends BaseRuntimeFlowableDele
 
     @Override
     public boolean cancel(boolean mayInterruptIfRunning) {
-        return cancel(mayInterruptIfRunning, taskId, taskService);
+        boolean result = cancel(mayInterruptIfRunning, taskId, taskService);
+        if (result) {
+            callback(getFlowInstanceId(), getTargetTaskInstanceId(), FlowNodeStatus.CANCELLED);
+        }
+        return result;
     }
 
     protected abstract boolean cancel(boolean mayInterruptIfRunning, Long taskId, TaskService taskService);
