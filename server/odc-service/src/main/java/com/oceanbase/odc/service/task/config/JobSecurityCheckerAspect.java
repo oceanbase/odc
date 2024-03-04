@@ -70,12 +70,12 @@ public class JobSecurityCheckerAspect{
     @Autowired
     private TaskFrameworkProperties taskFrameworkProperties;
 
-    @Pointcut("@annotation(com.oceanbase.odc.service.task.config.JobSecurityChecker)")
+    @Pointcut("@within(com.oceanbase.odc.service.task.config.JobSecurityChecker)")
     public void beforeRequest() {}
 
 
     @Before("beforeRequest()")
-    public void preprocess(JoinPoint point) throws Throwable {
+    public void checkRequestAddress(JoinPoint point) throws Throwable {
         ServletRequestAttributes attributes = (ServletRequestAttributes) RequestContextHolder.currentRequestAttributes();
         HttpServletRequest request = attributes.getRequest();
 
