@@ -57,14 +57,14 @@ public class FlowTaskSubmitter implements JavaDelegate {
         DelegateExecution executionFacade = new ExecutionEntityFacade(execution);
         threadPoolTaskExecutor.submit(() -> {
             try {
-                getaDelegateInstance(executionFacade).execute(executionFacade);
+                getDelegateInstance(executionFacade).execute(executionFacade);
             } catch (Throwable e) {
                 log.warn("Delegate task instance execute occur error.", e);
             }
         });
     }
 
-    private BaseRuntimeFlowableDelegate<?> getaDelegateInstance(DelegateExecution execution) throws Exception {
+    private BaseRuntimeFlowableDelegate<?> getDelegateInstance(DelegateExecution execution) throws Exception {
         Optional<FlowTaskInstance> flowTaskInstance = flowableAdaptor.getTaskInstanceByActivityId(
                 execution.getCurrentActivityId(), FlowTaskUtil.getFlowInstanceId(execution));
         PreConditions.validExists(ResourceType.ODC_FLOW_TASK_INSTANCE, "activityId",
