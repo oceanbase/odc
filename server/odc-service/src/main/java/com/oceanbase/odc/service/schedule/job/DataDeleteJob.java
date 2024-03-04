@@ -83,7 +83,7 @@ public class DataDeleteJob extends AbstractDlmJob {
             logicTableConfig.setCheckMode(CheckMode.MULTIPLE_GET);
             dlmTask.setLogicTableConfig(logicTableConfig);
             dlmTask.setStatus(TaskStatus.PREPARING);
-            dlmTask.setJobType(JobType.QUICK_DELETE);
+            dlmTask.setJobType(parameters.getDeleteByUniqueKey() ? JobType.QUICK_DELETE : JobType.DEIRECT_DELETE);
             dlmTasks.add(dlmTask);
         });
         return dlmTasks;

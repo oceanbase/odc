@@ -56,7 +56,7 @@ public class DataSourceInfoBuilder {
                         .setObProxy(String.format("%s:%s", connectionConfig.getHost(), connectionConfig.getPort()));
                 dataSourceInfo
                         .setFullUserName(OBConsoleDataSourceFactory.getUsername(connectionConfig));
-                dataSourceInfo.setDatabaseType(DataBaseType.OCEANBASEV10);
+                dataSourceInfo.setDatabaseType(DataBaseType.OB_MYSQL);
                 dataSourceInfo.setSysUser(connectionConfig.getSysTenantUsername());
                 dataSourceInfo.setClusterName(connectionConfig.getClusterName());
                 if (StringUtils.isNotEmpty(connectionConfig.getSysTenantPassword())) {

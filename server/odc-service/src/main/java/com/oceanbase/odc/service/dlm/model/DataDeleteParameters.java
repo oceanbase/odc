@@ -39,4 +39,6 @@ public class DataDeleteParameters implements TaskParameters {
 
     private RateLimitConfiguration rateLimit;
 
+    private Boolean deleteByUniqueKey = true;
+
 }
