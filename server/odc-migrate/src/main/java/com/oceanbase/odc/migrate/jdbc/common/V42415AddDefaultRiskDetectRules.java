@@ -45,8 +45,8 @@ import lombok.extern.slf4j.Slf4j;
  * @Description: []
  */
 @Slf4j
-@Migratable(version = "4.2.4.12", description = "add default risk level detect rules")
-public class V42412AddDefaultRiskDetectRules implements JdbcMigratable {
+@Migratable(version = "4.2.4.15", description = "add default risk level detect rules")
+public class V42415AddDefaultRiskDetectRules implements JdbcMigratable {
     private static final String DEFAULT_HIGH_RISK_DETECT_RULE_VALUE =
             "{\"booleanOperator\":\"OR\",\"children\":[{\"expression\":\"ENVIRONMENT_NAME\",\"operator\":\"EQUALS\",\"type\":\"CONDITION\",\"value\":\"${com.oceanbase.odc.builtin-resource.collaboration.environment.prod.name}\"},{\"expression\":\"TASK_TYPE\",\"operator\":\"IN\",\"type\":\"CONDITION\",\"value\":[\"APPLY_PROJECT_PERMISSION\",\"APPLY_DATABASE_PERMISSION\"]}],\"type\":\"CONDITION_GROUP\"}";
     private static final String DEFAULT_HIGH_RISK_DETECT_NAME = "default high risk level detect rule";
