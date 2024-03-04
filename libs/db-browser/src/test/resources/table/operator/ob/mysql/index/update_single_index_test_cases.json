@@ -66,5 +66,39 @@
       }
     },
     "output": "ALTER TABLE `schema`.`table` DROP INDEX `a`;\nCREATE  INDEX `b` USING HASH ON `schema`.`table` (`a`) GLOBAL;\n"
+  },
+  {
+    "id": 3,
+    "name": "case3",
+    "description": "alter visibility",
+    "input": {
+      "previous": {
+        "name": "a",
+        "schemaName": "schema",
+        "tableName": "table",
+        "type": "NORMAL",
+        "global": true,
+        "visible": true,
+        "columnNames": [
+          "a"
+        ],
+        "algorithm": "BTREE",
+        "ordinalPosition": null
+      },
+      "current": {
+        "name": "a",
+        "schemaName": "schema",
+        "tableName": "table",
+        "type": "NORMAL",
+        "global": true,
+        "visible": false,
+        "columnNames": [
+          "a"
+        ],
+        "algorithm": "BTREE",
+        "ordinalPosition": null
+      }
+    },
+    "output": "ALTER TABLE `schema`.`table` ALTER INDEX `a` INVISIBLE;\n"
   }
 ]
