@@ -70,7 +70,7 @@ public class JobSecurityCheckerAspect{
     @Autowired
     private TaskFrameworkProperties taskFrameworkProperties;
 
-    @Pointcut("@within(com.oceanbase.odc.service.task.config.JobSecurityChecker)")
+    @Pointcut("@annotation(com.oceanbase.odc.service.task.config.JobSecurityChecker)")
     public void beforeRequest() {}
 
 

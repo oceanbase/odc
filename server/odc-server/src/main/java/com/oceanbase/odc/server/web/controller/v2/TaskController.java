@@ -44,7 +44,6 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @RestController
 @RequestMapping("/api/v2/task")
-@JobSecurityChecker
 public class TaskController {
 
     @Autowired
@@ -53,6 +52,7 @@ public class TaskController {
     @Autowired
     private DataMaskingService dataMaskingService;
 
+    @JobSecurityChecker
     @ApiOperation(value = "updateResult", notes = "update task result")
     @RequestMapping(value = "/result", method = RequestMethod.POST)
     public SuccessResponse<String> updateResult(@RequestBody DefaultTaskResult taskResult) {
@@ -63,6 +63,7 @@ public class TaskController {
         return Responses.success("ok");
     }
 
+    @JobSecurityChecker
     @ApiOperation(value = "heart", notes = "update heart request")
     @RequestMapping(value = "/heart", method = RequestMethod.POST)
     public SuccessResponse<String> heart(@RequestBody HeartRequest heart) {
@@ -70,6 +71,7 @@ public class TaskController {
         return Responses.success("ok");
     }
 
+    @JobSecurityChecker
     @ApiOperation(value = "querySensitiveColumn", notes = "query sensitive columns")
     @RequestMapping(value = "/querySensitiveColumn", method = RequestMethod.POST)
     public SuccessResponse<QuerySensitiveColumnResp> querySensitiveColumn(@RequestBody QuerySensitiveColumnReq req) {
