@@ -32,7 +32,7 @@ import lombok.extern.slf4j.Slf4j;
  * @since ODC_release_3.2.2
  */
 @Slf4j
-public class OBOracleDBMSOutputInitializer implements ConnectionInitializer {
+public class OracleDBMSOutputInitializer implements ConnectionInitializer {
 
     private static final int PL_LOG_CACHE_SIZE = 1000000;
 
