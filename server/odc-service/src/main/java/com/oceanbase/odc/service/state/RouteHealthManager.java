@@ -44,8 +44,8 @@ import lombok.extern.slf4j.Slf4j;
 @ConditionalOnProperty(value = {"odc.state.enabled"}, havingValue = "true")
 public class RouteHealthManager implements InitializingBean {
 
-    private static final Map<RouteInfo, RouteManageInfo> ROUTE_HEALTHY_MAP        = new ConcurrentHashMap<>();
-    private final ScheduledExecutorService               scheduledExecutorService = Executors.newScheduledThreadPool(1);
+    private static final Map<RouteInfo, RouteManageInfo> ROUTE_HEALTHY_MAP = new ConcurrentHashMap<>();
+    private final ScheduledExecutorService scheduledExecutorService = Executors.newScheduledThreadPool(1);
 
     @Value("${odc.state.host.expire_seconds:3600}")
     private Integer expireSeconds;
