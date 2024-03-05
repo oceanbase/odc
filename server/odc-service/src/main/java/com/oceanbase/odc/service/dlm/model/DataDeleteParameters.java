@@ -41,4 +41,14 @@ public class DataDeleteParameters implements TaskParameters {
 
     private Boolean deleteByUniqueKey = true;
 
+    private boolean needPrintSqlTrace = false;
+
+    private int readThreadCount;
+
+    private int writeThreadCount;
+
+    private int queryTimeout;
+
+    private int scanBatchSize;
+
 }

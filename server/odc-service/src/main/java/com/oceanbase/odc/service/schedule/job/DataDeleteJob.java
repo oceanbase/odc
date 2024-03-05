@@ -24,6 +24,8 @@ import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.shared.constant.TaskStatus;
 import com.oceanbase.odc.metadb.schedule.ScheduleTaskEntity;
+import com.oceanbase.odc.service.dlm.DataSourceInfoBuilder;
+import com.oceanbase.odc.service.dlm.model.DataArchiveTableConfig;
 import com.oceanbase.odc.service.dlm.model.DataDeleteParameters;
 import com.oceanbase.odc.service.dlm.model.DlmTask;
 import com.oceanbase.odc.service.dlm.utils.DataArchiveConditionUtil;
@@ -49,6 +51,12 @@ public class DataDeleteJob extends AbstractDlmJob {
         jobThread = Thread.currentThread();
 
         ScheduleTaskEntity taskEntity = (ScheduleTaskEntity) context.getResult();
+
+        // execute in task framework.
+        if (taskFrameworkProperties.isEnabled()) {
+            executeInTaskFramework(context);
+            return;
+        }
 
         List<DlmTask> dlmTasks = getTaskUnits(taskEntity);
 
@@ -88,5 +96,47 @@ public class DataDeleteJob extends AbstractDlmJob {
         });
         return dlmTasks;
     }
+
+
+    private void executeInTaskFramework(JobExecutionContext context) {
+        ScheduleTaskEntity taskEntity = (ScheduleTaskEntity) context.getResult();
+        DataDeleteParameters dataDeleteParameters = JsonUtils.fromJson(taskEntity.getParametersJson(),
+                DataDeleteParameters.class);
+        DLMJobParameters parameters = new DLMJobParameters();
+        parameters.setJobType(JobType.DELETE);
+        parameters.setTables(dataDeleteParameters.getTables());
+        for (DataArchiveTableConfig tableConfig : parameters.getTables()) {
+            tableConfig.setConditionExpression(StringUtils.isNotEmpty(tableConfig.getConditionExpression())
+                    ? DataArchiveConditionUtil.parseCondition(tableConfig.getConditionExpression(),
+                            dataDeleteParameters.getVariables(),
+                            context.getFireTime())
+                    : "");
+        }
+        parameters.setNeedPrintSqlTrace(dataDeleteParameters.isNeedPrintSqlTrace());
+        parameters
+                .setRateLimit(limiterService.getByOrderIdOrElseDefaultConfig(Long.parseLong(taskEntity.getJobName())));
+        parameters.setWriteThreadCount(dataDeleteParameters.getWriteThreadCount());
+        parameters.setReadThreadCount(dataDeleteParameters.getReadThreadCount());
+        parameters.setScanBatchSize(dataDeleteParameters.getScanBatchSize());
+        parameters
+                .setSourceDs(DataSourceInfoBuilder.build(
+                        databaseService.findDataSourceForConnectById(dataDeleteParameters.getDatabaseId())));
+        parameters
+                .setTargetDs(DataSourceInfoBuilder.build(
+                        databaseService.findDataSourceForConnectById(dataDeleteParameters.getDatabaseId())));
+        parameters.getSourceDs().setDatabaseName(dataDeleteParameters.getDatabaseName());
+        parameters.getTargetDs().setDatabaseName(dataDeleteParameters.getDatabaseName());
+        parameters.getSourceDs().setConnectionCount(2 * (parameters.getReadThreadCount()
+                + parameters.getWriteThreadCount()));
+        parameters.getTargetDs().setConnectionCount(parameters.getSourceDs().getConnectionCount());
+
+        Long jobId = publishJob(parameters);
+        scheduleTaskRepository.updateJobIdById(taskEntity.getId(), jobId);
+        scheduleTaskRepository.updateTaskResult(taskEntity.getId(), JsonUtils.toJson(parameters));
+        log.info("Publish data-delete job to task framework succeed,scheduleTaskId={},jobIdentity={}",
+                taskEntity.getId(),
+                jobId);
+    }
+
 
 }

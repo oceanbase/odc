@@ -164,7 +164,8 @@ public class DataArchivePreprocessor extends AbstractDlmJobPreprocessor {
         parameters.setReadThreadCount(
                 (int) (dlmConfiguration.getSingleTaskThreadPoolSize() * dlmConfiguration.getReadWriteRatio()
                         / (1 + dlmConfiguration.getReadWriteRatio())));
-        parameters.setWriteThreadCount(dlmConfiguration.getDlmThreadPoolSize() - parameters.getReadThreadCount());
+        parameters
+                .setWriteThreadCount(dlmConfiguration.getSingleTaskThreadPoolSize() - parameters.getReadThreadCount());
         parameters.setScanBatchSize(dlmConfiguration.getDefaultScanBatchSize());
         parameters.setQueryTimeout(dlmConfiguration.getTaskConnectionQueryTimeout());
         parameters.setShardingStrategy(dlmConfiguration.getShardingStrategy());
