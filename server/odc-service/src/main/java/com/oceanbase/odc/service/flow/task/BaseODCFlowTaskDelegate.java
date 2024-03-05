@@ -244,7 +244,7 @@ public abstract class BaseODCFlowTaskDelegate<T> extends BaseRuntimeFlowableDele
 
     @Override
     public void callback(@NotNull long flowInstanceId, @NotNull long flowTaskInstanceId,
-            @NotNull FlowNodeStatus flowNodeStatus,  Map<String, Object> approvalVariables) {
+            @NotNull FlowNodeStatus flowNodeStatus, Map<String, Object> approvalVariables) {
         flowTaskCallBackApprovalService.approval(flowInstanceId, flowTaskInstanceId, flowNodeStatus, approvalVariables);
     }
 

@@ -34,5 +34,6 @@ public interface FlowTaskCallBack {
      * @param flowTaskInstanceId reference flow task instance node#id
      * @param flowNodeStatus flow node status
      */
-    void callback(long flowInstanceId, long flowTaskInstanceId, FlowNodeStatus flowNodeStatus,  Map<String, Object> approvalVariables);
+    void callback(long flowInstanceId, long flowTaskInstanceId, FlowNodeStatus flowNodeStatus,
+            Map<String, Object> approvalVariables);
 }
