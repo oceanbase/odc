@@ -290,4 +290,38 @@ pom.xml
 typescript
 [1m[7m%[27m[1m[0m                                                   ]2;unix@workpc:~/Code/java/opensource/odcfork]1;..ource/odcfork]7;file://workpc.local/Users/unix/Code/java/opensource/odcfork\[0m[27m[24m[J
 [1m[34m#[00m [36munix [00m@ [32mworkpc [00min [1m[33m~/Code/java/opensource/odcfork[00m [00mon[34m git:[36myaobin_task_trip_flow [31mx[00m [17:37:16] 
+[1m[31m$ [00m[K[?1h=[?2004hls[32ml[32ms[39m[32mc[32md[39m ..[4m.[4m.[24m[32mg[32mi[39mt[4m [4mc[24mommit -m 'modify partition'[32D[32mg[32mi[32mt[39m[24m [24mc[9C[33m'[33mm[33mo[33md[33mi[33mf[33my[33m [33mp[33ma[33mr[33mt[33mi[33mt[33mi[33mo[33mn[33m'[39m[28Dadd .     [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [23D[4m.[24m[?1l>[?2004l
+]2;git add .]1;git[1m[7m%[27m[1m[0m                                                   ]2;unix@workpc:~/Code/java/opensource/odcfork]1;..ource/odcfork]7;file://workpc.local/Users/unix/Code/java/opensource/odcfork\[0m[27m[24m[J
+[1m[34m#[00m [36munix [00m@ [32mworkpc [00min [1m[33m~/Code/java/opensource/odcfork[00m [00mon[34m git:[36myaobin_task_trip_flow [31mx[00m [17:37:19] 
+[1m[31m$ [00m[K[?1h=[?2004hgit add .[9D[32mg[32mi[32mt[39m[5C[4m.[24m[9D[32ml[32ms[39m[39m      [24m [32mc[32md[39m ..[4m.[4m.[24m[32mg[32mi[39mt[4m [4mc[24mommit -m 'modify partition'[32D[32mg[32mi[32mt[39m[24m [24mc[9C[33m'[33mm[33mo[33md[33mi[33mf[33my[33m [33mp[33ma[33mr[33mt[33mi[33mt[33mi[33mo[33mn[33m'[39m[33m [33m'[39m[33mt[33m'[39m[33me[33m'[39m[33ms[33m'[39m[33mt[33m'[39m[33m'[39m[39m [33m'[39m[39m [33m'[39m[39m [33ma[33m'[39m[33ms[33m'[39m[33mk[33m'[39m[33m [33m'[39m[33mc[33m'[39m[33ml[33m'[39m[33ml[33m'[39m[33m'[39m[39m [33m'[39m[39m [33ma[33m'[39m[33ml[33m'[39m[33ml[33m'[39m[33mb[33m'[39m[33ma[33m'[39m[33mc[33m'[39m[33mk[33m'[39m[?1l>[?2004l
+]2;git commit -m 'modify partition task callback']1;git[yaobin_task_trip_flow d33c73834] modify partition task callback
+ 3 files changed, 295 insertions(+), 7 deletions(-)
+ create mode 100644 typescript
+[1m[7m%[27m[1m[0m                                                   ]2;unix@workpc:~/Code/java/opensource/odcfork]1;..ource/odcfork]7;file://workpc.local/Users/unix/Code/java/opensource/odcfork\[0m[27m[24m[J
+[1m[34m#[00m [36munix [00m@ [32mworkpc [00min [1m[33m~/Code/java/opensource/odcfork[00m [00mon[34m git:[36myaobin_task_trip_flow [32mo[00m [17:37:29] 
+[1m[31m$ [00m[K[?1h=[?2004hgit commit -m 'modify partition task callback'[46D[32mg[32mi[32mt[39m[11C[33m'[33mm[33mo[33md[33mi[33mf[33my[33m [33mp[33ma[33mr[33mt[33mi[33mt[33mi[33mo[33mn[33m [33mt[33ma[33ms[33mk[33m [33mc[33ma[33ml[33ml[33mb[33ma[33mc[33mk[33m'[39m[42Dadd .     [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [37D[4m.[24m[9D[32ml[32ms[39m[39m      [24m [32mc[32md[39m ..[4m.[4m.[24m[32mg[32mi[39mt[4m [4mc[24mommit -m 'modify partition'[32D[32mg[32mi[32mt[39m[24m [24mc[9C[33m'[33mm[33mo[33md[33mi[33mf[33my[33m [33mp[33ma[33mr[33mt[33mi[33mt[33mi[33mo[33mn[33m'[39m[28Dadd .     [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [23D[4m.[24mmerg[4me[24m offical/dev/4.2.x[19D[24me[18C[27D[39m [39m [39m                         [27Dg[32mg[39m[32mg[39m[90mit commit -m 'modify partition task callback'[39m[45D[32mg[39m[39mi[39mt[39m [39mf[39me[39mt[39mc[39mh[39m [39mo[39mf[39mf[39mi[39mc[39ma[39ml[39m [39md[39me[39mv[39m/[39m4[39m.[39m2[39m.[39mx[39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [19D[27D[32mg[32mi[32mt[39m[24C[23Dmerge[8C/yaobin_task_trip_flow[35Dfetch[8C dev/4.2.x            [12D[23Dmerge[8C/yaobin_task_trip_flow[?1l>[?2004l
+]2;git merge offical/yaobin_task_trip_flow]1;git已经是最新的。
+[1m[7m%[27m[1m[0m                                                   ]2;unix@workpc:~/Code/java/opensource/odcfork]1;..ource/odcfork]7;file://workpc.local/Users/unix/Code/java/opensource/odcfork\[0m[27m[24m[J
+[1m[34m#[00m [36munix [00m@ [32mworkpc [00min [1m[33m~/Code/java/opensource/odcfork[00m [00mon[34m git:[36myaobin_task_trip_flow [31mx[00m [17:37:42] 
+[1m[31m$ [00m[K[?1h=[?2004hgit merge offical/yaobin_task_trip_flow[39D[32mg[32mi[32mt[39m[36C[35Dcommit -m 'modify partition task callback'[32D[33m'[33mm[33mo[33md[33mi[33mf[33my[33m [33mp[33ma[33mr[33mt[33mi[33mt[33mi[33mo[33mn[33m [33mt[33ma[33ms[33mk[33m [33mc[33ma[33ml[33ml[33mb[33ma[33mc[33mk[33m'[39m[42Dadd .     [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [37D[4m.[24m[9D[32ml[32ms[39m[39m      [24m [32mc[32md[39m ..[4m.[4m.[24m[32mg[32mi[39mt[4m [4mc[24mommit -m 'modify partition'[32D[32mg[32mi[32mt[39m[24m [24mc[9C[33m'[33mm[33mo[33md[33mi[33mf[33my[33m [33mp[33ma[33mr[33mt[33mi[33mt[33mi[33mo[33mn[33m'[39m[28Dadd .     [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [39m [23D[4m.[24mmerg[4me[24m offical/dev/4.2.x[19D[24me[18C[?1l>[?2004l
+]2;git merge offical/dev/4.2.x]1;git错误：Could not read e8aa24c160014ff7e884f1b5b41bbfe3f9fb77a5
+无法合并子模组 client （提交未跟随合并基线）
+冲突（子模组）：合并冲突于 client
+自动合并 server/odc-service/src/main/java/com/oceanbase/odc/service/flow/task/PartitionPlanRuntimeFlowableTask.java
+自动合并 server/odc-service/src/main/java/com/oceanbase/odc/service/flow/task/PreCheckRuntimeFlowableTask.java
+子模组内的递归合并现在只支持简单的情况。
+请手动合并每个有冲突的子模组。
+这可以通过下列步骤完成：
+ - 进入子模组（client），要么合并提交 bc019a62
+   要么更新至已合并这些变更的提交
+ - 回到上级项目并运行：
+
+      git add client
+
+   来记录上述的合并或更新
+ - 解决上级项目中的其他冲突
+ - 提交上级项目中的结果索引
+自动合并失败，修正冲突然后提交修正的结果。
+[1m[7m%[27m[1m[0m                                                   ]2;unix@workpc:~/Code/java/opensource/odcfork]1;..ource/odcfork]7;file://workpc.local/Users/unix/Code/java/opensource/odcfork\[0m[27m[24m[J
+[1m[34m#[00m [36munix [00m@ [32mworkpc [00min [1m[33m~/Code/java/opensource/odcfork[00m [00mon[34m git:[36myaobin_task_trip_flow [31mx[00m [17:37:49] C:[31m1[00m
 [1m[31m$ [00m[K[?1h=[?2004h

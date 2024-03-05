@@ -45,6 +45,7 @@ import com.oceanbase.odc.service.partitionplan.model.PartitionPlanPreViewResp;
 import com.oceanbase.odc.service.partitionplan.model.PartitionPlanTableConfig;
 import com.oceanbase.odc.service.quartz.util.ScheduleTaskUtils;
 import com.oceanbase.odc.service.schedule.ScheduleService;
+import com.oceanbase.odc.service.schedule.model.JobType;
 import com.oceanbase.odc.service.session.factory.DefaultConnectSessionFactory;
 
 import lombok.extern.slf4j.Slf4j;
@@ -153,6 +154,7 @@ public class PartitionPlanJob implements OdcJob {
         }
         taskParameters.setSqlContent(sqlContent.toString());
         taskParameters.setTimeoutMillis(timeoutMillis);
+        taskParameters.setParentJobType(JobType.PARTITION_PLAN);
         CreateFlowInstanceReq flowInstanceReq = new CreateFlowInstanceReq();
         flowInstanceReq.setParameters(taskParameters);
         flowInstanceReq.setTaskType(TaskType.ASYNC);
