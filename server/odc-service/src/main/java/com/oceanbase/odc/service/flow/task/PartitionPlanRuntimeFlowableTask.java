@@ -86,8 +86,7 @@ public class PartitionPlanRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Vo
         taskService.fail(taskId, 100, generateResult(false));
         super.onFailure(taskId, taskService);
         PartitionPlanTaskTraceContextHolder.clear();
-        flowTaskCallBackApprovalService.approval(getFlowInstanceId(), getTargetTaskInstanceId(),
-            FlowNodeStatus.FAILED);
+
     }
 
     @Override
@@ -97,8 +96,6 @@ public class PartitionPlanRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Vo
         super.onSuccessful(taskId, taskService);
         log.info("Partition plan task succeed, taskId={}", taskId);
         PartitionPlanTaskTraceContextHolder.clear();
-        flowTaskCallBackApprovalService.approval(getFlowInstanceId(), getTargetTaskInstanceId(),
-            FlowNodeStatus.COMPLETED);
     }
 
     @Override
@@ -106,8 +103,6 @@ public class PartitionPlanRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Vo
         taskService.fail(taskId, 100, generateResult(false));
         super.onTimeout(taskId, taskService);
         PartitionPlanTaskTraceContextHolder.clear();
-        flowTaskCallBackApprovalService.approval(getFlowInstanceId(), getTargetTaskInstanceId(),
-            FlowNodeStatus.EXPIRED);
     }
 
     @Override
