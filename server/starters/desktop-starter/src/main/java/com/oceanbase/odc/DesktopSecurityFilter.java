@@ -50,7 +50,6 @@ public class DesktopSecurityFilter implements Filter {
     @Override
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
             throws ServletException, IOException {
-
         SecuritySession session = securityManager.getSession(null);
         if (session == null) {
             log.info("Can not get the session from request for security framework, requestURI={}",
