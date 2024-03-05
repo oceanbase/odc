@@ -33,7 +33,9 @@ import org.springframework.stereotype.Service;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
+import com.oceanbase.odc.core.shared.constant.FlowStatus;
 import com.oceanbase.odc.core.shared.constant.TaskErrorStrategy;
+import com.oceanbase.odc.metadb.flow.FlowInstanceRepository;
 import com.oceanbase.odc.metadb.partitionplan.PartitionPlanEntity;
 import com.oceanbase.odc.metadb.partitionplan.PartitionPlanRepository;
 import com.oceanbase.odc.metadb.partitionplan.PartitionPlanTableEntity;
@@ -85,6 +87,8 @@ public class PartitionPlanScheduleService {
     private PartitionPlanTablePartitionKeyRepository partitionPlanTablePartitionKeyRepository;
     @Autowired
     private FlowInstanceService flowInstanceService;
+    @Autowired
+    private FlowInstanceRepository flowInstanceRepository;
 
     public PartitionPlanConfig getPartitionPlan(@NonNull Long flowInstanceId) {
         Long fId = this.flowInstanceService.mapFlowInstance(flowInstanceId, FlowInstance::getId, false);
@@ -201,9 +205,13 @@ public class PartitionPlanScheduleService {
         if (CollectionUtils.isEmpty(ppIds)) {
             return;
         }
-        ppIds = this.partitionPlanRepository.findByIdIn(ppIds).stream()
-                .filter(e -> Boolean.TRUE.equals(e.getEnabled()))
-                .map(PartitionPlanEntity::getId).collect(Collectors.toList());
+        List<PartitionPlanEntity> ppEntities = this.partitionPlanRepository.findByIdIn(ppIds)
+                .stream().filter(e -> Boolean.TRUE.equals(e.getEnabled())).collect(Collectors.toList());
+        Set<Long> flowInstIds = ppEntities.stream()
+                .map(PartitionPlanEntity::getFlowInstanceId)
+                .filter(id -> id > 0).collect(Collectors.toSet());
+        this.flowInstanceRepository.updateStatusByIds(flowInstIds, FlowStatus.CANCELLED);
+        ppIds = ppEntities.stream().map(PartitionPlanEntity::getId).collect(Collectors.toList());
         if (CollectionUtils.isEmpty(ppIds)) {
             return;
         }
