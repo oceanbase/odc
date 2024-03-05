@@ -154,7 +154,7 @@ public class PartitionPlanJob implements OdcJob {
         }
         taskParameters.setSqlContent(sqlContent.toString());
         taskParameters.setTimeoutMillis(timeoutMillis);
-        taskParameters.setParentTaskType(JobType.PARTITION_PLAN);
+        taskParameters.setParentJobType(JobType.PARTITION_PLAN);
         CreateFlowInstanceReq flowInstanceReq = new CreateFlowInstanceReq();
         flowInstanceReq.setParameters(taskParameters);
         flowInstanceReq.setTaskType(TaskType.ASYNC);

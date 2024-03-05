@@ -295,8 +295,8 @@ public class EventBuilder {
                 if (taskEntity.getTaskType() == TaskType.ASYNC) {
                     DatabaseChangeParameters parameters = JsonUtils.fromJson(taskEntity.getParametersJson(),
                             DatabaseChangeParameters.class);
-                    if (Objects.nonNull(parameters.getParentTaskType())) {
-                        labels.putIfNonNull(TASK_TYPE, parameters.getParentTaskType());
+                    if (Objects.nonNull(parameters.getParentJobType())) {
+                        labels.putIfNonNull(TASK_TYPE, parameters.getParentJobType());
                         labels.putIfNonNull(TASK_ID, parentInstanceId);
                     } else {
                         labels.putIfNonNull(TASK_ID, flowInstances.get(0).getId());

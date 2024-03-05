@@ -49,7 +49,7 @@ public class DatabaseChangeParameters implements Serializable, TaskParameters {
     private Boolean generateRollbackPlan;
     private boolean modifyTimeoutIfTimeConsumingSqlExists = true;
     // internal usage for notification
-    private JobType parentTaskType;
+    private JobType parentJobType;
 
     public void setErrorStrategy(String errorStrategy) {
         this.errorStrategy = TaskErrorStrategy.valueOf(errorStrategy);
