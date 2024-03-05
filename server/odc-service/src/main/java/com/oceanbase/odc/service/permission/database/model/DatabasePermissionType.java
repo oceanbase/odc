@@ -67,6 +67,10 @@ public enum DatabasePermissionType implements Translatable {
     public static DatabasePermissionType from(@NonNull SqlType sqlType) {
         switch (sqlType) {
             case SELECT:
+            case SHOW:
+            case EXPLAIN:
+            case DESC:
+            case USE_DB:
                 return QUERY;
             case UPDATE:
             case DELETE:
@@ -76,6 +80,8 @@ public enum DatabasePermissionType implements Translatable {
             case ALTER:
             case REPLACE:
             case TRUNCATE:
+            case OTHERS:
+            case UNKNOWN:
                 return CHANGE;
             default:
                 return null;

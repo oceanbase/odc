@@ -1,0 +1,128 @@
+# ODC code owners, refer to https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+# These owners will be the default owners for everything in the repo.
+*                                   @yhilmare @yizhouxw
+
+# libs
+/libs/db-browser/                   @yhilmare @PeachThinking
+/libs/ob-sql-parser/                @yhilmare @PeachThinking
+
+# 3rd-party
+/server/3rd-party/                  @MarkPotato777 @yhilmare
+
+# common
+/server/odc-common/                 @yhilmare @yizhouxw
+
+# migrate
+/server/odc-migrate/                @MarkPotato777 @yhilmare
+
+# core
+/server/odc-core/                   @yhilmare @yizhouxw
+/server/odc-core/**/alarm/          @LuckyPickleZZ
+/server/odc-core/**/authority/      @yhilmare
+/server/odc-core/**/datamasking/    @smallsheeeep
+/server/odc-core/**/datasource/     @yhilmare
+/server/odc-core/**/flow/           @yhilmare
+/server/odc-core/**/migrate/        @yhilmare @yizhouxw
+/server/odc-core/**/session/        @yhilmare
+/server/odc-core/**/shared/         @yhilmare @yizhouxw
+/server/odc-core/**/sql/            @yhilmare @LuckyPickleZZ
+/server/odc-core/**/task/           @yhilmare @krihy
+
+# service common
+/server/odc-service/                                  @yhilmare @yizhouxw
+/server/odc-service/**/config/                        @yhilmare @yizhouxw
+/server/odc-service/**/metadb/                        @yhilmare @yizhouxw
+/server/odc-service/**/service/common/                @yhilmare @MarkPotato777
+
+# service business
+/server/odc-service/**/service/audit/                 @MarkPotato777 @yizhouxw
+/server/odc-service/**/service/automation/            @LuckyPickleZZ @ungreat
+/server/odc-service/**/service/captcha/               @MarkPotato777 @smallsheeeep
+/server/odc-service/**/service/collaboration/         @MarkPotato777 @smallsheeeep
+/server/odc-service/**/service/config/                @MarkPotato777 @yizhouxw
+/server/odc-service/**/service/datasecurity/          @smallsheeeep @yhilmare
+/server/odc-service/**/service/datatransfer/          @LuckyPickleZZ @yhilmare
+/server/odc-service/**/service/db/                    @PeachThinking @yhilmare
+/server/odc-service/**/service/diagnose/              @LuckyPickleZZ @yizhouxw
+/server/odc-service/**/service/dispatch/              @yhilmare  @yizhouxw
+/server/odc-service/**/service/dlm/                   @guowl3 @smallsheeeep
+/server/odc-service/**/service/dml/                   @LuckyPickleZZ @PeachThinking
+/server/odc-service/**/service/encryption/            @smallsheeeep @yizhouxw
+/server/odc-service/**/service/feature/               @MarkPotato777 @yizhouxw
+/server/odc-service/**/service/flow/                  @yhilmare @krihy
+/server/odc-service/**/service/i18n/                  @LuckyPickleZZ
+/server/odc-service/**/service/iam/                   @MarkPotato777 @smallsheeeep
+/server/odc-service/**/service/info/                  @yhilmare @yizhouxw
+/server/odc-service/**/service/integration/           @smallsheeeep @ungreat
+/server/odc-service/**/service/lab/                   @LuckyPickleZZ @ungreat
+/server/odc-service/**/service/monitor/               @ungreat @yizhouxw
+/server/odc-service/**/service/notification/          @LuckyPickleZZ @MarkPotato777
+/server/odc-service/**/service/objectstorage/         @MarkPotato777 @yizhouxw
+/server/odc-service/**/service/onlineschemachange/    @krihy @LuckyPickleZZ
+/server/odc-service/**/service/partitionplan/         @guowl3 @yhilmare
+/server/odc-service/**/service/permission/            @smallsheeeep @yhilmare
+/server/odc-service/**/service/pldebug/               @yhilmare @krihy
+/server/odc-service/**/service/plugin/                @yhilmare @krihy
+/server/odc-service/**/service/quartz/                @guowl3 @yhilmare
+/server/odc-service/**/service/requlation/            @MarkPotato777 @smallsheeeep
+/server/odc-service/**/service/resourcegroup/         @MarkPotato777 @smallsheeeep
+/server/odc-service/**/service/resultset/             @LuckyPickleZZ @PeachThinking
+/server/odc-service/**/service/rollbackplan/          @PeachThinking @MarkPotato777
+/server/odc-service/**/service/schedule/              @guowl3 @yhilmare
+/server/odc-service/**/service/script/                @LuckyPickleZZ @yizhouxw
+/server/odc-service/**/service/session/               @yhilmare @LuckyPickleZZ
+/server/odc-service/**/service/shadowtable/           @MarkPotato777 @PeachThinking
+/server/odc-service/**/service/snippet/               @LuckyPickleZZ @yizhouxw
+/server/odc-service/**/service/sqlcheck/              @yhilmare @PeachThinking
+/server/odc-service/**/service/structurecompare/      @PeachThinking @yhilmare
+/server/odc-service/**/service/systemconfig/          @MarkPotato777  @yizhouxw
+/server/odc-service/**/service/task/                  @yhilmare @krihy @yizhouxw
+/server/odc-service/**/service/websocket/             @LuckyPickleZZ  @yizhouxw
+
+# plugins
+/server/plugins/                                      @yhilmare @yizhouxw
+/server/plugins/connect-plugin-doris/                 @yhilmare @krihy
+/server/plugins/connect-plugin-mysql/                 @yhilmare @krihy
+/server/plugins/connect-plugin-ob-mysql/              @yhilmare @krihy
+/server/plugins/connect-plugin-ob-oracle/             @yhilmare @krihy
+/server/plugins/connect-plugin-oracle/                @yhilmare @krihy
+
+/server/plugins/schema-plugin-api/                    @PeachThinking @MarkPotato777
+/server/plugins/schema-plugin-doris/                  @PeachThinking @MarkPotato777
+/server/plugins/schema-plugin-mysql/                  @PeachThinking @MarkPotato777
+/server/plugins/schema-plugin-ob-mysql/               @PeachThinking @MarkPotato777
+/server/plugins/schema-plugin-ob-oracle/              @PeachThinking @MarkPotato777
+/server/plugins/schema-plugin-odp-sharding-ob-mysql/  @PeachThinking @MarkPotato777
+/server/plugins/schema-plugin-oracle/                 @PeachThinking @MarkPotato777
+
+/server/plugins/task-plugin-api/                      @LuckyPickleZZ @yhilmare
+/server/plugins/task-plugin-doris/                    @LuckyPickleZZ @yhilmare
+/server/plugins/task-plugin-mysql/                    @LuckyPickleZZ @yhilmare
+/server/plugins/task-plugin-ob-mysql/                 @LuckyPickleZZ @yhilmare
+/server/plugins/task-plugin-ob-oracle/                @LuckyPickleZZ @yhilmare
+/server/plugins/task-plugin-oracle/                   @LuckyPickleZZ @yhilmare
+
+
+# starters
+/server/starters/                                     @yhilmare @yizhouxw
+/server/starters/desktop-starter/                     @yhilmare @yizhouxw
+/server/starters/web-starter/                         @yhilmare @MarkPotato777
+
+
+# CI/CD
+/.github/                    @smallsheeeep @yhilmare @yizhouxw
+/builds/                     @smallsheeeep @yhilmare @yizhouxw
+/script/                     @smallsheeeep @yhilmare @yizhouxw
+/distribution/               @smallsheeeep @yhilmare @yizhouxw
+/server/odc-test/            @smallsheeeep @yhilmare @yizhouxw
+/server/integration-test/    @smallsheeeep @yhilmare @yizhouxw
+/server/test-script/         @smallsheeeep @yhilmare @yizhouxw
+
+
+# docs
+/docs/                      @Jane201510 @yhilmare @yizhouxw
+CHANGELOG.md                @Jane201510 @yhilmare @yizhouxw
+CHANGELOG-zh-CN.md          @Jane201510 @yhilmare @yizhouxw
+README.md                   @Jane201510 @yizhouxw
+README-zh.md                @Jane201510 @yizhouxw
