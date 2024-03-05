@@ -39,7 +39,7 @@ import com.oceanbase.odc.service.task.config.TaskFrameworkProperties;
  * @since 4.2.4
  */
 @Component
-public class LocalRequestApiFilter extends OncePerRequestFilter {
+public class LocalRequestFilter extends OncePerRequestFilter {
 
     private static String[] limitLocalAccessList = new String[] {
             "/api/v2/task/heart",
@@ -58,7 +58,7 @@ public class LocalRequestApiFilter extends OncePerRequestFilter {
                 Arrays.stream(limitLocalAccessList)
                         .anyMatch(url -> StringUtils.containsIgnoreCase(request.getRequestURI(), url))) {
             PreConditions.validHasPermission(WebRequestUtils.isLocalRequest(request),
-                    ErrorCodes.AccessDenied, "Request access denied, remote address=" + request.getRemoteAddr());
+                    ErrorCodes.AccessDenied, "Access denied, remote address=" + request.getRemoteAddr());
         }
         filterChain.doFilter(request, response);
     }

@@ -56,7 +56,7 @@ public class DesktopSecurityFilter implements Filter {
 
         // Limit only localhost access odc api in client mode
         PreConditions.validHasPermission(WebRequestUtils.isLocalRequest(request),
-                ErrorCodes.AccessDenied, "Request access denied, remote address=" + request.getRemoteAddr());
+                ErrorCodes.AccessDenied, "Access denied, remote address=" + request.getRemoteAddr());
 
         SecuritySession session = securityManager.getSession(null);
         if (session == null) {
