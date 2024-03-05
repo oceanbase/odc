@@ -17,7 +17,6 @@ package com.oceanbase.odc.service.flow.task;
 
 import java.io.File;
 import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -29,7 +28,6 @@ import org.flowable.engine.delegate.DelegateExecution;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import com.oceanbase.odc.common.json.JsonUtils;
-import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.flow.exception.BaseFlowException;
 import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.core.shared.constant.DialectType;
@@ -39,13 +37,13 @@ import com.oceanbase.odc.core.sql.split.OffsetString;
 import com.oceanbase.odc.core.sql.split.SqlStatementIterator;
 import com.oceanbase.odc.metadb.task.JobEntity;
 import com.oceanbase.odc.metadb.task.TaskEntity;
-import com.oceanbase.odc.service.common.util.SqlUtils;
 import com.oceanbase.odc.service.connection.model.ConnectProperties;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.datasecurity.DataMaskingService;
 import com.oceanbase.odc.service.flow.exception.ServiceTaskError;
 import com.oceanbase.odc.service.flow.task.model.DatabaseChangeParameters;
 import com.oceanbase.odc.service.flow.task.model.DatabaseChangeResult;
+import com.oceanbase.odc.service.flow.task.model.DatabaseChangeSqlContent;
 import com.oceanbase.odc.service.flow.task.model.FlowTaskProperties;
 import com.oceanbase.odc.service.flow.task.model.RollbackPlanTaskResult;
 import com.oceanbase.odc.service.flow.task.util.DatabaseChangeFileReader;
@@ -92,7 +90,7 @@ public class DatabaseChangeRuntimeFlowableTaskCopied extends BaseODCFlowTaskDele
     @Autowired
     private FlowTaskProperties flowTaskProperties;
     @Autowired
-    private DatabaseChangeFileReader databaseChangeFileReader;
+    private ObjectStorageFacade storageFacade;
 
     private volatile Long jobId;
     private volatile boolean isSuccessful = false;
@@ -253,20 +251,12 @@ public class DatabaseChangeRuntimeFlowableTaskCopied extends BaseODCFlowTaskDele
         InputStream uploadFileInputStream = null;
         try {
             taskParameters.setAutoModifyTimeout(false);
-            if (StringUtils.isNotBlank(parameters.getSqlContent())) {
-                userInputSqls = SqlUtils.splitWithOffset(dialectType, parameters.getSqlContent(),
-                        parameters.getDelimiter(), true);
-            }
-            if (CollectionUtils.isNotEmpty(parameters.getSqlObjectIds())) {
-                String bucketName = "async".concat(File.separator).concat(creatorId.toString());
-                uploadFileInputStream =
-                        databaseChangeFileReader.readInputStreamFromSqlObjects(parameters, bucketName, -1);
-                if (uploadFileInputStream != null) {
-                    uploadFileSqlIterator = SqlUtils.iterator(dialectType, parameters.getDelimiter(),
-                            uploadFileInputStream,
-                            StandardCharsets.UTF_8);
-                }
-            }
+            DatabaseChangeSqlContent sqlContent =
+                    DatabaseChangeFileReader.getSqlContent(storageFacade, parameters, dialectType,
+                            "async".concat(File.separator).concat(creatorId.toString()));
+            userInputSqls = sqlContent.getUserInputSqls();
+            uploadFileSqlIterator = sqlContent.getUploadFileSqlIterator();
+            uploadFileInputStream = sqlContent.getUploadFileInputStream();
             while (CollectionUtils.isNotEmpty(userInputSqls)
                     || (uploadFileSqlIterator != null && uploadFileSqlIterator.hasNext())) {
                 String sql = CollectionUtils.isNotEmpty(userInputSqls) ? userInputSqls.remove(0).getStr()

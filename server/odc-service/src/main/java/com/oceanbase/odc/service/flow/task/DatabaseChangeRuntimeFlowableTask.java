@@ -17,7 +17,6 @@ package com.oceanbase.odc.service.flow.task;
 
 import java.io.File;
 import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
@@ -27,7 +26,6 @@ import org.flowable.engine.delegate.DelegateExecution;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import com.oceanbase.odc.common.json.JsonUtils;
-import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.flow.exception.BaseFlowException;
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionUtil;
@@ -38,7 +36,6 @@ import com.oceanbase.odc.core.sql.split.OffsetString;
 import com.oceanbase.odc.core.sql.split.SqlCommentProcessor;
 import com.oceanbase.odc.core.sql.split.SqlStatementIterator;
 import com.oceanbase.odc.metadb.task.TaskEntity;
-import com.oceanbase.odc.service.common.util.SqlUtils;
 import com.oceanbase.odc.service.connection.model.ConnectProperties;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.datasecurity.DataMaskingService;
@@ -48,6 +45,7 @@ import com.oceanbase.odc.service.flow.exception.ServiceTaskError;
 import com.oceanbase.odc.service.flow.exception.ServiceTaskExpiredException;
 import com.oceanbase.odc.service.flow.task.model.DatabaseChangeParameters;
 import com.oceanbase.odc.service.flow.task.model.DatabaseChangeResult;
+import com.oceanbase.odc.service.flow.task.model.DatabaseChangeSqlContent;
 import com.oceanbase.odc.service.flow.task.model.FlowTaskProperties;
 import com.oceanbase.odc.service.flow.task.model.RollbackPlanTaskResult;
 import com.oceanbase.odc.service.flow.task.util.DatabaseChangeFileReader;
@@ -90,9 +88,9 @@ public class DatabaseChangeRuntimeFlowableTask extends BaseODCFlowTaskDelegate<D
     private TaskService taskService;
     @Autowired
     private FlowTaskProperties flowTaskProperties;
-    @Autowired
-    private DatabaseChangeFileReader databaseChangeFileReader;
     private boolean autoModifyTimeout = false;
+    @Autowired
+    private ObjectStorageFacade storageFacade;
 
     @Override
     public boolean cancel(boolean mayInterruptIfRunning, Long taskId, TaskService taskService) {
@@ -229,19 +227,12 @@ public class DatabaseChangeRuntimeFlowableTask extends BaseODCFlowTaskDelegate<D
         SqlStatementIterator uploadFileSqlIterator = null;
         InputStream uploadFileInputStream = null;
         try {
-            String delimiter = parameters.getDelimiter();
-            if (StringUtils.isNotBlank(parameters.getSqlContent())) {
-                userInputSqls = SqlUtils.splitWithOffset(dialectType, parameters.getSqlContent(), delimiter, true);
-            }
-            if (CollectionUtils.isNotEmpty(parameters.getSqlObjectIds())) {
-                String bucketName = "async".concat(File.separator).concat(creatorId.toString());
-                uploadFileInputStream =
-                        databaseChangeFileReader.readInputStreamFromSqlObjects(parameters, bucketName, -1);
-                if (uploadFileInputStream != null) {
-                    uploadFileSqlIterator =
-                            SqlUtils.iterator(dialectType, delimiter, uploadFileInputStream, StandardCharsets.UTF_8);
-                }
-            }
+            DatabaseChangeSqlContent sqlContent =
+                    DatabaseChangeFileReader.getSqlContent(storageFacade, parameters, dialectType,
+                            "async".concat(File.separator).concat(creatorId.toString()));
+            userInputSqls = sqlContent.getUserInputSqls();
+            uploadFileSqlIterator = sqlContent.getUploadFileSqlIterator();
+            uploadFileInputStream = sqlContent.getUploadFileInputStream();
             while (CollectionUtils.isNotEmpty(userInputSqls)
                     || (uploadFileSqlIterator != null && uploadFileSqlIterator.hasNext())) {
                 String sql = CollectionUtils.isNotEmpty(userInputSqls) ? userInputSqls.remove(0).getStr()

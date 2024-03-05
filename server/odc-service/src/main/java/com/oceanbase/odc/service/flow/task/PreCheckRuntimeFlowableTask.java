@@ -61,6 +61,7 @@ import com.oceanbase.odc.service.flow.task.model.PreCheckTaskProperties;
 import com.oceanbase.odc.service.flow.task.model.SqlCheckTaskResult;
 import com.oceanbase.odc.service.flow.task.util.DatabaseChangeFileReader;
 import com.oceanbase.odc.service.flow.util.FlowTaskUtil;
+import com.oceanbase.odc.service.objectstorage.ObjectStorageFacade;
 import com.oceanbase.odc.service.onlineschemachange.model.OnlineSchemaChangeParameters;
 import com.oceanbase.odc.service.permission.database.model.DatabasePermissionType;
 import com.oceanbase.odc.service.permission.database.model.UnauthorizedDatabase;
@@ -104,11 +105,11 @@ public class PreCheckRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Void> {
     @Autowired
     private DatabaseService databaseService;
     @Autowired
-    private DatabaseChangeFileReader databaseChangeFileReader;
-    @Autowired
     private SqlCheckService sqlCheckService;
     @Autowired
     private PreCheckTaskProperties preCheckTaskProperties;
+    @Autowired
+    private ObjectStorageFacade storageFacade;
 
     private static final String CHECK_RESULT_FILE_NAME = "sql-check-result.json";
 
@@ -371,7 +372,8 @@ public class PreCheckRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Void> {
             params = (DatabaseChangeParameters) asParams.getScheduleTaskParameters();
         }
         if (Objects.nonNull(params)) {
-            this.uploadFileInputStream = databaseChangeFileReader.readInputStreamFromSqlObjects(params, bucketName, -1);
+            this.uploadFileInputStream =
+                    DatabaseChangeFileReader.readInputStreamFromSqlObjects(storageFacade, params, bucketName, -1);
             if (Objects.nonNull(this.uploadFileInputStream)) {
                 this.uploadFileSqlIterator = SqlUtils.iterator(connectionConfig.getDialectType(), params.getDelimiter(),
                         this.uploadFileInputStream, StandardCharsets.UTF_8);
