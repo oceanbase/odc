@@ -30,7 +30,6 @@ import com.oceanbase.odc.core.shared.exception.UnsupportedException;
 import com.oceanbase.odc.core.sql.execute.SyncJdbcExecutor;
 import com.oceanbase.odc.metadb.schedule.ScheduleEntity;
 import com.oceanbase.odc.service.connection.database.model.Database;
-import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.dlm.DlmLimiterService;
 import com.oceanbase.odc.service.dlm.model.DataArchiveTableConfig;
 import com.oceanbase.odc.service.dlm.model.OffsetConfig;
@@ -81,12 +80,6 @@ public class AbstractDlmJobPreprocessor implements Preprocessor {
         checkShardKey(connectionSession, sourceDb.getName(), tables);
         Map<DataArchiveTableConfig, String> sqlMap = getDataArchiveSqls(sourceDb, tables, variables);
         checkDataArchiveSql(connectionSession, sqlMap);
-    }
-
-    public void checkDatasource(ConnectionConfig datasource) {
-        if (datasource.getDialectType().isOracle()) {
-            throw new UnsupportedException("DLM is not supported for Oracle data sources.");
-        }
     }
 
     private void checkShardKey(ConnectionSession connectionSession, String databaseName,

@@ -85,8 +85,6 @@ public class DataArchivePreprocessor extends AbstractDlmJobPreprocessor {
             // permission to access it.
             Database sourceDb = databaseService.detail(dataArchiveParameters.getSourceDatabaseId());
             Database targetDb = databaseService.detail(dataArchiveParameters.getTargetDataBaseId());
-            checkDatasource(sourceDb.getDataSource());
-            checkDatasource(targetDb.getDataSource());
             dataArchiveParameters.setSourceDatabaseName(sourceDb.getName());
             dataArchiveParameters.setTargetDatabaseName(targetDb.getName());
             dataArchiveParameters.setSourceDataSourceName(sourceDb.getDataSource().getName());
