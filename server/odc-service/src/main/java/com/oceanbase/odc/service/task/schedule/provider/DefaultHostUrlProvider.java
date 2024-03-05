@@ -47,7 +47,7 @@ public class DefaultHostUrlProvider implements HostUrlProvider {
     public List<String> hostUrl() {
 
         if (taskFrameworkProperties.get().getRunMode().isProcess()) {
-            return Collections.singletonList("http://127.0.0.1:" + configProperties.getPort());
+            return Collections.singletonList("http://localhost:" + configProperties.getPort());
         }
         if (StringUtils.isNotBlank(taskFrameworkProperties.get().getOdcUrl())) {
             return Collections.singletonList(taskFrameworkProperties.get().getOdcUrl());

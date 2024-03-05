@@ -87,8 +87,8 @@ public class WebRequestUtils {
 
     public static boolean isLocalRequest(ServletRequest request) {
         String remoteAddr = request.getRemoteAddr();
-        return "127.0.0.1".equals(remoteAddr) || "0:0:0:0:0:0:0:1".equals(remoteAddr)
-                || "::1".equals(remoteAddr) || "localhost".equalsIgnoreCase(remoteAddr);
+        return "localhost".equalsIgnoreCase(remoteAddr) || "127.0.0.1".equals(remoteAddr)
+                || "0:0:0:0:0:0:0:1".equals(remoteAddr) || "::1".equals(remoteAddr);
     }
 
     private static UriComponents getRequestUriComponents(HttpServletRequest request) {

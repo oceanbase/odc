@@ -13,54 +13,40 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.iam.auth.local;
+package com.oceanbase.odc;
 
 import java.io.IOException;
-import java.util.Arrays;
 
 import javax.servlet.FilterChain;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.apache.commons.lang.StringUtils;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.service.common.util.WebRequestUtils;
-import com.oceanbase.odc.service.task.config.TaskFrameworkProperties;
 
 /**
  * @author yaobin
  * @date 2024-03-04
  * @since 4.2.4
  */
+@Profile("clientMode")
 @Component
-public class LocalRequestFilter extends OncePerRequestFilter {
-
-    private static String[] limitLocalAccessList = new String[] {
-            "/api/v2/task/heart",
-            "/api/v2/task/result",
-            "/api/v2/task/querySensitiveColumn"};
-
-    @Autowired
-    private TaskFrameworkProperties taskFrameworkProperties;
+public class DesktopLocalRequestFilter extends OncePerRequestFilter {
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
 
-        // Limit only localhost access odc api
-        if (taskFrameworkProperties.getRunMode().isProcess() &&
-                Arrays.stream(limitLocalAccessList)
-                        .anyMatch(url -> StringUtils.containsIgnoreCase(request.getRequestURI(), url))) {
-            PreConditions.validHasPermission(WebRequestUtils.isLocalRequest(request),
-                    ErrorCodes.AccessDenied,
-                    "Current api can only access from localhost, remote address=" + request.getRemoteAddr());
-        }
+        // Limit only localhost access odc api in client mode
+        PreConditions.validHasPermission(WebRequestUtils.isLocalRequest(request),
+                ErrorCodes.AccessDenied,
+                "Current api can only access from localhost, remote address=" + request.getRemoteAddr());
         filterChain.doFilter(request, response);
     }
 }
