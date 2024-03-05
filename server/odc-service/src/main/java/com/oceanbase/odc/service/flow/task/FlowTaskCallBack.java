@@ -15,6 +15,8 @@
  */
 package com.oceanbase.odc.service.flow.task;
 
+import java.util.Map;
+
 import com.oceanbase.odc.service.flow.model.FlowNodeStatus;
 
 /**
@@ -32,5 +34,5 @@ public interface FlowTaskCallBack {
      * @param flowTaskInstanceId reference flow task instance node#id
      * @param flowNodeStatus flow node status
      */
-    void callback(long flowInstanceId, long flowTaskInstanceId, FlowNodeStatus flowNodeStatus);
+    void callback(long flowInstanceId, long flowTaskInstanceId, FlowNodeStatus flowNodeStatus,  Map<String, Object> approvalVariables);
 }
