@@ -75,6 +75,7 @@ import com.oceanbase.odc.service.sqlcheck.rule.TooManyColumnRefInPrimaryKey;
 import com.oceanbase.odc.service.sqlcheck.rule.TooManyInExpression;
 import com.oceanbase.odc.service.sqlcheck.rule.TooManyOutOfLineIndex;
 import com.oceanbase.odc.service.sqlcheck.rule.TooManyTableJoin;
+import com.oceanbase.odc.service.sqlcheck.rule.TruncateTableExists;
 
 /**
  * {@link OracleSqlCheckerTest}
@@ -1177,8 +1178,24 @@ public class OracleSqlCheckerTest {
         CheckViolation c4 = new CheckViolation(sqls[2], 1, 0, 0, 15, type, new Object[] {});
         CheckViolation c5 = new CheckViolation(sqls[3], 1, 0, 0, 13, type, new Object[] {});
 
-
         List<CheckViolation> expect = Arrays.asList(c1, c2, c3, c4, c5);
+        Assert.assertEquals(expect, actual);
+    }
+
+    @Test
+    public void check_truncateTbl_violationGenerated() {
+        String[] sqls = {
+                "alter table tbl drop column a.c",
+                "truncate table a.b"
+        };
+        DefaultSqlChecker sqlChecker = new DefaultSqlChecker(DialectType.OB_ORACLE,
+                null, Collections.singletonList(new TruncateTableExists()));
+        List<CheckViolation> actual = sqlChecker.check(toOffsetString(sqls), null);
+
+        SqlCheckRuleType type = SqlCheckRuleType.TRUNCATE_TBLE_EXISTS;
+        CheckViolation c1 = new CheckViolation(sqls[1], 1, 0, 0, 17, type, new Object[] {});
+
+        List<CheckViolation> expect = Collections.singletonList(c1);
         Assert.assertEquals(expect, actual);
     }
 

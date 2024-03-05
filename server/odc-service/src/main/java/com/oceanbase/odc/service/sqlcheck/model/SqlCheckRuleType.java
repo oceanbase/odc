@@ -243,7 +243,11 @@ public enum SqlCheckRuleType implements Translatable {
     /**
      * offline 结构变更语句存在，可能导致性能下降
      */
-    OFFLINE_SCHEMA_CHANGE_EXISTS("offline-schema-change-exists");
+    OFFLINE_SCHEMA_CHANGE_EXISTS("offline-schema-change-exists"),
+    /**
+     * Truncate table 语句存在
+     */
+    TRUNCATE_TBLE_EXISTS("truncate-table-exists");
 
     private final String name;
     private static final String NAME_CODE = "name";

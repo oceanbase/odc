@@ -1380,3 +1380,21 @@
         value: OB_MYSQL
       - label: SUPPORTED_DIALECT_TYPE
         value: OB_ORACLE
+- id: 58
+  name: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.truncate-table-exists.name}
+  description: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.truncate-table-exists.description}
+  type: SQL_CHECK
+  builtIn: 1
+  labels:
+      - label: SUB_TYPE
+        value: DDL
+      - label: SUPPORTED_DIALECT_TYPE
+        value: MYSQL
+      - label: SUPPORTED_DIALECT_TYPE
+        value: ORACLE
+      - label: SUPPORTED_DIALECT_TYPE
+        value: OB_MYSQL
+      - label: SUPPORTED_DIALECT_TYPE
+        value: OB_ORACLE
+      - label: SUPPORTED_DIALECT_TYPE
+        value: ODP_SHARDING_OB_MYSQL

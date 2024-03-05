@@ -83,6 +83,7 @@ import com.oceanbase.odc.service.sqlcheck.factory.TooManyColumnRefInPrimaryKeyFa
 import com.oceanbase.odc.service.sqlcheck.factory.TooManyInExpressionFactory;
 import com.oceanbase.odc.service.sqlcheck.factory.TooManyOutOfLineIndexFactory;
 import com.oceanbase.odc.service.sqlcheck.factory.TooManyTableJoinFactory;
+import com.oceanbase.odc.service.sqlcheck.factory.TruncateTableExistsFactory;
 import com.oceanbase.odc.service.sqlcheck.factory.ZeroFillExistsFactory;
 import com.oceanbase.odc.service.sqlcheck.model.SqlCheckRuleType;
 
@@ -149,6 +150,7 @@ public class SqlCheckRules {
         rules.add(new SyntaxErrorExistsFactory());
         rules.add(new ObjectNameUsingReservedWordsFactory());
         rules.add(new OfflineDdlExistsFactory());
+        rules.add(new TruncateTableExistsFactory());
         return rules;
     }
 
