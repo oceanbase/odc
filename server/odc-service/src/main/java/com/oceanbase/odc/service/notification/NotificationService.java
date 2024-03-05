@@ -27,7 +27,6 @@ import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.TreeMap;
 import java.util.stream.Collectors;
 
 import javax.annotation.PostConstruct;
@@ -227,7 +226,7 @@ public class NotificationService {
 
     @PreAuthenticate(hasAnyResourceRole = {"OWNER"}, resourceType = "ODC_PROJECT", indexOfIdParam = 0)
     public List<NotificationPolicy> listPolicies(@NotNull Long projectId) {
-        TreeMap<Long, NotificationPolicy> policies = new TreeMap<>(metaPolicies);
+        Map<Long, NotificationPolicy> policies = new LinkedHashMap<>(metaPolicies);
 
         List<NotificationPolicyEntity> actual = policyRepository.findByProjectId(projectId);
         if (CollectionUtils.isNotEmpty(actual)) {
