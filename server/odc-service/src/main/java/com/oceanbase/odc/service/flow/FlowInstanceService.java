@@ -74,6 +74,8 @@ import com.oceanbase.odc.core.shared.exception.NotFoundException;
 import com.oceanbase.odc.core.shared.exception.OverLimitException;
 import com.oceanbase.odc.core.shared.exception.UnsupportedException;
 import com.oceanbase.odc.core.shared.exception.VerifyException;
+import com.oceanbase.odc.metadb.collaboration.EnvironmentEntity;
+import com.oceanbase.odc.metadb.collaboration.EnvironmentRepository;
 import com.oceanbase.odc.metadb.flow.FlowInstanceEntity;
 import com.oceanbase.odc.metadb.flow.FlowInstanceRepository;
 import com.oceanbase.odc.metadb.flow.FlowInstanceSpecs;
@@ -240,6 +242,8 @@ public class FlowInstanceService {
     private EventBuilder eventBuilder;
     @Autowired
     private CloudMetadataClient cloudMetadataClient;
+    @Autowired
+    private EnvironmentRepository environmentRepository;
 
     private final List<Consumer<DataTransferTaskInitEvent>> dataTransferTaskInitHooks = new ArrayList<>();
     private final List<Consumer<ShadowTableComparingUpdateEvent>> shadowTableComparingTaskHooks = new ArrayList<>();
@@ -732,6 +736,10 @@ public class FlowInstanceService {
             ConnectionConfig connectionConfig) {
         log.info("Start creating flow instance, flowInstanceReq={}", flowInstanceReq);
         TaskType taskType = flowInstanceReq.getTaskType();
+        if (taskType == TaskType.ASYNC) {
+            DatabaseChangeParameters taskParameters = (DatabaseChangeParameters) flowInstanceReq.getParameters();
+            taskParameters.setModifyTimeoutIfTimeConsumingSqlExists(false);
+        }
         TaskEntity taskEntity = taskService.create(flowInstanceReq, (int) TimeUnit.SECONDS
                 .convert(flowTaskProperties.getDefaultExecutionExpirationIntervalHours(), TimeUnit.HOURS));
         Verify.notNull(taskEntity.getId(), "TaskId can not be null");
@@ -1055,10 +1063,12 @@ public class FlowInstanceService {
     }
 
     private RiskLevelDescriber buildRiskLevelDescriber(CreateFlowInstanceReq req) {
+        EnvironmentEntity environment = environmentRepository.findById(req.getEnvironmentId()).orElse(null);
         return RiskLevelDescriber.builder()
                 .projectName(req.getProjectName())
                 .taskType(req.getTaskType().name())
                 .environmentId(String.valueOf(req.getEnvironmentId()))
+                .environmentName(environment == null ? null : environment.getName())
                 .databaseName(req.getDatabaseName())
                 .build();
     }

@@ -15,6 +15,7 @@
  */
 package com.oceanbase.odc.service.db;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -47,12 +48,17 @@ import com.oceanbase.odc.core.session.ConnectionSessionConstants;
 import com.oceanbase.odc.core.session.ConnectionSessionUtil;
 import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.shared.constant.OdcConstants;
+import com.oceanbase.odc.core.shared.constant.ResourceType;
+import com.oceanbase.odc.core.shared.exception.NotFoundException;
 import com.oceanbase.odc.core.shared.exception.UnsupportedException;
 import com.oceanbase.odc.core.sql.execute.SyncJdbcExecutor;
 import com.oceanbase.odc.core.sql.execute.task.DefaultSqlExecuteTaskManager;
 import com.oceanbase.odc.core.sql.split.OffsetString;
 import com.oceanbase.odc.core.sql.split.SqlCommentProcessor;
 import com.oceanbase.odc.core.sql.util.OBUtils;
+import com.oceanbase.odc.metadb.connection.DatabaseEntity;
+import com.oceanbase.odc.metadb.connection.DatabaseRepository;
+import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.db.model.BatchCompileResp;
 import com.oceanbase.odc.service.db.model.BatchCompileStatus;
 import com.oceanbase.odc.service.db.model.CallFunctionReq;
@@ -68,6 +74,8 @@ import com.oceanbase.odc.service.db.util.OBMysqlCallProcedureCallBack;
 import com.oceanbase.odc.service.db.util.OBOracleCallFunctionBlockCallBack;
 import com.oceanbase.odc.service.db.util.OBOracleCallProcedureBlockCallBack;
 import com.oceanbase.odc.service.db.util.OBOracleCompilePLCallBack;
+import com.oceanbase.odc.service.permission.database.DatabasePermissionHelper;
+import com.oceanbase.odc.service.permission.database.model.DatabasePermissionType;
 import com.oceanbase.odc.service.session.ConnectConsoleService;
 import com.oceanbase.odc.service.session.SessionProperties;
 import com.oceanbase.tools.dbbrowser.model.DBObjectType;
@@ -94,6 +102,11 @@ public class DBPLService {
 
     @Autowired
     private SessionProperties sessionProperties;
+    @Autowired
+    private DatabaseRepository databaseRepository;
+    @Autowired
+    private DatabasePermissionHelper databasePermissionHelper;
+
     private static final Integer DEFAULT_MAX_CONCURRENT_BATCH_COMPILE_TASK_COUNT = 10;
     private final DefaultSqlExecuteTaskManager taskManager;
     private final Map<String, Pair<BatchCompileTaskCallable, Future<BatchCompileResp>>> runningTaskMap;
@@ -227,6 +240,9 @@ public class DBPLService {
     }
 
     public String callProcedure(@NonNull ConnectionSession session, @NonNull CallProcedureReq req) {
+        Long databaseId = getDatabaseIdByConnectionSession(session);
+        databasePermissionHelper.checkPermissions(Collections.singleton(databaseId),
+                Collections.singleton(DatabasePermissionType.CHANGE));
         ConnectionCallback<CallProcedureResp> callback;
         DialectType dialectType = session.getDialectType();
         if (dialectType.isOracle()) {
@@ -259,6 +275,9 @@ public class DBPLService {
     }
 
     public String callFunction(@NonNull ConnectionSession session, @NonNull CallFunctionReq req) {
+        Long databaseId = getDatabaseIdByConnectionSession(session);
+        databasePermissionHelper.checkPermissions(Collections.singleton(databaseId),
+                Collections.singleton(DatabasePermissionType.CHANGE));
         ConnectionCallback<CallFunctionResp> callback;
         DialectType dialectType = session.getDialectType();
         if (dialectType.isOracle()) {
@@ -364,6 +383,14 @@ public class DBPLService {
             identity.setSchemaName(rs.getString(4));
             return identity;
         });
+    }
+
+    private Long getDatabaseIdByConnectionSession(@NonNull ConnectionSession session) {
+        ConnectionConfig connConfig = (ConnectionConfig) ConnectionSessionUtil.getConnectionConfig(session);
+        String schemaName = ConnectionSessionUtil.getCurrentSchema(session);
+        DatabaseEntity databaseEntity = databaseRepository.findByConnectionIdAndName(connConfig.getId(), schemaName)
+                .orElseThrow(() -> new NotFoundException(ResourceType.ODC_DATABASE, "name", schemaName));
+        return databaseEntity.getId();
     }
 
 }

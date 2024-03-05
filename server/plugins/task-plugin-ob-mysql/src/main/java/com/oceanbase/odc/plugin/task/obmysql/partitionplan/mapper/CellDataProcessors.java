@@ -52,6 +52,9 @@ public class CellDataProcessors {
 
         @Override
         public String convertToSqlLiteral(Object target, @NonNull DataType dataType) {
+            if (target == null) {
+                return "NULL";
+            }
             return target.toString();
         }
 

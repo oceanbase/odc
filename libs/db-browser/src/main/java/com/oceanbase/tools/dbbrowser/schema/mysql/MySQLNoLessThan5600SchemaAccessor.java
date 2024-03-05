@@ -13,21 +13,31 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.tools.dbbrowser.stats.mysql;
+package com.oceanbase.tools.dbbrowser.schema.mysql;
 
 import org.springframework.jdbc.core.JdbcOperations;
 
-import lombok.NonNull;
+import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessorSqlMappers;
+import com.oceanbase.tools.dbbrowser.schema.constant.StatementsFiles;
 
 /**
- * ClassName: DorisStatsAccessor Package: com.oceanbase.tools.dbbrowser.stats.mysql Description:
  *
- * @Author: fenghao
- * @Create 2024/2/5 16:23
- * @Version 1.0
+ * {@link MySQLNoLessThan5600SchemaAccessor}
+ *
+ * 适配 MySQL 版本：[5.6.00, 5.7.00)
+ *
+ * @author jingtian
+ * @date 2024/2/26
+ * @since ODC_release_4.2.4
  */
-public class DorisStatsAccessor extends MySQLNoLessThan5700StatsAccessor {
-    public DorisStatsAccessor(@NonNull JdbcOperations jdbcOperations) {
+public class MySQLNoLessThan5600SchemaAccessor extends MySQLNoLessThan5700SchemaAccessor {
+    public MySQLNoLessThan5600SchemaAccessor(JdbcOperations jdbcOperations) {
         super(jdbcOperations);
+        this.sqlMapper = DBSchemaAccessorSqlMappers.get(StatementsFiles.MYSQL_5_6_x);
+    }
+
+    @Override
+    protected boolean supportGeneratedColumn() {
+        return false;
     }
 }
