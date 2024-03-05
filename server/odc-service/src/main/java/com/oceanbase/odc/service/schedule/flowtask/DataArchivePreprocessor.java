@@ -156,6 +156,12 @@ public class DataArchivePreprocessor extends AbstractDlmJobPreprocessor {
                         String.format("Unsupported data archiving link from %s to %s.", sourceDbType, targetDbType));
             }
         }
+        if (sourceDbType == DialectType.OB_ORACLE) {
+            if (targetDbType != DialectType.OB_ORACLE) {
+                throw new UnsupportedException(
+                        String.format("Unsupported data archiving link from %s to %s.", sourceDbType, targetDbType));
+            }
+        }
     }
 
     private void initDefaultConfig(DataArchiveParameters parameters) {

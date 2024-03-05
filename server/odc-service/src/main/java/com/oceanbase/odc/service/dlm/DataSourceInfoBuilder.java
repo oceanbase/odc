@@ -69,6 +69,14 @@ public class DataSourceInfoBuilder {
                 dataSourceInfo.setSysDatabaseName("oceanbase");
                 break;
             }
+            case OB_ORACLE:
+                dataSourceInfo.setIp(connectionConfig.getHost());
+                dataSourceInfo.setPort(connectionConfig.getPort());
+                dataSourceInfo.setFullUserName(OBConsoleDataSourceFactory.getUsername(connectionConfig));
+                dataSourceInfo.setClusterName(connectionConfig.getClusterName());
+                dataSourceInfo.setTenantName(connectionConfig.getTenantName());
+                dataSourceInfo.setDatabaseType(DataBaseType.OB_ORACLE);
+                break;
             default:
                 log.warn(String.format("Unsupported datasource type:%s", connectionConfig.getDialectType()));
                 throw new UnsupportedException(

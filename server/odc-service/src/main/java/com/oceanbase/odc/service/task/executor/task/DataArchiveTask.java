@@ -88,6 +88,10 @@ public class DataArchiveTask extends BaseTask<Boolean> {
 
     private void syncTable(int tableIndex, DLMJobParameters parameters) throws Exception {
         DataSourceAdapter sourceDataSource = DataSourceFactory.getDataSource(parameters.getSourceDs());
+        if (sourceDataSource.getDataBaseType().isOracle()) {
+            log.info("Unsupported sync table construct for Oracle,databaseType={}", sourceDataSource.getDataBaseType());
+            return;
+        }
         DataSourceAdapter targetDataSource = DataSourceFactory.getDataSource(parameters.getTargetDs());
         if (parameters.getSourceDs().getDatabaseType() != parameters.getTargetDs().getDatabaseType()) {
             log.info("Data sources of different types do not currently support automatic creation of target tables.");

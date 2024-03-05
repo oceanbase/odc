@@ -86,10 +86,18 @@ public class AbstractDlmJobPreprocessor implements Preprocessor {
             List<DataArchiveTableConfig> tables) {
         SyncJdbcExecutor syncJdbcExecutor = connectionSession.getSyncJdbcExecutor(
                 ConnectionSessionConstants.CONSOLE_DS_KEY);
-        SqlBuilder sqlBuilder = new MySQLSqlBuilder();
-        sqlBuilder.append(
-                "SELECT TABLE_NAME from INFORMATION_SCHEMA.STATISTICS where NON_UNIQUE = 0 AND NULLABLE != 'YES' ");
-        sqlBuilder.append(String.format("AND TABLE_SCHEMA='%s' GROUP BY TABLE_NAME", databaseName));
+        SqlBuilder sqlBuilder;
+        if (connectionSession.getDialectType().isMysql()) {
+            sqlBuilder = new MySQLSqlBuilder();
+            sqlBuilder.append(
+                    "SELECT TABLE_NAME from INFORMATION_SCHEMA.STATISTICS where NON_UNIQUE = 0 AND NULLABLE != 'YES' ");
+            sqlBuilder.append(String.format("AND TABLE_SCHEMA='%s' GROUP BY TABLE_NAME", databaseName));
+        } else {
+            sqlBuilder = new OracleSqlBuilder();
+            sqlBuilder.append(
+                    String.format("select table_name from all_constraints where constraint_type = 'P' and owner = '%s'",
+                            databaseName));
+        }
         HashSet<String> tableNames =
                 new HashSet<>(syncJdbcExecutor.query(sqlBuilder.toString(), (rs, num) -> rs.getString(1)));
         tables.forEach(tableConfig -> {
@@ -131,13 +139,12 @@ public class AbstractDlmJobPreprocessor implements Preprocessor {
                 throw new UnsupportedException();
             }
             SqlBuilder sqlBuilder = dbType.isMysql() ? new MySQLSqlBuilder() : new OracleSqlBuilder();
-            sqlBuilder.append("SELECT 1 FROM").identifier(database.getName(), table.getTableName());
+            sqlBuilder.append("SELECT 1 FROM ").identifier(database.getName(), table.getTableName());
             if (StringUtils.isNotEmpty(table.getConditionExpression())) {
                 sqlBuilder.append(" WHERE ")
                         .append(DataArchiveConditionUtil.parseCondition(table.getConditionExpression(),
                                 variables, new Date()));
             }
-            sqlBuilder.append(" LIMIT 1;");
             return sqlBuilder.toString();
         } catch (Exception e) {
             throw new IllegalArgumentException(String.format("Parse condition error,message=%s", e.getMessage()));
