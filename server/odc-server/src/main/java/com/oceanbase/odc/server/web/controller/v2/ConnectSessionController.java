@@ -251,6 +251,7 @@ public class ConnectSessionController {
     }
 
     @PostMapping(value = "/sessions/{sessionId}/partitionPlans/latest/preview")
+    @StatefulRoute(stateName = StateName.DB_SESSION, stateIdExpression = "#sessionId")
     public ListResponse<PartitionPlanPreViewResp> preview(@PathVariable String sessionId,
             @RequestBody PartitionPlanPreviewReq req) {
         return Responses.list(this.partitionPlanServiceV2.generatePartitionDdl(

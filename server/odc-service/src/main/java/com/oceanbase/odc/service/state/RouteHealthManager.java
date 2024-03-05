@@ -41,13 +41,13 @@ import lombok.extern.slf4j.Slf4j;
 
 @Component
 @Slf4j
-@ConditionalOnProperty(value = {"odc.web.stateful-route.enabled"}, havingValue = "true")
+@ConditionalOnProperty(value = {"odc.state.enabled"}, havingValue = "true")
 public class RouteHealthManager implements InitializingBean {
 
-    private static final Map<RouteInfo, RouteManageInfo> ROUTE_HEALTHY_MAP = new ConcurrentHashMap<>();
-    private final ScheduledExecutorService scheduledExecutorService = Executors.newScheduledThreadPool(1);
+    private static final Map<RouteInfo, RouteManageInfo> ROUTE_HEALTHY_MAP        = new ConcurrentHashMap<>();
+    private final ScheduledExecutorService               scheduledExecutorService = Executors.newScheduledThreadPool(1);
 
-    @Value("${odc.web.stateful-route.host.expire_seconds:3600}")
+    @Value("${odc.state.host.expire_seconds:3600}")
     private Integer expireSeconds;
 
     public boolean isHealthy(RouteInfo routeInfo) {
@@ -59,13 +59,13 @@ public class RouteHealthManager implements InitializingBean {
 
     @Override
     public void afterPropertiesSet() {
-        scheduledExecutorService.scheduleWithFixedDelay(() -> {
+        scheduledExecutorService.scheduleAtFixedRate(() -> {
             try {
                 doTest();
             } catch (Exception e) {
                 log.info("test host error", e);
             }
-        }, 1, 10, TimeUnit.SECONDS);
+        }, 1, 2, TimeUnit.SECONDS);
     }
 
     @PreDestroy
