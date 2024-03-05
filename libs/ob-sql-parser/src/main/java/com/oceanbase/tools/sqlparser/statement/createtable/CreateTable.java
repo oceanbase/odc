@@ -19,6 +19,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import com.oceanbase.tools.sqlparser.statement.common.RelationFactor;
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.apache.commons.collections4.CollectionUtils;
 
@@ -52,6 +53,7 @@ public class CreateTable extends BaseStatement {
     private List<TableElement> tableElements;
     private TableOptions tableOptions;
     private boolean ifNotExists;
+    private RelationFactor likeTable;
     // delete or preserve
     private String commitOption;
     private Partition partition;
@@ -113,6 +115,10 @@ public class CreateTable extends BaseStatement {
         }
         if (this.userVariable != null) {
             builder.append(this.userVariable);
+        }
+        if (this.likeTable != null) {
+            builder.append(" LIKE ").append(this.likeTable);
+            return builder.toString();
         }
         if (CollectionUtils.isNotEmpty(this.tableElements)) {
             builder.append(" (");

@@ -42,6 +42,7 @@ import com.oceanbase.odc.service.sqlcheck.rule.MySQLMissingRequiredColumns;
 import com.oceanbase.odc.service.sqlcheck.rule.MySQLNoColumnCommentExists;
 import com.oceanbase.odc.service.sqlcheck.rule.MySQLNoNotNullAtInExpression;
 import com.oceanbase.odc.service.sqlcheck.rule.MySQLNoTableCommentExists;
+import com.oceanbase.odc.service.sqlcheck.rule.MySQLObjectNameUsingReservedWords;
 import com.oceanbase.odc.service.sqlcheck.rule.MySQLRestrictAutoIncrementDataTypes;
 import com.oceanbase.odc.service.sqlcheck.rule.MySQLRestrictAutoIncrementUnsigned;
 import com.oceanbase.odc.service.sqlcheck.rule.MySQLRestrictIndexDataTypes;
@@ -1098,6 +1099,32 @@ public class MySQLCheckerTest {
         CheckViolation c2 = new CheckViolation(sqls[1], 1, 25, 25, 28, type, new Object[] {"blob", "blob,text"});
 
         List<CheckViolation> expect = Arrays.asList(c1, c2);
+        Assert.assertEquals(expect, actual);
+    }
+
+    @Test
+    public void check_objectUsingReservedWords_violationGenerated() {
+        String[] sqls = {
+                "create table analyse (id int, primary key `analyse` using hash (col, col1) comment 'abcd')",
+                "create table abcd(aaaa int)",
+                "alter table abddd add partition (partition a.b values less than (-2, maxvalue) engine=InnoDB,"
+                        + "partition `analyse` values less than (func(1,2)) id 14)",
+                "create index `analyse` on a.b(id)",
+                "create function `analyse` (`p1` tinyint(4)) returns tinyint(4) begin      return p1; end"
+        };
+        DefaultSqlChecker sqlChecker = new DefaultSqlChecker(DialectType.OB_MYSQL,
+                null, Collections.singletonList(new MySQLObjectNameUsingReservedWords()));
+        List<CheckViolation> actual = sqlChecker.check(toOffsetString(sqls), null);
+
+        SqlCheckRuleType type = SqlCheckRuleType.OBJECT_NAME_USING_RESERVED_WORDS;
+        CheckViolation c1 = new CheckViolation(sqls[0], 1, 0, 0, 89, type, new Object[] {"analyse"});
+        CheckViolation c2 = new CheckViolation(sqls[0], 1, 22, 22, 23, type, new Object[] {"id"});
+        CheckViolation c3 = new CheckViolation(sqls[0], 1, 30, 30, 88, type, new Object[] {"`analyse`"});
+        CheckViolation c4 = new CheckViolation(sqls[2], 1, 93, 93, 146, type, new Object[] {"`analyse`"});
+        CheckViolation c5 = new CheckViolation(sqls[3], 1, 13, 13, 21, type, new Object[] {"`analyse`"});
+        CheckViolation c6 = new CheckViolation(sqls[4], 1, 16, 16, 24, type, new Object[] {"`analyse`"});
+
+        List<CheckViolation> expect = Arrays.asList(c1, c2, c3, c4, c5, c6);
         Assert.assertEquals(expect, actual);
     }
 

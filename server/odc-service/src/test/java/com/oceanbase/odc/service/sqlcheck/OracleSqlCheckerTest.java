@@ -51,6 +51,7 @@ import com.oceanbase.odc.service.sqlcheck.rule.OracleMissingRequiredColumns;
 import com.oceanbase.odc.service.sqlcheck.rule.OracleNoColumnCommentExists;
 import com.oceanbase.odc.service.sqlcheck.rule.OracleNoNotNullAtInExpression;
 import com.oceanbase.odc.service.sqlcheck.rule.OracleNoTableCommentExists;
+import com.oceanbase.odc.service.sqlcheck.rule.OracleObjectNameUsingReservedWords;
 import com.oceanbase.odc.service.sqlcheck.rule.OracleRestrictColumnNameCase;
 import com.oceanbase.odc.service.sqlcheck.rule.OracleRestrictIndexDataTypes;
 import com.oceanbase.odc.service.sqlcheck.rule.OracleRestrictPKDataTypes;
@@ -1115,6 +1116,44 @@ public class OracleSqlCheckerTest {
         CheckViolation c1 = new CheckViolation(sqls[2], 1, 39, 39, 78, type, new Object[] {"col1"});
 
         List<CheckViolation> expect = Collections.singletonList(c1);
+        Assert.assertEquals(expect, actual);
+    }
+
+    @Test
+    public void check_objectUsingReservedWords_violationGenerated() {
+        String[] sqls = {
+                "create table high (id varchar2(64), index \"high\" (id)) partition by list(a,b) subpartition by list(c) subpartition template("
+                        + "subpartition a.b values (2) INITRANS 12,"
+                        + "subpartition b values ('maxvalue') MAXTRANS 13) ("
+                        + "partition a.b@c values (default) tablespace tbs1 compress for oltp("
+                        + "subpartition a.high values (2) INITRANS 12,"
+                        + "subpartition b values ('maxvalue') MAXTRANS 13),"
+                        + "partition high values (3) id 14 nocompress,"
+                        + "partition values ('aaaddd') id 15 tablespace tbs)",
+                "CREATE TABLE uuiioo(ID VARCHAR2(64) constraint high primary key)",
+                "alter table tbl add high varchar2(64)",
+                "create or replace procedure high(p int) as begin dbms_output.put_line('aaaa'); end",
+                "alter table tbl modify partition a.b add "
+                        + "subpartition a.b values less than (+3) storage(next 12 initial 15 minextents 16 maxextents 17),"
+                        + "subpartition high values less than (maxvalue) tablespace tbs"
+        };
+        DefaultSqlChecker sqlChecker = new DefaultSqlChecker(DialectType.OB_ORACLE,
+                null, Collections.singletonList(new OracleObjectNameUsingReservedWords()));
+        List<CheckViolation> actual = sqlChecker.check(toOffsetString(sqls), null);
+
+        SqlCheckRuleType type = SqlCheckRuleType.OBJECT_NAME_USING_RESERVED_WORDS;
+        CheckViolation c1 = new CheckViolation(sqls[0], 1, 0, 0, 462, type, new Object[] {"high"});
+        CheckViolation c2 = new CheckViolation(sqls[0], 1, 280, 280, 321, type, new Object[] {"high"});
+        CheckViolation c3 = new CheckViolation(sqls[0], 1, 371, 371, 412, type, new Object[] {"high"});
+        CheckViolation c4 = new CheckViolation(sqls[0], 1, 19, 19, 20, type, new Object[] {"id"});
+        CheckViolation c5 = new CheckViolation(sqls[0], 1, 36, 36, 52, type, new Object[] {"\"high\""});
+        CheckViolation c6 = new CheckViolation(sqls[1], 1, 20, 20, 21, type, new Object[] {"ID"});
+        CheckViolation c7 = new CheckViolation(sqls[1], 1, 36, 36, 62, type, new Object[] {"high"});
+        CheckViolation c8 = new CheckViolation(sqls[2], 1, 20, 20, 23, type, new Object[] {"high"});
+        CheckViolation c9 = new CheckViolation(sqls[3], 1, 28, 28, 31, type, new Object[] {"high"});
+        CheckViolation c10 = new CheckViolation(sqls[4], 1, 136, 136, 195, type, new Object[] {"high"});
+
+        List<CheckViolation> expect = Arrays.asList(c1, c2, c3, c4, c5, c6, c7, c8, c9, c10);
         Assert.assertEquals(expect, actual);
     }
 
