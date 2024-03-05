@@ -56,7 +56,7 @@ public class SqlPlanJob implements OdcJob {
 
         DatabaseChangeParameters taskParameters = JSON.parseObject(scheduleEntity.getJobParametersJson(),
                 DatabaseChangeParameters.class);
-        taskParameters.setParentTaskType(JobType.SQL_PLAN.name());
+        taskParameters.setParentTaskType(JobType.SQL_PLAN);
         CreateFlowInstanceReq flowInstanceReq = new CreateFlowInstanceReq();
         flowInstanceReq.setParameters(taskParameters);
         flowInstanceReq.setTaskType(TaskType.ASYNC);
