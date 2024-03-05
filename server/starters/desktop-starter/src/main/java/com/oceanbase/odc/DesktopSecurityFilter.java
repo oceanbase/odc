@@ -31,6 +31,9 @@ import org.springframework.stereotype.Component;
 import com.oceanbase.odc.core.authority.DefaultLoginSecurityManager;
 import com.oceanbase.odc.core.authority.SecurityManager;
 import com.oceanbase.odc.core.authority.session.SecuritySession;
+import com.oceanbase.odc.core.shared.PreConditions;
+import com.oceanbase.odc.core.shared.constant.ErrorCodes;
+import com.oceanbase.odc.service.common.util.WebRequestUtils;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -50,6 +53,11 @@ public class DesktopSecurityFilter implements Filter {
     @Override
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
             throws ServletException, IOException {
+
+        // Limit only localhost access odc api in client mode
+        PreConditions.validHasPermission(WebRequestUtils.isLocalRequest(request),
+                ErrorCodes.AccessDenied, "Request access denied, remote address=" + request.getRemoteAddr());
+
         SecuritySession session = securityManager.getSession(null);
         if (session == null) {
             log.info("Can not get the session from request for security framework, requestURI={}",

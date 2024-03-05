@@ -26,7 +26,6 @@ import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.service.common.response.Responses;
 import com.oceanbase.odc.service.common.response.SuccessResponse;
 import com.oceanbase.odc.service.datasecurity.DataMaskingService;
-import com.oceanbase.odc.service.task.config.JobSecurityChecker;
 import com.oceanbase.odc.service.task.executor.server.HeartRequest;
 import com.oceanbase.odc.service.task.executor.task.DefaultTaskResult;
 import com.oceanbase.odc.service.task.runtime.QuerySensitiveColumnReq;
@@ -52,7 +51,6 @@ public class TaskController {
     @Autowired
     private DataMaskingService dataMaskingService;
 
-    @JobSecurityChecker
     @ApiOperation(value = "updateResult", notes = "update task result")
     @RequestMapping(value = "/result", method = RequestMethod.POST)
     public SuccessResponse<String> updateResult(@RequestBody DefaultTaskResult taskResult) {
@@ -63,7 +61,6 @@ public class TaskController {
         return Responses.success("ok");
     }
 
-    @JobSecurityChecker
     @ApiOperation(value = "heart", notes = "update heart request")
     @RequestMapping(value = "/heart", method = RequestMethod.POST)
     public SuccessResponse<String> heart(@RequestBody HeartRequest heart) {
@@ -71,7 +68,6 @@ public class TaskController {
         return Responses.success("ok");
     }
 
-    @JobSecurityChecker
     @ApiOperation(value = "querySensitiveColumn", notes = "query sensitive columns")
     @RequestMapping(value = "/querySensitiveColumn", method = RequestMethod.POST)
     public SuccessResponse<QuerySensitiveColumnResp> querySensitiveColumn(@RequestBody QuerySensitiveColumnReq req) {
