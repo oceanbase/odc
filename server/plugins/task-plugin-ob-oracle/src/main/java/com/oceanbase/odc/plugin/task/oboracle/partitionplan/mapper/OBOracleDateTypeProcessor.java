@@ -46,9 +46,11 @@ public class OBOracleDateTypeProcessor implements CellDataProcessor {
 
     @Override
     public String convertToSqlLiteral(Object target, @NonNull DataType dataType) {
+        if (target == null) {
+            return "NULL";
+        }
         if (!(target instanceof TimeFormatResult)) {
-            throw new IllegalStateException("Target's type is illegal, actual: "
-                    + (target == null ? "null" : target.getClass()));
+            throw new IllegalStateException("Target's type is illegal, actual: " + target.getClass());
         }
         TimeFormatResult result = (TimeFormatResult) target;
         if (result.getTimestamp() == null) {
