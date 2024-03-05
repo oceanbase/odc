@@ -58,7 +58,7 @@ public class LocalRequestFilter extends OncePerRequestFilter {
                 Arrays.stream(limitLocalAccessList)
                         .anyMatch(url -> StringUtils.containsIgnoreCase(request.getRequestURI(), url))) {
             PreConditions.validHasPermission(WebRequestUtils.isLocalRequest(request),
-                    ErrorCodes.AccessDenied, "Access denied, remote address=" + request.getRemoteAddr());
+                    ErrorCodes.AccessDenied, "Current api can only access from localhost, remote address=" + request.getRemoteAddr());
         }
         filterChain.doFilter(request, response);
     }
