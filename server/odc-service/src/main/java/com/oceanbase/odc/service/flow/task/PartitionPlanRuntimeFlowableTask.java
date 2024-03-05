@@ -20,6 +20,7 @@ import org.quartz.SchedulerException;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import com.oceanbase.odc.core.shared.constant.FlowStatus;
+import com.oceanbase.odc.service.flow.model.FlowNodeStatus;
 import com.oceanbase.odc.service.flow.task.model.PartitionPlanTaskResult;
 import com.oceanbase.odc.service.flow.util.FlowTaskUtil;
 import com.oceanbase.odc.service.partitionplan.PartitionPlanScheduleService;
@@ -85,6 +86,8 @@ public class PartitionPlanRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Vo
         taskService.fail(taskId, 100, generateResult(false));
         super.onFailure(taskId, taskService);
         PartitionPlanTaskTraceContextHolder.clear();
+        flowTaskCallBackApprovalService.approval(getFlowInstanceId(), getTargetTaskInstanceId(),
+            FlowNodeStatus.FAILED);
     }
 
     @Override
@@ -94,6 +97,8 @@ public class PartitionPlanRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Vo
         super.onSuccessful(taskId, taskService);
         log.info("Partition plan task succeed, taskId={}", taskId);
         PartitionPlanTaskTraceContextHolder.clear();
+        flowTaskCallBackApprovalService.approval(getFlowInstanceId(), getTargetTaskInstanceId(),
+            FlowNodeStatus.COMPLETED);
     }
 
     @Override
@@ -101,6 +106,8 @@ public class PartitionPlanRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Vo
         taskService.fail(taskId, 100, generateResult(false));
         super.onTimeout(taskId, taskService);
         PartitionPlanTaskTraceContextHolder.clear();
+        flowTaskCallBackApprovalService.approval(getFlowInstanceId(), getTargetTaskInstanceId(),
+            FlowNodeStatus.EXPIRED);
     }
 
     @Override
