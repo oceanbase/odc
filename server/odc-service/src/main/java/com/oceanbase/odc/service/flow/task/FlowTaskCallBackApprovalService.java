@@ -72,10 +72,6 @@ public class FlowTaskCallBackApprovalService {
     @Autowired
     private TransactionTemplate transactionTemplate;
 
-    public void approval(long flowInstanceId, long flowTaskInstanceId, FlowNodeStatus flowNodeStatus) {
-        approval(flowInstanceId, flowTaskInstanceId, flowNodeStatus, null);
-    }
-
     public void approval(long flowInstanceId, long flowTaskInstanceId, FlowNodeStatus flowNodeStatus,
             Map<String, Object> approvalVariables) {
         try {
@@ -86,7 +82,7 @@ public class FlowTaskCallBackApprovalService {
         }
     }
 
-    public void doApproval(long flowInstanceId, long flowTaskInstanceId, FlowNodeStatus flowNodeStatus,
+    private void doApproval(long flowInstanceId, long flowTaskInstanceId, FlowNodeStatus flowNodeStatus,
             Map<String, Object> approvalVariables) {
 
         if (!flowNodeStatus.isFinalStatus()) {
