@@ -43,6 +43,7 @@ import com.oceanbase.odc.service.sqlcheck.rule.MySQLNoColumnCommentExists;
 import com.oceanbase.odc.service.sqlcheck.rule.MySQLNoNotNullAtInExpression;
 import com.oceanbase.odc.service.sqlcheck.rule.MySQLNoTableCommentExists;
 import com.oceanbase.odc.service.sqlcheck.rule.MySQLObjectNameUsingReservedWords;
+import com.oceanbase.odc.service.sqlcheck.rule.MySQLOfflineDdlExists;
 import com.oceanbase.odc.service.sqlcheck.rule.MySQLRestrictAutoIncrementDataTypes;
 import com.oceanbase.odc.service.sqlcheck.rule.MySQLRestrictAutoIncrementUnsigned;
 import com.oceanbase.odc.service.sqlcheck.rule.MySQLRestrictIndexDataTypes;
@@ -1125,6 +1126,28 @@ public class MySQLCheckerTest {
         CheckViolation c6 = new CheckViolation(sqls[4], 1, 16, 16, 24, type, new Object[] {"`analyse`"});
 
         List<CheckViolation> expect = Arrays.asList(c1, c2, c3, c4, c5, c6);
+        Assert.assertEquals(expect, actual);
+    }
+
+    @Test
+    public void check_offlineDdl_violationGenerated() {
+        String[] sqls = {
+                "alter table tbl modify id varchar(64) primary key",
+                "alter table parti_tbl truncate partition a,b,d",
+                "truncate table a",
+                "drop table aaa"
+        };
+        DefaultSqlChecker sqlChecker = new DefaultSqlChecker(DialectType.OB_MYSQL,
+                null, Collections.singletonList(new MySQLOfflineDdlExists()));
+        List<CheckViolation> actual = sqlChecker.check(toOffsetString(sqls), null);
+
+        SqlCheckRuleType type = SqlCheckRuleType.OFFLINE_SCHEMA_CHANGE_EXISTS;
+        CheckViolation c1 = new CheckViolation(sqls[0], 1, 16, 16, 48, type, new Object[] {});
+        CheckViolation c2 = new CheckViolation(sqls[1], 1, 22, 22, 45, type, new Object[] {});
+        CheckViolation c3 = new CheckViolation(sqls[2], 1, 0, 0, 15, type, new Object[] {});
+        CheckViolation c4 = new CheckViolation(sqls[3], 1, 0, 0, 13, type, new Object[] {});
+
+        List<CheckViolation> expect = Arrays.asList(c1, c2, c3, c4);
         Assert.assertEquals(expect, actual);
     }
 

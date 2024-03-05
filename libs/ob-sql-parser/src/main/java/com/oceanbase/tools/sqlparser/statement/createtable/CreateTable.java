@@ -19,11 +19,11 @@ import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import com.oceanbase.tools.sqlparser.statement.common.RelationFactor;
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.apache.commons.collections4.CollectionUtils;
 
 import com.oceanbase.tools.sqlparser.statement.BaseStatement;
+import com.oceanbase.tools.sqlparser.statement.common.RelationFactor;
 import com.oceanbase.tools.sqlparser.statement.select.Select;
 
 import lombok.EqualsAndHashCode;

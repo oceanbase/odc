@@ -239,7 +239,11 @@ public enum SqlCheckRuleType implements Translatable {
     /**
      * 对象名使用了保留字
      */
-    OBJECT_NAME_USING_RESERVED_WORDS("object-name-using-reserved-words");
+    OBJECT_NAME_USING_RESERVED_WORDS("object-name-using-reserved-words"),
+    /**
+     * offline 结构变更语句存在，可能导致性能下降
+     */
+    OFFLINE_SCHEMA_CHANGE_EXISTS("offline-schema-change-exists");
 
     private final String name;
     private static final String NAME_CODE = "name";

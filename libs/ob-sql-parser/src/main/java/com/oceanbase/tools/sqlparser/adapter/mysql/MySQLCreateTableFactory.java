@@ -17,8 +17,9 @@ package com.oceanbase.tools.sqlparser.adapter.mysql;
 
 import java.util.stream.Collectors;
 
+import org.antlr.v4.runtime.ParserRuleContext;
+
 import com.oceanbase.tools.sqlparser.adapter.StatementFactory;
-import com.oceanbase.tools.sqlparser.obmysql.OBParser;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Create_table_like_stmtContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Create_table_stmtContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParserBaseVisitor;
@@ -26,7 +27,6 @@ import com.oceanbase.tools.sqlparser.statement.common.RelationFactor;
 import com.oceanbase.tools.sqlparser.statement.createtable.CreateTable;
 
 import lombok.NonNull;
-import org.antlr.v4.runtime.ParserRuleContext;
 
 /**
  * {@link MySQLCreateTableFactory}

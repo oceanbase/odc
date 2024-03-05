@@ -54,6 +54,7 @@ import com.oceanbase.odc.service.sqlcheck.factory.NoValidWhereClauseFactory;
 import com.oceanbase.odc.service.sqlcheck.factory.NoWhereClauseExistsFactory;
 import com.oceanbase.odc.service.sqlcheck.factory.NotNullColumnWithoutDefaultValueFactory;
 import com.oceanbase.odc.service.sqlcheck.factory.ObjectNameUsingReservedWordsFactory;
+import com.oceanbase.odc.service.sqlcheck.factory.OfflineDdlExistsFactory;
 import com.oceanbase.odc.service.sqlcheck.factory.PreferLocalOutOfLineIndexFactory;
 import com.oceanbase.odc.service.sqlcheck.factory.ProhibitedDatatypeExistsFactory;
 import com.oceanbase.odc.service.sqlcheck.factory.RestrictAutoIncrementDataTypesFactory;
@@ -147,6 +148,7 @@ public class SqlCheckRules {
         rules.add(new RestrictAutoIncrementDataTypesFactory());
         rules.add(new SyntaxErrorExistsFactory());
         rules.add(new ObjectNameUsingReservedWordsFactory());
+        rules.add(new OfflineDdlExistsFactory());
         return rules;
     }
 

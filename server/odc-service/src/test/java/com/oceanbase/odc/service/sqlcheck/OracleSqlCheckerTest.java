@@ -52,6 +52,7 @@ import com.oceanbase.odc.service.sqlcheck.rule.OracleNoColumnCommentExists;
 import com.oceanbase.odc.service.sqlcheck.rule.OracleNoNotNullAtInExpression;
 import com.oceanbase.odc.service.sqlcheck.rule.OracleNoTableCommentExists;
 import com.oceanbase.odc.service.sqlcheck.rule.OracleObjectNameUsingReservedWords;
+import com.oceanbase.odc.service.sqlcheck.rule.OracleOfflineDdlExists;
 import com.oceanbase.odc.service.sqlcheck.rule.OracleRestrictColumnNameCase;
 import com.oceanbase.odc.service.sqlcheck.rule.OracleRestrictIndexDataTypes;
 import com.oceanbase.odc.service.sqlcheck.rule.OracleRestrictPKDataTypes;
@@ -1154,6 +1155,30 @@ public class OracleSqlCheckerTest {
         CheckViolation c10 = new CheckViolation(sqls[4], 1, 136, 136, 195, type, new Object[] {"high"});
 
         List<CheckViolation> expect = Arrays.asList(c1, c2, c3, c4, c5, c6, c7, c8, c9, c10);
+        Assert.assertEquals(expect, actual);
+    }
+
+    @Test
+    public void check_offlineDdl_violationGenerated() {
+        String[] sqls = {
+                "alter table tbl drop column a.c",
+                "alter table tbl add primary key (a,b), drop primary key",
+                "truncate table a",
+                "drop table aaa"
+        };
+        DefaultSqlChecker sqlChecker = new DefaultSqlChecker(DialectType.OB_ORACLE,
+                null, Collections.singletonList(new OracleOfflineDdlExists()));
+        List<CheckViolation> actual = sqlChecker.check(toOffsetString(sqls), null);
+
+        SqlCheckRuleType type = SqlCheckRuleType.OFFLINE_SCHEMA_CHANGE_EXISTS;
+        CheckViolation c1 = new CheckViolation(sqls[0], 1, 16, 16, 30, type, new Object[] {});
+        CheckViolation c2 = new CheckViolation(sqls[1], 1, 16, 16, 36, type, new Object[] {});
+        CheckViolation c3 = new CheckViolation(sqls[1], 1, 39, 39, 54, type, new Object[] {});
+        CheckViolation c4 = new CheckViolation(sqls[2], 1, 0, 0, 15, type, new Object[] {});
+        CheckViolation c5 = new CheckViolation(sqls[3], 1, 0, 0, 13, type, new Object[] {});
+
+
+        List<CheckViolation> expect = Arrays.asList(c1, c2, c3, c4, c5);
         Assert.assertEquals(expect, actual);
     }
 
