@@ -19,6 +19,7 @@ import org.quartz.JobDataMap;
 import org.quartz.JobExecutionContext;
 
 import com.alibaba.fastjson.JSON;
+import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.core.shared.constant.TaskType;
 import com.oceanbase.odc.core.shared.exception.UnsupportedException;
 import com.oceanbase.odc.metadb.schedule.ScheduleEntity;
@@ -54,7 +55,7 @@ public class SqlPlanJob implements OdcJob {
             }
         }
 
-        DatabaseChangeParameters taskParameters = JSON.parseObject(scheduleEntity.getJobParametersJson(),
+        DatabaseChangeParameters taskParameters = JsonUtils.fromJson(scheduleEntity.getJobParametersJson(),
                 DatabaseChangeParameters.class);
         taskParameters.setParentJobType(JobType.SQL_PLAN);
         CreateFlowInstanceReq flowInstanceReq = new CreateFlowInstanceReq();

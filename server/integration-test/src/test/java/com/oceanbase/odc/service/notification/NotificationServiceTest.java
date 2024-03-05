@@ -18,6 +18,8 @@ package com.oceanbase.odc.service.notification;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.junit.After;
 import org.junit.Assert;
@@ -166,13 +168,12 @@ public class NotificationServiceTest extends AuthorityTestEnv {
         List<NotificationPolicy> toBeUpdated = Arrays.asList(saved, metaPolicy);
         notificationService.batchUpdatePolicies(PROJECT_ID, toBeUpdated);
 
-        List<NotificationPolicy> policies = notificationService.listPolicies(PROJECT_ID);
-        Assert.assertFalse(policies.get(0).isEnabled());
-        for (NotificationPolicy policy : policies) {
-            if (policy.getPolicyMetadataId() == 2) {
-                Assert.assertEquals(channel.getId(), policy.getChannels().get(0).getId());
-            }
-        }
+        Map<Long, List<NotificationPolicy>> policies = notificationService.listPolicies(PROJECT_ID)
+                .stream().collect(Collectors.groupingBy(NotificationPolicy::getPolicyMetadataId));
+
+        Assert.assertFalse(policies.get(1L).get(0).isEnabled());
+        Assert.assertTrue(policies.containsKey(2L));
+        Assert.assertEquals(policies.get(2L).get(0).getChannels().get(0).getId(), channel.getId());
     }
 
     private Channel getChannel() {
