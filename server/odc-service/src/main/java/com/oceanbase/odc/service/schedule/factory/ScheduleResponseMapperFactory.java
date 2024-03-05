@@ -70,6 +70,9 @@ public class ScheduleResponseMapperFactory {
     }
 
     public ScheduleResponseMapper generate(@NonNull Collection<ScheduleEntity> entities) {
+        if (entities.isEmpty()) {
+            return new ScheduleResponseMapper();
+        }
         Set<Long> scheduleIds = entities.stream().map(ScheduleEntity::getId).collect(Collectors.toSet());
         Set<Long> creators = entities.stream().map(ScheduleEntity::getCreatorId).collect(Collectors.toSet());
         List<UserEntity> userEntities = userRepository.findByUserIds(creators);
