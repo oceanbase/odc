@@ -58,7 +58,7 @@ final class OBOraclePLParser extends BaseSQLParser<PLLexer, PLParser> {
 
     @Override
     public Statement buildStatement(ParseTree root) {
-        return null;
+        return new OBOraclePLCreateStatementVisitor().visit(root);
     }
 
     @Override

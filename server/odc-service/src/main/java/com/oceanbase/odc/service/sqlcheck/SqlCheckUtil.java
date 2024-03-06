@@ -170,14 +170,14 @@ public class SqlCheckUtil {
                     } else if (CollectionUtils.isNotEmpty(a.getModifyColumns())) {
                         return true;
                     }
-                    return a.getChangColumnDefinition() != null;
+                    return a.getChangeColumnDefinition() != null;
                 }).flatMap(a -> {
                     if (CollectionUtils.isNotEmpty(a.getAddColumns())) {
                         return a.getAddColumns().stream();
                     } else if (CollectionUtils.isNotEmpty(a.getModifyColumns())) {
                         return a.getModifyColumns().stream();
                     }
-                    return Stream.of(a.getChangColumnDefinition());
+                    return Stream.of(a.getChangeColumnDefinition());
                 });
     }
 
