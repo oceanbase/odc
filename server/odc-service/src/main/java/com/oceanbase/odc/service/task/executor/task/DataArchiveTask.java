@@ -65,7 +65,7 @@ public class DataArchiveTask extends BaseTask<Boolean> {
     }
 
     @Override
-    protected void doStart(JobContext context) throws Exception {
+    protected boolean doStart(JobContext context) throws Exception {
 
         String taskParameters = context.getJobParameters().get(JobParametersKeyConstants.META_TASK_PARAMETER_JSON);
         DLMJobParameters parameters = JsonUtils.fromJson(taskParameters,
@@ -94,6 +94,7 @@ public class DataArchiveTask extends BaseTask<Boolean> {
             progress = (tableIndex + 1.0) / parameters.getTables().size();
         }
         isFinish = true;
+        return true;
     }
 
     private void syncTable(int tableIndex, DLMJobParameters parameters) throws Exception {
@@ -164,7 +165,7 @@ public class DataArchiveTask extends BaseTask<Boolean> {
     }
 
     @Override
-    protected void onFail(Throwable e) {
+    protected void doClose() throws Exception {
 
     }
 

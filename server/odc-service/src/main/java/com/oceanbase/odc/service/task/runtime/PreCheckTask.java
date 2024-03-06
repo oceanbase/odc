@@ -112,7 +112,7 @@ public class PreCheckTask extends BaseTask<FlowTaskResult> {
     }
 
     @Override
-    protected void doStart(JobContext context) throws Exception {
+    protected boolean doStart(JobContext context) throws Exception {
         try {
             List<OffsetString> sqls = new ArrayList<>();
             this.overLimit = getSqlContentUntilOverLimit(sqls, this.parameters.getMaxReadContentBytes());
@@ -131,6 +131,7 @@ public class PreCheckTask extends BaseTask<FlowTaskResult> {
         } finally {
             tryCloseInputStream();
         }
+        return this.success;
     }
 
     @Override
@@ -139,7 +140,7 @@ public class PreCheckTask extends BaseTask<FlowTaskResult> {
     }
 
     @Override
-    protected void onFail(Throwable e) {
+    protected void doClose() throws Exception {
         tryCloseInputStream();
     }
 
