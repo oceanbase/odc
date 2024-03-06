@@ -1165,10 +1165,14 @@ public class OracleSqlCheckerTest {
                 "alter table tbl drop column a.c",
                 "alter table tbl add primary key (a,b), drop primary key",
                 "truncate table a",
-                "drop table aaa"
+                "drop table aaa",
+                "create table abcd(id varchar2(64))"
         };
+        JdbcTemplate jdbcTemplate = Mockito.mock(JdbcTemplate.class);
+        Mockito.when(jdbcTemplate.queryForObject(Mockito.anyString(), Mockito.any(RowMapper.class)))
+                .thenReturn(sqls[4]);
         DefaultSqlChecker sqlChecker = new DefaultSqlChecker(DialectType.OB_ORACLE,
-                null, Collections.singletonList(new OracleOfflineDdlExists()));
+                null, Collections.singletonList(new OracleOfflineDdlExists(jdbcTemplate)));
         List<CheckViolation> actual = sqlChecker.check(toOffsetString(sqls), null);
 
         SqlCheckRuleType type = SqlCheckRuleType.OFFLINE_SCHEMA_CHANGE_EXISTS;

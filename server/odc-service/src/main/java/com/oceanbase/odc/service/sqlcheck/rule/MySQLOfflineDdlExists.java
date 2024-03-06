@@ -15,14 +15,17 @@
  */
 package com.oceanbase.odc.service.sqlcheck.rule;
 
+import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import org.apache.commons.collections4.CollectionUtils;
+import org.springframework.jdbc.core.JdbcOperations;
 
 import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.sql.parser.DropStatement;
@@ -31,12 +34,15 @@ import com.oceanbase.odc.service.sqlcheck.SqlCheckRule;
 import com.oceanbase.odc.service.sqlcheck.SqlCheckUtil;
 import com.oceanbase.odc.service.sqlcheck.model.CheckViolation;
 import com.oceanbase.odc.service.sqlcheck.model.SqlCheckRuleType;
+import com.oceanbase.tools.sqlparser.OBMySQLParser;
 import com.oceanbase.tools.sqlparser.statement.Statement;
 import com.oceanbase.tools.sqlparser.statement.alter.table.AlterTable;
 import com.oceanbase.tools.sqlparser.statement.alter.table.AlterTableAction;
 import com.oceanbase.tools.sqlparser.statement.createtable.ColumnDefinition;
+import com.oceanbase.tools.sqlparser.statement.createtable.CreateTable;
 import com.oceanbase.tools.sqlparser.statement.createtable.GenerateOption.Type;
 import com.oceanbase.tools.sqlparser.statement.createtable.InLineConstraint;
+import com.oceanbase.tools.sqlparser.statement.expression.ColumnReference;
 import com.oceanbase.tools.sqlparser.statement.truncate.TruncateTable;
 
 import lombok.NonNull;
@@ -51,6 +57,12 @@ import lombok.NonNull;
  */
 public class MySQLOfflineDdlExists implements SqlCheckRule {
 
+    private final JdbcOperations jdbcOperations;
+
+    public MySQLOfflineDdlExists(@NonNull JdbcOperations jdbcOperations) {
+        this.jdbcOperations = jdbcOperations;
+    }
+
     @Override
     public SqlCheckRuleType getType() {
         return SqlCheckRuleType.OFFLINE_SCHEMA_CHANGE_EXISTS;
@@ -60,12 +72,14 @@ public class MySQLOfflineDdlExists implements SqlCheckRule {
     public List<CheckViolation> check(@NonNull Statement statement, @NonNull SqlCheckContext context) {
         if (statement instanceof AlterTable) {
             AlterTable alterTable = (AlterTable) statement;
+            CreateTable createTable = getTable(alterTable.getSchema(), alterTable.getTableName(), context);
             return alterTable.getAlterTableActions().stream().flatMap(action -> {
                 List<CheckViolation> violations = new ArrayList<>();
                 violations.addAll(addColumnInLocation(statement, action));
                 violations.addAll(changeColumnInLocation(statement, action));
                 violations.addAll(addAutoIncrementColumn(statement, action));
-                violations.addAll(changeColumnToAutoIncrement(statement, action));
+                violations.addAll(changeColumnToAutoIncrement(statement, createTable, action));
+                violations.addAll(changeColumnType(statement, createTable, action));
                 violations.addAll(changeColumnToPK(statement, action));
                 violations.addAll(addOrDropStoredVirtualColumn(statement, action));
                 violations.addAll(dropColumn(statement, action));
@@ -95,6 +109,17 @@ public class MySQLOfflineDdlExists implements SqlCheckRule {
                 return SqlCheckUtil.buildViolation(statement.getText(), action, getType(), new Object[] {});
             }
             return null;
+        });
+    }
+
+    protected List<CheckViolation> changeColumnType(Statement statement, CreateTable target,
+            AlterTableAction action) {
+        return changeColumn(action, changed -> {
+            ColumnDefinition origin = extractColumnDefFrom(target, changed.getColumnReference());
+            if (origin == null || Objects.equals(origin.getDataType(), changed.getDataType())) {
+                return null;
+            }
+            return SqlCheckUtil.buildViolation(statement.getText(), action, getType(), new Object[] {});
         });
     }
 
@@ -134,7 +159,8 @@ public class MySQLOfflineDdlExists implements SqlCheckRule {
 
     protected List<CheckViolation> addAutoIncrementColumn(Statement statement, AlterTableAction action) {
         return addColumn(action, definition -> {
-            if (Boolean.TRUE.equals(definition.getColumnAttributes().getAutoIncrement())) {
+            if (definition.getColumnAttributes() != null
+                    && Boolean.TRUE.equals(definition.getColumnAttributes().getAutoIncrement())) {
                 return SqlCheckUtil.buildViolation(statement.getText(), action, getType(), new Object[] {});
             }
             return null;
@@ -173,25 +199,32 @@ public class MySQLOfflineDdlExists implements SqlCheckRule {
         });
     }
 
-    protected List<CheckViolation> changeColumnToAutoIncrement(Statement statement, AlterTableAction action) {
-        return changeColumn(action, definition -> {
-            if (Boolean.TRUE.equals(definition.getColumnAttributes().getAutoIncrement())) {
-                return SqlCheckUtil.buildViolation(statement.getText(), action, getType(), new Object[] {});
+    protected List<CheckViolation> changeColumnToAutoIncrement(Statement statement, CreateTable createTable,
+            AlterTableAction action) {
+        return changeColumn(action, changed -> {
+            if (changed.getColumnAttributes() == null
+                    || !Boolean.TRUE.equals(changed.getColumnAttributes().getAutoIncrement())) {
+                return null;
             }
-            return null;
+            ColumnDefinition origin = extractColumnDefFrom(createTable, changed.getColumnReference());
+            if (origin != null
+                    && origin.getColumnAttributes() != null
+                    && Boolean.TRUE.equals(changed.getColumnAttributes().getAutoIncrement())) {
+                return null;
+            }
+            return SqlCheckUtil.buildViolation(statement.getText(), action, getType(), new Object[] {});
         });
     }
 
     protected List<CheckViolation> changeColumnToPK(Statement statement, AlterTableAction action) {
         return changeColumn(action, definition -> {
-            if (CollectionUtils.isEmpty(definition.getColumnAttributes().getConstraints())) {
+            if (definition.getColumnAttributes() == null
+                    || CollectionUtils.isEmpty(definition.getColumnAttributes().getConstraints())
+                    || definition.getColumnAttributes().getConstraints().stream()
+                            .noneMatch(InLineConstraint::isPrimaryKey)) {
                 return null;
             }
-            if (definition.getColumnAttributes().getConstraints().stream().anyMatch(InLineConstraint::isPrimaryKey)) {
-                return SqlCheckUtil.buildViolation(statement.getText(), action, getType(), new Object[] {});
-
-            }
-            return null;
+            return SqlCheckUtil.buildViolation(statement.getText(), action, getType(), new Object[] {});
         });
     }
 
@@ -230,6 +263,40 @@ public class MySQLOfflineDdlExists implements SqlCheckRule {
             violations.add(func.apply(action.getChangeColumnDefinition()));
         }
         return violations;
+    }
+
+    protected CreateTable getTableFromRemote(JdbcOperations jdbcOperations, String schema, String tableName) {
+        String sql = "SHOW CREATE TABLE " + (schema == null ? tableName : (schema + "." + tableName));
+        try {
+            String ddl = jdbcOperations.queryForObject(sql, (rs, rowNum) -> rs.getString(2));
+            if (ddl == null) {
+                return null;
+            }
+            Statement statement = new OBMySQLParser().parse(new StringReader(ddl));
+            return statement instanceof CreateTable ? (CreateTable) statement : null;
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    protected CreateTable getTable(String schema, String tableName, SqlCheckContext checkContext) {
+        List<CreateTable> tables = checkContext.getAllCheckedStatements(CreateTable.class).stream().map(p -> p.left)
+                .collect(Collectors.toList());
+        if (CollectionUtils.isEmpty(tables)) {
+            return getTableFromRemote(jdbcOperations, schema, tableName);
+        }
+        Optional<CreateTable> optional = tables.stream().filter(
+                t -> Objects.equals(unquoteIdentifier(t.getTableName()), unquoteIdentifier(tableName))).findAny();
+        return optional.orElseGet(() -> getTableFromRemote(jdbcOperations, schema, tableName));
+    }
+
+    protected String unquoteIdentifier(String identifier) {
+        return SqlCheckUtil.unquoteMySQLIdentifier(identifier);
+    }
+
+    private ColumnDefinition extractColumnDefFrom(CreateTable createTable, ColumnReference columnReference) {
+        return createTable.getColumnDefinitions().stream()
+                .filter(d -> Objects.equals(columnReference, d.getColumnReference())).findFirst().orElse(null);
     }
 
     @Override

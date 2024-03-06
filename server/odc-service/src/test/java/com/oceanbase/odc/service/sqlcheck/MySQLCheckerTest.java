@@ -1135,10 +1135,16 @@ public class MySQLCheckerTest {
                 "alter table tbl modify id varchar(64) primary key",
                 "alter table parti_tbl truncate partition a,b,d",
                 "truncate table a",
-                "drop table aaa"
+                "drop table aaa",
+                "create table abcd(id varchar(64))",
+                "alter table abcd modify id int AUTO_INCREMENT",
+                "alter table abcd modify id varchar(64)"
         };
+        JdbcTemplate jdbcTemplate = Mockito.mock(JdbcTemplate.class);
+        Mockito.when(jdbcTemplate.queryForObject(Mockito.anyString(), Mockito.any(RowMapper.class)))
+                .thenReturn(sqls[4]);
         DefaultSqlChecker sqlChecker = new DefaultSqlChecker(DialectType.OB_MYSQL,
-                null, Collections.singletonList(new MySQLOfflineDdlExists()));
+                null, Collections.singletonList(new MySQLOfflineDdlExists(jdbcTemplate)));
         List<CheckViolation> actual = sqlChecker.check(toOffsetString(sqls), null);
 
         SqlCheckRuleType type = SqlCheckRuleType.OFFLINE_SCHEMA_CHANGE_EXISTS;
@@ -1146,8 +1152,10 @@ public class MySQLCheckerTest {
         CheckViolation c2 = new CheckViolation(sqls[1], 1, 22, 22, 45, type, new Object[] {});
         CheckViolation c3 = new CheckViolation(sqls[2], 1, 0, 0, 15, type, new Object[] {});
         CheckViolation c4 = new CheckViolation(sqls[3], 1, 0, 0, 13, type, new Object[] {});
+        CheckViolation c5 = new CheckViolation(sqls[5], 1, 17, 17, 44, type, new Object[] {});
+        CheckViolation c6 = new CheckViolation(sqls[5], 1, 17, 17, 44, type, new Object[] {});
 
-        List<CheckViolation> expect = Arrays.asList(c1, c2, c3, c4);
+        List<CheckViolation> expect = Arrays.asList(c1, c2, c3, c4, c5, c6);
         Assert.assertEquals(expect, actual);
     }
 

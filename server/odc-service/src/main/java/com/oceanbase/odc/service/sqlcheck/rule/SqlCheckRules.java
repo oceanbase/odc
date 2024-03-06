@@ -149,7 +149,7 @@ public class SqlCheckRules {
         rules.add(new RestrictAutoIncrementDataTypesFactory());
         rules.add(new SyntaxErrorExistsFactory());
         rules.add(new ObjectNameUsingReservedWordsFactory());
-        rules.add(new OfflineDdlExistsFactory());
+        rules.add(new OfflineDdlExistsFactory(jdbc));
         rules.add(new TruncateTableExistsFactory());
         return rules;
     }
