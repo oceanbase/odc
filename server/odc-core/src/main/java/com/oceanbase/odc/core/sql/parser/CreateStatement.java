@@ -46,4 +46,12 @@ public class CreateStatement extends BaseStatement {
         this.relationFactors = Collections.singletonList(relationFactor);
     }
 
+    public CreateStatement(@NonNull RelationFactor relationFactor) {
+        this.relationFactors = Collections.singletonList(relationFactor);
+    }
+
+    public CreateStatement(@NonNull List<RelationFactor> relationFactors) {
+        this.relationFactors = relationFactors;
+    }
+
 }
