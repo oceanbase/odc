@@ -21,6 +21,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.flowable.engine.TaskService;
@@ -151,7 +152,9 @@ public class FlowTaskCallBackApprovalService {
 
         List<Task> tasks = flowableTaskService.createTaskQuery().taskName(taskName)
                 .processInstanceId(flowInstance.getProcessInstanceId())
-                .processDefinitionId(flowInstance.getProcessDefinitionId()).list();
+                .processDefinitionId(flowInstance.getProcessDefinitionId())
+                .list().stream().filter(a -> taskName != null && taskName.contains("callback"))
+                .collect(Collectors.toList());
         Verify.verify(CollectionUtils.isNotEmpty(tasks), "No callback flowable task is found by name " + taskName);
         Verify.verify(tasks.size() == 1,
                 "Expect callback flowable task size is 1, but size is " + tasks.size());
