@@ -56,6 +56,7 @@ public class OdcTriggerListener extends TriggerListenerSupport {
 
     @Override
     public void triggerMisfired(Trigger trigger) {
+        log.warn("Job is misfired, job key:" + trigger.getJobKey());
         AlarmUtils.alarm(SCHEDULING_FAILED, "Job is misfired, job key:" + trigger.getJobKey());
         if (!notificationProperties.isEnabled()) {
             return;
