@@ -243,6 +243,8 @@ public class RollbackPlanRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Rol
     @Override
     protected void onFailure(Long taskId, TaskService taskService) {
         log.warn("Generate rollback plan task failed, taskId={}", taskId);
+        // flow continue if rollback task failed
+        super.callback(getFlowInstanceId(), getTargetTaskInstanceId(), FlowNodeStatus.COMPLETED, null);
     }
 
     @Override
@@ -264,10 +266,15 @@ public class RollbackPlanRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Rol
         } catch (Exception e) {
             log.warn("Failed to store generate rollback plan task result", e);
         }
+        super.callback(getFlowInstanceId(), getTargetTaskInstanceId(), FlowNodeStatus.COMPLETED, null);
+
     }
 
     @Override
-    protected void onTimeout(Long taskId, TaskService taskService) {}
+    protected void onTimeout(Long taskId, TaskService taskService) {
+        // flow continue if rollback task timeout
+        super.callback(getFlowInstanceId(), getTargetTaskInstanceId(), FlowNodeStatus.COMPLETED, null);
+    }
 
     @Override
     protected void onProgressUpdate(Long taskId, TaskService taskService) {}
