@@ -59,7 +59,7 @@ public class MySQLOfflineDdlExists implements SqlCheckRule {
 
     private final JdbcOperations jdbcOperations;
 
-    public MySQLOfflineDdlExists(@NonNull JdbcOperations jdbcOperations) {
+    public MySQLOfflineDdlExists(JdbcOperations jdbcOperations) {
         this.jdbcOperations = jdbcOperations;
     }
 
@@ -266,6 +266,9 @@ public class MySQLOfflineDdlExists implements SqlCheckRule {
     }
 
     protected CreateTable getTableFromRemote(JdbcOperations jdbcOperations, String schema, String tableName) {
+        if (jdbcOperations == null) {
+            return null;
+        }
         String sql = "SHOW CREATE TABLE " + (schema == null ? tableName : (schema + "." + tableName));
         try {
             String ddl = jdbcOperations.queryForObject(sql, (rs, rowNum) -> rs.getString(2));
@@ -295,6 +298,9 @@ public class MySQLOfflineDdlExists implements SqlCheckRule {
     }
 
     private ColumnDefinition extractColumnDefFrom(CreateTable createTable, ColumnReference columnReference) {
+        if (createTable == null) {
+            return null;
+        }
         return createTable.getColumnDefinitions().stream().filter(d -> {
             if (columnReference.getColumn() == null || d.getColumnReference().getColumn() == null) {
                 return false;

@@ -1342,7 +1342,7 @@
       - 'OB_ORACLE'
   propertiesJson: '{}'
 - enabled: 1
-  level: 2
+  level: 1
   rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-prod-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.truncate-table-exists.name}
   appliedDialectTypes:
@@ -1817,7 +1817,7 @@
       - 'OB_ORACLE'
   propertiesJson: '{}'
 - enabled: 1
-  level: 2
+  level: 1
   rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-default-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.truncate-table-exists.name}
   appliedDialectTypes:

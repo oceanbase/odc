@@ -47,7 +47,7 @@ import lombok.NonNull;
  */
 public class OracleOfflineDdlExists extends MySQLOfflineDdlExists {
 
-    public OracleOfflineDdlExists(@NonNull JdbcOperations jdbcOperations) {
+    public OracleOfflineDdlExists(JdbcOperations jdbcOperations) {
         super(jdbcOperations);
     }
 
@@ -97,6 +97,9 @@ public class OracleOfflineDdlExists extends MySQLOfflineDdlExists {
 
     @Override
     protected CreateTable getTableFromRemote(JdbcOperations jdbcOperations, String schema, String tableName) {
+        if (jdbcOperations == null) {
+            return null;
+        }
         String sql = "SHOW CREATE TABLE " + (schema == null ? tableName : (schema + "." + tableName));
         try {
             String ddl = jdbcOperations.queryForObject(sql, (rs, rowNum) -> rs.getString(2));
