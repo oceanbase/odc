@@ -24,6 +24,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 import com.oceanbase.odc.common.i18n.I18n;
 import com.oceanbase.odc.common.util.RetryExecutor;
+import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.flow.BaseFlowableDelegate;
 import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.core.shared.constant.FlowStatus;
@@ -93,9 +94,12 @@ public class CreateExternalApprovalTask extends BaseFlowableDelegate {
             // add riskLevel to variables
             String riskLevelNameKey =
                     riskLevelService.findRawById(Long.valueOf(FlowTaskUtil.getRiskLevel(execution))).get().getName();
-            String riskLevelName =
-                    I18n.translate(riskLevelNameKey.substring(2, riskLevelNameKey.length() - 1), null, Locale.US);
-            variables.setAttribute(Variable.RISK_LEVEL, riskLevelName);
+            if (StringUtils.isTranslatable(riskLevelNameKey)) {
+                String riskLevelName =
+                        I18n.translate(StringUtils.getTranslatableKey(riskLevelNameKey), null,
+                                Locale.CHINA);
+                variables.setAttribute(Variable.RISK_LEVEL, riskLevelName);
+            } ;
 
             String externalFlowInstanceId = approvalClient.start(properties, variables);
             flowApprovalInstance.setExternalFlowInstanceId(externalFlowInstanceId);

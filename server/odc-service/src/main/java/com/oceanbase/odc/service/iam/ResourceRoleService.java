@@ -28,7 +28,6 @@ import javax.validation.constraints.NotEmpty;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -77,14 +76,9 @@ public class ResourceRoleService {
             return Collections.emptyList();
         }
         List<UserResourceRole> userResourceRoles = new ArrayList<>();
-        ArrayList<String> resourceTypes = new ArrayList<>();
-        resourceTypes.add(ResourceType.ODC_PROJECT.toString());
-        Map<ResourceRoleName, ResourceRoleEntity> resourceRoleEntities =
-                resourceRoleRepository.findInResourceType(resourceTypes).stream().collect(Collectors.toMap(
-                        ResourceRoleEntity::getRoleName, v -> v, (existingValue, newValue) -> newValue));
-
-        List<UserResourceRoleEntity> entities = userResourceRoleList.stream().map(i -> {
-            ResourceRoleEntity resourceRoleEntity = resourceRoleEntities.getOrDefault(i.getResourceRole(), null);
+        userResourceRoleList.forEach(i -> {
+            ResourceRoleEntity resourceRoleEntity = resourceRoleRepository.findByResourceTypeAndResourceRoleName(
+                    i.getResourceType().toString(), i.getResourceRole().toString());
             if (resourceRoleEntity == null) {
                 throw new UnexpectedException("resource role not found, role=" + i.getResourceRole());
             }
@@ -93,18 +87,8 @@ public class ResourceRoleService {
             entity.setUserId(i.getUserId());
             entity.setResourceRoleId(resourceRoleEntity.getId());
             entity.setOrganizationId(authenticationFacade.currentOrganizationId());
+            userResourceRoleRepository.save(entity);
             userResourceRoles.add(fromEntity(entity, resourceRoleEntity));
-            return entity;
-        }).collect(Collectors.toList());
-
-        String batchInsert =
-                "insert into `iam_user_resource_role` (`user_id`, `resource_id`, `resource_role_id`, `organization_id`) VALUES (?, ?, ?, ?) on duplicate key update `id` = `id`";
-        JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
-        jdbcTemplate.batchUpdate(batchInsert, entities, entities.size(), (ps, entity) -> {
-            ps.setLong(1, entity.getUserId());
-            ps.setLong(2, entity.getResourceId());
-            ps.setLong(3, entity.getResourceRoleId());
-            ps.setLong(4, entity.getOrganizationId());
         });
         return userResourceRoles;
     }
@@ -173,7 +157,7 @@ public class ResourceRoleService {
 
     @Transactional(rollbackFor = Exception.class)
     @SkipAuthorize("internal usage")
-    public int deleteByResourceTypeAndId(ResourceType resourceType, Long resourceId) {
+    public int deleteByResourceTypeAndId(@NonNull ResourceType resourceType, @NonNull Long resourceId) {
         return userResourceRoleRepository.deleteByResourceTypeAndId(resourceType.toString(), resourceId);
     }
 

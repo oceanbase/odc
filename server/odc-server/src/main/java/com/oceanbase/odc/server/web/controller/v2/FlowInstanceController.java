@@ -16,10 +16,12 @@
 package com.oceanbase.odc.server.web.controller.v2;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -37,6 +39,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.oceanbase.odc.core.flow.model.FlowTaskResult;
+import com.oceanbase.odc.core.flow.model.TaskParameters;
 import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.core.shared.constant.FlowStatus;
 import com.oceanbase.odc.core.shared.constant.OrganizationType;
@@ -58,6 +61,8 @@ import com.oceanbase.odc.service.flow.model.FlowMetaInfo;
 import com.oceanbase.odc.service.flow.model.QueryFlowInstanceParams;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.partitionplan.model.PartitionPlanConfig;
+import com.oceanbase.odc.service.permission.database.model.ApplyDatabaseParameter;
+import com.oceanbase.odc.service.permission.database.model.ApplyDatabaseParameter.ApplyDatabase;
 import com.oceanbase.odc.service.session.model.SqlExecuteResult;
 import com.oceanbase.odc.service.task.model.OdcTaskLogLevel;
 
@@ -90,7 +95,21 @@ public class FlowInstanceController {
         if (authenticationFacade.currentUser().getOrganizationType() == OrganizationType.INDIVIDUAL) {
             return Responses.list(flowInstanceService.createIndividualFlowInstance(flowInstanceReq));
         } else {
-            return Responses.list(flowInstanceService.create(flowInstanceReq));
+            if (flowInstanceReq.getTaskType() == TaskType.APPLY_DATABASE_PERMISSION) {
+                TaskParameters parameters = flowInstanceReq.getParameters();
+                List<ApplyDatabase> databases = ((ApplyDatabaseParameter) parameters).getDatabases();
+                List<FlowInstanceDetailResp> resp = databases.stream().map(applyDatabas -> {
+                    ArrayList<ApplyDatabase> applyDatabases = new ArrayList<>();
+                    applyDatabases.add(applyDatabas);
+                    ((ApplyDatabaseParameter) parameters).setDatabases(applyDatabases);
+                    flowInstanceReq.setDatabaseId(applyDatabas.getId());
+                    flowInstanceReq.setParameters(parameters);
+                    return flowInstanceService.create(flowInstanceReq);
+                }).collect(Collectors.toList()).stream().flatMap(line -> line.stream()).collect(Collectors.toList());
+                return Responses.list(resp);
+            } else {
+                return Responses.list(flowInstanceService.create(flowInstanceReq));
+            }
         }
     }
 

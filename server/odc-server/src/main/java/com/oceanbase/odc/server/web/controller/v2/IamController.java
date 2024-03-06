@@ -333,7 +333,8 @@ public class IamController {
 
     @ApiOperation(value = "listResourceRoles", notes = "list resource roles")
     @RequestMapping(value = "/resourceRoles", method = RequestMethod.GET)
-    public ListResponse<ResourceRole> listResourceRoles(@RequestParam(value = "resourceType", defaultValue = "ODC_PROJECT") List<String> resourceType) {
+    public ListResponse<ResourceRole> listResourceRoles(
+            @RequestParam(value = "resourceType", defaultValue = "ODC_PROJECT") List<String> resourceType) {
         List<ResourceType> resourceTypes =
                 resourceType.stream().map(ResourceType::valueOf).collect(Collectors.toList());
         return Responses.list(resourceRoleService.listResourceRoles(resourceTypes));
