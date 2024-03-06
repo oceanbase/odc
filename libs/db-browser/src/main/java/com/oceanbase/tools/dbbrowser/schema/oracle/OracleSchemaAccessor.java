@@ -1483,16 +1483,18 @@ public class OracleSchemaAccessor implements DBSchemaAccessor {
         });
         parsePackageDDL(packageHead);
 
-        OracleSqlBuilder packageBodyDDL = new OracleSqlBuilder();
-        packageBodyDDL.append("SELECT dbms_metadata.get_ddl('PACKAGE_BODY', ")
-                .value(packageName)
-                .append(", ")
-                .value(schemaName)
-                .append(") as DDL from dual");
-        jdbcOperations.query(packageBodyDDL.toString(), rs -> {
-            packageBodyBasicInfo.setDdl(rs.getString(1));
-        });
-        parsePackageDDL(packageBody);
+        if (Objects.nonNull(packageBodyBasicInfo.getDefiner())) {
+            OracleSqlBuilder packageBodyDDL = new OracleSqlBuilder();
+            packageBodyDDL.append("SELECT dbms_metadata.get_ddl('PACKAGE_BODY', ")
+                    .value(packageName)
+                    .append(", ")
+                    .value(schemaName)
+                    .append(") as DDL from dual");
+            jdbcOperations.query(packageBodyDDL.toString(), rs -> {
+                packageBodyBasicInfo.setDdl(rs.getString(1));
+            });
+            parsePackageDDL(packageBody);
+        }
 
         if (StringUtils.containsIgnoreCase(dbPackage.getStatus(), PLConstants.PL_OBJECT_STATUS_INVALID)) {
             dbPackage.setErrorMessage(PLObjectErrMsgUtils.getOraclePLObjErrMsg(jdbcOperations,

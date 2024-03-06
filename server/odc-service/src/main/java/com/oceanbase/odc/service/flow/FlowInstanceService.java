@@ -1059,12 +1059,15 @@ public class FlowInstanceService {
     }
 
     private RiskLevelDescriber buildRiskLevelDescriber(CreateFlowInstanceReq req) {
-        EnvironmentEntity environment = environmentRepository.findById(req.getEnvironmentId()).orElse(null);
+        EnvironmentEntity env = null;
+        if (Objects.nonNull(req.getEnvironmentId())) {
+            env = environmentRepository.findById(req.getEnvironmentId()).orElse(null);
+        }
         return RiskLevelDescriber.builder()
                 .projectName(req.getProjectName())
                 .taskType(req.getTaskType().name())
-                .environmentId(String.valueOf(req.getEnvironmentId()))
-                .environmentName(environment == null ? null : environment.getName())
+                .environmentId(env == null ? null : String.valueOf(env.getId()))
+                .environmentName(env == null ? null : env.getName())
                 .databaseName(req.getDatabaseName())
                 .build();
     }
