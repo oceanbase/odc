@@ -295,8 +295,13 @@ public class MySQLOfflineDdlExists implements SqlCheckRule {
     }
 
     private ColumnDefinition extractColumnDefFrom(CreateTable createTable, ColumnReference columnReference) {
-        return createTable.getColumnDefinitions().stream()
-                .filter(d -> Objects.equals(columnReference, d.getColumnReference())).findFirst().orElse(null);
+        return createTable.getColumnDefinitions().stream().filter(d -> {
+            if (columnReference.getColumn() == null || d.getColumnReference().getColumn() == null) {
+                return false;
+            }
+            return Objects.equals(unquoteIdentifier(
+                    columnReference.getColumn()), unquoteIdentifier(d.getColumnReference().getColumn()));
+        }).findFirst().orElse(null);
     }
 
     @Override
