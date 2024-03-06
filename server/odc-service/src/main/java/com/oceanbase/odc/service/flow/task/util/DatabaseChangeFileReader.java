@@ -19,13 +19,22 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.SequenceInputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.Objects;
+
+import javax.validation.constraints.NotNull;
 
 import org.apache.commons.collections4.CollectionUtils;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
 
+import com.oceanbase.odc.common.util.StringUtils;
+import com.oceanbase.odc.core.shared.constant.DialectType;
+import com.oceanbase.odc.core.sql.split.OffsetString;
+import com.oceanbase.odc.core.sql.split.SqlStatementIterator;
+import com.oceanbase.odc.service.common.util.SqlUtils;
+import com.oceanbase.odc.service.flow.task.model.DatabaseChangeInputStream;
 import com.oceanbase.odc.service.flow.task.model.DatabaseChangeParameters;
+import com.oceanbase.odc.service.flow.task.model.DatabaseChangeSqlContent;
 import com.oceanbase.odc.service.objectstorage.ObjectStorageFacade;
 import com.oceanbase.odc.service.objectstorage.model.StorageObject;
 
@@ -37,29 +46,30 @@ import lombok.extern.slf4j.Slf4j;
  * @since ODC_release_4.2.0
  */
 @Slf4j
-@Component
 public class DatabaseChangeFileReader {
 
-    @Autowired
-    private ObjectStorageFacade storageFacade;
-
-    public InputStream readInputStreamFromSqlObjects(DatabaseChangeParameters params, String bucketName,
+    public static InputStream readInputStreamFromSqlObjects(@NotNull ObjectStorageFacade storageFacade,
+            DatabaseChangeParameters params, String bucketName,
             long maxSizeBytes) {
         List<String> objectIds = params.getSqlObjectIds();
         if (CollectionUtils.isEmpty(objectIds)) {
             return null;
         }
         try {
-            return readSqlFilesStream(bucketName, objectIds, maxSizeBytes);
+            return readSqlFilesStream(storageFacade, bucketName, objectIds, maxSizeBytes).getInputStream();
         } catch (Exception e) {
             log.warn("Failed to read sql files from object storage", e);
             throw new IllegalStateException("Failed to read sql files from object storage");
         }
     }
 
-    private InputStream readSqlFilesStream(String bucket, List<String> objectIds, long maxBytes) throws IOException {
+    public static DatabaseChangeInputStream readSqlFilesStream(@NotNull ObjectStorageFacade storageFacade,
+            @NotNull String bucket, @NotNull List<String> objectIds, Long maxBytes) throws IOException {
+        DatabaseChangeInputStream returnVal = new DatabaseChangeInputStream();
         long totalBytes = 0;
         InputStream inputStream = new ByteArrayInputStream(new byte[0]);
+        returnVal.setInputStream(inputStream);
+        returnVal.setSqlTotalBytes(totalBytes);
         for (String objectId : objectIds) {
             StorageObject object = storageFacade.loadObject(bucket, objectId);
             InputStream current = object.getContent();
@@ -71,16 +81,37 @@ public class DatabaseChangeFileReader {
                     && byteSql[2] == (byte) 0xbf) {
                 current.reset();
                 current.skip(3);
+                totalBytes -= 3;
             } else {
                 current.reset();
             }
-            if (maxBytes > 0 && totalBytes > maxBytes) {
+            if (Objects.nonNull(maxBytes) && maxBytes > 0 && totalBytes > maxBytes) {
                 log.info("The file size is too large and will not be read later, totalSize={} bytes", totalBytes);
-                return inputStream;
+                return returnVal;
             }
             inputStream = new SequenceInputStream(inputStream, current);
         }
-        return inputStream;
+        return returnVal;
+    }
+
+    public static DatabaseChangeSqlContent getSqlContent(@NotNull ObjectStorageFacade storageFacade,
+            @NotNull DatabaseChangeParameters parameters, @NotNull DialectType dialectType,
+            @NotNull String bucketName) {
+        List<OffsetString> userInputSqls = null;
+        SqlStatementIterator uploadFileSqlIterator = null;
+        InputStream uploadFileInputStream = null;
+        String delimiter = parameters.getDelimiter();
+        if (StringUtils.isNotBlank(parameters.getSqlContent())) {
+            userInputSqls = SqlUtils.splitWithOffset(dialectType, parameters.getSqlContent(), delimiter, true);
+        }
+        if (CollectionUtils.isNotEmpty(parameters.getSqlObjectIds())) {
+            uploadFileInputStream = readInputStreamFromSqlObjects(storageFacade, parameters, bucketName, -1);
+            if (uploadFileInputStream != null) {
+                uploadFileSqlIterator =
+                        SqlUtils.iterator(dialectType, delimiter, uploadFileInputStream, StandardCharsets.UTF_8);
+            }
+        }
+        return new DatabaseChangeSqlContent(userInputSqls, uploadFileSqlIterator, uploadFileInputStream);
     }
 
 }
