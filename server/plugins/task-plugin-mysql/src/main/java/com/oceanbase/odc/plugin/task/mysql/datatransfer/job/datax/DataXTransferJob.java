@@ -99,7 +99,7 @@ public class DataXTransferJob extends AbstractJob {
             // exit code: 0=success, 1=error
             int exitValue = process.waitFor();
             renameExportFile();
-            if (exitValue == 0 && failed == 0) {
+            if (exitValue == 0 && failed == 0 || isCanceled()) {
                 setStatus(Status.SUCCESS);
             } else {
                 setStatus(Status.FAILURE);
