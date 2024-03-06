@@ -64,18 +64,17 @@ public class FlowTaskCallBackApprovalServiceCopied {
     public void approval(long flowInstanceId, String serviceTaskActivityId, Map<String, Object> approvalVariables,
             Throwable exception) {
         FlowInstanceEntity flowInstance = getFlowInstance(flowInstanceId);
+        FlowableElement flowableElement = getFlowableElementOfCallBackTask(flowInstanceId, serviceTaskActivityId);
         boolean passed = FlowApprovalUtil.isApprovalPassed(flowInstance.getProcessDefinitionId(),
-                serviceTaskActivityId, exception);
-        doApproval(flowInstanceId, serviceTaskActivityId, passed, approvalVariables);
+                flowableElement.getActivityId(), exception);
+        doApproval(flowInstanceId, flowableElement.getName(), passed, approvalVariables);
     }
 
-    private void doApproval(long flowInstanceId, String serviceTaskActivityId, boolean approved,
+    private void doApproval(long flowInstanceId, String callBackTaskName, boolean approved,
             Map<String, Object> approvalVariables) {
 
         FlowInstanceEntity flowInstance = getFlowInstance(flowInstanceId);
-        FlowableElement flowableElement = getFlowableElementOfCallBackTask(flowInstanceId, serviceTaskActivityId);
-        Task task = getFlowableTask(flowInstance.getProcessInstanceId(), flowableElement.getName());
-
+        Task task = getFlowableTask(flowInstance.getProcessInstanceId(), callBackTaskName);
         Map<String, Object> variables = new HashMap<>();
         variables.putIfAbsent(APPROVAL_VARIABLE_NAME, approved);
         if (approvalVariables != null) {

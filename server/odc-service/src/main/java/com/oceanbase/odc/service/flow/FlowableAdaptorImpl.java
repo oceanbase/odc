@@ -184,7 +184,7 @@ public class FlowableAdaptorImpl implements FlowableAdaptor {
     public Optional<FlowTaskInstance> getTaskInstanceByActivityId(@NonNull String activityId,
             @NonNull Long flowInstanceId) {
         Optional<ServiceTaskInstanceEntity> optional = serviceTaskInstanceRepository
-                .findByInstanceTypeAndActivityId(FlowNodeType.SERVICE_TASK, activityId, flowInstanceId);
+                .findByInstanceTypeAndActivityId(activityId, flowInstanceId);
         return innerConvert(optional, this,
                 (entity, flowService) -> new FlowTaskInstance(entity,
                         new OdcRuntimeDelegateMapper(), flowService,

@@ -70,6 +70,12 @@ public interface ServiceTaskInstanceRepository extends OdcJpaRepository<ServiceT
             @Param("flowInstanceId") Long flowInstanceId);
 
     @Query(value = "select na.* from flow_instance_node_task as na inner join flow_instance_node as n on na.id=n.instance_id "
+            + "where n.activity_id=:activityId and n.flow_instance_id=:flowInstanceId",
+            nativeQuery = true)
+    Optional<ServiceTaskInstanceEntity> findByInstanceTypeAndActivityId(@Param("activityId") String activityId,
+            @Param("flowInstanceId") Long flowInstanceId);
+
+    @Query(value = "select na.* from flow_instance_node_task as na inner join flow_instance_node as n on na.id=n.instance_id "
             + "where n.instance_type=:#{#instanceType.name()} and n.name=:name and n.flow_instance_id=:flowInstanceId",
             nativeQuery = true)
     Optional<ServiceTaskInstanceEntity> findByInstanceTypeAndName(@Param("instanceType") FlowNodeType instanceType,
