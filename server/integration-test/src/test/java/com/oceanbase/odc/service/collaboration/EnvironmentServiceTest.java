@@ -19,6 +19,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
+import org.apache.commons.lang3.StringUtils;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -35,6 +36,7 @@ import com.oceanbase.odc.metadb.collaboration.EnvironmentRepository;
 import com.oceanbase.odc.service.collaboration.environment.EnvironmentService;
 import com.oceanbase.odc.service.collaboration.environment.model.CreateEnvironmentReq;
 import com.oceanbase.odc.service.collaboration.environment.model.Environment;
+import com.oceanbase.odc.service.collaboration.environment.model.EnvironmentExists;
 import com.oceanbase.odc.service.collaboration.environment.model.EnvironmentStyle;
 import com.oceanbase.odc.service.collaboration.environment.model.UpdateEnvironmentReq;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
@@ -120,6 +122,34 @@ public class EnvironmentServiceTest extends ServiceTestEnv {
         environmentService.delete(environment.getId());
         Assert.assertEquals(0, environmentRepository.count());
     }
+
+    @Test
+    public void testReservedName_Failure() {
+        EnvironmentExists exists = environmentService.exists("sit");
+        Assert.assertTrue(exists.getExists());
+        Assert.assertTrue(
+                StringUtils.equals(exists.getErrorMessage(), "The name sit is reserved, please modify and retry"));
+    }
+
+    @Test
+    public void testExistingName_Failure() {
+        environmentService.create(
+                CreateEnvironmentReq.builder().copiedRulesetId(RULESET_ID).description("a")
+                        .name("test_").enabled(true)
+                        .style(EnvironmentStyle.GEEKBLUE).build());
+
+        EnvironmentExists exists = environmentService.exists("test_");
+        Assert.assertTrue(exists.getExists());
+        Assert.assertTrue(StringUtils.equals(exists.getErrorMessage(),
+                "Environment with identifier name=test_ already exists, please modify name and retry"));
+    }
+
+    @Test
+    public void testExistingName_Success() {
+        EnvironmentExists exists = environmentService.exists("abc");
+        Assert.assertFalse(exists.getExists());
+    }
+
 
 
     private Ruleset getRuleset() {
