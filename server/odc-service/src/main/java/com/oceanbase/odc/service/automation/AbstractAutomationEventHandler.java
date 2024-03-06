@@ -15,8 +15,7 @@
  */
 package com.oceanbase.odc.service.automation;
 
-import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -128,18 +127,18 @@ public abstract class AbstractAutomationEventHandler implements TriggerEventHand
     }
 
     protected void bindProjectRole(Long userId, AutomationAction action) {
-        ArrayList<ResourceType> resourceTypes = new ArrayList<>(Arrays.asList(ResourceType.ODC_PROJECT));
         Long projectId = ((Integer) action.getArguments().get("projectId")).longValue();
         List<Integer> roleIds = (List<Integer>) action.getArguments().get("roles");
-        List<ProjectMember> members = resourceRoleService.listResourceRoles(resourceTypes).stream()
-                .filter(resourceRole -> roleIds.contains(resourceRole.getId().intValue()))
-                .map(resourceRole -> {
-                    ProjectMember member = new ProjectMember();
-                    member.setRole(resourceRole.getRoleName());
-                    member.setId(userId);
-                    return member;
-                })
-                .collect(Collectors.toList());
+        List<ProjectMember> members =
+                resourceRoleService.listResourceRoles(Collections.singletonList(ResourceType.ODC_PROJECT)).stream()
+                        .filter(resourceRole -> roleIds.contains(resourceRole.getId().intValue()))
+                        .map(resourceRole -> {
+                            ProjectMember member = new ProjectMember();
+                            member.setRole(resourceRole.getRoleName());
+                            member.setId(userId);
+                            return member;
+                        })
+                        .collect(Collectors.toList());
         projectService.createMembersSkipPermissionCheck(projectId, action.getOrganizationId(), members);
     }
 

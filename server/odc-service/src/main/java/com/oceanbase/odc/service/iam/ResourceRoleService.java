@@ -220,7 +220,7 @@ public class ResourceRoleService {
 
     public List<UserResourceRole> getUserIdsByProjectIdAndResourceRole(Long resourceId, ResourceType resourceType,
             String roleName) {
-        List<UserResourceRoleEntity> entities = userResourceRoleRepository.findByProjectIdAndResourceRole(resourceId,
+        List<UserResourceRoleEntity> entities = userResourceRoleRepository.findByResourceIdAndResourceRole(resourceId,
                 resourceType.toString(),
                 roleName);
         return entities.stream().map(e -> {

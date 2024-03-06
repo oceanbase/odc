@@ -20,7 +20,6 @@ import static com.oceanbase.odc.service.captcha.CaptchaConstants.SESSION_KEY_VER
 import java.io.IOException;
 import java.util.List;
 import java.util.Objects;
-import java.util.stream.Collectors;
 
 import javax.servlet.http.HttpServletRequest;
 
@@ -334,10 +333,9 @@ public class IamController {
     @ApiOperation(value = "listResourceRoles", notes = "list resource roles")
     @RequestMapping(value = "/resourceRoles", method = RequestMethod.GET)
     public ListResponse<ResourceRole> listResourceRoles(
-            @RequestParam(value = "resourceType", defaultValue = "ODC_PROJECT") List<String> resourceType) {
-        List<ResourceType> resourceTypes =
-                resourceType.stream().map(ResourceType::valueOf).collect(Collectors.toList());
-        return Responses.list(resourceRoleService.listResourceRoles(resourceTypes));
+            @RequestParam(required = false, value = "resourceType",
+                    defaultValue = "ODC_PROJECT") List<ResourceType> resourceType) {
+        return Responses.list(resourceRoleService.listResourceRoles(resourceType));
     }
 
     /**

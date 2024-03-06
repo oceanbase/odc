@@ -74,13 +74,13 @@ public interface UserResourceRoleRepository
     int deleteByUserIdAndResourceIdIn(@Param("userId") Long userId, @Param("resourceIds") Set<Long> resourceIds);
 
     @Query(nativeQuery = true,
-            value = "select t.* from iam_user_resource_role t,iam_resource_role irr where t.resource_role_id = irr.id and irr.resource_type = :resourceType and t.resource_id = :resourceId")
+            value = "select t.* from iam_user_resource_role t inner join iam_resource_role irr on t.resource_role_id = irr.id where irr.resource_type = :resourceType and t.resource_id = :resourceId")
     List<UserResourceRoleEntity> listByResourceTypeAndId(
             @Param("resourceType") String resourceType, @Param("resourceId") Long resourceId);
 
     @Query(nativeQuery = true,
-            value = "select t.* from iam_user_resource_role t,iam_resource_role irr where t.resource_role_id = irr.id and irr.resource_type = :resourceType and irr.role_name = :roleName and t.resource_id = :resourceId")
-    List<UserResourceRoleEntity> findByProjectIdAndResourceRole(
+            value = "select t.* from iam_user_resource_role t inner join iam_resource_role irr on t.resource_role_id = irr.id where irr.resource_type = :resourceType and irr.role_name = :roleName and t.resource_id = :resourceId")
+    List<UserResourceRoleEntity> findByResourceIdAndResourceRole(
             @Param("resourceId") Long resourceId, @Param("resourceType") String resourceType,
             @Param("roleName") String roleName);
 

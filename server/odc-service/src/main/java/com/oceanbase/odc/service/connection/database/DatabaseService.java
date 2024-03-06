@@ -726,10 +726,13 @@ public class DatabaseService {
     @Transactional(rollbackFor = Exception.class)
     @PreAuthenticate(hasAnyResourceRole = {"OWNER", "DBA"}, resourceType = "ODC_PROJECT", indexOfIdParam = 0)
     public boolean modifyDatabasesOwner(@NotNull Long projectId, @NotNull @Valid ModifyDatabaseOwnerReq req) {
-        Set<Long> projectIds = projectService.getMemberProjectIds(authenticationFacade.currentUserId());
-        if (!projectIds.contains(projectId)) {
-            throw new AccessDeniedException();
-        }
+        // check databaseId in projectId
+        databaseRepository.findByIdIn(req.getDatabaseIds()).forEach(database -> {
+            if (!projectId.equals(database.getProjectId())) {
+                throw new AccessDeniedException();
+            }
+        });
+
         // Delete the original owner
         req.getDatabaseIds().forEach(
                 databaseId -> {
@@ -751,6 +754,7 @@ public class DatabaseService {
         return true;
     }
 
+    @SkipAuthorize("internal authenticated")
     public GetDatabaseOwnerResp getDatabasesOwner(@NotNull Long projectId, @NotNull Long databaseId) {
         List<UserResourceRole> userResourceRoles = resourceRoleService.listByResourceTypeAndId(
                 ResourceType.ODC_DATABASE, databaseId);
@@ -759,7 +763,6 @@ public class DatabaseService {
         if (CollectionUtils.isEmpty(userResourceRoles)) {
             userResourceRoles = resourceRoleService.getUserIdsByProjectIdAndResourceRole(
                     projectId, ResourceType.ODC_PROJECT, "OWNER");
-
         }
 
         List<Member> members = userResourceRoles.stream()
