@@ -39,6 +39,8 @@ public class RiskLevelDescriber implements Serializable {
 
     private String environmentId;
 
+    private String environmentName;
+
     private String projectName;
 
     private String sqlCheckResult;
@@ -52,6 +54,8 @@ public class RiskLevelDescriber implements Serializable {
     public String describe(ConditionExpression expression) {
         if (expression == ConditionExpression.ENVIRONMENT_ID) {
             return StringUtils.isEmpty(this.environmentId) ? StringUtils.EMPTY : this.environmentId;
+        } else if (expression == ConditionExpression.ENVIRONMENT_NAME) {
+            return StringUtils.isEmpty(this.environmentName) ? StringUtils.EMPTY : this.environmentName;
         } else if (expression == ConditionExpression.PROJECT_NAME) {
             return StringUtils.isEmpty(this.projectName) ? StringUtils.EMPTY : this.projectName;
         } else if (expression == ConditionExpression.SQL_CHECK_RESULT) {

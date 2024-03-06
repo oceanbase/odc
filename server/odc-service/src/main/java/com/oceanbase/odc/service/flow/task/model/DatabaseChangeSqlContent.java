@@ -13,18 +13,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.regulation.risklevel.model;
+package com.oceanbase.odc.service.flow.task.model;
+
+import java.io.InputStream;
+import java.util.List;
+
+import com.oceanbase.odc.core.sql.split.OffsetString;
+import com.oceanbase.odc.core.sql.split.SqlStatementIterator;
+
+import lombok.AllArgsConstructor;
+import lombok.Data;
 
 /**
- * @Author: Lebie
- * @Date: 2023/8/4 16:17
- * @Description: []
+ * @author jingtian
+ * @date 2024/3/5
+ * @since ODC_release_4.2.4
  */
-public enum ConditionExpression {
-    PROJECT_NAME,
-    ENVIRONMENT_ID,
-    ENVIRONMENT_NAME,
-    TASK_TYPE,
-    DATABASE_NAME,
-    SQL_CHECK_RESULT
+@Data
+@AllArgsConstructor
+public class DatabaseChangeSqlContent {
+    private List<OffsetString> userInputSqls;
+    private SqlStatementIterator uploadFileSqlIterator;
+    private InputStream uploadFileInputStream;
 }

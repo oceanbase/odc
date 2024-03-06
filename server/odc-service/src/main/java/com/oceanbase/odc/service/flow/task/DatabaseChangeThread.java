@@ -20,7 +20,6 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.SequenceInputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -61,11 +60,12 @@ import com.oceanbase.odc.service.common.util.SqlUtils;
 import com.oceanbase.odc.service.datasecurity.DataMaskingService;
 import com.oceanbase.odc.service.datasecurity.model.SensitiveColumn;
 import com.oceanbase.odc.service.datasecurity.util.DataMaskingUtil;
+import com.oceanbase.odc.service.flow.task.model.DatabaseChangeInputStream;
 import com.oceanbase.odc.service.flow.task.model.DatabaseChangeParameters;
 import com.oceanbase.odc.service.flow.task.model.DatabaseChangeResult;
+import com.oceanbase.odc.service.flow.task.util.DatabaseChangeFileReader;
 import com.oceanbase.odc.service.objectstorage.ObjectStorageFacade;
 import com.oceanbase.odc.service.objectstorage.cloud.CloudObjectStorageService;
-import com.oceanbase.odc.service.objectstorage.model.StorageObject;
 import com.oceanbase.odc.service.session.DBSessionManageFacade;
 import com.oceanbase.odc.service.session.OdcStatementCallBack;
 import com.oceanbase.odc.service.session.initializer.ConsoleTimeoutInitializer;
@@ -254,7 +254,11 @@ public class DatabaseChangeThread extends Thread {
             sqlTotalBytes = sqlBytes.length;
         } else {
             try {
-                sqlInputStream = readSqlFilesStream(userId, objectIds);
+                DatabaseChangeInputStream databaseChangeInputStream =
+                        DatabaseChangeFileReader.readSqlFilesStream(objectStorageFacade,
+                                "async".concat(File.separator).concat(String.valueOf(userId)), objectIds, null);
+                sqlInputStream = databaseChangeInputStream.getInputStream();
+                sqlTotalBytes = databaseChangeInputStream.getSqlTotalBytes();
             } catch (IOException exception) {
                 throw new InternalServerError("load database change task file failed", exception);
             }
@@ -274,29 +278,6 @@ public class DatabaseChangeThread extends Thread {
         } catch (Exception exception) {
             throw new InternalServerError("create database change task file dir failed", exception);
         }
-    }
-
-    private InputStream readSqlFilesStream(Long userId, List<String> objectIds) throws IOException {
-        InputStream inputStream = new ByteArrayInputStream(new byte[0]);
-        for (String objectId : objectIds) {
-            String bucket = "async".concat(File.separator).concat(String.valueOf(userId));
-            StorageObject object = objectStorageFacade.loadObject(bucket, objectId);
-            InputStream current = object.getContent();
-            sqlTotalBytes += object.getMetadata().getTotalLength();
-            // remove UTF-8 BOM if exists
-            current.mark(3);
-            byte[] byteSql = new byte[3];
-            if (current.read(byteSql) >= 3 && byteSql[0] == (byte) 0xef && byteSql[1] == (byte) 0xbb
-                    && byteSql[2] == (byte) 0xbf) {
-                current.reset();
-                current.skip(3);
-                sqlTotalBytes -= 3;
-            } else {
-                current.reset();
-            }
-            inputStream = new SequenceInputStream(inputStream, current);
-        }
-        return inputStream;
     }
 
     private void addErrorRecordsToFile(int index, String sql, String errorMsg) {

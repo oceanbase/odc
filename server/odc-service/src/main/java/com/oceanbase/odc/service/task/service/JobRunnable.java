@@ -13,18 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.regulation.risklevel.model;
+package com.oceanbase.odc.service.task.service;
+
+import com.oceanbase.odc.service.task.exception.JobException;
 
 /**
- * @Author: Lebie
- * @Date: 2023/8/4 16:17
- * @Description: []
+ * @author yaobin
+ * @date 2024-02-23
+ * @since 4.2.4
  */
-public enum ConditionExpression {
-    PROJECT_NAME,
-    ENVIRONMENT_ID,
-    ENVIRONMENT_NAME,
-    TASK_TYPE,
-    DATABASE_NAME,
-    SQL_CHECK_RESULT
+@FunctionalInterface
+public interface JobRunnable {
+
+    void run() throws JobException;
 }

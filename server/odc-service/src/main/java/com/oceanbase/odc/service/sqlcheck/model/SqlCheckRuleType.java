@@ -233,10 +233,6 @@ public enum SqlCheckRuleType implements Translatable {
      */
     RESTRICT_AUTO_INCREMENT_DATATYPES("restrict-auto-increment-datatypes"),
     /**
-     * 表的 DDL 中涉及创建、修改索引的耗时操作
-     */
-    INDEX_CHANGE_TIME_CONSUMING_EXISTS("index-change-time-consuming-exists"),
-    /**
      * 对象名使用了保留字
      */
     OBJECT_NAME_USING_RESERVED_WORDS("object-name-using-reserved-words"),

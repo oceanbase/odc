@@ -137,6 +137,14 @@ public class RiskLevelService {
                 .collect(Collectors.toList());
     }
 
+    public boolean isDefaultRiskLevel(@NonNull Long organizationId, @NonNull Long id) {
+        Optional<RiskLevelEntity> riskLevelOptional = riskLevelRepository.findByOrganizationIdAndId(organizationId, id);
+        if (!riskLevelOptional.isPresent()) {
+            throw new NotFoundException(ResourceType.ODC_RISK_LEVEL, "id", id);
+        }
+        return riskLevelOptional.get().getLevel() == 0;
+    }
+
     private RiskLevel entityToModel(RiskLevelEntity entity) {
         RiskLevel model = riskLevelMapper.entityToModel(entity);
         model.setApprovalFlowConfig(approvalFlowConfigService.findById(entity.getApprovalFlowConfigId()));

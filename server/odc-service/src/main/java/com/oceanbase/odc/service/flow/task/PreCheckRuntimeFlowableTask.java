@@ -61,6 +61,7 @@ import com.oceanbase.odc.service.flow.task.model.PreCheckTaskProperties;
 import com.oceanbase.odc.service.flow.task.model.SqlCheckTaskResult;
 import com.oceanbase.odc.service.flow.task.util.DatabaseChangeFileReader;
 import com.oceanbase.odc.service.flow.util.FlowTaskUtil;
+import com.oceanbase.odc.service.objectstorage.ObjectStorageFacade;
 import com.oceanbase.odc.service.onlineschemachange.model.OnlineSchemaChangeParameters;
 import com.oceanbase.odc.service.permission.database.model.DatabasePermissionType;
 import com.oceanbase.odc.service.permission.database.model.UnauthorizedDatabase;
@@ -71,12 +72,9 @@ import com.oceanbase.odc.service.resultset.ResultSetExportTaskParameter;
 import com.oceanbase.odc.service.schedule.flowtask.AlterScheduleParameters;
 import com.oceanbase.odc.service.schedule.model.JobType;
 import com.oceanbase.odc.service.session.util.SchemaExtractor;
-import com.oceanbase.odc.service.sqlcheck.SqlCheckRule;
 import com.oceanbase.odc.service.sqlcheck.SqlCheckService;
 import com.oceanbase.odc.service.sqlcheck.model.CheckResult;
 import com.oceanbase.odc.service.sqlcheck.model.CheckViolation;
-import com.oceanbase.odc.service.sqlcheck.model.SqlCheckRuleType;
-import com.oceanbase.odc.service.sqlcheck.rule.IndexChangeTimeConsumingExists;
 import com.oceanbase.odc.service.task.TaskService;
 import com.oceanbase.odc.service.task.model.ExecutorInfo;
 import com.oceanbase.tools.dbbrowser.parser.constant.SqlType;
@@ -107,11 +105,11 @@ public class PreCheckRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Void> {
     @Autowired
     private DatabaseService databaseService;
     @Autowired
-    private DatabaseChangeFileReader databaseChangeFileReader;
-    @Autowired
     private SqlCheckService sqlCheckService;
     @Autowired
     private PreCheckTaskProperties preCheckTaskProperties;
+    @Autowired
+    private ObjectStorageFacade storageFacade;
 
     private static final String CHECK_RESULT_FILE_NAME = "sql-check-result.json";
 
@@ -196,6 +194,7 @@ public class PreCheckRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Void> {
         } catch (Exception e) {
             log.warn("Failed to store task result", e);
         }
+        super.onFailure(taskId, taskService);
     }
 
     @Override
@@ -269,11 +268,8 @@ public class PreCheckRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Void> {
         List<UnauthorizedDatabase> unauthorizedDatabases = new ArrayList<>();
         List<CheckViolation> violations = new ArrayList<>();
         if (CollectionUtils.isNotEmpty(sqls)) {
-            Long environmentId = Long.valueOf(describer.getEnvironmentId());
-            List<SqlCheckRule> checkRules =
-                    this.sqlCheckService.getRules(environmentId, describer.getDatabaseName(), connectionConfig);
-            checkRules.add(new IndexChangeTimeConsumingExists());
-            violations.addAll(this.sqlCheckService.check(environmentId, sqls, connectionConfig, checkRules));
+            violations.addAll(this.sqlCheckService.check(Long.valueOf(describer.getEnvironmentId()),
+                    describer.getDatabaseName(), sqls, connectionConfig));
             Map<String, Set<SqlType>> schemaName2SqlTypes = SchemaExtractor.listSchemaName2SqlTypes(
                     sqls.stream().map(e -> SqlTuple.newTuple(e.getStr())).collect(Collectors.toList()),
                     preCheckTaskEntity.getDatabaseName(), this.connectionConfig.getDialectType());
@@ -293,15 +289,7 @@ public class PreCheckRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Void> {
                     databaseService.filterUnauthorizedDatabases(schemaName2PermissionTypes, connectionConfig.getId());
         }
         this.permissionCheckResult = new DatabasePermissionCheckResult(unauthorizedDatabases);
-        if (violations.stream().filter(Objects::nonNull)
-                .anyMatch(v -> v.getType() == SqlCheckRuleType.INDEX_CHANGE_TIME_CONSUMING_EXISTS)) {
-            violations =
-                    violations.stream().filter(v -> v.getType() != SqlCheckRuleType.INDEX_CHANGE_TIME_CONSUMING_EXISTS)
-                            .collect(Collectors.toList());
-            this.sqlCheckResult = SqlCheckTaskResult.success(violations, true);
-        } else {
-            this.sqlCheckResult = SqlCheckTaskResult.success(violations, false);
-        }
+        this.sqlCheckResult = SqlCheckTaskResult.success(violations);
         try {
             storeTaskResultToFile(preCheckTaskEntity.getId(), this.sqlCheckResult);
             sqlCheckResult.setFileName(CHECK_RESULT_FILE_NAME);
@@ -385,7 +373,8 @@ public class PreCheckRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Void> {
             params = (DatabaseChangeParameters) asParams.getScheduleTaskParameters();
         }
         if (Objects.nonNull(params)) {
-            this.uploadFileInputStream = databaseChangeFileReader.readInputStreamFromSqlObjects(params, bucketName, -1);
+            this.uploadFileInputStream =
+                    DatabaseChangeFileReader.readInputStreamFromSqlObjects(storageFacade, params, bucketName, -1);
             if (Objects.nonNull(this.uploadFileInputStream)) {
                 this.uploadFileSqlIterator = SqlUtils.iterator(connectionConfig.getDialectType(), params.getDelimiter(),
                         this.uploadFileInputStream, StandardCharsets.UTF_8);

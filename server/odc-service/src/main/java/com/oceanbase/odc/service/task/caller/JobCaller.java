@@ -44,6 +44,14 @@ public interface JobCaller {
      */
     void stop(JobIdentity ji) throws JobException;
 
+    /**
+     * modify job parameters
+     *
+     * @param ji job identity
+     * @throws JobException throws JobException when stop job failed
+     */
+    void modify(JobIdentity ji, String jobParametersJson) throws JobException;
+
 
     /**
      * destroy a odc job executor
