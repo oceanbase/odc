@@ -90,33 +90,23 @@ public class PartitionPlanScheduleService {
     @Autowired
     private FlowInstanceRepository flowInstanceRepository;
 
-    public PartitionPlanConfig getPartitionPlan(@NonNull Long flowInstanceId) {
+    public PartitionPlanConfig getPartitionPlanByFlowInstanceId(@NonNull Long flowInstanceId) {
         Long fId = this.flowInstanceService.mapFlowInstance(flowInstanceId, FlowInstance::getId, false);
         Optional<PartitionPlanEntity> optional = this.partitionPlanRepository.findByFlowInstanceId(fId);
-        if (!optional.isPresent()) {
+        return optional.map(this::getPartitionPlan).orElse(null);
+    }
+
+    public PartitionPlanConfig getPartitionPlanByDatabaseId(@NonNull Long databaseId) {
+        Database database = this.databaseService.detail(databaseId);
+        List<PartitionPlanEntity> planEntities = this.partitionPlanRepository
+                .findByDatabaseIdAndEnabled(database.getId(), true);
+        if (CollectionUtils.isEmpty(planEntities)) {
             return null;
+        } else if (planEntities.size() > 1) {
+            throw new IllegalStateException("Unknown error, there are "
+                    + planEntities.size() + " partition plans are active, databaseId=" + databaseId);
         }
-        PartitionPlanEntity pp = optional.get();
-        PartitionPlanConfig target = entityToModel(pp);
-        List<PartitionPlanTableConfig> tableConfigs = this.partitionPlanTableRepository
-                .findByPartitionPlanIdIn(Collections.singletonList(pp.getId())).stream()
-                .map(this::entityToModel).collect(Collectors.toList());
-        target.setPartitionTableConfigs(tableConfigs);
-        if (CollectionUtils.isEmpty(tableConfigs)) {
-            return target;
-        }
-        Map<Long, List<PartitionPlanTablePartitionKeyEntity>> pptId2KeyEntities =
-                this.partitionPlanTablePartitionKeyRepository.findByPartitionplanTableIdIn(tableConfigs.stream()
-                        .map(PartitionPlanTableConfig::getId).collect(Collectors.toList())).stream()
-                        .collect(Collectors.groupingBy(PartitionPlanTablePartitionKeyEntity::getPartitionplanTableId));
-        target.getPartitionTableConfigs().forEach(tableConfig -> {
-            List<PartitionPlanTablePartitionKeyEntity> pptks = pptId2KeyEntities.get(tableConfig.getId());
-            if (CollectionUtils.isEmpty(pptks)) {
-                return;
-            }
-            tableConfig.setPartitionKeyConfigs(pptks.stream().map(this::entityToModel).collect(Collectors.toList()));
-        });
-        return target;
+        return getPartitionPlan(planEntities.get(0));
     }
 
     public List<PartitionPlanTableConfig> getPartitionPlanTables(@NonNull List<Long> partitionPlanTableIds) {
@@ -360,6 +350,29 @@ public class PartitionPlanScheduleService {
             return cfg;
         }).collect(Collectors.toList()));
         this.scheduleService.updateJobParametersById(scheduleId, JsonUtils.toJson(parameter));
+    }
+
+    private PartitionPlanConfig getPartitionPlan(@NonNull PartitionPlanEntity partitionPlan) {
+        PartitionPlanConfig target = entityToModel(partitionPlan);
+        List<PartitionPlanTableConfig> tableConfigs = this.partitionPlanTableRepository
+                .findByPartitionPlanIdIn(Collections.singletonList(partitionPlan.getId())).stream()
+                .map(this::entityToModel).collect(Collectors.toList());
+        target.setPartitionTableConfigs(tableConfigs);
+        if (CollectionUtils.isEmpty(tableConfigs)) {
+            return target;
+        }
+        Map<Long, List<PartitionPlanTablePartitionKeyEntity>> pptId2KeyEntities =
+                this.partitionPlanTablePartitionKeyRepository.findByPartitionplanTableIdIn(tableConfigs.stream()
+                        .map(PartitionPlanTableConfig::getId).collect(Collectors.toList())).stream()
+                        .collect(Collectors.groupingBy(PartitionPlanTablePartitionKeyEntity::getPartitionplanTableId));
+        target.getPartitionTableConfigs().forEach(tableConfig -> {
+            List<PartitionPlanTablePartitionKeyEntity> pptks = pptId2KeyEntities.get(tableConfig.getId());
+            if (CollectionUtils.isEmpty(pptks)) {
+                return;
+            }
+            tableConfig.setPartitionKeyConfigs(pptks.stream().map(this::entityToModel).collect(Collectors.toList()));
+        });
+        return target;
     }
 
 }
