@@ -22,6 +22,7 @@ import com.oceanbase.odc.core.flow.builder.TimerBoundaryEventBuilder;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.constant.TaskType;
 import com.oceanbase.odc.service.flow.FlowableAdaptor;
+import com.oceanbase.odc.service.flow.listener.PreCheckServiceTaskFailedListener;
 import com.oceanbase.odc.service.flow.listener.ServiceTaskCancelledListener;
 import com.oceanbase.odc.service.flow.listener.ServiceTaskExecutingCompleteListener;
 import com.oceanbase.odc.service.flow.listener.ServiceTaskExpiredListener;
@@ -76,12 +77,25 @@ public class OdcFlowInstanceConfigurer extends FlowInstanceConfigurer {
                 || nextNode.getTaskType() == TaskType.PRE_CHECK) {
             return next(nextNode, s -> {
                 s.setAsynchronous(true);
+                ErrorBoundaryEventBuilder failedErrBuilder =
+                        setHandleableError(nextNode, s, ErrorCodes.FlowTaskInstanceFailed);
+                failedErrBuilder.addExecutionListener(PreCheckServiceTaskFailedListener.class);
             }, u -> {
             }, u -> {
             });
         }
         return next(nextNode, serviceTaskBuilder -> {
+            serviceTaskBuilder.addExecutionListener(ServiceTaskExecutingCompleteListener.class);
             serviceTaskBuilder.setAsynchronous(true);
+            ErrorBoundaryEventBuilder cancelErrBuilder =
+                    setHandleableError(nextNode, serviceTaskBuilder, ErrorCodes.FlowTaskInstanceCancelled);
+            cancelErrBuilder.addExecutionListener(ServiceTaskCancelledListener.class);
+            ErrorBoundaryEventBuilder failedErrBuilder =
+                    setHandleableError(nextNode, serviceTaskBuilder, ErrorCodes.FlowTaskInstanceFailed);
+            failedErrBuilder.addExecutionListener(ServiceTaskFailedListener.class);
+            ErrorBoundaryEventBuilder expiredErrBuilder =
+                    setHandleableError(nextNode, serviceTaskBuilder, ErrorCodes.FlowTaskInstanceExpired);
+            expiredErrBuilder.addExecutionListener(ServiceTaskExpiredListener.class);
         }, userTaskBuilder -> {
             userTaskBuilder.addExecutionListener(ServiceTaskPendingListener.class);
             int waitExecExpireIntervalSeconds = nextNode.getStrategyConfig().getPendingExpireIntervalSeconds();

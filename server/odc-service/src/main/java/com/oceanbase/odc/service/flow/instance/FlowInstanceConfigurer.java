@@ -253,24 +253,8 @@ public class FlowInstanceConfigurer extends GraphConfigurer<FlowInstance, BaseFl
                 userManuTaskConsumer, userTimerTaskConsumer);
         String userTaskName = FlowNodeType.APPROVAL_TASK.name() + "_callback_task_" + getNameSuffix(nextNode);
         UserTaskBuilder userTaskBuilder = nullSafeGetNodeBuilder(userTaskName, nextNode, () -> {
-            UserTaskBuilder serviceTaskBuilder = new UserTaskBuilder(userTaskName);
-            if (nextNode.getTaskType() == TaskType.PRE_CHECK) {
-                ErrorBoundaryEventBuilder failedErrBuilder =
-                        setHandleableError(nextNode, serviceTaskBuilder, ErrorCodes.FlowTaskInstanceFailed);
-                failedErrBuilder.addExecutionListener(PreCheckServiceTaskFailedListener.class);
-            } else {
-                serviceTaskBuilder.addExecutionListener(ServiceTaskExecutingCompleteListener.class);
-                ErrorBoundaryEventBuilder cancelErrBuilder =
-                        setHandleableError(nextNode, serviceTaskBuilder, ErrorCodes.FlowTaskInstanceCancelled);
-                cancelErrBuilder.addExecutionListener(ServiceTaskCancelledListener.class);
-                ErrorBoundaryEventBuilder failedErrBuilder =
-                        setHandleableError(nextNode, serviceTaskBuilder, ErrorCodes.FlowTaskInstanceFailed);
-                failedErrBuilder.addExecutionListener(ServiceTaskFailedListener.class);
-                ErrorBoundaryEventBuilder expiredErrBuilder =
-                        setHandleableError(nextNode, serviceTaskBuilder, ErrorCodes.FlowTaskInstanceExpired);
-                expiredErrBuilder.addExecutionListener(ServiceTaskExpiredListener.class);
-            }
-            return serviceTaskBuilder;
+            UserTaskBuilder utb = new UserTaskBuilder(userTaskName);
+            return utb;
         });
         targetExecution.next(userTaskBuilder);
         nextNode.bindFlowableElement(new FlowableElement(userTaskBuilder));
@@ -443,7 +427,7 @@ public class FlowInstanceConfigurer extends GraphConfigurer<FlowInstance, BaseFl
     }
 
     protected ErrorBoundaryEventBuilder setHandleableError(@NonNull FlowTaskInstance nextNode,
-            @NonNull UserTaskBuilder builder, @NonNull ErrorCode errorCode) {
+            @NonNull ServiceTaskBuilder builder, @NonNull ErrorCode errorCode) {
         if (log.isDebugEnabled()) {
             log.debug("Start defining service task error handling logic, intanceType={}, errorCode={}",
                     nextNode.getNodeType(), errorCode);

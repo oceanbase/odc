@@ -32,7 +32,6 @@ import org.springframework.stereotype.Service;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.flow.model.FlowableElement;
 import com.oceanbase.odc.core.flow.model.FlowableElementType;
-import com.oceanbase.odc.core.flow.util.FlowUtil;
 import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
@@ -41,6 +40,7 @@ import com.oceanbase.odc.metadb.flow.FlowInstanceRepository;
 import com.oceanbase.odc.service.flow.FlowableAdaptor;
 import com.oceanbase.odc.service.flow.instance.FlowTaskInstance;
 import com.oceanbase.odc.service.flow.model.FlowNodeType;
+import com.oceanbase.odc.service.flow.task.util.FlowApprovalUtil;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -61,24 +61,26 @@ public class FlowTaskCallBackApprovalServiceCopied {
     @Autowired
     private FlowInstanceRepository flowInstanceRepository;
 
-    public void approval(long flowInstanceId, String currentActivityId, Throwable exception) {
+    public void approval(long flowInstanceId, String serviceTaskActivityId, Map<String, Object> approvalVariables,
+            Throwable exception) {
         FlowInstanceEntity flowInstance = getFlowInstance(flowInstanceId);
-        boolean passed = FlowUtil.isApprovalPassed(flowInstance.getProcessDefinitionId(), currentActivityId, exception);
-        if (passed) {
-            doApproval(flowInstanceId, currentActivityId, true);
-        } else {
-            doApproval(flowInstanceId, currentActivityId, false);
-        }
+        boolean passed = FlowApprovalUtil.isApprovalPassed(flowInstance.getProcessDefinitionId(),
+                serviceTaskActivityId, exception);
+        doApproval(flowInstanceId, serviceTaskActivityId, passed, approvalVariables);
     }
 
-    private void doApproval(long flowInstanceId, String currentActivityId, boolean approved) {
+    private void doApproval(long flowInstanceId, String serviceTaskActivityId, boolean approved,
+            Map<String, Object> approvalVariables) {
 
         FlowInstanceEntity flowInstance = getFlowInstance(flowInstanceId);
-        FlowableElement flowableElement = getFlowableElementOfCallBackTask(flowInstanceId, currentActivityId);
+        FlowableElement flowableElement = getFlowableElementOfCallBackTask(flowInstanceId, serviceTaskActivityId);
         Task task = getFlowableTask(flowInstance.getProcessInstanceId(), flowableElement.getName());
 
         Map<String, Object> variables = new HashMap<>();
         variables.putIfAbsent(APPROVAL_VARIABLE_NAME, approved);
+        if (approvalVariables != null) {
+            variables.putAll(approvalVariables);
+        }
         flowableTaskService.complete(task.getId(), variables);
     }
 
@@ -91,9 +93,9 @@ public class FlowTaskCallBackApprovalServiceCopied {
         return tasks.get(0);
     }
 
-    private FlowableElement getFlowableElementOfCallBackTask(long flowInstanceId, String currentActivityId) {
+    private FlowableElement getFlowableElementOfCallBackTask(long flowInstanceId, String serviceTaskActivityId) {
         Optional<FlowTaskInstance> flowTaskInstance =
-                this.flowableAdaptor.getTaskInstanceByActivityId(currentActivityId, flowInstanceId);
+                this.flowableAdaptor.getTaskInstanceByActivityId(serviceTaskActivityId, flowInstanceId);
 
         long flowTaskInstanceId = flowTaskInstance.get().getId();
         List<FlowableElement> flowableElements =

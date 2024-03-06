@@ -15,8 +15,13 @@
  */
 package com.oceanbase.odc.service.flow.task;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import org.flowable.engine.delegate.DelegateExecution;
 import org.flowable.engine.impl.persistence.entity.ExecutionEntityImpl;
+
+import lombok.Getter;
 
 /**
  *
@@ -26,11 +31,14 @@ import org.flowable.engine.impl.persistence.entity.ExecutionEntityImpl;
  */
 public class ExecutionEntityFacade extends ExecutionEntityImpl {
 
+    @Getter
+    private Map<String, Object> approvalVariables;
+
     public ExecutionEntityFacade(DelegateExecution execution) {
-        execution.getVariables().forEach(this::setVariable);
-        execution.getVariablesLocal().forEach(this::setVariableLocal);
-        execution.getTransientVariables().forEach(this::setTransientVariable);
-        execution.getTransientVariablesLocal().forEach(this::setTransientVariableLocal);
+        execution.getVariables().forEach(super::setVariable);
+        execution.getVariablesLocal().forEach(super::setVariableLocal);
+        execution.getTransientVariables().forEach(super::setTransientVariable);
+        execution.getTransientVariablesLocal().forEach(super::setTransientVariableLocal);
 
         this.id = execution.getId();
         this.activityId = execution.getCurrentActivityId();
@@ -39,4 +47,18 @@ public class ExecutionEntityFacade extends ExecutionEntityImpl {
         this.processInstanceId = execution.getProcessInstanceId();
         this.eventName = execution.getEventName();
     }
+
+    @Override
+    public void setVariable(String variableName, Object variableValue) {
+        if (this.approvalVariables == null) {
+            this.approvalVariables = new HashMap<>();
+        }
+        approvalVariables.put(variableName, variableValue);
+    }
+
+    @Override
+    public void setTransientVariable(String variableName, Object variableValue) {
+        setVariable(variableName, variableValue);
+    }
+
 }
