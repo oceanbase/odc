@@ -37,6 +37,8 @@ public class EmptyExecutionListener extends BaseExecutionListener {
         if (log.isDebugEnabled()) {
             log.debug("Begin execution, activityId={}, processInstanceId={}", execution.getCurrentActivityId(),
                     execution.getProcessInstanceId());
+            execution.getCurrentFlowableListener().getEvent();
+            execution.getCurrentFlowableListener();
         }
     }
 

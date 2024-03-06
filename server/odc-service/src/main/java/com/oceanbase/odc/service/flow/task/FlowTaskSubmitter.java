@@ -26,6 +26,7 @@ import org.springframework.stereotype.Component;
 
 import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
+import com.oceanbase.odc.service.flow.BeanInjectedClassDelegate;
 import com.oceanbase.odc.service.flow.FlowableAdaptor;
 import com.oceanbase.odc.service.flow.instance.FlowTaskInstance;
 import com.oceanbase.odc.service.flow.task.mapper.OdcRuntimeDelegateMapper;
@@ -42,8 +43,6 @@ import lombok.extern.slf4j.Slf4j;
 @Component
 public class FlowTaskSubmitter implements JavaDelegate {
 
-    @Autowired
-    private FlowTaskBeanFactory flowableTaskBeanFactory;
     @Qualifier("flowTaskExecutor")
     @Autowired
     private ThreadPoolTaskExecutor threadPoolTaskExecutor;
@@ -74,7 +73,7 @@ public class FlowTaskSubmitter implements JavaDelegate {
         Class<? extends BaseRuntimeFlowableDelegate<?>> delegateClass =
                 mapper.map(flowTaskInstance.get().getTaskType());
         flowTaskInstance.get().dealloc();
-        return flowableTaskBeanFactory.createBeanWithDependencies(delegateClass);
+        return BeanInjectedClassDelegate.instantiateDelegate(delegateClass);
     }
 
 }
