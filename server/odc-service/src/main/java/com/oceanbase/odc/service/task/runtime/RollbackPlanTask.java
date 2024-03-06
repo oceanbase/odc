@@ -171,8 +171,13 @@ public class RollbackPlanTask extends BaseTask<FlowTaskResult> {
     }
 
     @Override
-    protected void onFail(Throwable e) {
+    protected void doClose() throws Exception {
         tryCloseInputStream();
+    }
+
+    @Override
+    protected boolean isExecuteSucceed() {
+        return true;
     }
 
     @Override

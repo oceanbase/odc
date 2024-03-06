@@ -287,9 +287,14 @@ public class DatabaseChangeTask extends BaseTask<FlowTaskResult> {
     }
 
     @Override
-    protected void onFail(Throwable e) {
+    protected void doClose() throws Exception {
         tryExpireConnectionSession();
         tryCloseInputStream();
+    }
+
+    @Override
+    protected boolean isExecuteSucceed() {
+        return false;
     }
 
     @Override

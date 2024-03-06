@@ -164,8 +164,13 @@ public class DataArchiveTask extends BaseTask<Boolean> {
     }
 
     @Override
-    protected void onFail(Throwable e) {
+    protected void doClose() throws Exception {
 
+    }
+
+    @Override
+    protected boolean isExecuteSucceed() {
+        return true;
     }
 
     @Override
