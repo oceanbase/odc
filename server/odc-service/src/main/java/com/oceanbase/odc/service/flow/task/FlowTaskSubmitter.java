@@ -17,6 +17,9 @@ package com.oceanbase.odc.service.flow.task;
 
 import java.util.Optional;
 
+import org.flowable.common.engine.impl.cfg.TransactionPropagation;
+import org.flowable.common.engine.impl.interceptor.CommandConfig;
+import org.flowable.engine.ProcessEngineConfiguration;
 import org.flowable.engine.delegate.DelegateExecution;
 import org.flowable.engine.delegate.JavaDelegate;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -49,18 +52,36 @@ public class FlowTaskSubmitter implements JavaDelegate {
     private ThreadPoolTaskExecutor threadPoolTaskExecutor;
     @Autowired
     private FlowableAdaptor flowableAdaptor;
+    @Autowired
+    private ProcessEngineConfiguration processEngineConfiguration;
+    @Autowired
+    private FlowTaskCallBackApprovalServiceCopied flowTaskCallBackApprovalService;
 
     @Override
     public void execute(DelegateExecution execution) {
         // DelegateExecution will be changed when current thread return,
         // so use execution facade class to save execution properties
         DelegateExecution executionFacade = new ExecutionEntityFacade(execution);
-        threadPoolTaskExecutor.submit(() -> {
+        threadPoolTaskExecutor.submit(
+                () -> {
+                    doSubmit(executionFacade);
+                });
+    }
+
+    private void doSubmit(DelegateExecution executionFacade) {
+        CommandConfig config = new CommandConfig(false, TransactionPropagation.NOT_SUPPORTED);
+
+        processEngineConfiguration.getCommandExecutor().execute(config, commandContext -> {
             try {
                 getDelegateInstance(executionFacade).execute(executionFacade);
+                flowTaskCallBackApprovalService.approval(FlowTaskUtil.getFlowInstanceId(executionFacade),
+                        executionFacade.getCurrentActivityId(), null);
             } catch (Throwable e) {
                 log.warn("Delegate task instance execute occur error.", e);
+                flowTaskCallBackApprovalService.approval(FlowTaskUtil.getFlowInstanceId(executionFacade),
+                        executionFacade.getCurrentActivityId(), e.getCause());
             }
+            return null;
         });
     }
 

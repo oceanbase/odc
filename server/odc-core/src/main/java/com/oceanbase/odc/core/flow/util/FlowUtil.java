@@ -18,20 +18,26 @@ package com.oceanbase.odc.core.flow.util;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.flowable.bpmn.converter.BpmnXMLConverter;
 import org.flowable.bpmn.model.Activity;
 import org.flowable.bpmn.model.BoundaryEvent;
 import org.flowable.bpmn.model.BpmnModel;
+import org.flowable.bpmn.model.ErrorEventDefinition;
 import org.flowable.bpmn.model.EventDefinition;
 import org.flowable.bpmn.model.FlowElement;
 import org.flowable.bpmn.model.Process;
+import org.flowable.engine.delegate.BpmnError;
 import org.flowable.engine.impl.util.ProcessDefinitionUtil;
 
 import com.oceanbase.odc.core.flow.builder.FlowableProcessBuilder;
+import com.oceanbase.odc.core.flow.exception.BaseFlowException;
 
 import lombok.NonNull;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * Util for Flow module
@@ -40,6 +46,7 @@ import lombok.NonNull;
  * @date 2022-02-23 14:40
  * @since ODC_release_3.3.0
  */
+@Slf4j
 public class FlowUtil {
 
     public static String convertToXml(@NonNull FlowableProcessBuilder builder) {
@@ -77,5 +84,50 @@ public class FlowUtil {
         }
         return returnVal;
     }
+
+
+    public static boolean isApprovalPassed(String processDefinitionId, String currentActivityId, Throwable exception) {
+        if (exception == null) {
+            return true;
+        }
+        try {
+            handleException(processDefinitionId, currentActivityId, exception);
+            return true;
+            // approve
+        } catch (BpmnError e) {
+            log.warn("Found error boundary is defined to handle events, processInstanceId={}, activityId={}",
+                processDefinitionId, currentActivityId);
+            return false;
+        } catch (Exception e) {
+            return true;
+        }
+    }
+
+    private static void handleException(String processDefinitionId, String currentActivityId, Throwable exception) {
+        List<ErrorEventDefinition> defs =
+            FlowUtil.getBoundaryEventDefinitions(processDefinitionId, currentActivityId,
+                ErrorEventDefinition.class);
+        if (defs.isEmpty()) {
+            log.warn("No error boundary is defined to handle events, processInstanceId={}, activityId={}",
+                processDefinitionId, currentActivityId);
+        } else if (exception instanceof BaseFlowException) {
+            BaseFlowException flowException = (BaseFlowException) exception;
+            String targetErrorCode = flowException.getErrorCode().code();
+            for (ErrorEventDefinition eventDefinition : defs) {
+                String acceptErrorCode = eventDefinition.getErrorCode();
+                if (Objects.equals(acceptErrorCode, targetErrorCode)) {
+                    throw new BpmnError(targetErrorCode);
+                }
+            }
+            log.warn("Exception has no error boundary event, pId={}, activityId={}, acceptErrorCodes={}",
+                processDefinitionId, currentActivityId,
+                defs.stream().map(ErrorEventDefinition::getErrorCode).collect(Collectors.toList()));
+        } else {
+            log.warn("Exception has to be an instance of FlowException, pId={}, activityId={}, acceptErrorCodes={}",
+                processDefinitionId, currentActivityId,
+                defs.stream().map(ErrorEventDefinition::getErrorCode).collect(Collectors.toList()));
+        }
+    }
+
 
 }
