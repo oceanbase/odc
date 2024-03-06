@@ -86,7 +86,7 @@ public class RollbackPlanTask extends BaseTask<FlowTaskResult> {
     }
 
     @Override
-    protected void doStart(JobContext context) throws Exception {
+    protected boolean doStart(JobContext context) throws Exception {
         try {
             long startTimeMills = System.currentTimeMillis();
             ConnectionConfig connectionConfig = parameters.getConnectionConfig();
@@ -96,7 +96,7 @@ public class RollbackPlanTask extends BaseTask<FlowTaskResult> {
                 log.info("No sql content to execute, taskId={}", taskId);
                 this.success = true;
                 this.rollbackPlanTaskResult = RollbackPlanTaskResult.skip();
-                return;
+                return this.success;
             }
             ConnectionSession session = new DefaultConnectSessionFactory(connectionConfig).generateSession();
             ConnectionSessionUtil.setCurrentSchema(session, parameters.getDefaultSchema());
@@ -126,7 +126,7 @@ public class RollbackPlanTask extends BaseTask<FlowTaskResult> {
                                     .append(timeoutMills).append(", generate rollback plan will be stopped. */\n");
                             handleRollbackResult(rollbackPlans.toString());
                             this.success = true;
-                            return;
+                            return this.success;
                         }
                         GenerateRollbackPlan rollbackPlan = RollbackGeneratorFactory.create(sql,
                                 parameters.getRollbackProperties(), session, timeoutForCurrentSql);
@@ -142,7 +142,7 @@ public class RollbackPlanTask extends BaseTask<FlowTaskResult> {
                                     .append(", generate rollback plan will be stopped. */\n");
                             handleRollbackResult(rollbackPlans.toString());
                             this.success = true;
-                            return;
+                            return this.success;
                         }
                     } catch (UnsupportedSqlTypeForRollbackPlanException unsupportedSqlTypeException) {
                         log.info(unsupportedSqlTypeException.getMessage());
@@ -162,6 +162,7 @@ public class RollbackPlanTask extends BaseTask<FlowTaskResult> {
         } finally {
             tryCloseInputStream();
         }
+        return this.success;
     }
 
     @Override
@@ -173,11 +174,6 @@ public class RollbackPlanTask extends BaseTask<FlowTaskResult> {
     @Override
     protected void doClose() throws Exception {
         tryCloseInputStream();
-    }
-
-    @Override
-    protected Boolean isExecuteSucceed() {
-        return null;
     }
 
     @Override
