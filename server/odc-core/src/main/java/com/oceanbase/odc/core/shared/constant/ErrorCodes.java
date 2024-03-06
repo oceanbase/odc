@@ -30,10 +30,12 @@ public enum ErrorCodes implements ErrorCode {
     IllegalArgument,
     ArgumentValueAndTypeMismatched,
     DuplicatedExists,
+    ReservedName,
     BadRequest,
     RequestFormatVersionNotMatch,
     NotFound,
     AccessDenied,
+    DatabaseAccessDenied,
     LoginExpired,
     UnauthorizedSessionAccess,
     PermissionChanged,
@@ -160,6 +162,11 @@ public enum ErrorCodes implements ErrorCode {
     // Schedule
     AlterScheduleExists,
     InvalidCronExpression,
+
+    // Partition plan
+    InvalidSqlExpression,
+    PartitionKeyDataTypeMismatch,
+    TimeDataTypePrecisionMismatch,
 
     // Import & Export
     ExportExcelFileFailed,

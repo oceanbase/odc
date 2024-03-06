@@ -46,7 +46,11 @@ public class TimeDataType extends GeneralDataType {
     }
 
     public String getLocalizedMessage() {
-        String key = Translatable.I18N_KEY_PREFIX + "partitionplan." + this.getClass().getSimpleName();
+        return getLocalizedName();
+    }
+
+    public static String getLocalizedName() {
+        String key = Translatable.I18N_KEY_PREFIX + "partitionplan." + TimeDataType.class.getSimpleName();
         return I18n.translate(key, new Object[] {}, key, LocaleContextHolder.getLocale());
     }
 

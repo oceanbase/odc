@@ -26,7 +26,7 @@ import lombok.NonNull;
  * @date 2022-11-09 15:02
  * @since ODC_release_4.1.0
  */
-public class OBMySQLStatsAccessor extends MySQLNoGreaterThan5740StatsAccessor {
+public class OBMySQLStatsAccessor extends MySQLNoLessThan5700StatsAccessor {
 
     public OBMySQLStatsAccessor(@NonNull JdbcOperations jdbcOperations) {
         super(jdbcOperations);

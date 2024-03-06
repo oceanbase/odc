@@ -179,8 +179,8 @@ sqls:
       t1.CONSTRAINT_NAME,
       t2.position ASC
   get-partition: |-
-    select 
-      case 
+    select
+      case
           when t.part_func_type=4 then 'RANGE'
           when t.part_func_type=7 then 'LIST'
           when t.part_func_type=8 then 'HASH'
@@ -199,7 +199,30 @@ sqls:
       SYS.ALL_VIRTUAL_PART_REAL_AGENT p
       where d.database_name=? and t.table_name=? and d.tenant_id=t.tenant_id 
       and d.database_id=t.database_id and t.tenant_id=p.tenant_id and t.table_id=p.table_id
-      order by part_id asc;
+      order by part_id asc
+  list-partitions: |-
+    select
+      t.table_name as TABLE_NAME,
+      case
+          when t.part_func_type=4 then 'RANGE'
+          when t.part_func_type=7 then 'LIST'
+          when t.part_func_type=8 then 'HASH'
+          else 'UNKNOWN'
+      end as PARTITION_METHOD,
+
+      t.part_func_expr as EXPRESSION,
+      t.part_num as PART_NUM,
+      p.part_id as PART_ID,
+      p.part_name as PART_NAME,
+      p.high_bound_val as MAX_VALUE,
+      p.list_val as LIST_VALUE
+    from
+      SYS.ALL_VIRTUAL_DATABASE_REAL_AGENT d,
+      SYS.ALL_VIRTUAL_TABLE_REAL_AGENT t,
+      SYS.ALL_VIRTUAL_PART_REAL_AGENT p
+      where d.database_name=? and d.tenant_id=t.tenant_id
+      and d.database_id=t.database_id and t.tenant_id=p.tenant_id and t.table_id=p.table_id
+      order by part_id asc
   get-table-option: |-
     select
       t.*
@@ -208,7 +231,7 @@ sqls:
       SYS.ALL_VIRTUAL_TABLE_REAL_AGENT t
     where
       d.DATABASE_NAME = ? and t.TABLE_NAME = ?
-      and d.DATABASE_ID = t.DATABASE_ID;
+      and d.DATABASE_ID = t.DATABASE_ID
   list-database: |-
     select 
       USERNAME, 

@@ -17,9 +17,12 @@ package com.oceanbase.odc.service.collaboration.environment;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
+import java.util.TreeSet;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
+import javax.annotation.PostConstruct;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 
@@ -33,6 +36,7 @@ import com.oceanbase.odc.core.authority.util.Authenticated;
 import com.oceanbase.odc.core.authority.util.PreAuthenticate;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.shared.PreConditions;
+import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.core.shared.exception.BadRequestException;
 import com.oceanbase.odc.core.shared.exception.NotFoundException;
@@ -84,12 +88,31 @@ public class EnvironmentService {
 
     private final List<Consumer<EnvironmentDeleteEvent>> preDeleteHooks = new ArrayList<>();
     private final List<Consumer<EnvironmentDisableEvent>> preDisableHooks = new ArrayList<>();
+    private final Set<String> DEFAULT_ENV_NAMES = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
+
+    @PostConstruct
+    public void init() {
+        DEFAULT_ENV_NAMES.add("开发");
+        DEFAULT_ENV_NAMES.add("测试");
+        DEFAULT_ENV_NAMES.add("生产");
+        DEFAULT_ENV_NAMES.add("默认");
+        DEFAULT_ENV_NAMES.add("開發");
+        DEFAULT_ENV_NAMES.add("測試");
+        DEFAULT_ENV_NAMES.add("生產");
+        DEFAULT_ENV_NAMES.add("默認");
+        DEFAULT_ENV_NAMES.add("dev");
+        DEFAULT_ENV_NAMES.add("sit");
+        DEFAULT_ENV_NAMES.add("prod");
+        DEFAULT_ENV_NAMES.add("default");
+    }
 
     @Transactional(rollbackFor = Exception.class)
     @PreAuthenticate(actions = "create", resourceType = "ODC_ENVIRONMENT", isForAll = true)
     public Environment create(@NotNull @Valid CreateEnvironmentReq req) {
         PreConditions.validNoDuplicated(ResourceType.ODC_ENVIRONMENT, "name", req.getName(),
                 () -> exists(req.getName()));
+        PreConditions.validArgumentState(!DEFAULT_ENV_NAMES.contains(req.getName()), ErrorCodes.ReservedName,
+                new Object[] {req.getName()}, "The environment name is not allowed");
 
         Ruleset savedRuleset = rulesetService.create(buildRuleset(req.getName(), req.getDescription()));
         List<Rule> copiedRules = ruleService.list(req.getCopiedRulesetId(), new QueryRuleMetadataParams());

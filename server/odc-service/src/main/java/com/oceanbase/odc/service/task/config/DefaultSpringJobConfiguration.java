@@ -59,7 +59,6 @@ public class DefaultSpringJobConfiguration extends DefaultJobConfiguration
         setScheduleTaskService(ctx.getBean(ScheduleTaskService.class));
         setDaemonScheduler((Scheduler) ctx.getBean("taskFrameworkSchedulerFactoryBean"));
         setJobDispatcher(new ImmediateJobDispatcher());
-        setK8sJobClient(ctx.getBean(K8sJobClient.class));
         LocalEventPublisher publisher = new LocalEventPublisher();
         TaskFrameworkService tfs = ctx.getBean(TaskFrameworkService.class);
         if (tfs instanceof StdTaskFrameworkService) {
@@ -79,5 +78,10 @@ public class DefaultSpringJobConfiguration extends DefaultJobConfiguration
     @Override
     public TaskFrameworkProperties getTaskFrameworkProperties() {
         return ctx.getBean(TaskFrameworkProperties.class);
+    }
+
+    @Override
+    public K8sJobClient getK8sJobClient() {
+        return ctx.getBean(K8sJobClient.class);
     }
 }

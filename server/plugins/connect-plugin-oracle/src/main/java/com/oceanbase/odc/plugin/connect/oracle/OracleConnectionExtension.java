@@ -38,6 +38,7 @@ import com.oceanbase.odc.core.shared.jdbc.JdbcUrlParser;
 import com.oceanbase.odc.plugin.connect.api.TestResult;
 import com.oceanbase.odc.plugin.connect.model.JdbcUrlProperty;
 import com.oceanbase.odc.plugin.connect.obmysql.OBMySQLConnectionExtension;
+import com.oceanbase.odc.plugin.connect.oboracle.initializer.OracleDBMSOutputInitializer;
 
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
@@ -87,7 +88,7 @@ public class OracleConnectionExtension extends OBMySQLConnectionExtension {
 
     @Override
     public List<ConnectionInitializer> getConnectionInitializers() {
-        return Collections.emptyList();
+        return Collections.singletonList(new OracleDBMSOutputInitializer());
     }
 
     @Override

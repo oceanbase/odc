@@ -1,0 +1,28 @@
+kind: resource
+version: v2
+templates:
+  - metadata:
+      allow_duplicate: false
+      table_name: regulation_riskdetect_rule
+      unique_keys: [ "organization_id", "risk_level_id" ]
+    specs:
+      - column_name: id
+        default_value: 1
+        data_type: java.lang.Long
+      - column_name: name
+        value: default high risk level detect rule
+      - column_name: risk_level_id
+        value_from:
+          field_ref:
+            ref_file: runtime/V_4_2_0_31__risklevel.yaml
+            field_path: templates.3.specs.0.value
+      - column_name: value_json
+        value: "{\"booleanOperator\":\"OR\",\"children\":[{\"expression\":\"ENVIRONMENT_NAME\",\"operator\":\"EQUALS\",\"type\":\"CONDITION\",\"value\":\"${com.oceanbase.odc.builtin-resource.collaboration.environment.prod.name}\"},{\"expression\":\"TASK_TYPE\",\"operator\":\"IN\",\"type\":\"CONDITION\",\"value\":[\"APPLY_PROJECT_PERMISSION\",\"APPLY_DATABASE_PERMISSION\"]}],\"type\":\"CONDITION_GROUP\"}"
+      - column_name: is_builtin
+        value: true
+        data_type: java.lang.Boolean
+      - column_name: organization_id
+        value: ${ORGANIZATION_ID}
+      - column_name: creator_id
+        value: ${CREATOR_ID}
+        data_type: java.lang.Long

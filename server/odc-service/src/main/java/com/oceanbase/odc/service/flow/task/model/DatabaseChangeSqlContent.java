@@ -13,30 +13,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.partitionplan.model;
+package com.oceanbase.odc.service.flow.task.model;
 
+import java.io.InputStream;
 import java.util.List;
 
-import com.oceanbase.tools.dbbrowser.model.DBTablePartition;
-import com.oceanbase.tools.dbbrowser.model.datatype.DataType;
+import com.oceanbase.odc.core.sql.split.OffsetString;
+import com.oceanbase.odc.core.sql.split.SqlStatementIterator;
 
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.AllArgsConstructor;
+import lombok.Data;
 
 /**
- * {@link PartitionPlanDBTablePartition}
- *
- * @author yh263208
- * @date 2024-01-09 14:12
+ * @author jingtian
+ * @date 2024/3/5
  * @since ODC_release_4.2.4
- * @see DBTablePartition
  */
-@Getter
-@Setter
-@EqualsAndHashCode(callSuper = true)
-public class PartitionPlanDBTablePartition extends DBTablePartition {
-
-    private List<DataType> partitionKeyTypes;
-
+@Data
+@AllArgsConstructor
+public class DatabaseChangeSqlContent {
+    private List<OffsetString> userInputSqls;
+    private SqlStatementIterator uploadFileSqlIterator;
+    private InputStream uploadFileInputStream;
 }

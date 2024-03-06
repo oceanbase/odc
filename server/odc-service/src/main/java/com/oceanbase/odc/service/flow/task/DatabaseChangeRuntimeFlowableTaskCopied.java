@@ -16,49 +16,57 @@
 package com.oceanbase.odc.service.flow.task;
 
 import java.io.File;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.lang3.Validate;
 import org.flowable.engine.delegate.DelegateExecution;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.core.flow.exception.BaseFlowException;
 import com.oceanbase.odc.core.shared.Verify;
+import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.shared.constant.FlowStatus;
 import com.oceanbase.odc.core.shared.constant.TaskType;
+import com.oceanbase.odc.core.sql.split.OffsetString;
+import com.oceanbase.odc.core.sql.split.SqlStatementIterator;
 import com.oceanbase.odc.metadb.task.JobEntity;
 import com.oceanbase.odc.metadb.task.TaskEntity;
 import com.oceanbase.odc.service.connection.model.ConnectProperties;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.datasecurity.DataMaskingService;
 import com.oceanbase.odc.service.flow.exception.ServiceTaskError;
-import com.oceanbase.odc.service.flow.model.PreCheckTaskResult;
 import com.oceanbase.odc.service.flow.task.model.DatabaseChangeParameters;
 import com.oceanbase.odc.service.flow.task.model.DatabaseChangeResult;
+import com.oceanbase.odc.service.flow.task.model.DatabaseChangeSqlContent;
 import com.oceanbase.odc.service.flow.task.model.FlowTaskProperties;
 import com.oceanbase.odc.service.flow.task.model.RollbackPlanTaskResult;
+import com.oceanbase.odc.service.flow.task.util.DatabaseChangeFileReader;
 import com.oceanbase.odc.service.flow.util.FlowTaskUtil;
 import com.oceanbase.odc.service.objectstorage.ObjectStorageFacade;
 import com.oceanbase.odc.service.objectstorage.model.ObjectMetadata;
+import com.oceanbase.odc.service.sqlcheck.SqlCheckUtil;
 import com.oceanbase.odc.service.task.TaskService;
 import com.oceanbase.odc.service.task.config.TaskFrameworkProperties;
 import com.oceanbase.odc.service.task.constants.JobParametersKeyConstants;
 import com.oceanbase.odc.service.task.enums.JobStatus;
 import com.oceanbase.odc.service.task.exception.JobException;
-import com.oceanbase.odc.service.task.executor.task.DatabaseChangeTask;
+import com.oceanbase.odc.service.task.runtime.DatabaseChangeTask;
 import com.oceanbase.odc.service.task.runtime.DatabaseChangeTaskParameters;
 import com.oceanbase.odc.service.task.schedule.DefaultJobDefinition;
 import com.oceanbase.odc.service.task.schedule.JobDefinition;
 import com.oceanbase.odc.service.task.schedule.JobScheduler;
 import com.oceanbase.odc.service.task.service.TaskFrameworkService;
 import com.oceanbase.odc.service.task.util.JobUtils;
+import com.oceanbase.tools.sqlparser.statement.Statement;
+import com.oceanbase.tools.sqlparser.statement.alter.table.AlterTable;
+import com.oceanbase.tools.sqlparser.statement.createindex.CreateIndex;
+import com.oceanbase.tools.sqlparser.statement.createtable.OutOfLineConstraint;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -81,6 +89,8 @@ public class DatabaseChangeRuntimeFlowableTaskCopied extends BaseODCFlowTaskDele
     private TaskService taskService;
     @Autowired
     private FlowTaskProperties flowTaskProperties;
+    @Autowired
+    private ObjectStorageFacade storageFacade;
 
     private volatile Long jobId;
     private volatile boolean isSuccessful = false;
@@ -216,7 +226,8 @@ public class DatabaseChangeRuntimeFlowableTaskCopied extends BaseODCFlowTaskDele
             taskParameters.setSqlFileObjectMetadatas(objectMetadatas);
         }
         taskParameters.setNeedDataMasking(dataMaskingService.isMaskingEnabled());
-        modifyTimeoutIfTimeConsumingSqlExists(execution, p, taskParameters, taskEntity);
+        modifyTimeoutIfTimeConsumingSqlExists(p, taskParameters, taskEntity, config.getDialectType(),
+                FlowTaskUtil.getTaskCreator(execution).getId());
         jobParameters.put(JobParametersKeyConstants.FLOW_INSTANCE_ID, getFlowInstanceId().toString());
         jobParameters.put(JobParametersKeyConstants.TASK_PARAMETER_JSON_KEY, JobUtils.toJson(taskParameters));
         jobParameters.put(JobParametersKeyConstants.TASK_EXECUTION_TIMEOUT_MILLIS, p.getTimeoutMillis() + "");
@@ -226,25 +237,74 @@ public class DatabaseChangeRuntimeFlowableTaskCopied extends BaseODCFlowTaskDele
                 .build();
     }
 
-    private void modifyTimeoutIfTimeConsumingSqlExists(DelegateExecution execution, DatabaseChangeParameters parameters,
-            DatabaseChangeTaskParameters taskParameters, TaskEntity taskEntity) {
-        Long preCheckTaskId = FlowTaskUtil.getPreCheckTaskId(execution);
-        TaskEntity preCheckTask = taskService.detail(preCheckTaskId);
-
-        PreCheckTaskResult preCheckResult = JsonUtils.fromJson(preCheckTask.getResultJson(), PreCheckTaskResult.class);
-        Validate.notNull(preCheckResult, "Pre check task result can not be null");
+    private void modifyTimeoutIfTimeConsumingSqlExists(DatabaseChangeParameters parameters,
+            DatabaseChangeTaskParameters taskParameters, TaskEntity taskEntity, DialectType dialectType,
+            Long creatorId) {
         long autoModifiedTimeout = flowTaskProperties.getIndexChangeMaxTimeoutMillisecond();
-
-        if (Objects.nonNull(preCheckResult.getSqlCheckResult())
-                && preCheckResult.getSqlCheckResult().isTimeConsumingSqlExists()
-                && autoModifiedTimeout > parameters.getTimeoutMillis()) {
-            parameters.setTimeoutMillis(autoModifiedTimeout);
-            taskParameters.setAutoModifyTimeout(true);
-            taskEntity.setParametersJson(JsonUtils.toJson(parameters));
-            taskService.updateParametersJson(taskEntity);
-        } else {
+        if (!parameters.isModifyTimeoutIfTimeConsumingSqlExists() || !dialectType.isOceanbase()
+                || autoModifiedTimeout <= parameters.getTimeoutMillis()) {
             taskParameters.setAutoModifyTimeout(false);
+            return;
         }
+        List<OffsetString> userInputSqls = null;
+        SqlStatementIterator uploadFileSqlIterator = null;
+        InputStream uploadFileInputStream = null;
+        try {
+            taskParameters.setAutoModifyTimeout(false);
+            DatabaseChangeSqlContent sqlContent =
+                    DatabaseChangeFileReader.getSqlContent(storageFacade, parameters, dialectType,
+                            "async".concat(File.separator).concat(creatorId.toString()));
+            userInputSqls = sqlContent.getUserInputSqls();
+            uploadFileSqlIterator = sqlContent.getUploadFileSqlIterator();
+            uploadFileInputStream = sqlContent.getUploadFileInputStream();
+            while (CollectionUtils.isNotEmpty(userInputSqls)
+                    || (uploadFileSqlIterator != null && uploadFileSqlIterator.hasNext())) {
+                String sql = CollectionUtils.isNotEmpty(userInputSqls) ? userInputSqls.remove(0).getStr()
+                        : uploadFileSqlIterator.next().getStr();
+                if (checkTimeConsumingSql(SqlCheckUtil.parseSingleSql(dialectType, sql))) {
+                    parameters.setTimeoutMillis(autoModifiedTimeout);
+                    taskParameters.setAutoModifyTimeout(true);
+                    taskEntity.setParametersJson(JsonUtils.toJson(parameters));
+                    taskService.updateParametersJson(taskEntity);
+                    break;
+                }
+            }
+        } catch (Exception e) {
+            log.error("Error occurs while modify database change task timeout if time-consuming SQL exists", e);
+        } finally {
+            if (uploadFileInputStream != null) {
+                try {
+                    uploadFileInputStream.close();
+                } catch (Exception e) {
+                    // ignore
+                }
+            }
+        }
+    }
+
+    /**
+     * Check whether there is any SQL that may be time-consuming such as creating indexes, modifying
+     * primary key, etc.
+     *
+     * @param statement SQL parse statement
+     * @return true if involves time-consuming SQL, otherwise false
+     */
+    private boolean checkTimeConsumingSql(Statement statement) {
+        if (statement instanceof AlterTable) {
+            return ((AlterTable) statement).getAlterTableActions().stream().anyMatch(action -> {
+                if (action.getAddIndex() != null || action.getModifyPrimaryKey() != null) {
+                    return true;
+                } else if (action.getAddConstraint() != null) {
+                    OutOfLineConstraint addConstraint = action.getAddConstraint();
+                    return addConstraint.isPrimaryKey() || addConstraint.isUniqueKey();
+                } else {
+                    return false;
+                }
+            });
+        } else if (statement instanceof CreateIndex) {
+            return true;
+        }
+        return false;
     }
 
 }

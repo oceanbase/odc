@@ -17,14 +17,17 @@ package com.oceanbase.tools.dbbrowser.util;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.collections4.ListUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 import org.apache.logging.log4j.util.Strings;
@@ -34,10 +37,13 @@ import com.oceanbase.tools.dbbrowser.model.DBObjectType;
 import com.oceanbase.tools.dbbrowser.model.DBObjectWarningDescriptor;
 import com.oceanbase.tools.dbbrowser.model.DBTable.DBTableOptions;
 
+import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class DBSchemaAccessorUtil {
+
+    public static final int OB_MAX_IN_SIZE = 2000;
 
     public static void parseCreateOptions(DBTableOptions tableOptions, String createOptions) {
         if (StringUtils.contains(createOptions, "ROW_FORMAT = ")) {
@@ -217,6 +223,15 @@ public class DBSchemaAccessorUtil {
             String reason) {
         Validate.notNull(dbObjectWarningDescriptor, "dbObjectWarningDescriptor");
         dbObjectWarningDescriptor.setWarning(String.format("%s maybe not accurate due to %s", type.name(), reason));
+    }
+
+    public static <Y, E> List<E> partitionFind(List<Y> filterValues, int partitionSize,
+            @NonNull Function<List<Y>, List<E>> queryMethod) {
+        if (CollectionUtils.isEmpty(filterValues)) {
+            return queryMethod.apply(filterValues);
+        }
+        return ListUtils.partition(filterValues, partitionSize).stream().map(queryMethod)
+                .flatMap(Collection::stream).collect(Collectors.toList());
     }
 
 }

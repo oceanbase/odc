@@ -55,14 +55,14 @@ import lombok.Data;
  * @author jingtian
  * @date 2023/6/8
  */
-public class MySQLNoGreaterThan5740SchemaAccessorTest extends BaseTestEnv {
+public class MySQLNoLessThan5700SchemaAccessorTest extends BaseTestEnv {
     private static final String BASE_PATH = "src/test/resources/table/mysql/";
     private static String ddl;
     private static String dropTables;
     private static String testProcedureDDL;
     private static String testFunctionDDL;
-    private static List<MySQLNoGreaterThan5740SchemaAccessorTest.DataType> verifyDataTypes = new ArrayList<>();
-    private static List<MySQLNoGreaterThan5740SchemaAccessorTest.ColumnAttributes> columnAttributes = new ArrayList<>();
+    private static List<DataType> verifyDataTypes = new ArrayList<>();
+    private static List<ColumnAttributes> columnAttributes = new ArrayList<>();
     private static JdbcTemplate jdbcTemplate = new JdbcTemplate(getMySQLDataSource());
     private static DBSchemaAccessor accessor = new DBSchemaAccessors(getMySQLDataSource()).createMysql();
 
@@ -228,6 +228,47 @@ public class MySQLNoGreaterThan5740SchemaAccessorTest extends BaseTestEnv {
     }
 
     @Test
+    public void listTablePartitions_noCandidates_listSucceed() {
+        Map<String, DBTablePartition> actual = accessor.listTablePartitions(getMySQLDataBaseName(), null);
+        DBTablePartition partiHash = actual.get("part_hash");
+        Assert.assertEquals(5L, partiHash.getPartitionOption().getPartitionsNum().longValue());
+        Assert.assertEquals(DBTablePartitionType.HASH, partiHash.getPartitionOption().getType());
+
+        DBTablePartition partiList = actual.get("part_list");
+        Assert.assertEquals(5L, partiList.getPartitionOption().getPartitionsNum().longValue());
+        Assert.assertEquals(DBTablePartitionType.LIST, partiList.getPartitionOption().getType());
+        Assert.assertEquals(2, partiList.getPartitionDefinitions().get(0).getValuesList().size());
+
+        DBTablePartition partiRange = actual.get("part_range");
+        Assert.assertEquals(3L, partiRange.getPartitionOption().getPartitionsNum().longValue());
+        Assert.assertEquals(DBTablePartitionType.RANGE, partiRange.getPartitionOption().getType());
+        Assert.assertEquals("10", partiRange.getPartitionDefinitions().get(0).getMaxValues().get(0));
+    }
+
+    @Test
+    public void listTablePartitions_candidatesExists_listSucceed() {
+        Map<String, DBTablePartition> actual = accessor.listTablePartitions(getMySQLDataBaseName(),
+                Arrays.asList("part_hash", "part_list"));
+        DBTablePartition partiHash = actual.get("part_hash");
+        Assert.assertEquals(5L, partiHash.getPartitionOption().getPartitionsNum().longValue());
+        Assert.assertEquals(DBTablePartitionType.HASH, partiHash.getPartitionOption().getType());
+
+        DBTablePartition partiList = actual.get("part_list");
+        Assert.assertEquals(5L, partiList.getPartitionOption().getPartitionsNum().longValue());
+        Assert.assertEquals(DBTablePartitionType.LIST, partiList.getPartitionOption().getType());
+        Assert.assertEquals(2, partiList.getPartitionDefinitions().get(0).getValuesList().size());
+
+        Assert.assertNull(actual.get("part_range"));
+    }
+
+    @Test
+    public void listTableColumns_filterByTableName_Success() {
+        Map<String, List<DBTableColumn>> table2Columns = accessor.listTableColumns(getMySQLDataBaseName(),
+                Arrays.asList("view_test2", "part_list"));
+        Assert.assertEquals(2, table2Columns.size());
+    }
+
+    @Test
     public void listTableOptions_Success() {
         Map<String, DBTableOptions> table2Options =
                 accessor.listTableOptions(getMySQLDataBaseName());
@@ -299,41 +340,39 @@ public class MySQLNoGreaterThan5740SchemaAccessorTest extends BaseTestEnv {
     }
 
     private static void initVerifyColumnAttributes() {
-        columnAttributes.addAll(Arrays.asList(
-                MySQLNoGreaterThan5740SchemaAccessorTest.ColumnAttributes.of("col1", false, false, true, null,
-                        "col1_comments"),
-                MySQLNoGreaterThan5740SchemaAccessorTest.ColumnAttributes.of("col2", true, false, false, null, "")));
+        columnAttributes.addAll(Arrays.asList(ColumnAttributes.of("col1", false, false, true, null,
+                "col1_comments"), ColumnAttributes.of("col2", true, false, false, null, "")));
     }
 
     private static void initVerifyDataTypes() {
         verifyDataTypes.addAll(Arrays.asList(
-                MySQLNoGreaterThan5740SchemaAccessorTest.DataType.of("col1", "int", 10, 10L, 0, null),
-                MySQLNoGreaterThan5740SchemaAccessorTest.DataType.of("col2", "decimal", 10, 10L, 2, 2),
-                MySQLNoGreaterThan5740SchemaAccessorTest.DataType.of("col3", "decimal", 10, 10L, 2, 2),
-                MySQLNoGreaterThan5740SchemaAccessorTest.DataType.of("col4", "bit", 8, 8L, 0, null),
-                MySQLNoGreaterThan5740SchemaAccessorTest.DataType.of("col5", "tinyint", 3, 3L, 0, null),
-                MySQLNoGreaterThan5740SchemaAccessorTest.DataType.of("col6", "smallint", 5, 5L, 0, null),
-                MySQLNoGreaterThan5740SchemaAccessorTest.DataType.of("col7", "mediumint", 7, 7L, 0, null),
-                MySQLNoGreaterThan5740SchemaAccessorTest.DataType.of("col8", "bigint", 19, 19L, 0, null),
-                MySQLNoGreaterThan5740SchemaAccessorTest.DataType.of("col9", "float", 10, 10L, 2, 2),
-                MySQLNoGreaterThan5740SchemaAccessorTest.DataType.of("col10", "double", 10, 10L, 2, 2),
-                MySQLNoGreaterThan5740SchemaAccessorTest.DataType.of("col11", "varchar", 10, 10L, 0, null),
-                MySQLNoGreaterThan5740SchemaAccessorTest.DataType.of("col12", "char", 10, 10L, 0, null),
-                MySQLNoGreaterThan5740SchemaAccessorTest.DataType.of("col13", "text", 65535, null, 0, null),
-                MySQLNoGreaterThan5740SchemaAccessorTest.DataType.of("col14", "tinytext", 255, null, 0, null),
-                MySQLNoGreaterThan5740SchemaAccessorTest.DataType.of("col15", "mediumtext", 16777215, null, 0, null),
-                MySQLNoGreaterThan5740SchemaAccessorTest.DataType.of("col16", "longtext", 50331647, null, 0, null),
-                MySQLNoGreaterThan5740SchemaAccessorTest.DataType.of("col17", "blob", 65535, null, 0, null),
-                MySQLNoGreaterThan5740SchemaAccessorTest.DataType.of("col18", "tinyblob", 255, null, 0, null),
-                MySQLNoGreaterThan5740SchemaAccessorTest.DataType.of("col19", "longblob", 50331647, null, 0, null),
-                MySQLNoGreaterThan5740SchemaAccessorTest.DataType.of("col20", "mediumblob", 16777215, null, 0, null),
-                MySQLNoGreaterThan5740SchemaAccessorTest.DataType.of("col21", "binary", 16, 16L, 0, null),
-                MySQLNoGreaterThan5740SchemaAccessorTest.DataType.of("col22", "varbinary", 16, 16L, 0, null),
-                MySQLNoGreaterThan5740SchemaAccessorTest.DataType.of("col23", "timestamp", 0, 0L, 0, null),
-                MySQLNoGreaterThan5740SchemaAccessorTest.DataType.of("col24", "time", 0, 0L, 0, null),
-                MySQLNoGreaterThan5740SchemaAccessorTest.DataType.of("col25", "date", 0, null, 0, null),
-                MySQLNoGreaterThan5740SchemaAccessorTest.DataType.of("col26", "datetime", 0, 0L, 0, null),
-                MySQLNoGreaterThan5740SchemaAccessorTest.DataType.of("col27", "year", 0, 0L, 0, null)));
+                DataType.of("col1", "int", 10, 10L, 0, null),
+                DataType.of("col2", "decimal", 10, 10L, 2, 2),
+                DataType.of("col3", "decimal", 10, 10L, 2, 2),
+                DataType.of("col4", "bit", 8, 8L, 0, null),
+                DataType.of("col5", "tinyint", 3, 3L, 0, null),
+                DataType.of("col6", "smallint", 5, 5L, 0, null),
+                DataType.of("col7", "mediumint", 7, 7L, 0, null),
+                DataType.of("col8", "bigint", 19, 19L, 0, null),
+                DataType.of("col9", "float", 10, 10L, 2, 2),
+                DataType.of("col10", "double", 10, 10L, 2, 2),
+                DataType.of("col11", "varchar", 10, 10L, 0, null),
+                DataType.of("col12", "char", 10, 10L, 0, null),
+                DataType.of("col13", "text", 65535, null, 0, null),
+                DataType.of("col14", "tinytext", 255, null, 0, null),
+                DataType.of("col15", "mediumtext", 16777215, null, 0, null),
+                DataType.of("col16", "longtext", 50331647, null, 0, null),
+                DataType.of("col17", "blob", 65535, null, 0, null),
+                DataType.of("col18", "tinyblob", 255, null, 0, null),
+                DataType.of("col19", "longblob", 50331647, null, 0, null),
+                DataType.of("col20", "mediumblob", 16777215, null, 0, null),
+                DataType.of("col21", "binary", 16, 16L, 0, null),
+                DataType.of("col22", "varbinary", 16, 16L, 0, null),
+                DataType.of("col23", "timestamp", 0, 0L, 0, null),
+                DataType.of("col24", "time", 0, 0L, 0, null),
+                DataType.of("col25", "date", 0, null, 0, null),
+                DataType.of("col26", "datetime", 0, 0L, 0, null),
+                DataType.of("col27", "year", 0, 0L, 0, null)));
     }
 
     @Data
@@ -345,11 +384,10 @@ public class MySQLNoGreaterThan5740SchemaAccessorTest extends BaseTestEnv {
         private Integer displayScale;
         private Integer scale;
 
-        public static MySQLNoGreaterThan5740SchemaAccessorTest.DataType of(String columnName, String typeName,
+        public static DataType of(String columnName, String typeName,
                 long precision, Long displayPrecision, int scale,
                 Integer displayScale) {
-            MySQLNoGreaterThan5740SchemaAccessorTest.DataType dataType =
-                    new MySQLNoGreaterThan5740SchemaAccessorTest.DataType();
+            DataType dataType = new DataType();
             dataType.setColumnName(columnName);
             dataType.setTypeName(typeName);
             dataType.setPrecision(precision);
@@ -369,12 +407,11 @@ public class MySQLNoGreaterThan5740SchemaAccessorTest extends BaseTestEnv {
         private String defaultValue;
         private String comments;
 
-        static MySQLNoGreaterThan5740SchemaAccessorTest.ColumnAttributes of(String columnName, boolean nullable,
+        static ColumnAttributes of(String columnName, boolean nullable,
                 boolean virtual, boolean autoIncrement,
                 String defaultValue,
                 String comments) {
-            MySQLNoGreaterThan5740SchemaAccessorTest.ColumnAttributes columnAttributes =
-                    new MySQLNoGreaterThan5740SchemaAccessorTest.ColumnAttributes();
+            ColumnAttributes columnAttributes = new ColumnAttributes();
             columnAttributes.setColumnName(columnName);
             columnAttributes.setNullable(nullable);
             columnAttributes.setVirtual(virtual);

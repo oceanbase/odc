@@ -74,6 +74,8 @@ import com.oceanbase.odc.core.shared.exception.NotFoundException;
 import com.oceanbase.odc.core.shared.exception.OverLimitException;
 import com.oceanbase.odc.core.shared.exception.UnsupportedException;
 import com.oceanbase.odc.core.shared.exception.VerifyException;
+import com.oceanbase.odc.metadb.collaboration.EnvironmentEntity;
+import com.oceanbase.odc.metadb.collaboration.EnvironmentRepository;
 import com.oceanbase.odc.metadb.flow.FlowInstanceEntity;
 import com.oceanbase.odc.metadb.flow.FlowInstanceRepository;
 import com.oceanbase.odc.metadb.flow.FlowInstanceSpecs;
@@ -240,6 +242,8 @@ public class FlowInstanceService {
     private EventBuilder eventBuilder;
     @Autowired
     private CloudMetadataClient cloudMetadataClient;
+    @Autowired
+    private EnvironmentRepository environmentRepository;
 
     private final List<Consumer<DataTransferTaskInitEvent>> dataTransferTaskInitHooks = new ArrayList<>();
     private final List<Consumer<ShadowTableComparingUpdateEvent>> shadowTableComparingTaskHooks = new ArrayList<>();
@@ -939,8 +943,7 @@ public class FlowInstanceService {
     }
 
     private void initVariables(Map<String, Object> variables, TaskEntity taskEntity, TaskEntity preCheckTaskEntity,
-            ConnectionConfig config,
-            RiskLevelDescriber riskLevelDescriber) {
+            ConnectionConfig config, RiskLevelDescriber riskLevelDescriber) {
         FlowTaskUtil.setTaskId(variables, taskEntity.getId());
         if (Objects.nonNull(preCheckTaskEntity)) {
             FlowTaskUtil.setPreCheckTaskId(variables, preCheckTaskEntity.getId());
@@ -1056,10 +1059,15 @@ public class FlowInstanceService {
     }
 
     private RiskLevelDescriber buildRiskLevelDescriber(CreateFlowInstanceReq req) {
+        EnvironmentEntity env = null;
+        if (Objects.nonNull(req.getEnvironmentId())) {
+            env = environmentRepository.findById(req.getEnvironmentId()).orElse(null);
+        }
         return RiskLevelDescriber.builder()
                 .projectName(req.getProjectName())
                 .taskType(req.getTaskType().name())
-                .environmentId(String.valueOf(req.getEnvironmentId()))
+                .environmentId(env == null ? null : String.valueOf(env.getId()))
+                .environmentName(env == null ? null : env.getName())
                 .databaseName(req.getDatabaseName())
                 .build();
     }
