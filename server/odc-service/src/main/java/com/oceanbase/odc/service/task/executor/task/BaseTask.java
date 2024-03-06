@@ -53,15 +53,17 @@ public abstract class BaseTask<RESULT> implements Task<RESULT> {
             doInit(context);
             updateStatus(JobStatus.RUNNING);
             taskMonitor.monitor();
-            doStart(context);
-            updateStatus(JobStatus.DONE);
+            if (doStart(context)) {
+                updateStatus(JobStatus.DONE);
+            } else {
+                updateStatus(JobStatus.FAILED);
+            }
         } catch (Throwable e) {
             log.info("Task failed, id={}.", getJobId(), e);
             updateStatus(JobStatus.FAILED);
-            onFail(e);
         } finally {
             try {
-                doFinal();
+                doClose();
             } catch (Throwable e) {
                 // do nothing
             }
@@ -124,6 +126,7 @@ public abstract class BaseTask<RESULT> implements Task<RESULT> {
     }
 
     protected void updateStatus(JobStatus status) {
+        log.info("Update task status, id={}, status={}.", getJobId(), status);
         this.status = status;
     }
 
@@ -137,13 +140,17 @@ public abstract class BaseTask<RESULT> implements Task<RESULT> {
 
     protected abstract void doInit(JobContext context) throws Exception;
 
-    protected abstract void doStart(JobContext context) throws Exception;
+    /**
+     * start a task return succeed or failed after completed.
+     *
+     * @return return true if execute succeed, else return false
+     */
+    protected abstract boolean doStart(JobContext context) throws Exception;
 
     protected abstract void doStop() throws Exception;
 
-    // this method be invoked finally to release resource
-    protected void doFinal() {};
-
-    protected abstract void onFail(Throwable e);
-
+    /**
+     * task can release relational resource in this method
+     */
+    protected abstract void doClose() throws Exception;
 }

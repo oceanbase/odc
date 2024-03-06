@@ -48,4 +48,10 @@ public final class AlarmEventNames {
     public static final String DRUID_WAIT_THREAD_COUNT_MORE_THAN_0 = "DRUID_WAIT_THREAD_COUNT_MORE_THAN_0";
     public static final String DRUID_ACTIVE_COUNT_MORE_THAN_80_PERCENT = "DRUID_ACTIVE_COUNT_MORE_THAN_80_PERCENT";
 
+    /**
+     * SCHEDULING
+     */
+
+    public static final String SCHEDULING_FAILED = "SCHEDULING_FAILED";
+
 }
