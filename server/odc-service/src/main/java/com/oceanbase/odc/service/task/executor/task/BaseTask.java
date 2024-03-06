@@ -54,10 +54,10 @@ public abstract class BaseTask<RESULT> implements Task<RESULT> {
             updateStatus(JobStatus.RUNNING);
             taskMonitor.monitor();
             doStart(context);
-            if (isExecuteSucceed()) {
-                updateStatus(JobStatus.DONE);
-            } else {
+            if (isExecuteSucceed() == Boolean.FALSE) {
                 updateStatus(JobStatus.FAILED);
+            } else {
+                updateStatus(JobStatus.DONE);
             }
         } catch (Throwable e) {
             log.info("Task failed, id={}.", getJobId(), e);
@@ -155,6 +155,6 @@ public abstract class BaseTask<RESULT> implements Task<RESULT> {
      * 
      * @return return true if execute succeed, else return false
      */
-    protected abstract boolean isExecuteSucceed();
+    protected abstract Boolean isExecuteSucceed();
 
 }

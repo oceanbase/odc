@@ -293,8 +293,8 @@ public class DatabaseChangeTask extends BaseTask<FlowTaskResult> {
     }
 
     @Override
-    protected boolean isExecuteSucceed() {
-        return false;
+    protected Boolean isExecuteSucceed() {
+        return null;
     }
 
     @Override

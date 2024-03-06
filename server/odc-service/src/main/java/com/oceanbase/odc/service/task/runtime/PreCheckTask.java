@@ -154,8 +154,8 @@ public class PreCheckTask extends BaseTask<FlowTaskResult> {
     }
 
     @Override
-    protected boolean isExecuteSucceed() {
-        return true;
+    protected Boolean isExecuteSucceed() {
+        return null;
     }
 
     @Override

@@ -176,7 +176,7 @@ public class RollbackPlanTask extends BaseTask<FlowTaskResult> {
     }
 
     @Override
-    protected boolean isExecuteSucceed() {
+    protected Boolean isExecuteSucceed() {
         return true;
     }
 

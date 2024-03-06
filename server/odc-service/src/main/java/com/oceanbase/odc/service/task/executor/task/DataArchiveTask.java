@@ -169,8 +169,8 @@ public class DataArchiveTask extends BaseTask<Boolean> {
     }
 
     @Override
-    protected boolean isExecuteSucceed() {
-        return true;
+    protected Boolean isExecuteSucceed() {
+        return null;
     }
 
     @Override
