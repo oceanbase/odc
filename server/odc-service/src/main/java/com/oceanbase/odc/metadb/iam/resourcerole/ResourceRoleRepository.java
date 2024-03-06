@@ -19,6 +19,8 @@ import java.util.List;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import com.oceanbase.odc.core.shared.constant.ResourceType;
 
@@ -27,4 +29,12 @@ public interface ResourceRoleRepository
 
     List<ResourceRoleEntity> findByResourceType(ResourceType resourceType);
 
+    @Query(value = "select * from iam_resource_role where resource_type in (:resourceType)",
+            nativeQuery = true)
+    List<ResourceRoleEntity> findInResourceType(@Param("resourceType") List<String> resourceType);
+
+    @Query(value = "select * from iam_resource_role where resource_type  = :resourceType and role_name = :resourceRoleName",
+            nativeQuery = true)
+    ResourceRoleEntity findByResourceTypeAndResourceRoleName(@Param("resourceType") String resourceType,
+            @Param("resourceRoleName") String resourceRoleName);
 }

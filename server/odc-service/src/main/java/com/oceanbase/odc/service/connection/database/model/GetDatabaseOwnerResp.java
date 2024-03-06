@@ -16,30 +16,38 @@
 package com.oceanbase.odc.service.connection.database.model;
 
 import java.util.List;
-import java.util.Set;
-
-import javax.validation.constraints.NotEmpty;
 
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 /**
- * @Author: Lebie
- * @Date: 2023/4/13 11:46
- * @Description: []
+ * ClassName: GetDatabaseOwnerResp Package: com.oceanbase.odc.service.connection.database.model
+ * Description:
+ *
+ * @Author: fenghao
+ * @Create 2024/2/26 15:40
+ * @Version 1.0
  */
-
 @Data
-@Builder
-@NoArgsConstructor(force = true)
+@NoArgsConstructor
 @AllArgsConstructor
-public class TransferDatabasesReq {
-    @NotEmpty
-    private List<Long> databaseIds;
+public class GetDatabaseOwnerResp {
+
+    private Long databaseId;
 
     private Long projectId;
 
-    private Set<Long> ownerIds;
+    private List<Member> members;
+
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class Member {
+        private Long id;
+
+        private String accountName;
+
+        private String name;
+    }
 }
