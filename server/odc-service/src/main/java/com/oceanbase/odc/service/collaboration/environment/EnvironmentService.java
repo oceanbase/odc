@@ -109,7 +109,7 @@ public class EnvironmentService {
     @Transactional(rollbackFor = Exception.class)
     @PreAuthenticate(actions = "create", resourceType = "ODC_ENVIRONMENT", isForAll = true)
     public Environment create(@NotNull @Valid CreateEnvironmentReq req) {
-        EnvironmentExists exists = exists(req.getName());;
+        EnvironmentExists exists = exists(req.getName());
         if (exists.getExists()) {
             throw new BadRequestException(exists.getErrorMessage());
         }
