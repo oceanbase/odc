@@ -121,7 +121,7 @@ public class LoggerService {
             if (!jobDispatchChecker.isExecutorOnThisMachine(jobEntity)) {
                 ExecutorIdentifier ei = ExecutorIdentifierParser.parser(jobEntity.getExecutorIdentifier());
                 DispatchResponse response = requestDispatcher.forward(ei.getHost(), ei.getPort());
-                return response.getContentByType(new TypeReference<String>() {});
+                return response.getContentByType(new TypeReference<SuccessResponse<String>>() {}).getData();
             }
             String logFileStr = LogUtils.getTaskLogFileWithPath(jobEntity.getId(), level);
             return LogUtils.getLogContent(logFileStr, LogUtils.MAX_LOG_LINE_COUNT, LogUtils.MAX_LOG_BYTE_COUNT);
