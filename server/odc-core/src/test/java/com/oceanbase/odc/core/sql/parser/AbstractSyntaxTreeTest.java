@@ -32,6 +32,7 @@ import com.oceanbase.tools.sqlparser.oboracle.OBParser.Select_stmtContext;
 import com.oceanbase.tools.sqlparser.statement.Statement;
 import com.oceanbase.tools.sqlparser.statement.common.CharacterType;
 import com.oceanbase.tools.sqlparser.statement.common.DataType;
+import com.oceanbase.tools.sqlparser.statement.common.RelationFactor;
 import com.oceanbase.tools.sqlparser.statement.createtable.ColumnDefinition;
 import com.oceanbase.tools.sqlparser.statement.createtable.CreateTable;
 import com.oceanbase.tools.sqlparser.statement.expression.ColumnReference;
@@ -121,7 +122,8 @@ public class AbstractSyntaxTreeTest {
         AbstractSyntaxTree ast = factory.buildAst("create procedure `test1_proc` () BEGIN\n"
                 + "select * from t1_osc_new_;\n"
                 + "END;");
-        Assert.assertNull(ast.getStatement());
+        CreateStatement expect = new CreateStatement(new RelationFactor("`test1_proc`"));
+        Assert.assertEquals(expect, ast.getStatement());
     }
 
     @Test
@@ -138,7 +140,8 @@ public class AbstractSyntaxTreeTest {
                 + "begin\n"
                 + "dbms_output.put_line('asdasd');\n"
                 + "end;");
-        Assert.assertNull(ast.getStatement());
+        CreateStatement expect = new CreateStatement(new RelationFactor("test_proc"));
+        Assert.assertEquals(expect, ast.getStatement());
     }
 
     @Test

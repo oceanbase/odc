@@ -183,7 +183,7 @@ public class DatabaseChangeTask extends BaseTask<FlowTaskResult> {
     }
 
     @Override
-    protected void doStart(JobContext context) throws JobException {
+    protected boolean doStart(JobContext context) throws JobException {
         try {
             int index = 0;
             while (sqlIterator.hasNext()) {
@@ -277,6 +277,7 @@ public class DatabaseChangeTask extends BaseTask<FlowTaskResult> {
             tryExpireConnectionSession();
             tryCloseInputStream();
         }
+        return true;
     }
 
     @Override
@@ -287,7 +288,7 @@ public class DatabaseChangeTask extends BaseTask<FlowTaskResult> {
     }
 
     @Override
-    protected void onFail(Throwable e) {
+    protected void doClose() throws Exception {
         tryExpireConnectionSession();
         tryCloseInputStream();
     }

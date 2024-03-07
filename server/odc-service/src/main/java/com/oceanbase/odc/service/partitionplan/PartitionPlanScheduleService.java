@@ -155,18 +155,15 @@ public class PartitionPlanScheduleService {
         disablePartitionPlan(database.getId());
         PartitionPlanEntity partitionPlanEntity = modelToEntity(partitionPlanConfig);
         partitionPlanEntity = this.partitionPlanRepository.save(partitionPlanEntity);
-        if (!partitionPlanConfig.isEnabled()) {
-            log.info("Partition plan is disabled, do nothing and return");
+        if (!partitionPlanConfig.isEnabled()
+                || CollectionUtils.isEmpty(partitionPlanConfig.getPartitionTableConfigs())) {
+            log.info("Partition plan is disabled or table config is empty, do nothing and return");
             return;
         }
         Validate.isTrue(partitionPlanConfig.getCreationTrigger() != null, "Creation trigger can not be null");
-        ScheduleEntity createScheduleEntity = createAndEnableSchedule(
-                database, partitionPlanConfig.getCreationTrigger());
-        ScheduleEntity dropScheduleEntity = null;
-        if (partitionPlanConfig.getDroppingTrigger() != null) {
-            dropScheduleEntity = createAndEnableSchedule(database, partitionPlanConfig.getDroppingTrigger());
-        }
-        if (dropScheduleEntity == null) {
+        if (partitionPlanConfig.getDroppingTrigger() == null) {
+            ScheduleEntity createScheduleEntity = createAndEnableSchedule(
+                    database, partitionPlanConfig.getCreationTrigger());
             createPartitionPlanTables(partitionPlanConfig.getPartitionTableConfigs(),
                     partitionPlanEntity.getId(), createScheduleEntity.getId(),
                     partitionPlanConfig.getFlowInstanceId(), partitionPlanConfig.getTaskId(),
@@ -188,14 +185,24 @@ public class PartitionPlanScheduleService {
                         return cfg;
                     });
                 }).collect(Collectors.groupingBy(cfg -> cfg.getPartitionKeyConfigs().get(0).getStrategy()));
-        createPartitionPlanTables(strategy2TblCfgs.get(PartitionPlanStrategy.CREATE),
-                partitionPlanEntity.getId(), createScheduleEntity.getId(),
-                partitionPlanConfig.getFlowInstanceId(), partitionPlanConfig.getTaskId(),
-                partitionPlanConfig.getErrorStrategy(), partitionPlanConfig.getTimeoutMillis());
-        createPartitionPlanTables(strategy2TblCfgs.get(PartitionPlanStrategy.DROP),
-                partitionPlanEntity.getId(), dropScheduleEntity.getId(),
-                partitionPlanConfig.getFlowInstanceId(), partitionPlanConfig.getTaskId(),
-                partitionPlanConfig.getErrorStrategy(), partitionPlanConfig.getTimeoutMillis());
+        List<PartitionPlanTableConfig> createConfigs = strategy2TblCfgs.get(PartitionPlanStrategy.CREATE);
+        List<PartitionPlanTableConfig> dropConfigs = strategy2TblCfgs.get(PartitionPlanStrategy.DROP);
+        if (CollectionUtils.isNotEmpty(createConfigs)) {
+            ScheduleEntity createScheduleEntity = createAndEnableSchedule(
+                    database, partitionPlanConfig.getCreationTrigger());
+            createPartitionPlanTables(createConfigs,
+                    partitionPlanEntity.getId(), createScheduleEntity.getId(),
+                    partitionPlanConfig.getFlowInstanceId(), partitionPlanConfig.getTaskId(),
+                    partitionPlanConfig.getErrorStrategy(), partitionPlanConfig.getTimeoutMillis());
+        }
+        if (CollectionUtils.isNotEmpty(dropConfigs)) {
+            ScheduleEntity dropScheduleEntity = createAndEnableSchedule(
+                    database, partitionPlanConfig.getDroppingTrigger());
+            createPartitionPlanTables(dropConfigs,
+                    partitionPlanEntity.getId(), dropScheduleEntity.getId(),
+                    partitionPlanConfig.getFlowInstanceId(), partitionPlanConfig.getTaskId(),
+                    partitionPlanConfig.getErrorStrategy(), partitionPlanConfig.getTimeoutMillis());
+        }
     }
 
     @Transactional(rollbackOn = Exception.class)
