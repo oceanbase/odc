@@ -16,11 +16,11 @@
 
 package com.oceanbase.odc.service.flow.task;
 
-import java.util.Locale;
 import java.util.Optional;
 
 import org.flowable.engine.delegate.DelegateExecution;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.i18n.LocaleContextHolder;
 
 import com.oceanbase.odc.common.i18n.I18n;
 import com.oceanbase.odc.common.util.RetryExecutor;
@@ -97,7 +97,7 @@ public class CreateExternalApprovalTask extends BaseFlowableDelegate {
             if (StringUtils.isTranslatable(riskLevelNameKey)) {
                 String riskLevelName =
                         I18n.translate(StringUtils.getTranslatableKey(riskLevelNameKey), null,
-                                Locale.CHINA);
+                                LocaleContextHolder.getLocale());
                 variables.setAttribute(Variable.RISK_LEVEL, riskLevelName);
             } ;
 

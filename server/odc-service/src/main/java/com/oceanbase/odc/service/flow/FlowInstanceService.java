@@ -24,7 +24,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
@@ -46,6 +45,7 @@ import org.flowable.engine.history.HistoricProcessInstance;
 import org.flowable.engine.history.HistoricProcessInstanceQuery;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -1015,12 +1015,12 @@ public class FlowInstanceService {
             }
         }
         // set project owner related variables
-        List<UserResourceRole> projectUserResourceRole = resourceRoleService.getUserIdsByProjectIdAndResourceRole(
+        List<UserResourceRole> projectUserResourceRole = resourceRoleService.getUserIdsByResourceIdAndTypeAndName(
                 flowInstanceReq.getProjectId(), ResourceType.ODC_PROJECT,
                 "OWNER");
         List<User> projectOwnerUsers = projectUserResourceRole.stream()
                 .map(userResourceRole -> {
-                    User user = userService.detailWithoutPermissionCheck(userResourceRole.getUserId());
+                    User user = userService.deailById(userResourceRole.getUserId());
                     return user;
                 })
                 .collect(Collectors.toList());
@@ -1044,7 +1044,8 @@ public class FlowInstanceService {
             String environmentNameKey = database.getEnvironment().getName();
             if (StringUtils.isTranslatable(environmentNameKey)) {
                 String environmentName =
-                        I18n.translate(StringUtils.getTranslatableKey(environmentNameKey), null, Locale.CHINA);
+                        I18n.translate(StringUtils.getTranslatableKey(environmentNameKey), null,
+                                LocaleContextHolder.getLocale());
                 variables.setAttribute(Variable.ENVIRONMENT_NAME, environmentName);
             } ;
             variables.setAttribute(Variable.DATABASE_NAME, database.getName());

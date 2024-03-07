@@ -17,7 +17,7 @@ package com.oceanbase.odc.service.connection.database.model;
 
 import java.util.Set;
 
-import javax.validation.constraints.NotNull;
+import javax.validation.constraints.NotEmpty;
 
 import lombok.Data;
 
@@ -31,7 +31,7 @@ import lombok.Data;
  */
 @Data
 public class ModifyDatabaseOwnerReq {
-    @NotNull
+    @NotEmpty
     private Set<Long> databaseIds;
 
     private Set<Long> ownerIds;

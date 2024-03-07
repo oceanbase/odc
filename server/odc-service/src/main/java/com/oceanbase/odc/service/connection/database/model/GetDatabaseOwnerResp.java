@@ -17,6 +17,8 @@ package com.oceanbase.odc.service.connection.database.model;
 
 import java.util.List;
 
+import com.oceanbase.odc.service.common.model.InnerUser;
+
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -38,16 +40,5 @@ public class GetDatabaseOwnerResp {
 
     private Long projectId;
 
-    private List<Member> members;
-
-    @Data
-    @NoArgsConstructor
-    @AllArgsConstructor
-    public static class Member {
-        private Long id;
-
-        private String accountName;
-
-        private String name;
-    }
+    private List<InnerUser> members;
 }

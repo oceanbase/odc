@@ -88,12 +88,12 @@ public class Database implements SecurityResource, OrganizationIsolated, Seriali
     @JsonProperty(access = Access.READ_ONLY)
     private Set<DatabasePermissionType> authorizedPermissionTypes;
 
-    private List<Owner> owners;
+    private List<DatabaseOwner> owners;
 
     @Data
     @NoArgsConstructor
     @AllArgsConstructor
-    public static class Owner {
+    public static class DatabaseOwner {
         private Long id;
 
         private String accountName;

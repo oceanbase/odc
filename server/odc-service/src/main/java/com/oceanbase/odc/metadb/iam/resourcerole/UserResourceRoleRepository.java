@@ -26,14 +26,14 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.oceanbase.odc.core.shared.constant.ResourceType;
+
 public interface UserResourceRoleRepository
         extends JpaRepository<UserResourceRoleEntity, Long>, JpaSpecificationExecutor<UserResourceRoleEntity> {
     List<UserResourceRoleEntity> findByOrganizationIdAndUserId(Long organizationId, Long userId);
 
 
     List<UserResourceRoleEntity> findByUserId(Long userId);
-
-    // List<UserResourceRoleEntity> findByResourceTypeAndUserId(Long userId);
 
     List<UserResourceRoleEntity> findByResourceId(Long resourceId);
 
@@ -57,9 +57,10 @@ public interface UserResourceRoleRepository
 
     @Modifying
     @Transactional
-    @Query(value = "delete t from iam_user_resource_role t,iam_resource_role irr where t.resource_role_id = irr.id and irr.resource_type = :resourceType and  t.resource_id =:resourceId",
+    @Query(value = "delete t from iam_user_resource_role t inner join iam_resource_role irr on t.resource_role_id = irr.id where irr.resource_type = :#{#resourceType.name()} and  t.resource_id =:resourceId",
             nativeQuery = true)
-    int deleteByResourceTypeAndId(@Param("resourceType") String resourceType, @Param("resourceId") Long resourceId);
+    int deleteByResourceTypeAndId(@Param("resourceType") ResourceType resourceType,
+            @Param("resourceId") Long resourceId);
 
     @Modifying
     @Transactional
@@ -74,14 +75,18 @@ public interface UserResourceRoleRepository
     int deleteByUserIdAndResourceIdIn(@Param("userId") Long userId, @Param("resourceIds") Set<Long> resourceIds);
 
     @Query(nativeQuery = true,
-            value = "select t.* from iam_user_resource_role t inner join iam_resource_role irr on t.resource_role_id = irr.id where irr.resource_type = :resourceType and t.resource_id = :resourceId")
+            value = "select t.* from iam_user_resource_role t inner join iam_resource_role irr on t.resource_role_id = irr.id where irr.resource_type = :#{#resourceType.name()} and t.resource_id = :resourceId")
     List<UserResourceRoleEntity> listByResourceTypeAndId(
-            @Param("resourceType") String resourceType, @Param("resourceId") Long resourceId);
+            @Param("resourceType") ResourceType resourceType, @Param("resourceId") Long resourceId);
 
     @Query(nativeQuery = true,
             value = "select t.* from iam_user_resource_role t inner join iam_resource_role irr on t.resource_role_id = irr.id where irr.resource_type = :resourceType and irr.role_name = :roleName and t.resource_id = :resourceId")
-    List<UserResourceRoleEntity> findByResourceIdAndResourceRole(
+    List<UserResourceRoleEntity> findByResourceIdAndTypeAndName(
             @Param("resourceId") Long resourceId, @Param("resourceType") String resourceType,
             @Param("roleName") String roleName);
 
+    @Query(nativeQuery = true,
+            value = "select t.* from iam_user_resource_role t inner join iam_resource_role irr on t.resource_role_id = irr.id where irr.resource_type = :#{#resourceType.name()}  and  t.user_id = :userId")
+    List<UserResourceRoleEntity> findByUserIdAndResourceType(
+            @Param("userId") Long userId, @Param("resourceType") ResourceType resourceType);
 }
