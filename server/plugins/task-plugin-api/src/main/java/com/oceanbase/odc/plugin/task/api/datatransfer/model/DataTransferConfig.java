@@ -63,7 +63,7 @@ public class DataTransferConfig implements TaskParameters, Serializable {
     private EncodingType encoding = EncodingType.UTF_8;
     private CsvConfig csvConfig;
     private List<CsvColumnMapping> csvColumnMappings;
-    private boolean stopWhenError;
+    private boolean stopWhenError = true;
     private String exportFilePath;
     private boolean mergeSchemaFiles;
     private String querySql;
