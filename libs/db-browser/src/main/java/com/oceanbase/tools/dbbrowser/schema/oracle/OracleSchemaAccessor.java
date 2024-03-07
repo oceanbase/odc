@@ -755,6 +755,11 @@ public class OracleSchemaAccessor implements DBSchemaAccessor {
         final int[] hiddenColumnOrdinaryPosition = {-1};
         return (rs, rowNum) -> {
             DBTableColumn tableColumn = new DBTableColumn();
+            /**
+             * All LONG or LONG RAW columns have to be retrieved from the ResultSet prior to all the other
+             * columns or oracle jdbc will throw “Stream has already been closed” Exception
+             */
+            String defaultValue = rs.getString(OracleConstants.COL_DATA_DEFAULT);
             tableColumn.setSchemaName(rs.getString(OracleConstants.CONS_OWNER));
             tableColumn.setTableName(rs.getString(OracleConstants.COL_TABLE_NAME));
             tableColumn.setName(rs.getString(OracleConstants.COL_COLUMN_NAME));
@@ -790,8 +795,7 @@ public class OracleSchemaAccessor implements DBSchemaAccessor {
                 hiddenColumnOrdinaryPosition[0]--;
             }
             tableColumn.setVirtual("YES".equalsIgnoreCase(rs.getString(OracleConstants.COL_VIRTUAL_COLUMN)));
-            tableColumn.setDefaultValue("NULL".equals(rs.getString(OracleConstants.COL_DATA_DEFAULT)) ? null
-                    : rs.getString(OracleConstants.COL_DATA_DEFAULT));
+            tableColumn.setDefaultValue("NULL".equals(defaultValue) ? null : defaultValue);
             if (tableColumn.getVirtual()) {
                 tableColumn.setGenExpression(rs.getString(OracleConstants.COL_DATA_DEFAULT));
             }
@@ -1479,16 +1483,18 @@ public class OracleSchemaAccessor implements DBSchemaAccessor {
         });
         parsePackageDDL(packageHead);
 
-        OracleSqlBuilder packageBodyDDL = new OracleSqlBuilder();
-        packageBodyDDL.append("SELECT dbms_metadata.get_ddl('PACKAGE_BODY', ")
-                .value(packageName)
-                .append(", ")
-                .value(schemaName)
-                .append(") as DDL from dual");
-        jdbcOperations.query(packageBodyDDL.toString(), rs -> {
-            packageBodyBasicInfo.setDdl(rs.getString(1));
-        });
-        parsePackageDDL(packageBody);
+        if (Objects.nonNull(packageBodyBasicInfo.getDefiner())) {
+            OracleSqlBuilder packageBodyDDL = new OracleSqlBuilder();
+            packageBodyDDL.append("SELECT dbms_metadata.get_ddl('PACKAGE_BODY', ")
+                    .value(packageName)
+                    .append(", ")
+                    .value(schemaName)
+                    .append(") as DDL from dual");
+            jdbcOperations.query(packageBodyDDL.toString(), rs -> {
+                packageBodyBasicInfo.setDdl(rs.getString(1));
+            });
+            parsePackageDDL(packageBody);
+        }
 
         if (StringUtils.containsIgnoreCase(dbPackage.getStatus(), PLConstants.PL_OBJECT_STATUS_INVALID)) {
             dbPackage.setErrorMessage(PLObjectErrMsgUtils.getOraclePLObjErrMsg(jdbcOperations,

@@ -43,6 +43,7 @@ import com.oceanbase.odc.service.iam.model.User;
 import com.oceanbase.odc.service.iam.util.SecurityContextUtils;
 import com.oceanbase.odc.service.notification.Broker;
 import com.oceanbase.odc.service.notification.NotificationProperties;
+import com.oceanbase.odc.service.notification.helper.EventBuilder;
 import com.oceanbase.odc.service.quartz.util.ScheduleTaskUtils;
 import com.oceanbase.odc.service.schedule.model.JobType;
 import com.oceanbase.odc.service.schedule.model.QuartzKeyGenerator;
@@ -71,6 +72,8 @@ public class OdcJobListener implements JobListener {
     private HostProperties hostProperties;
     @Autowired
     private Broker broker;
+    @Autowired
+    private EventBuilder eventBuilder;
     @Autowired
     private NotificationProperties notificationProperties;
     private static final String ODC_JOB_LISTENER = "ODC_JOB_LISTENER";
@@ -139,6 +142,13 @@ public class OdcJobListener implements JobListener {
                 scheduleRepository.findById(ScheduleTaskUtils.getScheduleId(context));
         if (scheduleEntityOptional.isPresent()) {
             ScheduleEntity scheduleEntity = scheduleEntityOptional.get();
+            if (jobException != null && notificationProperties.isEnabled()) {
+                try {
+                    broker.enqueueEvent(eventBuilder.ofFailedTask(scheduleEntity));
+                } catch (Exception e) {
+                    log.warn("Failed to enqueue event.", e);
+                }
+            }
             JobKey key = QuartzKeyGenerator.generateJobKey(scheduleEntity.getId(), scheduleEntity.getJobType());
             try {
                 jobTriggers = context.getScheduler().getTriggersOfJob(key);

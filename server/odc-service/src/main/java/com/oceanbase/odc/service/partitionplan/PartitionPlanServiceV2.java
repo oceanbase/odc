@@ -25,9 +25,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
-import java.util.Set;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -45,10 +43,7 @@ import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.core.shared.exception.HttpException;
 import com.oceanbase.odc.core.shared.exception.NotFoundException;
-import com.oceanbase.odc.metadb.partitionplan.PartitionPlanEntity;
 import com.oceanbase.odc.metadb.partitionplan.PartitionPlanRepository;
-import com.oceanbase.odc.metadb.partitionplan.PartitionPlanTableEntity;
-import com.oceanbase.odc.metadb.partitionplan.PartitionPlanTablePartitionKeyEntity;
 import com.oceanbase.odc.metadb.partitionplan.PartitionPlanTablePartitionKeyRepository;
 import com.oceanbase.odc.metadb.partitionplan.PartitionPlanTableRepository;
 import com.oceanbase.odc.plugin.schema.api.TableExtensionPoint;
@@ -59,6 +54,7 @@ import com.oceanbase.odc.plugin.task.api.partitionplan.invoker.partitionname.Par
 import com.oceanbase.odc.plugin.task.api.partitionplan.model.PartitionPlanVariableKey;
 import com.oceanbase.odc.service.connection.database.DatabaseService;
 import com.oceanbase.odc.service.connection.database.model.Database;
+import com.oceanbase.odc.service.partitionplan.model.PartitionPlanConfig;
 import com.oceanbase.odc.service.partitionplan.model.PartitionPlanDBTable;
 import com.oceanbase.odc.service.partitionplan.model.PartitionPlanKeyConfig;
 import com.oceanbase.odc.service.partitionplan.model.PartitionPlanPreViewResp;
@@ -101,6 +97,8 @@ public class PartitionPlanServiceV2 {
     private PartitionPlanRepository partitionPlanRepository;
     @Autowired
     private PartitionPlanTablePartitionKeyRepository partitionPlanTablePartitionKeyRepository;
+    @Autowired
+    private PartitionPlanScheduleService partitionPlanScheduleService;
 
     public List<DataType> getPartitionKeyDataTypes(@NonNull String sessionId,
             @NonNull Long databaseId, @NonNull String tableName) {
@@ -154,29 +152,18 @@ public class PartitionPlanServiceV2 {
         if (extensionPoint == null) {
             throw new UnsupportedOperationException("Unsupported dialect " + dialectType);
         }
-        List<PartitionPlanEntity> ppEntities = this.partitionPlanRepository
-                .findByDatabaseIdAndEnabled(databaseId, true);
-        final Map<String, Set<PartitionPlanStrategy>> tblName2Strategies;
-        if (CollectionUtils.isNotEmpty(ppEntities)) {
-            List<PartitionPlanTableEntity> pptEntities = this.partitionPlanTableRepository
-                    .findByPartitionPlanIdInAndEnabled(ppEntities.stream()
-                            .map(PartitionPlanEntity::getId).collect(Collectors.toList()), true);
-            List<PartitionPlanTablePartitionKeyEntity> pptkEntities = this.partitionPlanTablePartitionKeyRepository
-                    .findByPartitionplanTableIdIn(pptEntities.stream()
-                            .map(PartitionPlanTableEntity::getId).collect(Collectors.toList()));
-            Map<Long, List<PartitionPlanTablePartitionKeyEntity>> pptId2PptkEntities = pptkEntities.stream()
-                    .collect(Collectors.groupingBy(PartitionPlanTablePartitionKeyEntity::getPartitionplanTableId));
-            tblName2Strategies = pptEntities.stream()
-                    .collect(Collectors.groupingBy(PartitionPlanTableEntity::getTableName)).entrySet().stream()
-                    .collect(Collectors.toMap(Entry::getKey, e -> e.getValue().stream().flatMap(pe -> {
-                        List<PartitionPlanTablePartitionKeyEntity> keys = pptId2PptkEntities.get(pe.getId());
-                        if (CollectionUtils.isEmpty(keys)) {
-                            return Stream.empty();
-                        }
-                        return keys.stream().map(PartitionPlanTablePartitionKeyEntity::getStrategy);
-                    }).collect(Collectors.toSet())));
+        PartitionPlanConfig partitionPlanConfig = this.partitionPlanScheduleService
+                .getPartitionPlanByDatabaseId(databaseId);
+        final Map<String, PartitionPlanTableConfig> tblName2PartiConfig;
+        if (partitionPlanConfig != null) {
+            tblName2PartiConfig = partitionPlanConfig.getPartitionTableConfigs().stream().collect(
+                    Collectors.toMap(PartitionPlanTableConfig::getTableName, v -> v, (p1, p2) -> {
+                        p1.setId(null);
+                        p1.getPartitionKeyConfigs().addAll(p2.getPartitionKeyConfigs());
+                        return p1;
+                    }));
         } else {
-            tblName2Strategies = new HashMap<>();
+            tblName2PartiConfig = new HashMap<>();
         }
         Database database = this.databaseService.detail(databaseId);
         List<DBTable> dbTables =
@@ -189,7 +176,7 @@ public class PartitionPlanServiceV2 {
             partitionPlanTable.setColumns(dbTable.getColumns());
             partitionPlanTable.setPartition(dbTable.getPartition());
             partitionPlanTable.setDialectType(dialectType);
-            partitionPlanTable.setStrategies(tblName2Strategies.get(dbTable.getName()));
+            partitionPlanTable.setPartitionPlanTableConfig(tblName2PartiConfig.get(dbTable.getName()));
             return partitionPlanTable;
         }).collect(Collectors.toList());
     }

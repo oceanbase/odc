@@ -35,13 +35,14 @@ import com.oceanbase.odc.service.sqlcheck.rule.ColumnCharsetExists;
 import com.oceanbase.odc.service.sqlcheck.rule.ColumnCollationExists;
 import com.oceanbase.odc.service.sqlcheck.rule.ColumnNameInBlackList;
 import com.oceanbase.odc.service.sqlcheck.rule.ForeignConstraintExists;
-import com.oceanbase.odc.service.sqlcheck.rule.IndexChangeTimeConsumingExists;
 import com.oceanbase.odc.service.sqlcheck.rule.MySQLColumnCalculation;
 import com.oceanbase.odc.service.sqlcheck.rule.MySQLLeftFuzzyMatch;
 import com.oceanbase.odc.service.sqlcheck.rule.MySQLMissingRequiredColumns;
 import com.oceanbase.odc.service.sqlcheck.rule.MySQLNoColumnCommentExists;
 import com.oceanbase.odc.service.sqlcheck.rule.MySQLNoNotNullAtInExpression;
 import com.oceanbase.odc.service.sqlcheck.rule.MySQLNoTableCommentExists;
+import com.oceanbase.odc.service.sqlcheck.rule.MySQLObjectNameUsingReservedWords;
+import com.oceanbase.odc.service.sqlcheck.rule.MySQLOfflineDdlExists;
 import com.oceanbase.odc.service.sqlcheck.rule.MySQLRestrictAutoIncrementDataTypes;
 import com.oceanbase.odc.service.sqlcheck.rule.MySQLRestrictAutoIncrementUnsigned;
 import com.oceanbase.odc.service.sqlcheck.rule.MySQLRestrictIndexDataTypes;
@@ -1102,6 +1103,62 @@ public class MySQLCheckerTest {
     }
 
     @Test
+    public void check_objectUsingReservedWords_violationGenerated() {
+        String[] sqls = {
+                "create table analyse (id int, primary key `analyse` using hash (col, col1) comment 'abcd')",
+                "create table abcd(aaaa int)",
+                "alter table abddd add partition (partition a.b values less than (-2, maxvalue) engine=InnoDB,"
+                        + "partition `analyse` values less than (func(1,2)) id 14)",
+                "create index `analyse` on a.b(id)",
+                "create function `analyse` (`p1` tinyint(4)) returns tinyint(4) begin      return p1; end"
+        };
+        DefaultSqlChecker sqlChecker = new DefaultSqlChecker(DialectType.OB_MYSQL,
+                null, Collections.singletonList(new MySQLObjectNameUsingReservedWords()));
+        List<CheckViolation> actual = sqlChecker.check(toOffsetString(sqls), null);
+
+        SqlCheckRuleType type = SqlCheckRuleType.OBJECT_NAME_USING_RESERVED_WORDS;
+        CheckViolation c1 = new CheckViolation(sqls[0], 1, 0, 0, 89, type, new Object[] {"analyse"});
+        CheckViolation c2 = new CheckViolation(sqls[0], 1, 22, 22, 23, type, new Object[] {"id"});
+        CheckViolation c3 = new CheckViolation(sqls[0], 1, 30, 30, 88, type, new Object[] {"`analyse`"});
+        CheckViolation c4 = new CheckViolation(sqls[2], 1, 93, 93, 146, type, new Object[] {"`analyse`"});
+        CheckViolation c5 = new CheckViolation(sqls[3], 1, 13, 13, 21, type, new Object[] {"`analyse`"});
+        CheckViolation c6 = new CheckViolation(sqls[4], 1, 16, 16, 24, type, new Object[] {"`analyse`"});
+
+        List<CheckViolation> expect = Arrays.asList(c1, c2, c3, c4, c5, c6);
+        Assert.assertEquals(expect, actual);
+    }
+
+    @Test
+    public void check_offlineDdl_violationGenerated() {
+        String[] sqls = {
+                "alter table tbl modify id varchar(64) primary key",
+                "alter table parti_tbl truncate partition a,b,d",
+                "truncate table a",
+                "drop table aaa",
+                "create table abcd(id varchar(64))",
+                "alter table abcd modify id int AUTO_INCREMENT",
+                "alter table abcd modify id varchar(64)"
+        };
+        JdbcTemplate jdbcTemplate = Mockito.mock(JdbcTemplate.class);
+        Mockito.when(jdbcTemplate.queryForObject(Mockito.anyString(), Mockito.any(RowMapper.class)))
+                .thenReturn(sqls[4]);
+        DefaultSqlChecker sqlChecker = new DefaultSqlChecker(DialectType.OB_MYSQL,
+                null, Collections.singletonList(new MySQLOfflineDdlExists(jdbcTemplate)));
+        List<CheckViolation> actual = sqlChecker.check(toOffsetString(sqls), null);
+
+        SqlCheckRuleType type = SqlCheckRuleType.OFFLINE_SCHEMA_CHANGE_EXISTS;
+        CheckViolation c1 = new CheckViolation(sqls[0], 1, 16, 16, 48, type, new Object[] {});
+        CheckViolation c2 = new CheckViolation(sqls[1], 1, 22, 22, 45, type, new Object[] {});
+        CheckViolation c3 = new CheckViolation(sqls[2], 1, 0, 0, 15, type, new Object[] {});
+        CheckViolation c4 = new CheckViolation(sqls[3], 1, 0, 0, 13, type, new Object[] {});
+        CheckViolation c5 = new CheckViolation(sqls[5], 1, 17, 17, 44, type, new Object[] {});
+        CheckViolation c6 = new CheckViolation(sqls[5], 1, 17, 17, 44, type, new Object[] {});
+
+        List<CheckViolation> expect = Arrays.asList(c1, c2, c3, c4, c5, c6);
+        Assert.assertEquals(expect, actual);
+    }
+
+    @Test
     public void check_restrictIndexType_violationGenerated() {
         String[] sqls = new String[] {
                 "create table abcd (\n"
@@ -1300,20 +1357,6 @@ public class MySQLCheckerTest {
         List<CheckViolation> expect = Collections.singletonList(c1);
         Assert.assertEquals(expect, actual);
     }
-
-    @Test
-    public void check_timeConsumingIndexChangeExists_violationGenerated() {
-        String sql = "alter table tab add unique index uq_idx(c1)";
-        SqlChecker sqlChecker = new DefaultSqlChecker(DialectType.OB_MYSQL, ";",
-                Collections.singletonList(new IndexChangeTimeConsumingExists()));
-        List<CheckViolation> actual = sqlChecker.check(sql);
-
-        CheckViolation c = new CheckViolation(sql, 1, 0, 0, 42,
-                SqlCheckRuleType.INDEX_CHANGE_TIME_CONSUMING_EXISTS, 0, new Object[] {});
-        List<CheckViolation> expect = Collections.singletonList(c);
-        Assert.assertEquals(expect, actual);
-    }
-
 
     private String joinAndAppend(String[] sqls, String delimiter) {
         return String.join(delimiter, sqls) + delimiter;

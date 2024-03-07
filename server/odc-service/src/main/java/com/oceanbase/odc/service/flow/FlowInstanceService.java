@@ -736,10 +736,6 @@ public class FlowInstanceService {
             ConnectionConfig connectionConfig) {
         log.info("Start creating flow instance, flowInstanceReq={}", flowInstanceReq);
         TaskType taskType = flowInstanceReq.getTaskType();
-        if (taskType == TaskType.ASYNC) {
-            DatabaseChangeParameters taskParameters = (DatabaseChangeParameters) flowInstanceReq.getParameters();
-            taskParameters.setModifyTimeoutIfTimeConsumingSqlExists(false);
-        }
         TaskEntity taskEntity = taskService.create(flowInstanceReq, (int) TimeUnit.SECONDS
                 .convert(flowTaskProperties.getDefaultExecutionExpirationIntervalHours(), TimeUnit.HOURS));
         Verify.notNull(taskEntity.getId(), "TaskId can not be null");
@@ -1063,12 +1059,15 @@ public class FlowInstanceService {
     }
 
     private RiskLevelDescriber buildRiskLevelDescriber(CreateFlowInstanceReq req) {
-        EnvironmentEntity environment = environmentRepository.findById(req.getEnvironmentId()).orElse(null);
+        EnvironmentEntity env = null;
+        if (Objects.nonNull(req.getEnvironmentId())) {
+            env = environmentRepository.findById(req.getEnvironmentId()).orElse(null);
+        }
         return RiskLevelDescriber.builder()
                 .projectName(req.getProjectName())
                 .taskType(req.getTaskType().name())
-                .environmentId(String.valueOf(req.getEnvironmentId()))
-                .environmentName(environment == null ? null : environment.getName())
+                .environmentId(env == null ? null : String.valueOf(env.getId()))
+                .environmentName(env == null ? null : env.getName())
                 .databaseName(req.getDatabaseName())
                 .build();
     }

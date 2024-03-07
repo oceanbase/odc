@@ -206,7 +206,7 @@ public class OdcStatementCallBack implements StatementCallback<List<JdbcGeneralR
             if (this.autoCommit ^ currentAutoCommit) {
                 statement.getConnection().setAutoCommit(currentAutoCommit);
             }
-            if (DialectType.OB_ORACLE.equals(this.dialectType)) {
+            if (this.dialectType.isOracle()) {
                 String dbmsInfo = queryDBMSOutput(statement);
                 if (dbmsInfo != null) {
                     log.info("Clear dbms_output cache, dbmsInfo={}", dbmsInfo);
@@ -296,7 +296,7 @@ public class OdcStatementCallBack implements StatementCallback<List<JdbcGeneralR
             executeResults.add(executeResult);
         }
         // get pl log，not support for mysql mode
-        if (DialectType.OB_ORACLE.equals(this.dialectType)) {
+        if (this.dialectType.isOracle()) {
             try (TraceStage s = traceWatch.start(SqlExecuteStages.QUERY_DBMS_OUTPUT)) {
                 executeResults.forEach(jdbcResult -> jdbcResult.setDbmsOutput(queryDBMSOutput(statement)));
             }

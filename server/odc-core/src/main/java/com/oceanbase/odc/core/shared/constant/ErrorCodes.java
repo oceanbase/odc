@@ -35,6 +35,7 @@ public enum ErrorCodes implements ErrorCode {
     RequestFormatVersionNotMatch,
     NotFound,
     AccessDenied,
+    DatabaseAccessDenied,
     LoginExpired,
     UnauthorizedSessionAccess,
     PermissionChanged,

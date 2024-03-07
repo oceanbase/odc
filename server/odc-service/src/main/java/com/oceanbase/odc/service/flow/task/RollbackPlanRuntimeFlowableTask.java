@@ -39,15 +39,16 @@ import com.oceanbase.odc.metadb.task.TaskEntity;
 import com.oceanbase.odc.service.common.FileManager;
 import com.oceanbase.odc.service.common.model.FileBucket;
 import com.oceanbase.odc.service.common.util.OdcFileUtil;
-import com.oceanbase.odc.service.common.util.SqlUtils;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.flow.model.FlowNodeStatus;
 import com.oceanbase.odc.service.flow.task.model.DatabaseChangeParameters;
 import com.oceanbase.odc.service.flow.task.model.DatabaseChangeResult;
+import com.oceanbase.odc.service.flow.task.model.DatabaseChangeSqlContent;
 import com.oceanbase.odc.service.flow.task.model.RollbackPlanTaskResult;
 import com.oceanbase.odc.service.flow.task.util.DatabaseChangeFileReader;
 import com.oceanbase.odc.service.flow.util.FlowTaskUtil;
 import com.oceanbase.odc.service.iam.model.User;
+import com.oceanbase.odc.service.objectstorage.ObjectStorageFacade;
 import com.oceanbase.odc.service.objectstorage.cloud.CloudObjectStorageService;
 import com.oceanbase.odc.service.rollbackplan.GenerateRollbackPlan;
 import com.oceanbase.odc.service.rollbackplan.RollbackGeneratorFactory;
@@ -75,9 +76,9 @@ public class RollbackPlanRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Rol
     @Autowired
     private RollbackProperties rollbackProperties;
     @Autowired
-    private DatabaseChangeFileReader databaseChangeFileReader;
-    @Autowired
     private CloudObjectStorageService cloudObjectStorageService;
+    @Autowired
+    private ObjectStorageFacade storageFacade;
     private volatile boolean isSuccess = false;
     private String resultFileDownloadUrl;
     private String resultFileId;
@@ -103,19 +104,12 @@ public class RollbackPlanRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Rol
             Verify.notNull(connectionConfig, "ConnectionConfig");
             DatabaseChangeParameters params =
                     JsonUtils.fromJson(taskEntity.getParametersJson(), DatabaseChangeParameters.class);
-            String bucketName = "async".concat(File.separator).concat(creator.getId() + "");
-            if (StringUtils.isNotBlank(params.getSqlContent())) {
-                this.userInputSqls = SqlUtils.splitWithOffset(connectionConfig.getDialectType(), params.getSqlContent(),
-                        params.getDelimiter());
-            }
-            if (CollectionUtils.isNotEmpty(params.getSqlObjectIds())) {
-                this.uploadFileInputStream = databaseChangeFileReader.readInputStreamFromSqlObjects(params, bucketName,
-                        rollbackProperties.getMaxRollbackContentSizeBytes());
-                if (this.uploadFileInputStream != null) {
-                    this.uploadFileSqlIterator = SqlUtils.iterator(connectionConfig.getDialectType(),
-                            params.getDelimiter(), this.uploadFileInputStream, StandardCharsets.UTF_8);
-                }
-            }
+            DatabaseChangeSqlContent sqlContent =
+                    DatabaseChangeFileReader.getSqlContent(storageFacade, params, connectionConfig.getDialectType(),
+                            "async".concat(File.separator).concat(creator.getId() + ""));
+            userInputSqls = sqlContent.getUserInputSqls();
+            uploadFileSqlIterator = sqlContent.getUploadFileSqlIterator();
+            uploadFileInputStream = sqlContent.getUploadFileInputStream();
             if (CollectionUtils.isEmpty(userInputSqls)
                     && (uploadFileSqlIterator == null || !uploadFileSqlIterator.hasNext())) {
                 this.isSuccess = true;
@@ -249,6 +243,8 @@ public class RollbackPlanRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Rol
     @Override
     protected void onFailure(Long taskId, TaskService taskService) {
         log.warn("Generate rollback plan task failed, taskId={}", taskId);
+        // flow continue if rollback task failed
+        super.callback(getFlowInstanceId(), getTargetTaskInstanceId(), FlowNodeStatus.COMPLETED, null);
     }
 
     @Override
@@ -270,10 +266,15 @@ public class RollbackPlanRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Rol
         } catch (Exception e) {
             log.warn("Failed to store generate rollback plan task result", e);
         }
+        super.callback(getFlowInstanceId(), getTargetTaskInstanceId(), FlowNodeStatus.COMPLETED, null);
+
     }
 
     @Override
-    protected void onTimeout(Long taskId, TaskService taskService) {}
+    protected void onTimeout(Long taskId, TaskService taskService) {
+        // flow continue if rollback task timeout
+        super.callback(getFlowInstanceId(), getTargetTaskInstanceId(), FlowNodeStatus.COMPLETED, null);
+    }
 
     @Override
     protected void onProgressUpdate(Long taskId, TaskService taskService) {}

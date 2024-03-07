@@ -35,7 +35,11 @@ class OBMySQLParser extends com.oceanbase.tools.sqlparser.OBMySQLParser {
         if (statement != null) {
             return statement;
         }
-        return new OBMySQLDropStatementVisitor().visit(root);
+        statement = new OBMySQLDropStatementVisitor().visit(root);
+        if (statement != null) {
+            return statement;
+        }
+        return new OBMySQLCreateStatementVisitor().visit(root);
     }
 
 }
