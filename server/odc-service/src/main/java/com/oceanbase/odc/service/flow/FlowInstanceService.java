@@ -712,13 +712,28 @@ public class FlowInstanceService {
         TaskType taskType = req.getTaskType();
         if (taskType == TaskType.ALTER_SCHEDULE) {
             AlterScheduleParameters params = (AlterScheduleParameters) req.getParameters();
-            if (params.getType() == JobType.DATA_ARCHIVE) {
-                DataArchiveParameters p = (DataArchiveParameters) params.getScheduleTaskParameters();
-                databaseIds.add(p.getSourceDatabaseId());
-                databaseIds.add(p.getTargetDataBaseId());
-            } else if (params.getType() == JobType.DATA_DELETE) {
-                DataDeleteParameters p = (DataDeleteParameters) params.getScheduleTaskParameters();
-                databaseIds.add(p.getDatabaseId());
+            // Check the new parameters during creation or update.
+            if (params.getOperationType() == OperationType.CREATE || params.getOperationType() == OperationType.UPDATE) {
+                if (params.getType() == JobType.DATA_ARCHIVE) {
+                    DataArchiveParameters p = (DataArchiveParameters) params.getScheduleTaskParameters();
+                    databaseIds.add(p.getSourceDatabaseId());
+                    databaseIds.add(p.getTargetDataBaseId());
+                } else if (params.getType() == JobType.DATA_DELETE) {
+                    DataDeleteParameters p = (DataDeleteParameters) params.getScheduleTaskParameters();
+                    databaseIds.add(p.getDatabaseId());
+                }
+            } else {
+                ScheduleEntity scheduleEntity = scheduleService.nullSafeGetById(params.getTaskId());
+                if (params.getType() == JobType.DATA_ARCHIVE) {
+                    DataArchiveParameters p = JsonUtils.fromJson(scheduleEntity.getJobParametersJson(),
+                        DataArchiveParameters.class);
+                    databaseIds.add(p.getSourceDatabaseId());
+                    databaseIds.add(p.getTargetDataBaseId());
+                } else if (params.getType() == JobType.DATA_DELETE) {
+                    DataDeleteParameters p = JsonUtils.fromJson(scheduleEntity.getJobParametersJson(),
+                        DataDeleteParameters.class);
+                    databaseIds.add(p.getDatabaseId());
+                }
             }
         } else if (taskType == TaskType.STRUCTURE_COMPARISON) {
             DBStructureComparisonParameter p = (DBStructureComparisonParameter) req.getParameters();
