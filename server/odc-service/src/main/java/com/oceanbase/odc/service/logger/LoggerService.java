@@ -32,7 +32,6 @@ import com.oceanbase.odc.service.common.response.SuccessResponse;
 import com.oceanbase.odc.service.dispatch.DispatchResponse;
 import com.oceanbase.odc.service.dispatch.JobDispatchChecker;
 import com.oceanbase.odc.service.dispatch.RequestDispatcher;
-import com.oceanbase.odc.service.flow.model.FlowInstanceDetailResp;
 import com.oceanbase.odc.service.objectstorage.cloud.CloudObjectStorageService;
 import com.oceanbase.odc.service.task.caller.ExecutorIdentifier;
 import com.oceanbase.odc.service.task.caller.ExecutorIdentifierParser;
