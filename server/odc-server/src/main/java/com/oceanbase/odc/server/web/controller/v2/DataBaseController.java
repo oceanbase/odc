@@ -34,7 +34,6 @@ import com.oceanbase.odc.service.connection.database.DatabaseSyncManager;
 import com.oceanbase.odc.service.connection.database.model.CreateDatabaseReq;
 import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.connection.database.model.DeleteDatabasesReq;
-import com.oceanbase.odc.service.connection.database.model.GetDatabaseOwnerResp;
 import com.oceanbase.odc.service.connection.database.model.ModifyDatabaseOwnerReq;
 import com.oceanbase.odc.service.connection.database.model.QueryDatabaseParams;
 import com.oceanbase.odc.service.connection.database.model.TransferDatabasesReq;
@@ -112,12 +111,4 @@ public class DataBaseController {
             @RequestBody ModifyDatabaseOwnerReq req) {
         return Responses.success(databaseService.modifyDatabasesOwner(projectId, req));
     }
-
-    @ApiOperation(value = "getDatabasesOwner", notes = "get database owner")
-    @RequestMapping(value = "/databases/owner/{projectId:[\\d]+}/{databaseId:[\\d]+}", method = RequestMethod.GET)
-    public SuccessResponse<GetDatabaseOwnerResp> getDatabasesOwner(@PathVariable Long projectId,
-            @PathVariable Long databaseId) {
-        return Responses.success(databaseService.getDatabasesOwner(projectId, databaseId));
-    }
-
 }

@@ -78,15 +78,16 @@ import com.oceanbase.odc.service.collaboration.environment.model.Environment;
 import com.oceanbase.odc.service.collaboration.project.ProjectService;
 import com.oceanbase.odc.service.collaboration.project.model.Project;
 import com.oceanbase.odc.service.collaboration.project.model.QueryProjectParams;
+import com.oceanbase.odc.service.common.model.InnerUser;
 import com.oceanbase.odc.service.connection.ConnectionService;
 import com.oceanbase.odc.service.connection.database.model.CreateDatabaseReq;
 import com.oceanbase.odc.service.connection.database.model.Database;
+import com.oceanbase.odc.service.connection.database.model.Database.DatabaseOwner;
 import com.oceanbase.odc.service.connection.database.model.DatabaseSyncProperties;
 import com.oceanbase.odc.service.connection.database.model.DatabaseSyncStatus;
 import com.oceanbase.odc.service.connection.database.model.DatabaseUser;
 import com.oceanbase.odc.service.connection.database.model.DeleteDatabasesReq;
 import com.oceanbase.odc.service.connection.database.model.GetDatabaseOwnerResp;
-import com.oceanbase.odc.service.connection.database.model.GetDatabaseOwnerResp.Member;
 import com.oceanbase.odc.service.connection.database.model.ModifyDatabaseOwnerReq;
 import com.oceanbase.odc.service.connection.database.model.QueryDatabaseParams;
 import com.oceanbase.odc.service.connection.database.model.TransferDatabasesReq;
@@ -383,17 +384,18 @@ public class DatabaseService {
                 });
 
         // Add new owner
+        ArrayList<UserResourceRole> userResourceRoles = new ArrayList<>();
         req.getDatabaseIds().forEach(databaseId -> {
-            List<UserResourceRole> collect = req.getOwnerIds().stream().map(userId -> {
+            userResourceRoles.addAll(req.getOwnerIds().stream().map(userId -> {
                 UserResourceRole userResourceRole = new UserResourceRole();
                 userResourceRole.setUserId(userId);
                 userResourceRole.setResourceId(databaseId);
                 userResourceRole.setResourceType(ResourceType.ODC_DATABASE);
                 userResourceRole.setResourceRole(ResourceRoleName.OWNER);
                 return userResourceRole;
-            }).collect(Collectors.toList());
-            resourceRoleService.saveAll(collect);
+            }).collect(Collectors.toList()));
         });
+        resourceRoleService.saveAll(userResourceRoles);
         return true;
     }
 
@@ -740,35 +742,36 @@ public class DatabaseService {
                 });
 
         // Add new owner
+        ArrayList<UserResourceRole> userResourceRoles = new ArrayList<>();
         req.getDatabaseIds().forEach(databaseId -> {
-            List<UserResourceRole> collect = req.getOwnerIds().stream().map(userId -> {
+            userResourceRoles.addAll(req.getOwnerIds().stream().map(userId -> {
                 UserResourceRole userResourceRole = new UserResourceRole();
                 userResourceRole.setUserId(userId);
                 userResourceRole.setResourceId(databaseId);
                 userResourceRole.setResourceType(ResourceType.ODC_DATABASE);
                 userResourceRole.setResourceRole(ResourceRoleName.OWNER);
                 return userResourceRole;
-            }).collect(Collectors.toList());
-            resourceRoleService.saveAll(collect);
+            }).collect(Collectors.toList()));
         });
+        resourceRoleService.saveAll(userResourceRoles);
         return true;
     }
 
-    @SkipAuthorize("internal authenticated")
+    @SkipAuthorize("odc internal usage")
     public GetDatabaseOwnerResp getDatabasesOwner(@NotNull Long projectId, @NotNull Long databaseId) {
         List<UserResourceRole> userResourceRoles = resourceRoleService.listByResourceTypeAndId(
                 ResourceType.ODC_DATABASE, databaseId);
 
         // 如果userResourceRoles是空的，就查询ODC_PROJECT表，获取项目的owner
         if (CollectionUtils.isEmpty(userResourceRoles)) {
-            userResourceRoles = resourceRoleService.getUserIdsByProjectIdAndResourceRole(
+            userResourceRoles = resourceRoleService.getUserIdsByResourceIdAndTypeAndName(
                     projectId, ResourceType.ODC_PROJECT, "OWNER");
         }
 
-        List<Member> members = userResourceRoles.stream()
+        List<InnerUser> members = userResourceRoles.stream()
                 .map(userResourceRole -> {
-                    User user = userService.detailWithoutPermissionCheck(userResourceRole.getUserId());
-                    Member member = new Member();
+                    User user = userService.deailById(userResourceRole.getUserId());
+                    InnerUser member = new InnerUser();
                     member.setId(user.getId());
                     member.setName(user.getName());
                     member.setAccountName(user.getAccountName());
@@ -867,15 +870,15 @@ public class DatabaseService {
             List<UserResourceRole> userResourceRoles = resourceRoleService.listByResourceTypeAndId(
                     ResourceType.ODC_DATABASE, entity.getId());
 
-            List<Database.Owner> owners = userResourceRoles.stream().map(userResourceRole -> {
-                User user = userService.detailWithoutPermissionCheck(userResourceRole.getUserId());
-                Database.Owner owner = new Database.Owner();
-                owner.setId(user.getId());
-                owner.setName(user.getName());
-                owner.setAccountName(user.getAccountName());
-                return owner;
+            List<DatabaseOwner> databaseOwners = userResourceRoles.stream().map(userResourceRole -> {
+                User user = userService.deailById(userResourceRole.getUserId());
+                DatabaseOwner databaseOwner = new DatabaseOwner();
+                databaseOwner.setId(user.getId());
+                databaseOwner.setName(user.getName());
+                databaseOwner.setAccountName(user.getAccountName());
+                return databaseOwner;
             }).collect(Collectors.toList());
-            database.setOwners(owners);
+            database.setOwners(databaseOwners);
 
             return database;
         });
