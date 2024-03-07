@@ -31,6 +31,7 @@ import org.hibernate.annotations.Generated;
 import org.hibernate.annotations.GenerationTime;
 
 import com.oceanbase.odc.common.jpa.JsonListConverter;
+import com.oceanbase.odc.common.util.ObjectUtil;
 
 import lombok.Data;
 
@@ -81,8 +82,8 @@ public class RuleApplyingEntity {
 
     public static RuleApplyingEntity merge(DefaultRuleApplyingEntity defaultRuleApplyingEntity,
             Optional<RuleApplyingEntity> ruleApplyingEntityOpt) {
-        RuleApplyingEntity entity = new RuleApplyingEntity();
         if (!ruleApplyingEntityOpt.isPresent()) {
+            RuleApplyingEntity entity = new RuleApplyingEntity();
             entity.setId(defaultRuleApplyingEntity.getId());
             entity.setEnabled(defaultRuleApplyingEntity.getEnabled());
             entity.setRuleMetadataId(defaultRuleApplyingEntity.getRuleMetadataId());
@@ -93,7 +94,7 @@ public class RuleApplyingEntity {
             entity.setUpdateTime(defaultRuleApplyingEntity.getUpdateTime());
             return entity;
         }
-        entity = ruleApplyingEntityOpt.get();
+        RuleApplyingEntity entity = ObjectUtil.deepCopy(ruleApplyingEntityOpt.get(), RuleApplyingEntity.class);
         entity.setId(defaultRuleApplyingEntity.getId());
         return entity;
     }

@@ -35,7 +35,6 @@ import org.springframework.transaction.annotation.Transactional;
 import com.oceanbase.odc.core.authority.util.Authenticated;
 import com.oceanbase.odc.core.authority.util.PreAuthenticate;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
-import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.core.shared.exception.BadRequestException;
@@ -45,6 +44,7 @@ import com.oceanbase.odc.metadb.collaboration.EnvironmentRepository;
 import com.oceanbase.odc.metadb.collaboration.EnvironmentSpecs;
 import com.oceanbase.odc.service.collaboration.environment.model.CreateEnvironmentReq;
 import com.oceanbase.odc.service.collaboration.environment.model.Environment;
+import com.oceanbase.odc.service.collaboration.environment.model.EnvironmentExists;
 import com.oceanbase.odc.service.collaboration.environment.model.QueryEnvironmentParam;
 import com.oceanbase.odc.service.collaboration.environment.model.UpdateEnvironmentReq;
 import com.oceanbase.odc.service.common.model.InnerUser;
@@ -109,11 +109,10 @@ public class EnvironmentService {
     @Transactional(rollbackFor = Exception.class)
     @PreAuthenticate(actions = "create", resourceType = "ODC_ENVIRONMENT", isForAll = true)
     public Environment create(@NotNull @Valid CreateEnvironmentReq req) {
-        PreConditions.validNoDuplicated(ResourceType.ODC_ENVIRONMENT, "name", req.getName(),
-                () -> exists(req.getName()));
-        PreConditions.validArgumentState(!DEFAULT_ENV_NAMES.contains(req.getName()), ErrorCodes.ReservedName,
-                new Object[] {req.getName()}, "The environment name is not allowed");
-
+        EnvironmentExists exists = exists(req.getName());
+        if (exists.getExists()) {
+            throw new BadRequestException(exists.getErrorMessage());
+        }
         Ruleset savedRuleset = rulesetService.create(buildRuleset(req.getName(), req.getDescription()));
         List<Rule> copiedRules = ruleService.list(req.getCopiedRulesetId(), new QueryRuleMetadataParams());
         ruleService.create(savedRuleset.getId(), copiedRules);
@@ -213,11 +212,22 @@ public class EnvironmentService {
     }
 
 
-    private boolean exists(String name) {
+    @SkipAuthorize("internally authenticated")
+    public EnvironmentExists exists(String name) {
+        if (DEFAULT_ENV_NAMES.contains(name)) {
+            return EnvironmentExists.builder().exists(true)
+                    .errorMessage(ErrorCodes.ReservedName.getLocalizedMessage(new Object[] {name})).build();
+        }
         EnvironmentEntity entity = new EnvironmentEntity();
         entity.setOrganizationId(authenticationFacade.currentOrganizationId());
         entity.setName(name);
-        return environmentRepository.exists(Example.of(entity));
+        if (environmentRepository.exists(Example.of(entity))) {
+            return EnvironmentExists.builder().exists(true)
+                    .errorMessage(ErrorCodes.DuplicatedExists.getLocalizedMessage(
+                            new Object[] {ResourceType.ODC_ENVIRONMENT.getLocalizedMessage(), "name", name}))
+                    .build();
+        }
+        return EnvironmentExists.builder().exists(false).build();
     }
 
     private Environment innerDetail(@NonNull Long id) {
