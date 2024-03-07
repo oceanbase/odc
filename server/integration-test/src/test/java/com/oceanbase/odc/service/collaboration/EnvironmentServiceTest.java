@@ -31,6 +31,8 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 
 import com.oceanbase.odc.ServiceTestEnv;
 import com.oceanbase.odc.core.shared.constant.DialectType;
+import com.oceanbase.odc.core.shared.constant.ErrorCodes;
+import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.core.shared.exception.BadRequestException;
 import com.oceanbase.odc.metadb.collaboration.EnvironmentRepository;
 import com.oceanbase.odc.service.collaboration.environment.EnvironmentService;
@@ -128,7 +130,8 @@ public class EnvironmentServiceTest extends ServiceTestEnv {
         EnvironmentExists exists = environmentService.exists("sit");
         Assert.assertTrue(exists.getExists());
         Assert.assertTrue(
-                StringUtils.equals(exists.getErrorMessage(), "The name sit is reserved, please modify and retry"));
+                StringUtils.equals(exists.getErrorMessage(),
+                        ErrorCodes.ReservedName.getLocalizedMessage(new Object[] {"sit"})));
     }
 
     @Test
@@ -141,7 +144,8 @@ public class EnvironmentServiceTest extends ServiceTestEnv {
         EnvironmentExists exists = environmentService.exists("test_");
         Assert.assertTrue(exists.getExists());
         Assert.assertTrue(StringUtils.equals(exists.getErrorMessage(),
-                "Environment with identifier name=test_ already exists, please modify name and retry"));
+                ErrorCodes.DuplicatedExists.getLocalizedMessage(
+                        new Object[] {ResourceType.ODC_ENVIRONMENT.getLocalizedMessage(), "name", "test_"})));
     }
 
     @Test
