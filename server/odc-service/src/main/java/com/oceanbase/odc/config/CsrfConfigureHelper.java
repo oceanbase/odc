@@ -96,13 +96,12 @@ public class CsrfConfigureHelper {
 
         private DefaultRequiresCsrfMatcher(CommonSecurityProperties commonSecurityProperties) {
             this.allowedMethods = new HashSet<>(Arrays.asList("GET", "HEAD", "TRACE", "OPTIONS"));
-            this.allowedUrls = new HashSet<>(
-                    Arrays.asList(ArrayUtils.addAll(
-                            new String[] {"/api/v1/user/create",
-                                    "/api/v2/iam/login",
-                                    "/api/v1/user/csrfToken",
-                                    "/api/v2/bastion/login"},
-                            commonSecurityProperties.getTaskWhiteList())));
+            this.allowedUrls = new HashSet<>(Arrays.asList(ArrayUtils.addAll(
+                    new String[] {"/api/v1/user/create",
+                            "/api/v2/iam/login",
+                            "/api/v1/user/csrfToken",
+                            "/api/v2/bastion/login"},
+                    commonSecurityProperties.getTaskWhiteList())));
         }
 
         public boolean matches(HttpServletRequest request) {
