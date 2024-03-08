@@ -17,7 +17,6 @@ package com.oceanbase.odc.service.collaboration;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.ThreadLocalRandom;
 
 import org.apache.commons.collections.ListUtils;
 import org.junit.After;
@@ -111,7 +110,7 @@ public class ProjectServiceTest extends ServiceTestEnv {
         Project saved = projectService.create(getProject());
         Mockito.when(
                 resourceRoleService.listByResourceTypeAndId(Mockito.eq(ResourceType.ODC_PROJECT), Mockito.anyLong()))
-            .thenReturn(listUserResourceRole(saved.getId()));
+                .thenReturn(listUserResourceRole(saved.getId()));
         Project actual = projectService.detail(saved.getId());
         Assert.assertNotNull(actual);
     }
