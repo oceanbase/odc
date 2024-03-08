@@ -110,7 +110,7 @@ public class ProjectServiceTest extends ServiceTestEnv {
     public void testGetProject_Success() {
         Long randomNumber = ThreadLocalRandom.current().nextLong(1, 6);
         Project saved = projectService.create(getProject());
-        Mockito.when(resourceRoleService.listByResourceTypeAndId(ResourceType.ODC_PROJECT, randomNumber))
+        Mockito.when(resourceRoleService.listByResourceTypeAndId(ResourceType.ODC_PROJECT, Mockito.anyLong()))
                 .thenReturn(listUserResourceRole(saved.getId()));
         Project actual = projectService.detail(saved.getId());
         Assert.assertNotNull(actual);

@@ -75,7 +75,7 @@ public class ResourceRoleService {
         if (CollectionUtils.isEmpty(userResourceRoleList)) {
             return Collections.emptyList();
         }
-        List<UserResourceRole> userResourceRoles = new ArrayList<>();
+        List<UserResourceRoleEntity> userResourceRoleEntityList = new ArrayList<>();
         userResourceRoleList.forEach(i -> {
             ResourceRoleEntity resourceRoleEntity = resourceRoleRepository.findByResourceTypeAndRoleName(
                     i.getResourceType(), i.getResourceRole());
@@ -87,10 +87,10 @@ public class ResourceRoleService {
             entity.setUserId(i.getUserId());
             entity.setResourceRoleId(resourceRoleEntity.getId());
             entity.setOrganizationId(authenticationFacade.currentOrganizationId());
-            userResourceRoleRepository.save(entity);
-            userResourceRoles.add(fromEntity(entity, resourceRoleEntity));
+            userResourceRoleEntityList.add(entity);
         });
-        return userResourceRoles;
+        userResourceRoleRepository.saveAll(userResourceRoleEntityList);
+        return userResourceRoleList;
     }
 
     @SkipAuthorize("odc internal usage")

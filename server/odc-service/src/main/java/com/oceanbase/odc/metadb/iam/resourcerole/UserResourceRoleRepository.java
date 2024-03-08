@@ -57,7 +57,8 @@ public interface UserResourceRoleRepository
 
     @Modifying
     @Transactional
-    @Query(value = "delete t from iam_user_resource_role t inner join iam_resource_role irr on t.resource_role_id = irr.id where irr.resource_type = :#{#resourceType.name()} and  t.resource_id =:resourceId",
+    @Query(value = "delete from iam_user_resource_role t\n"
+            + "where exists (select 1 from iam_resource_role irr where t.resource_role_id = irr.id and irr.resource_type = :#{#resourceType.name()} and t.resource_id = :resourceId)",
             nativeQuery = true)
     int deleteByResourceTypeAndId(@Param("resourceType") ResourceType resourceType,
             @Param("resourceId") Long resourceId);
