@@ -105,7 +105,7 @@ public class StartPreparingJob implements Job {
                     throw new TaskRuntimeException(e);
                 }
             } else {
-                log.warn("Job {} current status is {} but not preparing or retrying, start explain is aborted.",
+                log.info("Job {} current status is {} but not preparing or retrying, start explain is aborted.",
                         lockedEntity.getId(), lockedEntity.getStatus());
             }
         });
