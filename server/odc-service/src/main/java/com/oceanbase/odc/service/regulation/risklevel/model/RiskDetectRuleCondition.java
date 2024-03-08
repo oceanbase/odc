@@ -63,7 +63,6 @@ public class RiskDetectRuleCondition extends BaseTreeNode {
      */
     @NotEmpty
     @Valid
-    @Internationalizable
     private Object value;
 
     @Override
