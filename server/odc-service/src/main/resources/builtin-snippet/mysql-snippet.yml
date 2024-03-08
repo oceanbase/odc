@@ -52,3 +52,43 @@
         AND c.COLUMN_NAME = pk.COLUMN_NAME
     WHERE c.TABLE_SCHEMA = DATABASE()
     ORDER BY c.TABLE_SCHEMA ASC, c.TABLE_NAME ASC, c.ORDINAL_POSITION ASC;
+- name: mysql create user
+  dialect_type: MYSQL
+  tags: [ 'developer','mysql', 'user', 'create' ]
+  type: DDL
+  description: 'Create user in MySQL'
+  prefix: create_user
+  body: |
+    CREATE USER '${1:username}'  IDENTIFIED BY '${2:your_password}';
+- name: mysql grant all schema privileges to user
+  dialect_type: MYSQL
+  tags: [ 'developer','mysql', 'grant' ]
+  type: DDL
+  description: 'Grant all schema privileges to user for MySQL'
+  prefix: grant_all_schema_privileges_to_user
+  body: |
+    GRANT ALL ON *.* TO '${1:username}'@'${2:%}';
+- name: mysql grant one schema privileges to user
+  dialect_type: MYSQL
+  tags: [ 'developer','mysql', 'grant' ]
+  type: DDL
+  description: 'Grant one schema privileges to user for MySQL'
+  prefix: grant_one_schema_privileges_to_user
+  body: |
+    GRANT ALL ON ${2:schema_name}.* TO ${2:username};
+- name: mysql revoke all privileges from user
+  dialect_type: MYSQL
+  tags: [ 'developer','mysql', 'revoke' ]
+  type: DDL
+  description: 'Revoke all privileges from user for MySQL'
+  prefix: revoke_all_privileges_from_user
+  body: |
+    REVOKE ALL PRIVILEGES FROM ${2:username};
+- name: mysql revoke one schema privileges from user
+  dialect_type: MYSQL
+  tags: [ 'developer','mysql', 'revoke' ]
+  type: DDL
+  description: 'Revoke all privileges from user for MySQL'
+  prefix: revoke_all_privileges_from_user
+  body: |
+    REVOKE ALL PRIVILEGES ON ${1:schema_name}.* FROM ${2:username};

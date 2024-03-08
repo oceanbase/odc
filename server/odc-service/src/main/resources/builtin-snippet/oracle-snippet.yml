@@ -81,3 +81,13 @@
       TC.OWNER ASC,
       TC.TABLE_NAME ASC,
       TC.COLUMN_ID ASC;
+- name: oracle set date time format
+  dialect_type: ORACLE
+  tags: [ 'developer','oracle', 'datetime' ]
+  type: DDL
+  description: 'Set date time format for Oracle'
+  prefix: set_date_time_format
+  body: |
+    ALTER SESSION SET nls_date_format='YYYY-MM-DD';
+    ALTER SESSION SET nls_timestamp_format='YYYY-MM-DD HH:MI:SS.XFF3';
+    ALTER SESSION SET nls_timestamp_tz_format='YYYY-MM-DD HH24:MI:SS.XFF3 TZH:TZM';
