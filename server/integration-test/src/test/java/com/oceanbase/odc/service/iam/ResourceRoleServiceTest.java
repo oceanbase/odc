@@ -69,7 +69,9 @@ public class ResourceRoleServiceTest extends MockedAuthorityTestEnv {
         Mockito.when(resourceRoleRepository.findAll()).thenReturn(getResourceRoleEntity());
         Mockito.when(resourceRoleRepository.findById(1L)).thenReturn(Optional.of(getResourceRoleEntity().get(0)));
         Mockito.when(authenticationFacade.currentOrganizationId()).thenReturn(1L);
-
+        Mockito.when(
+                resourceRoleRepository.findByResourceTypeAndRoleName(ResourceType.ODC_PROJECT, ResourceRoleName.OWNER))
+                .thenReturn(getResourceRoleEntity().get(0));
         resourceRoleService.saveAll(Arrays.asList(getProjectOwner()));
 
         int actual = userResourceRoleRepository.findByUserId(1L).size();
@@ -82,6 +84,9 @@ public class ResourceRoleServiceTest extends MockedAuthorityTestEnv {
         Mockito.when(resourceRoleRepository.findById(Mockito.anyLong()))
                 .thenReturn(Optional.of(getResourceRoleEntity().get(0)));
         Mockito.when(authenticationFacade.currentOrganizationId()).thenReturn(1L);
+        Mockito.when(
+                resourceRoleRepository.findByResourceTypeAndRoleName(ResourceType.ODC_PROJECT, ResourceRoleName.OWNER))
+                .thenReturn(getResourceRoleEntity().get(0));
         resourceRoleService.saveAll(Arrays.asList(getProjectOwner()));
 
         int actual = resourceRoleService.listByResourceTypeAndId(ResourceType.ODC_PROJECT, 1L).size();
@@ -93,7 +98,11 @@ public class ResourceRoleServiceTest extends MockedAuthorityTestEnv {
         Mockito.when(resourceRoleRepository.findAll()).thenReturn(getResourceRoleEntity());
         Mockito.when(resourceRoleRepository.findById(1L)).thenReturn(Optional.of(getResourceRoleEntity().get(0)));
         Mockito.when(authenticationFacade.currentOrganizationId()).thenReturn(1L);
+        Mockito.when(
+                resourceRoleRepository.findByResourceTypeAndRoleName(ResourceType.ODC_PROJECT, ResourceRoleName.OWNER))
+                .thenReturn(getResourceRoleEntity().get(0));
         resourceRoleService.saveAll(Arrays.asList(getProjectOwner()));
+
 
         int actual = resourceRoleService.listByOrganizationIdAndUserId(1L, 1L).size();
         Assert.assertEquals(1, actual);
@@ -104,6 +113,8 @@ public class ResourceRoleServiceTest extends MockedAuthorityTestEnv {
         Mockito.when(resourceRoleRepository.findAll()).thenReturn(getResourceRoleEntity());
         Mockito.when(resourceRoleRepository.findById(1L)).thenReturn(Optional.of(getResourceRoleEntity().get(0)));
         Mockito.when(authenticationFacade.currentOrganizationId()).thenReturn(1L);
+        Mockito.when(resourceRoleRepository.findByResourceTypeAndRoleName(
+                ResourceType.ODC_PROJECT, ResourceRoleName.OWNER)).thenReturn(getResourceRoleEntity().get(0));
         resourceRoleService.saveAll(Arrays.asList(getProjectOwner()));
 
         int actual = resourceRoleService.deleteByResourceId(1L);
@@ -114,6 +125,7 @@ public class ResourceRoleServiceTest extends MockedAuthorityTestEnv {
         UserResourceRole projectOwner = new UserResourceRole();
         projectOwner.setUserId(1L);
         projectOwner.setResourceId(1L);
+        projectOwner.setResourceType(ResourceType.ODC_PROJECT);
         projectOwner.setResourceRole(ResourceRoleName.OWNER);
         return projectOwner;
     }
