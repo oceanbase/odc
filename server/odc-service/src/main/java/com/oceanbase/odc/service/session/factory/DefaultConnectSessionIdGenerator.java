@@ -49,7 +49,8 @@ public class DefaultConnectSessionIdGenerator implements ConnectionSessionIdGene
 
     @Override
     public CreateSessionReq getKeyFromId(@NonNull String id) {
-        CreateSessionReq req = JsonUtils.fromJson(new String(Base64.getUrlDecoder().decode(id)), CreateSessionReq.class);
+        CreateSessionReq req =
+                JsonUtils.fromJson(new String(Base64.getUrlDecoder().decode(id)), CreateSessionReq.class);
         if (req == null) {
             throw new IllegalStateException("session id's format is illegal, " + id);
         }
