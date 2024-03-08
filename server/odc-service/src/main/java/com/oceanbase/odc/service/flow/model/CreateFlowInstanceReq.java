@@ -50,6 +50,10 @@ import lombok.Data;
 
 @Data
 public class CreateFlowInstanceReq {
+    /**
+     * FlowInstanceId
+     */
+    private Long id;
 
     /**
      * Database id

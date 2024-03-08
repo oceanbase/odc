@@ -431,4 +431,14 @@ public abstract class StringUtils extends org.apache.commons.lang3.StringUtils {
         return matchLength >= maxMatchLength || j >= prefixes.length;
     }
 
+    public static boolean isTranslatable(@NonNull String str) {
+        return str.startsWith(DEFAULT_VARIABLE_PREFIX) && str.endsWith(DEFAULT_VARIABLE_SUFFIX);
+    }
+
+    public static String getTranslatableKey(@NonNull String str) {
+        if (!isTranslatable(str)) {
+            throw new IllegalStateException(str + " is not translatable");
+        }
+        return str.substring(DEFAULT_VARIABLE_PREFIX.length(), str.length() - DEFAULT_VARIABLE_SUFFIX.length());
+    }
 }

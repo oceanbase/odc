@@ -79,7 +79,7 @@ public class ConnectionEntity {
     private ConnectionVisibleScope visibleScope;
 
     /**
-     * Owner id, user_id if visible_scope=PRIVATE, enterprise_id if visible_scope=ORGANIZATION
+     * DatabaseOwner id, user_id if visible_scope=PRIVATE, enterprise_id if visible_scope=ORGANIZATION
      */
     @Column(name = "owner_id")
     private Long ownerId;

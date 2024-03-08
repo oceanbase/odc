@@ -28,13 +28,13 @@ import javax.validation.constraints.NotEmpty;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.shared.constant.ResourceRoleName;
+import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.core.shared.exception.UnexpectedException;
 import com.oceanbase.odc.metadb.iam.resourcerole.ResourceRoleEntity;
 import com.oceanbase.odc.metadb.iam.resourcerole.ResourceRoleRepository;
@@ -75,13 +75,10 @@ public class ResourceRoleService {
         if (CollectionUtils.isEmpty(userResourceRoleList)) {
             return Collections.emptyList();
         }
-        List<UserResourceRole> userResourceRoles = new ArrayList<>();
-        Map<ResourceRoleName, ResourceRoleEntity> resourceRoleEntities =
-                resourceRoleRepository.findAll().stream().collect(Collectors.toMap(
-                        ResourceRoleEntity::getRoleName, v -> v, (existingValue, newValue) -> newValue));
-
-        List<UserResourceRoleEntity> entities = userResourceRoleList.stream().map(i -> {
-            ResourceRoleEntity resourceRoleEntity = resourceRoleEntities.getOrDefault(i.getResourceRole(), null);
+        List<UserResourceRoleEntity> userResourceRoleEntityList = new ArrayList<>();
+        userResourceRoleList.forEach(i -> {
+            ResourceRoleEntity resourceRoleEntity = resourceRoleRepository.findByResourceTypeAndRoleName(
+                    i.getResourceType(), i.getResourceRole());
             if (resourceRoleEntity == null) {
                 throw new UnexpectedException("resource role not found, role=" + i.getResourceRole());
             }
@@ -90,20 +87,10 @@ public class ResourceRoleService {
             entity.setUserId(i.getUserId());
             entity.setResourceRoleId(resourceRoleEntity.getId());
             entity.setOrganizationId(authenticationFacade.currentOrganizationId());
-            userResourceRoles.add(fromEntity(entity, resourceRoleEntity));
-            return entity;
-        }).collect(Collectors.toList());
-
-        String batchInsert =
-                "insert into `iam_user_resource_role` (`user_id`, `resource_id`, `resource_role_id`, `organization_id`) VALUES (?, ?, ?, ?) on duplicate key update `id` = `id`";
-        JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
-        jdbcTemplate.batchUpdate(batchInsert, entities, entities.size(), (ps, entity) -> {
-            ps.setLong(1, entity.getUserId());
-            ps.setLong(2, entity.getResourceId());
-            ps.setLong(3, entity.getResourceRoleId());
-            ps.setLong(4, entity.getOrganizationId());
+            userResourceRoleEntityList.add(entity);
         });
-        return userResourceRoles;
+        userResourceRoleRepository.saveAll(userResourceRoleEntityList);
+        return userResourceRoleList;
     }
 
     @SkipAuthorize("odc internal usage")
@@ -125,9 +112,12 @@ public class ResourceRoleService {
 
     @SkipAuthorize
     public Map<Long, Set<ResourceRoleName>> getProjectId2ResourceRoleNames(Long userId) {
-        Map<Long, ResourceRole> id2ResourceRoles = listResourceRoles().stream().collect(Collectors
-                .toMap(ResourceRole::getId, resourceRole -> resourceRole, (existingValue, newValue) -> newValue));
-        return userResourceRoleRepository.findByUserId(userId).stream()
+        Map<Long, ResourceRole> id2ResourceRoles =
+                resourceRoleRepository.findByResourceType(ResourceType.ODC_PROJECT).stream()
+                        .map(resourceRoleMapper::entityToModel).collect(Collectors
+                                .toMap(ResourceRole::getId, resourceRole -> resourceRole,
+                                        (existingValue, newValue) -> newValue));
+        return userResourceRoleRepository.findByUserIdAndResourceType(userId, ResourceType.ODC_PROJECT).stream()
                 .collect(Collectors.groupingBy(UserResourceRoleEntity::getResourceId, Collectors.mapping(
                         e -> id2ResourceRoles.get(e.getResourceRoleId()).getRoleName(), Collectors.toSet())));
     }
@@ -139,14 +129,14 @@ public class ResourceRoleService {
 
     @Transactional(rollbackFor = Exception.class)
     @SkipAuthorize("internal usage")
-    public List<UserResourceRole> listByResourceId(Long resourceId) {
-        List<UserResourceRoleEntity> entities = userResourceRoleRepository.findByResourceId(resourceId);
+    public List<UserResourceRole> listByResourceTypeAndId(ResourceType resourceType, Long resourceId) {
+        List<UserResourceRoleEntity> entities =
+                userResourceRoleRepository.listByResourceTypeAndId(resourceType, resourceId);
         return entities.stream().map(e -> {
             ResourceRoleEntity resourceRole = resourceRoleRepository
                     .findById(e.getResourceRoleId())
                     .orElseThrow(() -> new UnexpectedException("resource role not found, id=" + e.getResourceRoleId()));
             return fromEntity(e, resourceRole);
-
         }).collect(Collectors.toList());
     }
 
@@ -168,6 +158,12 @@ public class ResourceRoleService {
 
     @Transactional(rollbackFor = Exception.class)
     @SkipAuthorize("internal usage")
+    public int deleteByResourceTypeAndId(@NonNull ResourceType resourceType, @NonNull Long resourceId) {
+        return userResourceRoleRepository.deleteByResourceTypeAndId(resourceType, resourceId);
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    @SkipAuthorize("internal usage")
     public int deleteByResourceIdAndUserId(@NonNull Long resourceId, @NonNull Long userId) {
         return userResourceRoleRepository.deleteByResourceIdAndUserId(resourceId, userId);
     }
@@ -184,8 +180,9 @@ public class ResourceRoleService {
     }
 
     @SkipAuthorize("internal usage")
-    public List<ResourceRole> listResourceRoles() {
-        return resourceRoleRepository.findAll().stream()
+    public List<ResourceRole> listResourceRoles(List<ResourceType> resourceType) {
+        return resourceRoleRepository
+                .findByResourceTypeIn(resourceType).stream()
                 .map(resourceRoleMapper::entityToModel).collect(Collectors.toList());
     }
 
@@ -220,6 +217,19 @@ public class ResourceRoleService {
         model.setResourceId(entity.getResourceId());
         model.setUserId(entity.getUserId());
         return model;
+    }
+
+    public List<UserResourceRole> getUserIdsByResourceIdAndTypeAndName(Long resourceId, ResourceType resourceType,
+            String roleName) {
+        List<UserResourceRoleEntity> entities = userResourceRoleRepository.findByResourceIdAndTypeAndName(resourceId,
+                resourceType.toString(),
+                roleName);
+        return entities.stream().map(e -> {
+            ResourceRoleEntity resourceRole = resourceRoleRepository
+                    .findById(e.getResourceRoleId())
+                    .orElseThrow(() -> new UnexpectedException("resource role not found, id=" + e.getResourceRoleId()));
+            return fromEntity(e, resourceRole);
+        }).collect(Collectors.toList());
     }
 
 }

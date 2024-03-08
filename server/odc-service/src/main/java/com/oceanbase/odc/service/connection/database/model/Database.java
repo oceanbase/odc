@@ -17,6 +17,7 @@ package com.oceanbase.odc.service.connection.database.model;
 
 import java.io.Serializable;
 import java.util.Date;
+import java.util.List;
 import java.util.Set;
 
 import javax.validation.constraints.NotBlank;
@@ -31,7 +32,9 @@ import com.oceanbase.odc.service.collaboration.project.model.Project;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.permission.database.model.DatabasePermissionType;
 
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 /**
  * @Author: Lebie
@@ -84,6 +87,19 @@ public class Database implements SecurityResource, OrganizationIsolated, Seriali
 
     @JsonProperty(access = Access.READ_ONLY)
     private Set<DatabasePermissionType> authorizedPermissionTypes;
+
+    private List<DatabaseOwner> owners;
+
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class DatabaseOwner {
+        private Long id;
+
+        private String accountName;
+
+        private String name;
+    }
 
     @Override
     public String resourceId() {
