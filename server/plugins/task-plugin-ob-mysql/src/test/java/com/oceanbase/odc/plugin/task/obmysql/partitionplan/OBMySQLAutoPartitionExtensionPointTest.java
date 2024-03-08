@@ -227,11 +227,11 @@ public class OBMySQLAutoPartitionExtensionPointTest {
             partition.setSchemaName(dbTable.getSchemaName());
             List<String> actuals = extensionPoint.generateCreatePartitionDdls(connection, partition);
             List<String> expects = Collections.singletonList(String.format("ALTER TABLE %s.%s ADD PARTITION (\n"
-                    + "\tPARTITION `p20240126` VALUES LESS THAN (20220801,'2024-01-25'),\n"
-                    + "\tPARTITION `p20240127` VALUES LESS THAN (20220802,'2024-01-26'),\n"
-                    + "\tPARTITION `p20240128` VALUES LESS THAN (20220803,'2024-01-27'),\n"
-                    + "\tPARTITION `p20240129` VALUES LESS THAN (20220804,'2024-01-28'),\n"
-                    + "\tPARTITION `p20240130` VALUES LESS THAN (20220805,'2024-01-29'));\n",
+                    + "\tPARTITION `p20240126` VALUES LESS THAN (20220801,'2024-01-26'),\n"
+                    + "\tPARTITION `p20240127` VALUES LESS THAN (20220802,'2024-01-27'),\n"
+                    + "\tPARTITION `p20240128` VALUES LESS THAN (20220803,'2024-01-28'),\n"
+                    + "\tPARTITION `p20240129` VALUES LESS THAN (20220804,'2024-01-29'),\n"
+                    + "\tPARTITION `p20240130` VALUES LESS THAN (20220805,'2024-01-30'));\n",
                     configuration.getDefaultDBName(), REAL_RANGE_TABLE_NAME));
             Assert.assertEquals(expects, actuals);
         }
