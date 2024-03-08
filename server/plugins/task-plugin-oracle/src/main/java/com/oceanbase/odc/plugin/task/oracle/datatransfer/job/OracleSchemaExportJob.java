@@ -63,7 +63,7 @@ public class OracleSchemaExportJob extends BaseSchemaExportJob {
 
     @Override
     protected String getDropStatement() {
-        return String.format("DROP %s %s", ObjectType.valueOfName(object.getType()).getName(), object.getName());
+        return String.format("DROP %s \"%s\";\n", ObjectType.valueOfName(object.getType()).getName(), object.getName());
     }
 
     @Override

@@ -30,11 +30,13 @@ import org.junit.Test;
 import com.oceanbase.tools.sqlparser.adapter.mysql.MySQLCreateTableFactory;
 import com.oceanbase.tools.sqlparser.obmysql.OBLexer;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser;
+import com.oceanbase.tools.sqlparser.obmysql.OBParser.Create_table_like_stmtContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Create_table_stmtContext;
 import com.oceanbase.tools.sqlparser.statement.Expression;
 import com.oceanbase.tools.sqlparser.statement.Operator;
 import com.oceanbase.tools.sqlparser.statement.common.CharacterType;
 import com.oceanbase.tools.sqlparser.statement.common.DataType;
+import com.oceanbase.tools.sqlparser.statement.common.RelationFactor;
 import com.oceanbase.tools.sqlparser.statement.createtable.ColumnDefinition;
 import com.oceanbase.tools.sqlparser.statement.createtable.CreateTable;
 import com.oceanbase.tools.sqlparser.statement.createtable.HashPartition;
@@ -71,6 +73,20 @@ public class MySQLCreateTableFactoryTest {
         DataType dataType = new CharacterType("varchar", new BigDecimal("64"));
         expect.setTableElements(
                 Collections.singletonList(new ColumnDefinition(new ColumnReference(null, null, "id"), dataType)));
+        Assert.assertEquals(expect, actual);
+    }
+
+    @Test
+    public void generate_createTableLike_generateSucceed() {
+        Create_table_like_stmtContext context = getCreateTableLikeContext("create table if not exists abcd like a.b");
+        StatementFactory<CreateTable> factory = new MySQLCreateTableFactory(context);
+        CreateTable actual = factory.generate();
+
+        CreateTable expect = new CreateTable("abcd");
+        expect.setIfNotExists(true);
+        RelationFactor likeTable = new RelationFactor("b");
+        likeTable.setSchema("a");
+        expect.setLikeTable(likeTable);
         Assert.assertEquals(expect, actual);
     }
 
@@ -399,6 +415,14 @@ public class MySQLCreateTableFactoryTest {
         OBParser parser = new OBParser(tokens);
         parser.setErrorHandler(new BailErrorStrategy());
         return parser.create_table_stmt();
+    }
+
+    private Create_table_like_stmtContext getCreateTableLikeContext(String expr) {
+        OBLexer lexer = new OBLexer(CharStreams.fromString(expr));
+        CommonTokenStream tokens = new CommonTokenStream(lexer);
+        OBParser parser = new OBParser(tokens);
+        parser.setErrorHandler(new BailErrorStrategy());
+        return parser.create_table_like_stmt();
     }
 
 }

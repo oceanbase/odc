@@ -234,7 +234,7 @@ public class FlowInstanceController {
 
     @GetMapping(value = "/{id:[\\d]+}/tasks/partitionPlans/getDetail")
     public SuccessResponse<PartitionPlanConfig> getPartitionPlan(@PathVariable Long id) {
-        return Responses.ok(this.partitionPlanScheduleService.getPartitionPlan(id));
+        return Responses.ok(this.partitionPlanScheduleService.getPartitionPlanByFlowInstanceId(id));
     }
 
 }

@@ -147,13 +147,14 @@ public class PartitionPlanServiceV2Test extends ServiceTestEnv {
         Mockito.when(this.sessionService.nullSafeGet("id", true)).thenReturn(session);
         TestDBConfiguration configuration = TestDBConfigurations.getInstance().getTestOBMysqlConfiguration();
         Database database = new Database();
+        database.setId(1000L);
         database.setName(configuration.getDefaultDBName());
-        Mockito.when(this.databaseService.detail(1L)).thenReturn(database);
+        Mockito.when(this.databaseService.detail(1000L)).thenReturn(database);
 
         PartitionPlanEntity p = TestRandom.nextObject(PartitionPlanEntity.class);
         p.setId(null);
         p.setEnabled(true);
-        p.setDatabaseId(1L);
+        p.setDatabaseId(1000L);
         p = this.partitionPlanRepository.save(p);
 
         PartitionPlanTableEntity pt = TestRandom.nextObject(PartitionPlanTableEntity.class);
@@ -168,7 +169,7 @@ public class PartitionPlanServiceV2Test extends ServiceTestEnv {
         pptk.setPartitionplanTableId(pt.getId());
         pptk = this.partitionPlanTablePartitionKeyRepository.save(pptk);
 
-        List<PartitionPlanDBTable> tables = this.partitionPlanService.listCandidateTables("id", 1L);
+        List<PartitionPlanDBTable> tables = this.partitionPlanService.listCandidateTables("id", 1000L);
         PartitionPlanDBTable target = tables.stream()
                 .filter(t -> MYSQL_OVERLAP_RANGE_TABLE_NAME.equals(t.getName())).findFirst().get();
         Set<PartitionPlanStrategy> actual = target.getStrategies();
