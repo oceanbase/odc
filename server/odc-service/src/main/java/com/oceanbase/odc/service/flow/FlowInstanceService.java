@@ -713,7 +713,8 @@ public class FlowInstanceService {
         if (taskType == TaskType.ALTER_SCHEDULE) {
             AlterScheduleParameters params = (AlterScheduleParameters) req.getParameters();
             // Check the new parameters during creation or update.
-            if (params.getOperationType() == OperationType.CREATE || params.getOperationType() == OperationType.UPDATE) {
+            if (params.getOperationType() == OperationType.CREATE
+                    || params.getOperationType() == OperationType.UPDATE) {
                 if (params.getType() == JobType.DATA_ARCHIVE) {
                     DataArchiveParameters p = (DataArchiveParameters) params.getScheduleTaskParameters();
                     databaseIds.add(p.getSourceDatabaseId());
@@ -726,12 +727,12 @@ public class FlowInstanceService {
                 ScheduleEntity scheduleEntity = scheduleService.nullSafeGetById(params.getTaskId());
                 if (params.getType() == JobType.DATA_ARCHIVE) {
                     DataArchiveParameters p = JsonUtils.fromJson(scheduleEntity.getJobParametersJson(),
-                        DataArchiveParameters.class);
+                            DataArchiveParameters.class);
                     databaseIds.add(p.getSourceDatabaseId());
                     databaseIds.add(p.getTargetDataBaseId());
                 } else if (params.getType() == JobType.DATA_DELETE) {
                     DataDeleteParameters p = JsonUtils.fromJson(scheduleEntity.getJobParametersJson(),
-                        DataDeleteParameters.class);
+                            DataDeleteParameters.class);
                     databaseIds.add(p.getDatabaseId());
                 }
             }
