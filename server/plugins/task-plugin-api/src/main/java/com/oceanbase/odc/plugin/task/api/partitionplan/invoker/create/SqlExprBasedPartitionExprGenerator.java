@@ -34,13 +34,15 @@ import lombok.NonNull;
  */
 public interface SqlExprBasedPartitionExprGenerator extends PartitionExprGenerator {
 
+    String GENERATOR_NAME = "CUSTOM_GENERATOR";
+
     List<String> generate(@NonNull Connection connection, @NonNull DBTable dbTable,
             @NonNull String partitionKey, @NonNull Integer generateCount,
             @NonNull SqlExprBasedGeneratorConfig config) throws Exception;
 
     @Override
     default String getName() {
-        return "CUSTOM_GENERATOR";
+        return GENERATOR_NAME;
     }
 
     @Override
