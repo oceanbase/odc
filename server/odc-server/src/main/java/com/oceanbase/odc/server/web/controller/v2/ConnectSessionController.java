@@ -62,6 +62,7 @@ import com.oceanbase.odc.service.session.model.SqlAsyncExecuteResp;
 import com.oceanbase.odc.service.session.model.SqlExecuteResult;
 import com.oceanbase.odc.service.sqlcheck.SqlCheckService;
 import com.oceanbase.odc.service.sqlcheck.model.CheckResult;
+import com.oceanbase.odc.service.sqlcheck.model.MultipleSqlCheckReq;
 import com.oceanbase.odc.service.sqlcheck.model.SqlCheckReq;
 
 import io.swagger.annotations.ApiOperation;
@@ -139,6 +140,21 @@ public class ConnectSessionController {
     public ListResponse<CheckResult> check(@PathVariable String sessionId, @RequestBody SqlCheckReq req) {
         ConnectionSession connectionSession = sessionService.nullSafeGet(SidUtils.getSessionId(sessionId), true);
         return Responses.list(this.sqlCheckService.check(connectionSession, req));
+    }
+
+    /**
+     * 对多个数据库进行sql检查
+     * todo
+     * @param req
+     * @return
+     */
+    @ApiOperation(value = "sqlCheck", notes = "对多个sql 脚本的内容进行静态检查")
+    @PostMapping("sessions/multiple/sqlCheck")
+    public ListResponse<CheckResult> multipleCheck(@RequestBody MultipleSqlCheckReq req) {
+        for (String sessionId : req.getSessionIds()) {
+            ConnectionSession connectionSession = sessionService.nullSafeGet(SidUtils.getSessionId(sessionId), true);
+        }
+        return null;
     }
 
     /**

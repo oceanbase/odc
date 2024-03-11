@@ -17,19 +17,30 @@
 package com.oceanbase.odc.server.web.controller.v2;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort.Direction;
+import org.springframework.data.web.PageableDefault;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.oceanbase.odc.common.json.JsonUtils;
+import com.oceanbase.odc.service.common.response.PaginatedResponse;
 import com.oceanbase.odc.service.common.response.Responses;
 import com.oceanbase.odc.service.common.response.SuccessResponse;
 import com.oceanbase.odc.service.datasecurity.DataMaskingService;
 import com.oceanbase.odc.service.task.executor.server.HeartRequest;
 import com.oceanbase.odc.service.task.executor.task.DefaultTaskResult;
+import com.oceanbase.odc.service.task.runtime.DatabaseChangeTemplateReq;
+import com.oceanbase.odc.service.task.runtime.DatabaseChangeTemplateResp;
 import com.oceanbase.odc.service.task.runtime.QuerySensitiveColumnReq;
 import com.oceanbase.odc.service.task.runtime.QuerySensitiveColumnResp;
+import com.oceanbase.odc.service.task.service.DatabaseChangeTemplateService;
 import com.oceanbase.odc.service.task.service.TaskFrameworkService;
 
 import io.swagger.annotations.ApiOperation;
@@ -50,6 +61,9 @@ public class TaskController {
 
     @Autowired
     private DataMaskingService dataMaskingService;
+
+    @Autowired
+    private DatabaseChangeTemplateService databaseChangeTemplateService;
 
     @ApiOperation(value = "updateResult", notes = "update task result")
     @RequestMapping(value = "/result", method = RequestMethod.POST)
@@ -74,4 +88,29 @@ public class TaskController {
         return Responses.success(dataMaskingService.querySensitiveColumn(req));
     }
 
+    @ApiOperation(value = "createOrModifyDatabaseTemplate", notes = "根据id是否有值来执行新增还是修改")
+    @PostMapping("/databasechange/templates")
+    public SuccessResponse<DatabaseChangeTemplateResp> createOrModifyDatabaseTemplate(
+            @RequestBody DatabaseChangeTemplateReq req) {
+        return Responses.success(new DatabaseChangeTemplateResp());
+    }
+
+    @ApiOperation(value = "queryDatabaseTemplateById", notes = "根据id查询模版详情")
+    @GetMapping("/databasechange/templates/{id:[\\d]+}")
+    public SuccessResponse<DatabaseChangeTemplateResp> queryDatabaseTemplateById(@PathVariable Long id) {
+        return Responses.success(new DatabaseChangeTemplateResp());
+    }
+
+    @ApiOperation(value = "listDatabaseTemplate", notes = "获取模版列表")
+    @GetMapping("databasechange/templates")
+    public PaginatedResponse<DatabaseChangeTemplateResp> listDatabaseTemplate(Long id,
+            @PageableDefault(size = Integer.MAX_VALUE, sort = {"id"}, direction = Direction.DESC) Pageable pageable) {
+        return null;
+    }
+
+    @ApiOperation(value = "deleteDatabaseTemplateById", notes = "删除单个模板")
+    @DeleteMapping("/databasechange/templates/{id:[\\d]+}")
+    public SuccessResponse<DatabaseChangeTemplateResp> deleteDatabaseTemplateById(@PathVariable Long id) {
+        return Responses.success(new DatabaseChangeTemplateResp());
+    }
 }
