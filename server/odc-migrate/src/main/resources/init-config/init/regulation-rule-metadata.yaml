@@ -1352,3 +1352,49 @@
         componentType: SELECT_TAGS
         defaultValues:
             - bigint
+- id: 56
+  name: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.object-name-using-reserved-words.name}
+  description: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.object-name-using-reserved-words.description}
+  type: SQL_CHECK
+  builtIn: 1
+  labels:
+      - label: SUB_TYPE
+        value: DDL
+      - label: SUPPORTED_DIALECT_TYPE
+        value: MYSQL
+      - label: SUPPORTED_DIALECT_TYPE
+        value: OB_MYSQL
+      - label: SUPPORTED_DIALECT_TYPE
+        value: OB_ORACLE
+      - label: SUPPORTED_DIALECT_TYPE
+        value: ODP_SHARDING_OB_MYSQL
+- id: 57
+  name: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.offline-schema-change-exists.name}
+  description: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.offline-schema-change-exists.description}
+  type: SQL_CHECK
+  builtIn: 1
+  labels:
+      - label: SUB_TYPE
+        value: DDL
+      - label: SUPPORTED_DIALECT_TYPE
+        value: OB_MYSQL
+      - label: SUPPORTED_DIALECT_TYPE
+        value: OB_ORACLE
+- id: 58
+  name: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.truncate-table-exists.name}
+  description: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.truncate-table-exists.description}
+  type: SQL_CHECK
+  builtIn: 1
+  labels:
+      - label: SUB_TYPE
+        value: DDL
+      - label: SUPPORTED_DIALECT_TYPE
+        value: MYSQL
+      - label: SUPPORTED_DIALECT_TYPE
+        value: ORACLE
+      - label: SUPPORTED_DIALECT_TYPE
+        value: OB_MYSQL
+      - label: SUPPORTED_DIALECT_TYPE
+        value: OB_ORACLE
+      - label: SUPPORTED_DIALECT_TYPE
+        value: ODP_SHARDING_OB_MYSQL

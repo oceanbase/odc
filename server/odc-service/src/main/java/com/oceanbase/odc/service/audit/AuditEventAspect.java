@@ -414,6 +414,18 @@ public class AuditEventAspect {
                 actualAction = AuditEventAction.DISABLE_DATA_MASKING_RULE;
             }
         }
+
+        if (AuditEventAction.ENABLE_AUTOMATION_RULE == originAction) {
+            if (!((SetEnabledReq) apiParams.get("req")).getEnabled()) {
+                actualAction = AuditEventAction.DISABLE_AUTOMATION_RULE;
+            }
+        }
+
+        if (AuditEventAction.ENABLE_SENSITIVE_COLUMN == originAction) {
+            if (!((SetEnabledReq) apiParams.get("req")).getEnabled()) {
+                actualAction = AuditEventAction.DISABLE_SENSITIVE_COLUMN;
+            }
+        }
         return actualAction;
     }
 

@@ -95,7 +95,7 @@ public abstract class BaseTransferJobFactory {
         }
         objects.forEach(o -> {
             ObjectResult object = new ObjectResult(transferConfig.getSchemaName(), o.getObjectName(),
-                    o.getDbObjectType().getName());
+                    o.getDbObjectType().name());
             AbstractJob job = generateSchemaExportJob(object, dataSource);
             jobs.add(job);
         });

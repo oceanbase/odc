@@ -53,6 +53,8 @@ import com.oceanbase.odc.service.sqlcheck.factory.NoTableCommentExistsFactory;
 import com.oceanbase.odc.service.sqlcheck.factory.NoValidWhereClauseFactory;
 import com.oceanbase.odc.service.sqlcheck.factory.NoWhereClauseExistsFactory;
 import com.oceanbase.odc.service.sqlcheck.factory.NotNullColumnWithoutDefaultValueFactory;
+import com.oceanbase.odc.service.sqlcheck.factory.ObjectNameUsingReservedWordsFactory;
+import com.oceanbase.odc.service.sqlcheck.factory.OfflineDdlExistsFactory;
 import com.oceanbase.odc.service.sqlcheck.factory.PreferLocalOutOfLineIndexFactory;
 import com.oceanbase.odc.service.sqlcheck.factory.ProhibitedDatatypeExistsFactory;
 import com.oceanbase.odc.service.sqlcheck.factory.RestrictAutoIncrementDataTypesFactory;
@@ -81,6 +83,7 @@ import com.oceanbase.odc.service.sqlcheck.factory.TooManyColumnRefInPrimaryKeyFa
 import com.oceanbase.odc.service.sqlcheck.factory.TooManyInExpressionFactory;
 import com.oceanbase.odc.service.sqlcheck.factory.TooManyOutOfLineIndexFactory;
 import com.oceanbase.odc.service.sqlcheck.factory.TooManyTableJoinFactory;
+import com.oceanbase.odc.service.sqlcheck.factory.TruncateTableExistsFactory;
 import com.oceanbase.odc.service.sqlcheck.factory.ZeroFillExistsFactory;
 import com.oceanbase.odc.service.sqlcheck.model.SqlCheckRuleType;
 
@@ -145,6 +148,9 @@ public class SqlCheckRules {
         rules.add(new NoPrimaryKeyNameExistsFactory());
         rules.add(new RestrictAutoIncrementDataTypesFactory());
         rules.add(new SyntaxErrorExistsFactory());
+        rules.add(new ObjectNameUsingReservedWordsFactory());
+        rules.add(new OfflineDdlExistsFactory(jdbc));
+        rules.add(new TruncateTableExistsFactory());
         return rules;
     }
 

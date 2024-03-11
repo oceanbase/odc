@@ -110,7 +110,7 @@ public class FlowInstanceUtilTest extends ServiceTestEnv {
         FlowInstance flowInstance = createFlowInstance();
         buildFlowInstance(flowInstance);
 
-        Assert.assertEquals(14, nodeRepository.findAll().size());
+        Assert.assertEquals(16, nodeRepository.findAll().size());
         Assert.assertEquals(8, sequenceRepository.findAll().size());
         Assert.assertEquals(4, gateWayInstanceRepository.findAll().size());
         Assert.assertEquals(2, serviceTaskRepository.findAll().size());

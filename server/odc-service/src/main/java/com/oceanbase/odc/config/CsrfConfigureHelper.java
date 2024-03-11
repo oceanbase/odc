@@ -29,6 +29,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpServletResponseWrapper;
 
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.AccessDeniedException;
@@ -82,7 +83,7 @@ public class CsrfConfigureHelper {
     }
 
     private RequestMatcher requestMatcher() {
-        return new DefaultRequiresCsrfMatcher();
+        return new DefaultRequiresCsrfMatcher(commonSecurityProperties);
     }
 
     private AccessDeniedHandler accessDeniedHandler() {
@@ -93,13 +94,14 @@ public class CsrfConfigureHelper {
         private final Set<String> allowedMethods;
         private final Set<String> allowedUrls;
 
-        private DefaultRequiresCsrfMatcher() {
-            this.allowedMethods = new HashSet(Arrays.asList("GET", "HEAD", "TRACE", "OPTIONS"));
-            this.allowedUrls = new HashSet(Arrays.asList(
-                    "/api/v1/user/create",
-                    "/api/v2/iam/login",
-                    "/api/v1/user/csrfToken",
-                    "/api/v2/bastion/login"));
+        private DefaultRequiresCsrfMatcher(CommonSecurityProperties commonSecurityProperties) {
+            this.allowedMethods = new HashSet<>(Arrays.asList("GET", "HEAD", "TRACE", "OPTIONS"));
+            this.allowedUrls = new HashSet<>(Arrays.asList(ArrayUtils.addAll(
+                    new String[] {"/api/v1/user/create",
+                            "/api/v2/iam/login",
+                            "/api/v1/user/csrfToken",
+                            "/api/v2/bastion/login"},
+                    commonSecurityProperties.getTaskWhiteList())));
         }
 
         public boolean matches(HttpServletRequest request) {

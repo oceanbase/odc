@@ -50,6 +50,8 @@ import com.oceanbase.odc.service.sqlcheck.rule.OracleMissingRequiredColumns;
 import com.oceanbase.odc.service.sqlcheck.rule.OracleNoColumnCommentExists;
 import com.oceanbase.odc.service.sqlcheck.rule.OracleNoNotNullAtInExpression;
 import com.oceanbase.odc.service.sqlcheck.rule.OracleNoTableCommentExists;
+import com.oceanbase.odc.service.sqlcheck.rule.OracleObjectNameUsingReservedWords;
+import com.oceanbase.odc.service.sqlcheck.rule.OracleOfflineDdlExists;
 import com.oceanbase.odc.service.sqlcheck.rule.OracleRestrictColumnNameCase;
 import com.oceanbase.odc.service.sqlcheck.rule.OracleRestrictIndexDataTypes;
 import com.oceanbase.odc.service.sqlcheck.rule.OracleRestrictPKDataTypes;
@@ -72,6 +74,7 @@ import com.oceanbase.odc.service.sqlcheck.rule.TooManyColumnRefInPrimaryKey;
 import com.oceanbase.odc.service.sqlcheck.rule.TooManyInExpression;
 import com.oceanbase.odc.service.sqlcheck.rule.TooManyOutOfLineIndex;
 import com.oceanbase.odc.service.sqlcheck.rule.TooManyTableJoin;
+import com.oceanbase.odc.service.sqlcheck.rule.TruncateTableExists;
 
 /**
  * {@link OracleSqlCheckerTest}
@@ -1112,6 +1115,88 @@ public class OracleSqlCheckerTest {
 
         SqlCheckRuleType type = SqlCheckRuleType.NO_COLUMN_COMMENT_EXISTS;
         CheckViolation c1 = new CheckViolation(sqls[2], 1, 39, 39, 78, type, new Object[] {"col1"});
+
+        List<CheckViolation> expect = Collections.singletonList(c1);
+        Assert.assertEquals(expect, actual);
+    }
+
+    @Test
+    public void check_objectUsingReservedWords_violationGenerated() {
+        String[] sqls = {
+                "create table high (id varchar2(64), index \"high\" (id)) partition by list(a,b) subpartition by list(c) subpartition template("
+                        + "subpartition a.b values (2) INITRANS 12,"
+                        + "subpartition b values ('maxvalue') MAXTRANS 13) ("
+                        + "partition a.b@c values (default) tablespace tbs1 compress for oltp("
+                        + "subpartition a.high values (2) INITRANS 12,"
+                        + "subpartition b values ('maxvalue') MAXTRANS 13),"
+                        + "partition high values (3) id 14 nocompress,"
+                        + "partition values ('aaaddd') id 15 tablespace tbs)",
+                "CREATE TABLE uuiioo(ID VARCHAR2(64) constraint high primary key)",
+                "alter table tbl add high varchar2(64)",
+                "create or replace procedure high(p int) as begin dbms_output.put_line('aaaa'); end",
+                "alter table tbl modify partition a.b add "
+                        + "subpartition a.b values less than (+3) storage(next 12 initial 15 minextents 16 maxextents 17),"
+                        + "subpartition high values less than (maxvalue) tablespace tbs"
+        };
+        DefaultSqlChecker sqlChecker = new DefaultSqlChecker(DialectType.OB_ORACLE,
+                null, Collections.singletonList(new OracleObjectNameUsingReservedWords()));
+        List<CheckViolation> actual = sqlChecker.check(toOffsetString(sqls), null);
+
+        SqlCheckRuleType type = SqlCheckRuleType.OBJECT_NAME_USING_RESERVED_WORDS;
+        CheckViolation c1 = new CheckViolation(sqls[0], 1, 0, 0, 462, type, new Object[] {"high"});
+        CheckViolation c2 = new CheckViolation(sqls[0], 1, 280, 280, 321, type, new Object[] {"high"});
+        CheckViolation c3 = new CheckViolation(sqls[0], 1, 371, 371, 412, type, new Object[] {"high"});
+        CheckViolation c4 = new CheckViolation(sqls[0], 1, 19, 19, 20, type, new Object[] {"id"});
+        CheckViolation c5 = new CheckViolation(sqls[0], 1, 36, 36, 52, type, new Object[] {"\"high\""});
+        CheckViolation c6 = new CheckViolation(sqls[1], 1, 20, 20, 21, type, new Object[] {"ID"});
+        CheckViolation c7 = new CheckViolation(sqls[1], 1, 36, 36, 62, type, new Object[] {"high"});
+        CheckViolation c8 = new CheckViolation(sqls[2], 1, 20, 20, 23, type, new Object[] {"high"});
+        CheckViolation c9 = new CheckViolation(sqls[3], 1, 28, 28, 31, type, new Object[] {"high"});
+        CheckViolation c10 = new CheckViolation(sqls[4], 1, 136, 136, 195, type, new Object[] {"high"});
+
+        List<CheckViolation> expect = Arrays.asList(c1, c2, c3, c4, c5, c6, c7, c8, c9, c10);
+        Assert.assertEquals(expect, actual);
+    }
+
+    @Test
+    public void check_offlineDdl_violationGenerated() {
+        String[] sqls = {
+                "alter table tbl drop column a.c",
+                "alter table tbl add primary key (a,b), drop primary key",
+                "truncate table a",
+                "drop table aaa",
+                "create table abcd(id varchar2(64))"
+        };
+        JdbcTemplate jdbcTemplate = Mockito.mock(JdbcTemplate.class);
+        Mockito.when(jdbcTemplate.queryForObject(Mockito.anyString(), Mockito.any(RowMapper.class)))
+                .thenReturn(sqls[4]);
+        DefaultSqlChecker sqlChecker = new DefaultSqlChecker(DialectType.OB_ORACLE,
+                null, Collections.singletonList(new OracleOfflineDdlExists(jdbcTemplate)));
+        List<CheckViolation> actual = sqlChecker.check(toOffsetString(sqls), null);
+
+        SqlCheckRuleType type = SqlCheckRuleType.OFFLINE_SCHEMA_CHANGE_EXISTS;
+        CheckViolation c1 = new CheckViolation(sqls[0], 1, 16, 16, 30, type, new Object[] {});
+        CheckViolation c2 = new CheckViolation(sqls[1], 1, 16, 16, 36, type, new Object[] {});
+        CheckViolation c3 = new CheckViolation(sqls[1], 1, 39, 39, 54, type, new Object[] {});
+        CheckViolation c4 = new CheckViolation(sqls[2], 1, 0, 0, 15, type, new Object[] {});
+        CheckViolation c5 = new CheckViolation(sqls[3], 1, 0, 0, 13, type, new Object[] {});
+
+        List<CheckViolation> expect = Arrays.asList(c1, c2, c3, c4, c5);
+        Assert.assertEquals(expect, actual);
+    }
+
+    @Test
+    public void check_truncateTbl_violationGenerated() {
+        String[] sqls = {
+                "alter table tbl drop column a.c",
+                "truncate table a.b"
+        };
+        DefaultSqlChecker sqlChecker = new DefaultSqlChecker(DialectType.OB_ORACLE,
+                null, Collections.singletonList(new TruncateTableExists()));
+        List<CheckViolation> actual = sqlChecker.check(toOffsetString(sqls), null);
+
+        SqlCheckRuleType type = SqlCheckRuleType.TRUNCATE_TBLE_EXISTS;
+        CheckViolation c1 = new CheckViolation(sqls[1], 1, 0, 0, 17, type, new Object[] {});
 
         List<CheckViolation> expect = Collections.singletonList(c1);
         Assert.assertEquals(expect, actual);
