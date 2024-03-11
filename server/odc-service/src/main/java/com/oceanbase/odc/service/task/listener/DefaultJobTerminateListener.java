@@ -16,16 +16,21 @@
 
 package com.oceanbase.odc.service.task.listener;
 
+import java.util.Map;
+
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.oceanbase.odc.common.event.AbstractEventListener;
 import com.oceanbase.odc.common.json.JsonUtils;
+import com.oceanbase.odc.core.shared.constant.TaskStatus;
 import com.oceanbase.odc.metadb.schedule.ScheduleTaskRepository;
 import com.oceanbase.odc.metadb.task.JobEntity;
 import com.oceanbase.odc.service.common.util.SpringContextUtil;
-import com.oceanbase.odc.service.dlm.model.DataArchiveParameters;
 import com.oceanbase.odc.service.schedule.ScheduleService;
-import com.oceanbase.odc.service.schedule.model.JobType;
+import com.oceanbase.odc.service.schedule.job.DLMJobParameters;
+import com.oceanbase.odc.service.task.constants.JobParametersKeyConstants;
 import com.oceanbase.odc.service.task.enums.JobStatus;
 import com.oceanbase.odc.service.task.service.TaskFrameworkService;
+import com.oceanbase.tools.migrator.common.enums.JobType;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -42,17 +47,34 @@ public class DefaultJobTerminateListener extends AbstractEventListener<JobTermin
     public void onEvent(JobTerminateEvent event) {
         TaskFrameworkService taskFrameworkService = SpringContextUtil.getBean(TaskFrameworkService.class);
         JobEntity jobEntity = taskFrameworkService.find(event.getJi().getId());
-        // Trigger the data-delete job if necessary after the data-archive task is completed.
-        if (jobEntity.getJobType().equals(JobType.DATA_ARCHIVE.name()) && event.getStatus() == JobStatus.DONE) {
+        if (jobEntity.getJobType().equals("DLM")) {
             ScheduleTaskRepository taskRepository = SpringContextUtil.getBean(ScheduleTaskRepository.class);
             ScheduleService scheduleService = SpringContextUtil.getBean(ScheduleService.class);
             taskRepository.findByJobId(jobEntity.getId()).ifPresent(o -> {
-                DataArchiveParameters dataArchiveParameters = JsonUtils.fromJson(o.getParametersJson(),
-                        DataArchiveParameters.class);
-                if (dataArchiveParameters.isDeleteAfterMigration()) {
+                taskRepository.updateStatusById(o.getId(), getTerminatedScheduleTaskStatus(event.getStatus()));
+                log.info("Update schedule task status to {} succeed,scheduleTaskId={}", event.getStatus(), o.getId());
+                DLMJobParameters parameters = JsonUtils.fromJson(
+                        JsonUtils
+                                .fromJson(jobEntity.getJobParametersJson(), new TypeReference<Map<String, String>>() {})
+                                .get(JobParametersKeyConstants.META_TASK_PARAMETER_JSON),
+                        DLMJobParameters.class);
+                // Trigger the data-delete job if necessary after the data-archive task is completed.
+                if (parameters.getJobType() == JobType.MIGRATE && parameters.isDeleteAfterMigration()) {
                     scheduleService.dataArchiveDelete(Long.parseLong(o.getJobName()), o.getId());
+                    log.info("Trigger delete job succeed.");
                 }
             });
+        }
+    }
+
+    private TaskStatus getTerminatedScheduleTaskStatus(JobStatus status) {
+        switch (status) {
+            case CANCELED:
+                return TaskStatus.CANCELED;
+            case FAILED:
+                return TaskStatus.FAILED;
+            default:
+                return TaskStatus.DONE;
         }
     }
 }

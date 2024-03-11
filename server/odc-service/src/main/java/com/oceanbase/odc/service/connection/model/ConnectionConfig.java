@@ -222,6 +222,7 @@ public class ConnectionConfig
      * 默认 schema，对应 /api/v1 的 defaultDBName 字段
      */
     @Size(max = 128, message = "Schema name is out of range [0, 128]")
+    @JsonIgnore
     private String defaultSchema;
     /**
      * 查询超时时间（单位：秒），对应 /api/v1 的 sessionTimeoutS 字段

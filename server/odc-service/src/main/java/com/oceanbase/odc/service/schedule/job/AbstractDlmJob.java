@@ -225,7 +225,7 @@ public class AbstractDlmJob implements OdcJob {
                 JsonUtils.toJson(parameters));
 
         DefaultJobDefinition jobDefinition = DefaultJobDefinition.builder().jobClass(DataArchiveTask.class)
-                .jobType(com.oceanbase.odc.service.schedule.model.JobType.DATA_ARCHIVE.name())
+                .jobType("DLM")
                 .jobParameters(jobData)
                 .build();
         return jobScheduler.scheduleJobNow(jobDefinition);
