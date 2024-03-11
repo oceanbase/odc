@@ -15,12 +15,15 @@
  */
 package com.oceanbase.odc.service.quartz;
 
+import static com.oceanbase.odc.core.alarm.AlarmEventNames.SCHEDULING_FAILED;
+
 import org.quartz.JobKey;
 import org.quartz.Trigger;
 import org.quartz.listeners.TriggerListenerSupport;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import com.oceanbase.odc.core.alarm.AlarmUtils;
 import com.oceanbase.odc.metadb.schedule.ScheduleRepository;
 import com.oceanbase.odc.service.notification.Broker;
 import com.oceanbase.odc.service.notification.NotificationProperties;
@@ -54,6 +57,7 @@ public class OdcTriggerListener extends TriggerListenerSupport {
     @Override
     public void triggerMisfired(Trigger trigger) {
         log.warn("Job is misfired, job key:" + trigger.getJobKey());
+        AlarmUtils.alarm(SCHEDULING_FAILED, "Job is misfired, job key:" + trigger.getJobKey());
         if (!notificationProperties.isEnabled()) {
             return;
         }

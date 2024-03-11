@@ -102,7 +102,7 @@ public class PartitionPlanJob implements OdcJob {
                 log.warn("Failed to get any partition plan tables, partitionPlanId={}", partitionPlanId);
                 return;
             }
-            PartitionPlanConfig target = this.partitionPlanScheduleService.getPartitionPlan(
+            PartitionPlanConfig target = this.partitionPlanScheduleService.getPartitionPlanByFlowInstanceId(
                     paramemters.getFlowInstanceId());
             if (target == null || !target.isEnabled()) {
                 log.warn("Partition plan is null or disabled, partitionPlanId={}", partitionPlanId);

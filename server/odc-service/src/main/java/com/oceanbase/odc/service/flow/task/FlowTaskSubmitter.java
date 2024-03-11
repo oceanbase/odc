@@ -57,6 +57,14 @@ public class FlowTaskSubmitter implements JavaDelegate {
     public void execute(DelegateExecution execution) {
         // DelegateExecution will be changed when current thread return,
         // so use execution facade class to save execution properties
+        DelegateExecution executionFacade = new ExecutionEntityFacade(execution);
+        threadPoolTaskExecutor.submit(() -> {
+            try {
+                getDelegateInstance(executionFacade).execute(executionFacade);
+            } catch (Throwable e) {
+                log.warn("Delegate task instance execute occur error.", e);
+            }
+        });
         ExecutionEntityFacade executionFacade = new ExecutionEntityFacade(execution);
         threadPoolTaskExecutor.submit(() -> doExecute(executionFacade));
     }

@@ -166,10 +166,14 @@ public class PreCheckRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Void> {
             taskEntity.setExecutionExpirationIntervalSeconds(
                     riskLevel.getApprovalFlowConfig().getExecutionExpirationIntervalSeconds());
             taskService.update(taskEntity);
-            FlowTaskUtil.setExecutionExpirationInterval(execution,
-                riskLevel.getApprovalFlowConfig().getExecutionExpirationIntervalSeconds(), TimeUnit.SECONDS);
-            FlowTaskUtil.setRiskLevel(execution, riskLevel.getLevel());
 
+            Integer executionExpirationSeconds = riskLevel.getApprovalFlowConfig()
+                    .getExecutionExpirationIntervalSeconds();
+            PreConditions.notNegative(executionExpirationSeconds, "ExecutionExpirationSeconds");
+            long executionExpirationIntervalMilliSecs =
+                    TimeUnit.MILLISECONDS.convert(executionExpirationSeconds, TimeUnit.SECONDS);
+            riskLevelResult.put(RuntimeTaskConstants.TIMEOUT_MILLI_SECONDS, executionExpirationIntervalMilliSecs);
+            riskLevelResult.put(RuntimeTaskConstants.RISKLEVEL, riskLevel.getLevel());
             success = true;
         } catch (Exception ex) {
             log.warn("risk detect failed, ", ex);

@@ -340,6 +340,43 @@ public enum AuditEventAction implements Translatable {
 
     REVOKE_DATABASE_PERMISSION,
 
+    /**
+     * Automation rule management
+     */
+    CREATE_AUTOMATION_RULE,
+
+    ENABLE_AUTOMATION_RULE,
+
+    DISABLE_AUTOMATION_RULE,
+
+    UPDATE_AUTOMATION_RULE,
+
+    DELETE_AUTOMATION_RULE,
+
+    /**
+     * Notification management
+     */
+    CREATE_NOTIFICATION_CHANNEL,
+
+    UPDATE_NOTIFICATION_CHANNEL,
+
+    DELETE_NOTIFICATION_CHANNEL,
+
+    BATCH_UPDATE_NOTIFICATION_POLICIES,
+
+    /**
+     * Sensitive column management
+     */
+    BATCH_CREATE_SENSITIVE_COLUMNS,
+
+    BATCH_UPDATE_SENSITIVE_COLUMNS,
+
+    BATCH_DELETE_SENSITIVE_COLUMNS,
+
+    ENABLE_SENSITIVE_COLUMN,
+
+    DISABLE_SENSITIVE_COLUMN,
+
     ;
 
     @Override
