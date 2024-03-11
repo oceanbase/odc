@@ -283,6 +283,11 @@ public class PartitionPlanServiceV2 {
                 throw new IllegalArgumentException("Unsupported partition type, " + partitionType);
             }
         }
+        /**
+         * Compatible with historical versions of partition plans because old partition plans do not record
+         * partition keys
+         */
+        adaptForHistoricalPartitionPlan(dbTable, tableConfig);
         Map<PartitionPlanStrategy, List<PartitionPlanKeyConfig>> strategy2PartitionKeyConfigs;
         if (CollectionUtils.isNotEmpty(tableConfig.getPartitionKeyConfigs())) {
             strategy2PartitionKeyConfigs = tableConfig
@@ -482,6 +487,22 @@ public class PartitionPlanServiceV2 {
                     throw new UnsupportedOperationException("Unsupported partition strategy, " + key);
             }
         });
+    }
+
+    private void adaptForHistoricalPartitionPlan(DBTable dbTable, PartitionPlanTableConfig tableConfig) {
+        List<PartitionPlanKeyConfig> keyConfigs = tableConfig.getPartitionKeyConfigs().stream()
+                .filter(p -> p.getStrategy() == PartitionPlanStrategy.CREATE && p.getPartitionKey() == null)
+                .collect(Collectors.toList());
+        if (CollectionUtils.isEmpty(keyConfigs) || keyConfigs.size() > 1) {
+            return;
+        }
+        PartitionPlanKeyConfig keyConfig = keyConfigs.get(0);
+        DBTablePartitionOption partitioption = dbTable.getPartition().getPartitionOption();
+        if (CollectionUtils.isNotEmpty(partitioption.getColumnNames())) {
+            keyConfig.setPartitionKey(partitioption.getColumnNames().get(0));
+        } else if (StringUtils.isNotEmpty(partitioption.getExpression())) {
+            keyConfig.setPartitionKey(partitioption.getExpression());
+        }
     }
 
 }
