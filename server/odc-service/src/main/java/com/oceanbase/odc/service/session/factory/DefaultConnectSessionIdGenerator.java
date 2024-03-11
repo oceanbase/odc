@@ -44,12 +44,13 @@ public class DefaultConnectSessionIdGenerator implements ConnectionSessionIdGene
             key.setDbId(databaseId);
         }
         key.setFrom(SystemUtils.getHostName());
-        return Base64.getEncoder().encodeToString(JsonUtils.toJson(key).getBytes());
+        return Base64.getUrlEncoder().encodeToString(JsonUtils.toJson(key).getBytes());
     }
 
     @Override
     public CreateSessionReq getKeyFromId(@NonNull String id) {
-        CreateSessionReq req = JsonUtils.fromJson(new String(Base64.getDecoder().decode(id)), CreateSessionReq.class);
+        CreateSessionReq req =
+                JsonUtils.fromJson(new String(Base64.getUrlDecoder().decode(id)), CreateSessionReq.class);
         if (req == null) {
             throw new IllegalStateException("session id's format is illegal, " + id);
         }
