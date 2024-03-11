@@ -33,8 +33,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.oceanbase.odc.common.util.StringUtils;
-import com.oceanbase.odc.core.shared.constant.DialectType;
-import com.oceanbase.odc.core.sql.split.SqlCommentProcessor;
 import com.oceanbase.odc.core.sql.split.SqlStatementIterator;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferConfig;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.ObjectResult;
@@ -82,7 +80,7 @@ public abstract class BaseSqlScriptImportJob extends AbstractJob {
 
     abstract protected SqlStatementIterator getStmtIterator() throws IOException;
 
-    abstract protected List<String> getPreSqlsForSchema();
+    abstract protected List<String> getPreSqlsForSchema() throws SQLException;
 
     abstract protected List<String> getPreSqlsForData();
 
@@ -90,7 +88,10 @@ public abstract class BaseSqlScriptImportJob extends AbstractJob {
 
     abstract protected List<String> getPostSqlsForData();
 
+    abstract protected List<String> getPreSqlsForExternal();
+
     private void runExternalSqlScript() throws Exception {
+        executeWithoutResult(getPreSqlsForExternal());
         try (Connection conn = dataSource.getConnection(); Statement stmt = conn.createStatement()) {
             SqlStatementIterator iterator = getStmtIterator();
             while (!isCanceled() && !Thread.currentThread().isInterrupted() && iterator.hasNext()) {
@@ -133,11 +134,8 @@ public abstract class BaseSqlScriptImportJob extends AbstractJob {
         executeWithoutResult(getPreSqlsForSchema());
 
         boolean firstLine = true;
-        DialectType dialectType = transferConfig.getConnectionInfo().getConnectType().getDialectType();
-        String charset = transferConfig.getEncoding().getAlias();
         try (Connection conn = dataSource.getConnection(); Statement stmt = conn.createStatement()) {
-            SqlStatementIterator iterator = SqlCommentProcessor.iterator(input.openStream(), Charset.forName(charset),
-                    new SqlCommentProcessor(dialectType, true, true, true));
+            SqlStatementIterator iterator = getStmtIterator();
             while (!Thread.currentThread().isInterrupted() && iterator.hasNext() && !isCanceled()) {
                 String sql = iterator.next().getStr();
                 if (StringUtils.isEmpty(sql.trim())
@@ -168,11 +166,8 @@ public abstract class BaseSqlScriptImportJob extends AbstractJob {
                 : Math.min(Math.max(transferConfig.getBatchCommitNum(), 10), 5000);
         executeWithoutResult(getPreSqlsForData());
 
-        DialectType dialectType = transferConfig.getConnectionInfo().getConnectType().getDialectType();
-        String charset = transferConfig.getEncoding().getAlias();
         try (Connection conn = dataSource.getConnection()) {
-            SqlStatementIterator iterator = SqlCommentProcessor.iterator(input.openStream(), Charset.forName(charset),
-                    new SqlCommentProcessor(dialectType, true, true, true));
+            SqlStatementIterator iterator = getStmtIterator();
             List<String> insertionBuffer = new LinkedList<>();
             while (!Thread.currentThread().isInterrupted() && !isCanceled()) {
                 try {

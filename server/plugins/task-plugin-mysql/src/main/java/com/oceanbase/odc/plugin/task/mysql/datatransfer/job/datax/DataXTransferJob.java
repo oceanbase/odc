@@ -172,7 +172,7 @@ public class DataXTransferJob extends AbstractJob {
                 }
                 matcher = LOG_DIRTY_RECORD_PATTERN.matcher(line);
                 if (matcher.matches()) {
-                    LOGGER.warn("Dirty record: {}", line);
+                    LOGGER.warn("Dirty record: {}", line.substring(0, Math.min(line.length(), 1024)));
                 }
             }
         } finally {
