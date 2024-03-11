@@ -283,10 +283,6 @@ public class PartitionPlanServiceV2 {
                 throw new IllegalArgumentException("Unsupported partition type, " + partitionType);
             }
         }
-        /**
-         * Compatible with historical versions of partition plans because old partition plans do not record
-         * partition keys
-         */
         adaptForHistoricalPartitionPlan(dbTable, tableConfig);
         Map<PartitionPlanStrategy, List<PartitionPlanKeyConfig>> strategy2PartitionKeyConfigs;
         if (CollectionUtils.isNotEmpty(tableConfig.getPartitionKeyConfigs())) {
@@ -396,6 +392,7 @@ public class PartitionPlanServiceV2 {
                             throw new IllegalStateException(
                                     "Failed to get invoker by name, " + config.getPartitionKeyInvoker());
                         }
+                        adaptForHistoricalPartitionPlan(config, config.getPartitionKeyInvokerParameters());
                         List<String> exprs = createInvoker.invoke(connection, dbTable,
                                 config.getPartitionKeyInvokerParameters());
                         for (int i = 0; i < exprs.size(); i++) {
@@ -489,6 +486,10 @@ public class PartitionPlanServiceV2 {
         });
     }
 
+    /**
+     * Compatible with historical versions of partition plans because old partition plans do not record
+     * partition keys
+     */
     private void adaptForHistoricalPartitionPlan(DBTable dbTable, PartitionPlanTableConfig tableConfig) {
         List<PartitionPlanKeyConfig> keyConfigs = tableConfig.getPartitionKeyConfigs().stream()
                 .filter(p -> p.getStrategy() == PartitionPlanStrategy.CREATE && p.getPartitionKey() == null)
@@ -503,6 +504,15 @@ public class PartitionPlanServiceV2 {
         } else if (StringUtils.isNotEmpty(partitioption.getExpression())) {
             keyConfig.setPartitionKey(partitioption.getExpression());
         }
+    }
+
+    private void adaptForHistoricalPartitionPlan(PartitionPlanKeyConfig config,
+            Map<String, Object> partitionKeyInvokerParameters) {
+        if (config.getStrategy() != PartitionPlanStrategy.CREATE) {
+            return;
+        }
+        partitionKeyInvokerParameters.computeIfAbsent(PartitionExprGenerator.GENERATOR_PARTITION_KEY,
+                s -> config.getPartitionKey());
     }
 
 }
