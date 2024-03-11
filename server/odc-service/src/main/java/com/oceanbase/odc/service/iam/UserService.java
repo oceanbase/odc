@@ -396,6 +396,12 @@ public class UserService {
     }
 
     @SkipAuthorize("odc internal usage")
+    public User deailById(long id) {
+        UserEntity userEntity = nullSafeGet(id);
+        return new User(userEntity);
+    }
+
+    @SkipAuthorize("odc internal usage")
     public User detailWithoutPermissionCheck(@NonNull Long id) {
         UserEntity userEntity = nullSafeGet(id);
         List<UserRoleEntity> userRoleEntities =
