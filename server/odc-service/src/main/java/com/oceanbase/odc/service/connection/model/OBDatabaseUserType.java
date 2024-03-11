@@ -17,11 +17,15 @@ package com.oceanbase.odc.service.connection.model;
 
 import com.alibaba.druid.util.StringUtils;
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonValue;
 
+@JsonIgnoreProperties(ignoreUnknown = true)
 public enum OBDatabaseUserType {
     ADMIN("Admin"),
     NORMAL("Normal"),
+    READ_ONLY("ReadonlyAccount"),
+    UNKNOWN("Unknown"),
     ;
 
     private String value;
@@ -42,6 +46,6 @@ public enum OBDatabaseUserType {
                 return userType;
             }
         }
-        throw new IllegalArgumentException("DatabaseUserType value not supported, given value '" + value + "'");
+        return OBDatabaseUserType.UNKNOWN;
     }
 }
