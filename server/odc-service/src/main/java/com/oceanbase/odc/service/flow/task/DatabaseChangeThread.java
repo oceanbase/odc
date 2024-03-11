@@ -60,9 +60,9 @@ import com.oceanbase.odc.service.common.util.SqlUtils;
 import com.oceanbase.odc.service.datasecurity.DataMaskingService;
 import com.oceanbase.odc.service.datasecurity.model.SensitiveColumn;
 import com.oceanbase.odc.service.datasecurity.util.DataMaskingUtil;
-import com.oceanbase.odc.service.flow.task.model.DatabaseChangeInputStream;
 import com.oceanbase.odc.service.flow.task.model.DatabaseChangeParameters;
 import com.oceanbase.odc.service.flow.task.model.DatabaseChangeResult;
+import com.oceanbase.odc.service.flow.task.model.SizeAwareInputStream;
 import com.oceanbase.odc.service.flow.task.util.DatabaseChangeFileReader;
 import com.oceanbase.odc.service.objectstorage.ObjectStorageFacade;
 import com.oceanbase.odc.service.objectstorage.cloud.CloudObjectStorageService;
@@ -254,11 +254,11 @@ public class DatabaseChangeThread extends Thread {
             sqlTotalBytes = sqlBytes.length;
         } else {
             try {
-                DatabaseChangeInputStream databaseChangeInputStream =
+                SizeAwareInputStream sizeAwareInputStream =
                         DatabaseChangeFileReader.readSqlFilesStream(objectStorageFacade,
                                 "async".concat(File.separator).concat(String.valueOf(userId)), objectIds, null);
-                sqlInputStream = databaseChangeInputStream.getInputStream();
-                sqlTotalBytes = databaseChangeInputStream.getSqlTotalBytes();
+                sqlInputStream = sizeAwareInputStream.getInputStream();
+                sqlTotalBytes = sizeAwareInputStream.getTotalBytes();
             } catch (IOException exception) {
                 throw new InternalServerError("load database change task file failed", exception);
             }

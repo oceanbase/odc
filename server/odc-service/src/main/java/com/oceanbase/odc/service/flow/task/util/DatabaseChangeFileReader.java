@@ -32,9 +32,9 @@ import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.sql.split.OffsetString;
 import com.oceanbase.odc.core.sql.split.SqlStatementIterator;
 import com.oceanbase.odc.service.common.util.SqlUtils;
-import com.oceanbase.odc.service.flow.task.model.DatabaseChangeInputStream;
 import com.oceanbase.odc.service.flow.task.model.DatabaseChangeParameters;
 import com.oceanbase.odc.service.flow.task.model.DatabaseChangeSqlContent;
+import com.oceanbase.odc.service.flow.task.model.SizeAwareInputStream;
 import com.oceanbase.odc.service.objectstorage.ObjectStorageFacade;
 import com.oceanbase.odc.service.objectstorage.model.StorageObject;
 
@@ -63,13 +63,11 @@ public class DatabaseChangeFileReader {
         }
     }
 
-    public static DatabaseChangeInputStream readSqlFilesStream(@NotNull ObjectStorageFacade storageFacade,
+    public static SizeAwareInputStream readSqlFilesStream(@NotNull ObjectStorageFacade storageFacade,
             @NotNull String bucket, @NotNull List<String> objectIds, Long maxBytes) throws IOException {
-        DatabaseChangeInputStream returnVal = new DatabaseChangeInputStream();
+        SizeAwareInputStream returnVal = new SizeAwareInputStream();
         long totalBytes = 0;
         InputStream inputStream = new ByteArrayInputStream(new byte[0]);
-        returnVal.setInputStream(inputStream);
-        returnVal.setSqlTotalBytes(totalBytes);
         for (String objectId : objectIds) {
             StorageObject object = storageFacade.loadObject(bucket, objectId);
             InputStream current = object.getContent();
@@ -91,6 +89,8 @@ public class DatabaseChangeFileReader {
             }
             inputStream = new SequenceInputStream(inputStream, current);
         }
+        returnVal.setInputStream(inputStream);
+        returnVal.setTotalBytes(totalBytes);
         return returnVal;
     }
 
