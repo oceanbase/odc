@@ -131,7 +131,7 @@ public class V42417HistoricalPartitionPlanMigrate implements JdbcMigratable {
         Map<Long, List<PartitionPlanTableEntityWrapper>> tableWrappers = jdbcTemplate.query("select table_name, "
                 + "partition_interval, partition_interval_unit, pre_create_partition_count, "
                 + "expire_period, expire_period_unit, partition_naming_prefix, partition_naming_suffix_expression, "
-                + "database_partition_plan_id, from table_partition_plan "
+                + "database_partition_plan_id from table_partition_plan "
                 + "where database_partition_plan_id in (" + ids + ")", (rs, rowNum) -> {
                     PartitionPlanTableEntityWrapper entity = new PartitionPlanTableEntityWrapper();
                     entity.setEnabled(true);
