@@ -15,6 +15,7 @@
  */
 package com.oceanbase.odc.metadb.partitionplan;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -112,6 +113,25 @@ public class PartitionPlanRepositoryTest extends ServiceTestEnv {
         actual = this.repository.save(actual);
         Optional<PartitionPlanEntity> expect = this.repository.findByFlowInstanceId(actual.getFlowInstanceId() + 1);
         Assert.assertFalse(expect.isPresent());
+    }
+
+    @Test
+    public void batchCreate_saveAll_saveSucceed() {
+        PartitionPlanEntity p1 = createRoleEntity();
+        p1.setId(null);
+        PartitionPlanEntity p2 = createRoleEntity();
+        p2.setId(null);
+        List<PartitionPlanEntity> actual = this.repository.batchCreate(Arrays.asList(p1, p2));
+        List<PartitionPlanEntity> expect = this.repository.findAll();
+        actual.forEach(p -> {
+            p.setCreateTime(null);
+            p.setUpdateTime(null);
+        });
+        expect.forEach(p -> {
+            p.setCreateTime(null);
+            p.setUpdateTime(null);
+        });
+        Assert.assertEquals(expect, actual);
     }
 
     private PartitionPlanEntity createRoleEntity() {

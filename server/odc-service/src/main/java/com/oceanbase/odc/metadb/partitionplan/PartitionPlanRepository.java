@@ -17,16 +17,19 @@ package com.oceanbase.odc.metadb.partitionplan;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Function;
 
 import javax.persistence.LockModeType;
 import javax.transaction.Transactional;
 
-import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+
+import com.oceanbase.odc.common.jpa.InsertSqlTemplateBuilder;
+import com.oceanbase.odc.config.jpa.OdcJpaRepository;
 
 import lombok.NonNull;
 
@@ -37,7 +40,7 @@ import lombok.NonNull;
  * @date 2024-01-10 16:55
  * @since ODC_release_4.2.4
  */
-public interface PartitionPlanRepository extends JpaRepository<PartitionPlanEntity, Long>,
+public interface PartitionPlanRepository extends OdcJpaRepository<PartitionPlanEntity, Long>,
         JpaSpecificationExecutor<PartitionPlanEntity> {
 
     List<PartitionPlanEntity> findByDatabaseIdAndEnabled(Long databaseId, Boolean enabled);
@@ -53,5 +56,23 @@ public interface PartitionPlanRepository extends JpaRepository<PartitionPlanEnti
     @Modifying
     int updateEnabledAndLastModifierIdByIdIn(@Param("ids") List<Long> ids,
             @Param("enabled") Boolean enabled, @Param("lastModifierId") Long lastModifierId);
+
+    default List<PartitionPlanEntity> batchCreate(List<PartitionPlanEntity> entities) {
+        String sql = InsertSqlTemplateBuilder.from("partitionplan")
+                .field(PartitionPlanEntity_.flowInstanceId)
+                .field("is_enabled")
+                .field(PartitionPlanEntity_.creatorId)
+                .field(PartitionPlanEntity_.lastModifierId)
+                .field(PartitionPlanEntity_.databaseId)
+                .build();
+        List<Function<PartitionPlanEntity, Object>> getter = valueGetterBuilder()
+                .add(PartitionPlanEntity::getFlowInstanceId)
+                .add(PartitionPlanEntity::getEnabled)
+                .add(PartitionPlanEntity::getCreatorId)
+                .add(PartitionPlanEntity::getLastModifierId)
+                .add(PartitionPlanEntity::getDatabaseId)
+                .build();
+        return batchCreate(entities, sql, getter, PartitionPlanEntity::setId);
+    }
 
 }
