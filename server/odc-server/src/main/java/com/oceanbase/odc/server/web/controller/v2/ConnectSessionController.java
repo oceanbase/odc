@@ -50,7 +50,7 @@ import com.oceanbase.odc.service.db.session.DBSessionService;
 import com.oceanbase.odc.service.db.session.KillSessionOrQueryReq;
 import com.oceanbase.odc.service.db.session.KillSessionResult;
 import com.oceanbase.odc.service.dml.ValueEncodeType;
-import com.oceanbase.odc.service.partitionplan.PartitionPlanServiceV2;
+import com.oceanbase.odc.service.partitionplan.PartitionPlanService;
 import com.oceanbase.odc.service.partitionplan.model.PartitionPlanPreViewResp;
 import com.oceanbase.odc.service.partitionplan.model.PartitionPlanPreviewReq;
 import com.oceanbase.odc.service.session.ConnectConsoleService;
@@ -85,7 +85,7 @@ public class ConnectSessionController {
     @Autowired
     private DBSessionService dbSessionService;
     @Autowired
-    private PartitionPlanServiceV2 partitionPlanServiceV2;
+    private PartitionPlanService partitionPlanService;
 
     @ApiOperation(value = "createSessionByDataSource", notes = "create connect session by a DataSource")
     @RequestMapping(value = "/datasources/{dataSourceId:[\\d]+}/sessions", method = RequestMethod.POST)
@@ -240,7 +240,7 @@ public class ConnectSessionController {
     @PostMapping(value = "/sessions/{sessionId}/partitionPlans/latest/preview")
     public ListResponse<PartitionPlanPreViewResp> preview(@PathVariable String sessionId,
             @RequestBody PartitionPlanPreviewReq req) {
-        return Responses.list(this.partitionPlanServiceV2.generatePartitionDdl(
+        return Responses.list(this.partitionPlanService.generatePartitionDdl(
                 SidUtils.getSessionId(sessionId), req.getTableConfigs(), req.isOnlyForPartitionName()));
     }
 

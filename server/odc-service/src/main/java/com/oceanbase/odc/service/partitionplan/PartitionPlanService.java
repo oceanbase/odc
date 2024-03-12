@@ -76,7 +76,7 @@ import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * {@link PartitionPlanServiceV2}
+ * {@link PartitionPlanService}
  *
  * @author yh263208
  * @date 2024-01-11 15:36
@@ -85,7 +85,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @Service
 @SkipAuthorize("odc internal usage")
-public class PartitionPlanServiceV2 {
+public class PartitionPlanService {
 
     @Autowired
     private ConnectSessionService sessionService;
