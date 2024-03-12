@@ -43,7 +43,7 @@ import lombok.extern.slf4j.Slf4j;
 @Deprecated
 public class OBMySQLHistoricalPartitionPlanCreateGenerator extends OBMySQLTimeIncreasePartitionExprGenerator {
 
-    private static final String TARGET_FUNCTION_NAME = "unix_timestamp";
+    private static final String TARGET_FUNCTION_NAME = "UNIX_TIMESTAMP";
 
     @Override
     public String getName() {
@@ -54,7 +54,7 @@ public class OBMySQLHistoricalPartitionPlanCreateGenerator extends OBMySQLTimeIn
     public List<String> generate(@NonNull Connection connection, @NonNull DBTable dbTable,
             @NonNull String partitionKey, @NonNull Integer generateCount,
             @NonNull TimeIncreaseGeneratorConfig config) throws IOException, SQLException {
-        if (StringUtils.startsWithIgnoreCase(partitionKey, TARGET_FUNCTION_NAME)) {
+        if (StringUtils.startsWith(partitionKey, TARGET_FUNCTION_NAME)) {
             List<Date> candidates = getCandidateDates(config, generateCount);
             return candidates.stream().map(date -> date.getTime() / 1000 + "").collect(Collectors.toList());
         }

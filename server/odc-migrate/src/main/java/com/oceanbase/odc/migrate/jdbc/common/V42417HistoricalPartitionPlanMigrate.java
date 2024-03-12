@@ -136,8 +136,7 @@ public class V42417HistoricalPartitionPlanMigrate implements JdbcMigratable {
                     entity.setHistoricalPartiId(rs.getLong("database_partition_plan_id"));
                     entity.setScheduleId(historicalId2Entity.get(entity.getHistoricalPartiId()).getScheduleId());
                     entity.setTableName(rs.getString("table_name"));
-                    int timePrecision =
-                            getTimePrecision(Integer.parseInt(rs.getString("partition_interval_unit")));
+                    int timePrecision = getTimePrecision(Integer.parseInt(rs.getString("partition_interval_unit")));
                     DateBasedPartitionNameGeneratorConfig config = new DateBasedPartitionNameGeneratorConfig();
                     config.setFromCurrentTime(true);
                     config.setIntervalPrecision(timePrecision);
@@ -149,8 +148,7 @@ public class V42417HistoricalPartitionPlanMigrate implements JdbcMigratable {
                     entity.setPartitionNameInvoker(DateBasedPartitionNameGenerator.GENERATOR_NAME);
                     entity.setPartitionNameInvokerParameters(JsonUtils.toJson(parameters));
 
-                    PartitionPlanTablePartitionKeyEntity createEntity =
-                            new PartitionPlanTablePartitionKeyEntity();
+                    PartitionPlanTablePartitionKeyEntity createEntity = new PartitionPlanTablePartitionKeyEntity();
                     createEntity.setStrategy(PartitionPlanStrategy.CREATE);
                     TimeIncreaseGeneratorConfig createConfig = new TimeIncreaseGeneratorConfig();
                     createConfig.setFromCurrentTime(true);
@@ -163,8 +161,7 @@ public class V42417HistoricalPartitionPlanMigrate implements JdbcMigratable {
                     createEntity.setPartitionKeyInvoker("HISTORICAL_PARTITION_PLAN_CREATE_GENERATOR");
                     createEntity.setPartitionKeyInvokerParameters(JsonUtils.toJson(createParameters));
 
-                    PartitionPlanTablePartitionKeyEntity dropEntity =
-                            new PartitionPlanTablePartitionKeyEntity();
+                    PartitionPlanTablePartitionKeyEntity dropEntity = new PartitionPlanTablePartitionKeyEntity();
                     dropEntity.setStrategy(PartitionPlanStrategy.DROP);
                     Map<String, Object> dropParameters = new HashMap<>();
                     dropParameters.put("periodUnit",
