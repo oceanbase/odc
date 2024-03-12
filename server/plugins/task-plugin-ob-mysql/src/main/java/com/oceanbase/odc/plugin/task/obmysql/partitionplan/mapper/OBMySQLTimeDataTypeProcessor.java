@@ -42,6 +42,9 @@ public class OBMySQLTimeDataTypeProcessor implements CellDataProcessor {
 
     @Override
     public String convertToSqlLiteral(Object target, @NonNull DataType dataType) {
+        if (target == null) {
+            return "NULL";
+        }
         Calendar calendar = Calendar.getInstance();
         calendar.setTime((Date) target);
         int year = calendar.get(Calendar.YEAR);

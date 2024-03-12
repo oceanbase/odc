@@ -233,9 +233,17 @@ public enum SqlCheckRuleType implements Translatable {
      */
     RESTRICT_AUTO_INCREMENT_DATATYPES("restrict-auto-increment-datatypes"),
     /**
-     * 表的 DDL 中涉及创建、修改索引的耗时操作
+     * 对象名使用了保留字
      */
-    INDEX_CHANGE_TIME_CONSUMING_EXISTS("index-change-time-consuming-exists");
+    OBJECT_NAME_USING_RESERVED_WORDS("object-name-using-reserved-words"),
+    /**
+     * offline 结构变更语句存在，可能导致性能下降
+     */
+    OFFLINE_SCHEMA_CHANGE_EXISTS("offline-schema-change-exists"),
+    /**
+     * Truncate table 语句存在
+     */
+    TRUNCATE_TBLE_EXISTS("truncate-table-exists");
 
     private final String name;
     private static final String NAME_CODE = "name";

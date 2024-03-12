@@ -54,20 +54,22 @@ import lombok.Setter;
 public class PartitionPlanDBTable extends DBTable {
 
     private DialectType dialectType;
-    private Set<PartitionPlanStrategy> strategies = new HashSet<>();
+    private PartitionPlanTableConfig partitionPlanTableConfig;
 
     public boolean isContainsCreateStrategy() {
-        if (CollectionUtils.isEmpty(this.strategies)) {
+        Set<PartitionPlanStrategy> strategies = getStrategies();
+        if (CollectionUtils.isEmpty(strategies)) {
             return false;
         }
-        return CollectionUtils.containsAny(this.strategies, PartitionPlanStrategy.CREATE);
+        return CollectionUtils.containsAny(strategies, PartitionPlanStrategy.CREATE);
     }
 
     public boolean isContainsDropStrategy() {
-        if (CollectionUtils.isEmpty(this.strategies)) {
+        Set<PartitionPlanStrategy> strategies = getStrategies();
+        if (CollectionUtils.isEmpty(strategies)) {
             return false;
         }
-        return CollectionUtils.containsAny(this.strategies, PartitionPlanStrategy.DROP);
+        return CollectionUtils.containsAny(strategies, PartitionPlanStrategy.DROP);
     }
 
     public boolean isRangePartitioned() {
@@ -132,6 +134,14 @@ public class PartitionPlanDBTable extends DBTable {
             tmp.append(realName).append(colName2TypeName.getOrDefault(realName, "unknown"));
         }
         return builder.insert(0, tmp.toString().hashCode()).toString();
+    }
+
+    public Set<PartitionPlanStrategy> getStrategies() {
+        if (this.partitionPlanTableConfig == null) {
+            return new HashSet<>();
+        }
+        return this.partitionPlanTableConfig.getPartitionKeyConfigs().stream()
+                .map(PartitionPlanKeyConfig::getStrategy).collect(Collectors.toSet());
     }
 
 }

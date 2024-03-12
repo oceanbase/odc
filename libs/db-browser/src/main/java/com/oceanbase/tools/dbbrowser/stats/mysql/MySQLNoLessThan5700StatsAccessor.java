@@ -30,11 +30,11 @@ import com.oceanbase.tools.dbbrowser.util.SqlBuilder;
 import lombok.NonNull;
 
 /**
- * {@link MySQLNoGreaterThan5740StatsAccessor}
+ * {@link MySQLNoLessThan5700StatsAccessor}
  *
- * 适配 MySQL 版本：(~, 5.7.40]
+ * 适配 MySQL 版本：[5.7.00, ~)
  */
-public class MySQLNoGreaterThan5740StatsAccessor implements DBStatsAccessor {
+public class MySQLNoLessThan5700StatsAccessor implements DBStatsAccessor {
     private static final String QUERY_SESSION_FROM_PROCESSLIST = "SELECT `ID`, "
             + "`USER` as USERNAME, "
             + "`DB` as DATABASE_NAME, "
@@ -56,7 +56,7 @@ public class MySQLNoGreaterThan5740StatsAccessor implements DBStatsAccessor {
 
     final JdbcOperations jdbcOperations;
 
-    public MySQLNoGreaterThan5740StatsAccessor(@NonNull JdbcOperations jdbcOperations) {
+    public MySQLNoLessThan5700StatsAccessor(@NonNull JdbcOperations jdbcOperations) {
         this.jdbcOperations = jdbcOperations;
     }
 

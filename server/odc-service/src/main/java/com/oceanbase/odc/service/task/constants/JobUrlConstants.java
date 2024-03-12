@@ -32,4 +32,6 @@ public class JobUrlConstants {
 
     public static final String STOP_TASK = "/api/v2/task/%s/stop";
 
+    public static final String MODIFY_JOB_PARAMETERS = "/api/v2/task/%s/modifyJobParameters";
+
 }

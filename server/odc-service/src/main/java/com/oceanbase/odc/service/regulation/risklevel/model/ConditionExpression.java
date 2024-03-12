@@ -23,6 +23,7 @@ package com.oceanbase.odc.service.regulation.risklevel.model;
 public enum ConditionExpression {
     PROJECT_NAME,
     ENVIRONMENT_ID,
+    ENVIRONMENT_NAME,
     TASK_TYPE,
     DATABASE_NAME,
     SQL_CHECK_RESULT

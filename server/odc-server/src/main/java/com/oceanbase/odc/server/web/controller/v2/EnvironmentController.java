@@ -28,6 +28,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.oceanbase.odc.service.collaboration.environment.EnvironmentService;
 import com.oceanbase.odc.service.collaboration.environment.model.CreateEnvironmentReq;
 import com.oceanbase.odc.service.collaboration.environment.model.Environment;
+import com.oceanbase.odc.service.collaboration.environment.model.EnvironmentExists;
 import com.oceanbase.odc.service.collaboration.environment.model.QueryEnvironmentParam;
 import com.oceanbase.odc.service.collaboration.environment.model.UpdateEnvironmentReq;
 import com.oceanbase.odc.service.common.model.SetEnabledReq;
@@ -86,5 +87,11 @@ public class EnvironmentController {
     @RequestMapping(value = "/environments/{id:[\\d]+}/setEnabled", method = RequestMethod.POST)
     public SuccessResponse<Boolean> setEnabled(@PathVariable Long id, @RequestBody @Valid SetEnabledReq req) {
         return Responses.success(environmentService.setEnabled(id, req));
+    }
+
+    @ApiOperation(value = "exists", notes = "Returns whether an environment exists")
+    @RequestMapping(value = "/environments/exists", method = RequestMethod.POST)
+    public SuccessResponse<EnvironmentExists> exists(@RequestParam String name) {
+        return Responses.success(environmentService.exists(name));
     }
 }

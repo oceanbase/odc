@@ -52,6 +52,8 @@ import com.oceanbase.odc.core.shared.exception.AccessDeniedException;
 import com.oceanbase.odc.core.shared.exception.NotFoundException;
 import com.oceanbase.odc.core.shared.exception.UnexpectedException;
 import com.oceanbase.odc.core.shared.exception.UnsupportedException;
+import com.oceanbase.odc.metadb.collaboration.EnvironmentEntity;
+import com.oceanbase.odc.metadb.collaboration.EnvironmentRepository;
 import com.oceanbase.odc.metadb.flow.FlowInstanceRepository;
 import com.oceanbase.odc.metadb.flow.ServiceTaskInstanceEntity;
 import com.oceanbase.odc.metadb.flow.ServiceTaskInstanceRepository;
@@ -94,8 +96,10 @@ import com.oceanbase.odc.service.schedule.model.ScheduleTaskMapper;
 import com.oceanbase.odc.service.schedule.model.ScheduleTaskResp;
 import com.oceanbase.odc.service.schedule.model.TriggerConfig;
 import com.oceanbase.odc.service.schedule.model.TriggerStrategy;
+import com.oceanbase.odc.service.task.exception.JobException;
 import com.oceanbase.odc.service.task.model.ExecutorInfo;
 import com.oceanbase.odc.service.task.model.OdcTaskLogLevel;
+import com.oceanbase.odc.service.task.schedule.JobScheduler;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -150,9 +154,15 @@ public class ScheduleService {
     private DatabaseService databaseService;
 
     @Autowired
+    private EnvironmentRepository environmentRepository;
+
+    @Autowired
     private TaskDispatchChecker dispatchChecker;
     @Autowired
     private RequestDispatcher requestDispatcher;
+
+    @Autowired
+    private JobScheduler jobScheduler;
     private final ScheduleTaskMapper scheduleTaskMapper = ScheduleTaskMapper.INSTANCE;
 
     public ScheduleEntity create(ScheduleEntity scheduleConfig) {
@@ -236,6 +246,14 @@ public class ScheduleService {
         ScheduleEntity entity = nullSafeGetByIdWithCheckPermission(scheduleId, true);
         ScheduleTaskEntity taskEntity = scheduleTaskService.nullSafeGetById(taskId);
         ExecutorInfo executorInfo = JsonUtils.fromJson(taskEntity.getExecutor(), ExecutorInfo.class);
+        if (taskEntity.getJobId() != null) {
+            try {
+                jobScheduler.cancelJob(taskEntity.getJobId());
+            } catch (JobException e) {
+                log.warn("Cancel job failed,jobId={}", taskEntity.getJobId(), e);
+                throw new UnexpectedException("Cancel job failed!", e);
+            }
+        }
         // Local interrupt task.
         if (dispatchChecker.isThisMachine(executorInfo)) {
             JobKey jobKey = QuartzKeyGenerator.generateJobKey(scheduleId, JobType.valueOf(taskEntity.getJobGroup()));
@@ -537,10 +555,12 @@ public class ScheduleService {
 
     private List<ResourceRoleName> getApproverRoleNames(ScheduleEntity entity) {
         Database database = databaseService.detail(entity.getDatabaseId());
+        EnvironmentEntity environment = environmentRepository.findById(database.getEnvironment().getId()).orElse(null);
         RiskLevelDescriber riskLevelDescriber = new RiskLevelDescriber();
         riskLevelDescriber.setDatabaseName(database.getName());
         riskLevelDescriber.setProjectName(database.getProject().getName());
         riskLevelDescriber.setEnvironmentId(database.getEnvironment().getId().toString());
+        riskLevelDescriber.setEnvironmentName(environment == null ? null : environment.getName());
         riskLevelDescriber.setTaskType(TaskType.ALTER_SCHEDULE.name());
         RiskLevel riskLevel = approvalFlowConfigSelector.select(riskLevelDescriber);
         return riskLevel.getApprovalFlowConfig().getNodes().stream().filter(node -> node.getResourceRoleName() != null)

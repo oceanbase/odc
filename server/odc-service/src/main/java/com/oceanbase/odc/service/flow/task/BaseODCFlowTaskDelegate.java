@@ -16,12 +16,15 @@
 package com.oceanbase.odc.service.flow.task;
 
 import java.util.Date;
+import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
+
+import javax.validation.constraints.NotNull;
 
 import org.flowable.engine.delegate.DelegateExecution;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -36,6 +39,7 @@ import com.oceanbase.odc.service.flow.exception.ServiceTaskCancelledException;
 import com.oceanbase.odc.service.flow.exception.ServiceTaskError;
 import com.oceanbase.odc.service.flow.exception.ServiceTaskExpiredException;
 import com.oceanbase.odc.service.flow.model.ExecutionStrategyConfig;
+import com.oceanbase.odc.service.flow.model.FlowNodeStatus;
 import com.oceanbase.odc.service.flow.model.FlowTaskExecutionStrategy;
 import com.oceanbase.odc.service.flow.task.model.RuntimeTaskConstants;
 import com.oceanbase.odc.service.flow.util.FlowTaskUtil;
@@ -60,7 +64,7 @@ import lombok.extern.slf4j.Slf4j;
  * @see BaseRuntimeFlowableDelegate
  */
 @Slf4j
-public abstract class BaseODCFlowTaskDelegate<T> extends BaseRuntimeFlowableDelegate<T> {
+public abstract class BaseODCFlowTaskDelegate<T> extends BaseRuntimeFlowableDelegate<T> implements FlowTaskCallBack {
 
     @Autowired
     private TaskService taskService;
@@ -84,6 +88,8 @@ public abstract class BaseODCFlowTaskDelegate<T> extends BaseRuntimeFlowableDele
     private ConnectionService connectionService;
     @Autowired
     private EventBuilder eventBuilder;
+    @Autowired
+    protected FlowTaskCallBackApprovalService flowTaskCallBackApprovalService;
 
     private void init(DelegateExecution execution) {
         this.taskId = FlowTaskUtil.getTaskId(execution);
@@ -236,10 +242,17 @@ public abstract class BaseODCFlowTaskDelegate<T> extends BaseRuntimeFlowableDele
      */
     protected abstract boolean isFailure();
 
+    @Override
+    public void callback(@NotNull long flowInstanceId, @NotNull long flowTaskInstanceId,
+            @NotNull FlowNodeStatus flowNodeStatus, Map<String, Object> approvalVariables) {
+        flowTaskCallBackApprovalService.approval(flowInstanceId, flowTaskInstanceId, flowNodeStatus, approvalVariables);
+    }
+
     /**
      * The callback method when the task fails, which is used to update the status and other operations
      */
     protected void onFailure(Long taskId, TaskService taskService) {
+        callback(getFlowInstanceId(), getTargetTaskInstanceId(), FlowNodeStatus.FAILED, null);
         if (notificationProperties.isEnabled()) {
             try {
                 Event event = eventBuilder.ofFailedTask(taskService.detail(taskId));
@@ -254,6 +267,7 @@ public abstract class BaseODCFlowTaskDelegate<T> extends BaseRuntimeFlowableDele
      * The callback method when the task is successful, used to update the status and other operations
      */
     protected void onSuccessful(Long taskId, TaskService taskService) {
+        callback(getFlowInstanceId(), getTargetTaskInstanceId(), FlowNodeStatus.COMPLETED, null);
         if (notificationProperties.isEnabled()) {
             try {
                 Event event = eventBuilder.ofSucceededTask(taskService.detail(taskId));
@@ -269,6 +283,7 @@ public abstract class BaseODCFlowTaskDelegate<T> extends BaseRuntimeFlowableDele
      * operations
      */
     protected void onTimeout(Long taskId, TaskService taskService) {
+        callback(getFlowInstanceId(), getTargetTaskInstanceId(), FlowNodeStatus.EXPIRED, null);
         if (notificationProperties.isEnabled()) {
             try {
                 Event event = eventBuilder.ofTimeoutTask(taskService.detail(taskId));
@@ -286,7 +301,11 @@ public abstract class BaseODCFlowTaskDelegate<T> extends BaseRuntimeFlowableDele
 
     @Override
     public boolean cancel(boolean mayInterruptIfRunning) {
-        return cancel(mayInterruptIfRunning, taskId, taskService);
+        boolean result = cancel(mayInterruptIfRunning, taskId, taskService);
+        if (result) {
+            callback(getFlowInstanceId(), getTargetTaskInstanceId(), FlowNodeStatus.CANCELLED, null);
+        }
+        return result;
     }
 
     protected abstract boolean cancel(boolean mayInterruptIfRunning, Long taskId, TaskService taskService);

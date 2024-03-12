@@ -24,7 +24,6 @@ import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.Validate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.ConnectionCallback;
 import org.springframework.stereotype.Service;
@@ -38,8 +37,6 @@ import com.oceanbase.odc.core.shared.constant.OdcConstants;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.core.shared.exception.UnexpectedException;
 import com.oceanbase.odc.core.shared.model.TableIdentity;
-import com.oceanbase.odc.core.sql.parser.AbstractSyntaxTreeFactories;
-import com.oceanbase.odc.core.sql.parser.AbstractSyntaxTreeFactory;
 import com.oceanbase.odc.core.sql.parser.DropStatement;
 import com.oceanbase.odc.plugin.schema.api.TableExtensionPoint;
 import com.oceanbase.odc.service.common.util.SqlUtils;
@@ -49,6 +46,7 @@ import com.oceanbase.odc.service.db.model.GenerateUpdateTableDDLReq;
 import com.oceanbase.odc.service.db.model.UpdateTableDdlCheck;
 import com.oceanbase.odc.service.plugin.SchemaPluginUtil;
 import com.oceanbase.odc.service.session.ConnectConsoleService;
+import com.oceanbase.odc.service.sqlcheck.SqlCheckUtil;
 import com.oceanbase.tools.dbbrowser.model.DBObjectIdentity;
 import com.oceanbase.tools.dbbrowser.model.DBTable;
 import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
@@ -154,7 +152,7 @@ public class DBTableService {
         boolean createIndex = false;
         boolean dropIndex = false;
         for (String s : SqlUtils.split(dialectType, ddl, ";")) {
-            Statement stmt = parseSingleSql(dialectType, s);
+            Statement stmt = SqlCheckUtil.parseSingleSql(dialectType, s);
             if (stmt == null) {
                 continue;
             }
@@ -180,17 +178,6 @@ public class DBTableService {
             return UpdateTableDdlCheck.CREATE_INDEX.getLocalizedMessage();
         }
         return null;
-    }
-
-    private Statement parseSingleSql(DialectType dialectType, String sql) {
-        try {
-            AbstractSyntaxTreeFactory factory = AbstractSyntaxTreeFactories.getAstFactory(dialectType, 0);
-            Validate.notNull(factory, "AbstractSyntaxTreeFactory can not be null");
-            return factory.buildAst(sql).getStatement();
-        } catch (Exception e) {
-            log.warn("parse generated update table sql failed, sql={}, error={}", sql, e.getMessage());
-            return null;
-        }
     }
 
     public Boolean isLowerCaseTableName(@NotNull ConnectionSession connectionSession) {

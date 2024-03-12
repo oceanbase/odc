@@ -16,6 +16,8 @@
 
 package com.oceanbase.odc.service.task.executor.task;
 
+import java.util.Map;
+
 import com.oceanbase.odc.service.task.caller.JobContext;
 import com.oceanbase.odc.service.task.enums.JobStatus;
 import com.oceanbase.odc.service.task.executor.server.TaskExecutor;
@@ -37,6 +39,11 @@ public interface Task<RESULT> {
      * Stop current task. This method will be called by {@link TaskExecutor} for stop a task
      */
     boolean stop();
+
+    /**
+     * Modify current task parameters
+     */
+    boolean modify(Map<String, String> jobParameters);
 
     /**
      * Get task progress, the progress should be between 0 and 1 (include 0 and 1)

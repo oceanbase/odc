@@ -24,24 +24,24 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import com.oceanbase.tools.dbbrowser.env.BaseTestEnv;
 import com.oceanbase.tools.dbbrowser.model.DBSession;
 import com.oceanbase.tools.dbbrowser.model.DBSession.DBTransState;
-import com.oceanbase.tools.dbbrowser.stats.mysql.MySQLNoGreaterThan5740StatsAccessor;
+import com.oceanbase.tools.dbbrowser.stats.mysql.MySQLNoLessThan5700StatsAccessor;
 
 /**
  * @author jingtian
  * @date 2023/6/7
  */
-public class MySQLNoGreaterThan5740StatsAccessorTest extends BaseTestEnv {
+public class MySQLNoLessThan5700StatsAccessorTest extends BaseTestEnv {
 
     @Test
     public void listAllSessions() {
-        DBStatsAccessor accessor = new MySQLNoGreaterThan5740StatsAccessor(new JdbcTemplate(getMySQLDataSource()));
+        DBStatsAccessor accessor = new MySQLNoLessThan5700StatsAccessor(new JdbcTemplate(getMySQLDataSource()));
         List<DBSession> session = accessor.listAllSessions();
         Assert.assertTrue(session.size() > 0);
     }
 
     @Test
     public void currentSession() {
-        DBStatsAccessor accessor = new MySQLNoGreaterThan5740StatsAccessor(new JdbcTemplate(getMySQLDataSource()));
+        DBStatsAccessor accessor = new MySQLNoLessThan5700StatsAccessor(new JdbcTemplate(getMySQLDataSource()));
         DBSession session = accessor.currentSession();
         Assert.assertEquals(DBTransState.UNKNOWN, session.getTransState());
     }

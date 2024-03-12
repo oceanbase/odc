@@ -33,7 +33,9 @@ import org.springframework.stereotype.Service;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
+import com.oceanbase.odc.core.shared.constant.FlowStatus;
 import com.oceanbase.odc.core.shared.constant.TaskErrorStrategy;
+import com.oceanbase.odc.metadb.flow.FlowInstanceRepository;
 import com.oceanbase.odc.metadb.partitionplan.PartitionPlanEntity;
 import com.oceanbase.odc.metadb.partitionplan.PartitionPlanRepository;
 import com.oceanbase.odc.metadb.partitionplan.PartitionPlanTableEntity;
@@ -85,34 +87,26 @@ public class PartitionPlanScheduleService {
     private PartitionPlanTablePartitionKeyRepository partitionPlanTablePartitionKeyRepository;
     @Autowired
     private FlowInstanceService flowInstanceService;
+    @Autowired
+    private FlowInstanceRepository flowInstanceRepository;
 
-    public PartitionPlanConfig getPartitionPlan(@NonNull Long flowInstanceId) {
+    public PartitionPlanConfig getPartitionPlanByFlowInstanceId(@NonNull Long flowInstanceId) {
         Long fId = this.flowInstanceService.mapFlowInstance(flowInstanceId, FlowInstance::getId, false);
         Optional<PartitionPlanEntity> optional = this.partitionPlanRepository.findByFlowInstanceId(fId);
-        if (!optional.isPresent()) {
+        return optional.map(this::getPartitionPlan).orElse(null);
+    }
+
+    public PartitionPlanConfig getPartitionPlanByDatabaseId(@NonNull Long databaseId) {
+        Database database = this.databaseService.detail(databaseId);
+        List<PartitionPlanEntity> planEntities = this.partitionPlanRepository
+                .findByDatabaseIdAndEnabled(database.getId(), true);
+        if (CollectionUtils.isEmpty(planEntities)) {
             return null;
+        } else if (planEntities.size() > 1) {
+            throw new IllegalStateException("Unknown error, there are "
+                    + planEntities.size() + " partition plans are active, databaseId=" + databaseId);
         }
-        PartitionPlanEntity pp = optional.get();
-        PartitionPlanConfig target = entityToModel(pp);
-        List<PartitionPlanTableConfig> tableConfigs = this.partitionPlanTableRepository
-                .findByPartitionPlanIdIn(Collections.singletonList(pp.getId())).stream()
-                .map(this::entityToModel).collect(Collectors.toList());
-        target.setPartitionTableConfigs(tableConfigs);
-        if (CollectionUtils.isEmpty(tableConfigs)) {
-            return target;
-        }
-        Map<Long, List<PartitionPlanTablePartitionKeyEntity>> pptId2KeyEntities =
-                this.partitionPlanTablePartitionKeyRepository.findByPartitionplanTableIdIn(tableConfigs.stream()
-                        .map(PartitionPlanTableConfig::getId).collect(Collectors.toList())).stream()
-                        .collect(Collectors.groupingBy(PartitionPlanTablePartitionKeyEntity::getPartitionplanTableId));
-        target.getPartitionTableConfigs().forEach(tableConfig -> {
-            List<PartitionPlanTablePartitionKeyEntity> pptks = pptId2KeyEntities.get(tableConfig.getId());
-            if (CollectionUtils.isEmpty(pptks)) {
-                return;
-            }
-            tableConfig.setPartitionKeyConfigs(pptks.stream().map(this::entityToModel).collect(Collectors.toList()));
-        });
-        return target;
+        return getPartitionPlan(planEntities.get(0));
     }
 
     public List<PartitionPlanTableConfig> getPartitionPlanTables(@NonNull List<Long> partitionPlanTableIds) {
@@ -151,18 +145,15 @@ public class PartitionPlanScheduleService {
         disablePartitionPlan(database.getId());
         PartitionPlanEntity partitionPlanEntity = modelToEntity(partitionPlanConfig);
         partitionPlanEntity = this.partitionPlanRepository.save(partitionPlanEntity);
-        if (!partitionPlanConfig.isEnabled()) {
-            log.info("Partition plan is disabled, do nothing and return");
+        if (!partitionPlanConfig.isEnabled()
+                || CollectionUtils.isEmpty(partitionPlanConfig.getPartitionTableConfigs())) {
+            log.info("Partition plan is disabled or table config is empty, do nothing and return");
             return;
         }
         Validate.isTrue(partitionPlanConfig.getCreationTrigger() != null, "Creation trigger can not be null");
-        ScheduleEntity createScheduleEntity = createAndEnableSchedule(
-                database, partitionPlanConfig.getCreationTrigger());
-        ScheduleEntity dropScheduleEntity = null;
-        if (partitionPlanConfig.getDroppingTrigger() != null) {
-            dropScheduleEntity = createAndEnableSchedule(database, partitionPlanConfig.getDroppingTrigger());
-        }
-        if (dropScheduleEntity == null) {
+        if (partitionPlanConfig.getDroppingTrigger() == null) {
+            ScheduleEntity createScheduleEntity = createAndEnableSchedule(
+                    database, partitionPlanConfig.getCreationTrigger());
             createPartitionPlanTables(partitionPlanConfig.getPartitionTableConfigs(),
                     partitionPlanEntity.getId(), createScheduleEntity.getId(),
                     partitionPlanConfig.getFlowInstanceId(), partitionPlanConfig.getTaskId(),
@@ -184,14 +175,24 @@ public class PartitionPlanScheduleService {
                         return cfg;
                     });
                 }).collect(Collectors.groupingBy(cfg -> cfg.getPartitionKeyConfigs().get(0).getStrategy()));
-        createPartitionPlanTables(strategy2TblCfgs.get(PartitionPlanStrategy.CREATE),
-                partitionPlanEntity.getId(), createScheduleEntity.getId(),
-                partitionPlanConfig.getFlowInstanceId(), partitionPlanConfig.getTaskId(),
-                partitionPlanConfig.getErrorStrategy(), partitionPlanConfig.getTimeoutMillis());
-        createPartitionPlanTables(strategy2TblCfgs.get(PartitionPlanStrategy.DROP),
-                partitionPlanEntity.getId(), dropScheduleEntity.getId(),
-                partitionPlanConfig.getFlowInstanceId(), partitionPlanConfig.getTaskId(),
-                partitionPlanConfig.getErrorStrategy(), partitionPlanConfig.getTimeoutMillis());
+        List<PartitionPlanTableConfig> createConfigs = strategy2TblCfgs.get(PartitionPlanStrategy.CREATE);
+        List<PartitionPlanTableConfig> dropConfigs = strategy2TblCfgs.get(PartitionPlanStrategy.DROP);
+        if (CollectionUtils.isNotEmpty(createConfigs)) {
+            ScheduleEntity createScheduleEntity = createAndEnableSchedule(
+                    database, partitionPlanConfig.getCreationTrigger());
+            createPartitionPlanTables(createConfigs,
+                    partitionPlanEntity.getId(), createScheduleEntity.getId(),
+                    partitionPlanConfig.getFlowInstanceId(), partitionPlanConfig.getTaskId(),
+                    partitionPlanConfig.getErrorStrategy(), partitionPlanConfig.getTimeoutMillis());
+        }
+        if (CollectionUtils.isNotEmpty(dropConfigs)) {
+            ScheduleEntity dropScheduleEntity = createAndEnableSchedule(
+                    database, partitionPlanConfig.getDroppingTrigger());
+            createPartitionPlanTables(dropConfigs,
+                    partitionPlanEntity.getId(), dropScheduleEntity.getId(),
+                    partitionPlanConfig.getFlowInstanceId(), partitionPlanConfig.getTaskId(),
+                    partitionPlanConfig.getErrorStrategy(), partitionPlanConfig.getTimeoutMillis());
+        }
     }
 
     @Transactional(rollbackOn = Exception.class)
@@ -201,9 +202,13 @@ public class PartitionPlanScheduleService {
         if (CollectionUtils.isEmpty(ppIds)) {
             return;
         }
-        ppIds = this.partitionPlanRepository.findByIdIn(ppIds).stream()
-                .filter(e -> Boolean.TRUE.equals(e.getEnabled()))
-                .map(PartitionPlanEntity::getId).collect(Collectors.toList());
+        List<PartitionPlanEntity> ppEntities = this.partitionPlanRepository.findByIdIn(ppIds)
+                .stream().filter(e -> Boolean.TRUE.equals(e.getEnabled())).collect(Collectors.toList());
+        Set<Long> flowInstIds = ppEntities.stream()
+                .map(PartitionPlanEntity::getFlowInstanceId)
+                .filter(id -> id > 0).collect(Collectors.toSet());
+        this.flowInstanceRepository.updateStatusByIds(flowInstIds, FlowStatus.CANCELLED);
+        ppIds = ppEntities.stream().map(PartitionPlanEntity::getId).collect(Collectors.toList());
         if (CollectionUtils.isEmpty(ppIds)) {
             return;
         }
@@ -345,6 +350,29 @@ public class PartitionPlanScheduleService {
             return cfg;
         }).collect(Collectors.toList()));
         this.scheduleService.updateJobParametersById(scheduleId, JsonUtils.toJson(parameter));
+    }
+
+    private PartitionPlanConfig getPartitionPlan(@NonNull PartitionPlanEntity partitionPlan) {
+        PartitionPlanConfig target = entityToModel(partitionPlan);
+        List<PartitionPlanTableConfig> tableConfigs = this.partitionPlanTableRepository
+                .findByPartitionPlanIdIn(Collections.singletonList(partitionPlan.getId())).stream()
+                .map(this::entityToModel).collect(Collectors.toList());
+        target.setPartitionTableConfigs(tableConfigs);
+        if (CollectionUtils.isEmpty(tableConfigs)) {
+            return target;
+        }
+        Map<Long, List<PartitionPlanTablePartitionKeyEntity>> pptId2KeyEntities =
+                this.partitionPlanTablePartitionKeyRepository.findByPartitionplanTableIdIn(tableConfigs.stream()
+                        .map(PartitionPlanTableConfig::getId).collect(Collectors.toList())).stream()
+                        .collect(Collectors.groupingBy(PartitionPlanTablePartitionKeyEntity::getPartitionplanTableId));
+        target.getPartitionTableConfigs().forEach(tableConfig -> {
+            List<PartitionPlanTablePartitionKeyEntity> pptks = pptId2KeyEntities.get(tableConfig.getId());
+            if (CollectionUtils.isEmpty(pptks)) {
+                return;
+            }
+            tableConfig.setPartitionKeyConfigs(pptks.stream().map(this::entityToModel).collect(Collectors.toList()));
+        });
+        return target;
     }
 
 }

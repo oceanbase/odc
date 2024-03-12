@@ -22,7 +22,7 @@ import org.apache.commons.lang3.Validate;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 import com.oceanbase.tools.dbbrowser.VersionUtils;
-import com.oceanbase.tools.dbbrowser.schema.mysql.MySQLNoGreaterThan5740SchemaAccessor;
+import com.oceanbase.tools.dbbrowser.schema.mysql.MySQLNoLessThan5700SchemaAccessor;
 import com.oceanbase.tools.dbbrowser.schema.mysql.OBMySQLBetween220And225XSchemaAccessor;
 import com.oceanbase.tools.dbbrowser.schema.mysql.OBMySQLBetween2260And2276SchemaAccessor;
 import com.oceanbase.tools.dbbrowser.schema.mysql.OBMySQLBetween2277And3XSchemaAccessor;
@@ -109,7 +109,7 @@ public class DBSchemaAccessors {
     }
 
     public DBSchemaAccessor createMysql() {
-        return new MySQLNoGreaterThan5740SchemaAccessor(this.jdbcTemplate);
+        return new MySQLNoLessThan5700SchemaAccessor(this.jdbcTemplate);
     }
 
 }

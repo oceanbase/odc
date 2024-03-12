@@ -15,6 +15,8 @@
  */
 package com.oceanbase.odc.core.flow;
 
+import java.util.Optional;
+
 import com.oceanbase.odc.core.flow.builder.BaseProcessNodeBuilder;
 import com.oceanbase.odc.core.flow.builder.ConditionSequenceFlowBuilder;
 import com.oceanbase.odc.core.flow.builder.EndEventBuilder;
@@ -23,8 +25,10 @@ import com.oceanbase.odc.core.flow.builder.FlowableProcessBuilder;
 import com.oceanbase.odc.core.flow.builder.ParallelGatewayBuilder;
 import com.oceanbase.odc.core.flow.builder.SequenceFlowBuilder;
 import com.oceanbase.odc.core.flow.graph.GraphConfigurer;
+import com.oceanbase.odc.core.flow.graph.GraphEdge;
 
 import lombok.NonNull;
+import lombok.Setter;
 
 /**
  * Impl of {@link ExecutionConfigurer}
@@ -36,6 +40,12 @@ import lombok.NonNull;
  */
 public class ExecutionConfigurer extends GraphConfigurer<FlowableProcessBuilder, BaseProcessNodeBuilder<?>> {
 
+    /**
+     * previous GraphVertex set out GraphEdge but not set target GraphVertex
+     */
+    @Setter
+    private GraphEdge previousGraphEdge;
+
     public ExecutionConfigurer(@NonNull FlowableProcessBuilder target) {
         super(target);
     }
@@ -45,8 +55,14 @@ public class ExecutionConfigurer extends GraphConfigurer<FlowableProcessBuilder,
         if (from instanceof EndEventBuilder) {
             throw new IllegalStateException("Can not append node after EndEvent");
         }
-        return (ExecutionConfigurer) super.next(nextNode,
-                new SequenceFlowBuilder(from == null ? "" : from.getGraphId() + " -> " + nextNode.getGraphId()));
+        ExecutionConfigurer executionConfigurer = (ExecutionConfigurer) super.next(nextNode,
+                Optional.ofNullable(previousGraphEdge).orElse(
+                        new SequenceFlowBuilder(
+                                from == null ? "" : from.getGraphId() + " -> " + nextNode.getGraphId())));
+        if (previousGraphEdge != null) {
+            previousGraphEdge = null;
+        }
+        return executionConfigurer;
     }
 
     public ExecutionConfigurer route(@NonNull String expr, @NonNull ExecutionConfigurer configurer) {

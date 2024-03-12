@@ -70,7 +70,7 @@ public class DorisSchemaAccessor implements DBSchemaAccessor {
 
     public DorisSchemaAccessor(@NonNull JdbcOperations jdbcOperations) {
         this.jdbcOperations = jdbcOperations;
-        this.sqlMapper = DBSchemaAccessorSqlMappers.get(StatementsFiles.MYSQL_5_7_40);
+        this.sqlMapper = DBSchemaAccessorSqlMappers.get(StatementsFiles.MYSQL_5_7_x);
     }
 
     @Override

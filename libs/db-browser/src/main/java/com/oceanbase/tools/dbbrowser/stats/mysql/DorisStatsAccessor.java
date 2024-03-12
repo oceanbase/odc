@@ -26,7 +26,7 @@ import lombok.NonNull;
  * @Create 2024/2/5 16:23
  * @Version 1.0
  */
-public class DorisStatsAccessor extends MySQLNoGreaterThan5740StatsAccessor {
+public class DorisStatsAccessor extends MySQLNoLessThan5700StatsAccessor {
     public DorisStatsAccessor(@NonNull JdbcOperations jdbcOperations) {
         super(jdbcOperations);
     }

@@ -35,6 +35,10 @@ public enum JobStatus {
         return JobStatus.CANCELED == this || JobStatus.FAILED == this || JobStatus.DONE == this;
     }
 
+    public boolean isExecuting() {
+        return JobStatus.PREPARING == this || JobStatus.RUNNING == this || JobStatus.RETRYING == this;
+    }
+
     public TaskStatus convertTaskStatus() {
 
         if (RETRYING == this) {

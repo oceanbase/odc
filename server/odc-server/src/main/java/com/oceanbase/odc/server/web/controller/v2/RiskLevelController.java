@@ -16,7 +16,6 @@
 package com.oceanbase.odc.server.web.controller.v2;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -40,9 +39,7 @@ import io.swagger.annotations.ApiOperation;
 @RequestMapping("/api/v2/regulation/risklevels")
 public class RiskLevelController {
 
-    // TODO 删除 com.oceanbase.odc.service.flow.RiskLevelService 之后，就可以去掉这个 @Qualifier 了
     @Autowired
-    @Qualifier("RiskLevelServiceFrom420")
     private RiskLevelService riskLevelService;
 
     @ApiOperation(value = "listRiskLevels", notes = "List all risk levels")
