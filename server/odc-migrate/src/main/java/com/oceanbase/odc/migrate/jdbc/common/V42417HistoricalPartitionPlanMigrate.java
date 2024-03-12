@@ -20,22 +20,27 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import javax.sql.DataSource;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.jdbc.core.JdbcTemplate;
 
+import com.oceanbase.odc.common.jpa.InsertSqlTemplateBuilder;
 import com.oceanbase.odc.common.json.JsonUtils;
+import com.oceanbase.odc.common.util.JdbcOperationsUtil;
+import com.oceanbase.odc.config.jpa.OdcJpaRepository.ValueGetterBuilder;
 import com.oceanbase.odc.core.migrate.JdbcMigratable;
 import com.oceanbase.odc.core.migrate.Migratable;
 import com.oceanbase.odc.metadb.partitionplan.PartitionPlanEntity;
-import com.oceanbase.odc.metadb.partitionplan.PartitionPlanRepository;
+import com.oceanbase.odc.metadb.partitionplan.PartitionPlanEntity_;
 import com.oceanbase.odc.metadb.partitionplan.PartitionPlanTableEntity;
+import com.oceanbase.odc.metadb.partitionplan.PartitionPlanTableEntity_;
 import com.oceanbase.odc.metadb.partitionplan.PartitionPlanTablePartitionKeyEntity;
-import com.oceanbase.odc.metadb.partitionplan.PartitionPlanTablePartitionKeyRepository;
-import com.oceanbase.odc.metadb.partitionplan.PartitionPlanTableRepository;
+import com.oceanbase.odc.metadb.partitionplan.PartitionPlanTablePartitionKeyEntity_;
 import com.oceanbase.odc.plugin.task.api.partitionplan.datatype.TimeDataType;
 import com.oceanbase.odc.plugin.task.api.partitionplan.invoker.create.PartitionExprGenerator;
 import com.oceanbase.odc.plugin.task.api.partitionplan.invoker.create.TimeIncreasePartitionExprGenerator;
@@ -43,7 +48,6 @@ import com.oceanbase.odc.plugin.task.api.partitionplan.invoker.partitionname.Dat
 import com.oceanbase.odc.plugin.task.api.partitionplan.invoker.partitionname.PartitionNameGenerator;
 import com.oceanbase.odc.plugin.task.api.partitionplan.model.DateBasedPartitionNameGeneratorConfig;
 import com.oceanbase.odc.plugin.task.api.partitionplan.model.TimeIncreaseGeneratorConfig;
-import com.oceanbase.odc.service.common.util.SpringContextUtil;
 import com.oceanbase.odc.service.partitionplan.model.PartitionPlanStrategy;
 
 import lombok.Getter;
@@ -61,46 +65,39 @@ import lombok.extern.slf4j.Slf4j;
 @Migratable(version = "4.2.4.17", description = "migrate historical partition plan data")
 public class V42417HistoricalPartitionPlanMigrate implements JdbcMigratable {
 
-    private final PartitionPlanRepository partitionPlanRepository =
-            SpringContextUtil.getBean(PartitionPlanRepository.class);
-    private final PartitionPlanTablePartitionKeyRepository planTablePartitionKeyRepository =
-            SpringContextUtil.getBean(PartitionPlanTablePartitionKeyRepository.class);
-    private final PartitionPlanTableRepository partitionPlanTableRepository =
-            SpringContextUtil.getBean(PartitionPlanTableRepository.class);
-
     @Override
     public void migrate(DataSource dataSource) {
-        clean();
         JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
+        clean(jdbcTemplate);
         List<PartitionPlanEntityWrapper> partitionPlanWrappers = generatePartitionPlanEntities(jdbcTemplate);
         if (CollectionUtils.isEmpty(partitionPlanWrappers)) {
             return;
         }
         try {
-            partitionPlanRepository.batchCreate(new ArrayList<>(partitionPlanWrappers));
+            batchCreatePartiPlans(jdbcTemplate, new ArrayList<>(partitionPlanWrappers));
             partitionPlanWrappers.forEach(i -> i.getPartitionPlanTableEntityWrappers()
                     .forEach(j -> j.setPartitionPlanId(i.getId())));
-            partitionPlanTableRepository.batchCreate(partitionPlanWrappers.stream()
+            batchCreatePartiPlanTables(jdbcTemplate, partitionPlanWrappers.stream()
                     .flatMap(i -> i.getPartitionPlanTableEntityWrappers().stream())
                     .collect(Collectors.toList()));
             partitionPlanWrappers.forEach(i -> i.getPartitionPlanTableEntityWrappers()
                     .forEach(j -> j.getPartitionKeyEntities()
                             .forEach(k -> k.setPartitionplanTableId(j.getId()))));
-            planTablePartitionKeyRepository.batchCreate(partitionPlanWrappers.stream()
+            batchCreatePartiPlanTableKeys(jdbcTemplate, partitionPlanWrappers.stream()
                     .flatMap(i -> i.getPartitionPlanTableEntityWrappers().stream()
                             .flatMap(j -> j.getPartitionKeyEntities().stream()))
                     .collect(Collectors.toList()));
         } catch (Exception e) {
             log.warn("Failed to migrate historical partition plan", e);
-            clean();
+            clean(jdbcTemplate);
             throw new IllegalStateException("failed to migrate historical partition plan");
         }
     }
 
-    private void clean() {
-        this.partitionPlanRepository.deleteAll();
-        this.partitionPlanTableRepository.deleteAll();
-        this.planTablePartitionKeyRepository.deleteAll();
+    private void clean(JdbcTemplate jdbcTemplate) {
+        jdbcTemplate.execute("delete from partitionplan where 1=1");
+        jdbcTemplate.execute("delete from partitionplan_table where 1=1");
+        jdbcTemplate.execute("delete from partitionplan_table_partitionkey where 1=1");
     }
 
     private List<PartitionPlanEntityWrapper> generatePartitionPlanEntities(JdbcTemplate jdbcTemplate) {
@@ -204,6 +201,73 @@ public class V42417HistoricalPartitionPlanMigrate implements JdbcMigratable {
             default:
                 throw new IllegalArgumentException("Illegal period unit, " + periodUnit);
         }
+    }
+
+    private void batchCreatePartiPlans(JdbcTemplate jdbcTemplate, List<PartitionPlanEntity> entities) {
+        String sql = InsertSqlTemplateBuilder.from("partitionplan")
+                .field(PartitionPlanEntity_.flowInstanceId)
+                .field("is_enabled")
+                .field(PartitionPlanEntity_.creatorId)
+                .field(PartitionPlanEntity_.lastModifierId)
+                .field(PartitionPlanEntity_.databaseId)
+                .build();
+        ValueGetterBuilder<PartitionPlanEntity> valueGetter = new ValueGetterBuilder<>();
+        List<Function<PartitionPlanEntity, Object>> getter = valueGetter
+                .add(PartitionPlanEntity::getFlowInstanceId)
+                .add(PartitionPlanEntity::getEnabled)
+                .add(PartitionPlanEntity::getCreatorId)
+                .add(PartitionPlanEntity::getLastModifierId)
+                .add(PartitionPlanEntity::getDatabaseId)
+                .build();
+        Map<Integer, Function<PartitionPlanEntity, Object>> valueGetterMap = new HashMap<>();
+        IntStream.range(1, getter.size() + 1).forEach(i -> valueGetterMap.put(i, getter.get(i - 1)));
+        JdbcOperationsUtil.batchCreate(jdbcTemplate, entities, sql, valueGetterMap, PartitionPlanEntity::setId);
+    }
+
+    private void batchCreatePartiPlanTables(JdbcTemplate jdbcTemplate, List<PartitionPlanTableEntity> entities) {
+        String sql = InsertSqlTemplateBuilder.from("partitionplan_table")
+                .field(PartitionPlanTableEntity_.tableName)
+                .field("partitionplan_id")
+                .field(PartitionPlanTableEntity_.scheduleId)
+                .field("is_enabled")
+                .field(PartitionPlanTableEntity_.partitionNameInvoker)
+                .field(PartitionPlanTableEntity_.partitionNameInvokerParameters)
+                .build();
+        ValueGetterBuilder<PartitionPlanTableEntity> valueGetter = new ValueGetterBuilder<>();
+        List<Function<PartitionPlanTableEntity, Object>> getter = valueGetter
+                .add(PartitionPlanTableEntity::getTableName)
+                .add(PartitionPlanTableEntity::getPartitionPlanId)
+                .add(PartitionPlanTableEntity::getScheduleId)
+                .add(PartitionPlanTableEntity::getEnabled)
+                .add(PartitionPlanTableEntity::getPartitionNameInvoker)
+                .add(PartitionPlanTableEntity::getPartitionNameInvokerParameters)
+                .build();
+        Map<Integer, Function<PartitionPlanTableEntity, Object>> valueGetterMap = new HashMap<>();
+        IntStream.range(1, getter.size() + 1).forEach(i -> valueGetterMap.put(i, getter.get(i - 1)));
+        JdbcOperationsUtil.batchCreate(jdbcTemplate, entities, sql, valueGetterMap, PartitionPlanTableEntity::setId);
+    }
+
+    private void batchCreatePartiPlanTableKeys(JdbcTemplate jdbcTemplate,
+            List<PartitionPlanTablePartitionKeyEntity> entities) {
+        String sql = InsertSqlTemplateBuilder.from("partitionplan_table_partitionkey")
+                .field(PartitionPlanTablePartitionKeyEntity_.partitionKey)
+                .field(PartitionPlanTablePartitionKeyEntity_.strategy)
+                .field(PartitionPlanTablePartitionKeyEntity_.partitionplanTableId)
+                .field(PartitionPlanTablePartitionKeyEntity_.partitionKeyInvoker)
+                .field(PartitionPlanTablePartitionKeyEntity_.partitionKeyInvokerParameters)
+                .build();
+        ValueGetterBuilder<PartitionPlanTablePartitionKeyEntity> valueGetter = new ValueGetterBuilder<>();
+        List<Function<PartitionPlanTablePartitionKeyEntity, Object>> getter = valueGetter
+                .add(PartitionPlanTablePartitionKeyEntity::getPartitionKey)
+                .add(p -> p.getStrategy().name())
+                .add(PartitionPlanTablePartitionKeyEntity::getPartitionplanTableId)
+                .add(PartitionPlanTablePartitionKeyEntity::getPartitionKeyInvoker)
+                .add(PartitionPlanTablePartitionKeyEntity::getPartitionKeyInvokerParameters)
+                .build();
+        Map<Integer, Function<PartitionPlanTablePartitionKeyEntity, Object>> valueGetterMap = new HashMap<>();
+        IntStream.range(1, getter.size() + 1).forEach(i -> valueGetterMap.put(i, getter.get(i - 1)));
+        JdbcOperationsUtil.batchCreate(jdbcTemplate, entities, sql, valueGetterMap,
+                PartitionPlanTablePartitionKeyEntity::setId);
     }
 
     @Getter
