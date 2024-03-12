@@ -51,15 +51,15 @@ import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * {@link V42416PartitionPlanMigrate}
+ * {@link V42416HistoricalPartitionPlanMigrate}
  *
  * @author yh263208
  * @date 2024-03-11 17:07
  * @since ODC_release_4.2.4
  */
 @Slf4j
-@Migratable(version = "4.2.4.17", description = "migrate partition plan data")
-public class V42416PartitionPlanMigrate implements JdbcMigratable {
+@Migratable(version = "4.2.4.17", description = "migrate historical partition plan data")
+public class V42416HistoricalPartitionPlanMigrate implements JdbcMigratable {
 
     private final PartitionPlanRepository partitionPlanRepository =
             SpringContextUtil.getBean(PartitionPlanRepository.class);
@@ -104,8 +104,8 @@ public class V42416PartitionPlanMigrate implements JdbcMigratable {
     }
 
     private List<PartitionPlanEntityWrapper> generatePartitionPlanEntities(JdbcTemplate jdbcTemplate) {
-        List<PartitionPlanEntityWrapper> wrappers = jdbcTemplate.query("select id, flow_instance_id, creator_id, "
-                + "modifier_id, database_id, schedule_id, create_time, update_time "
+        List<PartitionPlanEntityWrapper> wrappers = jdbcTemplate.query("select id, "
+                + "flow_instance_id, creator_id, modifier_id, database_id, schedule_id "
                 + "from connection_partition_plan where is_config_enabled=1", (rs, rowNum) -> {
                     PartitionPlanEntityWrapper entity = new PartitionPlanEntityWrapper();
                     entity.setEnabled(true);
@@ -115,8 +115,6 @@ public class V42416PartitionPlanMigrate implements JdbcMigratable {
                     entity.setFlowInstanceId(rs.getLong("flow_instance_id"));
                     entity.setCreatorId(rs.getLong("creator_id"));
                     entity.setDatabaseId(rs.getLong("database_id"));
-                    entity.setCreateTime(rs.getTimestamp("create_time"));
-                    entity.setUpdateTime(rs.getTimestamp("update_time"));
                     return entity;
                 });
         if (CollectionUtils.isEmpty(wrappers)) {
@@ -131,17 +129,15 @@ public class V42416PartitionPlanMigrate implements JdbcMigratable {
         Map<Long, PartitionPlanEntityWrapper> historicalId2Entity = entityWrappers.stream()
                 .collect(Collectors.toMap(PartitionPlanEntityWrapper::getHistoricalPartiId, w -> w));
         Map<Long, List<PartitionPlanTableEntityWrapper>> tableWrappers = jdbcTemplate.query("select table_name, "
-                + "partition_interval, partition_interval_unit, pre_create_partition_count, expire_period, "
-                + "expire_period_unit, partition_naming_prefix, partition_naming_suffix_expression, "
-                + "database_partition_plan_id, create_time, update_time from table_partition_plan "
+                + "partition_interval, partition_interval_unit, pre_create_partition_count, "
+                + "expire_period, expire_period_unit, partition_naming_prefix, partition_naming_suffix_expression, "
+                + "database_partition_plan_id, from table_partition_plan "
                 + "where database_partition_plan_id in (" + ids + ")", (rs, rowNum) -> {
                     PartitionPlanTableEntityWrapper entity = new PartitionPlanTableEntityWrapper();
                     entity.setEnabled(true);
                     entity.setHistoricalPartiId(rs.getLong("database_partition_plan_id"));
                     entity.setScheduleId(historicalId2Entity.get(entity.getHistoricalPartiId()).getScheduleId());
                     entity.setTableName(rs.getString("table_name"));
-                    entity.setCreateTime(rs.getTimestamp("create_time"));
-                    entity.setUpdateTime(rs.getTimestamp("update_time"));
                     int timePrecision =
                             getTimePrecision(Integer.parseInt(rs.getString("partition_interval_unit")));
                     DateBasedPartitionNameGeneratorConfig config = new DateBasedPartitionNameGeneratorConfig();
@@ -158,8 +154,6 @@ public class V42416PartitionPlanMigrate implements JdbcMigratable {
                     PartitionPlanTablePartitionKeyEntity createEntity =
                             new PartitionPlanTablePartitionKeyEntity();
                     createEntity.setStrategy(PartitionPlanStrategy.CREATE);
-                    createEntity.setCreateTime(rs.getTimestamp("create_time"));
-                    createEntity.setUpdateTime(rs.getTimestamp("update_time"));
                     TimeIncreaseGeneratorConfig createConfig = new TimeIncreaseGeneratorConfig();
                     createConfig.setFromCurrentTime(true);
                     createConfig.setIntervalPrecision(timePrecision);
@@ -174,8 +168,6 @@ public class V42416PartitionPlanMigrate implements JdbcMigratable {
                     PartitionPlanTablePartitionKeyEntity dropEntity =
                             new PartitionPlanTablePartitionKeyEntity();
                     dropEntity.setStrategy(PartitionPlanStrategy.DROP);
-                    dropEntity.setCreateTime(rs.getTimestamp("create_time"));
-                    dropEntity.setUpdateTime(rs.getTimestamp("update_time"));
                     Map<String, Object> dropParameters = new HashMap<>();
                     dropParameters.put("periodUnit",
                             getCalendarUnit(Integer.parseInt(rs.getString("expire_period_unit"))));
