@@ -62,7 +62,20 @@ public class OBMySQLTimeIncreasePartitionExprGenerator implements TimeIncreasePa
             throw new BadRequestException(ErrorCodes.TimeDataTypePrecisionMismatch, new Object[] {partitionKey},
                     "Illegal precision, interval precision > data type's precision");
         }
-        List<Date> candidates = getCandidateDates(config, generateCount);
+        Date baseTime;
+        if (config.isFromCurrentTime()) {
+            baseTime = new Date();
+        } else if (config.getBaseTimestampMillis() > 0) {
+            baseTime = new Date(config.getBaseTimestampMillis());
+        } else {
+            throw new IllegalArgumentException("Base time is missing");
+        }
+        List<Date> candidates = new ArrayList<>(generateCount);
+        for (int i = 0; i < generateCount; i++) {
+            baseTime = TimeDataTypeUtil.getNextDate(baseTime, config.getInterval(), config.getIntervalPrecision());
+            candidates.add(baseTime);
+        }
+        candidates = TimeDataTypeUtil.removeExcessPrecision(candidates, config.getIntervalPrecision());
         CellDataProcessor processor = getCellDataProcessor(dataType);
         return candidates.stream().map(i -> processor.convertToSqlLiteral(
                 convertCandidate(i, dataType, config), dataType)).collect(Collectors.toList());
@@ -81,23 +94,6 @@ public class OBMySQLTimeIncreasePartitionExprGenerator implements TimeIncreasePa
 
     protected Object convertCandidate(Date candidate, DataType dataType, TimeIncreaseGeneratorConfig config) {
         return candidate;
-    }
-
-    protected List<Date> getCandidateDates(TimeIncreaseGeneratorConfig config, Integer generateCount) {
-        Date baseTime;
-        if (config.isFromCurrentTime()) {
-            baseTime = new Date();
-        } else if (config.getBaseTimestampMillis() > 0) {
-            baseTime = new Date(config.getBaseTimestampMillis());
-        } else {
-            throw new IllegalArgumentException("Base time is missing");
-        }
-        List<Date> candidates = new ArrayList<>(generateCount);
-        for (int i = 0; i < generateCount; i++) {
-            baseTime = TimeDataTypeUtil.getNextDate(baseTime, config.getInterval(), config.getIntervalPrecision());
-            candidates.add(baseTime);
-        }
-        return TimeDataTypeUtil.removeExcessPrecision(candidates, config.getIntervalPrecision());
     }
 
 }
