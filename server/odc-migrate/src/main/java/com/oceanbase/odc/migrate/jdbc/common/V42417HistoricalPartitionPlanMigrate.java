@@ -51,7 +51,7 @@ import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * {@link V42416HistoricalPartitionPlanMigrate}
+ * {@link V42417HistoricalPartitionPlanMigrate}
  *
  * @author yh263208
  * @date 2024-03-11 17:07
@@ -59,7 +59,7 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 @Migratable(version = "4.2.4.17", description = "migrate historical partition plan data")
-public class V42416HistoricalPartitionPlanMigrate implements JdbcMigratable {
+public class V42417HistoricalPartitionPlanMigrate implements JdbcMigratable {
 
     private final PartitionPlanRepository partitionPlanRepository =
             SpringContextUtil.getBean(PartitionPlanRepository.class);
