@@ -124,6 +124,7 @@ public class Converter {
                     message.setRetryTimes(0);
                     message.setProjectId(channel.getProjectId());
                     message.setMaxRetryTimes(notificationProperties.getMaxResendTimes());
+                    message.setEvent(event);
                     messages.add(message);
                 } catch (Exception e) {
                     log.error("failed to convert event with id={}, channel id={}",

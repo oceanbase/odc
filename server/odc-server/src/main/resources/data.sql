@@ -564,7 +564,7 @@ VALUES ('odc.automatic-auth-rule.enabled', 'true', 'odc', 'default', 'master', '
 -- v4.1.3
 --
 insert into `config_system_configuration` (`key`, `value`, `application`, `profile`, `label`, `description`)
-VALUES ('odc.notification.enabled', 'false', 'odc', 'default', 'master', '是否开启消息通知，默认 false，表示不开启') ON DUPLICATE KEY update `id`=`id`;
+VALUES ('odc.notification.enabled', 'true', 'odc', 'default', 'master', '是否开启消息通知，默认 false，表示不开启') ON DUPLICATE KEY update `id`=`id`;
 insert into `config_system_configuration` (`key`, `value`, `application`, `profile`, `label`, `description`)
 VALUES ('odc.notification.event-dequeue-batch-size', '5', 'odc', 'default', 'master', '批量处理事件数量，默认 5') ON DUPLICATE KEY update `id`=`id`;
 insert into `config_system_configuration` (`key`, `value`, `application`, `profile`, `label`, `description`)

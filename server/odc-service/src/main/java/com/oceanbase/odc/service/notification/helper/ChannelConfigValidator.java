@@ -15,8 +15,13 @@
  */
 package com.oceanbase.odc.service.notification.helper;
 
+import java.util.Map;
+
+import org.apache.commons.collections4.MapUtils;
 import org.springframework.stereotype.Component;
 
+import com.oceanbase.odc.common.json.JsonUtils;
+import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.core.shared.exception.NotImplementedException;
 import com.oceanbase.odc.service.notification.model.BaseChannelConfig;
@@ -76,6 +81,24 @@ public class ChannelConfigValidator {
 
     private void validateWebhookChannelConfig(WebhookChannelConfig channelConfig) {
         Verify.notEmpty(channelConfig.getWebhook(), "webhook");
+        Verify.verify(channelConfig.getWebhook().startsWith("http://"), "Webhook should start with 'http://'");
+
+        String headersTemplate = channelConfig.getHeadersTemplate();
+        if (StringUtils.isNotEmpty(headersTemplate)) {
+            String[] split = headersTemplate.split(";");
+            for (String header : split) {
+                Verify.verify(2 == header.split(":").length, "Invalid header: " + header);
+            }
+        }
+
+        String responseValidation = channelConfig.getResponseValidation();
+        if (StringUtils.isNotEmpty(responseValidation) && responseValidation.startsWith("{")) {
+            Map map = JsonUtils.fromJson(responseValidation, Map.class);
+            if (MapUtils.isEmpty(map)) {
+                throw new IllegalArgumentException("Please enter a valid Json map for validation");
+            }
+        }
+
     }
 
 }
