@@ -173,7 +173,7 @@ public class OBMySQLAutoPartitionExtensionPoint implements AutoPartitionExtensio
 
     @Override
     public PartitionExprGenerator getPartitionExpressionGeneratorByName(@NonNull String name) {
-        List<PartitionExprGenerator> candidates = new ArrayList<>(2);
+        List<PartitionExprGenerator> candidates = new ArrayList<>(4);
         candidates.add(new OBMySQLSqlExprPartitionExprGenerator());
         candidates.add(new OBMySQLTimeIncreasePartitionExprGenerator());
         candidates.add(new OBMySQLHistoricalPartitionPlanCreateGenerator());
