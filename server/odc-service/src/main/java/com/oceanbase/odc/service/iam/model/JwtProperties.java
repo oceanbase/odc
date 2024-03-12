@@ -18,7 +18,7 @@ package com.oceanbase.odc.service.iam.model;
 public class JwtProperties {
 
     public static final String ID = "id";
-    public static final String TOKEN = "token";
+    public static final String ODC_JWT_TOKEN = "odc_jwt_token";
 
     public static final String AUTHENTICATION_KEY = "authentication";
 

@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.common.jwt;
+package com.oceanbase.odc.service.iam;
 
 import java.util.Date;
 import java.util.HashMap;
@@ -21,16 +21,25 @@ import java.util.Map;
 
 import org.junit.Assert;
 import org.junit.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 
 import com.auth0.jwt.interfaces.Claim;
+import com.oceanbase.odc.ServiceTestEnv;
 
-public class JwtUtilsTest {
+public class JwtServiceTest extends ServiceTestEnv {
+    @Value("${odc.iam.auth.jwt.buffer-time:3*60*1000}")
+    private long bufferTime;
+
+    @Autowired
+    private JwtService jwtService;
+
     @Test
     public void testSignPositive() {
         Map<String, Object> map = new HashMap<>();
         map.put("userId", 123);
         map.put("username", "testUser");
-        String token = JwtUtils.sign(map);
+        String token = jwtService.sign(map);
         Assert.assertNotNull(token);
     }
 
@@ -39,13 +48,13 @@ public class JwtUtilsTest {
         Map<String, Object> map = new HashMap<>();
         map.put("userId", 123);
         map.put("username", "testUser");
-        String token = JwtUtils.sign(map);
-        Assert.assertTrue(JwtUtils.verify(token));
+        String token = jwtService.sign(map);
+        Assert.assertTrue(jwtService.verify(token));
     }
 
     @Test
     public void testVerifyNegative() {
-        Assert.assertFalse(JwtUtils.verify("invalidToken"));
+        Assert.assertFalse(jwtService.verify("invalidToken"));
     }
 
     @Test
@@ -53,8 +62,8 @@ public class JwtUtilsTest {
         Map<String, Object> map = new HashMap<>();
         map.put("userId", 123);
         map.put("username", "testUser");
-        String token = JwtUtils.sign(map);
-        Map<String, Claim> claims = JwtUtils.getClaims(token);
+        String token = jwtService.sign(map);
+        Map<String, Claim> claims = jwtService.getClaims(token);
         Assert.assertNotNull(claims);
         Assert.assertEquals(new Integer(123), claims.get("userId").asInt());
         Assert.assertEquals("testUser", claims.get("username").asString());
@@ -65,8 +74,8 @@ public class JwtUtilsTest {
         Map<String, Object> map = new HashMap<>();
         map.put("userId", 123);
         map.put("username", "testUser");
-        String token = JwtUtils.sign(map);
-        Date expiresAt = JwtUtils.getExpiresAt(token);
+        String token = jwtService.sign(map);
+        Date expiresAt = jwtService.getExpiresAt(token);
         Assert.assertNotNull(expiresAt);
     }
 
@@ -75,21 +84,21 @@ public class JwtUtilsTest {
         Map<String, Object> map = new HashMap<>();
         map.put("userId", 123);
         map.put("username", "testUser");
-        String token = JwtUtils.sign(map);
-        Date issuedAt = JwtUtils.getIssuedAt(token);
+        String token = jwtService.sign(map);
+        Date issuedAt = jwtService.getIssuedAt(token);
         Assert.assertNotNull(issuedAt);
     }
 
     @Test
     public void testIsExpired() {
         Date expiration = new Date(System.currentTimeMillis() - 1000);
-        Assert.assertTrue(JwtUtils.isExpired(expiration));
+        Assert.assertTrue(jwtService.isExpired(expiration));
     }
 
     @Test
     public void testIsRenew() {
-        Date expiration = new Date(System.currentTimeMillis() + JwtUtils.BUFFER_TIME - 1000);
-        Assert.assertTrue(JwtUtils.isRenew(expiration));
+        Date expiration = new Date(System.currentTimeMillis() + bufferTime - 1000);
+        Assert.assertTrue(jwtService.isRenew(expiration));
     }
 
     @Test
@@ -97,8 +106,8 @@ public class JwtUtilsTest {
         Map<String, Object> map = new HashMap<>();
         map.put("userId", 123);
         map.put("username", "testUser");
-        String token = JwtUtils.sign(map);
-        String header = JwtUtils.getHeaderByBase64(token);
+        String token = jwtService.sign(map);
+        String header = jwtService.getHeaderByBase64(token);
         Assert.assertEquals("{\"typ\":\"JWT\",\"alg\":\"HS256\"}", header);
     }
 

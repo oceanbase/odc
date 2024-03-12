@@ -39,7 +39,6 @@ import org.springframework.stereotype.Component;
 
 import com.github.benmanes.caffeine.cache.Cache;
 import com.oceanbase.odc.common.json.JsonUtils;
-import com.oceanbase.odc.common.jwt.JwtUtils;
 import com.oceanbase.odc.common.trace.TraceContextHolder;
 import com.oceanbase.odc.core.authority.SecurityManager;
 import com.oceanbase.odc.core.authority.exception.AuthenticationException;
@@ -53,6 +52,7 @@ import com.oceanbase.odc.service.common.response.SuccessResponse;
 import com.oceanbase.odc.service.common.util.SpringContextUtil;
 import com.oceanbase.odc.service.common.util.WebRequestUtils;
 import com.oceanbase.odc.service.common.util.WebResponseUtils;
+import com.oceanbase.odc.service.iam.JwtService;
 import com.oceanbase.odc.service.iam.LoginHistoryService;
 import com.oceanbase.odc.service.iam.OrganizationMapper;
 import com.oceanbase.odc.service.iam.model.JwtProperties;
@@ -71,6 +71,8 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @Component
 public class CustomAuthenticationSuccessHandler extends SavedRequestAwareAuthenticationSuccessHandler {
+    @Autowired
+    private JwtService jwtService;
     @Autowired
     private OrganizationRepository organizationRepository;
 
@@ -147,7 +149,7 @@ public class CustomAuthenticationSuccessHandler extends SavedRequestAwareAuthent
             if (requestURI.contains("/login")) {
                 SuccessResponse<String> successResponse = Responses.success("ok");
                 /**
-                 * todo 在这里将authentication对象生成token，放在响应头中传回前端。
+                 * todo 在这里将authentication对象生成token，放在cookie中传回前端。
                  */
                 HashMap<String, Object> hashMap = new HashMap<>();
                 User user = (User) authentication.getPrincipal();
@@ -155,14 +157,12 @@ public class CustomAuthenticationSuccessHandler extends SavedRequestAwareAuthent
                 hashMap.put(JwtProperties.PRINCIPAL, user.getAccountName());
                 hashMap.put(JwtProperties.ORGANIZATION_ID, user.getOrganizationId());
                 hashMap.put(JwtProperties.ORGANIZATION_TYPE, JsonUtils.toJson(user.getOrganizationType()));
-                String token = JwtUtils.sign(hashMap);
-                Cookie cookie = new Cookie(JwtProperties.TOKEN, token);
+                String token = jwtService.sign(hashMap);
+                Cookie cookie = new Cookie(JwtProperties.ODC_JWT_TOKEN, token);
                 cookie.setPath("/");
                 cookie.setMaxAge(24 * 60 * 60);
                 cookie.setHttpOnly(true);
                 httpServletResponse.addCookie(cookie);
-
-                // httpServletResponse.setHeader(JwtProperties.TOKEN, token);
                 authenticationCache.put(user.getId(), authentication);
                 WebResponseUtils.writeJsonObjectWithOkStatus(successResponse, httpServletRequest, httpServletResponse);
             } else {

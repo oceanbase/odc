@@ -65,6 +65,9 @@ import lombok.extern.slf4j.Slf4j;
 @ConditionalOnProperty(value = {"odc.iam.auth.type"}, havingValue = "local")
 public class WebSecurityConfiguration extends WebSecurityConfigurerAdapter {
 
+    @Autowired
+    private CustomLogoutSuccessHandler customLogoutSuccessHandler;
+
     @Value("${odc.iam.authentication.captcha.enabled:false}")
     private boolean captchaEnabled;
 
@@ -165,7 +168,7 @@ public class WebSecurityConfiguration extends WebSecurityConfigurerAdapter {
             .and()
                 .logout()
                 .logoutUrl(commonSecurityProperties.getLogoutUri())
-                .logoutSuccessHandler(new CustomLogoutSuccessHandler())
+                .logoutSuccessHandler(customLogoutSuccessHandler)
                 .deleteCookies(commonSecurityProperties.getSessionCookieKey())
                 .invalidateHttpSession(true).permitAll()
 /*            .and()

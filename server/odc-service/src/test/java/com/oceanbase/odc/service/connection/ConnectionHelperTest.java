@@ -80,6 +80,11 @@ public class ConnectionHelperTest {
         public String decrypt(String encryptedText) {
             return encryptedText;
         }
+
+        @Override
+        public String encrypt(String test) {
+            return test;
+        }
     }
 
 }
