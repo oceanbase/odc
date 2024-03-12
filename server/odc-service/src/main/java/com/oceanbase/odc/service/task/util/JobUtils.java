@@ -29,6 +29,7 @@ import com.google.gson.reflect.TypeToken;
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.common.util.SystemUtils;
 import com.oceanbase.odc.core.shared.Verify;
+import com.oceanbase.odc.core.shared.constant.ConnectType;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.objectstorage.cloud.model.ObjectStorageConfiguration;
 import com.oceanbase.odc.service.task.constants.JobConstants;
@@ -133,7 +134,17 @@ public class JobUtils {
         config.setDefaultSchema(System.getProperty(JobEnvKeyConstants.ODC_EXECUTOR_DATABASE_NAME));
         config.setUsername(System.getProperty(JobEnvKeyConstants.ODC_EXECUTOR_DATABASE_USERNAME));
         config.setPassword(System.getProperty(JobEnvKeyConstants.ODC_EXECUTOR_DATABASE_PASSWORD));
+        config.setType(ConnectType.valueOf(
+                SystemUtils.getEnvOrProperty(JobEnvKeyConstants.ODC_EXECUTOR_DATABASE_CONNECT_TYPE)));
         config.setId(1L);
+
+        log.info("JobEnvKeyConstants.ODC_EXECUTOR_DATABASE_HOST ={}", config.getHost());
+        log.info("JobEnvKeyConstants.ODC_EXECUTOR_DATABASE_PORT ={}", config.getPort());
+        log.info("JobEnvKeyConstants.ODC_EXECUTOR_DATABASE_NAME ={}", config.getDefaultSchema());
+        log.info("JobEnvKeyConstants.ODC_EXECUTOR_DATABASE_USERNAME ={}", config.getUsername());
+        log.info("JobEnvKeyConstants.ODC_EXECUTOR_DATABASE_PASSWORD ={}", config.getPassword());
+        log.info("JobEnvKeyConstants.ODC_EXECUTOR_DATABASE_TYPE ={}", config.getType().name());
+
         return config;
     }
 

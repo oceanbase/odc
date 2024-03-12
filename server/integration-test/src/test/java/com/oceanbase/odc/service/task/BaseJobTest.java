@@ -21,6 +21,7 @@ import java.io.IOException;
 import org.junit.BeforeClass;
 import org.mockito.Mockito;
 
+import com.oceanbase.odc.core.shared.constant.ConnectType;
 import com.oceanbase.odc.service.common.model.HostProperties;
 import com.oceanbase.odc.service.task.config.DefaultJobConfiguration;
 import com.oceanbase.odc.service.task.config.JobConfigurationHolder;
@@ -51,6 +52,7 @@ public abstract class BaseJobTest {
         System.setProperty(JobEnvKeyConstants.ODC_EXECUTOR_DATABASE_USERNAME,
                 JdbcUtil.buildUser(tdc.getUsername(), tdc.getTenant(), tdc.getCluster()));
         System.setProperty(JobEnvKeyConstants.ODC_EXECUTOR_DATABASE_PASSWORD, tdc.getPassword());
+        System.setProperty(JobEnvKeyConstants.ODC_EXECUTOR_DATABASE_CONNECT_TYPE, ConnectType.MYSQL.name());
         String port = "8990";
         System.setProperty(JobEnvKeyConstants.REPORT_ENABLED, Boolean.FALSE.toString());
         System.setProperty(JobEnvKeyConstants.ODC_EXECUTOR_USER_ID, "1");

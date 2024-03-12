@@ -22,6 +22,7 @@ import java.util.function.Supplier;
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.common.trace.TraceContextHolder;
 import com.oceanbase.odc.common.util.SystemUtils;
+import com.oceanbase.odc.core.shared.constant.ConnectType;
 import com.oceanbase.odc.service.objectstorage.cloud.model.CloudEnvConfigurations;
 import com.oceanbase.odc.service.task.config.JobConfigurationHolder;
 import com.oceanbase.odc.service.task.constants.JobConstants;
@@ -59,15 +60,16 @@ public class JobEnvironmentFactory {
     }
 
     private void setDatabaseEnv() {
-        putFromEnv(JobEnvKeyConstants.ODC_EXECUTOR_DATABASE_HOST);
-        putFromEnv(JobEnvKeyConstants.ODC_EXECUTOR_DATABASE_PORT);
-        putFromEnv(JobEnvKeyConstants.ODC_EXECUTOR_DATABASE_NAME);
-        putFromEnv(JobEnvKeyConstants.ODC_EXECUTOR_DATABASE_USERNAME);
-        putFromEnv(JobEnvKeyConstants.ODC_EXECUTOR_DATABASE_PASSWORD);
+        putFromEnv(JobEnvKeyConstants.ODC_EXECUTOR_DATABASE_HOST, "ODC_DATABASE_HOST");
+        putFromEnv(JobEnvKeyConstants.ODC_EXECUTOR_DATABASE_PORT, "ODC_DATABASE_PORT");
+        putFromEnv(JobEnvKeyConstants.ODC_EXECUTOR_DATABASE_NAME, "ODC_DATABASE_NAME");
+        putFromEnv(JobEnvKeyConstants.ODC_EXECUTOR_DATABASE_USERNAME, "ODC_DATABASE_USERNAME");
+        putFromEnv(JobEnvKeyConstants.ODC_EXECUTOR_DATABASE_PASSWORD, "ODC_DATABASE_PASSWORD");
+        environments.put(JobEnvKeyConstants.ODC_EXECUTOR_DATABASE_CONNECT_TYPE, ConnectType.OB_MYSQL.name());
     }
 
-    private void putFromEnv(String envName) {
-        putEnv(envName, () -> SystemUtils.getEnvOrProperty(envName));
+    private void putFromEnv(String newEnv, String fromEnv) {
+        putEnv(newEnv, () -> SystemUtils.getEnvOrProperty(fromEnv));
     }
 
 

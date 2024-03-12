@@ -27,7 +27,9 @@ import org.apache.logging.log4j.core.LoggerContext;
 import com.oceanbase.odc.common.trace.TaskContextHolder;
 import com.oceanbase.odc.common.trace.TraceContextHolder;
 import com.oceanbase.odc.common.util.SystemUtils;
+import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.shared.Verify;
+import com.oceanbase.odc.service.session.factory.DefaultConnectSessionFactory;
 import com.oceanbase.odc.service.task.caller.JobContext;
 import com.oceanbase.odc.service.task.caller.JobEnvironmentEncryptor;
 import com.oceanbase.odc.service.task.constants.JobEnvKeyConstants;
@@ -60,6 +62,9 @@ public class TaskApplication {
         }
         EmbedServer server = new EmbedServer();
         try {
+            ConnectionSession connectionSession = new DefaultConnectSessionFactory(
+                    JobUtils.getMetaDBConnectionConfig()).generateSession();
+            connectionSession.expire();
             server.start();
             log.info("Starting embed server.");
             Task<?> task = TaskFactory.create(context.getJobClass());

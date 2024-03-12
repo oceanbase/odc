@@ -16,6 +16,8 @@
 
 package com.oceanbase.odc.service.task.constants;
 
+import com.oceanbase.odc.core.shared.constant.ConnectType;
+
 /**
  * Task framework environment constants. Using 'ODC_' prefix to avoid duplication.
  * 
@@ -56,6 +58,8 @@ public class JobEnvKeyConstants {
     public static final String ODC_EXECUTOR_DATABASE_USERNAME = "ODC_EXECUTOR_DATABASE_USERNAME";
 
     public static final String ODC_EXECUTOR_DATABASE_PASSWORD = "ODC_EXECUTOR_DATABASE_PASSWORD";
+
+    public static final String ODC_EXECUTOR_DATABASE_CONNECT_TYPE = ConnectType.OB_MYSQL.name();
 
     public static final String ENCRYPT_KEY = "ENCRYPT_KEY";
 
