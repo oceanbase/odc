@@ -36,6 +36,7 @@ import com.oceanbase.odc.common.util.JdbcOperationsUtil;
 import com.oceanbase.odc.config.jpa.OdcJpaRepository.ValueGetterBuilder;
 import com.oceanbase.odc.core.migrate.JdbcMigratable;
 import com.oceanbase.odc.core.migrate.Migratable;
+import com.oceanbase.odc.core.shared.constant.TaskErrorStrategy;
 import com.oceanbase.odc.metadb.partitionplan.PartitionPlanEntity;
 import com.oceanbase.odc.metadb.partitionplan.PartitionPlanEntity_;
 import com.oceanbase.odc.metadb.partitionplan.PartitionPlanTableEntity;
@@ -49,7 +50,9 @@ import com.oceanbase.odc.plugin.task.api.partitionplan.invoker.partitionname.Dat
 import com.oceanbase.odc.plugin.task.api.partitionplan.invoker.partitionname.PartitionNameGenerator;
 import com.oceanbase.odc.plugin.task.api.partitionplan.model.DateBasedPartitionNameGeneratorConfig;
 import com.oceanbase.odc.plugin.task.api.partitionplan.model.TimeIncreaseGeneratorConfig;
+import com.oceanbase.odc.service.partitionplan.model.PartitionPlanConfig;
 import com.oceanbase.odc.service.partitionplan.model.PartitionPlanStrategy;
+import com.oceanbase.odc.service.partitionplan.model.PartitionPlanTableConfig;
 
 import lombok.Getter;
 import lombok.Setter;
@@ -89,6 +92,7 @@ public class V42417HistoricalPartitionPlanMigrate implements JdbcMigratable {
                         .flatMap(i -> i.getPartitionPlanTableEntityWrappers().stream()
                                 .flatMap(j -> j.getPartitionKeyEntities().stream()))
                         .collect(Collectors.toList()));
+                batchUpdateScheduleParameterJson(jdbcTemplate, partitionPlanWrappers);
             } catch (Exception e) {
                 log.warn("Failed to migrate historical partition plan", e);
                 status.setRollbackOnly();
@@ -266,6 +270,30 @@ public class V42417HistoricalPartitionPlanMigrate implements JdbcMigratable {
         IntStream.range(1, getter.size() + 1).forEach(i -> valueGetterMap.put(i, getter.get(i - 1)));
         JdbcOperationsUtil.batchCreate(jdbcTemplate, entities, sql, valueGetterMap,
                 PartitionPlanTablePartitionKeyEntity::setId);
+    }
+
+    private void batchUpdateScheduleParameterJson(JdbcTemplate jdbcTemplate,
+            List<PartitionPlanEntityWrapper> wrappers) {
+        List<Object[]> params = wrappers.stream().map(wrapper -> {
+            PartitionPlanConfig config = mapToModel(wrapper);
+            return new Object[] {JsonUtils.toJson(config), wrapper.getScheduleId()};
+        }).collect(Collectors.toList());
+        jdbcTemplate.batchUpdate("update schedule_schedule set job_parameters_json=? where id=?", params);
+    }
+
+    private PartitionPlanConfig mapToModel(PartitionPlanEntityWrapper wrapper) {
+        PartitionPlanConfig parameter = new PartitionPlanConfig();
+        parameter.setErrorStrategy(TaskErrorStrategy.ABORT);
+        parameter.setTimeoutMillis(172800000L);
+        parameter.setId(wrapper.getId());
+        parameter.setTaskId(0L);
+        parameter.setFlowInstanceId(wrapper.getFlowInstanceId());
+        parameter.setPartitionTableConfigs(wrapper.getPartitionPlanTableEntityWrappers().stream().map(i -> {
+            PartitionPlanTableConfig cfg = new PartitionPlanTableConfig();
+            cfg.setId(i.getId());
+            return cfg;
+        }).collect(Collectors.toList()));
+        return parameter;
     }
 
     @Getter
