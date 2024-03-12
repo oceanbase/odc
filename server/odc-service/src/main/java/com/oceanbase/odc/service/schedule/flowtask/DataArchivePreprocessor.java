@@ -20,6 +20,7 @@ import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
 
+import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionConstants;
 import com.oceanbase.odc.core.session.ConnectionSessionFactory;
@@ -85,8 +86,6 @@ public class DataArchivePreprocessor extends AbstractDlmJobPreprocessor {
             // permission to access it.
             Database sourceDb = databaseService.detail(dataArchiveParameters.getSourceDatabaseId());
             Database targetDb = databaseService.detail(dataArchiveParameters.getTargetDataBaseId());
-            checkDatasource(sourceDb.getDataSource());
-            checkDatasource(targetDb.getDataSource());
             dataArchiveParameters.setSourceDatabaseName(sourceDb.getName());
             dataArchiveParameters.setTargetDatabaseName(targetDb.getName());
             dataArchiveParameters.setSourceDataSourceName(sourceDb.getDataSource().getName());
@@ -158,19 +157,28 @@ public class DataArchivePreprocessor extends AbstractDlmJobPreprocessor {
                         String.format("Unsupported data archiving link from %s to %s.", sourceDbType, targetDbType));
             }
         }
+        if (sourceDbType == DialectType.OB_ORACLE) {
+            if (targetDbType != DialectType.OB_ORACLE) {
+                throw new UnsupportedException(
+                        String.format("Unsupported data archiving link from %s to %s.", sourceDbType, targetDbType));
+            }
+        }
     }
 
     private void initDefaultConfig(DataArchiveParameters parameters) {
         parameters.setReadThreadCount(
                 (int) (dlmConfiguration.getSingleTaskThreadPoolSize() * dlmConfiguration.getReadWriteRatio()
                         / (1 + dlmConfiguration.getReadWriteRatio())));
-        parameters.setWriteThreadCount(dlmConfiguration.getDlmThreadPoolSize() - parameters.getReadThreadCount());
+        parameters
+                .setWriteThreadCount(dlmConfiguration.getSingleTaskThreadPoolSize() - parameters.getReadThreadCount());
         parameters.setScanBatchSize(dlmConfiguration.getDefaultScanBatchSize());
         parameters.setQueryTimeout(dlmConfiguration.getTaskConnectionQueryTimeout());
         parameters.setShardingStrategy(dlmConfiguration.getShardingStrategy());
         // set default target table name.
         parameters.getTables().forEach(tableConfig -> {
-            tableConfig.setTargetTableName(tableConfig.getTableName());
+            if (StringUtils.isEmpty(tableConfig.getTargetTableName())) {
+                tableConfig.setTargetTableName(tableConfig.getTableName());
+            }
         });
     }
 
