@@ -121,9 +121,6 @@ public class CommonSecurityProperties {
     @Value("${odc.web.security.cors.allowedOrigins:*}")
     private List<String> corsAllowedOrigins;
 
-    @Value("${odc.task-framework.enabled:true}")
-    private boolean taskFrameworkEnabled;
-
     @PostConstruct
     public void init() {
         log.info("Common security properties initialized, "
@@ -132,10 +129,7 @@ public class CommonSecurityProperties {
     }
 
     public String[] getAuthWhitelist() {
-        if (taskFrameworkEnabled) {
-            return ArrayUtils.addAll(buildInAuthWhitelist, TASK_WHITE_LIST);
-        }
-        return ArrayUtils.addAll(buildInAuthWhitelist);
+        return ArrayUtils.addAll(buildInAuthWhitelist, TASK_WHITE_LIST);
     }
 
     public String[] getTaskWhiteList() {
