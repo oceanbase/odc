@@ -28,6 +28,7 @@ import javax.sql.DataSource;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import com.oceanbase.odc.common.jpa.InsertSqlTemplateBuilder;
 import com.oceanbase.odc.common.json.JsonUtils;
@@ -68,36 +69,33 @@ public class V42417HistoricalPartitionPlanMigrate implements JdbcMigratable {
     @Override
     public void migrate(DataSource dataSource) {
         JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
-        clean(jdbcTemplate);
         List<PartitionPlanEntityWrapper> partitionPlanWrappers = generatePartitionPlanEntities(jdbcTemplate);
         if (CollectionUtils.isEmpty(partitionPlanWrappers)) {
             return;
         }
-        try {
-            batchCreatePartiPlans(jdbcTemplate, new ArrayList<>(partitionPlanWrappers));
-            partitionPlanWrappers.forEach(i -> i.getPartitionPlanTableEntityWrappers()
-                    .forEach(j -> j.setPartitionPlanId(i.getId())));
-            batchCreatePartiPlanTables(jdbcTemplate, partitionPlanWrappers.stream()
-                    .flatMap(i -> i.getPartitionPlanTableEntityWrappers().stream())
-                    .collect(Collectors.toList()));
-            partitionPlanWrappers.forEach(i -> i.getPartitionPlanTableEntityWrappers()
-                    .forEach(j -> j.getPartitionKeyEntities()
-                            .forEach(k -> k.setPartitionplanTableId(j.getId()))));
-            batchCreatePartiPlanTableKeys(jdbcTemplate, partitionPlanWrappers.stream()
-                    .flatMap(i -> i.getPartitionPlanTableEntityWrappers().stream()
-                            .flatMap(j -> j.getPartitionKeyEntities().stream()))
-                    .collect(Collectors.toList()));
-        } catch (Exception e) {
-            log.warn("Failed to migrate historical partition plan", e);
-            clean(jdbcTemplate);
-            throw new IllegalStateException("failed to migrate historical partition plan");
-        }
-    }
-
-    private void clean(JdbcTemplate jdbcTemplate) {
-        jdbcTemplate.execute("delete from partitionplan where 1=1");
-        jdbcTemplate.execute("delete from partitionplan_table where 1=1");
-        jdbcTemplate.execute("delete from partitionplan_table_partitionkey where 1=1");
+        TransactionTemplate transactionTemplate = JdbcOperationsUtil.getTransactionTemplate(dataSource);
+        transactionTemplate.execute(status -> {
+            try {
+                batchCreatePartiPlans(jdbcTemplate, new ArrayList<>(partitionPlanWrappers));
+                partitionPlanWrappers.forEach(i -> i.getPartitionPlanTableEntityWrappers()
+                        .forEach(j -> j.setPartitionPlanId(i.getId())));
+                batchCreatePartiPlanTables(jdbcTemplate, partitionPlanWrappers.stream()
+                        .flatMap(i -> i.getPartitionPlanTableEntityWrappers().stream())
+                        .collect(Collectors.toList()));
+                partitionPlanWrappers.forEach(i -> i.getPartitionPlanTableEntityWrappers()
+                        .forEach(j -> j.getPartitionKeyEntities()
+                                .forEach(k -> k.setPartitionplanTableId(j.getId()))));
+                batchCreatePartiPlanTableKeys(jdbcTemplate, partitionPlanWrappers.stream()
+                        .flatMap(i -> i.getPartitionPlanTableEntityWrappers().stream()
+                                .flatMap(j -> j.getPartitionKeyEntities().stream()))
+                        .collect(Collectors.toList()));
+            } catch (Exception e) {
+                log.warn("Failed to migrate historical partition plan", e);
+                status.setRollbackOnly();
+                throw new IllegalStateException("failed to migrate historical partition plan");
+            }
+            return null;
+        });
     }
 
     private List<PartitionPlanEntityWrapper> generatePartitionPlanEntities(JdbcTemplate jdbcTemplate) {
