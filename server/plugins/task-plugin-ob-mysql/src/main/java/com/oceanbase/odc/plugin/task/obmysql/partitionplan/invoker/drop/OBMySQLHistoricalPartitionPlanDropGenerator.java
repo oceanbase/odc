@@ -39,7 +39,7 @@ import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * {@link OBMySQLKeepLatestPartitionByTimeGenerator} is a deprecated invoker, only for historic
+ * {@link OBMySQLHistoricalPartitionPlanDropGenerator} is a deprecated invoker, only for historic
  * partition plan data migration
  *
  * @author yh263208
@@ -49,7 +49,7 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 @Deprecated
-public class OBMySQLKeepLatestPartitionByTimeGenerator implements DropPartitionGenerator {
+public class OBMySQLHistoricalPartitionPlanDropGenerator implements DropPartitionGenerator {
     /**
      * candidates:
      * <li>1 -> YEAR 2 -> MONTH 5 -> DAY</li>
@@ -59,7 +59,7 @@ public class OBMySQLKeepLatestPartitionByTimeGenerator implements DropPartitionG
 
     @Override
     public String getName() {
-        return "KEEP_MOST_LATEST_BY_TIME_GENERATOR";
+        return "HISTORICAL_PARTITION_PLAN_DROP_GENERATOR";
     }
 
     @Override

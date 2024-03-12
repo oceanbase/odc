@@ -35,7 +35,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 
 import com.oceanbase.odc.plugin.schema.obmysql.OBMySQLTableExtension;
 import com.oceanbase.odc.plugin.task.api.partitionplan.invoker.drop.DropPartitionGenerator;
-import com.oceanbase.odc.plugin.task.obmysql.partitionplan.invoker.drop.OBMySQLKeepLatestPartitionByTimeGenerator;
+import com.oceanbase.odc.plugin.task.obmysql.partitionplan.invoker.drop.OBMySQLHistoricalPartitionPlanDropGenerator;
 import com.oceanbase.odc.test.database.TestDBConfiguration;
 import com.oceanbase.odc.test.database.TestDBConfigurations;
 import com.oceanbase.tools.dbbrowser.model.DBTable;
@@ -43,13 +43,13 @@ import com.oceanbase.tools.dbbrowser.model.DBTableAbstractPartitionDefinition;
 import com.oceanbase.tools.dbbrowser.model.DBTablePartitionDefinition;
 
 /**
- * Test cases for {@link OBMySQLKeepLatestPartitionByTimeGenerator}
+ * Test cases for {@link OBMySQLHistoricalPartitionPlanDropGenerator}
  *
  * @author yh263208
  * @date 2024-03-11 16:39
  * @since ODC-release_3.2.4
  */
-public class OBMySQLKeepLatestPartitionByTimeGeneratorTest {
+public class OBMySQLHistoricalPartitionPlanDropGeneratorTest {
 
     public static final String DATETIME_RANGE_PARTI_TBL = "datetime_range_parti_tbl";
     public static final String UNIXTIMESTAMP_RANGE_PARTI_TBL = "unixtimestamp_range_parti_tbl";
@@ -76,7 +76,7 @@ public class OBMySQLKeepLatestPartitionByTimeGeneratorTest {
             OBMySQLTableExtension tableExtension = new OBMySQLTableExtension();
             DBTable dbTable = tableExtension.getDetail(connection,
                     configuration.getDefaultDBName(), DATETIME_RANGE_PARTI_TBL);
-            DropPartitionGenerator generator = new OBMySQLKeepLatestPartitionByTimeGenerator();
+            DropPartitionGenerator generator = new OBMySQLHistoricalPartitionPlanDropGenerator();
             List<DBTablePartitionDefinition> toDelete = generator.invoke(connection, dbTable, getParameters(2, 3));
             List<String> actuals = toDelete.stream().map(DBTableAbstractPartitionDefinition::getName)
                     .collect(Collectors.toList());
@@ -91,7 +91,7 @@ public class OBMySQLKeepLatestPartitionByTimeGeneratorTest {
             OBMySQLTableExtension tableExtension = new OBMySQLTableExtension();
             DBTable dbTable = tableExtension.getDetail(connection,
                     configuration.getDefaultDBName(), UNIXTIMESTAMP_RANGE_PARTI_TBL);
-            DropPartitionGenerator generator = new OBMySQLKeepLatestPartitionByTimeGenerator();
+            DropPartitionGenerator generator = new OBMySQLHistoricalPartitionPlanDropGenerator();
             List<DBTablePartitionDefinition> toDelete = generator.invoke(connection, dbTable, getParameters(2, 3));
             List<String> actuals = toDelete.stream().map(DBTableAbstractPartitionDefinition::getName)
                     .collect(Collectors.toList());
@@ -101,8 +101,8 @@ public class OBMySQLKeepLatestPartitionByTimeGeneratorTest {
 
     private Map<String, Object> getParameters(int periodUnit, int expirePeriod) {
         Map<String, Object> parameters = new HashMap<>();
-        parameters.put(OBMySQLKeepLatestPartitionByTimeGenerator.PERIOD_UNIT_KEY, periodUnit);
-        parameters.put(OBMySQLKeepLatestPartitionByTimeGenerator.EXPIRE_PERIOD_KEY, expirePeriod);
+        parameters.put(OBMySQLHistoricalPartitionPlanDropGenerator.PERIOD_UNIT_KEY, periodUnit);
+        parameters.put(OBMySQLHistoricalPartitionPlanDropGenerator.EXPIRE_PERIOD_KEY, expirePeriod);
         return parameters;
     }
 

@@ -171,7 +171,7 @@ public class V42417HistoricalPartitionPlanMigrate implements JdbcMigratable {
                     dropParameters.put("periodUnit",
                             getCalendarUnit(Integer.parseInt(rs.getString("expire_period_unit"))));
                     dropParameters.put("expirePeriod", rs.getInt("expire_period"));
-                    dropEntity.setPartitionKeyInvoker("KEEP_MOST_LATEST_BY_TIME_GENERATOR");
+                    dropEntity.setPartitionKeyInvoker("HISTORICAL_PARTITION_PLAN_DROP_GENERATOR");
                     dropEntity.setPartitionKeyInvokerParameters(JsonUtils.toJson(dropParameters));
                     entity.setPartitionKeyEntities(Arrays.asList(createEntity, dropEntity));
                     return entity;

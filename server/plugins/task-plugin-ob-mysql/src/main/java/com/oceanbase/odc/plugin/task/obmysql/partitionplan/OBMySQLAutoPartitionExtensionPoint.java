@@ -46,7 +46,7 @@ import com.oceanbase.odc.plugin.task.obmysql.partitionplan.invoker.OBMySQLExprCa
 import com.oceanbase.odc.plugin.task.obmysql.partitionplan.invoker.SqlExprCalculator;
 import com.oceanbase.odc.plugin.task.obmysql.partitionplan.invoker.create.OBMySQLSqlExprPartitionExprGenerator;
 import com.oceanbase.odc.plugin.task.obmysql.partitionplan.invoker.create.OBMySQLTimeIncreasePartitionExprGenerator;
-import com.oceanbase.odc.plugin.task.obmysql.partitionplan.invoker.drop.OBMySQLKeepLatestPartitionByTimeGenerator;
+import com.oceanbase.odc.plugin.task.obmysql.partitionplan.invoker.drop.OBMySQLHistoricalPartitionPlanDropGenerator;
 import com.oceanbase.odc.plugin.task.obmysql.partitionplan.invoker.drop.OBMySQLKeepLatestPartitionGenerator;
 import com.oceanbase.odc.plugin.task.obmysql.partitionplan.invoker.partitionname.OBMySQLDateBasedPartitionNameGenerator;
 import com.oceanbase.odc.plugin.task.obmysql.partitionplan.invoker.partitionname.OBMySQLExprBasedPartitionNameGenerator;
@@ -165,7 +165,7 @@ public class OBMySQLAutoPartitionExtensionPoint implements AutoPartitionExtensio
     public DropPartitionGenerator getDropPartitionGeneratorByName(@NonNull String name) {
         List<DropPartitionGenerator> candidates = new ArrayList<>(4);
         candidates.add(new OBMySQLKeepLatestPartitionGenerator());
-        candidates.add(new OBMySQLKeepLatestPartitionByTimeGenerator());
+        candidates.add(new OBMySQLHistoricalPartitionPlanDropGenerator());
         return candidates.stream().filter(i -> Objects.equals(i.getName(), name)).findFirst()
                 .orElseThrow(() -> new IllegalArgumentException("Failed to find generator by name " + name));
     }
