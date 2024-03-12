@@ -1,4 +1,4 @@
-create table `${const:com.oceanbase.odc.plugin.task.obmysql.partitionplan.OBMySQLKeepLatestPartitionByTimeGeneratorTest.DATETIME_RANGE_PARTI_TBL}` (
+create table `${const:com.oceanbase.odc.plugin.task.obmysql.partitionplan.OBMySQLHistoricalPartitionPlanDropGeneratorTest.DATETIME_RANGE_PARTI_TBL}` (
     id int(11),
     parti_key datetime
 ) partition by range columns(parti_key) (
@@ -11,7 +11,7 @@ create table `${const:com.oceanbase.odc.plugin.task.obmysql.partitionplan.OBMySQ
     partition p20240301 values less than ('2024-03-01 00:00:00')
 );
 
-create table `${const:com.oceanbase.odc.plugin.task.obmysql.partitionplan.OBMySQLKeepLatestPartitionByTimeGeneratorTest.UNIXTIMESTAMP_RANGE_PARTI_TBL}` (
+create table `${const:com.oceanbase.odc.plugin.task.obmysql.partitionplan.OBMySQLHistoricalPartitionPlanDropGeneratorTest.UNIXTIMESTAMP_RANGE_PARTI_TBL}` (
     id int(11),
     parti_key timestamp
 ) partition by range (UNIX_TIMESTAMP(parti_key)) (

@@ -51,6 +51,9 @@ public class V42417HistoricalPartitionPlanMigrateTest extends ServiceTestEnv {
 
     @Before
     public void setUp() {
+        this.partitionPlanRepository.deleteAll();
+        this.partitionPlanTableRepository.deleteAll();
+        this.planTablePartitionKeyRepository.deleteAll();
         this.jdbcTemplate.execute("delete from table_partition_plan where 1=1");
         this.jdbcTemplate.execute("delete from connection_partition_plan where 1=1");
         this.jdbcTemplate.execute("INSERT INTO `connection_partition_plan` (`id`, `connection_id`, "
