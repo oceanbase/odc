@@ -45,7 +45,6 @@ import com.oceanbase.odc.metadb.partitionplan.PartitionPlanTablePartitionKeyEnti
 import com.oceanbase.odc.metadb.partitionplan.PartitionPlanTablePartitionKeyEntity_;
 import com.oceanbase.odc.plugin.task.api.partitionplan.datatype.TimeDataType;
 import com.oceanbase.odc.plugin.task.api.partitionplan.invoker.create.PartitionExprGenerator;
-import com.oceanbase.odc.plugin.task.api.partitionplan.invoker.create.TimeIncreasePartitionExprGenerator;
 import com.oceanbase.odc.plugin.task.api.partitionplan.invoker.partitionname.DateBasedPartitionNameGenerator;
 import com.oceanbase.odc.plugin.task.api.partitionplan.invoker.partitionname.PartitionNameGenerator;
 import com.oceanbase.odc.plugin.task.api.partitionplan.model.DateBasedPartitionNameGeneratorConfig;
@@ -161,7 +160,7 @@ public class V42417HistoricalPartitionPlanMigrate implements JdbcMigratable {
                     createParameters.put(PartitionExprGenerator.GENERATE_COUNT_KEY,
                             rs.getInt("pre_create_partition_count"));
                     createParameters.put(PartitionExprGenerator.GENERATOR_PARAMETER_KEY, createConfig);
-                    createEntity.setPartitionKeyInvoker(TimeIncreasePartitionExprGenerator.GENERATOR_NAME);
+                    createEntity.setPartitionKeyInvoker("HISTORICAL_PARTITION_PLAN_CREATE_GENERATOR");
                     createEntity.setPartitionKeyInvokerParameters(JsonUtils.toJson(createParameters));
 
                     PartitionPlanTablePartitionKeyEntity dropEntity =
