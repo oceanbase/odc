@@ -501,8 +501,11 @@ public class ScheduleService {
         Long projectId = scheduleEntity.getProjectId();
         if (isWrite) {
             List<ResourceRoleName> resourceRoleNames = getApproverRoleNames(scheduleEntity);
-            if ((Objects.nonNull(projectId) && !projectPermissionValidator.hasProjectRole(projectId, resourceRoleNames))
-                    && authenticationFacade.currentUserId() != projectId) {
+            if (resourceRoleNames.isEmpty()) {
+                resourceRoleNames = ResourceRoleName.all();
+            }
+            if ((Objects.nonNull(projectId)
+                    && !projectPermissionValidator.hasProjectRole(projectId, resourceRoleNames))) {
                 throw new AccessDeniedException();
             }
         } else {
