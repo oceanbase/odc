@@ -154,6 +154,13 @@ public abstract class BaseFlowUserTaskInstance extends BaseFlowNodeInstance {
         update();
     }
 
+
+    protected void completeAuto(Map<String, Object> variables, String userTaskId) {
+        taskService.complete(userTaskId, variables);
+        setStatus(FlowNodeStatus.COMPLETED);
+        update();
+    }
+
     protected Optional<Task> getUserTask() {
         if (this.userTaskId == null) {
             log.warn("userTaskId is empty, flowInstanceId={}, instanceId={}",

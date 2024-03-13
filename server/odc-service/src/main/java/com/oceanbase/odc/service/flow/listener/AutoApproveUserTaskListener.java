@@ -15,7 +15,6 @@
  */
 package com.oceanbase.odc.service.flow.listener;
 
-import org.flowable.engine.TaskService;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 
 import com.oceanbase.odc.common.event.AbstractEventListener;
@@ -38,18 +37,16 @@ public class AutoApproveUserTaskListener extends AbstractEventListener<UserTaskC
 
     private final ThreadPoolTaskExecutor executorService;
     private final RetryExecutor retryExecutor =
-            RetryExecutor.builder().initialDelay(true).retryIntervalMillis(1000).retryTimes(10).build();
+            RetryExecutor.builder().initialDelay(true).retryIntervalMillis(1000).retryTimes(3).build();
 
     static class AutoApproveTask implements Runnable {
 
         private final RetryExecutor retryExecutor;
         private final FlowApprovalInstance approvalInstance;
-        private final TaskService taskService;
 
-        public AutoApproveTask(FlowApprovalInstance approvalInstance, RetryExecutor retryExecutor, TaskService taskService) {
+        public AutoApproveTask(FlowApprovalInstance approvalInstance, RetryExecutor retryExecutor) {
             this.retryExecutor = retryExecutor;
             this.approvalInstance = approvalInstance;
-            this.taskService = taskService;
         }
 
         @Override
@@ -60,8 +57,7 @@ public class AutoApproveUserTaskListener extends AbstractEventListener<UserTaskC
         private boolean approve() {
             Long flowInstanceId = approvalInstance.getFlowInstanceId();
             try {
-                // approvalInstance.approve("system auto-approval", true);
-                taskService.complete(approvalInstance.getUserTaskId());
+                approvalInstance.approve("system auto-approval", true);
                 log.info("Auto-approval succeeded, flowInstanceId={}", flowInstanceId);
                 return true;
             } catch (Exception e) {
@@ -81,9 +77,7 @@ public class AutoApproveUserTaskListener extends AbstractEventListener<UserTaskC
         if (!approvalInstance.isAutoApprove()) {
             return;
         }
-        // this.executorService.submit(new AutoApproveTask(approvalInst
-        // ance, retryExecutor));
-        new AutoApproveTask(approvalInstance, retryExecutor, event.getTaskService()).run();
+        new AutoApproveTask(approvalInstance, retryExecutor).run();
     }
 
 }
