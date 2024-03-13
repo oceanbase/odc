@@ -32,6 +32,7 @@ import com.oceanbase.odc.service.sqlcheck.model.SqlCheckRuleType;
 import com.oceanbase.tools.sqlparser.OBOracleSQLParser;
 import com.oceanbase.tools.sqlparser.statement.Statement;
 import com.oceanbase.tools.sqlparser.statement.alter.table.AlterTable;
+import com.oceanbase.tools.sqlparser.statement.alter.table.AlterTableAction;
 import com.oceanbase.tools.sqlparser.statement.createtable.CreateTable;
 import com.oceanbase.tools.sqlparser.statement.truncate.TruncateTable;
 
@@ -63,10 +64,10 @@ public class OracleOfflineDdlExists extends MySQLOfflineDdlExists {
             CreateTable createTable = getTable(alterTable.getSchema(), alterTable.getTableName(), context);
             return alterTable.getAlterTableActions().stream().flatMap(action -> {
                 List<CheckViolation> violations = new ArrayList<>();
-                violations.addAll(changeColumnToAutoIncrement(statement, createTable, action));
+                violations.addAll(addAutoIncrementColumn(statement, action));
                 violations.addAll(changeColumnToPK(statement, action));
                 violations.addAll(dropColumn(statement, action));
-                violations.addAll(addOrDropPK(statement, action));
+                violations.addAll(addOrDropPK(createTable, statement, action));
                 violations.addAll(modifyPartition(statement, action));
                 violations.addAll(dropPartition(statement, action));
                 violations.addAll(truncatePartition(statement, action));
@@ -74,12 +75,12 @@ public class OracleOfflineDdlExists extends MySQLOfflineDdlExists {
             }).collect(Collectors.toList());
         } else if (statement instanceof TruncateTable) {
             return Collections.singletonList(SqlCheckUtil.buildViolation(statement.getText(),
-                    statement, getType(), new Object[] {}));
+                    statement, getType(), new Object[] {"TRUNCATE table"}));
         } else if (statement instanceof DropStatement) {
             DropStatement dropStatement = (DropStatement) statement;
             if ("TABLE".equals(dropStatement.getObjectType())) {
                 return Collections.singletonList(SqlCheckUtil.buildViolation(statement.getText(),
-                        statement, getType(), new Object[] {}));
+                        statement, getType(), new Object[] {"Drop table"}));
             }
         }
         return Collections.emptyList();
@@ -111,6 +112,17 @@ public class OracleOfflineDdlExists extends MySQLOfflineDdlExists {
         } catch (Exception e) {
             return null;
         }
+    }
+
+    @Override
+    protected List<CheckViolation> addAutoIncrementColumn(Statement statement, AlterTableAction action) {
+        return addColumn(action, definition -> {
+            if (definition.getGenerateOption() == null || !definition.getGenerateOption().isAsIdentity()) {
+                return null;
+            }
+            return SqlCheckUtil.buildViolation(statement.getText(), action, getType(),
+                    new Object[] {"Add auto-increment column"});
+        });
     }
 
 }

@@ -23,6 +23,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.jdbc.core.JdbcOperations;
@@ -83,7 +84,7 @@ public class MySQLOfflineDdlExists implements SqlCheckRule {
                 violations.addAll(changeColumnToPK(statement, action));
                 violations.addAll(addOrDropStoredVirtualColumn(statement, action));
                 violations.addAll(dropColumn(statement, action));
-                violations.addAll(addOrDropPK(statement, action));
+                violations.addAll(addOrDropPK(createTable, statement, action));
                 violations.addAll(changeCharsetOrCollation(statement, action));
                 violations.addAll(modifyPartition(statement, action));
                 violations.addAll(dropPartition(statement, action));
@@ -92,12 +93,12 @@ public class MySQLOfflineDdlExists implements SqlCheckRule {
             }).collect(Collectors.toList());
         } else if (statement instanceof TruncateTable) {
             return Collections.singletonList(SqlCheckUtil.buildViolation(statement.getText(),
-                    statement, getType(), new Object[] {}));
+                    statement, getType(), new Object[] {"TRUNCATE table"}));
         } else if (statement instanceof DropStatement) {
             DropStatement dropStatement = (DropStatement) statement;
             if ("TABLE".equals(dropStatement.getObjectType())) {
                 return Collections.singletonList(SqlCheckUtil.buildViolation(statement.getText(),
-                        statement, getType(), new Object[] {}));
+                        statement, getType(), new Object[] {"Drop table"}));
             }
         }
         return Collections.emptyList();
@@ -106,7 +107,8 @@ public class MySQLOfflineDdlExists implements SqlCheckRule {
     protected List<CheckViolation> addColumnInLocation(Statement statement, AlterTableAction action) {
         return addColumn(action, definition -> {
             if (definition.getLocation() != null) {
-                return SqlCheckUtil.buildViolation(statement.getText(), action, getType(), new Object[] {});
+                return SqlCheckUtil.buildViolation(statement.getText(), action, getType(),
+                        new Object[] {"Add columns in the middle (BEFORE/AFTER/FIRST)"});
             }
             return null;
         });
@@ -119,14 +121,15 @@ public class MySQLOfflineDdlExists implements SqlCheckRule {
             if (origin == null || Objects.equals(origin.getDataType(), changed.getDataType())) {
                 return null;
             }
-            return SqlCheckUtil.buildViolation(statement.getText(), action, getType(), new Object[] {});
+            return SqlCheckUtil.buildViolation(statement.getText(), action, getType(),
+                    new Object[] {"Modify column data type"});
         });
     }
 
     protected List<CheckViolation> modifyPartition(Statement statement, AlterTableAction action) {
         if (action.getModifyPartition() != null) {
             return Collections.singletonList(SqlCheckUtil.buildViolation(statement.getText(),
-                    action, getType(), new Object[] {}));
+                    action, getType(), new Object[] {"Modify partition"}));
         }
         return Collections.emptyList();
     }
@@ -135,7 +138,7 @@ public class MySQLOfflineDdlExists implements SqlCheckRule {
         if (CollectionUtils.isNotEmpty(action.getDropPartitionNames())
                 || CollectionUtils.isNotEmpty(action.getDropSubPartitionNames())) {
             return Collections.singletonList(SqlCheckUtil.buildViolation(statement.getText(),
-                    action, getType(), new Object[] {}));
+                    action, getType(), new Object[] {"Drop partition"}));
         }
         return Collections.emptyList();
     }
@@ -144,7 +147,7 @@ public class MySQLOfflineDdlExists implements SqlCheckRule {
         if (CollectionUtils.isNotEmpty(action.getTruncatePartitionNames())
                 || CollectionUtils.isNotEmpty(action.getTruncateSubPartitionNames())) {
             return Collections.singletonList(SqlCheckUtil.buildViolation(statement.getText(),
-                    action, getType(), new Object[] {}));
+                    action, getType(), new Object[] {"TRUNCATE partition"}));
         }
         return Collections.emptyList();
     }
@@ -152,7 +155,7 @@ public class MySQLOfflineDdlExists implements SqlCheckRule {
     protected List<CheckViolation> dropColumn(Statement statement, AlterTableAction action) {
         if (CollectionUtils.isNotEmpty(action.getDropColumns())) {
             return Collections.singletonList(SqlCheckUtil.buildViolation(statement.getText(),
-                    action, getType(), new Object[] {}));
+                    action, getType(), new Object[] {"Drop column"}));
         }
         return Collections.emptyList();
     }
@@ -161,7 +164,8 @@ public class MySQLOfflineDdlExists implements SqlCheckRule {
         return addColumn(action, definition -> {
             if (definition.getColumnAttributes() != null
                     && Boolean.TRUE.equals(definition.getColumnAttributes().getAutoIncrement())) {
-                return SqlCheckUtil.buildViolation(statement.getText(), action, getType(), new Object[] {});
+                return SqlCheckUtil.buildViolation(statement.getText(), action, getType(),
+                        new Object[] {"Add auto-increment column"});
             }
             return null;
         });
@@ -171,22 +175,52 @@ public class MySQLOfflineDdlExists implements SqlCheckRule {
         return addColumn(action, definition -> {
             if (definition.getGenerateOption() != null
                     && Type.STORED.equals(definition.getGenerateOption().getType())) {
-                return SqlCheckUtil.buildViolation(statement.getText(), action, getType(), new Object[] {});
+                return SqlCheckUtil.buildViolation(statement.getText(), action, getType(),
+                        new Object[] {"Add/Drop STORED generated columns"});
             }
             return null;
         });
     }
 
-    protected List<CheckViolation> addOrDropPK(Statement statement, AlterTableAction action) {
+    protected List<CheckViolation> addOrDropPK(CreateTable createTable,
+            Statement statement, AlterTableAction action) {
         List<CheckViolation> violations = new ArrayList<>();
         if (action == null) {
             return violations;
         }
+        if (CollectionUtils.isNotEmpty(action.getDropConstraintNames()) && createTable != null) {
+            List<String> pkConstraintNames = createTable.getColumnDefinitions().stream().flatMap(d -> {
+                if (d.getColumnAttributes() == null) {
+                    return Stream.empty();
+                }
+                return d.getColumnAttributes().getConstraints().stream()
+                        .filter(c -> c.isPrimaryKey() && c.getConstraintName() != null)
+                        .map(InLineConstraint::getConstraintName);
+            }).collect(Collectors.toList());
+            if (CollectionUtils.isNotEmpty(createTable.getConstraints())) {
+                pkConstraintNames.addAll(createTable.getConstraints().stream().flatMap(c -> {
+                    if (!c.isPrimaryKey() || c.getConstraintName() == null) {
+                        return Stream.empty();
+                    }
+                    return Stream.of(c.getConstraintName());
+                }).collect(Collectors.toList()));
+            }
+            List<String> droppedNames = action.getDropConstraintNames().stream()
+                    .map(this::unquoteIdentifier).collect(Collectors.toList());
+            pkConstraintNames = pkConstraintNames.stream()
+                    .map(this::unquoteIdentifier).collect(Collectors.toList());
+            if (CollectionUtils.containsAny(droppedNames, pkConstraintNames)) {
+                violations.add(SqlCheckUtil.buildViolation(statement.getText(), action, getType(),
+                        new Object[] {"Drop primary keys"}));
+            }
+        }
         if (Boolean.TRUE.equals(action.getDropPrimaryKey())) {
-            violations.add(SqlCheckUtil.buildViolation(statement.getText(), action, getType(), new Object[] {}));
+            violations.add(SqlCheckUtil.buildViolation(statement.getText(), action, getType(),
+                    new Object[] {"Add primary keys"}));
         }
         if (action.getAddConstraint() != null && action.getAddConstraint().isPrimaryKey()) {
-            violations.add(SqlCheckUtil.buildViolation(statement.getText(), action, getType(), new Object[] {}));
+            violations.add(SqlCheckUtil.buildViolation(statement.getText(), action, getType(),
+                    new Object[] {"Drop primary keys"}));
         }
         return violations;
     }
@@ -194,7 +228,8 @@ public class MySQLOfflineDdlExists implements SqlCheckRule {
     protected List<CheckViolation> changeColumnInLocation(Statement statement, AlterTableAction action) {
         return changeColumn(action, definition -> {
             if (definition.getLocation() != null) {
-                return SqlCheckUtil.buildViolation(statement.getText(), action, getType(), new Object[] {});
+                return SqlCheckUtil.buildViolation(statement.getText(), action, getType(),
+                        new Object[] {"Rearrange (BEFORE/AFTER/FIRST)"});
             }
             return null;
         });
@@ -213,7 +248,8 @@ public class MySQLOfflineDdlExists implements SqlCheckRule {
                     && Boolean.TRUE.equals(changed.getColumnAttributes().getAutoIncrement())) {
                 return null;
             }
-            return SqlCheckUtil.buildViolation(statement.getText(), action, getType(), new Object[] {});
+            return SqlCheckUtil.buildViolation(statement.getText(), action, getType(),
+                    new Object[] {"Modify to auto-increment column"});
         });
     }
 
@@ -225,14 +261,15 @@ public class MySQLOfflineDdlExists implements SqlCheckRule {
                             .noneMatch(InLineConstraint::isPrimaryKey)) {
                 return null;
             }
-            return SqlCheckUtil.buildViolation(statement.getText(), action, getType(), new Object[] {});
+            return SqlCheckUtil.buildViolation(statement.getText(), action, getType(),
+                    new Object[] {"Modify column as primary key"});
         });
     }
 
     protected List<CheckViolation> changeCharsetOrCollation(Statement statement, AlterTableAction action) {
         if (action.getCharset() != null || action.getCollation() != null) {
             return Collections.singletonList(SqlCheckUtil.buildViolation(statement.getText(),
-                    action, getType(), new Object[] {}));
+                    action, getType(), new Object[] {"Convert character set"}));
         }
         return Collections.emptyList();
     }
