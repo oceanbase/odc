@@ -38,7 +38,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.validation.annotation.Validated;
 
-import com.oceanbase.odc.common.util.SystemUtils;
 import com.oceanbase.odc.core.authority.SecurityManager;
 import com.oceanbase.odc.core.authority.exception.AccessDeniedException;
 import com.oceanbase.odc.core.authority.model.DefaultSecurityResource;
