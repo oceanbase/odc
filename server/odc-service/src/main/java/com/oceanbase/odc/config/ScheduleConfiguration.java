@@ -125,7 +125,7 @@ public class ScheduleConfiguration {
         executor.setWaitForTasksToCompleteOnShutdown(true);
         executor.setAwaitTerminationSeconds(5);
         executor.setTaskDecorator(new TraceDecorator<>());
-        executor.setRejectedExecutionHandler(new ThreadPoolExecutor.AbortPolicy());
+        executor.setRejectedExecutionHandler(new ThreadPoolExecutor.CallerRunsPolicy());
         executor.initialize();
         log.info("flowTaskExecutor initialized");
         return executor;

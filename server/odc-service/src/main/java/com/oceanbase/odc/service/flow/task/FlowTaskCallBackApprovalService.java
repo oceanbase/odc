@@ -28,8 +28,8 @@ import org.flowable.engine.TaskService;
 import org.flowable.task.api.Task;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.support.TransactionTemplate;
 
+import com.oceanbase.odc.common.util.RetryExecutor;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.flow.model.FlowableElement;
 import com.oceanbase.odc.core.flow.model.FlowableElementType;
@@ -70,8 +70,9 @@ public class FlowTaskCallBackApprovalService {
     private ServiceTaskInstanceRepository serviceTaskRepository;
     @Autowired
     private ScheduleService scheduleService;
-    @Autowired
-    private TransactionTemplate transactionTemplate;
+
+    private final RetryExecutor retryExecutor =
+            RetryExecutor.builder().initialDelay(true).retryIntervalMillis(1000).retryTimes(10).build();
 
     public void approval(long flowInstanceId, long flowTaskInstanceId, FlowNodeStatus flowNodeStatus,
             Map<String, Object> approvalVariables) {
@@ -88,22 +89,37 @@ public class FlowTaskCallBackApprovalService {
 
         if (!flowNodeStatus.isFinalStatus()) {
             log.warn(
-                    "Task is not terminated, callback failed, flowInstanceId={}, flowTaskInstanceId={}, taskStatus={}.",
+                    "Task is not terminated, callback failed, flowInstanceId={}, flowTaskInstanceId={}, flowNodeStatus={}.",
                     flowInstanceId, flowTaskInstanceId, flowNodeStatus);
             return;
         }
-        FlowInstanceEntity flowInstance = getFlowInstance(flowInstanceId);
-        FlowableElement flowableElement = getFlowableElementOfUserTask(flowTaskInstanceId);
-        Task task = getFlowableTask(flowInstance, flowableElement.getName());
-        Map<String, Object> variables = new HashMap<>();
-        variables.putIfAbsent(APPROVAL_VARIABLE_NAME, flowNodeStatus == FlowNodeStatus.COMPLETED);
-        if (approvalVariables != null && !approvalVariables.isEmpty()) {
-            variables.putAll(approvalVariables);
-        }
-        transactionTemplate.executeWithoutResult(action -> {
-            updateFlowInstance(flowInstanceId, flowTaskInstanceId, flowNodeStatus);
+
+        retryExecutor.run(
+                () -> completeTask(flowInstanceId, flowTaskInstanceId, flowNodeStatus, approvalVariables),
+                r -> r);
+        updateFlowInstance(flowInstanceId, flowTaskInstanceId, flowNodeStatus);
+    }
+
+    private boolean completeTask(long flowInstanceId, long flowTaskInstanceId, FlowNodeStatus flowNodeStatus,
+            Map<String, Object> approvalVariables) {
+        try {
+            FlowInstanceEntity flowInstance = getFlowInstance(flowInstanceId);
+            FlowableElement flowableElement = getFlowableElementOfUserTask(flowTaskInstanceId);
+            Task task = getFlowableTask(flowInstance, flowableElement.getName());
+            Map<String, Object> variables = new HashMap<>();
+            variables.putIfAbsent(APPROVAL_VARIABLE_NAME, flowNodeStatus == FlowNodeStatus.COMPLETED);
+            if (approvalVariables != null && !approvalVariables.isEmpty()) {
+                variables.putAll(approvalVariables);
+            }
             flowableTaskService.complete(task.getId(), variables);
-        });
+            log.warn("complete task succeed, flowInstanceId={}, flowTaskInstanceId={}, flowNodeStatus={}.",
+                flowInstanceId, flowTaskInstanceId, flowNodeStatus);
+            return true;
+        } catch (Exception e) {
+            log.warn("complete task failed, flowInstanceId={}, flowTaskInstanceId={}, flowNodeStatus={}.",
+                    flowInstanceId, flowTaskInstanceId, flowNodeStatus);
+            return false;
+        }
     }
 
     private void updateFlowInstance(long flowInstanceId, long flowTaskInstanceId, FlowNodeStatus flowNodeStatus) {

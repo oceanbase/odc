@@ -188,7 +188,7 @@ public class DatabaseService {
         if (Objects.nonNull(entity.getProjectId())) {
             projectPermissionValidator.checkProjectRole(entity.getProjectId(), ResourceRoleName.all());
         }
-        return entitiesToModels(new PageImpl<>(Collections.singletonList(entity)), true).getContent().get(0);
+        return entityToModel(entity);
     }
 
     @SkipAuthorize("odc internal usage")
