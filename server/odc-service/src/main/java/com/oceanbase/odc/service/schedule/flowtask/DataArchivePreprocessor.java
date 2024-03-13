@@ -94,8 +94,10 @@ public class DataArchivePreprocessor extends AbstractDlmJobPreprocessor {
             dataArchiveParameters.setSourceDataSourceName(sourceDb.getDataSource().getName());
             dataArchiveParameters.setTargetDataSourceName(targetDb.getDataSource().getName());
             ConnectionConfig sourceDs = sourceDb.getDataSource();
-            sourceDs = SpringContextUtil.getBean(ConnectionService.class).getForConnectionSkipPermissionCheck(sourceDs.getId());
-            ConnectionConfig  targetDs = SpringContextUtil.getBean(ConnectionService.class).getForConnectionSkipPermissionCheck(targetDb.getDataSource().getId());
+            sourceDs = SpringContextUtil.getBean(ConnectionService.class)
+                    .getForConnectionSkipPermissionCheck(sourceDs.getId());
+            ConnectionConfig targetDs = SpringContextUtil.getBean(ConnectionService.class)
+                    .getForConnectionSkipPermissionCheck(targetDb.getDataSource().getId());
             sourceDs.setDefaultSchema(sourceDb.getName());
             ConnectionSessionFactory sourceSessionFactory = new DefaultConnectSessionFactory(sourceDs);
             ConnectionSessionFactory targetSessionFactory = new DefaultConnectSessionFactory(targetDs);

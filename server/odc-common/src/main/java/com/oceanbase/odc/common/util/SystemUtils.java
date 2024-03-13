@@ -124,7 +124,12 @@ public abstract class SystemUtils {
      */
     public static long getSystemFreeMemory() {
         OperatingSystemMXBean osBean = ManagementFactory.getPlatformMXBean(OperatingSystemMXBean.class);
-        return (osBean.getFreeSwapSpaceSize() + osBean.getFreePhysicalMemorySize()) / 1024 / 1024;
+        long freePhysical = osBean.getFreePhysicalMemorySize() / 1024 / 1024;
+        if (!isOnLinux()) {
+            // swap space size is 0 in docker,  getFreeSwapSpaceSize will return physical memory size
+            freePhysical = osBean.getFreeSwapSpaceSize() / 1024 / 1024;
+        }
+        return freePhysical;
     }
 
     public static Map<String, String> getSystemEnv() {
@@ -154,6 +159,8 @@ public abstract class SystemUtils {
         }
         return false;
     }
+
+
 
     public static long getProcessPid(Process process) {
         long pid = -1;

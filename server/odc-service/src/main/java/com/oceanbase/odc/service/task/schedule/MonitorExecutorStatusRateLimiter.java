@@ -33,6 +33,7 @@ import lombok.extern.slf4j.Slf4j;
 public class MonitorExecutorStatusRateLimiter implements StartJobRateLimiter {
 
     private final Supplier<TaskFrameworkProperties> taskFrameworkProperties;
+
     public MonitorExecutorStatusRateLimiter(Supplier<TaskFrameworkProperties> taskFrameworkProperties) {
         this.taskFrameworkProperties = taskFrameworkProperties;
     }
