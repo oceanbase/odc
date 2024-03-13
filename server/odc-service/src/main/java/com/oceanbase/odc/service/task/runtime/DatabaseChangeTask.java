@@ -113,6 +113,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class DatabaseChangeTask extends BaseTask<FlowTaskResult> {
+    private static final Long RETRY_SLEEP_INTERVAL_MILLIS = 3 * 60 * 1000L;
 
     private ConnectionSession connectionSession;
     private DatabaseChangeTaskParameters parameters;
@@ -217,44 +218,19 @@ public class DatabaseChangeTask extends BaseTask<FlowTaskResult> {
                         initializer.init(con);
                         return null;
                     });
-                    List<JdbcGeneralResult> results =
-                            executor.execute((StatementCallback<List<JdbcGeneralResult>>) stmt -> {
-                                stmt.setQueryTimeout((int) TimeUnit.MILLISECONDS
-                                        .toSeconds(this.databaseChangeParameters.getTimeoutMillis()));
-                                return statementCallback.doInStatement(stmt);
-                            });
-                    Verify.notEmpty(results, "resultList");
-                    GeneralSqlType sqlType = parseSqlType(sql);
-                    for (JdbcGeneralResult result : results) {
-                        SqlExecuteResult executeResult = new SqlExecuteResult(result);
-                        if (GeneralSqlType.DQL == sqlType) {
-                            containQuery = true;
-                            if (this.parameters.isNeedDataMasking()) {
-                                tryDataMasking(executeResult);
-                            }
-                        }
-                        queryResultSetBuffer.add(executeResult);
-                    }
+
+                    RetryCallBack callBack = new RetryCallBack();
+                    retryStatement(callBack, executor, statementCallback, sql);
                     appendResultToJsonFile(queryResultSetBuffer, index == 1, !sqlIterator.hasNext());
                     writeCsvFiles(queryResultSetBuffer);
                     queryResultSetBuffer.clear();
-                    boolean success = true;
-                    for (JdbcGeneralResult result : results) {
-                        SqlExecuteResult executeResult = new SqlExecuteResult(result);
-                        if (executeResult.getStatus() != SqlExecuteStatus.SUCCESS) {
-                            failCount++;
-                            log.warn("Error occurs when executing sql: {}, error message: {}", sql,
-                                    executeResult.getTrack());
-                            // only record info of failed sqls
-                            addErrorRecordsToFile(index, sql, executeResult.getTrack());
-                            success = false;
-                            break;
-                        }
-                    }
-                    if (success) {
+
+                    if (callBack.success) {
                         successCount++;
                     } else {
-                        if (TaskErrorStrategy.ABORT.equals(this.databaseChangeParameters.getErrorStrategy())) {
+                        failCount++;
+                        addErrorRecordsToFile(index, sql, callBack.track);
+                        if (TaskErrorStrategy.ABORT.equals(databaseChangeParameters.getErrorStrategy())) {
                             aborted = true;
                             break;
                         }
@@ -317,6 +293,62 @@ public class DatabaseChangeTask extends BaseTask<FlowTaskResult> {
         taskResult.setErrorRecordsFilePath(errorRecordsFilePath);
         taskResult.setAutoModifyTimeout(parameters.isAutoModifyTimeout());
         return taskResult;
+    }
+
+    private void retryStatement(RetryCallBack retryCallBack, JdbcOperations executor,
+            StatementCallback<List<JdbcGeneralResult>> statementCallback, String sql) {
+        boolean success = true;
+        GeneralSqlType sqlType = parseSqlType(sql);
+        for (int retryCount = 0; retryCount <= databaseChangeParameters.getRetryTimes(); retryCount++) {
+            success = true;
+            try {
+                queryResultSetBuffer.clear();
+                List<JdbcGeneralResult> results =
+                        executor.execute((StatementCallback<List<JdbcGeneralResult>>) stmt -> {
+                            stmt.setQueryTimeout(
+                                    (int) TimeUnit.MILLISECONDS.toSeconds(databaseChangeParameters.getTimeoutMillis()));
+                            return statementCallback.doInStatement(stmt);
+                        });
+                Verify.notEmpty(results, "resultList");
+                for (JdbcGeneralResult result : results) {
+                    SqlExecuteResult executeResult = new SqlExecuteResult(result);
+                    if (GeneralSqlType.DQL == sqlType) {
+                        this.containQuery = true;
+                        if (this.parameters.isNeedDataMasking()) {
+                            tryDataMasking(executeResult);
+                        }
+                    }
+                    queryResultSetBuffer.add(executeResult);
+
+                    if (executeResult.getStatus() != SqlExecuteStatus.SUCCESS) {
+                        log.warn("Error occurs when executing sql: {}, error message: {}", sql,
+                                executeResult.getTrack());
+                        success = false;
+                        retryCallBack.track = executeResult.getTrack();
+                    }
+                }
+            } catch (Exception e) {
+                if (retryCount == databaseChangeParameters.getRetryTimes()) {
+                    throw e;
+                }
+                success = false;
+                log.warn("Error occurs when executing sql: {}, error message: {}", sql, e.getMessage());
+            }
+            if (success || retryCount == databaseChangeParameters.getRetryTimes()) {
+                break;
+            } else {
+                log.warn(String.format("Will retry for the %sth time in %s seconds...", retryCount + 1,
+                        RETRY_SLEEP_INTERVAL_MILLIS / 1000));
+                try {
+                    Thread.sleep(RETRY_SLEEP_INTERVAL_MILLIS);
+                } catch (InterruptedException e) {
+                    log.warn("Database change task is interrupted, task will exit", e);
+                    canceled = true;
+                    break;
+                }
+            }
+        }
+        retryCallBack.success = success;
     }
 
     private ConnectionSession generateSession() {
@@ -607,6 +639,11 @@ public class DatabaseChangeTask extends BaseTask<FlowTaskResult> {
             this.sql = sql;
             this.fileName = fileName;
         }
+    }
+
+    private static class RetryCallBack {
+        boolean success;
+        String track;
     }
 
 }

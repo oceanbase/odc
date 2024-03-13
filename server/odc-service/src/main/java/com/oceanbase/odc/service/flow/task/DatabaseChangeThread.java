@@ -85,6 +85,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class DatabaseChangeThread extends Thread {
+    private static final Long RETRY_SLEEP_INTERVAL_MILLIS = 3 * 60 * 1000L;
 
     private final ConnectionSession connectionSession;
     private final DatabaseChangeParameters parameters;
@@ -171,7 +172,7 @@ public class DatabaseChangeThread extends Thread {
                         initializer.init(con);
                         return null;
                     });
-                    RetryCallBack<List<JdbcGeneralResult>> callBack = new RetryCallBack<>();
+                    RetryCallBack callBack = new RetryCallBack();
                     retryStatement(callBack, executor, statementCallback, sql);
                     appendResultToJsonFile(queryResultSetBuffer, index == 1, !sqlIterator.hasNext());
                     writeCsvFiles(queryResultSetBuffer);
@@ -213,7 +214,7 @@ public class DatabaseChangeThread extends Thread {
         }
     }
 
-    private void retryStatement(RetryCallBack<List<JdbcGeneralResult>> retryCallBack, JdbcOperations executor,
+    private void retryStatement(RetryCallBack retryCallBack, JdbcOperations executor,
             StatementCallback<List<JdbcGeneralResult>> statementCallback, String sql) {
         boolean success = true;
         GeneralSqlType sqlType = parseSqlType(sql);
@@ -255,12 +256,21 @@ public class DatabaseChangeThread extends Thread {
                 if (retryCount == parameters.getRetryTimes()) {
                     throw e;
                 }
+                success = false;
                 log.warn("Error occurs when executing sql: {}, error message: {}", sql, e.getMessage());
             }
             if (success || retryCount == parameters.getRetryTimes()) {
                 break;
             } else {
-                log.warn(String.format("Will retry for the %sth time...", retryCount + 1));
+                log.warn(String.format("Will retry for the %sth time in %s seconds...", retryCount + 1,
+                        RETRY_SLEEP_INTERVAL_MILLIS / 1000));
+                try {
+                    Thread.sleep(RETRY_SLEEP_INTERVAL_MILLIS);
+                } catch (InterruptedException e) {
+                    log.warn("Database change task is interrupted, task will exit", e);
+                    stop = true;
+                    break;
+                }
             }
         }
         retryCallBack.success = success;
@@ -462,7 +472,7 @@ public class DatabaseChangeThread extends Thread {
         }
     }
 
-    private static class RetryCallBack<T> {
+    private static class RetryCallBack {
         boolean success;
         String track;
     }
