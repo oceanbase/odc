@@ -59,17 +59,16 @@ public class JobEnvironmentFactory {
     }
 
     private void setDatabaseEnv() {
-        putFromEnv(JobEnvKeyConstants.ODC_EXECUTOR_DATABASE_HOST);
-        putFromEnv(JobEnvKeyConstants.ODC_EXECUTOR_DATABASE_PORT);
-        putFromEnv(JobEnvKeyConstants.ODC_EXECUTOR_DATABASE_NAME);
-        putFromEnv(JobEnvKeyConstants.ODC_EXECUTOR_DATABASE_USERNAME);
-        putFromEnv(JobEnvKeyConstants.ODC_EXECUTOR_DATABASE_PASSWORD);
+        putFromEnv(JobEnvKeyConstants.ODC_EXECUTOR_DATABASE_HOST, "ODC_DATABASE_HOST");
+        putFromEnv(JobEnvKeyConstants.ODC_EXECUTOR_DATABASE_PORT, "ODC_DATABASE_PORT");
+        putFromEnv(JobEnvKeyConstants.ODC_EXECUTOR_DATABASE_NAME, "ODC_DATABASE_NAME");
+        putFromEnv(JobEnvKeyConstants.ODC_EXECUTOR_DATABASE_USERNAME, "ODC_DATABASE_USERNAME");
+        putFromEnv(JobEnvKeyConstants.ODC_EXECUTOR_DATABASE_PASSWORD, "ODC_DATABASE_PASSWORD");
     }
 
-    private void putFromEnv(String envName) {
-        putEnv(envName, () -> SystemUtils.getEnvOrProperty(envName));
+    private void putFromEnv(String newEnv, String fromEnv) {
+        putEnv(newEnv, () -> SystemUtils.getEnvOrProperty(fromEnv));
     }
-
 
     private void putEnv(String envName, Supplier<String> envSupplier) {
         String envValue;
