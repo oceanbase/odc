@@ -183,12 +183,12 @@ public class DatabaseService {
     }
 
     private Database getDatabase(Long id) {
-        DatabaseEntity entity = databaseRepository.findById(id)
-                .orElseThrow(() -> new NotFoundException(ResourceType.ODC_DATABASE, "id", id));
-        if (Objects.nonNull(entity.getProjectId())) {
-            projectPermissionValidator.checkProjectRole(entity.getProjectId(), ResourceRoleName.all());
+        Database database = entityToModel(databaseRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException(ResourceType.ODC_DATABASE, "id", id)));
+        if (Objects.nonNull(database.getProject()) && Objects.nonNull(database.getProject().getId())) {
+            projectPermissionValidator.checkProjectRole(database.getProject().getId(), ResourceRoleName.all());
         }
-        return entitiesToModels(new PageImpl<>(Collections.singletonList(entity)), true).getContent().get(0);
+        return database;
     }
 
     @SkipAuthorize("odc internal usage")
