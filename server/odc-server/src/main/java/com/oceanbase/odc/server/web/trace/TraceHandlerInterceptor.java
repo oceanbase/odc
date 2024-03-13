@@ -78,7 +78,7 @@ public class TraceHandlerInterceptor implements HandlerInterceptor {
             String httpMethod = request.getMethod();
             int httpStatus = response.getStatus();
             String apiMsg = String.format(
-                    "userId=%d, serverName=%s, httpMethod=%s, httpStatus=%s, odcCode=%s, fullUrl=%s, methodName=%s, rt=%s, userAgent=%s, clientAddress=%s",
+                    "userId=%s, serverName=%s, httpMethod=%s, httpStatus=%s, odcCode=%s, fullUrl=%s, methodName=%s, rt=%s, userAgent=%s, clientAddress=%s",
                     userId, SERVER, httpMethod,
                     httpStatus, TraceContextHolder.getOdcCode(), fullURL,
                     methodName, rt, userAgent, clientAddress);
