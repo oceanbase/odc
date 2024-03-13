@@ -15,19 +15,37 @@
  */
 package com.oceanbase.odc.service.task.schedule;
 
+import java.util.function.Supplier;
+
+import com.oceanbase.odc.common.util.SystemUtils;
 import com.oceanbase.odc.service.task.config.JobConfiguration;
 import com.oceanbase.odc.service.task.config.JobConfigurationHolder;
 import com.oceanbase.odc.service.task.config.TaskFrameworkProperties;
+
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * @author yaobin
  * @date 2024-02-05
  * @since 4.2.4
  */
+@Slf4j
 public class MonitorExecutorStatusRateLimiter implements StartJobRateLimiter {
+
+    private final Supplier<TaskFrameworkProperties> taskFrameworkProperties;
+    public MonitorExecutorStatusRateLimiter(Supplier<TaskFrameworkProperties> taskFrameworkProperties) {
+        this.taskFrameworkProperties = taskFrameworkProperties;
+    }
 
     @Override
     public boolean tryAcquire() {
+        if (taskFrameworkProperties.get().getRunMode().isProcess()) {
+            long systemFreeMemory = SystemUtils.getSystemFreeMemory();
+            if (systemFreeMemory < 1024) {
+                log.warn("Current free memory lack, memory is {}", systemFreeMemory);
+                return false;
+            }
+        }
         return isExecutorWaitingToRunNotExceedThreshold();
     }
 
