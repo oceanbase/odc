@@ -15,18 +15,28 @@
  */
 package com.oceanbase.odc.server.web.trace;
 
+import static com.oceanbase.odc.core.alarm.AlarmEventNames.API_TOO_LONG_RT_TIME;
+
 import java.lang.reflect.Method;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.web.method.HandlerMethod;
 import org.springframework.web.servlet.HandlerInterceptor;
 
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
 import com.oceanbase.odc.common.trace.TraceContextHolder;
 import com.oceanbase.odc.common.util.SystemUtils;
+import com.oceanbase.odc.core.alarm.AlarmUtils;
+import com.oceanbase.odc.service.config.SystemConfigService;
+import com.oceanbase.odc.service.config.model.Configuration;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -38,10 +48,17 @@ import lombok.extern.slf4j.Slf4j;
 public class TraceHandlerInterceptor implements HandlerInterceptor {
 
     private static final String SERVER = SystemUtils.getHostName();
-
+    private static final String ALARM_RT_TIME_KEY = "odc.monitor.alarm.rt.time";
+    private static final Long DEFAULT_ALARM_RT_MILLISECONDS = 20 * 1000L;
 
     @Autowired
     private WebTraceUtils webTraceUtils;
+
+    @Autowired
+    private SystemConfigService systemConfigService;
+
+    private final Cache<String, Long> configCache =
+            Caffeine.newBuilder().maximumSize(1).expireAfterWrite(2, TimeUnit.MINUTES).build();
 
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) {
@@ -60,11 +77,15 @@ public class TraceHandlerInterceptor implements HandlerInterceptor {
             long rt = TraceContextHolder.getDuration();
             String httpMethod = request.getMethod();
             int httpStatus = response.getStatus();
-            log.info(
-                    "userId={}, serverName={}, httpMethod={}, httpStatus={}, odcCode={}, fullUrl={}, methodName={}, rt={}, userAgent={}, clientAddress={}",
+            String apiMsg = String.format(
+                    "userId=%d, serverName=%s, httpMethod=%s, httpStatus=%s, odcCode=%s, fullUrl=%s, methodName=%s, rt=%s, userAgent=%s, clientAddress=%s",
                     userId, SERVER, httpMethod,
                     httpStatus, TraceContextHolder.getOdcCode(), fullURL,
                     methodName, rt, userAgent, clientAddress);
+            log.info(apiMsg);
+            if (rt > getAlarmRtMillSecond()) {
+                AlarmUtils.alarm(API_TOO_LONG_RT_TIME, apiMsg);
+            }
         } finally {
             TraceContextHolder.clear();
         }
@@ -77,5 +98,15 @@ public class TraceHandlerInterceptor implements HandlerInterceptor {
             return method.getName();
         }
         return "";
+    }
+
+    private Long getAlarmRtMillSecond() {
+        return configCache.get(ALARM_RT_TIME_KEY, (key) -> {
+            List<Configuration> configurations = systemConfigService.queryByKeyPrefix(ALARM_RT_TIME_KEY);
+            if (CollectionUtils.isNotEmpty(configurations)) {
+                return Long.valueOf(configurations.get(0).getValue());
+            }
+            return DEFAULT_ALARM_RT_MILLISECONDS;
+        });
     }
 }
