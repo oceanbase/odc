@@ -77,7 +77,8 @@ public class AutoApproveUserTaskListener extends AbstractEventListener<UserTaskC
         if (!approvalInstance.isAutoApprove()) {
             return;
         }
-        this.executorService.submit(new AutoApproveTask(approvalInstance, retryExecutor));
+        // this.executorService.submit(new AutoApproveTask(approvalInstance, retryExecutor));
+        new AutoApproveTask(approvalInstance, retryExecutor).run();
     }
 
 }

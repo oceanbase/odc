@@ -180,7 +180,9 @@ public class FlowTaskCallBackApprovalService {
     private FlowableElement getFlowableElementOfUserTask(long flowTaskInstanceId) {
         List<FlowableElement> flowableElements =
                 this.flowableAdaptor.getFlowableElementByType(flowTaskInstanceId, FlowNodeType.SERVICE_TASK,
-                        FlowableElementType.USER_TASK);
+                        FlowableElementType.USER_TASK).stream()
+                    .filter(a -> a.getName() != null && a.getName()
+                        .contains("callback")).collect(Collectors.toList());
         if (CollectionUtils.isEmpty(flowableElements)) {
             throw new IllegalStateException("No flowable element is found by id " + flowTaskInstanceId);
         }
