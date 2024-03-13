@@ -58,6 +58,7 @@ public class DefaultJobTerminateListener extends AbstractEventListener<JobTermin
                                 .fromJson(jobEntity.getJobParametersJson(), new TypeReference<Map<String, String>>() {})
                                 .get(JobParametersKeyConstants.META_TASK_PARAMETER_JSON),
                         DLMJobParameters.class);
+                scheduleService.asyncScheduleStatus(Long.parseLong(o.getJobName()));
                 // Trigger the data-delete job if necessary after the data-archive task is completed.
                 if (parameters.getJobType() == JobType.MIGRATE && parameters.isDeleteAfterMigration()) {
                     scheduleService.dataArchiveDelete(Long.parseLong(o.getJobName()), o.getId());
