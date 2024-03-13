@@ -30,13 +30,13 @@ import com.oceanbase.odc.metadb.partitionplan.PartitionPlanTablePartitionKeyRepo
 import com.oceanbase.odc.metadb.partitionplan.PartitionPlanTableRepository;
 
 /**
- * Test cases for {@link V42417HistoricalPartitionPlanMigrate}
+ * Test cases for {@link V42416HistoricalPartitionPlanMigrate}
  *
  * @author yh263208
  * @date 2024-03-12 11:22
  * @since ODC_release_4.2.4
  */
-public class V42417HistoricalPartitionPlanMigrateTest extends ServiceTestEnv {
+public class V42416HistoricalPartitionPlanMigrateTest extends ServiceTestEnv {
 
     @Autowired
     private DataSource dataSource;
@@ -75,7 +75,7 @@ public class V42417HistoricalPartitionPlanMigrateTest extends ServiceTestEnv {
 
     @Test
     public void migrate_historicalPartiPlanExists_succeed() {
-        JdbcMigratable jdbcMigratable = new V42417HistoricalPartitionPlanMigrate();
+        JdbcMigratable jdbcMigratable = new V42416HistoricalPartitionPlanMigrate();
         jdbcMigratable.migrate(dataSource);
         Assert.assertEquals(2, this.partitionPlanRepository.findAll().size());
         Assert.assertEquals(6, this.partitionPlanTableRepository.findAll().size());
