@@ -29,8 +29,6 @@ import com.oceanbase.odc.core.shared.exception.UnsupportedException;
 import com.oceanbase.odc.metadb.schedule.ScheduleEntity;
 import com.oceanbase.odc.metadb.schedule.ScheduleTaskEntity;
 import com.oceanbase.odc.plugin.connect.api.InformationExtensionPoint;
-import com.oceanbase.odc.service.common.util.SpringContextUtil;
-import com.oceanbase.odc.service.connection.ConnectionService;
 import com.oceanbase.odc.service.connection.database.DatabaseService;
 import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
@@ -94,13 +92,9 @@ public class DataArchivePreprocessor extends AbstractDlmJobPreprocessor {
             dataArchiveParameters.setSourceDataSourceName(sourceDb.getDataSource().getName());
             dataArchiveParameters.setTargetDataSourceName(targetDb.getDataSource().getName());
             ConnectionConfig sourceDs = sourceDb.getDataSource();
-            sourceDs = SpringContextUtil.getBean(ConnectionService.class)
-                    .getForConnectionSkipPermissionCheck(sourceDs.getId());
-            ConnectionConfig targetDs = SpringContextUtil.getBean(ConnectionService.class)
-                    .getForConnectionSkipPermissionCheck(targetDb.getDataSource().getId());
             sourceDs.setDefaultSchema(sourceDb.getName());
             ConnectionSessionFactory sourceSessionFactory = new DefaultConnectSessionFactory(sourceDs);
-            ConnectionSessionFactory targetSessionFactory = new DefaultConnectSessionFactory(targetDs);
+            ConnectionSessionFactory targetSessionFactory = new DefaultConnectSessionFactory(targetDb.getDataSource());
             ConnectionSession sourceSession = sourceSessionFactory.generateSession();
             ConnectionSession targetSession = targetSessionFactory.generateSession();
             try {

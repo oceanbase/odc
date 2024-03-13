@@ -118,18 +118,13 @@ public abstract class SystemUtils {
     }
 
     /**
-     * get system free memory which contain free swap space and physical memory, unit size is MB
+     * get system free physical memory, unit size is MB
      *
      * @return free memory
      */
     public static long getSystemFreeMemory() {
         OperatingSystemMXBean osBean = ManagementFactory.getPlatformMXBean(OperatingSystemMXBean.class);
-        long freePhysical = osBean.getFreePhysicalMemorySize() / 1024 / 1024;
-        if (!isOnLinux()) {
-            // swap space size is 0 in docker,  getFreeSwapSpaceSize will return physical memory size
-            freePhysical = osBean.getFreeSwapSpaceSize() / 1024 / 1024;
-        }
-        return freePhysical;
+        return osBean.getFreePhysicalMemorySize() / 1024 / 1024;
     }
 
     public static Map<String, String> getSystemEnv() {
