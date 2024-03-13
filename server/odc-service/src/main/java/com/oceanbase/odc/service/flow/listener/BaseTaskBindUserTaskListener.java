@@ -17,7 +17,7 @@ package com.oceanbase.odc.service.flow.listener;
 
 import java.util.Optional;
 
-import org.flowable.task.service.TaskService;
+import org.flowable.engine.TaskService;
 import org.flowable.task.service.delegate.DelegateTask;
 import org.springframework.beans.factory.annotation.Autowired;
 
