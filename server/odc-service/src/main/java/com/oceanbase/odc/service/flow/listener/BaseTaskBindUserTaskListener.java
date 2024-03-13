@@ -17,6 +17,7 @@ package com.oceanbase.odc.service.flow.listener;
 
 import java.util.Optional;
 
+import org.flowable.task.service.TaskService;
 import org.flowable.task.service.delegate.DelegateTask;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -51,6 +52,8 @@ public class BaseTaskBindUserTaskListener extends BaseTaskListener {
     private FlowableAdaptor flowableAdaptor;
     @Autowired
     private UserTaskInstanceRepository userTaskInstanceRepository;
+    @Autowired
+    private TaskService taskService;
 
     @Override
     protected void onTaskCreated(DelegateTask delegateTask) {
@@ -61,7 +64,7 @@ public class BaseTaskBindUserTaskListener extends BaseTaskListener {
             String userTaskId = delegateTask.getId();
             userTaskInstanceRepository.updateUserTaskIdById(approvalInstanceId, userTaskId);
             approvalInstance.setUserTaskId(userTaskId);
-            eventPublisher.publishEvent(new UserTaskCreatedEvent(delegateTask, approvalInstance));
+            eventPublisher.publishEvent(new UserTaskCreatedEvent(delegateTask, approvalInstance, taskService));
             log.info("Approval task starts execution, taskId={}, taskName={}, approvalInstanceId={}",
                     delegateTask.getId(), delegateTask.getName(), approvalInstanceId);
         } catch (Exception e) {

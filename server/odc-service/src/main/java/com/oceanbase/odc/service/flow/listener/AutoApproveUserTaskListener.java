@@ -15,6 +15,7 @@
  */
 package com.oceanbase.odc.service.flow.listener;
 
+import org.flowable.engine.TaskService;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 
 import com.oceanbase.odc.common.event.AbstractEventListener;
@@ -43,10 +44,12 @@ public class AutoApproveUserTaskListener extends AbstractEventListener<UserTaskC
 
         private final RetryExecutor retryExecutor;
         private final FlowApprovalInstance approvalInstance;
+        private final TaskService taskService;
 
-        public AutoApproveTask(FlowApprovalInstance approvalInstance, RetryExecutor retryExecutor) {
+        public AutoApproveTask(FlowApprovalInstance approvalInstance, RetryExecutor retryExecutor, TaskService taskService) {
             this.retryExecutor = retryExecutor;
             this.approvalInstance = approvalInstance;
+            this.taskService = taskService;
         }
 
         @Override
@@ -57,7 +60,8 @@ public class AutoApproveUserTaskListener extends AbstractEventListener<UserTaskC
         private boolean approve() {
             Long flowInstanceId = approvalInstance.getFlowInstanceId();
             try {
-                approvalInstance.approve("system auto-approval", true);
+                // approvalInstance.approve("system auto-approval", true);
+                taskService.complete(approvalInstance.getUserTaskId());
                 log.info("Auto-approval succeeded, flowInstanceId={}", flowInstanceId);
                 return true;
             } catch (Exception e) {
@@ -77,8 +81,9 @@ public class AutoApproveUserTaskListener extends AbstractEventListener<UserTaskC
         if (!approvalInstance.isAutoApprove()) {
             return;
         }
-        // this.executorService.submit(new AutoApproveTask(approvalInstance, retryExecutor));
-        new AutoApproveTask(approvalInstance, retryExecutor).run();
+        // this.executorService.submit(new AutoApproveTask(approvalInst
+        // ance, retryExecutor));
+        new AutoApproveTask(approvalInstance, retryExecutor, event.getTaskService()).run();
     }
 
 }

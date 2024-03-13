@@ -15,6 +15,7 @@
  */
 package com.oceanbase.odc.service.flow.event;
 
+import org.flowable.engine.TaskService;
 import org.flowable.task.service.delegate.DelegateTask;
 
 import com.oceanbase.odc.common.event.AbstractEvent;
@@ -35,6 +36,8 @@ public class UserTaskCreatedEvent extends AbstractEvent {
 
     @Getter
     private final FlowApprovalInstance approvalInstance;
+    @Getter
+    private final TaskService taskService;
 
     /**
      * Constructs a prototypical Event.
@@ -42,12 +45,14 @@ public class UserTaskCreatedEvent extends AbstractEvent {
      * @param source The object on which the Event initially occurred.
      * @throws IllegalArgumentException if source is null.
      */
-    public UserTaskCreatedEvent(Object source, @NonNull FlowApprovalInstance approvalInstance) {
+    public UserTaskCreatedEvent(Object source, @NonNull FlowApprovalInstance approvalInstance,
+            TaskService taskService) {
         super(source, EventNames.USER_TASK_CREATED);
         if (!(source instanceof DelegateTask)) {
             throw new IllegalArgumentException("Event Source is illegal");
         }
         this.approvalInstance = approvalInstance;
+        this.taskService = taskService;
     }
 
     public DelegateTask getDelegateTask() {
