@@ -118,7 +118,7 @@ public class AlterTableAction extends BaseStatement {
     @Setter(AccessLevel.NONE)
     private ColumnReference changeColumn;
     @Setter(AccessLevel.NONE)
-    private ColumnDefinition changColumnDefinition;
+    private ColumnDefinition changeColumnDefinition;
     private OutOfLineIndex addIndex;
     private String dropIndexName;
     private String dropForeignKeyName;
@@ -216,7 +216,7 @@ public class AlterTableAction extends BaseStatement {
 
     public void changeColumn(@NonNull ColumnReference column, @NonNull ColumnDefinition definition) {
         this.changeColumn = column;
-        this.changColumnDefinition = definition;
+        this.changeColumnDefinition = definition;
     }
 
     public void reorganizePartition(@NonNull List<String> names,
@@ -357,8 +357,8 @@ public class AlterTableAction extends BaseStatement {
         if (this.alterColumn != null && this.alterColumnBehavior != null) {
             builder.append(" ALTER ").append(this.alterColumn).append(" ").append(this.alterColumnBehavior);
         }
-        if (this.changColumnDefinition != null && this.changeColumn != null) {
-            builder.append(" CHANGE ").append(this.changeColumn).append(" ").append(this.changColumnDefinition);
+        if (this.changeColumnDefinition != null && this.changeColumn != null) {
+            builder.append(" CHANGE ").append(this.changeColumn).append(" ").append(this.changeColumnDefinition);
         }
         if (this.addIndex != null) {
             builder.append(" ADD ").append(this.addIndex);

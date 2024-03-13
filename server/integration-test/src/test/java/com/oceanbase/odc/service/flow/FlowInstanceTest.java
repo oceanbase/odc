@@ -141,7 +141,7 @@ public class FlowInstanceTest extends ServiceTestEnv {
     public void create_createFlowInstanceWithTopo_createSucceed() {
         createFlowInstanceWithTopo();
 
-        Assert.assertEquals(8, nodeRepository.findAll().size());
+        Assert.assertEquals(10, nodeRepository.findAll().size());
         Assert.assertEquals(5, sequenceRepository.findAll().size());
         Assert.assertEquals(2, gateWayInstanceRepository.findAll().size());
         Assert.assertEquals(2, serviceTaskRepository.findAll().size());

@@ -17,7 +17,10 @@ package com.oceanbase.tools.sqlparser.adapter.mysql;
 
 import java.util.stream.Collectors;
 
+import org.antlr.v4.runtime.ParserRuleContext;
+
 import com.oceanbase.tools.sqlparser.adapter.StatementFactory;
+import com.oceanbase.tools.sqlparser.obmysql.OBParser.Create_table_like_stmtContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Create_table_stmtContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParserBaseVisitor;
 import com.oceanbase.tools.sqlparser.statement.common.RelationFactor;
@@ -35,15 +38,38 @@ import lombok.NonNull;
  */
 public class MySQLCreateTableFactory extends OBParserBaseVisitor<CreateTable> implements StatementFactory<CreateTable> {
 
-    private final Create_table_stmtContext createTableStmtContext;
+    private final ParserRuleContext parserRuleContext;
 
     public MySQLCreateTableFactory(@NonNull Create_table_stmtContext createTableStmtContext) {
-        this.createTableStmtContext = createTableStmtContext;
+        this.parserRuleContext = createTableStmtContext;
+    }
+
+    public MySQLCreateTableFactory(@NonNull Create_table_like_stmtContext createTableLikeStmtContext) {
+        this.parserRuleContext = createTableLikeStmtContext;
     }
 
     @Override
     public CreateTable generate() {
-        return visit(this.createTableStmtContext);
+        return visit(this.parserRuleContext);
+    }
+
+    @Override
+    public CreateTable visitCreate_table_like_stmt(Create_table_like_stmtContext ctx) {
+        RelationFactor factor = MySQLFromReferenceFactory.getRelationFactor(ctx.relation_factor(0));
+        CreateTable createTable = new CreateTable(ctx, factor.getRelation());
+        if (ctx.temporary_option().TEMPORARY() != null) {
+            createTable.setTemporary(true);
+        } else if (ctx.temporary_option().EXTERNAL() != null) {
+            createTable.setExternal(true);
+        }
+        if (ctx.IF() != null && ctx.not() != null && ctx.EXISTS() != null) {
+            createTable.setIfNotExists(true);
+        }
+        createTable.setSchema(factor.getSchema());
+        createTable.setUserVariable(factor.getUserVariable());
+        RelationFactor likeFactor = MySQLFromReferenceFactory.getRelationFactor(ctx.relation_factor(1));
+        createTable.setLikeTable(likeFactor);
+        return createTable;
     }
 
     @Override

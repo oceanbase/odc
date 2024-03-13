@@ -44,7 +44,7 @@ final class OBMySQLPLParser extends BaseSQLParser<PLLexer, PLParser> {
 
     @Override
     public Statement buildStatement(ParseTree root) {
-        return null;
+        return new OBMySQLPLCreateStatementVisitor().visit(root);
     }
 
     @Override

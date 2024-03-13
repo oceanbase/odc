@@ -34,7 +34,11 @@ class OBOracleSQLParser extends com.oceanbase.tools.sqlparser.OBOracleSQLParser 
         if (statement != null) {
             return statement;
         }
-        return new OBOracleDropStatementVisitor().visit(root);
+        statement = new OBOracleDropStatementVisitor().visit(root);
+        if (statement != null) {
+            return statement;
+        }
+        return new OBOracleCreateStatementVisitor().visit(root);
     }
 
 }

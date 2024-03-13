@@ -39,8 +39,8 @@ import lombok.Setter;
  */
 @Getter
 @Setter
-@EqualsAndHashCode(exclude = {"createTime", "updateTime"})
 @Entity
+@EqualsAndHashCode(exclude = {"id", "createTime", "updateTime"})
 @Table(name = "notification_policy_metadata")
 public class PolicyMetadataEntity {
 

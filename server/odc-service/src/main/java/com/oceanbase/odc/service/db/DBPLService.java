@@ -217,13 +217,14 @@ public class DBPLService {
 
     public DBPLObjectIdentity parsePLNameType(@NonNull ConnectionSession session, @NonNull String ddl) {
         DBPLObjectIdentity plObject = new DBPLObjectIdentity();
+        Validate.notNull(session.getDialectType(), "Dialect type can not be null");
         List<String> sqls = SqlCommentProcessor.removeSqlComments(ddl + "$$", "$$",
                 session.getDialectType(), true).stream().map(OffsetString::getStr).collect(Collectors.toList());
         if (!sqls.isEmpty()) {
             ddl = sqls.get(0);
         }
         ParsePLResult result;
-        if (DialectType.OB_ORACLE == session.getDialectType()) {
+        if (session.getDialectType().isOracle()) {
             result = PLParser.parseOracle(ddl);
         } else if (session.getDialectType().isMysql()) {
             result = PLParser.parseObMysql(ddl);

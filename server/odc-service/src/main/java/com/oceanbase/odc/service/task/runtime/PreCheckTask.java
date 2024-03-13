@@ -15,10 +15,8 @@
  */
 package com.oceanbase.odc.service.task.runtime;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.SequenceInputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -52,7 +50,7 @@ import com.oceanbase.odc.service.flow.task.model.DatabaseChangeParameters;
 import com.oceanbase.odc.service.flow.task.model.DatabasePermissionCheckResult;
 import com.oceanbase.odc.service.flow.task.model.SqlCheckTaskResult;
 import com.oceanbase.odc.service.objectstorage.model.ObjectMetadata;
-import com.oceanbase.odc.service.objectstorage.model.StorageObject;
+import com.oceanbase.odc.service.objectstorage.util.ObjectStorageUtils;
 import com.oceanbase.odc.service.onlineschemachange.model.OnlineSchemaChangeParameters;
 import com.oceanbase.odc.service.permission.database.model.DatabasePermissionType;
 import com.oceanbase.odc.service.permission.database.model.UnauthorizedDatabase;
@@ -70,12 +68,9 @@ import com.oceanbase.odc.service.sqlcheck.SqlCheckContext;
 import com.oceanbase.odc.service.sqlcheck.SqlCheckRule;
 import com.oceanbase.odc.service.sqlcheck.SqlCheckRuleFactory;
 import com.oceanbase.odc.service.sqlcheck.model.CheckViolation;
-import com.oceanbase.odc.service.sqlcheck.model.SqlCheckRuleType;
-import com.oceanbase.odc.service.sqlcheck.rule.IndexChangeTimeConsumingExists;
 import com.oceanbase.odc.service.sqlcheck.rule.SqlCheckRules;
 import com.oceanbase.odc.service.task.caller.JobContext;
 import com.oceanbase.odc.service.task.constants.JobParametersKeyConstants;
-import com.oceanbase.odc.service.task.executor.server.ObjectStorageHandler;
 import com.oceanbase.odc.service.task.executor.task.BaseTask;
 import com.oceanbase.odc.service.task.runtime.PreCheckTaskParameters.AuthorizedDatabase;
 import com.oceanbase.odc.service.task.util.JobUtils;
@@ -114,7 +109,7 @@ public class PreCheckTask extends BaseTask<FlowTaskResult> {
     }
 
     @Override
-    protected void doStart(JobContext context) throws Exception {
+    protected boolean doStart(JobContext context) throws Exception {
         try {
             List<OffsetString> sqls = new ArrayList<>();
             this.overLimit = getSqlContentUntilOverLimit(sqls, this.parameters.getMaxReadContentBytes());
@@ -127,20 +122,13 @@ public class PreCheckTask extends BaseTask<FlowTaskResult> {
                 log.info("Database permission check successfully, taskId={}", taskId);
             }
             this.permissionCheckResult = new DatabasePermissionCheckResult(unauthorizedDatabases);
-            if (violations.stream().filter(Objects::nonNull)
-                    .anyMatch(v -> v.getType() == SqlCheckRuleType.INDEX_CHANGE_TIME_CONSUMING_EXISTS)) {
-                violations = violations.stream()
-                        .filter(v -> v.getType() != SqlCheckRuleType.INDEX_CHANGE_TIME_CONSUMING_EXISTS)
-                        .collect(Collectors.toList());
-                this.sqlCheckResult = SqlCheckTaskResult.success(violations, true);
-            } else {
-                this.sqlCheckResult = SqlCheckTaskResult.success(violations, false);
-            }
+            this.sqlCheckResult = SqlCheckTaskResult.success(violations);
             this.success = true;
             log.info("Pre-check task end up running, task id: {}", taskId);
         } finally {
             tryCloseInputStream();
         }
+        return this.success;
     }
 
     @Override
@@ -149,7 +137,7 @@ public class PreCheckTask extends BaseTask<FlowTaskResult> {
     }
 
     @Override
-    protected void onFail(Throwable e) {
+    protected void doClose() throws Exception {
         tryCloseInputStream();
     }
 
@@ -211,26 +199,10 @@ public class PreCheckTask extends BaseTask<FlowTaskResult> {
             }
             params = (DatabaseChangeParameters) asParams.getScheduleTaskParameters();
         }
-        this.uploadFileInputStream = new ByteArrayInputStream(new byte[0]);
         List<ObjectMetadata> objectMetadataList = this.parameters.getSqlFileObjectMetadatas();
         if (Objects.nonNull(params) && CollectionUtils.isNotEmpty(objectMetadataList)) {
-            for (ObjectMetadata objectMetadata : objectMetadataList) {
-                StorageObject object =
-                        new ObjectStorageHandler(getCloudObjectStorageService(), JobUtils.getExecutorDataPath())
-                                .loadObject(objectMetadata);
-                InputStream current = object.getContent();
-                // remove UTF-8 BOM if exists
-                current.mark(3);
-                byte[] byteSql = new byte[3];
-                if (current.read(byteSql) >= 3 && byteSql[0] == (byte) 0xef && byteSql[1] == (byte) 0xbb
-                        && byteSql[2] == (byte) 0xbf) {
-                    current.reset();
-                    current.skip(3);
-                } else {
-                    current.reset();
-                }
-                this.uploadFileInputStream = new SequenceInputStream(this.uploadFileInputStream, current);
-            }
+            this.uploadFileInputStream = ObjectStorageUtils.loadObjectsForTask(objectMetadataList,
+                    getCloudObjectStorageService(), JobUtils.getExecutorDataPath(), -1).getInputStream();
             this.uploadFileSqlIterator = SqlUtils.iterator(this.parameters.getConnectionConfig().getDialectType(),
                     params.getDelimiter(), this.uploadFileInputStream, StandardCharsets.UTF_8);
         }
@@ -283,7 +255,6 @@ public class PreCheckTask extends BaseTask<FlowTaskResult> {
         try (SingleConnectionDataSource dataSource = (SingleConnectionDataSource) factory.getDataSource()) {
             JdbcTemplate jdbc = new JdbcTemplate(dataSource);
             List<SqlCheckRule> checkRules = getRules(rules, config.getDialectType(), jdbc);
-            checkRules.add(new IndexChangeTimeConsumingExists());
             DefaultSqlChecker sqlChecker = new DefaultSqlChecker(config.getDialectType(), null, checkRules);
             List<CheckViolation> checkViolations = new ArrayList<>();
             for (OffsetString sql : sqls) {
