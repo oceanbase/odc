@@ -27,6 +27,8 @@ import com.oceanbase.odc.service.common.response.OdcResult;
 import com.oceanbase.odc.service.common.util.SidUtils;
 import com.oceanbase.odc.service.db.DBCharsetService;
 import com.oceanbase.odc.service.session.ConnectSessionService;
+import com.oceanbase.odc.service.state.model.StateName;
+import com.oceanbase.odc.service.state.model.StatefulRoute;
 
 import io.swagger.annotations.ApiOperation;
 
@@ -45,12 +47,14 @@ public class DBCharacterController {
 
     @ApiOperation(value = "listCharset", notes = "查看数据库支持的charset，sid示例：sid:1000-1:d:db1")
     @RequestMapping(value = "/charset/list/{sid}", method = RequestMethod.GET)
+    @StatefulRoute(stateName = StateName.DB_SESSION, stateIdExpression = "#sid")
     public OdcResult<List<String>> listCharset(@PathVariable String sid) {
         return OdcResult.ok(charsetService.listCharset(sessionService.nullSafeGet(SidUtils.getSessionId(sid), true)));
     }
 
     @ApiOperation(value = "listCollation", notes = "查看数据库支持的collation，sid示例：sid:1000-1:d:db1")
     @RequestMapping(value = "/collation/list/{sid}", method = RequestMethod.GET)
+    @StatefulRoute(stateName = StateName.DB_SESSION, stateIdExpression = "#sid")
     public OdcResult<List<String>> listCollation(@PathVariable String sid) {
         return OdcResult.ok(charsetService.listCollation(sessionService.nullSafeGet(SidUtils.getSessionId(sid), true)));
     }

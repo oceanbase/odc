@@ -27,6 +27,8 @@ import com.oceanbase.odc.service.common.model.NlsFormatReq;
 import com.oceanbase.odc.service.common.response.Responses;
 import com.oceanbase.odc.service.common.response.SuccessResponse;
 import com.oceanbase.odc.service.session.ConnectSessionService;
+import com.oceanbase.odc.service.state.model.StateName;
+import com.oceanbase.odc.service.state.model.StatefulRoute;
 
 import io.swagger.annotations.ApiOperation;
 
@@ -54,6 +56,7 @@ public class NlsFormatController {
      */
     @ApiOperation(value = "format", notes = "格式化时间")
     @RequestMapping(value = "/sessions/{sessionId}/format", method = RequestMethod.POST)
+    @StatefulRoute(stateName = StateName.DB_SESSION, stateIdExpression = "#sessionId")
     public SuccessResponse<String> createSession(@PathVariable String sessionId, @RequestBody NlsFormatReq req) {
         return Responses.single(nlsFormatService.format(sessionService.nullSafeGet(sessionId, true), req));
     }
