@@ -42,18 +42,16 @@ public class DataSourceInfoBuilder {
         if (StringUtils.isNotEmpty(connectionConfig.getPassword())) {
             dataSourceInfo.setPassword(connectionConfig.getPassword());
         }
+        dataSourceInfo.setIp(connectionConfig.getHost());
+        dataSourceInfo.setPort(connectionConfig.getPort());
         switch (connectionConfig.getDialectType()) {
             case DORIS:
             case MYSQL: {
-                dataSourceInfo.setIp(connectionConfig.getHost());
-                dataSourceInfo.setPort(connectionConfig.getPort());
                 dataSourceInfo.setFullUserName(connectionConfig.getUsername());
                 dataSourceInfo.setDatabaseType(DataBaseType.MYSQL);
                 break;
             }
             case OB_MYSQL: {
-                dataSourceInfo
-                        .setObProxy(String.format("%s:%s", connectionConfig.getHost(), connectionConfig.getPort()));
                 dataSourceInfo
                         .setFullUserName(OBConsoleDataSourceFactory.getUsername(connectionConfig));
                 dataSourceInfo.setDatabaseType(DataBaseType.OB_MYSQL);
@@ -70,8 +68,6 @@ public class DataSourceInfoBuilder {
                 break;
             }
             case OB_ORACLE:
-                dataSourceInfo.setIp(connectionConfig.getHost());
-                dataSourceInfo.setPort(connectionConfig.getPort());
                 dataSourceInfo.setFullUserName(OBConsoleDataSourceFactory.getUsername(connectionConfig));
                 dataSourceInfo.setClusterName(connectionConfig.getClusterName());
                 dataSourceInfo.setTenantName(connectionConfig.getTenantName());
