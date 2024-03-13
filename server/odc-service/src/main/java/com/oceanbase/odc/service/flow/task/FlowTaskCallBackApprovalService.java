@@ -174,6 +174,8 @@ public class FlowTaskCallBackApprovalService {
                 .list().stream().filter(a -> taskName != null && taskName.contains("callback"))
                 .collect(Collectors.toList());
         if (CollectionUtils.isEmpty(tasks)) {
+            log.info("Task not found, processInstanceId={}, processDefinitionId={}, taskName={}.",
+                    flowInstance.getParentInstanceId(), flowInstance.getProcessDefinitionId(), taskName);
             return Optional.empty();
         }
         Verify.verify(tasks.size() == 1,
