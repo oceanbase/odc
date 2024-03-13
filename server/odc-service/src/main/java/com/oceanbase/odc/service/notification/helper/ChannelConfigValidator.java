@@ -81,7 +81,9 @@ public class ChannelConfigValidator {
 
     private void validateWebhookChannelConfig(WebhookChannelConfig channelConfig) {
         Verify.notEmpty(channelConfig.getWebhook(), "webhook");
-        Verify.verify(channelConfig.getWebhook().startsWith("http://"), "Webhook should start with 'http://'");
+        Verify.verify(
+                channelConfig.getWebhook().startsWith("http://") || channelConfig.getWebhook().startsWith("https://"),
+                "Webhook should start with 'http://' or 'https://'");
 
         String headersTemplate = channelConfig.getHeadersTemplate();
         if (StringUtils.isNotEmpty(headersTemplate)) {
