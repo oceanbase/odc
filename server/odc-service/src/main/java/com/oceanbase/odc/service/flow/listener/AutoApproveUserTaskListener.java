@@ -15,14 +15,11 @@
  */
 package com.oceanbase.odc.service.flow.listener;
 
-import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
-
 import com.oceanbase.odc.common.event.AbstractEventListener;
 import com.oceanbase.odc.common.util.RetryExecutor;
 import com.oceanbase.odc.service.flow.event.UserTaskCreatedEvent;
 import com.oceanbase.odc.service.flow.instance.FlowApprovalInstance;
 
-import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
 /**

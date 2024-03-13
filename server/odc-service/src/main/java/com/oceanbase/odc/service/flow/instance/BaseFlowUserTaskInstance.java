@@ -164,7 +164,7 @@ public abstract class BaseFlowUserTaskInstance extends BaseFlowNodeInstance {
     protected Optional<Task> getUserTask() {
         if (this.userTaskId == null) {
             log.warn("userTaskId is empty, flowInstanceId={}, instanceId={}",
-                this.getFlowInstanceId(), getId());
+                    this.getFlowInstanceId(), getId());
             return Optional.empty();
         }
         Task task = taskService.createTaskQuery().taskId(this.userTaskId).singleResult();
