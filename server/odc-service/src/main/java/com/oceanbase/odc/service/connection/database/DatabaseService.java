@@ -183,12 +183,12 @@ public class DatabaseService {
     }
 
     private Database getDatabase(Long id) {
-        DatabaseEntity entity = databaseRepository.findById(id)
-                .orElseThrow(() -> new NotFoundException(ResourceType.ODC_DATABASE, "id", id));
-        if (Objects.nonNull(entity.getProjectId())) {
-            projectPermissionValidator.checkProjectRole(entity.getProjectId(), ResourceRoleName.all());
+        Database database = entityToModel(databaseRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException(ResourceType.ODC_DATABASE, "id", id)), true);
+        if (Objects.nonNull(database.getProject()) && Objects.nonNull(database.getProject().getId())) {
+            projectPermissionValidator.checkProjectRole(database.getProject().getId(), ResourceRoleName.all());
         }
-        return entitiesToModels(new PageImpl<>(Collections.singletonList(entity)), true).getContent().get(0);
+        return database;
     }
 
     @SkipAuthorize("odc internal usage")
@@ -306,7 +306,7 @@ public class DatabaseService {
             database.setOrganizationId(authenticationFacade.currentOrganizationId());
             database.setLastSyncTime(new Date(System.currentTimeMillis()));
             DatabaseEntity saved = databaseRepository.saveAndFlush(database);
-            return entityToModel(saved);
+            return entityToModel(saved, false);
         } catch (Exception ex) {
             throw new BadRequestException(SqlExecuteResult.getTrackMessage(ex));
         } finally {
@@ -763,13 +763,17 @@ public class DatabaseService {
         });
     }
 
-    private Database entityToModel(DatabaseEntity entity) {
+    private Database entityToModel(DatabaseEntity entity, boolean includesPermittedAction) {
         Database model = databaseMapper.entityToModel(entity);
         if (Objects.nonNull(entity.getProjectId())) {
             model.setProject(projectService.detail(entity.getProjectId()));
         }
         model.setDataSource(connectionService.getForConnectionSkipPermissionCheck(entity.getConnectionId()));
         model.setEnvironment(environmentService.detailSkipPermissionCheck(model.getDataSource().getEnvironmentId()));
+        if (includesPermittedAction) {
+            model.setAuthorizedPermissionTypes(
+                    databasePermissionHelper.getPermissions(Collections.singleton(entity.getId())).get(entity.getId()));
+        }
         return model;
     }
 
