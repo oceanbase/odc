@@ -40,6 +40,7 @@ import com.oceanbase.odc.service.flow.model.FlowNodeType;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.Setter;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * Refer to {@link org.flowable.bpmn.model.UserTask} in {@code Flowable}
@@ -49,6 +50,7 @@ import lombok.Setter;
  * @since ODC_release_3.3.0
  * @see BaseFlowNodeInstance
  */
+@Slf4j
 public abstract class BaseFlowUserTaskInstance extends BaseFlowNodeInstance {
     @Getter
     @Setter
@@ -154,10 +156,14 @@ public abstract class BaseFlowUserTaskInstance extends BaseFlowNodeInstance {
 
     protected Optional<Task> getUserTask() {
         if (this.userTaskId == null) {
+            log.warn("userTaskId is empty, flowInstanceId={}, instanceId={}",
+                this.getFlowInstanceId(), getId());
             return Optional.empty();
         }
         Task task = taskService.createTaskQuery().taskId(this.userTaskId).singleResult();
         if (task == null) {
+            log.warn("User task not found by userTaskId, flowInstanceId={}, instanceId={}, userTaskId={}",
+                    this.getFlowInstanceId(), getId(), this.userTaskId);
             return Optional.empty();
         }
         return Optional.of(task);

@@ -74,11 +74,15 @@ public class StartPreparingJob implements Job {
                             a.getStatus(), JobStatus.CANCELED, "Job expired and failed.");
                 } else {
                     startJob(taskFrameworkService, a);
-                    // Sleep 100 ms between every task
-                    Thread.sleep(100);
                 }
             } catch (Throwable e) {
                 log.warn("try to start job {} failed: ", a.getId(), e);
+            }
+            // Sleep 100 ms between every job
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException e) {
+                log.warn("Sleep be interrupted, jobId={}", a.getId(), e);
             }
         });
     }

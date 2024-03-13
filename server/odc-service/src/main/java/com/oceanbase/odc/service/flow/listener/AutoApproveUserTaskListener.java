@@ -37,7 +37,7 @@ public class AutoApproveUserTaskListener extends AbstractEventListener<UserTaskC
 
     private final ThreadPoolTaskExecutor executorService;
     private final RetryExecutor retryExecutor =
-            RetryExecutor.builder().initialDelay(true).retryIntervalMillis(1000).retryTimes(3).build();
+            RetryExecutor.builder().initialDelay(true).retryIntervalMillis(1000).retryTimes(10).build();
 
     static class AutoApproveTask implements Runnable {
 
