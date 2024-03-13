@@ -51,7 +51,7 @@ public interface TaskFrameworkProperties {
 
     int getQuartzStartDelaySeconds();
 
-    int getStartNewProcessMemoryThreshold();
+    int getStartNewProcessMemoryMinSize();
 
     String getStartPreparingJobCronExpression();
 

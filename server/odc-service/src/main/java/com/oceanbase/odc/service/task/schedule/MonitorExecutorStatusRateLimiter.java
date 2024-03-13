@@ -41,8 +41,8 @@ public class MonitorExecutorStatusRateLimiter implements StartJobRateLimiter {
     public boolean tryAcquire() {
         if (taskFrameworkProperties.get().getRunMode().isProcess()) {
             long systemFreeMemory = SystemUtils.getSystemFreeMemory();
-            if (systemFreeMemory < 1024) {
-                log.warn("Current free memory lack, memory is {}", systemFreeMemory);
+            if (systemFreeMemory < taskFrameworkProperties.get().getStartNewProcessMemoryMinSize()) {
+                log.warn("Current free memory lack, free memory is {}", systemFreeMemory);
                 return false;
             }
         }
