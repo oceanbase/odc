@@ -23,7 +23,6 @@ import java.util.concurrent.Executors;
 import java.util.function.Supplier;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.scheduling.Trigger;
 import org.springframework.scheduling.annotation.EnableScheduling;
@@ -35,7 +34,6 @@ import com.oceanbase.odc.service.notification.model.MessageSendingStatus;
 
 @EnableScheduling
 @Configuration
-@ConditionalOnProperty(value = "odc.notification.enabled", havingValue = "true")
 public class NotificationScheduleConfiguration implements SchedulingConfigurer {
     @Autowired
     private NotificationProperties notificationProperties;

@@ -143,6 +143,8 @@ public class BrokerTest extends ServiceTestEnv {
     }
 
     private Message getMessage() {
+        Event event = new Event();
+        event.setId(1L);
         return Message.builder()
                 .title("test title")
                 .content("test content")
@@ -153,6 +155,7 @@ public class BrokerTest extends ServiceTestEnv {
                 .organizationId(ORGANIZATION_ID)
                 .projectId(1L)
                 .channel(getChannel())
+                .event(event)
                 .build();
     }
 
