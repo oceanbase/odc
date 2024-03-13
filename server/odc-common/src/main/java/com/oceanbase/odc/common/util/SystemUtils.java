@@ -37,6 +37,8 @@ import java.util.regex.Pattern;
 
 import org.apache.commons.lang3.StringUtils;
 
+import com.oceanbase.odc.common.unit.BinarySize;
+import com.oceanbase.odc.common.unit.BinarySizeUnit;
 import com.sun.management.OperatingSystemMXBean;
 
 import lombok.NonNull;
@@ -118,13 +120,13 @@ public abstract class SystemUtils {
     }
 
     /**
-     * get system free physical memory, unit size is MB
+     * get system free physical memory, unit size is byte
      *
      * @return free memory
      */
-    public static long getSystemFreeMemory() {
+    public static BinarySize getSystemFreeMemory() {
         OperatingSystemMXBean osBean = ManagementFactory.getPlatformMXBean(OperatingSystemMXBean.class);
-        return osBean.getFreePhysicalMemorySize() / 1024 / 1024;
+        return BinarySizeUnit.B.of(osBean.getFreePhysicalMemorySize());
     }
 
     public static Map<String, String> getSystemEnv() {

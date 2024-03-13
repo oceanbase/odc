@@ -17,6 +17,7 @@ package com.oceanbase.odc.service.task.schedule;
 
 import java.util.function.Supplier;
 
+import com.oceanbase.odc.common.unit.BinarySizeUnit;
 import com.oceanbase.odc.common.util.SystemUtils;
 import com.oceanbase.odc.service.task.config.JobConfiguration;
 import com.oceanbase.odc.service.task.config.JobConfigurationHolder;
@@ -41,9 +42,11 @@ public class MonitorExecutorStatusRateLimiter implements StartJobRateLimiter {
     @Override
     public boolean tryAcquire() {
         if (taskFrameworkProperties.get().getRunMode().isProcess() && SystemUtils.isOnLinux()) {
-            long systemFreeMemory = SystemUtils.getSystemFreeMemory();
+            long systemFreeMemory = SystemUtils.getSystemFreeMemory().convert(BinarySizeUnit.MB).getSizeDigit();
+            int startNewProcessMemoryMinSize = taskFrameworkProperties.get().getStartNewProcessMemoryMinSize();
             if (systemFreeMemory < taskFrameworkProperties.get().getStartNewProcessMemoryMinSize()) {
-                log.warn("Current free memory lack, free memory is {}", systemFreeMemory);
+                log.warn("Current free memory lack, systemFreeMemory={}, startNewProcessMemoryMinSize={}",
+                        systemFreeMemory, startNewProcessMemoryMinSize);
                 return false;
             }
         }
@@ -56,7 +59,13 @@ public class MonitorExecutorStatusRateLimiter implements StartJobRateLimiter {
         long count = jobConfiguration.getTaskFrameworkService().countRunningNeverHeartJobs(
                 taskFrameworkProperties.getExecutorWaitingToRunThresholdSeconds());
 
-        return taskFrameworkProperties.getExecutorWaitingToRunThresholdCount() - count > 0;
+        boolean executed = taskFrameworkProperties.getExecutorWaitingToRunThresholdCount() - count > 0;
+        if (executed) {
+            log.warn("Amount of executors waiting to run exceed threshold, wait next schedule,"
+                    + " threshold={}, waitingJobs={}.",
+                    taskFrameworkProperties.getExecutorWaitingToRunThresholdCount(), count);
+        }
+        return executed;
     }
 
 }

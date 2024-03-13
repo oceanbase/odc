@@ -58,11 +58,6 @@ public class StartPreparingJob implements Job {
         configuration = JobConfigurationHolder.getJobConfiguration();
         JobConfigurationValidator.validComponent();
         TaskFrameworkProperties taskFrameworkProperties = configuration.getTaskFrameworkProperties();
-        if (!configuration.getStartJobRateLimiter().tryAcquire()) {
-            log.warn("Amount of executors waiting to run exceed threshold, wait next schedule, threshold={}.",
-                    taskFrameworkProperties.getExecutorWaitingToRunThresholdCount());
-            return;
-        }
         // scan preparing job
         TaskFrameworkService taskFrameworkService = configuration.getTaskFrameworkService();
 
@@ -70,12 +65,17 @@ public class StartPreparingJob implements Job {
                 Lists.newArrayList(JobStatus.PREPARING, JobStatus.RETRYING), 0,
                 taskFrameworkProperties.getSingleFetchPreparingJobRows());
         jobs.forEach(a -> {
+            if (!configuration.getStartJobRateLimiter().tryAcquire()) {
+                return;
+            }
             try {
                 if (checkJobIsExpired(a)) {
                     taskFrameworkService.updateStatusDescriptionByIdOldStatus(a.getId(),
                             a.getStatus(), JobStatus.CANCELED, "Job expired and failed.");
                 } else {
                     startJob(taskFrameworkService, a);
+                    // Sleep 100 ms between every task
+                    Thread.sleep(100);
                 }
             } catch (Throwable e) {
                 log.warn("try to start job {} failed: ", a.getId(), e);

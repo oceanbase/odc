@@ -112,7 +112,7 @@ public class FlowTaskCallBackApprovalService {
                 variables.putAll(approvalVariables);
             }
             flowableTaskService.complete(task.getId(), variables);
-            log.warn("complete task succeed, flowInstanceId={}, flowTaskInstanceId={}, flowNodeStatus={}.",
+            log.info("complete task succeed, flowInstanceId={}, flowTaskInstanceId={}, flowNodeStatus={}.",
                 flowInstanceId, flowTaskInstanceId, flowNodeStatus);
             return true;
         } catch (Exception e) {
