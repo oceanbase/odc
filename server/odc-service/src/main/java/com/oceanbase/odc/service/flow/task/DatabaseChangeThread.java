@@ -85,7 +85,6 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class DatabaseChangeThread extends Thread {
-    private static final Long RETRY_SLEEP_INTERVAL_MILLIS = 3 * 60 * 1000L;
 
     private final ConnectionSession connectionSession;
     private final DatabaseChangeParameters parameters;
@@ -172,17 +171,17 @@ public class DatabaseChangeThread extends Thread {
                         initializer.init(con);
                         return null;
                     });
-                    RetryCallBack callBack = new RetryCallBack();
-                    retryStatement(callBack, executor, statementCallback, sql);
+                    RetryResult result = new RetryResult();
+                    retryStatement(result, executor, statementCallback, sql);
                     appendResultToJsonFile(queryResultSetBuffer, index == 1, !sqlIterator.hasNext());
                     writeCsvFiles(queryResultSetBuffer);
                     queryResultSetBuffer.clear();
 
-                    if (callBack.success) {
+                    if (result.success) {
                         successCount++;
                     } else {
                         failCount++;
-                        addErrorRecordsToFile(index, sql, callBack.track);
+                        addErrorRecordsToFile(index, sql, result.track);
                         if (TaskErrorStrategy.ABORT.equals(parameters.getErrorStrategy())) {
                             abort = true;
                             break;
@@ -214,11 +213,11 @@ public class DatabaseChangeThread extends Thread {
         }
     }
 
-    private void retryStatement(RetryCallBack retryCallBack, JdbcOperations executor,
+    private void retryStatement(RetryResult retryResult, JdbcOperations executor,
             StatementCallback<List<JdbcGeneralResult>> statementCallback, String sql) {
         boolean success = true;
         GeneralSqlType sqlType = parseSqlType(sql);
-        for (int retryCount = 0; retryCount <= parameters.getRetryTimes(); retryCount++) {
+        for (int retryCount = 0; retryCount <= parameters.getRetryTimes() && !stop; retryCount++) {
             success = true;
             try {
                 queryResultSetBuffer.clear();
@@ -249,7 +248,7 @@ public class DatabaseChangeThread extends Thread {
                         log.warn("Error occurs when executing sql: {}, error message: {}", sql,
                                 executeResult.getTrack());
                         success = false;
-                        retryCallBack.track = executeResult.getTrack();
+                        retryResult.track = executeResult.getTrack();
                     }
                 }
             } catch (Exception e) {
@@ -263,9 +262,9 @@ public class DatabaseChangeThread extends Thread {
                 break;
             } else {
                 log.warn(String.format("Will retry for the %sth time in %s seconds...", retryCount + 1,
-                        RETRY_SLEEP_INTERVAL_MILLIS / 1000));
+                        parameters.getRetryIntervalMillis() / 1000));
                 try {
-                    Thread.sleep(RETRY_SLEEP_INTERVAL_MILLIS);
+                    Thread.sleep(parameters.getRetryIntervalMillis());
                 } catch (InterruptedException e) {
                     log.warn("Database change task is interrupted, task will exit", e);
                     stop = true;
@@ -273,7 +272,7 @@ public class DatabaseChangeThread extends Thread {
                 }
             }
         }
-        retryCallBack.success = success;
+        retryResult.success = success;
     }
 
     private void init(Long userId) {
@@ -472,7 +471,7 @@ public class DatabaseChangeThread extends Thread {
         }
     }
 
-    private static class RetryCallBack {
+    private static class RetryResult {
         boolean success;
         String track;
     }
