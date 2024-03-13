@@ -18,8 +18,8 @@ package com.oceanbase.odc.service.dlm;
 import java.text.SimpleDateFormat;
 
 import com.oceanbase.odc.service.dlm.model.DlmTask;
+import com.oceanbase.odc.service.dlm.utils.DlmJobIdUtil;
 import com.oceanbase.odc.service.schedule.job.DLMJobParameters;
-import com.oceanbase.odc.service.task.schedule.JobIdentity;
 import com.oceanbase.tools.migrator.common.configure.DataSourceInfo;
 import com.oceanbase.tools.migrator.common.configure.LogicTableConfig;
 import com.oceanbase.tools.migrator.common.dto.HistoryJob;
@@ -95,28 +95,29 @@ public class DLMJobFactory extends JobFactory {
     }
 
     // adapt to task framework
-    public Job createJob(int tableIndex, JobIdentity jobIdentity, DLMJobParameters parameters) {
+    public Job createJob(int tableIndex, DLMJobParameters params) {
         HistoryJob historyJob = new HistoryJob();
-        historyJob.setId(String.format("%s-%s-%s", parameters.getJobType(), jobIdentity, tableIndex));
-        historyJob.setJobType(parameters.getJobType());
+        historyJob.setId(DlmJobIdUtil.generateHistoryJobId(params.getJobName(), params.getJobType().name(),
+                params.getScheduleTaskId(), tableIndex));
+        historyJob.setJobType(params.getJobType());
         historyJob.setTableId(-1L);
         historyJob.setPrintSqlTrace(false);
-        historyJob.setSourceTable(parameters.getTables().get(tableIndex).getTableName());
-        historyJob.setTargetTable(parameters.getTables().get(tableIndex).getTargetTableName());
+        historyJob.setSourceTable(params.getTables().get(tableIndex).getTableName());
+        historyJob.setTargetTable(params.getTables().get(tableIndex).getTargetTableName());
 
         LogicTableConfig logicTableConfig = new LogicTableConfig();
-        logicTableConfig.setMigrateRule(parameters.getTables().get(tableIndex).getConditionExpression());
+        logicTableConfig.setMigrateRule(params.getTables().get(tableIndex).getConditionExpression());
         logicTableConfig.setCheckMode(CheckMode.MULTIPLE_GET);
-        logicTableConfig.setReaderBatchSize(parameters.getRateLimit().getBatchSize());
-        logicTableConfig.setWriterBatchSize(parameters.getRateLimit().getBatchSize());
-        logicTableConfig.setMigrationInsertAction(parameters.getMigrationInsertAction());
-        logicTableConfig.setReaderTaskCount(parameters.getReadThreadCount());
-        logicTableConfig.setWriterTaskCount(parameters.getWriteThreadCount());
-        logicTableConfig.setGeneratorBatchSize(parameters.getScanBatchSize());
+        logicTableConfig.setReaderBatchSize(params.getRateLimit().getBatchSize());
+        logicTableConfig.setWriterBatchSize(params.getRateLimit().getBatchSize());
+        logicTableConfig.setMigrationInsertAction(params.getMigrationInsertAction());
+        logicTableConfig.setReaderTaskCount(params.getReadThreadCount());
+        logicTableConfig.setWriterTaskCount(params.getWriteThreadCount());
+        logicTableConfig.setGeneratorBatchSize(params.getScanBatchSize());
 
 
         JobReq req =
-                new JobReq(historyJob, logicTableConfig, parameters.getSourceDs(), parameters.getTargetDs(),
+                new JobReq(historyJob, logicTableConfig, params.getSourceDs(), params.getTargetDs(),
                         new ClusterMeta(),
                         new ClusterMeta(), new TenantMeta(), new TenantMeta());
         return createJob(req);

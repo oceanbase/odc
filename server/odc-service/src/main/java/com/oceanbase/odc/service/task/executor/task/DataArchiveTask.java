@@ -24,6 +24,7 @@ import com.oceanbase.odc.service.dlm.DLMJobFactory;
 import com.oceanbase.odc.service.schedule.job.DLMJobParameters;
 import com.oceanbase.odc.service.task.caller.JobContext;
 import com.oceanbase.odc.service.task.constants.JobParametersKeyConstants;
+import com.oceanbase.odc.service.task.util.JobUtils;
 import com.oceanbase.tools.dbbrowser.util.MySQLSqlBuilder;
 import com.oceanbase.tools.dbbrowser.util.OracleSqlBuilder;
 import com.oceanbase.tools.dbbrowser.util.SqlBuilder;
@@ -51,7 +52,7 @@ public class DataArchiveTask extends BaseTask<Boolean> {
 
     @Override
     protected void doInit(JobContext context) {
-        jobFactory = new DLMJobFactory(new CloudDLMJobStore());
+        jobFactory = new DLMJobFactory(new CloudDLMJobStore(JobUtils.getMetaDBConnectionConfig()));
         log.info("Init data-archive job env succeed,jobIdentity={}", context.getJobIdentity());
     }
 
@@ -71,7 +72,7 @@ public class DataArchiveTask extends BaseTask<Boolean> {
                 syncTable(tableIndex, parameters);
             }
             try {
-                job = jobFactory.createJob(tableIndex, context.getJobIdentity(), parameters);
+                job = jobFactory.createJob(tableIndex, parameters);
                 log.info("Init {} job succeed,DLMJobId={}", job.getJobMeta().getJobType(), job.getJobMeta().getJobId());
                 log.info("{} job start,DLMJobId={}", job.getJobMeta().getJobType(), job.getJobMeta().getJobId());
                 job.run();
