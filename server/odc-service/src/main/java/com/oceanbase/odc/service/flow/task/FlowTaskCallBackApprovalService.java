@@ -21,6 +21,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import org.apache.commons.collections4.CollectionUtils;
@@ -29,7 +30,7 @@ import org.flowable.task.api.Task;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import com.oceanbase.odc.common.util.RetryExecutor;
+import com.oceanbase.odc.common.concurrent.Await;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.flow.model.FlowableElement;
 import com.oceanbase.odc.core.flow.model.FlowableElementType;
@@ -71,9 +72,6 @@ public class FlowTaskCallBackApprovalService {
     @Autowired
     private ScheduleService scheduleService;
 
-    private final RetryExecutor retryExecutor =
-            RetryExecutor.builder().initialDelay(true).retryIntervalMillis(1000).retryTimes(10).build();
-
     public void approval(long flowInstanceId, long flowTaskInstanceId, FlowNodeStatus flowNodeStatus,
             Map<String, Object> approvalVariables) {
         try {
@@ -94,31 +92,35 @@ public class FlowTaskCallBackApprovalService {
             return;
         }
 
-        retryExecutor.run(
-                () -> completeTask(flowInstanceId, flowTaskInstanceId, flowNodeStatus, approvalVariables),
-                r -> r);
+        completeTask(flowInstanceId, flowTaskInstanceId, flowNodeStatus, approvalVariables);
         updateFlowInstance(flowInstanceId, flowTaskInstanceId, flowNodeStatus);
     }
 
-    private boolean completeTask(long flowInstanceId, long flowTaskInstanceId, FlowNodeStatus flowNodeStatus,
+    private void completeTask(long flowInstanceId, long flowTaskInstanceId, FlowNodeStatus flowNodeStatus,
             Map<String, Object> approvalVariables) {
+        FlowInstanceEntity flowInstance = getFlowInstance(flowInstanceId);
+        FlowableElement flowableElement = getFlowableElementOfUserTask(flowTaskInstanceId);
+
+        Await.await().timeout(60).timeUnit(TimeUnit.SECONDS)
+                .until(getFlowableTask(flowInstance, flowableElement.getName())::isPresent);
+        Task task = getFlowableTask(flowInstance, flowableElement.getName()).get();
+        doCompleteTask(flowInstanceId, flowTaskInstanceId, flowNodeStatus, approvalVariables, task.getId());
+    }
+
+    private void doCompleteTask(long flowInstanceId, long flowTaskInstanceId, FlowNodeStatus flowNodeStatus,
+            Map<String, Object> approvalVariables, String taskId) {
         try {
-            FlowInstanceEntity flowInstance = getFlowInstance(flowInstanceId);
-            FlowableElement flowableElement = getFlowableElementOfUserTask(flowTaskInstanceId);
-            Task task = getFlowableTask(flowInstance, flowableElement.getName());
             Map<String, Object> variables = new HashMap<>();
             variables.putIfAbsent(APPROVAL_VARIABLE_NAME, flowNodeStatus == FlowNodeStatus.COMPLETED);
             if (approvalVariables != null && !approvalVariables.isEmpty()) {
                 variables.putAll(approvalVariables);
             }
-            flowableTaskService.complete(task.getId(), variables);
+            flowableTaskService.complete(taskId, variables);
             log.info("complete task succeed, flowInstanceId={}, flowTaskInstanceId={}, flowNodeStatus={}.",
-                flowInstanceId, flowTaskInstanceId, flowNodeStatus);
-            return true;
+                    flowInstanceId, flowTaskInstanceId, flowNodeStatus);
         } catch (Exception e) {
             log.warn("complete task failed, flowInstanceId={}, flowTaskInstanceId={}, flowNodeStatus={}.",
                     flowInstanceId, flowTaskInstanceId, flowNodeStatus);
-            return false;
         }
     }
 
@@ -164,25 +166,28 @@ public class FlowTaskCallBackApprovalService {
         }
     }
 
-    private Task getFlowableTask(FlowInstanceEntity flowInstance, String taskName) {
+    private Optional<Task> getFlowableTask(FlowInstanceEntity flowInstance, String taskName) {
 
         List<Task> tasks = flowableTaskService.createTaskQuery().taskName(taskName)
                 .processInstanceId(flowInstance.getProcessInstanceId())
                 .processDefinitionId(flowInstance.getProcessDefinitionId())
                 .list().stream().filter(a -> taskName != null && taskName.contains("callback"))
                 .collect(Collectors.toList());
-        Verify.verify(CollectionUtils.isNotEmpty(tasks), "No callback flowable task is found by name " + taskName);
+        if (CollectionUtils.isEmpty(tasks)) {
+            return Optional.empty();
+        }
         Verify.verify(tasks.size() == 1,
                 "Expect callback flowable task size is 1, but size is " + tasks.size());
-        return tasks.get(0);
+        return Optional.of(tasks.get(0));
     }
 
     private FlowableElement getFlowableElementOfUserTask(long flowTaskInstanceId) {
         List<FlowableElement> flowableElements =
                 this.flowableAdaptor.getFlowableElementByType(flowTaskInstanceId, FlowNodeType.SERVICE_TASK,
                         FlowableElementType.USER_TASK).stream()
-                    .filter(a -> a.getName() != null && a.getName()
-                        .contains("callback")).collect(Collectors.toList());
+                        .filter(a -> a.getName() != null && a.getName()
+                                .contains("callback"))
+                        .collect(Collectors.toList());
         if (CollectionUtils.isEmpty(flowableElements)) {
             throw new IllegalStateException("No flowable element is found by id " + flowTaskInstanceId);
         }

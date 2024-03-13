@@ -35,7 +35,6 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class AutoApproveUserTaskListener extends AbstractEventListener<UserTaskCreatedEvent> {
 
-    private final ThreadPoolTaskExecutor executorService;
     private final RetryExecutor retryExecutor =
             RetryExecutor.builder().initialDelay(true).retryIntervalMillis(1000).retryTimes(3).build();
 
@@ -65,10 +64,6 @@ public class AutoApproveUserTaskListener extends AbstractEventListener<UserTaskC
                 return false;
             }
         }
-    }
-
-    public AutoApproveUserTaskListener(@NonNull ThreadPoolTaskExecutor executorService) {
-        this.executorService = executorService;
     }
 
     @Override

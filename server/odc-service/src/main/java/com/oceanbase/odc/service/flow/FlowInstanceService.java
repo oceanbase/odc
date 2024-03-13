@@ -252,7 +252,7 @@ public class FlowInstanceService {
 
     @PostConstruct
     public void init() {
-        this.eventPublisher.addEventListener(new AutoApproveUserTaskListener(executorService));
+        this.eventPublisher.addEventListener(new AutoApproveUserTaskListener());
         this.activeTaskAccessor = new DefaultActiveTaskAccessor(eventPublisher);
     }
 
