@@ -155,8 +155,6 @@ public abstract class SystemUtils {
         return false;
     }
 
-
-
     public static long getProcessPid(Process process) {
         long pid = -1;
         try {
