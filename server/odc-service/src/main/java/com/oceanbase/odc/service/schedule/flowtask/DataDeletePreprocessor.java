@@ -70,7 +70,6 @@ public class DataDeletePreprocessor extends AbstractDlmJobPreprocessor {
             // permission to access it.
             Database sourceDb = databaseService.detail(dataDeleteParameters.getDatabaseId());
             dataDeleteParameters.setDatabaseName(sourceDb.getName());
-            dataDeleteParameters.setDeleteByUniqueKey(false);
             ConnectionConfig dataSource = sourceDb.getDataSource();
             dataSource.setDefaultSchema(sourceDb.getName());
             ConnectionSessionFactory connectionSessionFactory = new DefaultConnectSessionFactory(dataSource);
