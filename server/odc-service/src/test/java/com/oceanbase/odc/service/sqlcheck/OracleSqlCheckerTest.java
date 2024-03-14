@@ -1177,15 +1177,15 @@ public class OracleSqlCheckerTest {
         List<CheckViolation> actual = sqlChecker.check(toOffsetString(sqls), null);
 
         SqlCheckRuleType type = SqlCheckRuleType.OFFLINE_SCHEMA_CHANGE_EXISTS;
-        CheckViolation c1 = new CheckViolation(sqls[0], 1, 16, 16, 30, type, new Object[] {"Drop column"});
-        CheckViolation c2 = new CheckViolation(sqls[1], 1, 16, 16, 36, type, new Object[] {"Drop primary keys"});
-        CheckViolation c3 = new CheckViolation(sqls[1], 1, 39, 39, 54, type, new Object[] {"Add primary keys"});
-        CheckViolation c4 = new CheckViolation(sqls[2], 1, 0, 0, 15, type, new Object[] {"TRUNCATE table"});
-        CheckViolation c5 = new CheckViolation(sqls[3], 1, 0, 0, 13, type, new Object[] {"Drop table"});
+        CheckViolation c1 = new CheckViolation(sqls[0], 1, 16, 16, 30, type, new Object[] {"DROP COLUMN"});
+        CheckViolation c2 = new CheckViolation(sqls[1], 1, 16, 16, 36, type, new Object[] {"ADD PRIMARY KEY"});
+        CheckViolation c3 = new CheckViolation(sqls[1], 1, 39, 39, 54, type, new Object[] {"DROP PRIMARY KEY"});
+        CheckViolation c4 = new CheckViolation(sqls[2], 1, 0, 0, 15, type, new Object[] {"TRUNCATE TABLE"});
+        CheckViolation c5 = new CheckViolation(sqls[3], 1, 0, 0, 13, type, new Object[] {"DROP TABLE"});
         CheckViolation c6 =
-                new CheckViolation(sqls[5], 1, 18, 18, 73, type, new Object[] {"Add auto-increment column"});
-        CheckViolation c7 = new CheckViolation(sqls[6], 1, 17, 17, 40, type, new Object[] {"Drop primary keys"});
-        CheckViolation c8 = new CheckViolation(sqls[6], 1, 43, 43, 62, type, new Object[] {"Drop primary keys"});
+                new CheckViolation(sqls[5], 1, 18, 18, 73, type, new Object[] {"ADD AUTO-INCREMENT COLUMN"});
+        CheckViolation c7 = new CheckViolation(sqls[6], 1, 17, 17, 40, type, new Object[] {"DROP PRIMARY KEY"});
+        CheckViolation c8 = new CheckViolation(sqls[6], 1, 43, 43, 62, type, new Object[] {"DROP PRIMARY KEY"});
 
         List<CheckViolation> expect = Arrays.asList(c1, c2, c3, c4, c5, c6, c7, c8);
         Assert.assertEquals(expect, actual);

@@ -65,22 +65,22 @@ public class OracleOfflineDdlExists extends MySQLOfflineDdlExists {
             return alterTable.getAlterTableActions().stream().flatMap(action -> {
                 List<CheckViolation> violations = new ArrayList<>();
                 violations.addAll(addAutoIncrementColumn(statement, action));
-                violations.addAll(changeColumnToPK(statement, action));
+                violations.addAll(changeColumnToPrimaryKey(createTable, statement, action));
                 violations.addAll(dropColumn(statement, action));
-                violations.addAll(addOrDropPK(createTable, statement, action));
-                violations.addAll(modifyPartition(statement, action));
+                violations.addAll(addOrDropPrimaryKey(createTable, statement, action));
+                violations.addAll(changePartition(statement, action));
                 violations.addAll(dropPartition(statement, action));
                 violations.addAll(truncatePartition(statement, action));
                 return violations.stream();
             }).collect(Collectors.toList());
         } else if (statement instanceof TruncateTable) {
             return Collections.singletonList(SqlCheckUtil.buildViolation(statement.getText(),
-                    statement, getType(), new Object[] {"TRUNCATE table"}));
+                    statement, getType(), new Object[] {"TRUNCATE TABLE"}));
         } else if (statement instanceof DropStatement) {
             DropStatement dropStatement = (DropStatement) statement;
             if ("TABLE".equals(dropStatement.getObjectType())) {
                 return Collections.singletonList(SqlCheckUtil.buildViolation(statement.getText(),
-                        statement, getType(), new Object[] {"Drop table"}));
+                        statement, getType(), new Object[] {"DROP TABLE"}));
             }
         }
         return Collections.emptyList();
@@ -121,7 +121,7 @@ public class OracleOfflineDdlExists extends MySQLOfflineDdlExists {
                 return null;
             }
             return SqlCheckUtil.buildViolation(statement.getText(), action, getType(),
-                    new Object[] {"Add auto-increment column"});
+                    new Object[] {"ADD AUTO-INCREMENT COLUMN"});
         });
     }
 
