@@ -118,9 +118,10 @@ public class ScheduleConfiguration {
     @Bean(name = "flowTaskExecutor")
     public ThreadPoolTaskExecutor flowTaskExecutor() {
         ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
-        executor.setCorePoolSize(CORE_NUMBER * 2);
-        executor.setMaxPoolSize(CORE_NUMBER * 10);
-        executor.setQueueCapacity(0);
+        int poolSize = Math.max(SystemUtils.availableProcessors() * 8, 64);
+        executor.setCorePoolSize(poolSize);
+        executor.setMaxPoolSize(poolSize);
+        executor.setQueueCapacity(512);
         executor.setThreadNamePrefix("flow-task-executor-");
         executor.setWaitForTasksToCompleteOnShutdown(true);
         executor.setAwaitTerminationSeconds(5);
