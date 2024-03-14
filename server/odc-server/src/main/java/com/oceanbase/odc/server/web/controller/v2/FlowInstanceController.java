@@ -63,6 +63,8 @@ import com.oceanbase.odc.service.partitionplan.PartitionPlanScheduleService;
 import com.oceanbase.odc.service.partitionplan.model.PartitionPlanConfig;
 import com.oceanbase.odc.service.permission.database.model.ApplyDatabaseParameter;
 import com.oceanbase.odc.service.permission.database.model.ApplyDatabaseParameter.ApplyDatabase;
+import com.oceanbase.odc.service.permission.table.model.ApplyTableParameter;
+import com.oceanbase.odc.service.permission.table.model.ApplyTableParameter.ApplyTable;
 import com.oceanbase.odc.service.session.model.SqlExecuteResult;
 import com.oceanbase.odc.service.task.model.OdcTaskLogLevel;
 
@@ -109,7 +111,23 @@ public class FlowInstanceController {
                     return flowInstanceService.create(flowInstanceReq);
                 }).collect(Collectors.toList()).stream().flatMap(line -> line.stream()).collect(Collectors.toList());
                 return Responses.list(resp);
-            } else {
+            } else if  (flowInstanceReq.getTaskType() == TaskType.APPLY_TABLE_PERMISSION){
+                TaskParameters parameters = flowInstanceReq.getParameters();
+                List<ApplyTable> tables = ((ApplyTableParameter) parameters).getTables();
+                List<FlowInstanceDetailResp> resp = tables.stream().map(applyTable -> {
+                    List<ApplyTable> collect = applyTable.getReqTableNames().stream().map(tableName -> {
+                        ApplyTable tmpApplyTable = new ApplyTable();
+                        tmpApplyTable.setDatabaseId(applyTable.getDatabaseId());
+                        tmpApplyTable.setTableName(tableName);
+                        return tmpApplyTable;
+                    }).collect(Collectors.toList());
+                    ((ApplyTableParameter) parameters).setTables(collect);
+                    flowInstanceReq.setParameters(parameters);
+                    flowInstanceReq.setDatabaseId(applyTable.getDatabaseId());
+                    return flowInstanceService.create(flowInstanceReq);
+                }).collect(Collectors.toList()).stream().flatMap(line -> line.stream()).collect(Collectors.toList());
+                return Responses.list(resp);
+            }else {
                 return Responses.list(flowInstanceService.create(flowInstanceReq));
             }
         }

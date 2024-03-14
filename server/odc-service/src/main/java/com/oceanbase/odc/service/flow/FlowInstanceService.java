@@ -422,7 +422,8 @@ public class FlowInstanceService {
                     TaskType.EXPORT_RESULT_SET,
                     TaskType.APPLY_PROJECT_PERMISSION,
                     TaskType.APPLY_DATABASE_PERMISSION,
-                    TaskType.STRUCTURE_COMPARISON);
+                    TaskType.STRUCTURE_COMPARISON,
+                    TaskType.APPLY_TABLE_PERMISSION);
             specification = specification.and(FlowInstanceViewSpecs.taskTypeIn(types));
         }
 
