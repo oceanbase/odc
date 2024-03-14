@@ -60,13 +60,11 @@ import lombok.extern.slf4j.Slf4j;
 @Authenticated
 public class UserBatchImportPreviewer {
 
-    private static final Pattern ACCOUNT_NAME_PATTERN = Pattern.compile("^[\\w.+@#$%]+$");
+    private static final Pattern ACCOUNT_NAME_PATTERN = Pattern.compile("^[\\w.+@#$%]{4,64}$");
     private static final Pattern PASSWORD_PATTERN = Pattern.compile(
             "^(?=(?:[^0-9]*[0-9]){2})(?=(?:[^A-Z]*[A-Z]){2})(?=(?:[^a-z]*[a-z]){2})"
                     + "(?=(?:[^._+@#$%]*[._+@#$%]){2})[\\w._+@#$%]{8,32}$");
     private static final Pattern SPACE_PATTERN = Pattern.compile("^(?=\\S).{1,64}(?<=[^.\\s])$");
-    public static final int ACCOUNTNAME_MAX_LENGTH = 64;
-    public static final int ACCOUNTNAME_MIN_LENGTH = 4;
     public static final int DESCRIPTION_MAX_LENGTH = 140;
     @Autowired
     private RoleService roleService;
@@ -128,12 +126,14 @@ public class UserBatchImportPreviewer {
 
         String accountName = map.get(USER_ACCOUNTNAME.getLocalizedMessage());
         Verify.verify(!accountNames.contains(accountName), "account name already exists");
-        checkAccountName(accountName);
+        Verify.verify(ACCOUNT_NAME_PATTERN.matcher(accountName).matches(),
+                "account name must be 4 to 64 characters long "
+                        + "and consist of letters, numbers, and special characters in ._+@#$% only");
         batchImportUser.setAccountName(accountName);
 
         String password = map.get(USER_PASSWORD.getLocalizedMessage());
         Verify.verify(PASSWORD_PATTERN.matcher(password).matches(),
-                "must be 8 to 32 characters long and include at least 2 digits, 2 uppercase letters, "
+                "password must be 8 to 32 characters long and include at least 2 digits, 2 uppercase letters, "
                         + "2 lowercase letters, and 2 special characters from ._+@#$%");
         batchImportUser.setPassword(password);
 
@@ -162,14 +162,6 @@ public class UserBatchImportPreviewer {
         batchImportUser.setDescription(description);
 
         return batchImportUser;
-    }
-
-    private void checkAccountName(String accountName) {
-        Verify.notNull(accountName, "account name");
-        Verify.notLessThan(accountName.length(), ACCOUNTNAME_MIN_LENGTH, "account name's length");
-        Verify.notGreaterThan(accountName.length(), ACCOUNTNAME_MAX_LENGTH, "account name's length");
-        Verify.verify(ACCOUNT_NAME_PATTERN.matcher(accountName).matches(),
-                "account name must consist of letters, numbers, and special characters in ._+@#$% only. ");
     }
 
 }
