@@ -52,6 +52,7 @@ import com.oceanbase.odc.config.BeanConfiguration;
 import com.oceanbase.odc.server.web.highavailable.RateLimitInterceptor;
 import com.oceanbase.odc.server.web.trace.TraceHandlerInterceptor;
 import com.oceanbase.odc.service.iam.auth.OrganizationAuthenticationInterceptor;
+import com.oceanbase.odc.service.state.StatefulRouteInterceptor;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -81,6 +82,8 @@ public class MvcConfiguration implements WebMvcConfigurer {
     private StringToDateConverter stringToDateConverter;
     @Autowired
     private OrganizationAuthenticationInterceptor organizationAuthenticationInterceptor;
+    @Autowired
+    private StatefulRouteInterceptor statefulRouteInterceptor;
 
     public MvcConfiguration() {
         log.info("mvc configuration initialized");
@@ -215,6 +218,7 @@ public class MvcConfiguration implements WebMvcConfigurer {
         registry.addInterceptor(traceHandlerInterceptor).addPathPatterns("/**");
         registry.addInterceptor(rateLimitInterceptor).addPathPatterns("/api/**");
         registry.addInterceptor(organizationAuthenticationInterceptor).addPathPatterns("/api/**");
+        registry.addInterceptor(statefulRouteInterceptor).addPathPatterns("/api/**");
     }
 
     /**

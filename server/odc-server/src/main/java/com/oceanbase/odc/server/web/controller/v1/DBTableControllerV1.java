@@ -33,6 +33,8 @@ import com.oceanbase.odc.service.db.DBTableService;
 import com.oceanbase.odc.service.db.model.OdcDBTable;
 import com.oceanbase.odc.service.db.model.OdcGenerateUpdateTableDDLReq;
 import com.oceanbase.odc.service.session.ConnectSessionService;
+import com.oceanbase.odc.service.state.model.StateName;
+import com.oceanbase.odc.service.state.model.StatefulRoute;
 import com.oceanbase.tools.dbbrowser.model.DBTable;
 
 import io.swagger.annotations.ApiOperation;
@@ -52,6 +54,7 @@ public class DBTableControllerV1 {
 
     @ApiOperation(value = "list", notes = "查看表的列表，sid示例：sid:1000-1:d:db1")
     @RequestMapping(value = "/list/{sid:.*}", method = RequestMethod.GET)
+    @StatefulRoute(stateName = StateName.DB_SESSION, stateIdExpression = "#sid")
     public OdcResult<List<OdcDBTable>> list(@PathVariable String sid) {
         // sid:1-1:d:database
         ResourceIdentifier i = ResourceIDParser.parse(sid);
@@ -62,6 +65,7 @@ public class DBTableControllerV1 {
 
     @ApiOperation(value = "detail", notes = "查看表的详细信息(字符编码、ddl等)，sid示例：sid:1000-1:d:db1:t:tb1")
     @RequestMapping(value = "/{sid:.*}", method = RequestMethod.GET)
+    @StatefulRoute(stateName = StateName.DB_SESSION, stateIdExpression = "#sid")
     public OdcResult<OdcDBTable> detail(@PathVariable String sid) {
         // parse sid and database name, sid:1-1:d:database:t:tb1
         ResourceIdentifier i = ResourceIDParser.parse(sid);
@@ -71,6 +75,7 @@ public class DBTableControllerV1 {
 
     @ApiOperation(value = "getUpdateSql", notes = "获取修改表名的sql")
     @RequestMapping(value = "/getUpdateSql/{sid:.*}", method = RequestMethod.PATCH)
+    @StatefulRoute(stateName = StateName.DB_SESSION, stateIdExpression = "#sid")
     public OdcResult<ResourceSql> getUpdateSql(@PathVariable String sid,
             @RequestBody OdcGenerateUpdateTableDDLReq req) {
         // parse sid and database name, sid:1-1:d:database:t:tb1
