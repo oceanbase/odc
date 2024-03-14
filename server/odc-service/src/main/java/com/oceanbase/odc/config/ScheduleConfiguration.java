@@ -104,12 +104,12 @@ public class ScheduleConfiguration {
         int poolSize = Math.max(SystemUtils.availableProcessors(), 5);
         executor.setCorePoolSize(poolSize);
         executor.setMaxPoolSize(poolSize);
-        executor.setQueueCapacity(0);
+        executor.setQueueCapacity(512);
         executor.setThreadNamePrefix("auto-approval-");
         executor.setWaitForTasksToCompleteOnShutdown(true);
         executor.setAwaitTerminationSeconds(5);
         executor.setTaskDecorator(new TraceDecorator<>());
-        executor.setRejectedExecutionHandler(new ThreadPoolExecutor.CallerRunsPolicy());
+        executor.setRejectedExecutionHandler(new ThreadPoolExecutor.AbortPolicy());
         executor.initialize();
         log.info("autoApprovalExecutor initialized");
         return executor;
