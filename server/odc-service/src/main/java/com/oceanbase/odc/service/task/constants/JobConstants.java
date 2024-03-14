@@ -43,7 +43,7 @@ public class JobConstants {
 
     public static final String ODC_BOOT_MODE_EXECUTOR = "TASK_EXECUTOR";
 
-    public static final int REPORT_TASK_INFO_INTERVAL_SECONDS = 30;
+    public static final int REPORT_TASK_INFO_INTERVAL_SECONDS = 10;
 
     public static final int REPORT_TASK_INFO_DELAY_SECONDS = 1;
 
