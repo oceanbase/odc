@@ -18,6 +18,7 @@ package com.oceanbase.odc.server.web.trace;
 import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
+import java.util.Objects;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.MethodParameter;
@@ -64,15 +65,17 @@ public class TraceSuccessResponseAdvice implements ResponseBodyAdvice<SuccessRes
     public SuccessResponse beforeBodyWrite(SuccessResponse body, MethodParameter returnType,
             MediaType selectedContentType, Class<? extends HttpMessageConverter<?>> selectedConverterType,
             ServerHttpRequest request, ServerHttpResponse response) {
-        body.setServer(SERVER);
-        body.setTraceId(TraceContextHolder.getTraceId());
-        if (StringUtils.isNotBlank(TraceContextHolder.getRequestId())) {
-            body.setRequestId(TraceContextHolder.getRequestId());
-        }
+        if (Objects.nonNull(body)) {
+            body.setServer(SERVER);
+            body.setTraceId(TraceContextHolder.getTraceId());
+            if (StringUtils.isNotBlank(TraceContextHolder.getRequestId())) {
+                body.setRequestId(TraceContextHolder.getRequestId());
+            }
 
-        body.setDurationMillis(TraceContextHolder.getDuration());
-        body.setTimestamp(OffsetDateTime.ofInstant(
-                Instant.ofEpochMilli(TraceContextHolder.getStartEpochMilli()), ZoneId.systemDefault()));
+            body.setDurationMillis(TraceContextHolder.getDuration());
+            body.setTimestamp(OffsetDateTime.ofInstant(
+                    Instant.ofEpochMilli(TraceContextHolder.getStartEpochMilli()), ZoneId.systemDefault()));
+        }
         return body;
     }
 }

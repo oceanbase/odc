@@ -16,6 +16,7 @@
 package com.oceanbase.odc.service.notification;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -23,6 +24,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.oceanbase.odc.common.util.ExceptionUtils;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
+import com.oceanbase.odc.core.shared.constant.OrganizationType;
+import com.oceanbase.odc.metadb.iam.OrganizationEntity;
+import com.oceanbase.odc.metadb.iam.OrganizationRepository;
 import com.oceanbase.odc.metadb.notification.MessageRepository;
 import com.oceanbase.odc.metadb.notification.MessageSendingHistoryEntity;
 import com.oceanbase.odc.metadb.notification.MessageSendingHistoryRepository;
@@ -66,6 +70,9 @@ public class Broker {
     @Autowired
     private MessageSendingHistoryRepository sendingHistoryRepository;
 
+    @Autowired
+    private OrganizationRepository organizationRepository;
+
     public void dequeueEvent(EventStatus eventStatus) {
         try {
             // 从事件队列中拉取事件
@@ -83,6 +90,10 @@ public class Broker {
 
     @Transactional(rollbackFor = Exception.class)
     public void enqueueEvent(Event event) {
+        Optional<OrganizationEntity> optional = organizationRepository.findById(event.getOrganizationId());
+        if (optional.isPresent() && optional.get().getType() == OrganizationType.INDIVIDUAL) {
+            return;
+        }
         eventQueue.offer(event);
     }
 
