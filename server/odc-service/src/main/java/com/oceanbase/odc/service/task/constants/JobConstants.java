@@ -45,11 +45,11 @@ public class JobConstants {
 
     public static final int REPORT_TASK_INFO_INTERVAL_SECONDS = 30;
 
-    public static final int REPORT_TASK_INFO_DELAY_SECONDS = 5;
+    public static final int REPORT_TASK_INFO_DELAY_SECONDS = 1;
 
     public static final int REPORT_TASK_HEART_INTERVAL_SECONDS = 5;
 
-    public static final int REPORT_TASK_HEART_DELAY_SECONDS = 5;
+    public static final int REPORT_TASK_HEART_DELAY_SECONDS = 1;
 
     public static final String ODC_SERVER_CLASS_NAME = "com.oceanbase.odc.server.OdcServer";
 
