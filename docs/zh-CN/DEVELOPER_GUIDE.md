@@ -245,11 +245,11 @@ script/build_jar.sh
 
 ```shell
 #set environment variables
-export ODC_DATABASE_HOST="???"
-export ODC_DATABASE_PORT==????
-export ODC_DATABASE_NAME="???"
-export ODC_DATABASE_USERNAME="???"
-export ODC_DATABASE_PASSWORD="???"
+export DATABASE_HOST="???"
+export DATABASE_PORT=????
+export DATABASE_NAME="???"
+export DATABASE_USERNAME="???"
+export DATABASE_PASSWORD="???"
 export ODC_PROFILE_MODE="alipay"
 export ODC_SERVER_PORT=8989
 
@@ -286,11 +286,11 @@ sudo rpm -i odc-server-*.rpm
 
 ```shell
 #set environment variables
-export ODC_DATABASE_HOST="???"
-export ODC_DATABASE_PORT==????
-export ODC_DATABASE_NAME="???"
-export ODC_DATABASE_USERNAME="???"
-export ODC_DATABASE_PASSWORD="???"
+export DATABASE_HOST="???"
+export DATABASE_PORT==????
+export DATABASE_NAME="???"
+export DATABASE_USERNAME="???"
+export DATABASE_PASSWORD="???"
 export ODC_PROFILE_MODE="alipay"
 export ODC_SERVER_PORT=8989
 
