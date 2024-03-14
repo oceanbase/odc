@@ -210,9 +210,6 @@ public class FlowInstanceService {
     private RequestDispatcher requestDispatcher;
     private ActiveTaskAccessor activeTaskAccessor;
     @Autowired
-    @Qualifier("autoApprovalExecutor")
-    private ThreadPoolTaskExecutor executorService;
-    @Autowired
     private ScheduleService scheduleService;
     @Autowired
     private ApprovalClient approvalClient;

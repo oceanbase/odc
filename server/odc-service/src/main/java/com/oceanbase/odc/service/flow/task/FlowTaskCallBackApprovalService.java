@@ -28,6 +28,8 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.flowable.engine.TaskService;
 import org.flowable.task.api.Task;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Service;
 
 import com.oceanbase.odc.common.concurrent.Await;
@@ -71,15 +73,21 @@ public class FlowTaskCallBackApprovalService {
     private ServiceTaskInstanceRepository serviceTaskRepository;
     @Autowired
     private ScheduleService scheduleService;
+    @Autowired
+    @Qualifier("autoApprovalExecutor")
+    private ThreadPoolTaskExecutor executorService;
 
     public void approval(long flowInstanceId, long flowTaskInstanceId, FlowNodeStatus flowNodeStatus,
             Map<String, Object> approvalVariables) {
-        try {
-            doApproval(flowInstanceId, flowTaskInstanceId, flowNodeStatus, approvalVariables);
-        } catch (Throwable e) {
-            log.warn("approval task callback node  failed, flowInstanceId={}, flowTaskInstanceId={}, flowNodeStatus={}",
-                    flowInstanceId, flowTaskInstanceId, flowNodeStatus.name());
-        }
+        executorService.execute(() -> {
+            try {
+                doApproval(flowInstanceId, flowTaskInstanceId, flowNodeStatus, approvalVariables);
+            } catch (Throwable e) {
+                log.warn(
+                        "approval task callback node  failed, flowInstanceId={}, flowTaskInstanceId={}, flowNodeStatus={}",
+                        flowInstanceId, flowTaskInstanceId, flowNodeStatus.name());
+            }
+        });
     }
 
     private void doApproval(long flowInstanceId, long flowTaskInstanceId, FlowNodeStatus flowNodeStatus,
