@@ -18,6 +18,7 @@ package com.oceanbase.odc.service.resultset;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -36,6 +37,7 @@ import java.util.concurrent.Callable;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.file.PathUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -134,6 +136,7 @@ public class ResultSetExportTask implements Callable<ResultSetExportResult> {
                 public FileVisitResult visitFile(Path file, BasicFileAttributes attrs)
                     throws IOException {
                     log.info(file.toString());
+                    log.info(FileUtils.readFileToString(file.toFile(), StandardCharsets.UTF_8));
                     return FileVisitResult.CONTINUE;
                 }
             });
@@ -146,7 +149,10 @@ public class ResultSetExportTask implements Callable<ResultSetExportResult> {
              */
             File origin = new File(localResultSetFilePath);
             if (!origin.exists()) {
+                log.warn("file not exists");
                 FileUtils.touch(origin);
+            } else {
+                log.info("file exists");
             }
 
             /*
