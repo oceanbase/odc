@@ -15,11 +15,14 @@
  */
 package com.oceanbase.odc.service.flow.listener;
 
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
+
 import com.oceanbase.odc.common.event.AbstractEventListener;
 import com.oceanbase.odc.common.util.RetryExecutor;
 import com.oceanbase.odc.service.flow.event.UserTaskCreatedEvent;
 import com.oceanbase.odc.service.flow.instance.FlowApprovalInstance;
 
+import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -32,6 +35,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class AutoApproveUserTaskListener extends AbstractEventListener<UserTaskCreatedEvent> {
 
+    private final ThreadPoolTaskExecutor executorService;
     private final RetryExecutor retryExecutor =
             RetryExecutor.builder().initialDelay(true).retryIntervalMillis(1000).retryTimes(3).build();
 
@@ -63,13 +67,17 @@ public class AutoApproveUserTaskListener extends AbstractEventListener<UserTaskC
         }
     }
 
+    public AutoApproveUserTaskListener(@NonNull ThreadPoolTaskExecutor executorService) {
+        this.executorService = executorService;
+    }
+
     @Override
     public void onEvent(UserTaskCreatedEvent event) {
         FlowApprovalInstance approvalInstance = event.getApprovalInstance();
         if (!approvalInstance.isAutoApprove()) {
             return;
         }
-        new AutoApproveTask(approvalInstance, retryExecutor).run();
+        this.executorService.submit(new AutoApproveTask(approvalInstance, retryExecutor));
     }
 
 }

@@ -247,24 +247,16 @@ public class FlowApprovalInstance extends BaseFlowUserTaskInstance {
             if (!this.autoApprove && requireOperator) {
                 this.operatorId = authenticationFacade.currentUserId();
             }
-            Map<String, Object> variables = new HashMap<>();
-            if (autoApprove) {
-                variables.putIfAbsent(APPROVAL_VARIABLE_NAME, true);
-                completeAuto(variables, this.getUserTaskId());
-            } else {
-                List<FormProperty> formProperties = getFormProperties();
-                formProperties = formProperties.stream()
-                        .filter(f -> APPROVAL_VARIABLE_NAME.equals(f.getName())
-                                && f.getType() instanceof BooleanFormType)
-                        .collect(Collectors.toList());
-                if (formProperties.isEmpty()) {
-                    log.warn("Form data in the approval node is not detected, propertyName={}", APPROVAL_VARIABLE_NAME);
-                }
-
-                variables.putIfAbsent(APPROVAL_VARIABLE_NAME, approved);
-                complete(variables);
+            List<FormProperty> formProperties = getFormProperties();
+            formProperties = formProperties.stream()
+                    .filter(f -> APPROVAL_VARIABLE_NAME.equals(f.getName()) && f.getType() instanceof BooleanFormType)
+                    .collect(Collectors.toList());
+            if (formProperties.isEmpty()) {
+                log.warn("Form data in the approval node is not detected, propertyName={}", APPROVAL_VARIABLE_NAME);
             }
-
+            Map<String, Object> variables = new HashMap<>();
+            variables.putIfAbsent(APPROVAL_VARIABLE_NAME, approved);
+            complete(variables);
         } catch (Exception e) {
             Long operatorId = null;
             if (!this.autoApprove) {

@@ -78,12 +78,6 @@ public class StartPreparingJob implements Job {
             } catch (Throwable e) {
                 log.warn("try to start job {} failed: ", a.getId(), e);
             }
-            // Sleep 100 ms between every job
-            try {
-                Thread.sleep(100);
-            } catch (InterruptedException e) {
-                log.warn("Sleep be interrupted, jobId={}", a.getId(), e);
-            }
         });
     }
 
