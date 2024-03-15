@@ -346,6 +346,8 @@ public class ResultSetExportTask implements Callable<ResultSetExportResult> {
                     FileUtils.deleteQuietly(dest);
                 }
                 FileUtils.moveFile(origin, dest);
+                log.info("dest : " + dest.getAbsolutePath());
+                log.info(FileUtils.readFileToString(dest, StandardCharsets.UTF_8));
                 return dest.getName();
             }
         } finally {

@@ -22,6 +22,7 @@ import static org.awaitility.Awaitility.await;
 import java.io.File;
 import java.io.FileReader;
 import java.io.LineNumberReader;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Paths;
 
 import org.apache.commons.io.FileUtils;
@@ -44,6 +45,9 @@ import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.flow.task.model.ResultSetExportResult;
 import com.oceanbase.odc.service.resultset.ResultSetExportTaskParameter.CSVFormat;
 
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
 public class DumperResultSetExportTaskManagerTest extends ServiceTestEnv {
     private static ConnectionSession mysqlSession;
     private static ConnectionSession oracleSession;
@@ -118,6 +122,8 @@ public class DumperResultSetExportTaskManagerTest extends ServiceTestEnv {
         ResultSetExportTaskContext context = manager.start(mysqlConnecitonConfig, req, taskId);
         await().atMost(30, SECONDS).until(context::isDone);
         File file = Paths.get(basePath, taskId, fileName + req.getFileFormat().getExtension()).toFile();
+        log.info("uttttttttt  file:" + file.getAbsolutePath());
+        log.info("exists? " + FileUtils.readFileToString(file, StandardCharsets.UTF_8));
         LineNumberReader lineNumberReader = new LineNumberReader(new FileReader(file));
         lineNumberReader.skip(Long.MAX_VALUE);
         Assert.assertEquals(4, lineNumberReader.getLineNumber());
