@@ -16,6 +16,3 @@
 
 INSERT INTO config_system_configuration(`key`, `value`, `description`) VALUES('odc.web.stateful-route.enabled',
     'true', 'enable stateful route') ON DUPLICATE KEY UPDATE `id`=`id`;
-
-INSERT INTO config_system_configuration(`key`, `value`, `description`) VALUES('odc.web.stateful-route.host.type',
-    'ipAddress', 'host type used for forwarding, use ipAddress or hostName') ON DUPLICATE KEY UPDATE `id`=`id`;
