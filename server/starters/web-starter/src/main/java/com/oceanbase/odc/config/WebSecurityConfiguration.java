@@ -27,6 +27,7 @@ import org.springframework.security.config.annotation.web.builders.WebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.context.SecurityContextPersistenceFilter;
 import org.springframework.security.web.context.SecurityContextRepository;
 import org.springframework.web.servlet.LocaleResolver;
 
@@ -38,6 +39,7 @@ import com.oceanbase.odc.service.iam.auth.CustomAuthenticationEntryPoint;
 import com.oceanbase.odc.service.iam.auth.CustomAuthenticationFailureHandler;
 import com.oceanbase.odc.service.iam.auth.CustomAuthenticationSuccessHandler;
 import com.oceanbase.odc.service.iam.auth.CustomLogoutSuccessHandler;
+import com.oceanbase.odc.service.iam.auth.CustomPostRequestSessionInvalidationFilter;
 import com.oceanbase.odc.service.iam.auth.JwtSecurityContextRepository;
 import com.oceanbase.odc.service.iam.auth.UsernamePasswordConfigureHelper;
 import com.oceanbase.odc.service.iam.auth.bastion.BastionAuthenticationProcessingFilter;
@@ -152,9 +154,10 @@ public class WebSecurityConfiguration extends WebSecurityConfigurerAdapter {
         ldapSecurityConfigureHelper.configure(http, authenticationManager());
 
         http.setSharedObject(SecurityContextRepository.class, jwtSecurityContextRepository);
+        http.addFilterBefore(new CustomPostRequestSessionInvalidationFilter(), SecurityContextPersistenceFilter.class);
 
         /**
-         * todo 取消session
+         *  Do not allow SpringSecurity to use session
          */
         http.sessionManagement()
                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS);

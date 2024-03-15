@@ -17,18 +17,18 @@ package com.oceanbase.odc.service.iam.model;
 
 public class JwtProperties {
 
-    public static final String ID = "id";
-    public static final String ODC_JWT_TOKEN = "odcJwtToken";
-
-    public static final String AUTHENTICATION_KEY = "authentication";
+    public static final String ID = "ID";
+    /**
+     * Keep the format consistent with the key format in the cookie
+     */
+    public static final String ODC_JWT_TOKEN = "ODC-JWT-TOKEN";
 
     public static final String AUTHENTICATION_BLANK_VALUE = "";
 
-    public static final String PRINCIPAL = "principal";
+    public static final String PRINCIPAL = "PRINCIPAL";
 
-    public static final String ORGANIZATION_ID = "organization_id";
+    public static final String ORGANIZATION_ID = "oORGANIZATION_ID";
 
-    public static final String ORGANIZATION_TYPE = "organization_type";
+    public static final String ORGANIZATION_TYPE = "ORGANIZATION_TYPE";
 
-    public static final String DETAILS = "details";
 }

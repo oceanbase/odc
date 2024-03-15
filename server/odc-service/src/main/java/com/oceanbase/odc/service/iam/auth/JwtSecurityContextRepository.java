@@ -108,7 +108,6 @@ public class JwtSecurityContextRepository implements SecurityContextRepository {
 
 
         // 模拟出认证通过后完整的Authenication对象
-
         Map<String, Claim> claims = jwtService.getClaims(token);
         long id = claims.get(JwtProperties.ID).asLong();
 
@@ -116,10 +115,7 @@ public class JwtSecurityContextRepository implements SecurityContextRepository {
             Authentication authentication = authenticationCache.getIfPresent(id);
             context.setAuthentication(authentication);
         } else {
-
             String username = claims.get(JwtProperties.PRINCIPAL).asString();
-
-
             UserEntity userEntity = userRepository.findByAccountName(username).orElseThrow(() -> {
                 log.warn("Username not found: username {}", username);
                 return new UsernameNotFoundException(username);
