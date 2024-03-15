@@ -187,8 +187,8 @@ public abstract class BaseJobCaller implements JobCaller {
             return;
         }
         log.info("Preparing destroy,jobId={}, executorIdentifier={}.", ji.getId(), executorIdentifier);
-
-        destroy(ExecutorIdentifierParser.parser(executorIdentifier));
+        // first update destroy time, second destroy executor.
+        // if executor failed update will be rollback, ensure distributed transaction atomicity.
         int rows = taskFrameworkService.updateExecutorToDestroyed(ji.getId());
         if (rows > 0) {
             log.info("Destroy job {} executor {} succeed.", ji.getId(), executorIdentifier);
@@ -196,6 +196,7 @@ public abstract class BaseJobCaller implements JobCaller {
         } else {
             throw new JobException("update executor to destroyed failed, executor={0}", executorIdentifier);
         }
+        destroy(ExecutorIdentifierParser.parser(executorIdentifier));
     }
 
 
