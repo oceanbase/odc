@@ -24,6 +24,7 @@ import com.oceanbase.odc.common.util.SystemUtils;
 import com.oceanbase.odc.service.task.config.JobConfiguration;
 import com.oceanbase.odc.service.task.config.JobConfigurationHolder;
 import com.oceanbase.odc.service.task.config.TaskFrameworkProperties;
+import com.oceanbase.odc.service.task.enums.TaskRunMode;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -46,11 +47,14 @@ public class MonitorExecutorStatusRateLimiter implements StartJobRateLimiter {
 
     @Override
     public boolean tryAcquire() {
+        boolean acquired = true;
         if (taskFrameworkProperties.get().getRunMode().isProcess() && SystemUtils.isOnLinux()) {
             JobConfiguration jobConfiguration = JobConfigurationHolder.getJobConfiguration();
-            long processRunningJobs = jobConfiguration.getTaskFrameworkService().countProcessRunningJobs();
-            if (processRunningJobs >= runningJobCountLimit) {
-                return false;
+            long count = jobConfiguration.getTaskFrameworkService().countExecutorRunningJobs(TaskRunMode.PROCESS);
+            if (count >= runningJobCountLimit) {
+                log.warn("Amount of executor running jobs exceed limit, wait next schedule, limit={}, runningJobs={}.",
+                        runningJobCountLimit, count);
+                acquired = false;
             }
             // Get current system free memory
             long systemFreeMemory = SystemUtils.getSystemFreeMemory().convert(BinarySizeUnit.MB).getSizeDigit();
@@ -59,10 +63,12 @@ public class MonitorExecutorStatusRateLimiter implements StartJobRateLimiter {
             if (systemFreeMemory * 0.5 <= startNewProcessMemoryMinSize) {
                 log.warn("Current free memory lack, systemFreeMemory={}, startNewProcessMemoryMinSize={}",
                         systemFreeMemory, startNewProcessMemoryMinSize);
-                return false;
+                acquired = false;
             }
+        } else {
+            acquired = isExecutorWaitingToRunNotExceedThreshold();
         }
-        return isExecutorWaitingToRunNotExceedThreshold();
+        return acquired;
     }
 
     private int calculateRunningJobCountLimit(Supplier<TaskFrameworkProperties> taskFrameworkProperties) {

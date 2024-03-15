@@ -183,7 +183,7 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
     }
 
     @Override
-    public long countProcessRunningJobs() {
+    public long countExecutorRunningJobs(TaskRunMode runMode) {
 
         CriteriaBuilder cb = entityManager.getCriteriaBuilder();
         CriteriaQuery<Long> query = cb.createQuery(Long.class);
@@ -191,7 +191,7 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
         // sql like:
         // select count(*) from job_job where
         // create_time > now() - 30d
-        // and run_mode = 'PROCESS'
+        // and run_mode = 'runMode'
         // and status <> 'PREPARING'
         // and executor_destroyed_time is null
 
@@ -200,7 +200,7 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
         query.where(
                 cb.greaterThan(root.get(JobEntityColumn.CREATE_TIME),
                         JobDateUtils.getCurrentDateSubtractDays(RECENT_DAY)),
-                cb.equal(root.get(JobEntityColumn.RUN_MODE), TaskRunMode.PROCESS),
+                cb.equal(root.get(JobEntityColumn.RUN_MODE), runMode),
                 cb.notEqual(root.get(JobEntityColumn.STATUS), JobStatus.PREPARING),
                 cb.isNull(root.get(JobEntityColumn.EXECUTOR_DESTROYED_TIME)),
                 executorPredicate(root, cb));
