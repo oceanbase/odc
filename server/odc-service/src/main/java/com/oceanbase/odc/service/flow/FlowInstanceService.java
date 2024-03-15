@@ -44,9 +44,11 @@ import org.flowable.engine.HistoryService;
 import org.flowable.engine.history.HistoricProcessInstance;
 import org.flowable.engine.history.HistoricProcessInstanceQuery;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -208,6 +210,9 @@ public class FlowInstanceService {
     private RequestDispatcher requestDispatcher;
     private ActiveTaskAccessor activeTaskAccessor;
     @Autowired
+    @Qualifier("autoApprovalExecutor")
+    private ThreadPoolTaskExecutor executorService;
+    @Autowired
     private ScheduleService scheduleService;
     @Autowired
     private ApprovalClient approvalClient;
@@ -247,7 +252,7 @@ public class FlowInstanceService {
 
     @PostConstruct
     public void init() {
-        this.eventPublisher.addEventListener(new AutoApproveUserTaskListener());
+        this.eventPublisher.addEventListener(new AutoApproveUserTaskListener(executorService));
         this.activeTaskAccessor = new DefaultActiveTaskAccessor(eventPublisher);
     }
 

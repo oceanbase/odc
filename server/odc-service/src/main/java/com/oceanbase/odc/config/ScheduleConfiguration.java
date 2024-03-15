@@ -104,7 +104,6 @@ public class ScheduleConfiguration {
         int poolSize = Math.max(SystemUtils.availableProcessors(), 5);
         executor.setCorePoolSize(poolSize);
         executor.setMaxPoolSize(poolSize);
-        executor.setQueueCapacity(1024);
         executor.setThreadNamePrefix("auto-approval-");
         executor.setWaitForTasksToCompleteOnShutdown(true);
         executor.setAwaitTerminationSeconds(5);
@@ -120,7 +119,6 @@ public class ScheduleConfiguration {
         ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
         executor.setCorePoolSize(CORE_NUMBER * 2);
         executor.setMaxPoolSize(CORE_NUMBER * 10);
-        executor.setQueueCapacity(1024);
         executor.setThreadNamePrefix("flow-task-executor-");
         executor.setWaitForTasksToCompleteOnShutdown(true);
         executor.setAwaitTerminationSeconds(5);
