@@ -27,6 +27,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Predicate;
 
@@ -154,6 +155,12 @@ public abstract class BaseParameterFactory<T extends BaseParameter> {
         sessionConfig.setJdbcOption("useCursorFetch", transferConfig.isUsePrepStmts() + "");
         sessionConfig.setJdbcOption("zeroDateTimeBehavior", DEFAULT_ZERO_DATE_TIME_BEHAVIOR);
         sessionConfig.setJdbcOption("sendConnectionAttributes", "false");
+        Optional.ofNullable(transferConfig.getExecutionTimeoutSeconds())
+                .ifPresent(timeout -> {
+                    sessionConfig.setJdbcOption("socketTimeout", timeout * 1000 + "");
+                    sessionConfig.setJdbcOption("connectTimeout", timeout * 1000 + "");
+                    sessionConfig.addInitSql4Both("set ob_query_timeout = " + timeout * 1000000);
+                });
 
         parameter.setSessionConfig(sessionConfig);
     }
