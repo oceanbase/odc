@@ -58,7 +58,7 @@ public class SingleConnectionDataSource extends BaseClassBasedDataSource impleme
     private final boolean autoReconnect;
     @Setter
     private EventPublisher eventPublisher;
-    protected Connection connection;
+    protected volatile Connection connection;
     private final List<ConnectionInitializer> initializerList = new LinkedList<>();
     private Lock lock;
     @Setter
@@ -98,6 +98,10 @@ public class SingleConnectionDataSource extends BaseClassBasedDataSource impleme
      */
     public void resetConnection() throws SQLException {
         log.info("The connection will be reset soon");
+        if (!tryLock()) {
+            throw new ConflictException(ErrorCodes.ConnectionOccupied, new Object[] {},
+                    "Connection is occupied, waited " + this.timeOutMillis + " millis");
+        }
         close();
         this.connection = null;
         this.lock = null;
@@ -181,7 +185,7 @@ public class SingleConnectionDataSource extends BaseClassBasedDataSource impleme
         }
     }
 
-    private Connection innerCreateConnection() throws SQLException {
+    private synchronized Connection innerCreateConnection() throws SQLException {
         if (this.connection != null) {
             throw new IllegalStateException("Connection is not null");
         }
