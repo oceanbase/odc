@@ -157,7 +157,7 @@ public class WebSecurityConfiguration extends WebSecurityConfigurerAdapter {
         http.addFilterBefore(new CustomPostRequestSessionInvalidationFilter(), SecurityContextPersistenceFilter.class);
 
         /**
-         *  Do not allow SpringSecurity to use session
+         * Do not allow SpringSecurity to use session
          */
         http.sessionManagement()
                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS);
