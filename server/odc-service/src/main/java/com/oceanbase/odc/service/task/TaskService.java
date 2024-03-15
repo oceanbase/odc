@@ -16,7 +16,6 @@
 package com.oceanbase.odc.service.task;
 
 import java.io.File;
-import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.text.MessageFormat;
 import java.util.ArrayList;
@@ -174,8 +173,40 @@ public class TaskService {
         return nullSafeFindById(id);
     }
 
-    public String getLog(Long userId, String taskId, TaskType type, OdcTaskLogLevel logLevel) throws IOException {
-        // TODO: fix file path traversal issue
+    public String getLog(Long userId, String taskId, TaskType type, OdcTaskLogLevel logLevel) {
+        File logFile;
+        try {
+            logFile = getLogFile(userId, taskId, type, logLevel);
+        } catch (NotFoundException ex) {
+            return ErrorCodes.TaskLogNotFound.getLocalizedMessage(new Object[] {"Id", taskId});
+        }
+        try (ReversedLinesFileReader reader = new ReversedLinesFileReader(logFile, StandardCharsets.UTF_8)) {
+            List<String> lines = new ArrayList<>();
+            int bytes = 0;
+            String line;
+            while ((line = reader.readLine()) != null) {
+                lines.add(line);
+                bytes += line.getBytes().length;
+                if (lines.size() >= MAX_LOG_LINE_COUNT || bytes >= MAX_LOG_BYTE_COUNT) {
+                    lines.add("[ODC INFO]: \n"
+                            + "Logs exceed max limitation (10000 rows or 1 MB), only the latest part is displayed.\n"
+                            + "Please download the log file for the full content.");
+                    break;
+                }
+            }
+            StringBuilder logBuilder = new StringBuilder();
+            for (int i = lines.size() - 1; i >= 0; i--) {
+                logBuilder.append(lines.get(i)).append("\n");
+            }
+            return logBuilder.toString();
+        } catch (Exception ex) {
+            log.warn("Read task log file failed, details={}", ex.getMessage());
+            throw new UnexpectedException("Read task log file failed, details: " + ex.getMessage(), ex);
+        }
+    }
+
+    public File getLogFile(Long userId, String taskId, TaskType type, OdcTaskLogLevel logLevel)
+            throws NotFoundException {
         String filePath;
         switch (type) {
             case ASYNC:
@@ -229,29 +260,9 @@ public class TaskService {
         }
         File logFile = new File(filePath);
         if (!logFile.exists()) {
-            return ErrorCodes.TaskLogNotFound.getLocalizedMessage(new Object[] {"Id", taskId});
+            throw new NotFoundException(ResourceType.ODC_FILE, "Path", filePath);
         }
-        List<String> lines = new ArrayList<>();
-        int bytes = 0;
-        try (ReversedLinesFileReader reader = new ReversedLinesFileReader(logFile, StandardCharsets.UTF_8)) {
-            String line;
-            while ((line = reader.readLine()) != null) {
-                lines.add(line);
-                bytes += line.getBytes().length;
-                if (lines.size() >= MAX_LOG_LINE_COUNT || bytes >= MAX_LOG_BYTE_COUNT) {
-                    lines.add("Logs exceed max limitation (10000 rows or 1 MB), only the latest part is displayed.");
-                    break;
-                }
-            }
-            StringBuilder logBuilder = new StringBuilder();
-            for (int i = lines.size() - 1; i >= 0; i--) {
-                logBuilder.append(lines.get(i)).append("\n");
-            }
-            return logBuilder.toString();
-        } catch (Exception ex) {
-            log.warn("Read task log file failed, details={}", ex.getMessage());
-            throw new UnexpectedException("Read task log file failed, details: " + ex.getMessage(), ex);
-        }
+        return logFile;
     }
 
     @Transactional(rollbackFor = Exception.class)
