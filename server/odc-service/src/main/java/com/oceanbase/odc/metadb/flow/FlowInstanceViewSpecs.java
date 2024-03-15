@@ -16,7 +16,6 @@
 
 package com.oceanbase.odc.metadb.flow;
 
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Date;
 import java.util.Objects;
@@ -97,13 +96,6 @@ public class FlowInstanceViewSpecs {
 
     public static Specification<FlowInstanceViewEntity> taskTypeIn(Collection<TaskType> taskTypes) {
         return SpecificationUtil.columnIn(FLOW_INSTANCE_VIEW_TASK_TYPE, taskTypes);
-    }
-
-    public static Specification<FlowInstanceViewEntity> groupByIdAndTaskType() {
-        return (root, query, cb) -> {
-            query.groupBy(Arrays.asList(root.get(FLOW_INSTANCE_VIEW_ID_NAME), root.get(FLOW_INSTANCE_VIEW_TASK_TYPE)));
-            return cb.conjunction();
-        };
     }
 
     public static Specification<FlowInstanceViewEntity> leftJoinFlowInstanceApprovalView(
