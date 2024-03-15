@@ -62,6 +62,11 @@ public interface TaskFrameworkService {
      */
     long countRunningNeverHeartJobs(int neverHeartSeconds);
 
+    /**
+     * count jobs which process is running
+     */
+    long countProcessRunningJobs();
+
     JobDefinition getJobDefinition(Long id);
 
     int startSuccess(Long id, String executorIdentifier);

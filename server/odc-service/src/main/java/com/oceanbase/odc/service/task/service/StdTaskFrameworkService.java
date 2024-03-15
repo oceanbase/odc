@@ -157,7 +157,6 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
         return page(condition, page, size);
     }
 
-
     @Override
     public long countRunningNeverHeartJobs(int neverHeartSeconds) {
         CriteriaBuilder cb = entityManager.getCriteriaBuilder();
@@ -182,6 +181,32 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
 
         return entityManager.createQuery(query).getSingleResult();
     }
+
+    @Override
+    public long countProcessRunningJobs() {
+
+        CriteriaBuilder cb = entityManager.getCriteriaBuilder();
+        CriteriaQuery<Long> query = cb.createQuery(Long.class);
+
+        // sql like:
+        // select count(*) from job_job where
+        // create_time > now() - 30d
+        // and run_mode = 'PROCESS'
+        // and status <> 'PREPARING'
+        // and executor_destroyed_time is null
+
+        Root<JobEntity> root = query.from(JobEntity.class);
+        query.select(cb.count(root));
+        query.where(
+                cb.greaterThan(root.get(JobEntityColumn.CREATE_TIME),
+                        JobDateUtils.getCurrentDateSubtractDays(RECENT_DAY)),
+                cb.equal(root.get(JobEntityColumn.RUN_MODE), TaskRunMode.PROCESS),
+                cb.notEqual(root.get(JobEntityColumn.STATUS), JobStatus.PREPARING),
+                cb.isNull(root.get(JobEntityColumn.EXECUTOR_DESTROYED_TIME)),
+                executorPredicate(root, cb));
+        return entityManager.createQuery(query).getSingleResult();
+    }
+
 
     private Specification<JobEntity> getExecutorSpec() {
         return (root, query, cb) -> executorPredicate(root, cb);

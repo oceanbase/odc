@@ -53,6 +53,8 @@ public interface TaskFrameworkProperties {
 
     int getStartNewProcessMemoryMinSizeInMilliBytes();
 
+    int getLimitRunningJobTotalMemoryInMilliBytes();
+
     String getStartPreparingJobCronExpression();
 
     String getCheckRunningJobCronExpression();

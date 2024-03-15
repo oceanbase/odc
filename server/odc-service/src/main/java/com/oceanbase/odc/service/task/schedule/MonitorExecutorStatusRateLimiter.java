@@ -15,6 +15,8 @@
  */
 package com.oceanbase.odc.service.task.schedule;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.function.Supplier;
 
 import com.oceanbase.odc.common.unit.BinarySizeUnit;
@@ -34,14 +36,42 @@ import lombok.extern.slf4j.Slf4j;
 public class MonitorExecutorStatusRateLimiter implements StartJobRateLimiter {
 
     private final Supplier<TaskFrameworkProperties> taskFrameworkProperties;
+    private final int runningJobCountLimit;
 
     public MonitorExecutorStatusRateLimiter(Supplier<TaskFrameworkProperties> taskFrameworkProperties) {
         this.taskFrameworkProperties = taskFrameworkProperties;
+        int limitCount = calculateRunningJobCountLimit(taskFrameworkProperties);
+        this.runningJobCountLimit = (limitCount == 0 ? 1 : limitCount);
+    }
+
+    private int calculateRunningJobCountLimit(Supplier<TaskFrameworkProperties> taskFrameworkProperties) {
+        if (taskFrameworkProperties.get().getRunMode().isProcess() && SystemUtils.isOnLinux()) {
+            // Get system free memory when limiter is init
+            long totalFreeMemory = SystemUtils.getSystemFreeMemory().convert(BinarySizeUnit.MB).getSizeDigit();
+            int limitRunningTaskTotalMemoryInMilliBytes =
+                    taskFrameworkProperties.get().getLimitRunningJobTotalMemoryInMilliBytes();
+
+            int usedToRunningJobMem =
+                    limitRunningTaskTotalMemoryInMilliBytes < 2048 ? new Double(totalFreeMemory * 0.5).intValue()
+                            : limitRunningTaskTotalMemoryInMilliBytes;
+            return new BigDecimal(usedToRunningJobMem)
+                    .divide(new BigDecimal(taskFrameworkProperties.get().getStartNewProcessMemoryMinSizeInMilliBytes()),
+                            RoundingMode.FLOOR)
+                    .intValue();
+        }
+        return 0;
     }
 
     @Override
     public boolean tryAcquire() {
+
         if (taskFrameworkProperties.get().getRunMode().isProcess() && SystemUtils.isOnLinux()) {
+            JobConfiguration jobConfiguration = JobConfigurationHolder.getJobConfiguration();
+            long processRunningJobs = jobConfiguration.getTaskFrameworkService().countProcessRunningJobs();
+            if (processRunningJobs >= runningJobCountLimit) {
+                return false;
+            }
+            // Get current system free memory
             long systemFreeMemory = SystemUtils.getSystemFreeMemory().convert(BinarySizeUnit.MB).getSizeDigit();
             int startNewProcessMemoryMinSize =
                     taskFrameworkProperties.get().getStartNewProcessMemoryMinSizeInMilliBytes();
