@@ -62,6 +62,10 @@ public enum OmsProjectStatusEnum {
      */
     DELETED,
 
-    UNKNOWN
+    UNKNOWN;
+
+    private boolean isValid() {
+
+    }
 
 }

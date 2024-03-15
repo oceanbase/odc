@@ -99,7 +99,7 @@ public class ProjectStepResultChecker {
         // todo 用户手动暂停了项目
         if (isProjectFinished()) {
             checkerResult.setTaskStatus(TaskStatus.DONE);
-        } else if (isProjectFailed() || isProjectReleased()) {
+        } else if (isProjectFailed() || isProjectInvalid()) {
             checkerResult.setTaskStatus(TaskStatus.FAILED);
         } else {
             checkerResult.setTaskStatus(TaskStatus.RUNNING);
@@ -140,7 +140,7 @@ public class ProjectStepResultChecker {
         }
     }
 
-    private boolean isProjectReleased() {
+    private boolean isProjectInvalid() {
         boolean result = Arrays.asList(OmsProjectStatusEnum.DELETED, OmsProjectStatusEnum.RELEASED,
                 OmsProjectStatusEnum.RELEASING).contains(progressResponse.getStatus());
         if (result) {
