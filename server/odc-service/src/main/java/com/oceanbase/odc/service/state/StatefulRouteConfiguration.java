@@ -39,11 +39,12 @@ public class StatefulRouteConfiguration {
     private Integer capacity;
 
     @Bean
-    public ThreadPoolExecutor stetefullRouteThreadPoolExecutor() {
+    public ThreadPoolExecutor statefulRouteThreadPoolExecutor() {
         int core = Math.max(SystemUtils.availableProcessors() * 2, coolPoolSize);
+        int max = Math.max(maxPoolSize, core);
         return new ThreadPoolExecutor(
                 core,
-                maxPoolSize,
+                max,
                 60L,
                 TimeUnit.SECONDS,
                 new LinkedBlockingQueue<>(capacity),

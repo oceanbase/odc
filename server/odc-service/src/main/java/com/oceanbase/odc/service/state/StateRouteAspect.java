@@ -81,7 +81,7 @@ public class StateRouteAspect {
     private HttpRequestProvider requestProvider;
 
     @Autowired
-    private ThreadPoolExecutor stetefullRouteThreadPoolExecutor;
+    private ThreadPoolExecutor statefulRouteThreadPoolExecutor;
 
     @Pointcut("@annotation(com.oceanbase.odc.service.state.model.StatefulRoute)")
     public void stateRouteMethods() {}
@@ -135,7 +135,7 @@ public class StateRouteAspect {
             final HttpServletRequest request = requestProvider.getRequest();
             final ByteArrayOutputStream requestBody = requestProvider.getRequestBody();
             List<Pair<RouteInfo, Future<DispatchResponse>>> routeResponse = otherNodeRoute.stream().map(r -> {
-                Future<DispatchResponse> future = stetefullRouteThreadPoolExecutor.submit(
+                Future<DispatchResponse> future = statefulRouteThreadPoolExecutor.submit(
                         () -> requestDispatcher.forward(r.getHostName(), r.getPort(), request, requestBody));
                 return new Pair<>(r, future);
             }).collect(Collectors.toList());
