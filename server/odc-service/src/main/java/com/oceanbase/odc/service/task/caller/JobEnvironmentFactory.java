@@ -68,7 +68,8 @@ public class JobEnvironmentFactory {
     }
 
     private void putFromEnv(String newEnv, String fromEnv, String otherEnv) {
-        putEnv(newEnv, () -> Optional.ofNullable(SystemUtils.getEnvOrProperty(fromEnv)).orElse(otherEnv));
+        putEnv(newEnv, () -> Optional.ofNullable(SystemUtils.getEnvOrProperty(fromEnv))
+                .orElse(SystemUtils.getEnvOrProperty(otherEnv)));
     }
 
     private void putEnv(String envName, Supplier<String> envSupplier) {
