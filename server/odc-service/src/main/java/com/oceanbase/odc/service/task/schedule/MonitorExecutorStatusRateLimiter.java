@@ -44,27 +44,8 @@ public class MonitorExecutorStatusRateLimiter implements StartJobRateLimiter {
         this.runningJobCountLimit = (limitCount == 0 ? 1 : limitCount);
     }
 
-    private int calculateRunningJobCountLimit(Supplier<TaskFrameworkProperties> taskFrameworkProperties) {
-        if (taskFrameworkProperties.get().getRunMode().isProcess() && SystemUtils.isOnLinux()) {
-            // Get system free memory when limiter is init
-            long totalFreeMemory = SystemUtils.getSystemFreeMemory().convert(BinarySizeUnit.MB).getSizeDigit();
-            int limitRunningTaskTotalMemoryInMilliBytes =
-                    taskFrameworkProperties.get().getLimitRunningJobTotalMemoryInMilliBytes();
-
-            int usedToRunningJobMem =
-                    limitRunningTaskTotalMemoryInMilliBytes < 2048 ? new Double(totalFreeMemory * 0.5).intValue()
-                            : limitRunningTaskTotalMemoryInMilliBytes;
-            return new BigDecimal(usedToRunningJobMem)
-                    .divide(new BigDecimal(taskFrameworkProperties.get().getStartNewProcessMemoryMinSizeInMilliBytes()),
-                            RoundingMode.FLOOR)
-                    .intValue();
-        }
-        return 0;
-    }
-
     @Override
     public boolean tryAcquire() {
-
         if (taskFrameworkProperties.get().getRunMode().isProcess() && SystemUtils.isOnLinux()) {
             JobConfiguration jobConfiguration = JobConfigurationHolder.getJobConfiguration();
             long processRunningJobs = jobConfiguration.getTaskFrameworkService().countProcessRunningJobs();
@@ -82,6 +63,24 @@ public class MonitorExecutorStatusRateLimiter implements StartJobRateLimiter {
             }
         }
         return isExecutorWaitingToRunNotExceedThreshold();
+    }
+
+    private int calculateRunningJobCountLimit(Supplier<TaskFrameworkProperties> taskFrameworkProperties) {
+        if (taskFrameworkProperties.get().getRunMode().isProcess() && SystemUtils.isOnLinux()) {
+            // Get system free memory when limiter is init
+            long totalFreeMemory = SystemUtils.getSystemFreeMemory().convert(BinarySizeUnit.MB).getSizeDigit();
+            int limitRunningTaskTotalMemoryInMilliBytes =
+                    taskFrameworkProperties.get().getLimitRunningJobTotalMemoryInMilliBytes();
+
+            int usedToRunningJobMem =
+                    limitRunningTaskTotalMemoryInMilliBytes < 2048 ? new Double(totalFreeMemory * 0.5).intValue()
+                            : limitRunningTaskTotalMemoryInMilliBytes;
+            return new BigDecimal(usedToRunningJobMem)
+                    .divide(new BigDecimal(taskFrameworkProperties.get().getStartNewProcessMemoryMinSizeInMilliBytes()),
+                            RoundingMode.FLOOR)
+                    .intValue();
+        }
+        return 0;
     }
 
     private boolean isExecutorWaitingToRunNotExceedThreshold() {
