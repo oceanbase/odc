@@ -181,7 +181,7 @@ public class SingleConnectionDataSource extends BaseClassBasedDataSource impleme
         }
     }
 
-    private Connection innerCreateConnection() throws SQLException {
+    private synchronized Connection innerCreateConnection() throws SQLException {
         if (this.connection != null) {
             throw new IllegalStateException("Connection is not null");
         }
