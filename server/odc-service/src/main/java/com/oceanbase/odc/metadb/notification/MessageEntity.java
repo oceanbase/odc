@@ -86,4 +86,6 @@ public class MessageEntity {
     private Date lastSentTime;
     @Column(name = "error_message")
     private String errorMessage;
+    @Column(name = "event_id")
+    private Long eventId;
 }

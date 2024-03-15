@@ -38,7 +38,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.validation.annotation.Validated;
 
-import com.oceanbase.odc.common.util.SystemUtils;
 import com.oceanbase.odc.core.authority.SecurityManager;
 import com.oceanbase.odc.core.authority.exception.AccessDeniedException;
 import com.oceanbase.odc.core.authority.model.DefaultSecurityResource;
@@ -92,6 +91,7 @@ import com.oceanbase.odc.service.permission.database.DatabasePermissionHelper;
 import com.oceanbase.odc.service.permission.database.model.DatabasePermissionType;
 import com.oceanbase.odc.service.session.factory.DefaultConnectSessionFactory;
 import com.oceanbase.odc.service.session.factory.DefaultConnectSessionIdGenerator;
+import com.oceanbase.odc.service.session.factory.StateHostGenerator;
 
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
@@ -147,6 +147,9 @@ public class ConnectSessionService {
     private CloudMetadataClient cloudMetadataClient;
     @Autowired
     private UserConfigFacade userConfigFacade;
+
+    @Autowired
+    private StateHostGenerator stateHostGenerator;
 
     @PostConstruct
     public void init() {
@@ -274,6 +277,7 @@ public class ConnectSessionService {
         DefaultConnectSessionIdGenerator idGenerator = new DefaultConnectSessionIdGenerator();
         idGenerator.setDatabaseId(req.getDbId());
         idGenerator.setFixRealId(StringUtils.isBlank(req.getRealId()) ? null : req.getRealId());
+        idGenerator.setHost(stateHostGenerator.getHost());
         sessionFactory.setIdGenerator(idGenerator);
         long timeoutMillis = TimeUnit.MILLISECONDS.convert(sessionProperties.getTimeoutMins(), TimeUnit.MINUTES);
         timeoutMillis = timeoutMillis + this.connectionSessionManager.getScanIntervalMillis();
@@ -327,7 +331,7 @@ public class ConnectSessionService {
         ConnectionSession session = connectionSessionManager.getSession(sessionId);
         if (session == null) {
             CreateSessionReq req = new DefaultConnectSessionIdGenerator().getKeyFromId(sessionId);
-            if (!autoCreate || !StringUtils.equals(req.getFrom(), SystemUtils.getHostName())) {
+            if (!autoCreate || !StringUtils.equals(req.getFrom(), stateHostGenerator.getHost())) {
                 throw new NotFoundException(ResourceType.ODC_SESSION, "ID", sessionId);
             }
             session = create(req);

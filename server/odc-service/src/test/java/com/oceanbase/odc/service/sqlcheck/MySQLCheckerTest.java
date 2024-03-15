@@ -1137,7 +1137,8 @@ public class MySQLCheckerTest {
                 "drop table aaa",
                 "create table abcd(id varchar(64))",
                 "alter table abcd modify id int AUTO_INCREMENT",
-                "alter table abcd modify id varchar(64)"
+                "alter table abcd modify id varchar(64)",
+                "alter table abcd add column a int after a"
         };
         JdbcTemplate jdbcTemplate = Mockito.mock(JdbcTemplate.class);
         Mockito.when(jdbcTemplate.queryForObject(Mockito.anyString(), Mockito.any(RowMapper.class)))
@@ -1153,8 +1154,9 @@ public class MySQLCheckerTest {
         CheckViolation c4 = new CheckViolation(sqls[3], 1, 0, 0, 13, type, new Object[] {});
         CheckViolation c5 = new CheckViolation(sqls[5], 1, 17, 17, 44, type, new Object[] {});
         CheckViolation c6 = new CheckViolation(sqls[5], 1, 17, 17, 44, type, new Object[] {});
+        CheckViolation c7 = new CheckViolation(sqls[7], 1, 17, 17, 40, type, new Object[] {});
 
-        List<CheckViolation> expect = Arrays.asList(c1, c2, c3, c4, c5, c6);
+        List<CheckViolation> expect = Arrays.asList(c1, c2, c3, c4, c5, c6, c7);
         Assert.assertEquals(expect, actual);
     }
 

@@ -13,19 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.flow.task.model;
+package com.oceanbase.odc.service.state.model;
 
-import java.io.InputStream;
+import com.oceanbase.odc.service.pldebug.PLDebugStateManager;
+import com.oceanbase.odc.service.session.ConnectSessionStateManager;
 
-import lombok.Data;
+import lombok.Getter;
 
-/**
- * @author jingtian
- * @date 2024/3/5
- * @since ODC_release_4.2.4
- */
-@Data
-public class DatabaseChangeInputStream {
-    private InputStream inputStream;
-    private long sqlTotalBytes;
+@Getter
+public enum StateName {
+    NONE(null),
+    PL_DEBUG_SESSION(PLDebugStateManager.class),
+    DB_SESSION(ConnectSessionStateManager.class);
+
+    private final Class<? extends StateManager> stateManagerClass;
+
+    StateName(Class<? extends StateManager> stateManagerClass) {
+        this.stateManagerClass = stateManagerClass;
+    }
 }

@@ -169,7 +169,8 @@ public class MySQLOfflineDdlExists implements SqlCheckRule {
 
     protected List<CheckViolation> addOrDropStoredVirtualColumn(Statement statement, AlterTableAction action) {
         return addColumn(action, definition -> {
-            if (Type.STORED.equals(definition.getGenerateOption().getType())) {
+            if (definition.getGenerateOption() != null
+                    && Type.STORED.equals(definition.getGenerateOption().getType())) {
                 return SqlCheckUtil.buildViolation(statement.getText(), action, getType(), new Object[] {});
             }
             return null;
