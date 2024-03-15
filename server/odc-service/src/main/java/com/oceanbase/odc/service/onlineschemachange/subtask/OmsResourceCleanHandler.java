@@ -52,11 +52,7 @@ public class OmsResourceCleanHandler {
         controlRequest.setUid(projectControl.getUid());
         try {
             OmsProjectProgressResponse progressResponse = projectOpenApiService.describeProjectProgress(controlRequest);
-            if (progressResponse.getStatus() == OmsProjectStatusEnum.RELEASED ||
-                    progressResponse.getStatus() == OmsProjectStatusEnum.RELEASING ||
-                    progressResponse.getStatus() == OmsProjectStatusEnum.DELETED) {
-                released = true;
-            }
+            released = progressResponse.getStatus().isProjectReleased();
         } catch (OmsException e) {
             // representative project has been deleted when message contain "GHANA-PROJECT000001"
             // or "project is not exists",

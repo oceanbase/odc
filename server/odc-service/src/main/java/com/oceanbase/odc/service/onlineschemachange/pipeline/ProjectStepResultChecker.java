@@ -16,7 +16,6 @@
 package com.oceanbase.odc.service.onlineschemachange.pipeline;
 
 import java.math.BigDecimal;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
@@ -99,7 +98,7 @@ public class ProjectStepResultChecker {
         // todo 用户手动暂停了项目
         if (isProjectFinished()) {
             checkerResult.setTaskStatus(TaskStatus.DONE);
-        } else if (isProjectFailed() || isProjectInvalid()) {
+        } else if (isProjectFailed() || progressResponse.getStatus().isProjectReleased()) {
             checkerResult.setTaskStatus(TaskStatus.FAILED);
         } else {
             checkerResult.setTaskStatus(TaskStatus.RUNNING);
@@ -138,15 +137,6 @@ public class ProjectStepResultChecker {
         if (precheckStep.getProgress() != null) {
             checkerResult.setPrecheckProgressPercentage(precheckStep.getProgress());
         }
-    }
-
-    private boolean isProjectInvalid() {
-        boolean result = Arrays.asList(OmsProjectStatusEnum.DELETED, OmsProjectStatusEnum.RELEASED,
-                OmsProjectStatusEnum.RELEASING).contains(progressResponse.getStatus());
-        if (result) {
-            checkerResult.setErrorMsg("Oms project has been released, status=" + progressResponse.getStatus());
-        }
-        return result;
     }
 
     private boolean isProjectFinished() {
@@ -192,14 +182,20 @@ public class ProjectStepResultChecker {
                     checkerResult.setErrorMsg(currentProjectStepMap.get(stepName).getExtraInfo().getErrorMsg());
                 }
 
-                int failedTimes = checkFailedTimes.compute(stepName, (k, v) -> v == null ? 1 : ++v);
-                if (failedTimes > checkProjectFailedThresholdTimes) {
-                    log.warn(
-                            "Current step failed times exceed threshold, stepName={}, failedTimes={}, thresholdTimes={}",
-                            stepName, failedTimes, checkProjectFailedThresholdTimes);
-                    isProjectFailed = true;
+                // record FULL_TRANSFER failed times
+                if (stepName == OmsStepName.FULL_TRANSFER) {
+                    int failedTimes = checkFailedTimes.compute(stepName, (k, v) -> v == null ? 1 : ++v);
+                    if (failedTimes > checkProjectFailedThresholdTimes) {
+                        log.warn(
+                                "Current step failed times exceed threshold, stepName={}, failedTimes={}, thresholdTimes={}",
+                                stepName, failedTimes, checkProjectFailedThresholdTimes);
+                        isProjectFailed = true;
+                    }
                 }
                 break;
+            } else {
+                // reset to zero if current step is not failed
+                checkFailedTimes.computeIfPresent(stepName, (k, v) -> 0);
             }
         }
         return isProjectFailed;
