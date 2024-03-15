@@ -295,8 +295,10 @@ public class ResultSetExportTask implements Callable<ResultSetExportResult> {
     private String getDumpFilePath(DataTransferTaskResult result, String extension) throws Exception {
         List<URL> exportPaths = result.getDataObjectsInfo().get(0).getExportPaths();
         if (CollectionUtils.isEmpty(exportPaths)) {
+            log.info("exportpaths:" + Paths.get(getDumpFileDirectory(), getFileName(extension)).toString());
             return Paths.get(getDumpFileDirectory(), getFileName(extension)).toString();
         }
+        log.info("exportPaths.get(0).toURI().getPath():" + exportPaths.get(0).toURI().getPath());
         return exportPaths.get(0).toURI().getPath();
     }
 
