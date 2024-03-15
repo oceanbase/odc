@@ -564,7 +564,7 @@ VALUES ('odc.automatic-auth-rule.enabled', 'true', 'odc', 'default', 'master', '
 -- v4.1.3
 --
 insert into `config_system_configuration` (`key`, `value`, `application`, `profile`, `label`, `description`)
-VALUES ('odc.notification.enabled', 'false', 'odc', 'default', 'master', '是否开启消息通知，默认 false，表示不开启') ON DUPLICATE KEY update `id`=`id`;
+VALUES ('odc.notification.enabled', 'true', 'odc', 'default', 'master', '是否开启消息通知，默认 false，表示不开启') ON DUPLICATE KEY update `id`=`id`;
 insert into `config_system_configuration` (`key`, `value`, `application`, `profile`, `label`, `description`)
 VALUES ('odc.notification.event-dequeue-batch-size', '5', 'odc', 'default', 'master', '批量处理事件数量，默认 5') ON DUPLICATE KEY update `id`=`id`;
 insert into `config_system_configuration` (`key`, `value`, `application`, `profile`, `label`, `description`)
@@ -726,7 +726,7 @@ INSERT INTO config_system_configuration ( `key`, `value`, `description` ) VALUES
 INSERT INTO config_system_configuration(`key`, `value`, `description`) VALUES('odc.task.pre-check.max-sql-content-bytes',
  '5242880', '预检查时所允许检查的 SQL 内容的最大长度，超过该上限将终止预检查并将检查结果置为最高风险等级。单位：字节，默认值：5242880（即 5MB），修改后重启生效') ON DUPLICATE KEY UPDATE `id`=`id`;
 
-INSERT INTO config_system_configuration ( `key`, `value`, `description` ) VALUES( 'odc.task-framework.enabled', 'false', 'enable task-framework or not' ) ON DUPLICATE KEY UPDATE `id` = `id`;
+INSERT INTO config_system_configuration ( `key`, `value`, `description` ) VALUES( 'odc.task-framework.enabled', 'true', 'enable task-framework or not' ) ON DUPLICATE KEY UPDATE `id` = `id`;
 INSERT INTO config_system_configuration ( `key`, `value`, `description` ) VALUES( 'odc.task-framework.run-mode', 'PROCESS', 'ODC task run mode contain: PROCESS/K8S, default is PROCESS' ) ON DUPLICATE KEY UPDATE `id` = `id`;
 INSERT INTO config_system_configuration ( `key`, `value`, `description` ) VALUES( 'odc.task-framework.odc-url', '', 'odc server url is used to report task result by TaskExecutor, use odc server ip when odc url is null') ON DUPLICATE KEY UPDATE `id`=`id`;
 INSERT INTO config_system_configuration ( `key`, `value`, `description` ) VALUES( 'odc.task-framework.start-preparing-job-cron-expression', '0/1 * * * * ?', 'start preparing job cron expression, modify value restart to take affect' ) ON DUPLICATE KEY UPDATE `id` = `id`;
@@ -734,7 +734,7 @@ INSERT INTO config_system_configuration ( `key`, `value`, `description` ) VALUES
 INSERT INTO config_system_configuration ( `key`, `value`, `description` ) VALUES( 'odc.task-framework.do-canceling-job-cron-expression', '0/10 * * * * ?', 'check canceling job cron expression, modify value restart to take affect' ) ON DUPLICATE KEY UPDATE `id` = `id`;
 INSERT INTO config_system_configuration ( `key`, `value`, `description` ) VALUES( 'odc.task-framework.destroy-executor-job-cron-expression', '0/10 * * * * ?', 'check terminate job to destroy executor cron expression, modify value restart to take affect' ) ON DUPLICATE KEY UPDATE `id` = `id`;
 INSERT INTO config_system_configuration ( `key`, `value`, `description` ) VALUES( 'odc.task-framework.job-heart-timeout-seconds', '300', 'job heart timeout seconds, job will failed or retrying' ) ON DUPLICATE KEY UPDATE `id` = `id`;
-INSERT INTO config_system_configuration ( `key`, `value`, `description` ) VALUES( 'odc.task-framework.executor-waiting-to-run-threshold-seconds', '30', 'time threshold of executor waiting to run, for controller schedule rate' ) ON DUPLICATE KEY UPDATE `id` = `id`;
+INSERT INTO config_system_configuration ( `key`, `value`, `description` ) VALUES( 'odc.task-framework.executor-waiting-to-run-threshold-seconds', '3', 'time threshold of executor waiting to run, for controller schedule rate' ) ON DUPLICATE KEY UPDATE `id` = `id`;
 INSERT INTO config_system_configuration ( `key`, `value`, `description` ) VALUES( 'odc.task-framework.executor-waiting-to-run-threshold-count', '10', 'amount threshold of executor waiting to run, for controller schedule rate' ) ON DUPLICATE KEY UPDATE `id` = `id`;
 
 INSERT INTO config_system_configuration ( `key`, `value`, `description` ) VALUES( 'odc.task-framework.k8s-properties.kube-config', '', 'kube config base64 encoded is used k8s connect default' ) ON DUPLICATE KEY UPDATE `id` = `id`;
@@ -758,6 +758,12 @@ INSERT INTO config_system_configuration(`key`, `value`, `description`) VALUES('o
  '7776000', 'How long expired permissions are retained, in seconds, defaults to 90 days') ON DUPLICATE KEY UPDATE `id`=`id`;
 INSERT INTO config_system_configuration(`key`, `value`, `description`) VALUES('odc.web.security.basic-authentication.enabled',
  'false', 'enable basic authentication or not, false by default') ON DUPLICATE KEY UPDATE `id`=`id`;
+
+INSERT INTO config_system_configuration(`key`, `value`, `description`) VALUES('odc.web.stateful-route.enabled',
+'true', 'enable stateful route') ON DUPLICATE KEY UPDATE `id`=`id`;
+
+INSERT INTO config_system_configuration(`key`, `value`, `description`) VALUES('odc.web.stateful-route.host.type',
+'ipAddress', 'host type used for forwarding, use ipAddress or hostName') ON DUPLICATE KEY UPDATE `id`=`id`;
 
 INSERT INTO config_system_configuration ( `key`, `value`, `description` )
 VALUES

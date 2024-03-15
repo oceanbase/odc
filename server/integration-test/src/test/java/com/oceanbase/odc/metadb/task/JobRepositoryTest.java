@@ -22,7 +22,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 import com.oceanbase.odc.ServiceTestEnv;
 import com.oceanbase.odc.service.task.enums.JobStatus;
-import com.oceanbase.odc.service.task.executor.task.DatabaseChangeTask;
+import com.oceanbase.odc.service.task.runtime.DatabaseChangeTask;
 
 /**
  * @author yaobin

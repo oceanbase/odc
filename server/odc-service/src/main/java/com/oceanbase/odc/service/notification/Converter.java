@@ -16,10 +16,12 @@
 package com.oceanbase.odc.service.notification;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -71,62 +73,64 @@ public class Converter {
             return messages;
         }
 
-        List<NotificationChannelRelationEntity> policyChannelEntities =
+        Map<Long, List<NotificationChannelRelationEntity>> mappedRelationEntities =
                 policyChannelRepository.findByNotificationPolicyIds(events.stream()
                         .flatMap(event -> event.getPolicies().stream().map(NotificationPolicy::getId))
-                        .collect(Collectors.toSet()));
-        if (CollectionUtils.isEmpty(policyChannelEntities)) {
+                        .collect(Collectors.toSet()))
+                        .stream()
+                        .collect(Collectors.groupingBy(NotificationChannelRelationEntity::getNotificationPolicyId));
+        if (CollectionUtils.isEmpty(mappedRelationEntities)) {
             return messages;
         }
 
         Map<Long, List<Channel>> mappedChannels = channelRepository.findByIdIn(
-                policyChannelEntities.stream()
-                        .map(NotificationChannelRelationEntity::getChannelId).collect(Collectors.toSet()))
+                mappedRelationEntities.values().stream()
+                        .flatMap(relation -> relation.stream().map(NotificationChannelRelationEntity::getChannelId))
+                        .collect(Collectors.toSet()))
                 .stream().map(entity -> channelMapper.fromEntityWithConfig(entity))
-                .collect(Collectors.groupingBy(channel -> {
-                    for (NotificationChannelRelationEntity entity : policyChannelEntities) {
-                        if (Objects.equals(entity.getChannelId(), channel.getId())) {
-                            return entity.getNotificationPolicyId();
-                        }
-                    }
-                    return null;
-                }));
+                .collect(Collectors.groupingBy(Channel::getId));
+        if (CollectionUtils.isEmpty(mappedChannels)) {
+            return messages;
+        }
 
         for (Event event : events) {
+            Set<Channel> channels = new HashSet<>();
             for (NotificationPolicy policy : event.getPolicies()) {
-                List<Channel> channels = mappedChannels.get(policy.getId());
-                if (CollectionUtils.isEmpty(channels)) {
-                    continue;
-                }
-                channels.forEach(channel -> {
-                    try {
-                        Message message = new Message();
-                        if (Objects.nonNull(channel.getChannelConfig())) {
-                            Locale locale;
-                            try {
-                                locale = Locale.forLanguageTag(channel.getChannelConfig().getLanguage());
-                            } catch (Exception e) {
-                                locale = Locale.getDefault();
-                            }
-                            message.setTitle(MessageTemplateProcessor.replaceVariables(
-                                    channel.getChannelConfig().getTitleTemplate(), locale, event.getLabels()));
-                            message.setContent(MessageTemplateProcessor.replaceVariables(
-                                    channel.getChannelConfig().getContentTemplate(), locale, event.getLabels()));
-                        }
-                        message.setOrganizationId(policy.getOrganizationId());
-                        message.setCreatorId(event.getCreatorId());
-                        message.setChannel(channel);
-                        message.setStatus(MessageSendingStatus.CREATED);
-                        message.setRetryTimes(0);
-                        message.setProjectId(channel.getProjectId());
-                        message.setMaxRetryTimes(notificationProperties.getMaxResendTimes());
-                        messages.add(message);
-                    } catch (Exception e) {
-                        log.error("failed to convert event with id={}, channel id={}",
-                                event.getId(), channel.getId(), e);
-                    }
-                });
+                List<NotificationChannelRelationEntity> relationEntities = mappedRelationEntities.get(policy.getId());
+                relationEntities.forEach(relation -> channels.addAll(mappedChannels.get(relation.getChannelId())));
             }
+            if (CollectionUtils.isEmpty(channels)) {
+                continue;
+            }
+            channels.forEach(channel -> {
+                try {
+                    Message message = new Message();
+                    if (Objects.nonNull(channel.getChannelConfig())) {
+                        Locale locale;
+                        try {
+                            locale = Locale.forLanguageTag(channel.getChannelConfig().getLanguage());
+                        } catch (Exception e) {
+                            locale = Locale.getDefault();
+                        }
+                        message.setTitle(MessageTemplateProcessor.replaceVariables(
+                                channel.getChannelConfig().getTitleTemplate(), locale, event.getLabels()));
+                        message.setContent(MessageTemplateProcessor.replaceVariables(
+                                channel.getChannelConfig().getContentTemplate(), locale, event.getLabels()));
+                    }
+                    message.setOrganizationId(channel.getOrganizationId());
+                    message.setCreatorId(event.getCreatorId());
+                    message.setChannel(channel);
+                    message.setStatus(MessageSendingStatus.CREATED);
+                    message.setRetryTimes(0);
+                    message.setProjectId(channel.getProjectId());
+                    message.setMaxRetryTimes(notificationProperties.getMaxResendTimes());
+                    message.setEvent(event);
+                    messages.add(message);
+                } catch (Exception e) {
+                    log.error("failed to convert event with id={}, channel id={}",
+                            event.getId(), channel.getId(), e);
+                }
+            });
         }
         log.info("{} events were converted into {} messages", events.size(), messages.size());
         return messages;

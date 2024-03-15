@@ -24,30 +24,51 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.text.StringSubstitutor;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 import com.oceanbase.odc.ServiceTestEnv;
+import com.oceanbase.odc.TestConnectionUtil;
+import com.oceanbase.odc.core.session.ConnectionSession;
+import com.oceanbase.odc.core.shared.constant.ConnectType;
 import com.oceanbase.odc.core.shared.constant.DialectType;
+import com.oceanbase.odc.metadb.partitionplan.PartitionPlanEntity;
+import com.oceanbase.odc.metadb.partitionplan.PartitionPlanRepository;
+import com.oceanbase.odc.metadb.partitionplan.PartitionPlanTableEntity;
+import com.oceanbase.odc.metadb.partitionplan.PartitionPlanTablePartitionKeyEntity;
+import com.oceanbase.odc.metadb.partitionplan.PartitionPlanTablePartitionKeyRepository;
+import com.oceanbase.odc.metadb.partitionplan.PartitionPlanTableRepository;
 import com.oceanbase.odc.plugin.task.api.partitionplan.datatype.TimeDataType;
 import com.oceanbase.odc.plugin.task.api.partitionplan.invoker.create.PartitionExprGenerator;
-import com.oceanbase.odc.plugin.task.api.partitionplan.invoker.drop.KeepMostRecentPartitionGenerator;
-import com.oceanbase.odc.plugin.task.api.partitionplan.invoker.partitionname.SqlExprBasedPartitionNameGenerator;
+import com.oceanbase.odc.plugin.task.api.partitionplan.invoker.drop.KeepMostLatestPartitionGenerator;
+import com.oceanbase.odc.plugin.task.api.partitionplan.invoker.partitionname.PartitionNameGenerator;
 import com.oceanbase.odc.plugin.task.api.partitionplan.model.PartitionPlanVariableKey;
 import com.oceanbase.odc.plugin.task.api.partitionplan.model.SqlExprBasedGeneratorConfig;
 import com.oceanbase.odc.plugin.task.api.partitionplan.model.TimeIncreaseGeneratorConfig;
+import com.oceanbase.odc.service.connection.database.DatabaseService;
+import com.oceanbase.odc.service.connection.database.model.Database;
+import com.oceanbase.odc.service.partitionplan.model.PartitionPlanDBTable;
 import com.oceanbase.odc.service.partitionplan.model.PartitionPlanKeyConfig;
+import com.oceanbase.odc.service.partitionplan.model.PartitionPlanPreViewResp;
 import com.oceanbase.odc.service.partitionplan.model.PartitionPlanStrategy;
 import com.oceanbase.odc.service.partitionplan.model.PartitionPlanTableConfig;
+import com.oceanbase.odc.service.session.ConnectSessionService;
 import com.oceanbase.odc.test.database.TestDBConfiguration;
 import com.oceanbase.odc.test.database.TestDBConfigurations;
+import com.oceanbase.odc.test.tool.TestRandom;
+import com.oceanbase.tools.dbbrowser.model.datatype.DataType;
+import com.oceanbase.tools.dbbrowser.model.datatype.GeneralDataType;
 
 /**
  * Test cases for {@link PartitionPlanServiceV2}
@@ -61,8 +82,18 @@ public class PartitionPlanServiceV2Test extends ServiceTestEnv {
     public static final String MYSQL_REAL_RANGE_TABLE_NAME = "range_svc_parti_tbl";
     public static final String MYSQL_OVERLAP_RANGE_TABLE_NAME = "range_svc_parti_overlap_tbl";
     public static final String ORACLE_RANGE_TABLE_NAME = "RANGE_SVC_PARTI_TBL";
+    @MockBean
+    private ConnectSessionService sessionService;
+    @MockBean
+    private DatabaseService databaseService;
     @Autowired
     private PartitionPlanServiceV2 partitionPlanService;
+    @Autowired
+    private PartitionPlanRepository partitionPlanRepository;
+    @Autowired
+    private PartitionPlanTableRepository partitionPlanTableRepository;
+    @Autowired
+    private PartitionPlanTablePartitionKeyRepository partitionPlanTablePartitionKeyRepository;
 
     @BeforeClass
     public static void setUp() throws IOException {
@@ -83,6 +114,67 @@ public class PartitionPlanServiceV2Test extends ServiceTestEnv {
         JdbcTemplate oracle = new JdbcTemplate(TestDBConfigurations.getInstance()
                 .getTestOBOracleConfiguration().getDataSource());
         oracle.execute("DROP TABLE " + ORACLE_RANGE_TABLE_NAME);
+    }
+
+    @Test
+    public void getPartitionKeyDataTypes_mysqlMode_getSucceed() {
+        ConnectionSession session = TestConnectionUtil.getTestConnectionSession(ConnectType.OB_MYSQL);
+        Mockito.when(this.sessionService.nullSafeGet("id", true)).thenReturn(session);
+        TestDBConfiguration configuration = TestDBConfigurations.getInstance().getTestOBMysqlConfiguration();
+        List<DataType> actual = this.partitionPlanService.getPartitionKeyDataTypes("id",
+                configuration.getDefaultDBName(), MYSQL_OVERLAP_RANGE_TABLE_NAME);
+        List<DataType> expect = Arrays.asList(
+                new GeneralDataType(0, 0, "int"), new TimeDataType("date", TimeDataType.DAY));
+        Assert.assertEquals(expect, actual);
+    }
+
+    @Test
+    public void listCandidateTables_noPartitionPlanExists_returnNotEmpty() {
+        ConnectionSession session = TestConnectionUtil.getTestConnectionSession(ConnectType.OB_MYSQL);
+        Mockito.when(this.sessionService.nullSafeGet("id", true)).thenReturn(session);
+        TestDBConfiguration configuration = TestDBConfigurations.getInstance().getTestOBMysqlConfiguration();
+        Database database = new Database();
+        database.setName(configuration.getDefaultDBName());
+        Mockito.when(this.databaseService.detail(1L)).thenReturn(database);
+
+        List<PartitionPlanDBTable> actual = this.partitionPlanService.listCandidateTables("id", 1L);
+        Assert.assertTrue(actual.stream().anyMatch(p -> CollectionUtils.isEmpty(p.getStrategies())));
+    }
+
+    @Test
+    public void listCandidateTables_partitionPlanExists_returnNotEmpty() {
+        ConnectionSession session = TestConnectionUtil.getTestConnectionSession(ConnectType.OB_MYSQL);
+        Mockito.when(this.sessionService.nullSafeGet("id", true)).thenReturn(session);
+        TestDBConfiguration configuration = TestDBConfigurations.getInstance().getTestOBMysqlConfiguration();
+        Database database = new Database();
+        database.setId(1000L);
+        database.setName(configuration.getDefaultDBName());
+        Mockito.when(this.databaseService.detail(1000L)).thenReturn(database);
+
+        PartitionPlanEntity p = TestRandom.nextObject(PartitionPlanEntity.class);
+        p.setId(null);
+        p.setEnabled(true);
+        p.setDatabaseId(1000L);
+        p = this.partitionPlanRepository.save(p);
+
+        PartitionPlanTableEntity pt = TestRandom.nextObject(PartitionPlanTableEntity.class);
+        pt.setId(null);
+        pt.setEnabled(true);
+        pt.setTableName(MYSQL_OVERLAP_RANGE_TABLE_NAME);
+        pt.setPartitionPlanId(p.getId());
+        pt = this.partitionPlanTableRepository.save(pt);
+
+        PartitionPlanTablePartitionKeyEntity pptk = TestRandom.nextObject(PartitionPlanTablePartitionKeyEntity.class);
+        pptk.setId(null);
+        pptk.setPartitionplanTableId(pt.getId());
+        pptk = this.partitionPlanTablePartitionKeyRepository.save(pptk);
+
+        List<PartitionPlanDBTable> tables = this.partitionPlanService.listCandidateTables("id", 1000L);
+        PartitionPlanDBTable target = tables.stream()
+                .filter(t -> MYSQL_OVERLAP_RANGE_TABLE_NAME.equals(t.getName())).findFirst().get();
+        Set<PartitionPlanStrategy> actual = target.getStrategies();
+        Set<PartitionPlanStrategy> expect = Collections.singleton(pptk.getStrategy());
+        Assert.assertEquals(expect, actual);
     }
 
     @Test
@@ -246,6 +338,117 @@ public class PartitionPlanServiceV2Test extends ServiceTestEnv {
         }
     }
 
+    @Test
+    public void generatePartitionName_oracle_generateSucceed() throws Exception {
+        PartitionPlanTableConfig tableConfig = new PartitionPlanTableConfig();
+        tableConfig.setTableName(ORACLE_RANGE_TABLE_NAME);
+        tableConfig.setPartitionNameInvoker("CUSTOM_PARTITION_NAME_GENERATOR");
+        SqlExprBasedGeneratorConfig config = new SqlExprBasedGeneratorConfig();
+        config.setGenerateExpr("CONCAT('P', TO_CHAR(TO_DATE('20240125', 'YYYYMMDD') + "
+                + PartitionPlanVariableKey.INTERVAL.getVariable() + ", 'YYYYMMDD'))");
+        config.setIntervalGenerateExpr("NUMTOYMINTERVAL(1, 'MONTH')");
+        tableConfig.setPartitionNameInvokerParameters(getSqlExprBasedNameGeneratorParameters(config));
+        TestDBConfiguration configuration = TestDBConfigurations.getInstance().getTestOBOracleConfiguration();
+        try (Connection connection = configuration.getDataSource().getConnection()) {
+            String actual = this.partitionPlanService.generatePartitionName(
+                    connection, DialectType.OB_ORACLE, configuration.getDefaultDBName(), tableConfig);
+            Assert.assertEquals("P20240225", actual);
+        }
+    }
+
+    @Test
+    public void preview_twoTables_succeed() {
+        ConnectionSession session = TestConnectionUtil.getTestConnectionSession(ConnectType.OB_MYSQL);
+        Mockito.when(this.sessionService.nullSafeGet("id", true)).thenReturn(session);
+
+        TestDBConfiguration configuration = TestDBConfigurations.getInstance().getTestOBMysqlConfiguration();
+        PartitionPlanTableConfig p1 = new PartitionPlanTableConfig();
+        p1.setTableName(MYSQL_OVERLAP_RANGE_TABLE_NAME);
+        p1.setPartitionNameInvoker("CUSTOM_PARTITION_NAME_GENERATOR");
+        SqlExprBasedGeneratorConfig config = new SqlExprBasedGeneratorConfig();
+        config.setGenerateExpr("concat('p', date_format(from_unixtime(unix_timestamp("
+                + "STR_TO_DATE(20240125, '%Y%m%d')) + "
+                + PartitionPlanVariableKey.INTERVAL.getVariable() + "), '%Y%m%d'))");
+        config.setIntervalGenerateExpr("86400");
+        p1.setPartitionNameInvokerParameters(getSqlExprBasedNameGeneratorParameters(config));
+        int generateCount = 5;
+        PartitionPlanKeyConfig c3Create = getMysqlc3CreateConfig(generateCount);
+        PartitionPlanKeyConfig datekeyCreate = getMysqldatekeyCreateConfig(generateCount);
+        p1.setPartitionKeyConfigs(Arrays.asList(c3Create, datekeyCreate));
+
+        PartitionPlanTableConfig p2 = new PartitionPlanTableConfig();
+        p2.setTableName(MYSQL_REAL_RANGE_TABLE_NAME);
+        p2.setPartitionNameInvoker("CUSTOM_PARTITION_NAME_GENERATOR");
+        SqlExprBasedGeneratorConfig config1 = new SqlExprBasedGeneratorConfig();
+        config1.setGenerateExpr("concat('p', date_format(from_unixtime(unix_timestamp("
+                + "STR_TO_DATE(20240125, '%Y%m%d'))), '%Y%m%d'))");
+        p2.setPartitionNameInvokerParameters(getSqlExprBasedNameGeneratorParameters(config1));
+        PartitionPlanKeyConfig c3Create1 = getMysqlc3CreateConfig(generateCount);
+        PartitionPlanKeyConfig datekeyCreate1 = getMysqldatekeyCreateConfig(generateCount);
+        p2.setPartitionKeyConfigs(Arrays.asList(c3Create1, datekeyCreate1));
+
+        List<PartitionPlanPreViewResp> actual = this.partitionPlanService.generatePartitionDdl(
+                "id", Arrays.asList(p1, p2), false);
+        PartitionPlanPreViewResp r1 = new PartitionPlanPreViewResp();
+        r1.setSqls(Collections.singletonList(String.format("ALTER TABLE %s.%s ADD PARTITION (\n"
+                + "\tPARTITION `p20240127` VALUES LESS THAN (20220802,'2024-01-26'),\n"
+                + "\tPARTITION `p20240128` VALUES LESS THAN (20220803,'2024-01-27'),\n"
+                + "\tPARTITION `p20240129` VALUES LESS THAN (20220804,'2024-01-28'));\n",
+                configuration.getDefaultDBName(), MYSQL_OVERLAP_RANGE_TABLE_NAME)));
+        r1.setTableName(MYSQL_OVERLAP_RANGE_TABLE_NAME);
+        PartitionPlanPreViewResp r2 = new PartitionPlanPreViewResp();
+        r2.setSqls(Collections.singletonList(String.format("ALTER TABLE %s.%s ADD PARTITION (\n"
+                + "\tPARTITION `p20240125` VALUES LESS THAN (20220801,'2024-01-25'),\n"
+                + "\tPARTITION `p20240125` VALUES LESS THAN (20220802,'2024-01-26'),\n"
+                + "\tPARTITION `p20240125` VALUES LESS THAN (20220803,'2024-01-27'),\n"
+                + "\tPARTITION `p20240125` VALUES LESS THAN (20220804,'2024-01-28'),\n"
+                + "\tPARTITION `p20240125` VALUES LESS THAN (20220805,'2024-01-29'));\n",
+                configuration.getDefaultDBName(), MYSQL_REAL_RANGE_TABLE_NAME)));
+        r2.setTableName(MYSQL_REAL_RANGE_TABLE_NAME);
+        Assert.assertEquals(Arrays.asList(r1, r2), actual);
+    }
+
+    @Test
+    public void preview_onlyForPartiName_succeed() {
+        ConnectionSession session = TestConnectionUtil.getTestConnectionSession(ConnectType.OB_MYSQL);
+        Mockito.when(this.sessionService.nullSafeGet("id", true)).thenReturn(session);
+
+        PartitionPlanTableConfig p1 = new PartitionPlanTableConfig();
+        p1.setTableName(MYSQL_OVERLAP_RANGE_TABLE_NAME);
+        p1.setPartitionNameInvoker("CUSTOM_PARTITION_NAME_GENERATOR");
+        SqlExprBasedGeneratorConfig config = new SqlExprBasedGeneratorConfig();
+        config.setGenerateExpr("concat('p', date_format(from_unixtime(unix_timestamp("
+                + "STR_TO_DATE(20240125, '%Y%m%d')) + "
+                + PartitionPlanVariableKey.INTERVAL.getVariable() + "), '%Y%m%d'))");
+        config.setIntervalGenerateExpr("86400");
+        p1.setPartitionNameInvokerParameters(getSqlExprBasedNameGeneratorParameters(config));
+        int generateCount = 5;
+        PartitionPlanKeyConfig c3Create = getMysqlc3CreateConfig(generateCount);
+        PartitionPlanKeyConfig datekeyCreate = getMysqldatekeyCreateConfig(generateCount);
+        p1.setPartitionKeyConfigs(Arrays.asList(c3Create, datekeyCreate));
+
+        PartitionPlanTableConfig p2 = new PartitionPlanTableConfig();
+        p2.setTableName(MYSQL_REAL_RANGE_TABLE_NAME);
+        p2.setPartitionNameInvoker("CUSTOM_PARTITION_NAME_GENERATOR");
+        SqlExprBasedGeneratorConfig config1 = new SqlExprBasedGeneratorConfig();
+        config1.setGenerateExpr("concat('p', date_format(from_unixtime(unix_timestamp("
+                + "STR_TO_DATE(20240125, '%Y%m%d'))), '%Y%m%d'))");
+        p2.setPartitionNameInvokerParameters(getSqlExprBasedNameGeneratorParameters(config1));
+        PartitionPlanKeyConfig c3Create1 = getMysqlc3CreateConfig(generateCount);
+        PartitionPlanKeyConfig datekeyCreate1 = getMysqldatekeyCreateConfig(generateCount);
+        p2.setPartitionKeyConfigs(Arrays.asList(c3Create1, datekeyCreate1));
+
+        List<PartitionPlanPreViewResp> actual = this.partitionPlanService.generatePartitionDdl(
+                "id", Arrays.asList(p1, p2), true);
+        PartitionPlanPreViewResp r1 = new PartitionPlanPreViewResp();
+        r1.setPartitionName("p20240126");
+        r1.setTableName(MYSQL_OVERLAP_RANGE_TABLE_NAME);
+        PartitionPlanPreViewResp r2 = new PartitionPlanPreViewResp();
+        r2.setPartitionName("p20240125");
+        r2.setTableName(MYSQL_REAL_RANGE_TABLE_NAME);
+        Assert.assertEquals(Arrays.asList(r1, r2), actual);
+    }
+
     private PartitionPlanKeyConfig getDropConfig() {
         PartitionPlanKeyConfig dropConfig = new PartitionPlanKeyConfig();
         dropConfig.setPartitionKey(null);
@@ -262,7 +465,7 @@ public class PartitionPlanServiceV2Test extends ServiceTestEnv {
         c3Create.setPartitionKeyInvoker("TIME_INCREASING_GENERATOR");
         TimeIncreaseGeneratorConfig config1 = new TimeIncreaseGeneratorConfig();
         long current = 1706180200490L;// 2024-01-25 18:57
-        config1.setFromTimestampMillis(current);
+        config1.setBaseTimestampMillis(current);
         config1.setInterval(1);
         config1.setIntervalPrecision(TimeDataType.DAY);
         c3Create.setPartitionKeyInvokerParameters(getTimeIncreaseGeneratorParameters(config1, generateCount, "c3"));
@@ -276,7 +479,7 @@ public class PartitionPlanServiceV2Test extends ServiceTestEnv {
         c1Create.setPartitionKeyInvoker("TIME_INCREASING_GENERATOR");
         TimeIncreaseGeneratorConfig config1 = new TimeIncreaseGeneratorConfig();
         long current = 1706180200490L;// 2024-01-25 18:57
-        config1.setFromTimestampMillis(current);
+        config1.setBaseTimestampMillis(current);
         config1.setInterval(1);
         config1.setIntervalPrecision(TimeDataType.DAY);
         c1Create.setPartitionKeyInvokerParameters(getTimeIncreaseGeneratorParameters(config1, generateCount, "c1"));
@@ -315,13 +518,14 @@ public class PartitionPlanServiceV2Test extends ServiceTestEnv {
 
     private Map<String, Object> getSqlExprBasedNameGeneratorParameters(SqlExprBasedGeneratorConfig config) {
         Map<String, Object> parameters = new HashMap<>();
-        parameters.put(SqlExprBasedPartitionNameGenerator.PARTITION_NAME_GEN_CONFIG_KEY, config);
+        parameters.put(PartitionNameGenerator.PARTITION_NAME_GENERATOR_KEY, config);
         return parameters;
     }
 
     private Map<String, Object> getDropPartitionParameters(int keepCount) {
         Map<String, Object> parameters = new HashMap<>();
-        parameters.put(KeepMostRecentPartitionGenerator.KEEP_RECENT_COUNT_KEY, keepCount);
+        parameters.put(KeepMostLatestPartitionGenerator.KEEP_LATEST_COUNT_KEY, keepCount);
+        parameters.put(KeepMostLatestPartitionGenerator.RELOAD_INDEXES, true);
         return parameters;
     }
 

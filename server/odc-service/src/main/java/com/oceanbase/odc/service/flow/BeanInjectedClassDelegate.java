@@ -70,7 +70,14 @@ public class BeanInjectedClassDelegate extends ClassDelegate {
         return obj;
     }
 
-    private void forEachClass(@NonNull Class<?> begin, Consumer<Class<?>> consumer) {
+    public static <T> T instantiateDelegate(Class<T> beanClass) throws Exception {
+        T beanInstance = beanClass.getDeclaredConstructor().newInstance();
+        forEachClass(beanClass, c -> injectAutowiredBeans(beanInstance, c));
+        forEachClass(beanClass, c -> invokePostConstructMethod(beanInstance, c));
+        return beanInstance;
+    }
+
+    private static void forEachClass(@NonNull Class<?> begin, Consumer<Class<?>> consumer) {
         Stack<Class<?>> stack = new Stack<>();
         stack.push(begin);
         Class<?> target = begin.getSuperclass();
@@ -83,7 +90,7 @@ public class BeanInjectedClassDelegate extends ClassDelegate {
         }
     }
 
-    private void invokePostConstructMethod(Object thisObj, Class<?> target) {
+    private static void invokePostConstructMethod(Object thisObj, Class<?> target) {
         Method[] methods = target.getDeclaredMethods();
         for (Method method : methods) {
             PostConstruct postConstruct = findAnnotation(method, PostConstruct.class);
@@ -110,7 +117,7 @@ public class BeanInjectedClassDelegate extends ClassDelegate {
         }
     }
 
-    private void injectAutowiredBeans(Object thisObj, Class<?> target) {
+    private static void injectAutowiredBeans(Object thisObj, Class<?> target) {
         Field[] fields = target.getDeclaredFields();
         for (Field field : fields) {
             Autowired autowired = findAnnotation(field, Autowired.class);
@@ -137,7 +144,7 @@ public class BeanInjectedClassDelegate extends ClassDelegate {
         }
     }
 
-    private Object getBean(String beanName, @NonNull Class<?> clazz) {
+    private static Object getBean(String beanName, @NonNull Class<?> clazz) {
         try {
             if (beanName == null) {
                 return SpringContextUtil.getBean(clazz);
@@ -149,7 +156,7 @@ public class BeanInjectedClassDelegate extends ClassDelegate {
         return null;
     }
 
-    private <T extends Annotation> T findAnnotation(@NonNull Field field, Class<T> clazz) {
+    private static <T extends Annotation> T findAnnotation(@NonNull Field field, Class<T> clazz) {
         T[] annotations = field.getDeclaredAnnotationsByType(clazz);
         if (annotations == null || annotations.length == 0) {
             return null;
@@ -157,7 +164,7 @@ public class BeanInjectedClassDelegate extends ClassDelegate {
         return annotations[0];
     }
 
-    private <T extends Annotation> T findAnnotation(@NonNull Method method, Class<T> clazz) {
+    private static <T extends Annotation> T findAnnotation(@NonNull Method method, Class<T> clazz) {
         T[] annotations = method.getDeclaredAnnotationsByType(clazz);
         if (annotations == null || annotations.length == 0) {
             return null;

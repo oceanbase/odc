@@ -42,7 +42,6 @@ import com.oceanbase.odc.core.shared.constant.FlowStatus;
 import com.oceanbase.odc.core.shared.constant.OrganizationType;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.core.shared.constant.TaskType;
-import com.oceanbase.odc.core.shared.exception.NotImplementedException;
 import com.oceanbase.odc.service.common.response.ListResponse;
 import com.oceanbase.odc.service.common.response.PaginatedResponse;
 import com.oceanbase.odc.service.common.response.Responses;
@@ -57,6 +56,7 @@ import com.oceanbase.odc.service.flow.model.FlowInstanceDetailResp;
 import com.oceanbase.odc.service.flow.model.FlowMetaInfo;
 import com.oceanbase.odc.service.flow.model.QueryFlowInstanceParams;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
+import com.oceanbase.odc.service.partitionplan.PartitionPlanScheduleService;
 import com.oceanbase.odc.service.partitionplan.model.PartitionPlanConfig;
 import com.oceanbase.odc.service.session.model.SqlExecuteResult;
 import com.oceanbase.odc.service.task.model.OdcTaskLogLevel;
@@ -81,6 +81,8 @@ public class FlowInstanceController {
     private FlowTaskInstanceService flowTaskInstanceService;
     @Autowired
     private AuthenticationFacade authenticationFacade;
+    @Autowired
+    private PartitionPlanScheduleService partitionPlanScheduleService;
 
     @ApiOperation(value = "createFlowInstance", notes = "创建流程实例，返回流程实例")
     @RequestMapping(value = "/", method = RequestMethod.POST)
@@ -231,8 +233,8 @@ public class FlowInstanceController {
     }
 
     @GetMapping(value = "/{id:[\\d]+}/tasks/partitionPlans/getDetail")
-    public SuccessResponse<PartitionPlanConfig> getPartitionPlan(@PathVariable Long flowInstanceId) {
-        throw new NotImplementedException();
+    public SuccessResponse<PartitionPlanConfig> getPartitionPlan(@PathVariable Long id) {
+        return Responses.ok(this.partitionPlanScheduleService.getPartitionPlanByFlowInstanceId(id));
     }
 
 }

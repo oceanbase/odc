@@ -20,7 +20,6 @@ import com.oceanbase.odc.service.task.schedule.JobIdentity;
 import com.oceanbase.tools.migrator.common.configure.LogicTableConfig;
 import com.oceanbase.tools.migrator.common.dto.HistoryJob;
 import com.oceanbase.tools.migrator.common.enums.JobStatus;
-import com.oceanbase.tools.migrator.common.enums.JobType;
 import com.oceanbase.tools.migrator.core.AbstractJobMetaFactory;
 import com.oceanbase.tools.migrator.core.JobReq;
 import com.oceanbase.tools.migrator.core.meta.ClusterMeta;
@@ -39,8 +38,8 @@ public class JobMetaFactoryCopied extends AbstractJobMetaFactory {
     public JobMeta create(int tableIndex, JobIdentity jobIdentity, DLMJobParameters parameters)
             throws Exception {
         HistoryJob historyJob = new HistoryJob();
-        historyJob.setId(String.format("%s-%s-%s", JobType.MIGRATE, jobIdentity, tableIndex));
-        historyJob.setJobType(JobType.MIGRATE);
+        historyJob.setId(String.format("%s-%s-%s", parameters.getJobType(), jobIdentity, tableIndex));
+        historyJob.setJobType(parameters.getJobType());
         historyJob.setJobStatus(JobStatus.RUNNING);
         historyJob.setTableId(-1L);
         historyJob.setPrintSqlTrace(false);

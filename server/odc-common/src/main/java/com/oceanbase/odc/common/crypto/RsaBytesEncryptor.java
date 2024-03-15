@@ -48,6 +48,7 @@ import lombok.NonNull;
 public class RsaBytesEncryptor implements BytesEncryptor {
 
     private static final String ALGORITHM_NAME = "RSA";
+    private static final String ALGORITHM_NAME_WITH_PADDING = "RSA/ECB/PKCS1Padding";
     private static final int DEFAULT_KEY_SIZE = 1024;
 
     private final RsaEncryptorType type;
@@ -116,7 +117,7 @@ public class RsaBytesEncryptor implements BytesEncryptor {
 
     private Cipher createCipher(int mode, Key key) {
         try {
-            Cipher cipher = Cipher.getInstance(ALGORITHM_NAME);
+            Cipher cipher = Cipher.getInstance(ALGORITHM_NAME_WITH_PADDING);
             cipher.init(mode, key);
             return cipher;
         } catch (NoSuchAlgorithmException e) {

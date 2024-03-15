@@ -41,6 +41,9 @@ import lombok.NonNull;
  */
 public interface AutoPartitionExtensionPoint extends ExtensionPoint {
 
+    List<DBTable> listAllPartitionedTables(@NonNull Connection connection,
+            @NonNull String schemaName, List<String> tableNames);
+
     boolean supports(@NonNull DBTablePartition partition);
 
     String unquoteIdentifier(@NonNull String identifier);

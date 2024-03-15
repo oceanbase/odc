@@ -33,7 +33,7 @@ import lombok.ToString;
 @ToString
 public class TimeIncreaseGeneratorConfig {
 
-    private long fromTimestampMillis;
+    private long baseTimestampMillis;
     private int interval;
     /**
      * ref {@link TimeDataType#getPrecision()}

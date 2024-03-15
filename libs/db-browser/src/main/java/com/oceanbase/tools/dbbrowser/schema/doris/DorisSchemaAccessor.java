@@ -27,6 +27,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.Validate;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.BadSqlGrammarException;
@@ -69,7 +70,7 @@ public class DorisSchemaAccessor implements DBSchemaAccessor {
 
     public DorisSchemaAccessor(@NonNull JdbcOperations jdbcOperations) {
         this.jdbcOperations = jdbcOperations;
-        this.sqlMapper = DBSchemaAccessorSqlMappers.get(StatementsFiles.MYSQL_5_7_40);
+        this.sqlMapper = DBSchemaAccessorSqlMappers.get(StatementsFiles.MYSQL_5_7_x);
     }
 
     @Override
@@ -372,12 +373,13 @@ public class DorisSchemaAccessor implements DBSchemaAccessor {
     }
 
     @Override
-    public Map<String, List<DBTableColumn>> listTableColumns(String schemaName) {
-        List<DBTableColumn> tableColumns =
-                jdbcOperations.query(getListTableColumnsSql(schemaName), listTableRowMapper());
-        Map<String, List<DBTableColumn>> tableName2Columns =
-                tableColumns.stream().collect(Collectors.groupingBy(DBTableColumn::getTableName));
-        return tableName2Columns;
+    public Map<String, List<DBTableColumn>> listTableColumns(String schemaName, List<String> tableNames) {
+        List<DBTableColumn> tableColumns = DBSchemaAccessorUtil.partitionFind(tableNames,
+                DBSchemaAccessorUtil.OB_MAX_IN_SIZE, names -> {
+                    String querySql = filterByValues(getListTableColumnsSql(schemaName), "TABLE_NAME", names);
+                    return jdbcOperations.query(querySql, listTableRowMapper());
+                });
+        return tableColumns.stream().collect(Collectors.groupingBy(DBTableColumn::getTableName));
     }
 
     @Override
@@ -421,7 +423,7 @@ public class DorisSchemaAccessor implements DBSchemaAccessor {
         return sb.toString();
     }
 
-    protected RowMapper listTableRowMapper() {
+    protected RowMapper<DBTableColumn> listTableRowMapper() {
         return (rs, romNum) -> {
             DBTableColumn tableColumn = new DBTableColumn();
             tableColumn.setSchemaName(rs.getString(MySQLConstants.COL_TABLE_SCHEMA));
@@ -498,7 +500,7 @@ public class DorisSchemaAccessor implements DBSchemaAccessor {
         };
     }
 
-    protected RowMapper listBasicTableColumnRowMapper() {
+    protected RowMapper<DBTableColumn> listBasicTableColumnRowMapper() {
         return (rs, romNum) -> {
             DBTableColumn tableColumn = new DBTableColumn();
             tableColumn.setSchemaName(rs.getString(MySQLConstants.COL_TABLE_SCHEMA));
@@ -645,10 +647,8 @@ public class DorisSchemaAccessor implements DBSchemaAccessor {
                         .collect(Collectors.toList()));
             }
         }
-        Map<String, List<DBTableConstraint>> tableName2Constraints =
-                fullConstraintName2Constraint.values().stream()
-                        .collect(Collectors.groupingBy(DBTableConstraint::getTableName));
-        return tableName2Constraints;
+        return fullConstraintName2Constraint.values().stream()
+                .collect(Collectors.groupingBy(DBTableConstraint::getTableName));
     }
 
     @Override
@@ -691,29 +691,14 @@ public class DorisSchemaAccessor implements DBSchemaAccessor {
     }
 
     @Override
-    public List<DBTablePartition> listTablePartitions(String tenantName, String schemaName, String tableName) {
+    public Map<String, DBTablePartition> listTablePartitions(@NonNull String schemaName,
+            List<String> tableNames) {
         throw new UnsupportedOperationException("Not supported yet");
     }
 
     @Override
     public List<DBTablePartition> listTableRangePartitionInfo(String tenantName) {
-        String sql =
-                "select t1.TABLE_NAME,t1.TABLE_SCHEMA,t2.PARTITION_EXPRESSION,COUNT(1) from "
-                        + " information_schema.tables t1 left join information_schema.partitions t2 "
-                        + " on t1.TABLE_NAME = t2.TABLE_NAME and t1.TABLE_SCHEMA = t2.TABLE_SCHEMA "
-                        + " where t2.PARTITION_METHOD = 'RANGE' OR t2.PARTITION_METHOD = 'RANGE COLUMNS' group by t1.TABLE_NAME,"
-                        + "t1.TABLE_SCHEMA;";
-        List<DBTablePartition> dbTablePartitions = jdbcOperations.query(sql, (rs, rowNum) -> {
-            DBTablePartition tablePartition = new DBTablePartition();
-            tablePartition.setTableName(rs.getString(1));
-            tablePartition.setSchemaName(rs.getString(2));
-            DBTablePartitionOption option = new DBTablePartitionOption();
-            option.setExpression(rs.getString(3));
-            option.setPartitionsNum(rs.getInt(4));
-            tablePartition.setPartitionOption(option);
-            return tablePartition;
-        });
-        return dbTablePartitions;
+        throw new UnsupportedOperationException("Not supported yet");
     }
 
     @Override
@@ -1211,8 +1196,21 @@ public class DorisSchemaAccessor implements DBSchemaAccessor {
         throw new UnsupportedOperationException("Not supported yet");
     }
 
+    private String filterByValues(String target, String colName, List<String> candidates) {
+        if (CollectionUtils.isEmpty(candidates)) {
+            return target;
+        }
+        String tables = candidates.stream().map(s -> new MySQLSqlBuilder().value(s).toString())
+                .collect(Collectors.joining(","));
+        SqlBuilder sqlBuilder = new MySQLSqlBuilder();
+        return sqlBuilder.append("select * from (")
+                .append(target).append(") dbbrowser").append(" WHERE dbbrowser.").identifier(colName)
+                .append(" in (").append(tables).append(")").toString();
+    }
+
     @Override
     public Map<String, DBTable> getTables(String schemaName, List<String> tableNames) {
         throw new UnsupportedOperationException("Not supported yet");
     }
+
 }

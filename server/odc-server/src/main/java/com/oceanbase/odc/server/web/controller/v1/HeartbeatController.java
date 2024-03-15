@@ -73,5 +73,4 @@ public class HeartbeatController {
         MemUnitType type = MemUnitType.valueOf(unitOfMem);
         return service.getOdcMetaInfo(type);
     }
-
 }

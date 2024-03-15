@@ -319,6 +319,8 @@ public class DataTransferTask implements Callable<DataTransferTaskResult> {
                 .collect(Collectors.toList());
         if (CollectionUtils.isNotEmpty(failedObjects)) {
             LOGGER.warn("Data transfer task completed with unfinished objects! Details : {}", failedObjects);
+            throw new IllegalStateException(
+                    "Data transfer task completed with unfinished objects! Details :" + failedObjects);
         }
     }
 

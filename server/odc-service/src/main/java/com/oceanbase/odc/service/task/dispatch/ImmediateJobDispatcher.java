@@ -16,8 +16,6 @@
 
 package com.oceanbase.odc.service.task.dispatch;
 
-import java.util.Arrays;
-
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.common.util.SystemUtils;
 import com.oceanbase.odc.core.shared.exception.UnsupportedException;
@@ -61,6 +59,12 @@ public class ImmediateJobDispatcher implements JobDispatcher {
     }
 
     @Override
+    public void modify(JobIdentity ji, String jobParametersJson) throws JobException {
+        JobCaller jobCaller = getJobCaller(getJobRunMode(ji));
+        jobCaller.modify(ji, jobParametersJson);
+    }
+
+    @Override
     public void destroy(JobIdentity ji) throws JobException {
         JobCaller jobCaller = getJobCaller(getJobRunMode(ji));
         jobCaller.destroy(ji);
@@ -101,7 +105,6 @@ public class ImmediateJobDispatcher implements JobDispatcher {
         JobImageNameProvider jobImageNameProvider = JobConfigurationHolder.getJobConfiguration()
                 .getJobImageNameProvider();
         podConfig.setImage(jobImageNameProvider.provide());
-        podConfig.setCommand(Arrays.asList("sh", "-c", "/opt/odc/bin/start-job.sh"));
         podConfig.setRegion(StringUtils.isNotBlank(k8s.getRegion()) ? k8s.getRegion()
                 : SystemUtils.getEnvOrProperty(JobEnvKeyConstants.OB_ARN_PARTITION));
 

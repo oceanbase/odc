@@ -35,6 +35,10 @@ public enum TaskRunMode {
         return this == K8S;
     }
 
+    public boolean isProcess() {
+        return !isK8s();
+    }
+
     @Override
     public String toString() {
         return this.name();

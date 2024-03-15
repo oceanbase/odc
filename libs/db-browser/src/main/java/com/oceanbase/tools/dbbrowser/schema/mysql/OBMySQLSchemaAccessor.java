@@ -16,6 +16,7 @@
 package com.oceanbase.tools.dbbrowser.schema.mysql;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -53,7 +54,7 @@ import lombok.extern.slf4j.Slf4j;
  * @author jingtian
  */
 @Slf4j
-public class OBMySQLSchemaAccessor extends MySQLNoGreaterThan5740SchemaAccessor {
+public class OBMySQLSchemaAccessor extends MySQLNoLessThan5700SchemaAccessor {
 
     protected static final Set<String> ESCAPE_SCHEMA_SET = new HashSet<>(3);
 
@@ -163,13 +164,6 @@ public class OBMySQLSchemaAccessor extends MySQLNoGreaterThan5740SchemaAccessor 
         List<DBTableColumn> columns = super.listTableColumns(schemaName, tableName);
         setStoredColumnByDDL(schemaName, tableName, columns);
         return columns;
-    }
-
-    @Override
-    public Map<String, List<DBTableColumn>> listTableColumns(String schemaName) {
-        Map<String, List<DBTableColumn>> tableName2Columns = super.listTableColumns(schemaName);
-        tableName2Columns.forEach((tableName, columns) -> setStoredColumnByDDL(schemaName, tableName, columns));
-        return tableName2Columns;
     }
 
     protected void setStoredColumnByDDL(String schemeName, String tableName, List<DBTableColumn> columns) {
@@ -329,7 +323,7 @@ public class OBMySQLSchemaAccessor extends MySQLNoGreaterThan5740SchemaAccessor 
         Map<String, String> tableName2Ddl = new HashMap<>();
         tableNames.stream()
                 .forEach(tableName -> tableName2Ddl.put(tableName, getTableDDL(schemaName, tableName)));
-        Map<String, List<DBTableColumn>> tableName2Columns = listTableColumns(schemaName);
+        Map<String, List<DBTableColumn>> tableName2Columns = listTableColumns(schemaName, Collections.emptyList());
         Map<String, List<DBTableIndex>> tableName2Indexes = listTableIndexes(schemaName, tableName2Ddl);
         Map<String, List<DBTableConstraint>> tableName2Constraints = listTableConstraints(schemaName);
         Map<String, DBTableOptions> tableName2Options = listTableOptions(schemaName);

@@ -24,9 +24,13 @@ import org.springframework.stereotype.Service;
 
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.shared.Verify;
+import com.oceanbase.odc.core.shared.exception.UnexpectedException;
+import com.oceanbase.odc.metadb.notification.EventEntity;
+import com.oceanbase.odc.metadb.notification.EventRepository;
 import com.oceanbase.odc.metadb.notification.MessageRepository;
 import com.oceanbase.odc.metadb.notification.MessageSendingHistoryEntity;
 import com.oceanbase.odc.metadb.notification.MessageSendingHistoryRepository;
+import com.oceanbase.odc.service.notification.helper.EventMapper;
 import com.oceanbase.odc.service.notification.model.Channel;
 import com.oceanbase.odc.service.notification.model.Message;
 import com.oceanbase.odc.service.notification.model.MessageSendResult;
@@ -50,6 +54,10 @@ public class NotificationDispatcher {
     private MessageSendingHistoryRepository sendingHistoryRepository;
     @Autowired
     private MessageSenderMapper messageSenderMapper;
+    @Autowired
+    private EventRepository eventRepository;
+    @Autowired
+    private EventMapper eventMapper;
 
     public void dispatch(Message message) throws Exception {
         Channel channel = message.getChannel();
@@ -65,6 +73,9 @@ public class NotificationDispatcher {
             return;
         }
 
+        EventEntity event = eventRepository.findById(message.getEvent().getId()).orElseThrow(
+                () -> new UnexpectedException("Event not found by id=" + message.getEvent().getId()));
+        message.setEvent(eventMapper.fromEntity(event));
         MessageSender sender = messageSenderMapper.get(channel);
         MessageSendResult result = sender.send(message);
         if (result.isActive()) {

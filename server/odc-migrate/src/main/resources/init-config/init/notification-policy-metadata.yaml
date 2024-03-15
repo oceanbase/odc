@@ -196,92 +196,92 @@
   match_expression: "taskType.equals('SQL_PLAN') && taskStatus.equals('APPROVAL_REJECTION')"
 - id: 50
   event_category: "TASK"
+  event_name: "${com.oceanbase.odc.TaskType.SQL_PLAN}-${com.oceanbase.odc.event.TASK.SCHEDULING_FAILED.name}"
+  match_expression: "taskType.equals('SQL_PLAN') && taskStatus.equals('SCHEDULING_FAILED')"
+- id: 51
+  event_category: "TASK"
   event_name: "${com.oceanbase.odc.TaskType.PARTITION_PLAN}-${com.oceanbase.odc.event.TASK.EXECUTION_SUCCEEDED.name}"
   match_expression: "taskType.equals('PARTITION_PLAN') && taskStatus.equals('EXECUTION_SUCCEEDED')"
-- id: 51
+- id: 52
   event_category: "TASK"
   event_name: "${com.oceanbase.odc.TaskType.PARTITION_PLAN}-${com.oceanbase.odc.event.TASK.EXECUTION_FAILED.name}"
   match_expression: "taskType.equals('PARTITION_PLAN') && taskStatus.equals('EXECUTION_FAILED')"
-- id: 52
+- id: 53
   event_category: "TASK"
   event_name: "${com.oceanbase.odc.TaskType.PARTITION_PLAN}-${com.oceanbase.odc.event.TASK.EXECUTION_TIMEOUT.name}"
   match_expression: "taskType.equals('PARTITION_PLAN') && taskStatus.equals('EXECUTION_TIMEOUT')"
-- id: 53
+- id: 54
   event_category: "TASK"
   event_name: "${com.oceanbase.odc.TaskType.PARTITION_PLAN}-${com.oceanbase.odc.event.TASK.PENDING_APPROVAL.name}"
   match_expression: "taskType.equals('PARTITION_PLAN') && taskStatus.equals('PENDING_APPROVAL')"
-- id: 54
+- id: 55
   event_category: "TASK"
   event_name: "${com.oceanbase.odc.TaskType.PARTITION_PLAN}-${com.oceanbase.odc.event.TASK.APPROVED.name}"
   match_expression: "taskType.equals('PARTITION_PLAN') && taskStatus.equals('APPROVED')"
-- id: 55
+- id: 56
   event_category: "TASK"
   event_name: "${com.oceanbase.odc.TaskType.PARTITION_PLAN}-${com.oceanbase.odc.event.TASK.APPROVAL_REJECTION.name}"
   match_expression: "taskType.equals('PARTITION_PLAN') && taskStatus.equals('APPROVAL_REJECTION')"
-- id: 56
+- id: 57
+  event_category: "TASK"
+  event_name: "${com.oceanbase.odc.TaskType.PARTITION_PLAN}-${com.oceanbase.odc.event.TASK.SCHEDULING_FAILED.name}"
+  match_expression: "taskType.equals('PARTITION_PLAN') && taskStatus.equals('SCHEDULING_FAILED')"
+- id: 58
   event_category: "TASK"
   event_name: "${com.oceanbase.odc.TaskType.DATA_ARCHIVE}-${com.oceanbase.odc.event.TASK.EXECUTION_SUCCEEDED.name}"
   match_expression: "taskType.equals('DATA_ARCHIVE') && taskStatus.equals('EXECUTION_SUCCEEDED')"
-- id: 57
+- id: 59
   event_category: "TASK"
   event_name: "${com.oceanbase.odc.TaskType.DATA_ARCHIVE}-${com.oceanbase.odc.event.TASK.EXECUTION_FAILED.name}"
   match_expression: "taskType.equals('DATA_ARCHIVE') && taskStatus.equals('EXECUTION_FAILED')"
-- id: 58
+- id: 60
   event_category: "TASK"
   event_name: "${com.oceanbase.odc.TaskType.DATA_ARCHIVE}-${com.oceanbase.odc.event.TASK.EXECUTION_TIMEOUT.name}"
   match_expression: "taskType.equals('DATA_ARCHIVE') && taskStatus.equals('EXECUTION_TIMEOUT')"
-- id: 59
+- id: 61
   event_category: "TASK"
   event_name: "${com.oceanbase.odc.TaskType.DATA_ARCHIVE}-${com.oceanbase.odc.event.TASK.PENDING_APPROVAL.name}"
   match_expression: "taskType.equals('DATA_ARCHIVE') && taskStatus.equals('PENDING_APPROVAL')"
-- id: 60
+- id: 62
   event_category: "TASK"
   event_name: "${com.oceanbase.odc.TaskType.DATA_ARCHIVE}-${com.oceanbase.odc.event.TASK.APPROVED.name}"
   match_expression: "taskType.equals('DATA_ARCHIVE') && taskStatus.equals('APPROVED')"
-- id: 61
+- id: 63
   event_category: "TASK"
   event_name: "${com.oceanbase.odc.TaskType.DATA_ARCHIVE}-${com.oceanbase.odc.event.TASK.APPROVAL_REJECTION.name}"
   match_expression: "taskType.equals('DATA_ARCHIVE') && taskStatus.equals('APPROVAL_REJECTION')"
-- id: 62
+- id: 64
   event_category: "TASK"
   event_name: "${com.oceanbase.odc.TaskType.DATA_ARCHIVE}-${com.oceanbase.odc.event.TASK.SCHEDULING_FAILED.name}"
   match_expression: "taskType.equals('DATA_ARCHIVE') && taskStatus.equals('SCHEDULING_FAILED')"
-- id: 63
-  event_category: "TASK"
-  event_name: "${com.oceanbase.odc.TaskType.DATA_ARCHIVE}-${com.oceanbase.odc.event.TASK.SCHEDULING_TIMEOUT.name}"
-  match_expression: "taskType.equals('DATA_ARCHIVE') && taskStatus.equals('SCHEDULING_TIMEOUT')"
-- id: 64
+- id: 65
   event_category: "TASK"
   event_name: "${com.oceanbase.odc.TaskType.DATA_DELETE}-${com.oceanbase.odc.event.TASK.EXECUTION_SUCCEEDED.name}"
   match_expression: "taskType.equals('DATA_DELETE') && taskStatus.equals('EXECUTION_SUCCEEDED')"
-- id: 65
+- id: 66
   event_category: "TASK"
   event_name: "${com.oceanbase.odc.TaskType.DATA_DELETE}-${com.oceanbase.odc.event.TASK.EXECUTION_FAILED.name}"
   match_expression: "taskType.equals('DATA_DELETE') && taskStatus.equals('EXECUTION_FAILED')"
-- id: 66
+- id: 67
   event_category: "TASK"
   event_name: "${com.oceanbase.odc.TaskType.DATA_DELETE}-${com.oceanbase.odc.event.TASK.EXECUTION_TIMEOUT.name}"
   match_expression: "taskType.equals('DATA_DELETE') && taskStatus.equals('EXECUTION_TIMEOUT')"
-- id: 67
+- id: 68
   event_category: "TASK"
   event_name: "${com.oceanbase.odc.TaskType.DATA_DELETE}-${com.oceanbase.odc.event.TASK.PENDING_APPROVAL.name}"
   match_expression: "taskType.equals('DATA_DELETE') && taskStatus.equals('PENDING_APPROVAL')"
-- id: 68
+- id: 69
   event_category: "TASK"
   event_name: "${com.oceanbase.odc.TaskType.DATA_DELETE}-${com.oceanbase.odc.event.TASK.APPROVED.name}"
   match_expression: "taskType.equals('DATA_DELETE') && taskStatus.equals('APPROVED')"
-- id: 69
+- id: 70
   event_category: "TASK"
   event_name: "${com.oceanbase.odc.TaskType.DATA_DELETE}-${com.oceanbase.odc.event.TASK.APPROVAL_REJECTION.name}"
   match_expression: "taskType.equals('DATA_DELETE') && taskStatus.equals('APPROVAL_REJECTION')"
-- id: 70
+- id: 71
   event_category: "TASK"
   event_name: "${com.oceanbase.odc.TaskType.DATA_DELETE}-${com.oceanbase.odc.event.TASK.SCHEDULING_FAILED.name}"
   match_expression: "taskType.equals('DATA_DELETE') && taskStatus.equals('SCHEDULING_FAILED')"
-- id: 71
-  event_category: "TASK"
-  event_name: "${com.oceanbase.odc.TaskType.DATA_DELETE}-${com.oceanbase.odc.event.TASK.SCHEDULING_TIMEOUT.name}"
-  match_expression: "taskType.equals('DATA_DELETE') && taskStatus.equals('SCHEDULING_TIMEOUT')"
 - id: 72
   event_category: "TASK"
   event_name: "${com.oceanbase.odc.TaskType.APPLY_PROJECT_PERMISSION}-${com.oceanbase.odc.event.TASK.EXECUTION_SUCCEEDED.name}"

@@ -20,6 +20,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import javax.annotation.PostConstruct;
@@ -31,6 +32,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
 
+import com.github.benmanes.caffeine.cache.Caffeine;
+import com.github.benmanes.caffeine.cache.LoadingCache;
+import com.oceanbase.odc.common.util.ExceptionUtils;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.metadb.config.UserConfigDAO;
 import com.oceanbase.odc.metadb.config.UserConfigEntity;
@@ -51,6 +55,9 @@ public class UserConfigService {
 
     private List<Configuration> defaultConfigurations;
     private Map<String, ConfigurationMeta> configKeyToConfigMeta;
+    private LoadingCache<Long, Map<String, Configuration>> userIdToConfigurationsCache = Caffeine.newBuilder()
+            .maximumSize(500).expireAfterWrite(60, TimeUnit.SECONDS)
+            .build(this::internalGetUserConfigurations);
 
     @PostConstruct
     public void init() {
@@ -63,12 +70,20 @@ public class UserConfigService {
         log.info("Default user configurations: {}", defaultConfigurations);
     }
 
+    /**
+     * deep copy for avoid dirty value in return list
+     */
     public List<Configuration> listDefaultUserConfigurations() {
-        return new ArrayList<>(defaultConfigurations);
+        List<Configuration> configurations = new ArrayList<>(defaultConfigurations.size());
+        for (Configuration configuration : defaultConfigurations) {
+            configurations.add(new Configuration(configuration.getKey(), configuration.getValue()));
+        }
+        return configurations;
     }
 
     public void deleteUserConfigurations(@NotNull Long userId) {
         int affectRows = userConfigDAO.deleteByUserId(userId);
+        evictUserConfigurationsCache(userId);
         log.info("Delete user configurations, userId={}, affectRows={}", userId, affectRows);
     }
 
@@ -96,6 +111,7 @@ public class UserConfigService {
         int affectRows = userConfigDAO.batchUpsert(entities);
         log.info("Update user configurations, userId={}, affectRows={}, configurations={}",
                 userId, affectRows, configurations);
+        evictUserConfigurationsCache(userId);
         return listUserConfigurations(userId);
     }
 
@@ -107,6 +123,7 @@ public class UserConfigService {
         log.info("Update user configuration, userId={}, affectRows={}, configuration={}",
                 userId, affectRows, configuration);
         UserConfigEntity stored = userConfigDAO.queryByUserIdAndKey(userId, configuration.getKey());
+        evictUserConfigurationsCache(userId);
         return Configuration.of(stored);
     }
 
@@ -116,5 +133,23 @@ public class UserConfigService {
             throw new IllegalArgumentException("Invalid configuration key: " + configuration.getKey());
         }
         ConfigValueValidator.validate(meta, configuration.getValue());
+    }
+
+    public Map<String, Configuration> getUserConfigurationsFromCache(Long userId) {
+        return userIdToConfigurationsCache.get(userId);
+    }
+
+    private Map<String, Configuration> internalGetUserConfigurations(Long userId) {
+        return listUserConfigurations(userId).stream()
+                .collect(Collectors.toMap(Configuration::getKey, c -> c));
+    }
+
+    private void evictUserConfigurationsCache(@NotNull Long userId) {
+        try {
+            userIdToConfigurationsCache.invalidate(userId);
+        } catch (Exception e) {
+            log.warn("Failed to evict cache, userId={}, reason={}",
+                    userId, ExceptionUtils.getRootCauseReason(e));
+        }
     }
 }

@@ -104,7 +104,6 @@ public class ScheduleConfiguration {
         int poolSize = Math.max(SystemUtils.availableProcessors(), 5);
         executor.setCorePoolSize(poolSize);
         executor.setMaxPoolSize(poolSize);
-        executor.setQueueCapacity(0);
         executor.setThreadNamePrefix("auto-approval-");
         executor.setWaitForTasksToCompleteOnShutdown(true);
         executor.setAwaitTerminationSeconds(5);
@@ -112,6 +111,21 @@ public class ScheduleConfiguration {
         executor.setRejectedExecutionHandler(new ThreadPoolExecutor.CallerRunsPolicy());
         executor.initialize();
         log.info("autoApprovalExecutor initialized");
+        return executor;
+    }
+
+    @Bean(name = "flowTaskExecutor")
+    public ThreadPoolTaskExecutor flowTaskExecutor() {
+        ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
+        executor.setCorePoolSize(CORE_NUMBER * 2);
+        executor.setMaxPoolSize(CORE_NUMBER * 10);
+        executor.setThreadNamePrefix("flow-task-executor-");
+        executor.setWaitForTasksToCompleteOnShutdown(true);
+        executor.setAwaitTerminationSeconds(5);
+        executor.setTaskDecorator(new TraceDecorator<>());
+        executor.setRejectedExecutionHandler(new ThreadPoolExecutor.AbortPolicy());
+        executor.initialize();
+        log.info("flowTaskExecutor initialized");
         return executor;
     }
 

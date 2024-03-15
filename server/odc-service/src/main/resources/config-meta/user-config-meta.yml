@@ -68,7 +68,7 @@
   max_value: ~
   min_value: ~
   allowed_values: [ 'true','false' ]
-  default_value: 'true'
+  default_value: 'false'
   nullable: false
   description: ''
 - id: 8
@@ -87,7 +87,7 @@
   type: 'string'
   max_value: ~
   min_value: ~
-  allowed_values: [ 'OceanBase','VSCode' ]
+  allowed_values: ~
   default_value: 'OceanBase'
   nullable: false
   description: ''
@@ -137,7 +137,7 @@
   type: 'string'
   max_value: ~
   min_value: ~
-  allowed_values: [ 'FollowSystem','en_US' ,'zh_CN' ,'zh_TW' ]
+  allowed_values: [ 'FollowSystem','en-US' ,'zh-CN' ,'zh-TW' ]
   default_value: 'FollowSystem'
   nullable: false
   description: ''

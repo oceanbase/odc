@@ -50,4 +50,17 @@ public class HostProperties {
      */
     @Value("${ODC_MAPPING_PORT:#{null}}")
     private String odcMappingPort;
+
+    /**
+     * The type of host is obtained. By default, the ip address is used. You can use hostName as host by
+     * changing the value to 'hostName'
+     */
+    @Value("${odc.web.stateful-route.host.type:ipAddress}")
+    private String hostType;
+
+
+    public Integer getRequestPort() {
+        return odcMappingPort == null ? Integer.parseInt(port)
+                : Integer.parseInt(odcMappingPort);
+    }
 }
