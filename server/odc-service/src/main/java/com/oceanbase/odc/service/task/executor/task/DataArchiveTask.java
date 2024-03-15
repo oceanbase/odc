@@ -19,6 +19,9 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 
 import com.oceanbase.odc.common.json.JsonUtils;
+import com.oceanbase.odc.core.shared.constant.DialectType;
+import com.oceanbase.odc.core.sql.parser.AbstractSyntaxTreeFactories;
+import com.oceanbase.odc.core.sql.parser.AbstractSyntaxTreeFactory;
 import com.oceanbase.odc.service.dlm.CloudDLMJobStore;
 import com.oceanbase.odc.service.dlm.DLMJobFactory;
 import com.oceanbase.odc.service.schedule.job.DLMJobParameters;
@@ -33,6 +36,9 @@ import com.oceanbase.tools.migrator.common.enums.JobType;
 import com.oceanbase.tools.migrator.datasource.DataSourceAdapter;
 import com.oceanbase.tools.migrator.datasource.DataSourceFactory;
 import com.oceanbase.tools.migrator.job.Job;
+import com.oceanbase.tools.sqlparser.adapter.mysql.MySQLFromReferenceFactory;
+import com.oceanbase.tools.sqlparser.obmysql.OBParser.Create_table_stmtContext;
+import com.oceanbase.tools.sqlparser.statement.common.RelationFactor;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -46,7 +52,7 @@ import lombok.extern.slf4j.Slf4j;
 public class DataArchiveTask extends BaseTask<Boolean> {
 
     private DLMJobFactory jobFactory;
-    private boolean isFinish = false;
+    private boolean isSuccess = true;
     private double progress = 0.0;
     private Job job;
 
@@ -81,10 +87,11 @@ public class DataArchiveTask extends BaseTask<Boolean> {
                 log.error("{} job failed,DLMJobId={},errorMsg={}", job.getJobMeta().getJobType(),
                         job.getJobMeta().getJobId(),
                         e);
+                // set task status to failed if any job failed.
+                isSuccess = false;
             }
             progress = (tableIndex + 1.0) / parameters.getTables().size();
         }
-        isFinish = true;
         return true;
     }
 
@@ -123,9 +130,23 @@ public class DataArchiveTask extends BaseTask<Boolean> {
             return;
         }
         try (Connection connection = targetDataSource.getConnectionForWrite()) {
+            createTableDDL = buildCreateTableDDL(createTableDDL,
+                    parameters.getTables().get(tableIndex).getTargetTableName());
+            log.info("Create target table begin, sql={}", createTableDDL);
             boolean result = connection.prepareStatement(createTableDDL).execute();
             log.info("Create target table finish, result={}", result);
         }
+    }
+
+    public String buildCreateTableDDL(String createSql, String targetTableName) {
+        AbstractSyntaxTreeFactory factory = AbstractSyntaxTreeFactories.getAstFactory(DialectType.OB_MYSQL, 0);
+        Create_table_stmtContext context = (Create_table_stmtContext) factory.buildAst(createSql).getRoot();
+        RelationFactor factor = MySQLFromReferenceFactory.getRelationFactor(context.relation_factor());
+        StringBuilder sb = new StringBuilder();
+        sb.append(createSql, 0, factor.getStart());
+        sb.append("`").append(targetTableName).append("`");
+        sb.append(createSql, factor.getStop() + 1, createSql.length() - 1);
+        return sb.toString();
     }
 
     private boolean checkTargetTableExist(String tableName, DataSourceAdapter dataSourceAdapter) {
@@ -171,6 +192,6 @@ public class DataArchiveTask extends BaseTask<Boolean> {
 
     @Override
     public Boolean getTaskResult() {
-        return isFinish;
+        return isSuccess;
     }
 }
