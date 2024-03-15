@@ -57,6 +57,7 @@ import com.oceanbase.odc.metadb.task.JobAttributeRepository;
 import com.oceanbase.odc.metadb.task.JobEntity;
 import com.oceanbase.odc.metadb.task.JobRepository;
 import com.oceanbase.odc.service.task.config.TaskFrameworkProperties;
+import com.oceanbase.odc.service.task.constants.JobAttributeEntityColumn;
 import com.oceanbase.odc.service.task.constants.JobEntityColumn;
 import com.oceanbase.odc.service.task.enums.JobStatus;
 import com.oceanbase.odc.service.task.enums.TaskRunMode;
@@ -315,14 +316,34 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
         jobRepository.update(jse);
 
         if (taskResult.getLogMetadata() != null && taskResult.getStatus().isTerminated()) {
-            taskResult.getLogMetadata().forEach((k, v) -> {
+            saveOrUpdateLogMetadata(taskResult, jse);
+        }
+    }
+
+    private void saveOrUpdateLogMetadata(TaskResult taskResult, JobEntity jse) {
+        taskResult.getLogMetadata().forEach((k, v) -> {
+            // log key may exist if job is retrying
+            Optional<String> logValue = findByJobIdAndAttributeKey(jse.getId(), k);
+            if (logValue.isPresent()) {
+                updateJobAttributeValue(jse.getId(), k, v);
+            } else {
                 JobAttributeEntity jobAttribute = new JobAttributeEntity();
                 jobAttribute.setJobId(jse.getId());
                 jobAttribute.setAttributeKey(k);
                 jobAttribute.setAttributeValue(v);
                 jobAttributeRepository.save(jobAttribute);
-            });
-        }
+            }
+        });
+    }
+
+    private void updateJobAttributeValue(Long id, String key, String value) {
+        CriteriaBuilder cb = entityManager.getCriteriaBuilder();
+        CriteriaUpdate<JobAttributeEntity> update = cb.createCriteriaUpdate(JobAttributeEntity.class);
+        Root<JobAttributeEntity> e = update.from(JobAttributeEntity.class);
+        update.set(JobAttributeEntityColumn.ATTRIBUTE_VALUE, value);
+        update.where(cb.equal(e.get(JobAttributeEntityColumn.ID), id),
+                cb.equal(e.get(JobAttributeEntityColumn.ATTRIBUTE_KEY), key));
+        entityManager.createQuery(update).executeUpdate();
     }
 
     @Transactional(rollbackFor = Exception.class)
@@ -467,4 +488,5 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
         JobAttributeEntity attributeEntity = jobAttributeRepository.findByJobIdAndAttributeKey(jobId, attributeKey);
         return Objects.isNull(attributeEntity) ? Optional.empty() : Optional.of(attributeEntity.getAttributeValue());
     }
+
 }
