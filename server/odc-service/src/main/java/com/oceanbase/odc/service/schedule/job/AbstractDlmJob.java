@@ -50,6 +50,7 @@ import com.oceanbase.odc.service.task.constants.JobParametersKeyConstants;
 import com.oceanbase.odc.service.task.executor.task.DataArchiveTask;
 import com.oceanbase.odc.service.task.schedule.DefaultJobDefinition;
 import com.oceanbase.odc.service.task.schedule.JobScheduler;
+import com.oceanbase.odc.service.task.schedule.SingleJobProperties;
 import com.oceanbase.odc.service.task.service.TaskFrameworkService;
 import com.oceanbase.tools.migrator.common.configure.LogicTableConfig;
 import com.oceanbase.tools.migrator.common.enums.JobType;
@@ -223,10 +224,12 @@ public class AbstractDlmJob implements OdcJob {
         Map<String, String> jobData = new HashMap<>();
         jobData.put(JobParametersKeyConstants.META_TASK_PARAMETER_JSON,
                 JsonUtils.toJson(parameters));
-
+        SingleJobProperties singleJobProperties = new SingleJobProperties();
+        singleJobProperties.setEnableRetryAfterHeartTimeout(true);
+        singleJobProperties.setMaxRetryTimesAfterHeartTimeout(2);
         DefaultJobDefinition jobDefinition = DefaultJobDefinition.builder().jobClass(DataArchiveTask.class)
                 .jobType("DLM")
-                .jobParameters(jobData)
+                .jobParameters(jobData).jobProperties(singleJobProperties)
                 .build();
         return jobScheduler.scheduleJobNow(jobDefinition);
     }
