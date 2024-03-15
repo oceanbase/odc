@@ -96,12 +96,8 @@ public class SingleConnectionDataSource extends BaseClassBasedDataSource impleme
     /**
      * Reset a {@code Connection}
      */
-    public void resetConnection() throws SQLException {
+    public synchronized void resetConnection() throws SQLException {
         log.info("The connection will be reset soon");
-        if (!tryLock()) {
-            throw new ConflictException(ErrorCodes.ConnectionOccupied, new Object[] {},
-                    "Connection is occupied, waited " + this.timeOutMillis + " millis");
-        }
         close();
         this.connection = null;
         this.lock = null;
@@ -185,7 +181,7 @@ public class SingleConnectionDataSource extends BaseClassBasedDataSource impleme
         }
     }
 
-    private synchronized Connection innerCreateConnection() throws SQLException {
+    private Connection innerCreateConnection() throws SQLException {
         if (this.connection != null) {
             throw new IllegalStateException("Connection is not null");
         }
