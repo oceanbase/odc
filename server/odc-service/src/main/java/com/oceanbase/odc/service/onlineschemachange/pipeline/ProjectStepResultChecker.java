@@ -98,7 +98,7 @@ public class ProjectStepResultChecker {
         // todo 用户手动暂停了项目
         if (isProjectFinished()) {
             checkerResult.setTaskStatus(TaskStatus.DONE);
-        } else if (isProjectFailed() || progressResponse.getStatus().isProjectReleased()) {
+        } else if (isProjectFailed() || progressResponse.getStatus().isProjectDestroyed()) {
             checkerResult.setTaskStatus(TaskStatus.FAILED);
         } else {
             checkerResult.setTaskStatus(TaskStatus.RUNNING);

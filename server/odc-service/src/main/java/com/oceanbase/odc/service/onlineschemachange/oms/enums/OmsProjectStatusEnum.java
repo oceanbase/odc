@@ -66,7 +66,7 @@ public enum OmsProjectStatusEnum {
 
     UNKNOWN;
 
-    public boolean isProjectReleased() {
+    public boolean isProjectDestroyed() {
         return Arrays.asList(OmsProjectStatusEnum.DELETED, OmsProjectStatusEnum.RELEASED,
                 OmsProjectStatusEnum.RELEASING).contains(this);
     }
