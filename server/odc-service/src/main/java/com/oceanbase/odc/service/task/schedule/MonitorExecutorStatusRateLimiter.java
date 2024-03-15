@@ -47,14 +47,13 @@ public class MonitorExecutorStatusRateLimiter implements StartJobRateLimiter {
 
     @Override
     public boolean tryAcquire() {
-        boolean acquired = true;
         if (taskFrameworkProperties.get().getRunMode().isProcess() && SystemUtils.isOnLinux()) {
             JobConfiguration jobConfiguration = JobConfigurationHolder.getJobConfiguration();
             long count = jobConfiguration.getTaskFrameworkService().countExecutorRunningJobs(TaskRunMode.PROCESS);
             if (count >= runningJobCountLimit) {
                 log.warn("Amount of executor running jobs exceed limit, wait next schedule, limit={}, runningJobs={}.",
                         runningJobCountLimit, count);
-                acquired = false;
+                return false;
             }
             // Get current system free memory
             long systemFreeMemory = SystemUtils.getSystemFreeMemory().convert(BinarySizeUnit.MB).getSizeDigit();
@@ -63,12 +62,10 @@ public class MonitorExecutorStatusRateLimiter implements StartJobRateLimiter {
             if (systemFreeMemory * 0.5 <= startNewProcessMemoryMinSize) {
                 log.warn("Current free memory lack, systemFreeMemory={}, startNewProcessMemoryMinSize={}",
                         systemFreeMemory, startNewProcessMemoryMinSize);
-                acquired = false;
+                return false;
             }
-        } else {
-            acquired = isExecutorWaitingToRunNotExceedThreshold();
         }
-        return acquired;
+        return isExecutorWaitingToRunNotExceedThreshold();
     }
 
     private int calculateRunningJobCountLimit(Supplier<TaskFrameworkProperties> taskFrameworkProperties) {
