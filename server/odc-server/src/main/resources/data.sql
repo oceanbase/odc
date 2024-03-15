@@ -755,12 +755,6 @@ INSERT INTO config_system_configuration(`key`, `value`, `description`) VALUES('o
 INSERT INTO config_system_configuration(`key`, `value`, `description`) VALUES('odc.web.security.basic-authentication.enabled',
  'false', 'enable basic authentication or not, false by default') ON DUPLICATE KEY UPDATE `id`=`id`;
 
-INSERT INTO config_system_configuration(`key`, `value`, `description`) VALUES('odc.web.stateful-route.enabled',
-'true', 'enable stateful route') ON DUPLICATE KEY UPDATE `id`=`id`;
-
-INSERT INTO config_system_configuration(`key`, `value`, `description`) VALUES('odc.web.stateful-route.host.type',
-'ipAddress', 'host type used for forwarding, use ipAddress or hostName') ON DUPLICATE KEY UPDATE `id`=`id`;
-
 INSERT INTO config_system_configuration ( `key`, `value`, `description` )
 VALUES
   ( 'odc.task.async.index-change-max-timeout-millis', '432000000', 'If the change content of the database change task involves time-consuming index change operations, the timeout period for the automatically modified database change task, unit: milliseconds. Default value is 5 days.' )
