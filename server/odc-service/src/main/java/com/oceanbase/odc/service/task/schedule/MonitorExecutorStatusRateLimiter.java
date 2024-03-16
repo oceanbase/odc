@@ -76,16 +76,16 @@ public class MonitorExecutorStatusRateLimiter implements StartJobRateLimiter {
         int limitRunningTaskTotalMemoryInMilliBytes =
                 taskFrameworkProperties.get().getLimitRunningJobTotalMemoryInMilliBytes();
         JobConfiguration jobConfiguration = JobConfigurationHolder.getJobConfiguration();
-        // Odc may restart, so we should query exists running jobs
-        long existRunningJobs =
-                jobConfiguration.getTaskFrameworkService().countExecutorRunningJobs(TaskRunMode.PROCESS);
+        // Odc may restart, so we should add exists running jobs
         int usedToRunningJobMem =
                 limitRunningTaskTotalMemoryInMilliBytes < 2048 ? new Double(totalFreeMemory * 0.5).intValue()
                         : limitRunningTaskTotalMemoryInMilliBytes;
         return new BigDecimal(usedToRunningJobMem)
                 .divide(new BigDecimal(taskFrameworkProperties.get().getStartNewProcessMemoryMinSizeInMilliBytes()),
                         RoundingMode.FLOOR)
-                .longValue() + existRunningJobs;
+                .add(new BigDecimal(
+                        jobConfiguration.getTaskFrameworkService().countExecutorRunningJobs(TaskRunMode.PROCESS)))
+                .longValue();
     }
 
     private boolean isExecutorWaitingToRunNotExceedThreshold() {
