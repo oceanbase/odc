@@ -37,11 +37,11 @@ import lombok.extern.slf4j.Slf4j;
 public class MonitorExecutorStatusRateLimiter implements StartJobRateLimiter {
 
     private final Supplier<TaskFrameworkProperties> taskFrameworkProperties;
-    private final int runningJobCountLimit;
+    private final long runningJobCountLimit;
 
     public MonitorExecutorStatusRateLimiter(Supplier<TaskFrameworkProperties> taskFrameworkProperties) {
         this.taskFrameworkProperties = taskFrameworkProperties;
-        int limitCount = calculateRunningJobCountLimit(taskFrameworkProperties);
+        long limitCount = calculateRunningJobCountLimit(taskFrameworkProperties);
         this.runningJobCountLimit = (limitCount == 0 ? 1 : limitCount);
     }
 
@@ -68,20 +68,23 @@ public class MonitorExecutorStatusRateLimiter implements StartJobRateLimiter {
         return isExecutorWaitingToRunNotExceedThreshold();
     }
 
-    private int calculateRunningJobCountLimit(Supplier<TaskFrameworkProperties> taskFrameworkProperties) {
+    private long calculateRunningJobCountLimit(Supplier<TaskFrameworkProperties> taskFrameworkProperties) {
         if (taskFrameworkProperties.get().getRunMode().isProcess() && SystemUtils.isOnLinux()) {
             // Get system free memory when limiter is init
             long totalFreeMemory = SystemUtils.getSystemFreeMemory().convert(BinarySizeUnit.MB).getSizeDigit();
             int limitRunningTaskTotalMemoryInMilliBytes =
                     taskFrameworkProperties.get().getLimitRunningJobTotalMemoryInMilliBytes();
-
+            JobConfiguration jobConfiguration = JobConfigurationHolder.getJobConfiguration();
+            // Odc may restart, so we should query exists running jobs
+            long existRunningJobs =
+                    jobConfiguration.getTaskFrameworkService().countExecutorRunningJobs(TaskRunMode.PROCESS);
             int usedToRunningJobMem =
                     limitRunningTaskTotalMemoryInMilliBytes < 2048 ? new Double(totalFreeMemory * 0.5).intValue()
                             : limitRunningTaskTotalMemoryInMilliBytes;
             return new BigDecimal(usedToRunningJobMem)
                     .divide(new BigDecimal(taskFrameworkProperties.get().getStartNewProcessMemoryMinSizeInMilliBytes()),
                             RoundingMode.FLOOR)
-                    .intValue();
+                    .longValue() + existRunningJobs;
         }
         return 0;
     }
