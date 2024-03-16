@@ -25,6 +25,7 @@ import com.oceanbase.odc.service.task.config.JobConfiguration;
 import com.oceanbase.odc.service.task.config.JobConfigurationHolder;
 import com.oceanbase.odc.service.task.config.TaskFrameworkProperties;
 import com.oceanbase.odc.service.task.enums.TaskRunMode;
+import com.oceanbase.odc.service.task.service.TaskFrameworkService;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -37,13 +38,15 @@ import lombok.extern.slf4j.Slf4j;
 public class MonitorExecutorStatusRateLimiter implements StartJobRateLimiter {
 
     private final Supplier<TaskFrameworkProperties> taskFrameworkProperties;
+    private final TaskFrameworkService taskFrameworkService;
     private long runningJobCountLimit;
 
-    public MonitorExecutorStatusRateLimiter(Supplier<TaskFrameworkProperties> taskFrameworkProperties) {
+    public MonitorExecutorStatusRateLimiter(Supplier<TaskFrameworkProperties> taskFrameworkProperties,
+            TaskFrameworkService taskFrameworkService) {
         this.taskFrameworkProperties = taskFrameworkProperties;
+        this.taskFrameworkService = taskFrameworkService;
         if (taskFrameworkProperties.get().getRunMode().isProcess() && SystemUtils.isOnLinux()) {
-            long limitCount = calculateRunningJobCountLimit(taskFrameworkProperties);
-            this.runningJobCountLimit = (limitCount == 0 ? 1 : limitCount);
+            this.runningJobCountLimit = calculateRunningJobCountLimit();
         }
     }
 
@@ -61,7 +64,7 @@ public class MonitorExecutorStatusRateLimiter implements StartJobRateLimiter {
             long systemFreeMemory = SystemUtils.getSystemFreeMemory().convert(BinarySizeUnit.MB).getSizeDigit();
             int startNewProcessMemoryMinSize =
                     taskFrameworkProperties.get().getStartNewProcessMemoryMinSizeInMilliBytes();
-            if (systemFreeMemory * 0.5 <= startNewProcessMemoryMinSize) {
+            if (systemFreeMemory >> 1 <= startNewProcessMemoryMinSize) {
                 log.warn("Current free memory lack, systemFreeMemory={}, startNewProcessMemoryMinSize={}",
                         systemFreeMemory, startNewProcessMemoryMinSize);
                 return false;
@@ -70,22 +73,18 @@ public class MonitorExecutorStatusRateLimiter implements StartJobRateLimiter {
         return isExecutorWaitingToRunNotExceedThreshold();
     }
 
-    private long calculateRunningJobCountLimit(Supplier<TaskFrameworkProperties> taskFrameworkProperties) {
+    private long calculateRunningJobCountLimit() {
         // Get system free memory when limiter is init
-        long totalFreeMemory = SystemUtils.getSystemFreeMemory().convert(BinarySizeUnit.MB).getSizeDigit();
-        int limitRunningTaskTotalMemoryInMilliBytes =
-                taskFrameworkProperties.get().getLimitRunningJobTotalMemoryInMilliBytes();
-        JobConfiguration jobConfiguration = JobConfigurationHolder.getJobConfiguration();
-        // Odc may restart, so we should add exists running jobs
-        int usedToRunningJobMem =
-                limitRunningTaskTotalMemoryInMilliBytes < 2048 ? new Double(totalFreeMemory * 0.5).intValue()
-                        : limitRunningTaskTotalMemoryInMilliBytes;
-        return new BigDecimal(usedToRunningJobMem)
+        long totalFreeMem = SystemUtils.getSystemFreeMemory().convert(BinarySizeUnit.MB).getSizeDigit();
+        int limitRunningMem = taskFrameworkProperties.get().getLimitRunningJobTotalMemoryInMilliBytes();
+        // Get total free memory 50% if limitRunningTaskMemory < 2048,
+        // odc may restart, so we should add exists running jobs number
+        long limitCount = new BigDecimal(limitRunningMem < 2048 ? totalFreeMem >> 1 : limitRunningMem)
                 .divide(new BigDecimal(taskFrameworkProperties.get().getStartNewProcessMemoryMinSizeInMilliBytes()),
                         RoundingMode.FLOOR)
-                .add(new BigDecimal(
-                        jobConfiguration.getTaskFrameworkService().countExecutorRunningJobs(TaskRunMode.PROCESS)))
+                .add(new BigDecimal(taskFrameworkService.countExecutorRunningJobs(TaskRunMode.PROCESS)))
                 .longValue();
+        return limitCount == 0 ? 1 : limitCount;
     }
 
     private boolean isExecutorWaitingToRunNotExceedThreshold() {
