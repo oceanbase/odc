@@ -179,6 +179,7 @@ public class FlowInstanceServiceTest extends ServiceTestEnv {
 
     @Before
     public void setUp() {
+        taskRepository.deleteAll();
         flowInstanceRepository.deleteAll();
         serviceTaskRepository.deleteAll();
         nodeRepository.deleteAll();

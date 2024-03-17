@@ -399,7 +399,8 @@ public class FlowInstanceService {
                 .and(FlowInstanceViewSpecs.statusIn(params.getStatuses()))
                 .and(FlowInstanceViewSpecs.createTimeLate(params.getStartTime()))
                 .and(FlowInstanceViewSpecs.createTimeBefore(params.getEndTime()))
-                .and(FlowInstanceViewSpecs.idEquals(targetId));
+                .and(FlowInstanceViewSpecs.idEquals(targetId))
+                .and(FlowInstanceViewSpecs.groupByIdAndTaskType());
         if (params.getType() != null) {
             specification = specification.and(FlowInstanceViewSpecs.taskTypeEquals(params.getType()));
         } else {
@@ -712,13 +713,29 @@ public class FlowInstanceService {
         TaskType taskType = req.getTaskType();
         if (taskType == TaskType.ALTER_SCHEDULE) {
             AlterScheduleParameters params = (AlterScheduleParameters) req.getParameters();
-            if (params.getType() == JobType.DATA_ARCHIVE) {
-                DataArchiveParameters p = (DataArchiveParameters) params.getScheduleTaskParameters();
-                databaseIds.add(p.getSourceDatabaseId());
-                databaseIds.add(p.getTargetDataBaseId());
-            } else if (params.getType() == JobType.DATA_DELETE) {
-                DataDeleteParameters p = (DataDeleteParameters) params.getScheduleTaskParameters();
-                databaseIds.add(p.getDatabaseId());
+            // Check the new parameters during creation or update.
+            if (params.getOperationType() == OperationType.CREATE
+                    || params.getOperationType() == OperationType.UPDATE) {
+                if (params.getType() == JobType.DATA_ARCHIVE) {
+                    DataArchiveParameters p = (DataArchiveParameters) params.getScheduleTaskParameters();
+                    databaseIds.add(p.getSourceDatabaseId());
+                    databaseIds.add(p.getTargetDataBaseId());
+                } else if (params.getType() == JobType.DATA_DELETE) {
+                    DataDeleteParameters p = (DataDeleteParameters) params.getScheduleTaskParameters();
+                    databaseIds.add(p.getDatabaseId());
+                }
+            } else {
+                ScheduleEntity scheduleEntity = scheduleService.nullSafeGetById(params.getTaskId());
+                if (params.getType() == JobType.DATA_ARCHIVE) {
+                    DataArchiveParameters p = JsonUtils.fromJson(scheduleEntity.getJobParametersJson(),
+                            DataArchiveParameters.class);
+                    databaseIds.add(p.getSourceDatabaseId());
+                    databaseIds.add(p.getTargetDataBaseId());
+                } else if (params.getType() == JobType.DATA_DELETE) {
+                    DataDeleteParameters p = JsonUtils.fromJson(scheduleEntity.getJobParametersJson(),
+                            DataDeleteParameters.class);
+                    databaseIds.add(p.getDatabaseId());
+                }
             }
         } else if (taskType == TaskType.STRUCTURE_COMPARISON) {
             DBStructureComparisonParameter p = (DBStructureComparisonParameter) req.getParameters();

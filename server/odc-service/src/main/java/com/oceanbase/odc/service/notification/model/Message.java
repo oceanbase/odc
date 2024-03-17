@@ -51,7 +51,7 @@ public class Message {
     private Date updateTime;
     private Date lastSentTime;
     private Channel channel;
-
+    private Event event;
 
     public MessageEntity toEntity() {
         MessageEntity entity = new MessageEntity();
@@ -70,6 +70,7 @@ public class Message {
         entity.setMaxRetryTimes(this.getMaxRetryTimes());
         entity.setLastSentTime(this.getLastSentTime());
         entity.setErrorMessage(this.getErrorMessage());
+        entity.setEventId(this.getEvent().getId());
         return entity;
     }
 
@@ -93,6 +94,8 @@ public class Message {
         message.setChannel(new Channel());
         message.getChannel().setId(entity.getChannelId());
         message.getChannel().setName(entity.getChannelName());
+        message.setEvent(new Event());
+        message.getEvent().setId(entity.getEventId());
         return message;
     }
 }

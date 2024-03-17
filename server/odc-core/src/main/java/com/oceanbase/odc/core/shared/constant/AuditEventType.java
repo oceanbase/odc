@@ -84,6 +84,12 @@ public enum AuditEventType implements Translatable {
 
     ENVIRONMENT_MANAGEMENT,
 
+    AUTOMATION_RULE_MANAGEMENT,
+
+    NOTIFICATION_MANAGEMENT,
+
+    SENSITIVE_COLUMN_MANAGEMENT,
+
     ;
 
 

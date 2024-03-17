@@ -15,19 +15,42 @@
  */
 package com.oceanbase.odc.service.task.schedule;
 
+import java.util.function.Supplier;
+
+import com.oceanbase.odc.common.unit.BinarySizeUnit;
+import com.oceanbase.odc.common.util.SystemUtils;
 import com.oceanbase.odc.service.task.config.JobConfiguration;
 import com.oceanbase.odc.service.task.config.JobConfigurationHolder;
 import com.oceanbase.odc.service.task.config.TaskFrameworkProperties;
+
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * @author yaobin
  * @date 2024-02-05
  * @since 4.2.4
  */
+@Slf4j
 public class MonitorExecutorStatusRateLimiter implements StartJobRateLimiter {
+
+    private final Supplier<TaskFrameworkProperties> taskFrameworkProperties;
+
+    public MonitorExecutorStatusRateLimiter(Supplier<TaskFrameworkProperties> taskFrameworkProperties) {
+        this.taskFrameworkProperties = taskFrameworkProperties;
+    }
 
     @Override
     public boolean tryAcquire() {
+        if (taskFrameworkProperties.get().getRunMode().isProcess() && SystemUtils.isOnLinux()) {
+            long systemFreeMemory = SystemUtils.getSystemFreeMemory().convert(BinarySizeUnit.MB).getSizeDigit();
+            int startNewProcessMemoryMinSize =
+                    taskFrameworkProperties.get().getStartNewProcessMemoryMinSizeInMilliBytes();
+            if (systemFreeMemory * 0.5 <= startNewProcessMemoryMinSize) {
+                log.warn("Current free memory lack, systemFreeMemory={}, startNewProcessMemoryMinSize={}",
+                        systemFreeMemory, startNewProcessMemoryMinSize);
+                return false;
+            }
+        }
         return isExecutorWaitingToRunNotExceedThreshold();
     }
 
@@ -37,7 +60,13 @@ public class MonitorExecutorStatusRateLimiter implements StartJobRateLimiter {
         long count = jobConfiguration.getTaskFrameworkService().countRunningNeverHeartJobs(
                 taskFrameworkProperties.getExecutorWaitingToRunThresholdSeconds());
 
-        return taskFrameworkProperties.getExecutorWaitingToRunThresholdCount() - count > 0;
+        boolean continued = taskFrameworkProperties.getExecutorWaitingToRunThresholdCount() - count > 0;
+        if (!continued) {
+            log.warn("Amount of executors waiting to run exceed threshold, wait next schedule,"
+                    + " threshold={}, waitingJobs={}.",
+                    taskFrameworkProperties.getExecutorWaitingToRunThresholdCount(), count);
+        }
+        return continued;
     }
 
 }
