@@ -12,6 +12,20 @@
       update_time DATETIME ON UPDATE CURRENT_TIMESTAMP NULL COMMENT 'record update time',
       ${2:column_name} ${3:data_type} COMMENT ''
     ) COMMENT '';
+- name: mysql query supported charset
+  dialect_type: MYSQL
+  tags: [ 'developer','mysql' ]
+  type: DDL
+  description: 'Query supported charset for MySQL'
+  prefix: query_supported_charset
+  body: |
+    SELECT
+      COLLATION_NAME AS COLLATION,
+      CHARACTER_SET_NAME AS CHARSET,
+      ID,
+      IS_DEFAULT
+    FROM
+      INFORMATION_SCHEMA.COLLATIONS;
 - name: mysql generate doc for all table columns
   dialect_type: MYSQL
   tags: [ 'developer','mysql', 'table', 'doc' ]
@@ -60,6 +74,55 @@
   prefix: create_user
   body: |
     CREATE USER '${1:username}'  IDENTIFIED BY '${2:your_password}';
+- name: mysql list users
+  dialect_type: MYSQL
+  tags: [ 'developer','mysql', 'user' ]
+  type: DQL
+  description: 'List users in MySQL'
+  prefix: query_user_list
+  body: |
+    SELECT
+      `user`,
+      `account_locked`,
+      `select_priv`,
+      `insert_priv`,
+      `update_priv`,
+      `delete_priv`,
+      `create_priv`,
+      `drop_priv`,
+      `process_priv`,
+      `grant_priv`,
+      `index_priv`,
+      `alter_priv`,
+      `show_db_priv`,
+      `super_priv`,
+      `create_view_priv`,
+      `show_view_priv`,
+      `create_user_priv`
+    FROM
+      `mysql`.`user`;
+- name: mysql list user db privileges
+  dialect_type: MYSQL
+  tags: [ 'developer','mysql', 'user' ]
+  type: DQL
+  description: 'List user db privileges in MySQL'
+  prefix: query_user_db_privilege_list
+  body: |
+    SELECT
+      `db`,
+      `user`,
+      `select_priv`,
+      `insert_priv`,
+      `update_priv`,
+      `delete_priv`,
+      `create_priv`,
+      `drop_priv`,
+      `index_priv`,
+      `alter_priv`,
+      `create_view_priv`,
+      `show_view_priv`
+    FROM
+      `mysql`.`db`;
 - name: mysql grant all schema privileges to user
   dialect_type: MYSQL
   tags: [ 'developer','mysql', 'grant' ]
