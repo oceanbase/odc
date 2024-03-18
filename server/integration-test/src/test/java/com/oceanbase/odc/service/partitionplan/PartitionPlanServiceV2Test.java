@@ -198,11 +198,11 @@ public class PartitionPlanServiceV2Test extends ServiceTestEnv {
             Map<PartitionPlanStrategy, List<String>> expect = new HashMap<>();
             expect.put(PartitionPlanStrategy.CREATE, Collections.singletonList(String.format(
                     "ALTER TABLE %s.%s ADD PARTITION (\n"
-                            + "\tPARTITION `p20240125` VALUES LESS THAN (20220801,'2024-01-26'),\n"
-                            + "\tPARTITION `p20240125` VALUES LESS THAN (20220802,'2024-01-27'),\n"
-                            + "\tPARTITION `p20240125` VALUES LESS THAN (20220803,'2024-01-28'),\n"
-                            + "\tPARTITION `p20240125` VALUES LESS THAN (20220804,'2024-01-29'),\n"
-                            + "\tPARTITION `p20240125` VALUES LESS THAN (20220805,'2024-01-30'));\n",
+                            + "\tPARTITION `p20240125` VALUES LESS THAN (20220801,'2024-01-27'),\n"
+                            + "\tPARTITION `p20240125` VALUES LESS THAN (20220802,'2024-01-28'),\n"
+                            + "\tPARTITION `p20240125` VALUES LESS THAN (20220803,'2024-01-29'),\n"
+                            + "\tPARTITION `p20240125` VALUES LESS THAN (20220804,'2024-01-30'),\n"
+                            + "\tPARTITION `p20240125` VALUES LESS THAN (20220805,'2024-01-31'));\n",
                     configuration.getDefaultDBName(), MYSQL_REAL_RANGE_TABLE_NAME)));
             Assert.assertEquals(expect, actual);
         }
@@ -254,11 +254,11 @@ public class PartitionPlanServiceV2Test extends ServiceTestEnv {
                     configuration.getDefaultDBName(), MYSQL_REAL_RANGE_TABLE_NAME)));
             expect.put(PartitionPlanStrategy.CREATE, Collections.singletonList(String.format(
                     "ALTER TABLE %s.%s ADD PARTITION (\n"
-                            + "\tPARTITION `p20240126` VALUES LESS THAN (20220801,'2024-01-26'),\n"
-                            + "\tPARTITION `p20240127` VALUES LESS THAN (20220802,'2024-01-27'),\n"
-                            + "\tPARTITION `p20240128` VALUES LESS THAN (20220803,'2024-01-28'),\n"
-                            + "\tPARTITION `p20240129` VALUES LESS THAN (20220804,'2024-01-29'),\n"
-                            + "\tPARTITION `p20240130` VALUES LESS THAN (20220805,'2024-01-30'));\n",
+                            + "\tPARTITION `p20240126` VALUES LESS THAN (20220801,'2024-01-27'),\n"
+                            + "\tPARTITION `p20240127` VALUES LESS THAN (20220802,'2024-01-28'),\n"
+                            + "\tPARTITION `p20240128` VALUES LESS THAN (20220803,'2024-01-29'),\n"
+                            + "\tPARTITION `p20240129` VALUES LESS THAN (20220804,'2024-01-30'),\n"
+                            + "\tPARTITION `p20240130` VALUES LESS THAN (20220805,'2024-01-31'));\n",
                     configuration.getDefaultDBName(), MYSQL_REAL_RANGE_TABLE_NAME)));
             Assert.assertEquals(expect, actual);
         }
@@ -290,13 +290,13 @@ public class PartitionPlanServiceV2Test extends ServiceTestEnv {
                     "ALTER TABLE %s.%s DROP PARTITION (P1, P0) UPDATE GLOBAL INDEXES;",
                     configuration.getDefaultDBName(), ORACLE_RANGE_TABLE_NAME)));
             expect.put(PartitionPlanStrategy.CREATE, Collections.singletonList(String.format("ALTER TABLE %s.%s ADD \n"
-                    + "\tPARTITION \"P20240225\" VALUES LESS THAN (TO_DATE(' 2024-01-26 00:00:00', "
+                    + "\tPARTITION \"P20240225\" VALUES LESS THAN (TO_DATE(' 2024-01-27 00:00:00', "
                     + "'SYYYY-MM-DD HH24:MI:SS', 'NLS_CALENDAR=GREGORIAN'),Timestamp '2025-12-31 23:59:59'),\n"
-                    + "\tPARTITION \"P20240325\" VALUES LESS THAN (TO_DATE(' 2024-01-27 00:00:00', "
+                    + "\tPARTITION \"P20240325\" VALUES LESS THAN (TO_DATE(' 2024-01-28 00:00:00', "
                     + "'SYYYY-MM-DD HH24:MI:SS', 'NLS_CALENDAR=GREGORIAN'),Timestamp '2026-12-31 23:59:59'),\n"
-                    + "\tPARTITION \"P20240525\" VALUES LESS THAN (TO_DATE(' 2024-01-29 00:00:00', "
+                    + "\tPARTITION \"P20240525\" VALUES LESS THAN (TO_DATE(' 2024-01-30 00:00:00', "
                     + "'SYYYY-MM-DD HH24:MI:SS', 'NLS_CALENDAR=GREGORIAN'),Timestamp '2028-12-31 23:59:59'),\n"
-                    + "\tPARTITION \"P20240625\" VALUES LESS THAN (TO_DATE(' 2024-01-30 00:00:00', "
+                    + "\tPARTITION \"P20240625\" VALUES LESS THAN (TO_DATE(' 2024-01-31 00:00:00', "
                     + "'SYYYY-MM-DD HH24:MI:SS', 'NLS_CALENDAR=GREGORIAN'),Timestamp '2029-12-31 23:59:59');\n",
                     configuration.getDefaultDBName(), ORACLE_RANGE_TABLE_NAME)));
             Assert.assertEquals(expect, actual);
@@ -330,10 +330,10 @@ public class PartitionPlanServiceV2Test extends ServiceTestEnv {
                     configuration.getDefaultDBName(), MYSQL_OVERLAP_RANGE_TABLE_NAME)));
             expect.put(PartitionPlanStrategy.CREATE, Collections.singletonList(String.format(
                     "ALTER TABLE %s.%s ADD PARTITION (\n"
-                            + "\tPARTITION `p20240126` VALUES LESS THAN (20220801,'2024-01-26'),\n"
-                            + "\tPARTITION `p20240127` VALUES LESS THAN (20220802,'2024-01-27'),\n"
-                            + "\tPARTITION `p20240128` VALUES LESS THAN (20220803,'2024-01-28'),\n"
-                            + "\tPARTITION `p20240129` VALUES LESS THAN (20220804,'2024-01-29'));\n",
+                            + "\tPARTITION `p20240126` VALUES LESS THAN (20220801,'2024-01-27'),\n"
+                            + "\tPARTITION `p20240127` VALUES LESS THAN (20220802,'2024-01-28'),\n"
+                            + "\tPARTITION `p20240128` VALUES LESS THAN (20220803,'2024-01-29'),\n"
+                            + "\tPARTITION `p20240129` VALUES LESS THAN (20220804,'2024-01-30'));\n",
                     configuration.getDefaultDBName(), MYSQL_OVERLAP_RANGE_TABLE_NAME)));
             Assert.assertEquals(expect, actual);
         }
@@ -392,19 +392,19 @@ public class PartitionPlanServiceV2Test extends ServiceTestEnv {
                 "id", Arrays.asList(p1, p2), false);
         PartitionPlanPreViewResp r1 = new PartitionPlanPreViewResp();
         r1.setSqls(Collections.singletonList(String.format("ALTER TABLE %s.%s ADD PARTITION (\n"
-                + "\tPARTITION `p20240126` VALUES LESS THAN (20220801,'2024-01-26'),\n"
-                + "\tPARTITION `p20240127` VALUES LESS THAN (20220802,'2024-01-27'),\n"
-                + "\tPARTITION `p20240128` VALUES LESS THAN (20220803,'2024-01-28'),\n"
-                + "\tPARTITION `p20240129` VALUES LESS THAN (20220804,'2024-01-29'));\n",
+                + "\tPARTITION `p20240126` VALUES LESS THAN (20220801,'2024-01-27'),\n"
+                + "\tPARTITION `p20240127` VALUES LESS THAN (20220802,'2024-01-28'),\n"
+                + "\tPARTITION `p20240128` VALUES LESS THAN (20220803,'2024-01-29'),\n"
+                + "\tPARTITION `p20240129` VALUES LESS THAN (20220804,'2024-01-30'));\n",
                 configuration.getDefaultDBName(), MYSQL_OVERLAP_RANGE_TABLE_NAME)));
         r1.setTableName(MYSQL_OVERLAP_RANGE_TABLE_NAME);
         PartitionPlanPreViewResp r2 = new PartitionPlanPreViewResp();
         r2.setSqls(Collections.singletonList(String.format("ALTER TABLE %s.%s ADD PARTITION (\n"
-                + "\tPARTITION `p20240125` VALUES LESS THAN (20220801,'2024-01-26'),\n"
-                + "\tPARTITION `p20240125` VALUES LESS THAN (20220802,'2024-01-27'),\n"
-                + "\tPARTITION `p20240125` VALUES LESS THAN (20220803,'2024-01-28'),\n"
-                + "\tPARTITION `p20240125` VALUES LESS THAN (20220804,'2024-01-29'),\n"
-                + "\tPARTITION `p20240125` VALUES LESS THAN (20220805,'2024-01-30'));\n",
+                + "\tPARTITION `p20240125` VALUES LESS THAN (20220801,'2024-01-27'),\n"
+                + "\tPARTITION `p20240125` VALUES LESS THAN (20220802,'2024-01-28'),\n"
+                + "\tPARTITION `p20240125` VALUES LESS THAN (20220803,'2024-01-29'),\n"
+                + "\tPARTITION `p20240125` VALUES LESS THAN (20220804,'2024-01-30'),\n"
+                + "\tPARTITION `p20240125` VALUES LESS THAN (20220805,'2024-01-31'));\n",
                 configuration.getDefaultDBName(), MYSQL_REAL_RANGE_TABLE_NAME)));
         r2.setTableName(MYSQL_REAL_RANGE_TABLE_NAME);
         Assert.assertEquals(Arrays.asList(r1, r2), actual);

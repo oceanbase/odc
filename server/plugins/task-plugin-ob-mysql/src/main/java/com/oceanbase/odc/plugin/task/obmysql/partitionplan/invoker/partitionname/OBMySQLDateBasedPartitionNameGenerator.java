@@ -42,7 +42,7 @@ public class OBMySQLDateBasedPartitionNameGenerator implements DateBasedPartitio
             @NonNull Integer targetPartitionIndex, @NonNull DBTablePartitionDefinition target,
             @NonNull DateBasedPartitionNameGeneratorConfig config) {
         int precision = config.getIntervalPrecision();
-        int interval = (targetPartitionIndex + 1) * config.getInterval();
+        int interval = (targetPartitionIndex + 2) * config.getInterval();
         Date from;
         if (config.isFromCurrentTime()) {
             from = new Date();

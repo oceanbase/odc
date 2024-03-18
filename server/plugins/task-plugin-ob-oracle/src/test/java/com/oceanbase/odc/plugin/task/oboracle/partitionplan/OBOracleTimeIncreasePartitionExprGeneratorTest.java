@@ -104,7 +104,7 @@ public class OBOracleTimeIncreasePartitionExprGeneratorTest {
             Calendar calendar = Calendar.getInstance();
             calendar.setTime(new Date(current));
             List<String> expects = new ArrayList<>();
-            calendar.add(Calendar.HOUR_OF_DAY, 5);
+            calendar.add(Calendar.HOUR_OF_DAY, 10);
             int i = 0;
             do {
                 int year = calendar.get(Calendar.YEAR);
@@ -135,7 +135,7 @@ public class OBOracleTimeIncreasePartitionExprGeneratorTest {
             Calendar calendar = Calendar.getInstance();
             calendar.setTime(new Date(current));
             List<String> expects = new ArrayList<>();
-            calendar.add(Calendar.MONTH, 5);
+            calendar.add(Calendar.MONTH, 10);
             int i = 0;
             do {
                 int year = calendar.get(Calendar.YEAR);
