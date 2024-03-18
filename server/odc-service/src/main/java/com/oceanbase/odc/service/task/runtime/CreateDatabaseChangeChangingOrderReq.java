@@ -13,12 +13,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.task.model;
+package com.oceanbase.odc.service.task.runtime;
 
-public class DatabaseSequence {
+import java.util.List;
+
+import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.NotEmpty;
+
+import lombok.Data;
+
+@Data
+public class CreateDatabaseChangeChangingOrderReq {
 
     private Long id;
 
+    @NotBlank
     private String name;
+
+    /**
+     * [[1,2],[3,4]]，json转换成list
+     */
+    @NotEmpty
+    private List<List> orders;
 
 }

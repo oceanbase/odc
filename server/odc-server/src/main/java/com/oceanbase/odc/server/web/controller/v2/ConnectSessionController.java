@@ -143,13 +143,13 @@ public class ConnectSessionController {
     }
 
     /**
-     * 对多个数据库进行sql检查
-     * todo
+     * 对多个数据库进行sql检查 todo 待完善
+     * 
      * @param req
      * @return
      */
     @ApiOperation(value = "sqlCheck", notes = "对多个sql 脚本的内容进行静态检查")
-    @PostMapping("sessions/multiple/sqlCheck")
+    @PostMapping("sessions/sqlCheck")
     public ListResponse<CheckResult> multipleCheck(@RequestBody MultipleSqlCheckReq req) {
         for (String sessionId : req.getSessionIds()) {
             ConnectionSession connectionSession = sessionService.nullSafeGet(SidUtils.getSessionId(sessionId), true);

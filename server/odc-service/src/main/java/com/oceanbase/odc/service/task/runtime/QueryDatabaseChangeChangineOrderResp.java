@@ -13,20 +13,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.task;
+package com.oceanbase.odc.service.task.runtime;
 
-import org.junit.Test;
-import org.springframework.beans.factory.annotation.Autowired;
+import java.util.List;
 
-import com.oceanbase.odc.metadb.task.DatabaseChangeTemplateRepository;
+import lombok.Data;
 
-public class TemplateTest {
-    @Autowired
-    private DatabaseChangeTemplateRepository databaseChangeTemplateRepository;
+@Data
+public class QueryDatabaseChangeChangineOrderResp {
 
-    @Test
-    public void test_repository() {
+    private Long id;
+
+    private String name;
+
+    private Long creatorId;
+
+    private Long organizationId;
+
+    /**
+     * 数据库编排顺序 [[{},{}],[{},{}]]
+     */
+    private List<List> databaseSequenceList;
 
 
-    }
 }
