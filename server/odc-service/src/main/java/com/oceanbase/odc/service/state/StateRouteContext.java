@@ -13,18 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.partitionplan.model;
+package com.oceanbase.odc.service.state;
 
-/**
- * @Author：tinker
- * @Date: 2022/9/21 10:48
- * @Descripition:
- */
-public enum InspectTriggerStrategy {
+import com.oceanbase.odc.service.dispatch.DispatchResponse;
 
-    EVERY_DAY,
-    FIRST_DAY_OF_MONTH,
-    LAST_DAY_OF_MONTH,
-    NONE
+import lombok.Data;
 
+@Data
+class StateRouteContext {
+    private DispatchResponse dispatchResponse;
 }

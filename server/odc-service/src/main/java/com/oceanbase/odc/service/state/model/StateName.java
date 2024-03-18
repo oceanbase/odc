@@ -13,17 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.partitionplan;
+package com.oceanbase.odc.service.state.model;
 
-/**
- * @Author：tianke
- * @Date: 2022/10/10 16:19
- * @Descripition:
- */
-public enum PartitionExpressionType {
+import com.oceanbase.odc.service.pldebug.PLDebugStateManager;
+import com.oceanbase.odc.service.session.ConnectSessionStateManager;
 
-    DATE,
-    UNIX_TIMESTAMP,
-    OTHER
+import lombok.Getter;
 
+@Getter
+public enum StateName {
+    NONE(null),
+    PL_DEBUG_SESSION(PLDebugStateManager.class),
+    DB_SESSION(ConnectSessionStateManager.class);
+
+    private final Class<? extends StateManager> stateManagerClass;
+
+    StateName(Class<? extends StateManager> stateManagerClass) {
+        this.stateManagerClass = stateManagerClass;
+    }
 }

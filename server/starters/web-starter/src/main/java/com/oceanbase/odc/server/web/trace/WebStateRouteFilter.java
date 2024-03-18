@@ -13,25 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.partitionplan.model;
+package com.oceanbase.odc.server.web.trace;
 
-/**
- * @Author：tianke
- * @Date: 2022/9/19 22:17
- * @Descripition:
- */
-public enum PeriodUnit {
-    YEAR(1),
-    MONTH(2),
-    DAY(5);
+import javax.servlet.annotation.WebFilter;
 
-    private int id;
+import org.springframework.context.annotation.Profile;
 
-    PeriodUnit(int id) {
-        this.id = id;
-    }
+import com.oceanbase.odc.service.state.StateRouteFilter;
 
-    public int getId() {
-        return id;
-    }
+@Profile({"alipay"})
+@WebFilter(urlPatterns = "/api/*")
+public class WebStateRouteFilter extends StateRouteFilter {
 }

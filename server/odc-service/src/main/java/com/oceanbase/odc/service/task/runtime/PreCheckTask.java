@@ -349,19 +349,19 @@ public class PreCheckTask extends BaseTask<FlowTaskResult> {
                 Database database = schemaName2Database.get(schemaName);
                 Set<DatabasePermissionType> authorized = authorizedSchema2PermissionTypes.get(schemaName);
                 if (CollectionUtils.isEmpty(authorized)) {
-                    ret.add(UnauthorizedDatabase.from(database, needs));
+                    ret.add(UnauthorizedDatabase.from(database, needs, false));
                 } else {
                     Set<DatabasePermissionType> unauthorized =
                             needs.stream().filter(p -> !authorized.contains(p)).collect(Collectors.toSet());
                     if (CollectionUtils.isNotEmpty(unauthorized)) {
-                        ret.add(UnauthorizedDatabase.from(database, unauthorized));
+                        ret.add(UnauthorizedDatabase.from(database, unauthorized, false));
                     }
                 }
             } else {
                 Database unknownDatabase = new Database();
                 unknownDatabase.setName(schemaName);
                 unknownDatabase.setDataSource(this.parameters.getConnectionConfig());
-                ret.add(UnauthorizedDatabase.from(unknownDatabase, needs));
+                ret.add(UnauthorizedDatabase.from(unknownDatabase, needs, false));
             }
         }
         return ret;

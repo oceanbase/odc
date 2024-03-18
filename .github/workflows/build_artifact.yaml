@@ -105,7 +105,7 @@ jobs:
         with:
           node-version: "16"
       - name: Build front static resources
-        if: ${{ github.event.inputs.build_jar == 'true' || github.event.inputs.build_rpm == 'true' || github.event.inputs.build_docker == 'true'}}
+        if: ${{ github.event.inputs.build_jar == 'true' || github.event.inputs.build_rpm == 'true' || github.event.inputs.build_docker == 'true' || github.event.inputs.build_client == 'true'}}
         run: |
           echo "Current directory: "`pwd`
           echo "Start build front static resources"

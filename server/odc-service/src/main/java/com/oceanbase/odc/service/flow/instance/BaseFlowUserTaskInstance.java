@@ -26,7 +26,6 @@ import org.flowable.engine.FormService;
 import org.flowable.engine.TaskService;
 import org.flowable.engine.form.FormData;
 import org.flowable.engine.form.FormProperty;
-import org.flowable.task.api.Task;
 import org.flowable.task.service.delegate.DelegateTask;
 
 import com.oceanbase.odc.common.event.EventPublisher;
@@ -40,6 +39,7 @@ import com.oceanbase.odc.service.flow.model.FlowNodeType;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.Setter;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * Refer to {@link org.flowable.bpmn.model.UserTask} in {@code Flowable}
@@ -49,6 +49,7 @@ import lombok.Setter;
  * @since ODC_release_3.3.0
  * @see BaseFlowNodeInstance
  */
+@Slf4j
 public abstract class BaseFlowUserTaskInstance extends BaseFlowNodeInstance {
     @Getter
     @Setter
@@ -91,7 +92,7 @@ public abstract class BaseFlowUserTaskInstance extends BaseFlowNodeInstance {
 
     @Override
     public boolean isPresentOnThisMachine() {
-        Optional<Task> optionalTask = getUserTask();
+        Optional<String> optionalTask = getUserTask();
         return optionalTask.isPresent();
     }
 
@@ -99,11 +100,11 @@ public abstract class BaseFlowUserTaskInstance extends BaseFlowNodeInstance {
         if (!isPresentOnThisMachine()) {
             throw new UnsupportedOperationException("User task isn't on this machine");
         }
-        Optional<Task> optionalTask = getUserTask();
+        Optional<String> optionalTask = getUserTask();
         if (!optionalTask.isPresent()) {
             throw new IllegalStateException("Can not get Task by user task id " + this.userTaskId);
         }
-        FormData formData = formService.getTaskFormData(optionalTask.get().getId());
+        FormData formData = formService.getTaskFormData(optionalTask.get());
         if (formData == null) {
             return Collections.emptyList();
         }
@@ -139,28 +140,26 @@ public abstract class BaseFlowUserTaskInstance extends BaseFlowNodeInstance {
         if (!isPresentOnThisMachine()) {
             throw new UnsupportedOperationException("User task isn't on this machine");
         }
-        Optional<Task> optionalTask = getUserTask();
+        Optional<String> optionalTask = getUserTask();
         if (!optionalTask.isPresent()) {
             throw new IllegalStateException("Can not get Task by user task id " + this.userTaskId);
         }
         if (variables == null) {
-            taskService.complete(optionalTask.get().getId());
+            taskService.complete(optionalTask.get());
         } else {
-            taskService.complete(optionalTask.get().getId(), variables);
+            taskService.complete(optionalTask.get(), variables);
         }
         setStatus(FlowNodeStatus.COMPLETED);
         update();
     }
 
-    protected Optional<Task> getUserTask() {
+    protected Optional<String> getUserTask() {
         if (this.userTaskId == null) {
+            log.warn("userTaskId is empty, flowInstanceId={}, instanceId={}",
+                    this.getFlowInstanceId(), getId());
             return Optional.empty();
         }
-        Task task = taskService.createTaskQuery().taskId(this.userTaskId).singleResult();
-        if (task == null) {
-            return Optional.empty();
-        }
-        return Optional.of(task);
+        return Optional.of(this.userTaskId);
     }
 
 }

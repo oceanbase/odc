@@ -12,3 +12,146 @@
       update_time DATETIME ON UPDATE CURRENT_TIMESTAMP NULL COMMENT 'record update time',
       ${2:column_name} ${3:data_type} COMMENT ''
     ) COMMENT '';
+- name: mysql query supported charset
+  dialect_type: MYSQL
+  tags: [ 'developer','mysql' ]
+  type: DDL
+  description: 'Query supported charset for MySQL'
+  prefix: query_supported_charset
+  body: |
+    SELECT
+      COLLATION_NAME AS COLLATION,
+      CHARACTER_SET_NAME AS CHARSET,
+      ID,
+      IS_DEFAULT
+    FROM
+      INFORMATION_SCHEMA.COLLATIONS;
+- name: mysql generate doc for all table columns
+  dialect_type: MYSQL
+  tags: [ 'developer','mysql', 'table', 'doc' ]
+  type: DDL
+  description: 'Generate doc all tables for current schema in MySQL'
+  prefix: doc_all_tables_for_current_schema
+  body: |
+    SELECT 
+        c.TABLE_NAME AS TABLE_NAME,
+        c.COLUMN_NAME AS COLUMN_NAME,
+        c.COLUMN_COMMENT AS DESCRIPTION,
+        c.DATA_TYPE AS TYPE,
+        CASE 
+            WHEN c.DATA_TYPE IN ('blob', 'blob', 'raw', 'longblob','mediumblob', 'tinyblob') THEN c.CHARACTER_OCTET_LENGTH
+            WHEN c.DATA_TYPE IN ('char', 'varchar', 'text', 'tinytext', 'longtext','mediumtext','json', 'xml', 'varbinary') THEN c.CHARACTER_MAXIMUM_LENGTH
+            WHEN c.DATA_TYPE IN ('bit', 'tynyint','smallint', '','decimal', 'numeric', 'int', 'bigint', 'float', 'double') THEN CONCAT(c.NUMERIC_PRECISION, ',', c.NUMERIC_SCALE)
+            WHEN c.DATA_TYPE IN ('datetime', 'timestamp', 'date', 'time', 'year') THEN c.DATETIME_PRECISION
+            WHEN c.DATA_TYPE IN ('enum', 'set') THEN 255
+            ELSE 'N/A' 
+        END AS `LENGTH/PRICISION`,
+        CASE WHEN c.IS_NULLABLE = 'YES' THEN 'Y' ELSE 'N' END AS IS_NULLABLE, 
+        CASE WHEN pk.CONSTRAINT_TYPE IS NOT NULL THEN 'Y' ELSE 'N' END AS IS_PRIMARY_KEY
+    FROM INFORMATION_SCHEMA.COLUMNS c
+    LEFT JOIN (
+        SELECT 
+            kcu.TABLE_SCHEMA,
+            kcu.TABLE_NAME,
+            kcu.COLUMN_NAME,
+            tc.CONSTRAINT_TYPE
+        FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE kcu
+        JOIN INFORMATION_SCHEMA.TABLE_CONSTRAINTS tc
+          ON kcu.CONSTRAINT_SCHEMA = tc.CONSTRAINT_SCHEMA
+          AND kcu.TABLE_NAME = tc.TABLE_NAME
+          AND kcu.CONSTRAINT_NAME = tc.CONSTRAINT_NAME
+          AND tc.CONSTRAINT_TYPE = 'PRIMARY KEY'
+    ) pk ON c.TABLE_SCHEMA = pk.TABLE_SCHEMA 
+        AND c.TABLE_NAME = pk.TABLE_NAME 
+        AND c.COLUMN_NAME = pk.COLUMN_NAME
+    WHERE c.TABLE_SCHEMA = DATABASE()
+    ORDER BY c.TABLE_SCHEMA ASC, c.TABLE_NAME ASC, c.ORDINAL_POSITION ASC;
+- name: mysql create user
+  dialect_type: MYSQL
+  tags: [ 'developer','mysql', 'user', 'create' ]
+  type: DDL
+  description: 'Create user in MySQL'
+  prefix: create_user
+  body: |
+    CREATE USER '${1:username}'  IDENTIFIED BY '${2:your_password}';
+- name: mysql list users
+  dialect_type: MYSQL
+  tags: [ 'developer','mysql', 'user' ]
+  type: DQL
+  description: 'List users in MySQL'
+  prefix: query_user_list
+  body: |
+    SELECT
+      `user`,
+      `account_locked`,
+      `select_priv`,
+      `insert_priv`,
+      `update_priv`,
+      `delete_priv`,
+      `create_priv`,
+      `drop_priv`,
+      `process_priv`,
+      `grant_priv`,
+      `index_priv`,
+      `alter_priv`,
+      `show_db_priv`,
+      `super_priv`,
+      `create_view_priv`,
+      `show_view_priv`,
+      `create_user_priv`
+    FROM
+      `mysql`.`user`;
+- name: mysql list user db privileges
+  dialect_type: MYSQL
+  tags: [ 'developer','mysql', 'user' ]
+  type: DQL
+  description: 'List user db privileges in MySQL'
+  prefix: query_user_db_privilege_list
+  body: |
+    SELECT
+      `db`,
+      `user`,
+      `select_priv`,
+      `insert_priv`,
+      `update_priv`,
+      `delete_priv`,
+      `create_priv`,
+      `drop_priv`,
+      `index_priv`,
+      `alter_priv`,
+      `create_view_priv`,
+      `show_view_priv`
+    FROM
+      `mysql`.`db`;
+- name: mysql grant all schema privileges to user
+  dialect_type: MYSQL
+  tags: [ 'developer','mysql', 'grant' ]
+  type: DDL
+  description: 'Grant all schema privileges to user for MySQL'
+  prefix: grant_all_schema_privileges_to_user
+  body: |
+    GRANT ALL ON *.* TO '${1:username}'@'${2:%}';
+- name: mysql grant one schema privileges to user
+  dialect_type: MYSQL
+  tags: [ 'developer','mysql', 'grant' ]
+  type: DDL
+  description: 'Grant one schema privileges to user for MySQL'
+  prefix: grant_one_schema_privileges_to_user
+  body: |
+    GRANT ALL ON ${2:schema_name}.* TO ${2:username};
+- name: mysql revoke all privileges from user
+  dialect_type: MYSQL
+  tags: [ 'developer','mysql', 'revoke' ]
+  type: DDL
+  description: 'Revoke all privileges from user for MySQL'
+  prefix: revoke_all_privileges_from_user
+  body: |
+    REVOKE ALL PRIVILEGES FROM ${2:username};
+- name: mysql revoke one schema privileges from user
+  dialect_type: MYSQL
+  tags: [ 'developer','mysql', 'revoke' ]
+  type: DDL
+  description: 'Revoke all privileges from user for MySQL'
+  prefix: revoke_all_privileges_from_user
+  body: |
+    REVOKE ALL PRIVILEGES ON ${1:schema_name}.* FROM ${2:username};

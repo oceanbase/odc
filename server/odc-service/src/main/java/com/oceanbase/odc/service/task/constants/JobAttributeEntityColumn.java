@@ -13,31 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.partitionplan.model;
-
-import java.io.Serializable;
-
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+package com.oceanbase.odc.service.task.constants;
 
 /**
- * @Author：tianke
- * @Date: 2022/9/19 21:51
- * @Descripition:
+ * @author yaobin
+ * @date 2024-03-13
+ * @since 4.2.4
  */
-@Data
-@Builder
-@NoArgsConstructor
-@AllArgsConstructor
-public class TablePartitionPlan implements Serializable {
+public class JobAttributeEntityColumn {
 
-    private Long databasePartitionPlanId;
-    private Long flowInstanceId;
-    private String schemaName;
-    private String tableName;
-    private Integer partitionCount;
-    private TablePartitionPlanDetail detail;
+    public static final String ID = "id";
+
+    public static final String ATTRIBUTE_KEY = "attributeKey";
+
+    public static final String ATTRIBUTE_VALUE = "attributeValue";
 
 }

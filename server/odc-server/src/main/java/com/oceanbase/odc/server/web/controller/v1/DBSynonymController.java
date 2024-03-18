@@ -32,6 +32,8 @@ import com.oceanbase.odc.service.common.util.ResourceIDParser;
 import com.oceanbase.odc.service.common.util.SidUtils;
 import com.oceanbase.odc.service.db.DBSynonymService;
 import com.oceanbase.odc.service.session.ConnectSessionService;
+import com.oceanbase.odc.service.state.model.StateName;
+import com.oceanbase.odc.service.state.model.StatefulRoute;
 import com.oceanbase.tools.dbbrowser.model.DBSynonym;
 import com.oceanbase.tools.dbbrowser.model.DBSynonymType;
 
@@ -55,6 +57,7 @@ public class DBSynonymController {
 
     @ApiOperation(value = "list", notes = "查看同义词的列表，sid示例：sid:1000-1:d:db1")
     @RequestMapping(value = "/list/{sid:.*}", method = RequestMethod.GET)
+    @StatefulRoute(stateName = StateName.DB_SESSION, stateIdExpression = "#sid")
     public OdcResult<List<DBSynonym>> list(@PathVariable String sid,
             @RequestParam(value = "synonymType", defaultValue = "COMMON") DBSynonymType synonymType) {
         ResourceIdentifier i = ResourceIDParser.parse(sid);
@@ -64,6 +67,7 @@ public class DBSynonymController {
 
     @ApiOperation(value = "detail", notes = "查看某一个特定的同义词细节，sid示例：sid:1000-1:syn:syn1")
     @RequestMapping(value = "/{sid:.*}", method = RequestMethod.GET)
+    @StatefulRoute(stateName = StateName.DB_SESSION, stateIdExpression = "#sid")
     public OdcResult<DBSynonym> detail(@PathVariable String sid,
             @RequestParam(value = "synonymType", defaultValue = "COMMON") DBSynonymType synonymType) {
         ResourceIdentifier i = ResourceIDParser.parse(sid);
@@ -76,6 +80,7 @@ public class DBSynonymController {
 
     @ApiOperation(value = "getCreateSql", notes = "获取同义词的创建sql，sid示例：sid:1000-1:syn:syn1")
     @RequestMapping(value = "/getCreateSql/{sid:.*}", method = RequestMethod.POST)
+    @StatefulRoute(stateName = StateName.DB_SESSION, stateIdExpression = "#sid")
     public OdcResult<ResourceSql> getCreateSql(@PathVariable String sid, @RequestBody DBSynonym resource) {
         return OdcResult.ok(ResourceSql.ofSql(synonymService.generateCreateSql(
                 sessionService.nullSafeGet(SidUtils.getSessionId(sid), true), resource)));

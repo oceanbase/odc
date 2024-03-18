@@ -67,6 +67,7 @@ public class OdcTriggerListener extends TriggerListenerSupport {
                     .ifPresent(schedule -> {
                         Event event = eventBuilder.ofFailedSchedule(schedule);
                         broker.enqueueEvent(event);
+                        AlarmUtils.alarm(SCHEDULING_FAILED, event.toString());
                     });
         } catch (Exception e) {
             log.warn("Failed to enqueue event.", e);
