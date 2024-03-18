@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 OceanBase.
+ * Copyright (c) 2024 OceanBase.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,17 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.partitionplan;
 
-/**
- * @Author：tianke
- * @Date: 2022/10/10 16:19
- * @Descripition:
- */
-public enum PartitionExpressionType {
-
-    DATE,
-    UNIX_TIMESTAMP,
-    OTHER
-
-}
+INSERT INTO config_system_configuration(`key`, `value`, `description`) VALUES('odc.web.stateful-route.enabled',
+    'true', 'enable stateful route') ON DUPLICATE KEY UPDATE `id`=`id`;

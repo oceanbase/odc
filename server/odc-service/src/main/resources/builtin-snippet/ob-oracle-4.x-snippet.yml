@@ -1,11 +1,11 @@
-# built-in snippet for OceanBase MySQL compatible mode
-- name: oceanbase mysql query unit list
-  dialect_type: OB_MYSQL
+# built-in snippet for OceanBase Oracle compatible mode
+- name: oceanbase Oracle query unit list
+  dialect_type: OB_ORACLE
   tags: [ 'dba','oceanbase' ]
   type: DQL
   min_version: 4.0.0
   max_version: ~
-  description: 'Query unit list for OceanBase MySQL compatible mode'
+  description: 'Query unit list for OceanBase Oracle compatible mode'
   prefix: query_unit_list
   body: |
     SELECT
@@ -28,9 +28,9 @@
       STATUS,
       CREATE_TIME
     FROM
-      oceanbase.GV\$OB_UNITS;
-- name: oceanbase mysql query cluster info
-  dialect_type: OB_MYSQL
+      GV\$OB_UNITS;
+- name: oceanbase Oracle query cluster info
+  dialect_type: OB_ORACLE
   tags: [ 'dba','oceanbase' ]
   type: DQL
   min_version: 4.0.0
@@ -40,11 +40,11 @@
   body: |
     SELECT NAME, VALUE 
     FROM 
-      oceanbase.GV\$OB_PARAMETERS 
+      GV\$OB_PARAMETERS 
     WHERE 
       NAME IN ('cluster', 'cluster_id');
-- name: oceanbase mysql query tenant scope parameters
-  dialect_type: OB_MYSQL
+- name: oceanbase Oracle query tenant scope parameters
+  dialect_type: OB_ORACLE
   tags: [ 'dba','oceanbase' ]
   type: DQL
   min_version: 4.0.0
@@ -59,11 +59,11 @@
       NAME,
       VALUE
     FROM
-      oceanbase.GV\$OB_PARAMETERS
+      GV\$OB_PARAMETERS
     WHERE
       SCOPE = 'TENANT';
-- name: oceanbase mysql query major compaction
-  dialect_type: OB_MYSQL
+- name: oceanbase Oracle query major compaction
+  dialect_type: OB_ORACLE
   tags: [ 'dba','oceanbase' ]
   type: DQL
   min_version: 4.0.0
@@ -73,7 +73,6 @@
   body: |
     SELECT
       FROZEN_SCN,
-      FROZEN_TIME,
       GLOBAL_BROADCAST_SCN,
       LAST_SCN,
       LAST_FINISH_TIME,
@@ -83,9 +82,9 @@
       IS_SUSPENDED,
       INFO
     FROM
-      oceanbase.DBA_OB_MAJOR_COMPACTION;
-- name: oceanbase mysql query tenant information
-  dialect_type: OB_MYSQL
+      DBA_OB_MAJOR_COMPACTION;
+- name: oceanbase Oracle query tenant information
+  dialect_type: OB_ORACLE
   tags: [ 'dba','oceanbase' ]
   type: DQL
   min_version: 4.0.0
@@ -103,35 +102,33 @@
       STATUS,
       LOCKED,
       IN_RECYCLEBIN,
-      TIMESTAMPDIFF(SECOND,CREATE_TIME,NOW()) AS EXIST_SECONDS
+      CURRENT_TIMESTAMP - CREATE_TIME as UPTIME
     FROM
-      oceanbase.DBA_OB_TENANTS;
-- name: oceanbase mysql query module memory usage
-  dialect_type: OB_MYSQL
+     DBA_OB_TENANTS;
+- name: oceanbase Oracle query module memory usage
+  dialect_type: OB_ORACLE
   tags: [ 'dba','oceanbase' ]
   type: DQL
   min_version: 4.0.0
   max_version: ~
-  description: Query module memory usage for OceanBase mysql mode tenant
+  description: Query module memory usage for OceanBase Oracle mode tenant
   prefix: query_module_memory_usage
   body: |
     SELECT
-      TENANT_ID,
       SVR_IP,
-      SVR_PORT,
       MOD_NAME,
       ROUND(SUM(USED) / 1024 / 1024, 2) AS USED_MB
     FROM
-      OCEANBASE.GV\$OB_MEMORY
+      GV\$OB_MEMORY
     GROUP BY MOD_NAME, SVR_IP
-    ORDER BY USED DESC;
-- name: oceanbase mysql query memstore usage
-  dialect_type: OB_MYSQL
+    ORDER BY USED_MB DESC;
+- name: oceanbase Oracle query memstore usage
+  dialect_type: OB_ORACLE
   tags: [ 'dba','oceanbase' ]
   type: DQL
   min_version: 4.0.0
   max_version: ~
-  description: Query memstore information for OceanBase mysql mode
+  description: Query memstore information for OceanBase Oracle mode
   prefix: query_memstore_information
   body: |
     SELECT
@@ -144,14 +141,14 @@
       ROUND(MEMSTORE_USED / 1024 / 1024 / 1024, 2) MEMSTORE_USED_GB,
       FREEZE_CNT
     FROM
-     oceanbase.GV\$OB_MEMSTORE;
-- name: oceanbase mysql query degraded log stat
-  dialect_type: OB_MYSQL
+     GV\$OB_MEMSTORE;
+- name: oceanbase Oracle query degraded log stat
+  dialect_type: OB_ORACLE
   tags: [ 'dba','oceanbase' ]
   type: DQL
   min_version: 4.0.0
   max_version: ~
-  description: Query degraded log stat for OceanBase mysql mode
+  description: Query degraded log stat for OceanBase Oracle mode
   prefix: query_degraded_log_stat
   body: |
     SELECT
@@ -163,19 +160,19 @@
       LS.ARBITRATION_MEMBER,
       LS.DEGRADED_LIST
     FROM
-      OCEANBASE.GV\$OB_LOG_STAT LS,
-      OCEANBASE.DBA_OB_TENANTS T
+      GV\$OB_LOG_STAT LS,
+      DBA_OB_TENANTS T
     WHERE
       DEGRADED_LIST <> ''
       AND LS.TENANT_ID = T.TENANT_ID
       AND TENANT_TYPE != 'META';
-- name: oceanbase mysql query compaction progress
-  dialect_type: OB_MYSQL
+- name: oceanbase Oracle query compaction progress
+  dialect_type: OB_ORACLE
   tags: [ 'dba','oceanbase' ]
   type: DQL
   min_version: 4.0.0
   max_version: ~
-  description: Query compaction progress for OceanBase mysql mode
+  description: Query compaction progress for OceanBase Oracle mode
   prefix: query_compaction_progress
   body: |
     -- query compaction progress for last 5 compactions
@@ -189,17 +186,17 @@
       MIN(START_TIME) as START_TIME,
       MAX(ESTIMATED_FINISH_TIME) as ESTIMATED_FINISH_TIME
     FROM
-      oceanbase.GV\$OB_COMPACTION_PROGRESS
+      GV\$OB_COMPACTION_PROGRESS
     GROUP BY COMPACTION_SCN
     ORDER BY COMPACTION_SCN DESC
-    LIMIT 5;
-- name: oceanbase mysql query compaction status
-  dialect_type: OB_MYSQL
+    FETCH FIRST 5 ROWS ONLY;
+- name: oceanbase Oracle query compaction status
+  dialect_type: OB_ORACLE
   tags: [ 'dba','oceanbase' ]
   type: DQL
   min_version: 4.0.0
   max_version: ~
-  description: Query compaction status for OceanBase mysql mode
+  description: Query compaction status for OceanBase Oracle mode
   prefix: query_compaction_status
   body: |
     SELECT
@@ -213,14 +210,14 @@
       START_TIME,
       LAST_FINISH_TIME
     FROM
-      oceanbase.DBA_OB_MAJOR_COMPACTION;
-- name: oceanbase mysql query mini merge history
-  dialect_type: OB_MYSQL
+      DBA_OB_MAJOR_COMPACTION;
+- name: oceanbase Oracle query mini merge history
+  dialect_type: OB_ORACLE
   tags: [ 'dba','oceanbase' ]
   type: DQL
   min_version: 4.0.0
   max_version: ~
-  description: Query mini merge history for OceanBase mysql mode
+  description: Query mini merge history for OceanBase Oracle mode
   prefix: query_mini_merge_history
   body: |
     SELECT
@@ -231,16 +228,18 @@
       SUM(TOTAL_ROW_COUNT) AS TOTAL_ROW_COUNT,
       COUNT(1) AS TABLET_COUNT
     FROM
-      oceanbase.GV\$OB_TABLET_COMPACTION_HISTORY
+      GV\$OB_TABLET_COMPACTION_HISTORY
     WHERE
-      TYPE = 'MINI_MERGE' ;
-- name: oceanbase mysql query cache size
-  dialect_type: OB_MYSQL
+      TYPE = 'MINI_MERGE' 
+    GROUP BY 
+      TENANT_ID;
+- name: oceanbase Oracle query cache size
+  dialect_type: OB_ORACLE
   tags: [ 'dba','oceanbase' ]
   type: DQL
   min_version: 4.0.0
   max_version: ~
-  description: Query cache size for OceanBase mysql mode
+  description: Query cache size for OceanBase Oracle mode
   prefix: query_cache_size
   body: |
     SELECT
@@ -251,96 +250,95 @@
       ROUND(CACHE_SIZE/1024/1024,2) CACHE_SIZE_MB
     FROM
       GV\$OB_KVCACHE;
-- name: oceanbase mysql stats top size tables in database
-  dialect_type: OB_MYSQL
+- name: oceanbase oracle stats top size tables in database
+  dialect_type: OB_ORACLE
   tags: [ 'dba','oceanbase', 'stats' ]
   type: DQL
   min_version: 4.0.0
   max_version: ~
-  description: Stats top size tables in database for OceanBase mysql mode
+  description: Stats top size tables in database for OceanBase oracle mode
   prefix: stats_top_size_tables_in_database
   body: |
-    select
-        t1.database_name,
-        t1.table_name,
-        SUM(ROUND(t2.data_size / 1024 / 1024, 2)) as data_size_MB,
-        SUM(ROUND(t2.required_size / 1024 / 1024, 2)) as required_size_MB
-    from
-    (
-        select
-        database_name,
-        table_id,
-        table_name,
-        tablet_id,
-        partition_name,
-        subpartition_name
-        from
-        oceanbase.dba_ob_table_locations
-    ) t1
-    left join (
-        select
-        tablet_id,
-        svr_ip,
-        svr_port,
-        data_size,
-        required_size
-        from
-        oceanbase.dba_ob_tablet_replicas
-    ) t2 
-    on t1.tablet_id = t2.tablet_id
-    group by t1.database_name, t1.table_name
-    order by data_size_MB desc
-    limit 10;
-- name: oceanbase mysql stats partition size for table
-  dialect_type: OB_MYSQL
+    SELECT
+      T1.DATABASE_NAME,
+      T1.TABLE_NAME,
+      SUM(ROUND(T2.DATA_SIZE / 1024 / 1024, 2)) AS DATA_SIZE_MB,
+      SUM(ROUND(T2.REQUIRED_SIZE / 1024 / 1024, 2)) AS REQUIRED_SIZE_MB
+    FROM (
+      SELECT
+        DATABASE_NAME,
+        TABLE_ID,
+        TABLE_NAME,
+        TABLET_ID,
+        PARTITION_NAME,
+        SUBPARTITION_NAME
+      FROM
+        DBA_OB_TABLE_LOCATIONS
+    ) T1
+    LEFT JOIN (
+      SELECT
+        TABLET_ID,
+        SVR_IP,
+        SVR_PORT,
+        DATA_SIZE,
+        REQUIRED_SIZE
+      FROM
+        DBA_OB_TABLET_REPLICAS
+    ) T2 
+    ON T1.TABLET_ID = T2.TABLET_ID
+    GROUP BY T1.DATABASE_NAME, T1.TABLE_NAME
+    ORDER BY DATA_SIZE_MB DESC
+    FETCH FIRST 10 ROWS ONLY;
+- name: oceanbase oracle stats partition size for table
+  dialect_type: OB_ORACLE
   tags: [ 'dba','oceanbase', 'stats' ]
   type: DQL
   min_version: 4.0.0
   max_version: ~
-  description: stats partition size for table for OceanBase mysql mode
+  description: stats partition size for table for OceanBase oracle mode
   prefix: stats_partition_size_for_table
   body: |
-    select
-        t1.database_name,
-        t1.table_name,
-        t1.tablet_id,
-        t1.partition_name,
-        t1.subpartition_name,
-        t2.svr_ip,
-        t2.svr_port,
-        ROUND(t2.data_size / 1024 / 1024, 2) as data_size_MB,
-        ROUND(t2.required_size / 1024 / 1024, 2) as required_size_MB
-    from (
-        select
-        database_name,
-        table_id,
-        table_name,
-        tablet_id,
-        partition_name,
-        subpartition_name
-        from
-        oceanbase.dba_ob_table_locations
-    ) t1
-    left join (
-        select
-        tablet_id,
-        svr_ip,
-        svr_port,
-        data_size,
-        required_size
-        from
-        oceanbase.dba_ob_tablet_replicas
-    ) t2 
-    on t1.tablet_id = t2.tablet_id
-    where t1.database_name = DATABASE()
-        and t1.table_name='${1:table_name}';
-- name: oceanbase mysql collect sql plan monitor
-  dialect_type: OB_MYSQL
+    SELECT
+      T1.DATABASE_NAME,
+      T1.TABLE_NAME,
+      T1.TABLET_ID,
+      T1.PARTITION_NAME,
+      T1.SUBPARTITION_NAME,
+      T2.SVR_IP,
+      T2.SVR_PORT,
+      ROUND(T2.DATA_SIZE / 1024 / 1024, 2) AS DATA_SIZE_MB,
+      ROUND(T2.REQUIRED_SIZE / 1024 / 1024, 2) AS REQUIRED_SIZE_MB
+    FROM (
+      SELECT
+        DATABASE_NAME,
+        TABLE_ID,
+        TABLE_NAME,
+        TABLET_ID,
+        PARTITION_NAME,
+        SUBPARTITION_NAME
+      FROM
+        DBA_OB_TABLE_LOCATIONS
+    ) T1
+    LEFT JOIN (
+      SELECT
+        TABLET_ID,
+        SVR_IP,
+        SVR_PORT,
+        DATA_SIZE,
+        REQUIRED_SIZE
+      FROM
+        DBA_OB_TABLET_REPLICAS
+    ) T2 
+    ON T1.TABLET_ID = T2.TABLET_ID
+    WHERE T1.DATABASE_NAME = SYS_CONTEXT('USERENV', 'CURRENT_SCHEMA')
+        AND T1.TABLE_NAME='${1:table_name}';
+- name: oceanbase Oracle collect sql plan monitor
+  dialect_type: OB_ORACLE
   tags: [ 'dba','oceanbase' ]
   type: DQL
   min_version: 4.0.0
   max_version: ~
-  description: Collect sql plan monitor information for OceanBase MySQL mode
+  description: Collect sql plan monitor information for OceanBase Oracle mode
   prefix: collect_sql_plan_monitor
   body: |
     -- The SQL Plan Monitor collects all relevant information pertaining to the execution of a SQL statement.
@@ -356,75 +354,74 @@
     -- * row_dt represents the time interval from when the operator emits its first row to when it emits the OB_ITER_END marker.
     -- * If the value is NULL, it indicates that either no first row has been emitted or OB_ITER_END has not been emitted.
     
-    
     set @target_trace_id='${1:target_trace_id}';
 
     -- query summary
-    select
-      op_id,
-      op,
-      rows,
-      rescan,
-      threads,
-      (close_time - open_time) open_dt,
-      (last_row_eof_time - first_row_time) row_dt,
-      open_time,
-      close_time,
-      first_row_time,
-      last_row_eof_time
+    SELECT
+      OP_ID,
+      OP,
+      OUTPUT_ROWS,
+      RESCAN,
+      THREADS,(CLOSE_TIME - OPEN_TIME) OPEN_DT,
+      (LAST_ROW_EOF_TIME - FIRST_ROW_TIME) ROW_DT,
+      OPEN_TIME,
+      CLOSE_TIME,
+      FIRST_ROW_TIME,
+      LAST_ROW_EOF_TIME
     FROM
-      (
-        select
-          plan_line_id op_id,
-          concat(lpad('', plan_depth, ' '), plan_operation) op,
-          sum(output_rows) rows,
-          sum(STARTS) rescan,
-          min(first_refresh_time) open_time,
-          max(last_refresh_time) close_time,
-          min(first_change_time) first_row_time,
-          max(last_change_time) last_row_eof_time,
-          count(1) threads
-        from
-          oceanbase.gv\$sql_plan_monitor
-        where
-          trace_id = @target_trace_id
-        group by
-          plan_line_id,
-          plan_operation
-        order by
-          plan_line_id
-      ) spm;
-
-    -- query details
-    select
-      op_id,
-      thread,
-      op,
-      rows,
-      rescan,
-      (close_time - open_time) open_dt,
-      (last_row_eof_time - first_row_time) row_dt,
-      open_time,
-      close_time,
-      first_row_time,
-      last_row_eof_time
+    (
+        SELECT
+          PLAN_LINE_ID OP_ID,
+          CONCAT(LPAD(' ', MAX(PLAN_DEPTH), ' '), PLAN_OPERATION) OP,
+          SUM(OUTPUT_ROWS) OUTPUT_ROWS,
+          SUM(STARTS) RESCAN,
+          MIN(FIRST_REFRESH_TIME) OPEN_TIME,
+          MAX(LAST_REFRESH_TIME) CLOSE_TIME,
+          MIN(FIRST_CHANGE_TIME) FIRST_ROW_TIME,
+          MAX(LAST_CHANGE_TIME) LAST_ROW_EOF_TIME,
+          COUNT(1) THREADS
+        FROM
+          GV\$SQL_PLAN_MONITOR
+        WHERE
+          TRACE_ID = @TARGET_TRACE_ID
+        GROUP BY
+          PLAN_LINE_ID,
+          PLAN_OPERATION,
+          PLAN_DEPTH
+          ORDER BY
+          PLAN_LINE_ID
+    ) SPM;
+    
+    -- QUERY DETAILS
+    SELECT
+      OP_ID,
+      THREAD,
+      OP,
+      OUTPUT_ROWS,
+      RESCAN,
+      (CLOSE_TIME - OPEN_TIME) OPEN_DT,
+      (LAST_ROW_EOF_TIME - FIRST_ROW_TIME) ROW_DT,
+      OPEN_TIME,
+      CLOSE_TIME,
+      FIRST_ROW_TIME,
+      LAST_ROW_EOF_TIME
     FROM
-      (
-        select
-          plan_line_id op_id,
-          PROCESS_NAME thread,
-          concat(lpad('', plan_depth, ' '), plan_operation) op,
-          output_rows rows,
-          STARTS rescan,
-          first_refresh_time open_time,
-          last_refresh_time close_time,
-          first_change_time first_row_time,
-          last_change_time last_row_eof_time
-        from
-          oceanbase.gv\$sql_plan_monitor
-        where
-          trace_id =  @target_trace_id
-        order by
-          plan_line_id,
+    (
+        SELECT
+          PLAN_LINE_ID OP_ID,
+          PROCESS_NAME THREAD,
+          CONCAT(LPAD(' ', PLAN_DEPTH, ' '), PLAN_OPERATION) OP,
+          OUTPUT_ROWS,
+          STARTS RESCAN,
+          FIRST_REFRESH_TIME OPEN_TIME,
+          LAST_REFRESH_TIME CLOSE_TIME,
+          FIRST_CHANGE_TIME FIRST_ROW_TIME,
+          LAST_CHANGE_TIME LAST_ROW_EOF_TIME
+        FROM
+          GV\$SQL_PLAN_MONITOR
+        WHERE
+          TRACE_ID = @TARGET_TRACE_ID
+        ORDER BY
+          PLAN_LINE_ID,
           PROCESS_NAME
-      ) spm;
+    ) SPM;

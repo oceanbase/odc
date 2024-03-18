@@ -609,6 +609,7 @@ public class DatabaseService {
         Map<Long, Set<DatabasePermissionType>> id2Types = databasePermissionHelper
                 .getPermissions(databases.stream().map(Database::getId).collect(Collectors.toList()));
         List<UnauthorizedDatabase> unauthorizedDatabases = new ArrayList<>();
+        Set<Long> involvedProjectIds = projectService.getMemberProjectIds(authenticationFacade.currentUserId());
         for (Map.Entry<String, Set<DatabasePermissionType>> entry : schemaName2PermissionTypes.entrySet()) {
             String schemaName = entry.getKey();
             Set<DatabasePermissionType> needs = entry.getValue();
@@ -617,21 +618,23 @@ public class DatabaseService {
             }
             if (name2Database.containsKey(schemaName)) {
                 Database database = name2Database.get(schemaName);
+                boolean applicable =
+                        database.getProject() != null && involvedProjectIds.contains(database.getProject().getId());
                 Set<DatabasePermissionType> authorized = id2Types.get(database.getId());
                 if (CollectionUtils.isEmpty(authorized)) {
-                    unauthorizedDatabases.add(UnauthorizedDatabase.from(database, needs));
+                    unauthorizedDatabases.add(UnauthorizedDatabase.from(database, needs, applicable));
                 } else {
                     Set<DatabasePermissionType> unauthorized =
                             needs.stream().filter(p -> !authorized.contains(p)).collect(Collectors.toSet());
                     if (CollectionUtils.isNotEmpty(unauthorized)) {
-                        unauthorizedDatabases.add(UnauthorizedDatabase.from(database, unauthorized));
+                        unauthorizedDatabases.add(UnauthorizedDatabase.from(database, unauthorized, applicable));
                     }
                 }
             } else {
                 Database unknownDatabase = new Database();
                 unknownDatabase.setName(schemaName);
                 unknownDatabase.setDataSource(dataSource);
-                unauthorizedDatabases.add(UnauthorizedDatabase.from(unknownDatabase, needs));
+                unauthorizedDatabases.add(UnauthorizedDatabase.from(unknownDatabase, needs, false));
             }
         }
         return unauthorizedDatabases;

@@ -75,7 +75,7 @@ public class PartitionPlanScheduleServiceTest extends ServiceTestEnv {
     @MockBean
     private FlowInstanceService flowInstanceService;
     @Autowired
-    private PartitionPlanServiceV2 partitionPlanService;
+    private PartitionPlanService partitionPlanService;
     @Autowired
     private PartitionPlanScheduleService partitionPlanScheduleService;
     @Autowired

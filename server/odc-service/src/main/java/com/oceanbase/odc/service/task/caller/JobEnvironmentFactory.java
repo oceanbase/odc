@@ -17,6 +17,7 @@ package com.oceanbase.odc.service.task.caller;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.Supplier;
 
 import com.oceanbase.odc.common.json.JsonUtils;
@@ -59,15 +60,16 @@ public class JobEnvironmentFactory {
     }
 
     private void setDatabaseEnv() {
-        putFromEnv(JobEnvKeyConstants.ODC_EXECUTOR_DATABASE_HOST, "ODC_DATABASE_HOST");
-        putFromEnv(JobEnvKeyConstants.ODC_EXECUTOR_DATABASE_PORT, "ODC_DATABASE_PORT");
-        putFromEnv(JobEnvKeyConstants.ODC_EXECUTOR_DATABASE_NAME, "ODC_DATABASE_NAME");
-        putFromEnv(JobEnvKeyConstants.ODC_EXECUTOR_DATABASE_USERNAME, "ODC_DATABASE_USERNAME");
-        putFromEnv(JobEnvKeyConstants.ODC_EXECUTOR_DATABASE_PASSWORD, "ODC_DATABASE_PASSWORD");
+        putFromEnv(JobEnvKeyConstants.ODC_EXECUTOR_DATABASE_HOST, "ODC_DATABASE_HOST", "DATABASE_HOST");
+        putFromEnv(JobEnvKeyConstants.ODC_EXECUTOR_DATABASE_PORT, "ODC_DATABASE_PORT", "DATABASE_PORT");
+        putFromEnv(JobEnvKeyConstants.ODC_EXECUTOR_DATABASE_NAME, "ODC_DATABASE_NAME", "DATABASE_NAME");
+        putFromEnv(JobEnvKeyConstants.ODC_EXECUTOR_DATABASE_USERNAME, "ODC_DATABASE_USERNAME", "DATABASE_USERNAME");
+        putFromEnv(JobEnvKeyConstants.ODC_EXECUTOR_DATABASE_PASSWORD, "ODC_DATABASE_PASSWORD", "DATABASE_PASSWORD");
     }
 
-    private void putFromEnv(String newEnv, String fromEnv) {
-        putEnv(newEnv, () -> SystemUtils.getEnvOrProperty(fromEnv));
+    private void putFromEnv(String newEnv, String fromEnv, String otherEnv) {
+        putEnv(newEnv, () -> Optional.ofNullable(SystemUtils.getEnvOrProperty(fromEnv))
+                .orElse(SystemUtils.getEnvOrProperty(otherEnv)));
     }
 
     private void putEnv(String envName, Supplier<String> envSupplier) {
