@@ -36,11 +36,11 @@ import com.oceanbase.odc.service.common.response.SuccessResponse;
 import com.oceanbase.odc.service.datasecurity.DataMaskingService;
 import com.oceanbase.odc.service.task.executor.server.HeartRequest;
 import com.oceanbase.odc.service.task.executor.task.DefaultTaskResult;
-import com.oceanbase.odc.service.task.runtime.DatabaseChangeTemplateReq;
-import com.oceanbase.odc.service.task.runtime.DatabaseChangeTemplateResp;
+import com.oceanbase.odc.service.task.runtime.CreateDatabaseChangeChangingOrderReq;
+import com.oceanbase.odc.service.task.runtime.QueryDatabaseChangeChangineOrderResp;
 import com.oceanbase.odc.service.task.runtime.QuerySensitiveColumnReq;
 import com.oceanbase.odc.service.task.runtime.QuerySensitiveColumnResp;
-import com.oceanbase.odc.service.task.service.DatabaseChangeTemplateService;
+import com.oceanbase.odc.service.task.service.DatabaseChangeChangingOrderTemplateService;
 import com.oceanbase.odc.service.task.service.TaskFrameworkService;
 
 import io.swagger.annotations.ApiOperation;
@@ -63,7 +63,7 @@ public class TaskController {
     private DataMaskingService dataMaskingService;
 
     @Autowired
-    private DatabaseChangeTemplateService databaseChangeTemplateService;
+    private DatabaseChangeChangingOrderTemplateService databaseChangeChangingOrderTemplateService;
 
     @ApiOperation(value = "updateResult", notes = "update task result")
     @RequestMapping(value = "/result", method = RequestMethod.POST)
@@ -89,28 +89,28 @@ public class TaskController {
     }
 
     @ApiOperation(value = "createOrModifyDatabaseTemplate", notes = "根据id是否有值来执行新增还是修改")
-    @PostMapping("/databasechange/templates")
-    public SuccessResponse<DatabaseChangeTemplateResp> createOrModifyDatabaseTemplate(
-            @RequestBody DatabaseChangeTemplateReq req) {
-        return Responses.success(new DatabaseChangeTemplateResp());
+    @PostMapping("/databasechange/changingorder/templates")
+    public SuccessResponse<Boolean> createOrModifyDatabaseTemplate(
+            @RequestBody CreateDatabaseChangeChangingOrderReq req) {
+        return Responses.success(databaseChangeChangingOrderTemplateService.createOrModifyDatabaseTemplate(req));
     }
 
     @ApiOperation(value = "queryDatabaseTemplateById", notes = "根据id查询模版详情")
-    @GetMapping("/databasechange/templates/{id:[\\d]+}")
-    public SuccessResponse<DatabaseChangeTemplateResp> queryDatabaseTemplateById(@PathVariable Long id) {
-        return Responses.success(new DatabaseChangeTemplateResp());
+    @GetMapping("/databasechange/changingorder/templates/{id:[\\d]+}")
+    public SuccessResponse<QueryDatabaseChangeChangineOrderResp> queryDatabaseTemplateById(@PathVariable Long id) {
+        return Responses.success(databaseChangeChangingOrderTemplateService.queryDatabaseTemplateById(id));
     }
 
     @ApiOperation(value = "listDatabaseTemplate", notes = "获取模版列表")
-    @GetMapping("databasechange/templates")
-    public PaginatedResponse<DatabaseChangeTemplateResp> listDatabaseTemplate(Long id,
+    @GetMapping("/databasechange/changingorder/templates")
+    public PaginatedResponse<QueryDatabaseChangeChangineOrderResp> listDatabaseTemplate(
             @PageableDefault(size = Integer.MAX_VALUE, sort = {"id"}, direction = Direction.DESC) Pageable pageable) {
-        return null;
+        return Responses.paginated(databaseChangeChangingOrderTemplateService.listDatabaseTemplate(pageable));
     }
 
     @ApiOperation(value = "deleteDatabaseTemplateById", notes = "删除单个模板")
-    @DeleteMapping("/databasechange/templates/{id:[\\d]+}")
-    public SuccessResponse<DatabaseChangeTemplateResp> deleteDatabaseTemplateById(@PathVariable Long id) {
-        return Responses.success(new DatabaseChangeTemplateResp());
+    @DeleteMapping("/databasechange/changingorder/templates/{id:[\\d]+}")
+    public SuccessResponse<Boolean> deleteDatabaseTemplateById(@PathVariable Long id) {
+        return Responses.success(databaseChangeChangingOrderTemplateService.deleteDatabseTemplateById(id));
     }
 }

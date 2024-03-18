@@ -30,7 +30,6 @@ public class MultipleSqlCheckReq {
     private String scriptContent;
     @NotNull
     private String delimiter;
-    private String schemaName;
-    private Long connectionId;
+    private List<String> schemaName;
 
 }

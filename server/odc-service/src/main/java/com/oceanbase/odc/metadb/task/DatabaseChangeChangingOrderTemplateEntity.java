@@ -31,8 +31,8 @@ import lombok.Data;
 
 @Data
 @Entity
-@Table(name = "task_databasechange_template")
-public class DatabaseChangeTemplateEntity {
+@Table(name = "task_databasechange_changingorder_template")
+public class DatabaseChangeChangingOrderTemplateEntity {
 
     @Id
     @Column(name = "id", nullable = false)
@@ -58,6 +58,4 @@ public class DatabaseChangeTemplateEntity {
     @Generated(GenerationTime.ALWAYS)
     @Column(name = "update_time", insertable = false, updatable = false)
     private Date updateTime;
-
-
 }
