@@ -15,6 +15,10 @@
  */
 package com.oceanbase.odc.service.flow.util;
 
+import java.util.Locale;
+
+import org.springframework.context.i18n.LocaleContextHolder;
+
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.service.flow.model.CreateFlowInstanceReq;
 
@@ -27,13 +31,12 @@ public class DescriptionGenerator {
 
     public static void generateDescription(CreateFlowInstanceReq req) {
         if (StringUtils.isEmpty(req.getDescription())) {
-            String description;
-            switch (req.getTaskType()) {
-                default:
-                    description = String.format("【%s】%s.%s ", req.getEnvironmentName(), req.getConnectionName(),
-                            req.getDatabaseName());
+            String descFormat = "[%s] %s.%s";
+            if (LocaleContextHolder.getLocale().getLanguage().equals(Locale.CHINESE.getLanguage())) {
+                descFormat = "【%s】%s.%s";
             }
-            req.setDescription(description);
+            req.setDescription(String.format(descFormat, req.getEnvironmentName(), req.getConnectionName(),
+                    req.getDatabaseName()));
         }
     }
 }
