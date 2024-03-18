@@ -18,13 +18,7 @@ package com.oceanbase.odc.service.resultset;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.FileVisitResult;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.SimpleFileVisitor;
-import java.nio.file.attribute.BasicFileAttributes;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.util.ArrayList;
@@ -37,7 +31,6 @@ import java.util.concurrent.Callable;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.file.PathUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -81,14 +74,12 @@ import com.oceanbase.tools.loaddump.common.model.ObjectStatus.Status;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.Getter;
-import lombok.extern.slf4j.Slf4j;
 
 /**
  * @Author: Lebie
  * @Date: 2021/11/22 下午3:46
  * @Description: [OBDumper task wrapper]
  */
-@Slf4j
 public class ResultSetExportTask implements Callable<ResultSetExportResult> {
     protected static final Logger LOGGER = LoggerFactory.getLogger("DataTransferLogger");
     private static final int DEFAULT_TIMEOUT_SECONDS = 24 * 60 * 60;
@@ -130,17 +121,6 @@ public class ResultSetExportTask implements Callable<ResultSetExportResult> {
             DataTransferTaskResult result = job.call();
             validateSuccessful(result);
 
-            log.info("testttttttt");
-            Files.walkFileTree(workingDir.toPath(), new SimpleFileVisitor<Path>() {
-                @Override
-                public FileVisitResult visitFile(Path file, BasicFileAttributes attrs)
-                    throws IOException {
-                    log.info(file.toString());
-                    log.info(FileUtils.readFileToString(file.toFile(), StandardCharsets.UTF_8));
-                    return FileVisitResult.CONTINUE;
-                }
-            });
-
             String localResultSetFilePath = getDumpFilePath(result,
                     parameter.getFileFormat() == DataTransferFormat.SQL ? DataTransferFormat.SQL.getExtension()
                             : DataTransferFormat.CSV.getExtension());
@@ -149,10 +129,7 @@ public class ResultSetExportTask implements Callable<ResultSetExportResult> {
              */
             File origin = new File(localResultSetFilePath);
             if (!origin.exists()) {
-                log.warn("file not exists");
                 FileUtils.touch(origin);
-            } else {
-                log.info("file exists");
             }
 
             /*
@@ -178,13 +155,10 @@ public class ResultSetExportTask implements Callable<ResultSetExportResult> {
                 LOGGER.warn("Post processing export file failed.");
                 throw e;
             }
-        }catch(
-
-    Exception e)
-    {
-        LOGGER.warn("ResultSetExportTask failed.", e);
-        throw e;
-    }
+        } catch (Exception e) {
+            LOGGER.warn("ResultSetExportTask failed.", e);
+            throw e;
+        }
     }
 
     private DataTransferConfig convertParam2TransferConfig(ResultSetExportTaskParameter parameter) {
@@ -301,10 +275,8 @@ public class ResultSetExportTask implements Callable<ResultSetExportResult> {
     private String getDumpFilePath(DataTransferTaskResult result, String extension) throws Exception {
         List<URL> exportPaths = result.getDataObjectsInfo().get(0).getExportPaths();
         if (CollectionUtils.isEmpty(exportPaths)) {
-            log.info("exportpaths:" + Paths.get(getDumpFileDirectory(), getFileName(extension)).toString());
             return Paths.get(getDumpFileDirectory(), getFileName(extension)).toString();
         }
-        log.info("exportPaths.get(0).toURI().getPath():" + exportPaths.get(0).toURI().getPath());
         return exportPaths.get(0).toURI().getPath();
     }
 
@@ -346,8 +318,6 @@ public class ResultSetExportTask implements Callable<ResultSetExportResult> {
                     FileUtils.deleteQuietly(dest);
                 }
                 FileUtils.moveFile(origin, dest);
-                log.info("dest : " + dest.getAbsolutePath());
-                log.info(FileUtils.readFileToString(dest, StandardCharsets.UTF_8));
                 return dest.getName();
             }
         } finally {
