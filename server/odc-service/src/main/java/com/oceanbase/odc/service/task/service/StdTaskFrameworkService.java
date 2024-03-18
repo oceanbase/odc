@@ -426,6 +426,7 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
         update.set(JobEntityColumn.STATUS, newStatus);
         update.set(JobEntityColumn.DESCRIPTION, description);
         update.set(JobEntityColumn.EXECUTOR_DESTROYED_TIME, null);
+        update.set(JobEntityColumn.LAST_HEART_TIME, null);
 
         update.where(cb.equal(e.get(JobEntityColumn.ID), id),
                 cb.equal(e.get(JobEntityColumn.STATUS), oldStatus),
