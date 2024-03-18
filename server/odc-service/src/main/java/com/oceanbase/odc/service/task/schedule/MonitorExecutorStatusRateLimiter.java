@@ -54,7 +54,7 @@ public class MonitorExecutorStatusRateLimiter implements StartJobRateLimiter {
     public boolean tryAcquire() {
         if (taskFrameworkProperties.get().getRunMode().isProcess() && SystemUtils.isOnLinux()) {
             JobConfiguration jobConfiguration = JobConfigurationHolder.getJobConfiguration();
-            long count = jobConfiguration.getTaskFrameworkService().countExecutorRunningJobs(TaskRunMode.PROCESS);
+            long count = jobConfiguration.getTaskFrameworkService().countRunningJobs(TaskRunMode.PROCESS);
             if (count >= runningJobCountLimit) {
                 log.warn("Amount of executor running jobs exceed limit, wait next schedule, limit={}, runningJobs={}.",
                         runningJobCountLimit, count);
@@ -63,7 +63,7 @@ public class MonitorExecutorStatusRateLimiter implements StartJobRateLimiter {
             // Get current system free memory
             long systemFreeMemory = SystemUtils.getSystemFreeMemory().convert(BinarySizeUnit.MB).getSizeDigit();
             int startNewProcessMemoryMinSize =
-                    taskFrameworkProperties.get().getStartNewProcessMemoryMinSizeInMilliBytes();
+                    taskFrameworkProperties.get().getStartNewProcessMemoryMinSizeInMB();
             if (systemFreeMemory >> 1 <= startNewProcessMemoryMinSize) {
                 log.warn("Current free memory lack, systemFreeMemory={}, startNewProcessMemoryMinSize={}",
                         systemFreeMemory, startNewProcessMemoryMinSize);
@@ -76,15 +76,14 @@ public class MonitorExecutorStatusRateLimiter implements StartJobRateLimiter {
     private long calculateRunningJobCountLimit() {
         // Get system free memory when limiter is init
         long totalFreeMem = SystemUtils.getSystemFreeMemory().convert(BinarySizeUnit.MB).getSizeDigit();
-        int limitRunningMem = taskFrameworkProperties.get().getLimitRunningJobTotalMemoryInMilliBytes();
-        int startNewProcessMem = taskFrameworkProperties.get().getStartNewProcessMemoryMinSizeInMilliBytes();
+        int limitRunningMem = taskFrameworkProperties.get().getRunningJobTotalMemoryThresholdInMB();
+        int startNewProcessMem = taskFrameworkProperties.get().getStartNewProcessMemoryMinSizeInMB();
         // Get total free memory * 50% if limitRunningTaskMemory less than StartNewProcessMemoryMinSize,
         // odc may restart, so we should add exists running jobs number
         long limitCount =
                 new BigDecimal(limitRunningMem < startNewProcessMem ? totalFreeMem >> 1 : limitRunningMem)
-                        .divide(new BigDecimal(startNewProcessMem),
-                                RoundingMode.FLOOR)
-                        .add(new BigDecimal(taskFrameworkService.countExecutorRunningJobs(TaskRunMode.PROCESS)))
+                        .divide(new BigDecimal(startNewProcessMem), RoundingMode.FLOOR)
+                        .add(new BigDecimal(taskFrameworkService.countRunningJobs(TaskRunMode.PROCESS)))
                         .longValue();
         return limitCount == 0 ? 1 : limitCount;
     }

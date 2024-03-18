@@ -66,7 +66,7 @@ public interface TaskFrameworkService {
     /**
      * count jobs which process is running
      */
-    long countExecutorRunningJobs(TaskRunMode runMode);
+    long countRunningJobs(TaskRunMode runMode);
 
     JobDefinition getJobDefinition(Long id);
 

@@ -183,7 +183,7 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
     }
 
     @Override
-    public long countExecutorRunningJobs(TaskRunMode runMode) {
+    public long countRunningJobs(TaskRunMode runMode) {
 
         CriteriaBuilder cb = entityManager.getCriteriaBuilder();
         CriteriaQuery<Long> query = cb.createQuery(Long.class);

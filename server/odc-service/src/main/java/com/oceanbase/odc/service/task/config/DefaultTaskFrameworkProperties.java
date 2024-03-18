@@ -72,12 +72,12 @@ public class DefaultTaskFrameworkProperties implements TaskFrameworkProperties {
     private int quartzStartDelaySeconds = 30;
 
     // min memory required for start process, unit is MB, this setting only usage for linux
-    private int startNewProcessMemoryMinSizeInMilliBytes = 1024;
+    private int startNewProcessMemoryMinSizeInMB = 1024;
 
     // limit running job total memory size, default value is 0, this setting only usage for linux,
-    // if this value less than startNewProcessMemoryMinSizeInMilliBytes,
+    // if this value less than startNewProcessMemoryMinSizeInMb,
     // we will use total free memory *50% for job process running
-    private int limitRunningJobTotalMemoryInMilliBytes;
+    private int runningJobTotalMemoryThresholdInMB;
 
     private String startPreparingJobCronExpression;
 
