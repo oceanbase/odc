@@ -66,6 +66,6 @@ public class I18nTest {
     public void translate_WithArgs() {
         String message = I18n.translate("com.oceanbase.odc.ErrorCodes.NotFound", new Object[] {"R1", "p1", "v1"},
                 "DefaultMessage", Locale.US);
-        Assert.assertEquals("R1 with identifier p1=v1 not found", message);
+        Assert.assertEquals("The R1 p1 with the value of v1 does not exist.", message);
     }
 }
