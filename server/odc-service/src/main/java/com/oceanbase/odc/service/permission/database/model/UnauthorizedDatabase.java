@@ -34,13 +34,16 @@ public class UnauthorizedDatabase extends Database {
 
     private Set<DatabasePermissionType> unauthorizedPermissionTypes;
 
-    public static UnauthorizedDatabase from(Database database, Set<DatabasePermissionType> types) {
+    private Boolean applicable;
+
+    public static UnauthorizedDatabase from(Database database, Set<DatabasePermissionType> types, boolean applicable) {
         UnauthorizedDatabase obj = new UnauthorizedDatabase();
         obj.setId(database.getId());
         obj.setName(database.getName());
         obj.setDataSource(database.getDataSource());
         obj.setProject(database.getProject());
         obj.setUnauthorizedPermissionTypes(types);
+        obj.setApplicable(applicable);
         return obj;
     }
 
