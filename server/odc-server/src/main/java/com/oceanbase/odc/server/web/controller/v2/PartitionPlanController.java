@@ -26,8 +26,6 @@ import com.oceanbase.odc.service.common.response.ListResponse;
 import com.oceanbase.odc.service.common.response.Responses;
 import com.oceanbase.odc.service.common.response.SuccessResponse;
 import com.oceanbase.odc.service.partitionplan.PartitionPlanService;
-import com.oceanbase.odc.service.partitionplan.PartitionPlanServiceV2;
-import com.oceanbase.odc.service.partitionplan.model.DatabasePartitionPlan;
 import com.oceanbase.odc.service.partitionplan.model.PartitionPlanVariable;
 
 /**
@@ -41,24 +39,21 @@ public class PartitionPlanController {
 
     @Autowired
     private PartitionPlanService partitionPlanService;
-    @Autowired
-    private PartitionPlanServiceV2 partitionPlanServiceV2;
 
     @RequestMapping(value = "/partitionPlans", method = RequestMethod.GET)
-    public SuccessResponse<DatabasePartitionPlan> getPartitionPlans(@RequestParam Long databaseId,
+    public SuccessResponse<String> getPartitionPlans(@RequestParam Long databaseId,
             @RequestParam(required = false) Long flowInstanceId) {
-        return Responses
-                .success(partitionPlanService.findRangeTablePlan(databaseId, flowInstanceId));
+        throw new UnsupportedOperationException("UnSupported now");
     }
 
     @RequestMapping(value = "/partitionPlans/exists", method = RequestMethod.GET)
     public SuccessResponse<Boolean> exist(@RequestParam("databaseId") Long databaseId) {
-        return Responses.success(partitionPlanService.hasConnectionPartitionPlan(databaseId));
+        throw new UnsupportedOperationException("UnSupported now");
     }
 
     @GetMapping(value = "/supportedVariables")
     public ListResponse<PartitionPlanVariable> getSupportedVariables() {
-        return Responses.list(this.partitionPlanServiceV2.getSupportedVariables());
+        return Responses.list(this.partitionPlanService.getSupportedVariables());
     }
 
 }
