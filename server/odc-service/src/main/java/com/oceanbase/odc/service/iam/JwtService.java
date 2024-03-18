@@ -27,7 +27,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.integration.jdbc.lock.JdbcLockRegistry;
 import org.springframework.stereotype.Component;
@@ -41,7 +40,6 @@ import com.auth0.jwt.interfaces.Claim;
 import com.oceanbase.odc.metadb.config.SystemConfigEntity;
 import com.oceanbase.odc.service.config.SystemConfigService;
 import com.oceanbase.odc.service.config.model.Configuration;
-import com.oceanbase.odc.service.encryption.SensitivePropertyHandler;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -49,14 +47,11 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class JwtService {
 
-    private SensitivePropertyHandler sensitivePropertyHandler;
-    // 过期时间 15分钟
-    @Value("${odc.iam.auth.jwt.expire-time:15*60*1000}")
+    @Value("${odc.iam.auth.jwt.expiration-seconds:15*60*1000}")
     private long expireTime;
-    // 缓冲时间 3分钟
-    @Value("${odc.iam.auth.jwt.buffer-time:3*60*1000}")
+    @Value("${odc.iam.auth.jwt.buffer-seconds:3*60*1000}")
     private long bufferTime;
-    // 私钥
+    @Value("${odc.iam.auth.jwt.secret-key:#{null}}")
     private String tokenSecret;
     private static final long TRY_LOCK_TIMEOUT_SECONDS = 5;
 
@@ -67,7 +62,7 @@ public class JwtService {
     private static final int ENCRYPTION_KEY_SIZE = 64;
 
     /**
-     * 确保分布式下密钥一致性
+     * Ensure the consistency of automatically generated jwt key in distributed mode
      * 
      * @param tokenSecret
      * @param systemConfigService
@@ -75,13 +70,10 @@ public class JwtService {
      */
     public JwtService(
             @Value("${odc.iam.auth.jwt.secret-key:#{null}}") String tokenSecret,
-            @Qualifier("sensitivePropertyHandlerImpl") SensitivePropertyHandler sensitivePropertyHandler,
             SystemConfigService systemConfigService,
             JdbcLockRegistry jdbcLockRegistry) {
         try {
-            this.sensitivePropertyHandler = sensitivePropertyHandler;
-            if (Objects.nonNull(tokenSecret)) {
-                this.tokenSecret = sensitivePropertyHandler.decrypt(tokenSecret);
+            if (StringUtils.isNotBlank(tokenSecret)) {
                 return;
             }
             log.info("Try to lock odc jwt secret...");
@@ -89,15 +81,19 @@ public class JwtService {
             if (lock.tryLock(TRY_LOCK_TIMEOUT_SECONDS, TimeUnit.SECONDS)) {
                 try {
                     log.info("Successfully acquired the jwt secret lock");
-                    // 生成jwt密钥
-                    this.tokenSecret = UUID.randomUUID().toString();
-                    // 对明文密钥加密
-                    String encrypt = sensitivePropertyHandler.encrypt(this.tokenSecret);
-                    SystemConfigEntity jwtSecretKey =
-                            createSystemConfigEntity(ENCRYPTION_JWT_KEY_SYSTEM_CONFIG_KEY,
-                                    encrypt, "ODC jwt secret key");
+                    List<Configuration> list = systemConfigService.queryByKeyPrefix(
+                            ENCRYPTION_JWT_KEY_SYSTEM_CONFIG_KEY);
+                    if (verifySystemConfig(list)) {
 
-                    systemConfigService.insert(Arrays.asList(jwtSecretKey));
+                        this.tokenSecret = list.get(0).getValue();
+                    } else {
+                        this.tokenSecret = UUID.randomUUID().toString();
+                        SystemConfigEntity jwtSecretKey =
+                                createSystemConfigEntity(ENCRYPTION_JWT_KEY_SYSTEM_CONFIG_KEY,
+                                        this.tokenSecret, "ODC jwt secret key");
+                        systemConfigService.insert(Arrays.asList(jwtSecretKey));
+                    }
+
                 } finally {
                     lock.unlock();
                 }
@@ -107,8 +103,7 @@ public class JwtService {
                 List<Configuration> list =
                         systemConfigService.queryByKeyPrefix(ENCRYPTION_JWT_KEY_SYSTEM_CONFIG_KEY);
                 if (verifySystemConfig(list)) {
-                    // 获取解密后的密钥
-                    this.tokenSecret = sensitivePropertyHandler.decrypt(list.get(0).getValue());
+                    this.tokenSecret = list.get(0).getValue();
                 } else {
                     throw new RuntimeException("Failed to get jwt secret from system configuration");
                 }
@@ -135,27 +130,26 @@ public class JwtService {
 
 
     /**
-     * 生成签名，15分钟过期 根据内部改造，支持6中类型，Integer,Long,Boolean,Double,String,Date
+     * Generate the jwtToken
      *
      * @param map
      * @return
      */
     public String sign(Map<String, Object> map) {
         try {
-            // 设置过期时间
+
             Date date = new Date(System.currentTimeMillis() + expireTime);
-            // 私钥和加密算法
+
             Algorithm algorithm = Algorithm.HMAC256(tokenSecret);
-            // 设置头部信息
+
             Map<String, Object> header = new HashMap<>(2);
             header.put("typ", "jwt");
-            // 返回token字符串
+
             JWTCreator.Builder builder = JWT.create()
                     .withHeader(header)
-                    .withIssuedAt(new Date()) // 发证时间
-                    .withExpiresAt(date); // 过期时间
-            // .sign(algorithm); //密钥
-            // map.entrySet().forEach(entry -> builder.withClaim( entry.getKey(),entry.getValue()));
+                    .withIssuedAt(new Date())
+                    .withExpiresAt(date);
+
             map.entrySet().forEach(entry -> {
                 if (entry.getValue() instanceof Integer) {
                     builder.withClaim(entry.getKey(), (Integer) entry.getValue());
@@ -180,12 +174,6 @@ public class JwtService {
     }
 
 
-    /**
-     * 检验token是否正确
-     *
-     * @param **token**
-     * @return
-     */
     public boolean verify(String token) {
         try {
             Algorithm algorithm = Algorithm.HMAC256(tokenSecret);
@@ -199,12 +187,7 @@ public class JwtService {
         }
     }
 
-    /**
-     * 获取用户自定义Claim集合
-     *
-     * @param token
-     * @return
-     */
+
     public Map<String, Claim> getClaims(String token) {
         Algorithm algorithm = Algorithm.HMAC256(tokenSecret);
         JWTVerifier verifier = JWT.require(algorithm).build();
@@ -212,31 +195,19 @@ public class JwtService {
         return jwt;
     }
 
-    /**
-     * 获取过期时间
-     *
-     * @param token
-     * @return
-     */
+
     public Date getExpiresAt(String token) {
         Algorithm algorithm = Algorithm.HMAC256(tokenSecret);
         return JWT.require(algorithm).build().verify(token).getExpiresAt();
     }
 
-    /**
-     * 获取jwt发布时间
-     */
+
     public Date getIssuedAt(String token) {
         Algorithm algorithm = Algorithm.HMAC256(tokenSecret);
         return JWT.require(algorithm).build().verify(token).getIssuedAt();
     }
 
-    /**
-     * 验证token是否失效
-     *
-     * @param expiration
-     * @return true:过期 false:没过期
-     */
+
     public boolean isExpired(Date expiration) {
         try {
             return expiration.before(new Date());
@@ -247,22 +218,12 @@ public class JwtService {
 
     }
 
-    /**
-     * 判断是否需要续期
-     *
-     * @param expiration
-     * @return
-     */
+
     public boolean isRenew(Date expiration) {
         return (expiration.getTime() - new Date().getTime()) < bufferTime;
     }
 
-    /**
-     * 直接Base64解密获取header内容
-     *
-     * @param token
-     * @return
-     */
+
     public String getHeaderByBase64(String token) {
         if (StringUtils.isEmpty(token)) {
             return null;
@@ -274,12 +235,7 @@ public class JwtService {
 
     }
 
-    /**
-     * 直接Base64解密获取payload内容
-     *
-     * @param token
-     * @return
-     */
+
     public String getPayloadByBase64(String token) {
 
         if (StringUtils.isEmpty(token)) {

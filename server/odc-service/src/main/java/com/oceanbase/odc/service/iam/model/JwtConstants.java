@@ -27,7 +27,7 @@ public class JwtConstants {
 
     public static final String PRINCIPAL = "PRINCIPAL";
 
-    public static final String ORGANIZATION_ID = "oORGANIZATION_ID";
+    public static final String ORGANIZATION_ID = "ORGANIZATION_ID";
 
     public static final String ORGANIZATION_TYPE = "ORGANIZATION_TYPE";
 
