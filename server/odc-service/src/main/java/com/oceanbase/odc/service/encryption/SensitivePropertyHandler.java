@@ -29,9 +29,4 @@ public interface SensitivePropertyHandler {
      * @return plainText
      */
     String decrypt(String encryptedText);
-
-    /**
-     * encrypt
-     */
-    String encrypt(String test);
 }

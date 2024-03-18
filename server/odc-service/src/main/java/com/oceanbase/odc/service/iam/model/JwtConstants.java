@@ -15,7 +15,7 @@
  */
 package com.oceanbase.odc.service.iam.model;
 
-public class JwtProperties {
+public class JwtConstants {
 
     public static final String ID = "ID";
     /**
@@ -27,7 +27,7 @@ public class JwtProperties {
 
     public static final String PRINCIPAL = "PRINCIPAL";
 
-    public static final String ORGANIZATION_ID = "oORGANIZATION_ID";
+    public static final String ORGANIZATION_ID = "ORGANIZATION_ID";
 
     public static final String ORGANIZATION_TYPE = "ORGANIZATION_TYPE";
 

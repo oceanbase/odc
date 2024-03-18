@@ -55,7 +55,7 @@ import com.oceanbase.odc.service.common.util.WebResponseUtils;
 import com.oceanbase.odc.service.iam.JwtService;
 import com.oceanbase.odc.service.iam.LoginHistoryService;
 import com.oceanbase.odc.service.iam.OrganizationMapper;
-import com.oceanbase.odc.service.iam.model.JwtProperties;
+import com.oceanbase.odc.service.iam.model.JwtConstants;
 import com.oceanbase.odc.service.iam.model.LoginHistory;
 import com.oceanbase.odc.service.iam.model.Organization;
 import com.oceanbase.odc.service.iam.model.User;
@@ -148,17 +148,14 @@ public class CustomAuthenticationSuccessHandler extends SavedRequestAwareAuthent
             // not affect BUC(/login/oauth2/code/buc)
             if (requestURI.contains("/login")) {
                 SuccessResponse<String> successResponse = Responses.success("ok");
-                /**
-                 * todo 在这里将authentication对象生成token，放在cookie中传回前端。
-                 */
                 HashMap<String, Object> hashMap = new HashMap<>();
                 User user = (User) authentication.getPrincipal();
-                hashMap.put(JwtProperties.ID, user.getId());
-                hashMap.put(JwtProperties.PRINCIPAL, user.getAccountName());
-                hashMap.put(JwtProperties.ORGANIZATION_ID, user.getOrganizationId());
-                hashMap.put(JwtProperties.ORGANIZATION_TYPE, JsonUtils.toJson(user.getOrganizationType()));
+                hashMap.put(JwtConstants.ID, user.getId());
+                hashMap.put(JwtConstants.PRINCIPAL, user.getAccountName());
+                hashMap.put(JwtConstants.ORGANIZATION_ID, user.getOrganizationId());
+                hashMap.put(JwtConstants.ORGANIZATION_TYPE, JsonUtils.toJson(user.getOrganizationType()));
                 String token = jwtService.sign(hashMap);
-                Cookie cookie = new Cookie(JwtProperties.ODC_JWT_TOKEN, token);
+                Cookie cookie = new Cookie(JwtConstants.ODC_JWT_TOKEN, token);
                 cookie.setPath("/");
                 cookie.setMaxAge(24 * 60 * 60);
                 cookie.setHttpOnly(true);

@@ -32,7 +32,7 @@ import com.github.benmanes.caffeine.cache.Cache;
 import com.oceanbase.odc.service.common.response.Responses;
 import com.oceanbase.odc.service.common.response.SuccessResponse;
 import com.oceanbase.odc.service.common.util.WebResponseUtils;
-import com.oceanbase.odc.service.iam.model.JwtProperties;
+import com.oceanbase.odc.service.iam.model.JwtConstants;
 import com.oceanbase.odc.service.iam.model.User;
 
 import lombok.extern.slf4j.Slf4j;
@@ -54,7 +54,7 @@ public class CustomLogoutSuccessHandler implements LogoutSuccessHandler {
     public void onLogoutSuccess(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse,
             Authentication authentication) throws IOException, ServletException {
 
-        Cookie cookie = new Cookie(JwtProperties.ODC_JWT_TOKEN, JwtProperties.AUTHENTICATION_BLANK_VALUE);
+        Cookie cookie = new Cookie(JwtConstants.ODC_JWT_TOKEN, JwtConstants.AUTHENTICATION_BLANK_VALUE);
         cookie.setMaxAge(0);
         cookie.setPath("/");
         cookie.setHttpOnly(true);

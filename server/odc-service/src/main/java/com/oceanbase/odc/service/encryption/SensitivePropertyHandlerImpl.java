@@ -55,10 +55,7 @@ public class SensitivePropertyHandlerImpl implements SensitivePropertyHandler {
             try {
                 if (Objects.nonNull(encryptionPublicKey) && Objects.nonNull(encryptionSecretKey)) {
                     this.publicKey = encryptionPublicKey;
-                    /**
-                     * 生成既能加密又能解密的textEncryptor
-                     */
-                    this.textEncryptor = Encryptors.rsaBase64(encryptionPublicKey, encryptionSecretKey);
+                    this.textEncryptor = Encryptors.rsaBase64Decryptor(encryptionSecretKey);
                     return;
                 }
                 log.info("Try to lock odc encryption secret...");
@@ -75,10 +72,7 @@ public class SensitivePropertyHandlerImpl implements SensitivePropertyHandler {
                         Pair<String, String> keyPair =
                                 RsaBytesEncryptor.generateBase64EncodeKeyPair(ENCRYPTION_KEY_SIZE);
                         this.publicKey = keyPair.left;
-                        /**
-                         * 生成既能加密又能解密的textEncryptor
-                         */
-                        this.textEncryptor = Encryptors.rsaBase64(keyPair.left, keyPair.right);
+                        this.textEncryptor = Encryptors.rsaBase64Decryptor(keyPair.right);
                         SystemConfigEntity publicKey = createSystemConfigEntity(ENCRYPTION_PUBLIC_KEY_SYSTEM_CONFIG_KEY,
                                 keyPair.left, "ODC asymmetric encryption public key");
                         SystemConfigEntity secretKey = createSystemConfigEntity(ENCRYPTION_SECRET_KEY_SYSTEM_CONFIG_KEY,
@@ -138,10 +132,5 @@ public class SensitivePropertyHandlerImpl implements SensitivePropertyHandler {
     @Override
     public String decrypt(String encryptedText) {
         return textEncryptor.decrypt(encryptedText);
-    }
-
-    @Override
-    public String encrypt(String test) {
-        return textEncryptor.encrypt(test);
     }
 }

@@ -45,7 +45,7 @@ import com.oceanbase.odc.metadb.iam.UserRepository;
 import com.oceanbase.odc.service.collaboration.OrganizationResourceMigrator;
 import com.oceanbase.odc.service.iam.JwtService;
 import com.oceanbase.odc.service.iam.OrganizationMapper;
-import com.oceanbase.odc.service.iam.model.JwtProperties;
+import com.oceanbase.odc.service.iam.model.JwtConstants;
 import com.oceanbase.odc.service.iam.model.User;
 
 import lombok.extern.slf4j.Slf4j;
@@ -86,7 +86,7 @@ public class JwtSecurityContextRepository implements SecurityContextRepository {
         }
 
         for (Cookie cookie : cookies) {
-            if (JwtProperties.ODC_JWT_TOKEN.equals(cookie.getName())) {
+            if (JwtConstants.ODC_JWT_TOKEN.equals(cookie.getName())) {
                 token = cookie.getValue();
                 break;
             }
@@ -97,34 +97,32 @@ public class JwtSecurityContextRepository implements SecurityContextRepository {
             return context;
         }
 
-        // 获取过期时间
         Date expiration = jwtService.getExpiresAt(token);
 
-        // 判断是否过期
         if (jwtService.isExpired(expiration)) {
             log.info("Created SecurityContext {} because token is expired", context);
             return context;
         }
 
 
-        // 模拟出认证通过后完整的Authenication对象
+
         Map<String, Claim> claims = jwtService.getClaims(token);
-        long id = claims.get(JwtProperties.ID).asLong();
+        long id = claims.get(JwtConstants.ID).asLong();
 
         if (authenticationCache.getIfPresent(id) != null) {
             Authentication authentication = authenticationCache.getIfPresent(id);
             context.setAuthentication(authentication);
         } else {
-            String username = claims.get(JwtProperties.PRINCIPAL).asString();
+            String username = claims.get(JwtConstants.PRINCIPAL).asString();
             UserEntity userEntity = userRepository.findByAccountName(username).orElseThrow(() -> {
                 log.warn("Username not found: username {}", username);
                 return new UsernameNotFoundException(username);
             });
             User user = new User(userEntity);
-            user.setOrganizationId(claims.get(JwtProperties.ORGANIZATION_ID).asLong());
+            user.setOrganizationId(claims.get(JwtConstants.ORGANIZATION_ID).asLong());
 
             OrganizationType organizationType =
-                    JsonUtils.fromJson(claims.get(JwtProperties.ORGANIZATION_TYPE).asString(),
+                    JsonUtils.fromJson(claims.get(JwtConstants.ORGANIZATION_TYPE).asString(),
                             OrganizationType.class);
             user.setOrganizationType(organizationType);
             UsernamePasswordAuthenticationToken usernamePasswordAuthenticationToken =
@@ -134,16 +132,17 @@ public class JwtSecurityContextRepository implements SecurityContextRepository {
         }
 
 
-        // jwt续期策略，默认在快要失效时间前完成续期，避免频繁更新
+        // jwt renewal policy, the default is to complete the renewal before the expiration time, to avoid
+        // frequent updates
         User user = (User) context.getAuthentication().getPrincipal();
         if (jwtService.isRenew(expiration)) {
             HashMap<String, Object> hashMap = new HashMap<>();
-            hashMap.put(JwtProperties.ID, user.getId());
-            hashMap.put(JwtProperties.PRINCIPAL, user.getAccountName());
-            hashMap.put(JwtProperties.ORGANIZATION_ID, user.getOrganizationId());
-            hashMap.put(JwtProperties.ORGANIZATION_TYPE, JsonUtils.toJson(user.getOrganizationType()));
+            hashMap.put(JwtConstants.ID, user.getId());
+            hashMap.put(JwtConstants.PRINCIPAL, user.getAccountName());
+            hashMap.put(JwtConstants.ORGANIZATION_ID, user.getOrganizationId());
+            hashMap.put(JwtConstants.ORGANIZATION_TYPE, JsonUtils.toJson(user.getOrganizationType()));
             String renewToken = jwtService.sign(hashMap);
-            Cookie cookie = new Cookie(JwtProperties.ODC_JWT_TOKEN, renewToken);
+            Cookie cookie = new Cookie(JwtConstants.ODC_JWT_TOKEN, renewToken);
             cookie.setPath("/");
             cookie.setMaxAge(24 * 60 * 60);
             cookie.setHttpOnly(true);
@@ -162,7 +161,7 @@ public class JwtSecurityContextRepository implements SecurityContextRepository {
 
     @Override
     public boolean containsContext(HttpServletRequest request) {
-        String header = request.getHeader(JwtProperties.ODC_JWT_TOKEN);
+        String header = request.getHeader(JwtConstants.ODC_JWT_TOKEN);
         if (StringUtils.hasText(header)) {
             return true;
         }
