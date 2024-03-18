@@ -48,4 +48,6 @@ public class JobEntityColumn {
 
     public static final String JOB_PARAMETERS_JSON = "jobParametersJson";
 
+    public static final String EXECUTION_TIMES = "executionTimes";
+
 }
