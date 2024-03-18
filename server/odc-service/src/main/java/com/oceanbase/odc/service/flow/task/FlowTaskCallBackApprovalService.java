@@ -77,8 +77,9 @@ public class FlowTaskCallBackApprovalService {
         try {
             doApproval(flowInstanceId, flowTaskInstanceId, flowNodeStatus, approvalVariables);
         } catch (Throwable e) {
-            log.warn("approval task callback node failed, flowInstanceId={}, flowTaskInstanceId={}, flowNodeStatus={},"
-                     + " ex={}", flowInstanceId, flowTaskInstanceId, flowNodeStatus.name(), e);
+            log.warn(
+                    "approval task callback node  failed, flowInstanceId={}, flowTaskInstanceId={}, flowNodeStatus={}, ex={}",
+                    flowInstanceId, flowTaskInstanceId, flowNodeStatus.name(), e);
         }
     }
 
