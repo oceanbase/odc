@@ -186,15 +186,15 @@ public class FlowTaskInstanceService {
             return null;
         }
         TaskEntity taskEntity = taskEntityOptional.get();
+        if (taskFrameworkProperties.isEnabled() && taskEntity.getJobId() != null) {
+            // TODO: get the latest part of log when task framework is enabled @krihy
+            return loggerService.getLogByTaskFramework(level, taskEntity.getJobId());
+        }
         if (!dispatchChecker.isTaskEntityOnThisMachine(taskEntity)) {
             // The task is not executing on current machine, need to forward the request
             ExecutorInfo executorInfo = JsonUtils.fromJson(taskEntity.getExecutor(), ExecutorInfo.class);
             DispatchResponse response = requestDispatcher.forward(executorInfo.getHost(), executorInfo.getPort());
             return response.getContentByType(new TypeReference<SuccessResponse<String>>() {}).getData();
-        }
-        if (taskFrameworkProperties.isEnabled() && taskEntity.getJobId() != null) {
-            // TODO: get the latest part of log when task framework is enabled @krihy
-            return loggerService.getLogByTaskFramework(level, taskEntity.getJobId());
         }
         return taskService.getLog(taskEntity.getCreatorId(), taskEntity.getId() + "", taskEntity.getTaskType(), level);
     }
@@ -205,11 +205,11 @@ public class FlowTaskInstanceService {
             return Collections.emptyList();
         }
         TaskEntity taskEntity = taskEntityOptional.get();
+        // TODO: download log file when task framework is enabled @krihy
         if (!dispatchChecker.isTaskEntityOnThisMachine(taskEntity)) {
             // The task is not executing on current machine, need to forward the request
             return dispatchRequest(taskEntity);
         }
-        // TODO: download log file when task framework is enabled @krihy
         try {
             File logFile = taskService.getLogFile(taskEntity.getCreatorId(), taskEntity.getId() + "",
                     taskEntity.getTaskType(), OdcTaskLogLevel.ALL);
