@@ -103,6 +103,8 @@ public class DataDeleteJob extends AbstractDlmJob {
         DataDeleteParameters dataDeleteParameters = JsonUtils.fromJson(taskEntity.getParametersJson(),
                 DataDeleteParameters.class);
         DLMJobParameters parameters = new DLMJobParameters();
+        parameters.setJobName(taskEntity.getJobName());
+        parameters.setScheduleTaskId(taskEntity.getId());
         parameters.setJobType(JobType.DELETE);
         parameters.setTables(dataDeleteParameters.getTables());
         for (DataArchiveTableConfig tableConfig : parameters.getTables()) {
