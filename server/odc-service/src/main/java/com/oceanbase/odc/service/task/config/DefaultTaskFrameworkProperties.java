@@ -74,9 +74,9 @@ public class DefaultTaskFrameworkProperties implements TaskFrameworkProperties {
     // min memory required for start process, unit is MB, this setting only usage for linux
     private int startNewProcessMemoryMinSizeInMilliBytes = 1024;
 
-    // limit running job total memory size, default value is 0, this setting only usage for linux
-    // if this value be setting less than 2048 include 0,
-    // we will use 50% of total free memory for job process running
+    // limit running job total memory size, default value is 0, this setting only usage for linux,
+    // if this value less than startNewProcessMemoryMinSizeInMilliBytes,
+    // we will use total free memory *50% for job process running
     private int limitRunningJobTotalMemoryInMilliBytes;
 
     private String startPreparingJobCronExpression;

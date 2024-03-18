@@ -77,13 +77,15 @@ public class MonitorExecutorStatusRateLimiter implements StartJobRateLimiter {
         // Get system free memory when limiter is init
         long totalFreeMem = SystemUtils.getSystemFreeMemory().convert(BinarySizeUnit.MB).getSizeDigit();
         int limitRunningMem = taskFrameworkProperties.get().getLimitRunningJobTotalMemoryInMilliBytes();
-        // Get total free memory 50% if limitRunningTaskMemory < 2048,
+        int startNewProcessMem = taskFrameworkProperties.get().getStartNewProcessMemoryMinSizeInMilliBytes();
+        // Get total free memory * 50% if limitRunningTaskMemory less than StartNewProcessMemoryMinSize,
         // odc may restart, so we should add exists running jobs number
-        long limitCount = new BigDecimal(limitRunningMem < 2048 ? totalFreeMem >> 1 : limitRunningMem)
-                .divide(new BigDecimal(taskFrameworkProperties.get().getStartNewProcessMemoryMinSizeInMilliBytes()),
-                        RoundingMode.FLOOR)
-                .add(new BigDecimal(taskFrameworkService.countExecutorRunningJobs(TaskRunMode.PROCESS)))
-                .longValue();
+        long limitCount =
+                new BigDecimal(limitRunningMem < startNewProcessMem ? totalFreeMem >> 1 : limitRunningMem)
+                        .divide(new BigDecimal(startNewProcessMem),
+                                RoundingMode.FLOOR)
+                        .add(new BigDecimal(taskFrameworkService.countExecutorRunningJobs(TaskRunMode.PROCESS)))
+                        .longValue();
         return limitCount == 0 ? 1 : limitCount;
     }
 
