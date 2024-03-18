@@ -251,6 +251,89 @@
       ROUND(CACHE_SIZE/1024/1024,2) CACHE_SIZE_MB
     FROM
       GV\$OB_KVCACHE;
+- name: oceanbase mysql stats top size tables in database
+  dialect_type: OB_MYSQL
+  tags: [ 'dba','oceanbase', 'stats' ]
+  type: DQL
+  min_version: 4.0.0
+  max_version: ~
+  description: Stats top size tables in database for OceanBase mysql mode
+  prefix: stats_top_size_tables_in_database
+  body: |
+    select
+        t1.database_name,
+        t1.table_name,
+        SUM(ROUND(t2.data_size / 1024 / 1024, 2)) as data_size_MB,
+        SUM(ROUND(t2.required_size / 1024 / 1024, 2)) as required_size_MB
+    from
+    (
+        select
+        database_name,
+        table_id,
+        table_name,
+        tablet_id,
+        partition_name,
+        subpartition_name
+        from
+        oceanbase.dba_ob_table_locations
+    ) t1
+    left join (
+        select
+        tablet_id,
+        svr_ip,
+        svr_port,
+        data_size,
+        required_size
+        from
+        oceanbase.dba_ob_tablet_replicas
+    ) t2 
+    on t1.tablet_id = t2.tablet_id
+    group by t1.database_name, t1.table_name
+    order by data_size_MB desc
+    limit 10;
+- name: oceanbase mysql stats partition size for table
+  dialect_type: OB_MYSQL
+  tags: [ 'dba','oceanbase', 'stats' ]
+  type: DQL
+  min_version: 4.0.0
+  max_version: ~
+  description: stats partition size for table for OceanBase mysql mode
+  prefix: stats_partition_size_for_table
+  body: |
+    select
+        t1.database_name,
+        t1.table_name,
+        t1.tablet_id,
+        t1.partition_name,
+        t1.subpartition_name,
+        t2.svr_ip,
+        t2.svr_port,
+        ROUND(t2.data_size / 1024 / 1024, 2) as data_size_MB,
+        ROUND(t2.required_size / 1024 / 1024, 2) as required_size_MB
+    from (
+        select
+        database_name,
+        table_id,
+        table_name,
+        tablet_id,
+        partition_name,
+        subpartition_name
+        from
+        oceanbase.dba_ob_table_locations
+    ) t1
+    left join (
+        select
+        tablet_id,
+        svr_ip,
+        svr_port,
+        data_size,
+        required_size
+        from
+        oceanbase.dba_ob_tablet_replicas
+    ) t2 
+    on t1.tablet_id = t2.tablet_id
+    where t1.database_name = DATABASE()
+        and t1.table_name='${1:table_name}';
 - name: oceanbase mysql collect sql plan monitor
   dialect_type: OB_MYSQL
   tags: [ 'dba','oceanbase' ]

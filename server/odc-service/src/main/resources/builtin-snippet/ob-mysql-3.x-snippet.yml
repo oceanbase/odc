@@ -111,7 +111,7 @@
     LEFT JOIN oceanbase.gv\$partition p
       ON t.table_id = p.table_id
     WHERE 
-      d.database_name='${1:database_name}' 
+      d.database_name=DATABASE()
     AND 
       t.table_type=3
     GROUP BY database_name, table_name
@@ -129,7 +129,7 @@
     SELECT
       d.database_name as database_name,
       t.table_name as table_name,
-      p.partition_id
+      p.partition_id,
       ROUND(sum(p.data_size)/1024/1024,1) as data_size_MB,
       ROUND(sum(p.required_size)/1024/1024,1) as required_size_MB
     FROM oceanbase.gv\$table t
@@ -138,7 +138,7 @@
     LEFT JOIN oceanbase.gv\$partition p
       ON t.table_id = p.table_id
     WHERE 
-      d.database_name='${1:database_name}' 
+      d.database_name = DATABASE()
     AND 
       t.table_type=3
     GROUP BY database_name, table_name, partition_id

@@ -250,6 +250,88 @@
       ROUND(CACHE_SIZE/1024/1024,2) CACHE_SIZE_MB
     FROM
       GV\$OB_KVCACHE;
+- name: oceanbase oracle stats top size tables in database
+  dialect_type: OB_ORACLE
+  tags: [ 'dba','oceanbase', 'stats' ]
+  type: DQL
+  min_version: 4.0.0
+  max_version: ~
+  description: Stats top size tables in database for OceanBase oracle mode
+  prefix: stats_top_size_tables_in_database
+  body: |
+    SELECT
+      T1.DATABASE_NAME,
+      T1.TABLE_NAME,
+      SUM(ROUND(T2.DATA_SIZE / 1024 / 1024, 2)) AS DATA_SIZE_MB,
+      SUM(ROUND(T2.REQUIRED_SIZE / 1024 / 1024, 2)) AS REQUIRED_SIZE_MB
+    FROM (
+      SELECT
+        DATABASE_NAME,
+        TABLE_ID,
+        TABLE_NAME,
+        TABLET_ID,
+        PARTITION_NAME,
+        SUBPARTITION_NAME
+      FROM
+        DBA_OB_TABLE_LOCATIONS
+    ) T1
+    LEFT JOIN (
+      SELECT
+        TABLET_ID,
+        SVR_IP,
+        SVR_PORT,
+        DATA_SIZE,
+        REQUIRED_SIZE
+      FROM
+        DBA_OB_TABLET_REPLICAS
+    ) T2 
+    ON T1.TABLET_ID = T2.TABLET_ID
+    GROUP BY T1.DATABASE_NAME, T1.TABLE_NAME
+    ORDER BY DATA_SIZE_MB DESC
+    FETCH FIRST 10 ROWS ONLY;
+- name: oceanbase oracle stats partition size for table
+  dialect_type: OB_ORACLE
+  tags: [ 'dba','oceanbase', 'stats' ]
+  type: DQL
+  min_version: 4.0.0
+  max_version: ~
+  description: stats partition size for table for OceanBase oracle mode
+  prefix: stats_partition_size_for_table
+  body: |
+    SELECT
+      T1.DATABASE_NAME,
+      T1.TABLE_NAME,
+      T1.TABLET_ID,
+      T1.PARTITION_NAME,
+      T1.SUBPARTITION_NAME,
+      T2.SVR_IP,
+      T2.SVR_PORT,
+      ROUND(T2.DATA_SIZE / 1024 / 1024, 2) AS DATA_SIZE_MB,
+      ROUND(T2.REQUIRED_SIZE / 1024 / 1024, 2) AS REQUIRED_SIZE_MB
+    FROM (
+      SELECT
+        DATABASE_NAME,
+        TABLE_ID,
+        TABLE_NAME,
+        TABLET_ID,
+        PARTITION_NAME,
+        SUBPARTITION_NAME
+      FROM
+        DBA_OB_TABLE_LOCATIONS
+    ) T1
+    LEFT JOIN (
+      SELECT
+        TABLET_ID,
+        SVR_IP,
+        SVR_PORT,
+        DATA_SIZE,
+        REQUIRED_SIZE
+      FROM
+        DBA_OB_TABLET_REPLICAS
+    ) T2 
+    ON T1.TABLET_ID = T2.TABLET_ID
+    WHERE T1.DATABASE_NAME = SYS_CONTEXT('USERENV', 'CURRENT_SCHEMA')
+        AND T1.TABLE_NAME='${1:table_name}';
 - name: oceanbase Oracle collect sql plan monitor
   dialect_type: OB_ORACLE
   tags: [ 'dba','oceanbase' ]
