@@ -38,7 +38,6 @@ public class DataSourceInfoBuilder {
         DataSourceInfo dataSourceInfo = new DataSourceInfo();
         dataSourceInfo.setDatabaseName(connectionConfig.getDefaultSchema());
         dataSourceInfo.setQueryTimeout(connectionConfig.queryTimeoutSeconds());
-        dataSourceInfo.setDatabaseName(connectionConfig.getDefaultSchema());
         if (StringUtils.isNotEmpty(connectionConfig.getPassword())) {
             dataSourceInfo.setPassword(connectionConfig.getPassword());
         }
