@@ -299,7 +299,7 @@
           MAX(LAST_CHANGE_TIME) LAST_ROW_EOF_TIME,
           COUNT(1) THREADS
         FROM
-          GV$SQL_PLAN_MONITOR
+          GV\$SQL_PLAN_MONITOR
         WHERE
           TRACE_ID = @TARGET_TRACE_ID
         GROUP BY
@@ -336,7 +336,7 @@
           FIRST_CHANGE_TIME FIRST_ROW_TIME,
           LAST_CHANGE_TIME LAST_ROW_EOF_TIME
         FROM
-          GV$SQL_PLAN_MONITOR
+          GV\$SQL_PLAN_MONITOR
         WHERE
           TRACE_ID = @TARGET_TRACE_ID
         ORDER BY
