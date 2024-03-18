@@ -127,10 +127,10 @@ public class EnhancedJpaRepository<T, ID extends Serializable> extends SimpleJpa
         Root<S> root = applySpecificationToCriteria(spec, domainClass, query);
 
         /**
-         * if group by, we calculate the count of the group instead of the sum of all group items this is
-         * the only difference with SimpleJpaRepository#getCountQuery
+         * if group by, we calculate the count of the group instead of the sum of all group items<br/>
+         * this is the only difference with SimpleJpaRepository#getCountQuery
          */
-        if (query.isDistinct() || query.getGroupList().size() > 0) {
+        if (query.isDistinct() || !query.getGroupList().isEmpty()) {
             query.select(builder.countDistinct(root));
         } else {
             query.select(builder.count(root));

@@ -283,7 +283,7 @@ public class FlowInstanceServiceTest extends ServiceTestEnv {
     }
 
     @Test
-    public void list_TwoPages_ReturnCorrectTotalElements() {
+    public void list_ThreePages_ReturnCorrectTotalElements() {
 
         for (int i = 0; i < 5; i++) {
             FlowInstance flowInstance = createFlowInstance("test" + i);
