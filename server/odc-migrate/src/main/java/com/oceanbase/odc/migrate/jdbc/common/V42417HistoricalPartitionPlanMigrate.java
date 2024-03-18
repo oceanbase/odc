@@ -73,6 +73,7 @@ public class V42417HistoricalPartitionPlanMigrate implements JdbcMigratable {
         JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
         List<PartitionPlanEntityWrapper> partitionPlanWrappers = generatePartitionPlanEntities(jdbcTemplate);
         if (CollectionUtils.isEmpty(partitionPlanWrappers)) {
+            log.info("No historical partition plan exists and the migration is complete");
             return;
         }
         TransactionTemplate transactionTemplate = JdbcOperationsUtil.getTransactionTemplate(dataSource);
@@ -220,6 +221,8 @@ public class V42417HistoricalPartitionPlanMigrate implements JdbcMigratable {
         Map<Integer, Function<PartitionPlanEntity, Object>> valueGetterMap = new HashMap<>();
         IntStream.range(1, getter.size() + 1).forEach(i -> valueGetterMap.put(i, getter.get(i - 1)));
         JdbcOperationsUtil.batchCreate(jdbcTemplate, entities, sql, valueGetterMap, PartitionPlanEntity::setId);
+        log.info("[1/4] Partition plan table migration completed, "
+                + "tableName=partitionplan, entityCount={}", entities.size());
     }
 
     private void batchCreatePartiPlanTables(JdbcTemplate jdbcTemplate, List<PartitionPlanTableEntity> entities) {
@@ -243,6 +246,8 @@ public class V42417HistoricalPartitionPlanMigrate implements JdbcMigratable {
         Map<Integer, Function<PartitionPlanTableEntity, Object>> valueGetterMap = new HashMap<>();
         IntStream.range(1, getter.size() + 1).forEach(i -> valueGetterMap.put(i, getter.get(i - 1)));
         JdbcOperationsUtil.batchCreate(jdbcTemplate, entities, sql, valueGetterMap, PartitionPlanTableEntity::setId);
+        log.info("[2/4] Partition plan table migration completed, "
+                + "tableName=partitionplan_table, entityCount={}", entities.size());
     }
 
     private void batchCreatePartiPlanTableKeys(JdbcTemplate jdbcTemplate,
@@ -266,6 +271,8 @@ public class V42417HistoricalPartitionPlanMigrate implements JdbcMigratable {
         IntStream.range(1, getter.size() + 1).forEach(i -> valueGetterMap.put(i, getter.get(i - 1)));
         JdbcOperationsUtil.batchCreate(jdbcTemplate, entities, sql, valueGetterMap,
                 PartitionPlanTablePartitionKeyEntity::setId);
+        log.info("[3/4] Partition plan table migration completed, "
+                + "tableName=partitionplan_table_partitionkey, entityCount={}", entities.size());
     }
 
     private void batchUpdateScheduleParameterJson(JdbcTemplate jdbcTemplate,
@@ -275,6 +282,7 @@ public class V42417HistoricalPartitionPlanMigrate implements JdbcMigratable {
             return new Object[] {JsonUtils.toJson(config), wrapper.getScheduleId()};
         }).collect(Collectors.toList());
         jdbcTemplate.batchUpdate("update schedule_schedule set job_parameters_json=? where id=?", params);
+        log.info("[4/4] Zoning plan parameter revision completed, tableName=schedule_schedule");
     }
 
     private PartitionPlanConfig mapToModel(PartitionPlanEntityWrapper wrapper) {
