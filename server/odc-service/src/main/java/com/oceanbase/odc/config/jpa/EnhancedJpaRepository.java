@@ -20,6 +20,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -29,18 +30,27 @@ import java.util.function.Function;
 import java.util.stream.IntStream;
 
 import javax.persistence.EntityManager;
+import javax.persistence.TypedQuery;
+import javax.persistence.criteria.CriteriaBuilder;
+import javax.persistence.criteria.CriteriaQuery;
+import javax.persistence.criteria.Predicate;
+import javax.persistence.criteria.Root;
 import javax.sql.DataSource;
 
 import org.hibernate.engine.jdbc.connections.internal.DatasourceConnectionProviderImpl;
 import org.hibernate.engine.jdbc.connections.spi.ConnectionProvider;
 import org.hibernate.internal.SessionFactoryImpl;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.jpa.repository.support.JpaEntityInformation;
 import org.springframework.data.jpa.repository.support.SimpleJpaRepository;
 import org.springframework.jdbc.core.ConnectionCallback;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
+import org.springframework.lang.Nullable;
+import org.springframework.util.Assert;
 
 import com.google.common.base.Preconditions;
+import com.oceanbase.odc.metadb.flow.FlowInstanceViewEntity;
 
 import lombok.SneakyThrows;
 
@@ -59,10 +69,12 @@ public class EnhancedJpaRepository<T, ID extends Serializable> extends SimpleJpa
         this.namedParameterJdbcTemplate = new NamedParameterJdbcTemplate(getDataSource(entityManager));
     }
 
-    private DataSource getDataSource(EntityManager entityManager) {
-        SessionFactoryImpl sf = entityManager.getEntityManagerFactory().unwrap(SessionFactoryImpl.class);
-        return ((DatasourceConnectionProviderImpl) sf.getServiceRegistry().getService(ConnectionProvider.class))
-                .getDataSource();
+    public JdbcTemplate getJdbcTemplate() {
+        return (JdbcTemplate) namedParameterJdbcTemplate.getJdbcOperations();
+    }
+
+    public NamedParameterJdbcTemplate getNamedParameterJdbcTemplate() {
+        return namedParameterJdbcTemplate;
     }
 
     public EntityManager getEntityManager() {
@@ -107,6 +119,36 @@ public class EnhancedJpaRepository<T, ID extends Serializable> extends SimpleJpa
         return batchCreate(entities, sql, valueGetterMap, idSetter);
     }
 
+
+    @Override
+    protected <S extends T> TypedQuery<Long> getCountQuery(Specification<S> spec, Class<S> domainClass) {
+        CriteriaBuilder builder = entityManager.getCriteriaBuilder();
+        CriteriaQuery<Long> query = builder.createQuery(Long.class);
+
+        Root<S> root = applySpecificationToCriteria(spec, domainClass, query);
+
+        /**
+         * if group by, we calculate the count of the group instead of the sum of all group items
+         * this is the only difference with SimpleJpaRepository#getCountQuery
+         */
+        if (query.isDistinct() || query.getGroupList().size() > 0) {
+            query.select(builder.countDistinct(root));
+        } else {
+            query.select(builder.count(root));
+        }
+
+        // Remove all Orders the Specifications might have applied
+        query.orderBy(Collections.emptyList());
+
+        return entityManager.createQuery(query);
+    }
+
+    private DataSource getDataSource(EntityManager entityManager) {
+        SessionFactoryImpl sf = entityManager.getEntityManagerFactory().unwrap(SessionFactoryImpl.class);
+        return ((DatasourceConnectionProviderImpl) sf.getServiceRegistry().getService(ConnectionProvider.class))
+            .getDataSource();
+    }
+
     private Long getGeneratedId(ResultSet resultSet) throws SQLException {
         if (resultSet.getObject("id") != null) {
             return Long.valueOf(resultSet.getObject("id").toString());
@@ -118,12 +160,27 @@ public class EnhancedJpaRepository<T, ID extends Serializable> extends SimpleJpa
         return null;
     }
 
-    public JdbcTemplate getJdbcTemplate() {
-        return (JdbcTemplate) namedParameterJdbcTemplate.getJdbcOperations();
-    }
 
-    public NamedParameterJdbcTemplate getNamedParameterJdbcTemplate() {
-        return namedParameterJdbcTemplate;
+    private <S, U extends T> Root<U> applySpecificationToCriteria(@Nullable Specification<U> spec, Class<U> domainClass,
+        CriteriaQuery<S> query) {
+
+        Assert.notNull(domainClass, "Domain class must not be null!");
+        Assert.notNull(query, "CriteriaQuery must not be null!");
+
+        Root<U> root = query.from(domainClass);
+
+        if (spec == null) {
+            return root;
+        }
+
+        CriteriaBuilder builder = entityManager.getCriteriaBuilder();
+        Predicate predicate = spec.toPredicate(root, query, builder);
+
+        if (predicate != null) {
+            query.where(predicate);
+        }
+
+        return root;
     }
 
 }
