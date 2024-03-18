@@ -59,6 +59,7 @@ import com.oceanbase.odc.service.flow.task.model.ResultSetExportResult;
 import com.oceanbase.odc.service.flow.task.model.RuntimeTaskConstants;
 import com.oceanbase.odc.service.flow.task.model.ShadowTableSyncTaskResult;
 import com.oceanbase.odc.service.flow.util.FlowTaskUtil;
+import com.oceanbase.odc.service.flow.util.TaskLogFilenameGenerator;
 import com.oceanbase.odc.service.iam.util.SecurityContextUtils;
 import com.oceanbase.odc.service.notification.Broker;
 import com.oceanbase.odc.service.notification.NotificationProperties;
@@ -363,14 +364,15 @@ public abstract class BaseODCFlowTaskDelegate<T> extends BaseRuntimeFlowableDele
             if (Objects.nonNull(cloudObjectStorageService) && cloudObjectStorageService.supported()) {
                 File logFile =
                         taskService.getLogFile(taskEntity.getCreatorId(), taskId + "", taskType, OdcTaskLogLevel.ALL);
+                String fileName = TaskLogFilenameGenerator.generate(flowInstanceId);
                 try {
-                    String objectName = cloudObjectStorageService.uploadTemp(logFile.getName(), logFile);
+                    String objectName = cloudObjectStorageService.uploadTemp(fileName, logFile);
                     downloadUrl = cloudObjectStorageService.getBucketName() + "/" + objectName;
-                    log.info("Upload task log file to OSS, taskId={}, logFileName={}", taskId, logFile.getName());
+                    log.info("Upload task log file to OSS, taskId={}, logFileName={}", taskId, fileName);
                 } catch (Exception e) {
                     log.warn("Failed to upload task log file to OSS, taskId={}", taskId, e);
                     throw new RuntimeException(
-                            String.format("Failed to upload task log file to OSS, file name: %s", logFile.getName()),
+                            String.format("Failed to upload task log file to OSS, file name: %s", fileName),
                             e.getCause());
                 }
             }
