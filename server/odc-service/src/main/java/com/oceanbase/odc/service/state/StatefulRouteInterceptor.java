@@ -15,6 +15,8 @@
  */
 package com.oceanbase.odc.service.state;
 
+import java.util.Optional;
+
 import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -35,7 +37,8 @@ public class StatefulRouteInterceptor implements HandlerInterceptor {
     @Override
     public void postHandle(HttpServletRequest request, HttpServletResponse response, Object handler,
             @Nullable ModelAndView modelAndView) throws Exception {
-        DispatchResponse dispatchResponse = StateRouteFilter.getContext().getDispatchResponse();
+        DispatchResponse dispatchResponse =
+                Optional.of(StateRouteFilter.getContext()).map(StateRouteContext::getDispatchResponse).orElse(null);
         if (dispatchResponse != null) {
             dispatchResponse.getResponseHeaders().forEach((headerName, headerValues) -> {
                 headerValues.forEach(value -> response.setHeader(headerName, value));

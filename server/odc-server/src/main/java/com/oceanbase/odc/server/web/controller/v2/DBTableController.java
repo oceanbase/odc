@@ -99,7 +99,7 @@ public class DBTableController {
         return Responses.success(tableService.generateUpdateDDL(session, req));
     }
 
-    @GetMapping(value = "/{sessionId}/databases/{databaseName}/candidatePartitionPlanTables")
+    @GetMapping(value = "/{sessionId}/databases/{databaseId}/candidatePartitionPlanTables")
     @StatefulRoute(stateName = StateName.DB_SESSION, stateIdExpression = "#sessionId")
     public ListResponse<PartitionPlanDBTable> listTables(@PathVariable String sessionId,
             @PathVariable Long databaseId) {
