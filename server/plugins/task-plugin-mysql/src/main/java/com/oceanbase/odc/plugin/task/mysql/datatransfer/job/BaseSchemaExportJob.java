@@ -72,7 +72,7 @@ public abstract class BaseSchemaExportJob extends AbstractJob {
         /*
          * touch file
          */
-        File output = Paths.get(workingDir.getPath(), "data", object.getSchema(), object.getType(),
+        File output = Paths.get(workingDir.getPath(), "data", object.getType(),
                 object.getName() + Constants.DDL_SUFFIX).toFile();
         if (!output.getParentFile().exists()) {
             FileUtils.forceMkdir(output.getParentFile());

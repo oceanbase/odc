@@ -32,6 +32,7 @@ import java.util.Set;
 import java.util.function.Predicate;
 
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 
 import com.oceanbase.odc.common.util.StringUtils;
@@ -163,6 +164,7 @@ public abstract class BaseParameterFactory<T extends BaseParameter> {
                 });
 
         parameter.setSessionConfig(sessionConfig);
+        FileUtils.deleteQuietly(sessionFile);
     }
 
     private void setCsvInfo(BaseParameter parameter) {
