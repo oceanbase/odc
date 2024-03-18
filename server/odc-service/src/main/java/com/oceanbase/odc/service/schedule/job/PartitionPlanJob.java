@@ -38,7 +38,7 @@ import com.oceanbase.odc.service.flow.model.CreateFlowInstanceReq;
 import com.oceanbase.odc.service.flow.model.FlowTaskExecutionStrategy;
 import com.oceanbase.odc.service.flow.task.model.DatabaseChangeParameters;
 import com.oceanbase.odc.service.partitionplan.PartitionPlanScheduleService;
-import com.oceanbase.odc.service.partitionplan.PartitionPlanServiceV2;
+import com.oceanbase.odc.service.partitionplan.PartitionPlanService;
 import com.oceanbase.odc.service.partitionplan.PartitionPlanTaskTraceContextHolder;
 import com.oceanbase.odc.service.partitionplan.model.PartitionPlanConfig;
 import com.oceanbase.odc.service.partitionplan.model.PartitionPlanPreViewResp;
@@ -60,7 +60,7 @@ import lombok.extern.slf4j.Slf4j;
 public class PartitionPlanJob implements OdcJob {
 
     private final ScheduleService scheduleService;
-    private final PartitionPlanServiceV2 partitionPlanService;
+    private final PartitionPlanService partitionPlanService;
     private final DatabaseService databaseService;
     private final FlowInstanceService flowInstanceService;
     private final PartitionPlanScheduleService partitionPlanScheduleService;
@@ -70,7 +70,7 @@ public class PartitionPlanJob implements OdcJob {
         this.databaseService = SpringContextUtil.getBean(DatabaseService.class);
         this.flowInstanceService = SpringContextUtil.getBean(FlowInstanceService.class);
         this.partitionPlanScheduleService = SpringContextUtil.getBean(PartitionPlanScheduleService.class);
-        this.partitionPlanService = SpringContextUtil.getBean(PartitionPlanServiceV2.class);
+        this.partitionPlanService = SpringContextUtil.getBean(PartitionPlanService.class);
     }
 
     @Override

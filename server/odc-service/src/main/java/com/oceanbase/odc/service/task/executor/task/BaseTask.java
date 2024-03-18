@@ -59,7 +59,7 @@ public abstract class BaseTask<RESULT> implements Task<RESULT> {
                 updateStatus(JobStatus.FAILED);
             }
         } catch (Throwable e) {
-            log.info("Task failed, id={}.", getJobId(), e);
+            log.warn("Task failed, id={}.", getJobId(), e);
             updateStatus(JobStatus.FAILED);
         } finally {
             try {

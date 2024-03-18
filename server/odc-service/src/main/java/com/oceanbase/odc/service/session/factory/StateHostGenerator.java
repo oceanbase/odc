@@ -13,19 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.partitionplan;
+package com.oceanbase.odc.service.session.factory;
 
-import org.mapstruct.Mapper;
-import org.mapstruct.factory.Mappers;
-
-import com.oceanbase.odc.metadb.partitionplan.DatabasePartitionPlanEntity;
-import com.oceanbase.odc.service.partitionplan.model.DatabasePartitionPlan;
-
-@Mapper
-public interface DatabasePartitionPlanMapper {
-    DatabasePartitionPlanMapper INSTANCE = Mappers.getMapper(DatabasePartitionPlanMapper.class);
-
-    DatabasePartitionPlan entityToModel(DatabasePartitionPlanEntity entity);
-
-    DatabasePartitionPlanEntity modelToEntity(DatabasePartitionPlan model);
+public interface StateHostGenerator {
+    String getHost();
 }

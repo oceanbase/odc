@@ -71,13 +71,13 @@ import com.oceanbase.tools.dbbrowser.model.datatype.DataType;
 import com.oceanbase.tools.dbbrowser.model.datatype.GeneralDataType;
 
 /**
- * Test cases for {@link PartitionPlanServiceV2}
+ * Test cases for {@link PartitionPlanService}
  *
  * @author yh263208
  * @date 2024-01-25 20:33
  * @since ODC_release_4.2.4
  */
-public class PartitionPlanServiceV2Test extends ServiceTestEnv {
+public class PartitionPlanServiceTest extends ServiceTestEnv {
 
     public static final String MYSQL_REAL_RANGE_TABLE_NAME = "range_svc_parti_tbl";
     public static final String MYSQL_OVERLAP_RANGE_TABLE_NAME = "range_svc_parti_overlap_tbl";
@@ -87,7 +87,7 @@ public class PartitionPlanServiceV2Test extends ServiceTestEnv {
     @MockBean
     private DatabaseService databaseService;
     @Autowired
-    private PartitionPlanServiceV2 partitionPlanService;
+    private PartitionPlanService partitionPlanService;
     @Autowired
     private PartitionPlanRepository partitionPlanRepository;
     @Autowired
@@ -551,7 +551,7 @@ public class PartitionPlanServiceV2Test extends ServiceTestEnv {
 
     private static List<String> getOBMysqlDdlContent() throws IOException {
         String delimiter = "\\$\\$\\s*";
-        try (InputStream input = PartitionPlanServiceV2Test.class.getClassLoader()
+        try (InputStream input = PartitionPlanServiceTest.class.getClassLoader()
                 .getResourceAsStream("partitionplan/obmysql/service_create_table.sql")) {
             byte[] buffer = new byte[input.available()];
             IOUtils.readFully(input, buffer);
@@ -562,7 +562,7 @@ public class PartitionPlanServiceV2Test extends ServiceTestEnv {
 
     private static List<String> getOBOracleDdlContent() throws IOException {
         String delimiter = "\\$\\$\\s*";
-        try (InputStream input = PartitionPlanServiceV2Test.class.getClassLoader()
+        try (InputStream input = PartitionPlanServiceTest.class.getClassLoader()
                 .getResourceAsStream("partitionplan/oboracle/service_create_table.sql")) {
             byte[] buffer = new byte[input.available()];
             IOUtils.readFully(input, buffer);

@@ -27,6 +27,8 @@ import com.oceanbase.odc.service.common.util.ResourceIDParser;
 import com.oceanbase.odc.service.common.util.SidUtils;
 import com.oceanbase.odc.service.db.DBProcedureService;
 import com.oceanbase.odc.service.session.ConnectSessionService;
+import com.oceanbase.odc.service.state.model.StateName;
+import com.oceanbase.odc.service.state.model.StatefulRoute;
 import com.oceanbase.tools.dbbrowser.model.DBProcedure;
 
 import io.swagger.annotations.ApiOperation;
@@ -45,6 +47,7 @@ public class DBProcedureController {
 
     @ApiOperation(value = "list", notes = "查看存储过程列表，sid示例：sid:1000-1:d:db1")
     @RequestMapping(value = "/list/{sid:.*}", method = RequestMethod.GET)
+    @StatefulRoute(stateName = StateName.DB_SESSION, stateIdExpression = "#sid")
     public OdcResult<List<DBProcedure>> list(@PathVariable String sid) {
         // sid:1-1:d:database
         ResourceIdentifier i = ResourceIDParser.parse(sid);
@@ -53,6 +56,7 @@ public class DBProcedureController {
 
     @ApiOperation(value = "detail", notes = "查看存储过程的详细信息，sid示例：sid:1000-1:d:db1:p:p1")
     @RequestMapping(value = "/{sid:.*}", method = RequestMethod.GET)
+    @StatefulRoute(stateName = StateName.DB_SESSION, stateIdExpression = "#sid")
     public OdcResult<DBProcedure> detail(@PathVariable String sid) {
         ResourceIdentifier i = ResourceIDParser.parse(sid);
         return OdcResult.ok(procedureService.detail(
@@ -61,6 +65,7 @@ public class DBProcedureController {
 
     @ApiOperation(value = "getCreateSql", notes = "获取创建存储过程的sql，sid示例：sid:1000-1:d:db1:p:p1")
     @RequestMapping(value = "/getCreateSql/{sid:.*}", method = RequestMethod.PATCH)
+    @StatefulRoute(stateName = StateName.DB_SESSION, stateIdExpression = "#sid")
     public OdcResult<ResourceSql> getCreateSql(@PathVariable String sid, @RequestBody DBProcedure resource) {
         return OdcResult.ok(procedureService.getCreateSql(
                 sessionService.nullSafeGet(SidUtils.getSessionId(sid), true), resource));

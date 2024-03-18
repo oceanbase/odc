@@ -33,6 +33,8 @@ import com.oceanbase.odc.service.common.util.SidUtils;
 import com.oceanbase.odc.service.db.DBTableColumnService;
 import com.oceanbase.odc.service.db.model.OdcDBTableColumn;
 import com.oceanbase.odc.service.session.ConnectSessionService;
+import com.oceanbase.odc.service.state.model.StateName;
+import com.oceanbase.odc.service.state.model.StatefulRoute;
 
 import io.swagger.annotations.ApiOperation;
 
@@ -58,6 +60,7 @@ public class DBTableColumnController {
 
     @ApiOperation(value = "getCreateSql", notes = "获取新增列的sql，sid示例：sid:1000-1:d:db1:t:tb1")
     @RequestMapping(value = "/getCreateSql/{sid:.*}", method = RequestMethod.PATCH)
+    @StatefulRoute(stateName = StateName.DB_SESSION, stateIdExpression = "#sid")
     public OdcResult<ResourceSql> getCreateSql(@PathVariable String sid, @RequestBody OdcDBTableColumn column) {
         return OdcResult.ok(ResourceSql.ofSql(this.columnService.getCreateSql(
                 sessionService.nullSafeGet(SidUtils.getSessionId(sid), true), column)));
@@ -65,6 +68,7 @@ public class DBTableColumnController {
 
     @ApiOperation(value = "getDeleteSql", notes = "获取删除列的sql，sid示例：sid:1000-1:d:db1:t:tb1")
     @RequestMapping(value = "/getDeleteSql/{sid:.*}", method = RequestMethod.PATCH)
+    @StatefulRoute(stateName = StateName.DB_SESSION, stateIdExpression = "#sid")
     public OdcResult<ResourceSql> getDeleteSql(@PathVariable String sid, @RequestBody OdcDBTableColumn column) {
         return OdcResult.ok(ResourceSql.ofSql(this.columnService.getDeleteSql(
                 sessionService.nullSafeGet(SidUtils.getSessionId(sid), true), column)));

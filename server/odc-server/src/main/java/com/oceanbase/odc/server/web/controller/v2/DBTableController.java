@@ -33,9 +33,11 @@ import com.oceanbase.odc.service.common.response.SuccessResponse;
 import com.oceanbase.odc.service.db.DBTableService;
 import com.oceanbase.odc.service.db.model.GenerateTableDDLResp;
 import com.oceanbase.odc.service.db.model.GenerateUpdateTableDDLReq;
-import com.oceanbase.odc.service.partitionplan.PartitionPlanServiceV2;
+import com.oceanbase.odc.service.partitionplan.PartitionPlanService;
 import com.oceanbase.odc.service.partitionplan.model.PartitionPlanDBTable;
 import com.oceanbase.odc.service.session.ConnectSessionService;
+import com.oceanbase.odc.service.state.model.StateName;
+import com.oceanbase.odc.service.state.model.StatefulRoute;
 import com.oceanbase.tools.dbbrowser.model.DBSchema;
 import com.oceanbase.tools.dbbrowser.model.DBTable;
 import com.oceanbase.tools.dbbrowser.model.datatype.DataType;
@@ -49,9 +51,10 @@ public class DBTableController {
     @Autowired
     private ConnectSessionService sessionService;
     @Autowired
-    private PartitionPlanServiceV2 partitionPlanServiceV2;
+    private PartitionPlanService partitionPlanService;
 
     @GetMapping(value = {"/{sessionId}/databases/{databaseName}/tables", "/{sessionId}/currentDatabase/tables"})
+    @StatefulRoute(stateName = StateName.DB_SESSION, stateIdExpression = "#sessionId")
     public ListResponse<String> listTables(@PathVariable String sessionId,
             @PathVariable(required = false) String databaseName,
             @RequestParam(required = false, name = "fuzzyTableName") String fuzzyTableName) {
@@ -61,6 +64,7 @@ public class DBTableController {
 
     @GetMapping(value = {"/{sessionId}/databases/{databaseName}/tables/{tableName}",
             "/{sessionId}/currentDatabase/tables/{tableName}"})
+    @StatefulRoute(stateName = StateName.DB_SESSION, stateIdExpression = "#sessionId")
     public SuccessResponse<DBTable> getTable(@PathVariable String sessionId,
             @PathVariable(required = false) String databaseName,
             @PathVariable String tableName) {
@@ -72,6 +76,7 @@ public class DBTableController {
 
     @PostMapping(value = {"/{sessionId}/databases/{databaseName}/tables/generateCreateTableDDL",
             "/{sessionId}/currentDatabase/tables/generateCreateTableDDL"})
+    @StatefulRoute(stateName = StateName.DB_SESSION, stateIdExpression = "#sessionId")
     public SuccessResponse<GenerateTableDDLResp> generateCreateTableDDL(@PathVariable String sessionId,
             @PathVariable(required = false) String databaseName, @RequestBody DBTable table) {
         table.setSchema(DBSchema.of(databaseName));
@@ -82,6 +87,7 @@ public class DBTableController {
 
     @PostMapping(value = {"/{sessionId}/databases/{databaseName}/tables/generateUpdateTableDDL",
             "/{sessionId}/currentDatabase/tables/generateUpdateTableDDL"})
+    @StatefulRoute(stateName = StateName.DB_SESSION, stateIdExpression = "#sessionId")
     public SuccessResponse<GenerateTableDDLResp> generateUpdateTableDDL(@PathVariable String sessionId,
             @PathVariable(required = false) String databaseName, @RequestBody GenerateUpdateTableDDLReq req) {
         DBSchema schema = DBSchema.of(databaseName);
@@ -94,16 +100,17 @@ public class DBTableController {
     }
 
     @GetMapping(value = "/{sessionId}/databases/{databaseId}/candidatePartitionPlanTables")
+    @StatefulRoute(stateName = StateName.DB_SESSION, stateIdExpression = "#sessionId")
     public ListResponse<PartitionPlanDBTable> listTables(@PathVariable String sessionId,
             @PathVariable Long databaseId) {
-        return Responses.list(this.partitionPlanServiceV2.listCandidateTables(sessionId, databaseId));
+        return Responses.list(this.partitionPlanService.listCandidateTables(sessionId, databaseId));
     }
 
     @GetMapping(value = "/{sessionId}/databases/{databaseId}/candidatePartitionPlanTables/"
             + "{tableName}/getPartitionKeyDataTypes")
     public ListResponse<DataType> getPartitionKeyDataTypes(@PathVariable String sessionId,
             @PathVariable Long databaseId, @PathVariable String tableName) {
-        return Responses.list(this.partitionPlanServiceV2.getPartitionKeyDataTypes(sessionId, databaseId, tableName));
+        return Responses.list(this.partitionPlanService.getPartitionKeyDataTypes(sessionId, databaseId, tableName));
     }
 
 }

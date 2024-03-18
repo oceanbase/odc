@@ -63,7 +63,8 @@ import lombok.extern.slf4j.Slf4j;
 @Component
 public class DumperResultSetExportTaskManager implements ResultSetExportTaskManager {
     private final static Logger LOGGER = LoggerFactory.getLogger("DataTransferLogger");
-    private final static String DEFAULT_FILE_PREFIX = "CUSTOM_SQL";
+    private final static String DEFAULT_FILE_PREFIX_ORACLE = "CUSTOM_SQL";
+    private final static String DEFAULT_FILE_PREFIX_MYSQL = "custom_sql";
 
     private ExecutorService executor;
     @Value("${odc.log.directory:./log}")
@@ -112,7 +113,8 @@ public class DumperResultSetExportTaskManager implements ResultSetExportTaskMana
             }
             LOGGER.info("Result set export task starts, working directory:{}", workingDir);
             if (parameter.getFileFormat() != DataTransferFormat.SQL || parameter.getTableName() == null) {
-                parameter.setTableName(DEFAULT_FILE_PREFIX);
+                parameter.setTableName(connectionConfig.getDialectType().isOracle() ? DEFAULT_FILE_PREFIX_ORACLE
+                        : DEFAULT_FILE_PREFIX_MYSQL);
             }
             String fileName =
                     StringUtils.isBlank(parameter.getFileName()) ? "result_set" : parameter.getFileName().trim();

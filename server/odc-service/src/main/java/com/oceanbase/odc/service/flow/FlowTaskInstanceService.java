@@ -98,7 +98,6 @@ import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.logger.LoggerService;
 import com.oceanbase.odc.service.objectstorage.ObjectStorageFacade;
 import com.oceanbase.odc.service.objectstorage.cloud.CloudObjectStorageService;
-import com.oceanbase.odc.service.partitionplan.PartitionPlanService;
 import com.oceanbase.odc.service.permission.database.model.ApplyDatabaseResult;
 import com.oceanbase.odc.service.permission.project.ApplyProjectResult;
 import com.oceanbase.odc.service.schedule.flowtask.AlterScheduleResult;
@@ -152,8 +151,6 @@ public class FlowTaskInstanceService {
     private DatabaseChangeOssUrlCache databaseChangeOssUrlCache;
     @Autowired
     private LocalFileManager localFileManager;
-    @Autowired
-    private PartitionPlanService partitionPlanService;
 
     @Value("${odc.task.async.result-preview-max-size-bytes:5242880}")
     private long resultPreviewMaxSizeBytes;

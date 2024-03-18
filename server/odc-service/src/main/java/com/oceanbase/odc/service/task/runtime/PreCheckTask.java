@@ -15,10 +15,8 @@
  */
 package com.oceanbase.odc.service.task.runtime;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.SequenceInputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -52,7 +50,7 @@ import com.oceanbase.odc.service.flow.task.model.DatabaseChangeParameters;
 import com.oceanbase.odc.service.flow.task.model.DatabasePermissionCheckResult;
 import com.oceanbase.odc.service.flow.task.model.SqlCheckTaskResult;
 import com.oceanbase.odc.service.objectstorage.model.ObjectMetadata;
-import com.oceanbase.odc.service.objectstorage.model.StorageObject;
+import com.oceanbase.odc.service.objectstorage.util.ObjectStorageUtils;
 import com.oceanbase.odc.service.onlineschemachange.model.OnlineSchemaChangeParameters;
 import com.oceanbase.odc.service.permission.database.model.DatabasePermissionType;
 import com.oceanbase.odc.service.permission.database.model.UnauthorizedDatabase;
@@ -73,7 +71,6 @@ import com.oceanbase.odc.service.sqlcheck.model.CheckViolation;
 import com.oceanbase.odc.service.sqlcheck.rule.SqlCheckRules;
 import com.oceanbase.odc.service.task.caller.JobContext;
 import com.oceanbase.odc.service.task.constants.JobParametersKeyConstants;
-import com.oceanbase.odc.service.task.executor.server.ObjectStorageHandler;
 import com.oceanbase.odc.service.task.executor.task.BaseTask;
 import com.oceanbase.odc.service.task.runtime.PreCheckTaskParameters.AuthorizedDatabase;
 import com.oceanbase.odc.service.task.util.JobUtils;
@@ -202,26 +199,10 @@ public class PreCheckTask extends BaseTask<FlowTaskResult> {
             }
             params = (DatabaseChangeParameters) asParams.getScheduleTaskParameters();
         }
-        this.uploadFileInputStream = new ByteArrayInputStream(new byte[0]);
         List<ObjectMetadata> objectMetadataList = this.parameters.getSqlFileObjectMetadatas();
         if (Objects.nonNull(params) && CollectionUtils.isNotEmpty(objectMetadataList)) {
-            for (ObjectMetadata objectMetadata : objectMetadataList) {
-                StorageObject object =
-                        new ObjectStorageHandler(getCloudObjectStorageService(), JobUtils.getExecutorDataPath())
-                                .loadObject(objectMetadata);
-                InputStream current = object.getContent();
-                // remove UTF-8 BOM if exists
-                current.mark(3);
-                byte[] byteSql = new byte[3];
-                if (current.read(byteSql) >= 3 && byteSql[0] == (byte) 0xef && byteSql[1] == (byte) 0xbb
-                        && byteSql[2] == (byte) 0xbf) {
-                    current.reset();
-                    current.skip(3);
-                } else {
-                    current.reset();
-                }
-                this.uploadFileInputStream = new SequenceInputStream(this.uploadFileInputStream, current);
-            }
+            this.uploadFileInputStream = ObjectStorageUtils.loadObjectsForTask(objectMetadataList,
+                    getCloudObjectStorageService(), JobUtils.getExecutorDataPath(), -1).getInputStream();
             this.uploadFileSqlIterator = SqlUtils.iterator(this.parameters.getConnectionConfig().getDialectType(),
                     params.getDelimiter(), this.uploadFileInputStream, StandardCharsets.UTF_8);
         }
@@ -368,19 +349,19 @@ public class PreCheckTask extends BaseTask<FlowTaskResult> {
                 Database database = schemaName2Database.get(schemaName);
                 Set<DatabasePermissionType> authorized = authorizedSchema2PermissionTypes.get(schemaName);
                 if (CollectionUtils.isEmpty(authorized)) {
-                    ret.add(UnauthorizedDatabase.from(database, needs));
+                    ret.add(UnauthorizedDatabase.from(database, needs, false));
                 } else {
                     Set<DatabasePermissionType> unauthorized =
                             needs.stream().filter(p -> !authorized.contains(p)).collect(Collectors.toSet());
                     if (CollectionUtils.isNotEmpty(unauthorized)) {
-                        ret.add(UnauthorizedDatabase.from(database, unauthorized));
+                        ret.add(UnauthorizedDatabase.from(database, unauthorized, false));
                     }
                 }
             } else {
                 Database unknownDatabase = new Database();
                 unknownDatabase.setName(schemaName);
                 unknownDatabase.setDataSource(this.parameters.getConnectionConfig());
-                ret.add(UnauthorizedDatabase.from(unknownDatabase, needs));
+                ret.add(UnauthorizedDatabase.from(unknownDatabase, needs, false));
             }
         }
         return ret;

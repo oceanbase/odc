@@ -20,12 +20,14 @@ import java.io.InputStream;
 import lombok.Data;
 
 /**
+ * An extended InputStream with stream size of bytes.
+ * 
  * @author jingtian
  * @date 2024/3/5
  * @since ODC_release_4.2.4
  */
 @Data
-public class DatabaseChangeInputStream {
+public class SizeAwareInputStream {
     private InputStream inputStream;
-    private long sqlTotalBytes;
+    private long totalBytes;
 }
