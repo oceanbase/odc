@@ -3,7 +3,6 @@
     "oracle": [
       "set names utf8",
       "set autocommit=1",
-      "set session ob_query_timeout=300000000",
       "set session ob_trx_timeout=180000000",
       "set session net_read_timeout=86400",
       "set session net_write_timeout=86400",
@@ -15,7 +14,6 @@
     "mysql": [
       "set names utf8",
       "set autocommit=1",
-      "set session ob_query_timeout=300000000",
       "set session ob_trx_timeout=180000000",
       "set session net_read_timeout=86400",
       "set session net_write_timeout=86400",
