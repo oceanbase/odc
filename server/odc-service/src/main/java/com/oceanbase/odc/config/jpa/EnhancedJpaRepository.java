@@ -50,7 +50,6 @@ import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
 
 import com.google.common.base.Preconditions;
-import com.oceanbase.odc.metadb.flow.FlowInstanceViewEntity;
 
 import lombok.SneakyThrows;
 
@@ -128,8 +127,8 @@ public class EnhancedJpaRepository<T, ID extends Serializable> extends SimpleJpa
         Root<S> root = applySpecificationToCriteria(spec, domainClass, query);
 
         /**
-         * if group by, we calculate the count of the group instead of the sum of all group items
-         * this is the only difference with SimpleJpaRepository#getCountQuery
+         * if group by, we calculate the count of the group instead of the sum of all group items this is
+         * the only difference with SimpleJpaRepository#getCountQuery
          */
         if (query.isDistinct() || query.getGroupList().size() > 0) {
             query.select(builder.countDistinct(root));
@@ -146,7 +145,7 @@ public class EnhancedJpaRepository<T, ID extends Serializable> extends SimpleJpa
     private DataSource getDataSource(EntityManager entityManager) {
         SessionFactoryImpl sf = entityManager.getEntityManagerFactory().unwrap(SessionFactoryImpl.class);
         return ((DatasourceConnectionProviderImpl) sf.getServiceRegistry().getService(ConnectionProvider.class))
-            .getDataSource();
+                .getDataSource();
     }
 
     private Long getGeneratedId(ResultSet resultSet) throws SQLException {
@@ -162,7 +161,7 @@ public class EnhancedJpaRepository<T, ID extends Serializable> extends SimpleJpa
 
 
     private <S, U extends T> Root<U> applySpecificationToCriteria(@Nullable Specification<U> spec, Class<U> domainClass,
-        CriteriaQuery<S> query) {
+            CriteriaQuery<S> query) {
 
         Assert.notNull(domainClass, "Domain class must not be null!");
         Assert.notNull(query, "CriteriaQuery must not be null!");

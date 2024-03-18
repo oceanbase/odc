@@ -46,6 +46,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 
 import com.oceanbase.odc.ServiceTestEnv;
@@ -279,6 +280,32 @@ public class FlowInstanceServiceTest extends ServiceTestEnv {
                 .type(TaskType.ASYNC).build();
         Page<FlowInstanceDetailResp> page = flowInstanceService.list(Pageable.unpaged(), params);
         Assert.assertEquals(2, page.getTotalElements());
+    }
+
+    @Test
+    public void list_TwoPages_ReturnCorrectTotalElements() {
+
+        for (int i = 0; i < 5; i++) {
+            FlowInstance flowInstance = createFlowInstance("test" + i);
+            buildFlowInstance(flowInstance);
+        }
+
+        User user = new User();
+        user.setRoleIds(Collections.emptyList());
+        when(userService.detailCurrentUser()).thenReturn(user);
+        when(databaseService.listDatabasesByConnectionIds(Mockito.anyCollection()))
+                .thenReturn(Collections.singletonList(getDatabase()));
+
+        QueryFlowInstanceParams params = QueryFlowInstanceParams.builder()
+                .approveByCurrentUser(false)
+                .createdByCurrentUser(true)
+                .containsAll(false)
+                .startTime(new Date(System.currentTimeMillis() - 10000))
+                .endTime(new Date(System.currentTimeMillis() + 10000))
+                .type(TaskType.ASYNC).build();
+        Page<FlowInstanceDetailResp> page = flowInstanceService.list(PageRequest.of(1, 2), params);
+        Assert.assertEquals(5, page.getTotalElements());
+        Assert.assertEquals(3, page.getTotalPages());
     }
 
     @Test
