@@ -152,7 +152,6 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
     public Page<JobEntity> findHeartTimeTimeoutJobs(int timeoutSeconds, int page, int size) {
         Specification<JobEntity> condition = Specification.where(getRecentDaySpec(RECENT_DAY))
                 .and(SpecificationUtil.columnEqual(JobEntityColumn.STATUS, JobStatus.RUNNING))
-                .and(SpecificationUtil.columnIsNotNull(JobEntityColumn.EXECUTOR_DESTROYED_TIME))
                 .and((root, query, cb) -> getHeartTimeoutPredicate(root, cb, timeoutSeconds))
                 .and(getExecutorSpec());
         return page(condition, page, size);
