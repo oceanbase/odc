@@ -15,10 +15,19 @@
  */
 package com.oceanbase.odc.service.dlm;
 
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
 
+import org.springframework.jdbc.core.StatementCallback;
+
+import com.oceanbase.odc.core.session.ConnectionSession;
+import com.oceanbase.odc.core.session.ConnectionSessionConstants;
+import com.oceanbase.odc.core.sql.execute.SyncJdbcExecutor;
+import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.dlm.model.RateLimitConfiguration;
+import com.oceanbase.odc.service.dlm.utils.DlmJobIdUtil;
+import com.oceanbase.odc.service.session.factory.DefaultConnectSessionFactory;
 import com.oceanbase.tools.migrator.common.dto.JobStatistic;
 import com.oceanbase.tools.migrator.common.dto.TableSizeInfo;
 import com.oceanbase.tools.migrator.common.dto.TaskGenerator;
@@ -32,12 +41,28 @@ import com.oceanbase.tools.migrator.core.meta.JobMeta;
 import com.oceanbase.tools.migrator.core.meta.TaskMeta;
 import com.oceanbase.tools.migrator.core.meta.TenantMeta;
 
+import lombok.extern.slf4j.Slf4j;
+
 /**
  * @Author：tinker
  * @Date: 2024/1/24 19:57
  * @Descripition:
  */
+@Slf4j
 public class CloudDLMJobStore implements IJobStore {
+
+    private ConnectionConfig metaDBConfig;
+    private ConnectionSession connectionSession;
+
+    public CloudDLMJobStore(ConnectionConfig metaDBConfig) {
+        this.metaDBConfig = metaDBConfig;
+        initConnectionSession();
+    }
+
+    private void initConnectionSession() {
+        connectionSession = new DefaultConnectSessionFactory(metaDBConfig).generateSession();
+    }
+
     @Override
     public TaskGenerator getTaskGenerator(String s, String s1) throws TaskGeneratorNotFoundException, SQLException {
         return null;
@@ -85,16 +110,43 @@ public class CloudDLMJobStore implements IJobStore {
 
     @Override
     public void updateLimiter(JobMeta jobMeta) throws SQLException {
-        RateLimitConfiguration rateLimit = new RateLimitConfiguration();
-        rateLimit.setRowLimit(50000);
-        rateLimit.setDataSizeLimit(10 * 1024 * 1024L);
+        try {
+            SyncJdbcExecutor syncJdbcExecutor = connectionSession.getSyncJdbcExecutor(
+                    ConnectionSessionConstants.BACKEND_DS_KEY);
+            RateLimitConfiguration rateLimit = syncJdbcExecutor.execute(
+                    (StatementCallback<RateLimitConfiguration>) statement -> {
+                        ResultSet resultSet = statement.executeQuery(
+                                String.format("select * from dlm_config_limiter_configuration where order_id = %s",
+                                        DlmJobIdUtil.getJobName(jobMeta.getJobId())));
+                        if (resultSet.next()) {
+                            RateLimitConfiguration result = new RateLimitConfiguration();
+                            result.setOrderId(resultSet.getLong("order_id"));
+                            result.setBatchSize(resultSet.getInt("batch_size"));
+                            result.setDataSizeLimit(resultSet.getLong("data_size_limit"));
+                            result.setRowLimit(resultSet.getInt("row_limit"));
+                            return result;
+                        } else {
+                            return null;
+                        }
 
-        setClusterLimitConfig(jobMeta.getSourceCluster(), rateLimit.getDataSizeLimit());
-        setClusterLimitConfig(jobMeta.getTargetCluster(), rateLimit.getDataSizeLimit());
-        setTenantLimitConfig(jobMeta.getSourceTenant(), rateLimit.getDataSizeLimit());
-        setTenantLimitConfig(jobMeta.getTargetTenant(), rateLimit.getDataSizeLimit());
-        setTableLimitConfig(jobMeta.getSourceTableMeta(), rateLimit.getRowLimit());
-        setTableLimitConfig(jobMeta.getTargetTableMeta(), rateLimit.getRowLimit());
+                    });
+            if (rateLimit == null) {
+                log.warn("RateLimitConfiguration not found,jobId={}", jobMeta.getJobId());
+                return;
+            }
+            setClusterLimitConfig(jobMeta.getSourceCluster(), rateLimit.getDataSizeLimit());
+            setClusterLimitConfig(jobMeta.getTargetCluster(), rateLimit.getDataSizeLimit());
+            setTenantLimitConfig(jobMeta.getSourceTenant(), rateLimit.getDataSizeLimit());
+            setTenantLimitConfig(jobMeta.getTargetTenant(), rateLimit.getDataSizeLimit());
+            setTableLimitConfig(jobMeta.getSourceTableMeta(), rateLimit.getRowLimit());
+            setTableLimitConfig(jobMeta.getTargetTableMeta(), rateLimit.getRowLimit());
+            log.info("Update limiter success,jobId={},rateLimit={}",
+                    jobMeta.getJobId(), rateLimit);
+        } catch (Exception e) {
+            log.warn("Update limiter failed,jobId={},error={}",
+                    jobMeta.getJobId(), e);
+        }
+
     }
 
     private void setClusterLimitConfig(ClusterMeta clusterMeta, long dataSizeLimit) {

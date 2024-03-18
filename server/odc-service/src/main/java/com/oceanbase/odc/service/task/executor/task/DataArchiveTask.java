@@ -19,21 +19,26 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 
 import com.oceanbase.odc.common.json.JsonUtils;
+import com.oceanbase.odc.core.shared.constant.DialectType;
+import com.oceanbase.odc.core.sql.parser.AbstractSyntaxTreeFactories;
+import com.oceanbase.odc.core.sql.parser.AbstractSyntaxTreeFactory;
 import com.oceanbase.odc.service.dlm.CloudDLMJobStore;
-import com.oceanbase.odc.service.dlm.DataArchiveJobFactory;
-import com.oceanbase.odc.service.dlm.JobMetaFactoryCopied;
+import com.oceanbase.odc.service.dlm.DLMJobFactory;
 import com.oceanbase.odc.service.schedule.job.DLMJobParameters;
 import com.oceanbase.odc.service.task.caller.JobContext;
 import com.oceanbase.odc.service.task.constants.JobParametersKeyConstants;
+import com.oceanbase.odc.service.task.util.JobUtils;
 import com.oceanbase.tools.dbbrowser.util.MySQLSqlBuilder;
 import com.oceanbase.tools.dbbrowser.util.OracleSqlBuilder;
 import com.oceanbase.tools.dbbrowser.util.SqlBuilder;
 import com.oceanbase.tools.migrator.common.enums.DataBaseType;
 import com.oceanbase.tools.migrator.common.enums.JobType;
-import com.oceanbase.tools.migrator.core.meta.JobMeta;
 import com.oceanbase.tools.migrator.datasource.DataSourceAdapter;
 import com.oceanbase.tools.migrator.datasource.DataSourceFactory;
-import com.oceanbase.tools.migrator.job.AbstractJob;
+import com.oceanbase.tools.migrator.job.Job;
+import com.oceanbase.tools.sqlparser.adapter.mysql.MySQLFromReferenceFactory;
+import com.oceanbase.tools.sqlparser.obmysql.OBParser.Create_table_stmtContext;
+import com.oceanbase.tools.sqlparser.statement.common.RelationFactor;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -46,21 +51,14 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class DataArchiveTask extends BaseTask<Boolean> {
 
-    private JobMetaFactoryCopied jobMetaFactory;
-
-    private DataArchiveJobFactory jobFactory;
-
-    private JobMeta runningJobMeta;
-
-    private boolean isFinish = false;
-
+    private DLMJobFactory jobFactory;
+    private boolean isSuccess = true;
     private double progress = 0.0;
+    private Job job;
 
     @Override
-    protected void doInit(JobContext context) throws Exception {
-        jobMetaFactory = new JobMetaFactoryCopied();
-        jobFactory = new DataArchiveJobFactory();
-        jobMetaFactory.setJobStore(new CloudDLMJobStore());
+    protected void doInit(JobContext context) {
+        jobFactory = new DLMJobFactory(new CloudDLMJobStore(JobUtils.getMetaDBConnectionConfig()));
         log.info("Init data-archive job env succeed,jobIdentity={}", context.getJobIdentity());
     }
 
@@ -79,26 +77,30 @@ public class DataArchiveTask extends BaseTask<Boolean> {
             if (parameters.getJobType() == JobType.MIGRATE) {
                 syncTable(tableIndex, parameters);
             }
-            runningJobMeta = jobMetaFactory.create(tableIndex, context.getJobIdentity(), parameters);
-            log.info("Init {} job succeed,DLMJobId={}", runningJobMeta.getJobType(), runningJobMeta.getJobId());
-            AbstractJob job = jobFactory.createJob(runningJobMeta);
             try {
-                log.info("{} job start,DLMJobId={}", runningJobMeta.getJobType(), runningJobMeta.getJobId());
+                job = jobFactory.createJob(tableIndex, parameters);
+                log.info("Init {} job succeed,DLMJobId={}", job.getJobMeta().getJobType(), job.getJobMeta().getJobId());
+                log.info("{} job start,DLMJobId={}", job.getJobMeta().getJobType(), job.getJobMeta().getJobId());
                 job.run();
-                log.info("{} job finished,DLMJobId={}", runningJobMeta.getJobType(), runningJobMeta.getJobId());
+                log.info("{} job finished,DLMJobId={}", job.getJobMeta().getJobType(), job.getJobMeta().getJobId());
             } catch (Throwable e) {
-                log.error("{} job failed,DLMJobId={},errorMsg={}", runningJobMeta.getJobType(),
-                        runningJobMeta.getJobId(),
+                log.error("{} job failed,DLMJobId={},errorMsg={}", job.getJobMeta().getJobType(),
+                        job.getJobMeta().getJobId(),
                         e);
+                // set task status to failed if any job failed.
+                isSuccess = false;
             }
             progress = (tableIndex + 1.0) / parameters.getTables().size();
         }
-        isFinish = true;
         return true;
     }
 
     private void syncTable(int tableIndex, DLMJobParameters parameters) throws Exception {
         DataSourceAdapter sourceDataSource = DataSourceFactory.getDataSource(parameters.getSourceDs());
+        if (sourceDataSource.getDataBaseType().isOracle()) {
+            log.info("Unsupported sync table construct for Oracle,databaseType={}", sourceDataSource.getDataBaseType());
+            return;
+        }
         DataSourceAdapter targetDataSource = DataSourceFactory.getDataSource(parameters.getTargetDs());
         if (parameters.getSourceDs().getDatabaseType() != parameters.getTargetDs().getDatabaseType()) {
             log.info("Data sources of different types do not currently support automatic creation of target tables.");
@@ -128,9 +130,23 @@ public class DataArchiveTask extends BaseTask<Boolean> {
             return;
         }
         try (Connection connection = targetDataSource.getConnectionForWrite()) {
+            createTableDDL = buildCreateTableDDL(createTableDDL,
+                    parameters.getTables().get(tableIndex).getTargetTableName());
+            log.info("Create target table begin, sql={}", createTableDDL);
             boolean result = connection.prepareStatement(createTableDDL).execute();
             log.info("Create target table finish, result={}", result);
         }
+    }
+
+    public String buildCreateTableDDL(String createSql, String targetTableName) {
+        AbstractSyntaxTreeFactory factory = AbstractSyntaxTreeFactories.getAstFactory(DialectType.OB_MYSQL, 0);
+        Create_table_stmtContext context = (Create_table_stmtContext) factory.buildAst(createSql).getRoot();
+        RelationFactor factor = MySQLFromReferenceFactory.getRelationFactor(context.relation_factor());
+        StringBuilder sb = new StringBuilder();
+        sb.append(createSql, 0, factor.getStart());
+        sb.append("`").append(targetTableName).append("`");
+        sb.append(createSql, factor.getStop() + 1, createSql.length() - 1);
+        return sb.toString();
     }
 
     private boolean checkTargetTableExist(String tableName, DataSourceAdapter dataSourceAdapter) {
@@ -150,7 +166,7 @@ public class DataArchiveTask extends BaseTask<Boolean> {
     }
 
     private static String getCreateTableDDL(String schemaName, String tableName, DataBaseType dbType) {
-        SqlBuilder sb = dbType == DataBaseType.OCEANBASEV10 || dbType == DataBaseType.MYSQL ? new MySQLSqlBuilder()
+        SqlBuilder sb = dbType == DataBaseType.OB_MYSQL || dbType == DataBaseType.MYSQL ? new MySQLSqlBuilder()
                 : new OracleSqlBuilder();
         sb.append("SHOW CREATE TABLE ");
         sb.identifier(schemaName);
@@ -161,7 +177,7 @@ public class DataArchiveTask extends BaseTask<Boolean> {
 
     @Override
     protected void doStop() throws Exception {
-        runningJobMeta.setToStop(true);
+        job.getJobMeta().setToStop(true);
     }
 
     @Override
@@ -176,6 +192,6 @@ public class DataArchiveTask extends BaseTask<Boolean> {
 
     @Override
     public Boolean getTaskResult() {
-        return isFinish;
+        return isSuccess;
     }
 }

@@ -108,7 +108,7 @@ public class ScheduleConfiguration {
         executor.setWaitForTasksToCompleteOnShutdown(true);
         executor.setAwaitTerminationSeconds(5);
         executor.setTaskDecorator(new TraceDecorator<>());
-        executor.setRejectedExecutionHandler(new ThreadPoolExecutor.CallerRunsPolicy());
+        executor.setRejectedExecutionHandler(new ThreadPoolExecutor.AbortPolicy());
         executor.initialize();
         log.info("autoApprovalExecutor initialized");
         return executor;

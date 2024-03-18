@@ -35,6 +35,10 @@ import lombok.Data;
 @Data
 public class DLMJobParameters {
 
+    private String jobName;
+
+    private Long scheduleTaskId;
+
     private List<DataArchiveTableConfig> tables;
 
     private JobType jobType;
