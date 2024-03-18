@@ -77,7 +77,7 @@ public class DefaultTaskFrameworkProperties implements TaskFrameworkProperties {
     // limit running job total memory size, default value is 0, this setting only usage for linux,
     // if this value less than startNewProcessMemoryMinSizeInMb,
     // we will use total free memory *50% for job process running
-    private int runningJobTotalMemoryThresholdInMB;
+    private int availableMaxMemoryForRunningJobInMb;
 
     private String startPreparingJobCronExpression;
 
