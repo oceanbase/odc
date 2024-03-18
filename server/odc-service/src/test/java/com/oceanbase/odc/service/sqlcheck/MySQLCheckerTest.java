@@ -1148,13 +1148,16 @@ public class MySQLCheckerTest {
         List<CheckViolation> actual = sqlChecker.check(toOffsetString(sqls), null);
 
         SqlCheckRuleType type = SqlCheckRuleType.OFFLINE_SCHEMA_CHANGE_EXISTS;
-        CheckViolation c1 = new CheckViolation(sqls[0], 1, 16, 16, 48, type, new Object[] {});
-        CheckViolation c2 = new CheckViolation(sqls[1], 1, 22, 22, 45, type, new Object[] {});
-        CheckViolation c3 = new CheckViolation(sqls[2], 1, 0, 0, 15, type, new Object[] {});
-        CheckViolation c4 = new CheckViolation(sqls[3], 1, 0, 0, 13, type, new Object[] {});
-        CheckViolation c5 = new CheckViolation(sqls[5], 1, 17, 17, 44, type, new Object[] {});
-        CheckViolation c6 = new CheckViolation(sqls[5], 1, 17, 17, 44, type, new Object[] {});
-        CheckViolation c7 = new CheckViolation(sqls[7], 1, 17, 17, 40, type, new Object[] {});
+        CheckViolation c1 =
+                new CheckViolation(sqls[0], 1, 16, 16, 48, type, new Object[] {"MODIFY COLUMN AS PRIMARY KEY"});
+        CheckViolation c2 = new CheckViolation(sqls[1], 1, 22, 22, 45, type, new Object[] {"TRUNCATE PARTITION"});
+        CheckViolation c3 = new CheckViolation(sqls[2], 1, 0, 0, 15, type, new Object[] {"TRUNCATE TABLE"});
+        CheckViolation c4 = new CheckViolation(sqls[3], 1, 0, 0, 13, type, new Object[] {"DROP TABLE"});
+        CheckViolation c5 =
+                new CheckViolation(sqls[5], 1, 17, 17, 44, type, new Object[] {"MODIFY TO AUTO-INCREMENT COLUMN"});
+        CheckViolation c6 = new CheckViolation(sqls[5], 1, 17, 17, 44, type, new Object[] {"MODIFY COLUMN DATA TYPE"});
+        CheckViolation c7 = new CheckViolation(sqls[7], 1, 17, 17, 40, type,
+                new Object[] {"ADD COLUMN IN THE MIDDLE (BEFORE/AFTER/FIRST)"});
 
         List<CheckViolation> expect = Arrays.asList(c1, c2, c3, c4, c5, c6, c7);
         Assert.assertEquals(expect, actual);

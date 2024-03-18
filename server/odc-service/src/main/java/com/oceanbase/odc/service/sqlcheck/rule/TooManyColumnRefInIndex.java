@@ -20,6 +20,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.apache.commons.collections4.CollectionUtils;
+
 import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.service.sqlcheck.SqlCheckContext;
 import com.oceanbase.odc.service.sqlcheck.SqlCheckRule;
@@ -59,6 +61,9 @@ public class TooManyColumnRefInIndex implements SqlCheckRule {
     public List<CheckViolation> check(@NonNull Statement statement, @NonNull SqlCheckContext context) {
         if (statement instanceof CreateTable) {
             CreateTable createTable = (CreateTable) statement;
+            if (CollectionUtils.isEmpty(createTable.getTableElements())) {
+                return Collections.emptyList();
+            }
             return createTable.getTableElements().stream().filter(e -> {
                 if (e instanceof OutOfLineConstraint) {
                     OutOfLineConstraint c = (OutOfLineConstraint) e;
