@@ -182,7 +182,7 @@ public class FlowTaskInstanceService {
 
     public String getLog(@NotNull Long flowInstanceId, OdcTaskLogLevel level) throws IOException {
         Optional<TaskEntity> taskEntityOptional = getLogDownloadableTaskEntity(flowInstanceId);
-        if (!taskEntityOptional.isPresent() || taskEntityOptional.get().getResultJson() == null) {
+        if (!taskEntityOptional.isPresent()) {
             return null;
         }
         TaskEntity taskEntity = taskEntityOptional.get();
