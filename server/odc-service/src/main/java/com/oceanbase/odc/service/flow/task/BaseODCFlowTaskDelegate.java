@@ -15,8 +15,12 @@
  */
 package com.oceanbase.odc.service.flow.task;
 
+import java.io.File;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ScheduledExecutorService;
@@ -30,9 +34,14 @@ import org.flowable.engine.delegate.DelegateExecution;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
+import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.core.flow.exception.BaseFlowException;
+import com.oceanbase.odc.core.flow.model.AbstractFlowTaskResult;
 import com.oceanbase.odc.core.shared.Verify;
+import com.oceanbase.odc.core.shared.constant.TaskType;
 import com.oceanbase.odc.metadb.flow.ServiceTaskInstanceRepository;
+import com.oceanbase.odc.metadb.task.TaskEntity;
+import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferTaskResult;
 import com.oceanbase.odc.service.common.model.HostProperties;
 import com.oceanbase.odc.service.connection.ConnectionService;
 import com.oceanbase.odc.service.flow.exception.ServiceTaskCancelledException;
@@ -41,17 +50,29 @@ import com.oceanbase.odc.service.flow.exception.ServiceTaskExpiredException;
 import com.oceanbase.odc.service.flow.model.ExecutionStrategyConfig;
 import com.oceanbase.odc.service.flow.model.FlowNodeStatus;
 import com.oceanbase.odc.service.flow.model.FlowTaskExecutionStrategy;
+import com.oceanbase.odc.service.flow.task.model.DBStructureComparisonTaskResult;
+import com.oceanbase.odc.service.flow.task.model.DatabaseChangeResult;
+import com.oceanbase.odc.service.flow.task.model.MockDataTaskResult;
+import com.oceanbase.odc.service.flow.task.model.OnlineSchemaChangeTaskResult;
+import com.oceanbase.odc.service.flow.task.model.PartitionPlanTaskResult;
+import com.oceanbase.odc.service.flow.task.model.ResultSetExportResult;
 import com.oceanbase.odc.service.flow.task.model.RuntimeTaskConstants;
+import com.oceanbase.odc.service.flow.task.model.ShadowTableSyncTaskResult;
 import com.oceanbase.odc.service.flow.util.FlowTaskUtil;
 import com.oceanbase.odc.service.iam.util.SecurityContextUtils;
 import com.oceanbase.odc.service.notification.Broker;
 import com.oceanbase.odc.service.notification.NotificationProperties;
 import com.oceanbase.odc.service.notification.helper.EventBuilder;
 import com.oceanbase.odc.service.notification.model.Event;
+import com.oceanbase.odc.service.objectstorage.cloud.CloudObjectStorageService;
+import com.oceanbase.odc.service.permission.database.model.ApplyDatabaseResult;
+import com.oceanbase.odc.service.permission.project.ApplyProjectResult;
 import com.oceanbase.odc.service.task.TaskService;
 import com.oceanbase.odc.service.task.model.ExecutorInfo;
+import com.oceanbase.odc.service.task.model.OdcTaskLogLevel;
 
 import lombok.Getter;
+import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -90,6 +111,24 @@ public abstract class BaseODCFlowTaskDelegate<T> extends BaseRuntimeFlowableDele
     private EventBuilder eventBuilder;
     @Autowired
     protected FlowTaskCallBackApprovalService flowTaskCallBackApprovalService;
+    @Autowired
+    protected CloudObjectStorageService cloudObjectStorageService;
+
+    private static final Set<TaskType> SUPPORT_DOWNLOAD_LOG_TASK_TYPES = new HashSet<TaskType>() {
+        {
+            add(TaskType.APPLY_DATABASE_PERMISSION);
+            add(TaskType.APPLY_PROJECT_PERMISSION);
+            add(TaskType.STRUCTURE_COMPARISON);
+            add(TaskType.IMPORT);
+            add(TaskType.EXPORT);
+            add(TaskType.ASYNC);
+            add(TaskType.MOCKDATA);
+            add(TaskType.ONLINE_SCHEMA_CHANGE);
+            add(TaskType.PARTITION_PLAN);
+            add(TaskType.EXPORT_RESULT_SET);
+            add(TaskType.SHADOWTABLE_SYNC);
+        }
+    };
 
     private void init(DelegateExecution execution) {
         this.taskId = FlowTaskUtil.getTaskId(execution);
@@ -245,6 +284,12 @@ public abstract class BaseODCFlowTaskDelegate<T> extends BaseRuntimeFlowableDele
     @Override
     public void callback(@NotNull long flowInstanceId, @NotNull long flowTaskInstanceId,
             @NotNull FlowNodeStatus flowNodeStatus, Map<String, Object> approvalVariables) {
+        try {
+            setDownloadLogUrl(flowInstanceId);
+        } catch (Exception e) {
+            log.warn("Failed to set download log URL, either because the log file does not exist "
+                    + "or the upload of the OSS failed.flowInstanceId={}", flowInstanceId, e);
+        }
         flowTaskCallBackApprovalService.approval(flowInstanceId, flowTaskInstanceId, flowNodeStatus, approvalVariables);
     }
 
@@ -309,5 +354,68 @@ public abstract class BaseODCFlowTaskDelegate<T> extends BaseRuntimeFlowableDele
     }
 
     protected abstract boolean cancel(boolean mayInterruptIfRunning, Long taskId, TaskService taskService);
+
+    private void setDownloadLogUrl(@NonNull Long flowInstanceId) {
+        TaskEntity taskEntity = taskService.detail(taskId);
+        TaskType taskType = taskEntity.getTaskType();
+        if (SUPPORT_DOWNLOAD_LOG_TASK_TYPES.contains(taskType)) {
+            String downloadUrl = String.format("/api/v2/flow/flowInstances/%s/tasks/log/download", flowInstanceId);
+            if (Objects.nonNull(cloudObjectStorageService) && cloudObjectStorageService.supported()) {
+                File logFile =
+                        taskService.getLogFile(taskEntity.getCreatorId(), taskId + "", taskType, OdcTaskLogLevel.ALL);
+                try {
+                    String objectName = cloudObjectStorageService.uploadTemp(logFile.getName(), logFile);
+                    downloadUrl = cloudObjectStorageService.getBucketName() + "/" + objectName;
+                    log.info("Upload task log file to OSS, taskId={}, logFileName={}", taskId, logFile.getName());
+                } catch (Exception e) {
+                    log.warn("Failed to upload task log file to OSS, taskId={}", taskId, e);
+                    throw new RuntimeException(
+                            String.format("Failed to upload task log file to OSS, file name: %s", logFile.getName()),
+                            e.getCause());
+                }
+            }
+            String resultJson = taskEntity.getResultJson();
+            AbstractFlowTaskResult result;
+            switch (taskType) {
+                case APPLY_DATABASE_PERMISSION:
+                    result = JsonUtils.fromJson(resultJson, ApplyDatabaseResult.class);
+                    break;
+                case APPLY_PROJECT_PERMISSION:
+                    result = JsonUtils.fromJson(resultJson, ApplyProjectResult.class);
+                    break;
+                case STRUCTURE_COMPARISON:
+                    result = JsonUtils.fromJson(resultJson, DBStructureComparisonTaskResult.class);
+                    break;
+                case IMPORT:
+                case EXPORT:
+                    result = JsonUtils.fromJson(resultJson, DataTransferTaskResult.class);
+                    break;
+                case ASYNC:
+                    result = JsonUtils.fromJson(resultJson, DatabaseChangeResult.class);
+                    break;
+                case MOCKDATA:
+                    result = JsonUtils.fromJson(resultJson, MockDataTaskResult.class);
+                    break;
+                case ONLINE_SCHEMA_CHANGE:
+                    result = JsonUtils.fromJson(resultJson, OnlineSchemaChangeTaskResult.class);
+                    break;
+                case PARTITION_PLAN:
+                    result = JsonUtils.fromJson(resultJson, PartitionPlanTaskResult.class);
+                    break;
+                case EXPORT_RESULT_SET:
+                    result = JsonUtils.fromJson(resultJson, ResultSetExportResult.class);
+                    break;
+                case SHADOWTABLE_SYNC:
+                    result = JsonUtils.fromJson(resultJson, ShadowTableSyncTaskResult.class);
+                    break;
+                default:
+                    throw new UnsupportedOperationException(
+                            "Unsupported task type for download log file, taskType=" + taskType);
+            }
+            result.setFullLogDownloadUrl(downloadUrl);
+            taskEntity.setResultJson(JsonUtils.toJson(result));
+            taskService.update(taskEntity);
+        }
+    }
 
 }

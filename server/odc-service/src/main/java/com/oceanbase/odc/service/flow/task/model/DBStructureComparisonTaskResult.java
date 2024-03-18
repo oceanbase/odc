@@ -17,13 +17,14 @@ package com.oceanbase.odc.service.flow.task.model;
 
 import java.util.List;
 
-import com.oceanbase.odc.core.flow.model.FlowTaskResult;
+import com.oceanbase.odc.core.flow.model.AbstractFlowTaskResult;
 import com.oceanbase.odc.core.shared.constant.TaskStatus;
 import com.oceanbase.odc.metadb.structurecompare.StructureComparisonTaskEntity;
 import com.oceanbase.tools.dbbrowser.model.DBObjectType;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 
 /**
@@ -31,9 +32,10 @@ import lombok.NoArgsConstructor;
  * @date 2024/1/3
  * @since ODC_release_4.2.4
  */
-@NoArgsConstructor
 @Data
-public class DBStructureComparisonTaskResult implements FlowTaskResult {
+@NoArgsConstructor
+@EqualsAndHashCode(callSuper = true)
+public class DBStructureComparisonTaskResult extends AbstractFlowTaskResult {
     /**
      * Refer to {@link StructureComparisonTaskEntity#getId()}
      */

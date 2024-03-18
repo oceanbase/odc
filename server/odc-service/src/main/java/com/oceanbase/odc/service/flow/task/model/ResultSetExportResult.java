@@ -15,12 +15,14 @@
  */
 package com.oceanbase.odc.service.flow.task.model;
 
-import com.oceanbase.odc.core.flow.model.FlowTaskResult;
+import com.oceanbase.odc.core.flow.model.AbstractFlowTaskResult;
 
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 @Data
-public class ResultSetExportResult implements FlowTaskResult {
+@EqualsAndHashCode(callSuper = true)
+public class ResultSetExportResult extends AbstractFlowTaskResult {
 
     private String fileName;
 
