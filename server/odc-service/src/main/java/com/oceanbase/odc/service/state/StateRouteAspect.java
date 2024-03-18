@@ -151,7 +151,7 @@ public class StateRouteAspect {
                 }
             }
         }
-        return stateManager.handleMultiResponse(allResponse, currentNode);
+        return stateManager.handleMultiResponse(allResponse, proceed);
     }
 
     private void logTrace(Method method, Object stateId, RouteInfo dispatchTo) {
