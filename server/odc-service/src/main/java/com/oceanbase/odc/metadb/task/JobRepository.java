@@ -44,12 +44,18 @@ public interface JobRepository extends JpaRepository<JobEntity, Long>,
 
     @Transactional
     @Query("update JobEntity set "
-            + " executorIdentifier=:#{#param.executorIdentifier},status=:#{#param.status},"
+            + " executorIdentifier=:#{#param.executorIdentifier}"
+            + " where id=:#{#param.id}")
+    @Modifying
+    int updateJobExecutorIdentifierById(@Param("param") JobEntity entity);
+    @Transactional
+    @Query("update JobEntity set "
+            + " status=:#{#param.status},"
             + " executionTimes=:#{#param.executionTimes},"
             + " startedTime=:#{#param.startedTime},"
             + " executorDestroyedTime=:#{#param.executorDestroyedTime}"
             + " where id=:#{#param.id}")
     @Modifying
-    int updateJobExecutorIdentifierAndStatusById(@Param("param") JobEntity entity);
+    int updateJobStatusAndExecutionTimesById(@Param("param") JobEntity entity);
 
 }
