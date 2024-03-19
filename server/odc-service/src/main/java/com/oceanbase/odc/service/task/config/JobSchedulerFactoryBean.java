@@ -20,6 +20,7 @@ import org.springframework.beans.factory.FactoryBean;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
 
+import com.oceanbase.odc.service.task.listener.DefaultJobProcessUpdateListener;
 import com.oceanbase.odc.service.task.listener.JobTerminateNotifyListener;
 import com.oceanbase.odc.service.task.schedule.JobScheduler;
 import com.oceanbase.odc.service.task.schedule.StdJobScheduler;
@@ -37,6 +38,8 @@ public class JobSchedulerFactoryBean implements FactoryBean<JobScheduler>, Initi
 
     @Autowired
     private JobTerminateNotifyListener jobTerminateNotifyListener;
+    @Autowired
+    private DefaultJobProcessUpdateListener defaultJobProcessUpdateListener;
 
     @Setter
     public JobConfiguration jobConfiguration;
@@ -55,5 +58,6 @@ public class JobSchedulerFactoryBean implements FactoryBean<JobScheduler>, Initi
     public void afterPropertiesSet() throws Exception {
         jobScheduler = new StdJobScheduler(jobConfiguration);
         jobScheduler.getEventPublisher().addEventListener(jobTerminateNotifyListener);
+        jobScheduler.getEventPublisher().addEventListener(defaultJobProcessUpdateListener);
     }
 }

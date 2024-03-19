@@ -86,16 +86,16 @@ public class CheckRunningJob implements Job {
             }
 
         } else {
-            log.info("No need to restart job {}, try to set status to CANCELED.", a.getId());
+            log.info("No need to restart job {}, try to set status to FAILED.", a.getId());
             TaskFrameworkProperties taskFrameworkProperties = getConfiguration().getTaskFrameworkProperties();
             int rows = getConfiguration().getTaskFrameworkService()
                     .updateStatusToCanceledWhenHeartTimeout(a.getId(),
                             taskFrameworkProperties.getJobHeartTimeoutSeconds(),
-                            "Heart timeout and set job to status CANCELED.");
+                            "Heart timeout and set job to status FAILED.");
             if (rows >= 0) {
                 getConfiguration().getEventPublisher().publishEvent(
-                        new JobTerminateEvent(JobIdentity.of(a.getId()), JobStatus.CANCELED));
-                log.info("Set job {} status to CANCELED accomplished.", a.getId());
+                        new JobTerminateEvent(JobIdentity.of(a.getId()), JobStatus.FAILED));
+                log.info("Set job {} status to FAILED accomplished.", a.getId());
             }
 
         }

@@ -44,7 +44,6 @@ import com.oceanbase.odc.service.task.exception.JobException;
 import com.oceanbase.odc.service.task.exception.TaskRuntimeException;
 import com.oceanbase.odc.service.task.listener.DefaultJobCallerListener;
 import com.oceanbase.odc.service.task.listener.DefaultJobTerminateListener;
-import com.oceanbase.odc.service.task.listener.DestroyExecutorListener;
 import com.oceanbase.odc.service.task.schedule.daemon.CheckRunningJob;
 import com.oceanbase.odc.service.task.schedule.daemon.DestroyExecutorJob;
 import com.oceanbase.odc.service.task.schedule.daemon.DoCancelingJob;
@@ -71,7 +70,6 @@ public class StdJobScheduler implements JobScheduler {
         validConfiguration(configuration);
         JobConfigurationHolder.setJobConfiguration(configuration);
 
-        getEventPublisher().addEventListener(new DestroyExecutorListener(configuration));
         getEventPublisher().addEventListener(new DefaultJobCallerListener(this));
         getEventPublisher().addEventListener(new DefaultJobTerminateListener());
         initDaemonJob();
