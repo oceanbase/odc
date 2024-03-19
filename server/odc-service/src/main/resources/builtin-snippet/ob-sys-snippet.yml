@@ -72,7 +72,7 @@
   type: DQL
   min_version: 4.0.0
   max_version: ~
-  description: 'Query OceanBase all tenants information'
+  description: 'Query all tenants information for OceanBase cluster'
   prefix: query_all_tenant_list
   body: |
     -- Query all tenants, 
@@ -98,7 +98,7 @@
   type: DQL
   min_version: 4.0.0
   max_version: ~
-  description: 'Query OceanBase all unit config'
+  description: 'Query all unit config for OceanBase cluster'
   prefix: query_all_unit_config_list
   body: |
     SELECT
@@ -120,7 +120,7 @@
   type: DQL
   min_version: 4.0.0
   max_version: ~
-  description: 'Query OceanBase all resource pool'
+  description: 'Query all resource pools for OceanBase cluster'
   prefix: query_all_resource_pool_list
   body: |
     SELECT
@@ -153,7 +153,7 @@
   type: DQL
   min_version: 4.0.0
   max_version: ~
-  description: 'Query OceanBase all unit'
+  description: 'Query all units for OceanBase cluster'
   prefix: query_all_unit_list
   body: |
     SELECT 
@@ -182,7 +182,7 @@
   type: DQL
   min_version: 4.0.0
   max_version: ~
-  description: 'Query OceanBase RS event history'
+  description: 'Query all RS event history for OceanBase cluster'
   prefix: query_all_rs_event_history
   body: |
     SELECT
@@ -212,7 +212,7 @@
   type: DQL
   min_version: 4.0.0
   max_version: ~
-  description: 'Query OceanBase arbitration service information'
+  description: 'Query arbitration service information for OceanBase cluster'
   prefix: query_all_arbitration_service_info
   body: |
     SELECT
@@ -228,7 +228,7 @@
   type: DQL
   min_version: 4.0.0
   max_version: ~
-  description: 'Query OceanBase RS task for tenant'
+  description: 'Query RS task for all tenants in OceanBase cluster'
   prefix: query_all_rs_task_for_tenants
   body: |
     SELECT
@@ -246,7 +246,7 @@
   type: DQL
   min_version: 4.0.0
   max_version: ~
-  description: 'Query OceanBase compaction status for all tenant'
+  description: 'Query compaction status for all tenant in OceanBase cluster'
   prefix: query_all_compaction_status
   body: |
     SELECT
@@ -328,7 +328,7 @@
   type: DCL
   min_version: 4.0.0
   max_version: ~
-  description: 'Query unused unit'
+  description: 'Query unused units'
   prefix: query_all_unused_unit
   body: |
     SELECT
@@ -357,7 +357,7 @@
   type: DQL
   min_version: ~
   max_version: ~
-  description: 'Query parameters for cluster'
+  description: 'Query CLUSTER scope parameters for OceanBase cluster'
   prefix: query_all_parameters_for_cluster
   body: |
     SELECT
@@ -376,7 +376,7 @@
   type: DQL
   min_version: ~
   max_version: ~
-  description: 'Query in-progress server jobs for cluster'
+  description: 'Query in-progress server jobs for OceanBase cluster'
   prefix: query_all_in_progress_server_jobs
   body: |
     SELECT
@@ -393,7 +393,7 @@
   type: DQL
   min_version: ~
   max_version: ~
-  description: 'Stat index error count for cluster'
+  description: 'Stat index error count for OceanBase cluster'
   prefix: stats_count_all_index_error
   body: |
     SELECT

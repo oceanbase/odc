@@ -1,11 +1,11 @@
-# built-in snippet for OceanBase Oracle compatible mode
+# built-in snippet for OceanBase Oracle mode
 - name: oceanbase Oracle query unit list
   dialect_type: OB_ORACLE
   tags: [ 'dba','oceanbase' ]
   type: DQL
   min_version: 4.0.0
   max_version: ~
-  description: 'Query unit list for OceanBase Oracle compatible mode'
+  description: 'Query unit list for OceanBase Oracle mode'
   prefix: query_unit_list
   body: |
     SELECT
@@ -68,7 +68,7 @@
   type: DQL
   min_version: 4.0.0
   max_version: ~
-  description: 'Query OceanBase cluster information'
+  description: 'Query major compaction information'
   prefix: query_major_compaction
   body: |
     SELECT
@@ -111,7 +111,7 @@
   type: DQL
   min_version: 4.0.0
   max_version: ~
-  description: Query module memory usage for OceanBase Oracle mode tenant
+  description: Query module memory usage for OceanBase Oracle mode
   prefix: query_module_memory_usage
   body: |
     SELECT
@@ -256,7 +256,7 @@
   type: DQL
   min_version: 4.0.0
   max_version: ~
-  description: Stats top size tables in database for OceanBase oracle mode
+  description: Stats top size tables in database for OceanBase Oracle mode
   prefix: stats_top_size_tables_in_database
   body: |
     SELECT
@@ -295,7 +295,7 @@
   type: DQL
   min_version: 4.0.0
   max_version: ~
-  description: stats partition size for table for OceanBase oracle mode
+  description: stats partition size for table for OceanBase Oracle mode
   prefix: stats_partition_size_for_table
   body: |
     SELECT
