@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.persistence.EntityManager;
 import javax.persistence.LockModeType;
@@ -246,8 +247,9 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
         Date currentDate = JobDateUtils.getCurrentDate();
         jobEntity.setStatus(JobStatus.RUNNING);
         jobEntity.setExecutorIdentifier(executorIdentifier);
+        Integer executionTimes = new AtomicInteger(jobEntity.getExecutionTimes()).incrementAndGet();
         // increment executionTimes
-        jobEntity.setExecutionTimes(jobEntity.getExecutionTimes() + 1);
+        jobEntity.setExecutionTimes(executionTimes);
         jobEntity.setStartedTime(currentDate);
         if (jobEntity.getExecutorDestroyedTime() != null) {
             jobEntity.setExecutorDestroyedTime(null);
