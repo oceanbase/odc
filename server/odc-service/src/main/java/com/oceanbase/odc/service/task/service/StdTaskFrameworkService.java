@@ -22,7 +22,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.persistence.EntityManager;
 import javax.persistence.LockModeType;
@@ -244,17 +243,22 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
     @Override
     public int startSuccess(Long id, String executorIdentifier) {
         JobEntity jobEntity = find(id);
+        jobEntity.setExecutorIdentifier(executorIdentifier);
+        return jobRepository.updateJobExecutorIdentifierById(jobEntity);
+    }
+
+    @Override
+    public int beforeStart(Long id) {
+        JobEntity jobEntity = find(id);
         Date currentDate = JobDateUtils.getCurrentDate();
         jobEntity.setStatus(JobStatus.RUNNING);
-        jobEntity.setExecutorIdentifier(executorIdentifier);
-        Integer executionTimes = new AtomicInteger(jobEntity.getExecutionTimes()).incrementAndGet();
         // increment executionTimes
-        jobEntity.setExecutionTimes(executionTimes);
+        jobEntity.setExecutionTimes(jobEntity.getExecutionTimes() + 1);
         jobEntity.setStartedTime(currentDate);
         if (jobEntity.getExecutorDestroyedTime() != null) {
             jobEntity.setExecutorDestroyedTime(null);
         }
-        return jobRepository.updateJobExecutorIdentifierAndStatusById(jobEntity);
+        return jobRepository.updateJobStatusAndExecutionTimesById(jobEntity);
     }
 
 

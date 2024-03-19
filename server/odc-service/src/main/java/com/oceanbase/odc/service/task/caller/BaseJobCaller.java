@@ -52,14 +52,18 @@ public abstract class BaseJobCaller implements JobCaller {
         TaskFrameworkService taskFrameworkService = jobConfiguration.getTaskFrameworkService();
         ExecutorIdentifier executorIdentifier = null;
         JobIdentity ji = context.getJobIdentity();
+        int rows = taskFrameworkService.beforeStart(ji.getId());
+        if (rows <= 0) {
+            throw new JobException("Start job failed, jobId={0}", ji.getId());
+        }
         try {
             executorIdentifier = doStart(context);
-            int rows = taskFrameworkService.startSuccess(ji.getId(), executorIdentifier.toString());
+            rows = taskFrameworkService.startSuccess(ji.getId(), executorIdentifier.toString());
             if (rows > 0) {
                 afterStartSucceed(executorIdentifier, ji);
             } else {
                 afterStartFailed(ji, jobConfiguration, executorIdentifier,
-                        new JobException("Update job status to RUNNING failed, jobId={0}.", ji.getId()));
+                    new JobException("Update job status to RUNNING failed, jobId={0}.", ji.getId()));
             }
 
         } catch (Exception ex) {
@@ -97,8 +101,8 @@ public abstract class BaseJobCaller implements JobCaller {
         // For transaction atomic, first update to CANCELED, then stop remote job in executor,
         // if stop remote failed, transaction will be rollback
         int rows = jobConfiguration.getTaskFrameworkService()
-            .updateStatusDescriptionByIdOldStatus(ji.getId(),
-                JobStatus.CANCELING, JobStatus.CANCELED, "stop job completed");
+                .updateStatusDescriptionByIdOldStatus(ji.getId(),
+                        JobStatus.CANCELING, JobStatus.CANCELED, "stop job completed");
         if (rows <= 0) {
             throw new JobException("Update job {0} status to CANCELED failed.", ji.getId());
         }
