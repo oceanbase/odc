@@ -135,17 +135,19 @@ public class DataArchiveTask extends BaseTask<Boolean> {
             log.info("Create target table begin, sql={}", createTableDDL);
             boolean result = connection.prepareStatement(createTableDDL).execute();
             log.info("Create target table finish, result={}", result);
+        } catch (Exception e) {
+            log.warn("Create target table failed.", e);
         }
     }
 
-    public String buildCreateTableDDL(String createSql, String targetTableName) {
+    public static String buildCreateTableDDL(String createSql, String targetTableName) {
         AbstractSyntaxTreeFactory factory = AbstractSyntaxTreeFactories.getAstFactory(DialectType.OB_MYSQL, 0);
         Create_table_stmtContext context = (Create_table_stmtContext) factory.buildAst(createSql).getRoot();
         RelationFactor factor = MySQLFromReferenceFactory.getRelationFactor(context.relation_factor());
         StringBuilder sb = new StringBuilder();
         sb.append(createSql, 0, factor.getStart());
         sb.append("`").append(targetTableName).append("`");
-        sb.append(createSql, factor.getStop() + 1, createSql.length() - 1);
+        sb.append(createSql, factor.getStop() + 1, createSql.length());
         return sb.toString();
     }
 

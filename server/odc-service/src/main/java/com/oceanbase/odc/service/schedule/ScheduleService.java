@@ -249,6 +249,7 @@ public class ScheduleService {
         if (taskEntity.getJobId() != null) {
             try {
                 jobScheduler.cancelJob(taskEntity.getJobId());
+                return ScheduleDetailResp.withId(scheduleId);
             } catch (JobException e) {
                 log.warn("Cancel job failed,jobId={}", taskEntity.getJobId(), e);
                 throw new UnexpectedException("Cancel job failed!", e);
