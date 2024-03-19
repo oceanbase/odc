@@ -4017,6 +4017,7 @@ unreserved_keyword_normal
     | JSON_VALUE
     | JSON_ARRAYAGG
     | JSON_OBJECTAGG
+    | JSON_TABLE
     | KEY_BLOCK_SIZE
     | KEY_VERSION
     | LAG
