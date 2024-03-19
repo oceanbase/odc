@@ -53,6 +53,7 @@ public interface JobRepository extends JpaRepository<JobEntity, Long>,
             + " status=:#{#param.status},"
             + " executionTimes=:#{#param.executionTimes},"
             + " startedTime=:#{#param.startedTime},"
+            + " lastHeartTime=:#{#param.lastHeartTime},"
             + " executorDestroyedTime=:#{#param.executorDestroyedTime}"
             + " where id=:#{#param.id}")
     @Modifying

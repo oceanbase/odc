@@ -255,6 +255,9 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
         // increment executionTimes
         jobEntity.setExecutionTimes(jobEntity.getExecutionTimes() + 1);
         jobEntity.setStartedTime(currentDate);
+        if(jobEntity.getLastHeartTime() != null) {
+            jobEntity.setLastHeartTime(null);
+        }
         if (jobEntity.getExecutorDestroyedTime() != null) {
             jobEntity.setExecutorDestroyedTime(null);
         }
