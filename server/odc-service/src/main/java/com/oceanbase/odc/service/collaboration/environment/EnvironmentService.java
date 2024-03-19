@@ -191,7 +191,8 @@ public class EnvironmentService {
     public Environment delete(@NotNull Long id) {
         Environment environment = innerDetail(id);
         for (Consumer<EnvironmentDeleteEvent> hook : preDeleteHooks) {
-            hook.accept(new EnvironmentDeleteEvent(id, environment.getName(), authenticationFacade.currentOrganizationId()));
+            hook.accept(new EnvironmentDeleteEvent(id, environment.getName(),
+                    authenticationFacade.currentOrganizationId()));
         }
         if (environment.getBuiltIn()) {
             throw new BadRequestException("Not allowed to delete builtin environments");
