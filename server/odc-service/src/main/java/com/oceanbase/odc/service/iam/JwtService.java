@@ -27,9 +27,10 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.integration.jdbc.lock.JdbcLockRegistry;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.JWTCreator;
@@ -43,16 +44,13 @@ import com.oceanbase.odc.service.config.model.Configuration;
 
 import lombok.extern.slf4j.Slf4j;
 
-@Component
+@Service
 @Slf4j
+@ConditionalOnProperty(value = {"odc.iam.auth.method"}, havingValue = "jwt")
 public class JwtService {
+    @Autowired
+    private JwtProperties jwtProperties;
 
-    @Value("${odc.iam.auth.jwt.expiration-seconds:15*60*1000}")
-    private long expireTime;
-    @Value("${odc.iam.auth.jwt.buffer-seconds:3*60*1000}")
-    private long bufferTime;
-    @Value("${odc.iam.auth.jwt.secret-key:#{null}}")
-    private String tokenSecret;
     private static final long TRY_LOCK_TIMEOUT_SECONDS = 5;
 
     private static final String LOCK_KEY = "ODC_JWT_SECRET_LOCK_KEY";
@@ -64,16 +62,16 @@ public class JwtService {
     /**
      * Ensure the consistency of automatically generated jwt key in distributed mode
      * 
-     * @param tokenSecret
+     * @param
      * @param systemConfigService
      * @param jdbcLockRegistry
      */
     public JwtService(
-            @Value("${odc.iam.auth.jwt.secret-key:#{null}}") String tokenSecret,
+            JwtProperties jwtProperties,
             SystemConfigService systemConfigService,
             JdbcLockRegistry jdbcLockRegistry) {
         try {
-            if (StringUtils.isNotBlank(tokenSecret)) {
+            if (StringUtils.isNotBlank(jwtProperties.getTokenSecret())) {
                 return;
             }
             log.info("Try to lock odc jwt secret...");
@@ -84,14 +82,13 @@ public class JwtService {
                     List<Configuration> list = systemConfigService.queryByKeyPrefix(
                             ENCRYPTION_JWT_KEY_SYSTEM_CONFIG_KEY);
                     if (verifySystemConfig(list)) {
-
-                        this.tokenSecret = list.get(0).getValue();
+                        this.jwtProperties.setTokenSecret(list.get(0).getValue());
                     } else {
-                        this.tokenSecret = UUID.randomUUID().toString();
+                        String tokenSecret = UUID.randomUUID().toString();
                         SystemConfigEntity jwtSecretKey =
                                 createSystemConfigEntity(ENCRYPTION_JWT_KEY_SYSTEM_CONFIG_KEY,
-                                        this.tokenSecret, "ODC jwt secret key");
-                        systemConfigService.insert(Arrays.asList(jwtSecretKey));
+                                        tokenSecret, "ODC jwt secret key");
+                        systemConfigService.saveConfig(Arrays.asList(jwtSecretKey));
                     }
 
                 } finally {
@@ -103,7 +100,7 @@ public class JwtService {
                 List<Configuration> list =
                         systemConfigService.queryByKeyPrefix(ENCRYPTION_JWT_KEY_SYSTEM_CONFIG_KEY);
                 if (verifySystemConfig(list)) {
-                    this.tokenSecret = list.get(0).getValue();
+                    jwtProperties.setTokenSecret(list.get(0).getValue());;
                 } else {
                     throw new RuntimeException("Failed to get jwt secret from system configuration");
                 }
@@ -117,7 +114,8 @@ public class JwtService {
 
 
     private boolean verifySystemConfig(List<Configuration> key) {
-        return key != null && !key.isEmpty() && Objects.nonNull(key.get(0)) && Objects.nonNull(key.get(0).getValue());
+        return key != null && !key.isEmpty() && Objects.nonNull(key.get(0))
+                && StringUtils.isNotBlank(key.get(0).getValue());
     }
 
     private SystemConfigEntity createSystemConfigEntity(String key, String value, String description) {
@@ -137,26 +135,20 @@ public class JwtService {
      */
     public String sign(Map<String, Object> map) {
         try {
-
-            Date date = new Date(System.currentTimeMillis() + expireTime);
-
-            Algorithm algorithm = Algorithm.HMAC256(tokenSecret);
-
+            Date date = new Date(System.currentTimeMillis() + jwtProperties.getExpireTime());
+            Algorithm algorithm = Algorithm.HMAC256(jwtProperties.getTokenSecret());
             Map<String, Object> header = new HashMap<>(2);
             header.put("typ", "jwt");
-
             JWTCreator.Builder builder = JWT.create()
                     .withHeader(header)
                     .withIssuedAt(new Date())
                     .withExpiresAt(date);
-
             map.entrySet().forEach(entry -> {
                 if (entry.getValue() instanceof Integer) {
                     builder.withClaim(entry.getKey(), (Integer) entry.getValue());
                 } else if (entry.getValue() instanceof Long) {
                     builder.withClaim(entry.getKey(), (Long) entry.getValue());
                 } else if (entry.getValue() instanceof Boolean) {
-
                     builder.withClaim(entry.getKey(), (Boolean) entry.getValue());
                 } else if (entry.getValue() instanceof String) {
                     builder.withClaim(entry.getKey(), String.valueOf(entry.getValue()));
@@ -168,7 +160,7 @@ public class JwtService {
             });
             return builder.sign(algorithm);
         } catch (Exception e) {
-            e.printStackTrace();
+            log.warn(e.getMessage());
             return null;
         }
     }
@@ -176,34 +168,32 @@ public class JwtService {
 
     public boolean verify(String token) {
         try {
-            Algorithm algorithm = Algorithm.HMAC256(tokenSecret);
+            Algorithm algorithm = Algorithm.HMAC256(jwtProperties.getTokenSecret());
             JWTVerifier verifier = JWT.require(algorithm).build();
             verifier.verify(token);
-
             return true;
         } catch (Exception e) {
-            e.printStackTrace();
+            log.warn(e.getMessage());
             return false;
         }
     }
 
 
     public Map<String, Claim> getClaims(String token) {
-        Algorithm algorithm = Algorithm.HMAC256(tokenSecret);
+        Algorithm algorithm = Algorithm.HMAC256(jwtProperties.getTokenSecret());
         JWTVerifier verifier = JWT.require(algorithm).build();
-        Map<String, Claim> jwt = verifier.verify(token).getClaims();
-        return jwt;
+        return verifier.verify(token).getClaims();
     }
 
 
     public Date getExpiresAt(String token) {
-        Algorithm algorithm = Algorithm.HMAC256(tokenSecret);
+        Algorithm algorithm = Algorithm.HMAC256(jwtProperties.getTokenSecret());
         return JWT.require(algorithm).build().verify(token).getExpiresAt();
     }
 
 
     public Date getIssuedAt(String token) {
-        Algorithm algorithm = Algorithm.HMAC256(tokenSecret);
+        Algorithm algorithm = Algorithm.HMAC256(jwtProperties.getTokenSecret());
         return JWT.require(algorithm).build().verify(token).getIssuedAt();
     }
 
@@ -212,7 +202,6 @@ public class JwtService {
         try {
             return expiration.before(new Date());
         } catch (TokenExpiredException e) {
-            // e.printStackTrace();
             return true;
         }
 
@@ -220,7 +209,7 @@ public class JwtService {
 
 
     public boolean isRenew(Date expiration) {
-        return (expiration.getTime() - new Date().getTime()) < bufferTime;
+        return (expiration.getTime() - new Date().getTime()) < jwtProperties.getBufferTime();
     }
 
 
@@ -229,8 +218,7 @@ public class JwtService {
             return null;
         } else {
             byte[] header_byte = Base64.getDecoder().decode(token.split("\\.")[0]);
-            String header = new String(header_byte);
-            return header;
+            return new String(header_byte);
         }
 
     }
@@ -242,8 +230,7 @@ public class JwtService {
             return null;
         } else {
             byte[] payload_byte = Base64.getDecoder().decode(token.split("\\.")[1]);
-            String payload = new String(payload_byte);
-            return payload;
+            return new String(payload_byte);
         }
 
     }

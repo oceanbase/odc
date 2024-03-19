@@ -28,4 +28,10 @@
         <include refid="table_name"></include>
         (`key`, `value`, `description`) VALUES(#{key}, #{value}, #{description}) ON DUPLICATE KEY UPDATE `id`=`id`
     </insert>
+
+    <insert id="saveConfig" parameterType="com.oceanbase.odc.metadb.config.SystemConfigEntity">
+        insert into
+        <include refid="table_name"></include>
+        (`key`, `value`, `description`) VALUES(#{key}, #{value}, #{description}) ON DUPLICATE KEY UPDATE `value`=#{value}
+    </insert>
 </mapper>
