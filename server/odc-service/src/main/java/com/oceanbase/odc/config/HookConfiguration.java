@@ -113,7 +113,7 @@ public class HookConfiguration {
 
         environmentService.addDeleteHook(event -> {
             checkDataSourceReference(event.getId(), event.getOrganizationId());
-            checkRiskLevelReference(event.getId(), event.getOrganizationId());
+            checkRiskLevelReference(event.getId(), event.getName(), event.getOrganizationId());
         });
         log.info("PreDeleteEnvironmentHooks added");
 
@@ -181,10 +181,10 @@ public class HookConfiguration {
 
     }
 
-    private void checkRiskLevelReference(Long id, Long organizationId) {
+    private void checkRiskLevelReference(Long id, String name, Long organizationId) {
         Set<RiskDetectRule> referencedRiskDetectRules =
                 riskDetectService.listAllByOrganizationId(organizationId)
-                        .stream().filter(rule -> rule.getRootNode().find(ConditionExpression.ENVIRONMENT_ID.name(), id))
+                        .stream().filter(rule -> rule.getRootNode().find(ConditionExpression.ENVIRONMENT_ID.name(), id) || rule.getRootNode().find(ConditionExpression.ENVIRONMENT_NAME.name(), name))
                         .collect(Collectors.toSet());
 
         if (!referencedRiskDetectRules.isEmpty()) {
