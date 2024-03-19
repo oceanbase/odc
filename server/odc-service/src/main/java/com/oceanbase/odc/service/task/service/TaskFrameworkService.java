@@ -65,6 +65,7 @@ public interface TaskFrameworkService {
     JobDefinition getJobDefinition(Long id);
 
     int startSuccess(Long id, String executorIdentifier);
+
     int beforeStart(Long id);
 
     void updateDescription(Long id, String description);

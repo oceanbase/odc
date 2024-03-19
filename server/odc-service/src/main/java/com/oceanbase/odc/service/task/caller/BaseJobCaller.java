@@ -63,7 +63,7 @@ public abstract class BaseJobCaller implements JobCaller {
                 afterStartSucceed(executorIdentifier, ji);
             } else {
                 afterStartFailed(ji, jobConfiguration, executorIdentifier,
-                    new JobException("Update job status to RUNNING failed, jobId={0}.", ji.getId()));
+                        new JobException("Update job status to RUNNING failed, jobId={0}.", ji.getId()));
             }
 
         } catch (Exception ex) {
