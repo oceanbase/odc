@@ -79,13 +79,15 @@ public class HttpUtil {
         if (Objects.nonNull(parameters)) {
             parameters.forEach(builder::addParameter);
         }
-        EntityBuilder eb = EntityBuilder.create()
-                .setContentType(ContentType.APPLICATION_JSON);
 
         if (jsonBody != null) {
+            // fix: java.lang.IllegalStateException: Content has not been provided
+            EntityBuilder eb = EntityBuilder.create()
+                    .setContentType(ContentType.APPLICATION_JSON);
             eb.setText(jsonBody);
+            builder.setEntity(eb.build());
         }
-        builder.setEntity(eb.build());
+
         String response = DEFAULT_HTTP_CLIENT.execute(builder.build(), new BasicResponseHandler());
         return JsonUtils.fromJson(response, responseTypeRef);
     }

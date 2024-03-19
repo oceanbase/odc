@@ -25,6 +25,7 @@ import com.oceanbase.odc.service.common.util.UrlUtils;
 import com.oceanbase.odc.service.task.constants.JobUrlConstants;
 import com.oceanbase.odc.service.task.executor.logger.LogBiz;
 import com.oceanbase.odc.service.task.executor.logger.LogBizImpl;
+import com.oceanbase.odc.service.task.executor.logger.LogUtils;
 import com.oceanbase.odc.service.task.executor.task.Task;
 import com.oceanbase.odc.service.task.schedule.JobIdentity;
 import com.oceanbase.odc.service.task.util.JobUtils;
@@ -50,7 +51,7 @@ public class RequestHandler {
         this.executorBiz = new LogBizImpl();
     }
 
-    public SuccessResponse<String> process(HttpMethod httpMethod, String uri, String requestData) {
+    public SuccessResponse<Object> process(HttpMethod httpMethod, String uri, String requestData) {
 
         if (uri == null || uri.trim().length() == 0) {
             return Responses.single("request error: uri is empty.");
@@ -66,13 +67,13 @@ public class RequestHandler {
 
                 return Responses.single(executorBiz.getLog(Long.parseLong(matcher.group(1)),
                         UrlUtils.getQueryParameterFirst(uri, "logType"),
-                        (maxLine == null ? null : Long.parseLong(maxLine)),
-                        (maxSize == null ? null : Long.parseLong(maxSize))));
+                        (maxLine == null ? LogUtils.MAX_LOG_LINE_COUNT : Long.parseLong(maxLine)),
+                        (maxSize == null ? LogUtils.MAX_LOG_BYTE_COUNT : Long.parseLong(maxSize))));
             }
             matcher = stopTaskPattern.matcher(path);
             if (matcher.find()) {
                 JobIdentity ji = JobIdentity.of(Long.parseLong(matcher.group(1)));
-                return Responses.single(String.valueOf(ThreadPoolTaskExecutor.getInstance().cancel(ji)));
+                return Responses.ok(ThreadPoolTaskExecutor.getInstance().cancel(ji));
             }
 
             matcher = modifyParametersPattern.matcher(path);

@@ -66,6 +66,8 @@ public interface TaskFrameworkService {
 
     int startSuccess(Long id, String executorIdentifier);
 
+    int beforeStart(Long id);
+
     void updateDescription(Long id, String description);
 
     int updateJobToCanceling(Long id, JobStatus oldStatus);
