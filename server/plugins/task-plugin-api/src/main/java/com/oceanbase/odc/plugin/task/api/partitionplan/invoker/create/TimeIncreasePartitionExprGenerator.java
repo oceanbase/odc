@@ -34,13 +34,15 @@ import lombok.NonNull;
  */
 public interface TimeIncreasePartitionExprGenerator extends PartitionExprGenerator {
 
+    String GENERATOR_NAME = "TIME_INCREASING_GENERATOR";
+
     List<String> generate(@NonNull Connection connection, @NonNull DBTable dbTable,
             @NonNull String partitionKey, @NonNull Integer generateCount,
             @NonNull TimeIncreaseGeneratorConfig config) throws Exception;
 
     @Override
     default String getName() {
-        return "TIME_INCREASING_GENERATOR";
+        return GENERATOR_NAME;
     }
 
     @Override

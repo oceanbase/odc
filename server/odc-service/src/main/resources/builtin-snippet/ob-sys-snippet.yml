@@ -6,7 +6,7 @@
   min_version: 4.0.0
   max_version: ~
   description: 'Query all zones for OceanBase cluster'
-  prefix: query_zone_list
+  prefix: query_all_zone_list
   body: |
     SELECT
       ZONE, CREATE_TIME, MODIFY_TIME, STATUS, IDC, REGION, TYPE
@@ -19,7 +19,7 @@
   min_version: 4.0.0
   max_version: ~
   description: 'Query all servers for OceanBase cluster'
-  prefix: query_server_list
+  prefix: query_all_server_list
   body: |
     SELECT
       ZONE,
@@ -41,7 +41,7 @@
   min_version: 4.0.0
   max_version: ~
   description: 'Query all servers resource stats for OceanBase cluster'
-  prefix: query_server_resource_stats
+  prefix: query_all_server_resource_stats
   body: |
     SELECT
       SVR_IP,
@@ -72,8 +72,8 @@
   type: DQL
   min_version: 4.0.0
   max_version: ~
-  description: 'Query OceanBase all tenants information'
-  prefix: query_tenant_list
+  description: 'Query all tenants information for OceanBase cluster'
+  prefix: query_all_tenant_list
   body: |
     -- Query all tenants, 
     -- including system tenants and user tenants, excluding META tenants 
@@ -98,8 +98,8 @@
   type: DQL
   min_version: 4.0.0
   max_version: ~
-  description: 'Query OceanBase all unit config'
-  prefix: query_unit_config_list
+  description: 'Query all unit config for OceanBase cluster'
+  prefix: query_all_unit_config_list
   body: |
     SELECT
       UNIT_CONFIG_ID,
@@ -120,8 +120,8 @@
   type: DQL
   min_version: 4.0.0
   max_version: ~
-  description: 'Query OceanBase all resource pool'
-  prefix: query_resource_pool_list
+  description: 'Query all resource pools for OceanBase cluster'
+  prefix: query_all_resource_pool_list
   body: |
     SELECT
       p.RESOURCE_POOL_ID,
@@ -153,8 +153,8 @@
   type: DQL
   min_version: 4.0.0
   max_version: ~
-  description: 'Query OceanBase all unit'
-  prefix: query_unit_list
+  description: 'Query all units for OceanBase cluster'
+  prefix: query_all_unit_list
   body: |
     SELECT 
       u.UNIT_ID,
@@ -182,8 +182,8 @@
   type: DQL
   min_version: 4.0.0
   max_version: ~
-  description: 'Query OceanBase RS event history'
-  prefix: query_rs_event_history
+  description: 'Query all RS event history for OceanBase cluster'
+  prefix: query_all_rs_event_history
   body: |
     SELECT
       TIMESTAMP AS GMT_CREATE,
@@ -212,8 +212,8 @@
   type: DQL
   min_version: 4.0.0
   max_version: ~
-  description: 'Query OceanBase arbitration service information'
-  prefix: query_arbitration_service_info
+  description: 'Query arbitration service information for OceanBase cluster'
+  prefix: query_all_arbitration_service_info
   body: |
     SELECT
       ARBITRATION_SERVICE_KEY,
@@ -228,8 +228,8 @@
   type: DQL
   min_version: 4.0.0
   max_version: ~
-  description: 'Query OceanBase RS task for tenant'
-  prefix: query_rs_task_for_all_tenants
+  description: 'Query RS task for all tenants in OceanBase cluster'
+  prefix: query_all_rs_task_for_tenants
   body: |
     SELECT
       TENANT_ID,
@@ -246,8 +246,8 @@
   type: DQL
   min_version: 4.0.0
   max_version: ~
-  description: 'Query OceanBase compaction status for all tenant'
-  prefix: query_compaction_status_for_all_tenants
+  description: 'Query compaction status for all tenant in OceanBase cluster'
+  prefix: query_all_compaction_status
   body: |
     SELECT
       TENANT_ID,
@@ -328,8 +328,8 @@
   type: DCL
   min_version: 4.0.0
   max_version: ~
-  description: 'Query unused unit'
-  prefix: query_unused_unit
+  description: 'Query unused units'
+  prefix: query_all_unused_unit
   body: |
     SELECT
       t1.UNIT_ID,
@@ -357,8 +357,8 @@
   type: DQL
   min_version: ~
   max_version: ~
-  description: 'Query parameters for cluster'
-  prefix: query_parameters_for_cluster
+  description: 'Query CLUSTER scope parameters for OceanBase cluster'
+  prefix: query_all_parameters_for_cluster
   body: |
     SELECT
       ZONE,
@@ -376,8 +376,8 @@
   type: DQL
   min_version: ~
   max_version: ~
-  description: 'Query in-progress server jobs for cluster'
-  prefix: query_in_progress_server_jobs
+  description: 'Query in-progress server jobs for OceanBase cluster'
+  prefix: query_all_in_progress_server_jobs
   body: |
     SELECT
       JOB_TYPE AS TASK_TYPE,
@@ -393,8 +393,8 @@
   type: DQL
   min_version: ~
   max_version: ~
-  description: 'Stat index error count for cluster'
-  prefix: stats_index_error_count
+  description: 'Stat index error count for OceanBase cluster'
+  prefix: stats_count_all_index_error
   body: |
     SELECT
       COUNT(*) AS CNT
