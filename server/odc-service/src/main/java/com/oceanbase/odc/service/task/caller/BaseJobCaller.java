@@ -96,7 +96,8 @@ public abstract class BaseJobCaller implements JobCaller {
         String executorEndpoint = jobEntity.getExecutorEndpoint();
 
         try {
-            if (executorEndpoint != null) {
+            if (executorEndpoint != null
+                    && isExecutorExist(ExecutorIdentifierParser.parser(jobEntity.getExecutorIdentifier()))) {
                 tryStop(jobConfiguration, ji, executorEndpoint);
             } else {
                 afterStopSucceed(jobConfiguration, ji);
@@ -106,6 +107,7 @@ public abstract class BaseJobCaller implements JobCaller {
             afterStopFailed(ji, e);
         }
     }
+
 
     private void tryStop(JobConfiguration jobConfiguration, JobIdentity ji, String executorEndpoint)
             throws IOException, JobException {
@@ -220,5 +222,7 @@ public abstract class BaseJobCaller implements JobCaller {
     protected abstract void doStop(JobIdentity ji) throws JobException;
 
     protected abstract void doDestroy(ExecutorIdentifier identifier) throws JobException;
+
+    protected abstract boolean isExecutorExist(ExecutorIdentifier identifier) throws JobException;
 
 }
