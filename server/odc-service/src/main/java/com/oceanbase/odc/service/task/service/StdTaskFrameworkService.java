@@ -424,14 +424,13 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
         CriteriaUpdate<JobEntity> update = cb.createCriteriaUpdate(JobEntity.class);
         Root<JobEntity> e = update.from(JobEntity.class);
         update.set(JobEntityColumn.STATUS, newStatus);
-        if (newStatus.isTerminated()) {
-            update.set(JobEntityColumn.FINISHED_TIME, JobDateUtils.getCurrentDate());
-        }
         update.set(JobEntityColumn.DESCRIPTION, description);
+        update.set(JobEntityColumn.EXECUTOR_DESTROYED_TIME, null);
+        update.set(JobEntityColumn.LAST_HEART_TIME, null);
 
         update.where(cb.equal(e.get(JobEntityColumn.ID), id),
                 cb.equal(e.get(JobEntityColumn.STATUS), oldStatus),
-                cb.isNull(e.get(JobEntityColumn.EXECUTOR_DESTROYED_TIME)));
+                cb.isNotNull(e.get(JobEntityColumn.EXECUTOR_DESTROYED_TIME)));
 
         return entityManager.createQuery(update).executeUpdate();
     }

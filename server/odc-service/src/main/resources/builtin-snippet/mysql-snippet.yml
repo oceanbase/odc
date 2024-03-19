@@ -6,6 +6,7 @@
   description: 'Create a new table for MySQL'
   prefix: create_table
   body: |
+    -- please modify column_name and data_type
     CREATE TABLE IF NOT EXISTS ${1:table_name} (
       id BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT 'auto increment id',
       create_time DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL COMMENT 'record create time',
@@ -30,7 +31,7 @@
   dialect_type: MYSQL
   tags: [ 'developer','mysql', 'table', 'doc' ]
   type: DDL
-  description: 'Generate doc all tables for current schema in MySQL'
+  description: 'Generate doc for all tables in current schema'
   prefix: doc_all_tables_for_current_schema
   body: |
     SELECT 
