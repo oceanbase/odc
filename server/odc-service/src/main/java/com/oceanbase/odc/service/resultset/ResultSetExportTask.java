@@ -281,7 +281,7 @@ public class ResultSetExportTask implements Callable<ResultSetExportResult> {
             case OB_MYSQL:
             case OB_ORACLE:
             case ODP_SHARDING_OB_MYSQL:
-                return "set ob_query_timeout = " + DEFAULT_TIMEOUT_SECONDS * 1000;
+                return "set ob_query_timeout = " + DEFAULT_TIMEOUT_SECONDS * 1000000L;
             case DORIS:
             case MYSQL:
                 return "set statement max_execution_time = " + DEFAULT_TIMEOUT_SECONDS;
