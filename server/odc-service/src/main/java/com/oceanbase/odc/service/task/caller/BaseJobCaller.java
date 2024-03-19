@@ -52,9 +52,13 @@ public abstract class BaseJobCaller implements JobCaller {
         TaskFrameworkService taskFrameworkService = jobConfiguration.getTaskFrameworkService();
         ExecutorIdentifier executorIdentifier = null;
         JobIdentity ji = context.getJobIdentity();
+        int rows = taskFrameworkService.beforeStart(ji.getId());
+        if (rows <= 0) {
+            throw new JobException("Start job failed, jobId={0}", ji.getId());
+        }
         try {
             executorIdentifier = doStart(context);
-            int rows = taskFrameworkService.startSuccess(ji.getId(), executorIdentifier.toString());
+            rows = taskFrameworkService.startSuccess(ji.getId(), executorIdentifier.toString());
             if (rows > 0) {
                 afterStartSucceed(executorIdentifier, ji);
             } else {
@@ -94,9 +98,17 @@ public abstract class BaseJobCaller implements JobCaller {
         TaskFrameworkService taskFrameworkService = jobConfiguration.getTaskFrameworkService();
         JobEntity jobEntity = taskFrameworkService.find(ji.getId());
         String executorEndpoint = jobEntity.getExecutorEndpoint();
-
+        // For transaction atomic, first update to CANCELED, then stop remote job in executor,
+        // if stop remote failed, transaction will be rollback
+        int rows = jobConfiguration.getTaskFrameworkService()
+                .updateStatusDescriptionByIdOldStatus(ji.getId(),
+                        JobStatus.CANCELING, JobStatus.CANCELED, "stop job completed");
+        if (rows <= 0) {
+            throw new JobException("Update job {0} status to CANCELED failed.", ji.getId());
+        }
         try {
-            if (executorEndpoint != null) {
+            if (executorEndpoint != null
+                    && isExecutorExist(ExecutorIdentifierParser.parser(jobEntity.getExecutorIdentifier()))) {
                 tryStop(jobConfiguration, ji, executorEndpoint);
             } else {
                 afterStopSucceed(jobConfiguration, ji);
@@ -107,16 +119,10 @@ public abstract class BaseJobCaller implements JobCaller {
         }
     }
 
+
     private void tryStop(JobConfiguration jobConfiguration, JobIdentity ji, String executorEndpoint)
             throws IOException, JobException {
-        // For transaction atomic, first update to CANCELED, then stop remote job in executor,
-        // if stop remote failed, transaction will be rollback
-        int rows = jobConfiguration.getTaskFrameworkService()
-                .updateStatusDescriptionByIdOldStatus(ji.getId(),
-                        JobStatus.CANCELING, JobStatus.CANCELED, "stop job completed");
-        if (rows <= 0) {
-            log.info("Update job {} status to CANCELED failed ", ji.getId());
-        }
+
         String url = executorEndpoint + String.format(JobUrlConstants.STOP_TASK, ji.getId());
         log.info("Try stop job {} in executor {}.", ji.getId(), url);
         SuccessResponse<Boolean> response =
@@ -220,5 +226,7 @@ public abstract class BaseJobCaller implements JobCaller {
     protected abstract void doStop(JobIdentity ji) throws JobException;
 
     protected abstract void doDestroy(ExecutorIdentifier identifier) throws JobException;
+
+    protected abstract boolean isExecutorExist(ExecutorIdentifier identifier) throws JobException;
 
 }
