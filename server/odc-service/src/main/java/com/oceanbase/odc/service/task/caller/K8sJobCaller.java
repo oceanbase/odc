@@ -59,10 +59,15 @@ public class K8sJobCaller extends BaseJobCaller {
 
     @Override
     protected void doDestroy(ExecutorIdentifier identifier) throws JobException {
-        Optional<String> executorOptional = client.get(identifier.getNamespace(), identifier.getExecutorName());
-        if (executorOptional.isPresent()) {
+        if (isExecutorExist(identifier)) {
             log.info("Found pod {}, delete it.", identifier.getExecutorName());
             client.delete(podConfig.getNamespace(), identifier.getExecutorName());
         }
+    }
+
+    @Override
+    protected boolean isExecutorExist(ExecutorIdentifier identifier) throws JobException {
+        Optional<String> executorOptional = client.get(identifier.getNamespace(), identifier.getExecutorName());
+        return executorOptional.isPresent();
     }
 }
