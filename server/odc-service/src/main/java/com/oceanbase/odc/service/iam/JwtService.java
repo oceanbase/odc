@@ -15,8 +15,8 @@
  */
 package com.oceanbase.odc.service.iam;
 
-import java.util.Arrays;
 import java.util.Base64;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -48,16 +48,12 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @ConditionalOnProperty(value = {"odc.iam.auth.method"}, havingValue = "jwt")
 public class JwtService {
-    @Autowired
-    private JwtProperties jwtProperties;
 
     private static final long TRY_LOCK_TIMEOUT_SECONDS = 5;
-
     private static final String LOCK_KEY = "ODC_JWT_SECRET_LOCK_KEY";
-
     private static final String ENCRYPTION_JWT_KEY_SYSTEM_CONFIG_KEY = "odc.iam.auth.jwt.secret-key";
-
-    private static final int ENCRYPTION_KEY_SIZE = 64;
+    @Autowired
+    private JwtProperties jwtProperties;
 
     /**
      * Ensure the consistency of automatically generated jwt key in distributed mode
@@ -66,10 +62,8 @@ public class JwtService {
      * @param systemConfigService
      * @param jdbcLockRegistry
      */
-    public JwtService(
-            JwtProperties jwtProperties,
-            SystemConfigService systemConfigService,
-            JdbcLockRegistry jdbcLockRegistry) {
+    public JwtService(JwtProperties jwtProperties,
+            SystemConfigService systemConfigService, JdbcLockRegistry jdbcLockRegistry) {
         try {
             if (StringUtils.isNotBlank(jwtProperties.getTokenSecret())) {
                 return;
@@ -88,7 +82,7 @@ public class JwtService {
                         SystemConfigEntity jwtSecretKey =
                                 createSystemConfigEntity(ENCRYPTION_JWT_KEY_SYSTEM_CONFIG_KEY,
                                         tokenSecret, "ODC jwt secret key");
-                        systemConfigService.saveConfig(Arrays.asList(jwtSecretKey));
+                        systemConfigService.saveConfig(Collections.singletonList(jwtSecretKey));
                     }
 
                 } finally {
@@ -109,9 +103,7 @@ public class JwtService {
             log.warn("Failed to init jwt secret, message={}", e.getMessage());
             throw new RuntimeException(e);
         }
-
     }
-
 
     private boolean verifySystemConfig(List<Configuration> key) {
         return key != null && !key.isEmpty() && Objects.nonNull(key.get(0))
@@ -125,7 +117,6 @@ public class JwtService {
         entity.setDescription(description);
         return entity;
     }
-
 
     /**
      * Generate the jwtToken
@@ -165,7 +156,6 @@ public class JwtService {
         }
     }
 
-
     public boolean verify(String token) {
         try {
             Algorithm algorithm = Algorithm.HMAC256(jwtProperties.getTokenSecret());
@@ -178,25 +168,21 @@ public class JwtService {
         }
     }
 
-
     public Map<String, Claim> getClaims(String token) {
         Algorithm algorithm = Algorithm.HMAC256(jwtProperties.getTokenSecret());
         JWTVerifier verifier = JWT.require(algorithm).build();
         return verifier.verify(token).getClaims();
     }
 
-
     public Date getExpiresAt(String token) {
         Algorithm algorithm = Algorithm.HMAC256(jwtProperties.getTokenSecret());
         return JWT.require(algorithm).build().verify(token).getExpiresAt();
     }
 
-
     public Date getIssuedAt(String token) {
         Algorithm algorithm = Algorithm.HMAC256(jwtProperties.getTokenSecret());
         return JWT.require(algorithm).build().verify(token).getIssuedAt();
     }
-
 
     public boolean isExpired(Date expiration) {
         try {
@@ -204,35 +190,26 @@ public class JwtService {
         } catch (TokenExpiredException e) {
             return true;
         }
-
     }
-
 
     public boolean isRenew(Date expiration) {
-        return (expiration.getTime() - new Date().getTime()) < jwtProperties.getBufferTime();
+        return (expiration.getTime() - System.currentTimeMillis()) < jwtProperties.getBufferTime();
     }
-
 
     public String getHeaderByBase64(String token) {
         if (StringUtils.isEmpty(token)) {
             return null;
         } else {
-            byte[] header_byte = Base64.getDecoder().decode(token.split("\\.")[0]);
-            return new String(header_byte);
+            return new String(Base64.getDecoder().decode(token.split("\\.")[0]));
         }
-
     }
 
-
     public String getPayloadByBase64(String token) {
-
         if (StringUtils.isEmpty(token)) {
             return null;
         } else {
-            byte[] payload_byte = Base64.getDecoder().decode(token.split("\\.")[1]);
-            return new String(payload_byte);
+            return new String(Base64.getDecoder().decode(token.split("\\.")[1]));
         }
-
     }
 
 }

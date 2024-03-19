@@ -16,14 +16,12 @@
 package com.oceanbase.odc.service.iam;
 
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.cloud.context.config.annotation.RefreshScope;
 import org.springframework.context.annotation.Configuration;
 
 import lombok.Data;
 
 @Configuration
-@ConditionalOnProperty(value = {"odc.iam.auth.method"}, havingValue = "jwt")
 @Data
 @RefreshScope
 public class JwtProperties {

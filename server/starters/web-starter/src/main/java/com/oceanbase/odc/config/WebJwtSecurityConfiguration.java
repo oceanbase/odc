@@ -16,201 +16,56 @@
 package com.oceanbase.odc.config;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.config.annotation.web.builders.WebSecurity;
-import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.authentication.logout.LogoutSuccessHandler;
 import org.springframework.security.web.context.SecurityContextPersistenceFilter;
 import org.springframework.security.web.context.SecurityContextRepository;
-import org.springframework.web.servlet.LocaleResolver;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.github.benmanes.caffeine.cache.LoadingCache;
-import com.oceanbase.odc.service.bastion.model.BastionProperties;
-import com.oceanbase.odc.service.captcha.CaptchaAuthenticationProcessingFilter;
-import com.oceanbase.odc.service.iam.auth.CustomAuthenticationEntryPoint;
-import com.oceanbase.odc.service.iam.auth.CustomAuthenticationFailureHandler;
-import com.oceanbase.odc.service.iam.auth.CustomAuthenticationSuccessHandler;
 import com.oceanbase.odc.service.iam.auth.CustomJwtLogoutSuccessHandler;
 import com.oceanbase.odc.service.iam.auth.CustomPostRequestSessionInvalidationFilter;
 import com.oceanbase.odc.service.iam.auth.JwtSecurityContextRepository;
-import com.oceanbase.odc.service.iam.auth.UsernamePasswordConfigureHelper;
-import com.oceanbase.odc.service.iam.auth.bastion.BastionAuthenticationProcessingFilter;
-import com.oceanbase.odc.service.iam.auth.bastion.BastionAuthenticationProvider;
-import com.oceanbase.odc.service.iam.auth.bastion.BastionUserDetailService;
-import com.oceanbase.odc.service.iam.auth.ldap.LdapSecurityConfigureHelper;
-import com.oceanbase.odc.service.iam.auth.ldap.LdapUserDetailsContextMapper;
-import com.oceanbase.odc.service.iam.auth.ldap.ODCLdapAuthenticationProvider;
-import com.oceanbase.odc.service.iam.auth.ldap.ODCLdapAuthenticator;
-import com.oceanbase.odc.service.iam.auth.local.LocalDaoAuthenticationProvider;
-import com.oceanbase.odc.service.iam.auth.oauth2.OAuth2SecurityConfigureHelper;
-import com.oceanbase.odc.service.iam.util.FailedLoginAttemptLimiter;
-import com.oceanbase.odc.service.integration.ldap.LdapConfigRegistrationManager;
 
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * @author wenniu.ly
- * @date 2021/7/30
+ * @author zj.cj
+ * @date 2024-03-19 21:58
+ * @since ODC_release_4.2.4
  */
-
 @Slf4j
 @Profile("alipay")
 @Configuration
 @ConditionalOnExpression("#{@environment.getProperty('odc.iam.auth.type') == 'local' && @environment.getProperty('odc.iam.auth.method') == 'jwt'}")
-public class WebJwtSecurityConfiguration extends WebSecurityConfigurerAdapter {
-
-    @Autowired
-    private CustomJwtLogoutSuccessHandler customJwtLogoutSuccessHandler;
-
-    @Value("${odc.iam.authentication.captcha.enabled:false}")
-    private boolean captchaEnabled;
-
-    @Autowired
-    private LoadingCache<String, FailedLoginAttemptLimiter> clientAddressLoginAttemptCache;
-
-    @Autowired
-    private BastionUserDetailService bastionUserDetailService;
-
-    @Autowired
-    private CommonSecurityProperties commonSecurityProperties;
-
-    @Autowired
-    private CsrfConfigureHelper csrfConfigureHelper;
-
-    @Autowired
-    private CorsConfigureHelper corsConfigureHelper;
-
-    @Autowired
-    private CustomAuthenticationSuccessHandler customAuthenticationSuccessHandler;
-
-    @Autowired
-    private CustomAuthenticationFailureHandler customAuthenticationFailureHandler;
-
-    @Autowired
-    private ObjectMapper objectMapper;
-
-    @Autowired
-    private LocaleResolver localeResolver;
-
-    @Autowired
-    private BastionProperties bastionProperties;
-
-    @Autowired
-    private UsernamePasswordConfigureHelper usernamePasswordConfigureHelper;
-
-    @Autowired
-    private LocalDaoAuthenticationProvider localDaoAuthenticationProvider;
-
-    @Autowired
-    private OAuth2SecurityConfigureHelper oauth2SecurityConfigureHelper;
-
-
-    @Autowired
-    private LdapSecurityConfigureHelper ldapSecurityConfigureHelper;
-
-    @Autowired
-    private LdapUserDetailsContextMapper ldapUserDetailsContextMapper;
-
-    @Autowired
-    private LdapConfigRegistrationManager ldapConfigRegistrationManager;
+public class WebJwtSecurityConfiguration extends WebJSessionSecurityConfiguration {
 
     @Autowired
     private JwtSecurityContextRepository jwtSecurityContextRepository;
-
-    private BastionAuthenticationProvider bastionAuthenticationProvider() {
-        return new BastionAuthenticationProvider(bastionUserDetailService);
-    }
-
-    @Override
-    public void configure(AuthenticationManagerBuilder auth) {
-        auth.authenticationProvider(localDaoAuthenticationProvider)
-                .authenticationProvider(bastionAuthenticationProvider())
-                .authenticationProvider(
-                        new ODCLdapAuthenticationProvider(new ODCLdapAuthenticator(ldapConfigRegistrationManager),
-                                ldapUserDetailsContextMapper));
-    }
-
-    @Override
-    public void configure(WebSecurity web) {
-        // 允许访问静态资源
-        web.ignoring().antMatchers(commonSecurityProperties.getStaticResources())
-                .and().ignoring().antMatchers(commonSecurityProperties.getAuthWhitelist());
-    }
+    @Autowired
+    private CustomJwtLogoutSuccessHandler customJwtLogoutSuccessHandler;
 
     @Override
     protected void configure(HttpSecurity http) throws Exception {
-        corsConfigureHelper.configure(http);
-
-        usernamePasswordConfigureHelper.configure(http, authenticationManager());
-        oauth2SecurityConfigureHelper.configure(http);
-        ldapSecurityConfigureHelper.configure(http, authenticationManager());
-
-        http.setSharedObject(SecurityContextRepository.class, jwtSecurityContextRepository);
+        super.configure(http);
         http.addFilterBefore(new CustomPostRequestSessionInvalidationFilter(), SecurityContextPersistenceFilter.class);
-
-        /**
-         * Do not allow SpringSecurity to use session
-         */
-        http.sessionManagement()
-                .sessionCreationPolicy(SessionCreationPolicy.STATELESS);
-
-        // @formatter:off
-        http.exceptionHandling()
-            .authenticationEntryPoint(new CustomAuthenticationEntryPoint(commonSecurityProperties.getLoginPage(),localeResolver))
-            .and()
-            .authorizeRequests()
-            .anyRequest().authenticated()
-            .and()
-            .logout()
-            .logoutUrl(commonSecurityProperties.getLogoutUri())
-            .logoutSuccessHandler(customJwtLogoutSuccessHandler)
-            .deleteCookies(commonSecurityProperties.getSessionCookieKey())
-            .invalidateHttpSession(true).permitAll()
-/*            .and()
-                .sessionManagement()
-                // SessionCreationPolicy.ALWAYS --> SessionCreationPolicy.IF_REQUIRED，防止登出后再次访问页面生成session造成无法跳转至登录页
-                .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
-                .sessionFixation()
-                .migrateSession()
-                .invalidSessionStrategy(new CustomInvalidSessionStrategy(commonSecurityProperties.getLoginPage(), localeResolver))*/;
-        // @formatter:on
-        csrfConfigureHelper.configure(http);
-
-        if (bastionProperties.getAccount().isAutoLoginEnabled()) {
-            http.addFilterBefore(bastionAuthenticationProcessingFilter(authenticationManager()),
-                    UsernamePasswordAuthenticationFilter.class);
-        }
-
-        if (captchaEnabled) {
-            http.addFilterBefore(getCaptchaAuthenticationProcessingFilter(),
-                    UsernamePasswordAuthenticationFilter.class);
-        }
     }
 
-    private CaptchaAuthenticationProcessingFilter getCaptchaAuthenticationProcessingFilter() {
-        CaptchaAuthenticationProcessingFilter captchaAuthenticationProcessingFilter =
-                new CaptchaAuthenticationProcessingFilter(customAuthenticationFailureHandler,
-                        clientAddressLoginAttemptCache);
-        captchaAuthenticationProcessingFilter.setFilterProcessesUrl(commonSecurityProperties.getLoginUri());
-        return captchaAuthenticationProcessingFilter;
+    @Override
+    protected SecurityContextRepository securityContextRepository() {
+        return this.jwtSecurityContextRepository;
     }
 
-
-    private BastionAuthenticationProcessingFilter bastionAuthenticationProcessingFilter(
-            AuthenticationManager authenticationManager) {
-        BastionAuthenticationProcessingFilter filter =
-                new BastionAuthenticationProcessingFilter(objectMapper);
-        filter.setAuthenticationManager(authenticationManager);
-        filter.setAuthenticationSuccessHandler(customAuthenticationSuccessHandler);
-        filter.setAuthenticationFailureHandler(customAuthenticationFailureHandler);
-        return filter;
+    @Override
+    protected LogoutSuccessHandler logoutSuccessHandler() {
+        return this.customJwtLogoutSuccessHandler;
     }
+
+    @Override
+    protected void configHttpSession(HttpSecurity http) throws Exception {
+        http.sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS);
+    }
+
 }

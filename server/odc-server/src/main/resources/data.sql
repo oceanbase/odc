@@ -771,4 +771,4 @@ INSERT INTO config_system_configuration(`key`, `value`, `description`) VALUES('o
  '180000', 'How long does the jwt need to be renewed before it expires, in seconds, defaults to 3min') ON DUPLICATE KEY UPDATE `id`=`id`;
 
 INSERT INTO config_system_configuration(`key`, `value`, `description`) VALUES('odc.iam.auth.method',
- 'jwt', 'The authentication mode used for login, there are two alternatives: jwt and jsession, the default is jwt') ON DUPLICATE KEY UPDATE `id`=`id`;
+ 'jsession', 'The authentication mode used for login, there are two alternatives: jwt and jsession, the default is jwt') ON DUPLICATE KEY UPDATE `id`=`id`;

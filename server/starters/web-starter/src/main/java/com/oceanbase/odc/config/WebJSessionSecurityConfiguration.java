@@ -27,6 +27,8 @@ import org.springframework.security.config.annotation.web.builders.WebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.authentication.logout.LogoutSuccessHandler;
+import org.springframework.security.web.context.SecurityContextRepository;
 import org.springframework.web.servlet.LocaleResolver;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -62,7 +64,7 @@ import lombok.extern.slf4j.Slf4j;
 @Profile("alipay")
 @Configuration
 @ConditionalOnExpression("#{@environment.getProperty('odc.iam.auth.type') == 'local' && @environment.getProperty('odc.iam.auth.method') == 'jsession'}")
-public class WebSecurityConfiguration extends WebSecurityConfigurerAdapter {
+public class WebJSessionSecurityConfiguration extends WebSecurityConfigurerAdapter {
 
     @Value("${odc.iam.authentication.captcha.enabled:false}")
     private boolean captchaEnabled;
@@ -144,25 +146,24 @@ public class WebSecurityConfiguration extends WebSecurityConfigurerAdapter {
         oauth2SecurityConfigureHelper.configure(http);
         ldapSecurityConfigureHelper.configure(http, authenticationManager());
 
+        SecurityContextRepository securityContextRepository = securityContextRepository();
+        if (securityContextRepository != null) {
+            http.setSharedObject(SecurityContextRepository.class, securityContextRepository);
+        }
+
         // @formatter:off
         http.exceptionHandling()
-            .authenticationEntryPoint(new CustomAuthenticationEntryPoint(commonSecurityProperties.getLoginPage(),localeResolver))
+                .authenticationEntryPoint(new CustomAuthenticationEntryPoint(commonSecurityProperties.getLoginPage(),localeResolver))
             .and()
-            .authorizeRequests()
-            .anyRequest().authenticated()
+                .authorizeRequests()
+                .anyRequest().authenticated()
             .and()
-            .logout()
-            .logoutUrl(commonSecurityProperties.getLogoutUri())
-            .logoutSuccessHandler(new CustomLogoutSuccessHandler())
-            .deleteCookies(commonSecurityProperties.getSessionCookieKey())
-            .invalidateHttpSession(true).permitAll()
-            .and()
-            .sessionManagement()
-            // SessionCreationPolicy.ALWAYS --> SessionCreationPolicy.IF_REQUIRED，防止登出后再次访问页面生成session造成无法跳转至登录页
-            .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
-            .sessionFixation()
-            .migrateSession()
-            .invalidSessionStrategy(new CustomInvalidSessionStrategy(commonSecurityProperties.getLoginPage(), localeResolver));
+                .logout()
+                .logoutUrl(commonSecurityProperties.getLogoutUri())
+                .logoutSuccessHandler(logoutSuccessHandler())
+                .deleteCookies(commonSecurityProperties.getSessionCookieKey())
+                .invalidateHttpSession(true).permitAll();
+        configHttpSession(http);
 
         // @formatter:on
         csrfConfigureHelper.configure(http);
@@ -176,7 +177,24 @@ public class WebSecurityConfiguration extends WebSecurityConfigurerAdapter {
             http.addFilterBefore(getCaptchaAuthenticationProcessingFilter(),
                     UsernamePasswordAuthenticationFilter.class);
         }
+    }
 
+    protected SecurityContextRepository securityContextRepository() {
+        return null;
+    }
+
+    protected LogoutSuccessHandler logoutSuccessHandler() {
+        return new CustomLogoutSuccessHandler();
+    }
+
+    protected void configHttpSession(HttpSecurity http) throws Exception {
+        http.sessionManagement()
+                // SessionCreationPolicy.ALWAYS --> SessionCreationPolicy.IF_REQUIRED，防止登出后再次访问页面生成session造成无法跳转至登录页
+                .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
+                .sessionFixation()
+                .migrateSession()
+                .invalidSessionStrategy(
+                        new CustomInvalidSessionStrategy(commonSecurityProperties.getLoginPage(), localeResolver));
     }
 
     private CaptchaAuthenticationProcessingFilter getCaptchaAuthenticationProcessingFilter() {
@@ -187,7 +205,6 @@ public class WebSecurityConfiguration extends WebSecurityConfigurerAdapter {
         return captchaAuthenticationProcessingFilter;
     }
 
-
     private BastionAuthenticationProcessingFilter bastionAuthenticationProcessingFilter(
             AuthenticationManager authenticationManager) {
         BastionAuthenticationProcessingFilter filter =
@@ -197,4 +214,5 @@ public class WebSecurityConfiguration extends WebSecurityConfigurerAdapter {
         filter.setAuthenticationFailureHandler(customAuthenticationFailureHandler);
         return filter;
     }
+
 }

@@ -54,18 +54,16 @@ import lombok.extern.slf4j.Slf4j;
 @Service
 @ConditionalOnProperty(value = {"odc.iam.auth.method"}, havingValue = "jwt")
 public class JwtSecurityContextRepository implements SecurityContextRepository {
+
     @Autowired
     private CommonSecurityProperties commonSecurityProperties;
-
     @Autowired
     private JwtService jwtService;
-
     @Autowired
     private UserRepository userRepository;
     @Autowired
     @Qualifier("authenticationCache")
     private Cache<Long, Authentication> authenticationCache;
-
     private final OrganizationMapper organizationMapper = OrganizationMapper.INSTANCE;
 
     @Override
@@ -96,13 +94,10 @@ public class JwtSecurityContextRepository implements SecurityContextRepository {
         }
 
         Date expiration = jwtService.getExpiresAt(token);
-
         if (jwtService.isExpired(expiration)) {
             log.info("Created SecurityContext {} because token is expired", context);
             return context;
         }
-
-
 
         Map<String, Claim> claims = jwtService.getClaims(token);
         long id = claims.get(JwtConstants.ID).asLong();
@@ -129,7 +124,6 @@ public class JwtSecurityContextRepository implements SecurityContextRepository {
             authenticationCache.put(user.getId(), usernamePasswordAuthenticationToken);
         }
 
-
         // jwt renewal policy, the default is to complete the renewal before the expiration time, to avoid
         // frequent updates
         User user = (User) context.getAuthentication().getPrincipal();
@@ -146,40 +140,33 @@ public class JwtSecurityContextRepository implements SecurityContextRepository {
             cookie.setHttpOnly(true);
             response.addCookie(cookie);
         }
-
         return context;
     }
 
-
-
     @Override
     public void saveContext(SecurityContext context, HttpServletRequest request, HttpServletResponse response) {
-        String requestURI = request.getRequestURI();
-        if (requestURI.contains(commonSecurityProperties.getLoginUri())) {
-            if (context.getAuthentication() != null && context.getAuthentication().isAuthenticated()) {
-                User user = (User) context.getAuthentication().getPrincipal();
-                HashMap<String, Object> hashMap = new HashMap<>();
-                hashMap.put(JwtConstants.ID, user.getId());
-                hashMap.put(JwtConstants.PRINCIPAL, user.getAccountName());
-                hashMap.put(JwtConstants.ORGANIZATION_ID, user.getOrganizationId());
-                hashMap.put(JwtConstants.ORGANIZATION_TYPE, JsonUtils.toJson(user.getOrganizationType()));
-                String token = jwtService.sign(hashMap);
-                Cookie cookie = new Cookie(JwtConstants.ODC_JWT_TOKEN, token);
-                cookie.setPath("/");
-                cookie.setMaxAge(24 * 60 * 60);
-                cookie.setHttpOnly(true);
-                response.addCookie(cookie);
-                authenticationCache.put(user.getId(), context.getAuthentication());
-            }
+        if (request.getRequestURI().contains(commonSecurityProperties.getLoginUri())
+                && context.getAuthentication() != null
+                && context.getAuthentication().isAuthenticated()) {
+            User user = (User) context.getAuthentication().getPrincipal();
+            HashMap<String, Object> hashMap = new HashMap<>();
+            hashMap.put(JwtConstants.ID, user.getId());
+            hashMap.put(JwtConstants.PRINCIPAL, user.getAccountName());
+            hashMap.put(JwtConstants.ORGANIZATION_ID, user.getOrganizationId());
+            hashMap.put(JwtConstants.ORGANIZATION_TYPE, JsonUtils.toJson(user.getOrganizationType()));
+            String token = jwtService.sign(hashMap);
+            Cookie cookie = new Cookie(JwtConstants.ODC_JWT_TOKEN, token);
+            cookie.setPath("/");
+            cookie.setMaxAge(24 * 60 * 60);
+            cookie.setHttpOnly(true);
+            response.addCookie(cookie);
+            authenticationCache.put(user.getId(), context.getAuthentication());
         }
     }
 
     @Override
     public boolean containsContext(HttpServletRequest request) {
-        String header = request.getHeader(JwtConstants.ODC_JWT_TOKEN);
-        if (StringUtils.hasText(header)) {
-            return true;
-        }
-        return false;
+        return StringUtils.hasText(request.getHeader(JwtConstants.ODC_JWT_TOKEN));
     }
+
 }

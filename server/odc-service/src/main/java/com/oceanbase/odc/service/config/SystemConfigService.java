@@ -143,7 +143,4 @@ public class SystemConfigService {
         entities.forEach(entity -> systemConfigDAO.saveConfig(entity));
     }
 
-    public static void main(String[] args) {
-
-    }
 }
