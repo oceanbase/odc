@@ -147,12 +147,14 @@ abstract class BaseSqlChecker implements SqlChecker {
         if (bufferStr.trim().length() != 0) {
             int lastSqlOffset;
             if (sqls.size() == 0) {
-                lastSqlOffset = sqlScript.indexOf(bufferStr, 0);
+                int index = sqlScript.indexOf(bufferStr.trim(), 0);
+                lastSqlOffset = index == -1 ? 0 : index;
             } else {
-                lastSqlOffset = sqlScript.indexOf(bufferStr, sqls.get(sqls.size() - 1).getOffset() + sqls.get(sqls.size() - 1).getStr().length());
+                int from = sqls.get(sqls.size() - 1).getOffset() + sqls.get(sqls.size() - 1).getStr().length();
+                int index = sqlScript.indexOf(bufferStr.trim(), from);
+                lastSqlOffset = index == -1 ? from : index;
             }
-            sqls.add(new OffsetString(lastSqlOffset == -1 ? 0 : lastSqlOffset, bufferStr));
-
+            sqls.add(new OffsetString(lastSqlOffset, bufferStr));
         }
         return sqls;
     }

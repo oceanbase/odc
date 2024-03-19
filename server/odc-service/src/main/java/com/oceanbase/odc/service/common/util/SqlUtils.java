@@ -138,12 +138,14 @@ public class SqlUtils {
                 log.info("sql processor's buffer is not empty, there may be some errors. buffer={}", bufferStr);
                 int lastSqlOffset;
                 if (sqls.size() == 0) {
-                    lastSqlOffset = sql.indexOf(bufferStr, 0);
+                    int index = sql.indexOf(bufferStr.trim(), 0);
+                    lastSqlOffset = index == -1 ? 0 : index;
                 } else {
-                    lastSqlOffset = sql.indexOf(bufferStr, sqls.get(sqls.size() - 1).getOffset() + sqls.get(sqls.size() - 1).getStr().length());
+                    int from = sqls.get(sqls.size() - 1).getOffset() + sqls.get(sqls.size() - 1).getStr().length();
+                    int index = sql.indexOf(bufferStr.trim(), from);
+                    lastSqlOffset = index == -1 ? from : index;
                 }
-                sqls.add(new OffsetString(lastSqlOffset == -1 ? 0 : lastSqlOffset, bufferStr));
-
+                sqls.add(new OffsetString(lastSqlOffset, bufferStr));
             }
             return sqls;
         }
