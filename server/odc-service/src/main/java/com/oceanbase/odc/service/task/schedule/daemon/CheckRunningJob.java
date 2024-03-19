@@ -77,7 +77,7 @@ public class CheckRunningJob implements Job {
         }
 
         if (checkJobIfRetryNecessary(a)) {
-            log.info("Need to restart job {}, destroy old executor completed.", a.getId());
+            log.info("Need to restart job, destroy old executor completed, jobId={}.", a.getId());
             int rows = getConfiguration().getTaskFrameworkService()
                     .updateStatusDescriptionByIdOldStatusAndExecutorDestroyed(a.getId(), JobStatus.RUNNING,
                             JobStatus.RETRYING, "Heart timeout and retrying job");
@@ -86,7 +86,7 @@ public class CheckRunningJob implements Job {
             }
 
         } else {
-            log.info("No need to restart job {}, try to set status to FAILED.", a.getId());
+            log.info("No need to restart job, try to set status to FAILED, jobId={}.", a.getId());
             TaskFrameworkProperties taskFrameworkProperties = getConfiguration().getTaskFrameworkProperties();
             int rows = getConfiguration().getTaskFrameworkService()
                     .updateStatusToCanceledWhenHeartTimeout(a.getId(),
@@ -95,7 +95,7 @@ public class CheckRunningJob implements Job {
             if (rows >= 0) {
                 getConfiguration().getEventPublisher().publishEvent(
                         new JobTerminateEvent(JobIdentity.of(a.getId()), JobStatus.FAILED));
-                log.info("Set job {} status to FAILED accomplished.", a.getId());
+                log.info("Set job status to FAILED accomplished, jobId={}.", a.getId());
             }
 
         }

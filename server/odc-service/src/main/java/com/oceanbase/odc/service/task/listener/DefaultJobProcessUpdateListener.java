@@ -55,7 +55,6 @@ public class DefaultJobProcessUpdateListener extends AbstractEventListener<Defau
 
     @Override
     public void onEvent(DefaultJobProcessUpdateEvent event) {
-
         TaskResult taskResult = event.getTaskResult();
         JobIdentity identity = taskResult.getJobIdentity();
         JobEntity jobEntity = stdTaskFrameworkService.find(identity.getId());
@@ -81,7 +80,7 @@ public class DefaultJobProcessUpdateListener extends AbstractEventListener<Defau
             taskEntity.setExecutor(JsonUtils.toJson(executorInfo));
         }
         taskRepository.update(taskEntity);
-        log.info("Update schedule task {} successfully.", taskEntity.getId());
+        log.info("Update scheduleTask successfully, scheduleTaskId={}.", taskEntity.getId());
     }
 
     private void updateTask(TaskResult taskResult, TaskEntity taskEntity) {
@@ -96,7 +95,7 @@ public class DefaultJobProcessUpdateListener extends AbstractEventListener<Defau
             taskEntity.setExecutor(JsonUtils.toJson(executorInfo));
         }
         taskService.update(taskEntity);
-        log.info("Update task task {} successfully.", taskEntity.getId());
+        log.info("Update taskTask successfully, taskId={}.", taskEntity.getId());
 
     }
 }
