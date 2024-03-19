@@ -268,8 +268,8 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
             log.warn("Job identity is not exists by id {}", taskResult.getJobIdentity().getId());
             return;
         }
-        if (je.getStatus().isTerminated()) {
-            log.warn("Job {} is finished, ignore result", je.getId());
+        if (je.getStatus().isTerminated() || je.getStatus() == JobStatus.CANCELING) {
+            log.warn("Job {} is finished, ignore result, currentStatus={}", je.getId(), je.getStatus());
             return;
         }
 
@@ -425,6 +425,8 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
         Root<JobEntity> e = update.from(JobEntity.class);
         update.set(JobEntityColumn.STATUS, newStatus);
         update.set(JobEntityColumn.DESCRIPTION, description);
+        update.set(JobEntityColumn.EXECUTOR_DESTROYED_TIME, null);
+        update.set(JobEntityColumn.LAST_HEART_TIME, null);
 
         update.where(cb.equal(e.get(JobEntityColumn.ID), id),
                 cb.equal(e.get(JobEntityColumn.STATUS), oldStatus),
