@@ -221,18 +221,23 @@ public class FlowTaskInstanceService {
 
     public List<? extends FlowTaskResult> getResult(@NotNull Long id) throws IOException {
         TaskEntity task = flowInstanceService.getTaskByFlowInstanceId(id);
-        if (task.getTaskType() == TaskType.ONLINE_SCHEMA_CHANGE) {
-            return getOnlineSchemaChangeResult(task);
-        } else if (task.getTaskType() == TaskType.EXPORT) {
-            return getDataTransferResult(task);
+        if (task.getTaskType() == TaskType.ONLINE_SCHEMA_CHANGE || task.getTaskType() == TaskType.EXPORT) {
+            return getTaskResultFromEntity(task);
         }
-
         Optional<TaskEntity> taskEntityOptional = getCompleteTaskEntity(id);
         if (!taskEntityOptional.isPresent()) {
             return Collections.emptyList();
         }
         TaskEntity taskEntity = taskEntityOptional.get();
-        if (taskEntity.getTaskType() == TaskType.ASYNC) {
+        return getTaskResultFromEntity(taskEntity);
+    }
+
+    public List<? extends FlowTaskResult> getTaskResultFromEntity(@NotNull TaskEntity taskEntity) throws IOException {
+        if (taskEntity.getTaskType() == TaskType.ONLINE_SCHEMA_CHANGE) {
+            return getOnlineSchemaChangeResult(taskEntity);
+        } else if (taskEntity.getTaskType() == TaskType.EXPORT) {
+            return getDataTransferResult(taskEntity);
+        } else if (taskEntity.getTaskType() == TaskType.ASYNC) {
             return getAsyncResult(taskEntity);
         } else if (taskEntity.getTaskType() == TaskType.MOCKDATA) {
             return getMockDataResult(taskEntity);
