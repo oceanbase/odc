@@ -149,9 +149,4 @@ public class StructureComparisonService {
     private void checkPermission(@NonNull StructureComparisonTaskEntity taskEntity) {
         flowInstanceService.mapFlowInstance(taskEntity.getFlowInstanceId(), flowInstance -> flowInstance, false);
     }
-
-    private Long currentUserId() {
-        return authenticationFacade.currentUserId();
-    }
-
 }
