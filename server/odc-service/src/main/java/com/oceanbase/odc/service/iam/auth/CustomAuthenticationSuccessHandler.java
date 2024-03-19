@@ -20,13 +20,11 @@ import static com.oceanbase.odc.service.automation.model.TriggerEvent.LOGIN_SUCC
 import java.io.IOException;
 import java.security.Principal;
 import java.time.OffsetDateTime;
-import java.util.HashMap;
 import java.util.List;
 import java.util.stream.Collectors;
 
 import javax.security.auth.Subject;
 import javax.servlet.ServletException;
-import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
@@ -37,8 +35,6 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.web.authentication.SavedRequestAwareAuthenticationSuccessHandler;
 import org.springframework.stereotype.Component;
 
-import com.github.benmanes.caffeine.cache.Cache;
-import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.common.trace.TraceContextHolder;
 import com.oceanbase.odc.core.authority.SecurityManager;
 import com.oceanbase.odc.core.authority.exception.AuthenticationException;
@@ -52,10 +48,8 @@ import com.oceanbase.odc.service.common.response.SuccessResponse;
 import com.oceanbase.odc.service.common.util.SpringContextUtil;
 import com.oceanbase.odc.service.common.util.WebRequestUtils;
 import com.oceanbase.odc.service.common.util.WebResponseUtils;
-import com.oceanbase.odc.service.iam.JwtService;
 import com.oceanbase.odc.service.iam.LoginHistoryService;
 import com.oceanbase.odc.service.iam.OrganizationMapper;
-import com.oceanbase.odc.service.iam.model.JwtConstants;
 import com.oceanbase.odc.service.iam.model.LoginHistory;
 import com.oceanbase.odc.service.iam.model.Organization;
 import com.oceanbase.odc.service.iam.model.User;
@@ -72,17 +66,12 @@ import lombok.extern.slf4j.Slf4j;
 @Component
 public class CustomAuthenticationSuccessHandler extends SavedRequestAwareAuthenticationSuccessHandler {
     @Autowired
-    private JwtService jwtService;
-    @Autowired
     private OrganizationRepository organizationRepository;
 
     @Autowired
     @Qualifier("organizationResourceMigrator")
     private OrganizationResourceMigrator organizationResourceMigrator;
 
-    @Autowired
-    @Qualifier("authenticationCache")
-    private Cache<Long, Authentication> authenticationCache;
     private final OrganizationMapper organizationMapper = OrganizationMapper.INSTANCE;
     private final SecurityManager securityManager;
     private final LoginHistoryService loginHistoryService;
@@ -148,19 +137,6 @@ public class CustomAuthenticationSuccessHandler extends SavedRequestAwareAuthent
             // not affect BUC(/login/oauth2/code/buc)
             if (requestURI.contains("/login")) {
                 SuccessResponse<String> successResponse = Responses.success("ok");
-                HashMap<String, Object> hashMap = new HashMap<>();
-                User user = (User) authentication.getPrincipal();
-                hashMap.put(JwtConstants.ID, user.getId());
-                hashMap.put(JwtConstants.PRINCIPAL, user.getAccountName());
-                hashMap.put(JwtConstants.ORGANIZATION_ID, user.getOrganizationId());
-                hashMap.put(JwtConstants.ORGANIZATION_TYPE, JsonUtils.toJson(user.getOrganizationType()));
-                String token = jwtService.sign(hashMap);
-                Cookie cookie = new Cookie(JwtConstants.ODC_JWT_TOKEN, token);
-                cookie.setPath("/");
-                cookie.setMaxAge(24 * 60 * 60);
-                cookie.setHttpOnly(true);
-                httpServletResponse.addCookie(cookie);
-                authenticationCache.put(user.getId(), authentication);
                 WebResponseUtils.writeJsonObjectWithOkStatus(successResponse, httpServletRequest, httpServletResponse);
             } else {
                 log.info("Login from non-login API, requestURI={}", requestURI);

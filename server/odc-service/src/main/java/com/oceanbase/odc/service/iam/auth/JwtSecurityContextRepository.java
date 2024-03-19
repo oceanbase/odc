@@ -25,6 +25,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
@@ -38,11 +39,10 @@ import org.springframework.util.StringUtils;
 import com.auth0.jwt.interfaces.Claim;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.oceanbase.odc.common.json.JsonUtils;
+import com.oceanbase.odc.config.CommonSecurityProperties;
 import com.oceanbase.odc.core.shared.constant.OrganizationType;
-import com.oceanbase.odc.metadb.iam.OrganizationRepository;
 import com.oceanbase.odc.metadb.iam.UserEntity;
 import com.oceanbase.odc.metadb.iam.UserRepository;
-import com.oceanbase.odc.service.collaboration.OrganizationResourceMigrator;
 import com.oceanbase.odc.service.iam.JwtService;
 import com.oceanbase.odc.service.iam.OrganizationMapper;
 import com.oceanbase.odc.service.iam.model.JwtConstants;
@@ -52,15 +52,13 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Service
+@ConditionalOnProperty(value = {"odc.iam.auth.method"}, havingValue = "jwt")
 public class JwtSecurityContextRepository implements SecurityContextRepository {
     @Autowired
-    private JwtService jwtService;
-    @Autowired
-    private OrganizationRepository organizationRepository;
+    private CommonSecurityProperties commonSecurityProperties;
 
     @Autowired
-    @Qualifier("organizationResourceMigrator")
-    private OrganizationResourceMigrator organizationResourceMigrator;
+    private JwtService jwtService;
 
     @Autowired
     private UserRepository userRepository;
@@ -156,7 +154,24 @@ public class JwtSecurityContextRepository implements SecurityContextRepository {
 
     @Override
     public void saveContext(SecurityContext context, HttpServletRequest request, HttpServletResponse response) {
-
+        String requestURI = request.getRequestURI();
+        if (requestURI.contains(commonSecurityProperties.getLoginUri())) {
+            if (context.getAuthentication() != null && context.getAuthentication().isAuthenticated()) {
+                User user = (User) context.getAuthentication().getPrincipal();
+                HashMap<String, Object> hashMap = new HashMap<>();
+                hashMap.put(JwtConstants.ID, user.getId());
+                hashMap.put(JwtConstants.PRINCIPAL, user.getAccountName());
+                hashMap.put(JwtConstants.ORGANIZATION_ID, user.getOrganizationId());
+                hashMap.put(JwtConstants.ORGANIZATION_TYPE, JsonUtils.toJson(user.getOrganizationType()));
+                String token = jwtService.sign(hashMap);
+                Cookie cookie = new Cookie(JwtConstants.ODC_JWT_TOKEN, token);
+                cookie.setPath("/");
+                cookie.setMaxAge(24 * 60 * 60);
+                cookie.setHttpOnly(true);
+                response.addCookie(cookie);
+                authenticationCache.put(user.getId(), context.getAuthentication());
+            }
+        }
     }
 
     @Override

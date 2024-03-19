@@ -21,4 +21,6 @@ public interface SystemConfigDAO {
     List<SystemConfigEntity> queryByKeyPrefix(String keyPrefix);
 
     void insert(SystemConfigEntity systemConfigEntity);
+
+    void saveConfig(SystemConfigEntity systemConfigEntity);
 }
