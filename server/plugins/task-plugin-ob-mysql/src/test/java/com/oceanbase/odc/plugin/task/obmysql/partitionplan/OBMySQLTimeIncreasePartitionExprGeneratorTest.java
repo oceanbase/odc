@@ -106,6 +106,7 @@ public class OBMySQLTimeIncreasePartitionExprGeneratorTest {
             Calendar calendar = Calendar.getInstance();
             calendar.setTime(new Date(current));
             List<String> expects = new ArrayList<>();
+            calendar.add(Calendar.HOUR_OF_DAY, 10);
             int i = 0;
             do {
                 int year = calendar.get(Calendar.YEAR);
@@ -136,6 +137,7 @@ public class OBMySQLTimeIncreasePartitionExprGeneratorTest {
             Calendar calendar = Calendar.getInstance();
             calendar.setTime(new Date(current));
             List<String> expects = new ArrayList<>();
+            calendar.add(Calendar.DAY_OF_MONTH, 10);
             int i = 0;
             do {
                 int year = calendar.get(Calendar.YEAR);
@@ -165,6 +167,7 @@ public class OBMySQLTimeIncreasePartitionExprGeneratorTest {
             Calendar calendar = Calendar.getInstance();
             calendar.setTime(new Date(current));
             List<String> expects = new ArrayList<>();
+            calendar.add(Calendar.YEAR, 10);
             int i = 0;
             do {
                 int year = calendar.get(Calendar.YEAR);

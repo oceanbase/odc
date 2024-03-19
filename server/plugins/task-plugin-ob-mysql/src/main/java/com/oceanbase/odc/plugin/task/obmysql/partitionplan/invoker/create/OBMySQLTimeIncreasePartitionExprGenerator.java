@@ -93,8 +93,8 @@ public class OBMySQLTimeIncreasePartitionExprGenerator implements TimeIncreasePa
             throw new IllegalArgumentException("Base time is missing");
         }
         List<Date> candidates = new ArrayList<>(generateCount);
-        candidates.add(baseTime);
-        for (int i = 1; i < generateCount; i++) {
+        baseTime = TimeDataTypeUtil.getNextDate(baseTime, config.getInterval(), config.getIntervalPrecision());
+        for (int i = 0; i < generateCount; i++) {
             baseTime = TimeDataTypeUtil.getNextDate(baseTime, config.getInterval(), config.getIntervalPrecision());
             candidates.add(baseTime);
         }
