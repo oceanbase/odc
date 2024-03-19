@@ -17,6 +17,7 @@ package com.oceanbase.odc.service.connection.table.model;
 
 import java.io.Serializable;
 import java.util.Date;
+import java.util.Set;
 
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotEmpty;
@@ -27,6 +28,8 @@ import com.oceanbase.odc.core.authority.model.SecurityResource;
 import com.oceanbase.odc.core.shared.OrganizationIsolated;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.service.connection.database.model.DatabaseSyncStatus;
+import com.oceanbase.odc.service.permission.database.model.DatabasePermissionType;
+import com.oceanbase.tools.dbbrowser.model.DBTable;
 
 import lombok.Data;
 
@@ -38,7 +41,7 @@ import lombok.Data;
  * @Version 1.0
  */
 @Data
-public class Table implements SecurityResource, OrganizationIsolated, Serializable {
+public class Table extends DBTable implements SecurityResource, OrganizationIsolated, Serializable {
     private Long id;
 
     /**
@@ -68,6 +71,9 @@ public class Table implements SecurityResource, OrganizationIsolated, Serializab
 
     @JsonProperty(access = Access.READ_ONLY)
     private Long organizationId;
+
+    @JsonProperty(access = Access.READ_ONLY)
+    private Set<DatabasePermissionType> authorizedPermissionTypes;
 
     @Override
     public String resourceId() {

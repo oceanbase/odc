@@ -38,7 +38,9 @@ public class QueryTablePermissionParams {
     private Long userId;
     private Long ticketId;
     private String fuzzyDatabaseName;
+    private Long databaseId;
     private String fuzzyDataSourceName;
+    private Long dataSourceId;
     private List<DatabasePermissionType> types;
     private AuthorizationType authorizationType;
     private List<ExpirationStatusFilter> statuses;

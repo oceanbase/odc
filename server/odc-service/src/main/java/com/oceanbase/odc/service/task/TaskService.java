@@ -98,6 +98,7 @@ public class TaskService {
     private static final String STRUCTURE_COMPARISON_LOG_PATH_PATTERN =
             "%s/structure-comparison/%d/%s/structure-comparison.%s";
     private static final String APPLY_TABLE_LOG_PATH_PATTERN = "%s/apply-table/%d/%s/apply-table-task.%s";
+
     @Autowired
     public TaskService(@Value("${odc.log.directory:./log}") String baseTaskLogDir) {
         logFilePrefix = baseTaskLogDir;

@@ -111,11 +111,11 @@ public class FlowInstanceController {
                     return flowInstanceService.create(flowInstanceReq);
                 }).collect(Collectors.toList()).stream().flatMap(line -> line.stream()).collect(Collectors.toList());
                 return Responses.list(resp);
-            } else if  (flowInstanceReq.getTaskType() == TaskType.APPLY_TABLE_PERMISSION){
+            } else if (flowInstanceReq.getTaskType() == TaskType.APPLY_TABLE_PERMISSION) {
                 TaskParameters parameters = flowInstanceReq.getParameters();
                 List<ApplyTable> tables = ((ApplyTableParameter) parameters).getTables();
                 List<FlowInstanceDetailResp> resp = tables.stream().map(applyTable -> {
-                    List<ApplyTable> collect = applyTable.getReqTableNames().stream().map(tableName -> {
+                    List<ApplyTable> collect = applyTable.getTableNames().stream().map(tableName -> {
                         ApplyTable tmpApplyTable = new ApplyTable();
                         tmpApplyTable.setDatabaseId(applyTable.getDatabaseId());
                         tmpApplyTable.setTableName(tableName);
@@ -127,7 +127,7 @@ public class FlowInstanceController {
                     return flowInstanceService.create(flowInstanceReq);
                 }).collect(Collectors.toList()).stream().flatMap(line -> line.stream()).collect(Collectors.toList());
                 return Responses.list(resp);
-            }else {
+            } else {
                 return Responses.list(flowInstanceService.create(flowInstanceReq));
             }
         }

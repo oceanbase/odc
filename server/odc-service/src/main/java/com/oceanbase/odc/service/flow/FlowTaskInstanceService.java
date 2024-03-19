@@ -101,6 +101,7 @@ import com.oceanbase.odc.service.objectstorage.cloud.CloudObjectStorageService;
 import com.oceanbase.odc.service.partitionplan.PartitionPlanService;
 import com.oceanbase.odc.service.permission.database.model.ApplyDatabaseResult;
 import com.oceanbase.odc.service.permission.project.ApplyProjectResult;
+import com.oceanbase.odc.service.permission.table.model.ApplyTableResult;
 import com.oceanbase.odc.service.schedule.flowtask.AlterScheduleResult;
 import com.oceanbase.odc.service.session.model.SqlExecuteResult;
 import com.oceanbase.odc.service.task.TaskService;
@@ -254,6 +255,8 @@ public class FlowTaskInstanceService {
             return getApplyDatabaseResult(taskEntity);
         } else if (taskEntity.getTaskType() == TaskType.STRUCTURE_COMPARISON) {
             return getStructureComparisonResult(taskEntity);
+        } else if (taskEntity.getTaskType() == TaskType.APPLY_TABLE_PERMISSION) {
+            return getApplyTableResult(taskEntity);
         } else {
             throw new UnsupportedException(ErrorCodes.Unsupported, new Object[] {ResourceType.ODC_TASK},
                     "Unsupported task type: " + taskEntity.getTaskType());
@@ -666,6 +669,10 @@ public class FlowTaskInstanceService {
 
     private List<DBStructureComparisonTaskResult> getStructureComparisonResult(@NonNull TaskEntity taskEntity) {
         return innerGetResult(taskEntity, DBStructureComparisonTaskResult.class);
+    }
+
+    private List<ApplyTableResult> getApplyTableResult(@NonNull TaskEntity taskEntity) {
+        return innerGetResult(taskEntity, ApplyTableResult.class);
     }
 
     private <T extends FlowTaskResult> List<T> innerGetResult(@NonNull TaskEntity taskEntity,

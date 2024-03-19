@@ -31,6 +31,7 @@ import javax.validation.constraints.NotNull;
 import org.apache.commons.lang.time.DateUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -108,6 +109,7 @@ public class TablePermissionService {
     private PermissionService permissionService;
 
     @Autowired
+    @Lazy
     private TableService tableService;
 
     @Value("${odc.iam.permission.expired-retention-time-seconds:7776000}")
@@ -152,6 +154,44 @@ public class TablePermissionService {
                     }
                     return permission;
                 });
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    @SkipAuthorize("permission check inside")
+    public List<UserTablePermission> listWithoutPage(@NotNull Long projectId,
+            @NotNull QueryTablePermissionParams params) {
+        if (params.getUserId() == null || params.getUserId() != authenticationFacade.currentUserId()) {
+            projectPermissionValidator.checkProjectRole(projectId,
+                    Arrays.asList(ResourceRoleName.OWNER, ResourceRoleName.DBA));
+        } else {
+            projectPermissionValidator.checkProjectRole(projectId, ResourceRoleName.all());
+        }
+        Date expiredTime = new Date(System.currentTimeMillis() - expiredRetentionTimeSeconds * 1000);
+        permissionService.deleteExpiredPermission(expiredTime);
+        Date expireTimeThreshold = TimeUtils.getStartOfDay(new Date());
+        Specification<UserTablePermissionEntity> spec = Specification
+                .where(UserTablePermissionSpec.projectIdEqual(projectId))
+                .and(UserTablePermissionSpec.organizationIdEqual(authenticationFacade.currentOrganizationId()))
+                .and(UserTablePermissionSpec.userIdEqual(params.getUserId()))
+                .and(UserTablePermissionSpec.ticketIdEqual(params.getTicketId()))
+                .and(UserTablePermissionSpec.databaseNameLike(params.getFuzzyDatabaseName()))
+                .and(UserTablePermissionSpec.dataSourceNameLike(params.getFuzzyDataSourceName()))
+                .and(UserTablePermissionSpec.typeIn(params.getTypes()))
+                .and(UserTablePermissionSpec.authorizationTypeEqual(params.getAuthorizationType()))
+                .and(UserTablePermissionSpec.filterByExpirationStatus(params.getStatuses(), expireTimeThreshold));
+        return userTablePermissionRepository.findAll(spec).stream().map(
+                e -> {
+                    UserTablePermission permission = mapper.entityToModel(e);
+                    Date expireTime = permission.getExpireTime();
+                    if (expireTime.before(expireTimeThreshold)) {
+                        permission.setStatus(ExpirationStatusFilter.EXPIRED);
+                    } else if (expireTime.before(DateUtils.addDays(expireTimeThreshold, EXPIRING_DAYS))) {
+                        permission.setStatus(ExpirationStatusFilter.EXPIRING);
+                    } else {
+                        permission.setStatus(ExpirationStatusFilter.NOT_EXPIRED);
+                    }
+                    return permission;
+                }).collect(Collectors.toList());
     }
 
     @Transactional(rollbackFor = Exception.class)

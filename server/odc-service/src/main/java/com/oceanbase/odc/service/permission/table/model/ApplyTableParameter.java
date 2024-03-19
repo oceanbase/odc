@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 OceanBase.
+ * Copyright (c) 2023 OceanBase.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.oceanbase.odc.service.permission.table.model;
 
 import java.io.Serializable;
@@ -21,19 +20,15 @@ import java.util.Date;
 import java.util.List;
 import java.util.Objects;
 
-import javax.persistence.Parameter;
-
 import com.oceanbase.odc.core.flow.model.TaskParameters;
 import com.oceanbase.odc.service.connection.table.model.Table;
-import com.oceanbase.odc.service.permission.database.model.ApplyDatabaseParameter.ApplyDatabase;
 import com.oceanbase.odc.service.permission.database.model.DatabasePermissionType;
 import com.oceanbase.odc.service.permission.project.ApplyProjectParameter.ApplyProject;
 
 import lombok.Data;
 
 /**
- * ClassName: ApplyTableParameter
- * Package: com.oceanbase.odc.service.permission.table.model
+ * ClassName: ApplyTableParameter Package: com.oceanbase.odc.service.permission.table.model
  * Description:
  *
  * @Author: fenghao
@@ -48,11 +43,11 @@ public class ApplyTableParameter implements Serializable, TaskParameters {
     /**
      * Project to be applied for, the
      */
-    private ApplyProject                 project;
+    private ApplyProject project;
     /**
      * Databases to be applied for, required
      */
-    private List<ApplyTable>          tables;
+    private List<ApplyTable> tables;
     /**
      * Permission types to be applied for, required
      */
@@ -60,11 +55,11 @@ public class ApplyTableParameter implements Serializable, TaskParameters {
     /**
      * Expiration time, null means no expiration, optional
      */
-    private Date                         expireTime;
+    private Date expireTime;
     /**
      * Reason for application, required
      */
-    private String                       applyReason;
+    private String applyReason;
 
     @Data
     public static class ApplyTable implements Serializable {
@@ -76,11 +71,11 @@ public class ApplyTableParameter implements Serializable, TaskParameters {
         private String dataSourceName;
         private Long tableId;
         private String tableName;
-        private List<String> reqTableNames;
+        private List<String> tableNames;
 
-        public static  ApplyTable from (Table table){
+        public static ApplyTable from(Table table) {
             ApplyTable applyTable = new ApplyTable();
-            if (Objects.isNull(applyTable)){
+            if (Objects.isNull(applyTable)) {
                 return null;
             }
             applyTable.setTableId(table.getId());

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 OceanBase.
+ * Copyright (c) 2023 OceanBase.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.oceanbase.odc.service.permission.table;
 
 import org.flowable.engine.delegate.DelegateExecution;
@@ -23,9 +22,7 @@ import com.oceanbase.odc.service.permission.database.model.ApplyDatabaseResult;
 import com.oceanbase.odc.service.task.TaskService;
 
 /**
- * ClassName: AppyTableFlowableTask
- * Package: com.oceanbase.odc.service.permission.table
- * Description:
+ * ClassName: AppyTableFlowableTask Package: com.oceanbase.odc.service.permission.table Description:
  *
  * @Author: fenghao
  * @Create 2024/3/14 17:25
@@ -35,7 +32,7 @@ public class AppyTableFlowableTask extends BaseODCFlowTaskDelegate<ApplyDatabase
 
     @Override
     protected ApplyDatabaseResult start(Long taskId, TaskService taskService, DelegateExecution execution)
-        throws Exception {
+            throws Exception {
         System.out.println("sss");
         return null;
     }
