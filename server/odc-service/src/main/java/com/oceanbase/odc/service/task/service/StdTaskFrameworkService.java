@@ -268,8 +268,8 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
             log.warn("Job identity is not exists by id {}", taskResult.getJobIdentity().getId());
             return;
         }
-        if (je.getStatus().isTerminated()) {
-            log.warn("Job {} is finished, ignore result", je.getId());
+        if (je.getStatus().isTerminated() || je.getStatus() == JobStatus.CANCELING) {
+            log.warn("Job {} is finished, ignore result, currentStatus={}", je.getId(), je.getStatus());
             return;
         }
 
