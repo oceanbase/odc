@@ -292,8 +292,6 @@ public class ConnectionService {
 
             if (connection.getPasswordSaved()) {
                 PreConditions.notNull(connection.getPassword(), "connection.password");
-            } else {
-                connection.setPassword(null);
             }
             connectionEncryption.encryptPasswords(connection);
 
@@ -746,6 +744,9 @@ public class ConnectionService {
                 .and(ConnectionSpecs.nameLike(params.getName()));
         if (CollectionUtils.isNotEmpty(params.getIds())) {
             spec = spec.and(ConnectionSpecs.idIn(params.getIds()));
+        }
+        if (Objects.nonNull(params.getUsername())) {
+            spec = spec.and(ConnectionSpecs.usernameEqual(params.getUsername()));
         }
         spec = spec.and(ConnectionSpecs.sort(pageable.getSort()));
         Pageable page = pageable.equals(Pageable.unpaged()) ? pageable
