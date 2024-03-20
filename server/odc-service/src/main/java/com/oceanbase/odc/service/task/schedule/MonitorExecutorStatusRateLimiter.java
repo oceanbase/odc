@@ -71,8 +71,10 @@ public class MonitorExecutorStatusRateLimiter implements StartJobRateLimiter {
                         systemFreeMemory, startNewProcessMemoryMinSize, totalPhysicMemory);
                 return false;
             }
+            return true;
+        } else {
+            return isExecutorWaitingToRunNotExceedThreshold();
         }
-        return isExecutorWaitingToRunNotExceedThreshold();
     }
 
     private long calculateRunningJobCountLimit() {
