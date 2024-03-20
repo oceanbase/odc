@@ -16,7 +16,7 @@
 package com.oceanbase.odc.service.task.listener;
 
 import com.oceanbase.odc.common.event.AbstractEvent;
-import com.oceanbase.odc.service.task.schedule.JobIdentity;
+import com.oceanbase.odc.service.task.executor.task.TaskResult;
 
 import lombok.Getter;
 
@@ -25,18 +25,18 @@ import lombok.Getter;
  * @date 2024-01-12
  * @since 4.2.4
  */
-public class DestroyExecutorEvent extends AbstractEvent {
+public class DefaultJobProcessUpdateEvent extends AbstractEvent {
 
     @Getter
-    private final JobIdentity ji;
+    private final TaskResult taskResult;
 
     /**
      * Constructs a prototypical Event.
      *
-     * @param ji The object on which the Event initially occurred.
+     * @param taskResult The object on which the Event initially occurred.
      */
-    public DestroyExecutorEvent(JobIdentity ji) {
-        super(ji, "DestroyExecutorEvent");
-        this.ji = ji;
+    public DefaultJobProcessUpdateEvent(TaskResult taskResult) {
+        super(taskResult, "DefaultJobProcessUpdateEvent");
+        this.taskResult = taskResult;
     }
 }

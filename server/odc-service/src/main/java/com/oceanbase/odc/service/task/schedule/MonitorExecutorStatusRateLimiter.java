@@ -95,8 +95,8 @@ public class MonitorExecutorStatusRateLimiter implements StartJobRateLimiter {
                 taskFrameworkProperties.getExecutorWaitingToRunThresholdSeconds());
 
         boolean continued = taskFrameworkProperties.getExecutorWaitingToRunThresholdCount() - count > 0;
-        if (!continued) {
-            log.warn("Amount of executors waiting to run exceed threshold, wait next schedule,"
+        if (!continued && log.isDebugEnabled()) {
+            log.debug("Amount of executors waiting to run exceed threshold, wait next schedule,"
                     + " threshold={}, waitingJobs={}.",
                     taskFrameworkProperties.getExecutorWaitingToRunThresholdCount(), count);
         }

@@ -65,6 +65,7 @@ import com.oceanbase.odc.service.task.exception.TaskRuntimeException;
 import com.oceanbase.odc.service.task.executor.server.HeartRequest;
 import com.oceanbase.odc.service.task.executor.task.Task;
 import com.oceanbase.odc.service.task.executor.task.TaskResult;
+import com.oceanbase.odc.service.task.listener.DefaultJobProcessUpdateEvent;
 import com.oceanbase.odc.service.task.listener.JobTerminateEvent;
 import com.oceanbase.odc.service.task.schedule.DefaultJobDefinition;
 import com.oceanbase.odc.service.task.schedule.JobDefinition;
@@ -90,9 +91,6 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
     private JobRepository jobRepository;
     @Autowired
     private JobAttributeRepository jobAttributeRepository;
-
-    @Autowired(required = false)
-    private List<ResultHandleService> resultHandleServices;
 
     @Setter
     private EventPublisher publisher;
@@ -308,9 +306,8 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
         }
 
         updateJobScheduleEntity(taskResult);
-        if (resultHandleServices != null) {
-            resultHandleServices.forEach(r -> r.handle(taskResult));
-        }
+        taskResultPublisherExecutor
+                .execute(() -> publisher.publishEvent(new DefaultJobProcessUpdateEvent(taskResult)));
         if (publisher != null && taskResult.getStatus() != null && taskResult.getStatus().isTerminated()) {
             taskResultPublisherExecutor.execute(() -> publisher
                     .publishEvent(new JobTerminateEvent(taskResult.getJobIdentity(), taskResult.getStatus())));
@@ -418,7 +415,7 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
         CriteriaBuilder cb = entityManager.getCriteriaBuilder();
         CriteriaUpdate<JobEntity> update = cb.createCriteriaUpdate(JobEntity.class);
         Root<JobEntity> root = update.from(JobEntity.class);
-        update.set(JobEntityColumn.STATUS, JobStatus.CANCELED);
+        update.set(JobEntityColumn.STATUS, JobStatus.FAILED);
         update.set(JobEntityColumn.FINISHED_TIME, JobDateUtils.getCurrentDate());
         update.set(JobEntityColumn.DESCRIPTION, description);
 

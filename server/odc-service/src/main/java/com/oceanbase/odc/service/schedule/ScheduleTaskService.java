@@ -105,6 +105,19 @@ public class ScheduleTaskService {
     }
 
 
+    public Optional<ScheduleTaskEntity> findByJobId(Long jobId) {
+        List<ScheduleTaskEntity> scheduleTasks = scheduleTaskRepository.findByJobId(jobId);
+        if (scheduleTasks != null) {
+            if (scheduleTasks.size() > 1) {
+                throw new IllegalStateException("Query scheduleTask by jobId occur error, except 1 but found "
+                        + scheduleTasks.size() + ",jobId=" + jobId);
+            } else if (scheduleTasks.size() == 1) {
+                return Optional.of(scheduleTasks.get(0));
+            }
+        }
+        return Optional.empty();
+    }
+
     public ScheduleTaskEntity nullSafeGetById(Long id) {
         Optional<ScheduleTaskEntity> scheduleEntityOptional = scheduleTaskRepository.findById(id);
         return scheduleEntityOptional
