@@ -15,7 +15,7 @@
     <properties>
         <root-project.basedir>${project.parent.parent.basedir}</root-project.basedir>
         <plugin.class>com.oceanbase.odc.plugin.schema.doris.DorisSchemaPlugin</plugin.class>
-        <plugin.dependencies>schema-plugin-ob-mysql, schema-plugin-mysql</plugin.dependencies>
+        <plugin.dependencies>schema-plugin-ob-mysql, schema-plugin-mysql, connect-plugin-doris</plugin.dependencies>
     </properties>
 
     <dependencies>
