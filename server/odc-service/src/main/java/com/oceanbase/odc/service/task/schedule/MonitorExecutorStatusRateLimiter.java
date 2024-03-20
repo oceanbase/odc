@@ -63,10 +63,12 @@ public class MonitorExecutorStatusRateLimiter implements StartJobRateLimiter {
                         runningJobCountLimit, count);
                 return false;
             }
-            // Get current system free memory
+            // Current systemFreeMemory must less than totalPhysicMemory * 0.2 + startNewProcessMemoryMinSize
             long systemFreeMemory = SystemUtils.getSystemFreePhysicalMemory().convert(BinarySizeUnit.MB).getSizeDigit();
             int startNewProcessMemoryMinSize = taskFrameworkProperties.get().getStartNewProcessMemoryMinSizeInMB();
-            if (systemFreeMemory < (totalPhysicMemory * 0.2 + startNewProcessMemoryMinSize)) {
+            if (new BigDecimal(totalPhysicMemory).multiply(BigDecimal.valueOf(0.2))
+                    .add(BigDecimal.valueOf(startNewProcessMemoryMinSize))
+                    .compareTo(BigDecimal.valueOf(systemFreeMemory)) < 0) {
                 log.warn("Free memory lack, systemFreeMemory={}, startNewProcessMemoryMinSize={}, totalPhysicMemory={}",
                         systemFreeMemory, startNewProcessMemoryMinSize, totalPhysicMemory);
                 return false;
@@ -79,7 +81,7 @@ public class MonitorExecutorStatusRateLimiter implements StartJobRateLimiter {
 
     private long calculateRunningJobCountLimit() {
         int startNewProcessMem = taskFrameworkProperties.get().getStartNewProcessMemoryMinSizeInMB();
-        // Get totalPhysicMemory * 0.35 / startNewProcessMemoryMinSize
+        // limitCount = totalPhysicMemory * 0.35 / startNewProcessMemoryMinSize
         // odc may restart, so we should add exists running jobs number
         long limitCount = new BigDecimal(totalPhysicMemory).multiply(BigDecimal.valueOf(0.35))
                 .divide(new BigDecimal(startNewProcessMem), RoundingMode.FLOOR)
