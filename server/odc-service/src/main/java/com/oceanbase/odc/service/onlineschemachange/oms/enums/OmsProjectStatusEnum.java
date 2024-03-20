@@ -15,6 +15,8 @@
  */
 package com.oceanbase.odc.service.onlineschemachange.oms.enums;
 
+import java.util.Arrays;
+
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
@@ -62,6 +64,10 @@ public enum OmsProjectStatusEnum {
      */
     DELETED,
 
-    UNKNOWN
+    UNKNOWN;
 
+    public boolean isProjectDestroyed() {
+        return Arrays.asList(OmsProjectStatusEnum.DELETED, OmsProjectStatusEnum.RELEASED,
+                OmsProjectStatusEnum.RELEASING).contains(this);
+    }
 }
