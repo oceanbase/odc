@@ -51,7 +51,6 @@ import com.oceanbase.odc.common.util.ExceptionUtils;
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.authority.util.Authenticated;
 import com.oceanbase.odc.core.authority.util.PreAuthenticate;
-import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.core.shared.exception.AccessDeniedException;
@@ -139,11 +138,7 @@ public class NotificationService {
     @Transactional(rollbackFor = Exception.class)
     @PreAuthenticate(hasAnyResourceRole = {"OWNER"}, resourceType = "ODC_PROJECT", indexOfIdParam = 0)
     public Channel detailChannel(@NotNull Long projectId, @NotNull Long channelId) {
-        Channel channel = channelMapper.fromEntityWithConfig(nullSafeGetChannel(channelId));
-        if (!Objects.equals(projectId, channel.getProjectId())) {
-            throw new AccessDeniedException("Channel does not belong to this project");
-        }
-        return channel;
+        return channelMapper.fromEntityWithConfig(nullSafeGetChannel(channelId, projectId));
     }
 
     @Transactional(rollbackFor = Exception.class)
@@ -171,10 +166,7 @@ public class NotificationService {
     public Channel updateChannel(@NotNull Long projectId, @NotNull Channel channel) {
         PreConditions.notNull(channel.getId(), "channel.id");
         validator.validate(channel.getType(), channel.getChannelConfig());
-        ChannelEntity entity = nullSafeGetChannel(channel.getId());
-        if (!Objects.equals(projectId, entity.getProjectId())) {
-            throw new AccessDeniedException("Channel does not belong to this project");
-        }
+        ChannelEntity entity = nullSafeGetChannel(channel.getId(), projectId);
 
         channelPropertyRepository.deleteByChannelId(entity.getId());
 
@@ -189,10 +181,7 @@ public class NotificationService {
     @Transactional(rollbackFor = Exception.class)
     @PreAuthenticate(hasAnyResourceRole = {"OWNER"}, resourceType = "ODC_PROJECT", indexOfIdParam = 0)
     public Channel deleteChannel(@NotNull Long projectId, @NotNull Long channelId) {
-        ChannelEntity entity = nullSafeGetChannel(channelId);
-        if (!Objects.equals(projectId, entity.getProjectId())) {
-            throw new AccessDeniedException("Channel does not belong to this project");
-        }
+        ChannelEntity entity = nullSafeGetChannel(channelId, projectId);
 
         channelRepository.deleteById(channelId);
         relationRepository.deleteByChannelId(channelId);
@@ -200,8 +189,8 @@ public class NotificationService {
         return channelMapper.fromEntity(entity);
     }
 
-    @SkipAuthorize("Any user could test channel")
-    public MessageSendResult testChannel(@NotNull Channel channel) {
+    @PreAuthenticate(hasAnyResourceRole = {"OWNER"}, resourceType = "ODC_PROJECT", indexOfIdParam = 0)
+    public MessageSendResult testChannel(@NotNull Long projectId, @NotNull Channel channel) {
         PreConditions.notNull(channel.getType(), "channel.type");
         PreConditions.notNull(channel.getChannelConfig(), "channel.config");
         validator.validate(channel.getType(), channel.getChannelConfig());
@@ -375,6 +364,11 @@ public class NotificationService {
     private ChannelEntity nullSafeGetChannel(@NonNull Long channelId) {
         Optional<ChannelEntity> optional = channelRepository.findById(channelId);
         return optional
+                .orElseThrow(() -> new NotFoundException(ResourceType.ODC_NOTIFICATION_CHANNEL, "id", channelId));
+    }
+
+    private ChannelEntity nullSafeGetChannel(@NonNull Long channelId, @NonNull Long projectId) {
+        return channelRepository.findByIdAndProjectId(channelId, projectId)
                 .orElseThrow(() -> new NotFoundException(ResourceType.ODC_NOTIFICATION_CHANNEL, "id", channelId));
     }
 
