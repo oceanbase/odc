@@ -31,6 +31,10 @@
             <groupId>com.oceanbase</groupId>
             <artifactId>schema-plugin-mysql</artifactId>
         </dependency>
+        <dependency>
+            <groupId>com.oceanbase</groupId>
+            <artifactId>connect-plugin-doris</artifactId>
+        </dependency>
     </dependencies>
 
     <build>
