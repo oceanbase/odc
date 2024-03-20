@@ -17,16 +17,13 @@ package com.oceanbase.odc.service.task;
 
 import java.io.File;
 import java.nio.charset.StandardCharsets;
-import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.List;
-import java.io.IOException;
 import java.util.Objects;
 import java.util.Optional;
 
 import javax.validation.constraints.NotNull;
 
-import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.io.input.ReversedLinesFileReader;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
