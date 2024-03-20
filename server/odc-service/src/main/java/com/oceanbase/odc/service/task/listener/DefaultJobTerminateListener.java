@@ -16,21 +16,25 @@
 
 package com.oceanbase.odc.service.task.listener;
 
-import java.util.Map;
+import java.util.Optional;
 
-import com.fasterxml.jackson.core.type.TypeReference;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+
 import com.oceanbase.odc.common.event.AbstractEventListener;
 import com.oceanbase.odc.common.json.JsonUtils;
-import com.oceanbase.odc.core.shared.constant.TaskStatus;
+import com.oceanbase.odc.metadb.schedule.ScheduleTaskEntity;
 import com.oceanbase.odc.metadb.schedule.ScheduleTaskRepository;
 import com.oceanbase.odc.metadb.task.JobEntity;
+import com.oceanbase.odc.metadb.task.TaskEntity;
+import com.oceanbase.odc.metadb.task.TaskRepository;
 import com.oceanbase.odc.service.common.util.SpringContextUtil;
+import com.oceanbase.odc.service.dlm.model.DataArchiveParameters;
 import com.oceanbase.odc.service.schedule.ScheduleService;
-import com.oceanbase.odc.service.schedule.job.DLMJobParameters;
-import com.oceanbase.odc.service.task.constants.JobParametersKeyConstants;
+import com.oceanbase.odc.service.schedule.ScheduleTaskService;
+import com.oceanbase.odc.service.schedule.model.JobType;
 import com.oceanbase.odc.service.task.enums.JobStatus;
 import com.oceanbase.odc.service.task.service.TaskFrameworkService;
-import com.oceanbase.tools.migrator.common.enums.JobType;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -39,43 +43,54 @@ import lombok.extern.slf4j.Slf4j;
  * @date 2023-12-15
  * @since 4.2.4
  */
+@Component
 @Slf4j
 public class DefaultJobTerminateListener extends AbstractEventListener<JobTerminateEvent> {
 
+    @Autowired
+    private TaskFrameworkService taskFrameworkService;
+    @Autowired
+    private ScheduleTaskService scheduleTaskService;
+    @Autowired
+    private ScheduleService scheduleService;
+    @Autowired
+    private ScheduleTaskRepository scheduleTaskRepository;
+    @Autowired
+    private TaskRepository taskRepository;
 
     @Override
     public void onEvent(JobTerminateEvent event) {
-        TaskFrameworkService taskFrameworkService = SpringContextUtil.getBean(TaskFrameworkService.class);
         JobEntity jobEntity = taskFrameworkService.find(event.getJi().getId());
-        if (jobEntity.getJobType().equals("DLM")) {
-            ScheduleTaskRepository taskRepository = SpringContextUtil.getBean(ScheduleTaskRepository.class);
+        // Trigger the data-delete job if necessary after the data-archive task is completed.
+        if (jobEntity.getJobType().equals(JobType.DATA_ARCHIVE.name()) && event.getStatus() == JobStatus.DONE) {
             ScheduleService scheduleService = SpringContextUtil.getBean(ScheduleService.class);
-            taskRepository.findByJobId(jobEntity.getId()).ifPresent(o -> {
-                taskRepository.updateStatusById(o.getId(), getTerminatedScheduleTaskStatus(event.getStatus()));
-                log.info("Update schedule task status to {} succeed,scheduleTaskId={}", event.getStatus(), o.getId());
-                DLMJobParameters parameters = JsonUtils.fromJson(
-                        JsonUtils
-                                .fromJson(jobEntity.getJobParametersJson(), new TypeReference<Map<String, String>>() {})
-                                .get(JobParametersKeyConstants.META_TASK_PARAMETER_JSON),
-                        DLMJobParameters.class);
-                scheduleService.asyncScheduleStatus(Long.parseLong(o.getJobName()));
-                // Trigger the data-delete job if necessary after the data-archive task is completed.
-                if (parameters.getJobType() == JobType.MIGRATE && parameters.isDeleteAfterMigration()) {
+            scheduleTaskService.findByJobId(jobEntity.getId()).ifPresent(o -> {
+                DataArchiveParameters dataArchiveParameters = JsonUtils.fromJson(o.getParametersJson(),
+                        DataArchiveParameters.class);
+                if (dataArchiveParameters.isDeleteAfterMigration()) {
                     scheduleService.dataArchiveDelete(Long.parseLong(o.getJobName()), o.getId());
-                    log.info("Trigger delete job succeed.");
                 }
             });
         }
-    }
 
-    private TaskStatus getTerminatedScheduleTaskStatus(JobStatus status) {
-        switch (status) {
-            case CANCELED:
-                return TaskStatus.CANCELED;
-            case FAILED:
-                return TaskStatus.FAILED;
-            default:
-                return TaskStatus.DONE;
+        Optional<ScheduleTaskEntity> scheduleTask = scheduleTaskService.findByJobId(jobEntity.getId());
+        if (scheduleTask.isPresent() && !scheduleTask.get().getStatus().isTerminated()) {
+            int row = scheduleTaskRepository.updateStatusById(scheduleTask.get().getId(),
+                    event.getStatus().convertTaskStatus());
+            if (row >= 1) {
+                log.info("Update scheduleTask successfully, scheduleTaskId={}, status={}.", jobEntity.getId(),
+                        event.getStatus().convertTaskStatus());
+            }
+        } else {
+            Optional<TaskEntity> taskEntity = taskRepository.findByJobId(jobEntity.getId());
+            if (taskEntity.isPresent() && !taskEntity.get().getStatus().isTerminated()) {
+                int row = taskRepository.updateStatusById(taskEntity.get().getId(),
+                        event.getStatus().convertTaskStatus());
+                if (row >= 1) {
+                    log.info("Update taskTask successfully, taskId={}, status={}.", jobEntity.getId(),
+                            event.getStatus().convertTaskStatus());
+                }
+            }
         }
     }
 }

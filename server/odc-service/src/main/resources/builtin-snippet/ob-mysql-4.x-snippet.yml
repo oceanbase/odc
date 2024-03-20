@@ -5,7 +5,7 @@
   type: DQL
   min_version: 4.0.0
   max_version: ~
-  description: 'Query unit list for OceanBase MySQL compatible mode'
+  description: 'Query unit list for OceanBase MySQL mode'
   prefix: query_unit_list
   body: |
     SELECT
@@ -68,7 +68,7 @@
   type: DQL
   min_version: 4.0.0
   max_version: ~
-  description: 'Query OceanBase cluster information'
+  description: 'Query major compaction information'
   prefix: query_major_compaction
   body: |
     SELECT
@@ -112,7 +112,7 @@
   type: DQL
   min_version: 4.0.0
   max_version: ~
-  description: Query module memory usage for OceanBase mysql mode tenant
+  description: Query module memory usage for OceanBase MySQL mode
   prefix: query_module_memory_usage
   body: |
     SELECT
@@ -131,7 +131,7 @@
   type: DQL
   min_version: 4.0.0
   max_version: ~
-  description: Query memstore information for OceanBase mysql mode
+  description: Query memstore information for OceanBase MySQL mode
   prefix: query_memstore_information
   body: |
     SELECT
@@ -151,7 +151,7 @@
   type: DQL
   min_version: 4.0.0
   max_version: ~
-  description: Query degraded log stat for OceanBase mysql mode
+  description: Query degraded log stat for OceanBase MySQL mode
   prefix: query_degraded_log_stat
   body: |
     SELECT
@@ -175,7 +175,7 @@
   type: DQL
   min_version: 4.0.0
   max_version: ~
-  description: Query compaction progress for OceanBase mysql mode
+  description: Query compaction progress for OceanBase MySQL mode
   prefix: query_compaction_progress
   body: |
     -- query compaction progress for last 5 compactions
@@ -199,7 +199,7 @@
   type: DQL
   min_version: 4.0.0
   max_version: ~
-  description: Query compaction status for OceanBase mysql mode
+  description: Query compaction status for OceanBase MySQL mode
   prefix: query_compaction_status
   body: |
     SELECT
@@ -220,7 +220,7 @@
   type: DQL
   min_version: 4.0.0
   max_version: ~
-  description: Query mini merge history for OceanBase mysql mode
+  description: Query mini merge history for OceanBase MySQL mode
   prefix: query_mini_merge_history
   body: |
     SELECT
@@ -240,7 +240,7 @@
   type: DQL
   min_version: 4.0.0
   max_version: ~
-  description: Query cache size for OceanBase mysql mode
+  description: Query cache size for OceanBase MySQL mode
   prefix: query_cache_size
   body: |
     SELECT
@@ -257,7 +257,7 @@
   type: DQL
   min_version: 4.0.0
   max_version: ~
-  description: Stats top size tables in database for OceanBase mysql mode
+  description: Stats top size tables in database for OceanBase MySQL mode
   prefix: stats_top_size_tables_in_database
   body: |
     select
@@ -297,7 +297,7 @@
   type: DQL
   min_version: 4.0.0
   max_version: ~
-  description: stats partition size for table for OceanBase mysql mode
+  description: stats partition size for table for OceanBase MySQL mode
   prefix: stats_partition_size_for_table
   body: |
     select

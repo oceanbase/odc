@@ -20,12 +20,12 @@ import org.springframework.stereotype.Component;
 
 import com.oceanbase.odc.common.event.AbstractEventListener;
 import com.oceanbase.odc.metadb.schedule.ScheduleEntity;
-import com.oceanbase.odc.metadb.schedule.ScheduleTaskRepository;
 import com.oceanbase.odc.metadb.task.JobEntity;
 import com.oceanbase.odc.service.notification.Broker;
 import com.oceanbase.odc.service.notification.NotificationProperties;
 import com.oceanbase.odc.service.notification.helper.EventBuilder;
 import com.oceanbase.odc.service.schedule.ScheduleService;
+import com.oceanbase.odc.service.schedule.ScheduleTaskService;
 import com.oceanbase.odc.service.task.enums.JobStatus;
 import com.oceanbase.odc.service.task.service.TaskFrameworkService;
 
@@ -48,7 +48,7 @@ public class JobTerminateNotifyListener extends AbstractEventListener<JobTermina
     @Autowired
     private EventBuilder eventBuilder;
     @Autowired
-    private ScheduleTaskRepository scheduleTaskRepository;
+    private ScheduleTaskService scheduleTaskService;
     @Autowired
     private ScheduleService scheduleService;
 
@@ -59,7 +59,7 @@ public class JobTerminateNotifyListener extends AbstractEventListener<JobTermina
         }
         try {
             JobEntity jobEntity = taskFrameworkService.find(event.getJi().getId());
-            scheduleTaskRepository.findByJobId(jobEntity.getId())
+            scheduleTaskService.findByJobId(jobEntity.getId())
                     .ifPresent(task -> {
                         ScheduleEntity schedule = scheduleService.nullSafeGetById(Long.parseLong(task.getJobName()));
                         broker.enqueueEvent(event.getStatus() == JobStatus.DONE ? eventBuilder.ofSucceededTask(schedule)

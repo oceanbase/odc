@@ -73,7 +73,7 @@ public class ExecutorProcessBuilderFactory {
         options.add("-XX:NumberOfGCLogFiles=5");
         options.add("-XX:+ExitOnOutOfMemoryError");
         options.add("-Xmx2048m");
-        options.add("-Xms1024m");
+        options.add("-Xms512m");
         return options;
     }
 

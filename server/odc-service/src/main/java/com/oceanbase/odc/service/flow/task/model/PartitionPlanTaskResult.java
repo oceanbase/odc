@@ -15,10 +15,10 @@
  */
 package com.oceanbase.odc.service.flow.task.model;
 
-import com.oceanbase.odc.core.flow.model.FlowTaskResult;
+import com.oceanbase.odc.core.flow.model.AbstractFlowTaskResult;
 
-import lombok.Getter;
-import lombok.Setter;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 /**
  * @author tianke
@@ -26,8 +26,8 @@ import lombok.Setter;
  * @date 2024-02-28 11:25
  * @since ODC_release_4.2.4
  */
-@Getter
-@Setter
-public class PartitionPlanTaskResult implements FlowTaskResult {
+@Data
+@EqualsAndHashCode(callSuper = true)
+public class PartitionPlanTaskResult extends AbstractFlowTaskResult {
     private boolean success;
 }

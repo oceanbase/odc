@@ -65,7 +65,7 @@ public abstract class BaseJobTest {
         DefaultTaskFrameworkProperties taskFrameworkProperties = new DefaultTaskFrameworkProperties();
         taskFrameworkProperties.setRunMode(TaskRunMode.PROCESS);
         HostUrlProvider urlProvider = new DefaultHostUrlProvider(
-                () ->taskFrameworkProperties, hostProperties);
+                () -> taskFrameworkProperties, hostProperties);
         jc.setHostUrlProvider(urlProvider);
         jc.setTaskFrameworkService(Mockito.mock(TaskFrameworkService.class));
         JobConfigurationHolder.setJobConfiguration(jc);

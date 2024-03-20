@@ -65,6 +65,7 @@ import com.oceanbase.odc.service.task.exception.TaskRuntimeException;
 import com.oceanbase.odc.service.task.executor.server.HeartRequest;
 import com.oceanbase.odc.service.task.executor.task.Task;
 import com.oceanbase.odc.service.task.executor.task.TaskResult;
+import com.oceanbase.odc.service.task.listener.DefaultJobProcessUpdateEvent;
 import com.oceanbase.odc.service.task.listener.JobTerminateEvent;
 import com.oceanbase.odc.service.task.schedule.DefaultJobDefinition;
 import com.oceanbase.odc.service.task.schedule.JobDefinition;
@@ -90,9 +91,6 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
     private JobRepository jobRepository;
     @Autowired
     private JobAttributeRepository jobAttributeRepository;
-
-    @Autowired(required = false)
-    private List<ResultHandleService> resultHandleServices;
 
     @Setter
     private EventPublisher publisher;
@@ -157,7 +155,6 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
         return page(condition, page, size);
     }
 
-
     @Override
     public long countRunningNeverHeartJobs(int neverHeartSeconds) {
         CriteriaBuilder cb = entityManager.getCriteriaBuilder();
@@ -182,6 +179,32 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
 
         return entityManager.createQuery(query).getSingleResult();
     }
+
+    @Override
+    public long countRunningJobs(TaskRunMode runMode) {
+
+        CriteriaBuilder cb = entityManager.getCriteriaBuilder();
+        CriteriaQuery<Long> query = cb.createQuery(Long.class);
+
+        // sql like:
+        // select count(*) from job_job where
+        // create_time > now() - 30d
+        // and run_mode = 'runMode'
+        // and status <> 'PREPARING'
+        // and executor_destroyed_time is null
+
+        Root<JobEntity> root = query.from(JobEntity.class);
+        query.select(cb.count(root));
+        query.where(
+                cb.greaterThan(root.get(JobEntityColumn.CREATE_TIME),
+                        JobDateUtils.getCurrentDateSubtractDays(RECENT_DAY)),
+                cb.equal(root.get(JobEntityColumn.RUN_MODE), runMode),
+                cb.notEqual(root.get(JobEntityColumn.STATUS), JobStatus.PREPARING),
+                cb.isNull(root.get(JobEntityColumn.EXECUTOR_DESTROYED_TIME)),
+                executorPredicate(root, cb));
+        return entityManager.createQuery(query).getSingleResult();
+    }
+
 
     private Specification<JobEntity> getExecutorSpec() {
         return (root, query, cb) -> executorPredicate(root, cb);
@@ -255,7 +278,7 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
         // increment executionTimes
         jobEntity.setExecutionTimes(jobEntity.getExecutionTimes() + 1);
         jobEntity.setStartedTime(currentDate);
-        if(jobEntity.getLastHeartTime() != null) {
+        if (jobEntity.getLastHeartTime() != null) {
             jobEntity.setLastHeartTime(null);
         }
         if (jobEntity.getExecutorDestroyedTime() != null) {
@@ -283,9 +306,8 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
         }
 
         updateJobScheduleEntity(taskResult);
-        if (resultHandleServices != null) {
-            resultHandleServices.forEach(r -> r.handle(taskResult));
-        }
+        taskResultPublisherExecutor
+                .execute(() -> publisher.publishEvent(new DefaultJobProcessUpdateEvent(taskResult)));
         if (publisher != null && taskResult.getStatus() != null && taskResult.getStatus().isTerminated()) {
             taskResultPublisherExecutor.execute(() -> publisher
                     .publishEvent(new JobTerminateEvent(taskResult.getJobIdentity(), taskResult.getStatus())));
@@ -393,7 +415,7 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
         CriteriaBuilder cb = entityManager.getCriteriaBuilder();
         CriteriaUpdate<JobEntity> update = cb.createCriteriaUpdate(JobEntity.class);
         Root<JobEntity> root = update.from(JobEntity.class);
-        update.set(JobEntityColumn.STATUS, JobStatus.CANCELED);
+        update.set(JobEntityColumn.STATUS, JobStatus.FAILED);
         update.set(JobEntityColumn.FINISHED_TIME, JobDateUtils.getCurrentDate());
         update.set(JobEntityColumn.DESCRIPTION, description);
 

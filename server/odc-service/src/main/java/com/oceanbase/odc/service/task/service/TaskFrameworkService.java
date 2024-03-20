@@ -23,6 +23,7 @@ import org.springframework.data.domain.Page;
 
 import com.oceanbase.odc.metadb.task.JobEntity;
 import com.oceanbase.odc.service.task.enums.JobStatus;
+import com.oceanbase.odc.service.task.enums.TaskRunMode;
 import com.oceanbase.odc.service.task.executor.server.HeartRequest;
 import com.oceanbase.odc.service.task.executor.task.TaskResult;
 import com.oceanbase.odc.service.task.schedule.JobDefinition;
@@ -62,9 +63,16 @@ public interface TaskFrameworkService {
      */
     long countRunningNeverHeartJobs(int neverHeartSeconds);
 
+    /**
+     * count jobs which process is running
+     */
+    long countRunningJobs(TaskRunMode runMode);
+
     JobDefinition getJobDefinition(Long id);
 
     int startSuccess(Long id, String executorIdentifier);
+    int beforeStart(Long id);
+
     int beforeStart(Long id);
 
     void updateDescription(Long id, String description);
