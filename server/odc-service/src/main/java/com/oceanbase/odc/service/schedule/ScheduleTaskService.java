@@ -16,11 +16,12 @@
 package com.oceanbase.odc.service.schedule;
 
 import java.io.File;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.LineIterator;
+import org.apache.commons.io.input.ReversedLinesFileReader;
 import org.quartz.JobKey;
 import org.quartz.SchedulerException;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -115,32 +116,32 @@ public class ScheduleTaskService {
         String filePath = String.format(LOG_PATH_PATTERN, logDirectory,
                 taskEntity.getJobName(), taskEntity.getJobGroup(), taskEntity.getId(),
                 logLevel.name().toLowerCase());
-
-        if (!new File(filePath).exists()) {
+        File logFile = new File(filePath);
+        if (!logFile.exists()) {
             return ErrorCodes.TaskLogNotFound.getLocalizedMessage(new Object[] {"Id", id});
         }
-        LineIterator it = null;
-        StringBuilder sb = new StringBuilder();
-        int lineCount = 1;
-        int byteCount = 0;
-        try {
-            it = FileUtils.lineIterator(new File(filePath));
-            while (it.hasNext()) {
-                if (lineCount > 10000 || byteCount > 1024 * 1024) {
-                    sb.append("Logs exceed max limitation (10000 rows or 1 MB), please download logs directly");
+        try (ReversedLinesFileReader reader = new ReversedLinesFileReader(logFile, StandardCharsets.UTF_8)) {
+            List<String> lines = new ArrayList<>();
+            int bytes = 0;
+            String line;
+            while ((line = reader.readLine()) != null) {
+                lines.add(line);
+                bytes += line.getBytes().length;
+                if (lines.size() >= 10000 || bytes >= 1024 * 1024) {
+                    lines.add("[ODC INFO]: \n"
+                            + "Logs exceed max limitation (10000 rows or 1 MB), only the latest part is displayed.\n"
+                            + "Please download the log file for the full content.");
                     break;
                 }
-                String line = it.nextLine();
-                sb.append(line).append("\n");
-                lineCount++;
-                byteCount = byteCount + line.getBytes().length;
             }
-            return sb.toString();
+            StringBuilder logBuilder = new StringBuilder();
+            for (int i = lines.size() - 1; i >= 0; i--) {
+                logBuilder.append(lines.get(i)).append("\n");
+            }
+            return logBuilder.toString();
         } catch (Exception ex) {
-            log.warn("read task log file failed, reason={}", ex.getMessage());
-            throw new UnexpectedException("read task log file failed, reason: " + ex.getMessage(), ex);
-        } finally {
-            LineIterator.closeQuietly(it);
+            log.warn("Read task log file failed, details={}", ex.getMessage());
+            throw new UnexpectedException("Read task log file failed, details: " + ex.getMessage(), ex);
         }
     }
 }
