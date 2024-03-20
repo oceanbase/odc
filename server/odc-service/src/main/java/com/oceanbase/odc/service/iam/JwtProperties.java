@@ -25,19 +25,19 @@ import lombok.Data;
 @Data
 @RefreshScope
 public class JwtProperties {
-    @Value("${odc.iam.auth.jwt.expiration-seconds:15}")
+    @Value("${odc.iam.auth.jwt.expiration-seconds:900}")
     private long expireTime;
-    @Value("${odc.iam.auth.jwt.buffer-seconds:3}")
+    @Value("${odc.iam.auth.jwt.buffer-seconds:180}")
     private long bufferTime;
     @Value("${odc.iam.auth.jwt.secret-key:#{null}}")
     private String tokenSecret;
 
     public long getExpireTime() {
-        return expireTime * 60000;
+        return expireTime * 1000;
     }
 
     public long getBufferTime() {
-        return bufferTime * 60000;
+        return bufferTime * 1000;
     }
 
 }
