@@ -41,6 +41,7 @@ import com.oceanbase.odc.service.flow.task.model.OnlineSchemaChangeTaskResult;
 import com.oceanbase.odc.service.flow.util.FlowTaskUtil;
 import com.oceanbase.odc.service.iam.OrganizationService;
 import com.oceanbase.odc.service.iam.model.User;
+import com.oceanbase.odc.service.onlineschemachange.configuration.OnlineSchemaChangeProperties;
 import com.oceanbase.odc.service.onlineschemachange.model.OnlineSchemaChangeParameters;
 import com.oceanbase.odc.service.onlineschemachange.model.OnlineSchemaChangeScheduleTaskParameters;
 import com.oceanbase.odc.service.onlineschemachange.model.OnlineSchemaChangeScheduleTaskResult;
@@ -80,8 +81,8 @@ public class OnlineSchemaChangeFlowableTask extends BaseODCFlowTaskDelegate<Void
     private OscTaskCompleteHandler completeHandler;
     @Autowired
     private OrganizationService organizationService;
-
-    private final static String checkTaskCronExpression = "0/10 * * * * ?";
+    @Autowired
+    private OnlineSchemaChangeProperties onlineSchemaChangeProperties;
 
     private volatile TaskStatus status;
     private volatile long scheduleId;
@@ -272,7 +273,7 @@ public class OnlineSchemaChangeFlowableTask extends BaseODCFlowTaskDelegate<Void
         scheduleEntity.setModifierId(scheduleEntity.getCreatorId());
         TriggerConfig triggerConfig = new TriggerConfig();
         triggerConfig.setTriggerStrategy(TriggerStrategy.CRON);
-        triggerConfig.setCronExpression(checkTaskCronExpression);
+        triggerConfig.setCronExpression(onlineSchemaChangeProperties.getOms().getCheckProjectProgressCronExpression());
         scheduleEntity.setTriggerConfigJson(JsonUtils.toJson(triggerConfig));
         scheduleEntity.setMisfireStrategy(MisfireStrategy.MISFIRE_INSTRUCTION_DO_NOTHING);
         scheduleEntity.setJobParametersJson(JsonUtils.toJson(parameter));

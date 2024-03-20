@@ -13,29 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-package com.oceanbase.odc.service.permission.project;
-
-import com.oceanbase.odc.core.flow.model.AbstractFlowTaskResult;
+package com.oceanbase.odc.core.flow.model;
 
 import lombok.Data;
-import lombok.EqualsAndHashCode;
 
 /**
  * @author gaoda.xy
- * @date 2023/10/13 16:12
+ * @date 2024/3/18 16:12
  */
 @Data
-@EqualsAndHashCode(callSuper = true)
-public class ApplyProjectResult extends AbstractFlowTaskResult {
+public class AbstractFlowTaskResult implements FlowTaskResult {
 
-    /**
-     * Mark whether the task is successful
-     */
-    private boolean success;
-    /**
-     * Task parameters
-     */
-    private ApplyProjectParameter parameter;
+    private String fullLogDownloadUrl;
 
 }
