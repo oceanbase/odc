@@ -20,7 +20,11 @@ import java.util.Arrays;
 import org.junit.Assert;
 import org.junit.Test;
 
+import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.core.shared.constant.DialectType;
+import com.oceanbase.odc.service.flow.task.model.DBStructureComparisonTaskResult;
+import com.oceanbase.odc.service.flow.task.model.DatabaseChangeResult;
+import com.oceanbase.odc.service.flow.task.model.MockDataTaskResult;
 import com.oceanbase.odc.service.structurecompare.model.ComparisonResult;
 import com.oceanbase.odc.service.structurecompare.model.DBObjectComparisonResult;
 import com.oceanbase.tools.dbbrowser.model.DBObjectType;
@@ -85,5 +89,28 @@ public class DBObjectComparisonResultTest {
                 + "-- Unsupported operation to modify table charset\n");
         returnVal.setSubDBObjectComparisonResult(Arrays.asList(unsupported, dropColumn, dropPartition, addPartition));
         return returnVal;
+    }
+
+    @Test
+    public void tset() {
+        String resultJson = "{\"clearCount\":0,\"conflictCount\":0,\"currentRecord\":null,\"dbMode\":\"OB_ORACLE\","
+                + "\"fullLogDownloadUrl\":null,\"ignoreCount\":0,\"internalTaskId\":null,"
+                + "\"objectName\":null,\"sessionName\":\"oboracle_3.2.4\",\"tableTaskIds\":null,"
+                + "\"taskName\":null,\"taskStatus\":\"SUCCESS\",\"totalGen\":10,\"writeCount\":10}";
+        String asyncJson = "{\"autoModifyTimeout\":false,\"containQuery\":true,\"errorRecordsFilePath\":null,"
+                + "\"failCount\":0,\"fullLogDownloadUrl\":\"/api/v2/flow/flowInstances/36/tasks/log/download"
+                + "\",\"jsonFileBytes\":1724,\"jsonFileName\":\"28DC5396-07DF-4E39-9B93-18D007333A32\","
+                + "\"records\":[],\"resultPreviewMaxSizeBytes\":5242880,\"rollbackPlanResult\":null,"
+                + "\"successCount\":1,\"zipFileDownloadUrl\":\"/api/v2/flow/flowInstances/36/tasks/download\","
+                + "\"zipFileId\":\"94B8B9BB-250F-46D2-BED4-05BE50DFC575\"}";
+        String scJson = "{\"comparingList\":null,\"fullLogDownloadUrl\":\"/api/v2/flow/flowInstances/33/tasks/log"
+                + "/download\",\"status\":\"DONE\",\"taskId\":11}";
+        MockDataTaskResult taskResult = JsonUtils.fromJson(resultJson, MockDataTaskResult.class);
+        DatabaseChangeResult asyncResult = JsonUtils.fromJson(asyncJson, DatabaseChangeResult.class);
+        DBStructureComparisonTaskResult scResult = JsonUtils.fromJson(scJson, DBStructureComparisonTaskResult.class);
+        System.out.println(taskResult);
+        System.out.println(asyncResult);
+        System.out.println(scResult);
+
     }
 }

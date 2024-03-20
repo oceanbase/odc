@@ -49,7 +49,6 @@ import com.oceanbase.odc.core.session.ConnectionSessionUtil;
 import com.oceanbase.odc.core.session.DefaultConnectionSessionManager;
 import com.oceanbase.odc.core.session.InMemoryConnectionSessionRepository;
 import com.oceanbase.odc.core.shared.PreConditions;
-import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.constant.LimitMetric;
 import com.oceanbase.odc.core.shared.constant.OrganizationType;
@@ -390,7 +389,7 @@ public class ConnectSessionService {
     }
 
     private Boolean getAutoCommit(ConnectionConfig connectionConfig) {
-        if (DialectType.OB_ORACLE.equals(connectionConfig.getDialectType())) {
+        if (connectionConfig.getDialectType().isOracle()) {
             return "ON".equalsIgnoreCase(userConfigFacade.getOracleAutoCommitMode());
         }
         return "ON".equalsIgnoreCase(userConfigFacade.getMysqlAutoCommitMode());
