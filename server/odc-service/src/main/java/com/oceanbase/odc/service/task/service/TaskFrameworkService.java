@@ -71,7 +71,6 @@ public interface TaskFrameworkService {
     JobDefinition getJobDefinition(Long id);
 
     int startSuccess(Long id, String executorIdentifier);
-    int beforeStart(Long id);
 
     int beforeStart(Long id);
 
