@@ -17,6 +17,8 @@ package com.oceanbase.odc.service.notification.model;
 
 import org.springframework.http.HttpMethod;
 
+import com.oceanbase.odc.common.json.SensitiveOutput;
+
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -30,6 +32,7 @@ public class WebhookChannelConfig extends BaseChannelConfig {
 
     private String webhook;
 
+    @SensitiveOutput
     private String sign;
 
     private String httpProxy;
