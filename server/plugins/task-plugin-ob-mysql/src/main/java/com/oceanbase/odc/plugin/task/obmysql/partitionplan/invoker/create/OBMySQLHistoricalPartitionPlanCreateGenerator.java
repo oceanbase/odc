@@ -25,6 +25,7 @@ import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
 
 import com.oceanbase.odc.plugin.task.api.partitionplan.model.TimeIncreaseGeneratorConfig;
+import com.oceanbase.odc.plugin.task.obmysql.partitionplan.invoker.SqlExprCalculator;
 import com.oceanbase.tools.dbbrowser.model.DBTable;
 
 import lombok.NonNull;
@@ -51,11 +52,20 @@ public class OBMySQLHistoricalPartitionPlanCreateGenerator extends OBMySQLTimeIn
     }
 
     @Override
+    protected Date getPartitionUpperBound(@NonNull SqlExprCalculator calculator, @NonNull String partitionKey,
+            @NonNull String upperBound) {
+        if (StringUtils.startsWith(partitionKey, TARGET_FUNCTION_NAME)) {
+            return new Date(Long.parseLong(upperBound) + 1000);
+        }
+        return super.getPartitionUpperBound(calculator, partitionKey, upperBound);
+    }
+
+    @Override
     public List<String> generate(@NonNull Connection connection, @NonNull DBTable dbTable,
             @NonNull String partitionKey, @NonNull Integer generateCount,
             @NonNull TimeIncreaseGeneratorConfig config) throws IOException, SQLException {
         if (StringUtils.startsWith(partitionKey, TARGET_FUNCTION_NAME)) {
-            List<Date> candidates = getCandidateDates(config, generateCount);
+            List<Date> candidates = getCandidateDates(connection, dbTable, partitionKey, config, generateCount);
             return candidates.stream().map(date -> date.getTime() / 1000 + "").collect(Collectors.toList());
         }
         return super.generate(connection, dbTable, partitionKey, generateCount, config);

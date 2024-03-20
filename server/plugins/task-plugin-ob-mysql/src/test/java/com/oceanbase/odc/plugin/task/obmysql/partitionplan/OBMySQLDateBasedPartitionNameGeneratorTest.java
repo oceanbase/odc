@@ -58,7 +58,7 @@ public class OBMySQLDateBasedPartitionNameGeneratorTest {
             PartitionNameGenerator generator = new OBMySQLDateBasedPartitionNameGenerator();
             String actual = generator.invoke(connection, dbTable, getParameters(config));
             DateFormat dateFormat = new SimpleDateFormat("yyyyMMdd");
-            String expect = "p" + dateFormat.format(TimeDataTypeUtil.getNextDate(new Date(), 2, TimeDataType.DAY));
+            String expect = "p" + dateFormat.format(TimeDataTypeUtil.getNextDate(new Date(), 1, TimeDataType.DAY));
             Assert.assertEquals(expect, actual);
         }
     }
