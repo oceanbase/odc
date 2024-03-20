@@ -675,8 +675,12 @@ INSERT INTO config_system_configuration(`key`, `value`, `description`) VALUES('o
   'CHANGE_ME', 'oms region')
   ON DUPLICATE KEY UPDATE `id`=`id`;
 
-INSERT INTO config_system_configuration(`key`, `value`, `description`) VALUES('odc.osc.oms.check-project-step-failed-threshold-time',
-  '120', 'project oms check project step failed, if failed time exceed 120 seconds, osc task will failed')
+INSERT INTO config_system_configuration(`key`, `value`, `description`) VALUES('odc.osc.oms.check-project-step-failed-timeout-seconds',
+  '120', 'check oms project step failed, if failed timeout 120 seconds, osc task will failed')
+  ON DUPLICATE KEY UPDATE `id`=`id`;
+
+INSERT INTO config_system_configuration(`key`, `value`, `description`) VALUES('odc.osc.oms.check-project-progress-cron-expression',
+  '0/10 * * * * ?', 'check oms project progress cron expression')
   ON DUPLICATE KEY UPDATE `id`=`id`;
 
 INSERT INTO config_system_configuration(`key`, `value`, `description`) VALUES('odc.features.task.osc.enabled', 'false',

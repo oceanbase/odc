@@ -56,17 +56,17 @@ public class ProjectStepResultChecker {
     private final OmsProjectProgressResponse progressResponse;
 
     private final boolean enableFullVerify;
-    private final int checkProjectFailedThresholdTime;
+    private final int checkProjectStepFailedTimeoutSeconds;
     private final Map<OmsStepName, Long> checkFailedTimes;
 
     public ProjectStepResultChecker(OmsProjectProgressResponse progressResponse, List<OmsProjectStepVO> projectSteps,
-            boolean enableFullVerify, int checkProjectFailedThresholdTime,
+            boolean enableFullVerify, int checkProjectStepFailedTimeoutSeconds,
             Map<OmsStepName, Long> checkFailedTimes) {
         this.progressResponse = progressResponse;
         this.currentProjectStepMap = projectSteps.stream().collect(Collectors.toMap(OmsProjectStepVO::getName, a -> a));
         this.checkerResult = new ProjectStepResult();
         this.enableFullVerify = enableFullVerify;
-        this.checkProjectFailedThresholdTime = checkProjectFailedThresholdTime;
+        this.checkProjectStepFailedTimeoutSeconds = checkProjectStepFailedTimeoutSeconds;
         this.checkFailedTimes = checkFailedTimes;
         this.toCheckSteps = Lists.newArrayList(OmsStepName.TRANSFER_INCR_LOG_PULL,
                 OmsStepName.FULL_TRANSFER, OmsStepName.INCR_TRANSFER);
@@ -182,14 +182,14 @@ public class ProjectStepResultChecker {
                     checkerResult.setErrorMsg(currentProjectStepMap.get(stepName).getExtraInfo().getErrorMsg());
                 }
 
-                // record FULL_TRANSFER failed times
+                // record FULL_TRANSFER failed time
                 if (stepName == OmsStepName.FULL_TRANSFER) {
                     long failedBeginTime = checkFailedTimes.computeIfAbsent(stepName, k -> System.currentTimeMillis());
                     long failedAccumulateTime = (System.currentTimeMillis() - failedBeginTime) / 1000;
-                    if (failedAccumulateTime > checkProjectFailedThresholdTime) {
-                        log.warn("Current step failed time exceed threshold, stepName={}, "
-                                + "failedAccumulateTime={}, thresholdTime={}",
-                                stepName, failedAccumulateTime, checkProjectFailedThresholdTime);
+                    if (failedAccumulateTime > checkProjectStepFailedTimeoutSeconds) {
+                        log.warn("Current step failed timeout, stepName={}, "
+                                + "failedAccumulateTimeSeconds={}, checkProjectStepFailedTimeoutSeconds={}",
+                                stepName, failedAccumulateTime, checkProjectStepFailedTimeoutSeconds);
                         isProjectFailed = true;
                     }
                 }

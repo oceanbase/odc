@@ -45,9 +45,13 @@ public class OnlineSchemaChangeProperties {
         private String region;
 
         /**
-         * when check oms project step failed time exceed this threshold times, osc task will be failed
+         *  osc task will be failed when check oms project step failed time exceed this seconds
          */
-        private int checkProjectStepFailedThresholdTime;
+        private int checkProjectStepFailedTimeoutSeconds;
+        /**
+         * check oms project process expression
+         */
+        private String checkProjectProgressCronExpression;
     }
 
 }
