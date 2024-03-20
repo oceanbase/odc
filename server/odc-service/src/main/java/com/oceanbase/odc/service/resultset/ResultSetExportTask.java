@@ -46,7 +46,6 @@ import com.oceanbase.odc.core.session.ConnectionSessionConstants;
 import com.oceanbase.odc.core.session.ConnectionSessionUtil;
 import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.core.shared.Verify;
-import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.shared.exception.OBException;
 import com.oceanbase.odc.core.shared.exception.UnexpectedException;
 import com.oceanbase.odc.core.shared.model.TableIdentity;
@@ -68,6 +67,7 @@ import com.oceanbase.odc.service.datatransfer.model.DataTransferProperties;
 import com.oceanbase.odc.service.flow.task.model.ResultSetExportResult;
 import com.oceanbase.odc.service.objectstorage.cloud.CloudObjectStorageService;
 import com.oceanbase.odc.service.plugin.TaskPluginUtil;
+import com.oceanbase.odc.service.session.initializer.ConsoleTimeoutInitializer;
 import com.oceanbase.tools.dbbrowser.model.DBTableColumn;
 import com.oceanbase.tools.loaddump.common.enums.ObjectType;
 import com.oceanbase.tools.loaddump.common.model.ObjectStatus.Status;
@@ -83,7 +83,6 @@ import lombok.Getter;
  */
 public class ResultSetExportTask implements Callable<ResultSetExportResult> {
     protected static final Logger LOGGER = LoggerFactory.getLogger("DataTransferLogger");
-    private static final int DEFAULT_TIMEOUT_SECONDS = 24 * 60 * 60;
 
     private final ResultSetExportTaskParameter parameter;
     private final String fileName;
@@ -205,7 +204,7 @@ public class ResultSetExportTask implements Callable<ResultSetExportResult> {
         config.setCursorFetchSize(dataTransferProperties.getCursorFetchSize());
         config.setUsePrepStmts(dataTransferProperties.isUseServerPrepStmts());
 
-        config.setExecutionTimeoutSeconds(DEFAULT_TIMEOUT_SECONDS);
+        config.setExecutionTimeoutSeconds(parameter.getExecutionTimeoutSeconds());
 
         return config;
     }
@@ -221,11 +220,10 @@ public class ResultSetExportTask implements Callable<ResultSetExportResult> {
             SyncJdbcExecutor syncJdbcExecutor = session.getSyncJdbcExecutor(ConnectionSessionConstants.BACKEND_DS_KEY);
             syncJdbcExecutor.execute((StatementCallback<?>) stmt -> {
                 stmt.setMaxRows(10);
-                String timeoutSetting =
-                        getTimeoutSettingStatement(config.getConnectionInfo().getConnectType().getDialectType());
-                if (timeoutSetting != null) {
-                    stmt.execute(timeoutSetting);
-                }
+                new ConsoleTimeoutInitializer(parameter.getExecutionTimeoutSeconds() * 1000000L,
+                        config.getConnectionInfo().getConnectType().getDialectType())
+                                .init(stmt.getConnection());
+
                 stmt.execute(parameter.getSql());
                 ResultSetMetaData rsMetaData = stmt.getResultSet().getMetaData();
                 if (rsMetaData == null) {
@@ -273,21 +271,6 @@ public class ResultSetExportTask implements Callable<ResultSetExportResult> {
                 }
                 maskConfigMap.put(TableIdentity.of(catalogName, tableName), column2Masker);
             }
-        }
-    }
-
-    private String getTimeoutSettingStatement(DialectType dialectType) {
-        switch (dialectType) {
-            case OB_MYSQL:
-            case OB_ORACLE:
-            case ODP_SHARDING_OB_MYSQL:
-                return "set ob_query_timeout = " + DEFAULT_TIMEOUT_SECONDS * 1000000L;
-            case DORIS:
-            case MYSQL:
-                return "set statement max_execution_time = " + DEFAULT_TIMEOUT_SECONDS;
-            case ORACLE:
-            default:
-                return null;
         }
     }
 
