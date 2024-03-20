@@ -22,20 +22,17 @@ import java.util.Map;
 import org.junit.Assert;
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 
 import com.auth0.jwt.interfaces.Claim;
 import com.oceanbase.odc.ServiceTestEnv;
 
 public class JwtServiceTest extends ServiceTestEnv {
-    @Value("${odc.iam.auth.jwt.buffer-time:3*60*1000}")
-    private long bufferTime;
 
     @Autowired
     private JwtService jwtService;
 
     @Test
-    public void testSignPositive() {
+    public void sign_generateJwtToken_succeed() {
         Map<String, Object> map = new HashMap<>();
         map.put("userId", 123);
         map.put("username", "testUser");
@@ -44,7 +41,7 @@ public class JwtServiceTest extends ServiceTestEnv {
     }
 
     @Test
-    public void testVerifyPositive() {
+    public void verify_verifyJwtToken_succeed() {
         Map<String, Object> map = new HashMap<>();
         map.put("userId", 123);
         map.put("username", "testUser");
@@ -53,12 +50,12 @@ public class JwtServiceTest extends ServiceTestEnv {
     }
 
     @Test
-    public void testVerifyNegative() {
+    public void verify_verifyJwtToken_failed() {
         Assert.assertFalse(jwtService.verify("invalidToken"));
     }
 
     @Test
-    public void testGetClaims() {
+    public void getClaims_getJwtLoad_succeed() {
         Map<String, Object> map = new HashMap<>();
         map.put("userId", 123);
         map.put("username", "testUser");
@@ -70,7 +67,7 @@ public class JwtServiceTest extends ServiceTestEnv {
     }
 
     @Test
-    public void testGetExpiresAt() {
+    public void getExpireAt_getJwtExpirationTime_succeed() {
         Map<String, Object> map = new HashMap<>();
         map.put("userId", 123);
         map.put("username", "testUser");
@@ -80,7 +77,7 @@ public class JwtServiceTest extends ServiceTestEnv {
     }
 
     @Test
-    public void testGetIssuedAt() {
+    public void getIssuedAt_getJwtIssueTime_succeed() {
         Map<String, Object> map = new HashMap<>();
         map.put("userId", 123);
         map.put("username", "testUser");
@@ -90,19 +87,19 @@ public class JwtServiceTest extends ServiceTestEnv {
     }
 
     @Test
-    public void testIsExpired() {
+    public void isExpired_checkWhetherJwtIsExpired_expired() {
         Date expiration = new Date(System.currentTimeMillis() - 1000);
         Assert.assertTrue(jwtService.isExpired(expiration));
     }
 
     @Test
-    public void testIsRenew() {
-        Date expiration = new Date(System.currentTimeMillis() + bufferTime - 1000);
+    public void isRenew_checkWhetherJwtNeedToRenew_true() {
+        Date expiration = new Date(System.currentTimeMillis() + jwtService.getJwtProperties().getBufferTime()- 1000);
         Assert.assertTrue(jwtService.isRenew(expiration));
     }
 
     @Test
-    public void testGetHeaderByBase64() {
+    public void getHeaderByBase64_getHeaderByBase64_obtainSucceed() {
         Map<String, Object> map = new HashMap<>();
         map.put("userId", 123);
         map.put("username", "testUser");

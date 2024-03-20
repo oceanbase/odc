@@ -66,13 +66,6 @@ public class CustomJwtLogoutSuccessHandler implements LogoutSuccessHandler {
             authenticationCache.invalidate(user.getId());
         }
 
-        if (authentication != null && authentication.getDetails() != null) {
-            try {
-                httpServletRequest.getSession().invalidate();
-            } catch (Exception e) {
-                log.warn("An error occurred while logging out {}", e.getMessage());
-            }
-        }
         setJsonResponse(httpServletRequest, httpServletResponse);
     }
 

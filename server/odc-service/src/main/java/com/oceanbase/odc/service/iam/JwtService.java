@@ -28,7 +28,6 @@ import java.util.concurrent.locks.Lock;
 
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.integration.jdbc.lock.JdbcLockRegistry;
 import org.springframework.stereotype.Service;
 
@@ -42,11 +41,12 @@ import com.oceanbase.odc.metadb.config.SystemConfigEntity;
 import com.oceanbase.odc.service.config.SystemConfigService;
 import com.oceanbase.odc.service.config.model.Configuration;
 
+import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 
 @Service
 @Slf4j
-@ConditionalOnProperty(value = {"odc.iam.auth.method"}, havingValue = "jwt")
+@Data
 public class JwtService {
 
     private static final long TRY_LOCK_TIMEOUT_SECONDS = 5;
@@ -76,9 +76,10 @@ public class JwtService {
                     List<Configuration> list = systemConfigService.queryByKeyPrefix(
                             ENCRYPTION_JWT_KEY_SYSTEM_CONFIG_KEY);
                     if (verifySystemConfig(list)) {
-                        this.jwtProperties.setTokenSecret(list.get(0).getValue());
+                        jwtProperties.setTokenSecret(list.get(0).getValue());
                     } else {
                         String tokenSecret = UUID.randomUUID().toString();
+                        jwtProperties.setTokenSecret(tokenSecret);
                         SystemConfigEntity jwtSecretKey =
                                 createSystemConfigEntity(ENCRYPTION_JWT_KEY_SYSTEM_CONFIG_KEY,
                                         tokenSecret, "ODC jwt secret key");
@@ -151,7 +152,6 @@ public class JwtService {
             });
             return builder.sign(algorithm);
         } catch (Exception e) {
-            log.warn(e.getMessage());
             return null;
         }
     }
@@ -163,7 +163,6 @@ public class JwtService {
             verifier.verify(token);
             return true;
         } catch (Exception e) {
-            log.warn(e.getMessage());
             return false;
         }
     }

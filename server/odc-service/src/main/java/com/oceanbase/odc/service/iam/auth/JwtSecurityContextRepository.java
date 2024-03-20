@@ -136,7 +136,7 @@ public class JwtSecurityContextRepository implements SecurityContextRepository {
             String renewToken = jwtService.sign(hashMap);
             Cookie cookie = new Cookie(JwtConstants.ODC_JWT_TOKEN, renewToken);
             cookie.setPath("/");
-            cookie.setMaxAge(24 * 60 * 60);
+            cookie.setMaxAge(86400);
             cookie.setHttpOnly(true);
             response.addCookie(cookie);
         }
@@ -157,7 +157,7 @@ public class JwtSecurityContextRepository implements SecurityContextRepository {
             String token = jwtService.sign(hashMap);
             Cookie cookie = new Cookie(JwtConstants.ODC_JWT_TOKEN, token);
             cookie.setPath("/");
-            cookie.setMaxAge(24 * 60 * 60);
+            cookie.setMaxAge(86400);
             cookie.setHttpOnly(true);
             response.addCookie(cookie);
             authenticationCache.put(user.getId(), context.getAuthentication());
