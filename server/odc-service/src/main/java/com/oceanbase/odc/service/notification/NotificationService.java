@@ -52,6 +52,7 @@ import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.authority.util.Authenticated;
 import com.oceanbase.odc.core.authority.util.PreAuthenticate;
 import com.oceanbase.odc.core.shared.PreConditions;
+import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.core.shared.exception.AccessDeniedException;
 import com.oceanbase.odc.core.shared.exception.NotFoundException;
@@ -71,12 +72,14 @@ import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.notification.helper.ChannelConfigValidator;
 import com.oceanbase.odc.service.notification.helper.ChannelMapper;
 import com.oceanbase.odc.service.notification.helper.PolicyMapper;
+import com.oceanbase.odc.service.notification.model.BaseChannelConfig;
 import com.oceanbase.odc.service.notification.model.Channel;
 import com.oceanbase.odc.service.notification.model.Message;
 import com.oceanbase.odc.service.notification.model.MessageSendResult;
 import com.oceanbase.odc.service.notification.model.NotificationPolicy;
 import com.oceanbase.odc.service.notification.model.QueryChannelParams;
 import com.oceanbase.odc.service.notification.model.QueryMessageParams;
+import com.oceanbase.odc.service.notification.model.WebhookChannelConfig;
 
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
@@ -168,6 +171,13 @@ public class NotificationService {
         validator.validate(channel.getType(), channel.getChannelConfig());
         ChannelEntity entity = nullSafeGetChannel(channel.getId(), projectId);
 
+        BaseChannelConfig channelConfig = channel.getChannelConfig();
+        if (channelConfig instanceof WebhookChannelConfig && ((WebhookChannelConfig) channelConfig).getSign() == null) {
+            String sign = ((WebhookChannelConfig) channelMapper.fromEntityWithConfig(entity).getChannelConfig())
+                    .getSign();
+            ((WebhookChannelConfig) channelConfig).setSign((sign));
+        }
+
         channelPropertyRepository.deleteByChannelId(entity.getId());
 
         ChannelEntity toBeSaved = channelMapper.toEntity(channel);
@@ -194,8 +204,17 @@ public class NotificationService {
         PreConditions.notNull(channel.getType(), "channel.type");
         PreConditions.notNull(channel.getChannelConfig(), "channel.config");
         validator.validate(channel.getType(), channel.getChannelConfig());
-        MessageSender sender = messageSenderMapper.get(channel);
 
+        BaseChannelConfig channelConfig = channel.getChannelConfig();
+        if (channelConfig instanceof WebhookChannelConfig && ((WebhookChannelConfig) channelConfig).getSign() == null) {
+            Verify.notNull(channel.getId(), "channel.id");
+            ChannelEntity entity = nullSafeGetChannel(channel.getId(), projectId);
+            String sign = ((WebhookChannelConfig) channelMapper.fromEntityWithConfig(entity).getChannelConfig())
+                    .getSign();
+            ((WebhookChannelConfig) channelConfig).setSign((sign));
+        }
+
+        MessageSender sender = messageSenderMapper.get(channel);
         String testMessage = I18n.translate(CHANNEL_TEST_MESSAGE_KEY, null, LocaleContextHolder.getLocale());
         try {
             return sender.send(Message.builder()
