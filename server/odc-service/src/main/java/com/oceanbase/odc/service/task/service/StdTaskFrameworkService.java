@@ -281,9 +281,9 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
         }
 
         updateJobScheduleEntity(taskResult);
+        taskResultPublisherExecutor
+                .execute(() -> publisher.publishEvent(new DefaultJobProcessUpdateEvent(taskResult)));
         if (publisher != null && taskResult.getStatus() != null && taskResult.getStatus().isTerminated()) {
-            taskResultPublisherExecutor
-                    .execute(() -> publisher.publishEvent(new DefaultJobProcessUpdateEvent(taskResult)));
             taskResultPublisherExecutor.execute(() -> publisher
                     .publishEvent(new JobTerminateEvent(taskResult.getJobIdentity(), taskResult.getStatus())));
         }

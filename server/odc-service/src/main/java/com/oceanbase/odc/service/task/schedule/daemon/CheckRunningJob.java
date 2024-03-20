@@ -63,12 +63,12 @@ public class CheckRunningJob implements Job {
 
     private void handleJobRetryingOrCanceled(JobEntity a) {
         getConfiguration().getTransactionManager().doInTransactionWithoutResult(() -> {
-            doHandleJobRetryingOrCanceled(a);
+            doHandleJobRetryingOrFailed(a);
         });
 
     }
 
-    private void doHandleJobRetryingOrCanceled(JobEntity a) {
+    private void doHandleJobRetryingOrFailed(JobEntity a) {
         // destroy executor
         try {
             getConfiguration().getJobDispatcher().destroy(JobIdentity.of(a.getId()));

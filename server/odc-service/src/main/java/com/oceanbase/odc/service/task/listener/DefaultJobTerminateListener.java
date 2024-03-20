@@ -16,10 +16,15 @@
 
 package com.oceanbase.odc.service.task.listener;
 
+import java.util.Optional;
+
 import com.oceanbase.odc.common.event.AbstractEventListener;
 import com.oceanbase.odc.common.json.JsonUtils;
+import com.oceanbase.odc.metadb.schedule.ScheduleTaskEntity;
 import com.oceanbase.odc.metadb.schedule.ScheduleTaskRepository;
 import com.oceanbase.odc.metadb.task.JobEntity;
+import com.oceanbase.odc.metadb.task.TaskEntity;
+import com.oceanbase.odc.metadb.task.TaskRepository;
 import com.oceanbase.odc.service.common.util.SpringContextUtil;
 import com.oceanbase.odc.service.dlm.model.DataArchiveParameters;
 import com.oceanbase.odc.service.schedule.ScheduleService;
@@ -42,9 +47,9 @@ public class DefaultJobTerminateListener extends AbstractEventListener<JobTermin
     public void onEvent(JobTerminateEvent event) {
         TaskFrameworkService taskFrameworkService = SpringContextUtil.getBean(TaskFrameworkService.class);
         JobEntity jobEntity = taskFrameworkService.find(event.getJi().getId());
+        ScheduleTaskRepository taskRepository = SpringContextUtil.getBean(ScheduleTaskRepository.class);
         // Trigger the data-delete job if necessary after the data-archive task is completed.
         if (jobEntity.getJobType().equals(JobType.DATA_ARCHIVE.name()) && event.getStatus() == JobStatus.DONE) {
-            ScheduleTaskRepository taskRepository = SpringContextUtil.getBean(ScheduleTaskRepository.class);
             ScheduleService scheduleService = SpringContextUtil.getBean(ScheduleService.class);
             taskRepository.findByJobId(jobEntity.getId()).ifPresent(o -> {
                 DataArchiveParameters dataArchiveParameters = JsonUtils.fromJson(o.getParametersJson(),
@@ -53,6 +58,26 @@ public class DefaultJobTerminateListener extends AbstractEventListener<JobTermin
                     scheduleService.dataArchiveDelete(Long.parseLong(o.getJobName()), o.getId());
                 }
             });
+        }
+
+        Optional<ScheduleTaskEntity> scheduleTask = taskRepository.findByJobId(jobEntity.getId());
+        if (scheduleTask.isPresent() && !scheduleTask.get().getStatus().isTerminated()) {
+            int row =
+                    taskRepository.updateStatusById(scheduleTask.get().getId(), event.getStatus().convertTaskStatus());
+            if (row >= 1) {
+                log.info("Update scheduleTask successfully, scheduleTaskId={}, status={}.", jobEntity.getId(),
+                        event.getStatus().convertTaskStatus());
+            }
+        } else {
+            TaskRepository repository = SpringContextUtil.getBean(TaskRepository.class);
+            Optional<TaskEntity> taskEntity = repository.findById(jobEntity.getId());
+            if (taskEntity.isPresent() && !taskEntity.get().getStatus().isTerminated()) {
+                int row = repository.updateStatusById(taskEntity.get().getId(), event.getStatus().convertTaskStatus());
+                if (row >= 1) {
+                    log.info("Update TaskTask successfully, taskId={}, status={}.", jobEntity.getId(),
+                            event.getStatus().convertTaskStatus());
+                }
+            }
         }
     }
 }

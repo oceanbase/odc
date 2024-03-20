@@ -26,6 +26,8 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import com.oceanbase.odc.core.shared.constant.TaskStatus;
+
 /**
  * @author wenniu.ly
  * @date 2022/2/11
@@ -58,5 +60,10 @@ public interface TaskRepository extends JpaRepository<TaskEntity, Long>, JpaSpec
     @Query("update TaskEntity set job_id=:jobId where id=:id")
     @Modifying
     void updateJobId(@Param("id") Long id, @Param("jobId") Long jobId);
+
+    @Transactional
+    @Modifying
+    @Query("update TaskEntity st set st.status = ?2 where st.id = ?1")
+    int updateStatusById(Long id, TaskStatus status);
 
 }
