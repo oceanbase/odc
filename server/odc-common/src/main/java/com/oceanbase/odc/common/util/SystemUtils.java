@@ -127,7 +127,9 @@ public abstract class SystemUtils {
     public static BinarySize getSystemFreePhysicalMemory() {
         OperatingSystemMXBean osBean = ManagementFactory.getPlatformMXBean(OperatingSystemMXBean.class);
         return BinarySizeUnit.B.of(osBean.getFreePhysicalMemorySize());
-    } /**
+    }
+
+    /**
      * get system free physical memory, unit size is byte
      *
      * @return free memory
