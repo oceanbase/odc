@@ -101,7 +101,7 @@ public class DataArchivePreprocessor extends AbstractDlmJobPreprocessor {
             ConnectionSession targetSession = targetSessionFactory.generateSession();
             try {
                 supportDataArchivingLink(sourceSession, targetSession);
-                if (sourceDs.getDialectType().isOracle() && checkTargetTableExist(targetDb.getName(),
+                if (sourceDs.getDialectType().isOracle() && !checkTargetTableExist(targetDb.getName(),
                         dataArchiveParameters.getTables(), targetSession)) {
                     throw new UnsupportedException("The target table does not exist.");
                 }
