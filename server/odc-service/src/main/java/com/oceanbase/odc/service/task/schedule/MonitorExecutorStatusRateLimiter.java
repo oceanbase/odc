@@ -58,8 +58,8 @@ public class MonitorExecutorStatusRateLimiter implements StartJobRateLimiter {
         if (taskFrameworkProperties.get().getRunMode().isProcess() && SystemUtils.isOnLinux()) {
             JobConfiguration jobConfiguration = JobConfigurationHolder.getJobConfiguration();
             long count = jobConfiguration.getTaskFrameworkService().countRunningJobs(TaskRunMode.PROCESS);
-            if (count >= runningJobCountLimit) {
-                log.warn("Amount of executor running jobs exceed limit, wait next schedule, limit={}, runningJobs={}.",
+            if (count >= runningJobCountLimit && log.isDebugEnabled()) {
+                log.debug("Amount of executor running jobs exceed limit, wait next schedule, limit={}, runningJobs={}.",
                         runningJobCountLimit, count);
                 return false;
             }
@@ -68,8 +68,8 @@ public class MonitorExecutorStatusRateLimiter implements StartJobRateLimiter {
             int startNewProcessMemoryMinSize = taskFrameworkProperties.get().getStartNewProcessMemoryMinSizeInMB();
             if (new BigDecimal(totalPhysicMemory).multiply(BigDecimal.valueOf(0.2))
                     .add(BigDecimal.valueOf(startNewProcessMemoryMinSize))
-                    .compareTo(BigDecimal.valueOf(systemFreeMemory)) > 0) {
-                log.warn("Free memory lack, systemFreeMemory={}, startNewProcessMemoryMinSize={}, totalPhysicMemory={}",
+                    .compareTo(BigDecimal.valueOf(systemFreeMemory)) > 0 && log.isDebugEnabled()) {
+                log.debug("Free memory lack, systemFreeMemory={}, startNewProcessMemoryMinSize={}, totalPhysicMemory={}",
                         systemFreeMemory, startNewProcessMemoryMinSize, totalPhysicMemory);
                 return false;
             }
