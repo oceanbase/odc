@@ -41,12 +41,10 @@ import com.oceanbase.odc.metadb.config.SystemConfigEntity;
 import com.oceanbase.odc.service.config.SystemConfigService;
 import com.oceanbase.odc.service.config.model.Configuration;
 
-import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 
 @Service
 @Slf4j
-@Data
 public class JwtService {
 
     private static final long TRY_LOCK_TIMEOUT_SECONDS = 5;

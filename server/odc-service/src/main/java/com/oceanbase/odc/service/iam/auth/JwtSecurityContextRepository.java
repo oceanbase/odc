@@ -15,6 +15,7 @@
  */
 package com.oceanbase.odc.service.iam.auth;
 
+import java.time.Duration;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -25,6 +26,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -44,7 +46,6 @@ import com.oceanbase.odc.core.shared.constant.OrganizationType;
 import com.oceanbase.odc.metadb.iam.UserEntity;
 import com.oceanbase.odc.metadb.iam.UserRepository;
 import com.oceanbase.odc.service.iam.JwtService;
-import com.oceanbase.odc.service.iam.OrganizationMapper;
 import com.oceanbase.odc.service.iam.model.JwtConstants;
 import com.oceanbase.odc.service.iam.model.User;
 
@@ -64,7 +65,8 @@ public class JwtSecurityContextRepository implements SecurityContextRepository {
     @Autowired
     @Qualifier("authenticationCache")
     private Cache<Long, Authentication> authenticationCache;
-    private final OrganizationMapper organizationMapper = OrganizationMapper.INSTANCE;
+    @Value("${server.servlet.session.timeout:8h}")
+    private Duration timeoutSetting;
 
     @Override
     public SecurityContext loadContext(HttpRequestResponseHolder requestResponseHolder) {
@@ -136,7 +138,7 @@ public class JwtSecurityContextRepository implements SecurityContextRepository {
             String renewToken = jwtService.sign(hashMap);
             Cookie cookie = new Cookie(JwtConstants.ODC_JWT_TOKEN, renewToken);
             cookie.setPath("/");
-            cookie.setMaxAge(86400);
+            cookie.setMaxAge((int) timeoutSetting.getSeconds());
             cookie.setHttpOnly(true);
             response.addCookie(cookie);
         }
@@ -157,7 +159,7 @@ public class JwtSecurityContextRepository implements SecurityContextRepository {
             String token = jwtService.sign(hashMap);
             Cookie cookie = new Cookie(JwtConstants.ODC_JWT_TOKEN, token);
             cookie.setPath("/");
-            cookie.setMaxAge(86400);
+            cookie.setMaxAge((int) timeoutSetting.getSeconds());
             cookie.setHttpOnly(true);
             response.addCookie(cookie);
             authenticationCache.put(user.getId(), context.getAuthentication());

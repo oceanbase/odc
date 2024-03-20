@@ -30,6 +30,8 @@ public class JwtServiceTest extends ServiceTestEnv {
 
     @Autowired
     private JwtService jwtService;
+    @Autowired
+    private JwtProperties jwtProperties;
 
     @Test
     public void sign_generateJwtToken_succeed() {
@@ -94,7 +96,7 @@ public class JwtServiceTest extends ServiceTestEnv {
 
     @Test
     public void isRenew_checkWhetherJwtNeedToRenew_true() {
-        Date expiration = new Date(System.currentTimeMillis() + jwtService.getJwtProperties().getBufferTime()- 1000);
+        Date expiration = new Date(System.currentTimeMillis() + jwtProperties.getBufferTime() - 1000);
         Assert.assertTrue(jwtService.isRenew(expiration));
     }
 
