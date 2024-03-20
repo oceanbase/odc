@@ -29,6 +29,7 @@ import com.oceanbase.odc.metadb.schedule.ScheduleTaskRepository;
 import com.oceanbase.odc.metadb.task.JobEntity;
 import com.oceanbase.odc.metadb.task.TaskEntity;
 import com.oceanbase.odc.service.common.util.UrlUtils;
+import com.oceanbase.odc.service.schedule.ScheduleTaskService;
 import com.oceanbase.odc.service.task.TaskService;
 import com.oceanbase.odc.service.task.executor.task.TaskResult;
 import com.oceanbase.odc.service.task.model.ExecutorInfo;
@@ -49,6 +50,8 @@ public class DefaultJobProcessUpdateListener extends AbstractEventListener<Defau
     @Autowired
     private ScheduleTaskRepository taskRepository;
     @Autowired
+    private ScheduleTaskService scheduleTaskService;
+    @Autowired
     private TaskService taskService;
     @Autowired
     private StdTaskFrameworkService stdTaskFrameworkService;
@@ -59,7 +62,7 @@ public class DefaultJobProcessUpdateListener extends AbstractEventListener<Defau
         JobIdentity identity = taskResult.getJobIdentity();
         JobEntity jobEntity = stdTaskFrameworkService.find(identity.getId());
 
-        Optional<ScheduleTaskEntity> scheduleTaskEntityOptional = taskRepository.findByJobId(jobEntity.getId());
+        Optional<ScheduleTaskEntity> scheduleTaskEntityOptional = scheduleTaskService.findByJobId(jobEntity.getId());
         if (scheduleTaskEntityOptional.isPresent()) {
             updateScheduleTask(taskResult, scheduleTaskEntityOptional.get());
             return;

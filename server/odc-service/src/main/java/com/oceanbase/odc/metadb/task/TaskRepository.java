@@ -16,6 +16,7 @@
 package com.oceanbase.odc.metadb.task;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 import javax.transaction.Transactional;
@@ -54,7 +55,7 @@ public interface TaskRepository extends JpaRepository<TaskEntity, Long>, JpaSpec
 
     List<TaskEntity> findByIdIn(Set<Long> taskIds);
 
-    List<TaskEntity> findByJobId(Long jobId);
+    Optional<TaskEntity> findByJobId(Long jobId);
 
     @Transactional
     @Query("update TaskEntity set job_id=:jobId where id=:id")

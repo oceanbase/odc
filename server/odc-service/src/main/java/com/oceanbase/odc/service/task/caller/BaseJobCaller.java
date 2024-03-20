@@ -19,6 +19,7 @@ package com.oceanbase.odc.service.task.caller;
 import java.io.IOException;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.oceanbase.odc.common.event.AbstractEvent;
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.metadb.task.JobEntity;
 import com.oceanbase.odc.service.common.response.SuccessResponse;
@@ -109,36 +110,32 @@ public abstract class BaseJobCaller implements JobCaller {
         try {
             if (executorEndpoint != null
                     && isExecutorExist(ExecutorIdentifierParser.parser(jobEntity.getExecutorIdentifier()))) {
-                tryStop(jobConfiguration, ji, executorEndpoint);
-            } else {
-                afterStopSucceed(jobConfiguration, ji);
+                tryStop(ji, executorEndpoint);
             }
-
+            afterStopSucceed(ji);
         } catch (Exception e) {
             afterStopFailed(ji, e);
         }
     }
 
 
-    private void tryStop(JobConfiguration jobConfiguration, JobIdentity ji, String executorEndpoint)
+    private void tryStop(JobIdentity ji, String executorEndpoint)
             throws IOException, JobException {
 
         String url = executorEndpoint + String.format(JobUrlConstants.STOP_TASK, ji.getId());
         log.info("Try stop job {} in executor {}.", ji.getId(), url);
         SuccessResponse<Boolean> response =
                 HttpUtil.request(url, new TypeReference<SuccessResponse<Boolean>>() {});
-        log.info("Stop job {} in executor, response is {}.", ji.getId(), JsonUtils.toJson(response));
         if (response != null && response.getSuccessful() && response.getData()) {
-            afterStopSucceed(jobConfiguration, ji);
+            log.info("Stop job {} in executor succeed, response is {}.", ji.getId(), JsonUtils.toJson(response));
         } else {
-            afterStopFailed(ji,
-                    new JobException("Stop job response not succeed, response={0}", JsonUtils.toJson(response)));
+            throw new JobException("Stop job response not succeed, response={0}", JsonUtils.toJson(response));
         }
     }
 
-    protected void afterStopSucceed(JobConfiguration jobConfiguration, JobIdentity ji) {
+    protected void afterStopSucceed(JobIdentity ji) {
         log.info("Stop job {}, set status to CANCELED successfully.", ji.getId());
-        jobConfiguration.getEventPublisher().publishEvent(new JobTerminateEvent(ji, JobStatus.CANCELED));
+        publishEvent(new JobTerminateEvent(ji, JobStatus.CANCELED));
         publishEvent(new JobCallerEvent(ji, JobCallerAction.STOP, true, null));
     }
 
@@ -207,7 +204,7 @@ public abstract class BaseJobCaller implements JobCaller {
     }
 
 
-    private void publishEvent(JobCallerEvent event) {
+    private <T extends AbstractEvent> void publishEvent(T event) {
         JobConfiguration configuration = JobConfigurationHolder.getJobConfiguration();
         configuration.getEventPublisher().publishEvent(event);
     }
