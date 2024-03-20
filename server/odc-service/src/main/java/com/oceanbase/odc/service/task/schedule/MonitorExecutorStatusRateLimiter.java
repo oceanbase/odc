@@ -40,12 +40,15 @@ public class MonitorExecutorStatusRateLimiter implements StartJobRateLimiter {
     private final Supplier<TaskFrameworkProperties> taskFrameworkProperties;
     private final TaskFrameworkService taskFrameworkService;
     private long runningJobCountLimit;
+    private long totalPhysicMemory;
 
     public MonitorExecutorStatusRateLimiter(Supplier<TaskFrameworkProperties> taskFrameworkProperties,
             TaskFrameworkService taskFrameworkService) {
         this.taskFrameworkProperties = taskFrameworkProperties;
         this.taskFrameworkService = taskFrameworkService;
         if (taskFrameworkProperties.get().getRunMode().isProcess() && SystemUtils.isOnLinux()) {
+            this.totalPhysicMemory =
+                    SystemUtils.getSystemTotalPhysicalMemory().convert(BinarySizeUnit.MB).getSizeDigit();
             this.runningJobCountLimit = calculateRunningJobCountLimit();
         }
     }
@@ -61,12 +64,11 @@ public class MonitorExecutorStatusRateLimiter implements StartJobRateLimiter {
                 return false;
             }
             // Get current system free memory
-            long systemFreeMemory = SystemUtils.getSystemFreeMemory().convert(BinarySizeUnit.MB).getSizeDigit();
-            int startNewProcessMemoryMinSize =
-                    taskFrameworkProperties.get().getStartNewProcessMemoryMinSizeInMB();
-            if (systemFreeMemory >> 1 <= startNewProcessMemoryMinSize) {
-                log.warn("Current free memory lack, systemFreeMemory={}, startNewProcessMemoryMinSize={}",
-                        systemFreeMemory, startNewProcessMemoryMinSize);
+            long systemFreeMemory = SystemUtils.getSystemFreePhysicalMemory().convert(BinarySizeUnit.MB).getSizeDigit();
+            int startNewProcessMemoryMinSize = taskFrameworkProperties.get().getStartNewProcessMemoryMinSizeInMB();
+            if (systemFreeMemory < (totalPhysicMemory * 0.2 + startNewProcessMemoryMinSize)) {
+                log.warn("Free memory lack, systemFreeMemory={}, startNewProcessMemoryMinSize={}, totalPhysicMemory={}",
+                        systemFreeMemory, startNewProcessMemoryMinSize, totalPhysicMemory);
                 return false;
             }
         }
@@ -74,17 +76,13 @@ public class MonitorExecutorStatusRateLimiter implements StartJobRateLimiter {
     }
 
     private long calculateRunningJobCountLimit() {
-        // Get system free memory when limiter is init
-        long totalFreeMem = SystemUtils.getSystemFreeMemory().convert(BinarySizeUnit.MB).getSizeDigit();
-        int limitRunningMem = taskFrameworkProperties.get().getAvailableMaxMemoryForRunningJobInMb();
         int startNewProcessMem = taskFrameworkProperties.get().getStartNewProcessMemoryMinSizeInMB();
-        // Get total free memory * 50% if limitRunningTaskMemory less than StartNewProcessMemoryMinSize,
+        // Get totalPhysicMemory * 0.35 / startNewProcessMemoryMinSize
         // odc may restart, so we should add exists running jobs number
-        long limitCount =
-                new BigDecimal(limitRunningMem < startNewProcessMem ? totalFreeMem >> 1 : limitRunningMem)
-                        .divide(new BigDecimal(startNewProcessMem), RoundingMode.FLOOR)
-                        .add(new BigDecimal(taskFrameworkService.countRunningJobs(TaskRunMode.PROCESS)))
-                        .longValue();
+        long limitCount = new BigDecimal(totalPhysicMemory).multiply(BigDecimal.valueOf(0.35))
+                .divide(new BigDecimal(startNewProcessMem), RoundingMode.FLOOR)
+                .add(new BigDecimal(taskFrameworkService.countRunningJobs(TaskRunMode.PROCESS)))
+                .longValue();
         return limitCount == 0 ? 1 : limitCount;
     }
 

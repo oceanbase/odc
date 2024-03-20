@@ -124,9 +124,17 @@ public abstract class SystemUtils {
      *
      * @return free memory
      */
-    public static BinarySize getSystemFreeMemory() {
+    public static BinarySize getSystemFreePhysicalMemory() {
         OperatingSystemMXBean osBean = ManagementFactory.getPlatformMXBean(OperatingSystemMXBean.class);
         return BinarySizeUnit.B.of(osBean.getFreePhysicalMemorySize());
+    } /**
+     * get system free physical memory, unit size is byte
+     *
+     * @return free memory
+     */
+    public static BinarySize getSystemTotalPhysicalMemory() {
+        OperatingSystemMXBean osBean = ManagementFactory.getPlatformMXBean(OperatingSystemMXBean.class);
+        return BinarySizeUnit.B.of(osBean.getTotalPhysicalMemorySize());
     }
 
     public static Map<String, String> getSystemEnv() {
