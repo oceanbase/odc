@@ -32,7 +32,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.web.context.HttpRequestResponseHolder;
 import org.springframework.security.web.context.SecurityContextRepository;
 import org.springframework.stereotype.Service;
@@ -41,10 +41,6 @@ import org.springframework.util.StringUtils;
 import com.auth0.jwt.interfaces.Claim;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.oceanbase.odc.common.json.JsonUtils;
-import com.oceanbase.odc.config.CommonSecurityProperties;
-import com.oceanbase.odc.core.shared.constant.OrganizationType;
-import com.oceanbase.odc.metadb.iam.UserEntity;
-import com.oceanbase.odc.metadb.iam.UserRepository;
 import com.oceanbase.odc.service.iam.JwtService;
 import com.oceanbase.odc.service.iam.model.JwtConstants;
 import com.oceanbase.odc.service.iam.model.User;
@@ -57,11 +53,9 @@ import lombok.extern.slf4j.Slf4j;
 public class JwtSecurityContextRepository implements SecurityContextRepository {
 
     @Autowired
-    private CommonSecurityProperties commonSecurityProperties;
+    private JdbcUserDetailService jdbcUserDetailService;
     @Autowired
     private JwtService jwtService;
-    @Autowired
-    private UserRepository userRepository;
     @Autowired
     @Qualifier("authenticationCache")
     private Cache<Long, Authentication> authenticationCache;
@@ -109,21 +103,11 @@ public class JwtSecurityContextRepository implements SecurityContextRepository {
             context.setAuthentication(authentication);
         } else {
             String username = claims.get(JwtConstants.PRINCIPAL).asString();
-            UserEntity userEntity = userRepository.findByAccountName(username).orElseThrow(() -> {
-                log.warn("Username not found: username {}", username);
-                return new UsernameNotFoundException(username);
-            });
-            User user = new User(userEntity);
-            user.setOrganizationId(claims.get(JwtConstants.ORGANIZATION_ID).asLong());
-
-            OrganizationType organizationType =
-                    JsonUtils.fromJson(claims.get(JwtConstants.ORGANIZATION_TYPE).asString(),
-                            OrganizationType.class);
-            user.setOrganizationType(organizationType);
+            UserDetails userDetails = jdbcUserDetailService.loadUserByUsername(username);
             UsernamePasswordAuthenticationToken usernamePasswordAuthenticationToken =
-                    new UsernamePasswordAuthenticationToken(user, null, null);
+                    new UsernamePasswordAuthenticationToken(userDetails, null, null);
             context.setAuthentication(usernamePasswordAuthenticationToken);
-            authenticationCache.put(user.getId(), usernamePasswordAuthenticationToken);
+            authenticationCache.put(id, usernamePasswordAuthenticationToken);
         }
 
         // jwt renewal policy, the default is to complete the renewal before the expiration time, to avoid
@@ -146,29 +130,10 @@ public class JwtSecurityContextRepository implements SecurityContextRepository {
     }
 
     @Override
-    public void saveContext(SecurityContext context, HttpServletRequest request, HttpServletResponse response) {
-        if (request.getRequestURI().contains(commonSecurityProperties.getLoginUri())
-                && context.getAuthentication() != null
-                && context.getAuthentication().isAuthenticated()) {
-            User user = (User) context.getAuthentication().getPrincipal();
-            HashMap<String, Object> hashMap = new HashMap<>();
-            hashMap.put(JwtConstants.ID, user.getId());
-            hashMap.put(JwtConstants.PRINCIPAL, user.getAccountName());
-            hashMap.put(JwtConstants.ORGANIZATION_ID, user.getOrganizationId());
-            hashMap.put(JwtConstants.ORGANIZATION_TYPE, JsonUtils.toJson(user.getOrganizationType()));
-            String token = jwtService.sign(hashMap);
-            Cookie cookie = new Cookie(JwtConstants.ODC_JWT_TOKEN, token);
-            cookie.setPath("/");
-            cookie.setMaxAge((int) timeoutSetting.getSeconds());
-            cookie.setHttpOnly(true);
-            response.addCookie(cookie);
-            authenticationCache.put(user.getId(), context.getAuthentication());
-        }
-    }
+    public void saveContext(SecurityContext context, HttpServletRequest request, HttpServletResponse response) {}
 
     @Override
     public boolean containsContext(HttpServletRequest request) {
         return StringUtils.hasText(request.getHeader(JwtConstants.ODC_JWT_TOKEN));
     }
-
 }

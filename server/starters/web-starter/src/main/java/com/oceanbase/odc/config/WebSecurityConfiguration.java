@@ -16,6 +16,7 @@
 package com.oceanbase.odc.config;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
 import org.springframework.context.annotation.Configuration;
@@ -64,7 +65,7 @@ import lombok.extern.slf4j.Slf4j;
 @Profile("alipay")
 @Configuration
 @ConditionalOnExpression("#{@environment.getProperty('odc.iam.auth.type') == 'local' && @environment.getProperty('odc.iam.auth.method') == 'jsession'}")
-public class WebJSessionSecurityConfiguration extends WebSecurityConfigurerAdapter {
+public class WebSecurityConfiguration extends WebSecurityConfigurerAdapter {
 
     @Value("${odc.iam.authentication.captcha.enabled:false}")
     private boolean captchaEnabled;
@@ -100,6 +101,7 @@ public class WebJSessionSecurityConfiguration extends WebSecurityConfigurerAdapt
     private BastionProperties bastionProperties;
 
     @Autowired
+    @Qualifier("usernamePasswordConfigureHelper")
     private UsernamePasswordConfigureHelper usernamePasswordConfigureHelper;
 
     @Autowired
@@ -141,8 +143,8 @@ public class WebJSessionSecurityConfiguration extends WebSecurityConfigurerAdapt
     @Override
     protected void configure(HttpSecurity http) throws Exception {
         corsConfigureHelper.configure(http);
-
-        usernamePasswordConfigureHelper.configure(http, authenticationManager());
+        usernamePasswordConfigureHelperConfigure(http);
+        // usernamePasswordConfigureHelper.configure(http, authenticationManager());
         oauth2SecurityConfigureHelper.configure(http);
         ldapSecurityConfigureHelper.configure(http, authenticationManager());
 
@@ -195,6 +197,10 @@ public class WebJSessionSecurityConfiguration extends WebSecurityConfigurerAdapt
                 .migrateSession()
                 .invalidSessionStrategy(
                         new CustomInvalidSessionStrategy(commonSecurityProperties.getLoginPage(), localeResolver));
+    }
+
+    protected void usernamePasswordConfigureHelperConfigure(HttpSecurity http) throws Exception {
+        usernamePasswordConfigureHelper.configure(http, authenticationManager());
     }
 
     private CaptchaAuthenticationProcessingFilter getCaptchaAuthenticationProcessingFilter() {

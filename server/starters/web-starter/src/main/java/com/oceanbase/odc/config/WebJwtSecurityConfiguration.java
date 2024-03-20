@@ -16,6 +16,7 @@
 package com.oceanbase.odc.config;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
@@ -28,11 +29,12 @@ import org.springframework.security.web.context.SecurityContextRepository;
 import com.oceanbase.odc.service.iam.auth.CustomJwtLogoutSuccessHandler;
 import com.oceanbase.odc.service.iam.auth.CustomPostRequestSessionInvalidationFilter;
 import com.oceanbase.odc.service.iam.auth.JwtSecurityContextRepository;
+import com.oceanbase.odc.service.iam.auth.UsernamePasswordConfigureHelper;
 
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * @author zj.cj
+ * @author zijia.cj
  * @date 2024-03-19 21:58
  * @since ODC_release_4.2.4
  */
@@ -40,12 +42,15 @@ import lombok.extern.slf4j.Slf4j;
 @Profile("alipay")
 @Configuration
 @ConditionalOnExpression("#{@environment.getProperty('odc.iam.auth.type') == 'local' && @environment.getProperty('odc.iam.auth.method') == 'jwt'}")
-public class WebJwtSecurityConfiguration extends WebJSessionSecurityConfiguration {
+public class WebJwtSecurityConfiguration extends WebSecurityConfiguration {
 
     @Autowired
     private JwtSecurityContextRepository jwtSecurityContextRepository;
     @Autowired
     private CustomJwtLogoutSuccessHandler customJwtLogoutSuccessHandler;
+    @Autowired
+    @Qualifier("jwtUsernamePasswordConfigureHelper")
+    private UsernamePasswordConfigureHelper jwtUsernamePasswordConfigureHelper;
 
     @Override
     protected void configure(HttpSecurity http) throws Exception {
@@ -61,6 +66,11 @@ public class WebJwtSecurityConfiguration extends WebJSessionSecurityConfiguratio
     @Override
     protected LogoutSuccessHandler logoutSuccessHandler() {
         return this.customJwtLogoutSuccessHandler;
+    }
+
+    @Override
+    protected void usernamePasswordConfigureHelperConfigure(HttpSecurity http) throws Exception {
+        jwtUsernamePasswordConfigureHelper.configure(http, authenticationManager());
     }
 
     @Override

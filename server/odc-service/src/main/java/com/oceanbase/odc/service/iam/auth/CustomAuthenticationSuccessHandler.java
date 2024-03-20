@@ -136,8 +136,7 @@ public class CustomAuthenticationSuccessHandler extends SavedRequestAwareAuthent
             // if login api, set response to OK
             // not affect BUC(/login/oauth2/code/buc)
             if (requestURI.contains("/login")) {
-                SuccessResponse<String> successResponse = Responses.success("ok");
-                WebResponseUtils.writeJsonObjectWithOkStatus(successResponse, httpServletRequest, httpServletResponse);
+                handleAfterSucceed(httpServletRequest, httpServletResponse, authentication);
             } else {
                 log.info("Login from non-login API, requestURI={}", requestURI);
             }
@@ -151,5 +150,11 @@ public class CustomAuthenticationSuccessHandler extends SavedRequestAwareAuthent
         }
         // or else, try redirect to original url, will redirect to '/' if no original url detected
         super.onAuthenticationSuccess(httpServletRequest, httpServletResponse, authentication);
+    }
+
+    protected void handleAfterSucceed(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse,
+            Authentication authentication) throws IOException {
+        SuccessResponse<String> successResponse = Responses.success("ok");
+        WebResponseUtils.writeJsonObjectWithOkStatus(successResponse, httpServletRequest, httpServletResponse);
     }
 }
