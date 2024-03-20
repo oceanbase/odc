@@ -56,17 +56,17 @@ public class ProjectStepResultChecker {
     private final OmsProjectProgressResponse progressResponse;
 
     private final boolean enableFullVerify;
-    private final int checkProjectFailedThresholdTimes;
-    private final Map<OmsStepName, Integer> checkFailedTimes;
+    private final int checkProjectFailedThresholdTime;
+    private final Map<OmsStepName, Long> checkFailedTimes;
 
     public ProjectStepResultChecker(OmsProjectProgressResponse progressResponse, List<OmsProjectStepVO> projectSteps,
-            boolean enableFullVerify, int checkProjectFailedThresholdTimes,
-            Map<OmsStepName, Integer> checkFailedTimes) {
+            boolean enableFullVerify, int checkProjectFailedThresholdTime,
+            Map<OmsStepName, Long> checkFailedTimes) {
         this.progressResponse = progressResponse;
         this.currentProjectStepMap = projectSteps.stream().collect(Collectors.toMap(OmsProjectStepVO::getName, a -> a));
         this.checkerResult = new ProjectStepResult();
         this.enableFullVerify = enableFullVerify;
-        this.checkProjectFailedThresholdTimes = checkProjectFailedThresholdTimes;
+        this.checkProjectFailedThresholdTime = checkProjectFailedThresholdTime;
         this.checkFailedTimes = checkFailedTimes;
         this.toCheckSteps = Lists.newArrayList(OmsStepName.TRANSFER_INCR_LOG_PULL,
                 OmsStepName.FULL_TRANSFER, OmsStepName.INCR_TRANSFER);
@@ -184,18 +184,19 @@ public class ProjectStepResultChecker {
 
                 // record FULL_TRANSFER failed times
                 if (stepName == OmsStepName.FULL_TRANSFER) {
-                    int failedTimes = checkFailedTimes.compute(stepName, (k, v) -> v == null ? 1 : ++v);
-                    if (failedTimes > checkProjectFailedThresholdTimes) {
-                        log.warn(
-                                "Current step failed times exceed threshold, stepName={}, failedTimes={}, thresholdTimes={}",
-                                stepName, failedTimes, checkProjectFailedThresholdTimes);
+                    long failedBeginTime = checkFailedTimes.computeIfAbsent(stepName, k -> System.currentTimeMillis());
+                    long failedAccumulateTime = (System.currentTimeMillis() - failedBeginTime) / 1000;
+                    if (failedAccumulateTime > checkProjectFailedThresholdTime) {
+                        log.warn("Current step failed time exceed threshold, stepName={}, "
+                                + "failedAccumulateTime={}, thresholdTime={}",
+                                stepName, failedAccumulateTime, checkProjectFailedThresholdTime);
                         isProjectFailed = true;
                     }
                 }
                 break;
             } else {
-                // reset to zero if current step is not failed
-                checkFailedTimes.computeIfPresent(stepName, (k, v) -> 0);
+                // remove if current step is not failed
+                checkFailedTimes.remove(stepName);
             }
         }
         return isProjectFailed;
@@ -272,7 +273,7 @@ public class ProjectStepResultChecker {
                         BigDecimal.valueOf(fullVerifyStep.getProgress()).doubleValue());
             }
         }
-        checkerResult.setCheckFailedTimes(this.checkFailedTimes);
+        checkerResult.setCheckFailedTime(this.checkFailedTimes);
 
     }
 
@@ -324,7 +325,7 @@ public class ProjectStepResultChecker {
          */
         private double taskPercentage;
 
-        private Map<OmsStepName, Integer> checkFailedTimes;
+        private Map<OmsStepName, Long> checkFailedTime;
 
     }
 }

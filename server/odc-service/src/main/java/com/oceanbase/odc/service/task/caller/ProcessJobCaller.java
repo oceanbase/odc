@@ -77,8 +77,7 @@ public class ProcessJobCaller extends BaseJobCaller {
     @Override
     protected void doDestroy(ExecutorIdentifier identifier) throws JobException {
         long pid = Long.parseLong(identifier.getNamespace());
-        if (SystemUtils.isProcessRunning(pid,
-                JobUtils.generateExecutorSelectorOnProcess(identifier.getExecutorName()))) {
+        if (isExecutorExist(identifier)) {
             log.info("Found process, try kill it, pid={}.", pid);
             boolean result = SystemUtils.killProcessByPid(pid);
             if (result) {
@@ -90,4 +89,16 @@ public class ProcessJobCaller extends BaseJobCaller {
         }
     }
 
+    @Override
+    protected boolean isExecutorExist(ExecutorIdentifier identifier) {
+        long pid = Long.parseLong(identifier.getNamespace());
+        boolean result = SystemUtils.isProcessRunning(pid,
+                JobUtils.generateExecutorSelectorOnProcess(identifier.getExecutorName()));
+        if (result) {
+            log.info("Found executor by identifier, identifier={}", identifier);
+        } else {
+            log.warn("Not found executor by identifier, identifier={}", identifier);
+        }
+        return result;
+    }
 }

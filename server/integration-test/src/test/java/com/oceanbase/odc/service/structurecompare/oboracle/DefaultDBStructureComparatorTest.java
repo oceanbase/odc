@@ -294,7 +294,7 @@ public class DefaultDBStructureComparatorTest extends PluginTestEnv {
         fkOnluyInSource.setComparisonResult(ComparisonResult.ONLY_IN_SOURCE);
         fkOnluyInSource.setChangeScript("ALTER TABLE \"" + targetSchemaName
                 + "\".\"UPDATE_CONSTRAINT\" ADD CONSTRAINT \"FK_ONLY_IN_SOURCE\" FOREIGN KEY "
-                + "(\"ID2\", \"ID1\") REFERENCES \"" + targetSchemaName + "\".\"FK_PARENT\" (\"PARENT_ID1\", "
+                + "(\"ID1\", \"ID2\") REFERENCES \"" + targetSchemaName + "\".\"FK_PARENT\" (\"PARENT_ID1\", "
                 + "\"PARENT_ID2\");\n");
 
         List<DBObjectComparisonResult> expected = new ArrayList<>();

@@ -110,6 +110,7 @@ public class DataXTransferJob extends AbstractJob {
             if (process != null && process.isAlive()) {
                 process.destroy();
             }
+            FileUtils.deleteQuietly(Paths.get(workingDir.getPath(), "job.conf").toFile());
             executor.shutdown();
         }
     }

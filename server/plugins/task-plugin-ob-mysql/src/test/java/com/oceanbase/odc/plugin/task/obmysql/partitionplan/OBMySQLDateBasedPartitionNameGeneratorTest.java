@@ -28,6 +28,7 @@ import org.junit.Test;
 import com.oceanbase.odc.plugin.task.api.partitionplan.datatype.TimeDataType;
 import com.oceanbase.odc.plugin.task.api.partitionplan.invoker.partitionname.PartitionNameGenerator;
 import com.oceanbase.odc.plugin.task.api.partitionplan.model.DateBasedPartitionNameGeneratorConfig;
+import com.oceanbase.odc.plugin.task.api.partitionplan.util.TimeDataTypeUtil;
 import com.oceanbase.odc.plugin.task.obmysql.partitionplan.invoker.partitionname.OBMySQLDateBasedPartitionNameGenerator;
 import com.oceanbase.odc.test.database.TestDBConfiguration;
 import com.oceanbase.odc.test.database.TestDBConfigurations;
@@ -57,7 +58,7 @@ public class OBMySQLDateBasedPartitionNameGeneratorTest {
             PartitionNameGenerator generator = new OBMySQLDateBasedPartitionNameGenerator();
             String actual = generator.invoke(connection, dbTable, getParameters(config));
             DateFormat dateFormat = new SimpleDateFormat("yyyyMMdd");
-            String expect = "p" + dateFormat.format(new Date());
+            String expect = "p" + dateFormat.format(TimeDataTypeUtil.getNextDate(new Date(), 2, TimeDataType.DAY));
             Assert.assertEquals(expect, actual);
         }
     }

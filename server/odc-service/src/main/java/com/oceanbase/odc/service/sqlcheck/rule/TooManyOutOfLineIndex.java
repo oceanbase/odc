@@ -20,6 +20,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import com.oceanbase.odc.core.shared.constant.DialectType;
@@ -57,6 +58,9 @@ public class TooManyOutOfLineIndex implements SqlCheckRule {
             return Collections.emptyList();
         }
         CreateTable createTable = (CreateTable) statement;
+        if (CollectionUtils.isEmpty(createTable.getTableElements())) {
+            return Collections.emptyList();
+        }
         List<TableElement> indexes = createTable.getTableElements().stream().filter(t -> {
             if (t instanceof OutOfLineIndex) {
                 return true;

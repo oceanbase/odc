@@ -78,8 +78,8 @@ public class FlowTaskCallBackApprovalService {
             doApproval(flowInstanceId, flowTaskInstanceId, flowNodeStatus, approvalVariables);
         } catch (Throwable e) {
             log.warn(
-                    "approval task callback node  failed, flowInstanceId={}, flowTaskInstanceId={}, flowNodeStatus={}",
-                    flowInstanceId, flowTaskInstanceId, flowNodeStatus.name());
+                    "approval task callback node  failed, flowInstanceId={}, flowTaskInstanceId={}, flowNodeStatus={}, ex={}",
+                    flowInstanceId, flowTaskInstanceId, flowNodeStatus.name(), e);
         }
     }
 
@@ -120,8 +120,8 @@ public class FlowTaskCallBackApprovalService {
             log.info("complete task succeed, flowInstanceId={}, flowTaskInstanceId={}, flowNodeStatus={}.",
                     flowInstanceId, flowTaskInstanceId, flowNodeStatus);
         } catch (Exception e) {
-            log.warn("complete task failed, flowInstanceId={}, flowTaskInstanceId={}, flowNodeStatus={}.",
-                    flowInstanceId, flowTaskInstanceId, flowNodeStatus);
+            log.warn("complete task failed, flowInstanceId={}, flowTaskInstanceId={}, flowNodeStatus={}, ex={}.",
+                    flowInstanceId, flowTaskInstanceId, flowNodeStatus, e);
         }
     }
 

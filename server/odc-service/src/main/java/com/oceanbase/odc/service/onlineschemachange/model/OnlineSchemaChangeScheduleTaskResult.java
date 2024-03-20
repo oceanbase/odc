@@ -121,7 +121,7 @@ public class OnlineSchemaChangeScheduleTaskResult {
      */
     private boolean manualSwapTableStarted;
 
-    private Map<OmsStepName, Integer> checkFailedTimes = new HashMap<>();
+    private Map<OmsStepName, Long> checkFailedTime = new HashMap<>();
 
     public OnlineSchemaChangeScheduleTaskResult(OnlineSchemaChangeScheduleTaskParameters taskParam) {
         this.originTableName = taskParam.getOriginTableName();
