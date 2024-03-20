@@ -20,8 +20,6 @@ import static com.oceanbase.odc.core.shared.constant.OdcConstants.DEFAULT_ZERO_D
 
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.HashMap;
@@ -29,10 +27,12 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Predicate;
 
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 
 import com.oceanbase.odc.common.util.StringUtils;
@@ -148,17 +148,23 @@ public abstract class BaseParameterFactory<T extends BaseParameter> {
     }
 
     private void setInitSqls(BaseParameter parameter) throws IOException {
-        try (InputStream is = getClass().getResourceAsStream(SESSION_CONFIG_FILE_PATH)) {
+        File sessionFile = new File(workingDir, "session.config");
+        IOUtils.copy(getClass().getResource(SESSION_CONFIG_FILE_PATH), sessionFile);
+        SessionConfig sessionConfig = SessionConfig.fromJson(sessionFile);
 
-            SessionConfig sessionConfig = SessionConfig.fromJson(IOUtils.toString(is, StandardCharsets.UTF_8));
+        sessionConfig.setJdbcOption("useServerPrepStmts", transferConfig.isUsePrepStmts() + "");
+        sessionConfig.setJdbcOption("useCursorFetch", transferConfig.isUsePrepStmts() + "");
+        sessionConfig.setJdbcOption("zeroDateTimeBehavior", DEFAULT_ZERO_DATE_TIME_BEHAVIOR);
+        sessionConfig.setJdbcOption("sendConnectionAttributes", "false");
+        Optional.ofNullable(transferConfig.getExecutionTimeoutSeconds())
+                .ifPresent(timeout -> {
+                    sessionConfig.setJdbcOption("socketTimeout", timeout * 1000 + "");
+                    sessionConfig.setJdbcOption("connectTimeout", timeout * 1000 + "");
+                    sessionConfig.addInitSql4Both("set ob_query_timeout = " + timeout * 1000000);
+                });
 
-            sessionConfig.setJdbcOption("useServerPrepStmts", transferConfig.isUsePrepStmts() + "");
-            sessionConfig.setJdbcOption("useCursorFetch", transferConfig.isUsePrepStmts() + "");
-            sessionConfig.setJdbcOption("zeroDateTimeBehavior", DEFAULT_ZERO_DATE_TIME_BEHAVIOR);
-            sessionConfig.setJdbcOption("sendConnectionAttributes", "false");
-
-            parameter.setSessionConfig(sessionConfig);
-        }
+        parameter.setSessionConfig(sessionConfig);
+        FileUtils.deleteQuietly(sessionFile);
     }
 
     private void setCsvInfo(BaseParameter parameter) {

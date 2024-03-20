@@ -13,18 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.partitionplan.model;
+package com.oceanbase.odc.core.flow.model;
+
+import lombok.Data;
 
 /**
- * @Author：tinker
- * @Date: 2022/9/21 10:48
- * @Descripition:
+ * @author gaoda.xy
+ * @date 2024/3/18 16:12
  */
-public enum InspectTriggerStrategy {
+@Data
+public class AbstractFlowTaskResult implements FlowTaskResult {
 
-    EVERY_DAY,
-    FIRST_DAY_OF_MONTH,
-    LAST_DAY_OF_MONTH,
-    NONE
+    private String fullLogDownloadUrl;
 
 }

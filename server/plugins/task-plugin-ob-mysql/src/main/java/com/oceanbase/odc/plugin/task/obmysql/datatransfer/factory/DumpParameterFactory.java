@@ -220,12 +220,12 @@ public class DumpParameterFactory extends BaseParameterFactory<DumpParameter> {
                 controlDescription.add(function);
                 controlContext.add(controlDescription);
             }
-            // TODO ob-loader-dumper will restore this method in version 4.2.8.1
-            // controlManager.register(entry.getKey().getSchemaName(), entry.getKey().getTableName(),
-            // controlContext);
+            controlManager.register(entry.getKey().getSchemaName(), entry.getKey().getTableName(), controlContext);
         }
         parameter.setControlManager(controlManager);
         parameter.setUseRuntimeTableName(true);
+        // only when dump data by custom query, this value is true
+        parameter.setUseRuntimeTableName(StringUtils.isNotEmpty(transferConfig.getQuerySql()));
     }
 
 }

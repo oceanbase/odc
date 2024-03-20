@@ -6,7 +6,7 @@
   min_version: 4.0.0
   max_version: ~
   description: 'Query all zones for OceanBase cluster'
-  prefix: query_zone_list
+  prefix: query_all_zone_list
   body: |
     SELECT
       ZONE, CREATE_TIME, MODIFY_TIME, STATUS, IDC, REGION, TYPE
@@ -19,7 +19,7 @@
   min_version: 4.0.0
   max_version: ~
   description: 'Query all servers for OceanBase cluster'
-  prefix: query_server_list
+  prefix: query_all_server_list
   body: |
     SELECT
       ZONE,
@@ -41,7 +41,7 @@
   min_version: 4.0.0
   max_version: ~
   description: 'Query all servers resource stats for OceanBase cluster'
-  prefix: query_server_resource_stats
+  prefix: query_all_server_resource_stats
   body: |
     SELECT
       SVR_IP,
@@ -66,6 +66,202 @@
       oceanbase.GV\$OB_SERVERS
     ORDER BY
      ZONE, SVR_IP;
+- name: oceanbase query all tenants
+  dialect_type: OB_MYSQL
+  tags: [ 'dba','oceanbase', 'sys' ]
+  type: DQL
+  min_version: 4.0.0
+  max_version: ~
+  description: 'Query all tenants information for OceanBase cluster'
+  prefix: query_all_tenant_list
+  body: |
+    -- Query all tenants, 
+    -- including system tenants and user tenants, excluding META tenants 
+    SELECT
+      TENANT_ID,
+      TENANT_NAME,
+      TENANT_TYPE,
+      PRIMARY_ZONE,
+      LOCALITY,
+      COMPATIBILITY_MODE,
+      STATUS,
+      LOCKED,
+      IN_RECYCLEBIN,
+      TIMESTAMPDIFF(SECOND,CREATE_TIME,NOW()) AS EXIST_SECONDS
+    FROM
+      oceanbase.DBA_OB_TENANTS
+    WHERE
+      TENANT_TYPE IN ('SYS', 'USER');
+- name: oceanbase query all unit config
+  dialect_type: OB_MYSQL
+  tags: [ 'dba','oceanbase', 'sys' ]
+  type: DQL
+  min_version: 4.0.0
+  max_version: ~
+  description: 'Query all unit config for OceanBase cluster'
+  prefix: query_all_unit_config_list
+  body: |
+    SELECT
+      UNIT_CONFIG_ID,
+      NAME,
+      MAX_CPU,
+      MIN_CPU,
+      ROUND(MEMORY_SIZE / 1024 / 1024 / 1024, 2) AS MAX_MEMORY_GB,
+      ROUND(MEMORY_SIZE / 1024 / 1024 / 1024, 2) AS MIN_MEMORY_GB,
+      ROUND(LOG_DISK_SIZE / 1024 / 1024 / 1024, 2) AS LOG_DISK_SIZE_GB,
+      MAX_IOPS,
+      MIN_IOPS,
+      IOPS_WEIGHT
+    FROM
+      oceanbase.DBA_OB_UNIT_CONFIGS;
+- name: oceanbase query all resource pool
+  dialect_type: OB_MYSQL
+  tags: [ 'dba','oceanbase', 'sys' ]
+  type: DQL
+  min_version: 4.0.0
+  max_version: ~
+  description: 'Query all resource pools for OceanBase cluster'
+  prefix: query_all_resource_pool_list
+  body: |
+    SELECT
+      p.RESOURCE_POOL_ID,
+      p.NAME,
+      p.UNIT_COUNT,
+      p.UNIT_CONFIG_ID,
+      p.ZONE_LIST,
+      p.TENANT_ID,
+      p.REPLICA_TYPE,
+      p.MODIFY_TIME AS UPDATE_TIME,
+      c.NAME AS UNIT_CONFIG_NAME,
+      c.MAX_CPU,
+      c.MIN_CPU,
+      ROUND(c.MEMORY_SIZE / 1024 / 1024 / 1024, 2) AS MAX_MEMORY_GB,
+      ROUND(c.MEMORY_SIZE / 1024 / 1024 / 1024, 2) AS MIN_MEMORY_GB,
+      ROUND(c.LOG_DISK_SIZE / 1024 / 1024 / 1024, 2) AS LOG_DISK_SIZE_GB,
+      c.MAX_IOPS,
+      c.MIN_IOPS,
+      c.IOPS_WEIGHT
+    FROM
+      oceanbase.DBA_OB_RESOURCE_POOLS p
+    JOIN 
+      oceanbase.DBA_OB_UNIT_CONFIGS c 
+    ON 
+      p.UNIT_CONFIG_ID = c.UNIT_CONFIG_ID;
+- name: oceanbase query all unit
+  dialect_type: OB_MYSQL
+  tags: [ 'dba','oceanbase', 'sys' ]
+  type: DQL
+  min_version: 4.0.0
+  max_version: ~
+  description: 'Query all units for OceanBase cluster'
+  prefix: query_all_unit_list
+  body: |
+    SELECT 
+      u.UNIT_ID,
+      u.RESOURCE_POOL_ID,
+      u.ZONE,
+      u.SVR_IP,
+      u.SVR_PORT,
+      u.STATUS,
+      p.REPLICA_TYPE,
+      p.TENANT_ID,
+      t.TENANT_NAME,
+      p.NAME AS RESOURCE_POOL_NAME,
+      u.MIGRATE_FROM_SVR_IP,
+      u.MIGRATE_FROM_SVR_PORT,
+      u.MANUAL_MIGRATE
+    FROM
+      oceanbase.DBA_OB_UNITS u
+      JOIN oceanbase.DBA_OB_RESOURCE_POOLS p
+      ON u.RESOURCE_POOL_ID = p.RESOURCE_POOL_ID
+      JOIN oceanbase.DBA_OB_TENANTS t
+      ON p.TENANT_ID = t.TENANT_ID;
+- name: oceanbase query RS event history
+  dialect_type: OB_MYSQL
+  tags: [ 'dba','oceanbase', 'sys' ]
+  type: DQL
+  min_version: 4.0.0
+  max_version: ~
+  description: 'Query all RS event history for OceanBase cluster'
+  prefix: query_all_rs_event_history
+  body: |
+    SELECT
+      TIMESTAMP AS GMT_CREATE,
+      MODULE,
+      EVENT,
+      NAME1,
+      VALUE1,
+      NAME2,
+      VALUE2,
+      NAME3,
+      VALUE3,
+      NAME4,
+      VALUE4,
+      NAME5,
+      VALUE5,
+      NAME6,
+      VALUE6,
+      EXTRA_INFO,
+      RS_SVR_IP,
+      RS_SVR_PORT
+    FROM
+      DBA_OB_ROOTSERVICE_EVENT_HISTORY;
+- name: oceanbase query arbitration service information
+  dialect_type: OB_MYSQL
+  tags: [ 'dba','oceanbase', 'sys' ]
+  type: DQL
+  min_version: 4.0.0
+  max_version: ~
+  description: 'Query arbitration service information for OceanBase cluster'
+  prefix: query_all_arbitration_service_info
+  body: |
+    SELECT
+      ARBITRATION_SERVICE_KEY,
+      ARBITRATION_SERVICE,
+      PREVIOUS_ARBITRATION_SERVICE,
+      TYPE
+    FROM
+      DBA_OB_ARBITRATION_SERVICE;
+- name: oceanbase query RS task for tenant
+  dialect_type: OB_MYSQL
+  tags: [ 'dba','oceanbase', 'sys' ]
+  type: DQL
+  min_version: 4.0.0
+  max_version: ~
+  description: 'Query RS task for all tenants in OceanBase cluster'
+  prefix: query_all_rs_task_for_tenants
+  body: |
+    SELECT
+      TENANT_ID,
+      JOB_ID,
+      JOB_TYPE,
+      JOB_STATUS,
+      PROGRESS
+    FROM
+      oceanbase.DBA_OB_TENANT_JOBS
+    ORDER BY JOB_ID DESC;
+- name: oceanbase query compaction status for all tenant
+  dialect_type: OB_MYSQL
+  tags: [ 'dba','oceanbase', 'sys' ]
+  type: DQL
+  min_version: 4.0.0
+  max_version: ~
+  description: 'Query compaction status for all tenant in OceanBase cluster'
+  prefix: query_all_compaction_status
+  body: |
+    SELECT
+      TENANT_ID,
+      GLOBAL_BROADCAST_SCN AS BROADCAST_SCN,
+      IS_ERROR AS ERROR,
+      STATUS,
+      FROZEN_SCN,
+      LAST_SCN,
+      IS_SUSPENDED AS SUSPEND,
+      INFO,
+      START_TIME,
+      LAST_FINISH_TIME
+    FROM
+      oceanbase.CDB_OB_MAJOR_COMPACTION;
 - name: oceanbase sys create resource unit, pool and tenant
   dialect_type: OB_MYSQL
   tags: [ 'dba', 'oceanbase', 'sys' ]
@@ -132,8 +328,8 @@
   type: DCL
   min_version: 4.0.0
   max_version: ~
-  description: 'Query unused unit'
-  prefix: query_unused_unit
+  description: 'Query unused units'
+  prefix: query_all_unused_unit
   body: |
     SELECT
       t1.UNIT_ID,
@@ -161,8 +357,8 @@
   type: DQL
   min_version: ~
   max_version: ~
-  description: 'Query parameters for cluster'
-  prefix: query_parameters_for_cluster
+  description: 'Query CLUSTER scope parameters for OceanBase cluster'
+  prefix: query_all_parameters_for_cluster
   body: |
     SELECT
       ZONE,
@@ -174,3 +370,36 @@
       oceanbase.GV\$OB_PARAMETERS
     WHERE
       SCOPE = 'CLUSTER';
+- name: oceanbase sys query in-progress server jobs
+  dialect_type: OB_MYSQL
+  tags: [ 'dba', 'oceanbase', 'sys' ]
+  type: DQL
+  min_version: ~
+  max_version: ~
+  description: 'Query in-progress server jobs for OceanBase cluster'
+  prefix: query_all_in_progress_server_jobs
+  body: |
+    SELECT
+      JOB_TYPE AS TASK_TYPE,
+      TIMESTAMPDIFF(SECOND, START_TIME, CURRENT_TIMESTAMP) AS MAX_SYS_TASK_DURATION_SECONDS,
+      SVR_IP
+    FROM
+      oceanbase.DBA_OB_SERVER_JOBS
+    WHERE
+      JOB_STATUS = 'INPROGRESS';
+- name: oceanbase sys stats index error count
+  dialect_type: OB_MYSQL
+  tags: [ 'dba', 'oceanbase', 'sys' ]
+  type: DQL
+  min_version: ~
+  max_version: ~
+  description: 'Stat index error count for OceanBase cluster'
+  prefix: stats_count_all_index_error
+  body: |
+    SELECT
+      COUNT(*) AS CNT
+    FROM
+      oceanbase.CDB_INDEXES
+    WHERE
+      STATUS IN ('ERROR', 'UNUSABLE');
+

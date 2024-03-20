@@ -13,17 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.partitionplan;
+package com.oceanbase.odc.service.flow.util;
+
+import lombok.NonNull;
 
 /**
- * @Author：tianke
- * @Date: 2022/10/10 16:19
- * @Descripition:
+ * @author gaoda.xy
+ * @date 2024/3/18 19:06
  */
-public enum PartitionExpressionType {
+public class TaskLogFilenameGenerator {
 
-    DATE,
-    UNIX_TIMESTAMP,
-    OTHER
+    public static String generate(@NonNull Long flowInstanceId) {
+        return String.format("odc_task_%d.log", flowInstanceId);
+    }
 
 }

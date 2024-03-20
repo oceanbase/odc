@@ -675,6 +675,14 @@ INSERT INTO config_system_configuration(`key`, `value`, `description`) VALUES('o
   'CHANGE_ME', 'oms region')
   ON DUPLICATE KEY UPDATE `id`=`id`;
 
+INSERT INTO config_system_configuration(`key`, `value`, `description`) VALUES('odc.osc.oms.check-project-step-failed-timeout-seconds',
+  '120', 'check oms project step failed, if failed timeout 120 seconds, osc task will failed')
+  ON DUPLICATE KEY UPDATE `id`=`id`;
+
+INSERT INTO config_system_configuration(`key`, `value`, `description`) VALUES('odc.osc.oms.check-project-progress-cron-expression',
+  '0/10 * * * * ?', 'check oms project progress cron expression')
+  ON DUPLICATE KEY UPDATE `id`=`id`;
+
 INSERT INTO config_system_configuration(`key`, `value`, `description`) VALUES('odc.features.task.osc.enabled', 'false',
 '是否开启无锁结构变更任务，默认不开启') ON DUPLICATE KEY UPDATE `id`=`id`;
 
@@ -756,11 +764,9 @@ INSERT INTO config_system_configuration(`key`, `value`, `description`) VALUES('o
 INSERT INTO config_system_configuration(`key`, `value`, `description`) VALUES('odc.web.security.basic-authentication.enabled',
  'false', 'enable basic authentication or not, false by default') ON DUPLICATE KEY UPDATE `id`=`id`;
 
-INSERT INTO config_system_configuration(`key`, `value`, `description`) VALUES('odc.web.stateful-route.enabled',
-'true', 'enable stateful route') ON DUPLICATE KEY UPDATE `id`=`id`;
 
 INSERT INTO config_system_configuration(`key`, `value`, `description`) VALUES('odc.web.stateful-route.host.type',
-'ipAddress', 'host type used for forwarding, use ipAddress or hostName') ON DUPLICATE KEY UPDATE `id`=`id`;
+                                                                              'ipAddress', 'host type used for forwarding, use ipAddress or hostName') ON DUPLICATE KEY UPDATE `id`=`id`;
 
 INSERT INTO config_system_configuration ( `key`, `value`, `description` )
 VALUES

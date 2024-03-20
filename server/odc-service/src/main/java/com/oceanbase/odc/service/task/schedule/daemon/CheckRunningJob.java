@@ -77,7 +77,7 @@ public class CheckRunningJob implements Job {
         }
 
         if (checkJobIfRetryNecessary(a)) {
-            log.info("Need to restart job {}, try to destroy executor.", a.getId());
+            log.info("Need to restart job {}, destroy old executor completed.", a.getId());
             int rows = getConfiguration().getTaskFrameworkService()
                     .updateStatusDescriptionByIdOldStatusAndExecutorDestroyed(a.getId(), JobStatus.RUNNING,
                             JobStatus.RETRYING, "Heart timeout and retrying job");

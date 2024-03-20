@@ -82,6 +82,7 @@ import lombok.Getter;
  */
 public class ResultSetExportTask implements Callable<ResultSetExportResult> {
     protected static final Logger LOGGER = LoggerFactory.getLogger("DataTransferLogger");
+    private static final int DEFAULT_TIMEOUT_SECONDS = 24 * 60 * 60;
 
     private final ResultSetExportTaskParameter parameter;
     private final String fileName;
@@ -202,6 +203,9 @@ public class ResultSetExportTask implements Callable<ResultSetExportResult> {
         setColumnConfig(config, parameter);
         config.setCursorFetchSize(dataTransferProperties.getCursorFetchSize());
         config.setUsePrepStmts(dataTransferProperties.isUseServerPrepStmts());
+
+        config.setExecutionTimeoutSeconds(DEFAULT_TIMEOUT_SECONDS);
+
         return config;
     }
 

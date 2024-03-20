@@ -19,11 +19,11 @@ package com.oceanbase.odc.plugin.task.api.datatransfer.model;
 import java.util.LinkedList;
 import java.util.List;
 
-import com.oceanbase.odc.core.flow.model.FlowTaskResult;
+import com.oceanbase.odc.core.flow.model.AbstractFlowTaskResult;
 
-import lombok.Getter;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
 
 /**
  * Task result for {@code DataTransfer}
@@ -32,10 +32,10 @@ import lombok.Setter;
  * @date 2022-03-07 11:10
  * @since ODC_release_3.3.0
  */
-@Getter
-@Setter
+@Data
 @NoArgsConstructor
-public class DataTransferTaskResult implements FlowTaskResult {
+@EqualsAndHashCode(callSuper = true)
+public class DataTransferTaskResult extends AbstractFlowTaskResult {
 
     private String exportZipFilePath;
     private List<ObjectResult> dataObjectsInfo = new LinkedList<>();

@@ -23,9 +23,10 @@ import org.mockito.Mockito;
 
 import com.oceanbase.odc.service.common.model.HostProperties;
 import com.oceanbase.odc.service.task.config.DefaultJobConfiguration;
+import com.oceanbase.odc.service.task.config.DefaultTaskFrameworkProperties;
 import com.oceanbase.odc.service.task.config.JobConfigurationHolder;
-import com.oceanbase.odc.service.task.config.TaskFrameworkProperties;
 import com.oceanbase.odc.service.task.constants.JobEnvKeyConstants;
+import com.oceanbase.odc.service.task.enums.TaskRunMode;
 import com.oceanbase.odc.service.task.schedule.provider.DefaultHostUrlProvider;
 import com.oceanbase.odc.service.task.schedule.provider.HostUrlProvider;
 import com.oceanbase.odc.service.task.service.TaskFrameworkService;
@@ -60,8 +61,11 @@ public abstract class BaseJobTest {
         HostProperties hostProperties = new HostProperties();
         hostProperties.setOdcHost("localhost");
         hostProperties.setPort(port);
+
+        DefaultTaskFrameworkProperties taskFrameworkProperties = new DefaultTaskFrameworkProperties();
+        taskFrameworkProperties.setRunMode(TaskRunMode.PROCESS);
         HostUrlProvider urlProvider = new DefaultHostUrlProvider(
-                () -> Mockito.mock(TaskFrameworkProperties.class), hostProperties);
+                () -> taskFrameworkProperties, hostProperties);
         jc.setHostUrlProvider(urlProvider);
         jc.setTaskFrameworkService(Mockito.mock(TaskFrameworkService.class));
         JobConfigurationHolder.setJobConfiguration(jc);

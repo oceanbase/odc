@@ -33,7 +33,7 @@ import com.oceanbase.odc.service.common.response.SuccessResponse;
 import com.oceanbase.odc.service.db.DBTableService;
 import com.oceanbase.odc.service.db.model.GenerateTableDDLResp;
 import com.oceanbase.odc.service.db.model.GenerateUpdateTableDDLReq;
-import com.oceanbase.odc.service.partitionplan.PartitionPlanServiceV2;
+import com.oceanbase.odc.service.partitionplan.PartitionPlanService;
 import com.oceanbase.odc.service.partitionplan.model.PartitionPlanDBTable;
 import com.oceanbase.odc.service.session.ConnectSessionService;
 import com.oceanbase.odc.service.state.model.StateName;
@@ -51,7 +51,7 @@ public class DBTableController {
     @Autowired
     private ConnectSessionService sessionService;
     @Autowired
-    private PartitionPlanServiceV2 partitionPlanServiceV2;
+    private PartitionPlanService partitionPlanService;
 
     @GetMapping(value = {"/{sessionId}/databases/{databaseName}/tables", "/{sessionId}/currentDatabase/tables"})
     @StatefulRoute(stateName = StateName.DB_SESSION, stateIdExpression = "#sessionId")
@@ -103,14 +103,14 @@ public class DBTableController {
     @StatefulRoute(stateName = StateName.DB_SESSION, stateIdExpression = "#sessionId")
     public ListResponse<PartitionPlanDBTable> listTables(@PathVariable String sessionId,
             @PathVariable Long databaseId) {
-        return Responses.list(this.partitionPlanServiceV2.listCandidateTables(sessionId, databaseId));
+        return Responses.list(this.partitionPlanService.listCandidateTables(sessionId, databaseId));
     }
 
     @GetMapping(value = "/{sessionId}/databases/{databaseId}/candidatePartitionPlanTables/"
             + "{tableName}/getPartitionKeyDataTypes")
     public ListResponse<DataType> getPartitionKeyDataTypes(@PathVariable String sessionId,
             @PathVariable Long databaseId, @PathVariable String tableName) {
-        return Responses.list(this.partitionPlanServiceV2.getPartitionKeyDataTypes(sessionId, databaseId, tableName));
+        return Responses.list(this.partitionPlanService.getPartitionKeyDataTypes(sessionId, databaseId, tableName));
     }
 
 }

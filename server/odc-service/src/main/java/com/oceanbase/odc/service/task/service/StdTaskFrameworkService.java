@@ -268,16 +268,25 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
     @Override
     public int startSuccess(Long id, String executorIdentifier) {
         JobEntity jobEntity = find(id);
+        jobEntity.setExecutorIdentifier(executorIdentifier);
+        return jobRepository.updateJobExecutorIdentifierById(jobEntity);
+    }
+
+    @Override
+    public int beforeStart(Long id) {
+        JobEntity jobEntity = find(id);
         Date currentDate = JobDateUtils.getCurrentDate();
         jobEntity.setStatus(JobStatus.RUNNING);
-        jobEntity.setExecutorIdentifier(executorIdentifier);
         // increment executionTimes
         jobEntity.setExecutionTimes(jobEntity.getExecutionTimes() + 1);
         jobEntity.setStartedTime(currentDate);
+        if (jobEntity.getLastHeartTime() != null) {
+            jobEntity.setLastHeartTime(null);
+        }
         if (jobEntity.getExecutorDestroyedTime() != null) {
             jobEntity.setExecutorDestroyedTime(null);
         }
-        return jobRepository.updateJobExecutorIdentifierAndStatusById(jobEntity);
+        return jobRepository.updateJobStatusAndExecutionTimesById(jobEntity);
     }
 
 
@@ -293,8 +302,8 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
             log.warn("Job identity is not exists by id {}", taskResult.getJobIdentity().getId());
             return;
         }
-        if (je.getStatus().isTerminated()) {
-            log.warn("Job {} is finished, ignore result", je.getId());
+        if (je.getStatus().isTerminated() || je.getStatus() == JobStatus.CANCELING) {
+            log.warn("Job {} is finished, ignore result, currentStatus={}", je.getId(), je.getStatus());
             return;
         }
 
@@ -449,14 +458,13 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
         CriteriaUpdate<JobEntity> update = cb.createCriteriaUpdate(JobEntity.class);
         Root<JobEntity> e = update.from(JobEntity.class);
         update.set(JobEntityColumn.STATUS, newStatus);
-        if (newStatus.isTerminated()) {
-            update.set(JobEntityColumn.FINISHED_TIME, JobDateUtils.getCurrentDate());
-        }
         update.set(JobEntityColumn.DESCRIPTION, description);
+        update.set(JobEntityColumn.EXECUTOR_DESTROYED_TIME, null);
+        update.set(JobEntityColumn.LAST_HEART_TIME, null);
 
         update.where(cb.equal(e.get(JobEntityColumn.ID), id),
                 cb.equal(e.get(JobEntityColumn.STATUS), oldStatus),
-                cb.isNull(e.get(JobEntityColumn.EXECUTOR_DESTROYED_TIME)));
+                cb.isNotNull(e.get(JobEntityColumn.EXECUTOR_DESTROYED_TIME)));
 
         return entityManager.createQuery(update).executeUpdate();
     }
