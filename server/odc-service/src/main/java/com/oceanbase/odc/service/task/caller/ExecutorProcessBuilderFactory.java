@@ -20,7 +20,6 @@ import java.lang.management.ManagementFactory;
 import java.lang.management.RuntimeMXBean;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.regex.Pattern;
 
 import com.oceanbase.odc.service.task.constants.JobConstants;
@@ -36,13 +35,13 @@ public class ExecutorProcessBuilderFactory {
 
     private static final Pattern ODC_SERVER_EXECUTABLE_JAR = Pattern.compile("^.*odc-server-.*executable\\.jar$");
 
-    public ProcessBuilder getProcessBuilder(Map<String, String> environments, String executorName) {
+    public ProcessBuilder getProcessBuilder(ProcessConfig processConfig, long jobId, String executorName) {
         RuntimeMXBean runtimeMxBean = ManagementFactory.getRuntimeMXBean();
         ProcessBuilder pb = new ProcessBuilder();
         List<String> commands = new ArrayList<>();
         commands.add("java");
         commands.add("-D" + JobUtils.generateExecutorSelectorOnProcess(executorName));
-        commands.addAll(jvmOptions(environments));
+        commands.addAll(jvmOptions(processConfig, jobId));
         if (ODC_SERVER_EXECUTABLE_JAR.matcher(runtimeMxBean.getClassPath()).matches()) {
             // start odc executor by java -jar
             commands.add("-jar");
@@ -56,24 +55,25 @@ public class ExecutorProcessBuilderFactory {
         }
         pb.command(commands);
         pb.directory(new File("."));
-        pb.environment().putAll(environments);
+        pb.environment().putAll(processConfig.getEnvironments());
         return pb;
     }
 
-    private List<String> jvmOptions(Map<String, String> environments) {
+    private List<String> jvmOptions(ProcessConfig processConfig, long jobId) {
         List<String> options = new ArrayList<>();
         options.add("-XX:+UseG1GC");
         options.add("-XX:+PrintAdaptiveSizePolicy");
         options.add("-XX:+PrintGCDetails");
         options.add("-XX:+PrintGCTimeStamps");
         options.add("-XX:+PrintGCDateStamps");
-        options.add(String.format("-Xloggc:%s/gc.log", environments.get(JobEnvKeyConstants.ODC_LOG_DIRECTORY)));
+        options.add(String.format("-Xloggc:%s/task/%d/gc.log",
+                processConfig.getEnvironments().get(JobEnvKeyConstants.ODC_LOG_DIRECTORY), jobId));
         options.add("-XX:+UseGCLogFileRotation");
         options.add("-XX:GCLogFileSize=50M");
         options.add("-XX:NumberOfGCLogFiles=5");
         options.add("-XX:+ExitOnOutOfMemoryError");
-        options.add("-Xmx2048m");
-        options.add("-Xms512m");
+        options.add(String.format("-Xmx%dm", processConfig.getJvmXmx()));
+        options.add(String.format("-Xms%dm", processConfig.getJvmXms()));
         return options;
     }
 

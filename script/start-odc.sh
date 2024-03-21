@@ -167,6 +167,10 @@ function init_java_exec() {
 }
 
 main() {
+    # set heap MaxRAMPercentage=60.0 if ODC_TASK_RUN_MODE is K8S
+    if [[ "${ODC_TASK_RUN_MODE}" == "K8S" ]]; then
+        default_heap_options="-XX:MaxRAMPercentage=60.0 -XX:InitialRAMPercentage=60.0"
+    fi
     # if ODC_BOOT_MODE is TASK_EXECUTOR start odc server as task executor mode
     if [[ "${ODC_BOOT_MODE}" == "TASK_EXECUTOR" ]]; then
         echo "start odc as ${ODC_BOOT_MODE}"
