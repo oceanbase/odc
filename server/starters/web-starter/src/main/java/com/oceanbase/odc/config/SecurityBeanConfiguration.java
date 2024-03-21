@@ -26,7 +26,6 @@ import com.oceanbase.odc.core.authority.SecurityManager;
 import com.oceanbase.odc.service.encryption.SensitivePropertyHandler;
 import com.oceanbase.odc.service.iam.auth.CustomAuthenticationFailureHandler;
 import com.oceanbase.odc.service.iam.auth.CustomAuthenticationSuccessHandler;
-import com.oceanbase.odc.service.iam.auth.CustomJwtAuthenticationSuccessHandler;
 import com.oceanbase.odc.service.iam.auth.UsernamePasswordConfigureHelper;
 import com.oceanbase.odc.service.iam.auth.local.LocalDaoAuthenticationProvider;
 import com.oceanbase.odc.service.iam.util.FailedLoginAttemptLimiter;
@@ -58,10 +57,6 @@ public class SecurityBeanConfiguration {
     @Autowired
     private CommonSecurityProperties commonSecurityProperties;
 
-    @Autowired
-    private CustomJwtAuthenticationSuccessHandler customJwtAuthenticationSuccessHandler;
-
-
     @Bean
     public LocalDaoAuthenticationProvider authenticationProvider() {
         LocalDaoAuthenticationProvider provider = new LocalDaoAuthenticationProvider();
@@ -75,13 +70,6 @@ public class SecurityBeanConfiguration {
     public UsernamePasswordConfigureHelper usernamePasswordConfigureHelper() {
         return new UsernamePasswordConfigureHelper(securityManager, clientAddressLoginAttemptCache,
                 sensitivePropertyHandler, customAuthenticationSuccessHandler, customAuthenticationFailureHandler,
-                commonSecurityProperties);
-    }
-
-    @Bean
-    public UsernamePasswordConfigureHelper jwtUsernamePasswordConfigureHelper() {
-        return new UsernamePasswordConfigureHelper(securityManager, clientAddressLoginAttemptCache,
-                sensitivePropertyHandler, customJwtAuthenticationSuccessHandler, customAuthenticationFailureHandler,
                 commonSecurityProperties);
     }
 }

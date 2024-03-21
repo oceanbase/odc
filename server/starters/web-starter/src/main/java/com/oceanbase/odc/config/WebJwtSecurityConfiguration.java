@@ -16,7 +16,6 @@
 package com.oceanbase.odc.config;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
@@ -29,7 +28,6 @@ import org.springframework.security.web.context.SecurityContextRepository;
 import com.oceanbase.odc.service.iam.auth.CustomJwtLogoutSuccessHandler;
 import com.oceanbase.odc.service.iam.auth.CustomPostRequestSessionInvalidationFilter;
 import com.oceanbase.odc.service.iam.auth.JwtSecurityContextRepository;
-import com.oceanbase.odc.service.iam.auth.UsernamePasswordConfigureHelper;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -48,9 +46,6 @@ public class WebJwtSecurityConfiguration extends WebSecurityConfiguration {
     private JwtSecurityContextRepository jwtSecurityContextRepository;
     @Autowired
     private CustomJwtLogoutSuccessHandler customJwtLogoutSuccessHandler;
-    @Autowired
-    @Qualifier("jwtUsernamePasswordConfigureHelper")
-    private UsernamePasswordConfigureHelper jwtUsernamePasswordConfigureHelper;
 
     @Override
     protected void configure(HttpSecurity http) throws Exception {
@@ -66,11 +61,6 @@ public class WebJwtSecurityConfiguration extends WebSecurityConfiguration {
     @Override
     protected LogoutSuccessHandler logoutSuccessHandler() {
         return this.customJwtLogoutSuccessHandler;
-    }
-
-    @Override
-    protected void usernamePasswordConfigureHelperConfigure(HttpSecurity http) throws Exception {
-        jwtUsernamePasswordConfigureHelper.configure(http, authenticationManager());
     }
 
     @Override

@@ -16,7 +16,6 @@
 package com.oceanbase.odc.config;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
 import org.springframework.context.annotation.Configuration;
@@ -101,7 +100,6 @@ public class WebSecurityConfiguration extends WebSecurityConfigurerAdapter {
     private BastionProperties bastionProperties;
 
     @Autowired
-    @Qualifier("usernamePasswordConfigureHelper")
     private UsernamePasswordConfigureHelper usernamePasswordConfigureHelper;
 
     @Autowired
@@ -143,8 +141,7 @@ public class WebSecurityConfiguration extends WebSecurityConfigurerAdapter {
     @Override
     protected void configure(HttpSecurity http) throws Exception {
         corsConfigureHelper.configure(http);
-        usernamePasswordConfigureHelperConfigure(http);
-        // usernamePasswordConfigureHelper.configure(http, authenticationManager());
+        usernamePasswordConfigureHelper.configure(http, authenticationManager());
         oauth2SecurityConfigureHelper.configure(http);
         ldapSecurityConfigureHelper.configure(http, authenticationManager());
 
@@ -197,10 +194,6 @@ public class WebSecurityConfiguration extends WebSecurityConfigurerAdapter {
                 .migrateSession()
                 .invalidSessionStrategy(
                         new CustomInvalidSessionStrategy(commonSecurityProperties.getLoginPage(), localeResolver));
-    }
-
-    protected void usernamePasswordConfigureHelperConfigure(HttpSecurity http) throws Exception {
-        usernamePasswordConfigureHelper.configure(http, authenticationManager());
     }
 
     private CaptchaAuthenticationProcessingFilter getCaptchaAuthenticationProcessingFilter() {

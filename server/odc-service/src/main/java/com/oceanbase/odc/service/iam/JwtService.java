@@ -125,7 +125,7 @@ public class JwtService {
      */
     public String sign(Map<String, Object> map) {
         try {
-            Date date = new Date(System.currentTimeMillis() + jwtProperties.getExpireTime());
+            Date date = new Date(System.currentTimeMillis() + jwtProperties.getExpireTimeMills());
             Algorithm algorithm = Algorithm.HMAC256(jwtProperties.getTokenSecret());
             Map<String, Object> header = new HashMap<>(2);
             header.put("typ", "jwt");
@@ -190,7 +190,7 @@ public class JwtService {
     }
 
     public boolean isRenew(Date expiration) {
-        return (expiration.getTime() - System.currentTimeMillis()) < jwtProperties.getBufferTime();
+        return (expiration.getTime() - System.currentTimeMillis()) < jwtProperties.getBufferTimeMills();
     }
 
     public String getHeaderByBase64(String token) {

@@ -19,7 +19,6 @@ import java.io.IOException;
 import java.time.Duration;
 import java.util.HashMap;
 
-import javax.servlet.ServletException;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -27,6 +26,7 @@ import javax.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Component;
 
@@ -45,6 +45,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Component
+@ConditionalOnProperty(value = "odc.iam.auth.method", havingValue = "jwt")
 public class CustomJwtAuthenticationSuccessHandler extends CustomAuthenticationSuccessHandler {
     @Autowired
     private JwtService jwtService;
@@ -59,11 +60,6 @@ public class CustomJwtAuthenticationSuccessHandler extends CustomAuthenticationS
         super(securityManager, loginHistoryService);
     }
 
-    @Override
-    public void onAuthenticationSuccess(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse,
-            Authentication authentication) throws IOException, ServletException {
-        super.onAuthenticationSuccess(httpServletRequest, httpServletResponse, authentication);
-    }
 
     @Override
     protected void handleAfterSucceed(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse,
