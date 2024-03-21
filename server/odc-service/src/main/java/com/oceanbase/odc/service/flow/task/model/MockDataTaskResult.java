@@ -29,6 +29,7 @@ import com.oceanbase.tools.datamocker.schedule.MockContext;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import lombok.NoArgsConstructor;
 import lombok.NonNull;
 
 /**
@@ -40,6 +41,7 @@ import lombok.NonNull;
  */
 @Data
 @EqualsAndHashCode(callSuper = true)
+@NoArgsConstructor
 public class MockDataTaskResult extends AbstractFlowTaskResult {
 
     @Deprecated

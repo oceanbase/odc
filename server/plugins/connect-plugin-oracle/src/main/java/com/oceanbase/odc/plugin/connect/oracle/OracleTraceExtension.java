@@ -40,7 +40,6 @@ public class OracleTraceExtension implements TraceExtensionPoint {
     public SqlExecTime getExecuteDetail(Statement statement, String version) throws SQLException {
         SqlExecTime sqlExecTime = new SqlExecTime();
         try {
-            Long execTime = 0L;
             String sql =
                     "SELECT PREV_SQL_ID FROM SYS.V$SESSION WHERE SID = SYS_CONTEXT('USERENV', 'SID') and AUDSID=SYS_CONTEXT('USERENV', 'SESSIONID')";
             String preSqlId = null;
@@ -54,11 +53,11 @@ public class OracleTraceExtension implements TraceExtensionPoint {
             ResultSet resultSet = statement.executeQuery(sql);
             if (resultSet.next()) {
                 // Get only the first row of data
-                execTime = resultSet.getBigDecimal("ELAPSED_TIME").longValue();
+                Long execTime = resultSet.getBigDecimal("ELAPSED_TIME").longValue();
                 log.info("Get execute detail from oracle, sql={}, execTime={}", resultSet.getString("SQL_TEXT"),
                         execTime);
+                sqlExecTime.setExecuteMicroseconds(execTime);
             }
-            sqlExecTime.setExecuteMicroseconds(execTime);
         } catch (Exception e) {
             log.warn("Failed to get execute detail from oracle, message={}", e.getMessage());
         }

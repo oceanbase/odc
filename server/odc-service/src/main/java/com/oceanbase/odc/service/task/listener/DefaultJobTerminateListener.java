@@ -35,7 +35,6 @@ import com.oceanbase.odc.service.schedule.ScheduleTaskService;
 import com.oceanbase.odc.service.schedule.job.DLMJobParameters;
 import com.oceanbase.odc.service.task.constants.JobParametersKeyConstants;
 import com.oceanbase.odc.service.task.service.TaskFrameworkService;
-import com.oceanbase.tools.migrator.common.enums.JobType;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -61,7 +60,6 @@ public class DefaultJobTerminateListener extends AbstractEventListener<JobTermin
 
     @Override
     public void onEvent(JobTerminateEvent event) {
-        TaskFrameworkService taskFrameworkService = SpringContextUtil.getBean(TaskFrameworkService.class);
         JobEntity jobEntity = taskFrameworkService.find(event.getJi().getId());
         if (jobEntity.getJobType().equals("DLM")) {
             ScheduleTaskRepository taskRepository = SpringContextUtil.getBean(ScheduleTaskRepository.class);
@@ -76,20 +74,22 @@ public class DefaultJobTerminateListener extends AbstractEventListener<JobTermin
                         DLMJobParameters.class);
                 scheduleService.asyncScheduleStatus(Long.parseLong(o.getJobName()));
                 // Trigger the data-delete job if necessary after the data-archive task is completed.
-                if (parameters.getJobType() == JobType.MIGRATE && parameters.isDeleteAfterMigration()) {
+                if (parameters.getJobType() == com.oceanbase.tools.migrator.common.enums.JobType.MIGRATE
+                        && parameters.isDeleteAfterMigration()) {
                     scheduleService.dataArchiveDelete(Long.parseLong(o.getJobName()), o.getId());
                     log.info("Trigger delete job succeed.");
                 }
             });
-        } else {
-            Optional<TaskEntity> taskEntity = taskRepository.findByJobId(jobEntity.getId());
-            if (taskEntity.isPresent() && !taskEntity.get().getStatus().isTerminated()) {
-                int row = taskRepository.updateStatusById(taskEntity.get().getId(),
+            return;
+        }
+        // update status for task_task.
+        Optional<TaskEntity> taskEntity = taskRepository.findByJobId(jobEntity.getId());
+        if (taskEntity.isPresent() && !taskEntity.get().getStatus().isTerminated()) {
+            int row = taskRepository.updateStatusById(taskEntity.get().getId(),
+                    event.getStatus().convertTaskStatus());
+            if (row >= 1) {
+                log.info("Update taskTask successfully, taskId={}, status={}.", jobEntity.getId(),
                         event.getStatus().convertTaskStatus());
-                if (row >= 1) {
-                    log.info("Update taskTask successfully, taskId={}, status={}.", jobEntity.getId(),
-                            event.getStatus().convertTaskStatus());
-                }
             }
         }
     }
