@@ -71,11 +71,15 @@ public class ThreadPoolTaskExecutor implements TaskExecutor {
             return task.getStatus() == JobStatus.CANCELED;
         }
 
+        // if task is terminated, cancel result will be true
+        if(getTask(ji).getStatus().isTerminated()){
+            return true;
+        }
         Future<Boolean> stopFuture = executor.submit(task::stop);
         boolean result = false;
         try {
-            // wait 30 seconds for stop task accomplished
-            result = stopFuture.get(30 * 1000, TimeUnit.MILLISECONDS);
+            // wait 10 seconds for stop task accomplished
+            result = stopFuture.get(10 * 1000, TimeUnit.MILLISECONDS);
         } catch (InterruptedException e) {
             log.warn("Stop task {} is be interrupted.", ji.getId(), e);
         } catch (ExecutionException e) {
