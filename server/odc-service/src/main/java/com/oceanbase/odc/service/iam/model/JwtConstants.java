@@ -13,14 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.metadb.config;
+package com.oceanbase.odc.service.iam.model;
 
-import java.util.List;
+public class JwtConstants {
 
-public interface SystemConfigDAO {
-    List<SystemConfigEntity> queryByKeyPrefix(String keyPrefix);
+    public static final String ID = "ID";
+    /**
+     * Keep the format consistent with the key format in the cookie
+     */
+    public static final String ODC_JWT_TOKEN = "ODC-JWT-TOKEN";
 
-    void insert(SystemConfigEntity systemConfigEntity);
+    public static final String AUTHENTICATION_BLANK_VALUE = "";
 
-    void saveConfig(SystemConfigEntity systemConfigEntity);
+    public static final String PRINCIPAL = "PRINCIPAL";
+
+    public static final String ORGANIZATION_ID = "ORGANIZATION_ID";
+
+    public static final String ORGANIZATION_TYPE = "ORGANIZATION_TYPE";
+
 }
