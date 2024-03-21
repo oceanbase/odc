@@ -25,6 +25,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import org.apache.commons.collections4.CollectionUtils;
@@ -87,6 +89,8 @@ import lombok.extern.slf4j.Slf4j;
 @SkipAuthorize("odc internal usage")
 public class PartitionPlanService {
 
+    public static Pattern ORACLE_TIMESTAMP_PATTERN = Pattern.compile(
+            "^Timestamp\\s+'(\\d+\\-\\d+\\-\\d+\\s+\\d+:\\d+:\\d+)(\\.\\d+)?'$");
     @Autowired
     private ConnectSessionService sessionService;
     @Autowired
@@ -455,12 +459,21 @@ public class PartitionPlanService {
             }
             int size = Math.min(i.getMaxValues().size(), definition.getMaxValues().size());
             for (int k = 0; k < size; k++) {
-                if (Objects.equals(i.getMaxValues().get(k), definition.getMaxValues().get(k))) {
+                if (upperBoundEquals(i.getMaxValues().get(k), definition.getMaxValues().get(k))) {
                     return true;
                 }
             }
             return false;
         });
+    }
+
+    private boolean upperBoundEquals(String existUpperBound, String newUpperBound) {
+        Matcher m1 = ORACLE_TIMESTAMP_PATTERN.matcher(existUpperBound);
+        Matcher m2 = ORACLE_TIMESTAMP_PATTERN.matcher(newUpperBound);
+        if (m1.matches() && m2.matches() && Objects.equals(m1.group(1), m2.group(1))) {
+            return true;
+        }
+        return Objects.equals(existUpperBound, newUpperBound);
     }
 
     private JdbcOperations getJdbcOpt(ConnectionSession connectionSession) {
