@@ -88,11 +88,16 @@ public class OdcJobListener implements JobListener {
         }
         // Init user.
         ScheduleEntity scheduleEntity = scheduleService.nullSafeGetById(ScheduleTaskUtils.getScheduleId(context));
+        // Ignore this schedule if scheduler has executing job.
+        if (scheduleEntity.getJobType().executeInTaskFramework() && !scheduleEntity.getAllowConcurrent()
+                && scheduleService.hasExecutingScheduleTask(
+                        scheduleEntity.getId())) {
+            return;
+        }
         UserEntity userEntity = userService.nullSafeGet(scheduleEntity.getCreatorId());
         userEntity.setOrganizationId(scheduleEntity.getOrganizationId());
         User taskCreator = new User(userEntity);
         SecurityContextUtils.setCurrentUser(taskCreator);
-
         // Create or load task.
         Long targetTaskId = ScheduleTaskUtils.getTargetTaskId(context);
         ScheduleTaskEntity entity;

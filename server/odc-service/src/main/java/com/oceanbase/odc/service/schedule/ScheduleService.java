@@ -523,6 +523,11 @@ public class ScheduleService {
         return false;
     }
 
+    public boolean hasExecutingScheduleTask(Long scheduleId) {
+        return !scheduleTaskService.listTaskByJobNameAndStatus(
+                scheduleId.toString(), TaskStatus.getProcessingStatus()).isEmpty();
+    }
+
     public ScheduleEntity nullSafeGetByIdWithCheckPermission(Long id) {
         return nullSafeGetByIdWithCheckPermission(id, false);
     }

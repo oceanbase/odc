@@ -66,7 +66,7 @@ import lombok.extern.slf4j.Slf4j;
  * @Descripition:
  */
 @Slf4j
-public class AbstractDlmJob implements OdcJob {
+public abstract class AbstractDlmJob implements OdcJob {
 
     public final ScheduleTaskRepository scheduleTaskRepository;
     public final DLMJobFactory jobFactory;
@@ -244,8 +244,16 @@ public class AbstractDlmJob implements OdcJob {
 
     @Override
     public void execute(JobExecutionContext context) {
-
+        if (context.getResult() == null) {
+            log.warn("Concurrent execute is not allowed,job will be existed.jobKey={}",
+                    context.getJobDetail().getKey());
+            return;
+        }
+        executeJob(context);
     }
+
+    public abstract void executeJob(JobExecutionContext context);
+
 
     @Override
     public void before(JobExecutionContext context) {
