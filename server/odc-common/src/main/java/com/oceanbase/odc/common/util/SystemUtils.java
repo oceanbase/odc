@@ -120,6 +120,15 @@ public abstract class SystemUtils {
     }
 
     /**
+     * get jvm Xmx
+     *
+     * @return free memory
+     */
+    public static BinarySize getJvmXmxMemory() {
+        return BinarySizeUnit.B.of(Runtime.getRuntime().maxMemory());
+    }
+
+    /**
      * get system free physical memory, unit size is byte
      *
      * @return free memory

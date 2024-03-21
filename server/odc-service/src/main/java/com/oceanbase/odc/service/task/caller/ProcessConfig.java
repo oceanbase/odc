@@ -29,7 +29,7 @@ public class ProcessConfig {
 
     private Map<String, String> environments;
 
-    private int jvmXmxMB;
+    private long jvmXmxMB;
 
-    private int jvmXmsMB;
+    private long jvmXmsMB;
 }

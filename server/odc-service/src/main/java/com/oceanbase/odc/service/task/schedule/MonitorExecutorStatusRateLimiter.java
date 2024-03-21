@@ -63,15 +63,13 @@ public class MonitorExecutorStatusRateLimiter implements StartJobRateLimiter {
                         runningJobCountLimit, count);
                 return false;
             }
-            // Current systemFreeMemory must bigger than systemMinFreeMemoryForStartJobSizeInMB +
-            // startNewProcessMemoryMinSize
             long systemFreeMemory = SystemUtils.getSystemFreePhysicalMemory().convert(BinarySizeUnit.MB).getSizeDigit();
-            int startNewProcessMemoryMinSize = taskFrameworkProperties.get().getJobProcessMinMemorySizeInMB();
-            int memoryReserveSize = taskFrameworkProperties.get().getSystemMinFreeMemoryReserveSizeInMB();
-            if (new BigDecimal(memoryReserveSize).add(BigDecimal.valueOf(startNewProcessMemoryMinSize))
-                    .compareTo(BigDecimal.valueOf(systemFreeMemory)) > 0 && log.isDebugEnabled()) {
-                log.debug("Free memory lack, systemFreeMemory={}, startNewProcessMemoryMinSize={}, "
-                        + "memoryReserveSize={}", systemFreeMemory, startNewProcessMemoryMinSize, memoryReserveSize);
+            long processMemoryMinSize = taskFrameworkProperties.get().getJobProcessMinMemorySizeInMB();
+            long memoryReserveSize = taskFrameworkProperties.get().getSystemReserveMinFreeMemorySizeInMB();
+
+            if (systemFreeMemory < (memoryReserveSize + processMemoryMinSize) && log.isDebugEnabled()) {
+                log.debug("Free memory lack, systemFreeMemory={}, processMemoryMinSize={}, "
+                        + "memoryReserveSize={}", systemFreeMemory, processMemoryMinSize, memoryReserveSize);
                 return false;
             }
             return true;
@@ -81,14 +79,14 @@ public class MonitorExecutorStatusRateLimiter implements StartJobRateLimiter {
     }
 
     private long calculateRunningJobCountLimit() {
-        int startNewProcessMem = taskFrameworkProperties.get().getJobProcessMinMemorySizeInMB();
+        long minProcessMem = taskFrameworkProperties.get().getJobProcessMinMemorySizeInMB();
+        long jvmXmx = SystemUtils.getJvmXmxMemory().convert(BinarySizeUnit.MB).getSizeDigit();
         // limitCount = totalPhysicMemory * 0.35 / startNewProcessMemoryMinSize
         // odc may restart, so we should add exists running jobs number
-        long limitCount = new BigDecimal(totalPhysicMemory).multiply(BigDecimal.valueOf(0.35))
-                .divide(new BigDecimal(startNewProcessMem), RoundingMode.FLOOR)
+        return new BigDecimal(totalPhysicMemory * 0.8).subtract(BigDecimal.valueOf(jvmXmx))
+                .divide(new BigDecimal(minProcessMem), RoundingMode.FLOOR)
                 .add(new BigDecimal(taskFrameworkService.countRunningJobs(TaskRunMode.PROCESS)))
                 .longValue();
-        return limitCount == 0 ? 1 : limitCount;
     }
 
     private boolean isExecutorWaitingToRunNotExceedThreshold() {

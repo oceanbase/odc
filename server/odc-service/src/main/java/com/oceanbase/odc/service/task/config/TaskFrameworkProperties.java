@@ -51,11 +51,11 @@ public interface TaskFrameworkProperties {
 
     int getQuartzStartDelaySeconds();
 
-    int getJobProcessMinMemorySizeInMB();
+    long getJobProcessMinMemorySizeInMB();
 
-    int getJobProcessMaxMemorySizeInMB();
+    long getJobProcessMaxMemorySizeInMB();
 
-    int getSystemMinFreeMemoryReserveSizeInMB();
+    long getSystemReserveMinFreeMemorySizeInMB();
 
     String getStartPreparingJobCronExpression();
 
