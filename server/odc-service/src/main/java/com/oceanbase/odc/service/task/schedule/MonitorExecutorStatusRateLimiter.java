@@ -21,8 +21,6 @@ import java.util.function.Supplier;
 
 import com.oceanbase.odc.common.unit.BinarySizeUnit;
 import com.oceanbase.odc.common.util.SystemUtils;
-import com.oceanbase.odc.service.task.config.JobConfiguration;
-import com.oceanbase.odc.service.task.config.JobConfigurationHolder;
 import com.oceanbase.odc.service.task.config.TaskFrameworkProperties;
 import com.oceanbase.odc.service.task.enums.TaskRunMode;
 import com.oceanbase.odc.service.task.service.TaskFrameworkService;
@@ -89,17 +87,14 @@ public class MonitorExecutorStatusRateLimiter implements StartJobRateLimiter {
     }
 
     private boolean isExecutorWaitingToRunNotExceedThreshold() {
-        JobConfiguration jobConfiguration = JobConfigurationHolder.getJobConfiguration();
-        TaskFrameworkProperties taskFrameworkProperties = jobConfiguration.getTaskFrameworkProperties();
-        long count = jobConfiguration.getTaskFrameworkService().countRunningNeverHeartJobs(
-                taskFrameworkProperties.getExecutorWaitingToRunThresholdSeconds());
-
-        boolean continued = taskFrameworkProperties.getExecutorWaitingToRunThresholdCount() - count > 0;
-        if (!continued && log.isDebugEnabled()) {
+        long count = taskFrameworkService.countRunningNeverHeartJobs(
+                taskFrameworkProperties.get().getExecutorWaitingToRunThresholdSeconds());
+        boolean continued = taskFrameworkProperties.get().getExecutorWaitingToRunThresholdCount() - count > 0;
+        if (!continued) {
             if (log.isDebugEnabled()) {
                 log.debug("Amount of executors waiting to run exceed threshold, wait next schedule,"
                         + " threshold={}, waitingJobs={}.",
-                        taskFrameworkProperties.getExecutorWaitingToRunThresholdCount(), count);
+                        taskFrameworkProperties.get().getExecutorWaitingToRunThresholdCount(), count);
             }
         }
         return continued;
