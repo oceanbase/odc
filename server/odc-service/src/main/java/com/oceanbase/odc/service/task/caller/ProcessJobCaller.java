@@ -42,7 +42,7 @@ public class ProcessJobCaller extends BaseJobCaller {
 
         String executorName = JobUtils.generateExecutorName(context.getJobIdentity());
         ProcessBuilder pb = new ExecutorProcessBuilderFactory().getProcessBuilder(
-                processConfig, context.getJobIdentity().getId(),executorName);
+                processConfig, context.getJobIdentity().getId(), executorName);
         Process process;
         try {
             process = pb.start();
