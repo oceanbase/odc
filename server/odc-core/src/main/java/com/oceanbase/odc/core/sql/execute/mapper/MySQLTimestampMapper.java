@@ -42,10 +42,10 @@ public class MySQLTimestampMapper implements JdbcColumnMapper {
             return "0000-00-00 00:00:00";
         }
 
-        String returnValue = new String (data.getBytes()) ;
-       /* if (returnValue.endsWith(".0")) {
-            return returnValue.substring(0, returnValue.length() - 2);
-        }*/
+        String returnValue = new String(data.getBytes());
+        /*
+         * if (returnValue.endsWith(".0")) { return returnValue.substring(0, returnValue.length() - 2); }
+         */
         return returnValue;
     }
 
