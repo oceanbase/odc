@@ -172,11 +172,11 @@ public class DataArchivePreprocessor extends AbstractDlmJobPreprocessor {
             }
             if (VersionUtils.isGreaterThanOrEqualsTo(sourceDbVersion, "4.3.0")) {
                 throw new UnsupportedException(
-                        String.format("Unsupported OB Version:{}", sourceDbVersion));
+                        String.format("Unsupported OB Version:%s", sourceDbVersion));
             }
             if (VersionUtils.isGreaterThanOrEqualsTo(targetDbVersion, "4.3.0")) {
                 throw new UnsupportedException(
-                        String.format("Unsupported OB Version:{}", targetDbVersion));
+                        String.format("Unsupported OB Version:%s", targetDbVersion));
             }
         }
     }
