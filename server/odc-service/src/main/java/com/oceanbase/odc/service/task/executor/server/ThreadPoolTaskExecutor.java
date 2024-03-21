@@ -28,7 +28,6 @@ import java.util.concurrent.TimeoutException;
 import com.oceanbase.odc.common.concurrent.ExecutorUtils;
 import com.oceanbase.odc.core.task.TaskThreadFactory;
 import com.oceanbase.odc.service.task.caller.JobContext;
-import com.oceanbase.odc.service.task.enums.JobStatus;
 import com.oceanbase.odc.service.task.executor.task.Task;
 import com.oceanbase.odc.service.task.schedule.JobIdentity;
 
@@ -67,11 +66,6 @@ public class ThreadPoolTaskExecutor implements TaskExecutor {
     @Override
     public boolean cancel(JobIdentity ji) {
         Task<?> task = tasks.get(ji);
-        Future<?> startFuture = futures.get(ji);
-        if (startFuture.isDone()) {
-            return task.getStatus() == JobStatus.CANCELED;
-        }
-
         Future<Boolean> stopFuture = executor.submit(task::stop);
         boolean result = false;
         try {
@@ -89,10 +83,8 @@ public class ThreadPoolTaskExecutor implements TaskExecutor {
             // current status is CANCELING must push to CANCELED
             result = getTask(ji).getStatus().isTerminated();
         }
-        if (!result) {
-            ExecutorUtils.gracefulShutdown(executor, "Task-Executor", 5);
-        }
-        log.info("Task is cancelled succeed, taskId={}, status={}.", ji.getId(), getTask(ji).getStatus());
+        ExecutorUtils.gracefulShutdown(executor, "Task-Executor", result ? 1 : 5);
+        log.info("Task is canceled succeed, taskId={}, status={}.", ji.getId(), getTask(ji).getStatus());
         return true;
     }
 
@@ -100,4 +92,6 @@ public class ThreadPoolTaskExecutor implements TaskExecutor {
     public Task<?> getTask(JobIdentity ji) {
         return tasks.get(ji);
     }
+
+
 }
