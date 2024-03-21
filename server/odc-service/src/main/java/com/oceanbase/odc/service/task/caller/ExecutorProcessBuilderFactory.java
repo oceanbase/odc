@@ -72,8 +72,8 @@ public class ExecutorProcessBuilderFactory {
         options.add("-XX:GCLogFileSize=50M");
         options.add("-XX:NumberOfGCLogFiles=5");
         options.add("-XX:+ExitOnOutOfMemoryError");
-        options.add(String.format("-Xmx%dm", processConfig.getJvmXmx()));
-        options.add(String.format("-Xms%dm", processConfig.getJvmXms()));
+        options.add(String.format("-Xmx%dm", processConfig.getJvmXmxMB()));
+        options.add(String.format("-Xms%dm", processConfig.getJvmXmsMB()));
         return options;
     }
 
