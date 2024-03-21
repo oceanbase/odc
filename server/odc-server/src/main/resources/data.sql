@@ -740,6 +740,9 @@ INSERT INTO config_system_configuration ( `key`, `value`, `description` ) VALUES
 INSERT INTO config_system_configuration ( `key`, `value`, `description` ) VALUES( 'odc.task-framework.job-heart-timeout-seconds', '300', 'job heart timeout seconds, job will failed or retrying' ) ON DUPLICATE KEY UPDATE `id` = `id`;
 INSERT INTO config_system_configuration ( `key`, `value`, `description` ) VALUES( 'odc.task-framework.executor-waiting-to-run-threshold-seconds', '3', 'time threshold of executor waiting to run, for controller schedule rate' ) ON DUPLICATE KEY UPDATE `id` = `id`;
 INSERT INTO config_system_configuration ( `key`, `value`, `description` ) VALUES( 'odc.task-framework.executor-waiting-to-run-threshold-count', '10', 'amount threshold of executor waiting to run, for controller schedule rate' ) ON DUPLICATE KEY UPDATE `id` = `id`;
+INSERT INTO config_system_configuration ( `key`, `value`, `description` ) VALUES( 'odc.task-framework.job-process-min-memory-size-in-mb', '1024', 'ob process min memory size in mb' ) ON DUPLICATE KEY UPDATE `id` = `id`;
+INSERT INTO config_system_configuration ( `key`, `value`, `description` ) VALUES( 'odc.task-framework.job-process-max-memory-size-in-mb', '1024', 'job process max memory size in mb' ) ON DUPLICATE KEY UPDATE `id` = `id`;
+INSERT INTO config_system_configuration ( `key`, `value`, `description` ) VALUES( 'odc.task-framework.system-reserve-min-free-memory-size-in-mb', '1024', 'system reserve min free memory size in mb' ) ON DUPLICATE KEY UPDATE `id` = `id`;
 
 INSERT INTO config_system_configuration ( `key`, `value`, `description` ) VALUES( 'odc.task-framework.k8s-properties.kube-config', '', 'kube config base64 encoded is used k8s connect default' ) ON DUPLICATE KEY UPDATE `id` = `id`;
 INSERT INTO config_system_configuration ( `key`, `value`, `description` ) VALUES( 'odc.task-framework.k8s-properties.kube-url', '', 'kube url be used to connect k8s when kube config is null' ) ON DUPLICATE KEY UPDATE `id` = `id`;
@@ -771,3 +774,12 @@ INSERT INTO config_system_configuration ( `key`, `value`, `description` )
 VALUES
   ( 'odc.task.async.index-change-max-timeout-millis', '432000000', 'If the change content of the database change task involves time-consuming index change operations, the timeout period for the automatically modified database change task, unit: milliseconds. Default value is 5 days.' )
   ON DUPLICATE KEY UPDATE `id` = `id`;
+
+INSERT INTO config_system_configuration(`key`, `value`, `description`) VALUES('odc.iam.auth.jwt.expiration-seconds',
+ '900', 'How long the jwt remain valid, in seconds, defaults to 900') ON DUPLICATE KEY UPDATE `id`=`id`;
+
+INSERT INTO config_system_configuration(`key`, `value`, `description`) VALUES('odc.iam.auth.jwt.buffer-seconds',
+ '180', 'How long does the jwt need to be renewed before it expires, in seconds, defaults to 180') ON DUPLICATE KEY UPDATE `id`=`id`;
+
+INSERT INTO config_system_configuration(`key`, `value`, `description`) VALUES('odc.iam.auth.method',
+ 'jsession', 'The authentication mode used for login, there are two alternatives: jwt and jsession, the default is jsession') ON DUPLICATE KEY UPDATE `id`=`id`;

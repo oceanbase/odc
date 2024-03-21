@@ -98,6 +98,11 @@ function init_parameters() {
     fi
     export LOCAL_HOSTNAME=$(hostname -I | awk -F ' ' '{print $1}')
     export ODC_PROFILE_MODE="${profile}"
+
+    # set heap MaxRAMPercentage=60.0 if ODC_TASK_RUN_MODE is K8S
+    if [[ "${ODC_TASK_RUN_MODE}" == "K8S" ]]; then
+        default_heap_options="-XX:MaxRAMPercentage=60.0 -XX:InitialRAMPercentage=60.0"
+    fi
     log_info "init parameters done"
 }
 

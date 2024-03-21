@@ -131,7 +131,12 @@ public class SensitivePropertyHandlerImpl implements SensitivePropertyHandler {
 
     @Override
     public String decrypt(String encryptedText) {
-        return textEncryptor.decrypt(encryptedText);
+        try {
+            return textEncryptor.decrypt(encryptedText);
+        } catch (Exception e) {
+            log.warn("Failed to decrypt sensitive property, encryptedText={}, publicKey={}", encryptedText,
+                    publicKey());
+            throw e;
+        }
     }
-
 }

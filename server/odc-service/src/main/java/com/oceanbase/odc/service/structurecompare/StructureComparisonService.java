@@ -17,11 +17,7 @@ package com.oceanbase.odc.service.structurecompare;
 
 import java.io.File;
 import java.nio.charset.StandardCharsets;
-import java.util.Collections;
 import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 import javax.validation.constraints.NotNull;
@@ -39,9 +35,7 @@ import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
-import com.oceanbase.odc.core.shared.exception.AccessDeniedException;
 import com.oceanbase.odc.core.shared.exception.NotFoundException;
-import com.oceanbase.odc.metadb.iam.UserEntity;
 import com.oceanbase.odc.metadb.structurecompare.StructureComparisonEntitySpecs;
 import com.oceanbase.odc.metadb.structurecompare.StructureComparisonTaskEntity;
 import com.oceanbase.odc.metadb.structurecompare.StructureComparisonTaskRepository;
@@ -49,6 +43,7 @@ import com.oceanbase.odc.metadb.structurecompare.StructureComparisonTaskResultEn
 import com.oceanbase.odc.metadb.structurecompare.StructureComparisonTaskResultRepository;
 import com.oceanbase.odc.service.common.response.Responses;
 import com.oceanbase.odc.service.flow.ApprovalPermissionService;
+import com.oceanbase.odc.service.flow.FlowInstanceService;
 import com.oceanbase.odc.service.flow.task.model.DBObjectStructureComparisonResp;
 import com.oceanbase.odc.service.flow.task.model.DBStructureComparisonResp;
 import com.oceanbase.odc.service.flow.task.model.DBStructureComparisonResp.ObjectComparisonResult;
@@ -80,6 +75,8 @@ public class StructureComparisonService {
     private AuthenticationFacade authenticationFacade;
     @Autowired
     private ApprovalPermissionService approvalPermissionService;
+    @Autowired
+    private FlowInstanceService flowInstanceService;
     /**
      * Maximum number of bytes returned by total sql change script, default value 1 MB
      */
@@ -149,27 +146,7 @@ public class StructureComparisonService {
                 results.stream().map(result -> result.toEntity(taskId, dialectType)).collect(Collectors.toList()));
     }
 
-    /**
-     * Permission verification, the following two situations allow you to view the structure comparison
-     * results: 1. The current user is the creator of the structure comparison task 2. The current user
-     * is the approver of the structure comparison task
-     */
     private void checkPermission(@NonNull StructureComparisonTaskEntity taskEntity) {
-        if (Objects.equals(currentUserId(), taskEntity.getCreatorId())) {
-            return;
-        }
-        Map<Long, Set<UserEntity>> flowInstanceId2Users = approvalPermissionService
-                .getApproverByFlowInstanceIds(Collections.singleton(taskEntity.getFlowInstanceId()));
-        Set<Long> approvalUserIds = flowInstanceId2Users.get(taskEntity.getFlowInstanceId()).stream()
-                .filter(Objects::nonNull).map(UserEntity::getId).collect(Collectors.toSet());
-        if (approvalUserIds.contains(currentUserId())) {
-            return;
-        }
-        throw new AccessDeniedException("The permission verification of the structure comparison task failed.");
+        flowInstanceService.mapFlowInstance(taskEntity.getFlowInstanceId(), flowInstance -> flowInstance, false);
     }
-
-    private Long currentUserId() {
-        return authenticationFacade.currentUserId();
-    }
-
 }

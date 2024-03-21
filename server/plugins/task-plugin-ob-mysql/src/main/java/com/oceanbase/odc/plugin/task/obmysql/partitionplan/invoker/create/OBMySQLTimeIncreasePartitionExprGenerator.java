@@ -23,19 +23,24 @@ import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.apache.commons.collections4.CollectionUtils;
+
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.exception.BadRequestException;
 import com.oceanbase.odc.plugin.task.api.partitionplan.datatype.TimeDataType;
 import com.oceanbase.odc.plugin.task.api.partitionplan.invoker.create.TimeIncreasePartitionExprGenerator;
 import com.oceanbase.odc.plugin.task.api.partitionplan.model.TimeIncreaseGeneratorConfig;
 import com.oceanbase.odc.plugin.task.api.partitionplan.util.TimeDataTypeUtil;
+import com.oceanbase.odc.plugin.task.obmysql.partitionplan.datatype.BasePartitionKeyDataTypeFactory;
 import com.oceanbase.odc.plugin.task.obmysql.partitionplan.datatype.OBMySQLPartitionKeyDataTypeFactory;
 import com.oceanbase.odc.plugin.task.obmysql.partitionplan.invoker.OBMySQLExprCalculator;
+import com.oceanbase.odc.plugin.task.obmysql.partitionplan.invoker.SqlExprCalculator;
+import com.oceanbase.odc.plugin.task.obmysql.partitionplan.invoker.SqlExprCalculator.SqlExprResult;
 import com.oceanbase.odc.plugin.task.obmysql.partitionplan.mapper.CellDataProcessor;
 import com.oceanbase.odc.plugin.task.obmysql.partitionplan.mapper.CellDataProcessors;
 import com.oceanbase.tools.dbbrowser.model.DBTable;
+import com.oceanbase.tools.dbbrowser.model.DBTablePartitionDefinition;
 import com.oceanbase.tools.dbbrowser.model.datatype.DataType;
-import com.oceanbase.tools.dbbrowser.model.datatype.DataTypeFactory;
 
 import lombok.NonNull;
 
@@ -53,7 +58,7 @@ public class OBMySQLTimeIncreasePartitionExprGenerator implements TimeIncreasePa
     public List<String> generate(@NonNull Connection connection, @NonNull DBTable dbTable,
             @NonNull String partitionKey, @NonNull Integer generateCount,
             @NonNull TimeIncreaseGeneratorConfig config) throws IOException, SQLException {
-        DataType dataType = getPartitionKeyDataType(connection, dbTable, partitionKey);
+        DataType dataType = getDataTypeFactory(connection, dbTable, partitionKey).generate();
         if (!(dataType instanceof TimeDataType)) {
             throw new BadRequestException(ErrorCodes.PartitionKeyDataTypeMismatch,
                     new Object[] {partitionKey, dataType.getDataTypeName(), TimeDataType.getLocalizedName()},
@@ -62,17 +67,19 @@ public class OBMySQLTimeIncreasePartitionExprGenerator implements TimeIncreasePa
             throw new BadRequestException(ErrorCodes.TimeDataTypePrecisionMismatch, new Object[] {partitionKey},
                     "Illegal precision, interval precision > data type's precision");
         }
-        List<Date> candidates = getCandidateDates(config, generateCount);
+        List<Date> candidates = getCandidateDates(connection, dbTable, partitionKey, config, generateCount);
         CellDataProcessor processor = getCellDataProcessor(dataType);
         return candidates.stream().map(i -> processor.convertToSqlLiteral(
                 convertCandidate(i, dataType, config), dataType)).collect(Collectors.toList());
     }
 
-    protected DataType getPartitionKeyDataType(@NonNull Connection connection,
-            @NonNull DBTable dbTable, @NonNull String partitionKey) throws IOException, SQLException {
-        DataTypeFactory factory = new OBMySQLPartitionKeyDataTypeFactory(
-                new OBMySQLExprCalculator(connection), dbTable, partitionKey);
-        return factory.generate();
+    protected SqlExprCalculator getSqlExprCalculator(Connection connection) {
+        return new OBMySQLExprCalculator(connection);
+    }
+
+    protected BasePartitionKeyDataTypeFactory getDataTypeFactory(Connection connection,
+            DBTable dbTable, String partitionKey) {
+        return new OBMySQLPartitionKeyDataTypeFactory(getSqlExprCalculator(connection), dbTable, partitionKey);
     }
 
     protected CellDataProcessor getCellDataProcessor(@NonNull DataType dataType) {
@@ -83,7 +90,33 @@ public class OBMySQLTimeIncreasePartitionExprGenerator implements TimeIncreasePa
         return candidate;
     }
 
-    protected List<Date> getCandidateDates(TimeIncreaseGeneratorConfig config, Integer generateCount) {
+    protected Date getPartitionUpperBound(@NonNull SqlExprCalculator calculator, @NonNull String partitionKey,
+            @NonNull String upperBound) {
+        SqlExprResult value = calculator.calculate("convert(" + upperBound + ", datetime)");
+        if (!(value.getValue() instanceof Date)) {
+            throw new IllegalStateException(upperBound + " isn't a date, " + value.getDataType().getDataTypeName());
+        }
+        return (Date) value.getValue();
+    }
+
+    private Date getBaseTime(String partitionKey, List<String> partitionUpperBounds,
+            SqlExprCalculator calculator, Date baseTime) {
+        List<Date> upperBounds = new ArrayList<>();
+        for (int i = partitionUpperBounds.size() - 1; i >= 0; i--) {
+            Date upperBound = getPartitionUpperBound(calculator, partitionKey, partitionUpperBounds.get(i));
+            if (baseTime.compareTo(upperBound) > 0) {
+                break;
+            }
+            upperBounds.add(upperBound);
+        }
+        if (CollectionUtils.isEmpty(upperBounds)) {
+            return baseTime;
+        }
+        return upperBounds.get(upperBounds.size() - 1);
+    }
+
+    protected List<Date> getCandidateDates(@NonNull Connection connection, @NonNull DBTable dbTable,
+            @NonNull String partitionKey, TimeIncreaseGeneratorConfig config, Integer generateCount) {
         Date baseTime;
         if (config.isFromCurrentTime()) {
             baseTime = new Date();
@@ -92,8 +125,14 @@ public class OBMySQLTimeIncreasePartitionExprGenerator implements TimeIncreasePa
         } else {
             throw new IllegalArgumentException("Base time is missing");
         }
+        BasePartitionKeyDataTypeFactory factory = getDataTypeFactory(connection, dbTable, partitionKey);
+        int index = factory.getPartitionKeyIndex();
+        if (index >= 0) {
+            List<DBTablePartitionDefinition> defs = dbTable.getPartition().getPartitionDefinitions();
+            baseTime = getBaseTime(partitionKey, defs.stream().map(d -> d.getMaxValues().get(index))
+                    .collect(Collectors.toList()), getSqlExprCalculator(connection), baseTime);
+        }
         List<Date> candidates = new ArrayList<>(generateCount);
-        baseTime = TimeDataTypeUtil.getNextDate(baseTime, config.getInterval(), config.getIntervalPrecision());
         for (int i = 0; i < generateCount; i++) {
             baseTime = TimeDataTypeUtil.getNextDate(baseTime, config.getInterval(), config.getIntervalPrecision());
             candidates.add(baseTime);
