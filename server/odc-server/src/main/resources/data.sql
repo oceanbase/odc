@@ -773,7 +773,7 @@ VALUES
   ON DUPLICATE KEY UPDATE `id` = `id`;
 
 INSERT INTO config_system_configuration(`key`, `value`, `description`) VALUES('odc.iam.auth.jwt.expiration-seconds',
- '28800', 'How long the jwt remain valid, in seconds, defaults to 28800') ON DUPLICATE KEY UPDATE `id`=`id`;
+ '900', 'How long the jwt remain valid, in seconds, defaults to 900') ON DUPLICATE KEY UPDATE `id`=`id`;
 
 INSERT INTO config_system_configuration(`key`, `value`, `description`) VALUES('odc.iam.auth.jwt.buffer-seconds',
  '180', 'How long does the jwt need to be renewed before it expires, in seconds, defaults to 180') ON DUPLICATE KEY UPDATE `id`=`id`;

@@ -25,7 +25,7 @@ import lombok.Data;
 @Data
 @RefreshScope
 public class JwtProperties {
-    @Value("${odc.iam.auth.jwt.expiration-seconds:28800}")
+    @Value("${odc.iam.auth.jwt.expiration-seconds:900}")
     private long expireTimeSeconds;
     @Value("${odc.iam.auth.jwt.buffer-seconds:180}")
     private long bufferTimeSeconds;
