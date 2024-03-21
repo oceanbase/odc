@@ -67,7 +67,7 @@ public class DefaultSpringJobConfiguration extends DefaultJobConfiguration
         setTaskFrameworkService(tfs);
         setEventPublisher(publisher);
         setTransactionManager(new SpringTransactionManager(ctx.getBean(TransactionTemplate.class)));
-        setStartJobRateLimiter(new MonitorExecutorStatusRateLimiter(this::getTaskFrameworkProperties));
+        setStartJobRateLimiter(new MonitorExecutorStatusRateLimiter(this::getTaskFrameworkProperties, tfs));
     }
 
     @Override

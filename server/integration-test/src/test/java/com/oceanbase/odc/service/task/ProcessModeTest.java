@@ -45,6 +45,7 @@ import com.oceanbase.odc.service.task.caller.ExecutorProcessBuilderFactory;
 import com.oceanbase.odc.service.task.caller.JobContext;
 import com.oceanbase.odc.service.task.caller.JobEnvironmentEncryptor;
 import com.oceanbase.odc.service.task.caller.JobEnvironmentFactory;
+import com.oceanbase.odc.service.task.caller.ProcessConfig;
 import com.oceanbase.odc.service.task.constants.JobEnvKeyConstants;
 import com.oceanbase.odc.service.task.constants.JobParametersKeyConstants;
 import com.oceanbase.odc.service.task.enums.TaskRunMode;
@@ -81,9 +82,13 @@ public class ProcessModeTest extends BaseJobTest {
 
         log.info("Current Java PID: {}", pid);
 
+        ProcessConfig processConfig = new ProcessConfig();
+        processConfig.setEnvironments(getEnvironments());
+        processConfig.setJvmXmxMB(512);
+        processConfig.setJvmXmsMB(256);
         String executorName = JobUtils.generateExecutorName(JobIdentity.of(exceptedTaskId));
-        ProcessBuilder pb = new ExecutorProcessBuilderFactory().getProcessBuilder(
-                getEnvironments(), executorName);
+        ProcessBuilder pb = new ExecutorProcessBuilderFactory()
+                .getProcessBuilder(processConfig, exceptedTaskId, executorName);
         Process process = null;
         try {
             process = pb.start();
