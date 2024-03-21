@@ -55,7 +55,7 @@ public interface TaskFrameworkProperties {
 
     int getJobProcessMaxMemorySizeInMB();
 
-    int getSystemMinFreeMemoryAfterStartJobSizeInMB();
+    int getSystemMinFreeMemoryReserveSizeInMB();
 
     String getStartPreparingJobCronExpression();
 
