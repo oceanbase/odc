@@ -82,10 +82,8 @@ public class MonitorExecutorStatusRateLimiter implements StartJobRateLimiter {
         long minProcessMem = taskFrameworkProperties.get().getJobProcessMinMemorySizeInMB();
         long jvmXmx = SystemUtils.getJvmXmxMemory().convert(BinarySizeUnit.MB).getSizeDigit();
         // limitCount = (totalPhysicMemory*0.8 - jvmXmx)/jobProcessMinMemorySize
-        // odc may restart, so we should add exists running jobs number
         return new BigDecimal(totalPhysicMemory * 0.8).subtract(BigDecimal.valueOf(jvmXmx))
                 .divide(new BigDecimal(minProcessMem), RoundingMode.FLOOR)
-                .add(new BigDecimal(taskFrameworkService.countRunningJobs(TaskRunMode.PROCESS)))
                 .longValue();
     }
 
