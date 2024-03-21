@@ -25,6 +25,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+import com.oceanbase.odc.common.concurrent.ExecutorUtils;
 import com.oceanbase.odc.core.task.TaskThreadFactory;
 import com.oceanbase.odc.service.task.caller.JobContext;
 import com.oceanbase.odc.service.task.enums.JobStatus;
@@ -71,23 +72,28 @@ public class ThreadPoolTaskExecutor implements TaskExecutor {
             return task.getStatus() == JobStatus.CANCELED;
         }
 
-        // if task is terminated, cancel result will be true
-        if(getTask(ji).getStatus().isTerminated()){
-            return true;
-        }
         Future<Boolean> stopFuture = executor.submit(task::stop);
         boolean result = false;
         try {
             // wait 10 seconds for stop task accomplished
             result = stopFuture.get(10 * 1000, TimeUnit.MILLISECONDS);
         } catch (InterruptedException e) {
-            log.warn("Stop task {} is be interrupted.", ji.getId(), e);
+            log.warn("Stop task is be interrupted, taskId={}.", ji.getId(), e);
         } catch (ExecutionException e) {
-            log.warn("Stop task {} execution exception.", ji.getId(), e);
+            log.warn("Stop task execution exception, taskId={}.", ji.getId(), e);
         } catch (TimeoutException e) {
-            log.warn("Stop task {} time out.", ji.getId(), e);
+            log.warn("Stop task time out, taskId={} .", ji.getId(), e);
         }
-        return result || startFuture.cancel(true);
+        if (!result) {
+            // if task is terminated, this method should return true,
+            // current status is CANCELING must push to CANCELED
+            result = getTask(ji).getStatus().isTerminated();
+        }
+        if (!result) {
+            ExecutorUtils.gracefulShutdown(executor, "Task-Executor", 5);
+        }
+        log.info("Task is cancelled succeed, taskId={}, status={}.", ji.getId(), getTask(ji).getStatus());
+        return true;
     }
 
     @Override
