@@ -83,6 +83,20 @@ public abstract class BasePartitionKeyDataTypeFactory implements DataTypeFactory
         if (dataType != null) {
             return dataType;
         }
+        List<DBTablePartitionDefinition> definitions = this.dbTable.getPartition().getPartitionDefinitions();
+        if (CollectionUtils.isEmpty(definitions)) {
+            throw new IllegalStateException("Partition def is empty");
+        }
+        int i = getPartitionKeyIndex();
+        DBTablePartitionDefinition definition = definitions.get(0);
+        return this.calculator.calculate(definition.getMaxValues().get(i)).getDataType();
+    }
+
+    public int getPartitionKeyIndex() {
+        DBTablePartitionOption option = this.dbTable.getPartition().getPartitionOption();
+        if (option == null) {
+            throw new IllegalStateException("Partition option is missing");
+        }
         int i;
         List<DBTablePartitionDefinition> definitions = this.dbTable.getPartition().getPartitionDefinitions();
         if (CollectionUtils.isEmpty(definitions)) {
@@ -91,7 +105,7 @@ public abstract class BasePartitionKeyDataTypeFactory implements DataTypeFactory
         List<String> cols = option.getColumnNames();
         if (CollectionUtils.isNotEmpty(cols)) {
             for (i = 0; i < cols.size(); i++) {
-                if (Objects.equals(unquotedPartitionKey, unquoteIdentifier(cols.get(i)))) {
+                if (Objects.equals(unquoteIdentifier(this.partitionKey), unquoteIdentifier(cols.get(i)))) {
                     break;
                 }
             }
@@ -99,13 +113,12 @@ public abstract class BasePartitionKeyDataTypeFactory implements DataTypeFactory
                 throw new IllegalStateException("Failed to find partition key, " + this.partitionKey);
             }
         } else if (StringUtils.isNotEmpty(option.getExpression())
-                && Objects.equals(unquoteIdentifier(option.getExpression()), unquotedPartitionKey)) {
+                && Objects.equals(unquoteIdentifier(option.getExpression()), unquoteIdentifier(this.partitionKey))) {
             i = 0;
         } else {
             throw new IllegalStateException("Partition type is unknown, expression and columns are both null");
         }
-        DBTablePartitionDefinition definition = definitions.get(0);
-        return this.calculator.calculate(definition.getMaxValues().get(i)).getDataType();
+        return i;
     }
 
     protected abstract String unquoteIdentifier(String identifier);

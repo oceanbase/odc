@@ -15,13 +15,14 @@
  */
 package com.oceanbase.odc.plugin.task.oboracle.partitionplan.invoker.create;
 
-import java.io.IOException;
 import java.sql.Connection;
-import java.sql.SQLException;
 import java.util.Date;
 
 import com.oceanbase.odc.core.sql.execute.model.TimeFormatResult;
 import com.oceanbase.odc.plugin.task.api.partitionplan.model.TimeIncreaseGeneratorConfig;
+import com.oceanbase.odc.plugin.task.obmysql.partitionplan.datatype.BasePartitionKeyDataTypeFactory;
+import com.oceanbase.odc.plugin.task.obmysql.partitionplan.invoker.SqlExprCalculator;
+import com.oceanbase.odc.plugin.task.obmysql.partitionplan.invoker.SqlExprCalculator.SqlExprResult;
 import com.oceanbase.odc.plugin.task.obmysql.partitionplan.invoker.create.OBMySQLTimeIncreasePartitionExprGenerator;
 import com.oceanbase.odc.plugin.task.obmysql.partitionplan.mapper.CellDataProcessor;
 import com.oceanbase.odc.plugin.task.oboracle.partitionplan.datatype.OBOraclePartitionKeyDataTypeFactory;
@@ -29,7 +30,6 @@ import com.oceanbase.odc.plugin.task.oboracle.partitionplan.invoker.OBOracleSqlE
 import com.oceanbase.odc.plugin.task.oboracle.partitionplan.mapper.CellDataProcessors;
 import com.oceanbase.tools.dbbrowser.model.DBTable;
 import com.oceanbase.tools.dbbrowser.model.datatype.DataType;
-import com.oceanbase.tools.dbbrowser.model.datatype.DataTypeFactory;
 
 import lombok.NonNull;
 
@@ -43,16 +43,29 @@ import lombok.NonNull;
 public class OBOracleTimeIncreasePartitionExprGenerator extends OBMySQLTimeIncreasePartitionExprGenerator {
 
     @Override
-    protected DataType getPartitionKeyDataType(@NonNull Connection connection,
-            @NonNull DBTable dbTable, @NonNull String partitionKey) throws IOException, SQLException {
-        DataTypeFactory factory = new OBOraclePartitionKeyDataTypeFactory(
-                new OBOracleSqlExprCalculator(connection), dbTable, partitionKey);
-        return factory.generate();
+    protected SqlExprCalculator getSqlExprCalculator(Connection connection) {
+        return new OBOracleSqlExprCalculator(connection);
+    }
+
+    @Override
+    protected BasePartitionKeyDataTypeFactory getDataTypeFactory(Connection connection,
+            DBTable dbTable, String partitionKey) {
+        return new OBOraclePartitionKeyDataTypeFactory(getSqlExprCalculator(connection), dbTable, partitionKey);
     }
 
     @Override
     protected CellDataProcessor getCellDataProcessor(@NonNull DataType dataType) {
         return CellDataProcessors.getByDataType(dataType);
+    }
+
+    @Override
+    protected Date getPartitionUpperBound(@NonNull SqlExprCalculator calculator, @NonNull String partitionKey,
+            @NonNull String upperBound) {
+        SqlExprResult value = calculator.calculate(upperBound);
+        if (!(value.getValue() instanceof TimeFormatResult)) {
+            throw new IllegalStateException(upperBound + " isn't a date, " + value.getDataType().getDataTypeName());
+        }
+        return new Date(((TimeFormatResult) value.getValue()).getTimestamp());
     }
 
     @Override
