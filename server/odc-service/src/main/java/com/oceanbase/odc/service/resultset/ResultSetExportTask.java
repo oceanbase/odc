@@ -19,7 +19,6 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.nio.file.Paths;
-import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -33,6 +32,7 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.jdbc.core.StatementCallback;
 
 import com.oceanbase.odc.common.trace.TraceContextHolder;
 import com.oceanbase.odc.common.util.ExceptionUtils;
@@ -67,6 +67,7 @@ import com.oceanbase.odc.service.datatransfer.model.DataTransferProperties;
 import com.oceanbase.odc.service.flow.task.model.ResultSetExportResult;
 import com.oceanbase.odc.service.objectstorage.cloud.CloudObjectStorageService;
 import com.oceanbase.odc.service.plugin.TaskPluginUtil;
+import com.oceanbase.odc.service.session.initializer.ConsoleTimeoutInitializer;
 import com.oceanbase.tools.dbbrowser.model.DBTableColumn;
 import com.oceanbase.tools.loaddump.common.enums.ObjectType;
 import com.oceanbase.tools.loaddump.common.model.ObjectStatus.Status;
@@ -82,7 +83,6 @@ import lombok.Getter;
  */
 public class ResultSetExportTask implements Callable<ResultSetExportResult> {
     protected static final Logger LOGGER = LoggerFactory.getLogger("DataTransferLogger");
-    private static final int DEFAULT_TIMEOUT_SECONDS = 24 * 60 * 60;
 
     private final ResultSetExportTaskParameter parameter;
     private final String fileName;
@@ -204,7 +204,7 @@ public class ResultSetExportTask implements Callable<ResultSetExportResult> {
         config.setCursorFetchSize(dataTransferProperties.getCursorFetchSize());
         config.setUsePrepStmts(dataTransferProperties.isUseServerPrepStmts());
 
-        config.setExecutionTimeoutSeconds(DEFAULT_TIMEOUT_SECONDS);
+        config.setExecutionTimeoutSeconds(parameter.getExecutionTimeoutSeconds());
 
         return config;
     }
@@ -218,26 +218,34 @@ public class ResultSetExportTask implements Callable<ResultSetExportResult> {
         Map<String, Map<String, List<OrdinalColumn>>> catalog2TableColumns = new HashMap<>();
         try {
             SyncJdbcExecutor syncJdbcExecutor = session.getSyncJdbcExecutor(ConnectionSessionConstants.BACKEND_DS_KEY);
-            ResultSetMetaData rsMetaData =
-                    syncJdbcExecutor.query(parameter.getSql(), pss -> pss.setMaxRows(10), ResultSet::getMetaData);
-            if (rsMetaData == null) {
-                throw new UnexpectedException("Query rs metadata failed.");
-            }
-            int columnCount = rsMetaData.getColumnCount();
-            for (int index = 1; index <= columnCount; index++) {
-                String catalogName = rsMetaData.getCatalogName(index);
-                String tableName = rsMetaData.getTableName(index);
-                String columnName = rsMetaData.getColumnName(index);
-                Map<String, List<OrdinalColumn>> table2Columns =
-                        catalog2TableColumns.computeIfAbsent(catalogName, k -> new HashMap<>());
-                List<OrdinalColumn> columns = table2Columns.computeIfAbsent(tableName, k -> new ArrayList<>());
-                columns.add(new OrdinalColumn(index - 1, columnName));
-                DBTableColumn column = new DBTableColumn();
-                column.setSchemaName(catalogName);
-                column.setTableName(tableName);
-                column.setName(columnName);
-                tableColumns.add(column);
-            }
+            syncJdbcExecutor.execute((StatementCallback<?>) stmt -> {
+                stmt.setMaxRows(10);
+                new ConsoleTimeoutInitializer(parameter.getExecutionTimeoutSeconds() * 1000000L,
+                        config.getConnectionInfo().getConnectType().getDialectType())
+                                .init(stmt.getConnection());
+
+                stmt.execute(parameter.getSql());
+                ResultSetMetaData rsMetaData = stmt.getResultSet().getMetaData();
+                if (rsMetaData == null) {
+                    throw new UnexpectedException("Query rs metadata failed.");
+                }
+                int columnCount = rsMetaData.getColumnCount();
+                for (int index = 1; index <= columnCount; index++) {
+                    String catalogName = rsMetaData.getCatalogName(index);
+                    String tableName = rsMetaData.getTableName(index);
+                    String columnName = rsMetaData.getColumnName(index);
+                    Map<String, List<OrdinalColumn>> table2Columns =
+                            catalog2TableColumns.computeIfAbsent(catalogName, k -> new HashMap<>());
+                    List<OrdinalColumn> columns = table2Columns.computeIfAbsent(tableName, k -> new ArrayList<>());
+                    columns.add(new OrdinalColumn(index - 1, columnName));
+                    DBTableColumn column = new DBTableColumn();
+                    column.setSchemaName(catalogName);
+                    column.setTableName(tableName);
+                    column.setName(columnName);
+                    tableColumns.add(column);
+                }
+                return null;
+            });
         } catch (Exception e) {
             throw OBException.executeFailed(
                     "Query result metadata failed, please try again, message=" + ExceptionUtils.getRootCauseMessage(e));
