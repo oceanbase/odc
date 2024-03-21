@@ -137,4 +137,10 @@ public class SystemConfigService {
         }
         return needRefresh;
     }
+
+    @Transactional(rollbackFor = Exception.class)
+    public void saveConfig(@NotNull List<SystemConfigEntity> entities) {
+        entities.forEach(entity -> systemConfigDAO.saveConfig(entity));
+    }
+
 }

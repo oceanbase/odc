@@ -23,6 +23,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 import com.oceanbase.odc.core.shared.constant.FlowStatus;
 import com.oceanbase.odc.core.shared.constant.TaskStatus;
+import com.oceanbase.odc.metadb.task.TaskEntity;
 import com.oceanbase.odc.service.datasecurity.DataMaskingService;
 import com.oceanbase.odc.service.flow.task.BaseODCFlowTaskDelegate;
 import com.oceanbase.odc.service.flow.task.model.ResultSetExportResult;
@@ -53,6 +54,8 @@ public class ResultSetExportFlowableTask extends BaseODCFlowTaskDelegate<ResultS
 
         ResultSetExportTaskParameter parameter = FlowTaskUtil.getResultSetExportTaskParameter(execution);
         parameter.setDatabase(FlowTaskUtil.getSchemaName(execution));
+        TaskEntity taskEntity = taskService.detail(taskId);
+        parameter.setExecutionTimeoutSeconds(taskEntity.getExecutionExpirationIntervalSeconds());
 
         context = taskManager.start(FlowTaskUtil.getConnectionConfig(execution), parameter, taskId.toString());
 
