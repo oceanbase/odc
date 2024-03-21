@@ -21,6 +21,7 @@ import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import com.oceanbase.odc.common.util.StringUtils;
+import com.oceanbase.odc.common.util.VersionUtils;
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionConstants;
 import com.oceanbase.odc.core.session.ConnectionSessionFactory;
@@ -168,6 +169,14 @@ public class DataArchivePreprocessor extends AbstractDlmJobPreprocessor {
             if (targetDbType != DialectType.OB_ORACLE) {
                 throw new UnsupportedException(
                         String.format("Unsupported data archiving link from %s to %s.", sourceDbType, targetDbType));
+            }
+            if (VersionUtils.isGreaterThanOrEqualsTo(sourceDbVersion, "4.3.0")) {
+                throw new UnsupportedException(
+                        String.format("Unsupported OB Version:{}", sourceDbVersion));
+            }
+            if (VersionUtils.isGreaterThanOrEqualsTo(targetDbVersion, "4.3.0")) {
+                throw new UnsupportedException(
+                        String.format("Unsupported OB Version:{}", targetDbVersion));
             }
         }
     }
