@@ -36,8 +36,8 @@ public class JobCallerBuilder {
         config.setEnvironments(environments);
         TaskFrameworkProperties taskFrameworkProperties =
                 JobConfigurationHolder.getJobConfiguration().getTaskFrameworkProperties();
-        config.setJvmXms(taskFrameworkProperties.getJobProcessMinMemorySizeInMB());
-        config.setJvmXmx(taskFrameworkProperties.getJobProcessMaxMemorySizeInMB());
+        config.setJvmXmsMB(taskFrameworkProperties.getJobProcessMinMemorySizeInMB());
+        config.setJvmXmxMB(taskFrameworkProperties.getJobProcessMaxMemorySizeInMB());
 
         return new ProcessJobCaller(config);
     }
