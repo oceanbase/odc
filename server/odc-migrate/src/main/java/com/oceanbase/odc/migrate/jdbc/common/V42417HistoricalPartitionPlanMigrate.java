@@ -139,9 +139,7 @@ public class V42417HistoricalPartitionPlanMigrate implements JdbcMigratable {
                     entity.setTableName(rs.getString("table_name"));
                     int timePrecision = getTimePrecision(Integer.parseInt(rs.getString("partition_interval_unit")));
                     DateBasedPartitionNameGeneratorConfig config = new DateBasedPartitionNameGeneratorConfig();
-                    config.setFromCurrentTime(true);
-                    config.setIntervalPrecision(timePrecision);
-                    config.setInterval(rs.getInt("partition_interval"));
+                    config.setRefUpperBoundIndex(0);
                     config.setNamingSuffixExpression(rs.getString("partition_naming_suffix_expression"));
                     config.setNamingPrefix(rs.getString("partition_naming_prefix"));
                     Map<String, Object> parameters = new HashMap<>();

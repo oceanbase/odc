@@ -44,11 +44,11 @@ import com.oceanbase.odc.plugin.task.api.partitionplan.invoker.partitionname.Par
 import com.oceanbase.odc.plugin.task.obmysql.partitionplan.OBMySQLAutoPartitionExtensionPoint;
 import com.oceanbase.odc.plugin.task.obmysql.partitionplan.invoker.SqlExprCalculator;
 import com.oceanbase.odc.plugin.task.obmysql.partitionplan.invoker.drop.OBMySQLKeepLatestPartitionGenerator;
-import com.oceanbase.odc.plugin.task.obmysql.partitionplan.invoker.partitionname.OBMySQLDateBasedPartitionNameGenerator;
 import com.oceanbase.odc.plugin.task.oboracle.partitionplan.datatype.OBOraclePartitionKeyDataTypeFactory;
 import com.oceanbase.odc.plugin.task.oboracle.partitionplan.invoker.OBOracleSqlExprCalculator;
 import com.oceanbase.odc.plugin.task.oboracle.partitionplan.invoker.create.OBOracleSqlExprPartitionExprGenerator;
 import com.oceanbase.odc.plugin.task.oboracle.partitionplan.invoker.create.OBOracleTimeIncreasePartitionExprGenerator;
+import com.oceanbase.odc.plugin.task.oboracle.partitionplan.invoker.partitionname.OBOracleDateBasedPartitionNameGenerator;
 import com.oceanbase.odc.plugin.task.oboracle.partitionplan.invoker.partitionname.OBOracleExprBasedPartitionNameGenerator;
 import com.oceanbase.odc.plugin.task.oboracle.partitionplan.util.DBTablePartitionEditors;
 import com.oceanbase.tools.dbbrowser.editor.DBTablePartitionEditor;
@@ -143,7 +143,7 @@ public class OBOracleAutoPartitionExtensionPoint extends OBMySQLAutoPartitionExt
     @Override
     public PartitionNameGenerator getPartitionNameGeneratorGeneratorByName(@NonNull String name) {
         List<PartitionNameGenerator> candidates = new ArrayList<>(2);
-        candidates.add(new OBMySQLDateBasedPartitionNameGenerator());
+        candidates.add(new OBOracleDateBasedPartitionNameGenerator());
         candidates.add(new OBOracleExprBasedPartitionNameGenerator());
         return candidates.stream().filter(i -> Objects.equals(i.getName(), name)).findFirst()
                 .orElseThrow(() -> new IllegalArgumentException("Failed to find generator by name " + name));
