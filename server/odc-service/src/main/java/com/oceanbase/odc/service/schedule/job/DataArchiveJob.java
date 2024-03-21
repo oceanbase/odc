@@ -45,8 +45,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class DataArchiveJob extends AbstractDlmJob {
     @Override
-    public void execute(JobExecutionContext context) {
-
+    public void executeJob(JobExecutionContext context) {
         // execute in task framework.
         if (taskFrameworkProperties.isEnabled()) {
             executeInTaskFramework(context);

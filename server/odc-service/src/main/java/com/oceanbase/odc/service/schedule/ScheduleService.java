@@ -403,6 +403,9 @@ public class ScheduleService {
         ScheduleEntity scheduleEntity = nullSafeGetById(scheduleId);
         JobKey key = QuartzKeyGenerator.generateJobKey(scheduleEntity.getId(), scheduleEntity.getJobType());
         ScheduleStatus status = scheduleEntity.getStatus();
+        if (status == ScheduleStatus.PAUSE) {
+            return;
+        }
         int runningTask = scheduleTaskService.listTaskByJobNameAndStatus(scheduleId.toString(),
                 TaskStatus.getProcessingStatus()).size();
         if (runningTask > 0) {
@@ -521,6 +524,11 @@ public class ScheduleService {
             }
         }
         return false;
+    }
+
+    public boolean hasExecutingScheduleTask(Long scheduleId) {
+        return !scheduleTaskService.listTaskByJobNameAndStatus(
+                scheduleId.toString(), TaskStatus.getProcessingStatus()).isEmpty();
     }
 
     public ScheduleEntity nullSafeGetByIdWithCheckPermission(Long id) {

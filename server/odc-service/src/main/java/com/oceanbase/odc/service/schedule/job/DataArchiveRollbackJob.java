@@ -41,7 +41,7 @@ import lombok.extern.slf4j.Slf4j;
 public class DataArchiveRollbackJob extends AbstractDlmJob {
 
     @Override
-    public void execute(JobExecutionContext context) {
+    public void executeJob(JobExecutionContext context) {
 
         jobThread = Thread.currentThread();
 
