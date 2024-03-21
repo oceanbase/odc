@@ -207,6 +207,7 @@ public class ScheduleService {
     public void pause(ScheduleEntity scheduleConfig) throws SchedulerException {
         Trigger scheduleTrigger = nullSafeGetScheduleTrigger(scheduleConfig);
         quartzJobService.pauseJob(scheduleTrigger.getJobKey());
+        interruptAllScheduleTask(scheduleConfig.getId());
         scheduleRepository.updateStatusById(scheduleConfig.getId(), ScheduleStatus.PAUSE);
     }
 
@@ -240,6 +241,14 @@ public class ScheduleService {
             throw new RuntimeException("Trigger job failed.");
         }
         return ScheduleDetailResp.withId(scheduleId);
+    }
+
+    public void interruptAllScheduleTask(Long scheduleId) {
+        Optional<ScheduleEntity> scheduler = scheduleRepository.findById(scheduleId);
+        scheduler.ifPresent(o -> {
+            scheduleTaskService.listTaskByJobNameAndStatus(o.getId().toString(),
+                    TaskStatus.getProcessingStatus()).forEach(task -> interruptJob(o.getId(), task.getId()));
+        });
     }
 
     public ScheduleDetailResp interruptJob(Long scheduleId, Long taskId) {
