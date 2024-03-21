@@ -69,7 +69,8 @@ public class MonitorExecutorStatusRateLimiter implements StartJobRateLimiter {
             if (new BigDecimal(totalPhysicMemory).multiply(BigDecimal.valueOf(0.2))
                     .add(BigDecimal.valueOf(startNewProcessMemoryMinSize))
                     .compareTo(BigDecimal.valueOf(systemFreeMemory)) > 0 && log.isDebugEnabled()) {
-                log.debug("Free memory lack, systemFreeMemory={}, startNewProcessMemoryMinSize={}, totalPhysicMemory={}",
+                log.debug(
+                        "Free memory lack, systemFreeMemory={}, startNewProcessMemoryMinSize={}, totalPhysicMemory={}",
                         systemFreeMemory, startNewProcessMemoryMinSize, totalPhysicMemory);
                 return false;
             }
