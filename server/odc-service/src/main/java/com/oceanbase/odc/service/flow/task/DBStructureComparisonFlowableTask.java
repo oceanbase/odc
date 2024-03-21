@@ -146,7 +146,8 @@ public class DBStructureComparisonFlowableTask extends BaseODCFlowTaskDelegate<V
         DBStructureComparisonConfig srcConfig = new DBStructureComparisonConfig();
 
         Database database = databaseService.detail((parameters.getSourceDatabaseId()));
-        ConnectionConfig connectionConfig = connectionService.getForConnect(database.getDataSource().getId());
+        ConnectionConfig connectionConfig =
+                connectionService.getForConnectionSkipPermissionCheck(database.getDataSource().getId());
 
         srcConfig.setSchemaName(database.getName());
         srcConfig.setConnectType(connectionConfig.getType());
@@ -165,7 +166,8 @@ public class DBStructureComparisonFlowableTask extends BaseODCFlowTaskDelegate<V
         DBStructureComparisonConfig tgtConfig = new DBStructureComparisonConfig();
 
         Database database = databaseService.detail(parameters.getTargetDatabaseId());
-        ConnectionConfig connectionConfig = connectionService.getForConnect(database.getDataSource().getId());
+        ConnectionConfig connectionConfig =
+                connectionService.getForConnectionSkipPermissionCheck(database.getDataSource().getId());
         tgtConfig.setSchemaName(database.getName());
         tgtConfig.setConnectType(connectionConfig.getType());
         tgtConfig.setDataSource(new DruidDataSourceFactory(connectionConfig).getDataSource());
