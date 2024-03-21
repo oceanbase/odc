@@ -55,7 +55,7 @@ public class OBMySQLHistoricalPartitionPlanCreateGenerator extends OBMySQLTimeIn
     protected Date getPartitionUpperBound(@NonNull SqlExprCalculator calculator, @NonNull String partitionKey,
             @NonNull String upperBound) {
         if (StringUtils.startsWith(partitionKey, TARGET_FUNCTION_NAME)) {
-            return new Date(Long.parseLong(upperBound) + 1000);
+            return new Date(Long.parseLong(upperBound) * 1000);
         }
         return super.getPartitionUpperBound(calculator, partitionKey, upperBound);
     }
