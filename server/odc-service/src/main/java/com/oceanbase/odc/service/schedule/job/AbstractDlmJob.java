@@ -249,6 +249,8 @@ public abstract class AbstractDlmJob implements OdcJob {
                     context.getJobDetail().getKey());
             return;
         }
+        ScheduleTaskEntity scheduleTask = (ScheduleTaskEntity) context.getResult();
+        ScheduleTaskContextHolder.trace(scheduleTask.getJobName(), scheduleTask.getJobGroup(), scheduleTask.getId());
         executeJob(context);
     }
 
@@ -257,8 +259,6 @@ public abstract class AbstractDlmJob implements OdcJob {
 
     @Override
     public void before(JobExecutionContext context) {
-        ScheduleTaskEntity scheduleTask = (ScheduleTaskEntity) context.getResult();
-        ScheduleTaskContextHolder.trace(scheduleTask.getJobName(), scheduleTask.getJobGroup(), scheduleTask.getId());
 
     }
 
