@@ -355,9 +355,10 @@ public abstract class BaseODCFlowTaskDelegate<T> extends BaseRuntimeFlowableDele
         List<? extends FlowTaskResult> flowTaskResults = flowTaskInstanceService.getTaskResultFromEntity(taskEntity);
         Verify.singleton(flowTaskResults, "flowTaskResults");
         if (flowTaskResults.get(0) instanceof AbstractFlowTaskResult) {
-            AbstractFlowTaskResult abstractFlowTaskResult = (AbstractFlowTaskResult) flowTaskResults.get(0);
+            FlowTaskResult flowTaskResult = flowTaskResults.get(0);
+            AbstractFlowTaskResult abstractFlowTaskResult = (AbstractFlowTaskResult) flowTaskResult;
             abstractFlowTaskResult.setFullLogDownloadUrl(downloadUrl);
-            taskEntity.setResultJson(JsonUtils.toJson(flowTaskResults));
+            taskEntity.setResultJson(JsonUtils.toJson(flowTaskResult));
             taskService.update(taskEntity);
         }
     }
