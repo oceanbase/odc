@@ -855,16 +855,9 @@ public class MySQLNoLessThan5700SchemaAccessor implements DBSchemaAccessor {
                 Collectors.groupingBy(m -> (String) m.get("TABLE_NAME")));
         return tableName2Res.entrySet().stream().collect(Collectors.toMap(Entry::getKey, e -> {
             Map<String, List<Map<String, Object>>> partiName2Res = e.getValue().stream()
-                    .collect(Collectors.groupingBy(m -> (String) m.get("PARTITION_NAME")));
-            List<String> orderedPartiName = new ArrayList<>();
-            for (Map<String, Object> row : e.getValue()) {
-                String partiName = (String) row.get("PARTITION_NAME");
-                if (orderedPartiName.contains(partiName)) {
-                    continue;
-                }
-                orderedPartiName.add(partiName);
-            }
-            List<Map<String, Object>> group = orderedPartiName.stream().map(partiName -> {
+                    .collect(Collectors.groupingBy(
+                            m -> (String) m.get("PARTITION_NAME"), LinkedHashMap::new, Collectors.toList()));
+            List<Map<String, Object>> group = partiName2Res.keySet().stream().map(partiName -> {
                 List<Map<String, Object>> rows = partiName2Res.get(partiName);
                 Map<String, Object> row = rows.get(0);
                 row.put("SUB_NUM", rows.size() == 1 ? 0 : rows.size());
