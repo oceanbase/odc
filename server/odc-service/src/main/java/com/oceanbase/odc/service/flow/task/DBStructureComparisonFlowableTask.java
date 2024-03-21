@@ -44,6 +44,7 @@ import com.oceanbase.odc.service.connection.ConnectionService;
 import com.oceanbase.odc.service.connection.database.DatabaseService;
 import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
+import com.oceanbase.odc.service.flow.exception.ServiceTaskError;
 import com.oceanbase.odc.service.flow.task.model.DBStructureComparisonParameter;
 import com.oceanbase.odc.service.flow.task.model.DBStructureComparisonParameter.ComparisonScope;
 import com.oceanbase.odc.service.flow.task.model.DBStructureComparisonParameter.DBStructureComparisonMapper;
@@ -130,6 +131,9 @@ public class DBStructureComparisonFlowableTask extends BaseODCFlowTaskDelegate<V
             log.info("Structure comparison task ends, id={}, task status={}, time consuming={} seconds",
                     taskResult.getTaskId(), taskResult.getStatus(),
                     (System.currentTimeMillis() - startTimestamp) / 1000);
+        } catch (Exception e) {
+            log.warn("Structure comparison task failed, taskId={}", taskId, e);
+            throw new ServiceTaskError(e);
         } finally {
             closeDataSource(srcConfig.getDataSource());
             closeDataSource(tgtConfig.getDataSource());

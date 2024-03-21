@@ -21,6 +21,7 @@ import java.util.concurrent.Executors;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import com.oceanbase.odc.service.onlineschemachange.exception.OmsException;
 import com.oceanbase.odc.service.onlineschemachange.oms.enums.OmsProjectStatusEnum;
 import com.oceanbase.odc.service.onlineschemachange.oms.openapi.OmsProjectOpenApiService;
 import com.oceanbase.odc.service.onlineschemachange.oms.request.OmsProjectControlRequest;
@@ -46,16 +47,20 @@ public class OmsResourceCleanHandler {
         }
 
         boolean released = false;
-        // todo project is not exists
         OmsProjectControlRequest controlRequest = new OmsProjectControlRequest();
         controlRequest.setId(projectControl.getId());
         controlRequest.setUid(projectControl.getUid());
-        OmsProjectProgressResponse progressResponse = projectOpenApiService.describeProjectProgress(controlRequest);
-        if (progressResponse.getStatus() == OmsProjectStatusEnum.RELEASED ||
-                progressResponse.getStatus() == OmsProjectStatusEnum.RELEASING ||
-                progressResponse.getStatus() == OmsProjectStatusEnum.DELETED) {
-            released = true;
+        try {
+            OmsProjectProgressResponse progressResponse = projectOpenApiService.describeProjectProgress(controlRequest);
+            released = progressResponse.getStatus().isProjectDestroyed();
+        } catch (OmsException e) {
+            // representative project has been deleted when message contain "GHANA-PROJECT000001"
+            // or "project is not exists",
+            if (e.getMessage() != null && e.getMessage().contains("GHANA-PROJECT000001")) {
+                released = true;
+            }
         }
+
         if (!released) {
             log.info("Oms project {} has not released, try to release it.", projectControl.getId());
             doReleaseOmsResource(controlRequest);
