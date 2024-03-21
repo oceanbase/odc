@@ -35,6 +35,12 @@ public interface ChannelPropertyRepository extends JpaRepository<ChannelProperty
     int deleteByChannelId(Long channelId);
 
     @Transactional
+    @Modifying
+    @Query(value = "delete from notification_channel_property where channel_id=?1 and key_string!=?2",
+            nativeQuery = true)
+    int deleteByChannelIdAndKeyNotEquals(Long channelId, String key);
+
+    @Transactional
     List<ChannelPropertyEntity> findAllByChannelId(Long channelId);
 
 }

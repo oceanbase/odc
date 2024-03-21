@@ -52,7 +52,6 @@ import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.authority.util.Authenticated;
 import com.oceanbase.odc.core.authority.util.PreAuthenticate;
 import com.oceanbase.odc.core.shared.PreConditions;
-import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.core.shared.exception.AccessDeniedException;
 import com.oceanbase.odc.core.shared.exception.NotFoundException;
@@ -173,12 +172,10 @@ public class NotificationService {
 
         BaseChannelConfig channelConfig = channel.getChannelConfig();
         if (channelConfig instanceof WebhookChannelConfig && ((WebhookChannelConfig) channelConfig).getSign() == null) {
-            String sign = ((WebhookChannelConfig) channelMapper.fromEntityWithConfig(entity).getChannelConfig())
-                    .getSign();
-            ((WebhookChannelConfig) channelConfig).setSign((sign));
+            channelPropertyRepository.deleteByChannelIdAndKeyNotEquals(entity.getId(), "sign");
+        } else {
+            channelPropertyRepository.deleteByChannelId(entity.getId());
         }
-
-        channelPropertyRepository.deleteByChannelId(entity.getId());
 
         ChannelEntity toBeSaved = channelMapper.toEntity(channel);
         toBeSaved.setCreatorId(authenticationFacade.currentUserId());
@@ -199,6 +196,7 @@ public class NotificationService {
         return channelMapper.fromEntity(entity);
     }
 
+    @Transactional(rollbackFor = Exception.class)
     @PreAuthenticate(hasAnyResourceRole = {"OWNER"}, resourceType = "ODC_PROJECT", indexOfIdParam = 0)
     public MessageSendResult testChannel(@NotNull Long projectId, @NotNull Channel channel) {
         PreConditions.notNull(channel.getType(), "channel.type");
@@ -206,8 +204,8 @@ public class NotificationService {
         validator.validate(channel.getType(), channel.getChannelConfig());
 
         BaseChannelConfig channelConfig = channel.getChannelConfig();
-        if (channelConfig instanceof WebhookChannelConfig && ((WebhookChannelConfig) channelConfig).getSign() == null) {
-            Verify.notNull(channel.getId(), "channel.id");
+        if (channelConfig instanceof WebhookChannelConfig && ((WebhookChannelConfig) channelConfig).getSign() == null
+                && channel.getId() != null) {
             ChannelEntity entity = nullSafeGetChannel(channel.getId(), projectId);
             String sign = ((WebhookChannelConfig) channelMapper.fromEntityWithConfig(entity).getChannelConfig())
                     .getSign();
