@@ -41,10 +41,11 @@ public class MySQLTimestampMapper implements JdbcColumnMapper {
         if (!isValidTimestamp(data)) {
             return "0000-00-00 00:00:00";
         }
-        String returnValue = timestamp.toString();
-        if (returnValue.endsWith(".0")) {
+
+        String returnValue = new String (data.getBytes()) ;
+       /* if (returnValue.endsWith(".0")) {
             return returnValue.substring(0, returnValue.length() - 2);
-        }
+        }*/
         return returnValue;
     }
 
