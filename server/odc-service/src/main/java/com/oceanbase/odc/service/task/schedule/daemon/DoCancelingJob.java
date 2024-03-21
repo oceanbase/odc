@@ -15,8 +15,6 @@
  */
 package com.oceanbase.odc.service.task.schedule.daemon;
 
-import java.util.concurrent.TimeUnit;
-
 import org.quartz.DisallowConcurrentExecution;
 import org.quartz.Job;
 import org.quartz.JobExecutionContext;
@@ -33,7 +31,6 @@ import com.oceanbase.odc.service.task.exception.JobException;
 import com.oceanbase.odc.service.task.exception.TaskRuntimeException;
 import com.oceanbase.odc.service.task.schedule.JobIdentity;
 import com.oceanbase.odc.service.task.service.TaskFrameworkService;
-import com.oceanbase.odc.service.task.util.JobDateUtils;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -82,15 +79,6 @@ public class DoCancelingJob implements Job {
                 log.info("Job {} be cancelled successfully.", lockedEntity.getId());
             }
         });
-    }
-
-    private boolean checkCancelingIsTimeout(JobEntity a) {
-
-        long baseTimeMills = a.getCreateTime().getTime();
-        long cancelTimeoutMills = TimeUnit.MILLISECONDS.convert(
-                getConfiguration().getTaskFrameworkProperties().getJobCancelTimeoutSeconds(), TimeUnit.SECONDS);
-        return JobDateUtils.getCurrentDate().getTime() - baseTimeMills > cancelTimeoutMills;
-
     }
 
     private JobConfiguration getConfiguration() {

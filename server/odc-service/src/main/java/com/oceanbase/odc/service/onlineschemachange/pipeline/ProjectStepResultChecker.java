@@ -56,13 +56,18 @@ public class ProjectStepResultChecker {
     private final OmsProjectProgressResponse progressResponse;
 
     private final boolean enableFullVerify;
+    private final int checkProjectStepFailedTimeoutSeconds;
+    private final Map<OmsStepName, Long> checkFailedTimes;
 
     public ProjectStepResultChecker(OmsProjectProgressResponse progressResponse, List<OmsProjectStepVO> projectSteps,
-            boolean enableFullVerify) {
+            boolean enableFullVerify, int checkProjectStepFailedTimeoutSeconds,
+            Map<OmsStepName, Long> checkFailedTimes) {
         this.progressResponse = progressResponse;
         this.currentProjectStepMap = projectSteps.stream().collect(Collectors.toMap(OmsProjectStepVO::getName, a -> a));
         this.checkerResult = new ProjectStepResult();
         this.enableFullVerify = enableFullVerify;
+        this.checkProjectStepFailedTimeoutSeconds = checkProjectStepFailedTimeoutSeconds;
+        this.checkFailedTimes = checkFailedTimes;
         this.toCheckSteps = Lists.newArrayList(OmsStepName.TRANSFER_INCR_LOG_PULL,
                 OmsStepName.FULL_TRANSFER, OmsStepName.INCR_TRANSFER);
         if (enableFullVerify) {
@@ -91,19 +96,14 @@ public class ProjectStepResultChecker {
         }
 
         // todo 用户手动暂停了项目
-        if (checkProjectFinished()) {
+        if (isProjectFinished()) {
             checkerResult.setTaskStatus(TaskStatus.DONE);
+        } else if (isProjectFailed() || progressResponse.getStatus().isProjectDestroyed()) {
+            checkerResult.setTaskStatus(TaskStatus.FAILED);
         } else {
-            // try to resume oms project if oms project is failed
-            if (resumeProjectSupplier != null && checkStepFailed()) {
-                try {
-                    resumeProjectSupplier.get();
-                } catch (Exception ex) {
-                    log.warn("resume project error", ex);
-                }
-            }
             checkerResult.setTaskStatus(TaskStatus.RUNNING);
         }
+
         fillMigrateResult();
         checkerVerifyResult();
         evaluateTaskPercentage();
@@ -139,7 +139,7 @@ public class ProjectStepResultChecker {
         }
     }
 
-    private boolean checkProjectFinished() {
+    private boolean isProjectFinished() {
         return progressResponse.getStatus() == OmsProjectStatusEnum.FINISHED
                 || checkProjectStepFinished();
     }
@@ -170,7 +170,7 @@ public class ProjectStepResultChecker {
         }
     }
 
-    private boolean checkStepFailed() {
+    private boolean isProjectFailed() {
         boolean isProjectFailed = false;
         for (OmsStepName stepName : toCheckSteps) {
             if (currentProjectStepMap.get(stepName) != null
@@ -181,8 +181,22 @@ public class ProjectStepResultChecker {
                 if (currentProjectStepMap.get(stepName).getExtraInfo() != null) {
                     checkerResult.setErrorMsg(currentProjectStepMap.get(stepName).getExtraInfo().getErrorMsg());
                 }
-                isProjectFailed = true;
+
+                // record FULL_TRANSFER failed time
+                if (stepName == OmsStepName.FULL_TRANSFER) {
+                    long failedBeginTime = checkFailedTimes.computeIfAbsent(stepName, k -> System.currentTimeMillis());
+                    long failedAccumulateTime = (System.currentTimeMillis() - failedBeginTime) / 1000;
+                    if (failedAccumulateTime > checkProjectStepFailedTimeoutSeconds) {
+                        log.warn("Current step failed timeout, stepName={}, "
+                                + "failedAccumulateTimeSeconds={}, checkProjectStepFailedTimeoutSeconds={}",
+                                stepName, failedAccumulateTime, checkProjectStepFailedTimeoutSeconds);
+                        isProjectFailed = true;
+                    }
+                }
                 break;
+            } else {
+                // remove if current step is not failed
+                checkFailedTimes.remove(stepName);
             }
         }
         return isProjectFailed;
@@ -259,6 +273,7 @@ public class ProjectStepResultChecker {
                         BigDecimal.valueOf(fullVerifyStep.getProgress()).doubleValue());
             }
         }
+        checkerResult.setCheckFailedTime(this.checkFailedTimes);
 
     }
 
@@ -309,6 +324,8 @@ public class ProjectStepResultChecker {
          * task percentage
          */
         private double taskPercentage;
+
+        private Map<OmsStepName, Long> checkFailedTime;
 
     }
 }

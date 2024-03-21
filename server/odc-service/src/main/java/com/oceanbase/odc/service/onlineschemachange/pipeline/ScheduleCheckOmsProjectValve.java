@@ -79,11 +79,15 @@ public class ScheduleCheckOmsProjectValve extends BaseValve {
         if (log.isDebugEnabled()) {
             log.debug("Get project step list from projectOpenApiService is {} ", JsonUtils.toJson(projectSteps));
         }
+        OnlineSchemaChangeScheduleTaskResult lastResult = JsonUtils.fromJson(scheduleTask.getResultJson(),
+                OnlineSchemaChangeScheduleTaskResult.class);
 
         OmsProjectProgressResponse progress = projectOpenApiService.describeProjectProgress(projectRequest);
 
         ProjectStepResult projectStepResult = new ProjectStepResultChecker(progress, projectSteps,
-                onlineSchemaChangeProperties.isEnableFullVerify())
+                onlineSchemaChangeProperties.isEnableFullVerify(),
+                onlineSchemaChangeProperties.getOms().getCheckProjectStepFailedTimeoutSeconds(),
+                lastResult.getCheckFailedTime())
                         .withCheckerVerifyResult(() -> listProjectFullVerifyResult(taskParameter.getOmsProjectId(),
                                 taskParameter.getDatabaseName(), taskParameter.getUid()))
                         .withResumeProject(() -> {
@@ -93,8 +97,7 @@ public class ScheduleCheckOmsProjectValve extends BaseValve {
                         .getCheckerResult();
 
         OnlineSchemaChangeScheduleTaskResult result = new OnlineSchemaChangeScheduleTaskResult(taskParameter);
-        OnlineSchemaChangeScheduleTaskResult lastResult = JsonUtils.fromJson(scheduleTask.getResultJson(),
-                OnlineSchemaChangeScheduleTaskResult.class);
+
         if (lastResult != null) {
             result.setManualSwapTableEnabled(lastResult.isManualSwapTableEnabled());
             result.setManualSwapTableStarted(lastResult.isManualSwapTableStarted());
@@ -139,6 +142,8 @@ public class ScheduleCheckOmsProjectValve extends BaseValve {
     private void continueHandleProjectStepResult(ProjectStepResult projectStepResult) {
         if (projectStepResult.getPreCheckResult() == PrecheckResult.FAILED) {
             throw new OscException(ErrorCodes.OmsPreCheckFailed, projectStepResult.getErrorMsg());
+        } else if (projectStepResult.getTaskStatus() == TaskStatus.FAILED) {
+            throw new OscException(ErrorCodes.OmsProjectExecutingFailed, projectStepResult.getErrorMsg());
         } else if (projectStepResult.getFullVerificationResult() == FullVerificationResult.INCONSISTENT) {
             throw new OscException(ErrorCodes.OmsDataCheckInconsistent,
                     "Task failed for origin table has inconsistent data with new table, result: "
@@ -174,6 +179,7 @@ public class ScheduleCheckOmsProjectValve extends BaseValve {
         result.setCurrentStep(projectStepResult.getCurrentStep());
         result.setCurrentStepStatus(projectStepResult.getCurrentStepStatus());
         result.setPrecheckResult(projectStepResult.getPreCheckResult());
+        result.setCheckFailedTime(projectStepResult.getCheckFailedTime());
     }
 
     private OmsProjectControlRequest getProjectRequest(OnlineSchemaChangeScheduleTaskParameters taskParam) {
