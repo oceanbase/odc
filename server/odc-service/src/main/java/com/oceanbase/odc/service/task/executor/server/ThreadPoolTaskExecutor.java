@@ -84,7 +84,8 @@ public class ThreadPoolTaskExecutor implements TaskExecutor {
             result = getTask(ji).getStatus().isTerminated();
         }
         ExecutorUtils.gracefulShutdown(executor, "Task-Executor", result ? 1 : 5);
-        log.info("Task is canceled succeed, taskId={}, status={}.", ji.getId(), getTask(ji).getStatus());
+        log.info("Task be canceled succeed, taskId={}, status={}, result={}.",
+                ji.getId(), getTask(ji).getStatus(), result);
         return true;
     }
 
@@ -92,6 +93,4 @@ public class ThreadPoolTaskExecutor implements TaskExecutor {
     public Task<?> getTask(JobIdentity ji) {
         return tasks.get(ji);
     }
-
-
 }
