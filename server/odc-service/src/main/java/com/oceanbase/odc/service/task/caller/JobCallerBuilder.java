@@ -17,6 +17,8 @@ package com.oceanbase.odc.service.task.caller;
 
 import java.util.Map;
 
+import com.oceanbase.odc.service.task.config.JobConfigurationHolder;
+import com.oceanbase.odc.service.task.config.TaskFrameworkProperties;
 import com.oceanbase.odc.service.task.constants.JobEnvKeyConstants;
 import com.oceanbase.odc.service.task.enums.TaskRunMode;
 
@@ -32,6 +34,10 @@ public class JobCallerBuilder {
         Map<String, String> environments = new JobEnvironmentFactory().getEnvironments(context, TaskRunMode.PROCESS);
         new JobEnvironmentEncryptor().encrypt(environments);
         config.setEnvironments(environments);
+        TaskFrameworkProperties taskFrameworkProperties =
+                JobConfigurationHolder.getJobConfiguration().getTaskFrameworkProperties();
+        config.setJvmXms(taskFrameworkProperties.getJobProcessMinMemorySizeInMB());
+        config.setJvmXmx(taskFrameworkProperties.getJobProcessMaxMemorySizeInMB());
 
         return new ProcessJobCaller(config);
     }
