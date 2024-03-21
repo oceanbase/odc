@@ -56,8 +56,7 @@ public class MonitorExecutorStatusRateLimiter implements StartJobRateLimiter {
     @Override
     public boolean tryAcquire() {
         if (taskFrameworkProperties.get().getRunMode().isProcess() && SystemUtils.isOnLinux()) {
-            JobConfiguration jobConfiguration = JobConfigurationHolder.getJobConfiguration();
-            long count = jobConfiguration.getTaskFrameworkService().countRunningJobs(TaskRunMode.PROCESS);
+            long count = taskFrameworkService.countRunningJobs(TaskRunMode.PROCESS);
             if (count >= runningJobCountLimit && log.isDebugEnabled()) {
                 log.debug("Amount of executor running jobs exceed limit, wait next schedule, limit={}, runningJobs={}.",
                         runningJobCountLimit, count);
