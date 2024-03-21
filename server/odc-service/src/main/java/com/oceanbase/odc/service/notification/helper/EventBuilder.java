@@ -331,7 +331,11 @@ public class EventBuilder {
                 log.warn("failed to query project info.", e);
             }
         }
-        labels.putIfNonNull(TICKET_URL, getTicketUrl(labels, task));
+        try {
+            labels.putIfNonNull(TICKET_URL, getTicketUrl(labels, task));
+        } catch (Exception e) {
+            log.warn("failed to get ticket url.", e);
+        }
     }
 
     private <T> String getTicketUrl(EventLabels labels, T task) {
