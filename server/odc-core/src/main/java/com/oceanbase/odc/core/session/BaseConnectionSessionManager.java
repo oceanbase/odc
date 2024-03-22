@@ -56,6 +56,11 @@ public abstract class BaseConnectionSessionManager implements ConnectionSessionM
         try {
             doStoreSession(session);
         } catch (Throwable e) {
+            try {
+                session.expire();
+            } catch (Exception e1) {
+                log.warn("Failed to expire session, session storage failed, sessId={}", session.getId(), e1);
+            }
             log.warn("Failed to store a session, session={}", session, e);
             try {
                 onCreateFailed(session, e);
