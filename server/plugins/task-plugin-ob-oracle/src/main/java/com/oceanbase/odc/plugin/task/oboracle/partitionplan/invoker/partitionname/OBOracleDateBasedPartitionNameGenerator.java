@@ -22,6 +22,7 @@ import com.oceanbase.odc.core.sql.execute.model.TimeFormatResult;
 import com.oceanbase.odc.plugin.task.obmysql.partitionplan.invoker.SqlExprCalculator;
 import com.oceanbase.odc.plugin.task.obmysql.partitionplan.invoker.SqlExprCalculator.SqlExprResult;
 import com.oceanbase.odc.plugin.task.obmysql.partitionplan.invoker.partitionname.OBMySQLDateBasedPartitionNameGenerator;
+import com.oceanbase.odc.plugin.task.oboracle.partitionplan.OBOracleAutoPartitionExtensionPoint;
 import com.oceanbase.odc.plugin.task.oboracle.partitionplan.invoker.OBOracleSqlExprCalculator;
 
 import lombok.NonNull;
@@ -35,6 +36,11 @@ import lombok.NonNull;
  * @see OBMySQLDateBasedPartitionNameGenerator
  */
 public class OBOracleDateBasedPartitionNameGenerator extends OBMySQLDateBasedPartitionNameGenerator {
+
+    @Override
+    protected String unquoteIdentifier(String identifier) {
+        return new OBOracleAutoPartitionExtensionPoint().unquoteIdentifier(identifier);
+    }
 
     @Override
     protected Date getPartitionUpperBound(@NonNull Connection connection,

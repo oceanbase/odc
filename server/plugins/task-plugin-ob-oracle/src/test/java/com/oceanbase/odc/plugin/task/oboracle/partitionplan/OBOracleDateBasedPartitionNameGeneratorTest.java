@@ -29,7 +29,9 @@ import com.oceanbase.odc.plugin.task.oboracle.partitionplan.invoker.partitionnam
 import com.oceanbase.odc.test.database.TestDBConfiguration;
 import com.oceanbase.odc.test.database.TestDBConfigurations;
 import com.oceanbase.tools.dbbrowser.model.DBTable;
+import com.oceanbase.tools.dbbrowser.model.DBTablePartition;
 import com.oceanbase.tools.dbbrowser.model.DBTablePartitionDefinition;
+import com.oceanbase.tools.dbbrowser.model.DBTablePartitionOption;
 
 /**
  * Test cases for {@link OBOracleDateBasedPartitionNameGenerator}
@@ -45,10 +47,18 @@ public class OBOracleDateBasedPartitionNameGeneratorTest {
         TestDBConfiguration configuration = TestDBConfigurations.getInstance().getTestOBOracleConfiguration();
         try (Connection connection = configuration.getDataSource().getConnection()) {
             DBTable dbTable = new DBTable();
+            DBTablePartition partition = new DBTablePartition();
+            DBTablePartitionOption option = new DBTablePartitionOption();
+            option.setColumnNames(Collections.singletonList("col"));
+            partition.setPartitionOption(option);
+            DBTablePartitionDefinition definition = new DBTablePartitionDefinition();
+            definition.setMaxValues(Collections.singletonList("Timestamp '2024-03-01 00:00:00.1234'"));
+            partition.setPartitionDefinitions(Collections.singletonList(definition));
+            dbTable.setPartition(partition);
             DateBasedPartitionNameGeneratorConfig config = new DateBasedPartitionNameGeneratorConfig();
             config.setNamingPrefix("p");
             config.setNamingSuffixExpression("yyyyMMdd");
-            config.setRefUpperBoundIndex(0);
+            config.setRefPartitionKey("\"COL\"");
             PartitionNameGenerator generator = new OBOracleDateBasedPartitionNameGenerator();
             String actual = generator.invoke(connection, dbTable, getParameters(config));
             String expect = "p20240301";

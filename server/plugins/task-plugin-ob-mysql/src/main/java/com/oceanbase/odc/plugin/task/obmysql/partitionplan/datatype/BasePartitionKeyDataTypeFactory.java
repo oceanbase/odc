@@ -17,12 +17,11 @@ package com.oceanbase.odc.plugin.task.obmysql.partitionplan.datatype;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.stream.Collectors;
 
 import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.lang3.StringUtils;
 
+import com.oceanbase.odc.plugin.task.api.partitionplan.util.DBTablePartitionUtil;
 import com.oceanbase.odc.plugin.task.obmysql.partitionplan.invoker.SqlExprCalculator;
 import com.oceanbase.tools.dbbrowser.model.DBTable;
 import com.oceanbase.tools.dbbrowser.model.DBTableColumn;
@@ -87,38 +86,9 @@ public abstract class BasePartitionKeyDataTypeFactory implements DataTypeFactory
         if (CollectionUtils.isEmpty(definitions)) {
             throw new IllegalStateException("Partition def is empty");
         }
-        int i = getPartitionKeyIndex();
+        int i = DBTablePartitionUtil.getPartitionKeyIndex(this.dbTable, this.partitionKey, this::unquoteIdentifier);
         DBTablePartitionDefinition definition = definitions.get(0);
         return this.calculator.calculate(definition.getMaxValues().get(i)).getDataType();
-    }
-
-    public int getPartitionKeyIndex() {
-        DBTablePartitionOption option = this.dbTable.getPartition().getPartitionOption();
-        if (option == null) {
-            throw new IllegalStateException("Partition option is missing");
-        }
-        int i;
-        List<DBTablePartitionDefinition> definitions = this.dbTable.getPartition().getPartitionDefinitions();
-        if (CollectionUtils.isEmpty(definitions)) {
-            throw new IllegalStateException("Partition def is empty");
-        }
-        List<String> cols = option.getColumnNames();
-        if (CollectionUtils.isNotEmpty(cols)) {
-            for (i = 0; i < cols.size(); i++) {
-                if (Objects.equals(unquoteIdentifier(this.partitionKey), unquoteIdentifier(cols.get(i)))) {
-                    break;
-                }
-            }
-            if (i >= cols.size() || i >= definitions.size()) {
-                throw new IllegalStateException("Failed to find partition key, " + this.partitionKey);
-            }
-        } else if (StringUtils.isNotEmpty(option.getExpression())
-                && Objects.equals(unquoteIdentifier(option.getExpression()), unquoteIdentifier(this.partitionKey))) {
-            i = 0;
-        } else {
-            throw new IllegalStateException("Partition type is unknown, expression and columns are both null");
-        }
-        return i;
     }
 
     protected abstract String unquoteIdentifier(String identifier);
