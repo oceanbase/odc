@@ -18,6 +18,10 @@ package com.oceanbase.odc.service.dml;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
+import javax.validation.constraints.NotNull;
 
 import org.junit.AfterClass;
 import org.junit.Assert;
@@ -31,7 +35,10 @@ import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionConstants;
 import com.oceanbase.odc.core.session.ConnectionSessionUtil;
 import com.oceanbase.odc.core.shared.constant.ConnectType;
+import com.oceanbase.odc.service.db.browser.DBSchemaAccessors;
 import com.oceanbase.odc.service.dml.model.DataModifyUnit;
+import com.oceanbase.tools.dbbrowser.model.DBTableColumn;
+import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
 
 /**
  * {@link UpdateGeneratorTest}
@@ -121,7 +128,8 @@ public class UpdateGeneratorTest {
         list.forEach(u -> u.setSchemaName(schema));
 
         MySQLDMLBuilder builder = new MySQLDMLBuilder(list, Collections.emptyList(), connectionSession, null);
-        UpdateGenerator generator = new UpdateGenerator(builder, connectionSession);
+        UpdateGenerator generator =
+                new UpdateGenerator(builder, getColumnName2Column(connectionSession, null, "t_test_update_data_sql"));
         String expect = "update `" + schema
                 + "`.`t_test_update_data_sql` set `c1` = 100, `c2` = 'test', `c4` = 'object@tmp_test.txt' where `c1`=1 and `c2`='abc';";
         Assert.assertEquals(expect, generator.generate());
@@ -176,7 +184,8 @@ public class UpdateGeneratorTest {
         list.forEach(u -> u.setSchemaName(schema));
 
         OracleDMLBuilder builder = new OracleDMLBuilder(list, Collections.emptyList(), connectionSession, null);
-        UpdateGenerator generator = new UpdateGenerator(builder, connectionSession);
+        UpdateGenerator generator =
+                new UpdateGenerator(builder, getColumnName2Column(connectionSession, null, "t_test_update_data_sql"));
         String expect = "update \"" + schema
                 + "\".\"t_test_update_data_sql\" set \"c1\" = 100, \"c2\" = 'test', \"c3\" = "
                 + "null, \"c4\" = load_clob_file('object@tmp_test.txt'), "
@@ -185,6 +194,16 @@ public class UpdateGeneratorTest {
                 + "\"C5\"=to_date('2023-07-11 20:04:31', 'YYYY-MM-DD HH24:MI:SS');";
         Assert.assertEquals(expect, generator.generate());
         Assert.assertTrue(generator.isAffectMultiRows());
+    }
+
+    private Map<String, DBTableColumn> getColumnName2Column(@NotNull ConnectionSession session, String schema,
+            @NotNull String tableName) {
+        DBSchemaAccessor accessor = DBSchemaAccessors.create(session);
+        if (schema == null) {
+            schema = ConnectionSessionUtil.getCurrentSchema(session);
+        }
+        return accessor.listTableColumns(schema, tableName).stream()
+                .collect(Collectors.toMap(DBTableColumn::getName, c -> c));
     }
 
 }

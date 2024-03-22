@@ -18,6 +18,7 @@ package com.oceanbase.odc.service.iam.auth.ldap;
 import java.util.Collection;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.ldap.core.DirContextAdapter;
 import org.springframework.ldap.core.DirContextOperations;
 import org.springframework.security.core.GrantedAuthority;
@@ -35,6 +36,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @Component
 @Slf4j
+@ConditionalOnProperty(value = {"odc.iam.auth.type"}, havingValue = "local")
 public class LdapUserDetailsContextMapper implements UserDetailsContextMapper {
 
     @Autowired
