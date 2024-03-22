@@ -140,7 +140,7 @@ public class SystemConfigService {
 
     @Transactional(rollbackFor = Exception.class)
     public void insert(@NotNull List<SystemConfigEntity> entities) {
-        entities.forEach(entity -> systemConfigDAO.upsert(entity));
+        entities.forEach(entity -> systemConfigDAO.insert(entity));
     }
 
     private boolean needRefresh() {

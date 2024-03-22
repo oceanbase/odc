@@ -46,6 +46,13 @@ public class SystemConfigDAO {
         return jdbcTemplate.queryForObject(sql, new BeanPropertyRowMapper<>(SystemConfigEntity.class), key);
     }
 
+    public int insert(SystemConfigEntity entity) {
+        PreConditions.notNull(entity, "systemConfigEntity");
+        String sql = "INSERT INTO `config_system_configuration`(`key`, `value`, `description`)"
+                + " VALUES(?, ?, ?) ON DUPLICATE KEY UPDATE `id`=`id`";
+        return jdbcTemplate.update(sql, entity.getKey(), entity.getValue(), entity.getDescription(), entity.getValue());
+    }
+
     public int upsert(SystemConfigEntity entity) {
         PreConditions.notNull(entity, "systemConfigEntity");
         String sql = "INSERT INTO `config_system_configuration`(`key`, `value`, `description`)"
