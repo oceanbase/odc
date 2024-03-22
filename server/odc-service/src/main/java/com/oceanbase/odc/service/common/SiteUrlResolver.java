@@ -43,8 +43,10 @@ public class SiteUrlResolver {
         if (configuration != null && !StringUtils.contains(configuration.getValue(), "localhost")) {
             return configuration.getValue();
         }
-        String host = Optional.ofNullable(hostProperties.getOdcHost()).orElse(SystemUtils.getLocalIpAddress());
-        String port = Optional.ofNullable(hostProperties.getOdcMappingPort()).orElse(hostProperties.getPort());
+        String host = Optional.ofNullable(hostProperties.getOdcHost())
+                .orElse(SystemUtils.getLocalIpAddress());
+        String port = Optional.ofNullable(hostProperties.getOdcMappingPort())
+                .orElse(hostProperties.getPort());
         return String.format("%s:%s", host, port);
     }
 }
