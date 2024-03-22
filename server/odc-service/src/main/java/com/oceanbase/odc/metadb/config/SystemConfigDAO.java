@@ -39,7 +39,7 @@ public class SystemConfigDAO {
     }
 
     public SystemConfigEntity queryByKey(String key) {
-        PreConditions.notEmpty(key, "ket");
+        PreConditions.notEmpty(key, "key");
         String sql = "SELECT `application`, `profile`, `key`, `value`, `create_time`, `update_time`, `description` "
                 + "FROM `config_system_configuration` "
                 + "WHERE `application`='odc' AND `profile`='default' AND `label`='master' AND `key` = ?";
