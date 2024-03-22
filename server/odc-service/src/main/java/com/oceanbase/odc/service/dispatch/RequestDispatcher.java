@@ -77,12 +77,10 @@ public class RequestDispatcher {
     }
 
     public DispatchResponse forward(@NonNull String ip, @NonNull Integer port, HttpServletRequest request,
-            ByteArrayOutputStream requestBody)
-            throws IOException {
+            ByteArrayOutputStream requestBody) throws IOException {
         String hostUrl = getHostUrl(ip, port);
         return forward(hostUrl, request, requestBody);
     }
-
 
     private DispatchResponse forward(String hostUrl, HttpServletRequest request, ByteArrayOutputStream requestBody)
             throws IOException {
@@ -95,7 +93,6 @@ public class RequestDispatcher {
         }
         return forward(hostUrl, method, requestUrl, headers, requestBody.toByteArray());
     }
-
 
     public String getHostUrl(@NonNull String ip, @NonNull Integer port) {
         return String.format("%s://%s:%s", PROTOCAL, ip, port);
@@ -117,8 +114,6 @@ public class RequestDispatcher {
         }
         return uriBuilder.toString();
     }
-
-
 
     public DispatchResponse forward(@NonNull String hostUrl, @NonNull HttpMethod method,
             @NonNull String requestUri, @NonNull HttpHeaders headers, byte[] requestBody) throws IOException {
