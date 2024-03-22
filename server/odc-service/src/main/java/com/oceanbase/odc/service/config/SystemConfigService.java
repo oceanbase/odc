@@ -114,6 +114,12 @@ public class SystemConfigService {
     }
 
     @SkipAuthorize("odc internal usage")
+    public Configuration queryByKey(String key) {
+        SystemConfigEntity entity = systemConfigDAO.queryByKey(key);
+        return ConfigurationUtils.fromEntity(entity);
+    }
+
+    @SkipAuthorize("odc internal usage")
     public synchronized void refresh() {
         if (needRefresh()) {
             contextRefresher.refresh();
@@ -125,7 +131,7 @@ public class SystemConfigService {
 
     @Transactional(rollbackFor = Exception.class)
     public void insert(@NotNull List<SystemConfigEntity> entities) {
-        entities.forEach(entity -> systemConfigDAO.insert(entity));
+        entities.forEach(entity -> systemConfigDAO.upsert(entity));
     }
 
     private boolean needRefresh() {
@@ -140,7 +146,7 @@ public class SystemConfigService {
 
     @Transactional(rollbackFor = Exception.class)
     public void saveConfig(@NotNull List<SystemConfigEntity> entities) {
-        entities.forEach(entity -> systemConfigDAO.saveConfig(entity));
+        entities.forEach(entity -> systemConfigDAO.upsert(entity));
     }
 
 }
