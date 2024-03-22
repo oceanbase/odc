@@ -17,11 +17,10 @@
 package com.oceanbase.odc.service.task.executor.logger;
 
 import java.io.File;
+import java.nio.charset.StandardCharsets;
 import java.util.Optional;
 
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.IOUtils;
-import org.apache.commons.io.LineIterator;
+import org.apache.commons.io.input.ReversedLinesFileReader;
 
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.exception.UnexpectedException;
@@ -44,33 +43,30 @@ public class LogUtils {
 
     public static String getLogContent(String file, Long fetchMaxLine, Long fetchMaxByteSize) {
 
-        long lineSize = fetchMaxLine != null ? Math.min(MAX_LOG_LINE_COUNT, fetchMaxLine) : MAX_LOG_LINE_COUNT;
-        long byteSize = fetchMaxByteSize != null ? Math.min(MAX_LOG_BYTE_COUNT, fetchMaxByteSize) : MAX_LOG_BYTE_COUNT;
-        if (!new File(file).exists()) {
+        File logFile = new File(file);
+        if (!logFile.exists()) {
             return ErrorCodes.TaskLogNotFound.getLocalizedMessage(new Object[] {file});
         }
-        LineIterator it = null;
-        StringBuilder sb = new StringBuilder();
-        int lineCount = 1;
-        int byteCount = 0;
-        try {
-            it = FileUtils.lineIterator(new File(file));
-            while (it.hasNext()) {
-                if (lineCount > lineSize || byteCount > byteSize) {
-                    sb.append("Logs exceed max limitation (10000 rows or 1 MB), please download logs directly");
+        StringBuilder logBuilder = new StringBuilder();
+        try (ReversedLinesFileReader reader = new ReversedLinesFileReader(logFile, StandardCharsets.UTF_8)) {
+            int bytes = 0;
+            int lineCount = 0;
+            String line;
+            while ((line = reader.readLine()) != null) {
+                bytes += line.getBytes().length;
+                if (lineCount >= fetchMaxLine || bytes >= fetchMaxByteSize) {
+                    logBuilder.append("[ODC INFO]: \n"
+                            + "Logs exceed max limitation (10000 rows or 1 MB), only the latest part is displayed.\n"
+                            + "Please download the log file for the full content.");
                     break;
                 }
-                String line = it.nextLine();
-                sb.append(line).append("\n");
+                logBuilder.insert(0, line + "\n");
                 lineCount++;
-                byteCount = byteCount + line.getBytes().length;
             }
-            return sb.toString();
+            return logBuilder.toString();
         } catch (Exception ex) {
-            log.warn("read task log file failed, reason={}", ex.getMessage());
-            throw new UnexpectedException("read task log file failed, reason: " + ex.getMessage(), ex);
-        } finally {
-            IOUtils.closeQuietly(it);
+            log.warn("Read task log file failed, details={}", ex.getMessage());
+            throw new UnexpectedException("Read task log file failed, details: " + ex.getMessage(), ex);
         }
     }
 
