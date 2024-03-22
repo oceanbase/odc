@@ -41,16 +41,12 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
-import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import com.oceanbase.odc.common.json.JsonUtils;
-import com.oceanbase.odc.common.util.StringUtils;
-import com.oceanbase.odc.common.util.SystemUtils;
 import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.core.shared.constant.TaskType;
 import com.oceanbase.odc.core.shared.exception.UnexpectedException;
@@ -67,7 +63,6 @@ import com.oceanbase.odc.service.collaboration.project.model.Project;
 import com.oceanbase.odc.service.common.SiteUrlResolver;
 import com.oceanbase.odc.service.common.model.HostProperties;
 import com.oceanbase.odc.service.config.SystemConfigService;
-import com.oceanbase.odc.service.config.model.Configuration;
 import com.oceanbase.odc.service.connection.ConnectionService;
 import com.oceanbase.odc.service.connection.database.DatabaseService;
 import com.oceanbase.odc.service.connection.database.model.Database;
@@ -351,6 +346,9 @@ public class EventBuilder {
             organizationId = ((ScheduleEntity) task).getOrganizationId();
         }
         String odcSite = siteUrlResolver.getSiteUrl();
+        if (!odcSite.startsWith("http")) {
+            odcSite = "http://".concat(odcSite);
+        }
         return String.format(TICKET_URL_TEMPLATE, odcSite, taskId, taskType, organizationId);
     }
 
