@@ -37,6 +37,8 @@ import com.oceanbase.odc.metadb.connection.DatabaseEntity;
 import com.oceanbase.odc.metadb.connection.DatabaseRepository;
 import com.oceanbase.odc.metadb.iam.UserDatabasePermissionEntity;
 import com.oceanbase.odc.metadb.iam.UserDatabasePermissionRepository;
+import com.oceanbase.odc.metadb.iam.UserTablePermissionEntity;
+import com.oceanbase.odc.metadb.iam.UserTablePermissionRepository;
 import com.oceanbase.odc.service.collaboration.project.ProjectService;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.permission.database.model.DatabasePermissionType;
@@ -59,6 +61,9 @@ public class DatabasePermissionHelper {
 
     @Autowired
     private UserDatabasePermissionRepository userDatabasePermissionRepository;
+
+    @Autowired
+    private UserTablePermissionRepository userTablePermissionRepository;
 
     /**
      * Check whether the current user has the permission to access the database
@@ -147,13 +152,40 @@ public class DatabasePermissionHelper {
     }
 
     private Map<Long, Set<DatabasePermissionType>> getDatabaseId2PermissionTypes(Collection<Long> databaseIds) {
-        return userDatabasePermissionRepository
+        Map<Long, Set<DatabasePermissionType>> databaseId2PermissionTypesFromTable =
+                getDatabaseId2PermissionTypesFromTable(databaseIds);
+        Map<Long, Set<DatabasePermissionType>> databaseId2PermissionTypes = userDatabasePermissionRepository
                 .findNotExpiredByUserIdAndDatabaseIdIn(authenticationFacade.currentUserId(), databaseIds).stream()
                 .collect(Collectors.toMap(
                         UserDatabasePermissionEntity::getDatabaseId,
                         e -> {
                             Set<DatabasePermissionType> list = new HashSet<>();
                             list.add(DatabasePermissionType.from(e.getAction()));
+                            return list;
+                        },
+                        (e1, e2) -> {
+                            e1.addAll(e2);
+                            return e1;
+                        }));
+        for (Map.Entry<Long, Set<DatabasePermissionType>> entry : databaseId2PermissionTypesFromTable.entrySet()) {
+            if (databaseId2PermissionTypes.containsKey(entry.getKey())) {
+                databaseId2PermissionTypes.get(entry.getKey()).addAll(entry.getValue());
+            } else {
+                databaseId2PermissionTypes.put(entry.getKey(), entry.getValue());
+            }
+        }
+        return databaseId2PermissionTypes;
+    }
+
+    private Map<Long, Set<DatabasePermissionType>> getDatabaseId2PermissionTypesFromTable(
+            Collection<Long> databaseIds) {
+        return userTablePermissionRepository
+                .findNotExpiredByUserIdAndDatabaseIdIn(authenticationFacade.currentUserId(), databaseIds).stream()
+                .collect(Collectors.toMap(
+                        UserTablePermissionEntity::getDatabaseId,
+                        e -> {
+                            Set<DatabasePermissionType> list = new HashSet<>();
+                            list.add(DatabasePermissionType.ACCESS);
                             return list;
                         },
                         (e1, e2) -> {

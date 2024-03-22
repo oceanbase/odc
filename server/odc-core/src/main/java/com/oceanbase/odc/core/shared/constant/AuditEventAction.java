@@ -181,6 +181,8 @@ public enum AuditEventAction implements Translatable {
 
     CREATE_APPLY_DATABASE_PERMISSION_TASK,
 
+    CREATE_APPLY_TABLE_PERMISSION_TASK,
+
     CREATE_SHADOWTABLE_SYNC_TASK,
 
     CREATE_PARTITION_PLAN_TASK,
@@ -209,6 +211,8 @@ public enum AuditEventAction implements Translatable {
     STOP_APPLY_PROJECT_PERMISSION_TASK,
 
     STOP_APPLY_DATABASE_PERMISSION_TASK,
+
+    STOP_APPLY_TABLE_PERMISSION_TASK,
 
     EXECUTE_ASYNC_TASK,
 
@@ -251,6 +255,8 @@ public enum AuditEventAction implements Translatable {
 
     APPROVE_APPLY_DATABASE_PERMISSION_TASK,
 
+    APPROVE_APPLY_TABLE_PERMISSION_TASK,
+
     REJECT_ASYNC_TASK,
 
     REJECT_MOCKDATA_TASK,
@@ -273,6 +279,8 @@ public enum AuditEventAction implements Translatable {
     REJECT_APPLY_PROJECT_PERMISSION_TASK,
 
     REJECT_APPLY_DATABASE_PERMISSION_TASK,
+
+    REJECT_APPLY_TABLE_PERMISSION_TASK,
 
     /**
      * 数据脱敏规则
@@ -339,6 +347,10 @@ public enum AuditEventAction implements Translatable {
     GRANT_DATABASE_PERMISSION,
 
     REVOKE_DATABASE_PERMISSION,
+
+    GRANT_TABLE_PERMISSION,
+
+    REVOKE_TABLE_PERMISSION,
 
     /**
      * Automation rule management

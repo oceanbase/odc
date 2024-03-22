@@ -107,11 +107,11 @@ import com.oceanbase.odc.service.onlineschemachange.ddl.OscDBAccessorFactory;
 import com.oceanbase.odc.service.onlineschemachange.rename.OscDBUserUtil;
 import com.oceanbase.odc.service.permission.database.DatabasePermissionHelper;
 import com.oceanbase.odc.service.permission.database.model.DatabasePermissionType;
-import com.oceanbase.odc.service.permission.database.model.UnauthorizedDatabase;
 import com.oceanbase.odc.service.plugin.SchemaPluginUtil;
 import com.oceanbase.odc.service.session.factory.DefaultConnectSessionFactory;
 import com.oceanbase.odc.service.session.factory.OBConsoleDataSourceFactory;
 import com.oceanbase.odc.service.session.model.SqlExecuteResult;
+import com.oceanbase.odc.service.session.model.UnauthorizedResource;
 import com.oceanbase.odc.service.task.runtime.PreCheckTaskParameters.AuthorizedDatabase;
 import com.oceanbase.tools.dbbrowser.model.DBDatabase;
 
@@ -640,7 +640,7 @@ public class DatabaseService {
     }
 
     @SkipAuthorize("odc internal usage")
-    public List<UnauthorizedDatabase> filterUnauthorizedDatabases(
+    public List<UnauthorizedResource> filterUnauthorizedDatabases(
             Map<String, Set<DatabasePermissionType>> schemaName2PermissionTypes, @NotNull Long dataSourceId) {
         if (schemaName2PermissionTypes == null || schemaName2PermissionTypes.isEmpty()) {
             return Collections.emptyList();
@@ -652,7 +652,7 @@ public class DatabaseService {
         databases.forEach(d -> name2Database.put(d.getName(), d));
         Map<Long, Set<DatabasePermissionType>> id2Types = databasePermissionHelper
                 .getPermissions(databases.stream().map(Database::getId).collect(Collectors.toList()));
-        List<UnauthorizedDatabase> unauthorizedDatabases = new ArrayList<>();
+        List<UnauthorizedResource> unauthorizedResources = new ArrayList<>();
         for (Map.Entry<String, Set<DatabasePermissionType>> entry : schemaName2PermissionTypes.entrySet()) {
             String schemaName = entry.getKey();
             Set<DatabasePermissionType> needs = entry.getValue();
@@ -663,22 +663,22 @@ public class DatabaseService {
                 Database database = name2Database.get(schemaName);
                 Set<DatabasePermissionType> authorized = id2Types.get(database.getId());
                 if (CollectionUtils.isEmpty(authorized)) {
-                    unauthorizedDatabases.add(UnauthorizedDatabase.from(database, needs));
+                    unauthorizedResources.add(UnauthorizedResource.from(database, needs));
                 } else {
                     Set<DatabasePermissionType> unauthorized =
                             needs.stream().filter(p -> !authorized.contains(p)).collect(Collectors.toSet());
                     if (CollectionUtils.isNotEmpty(unauthorized)) {
-                        unauthorizedDatabases.add(UnauthorizedDatabase.from(database, unauthorized));
+                        unauthorizedResources.add(UnauthorizedResource.from(database, unauthorized));
                     }
                 }
             } else {
                 Database unknownDatabase = new Database();
                 unknownDatabase.setName(schemaName);
                 unknownDatabase.setDataSource(dataSource);
-                unauthorizedDatabases.add(UnauthorizedDatabase.from(unknownDatabase, needs));
+                unauthorizedResources.add(UnauthorizedResource.from(unknownDatabase, needs));
             }
         }
-        return unauthorizedDatabases;
+        return unauthorizedResources;
     }
 
     @SkipAuthorize("internal usage")

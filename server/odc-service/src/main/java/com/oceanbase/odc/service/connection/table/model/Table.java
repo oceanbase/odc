@@ -56,9 +56,17 @@ public class Table extends DBTable implements SecurityResource, OrganizationIsol
 
     private String dataSourceName;
 
+    private Long projectId;
+
+    private String projectName;
+
     @NotEmpty
     @NotBlank
     private String name;
+
+    @NotEmpty
+    @NotBlank
+    private String tableName;
 
     @JsonProperty(access = Access.READ_ONLY)
     private Date createTime;

@@ -59,7 +59,7 @@ public interface UserTablePermissionRepository extends ReadOnlyRepository<UserTa
             + "  inner join `connect_table` as c_t on  c_t.`id` = i_p.`resource_id`"
             + "  inner join `connect_database` as c_d on c_t.database_id = c_d.`id`"
             + "  inner join `connect_connection` as c_c on c_d.`connection_id` = c_c.`id`"
-            + "  where i_p.`resource_type` = 'TABLE'"
+            + "  where i_p.`resource_type` = 'ODC_TABLE'"
             + "  and i_up.user_id = :userId"
             + "  and c_d.`id` in(:databaseIds)", nativeQuery = true)
     List<UserTablePermissionEntity> findNotExpiredByUserIdAndDatabaseIdIn(@Param("userId") Long userId,
@@ -87,7 +87,7 @@ public interface UserTablePermissionRepository extends ReadOnlyRepository<UserTa
             + "  inner join `connect_table` as c_t on  c_t.`id` = i_p.`resource_id`"
             + "  inner join `connect_database` as c_d on c_t.database_id = c_d.`id`"
             + "  inner join `connect_connection` as c_c on c_d.`connection_id` = c_c.`id`"
-            + "  where i_p.`resource_type` = 'TABLE'"
+            + "  where i_p.`resource_type` = 'ODC_TABLE'"
             + "  and i_up.user_id = :userId"
             + "  and c_d.`project_id` = :projectId", nativeQuery = true)
     List<UserTablePermissionEntity> findByUserIdAndProjectId(@Param("userId") Long userId,
@@ -115,7 +115,7 @@ public interface UserTablePermissionRepository extends ReadOnlyRepository<UserTa
             + "  inner join `connect_table` as c_t on  c_t.`id` = i_p.`resource_id`"
             + "  inner join `connect_database` as c_d on c_t.database_id = c_d.`id`"
             + "  inner join `connect_connection` as c_c on c_d.`connection_id` = c_c.`id`"
-            + "  where i_p.`resource_type` = 'TABLE'"
+            + "  where i_p.`resource_type` = 'ODC_TABLE'"
             + "  and i_up.user_id= :userId"
             + "  and c_d.`id` = :databaseId"
             + "  and c_t.`name` = :tableName", nativeQuery = true)

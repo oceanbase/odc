@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.oceanbase.odc.service.session.interceptor;
 
 import java.util.HashMap;
@@ -34,6 +33,7 @@ import com.oceanbase.odc.core.shared.constant.OrganizationType;
 import com.oceanbase.odc.core.sql.execute.SqlExecuteStages;
 import com.oceanbase.odc.service.connection.database.DatabaseService;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
+import com.oceanbase.odc.service.connection.table.TableService;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.permission.database.model.DatabasePermissionType;
 import com.oceanbase.odc.service.session.model.SqlAsyncExecuteReq;
@@ -48,19 +48,27 @@ import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * @Author: Lebie
- * @Date: 2023/8/8 22:23
- * @Description: []
+ * ClassName: TablePermissionInterceptor Package: com.oceanbase.odc.service.session.interceptor
+ * Description:
+ *
+ * @Author: fenghao
+ * @Create 2024/3/20 14:44
+ * @Version 1.0
  */
+
+// check column,table,database permission
 @Slf4j
 @Component
-public class DatabasePermissionInterceptor extends BaseTimeConsumingInterceptor {
-
+public class ResourcePermissionInterceptor extends BaseTimeConsumingInterceptor {
     @Autowired
     private DatabaseService databaseService;
 
     @Autowired
     private AuthenticationFacade authenticationFacade;
+
+    @Autowired
+    private TableService tableService;
+
 
     @Override
     public int getOrder() {
@@ -106,5 +114,4 @@ public class DatabasePermissionInterceptor extends BaseTimeConsumingInterceptor 
     protected String getExecuteStageName() {
         return SqlExecuteStages.DATABASE_PERMISSION_CHECK;
     }
-
 }

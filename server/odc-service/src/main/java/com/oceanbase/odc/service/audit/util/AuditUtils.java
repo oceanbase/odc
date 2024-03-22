@@ -176,6 +176,8 @@ public class AuditUtils {
                     return AuditEventAction.CREATE_APPLY_PROJECT_PERMISSION_TASK;
                 case APPLY_DATABASE_PERMISSION:
                     return AuditEventAction.CREATE_APPLY_DATABASE_PERMISSION_TASK;
+                case APPLY_TABLE_PERMISSION:
+                    return AuditEventAction.CREATE_APPLY_TABLE_PERMISSION_TASK;
             }
         }
         if (action == AuditEventAction.STOP_TASK) {
@@ -202,6 +204,8 @@ public class AuditUtils {
                     return AuditEventAction.STOP_APPLY_PROJECT_PERMISSION_TASK;
                 case APPLY_DATABASE_PERMISSION:
                     return AuditEventAction.STOP_APPLY_DATABASE_PERMISSION_TASK;
+                case APPLY_TABLE_PERMISSION:
+                    return AuditEventAction.STOP_APPLY_TABLE_PERMISSION_TASK;
             }
         }
         if (action == AuditEventAction.EXECUTE_TASK) {
@@ -252,6 +256,8 @@ public class AuditUtils {
                     return AuditEventAction.APPROVE_APPLY_PROJECT_PERMISSION_TASK;
                 case APPLY_DATABASE_PERMISSION:
                     return AuditEventAction.APPROVE_APPLY_DATABASE_PERMISSION_TASK;
+                case APPLY_TABLE_PERMISSION:
+                    return AuditEventAction.APPROVE_APPLY_TABLE_PERMISSION_TASK;
             }
         }
         if (action == AuditEventAction.REJECT) {
@@ -280,6 +286,8 @@ public class AuditUtils {
                     return AuditEventAction.REJECT_APPLY_PROJECT_PERMISSION_TASK;
                 case APPLY_DATABASE_PERMISSION:
                     return AuditEventAction.REJECT_APPLY_DATABASE_PERMISSION_TASK;
+                case APPLY_TABLE_PERMISSION:
+                    return AuditEventAction.REJECT_APPLY_TABLE_PERMISSION_TASK;
             }
         }
         // 如果不是流程相关的 action，则返回原值

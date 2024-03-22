@@ -223,6 +223,10 @@ public class TaskService {
                 filePath = String.format(STRUCTURE_COMPARISON_LOG_PATH_PATTERN, logFilePrefix, userId, taskId,
                         logLevel.name().toLowerCase());
                 break;
+            case APPLY_TABLE_PERMISSION:
+                filePath = String.format(APPLY_TABLE_LOG_PATH_PATTERN, logFilePrefix, userId, taskId,
+                        logLevel.name().toLowerCase());
+                break;
             default:
                 throw new UnsupportedException(ErrorCodes.Unsupported, new Object[] {ResourceType.ODC_TASK},
                         "Unsupported task type: " + type);

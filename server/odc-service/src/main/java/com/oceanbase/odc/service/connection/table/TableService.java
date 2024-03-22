@@ -149,6 +149,9 @@ public class TableService {
     private Table dbTableToTable(DBTable dbTable) {
         Table table = new Table();
         table.setName(dbTable.getName());
+        table.setTableName(dbTable.getName());
+        table.setDatabaseName(dbTable.getSchemaName());
+        table.setSchemaName(dbTable.getSchemaName());
         return table;
     }
 

@@ -55,7 +55,6 @@ import com.oceanbase.odc.service.objectstorage.model.ObjectMetadata;
 import com.oceanbase.odc.service.objectstorage.model.StorageObject;
 import com.oceanbase.odc.service.onlineschemachange.model.OnlineSchemaChangeParameters;
 import com.oceanbase.odc.service.permission.database.model.DatabasePermissionType;
-import com.oceanbase.odc.service.permission.database.model.UnauthorizedDatabase;
 import com.oceanbase.odc.service.regulation.ruleset.model.Rule;
 import com.oceanbase.odc.service.regulation.ruleset.model.Rule.RuleViolation;
 import com.oceanbase.odc.service.regulation.ruleset.model.RuleMetadata;
@@ -64,6 +63,7 @@ import com.oceanbase.odc.service.resultset.ResultSetExportTaskParameter;
 import com.oceanbase.odc.service.schedule.flowtask.AlterScheduleParameters;
 import com.oceanbase.odc.service.schedule.model.JobType;
 import com.oceanbase.odc.service.session.factory.OBConsoleDataSourceFactory;
+import com.oceanbase.odc.service.session.model.UnauthorizedResource;
 import com.oceanbase.odc.service.session.util.SchemaExtractor;
 import com.oceanbase.odc.service.sqlcheck.DefaultSqlChecker;
 import com.oceanbase.odc.service.sqlcheck.SqlCheckContext;
@@ -116,15 +116,15 @@ public class PreCheckTask extends BaseTask<FlowTaskResult> {
         try {
             List<OffsetString> sqls = new ArrayList<>();
             this.overLimit = getSqlContentUntilOverLimit(sqls, this.parameters.getMaxReadContentBytes());
-            List<UnauthorizedDatabase> unauthorizedDatabases = new ArrayList<>();
+            List<UnauthorizedResource> unauthorizedResources = new ArrayList<>();
             List<CheckViolation> violations = new ArrayList<>();
             if (CollectionUtils.isNotEmpty(sqls)) {
                 violations.addAll(checkViolations(sqls));
                 log.info("SQL check successfully, taskId={}", taskId);
-                unauthorizedDatabases.addAll(filterUnAuthorizedDatabase(sqls));
+                unauthorizedResources.addAll(filterUnAuthorizedDatabase(sqls));
                 log.info("Database permission check successfully, taskId={}", taskId);
             }
-            this.permissionCheckResult = new DatabasePermissionCheckResult(unauthorizedDatabases);
+            this.permissionCheckResult = new DatabasePermissionCheckResult(unauthorizedResources);
             this.sqlCheckResult = SqlCheckTaskResult.success(violations);
             this.success = true;
             log.info("Pre-check task end up running, task id: {}", taskId);
@@ -322,7 +322,7 @@ public class PreCheckTask extends BaseTask<FlowTaskResult> {
         });
     }
 
-    private List<UnauthorizedDatabase> filterUnAuthorizedDatabase(List<OffsetString> sqls) {
+    private List<UnauthorizedResource> filterUnAuthorizedDatabase(List<OffsetString> sqls) {
         // Get needed permission types for accessing the schemas
         Map<String, Set<DatabasePermissionType>> neededSchemaName2PermissionTypes = new HashMap<>();
         Map<String, Set<SqlType>> schemaName2SqlTypes = SchemaExtractor.listSchemaName2SqlTypes(
@@ -357,7 +357,7 @@ public class PreCheckTask extends BaseTask<FlowTaskResult> {
                 schemaName2Database.put(authorizedDatabase.getName(), database);
             }
         }
-        List<UnauthorizedDatabase> ret = new ArrayList<>();
+        List<UnauthorizedResource> ret = new ArrayList<>();
         for (Map.Entry<String, Set<DatabasePermissionType>> entry : neededSchemaName2PermissionTypes.entrySet()) {
             String schemaName = entry.getKey();
             Set<DatabasePermissionType> needs = entry.getValue();
@@ -368,19 +368,19 @@ public class PreCheckTask extends BaseTask<FlowTaskResult> {
                 Database database = schemaName2Database.get(schemaName);
                 Set<DatabasePermissionType> authorized = authorizedSchema2PermissionTypes.get(schemaName);
                 if (CollectionUtils.isEmpty(authorized)) {
-                    ret.add(UnauthorizedDatabase.from(database, needs));
+                    ret.add(UnauthorizedResource.from(database, needs));
                 } else {
                     Set<DatabasePermissionType> unauthorized =
                             needs.stream().filter(p -> !authorized.contains(p)).collect(Collectors.toSet());
                     if (CollectionUtils.isNotEmpty(unauthorized)) {
-                        ret.add(UnauthorizedDatabase.from(database, unauthorized));
+                        ret.add(UnauthorizedResource.from(database, unauthorized));
                     }
                 }
             } else {
                 Database unknownDatabase = new Database();
                 unknownDatabase.setName(schemaName);
                 unknownDatabase.setDataSource(this.parameters.getConnectionConfig());
-                ret.add(UnauthorizedDatabase.from(unknownDatabase, needs));
+                ret.add(UnauthorizedResource.from(unknownDatabase, needs));
             }
         }
         return ret;

@@ -22,13 +22,14 @@ import com.oceanbase.odc.service.permission.database.model.ApplyDatabaseResult;
 import com.oceanbase.odc.service.task.TaskService;
 
 /**
- * ClassName: AppyTableFlowableTask Package: com.oceanbase.odc.service.permission.table Description:
+ * ClassName: ApplyTableFlowableTask Package: com.oceanbase.odc.service.permission.table
+ * Description:
  *
  * @Author: fenghao
  * @Create 2024/3/14 17:25
  * @Version 1.0
  */
-public class AppyTableFlowableTask extends BaseODCFlowTaskDelegate<ApplyDatabaseResult> {
+public class ApplyTableFlowableTask extends BaseODCFlowTaskDelegate<ApplyDatabaseResult> {
 
     @Override
     protected ApplyDatabaseResult start(Long taskId, TaskService taskService, DelegateExecution execution)
