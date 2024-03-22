@@ -18,6 +18,7 @@ package com.oceanbase.odc.service.task.executor.logger;
 
 import java.io.File;
 import java.nio.charset.StandardCharsets;
+import java.util.LinkedList;
 import java.util.Optional;
 
 import org.apache.commons.io.input.ReversedLinesFileReader;
@@ -47,7 +48,7 @@ public class LogUtils {
         if (!logFile.exists()) {
             return ErrorCodes.TaskLogNotFound.getLocalizedMessage(new Object[] {file});
         }
-        StringBuilder logBuilder = new StringBuilder();
+        LinkedList<String> logContent = new LinkedList<>();
         try (ReversedLinesFileReader reader = new ReversedLinesFileReader(logFile, StandardCharsets.UTF_8)) {
             int bytes = 0;
             int lineCount = 0;
@@ -55,19 +56,22 @@ public class LogUtils {
             while ((line = reader.readLine()) != null) {
                 bytes += line.getBytes().length;
                 if (lineCount >= fetchMaxLine || bytes >= fetchMaxByteSize) {
-                    logBuilder.append("[ODC INFO]: \n"
+                    logContent.addLast("[ODC INFO]: \n"
                             + "Logs exceed max limitation (10000 rows or 1 MB), only the latest part is displayed.\n"
-                            + "Please download the log file for the full content.");
+                            + "please download logs directly.");
                     break;
                 }
-                logBuilder.insert(0, line + "\n");
+                logContent.addFirst(line + "\n");
                 lineCount++;
             }
-            return logBuilder.toString();
+
         } catch (Exception ex) {
             log.warn("Read task log file failed, details={}", ex.getMessage());
             throw new UnexpectedException("Read task log file failed, details: " + ex.getMessage(), ex);
         }
+        StringBuilder logBuilder = new StringBuilder();
+        logContent.forEach(logBuilder::append);
+        return logBuilder.toString();
     }
 
     public static String getTaskLogFileWithPath(Long jobId, OdcTaskLogLevel logType) {
