@@ -43,6 +43,24 @@ public class SystemConfigDAOTest extends ServiceTestEnv {
     }
 
     @Test
+    public void test_Insert_NotExists() {
+        systemConfigDAO.insert(getConfigEntity());
+        Assert.assertEquals(1, JdbcTestUtils.countRowsInTable(jdbcTemplate, "config_system_configuration"));
+    }
+
+    @Test
+    public void test_Insert_Exists() {
+        SystemConfigEntity config = getConfigEntity();
+        systemConfigDAO.insert(config);
+
+        config.setValue("value1");
+        systemConfigDAO.insert(config);
+
+        SystemConfigEntity entity = systemConfigDAO.queryByKey("dummy.key");
+        Assert.assertEquals("value", entity.getValue());
+    }
+
+    @Test
     public void test_Upsert_NotExists() {
         systemConfigDAO.upsert(getConfigEntity());
         Assert.assertEquals(1, JdbcTestUtils.countRowsInTable(jdbcTemplate, "config_system_configuration"));
@@ -50,10 +68,14 @@ public class SystemConfigDAOTest extends ServiceTestEnv {
 
     @Test
     public void test_Upsert_Exists() {
-        systemConfigDAO.upsert(getConfigEntity());
-        systemConfigDAO.upsert(getConfigEntity());
+        SystemConfigEntity config = getConfigEntity();
+        systemConfigDAO.upsert(config);
 
-        Assert.assertEquals(1, JdbcTestUtils.countRowsInTable(jdbcTemplate, "config_system_configuration"));
+        config.setValue("value1");
+        systemConfigDAO.upsert(config);
+
+        SystemConfigEntity entity = systemConfigDAO.queryByKey("dummy.key");
+        Assert.assertEquals("value1", entity.getValue());
     }
 
     @Test

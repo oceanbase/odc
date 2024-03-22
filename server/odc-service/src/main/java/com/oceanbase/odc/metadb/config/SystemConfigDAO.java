@@ -50,7 +50,7 @@ public class SystemConfigDAO {
         PreConditions.notNull(entity, "systemConfigEntity");
         String sql = "INSERT INTO `config_system_configuration`(`key`, `value`, `description`)"
                 + " VALUES(?, ?, ?) ON DUPLICATE KEY UPDATE `id`=`id`";
-        return jdbcTemplate.update(sql, entity.getKey(), entity.getValue(), entity.getDescription(), entity.getValue());
+        return jdbcTemplate.update(sql, entity.getKey(), entity.getValue(), entity.getDescription());
     }
 
     public int upsert(SystemConfigEntity entity) {
