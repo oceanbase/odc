@@ -56,7 +56,7 @@ public class LogUtils {
             while ((line = reader.readLine()) != null) {
                 bytes += line.getBytes().length;
                 if (lineCount >= fetchMaxLine || bytes >= fetchMaxByteSize) {
-                    logContent.addLast("[ODC INFO]: \n"
+                    logContent.addFirst("[ODC INFO]: \n"
                             + "Logs exceed max limitation (10000 rows or 1 MB), only the latest part is displayed.\n"
                             + "please download logs directly.");
                     break;
