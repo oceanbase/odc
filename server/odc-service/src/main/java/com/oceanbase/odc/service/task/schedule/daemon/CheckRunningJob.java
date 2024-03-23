@@ -85,7 +85,14 @@ public class CheckRunningJob implements Job {
         jobs.stream().filter(a -> {
             ExecutorIdentifier ei = ExecutorIdentifierParser.parser(a.getExecutorIdentifier());
             return !(HttpUtil.isConnectable(ei.getHost(), ei.getPort(), 3));
-        }).forEach(j -> handleJobRetryingOrFailed(j, null));
+        }).forEach(j -> handleJobRetryingOrFailed(j, a -> {
+            int rows = getConfiguration().getTaskFrameworkService().updateExecutorToDestroyed(a.getId());
+            if (rows > 0) {
+                log.info("Executor is not exists, update job executor to destroyed, jobId={}", a.getId());
+            } else {
+                throw new TaskRuntimeException("update executor to destroyed failed, id=" + a.getId());
+            }
+        }));
     }
 
     private void handleJobRetryingOrFailed(JobEntity a, Consumer<JobIdentity> jobIdentityConsumer) {
