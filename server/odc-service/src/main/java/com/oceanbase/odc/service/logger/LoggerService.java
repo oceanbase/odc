@@ -132,6 +132,6 @@ public class LoggerService {
             String logFileStr = LogUtils.getTaskLogFileWithPath(jobEntity.getId(), level);
             return LogUtils.getLogContent(logFileStr, LogUtils.MAX_LOG_LINE_COUNT, LogUtils.MAX_LOG_BYTE_COUNT);
         }
-        return  ErrorCodes.TaskLogNotFound.getLocalizedMessage(new Object[] {"Id", jobEntity.getId()});
+        return ErrorCodes.TaskLogNotFound.getLocalizedMessage(new Object[] {"Id", jobEntity.getId()});
     }
 }
