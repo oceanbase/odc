@@ -96,7 +96,7 @@ public class NotificationController {
     @ApiOperation(value = "testChannel", notes = "Test whether the channel is available")
     @RequestMapping(value = "/channels/test", method = RequestMethod.POST)
     public SuccessResponse<MessageSendResult> testChannel(@PathVariable Long projectId, @RequestBody Channel channel) {
-        return Responses.success(notificationService.testChannel(channel));
+        return Responses.success(notificationService.testChannel(projectId, channel));
     }
 
     @ApiOperation(value = "existsChannel", notes = "Query whether a channel name exists")

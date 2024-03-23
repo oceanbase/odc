@@ -16,6 +16,10 @@
 package com.oceanbase.odc.service.task.util;
 
 import java.io.IOException;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.Socket;
+import java.net.SocketAddress;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
@@ -34,10 +38,13 @@ import org.apache.http.impl.client.HttpClientBuilder;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.oceanbase.odc.common.json.JsonUtils;
 
+import lombok.extern.slf4j.Slf4j;
+
 /**
  * @author gaoda.xy
  * @date 2023/11/30 17:25
  */
+@Slf4j
 public class HttpUtil {
 
     private static final int CONNECT_TIMEOUT_SECONDS = 5;
@@ -92,4 +99,40 @@ public class HttpUtil {
         return JsonUtils.fromJson(response, responseTypeRef);
     }
 
+    public static boolean isConnectable(String server, int servPort, int retryTimes) {
+        boolean connectable = false;
+        for (int i = 0; i < retryTimes; i++) {
+            connectable = isConnectable(server, servPort);
+            if (connectable) {
+                break;
+            }
+        }
+        return connectable;
+    }
+
+    public static boolean isConnectable(String server, int servPort) {
+        try {
+            InetAddress ad = InetAddress.getByName(server);
+            boolean state = ad.isReachable(1000);
+            if (!state) {
+                log.warn("Target server can not reachable, servIp={}, servPort={}", server, servPort);
+                return false;
+            }
+        } catch (IOException e) {
+            log.warn("Test target server can not be connected, servIp={}, servPort={}", server, servPort);
+            return false;
+        }
+        try (Socket socket = new Socket()) {
+            socket.setReceiveBufferSize(8192);
+            socket.setSoTimeout(1000);
+            SocketAddress address = new InetSocketAddress(server, servPort);
+            // Test tcp can be connected succeed
+            socket.connect(address, 1000);
+            return true;
+        } catch (IOException e) {
+            log.warn("Target port can not be connected, servIp={}, servPort={}", server, servPort);
+            return false;
+        }
+
+    }
 }

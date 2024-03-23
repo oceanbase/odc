@@ -447,7 +447,6 @@ public class ConnectConsoleService {
             }
             if (Objects.isNull(request.getQueryLimit())
                     || !request.ifAddROWID()
-                    || !sessionProperties.isAddInternalRowId()
                     || session.getDialectType() != DialectType.OB_ORACLE) {
                 return target;
             }

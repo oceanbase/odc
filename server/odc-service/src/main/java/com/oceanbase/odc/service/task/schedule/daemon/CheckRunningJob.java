@@ -15,6 +15,8 @@
  */
 package com.oceanbase.odc.service.task.schedule.daemon;
 
+import java.util.function.Consumer;
+
 import org.quartz.DisallowConcurrentExecution;
 import org.quartz.Job;
 import org.quartz.JobExecutionContext;
@@ -23,6 +25,8 @@ import org.springframework.data.domain.Page;
 
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.metadb.task.JobEntity;
+import com.oceanbase.odc.service.task.caller.ExecutorIdentifier;
+import com.oceanbase.odc.service.task.caller.ExecutorIdentifierParser;
 import com.oceanbase.odc.service.task.config.JobConfiguration;
 import com.oceanbase.odc.service.task.config.JobConfigurationHolder;
 import com.oceanbase.odc.service.task.config.JobConfigurationValidator;
@@ -33,6 +37,7 @@ import com.oceanbase.odc.service.task.exception.TaskRuntimeException;
 import com.oceanbase.odc.service.task.listener.JobTerminateEvent;
 import com.oceanbase.odc.service.task.schedule.JobIdentity;
 import com.oceanbase.odc.service.task.schedule.SingleJobProperties;
+import com.oceanbase.odc.service.task.util.HttpUtil;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -54,28 +59,46 @@ public class CheckRunningJob implements Job {
         TaskFrameworkProperties taskFrameworkProperties = getConfiguration().getTaskFrameworkProperties();
         int size = taskFrameworkProperties.getSingleFetchCheckHeartTimeoutJobRows();
         int heartTimeoutPeriod = taskFrameworkProperties.getJobHeartTimeoutSeconds();
+        handleGeneralHeartTimeoutJobs(size, heartTimeoutPeriod);
+        handleNotLocalAndProcessIsNotExitsJobs(size, heartTimeoutPeriod);
+    }
+
+    private void handleGeneralHeartTimeoutJobs(int size, int heartTimeoutPeriod) {
         // find heart timeout job
         Page<JobEntity> jobs = getConfiguration().getTaskFrameworkService()
                 .findHeartTimeTimeoutJobs(heartTimeoutPeriod, 0, size);
-        jobs.forEach(this::handleJobRetryingOrCanceled);
-
+        jobs.forEach(j -> handleJobRetryingOrFailed(j, a -> {
+            try {
+                // destroy executor
+                getConfiguration().getJobDispatcher().destroy(JobIdentity.of(a.getId()));
+            } catch (JobException e) {
+                throw new TaskRuntimeException(e);
+            }
+        }));
     }
 
-    private void handleJobRetryingOrCanceled(JobEntity a) {
+    private void handleNotLocalAndProcessIsNotExitsJobs(int size, int heartTimeoutPeriod) {
+        // docker restart then ip has been changed and process been destroyed,
+        // so we should find heart timeout not running in local when process mode
+        Page<JobEntity> jobs = getConfiguration().getTaskFrameworkService()
+                .findHeartTimeTimeoutNoLocalJobs(heartTimeoutPeriod, 0, size);
+        jobs.stream().filter(a -> {
+            ExecutorIdentifier ei = ExecutorIdentifierParser.parser(a.getExecutorIdentifier());
+            return !(HttpUtil.isConnectable(ei.getHost(), ei.getPort(), 3));
+        }).forEach(j -> handleJobRetryingOrFailed(j, null));
+    }
+
+    private void handleJobRetryingOrFailed(JobEntity a, Consumer<JobIdentity> jobIdentityConsumer) {
         getConfiguration().getTransactionManager().doInTransactionWithoutResult(() -> {
-            doHandleJobRetryingOrFailed(a);
+            doHandleJobRetryingOrFailed(a, jobIdentityConsumer);
         });
 
     }
 
-    private void doHandleJobRetryingOrFailed(JobEntity a) {
-        // destroy executor
-        try {
-            getConfiguration().getJobDispatcher().destroy(JobIdentity.of(a.getId()));
-        } catch (JobException e) {
-            throw new TaskRuntimeException(e);
+    private void doHandleJobRetryingOrFailed(JobEntity a, Consumer<JobIdentity> jobIdentityConsumer) {
+        if (jobIdentityConsumer != null) {
+            jobIdentityConsumer.accept(JobIdentity.of(a.getId()));
         }
-
         if (checkJobIfRetryNecessary(a)) {
             log.info("Need to restart job, destroy old executor completed, jobId={}.", a.getId());
             int rows = getConfiguration().getTaskFrameworkService()

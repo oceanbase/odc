@@ -51,7 +51,6 @@ import com.oceanbase.odc.common.util.ExceptionUtils;
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.authority.util.Authenticated;
 import com.oceanbase.odc.core.authority.util.PreAuthenticate;
-import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.core.shared.exception.AccessDeniedException;
@@ -72,12 +71,14 @@ import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.notification.helper.ChannelConfigValidator;
 import com.oceanbase.odc.service.notification.helper.ChannelMapper;
 import com.oceanbase.odc.service.notification.helper.PolicyMapper;
+import com.oceanbase.odc.service.notification.model.BaseChannelConfig;
 import com.oceanbase.odc.service.notification.model.Channel;
 import com.oceanbase.odc.service.notification.model.Message;
 import com.oceanbase.odc.service.notification.model.MessageSendResult;
 import com.oceanbase.odc.service.notification.model.NotificationPolicy;
 import com.oceanbase.odc.service.notification.model.QueryChannelParams;
 import com.oceanbase.odc.service.notification.model.QueryMessageParams;
+import com.oceanbase.odc.service.notification.model.WebhookChannelConfig;
 
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
@@ -139,11 +140,7 @@ public class NotificationService {
     @Transactional(rollbackFor = Exception.class)
     @PreAuthenticate(hasAnyResourceRole = {"OWNER"}, resourceType = "ODC_PROJECT", indexOfIdParam = 0)
     public Channel detailChannel(@NotNull Long projectId, @NotNull Long channelId) {
-        Channel channel = channelMapper.fromEntityWithConfig(nullSafeGetChannel(channelId));
-        if (!Objects.equals(projectId, channel.getProjectId())) {
-            throw new AccessDeniedException("Channel does not belong to this project");
-        }
-        return channel;
+        return channelMapper.fromEntityWithConfig(nullSafeGetChannel(channelId, projectId));
     }
 
     @Transactional(rollbackFor = Exception.class)
@@ -171,12 +168,14 @@ public class NotificationService {
     public Channel updateChannel(@NotNull Long projectId, @NotNull Channel channel) {
         PreConditions.notNull(channel.getId(), "channel.id");
         validator.validate(channel.getType(), channel.getChannelConfig());
-        ChannelEntity entity = nullSafeGetChannel(channel.getId());
-        if (!Objects.equals(projectId, entity.getProjectId())) {
-            throw new AccessDeniedException("Channel does not belong to this project");
-        }
+        ChannelEntity entity = nullSafeGetChannel(channel.getId(), projectId);
 
-        channelPropertyRepository.deleteByChannelId(entity.getId());
+        BaseChannelConfig channelConfig = channel.getChannelConfig();
+        if (channelConfig instanceof WebhookChannelConfig && ((WebhookChannelConfig) channelConfig).getSign() == null) {
+            channelPropertyRepository.deleteByChannelIdAndKeyNotEquals(entity.getId(), "sign");
+        } else {
+            channelPropertyRepository.deleteByChannelId(entity.getId());
+        }
 
         ChannelEntity toBeSaved = channelMapper.toEntity(channel);
         toBeSaved.setCreatorId(authenticationFacade.currentUserId());
@@ -189,10 +188,7 @@ public class NotificationService {
     @Transactional(rollbackFor = Exception.class)
     @PreAuthenticate(hasAnyResourceRole = {"OWNER"}, resourceType = "ODC_PROJECT", indexOfIdParam = 0)
     public Channel deleteChannel(@NotNull Long projectId, @NotNull Long channelId) {
-        ChannelEntity entity = nullSafeGetChannel(channelId);
-        if (!Objects.equals(projectId, entity.getProjectId())) {
-            throw new AccessDeniedException("Channel does not belong to this project");
-        }
+        ChannelEntity entity = nullSafeGetChannel(channelId, projectId);
 
         channelRepository.deleteById(channelId);
         relationRepository.deleteByChannelId(channelId);
@@ -200,13 +196,23 @@ public class NotificationService {
         return channelMapper.fromEntity(entity);
     }
 
-    @SkipAuthorize("Any user could test channel")
-    public MessageSendResult testChannel(@NotNull Channel channel) {
+    @Transactional(rollbackFor = Exception.class)
+    @PreAuthenticate(hasAnyResourceRole = {"OWNER"}, resourceType = "ODC_PROJECT", indexOfIdParam = 0)
+    public MessageSendResult testChannel(@NotNull Long projectId, @NotNull Channel channel) {
         PreConditions.notNull(channel.getType(), "channel.type");
         PreConditions.notNull(channel.getChannelConfig(), "channel.config");
         validator.validate(channel.getType(), channel.getChannelConfig());
-        MessageSender sender = messageSenderMapper.get(channel);
 
+        BaseChannelConfig channelConfig = channel.getChannelConfig();
+        if (channelConfig instanceof WebhookChannelConfig && ((WebhookChannelConfig) channelConfig).getSign() == null
+                && channel.getId() != null) {
+            ChannelEntity entity = nullSafeGetChannel(channel.getId(), projectId);
+            String sign = ((WebhookChannelConfig) channelMapper.fromEntityWithConfig(entity).getChannelConfig())
+                    .getSign();
+            ((WebhookChannelConfig) channelConfig).setSign((sign));
+        }
+
+        MessageSender sender = messageSenderMapper.get(channel);
         String testMessage = I18n.translate(CHANNEL_TEST_MESSAGE_KEY, null, LocaleContextHolder.getLocale());
         try {
             return sender.send(Message.builder()
@@ -375,6 +381,11 @@ public class NotificationService {
     private ChannelEntity nullSafeGetChannel(@NonNull Long channelId) {
         Optional<ChannelEntity> optional = channelRepository.findById(channelId);
         return optional
+                .orElseThrow(() -> new NotFoundException(ResourceType.ODC_NOTIFICATION_CHANNEL, "id", channelId));
+    }
+
+    private ChannelEntity nullSafeGetChannel(@NonNull Long channelId, @NonNull Long projectId) {
+        return channelRepository.findByIdAndProjectId(channelId, projectId)
                 .orElseThrow(() -> new NotFoundException(ResourceType.ODC_NOTIFICATION_CHANNEL, "id", channelId));
     }
 

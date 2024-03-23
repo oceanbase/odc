@@ -51,8 +51,9 @@ public class MessageTemplateProcessor {
                     String.format("${com.oceanbase.odc.event.TASK.%s.name}", copiedVariables.get("taskStatus"));
             copiedVariables.put("taskStatus", taskStatusI18nKey);
         }
-        StringSubstitutor sub =
-                new StringSubstitutor(copiedVariables).setDisableSubstitutionInValues(true);
+        StringSubstitutor sub = new StringSubstitutor(copiedVariables)
+                .setDisableSubstitutionInValues(true)
+                .setVariableResolver(key -> copiedVariables.getOrDefault(key, ""));
         String message = sub.replace(template);
 
         if (Objects.nonNull(locale)) {

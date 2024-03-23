@@ -156,6 +156,21 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
     }
 
     @Override
+    public Page<JobEntity> findHeartTimeTimeoutNoLocalJobs(int timeoutSeconds, int page, int size) {
+        Specification<JobEntity> executorSpec = (root, query, cb) -> cb.and(
+                cb.equal(root.get(JobEntityColumn.RUN_MODE), TaskRunMode.PROCESS),
+                cb.or(cb.notLike(root.get(JobEntityColumn.EXECUTOR_IDENTIFIER),
+                        "%" + StringUtils.escapeLike(SystemUtils.getLocalIpAddress()) + "%"),
+                        cb.isNull(root.get(JobEntityColumn.EXECUTOR_IDENTIFIER))));
+
+        Specification<JobEntity> condition = Specification.where(getRecentDaySpec(RECENT_DAY))
+                .and(SpecificationUtil.columnEqual(JobEntityColumn.STATUS, JobStatus.RUNNING))
+                .and((root, query, cb) -> getHeartTimeoutPredicate(root, cb, timeoutSeconds))
+                .and(executorSpec);
+        return page(condition, page, size);
+    }
+
+    @Override
     public long countRunningNeverHeartJobs(int neverHeartSeconds) {
         CriteriaBuilder cb = entityManager.getCriteriaBuilder();
         CriteriaQuery<Long> query = cb.createQuery(Long.class);
