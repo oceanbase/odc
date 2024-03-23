@@ -20,6 +20,7 @@ import org.junit.Ignore;
 import org.junit.Test;
 
 import com.oceanbase.odc.service.task.executor.server.EmbedServer;
+import com.oceanbase.odc.service.task.util.HttpUtil;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -45,5 +46,11 @@ public class EmbedServerTest {
             server.stop();
         }
 
+    }
+
+    @Test
+    public void testIp() {
+
+        HttpUtil.isConnectable("localhost", 8989);
     }
 }

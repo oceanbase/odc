@@ -120,8 +120,14 @@ public class LoggerService {
             // process mode when executor is not current host, forward to target
             if (!jobDispatchChecker.isExecutorOnThisMachine(jobEntity)) {
                 ExecutorIdentifier ei = ExecutorIdentifierParser.parser(jobEntity.getExecutorIdentifier());
-                DispatchResponse response = requestDispatcher.forward(ei.getHost(), ei.getPort());
-                return response.getContentByType(new TypeReference<SuccessResponse<String>>() {}).getData();
+                boolean connectable = HttpUtil.isConnectable(ei.getHost(), ei.getPort(), 3);
+                if (connectable) {
+                    DispatchResponse response = requestDispatcher.forward(ei.getHost(), ei.getPort());
+                    return response.getContentByType(new TypeReference<SuccessResponse<String>>() {}).getData();
+                } else {
+                    // if log not found then return description to user
+                    return jobEntity.getDescription();
+                }
             }
             String logFileStr = LogUtils.getTaskLogFileWithPath(jobEntity.getId(), level);
             return LogUtils.getLogContent(logFileStr, LogUtils.MAX_LOG_LINE_COUNT, LogUtils.MAX_LOG_BYTE_COUNT);
