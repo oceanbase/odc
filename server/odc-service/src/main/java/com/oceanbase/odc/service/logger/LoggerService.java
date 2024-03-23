@@ -27,6 +27,7 @@ import org.springframework.stereotype.Service;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.shared.PreConditions;
+import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.metadb.task.JobEntity;
 import com.oceanbase.odc.service.common.response.SuccessResponse;
 import com.oceanbase.odc.service.dispatch.DispatchResponse;
@@ -125,14 +126,12 @@ public class LoggerService {
                     DispatchResponse response = requestDispatcher.forward(ei.getHost(), ei.getPort());
                     return response.getContentByType(new TypeReference<SuccessResponse<String>>() {}).getData();
                 } else {
-                    // if log not found then return description to user
-                    return jobEntity.getDescription();
+                    return ErrorCodes.TaskLogNotFound.getLocalizedMessage(new Object[] {"Id", jobEntity.getId()});
                 }
             }
             String logFileStr = LogUtils.getTaskLogFileWithPath(jobEntity.getId(), level);
             return LogUtils.getLogContent(logFileStr, LogUtils.MAX_LOG_LINE_COUNT, LogUtils.MAX_LOG_BYTE_COUNT);
         }
-        // if log not found then return description to user
-        return jobEntity.getDescription();
+        return  ErrorCodes.TaskLogNotFound.getLocalizedMessage(new Object[] {"Id", jobEntity.getId()});
     }
 }
