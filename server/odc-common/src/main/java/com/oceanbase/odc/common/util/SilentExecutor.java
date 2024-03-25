@@ -13,37 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-package com.oceanbase.odc.service.task;
-
-import org.junit.Ignore;
-import org.junit.Test;
-
-import com.oceanbase.odc.service.task.executor.server.EmbedServer;
+package com.oceanbase.odc.common.util;
 
 import lombok.extern.slf4j.Slf4j;
 
 /**
  * @author yaobin
- * @date 2023-12-13
+ * @date 2024-03-25
  * @since 4.2.4
  */
 @Slf4j
-public class EmbedServerTest {
+public class SilentExecutor {
 
-    @Ignore
-    @Test
-    public void test_server() throws Exception {
-
-        EmbedServer server = new EmbedServer();
-        server.start();
+    public static void executeSafely(String method, Runnable operation) {
         try {
-            synchronized (this) {
-                this.wait(60 * 1000);
-            }
-        } finally {
-            server.stop();
+            operation.run();
+        } catch (Exception e) {
+            log.warn(String.format("Execute %s failed.", method), e);
         }
-
     }
 }

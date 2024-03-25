@@ -80,6 +80,8 @@ public class DefaultTaskFrameworkProperties implements TaskFrameworkProperties {
     // job will not be started if systemFreeMemory less than this setting
     private long systemReserveMinFreeMemorySizeInMB = 1024;
 
+    private int checkOdcServerCanBeConnectedTimes = 3;
+
     private String startPreparingJobCronExpression;
 
     private String checkRunningJobCronExpression;

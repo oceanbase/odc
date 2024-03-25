@@ -55,7 +55,7 @@ public interface TaskFrameworkService {
 
     Page<JobEntity> findHeartTimeTimeoutJobs(int timeoutSeconds, int page, int size);
 
-    Page<JobEntity> findHeartTimeTimeoutNoLocalJobs(int timeoutSeconds, int page, int size);
+    Page<JobEntity> findHeartTimeTimeoutNotLocalJobs(int timeoutSeconds, int page, int size);
 
     /**
      * count the jobs started time before neverHeartSeconds which status is running and no heart

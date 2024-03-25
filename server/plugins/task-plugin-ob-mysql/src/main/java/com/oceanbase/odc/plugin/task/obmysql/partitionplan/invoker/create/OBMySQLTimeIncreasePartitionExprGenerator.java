@@ -30,8 +30,9 @@ import com.oceanbase.odc.core.shared.exception.BadRequestException;
 import com.oceanbase.odc.plugin.task.api.partitionplan.datatype.TimeDataType;
 import com.oceanbase.odc.plugin.task.api.partitionplan.invoker.create.TimeIncreasePartitionExprGenerator;
 import com.oceanbase.odc.plugin.task.api.partitionplan.model.TimeIncreaseGeneratorConfig;
+import com.oceanbase.odc.plugin.task.api.partitionplan.util.DBTablePartitionUtil;
 import com.oceanbase.odc.plugin.task.api.partitionplan.util.TimeDataTypeUtil;
-import com.oceanbase.odc.plugin.task.obmysql.partitionplan.datatype.BasePartitionKeyDataTypeFactory;
+import com.oceanbase.odc.plugin.task.obmysql.partitionplan.OBMySQLAutoPartitionExtensionPoint;
 import com.oceanbase.odc.plugin.task.obmysql.partitionplan.datatype.OBMySQLPartitionKeyDataTypeFactory;
 import com.oceanbase.odc.plugin.task.obmysql.partitionplan.invoker.OBMySQLExprCalculator;
 import com.oceanbase.odc.plugin.task.obmysql.partitionplan.invoker.SqlExprCalculator;
@@ -41,6 +42,7 @@ import com.oceanbase.odc.plugin.task.obmysql.partitionplan.mapper.CellDataProces
 import com.oceanbase.tools.dbbrowser.model.DBTable;
 import com.oceanbase.tools.dbbrowser.model.DBTablePartitionDefinition;
 import com.oceanbase.tools.dbbrowser.model.datatype.DataType;
+import com.oceanbase.tools.dbbrowser.model.datatype.DataTypeFactory;
 
 import lombok.NonNull;
 
@@ -77,7 +79,7 @@ public class OBMySQLTimeIncreasePartitionExprGenerator implements TimeIncreasePa
         return new OBMySQLExprCalculator(connection);
     }
 
-    protected BasePartitionKeyDataTypeFactory getDataTypeFactory(Connection connection,
+    protected DataTypeFactory getDataTypeFactory(Connection connection,
             DBTable dbTable, String partitionKey) {
         return new OBMySQLPartitionKeyDataTypeFactory(getSqlExprCalculator(connection), dbTable, partitionKey);
     }
@@ -115,6 +117,10 @@ public class OBMySQLTimeIncreasePartitionExprGenerator implements TimeIncreasePa
         return upperBounds.get(upperBounds.size() - 1);
     }
 
+    protected String unquoteIdentifier(String identifier) {
+        return new OBMySQLAutoPartitionExtensionPoint().unquoteIdentifier(identifier);
+    }
+
     protected List<Date> getCandidateDates(@NonNull Connection connection, @NonNull DBTable dbTable,
             @NonNull String partitionKey, TimeIncreaseGeneratorConfig config, Integer generateCount) {
         Date baseTime;
@@ -125,8 +131,7 @@ public class OBMySQLTimeIncreasePartitionExprGenerator implements TimeIncreasePa
         } else {
             throw new IllegalArgumentException("Base time is missing");
         }
-        BasePartitionKeyDataTypeFactory factory = getDataTypeFactory(connection, dbTable, partitionKey);
-        int index = factory.getPartitionKeyIndex();
+        int index = DBTablePartitionUtil.getPartitionKeyIndex(dbTable, partitionKey, this::unquoteIdentifier);
         if (index >= 0) {
             List<DBTablePartitionDefinition> defs = dbTable.getPartition().getPartitionDefinitions();
             baseTime = getBaseTime(partitionKey, defs.stream().map(d -> d.getMaxValues().get(index))

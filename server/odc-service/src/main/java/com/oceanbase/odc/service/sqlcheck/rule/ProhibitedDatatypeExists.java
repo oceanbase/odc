@@ -76,7 +76,7 @@ public class ProhibitedDatatypeExists implements SqlCheckRule {
     }
 
     private List<CheckViolation> builds(String sql, Stream<ColumnDefinition> stream) {
-        return stream.filter(d -> containsIgnoreCase(d.getDataType().getName()))
+        return stream.filter(d -> containsIgnoreCase(d.getDataType() == null ? null : d.getDataType().getName()))
                 .map(d -> {
                     DataType type = d.getDataType();
                     String dataTypes = "N/A";
@@ -88,6 +88,9 @@ public class ProhibitedDatatypeExists implements SqlCheckRule {
     }
 
     private boolean containsIgnoreCase(String name) {
+        if (name == null) {
+            return false;
+        }
         return this.prohibitedTypeNames.stream().anyMatch(s -> StringUtils.equalsIgnoreCase(s, name));
     }
 

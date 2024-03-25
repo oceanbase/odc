@@ -24,6 +24,7 @@ import org.quartz.JobExecutionException;
 import org.springframework.data.domain.Page;
 
 import com.oceanbase.odc.common.json.JsonUtils;
+import com.oceanbase.odc.common.util.SilentExecutor;
 import com.oceanbase.odc.metadb.task.JobEntity;
 import com.oceanbase.odc.service.task.caller.ExecutorIdentifier;
 import com.oceanbase.odc.service.task.caller.ExecutorIdentifierParser;
@@ -60,7 +61,9 @@ public class CheckRunningJob implements Job {
         int size = taskFrameworkProperties.getSingleFetchCheckHeartTimeoutJobRows();
         int heartTimeoutPeriod = taskFrameworkProperties.getJobHeartTimeoutSeconds();
         handleGeneralHeartTimeoutJobs(size, heartTimeoutPeriod);
-        handleNotLocalAndProcessIsNotExitsJobs(size, heartTimeoutPeriod);
+        if (taskFrameworkProperties.getRunMode().isProcess()) {
+            handleNotLocalAndProcessIsNotExitsJobs(size, heartTimeoutPeriod);
+        }
     }
 
     private void handleGeneralHeartTimeoutJobs(int size, int heartTimeoutPeriod) {
@@ -78,28 +81,30 @@ public class CheckRunningJob implements Job {
     }
 
     private void handleNotLocalAndProcessIsNotExitsJobs(int size, int heartTimeoutPeriod) {
-        // docker restart then ip has been changed and process been destroyed,
-        // so we should find heart timeout not running in local when process mode
+        // ip has been changed docker restart and process has been interrupted,
+        // so we should find jobs which heart timeout and not running in local
         Page<JobEntity> jobs = getConfiguration().getTaskFrameworkService()
-                .findHeartTimeTimeoutNoLocalJobs(heartTimeoutPeriod, 0, size);
+                .findHeartTimeTimeoutNotLocalJobs(heartTimeoutPeriod, 0, size);
         jobs.stream().filter(a -> {
             ExecutorIdentifier ei = ExecutorIdentifierParser.parser(a.getExecutorIdentifier());
-            return !(HttpUtil.isConnectable(ei.getHost(), ei.getPort(), 3));
+            return !(HttpUtil.isConnectable(ei.getHost(), ei.getPort(),
+                    getConfiguration().getTaskFrameworkProperties().getCheckOdcServerCanBeConnectedTimes()));
         }).forEach(j -> handleJobRetryingOrFailed(j, a -> {
             int rows = getConfiguration().getTaskFrameworkService().updateExecutorToDestroyed(a.getId());
             if (rows > 0) {
                 log.info("Executor is not exists, update job executor to destroyed, jobId={}", a.getId());
             } else {
-                throw new TaskRuntimeException("update executor to destroyed failed, id=" + a.getId());
+                throw new TaskRuntimeException("update executor to destroyed failed, jobId=" + a.getId());
             }
         }));
     }
 
     private void handleJobRetryingOrFailed(JobEntity a, Consumer<JobIdentity> jobIdentityConsumer) {
-        getConfiguration().getTransactionManager().doInTransactionWithoutResult(() -> {
-            doHandleJobRetryingOrFailed(a, jobIdentityConsumer);
+        SilentExecutor.executeSafely("handleJobRetryingOrFailed", () -> {
+            getConfiguration().getTransactionManager().doInTransactionWithoutResult(() -> {
+                doHandleJobRetryingOrFailed(a, jobIdentityConsumer);
+            });
         });
-
     }
 
     private void doHandleJobRetryingOrFailed(JobEntity a, Consumer<JobIdentity> jobIdentityConsumer) {
