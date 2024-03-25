@@ -91,7 +91,6 @@ public class PartitionPlanRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Vo
 
     @Override
     protected void onSuccessful(Long taskId, TaskService taskService) {
-        updateFlowInstanceStatus(FlowStatus.EXECUTION_SUCCEEDED);
         taskService.succeed(taskId, generateResult(true));
         log.info("Partition plan task succeed, taskId={}", taskId);
         PartitionPlanTaskTraceContextHolder.clear();
