@@ -49,7 +49,7 @@ public class LogBizImpl implements LogBiz {
         }
 
         String logFileStr = LogUtils.getTaskLogFileWithPath(jobId, logTypeLevel);
-        return LogUtils.getLogContent(logFileStr, fetchMaxLine, fetchMaxByteSize);
+        return LogUtils.getLogContentReversed(logFileStr, fetchMaxLine, fetchMaxByteSize);
     }
 
 

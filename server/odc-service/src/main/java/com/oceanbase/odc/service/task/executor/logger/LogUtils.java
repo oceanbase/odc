@@ -42,7 +42,7 @@ public class LogUtils {
     public static final long MAX_LOG_BYTE_COUNT = 1024 * 1024;
     private static final String TASK_LOG_PATH_PATTERN = "%s/task/%s/task-log.%s";
 
-    public static String getLogContent(String file, Long fetchMaxLine, Long fetchMaxByteSize) {
+    public static String getLogContentReversed(String file, Long fetchMaxLine, Long fetchMaxByteSize) {
 
         File logFile = new File(file);
         if (!logFile.exists()) {

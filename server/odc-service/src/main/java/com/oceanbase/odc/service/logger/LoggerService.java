@@ -92,7 +92,7 @@ public class LoggerService {
                 // check log file is exist on current disk
                 String logFileStr = LogUtils.getTaskLogFileWithPath(jobEntity.getId(), level);
                 if (new File(logFileStr).exists()) {
-                    return LogUtils.getLogContent(logFileStr, LogUtils.MAX_LOG_LINE_COUNT, LogUtils.MAX_LOG_BYTE_COUNT);
+                    return LogUtils.getLogContentReversed(logFileStr, LogUtils.MAX_LOG_LINE_COUNT, LogUtils.MAX_LOG_BYTE_COUNT);
                 }
 
                 File tempFile = cloudObjectStorageService.downloadToTempFile(objId.get());
@@ -101,7 +101,7 @@ public class LoggerService {
                 } finally {
                     FileUtils.deleteQuietly(tempFile);
                 }
-                return LogUtils.getLogContent(logFileStr, LogUtils.MAX_LOG_LINE_COUNT, LogUtils.MAX_LOG_BYTE_COUNT);
+                return LogUtils.getLogContentReversed(logFileStr, LogUtils.MAX_LOG_LINE_COUNT, LogUtils.MAX_LOG_BYTE_COUNT);
 
             }
         }
@@ -124,7 +124,7 @@ public class LoggerService {
                 return response.getContentByType(new TypeReference<SuccessResponse<String>>() {}).getData();
             }
             String logFileStr = LogUtils.getTaskLogFileWithPath(jobEntity.getId(), level);
-            return LogUtils.getLogContent(logFileStr, LogUtils.MAX_LOG_LINE_COUNT, LogUtils.MAX_LOG_BYTE_COUNT);
+            return LogUtils.getLogContentReversed(logFileStr, LogUtils.MAX_LOG_LINE_COUNT, LogUtils.MAX_LOG_BYTE_COUNT);
         }
         // if log not found then return description to user
         return jobEntity.getDescription();
