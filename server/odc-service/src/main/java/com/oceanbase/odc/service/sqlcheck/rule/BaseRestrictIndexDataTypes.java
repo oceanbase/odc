@@ -145,6 +145,8 @@ abstract class BaseRestrictIndexDataTypes extends BaseRestrictPKDataTypes {
             ColumnAttributes a = d.getColumnAttributes();
             if (a == null || CollectionUtils.isEmpty(a.getConstraints())) {
                 return false;
+            } else if (d.getDataType() == null) {
+                return false;
             }
             return a.getConstraints().stream().anyMatch(c -> c.isPrimaryKey() || c.isUniqueKey())
                     && !isTypeAllowed(d.getDataType().getName());
