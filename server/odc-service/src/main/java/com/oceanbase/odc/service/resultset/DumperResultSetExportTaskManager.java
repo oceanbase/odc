@@ -46,6 +46,7 @@ import com.oceanbase.odc.service.datasecurity.DataMaskingService;
 import com.oceanbase.odc.service.datasecurity.model.MaskingAlgorithm;
 import com.oceanbase.odc.service.datasecurity.model.SensitiveColumn;
 import com.oceanbase.odc.service.datasecurity.util.DataMaskingUtil;
+import com.oceanbase.odc.service.datatransfer.DataTransferAdapter;
 import com.oceanbase.odc.service.datatransfer.model.DataTransferProperties;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.objectstorage.cloud.CloudObjectStorageService;
@@ -83,6 +84,8 @@ public class DumperResultSetExportTaskManager implements ResultSetExportTaskMana
 
     @Autowired
     private AuthenticationFacade authenticationFacade;
+
+    private DataTransferAdapter dataTransferAdapter;
 
     @PostConstruct
     public void init() {
@@ -130,7 +133,7 @@ public class DumperResultSetExportTaskManager implements ResultSetExportTaskMana
             parameter.setSql(SqlRewriteUtil.addQueryLimit(parameter.getSql(), session, parameter.getMaxRows()));
 
             ResultSetExportTask task = new ResultSetExportTask(workingDir, logDir, parameter, session,
-                    cloudObjectStorageService, dataTransferProperties);
+                    cloudObjectStorageService, dataTransferProperties, dataTransferAdapter.getMaxDumpSizeBytes());
             return new ResultSetExportTaskContext(executor.submit(task), task);
 
         } catch (Exception e) {
