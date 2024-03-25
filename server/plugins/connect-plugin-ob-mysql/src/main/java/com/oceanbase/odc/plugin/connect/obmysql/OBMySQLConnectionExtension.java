@@ -142,10 +142,11 @@ public class OBMySQLConnectionExtension implements ConnectionExtensionPoint {
         } catch (Exception e) {
             Throwable rootCause = ExceptionUtils.getRootCause(e);
             if (rootCause == null) {
-                log.warn("Failed to get connection, errMsg={}", e.getLocalizedMessage(), e);
+                log.warn("Failed to get connection, errMsg={}", ExceptionUtils.getRootCauseReason(e));
                 return TestResult.unknownError(e);
             }
-            log.warn("Failed to get connection, rooCauseErrMsg={}", rootCause.getLocalizedMessage(), e);
+            log.warn("Failed to get connection, rooCauseErrMsg={}, errMsg={}", rootCause.getLocalizedMessage(),
+                    ExceptionUtils.getRootCauseReason(e));
             String host = hostAddress.getHost();
             Integer port = hostAddress.getPort();
             if (rootCause instanceof ConnectException) {
