@@ -42,7 +42,7 @@ public class TestLogUtils {
             a.write("\n".getBytes());
             a.write("go".getBytes());
             a.write("\n".getBytes());
-            String s = LogUtils.getLogContentReversed(fileName, 2L, 100L);
+            String s = LogUtils.getLatestLogContent(fileName, 2L, 100L);
             Assert.assertTrue(s.endsWith("java\ngo\n"));
         } catch (IOException e) {
             throw new RuntimeException(e);
@@ -62,7 +62,7 @@ public class TestLogUtils {
             a.write("\n".getBytes());
             a.write("go".getBytes());
             a.write("\n".getBytes());
-            String s = LogUtils.getLogContentReversed(fileName, 3L, 100L);
+            String s = LogUtils.getLatestLogContent(fileName, 3L, 100L);
             Assert.assertEquals("test\njava\ngo\n", s);
         } catch (IOException e) {
             throw new RuntimeException(e);
