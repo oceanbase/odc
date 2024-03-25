@@ -123,7 +123,8 @@ public class LoggerService {
             // process mode when executor is not current host, forward to target
             if (!jobDispatchChecker.isExecutorOnThisMachine(jobEntity)) {
                 ExecutorIdentifier ei = ExecutorIdentifierParser.parser(jobEntity.getExecutorIdentifier());
-                boolean connectable = HttpUtil.isConnectable(ei.getHost(), ei.getPort(), 3);
+                boolean connectable = HttpUtil.isConnectable(ei.getHost(), ei.getPort(),
+                        taskFrameworkProperties.getCheckOdcServerCanBeConnectedTimes());
                 if (connectable) {
                     DispatchResponse response = requestDispatcher.forward(ei.getHost(), ei.getPort());
                     return response.getContentByType(new TypeReference<SuccessResponse<String>>() {}).getData();

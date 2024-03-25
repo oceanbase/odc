@@ -57,6 +57,8 @@ public interface TaskFrameworkProperties {
 
     long getSystemReserveMinFreeMemorySizeInMB();
 
+    int getCheckOdcServerCanBeConnectedTimes();
+
     String getStartPreparingJobCronExpression();
 
     String getCheckRunningJobCronExpression();

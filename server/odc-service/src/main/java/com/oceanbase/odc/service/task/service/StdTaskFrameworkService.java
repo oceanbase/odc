@@ -156,18 +156,20 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
     }
 
     @Override
-    public Page<JobEntity> findHeartTimeTimeoutNoLocalJobs(int timeoutSeconds, int page, int size) {
-        Specification<JobEntity> executorSpec = (root, query, cb) -> cb.and(
+    public Page<JobEntity> findHeartTimeTimeoutNotLocalJobs(int timeoutSeconds, int page, int size) {
+        Specification<JobEntity> condition = Specification.where(getRecentDaySpec(RECENT_DAY))
+                .and(SpecificationUtil.columnEqual(JobEntityColumn.STATUS, JobStatus.RUNNING))
+                .and((root, query, cb) -> getHeartTimeoutPredicate(root, cb, timeoutSeconds))
+                .and(getNotLocalExecutor());
+        return page(condition, page, size);
+    }
+
+    private static Specification<JobEntity> getNotLocalExecutor() {
+        return (root, query, cb) -> cb.and(
                 cb.equal(root.get(JobEntityColumn.RUN_MODE), TaskRunMode.PROCESS),
                 cb.or(cb.notLike(root.get(JobEntityColumn.EXECUTOR_IDENTIFIER),
                         "%" + StringUtils.escapeLike(SystemUtils.getLocalIpAddress()) + "%"),
                         cb.isNull(root.get(JobEntityColumn.EXECUTOR_IDENTIFIER))));
-
-        Specification<JobEntity> condition = Specification.where(getRecentDaySpec(RECENT_DAY))
-                .and(SpecificationUtil.columnEqual(JobEntityColumn.STATUS, JobStatus.RUNNING))
-                .and((root, query, cb) -> getHeartTimeoutPredicate(root, cb, timeoutSeconds))
-                .and(executorSpec);
-        return page(condition, page, size);
     }
 
     @Override
@@ -205,7 +207,7 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
         // select count(*) from job_job where
         // create_time > now() - 30d
         // and run_mode = 'runMode'
-        // and status <> 'PREPARING'
+        // and status not in ( 'PREPARING', 'RETRYING')
         // and executor_destroyed_time is null
 
         Root<JobEntity> root = query.from(JobEntity.class);
@@ -214,7 +216,8 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
                 cb.greaterThan(root.get(JobEntityColumn.CREATE_TIME),
                         JobDateUtils.getCurrentDateSubtractDays(RECENT_DAY)),
                 cb.equal(root.get(JobEntityColumn.RUN_MODE), runMode),
-                cb.notEqual(root.get(JobEntityColumn.STATUS), JobStatus.PREPARING),
+                cb.in(root.get(JobEntityColumn.STATUS).in(JobStatus.PREPARING, JobStatus.RETRYING)).not(),
+                cb.notEqual(root.get(JobEntityColumn.STATUS), JobStatus.RETRYING),
                 cb.isNull(root.get(JobEntityColumn.EXECUTOR_DESTROYED_TIME)),
                 executorPredicate(root, cb));
         return entityManager.createQuery(query).getSingleResult();
