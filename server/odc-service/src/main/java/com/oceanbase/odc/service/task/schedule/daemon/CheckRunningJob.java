@@ -60,7 +60,7 @@ public class CheckRunningJob implements Job {
         int size = taskFrameworkProperties.getSingleFetchCheckHeartTimeoutJobRows();
         int heartTimeoutPeriod = taskFrameworkProperties.getJobHeartTimeoutSeconds();
         handleGeneralHeartTimeoutJobs(size, heartTimeoutPeriod);
-        if(taskFrameworkProperties.getRunMode().isProcess()) {
+        if (taskFrameworkProperties.getRunMode().isProcess()) {
             handleNotLocalAndProcessIsNotExitsJobs(size, heartTimeoutPeriod);
         }
     }
