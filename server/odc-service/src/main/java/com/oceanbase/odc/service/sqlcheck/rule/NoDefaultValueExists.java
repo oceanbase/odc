@@ -76,6 +76,9 @@ public class NoDefaultValueExists implements SqlCheckRule {
     }
 
     private boolean containsIgnoreCase(String name) {
+        if (name == null) {
+            return true;
+        }
         return this.typesAllowNoDefault.stream().anyMatch(s -> StringUtils.equalsIgnoreCase(s, name));
     }
 
@@ -83,9 +86,9 @@ public class NoDefaultValueExists implements SqlCheckRule {
         return stream.filter(d -> {
             ColumnAttributes attributes = d.getColumnAttributes();
             if (attributes == null) {
-                return !containsIgnoreCase(d.getDataType().getName());
+                return !containsIgnoreCase(getDataTypeName(d));
             }
-            return attributes.getDefaultValue() == null && !containsIgnoreCase(d.getDataType().getName());
+            return attributes.getDefaultValue() == null && !containsIgnoreCase(getDataTypeName(d));
         }).map(d -> {
             String dataTypes = "N/A";
             if (CollectionUtils.isNotEmpty(typesAllowNoDefault)) {
@@ -93,6 +96,10 @@ public class NoDefaultValueExists implements SqlCheckRule {
             }
             return SqlCheckUtil.buildViolation(sql, d, getType(), new Object[] {d.getDataType().getText(), dataTypes});
         }).collect(Collectors.toList());
+    }
+
+    private String getDataTypeName(ColumnDefinition definition) {
+        return definition.getDataType() == null ? null : definition.getDataType().getName();
     }
 
 }
