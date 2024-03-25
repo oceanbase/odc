@@ -36,6 +36,7 @@ import lombok.NonNull;
  */
 @Extension
 public class ODPShardingOBMySQLTableExtension extends OBMySQLTableExtension {
+
     @Override
     public DBTable getDetail(@NonNull Connection connection, @NonNull String schemaName, @NonNull String tableName) {
         DBTable table = super.getDetail(connection, schemaName, tableName);
@@ -57,4 +58,5 @@ public class ODPShardingOBMySQLTableExtension extends OBMySQLTableExtension {
         // only use DBStatsAccessor.getTableStats() method in plugin, so we do not use connectionId
         return new ODPOBMySQLStatsAccessor("");
     }
+
 }
