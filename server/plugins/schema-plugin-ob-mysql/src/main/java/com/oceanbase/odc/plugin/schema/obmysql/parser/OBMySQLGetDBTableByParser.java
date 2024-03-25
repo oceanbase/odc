@@ -66,9 +66,9 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 public class OBMySQLGetDBTableByParser implements GetDBTableByParser {
+
     private final CreateTable createTableStmt;
     private static final char MYSQL_IDENTIFIER_WRAP_CHAR = '`';
-
 
     public OBMySQLGetDBTableByParser(@NonNull String tableDDL) {
         this.createTableStmt = parseTableDDL(tableDDL);
@@ -89,7 +89,6 @@ public class OBMySQLGetDBTableByParser implements GetDBTableByParser {
     public List<DBTableColumn> listColumns() {
         throw new UnsupportedOperationException("Not supported yet");
     }
-
 
     /**
      * The original intention of this method is to solve the time-consuming problem of obtaining

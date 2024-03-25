@@ -261,6 +261,7 @@ public class DBStructureComparisonFlowableTask extends BaseODCFlowTaskDelegate<V
         } finally {
             StructureComparisonTraceContextHolder.clear();
         }
+        super.onTimeout(taskId, taskService);
     }
 
     @Override
@@ -276,6 +277,7 @@ public class DBStructureComparisonFlowableTask extends BaseODCFlowTaskDelegate<V
             StructureComparisonTraceContextHolder.clear();
         }
 
+        super.onFailure(taskId, taskService);
     }
 
     @Override
@@ -292,6 +294,7 @@ public class DBStructureComparisonFlowableTask extends BaseODCFlowTaskDelegate<V
         } finally {
             StructureComparisonTraceContextHolder.clear();
         }
+        super.onSuccessful(taskId, taskService);
     }
 
     @Override
