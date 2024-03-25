@@ -85,6 +85,7 @@ public class DumperResultSetExportTaskManager implements ResultSetExportTaskMana
     @Autowired
     private AuthenticationFacade authenticationFacade;
 
+    @Autowired
     private DataTransferAdapter dataTransferAdapter;
 
     @PostConstruct
