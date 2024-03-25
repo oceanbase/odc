@@ -216,8 +216,7 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
                 cb.greaterThan(root.get(JobEntityColumn.CREATE_TIME),
                         JobDateUtils.getCurrentDateSubtractDays(RECENT_DAY)),
                 cb.equal(root.get(JobEntityColumn.RUN_MODE), runMode),
-                cb.in(root.get(JobEntityColumn.STATUS).in(JobStatus.PREPARING, JobStatus.RETRYING)).not(),
-                cb.notEqual(root.get(JobEntityColumn.STATUS), JobStatus.RETRYING),
+                root.get(JobEntityColumn.STATUS).in(JobStatus.PREPARING, JobStatus.RETRYING).not(),
                 cb.isNull(root.get(JobEntityColumn.EXECUTOR_DESTROYED_TIME)),
                 executorPredicate(root, cb));
         return entityManager.createQuery(query).getSingleResult();

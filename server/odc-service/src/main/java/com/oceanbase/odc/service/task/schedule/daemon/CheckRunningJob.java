@@ -24,6 +24,7 @@ import org.quartz.JobExecutionException;
 import org.springframework.data.domain.Page;
 
 import com.oceanbase.odc.common.json.JsonUtils;
+import com.oceanbase.odc.common.util.SilentExecutor;
 import com.oceanbase.odc.metadb.task.JobEntity;
 import com.oceanbase.odc.service.task.caller.ExecutorIdentifier;
 import com.oceanbase.odc.service.task.caller.ExecutorIdentifierParser;
@@ -99,13 +100,11 @@ public class CheckRunningJob implements Job {
     }
 
     private void handleJobRetryingOrFailed(JobEntity a, Consumer<JobIdentity> jobIdentityConsumer) {
-        try {
+        SilentExecutor.executeSafely("handleJobRetryingOrFailed", () -> {
             getConfiguration().getTransactionManager().doInTransactionWithoutResult(() -> {
                 doHandleJobRetryingOrFailed(a, jobIdentityConsumer);
             });
-        } catch (Exception e) {
-            log.warn("handleJobRetryingOrFailed occur exception:", e);
-        }
+        });
     }
 
     private void doHandleJobRetryingOrFailed(JobEntity a, Consumer<JobIdentity> jobIdentityConsumer) {
