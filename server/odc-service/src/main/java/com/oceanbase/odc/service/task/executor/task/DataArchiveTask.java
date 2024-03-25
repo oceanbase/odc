@@ -92,7 +92,7 @@ public class DataArchiveTask extends BaseTask<Boolean> {
             }
             progress = (tableIndex + 1.0) / parameters.getTables().size();
         }
-        return true;
+        return isSuccess;
     }
 
     private void syncTable(int tableIndex, DLMJobParameters parameters) throws Exception {
