@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.plugin.task.obmysql.partitionplan;
+package com.oceanbase.odc.plugin.task.oboracle.partitionplan;
 
 import java.sql.Connection;
 import java.util.Collections;
@@ -25,7 +25,7 @@ import org.junit.Test;
 
 import com.oceanbase.odc.plugin.task.api.partitionplan.invoker.partitionname.PartitionNameGenerator;
 import com.oceanbase.odc.plugin.task.api.partitionplan.model.DateBasedPartitionNameGeneratorConfig;
-import com.oceanbase.odc.plugin.task.obmysql.partitionplan.invoker.partitionname.OBMySQLDateBasedPartitionNameGenerator;
+import com.oceanbase.odc.plugin.task.oboracle.partitionplan.invoker.partitionname.OBOracleDateBasedPartitionNameGenerator;
 import com.oceanbase.odc.test.database.TestDBConfiguration;
 import com.oceanbase.odc.test.database.TestDBConfigurations;
 import com.oceanbase.tools.dbbrowser.model.DBTable;
@@ -34,17 +34,17 @@ import com.oceanbase.tools.dbbrowser.model.DBTablePartitionDefinition;
 import com.oceanbase.tools.dbbrowser.model.DBTablePartitionOption;
 
 /**
- * Test cases for {@link OBMySQLDateBasedPartitionNameGenerator}
+ * Test cases for {@link OBOracleDateBasedPartitionNameGenerator}
  *
  * @author yh263208
- * @date 2024-01-25 15:42
+ * @date 2024-03-21 21:40
  * @since ODC_release_4.2.4
  */
-public class OBMySQLDateBasedPartitionNameGeneratorTest {
+public class OBOracleDateBasedPartitionNameGeneratorTest {
 
     @Test
     public void generate_refUpperBound_succeed() throws Exception {
-        TestDBConfiguration configuration = TestDBConfigurations.getInstance().getTestOBMysqlConfiguration();
+        TestDBConfiguration configuration = TestDBConfigurations.getInstance().getTestOBOracleConfiguration();
         try (Connection connection = configuration.getDataSource().getConnection()) {
             DBTable dbTable = new DBTable();
             DBTablePartition partition = new DBTablePartition();
@@ -52,14 +52,14 @@ public class OBMySQLDateBasedPartitionNameGeneratorTest {
             option.setColumnNames(Collections.singletonList("col"));
             partition.setPartitionOption(option);
             DBTablePartitionDefinition definition = new DBTablePartitionDefinition();
-            definition.setMaxValues(Collections.singletonList("'2024-03-01 00:00:00'"));
+            definition.setMaxValues(Collections.singletonList("Timestamp '2024-03-01 00:00:00.1234'"));
             partition.setPartitionDefinitions(Collections.singletonList(definition));
             dbTable.setPartition(partition);
             DateBasedPartitionNameGeneratorConfig config = new DateBasedPartitionNameGeneratorConfig();
             config.setNamingPrefix("p");
             config.setNamingSuffixExpression("yyyyMMdd");
-            config.setRefPartitionKey("col");
-            PartitionNameGenerator generator = new OBMySQLDateBasedPartitionNameGenerator();
+            config.setRefPartitionKey("\"COL\"");
+            PartitionNameGenerator generator = new OBOracleDateBasedPartitionNameGenerator();
             String actual = generator.invoke(connection, dbTable, getParameters(config));
             String expect = "p20240301";
             Assert.assertEquals(expect, actual);
@@ -69,7 +69,7 @@ public class OBMySQLDateBasedPartitionNameGeneratorTest {
     private Map<String, Object> getParameters(DateBasedPartitionNameGeneratorConfig config) {
         Map<String, Object> parameters = new HashMap<>();
         DBTablePartitionDefinition definition = new DBTablePartitionDefinition();
-        definition.setMaxValues(Collections.singletonList("'2024-03-01 00:00:00'"));
+        definition.setMaxValues(Collections.singletonList("Timestamp '2024-03-01 00:00:00.1234'"));
         parameters.put(PartitionNameGenerator.TARGET_PARTITION_DEF_KEY, definition);
         parameters.put(PartitionNameGenerator.TARGET_PARTITION_DEF_INDEX_KEY, 0);
         parameters.put(PartitionNameGenerator.PARTITION_NAME_GENERATOR_KEY, config);

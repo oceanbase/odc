@@ -45,7 +45,6 @@ import com.oceanbase.odc.metadb.partitionplan.PartitionPlanTablePartitionKeyEnti
 import com.oceanbase.odc.metadb.partitionplan.PartitionPlanTablePartitionKeyEntity_;
 import com.oceanbase.odc.plugin.task.api.partitionplan.datatype.TimeDataType;
 import com.oceanbase.odc.plugin.task.api.partitionplan.invoker.create.PartitionExprGenerator;
-import com.oceanbase.odc.plugin.task.api.partitionplan.invoker.partitionname.DateBasedPartitionNameGenerator;
 import com.oceanbase.odc.plugin.task.api.partitionplan.invoker.partitionname.PartitionNameGenerator;
 import com.oceanbase.odc.plugin.task.api.partitionplan.model.DateBasedPartitionNameGeneratorConfig;
 import com.oceanbase.odc.plugin.task.api.partitionplan.model.TimeIncreaseGeneratorConfig;
@@ -139,14 +138,11 @@ public class V42417HistoricalPartitionPlanMigrate implements JdbcMigratable {
                     entity.setTableName(rs.getString("table_name"));
                     int timePrecision = getTimePrecision(Integer.parseInt(rs.getString("partition_interval_unit")));
                     DateBasedPartitionNameGeneratorConfig config = new DateBasedPartitionNameGeneratorConfig();
-                    config.setFromCurrentTime(true);
-                    config.setIntervalPrecision(timePrecision);
-                    config.setInterval(rs.getInt("partition_interval"));
                     config.setNamingSuffixExpression(rs.getString("partition_naming_suffix_expression"));
                     config.setNamingPrefix(rs.getString("partition_naming_prefix"));
                     Map<String, Object> parameters = new HashMap<>();
                     parameters.put(PartitionNameGenerator.PARTITION_NAME_GENERATOR_KEY, config);
-                    entity.setPartitionNameInvoker(DateBasedPartitionNameGenerator.GENERATOR_NAME);
+                    entity.setPartitionNameInvoker("HISTORICAL_PARTITION_NAME_GENERATOR");
                     entity.setPartitionNameInvokerParameters(JsonUtils.toJson(parameters));
 
                     PartitionPlanTablePartitionKeyEntity createEntity = new PartitionPlanTablePartitionKeyEntity();

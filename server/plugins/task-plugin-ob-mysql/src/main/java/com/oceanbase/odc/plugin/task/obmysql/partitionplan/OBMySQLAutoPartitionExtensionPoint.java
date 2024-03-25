@@ -51,6 +51,7 @@ import com.oceanbase.odc.plugin.task.obmysql.partitionplan.invoker.drop.OBMySQLH
 import com.oceanbase.odc.plugin.task.obmysql.partitionplan.invoker.drop.OBMySQLKeepLatestPartitionGenerator;
 import com.oceanbase.odc.plugin.task.obmysql.partitionplan.invoker.partitionname.OBMySQLDateBasedPartitionNameGenerator;
 import com.oceanbase.odc.plugin.task.obmysql.partitionplan.invoker.partitionname.OBMySQLExprBasedPartitionNameGenerator;
+import com.oceanbase.odc.plugin.task.obmysql.partitionplan.invoker.partitionname.OBMySQLHistoricalPartitionNameGenerator;
 import com.oceanbase.odc.plugin.task.obmysql.partitionplan.util.DBTablePartitionEditors;
 import com.oceanbase.tools.dbbrowser.editor.DBTablePartitionEditor;
 import com.oceanbase.tools.dbbrowser.model.DBTable;
@@ -183,9 +184,10 @@ public class OBMySQLAutoPartitionExtensionPoint implements AutoPartitionExtensio
 
     @Override
     public PartitionNameGenerator getPartitionNameGeneratorGeneratorByName(@NonNull String name) {
-        List<PartitionNameGenerator> candidates = new ArrayList<>(2);
+        List<PartitionNameGenerator> candidates = new ArrayList<>(3);
         candidates.add(new OBMySQLDateBasedPartitionNameGenerator());
         candidates.add(new OBMySQLExprBasedPartitionNameGenerator());
+        candidates.add(new OBMySQLHistoricalPartitionNameGenerator());
         return candidates.stream().filter(i -> Objects.equals(i.getName(), name)).findFirst()
                 .orElseThrow(() -> new IllegalArgumentException("Failed to find generator by name " + name));
     }

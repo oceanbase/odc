@@ -16,31 +16,26 @@
 package com.oceanbase.odc.plugin.task.oboracle.partitionplan.invoker.partitionname;
 
 import java.sql.Connection;
+import java.util.Date;
 
+import com.oceanbase.odc.core.sql.execute.model.TimeFormatResult;
 import com.oceanbase.odc.plugin.task.obmysql.partitionplan.invoker.SqlExprCalculator;
-import com.oceanbase.odc.plugin.task.obmysql.partitionplan.invoker.partitionname.OBMySQLExprBasedPartitionNameGenerator;
-import com.oceanbase.odc.plugin.task.obmysql.partitionplan.mapper.CellDataProcessor;
+import com.oceanbase.odc.plugin.task.obmysql.partitionplan.invoker.SqlExprCalculator.SqlExprResult;
+import com.oceanbase.odc.plugin.task.obmysql.partitionplan.invoker.partitionname.OBMySQLDateBasedPartitionNameGenerator;
 import com.oceanbase.odc.plugin.task.oboracle.partitionplan.OBOracleAutoPartitionExtensionPoint;
 import com.oceanbase.odc.plugin.task.oboracle.partitionplan.invoker.OBOracleSqlExprCalculator;
-import com.oceanbase.odc.plugin.task.oboracle.partitionplan.mapper.CellDataProcessors;
-import com.oceanbase.tools.dbbrowser.model.datatype.DataType;
 
 import lombok.NonNull;
 
 /**
- * {@link OBMySQLExprBasedPartitionNameGenerator}
+ * {@link OBOracleDateBasedPartitionNameGenerator}
  *
  * @author yh263208
- * @date 2024-01-29 15:51
+ * @date 2024-03-21 21:28
  * @since ODC_release_4.2.4
- * @see OBMySQLExprBasedPartitionNameGenerator
+ * @see OBMySQLDateBasedPartitionNameGenerator
  */
-public class OBOracleExprBasedPartitionNameGenerator extends OBMySQLExprBasedPartitionNameGenerator {
-
-    @Override
-    protected SqlExprCalculator getSqlExprCalculator(Connection connection) {
-        return new OBOracleSqlExprCalculator(connection);
-    }
+public class OBOracleDateBasedPartitionNameGenerator extends OBMySQLDateBasedPartitionNameGenerator {
 
     @Override
     protected String unquoteIdentifier(String identifier) {
@@ -48,8 +43,14 @@ public class OBOracleExprBasedPartitionNameGenerator extends OBMySQLExprBasedPar
     }
 
     @Override
-    protected CellDataProcessor getCellDataProcessor(@NonNull DataType dataType) {
-        return CellDataProcessors.getByDataType(dataType);
+    protected Date getPartitionUpperBound(@NonNull Connection connection,
+            @NonNull String partitionKey, @NonNull String upperBound) {
+        SqlExprCalculator calculator = new OBOracleSqlExprCalculator(connection);
+        SqlExprResult value = calculator.calculate(upperBound);
+        if (!(value.getValue() instanceof TimeFormatResult)) {
+            throw new IllegalStateException(upperBound + " isn't a date, " + value.getDataType().getDataTypeName());
+        }
+        return new Date(((TimeFormatResult) value.getValue()).getTimestamp());
     }
 
 }
