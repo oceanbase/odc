@@ -41,16 +41,12 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
-import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import com.oceanbase.odc.common.json.JsonUtils;
-import com.oceanbase.odc.common.util.StringUtils;
-import com.oceanbase.odc.common.util.SystemUtils;
 import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.core.shared.constant.TaskType;
 import com.oceanbase.odc.core.shared.exception.UnexpectedException;
@@ -64,9 +60,9 @@ import com.oceanbase.odc.service.collaboration.environment.EnvironmentService;
 import com.oceanbase.odc.service.collaboration.environment.model.Environment;
 import com.oceanbase.odc.service.collaboration.project.ProjectService;
 import com.oceanbase.odc.service.collaboration.project.model.Project;
+import com.oceanbase.odc.service.common.SiteUrlResolver;
 import com.oceanbase.odc.service.common.model.HostProperties;
 import com.oceanbase.odc.service.config.SystemConfigService;
-import com.oceanbase.odc.service.config.model.Configuration;
 import com.oceanbase.odc.service.connection.ConnectionService;
 import com.oceanbase.odc.service.connection.database.DatabaseService;
 import com.oceanbase.odc.service.connection.database.model.Database;
@@ -119,6 +115,8 @@ public class EventBuilder {
     private SystemConfigService systemConfigService;
     @Autowired
     private HostProperties hostProperties;
+    @Autowired
+    private SiteUrlResolver siteUrlResolver;
 
     public Event ofFailedTask(TaskEntity task) {
         Event event = ofTask(task, TaskEvent.EXECUTION_FAILED);
@@ -347,16 +345,9 @@ public class EventBuilder {
         } else {
             organizationId = ((ScheduleEntity) task).getOrganizationId();
         }
-
-        String host = Optional.ofNullable(hostProperties.getOdcHost()).orElse(SystemUtils.getLocalIpAddress());
-        String port = Optional.ofNullable(hostProperties.getOdcMappingPort()).orElse(hostProperties.getPort());
-        String odcSite = String.format("%s:%s", host, port);
-        List<Configuration> configurations = systemConfigService.queryByKeyPrefix("odc.site.url");
-        if (CollectionUtils.isNotEmpty(configurations)) {
-            String siteInMeta = configurations.get(0).getValue();
-            if (!StringUtils.contains(siteInMeta, "localhost")) {
-                odcSite = siteInMeta;
-            }
+        String odcSite = siteUrlResolver.getSiteUrl();
+        if (!odcSite.startsWith("http")) {
+            odcSite = "http://".concat(odcSite);
         }
         return String.format(TICKET_URL_TEMPLATE, odcSite, taskId, taskType, organizationId);
     }
