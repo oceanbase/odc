@@ -53,7 +53,9 @@ import com.oceanbase.odc.plugin.task.api.partitionplan.AutoPartitionExtensionPoi
 import com.oceanbase.odc.plugin.task.api.partitionplan.invoker.create.PartitionExprGenerator;
 import com.oceanbase.odc.plugin.task.api.partitionplan.invoker.drop.DropPartitionGenerator;
 import com.oceanbase.odc.plugin.task.api.partitionplan.invoker.partitionname.PartitionNameGenerator;
+import com.oceanbase.odc.plugin.task.api.partitionplan.model.DateBasedPartitionNameGeneratorConfig;
 import com.oceanbase.odc.plugin.task.api.partitionplan.model.PartitionPlanVariableKey;
+import com.oceanbase.odc.plugin.task.api.partitionplan.util.ParameterUtil;
 import com.oceanbase.odc.service.connection.database.DatabaseService;
 import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.partitionplan.model.PartitionPlanConfig;
@@ -510,12 +512,22 @@ public class PartitionPlanService {
         if (CollectionUtils.isEmpty(keyConfigs) || keyConfigs.size() > 1) {
             return;
         }
-        PartitionPlanKeyConfig keyConfig = keyConfigs.get(0);
-        DBTablePartitionOption partitioption = dbTable.getPartition().getPartitionOption();
-        if (CollectionUtils.isNotEmpty(partitioption.getColumnNames())) {
-            keyConfig.setPartitionKey(partitioption.getColumnNames().get(0));
-        } else if (StringUtils.isNotEmpty(partitioption.getExpression())) {
-            keyConfig.setPartitionKey(partitioption.getExpression());
+        DateBasedPartitionNameGeneratorConfig config = null;
+        String mapKey = PartitionNameGenerator.PARTITION_NAME_GENERATOR_KEY;
+        try {
+            config = ParameterUtil.nullSafeExtract(tableConfig.getPartitionNameInvokerParameters(),
+                    mapKey, DateBasedPartitionNameGeneratorConfig.class);
+        } catch (Exception e) {
+            // eat exception
+        }
+        DBTablePartitionOption option = dbTable.getPartition().getPartitionOption();
+        String partitionKey = CollectionUtils.isEmpty(option.getColumnNames())
+                ? option.getExpression()
+                : option.getColumnNames().get(0);
+        keyConfigs.get(0).setPartitionKey(partitionKey);
+        if (config != null) {
+            config.setRefPartitionKey(partitionKey);
+            tableConfig.getPartitionNameInvokerParameters().put(mapKey, config);
         }
     }
 

@@ -15,6 +15,8 @@
  */
 package com.oceanbase.odc.config;
 
+import static com.oceanbase.odc.core.shared.constant.OdcConstants.DEFAULT_MASK_VALUE;
+
 import java.io.IOException;
 import java.util.List;
 import java.util.Objects;
@@ -46,7 +48,9 @@ import com.oceanbase.odc.common.i18n.Internationalizable;
 import com.oceanbase.odc.common.json.JacksonFactory;
 import com.oceanbase.odc.common.json.JacksonModules;
 import com.oceanbase.odc.common.json.JacksonModules.CustomOutputSerializer;
+import com.oceanbase.odc.common.json.JacksonModules.SensitiveOutputSerializer;
 import com.oceanbase.odc.common.json.NormalDialectTypeOutput;
+import com.oceanbase.odc.common.json.SensitiveOutput;
 import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.shared.exception.UnsupportedException;
 import com.oceanbase.odc.service.connection.CloudMetadataClient;
@@ -77,7 +81,8 @@ public class BeanConfiguration {
     @Bean
     public ObjectMapper objectMapper(SensitivePropertyHandler sensitivePropertyHandler) {
         CustomOutputSerializer customOutputSerializer = new CustomOutputSerializer()
-                .addSerializer(Internationalizable.class, new I18nOutputSerializer());
+                .addSerializer(Internationalizable.class, new I18nOutputSerializer())
+                .addSerializer(SensitiveOutput.class, new SensitiveOutputSerializer(input -> DEFAULT_MASK_VALUE));
         SimpleModule dialectTypeModule =
                 new SimpleModule().addSerializer(DialectType.class, new DialectTypeOutputSerializer());
         return JacksonFactory.unsafeJsonMapper()

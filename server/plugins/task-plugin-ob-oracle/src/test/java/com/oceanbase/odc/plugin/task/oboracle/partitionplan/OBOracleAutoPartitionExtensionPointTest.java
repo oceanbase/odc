@@ -129,7 +129,7 @@ public class OBOracleAutoPartitionExtensionPointTest {
                         + PartitionPlanVariableKey.INTERVAL.getVariable() + ", 'YYYYMMDD'))");
                 config2.setIntervalGenerateExpr("NUMTOYMINTERVAL(1, 'MONTH')");
                 definition.setName(nameGen.invoke(connection, dbTable,
-                        getSqlExprBasedNameGeneratorParameters(i, config2)));
+                        getSqlExprBasedNameGeneratorParameters(i, config2, definition)));
                 partition.getPartitionDefinitions().add(definition);
             }
             partition.setPartitionOption(dbTable.getPartition().getPartitionOption());
@@ -222,9 +222,10 @@ public class OBOracleAutoPartitionExtensionPointTest {
         return parameters;
     }
 
-    private Map<String, Object> getSqlExprBasedNameGeneratorParameters(int index, SqlExprBasedGeneratorConfig config) {
+    private Map<String, Object> getSqlExprBasedNameGeneratorParameters(int index, SqlExprBasedGeneratorConfig config,
+            DBTablePartitionDefinition definition) {
         Map<String, Object> parameters = new HashMap<>();
-        parameters.put(PartitionNameGenerator.TARGET_PARTITION_DEF_KEY, new DBTablePartitionDefinition());
+        parameters.put(PartitionNameGenerator.TARGET_PARTITION_DEF_KEY, definition);
         parameters.put(PartitionNameGenerator.TARGET_PARTITION_DEF_INDEX_KEY, index);
         parameters.put(PartitionNameGenerator.PARTITION_NAME_GENERATOR_KEY, config);
         return parameters;

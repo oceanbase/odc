@@ -16,6 +16,7 @@
 package com.oceanbase.odc.plugin.task.oboracle.partitionplan;
 
 import java.sql.Connection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -25,12 +26,13 @@ import org.junit.Test;
 import com.oceanbase.odc.plugin.task.api.partitionplan.invoker.partitionname.PartitionNameGenerator;
 import com.oceanbase.odc.plugin.task.api.partitionplan.model.PartitionPlanVariableKey;
 import com.oceanbase.odc.plugin.task.api.partitionplan.model.SqlExprBasedGeneratorConfig;
-import com.oceanbase.odc.plugin.task.obmysql.partitionplan.invoker.partitionname.OBMySQLExprBasedPartitionNameGenerator;
 import com.oceanbase.odc.plugin.task.oboracle.partitionplan.invoker.partitionname.OBOracleExprBasedPartitionNameGenerator;
 import com.oceanbase.odc.test.database.TestDBConfiguration;
 import com.oceanbase.odc.test.database.TestDBConfigurations;
 import com.oceanbase.tools.dbbrowser.model.DBTable;
+import com.oceanbase.tools.dbbrowser.model.DBTablePartition;
 import com.oceanbase.tools.dbbrowser.model.DBTablePartitionDefinition;
+import com.oceanbase.tools.dbbrowser.model.DBTablePartitionOption;
 
 /**
  * Test cases for {@link OBOracleExprBasedPartitionNameGenerator}
@@ -46,9 +48,17 @@ public class OBOracleExprBasedPartitionNameGeneratorTest {
         TestDBConfiguration configuration = TestDBConfigurations.getInstance().getTestOBOracleConfiguration();
         try (Connection connection = configuration.getDataSource().getConnection()) {
             DBTable dbTable = new DBTable();
-            PartitionNameGenerator generator = new OBMySQLExprBasedPartitionNameGenerator();
+            DBTablePartition partition = new DBTablePartition();
+            DBTablePartitionOption option = new DBTablePartitionOption();
+            option.setColumnNames(Collections.singletonList("\"COL\""));
+            partition.setPartitionOption(option);
+            DBTablePartitionDefinition definition = new DBTablePartitionDefinition();
+            definition.setMaxValues(Collections.singletonList("TO_DATE('2022-01-01 12:00:00'"));
+            partition.setPartitionDefinitions(Collections.singletonList(definition));
+            dbTable.setPartition(partition);
+            PartitionNameGenerator generator = new OBOracleExprBasedPartitionNameGenerator();
             SqlExprBasedGeneratorConfig config = new SqlExprBasedGeneratorConfig();
-            config.setGenerateExpr("CONCAT('P', TO_CHAR(TO_DATE('2022-01-01 12:00:00', 'YYYY-MM-DD HH24:MI:SS') + "
+            config.setGenerateExpr("CONCAT('P', TO_CHAR(${COL}, 'YYYY-MM-DD HH24:MI:SS') + "
                     + PartitionPlanVariableKey.INTERVAL.getVariable() + ", 'YYYYMMDD'))");
             config.setIntervalGenerateExpr("NUMTOYMINTERVAL(1, 'YEAR')");
             String actual = generator.invoke(connection, dbTable, getParameters(0, config));
@@ -58,7 +68,9 @@ public class OBOracleExprBasedPartitionNameGeneratorTest {
 
     private Map<String, Object> getParameters(int index, SqlExprBasedGeneratorConfig config) {
         Map<String, Object> parameters = new HashMap<>();
-        parameters.put(PartitionNameGenerator.TARGET_PARTITION_DEF_KEY, new DBTablePartitionDefinition());
+        DBTablePartitionDefinition definition = new DBTablePartitionDefinition();
+        definition.setMaxValues(Collections.singletonList("TO_DATE('2022-01-01 12:00:00'"));
+        parameters.put(PartitionNameGenerator.TARGET_PARTITION_DEF_KEY, definition);
         parameters.put(PartitionNameGenerator.TARGET_PARTITION_DEF_INDEX_KEY, index);
         parameters.put(PartitionNameGenerator.PARTITION_NAME_GENERATOR_KEY, config);
         return parameters;

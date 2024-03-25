@@ -15,13 +15,15 @@
  */
 package com.oceanbase.odc.service.task.schedule;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.function.Supplier;
 
 import com.oceanbase.odc.common.unit.BinarySizeUnit;
 import com.oceanbase.odc.common.util.SystemUtils;
-import com.oceanbase.odc.service.task.config.JobConfiguration;
-import com.oceanbase.odc.service.task.config.JobConfigurationHolder;
 import com.oceanbase.odc.service.task.config.TaskFrameworkProperties;
+import com.oceanbase.odc.service.task.enums.TaskRunMode;
+import com.oceanbase.odc.service.task.service.TaskFrameworkService;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -34,37 +36,66 @@ import lombok.extern.slf4j.Slf4j;
 public class MonitorExecutorStatusRateLimiter implements StartJobRateLimiter {
 
     private final Supplier<TaskFrameworkProperties> taskFrameworkProperties;
+    private final TaskFrameworkService taskFrameworkService;
+    private long runningJobCountLimit;
 
-    public MonitorExecutorStatusRateLimiter(Supplier<TaskFrameworkProperties> taskFrameworkProperties) {
+    public MonitorExecutorStatusRateLimiter(Supplier<TaskFrameworkProperties> taskFrameworkProperties,
+            TaskFrameworkService taskFrameworkService) {
         this.taskFrameworkProperties = taskFrameworkProperties;
+        this.taskFrameworkService = taskFrameworkService;
+        if (taskFrameworkProperties.get().getRunMode().isProcess() && SystemUtils.isOnLinux()) {
+            this.runningJobCountLimit = calculateRunningJobCountLimit();
+        }
     }
 
     @Override
     public boolean tryAcquire() {
         if (taskFrameworkProperties.get().getRunMode().isProcess() && SystemUtils.isOnLinux()) {
-            long systemFreeMemory = SystemUtils.getSystemFreeMemory().convert(BinarySizeUnit.MB).getSizeDigit();
-            int startNewProcessMemoryMinSize =
-                    taskFrameworkProperties.get().getStartNewProcessMemoryMinSizeInMilliBytes();
-            if (systemFreeMemory * 0.5 <= startNewProcessMemoryMinSize) {
-                log.warn("Current free memory lack, systemFreeMemory={}, startNewProcessMemoryMinSize={}",
-                        systemFreeMemory, startNewProcessMemoryMinSize);
+            long count = taskFrameworkService.countRunningJobs(TaskRunMode.PROCESS);
+            if (count >= runningJobCountLimit) {
+                if (log.isDebugEnabled()) {
+                    log.debug("Amount of executor running jobs exceed limit, wait next schedule,"
+                            + " limit={}, runningJobs={}.", runningJobCountLimit, count);
+                }
                 return false;
             }
+            long systemFreeMemory = SystemUtils.getSystemFreePhysicalMemory().convert(BinarySizeUnit.MB).getSizeDigit();
+            long processMemoryMinSize = taskFrameworkProperties.get().getJobProcessMinMemorySizeInMB();
+            long memoryReserveSize = taskFrameworkProperties.get().getSystemReserveMinFreeMemorySizeInMB();
+
+            if (systemFreeMemory < (memoryReserveSize + processMemoryMinSize)) {
+                if (log.isDebugEnabled()) {
+                    log.debug("Free memory lack, systemFreeMemory={}, processMemoryMinSize={}, "
+                            + "memoryReserveSize={}", systemFreeMemory, processMemoryMinSize, memoryReserveSize);
+                }
+                return false;
+            }
+            return true;
+        } else {
+            return isExecutorWaitingToRunNotExceedThreshold();
         }
-        return isExecutorWaitingToRunNotExceedThreshold();
+    }
+
+    private long calculateRunningJobCountLimit() {
+        long totalPhysicMemory = SystemUtils.getSystemTotalPhysicalMemory().convert(BinarySizeUnit.MB).getSizeDigit();
+        long jvmXmx = SystemUtils.getJvmXmxMemory().convert(BinarySizeUnit.MB).getSizeDigit();
+        long minProcessMem = taskFrameworkProperties.get().getJobProcessMinMemorySizeInMB();
+        // limitCount = (totalPhysicMemory*0.8 - jvmXmx)/jobProcessMinMemorySize
+        return new BigDecimal(totalPhysicMemory * 0.8).subtract(BigDecimal.valueOf(jvmXmx))
+                .divide(new BigDecimal(minProcessMem), RoundingMode.FLOOR)
+                .longValue();
     }
 
     private boolean isExecutorWaitingToRunNotExceedThreshold() {
-        JobConfiguration jobConfiguration = JobConfigurationHolder.getJobConfiguration();
-        TaskFrameworkProperties taskFrameworkProperties = jobConfiguration.getTaskFrameworkProperties();
-        long count = jobConfiguration.getTaskFrameworkService().countRunningNeverHeartJobs(
-                taskFrameworkProperties.getExecutorWaitingToRunThresholdSeconds());
-
-        boolean continued = taskFrameworkProperties.getExecutorWaitingToRunThresholdCount() - count > 0;
-        if (!continued && log.isDebugEnabled()) {
-            log.debug("Amount of executors waiting to run exceed threshold, wait next schedule,"
-                    + " threshold={}, waitingJobs={}.",
-                    taskFrameworkProperties.getExecutorWaitingToRunThresholdCount(), count);
+        long count = taskFrameworkService.countRunningNeverHeartJobs(
+                taskFrameworkProperties.get().getExecutorWaitingToRunThresholdSeconds());
+        boolean continued = taskFrameworkProperties.get().getExecutorWaitingToRunThresholdCount() - count > 0;
+        if (!continued) {
+            if (log.isDebugEnabled()) {
+                log.debug("Amount of executors waiting to run exceed threshold, wait next schedule,"
+                        + " threshold={}, waitingJobs={}.",
+                        taskFrameworkProperties.get().getExecutorWaitingToRunThresholdCount(), count);
+            }
         }
         return continued;
     }

@@ -28,4 +28,8 @@ import lombok.Data;
 public class ProcessConfig {
 
     private Map<String, String> environments;
+
+    private long jvmXmxMB;
+
+    private long jvmXmsMB;
 }
