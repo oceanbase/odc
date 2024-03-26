@@ -248,13 +248,6 @@ public class FlowInstanceConfigurer extends GraphConfigurer<FlowInstance, BaseFl
         String userTaskName = FlowNodeType.APPROVAL_TASK.name() + "_callback_task_" + getNameSuffix(nextNode);
         UserTaskBuilder userTaskBuilder = nullSafeGetNodeBuilder(userTaskName, nextNode, () -> {
             UserTaskBuilder utb = new UserTaskBuilder(userTaskName);
-            int waitExecExpireIntervalSeconds = nextNode.getStrategyConfig().getPendingExpireIntervalSeconds();
-            if (waitExecExpireIntervalSeconds > 0) {
-                // add timer boundary for callback task approved expired
-                TimerBoundaryEventBuilder timerBuilder =
-                        setExpireSeconds(nextNode, utb, waitExecExpireIntervalSeconds);
-                timerBuilder.addExecutionListener(ServiceTaskPendingExpiredListener.class);
-            }
             return utb;
         });
         targetExecution.next(userTaskBuilder);
