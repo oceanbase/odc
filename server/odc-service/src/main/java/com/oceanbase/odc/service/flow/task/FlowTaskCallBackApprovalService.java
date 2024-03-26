@@ -126,6 +126,9 @@ public class FlowTaskCallBackApprovalService {
     }
 
     private void updateFlowInstance(long flowInstanceId, long flowTaskInstanceId, FlowNodeStatus flowNodeStatus) {
+        int affectRows = serviceTaskRepository.updateStatusById(flowTaskInstanceId, flowNodeStatus);
+        log.info("Modify node instance status successfully, instanceId={}, affectRows={}",
+                flowNodeStatus, affectRows);
         if (flowNodeStatus == FlowNodeStatus.COMPLETED) {
             return;
         }
