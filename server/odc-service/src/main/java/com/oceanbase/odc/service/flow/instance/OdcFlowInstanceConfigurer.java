@@ -85,7 +85,7 @@ public class OdcFlowInstanceConfigurer extends FlowInstanceConfigurer {
             });
         }
         return next(nextNode, serviceTaskBuilder -> {
-           // serviceTaskBuilder.addExecutionListener(ServiceTaskExecutingCompleteListener.class);
+            serviceTaskBuilder.addExecutionListener(ServiceTaskExecutingCompleteListener.class);
             serviceTaskBuilder.setAsynchronous(true);
             ErrorBoundaryEventBuilder cancelErrBuilder =
                     setHandleableError(nextNode, serviceTaskBuilder, ErrorCodes.FlowTaskInstanceCancelled);

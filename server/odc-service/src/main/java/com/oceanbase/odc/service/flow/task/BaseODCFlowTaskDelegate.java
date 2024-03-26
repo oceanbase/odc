@@ -114,9 +114,6 @@ public abstract class BaseODCFlowTaskDelegate<T> extends BaseRuntimeFlowableDele
         this.timeoutMillis = FlowTaskUtil.getExecutionExpirationIntervalMillis(execution);
         this.taskService.updateExecutorInfo(taskId, new ExecutorInfo(hostProperties));
         SecurityContextUtils.setCurrentUser(FlowTaskUtil.getTaskCreator(execution));
-        int affectRows = serviceTaskRepository.updateStatusById(getTargetTaskInstanceId(), FlowNodeStatus.EXECUTING);
-        log.info("Modify node instance status successfully, instanceId={}, instanceType={}, affectRows={}",
-           getTargetTaskInstanceId(), getTaskType(), affectRows);
     }
 
     private void initMonitorExecutor() {
