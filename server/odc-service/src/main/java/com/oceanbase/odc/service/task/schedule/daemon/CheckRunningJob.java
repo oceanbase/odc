@@ -76,7 +76,6 @@ public class CheckRunningJob implements Job {
             SilentExecutor.executeSafely("handleJobRetryingOrFailed", () -> {
                 handleJobRetryingOrFailed(j, a -> {
                     try {
-                        // destroy executor
                         getConfiguration().getJobDispatcher().destroy(JobIdentity.of(a.getId()));
                     } catch (JobException e) {
                         throw new TaskRuntimeException(e);
@@ -107,7 +106,6 @@ public class CheckRunningJob implements Job {
                     } else {
                         throw new TaskRuntimeException("update executor to destroyed failed, jobId=" + a.getId());
                     }
-
                 });
             });
         }
@@ -139,7 +137,6 @@ public class CheckRunningJob implements Job {
                             new JobTerminateEvent(JobIdentity.of(a.getId()), JobStatus.FAILED));
                     log.info("Set job status to FAILED accomplished, jobId={}.", a.getId());
                 }
-
             }
         });
 
