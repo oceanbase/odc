@@ -250,7 +250,7 @@ public class FlowInstanceConfigurer extends GraphConfigurer<FlowInstance, BaseFl
             UserTaskBuilder utb = new UserTaskBuilder(userTaskName);
             int waitExecExpireIntervalSeconds = nextNode.getStrategyConfig().getPendingExpireIntervalSeconds();
             if (waitExecExpireIntervalSeconds > 0) {
-                // add timer boundary for user task approved expired when odc process crash
+                // add timer boundary for callback task approved expired
                 TimerBoundaryEventBuilder timerBuilder =
                         setExpireSeconds(nextNode, utb, waitExecExpireIntervalSeconds);
                 timerBuilder.addExecutionListener(ServiceTaskPendingExpiredListener.class);
