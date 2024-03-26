@@ -16,19 +16,28 @@
 package com.oceanbase.odc.service.config;
 
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
+import javax.annotation.Nullable;
 import javax.validation.constraints.NotNull;
 
+import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cloud.context.refresh.ContextRefresher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.github.benmanes.caffeine.cache.Caffeine;
+import com.github.benmanes.caffeine.cache.LoadingCache;
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
+import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.metadb.config.SystemConfigDAO;
 import com.oceanbase.odc.metadb.config.SystemConfigEntity;
 import com.oceanbase.odc.service.config.model.Configuration;
@@ -56,6 +65,10 @@ public class SystemConfigService {
 
     @Autowired
     private List<SystemConfigRefreshMatcher> systemConfigRefreshMatchers;
+
+    private final LoadingCache<String, List<Configuration>> configCache = Caffeine.newBuilder().maximumSize(1)
+            .expireAfterWrite(2, TimeUnit.MINUTES)
+            .build(useless -> this.listAll());
 
     /**
      * odc system configuration value stored in metadb by default, <br>
@@ -126,6 +139,22 @@ public class SystemConfigService {
             consumer.accept(config);
         }
         return config;
+    }
+
+    @SkipAuthorize("odc internal usage")
+    @Nullable
+    public List<Configuration> queryCacheByKey(Collection<String> key) {
+        List<Configuration> allConfig = configCache.get("allKeys");
+        Verify.notNull(allConfig, "allConfig");
+        HashSet<String> keySet = new HashSet<>(key);
+        return allConfig.stream().filter(c -> keySet.contains(c.getKey())).collect(Collectors.toList());
+    }
+
+    @SkipAuthorize("odc internal usage")
+    @Nullable
+    public Configuration queryCacheByKey(String key) {
+        List<Configuration> configurations = queryCacheByKey(Collections.singleton(key));
+        return CollectionUtils.isNotEmpty(configurations) ? configurations.get(0) : null;
     }
 
     @SkipAuthorize("odc internal usage")
