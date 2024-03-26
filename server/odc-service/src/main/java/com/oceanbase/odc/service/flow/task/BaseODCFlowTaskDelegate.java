@@ -39,6 +39,7 @@ import com.oceanbase.odc.core.flow.exception.BaseFlowException;
 import com.oceanbase.odc.core.flow.model.AbstractFlowTaskResult;
 import com.oceanbase.odc.core.flow.model.FlowTaskResult;
 import com.oceanbase.odc.core.shared.Verify;
+import com.oceanbase.odc.core.shared.constant.TaskType;
 import com.oceanbase.odc.core.shared.exception.NotFoundException;
 import com.oceanbase.odc.metadb.flow.ServiceTaskInstanceRepository;
 import com.oceanbase.odc.metadb.task.TaskEntity;
@@ -336,6 +337,11 @@ public abstract class BaseODCFlowTaskDelegate<T> extends BaseRuntimeFlowableDele
 
     private void setDownloadLogUrl(@NonNull Long flowInstanceId) throws IOException, NotFoundException {
         TaskEntity taskEntity = taskService.detail(taskId);
+        TaskType taskType = taskEntity.getTaskType();
+        if (taskType == TaskType.PRE_CHECK || taskType == TaskType.GENERATE_ROLLBACK
+                || taskType == TaskType.SQL_CHECK) {
+            return;
+        }
         File logFile = taskService.getLogFile(taskEntity.getCreatorId(), taskId + "", taskEntity.getTaskType(),
                 OdcTaskLogLevel.ALL);
         String downloadUrl = String.format("/api/v2/flow/flowInstances/%s/tasks/log/download", flowInstanceId);
