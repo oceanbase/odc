@@ -216,7 +216,6 @@ public class PreCheckRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Void> {
             log.warn("Failed to store task result", e);
         }
         super.callback(getFlowInstanceId(), getTargetTaskInstanceId(), FlowNodeStatus.COMPLETED, riskLevelResult);
-
     }
 
     @Override

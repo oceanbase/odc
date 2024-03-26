@@ -139,8 +139,8 @@ public class AlterScheduleTask extends BaseODCFlowTaskDelegate<AlterScheduleResu
     @Override
     protected void onSuccessful(Long taskId, TaskService taskService) {
         log.info("Alter schedule succeed, taskId={}", taskId);
-        updateFlowInstanceStatus(FlowStatus.EXECUTION_SUCCEEDED);
         super.callback(getFlowInstanceId(), getTargetTaskInstanceId(), FlowNodeStatus.COMPLETED, null);
+        updateFlowInstanceStatus(FlowStatus.EXECUTION_SUCCEEDED);
     }
 
     @Override
