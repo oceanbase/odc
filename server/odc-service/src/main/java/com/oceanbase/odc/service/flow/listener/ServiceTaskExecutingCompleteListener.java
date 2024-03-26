@@ -55,7 +55,7 @@ public class ServiceTaskExecutingCompleteListener extends BaseStatusModifyListen
 
     @Override
     protected FlowNodeStatus doModifyStatusOnEnd(FlowTaskInstance target) {
-        return internalModify(target, FlowNodeStatus.EXECUTING);
+        return FlowNodeStatus.EXECUTING;
     }
 
     @Override
