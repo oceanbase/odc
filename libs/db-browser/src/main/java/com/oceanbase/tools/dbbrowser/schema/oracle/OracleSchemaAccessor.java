@@ -1253,7 +1253,7 @@ public class OracleSchemaAccessor implements DBSchemaAccessor {
                 .value(schemaName)
                 .append(") as DDL FROM dual");
         jdbcOperations.query(getDDL.toString(), rs -> {
-            view.setDdl(rs.getString(1));
+            view.setDdl(StringUtils.trim(rs.getString(1)));
         });
         fullFillComment(view);
         OracleSqlBuilder getColumns = new OracleSqlBuilder();
@@ -1551,7 +1551,7 @@ public class OracleSchemaAccessor implements DBSchemaAccessor {
                 .value(schemaName)
                 .append(") as DDL FROM dual");
         jdbcOperations.query(ddl.toString(), rs -> {
-            trigger.setDdl(rs.getString(1));
+            trigger.setDdl(StringUtils.trim(rs.getString(1)));
         });
         if (StringUtils.containsIgnoreCase(trigger.getStatus(), PLConstants.PL_OBJECT_STATUS_INVALID)) {
             trigger.setErrorMessage(PLObjectErrMsgUtils.getOraclePLObjErrMsg(jdbcOperations,
