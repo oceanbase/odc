@@ -25,9 +25,11 @@ import javax.annotation.PostConstruct;
 import org.springframework.stereotype.Service;
 
 import com.oceanbase.odc.common.util.YamlUtils;
+import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.service.config.model.ConfigurationMeta;
 
 @Service
+@SkipAuthorize("isolated by user")
 public class UserConfigMetaService {
     private Map<String, ConfigurationMeta> keyToConfigMetaMap = new HashMap<>();
 
