@@ -287,6 +287,7 @@ public class DBStructureComparisonFlowableTask extends BaseODCFlowTaskDelegate<V
         log.info("Structure comparison task succeed, taskId={}", taskId);
         try {
             taskService.succeed(taskId, taskResult);
+            super.onSuccessful(taskId, taskService);
             updateFlowInstanceStatus(FlowStatus.EXECUTION_SUCCEEDED);
             super.onSuccessful(taskId, taskService);
         } catch (Exception e) {
@@ -294,7 +295,6 @@ public class DBStructureComparisonFlowableTask extends BaseODCFlowTaskDelegate<V
         } finally {
             StructureComparisonTraceContextHolder.clear();
         }
-        super.onSuccessful(taskId, taskService);
     }
 
     @Override
