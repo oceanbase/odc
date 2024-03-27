@@ -15,6 +15,8 @@
  */
 package com.oceanbase.odc.service.task.schedule.daemon;
 
+import java.text.MessageFormat;
+
 import org.quartz.DisallowConcurrentExecution;
 import org.quartz.Job;
 import org.quartz.JobExecutionContext;
@@ -22,6 +24,8 @@ import org.quartz.JobExecutionException;
 import org.springframework.data.domain.Page;
 
 import com.oceanbase.odc.common.json.JsonUtils;
+import com.oceanbase.odc.core.alarm.AlarmEventNames;
+import com.oceanbase.odc.core.alarm.AlarmUtils;
 import com.oceanbase.odc.metadb.task.JobEntity;
 import com.oceanbase.odc.service.task.config.JobConfiguration;
 import com.oceanbase.odc.service.task.config.JobConfigurationHolder;
@@ -97,7 +101,8 @@ public class CheckRunningJob implements Job {
                         new JobTerminateEvent(JobIdentity.of(a.getId()), JobStatus.FAILED));
                 log.info("Set job status to FAILED accomplished, jobId={}.", a.getId());
             }
-
+            AlarmUtils.alarm(AlarmEventNames.TASK_HEART_TIMEOUT,
+                MessageFormat.format("Job running failed due to heart timeout, jobId={0}", a.getId()));
         }
 
     }
