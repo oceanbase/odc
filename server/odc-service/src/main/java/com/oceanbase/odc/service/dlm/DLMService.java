@@ -22,6 +22,7 @@ import java.util.List;
 import org.springframework.stereotype.Service;
 
 import com.oceanbase.odc.common.util.StringUtils;
+import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.service.dlm.model.PreviewSqlStatementsReq;
 import com.oceanbase.odc.service.dlm.utils.DataArchiveConditionUtil;
 
@@ -33,6 +34,7 @@ import com.oceanbase.odc.service.dlm.utils.DataArchiveConditionUtil;
 @Service
 public class DLMService {
 
+    @SkipAuthorize("do not access any resources")
     public List<String> previewSqlStatements(PreviewSqlStatementsReq req) {
         List<String> returnValue = new LinkedList<>();
         String previewSqlTemp = "select * from %s where %s;";

@@ -138,6 +138,7 @@ public class SystemConfigService {
         }
     }
 
+    @SkipAuthorize("public readonly resource")
     @Transactional(rollbackFor = Exception.class)
     public void insert(@NotNull List<SystemConfigEntity> entities) {
         entities.forEach(entity -> systemConfigDAO.insert(entity));
