@@ -30,7 +30,6 @@ import org.springframework.stereotype.Component;
 
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionUtil;
-import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.shared.constant.OrganizationType;
 import com.oceanbase.odc.core.sql.execute.SqlExecuteStages;
 import com.oceanbase.odc.service.connection.database.DatabaseService;
