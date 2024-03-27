@@ -75,7 +75,7 @@ public class CloudDLMJobStore implements IJobStore {
                 ResultSet resultSet = ps.executeQuery();
                 if (resultSet.next()) {
                     TaskGenerator taskGenerator = new TaskGenerator();
-                    taskGenerator.setId("generator_id");
+                    taskGenerator.setId(resultSet.getString("generator_id"));
                     taskGenerator.setGeneratorType(GeneratorType.valueOf(resultSet.getString("type")));
                     taskGenerator.setGeneratorStatus(GeneratorStatus.valueOf(resultSet.getString("status")));
                     taskGenerator.setJobId(jobId);
@@ -162,7 +162,9 @@ public class CloudDLMJobStore implements IJobStore {
                     taskMeta.setMaxPrimaryKey(PrimaryKey.valuesOf(resultSet.getString("upper_bound_primary_key")));
                     taskMeta.setCursorPrimaryKey(PrimaryKey.valuesOf(resultSet.getString("primary_key_cursor")));
                     taskMeta.setPartitionName(resultSet.getString("partition_name"));
+                    taskMetas.add(taskMeta);
                 }
+                log.info("Load history task units success,count={}", taskMetas.size());
                 return taskMetas;
             }
         }
