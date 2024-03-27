@@ -141,7 +141,8 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
         Specification<JobEntity> condition = Specification.where(getRecentDaySpec(RECENT_DAY))
                 .and(SpecificationUtil.columnIn(JobEntityColumn.STATUS,
                         Lists.newArrayList(JobStatus.CANCELED, JobStatus.DONE, JobStatus.FAILED)))
-                .and(SpecificationUtil.columnIsNull(JobEntityColumn.EXECUTOR_DESTROYED_TIME));
+                .and(SpecificationUtil.columnIsNull(JobEntityColumn.EXECUTOR_DESTROYED_TIME))
+                .and(getExecutorSpec());
         return page(condition, page, size);
     }
 
