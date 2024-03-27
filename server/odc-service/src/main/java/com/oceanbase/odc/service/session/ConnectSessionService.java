@@ -64,6 +64,7 @@ import com.oceanbase.odc.core.task.DefaultTaskManager;
 import com.oceanbase.odc.core.task.ExecuteMonitorTaskManager;
 import com.oceanbase.odc.metadb.collaboration.EnvironmentEntity;
 import com.oceanbase.odc.metadb.collaboration.EnvironmentRepository;
+import com.oceanbase.odc.service.common.util.RuntimeEnvironmentUtils;
 import com.oceanbase.odc.service.common.util.SidUtils;
 import com.oceanbase.odc.service.config.UserConfigFacade;
 import com.oceanbase.odc.service.connection.CloudMetadataClient;
@@ -149,6 +150,8 @@ public class ConnectSessionService {
 
     @Autowired
     private StateHostGenerator stateHostGenerator;
+    @Autowired
+    private RuntimeEnvironmentUtils runtimeEnvironmentUtils;
 
     @PostConstruct
     public void init() {
@@ -261,9 +264,11 @@ public class ConnectSessionService {
         Set<String> actions = authorizationFacade.getAllPermittedActions(authenticationFacade.currentUser(),
                 ResourceType.ODC_CONNECTION, "" + dataSourceId);
         connection.setPermittedActions(actions);
-        ConnectionTestResult result = connectionTesting.test(connection);
-        if (!result.isActive() && result.getErrorCode() != ErrorCodes.ConnectionInitScriptFailed) {
-            throw new VerifyException(result.getErrorMessage());
+        if (!runtimeEnvironmentUtils.isOBCloudRuntimeMode()) {
+            ConnectionTestResult result = connectionTesting.test(connection);
+            if (!result.isActive() && result.getErrorCode() != ErrorCodes.ConnectionInitScriptFailed) {
+                throw new VerifyException(result.getErrorMessage());
+            }
         }
         SqlExecuteTaskManagerFactory factory =
                 new SqlExecuteTaskManagerFactory(this.monitorTaskManager, "console", 1);

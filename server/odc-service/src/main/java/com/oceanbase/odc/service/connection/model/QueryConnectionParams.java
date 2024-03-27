@@ -56,7 +56,7 @@ public class QueryConnectionParams {
     private String hostPort;
     private String name;
     /**
-     * 数据库用户名
+     * Database username
      */
     private String username;
 
