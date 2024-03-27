@@ -68,28 +68,24 @@ public class CheckRunningJob implements Job {
         }
     }
 
-    private void handleGeneralHeartTimeoutJobs(int size, int heartTimeoutPeriod) {
+    private void handleGeneralHeartTimeoutJobs(int size, int heartTimeoutSeconds) {
         // find heart timeout job
         Page<JobEntity> jobs = getConfiguration().getTaskFrameworkService()
-                .findHeartTimeTimeoutJobs(heartTimeoutPeriod, 0, size);
+                .findHeartTimeTimeoutJobs(heartTimeoutSeconds, 0, size);
         for (JobEntity j : jobs) {
             SilentExecutor.executeSafely("handleJobRetryingOrFailed", () -> {
                 handleJobRetryingOrFailed(j, a -> {
-                    try {
-                        getConfiguration().getJobDispatcher().destroy(JobIdentity.of(a.getId()));
-                    } catch (JobException e) {
-                        throw new TaskRuntimeException(e);
-                    }
+                    getConfiguration().getJobDispatcher().destroy(JobIdentity.of(a.getId()));
                 });
             });
         }
     }
 
-    private void handleNotLocalAndProcessIsNotExitsJobs(int size, int heartTimeoutPeriod) {
+    private void handleNotLocalAndProcessIsNotExitsJobs(int size, int heartTimeoutSeconds) {
         // ip has been changed docker restart and process has been interrupted,
         // so we should find jobs which heart timeout and not running in local
         Page<JobEntity> jobs = getConfiguration().getTaskFrameworkService()
-                .findHeartTimeTimeoutNotLocalJobs(heartTimeoutPeriod, 0, size);
+                .findHeartTimeTimeoutNotLocalJobs(heartTimeoutSeconds, 0, size);
 
         List<JobEntity> jobList = jobs.stream().filter(a -> {
             ExecutorIdentifier ei = ExecutorIdentifierParser.parser(a.getExecutorIdentifier());
@@ -104,7 +100,7 @@ public class CheckRunningJob implements Job {
                     if (rows > 0) {
                         log.info("Executor is not exists, update job executor to destroyed, jobId={}", a.getId());
                     } else {
-                        throw new TaskRuntimeException("update executor to destroyed failed, jobId=" + a.getId());
+                        throw new JobException("update executor to destroyed failed, jobId={0}", a.getId());
                     }
                 });
             });
