@@ -35,6 +35,7 @@ import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
+import com.oceanbase.odc.core.shared.exception.AccessDeniedException;
 import com.oceanbase.odc.core.shared.exception.NotFoundException;
 import com.oceanbase.odc.metadb.structurecompare.StructureComparisonEntitySpecs;
 import com.oceanbase.odc.metadb.structurecompare.StructureComparisonTaskEntity;
@@ -147,6 +148,12 @@ public class StructureComparisonService {
     }
 
     private void checkPermission(@NonNull StructureComparisonTaskEntity taskEntity) {
+        if (taskEntity.getFlowInstanceId() == null) {
+            if (!taskEntity.getCreatorId().equals(authenticationFacade.currentUserId())) {
+                throw new AccessDeniedException();
+            }
+            return;
+        }
         flowInstanceService.mapFlowInstance(taskEntity.getFlowInstanceId(), flowInstance -> flowInstance, false);
     }
 }
