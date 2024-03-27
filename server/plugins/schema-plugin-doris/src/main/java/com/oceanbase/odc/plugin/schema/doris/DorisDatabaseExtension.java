@@ -19,9 +19,12 @@ import java.sql.Connection;
 
 import org.pf4j.Extension;
 
+import com.oceanbase.odc.common.util.JdbcOperationsUtil;
 import com.oceanbase.odc.plugin.schema.doris.utils.DBAccessorUtil;
 import com.oceanbase.odc.plugin.schema.obmysql.OBMySQLDatabaseExtension;
+import com.oceanbase.tools.dbbrowser.model.DBDatabase;
 import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
+import com.oceanbase.tools.dbbrowser.util.MySQLSqlBuilder;
 
 /**
  * ClassName: DorisDatabaseExtension Package: com.oceanbase.odc.plugin.schema.doris Description:
@@ -36,6 +39,13 @@ public class DorisDatabaseExtension extends OBMySQLDatabaseExtension {
     @Override
     protected DBSchemaAccessor getSchemaAccessor(Connection connection) {
         return DBAccessorUtil.getSchemaAccessor(connection);
+    }
+
+    @Override
+    public void create(Connection connection, DBDatabase database, String password) {
+        MySQLSqlBuilder sqlBuilder = new MySQLSqlBuilder();
+        sqlBuilder.append("create database ").identifier(database.getName());
+        JdbcOperationsUtil.getJdbcOperations(connection).execute(sqlBuilder.toString());
     }
 
 }
