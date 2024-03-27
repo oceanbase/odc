@@ -134,7 +134,6 @@ public class TaskApplication {
         } catch (URISyntaxException e) {
             throw new TaskRuntimeException("load log file occur error, logfile=" + taskLogFile, e);
         }
-
     }
 
     private void validEnvValues() {
