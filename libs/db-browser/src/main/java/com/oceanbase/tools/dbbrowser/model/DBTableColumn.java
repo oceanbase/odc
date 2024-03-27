@@ -210,7 +210,7 @@ public class DBTableColumn implements DBObject, DBObjectWarningDescriptor {
         MUL,
 
         /**
-         * If COLUMN_KEY is AGG, the colum is an aggregate key in an Aggregate Model table.
+         * If COLUMN_KEY is AGG, the column is an aggregate key in an Aggregate Model table.
          */
         AGG
     }
