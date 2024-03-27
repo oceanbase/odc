@@ -289,7 +289,6 @@ public class DBStructureComparisonFlowableTask extends BaseODCFlowTaskDelegate<V
             taskService.succeed(taskId, taskResult);
             super.onSuccessful(taskId, taskService);
             updateFlowInstanceStatus(FlowStatus.EXECUTION_SUCCEEDED);
-            super.onSuccessful(taskId, taskService);
         } catch (Exception e) {
             log.warn("Failed to record structure comparison task successful result", e);
         } finally {
