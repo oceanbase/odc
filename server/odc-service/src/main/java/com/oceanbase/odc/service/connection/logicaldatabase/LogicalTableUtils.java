@@ -33,6 +33,8 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import javax.validation.Valid;
+import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
 
 /**
@@ -43,7 +45,20 @@ import javax.validation.constraints.NotNull;
 public class LogicalTableUtils {
     private static final Pattern DIGIT_PATTERN = Pattern.compile("\\d+");
 
-    public static Map<String, List<String>> identifyLogicalTables(@NotNull List<String> tableNames) {
+
+    public static Map<String, List<String>> generatePatternExpressions(List<String> fullTableNames) {
+        Map<String, List<String>> patternToPhysicalTablesMap = identifyLogicalTables(fullTableNames);
+        Map<String, List<String>> patternToExpressionMap = new LinkedHashMap<>();
+        for (String pattern : patternToPhysicalTablesMap.keySet()) {
+            List<String> tableNames = patternToPhysicalTablesMap.get(pattern);
+            String expression = replacePlaceholdersWithRanges(pattern, tableNames);
+            patternToExpressionMap.put(expression, tableNames);
+        }
+        return patternToExpressionMap;
+    }
+
+
+    public static Map<String, List<String>> identifyLogicalTables(@Valid @NotEmpty List<String> tableNames) {
         // 先将表名分解为由数字序列和非数字序列组成的部分，构建基本模式
         Map<String, List<String>> basePatternToTables = tableNames.stream().collect(
             Collectors.groupingBy(tableName -> tableName.replaceAll(DIGIT_PATTERN.pattern(), "[#]"))
@@ -58,20 +73,9 @@ public class LogicalTableUtils {
             String pattern = getConsistentNumberPattern(names);
             finalPatterns.put(pattern, names);
         });
-
+        finalPatterns.forEach((pattern, names) -> System.out.println(pattern + " -> " + names));
+        System.out.println("--------------------------------------------------");
         return finalPatterns;
-    }
-
-    public static Map<String, String> generatePatternExpressions(Map<String, List<String>> patternToPhysicalTablesMap) {
-        Map<String, String> patternToExpressionMap = new LinkedHashMap<>();
-
-        for (String pattern : patternToPhysicalTablesMap.keySet()) {
-            List<String> tableNames = patternToPhysicalTablesMap.get(pattern);
-            String expression = replacePlaceholdersWithRanges(pattern, tableNames);
-            patternToExpressionMap.put(pattern, expression);
-        }
-
-        return patternToExpressionMap;
     }
 
     public static String replacePlaceholdersWithRanges(String pattern, List<String> tableNames) {
@@ -119,12 +123,10 @@ public class LogicalTableUtils {
         // 检查是否为连续序列
         boolean isConsecutive = true;
         String first = sortedNumberStrings.first();
-        String last = first;
         int step = Integer.MIN_VALUE;
         String prevNumber = first;
 
         for (String currentNumber : sortedNumberStrings.tailSet(first, false)) {
-            last = currentNumber; // 更新末尾数字
             int currentStep = Integer.parseInt(currentNumber) - Integer.parseInt(prevNumber);
             if(step == Integer.MIN_VALUE) {
                 step = currentStep; // 设置初始步长
@@ -196,27 +198,5 @@ public class LogicalTableUtils {
         }
 
         return patternBuilder.toString();
-    }
-
-
-    public static void main(String[] args) {
-        List<String> tableNames = Arrays.asList(
-            "pp_000","pp_001","pp_002","pp_049",
-            "pyn_1_2","pyn_1_3","pyn_2_2",
-            "123_a","111_a","rr_202402_t", "rr_202401_t",
-            "test_1_2", "test_2_2", "test_3_2","lebie_11_ta2", "lebie_2_ta", "lebie_3_ta", "product3_1", "product3_2", "product3_12","test_1","test_2",
-            "inventory4_1", "inventory4_2", "inventory5_1", "inventory5_2",
-            "user5_data", "user6_data", "data_2021", "data_2022", "test", "test", "test1", "test12", "1_abc", "2_abc"
-        );
-
-        //List<String> tableNames = Arrays.asList("product3_1", "product3_2", "product3_12");
-
-        //List<String> tableNames = Arrays.asList("data_2021", "data_2022");
-
-        Map<String, List<String>> logicalTables = identifyLogicalTables(tableNames);
-        logicalTables.forEach((pattern, names) -> System.out.println(pattern + " -> " + names));
-        System.out.println("--------------------------------------------------");
-        Map<String, String> patternToExpressions = generatePatternExpressions(logicalTables);
-        patternToExpressions.forEach((pattern, expression) -> System.out.println(pattern + " -> " + expression));
     }
 }

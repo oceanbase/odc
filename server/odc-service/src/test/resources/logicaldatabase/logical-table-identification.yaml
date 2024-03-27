@@ -1,0 +1,8 @@
+- fullTableNames:
+    - tb_1
+    - tb_2
+  expression2Tables:
+    - logicalExpression: tb_[1-2]
+      tables:
+        - tb_1
+        - tb_2
