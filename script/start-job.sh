@@ -9,6 +9,7 @@
 script_source=$(readlink -f $0)
 bin_directory=$(dirname $script_source)
 install_directory=$(dirname $bin_directory)
+app_log_config_file="${install_directory}/conf/log4j2-task.xml"
 current_work_directory="$(pwd)"
 gc_basic_options="-XX:+UseG1GC -XX:+PrintAdaptiveSizePolicy -XX:+PrintGCDetails -XX:+PrintGCTimeStamps -XX:+PrintGCDateStamps"
 gc_log_options="-Xloggc:${install_directory}/log/gc.log -XX:+UseGCLogFileRotation -XX:GCLogFileSize=50M -XX:NumberOfGCLogFiles=5"
@@ -74,7 +75,7 @@ function init_jvm_options() {
         spacev_java_agent_options="${SPACEV_JAVA_AGENT}"
         echo "SPACEV_JAVA_AGENT is set"
     fi
-    local log_options="-Dodc.log.directory=${app_log_directory}"
+    local log_options="-Dlog4j.configurationFile=${app_log_config_file} -Dodc.log.directory=${app_log_directory}"
     local work_dir_options="-Duser.dir=${ODC_WORK_DIR:-${current_work_directory}}"
     local plugin_options="-Dplugin.dir=${plugin_directory}"
 

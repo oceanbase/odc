@@ -121,6 +121,9 @@ public class TaskApplication {
     }
 
     private void setLog4JConfigXml() {
+        if (System.getProperty("log4j.configurationFile") != null) {
+            return;
+        }
         String taskLogFile = "log4j2-task.xml";
         LoggerContext context = (org.apache.logging.log4j.core.LoggerContext) LogManager.getContext(false);
 
@@ -131,6 +134,7 @@ public class TaskApplication {
         } catch (URISyntaxException e) {
             throw new TaskRuntimeException("load log file occur error, logfile=" + taskLogFile, e);
         }
+
     }
 
     private void validEnvValues() {
