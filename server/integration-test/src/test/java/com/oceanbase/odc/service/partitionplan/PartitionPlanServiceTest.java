@@ -221,7 +221,7 @@ public class PartitionPlanServiceTest extends ServiceTestEnv {
                     connection, DialectType.OB_MYSQL, configuration.getDefaultDBName(), tableConfig);
             Map<PartitionPlanStrategy, List<String>> expect = new HashMap<>();
             expect.put(PartitionPlanStrategy.DROP, Collections.singletonList(String.format(
-                    "ALTER TABLE %s.%s DROP PARTITION (p20220830, p20220829);\n",
+                    "ALTER TABLE %s.%s DROP PARTITION (`p20220830`, `p20220829`);\n",
                     configuration.getDefaultDBName(), MYSQL_REAL_RANGE_TABLE_NAME)));
             Assert.assertEquals(expect, actual);
         }
@@ -250,7 +250,7 @@ public class PartitionPlanServiceTest extends ServiceTestEnv {
                     connection, DialectType.OB_MYSQL, configuration.getDefaultDBName(), tableConfig);
             Map<PartitionPlanStrategy, List<String>> expect = new HashMap<>();
             expect.put(PartitionPlanStrategy.DROP, Collections.singletonList(String.format(
-                    "ALTER TABLE %s.%s DROP PARTITION (p20220830, p20220829);\n",
+                    "ALTER TABLE %s.%s DROP PARTITION (`p20220830`, `p20220829`);\n",
                     configuration.getDefaultDBName(), MYSQL_REAL_RANGE_TABLE_NAME)));
             expect.put(PartitionPlanStrategy.CREATE, Collections.singletonList(String.format(
                     "ALTER TABLE %s.%s ADD PARTITION (\n"
@@ -287,7 +287,7 @@ public class PartitionPlanServiceTest extends ServiceTestEnv {
                     connection, DialectType.OB_ORACLE, configuration.getDefaultDBName(), tableConfig);
             Map<PartitionPlanStrategy, List<String>> expect = new HashMap<>();
             expect.put(PartitionPlanStrategy.DROP, Collections.singletonList(String.format(
-                    "ALTER TABLE %s.%s DROP PARTITION (P1, P0) UPDATE GLOBAL INDEXES;",
+                    "ALTER TABLE %s.%s DROP PARTITION (\"P1\", \"P0\") UPDATE GLOBAL INDEXES;",
                     configuration.getDefaultDBName(), ORACLE_RANGE_TABLE_NAME)));
             expect.put(PartitionPlanStrategy.CREATE, Collections.singletonList(String.format("ALTER TABLE %s.%s ADD \n"
                     + "\tPARTITION \"P20240225\" VALUES LESS THAN (TO_DATE(' 2025-01-01 00:00:00', "
@@ -326,7 +326,7 @@ public class PartitionPlanServiceTest extends ServiceTestEnv {
                     connection, DialectType.OB_MYSQL, configuration.getDefaultDBName(), tableConfig);
             Map<PartitionPlanStrategy, List<String>> expect = new HashMap<>();
             expect.put(PartitionPlanStrategy.DROP, Collections.singletonList(String.format(
-                    "ALTER TABLE %s.%s DROP PARTITION (p20220830, p20220829);\n",
+                    "ALTER TABLE %s.%s DROP PARTITION (`p20220830`, `p20220829`);\n",
                     configuration.getDefaultDBName(), MYSQL_OVERLAP_RANGE_TABLE_NAME)));
             expect.put(PartitionPlanStrategy.CREATE, Collections.singletonList(String.format(
                     "ALTER TABLE %s.%s ADD PARTITION (\n"

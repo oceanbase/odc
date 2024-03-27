@@ -29,7 +29,6 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 
-import com.oceanbase.tools.dbbrowser.model.DBTableAbstractPartitionDefinition;
 import com.oceanbase.tools.dbbrowser.model.DBTablePartition;
 import com.oceanbase.tools.dbbrowser.model.DBTablePartitionDefinition;
 import com.oceanbase.tools.dbbrowser.model.DBTablePartitionOption;
@@ -259,7 +258,8 @@ public abstract class DBTablePartitionEditor implements DBObjectEditor<DBTablePa
         }
         sqlBuilder.append(tableName).append(" DROP PARTITION (");
         Validate.isTrue(!CollectionUtils.isEmpty(definitions), "Partition elements can not be empty");
-        return sqlBuilder.append(definitions.stream().map(DBTableAbstractPartitionDefinition::getName)
+
+        return sqlBuilder.append(definitions.stream().map(d -> sqlBuilder().identifier(d.getName()).toString())
                 .collect(Collectors.joining(", "))).append(");").line().toString();
     }
 

@@ -177,7 +177,7 @@ public class OBOracleAutoPartitionExtensionPointTest {
             dbTablePartition.setSchemaName(dbTable.getSchemaName());
             List<String> actual = extensionPoint.generateDropPartitionDdls(connection, dbTablePartition, true);
             List<String> expects = Collections.singletonList(String.format(
-                    "ALTER TABLE %s.%s DROP PARTITION (P0) UPDATE GLOBAL INDEXES;",
+                    "ALTER TABLE %s.%s DROP PARTITION (\"P0\") UPDATE GLOBAL INDEXES;",
                     configuration.getDefaultDBName(), RANGE_TABLE_NAME));
             Assert.assertEquals(expects, actual);
         }
@@ -199,8 +199,9 @@ public class OBOracleAutoPartitionExtensionPointTest {
             dbTablePartition.setTableName(dbTable.getName());
             dbTablePartition.setSchemaName(dbTable.getSchemaName());
             List<String> actual = extensionPoint.generateDropPartitionDdls(connection, dbTablePartition, false);
-            List<String> expects = Collections.singletonList(String.format("ALTER TABLE %s.%s DROP PARTITION (P0);\n",
-                    configuration.getDefaultDBName(), RANGE_TABLE_NAME));
+            List<String> expects =
+                    Collections.singletonList(String.format("ALTER TABLE %s.%s DROP PARTITION (\"P0\");\n",
+                            configuration.getDefaultDBName(), RANGE_TABLE_NAME));
             Assert.assertEquals(expects, actual);
         }
     }
