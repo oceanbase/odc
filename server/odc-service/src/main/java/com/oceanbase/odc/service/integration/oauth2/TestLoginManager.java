@@ -176,7 +176,7 @@ public class TestLoginManager {
         return "test".equals(parseRegistrationName(registrationId));
     }
 
-    @PreAuthenticate(actions = "read", resourceType = "ODC_INTEGRATION", isForAll = true)
+    @SkipAuthorize
     public LdapContext loadLdapContext(HttpServletRequest request) {
         boolean isLdapLogin = LDAP_REQUEST_MATCHER.matches(request);
         if (!isLdapLogin) {
