@@ -52,13 +52,15 @@ import lombok.extern.slf4j.Slf4j;
 public class DataArchiveTask extends BaseTask<Boolean> {
 
     private DLMJobFactory jobFactory;
+    private CloudDLMJobStore jobStore;
     private boolean isSuccess = true;
     private double progress = 0.0;
     private Job job;
 
     @Override
     protected void doInit(JobContext context) {
-        jobFactory = new DLMJobFactory(new CloudDLMJobStore(JobUtils.getMetaDBConnectionConfig()));
+        jobStore = new CloudDLMJobStore(JobUtils.getMetaDBConnectionConfig());
+        jobFactory = new DLMJobFactory(jobStore);
         log.info("Init data-archive job env succeed,jobIdentity={}", context.getJobIdentity());
     }
 
@@ -184,7 +186,7 @@ public class DataArchiveTask extends BaseTask<Boolean> {
 
     @Override
     protected void doClose() throws Exception {
-
+        jobStore.destroy();
     }
 
     @Override
