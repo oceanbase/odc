@@ -29,7 +29,7 @@
         ]
       }
     },
-    "output": "ALTER TABLE schema.table ADD PARTITION (\n\tPARTITION `p1` VALUES LESS THAN (1000),\n\tPARTITION `p2` VALUES LESS THAN (2000));\n"
+    "output": "ALTER TABLE `schema`.`table` ADD PARTITION (\n\tPARTITION `p1` VALUES LESS THAN (1000),\n\tPARTITION `p2` VALUES LESS THAN (2000));\n"
   },
   {
     "id": 2,
