@@ -125,7 +125,8 @@ public class TaskApplication {
         String log4jConfigurationFile = System.getProperty("log4j.configurationFile");
         // odc sever log4j2 configurationFile is log4j.xml, so we should distinguish them in process mode
         if (log4jConfigurationFile != null && log4jConfigurationFile.endsWith(taskLogFile)) {
-            log.info("Use log4j configurationFile from system properties, log4j.configurationFile={}.", log4jConfigurationFile);
+            log.info("Use log4j configurationFile from system properties, log4j.configurationFile={}.",
+                    log4jConfigurationFile);
             return;
         }
         log.info("Use default log4j configurationFile.");
