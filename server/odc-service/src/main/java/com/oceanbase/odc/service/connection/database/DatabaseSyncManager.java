@@ -16,16 +16,23 @@
 package com.oceanbase.odc.service.connection.database;
 
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
+import org.apache.commons.lang.Validate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Service;
 
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
+import com.google.common.cache.LoadingCache;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.shared.exception.BadRequestException;
+import com.oceanbase.odc.metadb.iam.UserEntity;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
+import com.oceanbase.odc.service.iam.UserService;
 import com.oceanbase.odc.service.iam.util.SecurityContextUtils;
 
 import lombok.NonNull;
@@ -41,15 +48,27 @@ import lombok.extern.slf4j.Slf4j;
 public class DatabaseSyncManager {
     @Autowired
     private DatabaseService databaseService;
+    @Autowired
+    private UserService userService;
 
     @Autowired
     @Qualifier("syncDatabaseTaskExecutor")
     private ThreadPoolTaskExecutor executor;
 
+    LoadingCache<Long, UserEntity> id2UserEntity = CacheBuilder.newBuilder().maximumSize(100)
+            .expireAfterWrite(10, TimeUnit.MINUTES)
+            .build(new CacheLoader<Long, UserEntity>() {
+                @Override
+                public UserEntity load(Long creatorId) {
+                    return userService.nullSafeGet(creatorId);
+                }
+            });
+
     @SkipAuthorize("internal usage")
     public Future<Boolean> submitSyncDataSourceTask(@NonNull ConnectionConfig connection) {
         return doExecute(() -> executor.submit(() -> {
-            SecurityContextUtils.setCurrentUser(connection.getCreatorId(), connection.getOrganizationId(), null);
+            Long creatorId = connection.getCreatorId();
+            SecurityContextUtils.setCurrentUser(creatorId, connection.getOrganizationId(), getAccountName(creatorId));
             return databaseService.internalSyncDataSourceSchemas(connection.getId());
         }));
     }
@@ -59,6 +78,17 @@ public class DatabaseSyncManager {
             return supplier.get();
         } catch (Exception ex) {
             throw new BadRequestException("sync database failed");
+        }
+    }
+
+    private String getAccountName(@NonNull Long creatorId) {
+        try {
+            UserEntity userEntity = id2UserEntity.get(creatorId);
+            Validate.notNull(userEntity, "UserEntity not found by id:" + creatorId);
+            return userEntity.getAccountName();
+        } catch (Exception e) {
+            log.warn("Failed to get user entity from cache, message:{}", e.getMessage());
+            return null;
         }
     }
 }

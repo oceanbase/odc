@@ -46,7 +46,7 @@ import com.oceanbase.odc.service.common.util.ConditionalOnProperty;
 @DependsOn({"localObjectStorageFacade", "springContextUtil"})
 // can't remove ，cause migrate is after environment properties set.
 @ConditionalOnProperty(value = "odc.iam.auth.type",
-        havingValues = {"buc", "oauth2", "obcloud"}, collectionProperty = true)
+        havingValues = {"buc", "oauth2"}, collectionProperty = true)
 public class WebModeMultiOrganizationMetaDB extends AbstractWebModeMetaDB {
 
     @Override
