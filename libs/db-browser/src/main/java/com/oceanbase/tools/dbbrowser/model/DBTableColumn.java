@@ -208,6 +208,10 @@ public class DBTableColumn implements DBObject, DBObjectWarningDescriptor {
          * occurrences of a given value are permitted within the column.
          */
         MUL,
+
+        /**
+         * If COLUMN_KEY is AGG, the colum is an aggregate key in an Aggregate Model table.
+         */
         AGG
     }
 
