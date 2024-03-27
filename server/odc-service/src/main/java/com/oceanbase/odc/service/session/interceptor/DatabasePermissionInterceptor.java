@@ -92,18 +92,6 @@ public class DatabasePermissionInterceptor extends BaseTimeConsumingInterceptor 
         }
         List<UnauthorizedDatabase> unauthorizedDatabases =
                 databaseService.filterUnauthorizedDatabases(schemaName2PermissionTypes, connectionConfig.getId(), true);
-        DialectType dialectType = connectionConfig.getDialectType();
-        if (dialectType != null) {
-            if (dialectType.isOracle()) {
-                unauthorizedDatabases =
-                        unauthorizedDatabases.stream().filter(d -> !"SYS".equalsIgnoreCase(d.getName()))
-                                .collect(Collectors.toList());
-            } else if (dialectType.isMysql()) {
-                unauthorizedDatabases = unauthorizedDatabases.stream()
-                        .filter(d -> !"information_schema".equalsIgnoreCase(d.getName()))
-                        .collect(Collectors.toList());
-            }
-        }
         if (CollectionUtils.isNotEmpty(unauthorizedDatabases)) {
             response.setUnauthorizedDatabases(unauthorizedDatabases);
             return false;
