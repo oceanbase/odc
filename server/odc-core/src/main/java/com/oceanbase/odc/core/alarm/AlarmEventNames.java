@@ -61,7 +61,6 @@ public final class AlarmEventNames {
      */
     public static final String TASK_CANCELED_FAILED = "TASK_CANCELED_FAILED";
     public static final String TASK_HEART_TIMEOUT = "TASK_HEART_TIMEOUT";
-    public static final String TASK_RUNNING_COUNT_LIMITER = "TASK_RUNNING_COUNT_LIMITER";
     public static final String TASK_START_FAILED = "TASK_START_FAILED";
     public static final String TASK_EXECUTOR_DESTROY_FAILED = "TASK_EXECUTOR_DESTROY_FAILED";
 }
