@@ -16,9 +16,12 @@
 
 package com.oceanbase.odc.service.task.caller;
 
+import java.util.Optional;
+
 import com.oceanbase.odc.common.util.SystemUtils;
 import com.oceanbase.odc.service.task.exception.JobException;
 import com.oceanbase.odc.service.task.schedule.JobIdentity;
+import com.oceanbase.odc.service.task.util.HttpUtil;
 import com.oceanbase.odc.service.task.util.JobUtils;
 
 import lombok.extern.slf4j.Slf4j;
@@ -65,8 +68,11 @@ public class ProcessJobCaller extends BaseJobCaller {
                     pid, executorName);
         }
 
+        String portString = Optional.ofNullable(SystemUtils.getEnvOrProperty("server.port"))
+                .orElse(DefaultExecutorIdentifier.DEFAULT_PORT + "");
         // set process id as namespace
         return DefaultExecutorIdentifier.builder().host(SystemUtils.getLocalIpAddress())
+                .port(Integer.parseInt(portString))
                 .namespace(pid + "")
                 .executorName(executorName).build();
     }
@@ -75,17 +81,28 @@ public class ProcessJobCaller extends BaseJobCaller {
     protected void doStop(JobIdentity ji) throws JobException {}
 
     @Override
+    protected void doDestroy(JobIdentity ji, ExecutorIdentifier ei) {
+        if (isExecutorExist(ei)) {
+            long pid = Long.parseLong(ei.getNamespace());
+            log.info("Found process, try kill it, pid={}.", pid);
+            updateExecutorDestroyed(ji, ei);
+            destroy(ei);
+            return;
+        }
+        if (!HttpUtil.isConnectable(ei.getHost(), ei.getPort())) {
+            updateExecutorDestroyed(ji, ei);
+        }
+    }
+
+    @Override
     protected void doDestroy(ExecutorIdentifier identifier) throws JobException {
         long pid = Long.parseLong(identifier.getNamespace());
-        if (isExecutorExist(identifier)) {
-            log.info("Found process, try kill it, pid={}.", pid);
-            boolean result = SystemUtils.killProcessByPid(pid);
-            if (result) {
-                log.info("Destroy succeed by kill process, executorIdentifier={},  pid={}", identifier, pid);
-            } else {
-                throw new JobException(
-                        "Destroy executor failed by kill process, identifier={0}, pid{1}=", identifier, pid);
-            }
+        boolean result = SystemUtils.killProcessByPid(pid);
+        if (result) {
+            log.info("Destroy succeed by kill process, executorIdentifier={},  pid={}", identifier, pid);
+        } else {
+            throw new JobException(
+                    "Destroy executor failed by kill process, identifier={0}, pid{1}=", identifier, pid);
         }
     }
 

@@ -200,9 +200,10 @@ public abstract class BaseJobCaller implements JobCaller {
         } else {
             throw new JobException("update executor to destroyed failed, executor={0}", executorIdentifier);
         }
-        destroy(ExecutorIdentifierParser.parser(executorIdentifier));
+        doDestroy(ji, ExecutorIdentifierParser.parser(executorIdentifier));
     }
 
+    protected abstract void doDestroy(JobIdentity ji, ExecutorIdentifier ei);
 
     private <T extends AbstractEvent> void publishEvent(T event) {
         JobConfiguration configuration = JobConfigurationHolder.getJobConfiguration();
@@ -217,6 +218,18 @@ public abstract class BaseJobCaller implements JobCaller {
         doDestroy(identifier);
     }
 
+    protected void updateExecutorDestroyed(JobIdentity ji, ExecutorIdentifier ei) {
+        JobConfiguration jobConfiguration = JobConfigurationHolder.getJobConfiguration();
+        TaskFrameworkService taskFrameworkService = jobConfiguration.getTaskFrameworkService();
+        // first update destroy time, second destroy executor.
+        // if executor failed update will be rollback, ensure distributed transaction atomicity.
+        int rows = taskFrameworkService.updateExecutorToDestroyed(ji.getId());
+        if (rows > 0) {
+            log.info("Destroy job executor succeed, jobId={}, executor={}.", ji.getId(), ei);
+        } else {
+            throw new JobException("Update executor to destroyed failed, executor={0}", ei);
+        }
+    }
 
     protected abstract ExecutorIdentifier doStart(JobContext context) throws JobException;
 

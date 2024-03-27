@@ -141,8 +141,7 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
         Specification<JobEntity> condition = Specification.where(getRecentDaySpec(RECENT_DAY))
                 .and(SpecificationUtil.columnIn(JobEntityColumn.STATUS,
                         Lists.newArrayList(JobStatus.CANCELED, JobStatus.DONE, JobStatus.FAILED)))
-                .and(SpecificationUtil.columnIsNull(JobEntityColumn.EXECUTOR_DESTROYED_TIME))
-                .and(getExecutorSpec());
+                .and(SpecificationUtil.columnIsNull(JobEntityColumn.EXECUTOR_DESTROYED_TIME));
         return page(condition, page, size);
     }
 
@@ -150,26 +149,8 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
     public Page<JobEntity> findHeartTimeTimeoutJobs(int timeoutSeconds, int page, int size) {
         Specification<JobEntity> condition = Specification.where(getRecentDaySpec(RECENT_DAY))
                 .and(SpecificationUtil.columnEqual(JobEntityColumn.STATUS, JobStatus.RUNNING))
-                .and((root, query, cb) -> getHeartTimeoutPredicate(root, cb, timeoutSeconds))
-                .and(getExecutorSpec());
+                .and((root, query, cb) -> getHeartTimeoutPredicate(root, cb, timeoutSeconds));
         return page(condition, page, size);
-    }
-
-    @Override
-    public Page<JobEntity> findHeartTimeTimeoutNotLocalJobs(int timeoutSeconds, int page, int size) {
-        Specification<JobEntity> condition = Specification.where(getRecentDaySpec(RECENT_DAY))
-                .and(SpecificationUtil.columnEqual(JobEntityColumn.STATUS, JobStatus.RUNNING))
-                .and((root, query, cb) -> getHeartTimeoutPredicate(root, cb, timeoutSeconds))
-                .and(getNotLocalExecutor());
-        return page(condition, page, size);
-    }
-
-    private static Specification<JobEntity> getNotLocalExecutor() {
-        return (root, query, cb) -> cb.and(
-                cb.equal(root.get(JobEntityColumn.RUN_MODE), TaskRunMode.PROCESS),
-                cb.or(cb.notLike(root.get(JobEntityColumn.EXECUTOR_IDENTIFIER),
-                        "%" + StringUtils.escapeLike(SystemUtils.getLocalIpAddress()) + "%"),
-                        cb.isNull(root.get(JobEntityColumn.EXECUTOR_IDENTIFIER))));
     }
 
     @Override
@@ -427,7 +408,7 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
 
     @Transactional(rollbackFor = Exception.class)
     @Override
-    public int updateStatusToCanceledWhenHeartTimeout(Long id, int heartTimeoutSeconds, String description) {
+    public int updateStatusToFailedWhenHeartTimeout(Long id, int heartTimeoutSeconds, String description) {
 
         CriteriaBuilder cb = entityManager.getCriteriaBuilder();
         CriteriaUpdate<JobEntity> update = cb.createCriteriaUpdate(JobEntity.class);
@@ -518,9 +499,7 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
         Root<JobEntity> e = update.from(JobEntity.class);
         update.set(JobEntityColumn.EXECUTOR_DESTROYED_TIME, JobDateUtils.getCurrentDate());
 
-        update.where(cb.equal(e.get(JobEntityColumn.ID), id),
-                cb.isNull(e.get(JobEntityColumn.EXECUTOR_DESTROYED_TIME)));
-
+        update.where(cb.equal(e.get(JobEntityColumn.ID), id));
         return entityManager.createQuery(update).executeUpdate();
     }
 
