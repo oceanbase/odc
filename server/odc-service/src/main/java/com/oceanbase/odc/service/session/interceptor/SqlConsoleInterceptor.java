@@ -181,6 +181,7 @@ public class SqlConsoleInterceptor extends BaseTimeConsumingInterceptor {
                                 violation.setOffset(item.getSqlTuple().getOffset());
                                 violation.setStart(0);
                                 violation.setStop(item.getSqlTuple().getOriginalSql().length());
+                                violationRule.setLevel(rule.getLevel());
                                 violationRule.setViolation(violation);
                                 violatedRules.add(violationRule);
                             });

@@ -43,16 +43,6 @@ public class TestConnectionUtil extends PluginTestEnv {
     private static final Map<ConnectType, ConnectionSession> connectionSessionMap = new HashMap<>();
 
     static {
-        ConnectionConfig obMysqlConfig = getTestConnectionConfig(ConnectType.OB_MYSQL);
-        ConnectionSession obMysqlSession = new DefaultConnectSessionFactory(obMysqlConfig).generateSession();
-        connectionSessionMap.put(ConnectType.OB_MYSQL, obMysqlSession);
-        ConnectionConfig obOracleConfig = getTestConnectionConfig(ConnectType.OB_ORACLE);
-        ConnectionSession obOracleSession = new DefaultConnectSessionFactory(obOracleConfig).generateSession();
-        connectionSessionMap.put(ConnectType.OB_ORACLE, obOracleSession);
-        ConnectionConfig mysqlConfig = getTestConnectionConfig(ConnectType.MYSQL);
-        ConnectionSession mysqlSession = new DefaultConnectSessionFactory(mysqlConfig).generateSession();
-        connectionSessionMap.put(ConnectType.MYSQL, mysqlSession);
-
         Thread shutdownHookThread = new Thread(TestConnectionUtil::expireConnectionSession);
         shutdownHookThread.setDaemon(true);
         shutdownHookThread.setName("thread-odc-unit-test-shutdown-hook");
@@ -60,10 +50,12 @@ public class TestConnectionUtil extends PluginTestEnv {
     }
 
     public static ConnectionSession getTestConnectionSession(ConnectType type) {
-        if (connectionSessionMap.containsKey(type)) {
-            return connectionSessionMap.get(type);
+        if (!connectionSessionMap.containsKey(type)) {
+            ConnectionConfig config = getTestConnectionConfig(type);
+            ConnectionSession session = new DefaultConnectSessionFactory(config).generateSession();
+            connectionSessionMap.put(type, session);
         }
-        throw new UnsupportedOperationException(String.format("Test DB for %s mode is not supported yet", type));
+        return connectionSessionMap.get(type);
     }
 
     public static ConnectionConfig getTestConnectionConfig(ConnectType type) {

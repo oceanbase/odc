@@ -92,12 +92,13 @@ public class ResultSetExportTask implements Callable<ResultSetExportResult> {
     private final DataTransferConfig transferConfig;
     private final ConnectionSession session;
     private final DataTransferProperties dataTransferProperties;
+    private final Long maxDumpSizeBytes;
     @Getter
     private DataTransferJob job;
 
     public ResultSetExportTask(File workingDir, File logDir, ResultSetExportTaskParameter parameter,
             ConnectionSession session, CloudObjectStorageService cloudObjectStorageService,
-            DataTransferProperties dataTransferProperties) {
+            DataTransferProperties dataTransferProperties, Long maxDumpSizeBytes) {
         PreConditions.notBlank(parameter.getFileName(), "req.fileName");
         this.parameter = parameter;
         this.logDir = logDir;
@@ -107,6 +108,7 @@ public class ResultSetExportTask implements Callable<ResultSetExportResult> {
         this.cloudObjectStorageService = cloudObjectStorageService;
         this.dataTransferProperties = dataTransferProperties;
         this.transferConfig = convertParam2TransferConfig(parameter);
+        this.maxDumpSizeBytes = maxDumpSizeBytes;
     }
 
     @Override
@@ -197,6 +199,7 @@ public class ResultSetExportTask implements Callable<ResultSetExportResult> {
         connectionInfo.setSchema(parameter.getDatabase());
         config.setConnectionInfo(connectionInfo);
 
+        config.setMaxDumpSizeBytes(maxDumpSizeBytes);
 
         config.setQuerySql(parameter.getSql());
         config.setFileType(parameter.getFileFormat().name());

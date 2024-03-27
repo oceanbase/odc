@@ -179,8 +179,8 @@ main() {
     # if ODC_BOOT_MODE is TASK_EXECUTOR start odc server as task executor mode
     if [[ "${ODC_BOOT_MODE}" == "TASK_EXECUTOR" ]]; then
         echo "start odc as ${ODC_BOOT_MODE}"
-        sh -c "./start-job.sh"
-        exit $?
+        sh -c "${install_directory}/bin/start-job.sh"
+        exit 0
     fi
 
     if [[ "$1" == "--help" ]]; then

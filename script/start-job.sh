@@ -12,7 +12,7 @@ install_directory=$(dirname $bin_directory)
 app_log_config_file="${install_directory}/conf/log4j2-task.xml"
 current_work_directory="$(pwd)"
 gc_basic_options="-XX:+UseG1GC -XX:+PrintAdaptiveSizePolicy -XX:+PrintGCDetails -XX:+PrintGCTimeStamps -XX:+PrintGCDateStamps"
-gc_log_options="-Xloggc:${install_directory}/log/task/gc.log -XX:+UseGCLogFileRotation -XX:GCLogFileSize=50M -XX:NumberOfGCLogFiles=5"
+gc_log_options="-Xloggc:${install_directory}/log/gc.log -XX:+UseGCLogFileRotation -XX:GCLogFileSize=50M -XX:NumberOfGCLogFiles=5"
 default_heap_options="-XX:MaxRAMPercentage=60.0 -XX:InitialRAMPercentage=60.0"
 default_gc_options="${gc_basic_options} ${gc_log_options}"
 default_oom_options="-XX:+ExitOnOutOfMemoryError"
