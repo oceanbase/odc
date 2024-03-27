@@ -56,7 +56,8 @@ public class CheckRunningJob implements Job {
         int heartTimeoutSeconds = taskFrameworkProperties.getJobHeartTimeoutSeconds();
         // find heart timeout job
         Page<JobEntity> jobs = getConfiguration().getTaskFrameworkService()
-                .findHeartTimeTimeoutJobs(heartTimeoutSeconds, 0, getFetchRowSize(taskFrameworkProperties.getRunMode()));
+                .findHeartTimeTimeoutJobs(heartTimeoutSeconds, 0,
+                        getFetchRowSize(taskFrameworkProperties.getRunMode()));
         jobs.forEach(this::handleJobRetryingOrFailed);
 
     }

@@ -46,6 +46,7 @@ public interface TaskFrameworkProperties {
     int getSingleFetchDestroyExecutorJobRows();
 
     int getSingleFetchCheckHeartTimeoutJobRows();
+
     int getSingleMaxFetchCheckHeartTimeoutJobRows();
 
     int getMaxHeartTimeoutRetryTimes();
