@@ -30,6 +30,7 @@ import org.springframework.stereotype.Component;
 
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionUtil;
+import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.shared.constant.OrganizationType;
 import com.oceanbase.odc.core.sql.execute.SqlExecuteStages;
 import com.oceanbase.odc.service.connection.database.DatabaseService;
@@ -90,7 +91,19 @@ public class DatabasePermissionInterceptor extends BaseTimeConsumingInterceptor 
             }
         }
         List<UnauthorizedDatabase> unauthorizedDatabases =
-                databaseService.filterUnauthorizedDatabases(schemaName2PermissionTypes, connectionConfig.getId());
+                databaseService.filterUnauthorizedDatabases(schemaName2PermissionTypes, connectionConfig.getId(), true);
+        DialectType dialectType = connectionConfig.getDialectType();
+        if (dialectType != null) {
+            if (dialectType.isOracle()) {
+                unauthorizedDatabases =
+                        unauthorizedDatabases.stream().filter(d -> !"SYS".equalsIgnoreCase(d.getName()))
+                                .collect(Collectors.toList());
+            } else if (dialectType.isMysql()) {
+                unauthorizedDatabases = unauthorizedDatabases.stream()
+                        .filter(d -> !"information_schema".equalsIgnoreCase(d.getName()))
+                        .collect(Collectors.toList());
+            }
+        }
         if (CollectionUtils.isNotEmpty(unauthorizedDatabases)) {
             response.setUnauthorizedDatabases(unauthorizedDatabases);
             return false;
