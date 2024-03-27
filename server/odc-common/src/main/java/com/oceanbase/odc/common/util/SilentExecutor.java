@@ -15,6 +15,8 @@
  */
 package com.oceanbase.odc.common.util;
 
+import com.oceanbase.odc.common.function.Procedure;
+
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -25,11 +27,12 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class SilentExecutor {
 
-    public static void executeSafely(String method, Runnable operation) {
+    public static void executeSafely(Procedure operation) {
         try {
-            operation.run();
+            operation.invoke();
         } catch (Exception e) {
-            log.warn(String.format("Execute %s failed.", method), e);
+            StackTraceElement element = Thread.currentThread().getStackTrace()[2];
+            log.warn("Execute {}#{} failed.", element.getClassName(), element.getMethodName(), e);
         }
     }
 }

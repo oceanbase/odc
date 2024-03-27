@@ -16,10 +16,6 @@
 package com.oceanbase.odc.service.task.util;
 
 import java.io.IOException;
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
-import java.net.Socket;
-import java.net.SocketAddress;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
@@ -37,6 +33,7 @@ import org.apache.http.impl.client.HttpClientBuilder;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.oceanbase.odc.common.json.JsonUtils;
+import com.oceanbase.odc.service.common.response.OdcResult;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -99,40 +96,14 @@ public class HttpUtil {
         return JsonUtils.fromJson(response, responseTypeRef);
     }
 
-    public static boolean isConnectable(String server, int servPort, int retryTimes) {
-        boolean connectable = false;
-        for (int i = 0; i < retryTimes; i++) {
-            connectable = isConnectable(server, servPort);
-            if (connectable) {
-                break;
-            }
-        }
-        return connectable;
-    }
-
     public static boolean isConnectable(String server, int servPort) {
+        String url = String.format("http://%s:%d/api/v1/heartbeat/isHealthy", server, servPort);
         try {
-            InetAddress ad = InetAddress.getByName(server);
-            boolean state = ad.isReachable(1000);
-            if (!state) {
-                log.warn("Target server can not reachable, servIp={}, servPort={}", server, servPort);
-                return false;
-            }
+            OdcResult<Boolean> result = request(url, new TypeReference<OdcResult<Boolean>>() {});
+            return result.getData();
         } catch (IOException e) {
-            log.warn("Test target server can not be connected, servIp={}, servPort={}", server, servPort);
+            log.warn("Check odc server health failed, url={}", url);
             return false;
         }
-        try (Socket socket = new Socket()) {
-            socket.setReceiveBufferSize(8192);
-            socket.setSoTimeout(1000);
-            SocketAddress address = new InetSocketAddress(server, servPort);
-            // Test tcp can be connected succeed
-            socket.connect(address, 1000);
-            return true;
-        } catch (IOException e) {
-            log.warn("Target port can not be connected, servIp={}, servPort={}", server, servPort);
-            return false;
-        }
-
     }
 }

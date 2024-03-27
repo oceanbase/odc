@@ -46,6 +46,7 @@ public interface TaskFrameworkProperties {
     int getSingleFetchDestroyExecutorJobRows();
 
     int getSingleFetchCheckHeartTimeoutJobRows();
+    int getSingleMaxFetchCheckHeartTimeoutJobRows();
 
     int getMaxHeartTimeoutRetryTimes();
 
@@ -56,8 +57,6 @@ public interface TaskFrameworkProperties {
     long getJobProcessMaxMemorySizeInMB();
 
     long getSystemReserveMinFreeMemorySizeInMB();
-
-    int getCheckOdcServerCanBeConnectedTimes();
 
     String getStartPreparingJobCronExpression();
 

@@ -65,6 +65,9 @@ public class DefaultTaskFrameworkProperties implements TaskFrameworkProperties {
     // single fetch job rows to check report timeout or not
     private int singleFetchCheckHeartTimeoutJobRows = 100;
 
+    // single fetch max job rows
+    private int singleMaxFetchCheckHeartTimeoutJobRows = 10000;
+
     // max retry times after heart timeout
     private int maxHeartTimeoutRetryTimes = 3;
 
@@ -79,8 +82,6 @@ public class DefaultTaskFrameworkProperties implements TaskFrameworkProperties {
 
     // job will not be started if systemFreeMemory less than this setting
     private long systemReserveMinFreeMemorySizeInMB = 1024;
-
-    private int checkOdcServerCanBeConnectedTimes = 3;
 
     private String startPreparingJobCronExpression;
 

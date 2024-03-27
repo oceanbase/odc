@@ -20,6 +20,7 @@ import java.util.Optional;
 
 import com.oceanbase.odc.service.task.exception.JobException;
 import com.oceanbase.odc.service.task.schedule.JobIdentity;
+import com.oceanbase.odc.service.task.util.HttpUtil;
 import com.oceanbase.odc.service.task.util.JobUtils;
 
 import lombok.extern.slf4j.Slf4j;
@@ -52,17 +53,20 @@ public class K8sJobCaller extends BaseJobCaller {
     }
 
     @Override
-    public void doStop(JobIdentity ji) throws JobException {
+    public void doStop(JobIdentity ji) throws JobException {}
 
-
+    @Override
+    protected void doDestroy(JobIdentity ji, ExecutorIdentifier ei) {
+        if (isExecutorExist(ei)) {
+            log.info("Found pod, delete it,jobId={}, pod={}.", ji.getId(), ei.getExecutorName());
+            updateExecutorDestroyed(ji, ei);
+            destroy(ei);
+        }
     }
 
     @Override
     protected void doDestroy(ExecutorIdentifier identifier) throws JobException {
-        if (isExecutorExist(identifier)) {
-            log.info("Found pod {}, delete it.", identifier.getExecutorName());
-            client.delete(podConfig.getNamespace(), identifier.getExecutorName());
-        }
+        client.delete(podConfig.getNamespace(), identifier.getExecutorName());
     }
 
     @Override
