@@ -41,7 +41,7 @@ public class DefaultTagService extends AbstractTagService {
     }
 
     @Override
-    boolean checkUserTag(Long userId, String labelKey, String labelValue) {
+    public boolean checkUserTag(Long userId, String labelKey, String labelValue) {
         Configuration configuration = systemConfigService.queryCacheByKey(TAG_SERVICE_CONFIG_KEY);
         if (configuration == null) {
             return false;
