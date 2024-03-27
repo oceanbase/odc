@@ -489,7 +489,7 @@ public class MysqlModeSqlParserListener extends OBParserBaseListener implements 
             DBIndex index = new DBIndex();
             index.setName(handleObjectName(outOfLineIndex.getIndexName()));
             index.setRange(DBIndexRangeType.GLOBAL);
-            if (outOfLineIndex.getIndexOptions().getGlobal() != null
+            if (outOfLineIndex.getIndexOptions() != null && outOfLineIndex.getIndexOptions().getGlobal() != null
                     && !outOfLineIndex.getIndexOptions().getGlobal()) {
                 index.setRange(DBIndexRangeType.LOCAL);
             }
