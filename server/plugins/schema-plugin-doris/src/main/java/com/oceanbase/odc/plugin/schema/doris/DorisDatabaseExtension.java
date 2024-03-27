@@ -45,6 +45,7 @@ public class DorisDatabaseExtension extends OBMySQLDatabaseExtension {
     public void create(Connection connection, DBDatabase database, String password) {
         MySQLSqlBuilder sqlBuilder = new MySQLSqlBuilder();
         sqlBuilder.append("create database ").identifier(database.getName());
+        // TODO: Support database properties
         JdbcOperationsUtil.getJdbcOperations(connection).execute(sqlBuilder.toString());
     }
 
