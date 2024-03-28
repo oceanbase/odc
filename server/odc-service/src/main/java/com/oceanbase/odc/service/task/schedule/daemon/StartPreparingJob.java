@@ -61,6 +61,11 @@ public class StartPreparingJob implements Job {
         // scan preparing job
         TaskFrameworkService taskFrameworkService = configuration.getTaskFrameworkService();
 
+        if (!configuration.getTaskFrameworkProperties().isEnabled()) {
+            configuration.getTaskFrameworkDisabledHandler().handleJobToFailed();
+            return;
+        }
+
         Page<JobEntity> jobs = taskFrameworkService.find(
                 Lists.newArrayList(JobStatus.PREPARING, JobStatus.RETRYING), 0,
                 taskFrameworkProperties.getSingleFetchPreparingJobRows());

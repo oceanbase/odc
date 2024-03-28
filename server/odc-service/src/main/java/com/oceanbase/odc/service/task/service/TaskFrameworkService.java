@@ -54,6 +54,7 @@ public interface TaskFrameworkService {
     Page<JobEntity> find(List<JobStatus> status, int page, int size);
 
     Page<JobEntity> findHeartTimeTimeoutJobs(int timeoutSeconds, int page, int size);
+    Page<JobEntity> findNotTerminalJobs(int page, int size);
 
     /**
      * count the jobs started time before neverHeartSeconds which status is running and no heart
