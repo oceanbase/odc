@@ -186,7 +186,11 @@ public abstract class BaseJobCaller implements JobCaller {
         TaskFrameworkService taskFrameworkService = jobConfiguration.getTaskFrameworkService();
         JobEntity jobEntity = taskFrameworkService.find(ji.getId());
         String executorIdentifier = jobEntity.getExecutorIdentifier();
-        if (executorIdentifier == null || jobEntity.getExecutorDestroyedTime() != null) {
+        if (jobEntity.getExecutorDestroyedTime() != null) {
+            return;
+        }
+        if (executorIdentifier == null) {
+            updateExecutorDestroyed(ji);
             return;
         }
         log.info("Preparing destroy,jobId={}, executorIdentifier={}.", ji.getId(), executorIdentifier);
@@ -207,14 +211,14 @@ public abstract class BaseJobCaller implements JobCaller {
         doDestroyInternal(identifier);
     }
 
-    protected void updateExecutorDestroyed(JobIdentity ji, ExecutorIdentifier ei) throws JobException {
+    protected void updateExecutorDestroyed(JobIdentity ji) throws JobException {
         JobConfiguration jobConfiguration = JobConfigurationHolder.getJobConfiguration();
         TaskFrameworkService taskFrameworkService = jobConfiguration.getTaskFrameworkService();
         int rows = taskFrameworkService.updateExecutorToDestroyed(ji.getId());
         if (rows > 0) {
-            log.info("Destroy job executor succeed, jobId={}, executor={}.", ji.getId(), ei);
+            log.info("Destroy job executor succeed, jobId={}.", ji.getId());
         } else {
-            throw new JobException("Update executor to destroyed failed, executor={0}", ei);
+            throw new JobException("Update executor to destroyed failed, JodId={0}", ji.getId());
         }
     }
 

@@ -92,13 +92,13 @@ public class ProcessJobCaller extends BaseJobCaller {
             log.info("Found process, try kill it, pid={}.", pid);
             // first update destroy time, second destroy executor.
             // if executor failed update will be rollback, ensure distributed transaction atomicity.
-            updateExecutorDestroyed(ji, ei);
+            updateExecutorDestroyed(ji);
             destroyInternal(ei);
             return;
         }
 
         if (SystemUtils.getLocalIpAddress().equals(ei.getHost())) {
-            updateExecutorDestroyed(ji, ei);
+            updateExecutorDestroyed(ji);
             return;
         }
         JobConfiguration configuration = JobConfigurationHolder.getJobConfiguration();
@@ -112,7 +112,7 @@ public class ProcessJobCaller extends BaseJobCaller {
                         MessageFormat.format("Cannot connect to target identifier, jodId={0}, identifier={1}",
                                 ji.getId(), ei));
             }
-            updateExecutorDestroyed(ji, ei);
+            updateExecutorDestroyed(ji);
         }
     }
 

@@ -60,7 +60,7 @@ public class K8sJobCaller extends BaseJobCaller {
             log.info("Found pod, delete it,jobId={}, pod={}.", ji.getId(), ei.getExecutorName());
             destroyInternal(ei);
         }
-        updateExecutorDestroyed(ji, ei);
+        updateExecutorDestroyed(ji);
     }
 
     @Override
