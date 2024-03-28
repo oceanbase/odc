@@ -81,7 +81,7 @@ public class JwtService {
                         SystemConfigEntity jwtSecretKey =
                                 createSystemConfigEntity(ENCRYPTION_JWT_KEY_SYSTEM_CONFIG_KEY,
                                         tokenSecret, "ODC jwt secret key");
-                        systemConfigService.saveConfig(Collections.singletonList(jwtSecretKey));
+                        systemConfigService.upsert(Collections.singletonList(jwtSecretKey));
                     }
 
                 } finally {
