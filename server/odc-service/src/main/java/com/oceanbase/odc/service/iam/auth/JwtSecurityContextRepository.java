@@ -35,7 +35,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.web.context.HttpRequestResponseHolder;
 import org.springframework.security.web.context.SecurityContextRepository;
-import org.springframework.stereotype.Service;
+import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
 import com.auth0.jwt.interfaces.Claim;
@@ -48,7 +48,7 @@ import com.oceanbase.odc.service.iam.model.User;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-@Service
+@Component
 @ConditionalOnProperty(value = {"odc.iam.auth.method"}, havingValue = "jwt")
 public class JwtSecurityContextRepository implements SecurityContextRepository {
 

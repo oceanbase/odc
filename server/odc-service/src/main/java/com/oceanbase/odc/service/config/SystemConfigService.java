@@ -154,7 +154,7 @@ public class SystemConfigService {
         return needRefresh;
     }
 
-    @SkipAuthorize("public readonly resource")
+    @SkipAuthorize("odc internal usage")
     @Transactional(rollbackFor = Exception.class)
     public void upsert(@NotNull List<SystemConfigEntity> entities) {
         entities.forEach(entity -> systemConfigDAO.upsert(entity));
