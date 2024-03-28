@@ -61,7 +61,7 @@ public class DefaultJobTerminateListener extends AbstractEventListener<JobTermin
     @Override
     public void onEvent(JobTerminateEvent event) {
         JobEntity jobEntity = taskFrameworkService.find(event.getJi().getId());
-        if (jobEntity.getJobType().equals("DLM")) {
+        if ("DLM".equals(jobEntity.getJobType())) {
             ScheduleTaskRepository taskRepository = SpringContextUtil.getBean(ScheduleTaskRepository.class);
             ScheduleService scheduleService = SpringContextUtil.getBean(ScheduleService.class);
             scheduleTaskService.findByJobId(jobEntity.getId()).ifPresent(o -> {

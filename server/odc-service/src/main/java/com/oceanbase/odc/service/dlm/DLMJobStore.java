@@ -51,12 +51,12 @@ import lombok.extern.slf4j.Slf4j;
  * @Descripition:
  */
 @Slf4j
-public class CloudDLMJobStore implements IJobStore {
+public class DLMJobStore implements IJobStore {
 
     private DruidDataSource dataSource;
     private boolean enableBreakpointRecovery;
 
-    public CloudDLMJobStore(ConnectionConfig metaDBConfig) {
+    public DLMJobStore(ConnectionConfig metaDBConfig) {
         this.dataSource = (DruidDataSource) new DruidDataSourceFactory(metaDBConfig).getDataSource();
         initEnableBreakpointRecovery();
     }

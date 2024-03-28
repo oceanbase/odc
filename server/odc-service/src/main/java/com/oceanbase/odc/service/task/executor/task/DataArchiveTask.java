@@ -22,8 +22,8 @@ import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.sql.parser.AbstractSyntaxTreeFactories;
 import com.oceanbase.odc.core.sql.parser.AbstractSyntaxTreeFactory;
-import com.oceanbase.odc.service.dlm.CloudDLMJobStore;
 import com.oceanbase.odc.service.dlm.DLMJobFactory;
+import com.oceanbase.odc.service.dlm.DLMJobStore;
 import com.oceanbase.odc.service.schedule.job.DLMJobParameters;
 import com.oceanbase.odc.service.task.caller.JobContext;
 import com.oceanbase.odc.service.task.constants.JobParametersKeyConstants;
@@ -52,14 +52,14 @@ import lombok.extern.slf4j.Slf4j;
 public class DataArchiveTask extends BaseTask<Boolean> {
 
     private DLMJobFactory jobFactory;
-    private CloudDLMJobStore jobStore;
+    private DLMJobStore jobStore;
     private boolean isSuccess = true;
     private double progress = 0.0;
     private Job job;
 
     @Override
     protected void doInit(JobContext context) {
-        jobStore = new CloudDLMJobStore(JobUtils.getMetaDBConnectionConfig());
+        jobStore = new DLMJobStore(JobUtils.getMetaDBConnectionConfig());
         jobFactory = new DLMJobFactory(jobStore);
         log.info("Init data-archive job env succeed,jobIdentity={}", context.getJobIdentity());
     }
