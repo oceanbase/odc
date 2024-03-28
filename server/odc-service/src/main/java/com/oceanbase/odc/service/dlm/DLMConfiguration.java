@@ -55,20 +55,14 @@ public class DLMConfiguration {
     private int defaultScanBatchSize;
 
     @Bean
-    public JobMetaFactory jobMetaFactory(IJobStore jobStore) {
-        JobMetaFactory jobMetaFactory = new JobMetaFactory();
-        jobMetaFactory.setJobStore(jobStore);
-        jobMetaFactory.setSingleTaskThreadPoolSize(singleTaskThreadPoolSize);
-        jobMetaFactory.setReadWriteRatio(readWriteRatio);
-        jobMetaFactory.setTaskConnectionQueryTimeout(taskConnectionQueryTimeout);
-        jobMetaFactory.setDefaultShardingStrategy(shardingStrategy);
-        jobMetaFactory.setDefaultScanBatchSize(defaultScanBatchSize);
-        return jobMetaFactory;
-    }
-
-    @Bean
-    public DataArchiveJobFactory dataArchiveJobFactory(JobMetaFactory jobMetaFactory) {
-        return new DataArchiveJobFactory(jobMetaFactory);
+    public DLMJobFactory dlmJobFactory(IJobStore jobStore) {
+        DLMJobFactory dlmJobFactory = new DLMJobFactory(jobStore);
+        dlmJobFactory.setSingleTaskThreadPoolSize(singleTaskThreadPoolSize);
+        dlmJobFactory.setReadWriteRatio(readWriteRatio);
+        dlmJobFactory.setTaskConnectionQueryTimeout(taskConnectionQueryTimeout);
+        dlmJobFactory.setDefaultShardingStrategy(shardingStrategy);
+        dlmJobFactory.setDefaultScanBatchSize(defaultScanBatchSize);
+        return dlmJobFactory;
     }
 
 }
