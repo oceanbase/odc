@@ -31,7 +31,6 @@ import com.oceanbase.odc.service.schedule.ScheduleTaskService;
 import com.oceanbase.odc.service.task.TaskService;
 import com.oceanbase.odc.service.task.caller.K8sJobClient;
 import com.oceanbase.odc.service.task.dispatch.ImmediateJobDispatcher;
-import com.oceanbase.odc.service.task.schedule.MonitorProcessRateLimiter;
 import com.oceanbase.odc.service.task.schedule.StartJobRateLimiter;
 import com.oceanbase.odc.service.task.schedule.StartJobRateLimiterSupport;
 import com.oceanbase.odc.service.task.schedule.provider.DefaultHostUrlProvider;
@@ -69,7 +68,7 @@ public class DefaultSpringJobConfiguration extends DefaultJobConfiguration
         setTaskFrameworkService(tfs);
         setEventPublisher(publisher);
         setTransactionManager(new SpringTransactionManager(ctx.getBean(TransactionTemplate.class)));
-        initJobRateLimiter(tfs);
+        initJobRateLimiter();
     }
 
     @Override
@@ -87,10 +86,8 @@ public class DefaultSpringJobConfiguration extends DefaultJobConfiguration
         return ctx.getBean(K8sJobClient.class);
     }
 
-    private void initJobRateLimiter(TaskFrameworkService tfs) {
+    private void initJobRateLimiter() {
         StartJobRateLimiterSupport limiterSupport = new StartJobRateLimiterSupport();
-        limiterSupport.addJobRateLimiter(
-                new MonitorProcessRateLimiter(this::getTaskFrameworkProperties, tfs));
         ctx.getBeansOfType(StartJobRateLimiter.class).forEach((k, v) -> limiterSupport.addJobRateLimiter(v));
         setStartJobRateLimiter(limiterSupport);
     }
