@@ -215,6 +215,13 @@ public class ShadowTableComparingService {
     }
 
     private void checkPermission(ShadowTableComparingTaskEntity taskEntity) {
+        // shadow table comparing task has not been bind to flow instance yet
+        if (taskEntity.getFlowInstanceId() == null) {
+            if (!taskEntity.getCreatorId().equals(currentUserId())) {
+                throw new AccessDeniedException();
+            }
+            return;
+        }
         flowInstanceService.mapFlowInstance(taskEntity.getFlowInstanceId(), flowInstance -> flowInstance, false);
     }
 }
