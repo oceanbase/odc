@@ -17,6 +17,7 @@
 package com.oceanbase.odc.service.session.util;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -135,6 +136,36 @@ public class SchemaExtractor {
         return schemaName2SqlTypes;
     }
 
+    public static Map<RelationFactor, Set<SqlType>> listTableName2SqlTypes(List<SqlTuple> sqlTuples,
+            String defaultSchema,
+            DialectType dialectType) {
+        Map<RelationFactor, Set<SqlType>> tableName2SqlTypes = new HashMap<>();
+        for (SqlTuple sqlTuple : sqlTuples) {
+            try {
+                AbstractSyntaxTree ast = sqlTuple.getAst();
+                if (ast == null) {
+                    sqlTuple.initAst(AbstractSyntaxTreeFactories.getAstFactory(dialectType, 0));
+                    ast = sqlTuple.getAst();
+                }
+                // Set<String> schemaNames = listSchemaNames(ast, defaultSchema, dialectType);
+                List<RelationFactor> table2SchemaNames = listTable2SchemaNames(ast, defaultSchema, dialectType, false);
+                SqlType sqlType = SqlType.OTHERS;
+                BasicResult basicResult = ast.getParseResult();
+                if (Objects.nonNull(basicResult) && Objects.nonNull(basicResult.getSqlType())
+                        && basicResult.getSqlType() != SqlType.UNKNOWN) {
+                    sqlType = basicResult.getSqlType();
+                }
+                for (RelationFactor relationFactor : table2SchemaNames) {
+                    Set<SqlType> sqlTypes = tableName2SqlTypes.computeIfAbsent(relationFactor, k -> new HashSet<>());
+                    sqlTypes.add(sqlType);
+                }
+            } catch (Exception e) {
+                // just eat exception due to parse failed
+            }
+        }
+        return tableName2SqlTypes;
+    }
+
     public static Set<String> listSchemaNames(List<String> sqls, DialectType dialectType, String defaultSchema) {
         AbstractSyntaxTreeFactory factory = AbstractSyntaxTreeFactories.getAstFactory(dialectType, 0);
         if (factory == null) {
@@ -193,10 +224,66 @@ public class SchemaExtractor {
         return new HashSet<>();
     }
 
+    private static List<RelationFactor> listTable2SchemaNames(AbstractSyntaxTree ast, String defaultSchema,
+            DialectType dialectType, Boolean includeFunction) {
+        List<RelationFactor> relationFactorList;
+        BasicResult basicResult = ast.getParseResult();
+        if (dialectType.isMysql() || dialectType.isDoris()) {
+            if (basicResult.isPlDdl() || basicResult instanceof ParseMysqlPLResult) {
+                OBMySQLPLRelationFactorVisitor visitor = new OBMySQLPLRelationFactorVisitor();
+                visitor.visit(ast.getRoot());
+                relationFactorList = visitor.getRelationFactorList();
+            } else {
+                OBMySQLRelationFactorVisitor visitor = new OBMySQLRelationFactorVisitor(includeFunction);
+                visitor.visit(ast.getRoot());
+                relationFactorList = visitor.getRelationFactorList();
+            }
+            return relationFactorList.stream()
+                    .filter(r -> StringUtils.isBlank(r.getUserVariable()))
+                    .map(r -> {
+                        String schema = StringUtils.isNotBlank(r.getSchema()) ? r.getSchema() : defaultSchema;
+                        r.setSchema(schema);
+                        return r;
+                    }).filter(Objects::nonNull).collect(Collectors.toList());
+        } else if (dialectType.isOracle()) {
+            if (basicResult.isPlDdl() || basicResult instanceof ParseOraclePLResult) {
+                OBOraclePLRelationFactorVisitor visitor = new OBOraclePLRelationFactorVisitor();
+                visitor.visit(ast.getRoot());
+                relationFactorList = visitor.getRelationFactorList();
+            } else {
+                OBOracleRelationFactorVisitor visitor = new OBOracleRelationFactorVisitor();
+                visitor.visit(ast.getRoot());
+                relationFactorList = visitor.getRelationFactorList();
+            }
+            return relationFactorList.stream()
+                    .filter(r -> StringUtils.isBlank(r.getUserVariable()))
+                    .map(r -> {
+                        String schema = StringUtils.isNotBlank(r.getSchema()) ? r.getSchema() : defaultSchema;
+                        if (StringUtils.startsWith(schema, "\"") && StringUtils.endsWith(schema, "\"")) {
+                            r.setSchema(StringUtils.unquoteOracleIdentifier(schema));
+                        } else {
+                            r.setSchema(StringUtils.upperCase(schema));
+                        }
+                        return r;
+                    }).filter(Objects::nonNull).collect(Collectors.toList());
+        }
+        return Collections.emptyList();
+    }
+
     @Getter
     private static class OBMySQLRelationFactorVisitor extends OBParserBaseVisitor<RelationFactor> {
 
         private final List<RelationFactor> relationFactorList = new ArrayList<>();
+        private Boolean includeFunction;
+
+        public OBMySQLRelationFactorVisitor() {
+            this.includeFunction = Boolean.TRUE;
+        }
+
+        public OBMySQLRelationFactorVisitor(Boolean includeFunction) {
+            this.includeFunction = includeFunction;
+        }
+
 
         @Override
         public RelationFactor visitRelation_factor(Relation_factorContext ctx) {
@@ -239,7 +326,7 @@ public class SchemaExtractor {
         public RelationFactor visitSimple_expr(Simple_exprContext ctx) {
             MySQLExpressionFactory expressionFactory = new MySQLExpressionFactory();
             Expression expr = expressionFactory.visit(ctx);
-            if (expr instanceof FunctionCall) {
+            if (expr instanceof FunctionCall && this.includeFunction == true) {
                 String relationName = ((FunctionCall) expr).getFunctionName();
                 RelationFactor relationFactor = new RelationFactor(relationName);
                 if (relationName.contains(".")) {
@@ -418,5 +505,4 @@ public class SchemaExtractor {
         }
 
     }
-
 }

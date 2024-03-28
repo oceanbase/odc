@@ -17,6 +17,7 @@ package com.oceanbase.odc.server.web.controller.v2;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -115,13 +116,7 @@ public class FlowInstanceController {
                 TaskParameters parameters = flowInstanceReq.getParameters();
                 List<ApplyTable> tables = ((ApplyTableParameter) parameters).getTables();
                 List<FlowInstanceDetailResp> resp = tables.stream().map(applyTable -> {
-                    List<ApplyTable> collect = applyTable.getTableNames().stream().map(tableName -> {
-                        ApplyTable tmpApplyTable = new ApplyTable();
-                        tmpApplyTable.setDatabaseId(applyTable.getDatabaseId());
-                        tmpApplyTable.setTableName(tableName);
-                        return tmpApplyTable;
-                    }).collect(Collectors.toList());
-                    ((ApplyTableParameter) parameters).setTables(collect);
+                    ((ApplyTableParameter) parameters).setTables(Arrays.asList(applyTable));
                     flowInstanceReq.setParameters(parameters);
                     flowInstanceReq.setDatabaseId(applyTable.getDatabaseId());
                     return flowInstanceService.create(flowInstanceReq);

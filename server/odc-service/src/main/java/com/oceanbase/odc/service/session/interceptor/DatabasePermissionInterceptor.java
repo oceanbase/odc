@@ -26,6 +26,7 @@ import java.util.stream.Collectors;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
 import com.oceanbase.odc.core.session.ConnectionSession;
@@ -54,7 +55,8 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 @Component
-public class DatabasePermissionInterceptor extends BaseTimeConsumingInterceptor {
+@Order(1)
+public class DatabasePermissionInterceptor {
 
     @Autowired
     private DatabaseService databaseService;
@@ -62,12 +64,12 @@ public class DatabasePermissionInterceptor extends BaseTimeConsumingInterceptor 
     @Autowired
     private AuthenticationFacade authenticationFacade;
 
-    @Override
+    // @Override
     public int getOrder() {
         return 0;
     }
 
-    @Override
+    // @Override
     public boolean doPreHandle(@NonNull SqlAsyncExecuteReq request, @NonNull SqlAsyncExecuteResp response,
             @NonNull ConnectionSession session, @NonNull Map<String, Object> context) throws Exception {
         if (authenticationFacade.currentUser().getOrganizationType() == OrganizationType.INDIVIDUAL) {
@@ -98,11 +100,11 @@ public class DatabasePermissionInterceptor extends BaseTimeConsumingInterceptor 
         return true;
     }
 
-    @Override
+    // @Override
     public void afterCompletion(@NonNull SqlExecuteResult response, @NonNull ConnectionSession session,
             @NonNull Map<String, Object> context) {}
 
-    @Override
+    // @Override
     protected String getExecuteStageName() {
         return SqlExecuteStages.DATABASE_PERMISSION_CHECK;
     }

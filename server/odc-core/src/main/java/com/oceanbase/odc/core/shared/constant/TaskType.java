@@ -91,7 +91,9 @@ public enum TaskType implements Translatable {
      * Apply database permission
      */
     APPLY_DATABASE_PERMISSION,
-
+    /**
+     * Apply table permission
+     */
     APPLY_TABLE_PERMISSION,
     /**
      * Structure comparison

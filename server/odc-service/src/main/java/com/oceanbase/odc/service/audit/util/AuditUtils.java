@@ -77,6 +77,9 @@ public class AuditUtils {
                 case APPLY_DATABASE_PERMISSION:
                     type = AuditEventType.APPLY_DATABASE_PERMISSION;
                     break;
+                case APPLY_TABLE_PERMISSION:
+                    type = AuditEventType.APPLY_TABLE_PERMISSION;
+                    break;
                 default:
                     type = AuditEventType.UNKNOWN_TASK_TYPE;
             }

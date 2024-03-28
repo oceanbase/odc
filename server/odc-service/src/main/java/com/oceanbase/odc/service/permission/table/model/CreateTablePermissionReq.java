@@ -38,10 +38,16 @@ public class CreateTablePermissionReq {
     @NotEmpty
     private List<TablePermission> tables;
 
+    private Long creatorId;
+
+    private Long ticketId;
+
     @NotEmpty
     private List<DatabasePermissionType> types;
 
     private Date expireTime;
+
+    private Long organizationId;
 
     @NotNull
     private Long userId;

@@ -42,6 +42,7 @@ import com.oceanbase.odc.metadb.iam.UserTablePermissionRepository;
 import com.oceanbase.odc.service.collaboration.project.ProjectService;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.permission.database.model.DatabasePermissionType;
+import com.oceanbase.odc.service.permission.table.TablePermissionService;
 
 /**
  * @author gaoda.xy
@@ -64,6 +65,9 @@ public class DatabasePermissionHelper {
 
     @Autowired
     private UserTablePermissionRepository userTablePermissionRepository;
+
+    @Autowired
+    private TablePermissionService tablePermissionService;
 
     /**
      * Check whether the current user has the permission to access the database

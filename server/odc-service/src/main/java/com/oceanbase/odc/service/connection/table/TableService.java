@@ -49,6 +49,7 @@ import com.oceanbase.odc.service.permission.table.TablePermissionService;
 import com.oceanbase.odc.service.permission.table.UserTablePermission;
 import com.oceanbase.odc.service.permission.table.model.QueryTablePermissionParams;
 import com.oceanbase.odc.service.plugin.SchemaPluginUtil;
+import com.oceanbase.odc.service.session.factory.DefaultConnectSessionFactory;
 import com.oceanbase.tools.dbbrowser.model.DBObjectIdentity;
 import com.oceanbase.tools.dbbrowser.model.DBTable;
 
@@ -140,6 +141,32 @@ public class TableService {
         listTables = dbTablesToTables(DBTableList, userTablePermissionList);
         return listTables;
     }
+
+    public List<Table> listTablesWithoutPageByDatabaseId(Long databaseId) {
+        List<Table> listTables = new ArrayList<>();
+        Database databaseDetail = databaseService.detail(databaseId);
+        ConnectionSession connectionSession =
+                new DefaultConnectSessionFactory(databaseDetail.getDataSource()).generateSession();
+        List<DBTable> DBTableList = connectionSession.getSyncJdbcExecutor(ConnectionSessionConstants.BACKEND_DS_KEY)
+                .execute((ConnectionCallback<List<DBObjectIdentity>>) con -> getTableExtensionPoint(connectionSession)
+                        .list(con, databaseDetail.getName()))
+                .stream().map(item -> {
+                    DBTable table = new DBTable();
+                    table.setName(item.getName());
+                    table.setSchemaName(databaseDetail.getName());
+                    return table;
+                }).collect(Collectors.toList());
+        QueryTablePermissionParams params = QueryTablePermissionParams.builder()
+                .userId(authenticationFacade.currentUserId())
+                .databaseId(databaseDetail.getId())
+                .statuses(Arrays.asList(ExpirationStatusFilter.NOT_EXPIRED))
+                .build();
+        List<UserTablePermission> userTablePermissionList =
+                tablePermissionService.listWithoutPage(databaseDetail.getProject().getId(), params);
+        listTables = dbTablesToTables(DBTableList, userTablePermissionList);
+        return listTables;
+    }
+
 
     private TableExtensionPoint getTableExtensionPoint(@NotNull ConnectionSession connectionSession) {
         return SchemaPluginUtil.getTableExtension(connectionSession.getDialectType());

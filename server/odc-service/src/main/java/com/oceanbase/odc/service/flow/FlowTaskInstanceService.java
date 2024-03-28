@@ -253,10 +253,10 @@ public class FlowTaskInstanceService {
             return getApplyProjectResult(taskEntity);
         } else if (taskEntity.getTaskType() == TaskType.APPLY_DATABASE_PERMISSION) {
             return getApplyDatabaseResult(taskEntity);
-        } else if (taskEntity.getTaskType() == TaskType.STRUCTURE_COMPARISON) {
-            return getStructureComparisonResult(taskEntity);
         } else if (taskEntity.getTaskType() == TaskType.APPLY_TABLE_PERMISSION) {
             return getApplyTableResult(taskEntity);
+        } else if (taskEntity.getTaskType() == TaskType.STRUCTURE_COMPARISON) {
+            return getStructureComparisonResult(taskEntity);
         } else {
             throw new UnsupportedException(ErrorCodes.Unsupported, new Object[] {ResourceType.ODC_TASK},
                     "Unsupported task type: " + taskEntity.getTaskType());

@@ -27,6 +27,7 @@ import static com.oceanbase.odc.service.notification.constant.EventLabelKeys.ENV
 import static com.oceanbase.odc.service.notification.constant.EventLabelKeys.PROJECT_ID;
 import static com.oceanbase.odc.service.notification.constant.EventLabelKeys.PROJECT_NAME;
 import static com.oceanbase.odc.service.notification.constant.EventLabelKeys.REGION;
+import static com.oceanbase.odc.service.notification.constant.EventLabelKeys.TABLE_NAME;
 import static com.oceanbase.odc.service.notification.constant.EventLabelKeys.TASK_ENTITY_ID;
 import static com.oceanbase.odc.service.notification.constant.EventLabelKeys.TASK_ID;
 import static com.oceanbase.odc.service.notification.constant.EventLabelKeys.TASK_STATUS;
@@ -73,6 +74,8 @@ import com.oceanbase.odc.service.notification.model.TaskEvent;
 import com.oceanbase.odc.service.permission.database.model.ApplyDatabaseParameter;
 import com.oceanbase.odc.service.permission.database.model.ApplyDatabaseParameter.ApplyDatabase;
 import com.oceanbase.odc.service.permission.project.ApplyProjectParameter;
+import com.oceanbase.odc.service.permission.table.model.ApplyTableParameter;
+import com.oceanbase.odc.service.permission.table.model.ApplyTableParameter.ApplyTable;
 import com.oceanbase.odc.service.schedule.flowtask.AlterScheduleParameters;
 import com.oceanbase.odc.service.schedule.model.JobType;
 
@@ -188,6 +191,18 @@ public class EventBuilder {
             labels.putIfNonNull(DATABASE_NAME, dbNames);
             projectId = parameter.getProject().getId();
             labels.putIfNonNull(PROJECT_ID, projectId);
+        } else if (task.getTaskType() == TaskType.APPLY_TABLE_PERMISSION) {
+            ApplyTableParameter parameter =
+                    JsonUtils.fromJson(task.getParametersJson(), ApplyTableParameter.class);
+            List<String> dbNames =
+                    parameter.getTables().stream().map(ApplyTable::getDatabaseName).collect(Collectors.toList());
+            labels.putIfNonNull(DATABASE_NAME, dbNames);
+            projectId = parameter.getProject().getId();
+            labels.putIfNonNull(PROJECT_ID, projectId);
+            List<String> tableNames =
+                    parameter.getTables().stream().map(ApplyTable::getTableNames).flatMap(List::stream)
+                            .collect(Collectors.toList());
+            labels.putIfNonNull(TABLE_NAME, tableNames);
         } else if (task.getTaskType() == TaskType.APPLY_PROJECT_PERMISSION) {
             ApplyProjectParameter parameter =
                     JsonUtils.fromJson(task.getParametersJson(), ApplyProjectParameter.class);

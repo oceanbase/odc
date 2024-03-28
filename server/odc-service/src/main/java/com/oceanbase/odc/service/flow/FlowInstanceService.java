@@ -72,10 +72,12 @@ import com.oceanbase.odc.core.shared.constant.OrganizationType;
 import com.oceanbase.odc.core.shared.constant.ResourceRoleName;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.core.shared.constant.TaskType;
+import com.oceanbase.odc.core.shared.exception.BadRequestException;
 import com.oceanbase.odc.core.shared.exception.NotFoundException;
 import com.oceanbase.odc.core.shared.exception.OverLimitException;
 import com.oceanbase.odc.core.shared.exception.UnsupportedException;
 import com.oceanbase.odc.core.shared.exception.VerifyException;
+import com.oceanbase.odc.core.sql.execute.model.SqlTuple;
 import com.oceanbase.odc.metadb.collaboration.EnvironmentEntity;
 import com.oceanbase.odc.metadb.collaboration.EnvironmentRepository;
 import com.oceanbase.odc.metadb.flow.FlowInstanceEntity;
@@ -155,18 +157,23 @@ import com.oceanbase.odc.service.notification.helper.EventBuilder;
 import com.oceanbase.odc.service.notification.model.Event;
 import com.oceanbase.odc.service.permission.database.DatabasePermissionHelper;
 import com.oceanbase.odc.service.permission.database.model.DatabasePermissionType;
+import com.oceanbase.odc.service.permission.table.TablePermissionService;
 import com.oceanbase.odc.service.regulation.approval.model.ApprovalFlowConfig;
 import com.oceanbase.odc.service.regulation.approval.model.ApprovalNodeConfig;
 import com.oceanbase.odc.service.regulation.risklevel.RiskLevelService;
 import com.oceanbase.odc.service.regulation.risklevel.model.RiskLevel;
 import com.oceanbase.odc.service.regulation.risklevel.model.RiskLevelDescriber;
+import com.oceanbase.odc.service.resultset.ResultSetExportTaskParameter;
 import com.oceanbase.odc.service.schedule.ScheduleService;
 import com.oceanbase.odc.service.schedule.flowtask.AlterScheduleParameters;
 import com.oceanbase.odc.service.schedule.flowtask.OperationType;
 import com.oceanbase.odc.service.schedule.model.JobType;
 import com.oceanbase.odc.service.schedule.model.ScheduleStatus;
+import com.oceanbase.odc.service.session.interceptor.ResourcePermissionInterceptor;
+import com.oceanbase.odc.service.session.model.UnauthorizedResource;
 import com.oceanbase.odc.service.task.TaskService;
 import com.oceanbase.odc.service.task.model.ExecutorInfo;
+import com.oceanbase.tools.loaddump.common.enums.ObjectType;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -250,6 +257,12 @@ public class FlowInstanceService {
     private CloudMetadataClient cloudMetadataClient;
     @Autowired
     private EnvironmentRepository environmentRepository;
+
+    @Autowired
+    private TablePermissionService tablePermissionService;
+
+    @Autowired
+    private ResourcePermissionInterceptor resourcePermissionInterceptor;
     private final List<Consumer<DataTransferTaskInitEvent>> dataTransferTaskInitHooks = new ArrayList<>();
     private final List<Consumer<ShadowTableComparingUpdateEvent>> shadowTableComparingTaskHooks = new ArrayList<>();
     private static final long MAX_EXPORT_OBJECT_COUNT = 10000;
@@ -712,6 +725,69 @@ public class FlowInstanceService {
         if (authenticationFacade.currentUser().getOrganizationType() == OrganizationType.INDIVIDUAL) {
             return;
         }
+        // 权限申请工单，跳过权限校验
+        if (req.getTaskType() == TaskType.APPLY_DATABASE_PERMISSION
+                || req.getTaskType() == TaskType.APPLY_TABLE_PERMISSION
+                || req.getTaskType() == TaskType.APPLY_PROJECT_PERMISSION) {
+            return;
+        }
+        Database databaseDetail = databaseService.detail(req.getDatabaseId());
+
+        // TODO: 数据变更工单,数据导出工单，数据集导出工单进行表级别校验，其他工单进行库级别校验
+        if (req.getTaskType() == TaskType.ASYNC) {
+            DatabaseChangeParameters parameters = (DatabaseChangeParameters) req.getParameters();
+
+            List<String> listSqls = SqlUtils.split(databaseDetail.getDataSource().getDialectType(),
+                    parameters.getSqlContent(), parameters.getDelimiter());
+            List<SqlTuple> sqlTuples = SqlTuple.newTuples(listSqls);
+            try {
+                resourcePermissionInterceptor.doPreHandle(sqlTuples, databaseDetail.getId(), new HashSet<>());
+                return;
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        }
+        // EXPORT工单表级别鉴权
+        if (req.getTaskType() == TaskType.EXPORT) {
+            DataTransferConfig parameters = (DataTransferConfig) req.getParameters();
+            Map<String, Set<DatabasePermissionType>> tableNames = new HashMap<>();
+            if (CollectionUtils.isNotEmpty(parameters.getExportDbObjects())) {
+                parameters.getExportDbObjects().stream().forEach(item -> {
+                    if (item.getDbObjectType() == ObjectType.TABLE) {
+                        Set<DatabasePermissionType> databasePermissionTypes = new HashSet<>();
+                        databasePermissionTypes.addAll(DatabasePermissionType.from(TaskType.EXPORT));
+                        tableNames.put(item.getObjectName(), databasePermissionTypes);
+                    }
+                });
+            } ;
+            List<UnauthorizedResource> unauthorizedResources =
+                    tablePermissionService.filterUnauthorizedTablesByTableNames(tableNames, req.getDatabaseId());
+            if (CollectionUtils.isNotEmpty(unauthorizedResources)) {
+                throw new BadRequestException(ErrorCodes.DatabaseAccessDenied,
+                        new Object[] {
+                                unauthorizedResources.stream().map(UnauthorizedResource::getUnauthorizedPermissionTypes)
+                                        .flatMap(Collection::stream).map(DatabasePermissionType::getLocalizedMessage)
+                                        .collect(Collectors.joining(","))},
+                        "Lack permission for the database with id " + req.getDatabaseId());
+            } else {
+                return;
+            }
+        }
+        // EXPORT_RESULT_SET工单表级别鉴权
+        if (req.getTaskType() == TaskType.EXPORT_RESULT_SET) {
+            ResultSetExportTaskParameter parameters = (ResultSetExportTaskParameter) req.getParameters();
+            Set<DatabasePermissionType> databasePermissionTypes = new HashSet<>();
+            databasePermissionTypes.addAll(DatabasePermissionType.from(TaskType.EXPORT_RESULT_SET));
+            List<String> listSqls = Arrays.asList(parameters.getSql());
+            List<SqlTuple> sqlTuples = SqlTuple.newTuples(listSqls);
+            try {
+                resourcePermissionInterceptor.doPreHandle(sqlTuples, databaseDetail.getId(), databasePermissionTypes);
+                return;
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        }
+
         Set<Long> databaseIds = new HashSet<>();
         if (Objects.nonNull(req.getDatabaseId())) {
             databaseIds.add(req.getDatabaseId());

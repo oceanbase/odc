@@ -63,6 +63,10 @@ public class UserTablePermissionSpec {
         return SpecificationUtil.columnLike(UserTablePermissionEntity_.DATA_SOURCE_NAME, fuzzyDataSourceName);
     }
 
+    public static Specification<UserTablePermissionEntity> dataSourceId(Long datasourceId) {
+        return SpecificationUtil.columnEqual(UserTablePermissionEntity_.DATA_SOURCE_ID, datasourceId);
+    }
+
     public static Specification<UserTablePermissionEntity> typeIn(Collection<DatabasePermissionType> types) {
         Set<String> actions = new HashSet<>();
         if (CollectionUtils.isNotEmpty(types)) {

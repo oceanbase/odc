@@ -98,8 +98,8 @@ public class CreateFlowInstanceReq {
             @JsonSubTypes.Type(value = ResultSetExportTaskParameter.class, name = "EXPORT_RESULT_SET"),
             @JsonSubTypes.Type(value = ApplyProjectParameter.class, name = "APPLY_PROJECT_PERMISSION"),
             @JsonSubTypes.Type(value = ApplyDatabaseParameter.class, name = "APPLY_DATABASE_PERMISSION"),
-            @JsonSubTypes.Type(value = DBStructureComparisonParameter.class, name = "STRUCTURE_COMPARISON"),
-            @JsonSubTypes.Type(value = ApplyTableParameter.class, name = "APPLY_TABLE_PERMISSION")
+            @JsonSubTypes.Type(value = ApplyTableParameter.class, name = "APPLY_TABLE_PERMISSION"),
+            @JsonSubTypes.Type(value = DBStructureComparisonParameter.class, name = "STRUCTURE_COMPARISON")
     })
     private TaskParameters parameters;
 
