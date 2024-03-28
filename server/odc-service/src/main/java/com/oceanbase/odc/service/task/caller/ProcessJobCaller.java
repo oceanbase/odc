@@ -103,13 +103,15 @@ public class ProcessJobCaller extends BaseJobCaller {
         }
         JobConfiguration configuration = JobConfigurationHolder.getJobConfiguration();
         JobEntity jobEntity = configuration.getTaskFrameworkService().find(ji.getId());
-        if (jobEntity.getStatus() == JobStatus.RUNNING && !HttpUtil.isOdcHealthy(ei.getHost(), ei.getPort())) {
-            // Cannot connect to target identifier,we cannot kill the process,
-            // so we set job to FAILED and avoid two process running
-            configuration.getTaskFrameworkService().updateStatusDescriptionByIdOldStatus(
-                    ji.getId(), JobStatus.RUNNING, JobStatus.FAILED,
-                    MessageFormat.format("Cannot connect to target identifier, jodId={0}, identifier={1}",
-                            ji.getId(), ei));
+        if (!HttpUtil.isOdcHealthy(ei.getHost(), ei.getPort())) {
+            if (jobEntity.getStatus() == JobStatus.RUNNING) {
+                // Cannot connect to target identifier,we cannot kill the process,
+                // so we set job to FAILED and avoid two process running
+                configuration.getTaskFrameworkService().updateStatusDescriptionByIdOldStatus(
+                        ji.getId(), JobStatus.RUNNING, JobStatus.FAILED,
+                        MessageFormat.format("Cannot connect to target identifier, jodId={0}, identifier={1}",
+                                ji.getId(), ei));
+            }
             updateExecutorDestroyed(ji, ei);
         }
     }
