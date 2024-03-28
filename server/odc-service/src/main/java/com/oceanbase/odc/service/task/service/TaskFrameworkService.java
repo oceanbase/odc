@@ -57,7 +57,7 @@ public interface TaskFrameworkService {
 
     /**
      * count the jobs started time before neverHeartSeconds which status is running and no heart
-     * 
+     *
      * @param neverHeartSeconds job start seconds
      * @return count
      */
@@ -84,7 +84,7 @@ public interface TaskFrameworkService {
 
     int updateStatusDescriptionByIdOldStatus(Long id, JobStatus oldStatus, JobStatus newStatus, String description);
 
-    int updateStatusToCanceledWhenHeartTimeout(Long id, int heartTimeoutSeconds, String description);
+    int updateStatusToFailedWhenHeartTimeout(Long id, int heartTimeoutSeconds, String description);
 
     int updateStatusDescriptionByIdOldStatusAndExecutorDestroyed(Long id, JobStatus oldStatus, JobStatus newStatus,
             String description);

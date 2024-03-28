@@ -18,8 +18,6 @@ package com.oceanbase.odc.service.task.dispatch;
 
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.common.util.SystemUtils;
-import com.oceanbase.odc.core.shared.exception.UnsupportedException;
-import com.oceanbase.odc.service.task.caller.ExecutorIdentifier;
 import com.oceanbase.odc.service.task.caller.JobCaller;
 import com.oceanbase.odc.service.task.caller.JobCallerBuilder;
 import com.oceanbase.odc.service.task.caller.JobContext;
@@ -68,11 +66,6 @@ public class ImmediateJobDispatcher implements JobDispatcher {
     public void destroy(JobIdentity ji) throws JobException {
         JobCaller jobCaller = getJobCaller(getJobRunMode(ji));
         jobCaller.destroy(ji);
-    }
-
-    @Override
-    public void destroy(ExecutorIdentifier executorIdentifier) throws JobException {
-        throw new UnsupportedException("unsupported");
     }
 
     private JobCaller getJobCaller(TaskRunMode taskRunMode) {
