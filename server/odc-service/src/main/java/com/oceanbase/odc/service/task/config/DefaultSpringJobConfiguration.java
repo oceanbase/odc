@@ -90,7 +90,7 @@ public class DefaultSpringJobConfiguration extends DefaultJobConfiguration
     private void initJobRateLimiter(TaskFrameworkService tfs) {
         StartJobRateLimiterSupport limiterSupport = new StartJobRateLimiterSupport();
         limiterSupport.addJobRateLimiter(
-            new MonitorProcessRateLimiter(this::getTaskFrameworkProperties, tfs));
+                new MonitorProcessRateLimiter(this::getTaskFrameworkProperties, tfs));
         ctx.getBeansOfType(StartJobRateLimiter.class).forEach((k, v) -> limiterSupport.addJobRateLimiter(v));
         setStartJobRateLimiter(limiterSupport);
     }
