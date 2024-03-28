@@ -69,17 +69,24 @@ public class CheckRunningJob implements Job {
                 : taskFrameworkProperties.getSingleFetchCheckHeartTimeoutJobRows();
     }
 
-    private void handleJobRetryingOrFailed(JobEntity a) {
+    private void handleJobRetryingOrFailed(JobEntity jobEntity) {
         SilentExecutor.executeSafely(() -> getConfiguration().getTransactionManager()
-                .doInTransactionWithoutResult(() -> doHandleJobRetryingOrFailed(a)));
+                .doInTransactionWithoutResult(() -> doHandleJobRetryingOrFailed(jobEntity)));
     }
 
-    private void doHandleJobRetryingOrFailed(JobEntity a) {
+    private void doHandleJobRetryingOrFailed(JobEntity jobEntity) {
+        JobEntity a = getConfiguration().getTaskFrameworkService().findWithPessimisticLock(jobEntity.getId());
         // destroy executor
         try {
             getConfiguration().getJobDispatcher().destroy(JobIdentity.of(a.getId()));
         } catch (JobException e) {
             throw new TaskRuntimeException(e);
+        }
+
+        JobEntity checkedEntity = getConfiguration().getTaskFrameworkService().find(jobEntity.getId());
+        if (checkedEntity.getStatus() == JobStatus.FAILED) {
+            log.info("Job has been FAILED, jobId={}", jobEntity.getId());
+            return;
         }
 
         if (checkJobIfRetryNecessary(a)) {
