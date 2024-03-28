@@ -19,6 +19,6 @@ import java.util.List;
 
 public interface TagService {
 
-    List<String> getTags(Long userId, String label);
+    List<String> getUserTags(Long userId, String label);
 
 }

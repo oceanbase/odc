@@ -52,7 +52,7 @@ public class TagServiceTest {
         userTagItems.add(userTagItem);
         Mockito.when(systemConfigService.queryCacheByKey(anyString()))
                 .thenReturn(new Configuration("", JsonUtils.toJson(userTagItems)));
-        Assert.assertEquals(1, tagService.getTags(1L, "userTag").size());
+        Assert.assertEquals(1, tagService.getUserTags(1L, "userTag").size());
     }
 
     @Test

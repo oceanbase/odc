@@ -29,7 +29,7 @@ public class DefaultTagServiceFacadeImpl implements TagServiceFacade {
 
     @Override
     public boolean checkOSCEnabled(Long userId) {
-        List<String> tags = tagService.getTags(userId, DEFAULT_SINGLE_USER_TAG_LABEL_KEY);
+        List<String> tags = tagService.getUserTags(userId, DEFAULT_SINGLE_USER_TAG_LABEL_KEY);
         return tags.stream().anyMatch(TagNames.OSC_ENABLED::equals);
     }
 

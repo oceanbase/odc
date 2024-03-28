@@ -41,7 +41,7 @@ public class DefaultTagService implements TagService {
     }
 
     @Override
-    public List<String> getTags(Long userId, String label) {
+    public List<String> getUserTags(Long userId, String label) {
         Configuration configuration = systemConfigService.queryCacheByKey(TAG_SERVICE_CONFIG_KEY);
         if (configuration == null) {
             return Collections.emptyList();
