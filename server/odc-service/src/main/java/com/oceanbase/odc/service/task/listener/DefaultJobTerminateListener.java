@@ -88,7 +88,7 @@ public class DefaultJobTerminateListener extends AbstractEventListener<JobTermin
             int row = taskRepository.updateStatusById(taskEntity.get().getId(),
                     event.getStatus().convertTaskStatus());
             if (row >= 1) {
-                log.info("Update taskTask successfully, taskId={}, status={}.", jobEntity.getId(),
+                log.info("Update taskTask successfully, taskId={}, status={}.", taskEntity.get().getId(),
                         event.getStatus().convertTaskStatus());
             }
         }
