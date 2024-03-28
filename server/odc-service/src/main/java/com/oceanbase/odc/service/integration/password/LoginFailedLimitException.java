@@ -13,13 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.iam.auth.local;
+package com.oceanbase.odc.service.integration.password;
 
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.AuthenticationException;
 
-public class LocalPasswordAuthenticationToken extends UsernamePasswordAuthenticationToken {
+import com.oceanbase.odc.service.common.response.Error;
 
-    public LocalPasswordAuthenticationToken(Object principal, Object credentials) {
-        super(principal, credentials);
+import lombok.Getter;
+
+@Getter
+public class LoginFailedLimitException extends AuthenticationException {
+    final transient Error error;
+
+    public LoginFailedLimitException(Error error) {
+        super(null);
+        this.error = error;
     }
 }

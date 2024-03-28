@@ -15,7 +15,13 @@
  */
 package com.oceanbase.odc.service.iam.auth.local;
 
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.userdetails.UserDetails;
+
+import com.google.common.base.Preconditions;
+import com.oceanbase.odc.service.iam.auth.AttemptableUsernamePasswordAuthenticationToken;
 
 public class LocalDaoAuthenticationProvider extends DaoAuthenticationProvider {
 
@@ -26,7 +32,17 @@ public class LocalDaoAuthenticationProvider extends DaoAuthenticationProvider {
 
     @Override
     public boolean supports(Class<?> authentication) {
-        return authentication.isAssignableFrom(LocalPasswordAuthenticationToken.class);
+        return authentication.isAssignableFrom(AttemptableUsernamePasswordAuthenticationToken.class);
     }
 
+    @Override
+    protected Authentication createSuccessAuthentication(Object principal, Authentication authentication,
+            UserDetails user) {
+        Authentication successAuthentication = super.createSuccessAuthentication(principal, authentication, user);
+        Preconditions.checkArgument(successAuthentication instanceof UsernamePasswordAuthenticationToken);
+        Preconditions.checkArgument(authentication instanceof AttemptableUsernamePasswordAuthenticationToken);
+        return AttemptableUsernamePasswordAuthenticationToken.authenticated(
+                (UsernamePasswordAuthenticationToken) successAuthentication,
+                ((AttemptableUsernamePasswordAuthenticationToken) authentication).getLoginAttemptKey());
+    }
 }

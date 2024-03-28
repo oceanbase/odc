@@ -132,7 +132,7 @@ public class IntegrationService {
                 .findByNameAndTypeAndOrganizationId(config.getName(), config.getType(), organizationId);
         PreConditions.validNoDuplicated(ResourceType.ODC_EXTERNAL_APPROVAL, "name", config.getName(),
                 existsEntity::isPresent);
-        integrationConfigurationValidatorDelegate.preProcessConfig(config);
+        integrationConfigurationValidatorDelegate.preProcessConfig(config, null);
         Encryption encryption = config.getEncryption();
         encryption.check();
         applicationContext.publishEvent(IntegrationEvent.createPreCreate(config));
@@ -219,7 +219,7 @@ public class IntegrationService {
             throw new UnsupportedException(ErrorCodes.IllegalOperation, new Object[] {"builtin integration"},
                     "Operation on builtin integration is not allowed");
         }
-        integrationConfigurationValidatorDelegate.preProcessConfig(config);
+        integrationConfigurationValidatorDelegate.preProcessConfig(config, id);
         Encryption encryption = config.getEncryption();
         applicationContext.publishEvent(
                 IntegrationEvent.createPreUpdate(config, new IntegrationConfig(entity), entity.getSalt()));
