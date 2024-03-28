@@ -121,15 +121,10 @@ public class TaskApplication {
     }
 
     private void setLog4JConfigXml() {
-        String taskLogFile = "log4j2-task.xml";
-        String log4jConfigurationFile = System.getProperty("log4j.configurationFile");
-        // odc sever log4j2 configurationFile is log4j.xml, so we should distinguish them in process mode
-        if (log4jConfigurationFile != null && log4jConfigurationFile.endsWith(taskLogFile)) {
-            log.info("Use log4j configurationFile from system properties, log4j.configurationFile={}.",
-                    log4jConfigurationFile);
+        if (System.getProperty("log4j.configurationFile") != null) {
             return;
         }
-        log.info("Use default log4j configurationFile.");
+        String taskLogFile = "log4j2-task.xml";
         LoggerContext context = (org.apache.logging.log4j.core.LoggerContext) LogManager.getContext(false);
 
         URL resource = getClass().getClassLoader().getResource(taskLogFile);
