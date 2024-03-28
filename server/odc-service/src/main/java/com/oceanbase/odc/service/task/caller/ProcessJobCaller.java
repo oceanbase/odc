@@ -81,14 +81,14 @@ public class ProcessJobCaller extends BaseJobCaller {
     protected void doStop(JobIdentity ji) throws JobException {}
 
     @Override
-    protected void doDestroy(JobIdentity ji, ExecutorIdentifier ei) {
+    protected void doDestroy(JobIdentity ji, ExecutorIdentifier ei) throws JobException {
         if (isExecutorExist(ei)) {
             long pid = Long.parseLong(ei.getNamespace());
             log.info("Found process, try kill it, pid={}.", pid);
             // first update destroy time, second destroy executor.
             // if executor failed update will be rollback, ensure distributed transaction atomicity.
             updateExecutorDestroyed(ji, ei);
-            destroy(ei);
+            destroyInternal(ei);
             return;
         }
         if (!HttpUtil.isOdcHealthy(ei.getHost(), ei.getPort())) {
@@ -97,7 +97,7 @@ public class ProcessJobCaller extends BaseJobCaller {
     }
 
     @Override
-    protected void doDestroy(ExecutorIdentifier identifier) throws JobException {
+    protected void doDestroyInternal(ExecutorIdentifier identifier) throws JobException {
         long pid = Long.parseLong(identifier.getNamespace());
         boolean result = SystemUtils.killProcessByPid(pid);
         if (result) {

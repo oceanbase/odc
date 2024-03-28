@@ -63,12 +63,12 @@ public abstract class BaseJobCaller implements JobCaller {
             if (rows > 0) {
                 afterStartSucceed(executorIdentifier, ji);
             } else {
-                afterStartFailed(ji, jobConfiguration, executorIdentifier,
+                afterStartFailed(ji, executorIdentifier,
                         new JobException("Update job status to RUNNING failed, jobId={0}.", ji.getId()));
             }
 
         } catch (Exception ex) {
-            afterStartFailed(ji, jobConfiguration, executorIdentifier, ex);
+            afterStartFailed(ji, executorIdentifier, ex);
         }
     }
 
@@ -77,11 +77,11 @@ public abstract class BaseJobCaller implements JobCaller {
         publishEvent(new JobCallerEvent(ji, JobCallerAction.START, true, executorIdentifier, null));
     }
 
-    private void afterStartFailed(JobIdentity ji, JobConfiguration jobConfiguration,
+    private void afterStartFailed(JobIdentity ji,
             ExecutorIdentifier executorIdentifier, Exception ex) throws JobException {
         if (executorIdentifier != null) {
             try {
-                jobConfiguration.getJobDispatcher().destroy(executorIdentifier);
+                destroy(ji);
             } catch (JobException e) {
                 // if destroy failed, domain job will destroy it
                 log.warn("Destroy executor {} occur exception", executorIdentifier);
@@ -193,19 +193,18 @@ public abstract class BaseJobCaller implements JobCaller {
         doDestroy(ji, ExecutorIdentifierParser.parser(executorIdentifier));
     }
 
-    protected abstract void doDestroy(JobIdentity ji, ExecutorIdentifier ei);
+    protected abstract void doDestroy(JobIdentity ji, ExecutorIdentifier ei) throws JobException;
 
     private <T extends AbstractEvent> void publishEvent(T event) {
         JobConfiguration configuration = JobConfigurationHolder.getJobConfiguration();
         configuration.getEventPublisher().publishEvent(event);
     }
 
-    @Override
-    public void destroy(ExecutorIdentifier identifier) throws JobException {
+    protected void destroyInternal(ExecutorIdentifier identifier) throws JobException {
         if (identifier == null || identifier.getExecutorName() == null) {
             return;
         }
-        doDestroy(identifier);
+        doDestroyInternal(identifier);
     }
 
     protected void updateExecutorDestroyed(JobIdentity ji, ExecutorIdentifier ei) throws JobException {
@@ -223,7 +222,7 @@ public abstract class BaseJobCaller implements JobCaller {
 
     protected abstract void doStop(JobIdentity ji) throws JobException;
 
-    protected abstract void doDestroy(ExecutorIdentifier identifier) throws JobException;
+    protected abstract void doDestroyInternal(ExecutorIdentifier identifier) throws JobException;
 
     protected abstract boolean isExecutorExist(ExecutorIdentifier identifier) throws JobException;
 

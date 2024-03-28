@@ -55,16 +55,16 @@ public class K8sJobCaller extends BaseJobCaller {
     public void doStop(JobIdentity ji) throws JobException {}
 
     @Override
-    protected void doDestroy(JobIdentity ji, ExecutorIdentifier ei) {
+    protected void doDestroy(JobIdentity ji, ExecutorIdentifier ei) throws JobException {
         if (isExecutorExist(ei)) {
             log.info("Found pod, delete it,jobId={}, pod={}.", ji.getId(), ei.getExecutorName());
             updateExecutorDestroyed(ji, ei);
-            destroy(ei);
+            destroyInternal(ei);
         }
     }
 
     @Override
-    protected void doDestroy(ExecutorIdentifier identifier) throws JobException {
+    protected void doDestroyInternal(ExecutorIdentifier identifier) throws JobException {
         client.delete(podConfig.getNamespace(), identifier.getExecutorName());
     }
 
