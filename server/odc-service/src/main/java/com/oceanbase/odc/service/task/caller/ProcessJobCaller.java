@@ -104,7 +104,7 @@ public class ProcessJobCaller extends BaseJobCaller {
         JobConfiguration configuration = JobConfigurationHolder.getJobConfiguration();
         JobEntity jobEntity = configuration.getTaskFrameworkService().find(ji.getId());
         if (jobEntity.getStatus() == JobStatus.RUNNING && !HttpUtil.isOdcHealthy(ei.getHost(), ei.getPort())) {
-            // Cannot connect to target identifier,we cannot kill the process ,
+            // Cannot connect to target identifier,we cannot kill the process,
             // so we set job to FAILED and avoid two process running
             configuration.getTaskFrameworkService().updateStatusDescriptionByIdOldStatus(
                     ji.getId(), JobStatus.RUNNING, JobStatus.FAILED,
