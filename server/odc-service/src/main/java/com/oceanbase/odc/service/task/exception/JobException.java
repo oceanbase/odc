@@ -22,7 +22,7 @@ import java.text.MessageFormat;
  * @date 2023-11-15
  * @since 4.2.4
  */
-public class JobException extends RuntimeException {
+public class JobException extends Exception {
 
     /**
      * @param messagePattern message pattern, eg "id={0},name={1}"

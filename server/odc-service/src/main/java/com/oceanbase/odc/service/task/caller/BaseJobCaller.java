@@ -208,7 +208,7 @@ public abstract class BaseJobCaller implements JobCaller {
         doDestroy(identifier);
     }
 
-    protected void updateExecutorDestroyed(JobIdentity ji, ExecutorIdentifier ei) {
+    protected void updateExecutorDestroyed(JobIdentity ji, ExecutorIdentifier ei) throws JobException {
         JobConfiguration jobConfiguration = JobConfigurationHolder.getJobConfiguration();
         TaskFrameworkService taskFrameworkService = jobConfiguration.getTaskFrameworkService();
         int rows = taskFrameworkService.updateExecutorToDestroyed(ji.getId());
