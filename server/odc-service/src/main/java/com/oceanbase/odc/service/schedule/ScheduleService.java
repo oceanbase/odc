@@ -399,7 +399,7 @@ public class ScheduleService {
         scheduleRepository.updateStatusById(id, status);
     }
 
-    public void asyncScheduleStatus(Long scheduleId) {
+    public void refreshScheduleStatus(Long scheduleId) {
         ScheduleEntity scheduleEntity = nullSafeGetById(scheduleId);
         JobKey key = QuartzKeyGenerator.generateJobKey(scheduleEntity.getId(), scheduleEntity.getJobType());
         ScheduleStatus status = scheduleEntity.getStatus();

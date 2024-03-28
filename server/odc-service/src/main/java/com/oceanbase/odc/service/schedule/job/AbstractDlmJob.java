@@ -260,12 +260,12 @@ public abstract class AbstractDlmJob implements OdcJob {
 
     @Override
     public void before(JobExecutionContext context) {
-        scheduleService.asyncScheduleStatus(ScheduleTaskUtils.getScheduleId(context));
+        scheduleService.refreshScheduleStatus(ScheduleTaskUtils.getScheduleId(context));
     }
 
     @Override
     public void after(JobExecutionContext context) {
-        scheduleService.asyncScheduleStatus(ScheduleTaskUtils.getScheduleId(context));
+        scheduleService.refreshScheduleStatus(ScheduleTaskUtils.getScheduleId(context));
         ScheduleTaskContextHolder.clear();
     }
 
