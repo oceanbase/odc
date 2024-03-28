@@ -98,6 +98,7 @@ public class ProcessJobCaller extends BaseJobCaller {
         }
 
         if (SystemUtils.getLocalIpAddress().equals(ei.getHost())) {
+            updateExecutorDestroyed(ji, ei);
             return;
         }
         if (!HttpUtil.isOdcHealthy(ei.getHost(), ei.getPort())) {
@@ -110,6 +111,7 @@ public class ProcessJobCaller extends BaseJobCaller {
                         ji.getId(), JobStatus.RUNNING, JobStatus.FAILED,
                         MessageFormat.format("Cannot connect to target identifier, jodId={0}, identifier={1}",
                                 ji.getId(), ei));
+                updateExecutorDestroyed(ji, ei);
             }
         }
     }

@@ -127,8 +127,6 @@ public class LoggerService {
                 if (healthy) {
                     DispatchResponse response = requestDispatcher.forward(ei.getHost(), ei.getPort());
                     return response.getContentByType(new TypeReference<SuccessResponse<String>>() {}).getData();
-                } else {
-                    return ErrorCodes.TaskLogNotFound.getLocalizedMessage(new Object[] {"Id", jobEntity.getId()});
                 }
             }
             String logFileStr = LogUtils.getTaskLogFileWithPath(jobEntity.getId(), level);
