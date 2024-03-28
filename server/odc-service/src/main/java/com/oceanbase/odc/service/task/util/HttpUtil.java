@@ -44,8 +44,8 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class HttpUtil {
 
-    private static final int CONNECT_TIMEOUT_SECONDS = 5;
-    private static final int SOCKET_TIMEOUT_SECONDS = 30;
+    private static final int CONNECT_TIMEOUT_SECONDS = 3;
+    private static final int SOCKET_TIMEOUT_SECONDS = 15;
     private static final String DEFAULT_METHOD = "POST";
     private static final Charset DEFAULT_CHARSET = StandardCharsets.UTF_8;
     private static final Map<String, String> DEFAULT_HEADERS = new HashMap<String, String>() {
