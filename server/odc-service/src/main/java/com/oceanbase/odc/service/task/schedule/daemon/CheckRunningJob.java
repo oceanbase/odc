@@ -88,6 +88,10 @@ public class CheckRunningJob implements Job {
             log.info("Job has been FAILED, jobId={}", jobEntity.getId());
             return;
         }
+        if (checkedEntity.getExecutorDestroyedTime() == null) {
+            log.info("Job executor has not been destroyed, may not on this machine, jobId={}", jobEntity.getId());
+            return;
+        }
 
         if (checkJobIfRetryNecessary(a)) {
             log.info("Need to restart job, destroy old executor completed, jobId={}.", a.getId());
