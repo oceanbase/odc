@@ -85,11 +85,13 @@ public class ProcessJobCaller extends BaseJobCaller {
         if (isExecutorExist(ei)) {
             long pid = Long.parseLong(ei.getNamespace());
             log.info("Found process, try kill it, pid={}.", pid);
+            // first update destroy time, second destroy executor.
+            // if executor failed update will be rollback, ensure distributed transaction atomicity.
             updateExecutorDestroyed(ji, ei);
             destroy(ei);
             return;
         }
-        if (!HttpUtil.isConnectable(ei.getHost(), ei.getPort())) {
+        if (!HttpUtil.isOdcHealthy(ei.getHost(), ei.getPort())) {
             updateExecutorDestroyed(ji, ei);
         }
     }

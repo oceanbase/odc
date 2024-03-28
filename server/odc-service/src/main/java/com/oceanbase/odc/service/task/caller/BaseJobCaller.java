@@ -211,8 +211,6 @@ public abstract class BaseJobCaller implements JobCaller {
     protected void updateExecutorDestroyed(JobIdentity ji, ExecutorIdentifier ei) {
         JobConfiguration jobConfiguration = JobConfigurationHolder.getJobConfiguration();
         TaskFrameworkService taskFrameworkService = jobConfiguration.getTaskFrameworkService();
-        // first update destroy time, second destroy executor.
-        // if executor failed update will be rollback, ensure distributed transaction atomicity.
         int rows = taskFrameworkService.updateExecutorToDestroyed(ji.getId());
         if (rows > 0) {
             log.info("Destroy job executor succeed, jobId={}, executor={}.", ji.getId(), ei);

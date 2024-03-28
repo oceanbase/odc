@@ -96,7 +96,7 @@ public class HttpUtil {
         return JsonUtils.fromJson(response, responseTypeRef);
     }
 
-    public static boolean isConnectable(String server, int servPort) {
+    public static boolean isOdcHealthy(String server, int servPort) {
         String url = String.format("http://%s:%d/api/v1/heartbeat/isHealthy", server, servPort);
         try {
             OdcResult<Boolean> result = request(url, new TypeReference<OdcResult<Boolean>>() {});
