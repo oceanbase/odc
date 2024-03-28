@@ -60,7 +60,7 @@ public final class AlarmEventNames {
      * TASK
      */
     public static final String TASK_CANCELED_FAILED = "TASK_CANCELED_FAILED";
-    public static final String TASK_HEART_TIMEOUT = "TASK_HEART_TIMEOUT";
+    public static final String TASK_HEARTBEAT_TIMEOUT = "TASK_HEARTBEAT_TIMEOUT";
     public static final String TASK_START_FAILED = "TASK_START_FAILED";
     public static final String TASK_EXECUTOR_DESTROY_FAILED = "TASK_EXECUTOR_DESTROY_FAILED";
 }

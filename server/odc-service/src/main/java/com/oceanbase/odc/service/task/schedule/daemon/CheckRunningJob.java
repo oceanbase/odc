@@ -101,7 +101,7 @@ public class CheckRunningJob implements Job {
                         new JobTerminateEvent(JobIdentity.of(a.getId()), JobStatus.FAILED));
                 log.info("Set job status to FAILED accomplished, jobId={}.", a.getId());
             }
-            AlarmUtils.alarm(AlarmEventNames.TASK_HEART_TIMEOUT,
+            AlarmUtils.alarm(AlarmEventNames.TASK_HEARTBEAT_TIMEOUT,
                     MessageFormat.format("Job running failed due to heart timeout, jobId={0}", a.getId()));
         }
 
