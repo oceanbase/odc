@@ -16,9 +16,10 @@
 package com.oceanbase.odc.service.tag;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
+import java.util.stream.Collectors;
 
 import com.google.common.base.MoreObjects;
 import com.oceanbase.odc.common.json.JsonUtils;
@@ -29,30 +30,27 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-public class DefaultTagService extends AbstractTagService {
+public class DefaultTagService implements TagService {
 
     private static final String TAG_SERVICE_CONFIG_KEY = "odc.tag.config";
 
     private final SystemConfigService systemConfigService;
 
     public DefaultTagService(SystemConfigService systemConfigService) {
-        super("useTag");
         this.systemConfigService = systemConfigService;
     }
 
     @Override
-    public boolean checkUserTag(Long userId, String labelKey, String labelValue) {
+    public List<String> getTags(Long userId, String label) {
         Configuration configuration = systemConfigService.queryCacheByKey(TAG_SERVICE_CONFIG_KEY);
         if (configuration == null) {
-            return false;
+            return Collections.emptyList();
         }
         List<UserTagItem> userTagItems = JsonUtils.fromJsonList(configuration.getValue(), UserTagItem.class);
-        Optional<UserTagItem> targetTag = MoreObjects.firstNonNull(userTagItems, new ArrayList<UserTagItem>()).stream()
+        return MoreObjects.firstNonNull(userTagItems, new ArrayList<UserTagItem>()).stream()
                 .filter(item -> Objects.equals(userId, item.getUserId())
-                        && Objects.equals(labelKey, item.getLabelKey()) && Objects.equals(labelValue,
-                                item.getLabelValue()))
-                .findFirst();
-        return targetTag.isPresent();
+                        && Objects.equals(label, item.getLabelKey()))
+                .map(UserTagItem::getLabelValue).collect(Collectors.toList());
     }
 
     @Data

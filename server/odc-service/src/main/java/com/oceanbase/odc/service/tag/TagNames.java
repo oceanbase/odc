@@ -15,25 +15,9 @@
  */
 package com.oceanbase.odc.service.tag;
 
-public abstract class AbstractTagService implements TagService {
+public final class TagNames {
 
-    protected final String singleUserTagLabelKey;
+    public static final String OSC_ENABLED = "osc_enabled";
 
-    protected AbstractTagService(String singleUserTagLabelKey) {
-        this.singleUserTagLabelKey = singleUserTagLabelKey;
-    }
-
-    abstract boolean checkUserTag(Long userId, String labelKey, String labelValue);
-
-    @Override
-    public boolean checkOSCEnabled(Long userId) {
-        return checkUserTag(userId, singleUserTagLabelKey, TagNames.OSC_ENABLED);
-    }
-
-    protected static class TagNames {
-        public static final String OSC_ENABLED = "osc_enabled";
-
-        private TagNames() {}
-    }
-
+    private TagNames() {}
 }

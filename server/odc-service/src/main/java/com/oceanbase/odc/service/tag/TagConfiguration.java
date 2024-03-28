@@ -29,4 +29,11 @@ public class TagConfiguration {
     public TagService defaultTagService(SystemConfigService systemConfigService) {
         return new DefaultTagService(systemConfigService);
     }
+
+    @Bean
+    @ConditionalOnMissingBean(TagServiceFacade.class)
+    public TagServiceFacade defaultTagService(TagService tagService) {
+        return new DefaultTagServiceFacadeImpl(tagService);
+    }
+
 }

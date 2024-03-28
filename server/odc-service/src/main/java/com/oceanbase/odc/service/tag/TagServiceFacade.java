@@ -15,10 +15,6 @@
  */
 package com.oceanbase.odc.service.tag;
 
-import java.util.List;
-
-public interface TagService {
-
-    List<String> getTags(Long userId, String label);
-
+public interface TagServiceFacade {
+    boolean checkOSCEnabled(Long userId);
 }

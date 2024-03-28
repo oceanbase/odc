@@ -17,8 +17,21 @@ package com.oceanbase.odc.service.tag;
 
 import java.util.List;
 
-public interface TagService {
+public class DefaultTagServiceFacadeImpl implements TagServiceFacade {
 
-    List<String> getTags(Long userId, String label);
+    public static final String DEFAULT_SINGLE_USER_TAG_LABEL_KEY = "userTag";
+    private final TagService tagService;
+
+    protected DefaultTagServiceFacadeImpl(TagService tagService) {
+        this.tagService = tagService;
+    }
+
+
+    @Override
+    public boolean checkOSCEnabled(Long userId) {
+        List<String> tags = tagService.getTags(userId, DEFAULT_SINGLE_USER_TAG_LABEL_KEY);
+        return tags.stream().anyMatch(TagNames.OSC_ENABLED::equals);
+    }
+
 
 }
