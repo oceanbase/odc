@@ -42,6 +42,7 @@ import com.oceanbase.odc.service.dlm.model.DlmTask;
 import com.oceanbase.odc.service.dlm.model.RateLimitConfiguration;
 import com.oceanbase.odc.service.dlm.utils.DataArchiveConditionUtil;
 import com.oceanbase.odc.service.dlm.utils.DlmJobIdUtil;
+import com.oceanbase.odc.service.quartz.util.ScheduleTaskUtils;
 import com.oceanbase.odc.service.schedule.ScheduleService;
 import com.oceanbase.odc.service.schedule.flowtask.ScheduleTaskContextHolder;
 import com.oceanbase.odc.service.task.config.DefaultTaskFrameworkProperties;
@@ -259,11 +260,12 @@ public abstract class AbstractDlmJob implements OdcJob {
 
     @Override
     public void before(JobExecutionContext context) {
-
+        scheduleService.asyncScheduleStatus(ScheduleTaskUtils.getScheduleId(context));
     }
 
     @Override
     public void after(JobExecutionContext context) {
+        scheduleService.asyncScheduleStatus(ScheduleTaskUtils.getScheduleId(context));
         ScheduleTaskContextHolder.clear();
     }
 

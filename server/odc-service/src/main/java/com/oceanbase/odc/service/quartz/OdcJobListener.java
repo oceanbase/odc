@@ -16,6 +16,7 @@
 package com.oceanbase.odc.service.quartz;
 
 import java.util.Objects;
+import java.util.Optional;
 
 import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
@@ -30,6 +31,7 @@ import com.oceanbase.odc.core.shared.constant.TaskStatus;
 import com.oceanbase.odc.core.shared.exception.NotFoundException;
 import com.oceanbase.odc.metadb.iam.UserEntity;
 import com.oceanbase.odc.metadb.schedule.ScheduleEntity;
+import com.oceanbase.odc.metadb.schedule.ScheduleRepository;
 import com.oceanbase.odc.metadb.schedule.ScheduleTaskEntity;
 import com.oceanbase.odc.metadb.schedule.ScheduleTaskRepository;
 import com.oceanbase.odc.service.common.model.HostProperties;
@@ -40,7 +42,6 @@ import com.oceanbase.odc.service.notification.Broker;
 import com.oceanbase.odc.service.notification.NotificationProperties;
 import com.oceanbase.odc.service.notification.helper.EventBuilder;
 import com.oceanbase.odc.service.quartz.util.ScheduleTaskUtils;
-import com.oceanbase.odc.service.schedule.ScheduleService;
 import com.oceanbase.odc.service.schedule.model.JobType;
 import com.oceanbase.odc.service.task.model.ExecutorInfo;
 
@@ -59,7 +60,7 @@ public class OdcJobListener implements JobListener {
     @Autowired
     private ScheduleTaskRepository taskRepository;
     @Autowired
-    private ScheduleService scheduleService;
+    private ScheduleRepository scheduleRepository;
     @Autowired
     private UserService userService;
     @Autowired
@@ -87,17 +88,22 @@ public class OdcJobListener implements JobListener {
             return;
         }
         // Init user.
-        ScheduleEntity scheduleEntity = scheduleService.nullSafeGetById(ScheduleTaskUtils.getScheduleId(context));
+        Long scheduleId = ScheduleTaskUtils.getScheduleId(context);
+        ScheduleEntity scheduleEntity =
+                scheduleRepository.findById(scheduleId)
+                        .orElseThrow(() -> new NotFoundException(ResourceType.ODC_SCHEDULE, "id", scheduleId));
         // Ignore this schedule if scheduler has executing job.
         if (scheduleEntity.getJobType().executeInTaskFramework() && !scheduleEntity.getAllowConcurrent()
-                && scheduleService.hasExecutingScheduleTask(
-                        scheduleEntity.getId())) {
+                && !taskRepository.findByJobNameAndStatusIn(scheduleId.toString(), TaskStatus.getProcessingStatus())
+                        .isEmpty()) {
+            log.warn("Concurrent is not allowed for scheduler {}.", scheduleId);
             return;
         }
         UserEntity userEntity = userService.nullSafeGet(scheduleEntity.getCreatorId());
         userEntity.setOrganizationId(scheduleEntity.getOrganizationId());
         User taskCreator = new User(userEntity);
         SecurityContextUtils.setCurrentUser(taskCreator);
+
         // Create or load task.
         Long targetTaskId = ScheduleTaskUtils.getTargetTaskId(context);
         ScheduleTaskEntity entity;
@@ -123,7 +129,6 @@ public class OdcJobListener implements JobListener {
         }
         taskRepository.updateExecutor(entity.getId(), JsonUtils.toJson(new ExecutorInfo(hostProperties)));
         context.setResult(entity);
-        scheduleService.asyncScheduleStatus(scheduleEntity.getId());
         log.info("Task is prepared,taskId={}", entity.getId());
     }
 
@@ -134,14 +139,17 @@ public class OdcJobListener implements JobListener {
 
     @Override
     public void jobWasExecuted(JobExecutionContext context, JobExecutionException jobException) {
-        ScheduleEntity scheduleEntity = scheduleService.nullSafeGetById(ScheduleTaskUtils.getScheduleId(context));
-        if (jobException != null && notificationProperties.isEnabled()) {
-            try {
-                broker.enqueueEvent(eventBuilder.ofFailedTask(scheduleEntity));
-            } catch (Exception e) {
-                log.warn("Failed to enqueue event.", e);
+        Optional<ScheduleEntity> scheduleEntityOptional =
+                scheduleRepository.findById(ScheduleTaskUtils.getScheduleId(context));
+        if (scheduleEntityOptional.isPresent()) {
+            ScheduleEntity scheduleEntity = scheduleEntityOptional.get();
+            if (jobException != null && notificationProperties.isEnabled()) {
+                try {
+                    broker.enqueueEvent(eventBuilder.ofFailedTask(scheduleEntity));
+                } catch (Exception e) {
+                    log.warn("Failed to enqueue event.", e);
+                }
             }
         }
-        scheduleService.asyncScheduleStatus(scheduleEntity.getId());
     }
 }

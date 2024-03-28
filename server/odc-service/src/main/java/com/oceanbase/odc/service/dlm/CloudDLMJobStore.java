@@ -213,7 +213,7 @@ public class CloudDLMJobStore implements IJobStore {
             ResultSet resultSet = ps.executeQuery();
             while (resultSet.next()) {
                 Long count = resultSet.getLong(1);
-                return count;
+                return count > 0 ? count : null;
             }
         } catch (Exception ignored) {
             log.warn("Get abnormal task failed.jobId={}", jobId);
