@@ -122,6 +122,15 @@ public class DatabaseService {
 
     private final DatabaseMapper databaseMapper = DatabaseMapper.INSTANCE;
 
+    private static final Set<String> ORACLE_DATA_DICTIONARY = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
+
+    private static final Set<String> MYSQL_DATA_DICTIONARY = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
+
+    static {
+        ORACLE_DATA_DICTIONARY.add("SYS");
+        MYSQL_DATA_DICTIONARY.add("information_schema");
+    }
+
     @Autowired
     private DatabaseRepository databaseRepository;
 
@@ -597,7 +606,8 @@ public class DatabaseService {
 
     @SkipAuthorize("odc internal usage")
     public List<UnauthorizedDatabase> filterUnauthorizedDatabases(
-            Map<String, Set<DatabasePermissionType>> schemaName2PermissionTypes, @NotNull Long dataSourceId) {
+            Map<String, Set<DatabasePermissionType>> schemaName2PermissionTypes, @NotNull Long dataSourceId,
+            boolean ignoreDataDirectory) {
         if (schemaName2PermissionTypes == null || schemaName2PermissionTypes.isEmpty()) {
             return Collections.emptyList();
         }
@@ -635,6 +645,20 @@ public class DatabaseService {
                 unknownDatabase.setName(schemaName);
                 unknownDatabase.setDataSource(dataSource);
                 unauthorizedDatabases.add(UnauthorizedDatabase.from(unknownDatabase, needs, false));
+            }
+        }
+        if (ignoreDataDirectory) {
+            DialectType dialectType = dataSource.getDialectType();
+            if (dialectType != null) {
+                if (dialectType.isOracle()) {
+                    unauthorizedDatabases =
+                            unauthorizedDatabases.stream().filter(d -> !ORACLE_DATA_DICTIONARY.contains(d.getName()))
+                                    .collect(Collectors.toList());
+                } else if (dialectType.isMysql()) {
+                    unauthorizedDatabases = unauthorizedDatabases.stream()
+                            .filter(d -> !MYSQL_DATA_DICTIONARY.contains(d.getName()))
+                            .collect(Collectors.toList());
+                }
             }
         }
         return unauthorizedDatabases;
