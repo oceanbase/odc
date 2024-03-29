@@ -23,18 +23,15 @@ import java.time.format.DateTimeFormatter;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.function.Supplier;
 
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import com.oceanbase.odc.common.json.JsonUtils;
-import com.oceanbase.odc.common.unit.BinarySizeUnit;
 import com.oceanbase.odc.common.util.SystemUtils;
 import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.core.shared.constant.ConnectType;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.objectstorage.cloud.model.ObjectStorageConfiguration;
-import com.oceanbase.odc.service.task.config.TaskFrameworkProperties;
 import com.oceanbase.odc.service.task.constants.JobConstants;
 import com.oceanbase.odc.service.task.constants.JobEnvKeyConstants;
 import com.oceanbase.odc.service.task.enums.TaskRunMode;
@@ -170,23 +167,5 @@ public class JobUtils {
         if (System.getenv(environmentKey) != null && System.getProperty(environmentKey) == null) {
             System.setProperty(environmentKey, System.getenv(environmentKey));
         }
-    }
-
-    public static boolean isResourceEnough(Supplier<TaskFrameworkProperties> taskFrameworkProperties) {
-        if (taskFrameworkProperties.get().getRunMode().isProcess()) {
-            long systemFreeMemory = SystemUtils.getSystemFreePhysicalMemory().convert(BinarySizeUnit.MB).getSizeDigit();
-            long processMemoryMinSize = taskFrameworkProperties.get().getJobProcessMinMemorySizeInMB();
-            long memoryReserveSize = taskFrameworkProperties.get().getSystemReserveMinFreeMemorySizeInMB();
-
-            if (systemFreeMemory < (memoryReserveSize + processMemoryMinSize)) {
-                if (log.isDebugEnabled()) {
-                    log.debug("Free memory lack, systemFreeMemory={}, processMemoryMinSize={}, "
-                            + "memoryReserveSize={}", systemFreeMemory, processMemoryMinSize, memoryReserveSize);
-                }
-                return false;
-            }
-            return true;
-        }
-        return true;
     }
 }
