@@ -15,7 +15,7 @@
  */
 package com.oceanbase.odc.service.task.schedule.daemon;
 
-    import java.text.MessageFormat;
+import java.text.MessageFormat;
 
 import org.quartz.DisallowConcurrentExecution;
 import org.quartz.Job;
