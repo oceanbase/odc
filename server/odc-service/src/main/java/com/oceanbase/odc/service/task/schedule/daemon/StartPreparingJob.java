@@ -59,8 +59,7 @@ public class StartPreparingJob implements Job {
 
     @Override
     public void execute(JobExecutionContext context) throws JobExecutionException {
-        configuration = JobConfigurationHolder.getJobConfiguration();
-        JobConfigurationValidator.validComponent();
+        configuration = JobConfigurationHolder.getJobConfiguration();JobConfigurationValidator.validComponent();
         if (!ResourceDetectUtil.isResourceAvailable(configuration.getTaskFrameworkProperties())) {
             return;
         }

@@ -35,6 +35,9 @@ import lombok.Data;
 @ConfigurationProperties(prefix = "odc.task-framework")
 public class DefaultTaskFrameworkProperties implements TaskFrameworkProperties {
 
+    // task-framework enabled
+    private boolean enabled;
+
     private TaskRunMode runMode;
 
     private String odcUrl;

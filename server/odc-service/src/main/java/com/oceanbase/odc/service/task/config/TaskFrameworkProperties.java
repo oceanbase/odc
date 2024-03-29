@@ -23,6 +23,8 @@ import com.oceanbase.odc.service.task.enums.TaskRunMode;
  * @since 4.2.4
  */
 public interface TaskFrameworkProperties {
+    boolean isEnabled();
+
     TaskRunMode getRunMode();
 
     String getOdcUrl();

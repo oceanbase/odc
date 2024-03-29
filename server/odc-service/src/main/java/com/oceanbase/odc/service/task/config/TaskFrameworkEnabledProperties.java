@@ -15,6 +15,8 @@
  */
 package com.oceanbase.odc.service.task.config;
 
+import javax.annotation.PostConstruct;
+
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
 
@@ -26,10 +28,7 @@ import lombok.Data;
  * @since 4.2.4
  */
 @Data
-@Configuration
-@ConfigurationProperties(prefix = "odc.task-framework")
 public class TaskFrameworkEnabledProperties {
-
     // task-framework enabled
     private boolean enabled;
 }
