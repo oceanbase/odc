@@ -57,6 +57,9 @@ public class StartPreparingJob implements Job {
     public void execute(JobExecutionContext context) throws JobExecutionException {
         configuration = JobConfigurationHolder.getJobConfiguration();
         JobConfigurationValidator.validComponent();
+        if (!configuration.getStartJobRateLimiter().tryAcquire()) {
+            return;
+        }
         TaskFrameworkProperties taskFrameworkProperties = configuration.getTaskFrameworkProperties();
         // scan preparing job
         TaskFrameworkService taskFrameworkService = configuration.getTaskFrameworkService();
@@ -64,21 +67,23 @@ public class StartPreparingJob implements Job {
         Page<JobEntity> jobs = taskFrameworkService.find(
                 Lists.newArrayList(JobStatus.PREPARING, JobStatus.RETRYING), 0,
                 taskFrameworkProperties.getSingleFetchPreparingJobRows());
-        jobs.forEach(a -> {
+
+        for (JobEntity a : jobs) {
             if (!configuration.getStartJobRateLimiter().tryAcquire()) {
-                return;
+                break;
             }
             try {
                 if (checkJobIsExpired(a)) {
                     taskFrameworkService.updateStatusDescriptionByIdOldStatus(a.getId(),
-                            a.getStatus(), JobStatus.CANCELED, "Job expired and failed.");
+                        a.getStatus(), JobStatus.CANCELED, "Job expired and failed.");
                 } else {
                     startJob(taskFrameworkService, a);
                 }
             } catch (Throwable e) {
                 log.warn("try to start job {} failed: ", a.getId(), e);
             }
-        });
+        }
+
     }
 
     private void startJob(TaskFrameworkService taskFrameworkService, JobEntity jobEntity) {
