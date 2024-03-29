@@ -27,10 +27,10 @@ public abstract class BaseStartJobRateLimiter implements StartJobRateLimiter {
 
     @Override
     public boolean tryAcquire() {
-        return !match() || doTryAcquire();
+        return !supports() || doTryAcquire();
     }
 
-    protected abstract boolean match();
+    protected abstract boolean supports();
 
     protected abstract boolean doTryAcquire();
 }

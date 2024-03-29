@@ -47,7 +47,7 @@ public class MonitorProcessRateLimiter extends BaseStartJobRateLimiter {
     }
 
     @Override
-    protected boolean match() {
+    protected boolean supports() {
         return taskFrameworkProperties.get().getRunMode().isProcess() && SystemUtils.isOnLinux();
     }
 

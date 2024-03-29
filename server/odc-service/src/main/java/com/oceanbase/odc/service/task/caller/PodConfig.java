@@ -58,5 +58,5 @@ public class PodConfig {
 
     private Long mountDiskSize;
 
-    private Long nodeCount;
+    private Long maxNodeCount;
 }
