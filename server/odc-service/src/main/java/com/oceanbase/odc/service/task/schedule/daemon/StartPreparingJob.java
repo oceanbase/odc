@@ -15,6 +15,7 @@
  */
 package com.oceanbase.odc.service.task.schedule.daemon;
 
+import java.text.MessageFormat;
 import java.util.concurrent.TimeUnit;
 
 import org.quartz.DisallowConcurrentExecution;
@@ -26,6 +27,8 @@ import org.springframework.data.domain.Page;
 import com.google.common.collect.Lists;
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.common.trace.TraceContextHolder;
+import com.oceanbase.odc.core.alarm.AlarmEventNames;
+import com.oceanbase.odc.core.alarm.AlarmUtils;
 import com.oceanbase.odc.metadb.task.JobEntity;
 import com.oceanbase.odc.service.task.caller.JobContext;
 import com.oceanbase.odc.service.task.config.JobConfiguration;
@@ -100,6 +103,8 @@ public class StartPreparingJob implements Job {
                     getConfiguration().getJobDispatcher().start(jc);
                 } catch (JobException e) {
                     log.warn("Start job occur error: ", e);
+                    AlarmUtils.warn(AlarmEventNames.TASK_START_FAILED,
+                            MessageFormat.format("Start job failed, jobId={0}", lockedEntity.getId()));
                     throw new TaskRuntimeException(e);
                 }
             } else {

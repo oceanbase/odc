@@ -16,6 +16,7 @@
 
 package com.oceanbase.odc.service.task.service;
 
+import java.text.MessageFormat;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
@@ -49,6 +50,8 @@ import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.common.trace.TraceContextHolder;
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.common.util.SystemUtils;
+import com.oceanbase.odc.core.alarm.AlarmEventNames;
+import com.oceanbase.odc.core.alarm.AlarmUtils;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.core.shared.exception.NotFoundException;
@@ -310,6 +313,10 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
         if (publisher != null && taskResult.getStatus() != null && taskResult.getStatus().isTerminated()) {
             taskResultPublisherExecutor.execute(() -> publisher
                     .publishEvent(new JobTerminateEvent(taskResult.getJobIdentity(), taskResult.getStatus())));
+            if (taskResult.getStatus() == JobStatus.FAILED) {
+                AlarmUtils.info(AlarmEventNames.TASK_EXECUTION_FAILED,
+                        MessageFormat.format("Job execution failed, jobId={0}", taskResult.getJobIdentity().getId()));
+            }
         }
 
     }
