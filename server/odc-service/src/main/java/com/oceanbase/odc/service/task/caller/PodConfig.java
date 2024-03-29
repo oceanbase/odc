@@ -57,4 +57,6 @@ public class PodConfig {
     private String mountPath;
 
     private Long mountDiskSize;
+
+    private Long maxNodeCount;
 }

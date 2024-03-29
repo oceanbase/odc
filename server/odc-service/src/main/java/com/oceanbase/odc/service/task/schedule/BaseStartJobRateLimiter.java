@@ -13,23 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.task.config;
+package com.oceanbase.odc.service.task.schedule;
 
-import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.context.annotation.Configuration;
-
-import lombok.Data;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * @author yaobin
- * @date 2023-11-21
+ * @date 2024-02-05
  * @since 4.2.4
  */
-@Data
-@Configuration
-@ConfigurationProperties(prefix = "odc.task-framework")
-public class TaskFrameworkEnabledProperties {
+@Slf4j
+public abstract class BaseStartJobRateLimiter implements StartJobRateLimiter {
 
-    // task-framework enabled
-    private boolean enabled;
+    @Override
+    public boolean tryAcquire() {
+        return !supports() || doTryAcquire();
+    }
+
+    protected abstract boolean supports();
+
+    protected abstract boolean doTryAcquire();
 }

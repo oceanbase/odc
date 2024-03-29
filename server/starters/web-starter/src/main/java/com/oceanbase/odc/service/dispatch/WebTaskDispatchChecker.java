@@ -24,7 +24,6 @@ import com.oceanbase.odc.metadb.task.JobEntity;
 import com.oceanbase.odc.metadb.task.TaskEntity;
 import com.oceanbase.odc.service.common.model.HostProperties;
 import com.oceanbase.odc.service.task.config.TaskFrameworkEnabledProperties;
-import com.oceanbase.odc.service.task.config.TaskFrameworkProperties;
 import com.oceanbase.odc.service.task.model.ExecutorInfo;
 import com.oceanbase.odc.service.task.service.TaskFrameworkService;
 
@@ -45,11 +44,11 @@ public class WebTaskDispatchChecker implements TaskDispatchChecker {
     @Autowired
     private HostProperties hostProperties;
     @Autowired
-    private TaskFrameworkService           taskFrameworkService;
+    private TaskFrameworkService taskFrameworkService;
     @Autowired
     private TaskFrameworkEnabledProperties taskFrameworkProperties;
     @Autowired
-    private JobDispatchChecker             jobDispatchChecker;
+    private JobDispatchChecker jobDispatchChecker;
 
     @Override
     public boolean isThisMachine(@NonNull ExecutorInfo info) {

@@ -45,9 +45,7 @@ import com.oceanbase.odc.service.dlm.utils.DlmJobIdUtil;
 import com.oceanbase.odc.service.quartz.util.ScheduleTaskUtils;
 import com.oceanbase.odc.service.schedule.ScheduleService;
 import com.oceanbase.odc.service.schedule.flowtask.ScheduleTaskContextHolder;
-import com.oceanbase.odc.service.task.config.DefaultTaskFrameworkProperties;
 import com.oceanbase.odc.service.task.config.TaskFrameworkEnabledProperties;
-import com.oceanbase.odc.service.task.config.TaskFrameworkProperties;
 import com.oceanbase.odc.service.task.constants.JobParametersKeyConstants;
 import com.oceanbase.odc.service.task.executor.task.DataArchiveTask;
 import com.oceanbase.odc.service.task.schedule.DefaultJobDefinition;
@@ -91,7 +89,7 @@ public abstract class AbstractDlmJob implements OdcJob {
         databaseService = SpringContextUtil.getBean(DatabaseService.class);
         scheduleService = SpringContextUtil.getBean(ScheduleService.class);
         limiterService = SpringContextUtil.getBean(DlmLimiterService.class);
-        taskFrameworkProperties = SpringContextUtil.getBean(DefaultTaskFrameworkProperties.class);
+        taskFrameworkProperties = SpringContextUtil.getBean(TaskFrameworkEnabledProperties.class);
         taskFrameworkService = SpringContextUtil.getBean(TaskFrameworkService.class);
         if (taskFrameworkProperties.isEnabled()) {
             jobScheduler = SpringContextUtil.getBean(JobScheduler.class);

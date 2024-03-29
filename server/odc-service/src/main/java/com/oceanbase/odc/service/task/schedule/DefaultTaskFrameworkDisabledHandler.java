@@ -21,7 +21,6 @@ import com.oceanbase.odc.metadb.task.JobEntity;
 import com.oceanbase.odc.service.task.config.JobConfiguration;
 import com.oceanbase.odc.service.task.config.JobConfigurationHolder;
 import com.oceanbase.odc.service.task.config.TaskFrameworkEnabledProperties;
-import com.oceanbase.odc.service.task.config.TaskFrameworkProperties;
 import com.oceanbase.odc.service.task.enums.JobStatus;
 import com.oceanbase.odc.service.task.exception.JobException;
 import com.oceanbase.odc.service.task.exception.TaskRuntimeException;
@@ -45,7 +44,7 @@ public class DefaultTaskFrameworkDisabledHandler implements TaskFrameworkDisable
             return;
         }
         Page<JobEntity> jobs = configuration.getTaskFrameworkService().findNotTerminalJobs(0,
-            configuration.getTaskFrameworkProperties().getSingleFetchCheckHeartTimeoutJobRows());
+                configuration.getTaskFrameworkProperties().getSingleFetchCheckHeartTimeoutJobRows());
 
         jobs.getContent().forEach(j -> {
             try {
