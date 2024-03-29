@@ -46,7 +46,6 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class TaskMonitor {
 
-    private static final int REPORT_RESULT_RETRY_TIMES = Integer.MAX_VALUE;
     private final TaskReporter reporter;
     private final Task<?> task;
     private final CloudObjectStorageService cloudObjectStorageService;
@@ -164,7 +163,7 @@ public class TaskMonitor {
 
         if (JobUtils.isReportEnabled()) {
             // Report finish signal to task server
-            reportTaskResultWithRetry(finalResult, REPORT_RESULT_RETRY_TIMES);
+            reportTaskResultWithRetry(finalResult);
         }
         log.info("Task id: {} exit.", getJobId());
     }
@@ -183,25 +182,36 @@ public class TaskMonitor {
         }
     }
 
-    private void reportTaskResultWithRetry(DefaultTaskResult result, int retries) {
+    private void reportTaskResultWithRetry(DefaultTaskResult result) {
         if (result.getStatus() == JobStatus.DONE) {
             result.setProgress(100.0);
         }
         int retryTimes = 0;
-        while (retryTimes++ < retries) {
+        long startMills = System.currentTimeMillis();
+        while (true) {
+            long intervalMillis = System.currentTimeMillis() - startMills;
+            if ( intervalMillis / 1000 > JobConstants.REPORT_TASK_TIME_OUT_SECONDS) {
+                if(JobUtils.isProcessRunModeOfEnv()){
+                    log.warn("Report result time out after {} seconds", intervalMillis / 1000);
+                    ExitHelper.exit();
+                }
+                break;
+            }
             try {
                 boolean success = reporter.report(JobUrlConstants.TASK_RESULT_UPLOAD, result);
                 if (success) {
                     log.info("Report task result successfully");
                     break;
                 } else {
-                    log.warn("Report task result failed, will retry after {} seconds, remaining retries: {}",
-                            JobConstants.REPORT_TASK_INFO_INTERVAL_SECONDS, retries - retryTimes);
+                    log.warn("Report task result failed, will retry after {} seconds",
+                            JobConstants.REPORT_TASK_INFO_INTERVAL_SECONDS);
                     Thread.sleep(JobConstants.REPORT_TASK_INFO_INTERVAL_SECONDS * 1000L);
                 }
             } catch (Throwable e) {
                 log.warn("Report task result failed, taskId: {}", getJobId(), e);
             }
+
+
         }
     }
 

@@ -51,6 +51,8 @@ public class JobConstants {
 
     public static final int REPORT_TASK_HEART_DELAY_SECONDS = 1;
 
+    public static final int REPORT_TASK_TIME_OUT_SECONDS = 30 * 60;
+
     public static final String ODC_SERVER_CLASS_NAME = "com.oceanbase.odc.server.OdcServer";
 
     public static final String ODC_EXECUTOR_DEFAULT_MOUNT_PATH = "/data/logs/odc-task/runtime/task";
