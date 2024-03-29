@@ -75,7 +75,7 @@ public class StartPreparingJob implements Job {
             try {
                 if (checkJobIsExpired(a)) {
                     taskFrameworkService.updateStatusDescriptionByIdOldStatus(a.getId(),
-                        a.getStatus(), JobStatus.CANCELED, "Job expired and failed.");
+                            a.getStatus(), JobStatus.CANCELED, "Job expired and failed.");
                 } else {
                     startJob(taskFrameworkService, a);
                 }
