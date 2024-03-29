@@ -375,7 +375,7 @@ public class OBColumnExtractor implements ColumnExtractor {
         String columnName = processIdentifier(relations.pollFirst());
         String tableName = processIdentifier(relations.pollFirst());
         String databaseName = processIdentifier(relations.pollFirst());
-        if (ORACLE_PSEUDO_COLUMNS.contains(columnName)) {
+        if (Objects.nonNull(dialectType) && dialectType.isOracle() && ORACLE_PSEUDO_COLUMNS.contains(columnName)) {
             LogicalColumn c = LogicalColumn.empty();
             c.setName(columnName);
             c.setType(ColumnType.CONSTANT);
@@ -736,7 +736,7 @@ public class OBColumnExtractor implements ColumnExtractor {
                 return unquoted;
             }
             return StringUtils.checkMysqlIdentifierQuoted(identifier) ? unquoted : unquoted.toLowerCase();
-        } else if (dialectType == DialectType.OB_ORACLE) {
+        } else if (Objects.nonNull(dialectType) && dialectType.isOracle()) {
             String unquoted = StringUtils.unquoteOracleIdentifier(identifier);
             if (StringUtils.isBlank(unquoted)) {
                 return unquoted;

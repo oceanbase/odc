@@ -143,7 +143,13 @@ public class OracleSqlScriptImportJob extends BaseSqlScriptImportJob {
 
     @Override
     protected List<String> getPreSqlsForData() {
-        return Collections.singletonList("alter session set CURRENT_SCHEMA=" + transferConfig.getSchemaName());
+        List<String> preSqls = Lists.newArrayList("alter session set CURRENT_SCHEMA=" + transferConfig.getSchemaName());
+        if (transferConfig.isTruncateTableBeforeImport()) {
+            preSqls.add(String.format("TRUNCATE TABLE %s.%s", object.getSchema(),
+                    StringUtils.quoteOracleIdentifier(object.getName())));
+            LOGGER.info("{} will be truncated.", object.getSummary());
+        }
+        return preSqls;
     }
 
     @Override

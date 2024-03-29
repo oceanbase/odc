@@ -15,6 +15,9 @@
  */
 package com.oceanbase.odc.core.shared.constant;
 
+import java.util.Arrays;
+import java.util.List;
+
 /**
  * @author wenniu.ly
  * @date 2021/3/15
@@ -25,6 +28,10 @@ public enum TaskStatus {
     FAILED,
     CANCELED,
     DONE;
+
+    public static List<TaskStatus> getProcessingStatus() {
+        return Arrays.asList(PREPARING, RUNNING);
+    }
 
     public boolean isTerminated() {
         return TaskStatus.CANCELED == this || TaskStatus.FAILED == this || TaskStatus.DONE == this;

@@ -254,9 +254,9 @@ public abstract class DBTablePartitionEditor implements DBObjectEditor<DBTablePa
         SqlBuilder sqlBuilder = sqlBuilder();
         sqlBuilder.append("ALTER TABLE ");
         if (StringUtils.isNotEmpty(schemaName)) {
-            sqlBuilder.append(schemaName).append(".");
+            sqlBuilder.identifier(schemaName).append(".");
         }
-        sqlBuilder.append(tableName).append(" DROP PARTITION (");
+        sqlBuilder.identifier(tableName).append(" DROP PARTITION (");
         Validate.isTrue(!CollectionUtils.isEmpty(definitions), "Partition elements can not be empty");
 
         return sqlBuilder.append(definitions.stream().map(d -> sqlBuilder().identifier(d.getName()).toString())

@@ -90,7 +90,7 @@ public class DatabasePermissionInterceptor extends BaseTimeConsumingInterceptor 
             }
         }
         List<UnauthorizedDatabase> unauthorizedDatabases =
-                databaseService.filterUnauthorizedDatabases(schemaName2PermissionTypes, connectionConfig.getId());
+                databaseService.filterUnauthorizedDatabases(schemaName2PermissionTypes, connectionConfig.getId(), true);
         if (CollectionUtils.isNotEmpty(unauthorizedDatabases)) {
             response.setUnauthorizedDatabases(unauthorizedDatabases);
             return false;

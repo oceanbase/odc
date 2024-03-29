@@ -23,6 +23,7 @@ import com.oceanbase.odc.metadb.schedule.ScheduleEntity;
 import com.oceanbase.odc.service.connection.database.DatabaseService;
 import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
+import com.oceanbase.odc.service.dlm.DLMConfiguration;
 import com.oceanbase.odc.service.dlm.DlmLimiterService;
 import com.oceanbase.odc.service.dlm.model.DataDeleteParameters;
 import com.oceanbase.odc.service.flow.model.CreateFlowInstanceReq;
@@ -55,16 +56,20 @@ public class DataDeletePreprocessor extends AbstractDlmJobPreprocessor {
     @Autowired
     private DlmLimiterService limiterService;
 
+    @Autowired
+    private DLMConfiguration dlmConfiguration;
+
     @Override
     public void process(CreateFlowInstanceReq req) {
         AlterScheduleParameters parameters = (AlterScheduleParameters) req.getParameters();
         if (parameters.getOperationType() == OperationType.CREATE) {
             DataDeleteParameters dataDeleteParameters =
                     (DataDeleteParameters) parameters.getScheduleTaskParameters();
+            initDefaultConfig(dataDeleteParameters);
             // Throw exception when the specified database does not exist or the current user does not have
             // permission to access it.
             Database sourceDb = databaseService.detail(dataDeleteParameters.getDatabaseId());
-            checkDatasource(sourceDb.getDataSource());
+            dataDeleteParameters.setDatabaseName(sourceDb.getName());
             ConnectionConfig dataSource = sourceDb.getDataSource();
             dataSource.setDefaultSchema(sourceDb.getName());
             ConnectionSessionFactory connectionSessionFactory = new DefaultConnectSessionFactory(dataSource);
@@ -86,6 +91,20 @@ public class DataDeletePreprocessor extends AbstractDlmJobPreprocessor {
             initLimiterConfig(scheduleEntity.getId(), dataDeleteParameters.getRateLimit(), limiterService);
         }
         req.setParentFlowInstanceId(parameters.getTaskId());
+    }
+
+    private void initDefaultConfig(DataDeleteParameters parameters) {
+        parameters.setReadThreadCount(
+                (int) (dlmConfiguration.getSingleTaskThreadPoolSize() * dlmConfiguration.getReadWriteRatio()
+                        / (1 + dlmConfiguration.getReadWriteRatio())));
+        parameters
+                .setWriteThreadCount(dlmConfiguration.getSingleTaskThreadPoolSize() - parameters.getReadThreadCount());
+        parameters.setScanBatchSize(dlmConfiguration.getDefaultScanBatchSize());
+        parameters.setQueryTimeout(dlmConfiguration.getTaskConnectionQueryTimeout());
+        // set default target table name.
+        parameters.getTables().forEach(tableConfig -> {
+            tableConfig.setTargetTableName(tableConfig.getTableName());
+        });
     }
 
 }

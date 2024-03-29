@@ -63,12 +63,12 @@ public abstract class BaseJobCaller implements JobCaller {
             if (rows > 0) {
                 afterStartSucceed(executorIdentifier, ji);
             } else {
-                afterStartFailed(ji, jobConfiguration, executorIdentifier,
+                afterStartFailed(ji, executorIdentifier,
                         new JobException("Update job status to RUNNING failed, jobId={0}.", ji.getId()));
             }
 
         } catch (Exception ex) {
-            afterStartFailed(ji, jobConfiguration, executorIdentifier, ex);
+            afterStartFailed(ji, executorIdentifier, ex);
         }
     }
 
@@ -77,11 +77,11 @@ public abstract class BaseJobCaller implements JobCaller {
         publishEvent(new JobCallerEvent(ji, JobCallerAction.START, true, executorIdentifier, null));
     }
 
-    private void afterStartFailed(JobIdentity ji, JobConfiguration jobConfiguration,
+    private void afterStartFailed(JobIdentity ji,
             ExecutorIdentifier executorIdentifier, Exception ex) throws JobException {
         if (executorIdentifier != null) {
             try {
-                jobConfiguration.getJobDispatcher().destroy(executorIdentifier);
+                destroy(ji);
             } catch (JobException e) {
                 // if destroy failed, domain job will destroy it
                 log.warn("Destroy executor {} occur exception", executorIdentifier);
@@ -186,43 +186,47 @@ public abstract class BaseJobCaller implements JobCaller {
         TaskFrameworkService taskFrameworkService = jobConfiguration.getTaskFrameworkService();
         JobEntity jobEntity = taskFrameworkService.find(ji.getId());
         String executorIdentifier = jobEntity.getExecutorIdentifier();
-        if (executorIdentifier == null || jobEntity.getExecutorDestroyedTime() != null) {
+        if (jobEntity.getExecutorDestroyedTime() != null) {
+            return;
+        }
+        if (executorIdentifier == null) {
+            updateExecutorDestroyed(ji);
             return;
         }
         log.info("Preparing destroy,jobId={}, executorIdentifier={}.", ji.getId(), executorIdentifier);
-
-        // first update destroy time, second destroy executor.
-        // if executor failed update will be rollback, ensure distributed transaction atomicity.
-        int rows = taskFrameworkService.updateExecutorToDestroyed(ji.getId());
-        if (rows > 0) {
-            log.info("Destroy job {} executor {} succeed.", ji.getId(), executorIdentifier);
-            publishEvent(new JobCallerEvent(ji, JobCallerAction.DESTROY, true, null));
-        } else {
-            throw new JobException("update executor to destroyed failed, executor={0}", executorIdentifier);
-        }
-        destroy(ExecutorIdentifierParser.parser(executorIdentifier));
+        doDestroy(ji, ExecutorIdentifierParser.parser(executorIdentifier));
     }
 
+    protected abstract void doDestroy(JobIdentity ji, ExecutorIdentifier ei) throws JobException;
 
     private <T extends AbstractEvent> void publishEvent(T event) {
         JobConfiguration configuration = JobConfigurationHolder.getJobConfiguration();
         configuration.getEventPublisher().publishEvent(event);
     }
 
-    @Override
-    public void destroy(ExecutorIdentifier identifier) throws JobException {
+    protected void destroyInternal(ExecutorIdentifier identifier) throws JobException {
         if (identifier == null || identifier.getExecutorName() == null) {
             return;
         }
-        doDestroy(identifier);
+        doDestroyInternal(identifier);
     }
 
+    protected void updateExecutorDestroyed(JobIdentity ji) throws JobException {
+        JobConfiguration jobConfiguration = JobConfigurationHolder.getJobConfiguration();
+        TaskFrameworkService taskFrameworkService = jobConfiguration.getTaskFrameworkService();
+        int rows = taskFrameworkService.updateExecutorToDestroyed(ji.getId());
+        if (rows > 0) {
+            log.info("Destroy job executor succeed, jobId={}.", ji.getId());
+        } else {
+            throw new JobException("Update executor to destroyed failed, JodId={0}", ji.getId());
+        }
+    }
 
     protected abstract ExecutorIdentifier doStart(JobContext context) throws JobException;
 
     protected abstract void doStop(JobIdentity ji) throws JobException;
 
-    protected abstract void doDestroy(ExecutorIdentifier identifier) throws JobException;
+    protected abstract void doDestroyInternal(ExecutorIdentifier identifier) throws JobException;
 
     protected abstract boolean isExecutorExist(ExecutorIdentifier identifier) throws JobException;
 

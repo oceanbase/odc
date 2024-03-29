@@ -39,7 +39,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class DataArchiveDeleteJob extends AbstractDlmJob {
     @Override
-    public void execute(JobExecutionContext context) {
+    public void executeJob(JobExecutionContext context) {
 
         jobThread = Thread.currentThread();
         ScheduleTaskEntity taskEntity = (ScheduleTaskEntity) context.getResult();
