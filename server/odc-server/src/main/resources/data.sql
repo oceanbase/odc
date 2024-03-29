@@ -749,9 +749,10 @@ INSERT INTO config_system_configuration ( `key`, `value`, `description` ) VALUES
 INSERT INTO config_system_configuration ( `key`, `value`, `description` ) VALUES( 'odc.task-framework.k8s-properties.region', '', 'k8s region id' ) ON DUPLICATE KEY UPDATE `id` = `id`;
 INSERT INTO config_system_configuration ( `key`, `value`, `description` ) VALUES( 'odc.task-framework.k8s-properties.namespace', 'default', 'k8s namespace name' ) ON DUPLICATE KEY UPDATE `id` = `id`;
 INSERT INTO config_system_configuration ( `key`, `value`, `description` ) VALUES( 'odc.task-framework.k8s-properties.request-cpu', '2', 'k8s pod request cpu' ) ON DUPLICATE KEY UPDATE `id` = `id`;
-INSERT INTO config_system_configuration ( `key`, `value`, `description` ) VALUES( 'odc.task-framework.k8s-properties.request-mem', '2048', 'k8s pod request memory, unit is MB' ) ON DUPLICATE KEY UPDATE `id` = `id`;
+INSERT INTO config_system_configuration ( `key`, `value`, `description` ) VALUES( 'odc.task-framework.k8s-properties.request-mem', '4096', 'k8s pod request memory, unit is MB' ) ON DUPLICATE KEY UPDATE `id` = `id`;
 INSERT INTO config_system_configuration ( `key`, `value`, `description` ) VALUES( 'odc.task-framework.k8s-properties.limit-cpu', '2', 'k8s pod limit cpu' ) ON DUPLICATE KEY UPDATE `id` = `id`;
-INSERT INTO config_system_configuration ( `key`, `value`, `description` ) VALUES( 'odc.task-framework.k8s-properties.limit-mem', '2048', 'k8s pod limit memory,unit is MB' ) ON DUPLICATE KEY UPDATE `id` = `id`;
+INSERT INTO config_system_configuration ( `key`, `value`, `description` ) VALUES( 'odc.task-framework.k8s-properties.limit-mem', '4096', 'k8s pod limit memory,unit is MB' ) ON DUPLICATE KEY UPDATE `id` = `id`;
+INSERT INTO config_system_configuration ( `key`, `value`, `description` ) VALUES( 'odc.task-framework.k8s-properties.max-node-count', '', 'k8s max node count' ) ON DUPLICATE KEY UPDATE `id` = `id`;
 INSERT INTO config_system_configuration ( `key`, `value`, `description` ) VALUES( 'odc.task-framework.k8s-properties.enable-mount', 'false', 'k8s pod enable mount' ) ON DUPLICATE KEY UPDATE `id` = `id`;
 INSERT INTO config_system_configuration ( `key`, `value`, `description` ) VALUES( 'odc.task-framework.k8s-properties.mount-path', '', 'k8s pod mount path on host' ) ON DUPLICATE KEY UPDATE `id` = `id`;
 INSERT INTO config_system_configuration ( `key`, `value`, `description` ) VALUES( 'odc.task-framework.k8s-properties.mount-disk-size', '64', 'k8s pod mount disk size, unit is GB' ) ON DUPLICATE KEY UPDATE `id` = `id`;
