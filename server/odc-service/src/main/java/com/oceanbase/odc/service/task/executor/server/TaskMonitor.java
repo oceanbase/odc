@@ -186,7 +186,6 @@ public class TaskMonitor {
         if (result.getStatus() == JobStatus.DONE) {
             result.setProgress(100.0);
         }
-        int retryTimes = 0;
         long startMills = System.currentTimeMillis();
         while (true) {
             long intervalMillis = System.currentTimeMillis() - startMills;
