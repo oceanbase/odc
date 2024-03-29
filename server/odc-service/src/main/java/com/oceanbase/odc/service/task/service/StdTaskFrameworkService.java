@@ -150,8 +150,7 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
     public Page<JobEntity> findHeartTimeTimeoutJobs(int timeoutSeconds, int page, int size) {
         Specification<JobEntity> condition = Specification.where(getRecentDaySpec(RECENT_DAY))
                 .and(SpecificationUtil.columnEqual(JobEntityColumn.STATUS, JobStatus.RUNNING))
-                .and((root, query, cb) -> getHeartTimeoutPredicate(root, cb, timeoutSeconds))
-                .and(getExecutorSpec());
+                .and((root, query, cb) -> getHeartTimeoutPredicate(root, cb, timeoutSeconds));
         return page(condition, page, size);
     }
 
@@ -190,7 +189,7 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
         // select count(*) from job_job where
         // create_time > now() - 30d
         // and run_mode = 'runMode'
-        // and status <> 'PREPARING'
+        // and status not in ( 'PREPARING', 'RETRYING')
         // and executor_destroyed_time is null
 
         Root<JobEntity> root = query.from(JobEntity.class);
@@ -199,7 +198,7 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
                 cb.greaterThan(root.get(JobEntityColumn.CREATE_TIME),
                         JobDateUtils.getCurrentDateSubtractDays(RECENT_DAY)),
                 cb.equal(root.get(JobEntityColumn.RUN_MODE), runMode),
-                cb.notEqual(root.get(JobEntityColumn.STATUS), JobStatus.PREPARING),
+                root.get(JobEntityColumn.STATUS).in(JobStatus.PREPARING, JobStatus.RETRYING).not(),
                 cb.isNull(root.get(JobEntityColumn.EXECUTOR_DESTROYED_TIME)),
                 executorPredicate(root, cb));
         return entityManager.createQuery(query).getSingleResult();
@@ -410,7 +409,7 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
 
     @Transactional(rollbackFor = Exception.class)
     @Override
-    public int updateStatusToCanceledWhenHeartTimeout(Long id, int heartTimeoutSeconds, String description) {
+    public int updateStatusToFailedWhenHeartTimeout(Long id, int heartTimeoutSeconds, String description) {
 
         CriteriaBuilder cb = entityManager.getCriteriaBuilder();
         CriteriaUpdate<JobEntity> update = cb.createCriteriaUpdate(JobEntity.class);
@@ -501,9 +500,7 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
         Root<JobEntity> e = update.from(JobEntity.class);
         update.set(JobEntityColumn.EXECUTOR_DESTROYED_TIME, JobDateUtils.getCurrentDate());
 
-        update.where(cb.equal(e.get(JobEntityColumn.ID), id),
-                cb.isNull(e.get(JobEntityColumn.EXECUTOR_DESTROYED_TIME)));
-
+        update.where(cb.equal(e.get(JobEntityColumn.ID), id));
         return entityManager.createQuery(update).executeUpdate();
     }
 

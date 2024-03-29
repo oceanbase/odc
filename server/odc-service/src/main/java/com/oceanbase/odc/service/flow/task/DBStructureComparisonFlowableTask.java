@@ -261,6 +261,7 @@ public class DBStructureComparisonFlowableTask extends BaseODCFlowTaskDelegate<V
         } finally {
             StructureComparisonTraceContextHolder.clear();
         }
+        super.onTimeout(taskId, taskService);
     }
 
     @Override
@@ -275,7 +276,6 @@ public class DBStructureComparisonFlowableTask extends BaseODCFlowTaskDelegate<V
         } finally {
             StructureComparisonTraceContextHolder.clear();
         }
-
     }
 
     @Override
@@ -285,8 +285,8 @@ public class DBStructureComparisonFlowableTask extends BaseODCFlowTaskDelegate<V
         log.info("Structure comparison task succeed, taskId={}", taskId);
         try {
             taskService.succeed(taskId, taskResult);
-            updateFlowInstanceStatus(FlowStatus.EXECUTION_SUCCEEDED);
             super.onSuccessful(taskId, taskService);
+            updateFlowInstanceStatus(FlowStatus.EXECUTION_SUCCEEDED);
         } catch (Exception e) {
             log.warn("Failed to record structure comparison task successful result", e);
         } finally {
@@ -298,5 +298,4 @@ public class DBStructureComparisonFlowableTask extends BaseODCFlowTaskDelegate<V
     protected void onProgressUpdate(Long taskId, TaskService taskService) {
         taskService.updateProgress(taskId, comparator.getProgress());
     }
-
 }

@@ -15,7 +15,18 @@
  */
 package com.oceanbase.tools.dbbrowser.stats.mysql;
 
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
+
+import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.jdbc.core.JdbcOperations;
+import org.springframework.jdbc.core.RowMapper;
+
+import com.oceanbase.tools.dbbrowser.model.DBSession;
+import com.oceanbase.tools.dbbrowser.model.DBSession.DBTransState;
 
 import lombok.NonNull;
 
@@ -27,7 +38,48 @@ import lombok.NonNull;
  * @Version 1.0
  */
 public class DorisStatsAccessor extends MySQLNoLessThan5700StatsAccessor {
+
+    private static final String QUERY_SESSION_FROM_PROCESSLIST = "show full processlist";
+
     public DorisStatsAccessor(@NonNull JdbcOperations jdbcOperations) {
         super(jdbcOperations);
     }
+
+    @Override
+    public List<DBSession> listAllSessions() {
+        return this.jdbcOperations.query(QUERY_SESSION_FROM_PROCESSLIST, new DorisDBSessionMapper());
+    }
+
+    @Override
+    public DBSession currentSession() {
+        String connectionId = this.jdbcOperations.queryForObject(
+                "select connection_id()", (rs, rowNum) -> rs.getString(1));
+        List<DBSession> sessions = listAllSessions().stream()
+                .filter(s -> Objects.equals(connectionId, s.getId())).collect(Collectors.toList());
+        if (CollectionUtils.isEmpty(sessions)) {
+            return DBSession.unknown();
+        } else if (sessions.size() != 1) {
+            throw new IllegalStateException("Failed to locate the session by id, " + connectionId);
+        }
+        return sessions.get(0);
+    }
+
+    private static class DorisDBSessionMapper implements RowMapper<DBSession> {
+
+        @Override
+        public DBSession mapRow(ResultSet rs, int rowNum) throws SQLException {
+            DBSession session = new DBSession();
+            session.setId(rs.getString("Id"));
+            session.setUsername(rs.getString("User"));
+            session.setHost(rs.getString("Host"));
+            session.setDatabaseName(rs.getString("Db"));
+            session.setCommand(rs.getString("Command"));
+            session.setExecuteTime(rs.getInt("Time"));
+            session.setState(rs.getString("State"));
+            session.setTransState(DBTransState.UNKNOWN);
+            session.setProxyHost(session.getHost());
+            return session;
+        }
+    }
+
 }

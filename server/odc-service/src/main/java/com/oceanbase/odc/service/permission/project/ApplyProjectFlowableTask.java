@@ -175,8 +175,8 @@ public class ApplyProjectFlowableTask extends BaseODCFlowTaskDelegate<ApplyProje
         TaskContextHolder.trace(getTaskCreatorId(taskId, taskService), taskId);
         log.info("Apply project task succeed, taskId={}", taskId);
         TaskContextHolder.clear();
-        updateFlowInstanceStatus(FlowStatus.EXECUTION_SUCCEEDED);
         super.onSuccessful(taskId, taskService);
+        updateFlowInstanceStatus(FlowStatus.EXECUTION_SUCCEEDED);
     }
 
     @Override
