@@ -35,8 +35,6 @@ import lombok.NoArgsConstructor;
 public class LogicalTable {
     private String name;
 
-    private String fullNamePattern;
-
     private String fullNameExpression;
 
     private String databaseNamePattern;

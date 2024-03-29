@@ -1,15 +1,190 @@
+# no logical table
+- data_nodes:
+    - table_name: "tb1"
+      schema_name: "db1"
+  all_database_names:
+    - "db1"
+  logical_tables: []
+
+# only divide by database
+- data_nodes:
+    - table_name: "tb"
+      schema_name: "db1"
+    - table_name: "tb"
+      schema_name: "db2"
+  all_database_names:
+    - "db1"
+    - "db2"
+  logical_tables:
+    - table_name_pattern: "tb"
+      database_name_pattern: "db[#]"
+      actual_data_nodes:
+        - table_name: "tb"
+          schema_name: "db1"
+        - table_name: "tb"
+          schema_name: "db2"
+
+# only divide by table
 - data_nodes:
     - table_name: "tb1"
       schema_name: "db1"
     - table_name: "tb2"
-      schema_name: "db12"
+      schema_name: "db1"
   all_database_names:
     - "db1"
   logical_tables:
     - table_name_pattern: "tb[#]"
-      database_name_pattern: "db[#]"
+      database_name_pattern: "db1"
       actual_data_nodes:
-          - table_name: "tb1"
-            schema_name: "db1"
-          - table_name: "tb2"
-            schema_name: "db12"
+        - table_name: "tb1"
+          schema_name: "db1"
+        - table_name: "tb2"
+          schema_name: "db1"
+
+# with padding zero
+- data_nodes:
+    - table_name: "tb000"
+      schema_name: "db1"
+    - table_name: "tb001"
+      schema_name: "db1"
+  all_database_names:
+    - "db1"
+  logical_tables:
+    - table_name_pattern: "tb[#]"
+      database_name_pattern: "db1"
+      actual_data_nodes:
+        - table_name: "tb000"
+          schema_name: "db1"
+        - table_name: "tb001"
+          schema_name: "db1"
+
+# different number digits
+- data_nodes:
+    - table_name: "tb1"
+      schema_name: "db1"
+    - table_name: "tb20"
+      schema_name: "db1"
+  all_database_names:
+    - "db1"
+  logical_tables:
+    - table_name_pattern: "tb[#]"
+      database_name_pattern: "db1"
+      actual_data_nodes:
+        - table_name: "tb1"
+          schema_name: "db1"
+        - table_name: "tb20"
+          schema_name: "db1"
+
+# digits in the middle (shadow table scenario)
+- data_nodes:
+    - table_name: "tb_1_t"
+      schema_name: "db1"
+    - table_name: "tb_2_t"
+      schema_name: "db1"
+  all_database_names:
+    - "db1"
+  logical_tables:
+    - table_name_pattern: "tb_[#]_t"
+      database_name_pattern: "db1"
+      actual_data_nodes:
+        - table_name: "tb_1_t"
+          schema_name: "db1"
+        - table_name: "tb_2_t"
+          schema_name: "db1"
+
+# basic table also contains digits
+- data_nodes:
+    - table_name: "tb_1_t2"
+      schema_name: "db1"
+    - table_name: "tb_2_t2"
+      schema_name: "db1"
+  all_database_names:
+    - "db1"
+  logical_tables:
+    - table_name_pattern: "tb_[#]_t2"
+      database_name_pattern: "db1"
+      actual_data_nodes:
+        - table_name: "tb_1_t2"
+          schema_name: "db1"
+        - table_name: "tb_2_t2"
+          schema_name: "db1"
+
+# digits in the front
+- data_nodes:
+    - table_name: "tb_1_t2"
+      schema_name: "db1"
+    - table_name: "tb_2_t2"
+      schema_name: "db1"
+    - table_name: "1_test"
+      schema_name: "db1"
+    - table_name: "2000_test"
+      schema_name: "db1"
+    - table_name: "abc"
+      schema_name: "db1"
+  all_database_names:
+    - "db1"
+  logical_tables:
+    - table_name_pattern: "tb_[#]_t2"
+      database_name_pattern: "db1"
+      actual_data_nodes:
+        - table_name: "tb_1_t2"
+          schema_name: "db1"
+        - table_name: "tb_2_t2"
+          schema_name: "db1"
+    - table_name_pattern: "[#]_test"
+      database_name_pattern: "db1"
+      actual_data_nodes:
+        - table_name: "1_test"
+          schema_name: "db1"
+        - table_name: "2000_test"
+          schema_name: "db1"
+
+# table cascade digits
+- data_nodes:
+    - table_name: "tb_2023_01_t"
+      schema_name: "db1"
+    - table_name: "tb_2023_02_t"
+      schema_name: "db1"
+    - table_name: "tb_2024_01_t"
+      schema_name: "db1"
+    - table_name: "tb_2024_02_t"
+      schema_name: "db1"
+  all_database_names:
+    - "db1"
+  logical_tables:
+    - table_name_pattern: "tb_[#]_[#]_t"
+      database_name_pattern: "db1"
+      actual_data_nodes:
+        - table_name: "tb_2023_01_t"
+          schema_name: "db1"
+        - table_name: "tb_2023_02_t"
+          schema_name: "db1"
+        - table_name: "tb_2024_01_t"
+          schema_name: "db1"
+        - table_name: "tb_2024_02_t"
+          schema_name: "db1"
+
+# database-table cascade digits
+- data_nodes:
+    - table_name: "tb_000_t"
+      schema_name: "db_000"
+    - table_name: "tb_001_t"
+      schema_name: "db_000"
+    - table_name: "tb_000_t"
+      schema_name: "db_001"
+    - table_name: "tb_001_t"
+      schema_name: "db_001"
+  all_database_names:
+    - "db1"
+  logical_tables:
+    - table_name_pattern: "tb_[#]_t"
+      database_name_pattern: "db_[#]"
+      actual_data_nodes:
+        - table_name: "tb_000_t"
+          schema_name: "db_000"
+        - table_name: "tb_001_t"
+          schema_name: "db_000"
+        - table_name: "tb_000_t"
+          schema_name: "db_001"
+        - table_name: "tb_001_t"
+          schema_name: "db_001"

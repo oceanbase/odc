@@ -45,7 +45,14 @@ public class LogicalTableUtilsCopied {
             @NotEmpty List<String> allDatabaseNames) {
         // 找出所有逻辑表，并推导出 逻辑库表名的 databaseNamePattern 和 tableNamePattern
         List<LogicalTable> logicalTables = identifyLogicalTables(dataNodes);
+
+        // 替换掉 pattern 中的 [#] 为具体的数字范围
+        logicalTables.stream().forEach(table -> table.setFullNameExpression(replacePlaceholdersWithRanges(table, allDatabaseNames)));
         return logicalTables;
+    }
+
+    private static String replacePlaceholdersWithRanges(LogicalTable logicalTable, List<String> allDatabaseNames) {
+        return null;
     }
 
     private static List<LogicalTable> identifyLogicalTables(@Valid @NotEmpty List<DataNode> dataNodes) {
