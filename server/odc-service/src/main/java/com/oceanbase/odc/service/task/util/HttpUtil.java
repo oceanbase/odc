@@ -33,14 +33,18 @@ import org.apache.http.impl.client.HttpClientBuilder;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.oceanbase.odc.common.json.JsonUtils;
+import com.oceanbase.odc.service.common.response.OdcResult;
+
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * @author gaoda.xy
  * @date 2023/11/30 17:25
  */
+@Slf4j
 public class HttpUtil {
 
-    private static final int CONNECT_TIMEOUT_SECONDS = 5;
+    private static final int CONNECT_TIMEOUT_SECONDS = 3;
     private static final int SOCKET_TIMEOUT_SECONDS = 30;
     private static final String DEFAULT_METHOD = "POST";
     private static final Charset DEFAULT_CHARSET = StandardCharsets.UTF_8;
@@ -92,4 +96,14 @@ public class HttpUtil {
         return JsonUtils.fromJson(response, responseTypeRef);
     }
 
+    public static boolean isOdcHealthy(String server, int servPort) {
+        String url = String.format("http://%s:%d/api/v1/heartbeat/isHealthy", server, servPort);
+        try {
+            OdcResult<Boolean> result = request(url, new TypeReference<OdcResult<Boolean>>() {});
+            return result.getData();
+        } catch (IOException e) {
+            log.warn("Check odc server health failed, url={}", url);
+            return false;
+        }
+    }
 }
