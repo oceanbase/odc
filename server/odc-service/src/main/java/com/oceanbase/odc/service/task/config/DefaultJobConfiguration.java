@@ -31,7 +31,6 @@ import com.oceanbase.odc.service.task.schedule.provider.JobImageNameProvider;
 import com.oceanbase.odc.service.task.service.TaskFrameworkService;
 import com.oceanbase.odc.service.task.service.TransactionManager;
 
-import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
 
