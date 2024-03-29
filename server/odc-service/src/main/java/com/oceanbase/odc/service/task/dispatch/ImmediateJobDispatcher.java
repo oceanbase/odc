@@ -110,6 +110,7 @@ public class ImmediateJobDispatcher implements JobDispatcher {
                 StringUtils.isNotBlank(k8s.getMountPath()) ? k8s.getMountPath()
                         : JobConstants.ODC_EXECUTOR_DEFAULT_MOUNT_PATH);
         podConfig.setMountDiskSize(k8s.getMountDiskSize());
+        podConfig.setNodeCount(k8s.getNodeCount());
         return podConfig;
     }
 
