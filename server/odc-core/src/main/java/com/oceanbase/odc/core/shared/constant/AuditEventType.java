@@ -64,6 +64,8 @@ public enum AuditEventType implements Translatable {
 
     APPLY_DATABASE_PERMISSION,
 
+    STRUCTURE_COMPARISON,
+
     DATA_MASKING_RULE,
 
     DATA_MASKING_POLICY,
