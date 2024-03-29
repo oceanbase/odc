@@ -60,7 +60,6 @@ public class CheckRunningJob implements Job {
                 .findHeartTimeTimeoutJobs(heartTimeoutSeconds, 0,
                         getFetchRowSize(taskFrameworkProperties.getRunMode()));
         jobs.forEach(this::handleJobRetryingOrFailed);
-
     }
 
     private int getFetchRowSize(TaskRunMode taskRunMode) {
