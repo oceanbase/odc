@@ -32,13 +32,16 @@ import com.oceanbase.odc.service.task.service.TaskFrameworkService;
 import com.oceanbase.odc.service.task.service.TransactionManager;
 
 import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 
 /**
  * @author yaobin
  * @date 2023-11-21
  * @since 4.2.4
  */
-@Data
+@Getter
+@Setter
 public abstract class DefaultJobConfiguration implements JobConfiguration {
 
     protected TaskFrameworkProperties taskFrameworkProperties;
