@@ -42,6 +42,8 @@ import lombok.Data;
 @Data
 public abstract class DefaultJobConfiguration implements JobConfiguration {
 
+    protected TaskFrameworkEnabledProperties taskFrameworkEnabledProperties;
+
     protected TaskFrameworkProperties taskFrameworkProperties;
 
     protected CloudEnvConfigurations cloudEnvConfigurations;

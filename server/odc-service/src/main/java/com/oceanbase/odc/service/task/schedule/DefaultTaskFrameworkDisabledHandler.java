@@ -20,6 +20,7 @@ import org.springframework.data.domain.Page;
 import com.oceanbase.odc.metadb.task.JobEntity;
 import com.oceanbase.odc.service.task.config.JobConfiguration;
 import com.oceanbase.odc.service.task.config.JobConfigurationHolder;
+import com.oceanbase.odc.service.task.config.TaskFrameworkEnabledProperties;
 import com.oceanbase.odc.service.task.config.TaskFrameworkProperties;
 import com.oceanbase.odc.service.task.enums.JobStatus;
 import com.oceanbase.odc.service.task.exception.JobException;
@@ -39,12 +40,12 @@ public class DefaultTaskFrameworkDisabledHandler implements TaskFrameworkDisable
     @Override
     public void handleJobToFailed() {
         JobConfiguration configuration = JobConfigurationHolder.getJobConfiguration();
-        TaskFrameworkProperties taskFrameworkProperties = configuration.getTaskFrameworkProperties();
+        TaskFrameworkEnabledProperties taskFrameworkProperties = configuration.getTaskFrameworkEnabledProperties();
         if (taskFrameworkProperties.isEnabled()) {
             return;
         }
         Page<JobEntity> jobs = configuration.getTaskFrameworkService().findNotTerminalJobs(0,
-                taskFrameworkProperties.getSingleFetchCheckHeartTimeoutJobRows());
+            configuration.getTaskFrameworkProperties().getSingleFetchCheckHeartTimeoutJobRows());
 
         jobs.getContent().forEach(j -> {
             try {

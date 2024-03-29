@@ -51,6 +51,7 @@ public class DefaultSpringJobConfiguration extends DefaultJobConfiguration
 
     @Override
     public void afterPropertiesSet() {
+        setTaskFrameworkEnabledProperties(ctx.getBean(TaskFrameworkEnabledProperties.class));
         setCloudEnvConfigurations(ctx.getBean(CloudEnvConfigurations.class));
         setHostUrlProvider(new DefaultHostUrlProvider(this::getTaskFrameworkProperties,
                 ctx.getBean(HostProperties.class)));

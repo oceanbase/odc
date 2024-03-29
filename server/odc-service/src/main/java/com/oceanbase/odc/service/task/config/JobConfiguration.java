@@ -38,6 +38,7 @@ import com.oceanbase.odc.service.task.service.TransactionManager;
  * @since 4.2.4
  */
 public interface JobConfiguration {
+    TaskFrameworkEnabledProperties getTaskFrameworkEnabledProperties();
 
     TaskFrameworkProperties getTaskFrameworkProperties();
 
