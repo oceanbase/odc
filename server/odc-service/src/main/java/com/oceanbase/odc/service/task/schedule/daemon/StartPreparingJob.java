@@ -36,6 +36,7 @@ import com.oceanbase.odc.service.task.enums.JobStatus;
 import com.oceanbase.odc.service.task.exception.JobException;
 import com.oceanbase.odc.service.task.exception.TaskRuntimeException;
 import com.oceanbase.odc.service.task.schedule.DefaultJobContextBuilder;
+import com.oceanbase.odc.service.task.schedule.ResourceDetectUtil;
 import com.oceanbase.odc.service.task.schedule.SingleJobProperties;
 import com.oceanbase.odc.service.task.service.TaskFrameworkService;
 import com.oceanbase.odc.service.task.util.JobDateUtils;
@@ -57,7 +58,7 @@ public class StartPreparingJob implements Job {
     public void execute(JobExecutionContext context) throws JobExecutionException {
         configuration = JobConfigurationHolder.getJobConfiguration();
         JobConfigurationValidator.validComponent();
-        if (!configuration.getStartJobRateLimiter().tryAcquire()) {
+        if (!ResourceDetectUtil.isResourceAvailable(configuration.getTaskFrameworkProperties())) {
             return;
         }
         TaskFrameworkProperties taskFrameworkProperties = configuration.getTaskFrameworkProperties();

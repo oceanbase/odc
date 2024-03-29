@@ -61,18 +61,7 @@ public class MonitorProcessRateLimiter extends BaseStartJobRateLimiter {
             }
             return false;
         }
-        long systemFreeMemory = SystemUtils.getSystemFreePhysicalMemory().convert(BinarySizeUnit.MB).getSizeDigit();
-        long processMemoryMinSize = taskFrameworkProperties.get().getJobProcessMinMemorySizeInMB();
-        long memoryReserveSize = taskFrameworkProperties.get().getSystemReserveMinFreeMemorySizeInMB();
-
-        if (systemFreeMemory < (memoryReserveSize + processMemoryMinSize)) {
-            if (log.isDebugEnabled()) {
-                log.debug("Free memory lack, systemFreeMemory={}, processMemoryMinSize={}, "
-                        + "memoryReserveSize={}", systemFreeMemory, processMemoryMinSize, memoryReserveSize);
-            }
-            return false;
-        }
-        return true;
+        return ResourceDetectUtil.isResourceAvailable(taskFrameworkProperties.get());
     }
 
     private long calculateRunningJobCountLimit() {
