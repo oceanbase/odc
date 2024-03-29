@@ -84,7 +84,7 @@
   body: |
     SELECT
       `user`,
-      `account_locked`,
+      `password_expired`,
       `select_priv`,
       `insert_priv`,
       `update_priv`,
@@ -152,7 +152,7 @@
   dialect_type: MYSQL
   tags: [ 'developer','mysql', 'revoke' ]
   type: DDL
-  description: 'Revoke all privileges from user for MySQL'
-  prefix: revoke_all_privileges_from_user
+  description: 'Revoke one schema privileges from user for MySQL'
+  prefix: revoke_schema_privileges_from_user
   body: |
     REVOKE ALL PRIVILEGES ON ${1:schema_name}.* FROM ${2:username};

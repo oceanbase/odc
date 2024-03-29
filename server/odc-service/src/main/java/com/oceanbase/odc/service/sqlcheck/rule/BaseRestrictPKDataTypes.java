@@ -118,6 +118,9 @@ abstract class BaseRestrictPKDataTypes implements SqlCheckRule {
     protected Map<String, String> getColumnName2TypeName(CreateTable createTable) {
         Map<String, String> col2TypeName = new HashMap<>();
         createTable.getColumnDefinitions().forEach(d -> {
+            if (d.getDataType() == null) {
+                return;
+            }
             String column = unquoteIdentifier(d.getColumnReference().getColumn());
             col2TypeName.put(column, d.getDataType().getName());
         });
@@ -159,6 +162,8 @@ abstract class BaseRestrictPKDataTypes implements SqlCheckRule {
         return stream.filter(d -> {
             ColumnAttributes a = d.getColumnAttributes();
             if (a == null || CollectionUtils.isEmpty(a.getConstraints())) {
+                return false;
+            } else if (d.getDataType() == null) {
                 return false;
             }
             return a.getConstraints().stream().anyMatch(InLineConstraint::isPrimaryKey)

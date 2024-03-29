@@ -521,7 +521,10 @@ public class OracleSqlCheckerTest {
                         + "constraint abcd_pk primary key(name, \"age\"))",
                 "alter table abcd add primary key (NAME)",
                 "alter table abcd add primary key (age)",
-                "alter table \"abcd\" add primary key (NAME)"
+                "alter table \"abcd\" add primary key (NAME)",
+                "CREATE TABLE ORACLE_RANGE_VARCHAR_2(\n"
+                        + "    char_column_number GENERATED ALWAYS AS (TO_NUMBER(char_column)) VIRTUAL\n"
+                        + ")",
         };
         JdbcTemplate jdbcTemplate = Mockito.mock(JdbcTemplate.class);
         Mockito.when(jdbcTemplate.queryForObject(Mockito.anyString(), Mockito.any(RowMapper.class)))
@@ -563,7 +566,10 @@ public class OracleSqlCheckerTest {
                 "alter table abcd add unique (\"age\")",
                 "create index abcd_idx1 on abcd(id)",
                 "create index abcd_idx2 on abcd(id, name)",
-                "create index abcd_idx3 on abcd(age_t, name)"
+                "create index abcd_idx3 on abcd(age_t, name)",
+                "CREATE TABLE ORACLE_RANGE_VARCHAR_2(\n"
+                        + "    char_column_number GENERATED ALWAYS AS (TO_NUMBER(char_column)) VIRTUAL\n"
+                        + ")"
         };
         JdbcTemplate jdbcTemplate = Mockito.mock(JdbcTemplate.class);
         Mockito.when(jdbcTemplate.queryForObject(Mockito.anyString(), Mockito.any(RowMapper.class)))
@@ -814,7 +820,10 @@ public class OracleSqlCheckerTest {
     public void check_columnIsNullable_violationGenerated() {
         String[] sqls = new String[] {
                 "create table aaaa(id varchar(64), col1 blob, col2 number not null)",
-                "alter table abdcd add id number default 123, add id1 nchar(23) null, add col1 blob, add col2 number not null"
+                "alter table abdcd add id number default 123, add id1 nchar(23) null, add col1 blob, add col2 number not null",
+                "CREATE TABLE ORACLE_RANGE_VARCHAR_2(\n"
+                        + "    char_column_number GENERATED ALWAYS AS (TO_NUMBER(char_column)) VIRTUAL\n"
+                        + ")"
         };
         DefaultSqlChecker sqlChecker = new DefaultSqlChecker(DialectType.OB_ORACLE, "$$",
                 Collections.singletonList(new RestrictColumnNotNull(new HashSet<>(Collections.singletonList("blob")))));
@@ -833,7 +842,10 @@ public class OracleSqlCheckerTest {
     public void check_noDefaultValue_violationGenerated() {
         String[] sqls = new String[] {
                 "create table aaaa(id varchar(64), col1 blob, col2 number default 123)",
-                "alter table abdcd add id number unique, add id1 nchar(23) null, add col1 blob, add col2 number default 567"
+                "alter table abdcd add id number unique, add id1 nchar(23) null, add col1 blob, add col2 number default 567",
+                "CREATE TABLE ORACLE_RANGE_VARCHAR_2(\n"
+                        + "    char_column_number GENERATED ALWAYS AS (TO_NUMBER(char_column)) VIRTUAL\n"
+                        + ")"
         };
         DefaultSqlChecker sqlChecker = new DefaultSqlChecker(DialectType.OB_ORACLE, "$$",
                 Collections.singletonList(new NoDefaultValueExists(new HashSet<>(Collections.singletonList("blob")))));
@@ -1062,7 +1074,10 @@ public class OracleSqlCheckerTest {
         String[] sqls = {
                 "create table abcd(ida blob not null, col1 varchar(64) not null default 'abcd')",
                 "alter table abcd add idb varchar2(64) not null",
-                "alter table abcd add idv clob not null default 123"
+                "alter table abcd add idv clob not null default 123",
+                "CREATE TABLE ORACLE_RANGE_VARCHAR_2(\n"
+                        + "    char_column_number GENERATED ALWAYS AS (TO_NUMBER(char_column)) VIRTUAL\n"
+                        + ")"
         };
         DefaultSqlChecker sqlChecker = new DefaultSqlChecker(DialectType.OB_ORACLE,
                 null,

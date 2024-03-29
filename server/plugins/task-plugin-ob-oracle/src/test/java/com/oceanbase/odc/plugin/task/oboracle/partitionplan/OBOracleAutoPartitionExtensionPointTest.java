@@ -129,14 +129,14 @@ public class OBOracleAutoPartitionExtensionPointTest {
                         + PartitionPlanVariableKey.INTERVAL.getVariable() + ", 'YYYYMMDD'))");
                 config2.setIntervalGenerateExpr("NUMTOYMINTERVAL(1, 'MONTH')");
                 definition.setName(nameGen.invoke(connection, dbTable,
-                        getSqlExprBasedNameGeneratorParameters(i, config2)));
+                        getSqlExprBasedNameGeneratorParameters(i, config2, definition)));
                 partition.getPartitionDefinitions().add(definition);
             }
             partition.setPartitionOption(dbTable.getPartition().getPartitionOption());
             partition.setTableName(dbTable.getName());
             partition.setSchemaName(dbTable.getSchemaName());
             List<String> actuals = extensionPoint.generateCreatePartitionDdls(connection, partition);
-            List<String> expects = Collections.singletonList(String.format("ALTER TABLE %s.%s ADD \n"
+            List<String> expects = Collections.singletonList(String.format("ALTER TABLE \"%s\".\"%s\" ADD \n"
                     + "\tPARTITION \"P20240225\" VALUES LESS THAN (TO_DATE(' 2024-12-31 23:59:59', "
                     + "'SYYYY-MM-DD HH24:MI:SS', 'NLS_CALENDAR=GREGORIAN'),Timestamp '2024-01-26 00:00:00'),\n"
                     + "\tPARTITION \"P20240325\" VALUES LESS THAN (TO_DATE(' 2025-12-31 23:59:59', "
@@ -177,7 +177,7 @@ public class OBOracleAutoPartitionExtensionPointTest {
             dbTablePartition.setSchemaName(dbTable.getSchemaName());
             List<String> actual = extensionPoint.generateDropPartitionDdls(connection, dbTablePartition, true);
             List<String> expects = Collections.singletonList(String.format(
-                    "ALTER TABLE %s.%s DROP PARTITION (P0) UPDATE GLOBAL INDEXES;",
+                    "ALTER TABLE \"%s\".\"%s\" DROP PARTITION (\"P0\") UPDATE GLOBAL INDEXES;",
                     configuration.getDefaultDBName(), RANGE_TABLE_NAME));
             Assert.assertEquals(expects, actual);
         }
@@ -199,8 +199,9 @@ public class OBOracleAutoPartitionExtensionPointTest {
             dbTablePartition.setTableName(dbTable.getName());
             dbTablePartition.setSchemaName(dbTable.getSchemaName());
             List<String> actual = extensionPoint.generateDropPartitionDdls(connection, dbTablePartition, false);
-            List<String> expects = Collections.singletonList(String.format("ALTER TABLE %s.%s DROP PARTITION (P0);\n",
-                    configuration.getDefaultDBName(), RANGE_TABLE_NAME));
+            List<String> expects = Collections.singletonList(
+                    String.format("ALTER TABLE \"%s\".\"%s\" DROP PARTITION (\"P0\");\n",
+                            configuration.getDefaultDBName(), RANGE_TABLE_NAME));
             Assert.assertEquals(expects, actual);
         }
     }
@@ -222,9 +223,10 @@ public class OBOracleAutoPartitionExtensionPointTest {
         return parameters;
     }
 
-    private Map<String, Object> getSqlExprBasedNameGeneratorParameters(int index, SqlExprBasedGeneratorConfig config) {
+    private Map<String, Object> getSqlExprBasedNameGeneratorParameters(int index, SqlExprBasedGeneratorConfig config,
+            DBTablePartitionDefinition definition) {
         Map<String, Object> parameters = new HashMap<>();
-        parameters.put(PartitionNameGenerator.TARGET_PARTITION_DEF_KEY, new DBTablePartitionDefinition());
+        parameters.put(PartitionNameGenerator.TARGET_PARTITION_DEF_KEY, definition);
         parameters.put(PartitionNameGenerator.TARGET_PARTITION_DEF_INDEX_KEY, index);
         parameters.put(PartitionNameGenerator.PARTITION_NAME_GENERATOR_KEY, config);
         return parameters;

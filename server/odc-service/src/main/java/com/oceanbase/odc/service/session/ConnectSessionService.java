@@ -25,7 +25,10 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
@@ -147,9 +150,9 @@ public class ConnectSessionService {
     private CloudMetadataClient cloudMetadataClient;
     @Autowired
     private UserConfigFacade userConfigFacade;
-
     @Autowired
     private StateHostGenerator stateHostGenerator;
+    private final Map<String, Lock> sessionId2Lock = new ConcurrentHashMap<>();
     @Autowired
     private RuntimeEnvironmentUtils runtimeEnvironmentUtils;
 
@@ -161,6 +164,7 @@ public class ConnectSessionService {
         this.connectionSessionManager = new DefaultConnectionSessionManager(
                 new DefaultTaskManager("connection-session-management"), repository);
         this.connectionSessionManager.addListener(new SessionLimitListener(limitService));
+        this.connectionSessionManager.addListener(new SessionLockRemoveListener(this.sessionId2Lock));
         this.connectionSessionManager.enableAsyncRefreshSessionManager();
         this.connectionSessionManager.addSessionValidator(
                 new SessionValidatorPredicate(sessionProperties.getTimeoutMins(), TimeUnit.MINUTES));
@@ -340,9 +344,25 @@ public class ConnectSessionService {
             if (!autoCreate || !StringUtils.equals(req.getFrom(), stateHostGenerator.getHost())) {
                 throw new NotFoundException(ResourceType.ODC_SESSION, "ID", sessionId);
             }
-            session = create(req);
-            ConnectionSessionUtil.setConsoleSessionResetFlag(session, true);
-            return session;
+            Lock lock = this.sessionId2Lock.computeIfAbsent(sessionId, s -> new ReentrantLock());
+            try {
+                if (!lock.tryLock(10, TimeUnit.SECONDS)) {
+                    throw new IllegalStateException("Session is creating, please wait and retry later");
+                }
+            } catch (Exception e) {
+                throw new IllegalStateException(e);
+            }
+            try {
+                session = connectionSessionManager.getSession(sessionId);
+                if (session != null) {
+                    return session;
+                }
+                session = create(req);
+                ConnectionSessionUtil.setConsoleSessionResetFlag(session, true);
+                return session;
+            } finally {
+                lock.unlock();
+            }
         }
         if (!Objects.equals(ConnectionSessionUtil.getUserId(session), authenticationFacade.currentUserId())) {
             throw new NotFoundException(ResourceType.ODC_SESSION, "ID", sessionId);

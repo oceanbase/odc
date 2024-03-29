@@ -76,7 +76,7 @@ public class MappingRuleConvert {
         testLoginManager.saveOauth2TestIdIfNeed(JsonUtils.toJson(userInfoMap));
         testLoginManager.abortIfOAuthTestLoginInfo();
         Long organizationId = parseOrganizationId(userRequest.getClientRegistration().getRegistrationId());
-        String userAccountName = (String) userInfoMap.get(mappingRule.getUserAccountNameField());
+        String userAccountName = String.valueOf(userInfoMap.get(mappingRule.getUserAccountNameField()));
         String parseExtraInfo = parseExtraInfo(userInfoMap, mappingRule);
         String name = getName(userInfoMap, mappingRule);
         return MappingResult.builder()

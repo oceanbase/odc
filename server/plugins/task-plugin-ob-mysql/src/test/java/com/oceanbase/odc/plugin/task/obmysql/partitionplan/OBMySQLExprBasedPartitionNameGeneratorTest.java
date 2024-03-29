@@ -16,6 +16,7 @@
 package com.oceanbase.odc.plugin.task.obmysql.partitionplan;
 
 import java.sql.Connection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -29,7 +30,9 @@ import com.oceanbase.odc.plugin.task.obmysql.partitionplan.invoker.partitionname
 import com.oceanbase.odc.test.database.TestDBConfiguration;
 import com.oceanbase.odc.test.database.TestDBConfigurations;
 import com.oceanbase.tools.dbbrowser.model.DBTable;
+import com.oceanbase.tools.dbbrowser.model.DBTablePartition;
 import com.oceanbase.tools.dbbrowser.model.DBTablePartitionDefinition;
+import com.oceanbase.tools.dbbrowser.model.DBTablePartitionOption;
 
 /**
  * Test cases for {@link OBMySQLExprBasedPartitionNameGenerator}
@@ -45,10 +48,17 @@ public class OBMySQLExprBasedPartitionNameGeneratorTest {
         TestDBConfiguration configuration = TestDBConfigurations.getInstance().getTestOBMysqlConfiguration();
         try (Connection connection = configuration.getDataSource().getConnection()) {
             DBTable dbTable = new DBTable();
+            DBTablePartition partition = new DBTablePartition();
+            DBTablePartitionOption option = new DBTablePartitionOption();
+            option.setColumnNames(Collections.singletonList("`col`"));
+            partition.setPartitionOption(option);
+            DBTablePartitionDefinition definition = new DBTablePartitionDefinition();
+            definition.setMaxValues(Collections.singletonList("'2024-01-25 00:00:00'"));
+            partition.setPartitionDefinitions(Collections.singletonList(definition));
+            dbTable.setPartition(partition);
             PartitionNameGenerator generator = new OBMySQLExprBasedPartitionNameGenerator();
             SqlExprBasedGeneratorConfig config = new SqlExprBasedGeneratorConfig();
-            config.setGenerateExpr("concat('p', date_format(from_unixtime(unix_timestamp("
-                    + "STR_TO_DATE(20240125, '%Y%m%d')) + "
+            config.setGenerateExpr("concat('p', date_format(from_unixtime(unix_timestamp(${col}) + "
                     + PartitionPlanVariableKey.INTERVAL.getVariable() + "), '%Y%m%d'))");
             config.setIntervalGenerateExpr("86400");
             String actual = generator.invoke(connection, dbTable, getParameters(0, config));
@@ -58,7 +68,9 @@ public class OBMySQLExprBasedPartitionNameGeneratorTest {
 
     private Map<String, Object> getParameters(int index, SqlExprBasedGeneratorConfig config) {
         Map<String, Object> parameters = new HashMap<>();
-        parameters.put(PartitionNameGenerator.TARGET_PARTITION_DEF_KEY, new DBTablePartitionDefinition());
+        DBTablePartitionDefinition definition = new DBTablePartitionDefinition();
+        definition.setMaxValues(Collections.singletonList("'2024-01-25 00:00:00'"));
+        parameters.put(PartitionNameGenerator.TARGET_PARTITION_DEF_KEY, definition);
         parameters.put(PartitionNameGenerator.TARGET_PARTITION_DEF_INDEX_KEY, index);
         parameters.put(PartitionNameGenerator.PARTITION_NAME_GENERATOR_KEY, config);
         return parameters;

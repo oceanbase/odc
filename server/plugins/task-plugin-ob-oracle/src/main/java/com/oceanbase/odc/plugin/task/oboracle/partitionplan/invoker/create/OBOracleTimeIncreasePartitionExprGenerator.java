@@ -25,6 +25,7 @@ import com.oceanbase.odc.plugin.task.obmysql.partitionplan.invoker.SqlExprCalcul
 import com.oceanbase.odc.plugin.task.obmysql.partitionplan.invoker.SqlExprCalculator.SqlExprResult;
 import com.oceanbase.odc.plugin.task.obmysql.partitionplan.invoker.create.OBMySQLTimeIncreasePartitionExprGenerator;
 import com.oceanbase.odc.plugin.task.obmysql.partitionplan.mapper.CellDataProcessor;
+import com.oceanbase.odc.plugin.task.oboracle.partitionplan.OBOracleAutoPartitionExtensionPoint;
 import com.oceanbase.odc.plugin.task.oboracle.partitionplan.datatype.OBOraclePartitionKeyDataTypeFactory;
 import com.oceanbase.odc.plugin.task.oboracle.partitionplan.invoker.OBOracleSqlExprCalculator;
 import com.oceanbase.odc.plugin.task.oboracle.partitionplan.mapper.CellDataProcessors;
@@ -73,6 +74,11 @@ public class OBOracleTimeIncreasePartitionExprGenerator extends OBMySQLTimeIncre
         TimeFormatResult result = new TimeFormatResult();
         result.setTimestamp(candidate.getTime());
         return result;
+    }
+
+    @Override
+    protected String unquoteIdentifier(String identifier) {
+        return new OBOracleAutoPartitionExtensionPoint().unquoteIdentifier(identifier);
     }
 
 }

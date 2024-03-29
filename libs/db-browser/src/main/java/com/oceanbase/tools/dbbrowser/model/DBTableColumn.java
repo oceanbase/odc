@@ -207,7 +207,12 @@ public class DBTableColumn implements DBObject, DBObjectWarningDescriptor {
          * If COLUMN_KEY is MUL, the column is the first column of a nonunique index in which multiple
          * occurrences of a given value are permitted within the column.
          */
-        MUL
+        MUL,
+
+        /**
+         * If COLUMN_KEY is AGG, the column is an aggregate key in an Aggregate Model table.
+         */
+        AGG
     }
 
     public enum CharUnit {

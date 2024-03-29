@@ -40,6 +40,7 @@ import com.oceanbase.odc.core.flow.model.AbstractFlowTaskResult;
 import com.oceanbase.odc.core.flow.model.FlowTaskResult;
 import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.core.shared.exception.NotFoundException;
+import com.oceanbase.odc.core.shared.exception.UnsupportedException;
 import com.oceanbase.odc.metadb.flow.ServiceTaskInstanceRepository;
 import com.oceanbase.odc.metadb.task.TaskEntity;
 import com.oceanbase.odc.service.common.model.HostProperties;
@@ -161,7 +162,6 @@ public abstract class BaseODCFlowTaskDelegate<T> extends BaseRuntimeFlowableDele
             super.run(execution);
         } catch (Exception e) {
             log.warn("Failed to run task, activityId={}", execution.getCurrentActivityId(), e);
-            SecurityContextUtils.clear();
             if (scheduleExecutor != null) {
                 scheduleExecutor.shutdownNow();
             }
@@ -173,6 +173,7 @@ public abstract class BaseODCFlowTaskDelegate<T> extends BaseRuntimeFlowableDele
             if (e instanceof BaseFlowException) {
                 throw e;
             }
+            SecurityContextUtils.clear();
             throw new ServiceTaskError(e);
         }
         try {
@@ -336,8 +337,14 @@ public abstract class BaseODCFlowTaskDelegate<T> extends BaseRuntimeFlowableDele
 
     private void setDownloadLogUrl(@NonNull Long flowInstanceId) throws IOException, NotFoundException {
         TaskEntity taskEntity = taskService.detail(taskId);
-        File logFile = taskService.getLogFile(taskEntity.getCreatorId(), taskId + "", taskEntity.getTaskType(),
-                OdcTaskLogLevel.ALL);
+        File logFile;
+        try {
+            logFile = taskService.getLogFile(taskEntity.getCreatorId(), taskId + "", taskEntity.getTaskType(),
+                    OdcTaskLogLevel.ALL);
+        } catch (UnsupportedException e) {
+            // If the log file does not exist, the download URL will not be set
+            return;
+        }
         String downloadUrl = String.format("/api/v2/flow/flowInstances/%s/tasks/log/download", flowInstanceId);
         if (Objects.nonNull(cloudObjectStorageService) && cloudObjectStorageService.supported()) {
             String fileName = TaskLogFilenameGenerator.generate(flowInstanceId);

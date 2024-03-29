@@ -91,6 +91,7 @@ public class TestLoginManager {
         testLoginInfoCache.put(testId, loginInfo);
     }
 
+    @SkipAuthorize
     public void saveLdapTestIdIfNeed(@NotBlank String loginInfo) {
         LdapContext context = LdapContextHolder.getContext();
         if (context.isTest()) {
@@ -158,6 +159,7 @@ public class TestLoginManager {
         }
     }
 
+    @SkipAuthorize
     public void abortIfLdapTestLogin() {
         LdapContext context = LdapContextHolder.getContext();
         if (context.isTest()) {
@@ -165,6 +167,7 @@ public class TestLoginManager {
         }
     }
 
+    @SkipAuthorize
     public static boolean isOAuthTestLoginRequest(HttpServletRequest request) {
         String registrationId = resolveRegistrationId(request);
         if (registrationId == null) {
@@ -173,6 +176,7 @@ public class TestLoginManager {
         return "test".equals(parseRegistrationName(registrationId));
     }
 
+    @SkipAuthorize
     public LdapContext loadLdapContext(HttpServletRequest request) {
         boolean isLdapLogin = LDAP_REQUEST_MATCHER.matches(request);
         if (!isLdapLogin) {

@@ -18,6 +18,7 @@ package com.oceanbase.odc.service.config;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 import javax.validation.constraints.NotNull;
 
@@ -110,7 +111,21 @@ public class SystemConfigService {
     @SkipAuthorize("odc internal usage")
     public List<Configuration> queryByKeyPrefix(String keyPrefix) {
         List<SystemConfigEntity> configEntities = systemConfigDAO.queryByKeyPrefix(keyPrefix);
-        return ConfigurationUtils.fromEntity(configEntities);
+        return ConfigurationUtils.fromEntity(configEntities).stream().peek(config -> {
+            for (Consumer<Configuration> consumer : getConfigurationConsumer()) {
+                consumer.accept(config);
+            }
+        }).collect(Collectors.toList());
+    }
+
+    @SkipAuthorize("odc internal usage")
+    public Configuration queryByKey(String key) {
+        SystemConfigEntity systemConfigEntity = systemConfigDAO.queryByKey(key);
+        Configuration config = ConfigurationUtils.fromEntity(systemConfigEntity);
+        for (Consumer<Configuration> consumer : getConfigurationConsumer()) {
+            consumer.accept(config);
+        }
+        return config;
     }
 
     @SkipAuthorize("odc internal usage")
@@ -123,6 +138,7 @@ public class SystemConfigService {
         }
     }
 
+    @SkipAuthorize("public readonly resource")
     @Transactional(rollbackFor = Exception.class)
     public void insert(@NotNull List<SystemConfigEntity> entities) {
         entities.forEach(entity -> systemConfigDAO.insert(entity));
@@ -138,9 +154,10 @@ public class SystemConfigService {
         return needRefresh;
     }
 
+    @SkipAuthorize("odc internal usage")
     @Transactional(rollbackFor = Exception.class)
-    public void saveConfig(@NotNull List<SystemConfigEntity> entities) {
-        entities.forEach(entity -> systemConfigDAO.saveConfig(entity));
+    public void upsert(@NotNull List<SystemConfigEntity> entities) {
+        entities.forEach(entity -> systemConfigDAO.upsert(entity));
     }
 
 }
