@@ -15,7 +15,7 @@
  */
 package com.oceanbase.odc.service.task.schedule.daemon;
 
-import java.text.MessageFormat;
+    import java.text.MessageFormat;
 
 import org.quartz.DisallowConcurrentExecution;
 import org.quartz.Job;
@@ -84,6 +84,16 @@ public class CheckRunningJob implements Job {
             getConfiguration().getJobDispatcher().destroy(JobIdentity.of(a.getId()));
         } catch (JobException e) {
             throw new TaskRuntimeException(e);
+        }
+
+        JobEntity checkedEntity = getConfiguration().getTaskFrameworkService().find(jobEntity.getId());
+        if (checkedEntity.getStatus() == JobStatus.FAILED) {
+            log.info("Job has been FAILED, jobId={}", jobEntity.getId());
+            return;
+        }
+        if (checkedEntity.getExecutorDestroyedTime() == null) {
+            log.info("Job executor has not been destroyed, may not on this machine, jobId={}", jobEntity.getId());
+            return;
         }
 
         if (checkJobIfRetryNecessary(a)) {
