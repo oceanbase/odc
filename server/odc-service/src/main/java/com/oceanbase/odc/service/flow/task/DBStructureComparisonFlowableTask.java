@@ -276,8 +276,6 @@ public class DBStructureComparisonFlowableTask extends BaseODCFlowTaskDelegate<V
         } finally {
             StructureComparisonTraceContextHolder.clear();
         }
-
-        super.onFailure(taskId, taskService);
     }
 
     @Override
