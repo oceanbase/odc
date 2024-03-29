@@ -27,6 +27,8 @@ import org.junit.Test;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.oceanbase.odc.common.util.YamlUtils;
+import com.oceanbase.odc.service.connection.logicaldatabase.model.DataNode;
+import com.oceanbase.odc.service.connection.logicaldatabase.model.LogicalTable;
 
 import junit.framework.TestCase;
 import lombok.AllArgsConstructor;
@@ -34,22 +36,27 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 public class LogicalTableUtilsTest {
-    private static final String TEST_RESOURCE_FILE_PATH = "logicaldatabase/logical-table-identification.yaml";
+    private static final String TEST_RESOURCE_FILE_PATH = "logicaldatabase/logical_table_identification.yaml";
 
     @Test
     public void testGeneratePatternExpressions() {
-        List<LogicalTableIdentification> logicalTableIdentifications =
-                YamlUtils.fromYamlList(TEST_RESOURCE_FILE_PATH, LogicalTableIdentification.class);
-        for (LogicalTableIdentification logicalTableIdentification : logicalTableIdentifications) {
-            List<String> input = logicalTableIdentification.getFullTableNames();
-            Map<String, List<String>> result = LogicalTableUtils.generatePatternExpressions(input);
-            List<Expression2Tables> actual = result.entrySet().stream().map(entry -> new Expression2Tables(entry.getKey(), entry.getValue())).collect(Collectors.toList());
-            List<Expression2Tables> expected = logicalTableIdentification.getExpression2Tables();
-            Assert.assertEquals(expected, actual);
+        List<LogicalTableIdentificationTestCase> testCases =
+                YamlUtils.fromYamlList(TEST_RESOURCE_FILE_PATH, LogicalTableIdentificationTestCase.class);
+        for (LogicalTableIdentificationTestCase testCase : testCases) {
+            List<LogicalTable> actual = LogicalTableUtilsCopied.generatePatternExpressions(testCase.getDataNodes(), testCase.getAllDatabaseNames());
+            Assert.assertEquals(testCase.getLogicalTables(), actual);
         }
-
     }
 
+
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    static class LogicalTableIdentificationTestCase {
+        private List<DataNode> dataNodes;
+        private List<String> allDatabaseNames;
+        private List<LogicalTable> logicalTables;
+    }
 
     @Data
     @NoArgsConstructor
@@ -57,6 +64,8 @@ public class LogicalTableUtilsTest {
     static class LogicalTableIdentification {
         @JsonProperty("fullTableNames")
         private List<String> fullTableNames;
+        @JsonProperty("allDatabaseNames")
+        private List<String> allDatabaseNames;
         @JsonProperty("expression2Tables")
         private List<Expression2Tables> expression2Tables;
     }

@@ -35,7 +35,7 @@ public class DataNode {
 
     private String tableName;
 
-    public String format() {
+    public String getFullName() {
         return schemaName + DELIMITER + tableName;
     }
 }

@@ -39,5 +39,9 @@ public class LogicalTable {
 
     private String fullNameExpression;
 
+    private String databaseNamePattern;
+
+    private String tableNamePattern;
+
     private List<DataNode> actualDataNodes;
 }

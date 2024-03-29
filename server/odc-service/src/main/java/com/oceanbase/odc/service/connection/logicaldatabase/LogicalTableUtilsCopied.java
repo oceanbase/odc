@@ -29,47 +29,51 @@ import java.util.stream.Collectors;
 import javax.validation.Valid;
 import javax.validation.constraints.NotEmpty;
 
-import org.apache.hadoop.util.StringUtils;
+import com.oceanbase.odc.service.connection.logicaldatabase.model.DataNode;
+import com.oceanbase.odc.service.connection.logicaldatabase.model.LogicalTable;
 
 /**
  * @Author: Lebie
  * @Date: 2024/3/26 14:17
  * @Description: []
  */
-public class LogicalTableUtils {
+public class LogicalTableUtilsCopied {
     private static final String DELIMITER = ".";
     private static final Pattern DIGIT_PATTERN = Pattern.compile("\\d+");
 
-
-
-    public static Map<String, List<String>> generatePatternExpressions(@NotEmpty List<String> fullTableNames, @NotEmpty List<String> allDatabaseNames) {
-        Map<String, List<String>> patternToPhysicalTablesMap = identifyBasicPatterns(fullTableNames);
-        Map<String, List<String>> patternToExpressionMap = new LinkedHashMap<>();
-        for (String pattern : patternToPhysicalTablesMap.keySet()) {
-            List<String> tableNames = patternToPhysicalTablesMap.get(pattern);
-            String expression = replacePlaceholdersWithRanges(pattern, tableNames);
-            patternToExpressionMap.put(expression, tableNames);
-        }
-        return patternToExpressionMap;
+    public static List<LogicalTable> generatePatternExpressions(@NotEmpty List<DataNode> dataNodes,
+            @NotEmpty List<String> allDatabaseNames) {
+        // 找出所有逻辑表，并推导出 逻辑库表名的 databaseNamePattern 和 tableNamePattern
+        List<LogicalTable> logicalTables = identifyLogicalTables(dataNodes);
+        return logicalTables;
     }
 
-
-    private static Map<String, List<String>> identifyBasicPatterns(@Valid @NotEmpty List<String> tableNames) {
+    private static List<LogicalTable> identifyLogicalTables(@Valid @NotEmpty List<DataNode> dataNodes) {
         // 先将表名分解为由数字序列和非数字序列组成的部分，构建基本模式
-        Map<String, List<String>> basePatternToTables = tableNames.stream().collect(
-            Collectors.groupingBy(tableName -> tableName.replaceAll(DIGIT_PATTERN.pattern(), "[#]"))
-        );
-        basePatternToTables.entrySet().removeIf(entry -> entry.getValue().size() == 1);
+        Map<String, List<DataNode>> basePattern2Tables = dataNodes.stream().collect(
+                Collectors.groupingBy(dataNode -> dataNode.getTableName().replaceAll(DIGIT_PATTERN.pattern(), "[#]")));
+        basePattern2Tables.entrySet().removeIf(entry -> entry.getValue().size() == 1);
 
         // 最终确定的模式到表的映射
-        Map<String, List<String>> finalPatterns = new LinkedHashMap<>();
+        Map<String, List<DataNode>> finalPatterns = new LinkedHashMap<>();
 
-        basePatternToTables.forEach((basePattern, names) -> {
+        basePattern2Tables.forEach((basePattern, nodes) -> {
             // 检查哪些位置的[#]应该被保留，哪些应该替换成实际的数字
-            String pattern = getConsistentNumberPattern(names);
-            finalPatterns.put(pattern, names);
+            String pattern =
+                    getConsistentNumberPattern(nodes.stream().map(DataNode::getTableName).collect(Collectors.toList()));
+            finalPatterns.put(pattern, nodes);
         });
-        return finalPatterns;
+
+        List<LogicalTable> logicalTables = finalPatterns.entrySet().stream().map(entry -> {
+            LogicalTable logicalTable = new LogicalTable();
+            logicalTable.setTableNamePattern(entry.getKey());
+            logicalTable.setActualDataNodes(entry.getValue());
+            logicalTable.setDatabaseNamePattern(getConsistentNumberPattern(logicalTable.getActualDataNodes().stream()
+                    .map(node -> node.getSchemaName())
+                    .collect(Collectors.toList())));
+            return logicalTable;
+        }).collect(Collectors.toList());
+        return logicalTables;
     }
 
     private static String replacePlaceholdersWithRanges(String pattern, List<String> tableNames) {
@@ -122,9 +126,9 @@ public class LogicalTableUtils {
 
         for (String currentNumber : sortedNumberStrings.tailSet(first, false)) {
             int currentStep = Integer.parseInt(currentNumber) - Integer.parseInt(prevNumber);
-            if(step == Integer.MIN_VALUE) {
+            if (step == Integer.MIN_VALUE) {
                 step = currentStep; // 设置初始步长
-            } else if(currentStep != step) {
+            } else if (currentStep != step) {
                 isConsecutive = false; // 发现非连续的步长
                 break;
             }
@@ -178,7 +182,7 @@ public class LogicalTableUtils {
         }
 
         // 根据稳定的序列还原出最终的模式
-        StringBuilder patternBuilder = new StringBuilder(nameSections.get(0).get(0));  // 开始先添加第一部分的非数字序列
+        StringBuilder patternBuilder = new StringBuilder(nameSections.get(0).get(0)); // 开始先添加第一部分的非数字序列
 
         for (int idx = 1, varIdx = 0; idx < sectionCount; idx += 2, varIdx++) {
             if (isVariable.get(varIdx)) {

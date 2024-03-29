@@ -1,0 +1,15 @@
+- data_nodes:
+    - table_name: "tb1"
+      schema_name: "db1"
+    - table_name: "tb2"
+      schema_name: "db12"
+  all_database_names:
+    - "db1"
+  logical_tables:
+    - table_name_pattern: "tb[#]"
+      database_name_pattern: "db[#]"
+      actual_data_nodes:
+          - table_name: "tb1"
+            schema_name: "db1"
+          - table_name: "tb2"
+            schema_name: "db12"
