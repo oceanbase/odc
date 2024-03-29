@@ -13,23 +13,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.schedule.model;
+package com.oceanbase.odc.common.util;
+
+import com.oceanbase.odc.common.function.Procedure;
+
+import lombok.extern.slf4j.Slf4j;
 
 /**
- * @Author：tinker
- * @Date: 2022/11/16 15:36
- * @Descripition:
+ * @author yaobin
+ * @date 2024-03-25
+ * @since 4.2.4
  */
-public enum ScheduleStatus {
-    APPROVING,
+@Slf4j
+public class SilentExecutor {
 
-    APPROVAL_EXPIRED,
-
-    REJECTED,
-    PAUSE,
-    ENABLED,
-    TERMINATION,
-
-    COMPLETED
-
+    public static void executeSafely(Procedure operation) {
+        try {
+            operation.invoke();
+        } catch (Exception e) {
+            StackTraceElement element = Thread.currentThread().getStackTrace()[2];
+            log.warn("Execute {}#{} failed.", element.getClassName(), element.getMethodName(), e);
+        }
+    }
 }
