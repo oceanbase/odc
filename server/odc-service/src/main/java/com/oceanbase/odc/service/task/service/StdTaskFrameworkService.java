@@ -157,8 +157,8 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
     @Override
     public Page<JobEntity> findNotTerminalJobs(int page, int size) {
         Specification<JobEntity> condition = Specification.where(getRecentDaySpec(RECENT_DAY))
-            .and(SpecificationUtil.columnIn(JobEntityColumn.STATUS,
-                Lists.newArrayList(JobStatus.PREPARING, JobStatus.RETRYING, JobStatus.RUNNING)));
+                .and(SpecificationUtil.columnIn(JobEntityColumn.STATUS,
+                        Lists.newArrayList(JobStatus.PREPARING, JobStatus.RETRYING, JobStatus.RUNNING)));
         return page(condition, page, size);
     }
 
