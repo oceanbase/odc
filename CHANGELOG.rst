@@ -3,6 +3,427 @@
 
 New
 ~~~
+- Feat(taskframework): supports external log4j configuration file
+  (#2080) [krihy]
+- Feat(partition-plan): make partition name generation based on a
+  partition key (#2013) [IL MARE]
+- Feat(authentication): use jwt instead of jsession for authentication
+  (#1663) [jonas, yh263208]
+- Feat(partition-plan): migrate historical partition plan's data and
+  remove useless code (#1868) [IL MARE]
+- Feat(builtin-snippet): more snippets for  developer (#1934) [yizhou]
+- Feat(database-change): supports retry execute in database change task
+  (#1863) [LuckyLeo]
+- Feat(monitor): add api rt alarm (#1877) [Ang]
+- Feat(stateful): add stateful route (#1608) [Ang]
+- Feat(partition-plan): returns partition table configs when list
+  candidate tables (#1783) [IL MARE]
+- Feat(task): task executing strip from flowable (#1706) [krihy]
+- Feat(sql-check): add offline ddl detecting, key words detecting and
+  truncate statement detecting rules (#1766) [IL MARE]
+- Feat(partition-plan): disable the previous flow instance when a
+  partition plan is related to an exists flow (#1750) [IL MARE]
+- Feat(risk-detect): add default risk detect rules (#1664) [pynzzZ]
+- Feat(taskframework): support modify job parameters (#1612) [krihy]
+- Feat(partition-plan): add controller implementation (#1590) [IL MARE]
+- Feat(snippet): more builtin snippets (#1682) [yizhou]
+- Feat(snippet): initial builtin snippet framework (#1662) [yh263208,
+  yizhou]
+- Feat: make odc adapt to OceanBase 4.2.2 (#1660) [IL MARE]
+- Feat(database-change): adaption for oracle11g (#1617) [zhangxiao]
+- Feat(osc): supports add column in new ddl (#1611) [krihy]
+- Feat(notification): supports scheduling failed and task terminated
+  (#1647) [LuckyLeo]
+- Feat(dlm): data clean adapt to task framework (#1643) [MarkPotato777,
+  guowl3]
+- Feat(config): new user configuration api for settings center (#1609)
+  [yizhou]
+- Feat(dlm): supports review sql (#1606) [guowl3]
+- Feat(databaseChange): automatically adjust the timeout if the database
+  change task involves time-consuming index change operations (#1578)
+  [zhangxiao]
+- Feat(data-transfer): add task-plugin-oracle and datatransfer module
+  (#1500) [LuckyLeo]
+- Feat(notification): supports custom http request for wehbook channel
+  (#1604) [LuckyLeo]
+- Feat(datasource): session management adapt for oracle11g (#1520)
+  [zhangxiao]
+- Feat(rollback-plan): adapt to task framework (#1569) [XiaoYang]
+- Feat(data-masking): adapt to task framework (#1535) [XiaoYang]
+- Feat(structure-comparison): integrate structural comparison into the
+  service layer (#1473) [zhangxiao]
+- Feat(datasource): support new datasource of doris (#1494) [IL MARE,
+  isadba]
+- Feat(environment): supports custom environment (#1381) [pynzzZ]
+- Feat(datasource): connection module supports oracle11g (#806)
+  [zhangxiao]
+- Feat(partition-plan): add implementation for oracle mode (#1485) [IL
+  MARE]
+- Feat(notification): add channel implement and refactor message broker
+  (#1451) [LuckyLeo]
+- Feat(partition-plan): add implementation for mysql mode (#1456) [IL
+  MARE]
+- Feat(data-transfer): upgrade ob-loader-dumper to 4.2.8-RELEASE (#1427)
+  [LuckyLeo, LuckyPickleZZ]
+- Feat(data-transfer): not compress export output in client mode (#1459)
+  [LuckyLeo]
+- Feat(database-permission): service implementation (#1392) [XiaoYang]
+- Feat(partition-plan): add service implementation and plugin api
+  (#1430) [IL MARE]
+- Feat(deployment): add datetime output for ob-odc-web.std.log (#1420)
+  [yizhou]
+- Feat(db-browser): structural comparison task adaptation on ob-oracle
+  mode in db-browser layer (#1395) [zhangxiao]
+- Feat(notification): add controller and service layer for notification
+  (#1377) [LuckyLeo]
+- Feat(sso): supports ldap (#1349) [Ang, ungreat]
+- Feat(partition-plan): add api and storage layer (#1374) [IL MARE]
+- Feat(db-browser): make db-browser adapt to oracle11g (#503)
+  [zhangxiao]
+- Feat(database-permission): add apply database permission ticket
+  (#1372) [XiaoYang]
+- Feat(structure-compare): structural comparison task interface layer
+  code implementation (#1342) [zhangxiao]
+- Feat(notification): add migration script and i18n properties for
+  notification metadata (#1344) [LuckyLeo]
+- Feat(database-permission): adapt permission framework (#1366)
+  [XiaoYang]
+- Feat(structure-comapre): implement database object structure
+  comparison (#1364) [zhangxiao]
+- Feat(database-permission): add API definition (#1358) [XiaoYang]
+- Feat(version): upgrade the version of odc from 4.2.3 to 4.2.4 (#1361)
+  [IL MARE]
+- Feat(dlm): adapt to log service (#1538) [guowl3]
+- Feat(dlm): adapt to task framework (#1529) [guowl3, krihy]
+- Feat(taskframework): control schedule job rate by executor running
+  status (#1513) [krihy]
+
+Changes
+~~~~~~~
+- Refactor(notification): extract siteUrl cacluation logic into util
+  (#2021) [LuckyLeo]
+- Refactor(taskframework): add LoggerService for DLM query log (#1534)
+  [krihy]
+
+Fix
+~~~
+- Fix(security): add authorize annotation in service class (#2103)
+  [LuckyLeo]
+- Fix(shadowtable): it occurs NPE while creating shadow table comparing
+  tasks (#2087) [pynzzZ]
+- Fix(partition-plan): failed to execute partition ddl when schema or
+  table name is in lower case (#2088) [IL MARE]
+- Fix(partition-plan): failed to view partition plan tables when
+  partition is not active (#2099) [IL MARE]
+- Fix(flow): flow task service node complete time is not correct (#2052)
+  [krihy]
+- Fix(db-browser): failed to view detail of the table in doris (#2081)
+  [jonas]
+- Fix(sql-execute): commit/rollback button does not sync with trans
+  state for oceanbase 4.2 (#2097) [yizhou]
+- Fix(security): add horizontal authentication for service (#2064)
+  [guowl3]
+- Fix(sql-execute): cannot execute SQLs with single-line comments
+  (#2085) [pynzzZ]
+- Fix(builtin-snippets): duplicated prefix and wrong column for ob 3.x
+  (#2077) [yizhou]
+- Fix(database): failed to create doris database when input charset and
+  collation (#2076) [XiaoYang]
+- Fix(unit-test): load test DB connect session on demand (#2073)
+  [XiaoYang]
+- Fix(result-set-export): fix export result-set for oracle failed
+  (#2033) [LuckyLeo]
+- Fix(partition-plan): wrap the partition identifier when drop ddl
+  generated (#2068) [IL MARE]
+- Fix(db-browser): create table statement containing index is not
+  recognized as a create type (#2063) [jonas]
+- Fix(sql-check): fix npe caused by offline statement detection (#2057)
+  [IL MARE]
+- Fix(task): try to upload log file even through the task has no log
+  file (#2051) [XiaoYang]
+- Fix(db-browser): remove spaces before and after ddl in oracle mode
+  (#2050) [zhangxiao]
+- Fix(connection): modify DruidDataSource MaxWait timeout (#2011)
+  [zhangxiao]
+- Fix(schema-plugin): failed to view table's detail on sofa odp (#2043)
+  [IL MARE]
+- Fix(taskframework): cannot preview latest log for dlm (#2024) [krihy]
+- Fix(sql-check): avoid npe when virtual column exists (#2031) [IL MARE]
+- Fix(sql-execute): add an user config and add concurrent control for
+  session creating (#2020) [IL MARE]
+- Fix(sso):ldap mapper can't load on not local type (#1988) [Ang]
+- Fix(resultset-edit): bad performance when modifing query result set
+  (#2007) [XiaoYang]
+- Fix(notification): fix some security vulnerabilities (#2001)
+  [LuckyLeo]
+- Fix(taskframework): limit running job count by calculate free memory
+  when StartJobRateLimiter starting (#1932) [krihy]
+- Fix(taskframework): fix cancel result when status is done   (#2002)
+  [krihy]
+- Fix(structure-compare): failed to run structure compare task without
+  update connection permission (#2006) [zhangxiao]
+- Fix(sql): precision is lost when displaying timestamps (#1996) [jonas]
+- Fix(partition-plan): failed to generate partition correctly when
+  partition upper bound is not increased by 1 year/month/day (#1992) [IL
+  MARE]
+- Fix(encryption): add log output when failed to decrypt #1994.
+  [XiaoYang]
+- Fix(shadowtable): NPE occurs when project admins detail the
+  shadowtable and structure comparing task (#1960) [pynzzZ]
+- Fix(result-set): failed export oracle result set (#1956) [LuckyLeo]
+- Fix(connect): can not access Doris datasource (#1990) [XiaoYang]
+- Fix(flowTask): fix failed to get flow task results (#1985) [zhangxiao]
+- Fix(taskframework): update schedule task status when cancel completed
+  or heart check timeout (#1973) [krihy]
+- Fix(osc): osc will be failed if check oms step accumulate failed time
+  bigger than threshold (#1613) [krihy]
+- Fix(flow): wrong total elements and total pages of flow instances
+  while querying in page (#1947) [pynzzZ]
+- Fix(connection): SingleConnectionDataSource concurrent getConnection
+  may have  problems (#1914) [Ang]
+- Fix(ticket): cannot preview latest log and download complete log file
+  (#1940) [XiaoYang]
+- Fix(taskframework): fix cancel job and update executionTimes failed
+  (#1961) [krihy]
+- Fix(environment): modify the error message while disabling
+  environments (#1959) [pynzzZ]
+- Fix(sql-execute): the offset of the last sql goes wrong when it
+  doesn't end with the delimiter (#1970) [pynzzZ]
+- Fix(parser): failed to parse insert statement with a table named
+  'json_table' (#1968) [IL MARE]
+- Fix(builtin-snippets): fix wrong description for builtin snippets
+  (#1969) [yizhou]
+- Fix(taskframework): fix retry job reset destroy and heart time
+  (#1952) [krihy]
+- Fix(db-browser): the order of column names in Index and constraint are
+  inconsistent (#1948) [zhangxiao]
+- Fix(data-transfer): after data transfer is completed, the directory is
+  not cleared (#1951) [LuckyLeo]
+- Fix(stateful): stateful optional allow nullable (#1945) [Ang]
+- Fix(partition-plan): the first partition value is incorrect when
+  creating partitions sequentially based on the current time (#1804) [IL
+  MARE]
+- Fix(notification): NPE occurred when convert event to message (#1938)
+  [LuckyLeo]
+- Fix(database-permission): unable apply for database permission (#1896)
+  [XiaoYang]
+- Fix(sql-check): failed to detect pk dropping when drop it as
+  constraint (#1879) [IL MARE]
+- Fix(iam): failed to batch import user with roles (#1908) [LuckyLeo]
+- Fix(stateful): stateful interceptor will be npe when clientMode
+  (#1923) [Ang]
+- Fix(taskframework): add free memory check before start new process
+  avoid start process failed (#1883) [krihy]
+- Fix(partition-plan): fix wrong api's path variable #1928. [IL MARE]
+- Fix(taskframework): fix retry log attribute (#1904) [krihy]
+- Fix(stateful): max pool size may less than core pool size and cause
+  error (#1919) [Ang]
+- Fix(database-management): unable to create a connection using database
+  details (#1890) [XiaoYang]
+- Fix(stateful): RouteHealthManager wrong conditional on property
+  (#1880) [Ang]
+- Fix(sql-check): npe will be thrown when some alter statements exists
+  #1865. [IL MARE]
+- Fix(taskframework): fix invalid CSRF token when task process report
+  heart to sever (#1808) [krihy]
+- Fix(taskframework): fix executor meta db config (#1870) [krihy]
+- Fix(workflow): build front resource when only build client artifact
+  (#1867) [XiaoYang]
+- Fix(database-permission): return authorized permission types for
+  detail database interface (#1843) [XiaoYang]
+- Fix(multi-cloud): failed to create new connection with read only
+  account (#1838) [zhangxiao]
+- Fix(schedule): no permission to edit (#1847) [guowl3]
+- Fix(database-change): read sql file failed causing sql not executed
+  (#1807) [XiaoYang]
+- Fix(data-transfer): oracle mode import with incorrect splitted sqls
+  (#1832) [LuckyLeo]
+- Fix(connect): sometimes open sql console result in 404 error (#1809)
+  [IL MARE]
+- Fix(environment): flow instance selects wrong approval flow config
+  after updating risk detect rules (#1800) [pynzzZ]
+- Fix(datasource): connecting failed in OceanBase Oracle after
+  correcting the username (#1797) [pynzzZ]
+- Fix(dlm): check database permission failed (#1799) [guowl3]
+- Fix(environment): add an environment exists api (#1785) [pynzzZ]
+- Fix(taskframework): deserialize log occur error from remote (#1795)
+  [krihy]
+- Fix(audit): add audit keys and i18n messages for some module #1772.
+  [LuckyLeo]
+- Fix(data-transfer): export oracle object ddl without line breaks
+  (#1786) [LuckyLeo]
+- Fix(dlm): interrupt job failed (#1778) [guowl3]
+- Fix(alarm): add scheduling failed alarm (#1779) [Ang]
+- Fix(partition-plan): failed to create a drop strategy only (#1774) [IL
+  MARE]
+- Fix(taskframework): fix task update final status when completed
+  (#1768) [krihy]
+- Fix(flow): create flow instance failed when environment absent (#1770)
+  [XiaoYang]
+- Fix(sql-execute): anonymous block execution module adapted to
+  oracle11g (#1759) [zhangxiao]
+- Fix(database-change): failed to check if time-consuming sql exists in
+  personal space (#1720) [zhangxiao]
+- Fix(dlm): database not found (#1721) [guowl3]
+- Fix(taskframework):  limit remote ip as localhost to access task api
+  when task-framework run in process mode (#1730) [krihy]
+- Fix(notification): failed to send notification for partition plan
+  (#1726) [LuckyLeo]
+- Fix(partition-plan): npe will be thrown when input is invalid (#1748)
+  [IL MARE]
+- Fix(db-browser):failed to get table when column has default value in
+  oracle11g mode (#1733) [zhangxiao]
+- Fix(database-permission): permission intecept failed when switch
+  schema or call PL (#1678) [XiaoYang]
+- Fix(database-change): create database change task failed in private
+  sapce (#1702) [XiaoYang]
+- Fix(db-browser): failed to getTable in mysql5.6 (#1635) [zhangxiao]
+- Fix(database-change): show wrong executing result status (#1637)
+  [XiaoYang]
+- Fix(taskframework): enable taskframework default (#1691) [krihy]
+- Fix(dlm): job scheduler not found (#1690) [guowl3]
+- Fix(structure-compare): alter table remove partitioning sql is not put
+  in comment (#1674) [zhangxiao]
+- Fix(notification): some event failed to be sent (#1629) [LuckyLeo]
+- Fix(taskframework):  use default entry point to replace init cmd
+  (#1601) [krihy]
+- Fix(config): wrong reason while full link trace not enabled (#1644)
+  [yizhou]
+- Fix(security): share public and private key when ODC is deployed on
+  multiple nodes (#1641) [zhangxiao]
+- Fix(db-browser): listTables correctly returns the table under the
+  specified schema (#1632) [zhangxiao]
+- Fix(database-permission): delete related permission records when
+  deleting data source (#1619) [XiaoYang]
+- Fix(integration): garbled code exists when using Chinese in request
+  body (#1625) [XiaoYang]
+- Fix(structure-comparison): failed to create structure-comparison task
+  in personal space (#1623) [zhangxiao]
+- Fix(mock-data): failed to mock any data for ob-mysql mode (#1594) [IL
+  MARE]
+- Fix(database-permission): DB permission interceptor invalid when
+  executing PL in the SQL console (#1592) [XiaoYang]
+- Fix(db-browser): failed to list tables when ob's version is no greater
+  than 2.2.30 (#1478) [zhangxiao]
+- Fix(pre-check): load uploaded files failed (#1470) [XiaoYang]
+- Fix(database-permission): user holds no db permission in personal
+  space (#1467) [XiaoYang]
+- Fix(database-permission): failed to verify database permission in
+  personal space (#1458) [XiaoYang]
+- Fix(flow): revert #1380 and #1402 from dev/4.2.x (#1454) [Ang]
+- Fix(sso): frontend-backend integration testing (#1406) [Ang]
+- Fix(data-security): data masking failed when using nesting case-when
+  clause (#1410) [XiaoYang]
+- Fix(sql-execution): precision loss when displaying datetime type
+  (#1411) [IL MARE, jonas]
+- Fix(flow): reduce the result set size of the flow Instance query by
+  parent instance id (#1402) [Ang, ungreat]
+- Fix(db-browser): fix the visualization of mysql table structure design
+  and supports strings enclosed in single quotes (#1401) [IL MARE,
+  isadba]
+- Fix(flow):improve list API rt (#1383) [Ang, ungreat]
+- Fix(migrate): rename notification migrate script (#1373) [LuckyLeo]
+- Fix(dlm): create target table failed (#1614) [guowl3]
+- Fix(cloud): add a CacheManager bean which allows null values #1610.
+  [pynzzZ]
+- Fix(osc): validate input ddl  throw syntax exception when contain
+  comment (#1597) [krihy]
+- Fix(cloud): tenant/serverless instance test connection failed in some
+  specific scenery (#1602) [pynzzZ]
+- Fix(osc): supports ob oracle 4.0 drop primary constraint when contain
+  unique key (#1591) [krihy]
+- Fix(osc): fix i18n hint when user started swap table (#1580) [krihy]
+- Fix(osc): supports creating index sql in ob oracle  (#1560) [krihy]
+- Fix(cloud): serverless instance adaption #1561. [pynzzZ]
+- Fix(taskframework): k8s system config from data.sql is empty string
+  (#1541) [krihy]
+
+
+v4.2.3_bp1 (2024-02-01)
+-----------------------
+
+New
+~~~
+- Feat(pre-check): adapt to task framework (#1489) [XiaoYang]
+- Feat(taskframework): add process run model for task running (#1447)
+  [gaoda.xy, krihy]
+- Feat(database-change): database change task adapt streaming read sql
+  file (#1437) [XiaoYang]
+- Feat(task-framework): merge from feat/424_taskframework into dev/4.2.3
+  (#1365) [krihy]
+- Feat(osc): add project list  adapter oms new api (#1318) [krihy]
+- Feat(mock-data): add a logger for log printing (#1407) [IL MARE]
+- Feat(dlm):upgrade SDK to 1.0.10 (#1396) [guowl3]
+- Feat(dlm): supports sharding using unique indexes (#1327) [guowl3]
+
+Changes
+~~~~~~~
+- Refactor(objectstorage): create publicEndpointCloudClient and
+  internalEndpointCloudClient to distinguish uploading and generating
+  presignedUrl circumstance (#1319) [pynzzZ]
+
+Fix
+~~~
+- Fix(taskframework): start process failed when local odc server start
+  by java -jar (#1492) [krihy]
+- Fix(partition-plan):delete job failed if the associated trigger does
+  not exist (#1495) [guowl3]
+- Fix(table): query table data with no column comments (#1488)
+  [LuckyLeo]
+- Fix(sql-execute): fail to execute statement on OceanBase 2.2.30
+  (#1487) [LuckyLeo]
+- Fix(audit): executing sql with rare words failed when metadb's default
+  character is gbk (#1486) [pynzzZ]
+- Fix(flow): NPE when creating a ticket without connection information
+  (#1479) [XiaoYang]
+- Fix(sql-execute): executing anonymous block causes NPE in the team
+  space (#1474) [pynzzZ]
+- Fix(taskframework): lower k8s client version cause security problem
+  (#1472) [krihy]
+- Fix(sql-execute): do not follback execute when manual commit enabled
+  (#1468) [LuckyLeo]
+- Fix(data-transfer): fix wrong object type names were used (#1464)
+  [LuckyLeo]
+- Fix(data-transfer): do not create os user in client mode (#1465)
+  [LuckyLeo]
+- Fix(dlm): the data cleaning task scheduling failed after editing the
+  rate limit configuration (#1438) [guowl3]
+- Fix(flow): remove unnecessary query (#1429) [Ang]
+- Fix(flow): can not set task status correctly when creating task
+  concurrently (#1419) [IL MARE]
+- Fix(sql-execution): can not set a delimiter longer than 2 (#1414) [IL
+  MARE]
+- Fix(osc): exists horizontal overstep access data permission when swap
+  table manual (#1405) [krihy]
+- Fix(mock-data): failed to upload file to oss (#1345) [IL MARE]
+- Fix(osc): osc job query connection config by id throw Access Denied
+  (#1378) [krihy]
+- Fix(dlm): the task log file does not exist (#1376) [guowl3]
+- Fix(osc): osc task don't show manual swap table name when full migrate
+  is completed (#1357) [krihy]
+- Fix(sql-check): failed to check statement when connect to a lower case
+  schema  (#1341) [IL MARE]
+- Fix(database-change): query task details throw flow instance not found
+  exception (#1325) [XiaoYang]
+- Fix(database-change): query task details throw file not found
+  exception (#1316) [XiaoYang]
+- Fix(object-storage): remove dependency on OssTaskReferManager (#1314)
+  [LuckyLeo]
+
+Security
+~~~~~~~~
+- Security: upgrade aliyun-oss-sdk version (#1393) [pynzzZ]
+
+
+v4.2.3 (2023-12-26)
+-------------------
+
+New
+~~~
+- Feat(mock-data): increase the max number of the mock data to 100
+  million (#1294) [IL MARE]
+- Feat(dlm): upgrade dlm's version to 1.0.8 (#1299) [guowl3]
+- Feat(dlm): supports viewing task logs (#1017) [guowl3]
 - Feat(monitor):add api alarm (#1212) [Ang]
 - Feat(datatransfer): support masking data for mysql datatransfer
   (#1198) [LuckyLeo]
@@ -67,6 +488,24 @@ Changes
 
 Fix
 ~~~
+- Fix(sql-rule): the rule 'allow-sql-types' of dev environment is
+  disabled by default (#1302) [pynzzZ]
+- Fix(sql-rule): adjust several sql-console rules' default values
+  (#1281) [pynzzZ]
+- Fix(result-set-export): failed to rewrite sql for mysql (#1288)
+  [LuckyLeo]
+- Fix(datasource): make ODP_SHARDING_OB_MYSQL not be converted to
+  OB_MYSQL in some special cases (#1280) [zhangxiao]
+- Fix(result-export): failed to export mysql data (#1275) [LuckyLeo]
+- Fix(monitor): format alarm error stack to inline (#1273) [Ang]
+- Fix(mock-data): failed to recognize the charset key of 'UTF8' (#1272)
+  [IL MARE]
+- Fix(mock-data): upgrade mock-data module's version to fix several bugs
+  (#1227) [IL MARE]
+- Fix(flow): close prepared stmt and resultset when batch creating end
+  (#1266) [Ang, yh263208]
+- Fix(datasource):  convert the type of ob-mysql-sharding data source to
+  ob-mysql (#1253) [zhangxiao]
 - Fix(ticket): project "pending approval" tickets shows other project's
   "pending approval" tickets (#1260) [pynzzZ]
 - Fix(monitor): format druid log (#1251) [Ang]
