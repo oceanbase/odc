@@ -298,5 +298,4 @@ public class DBStructureComparisonFlowableTask extends BaseODCFlowTaskDelegate<V
     protected void onProgressUpdate(Long taskId, TaskService taskService) {
         taskService.updateProgress(taskId, comparator.getProgress());
     }
-
 }
