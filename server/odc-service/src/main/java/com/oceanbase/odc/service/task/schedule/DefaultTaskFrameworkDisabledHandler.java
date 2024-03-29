@@ -72,11 +72,15 @@ public class DefaultTaskFrameworkDisabledHandler implements TaskFrameworkDisable
                     throw new TaskRuntimeException(e);
                 }
             }
-
-            configuration.getTaskFrameworkService().updateStatusDescriptionByIdOldStatus(ji.getId(),
-                    je.getStatus(), JobStatus.FAILED, "Update status to failed due to task-framework disabled.");
-            configuration.getEventPublisher()
-                    .publishEvent(new JobTerminateEvent(ji, JobStatus.FAILED));
+            if (je.getStatus() == JobStatus.PREPARING || je.getStatus() == JobStatus.RETRYING ||
+                    (je.getStatus() == JobStatus.RUNNING &&
+                            configuration.getTaskFrameworkService().find(ji.getId())
+                                    .getExecutorDestroyedTime() != null)) {
+                configuration.getTaskFrameworkService().updateStatusDescriptionByIdOldStatus(ji.getId(),
+                        je.getStatus(), JobStatus.FAILED, "Update status to failed due to task-framework disabled.");
+                configuration.getEventPublisher()
+                        .publishEvent(new JobTerminateEvent(ji, JobStatus.FAILED));
+            }
 
         });
     }
