@@ -43,7 +43,7 @@ public class DefaultTaskFrameworkDisabledHandler implements TaskFrameworkDisable
         if (taskFrameworkProperties.isEnabled()) {
             return;
         }
-        Page<JobEntity> jobs = configuration.getTaskFrameworkService().findNotTerminalJobs(0,
+        Page<JobEntity> jobs = configuration.getTaskFrameworkService().findIncompleteJobs(0,
                 configuration.getTaskFrameworkProperties().getSingleFetchCheckHeartTimeoutJobRows());
 
         jobs.getContent().forEach(j -> {
