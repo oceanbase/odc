@@ -162,7 +162,6 @@ public abstract class BaseODCFlowTaskDelegate<T> extends BaseRuntimeFlowableDele
             super.run(execution);
         } catch (Exception e) {
             log.warn("Failed to run task, activityId={}", execution.getCurrentActivityId(), e);
-            SecurityContextUtils.clear();
             if (scheduleExecutor != null) {
                 scheduleExecutor.shutdownNow();
             }
@@ -174,6 +173,7 @@ public abstract class BaseODCFlowTaskDelegate<T> extends BaseRuntimeFlowableDele
             if (e instanceof BaseFlowException) {
                 throw e;
             }
+            SecurityContextUtils.clear();
             throw new ServiceTaskError(e);
         }
         try {
