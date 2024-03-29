@@ -166,7 +166,8 @@ public class DefaultConnectionSession implements ConnectionSession {
                         this.id, sessionLevelDir);
             }
         } catch (IOException exception) {
-            log.warn("Failed to delete session level directory, dir={}", sessionLevelDir, exception);
+            log.warn("Failed to delete session level directory, dir={}, sessionId={}",
+                    sessionLevelDir, this.id, exception);
         }
         log.info("Connection session was closed successfully, sessionId={}", this.id);
     }
@@ -285,9 +286,9 @@ public class DefaultConnectionSession implements ConnectionSession {
             }
             try {
                 ((AutoCloseable) dataSource).close();
-                log.info("Datasource is closed successfully, name={}", key);
+                log.info("Datasource is closed successfully, name={}, sessionId={}", key, this.id);
             } catch (Exception e) {
-                log.warn("Failed to close dataSource, name={}", key, e);
+                log.warn("Failed to close dataSource, name={}, sessionId={}", key, this.id, e);
             }
         }
     }
@@ -299,8 +300,11 @@ public class DefaultConnectionSession implements ConnectionSession {
         }
         try {
             taskManager.close();
+            if (log.isDebugEnabled()) {
+                log.debug("TaskManager is closed successfully, sessionId={}", this.id);
+            }
         } catch (Exception e) {
-            log.warn("Failed to close task manager", e);
+            log.warn("Failed to close the task manager, sessionId={}", this.id, e);
         }
     }
 
