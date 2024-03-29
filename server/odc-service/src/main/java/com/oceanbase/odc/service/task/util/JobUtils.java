@@ -173,7 +173,7 @@ public class JobUtils {
     }
 
     public static boolean isResourceEnough(Supplier<TaskFrameworkProperties> taskFrameworkProperties) {
-        if(taskFrameworkProperties.get().getRunMode().isProcess()) {
+        if (taskFrameworkProperties.get().getRunMode().isProcess()) {
             long systemFreeMemory = SystemUtils.getSystemFreePhysicalMemory().convert(BinarySizeUnit.MB).getSizeDigit();
             long processMemoryMinSize = taskFrameworkProperties.get().getJobProcessMinMemorySizeInMB();
             long memoryReserveSize = taskFrameworkProperties.get().getSystemReserveMinFreeMemorySizeInMB();
@@ -181,7 +181,7 @@ public class JobUtils {
             if (systemFreeMemory < (memoryReserveSize + processMemoryMinSize)) {
                 if (log.isDebugEnabled()) {
                     log.debug("Free memory lack, systemFreeMemory={}, processMemoryMinSize={}, "
-                              + "memoryReserveSize={}", systemFreeMemory, processMemoryMinSize, memoryReserveSize);
+                            + "memoryReserveSize={}", systemFreeMemory, processMemoryMinSize, memoryReserveSize);
                 }
                 return false;
             }
