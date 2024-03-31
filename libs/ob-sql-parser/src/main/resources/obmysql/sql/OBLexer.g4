@@ -19,6 +19,17 @@ lexer grammar OBLexer;
 public boolean inRangeOperator = false;
 }
 
+// Fragment rules for sub-patterns
+fragment NOTASCII : '\u0080'..'\u00FF';
+fragment GB_1     : '\u0081'..'\u00FE';
+fragment GB_2     : '\u0040'..'\u00FE';
+fragment GB_3     : '\u0030'..'\u0039';
+
+// Fragment rule to combine patterns
+fragment NOTASCII_GB_CHAR : NOTASCII | GB_1 GB_2 | GB_1 GB_3 GB_1 GB_3;
+fragment START_IDENTIFIER : [A-Za-z0-9$_]* [A-Za-z$_] [A-Za-z0-9$_]* | NOTASCII_GB_CHAR+ ;
+fragment IDENTIFIER       : [A-Za-z0-9$_] | NOTASCII_GB_CHAR+ ;
+
 ACCESS
     : ( A C C E S S )
     ;
@@ -57,6 +68,10 @@ ANALYZE
 
 ALL
     : ( A L L )
+    ;
+
+ALTER_HINT_BEGIN
+    : A L T E R '_' H I N T '_' B E G I N
     ;
 
 NAMESPACE
@@ -132,6 +147,10 @@ CIPHER
     : ( C I P H E R )
     ;
 
+WF_TOPN
+    : W F '_' T O P N
+    ;
+
 CONDITION
     : ( C O N D I T I O N )
     ;
@@ -192,8 +211,8 @@ CURRENT_USER
     : ( C U R R E N T '_' U S E R )
     ;
 
-WITH_ROWID
-    : (( W I T H ([ \t\n\r\f]+|('--'[ \t\n\r\f]+(~[\n\r])*)|('#'(~[\n\r])*)) R O W I D ))
+WITH_COLUMN_GROUP
+    : (( W I T H ([ \t\n\r\f]+|('--'[ \t]+(~[\n\r])*)|('#'(~[\n\r])*|'--'[\n\r])) C O L U M N ([ \t\n\r\f]+|('--'[ \t]+(~[\n\r])*)|('#'(~[\n\r])*|'--'[\n\r])) G R O U P ))
     ;
 
 CURSOR
@@ -238,6 +257,10 @@ DECLARE
     : ( D E C L A R E )
     ;
 
+ROWID
+    : R O W I D
+    ;
+
 DEFAULT
     : ( D E F A U L T )
     ;
@@ -248,6 +271,14 @@ DELAYED
 
 DELETE
     : ( D E L E T E )
+    ;
+
+SYNCHRONOUS
+    : S Y N C H R O N O U S
+    ;
+
+IMMEDIATE
+    : I M M E D I A T E
     ;
 
 DESC
@@ -424,6 +455,10 @@ INFILE
 
 INOUT
     : ( I N O U T )
+    ;
+
+INCLUDING
+    : I N C L U D I N G
     ;
 
 INSENSITIVE
@@ -705,6 +740,14 @@ PARSER
 
 PROCEDURE
     : ( P R O C E D U R E )
+    ;
+
+MIN_MAX
+    : M I N '_' M A X
+    ;
+
+NO_USE_COLUMN_STORE_HINT
+    : N O '_' U S E '_' C O L U M N '_' S T O R E '_' H I N T
     ;
 
 PURGE
@@ -1354,6 +1397,10 @@ CONSTRAINT_SCHEMA
     : C O N S T R A I N T '_' S C H E M A
     ;
 
+STATEMENT
+    : S T A T E M E N T
+    ;
+
 MASTER_SSL_CERT
     : M A S T E R '_' S S L '_' C E R T
     ;
@@ -1554,6 +1601,10 @@ ERROR_P
     : E R R O R '_' P
     ;
 
+LOWER_THAN_LOG
+    : L O W E R '_' T H A N '_' L O G
+    ;
+
 MAX_USER_CONNECTIONS
     : M A X '_' U S E R '_' C O N N E C T I O N S
     ;
@@ -1722,6 +1773,10 @@ ENGINE_
     : E N G I N E
     ;
 
+EXCLUDING
+    : E X C L U D I N G
+    ;
+
 TABLES
     : T A B L E S
     ;
@@ -1846,6 +1901,10 @@ PRIVILEGES
     : P R I V I L E G E S
     ;
 
+DEMAND
+    : D E M A N D
+    ;
+
 LOWER_ON
     : L O W E R '_' O N
     ;
@@ -1956,6 +2015,10 @@ ARCHIVELOG
 
 MAX_CONNECTIONS_PER_HOUR
     : M A X '_' C O N N E C T I O N S '_' P E R '_' H O U R
+    ;
+
+ASYNCHRONOUS
+    : A S Y N C H R O N O U S
     ;
 
 ENCODING
@@ -2434,6 +2497,10 @@ COUNT
     : C O U N T
     ;
 
+BLOCKING
+    : B L O C K I N G
+    ;
+
 NAMES
     : N A M E S
     ;
@@ -2492,6 +2559,10 @@ CONSISTENT_MODE
 
 MODIFY
     : M O D I F Y
+    ;
+
+USE_COLUMN_STORE_HINT
+    : U S E '_' C O L U M N '_' S T O R E '_' H I N T
     ;
 
 UNCOMMITTED
@@ -2620,6 +2691,10 @@ RESUME
 
 INT
     : I N T
+    ;
+
+COMPLETE
+    : C O M P L E T E
     ;
 
 STATS_PERSISTENT
@@ -2918,6 +2993,10 @@ RETURNED_SQLSTATE
     : R E T U R N E D '_' S Q L S T A T E
     ;
 
+SKIP_INDEX
+    : S K I P '_' I N D E X
+    ;
+
 END
     : E N D
     ;
@@ -3076,10 +3155,6 @@ REPLICA_TYPE
 
 AGGREGATE
     : A G G R E G A T E
-    ;
-
-TRANSFER
-    : T R A N S F E R
     ;
 
 JSON_ARRAYAGG
@@ -3278,6 +3353,10 @@ PARAMETERS
     : P A R A M E T E R S
     ;
 
+OBJECT
+    : O B J E C T
+    ;
+
 TABLESPACE
     : T A B L E S P A C E
     ;
@@ -3444,6 +3523,10 @@ INSTALL
 
 MONTH
     : M O N T H
+    ;
+
+NEVER
+    : N E V E R
     ;
 
 AFTER
@@ -3730,6 +3813,10 @@ ESCAPE
     : E S C A P E
     ;
 
+CLONE
+    : C L O N E
+    ;
+
 MASTER_AUTO_POSITION
     : M A S T E R '_' A U T O '_' P O S I T I O N
     ;
@@ -3996,6 +4083,10 @@ TOP_K_FRE_HIST
 
 MASTER_SSL_CRL
     : M A S T E R '_' S S L '_' C R L
+    ;
+
+RESOURCE_POOL
+    : R E S O U R C E '_' P O O L
     ;
 
 RESOURCE_POOL_LIST
@@ -4369,6 +4460,14 @@ SYSTEM_VARIABLE
 
 USER_VARIABLE
     : ('@'[A-Za-z0-9_.$]*)|('@'[`'"][`'"A-Za-z0-9_.$/%]*)
+    ;
+
+ID_DOT_ID
+    : START_IDENTIFIER '.' IDENTIFIER
+    ;
+
+ID_DOT_ID_DOT_ID
+    : START_IDENTIFIER '.' IDENTIFIER '.' IDENTIFIER
     ;
 
 NAME_OB
