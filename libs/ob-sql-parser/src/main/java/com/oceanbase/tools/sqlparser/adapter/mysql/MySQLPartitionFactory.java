@@ -61,10 +61,6 @@ public class MySQLPartitionFactory extends OBParserBaseVisitor<Partition> implem
 
     private final ParserRuleContext parserRuleContext;
 
-    public MySQLPartitionFactory(@NonNull Opt_partition_optionContext optPartitionOptionContext) {
-        this.parserRuleContext = optPartitionOptionContext;
-    }
-
     public MySQLPartitionFactory(@NonNull Partition_optionContext partitionOptionContext) {
         this.parserRuleContext = partitionOptionContext;
     }

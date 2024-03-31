@@ -22,6 +22,7 @@ import org.antlr.v4.runtime.ParserRuleContext;
 import com.oceanbase.tools.sqlparser.adapter.StatementFactory;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Create_table_like_stmtContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Create_table_stmtContext;
+import com.oceanbase.tools.sqlparser.obmysql.OBParser.Special_table_typeContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParserBaseVisitor;
 import com.oceanbase.tools.sqlparser.statement.common.RelationFactor;
 import com.oceanbase.tools.sqlparser.statement.createtable.CreateTable;
@@ -33,8 +34,8 @@ import lombok.NonNull;
  *
  * @author yh263208
  * @date 2022-12-26 15:04
- * @since ODC_release_4.1.0
  * @see StatementFactory
+ * @since ODC_release_4.1.0
  */
 public class MySQLCreateTableFactory extends OBParserBaseVisitor<CreateTable> implements StatementFactory<CreateTable> {
 
@@ -76,7 +77,15 @@ public class MySQLCreateTableFactory extends OBParserBaseVisitor<CreateTable> im
     public CreateTable visitCreate_table_stmt(Create_table_stmtContext ctx) {
         RelationFactor factor = MySQLFromReferenceFactory.getRelationFactor(ctx.relation_factor());
         CreateTable createTable = new CreateTable(ctx, factor.getRelation());
-        createTable.setExternal(true);
+        if (ctx.special_table_type() != null) {
+            Special_table_typeContext specialTableTypeContext = ctx.special_table_type();
+            if (specialTableTypeContext.EXTERNAL() != null) {
+                createTable.setExternal(true);
+            } else if (specialTableTypeContext.TEMPORARY() != null) {
+                createTable.setTemporary(true);
+            }
+        }
+
         if (ctx.IF() != null && ctx.not() != null && ctx.EXISTS() != null) {
             createTable.setIfNotExists(true);
         }
