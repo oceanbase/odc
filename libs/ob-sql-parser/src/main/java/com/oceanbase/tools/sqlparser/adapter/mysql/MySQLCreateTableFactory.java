@@ -76,11 +76,7 @@ public class MySQLCreateTableFactory extends OBParserBaseVisitor<CreateTable> im
     public CreateTable visitCreate_table_stmt(Create_table_stmtContext ctx) {
         RelationFactor factor = MySQLFromReferenceFactory.getRelationFactor(ctx.relation_factor());
         CreateTable createTable = new CreateTable(ctx, factor.getRelation());
-        if (ctx.temporary_option().TEMPORARY() != null) {
-            createTable.setTemporary(true);
-        } else if (ctx.temporary_option().EXTERNAL() != null) {
-            createTable.setExternal(true);
-        }
+        createTable.setExternal(true);
         if (ctx.IF() != null && ctx.not() != null && ctx.EXISTS() != null) {
             createTable.setIfNotExists(true);
         }
@@ -95,8 +91,11 @@ public class MySQLCreateTableFactory extends OBParserBaseVisitor<CreateTable> im
         if (ctx.table_option_list() != null) {
             createTable.setTableOptions(new MySQLTableOptionsFactory(ctx.table_option_list()).generate());
         }
-        if (ctx.opt_partition_option() != null) {
-            createTable.setPartition(new MySQLPartitionFactory(ctx.opt_partition_option()).generate());
+        if (ctx.partition_option() != null) {
+            createTable.setPartition(new MySQLPartitionFactory(ctx.partition_option()).generate());
+        }
+        if (ctx.auto_partition_option() != null) {
+            createTable.setPartition(new MySQLPartitionFactory(ctx.auto_partition_option()).generate());
         }
         return createTable;
     }

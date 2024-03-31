@@ -29,7 +29,6 @@ import com.oceanbase.tools.sqlparser.obmysql.OBParser.Column_partition_optionCon
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Hash_partition_optionContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Key_partition_optionContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.List_partition_optionContext;
-import com.oceanbase.tools.sqlparser.obmysql.OBParser.Opt_partition_optionContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Partition_optionContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Partition_optionsContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Range_partition_optionContext;

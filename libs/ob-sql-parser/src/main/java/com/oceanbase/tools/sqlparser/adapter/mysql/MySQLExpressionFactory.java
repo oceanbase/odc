@@ -714,7 +714,7 @@ public class MySQLExpressionFactory extends OBParserBaseVisitor<Expression> impl
     public Expression visitTtl_expr(Ttl_exprContext ctx) {
         Expression right = new IntervalExpression(ctx.INTERVAL(), ctx.ttl_unit(),
                 new ConstExpression(ctx.INTNUM()), ctx.ttl_unit().getText());
-        return new CompoundExpression(ctx, visit(ctx.simple_expr()), right, Operator.ADD);
+        return new CompoundExpression(ctx, visit(ctx.column_definition_ref()), right, Operator.ADD);
     }
 
     @Override

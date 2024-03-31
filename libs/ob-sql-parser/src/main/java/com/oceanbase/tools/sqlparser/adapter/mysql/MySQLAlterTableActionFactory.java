@@ -149,7 +149,7 @@ public class MySQLAlterTableActionFactory extends OBParserBaseVisitor<AlterTable
                     .setAddIndex((OutOfLineIndex) new MySQLTableElementFactory(ctx.out_of_line_index()).generate());
         } else if (ctx.DROP() != null) {
             alterTableAction.setDropIndexName(ctx.index_name(0).getText());
-        } else if (ctx.ALTER() != null && ctx.INDEX() != null) {
+        } else if (ctx.alter_with_opt_hint() != null && ctx.INDEX() != null) {
             String idxName = ctx.index_name(0).getText();
             if (ctx.visibility_option() != null) {
                 alterTableAction.alterIndexVisibility(idxName, ctx.visibility_option().VISIBLE() != null);
