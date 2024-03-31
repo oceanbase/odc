@@ -62,4 +62,8 @@ public class JobEnvKeyConstants {
     public static final String ENCRYPT_SALT = "ENCRYPT_SALT";
 
     public static final String REPORT_ENABLED = "REPORT_ENABLED";
+
+    public static final String ODC_PROPERTY_ENCRYPTION_ALGORITHM_KEY = "ODC_PROPERTY_ENCRYPTION_ALGORITHM_KEY";
+
+    public static final String ODC_PROPERTY_ENCRYPTION_PASSWORD = "ODC_PROPERTY_ENCRYPTION_PASSWORD";
 }

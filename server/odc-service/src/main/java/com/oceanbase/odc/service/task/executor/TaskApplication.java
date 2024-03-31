@@ -20,6 +20,7 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.core.LoggerContext;
@@ -121,15 +122,13 @@ public class TaskApplication {
     }
 
     private void setLog4JConfigXml() {
-        if (System.getProperty("log4j.configurationFile") != null) {
-            return;
-        }
-        String taskLogFile = "log4j2-task.xml";
+        String taskLogFile = Optional.ofNullable(System.getProperty("log4j.configurationFile"))
+                .orElse("log4j2-task.xml");
         LoggerContext context = (org.apache.logging.log4j.core.LoggerContext) LogManager.getContext(false);
 
         URL resource = getClass().getClassLoader().getResource(taskLogFile);
         try {
-            // this will force a reconfiguration
+            // this will force a reconfiguration, MDC context will to take effect
             context.setConfigLocation(resource.toURI());
         } catch (URISyntaxException e) {
             throw new TaskRuntimeException("load log file occur error, logfile=" + taskLogFile, e);
