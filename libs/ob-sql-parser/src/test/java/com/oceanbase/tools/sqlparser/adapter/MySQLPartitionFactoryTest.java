@@ -28,10 +28,10 @@ import org.junit.Test;
 import com.oceanbase.tools.sqlparser.adapter.mysql.MySQLPartitionFactory;
 import com.oceanbase.tools.sqlparser.obmysql.OBLexer;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser;
+import com.oceanbase.tools.sqlparser.obmysql.OBParser.Auto_partition_optionContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Partition_optionContext;
 import com.oceanbase.tools.sqlparser.statement.Expression;
 import com.oceanbase.tools.sqlparser.statement.Operator;
-import com.oceanbase.tools.sqlparser.statement.createtable.ColumnPartition;
 import com.oceanbase.tools.sqlparser.statement.createtable.HashPartition;
 import com.oceanbase.tools.sqlparser.statement.createtable.HashPartitionElement;
 import com.oceanbase.tools.sqlparser.statement.createtable.KeyPartition;
@@ -519,22 +519,8 @@ public class MySQLPartitionFactoryTest {
     }
 
     @Test
-    public void generate_columnPartition_succeed() {
-        StatementFactory<Partition> factory = new MySQLPartitionFactory(getPartitionContext(
-                "partition by column (a,(b,c), d)"));
-        Partition actual = factory.generate();
-
-        ColumnPartition expect = new ColumnPartition(Arrays.asList(
-                new ColumnReference(null, null, "a"),
-                new ColumnReference(null, null, "b"),
-                new ColumnReference(null, null, "c"),
-                new ColumnReference(null, null, "d")));
-        Assert.assertEquals(expect, actual);
-    }
-
-    @Test
     public void generate_autoPartition_succeed() {
-        StatementFactory<Partition> factory = new MySQLPartitionFactory(getPartitionContext(
+        StatementFactory<Partition> factory = new MySQLPartitionFactory(getAutoPartitionContext(
                 "partition by range columns(a,b) partition size 'auto' PARTITIONS AUTO"));
         Partition actual = factory.generate();
 
@@ -548,7 +534,7 @@ public class MySQLPartitionFactoryTest {
 
     @Test
     public void generate_autoPartition1_succeed() {
-        StatementFactory<Partition> factory = new MySQLPartitionFactory(getPartitionContext(
+        StatementFactory<Partition> factory = new MySQLPartitionFactory(getAutoPartitionContext(
                 "partition by range(b) partition size 'auto' PARTITIONS AUTO"));
         Partition actual = factory.generate();
 
@@ -567,4 +553,11 @@ public class MySQLPartitionFactoryTest {
         return parser.partition_option();
     }
 
+    private Auto_partition_optionContext getAutoPartitionContext(String part) {
+        OBLexer lexer = new OBLexer(CharStreams.fromString(part));
+        CommonTokenStream tokens = new CommonTokenStream(lexer);
+        OBParser parser = new OBParser(tokens);
+        parser.setErrorHandler(new BailErrorStrategy());
+        return parser.auto_partition_option();
+    }
 }

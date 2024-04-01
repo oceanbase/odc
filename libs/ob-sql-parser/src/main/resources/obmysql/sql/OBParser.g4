@@ -1326,12 +1326,6 @@ partition_option
     | list_partition_option
     ;
 
-opt_partition_option
-    : partition_option
-    | opt_column_partition_option
-    | auto_partition_option
-    ;
-
 auto_partition_option
     : auto_partition_type PARTITION SIZE partition_size PARTITIONS AUTO
     ;
@@ -1389,10 +1383,6 @@ partition_options
 
 partition_num
     : PARTITIONS INTNUM
-    ;
-
-opt_column_partition_option
-    : column_partition_option?
     ;
 
 column_partition_option

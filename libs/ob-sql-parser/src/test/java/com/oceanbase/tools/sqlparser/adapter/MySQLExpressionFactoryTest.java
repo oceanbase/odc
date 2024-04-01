@@ -73,7 +73,7 @@ public class MySQLExpressionFactoryTest {
 
     @Test
     public void generate_dotKeywordColumn_generateSucceed() {
-        ExprContext context = getExprContext(".BEFORE.col");
+        ExprContext context = getExprContext(".`BEFORE`.col");
         StatementFactory<Expression> factory = new MySQLExpressionFactory(context);
         Expression actual = factory.generate();
 
@@ -83,7 +83,7 @@ public class MySQLExpressionFactoryTest {
 
     @Test
     public void generate_keywordColumn_generateSucceed() {
-        ExprContext context = getExprContext("BEFORE.col");
+        ExprContext context = getExprContext("`BEFORE`.col");
         StatementFactory<Expression> factory = new MySQLExpressionFactory(context);
         Expression actual = factory.generate();
 
@@ -93,7 +93,7 @@ public class MySQLExpressionFactoryTest {
 
     @Test
     public void generate_dotKeywordKeyword_generateSucceed() {
-        ExprContext context = getExprContext(".BEFORE.BEFORE");
+        ExprContext context = getExprContext(".`BEFORE`.BEFORE");
         StatementFactory<Expression> factory = new MySQLExpressionFactory(context);
         Expression actual = factory.generate();
 
@@ -103,7 +103,7 @@ public class MySQLExpressionFactoryTest {
 
     @Test
     public void generate_dotKeywordStar_generateSucceed() {
-        ExprContext context = getExprContext(".BEFORE.*");
+        ExprContext context = getExprContext(".`BEFORE`.*");
         StatementFactory<Expression> factory = new MySQLExpressionFactory(context);
         Expression actual = factory.generate();
 
