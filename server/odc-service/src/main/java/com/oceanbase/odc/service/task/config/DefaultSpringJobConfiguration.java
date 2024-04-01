@@ -31,6 +31,7 @@ import com.oceanbase.odc.service.schedule.ScheduleTaskService;
 import com.oceanbase.odc.service.task.TaskService;
 import com.oceanbase.odc.service.task.caller.K8sJobClient;
 import com.oceanbase.odc.service.task.dispatch.ImmediateJobDispatcher;
+import com.oceanbase.odc.service.task.jasypt.JasyptEncryptorConfigProperties;
 import com.oceanbase.odc.service.task.schedule.DefaultTaskFrameworkDisabledHandler;
 import com.oceanbase.odc.service.task.schedule.StartJobRateLimiter;
 import com.oceanbase.odc.service.task.schedule.StartJobRateLimiterSupport;
@@ -72,6 +73,7 @@ public class DefaultSpringJobConfiguration extends DefaultJobConfiguration
         setTransactionManager(new SpringTransactionManager(ctx.getBean(TransactionTemplate.class)));
         initJobRateLimiter();
         setTaskFrameworkDisabledHandler(new DefaultTaskFrameworkDisabledHandler());
+        setJasyptEncryptorConfigProperties(ctx.getBean(JasyptEncryptorConfigProperties.class));
     }
 
     @Override
