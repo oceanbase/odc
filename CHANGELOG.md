@@ -4,8 +4,77 @@
 
 ### Feature
 
+### Fix
 
+Connection Session
 
+- Sessions failing to remove after expiration, causing potential leaks (#2125)
+- Concurrency issues with SingleConnectionDataSource.getConnection() under high load (#1914)
+- Connection failures in OceanBase Oracle, even after username corrections (#1797)
+- Intermittent 404 errors when attempting to open SQL console (#1809)
+
+SQL Execution
+
+- Commit/rollback button state not in sync with actual transaction status in OceanBase 4.2 (#2097)
+- SQL statements with single-line comments unable to execute (#2085)
+- Incorrect offsets for last SQL command without a trailing delimiter (#1970)
+- Incompatibility of anonymous block execution module with Oracle 11g (#1759)
+- Timestamp types displaying with precision loss (#1411)
+
+Result-set
+
+- Degrading performance when modifying multiple rows concurrently in result-set (#2007)
+- Timestamps displaying with precision loss (#1996)
+
+Table Object
+
+- Disparity in column names order between Index and Constraint views (#1948)
+- Inability to view table details for MySQL version 5.6 (#1635)
+- Sofa ODP table detail view not accessible (#2043)
+
+Online Schema Change
+
+- OSC task experiencing syntax exceptions when input statements contain comments (#1597)
+
+SQL-Check
+
+- Null Pointer Exception occurring when virtual columns are present (#2031)
+- Drop operations for primary keys as constraints going undetected (#1879)
+- Null Pointer Exception triggered by certain ALTER statements (#1865)
+
+Partition Plan
+
+- Partition DDL execution failures when schema or table names are lowercase (#2088)
+  Incorrect partition generation when upper bounds increase non-sequentially by year/month/day (#1992)
+
+Data Archiving/Cleaning
+
+- [Pending specific issue description]
+
+Users and Permissions
+
+- Inefficiencies in batch importing users with associated roles (#1908)
+
+Data Security
+
+- Data masking inconsistencies when employing nested CASE-WHEN clauses (#1410)
+
+System Integration
+
+- Presence of garbled code when including Chinese content in request body (#1625)
+
+DB Browser
+
+- Creation type not recognized for table statements containing indexes (#2063)
+- DDL containing extraneous spaces before and after in Oracle mode (#2050)
+- Tables with default values on columns not retrievable in Oracle 11g mode (#1733)
+- listTables not correctly returning tables for the specified schema consistently (#1632)
+- Tables unlistable in OceanBase versions not later than 2.2.30 (#1478)
+- Inadequate visualization for MySQL table structure, specifically for strings in single quotes (#1401)
+
+OB-SQL-Parser
+
+- Parsing issues for INSERT statements into tables named 'json_table' (#1968)
 
 ## 4.2.3_bp1 (2024-02-01)
 
