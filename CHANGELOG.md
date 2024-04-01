@@ -24,7 +24,9 @@ Structure Comparison
 - Supported scope includes table objects, with comparison properties including columns, primary keys, constraints, indexes, partitions, table properties
 - Structure comparison results provide DIFF preview and change script preview
 - SQL preview results are downloadable and can directly initiate structure synchronization tasks
-  Lock-Free Structure Changes
+
+Online Schema Changes
+
 - Support for adding intermediate columns to tables
 - Support for concurrent index changes during table structure modifications (OceanBase Oracle mode)
 - Support for primary key deletion when the table contains unique constraints (OceanBase Oracle mode)
