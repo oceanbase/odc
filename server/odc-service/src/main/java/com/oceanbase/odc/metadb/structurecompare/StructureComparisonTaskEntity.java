@@ -65,7 +65,7 @@ public class StructureComparisonTaskEntity {
      * Related flow instance id, references flow_instance(id)
      */
     @Column(name = "flow_instance_id", nullable = false)
-    private long flowInstanceId;
+    private Long flowInstanceId;
     /**
      * Source connect database id, references connect_database(id)
      */

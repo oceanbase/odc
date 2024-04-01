@@ -168,8 +168,8 @@ public class DatabaseChangeRuntimeFlowableTask extends BaseODCFlowTaskDelegate<D
     @Override
     protected void onSuccessful(Long taskId, TaskService taskService) {
         log.info("Async task succeed, taskId={}", taskId);
-        updateFlowInstanceStatus(FlowStatus.EXECUTION_SUCCEEDED);
         super.onSuccessful(taskId, taskService);
+        updateFlowInstanceStatus(FlowStatus.EXECUTION_SUCCEEDED);
     }
 
     @Override

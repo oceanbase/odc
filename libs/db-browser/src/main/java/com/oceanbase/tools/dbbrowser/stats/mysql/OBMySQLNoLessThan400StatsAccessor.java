@@ -56,7 +56,7 @@ public class OBMySQLNoLessThan400StatsAccessor extends OBMySQLStatsAccessor {
     private static final String OB40_QUERY_ALL_SESSIONS =
             "SELECT " + OB40_SESSION_COLUMNS + " FROM oceanbase.GV$OB_PROCESSLIST";
     private static final String OB40_QUERY_CURRENT_SESSION =
-            "SELECT " + OB40_SESSION_COLUMNS + " FROM oceanbase.GV$OB_PROCESSLIST WHERE `ID`=connection_id()";
+            "SELECT " + OB40_SESSION_COLUMNS + " FROM oceanbase.V$OB_PROCESSLIST WHERE `ID`=connection_id()";
 
     public OBMySQLNoLessThan400StatsAccessor(@NonNull JdbcOperations jdbcOperations) {
         super(jdbcOperations);

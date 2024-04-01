@@ -51,6 +51,7 @@ import com.oceanbase.odc.common.util.ExceptionUtils;
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.authority.util.Authenticated;
 import com.oceanbase.odc.core.authority.util.PreAuthenticate;
+import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.core.shared.exception.AccessDeniedException;
@@ -121,6 +122,7 @@ public class NotificationService {
 
     private Map<Long, NotificationPolicy> metaPolicies;
 
+    @SkipAuthorize("odc internal usage")
     @PostConstruct
     public void init() {
         metaPolicies = policyMetadataRepository.findAllOrderByCategoryAndName().stream()

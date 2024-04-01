@@ -67,13 +67,13 @@ public class DefaultConnectionSessionManager extends BaseValidatedConnectionSess
             try {
                 this.sessionManager.removeSession(session);
             } catch (Throwable e) {
-                log.warn("Fail to delete an expired Session, session={}", session, e);
+                log.warn("Fail to delete an expired session, sessionId={}", session.getId(), e);
             }
         }
 
         @Override
         public void onExpireFailed(ConnectionSession session, Throwable e) {
-            log.error("Fail to expire a session, session={}", session, e);
+            log.warn("Failed to expire a session, sessionId={}", session.getId(), e);
         }
 
     }
@@ -197,6 +197,8 @@ public class DefaultConnectionSessionManager extends BaseValidatedConnectionSess
             ConnectionSession session = this.delayDeleteSessionId2Session.get(this.sessionId);
             if (session == null) {
                 return;
+            } else {
+                this.delayDeleteSessionId2Session.remove(this.sessionId);
             }
             session.expire();
             log.info("Delayed deletion of connection session successfully, sessionId={}, AET={}", this.sessionId,

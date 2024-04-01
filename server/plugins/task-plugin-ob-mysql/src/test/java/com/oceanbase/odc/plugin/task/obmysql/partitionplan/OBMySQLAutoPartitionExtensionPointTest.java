@@ -226,7 +226,7 @@ public class OBMySQLAutoPartitionExtensionPointTest {
             partition.setTableName(dbTable.getName());
             partition.setSchemaName(dbTable.getSchemaName());
             List<String> actuals = extensionPoint.generateCreatePartitionDdls(connection, partition);
-            List<String> expects = Collections.singletonList(String.format("ALTER TABLE %s.%s ADD PARTITION (\n"
+            List<String> expects = Collections.singletonList(String.format("ALTER TABLE `%s`.`%s` ADD PARTITION (\n"
                     + "\tPARTITION `p20240126` VALUES LESS THAN (20220801,'2024-01-26'),\n"
                     + "\tPARTITION `p20240127` VALUES LESS THAN (20220802,'2024-01-27'),\n"
                     + "\tPARTITION `p20240128` VALUES LESS THAN (20220803,'2024-01-28'),\n"
@@ -253,8 +253,8 @@ public class OBMySQLAutoPartitionExtensionPointTest {
             dbTablePartition.setTableName(dbTable.getName());
             dbTablePartition.setSchemaName(dbTable.getSchemaName());
             List<String> actual = extensionPoint.generateDropPartitionDdls(connection, dbTablePartition, true);
-            List<String> expects = Collections.singletonList(String.format("ALTER TABLE %s.%s DROP PARTITION "
-                    + "(p20220830, p20220829);\n", configuration.getDefaultDBName(), REAL_RANGE_TABLE_NAME));
+            List<String> expects = Collections.singletonList(String.format("ALTER TABLE `%s`.`%s` DROP PARTITION "
+                    + "(`p20220830`, `p20220829`);\n", configuration.getDefaultDBName(), REAL_RANGE_TABLE_NAME));
             Assert.assertEquals(expects, actual);
         }
     }

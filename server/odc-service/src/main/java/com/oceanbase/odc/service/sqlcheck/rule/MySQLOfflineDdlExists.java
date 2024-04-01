@@ -191,7 +191,8 @@ public class MySQLOfflineDdlExists implements SqlCheckRule {
         }
         if (CollectionUtils.isNotEmpty(action.getDropConstraintNames()) && createTable != null) {
             List<String> pkConstraintNames = createTable.getColumnDefinitions().stream().flatMap(d -> {
-                if (d.getColumnAttributes() == null) {
+                if (d.getColumnAttributes() == null
+                        || CollectionUtils.isEmpty(d.getColumnAttributes().getConstraints())) {
                     return Stream.empty();
                 }
                 return d.getColumnAttributes().getConstraints().stream()

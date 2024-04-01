@@ -160,7 +160,7 @@ public abstract class BaseParameterFactory<T extends BaseParameter> {
                 .ifPresent(timeout -> {
                     sessionConfig.setJdbcOption("socketTimeout", timeout * 1000 + "");
                     sessionConfig.setJdbcOption("connectTimeout", timeout * 1000 + "");
-                    sessionConfig.addInitSql4Both("set ob_query_timeout = " + timeout * 1000000);
+                    sessionConfig.addInitSql4Both("set ob_query_timeout = " + timeout * 1000000L);
                 });
 
         parameter.setSessionConfig(sessionConfig);

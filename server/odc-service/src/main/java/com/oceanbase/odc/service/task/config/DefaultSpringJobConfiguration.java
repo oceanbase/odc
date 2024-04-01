@@ -31,7 +31,9 @@ import com.oceanbase.odc.service.schedule.ScheduleTaskService;
 import com.oceanbase.odc.service.task.TaskService;
 import com.oceanbase.odc.service.task.caller.K8sJobClient;
 import com.oceanbase.odc.service.task.dispatch.ImmediateJobDispatcher;
-import com.oceanbase.odc.service.task.schedule.MonitorExecutorStatusRateLimiter;
+import com.oceanbase.odc.service.task.schedule.DefaultTaskFrameworkDisabledHandler;
+import com.oceanbase.odc.service.task.schedule.StartJobRateLimiter;
+import com.oceanbase.odc.service.task.schedule.StartJobRateLimiterSupport;
 import com.oceanbase.odc.service.task.schedule.provider.DefaultHostUrlProvider;
 import com.oceanbase.odc.service.task.schedule.provider.DefaultJobImageNameProvider;
 import com.oceanbase.odc.service.task.service.SpringTransactionManager;
@@ -50,6 +52,7 @@ public class DefaultSpringJobConfiguration extends DefaultJobConfiguration
 
     @Override
     public void afterPropertiesSet() {
+        setTaskFrameworkEnabledProperties(ctx.getBean(TaskFrameworkEnabledProperties.class));
         setCloudEnvConfigurations(ctx.getBean(CloudEnvConfigurations.class));
         setHostUrlProvider(new DefaultHostUrlProvider(this::getTaskFrameworkProperties,
                 ctx.getBean(HostProperties.class)));
@@ -67,7 +70,8 @@ public class DefaultSpringJobConfiguration extends DefaultJobConfiguration
         setTaskFrameworkService(tfs);
         setEventPublisher(publisher);
         setTransactionManager(new SpringTransactionManager(ctx.getBean(TransactionTemplate.class)));
-        setStartJobRateLimiter(new MonitorExecutorStatusRateLimiter(this::getTaskFrameworkProperties, tfs));
+        initJobRateLimiter();
+        setTaskFrameworkDisabledHandler(new DefaultTaskFrameworkDisabledHandler());
     }
 
     @Override
@@ -83,5 +87,11 @@ public class DefaultSpringJobConfiguration extends DefaultJobConfiguration
     @Override
     public K8sJobClient getK8sJobClient() {
         return ctx.getBean(K8sJobClient.class);
+    }
+
+    private void initJobRateLimiter() {
+        StartJobRateLimiterSupport limiterSupport = new StartJobRateLimiterSupport();
+        ctx.getBeansOfType(StartJobRateLimiter.class).forEach((k, v) -> limiterSupport.addJobRateLimiter(v));
+        setStartJobRateLimiter(limiterSupport);
     }
 }

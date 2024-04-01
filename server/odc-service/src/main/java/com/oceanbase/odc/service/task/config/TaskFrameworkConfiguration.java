@@ -21,7 +21,6 @@ import javax.sql.DataSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
-import org.springframework.cloud.context.config.annotation.RefreshScope;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Lazy;
@@ -30,6 +29,9 @@ import org.springframework.scheduling.quartz.SchedulerFactoryBean;
 
 import com.oceanbase.odc.service.task.caller.K8sJobClient;
 import com.oceanbase.odc.service.task.caller.NativeK8sJobClient;
+import com.oceanbase.odc.service.task.schedule.MonitorProcessRateLimiter;
+import com.oceanbase.odc.service.task.schedule.StartJobRateLimiter;
+import com.oceanbase.odc.service.task.service.TaskFrameworkService;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -45,7 +47,6 @@ public class TaskFrameworkConfiguration {
     @Lazy
     @Bean
     @ConditionalOnMissingBean(K8sJobClient.class)
-    @RefreshScope
     public K8sJobClient k8sJobClient(@Autowired TaskFrameworkProperties taskFrameworkProperties) {
         try {
             log.info("k8s url is {}", taskFrameworkProperties.getK8sProperties().getKubeUrl());
@@ -55,6 +56,11 @@ public class TaskFrameworkConfiguration {
             log.warn("Create NativeK8sJobClient occur error:", e);
             return null;
         }
+    }
+
+    @Bean
+    public StartJobRateLimiter monitorProcessRateLimiter(@Autowired TaskFrameworkService taskFrameworkService) {
+        return new MonitorProcessRateLimiter(TaskFrameworkPropertiesSupplier.getSupplier(), taskFrameworkService);
     }
 
     @Lazy
@@ -69,6 +75,15 @@ public class TaskFrameworkConfiguration {
         schedulerFactoryBean.setStartupDelay(taskFrameworkProperties.getQuartzStartDelaySeconds());
         schedulerFactoryBean.setTaskExecutor(executor);
         return schedulerFactoryBean;
+    }
+
+    @Bean
+    public TaskFrameworkEnabledProperties taskFrameworkEnabledProperties(
+            @Autowired TaskFrameworkProperties taskFrameworkProperties) {
+        TaskFrameworkEnabledProperties properties = new TaskFrameworkEnabledProperties();
+        boolean enabled = taskFrameworkProperties.isEnabled();
+        properties.setEnabled(enabled);
+        return properties;
     }
 
     @Bean

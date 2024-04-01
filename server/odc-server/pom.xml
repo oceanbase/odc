@@ -262,6 +262,9 @@
                                     <location>target/classes/log4j2.xml</location>
                                 </source>
                                 <source>
+                                    <location>target/classes/log4j2-task.xml</location>
+                                </source>
+                                <source>
                                     <location>${project.basedir}/../../distribution/docker/resources/nginx.conf.template</location>
                                 </source>
                                 <source>

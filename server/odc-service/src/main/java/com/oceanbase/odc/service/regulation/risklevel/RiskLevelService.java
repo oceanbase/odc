@@ -137,6 +137,7 @@ public class RiskLevelService {
                 .collect(Collectors.toList());
     }
 
+    @SkipAuthorize("internal usage")
     public boolean isDefaultRiskLevel(@NonNull Long organizationId, @NonNull Long id) {
         Optional<RiskLevelEntity> riskLevelOptional = riskLevelRepository.findByOrganizationIdAndId(organizationId, id);
         if (!riskLevelOptional.isPresent()) {
