@@ -31,6 +31,7 @@ import com.oceanbase.odc.service.schedule.ScheduleTaskService;
 import com.oceanbase.odc.service.task.TaskService;
 import com.oceanbase.odc.service.task.caller.K8sJobClient;
 import com.oceanbase.odc.service.task.dispatch.ImmediateJobDispatcher;
+import com.oceanbase.odc.service.task.schedule.DefaultTaskFrameworkDisabledHandler;
 import com.oceanbase.odc.service.task.schedule.StartJobRateLimiter;
 import com.oceanbase.odc.service.task.schedule.StartJobRateLimiterSupport;
 import com.oceanbase.odc.service.task.schedule.provider.DefaultHostUrlProvider;
@@ -51,6 +52,7 @@ public class DefaultSpringJobConfiguration extends DefaultJobConfiguration
 
     @Override
     public void afterPropertiesSet() {
+        setTaskFrameworkEnabledProperties(ctx.getBean(TaskFrameworkEnabledProperties.class));
         setCloudEnvConfigurations(ctx.getBean(CloudEnvConfigurations.class));
         setHostUrlProvider(new DefaultHostUrlProvider(this::getTaskFrameworkProperties,
                 ctx.getBean(HostProperties.class)));
@@ -69,6 +71,7 @@ public class DefaultSpringJobConfiguration extends DefaultJobConfiguration
         setEventPublisher(publisher);
         setTransactionManager(new SpringTransactionManager(ctx.getBean(TransactionTemplate.class)));
         initJobRateLimiter();
+        setTaskFrameworkDisabledHandler(new DefaultTaskFrameworkDisabledHandler());
     }
 
     @Override

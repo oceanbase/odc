@@ -78,6 +78,15 @@ public class TaskFrameworkConfiguration {
     }
 
     @Bean
+    public TaskFrameworkEnabledProperties taskFrameworkEnabledProperties(
+            @Autowired TaskFrameworkProperties taskFrameworkProperties) {
+        TaskFrameworkEnabledProperties properties = new TaskFrameworkEnabledProperties();
+        boolean enabled = taskFrameworkProperties.isEnabled();
+        properties.setEnabled(enabled);
+        return properties;
+    }
+
+    @Bean
     public JobConfiguration jobConfiguration() {
         return new DefaultSpringJobConfiguration();
     }
