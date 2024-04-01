@@ -58,9 +58,9 @@ public class MySQLCreateTableFactory extends OBParserBaseVisitor<CreateTable> im
     public CreateTable visitCreate_table_like_stmt(Create_table_like_stmtContext ctx) {
         RelationFactor factor = MySQLFromReferenceFactory.getRelationFactor(ctx.relation_factor(0));
         CreateTable createTable = new CreateTable(ctx, factor.getRelation());
-        if (ctx.temporary_option().TEMPORARY() != null) {
+        if (ctx.special_table_type().TEMPORARY() != null) {
             createTable.setTemporary(true);
-        } else if (ctx.temporary_option().EXTERNAL() != null) {
+        } else if (ctx.special_table_type().EXTERNAL() != null) {
             createTable.setExternal(true);
         }
         if (ctx.IF() != null && ctx.not() != null && ctx.EXISTS() != null) {

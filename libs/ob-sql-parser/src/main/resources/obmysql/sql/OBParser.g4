@@ -861,17 +861,13 @@ use_database_stmt
     : USE database_factor
     ;
 
-temporary_option
-    : (TEMPORARY | EXTERNAL)?
-    ;
-
 special_table_type
     : (TEMPORARY | EXTERNAL)?
     ;
 
 create_table_like_stmt
-    : CREATE temporary_option TABLE (IF not EXISTS)? relation_factor LIKE relation_factor
-    | CREATE temporary_option TABLE (IF not EXISTS)? relation_factor LeftParen LIKE relation_factor RightParen
+    : CREATE special_table_type TABLE (IF not EXISTS)? relation_factor LIKE relation_factor
+    | CREATE special_table_type TABLE (IF not EXISTS)? relation_factor LeftParen LIKE relation_factor RightParen
     ;
 
 create_table_stmt
@@ -1019,8 +1015,7 @@ generated_column_attribute
     ;
 
 column_definition_ref
-    : (relation_name Dot)? column_name
-    | relation_name Dot relation_name Dot column_name
+    : ((relation_name Dot)? relation_name Dot)?  column_name
     ;
 
 column_definition_list
