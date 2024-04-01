@@ -18,8 +18,11 @@ package com.oceanbase.odc.plugin.task.obmysql.partitionplan;
 import java.io.IOException;
 import java.io.InputStream;
 import java.sql.Connection;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -34,7 +37,9 @@ import org.junit.Test;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 import com.oceanbase.odc.plugin.schema.obmysql.OBMySQLTableExtension;
+import com.oceanbase.odc.plugin.task.api.partitionplan.datatype.TimeDataType;
 import com.oceanbase.odc.plugin.task.api.partitionplan.invoker.drop.DropPartitionGenerator;
+import com.oceanbase.odc.plugin.task.api.partitionplan.util.TimeDataTypeUtil;
 import com.oceanbase.odc.plugin.task.obmysql.partitionplan.invoker.drop.OBMySQLHistoricalPartitionPlanDropGenerator;
 import com.oceanbase.odc.test.database.TestDBConfiguration;
 import com.oceanbase.odc.test.database.TestDBConfigurations;
@@ -80,7 +85,14 @@ public class OBMySQLHistoricalPartitionPlanDropGeneratorTest {
             List<DBTablePartitionDefinition> toDelete = generator.invoke(connection, dbTable, getParameters(2, 3));
             List<String> actuals = toDelete.stream().map(DBTableAbstractPartitionDefinition::getName)
                     .collect(Collectors.toList());
-            Assert.assertEquals(Arrays.asList("p20230901", "p20231001", "p20231101", "p20231201"), actuals);
+            Calendar calendar = Calendar.getInstance();
+            calendar.add(Calendar.MONTH, -2);
+            String bound = new SimpleDateFormat("''yyyy-MM-dd HH:mm:ss''")
+                    .format(TimeDataTypeUtil.removeExcessPrecision(calendar.getTime(), TimeDataType.MONTH));
+            List<String> expect = dbTable.getPartition().getPartitionDefinitions().stream()
+                    .filter(d -> d.getMaxValues().get(0).compareTo(bound) < 0)
+                    .map(DBTableAbstractPartitionDefinition::getName).collect(Collectors.toList());
+            Assert.assertEquals(expect, actuals);
         }
     }
 
@@ -95,7 +107,14 @@ public class OBMySQLHistoricalPartitionPlanDropGeneratorTest {
             List<DBTablePartitionDefinition> toDelete = generator.invoke(connection, dbTable, getParameters(2, 3));
             List<String> actuals = toDelete.stream().map(DBTableAbstractPartitionDefinition::getName)
                     .collect(Collectors.toList());
-            Assert.assertEquals(Arrays.asList("p20230901", "p20231001", "p20231101", "p20231201"), actuals);
+            Calendar calendar = Calendar.getInstance();
+            calendar.add(Calendar.MONTH, -2);
+            Date date = TimeDataTypeUtil.removeExcessPrecision(calendar.getTime(), TimeDataType.MONTH);
+            String bound = date.getTime() / 1000 + "";
+            List<String> expect = dbTable.getPartition().getPartitionDefinitions().stream()
+                    .filter(d -> d.getMaxValues().get(0).compareTo(bound) < 0)
+                    .map(DBTableAbstractPartitionDefinition::getName).collect(Collectors.toList());
+            Assert.assertEquals(expect, actuals);
         }
     }
 
