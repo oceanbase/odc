@@ -2,8 +2,6 @@
 
 ## 4.2.4 (2024-04-01)
 
-### Feature
-
 ### Feature Changes
 
 Data Sources
