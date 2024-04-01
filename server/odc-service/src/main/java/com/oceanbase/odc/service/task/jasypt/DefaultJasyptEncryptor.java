@@ -51,7 +51,8 @@ public class DefaultJasyptEncryptor implements JasyptEncryptor {
     }
 
     private boolean isEncrypted(String property) {
-        if (property == null) {
+        if (property == null || properties.getAlgorithm() == null
+                || properties.getSalt() == null || prefix == null || suffix == null) {
             return false;
         }
         final String trimmedValue = property.trim();

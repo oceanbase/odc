@@ -44,10 +44,5 @@ public class AccessEnvironmentJasyptEncryptorConfigProperties implements JasyptE
         setSuffix(SystemUtils.getEnvOrProperty(JobEnvKeyConstants.ODC_PROPERTY_ENCRYPTION_SUFFIX));
         setAlgorithm(SystemUtils.getEnvOrProperty(JobEnvKeyConstants.ODC_PROPERTY_ENCRYPTION_ALGORITHM));
         setSalt(System.getProperty(JobEnvKeyConstants.ODC_PROPERTY_ENCRYPTION_SALT));
-
-        Verify.notBlank(prefix, "prefix");
-        Verify.notBlank(suffix, "suffix");
-        Verify.notBlank(algorithm, "algorithm");
-        Verify.notBlank(salt, "salt");
     }
 }
