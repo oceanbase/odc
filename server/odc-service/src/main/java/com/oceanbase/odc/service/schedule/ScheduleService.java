@@ -420,6 +420,8 @@ public class ScheduleService {
                     if (trigger.mayFireAgain()) {
                         status = ScheduleStatus.ENABLED;
                         break;
+                    } else {
+                        status = ScheduleStatus.COMPLETED;
                     }
                 }
             } catch (SchedulerException e) {
