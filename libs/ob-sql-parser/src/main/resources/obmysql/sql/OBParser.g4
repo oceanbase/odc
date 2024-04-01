@@ -592,8 +592,8 @@ delete_stmt
     ;
 
 delete_basic_stmt
-    : DELETE FROM tbl_name (WHERE opt_hint_value expr)? order_by? limit_clause?
-    | DELETE multi_delete_table (WHERE opt_hint_value expr)?
+    : delete_with_opt_hint FROM tbl_name (WHERE opt_hint_value expr)? order_by? limit_clause?
+    | delete_with_opt_hint multi_delete_table (WHERE opt_hint_value expr)?
     ;
 
 multi_delete_table
@@ -606,7 +606,7 @@ update_stmt
     ;
 
 update_basic_stmt
-    : UPDATE IGNORE? table_references SET update_asgn_list (WHERE opt_hint_value expr)? order_by? limit_clause?
+    : update_with_opt_hint IGNORE? table_references SET update_asgn_list (WHERE opt_hint_value expr)? order_by? limit_clause?
     ;
 
 update_asgn_list
@@ -817,7 +817,12 @@ alter_database_stmt
     ;
 
 load_data_stmt
-    : LOAD DATA (LOCAL | REMOTE_OSS)? INFILE STRING_VALUE (IGNORE | REPLACE)? INTO TABLE relation_factor use_partition? (CHARACTER SET charset_name_or_default)? field_opt line_opt ((IGNORE INTNUM lines_or_rows) | (GENERATED INTNUM lines_or_rows))? ((LeftParen RightParen) | (LeftParen field_or_vars_list RightParen))? (SET load_set_list)? load_data_extended_option_list?
+    : load_data_with_opt_hint (LOCAL | REMOTE_OSS)? INFILE STRING_VALUE (IGNORE | REPLACE)? INTO TABLE relation_factor use_partition? (CHARACTER SET charset_name_or_default)? field_opt line_opt ((IGNORE INTNUM lines_or_rows) | (GENERATED INTNUM lines_or_rows))? ((LeftParen RightParen) | (LeftParen field_or_vars_list RightParen))? (SET load_set_list)? load_data_extended_option_list?
+    ;
+
+load_data_with_opt_hint
+    : LOAD DATA
+    | LOAD_DATA_HINT_BEGIN hint_list_with_end
     ;
 
 lines_or_rows
@@ -1939,7 +1944,7 @@ select_no_parens
     ;
 
 no_table_select
-    : SELECT query_expression_option_list? select_expr_list into_opt (FROM DUAL (WHERE opt_hint_value expr)? (GROUP BY groupby_clause)? (HAVING expr)? (WINDOW named_windows)?)?
+    : select_with_opt_hint query_expression_option_list? select_expr_list into_opt (FROM DUAL (WHERE opt_hint_value expr)? (GROUP BY groupby_clause)? (HAVING expr)? (WINDOW named_windows)?)?
     ;
 
 select_clause
@@ -1987,8 +1992,23 @@ select_with_parens_with_order_and_limit
     | select_with_parens order_by? limit_clause
     ;
 
+select_with_opt_hint
+    : SELECT
+    | SELECT_HINT_BEGIN hint_list_with_end
+    ;
+
+update_with_opt_hint
+    : UPDATE
+    | UPDATE_HINT_BEGIN hint_list_with_end
+    ;
+
+delete_with_opt_hint
+    : DELETE
+    | DELETE_HINT_BEGIN hint_list_with_end
+    ;
+
 simple_select
-    : SELECT query_expression_option_list? select_expr_list into_opt FROM from_list (WHERE opt_hint_value expr)? (GROUP BY groupby_clause)? (HAVING expr)? (WINDOW named_windows)?
+    : select_with_opt_hint query_expression_option_list? select_expr_list into_opt FROM from_list (WHERE opt_hint_value expr)? (GROUP BY groupby_clause)? (HAVING expr)? (WINDOW named_windows)?
     ;
 
 set_type_union
