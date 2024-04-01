@@ -61,13 +61,17 @@ public class StartPreparingJob implements Job {
     public void execute(JobExecutionContext context) throws JobExecutionException {
         configuration = JobConfigurationHolder.getJobConfiguration();
         JobConfigurationValidator.validComponent();
+
+        if (!configuration.getTaskFrameworkEnabledProperties().isEnabled()) {
+            configuration.getTaskFrameworkDisabledHandler().handleJobToFailed();
+            return;
+        }
         if (!ResourceDetectUtil.isResourceAvailable(configuration.getTaskFrameworkProperties())) {
             return;
         }
         TaskFrameworkProperties taskFrameworkProperties = configuration.getTaskFrameworkProperties();
         // scan preparing job
         TaskFrameworkService taskFrameworkService = configuration.getTaskFrameworkService();
-
         Page<JobEntity> jobs = taskFrameworkService.find(
                 Lists.newArrayList(JobStatus.PREPARING, JobStatus.RETRYING), 0,
                 taskFrameworkProperties.getSingleFetchPreparingJobRows());

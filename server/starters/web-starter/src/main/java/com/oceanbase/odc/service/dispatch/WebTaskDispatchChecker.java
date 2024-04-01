@@ -23,7 +23,7 @@ import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.metadb.task.JobEntity;
 import com.oceanbase.odc.metadb.task.TaskEntity;
 import com.oceanbase.odc.service.common.model.HostProperties;
-import com.oceanbase.odc.service.task.config.TaskFrameworkProperties;
+import com.oceanbase.odc.service.task.config.TaskFrameworkEnabledProperties;
 import com.oceanbase.odc.service.task.model.ExecutorInfo;
 import com.oceanbase.odc.service.task.service.TaskFrameworkService;
 
@@ -46,7 +46,7 @@ public class WebTaskDispatchChecker implements TaskDispatchChecker {
     @Autowired
     private TaskFrameworkService taskFrameworkService;
     @Autowired
-    private TaskFrameworkProperties taskFrameworkProperties;
+    private TaskFrameworkEnabledProperties taskFrameworkProperties;
     @Autowired
     private JobDispatchChecker jobDispatchChecker;
 

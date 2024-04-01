@@ -27,6 +27,7 @@ import com.oceanbase.odc.service.task.caller.K8sJobClient;
 import com.oceanbase.odc.service.task.dispatch.JobDispatcher;
 import com.oceanbase.odc.service.task.jasypt.JasyptEncryptorConfigProperties;
 import com.oceanbase.odc.service.task.schedule.StartJobRateLimiter;
+import com.oceanbase.odc.service.task.schedule.TaskFrameworkDisabledHandler;
 import com.oceanbase.odc.service.task.schedule.provider.HostUrlProvider;
 import com.oceanbase.odc.service.task.schedule.provider.JobImageNameProvider;
 import com.oceanbase.odc.service.task.service.TaskFrameworkService;
@@ -43,6 +44,8 @@ import lombok.Setter;
 @Getter
 @Setter
 public abstract class DefaultJobConfiguration implements JobConfiguration {
+
+    protected TaskFrameworkEnabledProperties taskFrameworkEnabledProperties;
 
     protected TaskFrameworkProperties taskFrameworkProperties;
 
@@ -71,6 +74,8 @@ public abstract class DefaultJobConfiguration implements JobConfiguration {
     protected TransactionManager transactionManager;
 
     protected StartJobRateLimiter startJobRateLimiter;
+
+    protected TaskFrameworkDisabledHandler taskFrameworkDisabledHandler;
 
     protected JasyptEncryptorConfigProperties jasyptEncryptorConfigProperties;
 }
