@@ -51,6 +51,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
 
+import com.oceanbase.odc.core.authority.SecurityManager;
+import com.oceanbase.odc.core.authority.permission.Permission;
 import com.oceanbase.odc.core.authority.util.Authenticated;
 import com.oceanbase.odc.core.authority.util.PreAuthenticate;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
@@ -179,6 +181,9 @@ public class DatabaseService {
     @Autowired
     private DatabasePermissionHelper databasePermissionHelper;
 
+    @Autowired
+    private SecurityManager securityManager;
+
     @Transactional(rollbackFor = Exception.class)
     @SkipAuthorize("internal authenticated")
     public Database detail(@NonNull Long id) {
@@ -186,6 +191,11 @@ public class DatabaseService {
                 .orElseThrow(() -> new NotFoundException(ResourceType.ODC_DATABASE, "id", id)), true);
         if (Objects.nonNull(database.getProject()) && Objects.nonNull(database.getProject().getId())) {
             projectPermissionValidator.checkProjectRole(database.getProject().getId(), ResourceRoleName.all());
+            return database;
+        }
+        Permission requiredPermission = this.securityManager
+                .getPermissionByActions(database.getDataSource(), Collections.singletonList("read"));
+        if (this.securityManager.isPermitted(requiredPermission)) {
             return database;
         }
         throw new NotFoundException(ResourceType.ODC_DATABASE, "id", id);
