@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 OceanBase.
+ * Copyright (c) 2023 OceanBase.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,11 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.oceanbase.odc.service.task.jasypt;
 
 import com.oceanbase.odc.common.util.SystemUtils;
-import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.service.task.constants.JobEnvKeyConstants;
 
 import lombok.Data;
