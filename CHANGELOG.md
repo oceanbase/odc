@@ -1,5 +1,81 @@
 # OceanBase Developer Center (ODC) CHANGELOG
 
+## 4.2.4 (2024-04-01)
+
+### Feature
+
+
+
+
+## 4.2.3_bp1 (2024-02-01)
+
+### Feature
+
+- database-change: database change task adapt streaming read sql file (#1437)
+- dlm: supports sharding using unique indexes (#1327)
+
+### Fix
+
+sql-execute
+
+- fail to execute statement on OceanBase 2.2.30 (#1487)
+- executing anonymous block causes NPE in the team space (#1474)
+- do not roll back execute when manual commit enabled(#1468)
+- can not set a delimiter longer than 2 (#1414)
+- during SQL window query request, the front end crashes when logging out.
+
+result-set
+
+- when there are multiple columns in the result set, it cannot be selected after sliding and the front end crashes occasionally at random points.
+- after filtering the result set, there is no content in the column mode.
+
+table
+
+- query table data with no column comments (#1488)
+
+data-export
+
+- object types are not displayed when exporting package bodies and synonyms. (#1464)
+
+flow
+
+- NPE when creating a ticket without connection information (#1479)
+- can not set task status correctly when creating task concurrently (#1419)
+- when the task creator and approver are not the current users, an error occurs when viewing the task approval node.
+
+osc
+
+- osc job query connection config by id throw Access Denied(#1378)
+- osc task don't show manual swap table name when full migrate is completed (#1357)
+
+database-change
+
+- query task details throw flow instance not found exception (#1325)
+- query task details throw file not found exception (#1316)
+
+partition-plan
+
+- delete job failed if the associated trigger does not exist (#1495)
+
+dlm
+
+- the data cleaning task scheduling failed after editing the rate limit configuration (#1438)
+- the task log file does not exist (#1376)
+
+desktop version
+
+- Ubuntu desktop version cannot open command line window.
+
+others
+
+- sql-check: failed to check statement when connect to a lower case schema for OBOracle (#1341)
+- audit: executing sql with rare words failed when metadb's default character is gbk (#1486)
+
+### Security
+
+- upgrade aliyun-oss-sdk version (#1393)
+- osc: horizontal overstep access data permission when swap table manual (#1405)
+
 ## 4.2.3 (2023-12-22)
 
 ### Feature
