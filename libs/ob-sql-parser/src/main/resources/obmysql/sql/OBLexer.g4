@@ -3157,6 +3157,10 @@ AGGREGATE
     : A G G R E G A T E
     ;
 
+TRANSFER
+    : T R A N S F E R
+    ;
+
 JSON_ARRAYAGG
     : J S O N '_' A R R A Y A G G
     ;

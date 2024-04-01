@@ -592,8 +592,8 @@ delete_stmt
     ;
 
 delete_basic_stmt
-    : delete_with_opt_hint FROM tbl_name (WHERE opt_hint_value expr)? order_by? limit_clause?
-    | delete_with_opt_hint multi_delete_table (WHERE opt_hint_value expr)?
+    : DELETE FROM tbl_name (WHERE opt_hint_value expr)? order_by? limit_clause?
+    | DELETE multi_delete_table (WHERE opt_hint_value expr)?
     ;
 
 multi_delete_table
@@ -606,7 +606,7 @@ update_stmt
     ;
 
 update_basic_stmt
-    : update_with_opt_hint IGNORE? table_references SET update_asgn_list (WHERE opt_hint_value expr)? order_by? limit_clause?
+    : UPDATE IGNORE? table_references SET update_asgn_list (WHERE opt_hint_value expr)? order_by? limit_clause?
     ;
 
 update_asgn_list
@@ -664,11 +664,11 @@ alter_resource_pool_option
     ;
 
 alter_resource_stmt
-    : alter_with_opt_hint RESOURCE UNIT relation_name (resource_unit_option | (opt_resource_unit_option_list Comma resource_unit_option))?
-    | alter_with_opt_hint RESOURCE POOL relation_name alter_resource_pool_option_list
-    | alter_with_opt_hint RESOURCE POOL relation_name SPLIT INTO LeftParen resource_pool_list RightParen ON LeftParen zone_list RightParen
-    | alter_with_opt_hint RESOURCE POOL MERGE LeftParen resource_pool_list RightParen INTO LeftParen resource_pool_list RightParen
-    | alter_with_opt_hint RESOURCE TENANT relation_name UNIT_NUM PARSER_SYNTAX_ERROR? INTNUM (DELETE UNIT_GROUP opt_equal_mark LeftParen id_list RightParen)?
+    : ALTER RESOURCE UNIT relation_name (resource_unit_option | (opt_resource_unit_option_list Comma resource_unit_option))?
+    | ALTER RESOURCE POOL relation_name alter_resource_pool_option_list
+    | ALTER RESOURCE POOL relation_name SPLIT INTO LeftParen resource_pool_list RightParen ON LeftParen zone_list RightParen
+    | ALTER RESOURCE POOL MERGE LeftParen resource_pool_list RightParen INTO LeftParen resource_pool_list RightParen
+    | ALTER RESOURCE TENANT relation_name UNIT_NUM PARSER_SYNTAX_ERROR? INTNUM (DELETE UNIT_GROUP opt_equal_mark LeftParen id_list RightParen)?
     ;
 
 drop_resource_stmt
@@ -717,10 +717,10 @@ resource_pool_list
     ;
 
 alter_tenant_stmt
-    : alter_with_opt_hint TENANT relation_name SET? (tenant_option | (opt_tenant_option_list Comma tenant_option))? (VARIABLES sys_var_and_val_list)?
-    | alter_with_opt_hint TENANT ALL SET? (tenant_option | (opt_tenant_option_list Comma tenant_option))? (VARIABLES sys_var_and_val_list)?
-    | alter_with_opt_hint TENANT relation_name RENAME GLOBAL_NAME TO relation_name
-    | alter_with_opt_hint TENANT relation_name lock_spec_mysql57
+    : ALTER TENANT relation_name SET? (tenant_option | (opt_tenant_option_list Comma tenant_option))? (VARIABLES sys_var_and_val_list)?
+    | ALTER TENANT ALL SET? (tenant_option | (opt_tenant_option_list Comma tenant_option))? (VARIABLES sys_var_and_val_list)?
+    | ALTER TENANT relation_name RENAME GLOBAL_NAME TO relation_name
+    | ALTER TENANT relation_name lock_spec_mysql57
     ;
 
 create_tenant_snapshot_stmt
@@ -738,7 +738,7 @@ drop_tenant_snapshot_stmt
     ;
 
 clone_tenant_stmt
-    : create_with_opt_hint TENANT (IF not EXISTS)? relation_name FROM relation_name clone_snapshot_option WITH clone_tenant_option_list
+    : CREATE TENANT (IF not EXISTS)? relation_name FROM relation_name clone_snapshot_option WITH clone_tenant_option_list
     ;
 
 clone_snapshot_option
@@ -813,16 +813,11 @@ drop_database_stmt
     ;
 
 alter_database_stmt
-    : alter_with_opt_hint database_key NAME_OB? SET? database_option_list
+    : ALTER database_key NAME_OB? SET? database_option_list
     ;
 
 load_data_stmt
-    : load_data_with_opt_hint (LOCAL | REMOTE_OSS)? INFILE STRING_VALUE (IGNORE | REPLACE)? INTO TABLE relation_factor use_partition? (CHARACTER SET charset_name_or_default)? field_opt line_opt ((IGNORE INTNUM lines_or_rows) | (GENERATED INTNUM lines_or_rows))? ((LeftParen RightParen) | (LeftParen field_or_vars_list RightParen))? (SET load_set_list)? load_data_extended_option_list?
-    ;
-
-load_data_with_opt_hint
-    : LOAD DATA
-    | LOAD_DATA_HINT_BEGIN hint_list_with_end
+    : LOAD DATA (LOCAL | REMOTE_OSS)? INFILE STRING_VALUE (IGNORE | REPLACE)? INTO TABLE relation_factor use_partition? (CHARACTER SET charset_name_or_default)? field_opt line_opt ((IGNORE INTNUM lines_or_rows) | (GENERATED INTNUM lines_or_rows))? ((LeftParen RightParen) | (LeftParen field_or_vars_list RightParen))? (SET load_set_list)? load_data_extended_option_list?
     ;
 
 lines_or_rows
@@ -875,21 +870,21 @@ create_table_like_stmt
     ;
 
 create_table_stmt
-    : create_with_opt_hint special_table_type TABLE (IF not EXISTS)? relation_factor LeftParen table_element_list RightParen table_option_list? (partition_option | auto_partition_option)?
-    | create_with_opt_hint special_table_type TABLE (IF not EXISTS)? relation_factor LeftParen table_element_list RightParen table_option_list? (partition_option | auto_partition_option)? with_column_group
-    | create_with_opt_hint special_table_type TABLE (IF not EXISTS)? relation_factor LeftParen table_element_list RightParen table_option_list? (partition_option | auto_partition_option)? select_stmt
-    | create_with_opt_hint special_table_type TABLE (IF not EXISTS)? relation_factor LeftParen table_element_list RightParen table_option_list? (partition_option | auto_partition_option)? AS select_stmt
-    | create_with_opt_hint special_table_type TABLE (IF not EXISTS)? relation_factor LeftParen table_element_list RightParen table_option_list? (partition_option | auto_partition_option)? with_column_group AS? select_stmt
-    | create_with_opt_hint special_table_type TABLE (IF not EXISTS)? relation_factor table_option_list (partition_option | auto_partition_option)? select_stmt
-    | create_with_opt_hint special_table_type TABLE (IF not EXISTS)? relation_factor table_option_list (partition_option | auto_partition_option)? AS select_stmt
-    | create_with_opt_hint special_table_type TABLE (IF not EXISTS)? relation_factor table_option_list (partition_option | auto_partition_option)? with_column_group AS? select_stmt
-    | create_with_opt_hint special_table_type TABLE (IF not EXISTS)? relation_factor partition_option select_stmt
-    | create_with_opt_hint special_table_type TABLE (IF not EXISTS)? relation_factor partition_option AS select_stmt
-    | create_with_opt_hint special_table_type TABLE (IF not EXISTS)? relation_factor partition_option with_column_group AS? select_stmt
-    | create_with_opt_hint special_table_type TABLE (IF not EXISTS)? relation_factor select_stmt
-    | create_with_opt_hint special_table_type TABLE (IF not EXISTS)? relation_factor with_column_group select_stmt
-    | create_with_opt_hint special_table_type TABLE (IF not EXISTS)? relation_factor AS select_stmt
-    | create_with_opt_hint special_table_type TABLE (IF not EXISTS)? relation_factor with_column_group AS select_stmt
+    : CREATE special_table_type TABLE (IF not EXISTS)? relation_factor LeftParen table_element_list RightParen table_option_list? (partition_option | auto_partition_option)?
+    | CREATE special_table_type TABLE (IF not EXISTS)? relation_factor LeftParen table_element_list RightParen table_option_list? (partition_option | auto_partition_option)? with_column_group
+    | CREATE special_table_type TABLE (IF not EXISTS)? relation_factor LeftParen table_element_list RightParen table_option_list? (partition_option | auto_partition_option)? select_stmt
+    | CREATE special_table_type TABLE (IF not EXISTS)? relation_factor LeftParen table_element_list RightParen table_option_list? (partition_option | auto_partition_option)? AS select_stmt
+    | CREATE special_table_type TABLE (IF not EXISTS)? relation_factor LeftParen table_element_list RightParen table_option_list? (partition_option | auto_partition_option)? with_column_group AS? select_stmt
+    | CREATE special_table_type TABLE (IF not EXISTS)? relation_factor table_option_list (partition_option | auto_partition_option)? select_stmt
+    | CREATE special_table_type TABLE (IF not EXISTS)? relation_factor table_option_list (partition_option | auto_partition_option)? AS select_stmt
+    | CREATE special_table_type TABLE (IF not EXISTS)? relation_factor table_option_list (partition_option | auto_partition_option)? with_column_group AS? select_stmt
+    | CREATE special_table_type TABLE (IF not EXISTS)? relation_factor partition_option select_stmt
+    | CREATE special_table_type TABLE (IF not EXISTS)? relation_factor partition_option AS select_stmt
+    | CREATE special_table_type TABLE (IF not EXISTS)? relation_factor partition_option with_column_group AS? select_stmt
+    | CREATE special_table_type TABLE (IF not EXISTS)? relation_factor select_stmt
+    | CREATE special_table_type TABLE (IF not EXISTS)? relation_factor with_column_group select_stmt
+    | CREATE special_table_type TABLE (IF not EXISTS)? relation_factor AS select_stmt
+    | CREATE special_table_type TABLE (IF not EXISTS)? relation_factor with_column_group AS select_stmt
     ;
 
 ret_type
@@ -1610,9 +1605,9 @@ drop_tablegroup_stmt
     ;
 
 alter_tablegroup_stmt
-    : alter_with_opt_hint TABLEGROUP relation_name ADD TABLE? table_list
-    | alter_with_opt_hint TABLEGROUP relation_name alter_tablegroup_actions
-    | alter_with_opt_hint TABLEGROUP relation_name alter_tg_partition_option
+    : ALTER TABLEGROUP relation_name ADD TABLE? table_list
+    | ALTER TABLEGROUP relation_name alter_tablegroup_actions
+    | ALTER TABLEGROUP relation_name alter_tg_partition_option
     ;
 
 tablegroup_option_list_space_seperated
@@ -1650,7 +1645,7 @@ create_view_stmt
     ;
 
 create_mview_stmt
-    : create_with_opt_hint MATERIALIZED VIEW view_name (LeftParen column_name_list RightParen)? table_option_list? (partition_option | auto_partition_option)? create_mview_refresh AS view_select_stmt ((WITH CHECK OPTION) | (WITH CASCADED CHECK OPTION) | (WITH LOCAL CHECK OPTION))?
+    : CREATE MATERIALIZED VIEW view_name (LeftParen column_name_list RightParen)? table_option_list? (partition_option | auto_partition_option)? create_mview_refresh AS view_select_stmt ((WITH CHECK OPTION) | (WITH CASCADED CHECK OPTION) | (WITH LOCAL CHECK OPTION))?
     ;
 
 create_mview_refresh
@@ -1724,18 +1719,8 @@ opt_tablet_id_no_empty
     ;
 
 create_index_stmt
-    : create_with_opt_hint (FULLTEXT | SPATIAL | UNIQUE)? INDEX (IF not EXISTS)? normal_relation_factor index_using_algorithm? ON relation_factor LeftParen sort_column_list RightParen opt_index_options? (partition_option | auto_partition_option)?
-    | create_with_opt_hint (FULLTEXT | SPATIAL | UNIQUE)? INDEX (IF not EXISTS)? normal_relation_factor index_using_algorithm? ON relation_factor LeftParen sort_column_list RightParen opt_index_options? (partition_option | auto_partition_option)? with_column_group
-    ;
-
-create_with_opt_hint
-    : CREATE
-    | CREATE_HINT_BEGIN hint_list_with_end
-    ;
-
-alter_with_opt_hint
-    : ALTER
-    | ALTER_HINT_BEGIN hint_list_with_end
+    : CREATE (FULLTEXT | SPATIAL | UNIQUE)? INDEX (IF not EXISTS)? normal_relation_factor index_using_algorithm? ON relation_factor LeftParen sort_column_list RightParen opt_index_options? (partition_option | auto_partition_option)?
+    | CREATE (FULLTEXT | SPATIAL | UNIQUE)? INDEX (IF not EXISTS)? normal_relation_factor index_using_algorithm? ON relation_factor LeftParen sort_column_list RightParen opt_index_options? (partition_option | auto_partition_option)? with_column_group
     ;
 
 index_name
@@ -1789,7 +1774,7 @@ index_using_algorithm
     ;
 
 create_mlog_stmt
-    : create_with_opt_hint MATERIALIZED VIEW LOG ON relation_factor opt_mlog_options? (WITH mlog_with_values)? (mlog_including_or_excluding NEW VALUES)? (PURGE mlog_purge_values)?
+    : CREATE MATERIALIZED VIEW LOG ON relation_factor opt_mlog_options? (WITH mlog_with_values)? (mlog_including_or_excluding NEW VALUES)? (PURGE mlog_purge_values)?
     ;
 
 opt_mlog_options
@@ -1954,7 +1939,7 @@ select_no_parens
     ;
 
 no_table_select
-    : select_with_opt_hint query_expression_option_list? select_expr_list into_opt (FROM DUAL (WHERE opt_hint_value expr)? (GROUP BY groupby_clause)? (HAVING expr)? (WINDOW named_windows)?)?
+    : SELECT query_expression_option_list? select_expr_list into_opt (FROM DUAL (WHERE opt_hint_value expr)? (GROUP BY groupby_clause)? (HAVING expr)? (WINDOW named_windows)?)?
     ;
 
 select_clause
@@ -2002,23 +1987,8 @@ select_with_parens_with_order_and_limit
     | select_with_parens order_by? limit_clause
     ;
 
-select_with_opt_hint
-    : SELECT
-    | SELECT_HINT_BEGIN hint_list_with_end
-    ;
-
-update_with_opt_hint
-    : UPDATE
-    | UPDATE_HINT_BEGIN hint_list_with_end
-    ;
-
-delete_with_opt_hint
-    : DELETE
-    | DELETE_HINT_BEGIN hint_list_with_end
-    ;
-
 simple_select
-    : select_with_opt_hint query_expression_option_list? select_expr_list into_opt FROM from_list (WHERE opt_hint_value expr)? (GROUP BY groupby_clause)? (HAVING expr)? (WINDOW named_windows)?
+    : SELECT query_expression_option_list? select_expr_list into_opt FROM from_list (WHERE opt_hint_value expr)? (GROUP BY groupby_clause)? (HAVING expr)? (WINDOW named_windows)?
     ;
 
 set_type_union
@@ -2551,7 +2521,7 @@ create_outline_stmt
     ;
 
 alter_outline_stmt
-    : alter_with_opt_hint OUTLINE relation_name ADD explainable_stmt (TO explainable_stmt)?
+    : ALTER OUTLINE relation_name ADD explainable_stmt (TO explainable_stmt)?
     ;
 
 drop_outline_stmt
@@ -2761,11 +2731,11 @@ alter_tablespace_action
     ;
 
 alter_tablespace_stmt
-    : alter_with_opt_hint TABLESPACE tablespace alter_tablespace_actions
+    : ALTER TABLESPACE tablespace alter_tablespace_actions
     ;
 
 rotate_master_key_stmt
-    : alter_with_opt_hint INSTANCE ROTATE INNODB MASTER KEY
+    : ALTER INSTANCE ROTATE INNODB MASTER KEY
     ;
 
 permanent_tablespace_options
@@ -2839,9 +2809,9 @@ user_list
 set_password_stmt
     : SET PASSWORD (FOR user opt_host_name)? COMP_EQ STRING_VALUE
     | SET PASSWORD (FOR user opt_host_name)? COMP_EQ PASSWORD LeftParen password RightParen
-    | alter_with_opt_hint USER user_with_host_name IDENTIFIED ((WITH STRING_VALUE) | (WITH NAME_OB))? BY password
-    | alter_with_opt_hint USER user_with_host_name require_specification
-    | alter_with_opt_hint USER user_with_host_name WITH resource_option_list
+    | ALTER USER user_with_host_name IDENTIFIED ((WITH STRING_VALUE) | (WITH NAME_OB))? BY password
+    | ALTER USER user_with_host_name require_specification
+    | ALTER USER user_with_host_name WITH resource_option_list
     ;
 
 opt_for_user
@@ -2862,7 +2832,7 @@ rename_list
     ;
 
 lock_user_stmt
-    : alter_with_opt_hint USER user_list ACCOUNT lock_spec_mysql57
+    : ALTER USER user_list ACCOUNT lock_spec_mysql57
     ;
 
 lock_spec_mysql57
@@ -2925,7 +2895,7 @@ drop_sequence_stmt
     ;
 
 alter_sequence_stmt
-    : alter_with_opt_hint SEQUENCE relation_factor sequence_option_list?
+    : ALTER SEQUENCE relation_factor sequence_option_list?
     ;
 
 create_dblink_stmt
@@ -2988,7 +2958,7 @@ priv_type_list
     ;
 
 priv_type
-    : alter_with_opt_hint TENANT?
+    : ALTER TENANT?
     | CREATE (RESOURCE POOL|USER?)
     | DELETE
     | DROP (DATABASE LINK)?
@@ -3004,7 +2974,7 @@ priv_type
     | PROCESS
     | USAGE
     | FILEX
-    | alter_with_opt_hint SYSTEM
+    | ALTER SYSTEM
     | REPLICATION SLAVE
     | REPLICATION CLIENT
     | CREATE (DATABASE LINK|ROUTINE)
@@ -3173,7 +3143,7 @@ audit_whenever_option
     ;
 
 audit_all_shortcut
-    : alter_with_opt_hint SYSTEM?
+    : ALTER SYSTEM?
     | CLUSTER
     | CONTEXT
     | MATERIALIZED? VIEW
@@ -3184,7 +3154,7 @@ audit_all_shortcut
     | SESSION
     | SYSTEM? AUDIT
     | SYSTEM? GRANT
-    | alter_with_opt_hint? TABLE
+    | ALTER? TABLE
     | TABLESPACE
     | TRIGGER
     | GRANT? TYPE
@@ -3215,8 +3185,8 @@ rename_table_action
     ;
 
 alter_table_stmt
-    : alter_with_opt_hint EXTERNAL? TABLE relation_factor alter_table_actions
-    | alter_with_opt_hint TABLE relation_factor alter_column_group_option
+    : ALTER EXTERNAL? TABLE relation_factor alter_table_actions
+    | ALTER TABLE relation_factor alter_column_group_option
     ;
 
 alter_table_actions
@@ -3291,9 +3261,9 @@ alter_index_option
     : ADD out_of_line_index
     | ADD LeftParen out_of_line_index RightParen
     | DROP key_or_index index_name
-    | alter_with_opt_hint INDEX index_name (parallel_option|visibility_option)
+    | ALTER INDEX index_name (parallel_option|visibility_option)
     | RENAME key_or_index index_name TO index_name
-    | alter_with_opt_hint (CHECK|CONSTRAINT) constraint_name check_state
+    | ALTER (CHECK|CONSTRAINT) constraint_name check_state
     ;
 
 visibility_option
@@ -3351,61 +3321,61 @@ dump_memory_stmt
     ;
 
 alter_system_stmt
-    : alter_with_opt_hint SYSTEM BOOTSTRAP server_info_list
-    | alter_with_opt_hint SYSTEM FLUSH cache_type CACHE namespace_expr? sql_id_or_schema_id_expr? databases_expr? (TENANT PARSER_SYNTAX_ERROR tenant_name_list)? flush_scope
-    | alter_with_opt_hint SYSTEM FLUSH SQL cache_type (TENANT PARSER_SYNTAX_ERROR tenant_name_list)? flush_scope
-    | alter_with_opt_hint SYSTEM FLUSH KVCACHE tenant_name? cache_name?
-    | alter_with_opt_hint SYSTEM FLUSH DAG WARNINGS
-    | alter_with_opt_hint SYSTEM FLUSH ILOGCACHE file_id?
-    | alter_with_opt_hint SYSTEM SWITCH REPLICA ls_role ls_server_or_server_or_zone_or_tenant
-    | alter_with_opt_hint SYSTEM SWITCH ROOTSERVICE partition_role server_or_zone
-    | alter_with_opt_hint SYSTEM REPORT REPLICA server_or_zone?
-    | alter_with_opt_hint SYSTEM RECYCLE REPLICA server_or_zone?
-    | alter_with_opt_hint SYSTEM START MERGE zone_desc
-    | alter_with_opt_hint SYSTEM suspend_or_resume MERGE tenant_list_tuple?
-    | alter_with_opt_hint SYSTEM suspend_or_resume RECOVERY zone_desc?
-    | alter_with_opt_hint SYSTEM CLEAR MERGE ERROR_P tenant_list_tuple?
-    | alter_with_opt_hint SYSTEM ADD ARBITRATION SERVICE STRING_VALUE
-    | alter_with_opt_hint SYSTEM REMOVE ARBITRATION SERVICE STRING_VALUE
-    | alter_with_opt_hint SYSTEM REPLACE ARBITRATION SERVICE STRING_VALUE WITH STRING_VALUE
-    | alter_with_opt_hint SYSTEM CANCEL cancel_task_type TASK STRING_VALUE
-    | alter_with_opt_hint SYSTEM MAJOR FREEZE ((tenant_list_tuple opt_tablet_id) | (tenant_list_tuple ls opt_tablet_id) | opt_tablet_id_no_empty)? (REBUILD COLUMN GROUP)?
-    | alter_with_opt_hint SYSTEM CHECKPOINT
-    | alter_with_opt_hint SYSTEM MINOR FREEZE ((tenant_list_tuple opt_tablet_id) | (tenant_list_tuple ls opt_tablet_id) | opt_tablet_id_no_empty)? (SERVER opt_equal_mark LeftParen server_list RightParen)? zone_desc?
-    | alter_with_opt_hint SYSTEM CHECKPOINT SLOG ((TENANT_ID opt_equal_mark INTNUM) | (TENANT opt_equal_mark relation_name_or_string))? ip_port
-    | alter_with_opt_hint SYSTEM CLEAR ROOTTABLE tenant_name?
-    | alter_with_opt_hint SYSTEM server_action SERVER server_list zone_desc?
-    | alter_with_opt_hint SYSTEM ADD ZONE relation_name_or_string add_or_alter_zone_options
-    | alter_with_opt_hint SYSTEM zone_action ZONE relation_name_or_string
-    | alter_with_opt_hint SYSTEM alter_or_change_or_modify ZONE relation_name_or_string SET? add_or_alter_zone_options
-    | alter_with_opt_hint SYSTEM REFRESH SCHEMA server_or_zone?
-    | alter_with_opt_hint SYSTEM REFRESH MEMORY STAT server_or_zone?
-    | alter_with_opt_hint SYSTEM WASH MEMORY FRAGMENTATION server_or_zone?
-    | alter_with_opt_hint SYSTEM REFRESH IO CALIBRATION (STORAGE opt_equal_mark STRING_VALUE)? (CALIBRATION_INFO opt_equal_mark LeftParen calibration_info_list RightParen)? server_or_zone?
-    | alter_with_opt_hint SYSTEM SET? alter_system_set_parameter_actions
-    | alter_with_opt_hint SYSTEM SET_TP alter_system_settp_actions server_or_zone?
-    | alter_with_opt_hint SYSTEM CLEAR LOCATION CACHE server_or_zone?
-    | alter_with_opt_hint SYSTEM REMOVE BALANCE TASK (TENANT PARSER_SYNTAX_ERROR tenant_name_list)? (ZONE PARSER_SYNTAX_ERROR zone_list)? (TYPE opt_equal_mark balance_task_type)?
-    | alter_with_opt_hint SYSTEM RELOAD GTS
-    | alter_with_opt_hint SYSTEM RELOAD UNIT
-    | alter_with_opt_hint SYSTEM RELOAD SERVER
-    | alter_with_opt_hint SYSTEM RELOAD ZONE
-    | alter_with_opt_hint SYSTEM MIGRATE UNIT PARSER_SYNTAX_ERROR? INTNUM DESTINATION PARSER_SYNTAX_ERROR? STRING_VALUE
-    | alter_with_opt_hint SYSTEM CANCEL MIGRATE UNIT INTNUM
-    | alter_with_opt_hint SYSTEM UPGRADE VIRTUAL SCHEMA
-    | alter_with_opt_hint SYSTEM RUN JOB STRING_VALUE server_or_zone?
-    | alter_with_opt_hint SYSTEM upgrade_action UPGRADE
-    | alter_with_opt_hint SYSTEM RUN UPGRADE JOB STRING_VALUE tenant_list_tuple?
-    | alter_with_opt_hint SYSTEM STOP UPGRADE JOB
-    | alter_with_opt_hint SYSTEM upgrade_action ROLLING UPGRADE
-    | alter_with_opt_hint SYSTEM REFRESH TIME_ZONE_INFO
-    | alter_with_opt_hint SYSTEM ENABLE SQL THROTTLE (FOR PRIORITY COMP_LE INTNUM)? opt_sql_throttle_using_cond
-    | alter_with_opt_hint SYSTEM DISABLE SQL THROTTLE
-    | alter_with_opt_hint SYSTEM SET DISK VALID ip_port
-    | alter_with_opt_hint SYSTEM SET NETWORK BANDWIDTH REGION relation_name_or_string TO relation_name_or_string conf_const
-    | alter_with_opt_hint SYSTEM ADD RESTORE SOURCE STRING_VALUE
-    | alter_with_opt_hint SYSTEM CLEAR RESTORE SOURCE
-    | alter_with_opt_hint SYSTEM RECOVER TABLE
+    : ALTER SYSTEM BOOTSTRAP server_info_list
+    | ALTER SYSTEM FLUSH cache_type CACHE namespace_expr? sql_id_or_schema_id_expr? databases_expr? (TENANT PARSER_SYNTAX_ERROR tenant_name_list)? flush_scope
+    | ALTER SYSTEM FLUSH SQL cache_type (TENANT PARSER_SYNTAX_ERROR tenant_name_list)? flush_scope
+    | ALTER SYSTEM FLUSH KVCACHE tenant_name? cache_name?
+    | ALTER SYSTEM FLUSH DAG WARNINGS
+    | ALTER SYSTEM FLUSH ILOGCACHE file_id?
+    | ALTER SYSTEM SWITCH REPLICA ls_role ls_server_or_server_or_zone_or_tenant
+    | ALTER SYSTEM SWITCH ROOTSERVICE partition_role server_or_zone
+    | ALTER SYSTEM REPORT REPLICA server_or_zone?
+    | ALTER SYSTEM RECYCLE REPLICA server_or_zone?
+    | ALTER SYSTEM START MERGE zone_desc
+    | ALTER SYSTEM suspend_or_resume MERGE tenant_list_tuple?
+    | ALTER SYSTEM suspend_or_resume RECOVERY zone_desc?
+    | ALTER SYSTEM CLEAR MERGE ERROR_P tenant_list_tuple?
+    | ALTER SYSTEM ADD ARBITRATION SERVICE STRING_VALUE
+    | ALTER SYSTEM REMOVE ARBITRATION SERVICE STRING_VALUE
+    | ALTER SYSTEM REPLACE ARBITRATION SERVICE STRING_VALUE WITH STRING_VALUE
+    | ALTER SYSTEM CANCEL cancel_task_type TASK STRING_VALUE
+    | ALTER SYSTEM MAJOR FREEZE ((tenant_list_tuple opt_tablet_id) | (tenant_list_tuple ls opt_tablet_id) | opt_tablet_id_no_empty)? (REBUILD COLUMN GROUP)?
+    | ALTER SYSTEM CHECKPOINT
+    | ALTER SYSTEM MINOR FREEZE ((tenant_list_tuple opt_tablet_id) | (tenant_list_tuple ls opt_tablet_id) | opt_tablet_id_no_empty)? (SERVER opt_equal_mark LeftParen server_list RightParen)? zone_desc?
+    | ALTER SYSTEM CHECKPOINT SLOG ((TENANT_ID opt_equal_mark INTNUM) | (TENANT opt_equal_mark relation_name_or_string))? ip_port
+    | ALTER SYSTEM CLEAR ROOTTABLE tenant_name?
+    | ALTER SYSTEM server_action SERVER server_list zone_desc?
+    | ALTER SYSTEM ADD ZONE relation_name_or_string add_or_alter_zone_options
+    | ALTER SYSTEM zone_action ZONE relation_name_or_string
+    | ALTER SYSTEM alter_or_change_or_modify ZONE relation_name_or_string SET? add_or_alter_zone_options
+    | ALTER SYSTEM REFRESH SCHEMA server_or_zone?
+    | ALTER SYSTEM REFRESH MEMORY STAT server_or_zone?
+    | ALTER SYSTEM WASH MEMORY FRAGMENTATION server_or_zone?
+    | ALTER SYSTEM REFRESH IO CALIBRATION (STORAGE opt_equal_mark STRING_VALUE)? (CALIBRATION_INFO opt_equal_mark LeftParen calibration_info_list RightParen)? server_or_zone?
+    | ALTER SYSTEM SET? alter_system_set_parameter_actions
+    | ALTER SYSTEM SET_TP alter_system_settp_actions server_or_zone?
+    | ALTER SYSTEM CLEAR LOCATION CACHE server_or_zone?
+    | ALTER SYSTEM REMOVE BALANCE TASK (TENANT PARSER_SYNTAX_ERROR tenant_name_list)? (ZONE PARSER_SYNTAX_ERROR zone_list)? (TYPE opt_equal_mark balance_task_type)?
+    | ALTER SYSTEM RELOAD GTS
+    | ALTER SYSTEM RELOAD UNIT
+    | ALTER SYSTEM RELOAD SERVER
+    | ALTER SYSTEM RELOAD ZONE
+    | ALTER SYSTEM MIGRATE UNIT PARSER_SYNTAX_ERROR? INTNUM DESTINATION PARSER_SYNTAX_ERROR? STRING_VALUE
+    | ALTER SYSTEM CANCEL MIGRATE UNIT INTNUM
+    | ALTER SYSTEM UPGRADE VIRTUAL SCHEMA
+    | ALTER SYSTEM RUN JOB STRING_VALUE server_or_zone?
+    | ALTER SYSTEM upgrade_action UPGRADE
+    | ALTER SYSTEM RUN UPGRADE JOB STRING_VALUE tenant_list_tuple?
+    | ALTER SYSTEM STOP UPGRADE JOB
+    | ALTER SYSTEM upgrade_action ROLLING UPGRADE
+    | ALTER SYSTEM REFRESH TIME_ZONE_INFO
+    | ALTER SYSTEM ENABLE SQL THROTTLE (FOR PRIORITY COMP_LE INTNUM)? opt_sql_throttle_using_cond
+    | ALTER SYSTEM DISABLE SQL THROTTLE
+    | ALTER SYSTEM SET DISK VALID ip_port
+    | ALTER SYSTEM SET NETWORK BANDWIDTH REGION relation_name_or_string TO relation_name_or_string conf_const
+    | ALTER SYSTEM ADD RESTORE SOURCE STRING_VALUE
+    | ALTER SYSTEM CLEAR RESTORE SOURCE
+    | ALTER SYSTEM RECOVER TABLE
     ;
 
 opt_sql_throttle_using_cond
