@@ -919,19 +919,8 @@ table_element_list
 
 table_element
     : column_definition
-    | constraint_definition
-    | CONSTRAINT constraint_name? PRIMARY KEY index_using_algorithm? LeftParen column_name_list RightParen index_using_algorithm? (COMMENT STRING_VALUE)?
-    | PRIMARY KEY index_name? index_using_algorithm? LeftParen column_name_list RightParen index_using_algorithm? (COMMENT STRING_VALUE)?
-    | key_or_index index_name? index_using_algorithm? LeftParen sort_column_list RightParen opt_index_options? (partition_option | auto_partition_option)?
-    | key_or_index index_name? index_using_algorithm? LeftParen sort_column_list RightParen opt_index_options? (partition_option | auto_partition_option)? with_column_group
-    | UNIQUE key_or_index? index_name? index_using_algorithm? LeftParen sort_column_list RightParen opt_index_options? (partition_option | auto_partition_option)?
-    | UNIQUE key_or_index? index_name? index_using_algorithm? LeftParen sort_column_list RightParen opt_index_options? (partition_option | auto_partition_option)? with_column_group
-    | CONSTRAINT constraint_name? UNIQUE key_or_index? index_name? index_using_algorithm? LeftParen sort_column_list RightParen opt_index_options?
-    | CONSTRAINT constraint_name? UNIQUE key_or_index? index_name? index_using_algorithm? LeftParen sort_column_list RightParen opt_index_options? with_column_group
-    | CONSTRAINT constraint_name? FOREIGN KEY index_name? LeftParen column_name_list RightParen REFERENCES relation_factor LeftParen column_name_list RightParen (MATCH match_action)? (opt_reference_option_list reference_option)?
-    | SPATIAL key_or_index? index_name? index_using_algorithm? LeftParen sort_column_list RightParen opt_index_options?
-    | SPATIAL key_or_index? index_name? index_using_algorithm? LeftParen sort_column_list RightParen opt_index_options? with_column_group
-    | FOREIGN KEY index_name? LeftParen column_name_list RightParen REFERENCES relation_factor LeftParen column_name_list RightParen (MATCH match_action)? (opt_reference_option_list reference_option)?
+    | out_of_line_index
+    | out_of_line_constraint
     ;
 
 out_of_line_constraint
@@ -947,7 +936,9 @@ references_clause
 
 out_of_line_index
     : key_or_index index_name? index_using_algorithm? LeftParen sort_column_list RightParen opt_index_options? (partition_option | auto_partition_option)?
+    | key_or_index index_name? index_using_algorithm? LeftParen sort_column_list RightParen opt_index_options? (partition_option | auto_partition_option)? with_column_group
     | (FULLTEXT | SPATIAL) key_or_index? index_name? index_using_algorithm? LeftParen sort_column_list RightParen opt_index_options? (partition_option | auto_partition_option)?
+    | (FULLTEXT | SPATIAL) key_or_index? index_name? index_using_algorithm? LeftParen sort_column_list RightParen opt_index_options? (partition_option | auto_partition_option)? with_column_group
     ;
 
 out_of_line_primary_index
@@ -956,6 +947,7 @@ out_of_line_primary_index
 
 out_of_line_unique_index
     : UNIQUE key_or_index? index_name? index_using_algorithm? LeftParen sort_column_list RightParen opt_index_options? (partition_option | auto_partition_option)?
+    | UNIQUE key_or_index? index_name? index_using_algorithm? LeftParen sort_column_list RightParen opt_index_options? (partition_option | auto_partition_option)? with_column_group
     ;
 
 opt_reference_option_list
@@ -984,13 +976,6 @@ match_action
 column_definition
     : column_definition_ref data_type opt_column_attribute_list? (FIRST | (BEFORE column_name) | (AFTER column_name))?
     | column_definition_ref data_type (GENERATED opt_generated_option_list)? AS LeftParen expr RightParen (VIRTUAL | STORED)? opt_generated_column_attribute_list? (FIRST | (BEFORE column_name) | (AFTER column_name))?
-    ;
-
-constraint_definition
-    : CONSTRAINT constraint_name? CHECK LeftParen expr RightParen check_state
-    | CHECK LeftParen expr RightParen check_state
-    | CONSTRAINT constraint_name? CHECK LeftParen expr RightParen
-    | CHECK LeftParen expr RightParen
     ;
 
 opt_generated_option_list

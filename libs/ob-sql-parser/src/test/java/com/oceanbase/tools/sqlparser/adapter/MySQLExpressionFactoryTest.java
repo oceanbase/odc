@@ -20,6 +20,12 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import org.antlr.v4.runtime.BailErrorStrategy;
+import org.antlr.v4.runtime.CharStreams;
+import org.antlr.v4.runtime.CommonTokenStream;
+import org.junit.Assert;
+import org.junit.Test;
+
 import com.oceanbase.tools.sqlparser.adapter.mysql.MySQLExpressionFactory;
 import com.oceanbase.tools.sqlparser.obmysql.OBLexer;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser;
@@ -55,11 +61,6 @@ import com.oceanbase.tools.sqlparser.statement.expression.WhenClause;
 import com.oceanbase.tools.sqlparser.statement.select.OrderBy;
 import com.oceanbase.tools.sqlparser.statement.select.SortDirection;
 import com.oceanbase.tools.sqlparser.statement.select.SortKey;
-import org.antlr.v4.runtime.BailErrorStrategy;
-import org.antlr.v4.runtime.CharStreams;
-import org.antlr.v4.runtime.CommonTokenStream;
-import org.junit.Assert;
-import org.junit.Test;
 
 /**
  * {@link MySQLExpressionFactoryTest}
@@ -773,7 +774,7 @@ public class MySQLExpressionFactoryTest {
     @Test
     public void generate_jsonValueExprOnEmpty_generateFunctionCallSucceed() {
         ExprContext context =
-            getExprContext("JSON_VALUE('123', _utf8 'abc' returning double TRUNCATE ASCII error_p on empty)");
+                getExprContext("JSON_VALUE('123', _utf8 'abc' returning double TRUNCATE ASCII error_p on empty)");
         StatementFactory<Expression> factory = new MySQLExpressionFactory(context);
         Expression actual = factory.generate();
 
@@ -794,7 +795,7 @@ public class MySQLExpressionFactoryTest {
     @Test
     public void generate_jsonValueExprOnError_generateFunctionCallSucceed() {
         ExprContext context =
-            getExprContext("JSON_VALUE('123', _utf8 'abc' returning double TRUNCATE ASCII null on error_p)");
+                getExprContext("JSON_VALUE('123', _utf8 'abc' returning double TRUNCATE ASCII null on error_p)");
         StatementFactory<Expression> factory = new MySQLExpressionFactory(context);
         Expression actual = factory.generate();
 
@@ -815,7 +816,7 @@ public class MySQLExpressionFactoryTest {
     @Test
     public void generate_jsonValueExprOnErrorEmpty_generateFunctionCallSucceed() {
         ExprContext context = getExprContext(
-            "JSON_VALUE('123', _utf8 'abc' returning double TRUNCATE ASCII default 12 on empty null on error_p)");
+                "JSON_VALUE('123', _utf8 'abc' returning double TRUNCATE ASCII default 12 on empty null on error_p)");
         StatementFactory<Expression> factory = new MySQLExpressionFactory(context);
         Expression actual = factory.generate();
 
@@ -1024,7 +1025,7 @@ public class MySQLExpressionFactoryTest {
 
         Expression left = new ColumnReference(null, "tab", "col");
         Expression right = new CompoundExpression(new ColumnReference(null, null, "col"),
-            new ColumnReference(null, null, "col1"), Operator.AND);
+                new ColumnReference(null, null, "col1"), Operator.AND);
         Expression expect = new CompoundExpression(left, right, Operator.NOT_BETWEEN);
         Assert.assertEquals(expect, actual);
     }
@@ -1063,7 +1064,7 @@ public class MySQLExpressionFactoryTest {
 
         Expression left = new ColumnReference(null, "tab", "col");
         Expression right = new CompoundExpression(new ColumnReference(null, null, "abc"),
-            new ColumnReference(null, null, "bcd"), Operator.ESCAPE);
+                new ColumnReference(null, null, "bcd"), Operator.ESCAPE);
         Expression expect = new CompoundExpression(left, right, Operator.NOT_LIKE);
         Assert.assertEquals(expect, actual);
     }
@@ -1178,7 +1179,7 @@ public class MySQLExpressionFactoryTest {
     @Test
     public void generate_distinctExprListWithoutWinBody_generateSucceed() {
         Bit_exprContext context =
-            getBitExprContext("count(distinct 5,6) over (name_ob partition by (1,2) order by col desc)");
+                getBitExprContext("count(distinct 5,6) over (name_ob partition by (1,2) order by col desc)");
         StatementFactory<Expression> factory = new MySQLExpressionFactory(context);
         Expression actual = factory.generate();
 
@@ -1203,8 +1204,8 @@ public class MySQLExpressionFactoryTest {
     @Test
     public void generate_uniqueGroupConcatExprListWithWinBody_generateSucceed() {
         Bit_exprContext context = getBitExprContext(
-            "GROUP_CONCAT(unique 5,6 order by col1 asc SEPARATOR 'mmm') over (name_ob partition by (1,2) order by col desc rows between "
-            + "current row and 123 PRECEDING)");
+                "GROUP_CONCAT(unique 5,6 order by col1 asc SEPARATOR 'mmm') over (name_ob partition by (1,2) order by col desc rows between "
+                        + "current row and 123 PRECEDING)");
         StatementFactory<Expression> factory = new MySQLExpressionFactory(context);
         Expression actual = factory.generate();
 
@@ -1238,8 +1239,8 @@ public class MySQLExpressionFactoryTest {
     @Test
     public void generate_uniqueListaggExprListWithWinBody_generateSucceed() {
         Bit_exprContext context = getBitExprContext(
-            "LISTAGG(unique 5,6 order by col1 asc SEPARATOR 'mmm') over (name_ob partition by (1,2) order by col desc rows between "
-            + "current row and interval 123 day FOLLOWING)");
+                "LISTAGG(unique 5,6 order by col1 asc SEPARATOR 'mmm') over (name_ob partition by (1,2) order by col desc rows between "
+                        + "current row and interval 123 day FOLLOWING)");
         StatementFactory<Expression> factory = new MySQLExpressionFactory(context);
         Expression actual = factory.generate();
 
@@ -1273,7 +1274,7 @@ public class MySQLExpressionFactoryTest {
     @Test
     public void generate_firstValueWithWinBody_generateSucceed() {
         Bit_exprContext context = getBitExprContext(
-            "FIRST_VALUE (5 respect nulls) over (name_ob partition by (1,2) order by col desc RANGE interval 123 day FOLLOWING)");
+                "FIRST_VALUE (5 respect nulls) over (name_ob partition by (1,2) order by col desc RANGE interval 123 day FOLLOWING)");
         StatementFactory<Expression> factory = new MySQLExpressionFactory(context);
         Expression actual = factory.generate();
 
@@ -1302,7 +1303,7 @@ public class MySQLExpressionFactoryTest {
     @Test
     public void generate_nthValueWithWinBody_generateSucceed() {
         Bit_exprContext context = getBitExprContext(
-            "NTH_VALUE(5,6) from first respect nulls over (name_ob partition by (1,2) order by col desc RANGE interval 123 day FOLLOWING)");
+                "NTH_VALUE(5,6) from first respect nulls over (name_ob partition by (1,2) order by col desc RANGE interval 123 day FOLLOWING)");
         StatementFactory<Expression> factory = new MySQLExpressionFactory(context);
         Expression actual = factory.generate();
 
@@ -1332,7 +1333,7 @@ public class MySQLExpressionFactoryTest {
     @Test
     public void generate_top_k_fre_histWithWinBody_generateSucceed() {
         Bit_exprContext context = getBitExprContext(
-            "TOP_K_FRE_HIST(5,6,7) over (name_ob partition by (1,2) order by col desc RANGE interval 123 day FOLLOWING)");
+                "TOP_K_FRE_HIST(5,6,7) over (name_ob partition by (1,2) order by col desc RANGE interval 123 day FOLLOWING)");
         StatementFactory<Expression> factory = new MySQLExpressionFactory(context);
         Expression actual = factory.generate();
 
@@ -1406,9 +1407,9 @@ public class MySQLExpressionFactoryTest {
         List<WhenClause> whenClauses = new ArrayList<>();
         ColumnReference columnReference = new ColumnReference(null, null, "a");
         whenClauses.add(new WhenClause(new CompoundExpression(columnReference, new ConstExpression("1"), Operator.LT),
-            new ConstExpression("11")));
+                new ConstExpression("11")));
         whenClauses.add(new WhenClause(new CompoundExpression(columnReference, new ConstExpression("2"), Operator.LT),
-            new ConstExpression("22")));
+                new ConstExpression("22")));
         CaseWhen expect = new CaseWhen(whenClauses);
         expect.setCaseDefault(new ConstExpression("33"));
         Assert.assertEquals(expect, actual);
