@@ -300,6 +300,8 @@ public class ConnectionService {
 
             if (connection.getPasswordSaved()) {
                 PreConditions.notNull(connection.getPassword(), "connection.password");
+            } else {
+                connection.setPassword(null);
             }
             connectionEncryption.encryptPasswords(connection);
 
