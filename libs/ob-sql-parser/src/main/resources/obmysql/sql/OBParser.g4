@@ -668,7 +668,7 @@ alter_resource_stmt
     | ALTER RESOURCE POOL relation_name alter_resource_pool_option_list
     | ALTER RESOURCE POOL relation_name SPLIT INTO LeftParen resource_pool_list RightParen ON LeftParen zone_list RightParen
     | ALTER RESOURCE POOL MERGE LeftParen resource_pool_list RightParen INTO LeftParen resource_pool_list RightParen
-    | ALTER RESOURCE TENANT relation_name UNIT_NUM PARSER_SYNTAX_ERROR? INTNUM (DELETE UNIT_GROUP opt_equal_mark LeftParen id_list RightParen)?
+    | ALTER RESOURCE TENANT relation_name UNIT_NUM opt_equal_mark INTNUM (DELETE UNIT_GROUP opt_equal_mark LeftParen id_list RightParen)?
     ;
 
 drop_resource_stmt
@@ -747,8 +747,8 @@ clone_snapshot_option
     ;
 
 clone_tenant_option
-    : RESOURCE_POOL PARSER_SYNTAX_ERROR? relation_name_or_string
-    | UNIT PARSER_SYNTAX_ERROR? relation_name_or_string
+    : RESOURCE_POOL opt_equal_mark relation_name_or_string
+    | UNIT opt_equal_mark relation_name_or_string
     ;
 
 clone_tenant_option_list
@@ -1720,7 +1720,7 @@ opt_tablet_id
     ;
 
 opt_tablet_id_no_empty
-    : TABLET_ID PARSER_SYNTAX_ERROR INTNUM
+    : TABLET_ID opt_equal_mark INTNUM
     ;
 
 create_index_stmt
@@ -1767,10 +1767,10 @@ index_option
     | WITH PARSER STRING_VALUE
     | index_using_algorithm
     | visibility_option
-    | DATA_TABLE_ID PARSER_SYNTAX_ERROR? INTNUM
-    | INDEX_TABLE_ID PARSER_SYNTAX_ERROR? INTNUM
-    | VIRTUAL_COLUMN_ID PARSER_SYNTAX_ERROR? INTNUM
-    | MAX_USED_PART_ID PARSER_SYNTAX_ERROR? INTNUM
+    | DATA_TABLE_ID opt_equal_mark INTNUM
+    | INDEX_TABLE_ID opt_equal_mark INTNUM
+    | VIRTUAL_COLUMN_ID opt_equal_mark INTNUM
+    | MAX_USED_PART_ID opt_equal_mark INTNUM
     | parallel_option
     ;
 
@@ -3205,7 +3205,7 @@ rename_table_action
     ;
 
 alter_table_stmt
-    : ALTER EXTERNAL? TABLE relation_factor alter_table_actions
+    : ALTER EXTERNAL? TABLE relation_factor alter_table_actions?
     | ALTER TABLE relation_factor alter_column_group_option
     ;
 
@@ -3283,7 +3283,6 @@ alter_index_option
     | DROP key_or_index index_name
     | ALTER INDEX index_name (parallel_option|visibility_option)
     | RENAME key_or_index index_name TO index_name
-    | ALTER (CHECK|CONSTRAINT) constraint_name check_state
     ;
 
 visibility_option
@@ -3342,8 +3341,8 @@ dump_memory_stmt
 
 alter_system_stmt
     : ALTER SYSTEM BOOTSTRAP server_info_list
-    | ALTER SYSTEM FLUSH cache_type CACHE namespace_expr? sql_id_or_schema_id_expr? databases_expr? (TENANT PARSER_SYNTAX_ERROR tenant_name_list)? flush_scope
-    | ALTER SYSTEM FLUSH SQL cache_type (TENANT PARSER_SYNTAX_ERROR tenant_name_list)? flush_scope
+    | ALTER SYSTEM FLUSH cache_type CACHE namespace_expr? sql_id_or_schema_id_expr? databases_expr? (TENANT opt_equal_mark tenant_name_list)? flush_scope
+    | ALTER SYSTEM FLUSH SQL cache_type (TENANT opt_equal_mark tenant_name_list)? flush_scope
     | ALTER SYSTEM FLUSH KVCACHE tenant_name? cache_name?
     | ALTER SYSTEM FLUSH DAG WARNINGS
     | ALTER SYSTEM FLUSH ILOGCACHE file_id?
@@ -3375,12 +3374,12 @@ alter_system_stmt
     | ALTER SYSTEM SET? alter_system_set_parameter_actions
     | ALTER SYSTEM SET_TP alter_system_settp_actions server_or_zone?
     | ALTER SYSTEM CLEAR LOCATION CACHE server_or_zone?
-    | ALTER SYSTEM REMOVE BALANCE TASK (TENANT PARSER_SYNTAX_ERROR tenant_name_list)? (ZONE PARSER_SYNTAX_ERROR zone_list)? (TYPE opt_equal_mark balance_task_type)?
+    | ALTER SYSTEM REMOVE BALANCE TASK (TENANT opt_equal_mark tenant_name_list)? (ZONE opt_equal_mark zone_list)? (TYPE opt_equal_mark balance_task_type)?
     | ALTER SYSTEM RELOAD GTS
     | ALTER SYSTEM RELOAD UNIT
     | ALTER SYSTEM RELOAD SERVER
     | ALTER SYSTEM RELOAD ZONE
-    | ALTER SYSTEM MIGRATE UNIT PARSER_SYNTAX_ERROR? INTNUM DESTINATION PARSER_SYNTAX_ERROR? STRING_VALUE
+    | ALTER SYSTEM MIGRATE UNIT opt_equal_mark INTNUM DESTINATION opt_equal_mark STRING_VALUE
     | ALTER SYSTEM CANCEL MIGRATE UNIT INTNUM
     | ALTER SYSTEM UPGRADE VIRTUAL SCHEMA
     | ALTER SYSTEM RUN JOB STRING_VALUE server_or_zone?
