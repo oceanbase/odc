@@ -4,6 +4,105 @@
 
 ### Feature
 
+### Feature Changes
+
+Data Sources
+
+- OceanBase support added for version 4.2.2
+- New Oracle data source with support for SQL development, import/export, data desensitization, object management, change approval
+- New Doris data source with support for SQL development, import/export, data desensitization, table object management, session management, command-line window, change approval
+
+SQL Development
+
+- 71 common operation snippets built-in, which can auto-complete in the SQL window and will match database type and version
+- SQL auto-completion supports completing data dictionary/performance view
+- Case sensitivity for schema names, table names, and column names in Oracle mode now consistent with PL/SQL Developer behavior
+
+Structure Comparison
+
+- New structure comparison feature added, supporting structure comparisons for homogenous databases (OBOracle, OBMySQL, MySQL)
+- Supported scope includes table objects, with comparison properties including columns, primary keys, constraints, indexes, partitions, table properties
+- Structure comparison results provide DIFF preview and change script preview
+- SQL preview results are downloadable and can directly initiate structure synchronization tasks
+  Lock-Free Structure Changes
+- Support for adding intermediate columns to tables
+- Support for concurrent index changes during table structure modifications (OceanBase Oracle mode)
+- Support for primary key deletion when the table contains unique constraints (OceanBase Oracle mode)
+
+Partition Plan
+
+- Support for configuring partition plans for databases in OBOracle mode
+- Partition field types not only support DATE/TIMESTAMP but also NUMBER/CHAR/VARCHAR2 and other field types
+- Redesigned the partition plan strategy configuration page, custom mode can configure any partition upper boundary calculation logic through expressions, support for previewing the execution SQL of the partition plan
+- Execution cycle for deleting partitions can be independently configured from the creation partition cycle
+
+Data Archiving/Cleaning
+
+- Support for configuring cleaning tasks for databases in OBOracle mode
+- Support for configuring archiving tasks for OBOracle -> OBOracle links
+- Support for previewing the actual executing SQL for data archival/cleaning tasks at the start of the task
+- Data archiving supports custom target table names
+- Data cleaning supports whether to use the primary key, if not using the primary key data will be deleted directly based on index condition matching, no need to shard tasks by primary key, can significantly improve cleaning efficiency in certain scenarios
+
+Security Standards
+
+- Support for Custom Environment
+    - Customize SQL window standards and SQL check rules for different business scenarios
+    - When creating a custom environment, choose an existing environment for initial configuration
+    - Support for configuring tag styles to easily distinguish between different environments
+- Three new SQL check rules added
+    - Reserved words should not be used as object names
+    - Existence of offline (lock table) structure change statements, offline structural changes lead to table locking, affecting business
+    - Existence of TRUNCATE statements, high risk of TRUNCATE tables in production environments
+- Default values of risk identification rules in security standards optimized, production environments can be used out of the box
+- SQL window standard adds risk tips for enabling PL debugging in production environments
+
+Database-level Access Controls
+
+- Project collaboration adds library access control
+- Library access permission types include querying, exporting, and changing; support for authorization by type; support for setting permission validity period
+- Project developers default to having access permissions for all libraries within the project, consistent with previous version behavior
+- New project participant role added, participants default to no access permissions for any library
+- Participants can apply for library access permissions through tickets
+- Administrators can directly authorize participants with library access permissions
+- Administrators can revoke library access permissions from participants
+
+Notification Messages
+
+- Project collaboration adds message notification feature
+- Supported event types include work order approval status change, task execution status change, and task scheduling failures
+- Notification range can be configured through rules, message content can be configured through templates
+- Notification channels support configuring common webhook channels such as DingTalk, Lark, WeCom, also support custom HTTP requests, message sending supports rate limiting
+
+System Integration
+
+- SSO adds LDAP protocol support
+
+### Usability Improvements
+
+- Optimized the database selection component, standardizing the library selection interaction across product pages and adding fuzzy matching functionality for project names, data source names, and database names.
+- Added a resource tree locator key to the SQL window for quickly identifying the current database's position within the resource tree.
+- Upgraded preference settings to a top-level feature accessible directly through the [Settings] entry; new configuration options include:
+    - Whether to enable full-link tracing during SQL execution.
+    - Whether to continue SQL execution upon encountering errors.
+    - Customization of editor theme and font size.
+    - Configuration of editor shortcuts for running SQL commands.
+    - Setting the default workspace.
+    - Whether to enable user behavior analytics.
+    - Desktop version now supports memory size configuration through JVM parameters.
+- Added database availability indicators; the database list under projects will now show unavailable statuses and reasons.
+- Improved the initiation interaction for work orders:
+    - Support for initiating various work orders directly from the database in the resource tree.
+    - Common task work orders (mock data, database changes, data archiving, data cleanup, database permission application) support reinitiation with editable task parameters.
+- Enhanced database change processes to detect index change statements and automatically adjust the timeout setting (120h) to prevent index change statement execution failure due to timeout.
+- Desktop version personal settings now support custom JVM configuration with memory usage control to within 1 GB.
+- Desktop version supports exporting data files larger than 4 GB.
+- Optimized the en-US language wording of the product.
+
+### Breaking Changes
+
+- The default environment for security standards no longer supports editing or disabling.
+
 ### Fix
 
 Connection Session
