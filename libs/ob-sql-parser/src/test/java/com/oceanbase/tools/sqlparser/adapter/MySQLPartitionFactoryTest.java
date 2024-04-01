@@ -28,7 +28,7 @@ import org.junit.Test;
 import com.oceanbase.tools.sqlparser.adapter.mysql.MySQLPartitionFactory;
 import com.oceanbase.tools.sqlparser.obmysql.OBLexer;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser;
-import com.oceanbase.tools.sqlparser.obmysql.OBParser.Opt_partition_optionContext;
+import com.oceanbase.tools.sqlparser.obmysql.OBParser.Partition_optionContext;
 import com.oceanbase.tools.sqlparser.statement.Expression;
 import com.oceanbase.tools.sqlparser.statement.Operator;
 import com.oceanbase.tools.sqlparser.statement.createtable.ColumnPartition;
@@ -559,12 +559,12 @@ public class MySQLPartitionFactoryTest {
         Assert.assertEquals(expect, actual);
     }
 
-    private Opt_partition_optionContext getPartitionContext(String part) {
+    private Partition_optionContext getPartitionContext(String part) {
         OBLexer lexer = new OBLexer(CharStreams.fromString(part));
         CommonTokenStream tokens = new CommonTokenStream(lexer);
         OBParser parser = new OBParser(tokens);
         parser.setErrorHandler(new BailErrorStrategy());
-        return parser.opt_partition_option();
+        return parser.partition_option();
     }
 
 }

@@ -4462,14 +4462,6 @@ USER_VARIABLE
     : ('@'[A-Za-z0-9_.$]*)|('@'[`'"][`'"A-Za-z0-9_.$/%]*)
     ;
 
-ID_DOT_ID
-    : START_IDENTIFIER '.' IDENTIFIER
-    ;
-
-ID_DOT_ID_DOT_ID
-    : START_IDENTIFIER '.' IDENTIFIER '.' IDENTIFIER
-    ;
-
 NAME_OB
     : (([A-Za-z0-9$_]|(~[\u0000-\u007F\uD800-\uDBFF]))+)
     | '`' ~[`]* '`'

@@ -195,10 +195,7 @@ column_ref
     : column_name
     | (Dot?|relation_name Dot) relation_name Dot (column_name|mysql_reserved_keyword)
     | (Dot?|relation_name Dot) mysql_reserved_keyword Dot mysql_reserved_keyword
-    | Dot? id_dot_id
     | relation_name Dot (relation_name Dot)? Star
-    | id_dot_id_dot_id
-    | id_dot_id Dot Star
     ;
 
 complex_string_literal
@@ -303,11 +300,9 @@ simple_expr
     | func_expr
     | window_function
     | LeftBrace relation_name expr RightBrace
-    | id_dot_id? USER_VARIABLE
     | USER_VARIABLE
     | column_definition_ref (JSON_EXTRACT|JSON_EXTRACT_UNQUOTED) complex_string_literal
     | relation_name Dot relation_name (Dot relation_name)? USER_VARIABLE
-    | id_dot_id_dot_id USER_VARIABLE
     ;
 
 expr
@@ -464,7 +459,6 @@ func_expr
     | CHARACTER LeftParen expr_list USING charset_name RightParen # complex_func_expr
     | function_name LeftParen expr_as_list? RightParen # simple_func_expr
     | relation_name Dot function_name LeftParen expr_as_list? RightParen # simple_func_expr
-    | id_dot_id LeftParen expr_as_list? RightParen # simple_func_expr
     | sys_interval_func # complex_func_expr
     | func_name=CALC_PARTITION_ID LeftParen bit_expr Comma bit_expr RightParen # simple_func_expr
     | func_name=CALC_PARTITION_ID LeftParen bit_expr Comma bit_expr Comma bit_expr RightParen # simple_func_expr
@@ -1027,8 +1021,6 @@ generated_column_attribute
 column_definition_ref
     : (relation_name Dot)? column_name
     | relation_name Dot relation_name Dot column_name
-    | id_dot_id
-    | id_dot_id_dot_id
     ;
 
 column_definition_list
@@ -1927,10 +1919,7 @@ no_param_column_ref
     : column_name
     | (Dot?|relation_name Dot) relation_name Dot (column_name|mysql_reserved_keyword)
     | (Dot?|relation_name Dot) mysql_reserved_keyword Dot mysql_reserved_keyword
-    | Dot? id_dot_id
     | relation_name Dot (relation_name Dot)? Star
-    | id_dot_id_dot_id
-    | id_dot_id Dot Star
     ;
 
 insert_vals_list
@@ -2371,14 +2360,12 @@ relation_with_star_list
 relation_factor_with_star
     : relation_name (Dot Star)?
     | relation_name Dot relation_name (Dot Star)?
-    | id_dot_id (Dot Star)?
     ;
 
 normal_relation_factor
     : relation_name USER_VARIABLE?
     | relation_name Dot relation_name USER_VARIABLE?
     | relation_name Dot mysql_reserved_keyword
-    | id_dot_id USER_VARIABLE?
     ;
 
 dot_relation_factor
@@ -3034,7 +3021,6 @@ object_type
 priv_level
     : Star (Dot Star)?
     | relation_name ((Dot Star)?|Dot relation_name)
-    | id_dot_id
     ;
 
 grant_options
@@ -3815,16 +3801,6 @@ column_name
 relation_name
     : NAME_OB
     | unreserved_keyword
-    ;
-
-id_dot_id
-    : ID_DOT_ID
-    ;
-
-id_dot_id_dot_id
-    : ID_DOT_ID_DOT_ID
-    | id_dot_id Dot relation_name
-    | relation_name Dot id_dot_id
     ;
 
 function_name
