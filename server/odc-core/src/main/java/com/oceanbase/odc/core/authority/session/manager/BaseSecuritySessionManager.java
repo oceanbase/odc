@@ -27,6 +27,7 @@ import java.util.function.Consumer;
 
 import org.apache.commons.lang3.Validate;
 
+import com.oceanbase.odc.common.util.ExceptionUtils;
 import com.oceanbase.odc.core.authority.exception.InvalidSessionException;
 import com.oceanbase.odc.core.authority.session.DelegateSecuritySession;
 import com.oceanbase.odc.core.authority.session.SecuritySession;
@@ -234,7 +235,9 @@ public abstract class BaseSecuritySessionManager implements SecuritySessionManag
             try {
                 consumer.accept(listener);
             } catch (Throwable e) {
-                log.warn("Failed to call listener's method", e);
+                StackTraceElement element = Thread.currentThread().getStackTrace()[2];
+                log.warn("Failed to call listener {}#{}, error={}", listener.getClass().getName(),
+                        element.getMethodName(), ExceptionUtils.getRootCauseReason(e));
             }
         }
     }
