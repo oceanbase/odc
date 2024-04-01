@@ -1385,10 +1385,6 @@ partition_num
     : PARTITIONS INTNUM
     ;
 
-column_partition_option
-    : PARTITION BY COLUMN LeftParen vertical_column_name (Comma aux_column_list)? RightParen
-    ;
-
 aux_column_list
     : vertical_column_name (Comma vertical_column_name)*
     ;
