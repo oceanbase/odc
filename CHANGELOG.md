@@ -170,7 +170,7 @@ DB Browser
 - DDL containing extraneous spaces before and after in Oracle mode (#2050)
 - Tables with default values on columns not retrievable in Oracle 11g mode (#1733)
 - listTables not correctly returning tables for the specified schema consistently (#1632)
-- Tables unlistable in OceanBase versions not later than 2.2.30 (#1478)
+- listTables failed in OceanBase versions < v2.2.30 (#1478)
 - Inadequate visualization for MySQL table structure, specifically for strings in single quotes (#1401)
 
 OB-SQL-Parser
