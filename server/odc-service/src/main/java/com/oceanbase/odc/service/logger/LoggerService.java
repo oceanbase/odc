@@ -113,10 +113,8 @@ public class LoggerService {
                 if (log.isDebugEnabled()) {
                     log.debug("job: {} is not finished, try to get log from remote pod.", jobEntity.getId());
                 }
-                // Get 5000 lines or 500K log
                 String hostWithUrl = jobEntity.getExecutorEndpoint() + String.format(JobUrlConstants.LOG_QUERY,
-                        jobEntity.getId()) + "?logType=" + level.getName()
-                        + "&fetchMaxLine=5000&fetchMaxByteSize=512000";
+                        jobEntity.getId()) + "?logType=" + level.getName();
                 SuccessResponse<String> response =
                         HttpUtil.request(hostWithUrl, new TypeReference<SuccessResponse<String>>() {});
                 return response.getData();

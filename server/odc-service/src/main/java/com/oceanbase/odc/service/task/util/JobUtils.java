@@ -24,18 +24,18 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
-import org.jasypt.encryption.pbe.StandardPBEStringEncryptor;
-import org.jasypt.iv.RandomIvGenerator;
-
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import com.oceanbase.odc.common.json.JsonUtils;
-import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.common.util.SystemUtils;
 import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.core.shared.constant.ConnectType;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.objectstorage.cloud.model.ObjectStorageConfiguration;
+import com.oceanbase.odc.service.task.jasypt.AccessEnvironmentJasyptEncryptorConfigProperties;
+import com.oceanbase.odc.service.task.jasypt.DefaultJasyptEncryptor;
+import com.oceanbase.odc.service.task.jasypt.DefaultJasyptEncryptorConfigProperties;
+import com.oceanbase.odc.service.task.jasypt.JasyptEncryptorConfigProperties;
 import com.oceanbase.odc.service.task.constants.JobConstants;
 import com.oceanbase.odc.service.task.constants.JobEnvKeyConstants;
 import com.oceanbase.odc.service.task.enums.TaskRunMode;
@@ -137,28 +137,13 @@ public class JobUtils {
         config.setPort(port != null ? Integer.parseInt(port) : 8989);
         config.setDefaultSchema(System.getProperty(JobEnvKeyConstants.ODC_EXECUTOR_DATABASE_NAME));
         config.setUsername(System.getProperty(JobEnvKeyConstants.ODC_EXECUTOR_DATABASE_USERNAME));
-        config.setPassword(decrypt(System.getProperty(JobEnvKeyConstants.ODC_EXECUTOR_DATABASE_PASSWORD)));
+        JasyptEncryptorConfigProperties properties = new AccessEnvironmentJasyptEncryptorConfigProperties();
+        config.setPassword(new DefaultJasyptEncryptor(properties)
+                .decrypt(System.getProperty(JobEnvKeyConstants.ODC_EXECUTOR_DATABASE_PASSWORD)));
         config.setType(ConnectType.OB_MYSQL);
         config.setId(1L);
         return config;
     }
-
-    public static String decrypt(String encryptedText) {
-        String prefix = JobConstants.ODC_PROPERTY_ENCRYPTION_ALGORITHM_PREFIX;
-        String suffix = JobConstants.ODC_PROPERTY_ENCRYPTION_ALGORITHM_SUFFIX;
-        if (StringUtils.isNotBlank(encryptedText) && encryptedText.startsWith(prefix)
-                && encryptedText.endsWith(suffix)) {
-            StandardPBEStringEncryptor encryptor = new StandardPBEStringEncryptor();
-            encryptor.setPassword(System.getProperty(JobEnvKeyConstants.ODC_PROPERTY_ENCRYPTION_PASSWORD));
-            encryptor.setAlgorithm(
-                    SystemUtils.getEnvOrProperty(JobEnvKeyConstants.ODC_PROPERTY_ENCRYPTION_ALGORITHM_KEY));
-            encryptor.setIvGenerator(new RandomIvGenerator());
-            return encryptor.decrypt(
-                    encryptedText.substring(prefix.length(), encryptedText.length() - suffix.length()));
-        }
-        return encryptedText;
-    }
-
 
     public static Optional<ObjectStorageConfiguration> getObjectStorageConfiguration() {
         String osc;

@@ -62,16 +62,9 @@ public class CheckRunningJob implements Job {
         // find heart timeout job
         Page<JobEntity> jobs = getConfiguration().getTaskFrameworkService()
                 .findHeartTimeTimeoutJobs(heartTimeoutSeconds, 0,
-                        getFetchRowSize(taskFrameworkProperties.getRunMode()));
+                    taskFrameworkProperties.getSingleFetchCheckHeartTimeoutJobRows());
         jobs.forEach(this::handleJobRetryingOrFailed);
     }
-
-    private int getFetchRowSize(TaskRunMode taskRunMode) {
-        TaskFrameworkProperties taskFrameworkProperties = getConfiguration().getTaskFrameworkProperties();
-        return taskRunMode.isProcess() ? taskFrameworkProperties.getSingleMaxFetchCheckHeartTimeoutJobRows()
-                : taskFrameworkProperties.getSingleFetchCheckHeartTimeoutJobRows();
-    }
-
     private void handleJobRetryingOrFailed(JobEntity jobEntity) {
         SilentExecutor.executeSafely(() -> getConfiguration().getTransactionManager()
                 .doInTransactionWithoutResult(() -> doHandleJobRetryingOrFailed(jobEntity)));

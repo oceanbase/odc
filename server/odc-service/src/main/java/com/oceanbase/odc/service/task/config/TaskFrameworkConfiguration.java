@@ -29,9 +29,13 @@ import org.springframework.scheduling.quartz.SchedulerFactoryBean;
 
 import com.oceanbase.odc.service.task.caller.K8sJobClient;
 import com.oceanbase.odc.service.task.caller.NativeK8sJobClient;
+import com.oceanbase.odc.service.task.jasypt.DefaultJasyptEncryptorConfigProperties;
+import com.oceanbase.odc.service.task.jasypt.JasyptEncryptorConfigProperties;
 import com.oceanbase.odc.service.task.schedule.MonitorProcessRateLimiter;
 import com.oceanbase.odc.service.task.schedule.StartJobRateLimiter;
 import com.oceanbase.odc.service.task.service.TaskFrameworkService;
+import com.ulisesbocchio.jasyptspringboot.properties.JasyptEncryptorConfigurationProperties;
+import com.ulisesbocchio.jasyptspringboot.util.Singleton;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -61,6 +65,12 @@ public class TaskFrameworkConfiguration {
     @Bean
     public StartJobRateLimiter monitorProcessRateLimiter(@Autowired TaskFrameworkService taskFrameworkService) {
         return new MonitorProcessRateLimiter(TaskFrameworkPropertiesSupplier.getSupplier(), taskFrameworkService);
+    }
+
+    @Bean
+    public JasyptEncryptorConfigProperties JasyptEncryptorConfigProperties(
+            @Autowired Singleton<JasyptEncryptorConfigurationProperties> configPropertiesSingleton) {
+        return new DefaultJasyptEncryptorConfigProperties(configPropertiesSingleton);
     }
 
     @Lazy

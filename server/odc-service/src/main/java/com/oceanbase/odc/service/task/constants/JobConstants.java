@@ -58,11 +58,4 @@ public class JobConstants {
     public static final String ODC_EXECUTOR_PROCESS_PROPERTIES_KEY = "odc.executor";
 
     public static final String ODC_JOB_MONITORING = "odcJobMonitoring";
-
-    public static final String ODC_PROPERTY_ENCRYPTION_ALGORITHM_NAME = "PBEWithHmacSHA512AndAES_128";
-
-    public static final String ODC_PROPERTY_ENCRYPTION_ALGORITHM_PREFIX = "ENC(";
-
-    public static final String ODC_PROPERTY_ENCRYPTION_ALGORITHM_SUFFIX = ")";
-
 }
