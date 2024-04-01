@@ -44,6 +44,7 @@ public class ConnectionConfigRepositoryTest extends ServiceTestEnv {
     private static final String NAME = "TEST_C1";
     private static final String CLUSTER_NAME = "C1";
     private static final String TENANT_NAME = "T1";
+    private static final String USERNAME = "odcTest";
 
     @Autowired
     private ConnectionConfigRepository repository;
@@ -148,7 +149,8 @@ public class ConnectionConfigRepositoryTest extends ServiceTestEnv {
                 .and(ConnectionSpecs.idLike(saved.getId().toString()))
                 .and(ConnectionSpecs.hostLike(connection.getHost()))
                 .and(ConnectionSpecs.portLike(connection.getPort().toString()))
-                .and(ConnectionSpecs.isNotTemp());
+                .and(ConnectionSpecs.isNotTemp())
+                .and(ConnectionSpecs.usernameEqual(USERNAME));
 
         List<ConnectionEntity> all = repository.findAll(spec);
 
@@ -280,6 +282,7 @@ public class ConnectionConfigRepositoryTest extends ServiceTestEnv {
         entity.setCreateTime(null);
         entity.setUpdateTime(null);
         entity.setTemp(false);
+        entity.setUsername(USERNAME);
         if (visibleScope == ConnectionVisibleScope.PRIVATE) {
             entity.setOwnerId(CREATOR_ID);
         } else {
