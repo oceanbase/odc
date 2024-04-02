@@ -95,7 +95,7 @@ public class ChannelConfigValidator {
                 + "please add it into system configuration with the key 'odc.notification.host-white-list'");
 
         String httpProxy = channelConfig.getHttpProxy();
-        Verify.verify(StringUtils.isNotEmpty(httpProxy) && httpProxy.split(":").length != 3,
+        Verify.verify(StringUtils.isEmpty(httpProxy) || httpProxy.split(":").length == 3,
                 "Illegal http proxy, it should be like 'http(s)://host:port'");
 
         String headersTemplate = channelConfig.getHeadersTemplate();
