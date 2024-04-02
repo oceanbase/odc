@@ -34,7 +34,7 @@ import lombok.EqualsAndHashCode;
 public class ConnectionPasswordCache {
 
     private final Cache<DatabaseUserIdentity, String> databaseUserIdentity2Password =
-            Caffeine.newBuilder().maximumSize(1000).expireAfterAccess(10, TimeUnit.HOURS).build();
+            Caffeine.newBuilder().maximumSize(1000).expireAfterWrite(10, TimeUnit.HOURS).build();
 
     public void setPassword(DatabaseUserIdentity key, String password) {
         databaseUserIdentity2Password.put(key, password);
