@@ -15,15 +15,14 @@
  */
 package com.oceanbase.odc.service.notification.helper;
 
-import java.util.List;
 import java.util.Map;
 
-import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.MapUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import com.oceanbase.odc.common.json.JsonUtils;
+import com.oceanbase.odc.common.util.SSRFChecker;
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.core.shared.exception.NotImplementedException;
@@ -91,8 +90,10 @@ public class ChannelConfigValidator {
         Verify.verify(
                 channelConfig.getWebhook().startsWith("http://") || channelConfig.getWebhook().startsWith("https://"),
                 "Webhook should start with 'http://' or 'https://'");
-        Verify.verify(checkHostInWhiteList(channelConfig.getWebhook()), "The webhook is not in white list, "
-                + "please add it into system configuration with the key 'odc.notification.host-white-list'");
+        Verify.verify(
+                SSRFChecker.checkUrlInWhiteList(channelConfig.getWebhook(), notificationProperties.getHostWhiteList()),
+                "The webhook is not in white list, "
+                        + "please add it into system configuration with the key 'odc.notification.host-white-list'");
 
         String httpProxy = channelConfig.getHttpProxy();
         Verify.verify(StringUtils.isEmpty(httpProxy) || httpProxy.split(":").length == 3,
@@ -114,18 +115,5 @@ public class ChannelConfigValidator {
             }
         }
 
-    }
-
-    private boolean checkHostInWhiteList(String webhook) {
-        List<String> whiteList = notificationProperties.getHostWhiteList();
-        if (CollectionUtils.isEmpty(whiteList)) {
-            return true;
-        }
-        for (String host : whiteList) {
-            if (StringUtils.startsWithIgnoreCase(webhook, host)) {
-                return true;
-            }
-        }
-        return false;
     }
 }
