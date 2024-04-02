@@ -65,9 +65,9 @@ public class V42417HistoricalPartitionPlanMigrateTest extends ServiceTestEnv {
                 + "`partition_interval`, `partition_interval_unit`, `pre_create_partition_count`, `expire_period`, "
                 + "`expire_period_unit`, `partition_naming_prefix`, `partition_naming_suffix_expression`, "
                 + "`creator_id`, `modifier_id`, `database_id`, `database_partition_plan_id`) VALUES "
-                + "(1, 1, 1, 1, 'test', 'datetime_range_parti_tbl', 0, 1, 12, '1', 5, 12, '1', 'p', 'yyyy_MM', 1, 1, 4, 1), "
-                + "(2, 1, 1, 1, 'test', 'date_range_parti_tbl', 0, 1, 24, '1', 10, 24, '1', 'p', 'yyyy_MM', 1, 1, 4, 1), "
-                + "(3, 1, 1, 1, 'test', 'unixtimestamp_range_parti_tbl', 0, 1, 36, '1', 15, 36, '1', 'p', 'yyyyMMdd', 1, 1, 4, 1), "
+                + "(1, 1, 1, 1, 'test', 'datetime_range_parti_tbl', 1, 1, 12, '1', 5, 12, '1', 'p', 'yyyy_MM', 1, 1, 4, 1), "
+                + "(2, 1, 1, 1, 'test', 'date_range_parti_tbl', 1, 1, 24, '1', 10, 24, '1', 'p', 'yyyy_MM', 1, 1, 4, 1), "
+                + "(3, 1, 1, 1, 'test', 'unixtimestamp_range_parti_tbl', 1, 1, 36, '1', 15, 36, '1', 'p', 'yyyyMMdd', 1, 1, 4, 1), "
                 + "(4, 1, 1, 2, 'test', 'datetime_range_parti_tbl', 1, 1, 12, '1', 5, 12, '1', 'p', 'yyyy_MM', 1, 1, 4, 2), "
                 + "(5, 1, 1, 2, 'test', 'date_range_parti_tbl', 1, 1, 24, '1', 10, 24, '1', 'p', 'yyyy_MM', 1, 1, 4, 2), "
                 + "(6, 1, 1, 2, 'test', 'unixtimestamp_range_parti_tbl', 1, 1, 36, '1', 15, 36, '1', 'p', 'yyyyMMdd', 1, 1, 4, 2)");
