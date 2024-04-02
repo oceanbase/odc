@@ -106,42 +106,42 @@ System Integration
 
 Connection Session
 
-- Sessions failing to remove after expiration, causing potential leaks [#2125](https://github.com/oceanbase/odc/issues/2125)
-- References to expired connection sessions failed to be promptly cleared, leading to resource leaks, which may cause increased memory consumption [#1914](https://github.com/oceanbase/odc/issues/1914)
-- Under high-frequency usage scenarios, executing SQL or viewing table data may encounter issues where the interface becomes unresponsive [#1797](https://github.com/oceanbase/odc/issues/1797)
-- Intermittent 404 errors when attempting to open SQL console [#1809](https://github.com/oceanbase/odc/issues/1809)
+- Sessions failing to remove after expiration, causing potential leaks [#2125](https://github.com/oceanbase/odc/pull/2125)
+- References to expired connection sessions failed to be promptly cleared, leading to resource leaks, which may cause increased memory consumption [#1914](https://github.com/oceanbase/odc/pull/1914)
+- Under high-frequency usage scenarios, executing SQL or viewing table data may encounter issues where the interface becomes unresponsive [#1797](https://github.com/oceanbase/odc/pull/1797)
+- Intermittent 404 errors when attempting to open SQL console [#1809](https://github.com/oceanbase/odc/pull/1809)
 
 SQL Execution
 
-- Commit/rollback button state not in sync with actual transaction status in OceanBase 4.2 [#2097](https://github.com/oceanbase/odc/issues/2097)
-- SQL statements with single-line comments unable to execute [#2085](https://github.com/oceanbase/odc/issues/2085)
-- Incorrect offsets for last SQL command without a trailing delimiter [#1970](https://github.com/oceanbase/odc/issues/1970)
-- Incompatibility of anonymous block execution module with Oracle 11g [#1759](https://github.com/oceanbase/odc/issues/1759)
+- Commit/rollback button state not in sync with actual transaction status in OceanBase 4.2 [#2097](https://github.com/oceanbase/odc/pull/2097)
+- SQL statements with single-line comments unable to execute [#2085](https://github.com/oceanbase/odc/pull/2085)
+- Incorrect offsets for last SQL command without a trailing delimiter [#1970](https://github.com/oceanbase/odc/pull/1970)
+- Incompatibility of anonymous block execution module with Oracle 11g [#1759](https://github.com/oceanbase/odc/pull/1759)
 
 Result-set
 
-- Degrading performance when modifying multiple rows concurrently in result-set [#2007](https://github.com/oceanbase/odc/issues/2007)
-- In OceanBase MySQL mode, the datetime data type loses precision when displayed [#1996](https://github.com/oceanbase/odc/issues/1996)
+- Degrading performance when modifying multiple rows concurrently in result-set [#2007](https://github.com/oceanbase/odc/pull/2007)
+- In OceanBase MySQL mode, the datetime data type loses precision when displayed [#1996](https://github.com/oceanbase/odc/pull/1996)
 
 Table Object
 
-- Disparity in column names order between Index and Constraint views [#1948](https://github.com/oceanbase/odc/issues/1948)
-- Inability to view table details for MySQL version 5.6 [#1635](https://github.com/oceanbase/odc/issues/1635)
-- Sofa ODP table detail view not accessible [#2043](https://github.com/oceanbase/odc/issues/2043)
+- Disparity in column names order between Index and Constraint views [#1948](https://github.com/oceanbase/odc/pull/1948)
+- Inability to view table details for MySQL version 5.6 [#1635](https://github.com/oceanbase/odc/pull/1635)
+- Sofa ODP table detail view not accessible [#2043](https://github.com/oceanbase/odc/pull/2043)
 
 Online Schema Change
 
-- OSC task experiencing syntax exceptions when input statements contain comments [#1597](https://github.com/oceanbase/odc/issues/1597)
+- OSC task experiencing syntax exceptions when input statements contain comments [#1597](https://github.com/oceanbase/odc/pull/1597)
 
 SQL-Check
 
-- Null Pointer Exception occurring when virtual columns are present [#2031](https://github.com/oceanbase/odc/issues/2031)
-- Drop operations for primary keys as constraints going undetected [#1879](https://github.com/oceanbase/odc/issues/1879)
-- Null Pointer Exception triggered by certain ALTER statements [#1865](https://github.com/oceanbase/odc/issues/1865)
+- Null Pointer Exception occurring when virtual columns are present [#2031](https://github.com/oceanbase/odc/pull/2031)
+- Drop operations for primary keys as constraints going undetected [#1879](https://github.com/oceanbase/odc/pull/1879)
+- Null Pointer Exception triggered by certain ALTER statements [#1865](https://github.com/oceanbase/odc/pull/1865)
 
 Partition Plan
 
-- Partition DDL execution failures when schema or table names are lowercase [#2088](https://github.com/oceanbase/odc/issues/2088)
+- Partition DDL execution failures when schema or table names are lowercase [#2088](https://github.com/oceanbase/odc/pull/2088)
 
 Data Archiving/Cleaning
 
@@ -149,44 +149,44 @@ Data Archiving/Cleaning
 
 Users and Permissions
 
-- Inefficiencies in batch importing users with associated roles [#1908](https://github.com/oceanbase/odc/issues/1908)
+- Inefficiencies in batch importing users with associated roles [#1908](https://github.com/oceanbase/odc/pull/1908)
 
 Data Security
 
-- Data masking inconsistencies when employing nested CASE-WHEN clauses [#1410](https://github.com/oceanbase/odc/issues/1410)
+- Data masking inconsistencies when employing nested CASE-WHEN clauses [#1410](https://github.com/oceanbase/odc/pull/1410)
 
 System Integration
 
-- Presence of garbled code when including Chinese content in request body [#1625](https://github.com/oceanbase/odc/issues/1625)
+- Presence of garbled code when including Chinese content in request body [#1625](https://github.com/oceanbase/odc/pull/1625)
 
 DB Browser
 
-- Creation type not recognized for table statements containing indexes [#2063](https://github.com/oceanbase/odc/issues/2063)
-- DDL containing extraneous spaces before and after in Oracle mode [#2050](https://github.com/oceanbase/odc/issues/2050)
-- Tables with default values on columns not retrievable in Oracle 11g mode [#1733](https://github.com/oceanbase/odc/issues/1733)
-- listTables not correctly returning tables for the specified schema consistently [#1632](https://github.com/oceanbase/odc/issues/1632)
-- listTables failed in OceanBase versions < v2.2.30 [#1478](https://github.com/oceanbase/odc/issues/1478)
-- Inadequate visualization for MySQL table structure, specifically for strings in single quotes [#1401](https://github.com/oceanbase/odc/issues/1401)
+- Creation type not recognized for table statements containing indexes [#2063](https://github.com/oceanbase/odc/pull/2063)
+- DDL containing extraneous spaces before and after in Oracle mode [#2050](https://github.com/oceanbase/odc/pull/2050)
+- Tables with default values on columns not retrievable in Oracle 11g mode [#1733](https://github.com/oceanbase/odc/pull/1733)
+- listTables not correctly returning tables for the specified schema consistently [#1632](https://github.com/oceanbase/odc/pull/1632)
+- listTables failed in OceanBase versions < v2.2.30 [#1478](https://github.com/oceanbase/odc/pull/1478)
+- Inadequate visualization for MySQL table structure, specifically for strings in single quotes [#1401](https://github.com/oceanbase/odc/pull/1401)
 
 OB-SQL-Parser
 
-- Parsing issues for INSERT statements into tables named 'json_table' [#1968](https://github.com/oceanbase/odc/issues/1968)
+- Parsing issues for INSERT statements into tables named 'json_table' [#1968](https://github.com/oceanbase/odc/pull/1968)
 
 ## 4.2.3_bp1 (2024-02-01)
 
 ### Feature
 
-- database-change: database change task adapt streaming read sql file [#1437](https://github.com/oceanbase/odc/issues/1437)
-- dlm: supports sharding using unique indexes [#1327](https://github.com/oceanbase/odc/issues/1327)
+- database-change: database change task adapt streaming read sql file [#1437](https://github.com/oceanbase/odc/pull/1437)
+- dlm: supports sharding using unique indexes [#1327](https://github.com/oceanbase/odc/pull/1327)
 
 ### Fix
 
 sql-execute
 
-- fail to execute statement on OceanBase 2.2.30 [#1487](https://github.com/oceanbase/odc/issues/1487)
-- executing anonymous block causes NPE in the team space [#1474](https://github.com/oceanbase/odc/issues/1474)
-- do not roll back execute when manual commit enabled[#1468](https://github.com/oceanbase/odc/issues/1468)
-- can not set a delimiter longer than 2 [#1414](https://github.com/oceanbase/odc/issues/1414)
+- fail to execute statement on OceanBase 2.2.30 [#1487](https://github.com/oceanbase/odc/pull/1487)
+- executing anonymous block causes NPE in the team space [#1474](https://github.com/oceanbase/odc/pull/1474)
+- do not roll back execute when manual commit enabled[#1468](https://github.com/oceanbase/odc/pull/1468)
+- can not set a delimiter longer than 2 [#1414](https://github.com/oceanbase/odc/pull/1414)
 - during SQL window query request, the front end crashes when logging out.
 
 result-set
@@ -196,36 +196,36 @@ result-set
 
 table
 
-- query table data with no column comments [#1488](https://github.com/oceanbase/odc/issues/1488)
+- query table data with no column comments [#1488](https://github.com/oceanbase/odc/pull/1488)
 
 data-export
 
-- object types are not displayed when exporting package bodies and synonyms. [#1464](https://github.com/oceanbase/odc/issues/1464)
+- object types are not displayed when exporting package bodies and synonyms. [#1464](https://github.com/oceanbase/odc/pull/1464)
 
 flow
 
-- NPE when creating a ticket without connection information [#1479](https://github.com/oceanbase/odc/issues/1479)
-- can not set task status correctly when creating task concurrently [#1419](https://github.com/oceanbase/odc/issues/1419)
+- NPE when creating a ticket without connection information [#1479](https://github.com/oceanbase/odc/pull/1479)
+- can not set task status correctly when creating task concurrently [#1419](https://github.com/oceanbase/odc/pull/1419)
 - when the task creator and approver are not the current users, an error occurs when viewing the task approval node.
 
 osc
 
-- osc job query connection config by id throw Access Denied[#1378](https://github.com/oceanbase/odc/issues/1378)
-- osc task don't show manual swap table name when full migrate is completed [#1357](https://github.com/oceanbase/odc/issues/1357)
+- osc job query connection config by id throw Access Denied[#1378](https://github.com/oceanbase/odc/pull/1378)
+- osc task don't show manual swap table name when full migrate is completed [#1357](https://github.com/oceanbase/odc/pull/1357)
 
 database-change
 
-- query task details throw flow instance not found exception [#1325](https://github.com/oceanbase/odc/issues/1325)
-- query task details throw file not found exception [#1316](https://github.com/oceanbase/odc/issues/1316)
+- query task details throw flow instance not found exception [#1325](https://github.com/oceanbase/odc/pull/1325)
+- query task details throw file not found exception [#1316](https://github.com/oceanbase/odc/pull/1316)
 
 partition-plan
 
-- delete job failed if the associated trigger does not exist [#1495](https://github.com/oceanbase/odc/issues/1495)
+- delete job failed if the associated trigger does not exist [#1495](https://github.com/oceanbase/odc/pull/1495)
 
 dlm
 
-- the data cleaning task scheduling failed after editing the rate limit configuration [#1438](https://github.com/oceanbase/odc/issues/1438)
-- the task log file does not exist [#1376](https://github.com/oceanbase/odc/issues/1376)
+- the data cleaning task scheduling failed after editing the rate limit configuration [#1438](https://github.com/oceanbase/odc/pull/1438)
+- the task log file does not exist [#1376](https://github.com/oceanbase/odc/pull/1376)
 
 desktop version
 
@@ -233,13 +233,13 @@ desktop version
 
 others
 
-- sql-check: failed to check statement when connect to a lower case schema for OBOracle [#1341](https://github.com/oceanbase/odc/issues/1341)
-- audit: executing sql with rare words failed when metadb's default character is gbk [#1486](https://github.com/oceanbase/odc/issues/1486)
+- sql-check: failed to check statement when connect to a lower case schema for OBOracle [#1341](https://github.com/oceanbase/odc/pull/1341)
+- audit: executing sql with rare words failed when metadb's default character is gbk [#1486](https://github.com/oceanbase/odc/pull/1486)
 
 ### Security
 
-- upgrade aliyun-oss-sdk version [#1393](https://github.com/oceanbase/odc/issues/1393)
-- osc: horizontal overstep access data permission when swap table manual [#1405](https://github.com/oceanbase/odc/issues/1405)
+- upgrade aliyun-oss-sdk version [#1393](https://github.com/oceanbase/odc/pull/1393)
+- osc: horizontal overstep access data permission when swap table manual [#1405](https://github.com/oceanbase/odc/pull/1405)
 
 ## 4.2.3 (2023-12-22)
 
