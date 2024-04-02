@@ -19,6 +19,7 @@ import java.util.Date;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonProperty.Access;
+import com.oceanbase.odc.metadb.dbobject.DBColumnEntity;
 
 import lombok.Data;
 
@@ -46,5 +47,23 @@ public class OdcDBColumn {
 
     @JsonProperty(access = Access.READ_ONLY)
     private Date updateTime;
+
+    public static OdcDBColumn fromEntity(DBColumnEntity entity) {
+        OdcDBColumn column = new OdcDBColumn();
+        if (entity == null) {
+            return column;
+        }
+        column.setId(entity.getId());
+        column.setName(entity.getName());
+        column.setOrganizationId(entity.getOrganizationId());
+        column.setCreateTime(entity.getCreateTime());
+        column.setUpdateTime(entity.getUpdateTime());
+        if (entity.getObjectId() != null) {
+            OdcDBObject object = new OdcDBObject();
+            object.setId(entity.getObjectId());
+            column.setDbObject(object);
+        }
+        return column;
+    }
 
 }

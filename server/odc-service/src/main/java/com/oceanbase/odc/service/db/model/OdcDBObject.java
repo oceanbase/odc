@@ -19,6 +19,7 @@ import java.util.Date;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonProperty.Access;
+import com.oceanbase.odc.metadb.dbobject.DBObjectEntity;
 import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.tools.dbbrowser.model.DBObjectType;
 
@@ -51,5 +52,24 @@ public class OdcDBObject {
 
     @JsonProperty(access = Access.READ_ONLY)
     private Date updateTime;
+
+    public static OdcDBObject fromEntity(DBObjectEntity entity) {
+        OdcDBObject object = new OdcDBObject();
+        if (entity == null) {
+            return object;
+        }
+        object.setId(entity.getId());
+        object.setName(entity.getName());
+        object.setType(entity.getType());
+        object.setOrganizationId(entity.getOrganizationId());
+        object.setCreateTime(entity.getCreateTime());
+        object.setUpdateTime(entity.getUpdateTime());
+        if (entity.getDatabaseId() != null) {
+            Database database = new Database();
+            database.setId(entity.getDatabaseId());
+            object.setDatabase(database);
+        }
+        return object;
+    }
 
 }
