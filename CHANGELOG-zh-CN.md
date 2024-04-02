@@ -132,7 +132,7 @@ SQL 执行
 - 索引和约束视图中列名顺序不一致 [#1948](https://github.com/oceanbase/odc/pull/1948)
 - 无法查看 MySQL v5.6 表详情 [#1635](https://github.com/oceanbase/odc/pull/1635)
 - 无法查看 Sofa ODP 表详情 [#2043](https://github.com/oceanbase/odc/pull/2043)
-- 表结构编辑无法把 NOT NULL 字段改为 NULL  [#1441](https://github.com/oceanbase/odc/issues/1441)
+- 表结构编辑无法把 NOT NULL 字段改为 NULL [#1441](https://github.com/oceanbase/odc/issues/1441)
 - 分区表有多个最大值时只显示了一个最大值 [#1501](https://github.com/oceanbase/odc/issues/1501)
 - 删除表主键的按钮被置灰无法点击 [#1874](https://github.com/oceanbase/odc/issues/1874)
 
@@ -239,13 +239,13 @@ SQL 执行
 
 数据导出
 
-- 导出包体和同义词时，不显示对象类型。 [#1464](https://github.com/oceanbase/odc/pull/1464)
+- 导出包体和同义词时，不显示对象类型 [#1464](https://github.com/oceanbase/odc/pull/1464)
 
 任务
 
 - 创建没有连接信息的工单时 NPE [#1479](https://github.com/oceanbase/odc/pull/1479)
 - 并发创建任务时无法正确设置任务状态 [#1419](https://github.com/oceanbase/odc/pull/1419)
-- 当任务创建者和审批者不是当前用户时，查看任务审批节点时发生错误。
+- 当任务创建者和审批者不是当前用户时，查看任务审批节点时发生错误
 
 无锁结构变更
 

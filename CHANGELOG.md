@@ -116,6 +116,9 @@ SQL Execution
 - SQL statements with single-line comments unable to execute [#2085](https://github.com/oceanbase/odc/pull/2085)
 - Incorrect offsets for last SQL command without a trailing delimiter [#1970](https://github.com/oceanbase/odc/pull/1970)
 - Incompatibility of anonymous block execution module with Oracle 11g [#1759](https://github.com/oceanbase/odc/pull/1759)
+- DBMS output is incorrect, failed to output all spaces [#1051](https://github.com/oceanbase/odc/issues/1970)
+- `#` and `$` disappeared after SQL window formatted the code [#1490](https://github.com/oceanbase/odc/issues/1490)
+- Auto-complete in SQL window not available for MySQL data source [#1718](https://github.com/oceanbase/odc/issues/1718)
 
 Result-set
 
@@ -128,16 +131,45 @@ Table Object
 - Disparity in column names order between Index and Constraint views [#1948](https://github.com/oceanbase/odc/pull/1948)
 - Inability to view table details for MySQL version 5.6 [#1635](https://github.com/oceanbase/odc/pull/1635)
 - Sofa ODP table detail view not accessible [#2043](https://github.com/oceanbase/odc/pull/2043)
+- Unable to change NOT NULL fields to NULL in table structure editor [#1441](https://github.com/oceanbase/odc/issues/1441)
+- When partitioned table has multiple maximum values, only one is displayed [#1501](https://github.com/oceanbase/odc/issues/1501)
+- Button to delete table primary key is greyed out and not clickable [#1874](https://github.com/oceanbase/odc/issues/1874)
+
+Import/Export
+
+- SQL statement split incorrectly causing task failure when comments contain `;` [#417](https://github.com/oceanbase/odc/issues/417)
+- Export task fails when type name is in lowercase [#631](https://github.com/oceanbase/odc/issues/631)
+- Exporting trigger objects fails [#750](https://github.com/oceanbase/odc/issues/750)
+- Export task fails when function name contains special characters [#1331](https://github.com/oceanbase/odc/issues/1331)
+- During Oracle mode export of indexes, index names are prefixed with database name [#1491](https://github.com/oceanbase/odc/issues/1491)
+- `DELIMITER $$` separator sticks to table name when exporting procedure structure [#1746](https://github.com/oceanbase/odc/issues/1746)
+- After creating an export task, terminating it shows task status as executed successfully [#1752](https://github.com/oceanbase/odc/issues/1752)
+- When exporting packages, object type in task details doesn't show the package body [#1755](https://github.com/oceanbase/odc/issues/1755)
+- Import task fails when CSV file includes DATE type [#2079](https://github.com/oceanbase/odc/issues/2079)
 
 Online Schema Change
 
 - OSC task experiencing syntax exceptions when input statements contain comments [#1597](https://github.com/oceanbase/odc/pull/1597)
 
-SQL-Check
+Projects and tickets
+
+- Task creation success message incorrect, changed to work order created successfully [#1320](https://github.com/oceanbase/odc/issues/1320)
+- SQL window dropdown switch project page crashes [#1512](https://github.com/oceanbase/odc/issues/1512)
+
+Database Changes
+
+- If rollback content is attachments, which are not displayed during the rollback process [#1379](https://github.com/oceanbase/odc/issues/1379)
+
+SQL Check
 
 - Null Pointer Exception occurring when virtual columns are present [#2031](https://github.com/oceanbase/odc/pull/2031)
 - Drop operations for primary keys as constraints going undetected [#1879](https://github.com/oceanbase/odc/pull/1879)
 - Null Pointer Exception triggered by certain ALTER statements [#1865](https://github.com/oceanbase/odc/pull/1865)
+
+SQL Plan
+
+- Clicking to terminate SQL plan is ineffective [#1528](https://github.com/oceanbase/odc/issues/1528)
+- Review status displays as pre-check failed when pre-check fails [#218](https://github.com/oceanbase/odc/issues/218)
 
 Partitioning Plan
 
