@@ -122,6 +122,7 @@ SQL 执行
 
 - 结果集中同时修改多行数据时耗时较久 [#2007](https://github.com/oceanbase/odc/pull/2007)
 - OceanBase MySQL 模式下 DATETIME 数据类型显示时精度丢失 [#1411](https://github.com/oceanbase/odc/pull/1411)
+- 查看 BLOB 字段文本和十六进制图像之间来回切换可能会导致界面冻结 [#300](https://github.com/oceanbase/odc/issues/300)
 
 表对象
 
@@ -164,7 +165,7 @@ DB Browser
 - 在 OceanBase 版本 < V2.2.30 时无法 listTables [#1478](https://github.com/oceanbase/odc/pull/1478)
 - MySQL 表结构设计的可视化不足，特别是对于单引号括起的字符串 [#1401](https://github.com/oceanbase/odc/pull/1401)
 
-OB-SQL-Parser
+OB SQL Parser
 
 - 解析命名为 'json_table' 的表的 INSERT 语句出错 [#1968](https://github.com/oceanbase/odc/pull/1968)
 

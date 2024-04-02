@@ -121,6 +121,7 @@ Result-set
 
 - Degrading performance when modifying multiple rows concurrently in result-set [#2007](https://github.com/oceanbase/odc/pull/2007)
 - In OceanBase MySQL mode, the datetime data type loses precision when displayed [#1996](https://github.com/oceanbase/odc/pull/1996)
+- Switching between viewing BLOB field text and hexadecimal images may cause the UI to freeze [#300](https://github.com/oceanbase/odc/issues/300)
 
 Table Object
 
@@ -167,7 +168,7 @@ DB Browser
 - listTables failed in OceanBase versions < v2.2.30 [#1478](https://github.com/oceanbase/odc/pull/1478)
 - Inadequate visualization for MySQL table schema, specifically for strings in single quotes [#1401](https://github.com/oceanbase/odc/pull/1401)
 
-OB-SQL-Parser
+OB SQL Parser
 
 - Parsing issues for INSERT statements into tables named 'json_table' [#1968](https://github.com/oceanbase/odc/pull/1968)
 
