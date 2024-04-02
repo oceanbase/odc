@@ -72,7 +72,7 @@ public class DefaultTaskFrameworkDisabledHandler implements TaskFrameworkDisable
                 }
             }
             if (je.getStatus() == JobStatus.RUNNING &&
-                    configuration.getTaskFrameworkService().findFromDatabase(ji.getId())
+                    configuration.getTaskFrameworkService().find(ji.getId())
                             .getExecutorDestroyedTime() == null) {
                 log.warn("Job executor has not been destroyed, may not on this machine, jobId={}", ji.getId());
                 return;

@@ -79,7 +79,7 @@ public class CheckRunningJob implements Job {
             throw new TaskRuntimeException(e);
         }
 
-        JobEntity checkedEntity = getConfiguration().getTaskFrameworkService().findFromDatabase(jobEntity.getId());
+        JobEntity checkedEntity = getConfiguration().getTaskFrameworkService().find(jobEntity.getId());
         if (checkedEntity.getStatus() == JobStatus.FAILED) {
             log.info("Job has been FAILED, jobId={}", jobEntity.getId());
             return;

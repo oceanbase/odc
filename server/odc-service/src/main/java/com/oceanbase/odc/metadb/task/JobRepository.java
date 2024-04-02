@@ -15,6 +15,8 @@
  */
 package com.oceanbase.odc.metadb.task;
 
+import java.util.Optional;
+
 import javax.transaction.Transactional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -59,5 +61,6 @@ public interface JobRepository extends JpaRepository<JobEntity, Long>,
             + " where id=:#{#param.id}")
     @Modifying
     int updateJobStatusAndExecutionTimesById(@Param("param") JobEntity entity);
+
 
 }

@@ -111,16 +111,12 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
 
     @Override
     public JobEntity find(Long id) {
-        return jobRepository.findById(id)
+        JobEntity jobEntity =  jobRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException(ResourceType.ODC_TASK, "id", id));
+        entityManager.refresh(jobEntity);
+        return jobEntity;
     }
 
-    @Override
-    public JobEntity findFromDatabase(Long id) {
-        Query query = entityManager.createNativeQuery("SELECT * FROM job_job WHERE id = ?", JobEntity.class);
-        query.setParameter(1, id);
-        return (JobEntity) query.getSingleResult();
-    }
 
     @Override
     public JobEntity findWithPessimisticLock(Long id) {
