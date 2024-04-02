@@ -103,7 +103,9 @@ public class PartitionPlanScheduleService {
         }
         PartitionPlanConfig partitionPlanConfig = (PartitionPlanConfig) parameters;
         partitionPlanConfig.setEnabled(false);
-        partitionPlanConfig.getPartitionTableConfigs().forEach(t -> t.setEnabled(false));
+        if (CollectionUtils.isNotEmpty(partitionPlanConfig.getPartitionTableConfigs())) {
+            partitionPlanConfig.getPartitionTableConfigs().forEach(t -> t.setEnabled(false));
+        }
         return partitionPlanConfig;
     }
 
