@@ -69,9 +69,6 @@ public class DefaultConnectionAdapter implements ConnectionAdapter {
             }
         }
         connectionConfig.setEndpoint(endpoint);
-        fullFillPasswordIfNeed(connectionConfig);
         return connectionConfig;
     }
-
-    protected <T extends CloudConnectionConfig> void fullFillPasswordIfNeed(T connectionConfig) {}
 }
