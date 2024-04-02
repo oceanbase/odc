@@ -18,6 +18,7 @@ package com.oceanbase.odc.metadb.dbobject;
 import java.util.Arrays;
 import java.util.List;
 
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -40,6 +41,11 @@ public class DBColumnRepositoryTest extends ServiceTestEnv {
         dbColumnRepository.deleteAll();
     }
 
+    @After
+    public void tearDown() {
+        dbColumnRepository.deleteAll();
+    }
+
     @Test
     public void test_findAll() {
         List<DBColumnEntity> entities = Arrays.asList(
@@ -48,6 +54,22 @@ public class DBColumnRepositoryTest extends ServiceTestEnv {
                 TestRandom.nextObject(DBColumnEntity.class));
         dbColumnRepository.saveAll(entities);
         Assert.assertEquals(entities.size(), dbColumnRepository.findAll().size());
+    }
+
+    @Test
+    public void test_findTop1000ByDatabaseIdInAndNameLike() {
+        DBColumnEntity entity1 = TestRandom.nextObject(DBColumnEntity.class);
+        entity1.setDatabaseId(1L);
+        entity1.setName("database_for_test_1");
+        DBColumnEntity entity2 = TestRandom.nextObject(DBColumnEntity.class);
+        entity2.setDatabaseId(2L);
+        entity2.setName("database_for_test_2");
+        dbColumnRepository.saveAll(Arrays.asList(entity1, entity2));
+        List<DBColumnEntity> entities =
+                dbColumnRepository.findTop1000ByDatabaseIdInAndNameLike(Arrays.asList(1L, 2L, 3L), "%test_1");
+        Assert.assertEquals(1, entities.size());
+        entities = dbColumnRepository.findTop1000ByDatabaseIdInAndNameLike(Arrays.asList(1L, 2L, 3L), "%test%");
+        Assert.assertEquals(2, entities.size());
     }
 
 }

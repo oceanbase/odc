@@ -343,6 +343,12 @@ public class DatabaseService {
     }
 
     @SkipAuthorize("internal usage")
+    public Set<Long> listExistDatabaseIdsByProjectId(@NonNull Long projectId) {
+        return databaseRepository.findByProjectIdAndExisted(projectId, true).stream().map(DatabaseEntity::getId)
+                .collect(Collectors.toSet());
+    }
+
+    @SkipAuthorize("internal usage")
     public Set<Long> listDatabaseIdsByConnectionIds(@NotEmpty Collection<Long> connectionIds) {
         return databaseRepository.findByConnectionIdIn(connectionIds).stream().map(DatabaseEntity::getId)
                 .collect(Collectors.toSet());
@@ -355,9 +361,21 @@ public class DatabaseService {
     }
 
     @SkipAuthorize("internal usage")
+    public List<Database> listDatabasesDetailsByIds(@NotEmpty Collection<Long> ids) {
+        Specification<DatabaseEntity> specs = DatabaseSpecs.idIn(ids);
+        return entitiesToModels(databaseRepository.findAll(specs, Pageable.unpaged()), true).getContent();
+    }
+
+    @SkipAuthorize("internal usage")
     public List<Database> listDatabasesByConnectionIds(@NotEmpty Collection<Long> connectionIds) {
         return databaseRepository.findByConnectionIdIn(connectionIds).stream().map(databaseMapper::entityToModel)
                 .collect(Collectors.toList());
+    }
+
+    @SkipAuthorize("internal usage")
+    public List<Database> listExistDatabasesByConnectionId(@NotNull Long connectionId) {
+        return databaseRepository.findByConnectionIdAndExisted(connectionId, true).stream()
+                .map(databaseMapper::entityToModel).collect(Collectors.toList());
     }
 
     @SkipAuthorize("internal usage")

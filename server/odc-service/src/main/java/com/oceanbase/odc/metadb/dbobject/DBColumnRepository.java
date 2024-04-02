@@ -15,6 +15,14 @@
  */
 package com.oceanbase.odc.metadb.dbobject;
 
+import java.util.Collection;
+import java.util.List;
+
+import javax.transaction.Transactional;
+
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+
 import com.oceanbase.odc.config.jpa.OdcJpaRepository;
 
 /**
@@ -22,5 +30,12 @@ import com.oceanbase.odc.config.jpa.OdcJpaRepository;
  * @date 2024/3/27 19:03
  */
 public interface DBColumnRepository extends OdcJpaRepository<DBColumnEntity, Long> {
+
+    @Transactional
+    @Query(value = "select t.* from connect_database_column as t where t.database_id in (:databaseIds) and "
+            + "t.name like :nameKey order by t.database_id desc, t.object_id desc LIMIT 1000;",
+            nativeQuery = true)
+    List<DBColumnEntity> findTop1000ByDatabaseIdInAndNameLike(@Param("databaseIds") Collection<Long> databaseIds,
+            @Param("nameKey") String nameKey);
 
 }

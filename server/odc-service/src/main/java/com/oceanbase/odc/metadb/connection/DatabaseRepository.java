@@ -35,7 +35,11 @@ public interface DatabaseRepository extends JpaRepository<DatabaseEntity, Long>,
 
     List<DatabaseEntity> findByConnectionIdIn(Collection<Long> connectionIds);
 
+    List<DatabaseEntity> findByConnectionIdAndExisted(Long connectionId, Boolean existed);
+
     List<DatabaseEntity> findByProjectId(Long projectId);
+
+    List<DatabaseEntity> findByProjectIdAndExisted(Long projectId, Boolean existed);
 
     List<DatabaseEntity> findByIdIn(Collection<Long> ids);
 
