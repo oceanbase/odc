@@ -25,6 +25,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.SortedSet;
 import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.regex.Matcher;
@@ -54,7 +55,7 @@ public class LogicalTableUtilsCopied {
     private static final String PATTERN_PLACEHOLDER = "[#]";
     private static final String PATTERN_PLACEHOLDER_REGEX = "\\[#\\]";
 
-    private static final String  DOT_DELIMITER = ".";
+    private static final String DOT_DELIMITER = ".";
     private static final String COMMA_DELIMITER = ",";
     private static final Pattern DIGIT_PATTERN = Pattern.compile("\\d+");
 
@@ -69,28 +70,79 @@ public class LogicalTableUtilsCopied {
             String tableNamePattern = table.getTableNamePattern();
             // 既分库，又分表
             if (databaseNamePattern.contains(PATTERN_PLACEHOLDER) && tableNamePattern.contains(PATTERN_PLACEHOLDER)) {
-                throw new NotImplementedException();
+                List<String> range = replacePlaceholdersWithRanges(table);
+                table.setFullNameExpression(String.join(COMMA_DELIMITER, range));
             } else if (databaseNamePattern.contains(PATTERN_PLACEHOLDER)) {
                 // 只分库，不分表
-                table.setFullNameExpression(replacePlaceholdersWithRanges(databaseNamePattern,
+                List<String> range = replacePlaceholdersWithRanges(databaseNamePattern,
                         table.getActualDataNodes().stream()
                                 .map(node -> node.getSchemaName())
                                 .collect(Collectors.toList()))
-                                            + DOT_DELIMITER + tableNamePattern);
+                        .stream().map(r -> r + DOT_DELIMITER + tableNamePattern).collect(Collectors.toList());
+                table.setFullNameExpression(String.join(COMMA_DELIMITER, range));
             } else if (tableNamePattern.contains(PATTERN_PLACEHOLDER)) {
                 // 只分表，不分库
-                String range = replacePlaceholdersWithRanges(tableNamePattern,
-                    table.getActualDataNodes().stream()
-                        .map(node -> node.getTableName())
-                        .collect(Collectors.toList()));
-                List<String> segs = Arrays.stream(range.split(COMMA_DELIMITER)).map(r -> databaseNamePattern + DOT_DELIMITER + r).collect(Collectors.toList());
-                table.setFullNameExpression(String.join(COMMA_DELIMITER, segs));
+                List<String> range = replacePlaceholdersWithRanges(tableNamePattern,
+                        table.getActualDataNodes().stream()
+                                .map(node -> node.getTableName())
+                                .collect(Collectors.toList()))
+                        .stream().map(r -> databaseNamePattern + DOT_DELIMITER + r).collect(Collectors.toList());
+                table.setFullNameExpression(String.join(COMMA_DELIMITER, range));
             } else {
                 throw new UnexpectedException(
                         String.format("Unexpected pattern: %s.%s", databaseNamePattern, tableNamePattern));
             }
         });
         return logicalTables;
+    }
+
+    private static List<String> replacePlaceholdersWithRanges(LogicalTable logicalTable) {
+        String databaseNamePattern = logicalTable.getDatabaseNamePattern();
+        String tableNamePattern = logicalTable.getTableNamePattern();
+        List<String> databaseNames = logicalTable.getActualDataNodes().stream()
+                .map(DataNode::getSchemaName)
+                .collect(Collectors.toList());
+        List<String> tableNames = logicalTable.getActualDataNodes().stream()
+                .map(DataNode::getTableName)
+                .collect(Collectors.toList());
+
+        int databaseNamePatternPlaceholderCount = databaseNamePattern.split(PATTERN_PLACEHOLDER_REGEX, 10).length - 1;
+        int tableNamePatternPlaceholderCount = tableNamePattern.split(PATTERN_PLACEHOLDER_REGEX, 10).length - 1;
+
+        // 如果分库和分表的级联数都大于等于 2，则直接按照分库来分组，对每个分组生成一个表达式
+        if (databaseNamePatternPlaceholderCount >= 2 && tableNamePatternPlaceholderCount >= 2) {
+        }
+
+        // 如果每个分库的分表是一致的
+        if (hasSameTableNames(logicalTable)) {
+            List<String> tableNameExpression = replacePlaceholdersWithRanges(tableNamePattern, tableNames).stream()
+                    .map(r -> r.replaceAll("([^\\[\\]]*)(\\[[^\\[\\]]*\\])$", "$1[[$2]]")).collect(Collectors.toList());
+            List<String> databaseNameExpression = replacePlaceholdersWithRanges(databaseNamePattern, databaseNames).stream()
+                    .map(r -> r.replaceAll("([^\\[\\]]*)(\\[[^\\[\\]]*\\])$", "$1[[$2]]")).collect(Collectors.toList());
+            List<String> resultSegs = new ArrayList<>();
+            for (String databaseName : databaseNameExpression) {
+                for (String tableName : tableNameExpression) {
+                    resultSegs.add(databaseName + DOT_DELIMITER + tableName);
+                }
+            }
+            return resultSegs;
+        }
+
+        return null;
+
+    }
+
+    private static boolean hasSameTableNames(LogicalTable logicalTable) {
+        Map<String, List<String>> schemaName2TableNames = logicalTable.getActualDataNodes().stream()
+                .collect(Collectors.groupingBy(DataNode::getSchemaName, TreeMap::new,
+                        Collectors.mapping(DataNode::getTableName, Collectors.toList())));
+        // 使用SortedSet保证列表中的元素顺序
+        Set<SortedSet<String>> tableSets = new HashSet<>();
+        for (List<String> tables : schemaName2TableNames.values()) {
+            SortedSet<String> sortedTables = new TreeSet<>(tables);
+            tableSets.add(sortedTables);
+        }
+        return tableSets.size() == 1;
     }
 
 
@@ -113,7 +165,7 @@ public class LogicalTableUtilsCopied {
     // 你还需要考虑一条规则，在有两个 [#] 占位符的场景，两组数字间如果满足笛卡尔积的情况，也需要根据单个 [#] 占位符的规则，将每个 [#] 占位符的数字范围合并起来
     // 注意，在有两个 [#] 的场景，你需要主动去检测两组数字是否满足笛卡尔积的情况，如果满足，才能表示成笛卡尔积的形式；如果不满足笛卡尔积的情况，你只需要按照第一个 [#]
     // 的数字来分组，在每个分组里，再对第二个 [#] 进行处理，这里的处理方式就跟只有一个 [#] 占位符的原则一样
-    private static String replacePlaceholdersWithRanges(String pattern, List<String> names) {
+    private static List<String> replacePlaceholdersWithRanges(String pattern, List<String> names) {
         String[] parts = pattern.split(PATTERN_PLACEHOLDER_REGEX, -1);
         int len = parts.length;
         Verify.notLessThan(len, 2, "Pattern should contain at least one placeholder: " + pattern);
@@ -130,7 +182,7 @@ public class LogicalTableUtilsCopied {
                     throw new IllegalArgumentException("表名 " + name + " 不符合模式 " + pattern);
                 }
             }).collect(Collectors.toSet()));
-            return parts[0] + range + parts[1];
+            return Arrays.asList(parts[0] + range + parts[1]);
         } else if (len == 3) {
             // contains two placeholders
             List<Pair<String, String>> numberPairs = names.stream().map(name -> {
@@ -140,21 +192,24 @@ public class LogicalTableUtilsCopied {
                 } else {
                     throw new IllegalArgumentException("表名 " + name + " 不符合模式 " + pattern);
                 }
-            }).collect(Collectors.toList()).stream().sorted(Comparator.comparing(pair -> pair.left)).collect(Collectors.toList());
+            }).collect(Collectors.toList()).stream().sorted(Comparator.comparing(pair -> pair.left))
+                    .collect(Collectors.toList());
 
             Pair<String, String> rangePair = generateRangeOrList(numberPairs);
             // 笛卡尔积的情况
             if (rangePair != null) {
-                return parts[0] + rangePair.left + parts[1] + rangePair.right + parts[2];
+                return Arrays.asList(parts[0] + rangePair.left + parts[1] + rangePair.right + parts[2]);
             } else {
                 List<String> result = new ArrayList<>();
                 // 不是笛卡尔积的情况，需要按照第一个 [#] 的数字来分组，在每个分组里，再对第二个 [#] 单独处理，然后将所有结果拼接起来
-                numberPairs.stream().collect(Collectors.groupingBy(pair -> pair.left, TreeMap::new, Collectors.toCollection(ArrayList::new))).entrySet().forEach(entry -> {
-                    String rightRange = generateRangeOrList(
-                            entry.getValue().stream().map(pair -> pair.right).collect(Collectors.toSet()));
-                    result.add(parts[0] + entry.getKey() + parts[1] + rightRange + parts[2]);
-                });
-                return String.join(COMMA_DELIMITER, result);
+                numberPairs.stream().collect(
+                        Collectors.groupingBy(pair -> pair.left, TreeMap::new, Collectors.toCollection(ArrayList::new)))
+                        .entrySet().forEach(entry -> {
+                            String rightRange = generateRangeOrList(
+                                    entry.getValue().stream().map(pair -> pair.right).collect(Collectors.toSet()));
+                            result.add(parts[0] + entry.getKey() + parts[1] + rightRange + parts[2]);
+                        });
+                return result;
             }
         } else {
             throw new UnexpectedException("Unexpected pattern: " + pattern);
@@ -166,8 +221,10 @@ public class LogicalTableUtilsCopied {
         // 如果是笛卡尔积，则结果可以表示为 Pair<String, String> 的形式
         // 并且 left 和 right 的表达式都遵循单个表达式的原则
         if (isCartesianProduct(numberPairs)) {
-            Set<String> leftSet = numberPairs.stream().map(pair -> pair.left).collect(Collectors.toCollection(TreeSet::new));
-            Set<String> rightSet = numberPairs.stream().map(pair -> pair.right).collect(Collectors.toCollection(TreeSet::new));
+            Set<String> leftSet =
+                    numberPairs.stream().map(pair -> pair.left).collect(Collectors.toCollection(TreeSet::new));
+            Set<String> rightSet =
+                    numberPairs.stream().map(pair -> pair.right).collect(Collectors.toCollection(TreeSet::new));
             return new Pair<>(generateRangeOrList(leftSet), generateRangeOrList(rightSet));
         }
         return null;
@@ -244,8 +301,6 @@ public class LogicalTableUtilsCopied {
             return String.format("[%s]", String.join(COMMA_DELIMITER, numberStrings));
         }
     }
-
-
 
     private static List<LogicalTable> identifyLogicalTables(@Valid @NotEmpty List<DataNode> dataNodes) {
         // 先将表名分解为由数字序列和非数字序列组成的部分，构建基本模式
