@@ -170,7 +170,7 @@ SQL 检查
 SQL 计划
 
 - 点击终止 SQL 计划无效  [#1528](https://github.com/oceanbase/odc/issues/1528)
-- 预检查失败时审批状态显示为预检查失败了 [#218](https://github.com/oceanbase/odc/issues/218)
+- 预检查失败时工单的审批状态显示为预检查失败了 [#218](https://github.com/oceanbase/odc/issues/218)
 
 分区计划
 

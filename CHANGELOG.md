@@ -116,9 +116,9 @@ SQL Execution
 - SQL statements with single-line comments unable to execute [#2085](https://github.com/oceanbase/odc/pull/2085)
 - Incorrect offsets for last SQL command without a trailing delimiter [#1970](https://github.com/oceanbase/odc/pull/1970)
 - Incompatibility of anonymous block execution module with Oracle 11g [#1759](https://github.com/oceanbase/odc/pull/1759)
-- DBMS output is incorrect, failed to output all spaces [#1051](https://github.com/oceanbase/odc/issues/1970)
-- `#` and `$` disappeared after SQL window formatted the code [#1490](https://github.com/oceanbase/odc/issues/1490)
-- Auto-complete in SQL window not available for MySQL data source [#1718](https://github.com/oceanbase/odc/issues/1718)
+- DBMS output failed to output spaces [#1051](https://github.com/oceanbase/odc/issues/1970)
+- `#` and `$` character disappeared after SQL window formatted the code [#1490](https://github.com/oceanbase/odc/issues/1490)
+- Auto-complete in SQL window not available for MySQL datasource [#1718](https://github.com/oceanbase/odc/issues/1718)
 
 Result-set
 
@@ -151,14 +151,14 @@ Online Schema Change
 
 - OSC task experiencing syntax exceptions when input statements contain comments [#1597](https://github.com/oceanbase/odc/pull/1597)
 
-Projects and tickets
+Project and ticket
 
-- Task creation success message incorrect, changed to work order created successfully [#1320](https://github.com/oceanbase/odc/issues/1320)
-- SQL window dropdown switch project page crashes [#1512](https://github.com/oceanbase/odc/issues/1512)
+- Ticket creation success message incorrect, changed to 'Ticket create successfully' [#1320](https://github.com/oceanbase/odc/issues/1320)
+- SQL window dropdown switch project causing page crashes [#1512](https://github.com/oceanbase/odc/issues/1512)
 
 Database Changes
 
-- If rollback content is attachments, which are not displayed during the rollback process [#1379](https://github.com/oceanbase/odc/issues/1379)
+- If rollback content is attachments, the rollback content are not displayed during the rollback process [#1379](https://github.com/oceanbase/odc/issues/1379)
 
 SQL Check
 
@@ -169,7 +169,7 @@ SQL Check
 SQL Plan
 
 - Clicking to terminate SQL plan is ineffective [#1528](https://github.com/oceanbase/odc/issues/1528)
-- Review status displays as pre-check failed when pre-check fails [#218](https://github.com/oceanbase/odc/issues/218)
+- Ticket status displays as pre-check failed when pre-check fails [#218](https://github.com/oceanbase/odc/issues/218)
 
 Partitioning Plan
 
