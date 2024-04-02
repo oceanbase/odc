@@ -108,8 +108,8 @@ System Integration
 Connection Session
 
 - Sessions failing to remove after expiration, causing potential leaks (#2125)
-- Concurrency issues with SingleConnectionDataSource.getConnection() under high load (#1914)
-- Connection failures in OceanBase Oracle, even after username corrections (#1797)
+- References to expired connection sessions failed to be promptly cleared, leading to resource leaks, which may cause increased memory consumption (#1914)
+- Under high-frequency usage scenarios, executing SQL or viewing table data may encounter issues where the interface becomes unresponsive (#1797)
 - Intermittent 404 errors when attempting to open SQL console (#1809)
 
 SQL Execution
@@ -118,12 +118,11 @@ SQL Execution
 - SQL statements with single-line comments unable to execute (#2085)
 - Incorrect offsets for last SQL command without a trailing delimiter (#1970)
 - Incompatibility of anonymous block execution module with Oracle 11g (#1759)
-- Timestamp types displaying with precision loss (#1411)
 
 Result-set
 
 - Degrading performance when modifying multiple rows concurrently in result-set (#2007)
-- Timestamps displaying with precision loss (#1996)
+- In OceanBase MySQL mode, the datetime data type loses precision when displayed (#1996)
 
 Table Object
 
@@ -144,7 +143,6 @@ SQL-Check
 Partition Plan
 
 - Partition DDL execution failures when schema or table names are lowercase (#2088)
-  Incorrect partition generation when upper bounds increase non-sequentially by year/month/day (#1992)
 
 Data Archiving/Cleaning
 
