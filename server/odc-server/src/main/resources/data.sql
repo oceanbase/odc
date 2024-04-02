@@ -581,6 +581,8 @@ VALUES ('odc.notification.dequeue-sending-notification-fixed-delay-millis', '120
 insert into `config_system_configuration` (`key`, `value`, `application`, `profile`, `label`, `description`)
 VALUES ('odc.notification.max-resend-times', '3', 'odc', 'default', 'master', '重新处理 SENT_FAILED 消息的最大重试次数，默认 3') ON DUPLICATE KEY
 update `id`=`id`;
+insert into `config_system_configuration` (`key`, `value`, `application`, `profile`, `label`, `description`)
+VALUES ('odc.notification.host-white-list', '', 'odc', 'default', 'master', 'Only whitelisted URLs are allowed when configuring the webhook to prevent SSRF security vulnerabilities') ON DUPLICATE KEY update `id`=`id`;
 INSERT INTO config_system_configuration(`key`, `value`, `description`) VALUES('odc.lab.resource.mysql-init-script-template',
 'create user if not exists {{dbUsername}}@''%'' identified by {{password}};  create database if not exists {{dbName}};  grant all privileges on {{dbName}}.* to {{dbUsername}}@''%'';  grant select on oceanbase.gv$tenant to {{dbUsername}}@''%'';  grant select on oceanbase.gv$unit to {{dbUsername}}@''%'';  grant select on oceanbase.gv$table to {{dbUsername}}@''%'';  grant select on oceanbase.gv$sysstat to {{dbUsername}}@''%'';  grant select on oceanbase.gv$memory to {{dbUsername}}@''%'';  grant select on oceanbase.gv$memstore to {{dbUsername}}@''%'';  grant select on oceanbase.gv$sql_audit to {{dbUsername}}@''%'';  grant select on oceanbase.gv$plan_cache_plan_stat to {{dbUsername}}@''%'';  grant select on oceanbase.gv$plan_cache_plan_explain to {{dbUsername}}@''%'';'
 , '实验室体验资源创建脚本模板，MySQL 模式，包含 create database/create user/grant privilege 过程，支持的变量包括 {{dbName}}, {{dbUsername}}, {{password}}'
