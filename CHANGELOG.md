@@ -97,10 +97,6 @@ System Integration
 - Desktop version supports exporting data files larger than 4 GB.
 - Optimized the en-US language wording of the product.
 
-### Non-backward-compatible Changes
-
-- The default environment for security standards no longer supports editing or disabling.
-
 ### Bug fixes
 
 Connection Session
