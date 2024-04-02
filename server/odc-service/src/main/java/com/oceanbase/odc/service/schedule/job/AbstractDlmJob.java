@@ -110,7 +110,6 @@ public abstract class AbstractDlmJob implements OdcJob {
                 log.info("The task unit had been completed,taskId={},tableName={}", taskId, taskUnit.getTableName());
                 continue;
             }
-            Job job;
             try {
                 initTask(taskUnit);
                 job = jobFactory.createJob(taskUnit);
@@ -273,7 +272,10 @@ public abstract class AbstractDlmJob implements OdcJob {
         if (jobThread == null) {
             throw new IllegalStateException("Task is not executing.");
         }
-        job.stop();
+        if (job != null) {
+            job.stop();
+            log.info("Job will be interrupted,jobId={}", job.getJobMeta().getJobId());
+        }
         jobThread.interrupt();
     }
 }
