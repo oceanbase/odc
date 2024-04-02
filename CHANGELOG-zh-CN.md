@@ -117,6 +117,9 @@ SQL 执行
 - OceanBase v4.2 提交/回滚按钮状态与实际事务状态不同步 [#2097](https://github.com/oceanbase/odc/pull/2097)
 - 带有单行注释的 SQL 语句执行失败 [#2085](https://github.com/oceanbase/odc/pull/2085)
 - 最后一个 SQL 命令若不以分隔符结束将导致偏移量计算错误 [#1970](https://github.com/oceanbase/odc/pull/1970)
+- DBMS 执行输出不正确，没有将空格完全输出 [#1051](https://github.com/oceanbase/odc/issues/1970)
+- `#` `$` 在 SQL 窗口格式化后消失 [#1490](https://github.com/oceanbase/odc/issues/1490)
+- MySQL 数据源 SQL 窗口自动补全不可用 [#1718](https://github.com/oceanbase/odc/issues/1718)
 
 结果集
 
@@ -129,16 +132,45 @@ SQL 执行
 - 索引和约束视图中列名顺序不一致 [#1948](https://github.com/oceanbase/odc/pull/1948)
 - 无法查看 MySQL v5.6 表详情 [#1635](https://github.com/oceanbase/odc/pull/1635)
 - 无法查看 Sofa ODP 表详情 [#2043](https://github.com/oceanbase/odc/pull/2043)
+- 表结构编辑无法把 NOT NULL 字段改为 NULL  [#1441](https://github.com/oceanbase/odc/issues/1441)
+- 分区表有多个最大值时只显示了一个最大值 [#1501](https://github.com/oceanbase/odc/issues/1501)
+- 删除表主键的按钮被置灰无法点击 [#1874](https://github.com/oceanbase/odc/issues/1874)
+
+导入导出
+
+- 当注释包含 `;` 时，SQL 语句拆分出错导致任务异常 [#417](https://github.com/oceanbase/odc/issues/417)
+- 类型名称小写时导出任务失败 [#631](https://github.com/oceanbase/odc/issues/631)
+- 导出触发器对象时导出失败 [#750](https://github.com/oceanbase/odc/issues/750)
+- 函数名称包含特殊字符导出任务失败 [#1331](https://github.com/oceanbase/odc/issues/1331)
+- Oracle 模式导出索引时，索引名称添加了数据库名前缀 [#1491](https://github.com/oceanbase/odc/issues/1491)
+- 导出存储过程的结构，`DELIMITER $$` 分隔符与表名连在一起 [#1746](https://github.com/oceanbase/odc/issues/1746)
+- 导出任务创建完成后终止导出任务，任务状态显示执行成功 [#1752](https://github.com/oceanbase/odc/issues/1752)
+- 导出程序包时，任务详细信息中的对象类型未显示包体 [#1755](https://github.com/oceanbase/odc/issues/1755)
+- 导入 CSV 文件包含 DATE 类型时导入失败 [#2079](https://github.com/oceanbase/odc/issues/2079)
 
 无锁结构变更
 
 - 当输入语句包含注释时，OSC 任务会因为语法异常而失败 [#1597](https://github.com/oceanbase/odc/pull/1597)
 
-SQL检查
+项目和工单
+
+- 任务创建成功提示文案错误，改为工单创建成功 [#1320](https://github.com/oceanbase/odc/issues/1320)
+- SQL 窗口下拉切换项目页面崩溃 [#1512](https://github.com/oceanbase/odc/issues/1512)
+
+数据库变更
+
+- 当回滚内容是附件时，回滚过程中没有展示 [#1379](https://github.com/oceanbase/odc/issues/1379)
+
+SQL 检查
 
 - 存在虚拟列时发生空指针异常 [#2031](https://github.com/oceanbase/odc/pull/2031)
 - 通过 DROP CONSTRAINT 删除主键的操作未能检测到 [#1879](https://github.com/oceanbase/odc/pull/1879)
 - 特定 ALTER 语句会触发的空指针异常 [#1865](https://github.com/oceanbase/odc/pull/1865)
+
+SQL 计划
+
+- 点击终止 SQL 计划无效  [#1528](https://github.com/oceanbase/odc/issues/1528)
+- 预检查失败时审批状态显示为预检查失败了 [#218](https://github.com/oceanbase/odc/issues/218)
 
 分区计划
 
@@ -146,6 +178,10 @@ SQL检查
 
 数据归档/清理
 
+- 数据归档完成之后触发回滚任务，子任务仍然在运行但是工单状态显示为已完成 [#690](https://github.com/oceanbase/odc/issues/690)
+- 并发调度数据归档任务时取消任务，任务状态未更新 [#721](https://github.com/oceanbase/odc/issues/721)
+- 使用数据库保留字作为列名时归档失败 [#1040](https://github.com/oceanbase/odc/issues/1040)
+- 创建大量表的数据归档任务时更新执行记录会失败 [#1338](https://github.com/oceanbase/odc/issues/1338)
 - 任务退出时未释放数据库连接池，任务数量较多时会占用较多线程
 - 获取连接失败时连接池会无限重试产生大量日志
 - 使用唯一键清理时没有使用正确索引产生慢 SQL
