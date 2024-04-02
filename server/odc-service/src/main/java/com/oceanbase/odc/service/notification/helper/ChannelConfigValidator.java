@@ -26,7 +26,7 @@ import com.oceanbase.odc.common.util.SSRFChecker;
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.core.shared.exception.NotImplementedException;
-import com.oceanbase.odc.service.notification.NotificationProperties;
+import com.oceanbase.odc.service.integration.HttpOperationService.IntegrationConfigProperties;
 import com.oceanbase.odc.service.notification.model.BaseChannelConfig;
 import com.oceanbase.odc.service.notification.model.ChannelType;
 import com.oceanbase.odc.service.notification.model.DingTalkChannelConfig;
@@ -46,7 +46,7 @@ public class ChannelConfigValidator {
     private static final String WECOM_WEBHOOK_PREFIX = "https://qyapi.weixin.qq.com/cgi-bin/webhook";
 
     @Autowired
-    private NotificationProperties notificationProperties;
+    private IntegrationConfigProperties integrationConfigProperties;
 
     public void validate(@NonNull ChannelType type, BaseChannelConfig channelConfig) {
         switch (type) {
@@ -90,10 +90,9 @@ public class ChannelConfigValidator {
         Verify.verify(
                 channelConfig.getWebhook().startsWith("http://") || channelConfig.getWebhook().startsWith("https://"),
                 "Webhook should start with 'http://' or 'https://'");
-        Verify.verify(
-                SSRFChecker.checkUrlInWhiteList(channelConfig.getWebhook(), notificationProperties.getHostWhiteList()),
-                "The webhook is not in white list, "
-                        + "please add it into system configuration with the key 'odc.notification.host-white-list'");
+        Verify.verify(SSRFChecker.checkUrlInWhiteList(channelConfig.getWebhook(),
+                integrationConfigProperties.getUrlWhiteList()),
+                "The webhook is not in white list, please add it into system configuration with the key 'odc.notification.host-white-list'");
 
         String httpProxy = channelConfig.getHttpProxy();
         Verify.verify(StringUtils.isEmpty(httpProxy) || httpProxy.split(":").length == 3,
