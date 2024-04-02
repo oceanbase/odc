@@ -24,23 +24,23 @@ Schema Comparison
 Online Schema Changes
 
 - Support for adding intermediate columns to tables
-- Support for concurrent index changes during table structure modifications (OceanBase Oracle mode)
+- Support for concurrent index changes during table schema modifications (OceanBase Oracle mode)
 - Support for primary key deletion when the table contains unique constraints (OceanBase Oracle mode)
 
-Partition Plan
+Partitioning Plan
 
-- Support for configuring partition plans for databases in OBOracle mode
+- Support for configuring partitioning plan for databases in OBOracle mode
 - Partition field types not only support DATE/TIMESTAMP but also NUMBER/CHAR/VARCHAR2 and other field types
-- Redesigned the partition plan strategy configuration page, custom mode can configure any partition upper boundary calculation logic through expressions, support for previewing the execution SQL of the partition plan
+- Redesigned the partitioning plan strategy configuration page, custom mode can configure any partition upper boundary calculation logic through expressions, support for previewing the execution SQL of the partitioning plan
 - Execution cycle for deleting partitions can be independently configured from the creation partition cycle
 
 Data Archiving/Cleaning
 
 - Support for configuring cleaning tasks for databases in OBOracle mode
-- Support for configuring archiving tasks for OBOracle -> OBOracle links
-- Support for previewing the actual executing SQL for data archival/cleaning tasks at the start of the task
+- Support for configuring archiving tasks from OBOracle to OBOracle
+- Support for previewing the actual SQL being executed for data archival/cleaning tasks when initiating the task
 - Data archiving supports custom target table names
-- Data cleaning supports whether to use the primary key, if not using the primary key data will be deleted directly based on index condition matching, no need to shard tasks by primary key, can significantly improve cleaning efficiency in certain scenarios
+- Data cleaning supports configuring whether to use primary keys. When primary keys are not used, data deletion will directly match the deletion criteria based on indexes, and the task execution process does not need to shard tasks based on primary keys. This can significantly improve the efficiency of cleaning, especially in specific scenarios.
 
 Security Standards
 
@@ -50,38 +50,38 @@ Security Standards
     - Support for configuring tag styles to easily distinguish between different environments
 - Three new SQL check rules added
     - Reserved words should not be used as object names
-    - Existence of offline (lock table) structure change statements, offline structural changes lead to table locking, affecting business
+    - Existence of offline (table lock) schema change statements, offline schema changes will result in table locking, impacting business operations
     - Existence of TRUNCATE statements, high risk of TRUNCATE tables in production environments
 - Default values of risk identification rules in security standards optimized, production environments can be used out of the box
 - SQL window standard adds risk tips for enabling PL debugging in production environments
 
-Database-level Access Controls
+Database-level Access Control
 
-- Project collaboration adds library access control
-- Library access permission types include querying, exporting, and changing; support for authorization by type; support for setting permission validity period
-- Project developers default to having access permissions for all libraries within the project, consistent with previous version behavior
-- New project participant role added, participants default to no access permissions for any library
-- Participants can apply for library access permissions through tickets
-- Administrators can directly authorize participants with library access permissions
-- Administrators can revoke library access permissions from participants
+- Project collaboration adds access control for databases
+- Types of database access permissions include query, export, and modification. It supports granting permissions based on types and setting the validity period of permissions
+- Project developers have default access to all databases within the project, consistent with previous versions
+- Added the role of project participant, with participants by default having no access to any databases
+- Participants can apply for permissions to access databases through tickets
+- Administrators can directly authorize participants with permissions to access databases
+- Administrators can revoke permissions to access databases from participants
 
-Notification Messages
+Notifications Messages
 
 - Project collaboration adds message notification feature
-- Supported event types include work order approval status change, task execution status change, and task scheduling failures
-- Notification range can be configured through rules, message content can be configured through templates
-- Notification channels support configuring common webhook channels such as DingTalk, Lark, WeCom, also support custom HTTP requests, message sending supports rate limiting
+- Supported event types include ticket approval status change, task execution status change, and task scheduling failures
+- The scope of notifications can be configured through rules, messages can be configured through templates
+- The notification channel supports configuring commonly used webhook channels, such as DingTalk, Lark, and WeCom. It also supports custom HTTP requests and setting limits on message sending
 
 System Integration
 
-- SSO adds LDAP protocol support
+- SSO supports LDAP protocol
 
 ### Usability Improvements
 
-- Optimized the database selection component, standardizing the library selection interaction across product pages and adding fuzzy matching functionality for project names, data source names, and database names.
+- Optimized the database selection component, standardizing the database selection interaction across product pages and adding fuzzy matching functionality for project names, data source names, and database names.
 - Added a resource tree locator key to the SQL window for quickly identifying the current database's position within the resource tree.
-- Upgraded preference settings to a top-level feature accessible directly through the [Settings] entry; new configuration options include:
-    - Whether to enable full-link tracing during SQL execution.
+- Upgraded preference settings to a top-level feature accessible directly through [Settings], new configuration options include:
+    - Whether to enable end-to-end tracing during SQL execution.
     - Whether to continue SQL execution upon encountering errors.
     - Customization of editor theme and font size.
     - Configuration of editor shortcuts for running SQL commands.
@@ -138,7 +138,7 @@ SQL-Check
 - Drop operations for primary keys as constraints going undetected [#1879](https://github.com/oceanbase/odc/pull/1879)
 - Null Pointer Exception triggered by certain ALTER statements [#1865](https://github.com/oceanbase/odc/pull/1865)
 
-Partition Plan
+Partitioning Plan
 
 - Partition DDL execution failures when schema or table names are lowercase [#2088](https://github.com/oceanbase/odc/pull/2088)
 
@@ -165,7 +165,7 @@ DB Browser
 - Tables with default values on columns not retrievable in Oracle 11g mode [#1733](https://github.com/oceanbase/odc/pull/1733)
 - listTables not correctly returning tables for the specified schema consistently [#1632](https://github.com/oceanbase/odc/pull/1632)
 - listTables failed in OceanBase versions < v2.2.30 [#1478](https://github.com/oceanbase/odc/pull/1478)
-- Inadequate visualization for MySQL table structure, specifically for strings in single quotes [#1401](https://github.com/oceanbase/odc/pull/1401)
+- Inadequate visualization for MySQL table schema, specifically for strings in single quotes [#1401](https://github.com/oceanbase/odc/pull/1401)
 
 OB-SQL-Parser
 
@@ -276,7 +276,7 @@ Connection session
 
 - Added an automatic reconnection mechanism to avoid errors and usability issues caused by session destruction when not used for a long time
 
-Partition plan
+Partitioning Plan
 
 - Supports scheduled scheduling
 
@@ -342,10 +342,10 @@ DLM
 
 - The database connection pool is too small, causing task execution failure
 
-Partition plan
+Partitioning Plan
 
 - Task creation failed in MySQL mode of OceanBase version 1.4.79
-- Tables that do not set a partition strategy will still perform partition plan changes
+- Tables that do not set a partition strategy will still perform partitioning plan changes
 
 SQL-Check
 
@@ -393,7 +393,7 @@ Full link trace
 
 Shadow table sync
 
-- After the work order is approved or rejected, the approver cannot view the task details
+- After the ticket is approved or rejected, the approver cannot view the task details
 
 obclient integration
 
@@ -401,8 +401,8 @@ obclient integration
 
 Tickets
 
-- Creating a work order takes too long
-- There is a "Pending Approval" work order for another project in the "Pending Approval" work order list
+- Creating a ticket takes too long
+- There is a "Pending Approval" ticket for another project in the "Pending Approval" ticket list
 
 Operation record
 
@@ -417,7 +417,7 @@ Operation record
 - Only allow users to modify table data with primary key constraints, unique key constraints and rowid with a blank screen
 - Optimize the error text when synchronizing database errors
 
-### Dependency library upgrade
+### Dependency database upgrade
 
 - Upgrade obclient version to 2.2.4
 - Upgrade spring security version to 5.7.10
@@ -526,7 +526,7 @@ Operational audit
 
 - Changes to "SQL Check Specification" and "SQL Window Specification" are not included in the operational audit scope
 
-### Dependency library upgrade
+### Dependency database upgrade
 
 - Upgrade ob-loader-dumper version to 4.2.5-RELEASE
 - Upgrade oceanbase-client version to 2.4.5
@@ -563,13 +563,13 @@ data masking
 
 - When the OceanBase MySQL schema is configured as case-sensitive, sensitive columns cannot be case-sensitive
 
-Work order management
+ticket management
 
-- After the work order is submitted, the work order status remains "queued" for a long time and is not updated and the work order does not report an error
+- After the ticket is submitted, the ticket status remains "queued" for a long time and is not updated and the ticket does not report an error
 
 Third party integration
 
-- When the approval flow does not contain an external approval node, it will also try to obtain the ID of the external approval work order
+- When the approval flow does not contain an external approval node, it will also try to obtain the ID of the external approval ticket
 
 SQL-Check
 
