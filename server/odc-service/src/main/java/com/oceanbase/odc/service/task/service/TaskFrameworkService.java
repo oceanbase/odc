@@ -43,6 +43,8 @@ public interface TaskFrameworkService {
 
     JobEntity find(Long id);
 
+    JobEntity findFromDatabase(Long id);
+
     Page<JobEntity> findCancelingJob(int page, int size);
 
     Page<JobEntity> findTerminalJob(int page, int size);
