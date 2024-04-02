@@ -26,7 +26,6 @@ import java.util.Optional;
 
 import javax.persistence.EntityManager;
 import javax.persistence.LockModeType;
-import javax.persistence.Query;
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
 import javax.persistence.criteria.CriteriaUpdate;
@@ -111,7 +110,7 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
 
     @Override
     public JobEntity find(Long id) {
-        JobEntity jobEntity =  jobRepository.findById(id)
+        JobEntity jobEntity = jobRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException(ResourceType.ODC_TASK, "id", id));
         entityManager.refresh(jobEntity);
         return jobEntity;
