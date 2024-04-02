@@ -118,7 +118,7 @@ public class ChannelConfigValidator {
 
     private boolean checkHostInWhiteList(String webhook) {
         List<String> whiteList = notificationProperties.getHostWhiteList();
-        if (CollectionUtils.isNotEmpty(whiteList)) {
+        if (CollectionUtils.isEmpty(whiteList)) {
             return true;
         }
         for (String host : whiteList) {
