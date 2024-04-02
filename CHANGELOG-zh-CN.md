@@ -107,7 +107,7 @@ SQL 开发
 
 连接会话
 
-- 连接会话过期后未能及时清除引用，导致资源泄漏，可能造成内存消耗上升" [#2125](https://github.com/oceanbase/odc/issues/2125)
+- 连接会话过期后未能及时清除引用，导致资源泄漏，可能造成内存消耗上升 [#2125](https://github.com/oceanbase/odc/issues/2125)
 - 高频使用场景下，执行 SQL 或查看表数据会遇到接口卡死无法响应的问题 [#1914](https://github.com/oceanbase/odc/issues/1914)
 - 在数据源配置修改用户名大小写之后，连接 OceanBase Oracle 可能会出错 [#1797](https://github.com/oceanbase/odc/issues/1797)
 - 打开 SQL 控制台时偶现 404 错误 [#1809](https://github.com/oceanbase/odc/issues/1809)
