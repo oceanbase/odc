@@ -117,7 +117,6 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
         return jobEntity;
     }
 
-
     @Override
     public JobEntity findWithPessimisticLock(Long id) {
         return entityManager.find(JobEntity.class, id, LockModeType.PESSIMISTIC_WRITE);

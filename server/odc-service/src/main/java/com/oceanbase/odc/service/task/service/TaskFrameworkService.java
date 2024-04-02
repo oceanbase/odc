@@ -42,6 +42,7 @@ public interface TaskFrameworkService {
     void handleHeart(HeartRequest heart);
 
     JobEntity find(Long id);
+
     Page<JobEntity> findCancelingJob(int page, int size);
 
     Page<JobEntity> findTerminalJob(int page, int size);
