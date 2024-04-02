@@ -25,7 +25,9 @@ import com.oceanbase.odc.service.schedule.ScheduleTaskService;
 import com.oceanbase.odc.service.task.TaskService;
 import com.oceanbase.odc.service.task.caller.K8sJobClient;
 import com.oceanbase.odc.service.task.dispatch.JobDispatcher;
+import com.oceanbase.odc.service.task.jasypt.JasyptEncryptorConfigProperties;
 import com.oceanbase.odc.service.task.schedule.StartJobRateLimiter;
+import com.oceanbase.odc.service.task.schedule.TaskFrameworkDisabledHandler;
 import com.oceanbase.odc.service.task.schedule.provider.HostUrlProvider;
 import com.oceanbase.odc.service.task.schedule.provider.JobImageNameProvider;
 import com.oceanbase.odc.service.task.service.TaskFrameworkService;
@@ -37,6 +39,7 @@ import com.oceanbase.odc.service.task.service.TransactionManager;
  * @since 4.2.4
  */
 public interface JobConfiguration {
+    TaskFrameworkEnabledProperties getTaskFrameworkEnabledProperties();
 
     TaskFrameworkProperties getTaskFrameworkProperties();
 
@@ -65,4 +68,8 @@ public interface JobConfiguration {
     TransactionManager getTransactionManager();
 
     StartJobRateLimiter getStartJobRateLimiter();
+
+    TaskFrameworkDisabledHandler getTaskFrameworkDisabledHandler();
+
+    JasyptEncryptorConfigProperties getJasyptEncryptorConfigProperties();
 }

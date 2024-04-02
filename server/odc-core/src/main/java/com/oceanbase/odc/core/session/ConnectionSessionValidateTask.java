@@ -60,7 +60,7 @@ public class ConnectionSessionValidateTask implements Runnable {
                 sessions.stream().filter(s -> that.validatePredicates.stream().anyMatch(p -> !p.test(s)))
                         .forEach(session -> {
                             try {
-                                log.info("Session failed to pass verification, session={}", session);
+                                log.info("Session failed to pass verification, sessionId={}", session.getId());
                                 session.expire();
                             } catch (Exception e) {
                                 log.warn("Failed to remove a session from manager, sessionId={}", session.getId(), e);

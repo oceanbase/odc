@@ -33,7 +33,6 @@ import com.oceanbase.odc.service.task.config.JobConfigurationHolder;
 import com.oceanbase.odc.service.task.config.JobConfigurationValidator;
 import com.oceanbase.odc.service.task.config.TaskFrameworkProperties;
 import com.oceanbase.odc.service.task.enums.JobStatus;
-import com.oceanbase.odc.service.task.enums.TaskRunMode;
 import com.oceanbase.odc.service.task.exception.JobException;
 import com.oceanbase.odc.service.task.exception.TaskRuntimeException;
 import com.oceanbase.odc.service.task.listener.JobTerminateEvent;
@@ -62,14 +61,8 @@ public class CheckRunningJob implements Job {
         // find heart timeout job
         Page<JobEntity> jobs = getConfiguration().getTaskFrameworkService()
                 .findHeartTimeTimeoutJobs(heartTimeoutSeconds, 0,
-                        getFetchRowSize(taskFrameworkProperties.getRunMode()));
+                        taskFrameworkProperties.getSingleFetchCheckHeartTimeoutJobRows());
         jobs.forEach(this::handleJobRetryingOrFailed);
-    }
-
-    private int getFetchRowSize(TaskRunMode taskRunMode) {
-        TaskFrameworkProperties taskFrameworkProperties = getConfiguration().getTaskFrameworkProperties();
-        return taskRunMode.isProcess() ? taskFrameworkProperties.getSingleMaxFetchCheckHeartTimeoutJobRows()
-                : taskFrameworkProperties.getSingleFetchCheckHeartTimeoutJobRows();
     }
 
     private void handleJobRetryingOrFailed(JobEntity jobEntity) {

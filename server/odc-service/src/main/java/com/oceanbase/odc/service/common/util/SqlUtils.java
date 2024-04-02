@@ -117,8 +117,6 @@ public class SqlUtils {
         return split(connectionSession.getDialectType(), processor, sql, removeCommentPrefix);
     }
 
-
-
     private static List<OffsetString> split(DialectType dialectType, SqlCommentProcessor processor, String sql,
             boolean removeCommentPrefix) {
         PreConditions.notBlank(processor.getDelimiter(), "delimiter", "Empty or blank delimiter is not allowed");

@@ -44,6 +44,7 @@ public class JobEnvironmentEncryptor {
             JobEnvKeyConstants.ODC_EXECUTOR_DATABASE_USERNAME,
             JobEnvKeyConstants.ODC_EXECUTOR_DATABASE_PASSWORD,
             JobEnvKeyConstants.ODC_OBJECT_STORAGE_CONFIGURATION,
+            JobEnvKeyConstants.ODC_PROPERTY_ENCRYPTION_SALT,
             JobEnvKeyConstants.ODC_JOB_CONTEXT);
 
 

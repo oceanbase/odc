@@ -23,7 +23,6 @@ import com.oceanbase.odc.service.schedule.job.DLMJobParameters;
 import com.oceanbase.tools.migrator.common.configure.DataSourceInfo;
 import com.oceanbase.tools.migrator.common.configure.LogicTableConfig;
 import com.oceanbase.tools.migrator.common.dto.HistoryJob;
-import com.oceanbase.tools.migrator.common.enums.JobType;
 import com.oceanbase.tools.migrator.common.enums.ShardingStrategy;
 import com.oceanbase.tools.migrator.core.IJobStore;
 import com.oceanbase.tools.migrator.core.JobFactory;
@@ -66,7 +65,7 @@ public class DLMJobFactory extends JobFactory {
     public Job createJob(DlmTask parameters) {
         HistoryJob historyJob = new HistoryJob();
         historyJob.setId(parameters.getId());
-        historyJob.setJobType(JobType.MIGRATE);
+        historyJob.setJobType(parameters.getJobType());
         historyJob.setDateStart("19700101");
         historyJob.setDateEnd(sdf.format(parameters.getFireTime()));
         historyJob.setTaskGeneratorId(parameters.getTaskGeneratorId());

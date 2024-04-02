@@ -175,7 +175,6 @@ public class DefaultSecuritySession implements SecuritySession, Serializable {
 
     protected void validate() throws InvalidSessionException {
         if (this.isTimedOut()) {
-            this.expire();
             Date lastAccessTime = this.getLastAccessTime();
             long timeout = this.getTimeoutMillis();
             Serializable sessionId = this.getId();

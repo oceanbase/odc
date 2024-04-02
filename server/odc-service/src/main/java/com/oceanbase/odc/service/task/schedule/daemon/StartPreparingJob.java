@@ -39,6 +39,7 @@ import com.oceanbase.odc.service.task.enums.JobStatus;
 import com.oceanbase.odc.service.task.exception.JobException;
 import com.oceanbase.odc.service.task.exception.TaskRuntimeException;
 import com.oceanbase.odc.service.task.schedule.DefaultJobContextBuilder;
+import com.oceanbase.odc.service.task.schedule.ResourceDetectUtil;
 import com.oceanbase.odc.service.task.schedule.SingleJobProperties;
 import com.oceanbase.odc.service.task.service.TaskFrameworkService;
 import com.oceanbase.odc.service.task.util.JobDateUtils;
@@ -60,16 +61,24 @@ public class StartPreparingJob implements Job {
     public void execute(JobExecutionContext context) throws JobExecutionException {
         configuration = JobConfigurationHolder.getJobConfiguration();
         JobConfigurationValidator.validComponent();
+
+        if (!configuration.getTaskFrameworkEnabledProperties().isEnabled()) {
+            configuration.getTaskFrameworkDisabledHandler().handleJobToFailed();
+            return;
+        }
+        if (!ResourceDetectUtil.isResourceAvailable(configuration.getTaskFrameworkProperties())) {
+            return;
+        }
         TaskFrameworkProperties taskFrameworkProperties = configuration.getTaskFrameworkProperties();
         // scan preparing job
         TaskFrameworkService taskFrameworkService = configuration.getTaskFrameworkService();
-
         Page<JobEntity> jobs = taskFrameworkService.find(
                 Lists.newArrayList(JobStatus.PREPARING, JobStatus.RETRYING), 0,
                 taskFrameworkProperties.getSingleFetchPreparingJobRows());
-        jobs.forEach(a -> {
+
+        for (JobEntity a : jobs) {
             if (!configuration.getStartJobRateLimiter().tryAcquire()) {
-                return;
+                break;
             }
             try {
                 if (checkJobIsExpired(a)) {
@@ -81,7 +90,8 @@ public class StartPreparingJob implements Job {
             } catch (Throwable e) {
                 log.warn("try to start job {} failed: ", a.getId(), e);
             }
-        });
+        }
+
     }
 
     private void startJob(TaskFrameworkService taskFrameworkService, JobEntity jobEntity) {

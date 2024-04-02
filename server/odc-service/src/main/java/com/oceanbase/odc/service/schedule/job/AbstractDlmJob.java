@@ -45,8 +45,7 @@ import com.oceanbase.odc.service.dlm.utils.DlmJobIdUtil;
 import com.oceanbase.odc.service.quartz.util.ScheduleTaskUtils;
 import com.oceanbase.odc.service.schedule.ScheduleService;
 import com.oceanbase.odc.service.schedule.flowtask.ScheduleTaskContextHolder;
-import com.oceanbase.odc.service.task.config.DefaultTaskFrameworkProperties;
-import com.oceanbase.odc.service.task.config.TaskFrameworkProperties;
+import com.oceanbase.odc.service.task.config.TaskFrameworkEnabledProperties;
 import com.oceanbase.odc.service.task.constants.JobParametersKeyConstants;
 import com.oceanbase.odc.service.task.executor.task.DataArchiveTask;
 import com.oceanbase.odc.service.task.schedule.DefaultJobDefinition;
@@ -77,7 +76,7 @@ public abstract class AbstractDlmJob implements OdcJob {
 
     public JobScheduler jobScheduler = null;
 
-    public final TaskFrameworkProperties taskFrameworkProperties;
+    public final TaskFrameworkEnabledProperties taskFrameworkProperties;
 
     public final TaskFrameworkService taskFrameworkService;
     public Thread jobThread;
@@ -90,7 +89,7 @@ public abstract class AbstractDlmJob implements OdcJob {
         databaseService = SpringContextUtil.getBean(DatabaseService.class);
         scheduleService = SpringContextUtil.getBean(ScheduleService.class);
         limiterService = SpringContextUtil.getBean(DlmLimiterService.class);
-        taskFrameworkProperties = SpringContextUtil.getBean(DefaultTaskFrameworkProperties.class);
+        taskFrameworkProperties = SpringContextUtil.getBean(TaskFrameworkEnabledProperties.class);
         taskFrameworkService = SpringContextUtil.getBean(TaskFrameworkService.class);
         if (taskFrameworkProperties.isEnabled()) {
             jobScheduler = SpringContextUtil.getBean(JobScheduler.class);
@@ -111,7 +110,6 @@ public abstract class AbstractDlmJob implements OdcJob {
                 log.info("The task unit had been completed,taskId={},tableName={}", taskId, taskUnit.getTableName());
                 continue;
             }
-            Job job;
             try {
                 initTask(taskUnit);
                 job = jobFactory.createJob(taskUnit);
@@ -274,7 +272,10 @@ public abstract class AbstractDlmJob implements OdcJob {
         if (jobThread == null) {
             throw new IllegalStateException("Task is not executing.");
         }
-        job.stop();
+        if (job != null) {
+            job.stop();
+            log.info("Job will be interrupted,jobId={}", job.getJobMeta().getJobId());
+        }
         jobThread.interrupt();
     }
 }

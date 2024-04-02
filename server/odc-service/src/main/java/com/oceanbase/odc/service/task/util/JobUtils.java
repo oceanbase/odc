@@ -35,6 +35,9 @@ import com.oceanbase.odc.service.objectstorage.cloud.model.ObjectStorageConfigur
 import com.oceanbase.odc.service.task.constants.JobConstants;
 import com.oceanbase.odc.service.task.constants.JobEnvKeyConstants;
 import com.oceanbase.odc.service.task.enums.TaskRunMode;
+import com.oceanbase.odc.service.task.jasypt.AccessEnvironmentJasyptEncryptorConfigProperties;
+import com.oceanbase.odc.service.task.jasypt.DefaultJasyptEncryptor;
+import com.oceanbase.odc.service.task.jasypt.JasyptEncryptorConfigProperties;
 import com.oceanbase.odc.service.task.schedule.JobIdentity;
 
 import lombok.extern.slf4j.Slf4j;
@@ -133,12 +136,13 @@ public class JobUtils {
         config.setPort(port != null ? Integer.parseInt(port) : 8989);
         config.setDefaultSchema(System.getProperty(JobEnvKeyConstants.ODC_EXECUTOR_DATABASE_NAME));
         config.setUsername(System.getProperty(JobEnvKeyConstants.ODC_EXECUTOR_DATABASE_USERNAME));
-        config.setPassword(System.getProperty(JobEnvKeyConstants.ODC_EXECUTOR_DATABASE_PASSWORD));
+        JasyptEncryptorConfigProperties properties = new AccessEnvironmentJasyptEncryptorConfigProperties();
+        config.setPassword(new DefaultJasyptEncryptor(properties)
+                .decrypt(System.getProperty(JobEnvKeyConstants.ODC_EXECUTOR_DATABASE_PASSWORD)));
         config.setType(ConnectType.OB_MYSQL);
         config.setId(1L);
         return config;
     }
-
 
     public static Optional<ObjectStorageConfiguration> getObjectStorageConfiguration() {
         String osc;
