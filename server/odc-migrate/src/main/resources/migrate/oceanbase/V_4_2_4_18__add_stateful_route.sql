@@ -15,4 +15,4 @@
  */
 
 INSERT INTO config_system_configuration(`key`, `value`, `description`) VALUES('odc.web.stateful-route.enabled',
-    'true', 'enable stateful route') ON DUPLICATE KEY UPDATE `id`=`id`;
+    'false', 'enable stateful route') ON DUPLICATE KEY UPDATE `id`=`id`;
