@@ -1,26 +1,25 @@
-
 ## 4.2.4 (2024-04-02)
 
 ### Feature Changes
 
 Data Sources
 
-- OceanBase support added for version 4.2.2
-- New Oracle data source with support for SQL development, import/export, data desensitization, object management, change approval
-- New Doris data source with support for SQL development, import/export, data desensitization, table object management, session management, command-line window, change approval
+- Supported OceanBase v4.2.2
+- New Oracle data source with support for SQL development, import/export, data masking, object management, change approval
+- New Doris data source with support for SQL development, import/export, data masking, table object management, session management, command-line window, change approval
 
 SQL Development
 
-- 71 common operation snippets built-in, which can auto-complete in the SQL window and will match database type and version
+- 71 common O&M snippets built-in, which can auto-complete in the SQL window and will match database type and version
 - SQL auto-completion supports completing data dictionary/performance view
 - Case sensitivity for schema names, table names, and column names in Oracle mode now consistent with PL/SQL Developer behavior
 
-Structure Comparison
+Schema Comparison
 
-- New structure comparison feature added, supporting structure comparisons for homogenous databases (OBOracle, OBMySQL, MySQL)
+- New Schema Comparison feature added, supporting Schema Comparisons for homogenous databases (OBOracle, OBMySQL, MySQL)
 - Supported scope includes table objects, with comparison properties including columns, primary keys, constraints, indexes, partitions, table properties
-- Structure comparison results provide DIFF preview and change script preview
-- SQL preview results are downloadable and can directly initiate structure synchronization tasks
+- Schema Comparison results provide DIFF preview and change script preview
+- SQL preview results are downloadable and can directly initiate schema synchronization tasks
 
 Online Schema Changes
 
@@ -90,19 +89,19 @@ System Integration
     - Whether to enable user behavior analytics.
     - Desktop version now supports memory size configuration through JVM parameters.
 - Added database availability indicators; the database list under projects will now show unavailable statuses and reasons.
-- Improved the initiation interaction for work orders:
-    - Support for initiating various work orders directly from the database in the resource tree.
-    - Common task work orders (mock data, database changes, data archiving, data cleanup, database permission application) support reinitiation with editable task parameters.
+- Improved the initiation interaction for tickets:
+    - Support for initiating various tickets directly from the database in the resource tree.
+    - Commonly used tickets (mock data, database changes, data archiving, data cleaning, database permission application) support reinitiation with editable task parameters.
 - Enhanced database change processes to detect index change statements and automatically adjust the timeout setting (120h) to prevent index change statement execution failure due to timeout.
 - Desktop version personal settings now support custom JVM configuration with memory usage control to within 1 GB.
 - Desktop version supports exporting data files larger than 4 GB.
 - Optimized the en-US language wording of the product.
 
-### Breaking Changes
+### Non-backward-compatible Changes
 
 - The default environment for security standards no longer supports editing or disabling.
 
-### Fix
+### Bug fixes
 
 Connection Session
 
@@ -179,7 +178,7 @@ OB-SQL-Parser
 - database-change: database change task adapt streaming read sql file [#1437](https://github.com/oceanbase/odc/pull/1437)
 - dlm: supports sharding using unique indexes [#1327](https://github.com/oceanbase/odc/pull/1327)
 
-### Fix
+### Bug fixes
 
 sql-execute
 
@@ -305,9 +304,9 @@ Full link trace
 
 Tickets
 
-- The project administrator can view all work orders under the project, and other roles can view the work orders they have approved
+- The project administrator can view all tickets under the project, and other roles can view the tickets they have approved
 
-### Fix
+### Bug fixes
 
 Data source
 
@@ -357,7 +356,7 @@ External approval integration
 - Unrecognized expression for data in indexed collection
 - The data in xml form returned by the external system will lose the root tag of the original xml during deserialization
 
-Data desensitization
+data masking
 
 - When duplicate columns are scanned, adding sensitive columns will fail
 
@@ -365,7 +364,7 @@ Project
 
 - After the user is granted "Personal Space" permission, he must log in again for it to take effect
 - Transaction timeout occurred when synchronizing a large number of databases or schemas to the project
-- Unable to filter work orders by project dimension
+- Unable to filter tickets by project dimension
 - Project OWNER can remove all users with DBA roles in the project
 
 Bastion integration
@@ -435,7 +434,7 @@ Data archiving
 - After the data archiving subtask starts running, updating the current limiter configuration cannot take effect.
 - Data cleaning task is not running
 
-Data desensitization
+data masking
 
 - Entering malicious identification rules in the scenario of automatic scanning of sensitive columns will result in a denial of service by regular expressions
 
@@ -461,7 +460,7 @@ Data Source
 - Adapted to OceanBase 4.2.0/4.2.1
 - Data sources add initialization scripts and customized JDBC connection parameter settings
 
-Data Desensitization
+data masking
 
 - Support view desensitization
 
@@ -481,11 +480,11 @@ Import and Export
 - Optimized object management performance in large-scale table scenarios, and used ob-sql-parser to parse index/constraint metadata
 - Optimized database object tree interaction, the project and data source selection interaction area is folded to the top, and the database list is displayed more clearly
 - Optimized the interaction between creating a new SQL window and switching databases in the SQL window. Switching databases is faster, and the SQL window adds a copy operation.
-- Optimized the data desensitization configuration interaction, making it more convenient to select sensitive columns
+- Optimized the data masking configuration interaction, making it more convenient to select sensitive columns
 - Optimized the problem of slow retrieval of data source list and slow retrieval of data source status in scenarios where there are a large number of data sources.
 - Optimize the error text when running PL with wrong parameters
 
-### Fix
+### Bug fixes
 
 PL Debugging
 
@@ -503,7 +502,7 @@ SQL-Check
 - When creating type under the OceanBase Oracle tenant, if the sub-stored procedure/function has no parameter list, SQL Check will report a syntax error.
 - Unable to turn off "Syntax Error" rule
 
-Data Desensitization
+data masking
 
 - Desensitization fails when the SELECT statement contains multiple table JOINs
 - Sensitive columns cannot be recognized in the case-sensitive OceanBase MySQL mode, causing desensitization to fail.
@@ -538,7 +537,7 @@ Operational audit
 
 ## 4.2.1 (2023-09-25)
 
-### Fix
+### Bug fixes
 
 SQL Execution
 
@@ -560,7 +559,7 @@ Datasource management
 - The session management interface cannot display the SQL being executed by the session
 - A null pointer exception occurs when there are empty rows or columns in the template file during batch import connections
 
-Data desensitization
+data masking
 
 - When the OceanBase MySQL schema is configured as case-sensitive, sensitive columns cannot be case-sensitive
 
