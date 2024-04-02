@@ -60,14 +60,12 @@ import com.oceanbase.odc.core.shared.exception.BadRequestException;
 import com.oceanbase.odc.core.shared.exception.InternalServerError;
 import com.oceanbase.odc.core.shared.exception.NotFoundException;
 import com.oceanbase.odc.core.shared.exception.OverLimitException;
-import com.oceanbase.odc.core.shared.exception.VerifyException;
 import com.oceanbase.odc.core.sql.execute.task.SqlExecuteTaskManagerFactory;
 import com.oceanbase.odc.core.sql.split.SqlCommentProcessor;
 import com.oceanbase.odc.core.task.DefaultTaskManager;
 import com.oceanbase.odc.core.task.ExecuteMonitorTaskManager;
 import com.oceanbase.odc.metadb.collaboration.EnvironmentEntity;
 import com.oceanbase.odc.metadb.collaboration.EnvironmentRepository;
-import com.oceanbase.odc.service.common.util.RuntimeEnvironmentUtils;
 import com.oceanbase.odc.service.common.util.SidUtils;
 import com.oceanbase.odc.service.config.UserConfigFacade;
 import com.oceanbase.odc.service.connection.CloudMetadataClient;
@@ -78,7 +76,6 @@ import com.oceanbase.odc.service.connection.database.DatabaseService;
 import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.connection.model.ConnectProperties;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
-import com.oceanbase.odc.service.connection.model.ConnectionTestResult;
 import com.oceanbase.odc.service.connection.model.CreateSessionReq;
 import com.oceanbase.odc.service.connection.model.CreateSessionResp;
 import com.oceanbase.odc.service.connection.model.DBSessionResp;
@@ -153,8 +150,6 @@ public class ConnectSessionService {
     @Autowired
     private StateHostGenerator stateHostGenerator;
     private final Map<String, Lock> sessionId2Lock = new ConcurrentHashMap<>();
-    @Autowired
-    private RuntimeEnvironmentUtils runtimeEnvironmentUtils;
 
     @PostConstruct
     public void init() {
@@ -270,12 +265,6 @@ public class ConnectSessionService {
         Set<String> actions = authorizationFacade.getAllPermittedActions(authenticationFacade.currentUser(),
                 ResourceType.ODC_CONNECTION, "" + dataSourceId);
         connection.setPermittedActions(actions);
-        if (!runtimeEnvironmentUtils.isOBCloudRuntimeMode()) {
-            ConnectionTestResult result = connectionTesting.test(connection);
-            if (!result.isActive() && result.getErrorCode() != ErrorCodes.ConnectionInitScriptFailed) {
-                throw new VerifyException(result.getErrorMessage());
-            }
-        }
         SqlExecuteTaskManagerFactory factory =
                 new SqlExecuteTaskManagerFactory(this.monitorTaskManager, "console", 1);
         if (StringUtils.isNotEmpty(schemaName)) {

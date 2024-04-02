@@ -381,6 +381,9 @@ public class ConnectionConfig
     }
 
     public void fillEncryptedPasswordFromSavedIfNull(ConnectionConfig saved) {
+        if (Boolean.FALSE.equals(this.getPasswordSaved())) {
+            return;
+        }
         PreConditions.notNull(saved, "saved");
         if (Objects.isNull(this.passwordEncrypted)) {
             setPasswordEncrypted(saved.getPasswordEncrypted());

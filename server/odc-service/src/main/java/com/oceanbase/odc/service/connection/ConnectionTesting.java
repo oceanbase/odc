@@ -79,7 +79,6 @@ public class ConnectionTesting {
     private CloudMetadataClient cloudMetadataClient;
     @Value("${odc.sdk.test-connect.query-timeout-seconds:2}")
     private int queryTimeoutSeconds = 2;
-
     public ConnectionTestResult test(@NotNull @Valid TestConnectionReq req) {
         PreConditions.notNull(req, "req");
         PreConditions.validArgumentState(Objects.nonNull(req.getPassword()),

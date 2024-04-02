@@ -99,8 +99,6 @@ import com.oceanbase.odc.service.common.model.Stats;
 import com.oceanbase.odc.service.common.response.CustomPage;
 import com.oceanbase.odc.service.common.response.PageAndStats;
 import com.oceanbase.odc.service.common.response.PaginatedData;
-import com.oceanbase.odc.service.common.util.RuntimeEnvironmentUtils;
-import com.oceanbase.odc.service.connection.ConnectionPasswordCache.DatabaseUserIdentity;
 import com.oceanbase.odc.service.connection.ConnectionStatusManager.CheckState;
 import com.oceanbase.odc.service.connection.database.DatabaseService;
 import com.oceanbase.odc.service.connection.database.DatabaseSyncManager;
@@ -212,12 +210,6 @@ public class ConnectionService {
 
     @Autowired
     private JdbcLockRegistry jdbcLockRegistry;
-
-    @Autowired
-    private ConnectionPasswordCache connectionPasswordCache;
-
-    @Autowired
-    private RuntimeEnvironmentUtils runtimeEnvironmentUtils;
 
     private final ConnectionMapper mapper = ConnectionMapper.INSTANCE;
 
@@ -597,9 +589,7 @@ public class ConnectionService {
                         }
                     });
             connectionEncryption.encryptPasswords(connection);
-            if (!runtimeEnvironmentUtils.isOBCloudRuntimeMode()) {
-                connection.fillEncryptedPasswordFromSavedIfNull(saved);
-            }
+            connection.fillEncryptedPasswordFromSavedIfNull(saved);
 
             ConnectionEntity entity = modelToEntity(connection);
             ConnectionEntity savedEntity = repository.saveAndFlush(entity);
@@ -892,7 +882,7 @@ public class ConnectionService {
         }
         return entities.stream().map(entity -> {
             ConnectionConfig connection = mapper.entityToModel(entity);
-            getPasswordFromCacheIfNeed(connection);
+            environmentAdapter.fillPasswordFromCacheIfNeed(connection);
             connection.setStatus(CheckState.of(ConnectionStatus.TESTING));
             if (withEnvironment) {
                 Environment environment = id2Environment.getOrDefault(connection.getEnvironmentId(), null);
@@ -911,26 +901,6 @@ public class ConnectionService {
             }
             return connection;
         }).collect(Collectors.toList());
-    }
-
-    private void getPasswordFromCacheIfNeed(ConnectionConfig connection) {
-        if (!runtimeEnvironmentUtils.isOBCloudRuntimeMode() || connection.getPasswordSaved()) {
-            return;
-        }
-        String clusterName = connection.getClusterName();
-        String tenantName = connection.getTenantName();
-        String username = connection.getUsername();
-        log.info("Password not saved, try to get password from cache, cluster name:{} tenant name:{} username:{}",
-                clusterName, tenantName, username);
-        String password = connectionPasswordCache
-                .getPassword(new DatabaseUserIdentity(clusterName, tenantName, username));
-        if (Objects.nonNull(password)) {
-            connection.setPassword(password);
-            connectionEncryption.encryptPasswords(connection);
-        } else {
-            log.warn("Failed to get password from cache, cluster name:{} tenant name:{} username:{}", clusterName,
-                    tenantName, username);
-        }
     }
 
     private ConnectionConfig entityToModel(@NonNull ConnectionEntity entity, @NonNull Boolean withEnvironment,

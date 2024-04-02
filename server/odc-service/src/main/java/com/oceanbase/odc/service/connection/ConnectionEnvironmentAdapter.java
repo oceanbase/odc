@@ -26,7 +26,7 @@ import com.oceanbase.odc.service.connection.model.OBTenant;
 import com.oceanbase.odc.service.connection.model.OBTenantEndpoint;
 
 @Component
-public class ConnectionEnvironmentAdapter {
+public class ConnectionEnvironmentAdapter implements EnvironmentAdapter {
 
     @Autowired
     private CloudMetadataClient cloudMetadataClient;
@@ -69,6 +69,11 @@ public class ConnectionEnvironmentAdapter {
             }
         }
         connectionConfig.setEndpoint(endpoint);
+        return connectionConfig;
+    }
+
+    @Override
+    public <T extends CloudConnectionConfig> T fillPasswordFromCacheIfNeed(T connectionConfig) {
         return connectionConfig;
     }
 
