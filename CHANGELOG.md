@@ -145,7 +145,9 @@ Partitioning Plan
 
 Data Archiving/Cleaning
 
-- [Pending specific issue description]
+- When tasks exit, they do not release the database connection pool, which can occupy many threads when there is a large number of tasks.
+- The connection pool will indefinitely retry and generate a large number of logs when failing to acquire connections.
+- Slow SQL is generated when cleaning up using unique keys due to not using the correct index.
 
 Users and Permissions
 
