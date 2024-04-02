@@ -109,16 +109,13 @@ public class LogicalTableUtilsCopied {
         int databaseNamePatternPlaceholderCount = databaseNamePattern.split(PATTERN_PLACEHOLDER_REGEX, 10).length - 1;
         int tableNamePatternPlaceholderCount = tableNamePattern.split(PATTERN_PLACEHOLDER_REGEX, 10).length - 1;
 
-        // 如果分库和分表的级联数都大于等于 2，则直接按照分库来分组，对每个分组生成一个表达式
-        if (databaseNamePatternPlaceholderCount >= 2 && tableNamePatternPlaceholderCount >= 2) {
-        }
 
-        // 如果每个分库的分表是一致的
+
+        // 如果每个分库的分表是完全一致的
         if (hasSameTableNames(logicalTable)) {
             List<String> tableNameExpression = replacePlaceholdersWithRanges(tableNamePattern, tableNames).stream()
-                    .map(r -> r.replaceAll("([^\\[\\]]*)(\\[[^\\[\\]]*\\])$", "$1[[$2]]")).collect(Collectors.toList());
-            List<String> databaseNameExpression = replacePlaceholdersWithRanges(databaseNamePattern, databaseNames).stream()
-                    .map(r -> r.replaceAll("([^\\[\\]]*)(\\[[^\\[\\]]*\\])$", "$1[[$2]]")).collect(Collectors.toList());
+                    .map(r -> replaceRangeSign(r)).collect(Collectors.toList());
+            List<String> databaseNameExpression = replacePlaceholdersWithRanges(databaseNamePattern, databaseNames);
             List<String> resultSegs = new ArrayList<>();
             for (String databaseName : databaseNameExpression) {
                 for (String tableName : tableNameExpression) {
@@ -126,10 +123,46 @@ public class LogicalTableUtilsCopied {
                 }
             }
             return resultSegs;
+        } else if () {
+        // 如果分表能被均分到每个分库
+
         }
 
-        return null;
 
+
+
+
+        // 如果分库和分表的级联数都大于等于 2，则直接按照分库来分组，对每个分组生成一个表达式
+        if (databaseNamePatternPlaceholderCount >= 2 && tableNamePatternPlaceholderCount >= 2) {
+        }
+        return null;
+    }
+
+
+    private boolean canBeDividedEvenly(LogicalTable logicalTable) {
+        Map<String, List<String>> schemaName2TableNames = logicalTable.getActualDataNodes().stream()
+            .collect(Collectors.groupingBy(DataNode::getSchemaName, TreeMap::new,
+                Collectors.mapping(DataNode::getTableName, Collectors.toList())));
+
+    }
+
+
+    private static String replaceRangeSign(String expression) {
+        // 找到最后一个']'的位置
+        int lastCloseIndex = expression.lastIndexOf(']');
+        // 如果存在，则替换为']]
+        if(lastCloseIndex != -1) {
+            expression = expression.substring(0, lastCloseIndex) + "]]" + expression.substring(lastCloseIndex + 1);
+        }
+
+        // 找到最后一个'['的位置
+        int lastOpenIndex = expression.lastIndexOf('[');
+        // 如果存在，则替换为'[['
+        if(lastOpenIndex != -1) {
+            expression = expression.substring(0, lastOpenIndex) + "[[" + expression.substring(lastOpenIndex + 1);
+        }
+
+        return expression;
     }
 
     private static boolean hasSameTableNames(LogicalTable logicalTable) {
@@ -145,26 +178,6 @@ public class LogicalTableUtilsCopied {
         return tableSets.size() == 1;
     }
 
-
-    // 我现在在写一个 JAVA 函数 String replacePlaceholdersWithRanges(String pattern, List<String> names)，pattern
-    // 是一个模式，names 的所有元素都满足这个模式。
-    // 这个函数的作用是，根据某些规则，将模式里的 [#] 替换成具体的数字范围，并返回完整的字符串。比如 pattern = "table_[#]"，names = ["table_1",
-    // "table_2", "table_3"]，那么返回 "table_[1-3]"。
-
-    // 你的理解不对，这里并不是简单的替换为最小值和最大值。他需要满足如下规则：1. 如果是连续的数字，则是一个范围，比如 [1-3]；2.
-    // 如果不是连续的数字，但这些数字是等差数列，则需要取最小值和最大值以及步长最为替换，比如 table_1, table_3, table_5, 可以表示为 table_[1-5:2],
-    // 代表最小值是 1， 最大值是 5， 步长是 2
-    // 还有一些额外的条件，如果只有两个数字，则也要表示成步长的形式。如果有两个以上的数字，且不是等差数列，则需要将 names 以 逗号 join 起来，组成字符串返回。
-    // 注意，你应该从 names 中提取数字，而是应该只关注 pattern 中的 [#] 在 names 各元素中的位置的数字
-    // pattern 中的 [#] 可能出现多次，可能出现在任何位置
-    // 请不要假定所有的 [#] 都应被统一目标替换，每个 [#] 占位符都是独立的一段。但是，他们之间也是存在关联的，如果有多个 [#]
-    // 的存在，我不觉得他们应该被单独处理，而是结合起来一起看。为了简化问题，我们可以假设，一个 pattern 中最多包含两个 [#]。
-    // 比如，pattern = "table_[#]_[#]", names 为 table_2023_01, table_2023_02, table_2024_01, table_2024_02
-    // 应该被表示成 table_[2023-2024]_[01-02]，意思是 两个 # 之间的数字是笛卡尔积，而不是独立的两个范围
-    // 请你不要忘记上面对话中的假设，也就是只存在一个 [#] 的那些规则，同样要适用，请写出完整的函数
-    // 你还需要考虑一条规则，在有两个 [#] 占位符的场景，两组数字间如果满足笛卡尔积的情况，也需要根据单个 [#] 占位符的规则，将每个 [#] 占位符的数字范围合并起来
-    // 注意，在有两个 [#] 的场景，你需要主动去检测两组数字是否满足笛卡尔积的情况，如果满足，才能表示成笛卡尔积的形式；如果不满足笛卡尔积的情况，你只需要按照第一个 [#]
-    // 的数字来分组，在每个分组里，再对第二个 [#] 进行处理，这里的处理方式就跟只有一个 [#] 占位符的原则一样
     private static List<String> replacePlaceholdersWithRanges(String pattern, List<String> names) {
         String[] parts = pattern.split(PATTERN_PLACEHOLDER_REGEX, -1);
         int len = parts.length;
