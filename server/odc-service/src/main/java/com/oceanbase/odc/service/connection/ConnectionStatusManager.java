@@ -88,10 +88,6 @@ public class ConnectionStatusManager {
 
     CheckState getAndRefreshStatus(ConnectionConfig connection) {
         PreConditions.notNull(connection, "connection");
-        if (Objects.nonNull(connection.getPasswordSaved()) && !connection.getPasswordSaved()
-                && Objects.isNull(connection.getPasswordEncrypted())) {
-            return CheckState.of(ConnectionStatus.NOPASSWORD);
-        }
         if (Objects.nonNull(connection.getEnabled()) && !connection.getEnabled()) {
             return CheckState.of(ConnectionStatus.DISABLED);
         }

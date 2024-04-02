@@ -167,7 +167,7 @@ public class ConnectionService {
     private ConnectProperties connectProperties;
 
     @Autowired
-    private ConnectionEnvironmentAdapter environmentAdapter;
+    private DefaultConnectionAdapter environmentAdapter;
 
     @Autowired
     private ConnectionSSLAdaptor connectionSSLAdaptor;
@@ -294,6 +294,7 @@ public class ConnectionService {
                 PreConditions.notNull(connection.getPassword(), "connection.password");
             } else {
                 connection.setPassword(null);
+                connection.setPasswordEncrypted(null);
             }
             connectionEncryption.encryptPasswords(connection);
 
@@ -588,6 +589,9 @@ public class ConnectionService {
                                     new Object[] {connection.getName()}, "same datasource name exists");
                         }
                     });
+            if (Boolean.FALSE.equals(connection.getPasswordSaved())) {
+                connection.setPassword(null);
+            }
             connectionEncryption.encryptPasswords(connection);
             connection.fillEncryptedPasswordFromSavedIfNull(saved);
 
@@ -882,7 +886,6 @@ public class ConnectionService {
         }
         return entities.stream().map(entity -> {
             ConnectionConfig connection = mapper.entityToModel(entity);
-            environmentAdapter.fillPasswordFromCacheIfNeed(connection);
             connection.setStatus(CheckState.of(ConnectionStatus.TESTING));
             if (withEnvironment) {
                 Environment environment = id2Environment.getOrDefault(connection.getEnvironmentId(), null);

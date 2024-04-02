@@ -46,7 +46,7 @@ public class ConnectionTestingTest {
     @Mock
     private ConnectionSSLAdaptor sslAdaptor;
     @Mock
-    private ConnectionEnvironmentAdapter environmentAdapter;
+    private DefaultConnectionAdapter environmentAdapter;
 
     @Before
     public void setUp() throws Exception {

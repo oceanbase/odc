@@ -21,8 +21,6 @@ import com.oceanbase.odc.service.connection.model.CloudConnectionConfig;
  * @author jingtian
  * @date 2024/4/2
  */
-public interface EnvironmentAdapter {
+public interface ConnectionAdapter {
     public <T extends CloudConnectionConfig> T adaptConfig(T connectionConfig);
-
-    public <T extends CloudConnectionConfig> T fillPasswordFromCacheIfNeed(T connectionConfig);
 }

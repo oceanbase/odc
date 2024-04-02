@@ -72,19 +72,19 @@ public class ConnectionTesting {
     @Autowired
     private ConnectProperties connectProperties;
     @Autowired
-    private ConnectionEnvironmentAdapter environmentAdapter;
+    private DefaultConnectionAdapter environmentAdapter;
     @Autowired
     private ConnectionSSLAdaptor connectionSSLAdaptor;
     @Autowired
     private CloudMetadataClient cloudMetadataClient;
     @Value("${odc.sdk.test-connect.query-timeout-seconds:2}")
     private int queryTimeoutSeconds = 2;
+
     public ConnectionTestResult test(@NotNull @Valid TestConnectionReq req) {
         PreConditions.notNull(req, "req");
+        environmentAdapter.adaptConfig(req);
         PreConditions.validArgumentState(Objects.nonNull(req.getPassword()),
                 ErrorCodes.ConnectionPasswordMissed, null, "password required for connection without password saved");
-
-        environmentAdapter.adaptConfig(req);
         cloudMetadataClient.checkPermission(OBTenant.of(req.getClusterName(),
                 req.getTenantName()), req.getInstanceType(), false, CloudPermissionAction.READONLY);
         connectionSSLAdaptor.adapt(req);
