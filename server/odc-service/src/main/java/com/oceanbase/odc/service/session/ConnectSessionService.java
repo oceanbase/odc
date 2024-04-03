@@ -255,7 +255,7 @@ public class ConnectSessionService {
         ConnectionConfig connection = connectionService.getForConnectionSkipPermissionCheck(dataSourceId);
         cloudMetadataClient.checkPermission(OBTenant.of(connection.getClusterName(),
                 connection.getTenantName()), connection.getInstanceType(), false, CloudPermissionAction.READONLY);
-        PreConditions.validArgumentState(Objects.nonNull(connection.getPasswordEncrypted()),
+        PreConditions.validArgumentState(Objects.nonNull(connection.getPassword()),
                 ErrorCodes.ConnectionPasswordMissed, null, "password required for connection without password saved");
         if (StringUtils.isNotBlank(schemaName) && connection.getDialectType().isOracle()) {
             schemaName = com.oceanbase.odc.common.util.StringUtils.quoteOracleIdentifier(schemaName);
