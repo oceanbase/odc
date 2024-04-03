@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.db;
+package com.oceanbase.odc.service.db.object;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -44,11 +44,11 @@ import com.oceanbase.odc.service.connection.ConnectionService;
 import com.oceanbase.odc.service.connection.database.DatabaseService;
 import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
-import com.oceanbase.odc.service.db.model.OdcDBColumn;
-import com.oceanbase.odc.service.db.model.OdcDBObject;
-import com.oceanbase.odc.service.db.model.QueryDBObjectParams;
-import com.oceanbase.odc.service.db.model.QueryDBObjectResp;
-import com.oceanbase.odc.service.db.model.SyncDBObjectReq;
+import com.oceanbase.odc.service.db.object.model.OdcDBColumn;
+import com.oceanbase.odc.service.db.object.model.OdcDBObject;
+import com.oceanbase.odc.service.db.object.model.QueryDBObjectParams;
+import com.oceanbase.odc.service.db.object.model.QueryDBObjectResp;
+import com.oceanbase.odc.service.db.object.model.SyncDBObjectReq;
 import com.oceanbase.odc.service.iam.ProjectPermissionValidator;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.tools.dbbrowser.model.DBObjectType;
@@ -136,7 +136,7 @@ public class DBObjectIndexService {
         List<Database> databases = databaseService.listDatabasesDetailsByIds(queryDatabaseIds);
         Map<Long, Database> id2Database =
                 databases.stream().collect(Collectors.toMap(Database::getId, e -> e, (e1, e2) -> e1));
-        if (params.getType() == null || params.getType() == DBObjectType.SCHEMA) {
+        if (CollectionUtils.isEmpty(params.getTypes()) || params.getTypes().contains(DBObjectType.SCHEMA)) {
             String key = params.getSearchKey().toLowerCase();
             resp.setDatabases(databases.stream().filter(e -> {
                 String name = e.getName().toLowerCase();
@@ -151,7 +151,7 @@ public class DBObjectIndexService {
                 }
             }).collect(Collectors.toList()));
         }
-        if (params.getType() == null || params.getType() == DBObjectType.COLUMN) {
+        if (CollectionUtils.isEmpty(params.getTypes()) || params.getTypes().contains(DBObjectType.COLUMN)) {
             List<DBColumnEntity> columns = dbColumnRepository.findTop1000ByDatabaseIdInAndNameLike(queryDatabaseIds,
                     params.getSearchKey());
             List<Long> objectIds = columns.stream().map(DBColumnEntity::getObjectId).collect(Collectors.toList());
@@ -160,13 +160,15 @@ public class DBObjectIndexService {
                     .collect(Collectors.toMap(OdcDBObject::getId, e -> e, (e1, e2) -> e1));
             resp.setDbColumns(columnEntitiesToModels(columns, id2Object));
         }
-        if (params.getType() == null) {
+        if (CollectionUtils.isEmpty(params.getTypes())) {
             List<DBObjectEntity> objects =
                     dbObjectRepository.findTop1000ByDatabaseIdInAndNameLike(queryDatabaseIds, params.getSearchKey());
             resp.setDbObjects(objectEntitiesToModels(objects, id2Database));
-        } else if (params.getType() != DBObjectType.SCHEMA && params.getType() != DBObjectType.COLUMN) {
-            List<DBObjectEntity> objects = dbObjectRepository.findTop1000ByDatabaseIdInAndTypeAndNameLike(
-                    queryDatabaseIds, params.getType(), params.getSearchKey());
+        } else {
+            List<DBObjectEntity> objects =
+                    dbObjectRepository.findTop1000ByDatabaseIdInAndTypeInAndNameLike(queryDatabaseIds,
+                            params.getTypes().stream().map(DBObjectType::getName).collect(Collectors.toList()),
+                            params.getSearchKey());
             resp.setDbObjects(objectEntitiesToModels(objects, id2Database));
         }
         return resp;

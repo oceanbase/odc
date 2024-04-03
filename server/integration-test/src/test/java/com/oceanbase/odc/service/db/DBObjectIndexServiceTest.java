@@ -53,8 +53,9 @@ import com.oceanbase.odc.service.connection.ConnectionService;
 import com.oceanbase.odc.service.connection.database.DatabaseMapper;
 import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
-import com.oceanbase.odc.service.db.model.QueryDBObjectParams;
-import com.oceanbase.odc.service.db.model.QueryDBObjectResp;
+import com.oceanbase.odc.service.db.object.DBObjectIndexService;
+import com.oceanbase.odc.service.db.object.model.QueryDBObjectParams;
+import com.oceanbase.odc.service.db.object.model.QueryDBObjectResp;
 import com.oceanbase.odc.service.iam.ProjectPermissionValidator;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.iam.model.User;
@@ -173,7 +174,7 @@ public class DBObjectIndexServiceTest extends ServiceTestEnv {
         QueryDBObjectParams params = QueryDBObjectParams.builder()
                 .projectId(VALID_PROJECT_ID)
                 .databaseIds(validDatabaseIds.subList(0, 1))
-                .type(DBObjectType.SCHEMA)
+                .types(Collections.singletonList(DBObjectType.SCHEMA))
                 .searchKey("%test%").build();
         QueryDBObjectResp resp = service.listDatabaseObjects(params);
         Assert.assertEquals(1, resp.getDatabases().size());
@@ -186,7 +187,7 @@ public class DBObjectIndexServiceTest extends ServiceTestEnv {
         QueryDBObjectParams params = QueryDBObjectParams.builder()
                 .projectId(VALID_PROJECT_ID)
                 .databaseIds(validDatabaseIds.subList(0, 1))
-                .type(DBObjectType.COLUMN)
+                .types(Collections.singletonList(DBObjectType.COLUMN))
                 .searchKey("%test%").build();
         QueryDBObjectResp resp = service.listDatabaseObjects(params);
         Assert.assertEquals(6, resp.getDbColumns().size());
@@ -199,7 +200,7 @@ public class DBObjectIndexServiceTest extends ServiceTestEnv {
         QueryDBObjectParams params = QueryDBObjectParams.builder()
                 .projectId(VALID_PROJECT_ID)
                 .databaseIds(validDatabaseIds.subList(0, 1))
-                .type(DBObjectType.FUNCTION)
+                .types(Arrays.asList(DBObjectType.SYNONYM, DBObjectType.PUBLIC_SYNONYM))
                 .searchKey("%test%").build();
         QueryDBObjectResp resp = service.listDatabaseObjects(params);
         Assert.assertEquals(1, resp.getDbObjects().size());

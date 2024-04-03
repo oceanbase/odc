@@ -23,7 +23,6 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.oceanbase.odc.config.jpa.OdcJpaRepository;
-import com.oceanbase.tools.dbbrowser.model.DBObjectType;
 
 /**
  * @author gaoda.xy
@@ -42,9 +41,10 @@ public interface DBObjectRepository extends OdcJpaRepository<DBObjectEntity, Lon
 
     @Transactional
     @Query(value = "select t.* from connect_database_object as t where t.database_id in (:databaseIds) and "
-            + "t.type = :#{#type.name()} and t.name like :nameKey order by t.database_id desc LIMIT 1000;",
+            + "t.type in (:types) and t.name like :nameKey order by t.database_id desc LIMIT 1000;",
             nativeQuery = true)
-    List<DBObjectEntity> findTop1000ByDatabaseIdInAndTypeAndNameLike(@Param("databaseIds") Collection<Long> databaseIds,
-            @Param("type") DBObjectType type, @Param("nameKey") String nameKey);
+    List<DBObjectEntity> findTop1000ByDatabaseIdInAndTypeInAndNameLike(
+            @Param("databaseIds") Collection<Long> databaseIds, @Param("types") Collection<String> types,
+            @Param("nameKey") String nameKey);
 
 }

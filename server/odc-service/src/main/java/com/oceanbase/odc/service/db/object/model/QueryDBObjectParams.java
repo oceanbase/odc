@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.db.model;
+package com.oceanbase.odc.service.db.object.model;
 
 import java.util.List;
 
@@ -50,7 +50,7 @@ public class QueryDBObjectParams {
     /**
      * Search specific type of DB objects. If not set, then search all types.
      */
-    private DBObjectType type;
+    private List<DBObjectType> types;
 
     /**
      * Default full text matching, use %searchKey% for fuzzy matching.
