@@ -40,7 +40,7 @@ public class ConnectionEncryption {
     @Autowired
     private EncryptionFacade encryptionFacade;
 
-    ConnectionConfig encryptPasswords(ConnectionConfig connection) {
+    public ConnectionConfig encryptPasswords(ConnectionConfig connection) {
         if (Objects.isNull(connection.getCipher())) {
             connection.setCipher(Cipher.AES256SALT);
         }

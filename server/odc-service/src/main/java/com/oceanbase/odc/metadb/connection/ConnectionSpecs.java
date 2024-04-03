@@ -117,6 +117,10 @@ public class ConnectionSpecs {
         return columnEqual("visibleScope", ConnectionVisibleScope.PRIVATE).and(columnEqual("ownerId", userId));
     }
 
+    public static Specification<ConnectionEntity> usernameEqual(String username) {
+        return columnEqual("username", username);
+    }
+
     public static Specification<ConnectionEntity> dialectTypeIn(List<DialectType> dialectTypes) {
         return in("dialectType", dialectTypes, DialectType.class);
     }
