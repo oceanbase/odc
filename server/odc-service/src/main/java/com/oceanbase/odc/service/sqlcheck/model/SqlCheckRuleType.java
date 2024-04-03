@@ -231,7 +231,19 @@ public enum SqlCheckRuleType implements Translatable {
     /**
      * 限制被声明为 auto-increment 的列的类型
      */
-    RESTRICT_AUTO_INCREMENT_DATATYPES("restrict-auto-increment-datatypes");
+    RESTRICT_AUTO_INCREMENT_DATATYPES("restrict-auto-increment-datatypes"),
+    /**
+     * 对象名使用了保留字
+     */
+    OBJECT_NAME_USING_RESERVED_WORDS("object-name-using-reserved-words"),
+    /**
+     * offline 结构变更语句存在，可能导致性能下降
+     */
+    OFFLINE_SCHEMA_CHANGE_EXISTS("offline-schema-change-exists"),
+    /**
+     * Truncate table 语句存在
+     */
+    TRUNCATE_TBLE_EXISTS("truncate-table-exists");
 
     private final String name;
     private static final String NAME_CODE = "name";

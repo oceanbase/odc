@@ -18,6 +18,8 @@ package com.oceanbase.odc.service.shadowtable;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 import static org.awaitility.Awaitility.await;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyObject;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
@@ -42,6 +44,7 @@ import com.oceanbase.odc.service.connection.ConnectionService;
 import com.oceanbase.odc.service.connection.database.DatabaseService;
 import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
+import com.oceanbase.odc.service.flow.FlowInstanceService;
 import com.oceanbase.odc.service.shadowtable.model.ShadowTableSyncReq;
 
 public class ShadowTableComparingServiceTest extends ServiceTestEnv {
@@ -53,6 +56,9 @@ public class ShadowTableComparingServiceTest extends ServiceTestEnv {
 
     @MockBean
     private DatabaseService databaseService;
+
+    @MockBean
+    private FlowInstanceService flowInstanceService;
 
     private static ConnectionSession connectionSession;
 
@@ -101,6 +107,7 @@ public class ShadowTableComparingServiceTest extends ServiceTestEnv {
         req.setSchemaName(config.getDefaultSchema());
         req.setOriginTableNames(Arrays.asList("t1", "t2"));
         req.setDestTableNames(Arrays.asList("__t_t1", "__t_t2"));
+        when(flowInstanceService.mapFlowInstance(anyObject(), any(), any())).thenReturn(1L);
         String taskId = shadowTableComparingService.createShadowTableSync(req);
         await().atMost(20, SECONDS)
                 .until(() -> shadowTableComparingService.listShadowTableSyncs(Long.valueOf(taskId)).isCompleted());
@@ -125,6 +132,7 @@ public class ShadowTableComparingServiceTest extends ServiceTestEnv {
         req.setOriginTableNames(Arrays.asList("t3"));
         req.setDestTableNames(Arrays.asList("__t_t3"));
         String taskId = shadowTableComparingService.createShadowTableSync(req);
+        when(flowInstanceService.mapFlowInstance(anyObject(), any(), any())).thenReturn(1L);
         await().atMost(20, SECONDS)
                 .until(() -> shadowTableComparingService.listShadowTableSyncs(Long.valueOf(taskId)).isCompleted());
     }
@@ -148,6 +156,7 @@ public class ShadowTableComparingServiceTest extends ServiceTestEnv {
         req.setOriginTableNames(Arrays.asList("not_exists_table"));
         req.setDestTableNames(Arrays.asList("__t_not_exists_table"));
         String taskId = shadowTableComparingService.createShadowTableSync(req);
+        when(flowInstanceService.mapFlowInstance(anyObject(), any(), any())).thenReturn(1L);
         await().atMost(20, SECONDS)
                 .until(() -> shadowTableComparingService.listShadowTableSyncs(Long.valueOf(taskId)).isCompleted());
     }

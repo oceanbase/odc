@@ -17,20 +17,27 @@
 package com.oceanbase.odc.service.task.util;
 
 import java.io.File;
+import java.lang.reflect.Type;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
 import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.common.util.SystemUtils;
 import com.oceanbase.odc.core.shared.Verify;
+import com.oceanbase.odc.core.shared.constant.ConnectType;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.objectstorage.cloud.model.ObjectStorageConfiguration;
 import com.oceanbase.odc.service.task.constants.JobConstants;
 import com.oceanbase.odc.service.task.constants.JobEnvKeyConstants;
 import com.oceanbase.odc.service.task.enums.TaskRunMode;
+import com.oceanbase.odc.service.task.jasypt.AccessEnvironmentJasyptEncryptorConfigProperties;
+import com.oceanbase.odc.service.task.jasypt.DefaultJasyptEncryptor;
+import com.oceanbase.odc.service.task.jasypt.JasyptEncryptorConfigProperties;
 import com.oceanbase.odc.service.task.schedule.JobIdentity;
 
 import lombok.extern.slf4j.Slf4j;
@@ -68,6 +75,22 @@ public class JobUtils {
         }
         return new Gson().fromJson(json, clazz);
     }
+
+    public static <T> T fromJson(String json, Type type) {
+        if (json == null) {
+            return null;
+        }
+        return new Gson().fromJson(json, type);
+    }
+
+    public static Map<String, String> fromJsonToMap(String json) {
+        if (json == null) {
+            return null;
+        }
+        Type mapType = new TypeToken<Map<String, String>>() {}.getType();
+        return new Gson().fromJson(json, mapType);
+    }
+
 
     public static Optional<Integer> getExecutorPort() {
         String port = SystemUtils.getEnvOrProperty(JobEnvKeyConstants.ODC_EXECUTOR_PORT);
@@ -113,11 +136,13 @@ public class JobUtils {
         config.setPort(port != null ? Integer.parseInt(port) : 8989);
         config.setDefaultSchema(System.getProperty(JobEnvKeyConstants.ODC_EXECUTOR_DATABASE_NAME));
         config.setUsername(System.getProperty(JobEnvKeyConstants.ODC_EXECUTOR_DATABASE_USERNAME));
-        config.setPassword(System.getProperty(JobEnvKeyConstants.ODC_EXECUTOR_DATABASE_PASSWORD));
+        JasyptEncryptorConfigProperties properties = new AccessEnvironmentJasyptEncryptorConfigProperties();
+        config.setPassword(new DefaultJasyptEncryptor(properties)
+                .decrypt(System.getProperty(JobEnvKeyConstants.ODC_EXECUTOR_DATABASE_PASSWORD)));
+        config.setType(ConnectType.OB_MYSQL);
         config.setId(1L);
         return config;
     }
-
 
     public static Optional<ObjectStorageConfiguration> getObjectStorageConfiguration() {
         String osc;

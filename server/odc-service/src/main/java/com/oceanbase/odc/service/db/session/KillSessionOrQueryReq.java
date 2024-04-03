@@ -28,7 +28,7 @@ public class KillSessionOrQueryReq {
     public static final String KILL_QUERY_TYPE = "query";
 
     @NotNull
-    private List<Long> sessionIds;
+    private List<String> sessionIds;
 
     @NotNull
     private String datasourceId;

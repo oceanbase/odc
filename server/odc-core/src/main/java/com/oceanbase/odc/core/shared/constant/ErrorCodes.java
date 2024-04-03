@@ -30,10 +30,12 @@ public enum ErrorCodes implements ErrorCode {
     IllegalArgument,
     ArgumentValueAndTypeMismatched,
     DuplicatedExists,
+    ReservedName,
     BadRequest,
     RequestFormatVersionNotMatch,
     NotFound,
     AccessDenied,
+    DatabaseAccessDenied,
     LoginExpired,
     UnauthorizedSessionAccess,
     PermissionChanged,
@@ -119,6 +121,8 @@ public enum ErrorCodes implements ErrorCode {
     FileSuffixNotAllowed,
 
     // Task
+    RunningTaskNotTerminable,
+    FinishedTaskNotTerminable,
     TaskNotReadyForDownload,
     TaskSqlExecuteFailed,
     TaskLogNotFound,
@@ -159,6 +163,11 @@ public enum ErrorCodes implements ErrorCode {
     AlterScheduleExists,
     InvalidCronExpression,
 
+    // Partition plan
+    InvalidSqlExpression,
+    PartitionKeyDataTypeMismatch,
+    TimeDataTypePrecisionMismatch,
+
     // Import & Export
     ExportExcelFileFailed,
 
@@ -169,6 +178,7 @@ public enum ErrorCodes implements ErrorCode {
     OscLockUserRequired,
     OscUnsupportedForeignKeyTable,
     OscColumnNameInconsistent,
+    OscAddPrimaryKeyColumnNotAllowed,
     OscDataCheckInconsistent,
     OscSwapTableStarted,
     OmsBindTargetNotFound,
@@ -177,6 +187,7 @@ public enum ErrorCodes implements ErrorCode {
     OmsParamError,
     OmsConnectivityTestFailed,
     OmsPreCheckFailed,
+    OmsProjectExecutingFailed,
 
     // resource
     BuiltInResourceOperateNotAllowed,
@@ -231,6 +242,7 @@ public enum ErrorCodes implements ErrorCode {
     ObGetPlanExplainEmpty,
     ObGetFullLinkTraceFailed,
     ObFullLinkTraceNotSupported,
+    ObFullLinkTraceNotEnabled,
 
     ObPreCheckDdlFailed,
     ObCopySchemaFailed,

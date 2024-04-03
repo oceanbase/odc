@@ -63,7 +63,7 @@ public class DataTransferConfig implements TaskParameters, Serializable {
     private EncodingType encoding = EncodingType.UTF_8;
     private CsvConfig csvConfig;
     private List<CsvColumnMapping> csvColumnMappings;
-    private boolean stopWhenError;
+    private boolean stopWhenError = true;
     private String exportFilePath;
     private boolean mergeSchemaFiles;
     private String querySql;
@@ -90,6 +90,7 @@ public class DataTransferConfig implements TaskParameters, Serializable {
     private int cursorFetchSize;
     @JsonIgnore
     private transient List<DBTableColumn> columns;
+    private Integer executionTimeoutSeconds;
 
     public boolean isCompressed() {
         return StringUtils.equalsIgnoreCase("ZIP", fileType);

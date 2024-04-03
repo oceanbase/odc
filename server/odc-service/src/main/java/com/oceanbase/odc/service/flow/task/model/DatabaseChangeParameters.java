@@ -22,6 +22,7 @@ import javax.validation.constraints.NotNull;
 
 import com.oceanbase.odc.core.flow.model.TaskParameters;
 import com.oceanbase.odc.core.shared.constant.TaskErrorStrategy;
+import com.oceanbase.odc.service.schedule.model.JobType;
 
 import lombok.Data;
 
@@ -46,6 +47,11 @@ public class DatabaseChangeParameters implements Serializable, TaskParameters {
     private Integer riskLevelIndex;
     @NotNull
     private Boolean generateRollbackPlan;
+    private boolean modifyTimeoutIfTimeConsumingSqlExists = true;
+    // internal usage for notification
+    private JobType parentJobType;
+    private Integer retryTimes = 0;
+    private Long retryIntervalMillis = 180000L;
 
     public void setErrorStrategy(String errorStrategy) {
         this.errorStrategy = TaskErrorStrategy.valueOf(errorStrategy);

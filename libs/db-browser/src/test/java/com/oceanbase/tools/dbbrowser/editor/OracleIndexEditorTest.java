@@ -29,7 +29,7 @@ import com.oceanbase.tools.dbbrowser.model.DBTableIndex;
 public class OracleIndexEditorTest {
 
     private DBTableIndexEditor indexEditor;
-    private final String BASE_DIR = "src/test/resources/table/operator/oracle/index";
+    private final String BASE_DIR = "src/test/resources/table/operator/ob/oracle/index";
 
     @Before
     public void setUp() {

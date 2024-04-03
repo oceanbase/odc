@@ -15,13 +15,15 @@
  */
 package com.oceanbase.odc.core.shared.model;
 
+import java.util.Objects;
+
 import com.oceanbase.tools.dbbrowser.model.DBSession;
 
 import lombok.Data;
 
 @Data
 public class OdcDBSession {
-    private long sessionId;
+    private String sessionId;
     private String dbUser;
     private String srcIp;
     private String database;
@@ -34,12 +36,12 @@ public class OdcDBSession {
 
     public static OdcDBSession from(DBSession dbSession) {
         OdcDBSession session = new OdcDBSession();
-        session.setSessionId(Long.parseLong(dbSession.getId()));
+        session.setSessionId(dbSession.getId());
         session.setDbUser(dbSession.getUsername());
         session.setSrcIp(dbSession.getHost());
         session.setDatabase(dbSession.getDatabaseName());
         session.setCommand(dbSession.getCommand());
-        session.setExecuteTime(dbSession.getExecuteTime());
+        session.setExecuteTime(Objects.isNull(dbSession.getExecuteTime()) ? 0 : dbSession.getExecuteTime());
         session.setStatus(dbSession.getState());
         session.setObproxyIp(dbSession.getProxyHost());
         session.setSql(dbSession.getLatestQueries());

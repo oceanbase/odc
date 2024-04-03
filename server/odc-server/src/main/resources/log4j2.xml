@@ -295,6 +295,55 @@
             </Routes>
         </Routing>
 
+        <!-- 以下为申请数据库权限任务日志配置 -->
+        <Routing name="AllRoutingApplyDatabaseAppender">
+            <Routes pattern="$${ctx:taskId}">
+                <Route>
+                    <RollingFile name="Rolling-${ctx:taskId}"
+                                 fileName="${LOG_DIRECTORY}/apply-database/${ctx:taskWorkSpace}/${ctx:taskId}/apply-database-task.all"
+                                 filePattern="${LOG_DIRECTORY}/apply-database/${ctx:taskWorkSpace}/${ctx:taskId}/${date:yyyy-MM}/apply-database-task-%d{yyyy-MM-dd}-%i.all.gz">
+                        <PatternLayout>
+                            <pattern>%d{yyyy-MM-dd HH:mm:ss} %p %c{1.} - %m%n</pattern>
+                        </PatternLayout>
+                        <Policies>
+                            <TimeBasedTriggeringPolicy/>
+                            <SizeBasedTriggeringPolicy size="30MB"/>
+                        </Policies>
+                        <Policies>
+                            <TimeBasedTriggeringPolicy interval="6" modulate="true"/>
+                            <SizeBasedTriggeringPolicy size="10 MB"/>
+                        </Policies>
+                    </RollingFile>
+                </Route>
+            </Routes>
+        </Routing>
+
+        <Routing name="WarnRoutingApplyDatabaseAppender">
+            <Routes pattern="$${ctx:taskId}">
+                <Route>
+                    <RollingFile name="Rolling-${ctx:taskId}"
+                                 fileName="${LOG_DIRECTORY}/apply-database/${ctx:taskWorkSpace}/${ctx:taskId}/apply-database-task.warn"
+                                 filePattern="${LOG_DIRECTORY}/apply-database/${ctx:taskWorkSpace}/${ctx:taskId}/${date:yyyy-MM}/apply-database-task-%d{yyyy-MM-dd}-%i.warn.gz">
+                        <PatternLayout>
+                            <pattern>%d{yyyy-MM-dd HH:mm:ss} %p %c{1.} - %m%n</pattern>
+                        </PatternLayout>
+                        <Filters>
+                            <!-- TRACE < DEBUG < INFO < WARN < ERROR < FATAL -->
+                            <ThresholdFilter level="WARN" onMatch="ACCEPT" onMismatch="DENY"/>
+                        </Filters>
+                        <Policies>
+                            <TimeBasedTriggeringPolicy/>
+                            <SizeBasedTriggeringPolicy size="30MB"/>
+                        </Policies>
+                        <Policies>
+                            <TimeBasedTriggeringPolicy interval="6" modulate="true"/>
+                            <SizeBasedTriggeringPolicy size="10 MB"/>
+                        </Policies>
+                    </RollingFile>
+                </Route>
+            </Routes>
+        </Routing>
+
         <!-- 以下为影子表同步任务日志配置 -->
         <Routing name="AllRoutingShadowtableAppender">
             <Routes pattern="${ctx:taskId}">
@@ -347,8 +396,8 @@
             <Routes pattern="${ctx:taskId}">
                 <Route>
                     <RollingFile name="Rolling-${ctx:taskId}"
-                                 fileName="${LOG_DIRECTORY}/partitionplan/${ctx:partitionplanWorkSpace}/${ctx:taskId}/partitionplan.all"
-                                 filePattern="${LOG_DIRECTORY}/partitionplan/${ctx:partitionplanWorkSpace}/${ctx:taskId}/${date:yyyy-MM}/partitionplan-task-%d{yyyy-MM-dd}-%i.all.gz">
+                                 fileName="${LOG_DIRECTORY}/partition-plan/${ctx:taskId}/partition-plan.all"
+                                 filePattern="${LOG_DIRECTORY}/partition-plan/${ctx:taskId}/${date:yyyy-MM}/partition-plan-%d{yyyy-MM-dd}-%i.all.gz">
                         <PatternLayout>
                             <pattern>%d{yyyy-MM-dd HH:mm:ss} %p %c{1.} - %m%n</pattern>
                         </PatternLayout>
@@ -369,8 +418,8 @@
             <Routes pattern="${ctx:taskId}">
                 <Route>
                     <RollingFile name="Rolling-${ctx:taskId}"
-                                 fileName="${LOG_DIRECTORY}/partitionplan/${ctx:partitionplanWorkSpace}/${ctx:taskId}/partitionplan.warn"
-                                 filePattern="${LOG_DIRECTORY}/partitionplan/${ctx:partitionplanWorkSpace}/${ctx:taskId}/${date:yyyy-MM}/partitionplan-%d{yyyy-MM-dd}-%i.warn.gz">
+                                 fileName="${LOG_DIRECTORY}/partition-plan/${ctx:taskId}/partition-plan.warn"
+                                 filePattern="${LOG_DIRECTORY}/partition-plan/${ctx:taskId}/${date:yyyy-MM}/partition-plan-%d{yyyy-MM-dd}-%i.warn.gz">
                         <PatternLayout>
                             <pattern>%d{yyyy-MM-dd HH:mm:ss} %p %c{1.} - %m%n</pattern>
                         </PatternLayout>
@@ -533,6 +582,54 @@
             </Routes>
         </Routing>
 
+        <!-- 以下为结构比对任务日志配置 -->
+        <Routing name="AllRoutingStructureComparisonAppender">
+            <Routes pattern="${ctx:taskId}">
+                <Route>
+                    <RollingFile name="Rolling-${ctx:taskId}"
+                                 fileName="${LOG_DIRECTORY}/structure-comparison/${ctx:structureComparisonWorkSpace}/${ctx:taskId}/structure-comparison.all"
+                                 filePattern="${LOG_DIRECTORY}/structure-comparison/${ctx:structureComparisonWorkSpace}/${ctx:taskId}/${date:yyyy-MM}/structure-comparison-%d{yyyy-MM-dd}-%i.all.gz">
+                        <PatternLayout>
+                            <pattern>%d{yyyy-MM-dd HH:mm:ss} %p %c{1.} - %m%n</pattern>
+                        </PatternLayout>
+                        <Policies>
+                            <TimeBasedTriggeringPolicy/>
+                            <SizeBasedTriggeringPolicy size="30MB"/>
+                        </Policies>
+                        <Policies>
+                            <TimeBasedTriggeringPolicy interval="6" modulate="true"/>
+                            <SizeBasedTriggeringPolicy size="10 MB"/>
+                        </Policies>
+                    </RollingFile>
+                </Route>
+            </Routes>
+        </Routing>
+        <Routing name="WarnRoutingStructureComparisonAppender">
+            <Routes pattern="${ctx:taskId}">
+                <Route>
+                    <RollingFile name="Rolling-${ctx:taskId}"
+                                 fileName="${LOG_DIRECTORY}/structure-comparison/${ctx:structureComparisonWorkSpace}/${ctx:taskId}/structure-comparison.warn"
+                                 filePattern="${LOG_DIRECTORY}/structure-comparison/${ctx:structureComparisonWorkSpace}/${ctx:taskId}/${date:yyyy-MM}/structure-comparison-%d{yyyy-MM-dd}-%i.warn.gz">
+                        <PatternLayout>
+                            <pattern>%d{yyyy-MM-dd HH:mm:ss} %p %c{1.} - %m%n</pattern>
+                        </PatternLayout>
+                        <Filters>
+                            <!-- TRACE < DEBUG < INFO < WARN < ERROR < FATAL -->
+                            <ThresholdFilter level="WARN" onMatch="ACCEPT" onMismatch="DENY"/>
+                        </Filters>
+                        <Policies>
+                            <TimeBasedTriggeringPolicy/>
+                            <SizeBasedTriggeringPolicy size="30MB"/>
+                        </Policies>
+                        <Policies>
+                            <TimeBasedTriggeringPolicy interval="6" modulate="true"/>
+                            <SizeBasedTriggeringPolicy size="10 MB"/>
+                        </Policies>
+                    </RollingFile>
+                </Route>
+            </Routes>
+        </Routing>
+
 
     </Appenders>
     <Loggers>
@@ -608,9 +705,15 @@
         </Logger>
 
         <!-- 申请项目权限任务日志输出 -->
-        <Logger name="com.oceanbase.odc.service.permissionapply.project.ApplyProjectFlowableTask" level="INFO" additivity="true">
+        <Logger name="com.oceanbase.odc.service.permission.project.ApplyProjectFlowableTask" level="INFO" additivity="true">
             <AppenderRef ref="AllRoutingApplyProjectAppender"/>
             <AppenderRef ref="WarnRoutingApplyProjectAppender"/>
+        </Logger>
+
+        <!-- 申请数据库权限任务日志输出 -->
+        <Logger name="com.oceanbase.odc.service.permission.database.ApplyDatabaseFlowableTask" level="INFO" additivity="true">
+            <AppenderRef ref="AllRoutingApplyDatabaseAppender"/>
+            <AppenderRef ref="WarnRoutingApplyDatabaseAppender"/>
         </Logger>
 
         <!-- 影子表同步任务日志输出 -->
@@ -620,15 +723,16 @@
         </Logger>
 
         <!-- 分区计划任务日志输出 -->
-        <Logger name="com.oceanbase.odc.service.flow.task.PartitionPlanTask" level="INFO" additivity="true">
+        <Logger name="com.oceanbase.odc.service.flow.task.PartitionPlanRuntimeFlowableTask" level="INFO" additivity="true">
             <AppenderRef ref="AllRoutingPartitionPlanAppender"/>
             <AppenderRef ref="WarnRoutingPartitionPlanAppender"/>
         </Logger>
-        <Logger name="com.oceanbase.odc.service.partitionplan" level="INFO" additivity="true">
+        <Logger name="com.oceanbase.odc.service.schedule.job.PartitionPlanJob" level="INFO" additivity="true">
             <AppenderRef ref="AllRoutingPartitionPlanAppender"/>
             <AppenderRef ref="WarnRoutingPartitionPlanAppender"/>
         </Logger>
-        <Logger name="com.oceanbase.odc.service.schedule" level="INFO" additivity="true">
+
+        <Logger name="com.oceanbase.odc.service.schedule.flowtask.AlterScheduleTask" level="INFO" additivity="true">
             <AppenderRef ref="AllRoutingAlterScheduleAppender"/>
             <AppenderRef ref="WarnRoutingAlterScheduleAppender"/>
         </Logger>
@@ -636,6 +740,11 @@
         <Logger name="com.oceanbase.odc.service.onlineschemachange" level="INFO" additivity="true">
             <AppenderRef ref="AllRoutingOnlineSchemaChangeAppender"/>
             <AppenderRef ref="WarnRoutingOnlineSchemaChangeAppender"/>
+        </Logger>
+        <!-- 结构比对任务日志输出 -->
+        <Logger name="com.oceanbase.odc.service.flow.task.DBStructureComparisonFlowableTask" level="INFO" additivity="true">
+            <AppenderRef ref="AllRoutingStructureComparisonAppender"/>
+            <AppenderRef ref="WarnRoutingStructureComparisonAppender"/>
         </Logger>
 
         <Logger name="com.oceanbase.tools.migrator" level="INFO" additivity="true">

@@ -49,6 +49,15 @@ public class RsaBytesEncryptorTest extends EncryptorTest {
     }
 
     @Test
+    public void test_bothMode_emptyString() {
+        RsaBytesEncryptor encryptor = new RsaBytesEncryptor(RsaEncryptorType.BOTH_MODE, keyPair.left, keyPair.right);
+        String origin = "";
+        byte[] encrypted = encryptor.encrypt(origin.getBytes(StandardCharsets.UTF_8));
+        String decrypted = new String(encryptor.decrypt(encrypted), StandardCharsets.UTF_8);
+        Assert.assertEquals(origin, decrypted);
+    }
+
+    @Test
     public void test_onlyEncryptor_and_onlyDecryptor() {
         RsaBytesEncryptor encryptor = new RsaBytesEncryptor(RsaEncryptorType.ENCRYPT_MODE, keyPair.left, null);
         RsaBytesEncryptor decryptor = new RsaBytesEncryptor(RsaEncryptorType.DECRYPT_MODE, null, keyPair.right);

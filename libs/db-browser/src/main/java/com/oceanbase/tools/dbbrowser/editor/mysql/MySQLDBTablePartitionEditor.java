@@ -15,11 +15,14 @@
  */
 package com.oceanbase.tools.dbbrowser.editor.mysql;
 
+import java.util.List;
 import java.util.Objects;
 
 import javax.validation.constraints.NotNull;
 
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Validate;
 
 import com.oceanbase.tools.dbbrowser.editor.DBTablePartitionEditor;
 import com.oceanbase.tools.dbbrowser.model.DBTablePartition;
@@ -29,6 +32,8 @@ import com.oceanbase.tools.dbbrowser.model.DBTablePartitionType;
 import com.oceanbase.tools.dbbrowser.util.DBSchemaAccessorUtil;
 import com.oceanbase.tools.dbbrowser.util.MySQLSqlBuilder;
 import com.oceanbase.tools.dbbrowser.util.SqlBuilder;
+
+import lombok.NonNull;
 
 /**
  * @Author: Lebie
@@ -40,6 +45,26 @@ public class MySQLDBTablePartitionEditor extends DBTablePartitionEditor {
     @Override
     protected SqlBuilder sqlBuilder() {
         return new MySQLSqlBuilder();
+    }
+
+    @Override
+    public String generateCreateObjectDDL(@NotNull DBTablePartition partition) {
+        if (partition.getPartitionOption().getType() == DBTablePartitionType.NOT_PARTITIONED) {
+            return StringUtils.EMPTY;
+        }
+        SqlBuilder sqlBuilder = sqlBuilder();
+        sqlBuilder.append("ALTER TABLE ").append(getFullyQualifiedTableName(partition)).space()
+                .append(generateCreateDefinitionDDL(partition));
+        return sqlBuilder.toString().trim() + ";\n";
+    }
+
+    @Override
+    public String generateDropObjectDDL(DBTablePartition dbObject) {
+        SqlBuilder sqlBuilder = sqlBuilder();
+        String fullyQualifiedTableName = getFullyQualifiedTableName(dbObject);
+        sqlBuilder.append("ALTER TABLE ").append(fullyQualifiedTableName).append(" REMOVE PARTITIONING").append(";")
+                .line();
+        return sqlBuilder.toString();
     }
 
     @Override
@@ -82,7 +107,13 @@ public class MySQLDBTablePartitionEditor extends DBTablePartitionEditor {
     }
 
     @Override
-    protected String generateAddPartitionDefinitionDDL(
+    protected String modifyPartitionType(@NotNull DBTablePartition oldPartition,
+            @NotNull DBTablePartition newPartition) {
+        return generateCreateObjectDDL(newPartition);
+    }
+
+    @Override
+    public String generateAddPartitionDefinitionDDL(
             @NotNull DBTablePartitionDefinition definition,
             @NotNull DBTablePartitionOption option, String fullyQualifiedTableName) {
         SqlBuilder sqlBuilder = sqlBuilder();
@@ -90,6 +121,32 @@ public class MySQLDBTablePartitionEditor extends DBTablePartitionEditor {
         appendDefinition(option, definition, sqlBuilder);
         sqlBuilder.append(");").line();
         return sqlBuilder.toString();
+    }
+
+    @Override
+    public String generateAddPartitionDefinitionDDL(String schemaName, @NonNull String tableName,
+            @NonNull DBTablePartitionOption option, List<DBTablePartitionDefinition> definitions) {
+        DBTablePartitionType partitionType = option.getType();
+        if (partitionType != DBTablePartitionType.RANGE
+                && partitionType != DBTablePartitionType.RANGE_COLUMNS
+                && partitionType != DBTablePartitionType.LIST
+                && partitionType != DBTablePartitionType.LIST_COLUMNS) {
+            return "";
+        }
+        SqlBuilder sqlBuilder = sqlBuilder();
+        sqlBuilder.append("ALTER TABLE ");
+        if (StringUtils.isNotEmpty(schemaName)) {
+            sqlBuilder.identifier(schemaName).append(".");
+        }
+        sqlBuilder.identifier(tableName).append(" ADD PARTITION (").append("\n\t");
+        Validate.isTrue(!CollectionUtils.isEmpty(definitions), "Partition elements can not be empty");
+        for (int i = 0; i < definitions.size(); i++) {
+            appendDefinition(option, definitions.get(i), sqlBuilder);
+            if (i < definitions.size() - 1) {
+                sqlBuilder.append(",\n\t");
+            }
+        }
+        return sqlBuilder.append(");").line().toString();
     }
 
     @Override

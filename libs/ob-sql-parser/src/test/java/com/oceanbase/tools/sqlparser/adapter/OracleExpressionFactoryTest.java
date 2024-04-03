@@ -33,6 +33,7 @@ import com.oceanbase.tools.sqlparser.oboracle.OBParser;
 import com.oceanbase.tools.sqlparser.oboracle.OBParser.Bit_exprContext;
 import com.oceanbase.tools.sqlparser.oboracle.OBParser.ExprContext;
 import com.oceanbase.tools.sqlparser.oboracle.OBParser.PredicateContext;
+import com.oceanbase.tools.sqlparser.oboracle.OBParser.Xml_functionContext;
 import com.oceanbase.tools.sqlparser.statement.Expression;
 import com.oceanbase.tools.sqlparser.statement.Expression.ReferenceOperator;
 import com.oceanbase.tools.sqlparser.statement.Operator;
@@ -213,6 +214,31 @@ public class OracleExpressionFactoryTest {
 
         RelationReference r = new RelationReference("tab", new RelationReference("col", null));
         FunctionCall expect = new FunctionCall("exists", Collections.singletonList(new ExpressionParam(r)));
+        Assert.assertEquals(expect, actual);
+    }
+
+    @Test
+    public void generate_dblinkFunc_generateSucceed() {
+        Bit_exprContext context = getBitExprContext("a@abc()");
+        StatementFactory<Expression> factory = new OracleExpressionFactory(context);
+        Expression actual = factory.generate();
+
+        FunctionCall expect = new FunctionCall("a", Collections.emptyList());
+        expect.setUserVariable("@abc");
+        Assert.assertEquals(expect, actual);
+    }
+
+    @Test
+    public void generate_dblinkFunc1_generateSucceed() {
+        Bit_exprContext context = getBitExprContext("a.b.c@abc(1,2)");
+        StatementFactory<Expression> factory = new OracleExpressionFactory(context);
+        Expression actual = factory.generate();
+
+        FunctionCall fCall = new FunctionCall("c", Arrays.asList(
+                new ExpressionParam(new ConstExpression("1")),
+                new ExpressionParam(new ConstExpression("2"))));
+        fCall.setUserVariable("@abc");
+        RelationReference expect = new RelationReference("a", new RelationReference("b", fCall));
         Assert.assertEquals(expect, actual);
     }
 
@@ -1584,6 +1610,44 @@ public class OracleExpressionFactoryTest {
     }
 
     @Test
+    public void generate_deleteXml_generateSucceed() {
+        Xml_functionContext context = getXmlExprContext("deletexml(1,2,3)");
+        OracleExpressionFactory factory = new OracleExpressionFactory();
+        Expression actual = factory.visit(context);
+
+        FunctionCall expect = new FunctionCall("deletexml", Arrays.asList(
+                new ExpressionParam(new ConstExpression("1")),
+                new ExpressionParam(new ConstExpression("2")),
+                new ExpressionParam(new ConstExpression("3"))));
+        Assert.assertEquals(expect, actual);
+    }
+
+    @Test
+    public void generate_insertChildXml_generateSucceed() {
+        Xml_functionContext context = getXmlExprContext("insertchildxml(1,2,3,4)");
+        OracleExpressionFactory factory = new OracleExpressionFactory();
+        Expression actual = factory.visit(context);
+
+        FunctionCall expect = new FunctionCall("insertchildxml", Arrays.asList(
+                new ExpressionParam(new ConstExpression("1")),
+                new ExpressionParam(new ConstExpression("2")),
+                new ExpressionParam(new ConstExpression("3")),
+                new ExpressionParam(new ConstExpression("4"))));
+        Assert.assertEquals(expect, actual);
+    }
+
+    @Test
+    public void generate_xmlSequence_generateSucceed() {
+        Xml_functionContext context = getXmlExprContext("xmlsequence(1)");
+        OracleExpressionFactory factory = new OracleExpressionFactory();
+        Expression actual = factory.visit(context);
+
+        FunctionCall expect = new FunctionCall("xmlsequence",
+                Collections.singletonList(new ExpressionParam(new ConstExpression("1"))));
+        Assert.assertEquals(expect, actual);
+    }
+
+    @Test
     public void generate_xmlParseWellformed_generateSucceed() {
         ExprContext context = getExprContext("xmlparse(document 'aaa' wellformed)");
         StatementFactory<Expression> factory = new OracleExpressionFactory(context);
@@ -2849,6 +2913,14 @@ public class OracleExpressionFactoryTest {
         OBParser parser = new OBParser(tokens);
         parser.setErrorHandler(new BailErrorStrategy());
         return parser.expr();
+    }
+
+    private Xml_functionContext getXmlExprContext(String expr) {
+        OBLexer lexer = new OBLexer(CharStreams.fromString(expr));
+        CommonTokenStream tokens = new CommonTokenStream(lexer);
+        OBParser parser = new OBParser(tokens);
+        parser.setErrorHandler(new BailErrorStrategy());
+        return parser.xml_function();
     }
 
 }

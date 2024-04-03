@@ -17,11 +17,13 @@
 package com.oceanbase.odc.service.task.service;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.data.domain.Page;
 
 import com.oceanbase.odc.metadb.task.JobEntity;
 import com.oceanbase.odc.service.task.enums.JobStatus;
+import com.oceanbase.odc.service.task.enums.TaskRunMode;
 import com.oceanbase.odc.service.task.executor.server.HeartRequest;
 import com.oceanbase.odc.service.task.executor.task.TaskResult;
 import com.oceanbase.odc.service.task.schedule.JobDefinition;
@@ -53,32 +55,43 @@ public interface TaskFrameworkService {
 
     Page<JobEntity> findHeartTimeTimeoutJobs(int timeoutSeconds, int page, int size);
 
+    Page<JobEntity> findIncompleteJobs(int page, int size);
+
     /**
      * count the jobs started time before neverHeartSeconds which status is running and no heart
-     * 
+     *
      * @param neverHeartSeconds job start seconds
      * @return count
      */
     long countRunningNeverHeartJobs(int neverHeartSeconds);
 
+    /**
+     * count jobs which process is running
+     */
+    long countRunningJobs(TaskRunMode runMode);
+
     JobDefinition getJobDefinition(Long id);
 
     int startSuccess(Long id, String executorIdentifier);
+
+    int beforeStart(Long id);
 
     void updateDescription(Long id, String description);
 
     int updateJobToCanceling(Long id, JobStatus oldStatus);
 
+    int updateJobParameters(Long id, String jobParametersJson);
+
     int updateExecutorToDestroyed(Long id);
 
     int updateStatusDescriptionByIdOldStatus(Long id, JobStatus oldStatus, JobStatus newStatus, String description);
 
-    int updateStatusToCanceledWhenHeartTimeout(Long id, int heartTimeoutSeconds, String description);
+    int updateStatusToFailedWhenHeartTimeout(Long id, int heartTimeoutSeconds, String description);
 
     int updateStatusDescriptionByIdOldStatusAndExecutorDestroyed(Long id, JobStatus oldStatus, JobStatus newStatus,
             String description);
 
-    String findByJobIdAndAttributeKey(Long jobId, String attributeKey);
+    Optional<String> findByJobIdAndAttributeKey(Long jobId, String attributeKey);
 
     boolean isJobFinished(Long id);
 }

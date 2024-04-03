@@ -17,18 +17,18 @@ package com.oceanbase.odc.config;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.builders.WebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.oauth2.client.web.OAuth2LoginAuthenticationFilter;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.authentication.logout.LogoutSuccessHandler;
+import org.springframework.security.web.context.SecurityContextRepository;
 import org.springframework.web.servlet.LocaleResolver;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -44,9 +44,14 @@ import com.oceanbase.odc.service.iam.auth.UsernamePasswordConfigureHelper;
 import com.oceanbase.odc.service.iam.auth.bastion.BastionAuthenticationProcessingFilter;
 import com.oceanbase.odc.service.iam.auth.bastion.BastionAuthenticationProvider;
 import com.oceanbase.odc.service.iam.auth.bastion.BastionUserDetailService;
-import com.oceanbase.odc.service.iam.auth.local.TestLoginAuthenticationFilter;
+import com.oceanbase.odc.service.iam.auth.ldap.LdapSecurityConfigureHelper;
+import com.oceanbase.odc.service.iam.auth.ldap.LdapUserDetailsContextMapper;
+import com.oceanbase.odc.service.iam.auth.ldap.ODCLdapAuthenticationProvider;
+import com.oceanbase.odc.service.iam.auth.ldap.ODCLdapAuthenticator;
+import com.oceanbase.odc.service.iam.auth.local.LocalDaoAuthenticationProvider;
 import com.oceanbase.odc.service.iam.auth.oauth2.OAuth2SecurityConfigureHelper;
 import com.oceanbase.odc.service.iam.util.FailedLoginAttemptLimiter;
+import com.oceanbase.odc.service.integration.ldap.LdapConfigRegistrationManager;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -58,7 +63,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @Profile("alipay")
 @Configuration
-@ConditionalOnProperty(value = {"odc.iam.auth.type"}, havingValue = "local")
+@ConditionalOnExpression("#{@environment.getProperty('odc.iam.auth.type') == 'local' && @environment.getProperty('odc.iam.auth.method') == 'jsession'}")
 public class WebSecurityConfiguration extends WebSecurityConfigurerAdapter {
 
     @Value("${odc.iam.authentication.captcha.enabled:false}")
@@ -98,10 +103,20 @@ public class WebSecurityConfiguration extends WebSecurityConfigurerAdapter {
     private UsernamePasswordConfigureHelper usernamePasswordConfigureHelper;
 
     @Autowired
-    private DaoAuthenticationProvider daoAuthenticationProvider;
+    private LocalDaoAuthenticationProvider localDaoAuthenticationProvider;
 
     @Autowired
     private OAuth2SecurityConfigureHelper oauth2SecurityConfigureHelper;
+
+
+    @Autowired
+    private LdapSecurityConfigureHelper ldapSecurityConfigureHelper;
+
+    @Autowired
+    private LdapUserDetailsContextMapper ldapUserDetailsContextMapper;
+
+    @Autowired
+    private LdapConfigRegistrationManager ldapConfigRegistrationManager;
 
     private BastionAuthenticationProvider bastionAuthenticationProvider() {
         return new BastionAuthenticationProvider(bastionUserDetailService);
@@ -109,8 +124,11 @@ public class WebSecurityConfiguration extends WebSecurityConfigurerAdapter {
 
     @Override
     public void configure(AuthenticationManagerBuilder auth) {
-        auth.authenticationProvider(daoAuthenticationProvider)
-                .authenticationProvider(bastionAuthenticationProvider());
+        auth.authenticationProvider(localDaoAuthenticationProvider)
+                .authenticationProvider(bastionAuthenticationProvider())
+                .authenticationProvider(
+                        new ODCLdapAuthenticationProvider(new ODCLdapAuthenticator(ldapConfigRegistrationManager),
+                                ldapUserDetailsContextMapper));
     }
 
     @Override
@@ -123,9 +141,15 @@ public class WebSecurityConfiguration extends WebSecurityConfigurerAdapter {
     @Override
     protected void configure(HttpSecurity http) throws Exception {
         corsConfigureHelper.configure(http);
-
         usernamePasswordConfigureHelper.configure(http, authenticationManager());
         oauth2SecurityConfigureHelper.configure(http);
+        ldapSecurityConfigureHelper.configure(http, authenticationManager());
+
+        SecurityContextRepository securityContextRepository = securityContextRepository();
+        if (securityContextRepository != null) {
+            http.setSharedObject(SecurityContextRepository.class, securityContextRepository);
+        }
+
         // @formatter:off
         http.exceptionHandling()
                 .authenticationEntryPoint(new CustomAuthenticationEntryPoint(commonSecurityProperties.getLoginPage(),localeResolver))
@@ -135,23 +159,13 @@ public class WebSecurityConfiguration extends WebSecurityConfigurerAdapter {
             .and()
                 .logout()
                 .logoutUrl(commonSecurityProperties.getLogoutUri())
-                .logoutSuccessHandler(new CustomLogoutSuccessHandler())
+                .logoutSuccessHandler(logoutSuccessHandler())
                 .deleteCookies(commonSecurityProperties.getSessionCookieKey())
-                .invalidateHttpSession(true).permitAll()
-            .and()
-                .sessionManagement()
-                // SessionCreationPolicy.ALWAYS --> SessionCreationPolicy.IF_REQUIRED，防止登出后再次访问页面生成session造成无法跳转至登录页
-                .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
-                .sessionFixation()
-                .migrateSession()
-                .invalidSessionStrategy(new CustomInvalidSessionStrategy(commonSecurityProperties.getLoginPage(), localeResolver));
+                .invalidateHttpSession(true).permitAll();
+        configHttpSession(http);
 
         // @formatter:on
         csrfConfigureHelper.configure(http);
-
-        http.addFilterBefore(
-                new TestLoginAuthenticationFilter(),
-                OAuth2LoginAuthenticationFilter.class);
 
         if (bastionProperties.getAccount().isAutoLoginEnabled()) {
             http.addFilterBefore(bastionAuthenticationProcessingFilter(authenticationManager()),
@@ -162,7 +176,24 @@ public class WebSecurityConfiguration extends WebSecurityConfigurerAdapter {
             http.addFilterBefore(getCaptchaAuthenticationProcessingFilter(),
                     UsernamePasswordAuthenticationFilter.class);
         }
+    }
 
+    protected SecurityContextRepository securityContextRepository() {
+        return null;
+    }
+
+    protected LogoutSuccessHandler logoutSuccessHandler() {
+        return new CustomLogoutSuccessHandler();
+    }
+
+    protected void configHttpSession(HttpSecurity http) throws Exception {
+        http.sessionManagement()
+                // SessionCreationPolicy.ALWAYS --> SessionCreationPolicy.IF_REQUIRED，防止登出后再次访问页面生成session造成无法跳转至登录页
+                .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
+                .sessionFixation()
+                .migrateSession()
+                .invalidSessionStrategy(
+                        new CustomInvalidSessionStrategy(commonSecurityProperties.getLoginPage(), localeResolver));
     }
 
     private CaptchaAuthenticationProcessingFilter getCaptchaAuthenticationProcessingFilter() {
@@ -173,7 +204,6 @@ public class WebSecurityConfiguration extends WebSecurityConfigurerAdapter {
         return captchaAuthenticationProcessingFilter;
     }
 
-
     private BastionAuthenticationProcessingFilter bastionAuthenticationProcessingFilter(
             AuthenticationManager authenticationManager) {
         BastionAuthenticationProcessingFilter filter =
@@ -183,4 +213,5 @@ public class WebSecurityConfiguration extends WebSecurityConfigurerAdapter {
         filter.setAuthenticationFailureHandler(customAuthenticationFailureHandler);
         return filter;
     }
+
 }

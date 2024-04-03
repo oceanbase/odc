@@ -46,4 +46,6 @@ public class JobEntityColumn {
 
     public static final String EXECUTOR_IDENTIFIER = "executorIdentifier";
 
+    public static final String JOB_PARAMETERS_JSON = "jobParametersJson";
+
 }

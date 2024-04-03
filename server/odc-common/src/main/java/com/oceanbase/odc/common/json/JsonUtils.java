@@ -15,6 +15,9 @@
  */
 package com.oceanbase.odc.common.json;
 
+import java.io.IOException;
+import java.io.Reader;
+import java.lang.reflect.Type;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -26,6 +29,7 @@ import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.SerializationFeature;
@@ -58,6 +62,9 @@ public class JsonUtils {
 
     private static final ObjectMapper UNSAFE_OBJECT_MAPPER = JacksonFactory.unsafeJsonMapper();
 
+    private static final ObjectMapper OBJECT_MAPPER_IGNORE_NULL = JacksonFactory.jsonMapper()
+            .setSerializationInclusion(Include.NON_NULL);
+
     public static <T> T fromJson(String json, Class<T> classType) {
         if (json == null) {
             return null;
@@ -67,6 +74,32 @@ public class JsonUtils {
         } catch (JsonProcessingException e) {
             return null;
         }
+    }
+
+    public static <T> T fromJsonReader(Reader reader, Class<T> classType) {
+        if (reader == null) {
+            return null;
+        }
+        try {
+            return OBJECT_MAPPER.readValue(reader, classType);
+        } catch (IOException e) {
+            return null;
+        }
+    }
+
+    public static <T> T fromJson(String json, JavaType javaType) {
+        if (json == null) {
+            return null;
+        }
+        try {
+            return OBJECT_MAPPER.readValue(json, javaType);
+        } catch (JsonProcessingException e) {
+            return null;
+        }
+    }
+
+    public static JavaType constructType(Type type) {
+        return OBJECT_MAPPER.getTypeFactory().constructType(type);
     }
 
     public static <T> T fromJson(String json, TypeReference<T> valueTypeRef) {
@@ -155,6 +188,11 @@ public class JsonUtils {
     public static String toJsonUpperCamelCase(Object obj) {
         return innerToJson(OBJECT_MAPPER_UPPER_CAMEL_CASE, obj);
     }
+
+    public static String toJsonIgnoreNull(Object obj) {
+        return innerToJson(OBJECT_MAPPER_IGNORE_NULL, obj);
+    }
+
 
     /**
      * 将 XML 转换成 JSON

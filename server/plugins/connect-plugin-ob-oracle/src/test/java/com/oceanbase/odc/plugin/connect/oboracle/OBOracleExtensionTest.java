@@ -18,6 +18,7 @@ package com.oceanbase.odc.plugin.connect.oboracle;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.List;
+import java.util.Properties;
 import java.util.UUID;
 
 import org.junit.AfterClass;
@@ -42,6 +43,8 @@ import com.oceanbase.odc.plugin.connect.api.SessionExtensionPoint;
 import com.oceanbase.odc.plugin.connect.api.SqlDiagnoseExtensionPoint;
 import com.oceanbase.odc.plugin.connect.api.TestResult;
 import com.oceanbase.odc.plugin.connect.api.TraceExtensionPoint;
+import com.oceanbase.odc.plugin.connect.model.ConnectionPropertiesBuilder;
+import com.oceanbase.odc.plugin.connect.model.JdbcUrlProperty;
 import com.oceanbase.odc.test.database.TestDBConfiguration;
 import com.oceanbase.odc.test.database.TestDBConfigurations;
 import com.oceanbase.odc.test.util.FileUtil;
@@ -76,6 +79,17 @@ public class OBOracleExtensionTest extends BaseExtensionPointTest {
         jdbcTemplate.execute(FileUtil.loadAsString(BASE_PATH + "tableDDL.sql"));
     }
 
+    private JdbcUrlProperty getJdbcProperties() {
+        return new JdbcUrlProperty(configuration.getHost(), configuration.getPort(), configuration.getDefaultDBName(),
+                null);
+    }
+
+    private Properties getTestConnectionProperties() {
+        return ConnectionPropertiesBuilder.getBuilder().user(getUsername(configuration))
+                .password(configuration.getPassword())
+                .build();
+    }
+
     @AfterClass
     public static void clear() {
         jdbcTemplate.execute(FileUtil.loadAsString(BASE_PATH + "drop.sql"));
@@ -83,20 +97,18 @@ public class OBOracleExtensionTest extends BaseExtensionPointTest {
 
     @Test
     public void test_ob_oracle_url_is_valid() {
-        String url = connectionExtensionPoint.generateJdbcUrl(configuration.getHost(), configuration.getPort(),
-                configuration.getDefaultDBName(), null);
-        TestResult result = connectionExtensionPoint.test(url, getUsername(configuration),
-                configuration.getPassword(), 30);
+        String url = connectionExtensionPoint.generateJdbcUrl(getJdbcProperties());
+        TestResult result = connectionExtensionPoint.test(url, getTestConnectionProperties(), 30);
         Assert.assertTrue(result.isActive());
         Assert.assertNull(result.getErrorCode());
     }
 
     @Test
     public void test_ob_oracle_connect_invalid_password() {
-        String url = connectionExtensionPoint.generateJdbcUrl(configuration.getHost(), configuration.getPort(),
-                configuration.getDefaultDBName(), null);
-        TestResult result = connectionExtensionPoint.test(url, getUsername(configuration),
-                UUID.randomUUID().toString(), 30);
+        String url = connectionExtensionPoint.generateJdbcUrl(getJdbcProperties());
+        Properties testConnectionProperties = getTestConnectionProperties();
+        testConnectionProperties.put(ConnectionPropertiesBuilder.PASSWORD, UUID.randomUUID().toString());
+        TestResult result = connectionExtensionPoint.test(url, testConnectionProperties, 30);
         Assert.assertFalse(result.isActive());
         Assert.assertEquals(ErrorCodes.ObAccessDenied, result.getErrorCode());
     }
@@ -104,10 +116,10 @@ public class OBOracleExtensionTest extends BaseExtensionPointTest {
     @Test
     @Ignore("TODO: fix this test")
     public void test_ob_oracle_connect_invalid_port() {
-        String url = connectionExtensionPoint.generateJdbcUrl(configuration.getHost(), configuration.getPort() + 100,
-                configuration.getDefaultDBName(), null);
-        TestResult result = connectionExtensionPoint.test(url, getUsername(configuration),
-                configuration.getPassword(), 30);
+        JdbcUrlProperty jdbcProperties = getJdbcProperties();
+        jdbcProperties.setPort(configuration.getPort() + 100);
+        String url = connectionExtensionPoint.generateJdbcUrl(jdbcProperties);
+        TestResult result = connectionExtensionPoint.test(url, getTestConnectionProperties(), 30);
 
         Assert.assertFalse(result.isActive());
         Assert.assertEquals(ErrorCodes.ConnectionUnknownPort, result.getErrorCode());
@@ -115,10 +127,10 @@ public class OBOracleExtensionTest extends BaseExtensionPointTest {
 
     @Test
     public void test_ob_oracle_connect_invalid_host() {
-        String url = connectionExtensionPoint.generateJdbcUrl(UUID.randomUUID().toString(),
-                configuration.getPort(), configuration.getDefaultDBName(), null);
-        TestResult result = connectionExtensionPoint.test(url, getUsername(configuration),
-                configuration.getPassword(), 30);
+        JdbcUrlProperty jdbcProperties = getJdbcProperties();
+        jdbcProperties.setHost(UUID.randomUUID().toString());
+        String url = connectionExtensionPoint.generateJdbcUrl(jdbcProperties);
+        TestResult result = connectionExtensionPoint.test(url, getTestConnectionProperties(), 30);
 
         Assert.assertFalse(result.isActive());
         Assert.assertEquals(ErrorCodes.ConnectionUnknownHost, result.getErrorCode());
@@ -255,7 +267,15 @@ public class OBOracleExtensionTest extends BaseExtensionPointTest {
         }
     }
 
-    private String getUsername(TestDBConfiguration configuration) {
+    @Test
+    public void test_ob_oracle_getVariable() throws SQLException {
+        try (Connection connection = getConnection()) {
+            String waitTimeout = sessionExtensionPoint.getVariable(connection, "nls_date_format");
+            Assert.assertNotNull(waitTimeout);
+        }
+    }
+
+    private static String getUsername(TestDBConfiguration configuration) {
         String username = ConnectionSessionUtil.getUserOrSchemaString(
                 configuration.getUsername(), DialectType.OB_ORACLE);
         if (StringUtils.isNotBlank(configuration.getTenant())) {

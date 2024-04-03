@@ -27,6 +27,7 @@ import com.oceanbase.tools.dbbrowser.model.DBProcedure;
 import com.oceanbase.tools.dbbrowser.model.DBSequence;
 import com.oceanbase.tools.dbbrowser.model.DBSynonym;
 import com.oceanbase.tools.dbbrowser.model.DBSynonymType;
+import com.oceanbase.tools.dbbrowser.model.DBTable;
 import com.oceanbase.tools.dbbrowser.model.DBTable.DBTableOptions;
 import com.oceanbase.tools.dbbrowser.model.DBTableColumn;
 import com.oceanbase.tools.dbbrowser.model.DBTableConstraint;
@@ -37,6 +38,8 @@ import com.oceanbase.tools.dbbrowser.model.DBTrigger;
 import com.oceanbase.tools.dbbrowser.model.DBType;
 import com.oceanbase.tools.dbbrowser.model.DBVariable;
 import com.oceanbase.tools.dbbrowser.model.DBView;
+
+import lombok.NonNull;
 
 /**
  * @author jingtian
@@ -167,7 +170,7 @@ public interface DBSchemaAccessor {
     /**
      * Get all table columns in the specified schema
      */
-    Map<String, List<DBTableColumn>> listTableColumns(String schemaName);
+    Map<String, List<DBTableColumn>> listTableColumns(String schemaName, List<String> tableNames);
 
     /**
      * Get all table columns in the specified schema and table
@@ -206,8 +209,13 @@ public interface DBSchemaAccessor {
 
     Map<String, DBTableOptions> listTableOptions(String schemaName);
 
-    List<DBTablePartition> listTablePartitions(String tenantName, String schemaName, String tableName);
+    Map<String, DBTablePartition> listTablePartitions(@NonNull String schemaName, List<String> tableNames);
 
+    /**
+     * you can use {@link DBSchemaAccessor#listTablePartitions(String, List)} instead we will delete it
+     * soon
+     */
+    @Deprecated
     List<DBTablePartition> listTableRangePartitionInfo(String tenantName);
 
     List<DBTableSubpartitionDefinition> listSubpartitions(String schemaName, String tableName);
@@ -243,4 +251,6 @@ public interface DBSchemaAccessor {
     DBSequence getSequence(String schemaName, String sequenceName);
 
     DBSynonym getSynonym(String schemaName, String synonymName, DBSynonymType synonymType);
+
+    Map<String, DBTable> getTables(String schemaName, List<String> tableNames);
 }

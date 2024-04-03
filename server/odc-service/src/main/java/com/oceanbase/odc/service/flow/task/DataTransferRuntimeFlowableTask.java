@@ -88,6 +88,7 @@ public class DataTransferRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Voi
              */
             odcInternalFileService.getExternalImportFiles(taskEntity, submitter, config.getImportFileName());
         }
+        config.setExecutionTimeoutSeconds(taskEntity.getExecutionExpirationIntervalSeconds());
         context = dataTransferService.create(taskId + "", config);
         taskService.start(taskId, context.getStatus());
         return null;
@@ -131,17 +132,19 @@ public class DataTransferRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Voi
         log.info("Data transfer task succeed, taskId={}", taskId);
         try {
             taskService.succeed(taskId, context.get());
+            super.onSuccessful(taskId, taskService);
             updateFlowInstanceStatus(FlowStatus.EXECUTION_SUCCEEDED);
         } catch (Exception e) {
             log.warn("Failed to get result", e);
         }
-        super.onSuccessful(taskId, taskService);
+
     }
 
     @Override
     protected void onTimeout(Long taskId, TaskService taskService) {
         log.warn("Data transfer task timeout, taskId={}", taskId);
         taskService.fail(taskId, context.getProgress(), context.getStatus());
+        super.onTimeout(taskId, taskService);
     }
 
     @Override

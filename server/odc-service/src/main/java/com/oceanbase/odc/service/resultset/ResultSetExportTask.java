@@ -19,7 +19,6 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.nio.file.Paths;
-import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -33,6 +32,7 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.jdbc.core.StatementCallback;
 
 import com.oceanbase.odc.common.trace.TraceContextHolder;
 import com.oceanbase.odc.common.util.ExceptionUtils;
@@ -67,6 +67,7 @@ import com.oceanbase.odc.service.datatransfer.model.DataTransferProperties;
 import com.oceanbase.odc.service.flow.task.model.ResultSetExportResult;
 import com.oceanbase.odc.service.objectstorage.cloud.CloudObjectStorageService;
 import com.oceanbase.odc.service.plugin.TaskPluginUtil;
+import com.oceanbase.odc.service.session.initializer.ConsoleTimeoutInitializer;
 import com.oceanbase.tools.dbbrowser.model.DBTableColumn;
 import com.oceanbase.tools.loaddump.common.enums.ObjectType;
 import com.oceanbase.tools.loaddump.common.model.ObjectStatus.Status;
@@ -91,12 +92,13 @@ public class ResultSetExportTask implements Callable<ResultSetExportResult> {
     private final DataTransferConfig transferConfig;
     private final ConnectionSession session;
     private final DataTransferProperties dataTransferProperties;
+    private final Long maxDumpSizeBytes;
     @Getter
     private DataTransferJob job;
 
     public ResultSetExportTask(File workingDir, File logDir, ResultSetExportTaskParameter parameter,
             ConnectionSession session, CloudObjectStorageService cloudObjectStorageService,
-            DataTransferProperties dataTransferProperties) {
+            DataTransferProperties dataTransferProperties, Long maxDumpSizeBytes) {
         PreConditions.notBlank(parameter.getFileName(), "req.fileName");
         this.parameter = parameter;
         this.logDir = logDir;
@@ -106,6 +108,7 @@ public class ResultSetExportTask implements Callable<ResultSetExportResult> {
         this.cloudObjectStorageService = cloudObjectStorageService;
         this.dataTransferProperties = dataTransferProperties;
         this.transferConfig = convertParam2TransferConfig(parameter);
+        this.maxDumpSizeBytes = maxDumpSizeBytes;
     }
 
     @Override
@@ -196,12 +199,16 @@ public class ResultSetExportTask implements Callable<ResultSetExportResult> {
         connectionInfo.setSchema(parameter.getDatabase());
         config.setConnectionInfo(connectionInfo);
 
+        config.setMaxDumpSizeBytes(maxDumpSizeBytes);
 
         config.setQuerySql(parameter.getSql());
         config.setFileType(parameter.getFileFormat().name());
         setColumnConfig(config, parameter);
         config.setCursorFetchSize(dataTransferProperties.getCursorFetchSize());
         config.setUsePrepStmts(dataTransferProperties.isUseServerPrepStmts());
+
+        config.setExecutionTimeoutSeconds(parameter.getExecutionTimeoutSeconds());
+
         return config;
     }
 
@@ -214,26 +221,34 @@ public class ResultSetExportTask implements Callable<ResultSetExportResult> {
         Map<String, Map<String, List<OrdinalColumn>>> catalog2TableColumns = new HashMap<>();
         try {
             SyncJdbcExecutor syncJdbcExecutor = session.getSyncJdbcExecutor(ConnectionSessionConstants.BACKEND_DS_KEY);
-            ResultSetMetaData rsMetaData =
-                    syncJdbcExecutor.query(parameter.getSql(), pss -> pss.setMaxRows(10), ResultSet::getMetaData);
-            if (rsMetaData == null) {
-                throw new UnexpectedException("Query rs metadata failed.");
-            }
-            int columnCount = rsMetaData.getColumnCount();
-            for (int index = 1; index <= columnCount; index++) {
-                String catalogName = rsMetaData.getCatalogName(index);
-                String tableName = rsMetaData.getTableName(index);
-                String columnName = rsMetaData.getColumnName(index);
-                Map<String, List<OrdinalColumn>> table2Columns =
-                        catalog2TableColumns.computeIfAbsent(catalogName, k -> new HashMap<>());
-                List<OrdinalColumn> columns = table2Columns.computeIfAbsent(tableName, k -> new ArrayList<>());
-                columns.add(new OrdinalColumn(index - 1, columnName));
-                DBTableColumn column = new DBTableColumn();
-                column.setSchemaName(catalogName);
-                column.setTableName(tableName);
-                column.setName(columnName);
-                tableColumns.add(column);
-            }
+            syncJdbcExecutor.execute((StatementCallback<?>) stmt -> {
+                stmt.setMaxRows(10);
+                new ConsoleTimeoutInitializer(parameter.getExecutionTimeoutSeconds() * 1000000L,
+                        config.getConnectionInfo().getConnectType().getDialectType())
+                                .init(stmt.getConnection());
+
+                stmt.execute(parameter.getSql());
+                ResultSetMetaData rsMetaData = stmt.getResultSet().getMetaData();
+                if (rsMetaData == null) {
+                    throw new UnexpectedException("Query rs metadata failed.");
+                }
+                int columnCount = rsMetaData.getColumnCount();
+                for (int index = 1; index <= columnCount; index++) {
+                    String catalogName = rsMetaData.getCatalogName(index);
+                    String tableName = rsMetaData.getTableName(index);
+                    String columnName = rsMetaData.getColumnName(index);
+                    Map<String, List<OrdinalColumn>> table2Columns =
+                            catalog2TableColumns.computeIfAbsent(catalogName, k -> new HashMap<>());
+                    List<OrdinalColumn> columns = table2Columns.computeIfAbsent(tableName, k -> new ArrayList<>());
+                    columns.add(new OrdinalColumn(index - 1, columnName));
+                    DBTableColumn column = new DBTableColumn();
+                    column.setSchemaName(catalogName);
+                    column.setTableName(tableName);
+                    column.setName(columnName);
+                    tableColumns.add(column);
+                }
+                return null;
+            });
         } catch (Exception e) {
             throw OBException.executeFailed(
                     "Query result metadata failed, please try again, message=" + ExceptionUtils.getRootCauseMessage(e));
@@ -277,7 +292,7 @@ public class ResultSetExportTask implements Callable<ResultSetExportResult> {
     }
 
     private String getFileName(String extension) {
-        return parameter.getTableName() + ".0.0" + extension;
+        return parameter.getTableName() + extension;
     }
 
     private String getDumpFileDirectory() throws IOException {

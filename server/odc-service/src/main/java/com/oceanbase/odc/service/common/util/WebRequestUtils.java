@@ -85,6 +85,12 @@ public class WebRequestUtils {
         return url.toString();
     }
 
+    public static boolean isLocalRequest(ServletRequest request) {
+        String remoteAddr = request.getRemoteAddr();
+        return "localhost".equalsIgnoreCase(remoteAddr) || "127.0.0.1".equals(remoteAddr)
+                || "0:0:0:0:0:0:0:1".equals(remoteAddr) || "::1".equals(remoteAddr);
+    }
+
     private static UriComponents getRequestUriComponents(HttpServletRequest request) {
         PreConditions.notNull(request, "request");
         HttpRequest httpRequest = new ServletServerHttpRequest(request);
@@ -234,7 +240,7 @@ public class WebRequestUtils {
         return (T) value;
     }
 
-    private static ServletRequestAttributes getRequestAttributes() {
+    public static ServletRequestAttributes getRequestAttributes() {
         RequestAttributes requestAttributes = RequestContextHolder.getRequestAttributes();
         Verify.notNull(requestAttributes, "RequestAttributes");
         return (ServletRequestAttributes) requestAttributes;
@@ -320,4 +326,10 @@ public class WebRequestUtils {
         return null;
     }
 
+    public static void setAttribute(@NonNull String key, @NonNull Object value) {
+        RequestAttributes requestAttributes = RequestContextHolder.getRequestAttributes();
+        if (requestAttributes != null) {
+            requestAttributes.setAttribute(key, value, RequestAttributes.SCOPE_REQUEST);
+        }
+    }
 }

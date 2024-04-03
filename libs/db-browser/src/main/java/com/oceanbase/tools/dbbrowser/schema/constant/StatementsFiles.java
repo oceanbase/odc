@@ -31,10 +31,14 @@ public final class StatementsFiles {
 
     public static final String OBMYSQL_1479 = "schema/sql/obmysql/obmysql_1_4_79.yaml";
 
-    public static final String MYSQL_5_7_40 = "schema/sql/mysql/mysql_5_7_40.yaml";
+    public static final String MYSQL_5_7_x = "schema/sql/mysql/mysql_5_7_x.yaml";
+
+    public static final String MYSQL_5_6_x = "schema/sql/mysql/mysql_5_6_x.yaml";
 
     public static final String OBORACLE_4_0_x = "schema/sql/oboracle/oboracle_4_0_x.yaml";
 
     public static final String OBORACLE_3_x = "schema/sql/oboracle/oboracle_3_x.yaml";
+
+    public static final String ORACLE_11_g = "schema/sql/oracle/oracle_11g.yaml";
 
 }

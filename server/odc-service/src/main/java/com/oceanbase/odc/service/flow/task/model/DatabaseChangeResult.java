@@ -17,16 +17,18 @@ package com.oceanbase.odc.service.flow.task.model;
 
 import java.util.List;
 
-import com.oceanbase.odc.core.flow.model.FlowTaskResult;
+import com.oceanbase.odc.core.flow.model.AbstractFlowTaskResult;
 
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 /**
  * @author wenniu.ly
  * @date 2021/3/15
  */
 @Data
-public class DatabaseChangeResult implements FlowTaskResult {
+@EqualsAndHashCode(callSuper = true)
+public class DatabaseChangeResult extends AbstractFlowTaskResult {
     private List<String> records;
     private Integer successCount;
     private Integer failCount;
@@ -38,4 +40,5 @@ public class DatabaseChangeResult implements FlowTaskResult {
     private Long resultPreviewMaxSizeBytes;
     private String errorRecordsFilePath;
     private RollbackPlanTaskResult rollbackPlanResult;
+    private boolean autoModifyTimeout;
 }

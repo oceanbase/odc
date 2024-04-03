@@ -1,0 +1,147 @@
+/*
+ * Copyright (c) 2023 OceanBase.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package com.oceanbase.odc.service.partitionplan.model;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+import org.apache.commons.collections4.CollectionUtils;
+
+import com.oceanbase.odc.common.util.StringUtils;
+import com.oceanbase.odc.core.shared.constant.DialectType;
+import com.oceanbase.odc.plugin.task.api.partitionplan.AutoPartitionExtensionPoint;
+import com.oceanbase.odc.service.plugin.TaskPluginUtil;
+import com.oceanbase.tools.dbbrowser.model.DBTable;
+import com.oceanbase.tools.dbbrowser.model.DBTableColumn;
+import com.oceanbase.tools.dbbrowser.model.DBTablePartition;
+import com.oceanbase.tools.dbbrowser.model.DBTablePartitionOption;
+import com.oceanbase.tools.dbbrowser.model.DBTablePartitionType;
+
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.Setter;
+
+/**
+ * {@link PartitionPlanDBTable}
+ *
+ * @author yh263208
+ * @date 2024-01-09 11:55
+ * @since ODC_release_4.2.4
+ * @see DBTable
+ */
+@Getter
+@Setter
+@EqualsAndHashCode(callSuper = true)
+public class PartitionPlanDBTable extends DBTable {
+
+    private DialectType dialectType;
+    private PartitionPlanTableConfig partitionPlanTableConfig;
+
+    public boolean isContainsCreateStrategy() {
+        Set<PartitionPlanStrategy> strategies = getStrategies();
+        if (CollectionUtils.isEmpty(strategies)) {
+            return false;
+        }
+        return CollectionUtils.containsAny(strategies, PartitionPlanStrategy.CREATE);
+    }
+
+    public boolean isContainsDropStrategy() {
+        Set<PartitionPlanStrategy> strategies = getStrategies();
+        if (CollectionUtils.isEmpty(strategies)) {
+            return false;
+        }
+        return CollectionUtils.containsAny(strategies, PartitionPlanStrategy.DROP);
+    }
+
+    public boolean isRangePartitioned() {
+        DBTablePartition partition = getPartition();
+        if (partition == null) {
+            return false;
+        }
+        DBTablePartitionType partitionType = partition.getPartitionOption().getType();
+        return Objects.equals(DBTablePartitionType.RANGE, partitionType)
+                || Objects.equals(DBTablePartitionType.RANGE_COLUMNS, partitionType);
+    }
+
+    public String getPartitionMode() {
+        DBTablePartition partition = getPartition();
+        if (partition == null) {
+            return "0";
+        }
+        int mode = 0;
+        DBTablePartitionOption option = partition.getPartitionOption();
+        switch (option.getType()) {
+            case KEY:
+                mode |= 0x1;
+                break;
+            case HASH:
+                mode |= 0x2;
+                break;
+            case LIST:
+                mode |= 0x4;
+                break;
+            case RANGE:
+                mode |= 0x8;
+                break;
+            case LIST_COLUMNS:
+                mode |= 0x10;
+                break;
+            case RANGE_COLUMNS:
+                mode |= 0x20;
+                break;
+            default:
+                return "0";
+        }
+        if (Boolean.TRUE.equals(partition.getSubpartitionTemplated())) {
+            mode |= 0x40;
+        }
+        StringBuilder builder = new StringBuilder(mode);
+        List<String> exprOrColumns = new ArrayList<>();
+        if (CollectionUtils.isNotEmpty(option.getColumnNames())) {
+            exprOrColumns.addAll(option.getColumnNames());
+        } else if (StringUtils.isNotEmpty(option.getExpression())) {
+            exprOrColumns.add(option.getExpression());
+        }
+        List<DBTableColumn> columns = getColumns();
+        AutoPartitionExtensionPoint extensionPoint = TaskPluginUtil.getAutoPartitionExtensionPoint(dialectType);
+        Map<String, String> colName2TypeName = new HashMap<>();
+        if (CollectionUtils.isNotEmpty(columns)) {
+            colName2TypeName = columns.stream().collect(Collectors.toMap(
+                    c -> extensionPoint.unquoteIdentifier(c.getName()), DBTableColumn::getTypeName));
+        }
+        StringBuilder tmp = new StringBuilder();
+        for (String exprOrColumn : exprOrColumns) {
+            String realName = extensionPoint.unquoteIdentifier(exprOrColumn);
+            tmp.append(realName).append(colName2TypeName.getOrDefault(realName, "unknown"));
+        }
+        return builder.insert(0, tmp.toString().hashCode()).toString();
+    }
+
+    public Set<PartitionPlanStrategy> getStrategies() {
+        if (this.partitionPlanTableConfig == null) {
+            return new HashSet<>();
+        }
+        return this.partitionPlanTableConfig.getPartitionKeyConfigs().stream()
+                .map(PartitionPlanKeyConfig::getStrategy).collect(Collectors.toSet());
+    }
+
+}

@@ -35,7 +35,8 @@ public class LeftFuzzyMatchFactory implements SqlCheckRuleFactory {
 
     @Override
     public SqlCheckRule generate(@NonNull DialectType dialectType, Map<String, Object> parameters) {
-        return dialectType.isMysql() ? new MySQLLeftFuzzyMatch() : new OracleLeftFuzzyMatch();
+        return (dialectType.isMysql() || dialectType.isDoris()) ? new MySQLLeftFuzzyMatch()
+                : new OracleLeftFuzzyMatch();
     }
 
 }

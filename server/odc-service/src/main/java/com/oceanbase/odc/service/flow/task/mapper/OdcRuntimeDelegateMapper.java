@@ -19,21 +19,20 @@ import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.core.shared.constant.TaskType;
 import com.oceanbase.odc.core.shared.exception.UnsupportedException;
-import com.oceanbase.odc.service.common.util.SpringContextUtil;
 import com.oceanbase.odc.service.flow.task.BaseRuntimeFlowableDelegate;
+import com.oceanbase.odc.service.flow.task.DBStructureComparisonFlowableTask;
 import com.oceanbase.odc.service.flow.task.DataTransferRuntimeFlowableTask;
 import com.oceanbase.odc.service.flow.task.DatabaseChangeRuntimeFlowableTask;
-import com.oceanbase.odc.service.flow.task.DatabaseChangeRuntimeFlowableTaskCopied;
 import com.oceanbase.odc.service.flow.task.MockDataRuntimeFlowableTask;
-import com.oceanbase.odc.service.flow.task.PartitionPlanTask;
+import com.oceanbase.odc.service.flow.task.PartitionPlanRuntimeFlowableTask;
 import com.oceanbase.odc.service.flow.task.PreCheckRuntimeFlowableTask;
 import com.oceanbase.odc.service.flow.task.RollbackPlanRuntimeFlowableTask;
 import com.oceanbase.odc.service.flow.task.ShadowtableSyncRuntimeFlowableTask;
 import com.oceanbase.odc.service.onlineschemachange.OnlineSchemaChangeFlowableTask;
-import com.oceanbase.odc.service.permissionapply.project.ApplyProjectFlowableTask;
+import com.oceanbase.odc.service.permission.database.ApplyDatabaseFlowableTask;
+import com.oceanbase.odc.service.permission.project.ApplyProjectFlowableTask;
 import com.oceanbase.odc.service.resultset.ResultSetExportFlowableTask;
 import com.oceanbase.odc.service.schedule.flowtask.AlterScheduleTask;
-import com.oceanbase.odc.service.task.config.TaskFrameworkProperties;
 
 import lombok.NonNull;
 
@@ -48,11 +47,9 @@ import lombok.NonNull;
 public class OdcRuntimeDelegateMapper implements RuntimeDelegateMapper {
     @Override
     public Class<? extends BaseRuntimeFlowableDelegate<?>> map(@NonNull TaskType taskType) {
-        boolean enableTaskFramework = SpringContextUtil.getBean(TaskFrameworkProperties.class).isEnabled();
         switch (taskType) {
             case ASYNC:
-                return enableTaskFramework ? DatabaseChangeRuntimeFlowableTaskCopied.class
-                        : DatabaseChangeRuntimeFlowableTask.class;
+                return DatabaseChangeRuntimeFlowableTask.class;
             case MOCKDATA:
                 return MockDataRuntimeFlowableTask.class;
             case IMPORT:
@@ -61,7 +58,7 @@ public class OdcRuntimeDelegateMapper implements RuntimeDelegateMapper {
             case SHADOWTABLE_SYNC:
                 return ShadowtableSyncRuntimeFlowableTask.class;
             case PARTITION_PLAN:
-                return PartitionPlanTask.class;
+                return PartitionPlanRuntimeFlowableTask.class;
             case ALTER_SCHEDULE:
                 return AlterScheduleTask.class;
             case ONLINE_SCHEMA_CHANGE:
@@ -74,6 +71,10 @@ public class OdcRuntimeDelegateMapper implements RuntimeDelegateMapper {
                 return PreCheckRuntimeFlowableTask.class;
             case APPLY_PROJECT_PERMISSION:
                 return ApplyProjectFlowableTask.class;
+            case APPLY_DATABASE_PERMISSION:
+                return ApplyDatabaseFlowableTask.class;
+            case STRUCTURE_COMPARISON:
+                return DBStructureComparisonFlowableTask.class;
             default:
                 throw new UnsupportedException(ErrorCodes.Unsupported, new Object[] {ResourceType.ODC_TASK},
                         "Unsupported task type: " + taskType);

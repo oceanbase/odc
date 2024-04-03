@@ -17,8 +17,11 @@ package com.oceanbase.tools.dbbrowser.schema.mysql;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 import org.springframework.jdbc.core.JdbcOperations;
@@ -37,6 +40,7 @@ import com.oceanbase.tools.dbbrowser.model.DBView;
 import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessorSqlMappers;
 import com.oceanbase.tools.dbbrowser.schema.constant.Statements;
 import com.oceanbase.tools.dbbrowser.schema.constant.StatementsFiles;
+import com.oceanbase.tools.dbbrowser.util.DBSchemaAccessorUtil;
 import com.oceanbase.tools.dbbrowser.util.MySQLSqlBuilder;
 import com.oceanbase.tools.dbbrowser.util.StringUtils;
 
@@ -88,7 +92,9 @@ public class OBMySQLBetween2277And3XSchemaAccessor extends OBMySQLSchemaAccessor
     protected void fillIndexRange(List<DBTableIndex> indexList, String schemaName,
             String tableName) {
         setIndexRangeByDDL(indexList, schemaName, tableName);
-        setIndexRangeByQuery(indexList, schemaName, tableName);
+        if (indexList.stream().anyMatch(idx -> Objects.isNull(idx.getGlobal()))) {
+            setIndexRangeByQuery(indexList, schemaName, tableName);
+        }
     }
 
     protected void setIndexRangeByQuery(List<DBTableIndex> indexList, String schemaName, String tableName) {
@@ -131,12 +137,66 @@ public class OBMySQLBetween2277And3XSchemaAccessor extends OBMySQLSchemaAccessor
 
     @Override
     public DBTablePartition getPartition(String schemaName, String tableName) {
+        String sql = sqlMapper.getSql(Statements.GET_PARTITION);
+        List<Map<String, Object>> result = jdbcOperations.query(sql, ps -> {
+            ps.setString(1, schemaName);
+            ps.setString(2, tableName);
+        }, (rs, rowNum) -> {
+            Map<String, Object> row = new HashMap<>();
+            row.put("partition_method", rs.getString("partition_method"));
+            row.put("part_num", rs.getInt("part_num"));
+            row.put("part_func_expr", rs.getString("part_func_expr"));
+            row.put("is_sub_part_template", rs.getInt("is_sub_part_template"));
+            row.put("part_name", rs.getString("part_name"));
+            row.put("part_id", rs.getInt("part_id"));
+            row.put("list_val", rs.getString("list_val"));
+            row.put("high_bound_val", rs.getString("high_bound_val"));
+            row.put("subpartition_method", rs.getString("subpartition_method"));
+            row.put("sub_part_func_expr", rs.getString("sub_part_func_expr"));
+            row.put("sub_part_num", rs.getInt("sub_part_num"));
+            return row;
+        });
+        return getFromResultSet(result, schemaName, tableName);
+    }
+
+    @Override
+    public Map<String, DBTablePartition> listTablePartitions(@NonNull String schemaName, List<String> tableNames) {
+        List<Map<String, Object>> queryResult = DBSchemaAccessorUtil.partitionFind(tableNames,
+                DBSchemaAccessorUtil.OB_MAX_IN_SIZE, names -> {
+                    String sql = filterByValues(sqlMapper.getSql(Statements.LIST_PARTITIONS), "table_name", names);
+                    return jdbcOperations.query(sql, new Object[] {schemaName}, (rs, rowNum) -> {
+                        Map<String, Object> row = new HashMap<>();
+                        row.put("table_name", rs.getString("table_name"));
+                        row.put("partition_method", rs.getString("partition_method"));
+                        row.put("part_num", rs.getInt("part_num"));
+                        row.put("part_func_expr", rs.getString("part_func_expr"));
+                        row.put("is_sub_part_template", rs.getInt("is_sub_part_template"));
+                        row.put("part_name", rs.getString("part_name"));
+                        row.put("part_id", rs.getInt("part_id"));
+                        row.put("list_val", rs.getString("list_val"));
+                        row.put("high_bound_val", rs.getString("high_bound_val"));
+                        row.put("subpartition_method", rs.getString("subpartition_method"));
+                        row.put("sub_part_func_expr", rs.getString("sub_part_func_expr"));
+                        row.put("sub_part_num", rs.getInt("sub_part_num"));
+                        return row;
+                    });
+                });
+        Map<String, List<Map<String, Object>>> tableName2Rows = queryResult.stream()
+                .collect(Collectors.groupingBy(m -> (String) m.get("table_name")));
+        return tableName2Rows.entrySet().stream().collect(Collectors.toMap(Entry::getKey,
+                e -> getFromResultSet(e.getValue(), schemaName, e.getKey())));
+    }
+
+    private DBTablePartition getFromResultSet(List<Map<String, Object>> rows, String schemaName, String tableName) {
         DBTablePartition partition = new DBTablePartition();
         DBTablePartition subPartition = new DBTablePartition();
         partition.setSubpartition(subPartition);
         DBTablePartitionOption partitionOption = new DBTablePartitionOption();
         partitionOption.setType(DBTablePartitionType.NOT_PARTITIONED);
         partition.setPartitionOption(partitionOption);
+        partition.setSchemaName(schemaName);
+        partition.setTableName(tableName);
+        subPartition.setSchemaName(schemaName);
 
         DBTablePartitionOption subPartitionOption = new DBTablePartitionOption();
         subPartitionOption.setType(DBTablePartitionType.NOT_PARTITIONED);
@@ -147,15 +207,10 @@ public class OBMySQLBetween2277And3XSchemaAccessor extends OBMySQLSchemaAccessor
         List<DBTablePartitionDefinition> subPartitionDefinitions = new ArrayList<>();
         subPartition.setPartitionDefinitions(subPartitionDefinitions);
 
-        String sql = sqlMapper.getSql(Statements.GET_PARTITION);
-
-        jdbcOperations.query(sql, ps -> {
-            ps.setString(1, schemaName);
-            ps.setString(2, tableName);
-        }, (rs, rowNum) -> {
-            partitionOption.setType(DBTablePartitionType.fromValue(rs.getString("partition_method")));
-            partitionOption.setPartitionsNum(rs.getInt("part_num"));
-            String expression = rs.getString("part_func_expr");
+        for (Map<String, Object> row : rows) {
+            partitionOption.setType(DBTablePartitionType.fromValue((String) row.get("partition_method")));
+            partitionOption.setPartitionsNum((Integer) row.get("part_num"));
+            String expression = (String) row.get("part_func_expr");
             if (StringUtils.isNotEmpty(expression)) {
                 if (partitionOption.getType().supportExpression()) {
                     partitionOption.setExpression(expression);
@@ -163,32 +218,32 @@ public class OBMySQLBetween2277And3XSchemaAccessor extends OBMySQLSchemaAccessor
                     partitionOption.setColumnNames(Arrays.asList(expression.split(",")));
                 }
             }
-            partition.setSubpartitionTemplated(rs.getInt("is_sub_part_template") == 1);
+            partition.setSubpartitionTemplated((Integer) row.get("is_sub_part_template") == 1);
 
             DBTablePartitionDefinition partitionDefinition = new DBTablePartitionDefinition();
-            partitionDefinition.setName(rs.getString("part_name"));
-            partitionDefinition.setOrdinalPosition(rs.getInt("part_id"));
-            partitionDefinition.setType(DBTablePartitionType.fromValue(rs.getString("partition_method")));
+            partitionDefinition.setName((String) row.get("part_name"));
+            partitionDefinition.setOrdinalPosition((Integer) row.get("part_id"));
+            partitionDefinition.setType(DBTablePartitionType.fromValue((String) row.get("partition_method")));
             String description = null;
             if (partitionDefinition.getType() == DBTablePartitionType.LIST
                     || partitionDefinition.getType() == DBTablePartitionType.LIST_COLUMNS) {
-                description = rs.getString("list_val");
+                description = (String) row.get("list_val");
             } else if (partitionDefinition.getType() == DBTablePartitionType.RANGE
                     || partitionDefinition.getType() == DBTablePartitionType.RANGE_COLUMNS) {
-                description = rs.getString("high_bound_val");
+                description = (String) row.get("high_bound_val");
             }
             partitionDefinition.fillValues(description);
             partitionDefinitions.add(partitionDefinition);
 
-            DBTablePartitionType subPartType = DBTablePartitionType.fromValue(rs.getString("subpartition_method"));
-            String subPartExpression = rs.getString("sub_part_func_expr");
+            DBTablePartitionType subPartType = DBTablePartitionType.fromValue((String) row.get("subpartition_method"));
+            String subPartExpression = (String) row.get("sub_part_func_expr");
 
             // TODO 目前 ODC 仅支持 HASH/KEY 模板化二级分区, 其它类型后续需补充
             // OB 1479 bug，不是二级分区表，内部表里也会有值，需要判断 sub_part_func_expr 是否为空来确定是否有二级分区
             if ((subPartType == DBTablePartitionType.HASH || subPartType == DBTablePartitionType.KEY)
                     && partition.getSubpartitionTemplated() && StringUtils.isNotBlank(subPartExpression)) {
                 subPartitionOption.setType(subPartType);
-                subPartitionOption.setPartitionsNum(rs.getInt("sub_part_num"));
+                subPartitionOption.setPartitionsNum((Integer) row.get("sub_part_num"));
                 if (subPartType.supportExpression()) {
                     subPartitionOption.setExpression(subPartExpression);
                 } else {
@@ -198,9 +253,7 @@ public class OBMySQLBetween2277And3XSchemaAccessor extends OBMySQLSchemaAccessor
             } else {
                 partition.setWarning("Only support HASH/KEY subpartition currently");
             }
-            return null;
-        });
-
+        }
         return partition;
     }
 
@@ -223,8 +276,8 @@ public class OBMySQLBetween2277And3XSchemaAccessor extends OBMySQLSchemaAccessor
     @Override
     public Map<String, List<DBTableColumn>> listBasicTableColumns(String schemaName) {
         String sql = sqlMapper.getSql(Statements.LIST_BASIC_SCHEMA_TABLE_COLUMNS);
-        List<DBTableColumn> tableColumns = jdbcOperations.query(sql, new Object[] {schemaName},
-                listBasicTableColumnRowMapper());
+        List<DBTableColumn> tableColumns =
+                jdbcOperations.query(sql, new Object[] {schemaName}, listBasicTableColumnRowMapper());
         return tableColumns.stream().collect(Collectors.groupingBy(DBTableColumn::getTableName));
     }
 

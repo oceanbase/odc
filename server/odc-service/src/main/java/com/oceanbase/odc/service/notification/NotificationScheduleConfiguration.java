@@ -23,8 +23,8 @@ import java.util.concurrent.Executors;
 import java.util.function.Supplier;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Profile;
 import org.springframework.scheduling.Trigger;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.SchedulingConfigurer;
@@ -35,7 +35,7 @@ import com.oceanbase.odc.service.notification.model.MessageSendingStatus;
 
 @EnableScheduling
 @Configuration
-@ConditionalOnProperty(value = "odc.notification.enabled", havingValue = "true")
+@Profile({"!clientMode"})
 public class NotificationScheduleConfiguration implements SchedulingConfigurer {
     @Autowired
     private NotificationProperties notificationProperties;
@@ -55,6 +55,9 @@ public class NotificationScheduleConfiguration implements SchedulingConfigurer {
         taskRegistrar.addTriggerTask(() -> broker.dequeueNotification(MessageSendingStatus.SENT_FAILED),
                 getTrigger(() -> Duration
                         .ofMillis(notificationProperties.getDequeueFailedNotificationFixedDelayMillis())));
+        taskRegistrar.addTriggerTask(() -> broker.dequeueNotification(MessageSendingStatus.SENDING),
+                getTrigger(() -> Duration
+                        .ofMillis(notificationProperties.getDequeueSendingNotificationFixedDelayMillis())));
     }
 
     private Trigger getTrigger(Supplier<Duration> durationSupplier) {

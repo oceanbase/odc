@@ -77,6 +77,9 @@ public class RestrictColumnNotNull implements SqlCheckRule {
     }
 
     private boolean containsIgnoreCase(String name) {
+        if (name == null) {
+            return true;
+        }
         return this.nullableDatatypes.stream().anyMatch(s -> StringUtils.equalsIgnoreCase(s, name));
     }
 
@@ -84,14 +87,14 @@ public class RestrictColumnNotNull implements SqlCheckRule {
         return stream.filter(d -> {
             ColumnAttributes attributes = d.getColumnAttributes();
             if (attributes == null) {
-                return !containsIgnoreCase(d.getDataType().getName());
+                return !containsIgnoreCase(getDataTypeName(d));
             }
             List<InLineConstraint> cs = attributes.getConstraints();
             if (CollectionUtils.isEmpty(cs)) {
-                return !containsIgnoreCase(d.getDataType().getName());
+                return !containsIgnoreCase(getDataTypeName(d));
             }
             return cs.stream().noneMatch(c -> Boolean.FALSE.equals(c.getNullable()))
-                    && !containsIgnoreCase(d.getDataType().getName());
+                    && !containsIgnoreCase(getDataTypeName(d));
         }).map(d -> {
             String dataTypes = "N/A";
             if (CollectionUtils.isNotEmpty(nullableDatatypes)) {
@@ -99,6 +102,10 @@ public class RestrictColumnNotNull implements SqlCheckRule {
             }
             return SqlCheckUtil.buildViolation(sql, d, getType(), new Object[] {d.getDataType().getText(), dataTypes});
         }).collect(Collectors.toList());
+    }
+
+    private String getDataTypeName(ColumnDefinition definition) {
+        return definition.getDataType() == null ? null : definition.getDataType().getName();
     }
 
 }

@@ -62,7 +62,7 @@ public class MySQLConstraintEditor extends DBTableConstraintEditor {
         } else {
             sqlBuilder.append("KEY ").identifier(constraint.getName());
         }
-        return sqlBuilder.toString();
+        return sqlBuilder.toString().trim() + ";\n";
     }
 
     @Override
@@ -72,8 +72,8 @@ public class MySQLConstraintEditor extends DBTableConstraintEditor {
         // 外键不支持重命名，只能删除后重建
         if (newConstraint.getType() == DBConstraintType.FOREIGN_KEY) {
             String drop = generateDropObjectDDL(oldConstraint);
-            sqlBuilder.append(drop).append(";").line()
-                    .append(generateCreateObjectDDL(newConstraint)).append(";").line();
+            sqlBuilder.append(drop)
+                    .append(generateCreateObjectDDL(newConstraint));
         } else {
             sqlBuilder.append("ALTER TABLE ").append(getFullyQualifiedTableName(oldConstraint))
                     .append(" RENAME KEY ").identifier(oldConstraint.getName()).append(" TO ")

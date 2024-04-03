@@ -1,0 +1,145 @@
+# built-in snippet for OceanBase MySQL compatible mode
+- name: oceanbase mysql query unit list
+  dialect_type: OB_MYSQL
+  tags: [ 'dba','oceanbase' ]
+  type: DQL
+  min_version: 2.2.0
+  max_version: 3.4.0
+  description: 'Query unit list for OceanBase MySQL mode'
+  prefix: query_unit_list
+  body: |
+    SELECT
+      SVR_IP,
+      SVR_PORT,
+      UNIT_ID,
+      TENANT_ID,
+      ZONE,
+      MAX_CPU,
+      MIN_CPU,
+      ROUND(MAX_MEMORY / 1024 / 1024 / 1024) MAX_MEMORY_GB,
+      ROUND(MIN_MEMORY / 1024 / 1024 / 1024) MIN_MEMORY_GB,
+      MAX_IOPS,
+      MIN_IOPS,
+      ROUND(MAX_DISK_SIZE / 1024 / 1024 / 1024) MAX_DISK_SIZE_GB
+    FROM
+      oceanbase.GV\$UNIT;
+- name: oceanbase mysql query cluster info
+  dialect_type: OB_MYSQL
+  tags: [ 'dba','oceanbase' ]
+  type: DQL
+  min_version: 2.2.0
+  max_version: 3.4.0
+  description: 'Query OceanBase cluster information'
+  prefix: query_cluster_info
+  body: |
+    show parameters like 'cluster%';
+- name: oceanbase mysql query tenant information
+  dialect_type: OB_MYSQL
+  tags: [ 'dba','oceanbase' ]
+  type: DQL
+  min_version: 2.2.0
+  max_version: 3.4.0
+  description: 'Query OceanBase tenant information'
+  prefix: query_tenant_information
+  body: |
+    SELECT
+      TENANT_ID,
+      TENANT_NAME,
+      ZONE_LIST,
+      PRIMARY_ZONE,
+      INFO,
+      READ_ONLY,
+      LOCALITY
+    FROM
+      oceanbase.GV\$TENANT;
+- name: oceanbase mysql query module memory usage
+  dialect_type: OB_MYSQL
+  tags: [ 'dba','oceanbase' ]
+  type: DQL
+  min_version: 2.2.0
+  max_version: 3.4.0
+  description: Query module memory usage for OceanBase MySQL mode
+  prefix: query_module_memory_usage
+  body: |
+    SELECT
+      TENANT_ID,
+      IP,
+      PORT,
+      CONTEXT AS CTX_NAME,
+      ROUND(SUM(USED) / 1024 / 1024, 2) AS USED_MB
+    FROM
+      OCEANBASE.GV\$MEMORY
+    GROUP BY CONTEXT, IP
+    ORDER BY USED DESC;
+- name: oceanbase mysql query module memory usage
+  dialect_type: OB_MYSQL
+  tags: [ 'dba','oceanbase' ]
+  type: DQL
+  min_version: 2.2.0
+  max_version: 3.4.0
+  description: Query memstore information for OceanBase MySQL mode
+  prefix: query_memstore_information
+  body: |
+    SELECT
+      IP,
+      PORT,
+      TENANT_ID,
+      ROUND(ACTIVE / 1024 / 1024 / 1024, 2) ACTIVE_GB,
+      ROUND(FREEZE_TRIGGER / 1024 / 1024 / 1024, 2) FREEZE_TRIGGER_GB,
+      ROUND(MEM_LIMIT / 1024 / 1024 / 1024, 2) MEMSTORE_LIMIT_GB,
+      ROUND(TOTAL / 1024 / 1024 / 1024, 2) MEMSTORE_USED_GB,
+      FREEZE_CNT
+    FROM
+      oceanbase.GV\$MEMSTORE;
+- name: oceanbase mysql stats top size tables in database
+  dialect_type: OB_MYSQL
+  tags: [ 'dba','oceanbase', 'stats' ]
+  type: DQL
+  min_version: 2.2.0
+  max_version: 3.4.0
+  description: Stats top size tables in database for OceanBase MySQL mode
+  prefix: stats_top_size_tables_in_database
+  body: |
+    SELECT
+      d.database_name as database_name,
+      t.table_name as table_name,
+      ROUND(sum(p.data_size)/1024/1024,1) as data_size_MB,
+      ROUND(sum(p.required_size)/1024/1024,1) as required_size_MB
+    FROM oceanbase.gv\$table t
+    LEFT JOIN oceanbase.gv\$database d
+      ON t.database_id = d.database_id
+    LEFT JOIN oceanbase.gv\$partition p
+      ON t.table_id = p.table_id
+    WHERE 
+      d.database_name=DATABASE()
+    AND 
+      t.table_type=3
+    GROUP BY database_name, table_name
+    ORDER BY data_size_MB DESC
+    LIMIT 10;
+- name: oceanbase mysql stats partition size for table
+  dialect_type: OB_MYSQL
+  tags: [ 'dba','oceanbase', 'stats' ]
+  type: DQL
+  min_version: 2.2.0
+  max_version: 3.4.0
+  description: stats partition size for table for OceanBase MySQL mode
+  prefix: stats_partition_size_for_table
+  body: |
+    SELECT
+      d.database_name as database_name,
+      t.table_name as table_name,
+      p.partition_id,
+      ROUND(sum(p.data_size)/1024/1024,1) as data_size_MB,
+      ROUND(sum(p.required_size)/1024/1024,1) as required_size_MB
+    FROM oceanbase.gv\$table t
+    LEFT JOIN oceanbase.gv\$database d
+      ON t.database_id = d.database_id
+    LEFT JOIN oceanbase.gv\$partition p
+      ON t.table_id = p.table_id
+    WHERE 
+      d.database_name = DATABASE()
+    AND 
+      t.table_type=3
+    GROUP BY database_name, table_name, partition_id
+    ORDER BY data_size_MB DESC;

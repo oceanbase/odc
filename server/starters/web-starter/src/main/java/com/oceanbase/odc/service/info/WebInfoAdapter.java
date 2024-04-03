@@ -66,7 +66,7 @@ public class WebInfoAdapter implements InfoAdapter {
             return alipayOpenApiProperties.getObOfficialLoginUrl();
         } else if (authType.contains("local")) {
             SSOIntegrationConfig sSoClientRegistration = integrationService.getSSoIntegrationConfig();
-            if (sSoClientRegistration == null) {
+            if (sSoClientRegistration == null || !sSoClientRegistration.isOauth2OrOidc()) {
                 return null;
             }
             return sSoClientRegistration.resolveLoginRedirectUrl();
@@ -80,12 +80,21 @@ public class WebInfoAdapter implements InfoAdapter {
             return alipayOpenApiProperties.getObOfficialLogoutUrl();
         } else if (authType.contains("local")) {
             SSOIntegrationConfig sSoClientRegistration = integrationService.getSSoIntegrationConfig();
-            if (sSoClientRegistration == null) {
+            if (sSoClientRegistration == null || !sSoClientRegistration.isOauth2OrOidc()) {
                 return null;
             }
             return sSoClientRegistration.resolveLogoutUrl();
         }
         return null;
+    }
+
+    @Override
+    public boolean isSSoLoginEnabled(HttpServletRequest request) {
+        if (authType.contains("local")) {
+            SSOIntegrationConfig ssoIntegrationConfig = integrationService.getSSoIntegrationConfig();
+            return ssoIntegrationConfig != null;
+        }
+        return getLoginUrl(request) != null;
     }
 
     @Override
@@ -95,6 +104,15 @@ public class WebInfoAdapter implements InfoAdapter {
             return "";
         }
         return sSoIntegrationConfig.getName();
+    }
+
+    @Override
+    public String ssoLoginType() {
+        SSOIntegrationConfig sSoIntegrationConfig = integrationService.getSSoIntegrationConfig();
+        if (sSoIntegrationConfig == null) {
+            return "";
+        }
+        return sSoIntegrationConfig.getType();
     }
 
     @Override

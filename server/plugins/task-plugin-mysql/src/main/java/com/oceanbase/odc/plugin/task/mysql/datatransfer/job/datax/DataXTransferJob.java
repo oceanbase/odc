@@ -98,17 +98,19 @@ public class DataXTransferJob extends AbstractJob {
             });
             // exit code: 0=success, 1=error
             int exitValue = process.waitFor();
-            renameExportFile();
-            if (exitValue == 0 && failed == 0) {
+            if (exitValue == 0 && failed == 0 || isCanceled()) {
+                renameExportFile();
                 setStatus(Status.SUCCESS);
             } else {
                 setStatus(Status.FAILURE);
-                throw new RuntimeException(String.format("DataX task failed. Number of failed records: %d .", failed));
+                throw new RuntimeException(String.format(
+                        "DataX task failed. Number of failed records: %d . Please get details in %s", failed, logDir));
             }
         } finally {
             if (process != null && process.isAlive()) {
                 process.destroy();
             }
+            FileUtils.deleteQuietly(Paths.get(workingDir.getPath(), "job.conf").toFile());
             executor.shutdown();
         }
     }
@@ -171,7 +173,7 @@ public class DataXTransferJob extends AbstractJob {
                 }
                 matcher = LOG_DIRTY_RECORD_PATTERN.matcher(line);
                 if (matcher.matches()) {
-                    LOGGER.warn("Dirty record: {}", line);
+                    LOGGER.warn("Dirty record: {}", line.substring(0, Math.min(line.length(), 1024)));
                 }
             }
         } finally {

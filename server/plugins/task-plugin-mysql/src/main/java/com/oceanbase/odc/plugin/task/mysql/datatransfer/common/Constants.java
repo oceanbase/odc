@@ -42,7 +42,7 @@ public class Constants {
 
     public static final String DEFAULT_PL_DELIMITER = "$$" + LINE_BREAKER;
 
-    public static final String PL_DELIMITER_STMT = "DELIMITER " + DEFAULT_PL_DELIMITER;
+    public static final String PL_DELIMITER_STMT = "DELIMITER " + DEFAULT_PL_DELIMITER + LINE_BREAKER;
 
     public static final String COMMIT_STMT = "commit";
 

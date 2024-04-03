@@ -22,6 +22,7 @@ import com.fasterxml.jackson.annotation.JsonValue;
 public enum OBDatabaseUserType {
     ADMIN("Admin"),
     NORMAL("Normal"),
+    READ_ONLY("ReadonlyAccount"),
     ;
 
     private String value;

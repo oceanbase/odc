@@ -74,6 +74,12 @@ public class AuditUtils {
                 case APPLY_PROJECT_PERMISSION:
                     type = AuditEventType.APPLY_PROJECT_PERMISSION;
                     break;
+                case APPLY_DATABASE_PERMISSION:
+                    type = AuditEventType.APPLY_DATABASE_PERMISSION;
+                    break;
+                case STRUCTURE_COMPARISON:
+                    type = AuditEventType.STRUCTURE_COMPARISON;
+                    break;
                 default:
                     type = AuditEventType.UNKNOWN_TASK_TYPE;
             }
@@ -163,6 +169,8 @@ public class AuditUtils {
                     return AuditEventAction.CREATE_PERMISSION_APPLY_TASK;
                 case SHADOWTABLE_SYNC:
                     return AuditEventAction.CREATE_SHADOWTABLE_SYNC_TASK;
+                case STRUCTURE_COMPARISON:
+                    return AuditEventAction.CREATE_STRUCTURE_COMPARISON_TASK;
                 case PARTITION_PLAN:
                     return AuditEventAction.CREATE_PARTITION_PLAN_TASK;
                 case ALTER_SCHEDULE:
@@ -171,6 +179,8 @@ public class AuditUtils {
                     return AuditEventAction.CREATE_ONLINE_SCHEMA_CHANGE_TASK;
                 case APPLY_PROJECT_PERMISSION:
                     return AuditEventAction.CREATE_APPLY_PROJECT_PERMISSION_TASK;
+                case APPLY_DATABASE_PERMISSION:
+                    return AuditEventAction.CREATE_APPLY_DATABASE_PERMISSION_TASK;
             }
         }
         if (action == AuditEventAction.STOP_TASK) {
@@ -187,6 +197,8 @@ public class AuditUtils {
                     return AuditEventAction.STOP_ASYNC_TASK;
                 case SHADOWTABLE_SYNC:
                     return AuditEventAction.STOP_SHADOWTABLE_SYNC_TASK;
+                case STRUCTURE_COMPARISON:
+                    return AuditEventAction.STOP_STRUCTURE_COMPARISON_TASK;
                 case PARTITION_PLAN:
                     return AuditEventAction.STOP_PARTITION_PLAN_TASK;
                 case ALTER_SCHEDULE:
@@ -195,6 +207,8 @@ public class AuditUtils {
                     return AuditEventAction.STOP_ONLINE_SCHEMA_CHANGE_TASK;
                 case APPLY_PROJECT_PERMISSION:
                     return AuditEventAction.STOP_APPLY_PROJECT_PERMISSION_TASK;
+                case APPLY_DATABASE_PERMISSION:
+                    return AuditEventAction.STOP_APPLY_DATABASE_PERMISSION_TASK;
             }
         }
         if (action == AuditEventAction.EXECUTE_TASK) {
@@ -211,6 +225,8 @@ public class AuditUtils {
                     return AuditEventAction.EXECUTE_ASYNC_TASK;
                 case SHADOWTABLE_SYNC:
                     return AuditEventAction.EXECUTE_SHADOWTABLE_SYNC_TASK;
+                case STRUCTURE_COMPARISON:
+                    return AuditEventAction.EXECUTE_STRUCTURE_COMPARISON_TASK;
                 case PARTITION_PLAN:
                     return AuditEventAction.EXECUTE_PARTITION_PLAN_TASK;
                 case ALTER_SCHEDULE:
@@ -235,6 +251,8 @@ public class AuditUtils {
                     return AuditEventAction.APPROVE_PERMISSION_APPLY_TASK;
                 case SHADOWTABLE_SYNC:
                     return AuditEventAction.APPROVE_SHADOWTABLE_SYNC_TASK;
+                case STRUCTURE_COMPARISON:
+                    return AuditEventAction.APPROVE_STRUCTURE_COMPARISON_TASK;
                 case PARTITION_PLAN:
                     return AuditEventAction.APPROVE_PARTITION_PLAN_TASK;
                 case ALTER_SCHEDULE:
@@ -243,6 +261,8 @@ public class AuditUtils {
                     return AuditEventAction.APPROVE_ONLINE_SCHEMA_CHANGE_TASK;
                 case APPLY_PROJECT_PERMISSION:
                     return AuditEventAction.APPROVE_APPLY_PROJECT_PERMISSION_TASK;
+                case APPLY_DATABASE_PERMISSION:
+                    return AuditEventAction.APPROVE_APPLY_DATABASE_PERMISSION_TASK;
             }
         }
         if (action == AuditEventAction.REJECT) {
@@ -261,6 +281,8 @@ public class AuditUtils {
                     return AuditEventAction.REJECT_PERMISSION_APPLY_TASK;
                 case SHADOWTABLE_SYNC:
                     return AuditEventAction.REJECT_SHADOWTABLE_SYNC_TASK;
+                case STRUCTURE_COMPARISON:
+                    return AuditEventAction.REJECT_STRUCTURE_COMPARISON_TASK;
                 case PARTITION_PLAN:
                     return AuditEventAction.REJECT_PARTITION_PLAN_TASK;
                 case ALTER_SCHEDULE:
@@ -269,6 +291,8 @@ public class AuditUtils {
                     return AuditEventAction.REJECT_ONLINE_SCHEMA_CHANGE_TASK;
                 case APPLY_PROJECT_PERMISSION:
                     return AuditEventAction.REJECT_APPLY_PROJECT_PERMISSION_TASK;
+                case APPLY_DATABASE_PERMISSION:
+                    return AuditEventAction.REJECT_APPLY_DATABASE_PERMISSION_TASK;
             }
         }
         // 如果不是流程相关的 action，则返回原值

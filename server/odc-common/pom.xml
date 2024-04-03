@@ -7,7 +7,7 @@
     <parent>
         <groupId>com.oceanbase</groupId>
         <artifactId>odc-parent</artifactId>
-        <version>4.2.3-SNAPSHOT</version>
+        <version>4.2.4-SNAPSHOT</version>
         <relativePath>../../pom.xml</relativePath>
     </parent>
     <artifactId>odc-common</artifactId>
@@ -166,6 +166,10 @@
         <dependency>
             <groupId>net.java.dev.jna</groupId>
             <artifactId>jna</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.auth0</groupId>
+            <artifactId>java-jwt</artifactId>
         </dependency>
     </dependencies>
 </project>

@@ -35,7 +35,7 @@ import lombok.EqualsAndHashCode;
  * columnName.
  */
 @Data
-@EqualsAndHashCode(exclude = {"name", "warning", "schemaName", "tableName", "ordinalPosition"})
+@EqualsAndHashCode(exclude = {"name", "warning", "schemaName", "tableName", "ordinalPosition", "keyType"})
 public class DBTableColumn implements DBObject, DBObjectWarningDescriptor {
     /**
      * 所属 schemaName
@@ -207,7 +207,12 @@ public class DBTableColumn implements DBObject, DBObjectWarningDescriptor {
          * If COLUMN_KEY is MUL, the column is the first column of a nonunique index in which multiple
          * occurrences of a given value are permitted within the column.
          */
-        MUL
+        MUL,
+
+        /**
+         * If COLUMN_KEY is AGG, the column is an aggregate key in an Aggregate Model table.
+         */
+        AGG
     }
 
     public enum CharUnit {

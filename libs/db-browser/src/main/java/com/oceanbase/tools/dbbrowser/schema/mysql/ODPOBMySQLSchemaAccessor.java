@@ -17,7 +17,9 @@ package com.oceanbase.tools.dbbrowser.schema.mysql;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.jdbc.core.JdbcOperations;
 
@@ -27,13 +29,14 @@ import com.oceanbase.tools.dbbrowser.model.DBObjectIdentity;
 import com.oceanbase.tools.dbbrowser.model.DBObjectType;
 import com.oceanbase.tools.dbbrowser.model.DBPLObjectIdentity;
 import com.oceanbase.tools.dbbrowser.model.DBProcedure;
+import com.oceanbase.tools.dbbrowser.model.DBTableConstraint;
 import com.oceanbase.tools.dbbrowser.util.MySQLSqlBuilder;
 import com.oceanbase.tools.dbbrowser.util.StringUtils;
 
 /**
  * @author jingtian
  */
-public class ODPOBMySQLSchemaAccessor extends MySQLNoGreaterThan5740SchemaAccessor {
+public class ODPOBMySQLSchemaAccessor extends MySQLNoLessThan5700SchemaAccessor {
 
     public ODPOBMySQLSchemaAccessor(JdbcOperations jdbcOperations) {
         super(jdbcOperations);
@@ -123,6 +126,18 @@ public class ODPOBMySQLSchemaAccessor extends MySQLNoGreaterThan5740SchemaAccess
     }
 
     @Override
+    public Map<String, List<DBTableConstraint>> listTableConstraints(String schemaName) {
+        // key_column_usage is not supported
+        return new HashMap<>();
+    }
+
+    @Override
+    public List<DBTableConstraint> listTableConstraints(String schemaName, String tableName) {
+        // key_column_usage is not supported
+        return Collections.emptyList();
+    }
+
+    @Override
     public List<DBObjectIdentity> listAllSystemViews() {
         return Collections.emptyList();
     }
@@ -146,4 +161,5 @@ public class ODPOBMySQLSchemaAccessor extends MySQLNoGreaterThan5740SchemaAccess
     public DBProcedure getProcedure(String schemaName, String procedureName) {
         throw new UnsupportedOperationException("Not supported yet");
     }
+
 }

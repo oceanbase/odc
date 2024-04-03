@@ -17,14 +17,15 @@ package com.oceanbase.tools.dbbrowser.schema.oracle;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.stream.Collectors;
 
-import org.springframework.jdbc.core.BeanPropertyRowMapper;
 import org.springframework.jdbc.core.JdbcOperations;
 
-import com.oceanbase.tools.dbbrowser.model.DBObjectIdentity;
 import com.oceanbase.tools.dbbrowser.model.DBSynonymType;
 import com.oceanbase.tools.dbbrowser.model.DBTable.DBTableOptions;
 import com.oceanbase.tools.dbbrowser.model.DBTableColumn;
@@ -35,10 +36,12 @@ import com.oceanbase.tools.dbbrowser.model.DBTablePartitionType;
 import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessorSqlMappers;
 import com.oceanbase.tools.dbbrowser.schema.constant.Statements;
 import com.oceanbase.tools.dbbrowser.schema.constant.StatementsFiles;
+import com.oceanbase.tools.dbbrowser.util.DBSchemaAccessorUtil;
 import com.oceanbase.tools.dbbrowser.util.OracleDataDictTableNames;
 import com.oceanbase.tools.dbbrowser.util.OracleSqlBuilder;
 import com.oceanbase.tools.dbbrowser.util.StringUtils;
 
+import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -48,6 +51,7 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 public class OBOracleLessThan400SchemaAccessor extends OBOracleSchemaAccessor {
+
     public OBOracleLessThan400SchemaAccessor(JdbcOperations jdbcOperations,
             OracleDataDictTableNames dataDictTableNames) {
         super(jdbcOperations, dataDictTableNames);
@@ -55,43 +59,18 @@ public class OBOracleLessThan400SchemaAccessor extends OBOracleSchemaAccessor {
     }
 
     @Override
-    public List<DBObjectIdentity> listTables(String schemaName, String tableNameLike) {
-        OracleSqlBuilder sb = new OracleSqlBuilder();
-        sb.append("select\n"
-                + "  t1.DATABASE_NAME as schema_name,\n"
-                + "  t2.TABLE_NAME as name,\n"
-                + "  'TABLE' as type \n"
-                + "from \n"
-                + "  SYS.ALL_VIRTUAL_DATABASE_REAL_AGENT t1,\n"
-                + "  SYS.ALL_VIRTUAL_TABLE_REAL_AGENT t2\n"
-                + "where \n"
-                + "  t1.database_id=t2.database_id\n"
-                + "  and t2.table_type = 3\n");
-
-        if (StringUtils.isNotBlank(schemaName)) {
-            sb.append("  and t1.database_name = ").value(schemaName);
-        }
-        if (StringUtils.isNotBlank(tableNameLike)) {
-            sb.append("  and t2.table_name LIKE ").value(tableNameLike);
-        }
-        sb.append(" order by t1.database_name, t2.table_name");
-        return jdbcOperations.query(sb.toString(), new BeanPropertyRowMapper<>(DBObjectIdentity.class));
-    }
-
-    @Override
     public DBTableOptions getTableOptions(String schemaName, String tableName) {
         DBTableOptions tableOptions = new DBTableOptions();
-        obtainTableCharset(tableOptions);
-        obtainTableCollation(tableOptions);
+        obtainTableCharset(Collections.singletonList(tableOptions));
+        obtainTableCollation(Collections.singletonList(tableOptions));
         String sql = this.sqlMapper.getSql(Statements.GET_TABLE_OPTION);
         try {
-            this.jdbcOperations.query(sql.toString(), new Object[] {schemaName, tableName},
-                    rs -> {
-                        tableOptions.setCreateTime(rs.getTimestamp("GMT_CREATE"));
-                        tableOptions.setUpdateTime(rs.getTimestamp("GMT_MODIFIED"));
-                        tableOptions.setComment(rs.getString("COMMENT"));
-                        tableOptions.setTabletSize(rs.getLong("TABLET_SIZE"));
-                    });
+            this.jdbcOperations.query(sql, new Object[] {schemaName, tableName}, rs -> {
+                tableOptions.setCreateTime(rs.getTimestamp("GMT_CREATE"));
+                tableOptions.setUpdateTime(rs.getTimestamp("GMT_MODIFIED"));
+                tableOptions.setComment(rs.getString("COMMENT"));
+                tableOptions.setTabletSize(rs.getLong("TABLET_SIZE"));
+            });
         } catch (Exception ex) {
             log.warn("get table options failed, schema={}, table={}, reason:", schemaName, tableName, ex);
         }
@@ -100,36 +79,70 @@ public class OBOracleLessThan400SchemaAccessor extends OBOracleSchemaAccessor {
 
     @Override
     public DBTablePartition getPartition(String schemaName, String tableName) {
+        String sql = this.sqlMapper.getSql(Statements.GET_PARTITION);
+        List<Map<String, Object>> queryResult =
+                this.jdbcOperations.query(sql, new Object[] {schemaName, tableName}, (rs, num) -> {
+                    Map<String, Object> result = new HashMap<>();
+                    result.put("PARTITION_METHOD", rs.getString("PARTITION_METHOD"));
+                    result.put("PART_NUM", rs.getInt("PART_NUM"));
+                    result.put("EXPRESSION", rs.getString("EXPRESSION"));
+                    result.put("PART_NAME", rs.getString("PART_NAME"));
+                    result.put("PART_ID", rs.getInt("PART_ID"));
+                    result.put("MAX_VALUE", rs.getString("MAX_VALUE"));
+                    result.put("LIST_VALUE", rs.getString("LIST_VALUE"));
+                    return result;
+                });
+        return getFromResultSet(queryResult, schemaName, tableName);
+    }
+
+    @Override
+    public Map<String, DBTablePartition> listTablePartitions(@NonNull String schemaName, List<String> tableNames) {
+        List<Map<String, Object>> queryResult = DBSchemaAccessorUtil.partitionFind(tableNames,
+                DBSchemaAccessorUtil.OB_MAX_IN_SIZE, names -> {
+                    String sql = filterByValues(sqlMapper.getSql(Statements.LIST_PARTITIONS), "TABLE_NAME", names);
+                    return jdbcOperations.query(sql, new Object[] {schemaName}, (rs, rowNum) -> {
+                        Map<String, Object> row = new HashMap<>();
+                        row.put("TABLE_NAME", rs.getString("TABLE_NAME"));
+                        row.put("PARTITION_METHOD", rs.getString("PARTITION_METHOD"));
+                        row.put("PART_NUM", rs.getInt("PART_NUM"));
+                        row.put("EXPRESSION", rs.getString("EXPRESSION"));
+                        row.put("PART_NAME", rs.getString("PART_NAME"));
+                        row.put("PART_ID", rs.getInt("PART_ID"));
+                        row.put("MAX_VALUE", rs.getString("MAX_VALUE"));
+                        row.put("LIST_VALUE", rs.getString("LIST_VALUE"));
+                        return row;
+                    });
+                });
+        Map<String, List<Map<String, Object>>> tableName2Rows = queryResult.stream()
+                .collect(Collectors.groupingBy(m -> (String) m.get("TABLE_NAME")));
+        return tableName2Rows.entrySet().stream().collect(Collectors.toMap(Entry::getKey,
+                e -> getFromResultSet(e.getValue(), schemaName, e.getKey())));
+    }
+
+    private DBTablePartition getFromResultSet(List<Map<String, Object>> rows, String schemaName, String tableName) {
         DBTablePartition partition = new DBTablePartition();
         partition.setPartitionOption(new DBTablePartitionOption());
         partition.setPartitionDefinitions(new ArrayList<>());
-
-        String sql = this.sqlMapper.getSql(Statements.GET_TABLE_PARTITION);
-
-        try {
-            this.jdbcOperations.query(sql.toString(), new Object[] {schemaName, tableName},
-                    rs -> {
-                        DBTablePartitionOption option = partition.getPartitionOption();
-                        option.setType(DBTablePartitionType.fromValue(rs.getString("PARTITION_METHOD")));
-                        option.setPartitionsNum(rs.getInt("PART_NUM"));
-                        String expression = rs.getString("EXPRESSION");
-                        if (option.getType().supportExpression()) {
-                            option.setExpression(expression);
-                        } else {
-                            option.setColumnNames(Arrays.asList(expression.split(",")));
-                        }
-                        DBTablePartitionDefinition partitionDefinition = new DBTablePartitionDefinition();
-                        partitionDefinition.setName(rs.getString("PART_NAME"));
-                        partitionDefinition.setOrdinalPosition(rs.getInt("PART_ID"));
-                        partitionDefinition.setType(option.getType());
-                        String maxValue = rs.getString("MAX_VALUE");
-                        String listValue = rs.getString("LIST_VALUE");
-                        partitionDefinition.fillValues(StringUtils.isNotEmpty(maxValue) ? maxValue : listValue);
-
-                        partition.getPartitionDefinitions().add(partitionDefinition);
-                    });
-        } catch (Exception ex) {
-            log.warn("get table partitions failed, schema={}, table={}, reason:", schemaName, tableName, ex);
+        partition.setSchemaName(schemaName);
+        partition.setTableName(tableName);
+        for (Map<String, Object> row : rows) {
+            DBTablePartitionOption option = partition.getPartitionOption();
+            option.setType(DBTablePartitionType.fromValue((String) row.get("PARTITION_METHOD")));
+            option.setPartitionsNum((Integer) row.get("PART_NUM"));
+            String expression = (String) row.get("EXPRESSION");
+            if (option.getType().supportExpression()) {
+                option.setExpression(expression);
+            } else {
+                option.setColumnNames(Arrays.asList(expression.split(",")));
+            }
+            DBTablePartitionDefinition partitionDefinition = new DBTablePartitionDefinition();
+            partitionDefinition.setName((String) row.get("PART_NAME"));
+            partitionDefinition.setOrdinalPosition((Integer) row.get("PART_ID"));
+            partitionDefinition.setType(option.getType());
+            String maxValue = (String) row.get("MAX_VALUE");
+            String listValue = (String) row.get("LIST_VALUE");
+            partitionDefinition.fillValues(StringUtils.isNotEmpty(maxValue) ? maxValue : listValue);
+            partition.getPartitionDefinitions().add(partitionDefinition);
         }
         return partition;
     }

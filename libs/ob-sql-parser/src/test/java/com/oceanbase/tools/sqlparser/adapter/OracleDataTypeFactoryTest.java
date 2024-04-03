@@ -64,6 +64,15 @@ public class OracleDataTypeFactoryTest {
     }
 
     @Test
+    public void generate_sdoGeo_generateSucceed() {
+        StatementFactory<DataType> factory = new OracleDataTypeFactory(getDataTypeContext("SDO_GEOMETRY"));
+        DataType actual = factory.generate();
+
+        DataType expect = new GeneralDataType("SDO_GEOMETRY", null);
+        Assert.assertEquals(expect, actual);
+    }
+
+    @Test
     public void generate_xmltype_generateSucceed() {
         StatementFactory<DataType> factory = new OracleDataTypeFactory(getDataTypeContext("xmltype"));
         DataType actual = factory.generate();

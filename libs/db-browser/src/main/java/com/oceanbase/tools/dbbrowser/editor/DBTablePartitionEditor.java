@@ -27,12 +27,15 @@ import javax.validation.constraints.NotNull;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Validate;
 
 import com.oceanbase.tools.dbbrowser.model.DBTablePartition;
 import com.oceanbase.tools.dbbrowser.model.DBTablePartitionDefinition;
 import com.oceanbase.tools.dbbrowser.model.DBTablePartitionOption;
 import com.oceanbase.tools.dbbrowser.model.DBTablePartitionType;
 import com.oceanbase.tools.dbbrowser.util.SqlBuilder;
+
+import lombok.NonNull;
 
 /**
  * @Author: Lebie
@@ -44,17 +47,6 @@ public abstract class DBTablePartitionEditor implements DBObjectEditor<DBTablePa
     @Override
     public boolean editable() {
         return false;
-    }
-
-    @Override
-    public String generateCreateObjectDDL(@NotNull DBTablePartition partition) {
-        if (partition.getPartitionOption().getType() == DBTablePartitionType.NOT_PARTITIONED) {
-            return StringUtils.EMPTY;
-        }
-        SqlBuilder sqlBuilder = sqlBuilder();
-        sqlBuilder.append("ALTER TABLE ").append(getFullyQualifiedTableName(partition)).space()
-                .append(generateCreateDefinitionDDL(partition));
-        return sqlBuilder.toString();
     }
 
     protected void appendExpression(DBTablePartition partition, SqlBuilder sqlBuilder) {
@@ -72,7 +64,8 @@ public abstract class DBTablePartitionEditor implements DBObjectEditor<DBTablePa
 
     @Override
     public String generateCreateDefinitionDDL(@NotNull DBTablePartition partition) {
-        if (partition.getPartitionOption().getType() == DBTablePartitionType.NOT_PARTITIONED) {
+        if (partition.getPartitionOption().getType() == null
+                || partition.getPartitionOption().getType() == DBTablePartitionType.NOT_PARTITIONED) {
             return StringUtils.EMPTY;
         }
         SqlBuilder sqlBuilder = sqlBuilder();
@@ -86,6 +79,10 @@ public abstract class DBTablePartitionEditor implements DBObjectEditor<DBTablePa
         if (Objects.nonNull(partition.getPartitionOption().getPartitionsNum())) {
             sqlBuilder.append("\nPARTITIONS ")
                     .append(String.valueOf(partition.getPartitionOption().getPartitionsNum()));
+            if (partition.getPartitionOption().getType() == DBTablePartitionType.HASH
+                    || partition.getPartitionOption().getType() == DBTablePartitionType.KEY) {
+                return sqlBuilder.toString();
+            }
         }
         appendDefinitions(partition, sqlBuilder);
         return sqlBuilder.toString();
@@ -103,6 +100,9 @@ public abstract class DBTablePartitionEditor implements DBObjectEditor<DBTablePa
             @NotNull DBTablePartition newPartition) {
         if (Objects.isNull(oldPartition) || Objects.isNull(newPartition)) {
             return StringUtils.EMPTY;
+        }
+        if (oldPartition.getPartitionOption().getType() != newPartition.getPartitionOption().getType()) {
+            return handleUpdatePartitionType(oldPartition, newPartition);
         }
         SqlBuilder sqlBuilder = sqlBuilder();
         String fullyQualifiedTableName = getFullyQualifiedTableName(newPartition);
@@ -146,6 +146,26 @@ public abstract class DBTablePartitionEditor implements DBObjectEditor<DBTablePa
         return sqlBuilder.toString();
     }
 
+    private String handleUpdatePartitionType(@NotNull DBTablePartition oldPartition,
+            @NotNull DBTablePartition newPartition) {
+        DBTablePartitionType oldType = oldPartition.getPartitionOption().getType();
+        DBTablePartitionType newType = newPartition.getPartitionOption().getType();
+        Validate.isTrue(oldType != newType, "Partition type should be different");
+        if (newType == DBTablePartitionType.NOT_PARTITIONED) {
+            // means convert partitioned table to non-partitioned table
+            return generateDropObjectDDL(oldPartition);
+        } else if (oldType == DBTablePartitionType.NOT_PARTITIONED) {
+            // means convert non-partitioned table to partitioned table
+            return generateCreateObjectDDL(newPartition);
+        } else {
+            // means modify table partition type
+            return modifyPartitionType(oldPartition, newPartition);
+        }
+    }
+
+    abstract protected String modifyPartitionType(@NotNull DBTablePartition oldPartition,
+            @NotNull DBTablePartition newPartition);
+
     @Override
     public String generateUpdateObjectListDDL(Collection<DBTablePartition> oldObjects,
             Collection<DBTablePartition> newObjects) {
@@ -161,6 +181,9 @@ public abstract class DBTablePartitionEditor implements DBObjectEditor<DBTablePa
             @NotNull DBTablePartition newPartition) {
         if (Objects.isNull(oldPartition) || Objects.isNull(newPartition)) {
             return StringUtils.EMPTY;
+        }
+        if (oldPartition.getPartitionOption().getType() != newPartition.getPartitionOption().getType()) {
+            return handleUpdatePartitionType(oldPartition, newPartition);
         }
         SqlBuilder sqlBuilder = sqlBuilder();
         String fullyQualifiedTableName = getFullyQualifiedTableName(newPartition);
@@ -218,19 +241,7 @@ public abstract class DBTablePartitionEditor implements DBObjectEditor<DBTablePa
         return StringUtils.EMPTY;
     }
 
-    @Override
-    public String generateDropObjectDDL(@NotNull DBTablePartition partition) {
-        SqlBuilder sqlBuilder = sqlBuilder();
-        String fullyQualifiedTableName = getFullyQualifiedTableName(partition);
-        if (Objects.nonNull(partition.getPartitionDefinitions())) {
-            partition.getPartitionDefinitions().forEach(definition -> sqlBuilder
-                    .append(generateDropPartitionDefinitionDDL(definition, fullyQualifiedTableName)));
-            return sqlBuilder.toString();
-        }
-        return StringUtils.EMPTY;
-    }
-
-    protected String generateDropPartitionDefinitionDDL(@NotNull DBTablePartitionDefinition definition,
+    public String generateDropPartitionDefinitionDDL(@NotNull DBTablePartitionDefinition definition,
             String fullyQualifiedTableName) {
         SqlBuilder sqlBuilder = sqlBuilder();
         sqlBuilder.append("ALTER TABLE ").append(fullyQualifiedTableName).append(" DROP PARTITION (")
@@ -238,18 +249,35 @@ public abstract class DBTablePartitionEditor implements DBObjectEditor<DBTablePa
         return sqlBuilder.toString();
     }
 
-    protected abstract String generateAddPartitionDefinitionDDL(@NotNull DBTablePartitionDefinition definition,
+    public String generateDropPartitionDefinitionDDL(String schemaName, @NonNull String tableName,
+            List<DBTablePartitionDefinition> definitions) {
+        SqlBuilder sqlBuilder = sqlBuilder();
+        sqlBuilder.append("ALTER TABLE ");
+        if (StringUtils.isNotEmpty(schemaName)) {
+            sqlBuilder.identifier(schemaName).append(".");
+        }
+        sqlBuilder.identifier(tableName).append(" DROP PARTITION (");
+        Validate.isTrue(!CollectionUtils.isEmpty(definitions), "Partition elements can not be empty");
+
+        return sqlBuilder.append(definitions.stream().map(d -> sqlBuilder().identifier(d.getName()).toString())
+                .collect(Collectors.joining(", "))).append(");").line().toString();
+    }
+
+    public abstract String generateAddPartitionDefinitionDDL(@NotNull DBTablePartitionDefinition definition,
             @NotNull DBTablePartitionOption option, String fullyQualifiedTableName);
+
+    public abstract String generateAddPartitionDefinitionDDL(String schemaName, @NonNull String tableName,
+            @NonNull DBTablePartitionOption option, List<DBTablePartitionDefinition> definitions);
 
     protected abstract SqlBuilder sqlBuilder();
 
     protected String getFullyQualifiedTableName(@NotNull DBTablePartition partition) {
         SqlBuilder sqlBuilder = sqlBuilder();
         if (StringUtils.isNotEmpty(partition.getSchemaName())) {
-            sqlBuilder.identifier(partition.getSchemaName()).append(".");
+            sqlBuilder.identifier(partition.getSchemaName());
         }
         if (StringUtils.isNotEmpty(partition.getTableName())) {
-            sqlBuilder.identifier(partition.getTableName());
+            sqlBuilder.append(".").identifier(partition.getTableName());
         }
         return sqlBuilder.toString();
     }

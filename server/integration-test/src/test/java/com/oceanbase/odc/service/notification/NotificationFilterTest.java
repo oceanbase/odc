@@ -24,10 +24,10 @@ import java.util.Map;
 import org.junit.Assert;
 import org.junit.Test;
 
-import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.metadb.notification.NotificationPolicyEntity;
 import com.oceanbase.odc.service.notification.helper.NotificationPolicyFilter;
 import com.oceanbase.odc.service.notification.model.EventLabels;
+import com.oceanbase.odc.service.notification.model.NotificationPolicy;
 
 public class NotificationFilterTest {
 
@@ -36,7 +36,7 @@ public class NotificationFilterTest {
         EventLabels labels = new EventLabels();
         labels.put("action", "failed");
 
-        List<NotificationPolicyEntity> filtered = NotificationPolicyFilter.filter(labels, getPolicies());
+        List<NotificationPolicy> filtered = NotificationPolicyFilter.filter(labels, getPolicies());
         Assert.assertEquals(1, filtered.size());
     }
 
@@ -45,7 +45,7 @@ public class NotificationFilterTest {
         EventLabels labels = new EventLabels();
         labels.put("action", "succeed");
 
-        List<NotificationPolicyEntity> filtered = NotificationPolicyFilter.filter(labels, getPolicies());
+        List<NotificationPolicy> filtered = NotificationPolicyFilter.filter(labels, getPolicies());
         Assert.assertEquals(0, filtered.size());
     }
 
@@ -53,7 +53,7 @@ public class NotificationFilterTest {
         Map<String, String> conditions = new HashMap<>();
         conditions.put("action", "failed");
         NotificationPolicyEntity policy = new NotificationPolicyEntity();
-        policy.setMatchExpression(JsonUtils.toJson(conditions));
+        policy.setMatchExpression("action.equals('failed')");
         return Collections.singletonList(policy);
     }
 

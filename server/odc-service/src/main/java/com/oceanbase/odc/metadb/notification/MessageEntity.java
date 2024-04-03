@@ -59,20 +59,22 @@ public class MessageEntity {
     private Long creatorId;
     @Column(name = "organization_id", nullable = false, updatable = false)
     private Long organizationId;
+    @Column(name = "project_id", nullable = false, updatable = false)
+    private Long projectId;
     @Column(name = "title", nullable = false, updatable = false)
     private String title;
     @Column(name = "content", nullable = false, updatable = false)
     private String content;
     @Convert(converter = JsonListConverter.class)
-    @Column(name = "to_recipients", nullable = false, updatable = false)
+    @Column(name = "to_recipients", updatable = false)
     private List<String> toRecipients;
     @Convert(converter = JsonListConverter.class)
-    @Column(name = "cc_recipients", nullable = false, updatable = false)
+    @Column(name = "cc_recipients", updatable = false)
     private List<String> ccRecipients;
-    @Column(name = "event_id", nullable = false, updatable = false)
-    private Long eventId;
     @Column(name = "channel_id", nullable = false, updatable = false)
     private Long channelId;
+    @Column(name = "channel_name", nullable = false, updatable = false)
+    private String channelName;
     @Enumerated(value = EnumType.STRING)
     @Column(name = "status", nullable = false, updatable = false)
     private MessageSendingStatus status;
@@ -80,4 +82,10 @@ public class MessageEntity {
     private Integer retryTimes;
     @Column(name = "max_retry_times", nullable = false, updatable = false)
     private Integer maxRetryTimes;
+    @Column(name = "last_sent_time")
+    private Date lastSentTime;
+    @Column(name = "error_message")
+    private String errorMessage;
+    @Column(name = "event_id")
+    private Long eventId;
 }

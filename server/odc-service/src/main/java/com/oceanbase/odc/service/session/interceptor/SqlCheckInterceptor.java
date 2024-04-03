@@ -34,7 +34,6 @@ import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.shared.constant.OrganizationType;
 import com.oceanbase.odc.core.sql.execute.SqlExecuteStages;
 import com.oceanbase.odc.core.sql.execute.model.SqlExecuteStatus;
-import com.oceanbase.odc.service.config.UserConfigFacade;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.regulation.ruleset.RuleService;
 import com.oceanbase.odc.service.regulation.ruleset.model.Rule;
@@ -67,14 +66,11 @@ public class SqlCheckInterceptor extends BaseTimeConsumingInterceptor {
     public final static String SQL_CHECK_INTERCEPTED = "SQL_CHECK_INTERCEPTED";
     private final static String SQL_CHECK_RESULT_KEY = "SQL_CHECK_RESULT";
     @Autowired
-    private UserConfigFacade userConfigFacade;
-    @Autowired
     private SqlCheckService sqlCheckService;
     @Autowired
     private RuleService ruleService;
     @Autowired
     private AuthenticationFacade authenticationFacade;
-
 
     @Override
     public boolean doPreHandle(@NonNull SqlAsyncExecuteReq request, @NonNull SqlAsyncExecuteResp response,
@@ -87,7 +83,6 @@ public class SqlCheckInterceptor extends BaseTimeConsumingInterceptor {
             return true;
         }
     }
-
 
     private boolean handle(@NonNull SqlAsyncExecuteReq request, @NonNull SqlAsyncExecuteResp response,
             @NonNull ConnectionSession session, @NonNull Map<String, Object> context) {

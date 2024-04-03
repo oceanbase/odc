@@ -5,7 +5,7 @@
     <parent>
         <groupId>com.oceanbase</groupId>
         <artifactId>odc-parent</artifactId>
-        <version>4.2.3-SNAPSHOT</version>
+        <version>4.2.4-SNAPSHOT</version>
         <relativePath>../../pom.xml</relativePath>
     </parent>
     <artifactId>odc-service</artifactId>
@@ -124,6 +124,10 @@
         <dependency>
             <groupId>org.springframework.security</groupId>
             <artifactId>spring-security-web</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.security</groupId>
+            <artifactId>spring-security-ldap</artifactId>
         </dependency>
         <dependency>
             <groupId>commons-cli</groupId>
@@ -249,6 +253,10 @@
             <artifactId>mariadb-java-client</artifactId>
         </dependency>
         <dependency>
+            <groupId>com.oracle.database.jdbc</groupId>
+            <artifactId>ojdbc8</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.codehaus.groovy</groupId>
             <artifactId>groovy-all</artifactId>
         </dependency>
@@ -262,12 +270,20 @@
             <artifactId>task-plugin-api</artifactId>
         </dependency>
         <dependency>
+            <groupId>com.oceanbase</groupId>
+            <artifactId>schema-plugin-ob-mysql</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.kubernetes</groupId>
             <artifactId>client-java</artifactId>
         </dependency>
         <dependency>
             <groupId>io.netty</groupId>
             <artifactId>netty-codec-http</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.github.ulisesbocchio</groupId>
+            <artifactId>jasypt-spring-boot-starter</artifactId>
         </dependency>
     </dependencies>
 </project>

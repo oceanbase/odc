@@ -33,6 +33,7 @@ import com.oceanbase.odc.metadb.flow.FlowInstanceEntity;
 import com.oceanbase.odc.metadb.iam.UserEntity;
 import com.oceanbase.odc.metadb.schedule.ScheduleEntity;
 import com.oceanbase.odc.service.common.model.InnerUser;
+import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.dlm.model.DataArchiveParameters;
 import com.oceanbase.odc.service.dlm.model.DataDeleteParameters;
@@ -58,10 +59,8 @@ public class ScheduleDetailResp implements OrganizationIsolated {
     private Long id;
     private Long organizationId;
     private JobType type;
-    private Long databaseId;
-    private InnerConnection datasource;
+    private Database database;
     private Long projectId;
-    private String databaseName;
     private InnerUser creator;
     private Date createTime;
     private Date updateTime;
@@ -123,7 +122,7 @@ public class ScheduleDetailResp implements OrganizationIsolated {
         private Function<Long, UserEntity> getUserById = null;
         private Function<Long, Long> getApproveInstanceIdById = null;
 
-        private Function<Long, ConnectionConfig> getDatasourceById = null;
+        private Function<Long, Database> getDatabaseById = null;
 
         private Function<Long, Set<UserEntity>> getCandidatesById = null;
 
@@ -141,9 +140,9 @@ public class ScheduleDetailResp implements OrganizationIsolated {
             return this;
         }
 
-        public ScheduleResponseMapper withGetDatasourceById(
-                @NonNull Function<Long, ConnectionConfig> getDatasourceById) {
-            this.getDatasourceById = getDatasourceById;
+        public ScheduleResponseMapper withGetDatabaseById(
+                @NonNull Function<Long, Database> getDatabaseById) {
+            this.getDatabaseById = getDatabaseById;
             return this;
         }
 
@@ -168,17 +167,12 @@ public class ScheduleDetailResp implements OrganizationIsolated {
             resp.setStatus(entity.getStatus());
 
             resp.setOrganizationId(entity.getOrganizationId());
-            resp.setDatabaseId(entity.getDatabaseId());
             resp.setProjectId(entity.getProjectId());
-            resp.setDatabaseName(entity.getDatabaseName());
-            ConnectionConfig datasource = getDatasourceById.apply(entity.getConnectionId());
-            if (datasource != null) {
-                resp.setDatasource(new InnerConnection(datasource));
-            }
+            resp.setDatabase(getDatabaseById.apply(entity.getDatabaseId()));
             resp.setJobParameters(getJobParameters(entity));
             resp.setTriggerConfig(entity.getTriggerConfigJson());
             resp.setNextFireTimes(
-                    QuartzCronExpressionUtils.getNextFireTimes(JsonUtils.fromJson(entity.getTriggerConfigJson(),
+                    QuartzCronExpressionUtils.getNextFiveFireTimes(JsonUtils.fromJson(entity.getTriggerConfigJson(),
                             TriggerConfig.class).getCronExpression()));
             UserEntity user = getUserById.apply(entity.getCreatorId());
             if (user != null) {

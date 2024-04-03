@@ -89,17 +89,18 @@ public class ShadowtableSyncRuntimeFlowableTask extends BaseODCFlowTaskDelegate<
         log.info("Shadowtable sync task succeed, taskId={}", taskId);
         try {
             taskService.succeed(taskId, context.getResult());
+            super.onSuccessful(taskId, taskService);
             updateFlowInstanceStatus(FlowStatus.EXECUTION_SUCCEEDED);
         } catch (Exception e) {
             log.warn("Failed to get result", e);
         }
-        super.onSuccessful(taskId, taskService);
     }
 
     @Override
     protected void onTimeout(Long taskId, TaskService taskService) {
         log.warn("Shadowtable sync task timeout, taskId={}", taskId);
         taskService.fail(taskId, context.getProgress(), context.getResult());
+        super.onTimeout(taskId, taskService);
     }
 
     @Override

@@ -25,11 +25,11 @@ import lombok.Data;
 @Data
 @AllArgsConstructor
 public class KillSessionResult {
-    private Long sessionId;
+    private String sessionId;
     private boolean killed;
     private String errorMessage;
 
-    public KillSessionResult(JdbcGeneralResult jdbcGeneralResult, Long sessionId) {
+    public KillSessionResult(JdbcGeneralResult jdbcGeneralResult, String sessionId) {
         this.sessionId = sessionId;
         this.killed = jdbcGeneralResult.getStatus().equals(SqlExecuteStatus.SUCCESS);
         if (!killed) {

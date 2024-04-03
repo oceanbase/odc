@@ -21,10 +21,14 @@ import java.io.InputStream;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
@@ -37,7 +41,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.validation.annotation.Validated;
 
-import com.oceanbase.odc.common.util.SystemUtils;
 import com.oceanbase.odc.core.authority.SecurityManager;
 import com.oceanbase.odc.core.authority.exception.AccessDeniedException;
 import com.oceanbase.odc.core.authority.model.DefaultSecurityResource;
@@ -49,7 +52,6 @@ import com.oceanbase.odc.core.session.ConnectionSessionUtil;
 import com.oceanbase.odc.core.session.DefaultConnectionSessionManager;
 import com.oceanbase.odc.core.session.InMemoryConnectionSessionRepository;
 import com.oceanbase.odc.core.shared.PreConditions;
-import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.constant.LimitMetric;
 import com.oceanbase.odc.core.shared.constant.OrganizationType;
@@ -67,7 +69,6 @@ import com.oceanbase.odc.metadb.collaboration.EnvironmentEntity;
 import com.oceanbase.odc.metadb.collaboration.EnvironmentRepository;
 import com.oceanbase.odc.service.common.util.SidUtils;
 import com.oceanbase.odc.service.config.UserConfigFacade;
-import com.oceanbase.odc.service.config.model.UserConfig;
 import com.oceanbase.odc.service.connection.CloudMetadataClient;
 import com.oceanbase.odc.service.connection.CloudMetadataClient.CloudPermissionAction;
 import com.oceanbase.odc.service.connection.ConnectionService;
@@ -88,8 +89,11 @@ import com.oceanbase.odc.service.iam.HorizontalDataPermissionValidator;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.iam.auth.AuthorizationFacade;
 import com.oceanbase.odc.service.lab.model.LabProperties;
+import com.oceanbase.odc.service.permission.database.DatabasePermissionHelper;
+import com.oceanbase.odc.service.permission.database.model.DatabasePermissionType;
 import com.oceanbase.odc.service.session.factory.DefaultConnectSessionFactory;
 import com.oceanbase.odc.service.session.factory.DefaultConnectSessionIdGenerator;
+import com.oceanbase.odc.service.session.factory.StateHostGenerator;
 
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
@@ -107,8 +111,6 @@ public class ConnectSessionService {
 
     @Autowired
     private ConnectionService connectionService;
-    @Autowired
-    private UserConfigFacade userConfigFacade;
     @Autowired
     private AuthenticationFacade authenticationFacade;
     @Autowired
@@ -142,7 +144,14 @@ public class ConnectSessionService {
     @Autowired
     private SecurityManager securityManager;
     @Autowired
+    private DatabasePermissionHelper databasePermissionHelper;
+    @Autowired
     private CloudMetadataClient cloudMetadataClient;
+    @Autowired
+    private UserConfigFacade userConfigFacade;
+    @Autowired
+    private StateHostGenerator stateHostGenerator;
+    private final Map<String, Lock> sessionId2Lock = new ConcurrentHashMap<>();
 
     @PostConstruct
     public void init() {
@@ -152,6 +161,7 @@ public class ConnectSessionService {
         this.connectionSessionManager = new DefaultConnectionSessionManager(
                 new DefaultTaskManager("connection-session-management"), repository);
         this.connectionSessionManager.addListener(new SessionLimitListener(limitService));
+        this.connectionSessionManager.addListener(new SessionLockRemoveListener(this.sessionId2Lock));
         this.connectionSessionManager.enableAsyncRefreshSessionManager();
         this.connectionSessionManager.addSessionValidator(
                 new SessionValidatorPredicate(sessionProperties.getTimeoutMins(), TimeUnit.MINUTES));
@@ -221,9 +231,15 @@ public class ConnectSessionService {
         if (req.getDbId() != null) {
             // create session by database id
             Database database = databaseService.detail(req.getDbId());
-            if (Objects.isNull(database.getProject())
-                    && authenticationFacade.currentUser().getOrganizationType() == OrganizationType.TEAM) {
-                throw new AccessDeniedException();
+            if (authenticationFacade.currentUser().getOrganizationType() == OrganizationType.TEAM) {
+                if (Objects.isNull(database.getProject())) {
+                    throw new AccessDeniedException();
+                }
+                Map<Long, Set<DatabasePermissionType>> id2PermissionTypes =
+                        databasePermissionHelper.getPermissions(Collections.singleton(req.getDbId()));
+                if (!id2PermissionTypes.containsKey(req.getDbId()) || id2PermissionTypes.get(req.getDbId()).isEmpty()) {
+                    throw new AccessDeniedException();
+                }
             }
             schemaName = database.getName();
             dataSourceId = database.getDataSource().getId();
@@ -253,17 +269,18 @@ public class ConnectSessionService {
         if (!result.isActive() && result.getErrorCode() != ErrorCodes.ConnectionInitScriptFailed) {
             throw new VerifyException(result.getErrorMessage());
         }
-        UserConfig userConfig = userConfigFacade.queryByCache(authenticationFacade.currentUserId());
         SqlExecuteTaskManagerFactory factory =
                 new SqlExecuteTaskManagerFactory(this.monitorTaskManager, "console", 1);
         if (StringUtils.isNotEmpty(schemaName)) {
             connection.setDefaultSchema(schemaName);
         }
+        // TODO: query from use config service
         DefaultConnectSessionFactory sessionFactory = new DefaultConnectSessionFactory(
-                connection, getAutoCommit(connection, userConfig), factory);
+                connection, getAutoCommit(connection), factory);
         DefaultConnectSessionIdGenerator idGenerator = new DefaultConnectSessionIdGenerator();
         idGenerator.setDatabaseId(req.getDbId());
         idGenerator.setFixRealId(StringUtils.isBlank(req.getRealId()) ? null : req.getRealId());
+        idGenerator.setHost(stateHostGenerator.getHost());
         sessionFactory.setIdGenerator(idGenerator);
         long timeoutMillis = TimeUnit.MILLISECONDS.convert(sessionProperties.getTimeoutMins(), TimeUnit.MINUTES);
         timeoutMillis = timeoutMillis + this.connectionSessionManager.getScanIntervalMillis();
@@ -273,7 +290,7 @@ public class ConnectSessionService {
             throw new BadRequestException("Failed to create a session");
         }
         try {
-            initSession(session, connection, userConfig);
+            initSession(session, connection);
             log.info("Connect session created, connectionId={}, session={}", dataSourceId, session);
             return session;
         } catch (Exception e) {
@@ -317,12 +334,28 @@ public class ConnectSessionService {
         ConnectionSession session = connectionSessionManager.getSession(sessionId);
         if (session == null) {
             CreateSessionReq req = new DefaultConnectSessionIdGenerator().getKeyFromId(sessionId);
-            if (!autoCreate || !StringUtils.equals(req.getFrom(), SystemUtils.getHostName())) {
+            if (!autoCreate || !StringUtils.equals(req.getFrom(), stateHostGenerator.getHost())) {
                 throw new NotFoundException(ResourceType.ODC_SESSION, "ID", sessionId);
             }
-            session = create(req);
-            ConnectionSessionUtil.setConsoleSessionResetFlag(session, true);
-            return session;
+            Lock lock = this.sessionId2Lock.computeIfAbsent(sessionId, s -> new ReentrantLock());
+            try {
+                if (!lock.tryLock(10, TimeUnit.SECONDS)) {
+                    throw new IllegalStateException("Session is creating, please wait and retry later");
+                }
+            } catch (Exception e) {
+                throw new IllegalStateException(e);
+            }
+            try {
+                session = connectionSessionManager.getSession(sessionId);
+                if (session != null) {
+                    return session;
+                }
+                session = create(req);
+                ConnectionSessionUtil.setConsoleSessionResetFlag(session, true);
+                return session;
+            } finally {
+                lock.unlock();
+            }
         }
         if (!Objects.equals(ConnectionSessionUtil.getUserId(session), authenticationFacade.currentUserId())) {
             throw new NotFoundException(ResourceType.ODC_SESSION, "ID", sessionId);
@@ -375,22 +408,21 @@ public class ConnectSessionService {
                 .build();
     }
 
-    private Boolean getAutoCommit(ConnectionConfig connectionConfig, UserConfig userConfig) {
-        if (DialectType.OB_ORACLE.equals(connectionConfig.getDialectType())) {
-            return "ON".equalsIgnoreCase(userConfig.getOracleAutoCommitMode());
+    private Boolean getAutoCommit(ConnectionConfig connectionConfig) {
+        if (connectionConfig.getDialectType().isOracle()) {
+            return "ON".equalsIgnoreCase(userConfigFacade.getOracleAutoCommitMode());
         }
-        return "ON".equalsIgnoreCase(userConfig.getMysqlAutoCommitMode());
+        return "ON".equalsIgnoreCase(userConfigFacade.getMysqlAutoCommitMode());
     }
 
-    private void initSession(ConnectionSession connectionSession, ConnectionConfig connectionConfig,
-            UserConfig userConfig) {
+    private void initSession(ConnectionSession connectionSession, ConnectionConfig connectionConfig) {
         SqlCommentProcessor processor = new SqlCommentProcessor(connectionConfig.getDialectType(), true, true);
-        processor.setDelimiter(userConfig.getDefaultDelimiter());
+        processor.setDelimiter(userConfigFacade.getDefaultDelimiter());
         ConnectionSessionUtil.setSqlCommentProcessor(connectionSession, processor);
 
-        ConnectionSessionUtil.setQueryLimit(connectionSession, userConfig.getDefaultQueryLimit());
+        ConnectionSessionUtil.setQueryLimit(connectionSession, userConfigFacade.getDefaultQueryLimit());
         ConnectionSessionUtil.setUserId(connectionSession, authenticationFacade.currentUserId());
-        if (connectionSession.getDialectType() == DialectType.OB_ORACLE) {
+        if (connectionSession.getDialectType().isOracle()) {
             ConnectionSessionUtil.initConsoleSessionTimeZone(connectionSession, connectProperties.getDefaultTimeZone());
         }
         Long envId = connectionConfig.getEnvironmentId();

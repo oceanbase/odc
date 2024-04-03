@@ -22,7 +22,7 @@ import org.apache.commons.lang3.Validate;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 import com.oceanbase.tools.dbbrowser.VersionUtils;
-import com.oceanbase.tools.dbbrowser.schema.mysql.MySQLNoGreaterThan5740SchemaAccessor;
+import com.oceanbase.tools.dbbrowser.schema.mysql.MySQLNoLessThan5700SchemaAccessor;
 import com.oceanbase.tools.dbbrowser.schema.mysql.OBMySQLBetween220And225XSchemaAccessor;
 import com.oceanbase.tools.dbbrowser.schema.mysql.OBMySQLBetween2260And2276SchemaAccessor;
 import com.oceanbase.tools.dbbrowser.schema.mysql.OBMySQLBetween2277And3XSchemaAccessor;
@@ -30,6 +30,7 @@ import com.oceanbase.tools.dbbrowser.schema.mysql.OBMySQLSchemaAccessor;
 import com.oceanbase.tools.dbbrowser.schema.oracle.OBOracleLessThan2270SchemaAccessor;
 import com.oceanbase.tools.dbbrowser.schema.oracle.OBOracleLessThan400SchemaAccessor;
 import com.oceanbase.tools.dbbrowser.schema.oracle.OBOracleSchemaAccessor;
+import com.oceanbase.tools.dbbrowser.schema.oracle.OracleSchemaAccessor;
 import com.oceanbase.tools.dbbrowser.util.ALLDataDictTableNames;
 
 import lombok.extern.slf4j.Slf4j;
@@ -103,8 +104,12 @@ public class DBSchemaAccessors {
         }
     }
 
+    public DBSchemaAccessor createOracle() {
+        return new OracleSchemaAccessor(this.jdbcTemplate, new ALLDataDictTableNames());
+    }
+
     public DBSchemaAccessor createMysql() {
-        return new MySQLNoGreaterThan5740SchemaAccessor(this.jdbcTemplate);
+        return new MySQLNoLessThan5700SchemaAccessor(this.jdbcTemplate);
     }
 
 }

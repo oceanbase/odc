@@ -16,12 +16,8 @@
 
 package com.oceanbase.odc.service.task.dispatch;
 
-import java.util.Arrays;
-
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.common.util.SystemUtils;
-import com.oceanbase.odc.core.shared.exception.UnsupportedException;
-import com.oceanbase.odc.service.task.caller.ExecutorIdentifier;
 import com.oceanbase.odc.service.task.caller.JobCaller;
 import com.oceanbase.odc.service.task.caller.JobCallerBuilder;
 import com.oceanbase.odc.service.task.caller.JobContext;
@@ -61,14 +57,15 @@ public class ImmediateJobDispatcher implements JobDispatcher {
     }
 
     @Override
-    public void destroy(JobIdentity ji) throws JobException {
+    public void modify(JobIdentity ji, String jobParametersJson) throws JobException {
         JobCaller jobCaller = getJobCaller(getJobRunMode(ji));
-        jobCaller.destroy(ji);
+        jobCaller.modify(ji, jobParametersJson);
     }
 
     @Override
-    public void destroy(ExecutorIdentifier executorIdentifier) throws JobException {
-        throw new UnsupportedException("unsupported");
+    public void destroy(JobIdentity ji) throws JobException {
+        JobCaller jobCaller = getJobCaller(getJobRunMode(ji));
+        jobCaller.destroy(ji);
     }
 
     private JobCaller getJobCaller(TaskRunMode taskRunMode) {
@@ -101,7 +98,6 @@ public class ImmediateJobDispatcher implements JobDispatcher {
         JobImageNameProvider jobImageNameProvider = JobConfigurationHolder.getJobConfiguration()
                 .getJobImageNameProvider();
         podConfig.setImage(jobImageNameProvider.provide());
-        podConfig.setCommand(Arrays.asList("sh", "-c", "/opt/odc/bin/start-job.sh"));
         podConfig.setRegion(StringUtils.isNotBlank(k8s.getRegion()) ? k8s.getRegion()
                 : SystemUtils.getEnvOrProperty(JobEnvKeyConstants.OB_ARN_PARTITION));
 
@@ -114,6 +110,7 @@ public class ImmediateJobDispatcher implements JobDispatcher {
                 StringUtils.isNotBlank(k8s.getMountPath()) ? k8s.getMountPath()
                         : JobConstants.ODC_EXECUTOR_DEFAULT_MOUNT_PATH);
         podConfig.setMountDiskSize(k8s.getMountDiskSize());
+        podConfig.setMaxNodeCount(k8s.getMaxNodeCount());
         return podConfig;
     }
 

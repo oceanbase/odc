@@ -24,11 +24,16 @@ import java.util.Objects;
 import org.apache.commons.lang3.Validate;
 import org.pf4j.Extension;
 
+import com.oceanbase.odc.common.util.VersionUtils;
 import com.oceanbase.odc.plugin.schema.obmysql.OBMySQLTableExtension;
 import com.oceanbase.odc.plugin.schema.oboracle.parser.OBOracleGetDBTableByParser;
 import com.oceanbase.odc.plugin.schema.oboracle.utils.DBAccessorUtil;
+import com.oceanbase.tools.dbbrowser.editor.DBTableConstraintEditor;
 import com.oceanbase.tools.dbbrowser.editor.DBTableEditor;
+import com.oceanbase.tools.dbbrowser.editor.DBTablePartitionEditor;
 import com.oceanbase.tools.dbbrowser.editor.oracle.OBOracleIndexEditor;
+import com.oceanbase.tools.dbbrowser.editor.oracle.OBOracleLessThan400ConstraintEditor;
+import com.oceanbase.tools.dbbrowser.editor.oracle.OBOracleLessThan400DBTablePartitionEditor;
 import com.oceanbase.tools.dbbrowser.editor.oracle.OracleColumnEditor;
 import com.oceanbase.tools.dbbrowser.editor.oracle.OracleConstraintEditor;
 import com.oceanbase.tools.dbbrowser.editor.oracle.OracleDBTablePartitionEditor;
@@ -144,7 +149,25 @@ public class OBOracleTableExtension extends OBMySQLTableExtension {
 
     @Override
     protected DBTableEditor getTableEditor(Connection connection) {
+        String dbVersion = DBAccessorUtil.getDbVersion(connection);
         return new OracleTableEditor(new OBOracleIndexEditor(), new OracleColumnEditor(),
-                new OracleConstraintEditor(), new OracleDBTablePartitionEditor());
+                getDBTableConstraintEditor(connection, dbVersion), getDBTablePartitionEditor(connection, dbVersion));
+    }
+
+    @Override
+    protected DBTablePartitionEditor getDBTablePartitionEditor(Connection connection, String dbVersion) {
+        if (VersionUtils.isLessThan(dbVersion, "4.0.0")) {
+            return new OBOracleLessThan400DBTablePartitionEditor();
+        } else {
+            return new OracleDBTablePartitionEditor();
+        }
+    }
+
+    @Override
+    protected DBTableConstraintEditor getDBTableConstraintEditor(Connection connection, String dbVersion) {
+        if (VersionUtils.isLessThan(dbVersion, "4.0.0")) {
+            return new OBOracleLessThan400ConstraintEditor();
+        }
+        return new OracleConstraintEditor();
     }
 }

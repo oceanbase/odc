@@ -5,7 +5,7 @@
     <parent>
         <artifactId>plugin-parent</artifactId>
         <groupId>com.oceanbase</groupId>
-        <version>4.2.3-SNAPSHOT</version>
+        <version>4.2.4-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -65,7 +65,7 @@
     <properties>
         <root-project.basedir>${project.parent.parent.basedir}</root-project.basedir>
         <plugin.class>com.oceanbase.odc.plugin.task.obmysql.OBMySQLTaskPlugin</plugin.class>
-        <plugin.dependencies>connect-plugin-mysql,schema-plugin-ob-oracle, schema-plugin-mysql,
+        <plugin.dependencies>schema-plugin-ob-mysql,connect-plugin-mysql,schema-plugin-ob-oracle, schema-plugin-mysql,
             connect-plugin-ob-oracle,connect-plugin-ob-mysql
         </plugin.dependencies>
     </properties>

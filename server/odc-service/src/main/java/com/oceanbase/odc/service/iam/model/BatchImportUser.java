@@ -34,4 +34,10 @@ public class BatchImportUser extends CreateUserReq {
 
     private String errorMessage;
 
+    public static BatchImportUser ofFail(String errorMessage) {
+        BatchImportUser batchImportUser = new BatchImportUser();
+        batchImportUser.setErrorMessage(errorMessage);
+        return batchImportUser;
+    }
+
 }

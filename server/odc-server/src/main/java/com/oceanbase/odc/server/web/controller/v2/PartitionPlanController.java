@@ -16,15 +16,17 @@
 package com.oceanbase.odc.server.web.controller.v2;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.oceanbase.odc.service.common.response.ListResponse;
 import com.oceanbase.odc.service.common.response.Responses;
 import com.oceanbase.odc.service.common.response.SuccessResponse;
 import com.oceanbase.odc.service.partitionplan.PartitionPlanService;
-import com.oceanbase.odc.service.partitionplan.model.DatabasePartitionPlan;
+import com.oceanbase.odc.service.partitionplan.model.PartitionPlanVariable;
 
 /**
  * @Author：tianke
@@ -39,15 +41,19 @@ public class PartitionPlanController {
     private PartitionPlanService partitionPlanService;
 
     @RequestMapping(value = "/partitionPlans", method = RequestMethod.GET)
-    public SuccessResponse<DatabasePartitionPlan> getPartitionPlans(@RequestParam Long databaseId,
+    public SuccessResponse<String> getPartitionPlans(@RequestParam Long databaseId,
             @RequestParam(required = false) Long flowInstanceId) {
-        return Responses
-                .success(partitionPlanService.findRangeTablePlan(databaseId, flowInstanceId));
+        throw new UnsupportedOperationException("UnSupported now");
     }
 
     @RequestMapping(value = "/partitionPlans/exists", method = RequestMethod.GET)
     public SuccessResponse<Boolean> exist(@RequestParam("databaseId") Long databaseId) {
-        return Responses.success(partitionPlanService.hasConnectionPartitionPlan(databaseId));
+        throw new UnsupportedOperationException("UnSupported now");
+    }
+
+    @GetMapping(value = "/supportedVariables")
+    public ListResponse<PartitionPlanVariable> getSupportedVariables() {
+        return Responses.list(this.partitionPlanService.getSupportedVariables());
     }
 
 }

@@ -32,15 +32,13 @@ import java.util.Objects;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
-import javax.sql.DataSource;
-
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.collections4.Predicate;
 import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -57,6 +55,7 @@ import com.oceanbase.odc.common.util.tableformat.CellStyle.NullStyle;
 import com.oceanbase.odc.common.util.tableformat.Table;
 import com.oceanbase.odc.core.shared.constant.OdcConstants;
 import com.oceanbase.odc.core.shared.constant.TaskStatus;
+import com.oceanbase.odc.plugin.connect.model.JdbcUrlProperty;
 import com.oceanbase.odc.plugin.connect.mysql.MySQLConnectionExtension;
 import com.oceanbase.odc.plugin.task.api.datatransfer.DataTransferJob;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.ConnectionInfo;
@@ -64,8 +63,10 @@ import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferConfig;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferTaskResult;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferType;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.ObjectResult;
+import com.oceanbase.odc.plugin.task.mysql.datatransfer.common.Constants;
 import com.oceanbase.odc.plugin.task.mysql.datatransfer.job.AbstractJob;
-import com.oceanbase.odc.plugin.task.mysql.datatransfer.job.TransferJobFactory;
+import com.oceanbase.odc.plugin.task.mysql.datatransfer.job.factory.BaseTransferJobFactory;
+import com.oceanbase.odc.plugin.task.mysql.datatransfer.job.factory.MySQLTransferJobFactory;
 import com.oceanbase.tools.loaddump.common.model.ObjectStatus.Status;
 import com.zaxxer.hikari.HikariDataSource;
 
@@ -76,18 +77,17 @@ import lombok.extern.slf4j.Slf4j;
 public class MySQLDataTransferJob implements DataTransferJob {
     private static final Logger LOGGER = LoggerFactory.getLogger("DataTransferLogger");
     private static final List<String> REPORT_HEADER = Arrays.asList("No.#", "Type", "Name", "Count", "Status");
+    private static final String READER_PREFIX = "datax/plugin/reader/";
+    private static final String WRITER_PREFIX = "datax/plugin/writer/";
 
-    private final DataTransferConfig baseConfig;
-    private final File workingDir;
-    private final File logDir;
-    private final List<URL> inputs;
-    private final AtomicInteger finishedJobNum = new AtomicInteger(0);
+    protected final DataTransferConfig baseConfig;
+    protected final File workingDir;
+    protected final File logDir;
+    protected final List<URL> inputs;
     private final List<AbstractJob> schemaJobs = new LinkedList<>();
     private final List<AbstractJob> dataJobs = new LinkedList<>();
     private final AtomicReference<TaskStatus> status = new AtomicReference<>();
     private final LocalEventPublisher publisher = new LocalEventPublisher();
-
-    private int transferJobNum = 0;
 
     public MySQLDataTransferJob(@NonNull DataTransferConfig config, @NonNull File workingDir, @NonNull File logDir,
             @NonNull List<URL> inputs) {
@@ -109,10 +109,13 @@ public class MySQLDataTransferJob implements DataTransferJob {
 
     @Override
     public double getProgress() {
-        if (transferJobNum == 0) {
-            return 0.0;
-        }
-        return finishedJobNum.get() * 100D / transferJobNum;
+        int base = (baseConfig.isTransferData() ? 1 : 0) + (baseConfig.isTransferDDL() ? 1 : 0);
+
+        double schemaProgress = CollectionUtils.isEmpty(schemaJobs) ? 0
+                : schemaJobs.stream().filter(AbstractJob::isDone).count() * 1D / schemaJobs.size();
+        double dataProgress = CollectionUtils.isEmpty(dataJobs) ? 0
+                : dataJobs.stream().filter(AbstractJob::isDone).count() * 1D / dataJobs.size();
+        return (schemaProgress + dataProgress) / base;
     }
 
     @Override
@@ -130,23 +133,37 @@ public class MySQLDataTransferJob implements DataTransferJob {
 
     @Override
     public DataTransferTaskResult call() throws Exception {
-        try (HikariDataSource dataSource = initDataSource()) {
+        try (HikariDataSource dataSource = getDataSource()) {
 
-            initTransferJobs(dataSource, dataSource.getJdbcUrl());
+            BaseTransferJobFactory factory = getJobFactory();
 
-            if (CollectionUtils.isNotEmpty(schemaJobs)) {
+            if (baseConfig.isTransferDDL() && !isCanceled()) {
+                List<AbstractJob> jobs = factory.generateSchemaTransferJobs(dataSource, dataSource.getJdbcUrl());
+                LOGGER.info("Found {} schema jobs for database {}.", jobs.size(), baseConfig.getSchemaName());
+                schemaJobs.addAll(jobs);
                 try {
                     runSchemaJobs();
                 } finally {
                     logSummary(schemaJobs, "SCHEMA");
                 }
             }
-            if (CollectionUtils.isNotEmpty(dataJobs)) {
+
+            if (baseConfig.isTransferData() && !isCanceled()) {
+                List<AbstractJob> jobs = factory.generateDataTransferJobs(dataSource, dataSource.getJdbcUrl());
+                LOGGER.info("Found {} data jobs for database {}.", jobs.size(), baseConfig.getSchemaName());
+                dataJobs.addAll(jobs);
                 ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor(
                         new ThreadFactoryBuilder().setNameFormat("datatransfer-schedule-%d").build());
                 try {
                     initSchedules(executor);
-                    unzipDataXToWorkingDir(workingDir);
+                    unzipDataXToWorkingDir(workingDir, name -> {
+                        if (name.startsWith(READER_PREFIX)) {
+                            return name.startsWith(READER_PREFIX + getReaderPluginName());
+                        } else if (name.startsWith(WRITER_PREFIX)) {
+                            return name.startsWith(WRITER_PREFIX + getWriterPluginName());
+                        }
+                        return true;
+                    });
                     runDataJobs();
                 } finally {
                     logSummary(dataJobs, "DATA");
@@ -158,7 +175,11 @@ public class MySQLDataTransferJob implements DataTransferJob {
         return new DataTransferTaskResult(getDataObjectsStatus(), getSchemaObjectsStatus());
     }
 
-    private HikariDataSource initDataSource() {
+    protected BaseTransferJobFactory getJobFactory() {
+        return new MySQLTransferJobFactory(baseConfig, workingDir, logDir, inputs);
+    }
+
+    protected HikariDataSource getDataSource() {
         ConnectionInfo connectionInfo = baseConfig.getConnectionInfo();
 
         Map<String, String> jdbcUrlParams = new HashMap<>();
@@ -172,8 +193,9 @@ public class MySQLDataTransferJob implements DataTransferJob {
             jdbcUrlParams.put("socksProxyPort", connectionInfo.getProxyPort() + "");
         }
         HikariDataSource dataSource = new HikariDataSource();
-        dataSource.setJdbcUrl(new MySQLConnectionExtension().generateJdbcUrl(connectionInfo.getHost(),
-                connectionInfo.getPort(), connectionInfo.getSchema(), jdbcUrlParams));
+        dataSource.setJdbcUrl(
+                new MySQLConnectionExtension().generateJdbcUrl(new JdbcUrlProperty(connectionInfo.getHost(),
+                        connectionInfo.getPort(), connectionInfo.getSchema(), jdbcUrlParams)));
         dataSource.setUsername(connectionInfo.getUserNameForConnect());
         dataSource.setPassword(connectionInfo.getPassword());
         dataSource.setDriverClassName(OdcConstants.MYSQL_DRIVER_CLASS_NAME);
@@ -181,28 +203,14 @@ public class MySQLDataTransferJob implements DataTransferJob {
         return dataSource;
     }
 
-    private void initTransferJobs(DataSource dataSource, String jdbcUrl) {
-        TransferJobFactory factory = new TransferJobFactory(baseConfig, workingDir, logDir, inputs, jdbcUrl);
-        try {
-            if (baseConfig.isTransferDDL()) {
-                List<AbstractJob> jobs = factory.generateSchemaTransferJobs(dataSource);
-                if (CollectionUtils.isNotEmpty(jobs)) {
-                    schemaJobs.addAll(jobs);
-                    transferJobNum += jobs.size();
-                }
-                LOGGER.info("Found {} schema jobs for database {}.", jobs.size(), baseConfig.getSchemaName());
-            }
-            if (baseConfig.isTransferData()) {
-                List<AbstractJob> jobs = factory.generateDataTransferJobs(dataSource);
-                if (CollectionUtils.isNotEmpty(jobs)) {
-                    dataJobs.addAll(jobs);
-                    transferJobNum += jobs.size();
-                }
-                LOGGER.info("Found {} data jobs for database {}.", jobs.size(), baseConfig.getSchemaName());
-            }
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to init transfer jobs.", e);
-        }
+    protected String getReaderPluginName() {
+        return baseConfig.getTransferType() == DataTransferType.IMPORT ? Constants.TXT_FILE_READER
+                : Constants.MYSQL_READER;
+    }
+
+    protected String getWriterPluginName() {
+        return baseConfig.getTransferType() == DataTransferType.IMPORT ? Constants.MYSQL_WRITER
+                : Constants.TXT_FILE_WRITER;
     }
 
     private void runSchemaJobs() {
@@ -216,8 +224,6 @@ public class MySQLDataTransferJob implements DataTransferJob {
             try {
                 LOGGER.info("Begin to transfer schema for {}.", job);
                 job.run();
-
-                finishedJobNum.getAndIncrement();
                 LOGGER.info("Successfully finished transferring schema for {}.", job);
             } catch (Exception e) {
                 LOGGER.warn("Object {} failed.", job, e);
@@ -243,8 +249,6 @@ public class MySQLDataTransferJob implements DataTransferJob {
                 LOGGER.info("Begin to transfer data for {}.", job);
                 publisher.publishEvent(new ObjectStartEvent(job, ""));
                 job.run();
-
-                finishedJobNum.getAndIncrement();
                 LOGGER.info("Successfully finished transferring data for {} .", job);
             } catch (Exception e) {
                 LOGGER.warn("Object {} failed.", job, e);
@@ -258,12 +262,16 @@ public class MySQLDataTransferJob implements DataTransferJob {
         }
     }
 
-    private synchronized static void unzipDataXToWorkingDir(File workingDir) throws IOException {
+    private synchronized static void unzipDataXToWorkingDir(File workingDir, Predicate<String> filter)
+            throws IOException {
         try (InputStream resource = MySQLDataTransferJob.class.getResourceAsStream("/datax.zip");
                 ZipInputStream zis = new ZipInputStream(resource)) {
             byte[] buffer = new byte[1024];
             ZipEntry entry;
             while ((entry = zis.getNextEntry()) != null) {
+                if (!filter.evaluate(entry.getName())) {
+                    continue;
+                }
                 File file = new File(workingDir, entry.getName());
                 if (entry.isDirectory()) {
                     file.mkdirs();

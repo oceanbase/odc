@@ -31,7 +31,7 @@ public enum IntegrationType {
     SQL_INTERCEPTOR,
 
     /**
-     * sso integration
+     * sso integration， OAuth、OIDC,LDAP
      */
     SSO,
 }

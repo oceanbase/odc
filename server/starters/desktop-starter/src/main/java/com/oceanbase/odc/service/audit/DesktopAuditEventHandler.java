@@ -40,6 +40,7 @@ public class DesktopAuditEventHandler implements AuditEventHandler {
                     AuditEventAction.STOP_EXPORT_TASK,
                     AuditEventAction.STOP_EXPORT_RESULT_SET_TASK,
                     AuditEventAction.STOP_SHADOWTABLE_SYNC_TASK,
+                    AuditEventAction.STOP_STRUCTURE_COMPARISON_TASK,
                     AuditEventAction.STOP_ALTER_SCHEDULE_TASK,
                     AuditEventAction.CREATE_ASYNC_TASK,
                     AuditEventAction.CREATE_MOCKDATA_TASK,
@@ -47,6 +48,7 @@ public class DesktopAuditEventHandler implements AuditEventHandler {
                     AuditEventAction.CREATE_EXPORT_TASK,
                     AuditEventAction.CREATE_EXPORT_RESULT_SET_TASK,
                     AuditEventAction.CREATE_SHADOWTABLE_SYNC_TASK,
+                    AuditEventAction.CREATE_STRUCTURE_COMPARISON_TASK,
                     AuditEventAction.CREATE_ALTER_SCHEDULE_TASK,
                     AuditEventAction.ROLLBACK_TASK);
     private final List<AuditEventType> supportedAuditEventTypeInClientMode =

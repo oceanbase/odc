@@ -63,15 +63,19 @@ import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.flow.model.TaskParameters;
 import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.core.shared.Verify;
+import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.constant.FlowStatus;
 import com.oceanbase.odc.core.shared.constant.LimitMetric;
+import com.oceanbase.odc.core.shared.constant.OrganizationType;
 import com.oceanbase.odc.core.shared.constant.ResourceRoleName;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.core.shared.constant.TaskType;
-import com.oceanbase.odc.core.shared.exception.AccessDeniedException;
 import com.oceanbase.odc.core.shared.exception.NotFoundException;
 import com.oceanbase.odc.core.shared.exception.OverLimitException;
+import com.oceanbase.odc.core.shared.exception.UnsupportedException;
 import com.oceanbase.odc.core.shared.exception.VerifyException;
+import com.oceanbase.odc.metadb.collaboration.EnvironmentEntity;
+import com.oceanbase.odc.metadb.collaboration.EnvironmentRepository;
 import com.oceanbase.odc.metadb.flow.FlowInstanceEntity;
 import com.oceanbase.odc.metadb.flow.FlowInstanceRepository;
 import com.oceanbase.odc.metadb.flow.FlowInstanceSpecs;
@@ -86,7 +90,6 @@ import com.oceanbase.odc.metadb.flow.UserTaskInstanceRepository;
 import com.oceanbase.odc.metadb.schedule.ScheduleEntity;
 import com.oceanbase.odc.metadb.task.TaskEntity;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferConfig;
-import com.oceanbase.odc.service.collaboration.project.ProjectService;
 import com.oceanbase.odc.service.common.response.SuccessResponse;
 import com.oceanbase.odc.service.common.util.SqlUtils;
 import com.oceanbase.odc.service.config.SystemConfigService;
@@ -100,6 +103,8 @@ import com.oceanbase.odc.service.connection.model.OBTenant;
 import com.oceanbase.odc.service.dispatch.DispatchResponse;
 import com.oceanbase.odc.service.dispatch.RequestDispatcher;
 import com.oceanbase.odc.service.dispatch.TaskDispatchChecker;
+import com.oceanbase.odc.service.dlm.model.DataArchiveParameters;
+import com.oceanbase.odc.service.dlm.model.DataDeleteParameters;
 import com.oceanbase.odc.service.flow.factory.FlowFactory;
 import com.oceanbase.odc.service.flow.factory.FlowResponseMapperFactory;
 import com.oceanbase.odc.service.flow.instance.BaseFlowNodeInstance;
@@ -120,12 +125,14 @@ import com.oceanbase.odc.service.flow.model.FlowNodeType;
 import com.oceanbase.odc.service.flow.model.QueryFlowInstanceParams;
 import com.oceanbase.odc.service.flow.processor.EnablePreprocess;
 import com.oceanbase.odc.service.flow.task.BaseRuntimeFlowableDelegate;
+import com.oceanbase.odc.service.flow.task.model.DBStructureComparisonParameter;
 import com.oceanbase.odc.service.flow.task.model.DatabaseChangeParameters;
 import com.oceanbase.odc.service.flow.task.model.FlowTaskProperties;
 import com.oceanbase.odc.service.flow.task.model.RuntimeTaskConstants;
 import com.oceanbase.odc.service.flow.task.model.ShadowTableSyncTaskParameter;
 import com.oceanbase.odc.service.flow.util.FlowTaskUtil;
 import com.oceanbase.odc.service.iam.HorizontalDataPermissionValidator;
+import com.oceanbase.odc.service.iam.ProjectPermissionValidator;
 import com.oceanbase.odc.service.iam.ResourceRoleService;
 import com.oceanbase.odc.service.iam.UserService;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
@@ -136,6 +143,12 @@ import com.oceanbase.odc.service.integration.model.ApprovalProperties;
 import com.oceanbase.odc.service.integration.model.IntegrationConfig;
 import com.oceanbase.odc.service.integration.model.TemplateVariables;
 import com.oceanbase.odc.service.integration.model.TemplateVariables.Variable;
+import com.oceanbase.odc.service.notification.Broker;
+import com.oceanbase.odc.service.notification.NotificationProperties;
+import com.oceanbase.odc.service.notification.helper.EventBuilder;
+import com.oceanbase.odc.service.notification.model.Event;
+import com.oceanbase.odc.service.permission.database.DatabasePermissionHelper;
+import com.oceanbase.odc.service.permission.database.model.DatabasePermissionType;
 import com.oceanbase.odc.service.regulation.approval.model.ApprovalFlowConfig;
 import com.oceanbase.odc.service.regulation.approval.model.ApprovalNodeConfig;
 import com.oceanbase.odc.service.regulation.risklevel.RiskLevelService;
@@ -144,6 +157,7 @@ import com.oceanbase.odc.service.regulation.risklevel.model.RiskLevelDescriber;
 import com.oceanbase.odc.service.schedule.ScheduleService;
 import com.oceanbase.odc.service.schedule.flowtask.AlterScheduleParameters;
 import com.oceanbase.odc.service.schedule.flowtask.OperationType;
+import com.oceanbase.odc.service.schedule.model.JobType;
 import com.oceanbase.odc.service.schedule.model.ScheduleStatus;
 import com.oceanbase.odc.service.task.TaskService;
 import com.oceanbase.odc.service.task.model.ExecutorInfo;
@@ -215,11 +229,21 @@ public class FlowInstanceService {
     @Autowired
     private FlowInstanceViewRepository flowInstanceViewRepository;
     @Autowired
-    private ProjectService projectService;
+    private ProjectPermissionValidator projectPermissionValidator;
     @Autowired
     private ResourceRoleService resourceRoleService;
     @Autowired
+    private DatabasePermissionHelper databasePermissionHelper;
+    @Autowired
+    private NotificationProperties notificationProperties;
+    @Autowired
+    private Broker broker;
+    @Autowired
+    private EventBuilder eventBuilder;
+    @Autowired
     private CloudMetadataClient cloudMetadataClient;
+    @Autowired
+    private EnvironmentRepository environmentRepository;
 
     private final List<Consumer<DataTransferTaskInitEvent>> dataTransferTaskInitHooks = new ArrayList<>();
     private final List<Consumer<ShadowTableComparingUpdateEvent>> shadowTableComparingTaskHooks = new ArrayList<>();
@@ -270,6 +294,7 @@ public class FlowInstanceService {
     @Transactional(rollbackFor = Throwable.class, propagation = Propagation.REQUIRED)
     public List<FlowInstanceDetailResp> create(@NotNull @Valid CreateFlowInstanceReq createReq) {
         // TODO 原终止逻辑想表达的语意是终止执行中的计划，但目前线上的语意是终止审批流。暂保留逻辑，待前端修改后删除。
+        checkCreateFlowInstancePermission(createReq);
         if (createReq.getTaskType() == TaskType.ALTER_SCHEDULE) {
             AlterScheduleParameters parameters = (AlterScheduleParameters) createReq.getParameters();
             if (parameters.getOperationType() == OperationType.TERMINATION) {
@@ -323,9 +348,7 @@ public class FlowInstanceService {
 
     public Page<FlowInstanceEntity> listAll(@NotNull Pageable pageable, @NotNull QueryFlowInstanceParams params) {
         if (Objects.nonNull(params.getProjectId())) {
-            if (!projectService.checkPermission(params.getProjectId(), ResourceRoleName.all())) {
-                throw new AccessDeniedException();
-            }
+            projectPermissionValidator.checkProjectRole(params.getProjectId(), ResourceRoleName.all());
         }
         if (params.getParentInstanceId() != null) {
             // TODO 4.1.3 自动运行模块改造完成后剥离
@@ -392,7 +415,9 @@ public class FlowInstanceService {
                     TaskType.ONLINE_SCHEMA_CHANGE,
                     TaskType.ALTER_SCHEDULE,
                     TaskType.EXPORT_RESULT_SET,
-                    TaskType.APPLY_PROJECT_PERMISSION);
+                    TaskType.APPLY_PROJECT_PERMISSION,
+                    TaskType.APPLY_DATABASE_PERMISSION,
+                    TaskType.STRUCTURE_COMPARISON);
             specification = specification.and(FlowInstanceViewSpecs.taskTypeIn(types));
         }
 
@@ -409,8 +434,8 @@ public class FlowInstanceService {
                 specification = specification.and(FlowInstanceViewSpecs.projectIdEquals(params.getProjectId()));
                 // if other project roles, show current user's created, waiting for approval and approved/rejected
                 // tickets
-                if (!projectService.checkPermission(params.getProjectId(), Arrays.asList(ResourceRoleName.OWNER))) {
-
+                if (!projectPermissionValidator.hasProjectRole(params.getProjectId(),
+                        Arrays.asList(ResourceRoleName.OWNER))) {
                     specification = specification.and(FlowInstanceViewSpecs.leftJoinFlowInstanceApprovalView(
                             resourceRoleIdentifiers, authenticationFacade.currentUserId(),
                             FlowNodeStatus.getExecutingAndFinalStatuses()));
@@ -577,6 +602,10 @@ public class FlowInstanceService {
                 return FlowInstanceDetailResp.withIdAndType(id, taskInstance.getTaskType());
             }
         }
+        if (CollectionUtils.isEmpty(approvalInstances) && CollectionUtils.isEmpty(taskInstances)) {
+            throw new UnsupportedException(ErrorCodes.FinishedTaskNotTerminable, null,
+                    "The current task has been completed and cannot be terminated");
+        }
         log.info("Flow status error, cancellation conditions are not met, forced cancellation, flowInstanceId={}, "
                 + "nodes={}", id,
                 instances.stream().map(t -> t.getId() + "," + t.getNodeType() + "," + t.getStatus())
@@ -596,12 +625,30 @@ public class FlowInstanceService {
             DispatchResponse response = requestDispatcher.forward(executorInfo.getHost(), executorInfo.getPort());
             return response.getContentByType(new TypeReference<SuccessResponse<FlowInstanceDetailResp>>() {}).getData();
         }
+        if (notificationProperties.isEnabled()) {
+            try {
+                Event event =
+                        eventBuilder.ofApprovedTask(getTaskByFlowInstanceId(id), authenticationFacade.currentUserId());
+                broker.enqueueEvent(event);
+            } catch (Exception e) {
+                log.warn("Failed to enqueue event.", e);
+            }
+        }
         completeApprovalInstance(id, instance -> instance.approve(message, !skipAuth), skipAuth);
         return FlowInstanceDetailResp.withIdAndType(id, taskEntity.getTaskType());
     }
 
     @Transactional(rollbackFor = Exception.class)
     public FlowInstanceDetailResp reject(@NotNull Long id, String message, Boolean skipAuth) {
+        if (notificationProperties.isEnabled()) {
+            try {
+                Event event =
+                        eventBuilder.ofRejectedTask(getTaskByFlowInstanceId(id), authenticationFacade.currentUserId());
+                broker.enqueueEvent(event);
+            } catch (Exception e) {
+                log.warn("Failed to enqueue event.", e);
+            }
+        }
         completeApprovalInstance(id, instance -> {
             instance.disApprove(message, !skipAuth);
             flowInstanceRepository.updateStatusById(instance.getFlowInstanceId(), FlowStatus.REJECTED);
@@ -621,8 +668,8 @@ public class FlowInstanceService {
                 optional.orElseThrow(() -> new NotFoundException(ResourceType.ODC_FLOW_INSTANCE, "id", flowInstanceId));
         try {
             if (!skipAuth) {
-                boolean isProjectOwner = flowInstance.getProjectId() != null && projectService.checkPermission(
-                        flowInstance.getProjectId(), Collections.singletonList(ResourceRoleName.OWNER));
+                boolean isProjectOwner = flowInstance.getProjectId() != null && projectPermissionValidator
+                        .hasProjectRole(flowInstance.getProjectId(), Collections.singletonList(ResourceRoleName.OWNER));
                 if (!Objects.equals(authenticationFacade.currentUserId(), flowInstance.getCreatorId())
                         && !isProjectOwner) {
                     List<UserTaskInstanceEntity> entities = approvalPermissionService.getApprovableApprovalInstances();
@@ -654,6 +701,50 @@ public class FlowInstanceService {
         Long taskId = taskIds.iterator().next();
         return taskService.detail(taskId);
     }
+
+    private void checkCreateFlowInstancePermission(CreateFlowInstanceReq req) {
+        if (authenticationFacade.currentUser().getOrganizationType() == OrganizationType.INDIVIDUAL) {
+            return;
+        }
+        Set<Long> databaseIds = new HashSet<>();
+        if (Objects.nonNull(req.getDatabaseId())) {
+            databaseIds.add(req.getDatabaseId());
+        }
+        TaskType taskType = req.getTaskType();
+        if (taskType == TaskType.ALTER_SCHEDULE) {
+            AlterScheduleParameters params = (AlterScheduleParameters) req.getParameters();
+            // Check the new parameters during creation or update.
+            if (params.getOperationType() == OperationType.CREATE
+                    || params.getOperationType() == OperationType.UPDATE) {
+                if (params.getType() == JobType.DATA_ARCHIVE) {
+                    DataArchiveParameters p = (DataArchiveParameters) params.getScheduleTaskParameters();
+                    databaseIds.add(p.getSourceDatabaseId());
+                    databaseIds.add(p.getTargetDataBaseId());
+                } else if (params.getType() == JobType.DATA_DELETE) {
+                    DataDeleteParameters p = (DataDeleteParameters) params.getScheduleTaskParameters();
+                    databaseIds.add(p.getDatabaseId());
+                }
+            } else {
+                ScheduleEntity scheduleEntity = scheduleService.nullSafeGetById(params.getTaskId());
+                if (params.getType() == JobType.DATA_ARCHIVE) {
+                    DataArchiveParameters p = JsonUtils.fromJson(scheduleEntity.getJobParametersJson(),
+                            DataArchiveParameters.class);
+                    databaseIds.add(p.getSourceDatabaseId());
+                    databaseIds.add(p.getTargetDataBaseId());
+                } else if (params.getType() == JobType.DATA_DELETE) {
+                    DataDeleteParameters p = JsonUtils.fromJson(scheduleEntity.getJobParametersJson(),
+                            DataDeleteParameters.class);
+                    databaseIds.add(p.getDatabaseId());
+                }
+            }
+        } else if (taskType == TaskType.STRUCTURE_COMPARISON) {
+            DBStructureComparisonParameter p = (DBStructureComparisonParameter) req.getParameters();
+            databaseIds.add(p.getTargetDatabaseId());
+            databaseIds.add(p.getSourceDatabaseId());
+        }
+        databasePermissionHelper.checkPermissions(databaseIds, DatabasePermissionType.from(req.getTaskType()));
+    }
+
 
     /**
      * It's used to internal build approval node.
@@ -693,6 +784,7 @@ public class FlowInstanceService {
 
             Map<String, Object> variables = new HashMap<>();
             FlowTaskUtil.setTemplateVariables(variables, buildTemplateVariables(flowInstanceReq, connectionConfig));
+            FlowTaskUtil.setFlowInstanceId(variables, flowInstance.getId());
             initVariables(variables, taskEntity, null, connectionConfig, buildRiskLevelDescriber(flowInstanceReq));
             flowInstance.start(variables);
             if (taskType == TaskType.SHADOWTABLE_SYNC) {
@@ -719,6 +811,7 @@ public class FlowInstanceService {
         preCheckReq.setTaskType(TaskType.PRE_CHECK);
         preCheckReq.setConnectionId(flowInstanceReq.getConnectionId());
         preCheckReq.setDatabaseId(flowInstanceReq.getDatabaseId());
+        preCheckReq.setDatabaseName(flowInstanceReq.getDatabaseName());
         TaskEntity preCheckTaskEntity = taskService.create(preCheckReq, (int) TimeUnit.SECONDS
                 .convert(flowTaskProperties.getDefaultExecutionExpirationIntervalHours(), TimeUnit.HOURS));
 
@@ -773,6 +866,10 @@ public class FlowInstanceService {
     }
 
     private String generateFlowInstanceName(@NonNull CreateFlowInstanceReq req) {
+        if (req.getTaskType() == TaskType.STRUCTURE_COMPARISON) {
+            DBStructureComparisonParameter parameters = (DBStructureComparisonParameter) req.getParameters();
+            return "structure_comparison_" + parameters.getSourceDatabaseId() + "_" + parameters.getTargetDatabaseId();
+        }
         String schemaName = req.getDatabaseName();
         String connectionName = req.getConnectionId() == null ? "no_connection" : req.getConnectionId() + "";
         if (schemaName == null) {
@@ -863,8 +960,7 @@ public class FlowInstanceService {
     }
 
     private void initVariables(Map<String, Object> variables, TaskEntity taskEntity, TaskEntity preCheckTaskEntity,
-            ConnectionConfig config,
-            RiskLevelDescriber riskLevelDescriber) {
+            ConnectionConfig config, RiskLevelDescriber riskLevelDescriber) {
         FlowTaskUtil.setTaskId(variables, taskEntity.getId());
         if (Objects.nonNull(preCheckTaskEntity)) {
             FlowTaskUtil.setPreCheckTaskId(variables, preCheckTaskEntity.getId());
@@ -882,6 +978,7 @@ public class FlowInstanceService {
             FlowTaskUtil.setSchemaName(variables, databaseService.detail(taskEntity.getDatabaseId()).getName());
         }
         FlowTaskUtil.setTaskCreator(variables, authenticationFacade.currentUser());
+        FlowTaskUtil.setOrganizationId(variables, authenticationFacade.currentOrganizationId());
         FlowTaskUtil.setTaskSubmitter(variables, JsonUtils.fromJson(taskEntity.getSubmitter(), ExecutorInfo.class));
         FlowTaskUtil.setRiskLevelDescriber(variables, riskLevelDescriber);
         FlowTaskUtil.setCloudMainAccountId(variables, authenticationFacade.currentUser().getParentUid());
@@ -979,10 +1076,15 @@ public class FlowInstanceService {
     }
 
     private RiskLevelDescriber buildRiskLevelDescriber(CreateFlowInstanceReq req) {
+        EnvironmentEntity env = null;
+        if (Objects.nonNull(req.getEnvironmentId())) {
+            env = environmentRepository.findById(req.getEnvironmentId()).orElse(null);
+        }
         return RiskLevelDescriber.builder()
                 .projectName(req.getProjectName())
                 .taskType(req.getTaskType().name())
-                .environmentId(String.valueOf(req.getEnvironmentId()))
+                .environmentId(env == null ? null : String.valueOf(env.getId()))
+                .environmentName(env == null ? null : env.getName())
                 .databaseName(req.getDatabaseName())
                 .build();
     }

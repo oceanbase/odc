@@ -18,18 +18,21 @@ package com.oceanbase.odc.service.config;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
-import org.apache.commons.compress.utils.Lists;
+import javax.validation.constraints.NotNull;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cloud.context.refresh.ContextRefresher;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.metadb.config.SystemConfigDAO;
 import com.oceanbase.odc.metadb.config.SystemConfigEntity;
 import com.oceanbase.odc.service.config.model.Configuration;
-import com.oceanbase.odc.service.config.util.OrganizationConfigUtil;
+import com.oceanbase.odc.service.config.util.ConfigurationUtils;
 import com.oceanbase.odc.service.systemconfig.SystemConfigRefreshMatcher;
 
 import lombok.extern.slf4j.Slf4j;
@@ -53,6 +56,7 @@ public class SystemConfigService {
 
     @Autowired
     private List<SystemConfigRefreshMatcher> systemConfigRefreshMatchers;
+
 
     /**
      * odc system configuration value stored in metadb by default, <br>
@@ -108,16 +112,21 @@ public class SystemConfigService {
     @SkipAuthorize("odc internal usage")
     public List<Configuration> queryByKeyPrefix(String keyPrefix) {
         List<SystemConfigEntity> configEntities = systemConfigDAO.queryByKeyPrefix(keyPrefix);
-        return OrganizationConfigUtil.convertDO2DTO(configEntities);
+        return ConfigurationUtils.fromEntity(configEntities).stream().peek(config -> {
+            for (Consumer<Configuration> consumer : getConfigurationConsumer()) {
+                consumer.accept(config);
+            }
+        }).collect(Collectors.toList());
     }
 
     @SkipAuthorize("odc internal usage")
-    public List<Configuration> queryByKeyPrefixes(List<String> keyPrefixes) {
-        List<Configuration> configurations = Lists.newArrayList();
-        for (String prefix : keyPrefixes) {
-            configurations.addAll(queryByKeyPrefix(prefix));
+    public Configuration queryByKey(String key) {
+        SystemConfigEntity systemConfigEntity = systemConfigDAO.queryByKey(key);
+        Configuration config = ConfigurationUtils.fromEntity(systemConfigEntity);
+        for (Consumer<Configuration> consumer : getConfigurationConsumer()) {
+            consumer.accept(config);
         }
-        return configurations;
+        return config;
     }
 
     @SkipAuthorize("odc internal usage")
@@ -130,6 +139,12 @@ public class SystemConfigService {
         }
     }
 
+    @SkipAuthorize("public readonly resource")
+    @Transactional(rollbackFor = Exception.class)
+    public void insert(@NotNull List<SystemConfigEntity> entities) {
+        entities.forEach(entity -> systemConfigDAO.insert(entity));
+    }
+
     private boolean needRefresh() {
         boolean needRefresh = false;
         for (SystemConfigRefreshMatcher matcher : systemConfigRefreshMatchers) {
@@ -139,4 +154,11 @@ public class SystemConfigService {
         }
         return needRefresh;
     }
+
+    @SkipAuthorize("odc internal usage")
+    @Transactional(rollbackFor = Exception.class)
+    public void upsert(@NotNull List<SystemConfigEntity> entities) {
+        entities.forEach(entity -> systemConfigDAO.upsert(entity));
+    }
+
 }

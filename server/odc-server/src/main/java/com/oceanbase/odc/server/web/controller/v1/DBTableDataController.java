@@ -32,6 +32,8 @@ import com.oceanbase.odc.service.dml.TableDataService;
 import com.oceanbase.odc.service.dml.model.BatchDataModifyReq;
 import com.oceanbase.odc.service.dml.model.BatchDataModifyResp;
 import com.oceanbase.odc.service.session.ConnectSessionService;
+import com.oceanbase.odc.service.state.model.StateName;
+import com.oceanbase.odc.service.state.model.StatefulRoute;
 
 import io.swagger.annotations.ApiOperation;
 
@@ -50,6 +52,7 @@ public class DBTableDataController {
 
     @ApiOperation(value = "batchGetModifySql", notes = "批量获取修改数据的sql，包含 INSERT/UPDATE/DELETE")
     @RequestMapping(value = "/batchGetModifySql/{sid:.*}", method = RequestMethod.POST)
+    @StatefulRoute(stateName = StateName.DB_SESSION, stateIdExpression = "#sid")
     public OdcResult<BatchDataModifyResp> batchGetModifySql(@PathVariable String sid,
             @RequestBody @NotNull @Valid BatchDataModifyReq req) {
         return OdcResult.ok(tableDataService.batchGetModifySql(

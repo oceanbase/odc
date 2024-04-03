@@ -25,4 +25,5 @@ import lombok.NoArgsConstructor;
 public class SSOTestInfo {
     private String testLoginUrl;
     private String testId;
+    private String testRegistrationId;
 }

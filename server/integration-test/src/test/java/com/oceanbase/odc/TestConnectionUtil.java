@@ -38,20 +38,11 @@ public class TestConnectionUtil extends PluginTestEnv {
     private static final Long CONNECTION_ID_OB_MYSQL = 1001L;
     private static final Long CONNECTION_ID_OB_ORACLE = 1002L;
     private static final Long CONNECTION_ID_MYSQL = 1003L;
+    private static final Long CONNECTION_ID_ORACLE = 1004L;
     private static final int QUERY_TIMEOUT_SECONDS = 60;
     private static final Map<ConnectType, ConnectionSession> connectionSessionMap = new HashMap<>();
 
     static {
-        ConnectionConfig obMysqlConfig = getTestConnectionConfig(ConnectType.OB_MYSQL);
-        ConnectionSession obMysqlSession = new DefaultConnectSessionFactory(obMysqlConfig).generateSession();
-        connectionSessionMap.put(ConnectType.OB_MYSQL, obMysqlSession);
-        ConnectionConfig obOracleConfig = getTestConnectionConfig(ConnectType.OB_ORACLE);
-        ConnectionSession obOracleSession = new DefaultConnectSessionFactory(obOracleConfig).generateSession();
-        connectionSessionMap.put(ConnectType.OB_ORACLE, obOracleSession);
-        ConnectionConfig mysqlConfig = getTestConnectionConfig(ConnectType.MYSQL);
-        ConnectionSession mysqlSession = new DefaultConnectSessionFactory(mysqlConfig).generateSession();
-        connectionSessionMap.put(ConnectType.MYSQL, mysqlSession);
-
         Thread shutdownHookThread = new Thread(TestConnectionUtil::expireConnectionSession);
         shutdownHookThread.setDaemon(true);
         shutdownHookThread.setName("thread-odc-unit-test-shutdown-hook");
@@ -59,10 +50,12 @@ public class TestConnectionUtil extends PluginTestEnv {
     }
 
     public static ConnectionSession getTestConnectionSession(ConnectType type) {
-        if (connectionSessionMap.containsKey(type)) {
-            return connectionSessionMap.get(type);
+        if (!connectionSessionMap.containsKey(type)) {
+            ConnectionConfig config = getTestConnectionConfig(type);
+            ConnectionSession session = new DefaultConnectSessionFactory(config).generateSession();
+            connectionSessionMap.put(type, session);
         }
-        throw new UnsupportedOperationException(String.format("Test DB for %s mode is not supported yet", type));
+        return connectionSessionMap.get(type);
     }
 
     public static ConnectionConfig getTestConnectionConfig(ConnectType type) {
@@ -77,6 +70,9 @@ public class TestConnectionUtil extends PluginTestEnv {
         } else if (type == ConnectType.MYSQL) {
             connection.setId(CONNECTION_ID_MYSQL);
             configuration = TestDBConfigurations.getInstance().getTestMysqlConfiguration();
+        } else if (type == ConnectType.ORACLE) {
+            connection.setId(CONNECTION_ID_ORACLE);
+            configuration = TestDBConfigurations.getInstance().getTestOracleConfiguration();
         } else {
             throw new UnsupportedOperationException(String.format("Test DB for %s mode is not supported yet", type));
         }
@@ -99,6 +95,8 @@ public class TestConnectionUtil extends PluginTestEnv {
         connection.setDefaultSchema(configuration.getDefaultDBName());
         connection.setVisibleScope(ConnectionVisibleScope.PRIVATE);
         connection.setQueryTimeoutSeconds(QUERY_TIMEOUT_SECONDS);
+        connection.setSid(configuration.getSID());
+        connection.setServiceName(configuration.getServiceName());
         return connection;
     }
 

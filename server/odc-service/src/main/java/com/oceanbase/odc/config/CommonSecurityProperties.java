@@ -77,6 +77,13 @@ public class CommonSecurityProperties {
             "/template/zh-cn/*",
             "/template/zh-tw/*"};
 
+
+    private static final String[] TASK_WHITE_LIST = new String[] {
+            "/api/v2/task/heart",
+            "/api/v2/task/result",
+            "/api/v2/task/querySensitiveColumn"
+    };
+
     private static final String LOGOUT_URI = "/api/v2/iam/logout";
     private static final String LOGIN_URI = "/api/v2/iam/login";
     private static final String LOGIN_PAGE = "/index.html";
@@ -103,15 +110,16 @@ public class CommonSecurityProperties {
     @Value("${odc.web.security.cors.enabled:false}")
     private boolean corsEnabled;
 
+    @Getter
+    @Value("${odc.web.security.basic-authentication.enabled:false}")
+    private boolean basicAuthenticationEnabled;
+
     /**
      * CORS 允许的 origins domain 列表，当 odc.web.security.cors.enabled=true 时配置有效
      */
     @Getter
     @Value("${odc.web.security.cors.allowedOrigins:*}")
     private List<String> corsAllowedOrigins;
-
-    @Value("${odc.task-framework.enabled:false}")
-    private boolean taskFrameworkEnabled;
 
     @PostConstruct
     public void init() {
@@ -121,14 +129,11 @@ public class CommonSecurityProperties {
     }
 
     public String[] getAuthWhitelist() {
-        if (taskFrameworkEnabled) {
-            String[] copiedAuthWhitelist = new String[buildInAuthWhitelist.length + 2];
-            System.arraycopy(buildInAuthWhitelist, 0, copiedAuthWhitelist, 0, buildInAuthWhitelist.length);
-            copiedAuthWhitelist[copiedAuthWhitelist.length - 1] = "/api/v2/task/heart";
-            copiedAuthWhitelist[copiedAuthWhitelist.length - 2] = "/api/v2/task/result";
-            return ArrayUtils.addAll(copiedAuthWhitelist);
-        }
-        return ArrayUtils.addAll(buildInAuthWhitelist);
+        return ArrayUtils.addAll(buildInAuthWhitelist, TASK_WHITE_LIST);
+    }
+
+    public String[] getTaskWhiteList() {
+        return ArrayUtils.addAll(TASK_WHITE_LIST);
     }
 
     public String[] getStaticResources() {

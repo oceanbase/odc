@@ -15,158 +15,141 @@
  */
 package com.oceanbase.odc.service.config;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
-import javax.validation.Valid;
-import javax.validation.constraints.NotBlank;
+import javax.annotation.PostConstruct;
+import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
 
+import com.github.benmanes.caffeine.cache.Caffeine;
+import com.github.benmanes.caffeine.cache.LoadingCache;
+import com.oceanbase.odc.common.util.ExceptionUtils;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
-import com.oceanbase.odc.core.shared.constant.ErrorCodes;
-import com.oceanbase.odc.core.shared.exception.BadRequestException;
-import com.oceanbase.odc.core.shared.exception.InternalServerError;
-import com.oceanbase.odc.core.shared.exception.NotFoundException;
 import com.oceanbase.odc.metadb.config.UserConfigDAO;
-import com.oceanbase.odc.metadb.config.UserConfigDO;
+import com.oceanbase.odc.metadb.config.UserConfigEntity;
+import com.oceanbase.odc.service.config.model.Configuration;
+import com.oceanbase.odc.service.config.model.ConfigurationMeta;
 
 import lombok.extern.slf4j.Slf4j;
 
-/**
- * service object for personal configuration
- *
- * @author yh263208
- * @date 2021-05-17 20:33
- * @since ODC_release_2.4.2
- */
-@Service
 @Slf4j
+@Service
 @Validated
-@SkipAuthorize("odc internal usage")
+@SkipAuthorize("isolated by user")
 public class UserConfigService {
-    /**
-     * data access object for user configuration
-     */
+    @Autowired
+    private UserConfigMetaService userConfigMetaService;
     @Autowired
     private UserConfigDAO userConfigDAO;
 
-    /**
-     * insert a personal config
-     *
-     * @param config config object
-     * @return config object
-     * @throws IllegalArgumentException exception will be thrown when data is illegal
-     * @throws InternalServerError error will be thrown when effect row is not equal to one
-     */
-    @Transactional(rollbackFor = Throwable.class, propagation = Propagation.REQUIRED)
-    public UserConfigDO insert(@Valid @NotNull UserConfigDO config)
-            throws IllegalArgumentException, InternalServerError {
-        String configKey = config.getKey();
-        int effectRow = userConfigDAO.insert(config);
-        if (effectRow != 1) {
-            log.error("Fail to insert a personal config setting, key={},value={},effectRow={}", configKey,
-                    config.getValue(), effectRow);
-            throw new InternalServerError("EffectRow is illegal");
-        }
-        log.info("Insert a personal config item successfully, userConfig={}", config);
-        return config;
+    private List<Configuration> defaultConfigurations;
+    private Map<String, ConfigurationMeta> configKeyToConfigMeta;
+    private LoadingCache<Long, Map<String, Configuration>> userIdToConfigurationsCache = Caffeine.newBuilder()
+            .maximumSize(500).expireAfterWrite(60, TimeUnit.SECONDS)
+            .build(this::internalGetUserConfigurations);
+
+    @PostConstruct
+    public void init() {
+        List<ConfigurationMeta> allConfigMetas = userConfigMetaService.listAllConfigMetas();
+        this.defaultConfigurations = allConfigMetas.stream().map(
+                meta -> new Configuration(meta.getKey(), meta.getDefaultValue()))
+                .collect(Collectors.toList());
+        this.configKeyToConfigMeta = allConfigMetas.stream()
+                .collect(Collectors.toMap(ConfigurationMeta::getKey, e -> e));
+        log.info("Default user configurations: {}", defaultConfigurations);
     }
 
     /**
-     * query a list of personal config for a user
-     *
-     * @param userId user id
-     * @return config map
-     * @throws IllegalArgumentException exception will be thrown when data is illegal
-     * @throws InternalServerError error will be thrown when config list's size is illegal
+     * deep copy for avoid dirty value in return list
      */
-    @NotNull(message = "Return value for OdcUserConfigService#query can not be null")
-    public List<UserConfigDO> query(@NotNull Long userId) throws IllegalArgumentException, InternalServerError {
-        return userConfigDAO.listByUserId(userId);
+    public List<Configuration> listDefaultUserConfigurations() {
+        List<Configuration> configurations = new ArrayList<>(defaultConfigurations.size());
+        for (Configuration configuration : defaultConfigurations) {
+            configurations.add(new Configuration(configuration.getKey(), configuration.getValue()));
+        }
+        return configurations;
     }
 
-    /**
-     * query a personal config item
-     *
-     * @param userId user id
-     * @param key config key
-     * @return config value
-     * @throws IllegalArgumentException exception will be thrown when data is illegal
-     * @throws InternalServerError error will be thrown when config key or value is illegal
-     */
-    public String query(@NotNull Long userId, @NotBlank String key)
-            throws IllegalArgumentException, InternalServerError {
-        UserConfigDO config = userConfigDAO.get(userId, key);
-        if (config == null) {
-            log.warn("Fail to query a personal config, config is null, userId={},key={}", userId, key);
-            return null;
-        }
-        if (config.getValue() == null) {
-            log.error("Fail to query a personal config, value is null, key={},value={}", config.getKey(),
-                    config.getValue());
-            throw new InternalServerError("Key or value is null");
-        }
-        return config.getValue();
+    public void deleteUserConfigurations(@NotNull Long userId) {
+        int affectRows = userConfigDAO.deleteByUserId(userId);
+        evictUserConfigurationsCache(userId);
+        log.info("Delete user configurations, userId={}, affectRows={}", userId, affectRows);
     }
 
-    /**
-     * update a personal config item
-     *
-     * @param config config object
-     * @return config object
-     * @throws IllegalArgumentException exception will be thrown when data is illegal
-     * @throws InternalServerError error will be thrown when effect row is not equal to one
-     */
-    @Transactional(rollbackFor = Throwable.class, propagation = Propagation.REQUIRED)
-    public UserConfigDO update(@Valid @NotNull UserConfigDO config)
-            throws IllegalArgumentException, InternalServerError {
-        UserConfigDO configDO = userConfigDAO.get(config.getUserId(), config.getKey());
-        if (configDO == null) {
-            throw new NotFoundException(ErrorCodes.NotFound, new Object[] {"UserConfig", "Key", config.getKey()},
-                    "UserConfig does not exist");
+    public List<Configuration> listUserConfigurations(@NotNull Long userId) {
+        Map<String, Configuration> keyToConfiguration =
+                userConfigDAO.queryByUserId(userId).stream().map(Configuration::of)
+                        .collect(Collectors.toMap(Configuration::getKey, e -> e));
+        List<Configuration> configurations = listDefaultUserConfigurations();
+        for (Configuration configuration : configurations) {
+            if (keyToConfiguration.containsKey(configuration.getKey())) {
+                configuration.setValue(keyToConfiguration.get(configuration.getKey()).getValue());
+            }
         }
-        if (configDO.getValue().equals(config.getValue())) {
-            throw new BadRequestException(ErrorCodes.BadRequest, new Object[] {},
-                    "There are not any differences between userConfig in metaDB and userConfig input");
-        }
-        int effectRow = userConfigDAO.update(config);
-        if (effectRow != 1) {
-            log.error("Fail to update a personal config setting, key={},value={},effectRow={}", config.getKey(),
-                    config.getValue(), effectRow);
-            throw new InternalServerError("EffectRow is illegal");
-        }
-        log.info("Update a personal config item successfully, userConfig={}", config);
-        return config;
+        return configurations;
     }
 
-    /**
-     * delete a personal config item
-     *
-     * @param config config object
-     * @return config object
-     * @throws IllegalArgumentException exception will be thrown when data is illegal
-     * @throws InternalServerError error will be thrown when effect row is not equal to one
-     */
-    @Transactional(rollbackFor = Throwable.class, propagation = Propagation.REQUIRED)
-    public UserConfigDO delete(@Valid @NotNull UserConfigDO config)
-            throws IllegalArgumentException, InternalServerError {
-        UserConfigDO configDO = userConfigDAO.get(config.getUserId(), config.getKey());
-        if (configDO == null) {
-            throw new NotFoundException(ErrorCodes.NotFound, new Object[] {"UserConfig", "Key", config.getKey()},
-                    "UserConfig does not exist");
+    @Transactional(rollbackFor = Exception.class)
+    public List<Configuration> updateUserConfigurations(@NotNull Long userId,
+            @NotEmpty List<Configuration> configurations) {
+        for (Configuration configuration : configurations) {
+            validateConfiguration(configuration);
         }
-        int effectRow = userConfigDAO.delete(config.getUserId(), config.getKey());
-        if (effectRow != 1) {
-            log.error("Fail to delete a personal config setting, key={},effectRow={}", config.getKey(),
-                    effectRow);
-            throw new InternalServerError("EffectRow is illegal");
+        List<UserConfigEntity> entities = configurations.stream()
+                .map(c -> c.toEntity(userId)).collect(Collectors.toList());
+        int affectRows = userConfigDAO.batchUpsert(entities);
+        log.info("Update user configurations, userId={}, affectRows={}, configurations={}",
+                userId, affectRows, configurations);
+        evictUserConfigurationsCache(userId);
+        return listUserConfigurations(userId);
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    public Configuration updateUserConfiguration(@NotNull Long userId, @NotNull Configuration configuration) {
+        validateConfiguration(configuration);
+        UserConfigEntity entity = configuration.toEntity(userId);
+        int affectRows = userConfigDAO.batchUpsert(Arrays.asList(entity));
+        log.info("Update user configuration, userId={}, affectRows={}, configuration={}",
+                userId, affectRows, configuration);
+        UserConfigEntity stored = userConfigDAO.queryByUserIdAndKey(userId, configuration.getKey());
+        evictUserConfigurationsCache(userId);
+        return Configuration.of(stored);
+    }
+
+    private void validateConfiguration(Configuration configuration) {
+        ConfigurationMeta meta = configKeyToConfigMeta.get(configuration.getKey());
+        if (Objects.isNull(meta)) {
+            throw new IllegalArgumentException("Invalid configuration key: " + configuration.getKey());
         }
-        log.info("Delete a personal config item successfully, userConfig={}", config);
-        return config;
+        ConfigValueValidator.validate(meta, configuration.getValue());
+    }
+
+    public Map<String, Configuration> getUserConfigurationsFromCache(Long userId) {
+        return userIdToConfigurationsCache.get(userId);
+    }
+
+    private Map<String, Configuration> internalGetUserConfigurations(Long userId) {
+        return listUserConfigurations(userId).stream()
+                .collect(Collectors.toMap(Configuration::getKey, c -> c));
+    }
+
+    private void evictUserConfigurationsCache(@NotNull Long userId) {
+        try {
+            userIdToConfigurationsCache.invalidate(userId);
+        } catch (Exception e) {
+            log.warn("Failed to evict cache, userId={}, reason={}",
+                    userId, ExceptionUtils.getRootCauseReason(e));
+        }
     }
 }

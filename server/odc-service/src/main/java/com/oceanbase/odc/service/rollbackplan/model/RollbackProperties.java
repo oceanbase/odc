@@ -44,4 +44,11 @@ public class RollbackProperties {
 
     @Value("${odc.task.async.rollback.max-timeout-millisecond:900000}")
     private Long maxTimeoutMillisecond;
+
+    @Value("${odc.task.async.rollback.max-rollback-content-size-bytes:268435456}")
+    private long maxRollbackContentSizeBytes;
+
+    @Value("${odc.task.async.rollback.total-max-change-lines:1000000}")
+    private int totalMaxChangeLines;
+
 }

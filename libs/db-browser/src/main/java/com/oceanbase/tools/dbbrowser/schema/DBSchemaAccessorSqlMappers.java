@@ -51,9 +51,11 @@ public class DBSchemaAccessorSqlMappers {
                 StatementsFiles.OBMYSQL_2276,
                 StatementsFiles.OBMYSQL_225X,
                 StatementsFiles.OBMYSQL_1479,
-                StatementsFiles.MYSQL_5_7_40,
+                StatementsFiles.MYSQL_5_7_x,
+                StatementsFiles.MYSQL_5_6_x,
                 StatementsFiles.OBORACLE_3_x,
-                StatementsFiles.OBORACLE_4_0_x));
+                StatementsFiles.OBORACLE_4_0_x,
+                StatementsFiles.ORACLE_11_g));
         for (String path : SQL_MAPPER_FILE_PATHS) {
             URL url = DBSchemaAccessorSqlMappers.class.getClassLoader().getResource(path);
             if (url == null) {

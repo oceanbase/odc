@@ -16,8 +16,7 @@
 
 package com.oceanbase.odc.service.task.schedule;
 
-import java.text.MessageFormat;
-import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
@@ -31,7 +30,6 @@ import org.quartz.SchedulerException;
 import org.quartz.Trigger;
 import org.quartz.TriggerKey;
 
-import com.google.common.collect.Lists;
 import com.oceanbase.odc.common.concurrent.Await;
 import com.oceanbase.odc.common.event.EventPublisher;
 import com.oceanbase.odc.core.shared.PreConditions;
@@ -45,12 +43,14 @@ import com.oceanbase.odc.service.task.enums.JobStatus;
 import com.oceanbase.odc.service.task.exception.JobException;
 import com.oceanbase.odc.service.task.exception.TaskRuntimeException;
 import com.oceanbase.odc.service.task.listener.DefaultJobCallerListener;
-import com.oceanbase.odc.service.task.listener.DestroyExecutorListener;
 import com.oceanbase.odc.service.task.schedule.daemon.CheckRunningJob;
 import com.oceanbase.odc.service.task.schedule.daemon.DestroyExecutorJob;
 import com.oceanbase.odc.service.task.schedule.daemon.DoCancelingJob;
 import com.oceanbase.odc.service.task.schedule.daemon.StartPreparingJob;
+import com.oceanbase.odc.service.task.service.JobRunnable;
+import com.oceanbase.odc.service.task.util.JobUtils;
 
+import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -60,7 +60,6 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 public class StdJobScheduler implements JobScheduler {
-
     private final Scheduler scheduler;
     private final JobConfiguration configuration;
 
@@ -70,7 +69,6 @@ public class StdJobScheduler implements JobScheduler {
         validConfiguration(configuration);
         JobConfigurationHolder.setJobConfiguration(configuration);
 
-        getEventPublisher().addEventListener(new DestroyExecutorListener(configuration));
         getEventPublisher().addEventListener(new DefaultJobCallerListener(this));
         initDaemonJob();
         log.info("Start StdJobScheduler succeed.");
@@ -92,15 +90,51 @@ public class StdJobScheduler implements JobScheduler {
 
     @Override
     public void cancelJob(Long id) throws JobException {
-        configuration.getTransactionManager().doInTransactionWithoutResult(() -> {
-            tryCanceling(id);
-        });
+        doInTransaction(() -> tryCanceling(id));
     }
 
     @Override
-    public void await(Long id, Integer timeout, TimeUnit timeUnit) throws InterruptedException {
+    public void modifyJobParameters(Long jobId, Map<String, String> jobParameters) throws JobException {
+        doInTransaction(() -> doModifyJobParameters(jobId, jobParameters));
+    }
+
+    private void doInTransaction(JobRunnable r) throws JobException {
+        try {
+            configuration.getTransactionManager().doInTransactionWithoutResult(() -> {
+                try {
+                    r.run();
+                } catch (JobException e) {
+                    throw new TaskRuntimeException(e);
+                }
+            });
+        } catch (Exception e) {
+            throw new JobException("Do in transaction occur error:", e);
+        }
+
+    }
+
+    private void doModifyJobParameters(Long jobId, @NonNull Map<String, String> jobParameters) throws JobException {
+        JobEntity jobEntity = configuration.getTaskFrameworkService().findWithPessimisticLock(jobId);
+        if (jobEntity == null) {
+            throw new JobException("Job is not found by id, jobId={0}.", jobId);
+        }
+        if (!jobEntity.getStatus().isExecuting()) {
+            throw new JobException("Job is not executing, jobId={0}, jobStatus={1}.", jobId, jobEntity.getStatus());
+        }
+        String newJobParametersJson = JobUtils.toJson(jobParameters);
+        configuration.getTaskFrameworkService().updateJobParameters(jobId, newJobParametersJson);
+
+        if (jobEntity.getStatus() == JobStatus.PREPARING) {
+            return;
+        }
+        // send new parameters to executor
+        configuration.getJobDispatcher().modify(JobIdentity.of(jobId), newJobParametersJson);
+    }
+
+    @Override
+    public void await(Long jobId, Integer timeout, TimeUnit timeUnit) throws InterruptedException {
         Await.await().timeUnit(timeUnit).timeout(timeout).period(10).periodTimeUnit(TimeUnit.SECONDS)
-                .until(() -> configuration.getTaskFrameworkService().isJobFinished(id))
+                .until(() -> configuration.getTaskFrameworkService().isJobFinished(jobId))
                 .build().start();
     }
 
@@ -109,25 +143,19 @@ public class StdJobScheduler implements JobScheduler {
         return configuration.getEventPublisher();
     }
 
-    private void tryCanceling(Long id) {
-        JobEntity jobEntity = configuration.getTaskFrameworkService().findWithPessimisticLock(id);
-        if (!cancelable(jobEntity.getStatus())) {
-            throw new TaskRuntimeException(
-                    MessageFormat.format("Cancel job failed, current job {0} status is {1}, can't be cancel.",
-                            jobEntity.getId(), jobEntity.getStatus()));
+    private void tryCanceling(Long jobId) throws JobException {
+        JobEntity jobEntity = configuration.getTaskFrameworkService().findWithPessimisticLock(jobId);
+        if (!jobEntity.getStatus().isExecuting()) {
+            throw new JobException("Cancel job failed, current job {0} status is {1}, can't be cancel.",
+                    jobEntity.getId(), jobEntity.getStatus());
         }
-        int count = configuration.getTaskFrameworkService().updateJobToCanceling(id, jobEntity.getStatus());
+        int count = configuration.getTaskFrameworkService().updateJobToCanceling(jobId, jobEntity.getStatus());
         if (count <= 0) {
-            throw new TaskRuntimeException(MessageFormat.format("Cancel job failed, current job {0} status is {1}.",
-                    jobEntity.getId(), jobEntity.getStatus()));
+            throw new JobException("Cancel job failed, current job {0} status is {1}.",
+                    jobEntity.getId(), jobEntity.getStatus());
         } else {
-            log.info("Update job {} status to {}", id, JobStatus.CANCELING.name());
+            log.info("Update job {} status to {}", jobId, JobStatus.CANCELING.name());
         }
-    }
-
-    private boolean cancelable(JobStatus status) {
-        List<JobStatus> list = Lists.newArrayList(JobStatus.PREPARING, JobStatus.RUNNING, JobStatus.RETRYING);
-        return list.contains(status);
     }
 
     private void initDaemonJob() {

@@ -375,7 +375,7 @@ public class OBColumnExtractor implements ColumnExtractor {
         String columnName = processIdentifier(relations.pollFirst());
         String tableName = processIdentifier(relations.pollFirst());
         String databaseName = processIdentifier(relations.pollFirst());
-        if (ORACLE_PSEUDO_COLUMNS.contains(columnName)) {
+        if (Objects.nonNull(dialectType) && dialectType.isOracle() && ORACLE_PSEUDO_COLUMNS.contains(columnName)) {
             LogicalColumn c = LogicalColumn.empty();
             c.setName(columnName);
             c.setType(ColumnType.CONSTANT);
@@ -549,6 +549,8 @@ public class OBColumnExtractor implements ColumnExtractor {
             return extractFunctionCallItem((FunctionCall) expr);
         } else if (expr instanceof IntervalExpression) {
             return extractIntervalExpression((IntervalExpression) expr);
+        } else if (expr instanceof CaseWhen) {
+            return extractCaseWhenItem((CaseWhen) expr);
         } else {
             throw new IllegalStateException("Unknown type of expression: " + expr);
         }
@@ -734,12 +736,18 @@ public class OBColumnExtractor implements ColumnExtractor {
                 return unquoted;
             }
             return StringUtils.checkMysqlIdentifierQuoted(identifier) ? unquoted : unquoted.toLowerCase();
-        } else if (dialectType == DialectType.OB_ORACLE) {
+        } else if (Objects.nonNull(dialectType) && dialectType.isOracle()) {
             String unquoted = StringUtils.unquoteOracleIdentifier(identifier);
             if (StringUtils.isBlank(unquoted)) {
                 return unquoted;
             }
             return StringUtils.checkOracleIdentifierQuoted(identifier) ? unquoted : unquoted.toUpperCase();
+        } else if (Objects.nonNull(dialectType) && dialectType.isDoris()) {
+            String unquoted = StringUtils.unquoteMySqlIdentifier(identifier);
+            if (StringUtils.isBlank(unquoted)) {
+                return unquoted;
+            }
+            return StringUtils.checkMysqlIdentifierQuoted(identifier) ? unquoted : unquoted.toLowerCase();
         } else {
             throw new IllegalStateException("Unknown dialect type: " + dialectType);
         }

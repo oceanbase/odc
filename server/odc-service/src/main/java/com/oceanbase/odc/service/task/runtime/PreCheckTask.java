@@ -15,19 +15,18 @@
  */
 package com.oceanbase.odc.service.task.runtime;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.SequenceInputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.stream.Collectors;
 
 import org.apache.commons.collections4.CollectionUtils;
@@ -40,17 +39,21 @@ import com.oceanbase.odc.core.datasource.SingleConnectionDataSource;
 import com.oceanbase.odc.core.flow.model.FlowTaskResult;
 import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.shared.constant.TaskType;
+import com.oceanbase.odc.core.sql.execute.model.SqlTuple;
 import com.oceanbase.odc.core.sql.split.OffsetString;
 import com.oceanbase.odc.core.sql.split.SqlStatementIterator;
 import com.oceanbase.odc.service.common.util.SqlUtils;
+import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.flow.model.PreCheckTaskResult;
 import com.oceanbase.odc.service.flow.task.model.DatabaseChangeParameters;
 import com.oceanbase.odc.service.flow.task.model.DatabasePermissionCheckResult;
 import com.oceanbase.odc.service.flow.task.model.SqlCheckTaskResult;
 import com.oceanbase.odc.service.objectstorage.model.ObjectMetadata;
-import com.oceanbase.odc.service.objectstorage.model.StorageObject;
+import com.oceanbase.odc.service.objectstorage.util.ObjectStorageUtils;
 import com.oceanbase.odc.service.onlineschemachange.model.OnlineSchemaChangeParameters;
+import com.oceanbase.odc.service.permission.database.model.DatabasePermissionType;
+import com.oceanbase.odc.service.permission.database.model.UnauthorizedDatabase;
 import com.oceanbase.odc.service.regulation.ruleset.model.Rule;
 import com.oceanbase.odc.service.regulation.ruleset.model.Rule.RuleViolation;
 import com.oceanbase.odc.service.regulation.ruleset.model.RuleMetadata;
@@ -68,9 +71,10 @@ import com.oceanbase.odc.service.sqlcheck.model.CheckViolation;
 import com.oceanbase.odc.service.sqlcheck.rule.SqlCheckRules;
 import com.oceanbase.odc.service.task.caller.JobContext;
 import com.oceanbase.odc.service.task.constants.JobParametersKeyConstants;
-import com.oceanbase.odc.service.task.executor.server.ObjectStorageHandler;
 import com.oceanbase.odc.service.task.executor.task.BaseTask;
+import com.oceanbase.odc.service.task.runtime.PreCheckTaskParameters.AuthorizedDatabase;
 import com.oceanbase.odc.service.task.util.JobUtils;
+import com.oceanbase.tools.dbbrowser.parser.constant.SqlType;
 
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
@@ -105,25 +109,26 @@ public class PreCheckTask extends BaseTask<FlowTaskResult> {
     }
 
     @Override
-    protected void doStart(JobContext context) throws Exception {
+    protected boolean doStart(JobContext context) throws Exception {
         try {
             List<OffsetString> sqls = new ArrayList<>();
             this.overLimit = getSqlContentUntilOverLimit(sqls, this.parameters.getMaxReadContentBytes());
-            Set<String> unauthorizedDatabaseNames = new HashSet<>();
+            List<UnauthorizedDatabase> unauthorizedDatabases = new ArrayList<>();
             List<CheckViolation> violations = new ArrayList<>();
             if (CollectionUtils.isNotEmpty(sqls)) {
                 violations.addAll(checkViolations(sqls));
                 log.info("SQL check successfully, taskId={}", taskId);
-                unauthorizedDatabaseNames.addAll(filterUnAuthorizedDatabaseNames(sqls));
+                unauthorizedDatabases.addAll(filterUnAuthorizedDatabase(sqls));
                 log.info("Database permission check successfully, taskId={}", taskId);
             }
-            this.permissionCheckResult = new DatabasePermissionCheckResult(unauthorizedDatabaseNames);
+            this.permissionCheckResult = new DatabasePermissionCheckResult(unauthorizedDatabases);
             this.sqlCheckResult = SqlCheckTaskResult.success(violations);
             this.success = true;
             log.info("Pre-check task end up running, task id: {}", taskId);
         } finally {
             tryCloseInputStream();
         }
+        return this.success;
     }
 
     @Override
@@ -132,7 +137,7 @@ public class PreCheckTask extends BaseTask<FlowTaskResult> {
     }
 
     @Override
-    protected void onFail(Throwable e) {
+    protected void doClose() throws Exception {
         tryCloseInputStream();
     }
 
@@ -194,26 +199,10 @@ public class PreCheckTask extends BaseTask<FlowTaskResult> {
             }
             params = (DatabaseChangeParameters) asParams.getScheduleTaskParameters();
         }
-        this.uploadFileInputStream = new ByteArrayInputStream(new byte[0]);
         List<ObjectMetadata> objectMetadataList = this.parameters.getSqlFileObjectMetadatas();
         if (Objects.nonNull(params) && CollectionUtils.isNotEmpty(objectMetadataList)) {
-            for (ObjectMetadata objectMetadata : objectMetadataList) {
-                StorageObject object =
-                        new ObjectStorageHandler(getCloudObjectStorageService(), JobUtils.getExecutorDataPath())
-                                .loadObject(objectMetadata);
-                InputStream current = object.getContent();
-                // remove UTF-8 BOM if exists
-                current.mark(3);
-                byte[] byteSql = new byte[3];
-                if (current.read(byteSql) >= 3 && byteSql[0] == (byte) 0xef && byteSql[1] == (byte) 0xbb
-                        && byteSql[2] == (byte) 0xbf) {
-                    current.reset();
-                    current.skip(3);
-                } else {
-                    current.reset();
-                }
-                this.uploadFileInputStream = new SequenceInputStream(this.uploadFileInputStream, current);
-            }
+            this.uploadFileInputStream = ObjectStorageUtils.loadObjectsForTask(objectMetadataList,
+                    getCloudObjectStorageService(), JobUtils.getExecutorDataPath(), -1).getInputStream();
             this.uploadFileSqlIterator = SqlUtils.iterator(this.parameters.getConnectionConfig().getDialectType(),
                     params.getDelimiter(), this.uploadFileInputStream, StandardCharsets.UTF_8);
         }
@@ -314,17 +303,70 @@ public class PreCheckTask extends BaseTask<FlowTaskResult> {
         });
     }
 
-    private Set<String> filterUnAuthorizedDatabaseNames(List<OffsetString> sqls) {
-        ConnectionConfig config = this.parameters.getConnectionConfig();
-        Set<String> authorizedDatabaseNames = this.parameters.getAuthorizedDatabaseNames();
-        Set<String> databaseNames = SchemaExtractor.listSchemaNames(
-                sqls.stream().map(OffsetString::getStr).collect(Collectors.toList()), config.getDialectType());
-        if (CollectionUtils.isEmpty(databaseNames)) {
-            return Collections.emptySet();
+    private List<UnauthorizedDatabase> filterUnAuthorizedDatabase(List<OffsetString> sqls) {
+        // Get needed permission types for accessing the schemas
+        Map<String, Set<DatabasePermissionType>> neededSchemaName2PermissionTypes = new HashMap<>();
+        Map<String, Set<SqlType>> schemaName2SqlTypes = SchemaExtractor.listSchemaName2SqlTypes(
+                sqls.stream().map(e -> SqlTuple.newTuple(e.getStr())).collect(Collectors.toList()),
+                this.parameters.getDefaultSchema(), this.parameters.getConnectionConfig().getDialectType());
+        for (Entry<String, Set<SqlType>> entry : schemaName2SqlTypes.entrySet()) {
+            Set<SqlType> sqlTypes = entry.getValue();
+            if (CollectionUtils.isNotEmpty(sqlTypes)) {
+                Set<DatabasePermissionType> permissionTypes = sqlTypes.stream().map(DatabasePermissionType::from)
+                        .filter(Objects::nonNull).collect(Collectors.toSet());
+                permissionTypes.addAll(DatabasePermissionType.from(this.parameters.getTaskType()));
+                if (CollectionUtils.isNotEmpty(permissionTypes)) {
+                    neededSchemaName2PermissionTypes.put(entry.getKey(), permissionTypes);
+                }
+            }
         }
-        return databaseNames.stream().filter(name -> !authorizedDatabaseNames.contains(name))
-                .collect(Collectors.toSet());
+        if (neededSchemaName2PermissionTypes.isEmpty()) {
+            return Collections.emptyList();
+        }
+        // Get authorized permission types for all schemas in current datasource
+        Map<String, Set<DatabasePermissionType>> authorizedSchema2PermissionTypes = new HashMap<>();
+        Map<String, Database> schemaName2Database = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+        List<AuthorizedDatabase> authorizedDatabases = this.parameters.getAuthorizedDatabase();
+        if (CollectionUtils.isNotEmpty(authorizedDatabases)) {
+            for (AuthorizedDatabase authorizedDatabase : authorizedDatabases) {
+                authorizedSchema2PermissionTypes.put(authorizedDatabase.getName(),
+                        authorizedDatabase.getPermissionTypes());
+                Database database = new Database();
+                database.setId(authorizedDatabase.getId());
+                database.setName(authorizedDatabase.getName());
+                database.setDataSource(this.parameters.getConnectionConfig());
+                schemaName2Database.put(authorizedDatabase.getName(), database);
+            }
+        }
+        List<UnauthorizedDatabase> ret = new ArrayList<>();
+        for (Map.Entry<String, Set<DatabasePermissionType>> entry : neededSchemaName2PermissionTypes.entrySet()) {
+            String schemaName = entry.getKey();
+            Set<DatabasePermissionType> needs = entry.getValue();
+            if (CollectionUtils.isEmpty(needs)) {
+                continue;
+            }
+            if (schemaName2Database.containsKey(schemaName)) {
+                Database database = schemaName2Database.get(schemaName);
+                Set<DatabasePermissionType> authorized = authorizedSchema2PermissionTypes.get(schemaName);
+                if (CollectionUtils.isEmpty(authorized)) {
+                    ret.add(UnauthorizedDatabase.from(database, needs, false));
+                } else {
+                    Set<DatabasePermissionType> unauthorized =
+                            needs.stream().filter(p -> !authorized.contains(p)).collect(Collectors.toSet());
+                    if (CollectionUtils.isNotEmpty(unauthorized)) {
+                        ret.add(UnauthorizedDatabase.from(database, unauthorized, false));
+                    }
+                }
+            } else {
+                Database unknownDatabase = new Database();
+                unknownDatabase.setName(schemaName);
+                unknownDatabase.setDataSource(this.parameters.getConnectionConfig());
+                ret.add(UnauthorizedDatabase.from(unknownDatabase, needs, false));
+            }
+        }
+        return ret;
     }
+
 
     private void tryCloseInputStream() {
         if (Objects.nonNull(this.uploadFileInputStream)) {
