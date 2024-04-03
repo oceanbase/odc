@@ -48,6 +48,7 @@ import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.connection.model.QueryConnectionParams;
 import com.oceanbase.odc.service.db.DBIdentitiesService;
 import com.oceanbase.odc.service.db.DBSchemaService;
+import com.oceanbase.odc.service.db.object.model.DBObjectSyncStatus;
 import com.oceanbase.odc.service.iam.ProjectPermissionValidator;
 
 /**
@@ -190,6 +191,7 @@ public class DatabaseServiceTest extends AuthorityTestEnv {
         entity.setLastSyncTime(new Date(System.currentTimeMillis()));
         entity.setOrganizationId(1L);
         entity.setSyncStatus(DatabaseSyncStatus.SUCCEEDED);
+        entity.setObjectSyncStatus(DBObjectSyncStatus.INITIALIZED);
         return entity;
     }
 
