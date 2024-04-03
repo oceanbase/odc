@@ -3,6 +3,9 @@
 
 New
 ~~~
+- Feat(tag): add tag service (#2090) [Ang]
+- Feat(dlm): adapts to the task framework and supports OceanBase Oracle
+  mode (#2059) [guowl3]
 - Feat(taskframework): supports external log4j configuration file
   (#2080) [krihy]
 - Feat(partition-plan): make partition name generation based on a
@@ -100,6 +103,8 @@ New
 
 Changes
 ~~~~~~~
+- Refactor(taskframework): refactor job rate limiter for extension
+  (#2112) [krihy]
 - Refactor(notification): extract siteUrl cacluation logic into util
   (#2021) [LuckyLeo]
 - Refactor(taskframework): add LoggerService for DLM query log (#1534)
@@ -107,6 +112,26 @@ Changes
 
 Fix
 ~~~
+- Fix(taskframework): fix decrypt meta db password (#2129) [krihy]
+- Fix(session): failed to remove session when session is expired (#2125)
+  [IL MARE]
+- Fix(taskframework): handle all preparing and running task to failed
+  when task-framework be set disabled (#2119) [krihy]
+- Fix(taskframework): add alarm in taskframework (#2098) [krihy]
+- Fix(audit): add audit type and event for structure comparing task
+  (#2117) [pynzzZ]
+- Fix(structure-comapre): failed to update task status when task fails
+  (#2116) [zhangxiao]
+- Fix(taskframework): ip change with docker restart cause jobs process
+  interrupted and status cannot be terminated (#2030) [krihy]
+- Fix(data-masking): cannot masking result set when using Oracle (#2114)
+  [XiaoYang]
+- Fix(sso): userAccountName allow null string (#2113) [Ang]
+- Fix(data-transfer): support data transfer for doris (#2106) [LuckyLeo]
+- Fix(connect): failed to sync standby cluster's databases (#2107) [IL
+  MARE]
+- Fix(doris): failed to view active db sessions in doris (#2104) [IL
+  MARE]
 - Fix(security): add authorize annotation in service class (#2103)
   [LuckyLeo]
 - Fix(shadowtable): it occurs NPE while creating shadow table comparing
