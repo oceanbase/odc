@@ -276,7 +276,7 @@ public class DBObjectIndexServiceTest extends ServiceTestEnv {
             entity.setConnectionId(CONNECTION_ID);
             entity.setExisted(true);
             entity.setName("project-" + projectId + "-test-" + i);
-            DatabaseEntity saved = databaseRepository.save(entity);
+            DatabaseEntity saved = databaseRepository.saveAndFlush(entity);
             result.add(databaseMapper.entityToModel(saved));
         }
         return result;
@@ -289,7 +289,7 @@ public class DBObjectIndexServiceTest extends ServiceTestEnv {
             entity.setDatabaseId(databaseId);
             entity.setName("database-" + databaseId + "-type-" + type + "-test-" + i);
             entity.setType(type);
-            DBObjectEntity saved = dbObjectRepository.save(entity);
+            DBObjectEntity saved = dbObjectRepository.saveAndFlush(entity);
             result.add(saved);
         }
         return result;
@@ -302,7 +302,7 @@ public class DBObjectIndexServiceTest extends ServiceTestEnv {
             entity.setDatabaseId(databaseId);
             entity.setObjectId(objectId);
             entity.setName("database-" + databaseId + "-object-" + objectId + "-test-" + i);
-            DBColumnEntity saved = dbColumnRepository.save(entity);
+            DBColumnEntity saved = dbColumnRepository.saveAndFlush(entity);
             result.add(saved);
         }
         return result;
