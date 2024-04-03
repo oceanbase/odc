@@ -48,6 +48,7 @@ import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.connection.model.QueryConnectionParams;
 import com.oceanbase.odc.service.db.DBIdentitiesService;
 import com.oceanbase.odc.service.db.DBSchemaService;
+import com.oceanbase.odc.service.db.object.model.DBObjectSyncStatus;
 import com.oceanbase.odc.service.iam.ProjectPermissionValidator;
 
 /**
@@ -168,12 +169,12 @@ public class DatabaseServiceTest extends AuthorityTestEnv {
     public void testTransfer_Success() {
         Mockito.when(connectionService.checkPermission(Mockito.anyList(), Mockito.anyList())).thenReturn(true);
         Mockito.when(projectPermissionValidator.hasProjectRole(Mockito.anyList(), Mockito.anyList())).thenReturn(true);
-        databaseRepository.saveAndFlush(getEntity());
+        DatabaseEntity saved = databaseRepository.saveAndFlush(getEntity());
         TransferDatabasesReq req = new TransferDatabasesReq();
-        req.setDatabaseIds(Arrays.asList(1L));
+        req.setDatabaseIds(Arrays.asList(saved.getId()));
         req.setProjectId(2L);
         Assert.assertTrue(databaseService.transfer(req));
-        Assert.assertEquals(2L, databaseRepository.findById(1L).get().getProjectId().longValue());
+        Assert.assertEquals(2L, databaseRepository.findById(saved.getId()).get().getProjectId().longValue());
     }
 
     private DatabaseEntity getEntity() {
@@ -190,6 +191,7 @@ public class DatabaseServiceTest extends AuthorityTestEnv {
         entity.setLastSyncTime(new Date(System.currentTimeMillis()));
         entity.setOrganizationId(1L);
         entity.setSyncStatus(DatabaseSyncStatus.SUCCEEDED);
+        entity.setObjectSyncStatus(DBObjectSyncStatus.INITIALIZED);
         return entity;
     }
 

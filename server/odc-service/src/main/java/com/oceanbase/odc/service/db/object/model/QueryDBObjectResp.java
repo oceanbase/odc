@@ -13,26 +13,32 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.db.model;
+package com.oceanbase.odc.service.db.object.model;
 
-import com.oceanbase.odc.core.shared.constant.ResourceType;
+import java.util.List;
+
+import com.oceanbase.odc.service.connection.database.model.Database;
 
 import lombok.Data;
 
 /**
  * @author gaoda.xy
- * @date 2024/3/29 17:24
+ * @date 2024/3/29 15:56
  */
 @Data
-public class SyncDBObjectReq {
+public class QueryDBObjectResp {
 
     /**
-     * Specify resource type, optional values: ODC_CONNECTION, ODC_PROJECT, ODC_DATABASE
+     * List of databases.
      */
-    private ResourceType resourceType;
+    private List<Database> databases;
     /**
-     * Specify resource id
+     * List of DB objects, such as table, view, function, procedure, package, trigger, type, etc.
      */
-    private Long resourceId;
+    private List<OdcDBObject> dbObjects;
+    /**
+     * List of DB columns of a table or view.
+     */
+    private List<OdcDBColumn> dbColumns;
 
 }

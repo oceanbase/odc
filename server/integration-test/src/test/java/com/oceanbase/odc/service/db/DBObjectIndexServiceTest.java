@@ -53,8 +53,9 @@ import com.oceanbase.odc.service.connection.ConnectionService;
 import com.oceanbase.odc.service.connection.database.DatabaseMapper;
 import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
-import com.oceanbase.odc.service.db.model.QueryDBObjectParams;
-import com.oceanbase.odc.service.db.model.QueryDBObjectResp;
+import com.oceanbase.odc.service.db.object.DBObjectIndexService;
+import com.oceanbase.odc.service.db.object.model.QueryDBObjectParams;
+import com.oceanbase.odc.service.db.object.model.QueryDBObjectResp;
 import com.oceanbase.odc.service.iam.ProjectPermissionValidator;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.iam.model.User;
@@ -102,6 +103,7 @@ public class DBObjectIndexServiceTest extends ServiceTestEnv {
 
     @Before
     public void setUp() {
+        tearDown();
         // Create metadata
         List<Database> databases = createDatabaseEntity(2, VALID_PROJECT_ID);
         validDatabaseIds = databases.stream().map(Database::getId).collect(Collectors.toList());
@@ -144,7 +146,6 @@ public class DBObjectIndexServiceTest extends ServiceTestEnv {
         dbColumnRepository.deleteAll();
     }
 
-
     @Test
     public void testList_specifyProjectId_all() {
         QueryDBObjectParams params = QueryDBObjectParams.builder()
@@ -173,7 +174,7 @@ public class DBObjectIndexServiceTest extends ServiceTestEnv {
         QueryDBObjectParams params = QueryDBObjectParams.builder()
                 .projectId(VALID_PROJECT_ID)
                 .databaseIds(validDatabaseIds.subList(0, 1))
-                .type(DBObjectType.SCHEMA)
+                .types(Collections.singletonList(DBObjectType.SCHEMA))
                 .searchKey("%test%").build();
         QueryDBObjectResp resp = service.listDatabaseObjects(params);
         Assert.assertEquals(1, resp.getDatabases().size());
@@ -186,7 +187,7 @@ public class DBObjectIndexServiceTest extends ServiceTestEnv {
         QueryDBObjectParams params = QueryDBObjectParams.builder()
                 .projectId(VALID_PROJECT_ID)
                 .databaseIds(validDatabaseIds.subList(0, 1))
-                .type(DBObjectType.COLUMN)
+                .types(Collections.singletonList(DBObjectType.COLUMN))
                 .searchKey("%test%").build();
         QueryDBObjectResp resp = service.listDatabaseObjects(params);
         Assert.assertEquals(6, resp.getDbColumns().size());
@@ -199,7 +200,7 @@ public class DBObjectIndexServiceTest extends ServiceTestEnv {
         QueryDBObjectParams params = QueryDBObjectParams.builder()
                 .projectId(VALID_PROJECT_ID)
                 .databaseIds(validDatabaseIds.subList(0, 1))
-                .type(DBObjectType.FUNCTION)
+                .types(Arrays.asList(DBObjectType.SYNONYM, DBObjectType.PUBLIC_SYNONYM))
                 .searchKey("%test%").build();
         QueryDBObjectResp resp = service.listDatabaseObjects(params);
         Assert.assertEquals(1, resp.getDbObjects().size());
@@ -275,7 +276,7 @@ public class DBObjectIndexServiceTest extends ServiceTestEnv {
             entity.setConnectionId(CONNECTION_ID);
             entity.setExisted(true);
             entity.setName("project-" + projectId + "-test-" + i);
-            DatabaseEntity saved = databaseRepository.save(entity);
+            DatabaseEntity saved = databaseRepository.saveAndFlush(entity);
             result.add(databaseMapper.entityToModel(saved));
         }
         return result;
@@ -288,7 +289,7 @@ public class DBObjectIndexServiceTest extends ServiceTestEnv {
             entity.setDatabaseId(databaseId);
             entity.setName("database-" + databaseId + "-type-" + type + "-test-" + i);
             entity.setType(type);
-            DBObjectEntity saved = dbObjectRepository.save(entity);
+            DBObjectEntity saved = dbObjectRepository.saveAndFlush(entity);
             result.add(saved);
         }
         return result;
@@ -301,7 +302,7 @@ public class DBObjectIndexServiceTest extends ServiceTestEnv {
             entity.setDatabaseId(databaseId);
             entity.setObjectId(objectId);
             entity.setName("database-" + databaseId + "-object-" + objectId + "-test-" + i);
-            DBColumnEntity saved = dbColumnRepository.save(entity);
+            DBColumnEntity saved = dbColumnRepository.saveAndFlush(entity);
             result.add(saved);
         }
         return result;

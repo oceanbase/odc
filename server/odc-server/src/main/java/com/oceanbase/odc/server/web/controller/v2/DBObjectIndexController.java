@@ -26,10 +26,10 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.oceanbase.odc.service.common.response.Responses;
 import com.oceanbase.odc.service.common.response.SuccessResponse;
-import com.oceanbase.odc.service.db.DBObjectIndexService;
-import com.oceanbase.odc.service.db.model.QueryDBObjectParams;
-import com.oceanbase.odc.service.db.model.QueryDBObjectResp;
-import com.oceanbase.odc.service.db.model.SyncDBObjectReq;
+import com.oceanbase.odc.service.db.object.DBObjectIndexService;
+import com.oceanbase.odc.service.db.object.model.QueryDBObjectParams;
+import com.oceanbase.odc.service.db.object.model.QueryDBObjectResp;
+import com.oceanbase.odc.service.db.object.model.SyncDBObjectReq;
 import com.oceanbase.tools.dbbrowser.model.DBObjectType;
 
 import io.swagger.annotations.ApiOperation;
@@ -51,13 +51,13 @@ public class DBObjectIndexController {
             @RequestParam(value = "projectId", required = false) Long projectId,
             @RequestParam(value = "datasourceId", required = false) Long datasourceId,
             @RequestParam(value = "databaseIds", required = false) List<Long> databaseIds,
-            @RequestParam(value = "type", required = false) DBObjectType type,
+            @RequestParam(value = "types", required = false) List<DBObjectType> types,
             @RequestParam(value = "searchKey") String searchKey) {
         QueryDBObjectParams params = QueryDBObjectParams.builder()
                 .projectId(projectId)
                 .datasourceId(datasourceId)
                 .databaseIds(databaseIds)
-                .type(type)
+                .types(types)
                 .searchKey(searchKey).build();
         return Responses.success(dbObjectIndexService.listDatabaseObjects(params));
     }
