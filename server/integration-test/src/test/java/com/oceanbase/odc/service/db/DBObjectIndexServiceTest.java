@@ -103,6 +103,7 @@ public class DBObjectIndexServiceTest extends ServiceTestEnv {
 
     @Before
     public void setUp() {
+        tearDown();
         // Create metadata
         List<Database> databases = createDatabaseEntity(2, VALID_PROJECT_ID);
         validDatabaseIds = databases.stream().map(Database::getId).collect(Collectors.toList());
@@ -144,7 +145,6 @@ public class DBObjectIndexServiceTest extends ServiceTestEnv {
         dbObjectRepository.deleteAll();
         dbColumnRepository.deleteAll();
     }
-
 
     @Test
     public void testList_specifyProjectId_all() {
