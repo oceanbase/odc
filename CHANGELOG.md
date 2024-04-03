@@ -101,60 +101,60 @@ System Integration
 
 Connection Session
 
-- Sessions failing to remove after expiration, causing potential leaks [#2125](https://github.com/oceanbase/odc/pull/2125)
-- References to expired connection sessions failed to be promptly cleared, leading to resource leaks, which may cause increased memory consumption [#1914](https://github.com/oceanbase/odc/pull/1914)
-- Under high-frequency usage scenarios, executing SQL or viewing table data may encounter issues where the interface becomes unresponsive [#1797](https://github.com/oceanbase/odc/pull/1797)
-- Intermittent 404 errors when attempting to open SQL console [#1809](https://github.com/oceanbase/odc/pull/1809)
+- Failure to promptly clear references after connection session expiration, leading to resource leaks and potential memory consumption increases [#2125](https://github.com/oceanbase/odc/pull/2125)
+- In high-frequency usage scenarios, executing SQL queries or viewing table data may encounter interface freezes and unresponsive behavior [#1914](https://github.com/oceanbase/odc/pull/1914)
+- After modifying the username case sensitivity in data source configuration, connecting to OceanBase Oracle may result in errors [#1797](https://github.com/oceanbase/odc/pull/1797)
+- Occasional occurrence of 404 errors when opening the SQL console [#1809](https://github.com/oceanbase/odc/pull/1809)
 
 SQL Execution
 
-- Commit/rollback button state not in sync with actual transaction status in OceanBase 4.2 [#2097](https://github.com/oceanbase/odc/pull/2097)
-- SQL statements with single-line comments unable to execute [#2085](https://github.com/oceanbase/odc/pull/2085)
-- Incorrect offsets for last SQL command without a trailing delimiter [#1970](https://github.com/oceanbase/odc/pull/1970)
+- In OceanBase v4.2, the status of the submit/rollback button is not synchronized with the actual transaction status [#2097](https://github.com/oceanbase/odc/pull/2097)
+- SQL statements with single-line comments fail to execute [#2085](https://github.com/oceanbase/odc/pull/2085)
+- The absence of a delimiter at the end of the last SQL command leads to incorrect offset calculation [#1970](https://github.com/oceanbase/odc/pull/1970)
 - Incompatibility of anonymous block execution module with Oracle 11g [#1759](https://github.com/oceanbase/odc/pull/1759)
-- DBMS output failed to output spaces [#1051](https://github.com/oceanbase/odc/issues/1970)
-- `#` and `$` character disappeared after SQL window formatted the code [#1490](https://github.com/oceanbase/odc/issues/1490)
-- Auto-complete in SQL window not available for MySQL datasource [#1718](https://github.com/oceanbase/odc/issues/1718)
+- Incorrect output in DBMS execution, spaces are not fully output [#1051](https://github.com/oceanbase/odc/issues/1970)
+- `#` and `$` disappear after SQL window formatting [#1490](https://github.com/oceanbase/odc/issues/1490)
+- Auto-complete is not available in the SQL window for the MySQL data source [#1718](https://github.com/oceanbase/odc/issues/1718)
 
 Result-set
 
-- Degrading performance when modifying multiple rows concurrently in result-set [#2007](https://github.com/oceanbase/odc/pull/2007)
-- In OceanBase MySQL mode, the datetime data type loses precision when displayed [#1996](https://github.com/oceanbase/odc/pull/1996)
-- Switching between viewing BLOB field text and hexadecimal images may cause the UI to freeze [#300](https://github.com/oceanbase/odc/issues/300)
+- Modifying multiple rows of data simultaneously in the result set takes a long time [#2007](https://github.com/oceanbase/odc/pull/2007)
+- Precision loss occurs when displaying DATETIME data type in OceanBase MySQL mode [#1996](https://github.com/oceanbase/odc/pull/1996)
+- Switching back and forth between viewing BLOB field text and hexadecimal images may cause interface freezing [#300](https://github.com/oceanbase/odc/issues/300)
 
-Table Object
+Table Objects
 
-- Disparity in column names order between Index and Constraint views [#1948](https://github.com/oceanbase/odc/pull/1948)
-- Inability to view table details for MySQL version 5.6 [#1635](https://github.com/oceanbase/odc/pull/1635)
-- Sofa ODP table detail view not accessible [#2043](https://github.com/oceanbase/odc/pull/2043)
-- Unable to change NOT NULL fields to NULL in table structure editor [#1441](https://github.com/oceanbase/odc/issues/1441)
-- When partitioned table has multiple maximum values, only one is displayed [#1501](https://github.com/oceanbase/odc/issues/1501)
-- Button to delete table primary key is greyed out and not clickable [#1874](https://github.com/oceanbase/odc/issues/1874)
+- The column order in index and constraint views is inconsistent. [#1948](https://github.com/oceanbase/odc/pull/1948)
+- Unable to view table details for MySQL v5.6. [#1635](https://github.com/oceanbase/odc/pull/1635)
+- Unable to view table details for Sofa ODP. [#2043](https://github.com/oceanbase/odc/pull/2043)
+- Cannot change NOT NULL fields to NULL in table schema editing. [#1441](https://github.com/oceanbase/odc/issues/1441)
+- When a partitioned table has multiple maximum values, only one maximum value is displayed. [#1501](https://github.com/oceanbase/odc/issues/1501)
+- The button to delete table primary keys is grayed out and cannot be clicked. [#1874](https://github.com/oceanbase/odc/issues/1874)
 
 Import/Export
 
-- SQL statement split incorrectly causing task failure when comments contain `;` [#417](https://github.com/oceanbase/odc/issues/417)
-- Export task fails when type name is in lowercase [#631](https://github.com/oceanbase/odc/issues/631)
-- Exporting trigger objects fails [#750](https://github.com/oceanbase/odc/issues/750)
-- Export task fails when function name contains special characters [#1331](https://github.com/oceanbase/odc/issues/1331)
-- During Oracle mode export of indexes, index names are prefixed with database name [#1491](https://github.com/oceanbase/odc/issues/1491)
-- `DELIMITER $$` separator sticks to table name when exporting procedure structure [#1746](https://github.com/oceanbase/odc/issues/1746)
-- After creating an export task, terminating it shows task status as executed successfully [#1752](https://github.com/oceanbase/odc/issues/1752)
-- When exporting packages, object type in task details doesn't show the package body [#1755](https://github.com/oceanbase/odc/issues/1755)
-- Import task fails when CSV file includes DATE type [#2079](https://github.com/oceanbase/odc/issues/2079)
+- Task exception caused by incorrect SQL statement splitting when comments contain `;`. [#417](https://github.com/oceanbase/odc/issues/417)
+- Export task fails when type names are lowercase. [#631](https://github.com/oceanbase/odc/issues/631)
+- Export failure when exporting trigger objects. [#750](https://github.com/oceanbase/odc/issues/750)
+- Export task fails when function names contain special characters. [#1331](https://github.com/oceanbase/odc/issues/1331)
+- When exporting indexes in Oracle mode, the index name is prefixed with the database name. [#1491](https://github.com/oceanbase/odc/issues/1491)
+- When exporting the schema of stored procedures, the `DELIMITER $$` delimiter is concatenated with the table name. [#1746](https://github.com/oceanbase/odc/issues/1746)
+- After creating an export task, terminating the export task will still display the task status as executed successfully. [#1752](https://github.com/oceanbase/odc/issues/1752)
+- When exporting packages, the object type is not displayed as the package body in task details. [#1755](https://github.com/oceanbase/odc/issues/1755)
+- Import fails when importing CSV files containing DATE types. [#2079](https://github.com/oceanbase/odc/issues/2079)
 
 Online Schema Change
 
 - OSC task experiencing syntax exceptions when input statements contain comments [#1597](https://github.com/oceanbase/odc/pull/1597)
 
-Project and ticket
+Projects and tickets
 
-- Ticket creation success message incorrect, changed to 'Ticket create successfully' [#1320](https://github.com/oceanbase/odc/issues/1320)
-- SQL window dropdown switch project causing page crashes [#1512](https://github.com/oceanbase/odc/issues/1512)
+- Incorrect prompt message for successful task creation, changed to "Ticket Created Successfully" [#1320](https://github.com/oceanbase/odc/issues/1320)
+- Dropdown switching project page crashes under SQL window [#1512](https://github.com/oceanbase/odc/issues/1512)
 
 Database Changes
 
-- If rollback content is attachments, the rollback content are not displayed during the rollback process [#1379](https://github.com/oceanbase/odc/issues/1379)
+- When the rollback content is an attachment, it is not displayed during the rollback process [#1379](https://github.com/oceanbase/odc/issues/1379)
 
 SQL Check
 
