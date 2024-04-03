@@ -110,7 +110,7 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
 
     @Override
     public JobEntity find(Long id) {
-        return jobRepository.findById(id)
+        return jobRepository.findByIdNative(id)
                 .orElseThrow(() -> new NotFoundException(ResourceType.ODC_TASK, "id", id));
     }
 

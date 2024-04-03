@@ -130,7 +130,8 @@ public class V42417HistoricalPartitionPlanMigrate implements JdbcMigratable {
                 + "partition_interval, partition_interval_unit, pre_create_partition_count, "
                 + "expire_period, expire_period_unit, partition_naming_prefix, partition_naming_suffix_expression, "
                 + "database_partition_plan_id from table_partition_plan "
-                + "where database_partition_plan_id in (" + ids + ")", (rs, rowNum) -> {
+                + "where database_partition_plan_id in (" + ids + ") "
+                + "and is_config_enabled=1 and is_auto_partition=1", (rs, rowNum) -> {
                     PartitionPlanTableEntityWrapper entity = new PartitionPlanTableEntityWrapper();
                     entity.setEnabled(true);
                     entity.setHistoricalPartiId(rs.getLong("database_partition_plan_id"));

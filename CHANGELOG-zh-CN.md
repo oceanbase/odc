@@ -1,6 +1,6 @@
 # OceanBase Developer Center (ODC) CHANGELOG
 
-## 4.2.4 （2024-04-01）
+## 4.2.4 （2024-04-02）
 
 ### 功能变化
 
@@ -99,27 +99,129 @@ SQL 开发
 - 桌面版支持导出大于 4G 的数据
 - 优化了产品英文文案
 
-### 非兼容变化
-
-- 安全规范的默认环境不再支持编辑和禁用
-
 ### 缺陷修复
+
+连接会话
+
+- 连接会话过期后未能及时清除引用，导致资源泄漏，可能造成内存消耗上升 [#2125](https://github.com/oceanbase/odc/pull/2125)
+- 高频使用场景下，执行 SQL 或查看表数据会遇到接口卡死无法响应的问题 [#1914](https://github.com/oceanbase/odc/pull/1914)
+- 在数据源配置修改用户名大小写之后，连接 OceanBase Oracle 可能会出错 [#1797](https://github.com/oceanbase/odc/pull/1797)
+- 打开 SQL 控制台时偶现 404 错误 [#1809](https://github.com/oceanbase/odc/pull/1809)
+
+SQL 执行
+
+- OceanBase v4.2 提交/回滚按钮状态与实际事务状态不同步 [#2097](https://github.com/oceanbase/odc/pull/2097)
+- 带有单行注释的 SQL 语句执行失败 [#2085](https://github.com/oceanbase/odc/pull/2085)
+- 最后一个 SQL 命令若不以分隔符结束将导致偏移量计算错误 [#1970](https://github.com/oceanbase/odc/pull/1970)
+- DBMS 执行输出不正确，没有将空格完全输出 [#1051](https://github.com/oceanbase/odc/issues/1970)
+- `#` `$` 在 SQL 窗口格式化后消失 [#1490](https://github.com/oceanbase/odc/issues/1490)
+- MySQL 数据源 SQL 窗口自动补全不可用 [#1718](https://github.com/oceanbase/odc/issues/1718)
+
+结果集
+
+- 结果集中同时修改多行数据时耗时较久 [#2007](https://github.com/oceanbase/odc/pull/2007)
+- OceanBase MySQL 模式下 DATETIME 数据类型显示时精度丢失 [#1411](https://github.com/oceanbase/odc/pull/1411)
+- 查看 BLOB 字段文本和十六进制图像之间来回切换可能会导致界面冻结 [#300](https://github.com/oceanbase/odc/issues/300)
+
+表对象
+
+- 索引和约束视图中列名顺序不一致 [#1948](https://github.com/oceanbase/odc/pull/1948)
+- 无法查看 MySQL v5.6 表详情 [#1635](https://github.com/oceanbase/odc/pull/1635)
+- 无法查看 Sofa ODP 表详情 [#2043](https://github.com/oceanbase/odc/pull/2043)
+- 表结构编辑无法把 NOT NULL 字段改为 NULL [#1441](https://github.com/oceanbase/odc/issues/1441)
+- 分区表有多个最大值时只显示了一个最大值 [#1501](https://github.com/oceanbase/odc/issues/1501)
+- 删除表主键的按钮被置灰无法点击 [#1874](https://github.com/oceanbase/odc/issues/1874)
+
+导入导出
+
+- 当注释包含 `;` 时，SQL 语句拆分出错导致任务异常 [#417](https://github.com/oceanbase/odc/issues/417)
+- 类型名称小写时导出任务失败 [#631](https://github.com/oceanbase/odc/issues/631)
+- 导出触发器对象时导出失败 [#750](https://github.com/oceanbase/odc/issues/750)
+- 函数名称包含特殊字符导出任务失败 [#1331](https://github.com/oceanbase/odc/issues/1331)
+- Oracle 模式导出索引时，索引名称添加了数据库名前缀 [#1491](https://github.com/oceanbase/odc/issues/1491)
+- 导出存储过程的结构，`DELIMITER $$` 分隔符与表名连在一起 [#1746](https://github.com/oceanbase/odc/issues/1746)
+- 导出任务创建完成后终止导出任务，任务状态显示执行成功 [#1752](https://github.com/oceanbase/odc/issues/1752)
+- 导出程序包时，任务详细信息中的对象类型未显示包体 [#1755](https://github.com/oceanbase/odc/issues/1755)
+- 导入 CSV 文件包含 DATE 类型时导入失败 [#2079](https://github.com/oceanbase/odc/issues/2079)
+
+无锁结构变更
+
+- 当输入语句包含注释时，OSC 任务会因为语法异常而失败 [#1597](https://github.com/oceanbase/odc/pull/1597)
+
+项目和工单
+
+- 任务创建成功提示文案错误，改为工单创建成功 [#1320](https://github.com/oceanbase/odc/issues/1320)
+- SQL 窗口下拉切换项目页面崩溃 [#1512](https://github.com/oceanbase/odc/issues/1512)
+
+数据库变更
+
+- 当回滚内容是附件时，回滚过程中没有展示 [#1379](https://github.com/oceanbase/odc/issues/1379)
+
+SQL 检查
+
+- 存在虚拟列时发生空指针异常 [#2031](https://github.com/oceanbase/odc/pull/2031)
+- 通过 DROP CONSTRAINT 删除主键的操作未能检测到 [#1879](https://github.com/oceanbase/odc/pull/1879)
+- 特定 ALTER 语句会触发的空指针异常 [#1865](https://github.com/oceanbase/odc/pull/1865)
+
+SQL 计划
+
+- 点击终止 SQL 计划无效  [#1528](https://github.com/oceanbase/odc/issues/1528)
+- 预检查失败时工单的审批状态显示为预检查失败了 [#218](https://github.com/oceanbase/odc/issues/218)
+
+分区计划
+
+- 当模式或表名为小写时，无法执行分区 DDL [#2088](https://github.com/oceanbase/odc/pull/2088)
+
+数据归档/清理
+
+- 数据归档完成之后触发回滚任务，子任务仍然在运行但是工单状态显示为已完成 [#690](https://github.com/oceanbase/odc/issues/690)
+- 并发调度数据归档任务时取消任务，任务状态未更新 [#721](https://github.com/oceanbase/odc/issues/721)
+- 使用数据库保留字作为列名时归档失败 [#1040](https://github.com/oceanbase/odc/issues/1040)
+- 创建大量表的数据归档任务时更新执行记录会失败 [#1338](https://github.com/oceanbase/odc/issues/1338)
+- 任务退出时未释放数据库连接池，任务数量较多时会占用较多线程
+- 获取连接失败时连接池会无限重试产生大量日志
+- 使用唯一键清理时没有使用正确索引产生慢 SQL
+
+用户与权限
+
+- 批量导入用户包含角色名称会失败 [#1908](https://github.com/oceanbase/odc/pull/1908)
+
+数据安全
+
+- 使用嵌套 CASE-WHEN 子句时数据掩码不一致 [#1410](https://github.com/oceanbase/odc/pull/1410)
+
+系统集成
+
+- 请求正文中包含中文内容时出现乱码 [#1625](https://github.com/oceanbase/odc/pull/1625)
+
+DB Browser
+
+- 包含索引的表创建语句未被识别为创建类型 [#2063](https://github.com/oceanbase/odc/pull/2063)
+- 在 Oracle 模式中 DDL 前后多余空格 [#2050](https://github.com/oceanbase/odc/pull/2050)
+- 在 Oracle 11g 模式下无法检索有默认值列的表 [#1733](https://github.com/oceanbase/odc/pull/1733)
+- listTables 未能一致地准确返回指定模式下的表 [#1632](https://github.com/oceanbase/odc/pull/1632)
+- 在 OceanBase 版本 < V2.2.30 时无法 listTables [#1478](https://github.com/oceanbase/odc/pull/1478)
+- MySQL 表结构设计的可视化不足，特别是对于单引号括起的字符串 [#1401](https://github.com/oceanbase/odc/pull/1401)
+
+OB SQL Parser
+
+- 解析命名为 'json_table' 的表的 INSERT 语句出错 [#1968](https://github.com/oceanbase/odc/pull/1968)
 
 ## 4.2.3_bp1 (2024-02-01)
 
 ### 功能变化
 
-- 数据库变更：数据库变更任务适配流式读取 SQL 文件 (#1437)
-- 数据归档/清理：支持使用唯一索引进行分片 (#1327)
+- 数据库变更：数据库变更任务适配流式读取 SQL 文件 [#1437](https://github.com/oceanbase/odc/pull/1437)
+- 数据归档/清理：支持使用唯一索引进行分片 [#1327](https://github.com/oceanbase/odc/pull/1327)
 
 ### 缺陷修复
 
 SQL 执行
 
-- 在 OceanBase v2.2.30 上 执行 SQL 失败 (#1487)
-- 在团队空间执行匿名块导致 NPE (#1474)
-- 个人设置启用手动提交时，回滚操作没有成功执行 (#1468)
-- 不能设置超过 2 个字符的分隔符 (#1414)
+- 在 OceanBase v2.2.30 上 执行 SQL 失败 [#1487](https://github.com/oceanbase/odc/pull/1487)
+- 在团队空间执行匿名块导致 NPE [#1474](https://github.com/oceanbase/odc/pull/1474)
+- 个人设置启用手动提交时，回滚操作没有成功执行 [#1468](https://github.com/oceanbase/odc/pull/1468)
+- 不能设置超过 2 个字符的分隔符 [#1414](https://github.com/oceanbase/odc/pull/1414)
 - 在 SQL 窗口查询请求期间，注销时前端崩溃。
 
 结果集
@@ -129,34 +231,34 @@ SQL 执行
 
 表对象
 
-- 查询表数据时没有列注释 (#1488)
+- 查询表数据时没有列注释 [#1488](https://github.com/oceanbase/odc/pull/1488)
 
 数据导出
 
-- 导出包体和同义词时，不显示对象类型。 (#1464)
+- 导出包体和同义词时，不显示对象类型 [#1464](https://github.com/oceanbase/odc/pull/1464)
 
 任务
 
-- 创建没有连接信息的工单时 NPE (#1479)
-- 并发创建任务时无法正确设置任务状态 (#1419)
-- 当任务创建者和审批者不是当前用户时，查看任务审批节点时发生错误。
+- 创建没有连接信息的工单时 NPE [#1479](https://github.com/oceanbase/odc/pull/1479)
+- 并发创建任务时无法正确设置任务状态 [#1419](https://github.com/oceanbase/odc/pull/1419)
+- 当任务创建者和审批者不是当前用户时，查看任务审批节点时发生错误
 
 无锁结构变更
 
-- OSC 任务在全量迁移完成时不显示手动交换表名 (#1357)
+- OSC 任务在全量迁移完成时不显示手动交换表名 [#1357](https://github.com/oceanbase/odc/pull/1357)
 
 数据库变更
 
-- 部分场景查询任务详情抛出流程实例未找到异常 (#1325)
-- 任务日志过期时查询任务详情抛出文件未找到异常 (#1316)
+- 部分场景查询任务详情抛出流程实例未找到异常 [#1325](https://github.com/oceanbase/odc/pull/1325)
+- 任务日志过期时查询任务详情抛出文件未找到异常 [#1316](https://github.com/oceanbase/odc/pull/1316)
 
 分区计划
 
-- 如果关联的调度配置不存在，删除作业失败 (#1495)
+- 如果关联的调度配置不存在，删除作业失败 [#1495](https://github.com/oceanbase/odc/pull/1495)
 
 数据归档/清理
 
-- 编辑速率限制配置后，数据清理任务调度失败 (#1438)
+- 编辑速率限制配置后，数据清理任务调度失败 [#1438](https://github.com/oceanbase/odc/pull/1438)
 
 桌面版本
 
@@ -164,13 +266,13 @@ SQL 执行
 
 其他
 
-- 连接到 OBOracle 的小写模式时，SQL 检查失败 (#1341)
-- MetaDB 默认字符集为 GBK 时，执行带有生僻字的 SQL 语句失败 (#1486)
+- 连接到 OBOracle 的小写模式时，SQL 检查失败 [#1341](https://github.com/oceanbase/odc/pull/1341)
+- MetaDB 默认字符集为 GBK 时，执行带有生僻字的 SQL 语句失败 [#1486](https://github.com/oceanbase/odc/pull/1486)
 
 ### 安全加固
 
-- 升级 aliyun-oss-sdk 版本 (#1393)
-- 无锁结构变更在手动交换表时存在水平越权访问数据权限 (#1405)
+- 升级 aliyun-oss-sdk 版本 [#1393](https://github.com/oceanbase/odc/pull/1393)
+- 无锁结构变更在手动交换表时存在水平越权访问数据权限 [#1405](https://github.com/oceanbase/odc/pull/1405)
 
 ## 4.2.3 (2023-12-22)
 
