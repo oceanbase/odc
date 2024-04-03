@@ -16,9 +16,12 @@
 package com.oceanbase.odc.service.collaboration;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
+import java.util.UUID;
 
 import org.apache.commons.collections.ListUtils;
+import org.apache.commons.lang.time.DateUtils;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -35,6 +38,8 @@ import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.core.shared.exception.BadRequestException;
 import com.oceanbase.odc.metadb.collaboration.ProjectEntity;
 import com.oceanbase.odc.metadb.collaboration.ProjectRepository;
+import com.oceanbase.odc.metadb.connection.DatabaseEntity;
+import com.oceanbase.odc.metadb.connection.DatabaseRepository;
 import com.oceanbase.odc.metadb.iam.UserEntity;
 import com.oceanbase.odc.metadb.iam.resourcerole.ResourceRoleEntity;
 import com.oceanbase.odc.metadb.iam.resourcerole.ResourceRoleRepository;
@@ -50,6 +55,7 @@ import com.oceanbase.odc.service.iam.UserService;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.iam.model.User;
 import com.oceanbase.odc.service.iam.model.UserResourceRole;
+import com.oceanbase.odc.test.tool.TestRandom;
 
 /**
  * @Author: Lebie
@@ -64,6 +70,9 @@ public class ProjectServiceTest extends ServiceTestEnv {
 
     @Autowired
     private ProjectRepository projectRepository;
+
+    @Autowired
+    private DatabaseRepository databaseRepository;
 
     @MockBean
     private UserService userService;
@@ -87,13 +96,14 @@ public class ProjectServiceTest extends ServiceTestEnv {
         Mockito.when(authenticationFacade.currentOrganizationId()).thenReturn(1L);
         Mockito.when(authenticationFacade.currentUser()).thenReturn(getUser());
         Mockito.when(resourceRoleRepository.findAll()).thenReturn(listAllProjectResourceRoles());
-
+        databaseRepository.deleteAll();
         projectRepository.deleteAll();
 
     }
 
     @After
     public void tearDown() {
+        databaseRepository.deleteAll();
         projectRepository.deleteAll();
     }
 
@@ -112,6 +122,30 @@ public class ProjectServiceTest extends ServiceTestEnv {
                 .thenReturn(listUserResourceRole(saved.getId()));
         Project actual = projectService.detail(saved.getId());
         Assert.assertNotNull(actual);
+    }
+
+    @Test
+    public void testGetProject_syncTimeIsNull() {
+        Date syncTime = new Date();
+        Project saved = projectService.create(getProject());
+        Mockito.when(resourceRoleService.listByResourceId(Mockito.any()))
+                .thenReturn(listUserResourceRole(saved.getId()));
+        createDatabase(saved.getId(), null);
+        createDatabase(saved.getId(), syncTime);
+        Project actual = projectService.detail(saved.getId());
+        Assert.assertNull(actual.getDbObjectLastSyncTime());
+    }
+
+    @Test
+    public void testGetProject_syncTimeNotNull() {
+        Date syncTime = new Date();
+        Project saved = projectService.create(getProject());
+        Mockito.when(resourceRoleService.listByResourceId(Mockito.any()))
+                .thenReturn(listUserResourceRole(saved.getId()));
+        createDatabase(saved.getId(), syncTime);
+        createDatabase(saved.getId(), DateUtils.addDays(syncTime, 1));
+        Project actual = projectService.detail(saved.getId());
+        Assert.assertEquals(syncTime, actual.getDbObjectLastSyncTime());
     }
 
     @Test
@@ -303,4 +337,14 @@ public class ProjectServiceTest extends ServiceTestEnv {
 
         return userResourceRoles;
     }
+
+    private void createDatabase(Long projectId, Date lastSyncTime) {
+        DatabaseEntity entity = TestRandom.nextObject(DatabaseEntity.class);
+        entity.setProjectId(projectId);
+        entity.setDatabaseId(UUID.randomUUID().toString());
+        entity.setExisted(true);
+        entity.setObjectLastSyncTime(lastSyncTime);
+        databaseRepository.save(entity);
+    }
+
 }

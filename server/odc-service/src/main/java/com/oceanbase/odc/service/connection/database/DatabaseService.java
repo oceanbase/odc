@@ -90,6 +90,7 @@ import com.oceanbase.odc.service.connection.database.model.QueryDatabaseParams;
 import com.oceanbase.odc.service.connection.database.model.TransferDatabasesReq;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.db.DBSchemaService;
+import com.oceanbase.odc.service.db.object.model.DBObjectSyncStatus;
 import com.oceanbase.odc.service.iam.HorizontalDataPermissionValidator;
 import com.oceanbase.odc.service.iam.OrganizationService;
 import com.oceanbase.odc.service.iam.ProjectPermissionValidator;
@@ -321,6 +322,7 @@ public class DatabaseService {
             database.setSyncStatus(DatabaseSyncStatus.SUCCEEDED);
             database.setOrganizationId(authenticationFacade.currentOrganizationId());
             database.setLastSyncTime(new Date(System.currentTimeMillis()));
+            database.setObjectSyncStatus(DBObjectSyncStatus.INITIALIZED);
             DatabaseEntity saved = databaseRepository.saveAndFlush(database);
             return entityToModel(saved, false);
         } catch (Exception ex) {
@@ -464,6 +466,7 @@ public class DatabaseService {
                         entity.setConnectionId(connection.getId());
                         entity.setSyncStatus(DatabaseSyncStatus.SUCCEEDED);
                         entity.setProjectId(currentProjectId);
+                        entity.setObjectSyncStatus(DBObjectSyncStatus.INITIALIZED);
                         if (databaseSyncProperties.isBlockInternalDatabase()
                                 && blockedDatabaseNames.contains(database.getName())) {
                             entity.setProjectId(null);
@@ -494,13 +497,14 @@ public class DatabaseService {
                             database.getCharsetName(),
                             database.getCollationName(),
                             database.getTableCount(),
-                            database.getExisted()
+                            database.getExisted(),
+                            database.getObjectSyncStatus().name()
                     }).collect(Collectors.toList());
 
             JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
             if (CollectionUtils.isNotEmpty(toAdd)) {
                 jdbcTemplate.batchUpdate(
-                        "insert into connect_database(database_id, organization_id, name, project_id, connection_id, environment_id, sync_status, charset_name, collation_name, table_count, is_existed) values(?,?,?,?,?,?,?,?,?,?,?)",
+                        "insert into connect_database(database_id, organization_id, name, project_id, connection_id, environment_id, sync_status, charset_name, collation_name, table_count, is_existed, object_sync_status) values(?,?,?,?,?,?,?,?,?,?,?,?)",
                         toAdd);
             }
             List<Object[]> toDelete = existedDatabasesInDb.stream()
@@ -573,14 +577,15 @@ public class DatabaseService {
                             latestDatabaseName,
                             connection.getId(),
                             connection.getEnvironmentId(),
-                            DatabaseSyncStatus.SUCCEEDED.name()
+                            DatabaseSyncStatus.SUCCEEDED.name(),
+                            DBObjectSyncStatus.INITIALIZED.name()
                     })
                     .collect(Collectors.toList());
 
             JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
             if (CollectionUtils.isNotEmpty(toAdd)) {
                 jdbcTemplate.batchUpdate(
-                        "insert into connect_database(database_id, organization_id, name, connection_id, environment_id, sync_status) values(?,?,?,?,?,?)",
+                        "insert into connect_database(database_id, organization_id, name, connection_id, environment_id, sync_status, object_sync_status) values(?,?,?,?,?,?,?)",
                         toAdd);
             }
 
