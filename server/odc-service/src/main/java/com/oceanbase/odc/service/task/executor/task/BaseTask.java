@@ -78,13 +78,13 @@ public abstract class BaseTask<RESULT> implements Task<RESULT> {
                 doStop();
                 updateStatus(JobStatus.CANCELED);
             }
+            return true;
         } catch (Throwable e) {
             log.warn("Stop task failed, id={}", getJobId(), e);
             return false;
         } finally {
             close();
         }
-        return true;
     }
 
     @Override
