@@ -117,7 +117,6 @@ public class LogicalTableUtils {
             }
             return resultSegs;
         } else {
-            // 先按照每个分库分组，计算各自分组的表达式
             Map<String, List<String>> databaseGroup = logicalTable.getActualDataNodes().stream()
                     .collect(Collectors.groupingBy(DataNode::getSchemaName, () -> new TreeMap<>(createSchemaNameComparator(databaseNamePattern)),
                             Collectors.mapping(DataNode::getTableName, Collectors.toList())));
@@ -137,7 +136,7 @@ public class LogicalTableUtils {
                 Map<String, List<String>> databaseName2ExpressionSegs = databaseGroup.entrySet().stream()
                         .collect(Collectors.toMap(Map.Entry::getKey,
                                 entry -> replacePlaceholdersWithRanges(tableNamePattern, entry.getValue()),
-                                (oldValue, newValue) -> oldValue, TreeMap::new));
+                                (oldValue, newValue) -> oldValue, () -> new TreeMap<>(createSchemaNameComparator(databaseNamePattern))));
                 return databaseName2ExpressionSegs.entrySet().stream()
                         .map(entry -> entry.getValue().stream().map(r -> entry.getKey() + DOT_DELIMITER + r)
                                 .collect(Collectors.joining(COMMA_DELIMITER)))
@@ -245,30 +244,6 @@ public class LogicalTableUtils {
         return true; // 所有的列表都正确排序
     }
 
-    private static boolean isAllSorted(List<List<String>> numberStrings) {
-        for (List<String> strings : numberStrings) {
-            if (!isSorted(strings)) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    private static boolean isSorted(List<String> numberStrings) {
-        if (numberStrings.size() < 2) {
-            return true; // 列表中有0个或1个元素，认为已排序
-        }
-        int previous = Integer.parseInt(numberStrings.get(0));
-        for (int i = 1; i < numberStrings.size(); i++) {
-            int current = Integer.parseInt(numberStrings.get(i));
-            if (previous > current) {
-                return false; // 如果前一个字符串大于当前字符串，则列表未排序
-            }
-            previous = current;
-        }
-        return true; // 所有相邻元素均已正确排序
-    }
-
     private static boolean isSameValueSize(Map<String, List<String>> map) {
         // 用于存储列表长度，初始化为-1表示尚未设置
         int listLength = -1;
@@ -356,7 +331,7 @@ public class LogicalTableUtils {
                 List<String> result = new ArrayList<>();
                 // 不是笛卡尔积的情况，需要按照第一个 [#] 的数字来分组，在每个分组里，再对第二个 [#] 单独处理，然后将所有结果拼接起来
                 numberPairs.stream().collect(
-                        Collectors.groupingBy(pair -> pair.left, TreeMap::new, Collectors.toCollection(ArrayList::new)))
+                        Collectors.groupingBy(pair -> pair.left, () ->  new TreeMap<>(Comparator.comparingInt(Integer::parseInt)), Collectors.toCollection(ArrayList::new)))
                         .entrySet().forEach(entry -> {
                             String rightRange = generateRangeOrList(
                                     entry.getValue().stream().map(pair -> pair.right).collect(Collectors.toSet()));
@@ -419,7 +394,6 @@ public class LogicalTableUtils {
             return numberStrings.iterator().next();
         }
 
-        // 这里这里，改排序方法！
         // 创建一个TreeSet集合，使用自定义Comparator按数字大小对字符串进行排序
         TreeSet<String> sortedNumberStrings = new TreeSet<>(Comparator.comparingInt(Integer::parseInt));
         sortedNumberStrings.addAll(numberStrings);
