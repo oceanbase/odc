@@ -16,11 +16,7 @@
 
 package com.oceanbase.odc.service.connection.logicaldatabase;
 
-import java.io.IOException;
-import java.io.InputStream;
 import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 
 import org.junit.Assert;
 import org.junit.Test;
@@ -30,7 +26,6 @@ import com.oceanbase.odc.common.util.YamlUtils;
 import com.oceanbase.odc.service.connection.logicaldatabase.model.DataNode;
 import com.oceanbase.odc.service.connection.logicaldatabase.model.LogicalTable;
 
-import junit.framework.TestCase;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -43,7 +38,7 @@ public class LogicalTableUtilsTest {
         List<LogicalTableIdentificationTestCase> testCases =
                 YamlUtils.fromYamlList(TEST_RESOURCE_FILE_PATH, LogicalTableIdentificationTestCase.class);
         for (LogicalTableIdentificationTestCase testCase : testCases) {
-            List<LogicalTable> actual = LogicalTableUtilsCopied.generatePatternExpressions(testCase.getDataNodes(), testCase.getAllDatabaseNames());
+            List<LogicalTable> actual = LogicalTableUtils.generatePatternExpressions(testCase.getDataNodes(), testCase.getAllDatabaseNames());
             Assert.assertEquals(testCase.getLogicalTables(), actual);
         }
     }
