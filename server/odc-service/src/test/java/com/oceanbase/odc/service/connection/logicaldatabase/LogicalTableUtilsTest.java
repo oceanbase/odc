@@ -37,8 +37,7 @@ public class LogicalTableUtilsTest {
         List<LogicalTableIdentificationTestCase> testCases =
                 YamlUtils.fromYamlList(TEST_RESOURCE_FILE_PATH, LogicalTableIdentificationTestCase.class);
         for (LogicalTableIdentificationTestCase testCase : testCases) {
-            List<LogicalTable> actual = LogicalTableUtils.generatePatternExpressions(testCase.getDataNodes(),
-                    testCase.getAllDatabaseNames());
+            List<LogicalTable> actual = LogicalTableUtils.generatePatternExpressions(testCase.getDataNodes());
             Assert.assertEquals(testCase.getLogicalTables(), actual);
         }
     }
@@ -49,7 +48,6 @@ public class LogicalTableUtilsTest {
     @AllArgsConstructor
     static class LogicalTableIdentificationTestCase {
         private List<DataNode> dataNodes;
-        private List<String> allDatabaseNames;
         private List<LogicalTable> logicalTables;
     }
 
@@ -59,8 +57,6 @@ public class LogicalTableUtilsTest {
     static class LogicalTableIdentification {
         @JsonProperty("fullTableNames")
         private List<String> fullTableNames;
-        @JsonProperty("allDatabaseNames")
-        private List<String> allDatabaseNames;
         @JsonProperty("expression2Tables")
         private List<Expression2Tables> expression2Tables;
     }

@@ -2,8 +2,6 @@
 - data_nodes:
     - table_name: "tb1"
       schema_name: "db1"
-  all_database_names:
-    - "db1"
   logical_tables: []
 
 # only divide by database
@@ -12,9 +10,6 @@
       schema_name: "db1"
     - table_name: "tb"
       schema_name: "db2"
-  all_database_names:
-    - "db1"
-    - "db2"
   logical_tables:
     - table_name_pattern: "tb"
       database_name_pattern: "db[#]"
@@ -31,8 +26,6 @@
       schema_name: "db1"
     - table_name: "tb2"
       schema_name: "db1"
-  all_database_names:
-    - "db1"
   logical_tables:
     - table_name_pattern: "tb[#]"
       database_name_pattern: "db1"
@@ -49,8 +42,6 @@
       schema_name: "db1"
     - table_name: "tb001"
       schema_name: "db1"
-  all_database_names:
-    - "db1"
   logical_tables:
     - table_name_pattern: "tb[#]"
       database_name_pattern: "db1"
@@ -67,8 +58,6 @@
       schema_name: "db1"
     - table_name: "tb20"
       schema_name: "db1"
-  all_database_names:
-    - "db1"
   logical_tables:
     - table_name_pattern: "tb[#]"
       database_name_pattern: "db1"
@@ -86,8 +75,6 @@
       schema_name: "db1"
     - table_name: "tb20"
       schema_name: "db1"
-  all_database_names:
-    - "db1"
   logical_tables:
     - table_name_pattern: "tb[#]"
       database_name_pattern: "db1"
@@ -106,8 +93,6 @@
       schema_name: "db1"
     - table_name: "tb_2_t"
       schema_name: "db1"
-  all_database_names:
-    - "db1"
   logical_tables:
     - table_name_pattern: "tb_[#]_t"
       database_name_pattern: "db1"
@@ -124,8 +109,6 @@
       schema_name: "db1"
     - table_name: "tb_2_t2"
       schema_name: "db1"
-  all_database_names:
-    - "db1"
   logical_tables:
     - table_name_pattern: "tb_[#]_t2"
       database_name_pattern: "db1"
@@ -148,8 +131,6 @@
       schema_name: "db1"
     - table_name: "abc"
       schema_name: "db1"
-  all_database_names:
-    - "db1"
   logical_tables:
     - table_name_pattern: "tb_[#]_t2"
       database_name_pattern: "db1"
@@ -178,8 +159,6 @@
       schema_name: "db1"
     - table_name: "tb_2024_02_t"
       schema_name: "db1"
-  all_database_names:
-    - "db1"
   logical_tables:
     - table_name_pattern: "tb_[#]_[#]_t"
       database_name_pattern: "db1"
@@ -201,8 +180,6 @@
       schema_name: "db1"
     - table_name: "tb_2024_02_t"
       schema_name: "db1"
-  all_database_names:
-    - "db1"
   logical_tables:
     - table_name_pattern: "tb_[#]_[#]_t"
       database_name_pattern: "db1"
@@ -228,8 +205,6 @@
       schema_name: "db1"
     - table_name: "tb_2028_02_t"
       schema_name: "db1"
-  all_database_names:
-    - "db1"
   logical_tables:
     - table_name_pattern: "tb_[#]_[#]_t"
       database_name_pattern: "db1"
@@ -267,8 +242,6 @@
       schema_name: "db1"
     - table_name: "tb_05_05_t"
       schema_name: "db1"
-  all_database_names:
-    - "db1"
   logical_tables:
     - table_name_pattern: "tb_[#]_[#]_t"
       database_name_pattern: "db1"
@@ -304,8 +277,6 @@
       schema_name: "db_001"
     - table_name: "tb_001_t"
       schema_name: "db_001"
-  all_database_names:
-    - "db1"
   logical_tables:
     - table_name_pattern: "tb_[#]_t"
       database_name_pattern: "db_[#]"
@@ -337,8 +308,6 @@
       schema_name: "db_001"
     - table_name: "tb_1_1"
       schema_name: "db_001"
-  all_database_names:
-    - "db1"
   logical_tables:
     - table_name_pattern: "tb_[#]_[#]"
       database_name_pattern: "db_[#]"
@@ -374,8 +343,6 @@
       schema_name: "db_001"
     - table_name: "tb_7"
       schema_name: "db_001"
-  all_database_names:
-    - "db1"
   logical_tables:
     - table_name_pattern: "tb_[#]"
       database_name_pattern: "db_[#]"
@@ -403,8 +370,6 @@
       schema_name: "db_003"
     - table_name: "tb_3"
       schema_name: "db_003"
-  all_database_names:
-    - "db1"
   logical_tables:
     - table_name_pattern: "tb_[#]"
       database_name_pattern: "db_[#]"
@@ -432,8 +397,6 @@
       schema_name: "db2"
     - table_name: "tb_2024_02_t"
       schema_name: "db2"
-  all_database_names:
-    - "db1"
   logical_tables:
     - table_name_pattern: "tb_[#]_[#]_t"
       database_name_pattern: "db[#]"
@@ -471,8 +434,6 @@
       schema_name: "db7"
     - table_name: "tb_2024_02_t"
       schema_name: "db7"
-  all_database_names:
-    - "db1"
   logical_tables:
     - table_name_pattern: "tb_[#]_[#]_t"
       database_name_pattern: "db[#]"
@@ -506,9 +467,6 @@
       schema_name: "db1"
     - table_name: "tb_3"
       schema_name: "db1"
-  all_database_names:
-    - "db0"
-    - "db1"
   logical_tables:
     - table_name_pattern: "tb_[#]"
       database_name_pattern: "db[#]"
@@ -532,11 +490,6 @@
       schema_name: "db_1_0"
     - table_name: "tb_3"
       schema_name: "db_1_1"
-  all_database_names:
-    - "db_0_0"
-    - "db_0_1"
-    - "db_1_0"
-    - "db_1_1"
   logical_tables:
     - table_name_pattern: "tb_[#]"
       database_name_pattern: "db_[#]_[#]"
@@ -560,11 +513,6 @@
       schema_name: "db_2"
     - table_name: "tb_1_1"
       schema_name: "db_3"
-  all_database_names:
-    - "db_0"
-    - "db_1"
-    - "db_2"
-    - "db_3"
   logical_tables:
     - table_name_pattern: "tb_[#]_[#]"
       database_name_pattern: "db_[#]"
@@ -592,9 +540,6 @@
       schema_name: "db_1"
     - table_name: "tb_10"
       schema_name: "db_1"
-  all_database_names:
-    - "db_0"
-    - "db_1"
   logical_tables:
     - table_name_pattern: "tb_[#]"
       database_name_pattern: "db_[#]"
@@ -626,9 +571,6 @@
       schema_name: "db_9"
     - table_name: "tb_10"
       schema_name: "db_9"
-  all_database_names:
-    - "db_9"
-    - "db_10"
   logical_tables:
     - table_name_pattern: "tb_[#]"
       database_name_pattern: "db_[#]"

@@ -17,7 +17,9 @@ package com.oceanbase.odc.service.connection.logicaldatabase.model;
 
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 /**
  * @Author: Lebie
@@ -25,6 +27,8 @@ import lombok.Data;
  * @Description: []
  */
 @Data
+@AllArgsConstructor
+@NoArgsConstructor
 public class DataNode {
     private static final String DELIMITER = ".";
 

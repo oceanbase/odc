@@ -62,21 +62,20 @@ public class LogicalTableUtils {
     private static final Pattern DIGIT_PATTERN = Pattern.compile("\\d+");
 
 
-    public static List<LogicalTable> generatePatternExpressions(@NotEmpty List<DataNode> dataNodes,
-            @NotEmpty List<String> allDatabaseNames) {
-        // 找出所有逻辑表，并推导出 逻辑库表名的 databaseNamePattern 和 tableNamePattern
+    public static List<LogicalTable> generatePatternExpressions(@NotEmpty List<DataNode> dataNodes) {
+        // find all logical tables with the same pattern
         List<LogicalTable> logicalTables = identifyLogicalTables(dataNodes);
 
-        // 替换掉 pattern 中的 [#] 为具体的数字范围
+        // alternative [#] with actual ranges
         logicalTables.stream().forEach(table -> {
             String databaseNamePattern = table.getDatabaseNamePattern();
             String tableNamePattern = table.getTableNamePattern();
-            // 既分库，又分表
+            // divide by both databases and tables
             if (databaseNamePattern.contains(PATTERN_PLACEHOLDER) && tableNamePattern.contains(PATTERN_PLACEHOLDER)) {
                 List<String> range = replacePlaceholdersWithRanges(table);
                 table.setFullNameExpression(String.join(COMMA_DELIMITER, range));
             } else if (databaseNamePattern.contains(PATTERN_PLACEHOLDER)) {
-                // 只分库，不分表
+                // divide only by databases
                 List<String> range = replacePlaceholdersWithRanges(databaseNamePattern,
                         table.getActualDataNodes().stream()
                                 .map(node -> node.getSchemaName())
@@ -85,7 +84,7 @@ public class LogicalTableUtils {
                                         .collect(Collectors.toList());
                 table.setFullNameExpression(String.join(COMMA_DELIMITER, range));
             } else if (tableNamePattern.contains(PATTERN_PLACEHOLDER)) {
-                // 只分表，不分库
+                // divide only by tables
                 List<String> range = replacePlaceholdersWithRanges(tableNamePattern,
                         table.getActualDataNodes().stream()
                                 .map(node -> node.getTableName())
@@ -101,7 +100,7 @@ public class LogicalTableUtils {
         return logicalTables;
     }
 
-    private static List<LogicalTable> identifyLogicalTables(@Valid @NotEmpty List<DataNode> dataNodes) {
+    public static List<LogicalTable> identifyLogicalTables(@Valid @NotEmpty List<DataNode> dataNodes) {
         // replace all table names with a pattern that replaces digits with [#]
         Map<String, List<DataNode>> basePattern2Tables = dataNodes.stream().collect(
                 Collectors.groupingBy(
@@ -256,7 +255,7 @@ public class LogicalTableUtils {
         return allNumberLists;
     }
 
-    public static boolean isOrderByEachElement(List<List<String>> lists) {
+    private static boolean isOrderByEachElement(List<List<String>> lists) {
         if (lists == null || lists.size() < 2) {
             return true;
         }
@@ -395,7 +394,7 @@ public class LogicalTableUtils {
         return null;
     }
 
-    public static boolean isCartesianProduct(List<Pair<String, String>> pairs) {
+    private static boolean isCartesianProduct(List<Pair<String, String>> pairs) {
         Map<String, Set<String>> map = new HashMap<>();
 
         for (Pair<String, String> pair : pairs) {
