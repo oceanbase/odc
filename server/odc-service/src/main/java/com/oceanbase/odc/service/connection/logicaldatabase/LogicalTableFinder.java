@@ -20,8 +20,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 import javax.validation.constraints.NotEmpty;
 
@@ -73,7 +71,8 @@ public class LogicalTableFinder {
             });
         }
         List<LogicalTable> logicalTables = LogicalTableUtils.identifyLogicalTables(dataNodes);
-        // TODO: use DBStructureComparator to compare if the table ddls are the same; if not, remove the DataNode
+        // TODO: use DBStructureComparator to compare if the table ddls are the same; if not, remove the
+        // DataNode
 
         return logicalTables;
     }
