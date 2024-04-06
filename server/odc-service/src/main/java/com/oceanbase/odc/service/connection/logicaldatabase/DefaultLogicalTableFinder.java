@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 OceanBase.
+ * Copyright (c) 2023 OceanBase.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,11 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.oceanbase.odc.service.connection.logicaldatabase;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -25,7 +23,6 @@ import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-import javax.validation.Valid;
 import javax.validation.constraints.NotEmpty;
 
 import org.springframework.validation.annotation.Validated;
@@ -57,9 +54,9 @@ public class DefaultLogicalTableFinder implements LogicalTableFinder {
         for (Database database : databases) {
             Long dataSourceId = database.getDataSource().getId();
             ConnectionConfig connectionConfig = id2DataSources.computeIfAbsent(dataSourceId,
-                k -> database.getDataSource());
+                    k -> database.getDataSource());
             List<Database> groupedDatabases = dataSource2Databases.computeIfAbsent(connectionConfig,
-                k -> new ArrayList<>());
+                    k -> new ArrayList<>());
             groupedDatabases.add(database);
         }
 

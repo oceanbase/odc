@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 OceanBase.
+ * Copyright (c) 2023 OceanBase.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.oceanbase.odc.service.connection.logicaldatabase;
 
 import java.util.List;
@@ -38,7 +37,8 @@ public class LogicalTableUtilsTest {
         List<LogicalTableIdentificationTestCase> testCases =
                 YamlUtils.fromYamlList(TEST_RESOURCE_FILE_PATH, LogicalTableIdentificationTestCase.class);
         for (LogicalTableIdentificationTestCase testCase : testCases) {
-            List<LogicalTable> actual = LogicalTableUtils.generatePatternExpressions(testCase.getDataNodes(), testCase.getAllDatabaseNames());
+            List<LogicalTable> actual = LogicalTableUtils.generatePatternExpressions(testCase.getDataNodes(),
+                    testCase.getAllDatabaseNames());
             Assert.assertEquals(testCase.getLogicalTables(), actual);
         }
     }
