@@ -52,10 +52,15 @@ import com.oceanbase.odc.service.connection.logicaldatabase.model.LogicalTable;
 public class LogicalTableUtils {
     private static final String PATTERN_PLACEHOLDER = "[#]";
     private static final String PATTERN_PLACEHOLDER_REGEX = "\\[#\\]";
-
+    private static final String DIGIT_REGEX_CAPTURING_GROUP_REPLACEMENT = "(\\\\d+)";
     private static final String DOT_DELIMITER = ".";
     private static final String COMMA_DELIMITER = ",";
+    private static final String LEFT_SQUARE_BRACKET = "[";
+    private static final String RIGHT_SQUARE_BRACKET = "]";
+    private static final String DOUBLE_LEFT_SQUARE_BRACKET = "[[";
+    private static final String DOUBLE_RIGHT_SQUARE_BRACKET = "]]";
     private static final Pattern DIGIT_PATTERN = Pattern.compile("\\d+");
+
 
     public static List<LogicalTable> generatePatternExpressions(@NotEmpty List<DataNode> dataNodes,
             @NotEmpty List<String> allDatabaseNames) {
@@ -168,10 +173,9 @@ public class LogicalTableUtils {
         return isOrderByEachElement(extractNumbers(databaseGroup, tableNamePattern));
     }
 
-
     // 根据提供的正则表达式创建一个Comparator，实现类似 SQL order by 的效果
     private static Comparator<String> createSchemaNameComparator(String pattern) {
-        String regex = pattern.replace(PATTERN_PLACEHOLDER_REGEX, "(\\\\d+)");
+        String regex = pattern.replaceAll(PATTERN_PLACEHOLDER_REGEX, DIGIT_REGEX_CAPTURING_GROUP_REPLACEMENT);
         Pattern compiledPattern = Pattern.compile(regex);
 
         return (schema1, schema2) -> {
@@ -198,7 +202,7 @@ public class LogicalTableUtils {
     private static List<List<String>> extractNumbers(Map<String, List<String>> databaseName2Tables,
             String tablePattern) {
         List<List<String>> allNumberLists = new ArrayList<>();
-        Pattern patternRegex = Pattern.compile(tablePattern.replaceAll(PATTERN_PLACEHOLDER_REGEX, "(\\\\d+)"));
+        Pattern patternRegex = Pattern.compile(tablePattern.replaceAll(PATTERN_PLACEHOLDER_REGEX, DIGIT_REGEX_CAPTURING_GROUP_REPLACEMENT));
 
         for (Map.Entry<String, List<String>> entry : databaseName2Tables.entrySet()) {
             List<String> tableNames = entry.getValue();
@@ -264,17 +268,17 @@ public class LogicalTableUtils {
 
     private static String replaceRangeSign(String expression) {
         // 找到最后一个']'的位置
-        int lastCloseIndex = expression.lastIndexOf(']');
+        int lastCloseIndex = expression.lastIndexOf(RIGHT_SQUARE_BRACKET);
         // 如果存在，则替换为']]
         if (lastCloseIndex != -1) {
-            expression = expression.substring(0, lastCloseIndex) + "]]" + expression.substring(lastCloseIndex + 1);
+            expression = expression.substring(0, lastCloseIndex) + DOUBLE_RIGHT_SQUARE_BRACKET + expression.substring(lastCloseIndex + 1);
         }
 
         // 找到最后一个'['的位置
-        int lastOpenIndex = expression.lastIndexOf('[');
+        int lastOpenIndex = expression.lastIndexOf(LEFT_SQUARE_BRACKET);
         // 如果存在，则替换为'[['
         if (lastOpenIndex != -1) {
-            expression = expression.substring(0, lastOpenIndex) + "[[" + expression.substring(lastOpenIndex + 1);
+            expression = expression.substring(0, lastOpenIndex) + DOUBLE_LEFT_SQUARE_BRACKET + expression.substring(lastOpenIndex + 1);
         }
 
         return expression;
@@ -299,7 +303,7 @@ public class LogicalTableUtils {
         Verify.notLessThan(len, 2, "Pattern should contain at least one placeholder: " + pattern);
         Verify.notGreaterThan(len, 3, "Pattern should contain at most two placeholders: " + pattern);
 
-        Pattern patternRegex = Pattern.compile(pattern.replaceAll(PATTERN_PLACEHOLDER_REGEX, "(\\\\d+)"));
+        Pattern patternRegex = Pattern.compile(pattern.replaceAll(PATTERN_PLACEHOLDER_REGEX, DIGIT_REGEX_CAPTURING_GROUP_REPLACEMENT));
         // contains only one placeholder
         if (len == 2) {
             String range = generateRangeOrList(names.stream().map(name -> {
@@ -343,7 +347,6 @@ public class LogicalTableUtils {
             throw new UnexpectedException("Unexpected pattern: " + pattern);
         }
     }
-
 
     private static Pair<String, String> generateRangeOrList(List<Pair<String, String>> numberPairs) {
         // 如果是笛卡尔积，则结果可以表示为 Pair<String, String> 的形式
@@ -435,7 +438,7 @@ public class LogicalTableUtils {
     private static List<LogicalTable> identifyLogicalTables(@Valid @NotEmpty List<DataNode> dataNodes) {
         // 先将表名分解为由数字序列和非数字序列组成的部分，构建基本模式
         Map<String, List<DataNode>> basePattern2Tables = dataNodes.stream().collect(
-                Collectors.groupingBy(dataNode -> dataNode.getTableName().replaceAll(DIGIT_PATTERN.pattern(), "[#]")));
+                Collectors.groupingBy(dataNode -> dataNode.getTableName().replaceAll(DIGIT_PATTERN.pattern(), PATTERN_PLACEHOLDER)));
         basePattern2Tables.entrySet().removeIf(entry -> entry.getValue().size() == 1);
 
         // 最终确定的模式到表的映射
