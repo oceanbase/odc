@@ -16,16 +16,18 @@
 
 package com.oceanbase.odc.service.permission.project;
 
-import com.oceanbase.odc.core.flow.model.FlowTaskResult;
+import com.oceanbase.odc.core.flow.model.AbstractFlowTaskResult;
 
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 /**
  * @author gaoda.xy
  * @date 2023/10/13 16:12
  */
 @Data
-public class ApplyProjectResult implements FlowTaskResult {
+@EqualsAndHashCode(callSuper = true)
+public class ApplyProjectResult extends AbstractFlowTaskResult {
 
     /**
      * Mark whether the task is successful

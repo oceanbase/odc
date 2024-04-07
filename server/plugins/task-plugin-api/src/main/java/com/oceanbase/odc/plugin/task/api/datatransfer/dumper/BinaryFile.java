@@ -16,9 +16,8 @@
 package com.oceanbase.odc.plugin.task.api.datatransfer.dumper;
 
 import java.io.InputStream;
+import java.lang.reflect.Method;
 import java.net.URL;
-
-import com.oceanbase.tools.loaddump.utils.SerializeUtils;
 
 import lombok.Getter;
 import lombok.NonNull;
@@ -45,11 +44,15 @@ public class BinaryFile<T> {
 
     public static <T> BinaryFile<T> newFile(@NonNull URL url) {
         try (InputStream inputStream = url.openStream()) {
-            T value = SerializeUtils.deserializeObjectByKryo(inputStream);
+
+            Class<?> clazz = Class.forName("com.oceanbase.tools.loaddump.utils.SerializeUtils");
+            Method method = clazz.getDeclaredMethod("deserializeObjectByKryo", InputStream.class);
+            method.setAccessible(true);
+            Object value = method.invoke(null, inputStream);
             if (value == null) {
                 return null;
             }
-            return new BinaryFile<>(value, url);
+            return new BinaryFile<>((T) value, url);
         } catch (Exception e) {
             return null;
         }

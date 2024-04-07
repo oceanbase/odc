@@ -28,6 +28,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
+import com.oceanbase.odc.config.CommonSecurityProperties;
 import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.service.common.util.WebRequestUtils;
@@ -41,10 +42,8 @@ import com.oceanbase.odc.service.task.config.TaskFrameworkProperties;
 @Component
 public class LocalRequestFilter extends OncePerRequestFilter {
 
-    private static String[] limitLocalAccessList = new String[] {
-            "/api/v2/task/heart",
-            "/api/v2/task/result",
-            "/api/v2/task/querySensitiveColumn"};
+    @Autowired
+    private CommonSecurityProperties commonSecurityProperties;
 
     @Autowired
     private TaskFrameworkProperties taskFrameworkProperties;
@@ -55,7 +54,7 @@ public class LocalRequestFilter extends OncePerRequestFilter {
 
         // Limit only localhost access odc api
         if (taskFrameworkProperties.getRunMode().isProcess() &&
-                Arrays.stream(limitLocalAccessList)
+                Arrays.stream(commonSecurityProperties.getTaskWhiteList())
                         .anyMatch(url -> StringUtils.containsIgnoreCase(request.getRequestURI(), url))) {
             PreConditions.validHasPermission(WebRequestUtils.isLocalRequest(request),
                     ErrorCodes.AccessDenied,

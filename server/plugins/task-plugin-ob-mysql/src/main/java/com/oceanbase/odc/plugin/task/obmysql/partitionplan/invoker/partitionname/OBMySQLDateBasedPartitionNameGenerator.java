@@ -16,13 +16,16 @@
 package com.oceanbase.odc.plugin.task.obmysql.partitionplan.invoker.partitionname;
 
 import java.sql.Connection;
-import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
 import com.oceanbase.odc.plugin.task.api.partitionplan.invoker.partitionname.DateBasedPartitionNameGenerator;
 import com.oceanbase.odc.plugin.task.api.partitionplan.model.DateBasedPartitionNameGeneratorConfig;
-import com.oceanbase.odc.plugin.task.api.partitionplan.util.TimeDataTypeUtil;
+import com.oceanbase.odc.plugin.task.api.partitionplan.util.DBTablePartitionUtil;
+import com.oceanbase.odc.plugin.task.obmysql.partitionplan.OBMySQLAutoPartitionExtensionPoint;
+import com.oceanbase.odc.plugin.task.obmysql.partitionplan.invoker.OBMySQLExprCalculator;
+import com.oceanbase.odc.plugin.task.obmysql.partitionplan.invoker.SqlExprCalculator;
+import com.oceanbase.odc.plugin.task.obmysql.partitionplan.invoker.SqlExprCalculator.SqlExprResult;
 import com.oceanbase.tools.dbbrowser.model.DBTable;
 import com.oceanbase.tools.dbbrowser.model.DBTablePartitionDefinition;
 
@@ -41,17 +44,25 @@ public class OBMySQLDateBasedPartitionNameGenerator implements DateBasedPartitio
     public String generate(@NonNull Connection connection, @NonNull DBTable dbTable,
             @NonNull Integer targetPartitionIndex, @NonNull DBTablePartitionDefinition target,
             @NonNull DateBasedPartitionNameGeneratorConfig config) {
-        int precision = config.getIntervalPrecision();
-        int interval = targetPartitionIndex * config.getInterval();
-        Date from;
-        if (config.isFromCurrentTime()) {
-            from = new Date();
-        } else {
-            from = new Date(config.getBaseTimestampMillis());
+        int index = DBTablePartitionUtil.getPartitionKeyIndex(
+                dbTable, config.getRefPartitionKey(), this::unquoteIdentifier);
+        Date baseDate = getPartitionUpperBound(
+                connection, config.getRefPartitionKey(), target.getMaxValues().get(index));
+        return config.getNamingPrefix() + new SimpleDateFormat(config.getNamingSuffixExpression()).format(baseDate);
+    }
+
+    protected String unquoteIdentifier(String identifier) {
+        return new OBMySQLAutoPartitionExtensionPoint().unquoteIdentifier(identifier);
+    }
+
+    protected Date getPartitionUpperBound(@NonNull Connection connection,
+            @NonNull String partitionKey, @NonNull String upperBound) {
+        SqlExprCalculator calculator = new OBMySQLExprCalculator(connection);
+        SqlExprResult value = calculator.calculate("convert(" + upperBound + ", datetime)");
+        if (!(value.getValue() instanceof Date)) {
+            throw new IllegalStateException(upperBound + " isn't a date, " + value.getDataType().getDataTypeName());
         }
-        Date baseDate = TimeDataTypeUtil.getNextDate(from, interval, precision);
-        DateFormat format = new SimpleDateFormat(config.getNamingSuffixExpression());
-        return config.getNamingPrefix() + format.format(TimeDataTypeUtil.removeExcessPrecision(baseDate, precision));
+        return (Date) value.getValue();
     }
 
 }

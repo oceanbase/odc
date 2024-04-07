@@ -40,6 +40,6 @@ public class BuiltinSnippetServiceTest {
     @Test
     public void listByConnectType() {
         List<BuiltinSnippet> builtinSnippets = service.listByConnectType(ConnectType.OB_ORACLE);
-        Assert.assertEquals(1, builtinSnippets.size());
+        Assert.assertEquals(20, builtinSnippets.size());
     }
 }

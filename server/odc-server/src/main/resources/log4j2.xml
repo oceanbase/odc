@@ -787,7 +787,7 @@
             <AppenderRef ref="WarnRoutingPartitionPlanAppender"/>
         </Logger>
 
-        <Logger name="com.oceanbase.odc.service.schedule" level="INFO" additivity="true">
+        <Logger name="com.oceanbase.odc.service.schedule.flowtask.AlterScheduleTask" level="INFO" additivity="true">
             <AppenderRef ref="AllRoutingAlterScheduleAppender"/>
             <AppenderRef ref="WarnRoutingAlterScheduleAppender"/>
         </Logger>

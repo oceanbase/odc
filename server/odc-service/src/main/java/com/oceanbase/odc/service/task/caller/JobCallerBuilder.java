@@ -17,8 +17,12 @@ package com.oceanbase.odc.service.task.caller;
 
 import java.util.Map;
 
+import com.oceanbase.odc.common.util.SystemUtils;
+import com.oceanbase.odc.service.task.config.JobConfigurationHolder;
+import com.oceanbase.odc.service.task.config.TaskFrameworkProperties;
 import com.oceanbase.odc.service.task.constants.JobEnvKeyConstants;
 import com.oceanbase.odc.service.task.enums.TaskRunMode;
+import com.oceanbase.odc.service.task.jasypt.JasyptEncryptorConfigProperties;
 
 /**
  * @author yaobin
@@ -32,6 +36,10 @@ public class JobCallerBuilder {
         Map<String, String> environments = new JobEnvironmentFactory().getEnvironments(context, TaskRunMode.PROCESS);
         new JobEnvironmentEncryptor().encrypt(environments);
         config.setEnvironments(environments);
+        TaskFrameworkProperties taskFrameworkProperties =
+                JobConfigurationHolder.getJobConfiguration().getTaskFrameworkProperties();
+        config.setJvmXmsMB(taskFrameworkProperties.getJobProcessMinMemorySizeInMB());
+        config.setJvmXmxMB(taskFrameworkProperties.getJobProcessMaxMemorySizeInMB());
 
         return new ProcessJobCaller(config);
     }
@@ -39,10 +47,22 @@ public class JobCallerBuilder {
     public static JobCaller buildK8sJobCaller(K8sJobClient k8sJobClient, PodConfig podConfig, JobContext context) {
 
         Map<String, String> environments = new JobEnvironmentFactory().getEnvironments(context, TaskRunMode.K8S);
+        podConfig.getEnvironments().put(JobEnvKeyConstants.ODC_PROPERTY_ENCRYPTION_SALT,
+                SystemUtils.getEnvOrProperty(JobEnvKeyConstants.ODC_PROPERTY_ENCRYPTION_SALT));
         new JobEnvironmentEncryptor().encrypt(environments);
 
+        JasyptEncryptorConfigProperties configProperties = JobConfigurationHolder.getJobConfiguration()
+                .getJasyptEncryptorConfigProperties();
         podConfig.setEnvironments(environments);
-        podConfig.getEnvironments().putIfAbsent(JobEnvKeyConstants.ODC_LOG_DIRECTORY, podConfig.getMountPath());
+        podConfig.getEnvironments().put(JobEnvKeyConstants.ODC_LOG_DIRECTORY, podConfig.getMountPath());
+        podConfig.getEnvironments().put(JobEnvKeyConstants.ODC_PROPERTY_ENCRYPTION_ALGORITHM,
+                configProperties.getAlgorithm());
+        podConfig.getEnvironments().put(JobEnvKeyConstants.ODC_PROPERTY_ENCRYPTION_PREFIX,
+                configProperties.getPrefix());
+        podConfig.getEnvironments().put(JobEnvKeyConstants.ODC_PROPERTY_ENCRYPTION_SUFFIX,
+                configProperties.getSuffix());
+        podConfig.getEnvironments().put(JobEnvKeyConstants.ODC_PROPERTY_ENCRYPTION_SALT,
+                configProperties.getSalt());
         return new K8sJobCaller(k8sJobClient, podConfig);
     }
 }

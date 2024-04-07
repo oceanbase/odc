@@ -92,7 +92,7 @@ public class DatabasePermissionInterceptor {
             }
         }
         List<UnauthorizedResource> unauthorizedResource =
-                databaseService.filterUnauthorizedDatabases(schemaName2PermissionTypes, connectionConfig.getId());
+                databaseService.filterUnauthorizedDatabases(schemaName2PermissionTypes, connectionConfig.getId(), true);
         if (CollectionUtils.isNotEmpty(unauthorizedResource)) {
             response.setUnauthorizedResource(unauthorizedResource);
             return false;

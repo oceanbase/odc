@@ -36,6 +36,7 @@ import lombok.EqualsAndHashCode;
 public class UnauthorizedResource extends Table {
     private static final long serialVersionUID = 2659094834615671659L;
 
+    private Boolean applicable;
     private String tableName;
     private Long tableId;
     private Set<DatabasePermissionType> unauthorizedPermissionTypes;
@@ -54,7 +55,7 @@ public class UnauthorizedResource extends Table {
         return obj;
     }
 
-    public static UnauthorizedResource from(Database res, Set<DatabasePermissionType> types) {
+    public static UnauthorizedResource from(Database res, Set<DatabasePermissionType> types, boolean applicable) {
         UnauthorizedResource obj = new UnauthorizedResource();
         obj.setDatabaseId(res.getId());
         obj.setDatabaseName(res.getName());
@@ -67,6 +68,7 @@ public class UnauthorizedResource extends Table {
             obj.setProjectName(res.getProject().getName());
         }
         obj.setUnauthorizedPermissionTypes(types);
+        obj.setApplicable(applicable);
         return obj;
     }
 }

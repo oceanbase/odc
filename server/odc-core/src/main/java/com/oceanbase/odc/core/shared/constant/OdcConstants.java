@@ -104,4 +104,6 @@ public class OdcConstants {
      */
     public static final String DEFAULT_ZERO_DATE_TIME_BEHAVIOR = "round";
 
+    public static final String DEFAULT_MASK_VALUE = "******";
+
 }

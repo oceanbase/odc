@@ -53,10 +53,3 @@ body:
     id: additional
     attributes:
       label: Anything else we need to know?
-
-  - type: textarea
-    id: cloud
-    attributes:
-      label: Cloud
-      description: |
-        Please provide more information on the cloud, such as region information, etc.

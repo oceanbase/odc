@@ -5,7 +5,7 @@
   type: DQL
   min_version: 4.0.0
   max_version: ~
-  description: 'Query unit list for OceanBase MySQL compatible mode'
+  description: 'Query unit list for OceanBase MySQL mode'
   prefix: query_unit_list
   body: |
     SELECT
@@ -43,13 +43,32 @@
       oceanbase.GV\$OB_PARAMETERS 
     WHERE 
       NAME IN ('cluster', 'cluster_id');
+- name: oceanbase mysql query tenant scope parameters
+  dialect_type: OB_MYSQL
+  tags: [ 'dba','oceanbase' ]
+  type: DQL
+  min_version: 4.0.0
+  max_version: ~
+  description: 'Query OceanBase tenant scope parameters'
+  prefix: query_tenant_scope_parameters
+  body: |
+    SELECT
+      ZONE,
+      SVR_IP,
+      SVR_PORT,
+      NAME,
+      VALUE
+    FROM
+      oceanbase.GV\$OB_PARAMETERS
+    WHERE
+      SCOPE = 'TENANT';
 - name: oceanbase mysql query major compaction
   dialect_type: OB_MYSQL
   tags: [ 'dba','oceanbase' ]
   type: DQL
   min_version: 4.0.0
   max_version: ~
-  description: 'Query OceanBase cluster information'
+  description: 'Query major compaction information'
   prefix: query_major_compaction
   body: |
     SELECT
@@ -93,7 +112,7 @@
   type: DQL
   min_version: 4.0.0
   max_version: ~
-  description: Query module memory usage for OceanBase mysql mode tenant
+  description: Query module memory usage for OceanBase MySQL mode
   prefix: query_module_memory_usage
   body: |
     SELECT
@@ -106,13 +125,13 @@
       OCEANBASE.GV\$OB_MEMORY
     GROUP BY MOD_NAME, SVR_IP
     ORDER BY USED DESC;
-- name: oceanbase mysql query module memory usage
+- name: oceanbase mysql query memstore usage
   dialect_type: OB_MYSQL
   tags: [ 'dba','oceanbase' ]
   type: DQL
   min_version: 4.0.0
   max_version: ~
-  description: Query memstore information for OceanBase mysql mode tenant
+  description: Query memstore information for OceanBase MySQL mode
   prefix: query_memstore_information
   body: |
     SELECT
@@ -126,6 +145,195 @@
       FREEZE_CNT
     FROM
      oceanbase.GV\$OB_MEMSTORE;
+- name: oceanbase mysql query degraded log stat
+  dialect_type: OB_MYSQL
+  tags: [ 'dba','oceanbase' ]
+  type: DQL
+  min_version: 4.0.0
+  max_version: ~
+  description: Query degraded log stat for OceanBase MySQL mode
+  prefix: query_degraded_log_stat
+  body: |
+    SELECT
+      LS.TENANT_ID,
+      LS.LS_ID,
+      LS.SVR_IP,
+      LS.SVR_PORT,
+      LS.ROLE,
+      LS.ARBITRATION_MEMBER,
+      LS.DEGRADED_LIST
+    FROM
+      OCEANBASE.GV\$OB_LOG_STAT LS,
+      OCEANBASE.DBA_OB_TENANTS T
+    WHERE
+      DEGRADED_LIST <> ''
+      AND LS.TENANT_ID = T.TENANT_ID
+      AND TENANT_TYPE != 'META';
+- name: oceanbase mysql query compaction progress
+  dialect_type: OB_MYSQL
+  tags: [ 'dba','oceanbase' ]
+  type: DQL
+  min_version: 4.0.0
+  max_version: ~
+  description: Query compaction progress for OceanBase MySQL mode
+  prefix: query_compaction_progress
+  body: |
+    -- query compaction progress for last 5 compactions
+    SELECT
+      COMPACTION_SCN,
+      SUM(TOTAL_TABLET_COUNT) as TOTAL_TABLET_COUNT,
+      SUM(UNFINISHED_TABLET_COUNT) as UNFINISHED_TABLET_COUNT,
+      ROUND(100 * (1 - SUM(UNFINISHED_TABLET_COUNT) / SUM(TOTAL_TABLET_COUNT)),2) AS COMPACTION_PROGRESS_PERCENTAGE,
+      SUM(DATA_SIZE) as DATA_SIZE,
+      SUM(UNFINISHED_DATA_SIZE) as UNFINISHED_DATA_SIZE,
+      MIN(START_TIME) as START_TIME,
+      MAX(ESTIMATED_FINISH_TIME) as ESTIMATED_FINISH_TIME
+    FROM
+      oceanbase.GV\$OB_COMPACTION_PROGRESS
+    GROUP BY COMPACTION_SCN
+    ORDER BY COMPACTION_SCN DESC
+    LIMIT 5;
+- name: oceanbase mysql query compaction status
+  dialect_type: OB_MYSQL
+  tags: [ 'dba','oceanbase' ]
+  type: DQL
+  min_version: 4.0.0
+  max_version: ~
+  description: Query compaction status for OceanBase MySQL mode
+  prefix: query_compaction_status
+  body: |
+    SELECT
+      GLOBAL_BROADCAST_SCN AS BROADCAST_SCN,
+      IS_ERROR AS ERROR,
+      STATUS,
+      FROZEN_SCN,
+      LAST_SCN,
+      IS_SUSPENDED AS SUSPEND,
+      INFO,
+      START_TIME,
+      LAST_FINISH_TIME
+    FROM
+      oceanbase.DBA_OB_MAJOR_COMPACTION;
+- name: oceanbase mysql query mini merge history
+  dialect_type: OB_MYSQL
+  tags: [ 'dba','oceanbase' ]
+  type: DQL
+  min_version: 4.0.0
+  max_version: ~
+  description: Query mini merge history for OceanBase MySQL mode
+  prefix: query_mini_merge_history
+  body: |
+    SELECT
+      TENANT_ID,
+      MIN(START_TIME) AS MIN_START_TIME,
+      MAX(FINISH_TIME) AS MAX_FINISH_TIME,
+      SUM(OCCUPY_SIZE) AS OCCUPY_SIZE,
+      SUM(TOTAL_ROW_COUNT) AS TOTAL_ROW_COUNT,
+      COUNT(1) AS TABLET_COUNT
+    FROM
+      oceanbase.GV\$OB_TABLET_COMPACTION_HISTORY
+    WHERE
+      TYPE = 'MINI_MERGE' ;
+- name: oceanbase mysql query cache size
+  dialect_type: OB_MYSQL
+  tags: [ 'dba','oceanbase' ]
+  type: DQL
+  min_version: 4.0.0
+  max_version: ~
+  description: Query cache size for OceanBase MySQL mode
+  prefix: query_cache_size
+  body: |
+    SELECT
+      TENANT_ID,
+      SVR_IP,
+      SVR_PORT,
+      CACHE_NAME,
+      ROUND(CACHE_SIZE/1024/1024,2) CACHE_SIZE_MB
+    FROM
+      GV\$OB_KVCACHE;
+- name: oceanbase mysql stats top size tables in database
+  dialect_type: OB_MYSQL
+  tags: [ 'dba','oceanbase', 'stats' ]
+  type: DQL
+  min_version: 4.0.0
+  max_version: ~
+  description: Stats top size tables in database for OceanBase MySQL mode
+  prefix: stats_top_size_tables_in_database
+  body: |
+    select
+        t1.database_name,
+        t1.table_name,
+        SUM(ROUND(t2.data_size / 1024 / 1024, 2)) as data_size_MB,
+        SUM(ROUND(t2.required_size / 1024 / 1024, 2)) as required_size_MB
+    from
+    (
+        select
+        database_name,
+        table_id,
+        table_name,
+        tablet_id,
+        partition_name,
+        subpartition_name
+        from
+        oceanbase.dba_ob_table_locations
+    ) t1
+    left join (
+        select
+        tablet_id,
+        svr_ip,
+        svr_port,
+        data_size,
+        required_size
+        from
+        oceanbase.dba_ob_tablet_replicas
+    ) t2 
+    on t1.tablet_id = t2.tablet_id
+    group by t1.database_name, t1.table_name
+    order by data_size_MB desc
+    limit 10;
+- name: oceanbase mysql stats partition size for table
+  dialect_type: OB_MYSQL
+  tags: [ 'dba','oceanbase', 'stats' ]
+  type: DQL
+  min_version: 4.0.0
+  max_version: ~
+  description: stats partition size for table for OceanBase MySQL mode
+  prefix: stats_partition_size_for_table
+  body: |
+    select
+        t1.database_name,
+        t1.table_name,
+        t1.tablet_id,
+        t1.partition_name,
+        t1.subpartition_name,
+        t2.svr_ip,
+        t2.svr_port,
+        ROUND(t2.data_size / 1024 / 1024, 2) as data_size_MB,
+        ROUND(t2.required_size / 1024 / 1024, 2) as required_size_MB
+    from (
+        select
+        database_name,
+        table_id,
+        table_name,
+        tablet_id,
+        partition_name,
+        subpartition_name
+        from
+        oceanbase.dba_ob_table_locations
+    ) t1
+    left join (
+        select
+        tablet_id,
+        svr_ip,
+        svr_port,
+        data_size,
+        required_size
+        from
+        oceanbase.dba_ob_tablet_replicas
+    ) t2 
+    on t1.tablet_id = t2.tablet_id
+    where t1.database_name = DATABASE()
+        and t1.table_name='${1:table_name}';
 - name: oceanbase mysql collect sql plan monitor
   dialect_type: OB_MYSQL
   tags: [ 'dba','oceanbase' ]

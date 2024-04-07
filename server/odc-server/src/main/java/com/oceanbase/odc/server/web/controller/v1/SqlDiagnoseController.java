@@ -34,6 +34,8 @@ import com.oceanbase.odc.service.common.response.SuccessResponse;
 import com.oceanbase.odc.service.common.util.SidUtils;
 import com.oceanbase.odc.service.diagnose.SqlDiagnoseService;
 import com.oceanbase.odc.service.session.ConnectSessionService;
+import com.oceanbase.odc.service.state.model.StateName;
+import com.oceanbase.odc.service.state.model.StatefulRoute;
 
 import io.swagger.annotations.ApiOperation;
 
@@ -52,6 +54,7 @@ public class SqlDiagnoseController {
 
     @ApiOperation(value = "explain", notes = "对sql执行explain查看计划信息，sid示例：sid:1000-1:d:db1")
     @RequestMapping(value = "/explain/{sid}", method = RequestMethod.POST)
+    @StatefulRoute(stateName = StateName.DB_SESSION, stateIdExpression = "#sid")
     public OdcResult<SqlExplain> explain(@PathVariable String sid, @RequestBody ResourceSql sql) {
         return OdcResult.ok(diagnoseService.explain(sessionService.nullSafeGet(SidUtils.getSessionId(sid), true), sql));
     }
@@ -59,6 +62,7 @@ public class SqlDiagnoseController {
     @ApiOperation(value = "getExecExplain", notes = "查询实际执行的计划信息，sid示例：sid:1000-1:d:db1,"
             + "注意参数tag带上sql_id")
     @RequestMapping(value = "/getExecExplain/{sid}", method = RequestMethod.POST)
+    @StatefulRoute(stateName = StateName.DB_SESSION, stateIdExpression = "#sid")
     public OdcResult<SqlExplain> getExecExplain(@PathVariable String sid, @RequestBody ResourceSql sql) {
         return OdcResult.ok(diagnoseService.getPhysicalPlan(
                 sessionService.nullSafeGet(SidUtils.getSessionId(sid), true), sql));
@@ -67,6 +71,7 @@ public class SqlDiagnoseController {
     @ApiOperation(value = "getExecDetail", notes = "查询执行sql的信息，例如等待时间、执行时间、IO等，sid示例：sid:1000-1:d:db1,"
             + "注意参数tag带上trace_id")
     @RequestMapping(value = "/getExecDetail/{sid}", method = RequestMethod.POST)
+    @StatefulRoute(stateName = StateName.DB_SESSION, stateIdExpression = "#sid")
     public OdcResult<SqlExecDetail> getExecDetail(@PathVariable String sid, @RequestBody ResourceSql sql) {
         return OdcResult.ok(diagnoseService.getExecutionDetail(
                 sessionService.nullSafeGet(SidUtils.getSessionId(sid), true), sql));
@@ -74,6 +79,7 @@ public class SqlDiagnoseController {
 
     @ApiOperation(value = "getFullLinkTrace", notes = "获取全链路诊断信息，嵌套数据结构")
     @RequestMapping(value = "/getFullLinkTrace/{sid}", method = RequestMethod.POST)
+    @StatefulRoute(stateName = StateName.DB_SESSION, stateIdExpression = "#sid")
     public SuccessResponse<TraceSpan> getFullLinkTrace(@PathVariable String sid, @RequestBody ResourceSql sql)
             throws IOException {
         return Responses.success(diagnoseService.getFullLinkTrace(
@@ -82,6 +88,7 @@ public class SqlDiagnoseController {
 
     @ApiOperation(value = "getFullLinkTraceDownloadUrl")
     @RequestMapping(value = "/getFullLinkTraceDownloadUrl/{sid}", method = RequestMethod.POST)
+    @StatefulRoute(stateName = StateName.DB_SESSION, stateIdExpression = "#sid")
     public SuccessResponse<String> getFullLinkTraceJson(@PathVariable String sid, @RequestBody ResourceSql sql)
             throws IOException {
         return Responses.success(diagnoseService.getFullLinkTraceDownloadUrl(

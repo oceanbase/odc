@@ -50,6 +50,8 @@ public class DatabaseChangeParameters implements Serializable, TaskParameters {
     private boolean modifyTimeoutIfTimeConsumingSqlExists = true;
     // internal usage for notification
     private JobType parentJobType;
+    private Integer retryTimes = 0;
+    private Long retryIntervalMillis = 180000L;
 
     public void setErrorStrategy(String errorStrategy) {
         this.errorStrategy = TaskErrorStrategy.valueOf(errorStrategy);

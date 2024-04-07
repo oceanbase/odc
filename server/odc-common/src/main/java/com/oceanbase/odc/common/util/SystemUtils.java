@@ -37,6 +37,10 @@ import java.util.regex.Pattern;
 
 import org.apache.commons.lang3.StringUtils;
 
+import com.oceanbase.odc.common.unit.BinarySize;
+import com.oceanbase.odc.common.unit.BinarySizeUnit;
+import com.sun.management.OperatingSystemMXBean;
+
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
@@ -113,6 +117,35 @@ public abstract class SystemUtils {
             metric2Messages.putIfAbsent("garbageCollector", bean.getCollectionCount());
         }
         return metric2Messages;
+    }
+
+    /**
+     * get jvm Xmx
+     *
+     * @return free memory
+     */
+    public static BinarySize getJvmXmxMemory() {
+        return BinarySizeUnit.B.of(Runtime.getRuntime().maxMemory());
+    }
+
+    /**
+     * get system free physical memory, unit size is byte
+     *
+     * @return free memory
+     */
+    public static BinarySize getSystemFreePhysicalMemory() {
+        OperatingSystemMXBean osBean = ManagementFactory.getPlatformMXBean(OperatingSystemMXBean.class);
+        return BinarySizeUnit.B.of(osBean.getFreePhysicalMemorySize());
+    }
+
+    /**
+     * get system free physical memory, unit size is byte
+     *
+     * @return free memory
+     */
+    public static BinarySize getSystemTotalPhysicalMemory() {
+        OperatingSystemMXBean osBean = ManagementFactory.getPlatformMXBean(OperatingSystemMXBean.class);
+        return BinarySizeUnit.B.of(osBean.getTotalPhysicalMemorySize());
     }
 
     public static Map<String, String> getSystemEnv() {

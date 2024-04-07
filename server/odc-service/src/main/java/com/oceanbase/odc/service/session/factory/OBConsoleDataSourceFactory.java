@@ -211,8 +211,8 @@ public class OBConsoleDataSourceFactory implements CloneableDataSourceFactory {
             if (!CollectionUtils.isEmpty(initializers)) {
                 initializers.forEach(dataSource::addInitializer);
             }
-            dataSource.addInitializer(new SessionCreatedInitializer(connectionConfig));
         }
+        dataSource.addInitializer(new SessionCreatedInitializer(connectionConfig));
         return dataSource;
     }
 

@@ -249,6 +249,7 @@ public class ScheduleService {
         if (taskEntity.getJobId() != null) {
             try {
                 jobScheduler.cancelJob(taskEntity.getJobId());
+                return ScheduleDetailResp.withId(scheduleId);
             } catch (JobException e) {
                 log.warn("Cancel job failed,jobId={}", taskEntity.getJobId(), e);
                 throw new UnexpectedException("Cancel job failed!", e);
@@ -398,6 +399,41 @@ public class ScheduleService {
         scheduleRepository.updateStatusById(id, status);
     }
 
+    public void refreshScheduleStatus(Long scheduleId) {
+        ScheduleEntity scheduleEntity = nullSafeGetById(scheduleId);
+        JobKey key = QuartzKeyGenerator.generateJobKey(scheduleEntity.getId(), scheduleEntity.getJobType());
+        ScheduleStatus status = scheduleEntity.getStatus();
+        if (status == ScheduleStatus.PAUSE) {
+            return;
+        }
+        int runningTask = scheduleTaskService.listTaskByJobNameAndStatus(scheduleId.toString(),
+                TaskStatus.getProcessingStatus()).size();
+        if (runningTask > 0) {
+            status = ScheduleStatus.ENABLED;
+        } else {
+            try {
+                List<? extends Trigger> jobTriggers = quartzJobService.getJobTriggers(key);
+                if (jobTriggers.isEmpty()) {
+                    status = ScheduleStatus.COMPLETED;
+                }
+                for (Trigger trigger : jobTriggers) {
+                    if (trigger.mayFireAgain()) {
+                        status = ScheduleStatus.ENABLED;
+                        break;
+                    } else {
+                        status = ScheduleStatus.COMPLETED;
+                    }
+                }
+            } catch (SchedulerException e) {
+                log.warn("Get job triggers failed and don't update schedule status.scheduleId={}", scheduleId);
+                return;
+            }
+        }
+        scheduleRepository.updateStatusById(scheduleId, status);
+        log.info("Update schedule status from {} to {} success,scheduleId={}}", scheduleEntity.getStatus(), status,
+                scheduleId);
+    }
+
     public void updateStatusByFlowInstanceId(Long id, ScheduleStatus status) {
         Long scheduleId = flowInstanceRepository.findScheduleIdByFlowInstanceId(id);
         if (scheduleId != null) {
@@ -492,6 +528,11 @@ public class ScheduleService {
         return false;
     }
 
+    public boolean hasExecutingScheduleTask(Long scheduleId) {
+        return !scheduleTaskService.listTaskByJobNameAndStatus(
+                scheduleId.toString(), TaskStatus.getProcessingStatus()).isEmpty();
+    }
+
     public ScheduleEntity nullSafeGetByIdWithCheckPermission(Long id) {
         return nullSafeGetByIdWithCheckPermission(id, false);
     }
@@ -501,8 +542,11 @@ public class ScheduleService {
         Long projectId = scheduleEntity.getProjectId();
         if (isWrite) {
             List<ResourceRoleName> resourceRoleNames = getApproverRoleNames(scheduleEntity);
-            if ((Objects.nonNull(projectId) && !projectPermissionValidator.hasProjectRole(projectId, resourceRoleNames))
-                    && authenticationFacade.currentUserId() != projectId) {
+            if (resourceRoleNames.isEmpty()) {
+                resourceRoleNames = ResourceRoleName.all();
+            }
+            if ((Objects.nonNull(projectId)
+                    && !projectPermissionValidator.hasProjectRole(projectId, resourceRoleNames))) {
                 throw new AccessDeniedException();
             }
         } else {

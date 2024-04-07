@@ -15,11 +15,9 @@
  */
 package com.oceanbase.odc.service.task.runtime;
 
-import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.SequenceInputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Objects;
@@ -43,7 +41,7 @@ import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.flow.task.model.RollbackPlanTaskResult;
 import com.oceanbase.odc.service.objectstorage.cloud.CloudObjectStorageService;
 import com.oceanbase.odc.service.objectstorage.model.ObjectMetadata;
-import com.oceanbase.odc.service.objectstorage.model.StorageObject;
+import com.oceanbase.odc.service.objectstorage.util.ObjectStorageUtils;
 import com.oceanbase.odc.service.rollbackplan.GenerateRollbackPlan;
 import com.oceanbase.odc.service.rollbackplan.RollbackGeneratorFactory;
 import com.oceanbase.odc.service.rollbackplan.UnsupportedSqlTypeForRollbackPlanException;
@@ -51,7 +49,6 @@ import com.oceanbase.odc.service.rollbackplan.model.RollbackPlan;
 import com.oceanbase.odc.service.session.factory.DefaultConnectSessionFactory;
 import com.oceanbase.odc.service.task.caller.JobContext;
 import com.oceanbase.odc.service.task.constants.JobParametersKeyConstants;
-import com.oceanbase.odc.service.task.executor.server.ObjectStorageHandler;
 import com.oceanbase.odc.service.task.executor.task.BaseTask;
 import com.oceanbase.odc.service.task.util.JobUtils;
 
@@ -197,33 +194,14 @@ public class RollbackPlanTask extends BaseTask<FlowTaskResult> {
 
     private void loadUploadFileInputStream() throws IOException {
         String delimiter = parameters.getDelimiter() != null ? parameters.getDelimiter() : ";";
-        this.uploadFileInputStream = new ByteArrayInputStream(new byte[0]);
         List<ObjectMetadata> objectMetadataList = this.parameters.getSqlFileObjectMetadatas();
         if (CollectionUtils.isNotEmpty(objectMetadataList)) {
-            long totalBytes = 0;
-            long maxBytes = parameters.getRollbackProperties().getMaxRollbackContentSizeBytes();
-            for (ObjectMetadata objectMetadata : objectMetadataList) {
-                StorageObject object =
-                        new ObjectStorageHandler(getCloudObjectStorageService(), JobUtils.getExecutorDataPath())
-                                .loadObject(objectMetadata);
-                InputStream current = object.getContent();
-                totalBytes += object.getMetadata().getTotalLength();
-                // remove UTF-8 BOM if exists
-                current.mark(3);
-                byte[] byteSql = new byte[3];
-                if (current.read(byteSql) >= 3 && byteSql[0] == (byte) 0xef && byteSql[1] == (byte) 0xbb
-                        && byteSql[2] == (byte) 0xbf) {
-                    current.reset();
-                    current.skip(3);
-                } else {
-                    current.reset();
-                }
-                if (maxBytes > 0 && totalBytes > maxBytes) {
-                    log.info("The file size is too large and will not be read later, totalSize={} bytes", totalBytes);
-                    break;
-                }
-                this.uploadFileInputStream = new SequenceInputStream(this.uploadFileInputStream, current);
-            }
+            this.uploadFileInputStream =
+                    ObjectStorageUtils
+                            .loadObjectsForTask(objectMetadataList, getCloudObjectStorageService(),
+                                    JobUtils.getExecutorDataPath(),
+                                    parameters.getRollbackProperties().getMaxRollbackContentSizeBytes())
+                            .getInputStream();
             this.uploadFileSqlIterator = SqlUtils.iterator(this.parameters.getConnectionConfig().getDialectType(),
                     delimiter, this.uploadFileInputStream, StandardCharsets.UTF_8);
         }

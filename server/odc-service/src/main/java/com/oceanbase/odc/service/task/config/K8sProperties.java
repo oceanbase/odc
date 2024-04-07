@@ -68,5 +68,9 @@ public class K8sProperties {
      */
     private Long mountDiskSize;
 
+    /**
+     * max node count in pool
+     */
+    private Long maxNodeCount;
 
 }

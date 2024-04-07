@@ -15,9 +15,14 @@
  */
 package com.oceanbase.odc.plugin.schema.doris;
 
+import java.sql.Connection;
+
 import org.pf4j.Extension;
 
+import com.oceanbase.odc.plugin.schema.doris.utils.DBAccessorUtil;
 import com.oceanbase.odc.plugin.schema.mysql.MySQLTableExtension;
+import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
+import com.oceanbase.tools.dbbrowser.stats.DBStatsAccessor;
 
 /**
  * ClassName: DorisTableExtension Package: com.oceanbase.odc.plugin.schema.doris Description:
@@ -28,4 +33,15 @@ import com.oceanbase.odc.plugin.schema.mysql.MySQLTableExtension;
  */
 @Extension
 public class DorisTableExtension extends MySQLTableExtension {
+
+    @Override
+    protected DBSchemaAccessor getSchemaAccessor(Connection connection) {
+        return DBAccessorUtil.getSchemaAccessor(connection);
+    }
+
+    @Override
+    protected DBStatsAccessor getStatsAccessor(Connection connection) {
+        return DBAccessorUtil.getStatsAccessor(connection);
+    }
+
 }

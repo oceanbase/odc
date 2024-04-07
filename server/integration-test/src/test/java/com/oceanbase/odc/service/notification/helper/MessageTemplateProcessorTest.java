@@ -48,4 +48,17 @@ public class MessageTemplateProcessorTest {
 
         Assert.assertEquals(expected, actual);
     }
+
+    @Test
+    public void testReplaceVariables_VariableNotExists_ReplaceEmptyString() {
+        String template = "name=${name}, project=${project}";
+
+        Map<String, String> variables = new HashMap<>();
+        variables.put("name", "fake name");
+
+        String expected = "name=fake name, project=";
+        String actual = MessageTemplateProcessor.replaceVariables(template, Locale.getDefault(), variables);
+
+        Assert.assertEquals(expected, actual);
+    }
 }

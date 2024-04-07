@@ -57,7 +57,6 @@ public class SecurityBeanConfiguration {
     @Autowired
     private CommonSecurityProperties commonSecurityProperties;
 
-
     @Bean
     public LocalDaoAuthenticationProvider authenticationProvider() {
         LocalDaoAuthenticationProvider provider = new LocalDaoAuthenticationProvider();

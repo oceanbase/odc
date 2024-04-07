@@ -21,7 +21,6 @@ import java.util.UUID;
 import org.apache.commons.lang3.RandomStringUtils;
 
 import com.oceanbase.odc.common.json.JsonUtils;
-import com.oceanbase.odc.common.util.SystemUtils;
 import com.oceanbase.odc.core.session.ConnectionSessionIdGenerator;
 import com.oceanbase.odc.service.connection.model.CreateSessionReq;
 
@@ -33,6 +32,7 @@ public class DefaultConnectSessionIdGenerator implements ConnectionSessionIdGene
 
     private Long databaseId;
     private String fixRealId;
+    private String host;
 
     @Override
     public String generateId(CreateSessionReq key) {
@@ -43,13 +43,14 @@ public class DefaultConnectSessionIdGenerator implements ConnectionSessionIdGene
         if (this.databaseId != null) {
             key.setDbId(databaseId);
         }
-        key.setFrom(SystemUtils.getHostName());
-        return Base64.getEncoder().encodeToString(JsonUtils.toJson(key).getBytes());
+        key.setFrom(host);
+        return Base64.getUrlEncoder().encodeToString(JsonUtils.toJson(key).getBytes());
     }
 
     @Override
     public CreateSessionReq getKeyFromId(@NonNull String id) {
-        CreateSessionReq req = JsonUtils.fromJson(new String(Base64.getDecoder().decode(id)), CreateSessionReq.class);
+        CreateSessionReq req =
+                JsonUtils.fromJson(new String(Base64.getUrlDecoder().decode(id)), CreateSessionReq.class);
         if (req == null) {
             throw new IllegalStateException("session id's format is illegal, " + id);
         }

@@ -91,6 +91,7 @@ public class EnvironmentService {
     private final Set<String> DEFAULT_ENV_NAMES = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
 
     @PostConstruct
+    @SkipAuthorize("odc internal usage")
     public void init() {
         DEFAULT_ENV_NAMES.add("开发");
         DEFAULT_ENV_NAMES.add("测试");
@@ -189,10 +190,11 @@ public class EnvironmentService {
     @PreAuthenticate(actions = "delete", resourceType = "ODC_ENVIRONMENT", indexOfIdParam = 0)
     @Transactional(rollbackFor = Exception.class)
     public Environment delete(@NotNull Long id) {
-        for (Consumer<EnvironmentDeleteEvent> hook : preDeleteHooks) {
-            hook.accept(new EnvironmentDeleteEvent(id, authenticationFacade.currentOrganizationId()));
-        }
         Environment environment = innerDetail(id);
+        for (Consumer<EnvironmentDeleteEvent> hook : preDeleteHooks) {
+            hook.accept(new EnvironmentDeleteEvent(id, environment.getName(),
+                    authenticationFacade.currentOrganizationId()));
+        }
         if (environment.getBuiltIn()) {
             throw new BadRequestException("Not allowed to delete builtin environments");
         }
@@ -278,6 +280,7 @@ public class EnvironmentService {
     @AllArgsConstructor
     public static class EnvironmentDeleteEvent {
         private Long id;
+        private String name;
         private Long organizationId;
     }
 

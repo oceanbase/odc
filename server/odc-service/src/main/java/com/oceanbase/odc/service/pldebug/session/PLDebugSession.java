@@ -27,7 +27,6 @@ import java.util.concurrent.TimeUnit;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.oceanbase.odc.common.concurrent.ExecutorUtils;
-import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.exception.OBException;
@@ -69,8 +68,8 @@ public class PLDebugSession {
     @Setter
     private Integer dbmsoutputMaxRows = null;
 
-    public PLDebugSession(long userId) {
-        this.sessionId = StringUtils.uuid();
+    public PLDebugSession(long userId, IdGenerator idGenerator) {
+        this.sessionId = idGenerator.generate();
         this.userId = userId;
         ThreadFactory threadFactory = new ThreadFactoryBuilder()
                 .setNameFormat("PLDebug-schedule-ping-%d")
@@ -253,5 +252,9 @@ public class PLDebugSession {
         }
         // ensure debugOn will be false
         debugOn = false;
+    }
+
+    public interface IdGenerator {
+        String generate();
     }
 }

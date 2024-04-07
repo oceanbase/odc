@@ -305,7 +305,8 @@ public class PreCheckRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Void> {
                 }
             }
             unauthorizedResource =
-                    databaseService.filterUnauthorizedDatabases(schemaName2PermissionTypes, connectionConfig.getId());
+                    databaseService.filterUnauthorizedDatabases(schemaName2PermissionTypes, connectionConfig.getId(),
+                            true);
         }
         this.permissionCheckResult = new DatabasePermissionCheckResult(unauthorizedResource);
         this.sqlCheckResult = SqlCheckTaskResult.success(violations);
@@ -352,7 +353,7 @@ public class PreCheckRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Void> {
             }
             unauthorizedResource =
                     tablePermissionService.filterUnauthorizedTables(tableName2PermissionTypes,
-                            connectionConfig.getId());
+                            connectionConfig.getId(), true);
         }
         this.permissionCheckResult = new DatabasePermissionCheckResult(unauthorizedResource);
         this.sqlCheckResult = SqlCheckTaskResult.success(violations);

@@ -111,7 +111,8 @@ public class ResourcePermissionInterceptor extends BaseTimeConsumingInterceptor 
             }
         }
         List<UnauthorizedResource> unauthorizedResource =
-                tablePermissionService.filterUnauthorizedTables(tableName2PermissionTypes, connectionConfig.getId());
+                tablePermissionService.filterUnauthorizedTables(tableName2PermissionTypes, connectionConfig.getId(),
+                        true);
         if (CollectionUtils.isNotEmpty(unauthorizedResource)) {
             response.setUnauthorizedResource(unauthorizedResource);
             return false;
@@ -144,7 +145,7 @@ public class ResourcePermissionInterceptor extends BaseTimeConsumingInterceptor 
         }
         List<UnauthorizedResource> unauthorizedResource =
                 tablePermissionService.filterUnauthorizedTables(tableName2PermissionTypes,
-                        databaseDetail.getDataSource().getId());
+                        databaseDetail.getDataSource().getId(), true);
 
         if (CollectionUtils.isNotEmpty(unauthorizedResource)) {
             throw new BadRequestException(ErrorCodes.DatabaseAccessDenied,

@@ -80,6 +80,9 @@ public class AuditUtils {
                 case APPLY_TABLE_PERMISSION:
                     type = AuditEventType.APPLY_TABLE_PERMISSION;
                     break;
+                case STRUCTURE_COMPARISON:
+                    type = AuditEventType.STRUCTURE_COMPARISON;
+                    break;
                 default:
                     type = AuditEventType.UNKNOWN_TASK_TYPE;
             }
@@ -169,6 +172,8 @@ public class AuditUtils {
                     return AuditEventAction.CREATE_PERMISSION_APPLY_TASK;
                 case SHADOWTABLE_SYNC:
                     return AuditEventAction.CREATE_SHADOWTABLE_SYNC_TASK;
+                case STRUCTURE_COMPARISON:
+                    return AuditEventAction.CREATE_STRUCTURE_COMPARISON_TASK;
                 case PARTITION_PLAN:
                     return AuditEventAction.CREATE_PARTITION_PLAN_TASK;
                 case ALTER_SCHEDULE:
@@ -197,6 +202,8 @@ public class AuditUtils {
                     return AuditEventAction.STOP_ASYNC_TASK;
                 case SHADOWTABLE_SYNC:
                     return AuditEventAction.STOP_SHADOWTABLE_SYNC_TASK;
+                case STRUCTURE_COMPARISON:
+                    return AuditEventAction.STOP_STRUCTURE_COMPARISON_TASK;
                 case PARTITION_PLAN:
                     return AuditEventAction.STOP_PARTITION_PLAN_TASK;
                 case ALTER_SCHEDULE:
@@ -225,6 +232,8 @@ public class AuditUtils {
                     return AuditEventAction.EXECUTE_ASYNC_TASK;
                 case SHADOWTABLE_SYNC:
                     return AuditEventAction.EXECUTE_SHADOWTABLE_SYNC_TASK;
+                case STRUCTURE_COMPARISON:
+                    return AuditEventAction.EXECUTE_STRUCTURE_COMPARISON_TASK;
                 case PARTITION_PLAN:
                     return AuditEventAction.EXECUTE_PARTITION_PLAN_TASK;
                 case ALTER_SCHEDULE:
@@ -249,6 +258,8 @@ public class AuditUtils {
                     return AuditEventAction.APPROVE_PERMISSION_APPLY_TASK;
                 case SHADOWTABLE_SYNC:
                     return AuditEventAction.APPROVE_SHADOWTABLE_SYNC_TASK;
+                case STRUCTURE_COMPARISON:
+                    return AuditEventAction.APPROVE_STRUCTURE_COMPARISON_TASK;
                 case PARTITION_PLAN:
                     return AuditEventAction.APPROVE_PARTITION_PLAN_TASK;
                 case ALTER_SCHEDULE:
@@ -279,6 +290,8 @@ public class AuditUtils {
                     return AuditEventAction.REJECT_PERMISSION_APPLY_TASK;
                 case SHADOWTABLE_SYNC:
                     return AuditEventAction.REJECT_SHADOWTABLE_SYNC_TASK;
+                case STRUCTURE_COMPARISON:
+                    return AuditEventAction.REJECT_STRUCTURE_COMPARISON_TASK;
                 case PARTITION_PLAN:
                     return AuditEventAction.REJECT_PARTITION_PLAN_TASK;
                 case ALTER_SCHEDULE:

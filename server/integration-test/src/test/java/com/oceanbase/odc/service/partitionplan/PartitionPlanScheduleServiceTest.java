@@ -50,6 +50,7 @@ import com.oceanbase.odc.plugin.task.api.partitionplan.model.TimeIncreaseGenerat
 import com.oceanbase.odc.service.connection.database.DatabaseService;
 import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.flow.FlowInstanceService;
+import com.oceanbase.odc.service.flow.model.FlowInstanceDetailResp;
 import com.oceanbase.odc.service.partitionplan.model.PartitionPlanConfig;
 import com.oceanbase.odc.service.partitionplan.model.PartitionPlanKeyConfig;
 import com.oceanbase.odc.service.partitionplan.model.PartitionPlanStrategy;
@@ -75,7 +76,7 @@ public class PartitionPlanScheduleServiceTest extends ServiceTestEnv {
     @MockBean
     private FlowInstanceService flowInstanceService;
     @Autowired
-    private PartitionPlanServiceV2 partitionPlanService;
+    private PartitionPlanService partitionPlanService;
     @Autowired
     private PartitionPlanScheduleService partitionPlanScheduleService;
     @Autowired
@@ -276,8 +277,9 @@ public class PartitionPlanScheduleServiceTest extends ServiceTestEnv {
                 .thenReturn(TestRandom.nextObject(ScheduleEntity.class));
         Mockito.doNothing().when(this.scheduleService).enable(Mockito.isA(ScheduleEntity.class));
         this.partitionPlanScheduleService.submit(partitionPlanConfig);
-        Mockito.when(this.flowInstanceService.mapFlowInstance(Mockito.any(), Mockito.any(), Mockito.any()))
-                .thenReturn(partitionPlanConfig.getFlowInstanceId());
+        FlowInstanceDetailResp resp = new FlowInstanceDetailResp();
+        resp.setId(partitionPlanConfig.getFlowInstanceId());
+        Mockito.when(this.flowInstanceService.detail(Mockito.any())).thenReturn(resp);
         PartitionPlanConfig expect = this.partitionPlanScheduleService
                 .getPartitionPlanByFlowInstanceId(partitionPlanConfig.getFlowInstanceId());
         Assert.assertEquals(1, expect.getPartitionTableConfigs().size());
@@ -352,8 +354,9 @@ public class PartitionPlanScheduleServiceTest extends ServiceTestEnv {
                 .thenReturn(TestRandom.nextObject(ScheduleEntity.class));
         Mockito.doNothing().when(this.scheduleService).enable(Mockito.isA(ScheduleEntity.class));
         this.partitionPlanScheduleService.submit(partitionPlanConfig);
-        Mockito.when(this.flowInstanceService.mapFlowInstance(Mockito.any(), Mockito.any(), Mockito.any()))
-                .thenReturn(partitionPlanConfig.getFlowInstanceId());
+        FlowInstanceDetailResp resp = new FlowInstanceDetailResp();
+        resp.setId(partitionPlanConfig.getFlowInstanceId());
+        Mockito.when(this.flowInstanceService.detail(Mockito.any())).thenReturn(resp);
         PartitionPlanConfig cfg = this.partitionPlanScheduleService
                 .getPartitionPlanByFlowInstanceId(partitionPlanConfig.getFlowInstanceId());
         List<PartitionPlanTableConfig> expects = this.partitionPlanScheduleService.getPartitionPlanTables(

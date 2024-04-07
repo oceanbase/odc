@@ -30,6 +30,7 @@ import com.google.common.collect.Sets;
 import com.oceanbase.odc.common.util.ResourceUtils;
 import com.oceanbase.odc.common.util.ResourceUtils.ResourceInfo;
 import com.oceanbase.odc.common.util.YamlUtils;
+import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionUtil;
 import com.oceanbase.odc.core.shared.constant.ConnectType;
@@ -40,6 +41,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Service
+@SkipAuthorize("personal resource")
 public class BuiltinSnippetService {
 
     private static final String BUILTIN_SNIPPET_DIR = "builtin-snippet";

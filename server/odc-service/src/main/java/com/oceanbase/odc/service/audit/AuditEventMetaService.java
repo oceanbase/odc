@@ -78,6 +78,7 @@ public class AuditEventMetaService {
                         AuditEventType.IMPORT,
                         AuditEventType.EXPORT,
                         AuditEventType.EXPORT_RESULT_SET,
+                        AuditEventType.STRUCTURE_COMPARISON,
                         AuditEventType.PERMISSION_APPLY,
                         AuditEventType.SHADOWTABLE_SYNC,
                         AuditEventType.PARTITION_PLAN,

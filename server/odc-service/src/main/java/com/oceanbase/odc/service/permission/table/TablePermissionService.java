@@ -25,6 +25,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.TreeSet;
 import java.util.stream.Collectors;
 
 import javax.validation.Valid;
@@ -48,6 +49,7 @@ import com.oceanbase.odc.core.authority.util.Authenticated;
 import com.oceanbase.odc.core.authority.util.PreAuthenticate;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.shared.constant.AuthorizationType;
+import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.shared.constant.PermissionType;
 import com.oceanbase.odc.core.shared.constant.ResourceRoleName;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
@@ -136,6 +138,10 @@ public class TablePermissionService {
 
     private static final UserTablePermissionMapper mapper = UserTablePermissionMapper.INSTANCE;
     private static final int EXPIRING_DAYS = 7;
+
+    private static final Set<String> ORACLE_DATA_DICTIONARY = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
+
+    private static final Set<String> MYSQL_DATA_DICTIONARY = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
 
     @Transactional(rollbackFor = Exception.class)
     @SkipAuthorize("permission check inside")
@@ -417,7 +423,8 @@ public class TablePermissionService {
 
     @SkipAuthorize("odc internal usage")
     public List<UnauthorizedResource> filterUnauthorizedTables(
-            Map<RelationFactor, Set<DatabasePermissionType>> tableName2PermissionTypes, @NotNull Long dataSourceId) {
+            Map<RelationFactor, Set<DatabasePermissionType>> tableName2PermissionTypes, @NotNull Long dataSourceId,
+            boolean ignoreDataDictionary) {
         if (tableName2PermissionTypes == null || tableName2PermissionTypes.isEmpty()) {
             return Collections.emptyList();
         }
@@ -437,6 +444,7 @@ public class TablePermissionService {
         List<UserTablePermission> userTablePermissions = listWithoutPageByDataSourceId(dataSource.getId(),
                 queryTablePermissionParams);
         List<UnauthorizedResource> unauthorizedResources = new ArrayList<>();
+        Set<Long> involvedProjectIds = projectService.getMemberProjectIds(authenticationFacade.currentUserId());
         for (RelationFactor relationFactor : tableName2PermissionTypes.keySet()) {
             String schemaName = relationFactor.getSchema();
             String tableName = relationFactor.getRelation();
@@ -446,6 +454,8 @@ public class TablePermissionService {
             }
             if (name2Database.containsKey(schemaName)) {
                 Database database = name2Database.get(schemaName);
+                boolean applicable =
+                        database.getProject() != null && involvedProjectIds.contains(database.getProject().getId());
                 // 用户拥有当前库的权限
                 Set<DatabasePermissionType> authorized = id2Types.get(database.getId());
                 // 先进行库级别鉴权
@@ -463,7 +473,7 @@ public class TablePermissionService {
                     });
                 }
                 if (CollectionUtils.isNotEmpty(needs)) {
-                    UnauthorizedResource unauthorizedResource = UnauthorizedResource.from(database, needs);
+                    UnauthorizedResource unauthorizedResource = UnauthorizedResource.from(database, needs, applicable);
                     unauthorizedResource.setTableName(tableName);
                     unauthorizedResources.add(unauthorizedResource);
                 }
@@ -471,7 +481,35 @@ public class TablePermissionService {
                 Database unknownDatabase = new Database();
                 unknownDatabase.setName(schemaName);
                 unknownDatabase.setDataSource(dataSource);
-                unauthorizedResources.add(UnauthorizedResource.from(unknownDatabase, needs));
+                unauthorizedResources.add(UnauthorizedResource.from(unknownDatabase, needs, false));
+            }
+        }
+        if (ignoreDataDictionary) {
+            DialectType dialectType = dataSource.getDialectType();
+            if (dialectType != null) {
+                if (dialectType.isOracle()) {
+                    unauthorizedResources =
+                            unauthorizedResources.stream().filter(d -> !ORACLE_DATA_DICTIONARY.contains(d.getName()))
+                                    .collect(Collectors.toList());
+                } else if (dialectType.isMysql()) {
+                    unauthorizedResources = unauthorizedResources.stream()
+                            .filter(d -> !MYSQL_DATA_DICTIONARY.contains(d.getName()))
+                            .collect(Collectors.toList());
+                }
+            }
+        }
+        if (ignoreDataDictionary) {
+            DialectType dialectType = dataSource.getDialectType();
+            if (dialectType != null) {
+                if (dialectType.isOracle()) {
+                    unauthorizedResources =
+                            unauthorizedResources.stream().filter(d -> !ORACLE_DATA_DICTIONARY.contains(d.getName()))
+                                    .collect(Collectors.toList());
+                } else if (dialectType.isMysql()) {
+                    unauthorizedResources = unauthorizedResources.stream()
+                            .filter(d -> !MYSQL_DATA_DICTIONARY.contains(d.getName()))
+                            .collect(Collectors.toList());
+                }
             }
         }
         return unauthorizedResources;
@@ -502,6 +540,10 @@ public class TablePermissionService {
                 listWithoutPageByDataSourceId(databaseDetail.getDataSource().getId(),
                         queryTablePermissionParams);
         List<UnauthorizedResource> unauthorizedResources = new ArrayList<>();
+
+        Set<Long> involvedProjectIds = projectService.getMemberProjectIds(authenticationFacade.currentUserId());
+        boolean applicable =
+                databaseDetail.getProject() != null && involvedProjectIds.contains(databaseDetail.getProject().getId());
         for (String tableName : tableNames.keySet()) {
             Set<DatabasePermissionType> needs = tableNames.get(tableName);
             if (CollectionUtils.isEmpty(needs)) {
@@ -526,7 +568,8 @@ public class TablePermissionService {
                     });
                 }
                 if (CollectionUtils.isNotEmpty(needs)) {
-                    UnauthorizedResource unauthorizedResource = UnauthorizedResource.from(databaseDetail, needs);
+                    UnauthorizedResource unauthorizedResource =
+                            UnauthorizedResource.from(databaseDetail, needs, applicable);
                     unauthorizedResource.setTableName(tableName);
                     unauthorizedResources.add(unauthorizedResource);
                 }
@@ -534,7 +577,7 @@ public class TablePermissionService {
                 Database unknownDatabase = new Database();
                 unknownDatabase.setName(databaseDetail.getName());
                 unknownDatabase.setDataSource(databaseDetail.getDataSource());
-                unauthorizedResources.add(UnauthorizedResource.from(unknownDatabase, needs));
+                unauthorizedResources.add(UnauthorizedResource.from(unknownDatabase, needs, false));
             }
         }
         return unauthorizedResources;
