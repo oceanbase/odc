@@ -94,7 +94,7 @@ public class LogicalTableFinderTest {
     }
 
     @SneakyThrows
-    public static String loadAsString(String... paths) {
+    private static String loadAsString(String... paths) {
         StringBuilder sb = new StringBuilder();
         for (String path : paths) {
             sb.append(readFile(path));

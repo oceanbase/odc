@@ -53,7 +53,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @Validated
 public class LogicalTableFinder {
-    public List<LogicalTable> find(@NotEmpty List<Database> databases) {
+    public static List<LogicalTable> find(@NotEmpty List<Database> databases) {
         Map<Long, List<Database>> dataSourceId2Databases =
                 databases.stream().collect(Collectors.groupingBy(database -> database.getDataSource().getId()));
         Map<Long, ConnectionConfig> id2DataSource = new HashMap<>();
@@ -116,7 +116,7 @@ public class LogicalTableFinder {
         return finalLogicalTables;
     }
 
-    private Map<String, List<String>> getSchemaName2TableNames(ConnectionConfig dataSource,
+    private static Map<String, List<String>> getSchemaName2TableNames(ConnectionConfig dataSource,
             List<Database> groupedDatabases) {
         ConnectionSessionFactory connectionSessionFactory = new DefaultConnectSessionFactory(dataSource);
         ConnectionSession connectionSession = connectionSessionFactory.generateSession();
@@ -140,7 +140,7 @@ public class LogicalTableFinder {
         }
     }
 
-    private Map<String, DBTable> getTableName2Tables(ConnectionConfig dataSource, String schemaName,
+    private static Map<String, DBTable> getTableName2Tables(ConnectionConfig dataSource, String schemaName,
             List<String> tableNames) {
         ConnectionSessionFactory connectionSessionFactory = new DefaultConnectSessionFactory(dataSource);
         ConnectionSession connectionSession = connectionSessionFactory.generateSession();

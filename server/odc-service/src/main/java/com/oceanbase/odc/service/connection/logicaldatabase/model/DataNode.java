@@ -48,12 +48,14 @@ import lombok.NoArgsConstructor;
 public class DataNode {
     private static final String DELIMITER = ".";
 
+    @JsonIgnore
     private ConnectionConfig dataSourceConfig;
 
     private String schemaName;
 
     private String tableName;
 
+    @JsonIgnore
     private DBTable table;
 
     public String getFullName() {

@@ -344,7 +344,8 @@ public class LogicalTableUtils {
                 if (matcher.matches()) {
                     return matcher.group(1);
                 } else {
-                    throw new IllegalArgumentException("表名 " + name + " 不符合模式 " + pattern);
+                    throw new IllegalArgumentException(
+                            "the table name " + name + " does not match the pattern " + pattern);
                 }
             }).collect(Collectors.toSet()));
             return Arrays.asList(parts[0] + range + parts[1]);
@@ -355,7 +356,8 @@ public class LogicalTableUtils {
                 if (matcher.matches()) {
                     return new Pair<>(matcher.group(1), matcher.group(2));
                 } else {
-                    throw new IllegalArgumentException("表名 " + name + " 不符合模式 " + pattern);
+                    throw new IllegalArgumentException(
+                            "the table name " + name + " does not match the pattern " + pattern);
                 }
             }).collect(Collectors.toList()).stream().sorted(Comparator.comparing(pair -> pair.left))
                     .collect(Collectors.toList());
