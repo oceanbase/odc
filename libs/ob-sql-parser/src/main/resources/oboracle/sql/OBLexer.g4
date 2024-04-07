@@ -43,6 +43,10 @@ P_SIZE
     : P
     ;
 
+WITH_COLUMN_GROUP
+    : (( W I T H ([ \t\n\r\f]+|('--'(~[\n\r])*)) C O L U M N ([ \t\n\r\f]+|('--'(~[\n\r])*)) G R O U P ))
+    ;
+
 HIDE
     : H I D E
     ;
@@ -61,6 +65,10 @@ OBJECT_ID
 
 ADD
     : ( A D D )
+    ;
+
+ALTER_HINT_BEGIN
+    : A L T E R '_' H I N T '_' B E G I N
     ;
 
 NAMESPACE
@@ -281,6 +289,10 @@ ABSENT
 
 IDENTIFIED
     : ( I D E N T I F I E D )
+    ;
+
+SYNCHRONOUS
+    : S Y N C H R O N O U S
     ;
 
 IMMEDIATE
@@ -726,6 +738,10 @@ CURRENT_USER
 
 CURSOR
     : ( C U R S O R )
+    ;
+
+STATEMENT
+    : S T A T E M E N T
     ;
 
 DAY_HOUR
@@ -1388,6 +1404,10 @@ ISNULL
 
 RETURNING
     : ( R E T U R N I N G )
+    ;
+
+BLOCKING
+    : B L O C K I N G
     ;
 
 ISOPEN
@@ -2094,6 +2114,10 @@ ENGINE_
     : E N G I N E
     ;
 
+EXCLUDING
+    : E X C L U D I N G
+    ;
+
 TRADITIONAL
     : T R A D I T I O N A L
     ;
@@ -2194,6 +2218,10 @@ UNIT
     : U N I T
     ;
 
+DEMAND
+    : D E M A N D
+    ;
+
 LOWER_ON
     : L O W E R '_' O N
     ;
@@ -2292,6 +2320,10 @@ MATCHED
 
 MAX_CONNECTIONS_PER_HOUR
     : M A X '_' C O N N E C T I O N S '_' P E R '_' H O U R
+    ;
+
+ASYNCHRONOUS
+    : A S Y N C H R O N O U S
     ;
 
 FAILED_LOGIN_ATTEMPTS
@@ -2906,6 +2938,10 @@ SEGMENT
     : S E G M E N T
     ;
 
+USE_COLUMN_STORE_HINT
+    : U S E '_' C O L U M N '_' S T O R E '_' H I N T
+    ;
+
 UNCOMMITTED
     : U N C O M M I T T E D
     ;
@@ -3050,6 +3086,10 @@ INT
     : I N T
     ;
 
+COMPLETE
+    : C O M P L E T E
+    ;
+
 STATS_PERSISTENT
     : S T A T S '_' P E R S I S T E N T
     ;
@@ -3122,8 +3162,16 @@ IPC
     : I P C
     ;
 
+MIN_MAX
+    : M I N '_' M A X
+    ;
+
 PATH
     : P A T H
+    ;
+
+NO_USE_COLUMN_STORE_HINT
+    : N O '_' U S E '_' C O L U M N '_' S T O R E '_' H I N T
     ;
 
 TRIM
@@ -3376,6 +3424,10 @@ CACHE
 
 RETURNED_SQLSTATE
     : R E T U R N E D '_' S Q L S T A T E
+    ;
+
+SKIP_INDEX
+    : S K I P '_' I N D E X
     ;
 
 END
@@ -3938,6 +3990,10 @@ MONTH
     : M O N T H
     ;
 
+NEVER
+    : N E V E R
+    ;
+
 AFTER
     : A F T E R
     ;
@@ -3998,6 +4054,18 @@ AUTOEXTEND_SIZE
     : A U T O E X T E N D '_' S I Z E
     ;
 
+TABLET_ID
+    : T A B L E T '_' I D
+    ;
+
+NO_COUNT_TO_EXISTS
+    : N O '_' C O U N T '_' T O '_' E X I S T S
+    ;
+
+NO_REPLACE_CONST
+    : N O '_' R E P L A C E '_' C O N S T
+    ;
+
 SOURCE
     : S O U R C E
     ;
@@ -4008,6 +4076,10 @@ POW
 
 IGNORE_SERVER_IDS
     : I G N O R E '_' S E R V E R '_' I D S
+    ;
+
+WF_TOPN
+    : W F '_' T O P N
     ;
 
 REPLICA_NUM
@@ -4144,6 +4216,10 @@ RELAYLOG
 
 SQL_BEFORE_GTIDS
     : S Q L '_' B E F O R E '_' G T I D S
+    ;
+
+LOWER_THAN_FOR
+    : L O W E R '_' T H A N '_' F O R
     ;
 
 PRIMARY_ZONE
@@ -4883,6 +4959,10 @@ AND_OP
 
 COMP_EQ
     : '='
+    ;
+
+COMP_NSEQ
+    : '<=>'
     ;
 
 SET_VAR
