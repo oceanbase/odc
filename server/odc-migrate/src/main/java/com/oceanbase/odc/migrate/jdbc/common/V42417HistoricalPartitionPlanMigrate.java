@@ -170,7 +170,8 @@ public class V42417HistoricalPartitionPlanMigrate implements JdbcMigratable {
                     entity.setPartitionKeyEntities(Arrays.asList(createEntity, dropEntity));
                     return entity;
                 }).stream().collect(Collectors.groupingBy(PartitionPlanTableEntityWrapper::getHistoricalPartiId));
-        entityWrappers.forEach(w -> w.setPartitionPlanTableEntityWrappers(tableWrappers.get(w.getHistoricalPartiId())));
+        entityWrappers.forEach(w -> w.setPartitionPlanTableEntityWrappers(
+                tableWrappers.getOrDefault(w.getHistoricalPartiId(), new ArrayList<>())));
     }
 
     private int getTimePrecision(int periodUnit) {
