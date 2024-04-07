@@ -16,6 +16,9 @@
 package com.oceanbase.odc.service.connection.logicaldatabase.model;
 
 import java.util.List;
+import java.util.Map;
+
+import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -41,4 +44,9 @@ public class LogicalTable {
     private String tableNamePattern;
 
     private List<DataNode> actualDataNodes;
+
+    public Map<ConnectionConfig, List<DataNode>> groupByDataSource() {
+        return actualDataNodes.stream().collect(
+                java.util.stream.Collectors.groupingBy(DataNode::getDataSourceConfig));
+    }
 }

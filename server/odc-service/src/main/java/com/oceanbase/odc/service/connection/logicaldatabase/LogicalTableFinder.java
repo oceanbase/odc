@@ -16,16 +16,19 @@
 package com.oceanbase.odc.service.connection.logicaldatabase;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import javax.validation.constraints.NotEmpty;
 
 import org.springframework.stereotype.Component;
 import org.springframework.validation.annotation.Validated;
 
+import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionFactory;
 import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.connection.logicaldatabase.model.DataNode;
@@ -33,6 +36,8 @@ import com.oceanbase.odc.service.connection.logicaldatabase.model.LogicalTable;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.db.browser.DBSchemaAccessors;
 import com.oceanbase.odc.service.session.factory.DefaultConnectSessionFactory;
+import com.oceanbase.tools.dbbrowser.model.DBObjectIdentity;
+import com.oceanbase.tools.dbbrowser.model.DBTable;
 import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
 
 import lombok.extern.slf4j.Slf4j;
@@ -61,26 +66,83 @@ public class LogicalTableFinder {
         Set<ConnectionConfig> dataSources = dataSource2Databases.keySet();
         for (ConnectionConfig dataSource : dataSources) {
             List<Database> groupedDatabases = dataSource2Databases.get(dataSource);
-            findTableNames(dataSource, groupedDatabases).entrySet().forEach(entry -> {
+            getSchemaName2TableNames(dataSource, groupedDatabases).entrySet().forEach(entry -> {
                 String databaseName = entry.getKey();
                 List<String> tableNames = entry.getValue();
                 tableNames.forEach(tableName -> {
-                    DataNode dataNode = new DataNode(dataSource, databaseName, tableName);
+                    DataNode dataNode = new DataNode(dataSource, databaseName, tableName, null);
                     dataNodes.add(dataNode);
                 });
             });
         }
         List<LogicalTable> logicalTables = LogicalTableUtils.identifyLogicalTables(dataNodes);
-        // TODO: use DBStructureComparator to compare if the table ddls are the same; if not, remove the
+        for (LogicalTable logicalTable : logicalTables) {
+            for (Map.Entry<ConnectionConfig, List<DataNode>> entry : logicalTable.groupByDataSource().entrySet()) {
+                ConnectionConfig dataSource = entry.getKey();
+                Map<String, List<String>> schemaName2TableNames = entry.getValue().stream()
+                        .collect(Collectors.groupingBy(DataNode::getSchemaName,
+                                Collectors.mapping(DataNode::getTableName, Collectors.toList())));
+                schemaName2TableNames.entrySet().forEach(schemaName2TableNamesEntry -> {
+                    String schemaName = schemaName2TableNamesEntry.getKey();
+                    List<String> tableNames = schemaName2TableNamesEntry.getValue();
+                    Map<String, DBTable> tables = getTableName2Tables(dataSource, schemaName, tableNames);
+                    for (DataNode dataNode : entry.getValue()) {
+                        dataNode.setTable(tables.getOrDefault(dataNode.getTableName(), null));
+                    }
+                });
+            }
+        }
+
+        // TODO: use DBStructureComparator to compare if the table DDLs are the same; if not, remove the
         // DataNode
 
         return logicalTables;
     }
 
-    private Map<String, List<String>> findTableNames(ConnectionConfig dataSource, List<Database> databases) {
+    private Map<String, List<String>> getSchemaName2TableNames(ConnectionConfig dataSource,
+            List<Database> groupedDatabases) {
         ConnectionSessionFactory connectionSessionFactory = new DefaultConnectSessionFactory(dataSource);
-        DBSchemaAccessor schemaAccessor = DBSchemaAccessors.create(connectionSessionFactory.generateSession());
-        // TODO: add a batch-list-table-names method in DBSchemaAccessor
-        return null;
+        ConnectionSession connectionSession = connectionSessionFactory.generateSession();
+        DBSchemaAccessor schemaAccessor = DBSchemaAccessors.create(connectionSession);
+        try {
+            return groupedDatabases.stream().collect(Collectors.toMap(Database::getName, database -> {
+                try {
+                    return schemaAccessor.listTables(database.getName(), null).stream()
+                            .map(DBObjectIdentity::getName).collect(Collectors.toList());
+                } catch (Exception e) {
+                    log.error("Failed to get table names from schema: {}", database.getName(), e);
+                    return Collections.emptyList();
+                }
+            }));
+        } finally {
+            try {
+                connectionSession.expire();
+            } catch (Exception ex) {
+                // eat exception
+            }
+        }
+    }
+
+    private Map<String, DBTable> getTableName2Tables(ConnectionConfig dataSource, String schemaName,
+            List<String> tableNames) {
+        ConnectionSessionFactory connectionSessionFactory = new DefaultConnectSessionFactory(dataSource);
+        ConnectionSession connectionSession = connectionSessionFactory.generateSession();
+        DBSchemaAccessor schemaAccessor = DBSchemaAccessors.create(connectionSession);
+        try {
+            return schemaAccessor.getTables(schemaName, tableNames);
+        } catch (Exception e) {
+            log.error("Failed to get tables from schema: {}", schemaName, e);
+        } finally {
+            try {
+                connectionSession.expire();
+            } catch (Exception ex) {
+                // eat exception
+            }
+        }
+        return Collections.emptyMap();
+    }
+
+    private String getTableStructureSignature(DBTable table) {
+
     }
 }

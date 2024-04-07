@@ -15,7 +15,18 @@
  */
 package com.oceanbase.odc.service.connection.logicaldatabase.model;
 
+import java.util.Comparator;
+import java.util.List;
+import java.util.TreeMap;
+import java.util.TreeSet;
+import java.util.stream.Collectors;
+
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
+import com.oceanbase.tools.dbbrowser.model.DBTable;
+import com.oceanbase.tools.dbbrowser.model.DBTableColumn;
+import com.oceanbase.tools.dbbrowser.model.DBTableConstraint;
+import com.oceanbase.tools.dbbrowser.model.DBTableIndex;
+import com.oceanbase.tools.dbbrowser.model.DBTablePartition;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -38,7 +49,22 @@ public class DataNode {
 
     private String tableName;
 
+    private DBTable table;
+
     public String getFullName() {
         return schemaName + DELIMITER + tableName;
+    }
+
+    public String getStructureSignature() {
+        List<DBTableColumn> columns = table.getColumns();
+        List<DBTableIndex> indexes = table.getIndexes();
+        List<DBTableConstraint> constraints = table.getConstraints();
+        DBTablePartition partition = table.getPartition();
+    }
+
+    private String getColumnsSignature(List<DBTableColumn> columns) {
+        columns.stream().sorted(Comparator.comparing(DBTableColumn::getName)).map(column -> {
+            return String.join("|", column.getName(), column.getTypeName(), column.get)
+        }).collect(Collectors.joining(","));
     }
 }
