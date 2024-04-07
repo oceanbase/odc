@@ -150,7 +150,7 @@ public class HttpOperationService {
     @RefreshScope
     @Configuration
     @Data
-    private static class IntegrationConfigProperties {
+    public static class IntegrationConfigProperties {
 
         @Value("${odc.integration.url-white-list:}")
         private List<String> urlWhiteList;

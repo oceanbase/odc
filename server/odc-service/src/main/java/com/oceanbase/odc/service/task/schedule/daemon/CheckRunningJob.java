@@ -15,6 +15,8 @@
  */
 package com.oceanbase.odc.service.task.schedule.daemon;
 
+import java.text.MessageFormat;
+
 import org.quartz.DisallowConcurrentExecution;
 import org.quartz.Job;
 import org.quartz.JobExecutionContext;
@@ -22,6 +24,9 @@ import org.quartz.JobExecutionException;
 import org.springframework.data.domain.Page;
 
 import com.oceanbase.odc.common.json.JsonUtils;
+import com.oceanbase.odc.common.util.SilentExecutor;
+import com.oceanbase.odc.core.alarm.AlarmEventNames;
+import com.oceanbase.odc.core.alarm.AlarmUtils;
 import com.oceanbase.odc.metadb.task.JobEntity;
 import com.oceanbase.odc.service.task.config.JobConfiguration;
 import com.oceanbase.odc.service.task.config.JobConfigurationHolder;
@@ -52,28 +57,36 @@ public class CheckRunningJob implements Job {
         configuration = JobConfigurationHolder.getJobConfiguration();
         JobConfigurationValidator.validComponent();
         TaskFrameworkProperties taskFrameworkProperties = getConfiguration().getTaskFrameworkProperties();
-        int size = taskFrameworkProperties.getSingleFetchCheckHeartTimeoutJobRows();
-        int heartTimeoutPeriod = taskFrameworkProperties.getJobHeartTimeoutSeconds();
+        int heartTimeoutSeconds = taskFrameworkProperties.getJobHeartTimeoutSeconds();
         // find heart timeout job
         Page<JobEntity> jobs = getConfiguration().getTaskFrameworkService()
-                .findHeartTimeTimeoutJobs(heartTimeoutPeriod, 0, size);
-        jobs.forEach(this::handleJobRetryingOrCanceled);
-
+                .findHeartTimeTimeoutJobs(heartTimeoutSeconds, 0,
+                        taskFrameworkProperties.getSingleFetchCheckHeartTimeoutJobRows());
+        jobs.forEach(this::handleJobRetryingOrFailed);
     }
 
-    private void handleJobRetryingOrCanceled(JobEntity a) {
-        getConfiguration().getTransactionManager().doInTransactionWithoutResult(() -> {
-            doHandleJobRetryingOrFailed(a);
-        });
-
+    private void handleJobRetryingOrFailed(JobEntity jobEntity) {
+        SilentExecutor.executeSafely(() -> getConfiguration().getTransactionManager()
+                .doInTransactionWithoutResult(() -> doHandleJobRetryingOrFailed(jobEntity)));
     }
 
-    private void doHandleJobRetryingOrFailed(JobEntity a) {
+    private void doHandleJobRetryingOrFailed(JobEntity jobEntity) {
+        JobEntity a = getConfiguration().getTaskFrameworkService().findWithPessimisticLock(jobEntity.getId());
         // destroy executor
         try {
             getConfiguration().getJobDispatcher().destroy(JobIdentity.of(a.getId()));
         } catch (JobException e) {
             throw new TaskRuntimeException(e);
+        }
+
+        JobEntity checkedEntity = getConfiguration().getTaskFrameworkService().find(jobEntity.getId());
+        if (checkedEntity.getStatus() == JobStatus.FAILED) {
+            log.info("Job has been FAILED, jobId={}", jobEntity.getId());
+            return;
+        }
+        if (checkedEntity.getExecutorDestroyedTime() == null) {
+            log.info("Job executor has not been destroyed, may not on this machine, jobId={}", jobEntity.getId());
+            return;
         }
 
         if (checkJobIfRetryNecessary(a)) {
@@ -89,7 +102,7 @@ public class CheckRunningJob implements Job {
             log.info("No need to restart job, try to set status to FAILED, jobId={}.", a.getId());
             TaskFrameworkProperties taskFrameworkProperties = getConfiguration().getTaskFrameworkProperties();
             int rows = getConfiguration().getTaskFrameworkService()
-                    .updateStatusToCanceledWhenHeartTimeout(a.getId(),
+                    .updateStatusToFailedWhenHeartTimeout(a.getId(),
                             taskFrameworkProperties.getJobHeartTimeoutSeconds(),
                             "Heart timeout and set job to status FAILED.");
             if (rows >= 0) {
@@ -97,7 +110,8 @@ public class CheckRunningJob implements Job {
                         new JobTerminateEvent(JobIdentity.of(a.getId()), JobStatus.FAILED));
                 log.info("Set job status to FAILED accomplished, jobId={}.", a.getId());
             }
-
+            AlarmUtils.warn(AlarmEventNames.TASK_HEARTBEAT_TIMEOUT,
+                    MessageFormat.format("Job running failed due to heart timeout, jobId={0}", a.getId()));
         }
 
     }

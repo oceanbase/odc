@@ -16,6 +16,7 @@
 
 package com.oceanbase.odc.service.task.service;
 
+import java.text.MessageFormat;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
@@ -49,6 +50,8 @@ import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.common.trace.TraceContextHolder;
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.common.util.SystemUtils;
+import com.oceanbase.odc.core.alarm.AlarmEventNames;
+import com.oceanbase.odc.core.alarm.AlarmUtils;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.core.shared.exception.NotFoundException;
@@ -107,7 +110,7 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
 
     @Override
     public JobEntity find(Long id) {
-        return jobRepository.findById(id)
+        return jobRepository.findByIdNative(id)
                 .orElseThrow(() -> new NotFoundException(ResourceType.ODC_TASK, "id", id));
     }
 
@@ -150,8 +153,15 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
     public Page<JobEntity> findHeartTimeTimeoutJobs(int timeoutSeconds, int page, int size) {
         Specification<JobEntity> condition = Specification.where(getRecentDaySpec(RECENT_DAY))
                 .and(SpecificationUtil.columnEqual(JobEntityColumn.STATUS, JobStatus.RUNNING))
-                .and((root, query, cb) -> getHeartTimeoutPredicate(root, cb, timeoutSeconds))
-                .and(getExecutorSpec());
+                .and((root, query, cb) -> getHeartTimeoutPredicate(root, cb, timeoutSeconds));
+        return page(condition, page, size);
+    }
+
+    @Override
+    public Page<JobEntity> findIncompleteJobs(int page, int size) {
+        Specification<JobEntity> condition = Specification.where(getRecentDaySpec(RECENT_DAY))
+                .and(SpecificationUtil.columnIn(JobEntityColumn.STATUS,
+                        Lists.newArrayList(JobStatus.PREPARING, JobStatus.RETRYING, JobStatus.RUNNING)));
         return page(condition, page, size);
     }
 
@@ -190,7 +200,7 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
         // select count(*) from job_job where
         // create_time > now() - 30d
         // and run_mode = 'runMode'
-        // and status <> 'PREPARING'
+        // and status not in ( 'PREPARING', 'RETRYING')
         // and executor_destroyed_time is null
 
         Root<JobEntity> root = query.from(JobEntity.class);
@@ -199,7 +209,7 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
                 cb.greaterThan(root.get(JobEntityColumn.CREATE_TIME),
                         JobDateUtils.getCurrentDateSubtractDays(RECENT_DAY)),
                 cb.equal(root.get(JobEntityColumn.RUN_MODE), runMode),
-                cb.notEqual(root.get(JobEntityColumn.STATUS), JobStatus.PREPARING),
+                root.get(JobEntityColumn.STATUS).in(JobStatus.PREPARING, JobStatus.RETRYING).not(),
                 cb.isNull(root.get(JobEntityColumn.EXECUTOR_DESTROYED_TIME)),
                 executorPredicate(root, cb));
         return entityManager.createQuery(query).getSingleResult();
@@ -311,6 +321,10 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
         if (publisher != null && taskResult.getStatus() != null && taskResult.getStatus().isTerminated()) {
             taskResultPublisherExecutor.execute(() -> publisher
                     .publishEvent(new JobTerminateEvent(taskResult.getJobIdentity(), taskResult.getStatus())));
+            if (taskResult.getStatus() == JobStatus.FAILED) {
+                AlarmUtils.info(AlarmEventNames.TASK_EXECUTION_FAILED,
+                        MessageFormat.format("Job execution failed, jobId={0}", taskResult.getJobIdentity().getId()));
+            }
         }
 
     }
@@ -410,7 +424,7 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
 
     @Transactional(rollbackFor = Exception.class)
     @Override
-    public int updateStatusToCanceledWhenHeartTimeout(Long id, int heartTimeoutSeconds, String description) {
+    public int updateStatusToFailedWhenHeartTimeout(Long id, int heartTimeoutSeconds, String description) {
 
         CriteriaBuilder cb = entityManager.getCriteriaBuilder();
         CriteriaUpdate<JobEntity> update = cb.createCriteriaUpdate(JobEntity.class);
@@ -501,9 +515,7 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
         Root<JobEntity> e = update.from(JobEntity.class);
         update.set(JobEntityColumn.EXECUTOR_DESTROYED_TIME, JobDateUtils.getCurrentDate());
 
-        update.where(cb.equal(e.get(JobEntityColumn.ID), id),
-                cb.isNull(e.get(JobEntityColumn.EXECUTOR_DESTROYED_TIME)));
-
+        update.where(cb.equal(e.get(JobEntityColumn.ID), id));
         return entityManager.createQuery(update).executeUpdate();
     }
 

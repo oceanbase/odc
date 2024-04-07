@@ -60,14 +60,4 @@ public interface JobCaller {
      * @throws JobException throws JobException when stop job failed
      */
     void destroy(JobIdentity ji) throws JobException;
-
-
-    /**
-     * destroy executor identifier
-     *
-     * @param executorIdentifier job identity
-     * @throws JobException throws JobException when stop job failed
-     */
-    void destroy(ExecutorIdentifier executorIdentifier) throws JobException;
-
 }
