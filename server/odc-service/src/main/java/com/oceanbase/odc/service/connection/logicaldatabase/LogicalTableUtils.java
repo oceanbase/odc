@@ -18,10 +18,10 @@ package com.oceanbase.odc.service.connection.logicaldatabase;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -107,8 +107,11 @@ public class LogicalTableUtils {
                         dataNode -> dataNode.getTableName().replaceAll(DIGIT_PATTERN.pattern(), PATTERN_PLACEHOLDER)));
         basePattern2Tables.entrySet().removeIf(entry -> entry.getValue().size() == 1);
 
+        if (basePattern2Tables.isEmpty()) {
+            return Collections.EMPTY_LIST;
+        }
 
-        Map<String, List<DataNode>> finalPatterns = new LinkedHashMap<>();
+        Map<String, List<DataNode>> finalPatterns = new TreeMap<>();
 
         basePattern2Tables.forEach((basePattern, nodes) -> {
             // check which [#] should be kept and which should be replaced with actual numbers

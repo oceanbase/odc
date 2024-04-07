@@ -15,9 +15,14 @@
  */
 package com.oceanbase.odc.service.connection.logicaldatabase.model;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
+import org.apache.commons.collections.CollectionUtils;
+
+import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 
 import lombok.AllArgsConstructor;
@@ -46,7 +51,26 @@ public class LogicalTable {
     private List<DataNode> actualDataNodes;
 
     public Map<ConnectionConfig, List<DataNode>> groupByDataSource() {
-        return actualDataNodes.stream().collect(
-                java.util.stream.Collectors.groupingBy(DataNode::getDataSourceConfig));
+        if (CollectionUtils.isEmpty(actualDataNodes)) {
+            return Collections.emptyMap();
+        }
+        return actualDataNodes.stream().collect(Collectors.groupingBy(DataNode::getDataSourceConfig));
+    }
+
+    /**
+     * Generate table name from pattern. Possible results: test_[#] --> test, test_[#]_t --> test_t,
+     * test_[#]_[#] --> test, [#]_test --> test, test_[#]_[#]_t -> test_t
+     */
+    public String getName() {
+        if (StringUtils.isEmpty(tableNamePattern)) {
+            return StringUtils.EMPTY;
+        }
+        // handle potential sequences of [#] and surrounding underscores
+        String name = tableNamePattern.replaceAll("([_]?\\[#\\]_?)+", "_");
+        // remove redundant consecutive underscores (preserve one if necessary)
+        name = name.replaceAll("_{2,}", "_");
+        // remove any extra underscores that may be at the beginning or end of the string
+        name = name.replaceAll("^_|_$", "");
+        return name;
     }
 }

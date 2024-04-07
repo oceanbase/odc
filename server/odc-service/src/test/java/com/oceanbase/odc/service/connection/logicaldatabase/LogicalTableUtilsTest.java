@@ -20,7 +20,6 @@ import java.util.List;
 import org.junit.Assert;
 import org.junit.Test;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.oceanbase.odc.common.util.YamlUtils;
 import com.oceanbase.odc.service.connection.logicaldatabase.model.DataNode;
 import com.oceanbase.odc.service.connection.logicaldatabase.model.LogicalTable;
@@ -49,25 +48,5 @@ public class LogicalTableUtilsTest {
     static class LogicalTableIdentificationTestCase {
         private List<DataNode> dataNodes;
         private List<LogicalTable> logicalTables;
-    }
-
-    @Data
-    @NoArgsConstructor
-    @AllArgsConstructor
-    static class LogicalTableIdentification {
-        @JsonProperty("fullTableNames")
-        private List<String> fullTableNames;
-        @JsonProperty("expression2Tables")
-        private List<Expression2Tables> expression2Tables;
-    }
-
-    @Data
-    @NoArgsConstructor
-    @AllArgsConstructor
-    static class Expression2Tables {
-        @JsonProperty("logicalExpression")
-        private String logicalExpression;
-        @JsonProperty("tables")
-        private List<String> tables;
     }
 }

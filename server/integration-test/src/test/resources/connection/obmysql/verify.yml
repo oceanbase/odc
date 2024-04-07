@@ -1,0 +1,33 @@
+- name: "tb_a"
+  table_name_pattern: "tb_a_[#]"
+  database_name_pattern: "db_[#]"
+  full_name_expression: "db_[00-03].tb_a_[00-03]"
+  actual_data_nodes:
+    - table_name: "tb_a_00"
+      schema_name: "db_00"
+    - table_name: "tb_a_01"
+      schema_name: "db_01"
+    - table_name: "tb_a_02"
+      schema_name: "db_02"
+    - table_name: "tb_a_03"
+      schema_name: "db_03"
+
+- name: "tb_i"
+  table_name_pattern: "tb_i_[#]"
+  database_name_pattern: "db_00"
+  full_name_expression: "db_00.tb_i_[00-01]"
+  actual_data_nodes:
+    - table_name: "tb_i_00"
+      schema_name: "db_00"
+    - table_name: "tb_i_01"
+      schema_name: "db_00"
+
+- name: "tb_j"
+  table_name_pattern: "tb_j_[#]"
+  database_name_pattern: "db_00"
+  full_name_expression: "db_00.tb_j_[00-01]"
+  actual_data_nodes:
+    - table_name: "tb_j_00"
+      schema_name: "db_00"
+    - table_name: "tb_j_01"
+      schema_name: "db_00"

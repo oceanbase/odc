@@ -17,6 +17,7 @@ package com.oceanbase.odc.service.connection.logicaldatabase;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -25,7 +26,6 @@ import java.util.stream.Collectors;
 
 import javax.validation.constraints.NotEmpty;
 
-import org.springframework.stereotype.Component;
 import org.springframework.validation.annotation.Validated;
 
 import com.oceanbase.odc.core.session.ConnectionSession;
@@ -40,6 +40,9 @@ import com.oceanbase.tools.dbbrowser.model.DBObjectIdentity;
 import com.oceanbase.tools.dbbrowser.model.DBTable;
 import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
 
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -49,23 +52,19 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 @Validated
-@Component
 public class LogicalTableFinder {
     public List<LogicalTable> find(@NotEmpty List<Database> databases) {
-        Map<Long, ConnectionConfig> id2DataSources = new HashMap<>();
-        Map<ConnectionConfig, List<Database>> dataSource2Databases = new HashMap<>();
-        for (Database database : databases) {
-            Long dataSourceId = database.getDataSource().getId();
-            ConnectionConfig connectionConfig = id2DataSources.computeIfAbsent(dataSourceId,
-                    k -> database.getDataSource());
-            List<Database> groupedDatabases = dataSource2Databases.computeIfAbsent(connectionConfig,
-                    k -> new ArrayList<>());
-            groupedDatabases.add(database);
-        }
+        Map<Long, List<Database>> dataSourceId2Databases =
+                databases.stream().collect(Collectors.groupingBy(database -> database.getDataSource().getId()));
+        Map<Long, ConnectionConfig> id2DataSource = new HashMap<>();
+        databases.stream()
+                .forEach(database -> id2DataSource.put(database.getDataSource().getId(), database.getDataSource()));
+
         List<DataNode> dataNodes = new ArrayList<>();
-        Set<ConnectionConfig> dataSources = dataSource2Databases.keySet();
-        for (ConnectionConfig dataSource : dataSources) {
-            List<Database> groupedDatabases = dataSource2Databases.get(dataSource);
+        Set<Long> dataSourceIds = dataSourceId2Databases.keySet();
+        for (Long dataSourceId : dataSourceIds) {
+            List<Database> groupedDatabases = dataSourceId2Databases.get(dataSourceId);
+            ConnectionConfig dataSource = id2DataSource.get(dataSourceId);
             getSchemaName2TableNames(dataSource, groupedDatabases).entrySet().forEach(entry -> {
                 String databaseName = entry.getKey();
                 List<String> tableNames = entry.getValue();
@@ -76,28 +75,38 @@ public class LogicalTableFinder {
             });
         }
         List<LogicalTable> logicalTables = LogicalTableUtils.identifyLogicalTables(dataNodes);
+
+        Map<Long, List<DataNode>> dataSourceId2DataNodes = logicalTables.stream()
+                .flatMap(logicalTable -> logicalTable.getActualDataNodes().stream()).collect(Collectors.toList())
+                .stream().collect(Collectors.groupingBy(dataNode -> dataNode.getDataSourceConfig().getId()));
+
+        Map<String, DBTable> tables = new HashMap<>();
+        for (Map.Entry<Long, List<DataNode>> entry : dataSourceId2DataNodes.entrySet()) {
+            ConnectionConfig dataSource = id2DataSource.get(entry.getKey());
+            Map<String, List<String>> schemaName2TableNames = entry.getValue().stream()
+                    .collect(Collectors.groupingBy(DataNode::getSchemaName,
+                            Collectors.mapping(DataNode::getTableName, Collectors.toList())));
+            schemaName2TableNames.entrySet().forEach(schemaName2TableNamesEntry -> {
+                String schemaName = schemaName2TableNamesEntry.getKey();
+                List<String> tableNames = schemaName2TableNamesEntry.getValue();
+                tables.putAll(getTableName2Tables(dataSource, schemaName, tableNames).entrySet().stream()
+                        .collect(Collectors.toMap(key -> schemaName + "." + key.getKey(), Map.Entry::getValue)));
+            });
+        }
+
         for (LogicalTable logicalTable : logicalTables) {
             Map<String, List<DataNode>> sha1ToDataNodes = new HashMap<>();
             final List<DataNode>[] majorityDataNodes = new List[] {new ArrayList<>()};
-            for (Map.Entry<ConnectionConfig, List<DataNode>> entry : logicalTable.groupByDataSource().entrySet()) {
-                ConnectionConfig dataSource = entry.getKey();
-                Map<String, List<String>> schemaName2TableNames = entry.getValue().stream()
-                        .collect(Collectors.groupingBy(DataNode::getSchemaName,
-                                Collectors.mapping(DataNode::getTableName, Collectors.toList())));
-                schemaName2TableNames.entrySet().forEach(schemaName2TableNamesEntry -> {
-                    String schemaName = schemaName2TableNamesEntry.getKey();
-                    List<String> tableNames = schemaName2TableNamesEntry.getValue();
-                    Map<String, DBTable> tables = getTableName2Tables(dataSource, schemaName, tableNames);
-                    for (DataNode dataNode : entry.getValue()) {
-                        dataNode.setTable(tables.getOrDefault(dataNode.getTableName(), null));
-                        String dataNodeSignature = dataNode.getStructureSignature();
-                        sha1ToDataNodes.computeIfAbsent(dataNodeSignature, k -> new ArrayList<>()).add(dataNode);
-                        if (sha1ToDataNodes.get(dataNodeSignature).size() > majorityDataNodes[0].size()) {
-                            majorityDataNodes[0] = sha1ToDataNodes.get(dataNodeSignature);
-                        }
-                    }
-                });
+
+            for (DataNode dataNode : logicalTable.getActualDataNodes()) {
+                dataNode.setTable(tables.getOrDefault(dataNode.getFullName(), null));
+                String dataNodeSignature = dataNode.getStructureSignature();
+                sha1ToDataNodes.computeIfAbsent(dataNodeSignature, k -> new ArrayList<>()).add(dataNode);
+                if (sha1ToDataNodes.get(dataNodeSignature).size() > majorityDataNodes[0].size()) {
+                    majorityDataNodes[0] = sha1ToDataNodes.get(dataNodeSignature);
+                }
             }
+            majorityDataNodes[0].sort(Comparator.comparing(DataNode::getTableName));
             logicalTable.setActualDataNodes(majorityDataNodes[0]);
         }
 
@@ -148,5 +157,13 @@ public class LogicalTableFinder {
             }
         }
         return Collections.emptyMap();
+    }
+
+    @Data
+    @AllArgsConstructor
+    @NoArgsConstructor
+    static class SchemaIdentity {
+        private Long dataSourceId;
+        private String schemaName;
     }
 }
