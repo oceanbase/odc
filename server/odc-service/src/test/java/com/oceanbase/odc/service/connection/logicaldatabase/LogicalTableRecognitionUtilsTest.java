@@ -37,7 +37,7 @@ public class LogicalTableRecognitionUtilsTest {
                 YamlUtils.fromYamlList(TEST_RESOURCE_FILE_PATH, LogicalTableIdentificationTestCase.class);
         for (LogicalTableIdentificationTestCase testCase : testCases) {
             List<LogicalTable> actual =
-                    LogicalTableRecognitionUtils.generatePatternExpressions(testCase.getDataNodes());
+                    LogicalTableRecognitionUtils.recognizeLogicalTablesWithExpression(testCase.getDataNodes());
             Assert.assertEquals(testCase.getLogicalTables(), actual);
         }
     }

@@ -61,8 +61,7 @@ public class LogicalTableRecognitionUtils {
     private static final String DOUBLE_RIGHT_SQUARE_BRACKET = "]]";
     private static final Pattern DIGIT_PATTERN = Pattern.compile("\\d+");
 
-
-    public static List<LogicalTable> generatePatternExpressions(@NotEmpty List<DataNode> dataNodes) {
+    public static List<LogicalTable> recognizeLogicalTablesWithExpression(@NotEmpty List<DataNode> dataNodes) {
         // find all logical tables with the same pattern
         List<LogicalTable> logicalTables = recognizeLogicalTables(dataNodes);
 

@@ -111,7 +111,7 @@ public class LogicalTableFinder {
         }
 
         List<LogicalTable> finalLogicalTables =
-                LogicalTableRecognitionUtils.generatePatternExpressions(logicalTables.stream()
+                LogicalTableRecognitionUtils.recognizeLogicalTablesWithExpression(logicalTables.stream()
                         .map(LogicalTable::getActualDataNodes).flatMap(List::stream).collect(Collectors.toList()));
 
         return finalLogicalTables;
