@@ -49,7 +49,7 @@ import com.oceanbase.odc.service.connection.logicaldatabase.model.LogicalTable;
  * @Date: 2024/3/26 14:17
  * @Description: []
  */
-public class LogicalTableUtils {
+public class LogicalTableRecognitionUtils {
     private static final String PATTERN_PLACEHOLDER = "[#]";
     private static final String PATTERN_PLACEHOLDER_REGEX = "\\[#\\]";
     private static final String DIGIT_REGEX_CAPTURING_GROUP_REPLACEMENT = "(\\\\d+)";
@@ -64,7 +64,7 @@ public class LogicalTableUtils {
 
     public static List<LogicalTable> generatePatternExpressions(@NotEmpty List<DataNode> dataNodes) {
         // find all logical tables with the same pattern
-        List<LogicalTable> logicalTables = identifyLogicalTables(dataNodes);
+        List<LogicalTable> logicalTables = recognizeLogicalTables(dataNodes);
 
         // alternative [#] with actual ranges
         logicalTables.stream().forEach(table -> {
@@ -100,7 +100,7 @@ public class LogicalTableUtils {
         return logicalTables;
     }
 
-    public static List<LogicalTable> identifyLogicalTables(@Valid @NotEmpty List<DataNode> dataNodes) {
+    public static List<LogicalTable> recognizeLogicalTables(@Valid @NotEmpty List<DataNode> dataNodes) {
         // replace all table names with a pattern that replaces digits with [#]
         Map<String, List<DataNode>> basePattern2Tables = dataNodes.stream().collect(
                 Collectors.groupingBy(
@@ -132,6 +132,62 @@ public class LogicalTableUtils {
         return logicalTables;
     }
 
+    private static List<String> replacePlaceholdersWithRanges(String pattern, List<String> names) {
+        String[] parts = pattern.split(PATTERN_PLACEHOLDER_REGEX, -1);
+        int len = parts.length;
+        Verify.notLessThan(len, 2, "Pattern should contain at least one placeholder: " + pattern);
+        Verify.notGreaterThan(len, 3, "Pattern should contain at most two placeholders: " + pattern);
+
+        Pattern patternRegex =
+                Pattern.compile(pattern.replaceAll(PATTERN_PLACEHOLDER_REGEX, DIGIT_REGEX_CAPTURING_GROUP_REPLACEMENT));
+        // contains only one placeholder
+        if (len == 2) {
+            String range = generateRangeOrList(names.stream().map(name -> {
+                Matcher matcher = patternRegex.matcher(name);
+                if (matcher.matches()) {
+                    return matcher.group(1);
+                } else {
+                    throw new IllegalArgumentException(
+                            "the table name " + name + " does not match the pattern " + pattern);
+                }
+            }).collect(Collectors.toSet()));
+            return Arrays.asList(parts[0] + range + parts[1]);
+        } else if (len == 3) {
+            // contains two placeholders
+            List<Pair<String, String>> numberPairs = names.stream().map(name -> {
+                Matcher matcher = patternRegex.matcher(name);
+                if (matcher.matches()) {
+                    return new Pair<>(matcher.group(1), matcher.group(2));
+                } else {
+                    throw new IllegalArgumentException(
+                            "the table name " + name + " does not match the pattern " + pattern);
+                }
+            }).collect(Collectors.toList()).stream().sorted(Comparator.comparing(pair -> pair.left))
+                    .collect(Collectors.toList());
+
+            Pair<String, String> rangePair = generateRangeOrList(numberPairs);
+            // it is a Cartesian product
+            if (rangePair != null) {
+                return Arrays.asList(parts[0] + rangePair.left + parts[1] + rangePair.right + parts[2]);
+            } else {
+                // it is not a Cartesian product, we should group by the first [#] number and process the second [#]
+                // separately
+                List<String> result = new ArrayList<>();
+                numberPairs.stream().collect(
+                        Collectors.groupingBy(pair -> pair.left,
+                                () -> new TreeMap<>(Comparator.comparingInt(Integer::parseInt)),
+                                Collectors.toCollection(ArrayList::new)))
+                        .entrySet().forEach(entry -> {
+                            String rightRange = generateRangeOrList(
+                                    entry.getValue().stream().map(pair -> pair.right).collect(Collectors.toSet()));
+                            result.add(parts[0] + entry.getKey() + parts[1] + rightRange + parts[2]);
+                        });
+                return result;
+            }
+        } else {
+            throw new UnexpectedException("Unexpected pattern: " + pattern);
+        }
+    }
 
     private static List<String> replacePlaceholdersWithRanges(LogicalTable logicalTable) {
         String databaseNamePattern = logicalTable.getDatabaseNamePattern();
@@ -329,63 +385,6 @@ public class LogicalTableUtils {
         return tableSets.size() == 1;
     }
 
-    private static List<String> replacePlaceholdersWithRanges(String pattern, List<String> names) {
-        String[] parts = pattern.split(PATTERN_PLACEHOLDER_REGEX, -1);
-        int len = parts.length;
-        Verify.notLessThan(len, 2, "Pattern should contain at least one placeholder: " + pattern);
-        Verify.notGreaterThan(len, 3, "Pattern should contain at most two placeholders: " + pattern);
-
-        Pattern patternRegex =
-                Pattern.compile(pattern.replaceAll(PATTERN_PLACEHOLDER_REGEX, DIGIT_REGEX_CAPTURING_GROUP_REPLACEMENT));
-        // contains only one placeholder
-        if (len == 2) {
-            String range = generateRangeOrList(names.stream().map(name -> {
-                Matcher matcher = patternRegex.matcher(name);
-                if (matcher.matches()) {
-                    return matcher.group(1);
-                } else {
-                    throw new IllegalArgumentException(
-                            "the table name " + name + " does not match the pattern " + pattern);
-                }
-            }).collect(Collectors.toSet()));
-            return Arrays.asList(parts[0] + range + parts[1]);
-        } else if (len == 3) {
-            // contains two placeholders
-            List<Pair<String, String>> numberPairs = names.stream().map(name -> {
-                Matcher matcher = patternRegex.matcher(name);
-                if (matcher.matches()) {
-                    return new Pair<>(matcher.group(1), matcher.group(2));
-                } else {
-                    throw new IllegalArgumentException(
-                            "the table name " + name + " does not match the pattern " + pattern);
-                }
-            }).collect(Collectors.toList()).stream().sorted(Comparator.comparing(pair -> pair.left))
-                    .collect(Collectors.toList());
-
-            Pair<String, String> rangePair = generateRangeOrList(numberPairs);
-            // it is a Cartesian product
-            if (rangePair != null) {
-                return Arrays.asList(parts[0] + rangePair.left + parts[1] + rangePair.right + parts[2]);
-            } else {
-                // it is not a Cartesian product, we should group by the first [#] number and process the second [#]
-                // separately
-                List<String> result = new ArrayList<>();
-                numberPairs.stream().collect(
-                        Collectors.groupingBy(pair -> pair.left,
-                                () -> new TreeMap<>(Comparator.comparingInt(Integer::parseInt)),
-                                Collectors.toCollection(ArrayList::new)))
-                        .entrySet().forEach(entry -> {
-                            String rightRange = generateRangeOrList(
-                                    entry.getValue().stream().map(pair -> pair.right).collect(Collectors.toSet()));
-                            result.add(parts[0] + entry.getKey() + parts[1] + rightRange + parts[2]);
-                        });
-                return result;
-            }
-        } else {
-            throw new UnexpectedException("Unexpected pattern: " + pattern);
-        }
-    }
-
     private static Pair<String, String> generateRangeOrList(List<Pair<String, String>> numberPairs) {
         // if it is a Cartesian product, we generate range for each part
         if (isCartesianProduct(numberPairs)) {
@@ -397,32 +396,6 @@ public class LogicalTableUtils {
         }
         // if it is not a Cartesian product, we return null
         return null;
-    }
-
-    private static boolean isCartesianProduct(List<Pair<String, String>> pairs) {
-        Map<String, Set<String>> map = new HashMap<>();
-
-        for (Pair<String, String> pair : pairs) {
-            String left = pair.left;
-            String right = pair.right;
-
-            if (!map.containsKey(left)) {
-                map.put(left, new HashSet<>());
-            }
-            map.get(left).add(right);
-        }
-
-        Set<String> referenceSet = null;
-        for (Set<String> rightSet : map.values()) {
-            if (referenceSet == null) {
-                referenceSet = rightSet;
-                continue;
-            }
-            if (!CollectionUtils.isEqualCollection(referenceSet, rightSet)) {
-                return false;
-            }
-        }
-        return true;
     }
 
     private static String generateRangeOrList(Set<String> numberStrings) {
@@ -466,6 +439,33 @@ public class LogicalTableUtils {
             // if not consecutive, we just list them all
             return String.format("[%s]", String.join(COMMA_DELIMITER, numberStrings));
         }
+    }
+
+
+    private static boolean isCartesianProduct(List<Pair<String, String>> pairs) {
+        Map<String, Set<String>> map = new HashMap<>();
+
+        for (Pair<String, String> pair : pairs) {
+            String left = pair.left;
+            String right = pair.right;
+
+            if (!map.containsKey(left)) {
+                map.put(left, new HashSet<>());
+            }
+            map.get(left).add(right);
+        }
+
+        Set<String> referenceSet = null;
+        for (Set<String> rightSet : map.values()) {
+            if (referenceSet == null) {
+                referenceSet = rightSet;
+                continue;
+            }
+            if (!CollectionUtils.isEqualCollection(referenceSet, rightSet)) {
+                return false;
+            }
+        }
+        return true;
     }
 
     private static String getConsistentNumberPattern(List<String> names) {

@@ -74,7 +74,7 @@ public class LogicalTableFinder {
                 });
             });
         }
-        List<LogicalTable> logicalTables = LogicalTableUtils.identifyLogicalTables(dataNodes);
+        List<LogicalTable> logicalTables = LogicalTableRecognitionUtils.recognizeLogicalTables(dataNodes);
 
         Map<Long, List<DataNode>> dataSourceId2DataNodes = logicalTables.stream()
                 .flatMap(logicalTable -> logicalTable.getActualDataNodes().stream()).collect(Collectors.toList())
@@ -110,8 +110,9 @@ public class LogicalTableFinder {
             logicalTable.setActualDataNodes(majorityDataNodes[0]);
         }
 
-        List<LogicalTable> finalLogicalTables = LogicalTableUtils.generatePatternExpressions(logicalTables.stream()
-                .map(LogicalTable::getActualDataNodes).flatMap(List::stream).collect(Collectors.toList()));
+        List<LogicalTable> finalLogicalTables =
+                LogicalTableRecognitionUtils.generatePatternExpressions(logicalTables.stream()
+                        .map(LogicalTable::getActualDataNodes).flatMap(List::stream).collect(Collectors.toList()));
 
         return finalLogicalTables;
     }

@@ -28,7 +28,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-public class LogicalTableUtilsTest {
+public class LogicalTableRecognitionUtilsTest {
     private static final String TEST_RESOURCE_FILE_PATH = "logicaldatabase/logical_table_identification.yaml";
 
     @Test
@@ -36,7 +36,8 @@ public class LogicalTableUtilsTest {
         List<LogicalTableIdentificationTestCase> testCases =
                 YamlUtils.fromYamlList(TEST_RESOURCE_FILE_PATH, LogicalTableIdentificationTestCase.class);
         for (LogicalTableIdentificationTestCase testCase : testCases) {
-            List<LogicalTable> actual = LogicalTableUtils.generatePatternExpressions(testCase.getDataNodes());
+            List<LogicalTable> actual =
+                    LogicalTableRecognitionUtils.generatePatternExpressions(testCase.getDataNodes());
             Assert.assertEquals(testCase.getLogicalTables(), actual);
         }
     }
