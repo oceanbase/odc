@@ -77,6 +77,8 @@ public class LogicalTableFinder {
         }
         List<LogicalTable> logicalTables = LogicalTableUtils.identifyLogicalTables(dataNodes);
         for (LogicalTable logicalTable : logicalTables) {
+            Map<String, List<DataNode>> sha1ToDataNodes = new HashMap<>();
+            final List<DataNode>[] majorityDataNodes = new List[] {new ArrayList<>()};
             for (Map.Entry<ConnectionConfig, List<DataNode>> entry : logicalTable.groupByDataSource().entrySet()) {
                 ConnectionConfig dataSource = entry.getKey();
                 Map<String, List<String>> schemaName2TableNames = entry.getValue().stream()
@@ -88,15 +90,21 @@ public class LogicalTableFinder {
                     Map<String, DBTable> tables = getTableName2Tables(dataSource, schemaName, tableNames);
                     for (DataNode dataNode : entry.getValue()) {
                         dataNode.setTable(tables.getOrDefault(dataNode.getTableName(), null));
+                        String dataNodeSignature = dataNode.getStructureSignature();
+                        sha1ToDataNodes.computeIfAbsent(dataNodeSignature, k -> new ArrayList<>()).add(dataNode);
+                        if (sha1ToDataNodes.get(dataNodeSignature).size() > majorityDataNodes[0].size()) {
+                            majorityDataNodes[0] = sha1ToDataNodes.get(dataNodeSignature);
+                        }
                     }
                 });
             }
+            logicalTable.setActualDataNodes(majorityDataNodes[0]);
         }
 
-        // TODO: use DBStructureComparator to compare if the table DDLs are the same; if not, remove the
-        // DataNode
+        List<LogicalTable> finalLogicalTables = LogicalTableUtils.generatePatternExpressions(logicalTables.stream()
+                .map(LogicalTable::getActualDataNodes).flatMap(List::stream).collect(Collectors.toList()));
 
-        return logicalTables;
+        return finalLogicalTables;
     }
 
     private Map<String, List<String>> getSchemaName2TableNames(ConnectionConfig dataSource,
@@ -140,9 +148,5 @@ public class LogicalTableFinder {
             }
         }
         return Collections.emptyMap();
-    }
-
-    private String getTableStructureSignature(DBTable table) {
-
     }
 }
