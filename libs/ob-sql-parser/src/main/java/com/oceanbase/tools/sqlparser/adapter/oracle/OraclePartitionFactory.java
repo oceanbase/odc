@@ -27,7 +27,7 @@ import com.oceanbase.tools.sqlparser.oboracle.OBParser.Auto_range_typeContext;
 import com.oceanbase.tools.sqlparser.oboracle.OBParser.Column_partition_optionContext;
 import com.oceanbase.tools.sqlparser.oboracle.OBParser.Hash_partition_optionContext;
 import com.oceanbase.tools.sqlparser.oboracle.OBParser.List_partition_optionContext;
-import com.oceanbase.tools.sqlparser.oboracle.OBParser.Opt_partition_optionContext;
+import com.oceanbase.tools.sqlparser.oboracle.OBParser.Partition_optionContext;
 import com.oceanbase.tools.sqlparser.oboracle.OBParser.Range_partition_optionContext;
 import com.oceanbase.tools.sqlparser.oboracle.OBParser.Subpartition_optionContext;
 import com.oceanbase.tools.sqlparser.oboracle.OBParser.Vertical_column_nameContext;
@@ -58,8 +58,12 @@ public class OraclePartitionFactory extends OBParserBaseVisitor<Partition> imple
 
     private final ParserRuleContext parserRuleContext;
 
-    public OraclePartitionFactory(@NonNull Opt_partition_optionContext optPartitionOptionContext) {
-        this.parserRuleContext = optPartitionOptionContext;
+    public OraclePartitionFactory(@NonNull Partition_optionContext partitionOptionContext) {
+        this.parserRuleContext = partitionOptionContext;
+    }
+
+    public OraclePartitionFactory(@NonNull Auto_partition_optionContext autoPartitionOptionContext) {
+        this.parserRuleContext = autoPartitionOptionContext;
     }
 
     public OraclePartitionFactory(@NonNull Hash_partition_optionContext ctx) {

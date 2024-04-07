@@ -76,8 +76,11 @@ stmt
     | create_index_stmt
     | drop_index_stmt
     | kill_stmt
+    | create_mlog_stmt
+    | drop_mlog_stmt
     | help_stmt
     | create_view_stmt
+    | create_mview_stmt
     | create_tenant_stmt
     | alter_tenant_stmt
     | drop_tenant_stmt
@@ -267,7 +270,9 @@ conf_const
 bool_pri
     : bit_expr IS not? (NULLX|is_nan_inf_value)
     | bit_expr IS NOT? (JSON FORMAT)? is_json_constrain
-    | bit_expr ((((COMP_EQ|COMP_GE)|(COMP_LE|COMP_LT)) SOME|((COMP_GT|COMP_NE) SOME|COMP_NE_PL))|(((COMP_GE|COMP_GT? COMP_EQ)|(COMP_LE|COMP_LT COMP_EQ?))|((COMP_LT? COMP_GT|COMP_NE)|(Caret|Not) COMP_EQ)) sub_query_flag?) bit_expr
+    | json_exists_expr
+    | bit_expr ((((COMP_EQ SOME|COMP_NSEQ)|(COMP_LE|COMP_LT) SOME)|((COMP_GE|COMP_GT? COMP_EQ)|(COMP_LE|COMP_LT COMP_EQ?)) sub_query_flag?)|(((COMP_GE|COMP_GT) SOME|(COMP_NE SOME|COMP_NE_PL))|((COMP_LT? COMP_GT|COMP_NE)|(Caret|Not) COMP_EQ) sub_query_flag?)) bit_expr
+    | JSON_EQUAL LeftParen func_param_list json_equal_option? RightParen
     | predicate
     ;
 
@@ -1112,7 +1117,7 @@ drop_synonym_stmt
     | DROP PUBLIC? SYNONYM database_factor Dot synonym_name FORCE?
     ;
 
-temporary_option
+special_table_type
     : GLOBAL TEMPORARY
     | EXTERNAL
     | empty
@@ -1150,11 +1155,11 @@ alter_keystore_stmt
     ;
 
 create_table_stmt
-    : CREATE temporary_option TABLE relation_factor LeftParen table_element_list RightParen table_option_list? opt_partition_option on_commit_option
-    | CREATE temporary_option TABLE relation_factor LeftParen table_element_list RightParen table_option_list? opt_partition_option on_commit_option AS subquery order_by? fetch_next_clause?
-    | CREATE temporary_option TABLE relation_factor table_option_list opt_partition_option on_commit_option AS subquery order_by? fetch_next_clause?
-    | CREATE temporary_option TABLE relation_factor partition_option on_commit_option AS subquery order_by? fetch_next_clause?
-    | CREATE temporary_option TABLE relation_factor on_commit_option AS subquery order_by? fetch_next_clause?
+    : CREATE special_table_type TABLE relation_factor LeftParen table_element_list RightParen table_option_list? (partition_option | auto_partition_option)? (WITH_COLUMN_GROUP LeftParen column_group_list RightParen)? on_commit_option
+    | CREATE special_table_type TABLE relation_factor LeftParen table_element_list RightParen table_option_list? (partition_option | auto_partition_option)? (WITH_COLUMN_GROUP LeftParen column_group_list RightParen)? on_commit_option AS subquery order_by? fetch_next_clause?
+    | CREATE special_table_type TABLE relation_factor table_option_list (partition_option | auto_partition_option)? (WITH_COLUMN_GROUP LeftParen column_group_list RightParen)? on_commit_option AS subquery order_by? fetch_next_clause?
+    | CREATE special_table_type TABLE relation_factor partition_option (WITH_COLUMN_GROUP LeftParen column_group_list RightParen)? on_commit_option AS subquery order_by? fetch_next_clause?
+    | CREATE special_table_type TABLE relation_factor (WITH_COLUMN_GROUP LeftParen column_group_list RightParen)? on_commit_option AS subquery order_by? fetch_next_clause?
     ;
 
 table_element_list
@@ -1470,6 +1475,7 @@ column_attribute
     | ID INTNUM
     | constraint_and_name? CHECK LeftParen expr RightParen constraint_state
     | constraint_and_name? references_clause constraint_state
+    | SKIP_INDEX LeftParen (skip_index_type | (opt_skip_index_type_list Comma skip_index_type))? RightParen
     ;
 
 now_or_signed_literal
@@ -1592,16 +1598,25 @@ partition_option_inner
     : hash_partition_option
     | range_partition_option
     | list_partition_option
+    | external_table_partition_option
     ;
 
-opt_partition_option
-    : partition_option
-    | opt_column_partition_option
-    | auto_partition_option
+external_table_partition_option
+    : PARTITION BY LeftParen column_name_list RightParen
     ;
 
 auto_partition_option
     : auto_partition_type PARTITION SIZE partition_size PARTITIONS AUTO
+    ;
+
+column_group_element
+    : ALL COLUMNS
+    | EACH COLUMN
+    | relation_name LeftParen column_name_list RightParen
+    ;
+
+column_group_list
+    : column_group_element (Comma column_group_element)*
     ;
 
 partition_size
@@ -1923,6 +1938,47 @@ create_view_stmt
     : CREATE (OR REPLACE)? ((NO FORCE) | FORCE)? VIEW view_name (LeftParen alias_name_list RightParen)? (TABLE_ID COMP_EQ INTNUM)? AS view_subquery view_with_opt
     ;
 
+create_mview_stmt
+    : CREATE MATERIALIZED VIEW view_name (LeftParen alias_name_list RightParen)? table_option_list? (partition_option | auto_partition_option)? create_mview_refresh AS view_subquery view_with_opt
+    ;
+
+create_mview_refresh
+    : REFRESH mv_refresh_method mv_refresh_on_clause mv_refresh_interval
+    | NEVER REFRESH
+    | empty
+    ;
+
+mv_refresh_on_clause
+    : ON mv_refresh_mode
+    | empty
+    ;
+
+mv_refresh_method
+    : FAST
+    | COMPLETE
+    | FORCE
+    ;
+
+mv_refresh_mode
+    : DEMAND
+    | COMMIT
+    | STATEMENT
+    ;
+
+mv_refresh_interval
+    : mv_start_clause mv_next_clause
+    ;
+
+mv_start_clause
+    : START WITH bit_expr
+    | empty
+    ;
+
+mv_next_clause
+    : NEXT bit_expr
+    | empty
+    ;
+
 view_subquery
     : subquery order_by? fetch_next_clause?
     ;
@@ -1941,8 +1997,17 @@ view_name
     : relation_factor
     ;
 
+opt_tablet_id
+    : TABLET_ID opt_equal_mark INTNUM
+    | empty
+    ;
+
+opt_tablet_id_no_empty
+    : TABLET_ID opt_equal_mark INTNUM
+    ;
+
 create_index_stmt
-    : CREATE UNIQUE? INDEX normal_relation_factor index_using_algorithm? ON relation_factor LeftParen sort_column_list RightParen opt_index_options? opt_partition_option
+    : CREATE UNIQUE? INDEX normal_relation_factor index_using_algorithm? ON relation_factor LeftParen sort_column_list RightParen opt_index_options? (partition_option | auto_partition_option)? (WITH_COLUMN_GROUP LeftParen column_group_list RightParen)?
     ;
 
 index_name
@@ -1994,6 +2059,78 @@ index_option
 index_using_algorithm
     : USING BTREE
     | USING HASH
+    ;
+
+create_mlog_stmt
+    : CREATE MATERIALIZED VIEW LOG ON relation_factor opt_mlog_options? (WITH mlog_with_values)? (mlog_including_or_excluding NEW VALUES)? (PURGE mlog_purge_values)?
+    ;
+
+opt_mlog_options
+    : mlog_option+
+    ;
+
+mlog_option
+    : physical_attributes_option
+    | parallel_option
+    ;
+
+mlog_with_values
+    : mlog_with_special_columns mlog_with_reference_columns
+    ;
+
+mlog_with_special_columns
+    : mlog_with_special_column_list?
+    ;
+
+mlog_with_special_column_list
+    : mlog_with_special_column (Comma mlog_with_special_column_list)?
+    ;
+
+mlog_with_special_column
+    : PRIMARY KEY
+    | ROWID
+    | SEQUENCE
+    ;
+
+mlog_with_reference_columns
+    : empty
+    | LeftParen mlog_with_reference_column_list? RightParen
+    ;
+
+mlog_with_reference_column_list
+    : mlog_with_reference_column (Comma mlog_with_reference_column_list)?
+    ;
+
+mlog_with_reference_column
+    : column_name
+    ;
+
+mlog_including_or_excluding
+    : INCLUDING
+    | EXCLUDING
+    ;
+
+mlog_purge_values
+    : IMMEDIATE mlog_purge_immediate_sync_or_async
+    | mlog_purge_start mlog_purge_next
+    ;
+
+mlog_purge_immediate_sync_or_async
+    : (SYNCHRONOUS | ASYNCHRONOUS)?
+    ;
+
+mlog_purge_start
+    : empty
+    | START WITH bit_expr
+    ;
+
+mlog_purge_next
+    : empty
+    | NEXT bit_expr
+    ;
+
+drop_mlog_stmt
+    : DROP MATERIALIZED VIEW LOG ON relation_factor
     ;
 
 drop_table_stmt
@@ -2129,7 +2266,7 @@ merge_insert_clause
 source_relation_factor
     : relation_factor relation_name?
     | select_with_parens relation_name?
-    | TABLE LeftParen simple_expr RightParen relation_name?
+    | TABLE LeftParen (select_no_parens|simple_expr) RightParen relation_name?
     | dual_table relation_name?
     ;
 
@@ -2430,7 +2567,7 @@ use_jit_type
     ;
 
 for_update
-    : FOR UPDATE (OF column_list)? ((WAIT INTNUM) | NOWAIT | (R_SKIP LOCKED))?
+    : FOR UPDATE (OF column_list)? ((WAIT DECIMAL_VAL) | (WAIT INTNUM) | NOWAIT | (R_SKIP LOCKED))?
     ;
 
 parameterized_trim
@@ -2553,7 +2690,7 @@ table_factor
     : tbl_name
     | table_subquery
     | LeftParen table_reference RightParen
-    | TABLE LeftParen simple_expr RightParen relation_name?
+    | TABLE LeftParen (select_no_parens|simple_expr) RightParen relation_name?
     | select_function relation_name?
     | json_table_expr (AS? relation_name)?
     | xml_table_expr (AS? relation_name)?
@@ -3458,6 +3595,7 @@ alter_index_option_oracle
 
 alter_table_stmt
     : ALTER EXTERNAL? TABLE relation_factor alter_table_actions
+    | ALTER TABLE relation_factor alter_column_group_option
     ;
 
 alter_table_actions
@@ -3553,6 +3691,10 @@ alter_index_option
 visibility_option
     : VISIBLE
     | INVISIBLE
+    ;
+
+alter_column_group_option
+    : (ADD|DROP) COLUMN GROUP LeftParen column_group_list RightParen
     ;
 
 alter_column_option
@@ -3689,9 +3831,9 @@ alter_system_stmt
     | ALTER SYSTEM suspend_or_resume MERGE tenant_list_tuple_v2?
     | ALTER SYSTEM CLEAR MERGE ERROR_P tenant_list_tuple_v2?
     | ALTER SYSTEM CANCEL cancel_task_type TASK STRING_VALUE
-    | ALTER SYSTEM MAJOR FREEZE tenant_list_tuple_v2?
+    | ALTER SYSTEM MAJOR FREEZE ((tenant_list_tuple opt_tablet_id) | (tenant_list_tuple ls opt_tablet_id) | opt_tablet_id_no_empty)? (REBUILD COLUMN GROUP)?
     | ALTER SYSTEM CHECKPOINT
-    | ALTER SYSTEM MINOR FREEZE tenant_list_tuple? (SERVER opt_equal_mark LeftParen server_list RightParen)? zone_desc?
+    | ALTER SYSTEM MINOR FREEZE ((tenant_list_tuple opt_tablet_id) | (tenant_list_tuple ls opt_tablet_id) | opt_tablet_id_no_empty)? (SERVER opt_equal_mark LeftParen server_list RightParen)? zone_desc?
     | ALTER SYSTEM ARCHIVELOG (TENANT opt_equal_mark tenant_name_list)? (DESCRIPTION opt_equal_mark STRING_VALUE)?
     | ALTER SYSTEM NOARCHIVELOG (TENANT opt_equal_mark tenant_name_list)? (DESCRIPTION opt_equal_mark STRING_VALUE)?
     | ALTER SYSTEM BACKUP DATABASE (TO opt_equal_mark STRING_VALUE)? (DESCRIPTION opt_equal_mark STRING_VALUE)?
@@ -3731,6 +3873,7 @@ alter_system_stmt
     | ALTER SYSTEM SET alter_system_set_clause_list
     | ALTER SYSTEM KILL SESSION bit_expr IMMEDIATE
     | ALTER SYSTEM KILL SESSION bit_expr
+    | ALTER SYSTEM RESET alter_system_reset_clause_list
     ;
 
 opt_sql_throttle_using_cond
@@ -3754,8 +3897,20 @@ alter_system_set_clause
     : set_system_parameter_clause
     ;
 
+alter_system_reset_clause_list
+    : alter_system_reset_clause+
+    ;
+
+alter_system_reset_clause
+    : reset_system_parameter_clause
+    ;
+
 set_system_parameter_clause
     : var_name COMP_EQ bit_expr
+    ;
+
+reset_system_parameter_clause
+    : var_name
     ;
 
 cache_type
@@ -3855,6 +4010,10 @@ alter_or_change_or_modify
     : ALTER
     | CHANGE
     | MODIFY
+    ;
+
+ls
+    : LS COMP_EQ? INTNUM
     ;
 
 partition_id_desc
@@ -4699,6 +4858,17 @@ json_obj_unique_key
     : WITH UNIQUE KEYS
     ;
 
+opt_skip_index_type_list
+    : empty
+    | skip_index_type
+    | opt_skip_index_type_list Comma skip_index_type
+    ;
+
+skip_index_type
+    : MIN_MAX
+    | SUM
+    ;
+
 xmlparse_expr
     : XMLPARSE LeftParen xml_doc_type xml_text WELLFORMED? RightParen
     ;
@@ -4988,6 +5158,7 @@ oracle_unreserved_keyword
     | SQLERROR
     | SQLSTATE
     | STATEMENT_ID
+    | STATEMENT
     | STATISTICS
     | STOP
     | STORAGE
@@ -5031,6 +5202,7 @@ unreserved_keyword_normal
     | ASCII
     | ASENSITIVE
     | ASIS
+    | ASYNCHRONOUS
     | AT
     | AUTHORS
     | AUTO
@@ -5070,6 +5242,7 @@ unreserved_keyword_normal
     | BREADTH
     | CALC_PARTITION_ID
     | CALL
+    | COMPLETE
     | CASCADED
     | CAST
     | CATALOG_NAME
@@ -5150,6 +5323,7 @@ unreserved_keyword_normal
     | DELETEXML
     | DELETING
     | DEPTH
+    | DEMAND
     | DESCRIPTION
     | DES_KEY_FILE
     | DESCRIBE
@@ -5195,6 +5369,7 @@ unreserved_keyword_normal
     | EVERY
     | EXCHANGE
     | EXCLUDE
+    | EXCLUDING
     | EXEMPT
     | EXIT
     | EXPANSION
@@ -5220,6 +5395,7 @@ unreserved_keyword_normal
     | SKIP_BLANK_LINES
     | TRIM_SPACE
     | NULL_IF_EXETERNAL
+    | NEVER
     | EMPTY_FIELD_AS_NULL
     | FILE_ID
     | FILEX
@@ -5359,6 +5535,7 @@ unreserved_keyword_normal
     | LOOP
     | LOW
     | LOW_PRIORITY
+    | LS
     | ISOPEN
     | ISOLATION_LEVEL
     | M_SIZE
@@ -5417,6 +5594,7 @@ unreserved_keyword_normal
     | MIGRATION
     | MIN_CPU
     | MIN_IOPS
+    | MIN_MAX
     | MIN_MEMORY
     | MINOR
     | MIN_ROWS
@@ -5632,6 +5810,7 @@ unreserved_keyword_normal
     | SIGNED
     | SIMPLE
     | R_SKIP
+    | SKIP_INDEX
     | SLAVE
     | SLOW
     | SOCKET
@@ -5692,6 +5871,7 @@ unreserved_keyword_normal
     | SWAPS
     | SWITCHES
     | SWITCHOVER
+    | SYNCHRONOUS
     | SYSTEM_USER
     | SYSTIMESTAMP
     | SYSBACKUP
@@ -5708,6 +5888,7 @@ unreserved_keyword_normal
     | TABLE_ID
     | TABLE_NAME
     | TABLET
+    | TABLET_ID
     | TABLET_SIZE
     | TABLET_MAX_SIZE
     | TASK
