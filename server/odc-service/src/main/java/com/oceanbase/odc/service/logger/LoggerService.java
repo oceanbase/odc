@@ -107,17 +107,22 @@ public class LoggerService {
                         LogUtils.MAX_LOG_BYTE_COUNT);
 
             }
-        }
-        if (JobUtils.isK8sRunMode(jobEntity.getRunMode())) {
             if (jobEntity.getExecutorDestroyedTime() == null && jobEntity.getExecutorEndpoint() != null) {
                 if (log.isDebugEnabled()) {
                     log.debug("job: {} is not finished, try to get log from remote pod.", jobEntity.getId());
                 }
                 String hostWithUrl = jobEntity.getExecutorEndpoint() + String.format(JobUrlConstants.LOG_QUERY,
                         jobEntity.getId()) + "?logType=" + level.getName();
-                SuccessResponse<String> response =
-                        HttpUtil.request(hostWithUrl, new TypeReference<SuccessResponse<String>>() {});
-                return response.getData();
+                try {
+                    SuccessResponse<String> response =
+                            HttpUtil.request(hostWithUrl, new TypeReference<SuccessResponse<String>>() {});
+                    return response.getData();
+                } catch (IOException e) {
+                    // Occur io timeout when pod deleted manual
+                    log.warn("Query log from executor occur error, executorEndpoint={}, jobId={}",
+                            jobEntity.getExecutorEndpoint(), jobEntity.getId(), e);
+                    return ErrorCodes.TaskLogNotFound.getLocalizedMessage(new Object[] {"Id", jobEntity.getId()});
+                }
             }
         } else {
             // process mode when executor is not current host, forward to target
