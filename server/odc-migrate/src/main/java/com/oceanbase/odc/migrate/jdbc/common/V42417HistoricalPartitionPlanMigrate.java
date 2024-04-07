@@ -70,7 +70,9 @@ public class V42417HistoricalPartitionPlanMigrate implements JdbcMigratable {
     @Override
     public void migrate(DataSource dataSource) {
         JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
-        List<PartitionPlanEntityWrapper> partitionPlanWrappers = generatePartitionPlanEntities(jdbcTemplate);
+        List<PartitionPlanEntityWrapper> partitionPlanWrappers = generatePartitionPlanEntities(jdbcTemplate).stream()
+                .filter(w -> CollectionUtils.isNotEmpty(w.getPartitionPlanTableEntityWrappers()))
+                .collect(Collectors.toList());
         if (CollectionUtils.isEmpty(partitionPlanWrappers)) {
             log.info("No historical partition plan exists and the migration is complete");
             return;
@@ -170,8 +172,7 @@ public class V42417HistoricalPartitionPlanMigrate implements JdbcMigratable {
                     entity.setPartitionKeyEntities(Arrays.asList(createEntity, dropEntity));
                     return entity;
                 }).stream().collect(Collectors.groupingBy(PartitionPlanTableEntityWrapper::getHistoricalPartiId));
-        entityWrappers.forEach(w -> w.setPartitionPlanTableEntityWrappers(
-                tableWrappers.getOrDefault(w.getHistoricalPartiId(), new ArrayList<>())));
+        entityWrappers.forEach(w -> w.setPartitionPlanTableEntityWrappers(tableWrappers.get(w.getHistoricalPartiId())));
     }
 
     private int getTimePrecision(int periodUnit) {
