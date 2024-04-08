@@ -132,11 +132,12 @@ public class LoggerService {
                     DispatchResponse response = requestDispatcher.forward(ei.getHost(), ei.getPort());
                     return response.getContentByType(new TypeReference<SuccessResponse<String>>() {}).getData();
                 } catch (Exception ex) {
+                    // Try to get log from localhost if forward to remote failed
                     log.warn("Forward to remote odc occur error, jobId={}, executorIdentifier={}",
                             jobEntity.getId(), jobEntity.getExecutorIdentifier(), ex);
-                    return ErrorCodes.TaskLogNotFound.getLocalizedMessage(new Object[] {"Id", jobEntity.getId()});
                 }
             }
+
             String logFileStr = LogUtils.getTaskLogFileWithPath(jobEntity.getId(), level);
             return LogUtils.getLatestLogContent(logFileStr, LogUtils.MAX_LOG_LINE_COUNT, LogUtils.MAX_LOG_BYTE_COUNT);
         }
