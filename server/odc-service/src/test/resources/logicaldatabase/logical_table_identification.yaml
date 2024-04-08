@@ -11,7 +11,8 @@
     - table_name: "tb"
       schema_name: "db2"
   logical_tables:
-    - table_name_pattern: "tb"
+    - name: "tb"
+      table_name_pattern: "tb"
       database_name_pattern: "db[#]"
       full_name_expression: "db[1-2].tb"
       actual_data_nodes:
@@ -27,7 +28,8 @@
     - table_name: "tb2"
       schema_name: "db1"
   logical_tables:
-    - table_name_pattern: "tb[#]"
+    - name: "tb"
+      table_name_pattern: "tb[#]"
       database_name_pattern: "db1"
       full_name_expression: "db1.tb[1-2]"
       actual_data_nodes:
@@ -43,7 +45,8 @@
     - table_name: "tb001"
       schema_name: "db1"
   logical_tables:
-    - table_name_pattern: "tb[#]"
+    - name: "tb"
+      table_name_pattern: "tb[#]"
       database_name_pattern: "db1"
       full_name_expression: "db1.tb[000-001]"
       actual_data_nodes:
@@ -59,7 +62,8 @@
     - table_name: "tb20"
       schema_name: "db1"
   logical_tables:
-    - table_name_pattern: "tb[#]"
+    - name: "tb"
+      table_name_pattern: "tb[#]"
       database_name_pattern: "db1"
       full_name_expression: "db1.tb[1-20:19]"
       actual_data_nodes:
@@ -76,7 +80,8 @@
     - table_name: "tb20"
       schema_name: "db1"
   logical_tables:
-    - table_name_pattern: "tb[#]"
+    - name: "tb"
+      table_name_pattern: "tb[#]"
       database_name_pattern: "db1"
       full_name_expression: "db1.tb[1,2,20]"
       actual_data_nodes:
@@ -94,7 +99,8 @@
     - table_name: "tb_2_t"
       schema_name: "db1"
   logical_tables:
-    - table_name_pattern: "tb_[#]_t"
+    - name: "tb_t"
+      table_name_pattern: "tb_[#]_t"
       database_name_pattern: "db1"
       full_name_expression: "db1.tb_[1-2]_t"
       actual_data_nodes:
@@ -110,7 +116,8 @@
     - table_name: "tb_2_t2"
       schema_name: "db1"
   logical_tables:
-    - table_name_pattern: "tb_[#]_t2"
+    - name: "tb_t2"
+      table_name_pattern: "tb_[#]_t2"
       database_name_pattern: "db1"
       full_name_expression: "db1.tb_[1-2]_t2"
       actual_data_nodes:
@@ -132,21 +139,23 @@
     - table_name: "abc"
       schema_name: "db1"
   logical_tables:
-    - table_name_pattern: "tb_[#]_t2"
-      database_name_pattern: "db1"
-      full_name_expression: "db1.tb_[1-2]_t2"
-      actual_data_nodes:
-        - table_name: "tb_1_t2"
-          schema_name: "db1"
-        - table_name: "tb_2_t2"
-          schema_name: "db1"
-    - table_name_pattern: "[#]_test"
+    - name: "test"
+      table_name_pattern: "[#]_test"
       database_name_pattern: "db1"
       full_name_expression: "db1.[1-2000:1999]_test"
       actual_data_nodes:
         - table_name: "1_test"
           schema_name: "db1"
         - table_name: "2000_test"
+          schema_name: "db1"
+    - name: "tb_t2"
+      table_name_pattern: "tb_[#]_t2"
+      database_name_pattern: "db1"
+      full_name_expression: "db1.tb_[1-2]_t2"
+      actual_data_nodes:
+        - table_name: "tb_1_t2"
+          schema_name: "db1"
+        - table_name: "tb_2_t2"
           schema_name: "db1"
 
 # table cascade digits
@@ -160,7 +169,8 @@
     - table_name: "tb_2024_02_t"
       schema_name: "db1"
   logical_tables:
-    - table_name_pattern: "tb_[#]_[#]_t"
+    - name: "tb_t"
+      table_name_pattern: "tb_[#]_[#]_t"
       database_name_pattern: "db1"
       full_name_expression: "db1.tb_[2023-2024]_[01-02]_t"
       actual_data_nodes:
@@ -181,7 +191,8 @@
     - table_name: "tb_2024_02_t"
       schema_name: "db1"
   logical_tables:
-    - table_name_pattern: "tb_[#]_[#]_t"
+    - name: "tb_t"
+      table_name_pattern: "tb_[#]_[#]_t"
       database_name_pattern: "db1"
       full_name_expression: "db1.tb_2023_01_t,db1.tb_2024_[01-02]_t"
       actual_data_nodes:
@@ -206,7 +217,8 @@
     - table_name: "tb_2028_02_t"
       schema_name: "db1"
   logical_tables:
-    - table_name_pattern: "tb_[#]_[#]_t"
+    - name: "tb_t"
+      table_name_pattern: "tb_[#]_[#]_t"
       database_name_pattern: "db1"
       full_name_expression: "db1.tb_[2023,2024,2028]_[01-02]_t"
       actual_data_nodes:
@@ -243,7 +255,8 @@
     - table_name: "tb_05_05_t"
       schema_name: "db1"
   logical_tables:
-    - table_name_pattern: "tb_[#]_[#]_t"
+    - name: "tb_t"
+      table_name_pattern: "tb_[#]_[#]_t"
       database_name_pattern: "db1"
       full_name_expression: "db1.tb_[01-05:2]_[01-05:2]_t"
       actual_data_nodes:
@@ -278,7 +291,8 @@
     - table_name: "tb_001_t"
       schema_name: "db_001"
   logical_tables:
-    - table_name_pattern: "tb_[#]_t"
+    - name: "tb_t"
+      table_name_pattern: "tb_[#]_t"
       database_name_pattern: "db_[#]"
       full_name_expression: "db_[000-001].tb_[[000-001]]_t"
       actual_data_nodes:
@@ -309,7 +323,8 @@
     - table_name: "tb_1_1"
       schema_name: "db_001"
   logical_tables:
-    - table_name_pattern: "tb_[#]_[#]"
+    - name: "tb"
+      table_name_pattern: "tb_[#]_[#]"
       database_name_pattern: "db_[#]"
       full_name_expression: "db_[000-001].tb_[0-1]_[[0-1]]"
       actual_data_nodes:
@@ -344,7 +359,8 @@
     - table_name: "tb_7"
       schema_name: "db_001"
   logical_tables:
-    - table_name_pattern: "tb_[#]"
+    - name: "tb"
+      table_name_pattern: "tb_[#]"
       database_name_pattern: "db_[#]"
       full_name_expression: "db_[000-001].tb_[[1,2,7]]"
       actual_data_nodes:
@@ -371,7 +387,8 @@
     - table_name: "tb_3"
       schema_name: "db_003"
   logical_tables:
-    - table_name_pattern: "tb_[#]"
+    - name: "tb"
+      table_name_pattern: "tb_[#]"
       database_name_pattern: "db_[#]"
       full_name_expression: "db_[000-003:3].tb_[[1-3:2]]"
       actual_data_nodes:
@@ -398,7 +415,8 @@
     - table_name: "tb_2024_02_t"
       schema_name: "db2"
   logical_tables:
-    - table_name_pattern: "tb_[#]_[#]_t"
+    - name: "tb_t"
+      table_name_pattern: "tb_[#]_[#]_t"
       database_name_pattern: "db[#]"
       full_name_expression: "db[0-2:2].tb_2023_01_t,db[0-2:2].tb_2024_[[01-02]]_t"
       actual_data_nodes:
@@ -435,7 +453,8 @@
     - table_name: "tb_2024_02_t"
       schema_name: "db7"
   logical_tables:
-    - table_name_pattern: "tb_[#]_[#]_t"
+    - name: "tb_t"
+      table_name_pattern: "tb_[#]_[#]_t"
       database_name_pattern: "db[#]"
       full_name_expression: "db[0,2,7].tb_2023_01_t,db[0,2,7].tb_2024_[[01-02]]_t"
       actual_data_nodes:
@@ -468,7 +487,8 @@
     - table_name: "tb_3"
       schema_name: "db1"
   logical_tables:
-    - table_name_pattern: "tb_[#]"
+    - name: "tb"
+      table_name_pattern: "tb_[#]"
       database_name_pattern: "db[#]"
       full_name_expression: "db[0-1].tb_[0-3]"
       actual_data_nodes:
@@ -491,7 +511,8 @@
     - table_name: "tb_3"
       schema_name: "db_1_1"
   logical_tables:
-    - table_name_pattern: "tb_[#]"
+    - name: "tb"
+      table_name_pattern: "tb_[#]"
       database_name_pattern: "db_[#]_[#]"
       full_name_expression: "db_[0-1]_[0-1].tb_[0-3]"
       actual_data_nodes:
@@ -514,7 +535,8 @@
     - table_name: "tb_1_1"
       schema_name: "db_3"
   logical_tables:
-    - table_name_pattern: "tb_[#]_[#]"
+    - name: "tb"
+      table_name_pattern: "tb_[#]_[#]"
       database_name_pattern: "db_[#]"
       full_name_expression: "db_[0-3].tb_[0-1]_[0-1]"
       actual_data_nodes:
@@ -541,7 +563,8 @@
     - table_name: "tb_10"
       schema_name: "db_1"
   logical_tables:
-    - table_name_pattern: "tb_[#]"
+    - name: "tb"
+      table_name_pattern: "tb_[#]"
       database_name_pattern: "db_[#]"
       full_name_expression: "db_[0-1].tb_[0-10:2]"
       actual_data_nodes:
@@ -572,7 +595,8 @@
     - table_name: "tb_10"
       schema_name: "db_9"
   logical_tables:
-    - table_name_pattern: "tb_[#]"
+    - name: "tb"
+      table_name_pattern: "tb_[#]"
       database_name_pattern: "db_[#]"
       full_name_expression: "db_9.tb_[6-10:2],db_10.tb_[0-4:2]"
       actual_data_nodes:

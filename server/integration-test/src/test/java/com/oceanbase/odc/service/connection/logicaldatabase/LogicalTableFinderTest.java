@@ -81,6 +81,7 @@ public class LogicalTableFinderTest {
         for (int i = 0; i < expected.size(); i++) {
             LogicalTable expectedTable = expected.get(i);
             LogicalTable actualTable = actual.get(i);
+            Assert.assertEquals(expectedTable.getName(), actualTable.getName());
             Assert.assertEquals(expectedTable.getTableNamePattern(), actualTable.getTableNamePattern());
             Assert.assertEquals(expectedTable.getDatabaseNamePattern(), actualTable.getDatabaseNamePattern());
             Assert.assertEquals(expectedTable.getFullNameExpression(), actualTable.getFullNameExpression());

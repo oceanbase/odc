@@ -38,8 +38,27 @@ public class LogicalTableRecognitionUtilsTest {
         for (LogicalTableIdentificationTestCase testCase : testCases) {
             List<LogicalTable> actual =
                     LogicalTableRecognitionUtils.recognizeLogicalTablesWithExpression(testCase.getDataNodes());
-            Assert.assertEquals(testCase.getLogicalTables(), actual);
+            List<InnerLogicalTable> expected = testCase.getLogicalTables();
+
+            Assert.assertEquals(expected.size(), actual.size());
+
+            for (int i = 0; i < expected.size(); i++) {
+                InnerLogicalTable expectedTable = expected.get(i);
+                LogicalTable actualTable = actual.get(i);
+                Assert.assertEquals(expectedTable.getName(), actualTable.getName());
+                Assert.assertEquals(expectedTable.getTableNamePattern(), actualTable.getTableNamePattern());
+                Assert.assertEquals(expectedTable.getDatabaseNamePattern(), actualTable.getDatabaseNamePattern());
+                Assert.assertEquals(expectedTable.getFullNameExpression(), actualTable.getFullNameExpression());
+
+                Assert.assertEquals(expectedTable.getActualDataNodes().size(), actualTable.getActualDataNodes().size());
+                for (int j = 0; j < expectedTable.getActualDataNodes().size(); j++) {
+                    DataNode expectedDataNode = expectedTable.getActualDataNodes().get(j);
+                    DataNode actualDataNode = actualTable.getActualDataNodes().get(j);
+                    Assert.assertEquals(expectedDataNode.getFullName(), actualDataNode.getFullName());
+                }
+            }
         }
+
     }
 
 
@@ -48,6 +67,21 @@ public class LogicalTableRecognitionUtilsTest {
     @AllArgsConstructor
     static class LogicalTableIdentificationTestCase {
         private List<DataNode> dataNodes;
-        private List<LogicalTable> logicalTables;
+        private List<InnerLogicalTable> logicalTables;
+    }
+
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    static class InnerLogicalTable {
+        private String name;
+
+        private String fullNameExpression;
+
+        private String databaseNamePattern;
+
+        private String tableNamePattern;
+
+        private List<DataNode> actualDataNodes;
     }
 }
