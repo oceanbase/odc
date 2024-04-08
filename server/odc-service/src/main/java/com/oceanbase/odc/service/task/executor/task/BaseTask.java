@@ -116,7 +116,7 @@ public abstract class BaseTask<RESULT> implements Task<RESULT> {
             } catch (Throwable e) {
                 // do nothing
             }
-            log.info("Task be completed, id={}, status={}.", getJobId(), getStatus());
+            log.info("Task completed, id={}, status={}.", getJobId(), getStatus());
             taskMonitor.finalWork();
         }
     }

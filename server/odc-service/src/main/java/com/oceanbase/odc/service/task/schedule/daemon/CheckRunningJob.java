@@ -81,7 +81,7 @@ public class CheckRunningJob implements Job {
             if (rows > 0) {
                 log.info("Job {} set status to RETRYING.", a.getId());
             } else {
-                throw new TaskRuntimeException("Set job status to FAILED failed, jobId=" + jobEntity.getId());
+                throw new TaskRuntimeException("Set job status to RETRYING failed, jobId=" + jobEntity.getId());
             }
 
         } else {
@@ -92,7 +92,7 @@ public class CheckRunningJob implements Job {
                             taskFrameworkProperties.getJobHeartTimeoutSeconds(),
                             "Heart timeout and set job to status FAILED.");
             if (rows >= 0) {
-                log.info("Set job status to FAILED accomplished, jobId={}.", a.getId());
+                log.info("Set job status to RETRYING accomplished, jobId={}.", a.getId());
                 AlarmUtils.warn(AlarmEventNames.TASK_HEARTBEAT_TIMEOUT,
                         MessageFormat.format("Job running failed due to heart timeout, jobId={0}", a.getId()));
             } else {
