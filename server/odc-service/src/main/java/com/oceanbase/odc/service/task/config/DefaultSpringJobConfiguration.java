@@ -31,8 +31,10 @@ import com.oceanbase.odc.service.schedule.ScheduleTaskService;
 import com.oceanbase.odc.service.task.TaskService;
 import com.oceanbase.odc.service.task.caller.K8sJobClient;
 import com.oceanbase.odc.service.task.dispatch.ImmediateJobDispatcher;
-import com.oceanbase.odc.service.task.enums.TaskRunMode;
-import com.oceanbase.odc.service.task.schedule.MonitorExecutorStatusRateLimiter;
+import com.oceanbase.odc.service.task.jasypt.JasyptEncryptorConfigProperties;
+import com.oceanbase.odc.service.task.schedule.DefaultTaskFrameworkDisabledHandler;
+import com.oceanbase.odc.service.task.schedule.StartJobRateLimiter;
+import com.oceanbase.odc.service.task.schedule.StartJobRateLimiterSupport;
 import com.oceanbase.odc.service.task.schedule.provider.DefaultHostUrlProvider;
 import com.oceanbase.odc.service.task.schedule.provider.DefaultJobImageNameProvider;
 import com.oceanbase.odc.service.task.service.SpringTransactionManager;
@@ -51,6 +53,7 @@ public class DefaultSpringJobConfiguration extends DefaultJobConfiguration
 
     @Override
     public void afterPropertiesSet() {
+        setTaskFrameworkEnabledProperties(ctx.getBean(TaskFrameworkEnabledProperties.class));
         setCloudEnvConfigurations(ctx.getBean(CloudEnvConfigurations.class));
         setHostUrlProvider(new DefaultHostUrlProvider(this::getTaskFrameworkProperties,
                 ctx.getBean(HostProperties.class)));
@@ -60,9 +63,6 @@ public class DefaultSpringJobConfiguration extends DefaultJobConfiguration
         setScheduleTaskService(ctx.getBean(ScheduleTaskService.class));
         setDaemonScheduler((Scheduler) ctx.getBean("taskFrameworkSchedulerFactoryBean"));
         setJobDispatcher(new ImmediateJobDispatcher());
-        if (getTaskFrameworkProperties().getRunMode() == TaskRunMode.K8S) {
-            setK8sJobClient(ctx.getBean(K8sJobClient.class));
-        }
         LocalEventPublisher publisher = new LocalEventPublisher();
         TaskFrameworkService tfs = ctx.getBean(TaskFrameworkService.class);
         if (tfs instanceof StdTaskFrameworkService) {
@@ -71,7 +71,9 @@ public class DefaultSpringJobConfiguration extends DefaultJobConfiguration
         setTaskFrameworkService(tfs);
         setEventPublisher(publisher);
         setTransactionManager(new SpringTransactionManager(ctx.getBean(TransactionTemplate.class)));
-        setStartJobRateLimiter(new MonitorExecutorStatusRateLimiter());
+        initJobRateLimiter();
+        setTaskFrameworkDisabledHandler(new DefaultTaskFrameworkDisabledHandler());
+        setJasyptEncryptorConfigProperties(ctx.getBean(JasyptEncryptorConfigProperties.class));
     }
 
     @Override
@@ -82,5 +84,16 @@ public class DefaultSpringJobConfiguration extends DefaultJobConfiguration
     @Override
     public TaskFrameworkProperties getTaskFrameworkProperties() {
         return ctx.getBean(TaskFrameworkProperties.class);
+    }
+
+    @Override
+    public K8sJobClient getK8sJobClient() {
+        return ctx.getBean(K8sJobClient.class);
+    }
+
+    private void initJobRateLimiter() {
+        StartJobRateLimiterSupport limiterSupport = new StartJobRateLimiterSupport();
+        ctx.getBeansOfType(StartJobRateLimiter.class).forEach((k, v) -> limiterSupport.addJobRateLimiter(v));
+        setStartJobRateLimiter(limiterSupport);
     }
 }

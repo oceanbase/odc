@@ -19,6 +19,7 @@ package com.oceanbase.odc.service.task.caller;
 import java.io.IOException;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.oceanbase.odc.common.event.AbstractEvent;
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.metadb.task.JobEntity;
 import com.oceanbase.odc.service.common.response.SuccessResponse;
@@ -52,18 +53,22 @@ public abstract class BaseJobCaller implements JobCaller {
         TaskFrameworkService taskFrameworkService = jobConfiguration.getTaskFrameworkService();
         ExecutorIdentifier executorIdentifier = null;
         JobIdentity ji = context.getJobIdentity();
+        int rows = taskFrameworkService.beforeStart(ji.getId());
+        if (rows <= 0) {
+            throw new JobException("Start job failed, jobId={0}", ji.getId());
+        }
         try {
             executorIdentifier = doStart(context);
-            int rows = taskFrameworkService.startSuccess(ji.getId(), executorIdentifier.toString());
+            rows = taskFrameworkService.startSuccess(ji.getId(), executorIdentifier.toString());
             if (rows > 0) {
                 afterStartSucceed(executorIdentifier, ji);
             } else {
-                afterStartFailed(ji, jobConfiguration, executorIdentifier,
+                afterStartFailed(ji, executorIdentifier,
                         new JobException("Update job status to RUNNING failed, jobId={0}.", ji.getId()));
             }
 
         } catch (Exception ex) {
-            afterStartFailed(ji, jobConfiguration, executorIdentifier, ex);
+            afterStartFailed(ji, executorIdentifier, ex);
         }
     }
 
@@ -72,11 +77,11 @@ public abstract class BaseJobCaller implements JobCaller {
         publishEvent(new JobCallerEvent(ji, JobCallerAction.START, true, executorIdentifier, null));
     }
 
-    private void afterStartFailed(JobIdentity ji, JobConfiguration jobConfiguration,
+    private void afterStartFailed(JobIdentity ji,
             ExecutorIdentifier executorIdentifier, Exception ex) throws JobException {
         if (executorIdentifier != null) {
             try {
-                jobConfiguration.getJobDispatcher().destroy(executorIdentifier);
+                destroy(ji);
             } catch (JobException e) {
                 // if destroy failed, domain job will destroy it
                 log.warn("Destroy executor {} occur exception", executorIdentifier);
@@ -94,45 +99,43 @@ public abstract class BaseJobCaller implements JobCaller {
         TaskFrameworkService taskFrameworkService = jobConfiguration.getTaskFrameworkService();
         JobEntity jobEntity = taskFrameworkService.find(ji.getId());
         String executorEndpoint = jobEntity.getExecutorEndpoint();
-
-        try {
-            if (executorEndpoint != null) {
-                tryStop(jobConfiguration, ji, executorEndpoint);
-            } else {
-                afterStopSucceed(jobConfiguration, ji);
-            }
-
-        } catch (Exception e) {
-            afterStopFailed(ji, e);
-        }
-    }
-
-    private void tryStop(JobConfiguration jobConfiguration, JobIdentity ji, String executorEndpoint)
-            throws IOException, JobException {
         // For transaction atomic, first update to CANCELED, then stop remote job in executor,
         // if stop remote failed, transaction will be rollback
         int rows = jobConfiguration.getTaskFrameworkService()
                 .updateStatusDescriptionByIdOldStatus(ji.getId(),
                         JobStatus.CANCELING, JobStatus.CANCELED, "stop job completed");
         if (rows <= 0) {
-            log.info("Update job {} status to CANCELED failed ", ji.getId());
+            throw new JobException("Update job {0} status to CANCELED failed.", ji.getId());
         }
+        try {
+            if (executorEndpoint != null
+                    && isExecutorExist(ExecutorIdentifierParser.parser(jobEntity.getExecutorIdentifier()))) {
+                tryStop(ji, executorEndpoint);
+            }
+            afterStopSucceed(ji);
+        } catch (Exception e) {
+            afterStopFailed(ji, e);
+        }
+    }
+
+
+    private void tryStop(JobIdentity ji, String executorEndpoint)
+            throws IOException, JobException {
+
         String url = executorEndpoint + String.format(JobUrlConstants.STOP_TASK, ji.getId());
         log.info("Try stop job {} in executor {}.", ji.getId(), url);
         SuccessResponse<Boolean> response =
                 HttpUtil.request(url, new TypeReference<SuccessResponse<Boolean>>() {});
-        log.info("Stop job {} in executor, response is {}.", ji.getId(), JsonUtils.toJson(response));
         if (response != null && response.getSuccessful() && response.getData()) {
-            afterStopSucceed(jobConfiguration, ji);
+            log.info("Stop job {} in executor succeed, response is {}.", ji.getId(), JsonUtils.toJson(response));
         } else {
-            afterStopFailed(ji,
-                    new JobException("Stop job response not succeed, response={0}", JsonUtils.toJson(response)));
+            throw new JobException("Stop job response not succeed, response={0}", JsonUtils.toJson(response));
         }
     }
 
-    protected void afterStopSucceed(JobConfiguration jobConfiguration, JobIdentity ji) {
+    protected void afterStopSucceed(JobIdentity ji) {
         log.info("Stop job {}, set status to CANCELED successfully.", ji.getId());
-        jobConfiguration.getEventPublisher().publishEvent(new JobTerminateEvent(ji, JobStatus.CANCELED));
+        publishEvent(new JobTerminateEvent(ji, JobStatus.CANCELED));
         publishEvent(new JobCallerEvent(ji, JobCallerAction.STOP, true, null));
     }
 
@@ -183,40 +186,48 @@ public abstract class BaseJobCaller implements JobCaller {
         TaskFrameworkService taskFrameworkService = jobConfiguration.getTaskFrameworkService();
         JobEntity jobEntity = taskFrameworkService.find(ji.getId());
         String executorIdentifier = jobEntity.getExecutorIdentifier();
+        if (jobEntity.getExecutorDestroyedTime() != null) {
+            return;
+        }
         if (executorIdentifier == null) {
+            updateExecutorDestroyed(ji);
             return;
         }
         log.info("Preparing destroy,jobId={}, executorIdentifier={}.", ji.getId(), executorIdentifier);
-
-        destroy(ExecutorIdentifierParser.parser(executorIdentifier));
-        int rows = taskFrameworkService.updateExecutorToDestroyed(ji.getId());
-        if (rows > 0) {
-            log.info("Destroy job {} executor {} succeed.", ji.getId(), executorIdentifier);
-            publishEvent(new JobCallerEvent(ji, JobCallerAction.DESTROY, true, null));
-        } else {
-            throw new JobException("update executor to destroyed failed, executor={0}", executorIdentifier);
-        }
+        doDestroy(ji, ExecutorIdentifierParser.parser(executorIdentifier));
     }
 
+    protected abstract void doDestroy(JobIdentity ji, ExecutorIdentifier ei) throws JobException;
 
-    private void publishEvent(JobCallerEvent event) {
+    private <T extends AbstractEvent> void publishEvent(T event) {
         JobConfiguration configuration = JobConfigurationHolder.getJobConfiguration();
         configuration.getEventPublisher().publishEvent(event);
     }
 
-    @Override
-    public void destroy(ExecutorIdentifier identifier) throws JobException {
+    protected void destroyInternal(ExecutorIdentifier identifier) throws JobException {
         if (identifier == null || identifier.getExecutorName() == null) {
             return;
         }
-        doDestroy(identifier);
+        doDestroyInternal(identifier);
     }
 
+    protected void updateExecutorDestroyed(JobIdentity ji) throws JobException {
+        JobConfiguration jobConfiguration = JobConfigurationHolder.getJobConfiguration();
+        TaskFrameworkService taskFrameworkService = jobConfiguration.getTaskFrameworkService();
+        int rows = taskFrameworkService.updateExecutorToDestroyed(ji.getId());
+        if (rows > 0) {
+            log.info("Destroy job executor succeed, jobId={}.", ji.getId());
+        } else {
+            throw new JobException("Update executor to destroyed failed, JodId={0}", ji.getId());
+        }
+    }
 
     protected abstract ExecutorIdentifier doStart(JobContext context) throws JobException;
 
     protected abstract void doStop(JobIdentity ji) throws JobException;
 
-    protected abstract void doDestroy(ExecutorIdentifier identifier) throws JobException;
+    protected abstract void doDestroyInternal(ExecutorIdentifier identifier) throws JobException;
+
+    protected abstract boolean isExecutorExist(ExecutorIdentifier identifier) throws JobException;
 
 }

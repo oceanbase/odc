@@ -177,8 +177,8 @@ public class ApplyDatabaseFlowableTask extends BaseODCFlowTaskDelegate<ApplyData
         TaskContextHolder.trace(getTaskCreatorId(taskId, taskService), taskId);
         log.info("Apply database task succeed, taskId={}", taskId);
         TaskContextHolder.clear();
-        updateFlowInstanceStatus(FlowStatus.EXECUTION_SUCCEEDED);
         super.onSuccessful(taskId, taskService);
+        updateFlowInstanceStatus(FlowStatus.EXECUTION_SUCCEEDED);
     }
 
     @Override

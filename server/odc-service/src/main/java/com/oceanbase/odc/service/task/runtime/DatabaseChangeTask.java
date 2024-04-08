@@ -20,7 +20,6 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.SequenceInputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -85,9 +84,9 @@ import com.oceanbase.odc.service.datasecurity.util.DataMaskingUtil;
 import com.oceanbase.odc.service.datasecurity.util.MaskingAlgorithmUtil;
 import com.oceanbase.odc.service.flow.task.model.DatabaseChangeParameters;
 import com.oceanbase.odc.service.flow.task.model.DatabaseChangeResult;
+import com.oceanbase.odc.service.flow.task.model.SizeAwareInputStream;
 import com.oceanbase.odc.service.objectstorage.cloud.CloudObjectStorageService;
-import com.oceanbase.odc.service.objectstorage.model.ObjectMetadata;
-import com.oceanbase.odc.service.objectstorage.model.StorageObject;
+import com.oceanbase.odc.service.objectstorage.util.ObjectStorageUtils;
 import com.oceanbase.odc.service.session.OdcStatementCallBack;
 import com.oceanbase.odc.service.session.factory.DefaultConnectSessionFactory;
 import com.oceanbase.odc.service.session.initializer.ConsoleTimeoutInitializer;
@@ -96,7 +95,6 @@ import com.oceanbase.odc.service.task.caller.JobContext;
 import com.oceanbase.odc.service.task.constants.JobParametersKeyConstants;
 import com.oceanbase.odc.service.task.constants.JobUrlConstants;
 import com.oceanbase.odc.service.task.exception.JobException;
-import com.oceanbase.odc.service.task.executor.server.ObjectStorageHandler;
 import com.oceanbase.odc.service.task.executor.task.BaseTask;
 import com.oceanbase.odc.service.task.util.HttpUtil;
 import com.oceanbase.odc.service.task.util.JobUtils;
@@ -161,7 +159,11 @@ public class DatabaseChangeTask extends BaseTask<FlowTaskResult> {
             sqlTotalBytes = sqlBytes.length;
         } else {
             try {
-                sqlInputStream = readSqlFilesStream();
+                SizeAwareInputStream sizeAwareInputStream =
+                        ObjectStorageUtils.loadObjectsForTask(this.parameters.getSqlFileObjectMetadatas(),
+                                getCloudObjectStorageService(), JobUtils.getExecutorDataPath(), -1);
+                sqlTotalBytes += sizeAwareInputStream.getTotalBytes();
+                sqlInputStream = sizeAwareInputStream.getInputStream();
             } catch (IOException exception) {
                 throw new InternalServerError("Load database change task file failed", exception);
             }
@@ -183,7 +185,7 @@ public class DatabaseChangeTask extends BaseTask<FlowTaskResult> {
     }
 
     @Override
-    protected void doStart(JobContext context) throws JobException {
+    protected boolean doStart(JobContext context) throws JobException {
         try {
             int index = 0;
             while (sqlIterator.hasNext()) {
@@ -215,44 +217,19 @@ public class DatabaseChangeTask extends BaseTask<FlowTaskResult> {
                         initializer.init(con);
                         return null;
                     });
-                    List<JdbcGeneralResult> results =
-                            executor.execute((StatementCallback<List<JdbcGeneralResult>>) stmt -> {
-                                stmt.setQueryTimeout((int) TimeUnit.MILLISECONDS
-                                        .toSeconds(this.databaseChangeParameters.getTimeoutMillis()));
-                                return statementCallback.doInStatement(stmt);
-                            });
-                    Verify.notEmpty(results, "resultList");
-                    GeneralSqlType sqlType = parseSqlType(sql);
-                    for (JdbcGeneralResult result : results) {
-                        SqlExecuteResult executeResult = new SqlExecuteResult(result);
-                        if (GeneralSqlType.DQL == sqlType) {
-                            containQuery = true;
-                            if (this.parameters.isNeedDataMasking()) {
-                                tryDataMasking(executeResult);
-                            }
-                        }
-                        queryResultSetBuffer.add(executeResult);
-                    }
+
+                    RetryResult result = new RetryResult();
+                    retryStatement(result, executor, statementCallback, sql);
                     appendResultToJsonFile(queryResultSetBuffer, index == 1, !sqlIterator.hasNext());
                     writeCsvFiles(queryResultSetBuffer);
                     queryResultSetBuffer.clear();
-                    boolean success = true;
-                    for (JdbcGeneralResult result : results) {
-                        SqlExecuteResult executeResult = new SqlExecuteResult(result);
-                        if (executeResult.getStatus() != SqlExecuteStatus.SUCCESS) {
-                            failCount++;
-                            log.warn("Error occurs when executing sql: {}, error message: {}", sql,
-                                    executeResult.getTrack());
-                            // only record info of failed sqls
-                            addErrorRecordsToFile(index, sql, executeResult.getTrack());
-                            success = false;
-                            break;
-                        }
-                    }
-                    if (success) {
+
+                    if (result.success) {
                         successCount++;
                     } else {
-                        if (TaskErrorStrategy.ABORT.equals(this.databaseChangeParameters.getErrorStrategy())) {
+                        failCount++;
+                        addErrorRecordsToFile(index, sql, result.track);
+                        if (TaskErrorStrategy.ABORT.equals(databaseChangeParameters.getErrorStrategy())) {
                             aborted = true;
                             break;
                         }
@@ -277,6 +254,7 @@ public class DatabaseChangeTask extends BaseTask<FlowTaskResult> {
             tryExpireConnectionSession();
             tryCloseInputStream();
         }
+        return true;
     }
 
     @Override
@@ -287,7 +265,7 @@ public class DatabaseChangeTask extends BaseTask<FlowTaskResult> {
     }
 
     @Override
-    protected void onFail(Throwable e) {
+    protected void doClose() throws Exception {
         tryExpireConnectionSession();
         tryCloseInputStream();
     }
@@ -316,6 +294,62 @@ public class DatabaseChangeTask extends BaseTask<FlowTaskResult> {
         return taskResult;
     }
 
+    private void retryStatement(RetryResult retryResult, JdbcOperations executor,
+            StatementCallback<List<JdbcGeneralResult>> statementCallback, String sql) {
+        boolean success = true;
+        GeneralSqlType sqlType = parseSqlType(sql);
+        for (int retryCount = 0; retryCount <= databaseChangeParameters.getRetryTimes() && !canceled; retryCount++) {
+            success = true;
+            try {
+                queryResultSetBuffer.clear();
+                List<JdbcGeneralResult> results =
+                        executor.execute((StatementCallback<List<JdbcGeneralResult>>) stmt -> {
+                            stmt.setQueryTimeout(
+                                    (int) TimeUnit.MILLISECONDS.toSeconds(databaseChangeParameters.getTimeoutMillis()));
+                            return statementCallback.doInStatement(stmt);
+                        });
+                Verify.notEmpty(results, "resultList");
+                for (JdbcGeneralResult result : results) {
+                    SqlExecuteResult executeResult = new SqlExecuteResult(result);
+                    if (GeneralSqlType.DQL == sqlType) {
+                        this.containQuery = true;
+                        if (this.parameters.isNeedDataMasking()) {
+                            tryDataMasking(executeResult);
+                        }
+                    }
+                    queryResultSetBuffer.add(executeResult);
+
+                    if (executeResult.getStatus() != SqlExecuteStatus.SUCCESS) {
+                        log.warn("Error occurs when executing sql: {}, error message: {}", sql,
+                                executeResult.getTrack());
+                        success = false;
+                        retryResult.track = executeResult.getTrack();
+                    }
+                }
+            } catch (Exception e) {
+                if (retryCount == databaseChangeParameters.getRetryTimes()) {
+                    throw e;
+                }
+                success = false;
+                log.warn("Error occurs when executing sql: {}, error message: {}", sql, e.getMessage());
+            }
+            if (success || retryCount == databaseChangeParameters.getRetryTimes()) {
+                break;
+            } else {
+                log.warn(String.format("Will retry for the %sth time in %s seconds...", retryCount + 1,
+                        databaseChangeParameters.getRetryIntervalMillis() / 1000));
+                try {
+                    Thread.sleep(databaseChangeParameters.getRetryIntervalMillis());
+                } catch (InterruptedException e) {
+                    log.warn("Database change task is interrupted, task will exit", e);
+                    canceled = true;
+                    break;
+                }
+            }
+        }
+        retryResult.success = success;
+    }
+
     private ConnectionSession generateSession() {
         ConnectionConfig connectionConfig = this.parameters.getConnectionConfig();
         DefaultConnectSessionFactory sessionFactory = new DefaultConnectSessionFactory(connectionConfig);
@@ -328,31 +362,6 @@ public class DatabaseChangeTask extends BaseTask<FlowTaskResult> {
         ConnectionSessionUtil.setSqlCommentProcessor(connectionSession, processor);
         ConnectionSessionUtil.setColumnAccessor(connectionSession, new DatasourceColumnAccessor(connectionSession));
         return connectionSession;
-    }
-
-    private InputStream readSqlFilesStream() throws IOException {
-        InputStream inputStream = new ByteArrayInputStream(new byte[0]);
-        List<ObjectMetadata> objectMetadataList = this.parameters.getSqlFileObjectMetadatas();
-        for (ObjectMetadata objectMetadata : objectMetadataList) {
-            StorageObject object =
-                    new ObjectStorageHandler(getCloudObjectStorageService(), JobUtils.getExecutorDataPath())
-                            .loadObject(objectMetadata);
-            InputStream current = object.getContent();
-            sqlTotalBytes += object.getMetadata().getTotalLength();
-            // remove UTF-8 BOM if exists
-            current.mark(3);
-            byte[] byteSql = new byte[3];
-            if (current.read(byteSql) >= 3 && byteSql[0] == (byte) 0xef && byteSql[1] == (byte) 0xbb
-                    && byteSql[2] == (byte) 0xbf) {
-                current.reset();
-                current.skip(3);
-                sqlTotalBytes -= 3;
-            } else {
-                current.reset();
-            }
-            inputStream = new SequenceInputStream(inputStream, current);
-        }
-        return inputStream;
     }
 
     private void appendResultToJsonFile(List<SqlExecuteResult> results, boolean start, boolean end) {
@@ -629,6 +638,11 @@ public class DatabaseChangeTask extends BaseTask<FlowTaskResult> {
             this.sql = sql;
             this.fileName = fileName;
         }
+    }
+
+    private static class RetryResult {
+        boolean success;
+        String track;
     }
 
 }

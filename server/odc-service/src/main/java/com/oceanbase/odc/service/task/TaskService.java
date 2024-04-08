@@ -16,17 +16,15 @@
 package com.oceanbase.odc.service.task;
 
 import java.io.File;
-import java.io.IOException;
-import java.text.MessageFormat;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
 import javax.validation.constraints.NotNull;
 
-import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.LineIterator;
+import org.apache.commons.io.input.ReversedLinesFileReader;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
@@ -54,7 +52,6 @@ import com.oceanbase.odc.service.common.model.HostProperties;
 import com.oceanbase.odc.service.flow.model.CreateFlowInstanceReq;
 import com.oceanbase.odc.service.flow.model.QueryTaskInstanceParams;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
-import com.oceanbase.odc.service.task.exception.TaskRuntimeException;
 import com.oceanbase.odc.service.task.model.ExecutorInfo;
 import com.oceanbase.odc.service.task.model.OdcTaskLogLevel;
 
@@ -88,8 +85,8 @@ public class TaskService {
 
     private static final String ALTER_SCHEDULE_LOG_PATH_PATTERN = "%s/alterschedule/%d/%s/alterschedule.%s";
     private static final String PARTITIONPLAN_LOG_PATH_PATTERN = "%s/partition-plan/%s/partition-plan.%s";
-    private static final long MAX_LOG_LINE_COUNT = 10000;
-    private static final long MAX_LOG_BYTE_COUNT = 1024 * 1024;
+    private static final int MAX_LOG_LINE_COUNT = 10000;
+    private static final int MAX_LOG_BYTE_COUNT = 1024 * 1024;
     private static final String ONLINE_SCHEMA_CHANGE_LOG_PATH_PATTERN =
             "%s/onlineschemachange/%d/%s/onlineschemachange.%s";
     private static final String EXPORT_RESULT_SET_LOG_PATH_PATTERN = "%s/result-set-export/%s/ob-loader-dumper.%s";
@@ -173,8 +170,40 @@ public class TaskService {
         return nullSafeFindById(id);
     }
 
-    public String getLog(Long userId, String taskId, TaskType type, OdcTaskLogLevel logLevel) throws IOException {
-        // TODO: fix file path traversal issue
+    public String getLog(Long userId, String taskId, TaskType type, OdcTaskLogLevel logLevel) {
+        File logFile;
+        try {
+            logFile = getLogFile(userId, taskId, type, logLevel);
+        } catch (NotFoundException ex) {
+            return ErrorCodes.TaskLogNotFound.getLocalizedMessage(new Object[] {"Id", taskId});
+        }
+        try (ReversedLinesFileReader reader = new ReversedLinesFileReader(logFile, StandardCharsets.UTF_8)) {
+            List<String> lines = new ArrayList<>();
+            int bytes = 0;
+            String line;
+            while ((line = reader.readLine()) != null) {
+                lines.add(line);
+                bytes += line.getBytes().length;
+                if (lines.size() >= MAX_LOG_LINE_COUNT || bytes >= MAX_LOG_BYTE_COUNT) {
+                    lines.add("[ODC INFO]: \n"
+                            + "Logs exceed max limitation (10000 rows or 1 MB), only the latest part is displayed.\n"
+                            + "Please download the log file for the full content.");
+                    break;
+                }
+            }
+            StringBuilder logBuilder = new StringBuilder();
+            for (int i = lines.size() - 1; i >= 0; i--) {
+                logBuilder.append(lines.get(i)).append("\n");
+            }
+            return logBuilder.toString();
+        } catch (Exception ex) {
+            log.warn("Read task log file failed, details={}", ex.getMessage());
+            throw new UnexpectedException("Read task log file failed, details: " + ex.getMessage(), ex);
+        }
+    }
+
+    public File getLogFile(Long userId, String taskId, TaskType type, OdcTaskLogLevel logLevel)
+            throws NotFoundException {
         String filePath;
         switch (type) {
             case ASYNC:
@@ -226,33 +255,11 @@ public class TaskService {
                 throw new UnsupportedException(ErrorCodes.Unsupported, new Object[] {ResourceType.ODC_TASK},
                         "Unsupported task type: " + type);
         }
-
-        if (!new File(filePath).exists()) {
-            return ErrorCodes.TaskLogNotFound.getLocalizedMessage(new Object[] {"Id", taskId});
+        File logFile = new File(filePath);
+        if (!logFile.exists()) {
+            throw new NotFoundException(ResourceType.ODC_FILE, "Path", filePath);
         }
-        LineIterator it = null;
-        StringBuilder sb = new StringBuilder();
-        int lineCount = 1;
-        int byteCount = 0;
-        try {
-            it = FileUtils.lineIterator(new File(filePath));
-            while (it.hasNext()) {
-                if (lineCount > MAX_LOG_LINE_COUNT || byteCount > MAX_LOG_BYTE_COUNT) {
-                    sb.append("Logs exceed max limitation (10000 rows or 1 MB), please download logs directly");
-                    break;
-                }
-                String line = it.nextLine();
-                sb.append(line).append("\n");
-                lineCount++;
-                byteCount = byteCount + line.getBytes().length;
-            }
-            return sb.toString();
-        } catch (Exception ex) {
-            log.warn("read task log file failed, reason={}", ex.getMessage());
-            throw new UnexpectedException("read task log file failed, reason: " + ex.getMessage(), ex);
-        } finally {
-            LineIterator.closeQuietly(it);
-        }
+        return logFile;
     }
 
     @Transactional(rollbackFor = Exception.class)
@@ -324,16 +331,7 @@ public class TaskService {
     }
 
     public Optional<TaskEntity> findByJobId(@NonNull Long jobId) {
-        List<TaskEntity> entities = taskRepository.findByJobId(jobId);
-        if (CollectionUtils.isNotEmpty(entities)) {
-            if (entities.size() > 1) {
-                throw new TaskRuntimeException(
-                        MessageFormat.format("Find TaskEntity by job id {0}, excepted size 1 but found {1}",
-                                jobId, entities.size()));
-            }
-            return Optional.of(entities.get(0));
-        }
-        return Optional.empty();
+        return taskRepository.findByJobId(jobId);
     }
 
     @Transactional(rollbackFor = Exception.class)

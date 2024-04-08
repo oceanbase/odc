@@ -30,7 +30,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.transaction.support.TransactionTemplate;
 
-import com.oceanbase.odc.common.util.JdbcTemplateUtils;
+import com.oceanbase.odc.common.util.JdbcOperationsUtil;
 import com.oceanbase.odc.core.migrate.JdbcMigratable;
 import com.oceanbase.odc.core.migrate.Migratable;
 
@@ -59,7 +59,7 @@ public class V42415AddDefaultRiskDetectRules implements JdbcMigratable {
     public void migrate(DataSource dataSource) {
         this.jdbcTemplate = new JdbcTemplate(dataSource);
         this.namedParameterJdbcTemplate = new NamedParameterJdbcTemplate(jdbcTemplate);
-        this.transactionTemplate = JdbcTemplateUtils.getTransactionTemplate(dataSource);
+        this.transactionTemplate = JdbcOperationsUtil.getTransactionTemplate(dataSource);
         transactionTemplate.execute(status -> {
             try {
                 List<Long> organizationIds = listTeamOrganizationIds();

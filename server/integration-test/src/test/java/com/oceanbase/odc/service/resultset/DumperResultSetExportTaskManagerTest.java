@@ -25,6 +25,7 @@ import java.io.LineNumberReader;
 import java.nio.file.Paths;
 
 import org.apache.commons.io.FileUtils;
+import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -87,6 +88,12 @@ public class DumperResultSetExportTaskManagerTest extends ServiceTestEnv {
         String sql = "drop table rs_export_test";
         mysqlSession.getSyncJdbcExecutor(ConnectionSessionConstants.BACKEND_DS_KEY).update(sql);
         oracleSession.getSyncJdbcExecutor(ConnectionSessionConstants.BACKEND_DS_KEY).update(sql);
+    }
+
+    @After
+    public void tearDown() {
+        File workingDir = Paths.get(basePath, taskId).toFile();
+        FileUtils.deleteQuietly(workingDir);
     }
 
     @Test

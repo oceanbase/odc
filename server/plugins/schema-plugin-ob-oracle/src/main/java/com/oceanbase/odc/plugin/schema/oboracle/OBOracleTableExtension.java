@@ -154,6 +154,7 @@ public class OBOracleTableExtension extends OBMySQLTableExtension {
                 getDBTableConstraintEditor(connection, dbVersion), getDBTablePartitionEditor(connection, dbVersion));
     }
 
+    @Override
     protected DBTablePartitionEditor getDBTablePartitionEditor(Connection connection, String dbVersion) {
         if (VersionUtils.isLessThan(dbVersion, "4.0.0")) {
             return new OBOracleLessThan400DBTablePartitionEditor();
@@ -162,6 +163,7 @@ public class OBOracleTableExtension extends OBMySQLTableExtension {
         }
     }
 
+    @Override
     protected DBTableConstraintEditor getDBTableConstraintEditor(Connection connection, String dbVersion) {
         if (VersionUtils.isLessThan(dbVersion, "4.0.0")) {
             return new OBOracleLessThan400ConstraintEditor();

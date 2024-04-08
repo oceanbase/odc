@@ -36,7 +36,6 @@ import com.oceanbase.odc.service.sqlcheck.rule.ColumnCharsetExists;
 import com.oceanbase.odc.service.sqlcheck.rule.ColumnCollationExists;
 import com.oceanbase.odc.service.sqlcheck.rule.ColumnNameInBlackList;
 import com.oceanbase.odc.service.sqlcheck.rule.ForeignConstraintExists;
-import com.oceanbase.odc.service.sqlcheck.rule.IndexChangeTimeConsumingExists;
 import com.oceanbase.odc.service.sqlcheck.rule.NoDefaultValueExists;
 import com.oceanbase.odc.service.sqlcheck.rule.NoIndexNameExists;
 import com.oceanbase.odc.service.sqlcheck.rule.NoPrimaryKeyExists;
@@ -51,6 +50,8 @@ import com.oceanbase.odc.service.sqlcheck.rule.OracleMissingRequiredColumns;
 import com.oceanbase.odc.service.sqlcheck.rule.OracleNoColumnCommentExists;
 import com.oceanbase.odc.service.sqlcheck.rule.OracleNoNotNullAtInExpression;
 import com.oceanbase.odc.service.sqlcheck.rule.OracleNoTableCommentExists;
+import com.oceanbase.odc.service.sqlcheck.rule.OracleObjectNameUsingReservedWords;
+import com.oceanbase.odc.service.sqlcheck.rule.OracleOfflineDdlExists;
 import com.oceanbase.odc.service.sqlcheck.rule.OracleRestrictColumnNameCase;
 import com.oceanbase.odc.service.sqlcheck.rule.OracleRestrictIndexDataTypes;
 import com.oceanbase.odc.service.sqlcheck.rule.OracleRestrictPKDataTypes;
@@ -73,6 +74,7 @@ import com.oceanbase.odc.service.sqlcheck.rule.TooManyColumnRefInPrimaryKey;
 import com.oceanbase.odc.service.sqlcheck.rule.TooManyInExpression;
 import com.oceanbase.odc.service.sqlcheck.rule.TooManyOutOfLineIndex;
 import com.oceanbase.odc.service.sqlcheck.rule.TooManyTableJoin;
+import com.oceanbase.odc.service.sqlcheck.rule.TruncateTableExists;
 
 /**
  * {@link OracleSqlCheckerTest}
@@ -519,7 +521,10 @@ public class OracleSqlCheckerTest {
                         + "constraint abcd_pk primary key(name, \"age\"))",
                 "alter table abcd add primary key (NAME)",
                 "alter table abcd add primary key (age)",
-                "alter table \"abcd\" add primary key (NAME)"
+                "alter table \"abcd\" add primary key (NAME)",
+                "CREATE TABLE ORACLE_RANGE_VARCHAR_2(\n"
+                        + "    char_column_number GENERATED ALWAYS AS (TO_NUMBER(char_column)) VIRTUAL\n"
+                        + ")",
         };
         JdbcTemplate jdbcTemplate = Mockito.mock(JdbcTemplate.class);
         Mockito.when(jdbcTemplate.queryForObject(Mockito.anyString(), Mockito.any(RowMapper.class)))
@@ -561,7 +566,10 @@ public class OracleSqlCheckerTest {
                 "alter table abcd add unique (\"age\")",
                 "create index abcd_idx1 on abcd(id)",
                 "create index abcd_idx2 on abcd(id, name)",
-                "create index abcd_idx3 on abcd(age_t, name)"
+                "create index abcd_idx3 on abcd(age_t, name)",
+                "CREATE TABLE ORACLE_RANGE_VARCHAR_2(\n"
+                        + "    char_column_number GENERATED ALWAYS AS (TO_NUMBER(char_column)) VIRTUAL\n"
+                        + ")"
         };
         JdbcTemplate jdbcTemplate = Mockito.mock(JdbcTemplate.class);
         Mockito.when(jdbcTemplate.queryForObject(Mockito.anyString(), Mockito.any(RowMapper.class)))
@@ -812,7 +820,10 @@ public class OracleSqlCheckerTest {
     public void check_columnIsNullable_violationGenerated() {
         String[] sqls = new String[] {
                 "create table aaaa(id varchar(64), col1 blob, col2 number not null)",
-                "alter table abdcd add id number default 123, add id1 nchar(23) null, add col1 blob, add col2 number not null"
+                "alter table abdcd add id number default 123, add id1 nchar(23) null, add col1 blob, add col2 number not null",
+                "CREATE TABLE ORACLE_RANGE_VARCHAR_2(\n"
+                        + "    char_column_number GENERATED ALWAYS AS (TO_NUMBER(char_column)) VIRTUAL\n"
+                        + ")"
         };
         DefaultSqlChecker sqlChecker = new DefaultSqlChecker(DialectType.OB_ORACLE, "$$",
                 Collections.singletonList(new RestrictColumnNotNull(new HashSet<>(Collections.singletonList("blob")))));
@@ -831,7 +842,10 @@ public class OracleSqlCheckerTest {
     public void check_noDefaultValue_violationGenerated() {
         String[] sqls = new String[] {
                 "create table aaaa(id varchar(64), col1 blob, col2 number default 123)",
-                "alter table abdcd add id number unique, add id1 nchar(23) null, add col1 blob, add col2 number default 567"
+                "alter table abdcd add id number unique, add id1 nchar(23) null, add col1 blob, add col2 number default 567",
+                "CREATE TABLE ORACLE_RANGE_VARCHAR_2(\n"
+                        + "    char_column_number GENERATED ALWAYS AS (TO_NUMBER(char_column)) VIRTUAL\n"
+                        + ")"
         };
         DefaultSqlChecker sqlChecker = new DefaultSqlChecker(DialectType.OB_ORACLE, "$$",
                 Collections.singletonList(new NoDefaultValueExists(new HashSet<>(Collections.singletonList("blob")))));
@@ -1060,7 +1074,10 @@ public class OracleSqlCheckerTest {
         String[] sqls = {
                 "create table abcd(ida blob not null, col1 varchar(64) not null default 'abcd')",
                 "alter table abcd add idb varchar2(64) not null",
-                "alter table abcd add idv clob not null default 123"
+                "alter table abcd add idv clob not null default 123",
+                "CREATE TABLE ORACLE_RANGE_VARCHAR_2(\n"
+                        + "    char_column_number GENERATED ALWAYS AS (TO_NUMBER(char_column)) VIRTUAL\n"
+                        + ")"
         };
         DefaultSqlChecker sqlChecker = new DefaultSqlChecker(DialectType.OB_ORACLE,
                 null,
@@ -1119,6 +1136,94 @@ public class OracleSqlCheckerTest {
     }
 
     @Test
+    public void check_objectUsingReservedWords_violationGenerated() {
+        String[] sqls = {
+                "create table high (id varchar2(64), index \"high\" (id)) partition by list(a,b) subpartition by list(c) subpartition template("
+                        + "subpartition a.b values (2) INITRANS 12,"
+                        + "subpartition b values ('maxvalue') MAXTRANS 13) ("
+                        + "partition a.b@c values (default) tablespace tbs1 compress for oltp("
+                        + "subpartition a.high values (2) INITRANS 12,"
+                        + "subpartition b values ('maxvalue') MAXTRANS 13),"
+                        + "partition high values (3) id 14 nocompress,"
+                        + "partition values ('aaaddd') id 15 tablespace tbs)",
+                "CREATE TABLE uuiioo(ID VARCHAR2(64) constraint high primary key)",
+                "alter table tbl add high varchar2(64)",
+                "create or replace procedure high(p int) as begin dbms_output.put_line('aaaa'); end",
+                "alter table tbl modify partition a.b add "
+                        + "subpartition a.b values less than (+3) storage(next 12 initial 15 minextents 16 maxextents 17),"
+                        + "subpartition high values less than (maxvalue) tablespace tbs"
+        };
+        DefaultSqlChecker sqlChecker = new DefaultSqlChecker(DialectType.OB_ORACLE,
+                null, Collections.singletonList(new OracleObjectNameUsingReservedWords()));
+        List<CheckViolation> actual = sqlChecker.check(toOffsetString(sqls), null);
+
+        SqlCheckRuleType type = SqlCheckRuleType.OBJECT_NAME_USING_RESERVED_WORDS;
+        CheckViolation c1 = new CheckViolation(sqls[0], 1, 0, 0, 462, type, new Object[] {"high"});
+        CheckViolation c2 = new CheckViolation(sqls[0], 1, 280, 280, 321, type, new Object[] {"high"});
+        CheckViolation c3 = new CheckViolation(sqls[0], 1, 371, 371, 412, type, new Object[] {"high"});
+        CheckViolation c4 = new CheckViolation(sqls[0], 1, 19, 19, 20, type, new Object[] {"id"});
+        CheckViolation c5 = new CheckViolation(sqls[0], 1, 36, 36, 52, type, new Object[] {"\"high\""});
+        CheckViolation c6 = new CheckViolation(sqls[1], 1, 20, 20, 21, type, new Object[] {"ID"});
+        CheckViolation c7 = new CheckViolation(sqls[1], 1, 36, 36, 62, type, new Object[] {"high"});
+        CheckViolation c8 = new CheckViolation(sqls[2], 1, 20, 20, 23, type, new Object[] {"high"});
+        CheckViolation c9 = new CheckViolation(sqls[3], 1, 28, 28, 31, type, new Object[] {"high"});
+        CheckViolation c10 = new CheckViolation(sqls[4], 1, 136, 136, 195, type, new Object[] {"high"});
+
+        List<CheckViolation> expect = Arrays.asList(c1, c2, c3, c4, c5, c6, c7, c8, c9, c10);
+        Assert.assertEquals(expect, actual);
+    }
+
+    @Test
+    public void check_offlineDdl_violationGenerated() {
+        String[] sqls = {
+                "alter table tbl drop column a.c",
+                "alter table tbl add primary key (a,b), drop primary key",
+                "truncate table a",
+                "drop table aaa",
+                "create table abcd(id varchar2(64) constraint pllo primary key, constraint pk_aaa primary key(id))",
+                "alter table ttttt add (id number generated by default on null as identity)",
+                "alter table abcd drop constraint \"PK_AAA\", drop constraint pllo"
+        };
+        JdbcTemplate jdbcTemplate = Mockito.mock(JdbcTemplate.class);
+        Mockito.when(jdbcTemplate.queryForObject(Mockito.anyString(), Mockito.any(RowMapper.class)))
+                .thenReturn(sqls[4]);
+        DefaultSqlChecker sqlChecker = new DefaultSqlChecker(DialectType.OB_ORACLE,
+                null, Collections.singletonList(new OracleOfflineDdlExists(jdbcTemplate)));
+        List<CheckViolation> actual = sqlChecker.check(toOffsetString(sqls), null);
+
+        SqlCheckRuleType type = SqlCheckRuleType.OFFLINE_SCHEMA_CHANGE_EXISTS;
+        CheckViolation c1 = new CheckViolation(sqls[0], 1, 16, 16, 30, type, new Object[] {"DROP COLUMN"});
+        CheckViolation c2 = new CheckViolation(sqls[1], 1, 16, 16, 36, type, new Object[] {"ADD PRIMARY KEY"});
+        CheckViolation c3 = new CheckViolation(sqls[1], 1, 39, 39, 54, type, new Object[] {"DROP PRIMARY KEY"});
+        CheckViolation c4 = new CheckViolation(sqls[2], 1, 0, 0, 15, type, new Object[] {"TRUNCATE TABLE"});
+        CheckViolation c5 = new CheckViolation(sqls[3], 1, 0, 0, 13, type, new Object[] {"DROP TABLE"});
+        CheckViolation c6 =
+                new CheckViolation(sqls[5], 1, 18, 18, 73, type, new Object[] {"ADD AUTO-INCREMENT COLUMN"});
+        CheckViolation c7 = new CheckViolation(sqls[6], 1, 17, 17, 40, type, new Object[] {"DROP PRIMARY KEY"});
+        CheckViolation c8 = new CheckViolation(sqls[6], 1, 43, 43, 62, type, new Object[] {"DROP PRIMARY KEY"});
+
+        List<CheckViolation> expect = Arrays.asList(c1, c2, c3, c4, c5, c6, c7, c8);
+        Assert.assertEquals(expect, actual);
+    }
+
+    @Test
+    public void check_truncateTbl_violationGenerated() {
+        String[] sqls = {
+                "alter table tbl drop column a.c",
+                "truncate table a.b"
+        };
+        DefaultSqlChecker sqlChecker = new DefaultSqlChecker(DialectType.OB_ORACLE,
+                null, Collections.singletonList(new TruncateTableExists()));
+        List<CheckViolation> actual = sqlChecker.check(toOffsetString(sqls), null);
+
+        SqlCheckRuleType type = SqlCheckRuleType.TRUNCATE_TBLE_EXISTS;
+        CheckViolation c1 = new CheckViolation(sqls[1], 1, 0, 0, 17, type, new Object[] {});
+
+        List<CheckViolation> expect = Collections.singletonList(c1);
+        Assert.assertEquals(expect, actual);
+    }
+
+    @Test
     public void check_PlExists_noViolationGenerated() {
         String sql = "CREATE OR REPLACE function fun1 return int as v1 int;\n"
                 + "begin\n"
@@ -1165,19 +1270,6 @@ public class OracleSqlCheckerTest {
         CheckResult r1 = new CheckResult("1", Arrays.asList(c1, c3));
         CheckResult r2 = new CheckResult("2", Collections.singletonList(c2));
         List<CheckResult> expect = Arrays.asList(r1, r2);
-        Assert.assertEquals(expect, actual);
-    }
-
-    @Test
-    public void check_timeConsumingIndexChangeExists_violationGenerated() {
-        String sql = "alter table tab modify primary key(c1,c2)";
-        SqlChecker sqlChecker = new DefaultSqlChecker(DialectType.OB_ORACLE, ";",
-                Collections.singletonList(new IndexChangeTimeConsumingExists()));
-        List<CheckViolation> actual = sqlChecker.check(sql);
-
-        CheckViolation c = new CheckViolation(sql, 1, 0, 0, 40,
-                SqlCheckRuleType.INDEX_CHANGE_TIME_CONSUMING_EXISTS, 0, new Object[] {});
-        List<CheckViolation> expect = Collections.singletonList(c);
         Assert.assertEquals(expect, actual);
     }
 

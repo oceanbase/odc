@@ -27,7 +27,11 @@ import java.util.stream.Collectors;
 import javax.sql.DataSource;
 
 import org.apache.commons.collections4.CollectionUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import com.google.common.collect.Lists;
+import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.sql.split.SqlSplitter;
 import com.oceanbase.odc.core.sql.split.SqlStatementIterator;
 import com.oceanbase.odc.plugin.schema.oracle.OracleFunctionExtension;
@@ -52,6 +56,7 @@ import com.oceanbase.tools.loaddump.common.enums.ObjectType;
  * @date 2024/2/1
  */
 public class OracleSqlScriptImportJob extends BaseSqlScriptImportJob {
+    private static final Logger LOGGER = LoggerFactory.getLogger("DataTransferLogger");
 
     public OracleSqlScriptImportJob(ObjectResult object, DataTransferConfig transferConfig, URL input,
             DataSource dataSource) {
@@ -125,13 +130,26 @@ public class OracleSqlScriptImportJob extends BaseSqlScriptImportJob {
     }
 
     @Override
-    protected List<String> getPreSqlsForSchema() {
-        return Collections.singletonList("alter session set CURRENT_SCHEMA=" + transferConfig.getSchemaName());
+    protected List<String> getPreSqlsForSchema() throws SQLException {
+        List<String> sqls = Lists.newArrayList(
+                "alter session set CURRENT_SCHEMA=" + transferConfig.getSchemaName());
+        if (transferConfig.isReplaceSchemaWhenExists() && isObjectExists()) {
+            sqls.add(String.format("DROP %s %s", ObjectType.valueOfName(object.getType()).getName(),
+                    StringUtils.quoteOracleIdentifier(object.getName())));
+            LOGGER.info("{} will be dropped.", object.getSummary());
+        }
+        return sqls;
     }
 
     @Override
     protected List<String> getPreSqlsForData() {
-        return Collections.singletonList("alter session set CURRENT_SCHEMA=" + transferConfig.getSchemaName());
+        List<String> preSqls = Lists.newArrayList("alter session set CURRENT_SCHEMA=" + transferConfig.getSchemaName());
+        if (transferConfig.isTruncateTableBeforeImport()) {
+            preSqls.add(String.format("TRUNCATE TABLE %s.%s", object.getSchema(),
+                    StringUtils.quoteOracleIdentifier(object.getName())));
+            LOGGER.info("{} will be truncated.", object.getSummary());
+        }
+        return preSqls;
     }
 
     @Override
@@ -142,5 +160,10 @@ public class OracleSqlScriptImportJob extends BaseSqlScriptImportJob {
     @Override
     protected List<String> getPostSqlsForData() {
         return Collections.emptyList();
+    }
+
+    @Override
+    protected List<String> getPreSqlsForExternal() {
+        return Collections.singletonList("alter session set CURRENT_SCHEMA=" + transferConfig.getSchemaName());
     }
 }

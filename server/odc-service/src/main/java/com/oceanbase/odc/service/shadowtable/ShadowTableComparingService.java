@@ -17,11 +17,8 @@ package com.oceanbase.odc.service.shadowtable;
 
 import java.math.BigDecimal;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.stream.Collectors;
 
@@ -44,7 +41,6 @@ import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.core.shared.exception.AccessDeniedException;
 import com.oceanbase.odc.core.shared.exception.BadRequestException;
 import com.oceanbase.odc.core.shared.exception.NotFoundException;
-import com.oceanbase.odc.metadb.iam.UserEntity;
 import com.oceanbase.odc.metadb.shadowtable.ShadowTableComparingTaskEntity;
 import com.oceanbase.odc.metadb.shadowtable.TableComparingEntity;
 import com.oceanbase.odc.metadb.shadowtable.TableComparingRepository;
@@ -218,20 +214,14 @@ public class ShadowTableComparingService {
         return authenticationFacade.currentUserId();
     }
 
-    /**
-     * 权限校验，以下两种情况允许查看影子表对比结果： 1. 当前用户是影子表结构对比任务的创建者 2. 当前用户是影子表同步任务的审批人
-     */
     private void checkPermission(ShadowTableComparingTaskEntity taskEntity) {
-        if (currentUserId().equals(taskEntity.getCreatorId())) {
+        // shadow table comparing task has not been bind to flow instance yet
+        if (taskEntity.getFlowInstanceId() == null) {
+            if (!taskEntity.getCreatorId().equals(currentUserId())) {
+                throw new AccessDeniedException();
+            }
             return;
         }
-        Map<Long, Set<UserEntity>> flowInstanceId2Users = approvalPermissionService
-                .getApproverByFlowInstanceIds(Collections.singleton(taskEntity.getFlowInstanceId()));
-        Set<Long> approvalUserIds = flowInstanceId2Users.get(taskEntity.getFlowInstanceId()).stream()
-                .filter(Objects::nonNull).map(UserEntity::getId).collect(Collectors.toSet());
-        if (approvalUserIds.contains(currentUserId())) {
-            return;
-        }
-        throw new AccessDeniedException();
+        flowInstanceService.mapFlowInstance(taskEntity.getFlowInstanceId(), flowInstance -> flowInstance, false);
     }
 }

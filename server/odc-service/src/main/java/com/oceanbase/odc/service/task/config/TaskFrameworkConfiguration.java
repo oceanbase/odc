@@ -27,9 +27,15 @@ import org.springframework.context.annotation.Lazy;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.scheduling.quartz.SchedulerFactoryBean;
 
-import com.oceanbase.odc.service.common.util.ConditionalOnProperty;
 import com.oceanbase.odc.service.task.caller.K8sJobClient;
 import com.oceanbase.odc.service.task.caller.NativeK8sJobClient;
+import com.oceanbase.odc.service.task.jasypt.DefaultJasyptEncryptorConfigProperties;
+import com.oceanbase.odc.service.task.jasypt.JasyptEncryptorConfigProperties;
+import com.oceanbase.odc.service.task.schedule.MonitorProcessRateLimiter;
+import com.oceanbase.odc.service.task.schedule.StartJobRateLimiter;
+import com.oceanbase.odc.service.task.service.TaskFrameworkService;
+import com.ulisesbocchio.jasyptspringboot.properties.JasyptEncryptorConfigurationProperties;
+import com.ulisesbocchio.jasyptspringboot.util.Singleton;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -38,7 +44,6 @@ import lombok.extern.slf4j.Slf4j;
  * @date 2023-11-21
  * @since 4.2.4
  */
-@ConditionalOnProperty(prefix = "odc.task-framework", name = "enabled", havingValues = "true")
 @Configuration
 @Slf4j
 public class TaskFrameworkConfiguration {
@@ -57,6 +62,17 @@ public class TaskFrameworkConfiguration {
         }
     }
 
+    @Bean
+    public StartJobRateLimiter monitorProcessRateLimiter(@Autowired TaskFrameworkService taskFrameworkService) {
+        return new MonitorProcessRateLimiter(TaskFrameworkPropertiesSupplier.getSupplier(), taskFrameworkService);
+    }
+
+    @Bean
+    public JasyptEncryptorConfigProperties JasyptEncryptorConfigProperties(
+            @Autowired Singleton<JasyptEncryptorConfigurationProperties> configPropertiesSingleton) {
+        return new DefaultJasyptEncryptorConfigProperties(configPropertiesSingleton);
+    }
+
     @Lazy
     @Bean("taskFrameworkSchedulerFactoryBean")
     public SchedulerFactoryBean taskFrameworkSchedulerFactoryBean(DataSource dataSource,
@@ -69,6 +85,15 @@ public class TaskFrameworkConfiguration {
         schedulerFactoryBean.setStartupDelay(taskFrameworkProperties.getQuartzStartDelaySeconds());
         schedulerFactoryBean.setTaskExecutor(executor);
         return schedulerFactoryBean;
+    }
+
+    @Bean
+    public TaskFrameworkEnabledProperties taskFrameworkEnabledProperties(
+            @Autowired TaskFrameworkProperties taskFrameworkProperties) {
+        TaskFrameworkEnabledProperties properties = new TaskFrameworkEnabledProperties();
+        boolean enabled = taskFrameworkProperties.isEnabled();
+        properties.setEnabled(enabled);
+        return properties;
     }
 
     @Bean

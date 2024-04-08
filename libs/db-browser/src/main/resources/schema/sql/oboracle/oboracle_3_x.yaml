@@ -148,6 +148,7 @@ sqls:
       t1.OWNER = ? and t1.TABLE_NAME = ?
     ORDER BY
       t1.CONSTRAINT_NAME,
+      t3.position,
       t2.position ASC
   list-schema-constraints: |-
     SELECT
@@ -177,6 +178,7 @@ sqls:
     ORDER BY
       t1.TABLE_NAME,
       t1.CONSTRAINT_NAME,
+      t3.position,
       t2.position ASC
   get-partition: |-
     select

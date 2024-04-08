@@ -58,6 +58,7 @@ import com.oceanbase.odc.service.flow.model.FlowInstanceApprovalReq;
 import com.oceanbase.odc.service.flow.model.FlowInstanceDetailResp;
 import com.oceanbase.odc.service.flow.model.FlowMetaInfo;
 import com.oceanbase.odc.service.flow.model.QueryFlowInstanceParams;
+import com.oceanbase.odc.service.flow.util.TaskLogFilenameGenerator;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.partitionplan.PartitionPlanScheduleService;
 import com.oceanbase.odc.service.partitionplan.model.PartitionPlanConfig;
@@ -195,6 +196,15 @@ public class FlowInstanceController {
         return Responses.single(flowTaskInstanceService.getLog(id, logType));
     }
 
+    @ApiOperation(value = "downloadLog", notes = "下载任务完整日志")
+    @RequestMapping(value = "/{id:[\\d]+}/tasks/log/download", method = RequestMethod.GET)
+    public ResponseEntity<InputStreamResource> downloadLog(@PathVariable Long id) throws IOException {
+        List<BinaryDataResult> results = flowTaskInstanceService.downloadLog(id);
+        PreConditions.validExists(ResourceType.ODC_FILE, "id", id, () -> CollectionUtils.isNotEmpty(results));
+        return WebResponseUtils.getFileAttachmentResponseEntity(
+                new InputStreamResource(results.get(0).getInputStream()), TaskLogFilenameGenerator.generate(id));
+    }
+
     @ApiOperation(value = "getMetaInfo", notes = "获取流程相关的一些元数据信息，包括待审批数量等")
     @RequestMapping(value = "/getMetaInfo", method = RequestMethod.GET)
     public SuccessResponse<FlowMetaInfo> getMetaInfo() {
@@ -253,7 +263,7 @@ public class FlowInstanceController {
 
     @GetMapping(value = "/{id:[\\d]+}/tasks/partitionPlans/getDetail")
     public SuccessResponse<PartitionPlanConfig> getPartitionPlan(@PathVariable Long id) {
-        return Responses.ok(this.partitionPlanScheduleService.getPartitionPlan(id));
+        return Responses.ok(this.partitionPlanScheduleService.getPartitionPlanByFlowInstanceId(id));
     }
 
 }

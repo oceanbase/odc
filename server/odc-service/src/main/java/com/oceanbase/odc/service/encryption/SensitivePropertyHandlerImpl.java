@@ -63,6 +63,12 @@ public class SensitivePropertyHandlerImpl implements SensitivePropertyHandler {
                 if (lock.tryLock(TRY_LOCK_TIMEOUT_SECONDS, TimeUnit.SECONDS)) {
                     try {
                         log.info("Successfully acquired the encryption secret lock");
+                        Pair<String, String> existedKeyPair = queryPublicKeyToSecretKeyPair(systemConfigService);
+                        if (existedKeyPair != null) {
+                            this.publicKey = existedKeyPair.left;
+                            this.textEncryptor = Encryptors.rsaBase64Decryptor(existedKeyPair.right);
+                            return;
+                        }
                         Pair<String, String> keyPair =
                                 RsaBytesEncryptor.generateBase64EncodeKeyPair(ENCRYPTION_KEY_SIZE);
                         this.publicKey = keyPair.left;
@@ -78,13 +84,10 @@ public class SensitivePropertyHandlerImpl implements SensitivePropertyHandler {
                 } else {
                     log.info(
                             "Failed to get encryption secret lock, try to get encryption secret from system configuration");
-                    List<Configuration> publicKey =
-                            systemConfigService.queryByKeyPrefix(ENCRYPTION_PUBLIC_KEY_SYSTEM_CONFIG_KEY);
-                    List<Configuration> secretKey =
-                            systemConfigService.queryByKeyPrefix(ENCRYPTION_SECRET_KEY_SYSTEM_CONFIG_KEY);
-                    if (verifySystemConfig(publicKey) && verifySystemConfig(secretKey)) {
-                        this.publicKey = publicKey.get(0).getValue();
-                        this.textEncryptor = Encryptors.rsaBase64Decryptor(secretKey.get(0).getValue());
+                    Pair<String, String> keyPair = queryPublicKeyToSecretKeyPair(systemConfigService);
+                    if (Objects.nonNull(keyPair)) {
+                        this.publicKey = keyPair.left;
+                        this.textEncryptor = Encryptors.rsaBase64Decryptor(keyPair.right);
                     } else {
                         throw new RuntimeException("Failed to get encryption secret from system configuration");
                     }
@@ -112,6 +115,15 @@ public class SensitivePropertyHandlerImpl implements SensitivePropertyHandler {
         return entity;
     }
 
+    private Pair<String, String> queryPublicKeyToSecretKeyPair(SystemConfigService systemConfigService) {
+        List<Configuration> publicKey = systemConfigService.queryByKeyPrefix(ENCRYPTION_PUBLIC_KEY_SYSTEM_CONFIG_KEY);
+        List<Configuration> secretKey = systemConfigService.queryByKeyPrefix(ENCRYPTION_SECRET_KEY_SYSTEM_CONFIG_KEY);
+        if (verifySystemConfig(publicKey) && verifySystemConfig(secretKey)) {
+            return new Pair<>(publicKey.get(0).getValue(), secretKey.get(0).getValue());
+        }
+        return null;
+    }
+
     @Override
     public String publicKey() {
         return this.publicKey;
@@ -119,7 +131,12 @@ public class SensitivePropertyHandlerImpl implements SensitivePropertyHandler {
 
     @Override
     public String decrypt(String encryptedText) {
-        return textEncryptor.decrypt(encryptedText);
+        try {
+            return textEncryptor.decrypt(encryptedText);
+        } catch (Exception e) {
+            log.warn("Failed to decrypt sensitive property, encryptedText={}, publicKey={}", encryptedText,
+                    publicKey());
+            throw e;
+        }
     }
-
 }

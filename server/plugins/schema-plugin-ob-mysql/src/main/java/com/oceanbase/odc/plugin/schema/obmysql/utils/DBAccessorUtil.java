@@ -29,9 +29,9 @@ import com.oceanbase.tools.dbbrowser.stats.DBStatsAccessor;
  * @date 2023/6/30
  */
 public class DBAccessorUtil {
+
     public static String getDbVersion(Connection connection) {
-        OBMySQLInformationExtension informationExtension = new OBMySQLInformationExtension();
-        return informationExtension.getDBVersion(connection);
+        return new OBMySQLInformationExtension().getDBVersion(connection);
     }
 
     public static DBSchemaAccessor getSchemaAccessor(Connection connection) {

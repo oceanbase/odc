@@ -20,6 +20,7 @@ import org.quartz.SchedulerException;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import com.oceanbase.odc.core.shared.constant.FlowStatus;
+import com.oceanbase.odc.service.flow.model.FlowNodeStatus;
 import com.oceanbase.odc.service.flow.task.model.PartitionPlanTaskResult;
 import com.oceanbase.odc.service.flow.util.FlowTaskUtil;
 import com.oceanbase.odc.service.partitionplan.PartitionPlanScheduleService;
@@ -85,14 +86,15 @@ public class PartitionPlanRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Vo
         taskService.fail(taskId, 100, generateResult(false));
         super.onFailure(taskId, taskService);
         PartitionPlanTaskTraceContextHolder.clear();
+
     }
 
     @Override
     protected void onSuccessful(Long taskId, TaskService taskService) {
-        updateFlowInstanceStatus(FlowStatus.EXECUTION_SUCCEEDED);
-        taskService.succeed(taskId, generateResult(true));
-        super.onSuccessful(taskId, taskService);
         log.info("Partition plan task succeed, taskId={}", taskId);
+        taskService.succeed(taskId, generateResult(true));
+        super.callback(getFlowInstanceId(), getTargetTaskInstanceId(), FlowNodeStatus.COMPLETED, null);
+        updateFlowInstanceStatus(FlowStatus.EXECUTION_SUCCEEDED);
         PartitionPlanTaskTraceContextHolder.clear();
     }
 

@@ -25,7 +25,6 @@ import org.springframework.web.bind.annotation.RestController;
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.service.common.response.Responses;
 import com.oceanbase.odc.service.common.response.SuccessResponse;
-import com.oceanbase.odc.service.common.util.ConditionalOnProperty;
 import com.oceanbase.odc.service.datasecurity.DataMaskingService;
 import com.oceanbase.odc.service.task.executor.server.HeartRequest;
 import com.oceanbase.odc.service.task.executor.task.DefaultTaskResult;
@@ -41,7 +40,6 @@ import lombok.extern.slf4j.Slf4j;
  * @date 2023-11-29
  * @since 4.2.4
  */
-@ConditionalOnProperty(prefix = "odc.task-framework", name = "enabled", havingValues = "true")
 @Slf4j
 @RestController
 @RequestMapping("/api/v2/task")

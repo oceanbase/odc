@@ -17,10 +17,11 @@ package com.oceanbase.odc.service.flow.task.model;
 
 import java.util.List;
 
-import com.oceanbase.odc.core.flow.model.FlowTaskResult;
+import com.oceanbase.odc.core.flow.model.AbstractFlowTaskResult;
 import com.oceanbase.odc.service.shadowtable.model.TableSyncExecuteStatus;
 
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 /**
  * @Author: Lebie
@@ -28,7 +29,8 @@ import lombok.Data;
  * @Description: []
  */
 @Data
-public class ShadowTableSyncTaskResult implements FlowTaskResult {
+@EqualsAndHashCode(callSuper = true)
+public class ShadowTableSyncTaskResult extends AbstractFlowTaskResult {
     private Long shadowTableComparingId;
     private List<TableSyncExecuting> tables;
 

@@ -20,16 +20,17 @@ import java.util.List;
 import org.apache.commons.collections4.CollectionUtils;
 
 import com.oceanbase.odc.common.json.NormalDialectTypeOutput;
-import com.oceanbase.odc.core.flow.model.FlowTaskResult;
+import com.oceanbase.odc.core.flow.model.AbstractFlowTaskResult;
 import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.tools.datamocker.core.task.TableTaskContext;
 import com.oceanbase.tools.datamocker.model.enums.MockTaskStatus;
 import com.oceanbase.tools.datamocker.schedule.MockContext;
 
-import lombok.Getter;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.NoArgsConstructor;
 import lombok.NonNull;
-import lombok.Setter;
 
 /**
  * Task execute result for {@code MockData}
@@ -38,9 +39,10 @@ import lombok.Setter;
  * @date 2022-03-07 11:04
  * @since ODC_release_3.3.0
  */
-@Getter
-@Setter
-public class MockDataTaskResult implements FlowTaskResult {
+@Data
+@EqualsAndHashCode(callSuper = true)
+@NoArgsConstructor
+public class MockDataTaskResult extends AbstractFlowTaskResult {
 
     @Deprecated
     private String taskName;
@@ -59,8 +61,6 @@ public class MockDataTaskResult implements FlowTaskResult {
     private String internalTaskId;
     @Deprecated
     private List<String> tableTaskIds;
-
-    public MockDataTaskResult() {}
 
     public MockDataTaskResult(@NonNull ConnectionConfig connectionConfig, @NonNull MockContext context) {
         List<TableTaskContext> tableTaskContexts = context.getTables();

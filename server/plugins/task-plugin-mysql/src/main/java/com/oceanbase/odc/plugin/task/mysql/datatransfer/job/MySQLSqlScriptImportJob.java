@@ -94,12 +94,12 @@ public class MySQLSqlScriptImportJob extends BaseSqlScriptImportJob {
     }
 
     @Override
-    protected List<String> getPreSqlsForSchema() {
+    protected List<String> getPreSqlsForSchema() throws SQLException {
         List<String> preSqls = new LinkedList<>();
         if (StringUtils.equalsIgnoreCase(object.getType(), "TABLE")) {
             preSqls.add(Constants.DISABLE_FK);
         }
-        if (transferConfig.isReplaceSchemaWhenExists()) {
+        if (transferConfig.isReplaceSchemaWhenExists() && isObjectExists()) {
             preSqls.add(String.format(Constants.DROP_OBJECT_FORMAT, object.getType(),
                     StringUtils.quoteMysqlIdentifier(object.getName())));
             LOGGER.info("{} will be dropped.", object.getSummary());
@@ -132,6 +132,11 @@ public class MySQLSqlScriptImportJob extends BaseSqlScriptImportJob {
         if (StringUtils.equalsIgnoreCase(object.getType(), "TABLE")) {
             return Collections.singletonList(Constants.ENABLE_FK);
         }
+        return null;
+    }
+
+    @Override
+    protected List<String> getPreSqlsForExternal() {
         return null;
     }
 

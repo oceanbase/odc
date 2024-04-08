@@ -17,6 +17,7 @@ package com.oceanbase.odc.service.dml;
 
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
@@ -36,6 +37,7 @@ import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.exception.UnexpectedException;
 import com.oceanbase.odc.service.common.model.ResourceSql;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
+import com.oceanbase.odc.service.db.browser.DBSchemaAccessors;
 import com.oceanbase.odc.service.dml.model.BatchDataModifyReq;
 import com.oceanbase.odc.service.dml.model.BatchDataModifyReq.Operate;
 import com.oceanbase.odc.service.dml.model.BatchDataModifyReq.Row;
@@ -43,7 +45,9 @@ import com.oceanbase.odc.service.dml.model.BatchDataModifyResp;
 import com.oceanbase.odc.service.dml.model.DataModifyUnit;
 import com.oceanbase.odc.service.feature.AllFeatures;
 import com.oceanbase.odc.service.feature.Features;
+import com.oceanbase.tools.dbbrowser.model.DBTableColumn;
 import com.oceanbase.tools.dbbrowser.model.DBTableConstraint;
+import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -70,6 +74,7 @@ public class TableDataService {
         resp.setTableName(tableName);
         resp.setSchemaName(schemaName);
         List<DBTableConstraint> constraints = BaseDMLBuilder.getConstraints(schemaName, tableName, connectionSession);
+        Map<String, DBTableColumn> columnName2Column = getColumnName2Column(connectionSession, schemaName, tableName);
         StringBuilder sqlBuilder = new StringBuilder();
         for (Row row : sortedRows) {
             Operate operate = row.getOperate();
@@ -102,7 +107,7 @@ public class TableDataService {
                         "Primary key or unique constraint is required to generate update condition");
             }
 
-            DMLGenerator generator = getGenerator(operate, dmlBuilder, connectionSession);
+            DMLGenerator generator = getGenerator(operate, dmlBuilder, columnName2Column);
             String sql = generator.generate();
 
             ResourceSql resourceSql = new ResourceSql();
@@ -144,17 +149,27 @@ public class TableDataService {
     }
 
     private DMLGenerator getGenerator(Operate operate, DMLBuilder builder,
-            ConnectionSession connectionSession) {
+            Map<String, DBTableColumn> columnName2Column) {
         switch (operate) {
             case INSERT:
                 return new InsertGenerator(builder);
             case UPDATE:
-                return new UpdateGenerator(builder, connectionSession);
+                return new UpdateGenerator(builder, columnName2Column);
             case DELETE:
                 return new DeleteGenerator(builder);
             default:
                 throw new UnexpectedException("Unexpected operate value:" + operate);
         }
+    }
+
+    private Map<String, DBTableColumn> getColumnName2Column(@NotNull ConnectionSession session, String schema,
+            @NotNull String tableName) {
+        DBSchemaAccessor accessor = DBSchemaAccessors.create(session);
+        if (schema == null) {
+            schema = ConnectionSessionUtil.getCurrentSchema(session);
+        }
+        return accessor.listTableColumns(schema, tableName).stream()
+                .collect(Collectors.toMap(DBTableColumn::getName, c -> c));
     }
 
 }

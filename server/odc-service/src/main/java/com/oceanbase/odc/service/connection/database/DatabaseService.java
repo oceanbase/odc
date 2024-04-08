@@ -51,6 +51,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
 
+import com.oceanbase.odc.core.authority.SecurityManager;
+import com.oceanbase.odc.core.authority.permission.Permission;
 import com.oceanbase.odc.core.authority.util.Authenticated;
 import com.oceanbase.odc.core.authority.util.PreAuthenticate;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
@@ -131,6 +133,15 @@ public class DatabaseService {
 
     private final DatabaseMapper databaseMapper = DatabaseMapper.INSTANCE;
 
+    private static final Set<String> ORACLE_DATA_DICTIONARY = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
+
+    private static final Set<String> MYSQL_DATA_DICTIONARY = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
+
+    static {
+        ORACLE_DATA_DICTIONARY.add("SYS");
+        MYSQL_DATA_DICTIONARY.add("information_schema");
+    }
+
     @Autowired
     private DatabaseRepository databaseRepository;
 
@@ -183,6 +194,9 @@ public class DatabaseService {
     private DatabasePermissionHelper databasePermissionHelper;
 
     @Autowired
+    private SecurityManager securityManager;
+
+    @Autowired
     private ResourceRoleService resourceRoleService;
 
     @Autowired
@@ -191,22 +205,24 @@ public class DatabaseService {
     @Transactional(rollbackFor = Exception.class)
     @SkipAuthorize("internal authenticated")
     public Database detail(@NonNull Long id) {
-        return getDatabase(id);
+        Database database = entityToModel(databaseRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException(ResourceType.ODC_DATABASE, "id", id)), true);
+        if (Objects.nonNull(database.getProject()) && Objects.nonNull(database.getProject().getId())) {
+            projectPermissionValidator.checkProjectRole(database.getProject().getId(), ResourceRoleName.all());
+            return database;
+        }
+        Permission requiredPermission = this.securityManager
+                .getPermissionByActions(database.getDataSource(), Collections.singletonList("read"));
+        if (this.securityManager.isPermitted(requiredPermission)) {
+            return database;
+        }
+        throw new NotFoundException(ResourceType.ODC_DATABASE, "id", id);
     }
 
     @SkipAuthorize("odc internal usage")
     public Database getBasicSkipPermissionCheck(Long id) {
         return databaseMapper.entityToModel(databaseRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException(ResourceType.ODC_DATABASE, "id", id)));
-    }
-
-    private Database getDatabase(Long id) {
-        Database database = entityToModel(databaseRepository.findById(id)
-                .orElseThrow(() -> new NotFoundException(ResourceType.ODC_DATABASE, "id", id)));
-        if (Objects.nonNull(database.getProject()) && Objects.nonNull(database.getProject().getId())) {
-            projectPermissionValidator.checkProjectRole(database.getProject().getId(), ResourceRoleName.all());
-        }
-        return database;
     }
 
     @SkipAuthorize("odc internal usage")
@@ -324,7 +340,7 @@ public class DatabaseService {
             database.setOrganizationId(authenticationFacade.currentOrganizationId());
             database.setLastSyncTime(new Date(System.currentTimeMillis()));
             DatabaseEntity saved = databaseRepository.saveAndFlush(database);
-            return entityToModel(saved);
+            return entityToModel(saved, false);
         } catch (Exception ex) {
             throw new BadRequestException(SqlExecuteResult.getTrackMessage(ex));
         } finally {
@@ -641,7 +657,8 @@ public class DatabaseService {
 
     @SkipAuthorize("odc internal usage")
     public List<UnauthorizedDatabase> filterUnauthorizedDatabases(
-            Map<String, Set<DatabasePermissionType>> schemaName2PermissionTypes, @NotNull Long dataSourceId) {
+            Map<String, Set<DatabasePermissionType>> schemaName2PermissionTypes, @NotNull Long dataSourceId,
+            boolean ignoreDataDirectory) {
         if (schemaName2PermissionTypes == null || schemaName2PermissionTypes.isEmpty()) {
             return Collections.emptyList();
         }
@@ -653,6 +670,7 @@ public class DatabaseService {
         Map<Long, Set<DatabasePermissionType>> id2Types = databasePermissionHelper
                 .getPermissions(databases.stream().map(Database::getId).collect(Collectors.toList()));
         List<UnauthorizedDatabase> unauthorizedDatabases = new ArrayList<>();
+        Set<Long> involvedProjectIds = projectService.getMemberProjectIds(authenticationFacade.currentUserId());
         for (Map.Entry<String, Set<DatabasePermissionType>> entry : schemaName2PermissionTypes.entrySet()) {
             String schemaName = entry.getKey();
             Set<DatabasePermissionType> needs = entry.getValue();
@@ -661,21 +679,37 @@ public class DatabaseService {
             }
             if (name2Database.containsKey(schemaName)) {
                 Database database = name2Database.get(schemaName);
+                boolean applicable =
+                        database.getProject() != null && involvedProjectIds.contains(database.getProject().getId());
                 Set<DatabasePermissionType> authorized = id2Types.get(database.getId());
                 if (CollectionUtils.isEmpty(authorized)) {
-                    unauthorizedDatabases.add(UnauthorizedDatabase.from(database, needs));
+                    unauthorizedDatabases.add(UnauthorizedDatabase.from(database, needs, applicable));
                 } else {
                     Set<DatabasePermissionType> unauthorized =
                             needs.stream().filter(p -> !authorized.contains(p)).collect(Collectors.toSet());
                     if (CollectionUtils.isNotEmpty(unauthorized)) {
-                        unauthorizedDatabases.add(UnauthorizedDatabase.from(database, unauthorized));
+                        unauthorizedDatabases.add(UnauthorizedDatabase.from(database, unauthorized, applicable));
                     }
                 }
             } else {
                 Database unknownDatabase = new Database();
                 unknownDatabase.setName(schemaName);
                 unknownDatabase.setDataSource(dataSource);
-                unauthorizedDatabases.add(UnauthorizedDatabase.from(unknownDatabase, needs));
+                unauthorizedDatabases.add(UnauthorizedDatabase.from(unknownDatabase, needs, false));
+            }
+        }
+        if (ignoreDataDirectory) {
+            DialectType dialectType = dataSource.getDialectType();
+            if (dialectType != null) {
+                if (dialectType.isOracle()) {
+                    unauthorizedDatabases =
+                            unauthorizedDatabases.stream().filter(d -> !ORACLE_DATA_DICTIONARY.contains(d.getName()))
+                                    .collect(Collectors.toList());
+                } else if (dialectType.isMysql()) {
+                    unauthorizedDatabases = unauthorizedDatabases.stream()
+                            .filter(d -> !MYSQL_DATA_DICTIONARY.contains(d.getName()))
+                            .collect(Collectors.toList());
+                }
             }
         }
         return unauthorizedDatabases;
@@ -884,13 +918,17 @@ public class DatabaseService {
         });
     }
 
-    private Database entityToModel(DatabaseEntity entity) {
+    private Database entityToModel(DatabaseEntity entity, boolean includesPermittedAction) {
         Database model = databaseMapper.entityToModel(entity);
         if (Objects.nonNull(entity.getProjectId())) {
             model.setProject(projectService.detail(entity.getProjectId()));
         }
         model.setDataSource(connectionService.getForConnectionSkipPermissionCheck(entity.getConnectionId()));
         model.setEnvironment(environmentService.detailSkipPermissionCheck(model.getDataSource().getEnvironmentId()));
+        if (includesPermittedAction) {
+            model.setAuthorizedPermissionTypes(
+                    databasePermissionHelper.getPermissions(Collections.singleton(entity.getId())).get(entity.getId()));
+        }
         return model;
     }
 
@@ -914,4 +952,5 @@ public class DatabaseService {
             userPermissionRepository.deleteByPermissionIds(permissionIds);
         }
     }
+
 }

@@ -47,6 +47,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 
 import com.oceanbase.odc.ServiceTestEnv;
@@ -179,6 +180,7 @@ public class FlowInstanceServiceTest extends ServiceTestEnv {
 
     @Before
     public void setUp() {
+        taskRepository.deleteAll();
         flowInstanceRepository.deleteAll();
         serviceTaskRepository.deleteAll();
         nodeRepository.deleteAll();
@@ -191,7 +193,7 @@ public class FlowInstanceServiceTest extends ServiceTestEnv {
         connectionConfig.setType(ConnectType.OB_MYSQL);
         Database database = TestRandom.nextObject(Database.class);
         connectionConfig.setVisibleScope(ConnectionVisibleScope.ORGANIZATION);
-        when(sqlCheckService.check(Mockito.any(Long.class), Mockito.any(String.class), Mockito.any(), Mockito.any()))
+        when(sqlCheckService.check(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any()))
                 .thenReturn(Collections.emptyList());
         when(connectionService.getForConnectionSkipPermissionCheck(Mockito.anyLong())).thenReturn(connectionConfig);
         when(databaseService.findDataSourceForConnectById(Mockito.anyLong())).thenReturn(connectionConfig);
@@ -284,6 +286,32 @@ public class FlowInstanceServiceTest extends ServiceTestEnv {
                 .type(TaskType.ASYNC).build();
         Page<FlowInstanceDetailResp> page = flowInstanceService.list(Pageable.unpaged(), params);
         Assert.assertEquals(2, page.getTotalElements());
+    }
+
+    @Test
+    public void list_ThreePages_ReturnCorrectTotalElements() {
+
+        for (int i = 0; i < 5; i++) {
+            FlowInstance flowInstance = createFlowInstance("test" + i);
+            buildFlowInstance(flowInstance);
+        }
+
+        User user = new User();
+        user.setRoleIds(Collections.emptyList());
+        when(userService.detailCurrentUser()).thenReturn(user);
+        when(databaseService.listDatabasesByConnectionIds(Mockito.anyCollection()))
+                .thenReturn(Collections.singletonList(getDatabase()));
+
+        QueryFlowInstanceParams params = QueryFlowInstanceParams.builder()
+                .approveByCurrentUser(false)
+                .createdByCurrentUser(true)
+                .containsAll(false)
+                .startTime(new Date(System.currentTimeMillis() - 10000))
+                .endTime(new Date(System.currentTimeMillis() + 10000))
+                .type(TaskType.ASYNC).build();
+        Page<FlowInstanceDetailResp> page = flowInstanceService.list(PageRequest.of(1, 2), params);
+        Assert.assertEquals(5, page.getTotalElements());
+        Assert.assertEquals(3, page.getTotalPages());
     }
 
     @Test

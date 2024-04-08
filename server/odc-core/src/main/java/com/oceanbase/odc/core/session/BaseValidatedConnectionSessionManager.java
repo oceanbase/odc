@@ -49,7 +49,7 @@ public abstract class BaseValidatedConnectionSessionManager extends BaseConnecti
     private final TaskManager taskManager;
     @Getter
     private long scanIntervalMillis = SESSION_MANAGER_SCAN_INTERVAL_MILLIS;
-    private volatile boolean asynTaskHasBeenStarted = false;
+    private volatile boolean asyncTaskHasBeenStarted = false;
     private final List<Predicate<ConnectionSession>> validators = new LinkedList<>();
 
     public BaseValidatedConnectionSessionManager(@NonNull TaskManager taskManager) {
@@ -62,8 +62,8 @@ public abstract class BaseValidatedConnectionSessionManager extends BaseConnecti
     }
 
     public synchronized void enableAsyncRefreshSessionManager() {
-        if (!asynTaskHasBeenStarted) {
-            asynTaskHasBeenStarted = true;
+        if (!asyncTaskHasBeenStarted) {
+            asyncTaskHasBeenStarted = true;
             taskManager.submit(new ConnectionSessionValidateTask(this, this.validators, scanIntervalMillis));
         }
     }

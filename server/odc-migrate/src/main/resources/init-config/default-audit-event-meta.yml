@@ -414,3 +414,102 @@
   in_connection: 0
   enabled: 1
   id: 83
+
+# AUTOMATION_RULE_MANAGEMENT
+- type: "AUTOMATION_RULE_MANAGEMENT"
+  action: "CREATE_AUTOMATION_RULE"
+  method_signature: "com.oceanbase.odc.server.web.controller.v2.AutomationController.createAutomationRule"
+  sid_extract_expression: ""
+  in_connection: 0
+  enabled: 1
+  id: 84
+
+- type: "AUTOMATION_RULE_MANAGEMENT"
+  action: "ENABLE_AUTOMATION_RULE"
+  method_signature: "com.oceanbase.odc.server.web.controller.v2.AutomationController.enableAutomationRule"
+  sid_extract_expression: ""
+  in_connection: 0
+  enabled: 1
+  id: 85
+
+- type: "AUTOMATION_RULE_MANAGEMENT"
+  action: "UPDATE_AUTOMATION_RULE"
+  method_signature: "com.oceanbase.odc.server.web.controller.v2.AutomationController.updateAutomationRule"
+  sid_extract_expression: ""
+  in_connection: 0
+  enabled: 1
+  id: 86
+
+- type: "AUTOMATION_RULE_MANAGEMENT"
+  action: "DELETE_AUTOMATION_RULE"
+  method_signature: "com.oceanbase.odc.server.web.controller.v2.AutomationController.deleteAutomationRule"
+  sid_extract_expression: ""
+  in_connection: 0
+  enabled: 1
+  id: 87
+
+# NOTIFICATION_MANAGEMENT
+- type: "NOTIFICATION_MANAGEMENT"
+  action: "CREATE_NOTIFICATION_CHANNEL"
+  method_signature: "com.oceanbase.odc.server.web.controller.v2.NotificationController.createChannel"
+  sid_extract_expression: ""
+  in_connection: 0
+  enabled: 1
+  id: 88
+
+- type: "NOTIFICATION_MANAGEMENT"
+  action: "UPDATE_NOTIFICATION_CHANNEL"
+  method_signature: "com.oceanbase.odc.server.web.controller.v2.NotificationController.updateChannel"
+  sid_extract_expression: ""
+  in_connection: 0
+  enabled: 1
+  id: 89
+
+- type: "NOTIFICATION_MANAGEMENT"
+  action: "DELETE_NOTIFICATION_CHANNEL"
+  method_signature: "com.oceanbase.odc.server.web.controller.v2.NotificationController.deleteChannel"
+  sid_extract_expression: ""
+  in_connection: 0
+  enabled: 1
+  id: 90
+
+- type: "NOTIFICATION_MANAGEMENT"
+  action: "BATCH_UPDATE_NOTIFICATION_POLICIES"
+  method_signature: "com.oceanbase.odc.server.web.controller.v2.NotificationController.batchUpdatePolicies"
+  sid_extract_expression: ""
+  in_connection: 0
+  enabled: 1
+  id: 91
+
+# SENSITIVE_COLUMN_MANAGEMENT
+- type: "SENSITIVE_COLUMN_MANAGEMENT"
+  action: "BATCH_CREATE_SENSITIVE_COLUMNS"
+  method_signature: "com.oceanbase.odc.server.web.controller.v2.SensitiveColumnController.batchCreateSensitiveColumns"
+  sid_extract_expression: ""
+  in_connection: 0
+  enabled: 1
+  id: 92
+
+- type: "SENSITIVE_COLUMN_MANAGEMENT"
+  action: "BATCH_UPDATE_SENSITIVE_COLUMNS"
+  method_signature: "com.oceanbase.odc.server.web.controller.v2.SensitiveColumnController.batchUpdateSensitiveColumns"
+  sid_extract_expression: ""
+  in_connection: 0
+  enabled: 1
+  id: 93
+
+- type: "SENSITIVE_COLUMN_MANAGEMENT"
+  action: "BATCH_DELETE_SENSITIVE_COLUMNS"
+  method_signature: "com.oceanbase.odc.server.web.controller.v2.SensitiveColumnController.batchDeleteSensitiveColumns"
+  sid_extract_expression: ""
+  in_connection: 0
+  enabled: 1
+  id: 94
+
+- type: "SENSITIVE_COLUMN_MANAGEMENT"
+  action: "ENABLE_SENSITIVE_COLUMN"
+  method_signature: "com.oceanbase.odc.server.web.controller.v2.SensitiveColumnController.setEnabled"
+  sid_extract_expression: ""
+  in_connection: 0
+  enabled: 1
+  id: 95

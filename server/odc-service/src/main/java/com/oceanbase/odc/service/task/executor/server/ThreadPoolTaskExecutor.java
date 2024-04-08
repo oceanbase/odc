@@ -25,9 +25,9 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+import com.oceanbase.odc.common.concurrent.ExecutorUtils;
 import com.oceanbase.odc.core.task.TaskThreadFactory;
 import com.oceanbase.odc.service.task.caller.JobContext;
-import com.oceanbase.odc.service.task.enums.JobStatus;
 import com.oceanbase.odc.service.task.executor.task.Task;
 import com.oceanbase.odc.service.task.schedule.JobIdentity;
 
@@ -66,24 +66,27 @@ public class ThreadPoolTaskExecutor implements TaskExecutor {
     @Override
     public boolean cancel(JobIdentity ji) {
         Task<?> task = tasks.get(ji);
-        Future<?> startFuture = futures.get(ji);
-        if (startFuture.isDone()) {
-            return task.getStatus() == JobStatus.CANCELED;
-        }
-
         Future<Boolean> stopFuture = executor.submit(task::stop);
         boolean result = false;
         try {
-            // wait 30 seconds for stop task accomplished
-            result = stopFuture.get(30 * 1000, TimeUnit.MILLISECONDS);
+            // wait 10 seconds for stop task accomplished
+            result = stopFuture.get(10 * 1000, TimeUnit.MILLISECONDS);
         } catch (InterruptedException e) {
-            log.warn("Stop task {} is be interrupted.", ji.getId(), e);
+            log.warn("Stop task is be interrupted, taskId={}.", ji.getId(), e);
         } catch (ExecutionException e) {
-            log.warn("Stop task {} execution exception.", ji.getId(), e);
+            log.warn("Stop task execution exception, taskId={}.", ji.getId(), e);
         } catch (TimeoutException e) {
-            log.warn("Stop task {} time out.", ji.getId(), e);
+            log.warn("Stop task time out, taskId={} .", ji.getId(), e);
         }
-        return result || startFuture.cancel(true);
+        if (!result) {
+            // if task is terminated, this method should return true,
+            // current status is CANCELING must push to CANCELED
+            result = getTask(ji).getStatus().isTerminated();
+        }
+        ExecutorUtils.gracefulShutdown(executor, "Task-Executor", result ? 1 : 5);
+        log.info("Task be canceled succeed, taskId={}, status={}, result={}.",
+                ji.getId(), getTask(ji).getStatus(), result);
+        return true;
     }
 
     @Override

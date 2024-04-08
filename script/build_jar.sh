@@ -18,6 +18,7 @@ mkdir -p "${ODC_DIR}/"{lib,conf,plugins,starters}
 [[ -f "${ODC_DIR}"/lib/*.jar ]] && rm -fv "${ODC_DIR}"/lib/*.jar
 cp -fv "${ODC_DIR}"/server/odc-server/target/odc-*-executable.jar "${ODC_DIR}"/lib/
 cp -fv "${ODC_DIR}"/server/odc-server/target/classes/log4j2.xml "${ODC_DIR}"/conf/
+cp -fv "${ODC_DIR}"/server/odc-server/target/classes/log4j2-task.xml "${ODC_DIR}"/conf/
 
 echo "copy plugin jars to ${ODC_DIR}/plugins ."
 [[ -f "${ODC_DIR}"/plugins/*.jar ]] && rm -fv "${ODC_DIR}"/plugins/*.jar

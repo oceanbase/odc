@@ -14,7 +14,7 @@ current_work_directory="$(pwd)"
 default_server_port=8989
 gc_basic_options="-XX:+UseG1GC -XX:+PrintAdaptiveSizePolicy -XX:+PrintGCDetails -XX:+PrintGCTimeStamps -XX:+PrintGCDateStamps"
 gc_log_options="-Xloggc:${install_directory}/log/gc.log -XX:+UseGCLogFileRotation -XX:GCLogFileSize=50M -XX:NumberOfGCLogFiles=5"
-default_heap_options="-XX:MaxRAMPercentage=60.0 -XX:InitialRAMPercentage=60.0"
+default_heap_options="-XX:MaxRAMPercentage=45.0 -XX:InitialRAMPercentage=45.0"
 default_gc_options="${gc_basic_options} ${gc_log_options}"
 default_oom_options="-XX:+ExitOnOutOfMemoryError"
 
@@ -98,6 +98,11 @@ function init_parameters() {
     fi
     export LOCAL_HOSTNAME=$(hostname -I | awk -F ' ' '{print $1}')
     export ODC_PROFILE_MODE="${profile}"
+
+    # set heap MaxRAMPercentage=60.0 if ODC_TASK_RUN_MODE is K8S
+    if [[ "${ODC_TASK_RUN_MODE}" == "K8S" ]]; then
+        default_heap_options="-XX:MaxRAMPercentage=60.0 -XX:InitialRAMPercentage=60.0"
+    fi
     log_info "init parameters done"
 }
 
@@ -170,8 +175,8 @@ main() {
     # if ODC_BOOT_MODE is TASK_EXECUTOR start odc server as task executor mode
     if [[ "${ODC_BOOT_MODE}" == "TASK_EXECUTOR" ]]; then
         echo "start odc as ${ODC_BOOT_MODE}"
-        sh -c "./start-job.sh"
-        exit $?
+        sh -c "${install_directory}/bin/start-job.sh"
+        exit 0
     fi
 
     if [[ "$1" == "--help" ]]; then

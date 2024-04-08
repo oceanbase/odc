@@ -35,25 +35,27 @@ import com.oceanbase.odc.service.common.util.SpringContextUtil;
 import com.oceanbase.odc.service.connection.database.DatabaseService;
 import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
-import com.oceanbase.odc.service.dlm.DataArchiveJobFactory;
+import com.oceanbase.odc.service.dlm.DLMJobFactory;
 import com.oceanbase.odc.service.dlm.DlmLimiterService;
 import com.oceanbase.odc.service.dlm.model.DataArchiveParameters;
 import com.oceanbase.odc.service.dlm.model.DlmTask;
 import com.oceanbase.odc.service.dlm.model.RateLimitConfiguration;
 import com.oceanbase.odc.service.dlm.utils.DataArchiveConditionUtil;
 import com.oceanbase.odc.service.dlm.utils.DlmJobIdUtil;
+import com.oceanbase.odc.service.quartz.util.ScheduleTaskUtils;
 import com.oceanbase.odc.service.schedule.ScheduleService;
 import com.oceanbase.odc.service.schedule.flowtask.ScheduleTaskContextHolder;
-import com.oceanbase.odc.service.task.config.DefaultTaskFrameworkProperties;
-import com.oceanbase.odc.service.task.config.TaskFrameworkProperties;
+import com.oceanbase.odc.service.task.config.TaskFrameworkEnabledProperties;
 import com.oceanbase.odc.service.task.constants.JobParametersKeyConstants;
 import com.oceanbase.odc.service.task.executor.task.DataArchiveTask;
 import com.oceanbase.odc.service.task.schedule.DefaultJobDefinition;
 import com.oceanbase.odc.service.task.schedule.JobScheduler;
+import com.oceanbase.odc.service.task.schedule.SingleJobProperties;
 import com.oceanbase.odc.service.task.service.TaskFrameworkService;
 import com.oceanbase.tools.migrator.common.configure.LogicTableConfig;
 import com.oceanbase.tools.migrator.common.enums.JobType;
-import com.oceanbase.tools.migrator.job.AbstractJob;
+import com.oceanbase.tools.migrator.common.exception.JobException;
+import com.oceanbase.tools.migrator.job.Job;
 import com.oceanbase.tools.migrator.task.CheckMode;
 
 import lombok.extern.slf4j.Slf4j;
@@ -64,34 +66,33 @@ import lombok.extern.slf4j.Slf4j;
  * @Descripition:
  */
 @Slf4j
-public class AbstractDlmJob implements OdcJob {
+public abstract class AbstractDlmJob implements OdcJob {
 
     public final ScheduleTaskRepository scheduleTaskRepository;
-    public final DataArchiveJobFactory dataArchiveJobFactory;
+    public final DLMJobFactory jobFactory;
     public final DatabaseService databaseService;
     public final ScheduleService scheduleService;
     public final DlmLimiterService limiterService;
 
-    public JobScheduler jobScheduler;
+    public JobScheduler jobScheduler = null;
 
-    public final TaskFrameworkProperties taskFrameworkProperties;
+    public final TaskFrameworkEnabledProperties taskFrameworkProperties;
 
-    public TaskFrameworkService taskFrameworkService;
+    public final TaskFrameworkService taskFrameworkService;
     public Thread jobThread;
-
-    private AbstractJob job;
+    private Job job;
 
 
     public AbstractDlmJob() {
         scheduleTaskRepository = SpringContextUtil.getBean(ScheduleTaskRepository.class);
-        dataArchiveJobFactory = SpringContextUtil.getBean(DataArchiveJobFactory.class);
+        jobFactory = SpringContextUtil.getBean(DLMJobFactory.class);
         databaseService = SpringContextUtil.getBean(DatabaseService.class);
         scheduleService = SpringContextUtil.getBean(ScheduleService.class);
         limiterService = SpringContextUtil.getBean(DlmLimiterService.class);
-        taskFrameworkProperties = SpringContextUtil.getBean(DefaultTaskFrameworkProperties.class);
+        taskFrameworkProperties = SpringContextUtil.getBean(TaskFrameworkEnabledProperties.class);
+        taskFrameworkService = SpringContextUtil.getBean(TaskFrameworkService.class);
         if (taskFrameworkProperties.isEnabled()) {
             jobScheduler = SpringContextUtil.getBean(JobScheduler.class);
-            taskFrameworkService = SpringContextUtil.getBean(TaskFrameworkService.class);
         }
     }
 
@@ -111,8 +112,8 @@ public class AbstractDlmJob implements OdcJob {
             }
             try {
                 initTask(taskUnit);
-                job = dataArchiveJobFactory.createJob(taskUnit);
-                log.info("Create dlm job succeed,taskId={},jobMeta={}", taskId, job.getJobMeta().toString());
+                job = jobFactory.createJob(taskUnit);
+                log.info("Create dlm job succeed,taskId={},task parameters={}", taskId, taskUnit);
             } catch (Exception e) {
                 log.warn("Create dlm job failed,taskId={},tableName={},errorMessage={}", taskId,
                         taskUnit.getTableName(), e);
@@ -123,16 +124,15 @@ public class AbstractDlmJob implements OdcJob {
                 job.run();
                 taskUnit.setStatus(TaskStatus.DONE);
                 log.info("DLM job succeed,taskId={},unitId={}", taskId, taskUnit.getId());
-            } catch (InterruptedException e) {
-                log.info("Data archive task is Interrupted,taskId={}", taskId);
+            } catch (JobException e) {
                 // used to stop several sub-threads.
-                job.getJobMeta().closeDataAdapter();
-                taskUnit.setStatus(TaskStatus.CANCELED);
-                break;
-            } catch (Exception e) {
-                log.error("Data archive task is failed,taskId={},errorMessage={}", taskId, e);
-                job.getJobMeta().closeDataAdapter();
-                taskUnit.setStatus(TaskStatus.FAILED);
+                if (job.getJobMeta().isToStop()) {
+                    log.info("Data archive task is Interrupted,taskId={}", taskId);
+                    taskUnit.setStatus(TaskStatus.CANCELED);
+                } else {
+                    log.error("Data archive task is failed,taskId={},errorMessage={}", taskId, e);
+                    taskUnit.setStatus(TaskStatus.FAILED);
+                }
             } finally {
                 scheduleTaskRepository.updateTaskResult(taskId, JsonUtils.toJson(taskUnits));
             }
@@ -223,10 +223,12 @@ public class AbstractDlmJob implements OdcJob {
         Map<String, String> jobData = new HashMap<>();
         jobData.put(JobParametersKeyConstants.META_TASK_PARAMETER_JSON,
                 JsonUtils.toJson(parameters));
-
+        SingleJobProperties singleJobProperties = new SingleJobProperties();
+        singleJobProperties.setEnableRetryAfterHeartTimeout(true);
+        singleJobProperties.setMaxRetryTimesAfterHeartTimeout(2);
         DefaultJobDefinition jobDefinition = DefaultJobDefinition.builder().jobClass(DataArchiveTask.class)
-                .jobType(com.oceanbase.odc.service.schedule.model.JobType.DATA_ARCHIVE.name())
-                .jobParameters(jobData)
+                .jobType("DLM")
+                .jobParameters(jobData).jobProperties(singleJobProperties)
                 .build();
         return jobScheduler.scheduleJobNow(jobDefinition);
     }
@@ -241,18 +243,27 @@ public class AbstractDlmJob implements OdcJob {
 
     @Override
     public void execute(JobExecutionContext context) {
-
+        if (context.getResult() == null) {
+            log.warn("Concurrent execute is not allowed,job will be existed.jobKey={}",
+                    context.getJobDetail().getKey());
+            return;
+        }
+        ScheduleTaskEntity scheduleTask = (ScheduleTaskEntity) context.getResult();
+        ScheduleTaskContextHolder.trace(scheduleTask.getJobName(), scheduleTask.getJobGroup(), scheduleTask.getId());
+        executeJob(context);
     }
+
+    public abstract void executeJob(JobExecutionContext context);
+
 
     @Override
     public void before(JobExecutionContext context) {
-        ScheduleTaskEntity scheduleTask = (ScheduleTaskEntity) context.getResult();
-        ScheduleTaskContextHolder.trace(scheduleTask.getJobName(), scheduleTask.getJobGroup(), scheduleTask.getId());
-
+        scheduleService.refreshScheduleStatus(ScheduleTaskUtils.getScheduleId(context));
     }
 
     @Override
     public void after(JobExecutionContext context) {
+        scheduleService.refreshScheduleStatus(ScheduleTaskUtils.getScheduleId(context));
         ScheduleTaskContextHolder.clear();
     }
 
@@ -261,9 +272,9 @@ public class AbstractDlmJob implements OdcJob {
         if (jobThread == null) {
             throw new IllegalStateException("Task is not executing.");
         }
-        job.getJobMeta().setToStop(true);
-        if (job != null && job.getJobMeta() != null) {
-            job.getJobMeta().destroyExecutor();
+        if (job != null) {
+            job.stop();
+            log.info("Job will be interrupted,jobId={}", job.getJobMeta().getJobId());
         }
         jobThread.interrupt();
     }

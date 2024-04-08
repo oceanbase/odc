@@ -27,6 +27,7 @@ import org.springframework.stereotype.Service;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.shared.PreConditions;
+import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.metadb.task.JobEntity;
 import com.oceanbase.odc.service.common.response.SuccessResponse;
 import com.oceanbase.odc.service.dispatch.DispatchResponse;
@@ -92,7 +93,8 @@ public class LoggerService {
                 // check log file is exist on current disk
                 String logFileStr = LogUtils.getTaskLogFileWithPath(jobEntity.getId(), level);
                 if (new File(logFileStr).exists()) {
-                    return LogUtils.getLogContent(logFileStr, LogUtils.MAX_LOG_LINE_COUNT, LogUtils.MAX_LOG_BYTE_COUNT);
+                    return LogUtils.getLatestLogContent(logFileStr, LogUtils.MAX_LOG_LINE_COUNT,
+                            LogUtils.MAX_LOG_BYTE_COUNT);
                 }
 
                 File tempFile = cloudObjectStorageService.downloadToTempFile(objId.get());
@@ -101,7 +103,8 @@ public class LoggerService {
                 } finally {
                     FileUtils.deleteQuietly(tempFile);
                 }
-                return LogUtils.getLogContent(logFileStr, LogUtils.MAX_LOG_LINE_COUNT, LogUtils.MAX_LOG_BYTE_COUNT);
+                return LogUtils.getLatestLogContent(logFileStr, LogUtils.MAX_LOG_LINE_COUNT,
+                        LogUtils.MAX_LOG_BYTE_COUNT);
 
             }
         }
@@ -120,13 +123,15 @@ public class LoggerService {
             // process mode when executor is not current host, forward to target
             if (!jobDispatchChecker.isExecutorOnThisMachine(jobEntity)) {
                 ExecutorIdentifier ei = ExecutorIdentifierParser.parser(jobEntity.getExecutorIdentifier());
-                DispatchResponse response = requestDispatcher.forward(ei.getHost(), ei.getPort());
-                return response.getContentByType(new TypeReference<String>() {});
+                boolean healthy = HttpUtil.isOdcHealthy(ei.getHost(), ei.getPort());
+                if (healthy) {
+                    DispatchResponse response = requestDispatcher.forward(ei.getHost(), ei.getPort());
+                    return response.getContentByType(new TypeReference<SuccessResponse<String>>() {}).getData();
+                }
             }
             String logFileStr = LogUtils.getTaskLogFileWithPath(jobEntity.getId(), level);
-            return LogUtils.getLogContent(logFileStr, LogUtils.MAX_LOG_LINE_COUNT, LogUtils.MAX_LOG_BYTE_COUNT);
+            return LogUtils.getLatestLogContent(logFileStr, LogUtils.MAX_LOG_LINE_COUNT, LogUtils.MAX_LOG_BYTE_COUNT);
         }
-        // if log not found then return description to user
-        return jobEntity.getDescription();
+        return ErrorCodes.TaskLogNotFound.getLocalizedMessage(new Object[] {"Id", jobEntity.getId()});
     }
 }

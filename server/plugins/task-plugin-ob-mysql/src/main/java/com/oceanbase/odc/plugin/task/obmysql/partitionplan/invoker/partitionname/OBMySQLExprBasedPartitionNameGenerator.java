@@ -21,12 +21,14 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.text.StringSubstitutor;
 
 import com.oceanbase.odc.plugin.task.api.partitionplan.invoker.partitionname.SqlExprBasedPartitionNameGenerator;
 import com.oceanbase.odc.plugin.task.api.partitionplan.model.PartitionPlanVariableKey;
 import com.oceanbase.odc.plugin.task.api.partitionplan.model.SqlExprBasedGeneratorConfig;
+import com.oceanbase.odc.plugin.task.obmysql.partitionplan.OBMySQLAutoPartitionExtensionPoint;
 import com.oceanbase.odc.plugin.task.obmysql.partitionplan.invoker.OBMySQLExprCalculator;
 import com.oceanbase.odc.plugin.task.obmysql.partitionplan.invoker.SqlExprCalculator;
 import com.oceanbase.odc.plugin.task.obmysql.partitionplan.invoker.SqlExprCalculator.SqlExprResult;
@@ -34,6 +36,7 @@ import com.oceanbase.odc.plugin.task.obmysql.partitionplan.mapper.CellDataProces
 import com.oceanbase.odc.plugin.task.obmysql.partitionplan.mapper.CellDataProcessors;
 import com.oceanbase.tools.dbbrowser.model.DBTable;
 import com.oceanbase.tools.dbbrowser.model.DBTablePartitionDefinition;
+import com.oceanbase.tools.dbbrowser.model.DBTablePartitionOption;
 import com.oceanbase.tools.dbbrowser.model.datatype.DataType;
 
 import lombok.NonNull;
@@ -53,7 +56,8 @@ public class OBMySQLExprBasedPartitionNameGenerator implements SqlExprBasedParti
             @NonNull Integer targetPartitionIndex, @NonNull DBTablePartitionDefinition target,
             @NonNull SqlExprBasedGeneratorConfig config) {
         SqlExprCalculator calculator = getSqlExprCalculator(connection);
-        SqlExprResult result = calculator.calculate(getRealGenerateExpression(targetPartitionIndex, config));
+        SqlExprResult result = calculator.calculate(getRealGenerateExpression(
+                dbTable, target, targetPartitionIndex, config));
         return getCellDataProcessor(result.getDataType()).convertToSqlLiteral(result.getValue(), result.getDataType());
     }
 
@@ -65,17 +69,48 @@ public class OBMySQLExprBasedPartitionNameGenerator implements SqlExprBasedParti
         return CellDataProcessors.getByDataType(dataType);
     }
 
-    private String getRealGenerateExpression(Integer targetPartitionIndex, SqlExprBasedGeneratorConfig config) {
-        if (StringUtils.isEmpty(config.getIntervalGenerateExpr())) {
+    protected String unquoteIdentifier(String identifier) {
+        return new OBMySQLAutoPartitionExtensionPoint().unquoteIdentifier(identifier);
+    }
+
+    private String getRealGenerateExpression(DBTable dbTable,
+            DBTablePartitionDefinition definition,
+            Integer targetPartitionIndex, SqlExprBasedGeneratorConfig config) {
+        Map<String, String> variables = new HashMap<>();
+        setIntervalVariable(config, targetPartitionIndex, variables);
+        setPartitionKeyUpperBoundVariable(dbTable, definition, variables);
+        if (variables.isEmpty()) {
             return config.getGenerateExpr();
+        }
+        return new StringSubstitutor(variables).replace(config.getGenerateExpr());
+    }
+
+    private void setIntervalVariable(SqlExprBasedGeneratorConfig config,
+            Integer targetPartitionIndex, Map<String, String> variables) {
+        if (StringUtils.isEmpty(config.getIntervalGenerateExpr())) {
+            return;
         }
         List<String> intervals = new ArrayList<>();
         for (int i = 0; i <= targetPartitionIndex; i++) {
             intervals.add(config.getIntervalGenerateExpr());
         }
-        Map<String, String> variables = new HashMap<>();
         variables.put(PartitionPlanVariableKey.INTERVAL.name(), "(" + String.join("+", intervals) + ")");
-        return new StringSubstitutor(variables).replace(config.getGenerateExpr());
+    }
+
+    private void setPartitionKeyUpperBoundVariable(DBTable dbTable,
+            DBTablePartitionDefinition definition, Map<String, String> variables) {
+        DBTablePartitionOption option = dbTable.getPartition().getPartitionOption();
+        if (option == null) {
+            throw new IllegalStateException("Partition option is missing");
+        }
+        List<String> cols = option.getColumnNames();
+        if (CollectionUtils.isNotEmpty(cols)) {
+            for (int i = 0; i < cols.size(); i++) {
+                variables.put(unquoteIdentifier(cols.get(i)), definition.getMaxValues().get(i));
+            }
+        } else if (StringUtils.isNotEmpty(option.getExpression())) {
+            variables.put(unquoteIdentifier(option.getExpression()), definition.getMaxValues().get(0));
+        }
     }
 
 }

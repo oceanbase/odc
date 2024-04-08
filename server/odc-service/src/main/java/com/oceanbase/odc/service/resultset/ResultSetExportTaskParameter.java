@@ -49,6 +49,7 @@ public class ResultSetExportTaskParameter implements Serializable, TaskParameter
     private List<MaskingAlgorithm> rowDataMaskingAlgorithms;
     @JsonIgnore
     private String database;
+    private Integer executionTimeoutSeconds = 48 * 60 * 60;
 
     @Data
     static class CSVFormat {

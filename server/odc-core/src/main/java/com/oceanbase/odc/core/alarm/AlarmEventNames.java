@@ -48,4 +48,20 @@ public final class AlarmEventNames {
     public static final String DRUID_WAIT_THREAD_COUNT_MORE_THAN_0 = "DRUID_WAIT_THREAD_COUNT_MORE_THAN_0";
     public static final String DRUID_ACTIVE_COUNT_MORE_THAN_80_PERCENT = "DRUID_ACTIVE_COUNT_MORE_THAN_80_PERCENT";
 
+    public static final String API_TOO_LONG_RT_TIME = "API_TOO_LONG_RT_TIME";
+
+    /**
+     * SCHEDULING
+     */
+
+    public static final String SCHEDULING_FAILED = "SCHEDULING_FAILED";
+
+    /**
+     * TASK
+     */
+    public static final String TASK_CANCELED_FAILED = "TASK_CANCELED_FAILED";
+    public static final String TASK_HEARTBEAT_TIMEOUT = "TASK_HEARTBEAT_TIMEOUT";
+    public static final String TASK_START_FAILED = "TASK_START_FAILED";
+    public static final String TASK_EXECUTION_FAILED = "TASK_EXECUTION_FAILED";
+    public static final String TASK_EXECUTOR_DESTROY_FAILED = "TASK_EXECUTOR_DESTROY_FAILED";
 }

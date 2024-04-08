@@ -47,18 +47,23 @@ public class DispatchResponse {
     private ErrorResponseException thrown;
     @Getter
     private final HttpHeaders responseHeaders;
+    @Getter
+    private final HttpStatus httpStatus;
 
-    public static DispatchResponse of(@NonNull byte[] content, @NonNull HttpHeaders headers) {
-        DispatchResponse response = new DispatchResponse(content, headers);
+    public static DispatchResponse of(@NonNull byte[] content, @NonNull HttpHeaders headers,
+            @NonNull HttpStatus httpStatus) {
+        DispatchResponse response = new DispatchResponse(content, headers, httpStatus);
         if (response.thrown != null) {
             throw response.thrown;
         }
         return response;
     }
 
-    private DispatchResponse(@NonNull byte[] content, @NonNull HttpHeaders responseHeaders) {
+    private DispatchResponse(@NonNull byte[] content, @NonNull HttpHeaders responseHeaders,
+            @NonNull HttpStatus httpStatus) {
         this.content = content;
         this.responseHeaders = responseHeaders;
+        this.httpStatus = httpStatus;
         MediaType contentType = responseHeaders.getContentType();
         Verify.notNull(contentType, "ContentType can not be null");
         this.thrown = null;
@@ -72,12 +77,12 @@ public class DispatchResponse {
         } else {
             contentStr = new String(content);
         }
-        HttpStatus httpStatus;
+        HttpStatus jsonHttpStatus;
         String errorCode;
         String localizedMessage;
         OdcResult<?> v1Result = v1(contentStr);
         if (v1Result.getErrCode() != null && v1Result.getErrMsg() != null) {
-            httpStatus = v1Result.getHttpStatus();
+            jsonHttpStatus = v1Result.getHttpStatus();
             errorCode = v1Result.getErrCode();
             localizedMessage = v1Result.getErrMsg();
         } else {
@@ -85,11 +90,11 @@ public class DispatchResponse {
             if (v2Result.getError() == null) {
                 return;
             }
-            httpStatus = v2Result.getHttpStatus();
+            jsonHttpStatus = v2Result.getHttpStatus();
             errorCode = v2Result.getError().getCode();
             localizedMessage = v2Result.getError().getMessage();
         }
-        thrown = new ErrorResponseException(httpStatus, errorCode, localizedMessage);
+        thrown = new ErrorResponseException(jsonHttpStatus, errorCode, localizedMessage);
     }
 
     public <T> T getContentByType(@NonNull TypeReference<T> reference) {
@@ -122,5 +127,4 @@ public class DispatchResponse {
         }
         return new String(getContent(), charset);
     }
-
 }

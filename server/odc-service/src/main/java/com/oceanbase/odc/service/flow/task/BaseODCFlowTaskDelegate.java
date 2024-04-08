@@ -15,7 +15,12 @@
  */
 package com.oceanbase.odc.service.flow.task;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.Date;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ScheduledExecutorService;
@@ -23,31 +28,45 @@ import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
+import javax.validation.constraints.NotNull;
+
 import org.flowable.engine.delegate.DelegateExecution;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
+import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.core.flow.exception.BaseFlowException;
+import com.oceanbase.odc.core.flow.model.AbstractFlowTaskResult;
+import com.oceanbase.odc.core.flow.model.FlowTaskResult;
 import com.oceanbase.odc.core.shared.Verify;
+import com.oceanbase.odc.core.shared.exception.NotFoundException;
+import com.oceanbase.odc.core.shared.exception.UnsupportedException;
 import com.oceanbase.odc.metadb.flow.ServiceTaskInstanceRepository;
+import com.oceanbase.odc.metadb.task.TaskEntity;
 import com.oceanbase.odc.service.common.model.HostProperties;
 import com.oceanbase.odc.service.connection.ConnectionService;
+import com.oceanbase.odc.service.flow.FlowTaskInstanceService;
 import com.oceanbase.odc.service.flow.exception.ServiceTaskCancelledException;
 import com.oceanbase.odc.service.flow.exception.ServiceTaskError;
 import com.oceanbase.odc.service.flow.exception.ServiceTaskExpiredException;
 import com.oceanbase.odc.service.flow.model.ExecutionStrategyConfig;
+import com.oceanbase.odc.service.flow.model.FlowNodeStatus;
 import com.oceanbase.odc.service.flow.model.FlowTaskExecutionStrategy;
 import com.oceanbase.odc.service.flow.task.model.RuntimeTaskConstants;
 import com.oceanbase.odc.service.flow.util.FlowTaskUtil;
+import com.oceanbase.odc.service.flow.util.TaskLogFilenameGenerator;
 import com.oceanbase.odc.service.iam.util.SecurityContextUtils;
 import com.oceanbase.odc.service.notification.Broker;
 import com.oceanbase.odc.service.notification.NotificationProperties;
 import com.oceanbase.odc.service.notification.helper.EventBuilder;
 import com.oceanbase.odc.service.notification.model.Event;
+import com.oceanbase.odc.service.objectstorage.cloud.CloudObjectStorageService;
 import com.oceanbase.odc.service.task.TaskService;
 import com.oceanbase.odc.service.task.model.ExecutorInfo;
+import com.oceanbase.odc.service.task.model.OdcTaskLogLevel;
 
 import lombok.Getter;
+import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -60,7 +79,7 @@ import lombok.extern.slf4j.Slf4j;
  * @see BaseRuntimeFlowableDelegate
  */
 @Slf4j
-public abstract class BaseODCFlowTaskDelegate<T> extends BaseRuntimeFlowableDelegate<T> {
+public abstract class BaseODCFlowTaskDelegate<T> extends BaseRuntimeFlowableDelegate<T> implements FlowTaskCallBack {
 
     @Autowired
     private TaskService taskService;
@@ -84,6 +103,12 @@ public abstract class BaseODCFlowTaskDelegate<T> extends BaseRuntimeFlowableDele
     private ConnectionService connectionService;
     @Autowired
     private EventBuilder eventBuilder;
+    @Autowired
+    protected FlowTaskCallBackApprovalService flowTaskCallBackApprovalService;
+    @Autowired
+    protected CloudObjectStorageService cloudObjectStorageService;
+    @Autowired
+    private FlowTaskInstanceService flowTaskInstanceService;
 
     private void init(DelegateExecution execution) {
         this.taskId = FlowTaskUtil.getTaskId(execution);
@@ -137,7 +162,6 @@ public abstract class BaseODCFlowTaskDelegate<T> extends BaseRuntimeFlowableDele
             super.run(execution);
         } catch (Exception e) {
             log.warn("Failed to run task, activityId={}", execution.getCurrentActivityId(), e);
-            SecurityContextUtils.clear();
             if (scheduleExecutor != null) {
                 scheduleExecutor.shutdownNow();
             }
@@ -149,6 +173,7 @@ public abstract class BaseODCFlowTaskDelegate<T> extends BaseRuntimeFlowableDele
             if (e instanceof BaseFlowException) {
                 throw e;
             }
+            SecurityContextUtils.clear();
             throw new ServiceTaskError(e);
         }
         try {
@@ -236,10 +261,23 @@ public abstract class BaseODCFlowTaskDelegate<T> extends BaseRuntimeFlowableDele
      */
     protected abstract boolean isFailure();
 
+    @Override
+    public void callback(@NotNull long flowInstanceId, @NotNull long flowTaskInstanceId,
+            @NotNull FlowNodeStatus flowNodeStatus, Map<String, Object> approvalVariables) {
+        try {
+            setDownloadLogUrl(flowInstanceId);
+        } catch (Exception e) {
+            log.warn("Failed to set download log URL, either because the log file does not exist "
+                    + "or the upload of the OSS failed, flowInstanceId={}", flowInstanceId, e);
+        }
+        flowTaskCallBackApprovalService.approval(flowInstanceId, flowTaskInstanceId, flowNodeStatus, approvalVariables);
+    }
+
     /**
      * The callback method when the task fails, which is used to update the status and other operations
      */
     protected void onFailure(Long taskId, TaskService taskService) {
+        callback(getFlowInstanceId(), getTargetTaskInstanceId(), FlowNodeStatus.FAILED, null);
         if (notificationProperties.isEnabled()) {
             try {
                 Event event = eventBuilder.ofFailedTask(taskService.detail(taskId));
@@ -254,6 +292,7 @@ public abstract class BaseODCFlowTaskDelegate<T> extends BaseRuntimeFlowableDele
      * The callback method when the task is successful, used to update the status and other operations
      */
     protected void onSuccessful(Long taskId, TaskService taskService) {
+        callback(getFlowInstanceId(), getTargetTaskInstanceId(), FlowNodeStatus.COMPLETED, null);
         if (notificationProperties.isEnabled()) {
             try {
                 Event event = eventBuilder.ofSucceededTask(taskService.detail(taskId));
@@ -269,6 +308,7 @@ public abstract class BaseODCFlowTaskDelegate<T> extends BaseRuntimeFlowableDele
      * operations
      */
     protected void onTimeout(Long taskId, TaskService taskService) {
+        callback(getFlowInstanceId(), getTargetTaskInstanceId(), FlowNodeStatus.EXPIRED, null);
         if (notificationProperties.isEnabled()) {
             try {
                 Event event = eventBuilder.ofTimeoutTask(taskService.detail(taskId));
@@ -286,9 +326,47 @@ public abstract class BaseODCFlowTaskDelegate<T> extends BaseRuntimeFlowableDele
 
     @Override
     public boolean cancel(boolean mayInterruptIfRunning) {
-        return cancel(mayInterruptIfRunning, taskId, taskService);
+        boolean result = cancel(mayInterruptIfRunning, taskId, taskService);
+        if (result) {
+            callback(getFlowInstanceId(), getTargetTaskInstanceId(), FlowNodeStatus.CANCELLED, null);
+        }
+        return result;
     }
 
     protected abstract boolean cancel(boolean mayInterruptIfRunning, Long taskId, TaskService taskService);
 
+    private void setDownloadLogUrl(@NonNull Long flowInstanceId) throws IOException, NotFoundException {
+        TaskEntity taskEntity = taskService.detail(taskId);
+        File logFile;
+        try {
+            logFile = taskService.getLogFile(taskEntity.getCreatorId(), taskId + "", taskEntity.getTaskType(),
+                    OdcTaskLogLevel.ALL);
+        } catch (UnsupportedException e) {
+            // If the log file does not exist, the download URL will not be set
+            return;
+        }
+        String downloadUrl = String.format("/api/v2/flow/flowInstances/%s/tasks/log/download", flowInstanceId);
+        if (Objects.nonNull(cloudObjectStorageService) && cloudObjectStorageService.supported()) {
+            String fileName = TaskLogFilenameGenerator.generate(flowInstanceId);
+            try {
+                String objectName = cloudObjectStorageService.uploadTemp(fileName, logFile);
+                downloadUrl = cloudObjectStorageService.getBucketName() + "/" + objectName;
+                log.info("Upload task log file to OSS, taskId={}, logFileName={}", taskId, fileName);
+            } catch (Exception e) {
+                log.warn("Failed to upload task log file to OSS, taskId={}", taskId, e);
+                throw new RuntimeException(
+                        String.format("Failed to upload task log file to OSS, file name: %s", fileName),
+                        e.getCause());
+            }
+        }
+        List<? extends FlowTaskResult> flowTaskResults = flowTaskInstanceService.getTaskResultFromEntity(taskEntity);
+        Verify.singleton(flowTaskResults, "flowTaskResults");
+        if (flowTaskResults.get(0) instanceof AbstractFlowTaskResult) {
+            FlowTaskResult flowTaskResult = flowTaskResults.get(0);
+            AbstractFlowTaskResult abstractFlowTaskResult = (AbstractFlowTaskResult) flowTaskResult;
+            abstractFlowTaskResult.setFullLogDownloadUrl(downloadUrl);
+            taskEntity.setResultJson(JsonUtils.toJson(flowTaskResult));
+            taskService.update(taskEntity);
+        }
+    }
 }

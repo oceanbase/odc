@@ -1,4 +1,4 @@
-create table ${const:com.oceanbase.odc.service.partitionplan.PartitionPlanServiceV2Test.ORACLE_RANGE_TABLE_NAME}(
+create table ${const:com.oceanbase.odc.service.partitionplan.PartitionPlanServiceTest.ORACLE_RANGE_TABLE_NAME}(
     c1 date,
     c2 timestamp(6),
     c5 varchar2(64)

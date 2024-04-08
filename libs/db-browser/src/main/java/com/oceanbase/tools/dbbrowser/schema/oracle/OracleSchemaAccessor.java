@@ -1253,7 +1253,7 @@ public class OracleSchemaAccessor implements DBSchemaAccessor {
                 .value(schemaName)
                 .append(") as DDL FROM dual");
         jdbcOperations.query(getDDL.toString(), rs -> {
-            view.setDdl(rs.getString(1));
+            view.setDdl(StringUtils.trim(rs.getString(1)));
         });
         fullFillComment(view);
         OracleSqlBuilder getColumns = new OracleSqlBuilder();
@@ -1451,13 +1451,9 @@ public class OracleSchemaAccessor implements DBSchemaAccessor {
         dbPackage.setPackageName(packageName);
 
         DBPackageDetail packageHead = new DBPackageDetail();
-        DBPackageDetail packageBody = new DBPackageDetail();
         DBPackageBasicInfo packageHeadBasicInfo = new DBPackageBasicInfo();
-        DBPackageBasicInfo packageBodyBasicInfo = new DBPackageBasicInfo();
         packageHead.setBasicInfo(packageHeadBasicInfo);
-        packageBody.setBasicInfo(packageBodyBasicInfo);
         dbPackage.setPackageHead(packageHead);
-        dbPackage.setPackageBody(packageBody);
 
         jdbcOperations.query(info.toString(), (rs) -> {
             dbPackage.setStatus(rs.getString("STATUS"));
@@ -1466,9 +1462,13 @@ public class OracleSchemaAccessor implements DBSchemaAccessor {
                 packageHeadBasicInfo.setCreateTime(rs.getTimestamp("CREATED"));
                 packageHeadBasicInfo.setModifyTime(rs.getTimestamp("LAST_DDL_TIME"));
             } else {
+                DBPackageDetail packageBody = new DBPackageDetail();
+                DBPackageBasicInfo packageBodyBasicInfo = new DBPackageBasicInfo();
                 packageBodyBasicInfo.setDefiner(rs.getString("OWNER"));
                 packageBodyBasicInfo.setCreateTime(rs.getTimestamp("CREATED"));
                 packageBodyBasicInfo.setModifyTime(rs.getTimestamp("LAST_DDL_TIME"));
+                packageBody.setBasicInfo(packageBodyBasicInfo);
+                dbPackage.setPackageBody(packageBody);
             }
         });
 
@@ -1483,16 +1483,19 @@ public class OracleSchemaAccessor implements DBSchemaAccessor {
         });
         parsePackageDDL(packageHead);
 
-        OracleSqlBuilder packageBodyDDL = new OracleSqlBuilder();
-        packageBodyDDL.append("SELECT dbms_metadata.get_ddl('PACKAGE_BODY', ")
-                .value(packageName)
-                .append(", ")
-                .value(schemaName)
-                .append(") as DDL from dual");
-        jdbcOperations.query(packageBodyDDL.toString(), rs -> {
-            packageBodyBasicInfo.setDdl(rs.getString(1));
-        });
-        parsePackageDDL(packageBody);
+        if (Objects.nonNull(dbPackage.getPackageBody()) && Objects.nonNull(dbPackage.getPackageBody().getBasicInfo())) {
+            DBPackageDetail packageBody = dbPackage.getPackageBody();
+            OracleSqlBuilder packageBodyDDL = new OracleSqlBuilder();
+            packageBodyDDL.append("SELECT dbms_metadata.get_ddl('PACKAGE_BODY', ")
+                    .value(packageName)
+                    .append(", ")
+                    .value(schemaName)
+                    .append(") as DDL from dual");
+            jdbcOperations.query(packageBodyDDL.toString(), rs -> {
+                packageBody.getBasicInfo().setDdl(rs.getString(1));
+            });
+            parsePackageDDL(dbPackage.getPackageBody());
+        }
 
         if (StringUtils.containsIgnoreCase(dbPackage.getStatus(), PLConstants.PL_OBJECT_STATUS_INVALID)) {
             dbPackage.setErrorMessage(PLObjectErrMsgUtils.getOraclePLObjErrMsg(jdbcOperations,
@@ -1548,7 +1551,7 @@ public class OracleSchemaAccessor implements DBSchemaAccessor {
                 .value(schemaName)
                 .append(") as DDL FROM dual");
         jdbcOperations.query(ddl.toString(), rs -> {
-            trigger.setDdl(rs.getString(1));
+            trigger.setDdl(StringUtils.trim(rs.getString(1)));
         });
         if (StringUtils.containsIgnoreCase(trigger.getStatus(), PLConstants.PL_OBJECT_STATUS_INVALID)) {
             trigger.setErrorMessage(PLObjectErrMsgUtils.getOraclePLObjErrMsg(jdbcOperations,

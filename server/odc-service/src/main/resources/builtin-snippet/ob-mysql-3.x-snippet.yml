@@ -5,7 +5,7 @@
   type: DQL
   min_version: 2.2.0
   max_version: 3.4.0
-  description: 'Query unit list for OceanBase MySQL compatible mode'
+  description: 'Query unit list for OceanBase MySQL mode'
   prefix: query_unit_list
   body: |
     SELECT
@@ -58,7 +58,7 @@
   type: DQL
   min_version: 2.2.0
   max_version: 3.4.0
-  description: Query module memory usage for OceanBase mysql mode tenant
+  description: Query module memory usage for OceanBase MySQL mode
   prefix: query_module_memory_usage
   body: |
     SELECT
@@ -77,7 +77,7 @@
   type: DQL
   min_version: 2.2.0
   max_version: 3.4.0
-  description: Query memstore information for OceanBase mysql mode tenant
+  description: Query memstore information for OceanBase MySQL mode
   prefix: query_memstore_information
   body: |
     SELECT
@@ -91,3 +91,55 @@
       FREEZE_CNT
     FROM
       oceanbase.GV\$MEMSTORE;
+- name: oceanbase mysql stats top size tables in database
+  dialect_type: OB_MYSQL
+  tags: [ 'dba','oceanbase', 'stats' ]
+  type: DQL
+  min_version: 2.2.0
+  max_version: 3.4.0
+  description: Stats top size tables in database for OceanBase MySQL mode
+  prefix: stats_top_size_tables_in_database
+  body: |
+    SELECT
+      d.database_name as database_name,
+      t.table_name as table_name,
+      ROUND(sum(p.data_size)/1024/1024,1) as data_size_MB,
+      ROUND(sum(p.required_size)/1024/1024,1) as required_size_MB
+    FROM oceanbase.gv\$table t
+    LEFT JOIN oceanbase.gv\$database d
+      ON t.database_id = d.database_id
+    LEFT JOIN oceanbase.gv\$partition p
+      ON t.table_id = p.table_id
+    WHERE 
+      d.database_name=DATABASE()
+    AND 
+      t.table_type=3
+    GROUP BY database_name, table_name
+    ORDER BY data_size_MB DESC
+    LIMIT 10;
+- name: oceanbase mysql stats partition size for table
+  dialect_type: OB_MYSQL
+  tags: [ 'dba','oceanbase', 'stats' ]
+  type: DQL
+  min_version: 2.2.0
+  max_version: 3.4.0
+  description: stats partition size for table for OceanBase MySQL mode
+  prefix: stats_partition_size_for_table
+  body: |
+    SELECT
+      d.database_name as database_name,
+      t.table_name as table_name,
+      p.partition_id,
+      ROUND(sum(p.data_size)/1024/1024,1) as data_size_MB,
+      ROUND(sum(p.required_size)/1024/1024,1) as required_size_MB
+    FROM oceanbase.gv\$table t
+    LEFT JOIN oceanbase.gv\$database d
+      ON t.database_id = d.database_id
+    LEFT JOIN oceanbase.gv\$partition p
+      ON t.table_id = p.table_id
+    WHERE 
+      d.database_name = DATABASE()
+    AND 
+      t.table_type=3
+    GROUP BY database_name, table_name, partition_id
+    ORDER BY data_size_MB DESC;

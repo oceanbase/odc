@@ -111,24 +111,32 @@ public class SqlRewriteUtil {
 
     public static String addQueryLimit(@NotEmpty String sql, ConnectionSession session, Long maxRows) {
         StringBuilder result = new StringBuilder("select * from (");
+        StringBuilder explain = new StringBuilder();
         result.append(sql.endsWith(";") ? sql.substring(0, sql.length() - 1) : sql).append(")");
 
         if (session.getDialectType() == DialectType.MYSQL) {
             result.append(" as ").append(OdcConstants.ODC_INTERNAL_RESULT_SET);
         }
-        if (session.getDialectType().isMysql()) {
-            result.append(" limit ").append(maxRows);
-        } else {
-            if (VersionUtils.isGreaterThanOrEqualsTo(ConnectionSessionUtil.getVersion(session), "2.2.50")) {
-                result.append(" fetch first ").append(maxRows).append(" rows only");
-            } else {
+        switch (session.getDialectType()) {
+            case ORACLE:
                 result.append(" where rownum <= ").append(maxRows);
-            }
+                explain.append("explain plan for ").append(result);
+                break;
+            case OB_ORACLE:
+                if (VersionUtils.isGreaterThanOrEqualsTo(ConnectionSessionUtil.getVersion(session), "2.2.50")) {
+                    result.append(" fetch first ").append(maxRows).append(" rows only");
+                } else {
+                    result.append(" where rownum <= ").append(maxRows);
+                }
+                explain.append("explain ").append(result);
+                break;
+            default:
+                result.append(" limit ").append(maxRows);
+                explain.append("explain ").append(result);
         }
 
-        String explain = "explain " + result;
         try {
-            session.getSyncJdbcExecutor(ConnectionSessionConstants.CONSOLE_DS_KEY).execute(explain);
+            session.getSyncJdbcExecutor(ConnectionSessionConstants.CONSOLE_DS_KEY).execute(explain.toString());
         } catch (Exception e) {
             log.warn("failed to add max-rows limit, will use original sql, reason:{}", e.getMessage());
             return sql;
