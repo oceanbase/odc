@@ -20,8 +20,6 @@ import java.text.MessageFormat;
 import java.util.Optional;
 
 import com.oceanbase.odc.common.util.SystemUtils;
-import com.oceanbase.odc.core.shared.constant.ErrorCodes;
-import com.oceanbase.odc.core.shared.exception.BadRequestException;
 import com.oceanbase.odc.metadb.task.JobEntity;
 import com.oceanbase.odc.service.task.config.JobConfiguration;
 import com.oceanbase.odc.service.task.config.JobConfigurationHolder;
@@ -115,10 +113,9 @@ public class ProcessJobCaller extends BaseJobCaller {
                                 ji.getId(), ei));
             }
             updateExecutorDestroyed(ji);
-            throw new BadRequestException(ErrorCodes.ConnectionHostUnreachable, new Object[] {},
-                    MessageFormat.format(
-                            "Cannot connect to target odc server, set job to failed, jodId={0}, identifier={1}",
-                            ji.getId(), ei));
+            log.warn("Cannot connect to target odc server, set job to failed, jodId={}, identifier={}",
+                    ji.getId(), ei);
+            return;
         }
         throw new JobException("Connect to target odc server succeed, but cannot destroy process,"
                 + " may not on this machine, jodId={0}, identifier={1}", ji.getId(), ei);

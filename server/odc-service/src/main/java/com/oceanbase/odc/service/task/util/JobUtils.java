@@ -30,14 +30,11 @@ import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.common.util.SystemUtils;
 import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.core.shared.constant.ConnectType;
-import com.oceanbase.odc.core.shared.constant.ErrorCodes;
-import com.oceanbase.odc.core.shared.exception.HttpException;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.objectstorage.cloud.model.ObjectStorageConfiguration;
 import com.oceanbase.odc.service.task.constants.JobConstants;
 import com.oceanbase.odc.service.task.constants.JobEnvKeyConstants;
 import com.oceanbase.odc.service.task.enums.TaskRunMode;
-import com.oceanbase.odc.service.task.exception.TaskRuntimeException;
 import com.oceanbase.odc.service.task.jasypt.AccessEnvironmentJasyptEncryptorConfigProperties;
 import com.oceanbase.odc.service.task.jasypt.DefaultJasyptEncryptor;
 import com.oceanbase.odc.service.task.jasypt.JasyptEncryptorConfigProperties;
@@ -171,17 +168,8 @@ public class JobUtils {
     }
 
     public static void putEnvToSysProperties(String environmentKey) {
-        if (System.getenv(environmentKey) != null && System.getProperty(environmentKey) == null) {
+        if (System.getenv(environmentKey) != null) {
             System.setProperty(environmentKey, System.getenv(environmentKey));
-        }
-    }
-
-    public static void handleDestroyException(Exception e) {
-        if (e instanceof HttpException
-                && ((HttpException) e).getErrorCode() == ErrorCodes.ConnectionHostUnreachable) {
-            log.warn(e.getMessage());
-        } else {
-            throw new TaskRuntimeException(e);
         }
     }
 }

@@ -22,9 +22,9 @@ import com.oceanbase.odc.service.task.config.JobConfiguration;
 import com.oceanbase.odc.service.task.config.JobConfigurationHolder;
 import com.oceanbase.odc.service.task.config.TaskFrameworkEnabledProperties;
 import com.oceanbase.odc.service.task.enums.JobStatus;
+import com.oceanbase.odc.service.task.exception.JobException;
 import com.oceanbase.odc.service.task.exception.TaskRuntimeException;
 import com.oceanbase.odc.service.task.listener.JobTerminateEvent;
-import com.oceanbase.odc.service.task.util.JobUtils;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -74,8 +74,8 @@ public class DefaultTaskFrameworkDisabledHandler implements TaskFrameworkDisable
             if (je.getStatus() == JobStatus.RUNNING) {
                 try {
                     configuration.getJobDispatcher().destroy(ji);
-                } catch (Exception e) {
-                    JobUtils.handleDestroyException(e);
+                } catch (JobException e) {
+                    throw new TaskRuntimeException(e);
                 }
             }
             configuration.getEventPublisher()

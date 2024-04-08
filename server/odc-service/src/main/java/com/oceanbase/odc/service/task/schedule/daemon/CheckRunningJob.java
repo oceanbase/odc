@@ -33,11 +33,11 @@ import com.oceanbase.odc.service.task.config.JobConfigurationHolder;
 import com.oceanbase.odc.service.task.config.JobConfigurationValidator;
 import com.oceanbase.odc.service.task.config.TaskFrameworkProperties;
 import com.oceanbase.odc.service.task.enums.JobStatus;
+import com.oceanbase.odc.service.task.exception.JobException;
 import com.oceanbase.odc.service.task.exception.TaskRuntimeException;
 import com.oceanbase.odc.service.task.listener.JobTerminateEvent;
 import com.oceanbase.odc.service.task.schedule.JobIdentity;
 import com.oceanbase.odc.service.task.schedule.SingleJobProperties;
-import com.oceanbase.odc.service.task.util.JobUtils;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -102,8 +102,8 @@ public class CheckRunningJob implements Job {
 
         try {
             getConfiguration().getJobDispatcher().destroy(JobIdentity.of(a.getId()));
-        } catch (Exception e) {
-            JobUtils.handleDestroyException(e);
+        } catch (JobException e) {
+            throw new TaskRuntimeException(e);
         }
         if (!isNeedRetry) {
             getConfiguration().getEventPublisher().publishEvent(
