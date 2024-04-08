@@ -15,8 +15,10 @@
  */
 package com.oceanbase.odc.service.task.service;
 
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 
+import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.support.TransactionTemplate;
 
 /**
@@ -40,5 +42,10 @@ public class SpringTransactionManager implements TransactionManager {
     @Override
     public void doInTransactionWithoutResult(Runnable r) {
         transactionTemplate.executeWithoutResult(status -> r.run());
+    }
+
+    @Override
+    public void doInTransactionWithoutResult(Consumer<TransactionStatus> status) {
+        transactionTemplate.executeWithoutResult(status);
     }
 }

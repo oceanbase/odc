@@ -15,7 +15,10 @@
  */
 package com.oceanbase.odc.service.task.service;
 
+import java.util.function.Consumer;
 import java.util.function.Supplier;
+
+import org.springframework.transaction.TransactionStatus;
 
 /**
  * @author yaobin
@@ -27,4 +30,6 @@ public interface TransactionManager {
     <T> T doInTransaction(Supplier<T> action);
 
     void doInTransactionWithoutResult(Runnable r);
+
+    void doInTransactionWithoutResult(Consumer<TransactionStatus> action);
 }

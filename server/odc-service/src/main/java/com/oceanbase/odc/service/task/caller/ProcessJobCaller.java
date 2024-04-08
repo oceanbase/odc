@@ -20,6 +20,9 @@ import java.text.MessageFormat;
 import java.util.Optional;
 
 import com.oceanbase.odc.common.util.SystemUtils;
+import com.oceanbase.odc.core.shared.constant.ErrorCodes;
+import com.oceanbase.odc.core.shared.exception.BadRequestException;
+import com.oceanbase.odc.core.shared.exception.NotFoundException;
 import com.oceanbase.odc.metadb.task.JobEntity;
 import com.oceanbase.odc.service.task.config.JobConfiguration;
 import com.oceanbase.odc.service.task.config.JobConfigurationHolder;
@@ -113,7 +116,14 @@ public class ProcessJobCaller extends BaseJobCaller {
                                 ji.getId(), ei));
             }
             updateExecutorDestroyed(ji);
+            throw new NotFoundException(ErrorCodes.NotFound, new Object[] {},
+                    MessageFormat.format(
+                            "Cannot connect to target identifier, set job to failed, jodId={0}, identifier={1}",
+                            ji.getId(), ei));
         }
+        throw new BadRequestException(ErrorCodes.BadArgument, new Object[] {},
+                MessageFormat.format("Destroy process failed, may not on this machine, jodId={0}, identifier={1}",
+                        ji.getId(), ei));
     }
 
     @Override
