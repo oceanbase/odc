@@ -16,24 +16,22 @@
 package com.oceanbase.odc.plugin.task.obmysql.partitionplan;
 
 import java.sql.Connection;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-import java.util.Date;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
 import org.junit.Assert;
 import org.junit.Test;
 
-import com.oceanbase.odc.plugin.task.api.partitionplan.datatype.TimeDataType;
 import com.oceanbase.odc.plugin.task.api.partitionplan.invoker.partitionname.PartitionNameGenerator;
 import com.oceanbase.odc.plugin.task.api.partitionplan.model.DateBasedPartitionNameGeneratorConfig;
-import com.oceanbase.odc.plugin.task.api.partitionplan.util.TimeDataTypeUtil;
 import com.oceanbase.odc.plugin.task.obmysql.partitionplan.invoker.partitionname.OBMySQLDateBasedPartitionNameGenerator;
 import com.oceanbase.odc.test.database.TestDBConfiguration;
 import com.oceanbase.odc.test.database.TestDBConfigurations;
 import com.oceanbase.tools.dbbrowser.model.DBTable;
+import com.oceanbase.tools.dbbrowser.model.DBTablePartition;
 import com.oceanbase.tools.dbbrowser.model.DBTablePartitionDefinition;
+import com.oceanbase.tools.dbbrowser.model.DBTablePartitionOption;
 
 /**
  * Test cases for {@link OBMySQLDateBasedPartitionNameGenerator}
@@ -45,27 +43,34 @@ import com.oceanbase.tools.dbbrowser.model.DBTablePartitionDefinition;
 public class OBMySQLDateBasedPartitionNameGeneratorTest {
 
     @Test
-    public void generate_sqlExpr_succeed() throws Exception {
+    public void generate_refUpperBound_succeed() throws Exception {
         TestDBConfiguration configuration = TestDBConfigurations.getInstance().getTestOBMysqlConfiguration();
         try (Connection connection = configuration.getDataSource().getConnection()) {
             DBTable dbTable = new DBTable();
+            DBTablePartition partition = new DBTablePartition();
+            DBTablePartitionOption option = new DBTablePartitionOption();
+            option.setColumnNames(Collections.singletonList("col"));
+            partition.setPartitionOption(option);
+            DBTablePartitionDefinition definition = new DBTablePartitionDefinition();
+            definition.setMaxValues(Collections.singletonList("'2024-03-01 00:00:00'"));
+            partition.setPartitionDefinitions(Collections.singletonList(definition));
+            dbTable.setPartition(partition);
             DateBasedPartitionNameGeneratorConfig config = new DateBasedPartitionNameGeneratorConfig();
-            config.setFromCurrentTime(true);
             config.setNamingPrefix("p");
             config.setNamingSuffixExpression("yyyyMMdd");
-            config.setInterval(1);
-            config.setIntervalPrecision(TimeDataType.DAY);
+            config.setRefPartitionKey("col");
             PartitionNameGenerator generator = new OBMySQLDateBasedPartitionNameGenerator();
             String actual = generator.invoke(connection, dbTable, getParameters(config));
-            DateFormat dateFormat = new SimpleDateFormat("yyyyMMdd");
-            String expect = "p" + dateFormat.format(TimeDataTypeUtil.getNextDate(new Date(), 2, TimeDataType.DAY));
+            String expect = "p20240301";
             Assert.assertEquals(expect, actual);
         }
     }
 
     private Map<String, Object> getParameters(DateBasedPartitionNameGeneratorConfig config) {
         Map<String, Object> parameters = new HashMap<>();
-        parameters.put(PartitionNameGenerator.TARGET_PARTITION_DEF_KEY, new DBTablePartitionDefinition());
+        DBTablePartitionDefinition definition = new DBTablePartitionDefinition();
+        definition.setMaxValues(Collections.singletonList("'2024-03-01 00:00:00'"));
+        parameters.put(PartitionNameGenerator.TARGET_PARTITION_DEF_KEY, definition);
         parameters.put(PartitionNameGenerator.TARGET_PARTITION_DEF_INDEX_KEY, 0);
         parameters.put(PartitionNameGenerator.PARTITION_NAME_GENERATOR_KEY, config);
         return parameters;

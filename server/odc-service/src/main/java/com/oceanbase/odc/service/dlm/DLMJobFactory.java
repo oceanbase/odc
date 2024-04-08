@@ -18,43 +18,54 @@ package com.oceanbase.odc.service.dlm;
 import java.text.SimpleDateFormat;
 
 import com.oceanbase.odc.service.dlm.model.DlmTask;
+import com.oceanbase.odc.service.dlm.utils.DlmJobIdUtil;
+import com.oceanbase.odc.service.schedule.job.DLMJobParameters;
 import com.oceanbase.tools.migrator.common.configure.DataSourceInfo;
 import com.oceanbase.tools.migrator.common.configure.LogicTableConfig;
 import com.oceanbase.tools.migrator.common.dto.HistoryJob;
-import com.oceanbase.tools.migrator.common.enums.JobStatus;
-import com.oceanbase.tools.migrator.common.enums.JobType;
 import com.oceanbase.tools.migrator.common.enums.ShardingStrategy;
-import com.oceanbase.tools.migrator.core.AbstractJobMetaFactory;
+import com.oceanbase.tools.migrator.core.IJobStore;
+import com.oceanbase.tools.migrator.core.JobFactory;
 import com.oceanbase.tools.migrator.core.JobReq;
 import com.oceanbase.tools.migrator.core.meta.ClusterMeta;
-import com.oceanbase.tools.migrator.core.meta.JobMeta;
 import com.oceanbase.tools.migrator.core.meta.TenantMeta;
+import com.oceanbase.tools.migrator.job.Job;
+import com.oceanbase.tools.migrator.task.CheckMode;
 
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
 /**
  * @Author：tinker
- * @Date: 2023/4/18 16:10
+ * @Date: 2023/5/9 14:38
  * @Descripition:
  */
 @Slf4j
-public class JobMetaFactory extends AbstractJobMetaFactory {
+public class DLMJobFactory extends JobFactory {
 
     private final SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd");
+
+    @Setter
     private int singleTaskThreadPoolSize;
 
+    @Setter
     private int taskConnectionQueryTimeout;
+    @Setter
     private double readWriteRatio;
-
+    @Setter
     private int defaultScanBatchSize;
 
+    @Setter
     private ShardingStrategy defaultShardingStrategy;
 
-    public JobMeta create(DlmTask parameters) throws Exception {
+    public DLMJobFactory(IJobStore jobStore) {
+        super(jobStore);
+    }
+
+    public Job createJob(DlmTask parameters) {
         HistoryJob historyJob = new HistoryJob();
         historyJob.setId(parameters.getId());
-        historyJob.setJobType(JobType.MIGRATE);
-        historyJob.setJobStatus(JobStatus.RUNNING);
+        historyJob.setJobType(parameters.getJobType());
         historyJob.setDateStart("19700101");
         historyJob.setDateEnd(sdf.format(parameters.getFireTime()));
         historyJob.setTaskGeneratorId(parameters.getTaskGeneratorId());
@@ -79,29 +90,35 @@ public class JobMetaFactory extends AbstractJobMetaFactory {
         JobReq req =
                 new JobReq(historyJob, parameters.getLogicTableConfig(), sourceInfo, targetInfo, new ClusterMeta(),
                         new ClusterMeta(), new TenantMeta(), new TenantMeta());
-        JobMeta jobMeta = super.create(req);
-        jobMeta.setShardingStrategy(defaultShardingStrategy);
-        return jobMeta;
+        return super.createJob(req);
     }
 
-    public void setReadWriteRatio(double readWriteRatio) {
-        this.readWriteRatio = readWriteRatio;
-    }
+    // adapt to task framework
+    public Job createJob(int tableIndex, DLMJobParameters params) {
+        HistoryJob historyJob = new HistoryJob();
+        historyJob.setId(DlmJobIdUtil.generateHistoryJobId(params.getJobName(), params.getJobType().name(),
+                params.getScheduleTaskId(), tableIndex));
+        historyJob.setJobType(params.getJobType());
+        historyJob.setTableId(-1L);
+        historyJob.setPrintSqlTrace(false);
+        historyJob.setSourceTable(params.getTables().get(tableIndex).getTableName());
+        historyJob.setTargetTable(params.getTables().get(tableIndex).getTargetTableName());
 
-    public void setSingleTaskThreadPoolSize(int singleTaskThreadPoolSize) {
-        this.singleTaskThreadPoolSize = singleTaskThreadPoolSize;
-    }
+        LogicTableConfig logicTableConfig = new LogicTableConfig();
+        logicTableConfig.setMigrateRule(params.getTables().get(tableIndex).getConditionExpression());
+        logicTableConfig.setCheckMode(CheckMode.MULTIPLE_GET);
+        logicTableConfig.setReaderBatchSize(params.getRateLimit().getBatchSize());
+        logicTableConfig.setWriterBatchSize(params.getRateLimit().getBatchSize());
+        logicTableConfig.setMigrationInsertAction(params.getMigrationInsertAction());
+        logicTableConfig.setReaderTaskCount(params.getReadThreadCount());
+        logicTableConfig.setWriterTaskCount(params.getWriteThreadCount());
+        logicTableConfig.setGeneratorBatchSize(params.getScanBatchSize());
 
-    public void setTaskConnectionQueryTimeout(int taskConnectionQueryTimeout) {
-        this.taskConnectionQueryTimeout = taskConnectionQueryTimeout;
-    }
 
-    public void setDefaultShardingStrategy(ShardingStrategy defaultShardingStrategy) {
-        this.defaultShardingStrategy = defaultShardingStrategy;
+        JobReq req =
+                new JobReq(historyJob, logicTableConfig, params.getSourceDs(), params.getTargetDs(),
+                        new ClusterMeta(),
+                        new ClusterMeta(), new TenantMeta(), new TenantMeta());
+        return createJob(req);
     }
-
-    public void setDefaultScanBatchSize(int defaultScanBatchSize) {
-        this.defaultScanBatchSize = defaultScanBatchSize;
-    }
-
 }

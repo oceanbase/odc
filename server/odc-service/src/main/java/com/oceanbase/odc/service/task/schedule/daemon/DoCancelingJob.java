@@ -15,12 +15,16 @@
  */
 package com.oceanbase.odc.service.task.schedule.daemon;
 
+import java.text.MessageFormat;
+
 import org.quartz.DisallowConcurrentExecution;
 import org.quartz.Job;
 import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
 import org.springframework.data.domain.Page;
 
+import com.oceanbase.odc.core.alarm.AlarmEventNames;
+import com.oceanbase.odc.core.alarm.AlarmUtils;
 import com.oceanbase.odc.metadb.task.JobEntity;
 import com.oceanbase.odc.service.task.config.JobConfiguration;
 import com.oceanbase.odc.service.task.config.JobConfigurationHolder;
@@ -74,6 +78,8 @@ public class DoCancelingJob implements Job {
                     getConfiguration().getJobDispatcher().stop(JobIdentity.of(lockedEntity.getId()));
                 } catch (JobException e) {
                     log.warn("Stop job occur error: ", e);
+                    AlarmUtils.warn(AlarmEventNames.TASK_CANCELED_FAILED,
+                            MessageFormat.format("Cancel job failed, jobId={0}", lockedEntity.getId()));
                     throw new TaskRuntimeException(e);
                 }
                 log.info("Job {} be cancelled successfully.", lockedEntity.getId());

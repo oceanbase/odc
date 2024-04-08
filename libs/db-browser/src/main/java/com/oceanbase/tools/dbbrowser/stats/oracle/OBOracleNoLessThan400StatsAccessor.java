@@ -51,9 +51,9 @@ public class OBOracleNoLessThan400StatsAccessor extends BaseOBOracleStatsAccesso
             + "  TRACE_ID, "
             + "  SUBSTR(INFO, 1, 200) AS LATEST_QUERIES ";
     private static final String OB40_QUERY_ALL_SESSIONS =
-            "SELECT " + OB_PROCESSLIST_SESSION_COLUMNS + " FROM SYS.GV$OB_PROCESSLIST";
+            "SELECT " + OB_PROCESSLIST_SESSION_COLUMNS + " FROM GV$OB_PROCESSLIST";
     private static final String OB40_QUERY_CURRENT_SESSION =
-            "SELECT " + OB_PROCESSLIST_SESSION_COLUMNS + " FROM SYS.GV$OB_PROCESSLIST WHERE ID=userenv('sessionid')";
+            "SELECT " + OB_PROCESSLIST_SESSION_COLUMNS + " FROM V$OB_PROCESSLIST WHERE ID=userenv('sessionid')";
 
     public OBOracleNoLessThan400StatsAccessor(JdbcOperations jdbcOperations) {
         super(jdbcOperations);

@@ -51,6 +51,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
 
+import com.oceanbase.odc.core.authority.SecurityManager;
+import com.oceanbase.odc.core.authority.permission.Permission;
 import com.oceanbase.odc.core.authority.util.Authenticated;
 import com.oceanbase.odc.core.authority.util.PreAuthenticate;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
@@ -122,6 +124,15 @@ public class DatabaseService {
 
     private final DatabaseMapper databaseMapper = DatabaseMapper.INSTANCE;
 
+    private static final Set<String> ORACLE_DATA_DICTIONARY = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
+
+    private static final Set<String> MYSQL_DATA_DICTIONARY = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
+
+    static {
+        ORACLE_DATA_DICTIONARY.add("SYS");
+        MYSQL_DATA_DICTIONARY.add("information_schema");
+    }
+
     @Autowired
     private DatabaseRepository databaseRepository;
 
@@ -170,25 +181,30 @@ public class DatabaseService {
     @Autowired
     private DatabasePermissionHelper databasePermissionHelper;
 
+    @Autowired
+    private SecurityManager securityManager;
+
     @Transactional(rollbackFor = Exception.class)
     @SkipAuthorize("internal authenticated")
     public Database detail(@NonNull Long id) {
-        return getDatabase(id);
+        Database database = entityToModel(databaseRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException(ResourceType.ODC_DATABASE, "id", id)), true);
+        if (Objects.nonNull(database.getProject()) && Objects.nonNull(database.getProject().getId())) {
+            projectPermissionValidator.checkProjectRole(database.getProject().getId(), ResourceRoleName.all());
+            return database;
+        }
+        Permission requiredPermission = this.securityManager
+                .getPermissionByActions(database.getDataSource(), Collections.singletonList("read"));
+        if (this.securityManager.isPermitted(requiredPermission)) {
+            return database;
+        }
+        throw new NotFoundException(ResourceType.ODC_DATABASE, "id", id);
     }
 
     @SkipAuthorize("odc internal usage")
     public Database getBasicSkipPermissionCheck(Long id) {
         return databaseMapper.entityToModel(databaseRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException(ResourceType.ODC_DATABASE, "id", id)));
-    }
-
-    private Database getDatabase(Long id) {
-        Database database = entityToModel(databaseRepository.findById(id)
-                .orElseThrow(() -> new NotFoundException(ResourceType.ODC_DATABASE, "id", id)), true);
-        if (Objects.nonNull(database.getProject()) && Objects.nonNull(database.getProject().getId())) {
-            projectPermissionValidator.checkProjectRole(database.getProject().getId(), ResourceRoleName.all());
-        }
-        return database;
     }
 
     @SkipAuthorize("odc internal usage")
@@ -597,7 +613,8 @@ public class DatabaseService {
 
     @SkipAuthorize("odc internal usage")
     public List<UnauthorizedDatabase> filterUnauthorizedDatabases(
-            Map<String, Set<DatabasePermissionType>> schemaName2PermissionTypes, @NotNull Long dataSourceId) {
+            Map<String, Set<DatabasePermissionType>> schemaName2PermissionTypes, @NotNull Long dataSourceId,
+            boolean ignoreDataDirectory) {
         if (schemaName2PermissionTypes == null || schemaName2PermissionTypes.isEmpty()) {
             return Collections.emptyList();
         }
@@ -635,6 +652,20 @@ public class DatabaseService {
                 unknownDatabase.setName(schemaName);
                 unknownDatabase.setDataSource(dataSource);
                 unauthorizedDatabases.add(UnauthorizedDatabase.from(unknownDatabase, needs, false));
+            }
+        }
+        if (ignoreDataDirectory) {
+            DialectType dialectType = dataSource.getDialectType();
+            if (dialectType != null) {
+                if (dialectType.isOracle()) {
+                    unauthorizedDatabases =
+                            unauthorizedDatabases.stream().filter(d -> !ORACLE_DATA_DICTIONARY.contains(d.getName()))
+                                    .collect(Collectors.toList());
+                } else if (dialectType.isMysql()) {
+                    unauthorizedDatabases = unauthorizedDatabases.stream()
+                            .filter(d -> !MYSQL_DATA_DICTIONARY.contains(d.getName()))
+                            .collect(Collectors.toList());
+                }
             }
         }
         return unauthorizedDatabases;

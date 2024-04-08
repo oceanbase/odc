@@ -20,6 +20,7 @@ import java.sql.Connection;
 import com.oceanbase.odc.plugin.task.obmysql.partitionplan.invoker.SqlExprCalculator;
 import com.oceanbase.odc.plugin.task.obmysql.partitionplan.invoker.partitionname.OBMySQLExprBasedPartitionNameGenerator;
 import com.oceanbase.odc.plugin.task.obmysql.partitionplan.mapper.CellDataProcessor;
+import com.oceanbase.odc.plugin.task.oboracle.partitionplan.OBOracleAutoPartitionExtensionPoint;
 import com.oceanbase.odc.plugin.task.oboracle.partitionplan.invoker.OBOracleSqlExprCalculator;
 import com.oceanbase.odc.plugin.task.oboracle.partitionplan.mapper.CellDataProcessors;
 import com.oceanbase.tools.dbbrowser.model.datatype.DataType;
@@ -39,6 +40,11 @@ public class OBOracleExprBasedPartitionNameGenerator extends OBMySQLExprBasedPar
     @Override
     protected SqlExprCalculator getSqlExprCalculator(Connection connection) {
         return new OBOracleSqlExprCalculator(connection);
+    }
+
+    @Override
+    protected String unquoteIdentifier(String identifier) {
+        return new OBOracleAutoPartitionExtensionPoint().unquoteIdentifier(identifier);
     }
 
     @Override

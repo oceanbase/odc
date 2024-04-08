@@ -219,14 +219,14 @@ public class OBMySQLAutoPartitionExtensionPointTest {
                         + PartitionPlanVariableKey.INTERVAL.getVariable() + "), '%Y%m%d'))");
                 config2.setIntervalGenerateExpr("86400");
                 definition.setName(nameGen.invoke(connection, dbTable,
-                        getSqlExprBasedNameGeneratorParameters(i, config2)));
+                        getSqlExprBasedNameGeneratorParameters(i, config2, definition)));
                 partition.getPartitionDefinitions().add(definition);
             }
             partition.setPartitionOption(dbTable.getPartition().getPartitionOption());
             partition.setTableName(dbTable.getName());
             partition.setSchemaName(dbTable.getSchemaName());
             List<String> actuals = extensionPoint.generateCreatePartitionDdls(connection, partition);
-            List<String> expects = Collections.singletonList(String.format("ALTER TABLE %s.%s ADD PARTITION (\n"
+            List<String> expects = Collections.singletonList(String.format("ALTER TABLE `%s`.`%s` ADD PARTITION (\n"
                     + "\tPARTITION `p20240126` VALUES LESS THAN (20220801,'2024-01-26'),\n"
                     + "\tPARTITION `p20240127` VALUES LESS THAN (20220802,'2024-01-27'),\n"
                     + "\tPARTITION `p20240128` VALUES LESS THAN (20220803,'2024-01-28'),\n"
@@ -253,8 +253,8 @@ public class OBMySQLAutoPartitionExtensionPointTest {
             dbTablePartition.setTableName(dbTable.getName());
             dbTablePartition.setSchemaName(dbTable.getSchemaName());
             List<String> actual = extensionPoint.generateDropPartitionDdls(connection, dbTablePartition, true);
-            List<String> expects = Collections.singletonList(String.format("ALTER TABLE %s.%s DROP PARTITION "
-                    + "(p20220830, p20220829);\n", configuration.getDefaultDBName(), REAL_RANGE_TABLE_NAME));
+            List<String> expects = Collections.singletonList(String.format("ALTER TABLE `%s`.`%s` DROP PARTITION "
+                    + "(`p20220830`, `p20220829`);\n", configuration.getDefaultDBName(), REAL_RANGE_TABLE_NAME));
             Assert.assertEquals(expects, actual);
         }
     }
@@ -276,9 +276,10 @@ public class OBMySQLAutoPartitionExtensionPointTest {
         return parameters;
     }
 
-    private Map<String, Object> getSqlExprBasedNameGeneratorParameters(int index, SqlExprBasedGeneratorConfig config) {
+    private Map<String, Object> getSqlExprBasedNameGeneratorParameters(int index, SqlExprBasedGeneratorConfig config,
+            DBTablePartitionDefinition definition) {
         Map<String, Object> parameters = new HashMap<>();
-        parameters.put(PartitionNameGenerator.TARGET_PARTITION_DEF_KEY, new DBTablePartitionDefinition());
+        parameters.put(PartitionNameGenerator.TARGET_PARTITION_DEF_KEY, definition);
         parameters.put(PartitionNameGenerator.TARGET_PARTITION_DEF_INDEX_KEY, index);
         parameters.put(PartitionNameGenerator.PARTITION_NAME_GENERATOR_KEY, config);
         return parameters;

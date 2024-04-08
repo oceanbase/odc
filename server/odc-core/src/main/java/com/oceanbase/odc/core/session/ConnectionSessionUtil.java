@@ -129,7 +129,7 @@ public class ConnectionSessionUtil {
      * @return string without double quotation
      */
     public static String getUserOrSchemaString(String input, DialectType dialectType) {
-        if (!DialectType.OB_ORACLE.equals(dialectType)) {
+        if (!(Objects.nonNull(dialectType) && dialectType.isOracle())) {
             return input;
         }
         if (input == null) {

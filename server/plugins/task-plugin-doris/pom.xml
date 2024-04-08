@@ -5,7 +5,7 @@
     <parent>
         <artifactId>plugin-parent</artifactId>
         <groupId>com.oceanbase</groupId>
-        <version>4.2.4-SNAPSHOT</version>
+        <version>4.3.0-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -23,6 +23,10 @@
         <dependency>
             <groupId>com.oceanbase</groupId>
             <artifactId>schema-plugin-ob-mysql</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.oceanbase</groupId>
+            <artifactId>schema-plugin-mysql</artifactId>
         </dependency>
         <dependency>
             <groupId>com.oceanbase</groupId>
@@ -59,7 +63,8 @@
     <properties>
         <root-project.basedir>${project.parent.parent.basedir}</root-project.basedir>
         <plugin.class>com.oceanbase.odc.plugin.task.doris.DorisTaskPlugin</plugin.class>
-        <plugin.dependencies>schema-plugin-doris, connect-plugin-doris, task-plugin-ob-mysql, task-plugin-mysql, connect-plugin-mysql</plugin.dependencies>
+        <plugin.dependencies>schema-plugin-mysql, schema-plugin-doris, connect-plugin-doris, task-plugin-ob-mysql, task-plugin-mysql, connect-plugin-mysql
+        </plugin.dependencies>
     </properties>
 
     <build>

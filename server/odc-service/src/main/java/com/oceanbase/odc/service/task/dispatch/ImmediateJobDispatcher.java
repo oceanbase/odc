@@ -18,8 +18,6 @@ package com.oceanbase.odc.service.task.dispatch;
 
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.common.util.SystemUtils;
-import com.oceanbase.odc.core.shared.exception.UnsupportedException;
-import com.oceanbase.odc.service.task.caller.ExecutorIdentifier;
 import com.oceanbase.odc.service.task.caller.JobCaller;
 import com.oceanbase.odc.service.task.caller.JobCallerBuilder;
 import com.oceanbase.odc.service.task.caller.JobContext;
@@ -70,11 +68,6 @@ public class ImmediateJobDispatcher implements JobDispatcher {
         jobCaller.destroy(ji);
     }
 
-    @Override
-    public void destroy(ExecutorIdentifier executorIdentifier) throws JobException {
-        throw new UnsupportedException("unsupported");
-    }
-
     private JobCaller getJobCaller(TaskRunMode taskRunMode) {
         return getJobCallerWithContext(taskRunMode, null);
     }
@@ -117,6 +110,7 @@ public class ImmediateJobDispatcher implements JobDispatcher {
                 StringUtils.isNotBlank(k8s.getMountPath()) ? k8s.getMountPath()
                         : JobConstants.ODC_EXECUTOR_DEFAULT_MOUNT_PATH);
         podConfig.setMountDiskSize(k8s.getMountDiskSize());
+        podConfig.setMaxNodeCount(k8s.getMaxNodeCount());
         return podConfig;
     }
 

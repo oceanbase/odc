@@ -83,7 +83,7 @@ public class DefaultJobProcessUpdateListener extends AbstractEventListener<Defau
             taskEntity.setExecutor(JsonUtils.toJson(executorInfo));
         }
         taskRepository.update(taskEntity);
-        log.info("Update scheduleTask successfully, scheduleTaskId={}.", taskEntity.getId());
+        log.debug("Update scheduleTask successfully, scheduleTaskId={}.", taskEntity.getId());
     }
 
     private void updateTask(TaskResult taskResult, TaskEntity taskEntity) {
@@ -98,7 +98,7 @@ public class DefaultJobProcessUpdateListener extends AbstractEventListener<Defau
             taskEntity.setExecutor(JsonUtils.toJson(executorInfo));
         }
         taskService.update(taskEntity);
-        log.info("Update taskTask successfully, taskId={}.", taskEntity.getId());
+        log.debug("Update taskTask successfully, taskId={}.", taskEntity.getId());
 
     }
 }

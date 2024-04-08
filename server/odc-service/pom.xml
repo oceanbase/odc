@@ -5,7 +5,7 @@
     <parent>
         <groupId>com.oceanbase</groupId>
         <artifactId>odc-parent</artifactId>
-        <version>4.2.4-SNAPSHOT</version>
+        <version>4.3.0-SNAPSHOT</version>
         <relativePath>../../pom.xml</relativePath>
     </parent>
     <artifactId>odc-service</artifactId>
@@ -280,6 +280,10 @@
         <dependency>
             <groupId>io.netty</groupId>
             <artifactId>netty-codec-http</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.github.ulisesbocchio</groupId>
+            <artifactId>jasypt-spring-boot-starter</artifactId>
         </dependency>
     </dependencies>
 </project>

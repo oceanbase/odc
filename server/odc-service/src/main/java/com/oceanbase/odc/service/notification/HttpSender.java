@@ -121,11 +121,8 @@ public class HttpSender implements MessageSender {
         }
         String httpProxy = channelConfig.getHttpProxy();
         String[] proxyParas = httpProxy.split(":");
-        if (proxyParas.length != 2) {
-            throw new IllegalArgumentException("Illegal http proxy: " + httpProxy);
-        }
-        String hostName = proxyParas[0].replaceFirst("//", "");
-        int port = Integer.parseInt(proxyParas[1]);
+        String hostName = proxyParas[1].replaceFirst("//", "");
+        int port = Integer.parseInt(proxyParas[2]);
         Proxy proxy = new Proxy(Type.HTTP, new InetSocketAddress(hostName, port));
         requestFactory.setProxy(proxy);
         return restTemplate;

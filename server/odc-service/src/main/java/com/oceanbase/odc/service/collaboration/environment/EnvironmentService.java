@@ -91,6 +91,7 @@ public class EnvironmentService {
     private final Set<String> DEFAULT_ENV_NAMES = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
 
     @PostConstruct
+    @SkipAuthorize("odc internal usage")
     public void init() {
         DEFAULT_ENV_NAMES.add("开发");
         DEFAULT_ENV_NAMES.add("测试");

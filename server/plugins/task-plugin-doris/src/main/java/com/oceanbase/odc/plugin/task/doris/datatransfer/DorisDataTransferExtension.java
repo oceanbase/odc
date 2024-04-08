@@ -15,15 +15,22 @@
  */
 package com.oceanbase.odc.plugin.task.doris.datatransfer;
 
+import java.io.File;
+import java.net.URL;
 import java.sql.SQLException;
+import java.util.List;
 import java.util.Set;
 
 import org.apache.commons.collections4.SetUtils;
 import org.pf4j.Extension;
 
+import com.oceanbase.odc.plugin.task.api.datatransfer.DataTransferJob;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.ConnectionInfo;
+import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferConfig;
 import com.oceanbase.odc.plugin.task.mysql.datatransfer.MySQLDataTransferExtension;
 import com.oceanbase.tools.loaddump.common.enums.ObjectType;
+
+import lombok.NonNull;
 
 /**
  * ClassName: DorisDataTransferExtension Package:
@@ -35,6 +42,12 @@ import com.oceanbase.tools.loaddump.common.enums.ObjectType;
  */
 @Extension
 public class DorisDataTransferExtension extends MySQLDataTransferExtension {
+
+    @Override
+    public DataTransferJob generate(@NonNull DataTransferConfig config, @NonNull File workingDir, @NonNull File logDir,
+            @NonNull List<URL> inputs) throws Exception {
+        return new DorisDataTransferJob(config, workingDir, logDir, inputs);
+    }
 
     @Override
     public Set<ObjectType> getSupportedObjectTypes(ConnectionInfo connectionInfo) throws SQLException {

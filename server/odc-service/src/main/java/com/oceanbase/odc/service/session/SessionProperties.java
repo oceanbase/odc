@@ -117,12 +117,6 @@ public class SessionProperties {
     private long timeoutMins = 480;
 
     /**
-     * 用于控制用户在 SQL 执行时是否改写增加 rowid 列
-     */
-    @Value("${odc.session.sql-execute.add-internal-rowid:true}")
-    private boolean addInternalRowId = true;
-
-    /**
      * Timeout for querying full link trace
      */
     @Value("${odc.session.full-link-trace-timeout-seconds:60}")

@@ -102,7 +102,7 @@ import com.oceanbase.odc.service.permission.project.ApplyProjectResult;
 import com.oceanbase.odc.service.schedule.flowtask.AlterScheduleResult;
 import com.oceanbase.odc.service.session.model.SqlExecuteResult;
 import com.oceanbase.odc.service.task.TaskService;
-import com.oceanbase.odc.service.task.config.TaskFrameworkProperties;
+import com.oceanbase.odc.service.task.config.TaskFrameworkEnabledProperties;
 import com.oceanbase.odc.service.task.model.ExecutorInfo;
 import com.oceanbase.odc.service.task.model.OdcTaskLogLevel;
 
@@ -150,7 +150,7 @@ public class FlowTaskInstanceService {
     @Autowired
     private LocalFileManager localFileManager;
     @Autowired
-    private TaskFrameworkProperties taskFrameworkProperties;
+    private TaskFrameworkEnabledProperties taskFrameworkProperties;
     @Autowired
     private LoggerService loggerService;
     @Value("${odc.task.async.result-preview-max-size-bytes:5242880}")

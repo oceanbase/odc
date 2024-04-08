@@ -55,5 +55,6 @@ public class EventLabelKeys {
      * global info
      */
     public static final String REGION = "region";
+    public static final String TICKET_URL = "ticketUrl";
 
 }
