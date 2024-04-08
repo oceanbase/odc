@@ -60,7 +60,6 @@ import com.oceanbase.odc.core.shared.exception.BadRequestException;
 import com.oceanbase.odc.core.shared.exception.InternalServerError;
 import com.oceanbase.odc.core.shared.exception.NotFoundException;
 import com.oceanbase.odc.core.shared.exception.OverLimitException;
-import com.oceanbase.odc.core.shared.exception.VerifyException;
 import com.oceanbase.odc.core.sql.execute.task.SqlExecuteTaskManagerFactory;
 import com.oceanbase.odc.core.sql.split.SqlCommentProcessor;
 import com.oceanbase.odc.core.task.DefaultTaskManager;
@@ -77,7 +76,6 @@ import com.oceanbase.odc.service.connection.database.DatabaseService;
 import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.connection.model.ConnectProperties;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
-import com.oceanbase.odc.service.connection.model.ConnectionTestResult;
 import com.oceanbase.odc.service.connection.model.CreateSessionReq;
 import com.oceanbase.odc.service.connection.model.CreateSessionResp;
 import com.oceanbase.odc.service.connection.model.DBSessionResp;
@@ -257,6 +255,8 @@ public class ConnectSessionService {
         ConnectionConfig connection = connectionService.getForConnectionSkipPermissionCheck(dataSourceId);
         cloudMetadataClient.checkPermission(OBTenant.of(connection.getClusterName(),
                 connection.getTenantName()), connection.getInstanceType(), false, CloudPermissionAction.READONLY);
+        PreConditions.validArgumentState(Objects.nonNull(connection.getPassword()),
+                ErrorCodes.ConnectionPasswordMissed, null, "password required for connection without password saved");
         if (StringUtils.isNotBlank(schemaName) && connection.getDialectType().isOracle()) {
             schemaName = com.oceanbase.odc.common.util.StringUtils.quoteOracleIdentifier(schemaName);
         }
@@ -265,10 +265,6 @@ public class ConnectSessionService {
         Set<String> actions = authorizationFacade.getAllPermittedActions(authenticationFacade.currentUser(),
                 ResourceType.ODC_CONNECTION, "" + dataSourceId);
         connection.setPermittedActions(actions);
-        ConnectionTestResult result = connectionTesting.test(connection);
-        if (!result.isActive() && result.getErrorCode() != ErrorCodes.ConnectionInitScriptFailed) {
-            throw new VerifyException(result.getErrorMessage());
-        }
         SqlExecuteTaskManagerFactory factory =
                 new SqlExecuteTaskManagerFactory(this.monitorTaskManager, "console", 1);
         if (StringUtils.isNotEmpty(schemaName)) {

@@ -32,7 +32,8 @@ public enum OBInstanceType implements Translatable {
     MYSQL_TENANT("mtenant"),
     ORACLE_TENANT("otenant"),
     MYSQL_SERVERLESS("mtenant_serverless"),
-    ORACLE_SERVERLESS("otenant_serverless");
+    ORACLE_SERVERLESS("otenant_serverless"),
+    DEDICATED("DEDICATED");
 
     @Getter
     private String value;
