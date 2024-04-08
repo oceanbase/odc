@@ -32,6 +32,8 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import com.oceanbase.odc.TestConnectionUtil;
 import com.oceanbase.odc.common.util.YamlUtils;
 import com.oceanbase.odc.core.shared.constant.ConnectType;
+import com.oceanbase.odc.core.shared.constant.DialectType;
+import com.oceanbase.odc.service.common.util.SqlUtils;
 import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.connection.logicaldatabase.model.DataNode;
 import com.oceanbase.odc.service.connection.logicaldatabase.model.LogicalTable;
@@ -59,7 +61,8 @@ public class LogicalTableFinderTest {
         OBMYSQL_JDBC_TEMPLATE.execute(dropTables);
 
         String createTables = loadAsString(OBMYSQL_BASE_PATH + "create.sql");
-        OBMYSQL_JDBC_TEMPLATE.execute(createTables);
+        List<String> sqls = SqlUtils.split(DialectType.OB_MYSQL, createTables, ";");
+        sqls.forEach(sql -> OBMYSQL_JDBC_TEMPLATE.execute(sql));
     }
 
     @AfterClass

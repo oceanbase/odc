@@ -90,7 +90,8 @@ public class LogicalTableFinder {
                 String schemaName = schemaName2TableNamesEntry.getKey();
                 List<String> tableNames = schemaName2TableNamesEntry.getValue();
                 tables.putAll(getTableName2Tables(dataSource, schemaName, tableNames).entrySet().stream()
-                        .collect(Collectors.toMap(key -> schemaName + "." + key.getKey(), Map.Entry::getValue)));
+                        .collect(Collectors.toMap(key -> dataSource.getId() + "." + schemaName + "." + key.getKey(),
+                                Map.Entry::getValue)));
             });
         }
 
@@ -99,7 +100,8 @@ public class LogicalTableFinder {
             final List<DataNode>[] majorityDataNodes = new List[] {new ArrayList<>()};
 
             for (DataNode dataNode : logicalTable.getActualDataNodes()) {
-                dataNode.setTable(tables.getOrDefault(dataNode.getFullName(), null));
+                dataNode.setTable(tables
+                        .getOrDefault(dataNode.getDataSourceConfig().getId() + "." + dataNode.getFullName(), null));
                 String dataNodeSignature = dataNode.getStructureSignature();
                 sha1ToDataNodes.computeIfAbsent(dataNodeSignature, k -> new ArrayList<>()).add(dataNode);
                 if (sha1ToDataNodes.get(dataNodeSignature).size() > majorityDataNodes[0].size()) {

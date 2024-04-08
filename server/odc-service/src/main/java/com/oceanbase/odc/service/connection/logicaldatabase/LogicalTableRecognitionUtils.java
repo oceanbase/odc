@@ -121,6 +121,8 @@ public class LogicalTableRecognitionUtils {
 
         List<LogicalTable> logicalTables = finalPatterns.entrySet().stream().map(entry -> {
             LogicalTable logicalTable = new LogicalTable();
+            Collections.sort(entry.getValue(),
+                    Comparator.comparing(DataNode::getSchemaName).thenComparing(DataNode::getTableName));
             logicalTable.setTableNamePattern(entry.getKey());
             logicalTable.setActualDataNodes(entry.getValue());
             logicalTable.setDatabaseNamePattern(getConsistentNumberPattern(logicalTable.getActualDataNodes().stream()
