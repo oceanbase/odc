@@ -124,6 +124,10 @@ public class LogicalTableFinderTest {
             database.setName("db_0" + i);
             databases.add(database);
         }
+        Database database = new Database();
+        database.setDataSource(TestConnectionUtil.getTestConnectionConfig(ConnectType.OB_MYSQL));
+        database.setName("db_empty");
+        databases.add(database);
         return databases;
     }
 }

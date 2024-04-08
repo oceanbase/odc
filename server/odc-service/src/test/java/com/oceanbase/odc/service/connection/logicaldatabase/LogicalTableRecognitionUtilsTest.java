@@ -40,21 +40,26 @@ public class LogicalTableRecognitionUtilsTest {
                     LogicalTableRecognitionUtils.recognizeLogicalTablesWithExpression(testCase.getDataNodes());
             List<InnerLogicalTable> expected = testCase.getLogicalTables();
 
-            Assert.assertEquals(expected.size(), actual.size());
+            Assert.assertEquals(String.format("test case id = %d", testCase.getId()), expected.size(), actual.size());
 
             for (int i = 0; i < expected.size(); i++) {
                 InnerLogicalTable expectedTable = expected.get(i);
                 LogicalTable actualTable = actual.get(i);
-                Assert.assertEquals(expectedTable.getName(), actualTable.getName());
-                Assert.assertEquals(expectedTable.getTableNamePattern(), actualTable.getTableNamePattern());
-                Assert.assertEquals(expectedTable.getDatabaseNamePattern(), actualTable.getDatabaseNamePattern());
-                Assert.assertEquals(expectedTable.getFullNameExpression(), actualTable.getFullNameExpression());
+                Assert.assertEquals(String.format("test case id = %d", testCase.getId()), expectedTable.getName(),
+                        actualTable.getName());
+                Assert.assertEquals(String.format("test case id = %d", testCase.getId()),
+                        expectedTable.getTableNamePattern(), actualTable.getTableNamePattern());
+                Assert.assertEquals(String.format("test case id = %d", testCase.getId()),
+                        expectedTable.getDatabaseNamePattern(), actualTable.getDatabaseNamePattern());
+                Assert.assertEquals(String.format("test case id = %d", testCase.getId()),
+                        expectedTable.getFullNameExpression(), actualTable.getFullNameExpression());
 
                 Assert.assertEquals(expectedTable.getActualDataNodes().size(), actualTable.getActualDataNodes().size());
                 for (int j = 0; j < expectedTable.getActualDataNodes().size(); j++) {
                     DataNode expectedDataNode = expectedTable.getActualDataNodes().get(j);
                     DataNode actualDataNode = actualTable.getActualDataNodes().get(j);
-                    Assert.assertEquals(expectedDataNode.getFullName(), actualDataNode.getFullName());
+                    Assert.assertEquals(String.format("test case id = %d", testCase.getId()),
+                            expectedDataNode.getFullName(), actualDataNode.getFullName());
                 }
             }
         }
@@ -66,6 +71,7 @@ public class LogicalTableRecognitionUtilsTest {
     @NoArgsConstructor
     @AllArgsConstructor
     static class LogicalTableIdentificationTestCase {
+        private Long id;
         private List<DataNode> dataNodes;
         private List<InnerLogicalTable> logicalTables;
     }

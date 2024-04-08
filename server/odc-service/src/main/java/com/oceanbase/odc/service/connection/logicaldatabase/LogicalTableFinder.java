@@ -40,9 +40,6 @@ import com.oceanbase.tools.dbbrowser.model.DBObjectIdentity;
 import com.oceanbase.tools.dbbrowser.model.DBTable;
 import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -160,13 +157,5 @@ public class LogicalTableFinder {
             }
         }
         return Collections.emptyMap();
-    }
-
-    @Data
-    @AllArgsConstructor
-    @NoArgsConstructor
-    static class SchemaIdentity {
-        private Long dataSourceId;
-        private String schemaName;
     }
 }

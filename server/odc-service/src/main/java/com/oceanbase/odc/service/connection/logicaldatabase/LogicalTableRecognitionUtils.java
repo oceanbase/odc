@@ -121,13 +121,17 @@ public class LogicalTableRecognitionUtils {
 
         List<LogicalTable> logicalTables = finalPatterns.entrySet().stream().map(entry -> {
             LogicalTable logicalTable = new LogicalTable();
-            Collections.sort(entry.getValue(),
-                    Comparator.comparing(DataNode::getSchemaName).thenComparing(DataNode::getTableName));
             logicalTable.setTableNamePattern(entry.getKey());
             logicalTable.setActualDataNodes(entry.getValue());
             logicalTable.setDatabaseNamePattern(getConsistentNumberPattern(logicalTable.getActualDataNodes().stream()
                     .map(node -> node.getSchemaName())
                     .collect(Collectors.toList())));
+            Collections.sort(logicalTable.getActualDataNodes(),
+                    Comparator
+                            .comparing(DataNode::getSchemaName,
+                                    createGroupNumberComparator(logicalTable.getDatabaseNamePattern()))
+                            .thenComparing(DataNode::getTableName,
+                                    createGroupNumberComparator(logicalTable.getTableNamePattern())));
             return logicalTable;
         }).collect(Collectors.toList());
         return logicalTables;
@@ -216,7 +220,7 @@ public class LogicalTableRecognitionUtils {
         } else {
             Map<String, List<String>> databaseGroup = logicalTable.getActualDataNodes().stream()
                     .collect(Collectors.groupingBy(DataNode::getSchemaName,
-                            () -> new TreeMap<>(createSchemaNameComparator(databaseNamePattern)),
+                            () -> new TreeMap<>(createGroupNumberComparator(databaseNamePattern)),
                             Collectors.mapping(DataNode::getTableName, Collectors.toList())));
 
             // if could be merged, we should merge database pattern and table pattern into one expression
@@ -231,12 +235,12 @@ public class LogicalTableRecognitionUtils {
                 Verify.singleton(tableExpressions, "tableExpressions.size");
                 return Arrays.asList(databaseExpressions.get(0) + DOT_DELIMITER + tableExpressions.get(0));
             } else {
-                // if could not be merged, we should return every expression group by database name
+                // if it could not be merged, we should return every expression group by database name
                 Map<String, List<String>> databaseName2ExpressionSegs = databaseGroup.entrySet().stream()
                         .collect(Collectors.toMap(Map.Entry::getKey,
                                 entry -> replacePlaceholdersWithRanges(tableNamePattern, entry.getValue()),
                                 (oldValue, newValue) -> oldValue,
-                                () -> new TreeMap<>(createSchemaNameComparator(databaseNamePattern))));
+                                () -> new TreeMap<>(createGroupNumberComparator(databaseNamePattern))));
                 return databaseName2ExpressionSegs.entrySet().stream()
                         .map(entry -> entry.getValue().stream().map(r -> entry.getKey() + DOT_DELIMITER + r)
                                 .collect(Collectors.joining(COMMA_DELIMITER)))
@@ -266,7 +270,7 @@ public class LogicalTableRecognitionUtils {
         return isOrderByEachElement(extractNumbers(databaseGroup, tableNamePattern));
     }
 
-    private static Comparator<String> createSchemaNameComparator(String pattern) {
+    private static Comparator<String> createGroupNumberComparator(String pattern) {
         // this is a comparator that can compare two number strings
         // the logic is the same with Order By multiple columns in SQL
         String regex = pattern.replaceAll(PATTERN_PLACEHOLDER_REGEX, DIGIT_REGEX_CAPTURING_GROUP_REPLACEMENT);
@@ -428,7 +432,8 @@ public class LogicalTableRecognitionUtils {
             String start = sortedNumberStrings.first();
             String end = sortedNumberStrings.last();
             if (StringUtils.equals(start, end)) {
-                return String.format("[%s]", start);
+                // all numbers are the same, just return the number
+                return start;
             } else if (step == 1) {
                 // if step is 1, we could use continuous range
                 return String.format("[%s-%s]", start, end);

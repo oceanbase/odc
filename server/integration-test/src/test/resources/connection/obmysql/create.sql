@@ -2,6 +2,7 @@ create database if not exists db_00;
 create database if not exists db_01;
 create database if not exists db_02;
 create database if not exists db_03;
+create database if not exists db_empty;
 
 -- below are logical tables
 

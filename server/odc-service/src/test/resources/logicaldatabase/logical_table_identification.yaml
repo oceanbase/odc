@@ -1,11 +1,13 @@
 # no logical table
-- data_nodes:
+- id: 1
+  data_nodes:
     - table_name: "tb1"
       schema_name: "db1"
   logical_tables: []
 
 # only divide by database
-- data_nodes:
+- id: 2
+  data_nodes:
     - table_name: "tb"
       schema_name: "db1"
     - table_name: "tb"
@@ -22,7 +24,8 @@
           schema_name: "db2"
 
 # only divide by table
-- data_nodes:
+- id: 3
+  data_nodes:
     - table_name: "tb1"
       schema_name: "db1"
     - table_name: "tb2"
@@ -39,7 +42,8 @@
           schema_name: "db1"
 
 # with padding zero
-- data_nodes:
+- id: 4
+  data_nodes:
     - table_name: "tb000"
       schema_name: "db1"
     - table_name: "tb001"
@@ -56,7 +60,8 @@
           schema_name: "db1"
 
 # different number digits
-- data_nodes:
+- id: 5
+  data_nodes:
     - table_name: "tb1"
       schema_name: "db1"
     - table_name: "tb20"
@@ -72,7 +77,8 @@
         - table_name: "tb20"
           schema_name: "db1"
 
-- data_nodes:
+- id: 6
+  data_nodes:
     - table_name: "tb1"
       schema_name: "db1"
     - table_name: "tb2"
@@ -93,7 +99,8 @@
           schema_name: "db1"
 
 # digits in the middle (shadow table scenario)
-- data_nodes:
+- id: 7
+  data_nodes:
     - table_name: "tb_1_t"
       schema_name: "db1"
     - table_name: "tb_2_t"
@@ -110,7 +117,8 @@
           schema_name: "db1"
 
 # basic table also contains digits
-- data_nodes:
+- id: 8
+  data_nodes:
     - table_name: "tb_1_t2"
       schema_name: "db1"
     - table_name: "tb_2_t2"
@@ -127,7 +135,8 @@
           schema_name: "db1"
 
 # digits in the front
-- data_nodes:
+- id: 9
+  data_nodes:
     - table_name: "tb_1_t2"
       schema_name: "db1"
     - table_name: "tb_2_t2"
@@ -159,7 +168,8 @@
           schema_name: "db1"
 
 # table cascade digits
-- data_nodes:
+- id: 10
+  data_nodes:
     - table_name: "tb_2023_01_t"
       schema_name: "db1"
     - table_name: "tb_2023_02_t"
@@ -183,7 +193,8 @@
         - table_name: "tb_2024_02_t"
           schema_name: "db1"
 
-- data_nodes:
+- id: 11
+  data_nodes:
     - table_name: "tb_2023_01_t"
       schema_name: "db1"
     - table_name: "tb_2024_01_t"
@@ -203,7 +214,8 @@
         - table_name: "tb_2024_02_t"
           schema_name: "db1"
 
-- data_nodes:
+- id: 12
+  data_nodes:
     - table_name: "tb_2023_01_t"
       schema_name: "db1"
     - table_name: "tb_2024_01_t"
@@ -224,18 +236,19 @@
       actual_data_nodes:
         - table_name: "tb_2023_01_t"
           schema_name: "db1"
-        - table_name: "tb_2024_01_t"
-          schema_name: "db1"
-        - table_name: "tb_2028_01_t"
-          schema_name: "db1"
         - table_name: "tb_2023_02_t"
           schema_name: "db1"
+        - table_name: "tb_2024_01_t"
+          schema_name: "db1"
         - table_name: "tb_2024_02_t"
+          schema_name: "db1"
+        - table_name: "tb_2028_01_t"
           schema_name: "db1"
         - table_name: "tb_2028_02_t"
           schema_name: "db1"
 
-- data_nodes:
+- id: 13
+  data_nodes:
     - table_name: "tb_01_01_t"
       schema_name: "db1"
     - table_name: "tb_01_03_t"
@@ -281,7 +294,8 @@
 
 
 # database-table cascade digits
-- data_nodes:
+- id: 14
+  data_nodes:
     - table_name: "tb_000_t"
       schema_name: "db_000"
     - table_name: "tb_001_t"
@@ -305,7 +319,8 @@
         - table_name: "tb_001_t"
           schema_name: "db_001"
 
-- data_nodes:
+- id: 15
+  data_nodes:
     - table_name: "tb_0_0"
       schema_name: "db_000"
     - table_name: "tb_0_1"
@@ -345,7 +360,8 @@
         - table_name: "tb_1_1"
           schema_name: "db_001"
 
-- data_nodes:
+- id: 16
+  data_nodes:
     - table_name: "tb_1"
       schema_name: "db_000"
     - table_name: "tb_2"
@@ -377,7 +393,8 @@
         - table_name: "tb_7"
           schema_name: "db_001"
 
-- data_nodes:
+- id: 17
+  data_nodes:
     - table_name: "tb_1"
       schema_name: "db_000"
     - table_name: "tb_3"
@@ -401,7 +418,8 @@
         - table_name: "tb_3"
           schema_name: "db_003"
 
-- data_nodes:
+- id: 18
+  data_nodes:
     - table_name: "tb_2023_01_t"
       schema_name: "db0"
     - table_name: "tb_2024_01_t"
@@ -433,7 +451,8 @@
         - table_name: "tb_2024_02_t"
           schema_name: "db2"
 
-- data_nodes:
+- id: 19
+  data_nodes:
     - table_name: "tb_2023_01_t"
       schema_name: "db0"
     - table_name: "tb_2024_01_t"
@@ -477,7 +496,8 @@
         - table_name: "tb_2024_02_t"
           schema_name: "db7"
 
-- data_nodes:
+- id: 20
+  data_nodes:
     - table_name: "tb_0"
       schema_name: "db0"
     - table_name: "tb_1"
@@ -501,7 +521,8 @@
         - table_name: "tb_3"
           schema_name: "db1"
 
-- data_nodes:
+- id: 21
+  data_nodes:
     - table_name: "tb_0"
       schema_name: "db_0_0"
     - table_name: "tb_1"
@@ -525,7 +546,8 @@
         - table_name: "tb_3"
           schema_name: "db_1_1"
 
-- data_nodes:
+- id: 22
+  data_nodes:
     - table_name: "tb_0_0"
       schema_name: "db_0"
     - table_name: "tb_0_1"
@@ -549,7 +571,8 @@
         - table_name: "tb_1_1"
           schema_name: "db_3"
 
-- data_nodes:
+- id: 23
+  data_nodes:
     - table_name: "tb_0"
       schema_name: "db_0"
     - table_name: "tb_2"
@@ -581,7 +604,8 @@
         - table_name: "tb_10"
           schema_name: "db_1"
 
-- data_nodes:
+- id: 24
+  data_nodes:
     - table_name: "tb_0"
       schema_name: "db_10"
     - table_name: "tb_2"
@@ -600,15 +624,119 @@
       database_name_pattern: "db_[#]"
       full_name_expression: "db_9.tb_[6-10:2],db_10.tb_[0-4:2]"
       actual_data_nodes:
-        - table_name: "tb_0"
-          schema_name: "db_10"
-        - table_name: "tb_2"
-          schema_name: "db_10"
-        - table_name: "tb_4"
-          schema_name: "db_10"
         - table_name: "tb_6"
           schema_name: "db_9"
         - table_name: "tb_8"
           schema_name: "db_9"
         - table_name: "tb_10"
           schema_name: "db_9"
+        - table_name: "tb_0"
+          schema_name: "db_10"
+        - table_name: "tb_2"
+          schema_name: "db_10"
+        - table_name: "tb_4"
+          schema_name: "db_10"
+
+- id: 25
+  data_nodes:
+    - table_name: "tb_0"
+      schema_name: "db_10"
+    - table_name: "tb_2"
+      schema_name: "db_10"
+    - table_name: "tb_6"
+      schema_name: "db_9"
+    - table_name: "tb_8"
+      schema_name: "db_9"
+    - table_name: "tb_10"
+      schema_name: "db_9"
+  logical_tables:
+    - name: "tb"
+      table_name_pattern: "tb_[#]"
+      database_name_pattern: "db_[#]"
+      full_name_expression: "db_9.tb_[6-10:2],db_10.tb_[0-2:2]"
+      actual_data_nodes:
+        - table_name: "tb_6"
+          schema_name: "db_9"
+        - table_name: "tb_8"
+          schema_name: "db_9"
+        - table_name: "tb_10"
+          schema_name: "db_9"
+        - table_name: "tb_0"
+          schema_name: "db_10"
+        - table_name: "tb_2"
+          schema_name: "db_10"
+
+- id: 26
+  data_nodes:
+    - table_name: "tb_0_0"
+      schema_name: "db_10"
+    - table_name: "tb_1_2"
+      schema_name: "db_10"
+    - table_name: "tb_1_0"
+      schema_name: "db_9"
+    - table_name: "tb_0_1"
+      schema_name: "db_9"
+  logical_tables:
+    - name: "tb"
+      table_name_pattern: "tb_[#]_[#]"
+      database_name_pattern: "db_[#]"
+      full_name_expression: "db_9.tb_0_1,db_9.tb_1_0,db_10.tb_0_0,db_10.tb_1_2"
+      actual_data_nodes:
+        - table_name: "tb_0_1"
+          schema_name: "db_9"
+        - table_name: "tb_1_0"
+          schema_name: "db_9"
+        - table_name: "tb_0_0"
+          schema_name: "db_10"
+        - table_name: "tb_1_2"
+          schema_name: "db_10"
+
+- id: 27
+  data_nodes:
+    - table_name: "tb_1_0"
+      schema_name: "db_9"
+    - table_name: "tb_0_0"
+      schema_name: "db_9"
+    - table_name: "tb_1_1"
+      schema_name: "db_10"
+    - table_name: "tb_1_0"
+      schema_name: "db_10"
+  logical_tables:
+    - name: "tb"
+      table_name_pattern: "tb_[#]_[#]"
+      database_name_pattern: "db_[#]"
+      full_name_expression: "db_9.tb_[0-1]_0,db_10.tb_1_[0-1]"
+      actual_data_nodes:
+        - table_name: "tb_0_0"
+          schema_name: "db_9"
+        - table_name: "tb_1_0"
+          schema_name: "db_9"
+        - table_name: "tb_1_0"
+          schema_name: "db_10"
+        - table_name: "tb_1_1"
+          schema_name: "db_10"
+
+- id: 28
+  data_nodes:
+    - table_name: "tb_1_0"
+      schema_name: "db_9"
+    - table_name: "tb_0_0"
+      schema_name: "db_9"
+    - table_name: "tb_1_1"
+      schema_name: "db_10"
+    - table_name: "tb_1_0"
+      schema_name: "db_10"
+  logical_tables:
+    - name: "tb"
+      table_name_pattern: "tb_[#]_[#]"
+      database_name_pattern: "db_[#]"
+      full_name_expression: "db_9.tb_[0-1]_0,db_10.tb_1_[0-1]"
+      actual_data_nodes:
+        - table_name: "tb_0_0"
+          schema_name: "db_9"
+        - table_name: "tb_1_0"
+          schema_name: "db_9"
+        - table_name: "tb_1_0"
+          schema_name: "db_10"
+        - table_name: "tb_1_1"
+          schema_name: "db_10"
