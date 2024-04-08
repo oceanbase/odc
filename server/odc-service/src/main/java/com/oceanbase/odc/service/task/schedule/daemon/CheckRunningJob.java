@@ -74,12 +74,12 @@ public class CheckRunningJob implements Job {
         JobEntity a = getConfiguration().getTaskFrameworkService().findWithPessimisticLock(jobEntity.getId());
         boolean isNeedRetry = checkJobIfRetryNecessary(a);
         if (isNeedRetry) {
-            log.info("Need to restart job, destroy old executor completed, jobId={}.", a.getId());
+            log.info("Need to restart job, try to set status to RETRYING, jobId={}.", a.getId());
             int rows = getConfiguration().getTaskFrameworkService()
                     .updateStatusDescriptionByIdOldStatus(a.getId(), JobStatus.RUNNING,
                             JobStatus.RETRYING, "Heart timeout and retrying job");
             if (rows > 0) {
-                log.info("Job {} set status to RETRYING.", a.getId());
+                log.info("Set job status to RETRYING, jobId={}.", a.getId());
             } else {
                 throw new TaskRuntimeException("Set job status to RETRYING failed, jobId=" + jobEntity.getId());
             }
@@ -91,7 +91,7 @@ public class CheckRunningJob implements Job {
                     .updateStatusToFailedWhenHeartTimeout(a.getId(),
                             taskFrameworkProperties.getJobHeartTimeoutSeconds(),
                             "Heart timeout and set job to status FAILED.");
-            if (rows >= 0) {
+            if (rows > 0) {
                 log.info("Set job status to FAILED accomplished, jobId={}.", a.getId());
                 AlarmUtils.warn(AlarmEventNames.TASK_HEARTBEAT_TIMEOUT,
                         MessageFormat.format("Job running failed due to heart timeout, jobId={0}", a.getId()));
