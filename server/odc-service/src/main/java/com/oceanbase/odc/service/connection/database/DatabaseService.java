@@ -74,7 +74,6 @@ import com.oceanbase.odc.metadb.iam.PermissionRepository;
 import com.oceanbase.odc.metadb.iam.UserDatabasePermissionEntity;
 import com.oceanbase.odc.metadb.iam.UserDatabasePermissionRepository;
 import com.oceanbase.odc.metadb.iam.UserPermissionRepository;
-import com.oceanbase.odc.metadb.iam.resourcerole.UserResourceRoleRepository;
 import com.oceanbase.odc.service.collaboration.environment.EnvironmentService;
 import com.oceanbase.odc.service.collaboration.environment.model.Environment;
 import com.oceanbase.odc.service.collaboration.project.ProjectService;
@@ -84,12 +83,10 @@ import com.oceanbase.odc.service.common.model.InnerUser;
 import com.oceanbase.odc.service.connection.ConnectionService;
 import com.oceanbase.odc.service.connection.database.model.CreateDatabaseReq;
 import com.oceanbase.odc.service.connection.database.model.Database;
-import com.oceanbase.odc.service.connection.database.model.Database.DatabaseOwner;
 import com.oceanbase.odc.service.connection.database.model.DatabaseSyncProperties;
 import com.oceanbase.odc.service.connection.database.model.DatabaseSyncStatus;
 import com.oceanbase.odc.service.connection.database.model.DatabaseUser;
 import com.oceanbase.odc.service.connection.database.model.DeleteDatabasesReq;
-import com.oceanbase.odc.service.connection.database.model.GetDatabaseOwnerResp;
 import com.oceanbase.odc.service.connection.database.model.ModifyDatabaseOwnerReq;
 import com.oceanbase.odc.service.connection.database.model.QueryDatabaseParams;
 import com.oceanbase.odc.service.connection.database.model.TransferDatabasesReq;
@@ -186,9 +183,6 @@ public class DatabaseService {
 
     @Autowired
     private UserPermissionRepository userPermissionRepository;
-
-    @Autowired
-    private UserResourceRoleRepository userResourceRoleRepository;
 
     @Autowired
     private DatabasePermissionHelper databasePermissionHelper;
@@ -340,6 +334,9 @@ public class DatabaseService {
             database.setOrganizationId(authenticationFacade.currentOrganizationId());
             database.setLastSyncTime(new Date(System.currentTimeMillis()));
             DatabaseEntity saved = databaseRepository.saveAndFlush(database);
+            List<UserResourceRole> userResourceRoles = buildUserResourceRoles(Collections.singleton(saved.getId()),
+                    req.getOwnerIds());
+            resourceRoleService.saveAll(userResourceRoles);
             return entityToModel(saved, false);
         } catch (Exception ex) {
             throw new BadRequestException(SqlExecuteResult.getTrackMessage(ex));
@@ -388,29 +385,15 @@ public class DatabaseService {
     @SkipAuthorize("internal authenticated")
     public boolean transfer(@NonNull @Valid TransferDatabasesReq req) {
         List<DatabaseEntity> entities = databaseRepository.findAllById(req.getDatabaseIds());
-        checkTransferable(entities, req.getProjectId());
-        databaseRepository.setProjectIdByIdIn(req.getProjectId(), entities.stream().map(DatabaseEntity::getId)
-                .collect(Collectors.toSet()));
-        deleteDatabasePermissionByIds(req.getDatabaseIds());
-
-        // Delete the original owner
-        req.getDatabaseIds().forEach(
-                databaseId -> {
-                    resourceRoleService.deleteByResourceTypeAndId(ResourceType.ODC_DATABASE, databaseId);
-                });
-
-        // Add new owner
-        ArrayList<UserResourceRole> userResourceRoles = new ArrayList<>();
-        req.getDatabaseIds().forEach(databaseId -> {
-            userResourceRoles.addAll(req.getOwnerIds().stream().map(userId -> {
-                UserResourceRole userResourceRole = new UserResourceRole();
-                userResourceRole.setUserId(userId);
-                userResourceRole.setResourceId(databaseId);
-                userResourceRole.setResourceType(ResourceType.ODC_DATABASE);
-                userResourceRole.setResourceRole(ResourceRoleName.OWNER);
-                return userResourceRole;
-            }).collect(Collectors.toList()));
-        });
+        if (CollectionUtils.isEmpty(entities)) {
+            return false;
+        }
+        checkTransferable(entities, req);
+        Set<Long> databaseIds = entities.stream().map(DatabaseEntity::getId).collect(Collectors.toSet());
+        databaseRepository.setProjectIdByIdIn(req.getProjectId(), databaseIds);
+        deleteDatabasePermissionByIds(databaseIds);
+        resourceRoleService.deleteByResourceTypeAndIdIn(ResourceType.ODC_DATABASE, databaseIds);
+        List<UserResourceRole> userResourceRoles = buildUserResourceRoles(databaseIds, req.getOwnerIds());
         resourceRoleService.saveAll(userResourceRoles);
         return true;
     }
@@ -428,14 +411,10 @@ public class DatabaseService {
             return false;
         }
         saved.forEach(database -> checkPermission(database.getProjectId(), database.getConnectionId()));
-        deleteDatabasePermissionByIds(req.getDatabaseIds());
+        Set<Long> databaseIds = saved.stream().map(DatabaseEntity::getId).collect(Collectors.toSet());
+        deleteDatabasePermissionByIds(databaseIds);
+        resourceRoleService.deleteByResourceTypeAndIdIn(ResourceType.ODC_DATABASE, databaseIds);
         databaseRepository.deleteAll(saved);
-
-        // Delete the original owner
-        req.getDatabaseIds().forEach(
-                databaseId -> {
-                    resourceRoleService.deleteByResourceTypeAndId(ResourceType.ODC_DATABASE, databaseId);
-                });
         return true;
     }
 
@@ -761,22 +740,14 @@ public class DatabaseService {
 
     @Transactional(rollbackFor = Exception.class)
     @PreAuthenticate(hasAnyResourceRole = {"OWNER", "DBA"}, resourceType = "ODC_PROJECT", indexOfIdParam = 0)
-    public boolean modifyDatabasesOwner(@NotNull Long projectId, @NotNull @Valid ModifyDatabaseOwnerReq req) {
-        // check databaseId in projectId
+    public boolean modifyDatabasesOwners(@NotNull Long projectId, @NotNull @Valid ModifyDatabaseOwnerReq req) {
         databaseRepository.findByIdIn(req.getDatabaseIds()).forEach(database -> {
             if (!projectId.equals(database.getProjectId())) {
                 throw new AccessDeniedException();
             }
         });
-
-        // Delete the original owner
-        req.getDatabaseIds().forEach(
-                databaseId -> {
-                    resourceRoleService.deleteByResourceTypeAndId(ResourceType.ODC_DATABASE, databaseId);
-                });
-
-        // Add new owner
-        ArrayList<UserResourceRole> userResourceRoles = new ArrayList<>();
+        resourceRoleService.deleteByResourceTypeAndIdIn(ResourceType.ODC_DATABASE, req.getDatabaseIds());
+        List<UserResourceRole> userResourceRoles = new ArrayList<>();
         req.getDatabaseIds().forEach(databaseId -> {
             userResourceRoles.addAll(req.getOwnerIds().stream().map(userId -> {
                 UserResourceRole userResourceRole = new UserResourceRole();
@@ -789,36 +760,6 @@ public class DatabaseService {
         });
         resourceRoleService.saveAll(userResourceRoles);
         return true;
-    }
-
-    @SkipAuthorize("odc internal usage")
-    public GetDatabaseOwnerResp getDatabasesOwner(@NotNull Long projectId, @NotNull Long databaseId) {
-        List<UserResourceRole> userResourceRoles = resourceRoleService.listByResourceTypeAndId(
-                ResourceType.ODC_DATABASE, databaseId);
-
-        // 如果userResourceRoles是空的，就查询ODC_PROJECT表，获取项目的owner
-        if (CollectionUtils.isEmpty(userResourceRoles)) {
-            userResourceRoles = resourceRoleService.getUserIdsByResourceIdAndTypeAndName(
-                    projectId, ResourceType.ODC_PROJECT, "OWNER");
-        }
-
-        List<InnerUser> members = userResourceRoles.stream()
-                .map(userResourceRole -> {
-                    User user = userService.deailById(userResourceRole.getUserId());
-                    InnerUser member = new InnerUser();
-                    member.setId(user.getId());
-                    member.setName(user.getName());
-                    member.setAccountName(user.getAccountName());
-                    return member;
-                })
-                .collect(Collectors.toList());
-
-        GetDatabaseOwnerResp getDatabaseOwnerResp = new GetDatabaseOwnerResp();
-        getDatabaseOwnerResp.setDatabaseId(databaseId);
-        getDatabaseOwnerResp.setProjectId(projectId);
-        getDatabaseOwnerResp.setMembers(members);
-
-        return getDatabaseOwnerResp;
     }
 
     private void checkPermission(Long projectId, Long dataSourceId) {
@@ -838,13 +779,20 @@ public class DatabaseService {
         }
     }
 
-    private void checkTransferable(@NonNull Collection<DatabaseEntity> databases, Long newProjectId) {
+    private void checkTransferable(@NonNull Collection<DatabaseEntity> databases, @NonNull TransferDatabasesReq req) {
         if (CollectionUtils.isEmpty(databases)) {
             return;
         }
-        if (Objects.nonNull(newProjectId)) {
-            projectPermissionValidator.checkProjectRole(newProjectId,
+        if (Objects.nonNull(req.getProjectId())) {
+            projectPermissionValidator.checkProjectRole(req.getProjectId(),
                     Arrays.asList(ResourceRoleName.DBA, ResourceRoleName.OWNER));
+        }
+        if (CollectionUtils.isNotEmpty(req.getOwnerIds())) {
+            Set<Long> memberIds =
+                    resourceRoleService.listByResourceTypeAndId(ResourceType.ODC_PROJECT, req.getProjectId()).stream()
+                            .map(UserResourceRole::getUserId).collect(Collectors.toSet());
+            PreConditions.validArgumentState(memberIds.containsAll(req.getOwnerIds()), ErrorCodes.AccessDenied, null,
+                    "Invalid ownerIds");
         }
         List<Long> projectIds = databases.stream().map(DatabaseEntity::getProjectId).collect(Collectors.toList());
         List<Long> connectionIds = databases.stream().map(DatabaseEntity::getConnectionId).collect(Collectors.toList());
@@ -886,6 +834,20 @@ public class DatabaseService {
             databaseId2PermittedActions = databasePermissionHelper.getPermissions(databaseIds);
         }
         Map<Long, Set<DatabasePermissionType>> finalId2PermittedActions = databaseId2PermittedActions;
+        Map<Long, List<UserResourceRole>> databaseId2UserResourceRole = new HashMap<>();
+        Map<Long, User> userId2User = new HashMap<>();
+        List<UserResourceRole> userResourceRoles =
+                resourceRoleService.listByResourceTypeAndIdIn(ResourceType.ODC_DATABASE, databaseIds);
+        if (CollectionUtils.isNotEmpty(userResourceRoles)) {
+            databaseId2UserResourceRole = userResourceRoles.stream()
+                    .collect(Collectors.groupingBy(UserResourceRole::getResourceId, Collectors.toList()));
+            userId2User = userService
+                    .batchNullSafeGet(
+                            userResourceRoles.stream().map(UserResourceRole::getUserId).collect(Collectors.toSet()))
+                    .stream().collect(Collectors.toMap(User::getId, v -> v, (v1, v2) -> v2));
+        }
+        Map<Long, List<UserResourceRole>> finalDatabaseId2UserResourceRole = databaseId2UserResourceRole;
+        Map<Long, User> finalUserId2User = userId2User;
         return entities.map(entity -> {
             Database database = databaseMapper.entityToModel(entity);
             List<Project> projects = projectId2Projects.getOrDefault(entity.getProjectId(), new ArrayList<>());
@@ -899,21 +861,21 @@ public class DatabaseService {
             if (includesPermittedAction) {
                 database.setAuthorizedPermissionTypes(finalId2PermittedActions.get(entity.getId()));
             }
-
             // Set the owner of the database
-            List<UserResourceRole> userResourceRoles = resourceRoleService.listByResourceTypeAndId(
-                    ResourceType.ODC_DATABASE, entity.getId());
-
-            List<DatabaseOwner> databaseOwners = userResourceRoles.stream().map(userResourceRole -> {
-                User user = userService.deailById(userResourceRole.getUserId());
-                DatabaseOwner databaseOwner = new DatabaseOwner();
-                databaseOwner.setId(user.getId());
-                databaseOwner.setName(user.getName());
-                databaseOwner.setAccountName(user.getAccountName());
-                return databaseOwner;
-            }).collect(Collectors.toList());
-            database.setOwners(databaseOwners);
-
+            List<UserResourceRole> resourceRoles = finalDatabaseId2UserResourceRole.get(entity.getId());
+            if (CollectionUtils.isNotEmpty(resourceRoles)) {
+                Set<Long> ownerIds =
+                        resourceRoles.stream().map(UserResourceRole::getUserId).collect(Collectors.toSet());
+                List<InnerUser> owners = ownerIds.stream().map(id -> {
+                    User user = finalUserId2User.get(id);
+                    InnerUser innerUser = new InnerUser();
+                    innerUser.setId(user.getId());
+                    innerUser.setName(user.getName());
+                    innerUser.setAccountName(user.getAccountName());
+                    return innerUser;
+                }).collect(Collectors.toList());
+                database.setOwners(owners);
+            }
             return database;
         });
     }
@@ -951,6 +913,24 @@ public class DatabaseService {
             permissionRepository.deleteByIds(permissionIds);
             userPermissionRepository.deleteByPermissionIds(permissionIds);
         }
+    }
+
+    private List<UserResourceRole> buildUserResourceRoles(Collection<Long> databaseIds, Collection<Long> ownerIds) {
+        List<UserResourceRole> userResourceRoles = new ArrayList<>();
+        if (CollectionUtils.isNotEmpty(databaseIds) || CollectionUtils.isEmpty(ownerIds)) {
+            return userResourceRoles;
+        }
+        databaseIds.forEach(databaseId -> {
+            userResourceRoles.addAll(ownerIds.stream().map(userId -> {
+                UserResourceRole userResourceRole = new UserResourceRole();
+                userResourceRole.setUserId(userId);
+                userResourceRole.setResourceId(databaseId);
+                userResourceRole.setResourceType(ResourceType.ODC_DATABASE);
+                userResourceRole.setResourceRole(ResourceRoleName.OWNER);
+                return userResourceRole;
+            }).collect(Collectors.toList()));
+        });
+        return userResourceRoles;
     }
 
 }

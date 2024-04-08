@@ -96,7 +96,7 @@ public class HookConfiguration {
     public void init() {
         userService.addPostUserDeleteHook(event -> {
             Long userId = event.getUserId();
-            projectService.deleteUserRelatedProjectRoles(userId);
+            projectService.deleteUserRelatedResourceRoles(userId);
             userConfigService.deleteUserConfigurations(userId);
         });
         log.info("PostUserDeleteHook added");

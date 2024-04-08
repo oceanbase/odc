@@ -107,8 +107,8 @@ public class DataBaseController {
 
     @ApiOperation(value = "modifyDatabasesOwner", notes = "modify database owner")
     @RequestMapping(value = "/databases/owner/{projectId:[\\d]+}", method = RequestMethod.PUT)
-    public SuccessResponse<Boolean> modifyDatabasesOwner(@PathVariable Long projectId,
+    public SuccessResponse<Boolean> modifyDatabasesOwners(@PathVariable Long projectId,
             @RequestBody ModifyDatabaseOwnerReq req) {
-        return Responses.success(databaseService.modifyDatabasesOwner(projectId, req));
+        return Responses.success(databaseService.modifyDatabasesOwners(projectId, req));
     }
 }

@@ -16,14 +16,15 @@
 package com.oceanbase.odc.service.iam;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import javax.sql.DataSource;
 import javax.validation.constraints.NotEmpty;
 
 import org.apache.commons.collections4.CollectionUtils;
@@ -55,6 +56,7 @@ import lombok.extern.slf4j.Slf4j;
 @Service
 @Slf4j
 public class ResourceRoleService {
+
     @Autowired
     private ResourceRoleRepository resourceRoleRepository;
 
@@ -63,9 +65,6 @@ public class ResourceRoleService {
 
     @Autowired
     private AuthenticationFacade authenticationFacade;
-
-    @Autowired
-    private DataSource dataSource;
 
     private final ResourceRoleMapper resourceRoleMapper = ResourceRoleMapper.INSTANCE;
 
@@ -76,15 +75,21 @@ public class ResourceRoleService {
             return Collections.emptyList();
         }
         List<UserResourceRoleEntity> userResourceRoleEntityList = new ArrayList<>();
-        userResourceRoleList.forEach(i -> {
-            ResourceRoleEntity resourceRoleEntity = resourceRoleRepository.findByResourceTypeAndRoleName(
-                    i.getResourceType(), i.getResourceRole());
-            if (resourceRoleEntity == null) {
-                throw new UnexpectedException("resource role not found, role=" + i.getResourceRole());
+        Map<ResourceType, Map<ResourceRoleName, ResourceRoleEntity>> resourceRoleMap = resourceRoleRepository.findAll()
+                .stream().collect(Collectors.groupingBy(ResourceRoleEntity::getResourceType,
+                        Collectors.toMap(ResourceRoleEntity::getRoleName, v -> v, (v1, v2) -> v2)));
+        userResourceRoleList.forEach(e -> {
+            Map<ResourceRoleName, ResourceRoleEntity> resourceRoleEntityMap = resourceRoleMap.get(e.getResourceType());
+            if (Objects.isNull(resourceRoleEntityMap)) {
+                throw new UnexpectedException("resource type has no role, type=" + e.getResourceType());
+            }
+            ResourceRoleEntity resourceRoleEntity = resourceRoleEntityMap.get(e.getResourceRole());
+            if (Objects.isNull(resourceRoleEntity)) {
+                throw new UnexpectedException("resource role not found, role=" + e.getResourceRole());
             }
             UserResourceRoleEntity entity = new UserResourceRoleEntity();
-            entity.setResourceId(i.getResourceId());
-            entity.setUserId(i.getUserId());
+            entity.setResourceId(e.getResourceId());
+            entity.setUserId(e.getUserId());
             entity.setResourceRoleId(resourceRoleEntity.getId());
             entity.setOrganizationId(authenticationFacade.currentOrganizationId());
             userResourceRoleEntityList.add(entity);
@@ -112,11 +117,9 @@ public class ResourceRoleService {
 
     @SkipAuthorize
     public Map<Long, Set<ResourceRoleName>> getProjectId2ResourceRoleNames(Long userId) {
-        Map<Long, ResourceRole> id2ResourceRoles =
-                resourceRoleRepository.findByResourceType(ResourceType.ODC_PROJECT).stream()
-                        .map(resourceRoleMapper::entityToModel).collect(Collectors
-                                .toMap(ResourceRole::getId, resourceRole -> resourceRole,
-                                        (existingValue, newValue) -> newValue));
+        Map<Long, ResourceRole> id2ResourceRoles = resourceRoleRepository.findByResourceType(ResourceType.ODC_PROJECT)
+                .stream().map(resourceRoleMapper::entityToModel)
+                .collect(Collectors.toMap(ResourceRole::getId, resourceRole -> resourceRole, (v1, v2) -> v2));
         return userResourceRoleRepository.findByUserIdAndResourceType(userId, ResourceType.ODC_PROJECT).stream()
                 .collect(Collectors.groupingBy(UserResourceRoleEntity::getResourceId, Collectors.mapping(
                         e -> id2ResourceRoles.get(e.getResourceRoleId()).getRoleName(), Collectors.toSet())));
@@ -130,30 +133,14 @@ public class ResourceRoleService {
     @Transactional(rollbackFor = Exception.class)
     @SkipAuthorize("internal usage")
     public List<UserResourceRole> listByResourceTypeAndId(ResourceType resourceType, Long resourceId) {
-        List<UserResourceRoleEntity> entities =
-                userResourceRoleRepository.listByResourceTypeAndId(resourceType, resourceId);
-        return entities.stream().map(e -> {
-            ResourceRoleEntity resourceRole = resourceRoleRepository
-                    .findById(e.getResourceRoleId())
-                    .orElseThrow(() -> new UnexpectedException("resource role not found, id=" + e.getResourceRoleId()));
-            return fromEntity(e, resourceRole);
-        }).collect(Collectors.toList());
+        return fromEntities(userResourceRoleRepository.listByResourceTypeAndId(resourceType, resourceId));
     }
 
     @Transactional(rollbackFor = Exception.class)
     @SkipAuthorize("internal usage")
-    public List<UserResourceRole> listByResourceIdIn(@NonNull Set<Long> resourceIds) {
-        List<UserResourceRoleEntity> entities = userResourceRoleRepository.findByResourceIdIn(resourceIds);
-        Map<Long, ResourceRoleEntity> id2ResourceRoles = resourceRoleRepository.findAll().stream()
-                .collect(Collectors.toMap(ResourceRoleEntity::getId, v -> v));
-        return entities.stream().map(entity -> fromEntity(entity, id2ResourceRoles.get(entity.getResourceRoleId())))
-                .collect(Collectors.toList());
-    }
-
-    @Transactional(rollbackFor = Exception.class)
-    @SkipAuthorize("only for unit test")
-    public int deleteByResourceId(Long resourceId) {
-        return userResourceRoleRepository.deleteByResourceId(resourceId);
+    public List<UserResourceRole> listByResourceTypeAndIdIn(ResourceType resourceType,
+            @NotEmpty Collection<Long> resourceIds) {
+        return fromEntities(userResourceRoleRepository.listByResourceTypeAndIdIn(resourceType, resourceIds));
     }
 
     @Transactional(rollbackFor = Exception.class)
@@ -164,14 +151,23 @@ public class ResourceRoleService {
 
     @Transactional(rollbackFor = Exception.class)
     @SkipAuthorize("internal usage")
-    public int deleteByResourceIdAndUserId(@NonNull Long resourceId, @NonNull Long userId) {
-        return userResourceRoleRepository.deleteByResourceIdAndUserId(resourceId, userId);
+    public int deleteByResourceTypeAndIdIn(@NonNull ResourceType resourceType, @NotEmpty Collection<Long> resourceIds) {
+        return userResourceRoleRepository.deleteByResourceTypeAndIdIn(resourceType, resourceIds);
     }
 
-    @SkipAuthorize("internal usage")
     @Transactional(rollbackFor = Exception.class)
-    public int deleteByUserIdAndResourceIdIn(@NonNull Long userId, @NotEmpty Set<Long> resourceIds) {
-        return userResourceRoleRepository.deleteByUserIdAndResourceIdIn(userId, resourceIds);
+    @SkipAuthorize("internal usage")
+    public int deleteByUserIdAndResourceIdAndResourceType(@NonNull Long userId, @NonNull Long resourceId,
+            @NonNull ResourceType resourceType) {
+        return userResourceRoleRepository.deleteByUserIdAndResourceIdAndResourceType(userId, resourceId, resourceType);
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    @SkipAuthorize("internal usage")
+    public int deleteByUserIdAndResourceIdInAndResourceType(@NonNull Long userId, @NonNull Collection<Long> resourceIds,
+            @NonNull ResourceType resourceType) {
+        return userResourceRoleRepository.deleteByUserIdAndResourceIdInAndResourceType(userId, resourceIds,
+                resourceType);
     }
 
     @SkipAuthorize("internal usage")
@@ -181,32 +177,39 @@ public class ResourceRoleService {
 
     @SkipAuthorize("internal usage")
     public List<ResourceRole> listResourceRoles(List<ResourceType> resourceType) {
-        return resourceRoleRepository
-                .findByResourceTypeIn(resourceType).stream()
-                .map(resourceRoleMapper::entityToModel).collect(Collectors.toList());
+        return resourceRoleRepository.findByResourceTypeIn(resourceType).stream().map(resourceRoleMapper::entityToModel)
+                .collect(Collectors.toList());
     }
 
     @SkipAuthorize("internal authenticated")
     public List<UserResourceRole> listByOrganizationIdAndUserId(Long organizationId, Long userId) {
-        List<UserResourceRoleEntity> entities =
-                userResourceRoleRepository.findByOrganizationIdAndUserId(organizationId, userId);
-        return entities.stream().map(e -> {
-            ResourceRoleEntity resourceRole = resourceRoleRepository
-                    .findById(e.getResourceRoleId())
-                    .orElseThrow(() -> new UnexpectedException("resource role not found, id=" + e.getResourceRoleId()));
-            return fromEntity(e, resourceRole);
-        }).collect(Collectors.toList());
+        return fromEntities(userResourceRoleRepository.findByOrganizationIdAndUserId(organizationId, userId));
     }
 
     @SkipAuthorize("internal usage")
     public List<UserResourceRole> listByUserId(Long userId) {
-        List<UserResourceRoleEntity> entities =
-                userResourceRoleRepository.findByUserId(userId);
+        return fromEntities(userResourceRoleRepository.findByUserId(userId));
+    }
+
+    @SkipAuthorize("internal usage")
+    public List<UserResourceRole> listByResourceIdAndTypeAndName(Long resourceId, ResourceType resourceType,
+            String roleName) {
+        return fromEntities(
+                userResourceRoleRepository.findByResourceIdAndTypeAndName(resourceId, resourceType, roleName));
+    }
+
+    private List<UserResourceRole> fromEntities(Collection<UserResourceRoleEntity> entities) {
+        if (CollectionUtils.isEmpty(entities)) {
+            return new ArrayList<>();
+        }
+        Map<Long, ResourceRoleEntity> id2ResourceRoleEntities = resourceRoleRepository.findAll().stream()
+                .collect(Collectors.toMap(ResourceRoleEntity::getId, v -> v, (v1, v2) -> v2));
         return entities.stream().map(e -> {
-            ResourceRoleEntity resourceRole = resourceRoleRepository
-                    .findById(e.getResourceRoleId())
-                    .orElseThrow(() -> new UnexpectedException("resource role not found, id=" + e.getResourceRoleId()));
-            return fromEntity(e, resourceRole);
+            ResourceRoleEntity resourceRoleEntity = id2ResourceRoleEntities.get(e.getResourceRoleId());
+            if (Objects.isNull(resourceRoleEntity)) {
+                throw new UnexpectedException("resource role not found, id=" + e.getResourceRoleId());
+            }
+            return fromEntity(e, resourceRoleEntity);
         }).collect(Collectors.toList());
     }
 
@@ -217,19 +220,6 @@ public class ResourceRoleService {
         model.setResourceId(entity.getResourceId());
         model.setUserId(entity.getUserId());
         return model;
-    }
-
-    public List<UserResourceRole> getUserIdsByResourceIdAndTypeAndName(Long resourceId, ResourceType resourceType,
-            String roleName) {
-        List<UserResourceRoleEntity> entities = userResourceRoleRepository.findByResourceIdAndTypeAndName(resourceId,
-                resourceType.toString(),
-                roleName);
-        return entities.stream().map(e -> {
-            ResourceRoleEntity resourceRole = resourceRoleRepository
-                    .findById(e.getResourceRoleId())
-                    .orElseThrow(() -> new UnexpectedException("resource role not found, id=" + e.getResourceRoleId()));
-            return fromEntity(e, resourceRole);
-        }).collect(Collectors.toList());
     }
 
 }

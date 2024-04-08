@@ -17,6 +17,7 @@ package com.oceanbase.odc.server.web.controller.v2;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -39,7 +40,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.oceanbase.odc.core.flow.model.FlowTaskResult;
-import com.oceanbase.odc.core.flow.model.TaskParameters;
 import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.core.shared.constant.FlowStatus;
 import com.oceanbase.odc.core.shared.constant.OrganizationType;
@@ -90,6 +90,8 @@ public class FlowInstanceController {
     @Autowired
     private PartitionPlanScheduleService partitionPlanScheduleService;
 
+    private static final int MAX_APPLY_DATABASE_SIZE = 10;
+
     @ApiOperation(value = "createFlowInstance", notes = "创建流程实例，返回流程实例")
     @RequestMapping(value = "/", method = RequestMethod.POST)
     public ListResponse<FlowInstanceDetailResp> createFlowInstance(
@@ -99,16 +101,19 @@ public class FlowInstanceController {
             return Responses.list(flowInstanceService.createIndividualFlowInstance(flowInstanceReq));
         } else {
             if (flowInstanceReq.getTaskType() == TaskType.APPLY_DATABASE_PERMISSION) {
-                TaskParameters parameters = flowInstanceReq.getParameters();
-                List<ApplyDatabase> databases = ((ApplyDatabaseParameter) parameters).getDatabases();
-                List<FlowInstanceDetailResp> resp = databases.stream().map(applyDatabas -> {
-                    ArrayList<ApplyDatabase> applyDatabases = new ArrayList<>();
-                    applyDatabases.add(applyDatabas);
-                    ((ApplyDatabaseParameter) parameters).setDatabases(applyDatabases);
-                    flowInstanceReq.setDatabaseId(applyDatabas.getId());
-                    flowInstanceReq.setParameters(parameters);
+                ApplyDatabaseParameter parameter = (ApplyDatabaseParameter) flowInstanceReq.getParameters();
+                List<ApplyDatabase> databases = new ArrayList<>(parameter.getDatabases());
+                if (CollectionUtils.isNotEmpty(databases) && databases.size() > MAX_APPLY_DATABASE_SIZE) {
+                    throw new IllegalStateException("The number of databases to apply for exceeds the maximum limit");
+                }
+                List<FlowInstanceDetailResp> resp = databases.stream().map(e -> {
+                    List<ApplyDatabase> applyDatabases = new ArrayList<>();
+                    applyDatabases.add(e);
+                    parameter.setDatabases(applyDatabases);
+                    flowInstanceReq.setDatabaseId(e.getId());
+                    flowInstanceReq.setParameters(parameter);
                     return flowInstanceService.create(flowInstanceReq);
-                }).collect(Collectors.toList()).stream().flatMap(line -> line.stream()).collect(Collectors.toList());
+                }).collect(Collectors.toList()).stream().flatMap(Collection::stream).collect(Collectors.toList());
                 return Responses.list(resp);
             } else {
                 return Responses.list(flowInstanceService.create(flowInstanceReq));

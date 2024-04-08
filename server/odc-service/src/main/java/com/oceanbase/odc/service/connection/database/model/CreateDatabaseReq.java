@@ -15,6 +15,9 @@
  */
 package com.oceanbase.odc.service.connection.database.model;
 
+import java.util.HashSet;
+import java.util.Set;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -38,4 +41,5 @@ public class CreateDatabaseReq {
     private Long projectId;
     @NonNull
     private Long dataSourceId;
+    private Set<Long> ownerIds = new HashSet<>();
 }

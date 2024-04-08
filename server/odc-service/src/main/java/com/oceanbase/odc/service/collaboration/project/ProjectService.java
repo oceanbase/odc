@@ -28,6 +28,7 @@ import javax.validation.Valid;
 import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
 
+import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Example;
 import org.springframework.data.domain.Page;
@@ -35,7 +36,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.util.CollectionUtils;
 import org.springframework.validation.annotation.Validated;
 
 import com.oceanbase.odc.core.authority.util.Authenticated;
@@ -52,6 +52,7 @@ import com.oceanbase.odc.metadb.collaboration.ProjectRepository;
 import com.oceanbase.odc.metadb.collaboration.ProjectSpecs;
 import com.oceanbase.odc.metadb.connection.ConnectionConfigRepository;
 import com.oceanbase.odc.metadb.connection.ConnectionEntity;
+import com.oceanbase.odc.metadb.connection.DatabaseEntity;
 import com.oceanbase.odc.metadb.connection.DatabaseRepository;
 import com.oceanbase.odc.metadb.iam.PermissionRepository;
 import com.oceanbase.odc.metadb.iam.UserDatabasePermissionEntity;
@@ -320,14 +321,18 @@ public class ProjectService {
         if (currentUserId().longValue() == userId.longValue()) {
             throw new BadRequestException("Not allowed to delete yourself");
         }
-        Set<Long> memberIds = resourceRoleService.listByResourceIdIn(Collections.singleton(projectId)).stream()
-                .filter(Objects::nonNull)
-                .map(UserResourceRole::getUserId).collect(
-                        Collectors.toSet());
+        Set<Long> memberIds = resourceRoleService.listByResourceTypeAndId(ResourceType.ODC_PROJECT, projectId).stream()
+                .filter(Objects::nonNull).map(UserResourceRole::getUserId).collect(Collectors.toSet());
         if (!memberIds.contains(userId)) {
             throw new BadRequestException("User not belongs to this project");
         }
-        resourceRoleService.deleteByUserIdAndResourceIdIn(userId, Collections.singleton(projectId));
+        resourceRoleService.deleteByUserIdAndResourceIdAndResourceType(userId, projectId, ResourceType.ODC_PROJECT);
+        List<Long> relatedDatabaseIds = databaseRepository.findByProjectId(projectId).stream()
+                .map(DatabaseEntity::getId).collect(Collectors.toList());
+        if (CollectionUtils.isNotEmpty(relatedDatabaseIds)) {
+            resourceRoleService.deleteByUserIdAndResourceIdInAndResourceType(userId, relatedDatabaseIds,
+                    ResourceType.ODC_DATABASE);
+        }
         checkMemberRoles(detail(projectId).getMembers());
         deleteMemberRelatedDatabasePermissions(userId, projectId);
         return true;
@@ -335,7 +340,7 @@ public class ProjectService {
 
     @Transactional(rollbackFor = Exception.class)
     @SkipAuthorize("internal usage")
-    public boolean deleteUserRelatedProjectRoles(@NonNull Long userId) {
+    public boolean deleteUserRelatedResourceRoles(@NonNull Long userId) {
         resourceRoleService.deleteByUserId(userId);
         return true;
     }
@@ -353,10 +358,10 @@ public class ProjectService {
         if (CollectionUtils.isEmpty(userId2ResourceRoles.keySet())) {
             return false;
         }
-        if (!userId2ResourceRoles.keySet().contains(userId)) {
+        if (!userId2ResourceRoles.containsKey(userId)) {
             throw new BadRequestException("User not belongs to this project");
         }
-        resourceRoleService.deleteByResourceIdAndUserId(projectId, userId);
+        resourceRoleService.deleteByUserIdAndResourceIdAndResourceType(userId, projectId, ResourceType.ODC_PROJECT);
         if (CollectionUtils.isEmpty(members)) {
             return true;
         }
@@ -381,11 +386,11 @@ public class ProjectService {
     @SkipAuthorize("permission check inside")
     public Map<Long, Set<ResourceRoleName>> getProjectId2ResourceRoleNames() {
         List<UserResourceRole> userResourceRoles =
-                resourceRoleService.listByOrganizationIdAndUserId(currentOrganizationId(),
-                        currentUserId());
+                resourceRoleService.listByOrganizationIdAndUserId(currentOrganizationId(), currentUserId());
         Map<Long, Set<ResourceRoleName>> projectId2Members =
-                userResourceRoles.stream().collect(Collectors.groupingBy(UserResourceRole::getResourceId,
-                        Collectors.mapping(UserResourceRole::getResourceRole, Collectors.toSet())));
+                userResourceRoles.stream().filter(UserResourceRole::isProjectMember)
+                        .collect(Collectors.groupingBy(UserResourceRole::getResourceId,
+                                Collectors.mapping(UserResourceRole::getResourceRole, Collectors.toSet())));
         return projectId2Members;
     }
 

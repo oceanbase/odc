@@ -20,7 +20,6 @@ import java.util.List;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 
-import com.oceanbase.odc.core.shared.constant.ResourceRoleName;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
 
 public interface ResourceRoleRepository
@@ -30,5 +29,4 @@ public interface ResourceRoleRepository
 
     List<ResourceRoleEntity> findByResourceTypeIn(List<ResourceType> resourceType);
 
-    ResourceRoleEntity findByResourceTypeAndRoleName(ResourceType resourceType, ResourceRoleName roleName);
 }

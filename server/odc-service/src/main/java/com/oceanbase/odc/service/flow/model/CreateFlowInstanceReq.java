@@ -53,6 +53,7 @@ public class CreateFlowInstanceReq {
     /**
      * FlowInstanceId
      */
+    @JsonProperty(access = Access.READ_ONLY)
     private Long id;
 
     /**

@@ -119,7 +119,7 @@ public class RiskLevelService {
 
     @SkipAuthorize("internal usage")
     public Optional<RiskLevel> findRawById(@NonNull Long id) {
-        return riskLevelRepository.findById(id).map(this::rawEntityToModel);
+        return riskLevelRepository.findById(id).map(riskLevelMapper::entityToModel);
     }
 
     @SkipAuthorize("internal usage")
@@ -157,8 +157,4 @@ public class RiskLevelService {
         return model;
     }
 
-    private RiskLevel rawEntityToModel(RiskLevelEntity entity) {
-        RiskLevel model = riskLevelMapper.entityToModel(entity);
-        return model;
-    }
 }
