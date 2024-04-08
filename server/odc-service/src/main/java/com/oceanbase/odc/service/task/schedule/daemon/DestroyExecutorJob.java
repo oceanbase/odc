@@ -30,10 +30,10 @@ import com.oceanbase.odc.service.task.config.JobConfiguration;
 import com.oceanbase.odc.service.task.config.JobConfigurationHolder;
 import com.oceanbase.odc.service.task.config.JobConfigurationValidator;
 import com.oceanbase.odc.service.task.config.TaskFrameworkProperties;
-import com.oceanbase.odc.service.task.exception.JobException;
 import com.oceanbase.odc.service.task.exception.TaskRuntimeException;
 import com.oceanbase.odc.service.task.schedule.JobIdentity;
 import com.oceanbase.odc.service.task.service.TaskFrameworkService;
+import com.oceanbase.odc.service.task.util.JobUtils;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -76,12 +76,16 @@ public class DestroyExecutorJob implements Job {
                         lockedEntity.getStatus());
                 try {
                     getConfiguration().getJobDispatcher().destroy(JobIdentity.of(lockedEntity.getId()));
-                } catch (JobException e) {
-                    log.warn("Destroy executor occur error, jobId={}: ", lockedEntity.getId(), e);
-                    AlarmUtils.warn(AlarmEventNames.TASK_EXECUTOR_DESTROY_FAILED,
+                } catch (Exception e) {
+                    try {
+                        JobUtils.handleDestroyException(e);
+                    } catch (Exception ex) {
+                        log.warn("Destroy executor occur error, jobId={}: ", lockedEntity.getId(), e);
+                        AlarmUtils.warn(AlarmEventNames.TASK_EXECUTOR_DESTROY_FAILED,
                             MessageFormat.format("Job executor destroy failed, jobId={0}",
-                                    lockedEntity.getId()));
-                    throw new TaskRuntimeException(e);
+                                lockedEntity.getId()));
+                        throw new TaskRuntimeException(e);
+                    }
                 }
                 log.info("Job destroy executor succeed, jobId={}.", lockedEntity.getId());
             }

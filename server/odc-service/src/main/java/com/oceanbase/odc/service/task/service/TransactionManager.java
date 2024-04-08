@@ -30,6 +30,4 @@ public interface TransactionManager {
     <T> T doInTransaction(Supplier<T> action);
 
     void doInTransactionWithoutResult(Runnable r);
-
-    void doInTransactionWithoutResult(Consumer<TransactionStatus> action);
 }

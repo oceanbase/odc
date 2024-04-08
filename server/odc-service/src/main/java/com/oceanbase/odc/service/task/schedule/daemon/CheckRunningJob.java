@@ -22,25 +22,22 @@ import org.quartz.Job;
 import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
 import org.springframework.data.domain.Page;
-import org.springframework.transaction.TransactionStatus;
 
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.common.util.SilentExecutor;
 import com.oceanbase.odc.core.alarm.AlarmEventNames;
 import com.oceanbase.odc.core.alarm.AlarmUtils;
-import com.oceanbase.odc.core.shared.exception.BadRequestException;
-import com.oceanbase.odc.core.shared.exception.NotFoundException;
 import com.oceanbase.odc.metadb.task.JobEntity;
 import com.oceanbase.odc.service.task.config.JobConfiguration;
 import com.oceanbase.odc.service.task.config.JobConfigurationHolder;
 import com.oceanbase.odc.service.task.config.JobConfigurationValidator;
 import com.oceanbase.odc.service.task.config.TaskFrameworkProperties;
 import com.oceanbase.odc.service.task.enums.JobStatus;
-import com.oceanbase.odc.service.task.exception.JobException;
 import com.oceanbase.odc.service.task.exception.TaskRuntimeException;
 import com.oceanbase.odc.service.task.listener.JobTerminateEvent;
 import com.oceanbase.odc.service.task.schedule.JobIdentity;
 import com.oceanbase.odc.service.task.schedule.SingleJobProperties;
+import com.oceanbase.odc.service.task.util.JobUtils;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -70,10 +67,10 @@ public class CheckRunningJob implements Job {
 
     private void handleJobRetryingOrFailed(JobEntity jobEntity) {
         SilentExecutor.executeSafely(() -> getConfiguration().getTransactionManager()
-                .doInTransactionWithoutResult(status -> doHandleJobRetryingOrFailed(status, jobEntity)));
+                .doInTransactionWithoutResult(() -> doHandleJobRetryingOrFailed(jobEntity)));
     }
 
-    private void doHandleJobRetryingOrFailed(TransactionStatus status, JobEntity jobEntity) {
+    private void doHandleJobRetryingOrFailed(JobEntity jobEntity) {
         JobEntity a = getConfiguration().getTaskFrameworkService().findWithPessimisticLock(jobEntity.getId());
         boolean isNeedRetry = checkJobIfRetryNecessary(a);
         if (isNeedRetry) {
@@ -105,19 +102,12 @@ public class CheckRunningJob implements Job {
 
         try {
             getConfiguration().getJobDispatcher().destroy(JobIdentity.of(a.getId()));
-        } catch (NotFoundException e) {
-            log.warn(e.getMessage());
-        } catch (BadRequestException e) {
-            log.warn(e.getMessage());
-            status.setRollbackOnly();
-        } catch (JobException e) {
-            throw new TaskRuntimeException(e);
+        } catch (Exception e) {
+            JobUtils.handleDestroyException(e);
         }
-
         if (!isNeedRetry) {
             getConfiguration().getEventPublisher().publishEvent(
                     new JobTerminateEvent(JobIdentity.of(a.getId()), JobStatus.FAILED));
-
         }
     }
 

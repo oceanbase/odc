@@ -112,18 +112,17 @@ public class ProcessJobCaller extends BaseJobCaller {
                 // so we set job to FAILED and avoid two process running
                 configuration.getTaskFrameworkService().updateStatusDescriptionByIdOldStatus(
                         ji.getId(), JobStatus.RUNNING, JobStatus.FAILED,
-                        MessageFormat.format("Cannot connect to target identifier, jodId={0}, identifier={1}",
+                        MessageFormat.format("Cannot connect to target odc server, jodId={0}, identifier={1}",
                                 ji.getId(), ei));
             }
             updateExecutorDestroyed(ji);
-            throw new NotFoundException(ErrorCodes.NotFound, new Object[] {},
+            throw new BadRequestException(ErrorCodes.ConnectionHostUnreachable, new Object[] {},
                     MessageFormat.format(
-                            "Cannot connect to target identifier, set job to failed, jodId={0}, identifier={1}",
+                            "Cannot connect to target odc server, set job to failed, jodId={0}, identifier={1}",
                             ji.getId(), ei));
         }
-        throw new BadRequestException(ErrorCodes.BadArgument, new Object[] {},
-                MessageFormat.format("Destroy process failed, may not on this machine, jodId={0}, identifier={1}",
-                        ji.getId(), ei));
+        throw new JobException("Connect to target odc server succeed, but cannot destroy process,"
+                + " may not on this machine, jodId={0}, identifier={1}", ji.getId(), ei);
     }
 
     @Override

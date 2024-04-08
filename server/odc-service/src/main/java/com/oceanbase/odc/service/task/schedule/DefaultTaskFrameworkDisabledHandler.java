@@ -17,14 +17,16 @@ package com.oceanbase.odc.service.task.schedule;
 
 import org.springframework.data.domain.Page;
 
+import com.oceanbase.odc.core.shared.constant.ErrorCodes;
+import com.oceanbase.odc.core.shared.exception.HttpException;
 import com.oceanbase.odc.metadb.task.JobEntity;
 import com.oceanbase.odc.service.task.config.JobConfiguration;
 import com.oceanbase.odc.service.task.config.JobConfigurationHolder;
 import com.oceanbase.odc.service.task.config.TaskFrameworkEnabledProperties;
 import com.oceanbase.odc.service.task.enums.JobStatus;
-import com.oceanbase.odc.service.task.exception.JobException;
 import com.oceanbase.odc.service.task.exception.TaskRuntimeException;
 import com.oceanbase.odc.service.task.listener.JobTerminateEvent;
+import com.oceanbase.odc.service.task.util.JobUtils;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -74,8 +76,8 @@ public class DefaultTaskFrameworkDisabledHandler implements TaskFrameworkDisable
             if (je.getStatus() == JobStatus.RUNNING) {
                 try {
                     configuration.getJobDispatcher().destroy(ji);
-                } catch (JobException e) {
-                    throw new TaskRuntimeException(e);
+                } catch (Exception e) {
+                    JobUtils.handleDestroyException(e);
                 }
             }
             configuration.getEventPublisher()
