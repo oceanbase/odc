@@ -71,9 +71,9 @@ public class LogicalTableFinder {
                 });
             });
         }
-        List<LogicalTable> logicalTables = LogicalTableRecognitionUtils.recognizeLogicalTables(dataNodes);
+        List<LogicalTable> logicalTableCandidates = LogicalTableRecognitionUtils.recognizeLogicalTables(dataNodes);
 
-        Map<Long, List<DataNode>> dataSourceId2DataNodes = logicalTables.stream()
+        Map<Long, List<DataNode>> dataSourceId2DataNodes = logicalTableCandidates.stream()
                 .flatMap(logicalTable -> logicalTable.getActualDataNodes().stream()).collect(Collectors.toList())
                 .stream().collect(Collectors.groupingBy(dataNode -> dataNode.getDataSourceConfig().getId()));
 
@@ -92,7 +92,7 @@ public class LogicalTableFinder {
             });
         }
 
-        for (LogicalTable logicalTable : logicalTables) {
+        for (LogicalTable logicalTable : logicalTableCandidates) {
             Map<String, List<DataNode>> sha1ToDataNodes = new HashMap<>();
             final List<DataNode>[] majorityDataNodes = new List[] {new ArrayList<>()};
 
@@ -110,7 +110,7 @@ public class LogicalTableFinder {
         }
 
         List<LogicalTable> finalLogicalTables =
-                LogicalTableRecognitionUtils.recognizeLogicalTablesWithExpression(logicalTables.stream()
+                LogicalTableRecognitionUtils.recognizeLogicalTablesWithExpression(logicalTableCandidates.stream()
                         .map(LogicalTable::getActualDataNodes).flatMap(List::stream).collect(Collectors.toList()));
 
         return finalLogicalTables;
