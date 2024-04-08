@@ -47,6 +47,7 @@ public class HttpUtil {
     private static final int CONNECT_TIMEOUT_SECONDS = 3;
     private static final int SOCKET_TIMEOUT_SECONDS = 30;
     private static final String DEFAULT_METHOD = "POST";
+    private static final String METHOD_GET = "GET";
     private static final Charset DEFAULT_CHARSET = StandardCharsets.UTF_8;
     private static final Map<String, String> DEFAULT_HEADERS = new HashMap<String, String>() {
         {
@@ -99,7 +100,8 @@ public class HttpUtil {
     public static boolean isOdcHealthy(String server, int servPort) {
         String url = String.format("http://%s:%d/api/v1/heartbeat/isHealthy", server, servPort);
         try {
-            OdcResult<Boolean> result = request(url, new TypeReference<OdcResult<Boolean>>() {});
+            OdcResult<Boolean> result = request(METHOD_GET, url, DEFAULT_HEADERS, null, null,
+                    new TypeReference<OdcResult<Boolean>>() {});
             return result.getData();
         } catch (IOException e) {
             log.warn("Check odc server health failed, url={}", url);

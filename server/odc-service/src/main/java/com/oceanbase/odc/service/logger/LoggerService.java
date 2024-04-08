@@ -128,10 +128,13 @@ public class LoggerService {
             // process mode when executor is not current host, forward to target
             if (!jobDispatchChecker.isExecutorOnThisMachine(jobEntity)) {
                 ExecutorIdentifier ei = ExecutorIdentifierParser.parser(jobEntity.getExecutorIdentifier());
-                boolean healthy = HttpUtil.isOdcHealthy(ei.getHost(), ei.getPort());
-                if (healthy) {
+                try {
                     DispatchResponse response = requestDispatcher.forward(ei.getHost(), ei.getPort());
                     return response.getContentByType(new TypeReference<SuccessResponse<String>>() {}).getData();
+                } catch (Exception ex) {
+                    log.warn("Forward to remote odc occur error, jobId={}, executorIdentifier={}",
+                            jobEntity.getId(), jobEntity.getExecutorIdentifier(), ex);
+                    return ErrorCodes.TaskLogNotFound.getLocalizedMessage(new Object[] {"Id", jobEntity.getId()});
                 }
             }
             String logFileStr = LogUtils.getTaskLogFileWithPath(jobEntity.getId(), level);
