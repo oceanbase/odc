@@ -15,10 +15,8 @@
  */
 package com.oceanbase.odc.service.task.service;
 
-import java.util.function.Consumer;
 import java.util.function.Supplier;
 
-import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.support.TransactionTemplate;
 
 /**

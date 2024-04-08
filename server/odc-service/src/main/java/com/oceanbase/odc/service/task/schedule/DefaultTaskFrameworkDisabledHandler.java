@@ -17,8 +17,6 @@ package com.oceanbase.odc.service.task.schedule;
 
 import org.springframework.data.domain.Page;
 
-import com.oceanbase.odc.core.shared.constant.ErrorCodes;
-import com.oceanbase.odc.core.shared.exception.HttpException;
 import com.oceanbase.odc.metadb.task.JobEntity;
 import com.oceanbase.odc.service.task.config.JobConfiguration;
 import com.oceanbase.odc.service.task.config.JobConfigurationHolder;

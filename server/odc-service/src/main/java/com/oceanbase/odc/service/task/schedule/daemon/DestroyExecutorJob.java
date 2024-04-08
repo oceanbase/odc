@@ -71,7 +71,7 @@ public class DestroyExecutorJob implements Job {
         getConfiguration().getTransactionManager().doInTransactionWithoutResult(() -> {
             JobEntity lockedEntity = taskFrameworkService.findWithPessimisticLock(jobEntity.getId());
 
-            if (lockedEntity.getStatus().isTerminated() && lockedEntity.getExecutorIdentifier() != null) {
+            if (lockedEntity.getStatus().isTerminated()) {
                 log.info("Job prepare destroy executor, jobId={},status={}.", lockedEntity.getId(),
                         lockedEntity.getStatus());
                 try {
@@ -82,8 +82,8 @@ public class DestroyExecutorJob implements Job {
                     } catch (Exception ex) {
                         log.warn("Destroy executor occur error, jobId={}: ", lockedEntity.getId(), e);
                         AlarmUtils.warn(AlarmEventNames.TASK_EXECUTOR_DESTROY_FAILED,
-                            MessageFormat.format("Job executor destroy failed, jobId={0}",
-                                lockedEntity.getId()));
+                                MessageFormat.format("Job executor destroy failed, jobId={0}",
+                                        lockedEntity.getId()));
                         throw new TaskRuntimeException(e);
                     }
                 }
