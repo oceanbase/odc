@@ -60,7 +60,7 @@ public class PodConfig {
 
     private Long maxNodeCount;
 
-    private Long nodeCpu;
+    private Double nodeCpu;
 
-    private Long nodeMem;
+    private Long nodeMemInMB;
 }

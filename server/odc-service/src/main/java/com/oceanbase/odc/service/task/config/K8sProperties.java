@@ -76,11 +76,11 @@ public class K8sProperties {
     /**
      * node cpu
      */
-    private Long nodeCpu;
+    private Double nodeCpu;
 
     /**
      * node memory
      */
-    private Long nodeMem;
+    private Long nodeMemInMB;
 
 }

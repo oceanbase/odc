@@ -112,7 +112,7 @@ public class ImmediateJobDispatcher implements JobDispatcher {
         podConfig.setMountDiskSize(k8s.getMountDiskSize());
         podConfig.setMaxNodeCount(k8s.getMaxNodeCount());
         podConfig.setNodeCpu(k8s.getNodeCpu());
-        podConfig.setNodeMem(k8s.getNodeMem());
+        podConfig.setNodeMemInMB(k8s.getNodeMemInMB());
         return podConfig;
     }
 
