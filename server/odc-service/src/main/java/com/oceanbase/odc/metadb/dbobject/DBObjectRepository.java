@@ -17,12 +17,16 @@ package com.oceanbase.odc.metadb.dbobject;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.function.Function;
 
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.oceanbase.odc.common.jpa.InsertSqlTemplateBuilder;
 import com.oceanbase.odc.config.jpa.OdcJpaRepository;
+import com.oceanbase.tools.dbbrowser.model.DBObjectType;
 
 /**
  * @author gaoda.xy
@@ -31,6 +35,8 @@ import com.oceanbase.odc.config.jpa.OdcJpaRepository;
 public interface DBObjectRepository extends OdcJpaRepository<DBObjectEntity, Long> {
 
     List<DBObjectEntity> findByIdIn(Collection<Long> ids);
+
+    List<DBObjectEntity> findByDatabaseIdAndType(Long databaseId, DBObjectType type);
 
     @Transactional
     @Query(value = "select t.* from database_schema_object as t where t.database_id in (:databaseIds) and "
@@ -46,5 +52,26 @@ public interface DBObjectRepository extends OdcJpaRepository<DBObjectEntity, Lon
     List<DBObjectEntity> findTop1000ByDatabaseIdInAndTypeInAndNameLike(
             @Param("databaseIds") Collection<Long> databaseIds, @Param("types") Collection<String> types,
             @Param("nameKey") String nameKey);
+
+    @Modifying
+    @Transactional
+    @Query(value = "delete from database_schema_object t where t.id in (:ids)", nativeQuery = true)
+    int deleteByIds(@Param("ids") Collection<Long> ids);
+
+    default List<DBObjectEntity> batchCreate(List<DBObjectEntity> entities) {
+        String sql = InsertSqlTemplateBuilder.from("database_schema_object")
+                .field(DBObjectEntity_.name)
+                .field(DBObjectEntity_.databaseId)
+                .field(DBObjectEntity_.type)
+                .field(DBObjectEntity_.organizationId)
+                .build();
+        List<Function<DBObjectEntity, Object>> getter = valueGetterBuilder()
+                .add(DBObjectEntity::getName)
+                .add(DBObjectEntity::getDatabaseId)
+                .add(e -> e.getType().name())
+                .add(DBObjectEntity::getOrganizationId)
+                .build();
+        return batchCreate(entities, sql, getter, DBObjectEntity::setId);
+    }
 
 }
