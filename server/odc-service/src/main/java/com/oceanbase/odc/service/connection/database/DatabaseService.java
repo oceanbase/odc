@@ -917,7 +917,7 @@ public class DatabaseService {
 
     private List<UserResourceRole> buildUserResourceRoles(Collection<Long> databaseIds, Collection<Long> ownerIds) {
         List<UserResourceRole> userResourceRoles = new ArrayList<>();
-        if (CollectionUtils.isNotEmpty(databaseIds) || CollectionUtils.isEmpty(ownerIds)) {
+        if (CollectionUtils.isEmpty(databaseIds) || CollectionUtils.isEmpty(ownerIds)) {
             return userResourceRoles;
         }
         databaseIds.forEach(databaseId -> {
