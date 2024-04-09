@@ -53,9 +53,9 @@ import com.oceanbase.odc.service.connection.ConnectionService;
 import com.oceanbase.odc.service.connection.database.DatabaseMapper;
 import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
-import com.oceanbase.odc.service.db.object.DBObjectIndexService;
-import com.oceanbase.odc.service.db.object.model.QueryDBObjectParams;
-import com.oceanbase.odc.service.db.object.model.QueryDBObjectResp;
+import com.oceanbase.odc.service.db.schema.DBSchemaIndexService;
+import com.oceanbase.odc.service.db.schema.model.QueryDBObjectParams;
+import com.oceanbase.odc.service.db.schema.model.QueryDBObjectResp;
 import com.oceanbase.odc.service.iam.ProjectPermissionValidator;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.iam.model.User;
@@ -68,10 +68,10 @@ import com.oceanbase.tools.dbbrowser.model.DBObjectType;
  * @author gaoda.xy
  * @date 2024/4/2 14:53
  */
-public class DBObjectIndexServiceTest extends ServiceTestEnv {
+public class DBSchemaIndexServiceTest extends ServiceTestEnv {
 
     @Autowired
-    private DBObjectIndexService service;
+    private DBSchemaIndexService service;
     @Autowired
     private DatabaseRepository databaseRepository;
     @Autowired

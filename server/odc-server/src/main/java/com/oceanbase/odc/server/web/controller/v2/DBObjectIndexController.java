@@ -26,10 +26,10 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.oceanbase.odc.service.common.response.Responses;
 import com.oceanbase.odc.service.common.response.SuccessResponse;
-import com.oceanbase.odc.service.db.object.DBObjectIndexService;
-import com.oceanbase.odc.service.db.object.model.QueryDBObjectParams;
-import com.oceanbase.odc.service.db.object.model.QueryDBObjectResp;
-import com.oceanbase.odc.service.db.object.model.SyncDBObjectReq;
+import com.oceanbase.odc.service.db.schema.DBSchemaIndexService;
+import com.oceanbase.odc.service.db.schema.model.QueryDBObjectParams;
+import com.oceanbase.odc.service.db.schema.model.QueryDBObjectResp;
+import com.oceanbase.odc.service.db.schema.model.SyncDBObjectReq;
 import com.oceanbase.tools.dbbrowser.model.DBObjectType;
 
 import io.swagger.annotations.ApiOperation;
@@ -43,7 +43,7 @@ import io.swagger.annotations.ApiOperation;
 public class DBObjectIndexController {
 
     @Autowired
-    private DBObjectIndexService dbObjectIndexService;
+    private DBSchemaIndexService dbSchemaIndexService;
 
     @ApiOperation(value = "listDatabaseObjects", notes = "List database objects")
     @RequestMapping(value = "/objects", method = RequestMethod.GET)
@@ -59,13 +59,13 @@ public class DBObjectIndexController {
                 .databaseIds(databaseIds)
                 .types(types)
                 .searchKey(searchKey).build();
-        return Responses.success(dbObjectIndexService.listDatabaseObjects(params));
+        return Responses.success(dbSchemaIndexService.listDatabaseObjects(params));
     }
 
     @ApiOperation(value = "syncDatabaseObjects", notes = "Sync database objects")
     @RequestMapping(value = "/sync", method = RequestMethod.POST)
     public SuccessResponse<Boolean> syncDatabaseObjects(@RequestBody SyncDBObjectReq req) {
-        return Responses.success(dbObjectIndexService.syncDatabaseObjects(req));
+        return Responses.success(dbSchemaIndexService.syncDatabaseObjects(req));
     }
 
 

@@ -36,7 +36,7 @@ import lombok.Data;
  */
 @Data
 @Entity
-@Table(name = "connect_database_object")
+@Table(name = "database_schema_object")
 public class DBObjectEntity {
 
     @Id

@@ -33,14 +33,14 @@ public interface DBObjectRepository extends OdcJpaRepository<DBObjectEntity, Lon
     List<DBObjectEntity> findByIdIn(Collection<Long> ids);
 
     @Transactional
-    @Query(value = "select t.* from connect_database_object as t where t.database_id in (:databaseIds) and "
+    @Query(value = "select t.* from database_schema_object as t where t.database_id in (:databaseIds) and "
             + "t.name like :nameKey order by t.database_id desc LIMIT 1000;",
             nativeQuery = true)
     List<DBObjectEntity> findTop1000ByDatabaseIdInAndNameLike(@Param("databaseIds") Collection<Long> databaseIds,
             @Param("nameKey") String nameKey);
 
     @Transactional
-    @Query(value = "select t.* from connect_database_object as t where t.database_id in (:databaseIds) and "
+    @Query(value = "select t.* from database_schema_object as t where t.database_id in (:databaseIds) and "
             + "t.type in (:types) and t.name like :nameKey order by t.database_id desc LIMIT 1000;",
             nativeQuery = true)
     List<DBObjectEntity> findTop1000ByDatabaseIdInAndTypeInAndNameLike(

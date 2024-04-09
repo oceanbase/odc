@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.db.object;
+package com.oceanbase.odc.service.db.schema;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -44,11 +44,11 @@ import com.oceanbase.odc.service.connection.ConnectionService;
 import com.oceanbase.odc.service.connection.database.DatabaseService;
 import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
-import com.oceanbase.odc.service.db.object.model.OdcDBColumn;
-import com.oceanbase.odc.service.db.object.model.OdcDBObject;
-import com.oceanbase.odc.service.db.object.model.QueryDBObjectParams;
-import com.oceanbase.odc.service.db.object.model.QueryDBObjectResp;
-import com.oceanbase.odc.service.db.object.model.SyncDBObjectReq;
+import com.oceanbase.odc.service.db.schema.model.OdcDBColumn;
+import com.oceanbase.odc.service.db.schema.model.OdcDBObject;
+import com.oceanbase.odc.service.db.schema.model.QueryDBObjectParams;
+import com.oceanbase.odc.service.db.schema.model.QueryDBObjectResp;
+import com.oceanbase.odc.service.db.schema.model.SyncDBObjectReq;
 import com.oceanbase.odc.service.iam.ProjectPermissionValidator;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.tools.dbbrowser.model.DBObjectType;
@@ -62,7 +62,7 @@ import lombok.NonNull;
 @Service
 @Validated
 @SkipAuthorize("permission check inside")
-public class DBObjectIndexService {
+public class DBSchemaIndexService {
 
     @Autowired
     private ProjectPermissionValidator projectPermissionValidator;

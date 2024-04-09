@@ -29,7 +29,7 @@ import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.service.collaboration.environment.model.Environment;
 import com.oceanbase.odc.service.collaboration.project.model.Project;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
-import com.oceanbase.odc.service.db.object.model.DBObjectSyncStatus;
+import com.oceanbase.odc.service.db.schema.model.DBObjectSyncStatus;
 import com.oceanbase.odc.service.permission.database.model.DatabasePermissionType;
 
 import lombok.Data;

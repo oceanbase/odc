@@ -32,7 +32,7 @@ import lombok.Data;
  */
 @Data
 @Entity
-@Table(name = "connect_database_column")
+@Table(name = "database_schema_column")
 public class DBColumnEntity {
 
     @Id

@@ -13,22 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.db.object.model;
+package com.oceanbase.odc.service.db.schema.model;
 
 import java.util.Date;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonProperty.Access;
-import com.oceanbase.odc.metadb.dbobject.DBColumnEntity;
+import com.oceanbase.odc.metadb.dbobject.DBObjectEntity;
+import com.oceanbase.odc.service.connection.database.model.Database;
+import com.oceanbase.tools.dbbrowser.model.DBObjectType;
 
 import lombok.Data;
 
 /**
  * @author gaoda.xy
- * @date 2024/3/29 11:57
+ * @date 2024/3/29 11:49
  */
 @Data
-public class OdcDBColumn {
+public class OdcDBObject {
 
     @JsonProperty(access = Access.READ_ONLY)
     private Long id;
@@ -37,7 +39,10 @@ public class OdcDBColumn {
     private String name;
 
     @JsonProperty(access = Access.READ_ONLY)
-    private OdcDBObject dbObject;
+    private DBObjectType type;
+
+    @JsonProperty(access = Access.READ_ONLY)
+    private Database database;
 
     @JsonProperty(access = Access.READ_ONLY)
     private Long organizationId;
@@ -48,22 +53,23 @@ public class OdcDBColumn {
     @JsonProperty(access = Access.READ_ONLY)
     private Date updateTime;
 
-    public static OdcDBColumn fromEntity(DBColumnEntity entity) {
-        OdcDBColumn column = new OdcDBColumn();
+    public static OdcDBObject fromEntity(DBObjectEntity entity) {
+        OdcDBObject object = new OdcDBObject();
         if (entity == null) {
-            return column;
+            return object;
         }
-        column.setId(entity.getId());
-        column.setName(entity.getName());
-        column.setOrganizationId(entity.getOrganizationId());
-        column.setCreateTime(entity.getCreateTime());
-        column.setUpdateTime(entity.getUpdateTime());
-        if (entity.getObjectId() != null) {
-            OdcDBObject object = new OdcDBObject();
-            object.setId(entity.getObjectId());
-            column.setDbObject(object);
+        object.setId(entity.getId());
+        object.setName(entity.getName());
+        object.setType(entity.getType());
+        object.setOrganizationId(entity.getOrganizationId());
+        object.setCreateTime(entity.getCreateTime());
+        object.setUpdateTime(entity.getUpdateTime());
+        if (entity.getDatabaseId() != null) {
+            Database database = new Database();
+            database.setId(entity.getDatabaseId());
+            object.setDatabase(database);
         }
-        return column;
+        return object;
     }
 
 }

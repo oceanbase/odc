@@ -48,7 +48,7 @@ import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.connection.model.QueryConnectionParams;
 import com.oceanbase.odc.service.db.DBIdentitiesService;
 import com.oceanbase.odc.service.db.DBSchemaService;
-import com.oceanbase.odc.service.db.object.model.DBObjectSyncStatus;
+import com.oceanbase.odc.service.db.schema.model.DBObjectSyncStatus;
 import com.oceanbase.odc.service.iam.ProjectPermissionValidator;
 
 /**

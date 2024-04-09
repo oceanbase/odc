@@ -90,7 +90,7 @@ import com.oceanbase.odc.service.connection.database.model.QueryDatabaseParams;
 import com.oceanbase.odc.service.connection.database.model.TransferDatabasesReq;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.db.DBSchemaService;
-import com.oceanbase.odc.service.db.object.model.DBObjectSyncStatus;
+import com.oceanbase.odc.service.db.schema.model.DBObjectSyncStatus;
 import com.oceanbase.odc.service.iam.HorizontalDataPermissionValidator;
 import com.oceanbase.odc.service.iam.OrganizationService;
 import com.oceanbase.odc.service.iam.ProjectPermissionValidator;

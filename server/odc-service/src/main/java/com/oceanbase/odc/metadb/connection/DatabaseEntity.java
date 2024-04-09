@@ -30,7 +30,7 @@ import org.hibernate.annotations.Generated;
 import org.hibernate.annotations.GenerationTime;
 
 import com.oceanbase.odc.service.connection.database.model.DatabaseSyncStatus;
-import com.oceanbase.odc.service.db.object.model.DBObjectSyncStatus;
+import com.oceanbase.odc.service.db.schema.model.DBObjectSyncStatus;
 
 import lombok.Data;
 
