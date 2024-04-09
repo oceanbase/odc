@@ -73,7 +73,6 @@ public abstract class AbstractDebugSession implements AutoCloseable {
     public abstract boolean detectSessionAlive();
 
     public List<DBPLParam> executeProcedure(DBProcedure procedure) {
-
         try {
             // -1 means statement queryTimeout will be default 0,
             // By default there is no limit on the amount of time allowed for a running statement to complete
@@ -109,9 +108,9 @@ public abstract class AbstractDebugSession implements AutoCloseable {
         this.connection = newDataSource.getConnection();
     }
 
-    protected DebugDataSource acquireDataSource(ConnectionSession connectionSession) {
+    protected DebugDataSource acquireDataSource(ConnectionSession connectionSession, List<String> initSqls) {
         ConnectionConfig config = (ConnectionConfig) ConnectionSessionUtil.getConnectionConfig(connectionSession);
-        DebugDataSource dataSource = new DebugDataSource(config);
+        DebugDataSource dataSource = new DebugDataSource(config, initSqls);
         String schema = ConnectionSessionUtil.getCurrentSchema(connectionSession);
         String host;
         Integer port;
@@ -190,18 +189,26 @@ public abstract class AbstractDebugSession implements AutoCloseable {
 
     static class DebugDataSource extends SingleConnectionDataSource {
 
+        private final List<String> initSqls;
         private final SessionCreatedInitializer initializer;
 
-        public DebugDataSource(@NonNull ConnectionConfig connectionConfig) {
+        public DebugDataSource(@NonNull ConnectionConfig connectionConfig, List<String> initSqls) {
+            this.initSqls = initSqls;
             this.initializer = new SessionCreatedInitializer(connectionConfig, true);
         }
 
         @Override
         protected void prepareConnection(Connection con) throws SQLException {
             super.prepareConnection(con);
+            if (CollectionUtils.isNotEmpty(this.initSqls)) {
+                try (Statement statement = con.createStatement()) {
+                    for (String stmt : this.initSqls) {
+                        statement.execute(stmt);
+                    }
+                }
+            }
             this.initializer.init(con);
         }
-
     }
 
 }
