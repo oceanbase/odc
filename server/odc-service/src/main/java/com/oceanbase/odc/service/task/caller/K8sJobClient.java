@@ -38,7 +38,7 @@ public interface K8sJobClient {
      * @param image image name
      * @param command image start command
      * @param podConfig pod config
-     * @return job serial number
+     * @return arn string
      * @throws JobException throws exception when create job failed
      */
     String create(String namespace, String name, String image, List<String> command,
@@ -48,19 +48,19 @@ public interface K8sJobClient {
      * get job by serial number in k8s namespace
      *
      * @param namespace namespace name
-     * @param name job serial number
+     * @param arn arn string
      * @return job serial number
      * @throws JobException throws exception when get job failed
      */
-    Optional<String> get(String namespace, String name) throws JobException;
+    Optional<K8sJobResponse> get(String namespace, String arn) throws JobException;
 
     /**
      * delete job by serial number in k8s namespace
      *
      * @param namespace namespace name
-     * @param name job serial number
+     * @param arn arn string
      * @return job serial number
      * @throws JobException throws exception when delete job failed
      */
-    String delete(String namespace, String name) throws JobException;
+    String delete(String namespace, String arn) throws JobException;
 }

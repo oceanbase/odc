@@ -56,7 +56,12 @@ public class K8sJobCaller extends BaseJobCaller {
 
     @Override
     protected void doDestroy(JobIdentity ji, ExecutorIdentifier ei) throws JobException {
-        if (isExecutorExist(ei)) {
+        Optional<K8sJobResponse> k8sJobResponse = client.get(ei.getNamespace(), ei.getExecutorName());
+        if (k8sJobResponse.isPresent()) {
+            if (PodStatus.PENDING == PodStatus.of(k8sJobResponse.get().getResourceStatus())) {
+                throw new JobException("Destroy process failed, jodId={0}, identifier={1}, podStatus={2}",
+                        ji.getId(), ei, k8sJobResponse.get().getResourceStatus());
+            }
             log.info("Found pod, delete it, jobId={}, pod={}.", ji.getId(), ei.getExecutorName());
             destroyInternal(ei);
         }
@@ -70,7 +75,7 @@ public class K8sJobCaller extends BaseJobCaller {
 
     @Override
     protected boolean isExecutorExist(ExecutorIdentifier identifier) throws JobException {
-        Optional<String> executorOptional = client.get(identifier.getNamespace(), identifier.getExecutorName());
+        Optional<K8sJobResponse> executorOptional = client.get(identifier.getNamespace(), identifier.getExecutorName());
         return executorOptional.isPresent();
     }
 }
