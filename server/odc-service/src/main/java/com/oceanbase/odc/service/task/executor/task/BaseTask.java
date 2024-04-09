@@ -20,6 +20,7 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import com.oceanbase.odc.service.objectstorage.cloud.CloudObjectStorageService;
 import com.oceanbase.odc.service.objectstorage.cloud.model.ObjectStorageConfiguration;
@@ -38,17 +39,19 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public abstract class BaseTask<RESULT> implements Task<RESULT> {
 
+    private final AtomicBoolean closed = new AtomicBoolean(false);
     private JobContext context;
     private Map<String, String> jobParameters;
     private volatile JobStatus status = JobStatus.PREPARING;
     private CloudObjectStorageService cloudObjectStorageService;
+    private TaskMonitor taskMonitor;
 
     @Override
     public void start(JobContext context) {
         this.context = context;
         this.jobParameters = Collections.unmodifiableMap(context.getJobParameters());
         initCloudObjectStorageService();
-        TaskMonitor taskMonitor = new TaskMonitor(this, cloudObjectStorageService);
+        this.taskMonitor = new TaskMonitor(this, cloudObjectStorageService);
         try {
             doInit(context);
             updateStatus(JobStatus.RUNNING);
@@ -62,31 +65,26 @@ public abstract class BaseTask<RESULT> implements Task<RESULT> {
             log.warn("Task failed, id={}.", getJobId(), e);
             updateStatus(JobStatus.FAILED);
         } finally {
-            try {
-                doClose();
-            } catch (Throwable e) {
-                // do nothing
-            }
-            log.info("Task be completed, id={}, status={}.", getJobId(), getStatus());
-            taskMonitor.finalWork();
+            close();
         }
     }
 
     @Override
     public boolean stop() {
-        if (getStatus().isTerminated()) {
-            log.warn("Task is already finished and cannot be canceled, id={}", getJobId());
-            return true;
-        }
         try {
-            doStop();
+            if (getStatus().isTerminated()) {
+                log.warn("Task is already finished and cannot be canceled, id={}, status={}.", getJobId(), getStatus());
+            } else {
+                doStop();
+                updateStatus(JobStatus.CANCELED);
+            }
+            return true;
         } catch (Throwable e) {
-            log.warn("stop task failed, id={}", getJobId(), e);
+            log.warn("Stop task failed, id={}", getJobId(), e);
             return false;
+        } finally {
+            close();
         }
-        updateStatus(JobStatus.CANCELED);
-        log.info("Task be canceled, id={}", getJobId());
-        return true;
     }
 
     @Override
@@ -109,6 +107,18 @@ public abstract class BaseTask<RESULT> implements Task<RESULT> {
     private void initCloudObjectStorageService() {
         Optional<ObjectStorageConfiguration> storageConfig = JobUtils.getObjectStorageConfiguration();
         storageConfig.ifPresent(osc -> this.cloudObjectStorageService = CloudObjectStorageServiceBuilder.build(osc));
+    }
+
+    private void close() {
+        if (closed.compareAndSet(false, true)) {
+            try {
+                doClose();
+            } catch (Throwable e) {
+                // do nothing
+            }
+            log.info("Task completed, id={}, status={}.", getJobId(), getStatus());
+            taskMonitor.finalWork();
+        }
     }
 
     protected CloudObjectStorageService getCloudObjectStorageService() {
