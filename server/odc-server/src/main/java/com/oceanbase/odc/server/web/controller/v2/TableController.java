@@ -56,7 +56,6 @@ public class TableController {
         ResourceIdentifier i = ResourceIDParser.parse(sid);
         List<Table> tables =
                 tableService.listTablesWithoutPage(sessionService.nullSafeGet(i.getSid(), true), i.getDatabaseId());
-        // return OdcResult.ok(tables.stream().map(OdcDBTable::new).collect(Collectors.toList()));
         return OdcResult.ok(tables);
     }
 

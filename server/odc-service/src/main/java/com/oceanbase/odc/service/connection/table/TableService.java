@@ -27,6 +27,8 @@ import java.util.stream.Collectors;
 import javax.validation.constraints.NotNull;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.jdbc.core.ConnectionCallback;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -41,10 +43,14 @@ import com.oceanbase.odc.metadb.connection.TableRepository;
 import com.oceanbase.odc.plugin.schema.api.TableExtensionPoint;
 import com.oceanbase.odc.service.connection.database.DatabaseService;
 import com.oceanbase.odc.service.connection.database.model.Database;
+import com.oceanbase.odc.service.connection.database.model.QueryDatabaseParams;
 import com.oceanbase.odc.service.connection.table.model.Table;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
+import com.oceanbase.odc.service.permission.database.DatabasePermissionService;
 import com.oceanbase.odc.service.permission.database.model.DatabasePermissionType;
 import com.oceanbase.odc.service.permission.database.model.ExpirationStatusFilter;
+import com.oceanbase.odc.service.permission.database.model.QueryDatabasePermissionParams;
+import com.oceanbase.odc.service.permission.database.model.UserDatabasePermission;
 import com.oceanbase.odc.service.permission.table.TablePermissionService;
 import com.oceanbase.odc.service.permission.table.UserTablePermission;
 import com.oceanbase.odc.service.permission.table.model.QueryTablePermissionParams;
@@ -139,7 +145,33 @@ public class TableService {
         List<UserTablePermission> userTablePermissionList =
                 tablePermissionService.listWithoutPage(databaseDetail.getProject().getId(), params);
         listTables = dbTablesToTables(DBTableList, userTablePermissionList);
-        return listTables;
+
+        // 组装库的权限
+        QueryDatabaseParams queryDatabaseParams = QueryDatabaseParams.builder()
+            .dataSourceId(databaseDetail.getDataSource().getId())
+            .existed(true)
+            .environmentId(databaseDetail.getEnvironment().getId())
+            .schemaName(databaseDetail.getName())
+            .includesPermittedAction(true)
+            .projectId(databaseDetail.getProject().getId()).build();
+        Page<Database> databaseList = databaseService.list(queryDatabaseParams, Pageable.unpaged());
+
+        List<Table> finalListTables = listTables;
+        databaseList.getContent().forEach(database -> {
+            finalListTables.forEach(table -> {
+                if (table.getDatabaseName().equals(database.getName())) {
+                    Set<DatabasePermissionType> tableAuthorizedPermissionTypes = table.getAuthorizedPermissionTypes();
+                    if (tableAuthorizedPermissionTypes == null) {
+                        tableAuthorizedPermissionTypes = database.getAuthorizedPermissionTypes();
+                    }else{
+                        tableAuthorizedPermissionTypes.addAll(database.getAuthorizedPermissionTypes());
+                    }
+                    table.setAuthorizedPermissionTypes(tableAuthorizedPermissionTypes);
+                }
+            });
+        });
+
+        return finalListTables;
     }
 
     public List<Table> listTablesWithoutPageByDatabaseId(Long databaseId) {
