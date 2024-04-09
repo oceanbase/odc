@@ -73,4 +73,14 @@ public class K8sProperties {
      */
     private Long maxNodeCount;
 
+    /**
+     * node cpu
+     */
+    private Double nodeCpu;
+
+    /**
+     * node memory
+     */
+    private Long nodeMemInMB;
+
 }
