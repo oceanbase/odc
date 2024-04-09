@@ -128,6 +128,7 @@ import com.oceanbase.odc.service.flow.task.BaseRuntimeFlowableDelegate;
 import com.oceanbase.odc.service.flow.task.model.DBStructureComparisonParameter;
 import com.oceanbase.odc.service.flow.task.model.DatabaseChangeParameters;
 import com.oceanbase.odc.service.flow.task.model.FlowTaskProperties;
+import com.oceanbase.odc.service.flow.task.model.MultipleDatabaseChangeParameters;
 import com.oceanbase.odc.service.flow.task.model.RuntimeTaskConstants;
 import com.oceanbase.odc.service.flow.task.model.ShadowTableSyncTaskParameter;
 import com.oceanbase.odc.service.flow.util.FlowTaskUtil;
@@ -307,6 +308,12 @@ public class FlowInstanceService {
                 return Collections.emptyList();
             }
         }
+        if (createReq.getTaskType() == TaskType.MULTIPLE_ASYNC) {
+            MultipleDatabaseChangeParameters taskParameters =
+                    (MultipleDatabaseChangeParameters) createReq.getParameters();
+            PreConditions.maxLength(taskParameters.getSqlContent(), "sql content",
+                    flowTaskProperties.getSqlContentMaxLength());
+        }
         if (createReq.getTaskType() == TaskType.ASYNC) {
             DatabaseChangeParameters taskParameters = (DatabaseChangeParameters) createReq.getParameters();
             PreConditions.maxLength(taskParameters.getSqlContent(), "sql content",
@@ -323,12 +330,26 @@ public class FlowInstanceService {
         List<RiskLevel> riskLevels = riskLevelService.list();
         Verify.notEmpty(riskLevels, "riskLevels");
         ConnectionConfig conn = null;
-        if (Objects.nonNull(createReq.getConnectionId())) {
+        List<ConnectionConfig> conns = null;
+        if (Objects.nonNull(createReq.getConnectionId()) && createReq.getTaskType() != TaskType.MULTIPLE_ASYNC) {
             conn = connectionService.getForConnectionSkipPermissionCheck(createReq.getConnectionId());
             cloudMetadataClient.checkPermission(OBTenant.of(conn.getClusterName(),
                     conn.getTenantName()), conn.getInstanceType(), false, CloudPermissionAction.READONLY);
+        } else {
+            // 针对多库的数据源的连接权限检查
+            MultipleDatabaseChangeParameters taskParameters =
+                    (MultipleDatabaseChangeParameters) createReq.getParameters();
+            conns = taskParameters.getDatabases().stream().map(
+                    x -> (connectionService.getForConnectionSkipPermissionCheck(x.getDataSource().getId()))).collect(
+                            Collectors.toList());
+            conns.forEach(x -> cloudMetadataClient.checkPermission(OBTenant.of(x.getClusterName(),
+                    x.getTenantName()), x.getInstanceType(), false, CloudPermissionAction.READONLY));
         }
-        return Collections.singletonList(buildFlowInstance(riskLevels, createReq, conn));
+        if (createReq.getTaskType() == TaskType.MULTIPLE_ASYNC) {
+            return Collections.singletonList(buildFlowInstanceForMultiple(riskLevels, createReq, conns));
+        } else {
+            return Collections.singletonList(buildFlowInstance(riskLevels, createReq, conn));
+        }
     }
 
     public Page<FlowInstanceDetailResp> list(@NotNull Pageable pageable, @NotNull QueryFlowInstanceParams params) {
@@ -405,6 +426,7 @@ public class FlowInstanceService {
         } else {
             // Task type which will be filtered independently
             List<TaskType> types = Arrays.asList(
+                    TaskType.MULTIPLE_ASYNC,
                     TaskType.EXPORT,
                     TaskType.IMPORT,
                     TaskType.MOCKDATA,
@@ -696,6 +718,7 @@ public class FlowInstanceService {
 
         Set<Long> taskIds = entities.stream().filter(entity -> entity.getTargetTaskId() != null)
                 .map(ServiceTaskInstanceEntity::getTargetTaskId).collect(Collectors.toSet());
+        // todo 多库需要修改
         Verify.singleton(taskIds, "Multi task for one instance is not allowed, id " + id);
         Long taskId = taskIds.iterator().next();
         return taskService.detail(taskId);
@@ -706,7 +729,7 @@ public class FlowInstanceService {
             return;
         }
         Set<Long> databaseIds = new HashSet<>();
-        if (Objects.nonNull(req.getDatabaseId())) {
+        if (Objects.nonNull(req.getDatabaseId()) && req.getTaskType() != TaskType.MULTIPLE_ASYNC) {
             databaseIds.add(req.getDatabaseId());
         }
         TaskType taskType = req.getTaskType();
@@ -740,6 +763,9 @@ public class FlowInstanceService {
             DBStructureComparisonParameter p = (DBStructureComparisonParameter) req.getParameters();
             databaseIds.add(p.getTargetDatabaseId());
             databaseIds.add(p.getSourceDatabaseId());
+        } else if (taskType == TaskType.MULTIPLE_ASYNC) {
+            MultipleDatabaseChangeParameters parameters = (MultipleDatabaseChangeParameters) req.getParameters();
+            databaseIds = parameters.getDatabases().stream().map(x -> x.getId()).collect(Collectors.toSet());
         }
         databasePermissionHelper.checkPermissions(databaseIds, DatabasePermissionType.from(req.getTaskType()));
     }
@@ -864,11 +890,90 @@ public class FlowInstanceService {
         return FlowInstanceDetailResp.withIdAndType(flowInstance.getId(), flowInstanceReq.getTaskType());
     }
 
+    // todo 创建多个数据源连接id的流程实例
+    private FlowInstanceDetailResp buildFlowInstanceForMultiple(List<RiskLevel> riskLevels,
+            CreateFlowInstanceReq flowInstanceReq, List<ConnectionConfig> connectionConfigs) {
+        log.info("Start creating flow instance, flowInstanceReq={}", flowInstanceReq);
+        MultipleDatabaseChangeParameters parameters =
+                (MultipleDatabaseChangeParameters) flowInstanceReq.getParameters();
+        List<TaskEntity> preCheckTaskEntityList = parameters.getDatabases().stream().map(x -> {
+            CreateFlowInstanceReq preCheckReq = new CreateFlowInstanceReq();
+            preCheckReq.setTaskType(TaskType.PRE_CHECK);
+            preCheckReq.setConnectionId(x.getDataSource().getId());
+            preCheckReq.setDatabaseId(x.getId());
+            preCheckReq.setDatabaseName(flowInstanceReq.getDatabaseName());
+            return preCheckReq;
+        }).map(x -> taskService.create(x, (int) TimeUnit.SECONDS
+                .convert(flowTaskProperties.getDefaultExecutionExpirationIntervalHours(), TimeUnit.HOURS))).collect(
+                        Collectors.toList());
+
+        List<TaskEntity> taskEntities = new ArrayList<>();
+        for (long i = 0; i < parameters.getOrderedDatabaseIds().size(); i++) {
+            parameters.setBatchId(i);
+            TaskEntity taskEntity = taskService.create(flowInstanceReq, (int) TimeUnit.SECONDS
+                    .convert(flowTaskProperties.getDefaultExecutionExpirationIntervalHours(), TimeUnit.HOURS));
+            Verify.notNull(taskEntity.getId(), "TaskId can not be null");
+            taskEntities.add(taskEntity);
+        }
+        // 生成流程实例
+
+        FlowInstance flowInstance = flowFactory.generateFlowInstance(generateFlowInstanceName(flowInstanceReq),
+                flowInstanceReq.getParentFlowInstanceId(),
+                flowInstanceReq.getProjectId(),
+                flowInstanceReq.getDescription());
+        Verify.notNull(flowInstance.getId(), "FlowInstance id can not be null");
+
+        try {
+            // 生成多个预检查的任务节点
+            FlowTaskInstance riskDetectInstance = flowFactory.generateFlowTaskInstance(flowInstance.getId(), true,
+                    false, TaskType.PRE_CHECK,
+                    ExecutionStrategyConfig.autoStrategy());
+            riskDetectInstance.setTargetTaskId(preCheckTaskEntityList.get(0).getId());
+            FlowGatewayInstance riskLevelGateway =
+                    flowFactory.generateFlowGatewayInstance(flowInstance.getId(), false, true);
+            FlowInstanceConfigurer startConfigurer =
+                    flowInstance.newFlowInstance().next(riskDetectInstance).next(riskLevelGateway);
+            // 为每个风险生成对应的审批流程和任务节点，风险网关使用排他网管
+            for (int i = 0; i < riskLevels.size(); i++) {
+                // 分批次创建和编排任务节点
+                FlowInstanceConfigurer targetConfigurer =
+                        buildConfigurerForMultiple(riskLevels.get(i).getApprovalFlowConfig(),
+                                flowInstance, flowInstanceReq.getTaskType(),
+                                taskEntities.stream().map(x -> x.getId()).collect(
+                                        Collectors.toList()),
+                                flowInstanceReq.getParameters(), flowInstanceReq);
+                startConfigurer.route(
+                        String.format("${%s == %d}", RuntimeTaskConstants.RISKLEVEL, riskLevels.get(i).getLevel()),
+                        targetConfigurer);
+            }
+            flowInstance.buildTopology();
+        } catch (Exception e) {
+            log.warn("Failed to build FlowInstance, flowInstanceReq={}", flowInstanceReq, e);
+            throw e;
+        } finally {
+            flowInstance.dealloc();
+        }
+        // todo 流程变量需要改进，目前采用单库的实现
+        Map<String, Object> variables = new HashMap<>();
+        FlowTaskUtil.setFlowInstanceId(variables, flowInstance.getId());
+        FlowTaskUtil.setTemplateVariables(variables, buildTemplateVariables(flowInstanceReq,
+                connectionConfigs.get(0)));
+        initVariables(variables, taskEntities.get(0), preCheckTaskEntityList.get(0), connectionConfigs.get(0),
+                buildRiskLevelDescriber(flowInstanceReq));
+        flowInstance.start(variables);
+        log.info("New flow instance succeeded, instanceId={}, flowInstanceReq={}",
+                flowInstance.getId(), flowInstanceReq);
+        return FlowInstanceDetailResp.withIdAndType(flowInstance.getId(), flowInstanceReq.getTaskType());
+    }
+
     private String generateFlowInstanceName(@NonNull CreateFlowInstanceReq req) {
         if (req.getTaskType() == TaskType.STRUCTURE_COMPARISON) {
             DBStructureComparisonParameter parameters = (DBStructureComparisonParameter) req.getParameters();
             return "structure_comparison_" + parameters.getSourceDatabaseId() + "_" + parameters.getTargetDatabaseId();
         }
+        /**
+         * todo 可以补充多库流程的取名，先不填，不影响
+         */
         String schemaName = req.getDatabaseName();
         String connectionName = req.getConnectionId() == null ? "no_connection" : req.getConnectionId() + "";
         if (schemaName == null) {
@@ -918,6 +1023,81 @@ public class FlowInstanceService {
                     taskConfigurer = flowInstance.newFlowInstanceConfigurer(rollbackPlanInstance).next(taskInstance);
                 } else {
                     taskConfigurer = flowInstance.newFlowInstanceConfigurer(taskInstance);
+                }
+                taskConfigurer.endFlowInstance();
+                configurer.route(String.format("${%s}", FlowApprovalInstance.APPROVAL_VARIABLE_NAME),
+                        taskConfigurer);
+            }
+            configurers.add(configurer);
+        }
+        for (int j = configurers.size() - 2; j >= 0; j--) {
+            FlowInstanceConfigurer configurer = configurers.get(j);
+            FlowInstanceConfigurer targetConfigurer = configurers.get(j + 1);
+            configurer.route(String.format("${%s}", FlowApprovalInstance.APPROVAL_VARIABLE_NAME), targetConfigurer);
+        }
+        return configurers.get(0);
+    }
+
+    private FlowInstanceConfigurer buildConfigurerForMultiple(
+            @NonNull ApprovalFlowConfig approvalFlowConfig,
+            @NonNull FlowInstance flowInstance,
+            @NonNull TaskType taskType,
+            @NonNull List<Long> targetTaskIds,
+            @NonNull TaskParameters parameters,
+            @NonNull CreateFlowInstanceReq flowInstanceReq) {
+        // 获取审批节点配置列表
+        List<ApprovalNodeConfig> nodeConfigs = approvalFlowConfig.getNodes();
+        Verify.verify(!nodeConfigs.isEmpty(), "Approval Nodes size can not be equal to zero");
+        // 创建一个空的流程实例配置器列表
+        List<FlowInstanceConfigurer> configurers = new LinkedList<>();
+        // 遍历审批节点配置列表
+        for (int nodeSequence = 0; nodeSequence < nodeConfigs.size(); nodeSequence++) {
+            FlowInstanceConfigurer configurer;
+            ApprovalNodeConfig nodeConfig = nodeConfigs.get(nodeSequence);
+            // 获取资源角色id
+            Long resourceRoleId = nodeConfig.getResourceRoleId();
+            // 创建一个审批流程实例，并根据节点配置的属性设置实例的各种参数
+            FlowApprovalInstance approvalInstance = flowFactory.generateFlowApprovalInstance(flowInstance.getId(),
+                    false, false,
+                    nodeConfig.getAutoApproval(), approvalFlowConfig.getApprovalExpirationIntervalSeconds(),
+                    nodeConfig.getExternalApprovalId());
+            // 如果节点配置中定义了资源角色ID，则为审批实例设置候选人
+            if (Objects.nonNull(resourceRoleId)) {
+                approvalInstance.setCandidate(StringUtils.join(flowInstanceReq.getProjectId(), ":", resourceRoleId));
+            }
+            // 创建一个审批网关流程实例
+            FlowGatewayInstance approvalGatewayInstance =
+                    flowFactory.generateFlowGatewayInstance(flowInstance.getId(), false, true);
+            // 创建流程实例配置器，并将之前创建的审批实例添加到配置器中
+            configurer = flowInstance.newFlowInstanceConfigurer(approvalInstance);
+            // 配置审批实例的下一步为审批网关实例，并使用 route 方法设置流程变量以控制流程的走向
+            configurer = configurer.next(approvalGatewayInstance).route(String.format("${!%s}",
+                    FlowApprovalInstance.APPROVAL_VARIABLE_NAME), flowInstance.endFlowInstance());
+            /**
+             * 如果当前审批节点是审批流程中的最后一个节点
+             */
+            if (nodeSequence == nodeConfigs.size() - 1) {
+                FlowInstanceConfigurer taskConfigurer = null;
+                for (int i = 0; i < targetTaskIds.size(); i++) {
+                    Long targetTaskId = targetTaskIds.get(i);
+                    // 创建一个任务实例，并根据任务类型和参数配置任务实例
+                    ExecutionStrategyConfig strategyConfig = ExecutionStrategyConfig.from(flowInstanceReq,
+                            approvalFlowConfig.getWaitExecutionExpirationIntervalSeconds());
+                    FlowTaskInstance taskInstance;
+                    if (i == targetTaskIds.size() - 1) {
+                        taskInstance = flowFactory.generateFlowTaskInstance(flowInstance.getId(), false, true,
+                                taskType, strategyConfig);
+                    } else {
+                        taskInstance = flowFactory.generateFlowTaskInstance(flowInstance.getId(), false, false,
+                                taskType, strategyConfig);
+                    }
+
+                    taskInstance.setTargetTaskId(targetTaskId);
+                    if (taskConfigurer == null) {
+                        taskConfigurer = flowInstance.newFlowInstanceConfigurer(taskInstance);
+                    } else {
+                        taskConfigurer.next(taskInstance);
+                    }
                 }
                 taskConfigurer.endFlowInstance();
                 configurer.route(String.format("${%s}", FlowApprovalInstance.APPROVAL_VARIABLE_NAME),
@@ -1086,6 +1266,10 @@ public class FlowInstanceService {
                 .environmentName(env == null ? null : env.getName())
                 .databaseName(req.getDatabaseName())
                 .build();
+    }
+
+    public List<FlowInstanceEntity> getFlowInstanceByParentId(Long parentFlowInstanceId) {
+        return flowInstanceRepository.findByParentInstanceId(parentFlowInstanceId);
     }
 
     public Set<Long> getApprovingAlterScheduleById(Long parentFlowInstanceId) {

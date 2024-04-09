@@ -43,6 +43,7 @@ import com.oceanbase.odc.service.db.browser.DBSchemaAccessors;
 import com.oceanbase.odc.service.flow.task.model.DBStructureComparisonParameter;
 import com.oceanbase.odc.service.flow.task.model.DatabaseChangeParameters;
 import com.oceanbase.odc.service.flow.task.model.MockProperties;
+import com.oceanbase.odc.service.flow.task.model.MultipleDatabaseChangeParameters;
 import com.oceanbase.odc.service.flow.task.model.OdcMockTaskConfig;
 import com.oceanbase.odc.service.flow.task.model.RuntimeTaskConstants;
 import com.oceanbase.odc.service.flow.task.model.ShadowTableSyncTaskParameter;
@@ -94,6 +95,11 @@ public class FlowTaskUtil {
     public static DatabaseChangeParameters getAsyncParameter(@NonNull DelegateExecution execution) {
         return internalGetParameter(execution, DatabaseChangeParameters.class).orElseThrow(
                 () -> new VerifyException("OdcAsyncTaskParameters is absent"));
+    }
+
+    public static MultipleDatabaseChangeParameters getMultipleAsyncParameter(@NonNull DelegateExecution execution) {
+        return internalGetParameter(execution, MultipleDatabaseChangeParameters.class).orElseThrow(
+                () -> new VerifyException("OdcMultipleAsyncTaskParameters is absent"));
     }
 
     public static DataTransferConfig getDataTransferParameter(@NonNull DelegateExecution execution) {

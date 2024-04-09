@@ -154,7 +154,7 @@ public class ConnectSessionController {
         for (String sessionId : req.getSessionIds()) {
             ConnectionSession connectionSession = sessionService.nullSafeGet(SidUtils.getSessionId(sessionId), true);
         }
-        return null;
+        throw new RuntimeException("暂未实现");
     }
 
     /**

@@ -32,6 +32,7 @@ import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferConfig;
 import com.oceanbase.odc.service.flow.processor.CreateFlowInstanceProcessAspect;
 import com.oceanbase.odc.service.flow.task.model.DBStructureComparisonParameter;
 import com.oceanbase.odc.service.flow.task.model.DatabaseChangeParameters;
+import com.oceanbase.odc.service.flow.task.model.MultipleDatabaseChangeParameters;
 import com.oceanbase.odc.service.flow.task.model.OdcMockTaskConfig;
 import com.oceanbase.odc.service.flow.task.model.ShadowTableSyncTaskParameter;
 import com.oceanbase.odc.service.onlineschemachange.model.OnlineSchemaChangeParameters;
@@ -85,6 +86,7 @@ public class CreateFlowInstanceReq {
     @JsonSubTypes(value = {
             @JsonSubTypes.Type(value = OdcMockTaskConfig.class, name = "MOCKDATA"),
             @JsonSubTypes.Type(value = DataTransferConfig.class, names = {"EXPORT", "IMPORT"}),
+            @JsonSubTypes.Type(value = MultipleDatabaseChangeParameters.class, names = {"MULTIPLE_ASYNC"}),
             @JsonSubTypes.Type(value = DatabaseChangeParameters.class, names = {"ASYNC"}),
             @JsonSubTypes.Type(value = PartitionPlanConfig.class, name = "PARTITION_PLAN"),
             @JsonSubTypes.Type(value = ShadowTableSyncTaskParameter.class, name = "SHADOWTABLE_SYNC"),

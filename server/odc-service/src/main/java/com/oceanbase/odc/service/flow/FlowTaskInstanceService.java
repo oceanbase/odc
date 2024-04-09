@@ -236,6 +236,8 @@ public class FlowTaskInstanceService {
         TaskEntity taskEntity = taskEntityOptional.get();
         if (taskEntity.getTaskType() == TaskType.ASYNC) {
             return getAsyncResult(taskEntity);
+        } else if (taskEntity.getTaskType() == TaskType.MULTIPLE_ASYNC) {
+            return getMultipleAsyncResult(taskEntity);
         } else if (taskEntity.getTaskType() == TaskType.MOCKDATA) {
             return getMockDataResult(taskEntity);
         } else if (taskEntity.getTaskType() == TaskType.IMPORT) {
@@ -582,6 +584,17 @@ public class FlowTaskInstanceService {
                 }).collect(Collectors.toList()), false);
     }
 
+    /**
+     * todo 多库逻辑需要完善
+     * 
+     * @param taskEntity
+     * @return
+     * @throws IOException
+     */
+    private List<DatabaseChangeResult> getMultipleAsyncResult(@NonNull TaskEntity taskEntity) throws IOException {
+        return null;
+    }
+
     private List<DatabaseChangeResult> getAsyncResult(@NonNull TaskEntity taskEntity) throws IOException {
         if (!dispatchChecker.isTaskEntityOnThisMachine(taskEntity)) {
             /**
@@ -712,6 +725,9 @@ public class FlowTaskInstanceService {
         if (CollectionUtils.isEmpty(taskInstances)) {
             return Optional.empty();
         }
+        /**
+         * todo 限制任务节点唯一，多库需要改
+         */
         Verify.singleton(taskInstances, "TaskInstances");
 
         FlowTaskInstance flowTaskInstance = taskInstances.get(0);

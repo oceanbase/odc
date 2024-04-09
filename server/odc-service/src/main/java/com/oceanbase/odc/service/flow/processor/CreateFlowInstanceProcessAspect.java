@@ -19,6 +19,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 import org.aspectj.lang.JoinPoint;
 import org.aspectj.lang.annotation.Aspect;
@@ -34,10 +35,12 @@ import com.oceanbase.odc.core.shared.constant.TaskType;
 import com.oceanbase.odc.core.shared.exception.BadRequestException;
 import com.oceanbase.odc.metadb.schedule.ScheduleEntity;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferConfig;
+import com.oceanbase.odc.service.collaboration.project.model.Project;
 import com.oceanbase.odc.service.connection.database.DatabaseService;
 import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.flow.model.CreateFlowInstanceReq;
 import com.oceanbase.odc.service.flow.task.model.DBStructureComparisonParameter;
+import com.oceanbase.odc.service.flow.task.model.MultipleDatabaseChangeParameters;
 import com.oceanbase.odc.service.flow.util.DescriptionGenerator;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.schedule.ScheduleService;
@@ -82,8 +85,11 @@ public class CreateFlowInstanceProcessAspect implements InitializingBean {
             DBStructureComparisonParameter parameters = (DBStructureComparisonParameter) req.getParameters();
             req.setDatabaseId(parameters.getSourceDatabaseId());
         }
-        if (Objects.nonNull(req.getDatabaseId())) {
+        // 多库时为null
+        if (Objects.nonNull(req.getDatabaseId()) && req.getTaskType() != TaskType.MULTIPLE_ASYNC) {
             adaptCreateFlowInstanceReq(req);
+        } else {
+            adaptDatabaseCreateFlowInstanceReqForMultiple(req);
         }
         if (req.getTaskType() != TaskType.ALTER_SCHEDULE) {
             if (flowTaskPreprocessors.containsKey(req.getTaskType())) {
@@ -160,4 +166,31 @@ public class CreateFlowInstanceProcessAspect implements InitializingBean {
             config.setDatabaseId(req.getDatabaseId());
         }
     }
+
+    /**
+     * todo 多库的入参待定。
+     * 
+     * @param req
+     */
+    private void adaptDatabaseCreateFlowInstanceReqForMultiple(CreateFlowInstanceReq req) {
+
+        MultipleDatabaseChangeParameters parameters = (MultipleDatabaseChangeParameters) req.getParameters();
+        // todo 耗时多
+        List<Database> databases = (List<Database>) parameters.getOrderedDatabaseIds().stream().flatMap(List::stream)
+                .map(
+                        x -> databaseService.detail(Long.valueOf(x.toString())))
+                .collect(Collectors.toList());
+        parameters.setDatabases(databases);
+        Project project = databases != null && databases.isEmpty() ? null : databases.get(0).getProject();
+        if (Objects.isNull(project)
+                && authenticationFacade.currentUser().getOrganizationType() == OrganizationType.TEAM) {
+            throw new BadRequestException("Cannot create flow under default project in TEAM organization");
+        }
+        req.setProjectId(project.getId());
+        req.setProjectName(
+                project.getName());
+
+        DescriptionGenerator.generateDescription(req);
+    }
+
 }

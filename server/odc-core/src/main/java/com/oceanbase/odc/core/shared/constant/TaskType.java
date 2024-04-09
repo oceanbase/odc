@@ -27,6 +27,10 @@ import com.oceanbase.odc.common.i18n.Translatable;
  */
 public enum TaskType implements Translatable {
     /**
+     * Multiple database change
+     */
+    MULTIPLE_ASYNC,
+    /**
      * Database change
      */
     ASYNC,
