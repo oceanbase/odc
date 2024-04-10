@@ -44,6 +44,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
 
+import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.common.util.TimeUtils;
 import com.oceanbase.odc.core.authority.util.Authenticated;
 import com.oceanbase.odc.core.authority.util.PreAuthenticate;
@@ -421,6 +422,7 @@ public class TablePermissionService {
     }
 
 
+    // 对表和库的权限进行过滤
     @SkipAuthorize("odc internal usage")
     public List<UnauthorizedResource> filterUnauthorizedTables(
             Map<RelationFactor, Set<DatabasePermissionType>> tableName2PermissionTypes, @NotNull Long dataSourceId,
@@ -447,7 +449,7 @@ public class TablePermissionService {
         Set<Long> involvedProjectIds = projectService.getMemberProjectIds(authenticationFacade.currentUserId());
         for (RelationFactor relationFactor : tableName2PermissionTypes.keySet()) {
             String schemaName = relationFactor.getSchema();
-            String tableName = relationFactor.getRelation();
+            String tableName = StringUtils.unquoteMySqlIdentifier(relationFactor.getRelation());
             Set<DatabasePermissionType> needs = tableName2PermissionTypes.get(relationFactor);
             if (CollectionUtils.isEmpty(needs)) {
                 continue;

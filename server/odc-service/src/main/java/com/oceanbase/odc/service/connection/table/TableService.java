@@ -160,11 +160,17 @@ public class TableService {
         databaseList.getContent().forEach(database -> {
             finalListTables.forEach(table -> {
                 if (table.getDatabaseName().equals(database.getName())) {
+                    Set<DatabasePermissionType> dbAuthorizedPermissionTypes = database.getAuthorizedPermissionTypes();
+                    // 如果dbAuthorizedPermissionTypes中有ACCESS权限，需要去掉
+                    if (dbAuthorizedPermissionTypes != null) {
+                        dbAuthorizedPermissionTypes.remove(DatabasePermissionType.ACCESS);
+                    }
+
                     Set<DatabasePermissionType> tableAuthorizedPermissionTypes = table.getAuthorizedPermissionTypes();
                     if (tableAuthorizedPermissionTypes == null) {
-                        tableAuthorizedPermissionTypes = database.getAuthorizedPermissionTypes();
+                        tableAuthorizedPermissionTypes = dbAuthorizedPermissionTypes;
                     }else{
-                        tableAuthorizedPermissionTypes.addAll(database.getAuthorizedPermissionTypes());
+                        tableAuthorizedPermissionTypes.addAll(dbAuthorizedPermissionTypes);
                     }
                     table.setAuthorizedPermissionTypes(tableAuthorizedPermissionTypes);
                 }

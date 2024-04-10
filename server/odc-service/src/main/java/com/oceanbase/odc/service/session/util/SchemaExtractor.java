@@ -242,7 +242,7 @@ public class SchemaExtractor {
                     .filter(r -> StringUtils.isBlank(r.getUserVariable()))
                     .map(r -> {
                         String schema = StringUtils.isNotBlank(r.getSchema()) ? r.getSchema() : defaultSchema;
-                        r.setSchema(schema);
+                        r.setSchema(StringUtils.unquoteMySqlIdentifier(schema));
                         return r;
                     }).filter(Objects::nonNull).collect(Collectors.toList());
         } else if (dialectType.isOracle()) {

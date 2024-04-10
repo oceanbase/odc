@@ -328,9 +328,9 @@ public class PreCheckRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Void> {
         if (CollectionUtils.isNotEmpty(sqls)) {
             violations.addAll(this.sqlCheckService.check(Long.valueOf(describer.getEnvironmentId()),
                     describer.getDatabaseName(), sqls, connectionConfig));
-            Map<String, Set<SqlType>> schemaName2SqlTypes = SchemaExtractor.listSchemaName2SqlTypes(
-                    sqls.stream().map(e -> SqlTuple.newTuple(e.getStr())).collect(Collectors.toList()),
-                    preCheckTaskEntity.getDatabaseName(), this.connectionConfig.getDialectType());
+            //Map<String, Set<SqlType>> schemaName2SqlTypes = SchemaExtractor.listSchemaName2SqlTypes(
+            //        sqls.stream().map(e -> SqlTuple.newTuple(e.getStr())).collect(Collectors.toList()),
+            //        preCheckTaskEntity.getDatabaseName(), this.connectionConfig.getDialectType());
 
             // Resource权限检查
             Map<RelationFactor, Set<SqlType>> relationFactorSetMap = SchemaExtractor.listTableName2SqlTypes(
