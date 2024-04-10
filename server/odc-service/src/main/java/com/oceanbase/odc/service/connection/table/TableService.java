@@ -46,11 +46,8 @@ import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.connection.database.model.QueryDatabaseParams;
 import com.oceanbase.odc.service.connection.table.model.Table;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
-import com.oceanbase.odc.service.permission.database.DatabasePermissionService;
 import com.oceanbase.odc.service.permission.database.model.DatabasePermissionType;
 import com.oceanbase.odc.service.permission.database.model.ExpirationStatusFilter;
-import com.oceanbase.odc.service.permission.database.model.QueryDatabasePermissionParams;
-import com.oceanbase.odc.service.permission.database.model.UserDatabasePermission;
 import com.oceanbase.odc.service.permission.table.TablePermissionService;
 import com.oceanbase.odc.service.permission.table.UserTablePermission;
 import com.oceanbase.odc.service.permission.table.model.QueryTablePermissionParams;
@@ -148,12 +145,12 @@ public class TableService {
 
         // 组装库的权限
         QueryDatabaseParams queryDatabaseParams = QueryDatabaseParams.builder()
-            .dataSourceId(databaseDetail.getDataSource().getId())
-            .existed(true)
-            .environmentId(databaseDetail.getEnvironment().getId())
-            .schemaName(databaseDetail.getName())
-            .includesPermittedAction(true)
-            .projectId(databaseDetail.getProject().getId()).build();
+                .dataSourceId(databaseDetail.getDataSource().getId())
+                .existed(true)
+                .environmentId(databaseDetail.getEnvironment().getId())
+                .schemaName(databaseDetail.getName())
+                .includesPermittedAction(true)
+                .projectId(databaseDetail.getProject().getId()).build();
         Page<Database> databaseList = databaseService.list(queryDatabaseParams, Pageable.unpaged());
 
         List<Table> finalListTables = listTables;
@@ -169,7 +166,7 @@ public class TableService {
                     Set<DatabasePermissionType> tableAuthorizedPermissionTypes = table.getAuthorizedPermissionTypes();
                     if (tableAuthorizedPermissionTypes == null) {
                         tableAuthorizedPermissionTypes = dbAuthorizedPermissionTypes;
-                    }else{
+                    } else {
                         tableAuthorizedPermissionTypes.addAll(dbAuthorizedPermissionTypes);
                     }
                     table.setAuthorizedPermissionTypes(tableAuthorizedPermissionTypes);

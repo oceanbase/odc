@@ -1161,10 +1161,11 @@ public class FlowInstanceService {
             DatabaseChangeParameters params = (DatabaseChangeParameters) flowInstanceReq.getParameters();
             variables.setAttribute(Variable.SQL_CONTENT, JsonUtils.toJson(params.getSqlContent()));
             if (StringUtils.isNotBlank(params.getSqlContent())) {
-                List<String> splitSqlList = SqlUtils.split(config.getDialectType(), params.getSqlContent(), params.getDelimiter());
+                List<String> splitSqlList =
+                        SqlUtils.split(config.getDialectType(), params.getSqlContent(), params.getDelimiter());
                 variables.setAttribute(Variable.SQL_CONTENT_JSON_ARRAY, JsonUtils.toJson(splitSqlList));
             }
-        }else{
+        } else {
             String sql = "";
             variables.setAttribute(Variable.SQL_CONTENT, JsonUtils.toJson(sql));
             variables.setAttribute(Variable.SQL_CONTENT_JSON_ARRAY, JsonUtils.toJson(sql));
