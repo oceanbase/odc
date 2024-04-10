@@ -1159,12 +1159,15 @@ public class FlowInstanceService {
         // set SQL content if task type is DatabaseChange
         if (taskType == TaskType.ASYNC) {
             DatabaseChangeParameters params = (DatabaseChangeParameters) flowInstanceReq.getParameters();
-            String sqlContent = JsonUtils.toJson(params.getSqlContent());
-            variables.setAttribute(Variable.SQL_CONTENT, sqlContent);
-            if (StringUtils.isNotBlank(sqlContent)) {
-                List<String> splitSqlList = SqlUtils.split(config.getDialectType(), sqlContent, params.getDelimiter());
+            variables.setAttribute(Variable.SQL_CONTENT, JsonUtils.toJson(params.getSqlContent()));
+            if (StringUtils.isNotBlank(params.getSqlContent())) {
+                List<String> splitSqlList = SqlUtils.split(config.getDialectType(), params.getSqlContent(), params.getDelimiter());
                 variables.setAttribute(Variable.SQL_CONTENT_JSON_ARRAY, JsonUtils.toJson(splitSqlList));
             }
+        }else{
+            String sql = "";
+            variables.setAttribute(Variable.SQL_CONTENT, JsonUtils.toJson(sql));
+            variables.setAttribute(Variable.SQL_CONTENT_JSON_ARRAY, JsonUtils.toJson(sql));
         }
         // set ODC URL site
         List<Configuration> configurations = systemConfigService.queryByKeyPrefix(ODC_SITE_URL);
