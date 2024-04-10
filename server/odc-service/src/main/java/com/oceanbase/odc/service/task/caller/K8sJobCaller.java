@@ -16,7 +16,6 @@
 
 package com.oceanbase.odc.service.task.caller;
 
-import java.time.format.DateTimeFormatter;
 import java.util.Optional;
 
 import com.oceanbase.odc.metadb.task.JobEntity;
@@ -36,7 +35,6 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class K8sJobCaller extends BaseJobCaller {
 
-    public static final DateTimeFormatter OUTPUT_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
     private final K8sJobClient client;
     private final PodConfig podConfig;
 
@@ -68,8 +66,8 @@ public class K8sJobCaller extends BaseJobCaller {
                 JobEntity jobEntity = jobConfiguration.getTaskFrameworkService().find(ji.getId());
                 if ((System.currentTimeMillis() - jobEntity.getStartedTime().getTime()) / 1000 > podConfig
                         .getPodPendingTimeoutSeconds()) {
-                    log.info("Pod pending timeout, will be deleted, jobId={}, pod={},"
-                            + ",podPendingTimeoutSeconds={}.", ji.getId(), ei.getExecutorName(),
+                    log.info("Pod pending timeout, will be deleted, jobId={}, pod={}, "
+                            + "podPendingTimeoutSeconds={}.", ji.getId(), ei.getExecutorName(),
                             podConfig.getPodPendingTimeoutSeconds());
                 } else {
                     // Pod cannot be deleted when pod pending is not timeout,
