@@ -33,6 +33,10 @@ public class K8sProperties {
      * pod image name with version, odc job will be running in this image
      */
     private String podImageName;
+    /**
+     * pod pending timeout
+     */
+    private Long podPendingTimeoutSeconds;
 
     /**
      * pod request cpu

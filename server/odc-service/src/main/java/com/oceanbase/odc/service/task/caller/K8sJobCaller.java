@@ -16,8 +16,12 @@
 
 package com.oceanbase.odc.service.task.caller;
 
+import java.time.format.DateTimeFormatter;
 import java.util.Optional;
 
+import com.oceanbase.odc.metadb.task.JobEntity;
+import com.oceanbase.odc.service.task.config.JobConfiguration;
+import com.oceanbase.odc.service.task.config.JobConfigurationHolder;
 import com.oceanbase.odc.service.task.exception.JobException;
 import com.oceanbase.odc.service.task.schedule.JobIdentity;
 import com.oceanbase.odc.service.task.util.JobUtils;
@@ -32,6 +36,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class K8sJobCaller extends BaseJobCaller {
 
+    public static final DateTimeFormatter OUTPUT_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
     private final K8sJobClient client;
     private final PodConfig podConfig;
 
@@ -59,8 +64,19 @@ public class K8sJobCaller extends BaseJobCaller {
         Optional<K8sJobResponse> k8sJobResponse = client.get(ei.getNamespace(), ei.getExecutorName());
         if (k8sJobResponse.isPresent()) {
             if (PodStatus.PENDING == PodStatus.of(k8sJobResponse.get().getResourceStatus())) {
-                throw new JobException("Destroy process failed, jodId={0}, identifier={1}, podStatus={2}",
-                        ji.getId(), ei, k8sJobResponse.get().getResourceStatus());
+                JobConfiguration jobConfiguration = JobConfigurationHolder.getJobConfiguration();
+                JobEntity jobEntity = jobConfiguration.getTaskFrameworkService().find(ji.getId());
+                if ((System.currentTimeMillis() - jobEntity.getStartedTime().getTime()) / 1000 > podConfig
+                        .getPodPendingTimeoutSeconds()) {
+                    log.info("Pod pending timeout, will be deleted, jobId={}, pod={},"
+                            + ",podPendingTimeoutSeconds={}.", ji.getId(), ei.getExecutorName(),
+                            podConfig.getPodPendingTimeoutSeconds());
+                } else {
+                    // Pod cannot be deleted when pod pending is not timeout,
+                    // so throw exception representative delete failed
+                    throw new JobException("Destroy pod failed, jodId={0}, identifier={1}, podStatus={2}",
+                            ji.getId(), ei.getExecutorName(), k8sJobResponse.get().getResourceStatus());
+                }
             }
             log.info("Found pod, delete it, jobId={}, pod={}.", ji.getId(), ei.getExecutorName());
             destroyInternal(ei);

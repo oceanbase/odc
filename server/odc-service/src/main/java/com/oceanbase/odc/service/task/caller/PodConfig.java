@@ -44,6 +44,8 @@ public class PodConfig {
 
     private String imagePullPolicy = JobConstants.IMAGE_PULL_POLICY_ALWAYS;
 
+    private Long podPendingTimeoutSeconds;
+
     private Double requestCpu;
 
     private Long requestMem;
