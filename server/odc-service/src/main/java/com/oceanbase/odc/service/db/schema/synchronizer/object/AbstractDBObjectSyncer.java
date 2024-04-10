@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.db.schema.synchronizer;
+package com.oceanbase.odc.service.db.schema.synchronizer.object;
 
 import java.util.List;
 import java.util.Set;
@@ -21,10 +21,13 @@ import java.util.stream.Collectors;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.Ordered;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.oceanbase.odc.metadb.dbobject.DBObjectEntity;
 import com.oceanbase.odc.metadb.dbobject.DBObjectRepository;
 import com.oceanbase.odc.service.connection.database.model.Database;
+import com.oceanbase.odc.service.db.schema.synchronizer.DBSchemaSyncer;
 import com.oceanbase.tools.dbbrowser.model.DBObjectType;
 import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
 
@@ -36,23 +39,18 @@ import lombok.extern.slf4j.Slf4j;
  * @date 2024/4/9 17:06
  */
 @Slf4j
-public abstract class AbstractDBObjectSynchronizer implements DBMetadataSynchronizer {
+public abstract class AbstractDBObjectSyncer implements DBSchemaSyncer {
 
     @Autowired
     protected DBObjectRepository repository;
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public void sync(@NonNull DBSchemaAccessor accessor, @NonNull Database database) {
         try {
             Set<String> latestObjectNames = getLatestObjectNames(accessor, database);
             List<DBObjectEntity> existingObjects =
                     repository.findByDatabaseIdAndType(database.getId(), getObjectType());
-            // Delete objects that are not in the latest object list
-            List<DBObjectEntity> toBeDeleted = existingObjects.stream()
-                    .filter(e -> !latestObjectNames.contains(e.getName())).collect(Collectors.toList());
-            if (CollectionUtils.isNotEmpty(toBeDeleted)) {
-                repository.deleteByIds(toBeDeleted.stream().map(DBObjectEntity::getId).collect(Collectors.toList()));
-            }
             // Insert objects that are not in the existing object list
             Set<String> existingObjectNames =
                     existingObjects.stream().map(DBObjectEntity::getName).collect(Collectors.toSet());
@@ -68,9 +66,20 @@ public abstract class AbstractDBObjectSynchronizer implements DBMetadataSynchron
             if (CollectionUtils.isNotEmpty(toBeInserted)) {
                 repository.batchCreate(toBeInserted);
             }
+            // Delete objects that are not in the latest object list
+            List<DBObjectEntity> toBeDeleted = existingObjects.stream()
+                    .filter(e -> !latestObjectNames.contains(e.getName())).collect(Collectors.toList());
+            if (CollectionUtils.isNotEmpty(toBeDeleted)) {
+                repository.deleteByIds(toBeDeleted.stream().map(DBObjectEntity::getId).collect(Collectors.toList()));
+            }
         } catch (Exception e) {
             log.warn("Failed to synchronize {} for database id={}", getObjectType(), database.getId(), e);
         }
+    }
+
+    @Override
+    public int getOrder() {
+        return Ordered.HIGHEST_PRECEDENCE;
     }
 
     abstract Set<String> getLatestObjectNames(@NonNull DBSchemaAccessor accessor, @NonNull Database database);

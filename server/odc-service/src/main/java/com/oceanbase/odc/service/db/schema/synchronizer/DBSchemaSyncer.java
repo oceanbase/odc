@@ -15,6 +15,8 @@
  */
 package com.oceanbase.odc.service.db.schema.synchronizer;
 
+import org.springframework.core.Ordered;
+
 import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
@@ -25,7 +27,7 @@ import lombok.NonNull;
  * @author gaoda.xy
  * @date 2024/4/9 17:03
  */
-public interface DBMetadataSynchronizer {
+public interface DBSchemaSyncer extends Ordered {
 
     /**
      * Sync database metadata

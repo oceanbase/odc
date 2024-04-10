@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.db.schema.synchronizer;
+package com.oceanbase.odc.service.db.schema.synchronizer.object;
 
 import java.util.List;
 import java.util.Set;
@@ -23,33 +23,33 @@ import org.springframework.stereotype.Component;
 
 import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.service.connection.database.model.Database;
+import com.oceanbase.tools.dbbrowser.model.DBObjectIdentity;
 import com.oceanbase.tools.dbbrowser.model.DBObjectType;
-import com.oceanbase.tools.dbbrowser.model.DBPLObjectIdentity;
 import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
 
 import lombok.NonNull;
 
 /**
  * @author gaoda.xy
- * @date 2024/4/9 20:27
+ * @date 2024/4/9 20:45
  */
 @Component
-public class FunctionSynchronizer extends AbstractDBObjectSynchronizer {
+public class SequenceSyncer extends AbstractDBObjectSyncer {
 
     @Override
     Set<String> getLatestObjectNames(@NonNull DBSchemaAccessor accessor, @NonNull Database database) {
-        List<DBPLObjectIdentity> functions = accessor.listFunctions(database.getName());
-        return functions.stream().map(DBPLObjectIdentity::getName).collect(Collectors.toSet());
+        List<DBObjectIdentity> sequences = accessor.listSequences(database.getName());
+        return sequences.stream().map(DBObjectIdentity::getName).collect(Collectors.toSet());
     }
 
     @Override
     DBObjectType getObjectType() {
-        return DBObjectType.FUNCTION;
+        return DBObjectType.SEQUENCE;
     }
 
     @Override
     public boolean support(@NonNull DialectType dialectType) {
-        return dialectType.isMysql() || dialectType.isOracle() || dialectType.isDoris();
+        return dialectType.isOceanbase();
     }
 
 }
