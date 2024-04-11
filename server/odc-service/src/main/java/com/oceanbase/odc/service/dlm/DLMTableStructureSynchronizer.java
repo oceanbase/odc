@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 OceanBase.
+ * Copyright (c) 2023 OceanBase.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.oceanbase.odc.service.dlm;
 
 import java.sql.Connection;
@@ -62,7 +61,6 @@ public class DLMTableStructureSynchronizer {
         List<DBObjectComparisonResult> compare = comparator.compare(sourceConfig, targetConfig);
         StructureComparisonTaskResultEntity res = compare.get(0).toEntity(1L,
                 DialectType.OB_MYSQL);
-        log.info(res.toString());
         if (StringUtils.isNotEmpty(res.getChangeSqlScript())) {
             log.info("Start to sync target table structure,sqls={}", res.getChangeSqlScript());
             try (Connection conn = targetConfig.getDataSource().getConnection()) {
