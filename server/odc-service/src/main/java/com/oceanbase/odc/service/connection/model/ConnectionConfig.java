@@ -303,6 +303,9 @@ public class ConnectionConfig
     private OBInstanceType instanceType;
 
     @JsonIgnore
+    private OBInstanceRoleType roleType;
+
+    @JsonIgnore
     private transient Map<String, Object> attributes;
 
     /**
@@ -424,6 +427,13 @@ public class ConnectionConfig
             return OdcConstants.DEFAULT_QUERY_TIMEOUT_SECONDS;
         }
         return queryTimeoutSeconds;
+    }
+
+    public String getInternalSessionInitScript() {
+        if (this.roleType == OBInstanceRoleType.PHYSICAL_STANDBY && getDialectType().isOceanbase()) {
+            return "set ";
+        }
+        return null;
     }
 
     @Size(max = 8192, message = "Session init script is out of range [0,8192]")
