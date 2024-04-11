@@ -51,10 +51,6 @@ public class LogicalTableFinderTest {
     private static final JdbcTemplate OBMYSQL_JDBC_TEMPLATE =
             new JdbcTemplate(TestDBConfigurations.getInstance().getTestOBMysqlConfiguration().getDataSource());
 
-
-    private static final LogicalTableFinder logicalTableFinder = new LogicalTableFinder();
-
-
     @BeforeClass
     public static void setUp() throws IOException {
         String dropTables = loadAsString(OBMYSQL_BASE_PATH + "drop.sql");
@@ -77,7 +73,7 @@ public class LogicalTableFinderTest {
         List<LogicalTable> expected =
                 YamlUtils.fromYamlList("connection/obmysql/verify.yml", LogicalTable.class);
         Collections.sort(expected, Comparator.comparing(LogicalTable::getTableNamePattern));
-        List<LogicalTable> actual = logicalTableFinder.find(obtainOBMySQLDatabases());
+        List<LogicalTable> actual = LogicalTableFinder.find(obtainOBMySQLDatabases());
 
         Assert.assertEquals(expected.size(), actual.size());
 

@@ -24,8 +24,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import javax.validation.constraints.NotEmpty;
-
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionFactory;
 import com.oceanbase.odc.core.shared.Verify;
@@ -48,7 +46,7 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 public class LogicalTableFinder {
-    public static List<LogicalTable> find(@NotEmpty List<Database> databases) {
+    public static List<LogicalTable> find(List<Database> databases) {
         Verify.notEmpty(databases, "LogicalTableFinder#find.databases");
         Map<Long, List<Database>> dataSourceId2Databases =
                 databases.stream().collect(Collectors.groupingBy(database -> database.getDataSource().getId()));
@@ -118,8 +116,8 @@ public class LogicalTableFinder {
             List<Database> groupedDatabases) {
         ConnectionSessionFactory connectionSessionFactory = new DefaultConnectSessionFactory(dataSource);
         ConnectionSession connectionSession = connectionSessionFactory.generateSession();
-        DBSchemaAccessor schemaAccessor = DBSchemaAccessors.create(connectionSession);
         try {
+            DBSchemaAccessor schemaAccessor = DBSchemaAccessors.create(connectionSession);
             return groupedDatabases.stream().collect(Collectors.toMap(Database::getName, database -> {
                 try {
                     return schemaAccessor.listTables(database.getName(), null).stream()
