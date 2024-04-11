@@ -35,7 +35,7 @@ public interface DBSchemaSyncer extends Ordered {
      * @param accessor db schema accessor, refer to {@link DBSchemaAccessor}
      * @param database target database, refer to {@link Database}
      */
-    void sync(@NonNull DBSchemaAccessor accessor, @NonNull Database database);
+    void sync(@NonNull DBSchemaAccessor accessor, @NonNull Database database) throws InterruptedException;
 
     /**
      * Whether the synchronizer supports the specified dialect type

@@ -20,13 +20,18 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.Lock;
 import java.util.stream.Collectors;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.Ordered;
+import org.springframework.integration.jdbc.lock.JdbcLockRegistry;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.oceanbase.odc.core.shared.constant.ErrorCodes;
+import com.oceanbase.odc.core.shared.exception.ConflictException;
 import com.oceanbase.odc.metadb.dbobject.DBColumnEntity;
 import com.oceanbase.odc.metadb.dbobject.DBColumnRepository;
 import com.oceanbase.odc.metadb.dbobject.DBObjectEntity;
@@ -52,9 +57,16 @@ public abstract class AbstractDBColumnSyncer implements DBSchemaSyncer {
     @Autowired
     protected DBColumnRepository dbColumnRepository;
 
+    @Autowired
+    private JdbcLockRegistry jdbcLockRegistry;
+
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public void sync(@NonNull DBSchemaAccessor accessor, @NonNull Database database) {
+    public void sync(@NonNull DBSchemaAccessor accessor, @NonNull Database database) throws InterruptedException {
+        Lock lock = jdbcLockRegistry.obtain(generateJdbcLockKey(database));
+        if (!lock.tryLock(3, TimeUnit.SECONDS)) {
+            throw new ConflictException(ErrorCodes.ResourceModifying, "Can not acquire jdbc lock");
+        }
         try {
             Map<String, Set<String>> latestObject2Columns = getLatestObjectToColumns(accessor, database);
             Map<String, DBObjectEntity> existingObject2Entity =
@@ -104,6 +116,10 @@ public abstract class AbstractDBColumnSyncer implements DBSchemaSyncer {
         } catch (Exception e) {
             log.warn("Failed to synchronize columns of {} for database id={}", getObjectType(), database.getId(), e);
         }
+    }
+
+    private String generateJdbcLockKey(@NonNull Database database) {
+        return "db-schema-sync-database-" + database.getId() + "-" + getObjectType();
     }
 
     @Override

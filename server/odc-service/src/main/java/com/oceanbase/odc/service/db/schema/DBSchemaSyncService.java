@@ -68,7 +68,7 @@ public class DBSchemaSyncService {
         this.syncers = implementations;
     }
 
-    public void sync(@NonNull Long databaseId) {
+    public void sync(@NonNull Long databaseId) throws InterruptedException {
         Database database = databaseService.getBasicSkipPermissionCheck(databaseId);
         PreConditions.notNull(database.getDataSource(), "database.dataSource");
         ConnectionConfig config =
