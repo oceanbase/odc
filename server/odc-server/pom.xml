@@ -292,7 +292,9 @@
                         </mapping>
                     </mappings>
                     <preinstallScriptlet>
-                        <script>echo "installing ${project.name} ${project.version} now"</script>
+                        <script>echo "installing ${project.name} ${project.version} now" &amp;&amp;
+                            rm -rf ${rpm.rootdir}/starters/* &amp;&amp; rm -rf ${rpm.rootdir}/plugins/*
+                        </script>
                     </preinstallScriptlet>
                     <postinstallScriptlet>
                         <script>tar -xvzf ${rpm.rootdir}/bin/obclient.tar.gz -C ${rpm.rootdir} &amp;&amp;
