@@ -1097,11 +1097,14 @@ public class FlowInstanceService {
         variables.setAttribute(Variable.TASK_DESCRIPTION, flowInstanceReq.getDescription());
         // set connection related variables
         if (Objects.nonNull(config)) {
-            variables.setAttribute(Variable.CONNECTION_NAME, config.getName());
-            variables.setAttribute(Variable.CONNECTION_TENANT, config.getTenantName());
+            variables.setAttribute(Variable.CONNECTION_NAME, JsonUtils.toJson(config.getName()));
+            variables.setAttribute(Variable.CONNECTION_TENANT, JsonUtils.toJson(config.getTenantName()));
             for (Entry<String, String> entry : config.getProperties().entrySet()) {
                 variables.setAttribute(Variable.CONNECTION_PROPERTIES, entry.getKey(), entry.getValue());
             }
+        }else{
+            variables.setAttribute(Variable.CONNECTION_NAME, JsonUtils.toJson(""));
+            variables.setAttribute(Variable.CONNECTION_TENANT, JsonUtils.toJson(""));
         }
         // set project owner related variables
         List<UserResourceRole> projectUserResourceRole = resourceRoleService.getUserIdsByResourceIdAndTypeAndName(
