@@ -49,6 +49,8 @@ public class DataArchiveParameters implements TaskParameters {
 
     private List<DataArchiveTableConfig> tables;
 
+    private boolean isTableStructureSyncEnabled = true;
+
     private boolean deleteAfterMigration = false;
 
     private boolean needPrintSqlTrace = false;

@@ -49,6 +49,8 @@ public class DLMJobParameters {
 
     private boolean deleteAfterMigration;
 
+    private boolean isTableStructureSyncEnabled;
+
     private MigrationInsertAction migrationInsertAction;
 
     private boolean needPrintSqlTrace;

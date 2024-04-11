@@ -26,7 +26,7 @@ import com.oceanbase.odc.core.session.ConnectionSessionConstants;
 import com.oceanbase.odc.core.shared.constant.TaskStatus;
 import com.oceanbase.odc.metadb.schedule.ScheduleTaskEntity;
 import com.oceanbase.odc.service.db.browser.DBSchemaAccessors;
-import com.oceanbase.odc.service.dlm.DataSourceInfoBuilder;
+import com.oceanbase.odc.service.dlm.DataSourceInfoMapper;
 import com.oceanbase.odc.service.dlm.model.DataArchiveParameters;
 import com.oceanbase.odc.service.dlm.model.DataArchiveTableConfig;
 import com.oceanbase.odc.service.dlm.model.DlmTask;
@@ -103,16 +103,17 @@ public class DataArchiveJob extends AbstractDlmJob {
         parameters.setShardingStrategy(dataArchiveParameters.getShardingStrategy());
         parameters.setScanBatchSize(dataArchiveParameters.getScanBatchSize());
         parameters
-                .setSourceDs(DataSourceInfoBuilder.build(
+                .setSourceDs(DataSourceInfoMapper.toDataSourceInfo(
                         databaseService.findDataSourceForConnectById(dataArchiveParameters.getSourceDatabaseId())));
         parameters
-                .setTargetDs(DataSourceInfoBuilder.build(
+                .setTargetDs(DataSourceInfoMapper.toDataSourceInfo(
                         databaseService.findDataSourceForConnectById(dataArchiveParameters.getTargetDataBaseId())));
         parameters.getSourceDs().setDatabaseName(dataArchiveParameters.getSourceDatabaseName());
         parameters.getTargetDs().setDatabaseName(dataArchiveParameters.getTargetDatabaseName());
         parameters.getSourceDs().setConnectionCount(2 * (parameters.getReadThreadCount()
                 + parameters.getWriteThreadCount()));
         parameters.getTargetDs().setConnectionCount(parameters.getSourceDs().getConnectionCount());
+        parameters.setTableStructureSyncEnabled(dataArchiveParameters.isTableStructureSyncEnabled());
 
         Long jobId = publishJob(parameters);
         scheduleTaskRepository.updateJobIdById(taskEntity.getId(), jobId);
