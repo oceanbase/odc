@@ -26,10 +26,9 @@ import java.util.stream.Collectors;
 
 import javax.validation.constraints.NotEmpty;
 
-import org.springframework.validation.annotation.Validated;
-
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionFactory;
+import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.connection.logicaldatabase.model.DataNode;
 import com.oceanbase.odc.service.connection.logicaldatabase.model.LogicalTable;
@@ -48,9 +47,9 @@ import lombok.extern.slf4j.Slf4j;
  * @Description: []
  */
 @Slf4j
-@Validated
 public class LogicalTableFinder {
     public static List<LogicalTable> find(@NotEmpty List<Database> databases) {
+        Verify.notEmpty(databases, "LogicalTableFinder#find.databases");
         Map<Long, List<Database>> dataSourceId2Databases =
                 databases.stream().collect(Collectors.groupingBy(database -> database.getDataSource().getId()));
         Map<Long, ConnectionConfig> id2DataSource = new HashMap<>();
@@ -66,7 +65,7 @@ public class LogicalTableFinder {
                 String databaseName = entry.getKey();
                 List<String> tableNames = entry.getValue();
                 tableNames.forEach(tableName -> {
-                    DataNode dataNode = new DataNode(dataSource, databaseName, tableName, null);
+                    DataNode dataNode = new DataNode(dataSource, databaseName, tableName);
                     dataNodes.add(dataNode);
                 });
             });
@@ -97,9 +96,8 @@ public class LogicalTableFinder {
             final List<DataNode>[] majorityDataNodes = new List[] {new ArrayList<>()};
 
             for (DataNode dataNode : logicalTable.getActualDataNodes()) {
-                dataNode.setTable(tables
+                String dataNodeSignature = dataNode.getStructureSignature(tables
                         .getOrDefault(dataNode.getDataSourceConfig().getId() + "." + dataNode.getFullName(), null));
-                String dataNodeSignature = dataNode.getStructureSignature();
                 sha1ToDataNodes.computeIfAbsent(dataNodeSignature, k -> new ArrayList<>()).add(dataNode);
                 if (sha1ToDataNodes.get(dataNodeSignature).size() > majorityDataNodes[0].size()) {
                     majorityDataNodes[0] = sha1ToDataNodes.get(dataNodeSignature);

@@ -32,9 +32,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import javax.validation.Valid;
-import javax.validation.constraints.NotEmpty;
-
 import org.apache.commons.collections4.CollectionUtils;
 
 import com.oceanbase.odc.common.lang.Pair;
@@ -61,7 +58,8 @@ public class LogicalTableRecognitionUtils {
     private static final String DOUBLE_RIGHT_SQUARE_BRACKET = "]]";
     private static final Pattern DIGIT_PATTERN = Pattern.compile("\\d+");
 
-    public static List<LogicalTable> recognizeLogicalTablesWithExpression(@NotEmpty List<DataNode> dataNodes) {
+    public static List<LogicalTable> recognizeLogicalTablesWithExpression(List<DataNode> dataNodes) {
+        Verify.notEmpty(dataNodes, "LogicalTableRecognitionUtils#recognizeLogicalTablesWithExpression.dataNodes");
         // find all logical tables with the same pattern
         List<LogicalTable> logicalTables = recognizeLogicalTables(dataNodes);
 
@@ -99,7 +97,8 @@ public class LogicalTableRecognitionUtils {
         return logicalTables;
     }
 
-    public static List<LogicalTable> recognizeLogicalTables(@Valid @NotEmpty List<DataNode> dataNodes) {
+    public static List<LogicalTable> recognizeLogicalTables(List<DataNode> dataNodes) {
+        Verify.notEmpty(dataNodes, "LogicalTableFinder#recognizeLogicalTables.dataNodes");
         // replace all table names with a pattern that replaces digits with [#]
         Map<String, List<DataNode>> basePattern2Tables = dataNodes.stream().collect(
                 Collectors.groupingBy(

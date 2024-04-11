@@ -55,16 +55,13 @@ public class DataNode {
 
     private String tableName;
 
-    @JsonIgnore
-    private DBTable table;
-
     public String getFullName() {
         return schemaName + DELIMITER + tableName;
     }
 
 
     @JsonIgnore
-    public String getStructureSignature() {
+    public String getStructureSignature(DBTable table) {
         if (Objects.isNull(table)) {
             return "[ODC] NULL OBJECT";
         }
