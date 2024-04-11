@@ -19,6 +19,7 @@ package com.oceanbase.odc.service.session.initializer;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -58,13 +59,24 @@ public class SessionCreatedInitializer implements ConnectionInitializer {
     @Override
     public void init(Connection connection) throws SQLException {
         long start = System.currentTimeMillis();
-        String initScript = connectionConfig.getSessionInitScript();
-        if (StringUtils.isEmpty(initScript)) {
+        String odcInternalInitScript = connectionConfig.getInternalSessionInitScript();
+        String userDefinedInitScript = connectionConfig.getSessionInitScript();
+        List<String> sqls = new ArrayList<>();
+        if (StringUtils.isEmpty(userDefinedInitScript) && StringUtils.isEmpty(odcInternalInitScript)) {
             return;
         }
-        List<String> sqls = SqlCommentProcessor.removeSqlComments(
-                initScript, ";", connectionConfig.getDialectType(), false).stream().map(OffsetString::getStr).collect(
-                        Collectors.toList());
+        if (StringUtils.isNotEmpty(odcInternalInitScript)) {
+            sqls.addAll(SqlCommentProcessor.removeSqlComments(
+                    odcInternalInitScript, ";", connectionConfig.getDialectType(), false).stream()
+                    .map(OffsetString::getStr)
+                    .collect(Collectors.toList()));
+        }
+        if (StringUtils.isNotEmpty(userDefinedInitScript)) {
+            sqls.addAll(SqlCommentProcessor.removeSqlComments(
+                    userDefinedInitScript, ";", connectionConfig.getDialectType(), false).stream()
+                    .map(OffsetString::getStr)
+                    .collect(Collectors.toList()));
+        }
         if (CollectionUtils.isEmpty(sqls)) {
             return;
         }

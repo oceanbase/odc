@@ -243,7 +243,8 @@ public class ConnectionTesting {
 
     private void testInitScript(ConnectionExtensionPoint extensionPoint,
             String schema, ConnectionConfig config) throws SQLException {
-        if (StringUtils.isEmpty(config.getSessionInitScript())) {
+        if (StringUtils.isEmpty(config.getSessionInitScript())
+                && StringUtils.isEmpty(config.getInternalSessionInitScript())) {
             return;
         }
         String jdbcUrl =

@@ -303,7 +303,7 @@ public class ConnectionConfig
     private OBInstanceType instanceType;
 
     @JsonIgnore
-    private OBInstanceRoleType roleType;
+    private OBInstanceRoleType instanceRoleType;
 
     @JsonIgnore
     private transient Map<String, Object> attributes;
@@ -429,9 +429,10 @@ public class ConnectionConfig
         return queryTimeoutSeconds;
     }
 
+    @JsonIgnore
     public String getInternalSessionInitScript() {
-        if (this.roleType == OBInstanceRoleType.PHYSICAL_STANDBY && getDialectType().isOceanbase()) {
-            return "set ";
+        if (this.instanceRoleType == OBInstanceRoleType.PHYSICAL_STANDBY && getDialectType().isOceanbase()) {
+            return "set ob_read_consistency='WEAK';";
         }
         return null;
     }

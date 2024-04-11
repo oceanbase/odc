@@ -138,6 +138,9 @@ public class TestConnectionReq implements CloudConnectionConfig, SSLConnectionCo
 
     private Map<String, Object> jdbcUrlParameters;
 
+    @JsonIgnore
+    private OBInstanceRoleType instanceRoleType;
+
     public DialectType getDialectType() {
         if (Objects.nonNull(this.type)) {
             return this.type.getDialectType();
