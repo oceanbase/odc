@@ -118,11 +118,6 @@ public class RiskLevelService {
     }
 
     @SkipAuthorize("internal usage")
-    public Optional<RiskLevel> findRawById(@NonNull Long id) {
-        return riskLevelRepository.findById(id).map(riskLevelMapper::entityToModel);
-    }
-
-    @SkipAuthorize("internal usage")
     public boolean exists(@NonNull Long organizationId, @NonNull Long id) {
         RiskLevelEntity example = new RiskLevelEntity();
         example.setOrganizationId(organizationId);

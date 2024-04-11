@@ -94,7 +94,7 @@ public class ResourceRoleService {
             entity.setOrganizationId(authenticationFacade.currentOrganizationId());
             userResourceRoleEntityList.add(entity);
         });
-        userResourceRoleRepository.saveAll(userResourceRoleEntityList);
+        userResourceRoleRepository.batchCreate(userResourceRoleEntityList);
         return userResourceRoleList;
     }
 

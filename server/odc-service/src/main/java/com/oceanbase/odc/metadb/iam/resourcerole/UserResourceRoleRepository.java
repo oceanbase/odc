@@ -18,18 +18,18 @@ package com.oceanbase.odc.metadb.iam.resourcerole;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Function;
 
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.oceanbase.odc.common.jpa.InsertSqlTemplateBuilder;
+import com.oceanbase.odc.config.jpa.OdcJpaRepository;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
 
-public interface UserResourceRoleRepository
-        extends JpaRepository<UserResourceRoleEntity, Long>, JpaSpecificationExecutor<UserResourceRoleEntity> {
+public interface UserResourceRoleRepository extends OdcJpaRepository<UserResourceRoleEntity, Long> {
 
     List<UserResourceRoleEntity> findByOrganizationIdAndUserId(Long organizationId, Long userId);
 
@@ -107,5 +107,21 @@ public interface UserResourceRoleRepository
             nativeQuery = true)
     List<UserResourceRoleEntity> findByUserIdAndResourceType(@Param("userId") Long userId,
             @Param("resourceType") ResourceType resourceType);
+
+    default List<UserResourceRoleEntity> batchCreate(List<UserResourceRoleEntity> entities) {
+        String sql = InsertSqlTemplateBuilder.from("iam_user_resource_role")
+                .field(UserResourceRoleEntity_.userId)
+                .field(UserResourceRoleEntity_.resourceId)
+                .field(UserResourceRoleEntity_.resourceRoleId)
+                .field(UserResourceRoleEntity_.organizationId)
+                .build();
+        List<Function<UserResourceRoleEntity, Object>> getter = valueGetterBuilder()
+                .add(UserResourceRoleEntity::getUserId)
+                .add(UserResourceRoleEntity::getResourceId)
+                .add(UserResourceRoleEntity::getResourceRoleId)
+                .add(UserResourceRoleEntity::getOrganizationId)
+                .build();
+        return batchCreate(entities, sql, getter, UserResourceRoleEntity::setId);
+    }
 
 }

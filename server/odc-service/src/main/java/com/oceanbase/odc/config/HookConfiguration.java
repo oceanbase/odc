@@ -37,7 +37,6 @@ import com.oceanbase.odc.core.shared.exception.BadRequestException;
 import com.oceanbase.odc.metadb.collaboration.ProjectEntity;
 import com.oceanbase.odc.metadb.collaboration.ProjectRepository;
 import com.oceanbase.odc.service.collaboration.environment.EnvironmentService;
-import com.oceanbase.odc.service.collaboration.project.ProjectService;
 import com.oceanbase.odc.service.config.UserConfigService;
 import com.oceanbase.odc.service.connection.ConnectionService;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
@@ -72,9 +71,6 @@ public class HookConfiguration {
     private RiskLevelService riskLevelService;
 
     @Autowired
-    private ProjectService projectService;
-
-    @Autowired
     private ResourceRoleService resourceRoleService;
 
     @Autowired
@@ -96,7 +92,7 @@ public class HookConfiguration {
     public void init() {
         userService.addPostUserDeleteHook(event -> {
             Long userId = event.getUserId();
-            projectService.deleteUserRelatedResourceRoles(userId);
+            resourceRoleService.deleteByUserId(userId);
             userConfigService.deleteUserConfigurations(userId);
         });
         log.info("PostUserDeleteHook added");

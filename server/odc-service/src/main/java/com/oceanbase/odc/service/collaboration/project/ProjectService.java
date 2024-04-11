@@ -166,7 +166,7 @@ public class ProjectService {
             entity.setOrganizationId(user.getOrganizationId());
             return entity;
         }).collect(Collectors.toList());
-        userResourceRoleRepository.saveAll(userResourceRoleEntities);
+        userResourceRoleRepository.batchCreate(userResourceRoleEntities);
     }
 
     @PreAuthenticate(actions = "create", resourceType = "ODC_PROJECT", isForAll = true)
@@ -337,14 +337,6 @@ public class ProjectService {
         deleteMemberRelatedDatabasePermissions(userId, projectId);
         return true;
     }
-
-    @Transactional(rollbackFor = Exception.class)
-    @SkipAuthorize("internal usage")
-    public boolean deleteUserRelatedResourceRoles(@NonNull Long userId) {
-        resourceRoleService.deleteByUserId(userId);
-        return true;
-    }
-
 
     @PreAuthenticate(hasAnyResourceRole = {"OWNER"}, resourceType = "ODC_PROJECT", indexOfIdParam = 0)
     @Transactional(rollbackFor = Exception.class)

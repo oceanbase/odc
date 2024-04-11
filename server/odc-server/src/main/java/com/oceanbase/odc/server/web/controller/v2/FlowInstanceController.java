@@ -16,13 +16,10 @@
 package com.oceanbase.odc.server.web.controller.v2;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -62,8 +59,6 @@ import com.oceanbase.odc.service.flow.util.TaskLogFilenameGenerator;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.partitionplan.PartitionPlanScheduleService;
 import com.oceanbase.odc.service.partitionplan.model.PartitionPlanConfig;
-import com.oceanbase.odc.service.permission.database.model.ApplyDatabaseParameter;
-import com.oceanbase.odc.service.permission.database.model.ApplyDatabaseParameter.ApplyDatabase;
 import com.oceanbase.odc.service.session.model.SqlExecuteResult;
 import com.oceanbase.odc.service.task.model.OdcTaskLogLevel;
 
@@ -90,8 +85,6 @@ public class FlowInstanceController {
     @Autowired
     private PartitionPlanScheduleService partitionPlanScheduleService;
 
-    private static final int MAX_APPLY_DATABASE_SIZE = 10;
-
     @ApiOperation(value = "createFlowInstance", notes = "创建流程实例，返回流程实例")
     @RequestMapping(value = "/", method = RequestMethod.POST)
     public ListResponse<FlowInstanceDetailResp> createFlowInstance(
@@ -100,24 +93,7 @@ public class FlowInstanceController {
         if (authenticationFacade.currentUser().getOrganizationType() == OrganizationType.INDIVIDUAL) {
             return Responses.list(flowInstanceService.createIndividualFlowInstance(flowInstanceReq));
         } else {
-            if (flowInstanceReq.getTaskType() == TaskType.APPLY_DATABASE_PERMISSION) {
-                ApplyDatabaseParameter parameter = (ApplyDatabaseParameter) flowInstanceReq.getParameters();
-                List<ApplyDatabase> databases = new ArrayList<>(parameter.getDatabases());
-                if (CollectionUtils.isNotEmpty(databases) && databases.size() > MAX_APPLY_DATABASE_SIZE) {
-                    throw new IllegalStateException("The number of databases to apply for exceeds the maximum limit");
-                }
-                List<FlowInstanceDetailResp> resp = databases.stream().map(e -> {
-                    List<ApplyDatabase> applyDatabases = new ArrayList<>();
-                    applyDatabases.add(e);
-                    parameter.setDatabases(applyDatabases);
-                    flowInstanceReq.setDatabaseId(e.getId());
-                    flowInstanceReq.setParameters(parameter);
-                    return flowInstanceService.create(flowInstanceReq);
-                }).collect(Collectors.toList()).stream().flatMap(Collection::stream).collect(Collectors.toList());
-                return Responses.list(resp);
-            } else {
-                return Responses.list(flowInstanceService.create(flowInstanceReq));
-            }
+            return Responses.list(flowInstanceService.create(flowInstanceReq));
         }
     }
 
