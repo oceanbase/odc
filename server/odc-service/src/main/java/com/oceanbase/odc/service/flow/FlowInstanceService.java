@@ -1155,6 +1155,12 @@ public class FlowInstanceService {
                 }).collect(Collectors.toList());
                 variables.setAttribute(Variable.DATABASE_OWNERS_NAMES, JsonUtils.toJson(ownerNames));
             }
+        }else{
+            variables.setAttribute(Variable.ENVIRONMENT_NAME, "");
+            variables.setAttribute(Variable.DATABASE_NAME, "");
+            variables.setAttribute(Variable.DATABASE_OWNERS_IDS, JsonUtils.toJson(Collections.emptyList()));
+            variables.setAttribute(Variable.DATABASE_OWNERS_ACCOUNTS, JsonUtils.toJson(Collections.emptyList()));
+            variables.setAttribute(Variable.DATABASE_OWNERS_NAMES, JsonUtils.toJson(Collections.emptyList()));
         }
         // set SQL content if task type is DatabaseChange
         if (taskType == TaskType.ASYNC) {
@@ -1168,7 +1174,7 @@ public class FlowInstanceService {
         } else {
             String sql = "";
             variables.setAttribute(Variable.SQL_CONTENT, JsonUtils.toJson(sql));
-            variables.setAttribute(Variable.SQL_CONTENT_JSON_ARRAY, JsonUtils.toJson(sql));
+            variables.setAttribute(Variable.SQL_CONTENT_JSON_ARRAY, JsonUtils.toJson(Collections.emptyList()));
         }
         // set ODC URL site
         List<Configuration> configurations = systemConfigService.queryByKeyPrefix(ODC_SITE_URL);
