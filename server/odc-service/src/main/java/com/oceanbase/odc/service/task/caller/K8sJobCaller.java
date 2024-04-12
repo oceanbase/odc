@@ -90,6 +90,7 @@ public class K8sJobCaller extends BaseJobCaller {
     @Override
     protected boolean isExecutorExist(ExecutorIdentifier identifier) throws JobException {
         Optional<K8sJobResponse> executorOptional = client.get(identifier.getNamespace(), identifier.getExecutorName());
-        return executorOptional.isPresent();
+        return executorOptional.isPresent() &&
+                PodStatus.of(executorOptional.get().getResourceStatus()) != PodStatus.TERMINATING;
     }
 }
