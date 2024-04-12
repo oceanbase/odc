@@ -131,7 +131,9 @@ public class SingleConnectionDataSource extends BaseClassBasedDataSource impleme
     private boolean tryLock() {
         try {
             boolean locked = this.lock.tryLock(timeOutMillis, TimeUnit.MILLISECONDS);
-            log.info("get connection lock success, locked={}, lock={}", locked, this.lock.hashCode());
+            if (locked) {
+                log.info("Get connection lock success, lock={}", this.lock.hashCode());
+            }
             return locked;
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
