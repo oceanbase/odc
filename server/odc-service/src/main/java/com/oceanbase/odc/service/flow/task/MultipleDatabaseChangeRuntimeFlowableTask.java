@@ -32,7 +32,6 @@ import com.oceanbase.odc.metadb.flow.ServiceTaskInstanceRepository;
 import com.oceanbase.odc.metadb.task.TaskEntity;
 import com.oceanbase.odc.service.flow.FlowInstanceService;
 import com.oceanbase.odc.service.flow.FlowableAdaptor;
-import com.oceanbase.odc.service.flow.instance.FlowTaskInstance;
 import com.oceanbase.odc.service.flow.model.CreateFlowInstanceReq;
 import com.oceanbase.odc.service.flow.model.FlowInstanceDetailResp;
 import com.oceanbase.odc.service.flow.model.FlowTaskExecutionStrategy;
@@ -52,8 +51,6 @@ public class MultipleDatabaseChangeRuntimeFlowableTask extends BaseODCFlowTaskDe
 
     private volatile boolean isSuccessful = false;
     private volatile boolean isFailure = false;
-
-    private Long taskId;
 
     private Long batchId;
 
@@ -81,23 +78,34 @@ public class MultipleDatabaseChangeRuntimeFlowableTask extends BaseODCFlowTaskDe
     @Override
     protected Void start(Long taskId, TaskService taskService, DelegateExecution execution)
             throws InterruptedException {
+
         try {
-            FlowTaskInstance flowTaskInstance = flowableAdaptor.getTaskInstanceByActivityId(
+            /*FlowTaskInstance flowTaskInstance = flowableAdaptor.getTaskInstanceByActivityId(
                     execution.getCurrentActivityId(), getFlowInstanceId())
                     .orElseThrow(() -> new RuntimeException("获取流程实例对象失败"));
             log.info("multiple database task starts, taskId={}, activityId={}", taskId,
                     execution.getCurrentActivityId());
             taskService.start(flowTaskInstance.getTargetTaskId(), generateResult(false));
-            Long targetTaskId = flowTaskInstance.getTargetTaskId();
-            TaskEntity detail = taskService.detail(targetTaskId);
-            this.taskId = targetTaskId;
+            Long targetTaskId = flowTaskInstance.getTargetTaskId();*/
+            TaskEntity detail = taskService.detail(taskId);
+            //this.taskId = targetTaskId;
             MultipleDatabaseChangeParameters multipleDatabaseChangeParameters = JsonUtils.fromJson(
                     detail.getParametersJson(), MultipleDatabaseChangeParameters.class);
-
-            this.batchId = multipleDatabaseChangeParameters.getBatchId();
+            Integer batchId ;
+            Object value =  multipleDatabaseChangeParameters.getBatchId();
+            if(value==null){
+                batchId=0;
+            }else {
+                batchId=(Integer) value;
+            }
+            multipleDatabaseChangeParameters.setBatchId(batchId + 1);
+            detail.setParametersJson(JsonUtils.toJson(multipleDatabaseChangeParameters));
+            taskService.updateParametersJson(detail);
+            this.batchId = Long.valueOf(batchId);
+            //this.batchId = multipleDatabaseChangeParameters.getBatchId();
             this.batchNumber = (long) multipleDatabaseChangeParameters.getOrderedDatabaseIds().size();
             List<Integer> batchDatabaseIds =
-                    multipleDatabaseChangeParameters.getOrderedDatabaseIds().get(Math.toIntExact(this.batchId));
+                    multipleDatabaseChangeParameters.getOrderedDatabaseIds().get(batchId);
             Set<Long> flowInstanceIds = new HashSet<>();
             for (Integer batchDatabaseId : batchDatabaseIds) {
                 // 构造单库工单参数，绑定父工单
@@ -113,10 +121,10 @@ public class MultipleDatabaseChangeRuntimeFlowableTask extends BaseODCFlowTaskDe
                 flowInstanceIds.add(individualFlowInstance.get(0).getId());
             }
 
-            long orinalTime = System.currentTimeMillis();
+            long originalTime = System.currentTimeMillis();
             // 是否成功标志
             boolean flag = true;
-            while (System.currentTimeMillis() - orinalTime <= multipleDatabaseChangeParameters.getTimeoutMillis()) {
+            while (System.currentTimeMillis() - originalTime <= multipleDatabaseChangeParameters.getTimeoutMillis()) {
                 // 是否完成标志，用于跳出循环
                 int number = 0;
                 for (Long flowInstanceId : flowInstanceIds) {
@@ -179,11 +187,11 @@ public class MultipleDatabaseChangeRuntimeFlowableTask extends BaseODCFlowTaskDe
     @Override
     protected void onSuccessful(Long taskId, TaskService taskService) {
         log.info("multiple database task succeed, taskId={}", taskId);
-        // 判断是都是最后一个多库变更任务节点
+        // 判断是否为最后一个多库变更任务节点
         if (this.batchId == batchNumber - 1) {
             // 查询所有单库工单是否成功。
             List<ServiceTaskInstanceEntity> byTargetTaskId = serviceTaskInstanceRepository.findByTargetTaskId(
-                    this.taskId).orElseThrow(() -> new NoSuchElementException("获取工单列表失败"));
+                    taskId).orElseThrow(() -> new NoSuchElementException("获取工单列表失败"));
             List<FlowInstanceEntity> flowInstanceByParentId = flowInstanceService.getFlowInstanceByParentId(
                     byTargetTaskId.get(0).getFlowInstanceId());
             boolean allSucceeded = flowInstanceByParentId.stream()
@@ -196,8 +204,9 @@ public class MultipleDatabaseChangeRuntimeFlowableTask extends BaseODCFlowTaskDe
                 updateFlowInstanceStatus(FlowStatus.EXECUTION_FAILED);
             }
         }
-        taskService.succeed(this.taskId, generateResult(true));
-        super.onSuccessful(this.taskId, taskService);
+        taskService.succeed(taskId, generateResult(true));
+        super.onSuccessful(taskId, taskService);
+
     }
 
     @Override

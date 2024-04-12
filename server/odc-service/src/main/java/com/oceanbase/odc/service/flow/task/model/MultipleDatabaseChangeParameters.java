@@ -44,7 +44,7 @@ public class MultipleDatabaseChangeParameters implements Serializable, TaskParam
     /**
      * 当前批次
      */
-    private Long batchId;
+    private Integer batchId;
     private String sqlContent;
     // 用于前端展示执行SQL文件名
     private List<String> sqlObjectNames;

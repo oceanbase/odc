@@ -65,6 +65,7 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 public class FlowTaskInstance extends BaseFlowNodeInstance {
+    public static final String PENDING_APPROVAL_TASK_NAME_PREFIX=FlowNodeType.SERVICE_TASK.name()+"_wait_task_";
 
     public static final String ABORT_VARIABLE_NAME = "aborted";
     @Setter
@@ -267,7 +268,8 @@ public class FlowTaskInstance extends BaseFlowNodeInstance {
         Verify.verify(getStatus() == FlowNodeStatus.PENDING, "Task status is illegal: " + getStatus());
 
         List<FlowableElement> elements =
-                flowableAdaptor.getFlowableElementByType(getId(), getNodeType(), FlowableElementType.USER_TASK);
+                flowableAdaptor.getFlowableElementByType(getId(), getNodeType(), FlowableElementType.USER_TASK).stream().filter(x->x.getName().startsWith(PENDING_APPROVAL_TASK_NAME_PREFIX)).collect(
+                    Collectors.toList());
         Verify.verify(!elements.isEmpty(), "Can not find any user task related to task instance, id " + getId());
         log.info("Get the execution node of the task instance, instanceId={}, elements={}", getId(), elements);
 
@@ -277,9 +279,11 @@ public class FlowTaskInstance extends BaseFlowNodeInstance {
                 "Can not find process instance by flow instance id " + getFlowInstanceId());
 
         String pid = optional.get();
+        // todo taskService.createTaskQuery()没有数据
         List<Task> tasks = taskService.createTaskQuery().processInstanceId(pid).list().stream()
                 .filter(t -> elements.stream().anyMatch(e -> Objects.equals(e.getName(), t.getName())))
                 .collect(Collectors.toList());
+        // todo 暂时关闭
         Verify.verify(tasks.size() == elements.size(), "Some tasks is not found");
         Map<String, Object> variables = new HashMap<>();
         variables.putIfAbsent(ABORT_VARIABLE_NAME, aborted);

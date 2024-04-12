@@ -336,7 +336,7 @@ public class FlowInstanceConfigurer extends GraphConfigurer<FlowInstance, BaseFl
             log.debug("Start defining a manual execution task node instance, instanceType={}, strategy={}",
                     nextNode.getNodeType(), strategyConfig.getStrategy());
         }
-        String waitTaskName = FlowNodeType.SERVICE_TASK.name() + "_wait_task_" + getNameSuffix(nextNode);
+        String waitTaskName = FlowTaskInstance.PENDING_APPROVAL_TASK_NAME_PREFIX + getNameSuffix(nextNode);
         UserTaskBuilder userTaskBuilder = nullSafeGetNodeBuilder(waitTaskName, nextNode, () -> {
             UserTaskBuilder builder = new UserTaskBuilder(waitTaskName);
             userManuTaskConsumer.accept(builder);

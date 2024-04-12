@@ -907,14 +907,17 @@ public class FlowInstanceService {
                 .convert(flowTaskProperties.getDefaultExecutionExpirationIntervalHours(), TimeUnit.HOURS))).collect(
                         Collectors.toList());
 
-        List<TaskEntity> taskEntities = new ArrayList<>();
+        /*List<TaskEntity> taskEntities = new ArrayList<>();
         for (long i = 0; i < parameters.getOrderedDatabaseIds().size(); i++) {
             parameters.setBatchId(i);
             TaskEntity taskEntity = taskService.create(flowInstanceReq, (int) TimeUnit.SECONDS
                     .convert(flowTaskProperties.getDefaultExecutionExpirationIntervalHours(), TimeUnit.HOURS));
             Verify.notNull(taskEntity.getId(), "TaskId can not be null");
             taskEntities.add(taskEntity);
-        }
+        }*/
+        TaskEntity taskEntity = taskService.create(flowInstanceReq, (int) TimeUnit.SECONDS
+            .convert(flowTaskProperties.getDefaultExecutionExpirationIntervalHours(), TimeUnit.HOURS));
+        Verify.notNull(taskEntity.getId(), "TaskId can not be null");
         // 生成流程实例
 
         FlowInstance flowInstance = flowFactory.generateFlowInstance(generateFlowInstanceName(flowInstanceReq),
@@ -939,8 +942,7 @@ public class FlowInstanceService {
                 FlowInstanceConfigurer targetConfigurer =
                         buildConfigurerForMultiple(riskLevels.get(i).getApprovalFlowConfig(),
                                 flowInstance, flowInstanceReq.getTaskType(),
-                                taskEntities.stream().map(x -> x.getId()).collect(
-                                        Collectors.toList()),
+                                taskEntity.getId(),
                                 flowInstanceReq.getParameters(), flowInstanceReq);
                 startConfigurer.route(
                         String.format("${%s == %d}", RuntimeTaskConstants.RISKLEVEL, riskLevels.get(i).getLevel()),
@@ -958,7 +960,7 @@ public class FlowInstanceService {
         FlowTaskUtil.setFlowInstanceId(variables, flowInstance.getId());
         FlowTaskUtil.setTemplateVariables(variables, buildTemplateVariables(flowInstanceReq,
                 connectionConfigs.get(0)));
-        initVariables(variables, taskEntities.get(0), preCheckTaskEntityList.get(0), connectionConfigs.get(0),
+        initVariables(variables, taskEntity, preCheckTaskEntityList.get(0), connectionConfigs.get(0),
                 buildRiskLevelDescriber(flowInstanceReq));
         flowInstance.start(variables);
         log.info("New flow instance succeeded, instanceId={}, flowInstanceReq={}",
@@ -1042,7 +1044,7 @@ public class FlowInstanceService {
             @NonNull ApprovalFlowConfig approvalFlowConfig,
             @NonNull FlowInstance flowInstance,
             @NonNull TaskType taskType,
-            @NonNull List<Long> targetTaskIds,
+            @NonNull Long taskId,
             @NonNull TaskParameters parameters,
             @NonNull CreateFlowInstanceReq flowInstanceReq) {
         // 获取审批节点配置列表
@@ -1078,13 +1080,16 @@ public class FlowInstanceService {
              */
             if (nodeSequence == nodeConfigs.size() - 1) {
                 FlowInstanceConfigurer taskConfigurer = null;
-                for (int i = 0; i < targetTaskIds.size(); i++) {
-                    Long targetTaskId = targetTaskIds.get(i);
+                // 按批次创建
+                int orders
+                    = ((MultipleDatabaseChangeParameters) flowInstanceReq.getParameters()).getOrderedDatabaseIds().size();
+                for (int i = 0; i < orders; i++) {
+                    // 创建审批节点
                     // 创建一个任务实例，并根据任务类型和参数配置任务实例
                     ExecutionStrategyConfig strategyConfig = ExecutionStrategyConfig.from(flowInstanceReq,
                             approvalFlowConfig.getWaitExecutionExpirationIntervalSeconds());
                     FlowTaskInstance taskInstance;
-                    if (i == targetTaskIds.size() - 1) {
+                    if (i == orders - 1) {
                         taskInstance = flowFactory.generateFlowTaskInstance(flowInstance.getId(), false, true,
                                 taskType, strategyConfig);
                     } else {
@@ -1092,7 +1097,7 @@ public class FlowInstanceService {
                                 taskType, strategyConfig);
                     }
 
-                    taskInstance.setTargetTaskId(targetTaskId);
+                    taskInstance.setTargetTaskId(taskId);
                     if (taskConfigurer == null) {
                         taskConfigurer = flowInstance.newFlowInstanceConfigurer(taskInstance);
                     } else {
