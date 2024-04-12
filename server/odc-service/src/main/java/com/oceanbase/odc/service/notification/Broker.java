@@ -20,7 +20,6 @@ import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import com.oceanbase.odc.common.util.ExceptionUtils;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
@@ -88,7 +87,6 @@ public class Broker {
         }
     }
 
-    @Transactional(rollbackFor = Exception.class)
     public void enqueueEvent(Event event) {
         Optional<OrganizationEntity> optional = organizationRepository.findById(event.getOrganizationId());
         if (optional.isPresent() && optional.get().getType() == OrganizationType.INDIVIDUAL) {

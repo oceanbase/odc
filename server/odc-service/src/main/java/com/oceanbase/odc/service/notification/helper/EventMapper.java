@@ -59,13 +59,15 @@ public class EventMapper {
         entity.setTriggerTime(event.getTriggerTime());
         entity.setProjectId(event.getProjectId());
         if (Objects.nonNull(event.getLabels())) {
-            entity.setLabels(event.getLabels().entrySet().stream().map(entry -> {
-                EventLabelEntity labelEntity = new EventLabelEntity();
-                labelEntity.setKey(entry.getKey());
-                labelEntity.setValue(entry.getValue());
-                labelEntity.setEvent(entity);
-                return labelEntity;
-            }).collect(Collectors.toList()));
+            entity.setLabels(event.getLabels().entrySet().stream()
+                    .filter(entry -> entry.getValue() != null)
+                    .map(entry -> {
+                        EventLabelEntity labelEntity = new EventLabelEntity();
+                        labelEntity.setKey(entry.getKey());
+                        labelEntity.setValue(entry.getValue());
+                        labelEntity.setEvent(entity);
+                        return labelEntity;
+                    }).collect(Collectors.toList()));
         }
         return entity;
     }
