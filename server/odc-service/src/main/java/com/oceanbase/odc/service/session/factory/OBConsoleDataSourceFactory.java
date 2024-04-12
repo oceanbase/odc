@@ -48,7 +48,8 @@ import com.oceanbase.odc.service.connection.model.ConnectionConfig.SSLFileEntry;
 import com.oceanbase.odc.service.connection.model.OBTenantEndpoint;
 import com.oceanbase.odc.service.connection.util.ConnectionMapper;
 import com.oceanbase.odc.service.plugin.ConnectionPluginUtil;
-import com.oceanbase.odc.service.session.initializer.SessionCreatedInitializer;
+import com.oceanbase.odc.service.session.initializer.BackupInstanceInitializer;
+import com.oceanbase.odc.service.session.initializer.DataSourceInitScriptInitializer;
 
 import lombok.NonNull;
 import lombok.Setter;
@@ -212,7 +213,8 @@ public class OBConsoleDataSourceFactory implements CloneableDataSourceFactory {
                 initializers.forEach(dataSource::addInitializer);
             }
         }
-        dataSource.addInitializer(new SessionCreatedInitializer(connectionConfig));
+        dataSource.addInitializer(new BackupInstanceInitializer(connectionConfig));
+        dataSource.addInitializer(new DataSourceInitScriptInitializer(connectionConfig));
         return dataSource;
     }
 

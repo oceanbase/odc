@@ -19,6 +19,9 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Objects;
 import java.util.Properties;
 
@@ -53,7 +56,8 @@ import com.oceanbase.odc.service.connection.ssl.ConnectionSSLAdaptor;
 import com.oceanbase.odc.service.connection.util.ConnectTypeUtil;
 import com.oceanbase.odc.service.plugin.ConnectionPluginUtil;
 import com.oceanbase.odc.service.session.factory.OBConsoleDataSourceFactory;
-import com.oceanbase.odc.service.session.initializer.SessionCreatedInitializer;
+import com.oceanbase.odc.service.session.initializer.BackupInstanceInitializer;
+import com.oceanbase.odc.service.session.initializer.DataSourceInitScriptInitializer;
 
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
@@ -122,13 +126,19 @@ public class ConnectionTesting {
              * <pre>
              *     1. 用户的 username：
              *        a. 第一种场景下使用 {@link OBConsoleDataSourceFactory#getUsername(ConnectionConfig)}
-             *           获取的用户名就是 obclient 串中 {@code -u} 中填入的内容，这是符合测试语义的。
-             *        b. 第二种场景下由于 {@link ConnectType} 不准，如果信任该值可能导致 {@code username} 格式错误，因此需要将其设置为
+             *           获取的用户名就是 obclient 串中 {@code
+             * -u
+             * } 中填入的内容，这是符合测试语义的。
+             *        b. 第二种场景下由于 {@link ConnectType} 不准，如果信任该值可能导致 {@code
+             * username
+             * } 格式错误，因此需要将其设置为
              *           null，然后使用 {@link OBConsoleDataSourceFactory#getUsername(ConnectionConfig)}
              *           此时获取到的内容是 {@link ConnectionConfig} 中 {@code user@tenant#cluster}，这是符合测试语义的。
              *     2. 要连接到的目标 schema：
              *        a. 第一种场景下使用 {@link OBConsoleDataSourceFactory#getDefaultSchema(ConnectionConfig)}
-             *           获取到的就是 obclient 串中 {@code -D} 中的内容，这同样是符合测试语义的。
+             *           获取到的就是 obclient 串中 {@code
+             * -D
+             * } 中的内容，这同样是符合测试语义的。
              *        b. 第二种场景下需要分情况讨论：
              *           1). 如果 {@link ConnectType#getDialectType()} 为 {@link DialectType#OB_MYSQL}，此时 schema 应该使用
              *               {@link OBConsoleDataSourceFactory#getDefaultSchema(ConnectionConfig)}
@@ -243,10 +253,6 @@ public class ConnectionTesting {
 
     private void testInitScript(ConnectionExtensionPoint extensionPoint,
             String schema, ConnectionConfig config) throws SQLException {
-        if (StringUtils.isEmpty(config.getSessionInitScript())
-                && StringUtils.isEmpty(config.getInternalSessionInitScript())) {
-            return;
-        }
         String jdbcUrl =
                 extensionPoint.generateJdbcUrl(getJdbcUrlProperties(config, schema));
 
@@ -254,13 +260,18 @@ public class ConnectionTesting {
         properties.setProperty("socketTimeout", ConnectTypeUtil.REACHABLE_TIMEOUT_MILLIS + "");
         properties.setProperty("connectTimeout", ConnectTypeUtil.REACHABLE_TIMEOUT_MILLIS + "");
 
-        ConnectionInitializer initializer = new SessionCreatedInitializer(config, false);
+        List<ConnectionInitializer> initializers = new ArrayList<>();
+        initializers.addAll(
+                Arrays.asList(new DataSourceInitScriptInitializer(config, false),
+                        new BackupInstanceInitializer(config)));
         try (Connection connection = DriverManager.getConnection(jdbcUrl, properties);
                 Statement statement = connection.createStatement()) {
             if (queryTimeoutSeconds >= 0) {
                 statement.setQueryTimeout(queryTimeoutSeconds);
             }
-            initializer.init(connection);
+            for (ConnectionInitializer initializer : initializers) {
+                initializer.init(connection);
+            }
         }
     }
 

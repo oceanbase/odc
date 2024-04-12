@@ -19,7 +19,6 @@ package com.oceanbase.odc.service.session.initializer;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -35,23 +34,23 @@ import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * {@link SessionCreatedInitializer}
+ * {@link DataSourceInitScriptInitializer}
  *
  * @author yh263208
  * @date 2023-09-12 17:31
  * @since ODC_release_4.2.2
  */
 @Slf4j
-public class SessionCreatedInitializer implements ConnectionInitializer {
+public class DataSourceInitScriptInitializer implements ConnectionInitializer {
 
     private final ConnectionConfig connectionConfig;
     private final boolean eatException;
 
-    public SessionCreatedInitializer(ConnectionConfig connectionConfig) {
+    public DataSourceInitScriptInitializer(ConnectionConfig connectionConfig) {
         this(connectionConfig, true);
     }
 
-    public SessionCreatedInitializer(@NonNull ConnectionConfig connectionConfig, boolean eatException) {
+    public DataSourceInitScriptInitializer(@NonNull ConnectionConfig connectionConfig, boolean eatException) {
         this.eatException = eatException;
         this.connectionConfig = connectionConfig;
     }
@@ -59,24 +58,13 @@ public class SessionCreatedInitializer implements ConnectionInitializer {
     @Override
     public void init(Connection connection) throws SQLException {
         long start = System.currentTimeMillis();
-        String odcInternalInitScript = connectionConfig.getInternalSessionInitScript();
-        String userDefinedInitScript = connectionConfig.getSessionInitScript();
-        List<String> sqls = new ArrayList<>();
-        if (StringUtils.isEmpty(userDefinedInitScript) && StringUtils.isEmpty(odcInternalInitScript)) {
+        String initScript = connectionConfig.getSessionInitScript();
+        if (StringUtils.isEmpty(initScript)) {
             return;
         }
-        if (StringUtils.isNotEmpty(odcInternalInitScript)) {
-            sqls.addAll(SqlCommentProcessor.removeSqlComments(
-                    odcInternalInitScript, ";", connectionConfig.getDialectType(), false).stream()
-                    .map(OffsetString::getStr)
-                    .collect(Collectors.toList()));
-        }
-        if (StringUtils.isNotEmpty(userDefinedInitScript)) {
-            sqls.addAll(SqlCommentProcessor.removeSqlComments(
-                    userDefinedInitScript, ";", connectionConfig.getDialectType(), false).stream()
-                    .map(OffsetString::getStr)
-                    .collect(Collectors.toList()));
-        }
+        List<String> sqls = SqlCommentProcessor.removeSqlComments(
+                initScript, ";", connectionConfig.getDialectType(), false).stream().map(OffsetString::getStr).collect(
+                        Collectors.toList());
         if (CollectionUtils.isEmpty(sqls)) {
             return;
         }
