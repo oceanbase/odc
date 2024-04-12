@@ -685,6 +685,7 @@ INSERT INTO config_system_configuration(`key`, `value`, `description`) VALUES('o
 
 INSERT INTO config_system_configuration(`key`, `value`, `description`) VALUES('odc.features.task.osc.enabled', 'false',
 '是否开启无锁结构变更任务，默认不开启') ON DUPLICATE KEY UPDATE `id`=`id`;
+INSERT INTO config_system_configuration ( `key`, `value`, `description` ) VALUES( 'odc.task.maxConcurrentTaskCount', '30', '计划任务最大并发数' ) ON DUPLICATE KEY UPDATE `id` = `id`;
 
 INSERT INTO config_system_configuration ( `key`, `value`, `description` ) VALUES( 'odc.connect.database.sync.interval-millis', '180000', '同步数据源下所有数据库到 metadb 的间隔时间，默认 3 分钟，单位毫秒' ) ON DUPLICATE KEY UPDATE `id` = `id`;
 INSERT INTO config_system_configuration ( `key`, `value`, `description` ) VALUES( 'odc.task.dlm.default-single-task-row-limit', '20000', 'DLM 单个任务默认每秒行限制' ) ON DUPLICATE KEY UPDATE `id` = `id`;
