@@ -150,7 +150,7 @@ public class SingleConnectionDataSource extends BaseClassBasedDataSource impleme
                     new Class[] {Connection.class},
                     new CloseIgnoreInvocationHandler(connection, this.lock));
         } catch (Exception e) {
-            log.warn("get connection error unlock, hashcode=" + this.lock.hashCode());
+            log.warn("Get connection error unlock, hashcode=" + this.lock.hashCode());
             this.lock.unlock();
             throw e;
         }
@@ -234,7 +234,7 @@ public class SingleConnectionDataSource extends BaseClassBasedDataSource impleme
                     return true;
                 }
             } else if ("close".equals(method.getName())) {
-                log.info("get connection unlock, hashcode=" + this.lock.hashCode());
+                log.info("Get connection unlock, hashcode=" + this.lock.hashCode());
                 lock.unlock();
                 return null;
             } else if ("isClosed".equals(method.getName())) {
