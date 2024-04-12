@@ -118,7 +118,8 @@ public class ProjectServiceTest extends ServiceTestEnv {
     @Test
     public void testGetProject_Success() {
         Project saved = projectService.create(getProject());
-        Mockito.when(resourceRoleService.listByResourceId(Mockito.any()))
+        Mockito.when(
+                resourceRoleService.listByResourceTypeAndId(Mockito.eq(ResourceType.ODC_PROJECT), Mockito.anyLong()))
                 .thenReturn(listUserResourceRole(saved.getId()));
         Project actual = projectService.detail(saved.getId());
         Assert.assertNotNull(actual);

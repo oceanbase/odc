@@ -46,8 +46,6 @@ import com.oceanbase.odc.service.connection.database.model.QueryDatabaseParams;
 import com.oceanbase.odc.service.connection.database.model.TransferDatabasesReq;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.connection.model.QueryConnectionParams;
-import com.oceanbase.odc.service.db.DBIdentitiesService;
-import com.oceanbase.odc.service.db.DBSchemaService;
 import com.oceanbase.odc.service.db.schema.model.DBObjectSyncStatus;
 import com.oceanbase.odc.service.iam.ProjectPermissionValidator;
 
@@ -74,13 +72,6 @@ public class DatabaseServiceTest extends AuthorityTestEnv {
 
     @MockBean
     private ConnectionService connectionService;
-
-    @Autowired
-    private DBSchemaService dbSchemaService;
-
-    @Autowired
-    private DBIdentitiesService dbIdentitiesService;
-
 
     @Before
     public void setUp() {
@@ -215,4 +206,5 @@ public class DatabaseServiceTest extends AuthorityTestEnv {
         environment.setName("fake_env");
         return environment;
     }
+
 }
