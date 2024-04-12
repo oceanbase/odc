@@ -130,6 +130,7 @@ public class SingleConnectionDataSource extends BaseClassBasedDataSource impleme
 
     private boolean tryLock() {
         try {
+            log.info("get connection try lock, hashcode=" + this.lock.hashCode());
             return this.lock.tryLock(timeOutMillis, TimeUnit.MILLISECONDS);
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
@@ -146,6 +147,7 @@ public class SingleConnectionDataSource extends BaseClassBasedDataSource impleme
                     new Class[] {Connection.class},
                     new CloseIgnoreInvocationHandler(connection, this.lock));
         } catch (Exception e) {
+            log.info("get connection error unlock, hashcode=" + this.lock.hashCode());
             this.lock.unlock();
             throw e;
         }
@@ -188,9 +190,7 @@ public class SingleConnectionDataSource extends BaseClassBasedDataSource impleme
         try {
             this.connection = newConnectionFromDriver(getUsername(), getPassword());
             this.lock = new ReentrantLock();
-            if (log.isDebugEnabled()) {
-                log.debug("Established shared JDBC Connection");
-            }
+            log.info("Established shared JDBC Connection");
             prepareConnection(this.connection);
             return getConnectionProxy(this.connection);
         } catch (Throwable e) {
@@ -231,6 +231,7 @@ public class SingleConnectionDataSource extends BaseClassBasedDataSource impleme
                     return true;
                 }
             } else if ("close".equals(method.getName())) {
+                log.info("get connection unlock, hashcode=" + this.lock.hashCode());
                 lock.unlock();
                 return null;
             } else if ("isClosed".equals(method.getName())) {
