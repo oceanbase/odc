@@ -33,15 +33,6 @@ public class ScheduleTaskContextHolder {
      * 请求入口处，将任务日志meta信息写入上下文
      */
 
-    public static void trace(Long scheduleId) {
-        ThreadContext.put(SCHEDULE_ID, String.valueOf(scheduleId));
-    }
-
-    public static void trace(Long scheduleId, String jobType) {
-        ThreadContext.put(SCHEDULE_ID, String.valueOf(scheduleId));
-        ThreadContext.put(JOB_TYPE, jobType);
-    }
-
     public static void trace(Long scheduleId, String jobType, Long scheduleTaskId) {
         ThreadContext.put(SCHEDULE_ID, String.valueOf(scheduleId));
         ThreadContext.put(JOB_TYPE, jobType);

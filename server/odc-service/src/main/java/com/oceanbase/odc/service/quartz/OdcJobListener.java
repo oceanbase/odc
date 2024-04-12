@@ -93,7 +93,7 @@ public class OdcJobListener implements JobListener {
         ScheduleEntity scheduleEntity =
                 scheduleRepository.findById(scheduleId)
                         .orElseThrow(() -> new NotFoundException(ResourceType.ODC_SCHEDULE, "id", scheduleId));
-        ScheduleTaskContextHolder.trace(scheduleEntity.getId());
+        ScheduleTaskContextHolder.trace(scheduleEntity.getId(), scheduleEntity.getJobType().name(), null);
         log.info("Job to be executed.OrganizationId={},ProjectId={},DatabaseId={},JobType={}",
                 scheduleEntity.getOrganizationId(), scheduleEntity.getProjectId(), scheduleEntity.getDatabaseId(),
                 scheduleEntity.getJobType());
