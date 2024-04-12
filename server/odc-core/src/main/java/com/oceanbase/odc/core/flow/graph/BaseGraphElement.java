@@ -15,7 +15,7 @@
  */
 package com.oceanbase.odc.core.flow.graph;
 
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 
@@ -44,7 +44,7 @@ public abstract class BaseGraphElement {
     public BaseGraphElement(@NonNull String graphId, String name) {
         this.name = name;
         this.graphId = graphId;
-        this.attributes = new HashMap<>();
+        this.attributes = new LinkedHashMap<>();
     }
 
     public void setAttribute(@NonNull String key, Object value) {
