@@ -42,6 +42,7 @@ import com.oceanbase.odc.service.notification.Broker;
 import com.oceanbase.odc.service.notification.NotificationProperties;
 import com.oceanbase.odc.service.notification.helper.EventBuilder;
 import com.oceanbase.odc.service.quartz.util.ScheduleTaskUtils;
+import com.oceanbase.odc.service.schedule.flowtask.ScheduleTaskContextHolder;
 import com.oceanbase.odc.service.schedule.model.JobType;
 import com.oceanbase.odc.service.task.model.ExecutorInfo;
 
@@ -92,6 +93,10 @@ public class OdcJobListener implements JobListener {
         ScheduleEntity scheduleEntity =
                 scheduleRepository.findById(scheduleId)
                         .orElseThrow(() -> new NotFoundException(ResourceType.ODC_SCHEDULE, "id", scheduleId));
+        ScheduleTaskContextHolder.trace(scheduleEntity.getId());
+        log.info("Job to be executed.OrganizationId={},ProjectId={},DatabaseId={},JobType={}",
+                scheduleEntity.getOrganizationId(), scheduleEntity.getProjectId(), scheduleEntity.getDatabaseId(),
+                scheduleEntity.getJobType());
         // Ignore this schedule if scheduler has executing job.
         if (scheduleEntity.getJobType().executeInTaskFramework() && !scheduleEntity.getAllowConcurrent()
                 && !taskRepository.findByJobNameAndStatusIn(scheduleId.toString(), TaskStatus.getProcessingStatus())
@@ -127,6 +132,7 @@ public class OdcJobListener implements JobListener {
             entity = taskRepository.findById(targetTaskId).orElseThrow(() -> new NotFoundException(
                     ResourceType.ODC_SCHEDULE_TASK, "id", targetTaskId));
         }
+        ScheduleTaskContextHolder.trace(scheduleEntity.getId(), entity.getId());
         taskRepository.updateExecutor(entity.getId(), JsonUtils.toJson(new ExecutorInfo(hostProperties)));
         context.setResult(entity);
         log.info("Task is prepared,taskId={}", entity.getId());
@@ -139,6 +145,7 @@ public class OdcJobListener implements JobListener {
 
     @Override
     public void jobWasExecuted(JobExecutionContext context, JobExecutionException jobException) {
+        ScheduleTaskContextHolder.clear();
         Optional<ScheduleEntity> scheduleEntityOptional =
                 scheduleRepository.findById(ScheduleTaskUtils.getScheduleId(context));
         if (scheduleEntityOptional.isPresent()) {
