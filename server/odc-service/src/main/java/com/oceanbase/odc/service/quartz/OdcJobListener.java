@@ -132,7 +132,7 @@ public class OdcJobListener implements JobListener {
             entity = taskRepository.findById(targetTaskId).orElseThrow(() -> new NotFoundException(
                     ResourceType.ODC_SCHEDULE_TASK, "id", targetTaskId));
         }
-        ScheduleTaskContextHolder.trace(scheduleEntity.getId(), entity.getId());
+        ScheduleTaskContextHolder.trace(scheduleEntity.getId(), entity.getJobGroup(), entity.getId());
         taskRepository.updateExecutor(entity.getId(), JsonUtils.toJson(new ExecutorInfo(hostProperties)));
         context.setResult(entity);
         log.info("Task is prepared,taskId={}", entity.getId());

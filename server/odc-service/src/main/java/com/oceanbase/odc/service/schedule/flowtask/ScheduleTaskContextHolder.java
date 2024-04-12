@@ -26,6 +26,7 @@ import org.apache.logging.log4j.ThreadContext;
 public class ScheduleTaskContextHolder {
 
     public static final String SCHEDULE_ID = "scheduleId";
+    public static final String JOB_TYPE = "jobType";
     public static final String SCHEDULE_TASK_ID = "scheduleTaskId";
 
     /**
@@ -36,8 +37,14 @@ public class ScheduleTaskContextHolder {
         ThreadContext.put(SCHEDULE_ID, String.valueOf(scheduleId));
     }
 
-    public static void trace(Long scheduleId, Long scheduleTaskId) {
+    public static void trace(Long scheduleId, String jobType) {
         ThreadContext.put(SCHEDULE_ID, String.valueOf(scheduleId));
+        ThreadContext.put(JOB_TYPE, jobType);
+    }
+
+    public static void trace(Long scheduleId, String jobType, Long scheduleTaskId) {
+        ThreadContext.put(SCHEDULE_ID, String.valueOf(scheduleId));
+        ThreadContext.put(JOB_TYPE, jobType);
         ThreadContext.put(SCHEDULE_TASK_ID, String.valueOf(scheduleTaskId));
     }
 
@@ -46,6 +53,7 @@ public class ScheduleTaskContextHolder {
      */
     public static void clear() {
         ThreadContext.remove(SCHEDULE_ID);
+        ThreadContext.remove(JOB_TYPE);
         ThreadContext.remove(SCHEDULE_TASK_ID);
     }
 }
