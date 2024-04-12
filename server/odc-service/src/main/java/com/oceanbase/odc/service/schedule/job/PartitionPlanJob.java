@@ -35,6 +35,7 @@ import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.flow.FlowInstanceService;
 import com.oceanbase.odc.service.flow.model.CreateFlowInstanceReq;
+import com.oceanbase.odc.service.flow.model.FlowInstanceDetailResp;
 import com.oceanbase.odc.service.flow.model.FlowTaskExecutionStrategy;
 import com.oceanbase.odc.service.flow.task.model.DatabaseChangeParameters;
 import com.oceanbase.odc.service.partitionplan.PartitionPlanScheduleService;
@@ -161,7 +162,9 @@ public class PartitionPlanJob implements OdcJob {
         flowInstanceReq.setDatabaseId(databaseId);
         flowInstanceReq.setParentFlowInstanceId(parentFlowInstanceId);
         flowInstanceReq.setExecutionStrategy(FlowTaskExecutionStrategy.AUTO);
-        this.flowInstanceService.createWithoutApprovalNode(flowInstanceReq);
+        List<FlowInstanceDetailResp> flowInstance = this.flowInstanceService.createWithoutApprovalNode(
+                flowInstanceReq);
+        log.info("Create sql plan sub task success,flowInstanceId={}", flowInstance.get(0).getId());
     }
 
 }
