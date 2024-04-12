@@ -164,7 +164,11 @@ public class PartitionPlanJob implements OdcJob {
         flowInstanceReq.setExecutionStrategy(FlowTaskExecutionStrategy.AUTO);
         List<FlowInstanceDetailResp> flowInstance = this.flowInstanceService.createWithoutApprovalNode(
                 flowInstanceReq);
-        log.info("Create sql plan sub task success,flowInstanceId={}", flowInstance.get(0).getId());
+        if (flowInstance.isEmpty()) {
+            log.warn("Create partition plan subtask failed.");
+        } else {
+            log.info("Create partition plan subtask success,flowInstanceId={}", flowInstance.get(0).getId());
+        }
     }
 
 }

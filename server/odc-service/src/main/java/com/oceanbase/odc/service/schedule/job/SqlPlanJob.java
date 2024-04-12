@@ -70,7 +70,11 @@ public class SqlPlanJob implements OdcJob {
         FlowInstanceService flowInstanceService = SpringContextUtil.getBean(FlowInstanceService.class);
         List<FlowInstanceDetailResp> flowInstance = flowInstanceService.createWithoutApprovalNode(
                 flowInstanceReq);
-        log.info("Create sql plan sub task success,flowInstanceId={}", flowInstance.get(0).getId());
+        if (flowInstance.isEmpty()) {
+            log.warn("Create sql plan subtask failed.");
+        } else {
+            log.info("Create sql plan subtask success,flowInstanceId={}", flowInstance.get(0).getId());
+        }
 
     }
 
