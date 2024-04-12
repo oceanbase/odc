@@ -129,7 +129,8 @@ public class ProjectServiceTest extends ServiceTestEnv {
     public void testGetProject_syncTimeIsNull() {
         Date syncTime = new Date();
         Project saved = projectService.create(getProject());
-        Mockito.when(resourceRoleService.listByResourceId(Mockito.any()))
+        Mockito.when(
+                resourceRoleService.listByResourceTypeAndId(Mockito.eq(ResourceType.ODC_PROJECT), Mockito.anyLong()))
                 .thenReturn(listUserResourceRole(saved.getId()));
         createDatabase(saved.getId(), null);
         createDatabase(saved.getId(), syncTime);
@@ -141,7 +142,8 @@ public class ProjectServiceTest extends ServiceTestEnv {
     public void testGetProject_syncTimeNotNull() {
         Date syncTime = new Date();
         Project saved = projectService.create(getProject());
-        Mockito.when(resourceRoleService.listByResourceId(Mockito.any()))
+        Mockito.when(
+                resourceRoleService.listByResourceTypeAndId(Mockito.eq(ResourceType.ODC_PROJECT), Mockito.anyLong()))
                 .thenReturn(listUserResourceRole(saved.getId()));
         createDatabase(saved.getId(), syncTime);
         createDatabase(saved.getId(), DateUtils.addDays(syncTime, 1));
