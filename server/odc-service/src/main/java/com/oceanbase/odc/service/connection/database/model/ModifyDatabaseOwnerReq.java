@@ -13,20 +13,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.metadb.iam.resourcerole;
+package com.oceanbase.odc.service.connection.database.model;
 
-import java.util.List;
+import java.util.Set;
 
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import javax.validation.constraints.NotEmpty;
 
-import com.oceanbase.odc.core.shared.constant.ResourceType;
+import lombok.Data;
 
-public interface ResourceRoleRepository
-        extends JpaRepository<ResourceRoleEntity, Long>, JpaSpecificationExecutor<ResourceRoleEntity> {
+/**
+ * ClassName: ModifyDatabaseOwnerReq Package: com.oceanbase.odc.service.connection.database.model
+ * Description:
+ *
+ * @Author: fenghao
+ * @Create 2024/2/23 18:27
+ * @Version 1.0
+ */
+@Data
+public class ModifyDatabaseOwnerReq {
+    @NotEmpty
+    private Set<Long> databaseIds;
 
-    List<ResourceRoleEntity> findByResourceType(ResourceType resourceType);
-
-    List<ResourceRoleEntity> findByResourceTypeIn(List<ResourceType> resourceType);
-
+    private Set<Long> ownerIds;
 }
