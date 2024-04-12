@@ -73,7 +73,7 @@ public class LogicalTableFinderTest {
         List<LogicalTable> expected =
                 YamlUtils.fromYamlList("connection/obmysql/verify.yml", LogicalTable.class);
         Collections.sort(expected, Comparator.comparing(LogicalTable::getTableNamePattern));
-        List<LogicalTable> actual = LogicalTableFinder.find(obtainOBMySQLDatabases());
+        List<LogicalTable> actual = new LogicalTableFinder(obtainOBMySQLDatabases()).find();
 
         Assert.assertEquals(expected.size(), actual.size());
 

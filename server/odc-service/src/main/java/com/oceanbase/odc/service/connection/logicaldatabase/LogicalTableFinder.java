@@ -26,7 +26,7 @@ import java.util.stream.Collectors;
 
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionFactory;
-import com.oceanbase.odc.core.shared.Verify;
+import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.connection.logicaldatabase.model.DataNode;
 import com.oceanbase.odc.service.connection.logicaldatabase.model.LogicalTable;
@@ -46,8 +46,14 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 public class LogicalTableFinder {
-    public static List<LogicalTable> find(List<Database> databases) {
-        Verify.notEmpty(databases, "LogicalTableFinder#find.databases");
+    private List<Database> databases;
+
+    LogicalTableFinder(List<Database> databases) {
+        this.databases = databases;
+    }
+
+    public List<LogicalTable> find() {
+        PreConditions.notEmpty(databases, "LogicalTableFinder#find.databases");
         Map<Long, List<Database>> dataSourceId2Databases =
                 databases.stream().collect(Collectors.groupingBy(database -> database.getDataSource().getId()));
         Map<Long, ConnectionConfig> id2DataSource = new HashMap<>();

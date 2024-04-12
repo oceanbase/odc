@@ -36,6 +36,7 @@ import org.apache.commons.collections4.CollectionUtils;
 
 import com.oceanbase.odc.common.lang.Pair;
 import com.oceanbase.odc.common.util.StringUtils;
+import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.core.shared.exception.UnexpectedException;
 import com.oceanbase.odc.service.connection.logicaldatabase.model.DataNode;
@@ -46,7 +47,7 @@ import com.oceanbase.odc.service.connection.logicaldatabase.model.LogicalTable;
  * @Date: 2024/3/26 14:17
  * @Description: []
  */
-public class LogicalTableRecognitionUtils {
+class LogicalTableRecognitionUtils {
     private static final String PATTERN_PLACEHOLDER = "[#]";
     private static final String PATTERN_PLACEHOLDER_REGEX = "\\[#\\]";
     private static final String DIGIT_REGEX_CAPTURING_GROUP_REPLACEMENT = "(\\\\d+)";
@@ -58,8 +59,9 @@ public class LogicalTableRecognitionUtils {
     private static final String DOUBLE_RIGHT_SQUARE_BRACKET = "]]";
     private static final Pattern DIGIT_PATTERN = Pattern.compile("\\d+");
 
-    public static List<LogicalTable> recognizeLogicalTablesWithExpression(List<DataNode> dataNodes) {
-        Verify.notEmpty(dataNodes, "LogicalTableRecognitionUtils#recognizeLogicalTablesWithExpression.dataNodes");
+    static List<LogicalTable> recognizeLogicalTablesWithExpression(List<DataNode> dataNodes) {
+        PreConditions.notEmpty(dataNodes,
+                "LogicalTableRecognitionUtils#recognizeLogicalTablesWithExpression.dataNodes");
         // find all logical tables with the same pattern
         List<LogicalTable> logicalTables = recognizeLogicalTables(dataNodes);
 
@@ -98,7 +100,7 @@ public class LogicalTableRecognitionUtils {
     }
 
     public static List<LogicalTable> recognizeLogicalTables(List<DataNode> dataNodes) {
-        Verify.notEmpty(dataNodes, "LogicalTableFinder#recognizeLogicalTables.dataNodes");
+        PreConditions.notEmpty(dataNodes, "LogicalTableFinder#recognizeLogicalTables.dataNodes");
         // replace all table names with a pattern that replaces digits with [#]
         Map<String, List<DataNode>> basePattern2Tables = dataNodes.stream().collect(
                 Collectors.groupingBy(
