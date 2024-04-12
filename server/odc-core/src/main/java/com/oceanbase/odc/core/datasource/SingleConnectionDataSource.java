@@ -130,8 +130,9 @@ public class SingleConnectionDataSource extends BaseClassBasedDataSource impleme
 
     private boolean tryLock() {
         try {
-            log.info("get connection try lock, hashcode=" + this.lock.hashCode());
-            return this.lock.tryLock(timeOutMillis, TimeUnit.MILLISECONDS);
+            boolean locked = this.lock.tryLock(timeOutMillis, TimeUnit.MILLISECONDS);
+            log.info("get connection lock success, locked={}, lock={}", locked, this.lock.hashCode());
+            return locked;
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
@@ -147,7 +148,7 @@ public class SingleConnectionDataSource extends BaseClassBasedDataSource impleme
                     new Class[] {Connection.class},
                     new CloseIgnoreInvocationHandler(connection, this.lock));
         } catch (Exception e) {
-            log.info("get connection error unlock, hashcode=" + this.lock.hashCode());
+            log.warn("get connection error unlock, hashcode=" + this.lock.hashCode());
             this.lock.unlock();
             throw e;
         }
