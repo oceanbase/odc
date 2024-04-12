@@ -190,7 +190,7 @@ public class SingleConnectionDataSource extends BaseClassBasedDataSource impleme
         try {
             this.connection = newConnectionFromDriver(getUsername(), getPassword());
             this.lock = new ReentrantLock();
-            log.info("Established shared JDBC Connection");
+            log.info("Established shared JDBC Connection,lock=" + this.lock.hashCode());
             prepareConnection(this.connection);
             return getConnectionProxy(this.connection);
         } catch (Throwable e) {
