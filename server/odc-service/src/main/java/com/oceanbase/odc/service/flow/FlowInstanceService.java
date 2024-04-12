@@ -907,16 +907,15 @@ public class FlowInstanceService {
                 .convert(flowTaskProperties.getDefaultExecutionExpirationIntervalHours(), TimeUnit.HOURS))).collect(
                         Collectors.toList());
 
-        /*List<TaskEntity> taskEntities = new ArrayList<>();
-        for (long i = 0; i < parameters.getOrderedDatabaseIds().size(); i++) {
-            parameters.setBatchId(i);
-            TaskEntity taskEntity = taskService.create(flowInstanceReq, (int) TimeUnit.SECONDS
-                    .convert(flowTaskProperties.getDefaultExecutionExpirationIntervalHours(), TimeUnit.HOURS));
-            Verify.notNull(taskEntity.getId(), "TaskId can not be null");
-            taskEntities.add(taskEntity);
-        }*/
+        /*
+         * List<TaskEntity> taskEntities = new ArrayList<>(); for (long i = 0; i <
+         * parameters.getOrderedDatabaseIds().size(); i++) { parameters.setBatchId(i); TaskEntity taskEntity
+         * = taskService.create(flowInstanceReq, (int) TimeUnit.SECONDS
+         * .convert(flowTaskProperties.getDefaultExecutionExpirationIntervalHours(), TimeUnit.HOURS));
+         * Verify.notNull(taskEntity.getId(), "TaskId can not be null"); taskEntities.add(taskEntity); }
+         */
         TaskEntity taskEntity = taskService.create(flowInstanceReq, (int) TimeUnit.SECONDS
-            .convert(flowTaskProperties.getDefaultExecutionExpirationIntervalHours(), TimeUnit.HOURS));
+                .convert(flowTaskProperties.getDefaultExecutionExpirationIntervalHours(), TimeUnit.HOURS));
         Verify.notNull(taskEntity.getId(), "TaskId can not be null");
         // 生成流程实例
 
@@ -1081,8 +1080,8 @@ public class FlowInstanceService {
             if (nodeSequence == nodeConfigs.size() - 1) {
                 FlowInstanceConfigurer taskConfigurer = null;
                 // 按批次创建
-                int orders
-                    = ((MultipleDatabaseChangeParameters) flowInstanceReq.getParameters()).getOrderedDatabaseIds().size();
+                int orders = ((MultipleDatabaseChangeParameters) flowInstanceReq.getParameters())
+                        .getOrderedDatabaseIds().size();
                 for (int i = 0; i < orders; i++) {
                     // 创建审批节点
                     // 创建一个任务实例，并根据任务类型和参数配置任务实例

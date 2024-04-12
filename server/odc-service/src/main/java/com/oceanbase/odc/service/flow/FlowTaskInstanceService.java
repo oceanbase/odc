@@ -176,7 +176,7 @@ public class FlowTaskInstanceService {
                 filterTaskInstance(id, instance -> instance.getStatus() == FlowNodeStatus.PENDING);
         PreConditions.validExists(ResourceType.ODC_FLOW_TASK_INSTANCE, "flowInstanceId", id,
                 () -> instances.size() > 0);
-        //todo 多库时暂时关闭
+        // todo 多库时暂时关闭
         Verify.singleton(instances, "FlowTaskInstance");
 
         FlowTaskInstance taskInstance = instances.get(0);
@@ -593,7 +593,8 @@ public class FlowTaskInstanceService {
      * @return
      * @throws IOException
      */
-    private List<MultipleDatabaseChangeTaskResult> getMultipleAsyncResult(@NonNull TaskEntity taskEntity) throws IOException {
+    private List<MultipleDatabaseChangeTaskResult> getMultipleAsyncResult(@NonNull TaskEntity taskEntity)
+            throws IOException {
         return innerGetResult(taskEntity, MultipleDatabaseChangeTaskResult.class);
     }
 
@@ -730,7 +731,7 @@ public class FlowTaskInstanceService {
         /**
          * todo 限制任务流程节点实例唯一，多库需要改
          */
-         Verify.singleton(taskInstances, "TaskInstances");
+        Verify.singleton(taskInstances, "TaskInstances");
 
         FlowTaskInstance flowTaskInstance = taskInstances.get(0);
         Long targetTaskId = flowTaskInstance.getTargetTaskId();

@@ -80,29 +80,30 @@ public class MultipleDatabaseChangeRuntimeFlowableTask extends BaseODCFlowTaskDe
             throws InterruptedException {
 
         try {
-            /*FlowTaskInstance flowTaskInstance = flowableAdaptor.getTaskInstanceByActivityId(
-                    execution.getCurrentActivityId(), getFlowInstanceId())
-                    .orElseThrow(() -> new RuntimeException("获取流程实例对象失败"));
-            log.info("multiple database task starts, taskId={}, activityId={}", taskId,
-                    execution.getCurrentActivityId());
-            taskService.start(flowTaskInstance.getTargetTaskId(), generateResult(false));
-            Long targetTaskId = flowTaskInstance.getTargetTaskId();*/
+            /*
+             * FlowTaskInstance flowTaskInstance = flowableAdaptor.getTaskInstanceByActivityId(
+             * execution.getCurrentActivityId(), getFlowInstanceId()) .orElseThrow(() -> new
+             * RuntimeException("获取流程实例对象失败"));
+             * log.info("multiple database task starts, taskId={}, activityId={}", taskId,
+             * execution.getCurrentActivityId()); taskService.start(flowTaskInstance.getTargetTaskId(),
+             * generateResult(false)); Long targetTaskId = flowTaskInstance.getTargetTaskId();
+             */
             TaskEntity detail = taskService.detail(taskId);
-            //this.taskId = targetTaskId;
+            // this.taskId = targetTaskId;
             MultipleDatabaseChangeParameters multipleDatabaseChangeParameters = JsonUtils.fromJson(
                     detail.getParametersJson(), MultipleDatabaseChangeParameters.class);
-            Integer batchId ;
-            Object value =  multipleDatabaseChangeParameters.getBatchId();
-            if(value==null){
-                batchId=0;
-            }else {
-                batchId=(Integer) value;
+            Integer batchId;
+            Object value = multipleDatabaseChangeParameters.getBatchId();
+            if (value == null) {
+                batchId = 0;
+            } else {
+                batchId = (Integer) value;
             }
             multipleDatabaseChangeParameters.setBatchId(batchId + 1);
             detail.setParametersJson(JsonUtils.toJson(multipleDatabaseChangeParameters));
             taskService.updateParametersJson(detail);
             this.batchId = Long.valueOf(batchId);
-            //this.batchId = multipleDatabaseChangeParameters.getBatchId();
+            // this.batchId = multipleDatabaseChangeParameters.getBatchId();
             this.batchNumber = (long) multipleDatabaseChangeParameters.getOrderedDatabaseIds().size();
             List<Integer> batchDatabaseIds =
                     multipleDatabaseChangeParameters.getOrderedDatabaseIds().get(batchId);
