@@ -15,12 +15,15 @@
  */
 package com.oceanbase.odc.service.queryprofile.model;
 
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
 import com.oceanbase.odc.core.flow.graph.Graph;
+import com.oceanbase.odc.core.flow.graph.GraphVertex;
 
 import lombok.Getter;
+import lombok.NonNull;
 
 /**
  * @author liuyizhuo.lyz
@@ -30,6 +33,7 @@ import lombok.Getter;
 public class SqlPlanGraph extends Graph {
     private final Map<String, String> overview = new LinkedHashMap<>();
     private final Map<String, String> statistics = new LinkedHashMap<>();
+    private final Map<String, GraphVertex> operatorMap = new HashMap<>();
 
     public void setStatistic(String key, String value) {
         if (value != null) {
@@ -43,4 +47,9 @@ public class SqlPlanGraph extends Graph {
         }
     }
 
+    @Override
+    public GraphVertex insertVertex(@NonNull GraphVertex vertex) {
+        operatorMap.put(vertex.getGraphId(), vertex);
+        return super.insertVertex(vertex);
+    }
 }

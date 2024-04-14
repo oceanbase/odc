@@ -24,8 +24,11 @@ import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import com.oceanbase.odc.core.flow.graph.GraphVertex;
 import com.oceanbase.odc.service.queryprofile.helper.PlanGraphBuilder;
+import com.oceanbase.odc.service.queryprofile.model.OBPlanDO;
 import com.oceanbase.odc.service.queryprofile.model.PredicateKey;
+import com.oceanbase.odc.service.queryprofile.model.SqlPlanGraph;
 
 /**
  * @author liuyizhuo.lyz
@@ -40,6 +43,14 @@ public class PlanGraphBuilderTest {
         PARAMS.put(":2", "1");
         PARAMS.put(":3", "'1995-01-01 00:00:00'");
         PARAMS.put(":4", "'1996-12-30 00:00:00'");
+    }
+
+    @Test
+    public void test_BuildPlanGraph_BuildSuccess() {
+        List<OBPlanDO> records = getPlanRecords();
+        SqlPlanGraph graph = PlanGraphBuilder.buildPlanGraph(records);
+        List<GraphVertex> vertices = graph.getTopoOrderedVertices();
+        Assert.assertEquals(vertices.size(), records.size());
     }
 
     @Test
@@ -60,9 +71,28 @@ public class PlanGraphBuilderTest {
                 colums);
     }
 
-    @Test
-    public void test_ParseSpecialPredicates() {
+    private List<OBPlanDO> getPlanRecords() {
+        OBPlanDO plan1 = new OBPlanDO();
+        plan1.setId("0");
+        plan1.setParentId("-1");
+        plan1.setObjectName("O1");
 
+        OBPlanDO plan2 = new OBPlanDO();
+        plan2.setId("1");
+        plan2.setParentId("0");
+        plan2.setObjectName("O2");
+
+        OBPlanDO plan3 = new OBPlanDO();
+        plan3.setId("2");
+        plan3.setParentId("0");
+        plan3.setObjectName("O3");
+
+        OBPlanDO plan4 = new OBPlanDO();
+        plan4.setId("3");
+        plan4.setParentId("2");
+        plan4.setObjectName("O4");
+
+        return Arrays.asList(plan1, plan2, plan3, plan4);
     }
 
 }
