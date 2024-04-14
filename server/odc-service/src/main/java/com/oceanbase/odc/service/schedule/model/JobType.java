@@ -32,5 +32,10 @@ public enum JobType {
 
     DATA_ARCHIVE_ROLLBACK,
 
-    ONLINE_SCHEMA_CHANGE_COMPLETE
+    ONLINE_SCHEMA_CHANGE_COMPLETE;
+
+    public boolean executeInTaskFramework() {
+        return this == DATA_ARCHIVE || this == DATA_ARCHIVE_DELETE || this == DATA_DELETE
+                || this == DATA_ARCHIVE_ROLLBACK;
+    }
 }

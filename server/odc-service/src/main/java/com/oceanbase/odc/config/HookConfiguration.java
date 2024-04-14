@@ -37,7 +37,6 @@ import com.oceanbase.odc.core.shared.exception.BadRequestException;
 import com.oceanbase.odc.metadb.collaboration.ProjectEntity;
 import com.oceanbase.odc.metadb.collaboration.ProjectRepository;
 import com.oceanbase.odc.service.collaboration.environment.EnvironmentService;
-import com.oceanbase.odc.service.collaboration.project.ProjectService;
 import com.oceanbase.odc.service.config.UserConfigService;
 import com.oceanbase.odc.service.connection.ConnectionService;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
@@ -72,9 +71,6 @@ public class HookConfiguration {
     private RiskLevelService riskLevelService;
 
     @Autowired
-    private ProjectService projectService;
-
-    @Autowired
     private ResourceRoleService resourceRoleService;
 
     @Autowired
@@ -96,7 +92,7 @@ public class HookConfiguration {
     public void init() {
         userService.addPostUserDeleteHook(event -> {
             Long userId = event.getUserId();
-            projectService.deleteUserRelatedProjectRoles(userId);
+            resourceRoleService.deleteByUserId(userId);
             userConfigService.deleteUserConfigurations(userId);
         });
         log.info("PostUserDeleteHook added");
@@ -112,12 +108,14 @@ public class HookConfiguration {
         log.info("PreApprovalFlowConfigDeleteHook added");
 
         environmentService.addDeleteHook(event -> {
-            checkDataSourceReference(event.getId(), event.getOrganizationId());
-            checkRiskLevelReference(event.getId(), event.getOrganizationId());
+            checkDataSourceReference(event.getId(), event.getOrganizationId(), AuditEventAction.DELETE_ENVIRONMENT);
+            checkRiskLevelReference(event.getId(), event.getName(), event.getOrganizationId(),
+                    AuditEventAction.DELETE_ENVIRONMENT);
         });
         log.info("PreDeleteEnvironmentHooks added");
 
-        environmentService.addDisableHook(event -> checkDataSourceReference(event.getId(), event.getOrganizationId()));
+        environmentService.addDisableHook(event -> checkDataSourceReference(event.getId(), event.getOrganizationId(),
+                AuditEventAction.DISABLE_ENVIRONMENT));
         log.info("PreDisableEnvironmentHooks added");
     }
 
@@ -166,12 +164,12 @@ public class HookConfiguration {
 
     }
 
-    private void checkDataSourceReference(Long id, Long organizationId) {
+    private void checkDataSourceReference(Long id, Long organizationId, AuditEventAction action) {
         List<ConnectionConfig> dataSources = connectionService.listByOrganizationIdAndEnvironmentId(organizationId, id);
         if (!CollectionUtils.isEmpty(dataSources)) {
             throw new BadRequestException(ErrorCodes.CannotOperateDueReference,
                     new Object[] {
-                            AuditEventAction.DISABLE_ENVIRONMENT.getLocalizedMessage(),
+                            action.getLocalizedMessage(),
                             ResourceType.ODC_ENVIRONMENT.getLocalizedMessage(), "name",
                             String.join(dataSources.stream().map(ConnectionConfig::getName)
                                     .collect(Collectors.joining(", "))),
@@ -181,10 +179,12 @@ public class HookConfiguration {
 
     }
 
-    private void checkRiskLevelReference(Long id, Long organizationId) {
+    private void checkRiskLevelReference(Long id, String name, Long organizationId, AuditEventAction action) {
         Set<RiskDetectRule> referencedRiskDetectRules =
                 riskDetectService.listAllByOrganizationId(organizationId)
-                        .stream().filter(rule -> rule.getRootNode().find(ConditionExpression.ENVIRONMENT_ID.name(), id))
+                        .stream()
+                        .filter(rule -> rule.getRootNode().find(ConditionExpression.ENVIRONMENT_ID.name(), id)
+                                || rule.getRootNode().find(ConditionExpression.ENVIRONMENT_NAME.name(), name))
                         .collect(Collectors.toSet());
 
         if (!referencedRiskDetectRules.isEmpty()) {
@@ -195,7 +195,7 @@ public class HookConfiguration {
 
             throw new BadRequestException(ErrorCodes.CannotOperateDueReference,
                     new Object[] {
-                            AuditEventAction.DELETE_ENVIRONMENT.getLocalizedMessage(),
+                            action.getLocalizedMessage(),
                             ResourceType.ODC_ENVIRONMENT.getLocalizedMessage(), "name",
                             riskLevelNames,
                             ResourceType.ODC_RISK_LEVEL.getLocalizedMessage()},

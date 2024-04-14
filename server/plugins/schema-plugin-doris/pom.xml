@@ -6,7 +6,7 @@
     <parent>
         <groupId>com.oceanbase</groupId>
         <artifactId>plugin-parent</artifactId>
-        <version>4.2.4-SNAPSHOT</version>
+        <version>4.3.0-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -15,7 +15,7 @@
     <properties>
         <root-project.basedir>${project.parent.parent.basedir}</root-project.basedir>
         <plugin.class>com.oceanbase.odc.plugin.schema.doris.DorisSchemaPlugin</plugin.class>
-        <plugin.dependencies>schema-plugin-ob-mysql, schema-plugin-mysql</plugin.dependencies>
+        <plugin.dependencies>schema-plugin-ob-mysql, schema-plugin-mysql, connect-plugin-doris</plugin.dependencies>
     </properties>
 
     <dependencies>
@@ -30,6 +30,10 @@
         <dependency>
             <groupId>com.oceanbase</groupId>
             <artifactId>schema-plugin-mysql</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.oceanbase</groupId>
+            <artifactId>connect-plugin-doris</artifactId>
         </dependency>
     </dependencies>
 

@@ -15,7 +15,11 @@
  */
 package com.oceanbase.odc.plugin.schema.doris;
 
+import java.sql.Connection;
+
+import com.oceanbase.odc.plugin.schema.doris.utils.DBAccessorUtil;
 import com.oceanbase.odc.plugin.schema.obmysql.OBMySQLProcedureExtension;
+import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
 
 /**
  * ClassName: DorisProcedureExtension Package: com.oceanbase.odc.plugin.schema.doris Description:
@@ -25,4 +29,10 @@ import com.oceanbase.odc.plugin.schema.obmysql.OBMySQLProcedureExtension;
  * @Version 1.0
  */
 public class DorisProcedureExtension extends OBMySQLProcedureExtension {
+
+    @Override
+    protected DBSchemaAccessor getSchemaAccessor(Connection connection) {
+        return DBAccessorUtil.getSchemaAccessor(connection);
+    }
+
 }

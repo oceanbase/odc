@@ -51,6 +51,11 @@ import lombok.Data;
 
 @Data
 public class CreateFlowInstanceReq {
+    /**
+     * FlowInstanceId
+     */
+    @JsonProperty(access = Access.READ_ONLY)
+    private Long id;
 
     /**
      * Database id

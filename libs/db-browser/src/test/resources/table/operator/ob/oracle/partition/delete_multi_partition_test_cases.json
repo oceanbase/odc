@@ -29,6 +29,6 @@
         ]
       }
     },
-    "output": "ALTER TABLE schema.table DROP PARTITION (p1, p2);\n"
+    "output": "ALTER TABLE \"schema\".\"table\" DROP PARTITION (\"p1\", \"p2\");\n"
   }
 ]

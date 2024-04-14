@@ -16,6 +16,7 @@
 package com.oceanbase.odc.service.notification;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
@@ -96,7 +97,8 @@ public class Converter {
         for (Event event : events) {
             Set<Channel> channels = new HashSet<>();
             for (NotificationPolicy policy : event.getPolicies()) {
-                List<NotificationChannelRelationEntity> relationEntities = mappedRelationEntities.get(policy.getId());
+                List<NotificationChannelRelationEntity> relationEntities =
+                        mappedRelationEntities.getOrDefault(policy.getId(), Collections.emptyList());
                 relationEntities.forEach(relation -> channels.addAll(mappedChannels.get(relation.getChannelId())));
             }
             if (CollectionUtils.isEmpty(channels)) {
@@ -124,6 +126,7 @@ public class Converter {
                     message.setRetryTimes(0);
                     message.setProjectId(channel.getProjectId());
                     message.setMaxRetryTimes(notificationProperties.getMaxResendTimes());
+                    message.setEvent(event);
                     messages.add(message);
                 } catch (Exception e) {
                     log.error("failed to convert event with id={}, channel id={}",

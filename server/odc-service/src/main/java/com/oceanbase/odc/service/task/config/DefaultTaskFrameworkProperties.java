@@ -56,20 +56,29 @@ public class DefaultTaskFrameworkProperties implements TaskFrameworkProperties {
     private int jobCancelTimeoutSeconds = 2 * 60;
 
     // single fetch job rows for schedule
-    private int singleFetchPreparingJobRows = 10;
+    private int singleFetchPreparingJobRows = 1;
 
-    private int singleFetchCancelingJobRows = 30;
+    private int singleFetchCancelingJobRows = 10;
 
-    private int singleFetchDestroyExecutorJobRows = 30;
+    private int singleFetchDestroyExecutorJobRows = 10;
 
     // single fetch job rows to check report timeout or not
-    private int singleFetchCheckHeartTimeoutJobRows = 1000;
+    private int singleFetchCheckHeartTimeoutJobRows = 30;
 
     // max retry times after heart timeout
     private int maxHeartTimeoutRetryTimes = 3;
 
     // number of seconds to wait after initialization before starting the scheduler
     private int quartzStartDelaySeconds = 30;
+
+    // min memory required for start process, unit is MB, this setting only usage for linux
+    private long jobProcessMinMemorySizeInMB = 1024;
+
+    // max memory required for start process, unit is MB, this setting only usage for linux
+    private long jobProcessMaxMemorySizeInMB = 1024;
+
+    // job will not be started if systemFreeMemory less than this setting
+    private long systemReserveMinFreeMemorySizeInMB = 1024;
 
     private String startPreparingJobCronExpression;
 

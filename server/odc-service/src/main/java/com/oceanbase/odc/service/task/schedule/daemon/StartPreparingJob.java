@@ -15,6 +15,7 @@
  */
 package com.oceanbase.odc.service.task.schedule.daemon;
 
+import java.text.MessageFormat;
 import java.util.concurrent.TimeUnit;
 
 import org.quartz.DisallowConcurrentExecution;
@@ -26,6 +27,8 @@ import org.springframework.data.domain.Page;
 import com.google.common.collect.Lists;
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.common.trace.TraceContextHolder;
+import com.oceanbase.odc.core.alarm.AlarmEventNames;
+import com.oceanbase.odc.core.alarm.AlarmUtils;
 import com.oceanbase.odc.metadb.task.JobEntity;
 import com.oceanbase.odc.service.task.caller.JobContext;
 import com.oceanbase.odc.service.task.config.JobConfiguration;
@@ -36,6 +39,7 @@ import com.oceanbase.odc.service.task.enums.JobStatus;
 import com.oceanbase.odc.service.task.exception.JobException;
 import com.oceanbase.odc.service.task.exception.TaskRuntimeException;
 import com.oceanbase.odc.service.task.schedule.DefaultJobContextBuilder;
+import com.oceanbase.odc.service.task.schedule.ResourceDetectUtil;
 import com.oceanbase.odc.service.task.schedule.SingleJobProperties;
 import com.oceanbase.odc.service.task.service.TaskFrameworkService;
 import com.oceanbase.odc.service.task.util.JobDateUtils;
@@ -57,19 +61,25 @@ public class StartPreparingJob implements Job {
     public void execute(JobExecutionContext context) throws JobExecutionException {
         configuration = JobConfigurationHolder.getJobConfiguration();
         JobConfigurationValidator.validComponent();
-        TaskFrameworkProperties taskFrameworkProperties = configuration.getTaskFrameworkProperties();
-        if (!configuration.getStartJobRateLimiter().tryAcquire()) {
-            log.warn("Amount of executors waiting to run exceed threshold, wait next schedule, threshold={}.",
-                    taskFrameworkProperties.getExecutorWaitingToRunThresholdCount());
+
+        if (!configuration.getTaskFrameworkEnabledProperties().isEnabled()) {
+            configuration.getTaskFrameworkDisabledHandler().handleJobToFailed();
             return;
         }
+        if (!ResourceDetectUtil.isResourceAvailable(configuration.getTaskFrameworkProperties())) {
+            return;
+        }
+        TaskFrameworkProperties taskFrameworkProperties = configuration.getTaskFrameworkProperties();
         // scan preparing job
         TaskFrameworkService taskFrameworkService = configuration.getTaskFrameworkService();
-
         Page<JobEntity> jobs = taskFrameworkService.find(
                 Lists.newArrayList(JobStatus.PREPARING, JobStatus.RETRYING), 0,
                 taskFrameworkProperties.getSingleFetchPreparingJobRows());
-        jobs.forEach(a -> {
+
+        for (JobEntity a : jobs) {
+            if (!configuration.getStartJobRateLimiter().tryAcquire()) {
+                break;
+            }
             try {
                 if (checkJobIsExpired(a)) {
                     taskFrameworkService.updateStatusDescriptionByIdOldStatus(a.getId(),
@@ -80,7 +90,8 @@ public class StartPreparingJob implements Job {
             } catch (Throwable e) {
                 log.warn("try to start job {} failed: ", a.getId(), e);
             }
-        });
+        }
+
     }
 
     private void startJob(TaskFrameworkService taskFrameworkService, JobEntity jobEntity) {
@@ -102,6 +113,8 @@ public class StartPreparingJob implements Job {
                     getConfiguration().getJobDispatcher().start(jc);
                 } catch (JobException e) {
                     log.warn("Start job occur error: ", e);
+                    AlarmUtils.warn(AlarmEventNames.TASK_START_FAILED,
+                            MessageFormat.format("Start job failed, jobId={0}", lockedEntity.getId()));
                     throw new TaskRuntimeException(e);
                 }
             } else {

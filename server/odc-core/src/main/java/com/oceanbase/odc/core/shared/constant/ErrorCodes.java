@@ -187,6 +187,7 @@ public enum ErrorCodes implements ErrorCode {
     OmsParamError,
     OmsConnectivityTestFailed,
     OmsPreCheckFailed,
+    OmsProjectExecutingFailed,
 
     // resource
     BuiltInResourceOperateNotAllowed,

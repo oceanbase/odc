@@ -21,6 +21,7 @@ import java.util.Objects;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.service.config.model.Configuration;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 
@@ -28,6 +29,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Service
+@SkipAuthorize("odc internal usage")
 public class UserConfigFacadeImpl implements UserConfigFacade {
     @Autowired
     private UserConfigService userConfigService;

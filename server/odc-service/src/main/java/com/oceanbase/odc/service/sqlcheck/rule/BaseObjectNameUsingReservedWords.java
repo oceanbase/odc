@@ -69,16 +69,18 @@ public abstract class BaseObjectNameUsingReservedWords implements SqlCheckRule {
                         statement, getType(), new Object[] {createTable.getTableName()}));
             }
             violations.addAll(builds(statement, createTable.getPartition()));
-            violations.addAll(createTable.getTableElements().stream().flatMap(tableElement -> {
-                if (tableElement instanceof ColumnDefinition) {
-                    return builds(statement, (ColumnDefinition) tableElement).stream();
-                } else if (tableElement instanceof OutOfLineIndex) {
-                    return builds(statement, (OutOfLineIndex) tableElement).stream();
-                } else if (tableElement instanceof OutOfLineConstraint) {
-                    return builds(statement, (OutOfLineConstraint) tableElement).stream();
-                }
-                return Stream.empty();
-            }).collect(Collectors.toList()));
+            if (CollectionUtils.isNotEmpty(createTable.getTableElements())) {
+                violations.addAll(createTable.getTableElements().stream().flatMap(tableElement -> {
+                    if (tableElement instanceof ColumnDefinition) {
+                        return builds(statement, (ColumnDefinition) tableElement).stream();
+                    } else if (tableElement instanceof OutOfLineIndex) {
+                        return builds(statement, (OutOfLineIndex) tableElement).stream();
+                    } else if (tableElement instanceof OutOfLineConstraint) {
+                        return builds(statement, (OutOfLineConstraint) tableElement).stream();
+                    }
+                    return Stream.empty();
+                }).collect(Collectors.toList()));
+            }
         } else if (statement instanceof AlterTable) {
             AlterTable alterTable = (AlterTable) statement;
             violations.addAll(alterTable.getAlterTableActions().stream().flatMap(action -> {

@@ -58,7 +58,7 @@ public class SingleConnectionDataSource extends BaseClassBasedDataSource impleme
     private final boolean autoReconnect;
     @Setter
     private EventPublisher eventPublisher;
-    protected Connection connection;
+    protected volatile Connection connection;
     private final List<ConnectionInitializer> initializerList = new LinkedList<>();
     private Lock lock;
     @Setter
@@ -96,7 +96,7 @@ public class SingleConnectionDataSource extends BaseClassBasedDataSource impleme
     /**
      * Reset a {@code Connection}
      */
-    public void resetConnection() throws SQLException {
+    public synchronized void resetConnection() throws SQLException {
         log.info("The connection will be reset soon");
         close();
         this.connection = null;
@@ -181,7 +181,7 @@ public class SingleConnectionDataSource extends BaseClassBasedDataSource impleme
         }
     }
 
-    private Connection innerCreateConnection() throws SQLException {
+    private synchronized Connection innerCreateConnection() throws SQLException {
         if (this.connection != null) {
             throw new IllegalStateException("Connection is not null");
         }

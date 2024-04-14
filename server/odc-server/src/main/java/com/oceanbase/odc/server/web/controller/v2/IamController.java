@@ -39,6 +39,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
+import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.core.shared.exception.BadRequestException;
 import com.oceanbase.odc.service.captcha.CaptchaService;
 import com.oceanbase.odc.service.captcha.VerificationCode;
@@ -331,8 +332,10 @@ public class IamController {
 
     @ApiOperation(value = "listResourceRoles", notes = "list resource roles")
     @RequestMapping(value = "/resourceRoles", method = RequestMethod.GET)
-    public ListResponse<ResourceRole> listResourceRoles() {
-        return Responses.list(resourceRoleService.listResourceRoles());
+    public ListResponse<ResourceRole> listResourceRoles(
+            @RequestParam(required = false, value = "resourceType",
+                    defaultValue = "ODC_PROJECT") List<ResourceType> resourceType) {
+        return Responses.list(resourceRoleService.listResourceRoles(resourceType));
     }
 
     /**

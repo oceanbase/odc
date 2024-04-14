@@ -82,7 +82,7 @@ public class DruidDataSourceFactory extends OBConsoleDataSourceFactory {
         dataSource.setMaxActive(5);
         dataSource.setInitialSize(2);
         // wait for get available connection from connection pool
-        dataSource.setMaxWait(10_000L);
+        dataSource.setMaxWait(5000L);
         /**
          * {@link DruidDataSource#init()} will set these two properties to
          * {@link com.alibaba.druid.pool.DruidAbstractDataSource#DEFAULT_TIME_SOCKET_TIMEOUT_MILLIS} if we

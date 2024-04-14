@@ -66,12 +66,14 @@ public class RulesetService {
         return ruleset;
     }
 
+    @SkipAuthorize("internal authenticated")
     @Transactional(rollbackFor = Exception.class)
     public Ruleset create(@NonNull Ruleset ruleset) {
         permissionValidator.checkCurrentOrganization(ruleset);
         return entityToModel(rulesetRepository.save(modelToEntity(ruleset)));
     }
 
+    @SkipAuthorize("internal authenticated")
     @Transactional(rollbackFor = Exception.class)
     public Ruleset delete(@NonNull Long id) {
         Ruleset ruleset = entityToModel(rulesetRepository.findById(id)

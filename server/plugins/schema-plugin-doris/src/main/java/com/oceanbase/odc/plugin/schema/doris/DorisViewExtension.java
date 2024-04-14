@@ -15,9 +15,13 @@
  */
 package com.oceanbase.odc.plugin.schema.doris;
 
+import java.sql.Connection;
+
 import org.pf4j.Extension;
 
+import com.oceanbase.odc.plugin.schema.doris.utils.DBAccessorUtil;
 import com.oceanbase.odc.plugin.schema.obmysql.OBMySQLViewExtension;
+import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
 
 /**
  * ClassName: DorisViewExtension Package: com.oceanbase.odc.plugin.schema.doris Description:
@@ -28,4 +32,10 @@ import com.oceanbase.odc.plugin.schema.obmysql.OBMySQLViewExtension;
  */
 @Extension
 public class DorisViewExtension extends OBMySQLViewExtension {
+
+    @Override
+    protected DBSchemaAccessor getSchemaAccessor(Connection connection) {
+        return DBAccessorUtil.getSchemaAccessor(connection);
+    }
+
 }

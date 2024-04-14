@@ -117,8 +117,6 @@ public class SqlUtils {
         return split(connectionSession.getDialectType(), processor, sql, removeCommentPrefix);
     }
 
-
-
     private static List<OffsetString> split(DialectType dialectType, SqlCommentProcessor processor, String sql,
             boolean removeCommentPrefix) {
         PreConditions.notBlank(processor.getDelimiter(), "delimiter", "Empty or blank delimiter is not allowed");
@@ -136,13 +134,16 @@ public class SqlUtils {
             if (bufferStr.trim().length() != 0) {
                 // if buffer is not empty, there will be some errors in syntax
                 log.info("sql processor's buffer is not empty, there may be some errors. buffer={}", bufferStr);
+                int lastSqlOffset;
                 if (sqls.size() == 0) {
-                    sqls.add(new OffsetString(0, bufferStr));
+                    int index = sql.indexOf(bufferStr.trim(), 0);
+                    lastSqlOffset = index == -1 ? 0 : index;
                 } else {
-                    sqls.add(new OffsetString(
-                            sqls.get(sqls.size() - 1).getOffset() + sqls.get(sqls.size() - 1).getStr().length(),
-                            bufferStr));
+                    int from = sqls.get(sqls.size() - 1).getOffset() + sqls.get(sqls.size() - 1).getStr().length();
+                    int index = sql.indexOf(bufferStr.trim(), from);
+                    lastSqlOffset = index == -1 ? from : index;
                 }
+                sqls.add(new OffsetString(lastSqlOffset, bufferStr));
             }
             return sqls;
         }

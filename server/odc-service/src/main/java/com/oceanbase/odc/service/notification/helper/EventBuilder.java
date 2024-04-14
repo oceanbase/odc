@@ -32,6 +32,7 @@ import static com.oceanbase.odc.service.notification.constant.EventLabelKeys.TAS
 import static com.oceanbase.odc.service.notification.constant.EventLabelKeys.TASK_STATUS;
 import static com.oceanbase.odc.service.notification.constant.EventLabelKeys.TASK_TYPE;
 import static com.oceanbase.odc.service.notification.constant.EventLabelKeys.TENANT_NAME;
+import static com.oceanbase.odc.service.notification.constant.EventLabelKeys.TICKET_URL;
 import static com.oceanbase.odc.service.notification.constant.EventLabelKeys.TRIGGER_TIME;
 
 import java.time.LocalDateTime;
@@ -59,6 +60,9 @@ import com.oceanbase.odc.service.collaboration.environment.EnvironmentService;
 import com.oceanbase.odc.service.collaboration.environment.model.Environment;
 import com.oceanbase.odc.service.collaboration.project.ProjectService;
 import com.oceanbase.odc.service.collaboration.project.model.Project;
+import com.oceanbase.odc.service.common.SiteUrlResolver;
+import com.oceanbase.odc.service.common.model.HostProperties;
+import com.oceanbase.odc.service.config.SystemConfigService;
 import com.oceanbase.odc.service.connection.ConnectionService;
 import com.oceanbase.odc.service.connection.database.DatabaseService;
 import com.oceanbase.odc.service.connection.database.model.Database;
@@ -90,6 +94,8 @@ public class EventBuilder {
     private static final String OB_ARN_PARTITION = System.getenv("OB_ARN_PARTITION");
     private static final String AUTO_APPROVAL_KEY =
             "${com.oceanbase.odc.builtin-resource.regulation.approval.flow.config.auto-approval.name}";
+    private static final String TICKET_URL_TEMPLATE =
+            "%s/#/task?taskId=%s&taskType=%s&organizationId=%s";
 
     @Autowired
     private ConnectionService connectionService;
@@ -105,6 +111,12 @@ public class EventBuilder {
     private ScheduleRepository scheduleRepository;
     @Autowired
     private ProjectService projectService;
+    @Autowired
+    private SystemConfigService systemConfigService;
+    @Autowired
+    private HostProperties hostProperties;
+    @Autowired
+    private SiteUrlResolver siteUrlResolver;
 
     public Event ofFailedTask(TaskEntity task) {
         Event event = ofTask(task, TaskEvent.EXECUTION_FAILED);
@@ -147,19 +159,19 @@ public class EventBuilder {
 
     public Event ofSucceededTask(ScheduleEntity schedule) {
         Event event = ofSchedule(schedule, TaskEvent.EXECUTION_SUCCEEDED);
-        resolveLabels(event.getLabels());
+        resolveLabels(event.getLabels(), schedule);
         return event;
     }
 
     public Event ofFailedTask(ScheduleEntity schedule) {
         Event event = ofSchedule(schedule, TaskEvent.EXECUTION_FAILED);
-        resolveLabels(event.getLabels());
+        resolveLabels(event.getLabels(), schedule);
         return event;
     }
 
     public Event ofFailedSchedule(ScheduleEntity schedule) {
         Event event = ofSchedule(schedule, TaskEvent.SCHEDULING_FAILED);
-        resolveLabels(event.getLabels());
+        resolveLabels(event.getLabels(), schedule);
         return event;
     }
 
@@ -183,8 +195,8 @@ public class EventBuilder {
         } else if (task.getTaskType() == TaskType.APPLY_DATABASE_PERMISSION) {
             ApplyDatabaseParameter parameter =
                     JsonUtils.fromJson(task.getParametersJson(), ApplyDatabaseParameter.class);
-            List<String> dbNames =
-                    parameter.getDatabases().stream().map(ApplyDatabase::getName).collect(Collectors.toList());
+            String dbNames =
+                    parameter.getDatabases().stream().map(ApplyDatabase::getName).collect(Collectors.joining(","));
             labels.putIfNonNull(DATABASE_NAME, dbNames);
             projectId = parameter.getProject().getId();
             labels.putIfNonNull(PROJECT_ID, projectId);
@@ -238,10 +250,6 @@ public class EventBuilder {
                 .triggerTime(new Date())
                 .labels(labels)
                 .build();
-    }
-
-    private void resolveLabels(EventLabels labels) {
-        resolveLabels(labels, null);
     }
 
     private <T> void resolveLabels(EventLabels labels, T task) {
@@ -321,6 +329,27 @@ public class EventBuilder {
                 log.warn("failed to query project info.", e);
             }
         }
+        try {
+            labels.putIfNonNull(TICKET_URL, getTicketUrl(labels, task));
+        } catch (Exception e) {
+            log.warn("failed to get ticket url.", e);
+        }
+    }
+
+    private <T> String getTicketUrl(EventLabels labels, T task) {
+        String taskType = labels.get(TASK_TYPE);
+        String taskId = labels.get(TASK_ID);
+        Long organizationId;
+        if (task instanceof TaskEntity) {
+            organizationId = ((TaskEntity) task).getOrganizationId();
+        } else {
+            organizationId = ((ScheduleEntity) task).getOrganizationId();
+        }
+        String odcSite = siteUrlResolver.getSiteUrl();
+        if (!odcSite.startsWith("http")) {
+            odcSite = "http://".concat(odcSite);
+        }
+        return String.format(TICKET_URL_TEMPLATE, odcSite, taskId, taskType, organizationId);
     }
 
 }

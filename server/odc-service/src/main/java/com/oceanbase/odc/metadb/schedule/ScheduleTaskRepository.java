@@ -16,7 +16,6 @@
 package com.oceanbase.odc.metadb.schedule;
 
 import java.util.List;
-import java.util.Optional;
 
 import javax.transaction.Transactional;
 
@@ -70,7 +69,7 @@ public interface ScheduleTaskRepository extends JpaRepository<ScheduleTaskEntity
     @Query("update ScheduleTaskEntity st set st.jobId = ?2 where st.id = ?1")
     int updateJobIdById(Long id, Long jobId);
 
-    Optional<ScheduleTaskEntity> findByJobId(Long jobId);
+    List<ScheduleTaskEntity> findByJobId(Long jobId);
 
     @Transactional
     @Modifying

@@ -15,8 +15,6 @@
  */
 package com.oceanbase.odc.plugin.task.api.partitionplan.model;
 
-import com.oceanbase.odc.plugin.task.api.partitionplan.datatype.TimeDataType;
-
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
@@ -35,12 +33,6 @@ public class DateBasedPartitionNameGeneratorConfig {
 
     private String namingPrefix;
     private String namingSuffixExpression;
-    private int interval;
-    /**
-     * ref {@link TimeDataType#getPrecision()}
-     */
-    private int intervalPrecision;
-    private long baseTimestampMillis;
-    private boolean fromCurrentTime;
+    private String refPartitionKey;
 
 }

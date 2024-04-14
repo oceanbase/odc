@@ -51,7 +51,6 @@ import com.oceanbase.odc.service.flow.task.model.RollbackPlanTaskResult;
 import com.oceanbase.odc.service.flow.task.util.DatabaseChangeFileReader;
 import com.oceanbase.odc.service.flow.util.FlowTaskUtil;
 import com.oceanbase.odc.service.objectstorage.ObjectStorageFacade;
-import com.oceanbase.odc.service.objectstorage.cloud.CloudObjectStorageService;
 import com.oceanbase.odc.service.session.DBSessionManageFacade;
 import com.oceanbase.odc.service.session.factory.DefaultConnectSessionFactory;
 import com.oceanbase.odc.service.sqlcheck.SqlCheckUtil;
@@ -74,8 +73,6 @@ public class DatabaseChangeRuntimeFlowableTask extends BaseODCFlowTaskDelegate<D
     private volatile DatabaseChangeThread asyncTaskThread;
     private volatile boolean isSuccessful = false;
     private volatile boolean isFailure = false;
-    @Autowired
-    private CloudObjectStorageService cloudObjectStorageService;
     @Autowired
     private ConnectProperties connectProperties;
     @Autowired
@@ -171,8 +168,8 @@ public class DatabaseChangeRuntimeFlowableTask extends BaseODCFlowTaskDelegate<D
     @Override
     protected void onSuccessful(Long taskId, TaskService taskService) {
         log.info("Async task succeed, taskId={}", taskId);
-        updateFlowInstanceStatus(FlowStatus.EXECUTION_SUCCEEDED);
         super.onSuccessful(taskId, taskService);
+        updateFlowInstanceStatus(FlowStatus.EXECUTION_SUCCEEDED);
     }
 
     @Override

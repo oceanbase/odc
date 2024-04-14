@@ -136,9 +136,9 @@ public class MySQLDBTablePartitionEditor extends DBTablePartitionEditor {
         SqlBuilder sqlBuilder = sqlBuilder();
         sqlBuilder.append("ALTER TABLE ");
         if (StringUtils.isNotEmpty(schemaName)) {
-            sqlBuilder.append(schemaName).append(".");
+            sqlBuilder.identifier(schemaName).append(".");
         }
-        sqlBuilder.append(tableName).append(" ADD PARTITION (").append("\n\t");
+        sqlBuilder.identifier(tableName).append(" ADD PARTITION (").append("\n\t");
         Validate.isTrue(!CollectionUtils.isEmpty(definitions), "Partition elements can not be empty");
         for (int i = 0; i < definitions.size(); i++) {
             appendDefinition(option, definitions.get(i), sqlBuilder);

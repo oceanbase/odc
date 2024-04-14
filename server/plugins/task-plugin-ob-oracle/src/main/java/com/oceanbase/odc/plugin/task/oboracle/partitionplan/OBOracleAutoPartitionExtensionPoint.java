@@ -39,14 +39,16 @@ import com.oceanbase.odc.plugin.connect.api.InformationExtensionPoint;
 import com.oceanbase.odc.plugin.connect.oboracle.OBOracleInformationExtension;
 import com.oceanbase.odc.plugin.schema.oboracle.browser.DBSchemaAccessors;
 import com.oceanbase.odc.plugin.task.api.partitionplan.invoker.create.PartitionExprGenerator;
+import com.oceanbase.odc.plugin.task.api.partitionplan.invoker.drop.DropPartitionGenerator;
 import com.oceanbase.odc.plugin.task.api.partitionplan.invoker.partitionname.PartitionNameGenerator;
 import com.oceanbase.odc.plugin.task.obmysql.partitionplan.OBMySQLAutoPartitionExtensionPoint;
 import com.oceanbase.odc.plugin.task.obmysql.partitionplan.invoker.SqlExprCalculator;
-import com.oceanbase.odc.plugin.task.obmysql.partitionplan.invoker.partitionname.OBMySQLDateBasedPartitionNameGenerator;
+import com.oceanbase.odc.plugin.task.obmysql.partitionplan.invoker.drop.OBMySQLKeepLatestPartitionGenerator;
 import com.oceanbase.odc.plugin.task.oboracle.partitionplan.datatype.OBOraclePartitionKeyDataTypeFactory;
 import com.oceanbase.odc.plugin.task.oboracle.partitionplan.invoker.OBOracleSqlExprCalculator;
 import com.oceanbase.odc.plugin.task.oboracle.partitionplan.invoker.create.OBOracleSqlExprPartitionExprGenerator;
 import com.oceanbase.odc.plugin.task.oboracle.partitionplan.invoker.create.OBOracleTimeIncreasePartitionExprGenerator;
+import com.oceanbase.odc.plugin.task.oboracle.partitionplan.invoker.partitionname.OBOracleDateBasedPartitionNameGenerator;
 import com.oceanbase.odc.plugin.task.oboracle.partitionplan.invoker.partitionname.OBOracleExprBasedPartitionNameGenerator;
 import com.oceanbase.odc.plugin.task.oboracle.partitionplan.util.DBTablePartitionEditors;
 import com.oceanbase.tools.dbbrowser.editor.DBTablePartitionEditor;
@@ -122,6 +124,14 @@ public class OBOracleAutoPartitionExtensionPoint extends OBMySQLAutoPartitionExt
     }
 
     @Override
+    public DropPartitionGenerator getDropPartitionGeneratorByName(@NonNull String name) {
+        List<DropPartitionGenerator> candidates = new ArrayList<>(4);
+        candidates.add(new OBMySQLKeepLatestPartitionGenerator());
+        return candidates.stream().filter(i -> Objects.equals(i.getName(), name)).findFirst()
+                .orElseThrow(() -> new IllegalArgumentException("Failed to find generator by name " + name));
+    }
+
+    @Override
     public PartitionExprGenerator getPartitionExpressionGeneratorByName(@NonNull String name) {
         List<PartitionExprGenerator> candidates = new ArrayList<>(2);
         candidates.add(new OBOracleSqlExprPartitionExprGenerator());
@@ -133,7 +143,7 @@ public class OBOracleAutoPartitionExtensionPoint extends OBMySQLAutoPartitionExt
     @Override
     public PartitionNameGenerator getPartitionNameGeneratorGeneratorByName(@NonNull String name) {
         List<PartitionNameGenerator> candidates = new ArrayList<>(2);
-        candidates.add(new OBMySQLDateBasedPartitionNameGenerator());
+        candidates.add(new OBOracleDateBasedPartitionNameGenerator());
         candidates.add(new OBOracleExprBasedPartitionNameGenerator());
         return candidates.stream().filter(i -> Objects.equals(i.getName(), name)).findFirst()
                 .orElseThrow(() -> new IllegalArgumentException("Failed to find generator by name " + name));

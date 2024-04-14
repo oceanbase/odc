@@ -18,11 +18,11 @@ package com.oceanbase.odc.service.notification;
 import java.net.InetSocketAddress;
 import java.net.Proxy;
 import java.net.Proxy.Type;
+import java.util.Locale;
 import java.util.Map;
 
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.text.StringSubstitutor;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
@@ -32,10 +32,12 @@ import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 
-import com.google.common.collect.ImmutableMap;
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.service.notification.helper.MessageResponseValidator;
+import com.oceanbase.odc.service.notification.helper.MessageTemplateProcessor;
 import com.oceanbase.odc.service.notification.model.ChannelType;
+import com.oceanbase.odc.service.notification.model.Event;
+import com.oceanbase.odc.service.notification.model.EventLabels;
 import com.oceanbase.odc.service.notification.model.Message;
 import com.oceanbase.odc.service.notification.model.MessageSendResult;
 import com.oceanbase.odc.service.notification.model.WebhookChannelConfig;
@@ -55,8 +57,7 @@ public class HttpSender implements MessageSender {
     @Override
     public MessageSendResult send(Message message) throws Exception {
         WebhookChannelConfig channelConfig = (WebhookChannelConfig) message.getChannel().getChannelConfig();
-        RestTemplate restTemplate = new RestTemplate();
-        setProxyIfNeed(restTemplate, channelConfig);
+        RestTemplate restTemplate = getRestTemplate(channelConfig);
         HttpMethod httpMethod = channelConfig.getHttpMethod() == null ? HttpMethod.POST : channelConfig.getHttpMethod();
         HttpEntity<String> request = new HttpEntity<>(getBody(message), getHeaders(message));
         ResponseEntity<Map> response =
@@ -71,13 +72,16 @@ public class HttpSender implements MessageSender {
     protected HttpHeaders getHeaders(Message message) {
         WebhookChannelConfig channelConfig = (WebhookChannelConfig) message.getChannel().getChannelConfig();
         HttpHeaders headers = new HttpHeaders();
-        String headersStr = channelConfig.getHeadersTemplate();
-        if (StringUtils.isEmpty(headersStr)) {
+        String headersTemplate = channelConfig.getHeadersTemplate();
+        if (StringUtils.isEmpty(headersTemplate)) {
             return headers;
         }
-        String[] split = headersStr.split(";");
+        String[] split = resolveTemplate(message, headersTemplate).split(";");
         for (String header : split) {
             String[] headerNameAndValue = header.split(":", 2);
+            if (headerNameAndValue.length != 2) {
+                continue;
+            }
             headers.add(headerNameAndValue[0].trim(), headerNameAndValue[1].trim());
         }
         return headers;
@@ -85,9 +89,7 @@ public class HttpSender implements MessageSender {
 
     protected String getBody(Message message) {
         WebhookChannelConfig channelConfig = (WebhookChannelConfig) message.getChannel().getChannelConfig();
-        StringSubstitutor substitutor = new StringSubstitutor(ImmutableMap.of("message", message.getContent()));
-        String bodyTemplate = channelConfig.getBodyTemplate();
-        return substitutor.replace(bodyTemplate);
+        return resolveTemplate(message, channelConfig.getBodyTemplate());
     }
 
     protected MessageSendResult checkResponse(Message message, ResponseEntity<Map> response) {
@@ -108,22 +110,42 @@ public class HttpSender implements MessageSender {
                         responseValidation, content));
     }
 
-    private void setProxyIfNeed(RestTemplate restTemplate, WebhookChannelConfig channelConfig) {
+    private RestTemplate getRestTemplate(WebhookChannelConfig channelConfig) {
+        SimpleClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory();
+        requestFactory.setConnectTimeout(10000);
+        requestFactory.setReadTimeout(10000);
+        RestTemplate restTemplate = new RestTemplate(requestFactory);
+
         if (StringUtils.isEmpty(channelConfig.getHttpProxy())) {
-            return;
+            return restTemplate;
         }
         String httpProxy = channelConfig.getHttpProxy();
         String[] proxyParas = httpProxy.split(":");
-        if (proxyParas.length != 2) {
-            throw new IllegalArgumentException("Illegal http proxy: " + httpProxy);
-        }
-        String hostName = proxyParas[0].replaceFirst("//", "");
-        int port = Integer.parseInt(proxyParas[1]);
+        String hostName = proxyParas[1].replaceFirst("//", "");
+        int port = Integer.parseInt(proxyParas[2]);
         Proxy proxy = new Proxy(Type.HTTP, new InetSocketAddress(hostName, port));
-
-        SimpleClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory();
         requestFactory.setProxy(proxy);
-        restTemplate.setRequestFactory(requestFactory);
+        return restTemplate;
+    }
+
+    private String resolveTemplate(Message message, String template) {
+        Event event = message.getEvent();
+        WebhookChannelConfig channelConfig = (WebhookChannelConfig) message.getChannel().getChannelConfig();
+        Locale locale;
+        try {
+            locale = Locale.forLanguageTag(channelConfig.getLanguage());
+        } catch (Exception e) {
+            locale = Locale.getDefault();
+        }
+        EventLabels labels;
+        if (event == null || event.getLabels() == null) {
+            labels = new EventLabels();
+        } else {
+            labels = event.getLabels();
+        }
+        labels.putIfNonNull("message", message.getContent());
+        labels.putIfNonNull("title", message.getTitle());
+        return MessageTemplateProcessor.replaceVariables(template, locale, labels);
     }
 
 }

@@ -98,8 +98,8 @@ public class DataXTransferJob extends AbstractJob {
             });
             // exit code: 0=success, 1=error
             int exitValue = process.waitFor();
-            renameExportFile();
             if (exitValue == 0 && failed == 0 || isCanceled()) {
+                renameExportFile();
                 setStatus(Status.SUCCESS);
             } else {
                 setStatus(Status.FAILURE);
@@ -110,6 +110,7 @@ public class DataXTransferJob extends AbstractJob {
             if (process != null && process.isAlive()) {
                 process.destroy();
             }
+            FileUtils.deleteQuietly(Paths.get(workingDir.getPath(), "job.conf").toFile());
             executor.shutdown();
         }
     }

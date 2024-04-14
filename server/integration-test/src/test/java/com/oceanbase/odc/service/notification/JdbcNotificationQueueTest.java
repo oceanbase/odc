@@ -42,6 +42,7 @@ import com.oceanbase.odc.service.notification.helper.ChannelMapper;
 import com.oceanbase.odc.service.notification.helper.EventMapper;
 import com.oceanbase.odc.service.notification.model.Channel;
 import com.oceanbase.odc.service.notification.model.ChannelType;
+import com.oceanbase.odc.service.notification.model.Event;
 import com.oceanbase.odc.service.notification.model.Message;
 import com.oceanbase.odc.service.notification.model.MessageSendingStatus;
 
@@ -142,6 +143,8 @@ public class JdbcNotificationQueueTest extends ServiceTestEnv {
     }
 
     private Message getMessage() {
+        Event event = new Event();
+        event.setId(1L);
         return Message.builder()
                 .title("test title")
                 .content("test content")
@@ -152,6 +155,7 @@ public class JdbcNotificationQueueTest extends ServiceTestEnv {
                 .organizationId(ORGANIZATION_ID)
                 .projectId(1L)
                 .channel(getChannel())
+                .event(event)
                 .build();
     }
 

@@ -33,6 +33,7 @@ import org.springframework.stereotype.Service;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
+import com.oceanbase.odc.core.flow.model.TaskParameters;
 import com.oceanbase.odc.core.shared.constant.FlowStatus;
 import com.oceanbase.odc.core.shared.constant.TaskErrorStrategy;
 import com.oceanbase.odc.metadb.flow.FlowInstanceRepository;
@@ -46,7 +47,7 @@ import com.oceanbase.odc.metadb.schedule.ScheduleEntity;
 import com.oceanbase.odc.service.connection.database.DatabaseService;
 import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.flow.FlowInstanceService;
-import com.oceanbase.odc.service.flow.instance.FlowInstance;
+import com.oceanbase.odc.service.flow.model.FlowInstanceDetailResp;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.partitionplan.model.PartitionPlanConfig;
 import com.oceanbase.odc.service.partitionplan.model.PartitionPlanKeyConfig;
@@ -91,9 +92,21 @@ public class PartitionPlanScheduleService {
     private FlowInstanceRepository flowInstanceRepository;
 
     public PartitionPlanConfig getPartitionPlanByFlowInstanceId(@NonNull Long flowInstanceId) {
-        Long fId = this.flowInstanceService.mapFlowInstance(flowInstanceId, FlowInstance::getId, false);
-        Optional<PartitionPlanEntity> optional = this.partitionPlanRepository.findByFlowInstanceId(fId);
-        return optional.map(this::getPartitionPlan).orElse(null);
+        FlowInstanceDetailResp resp = this.flowInstanceService.detail(flowInstanceId);
+        Optional<PartitionPlanEntity> optional = this.partitionPlanRepository.findByFlowInstanceId(resp.getId());
+        if (optional.isPresent()) {
+            return optional.map(this::getPartitionPlan).get();
+        }
+        TaskParameters parameters = resp.getParameters();
+        if (!(parameters instanceof PartitionPlanConfig)) {
+            return null;
+        }
+        PartitionPlanConfig partitionPlanConfig = (PartitionPlanConfig) parameters;
+        partitionPlanConfig.setEnabled(false);
+        if (CollectionUtils.isNotEmpty(partitionPlanConfig.getPartitionTableConfigs())) {
+            partitionPlanConfig.getPartitionTableConfigs().forEach(t -> t.setEnabled(false));
+        }
+        return partitionPlanConfig;
     }
 
     public PartitionPlanConfig getPartitionPlanByDatabaseId(@NonNull Long databaseId) {

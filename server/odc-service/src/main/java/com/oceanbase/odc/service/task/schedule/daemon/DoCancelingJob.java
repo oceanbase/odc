@@ -15,7 +15,7 @@
  */
 package com.oceanbase.odc.service.task.schedule.daemon;
 
-import java.util.concurrent.TimeUnit;
+import java.text.MessageFormat;
 
 import org.quartz.DisallowConcurrentExecution;
 import org.quartz.Job;
@@ -23,6 +23,8 @@ import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
 import org.springframework.data.domain.Page;
 
+import com.oceanbase.odc.core.alarm.AlarmEventNames;
+import com.oceanbase.odc.core.alarm.AlarmUtils;
 import com.oceanbase.odc.metadb.task.JobEntity;
 import com.oceanbase.odc.service.task.config.JobConfiguration;
 import com.oceanbase.odc.service.task.config.JobConfigurationHolder;
@@ -33,7 +35,6 @@ import com.oceanbase.odc.service.task.exception.JobException;
 import com.oceanbase.odc.service.task.exception.TaskRuntimeException;
 import com.oceanbase.odc.service.task.schedule.JobIdentity;
 import com.oceanbase.odc.service.task.service.TaskFrameworkService;
-import com.oceanbase.odc.service.task.util.JobDateUtils;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -77,20 +78,13 @@ public class DoCancelingJob implements Job {
                     getConfiguration().getJobDispatcher().stop(JobIdentity.of(lockedEntity.getId()));
                 } catch (JobException e) {
                     log.warn("Stop job occur error: ", e);
+                    AlarmUtils.warn(AlarmEventNames.TASK_CANCELED_FAILED,
+                            MessageFormat.format("Cancel job failed, jobId={0}", lockedEntity.getId()));
                     throw new TaskRuntimeException(e);
                 }
                 log.info("Job {} be cancelled successfully.", lockedEntity.getId());
             }
         });
-    }
-
-    private boolean checkCancelingIsTimeout(JobEntity a) {
-
-        long baseTimeMills = a.getCreateTime().getTime();
-        long cancelTimeoutMills = TimeUnit.MILLISECONDS.convert(
-                getConfiguration().getTaskFrameworkProperties().getJobCancelTimeoutSeconds(), TimeUnit.SECONDS);
-        return JobDateUtils.getCurrentDate().getTime() - baseTimeMills > cancelTimeoutMills;
-
     }
 
     private JobConfiguration getConfiguration() {

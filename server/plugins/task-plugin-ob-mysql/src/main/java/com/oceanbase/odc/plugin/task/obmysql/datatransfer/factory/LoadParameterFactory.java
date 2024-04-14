@@ -17,9 +17,7 @@
 package com.oceanbase.odc.plugin.task.obmysql.datatransfer.factory;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
@@ -123,11 +121,14 @@ public class LoadParameterFactory extends BaseParameterFactory<LoadParameter> {
          * only CSV format would save the manifest {@link com.oceanbase.tools.loaddump.client.DumpClient}
          */
         if (manifest.exists() && manifest.isFile()) {
-            try (InputStream inputStream = new FileInputStream(manifest)) {
-                if (SerializeUtils.deserializeObjectByKryo(inputStream) == null) {
+            try {
+                if (SerializeUtils.deserializeObjectByKryo(manifest.getPath()) == null) {
                     log.warn("Failed to deserialize MANIFEST.BIN, please check if different versions of ODC or "
                             + "ob-loader-dumper were used between export and import.");
                 }
+            } catch (Exception e) {
+                log.warn("Failed to deserialize MANIFEST.BIN, please check if different versions of ODC or "
+                        + "ob-loader-dumper were used between export and import.");
             }
         }
 
