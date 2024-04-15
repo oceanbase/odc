@@ -16,6 +16,8 @@
 package com.oceanbase.odc.service.db.schema;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -34,7 +36,6 @@ import com.oceanbase.odc.core.shared.constant.OrganizationType;
 import com.oceanbase.odc.core.shared.constant.ResourceRoleName;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.core.shared.exception.NotFoundException;
-import com.oceanbase.odc.core.shared.exception.NotImplementedException;
 import com.oceanbase.odc.metadb.dbobject.DBColumnEntity;
 import com.oceanbase.odc.metadb.dbobject.DBColumnRepository;
 import com.oceanbase.odc.metadb.dbobject.DBObjectEntity;
@@ -44,6 +45,7 @@ import com.oceanbase.odc.service.connection.ConnectionService;
 import com.oceanbase.odc.service.connection.database.DatabaseService;
 import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
+import com.oceanbase.odc.service.db.schema.model.DBObjectSyncStatus;
 import com.oceanbase.odc.service.db.schema.model.OdcDBColumn;
 import com.oceanbase.odc.service.db.schema.model.OdcDBObject;
 import com.oceanbase.odc.service.db.schema.model.QueryDBObjectParams;
@@ -78,6 +80,8 @@ public class DBSchemaIndexService {
     private DBColumnRepository dbColumnRepository;
     @Autowired
     private DBObjectRepository dbObjectRepository;
+    @Autowired
+    private DBSchemaSyncTaskManager dbSchemaSyncTaskManager;
 
     public QueryDBObjectResp listDatabaseObjects(@NonNull @Valid QueryDBObjectParams params) {
         QueryDBObjectResp resp = new QueryDBObjectResp();
@@ -174,8 +178,33 @@ public class DBSchemaIndexService {
         return resp;
     }
 
-    public Boolean syncDatabaseObjects(@NonNull SyncDBObjectReq req) {
-        throw new NotImplementedException();
+    public Boolean syncDatabaseObjects(@NonNull @Valid SyncDBObjectReq req) {
+        Set<Database> databases = new HashSet<>();
+        if (req.getResourceType() == ResourceType.ODC_CONNECTION) {
+            Set<Database> dbs = new HashSet<>(databaseService.listExistDatabasesByConnectionId(req.getResourceId()));
+            Set<Long> projectIds = projectService.getMemberProjectIds(authenticationFacade.currentUserId());
+            databases.addAll(dbs.stream()
+                    .filter(e -> e.getProject() != null && projectIds.contains(e.getProject().getId()))
+                    .collect(Collectors.toSet()));
+        } else if (req.getResourceType() == ResourceType.ODC_PROJECT) {
+            projectPermissionValidator.checkProjectRole(req.getResourceId(), ResourceRoleName.all());
+            databases.addAll(databaseService.listExistDatabasesByProjectId(req.getResourceId()));
+        } else if (req.getResourceType() == ResourceType.ODC_DATABASE) {
+            List<Database> dbs = databaseService.listDatabasesByIds(Collections.singleton(req.getResourceId()));
+            Set<Long> projectIds = projectService.getMemberProjectIds(authenticationFacade.currentUserId());
+            if (CollectionUtils.isEmpty(dbs) || dbs.get(0).getProject() == null
+                    || !projectIds.contains(dbs.get(0).getProject().getId())) {
+                throw new NotFoundException(ResourceType.ODC_DATABASE, "id", req.getResourceId());
+            }
+            databases.add(dbs.get(0));
+        } else {
+            throw new IllegalArgumentException("Unsupported resource type: " + req.getResourceType());
+        }
+        databases.removeIf(e -> Boolean.FALSE.equals(e.getExisted())
+                || e.getObjectSyncStatus() == DBObjectSyncStatus.PENDING
+                || e.getObjectSyncStatus() == DBObjectSyncStatus.SYNCING);
+        dbSchemaSyncTaskManager.submitDBSchemaSyncTask(databases);
+        return true;
     }
 
     private List<OdcDBObject> objectEntitiesToModels(List<DBObjectEntity> entities, Map<Long, Database> id2Database) {

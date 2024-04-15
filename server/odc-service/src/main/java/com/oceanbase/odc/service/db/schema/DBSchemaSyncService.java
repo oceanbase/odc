@@ -16,35 +16,44 @@
 package com.oceanbase.odc.service.db.schema;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.Lock;
 
 import javax.annotation.PostConstruct;
 
 import org.springframework.beans.factory.ListableBeanFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.Ordered;
+import org.springframework.integration.jdbc.lock.JdbcLockRegistry;
 import org.springframework.stereotype.Service;
 
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.shared.PreConditions;
+import com.oceanbase.odc.core.shared.constant.ErrorCodes;
+import com.oceanbase.odc.core.shared.exception.ConflictException;
 import com.oceanbase.odc.service.connection.ConnectionService;
 import com.oceanbase.odc.service.connection.database.DatabaseService;
 import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.db.browser.DBSchemaAccessors;
-import com.oceanbase.odc.service.db.schema.synchronizer.DBSchemaSyncer;
+import com.oceanbase.odc.service.db.schema.model.DBObjectSyncStatus;
+import com.oceanbase.odc.service.db.schema.syncer.DBSchemaSyncer;
 import com.oceanbase.odc.service.session.factory.DefaultConnectSessionFactory;
 import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
 
 import lombok.NonNull;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * @author gaoda.xy
  * @date 2024/4/10 20:56
  */
+@Slf4j
 @Service
 @SkipAuthorize("odc internal usage")
 public class DBSchemaSyncService {
@@ -58,6 +67,9 @@ public class DBSchemaSyncService {
     @Autowired
     private ConnectionService connectionService;
 
+    @Autowired
+    private JdbcLockRegistry jdbcLockRegistry;
+
     private List<DBSchemaSyncer> syncers;
 
     @PostConstruct
@@ -68,21 +80,44 @@ public class DBSchemaSyncService {
         this.syncers = implementations;
     }
 
-    public void sync(@NonNull Long databaseId) throws InterruptedException {
-        Database database = databaseService.getBasicSkipPermissionCheck(databaseId);
+    public void sync(@NonNull Database database) throws InterruptedException {
         PreConditions.notNull(database.getDataSource(), "database.dataSource");
-        ConnectionConfig config =
-                connectionService.getForConnectionSkipPermissionCheck(database.getDataSource().getId());
-        ConnectionSession session = new DefaultConnectSessionFactory(config).generateSession();
+        Long dataSourceId = database.getDataSource().getId();
+        Lock lock = jdbcLockRegistry.obtain("sync-datasource-" + dataSourceId + "-database-" + database.getId());
+        if (!lock.tryLock(3, TimeUnit.SECONDS)) {
+            throw new ConflictException(ErrorCodes.ResourceModifying, "Can not acquire jdbc lock");
+        }
         try {
-            DBSchemaAccessor accessor = DBSchemaAccessors.create(session);
-            for (DBSchemaSyncer syncer : syncers) {
-                if (syncer.support(config.getDialectType())) {
-                    syncer.sync(accessor, database);
+            databaseService.updateObjectSyncStatus(Collections.singleton(database.getId()), DBObjectSyncStatus.SYNCING);
+            ConnectionConfig config = connectionService.getForConnectionSkipPermissionCheck(dataSourceId);
+            ConnectionSession session = new DefaultConnectSessionFactory(config).generateSession();
+            try {
+                DBSchemaAccessor accessor = DBSchemaAccessors.create(session);
+                int failedCount = 0;
+                for (DBSchemaSyncer syncer : syncers) {
+                    if (syncer.support(config.getDialectType())) {
+                        try {
+                            syncer.sync(accessor, database);
+                        } catch (Exception e) {
+                            failedCount++;
+                            log.warn("Failed to synchronize {} for database id={}", syncer.getObjectType(),
+                                    database.getId(), e);
+                        }
+                    }
                 }
+                databaseService.updateObjectLastSyncTime(Collections.singleton(database.getId()));
+                if (failedCount > 0) {
+                    databaseService.updateObjectSyncStatus(Collections.singleton(database.getId()),
+                            DBObjectSyncStatus.FAILED);
+                } else {
+                    databaseService.updateObjectSyncStatus(Collections.singleton(database.getId()),
+                            DBObjectSyncStatus.SYNCED);
+                }
+            } finally {
+                session.expire();
             }
         } finally {
-            session.expire();
+            lock.unlock();
         }
     }
 

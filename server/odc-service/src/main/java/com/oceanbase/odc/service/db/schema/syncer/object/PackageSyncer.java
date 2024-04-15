@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.db.schema.synchronizer.object;
+package com.oceanbase.odc.service.db.schema.syncer.object;
 
 import java.util.List;
 import java.util.Set;
@@ -21,30 +21,35 @@ import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Component;
 
+import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.service.connection.database.model.Database;
-import com.oceanbase.tools.dbbrowser.model.DBObjectIdentity;
 import com.oceanbase.tools.dbbrowser.model.DBObjectType;
-import com.oceanbase.tools.dbbrowser.model.DBSynonymType;
+import com.oceanbase.tools.dbbrowser.model.DBPLObjectIdentity;
 import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
 
 import lombok.NonNull;
 
 /**
  * @author gaoda.xy
- * @date 2024/4/9 20:44
+ * @date 2024/4/9 20:32
  */
 @Component
-public class PublicSynonymSyncer extends SynonymSyncer {
+public class PackageSyncer extends AbstractDBObjectSyncer {
 
     @Override
     Set<String> getLatestObjectNames(@NonNull DBSchemaAccessor accessor, @NonNull Database database) {
-        List<DBObjectIdentity> synonyms = accessor.listSynonyms(database.getName(), DBSynonymType.PUBLIC);
-        return synonyms.stream().map(DBObjectIdentity::getName).collect(Collectors.toSet());
+        List<DBPLObjectIdentity> packages = accessor.listPackages(database.getName());
+        return packages.stream().map(DBPLObjectIdentity::getName).collect(Collectors.toSet());
     }
 
     @Override
-    DBObjectType getObjectType() {
-        return DBObjectType.PUBLIC_SYNONYM;
+    public DBObjectType getObjectType() {
+        return DBObjectType.PACKAGE;
+    }
+
+    @Override
+    public boolean support(@NonNull DialectType dialectType) {
+        return dialectType.isOracle();
     }
 
 }

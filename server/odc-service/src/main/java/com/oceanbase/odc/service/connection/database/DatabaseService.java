@@ -70,6 +70,8 @@ import com.oceanbase.odc.core.shared.exception.NotFoundException;
 import com.oceanbase.odc.metadb.connection.DatabaseEntity;
 import com.oceanbase.odc.metadb.connection.DatabaseRepository;
 import com.oceanbase.odc.metadb.connection.DatabaseSpecs;
+import com.oceanbase.odc.metadb.dbobject.DBColumnRepository;
+import com.oceanbase.odc.metadb.dbobject.DBObjectRepository;
 import com.oceanbase.odc.metadb.iam.PermissionRepository;
 import com.oceanbase.odc.metadb.iam.UserDatabasePermissionEntity;
 import com.oceanbase.odc.metadb.iam.UserDatabasePermissionRepository;
@@ -184,6 +186,12 @@ public class DatabaseService {
 
     @Autowired
     private UserPermissionRepository userPermissionRepository;
+
+    @Autowired
+    private DBObjectRepository dbObjectRepository;
+
+    @Autowired
+    private DBColumnRepository dbColumnRepository;
 
     @Autowired
     private DatabasePermissionHelper databasePermissionHelper;
@@ -397,6 +405,12 @@ public class DatabaseService {
     }
 
     @SkipAuthorize("internal usage")
+    public Set<Database> listExistDatabasesByProjectId(@NonNull Long projectId) {
+        return databaseRepository.findByProjectIdAndExisted(projectId, true).stream()
+                .map(databaseMapper::entityToModel).collect(Collectors.toSet());
+    }
+
+    @SkipAuthorize("internal usage")
     public Set<Database> listDatabaseByNames(@NotEmpty Collection<String> names) {
         return databaseRepository.findByNameIn(names).stream().map(databaseMapper::entityToModel)
                 .collect(Collectors.toSet());
@@ -434,6 +448,8 @@ public class DatabaseService {
         saved.forEach(database -> checkPermission(database.getProjectId(), database.getConnectionId()));
         Set<Long> databaseIds = saved.stream().map(DatabaseEntity::getId).collect(Collectors.toSet());
         deleteDatabasePermissionByIds(databaseIds);
+        dbColumnRepository.deleteByDatabaseIdIn(req.getDatabaseIds());
+        dbObjectRepository.deleteByDatabaseIdIn(req.getDatabaseIds());
         resourceRoleService.deleteByResourceTypeAndIdIn(ResourceType.ODC_DATABASE, databaseIds);
         databaseRepository.deleteAll(saved);
         return true;
@@ -784,6 +800,24 @@ public class DatabaseService {
         });
         resourceRoleService.saveAll(userResourceRoles);
         return true;
+    }
+
+    @SkipAuthorize("odc internal usage")
+    @Transactional(rollbackFor = Exception.class)
+    public void updateObjectSyncStatus(@NotNull Collection<Long> databaseIds, @NotNull DBObjectSyncStatus status) {
+        if (CollectionUtils.isEmpty(databaseIds)) {
+            return;
+        }
+        databaseRepository.setObjectSyncStatusByIdIn(databaseIds, status);
+    }
+
+    @SkipAuthorize("odc internal usage")
+    @Transactional(rollbackFor = Exception.class)
+    public void updateObjectLastSyncTime(@NotNull Collection<Long> databaseIds) {
+        if (CollectionUtils.isEmpty(databaseIds)) {
+            return;
+        }
+        databaseRepository.setObjectLastSyncTimeByIdIn(databaseIds, new Date());
     }
 
     private void checkPermission(Long projectId, Long dataSourceId) {

@@ -84,6 +84,9 @@ public interface ConnectionConfigRepository
             + " WHERE e.organizationId=:organizationId")
     Set<Long> findIdsByOrganizationId(@Param("organizationId") Long organizationId);
 
+    @Query("SELECT e.id FROM #{#entityName} e WHERE e.organizationId in (:organizationIds)")
+    Set<Long> findIdsByOrganizationIdIn(@Param("organizationIds") Collection<Long> organizationIds);
+
     @Query(value = "update connect_connection set `password`=:passwordEncyrpted,"
             + " sys_tenant_password=:sysTenantPasswordEncyrpted,"
             + " readonly_password=:readonlyPasswordEncyrpted where `id`=:connectionId", nativeQuery = true)

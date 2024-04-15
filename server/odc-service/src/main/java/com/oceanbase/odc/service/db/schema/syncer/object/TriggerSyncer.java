@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.db.schema.synchronizer.object;
+package com.oceanbase.odc.service.db.schema.syncer.object;
 
 import java.util.List;
 import java.util.Set;
@@ -31,25 +31,25 @@ import lombok.NonNull;
 
 /**
  * @author gaoda.xy
- * @date 2024/4/9 20:27
+ * @date 2024/4/9 20:33
  */
 @Component
-public class FunctionSyncer extends AbstractDBObjectSyncer {
+public class TriggerSyncer extends AbstractDBObjectSyncer {
 
     @Override
     Set<String> getLatestObjectNames(@NonNull DBSchemaAccessor accessor, @NonNull Database database) {
-        List<DBPLObjectIdentity> functions = accessor.listFunctions(database.getName());
-        return functions.stream().map(DBPLObjectIdentity::getName).collect(Collectors.toSet());
+        List<DBPLObjectIdentity> triggers = accessor.listTriggers(database.getName());
+        return triggers.stream().map(DBPLObjectIdentity::getName).collect(Collectors.toSet());
     }
 
     @Override
-    DBObjectType getObjectType() {
-        return DBObjectType.FUNCTION;
+    public DBObjectType getObjectType() {
+        return DBObjectType.TRIGGER;
     }
 
     @Override
     public boolean support(@NonNull DialectType dialectType) {
-        return dialectType.isMysql() || dialectType.isOracle() || dialectType.isDoris();
+        return dialectType.isOracle();
     }
 
 }

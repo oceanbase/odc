@@ -786,3 +786,9 @@ INSERT INTO config_system_configuration(`key`, `value`, `description`) VALUES('o
 
 INSERT INTO config_system_configuration(`key`, `value`, `description`) VALUES('odc.iam.auth.method',
  'jsession', 'The authentication mode used for login, there are two alternatives: jwt and jsession, the default is jsession') ON DUPLICATE KEY UPDATE `id`=`id`;
+
+---
+--- v4.3.0
+---
+ INSERT INTO config_system_configuration(`key`, `value`, `description`) VALUES('odc.database.schema.sync-cron-expression',
+  '0 0 2 * * ?', 'cron expression for synchronizing full database schema') ON DUPLICATE KEY UPDATE `id`=`id`;

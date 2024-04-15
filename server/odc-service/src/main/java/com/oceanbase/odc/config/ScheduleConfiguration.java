@@ -213,6 +213,21 @@ public class ScheduleConfiguration {
         return executor;
     }
 
+    @Bean(name = "syncDBSchemaTaskExecutor")
+    public ThreadPoolTaskExecutor syncDBSchemaTaskExecutor() {
+        ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
+        int poolSize = Math.max(SystemUtils.availableProcessors() * 4, 32);
+        executor.setCorePoolSize(poolSize);
+        executor.setMaxPoolSize(poolSize);
+        executor.setThreadNamePrefix("database-schema-sync-");
+        executor.setWaitForTasksToCompleteOnShutdown(true);
+        executor.setAwaitTerminationSeconds(5);
+        executor.setTaskDecorator(new TraceDecorator<>());
+        executor.setRejectedExecutionHandler(new ThreadPoolExecutor.DiscardPolicy());
+        executor.initialize();
+        log.info("syncDBSchemaTaskExecutor initialized");
+        return executor;
+    }
 
     @Lazy
     @Bean(name = "taskResultPublisherExecutor")

@@ -13,12 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.db.schema.synchronizer.object;
+package com.oceanbase.odc.service.db.schema.syncer;
 
-import java.util.HashSet;
-import java.util.Set;
-
-import org.springframework.stereotype.Component;
+import org.springframework.core.Ordered;
 
 import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.service.connection.database.model.Database;
@@ -29,24 +26,31 @@ import lombok.NonNull;
 
 /**
  * @author gaoda.xy
- * @date 2024/4/9 17:18
+ * @date 2024/4/9 17:03
  */
-@Component
-public class TableSyncer extends AbstractDBObjectSyncer {
+public interface DBSchemaSyncer extends Ordered {
 
-    @Override
-    protected Set<String> getLatestObjectNames(@NonNull DBSchemaAccessor accessor, @NonNull Database database) {
-        return new HashSet<>(accessor.showTables(database.getName()));
-    }
+    /**
+     * Sync database metadata
+     * 
+     * @param accessor db schema accessor, refer to {@link DBSchemaAccessor}
+     * @param database target database, refer to {@link Database}
+     */
+    void sync(@NonNull DBSchemaAccessor accessor, @NonNull Database database);
 
-    @Override
-    DBObjectType getObjectType() {
-        return DBObjectType.TABLE;
-    }
+    /**
+     * Get the object type that the synchronizer supports
+     *
+     * @return object type, refer to {@link DBObjectType}
+     */
+    DBObjectType getObjectType();
 
-    @Override
-    public boolean support(@NonNull DialectType dialectType) {
-        return dialectType.isMysql() || dialectType.isOracle() || dialectType.isDoris();
-    }
+    /**
+     * Whether the synchronizer supports the specified dialect type
+     * 
+     * @param dialectType dialect type
+     * @return true if support
+     */
+    boolean support(@NonNull DialectType dialectType);
 
 }

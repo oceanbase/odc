@@ -58,6 +58,11 @@ public interface DBObjectRepository extends OdcJpaRepository<DBObjectEntity, Lon
     @Query(value = "delete from database_schema_object t where t.id in (:ids)", nativeQuery = true)
     int deleteByIds(@Param("ids") Collection<Long> ids);
 
+    @Modifying
+    @Transactional
+    @Query(value = "delete from database_schema_object t where t.database_id in (:databaseIds)", nativeQuery = true)
+    int deleteByDatabaseIdIn(@Param("databaseIds") Collection<Long> databaseIds);
+
     default List<DBObjectEntity> batchCreate(List<DBObjectEntity> entities) {
         String sql = InsertSqlTemplateBuilder.from("database_schema_object")
                 .field(DBObjectEntity_.name)

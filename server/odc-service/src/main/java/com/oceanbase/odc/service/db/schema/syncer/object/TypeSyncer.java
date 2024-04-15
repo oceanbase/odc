@@ -13,9 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.db.schema.synchronizer.column;
+package com.oceanbase.odc.service.db.schema.syncer.object;
 
-import java.util.Map;
+import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -24,33 +24,32 @@ import org.springframework.stereotype.Component;
 import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.tools.dbbrowser.model.DBObjectType;
-import com.oceanbase.tools.dbbrowser.model.DBTableColumn;
+import com.oceanbase.tools.dbbrowser.model.DBPLObjectIdentity;
 import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
 
 import lombok.NonNull;
 
 /**
  * @author gaoda.xy
- * @date 2024/4/10 20:13
+ * @date 2024/4/9 20:39
  */
 @Component
-public class TableColumnSyncer extends AbstractDBColumnSyncer {
+public class TypeSyncer extends AbstractDBObjectSyncer {
 
     @Override
-    DBObjectType getObjectType() {
-        return DBObjectType.TABLE;
+    Set<String> getLatestObjectNames(@NonNull DBSchemaAccessor accessor, @NonNull Database database) {
+        List<DBPLObjectIdentity> types = accessor.listTypes(database.getName());
+        return types.stream().map(DBPLObjectIdentity::getName).collect(Collectors.toSet());
     }
 
     @Override
-    Map<String, Set<String>> getLatestObjectToColumns(@NonNull DBSchemaAccessor accessor, @NonNull Database database) {
-        return accessor.listBasicTableColumns(database.getName()).entrySet().stream()
-                .collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue()
-                        .stream().map(DBTableColumn::getName).collect(Collectors.toSet())));
+    public DBObjectType getObjectType() {
+        return DBObjectType.TYPE;
     }
 
     @Override
     public boolean support(@NonNull DialectType dialectType) {
-        return dialectType.isMysql() || dialectType.isOracle() || dialectType.isDoris();
+        return dialectType.isOracle();
     }
 
 }
