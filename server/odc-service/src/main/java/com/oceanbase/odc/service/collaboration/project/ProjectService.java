@@ -16,6 +16,7 @@
 package com.oceanbase.odc.service.collaboration.project;
 
 import java.util.Collections;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -195,7 +196,9 @@ public class ProjectService {
                 .orElseThrow(() -> new NotFoundException(ResourceType.ODC_PROJECT, "id", id));
         List<UserResourceRole> userResourceRoles =
                 resourceRoleService.listByResourceTypeAndId(ResourceType.ODC_PROJECT, entity.getId());
-        return entityToModel(entity, userResourceRoles);
+        Project project = entityToModel(entity, userResourceRoles);
+        project.setDbObjectLastSyncTime(getEarliestObjectSyncTime(id));
+        return project;
     }
 
     @SkipAuthorize("odc internal usage")
@@ -490,6 +493,18 @@ public class ProjectService {
         userResourceRole.setResourceRole(member.getRole());
         userResourceRole.setResourceType(ResourceType.ODC_PROJECT);
         return userResourceRole;
+    }
+
+    private Date getEarliestObjectSyncTime(@NotNull Long projectId) {
+        List<DatabaseEntity> entities = databaseRepository.findByProjectIdAndExisted(projectId, true);
+        if (CollectionUtils.isEmpty(entities)) {
+            return null;
+        }
+        Set<Date> syncTimes = entities.stream().map(DatabaseEntity::getObjectLastSyncTime).collect(Collectors.toSet());
+        if (syncTimes.contains(null)) {
+            return null;
+        }
+        return syncTimes.stream().min(Date::compareTo).orElse(null);
     }
 
     private Long currentOrganizationId() {

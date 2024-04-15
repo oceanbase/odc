@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -360,7 +361,9 @@ public class ConnectionService {
 
     @PreAuthenticate(actions = "read", resourceType = "ODC_CONNECTION", indexOfIdParam = 0)
     public ConnectionConfig detail(@NotNull Long id) {
-        return getWithoutPermissionCheck(id);
+        ConnectionConfig conn = getWithoutPermissionCheck(id);
+        conn.setDbObjectLastSyncTime(getEarliestObjectSyncTime(conn.getId()));
+        return conn;
     }
 
     @Transactional(rollbackFor = Exception.class)
@@ -957,6 +960,18 @@ public class ConnectionService {
         if (Objects.nonNull(properties) && StringUtils.equals(properties.get("maskHost"), "true")) {
             connection.setHost("trial_connection_host");
         }
+    }
+
+    private Date getEarliestObjectSyncTime(@NotNull Long connectionId) {
+        List<DatabaseEntity> entities = databaseRepository.findByConnectionIdAndExisted(connectionId, true);
+        if (CollectionUtils.isEmpty(entities)) {
+            return null;
+        }
+        Set<Date> syncTimes = entities.stream().map(DatabaseEntity::getObjectLastSyncTime).collect(Collectors.toSet());
+        if (syncTimes.contains(null)) {
+            return null;
+        }
+        return syncTimes.stream().min(Date::compareTo).orElse(null);
     }
 
 }
