@@ -386,6 +386,7 @@ json_function
     | json_exists_expr
     | json_object_expr
     | json_table_expr
+    | json_equal_expr
     ;
 
 common_cursor_attribute
@@ -4471,6 +4472,10 @@ js_array_return_clause
 
 json_value_expr
     : JSON_VALUE LeftParen js_doc_expr Comma js_literal opt_js_value_returning_type TRUNCATE? ASCII? json_value_on_opt? RightParen
+    ;
+
+json_equal_expr
+    : JSON_EQUAL LeftParen func_param_list json_equal_option? RightParen
     ;
 
 json_value_on_opt
