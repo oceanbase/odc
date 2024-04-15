@@ -29,6 +29,7 @@ import com.oceanbase.odc.core.sql.execute.mapper.MySQLGeometryMapper;
 import com.oceanbase.odc.core.sql.execute.mapper.MySQLNumberMapper;
 import com.oceanbase.odc.core.sql.execute.mapper.MySQLTimestampMapper;
 import com.oceanbase.odc.core.sql.execute.mapper.MySQLYearMapper;
+import com.oceanbase.odc.core.sql.execute.mapper.OBOracleGeometryMapper;
 import com.oceanbase.odc.core.sql.execute.mapper.OracleBinaryNumberMapper;
 import com.oceanbase.odc.core.sql.execute.mapper.OracleGeneralDateMapper;
 import com.oceanbase.odc.core.sql.execute.mapper.OracleGeneralTimestampLTZMapper;
@@ -52,16 +53,23 @@ public class RollBackPlanJdbcRowMapper extends BaseDialectBasedRowMapper {
             mapperList.add(new MySQLTimestampMapper());
             mapperList.add(new MySQLGeometryMapper());
             mapperList.add(new MySQLNumberMapper());
-        } else if (dialectType.isOracle()) {
-            mapperList.add(new OracleGeneralDateMapper());
-            mapperList.add(new OracleGeneralTimestampTZMapper());
-            mapperList.add(new OracleGeneralTimestampLTZMapper(timeZone));
-            mapperList.add(new OracleIntervalMapper());
-            mapperList.add(new OracleGeneralTimestampMapper());
-            mapperList.add(new OracleNumberMapper());
-            mapperList.add(new OracleBinaryNumberMapper());
+        } else if (DialectType.OB_ORACLE == dialectType) {
+            initForOracleMode(timeZone);
+            mapperList.add(new OBOracleGeometryMapper());
+        } else if (DialectType.ORACLE == dialectType) {
+            initForOracleMode(timeZone);
         }
         mapperList.add(new GeneralLobMapper());
+    }
+
+    private void initForOracleMode(String timeZone) {
+        mapperList.add(new OracleGeneralDateMapper());
+        mapperList.add(new OracleGeneralTimestampTZMapper());
+        mapperList.add(new OracleGeneralTimestampLTZMapper(timeZone));
+        mapperList.add(new OracleIntervalMapper());
+        mapperList.add(new OracleGeneralTimestampMapper());
+        mapperList.add(new OracleNumberMapper());
+        mapperList.add(new OracleBinaryNumberMapper());
     }
 
     @Override
