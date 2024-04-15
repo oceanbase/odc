@@ -34,13 +34,14 @@ import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.core.shared.constant.TaskType;
 import com.oceanbase.odc.core.shared.exception.NotFoundException;
-import com.oceanbase.odc.metadb.connection.DatabaseEntity;
 import com.oceanbase.odc.metadb.connection.DatabaseRepository;
 import com.oceanbase.odc.metadb.schedule.ScheduleEntity;
 import com.oceanbase.odc.metadb.schedule.ScheduleRepository;
 import com.oceanbase.odc.metadb.schedule.ScheduleTaskEntity;
 import com.oceanbase.odc.metadb.schedule.ScheduleTaskRepository;
 import com.oceanbase.odc.service.connection.ConnectionService;
+import com.oceanbase.odc.service.connection.database.DatabaseService;
+import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.flow.factory.FlowFactory;
 import com.oceanbase.odc.service.flow.instance.FlowInstance;
@@ -81,18 +82,17 @@ public class OscService {
     private HorizontalDataPermissionValidator permissionValidator;
     @Autowired
     private FlowFactory flowFactory;
+    @Autowired
+    private DatabaseService databaseService;
 
 
     @SkipAuthorize("internal authenticated")
     public OscLockDatabaseUserInfo getOscDatabaseInfo(@NonNull Long id) {
-        Optional<DatabaseEntity> database = databaseRepository.findById(id);
+
+        Database database = databaseService.detail(id);
         OscLockDatabaseUserInfo oscDatabase = new OscLockDatabaseUserInfo();
-        if (!database.isPresent()) {
-            return oscDatabase;
-        }
-        DatabaseEntity databaseEntity = database.get();
-        oscDatabase.setDatabaseId(databaseEntity.getDatabaseId());
-        oscDatabase.setLockDatabaseUserRequired(getLockUserIsRequired(databaseEntity.getConnectionId()));
+        oscDatabase.setDatabaseId(database.getDatabaseId());
+        oscDatabase.setLockDatabaseUserRequired(getLockUserIsRequired(database.getDataSource().getId()));
         return oscDatabase;
     }
 
