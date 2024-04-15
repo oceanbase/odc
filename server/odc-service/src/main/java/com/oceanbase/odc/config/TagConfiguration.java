@@ -13,13 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.tag;
+package com.oceanbase.odc.config;
 
-import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 
-@AutoConfiguration
+import com.oceanbase.odc.service.tag.DefaultTagService;
+import com.oceanbase.odc.service.tag.DefaultTagServiceFacadeImpl;
+import com.oceanbase.odc.service.tag.TagService;
+import com.oceanbase.odc.service.tag.TagServiceFacade;
+
+@Configuration
 public class TagConfiguration {
 
     @Bean
@@ -30,7 +35,7 @@ public class TagConfiguration {
 
     @Bean
     @ConditionalOnMissingBean(TagServiceFacade.class)
-    public TagServiceFacade defaultTagService(TagService tagService) {
+    public TagServiceFacade defaultTagServiceFacade(TagService tagService) {
         return new DefaultTagServiceFacadeImpl(tagService);
     }
 

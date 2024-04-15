@@ -22,7 +22,7 @@ public class DefaultTagServiceFacadeImpl implements TagServiceFacade {
     public static final String DEFAULT_SINGLE_USER_TAG_LABEL_KEY = "userTag";
     private final TagService tagService;
 
-    protected DefaultTagServiceFacadeImpl(TagService tagService) {
+    public DefaultTagServiceFacadeImpl(TagService tagService) {
         this.tagService = tagService;
     }
 
