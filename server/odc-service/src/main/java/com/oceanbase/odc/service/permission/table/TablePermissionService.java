@@ -421,6 +421,17 @@ public class TablePermissionService {
         return permissionIds.stream().map(UserTablePermission::from).collect(Collectors.toList());
     }
 
+    @Transactional(rollbackFor = Exception.class)
+    @SkipAuthorize("odc internal usage")
+    public void deleteByDatabaseIds(List<Long> databaseIds) {
+        if (CollectionUtils.isEmpty(databaseIds)) {
+            return;
+        }
+        List<Long> permissionIds = userTablePermissionRepository.findByDatabaseIdIn(databaseIds).stream().map(
+                UserTablePermissionEntity::getId).collect(Collectors.toList());
+        permissionRepository.deleteByIds(permissionIds);
+        userPermissionRepository.deleteByPermissionIds(permissionIds);
+    }
 
     // 对表和库的权限进行过滤
     @SkipAuthorize("odc internal usage")
@@ -442,7 +453,8 @@ public class TablePermissionService {
                 .getPermissions(databases.stream().map(Database::getId).collect(Collectors.toList()));
         // 当前用户与表的权限关系
         QueryTablePermissionParams queryTablePermissionParams = QueryTablePermissionParams.builder()
-                .userId(authenticationFacade.currentUserId()).dataSourceId(dataSourceId).build();
+                .userId(authenticationFacade.currentUserId()).dataSourceId(dataSourceId)
+                .statuses(Arrays.asList(ExpirationStatusFilter.NOT_EXPIRED)).build();
         List<UserTablePermission> userTablePermissions = listWithoutPageByDataSourceId(dataSource.getId(),
                 queryTablePermissionParams);
         List<UnauthorizedResource> unauthorizedResources = new ArrayList<>();
@@ -537,6 +549,7 @@ public class TablePermissionService {
         // 当前用户与表的权限关系
         QueryTablePermissionParams queryTablePermissionParams = QueryTablePermissionParams.builder()
                 .userId(authenticationFacade.currentUserId()).dataSourceId(databaseDetail.getDataSource().getId())
+                .statuses(Arrays.asList(ExpirationStatusFilter.NOT_EXPIRED))
                 .build();
         List<UserTablePermission> userTablePermissions =
                 listWithoutPageByDataSourceId(databaseDetail.getDataSource().getId(),

@@ -1102,7 +1102,7 @@ public class FlowInstanceService {
             for (Entry<String, String> entry : config.getProperties().entrySet()) {
                 variables.setAttribute(Variable.CONNECTION_PROPERTIES, entry.getKey(), entry.getValue());
             }
-        }else{
+        } else {
             variables.setAttribute(Variable.CONNECTION_NAME, JsonUtils.toJson(""));
             variables.setAttribute(Variable.CONNECTION_TENANT, JsonUtils.toJson(""));
         }
@@ -1158,7 +1158,7 @@ public class FlowInstanceService {
                 }).collect(Collectors.toList());
                 variables.setAttribute(Variable.DATABASE_OWNERS_NAMES, JsonUtils.toJson(ownerNames));
             }
-        }else{
+        } else {
             variables.setAttribute(Variable.ENVIRONMENT_NAME, "");
             variables.setAttribute(Variable.DATABASE_NAME, "");
             variables.setAttribute(Variable.DATABASE_OWNERS_IDS, JsonUtils.toJson(Collections.emptyList()));

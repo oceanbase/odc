@@ -109,6 +109,7 @@ import com.oceanbase.odc.service.onlineschemachange.ddl.OscDBAccessorFactory;
 import com.oceanbase.odc.service.onlineschemachange.rename.OscDBUserUtil;
 import com.oceanbase.odc.service.permission.database.DatabasePermissionHelper;
 import com.oceanbase.odc.service.permission.database.model.DatabasePermissionType;
+import com.oceanbase.odc.service.permission.table.TablePermissionService;
 import com.oceanbase.odc.service.plugin.SchemaPluginUtil;
 import com.oceanbase.odc.service.session.factory.DefaultConnectSessionFactory;
 import com.oceanbase.odc.service.session.factory.OBConsoleDataSourceFactory;
@@ -200,6 +201,9 @@ public class DatabaseService {
     private UserService userService;
 
     private SecurityManager securityManager;
+
+    @Autowired
+    private TablePermissionService tablePermissionService;
 
     @Transactional(rollbackFor = Exception.class)
     @SkipAuthorize("internal authenticated")
@@ -391,6 +395,7 @@ public class DatabaseService {
         databaseRepository.setProjectIdByIdIn(req.getProjectId(), entities.stream().map(DatabaseEntity::getId)
                 .collect(Collectors.toSet()));
         deleteDatabasePermissionByIds(req.getDatabaseIds());
+        tablePermissionService.deleteByDatabaseIds(req.getDatabaseIds());
 
         // Delete the original owner
         req.getDatabaseIds().forEach(
