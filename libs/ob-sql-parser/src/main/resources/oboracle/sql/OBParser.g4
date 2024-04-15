@@ -1154,11 +1154,11 @@ alter_keystore_stmt
     ;
 
 create_table_stmt
-    : CREATE special_table_type TABLE relation_factor LeftParen table_element_list RightParen table_option_list? (partition_option | auto_partition_option)? (with_column_group)? on_commit_option
-    | CREATE special_table_type TABLE relation_factor LeftParen table_element_list RightParen table_option_list? (partition_option | auto_partition_option)? (with_column_group)? on_commit_option AS subquery order_by? fetch_next_clause?
-    | CREATE special_table_type TABLE relation_factor table_option_list (partition_option | auto_partition_option)? (with_column_group)? on_commit_option AS subquery order_by? fetch_next_clause?
-    | CREATE special_table_type TABLE relation_factor partition_option (with_column_group)? on_commit_option AS subquery order_by? fetch_next_clause?
-    | CREATE special_table_type TABLE relation_factor (with_column_group)? on_commit_option AS subquery order_by? fetch_next_clause?
+    : CREATE special_table_type TABLE relation_factor LeftParen table_element_list RightParen table_option_list? (partition_option | auto_partition_option)? with_column_group? on_commit_option
+    | CREATE special_table_type TABLE relation_factor LeftParen table_element_list RightParen table_option_list? (partition_option | auto_partition_option)? with_column_group? on_commit_option AS subquery order_by? fetch_next_clause?
+    | CREATE special_table_type TABLE relation_factor table_option_list (partition_option | auto_partition_option)? with_column_group? on_commit_option AS subquery order_by? fetch_next_clause?
+    | CREATE special_table_type TABLE relation_factor partition_option with_column_group? on_commit_option AS subquery order_by? fetch_next_clause?
+    | CREATE special_table_type TABLE relation_factor with_column_group? on_commit_option AS subquery order_by? fetch_next_clause?
     ;
 
 table_element_list
@@ -1678,14 +1678,6 @@ subpartition_individual_option
     | SUBPARTITION BY LIST LeftParen column_name_list RightParen
     ;
 
-opt_column_partition_option
-    : column_partition_option?
-    ;
-
-column_partition_option
-    : PARTITION BY COLUMN? LeftParen vertical_column_name (Comma aux_column_list)? RightParen
-    ;
-
 aux_column_list
     : vertical_column_name (Comma vertical_column_name)*
     ;
@@ -2010,7 +2002,7 @@ opt_tablet_id_no_empty
     ;
 
 create_index_stmt
-    : CREATE UNIQUE? INDEX normal_relation_factor index_using_algorithm? ON relation_factor LeftParen sort_column_list RightParen opt_index_options? (partition_option | auto_partition_option)? (with_column_group)?
+    : CREATE UNIQUE? INDEX normal_relation_factor index_using_algorithm? ON relation_factor LeftParen sort_column_list RightParen opt_index_options? (partition_option | auto_partition_option)? with_column_group?
     ;
 
 index_name
