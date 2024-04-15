@@ -76,7 +76,7 @@ public class ConnectionTesting {
     @Autowired
     private ConnectProperties connectProperties;
     @Autowired
-    private DefaultConnectionAdapter environmentAdapter;
+    private ConnectionAdapter environmentAdapter;
     @Autowired
     private ConnectionSSLAdaptor connectionSSLAdaptor;
     @Autowired

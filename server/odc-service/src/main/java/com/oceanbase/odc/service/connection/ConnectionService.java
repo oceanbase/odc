@@ -167,7 +167,7 @@ public class ConnectionService {
     private ConnectProperties connectProperties;
 
     @Autowired
-    private DefaultConnectionAdapter environmentAdapter;
+    private ConnectionAdapter environmentAdapter;
 
     @Autowired
     private ConnectionSSLAdaptor connectionSSLAdaptor;

@@ -273,14 +273,14 @@ public class DataTransferTask implements Callable<DataTransferTaskResult> {
 
         if (dataPath.exists()) {
             boolean deleteRes = FileUtils.deleteQuietly(dataPath);
-            log.info("Delete data directory, dir={}, result={}", dataPath.getAbsolutePath(), deleteRes);
+            LOGGER.info("Delete data directory, dir={}, result={}", dataPath.getAbsolutePath(), deleteRes);
         }
         for (File subFile : workingDir.listFiles()) {
             if (subFile.isDirectory()) {
                 continue;
             }
             boolean deleteRes = FileUtils.deleteQuietly(subFile);
-            log.info("Deleted file, fileName={}, result={}", subFile.getName(), deleteRes);
+            LOGGER.info("Deleted file, fileName={}, result={}", subFile.getName(), deleteRes);
         }
     }
 
@@ -304,7 +304,7 @@ public class DataTransferTask implements Callable<DataTransferTaskResult> {
                 FileUtils.deleteQuietly(exportPath);
                 exportPath = schemaFile;
             } catch (Exception ex) {
-                log.warn("merge schema failed, origin files will still be used, reason=", ex);
+                LOGGER.warn("merge schema failed, origin files will still be used, reason=", ex);
             }
         }
 
@@ -329,7 +329,7 @@ public class DataTransferTask implements Callable<DataTransferTaskResult> {
         Validate.isTrue(CollectionUtils.isNotEmpty(fileNames), "No script found");
         Validate.notNull(format, "DataTransferFormat can not be null");
         if (DataTransferFormat.CSV.equals(format) && fileNames.size() > 1) {
-            log.warn("Multiple files for CSV format is invalid, importFileNames={}", fileNames);
+            LOGGER.warn("Multiple files for CSV format is invalid, importFileNames={}", fileNames);
             throw new IllegalArgumentException("Multiple files isn't accepted for CSV format");
         }
         LocalFileManager fileManager = SpringContextUtil.getBean(LocalFileManager.class);
@@ -343,7 +343,7 @@ public class DataTransferTask implements Callable<DataTransferTaskResult> {
                     OutputStream outputStream = new FileOutputStream(dest)) {
                 IOUtils.copy(inputStream, outputStream);
             }
-            log.info("Copy script to working dir, from={}, dest={}", from.getAbsolutePath(), dest.getAbsolutePath());
+            LOGGER.info("Copy script to working dir, from={}, dest={}", from.getAbsolutePath(), dest.getAbsolutePath());
             inputs.add(dest.toURI().toURL());
         }
         return inputs;
@@ -351,19 +351,17 @@ public class DataTransferTask implements Callable<DataTransferTaskResult> {
 
     private ExportOutput copyImportZip(List<String> fileNames, File destDir) throws IOException {
         if (fileNames == null || fileNames.size() != 1) {
-            log.warn("Single zip file is available, importFileNames={}", fileNames);
+            LOGGER.warn("Single zip file is available, importFileNames={}", fileNames);
             throw new IllegalArgumentException("Single zip file is available");
         }
         String fileName = fileNames.get(0);
         LocalFileManager fileManager = SpringContextUtil.getBean(LocalFileManager.class);
         Optional<File> uploadFile = fileManager.findByName(TaskType.IMPORT, LocalFileManager.UPLOAD_BUCKET, fileName);
         File from = uploadFile.orElseThrow(() -> new FileNotFoundException("File not found, " + fileName));
-        File dest = new File(destDir.getAbsolutePath() + File.separator + "data");
-        FileUtils.forceMkdir(dest);
         ExportOutput exportOutput = new ExportOutput(from);
-        exportOutput.toFolder(dest);
-        log.info("Unzip file to working dir, from={}, dest={}", from.getAbsolutePath(), dest.getAbsolutePath());
-        return new ExportOutput(dest);
+        exportOutput.toFolder(destDir);
+        LOGGER.info("Unzip file to working dir, from={}, dest={}", from.getAbsolutePath(), destDir.getAbsolutePath());
+        return new ExportOutput(destDir);
     }
 
     private void copyExportedFiles(DataTransferTaskResult result, String exportPath) {
