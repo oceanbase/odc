@@ -270,9 +270,7 @@ conf_const
 bool_pri
     : bit_expr IS not? (NULLX|is_nan_inf_value)
     | bit_expr IS NOT? (JSON FORMAT)? is_json_constrain
-    | json_exists_expr
     | bit_expr ((((COMP_EQ SOME|COMP_NSEQ)|(COMP_LE|COMP_LT) SOME)|((COMP_GE|COMP_GT? COMP_EQ)|(COMP_LE|COMP_LT COMP_EQ?)) sub_query_flag?)|(((COMP_GE|COMP_GT) SOME|(COMP_NE SOME|COMP_NE_PL))|((COMP_LT? COMP_GT|COMP_NE)|(Caret|Not) COMP_EQ) sub_query_flag?)) bit_expr
-    | JSON_EQUAL LeftParen func_param_list json_equal_option? RightParen
     | predicate
     ;
 
