@@ -197,8 +197,8 @@ public abstract class AbstractDebugSession implements AutoCloseable {
 
         public DebugDataSource(@NonNull ConnectionConfig connectionConfig, List<String> initSqls) {
             this.initSqls = initSqls;
-            this.initializers = Arrays.asList(new DataSourceInitScriptInitializer(connectionConfig, true),
-                    new BackupInstanceInitializer(connectionConfig));
+            this.initializers = Arrays.asList(new BackupInstanceInitializer(connectionConfig),
+                    new DataSourceInitScriptInitializer(connectionConfig, true));
         }
 
         @Override

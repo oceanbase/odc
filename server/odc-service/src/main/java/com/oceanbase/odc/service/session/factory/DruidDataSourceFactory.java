@@ -62,9 +62,8 @@ public class DruidDataSourceFactory extends OBConsoleDataSourceFactory {
         String jdbcUrl = getJdbcUrl();
         String username = getUsername();
         String password = getPassword();
-        DruidDataSource dataSource =
-                new InnerDataSource(Arrays.asList(new DataSourceInitScriptInitializer(connectionConfig),
-                        new BackupInstanceInitializer(connectionConfig)));
+        DruidDataSource dataSource = new InnerDataSource(Arrays.asList(new BackupInstanceInitializer(connectionConfig),
+                new DataSourceInitScriptInitializer(connectionConfig)));
         dataSource.setUrl(jdbcUrl);
         dataSource.setUsername(username);
         dataSource.setPassword(password);

@@ -256,8 +256,8 @@ public class ConnectionTesting {
 
         List<ConnectionInitializer> initializers = new ArrayList<>();
         initializers.addAll(
-                Arrays.asList(new DataSourceInitScriptInitializer(config, false),
-                        new BackupInstanceInitializer(config)));
+                Arrays.asList(new BackupInstanceInitializer(config),
+                        new DataSourceInitScriptInitializer(config, false)));
         try (Connection connection = DriverManager.getConnection(jdbcUrl, properties);
                 Statement statement = connection.createStatement()) {
             if (queryTimeoutSeconds >= 0) {

@@ -429,14 +429,6 @@ public class ConnectionConfig
         return queryTimeoutSeconds;
     }
 
-    @JsonIgnore
-    public String getInternalSessionInitScript() {
-        if (this.instanceRoleType == OBInstanceRoleType.PHYSICAL_STANDBY && getDialectType().isOceanbase()) {
-            return "set ob_read_consistency='WEAK';";
-        }
-        return null;
-    }
-
     @Size(max = 8192, message = "Session init script is out of range [0,8192]")
     public String getSessionInitScript() {
         if (this.attributes == null) {
