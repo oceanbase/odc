@@ -759,6 +759,7 @@ INSERT INTO config_system_configuration ( `key`, `value`, `description` ) VALUES
 INSERT INTO config_system_configuration ( `key`, `value`, `description` ) VALUES( 'odc.task-framework.k8s-properties.mount-path', '', 'k8s pod mount path on host' ) ON DUPLICATE KEY UPDATE `id` = `id`;
 INSERT INTO config_system_configuration ( `key`, `value`, `description` ) VALUES( 'odc.task-framework.k8s-properties.mount-disk-size', '64', 'k8s pod mount disk size, unit is GB' ) ON DUPLICATE KEY UPDATE `id` = `id`;
 INSERT INTO config_system_configuration ( `key`, `value`, `description` ) VALUES( 'odc.task-framework.k8s-properties.pod-image-name', '', 'k8s pod image name' ) ON DUPLICATE KEY UPDATE `id` = `id`;
+INSERT INTO config_system_configuration ( `key`, `value`, `description` ) VALUES( 'odc.task-framework.k8s-properties.pod-pending-timeout-seconds', '3600', 'pod will be destroyed if pending exceed this time, default time is 1h' ) ON DUPLICATE KEY UPDATE `id` = `id`;
 INSERT INTO config_system_configuration ( `key`, `value`, `description` ) VALUES( 'odc.task.pre-check.execution-timeout-millis', '3600000', 'Pre-check task execution timeout, in milliseconds, default value: 3600000 i.e. 1 hour') ON DUPLICATE KEY UPDATE `id`=`id`;
 
 ---
