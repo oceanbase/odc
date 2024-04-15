@@ -55,7 +55,7 @@ public class QuartzConfiguration {
         schedulerFactoryBean.setDataSource(dataSource);
         schedulerFactoryBean.setSchedulerName(defaultSchedulerName);
         Properties properties = new Properties();
-        properties.put("org.quartz.threadPool.threadCount", maxConcurrentTaskCount);
+        properties.put("org.quartz.threadPool.threadCount", maxConcurrentTaskCount.toString());
         schedulerFactoryBean.setQuartzProperties(properties);
         return schedulerFactoryBean;
     }
