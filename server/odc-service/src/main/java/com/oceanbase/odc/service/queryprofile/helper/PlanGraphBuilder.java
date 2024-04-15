@@ -68,7 +68,9 @@ public class PlanGraphBuilder {
     private static Operator parseResult(OBPlanDO record, Map<String, String> parameters) {
         Operator operator = new Operator(record.getId(), record.getOperator());
         // set object info
-        operator.setAttribute("Full object name", parseObjectName(record));
+        String objectName = parseObjectName(record);
+        operator.setTitle(objectName);
+        operator.setAttribute("Full object name", objectName);
         operator.setAttribute("Alias", record.getObjectAlias());
         // init parameters
         if (StringUtils.isNotEmpty(record.getOther()) && parameters.isEmpty()) {

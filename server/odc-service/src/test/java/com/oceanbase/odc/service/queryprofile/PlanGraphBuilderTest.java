@@ -39,7 +39,7 @@ public class PlanGraphBuilderTest {
 
     @BeforeClass
     public static void setUp() {
-        PARAMS.put(":1", "ASIA");
+        PARAMS.put(":1", "'ASIA'");
         PARAMS.put(":2", "1");
         PARAMS.put(":3", "'1995-01-01 00:00:00'");
         PARAMS.put(":4", "'1996-12-30 00:00:00'");

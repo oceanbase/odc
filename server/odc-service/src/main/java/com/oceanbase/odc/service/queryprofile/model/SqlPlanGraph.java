@@ -52,4 +52,8 @@ public class SqlPlanGraph extends Graph {
         operatorMap.put(vertex.getGraphId(), vertex);
         return super.insertVertex(vertex);
     }
+
+    public GraphVertex getVertex(@NonNull String id) {
+        return operatorMap.get(id);
+    }
 }

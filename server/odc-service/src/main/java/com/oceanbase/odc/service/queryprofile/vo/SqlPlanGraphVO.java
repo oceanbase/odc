@@ -30,5 +30,5 @@ public class SqlPlanGraphVO {
     private List<OperatorVO> vertexList;
     private Map<String, String> statistics;
     private Map<String, String> overview;
-    private Map<String, List<String>> topK;
+    private Map<String, List<String>> topNodes;
 }

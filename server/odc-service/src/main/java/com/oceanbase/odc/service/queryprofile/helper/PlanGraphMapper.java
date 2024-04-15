@@ -30,7 +30,7 @@ import com.oceanbase.odc.service.queryprofile.vo.SqlPlanGraphVO;
  */
 public class PlanGraphMapper {
 
-    public static SqlPlanGraphVO map(SqlPlanGraph graph) {
+    public static SqlPlanGraphVO toVO(SqlPlanGraph graph) {
         SqlPlanGraphVO vo = new SqlPlanGraphVO();
         vo.setOverview(graph.getOverview());
         vo.setStatistics(graph.getStatistics());
