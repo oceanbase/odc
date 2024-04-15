@@ -872,21 +872,11 @@ create_table_like_stmt
     ;
 
 create_table_stmt
-    : CREATE special_table_type TABLE (IF not EXISTS)? relation_factor LeftParen table_element_list RightParen table_option_list? (partition_option | auto_partition_option)?
-    | CREATE special_table_type TABLE (IF not EXISTS)? relation_factor LeftParen table_element_list RightParen table_option_list? (partition_option | auto_partition_option)? with_column_group
-    | CREATE special_table_type TABLE (IF not EXISTS)? relation_factor LeftParen table_element_list RightParen table_option_list? (partition_option | auto_partition_option)? select_stmt
-    | CREATE special_table_type TABLE (IF not EXISTS)? relation_factor LeftParen table_element_list RightParen table_option_list? (partition_option | auto_partition_option)? AS select_stmt
-    | CREATE special_table_type TABLE (IF not EXISTS)? relation_factor LeftParen table_element_list RightParen table_option_list? (partition_option | auto_partition_option)? with_column_group AS? select_stmt
-    | CREATE special_table_type TABLE (IF not EXISTS)? relation_factor table_option_list (partition_option | auto_partition_option)? select_stmt
-    | CREATE special_table_type TABLE (IF not EXISTS)? relation_factor table_option_list (partition_option | auto_partition_option)? AS select_stmt
-    | CREATE special_table_type TABLE (IF not EXISTS)? relation_factor table_option_list (partition_option | auto_partition_option)? with_column_group AS? select_stmt
-    | CREATE special_table_type TABLE (IF not EXISTS)? relation_factor partition_option select_stmt
-    | CREATE special_table_type TABLE (IF not EXISTS)? relation_factor partition_option AS select_stmt
-    | CREATE special_table_type TABLE (IF not EXISTS)? relation_factor partition_option with_column_group AS? select_stmt
-    | CREATE special_table_type TABLE (IF not EXISTS)? relation_factor select_stmt
-    | CREATE special_table_type TABLE (IF not EXISTS)? relation_factor with_column_group select_stmt
-    | CREATE special_table_type TABLE (IF not EXISTS)? relation_factor AS select_stmt
-    | CREATE special_table_type TABLE (IF not EXISTS)? relation_factor with_column_group AS select_stmt
+    : CREATE special_table_type TABLE (IF not EXISTS)? relation_factor LeftParen table_element_list RightParen table_option_list? (partition_option | auto_partition_option)? with_column_group?
+    | CREATE special_table_type TABLE (IF not EXISTS)? relation_factor LeftParen table_element_list RightParen table_option_list? (partition_option | auto_partition_option)? with_column_group? AS? select_stmt
+    | CREATE special_table_type TABLE (IF not EXISTS)? relation_factor table_option_list (partition_option | auto_partition_option)? with_column_group? AS? select_stmt
+    | CREATE special_table_type TABLE (IF not EXISTS)? relation_factor partition_option with_column_group? AS? select_stmt
+    | CREATE special_table_type TABLE (IF not EXISTS)? relation_factor with_column_group? AS? select_stmt
     ;
 
 ret_type
