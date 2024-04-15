@@ -17,6 +17,8 @@ package com.oceanbase.odc.service.session.factory;
 
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -33,7 +35,8 @@ import com.oceanbase.odc.plugin.connect.model.ConnectionPropertiesBuilder;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.connection.util.ConnectionMapper;
 import com.oceanbase.odc.service.plugin.ConnectionPluginUtil;
-import com.oceanbase.odc.service.session.initializer.SessionCreatedInitializer;
+import com.oceanbase.odc.service.session.initializer.BackupInstanceInitializer;
+import com.oceanbase.odc.service.session.initializer.DataSourceInitScriptInitializer;
 
 import lombok.NonNull;
 
@@ -59,7 +62,8 @@ public class DruidDataSourceFactory extends OBConsoleDataSourceFactory {
         String jdbcUrl = getJdbcUrl();
         String username = getUsername();
         String password = getPassword();
-        DruidDataSource dataSource = new InnerDataSource(new SessionCreatedInitializer(connectionConfig));
+        DruidDataSource dataSource = new InnerDataSource(Arrays.asList(new BackupInstanceInitializer(connectionConfig),
+                new DataSourceInitScriptInitializer(connectionConfig)));
         dataSource.setUrl(jdbcUrl);
         dataSource.setUsername(username);
         dataSource.setPassword(password);
@@ -137,10 +141,10 @@ public class DruidDataSourceFactory extends OBConsoleDataSourceFactory {
 
     static class InnerDataSource extends DruidDataSource {
 
-        private final ConnectionInitializer initializer;
+        private final List<ConnectionInitializer> initializers;
 
-        private InnerDataSource(@NonNull ConnectionInitializer initializer) {
-            this.initializer = initializer;
+        private InnerDataSource(@NonNull List<ConnectionInitializer> initializers) {
+            this.initializers = initializers;
         }
 
         @Override
@@ -150,7 +154,9 @@ public class DruidDataSourceFactory extends OBConsoleDataSourceFactory {
                 super.initPhysicalConnection(conn, variables, globalVariables);
             } finally {
                 try {
-                    this.initializer.init(conn);
+                    for (ConnectionInitializer initializer : initializers) {
+                        initializer.init(conn);
+                    }
                 } catch (Exception e) {
                     // eat exception
                 }

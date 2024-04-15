@@ -18,6 +18,7 @@ package com.oceanbase.odc.service.pldebug.session;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.Arrays;
 import java.util.List;
 import java.util.function.Supplier;
 
@@ -29,6 +30,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.SingleConnectionDataSource;
 
 import com.oceanbase.odc.common.util.StringUtils;
+import com.oceanbase.odc.core.datasource.ConnectionInitializer;
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionConstants;
 import com.oceanbase.odc.core.session.ConnectionSessionUtil;
@@ -41,7 +43,8 @@ import com.oceanbase.odc.core.sql.util.OdcDBSessionRowMapper;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.pldebug.util.CallProcedureCallBack;
 import com.oceanbase.odc.service.pldebug.util.OBOracleCallFunctionCallBack;
-import com.oceanbase.odc.service.session.initializer.SessionCreatedInitializer;
+import com.oceanbase.odc.service.session.initializer.BackupInstanceInitializer;
+import com.oceanbase.odc.service.session.initializer.DataSourceInitScriptInitializer;
 import com.oceanbase.tools.dbbrowser.model.DBFunction;
 import com.oceanbase.tools.dbbrowser.model.DBPLParam;
 import com.oceanbase.tools.dbbrowser.model.DBProcedure;
@@ -190,11 +193,12 @@ public abstract class AbstractDebugSession implements AutoCloseable {
     static class DebugDataSource extends SingleConnectionDataSource {
 
         private final List<String> initSqls;
-        private final SessionCreatedInitializer initializer;
+        private final List<ConnectionInitializer> initializers;
 
         public DebugDataSource(@NonNull ConnectionConfig connectionConfig, List<String> initSqls) {
             this.initSqls = initSqls;
-            this.initializer = new SessionCreatedInitializer(connectionConfig, true);
+            this.initializers = Arrays.asList(new BackupInstanceInitializer(connectionConfig),
+                    new DataSourceInitScriptInitializer(connectionConfig, true));
         }
 
         @Override
@@ -207,7 +211,9 @@ public abstract class AbstractDebugSession implements AutoCloseable {
                     }
                 }
             }
-            this.initializer.init(con);
+            for (ConnectionInitializer initializer : this.initializers) {
+                initializer.init(con);
+            }
         }
     }
 

@@ -54,6 +54,8 @@ public class OBTenant {
 
     private OBInstanceType instanceType;
 
+    private OBInstanceRoleType instanceRole;
+
     public static OBTenant of(String clusterInstanceId, String tenantId) {
         OBTenant obTenant = new OBTenant();
         obTenant.setClusterInstanceId(clusterInstanceId);

@@ -24,6 +24,8 @@ public interface CloudConnectionConfig {
 
     OBInstanceType getInstanceType();
 
+    OBInstanceRoleType getInstanceRoleType();
+
     void setClusterName(String clusterName);
 
     void setTenantName(String tenantName);
@@ -41,4 +43,6 @@ public interface CloudConnectionConfig {
     void setSysTenantPassword(String password);
 
     void setInstanceType(OBInstanceType instanceType);
+
+    void setInstanceRoleType(OBInstanceRoleType roleType);
 }

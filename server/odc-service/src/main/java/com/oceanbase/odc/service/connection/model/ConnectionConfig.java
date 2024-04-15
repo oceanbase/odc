@@ -303,6 +303,9 @@ public class ConnectionConfig
     private OBInstanceType instanceType;
 
     @JsonIgnore
+    private OBInstanceRoleType instanceRoleType;
+
+    @JsonIgnore
     private transient Map<String, Object> attributes;
 
     /**

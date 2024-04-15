@@ -34,23 +34,23 @@ import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * {@link SessionCreatedInitializer}
+ * {@link DataSourceInitScriptInitializer}
  *
  * @author yh263208
  * @date 2023-09-12 17:31
  * @since ODC_release_4.2.2
  */
 @Slf4j
-public class SessionCreatedInitializer implements ConnectionInitializer {
+public class DataSourceInitScriptInitializer implements ConnectionInitializer {
 
     private final ConnectionConfig connectionConfig;
     private final boolean eatException;
 
-    public SessionCreatedInitializer(ConnectionConfig connectionConfig) {
+    public DataSourceInitScriptInitializer(ConnectionConfig connectionConfig) {
         this(connectionConfig, true);
     }
 
-    public SessionCreatedInitializer(@NonNull ConnectionConfig connectionConfig, boolean eatException) {
+    public DataSourceInitScriptInitializer(@NonNull ConnectionConfig connectionConfig, boolean eatException) {
         this.eatException = eatException;
         this.connectionConfig = connectionConfig;
     }
