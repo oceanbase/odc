@@ -157,7 +157,6 @@ public class ConnectionTesting {
             } else {
                 throw new UnsupportedOperationException("Unsupported type, " + type);
             }
-            config.setType(null);
 
             ConnectionExtensionPoint connectionExtensionPoint = ConnectionPluginUtil.getConnectionExtension(
                     (type != null) ? type.getDialectType() : DialectType.OB_MYSQL);
