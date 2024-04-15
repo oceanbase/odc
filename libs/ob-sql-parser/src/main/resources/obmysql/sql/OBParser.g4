@@ -136,6 +136,7 @@ stmt
     | method_opt
     | switchover_tenant_stmt
     | recover_tenant_stmt
+    | transfer_partition_stmt
     | create_tenant_snapshot_stmt
     | drop_tenant_snapshot_stmt
     | clone_tenant_stmt

@@ -19,17 +19,6 @@ lexer grammar OBLexer;
 public boolean inRangeOperator = false;
 }
 
-// Fragment rules for sub-patterns
-fragment NOTASCII : '\u0080'..'\u00FF';
-fragment GB_1     : '\u0081'..'\u00FE';
-fragment GB_2     : '\u0040'..'\u00FE';
-fragment GB_3     : '\u0030'..'\u0039';
-
-// Fragment rule to combine patterns
-fragment NOTASCII_GB_CHAR : NOTASCII | GB_1 GB_2 | GB_1 GB_3 GB_1 GB_3;
-fragment START_IDENTIFIER : [A-Za-z0-9$_]* [A-Za-z$_] [A-Za-z0-9$_]* | NOTASCII_GB_CHAR+ ;
-fragment IDENTIFIER       : [A-Za-z0-9$_] | NOTASCII_GB_CHAR+ ;
-
 ACCESS
     : ( A C C E S S )
     ;

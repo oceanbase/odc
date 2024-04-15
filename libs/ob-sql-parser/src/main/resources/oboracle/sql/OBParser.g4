@@ -1155,11 +1155,11 @@ alter_keystore_stmt
     ;
 
 create_table_stmt
-    : CREATE special_table_type TABLE relation_factor LeftParen table_element_list RightParen table_option_list? (partition_option | auto_partition_option)? (WITH_COLUMN_GROUP LeftParen column_group_list RightParen)? on_commit_option
-    | CREATE special_table_type TABLE relation_factor LeftParen table_element_list RightParen table_option_list? (partition_option | auto_partition_option)? (WITH_COLUMN_GROUP LeftParen column_group_list RightParen)? on_commit_option AS subquery order_by? fetch_next_clause?
-    | CREATE special_table_type TABLE relation_factor table_option_list (partition_option | auto_partition_option)? (WITH_COLUMN_GROUP LeftParen column_group_list RightParen)? on_commit_option AS subquery order_by? fetch_next_clause?
-    | CREATE special_table_type TABLE relation_factor partition_option (WITH_COLUMN_GROUP LeftParen column_group_list RightParen)? on_commit_option AS subquery order_by? fetch_next_clause?
-    | CREATE special_table_type TABLE relation_factor (WITH_COLUMN_GROUP LeftParen column_group_list RightParen)? on_commit_option AS subquery order_by? fetch_next_clause?
+    : CREATE special_table_type TABLE relation_factor LeftParen table_element_list RightParen table_option_list? (partition_option | auto_partition_option)? (with_column_group)? on_commit_option
+    | CREATE special_table_type TABLE relation_factor LeftParen table_element_list RightParen table_option_list? (partition_option | auto_partition_option)? (with_column_group)? on_commit_option AS subquery order_by? fetch_next_clause?
+    | CREATE special_table_type TABLE relation_factor table_option_list (partition_option | auto_partition_option)? (with_column_group)? on_commit_option AS subquery order_by? fetch_next_clause?
+    | CREATE special_table_type TABLE relation_factor partition_option (with_column_group)? on_commit_option AS subquery order_by? fetch_next_clause?
+    | CREATE special_table_type TABLE relation_factor (with_column_group)? on_commit_option AS subquery order_by? fetch_next_clause?
     ;
 
 table_element_list
@@ -1619,6 +1619,10 @@ column_group_list
     : column_group_element (Comma column_group_element)*
     ;
 
+with_column_group
+    : WITH_COLUMN_GROUP LeftParen column_group_list RightParen
+    ;
+
 partition_size
     : conf_const
     | AUTO
@@ -2007,7 +2011,7 @@ opt_tablet_id_no_empty
     ;
 
 create_index_stmt
-    : CREATE UNIQUE? INDEX normal_relation_factor index_using_algorithm? ON relation_factor LeftParen sort_column_list RightParen opt_index_options? (partition_option | auto_partition_option)? (WITH_COLUMN_GROUP LeftParen column_group_list RightParen)?
+    : CREATE UNIQUE? INDEX normal_relation_factor index_using_algorithm? ON relation_factor LeftParen sort_column_list RightParen opt_index_options? (partition_option | auto_partition_option)? (with_column_group)?
     ;
 
 index_name
