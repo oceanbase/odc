@@ -19,7 +19,7 @@ import java.util.List;
 
 public class DefaultTagServiceFacadeImpl implements TagServiceFacade {
 
-    public static final String DEFAULT_SINGLE_USER_TAG_LABEL_KEY = "userTag";
+    public static final String DEFAULT_SINGLE_USER_TAG_LABEL_KEY = "oceanbase_odc_whitelist";
     private final TagService tagService;
 
     public DefaultTagServiceFacadeImpl(TagService tagService) {
