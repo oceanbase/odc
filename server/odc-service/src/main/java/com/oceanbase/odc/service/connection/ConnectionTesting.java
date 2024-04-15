@@ -126,19 +126,13 @@ public class ConnectionTesting {
              * <pre>
              *     1. 用户的 username：
              *        a. 第一种场景下使用 {@link OBConsoleDataSourceFactory#getUsername(ConnectionConfig)}
-             *           获取的用户名就是 obclient 串中 {@code
-             * -u
-             * } 中填入的内容，这是符合测试语义的。
-             *        b. 第二种场景下由于 {@link ConnectType} 不准，如果信任该值可能导致 {@code
-             * username
-             * } 格式错误，因此需要将其设置为
+             *           获取的用户名就是 obclient 串中 {@code -u} 中填入的内容，这是符合测试语义的。
+             *        b. 第二种场景下由于 {@link ConnectType} 不准，如果信任该值可能导致 {@code username} 格式错误，因此需要将其设置为
              *           null，然后使用 {@link OBConsoleDataSourceFactory#getUsername(ConnectionConfig)}
              *           此时获取到的内容是 {@link ConnectionConfig} 中 {@code user@tenant#cluster}，这是符合测试语义的。
              *     2. 要连接到的目标 schema：
              *        a. 第一种场景下使用 {@link OBConsoleDataSourceFactory#getDefaultSchema(ConnectionConfig)}
-             *           获取到的就是 obclient 串中 {@code
-             * -D
-             * } 中的内容，这同样是符合测试语义的。
+             *           获取到的就是 obclient 串中 {@code -D} 中的内容，这同样是符合测试语义的。
              *        b. 第二种场景下需要分情况讨论：
              *           1). 如果 {@link ConnectType#getDialectType()} 为 {@link DialectType#OB_MYSQL}，此时 schema 应该使用
              *               {@link OBConsoleDataSourceFactory#getDefaultSchema(ConnectionConfig)}
