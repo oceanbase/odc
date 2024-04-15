@@ -22,7 +22,7 @@ package com.oceanbase.odc.service.task.caller;
  */
 public enum PodStatus {
 
-    PENDING("Pending", "INTI"),
+    PENDING("Pending", "INIT"),
     RUNNING("Running", "ALLOCATED"),
     TERMINATING("Terminating", "PENDING_DELETE"),
     UNKNOWN("Known", "UNKNOWN");
