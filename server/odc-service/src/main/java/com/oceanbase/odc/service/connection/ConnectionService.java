@@ -167,7 +167,7 @@ public class ConnectionService {
     private ConnectProperties connectProperties;
 
     @Autowired
-    private ConnectionEnvironmentAdapter environmentAdapter;
+    private ConnectionAdapter environmentAdapter;
 
     @Autowired
     private ConnectionSSLAdaptor connectionSSLAdaptor;
@@ -294,6 +294,7 @@ public class ConnectionService {
                 PreConditions.notNull(connection.getPassword(), "connection.password");
             } else {
                 connection.setPassword(null);
+                connection.setPasswordEncrypted(null);
             }
             connectionEncryption.encryptPasswords(connection);
 
@@ -588,6 +589,9 @@ public class ConnectionService {
                                     new Object[] {connection.getName()}, "same datasource name exists");
                         }
                     });
+            if (Boolean.FALSE.equals(connection.getPasswordSaved())) {
+                connection.setPassword(null);
+            }
             connectionEncryption.encryptPasswords(connection);
             connection.fillEncryptedPasswordFromSavedIfNull(saved);
 
@@ -747,6 +751,9 @@ public class ConnectionService {
                 .and(ConnectionSpecs.nameLike(params.getName()));
         if (CollectionUtils.isNotEmpty(params.getIds())) {
             spec = spec.and(ConnectionSpecs.idIn(params.getIds()));
+        }
+        if (Objects.nonNull(params.getUsername())) {
+            spec = spec.and(ConnectionSpecs.usernameEqual(params.getUsername()));
         }
         spec = spec.and(ConnectionSpecs.sort(pageable.getSort()));
         Pageable page = pageable.equals(Pageable.unpaged()) ? pageable

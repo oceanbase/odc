@@ -16,11 +16,11 @@
 
 package com.oceanbase.odc.service.task.executor;
 
+import java.io.File;
+import java.net.URI;
 import java.net.URISyntaxException;
-import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Optional;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.core.LoggerContext;
@@ -122,17 +122,25 @@ public class TaskApplication {
     }
 
     private void setLog4JConfigXml() {
-        String taskLogFile = Optional.ofNullable(System.getProperty("log4j.configurationFile"))
-                .orElse("log4j2-task.xml");
-        LoggerContext context = (org.apache.logging.log4j.core.LoggerContext) LogManager.getContext(false);
-
-        URL resource = getClass().getClassLoader().getResource(taskLogFile);
-        try {
-            // this will force a reconfiguration, MDC context will to take effect
-            context.setConfigLocation(resource.toURI());
-        } catch (URISyntaxException e) {
-            throw new TaskRuntimeException("load log file occur error, logfile=" + taskLogFile, e);
+        String configurationFile = System.getProperty("log4j.configurationFile");
+        URI taskLogFile = null;
+        if (configurationFile != null) {
+            File file = new File(configurationFile);
+            if (file.exists() && file.isFile()) {
+                taskLogFile = file.toURI();
+            }
         }
+        if (taskLogFile == null) {
+            try {
+                taskLogFile = getClass().getClassLoader().getResource("log4j2-task.xml").toURI();
+            } catch (URISyntaxException e) {
+                throw new TaskRuntimeException("load default log4j2-task.xml occur error:", e);
+            }
+        }
+
+        LoggerContext context = (org.apache.logging.log4j.core.LoggerContext) LogManager.getContext(false);
+        // this will force a reconfiguration, MDC context will to take effect
+        context.setConfigLocation(taskLogFile);
     }
 
     private void validEnvValues() {

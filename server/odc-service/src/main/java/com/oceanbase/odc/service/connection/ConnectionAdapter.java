@@ -13,31 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.core.shared.constant;
+package com.oceanbase.odc.service.connection;
+
+import com.oceanbase.odc.service.connection.model.CloudConnectionConfig;
 
 /**
- * 连接状态，注意不是 Session 状态
+ * @author jingtian
+ * @date 2024/4/2
  */
-public enum ConnectionStatus {
-    /**
-     * 可连接
-     */
-    ACTIVE,
-    /**
-     * 不可连接
-     */
-    INACTIVE,
-    /**
-     * 检测中
-     */
-    TESTING,
-    /**
-     * 连接已禁用，不进行检测
-     */
-    DISABLED,
-    /**
-     * 未知
-     */
-    UNKNOWN,
-
+public interface ConnectionAdapter {
+    public <T extends CloudConnectionConfig> T adaptConfig(T connectionConfig);
 }
