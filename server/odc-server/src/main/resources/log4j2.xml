@@ -48,7 +48,7 @@
         </RollingFile>
 
         <RollingFile name="SchedulerFileAppender" fileName="${LOG_DIRECTORY}/scheduler.log"
-                     filePattern="${LOG_DIRECTORY}/odc-%d{yyyy-MM-dd}-%i.log">
+                     filePattern="${LOG_DIRECTORY}/scheduler-%d{yyyy-MM-dd}-%i.log">
             <PatternLayout pattern="[%date{yyyy-MM-dd HH:mm:ss.SSS}][%thread][%level][%class][%line][ScheduledTask-%X{scheduleId}-%X{scheduleTaskId}]: %message%n"/>
             <Policies>
                 <SizeBasedTriggeringPolicy size="100MB"/>
