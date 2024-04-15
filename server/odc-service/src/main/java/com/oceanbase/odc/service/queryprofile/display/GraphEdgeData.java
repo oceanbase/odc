@@ -13,10 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.queryprofile.vo;
-
-import java.util.List;
-import java.util.Map;
+package com.oceanbase.odc.service.queryprofile.display;
 
 import lombok.Data;
 
@@ -25,10 +22,8 @@ import lombok.Data;
  * @date 2024/4/11
  */
 @Data
-public class SqlPlanGraphVO {
-    private List<GraphEdgeVO> edgeList;
-    private List<OperatorVO> vertexList;
-    private Map<String, String> statistics;
-    private Map<String, String> overview;
-    private Map<String, List<String>> topNodes;
+public class GraphEdgeData {
+    private String from;
+    private String to;
+    private Float weight;
 }

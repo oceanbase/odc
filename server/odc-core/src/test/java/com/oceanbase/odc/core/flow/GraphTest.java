@@ -30,11 +30,11 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
+import com.oceanbase.odc.common.graph.Graph;
+import com.oceanbase.odc.common.graph.GraphConfigurer;
+import com.oceanbase.odc.common.graph.GraphEdge;
+import com.oceanbase.odc.common.graph.GraphVertex;
 import com.oceanbase.odc.common.lang.Pair;
-import com.oceanbase.odc.core.flow.graph.Graph;
-import com.oceanbase.odc.core.flow.graph.GraphConfigurer;
-import com.oceanbase.odc.core.flow.graph.GraphEdge;
-import com.oceanbase.odc.core.flow.graph.GraphVertex;
 
 /**
  * Test cases for {@link Graph}

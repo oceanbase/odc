@@ -13,11 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.core.flow.graph;
+package com.oceanbase.odc.common.graph;
 
 import java.util.LinkedList;
-
-import com.oceanbase.odc.core.shared.Verify;
 
 import lombok.NonNull;
 
@@ -99,7 +97,9 @@ public class GraphConfigurer<T extends Graph, V extends GraphVertex> {
             return this;
         }
         V from = last();
-        Verify.notNull(from, "FromVertex");
+        if (from == null) {
+            throw new IllegalStateException("FromVertex should not be null");
+        }
         if (target.contains(from) && target.contains(to)) {
             if (target.getWeight(from.getGraphId(), to.getGraphId()) != Graph.INFINITE) {
                 return this;

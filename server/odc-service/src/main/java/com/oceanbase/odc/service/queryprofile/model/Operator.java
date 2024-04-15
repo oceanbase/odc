@@ -17,7 +17,7 @@ package com.oceanbase.odc.service.queryprofile.model;
 
 import java.util.Map;
 
-import com.oceanbase.odc.core.flow.graph.GraphVertex;
+import com.oceanbase.odc.common.graph.GraphVertex;
 import com.oceanbase.odc.service.queryprofile.model.SqlProfile.Status;
 
 import lombok.Getter;

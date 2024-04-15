@@ -15,62 +15,61 @@
  */
 package com.oceanbase.odc.service.queryprofile.model;
 
-public enum PredicateKey {
-    // table scan
-    access("Access predicates"),
-    filter("Filter predicates"),
-    range_key("Range key"),
-    range("Range"),
-    range_cond("Range condition"),
-    partitions("Scan partitions"),
-    // join
-    nl_params_("Nested loop params"),
-    conds("Join conditions"),
-    equal_conds("Equal conditions"),
-    other_conds("Other conditions"),
-    // group
-    group("Group key"),
-    agg_func("Aggregate function"),
-    // window function
-    win_expr("Window function"),
-    upper("Window upper boundary"),
-    lower("Window lower boundary"),
-    // subplan filter
-    exec_params_("Execution params"),
-    onetime_exprs_("Onetime expressions"),
-    // distinct
-    distinct("Distinct columns"),
-    // sort
-    sort_keys("Sort keys"),
-    prefix_pos("Prefix positions"),
-    // limit
-    limit("Limit"),
-    offset("Offset"),
-    percent("Percentage"),
-    // for update
-    // insert
-    columns("Columns"),
-    values("Values"),
-    // delete
-    table_columns("Columns"),
-    update("Update expressions"),
-    // merge
-    match_conds("Match conditions"),
-    insert_conds("Insert conditions"),
-    update_conds("Update conditions"),
-    delete_conds("Delete conditions"),
-    // exchange
-    pkey("Repatition key"),
-    ;
+import java.util.HashMap;
+import java.util.Map;
 
-    private final String displayName;
+public class PredicateKey {
+    private static final Map<String, String> MAP = new HashMap<>();
 
-    PredicateKey(String displayName) {
-        this.displayName = displayName;
+    static {
+        // table scan
+        MAP.put("access", "Access predicates");
+        MAP.put("filter", "Filter predicates");
+        MAP.put("range_key", "Range key");
+        MAP.put("range", "Range");
+        MAP.put("range_cond", "Range condition");
+        MAP.put("partitions", "Scan partitions");
+        // join
+        MAP.put("nl_params_", "Nested loop params");
+        MAP.put("conds", "Join conditions");
+        MAP.put("equal_conds", "Equal conditions");
+        MAP.put("other_conds", "Other conditions");
+        // group
+        MAP.put("group", "Group key");
+        MAP.put("agg_func", "Aggregate function");
+        // window function
+        MAP.put("win_expr", "Window function");
+        MAP.put("upper", "Window upper boundary");
+        MAP.put("lower", "Window lower boundary");
+        // subplan filter
+        MAP.put("exec_params_", "Execution params");
+        MAP.put("onetime_exprs_", "Onetime expressions");
+        // distinct
+        MAP.put("distinct", "Distinct columns");
+        // sort
+        MAP.put("sort_keys", "Sort keys");
+        MAP.put("prefix_pos", "Prefix positions");
+        // limit
+        MAP.put("limit", "Limit");
+        MAP.put("offset", "Offset");
+        MAP.put("percent", "Percentage");
+        // insert
+        MAP.put("columns", "Columns");
+        MAP.put("values", "Values");
+        // delete
+        MAP.put("table_columns", "Columns");
+        MAP.put("update", "Update expressions");
+        // merge
+        MAP.put("match_conds", "Match conditions");
+        MAP.put("insert_conds", "Insert conditions");
+        MAP.put("update_conds", "Update conditions");
+        MAP.put("delete_conds", "Delete conditions");
+        // exchange
+        MAP.put("pkey", "Repatition key");
     }
 
-    public String getDisplayName() {
-        return displayName;
+    public static String getLabel(String key) {
+        return MAP.get(key);
     }
 
 }

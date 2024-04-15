@@ -21,7 +21,7 @@ import java.util.Map;
  * @author liuyizhuo.lyz
  * @date 2024/4/12
  */
-public class CustomStringSubstitutor {
+public class PlanParameterSubstitutor {
 
     public static String replace(String charSequence, Map<String, String> variables) {
         StringBuilder builder = new StringBuilder();

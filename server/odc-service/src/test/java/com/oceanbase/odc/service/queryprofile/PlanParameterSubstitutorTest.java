@@ -21,13 +21,13 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import com.google.common.collect.ImmutableMap;
-import com.oceanbase.odc.service.queryprofile.helper.CustomStringSubstitutor;
+import com.oceanbase.odc.service.queryprofile.helper.PlanParameterSubstitutor;
 
 /**
  * @author liuyizhuo.lyz
  * @date 2024/4/12
  */
-public class CustomStringSubstitutorTest {
+public class PlanParameterSubstitutorTest {
 
     @Test
     public void test_Replace_Success() {
@@ -35,14 +35,14 @@ public class CustomStringSubstitutorTest {
         String template = "filter([ORDERS.O_ORDERDATE >= :1], [ORDERS.O_ORDERDATE <= :23])";
         Assert.assertEquals(
                 "filter([ORDERS.O_ORDERDATE >= VALUE1], [ORDERS.O_ORDERDATE <= VALUE2])",
-                CustomStringSubstitutor.replace(template, variables));
+                PlanParameterSubstitutor.replace(template, variables));
     }
 
     @Test
     public void test_Replace_Fail() {
         Map<String, String> variables = ImmutableMap.of(":1", "VALUE1", ":23", "VALUE2");
         String template = "filter([REGION.R_NAME = :3])";
-        Assert.assertEquals(template, CustomStringSubstitutor.replace(template, variables));
+        Assert.assertEquals(template, PlanParameterSubstitutor.replace(template, variables));
     }
 
 }

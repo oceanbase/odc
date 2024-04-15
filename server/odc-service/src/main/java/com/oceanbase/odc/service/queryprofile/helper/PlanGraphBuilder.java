@@ -26,7 +26,7 @@ import java.util.regex.Pattern;
 
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.shared.exception.UnexpectedException;
-import com.oceanbase.odc.service.queryprofile.model.OBPlanDO;
+import com.oceanbase.odc.service.queryprofile.model.OBPlanRecord;
 import com.oceanbase.odc.service.queryprofile.model.Operator;
 import com.oceanbase.odc.service.queryprofile.model.PredicateKey;
 import com.oceanbase.odc.service.queryprofile.model.SqlPlanGraph;
@@ -44,11 +44,11 @@ public class PlanGraphBuilder {
     private static final Pattern VALUE_GROUP_PATTERN = Pattern.compile("\\[([^]]+)]");
     private static final String EMPTY_PREDICATE = "nil";
 
-    public static SqlPlanGraph buildPlanGraph(List<OBPlanDO> records) {
+    public static SqlPlanGraph buildPlanGraph(List<OBPlanRecord> records) {
         SqlPlanGraph graph = new SqlPlanGraph();
         Map<String, Operator> map = new HashMap<>();
         Map<String, String> parameters = new HashMap<>();
-        for (OBPlanDO record : records) {
+        for (OBPlanRecord record : records) {
             Operator operator = parseResult(record, parameters);
             operator.setStatus(Status.PREPARING);
             graph.insertVertex(operator);
@@ -65,7 +65,7 @@ public class PlanGraphBuilder {
         return graph;
     }
 
-    private static Operator parseResult(OBPlanDO record, Map<String, String> parameters) {
+    private static Operator parseResult(OBPlanRecord record, Map<String, String> parameters) {
         Operator operator = new Operator(record.getId(), record.getOperator());
         // set object info
         String objectName = parseObjectName(record);
@@ -118,18 +118,17 @@ public class PlanGraphBuilder {
                 depth--;
                 if (depth == 0) {
                     try {
-                        String predicateKey = keyBuilder.toString().trim();
-                        PredicateKey key = PredicateKey.valueOf(predicateKey);
+                        String predicateKey = PredicateKey.getLabel(keyBuilder.toString().trim());
                         String predicate = valueBuilder.toString();
                         if (predicate.startsWith("[")) {
                             LinkedList<String> values = new LinkedList<>();
                             Matcher matcher = VALUE_GROUP_PATTERN.matcher(predicate);
                             while (matcher.find()) {
-                                values.add(CustomStringSubstitutor.replace(matcher.group(1), parameters));
+                                values.add(PlanParameterSubstitutor.replace(matcher.group(1), parameters));
                             }
-                            map.put(key.getDisplayName(), values);
+                            map.put(predicateKey, values);
                         } else if (!EMPTY_PREDICATE.equals(predicate)) {
-                            map.put(key.getDisplayName(), Collections.singletonList(predicate));
+                            map.put(predicateKey, Collections.singletonList(predicate));
                         }
                     } catch (Exception e) {
                         // eat exception
@@ -154,7 +153,7 @@ public class PlanGraphBuilder {
         }
     }
 
-    private static String parseObjectName(OBPlanDO record) {
+    private static String parseObjectName(OBPlanRecord record) {
         String name = record.getObjectName();
         return record.getObjectOwner() == null ? name : String.format("%s.%s", record.getObjectOwner(), name);
     }

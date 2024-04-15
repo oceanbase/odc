@@ -17,12 +17,12 @@ package com.oceanbase.odc.service.queryprofile.helper;
 
 import java.util.stream.Collectors;
 
-import com.oceanbase.odc.core.flow.graph.GraphEdge;
+import com.oceanbase.odc.common.graph.GraphEdge;
+import com.oceanbase.odc.service.queryprofile.display.GraphEdgeData;
+import com.oceanbase.odc.service.queryprofile.display.OperatorData;
+import com.oceanbase.odc.service.queryprofile.display.SqlPlanGraphData;
 import com.oceanbase.odc.service.queryprofile.model.Operator;
 import com.oceanbase.odc.service.queryprofile.model.SqlPlanGraph;
-import com.oceanbase.odc.service.queryprofile.vo.GraphEdgeVO;
-import com.oceanbase.odc.service.queryprofile.vo.OperatorVO;
-import com.oceanbase.odc.service.queryprofile.vo.SqlPlanGraphVO;
 
 /**
  * @author liuyizhuo.lyz
@@ -30,8 +30,8 @@ import com.oceanbase.odc.service.queryprofile.vo.SqlPlanGraphVO;
  */
 public class PlanGraphMapper {
 
-    public static SqlPlanGraphVO toVO(SqlPlanGraph graph) {
-        SqlPlanGraphVO vo = new SqlPlanGraphVO();
+    public static SqlPlanGraphData toVO(SqlPlanGraph graph) {
+        SqlPlanGraphData vo = new SqlPlanGraphData();
         vo.setOverview(graph.getOverview());
         vo.setStatistics(graph.getStatistics());
         vo.setVertexList(graph.getVertexList().stream()
@@ -41,16 +41,16 @@ public class PlanGraphMapper {
         return vo;
     }
 
-    private static GraphEdgeVO mapEdge(GraphEdge edge) {
-        GraphEdgeVO vo = new GraphEdgeVO();
+    private static GraphEdgeData mapEdge(GraphEdge edge) {
+        GraphEdgeData vo = new GraphEdgeData();
         vo.setFrom(edge.getFrom().getGraphId());
         vo.setTo(edge.getTo().getGraphId());
         vo.setWeight(edge.getWeight());
         return vo;
     }
 
-    private static OperatorVO mapVertex(Operator vertex) {
-        OperatorVO vo = new OperatorVO();
+    private static OperatorData mapVertex(Operator vertex) {
+        OperatorData vo = new OperatorData();
         vo.setGraphId(vertex.getGraphId());
         vo.setName(vertex.getName());
         vo.setTitle(vertex.getTitle());

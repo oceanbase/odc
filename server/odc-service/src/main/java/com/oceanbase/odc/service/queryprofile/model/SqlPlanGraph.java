@@ -19,8 +19,8 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-import com.oceanbase.odc.core.flow.graph.Graph;
-import com.oceanbase.odc.core.flow.graph.GraphVertex;
+import com.oceanbase.odc.common.graph.Graph;
+import com.oceanbase.odc.common.graph.GraphVertex;
 
 import lombok.Getter;
 import lombok.NonNull;

@@ -13,9 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.queryprofile.vo;
+package com.oceanbase.odc.service.queryprofile.display;
 
-import java.util.Date;
+import java.util.Map;
 
 import com.oceanbase.odc.service.queryprofile.model.SqlProfile.Status;
 
@@ -26,12 +26,12 @@ import lombok.Data;
  * @date 2024/4/11
  */
 @Data
-public class SqlProfileVO {
-    private Date startTime;
-    private Date endTime;
+public class OperatorData {
+    private String graphId;
+    private String name;
+    private String title;
     private Status status;
-    private Long duration;
-    private String traceId;
-    private String sqlText;
-    private SqlPlanGraphVO graph;
+    private Map<String, Object> attributes;
+    private Map<String, String> statistics;
+    private Map<String, String> overview;
 }

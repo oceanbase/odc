@@ -17,6 +17,8 @@ package com.oceanbase.odc.core.flow;
 
 import java.util.Optional;
 
+import com.oceanbase.odc.common.graph.GraphConfigurer;
+import com.oceanbase.odc.common.graph.GraphEdge;
 import com.oceanbase.odc.core.flow.builder.BaseProcessNodeBuilder;
 import com.oceanbase.odc.core.flow.builder.ConditionSequenceFlowBuilder;
 import com.oceanbase.odc.core.flow.builder.EndEventBuilder;
@@ -24,8 +26,6 @@ import com.oceanbase.odc.core.flow.builder.ExclusiveGatewayBuilder;
 import com.oceanbase.odc.core.flow.builder.FlowableProcessBuilder;
 import com.oceanbase.odc.core.flow.builder.ParallelGatewayBuilder;
 import com.oceanbase.odc.core.flow.builder.SequenceFlowBuilder;
-import com.oceanbase.odc.core.flow.graph.GraphConfigurer;
-import com.oceanbase.odc.core.flow.graph.GraphEdge;
 
 import lombok.NonNull;
 import lombok.Setter;
