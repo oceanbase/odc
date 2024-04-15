@@ -178,6 +178,10 @@ public class ConnectionTesting {
                     return ConnectionTestResult.fail(ErrorCodes.ObMysqlAccessDenied,
                             new String[] {schema, result.getArgs()[0]});
                 }
+                if (result.getErrorCode() == ErrorCodes.ObWeakReadConsistencyRequired
+                        && type.getDialectType().isOceanbase()) {
+                    return ConnectionTestResult.fail(ErrorCodes.ObWeakReadConsistencyRequired, null);
+                }
                 return new ConnectionTestResult(result, null);
             }
             ConnectType connectType = ConnectTypeUtil.getConnectType(

@@ -137,6 +137,7 @@ public class OBMySQLConnectionExtension implements ConnectionExtensionPoint {
                 if (queryTimeout >= 0) {
                     statement.setQueryTimeout(queryTimeout);
                 }
+                executeTestSqls(statement);
                 return TestResult.success();
             }
         } catch (Exception e) {
@@ -171,9 +172,13 @@ public class OBMySQLConnectionExtension implements ConnectionExtensionPoint {
                 return TestResult.unknownHost(host);
             } else if (StringUtils.containsIgnoreCase(rootCause.getMessage(), "Access denied")) {
                 return TestResult.accessDenied(rootCause.getLocalizedMessage());
+            } else if (StringUtils.containsIgnoreCase(rootCause.getMessage(),
+                    "standby cluster support weak read only")) {
+                return TestResult.obWeakReadConsistencyRequired();
             }
             return TestResult.unknownError(rootCause);
         }
     }
 
+    protected void executeTestSqls(Statement statement) throws SQLException {}
 }

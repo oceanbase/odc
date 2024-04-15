@@ -15,6 +15,8 @@
  */
 package com.oceanbase.odc.plugin.connect.oboracle;
 
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -25,12 +27,15 @@ import com.oceanbase.odc.plugin.connect.obmysql.OBMySQLConnectionExtension;
 import com.oceanbase.odc.plugin.connect.obmysql.initializer.EnableTraceInitializer;
 import com.oceanbase.odc.plugin.connect.oboracle.initializer.OracleDBMSOutputInitializer;
 
+import lombok.extern.slf4j.Slf4j;
+
 /**
  * @author yaobin
  * @date 2023-04-14
  * @since 4.2.0
  */
 @Extension
+@Slf4j
 public class OBOracleConnectionExtension extends OBMySQLConnectionExtension {
 
     @Override
@@ -41,4 +46,8 @@ public class OBOracleConnectionExtension extends OBMySQLConnectionExtension {
         return initializers;
     }
 
+    @Override
+    protected void executeTestSqls(Statement statement) throws SQLException {
+        statement.execute("SELECT USER_ID FROM ALL_USERS WHERE ROWNUM < 1");
+    }
 }
