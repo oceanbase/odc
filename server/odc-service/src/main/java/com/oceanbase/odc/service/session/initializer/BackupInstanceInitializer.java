@@ -19,7 +19,9 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
 
+import com.oceanbase.odc.common.util.VersionUtils;
 import com.oceanbase.odc.core.datasource.ConnectionInitializer;
+import com.oceanbase.odc.core.sql.util.OBUtils;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.connection.model.OBInstanceRoleType;
 
@@ -43,12 +45,17 @@ public class BackupInstanceInitializer implements ConnectionInitializer {
         if (this.connectionConfig.getDialectType().isOceanbase()
                 && this.connectionConfig.getInstanceRoleType() == OBInstanceRoleType.PHYSICAL_STANDBY) {
             long start = System.currentTimeMillis();
-            try (Statement statement = connection.createStatement()) {
-                statement.setQueryTimeout(3);
-                statement.execute("set ob_read_consistency='WEAK';");
-                log.info("Backup instance initializer init finished, cost={}ms", System.currentTimeMillis() - start);
-            } catch (SQLException e) {
-                log.warn("Failed to set ob_read_consistency='WEAK' for backup instance, error: {}", e.getMessage());
+            String version = OBUtils.getObVersion(connection);
+            if (VersionUtils.isLessThan(version, "4.0.0")) {
+                try (Statement statement = connection.createStatement()) {
+                    statement.setQueryTimeout(3);
+                    statement.execute("set ob_read_consistency='WEAK';");
+                    log.info("Backup instance initializer init finished, cost={}ms",
+                            System.currentTimeMillis() - start);
+                } catch (SQLException e) {
+                    log.warn("Failed to set ob_read_consistency='WEAK' for backup instance, error: {}",
+                            e.getMessage());
+                }
             }
         }
     }
