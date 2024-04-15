@@ -111,6 +111,9 @@
         <Logger name="com.oceanbase.odc.service.objectstorage.cloud" level="INFO" additivity="false">
             <AppenderRef ref="ExecutorFileAppender"/>
         </Logger>
+        <Logger name="com.oceanbase.odc.service.plugin.PluginProperties" level="INFO" additivity="false">
+            <AppenderRef ref="ExecutorFileAppender"/>
+        </Logger>
         <!-- 执行器日志输出 end -->
 
         <!-- 任务日志输出，输出级别 INFO -->

@@ -36,7 +36,13 @@ public enum OBInstanceStatus {
 
     ABNORMAL("ABNORMAL"),
 
-    OFFLINE("OFFLINE");
+    OFFLINE("OFFLINE"),
+
+    PENDING_STOP("PENDING_STOP"),
+
+    STOPPED("STOPPED"),
+
+    PENDING_START("PENDING_START");
 
     private String name;
 

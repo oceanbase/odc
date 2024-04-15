@@ -53,7 +53,7 @@ public class JobConstants {
 
     public static final String ODC_SERVER_CLASS_NAME = "com.oceanbase.odc.server.OdcServer";
 
-    public static final String ODC_EXECUTOR_DEFAULT_MOUNT_PATH = "/data/logs/odc-task/runtime/task";
+    public static final String ODC_EXECUTOR_DEFAULT_MOUNT_PATH = "/data/logs/odc-task/runtime";
 
     public static final String ODC_EXECUTOR_PROCESS_PROPERTIES_KEY = "odc.executor";
 

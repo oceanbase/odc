@@ -72,7 +72,7 @@ public class ConnectionTesting {
     @Autowired
     private ConnectProperties connectProperties;
     @Autowired
-    private ConnectionEnvironmentAdapter environmentAdapter;
+    private ConnectionAdapter environmentAdapter;
     @Autowired
     private ConnectionSSLAdaptor connectionSSLAdaptor;
     @Autowired
@@ -82,10 +82,9 @@ public class ConnectionTesting {
 
     public ConnectionTestResult test(@NotNull @Valid TestConnectionReq req) {
         PreConditions.notNull(req, "req");
+        environmentAdapter.adaptConfig(req);
         PreConditions.validArgumentState(Objects.nonNull(req.getPassword()),
                 ErrorCodes.ConnectionPasswordMissed, null, "password required for connection without password saved");
-
-        environmentAdapter.adaptConfig(req);
         cloudMetadataClient.checkPermission(OBTenant.of(req.getClusterName(),
                 req.getTenantName()), req.getInstanceType(), false, CloudPermissionAction.READONLY);
         connectionSSLAdaptor.adapt(req);
@@ -232,7 +231,6 @@ public class ConnectionTesting {
 
         OBTenantEndpoint endpoint = req.getEndpoint();
         if (Objects.nonNull(endpoint) && OceanBaseAccessMode.IC_PROXY == endpoint.getAccessMode()) {
-            config.setClusterName(null);
             config.setEndpoint(endpoint);
         }
         if (StringUtils.isNotBlank(req.getOBTenantName())) {

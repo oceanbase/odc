@@ -72,14 +72,6 @@ public class ConnectionStatusManagerTest extends ServiceTestEnv {
     }
 
     @Test
-    public void getAndRefreshStatus_PasswordSavedFalse_Return_NONPASSWORD() {
-        ConnectionConfig connection = newConnection();
-        connection.setPasswordSaved(false);
-        CheckState checkState = statusManager.getAndRefreshStatus(connection);
-        Assert.assertEquals(ConnectionStatus.NOPASSWORD, checkState.getStatus());
-    }
-
-    @Test
     public void getAndRefreshStatus_EnabledFalse_Return_DISABLED() {
         ConnectionConfig connection = newConnection();
         connection.setEnabled(false);

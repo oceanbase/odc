@@ -201,6 +201,7 @@ public class DatabaseService {
     public Database detail(@NonNull Long id) {
         Database database = entityToModel(databaseRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException(ResourceType.ODC_DATABASE, "id", id)), true);
+        horizontalDataPermissionValidator.checkCurrentOrganization(database);
         if (Objects.nonNull(database.getProject()) && Objects.nonNull(database.getProject().getId())) {
             projectPermissionValidator.checkProjectRole(database.getProject().getId(), ResourceRoleName.all());
             return database;

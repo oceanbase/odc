@@ -49,7 +49,6 @@ public class JobCallerBuilder {
         Map<String, String> environments = new JobEnvironmentFactory().getEnvironments(context, TaskRunMode.K8S);
         podConfig.getEnvironments().put(JobEnvKeyConstants.ODC_PROPERTY_ENCRYPTION_SALT,
                 SystemUtils.getEnvOrProperty(JobEnvKeyConstants.ODC_PROPERTY_ENCRYPTION_SALT));
-        new JobEnvironmentEncryptor().encrypt(environments);
 
         JasyptEncryptorConfigProperties configProperties = JobConfigurationHolder.getJobConfiguration()
                 .getJasyptEncryptorConfigProperties();
@@ -63,6 +62,7 @@ public class JobCallerBuilder {
                 configProperties.getSuffix());
         podConfig.getEnvironments().put(JobEnvKeyConstants.ODC_PROPERTY_ENCRYPTION_SALT,
                 configProperties.getSalt());
+        new JobEnvironmentEncryptor().encrypt(environments);
         return new K8sJobCaller(k8sJobClient, podConfig);
     }
 }

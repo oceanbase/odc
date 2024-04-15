@@ -19,6 +19,7 @@ import java.sql.ResultSet;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -108,11 +109,12 @@ public class DebuggerSession extends AbstractDebugSession {
         this.syncEnabled = syncEnabled;
 
         // Debugger must connect to database host the same as debuggee
+        // 设置超时时间, 单位：us
+        List<String> initSqls = Collections.singletonList(
+                String.format("set session ob_query_timeout = %s;", DEBUG_TIMEOUT_MS * 1000));
         acquireNewConnection(debuggeeSession.getConnectionSession(),
-                () -> cloneDataSource(debuggeeSession.getNewDataSource()));
+                () -> cloneDataSource(debuggeeSession.getNewDataSource(), initSqls));
         try (Statement stmt = connection.createStatement()) {
-            // 设置超时时间, 单位：us
-            stmt.execute(String.format("set session ob_query_timeout = %s;", DEBUG_TIMEOUT_MS * 1000));
             // 绑定调试目标id
             stmt.execute(String.format("call dbms_debug.attach_session(%s);", debuggeeSession.getDebugId()));
         } catch (Exception e) {
@@ -178,9 +180,9 @@ public class DebuggerSession extends AbstractDebugSession {
         }
     }
 
-    private DebugDataSource cloneDataSource(DebugDataSource originDataSource) {
+    private DebugDataSource cloneDataSource(DebugDataSource originDataSource, List<String> initSqls) {
         ConnectionConfig config = (ConnectionConfig) ConnectionSessionUtil.getConnectionConfig(connectionSession);
-        DebugDataSource debuggerDataSource = new DebugDataSource(config);
+        DebugDataSource debuggerDataSource = new DebugDataSource(config, initSqls);
         debuggerDataSource.setUrl(originDataSource.getUrl());
         debuggerDataSource.setUsername(originDataSource.getUsername());
         debuggerDataSource.setPassword(originDataSource.getPassword());
