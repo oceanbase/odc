@@ -70,7 +70,9 @@ public class V42417HistoricalPartitionPlanMigrate implements JdbcMigratable {
     @Override
     public void migrate(DataSource dataSource) {
         JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
-        List<PartitionPlanEntityWrapper> partitionPlanWrappers = generatePartitionPlanEntities(jdbcTemplate);
+        List<PartitionPlanEntityWrapper> partitionPlanWrappers = generatePartitionPlanEntities(jdbcTemplate).stream()
+                .filter(w -> CollectionUtils.isNotEmpty(w.getPartitionPlanTableEntityWrappers()))
+                .collect(Collectors.toList());
         if (CollectionUtils.isEmpty(partitionPlanWrappers)) {
             log.info("No historical partition plan exists and the migration is complete");
             return;

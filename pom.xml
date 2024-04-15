@@ -9,7 +9,7 @@
     <packaging>pom</packaging>
     <name>OceanBase Developer Center</name>
     <url>https://github.com/oceanbase/odc</url>
-    <version>4.2.4-SNAPSHOT</version>
+    <version>4.3.0-SNAPSHOT</version>
     <modules>
         <module>server/3rd-party/Libinjection</module>
         <module>server/odc-test</module>
@@ -93,7 +93,7 @@
         <alipay.sdk.version>4.20.19.ALL</alipay.sdk.version>
         <bucket4j-core.version>4.10.0</bucket4j-core.version>
         <springfox-swagger-ui.version>2.10.0</springfox-swagger-ui.version>
-        <db-browser.version>1.1.0</db-browser.version>
+        <db-browser.version>1.1.1</db-browser.version>
         <ob-sql-parser.version>1.3.0</ob-sql-parser.version>
         <pf4j.version>3.10.0</pf4j.version>
         <bcpkix-jdk15on.version>1.64</bcpkix-jdk15on.version>
@@ -142,6 +142,7 @@
         <micrometer-core.version>1.8.0</micrometer-core.version>
         <mariadb-java-client.version>2.7.11</mariadb-java-client.version>
         <kubernetes-client.version>19.0.0</kubernetes-client.version>
+        <okio-jvm.version>3.4.0</okio-jvm.version>
         <jna.version>5.8.0</jna.version>
 
         <jwt.version>3.9.0</jwt.version>
@@ -1129,6 +1130,17 @@
                 <groupId>io.kubernetes</groupId>
                 <artifactId>client-java</artifactId>
                 <version>${kubernetes-client.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>com.squareup.okio</groupId>
+                        <artifactId>okio-jvm</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>com.squareup.okio</groupId>
+                <artifactId>okio-jvm</artifactId>
+                <version>${okio-jvm.version}</version>
             </dependency>
             <dependency>
                 <groupId>io.netty</groupId>
