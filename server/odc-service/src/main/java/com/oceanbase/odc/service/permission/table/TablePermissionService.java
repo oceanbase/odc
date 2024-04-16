@@ -429,6 +429,9 @@ public class TablePermissionService {
         }
         List<Long> permissionIds = userTablePermissionRepository.findByDatabaseIdIn(databaseIds).stream().map(
                 UserTablePermissionEntity::getId).collect(Collectors.toList());
+        if (CollectionUtils.isEmpty(permissionIds)) {
+            return;
+        }
         permissionRepository.deleteByIds(permissionIds);
         userPermissionRepository.deleteByPermissionIds(permissionIds);
     }
