@@ -216,7 +216,7 @@ public class ScheduleConfiguration {
     @Bean(name = "syncDBSchemaTaskExecutor")
     public ThreadPoolTaskExecutor syncDBSchemaTaskExecutor() {
         ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
-        int poolSize = Math.max(SystemUtils.availableProcessors() * 4, 32);
+        int poolSize = Math.max(SystemUtils.availableProcessors() * 4, 16);
         executor.setCorePoolSize(poolSize);
         executor.setMaxPoolSize(poolSize);
         executor.setThreadNamePrefix("database-schema-sync-");
