@@ -71,9 +71,10 @@ public interface DatabaseRepository extends JpaRepository<DatabaseEntity, Long>,
 
     @Modifying
     @Transactional
-    @Query(value = "update connect_database t set t.object_last_sync_time = :syncTime where t.id in (:ids)",
+    @Query(value = "update connect_database t set t.object_sync_status = :#{#status.name()}, t.object_last_sync_time = :syncTime where t.id = :id",
             nativeQuery = true)
-    int setObjectLastSyncTimeByIdIn(@Param("ids") Collection<Long> ids, @Param("syncTime") Date syncTime);
+    int setObjectLastSyncTimeAndStatusById(@Param("id") Long id, @Param("syncTime") Date syncTime,
+            @Param("status") DBObjectSyncStatus status);
 
 
     @Transactional

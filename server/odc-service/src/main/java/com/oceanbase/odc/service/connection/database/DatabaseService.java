@@ -485,11 +485,6 @@ public class DatabaseService {
                     syncIndividualDataSources(connection);
                 } else {
                     syncTeamDataSources(connection);
-                    try {
-                        dbSchemaSyncTaskManager.submitTaskByDataSources(Collections.singleton(connection));
-                    } catch (Exception e) {
-                        log.warn("Submit database schema sync task failed, dataSourceId={}", dataSourceId, e);
-                    }
                 }
             });
             return true;
@@ -831,11 +826,9 @@ public class DatabaseService {
 
     @SkipAuthorize("odc internal usage")
     @Transactional(rollbackFor = Exception.class)
-    public void updateObjectLastSyncTime(@NotNull Collection<Long> databaseIds) {
-        if (CollectionUtils.isEmpty(databaseIds)) {
-            return;
-        }
-        databaseRepository.setObjectLastSyncTimeByIdIn(databaseIds, new Date());
+    public void updateObjectLastSyncTimeAndStatus(@NotNull Long databaseId,
+            @NotNull DBObjectSyncStatus status) {
+        databaseRepository.setObjectLastSyncTimeAndStatusById(databaseId, new Date(), status);
     }
 
     private void checkPermission(Long projectId, Long dataSourceId) {

@@ -16,7 +16,6 @@
 package com.oceanbase.odc.service.db.schema;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -27,7 +26,6 @@ import javax.annotation.PostConstruct;
 
 import org.springframework.beans.factory.ListableBeanFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Lazy;
 import org.springframework.core.Ordered;
 import org.springframework.integration.jdbc.lock.JdbcLockRegistry;
 import org.springframework.stereotype.Service;
@@ -38,11 +36,9 @@ import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.exception.ConflictException;
 import com.oceanbase.odc.service.connection.ConnectionService;
-import com.oceanbase.odc.service.connection.database.DatabaseService;
 import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.db.browser.DBSchemaAccessors;
-import com.oceanbase.odc.service.db.schema.model.DBObjectSyncStatus;
 import com.oceanbase.odc.service.db.schema.syncer.DBSchemaSyncer;
 import com.oceanbase.odc.service.session.factory.DefaultConnectSessionFactory;
 import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
@@ -63,10 +59,6 @@ public class DBSchemaSyncService {
     private ListableBeanFactory beanFactory;
 
     @Autowired
-    @Lazy
-    private DatabaseService databaseService;
-
-    @Autowired
     private ConnectionService connectionService;
 
     @Autowired
@@ -82,7 +74,7 @@ public class DBSchemaSyncService {
         this.syncers = implementations;
     }
 
-    public void sync(@NonNull Database database) throws InterruptedException {
+    public boolean sync(@NonNull Database database) throws InterruptedException {
         PreConditions.notNull(database.getDataSource(), "database.dataSource");
         Long dataSourceId = database.getDataSource().getId();
         Lock lock = jdbcLockRegistry.obtain("sync-datasource-" + dataSourceId + "-database-" + database.getId());
@@ -90,31 +82,23 @@ public class DBSchemaSyncService {
             throw new ConflictException(ErrorCodes.ResourceModifying, "Can not acquire jdbc lock");
         }
         try {
-            databaseService.updateObjectSyncStatus(Collections.singleton(database.getId()), DBObjectSyncStatus.SYNCING);
             ConnectionConfig config = connectionService.getForConnectionSkipPermissionCheck(dataSourceId);
             ConnectionSession session = new DefaultConnectSessionFactory(config).generateSession();
             try {
                 DBSchemaAccessor accessor = DBSchemaAccessors.create(session);
-                int failedCount = 0;
+                boolean success = true;
                 for (DBSchemaSyncer syncer : syncers) {
                     if (syncer.support(config.getDialectType())) {
                         try {
                             syncer.sync(accessor, database);
                         } catch (Exception e) {
-                            failedCount++;
+                            success = false;
                             log.warn("Failed to synchronize {} for database id={}", syncer.getObjectType(),
                                     database.getId(), e);
                         }
                     }
                 }
-                databaseService.updateObjectLastSyncTime(Collections.singleton(database.getId()));
-                if (failedCount > 0) {
-                    databaseService.updateObjectSyncStatus(Collections.singleton(database.getId()),
-                            DBObjectSyncStatus.FAILED);
-                } else {
-                    databaseService.updateObjectSyncStatus(Collections.singleton(database.getId()),
-                            DBObjectSyncStatus.SYNCED);
-                }
+                return success;
             } finally {
                 session.expire();
             }

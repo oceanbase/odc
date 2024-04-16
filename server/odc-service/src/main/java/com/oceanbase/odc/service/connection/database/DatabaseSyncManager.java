@@ -15,6 +15,7 @@
  */
 package com.oceanbase.odc.service.connection.database;
 
+import java.util.Collections;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
@@ -32,6 +33,7 @@ import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.shared.exception.BadRequestException;
 import com.oceanbase.odc.metadb.iam.UserEntity;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
+import com.oceanbase.odc.service.db.schema.DBSchemaSyncTaskManager;
 import com.oceanbase.odc.service.iam.UserService;
 import com.oceanbase.odc.service.iam.util.SecurityContextUtils;
 
@@ -50,6 +52,8 @@ public class DatabaseSyncManager {
     private DatabaseService databaseService;
     @Autowired
     private UserService userService;
+    @Autowired
+    DBSchemaSyncTaskManager dbSchemaSyncTaskManager;
 
     @Autowired
     @Qualifier("syncDatabaseTaskExecutor")
@@ -70,6 +74,17 @@ public class DatabaseSyncManager {
             Long creatorId = connection.getCreatorId();
             SecurityContextUtils.setCurrentUser(creatorId, connection.getOrganizationId(), getAccountName(creatorId));
             return databaseService.internalSyncDataSourceSchemas(connection.getId());
+        }));
+    }
+
+    @SkipAuthorize("internal usage")
+    public Future<Boolean> submitSyncDataSourceAndDBSchemaTask(@NonNull ConnectionConfig connection) {
+        return doExecute(() -> executor.submit(() -> {
+            Long creatorId = connection.getCreatorId();
+            SecurityContextUtils.setCurrentUser(creatorId, connection.getOrganizationId(), getAccountName(creatorId));
+            Boolean res = databaseService.internalSyncDataSourceSchemas(connection.getId());
+            dbSchemaSyncTaskManager.submitTaskByDataSources(Collections.singletonList(connection));
+            return res;
         }));
     }
 

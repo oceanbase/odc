@@ -238,7 +238,7 @@ public class ConnectionService {
             transactionManager.rollback(transactionStatus);
             throw e;
         }
-        databaseSyncManager.submitSyncDataSourceTask(saved);
+        databaseSyncManager.submitSyncDataSourceAndDBSchemaTask(saved);
         return saved;
     }
 
@@ -248,7 +248,7 @@ public class ConnectionService {
         List<ConnectionConfig> connectionConfigs = new ArrayList<>();
         for (ConnectionConfig connection : connections) {
             ConnectionConfig saved = innerCreate(connection, currentUserId(), false);
-            databaseSyncManager.submitSyncDataSourceTask(saved);
+            databaseSyncManager.submitSyncDataSourceAndDBSchemaTask(saved);
             userPermissionService.bindUserAndDataSourcePermission(currentUserId(), currentOrganizationId(),
                     saved.getId(),
                     Arrays.asList("read", "update", "delete"));

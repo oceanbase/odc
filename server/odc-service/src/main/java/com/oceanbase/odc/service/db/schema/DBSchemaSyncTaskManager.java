@@ -16,6 +16,7 @@
 package com.oceanbase.odc.service.db.schema;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Callable;
@@ -32,6 +33,8 @@ import com.oceanbase.odc.service.connection.database.DatabaseService;
 import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.db.schema.model.DBObjectSyncStatus;
+
+import lombok.NonNull;
 
 /**
  * @author gaoda.xy
@@ -58,11 +61,7 @@ public class DBSchemaSyncTaskManager {
         Set<Long> databaseIds = databases.stream().map(Database::getId).collect(Collectors.toSet());
         databaseService.updateObjectSyncStatus(databaseIds, DBObjectSyncStatus.PENDING);
         databases.forEach(database -> {
-            Callable<Void> task = () -> {
-                dbSchemaSyncService.sync(database);
-                return null;
-            };
-            executor.submit(task);
+            executor.submit(generateTask(database));
         });
     }
 
@@ -80,12 +79,25 @@ public class DBSchemaSyncTaskManager {
         Set<Long> databaseIds = databases.stream().map(Database::getId).collect(Collectors.toSet());
         databaseService.updateObjectSyncStatus(databaseIds, DBObjectSyncStatus.PENDING);
         databases.forEach(database -> {
-            Callable<Void> task = () -> {
-                dbSchemaSyncService.sync(database);
-                return null;
-            };
-            executor.submit(task);
+            executor.submit(generateTask(database));
         });
+    }
+
+    private Callable<Void> generateTask(@NonNull Database database) {
+        return () -> {
+            try {
+                databaseService.updateObjectSyncStatus(Collections.singleton(database.getId()),
+                        DBObjectSyncStatus.SYNCING);
+                if (dbSchemaSyncService.sync(database)) {
+                    databaseService.updateObjectLastSyncTimeAndStatus(database.getId(), DBObjectSyncStatus.SYNCED);
+                } else {
+                    databaseService.updateObjectLastSyncTimeAndStatus(database.getId(), DBObjectSyncStatus.FAILED);
+                }
+            } catch (Exception e) {
+                databaseService.updateObjectLastSyncTimeAndStatus(database.getId(), DBObjectSyncStatus.FAILED);
+            }
+            return null;
+        };
     }
 
 }
