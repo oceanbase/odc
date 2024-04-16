@@ -40,6 +40,7 @@ import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
 
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -512,6 +513,8 @@ public class DatabaseService {
                 jdbcTemplate.batchUpdate(update, toUpdate);
             }
         } catch (SQLException e) {
+            deleteDatabaseIfClusterNotExists(e, connection.getId(),
+                    "update connect_database set is_existed = 0 where connection_id=?");
             throw new IllegalStateException(e);
         } finally {
             if (teamDataSource instanceof AutoCloseable) {
@@ -576,6 +579,8 @@ public class DatabaseService {
                 jdbcTemplate.batchUpdate("delete from connect_database where id = ?", toDelete);
             }
         } catch (SQLException e) {
+            deleteDatabaseIfClusterNotExists(e, connection.getId(),
+                    "delete from connect_database where connection_id=?");
             throw new IllegalStateException(e);
         } finally {
             if (individualDataSource instanceof AutoCloseable) {
@@ -833,4 +838,19 @@ public class DatabaseService {
         }
     }
 
+
+    private void deleteDatabaseIfClusterNotExists(SQLException e, Long connectionId, String deleteSql) {
+        if (StringUtils.containsIgnoreCase(e.getMessage(), "cluster not exist")) {
+            log.info(
+                    "Cluster not exist, set existed to false for all databases in this data source, data source id = {}",
+                    connectionId);
+            JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
+            try {
+                jdbcTemplate.update(deleteSql, new Object[] {connectionId});
+            } catch (Exception ex) {
+                log.warn("Failed to delete databases when cluster not exist, errorMessage={}",
+                        ex.getLocalizedMessage());
+            }
+        }
+    }
 }
