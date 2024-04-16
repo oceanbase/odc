@@ -237,14 +237,16 @@ public class ScheduleService {
         Optional<ScheduleEntity> scheduleEntityOptional = scheduleRepository.findById(scheduleId);
         if (scheduleEntityOptional.isPresent()) {
             Database database;
-            try{
+            try {
                 database = databaseService.getBasicSkipPermissionCheck(scheduleEntityOptional.get().getDatabaseId());
-            }catch (NotFoundException e){
+            } catch (NotFoundException e) {
                 database = null;
             }
-            if(database == null || !database.getExisted()){
+            if (database == null || !database.getExisted()) {
                 try {
-                    log.info("The database for scheduled task operation does not exist, and the schedule is being terminated.scheduleId={}", scheduleId);
+                    log.info(
+                            "The database for scheduled task operation does not exist, and the schedule is being terminated.scheduleId={}",
+                            scheduleId);
                     terminate(scheduleEntityOptional.get());
                 } catch (SchedulerException e) {
                     log.warn("Terminate schedule failed,scheduleId={}", scheduleId);

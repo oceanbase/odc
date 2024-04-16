@@ -27,7 +27,6 @@ import org.springframework.stereotype.Component;
 import com.oceanbase.odc.core.alarm.AlarmUtils;
 import com.oceanbase.odc.metadb.schedule.ScheduleRepository;
 import com.oceanbase.odc.service.common.util.SpringContextUtil;
-import com.oceanbase.odc.service.connection.database.DatabaseService;
 import com.oceanbase.odc.service.notification.Broker;
 import com.oceanbase.odc.service.notification.NotificationProperties;
 import com.oceanbase.odc.service.notification.helper.EventBuilder;
@@ -47,8 +46,7 @@ public class OdcTriggerListener extends TriggerListenerSupport {
 
     @Autowired
     private ScheduleRepository scheduleRepository;
-    @Autowired
-    private DatabaseService databaseService;
+
     @Autowired
     private NotificationProperties notificationProperties;
     @Autowired
