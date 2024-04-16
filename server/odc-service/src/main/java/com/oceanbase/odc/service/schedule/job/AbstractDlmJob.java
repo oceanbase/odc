@@ -44,7 +44,6 @@ import com.oceanbase.odc.service.dlm.utils.DataArchiveConditionUtil;
 import com.oceanbase.odc.service.dlm.utils.DlmJobIdUtil;
 import com.oceanbase.odc.service.quartz.util.ScheduleTaskUtils;
 import com.oceanbase.odc.service.schedule.ScheduleService;
-import com.oceanbase.odc.service.schedule.flowtask.ScheduleTaskContextHolder;
 import com.oceanbase.odc.service.task.config.TaskFrameworkEnabledProperties;
 import com.oceanbase.odc.service.task.constants.JobParametersKeyConstants;
 import com.oceanbase.odc.service.task.executor.task.DataArchiveTask;
@@ -248,8 +247,6 @@ public abstract class AbstractDlmJob implements OdcJob {
                     context.getJobDetail().getKey());
             return;
         }
-        ScheduleTaskEntity scheduleTask = (ScheduleTaskEntity) context.getResult();
-        ScheduleTaskContextHolder.trace(scheduleTask.getJobName(), scheduleTask.getJobGroup(), scheduleTask.getId());
         executeJob(context);
     }
 
@@ -264,7 +261,6 @@ public abstract class AbstractDlmJob implements OdcJob {
     @Override
     public void after(JobExecutionContext context) {
         scheduleService.refreshScheduleStatus(ScheduleTaskUtils.getScheduleId(context));
-        ScheduleTaskContextHolder.clear();
     }
 
     @Override

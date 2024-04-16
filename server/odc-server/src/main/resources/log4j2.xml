@@ -47,6 +47,20 @@
             </DefaultRolloverStrategy>
         </RollingFile>
 
+        <RollingFile name="SchedulerFileAppender" fileName="${LOG_DIRECTORY}/scheduler.log"
+                     filePattern="${LOG_DIRECTORY}/scheduler-%d{yyyy-MM-dd}-%i.log">
+            <PatternLayout pattern="[%date{yyyy-MM-dd HH:mm:ss.SSS}][%thread][%level][%class][%line][ScheduledTask-%X{scheduleId}-%X{scheduleTaskId}]: %message%n"/>
+            <Policies>
+                <SizeBasedTriggeringPolicy size="100MB"/>
+            </Policies>
+            <DefaultRolloverStrategy max="20">
+                <Delete basePath="${LOG_DIRECTORY}" maxDepth="2">
+                    <IfFileName glob="*.log*"/>
+                    <IfLastModified age="14d"/>
+                </Delete>
+            </DefaultRolloverStrategy>
+        </RollingFile>
+
         <!-- ODC日志配置 -->
         <RollingFile name="OdcAPIFileAppender" fileName="${LOG_DIRECTORY}/access.log"
                      filePattern="${LOG_DIRECTORY}/access-%d{yyyy-MM-dd}-%i.log">
@@ -541,8 +555,8 @@
             <Routes pattern="${ctx:scheduleTaskId}">
                 <Route>
                     <RollingFile name="InfoRolling-${ctx:scheduleTaskId}"
-                                 fileName="${LOG_DIRECTORY}/scheduleTask/${ctx:jobName}-${ctx:jobGroup}/${ctx:scheduleTaskId}/log.all"
-                                 filePattern="${LOG_DIRECTORY}/scheduleTask/${ctx:jobName}-${ctx:jobGroup}/${ctx:scheduleTaskId}/${date:yyyy-MM}/log-%d{yyyy-MM-dd}-%i.all.gz">
+                                 fileName="${LOG_DIRECTORY}/scheduleTask/${ctx:scheduleId}-${ctx:jobType}/${ctx:scheduleTaskId}/log.all"
+                                 filePattern="${LOG_DIRECTORY}/scheduleTask/${ctx:scheduleId}-${ctx:jobType}/${ctx:scheduleTaskId}/${date:yyyy-MM}/log-%d{yyyy-MM-dd}-%i.all.gz">
                         <PatternLayout>
                             <pattern>%d{yyyy-MM-dd HH:mm:ss} [%p] %m%n</pattern>
                         </PatternLayout>
@@ -563,8 +577,8 @@
             <Routes pattern="${ctx:scheduleTaskId}">
                 <Route>
                     <RollingFile name="WarnRolling-${ctx:scheduleTaskId}"
-                                 fileName="${LOG_DIRECTORY}/scheduleTask/${ctx:jobName}-${ctx:jobGroup}/${ctx:scheduleTaskId}/log.warn"
-                                 filePattern="${LOG_DIRECTORY}/scheduleTask/${ctx:jobName}-${ctx:jobGroup}/${ctx:scheduleTaskId}/${date:yyyy-MM}/log-%d{yyyy-MM-dd}-%i.warn.gz">
+                                 fileName="${LOG_DIRECTORY}/scheduleTask/${ctx:scheduleId}-${ctx:jobType}/${ctx:scheduleTaskId}/log.warn"
+                                 filePattern="${LOG_DIRECTORY}/scheduleTask/${ctx:scheduleId}-${ctx:jobType}/${ctx:scheduleTaskId}/${date:yyyy-MM}/log-%d{yyyy-MM-dd}-%i.warn.gz">
                         <PatternLayout>
                             <pattern>%d{yyyy-MM-dd HH:mm:ss} [%p] %m%n</pattern>
                         </PatternLayout>
@@ -750,6 +764,14 @@
         <Logger name="com.oceanbase.tools.migrator" level="INFO" additivity="true">
             <AppenderRef ref="ScheduleTaskInfoRoutingAppender"/>
             <AppenderRef ref="ScheduleTaskWarnRoutingAppender"/>
+        </Logger>
+
+        <Logger name="com.oceanbase.odc.service.quartz" level="INFO" additivity="true">
+            <AppenderRef ref="SchedulerFileAppender"/>
+        </Logger>
+
+        <Logger name="com.oceanbase.odc.service.schedule.job" level="INFO" additivity="true">
+            <AppenderRef ref="SchedulerFileAppender"/>
         </Logger>
 
         <!-- ODC程序日志输出，输出级别 INFO -->

@@ -15,6 +15,8 @@
  */
 package com.oceanbase.odc.service.schedule.job;
 
+import java.util.List;
+
 import org.quartz.JobDataMap;
 import org.quartz.JobExecutionContext;
 
@@ -26,6 +28,7 @@ import com.oceanbase.odc.metadb.schedule.ScheduleEntity;
 import com.oceanbase.odc.service.common.util.SpringContextUtil;
 import com.oceanbase.odc.service.flow.FlowInstanceService;
 import com.oceanbase.odc.service.flow.model.CreateFlowInstanceReq;
+import com.oceanbase.odc.service.flow.model.FlowInstanceDetailResp;
 import com.oceanbase.odc.service.flow.task.model.DatabaseChangeParameters;
 import com.oceanbase.odc.service.schedule.ScheduleService;
 import com.oceanbase.odc.service.schedule.model.JobType;
@@ -65,7 +68,13 @@ public class SqlPlanJob implements OdcJob {
         flowInstanceReq.setDatabaseId(scheduleEntity.getDatabaseId());
 
         FlowInstanceService flowInstanceService = SpringContextUtil.getBean(FlowInstanceService.class);
-        flowInstanceService.createWithoutApprovalNode(flowInstanceReq);
+        List<FlowInstanceDetailResp> flowInstance = flowInstanceService.createWithoutApprovalNode(
+                flowInstanceReq);
+        if (flowInstance.isEmpty()) {
+            log.warn("Create sql plan subtask failed.");
+        } else {
+            log.info("Create sql plan subtask success,flowInstanceId={}", flowInstance.get(0).getId());
+        }
 
     }
 
