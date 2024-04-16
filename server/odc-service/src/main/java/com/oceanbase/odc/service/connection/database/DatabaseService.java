@@ -352,13 +352,7 @@ public class DatabaseService {
             List<UserResourceRole> userResourceRoles = buildUserResourceRoles(Collections.singleton(saved.getId()),
                     req.getOwnerIds());
             resourceRoleService.saveAll(userResourceRoles);
-            Database result = entityToModel(saved, false);
-            try {
-                dbSchemaSyncTaskManager.submitTaskByDatabases(Collections.singleton(result));
-            } catch (Exception e) {
-                log.warn("Submit sync database schema task failed, databaseId={}", result.getId(), e);
-            }
-            return result;
+            return entityToModel(saved, false);
         } catch (Exception ex) {
             throw new BadRequestException(SqlExecuteResult.getTrackMessage(ex));
         } finally {

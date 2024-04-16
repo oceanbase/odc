@@ -62,9 +62,7 @@ public class DBSchemaSyncTaskManager {
         }
         Set<Long> databaseIds = databases.stream().map(Database::getId).collect(Collectors.toSet());
         databaseService.updateObjectSyncStatus(databaseIds, DBObjectSyncStatus.PENDING);
-        databases.forEach(database -> {
-            executor.submit(generateTask(database));
-        });
+        databases.forEach(database -> executor.submit(generateTask(database)));
     }
 
     public void submitTaskByDataSources(@NonNull ConnectionConfig dataSource) {
@@ -75,9 +73,7 @@ public class DBSchemaSyncTaskManager {
         }
         Set<Long> databaseIds = databases.stream().map(Database::getId).collect(Collectors.toSet());
         databaseService.updateObjectSyncStatus(databaseIds, DBObjectSyncStatus.PENDING);
-        databases.forEach(database -> {
-            executor.submit(generateTask(database));
-        });
+        databases.forEach(database -> executor.submit(generateTask(database)));
     }
 
     private Callable<Void> generateTask(@NonNull Database database) {
