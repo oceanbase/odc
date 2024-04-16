@@ -35,11 +35,13 @@ import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.db.schema.model.DBObjectSyncStatus;
 
 import lombok.NonNull;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * @author gaoda.xy
  * @date 2024/4/15 10:18
  */
+@Slf4j
 @Component
 public class DBSchemaSyncTaskManager {
 
@@ -90,6 +92,7 @@ public class DBSchemaSyncTaskManager {
                 }
             } catch (Exception e) {
                 databaseService.updateObjectLastSyncTimeAndStatus(database.getId(), DBObjectSyncStatus.FAILED);
+                log.warn("Failed to synchronize schema for database id={}", database.getId(), e);
             }
             return null;
         };
