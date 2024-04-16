@@ -67,9 +67,9 @@ public class DBSchemaSyncScheduler {
                 || e.getObjectSyncStatus() == DBObjectSyncStatus.PENDING);
         try {
             dbSchemaSyncTaskManager.submitTaskByDatabases(databases);
-            log.info("Submit database schema sync task success, dbCount: {}", databases.size());
+            log.info("Submit sync database schema task success, dbCount: {}", databases.size());
         } catch (Exception e) {
-            log.warn("Submit database schema sync task failed", e);
+            log.warn("Submit sync database schema task failed", e);
         }
     }
 

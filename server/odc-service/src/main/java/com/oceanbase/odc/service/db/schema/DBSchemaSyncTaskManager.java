@@ -54,7 +54,7 @@ public class DBSchemaSyncTaskManager {
     @Lazy
     private DatabaseService databaseService;
 
-    public void submitTaskByDatabases(Collection<Database> databases) {
+    public void submitTaskByDatabases(@NonNull Collection<Database> databases) {
         if (CollectionUtils.isEmpty(databases)) {
             return;
         }
@@ -65,14 +65,9 @@ public class DBSchemaSyncTaskManager {
         });
     }
 
-    public void submitTaskByDataSources(Collection<ConnectionConfig> dataSources) {
-        if (CollectionUtils.isEmpty(dataSources)) {
-            return;
-        }
-        List<Database> databases = databaseService.listDatabasesByConnectionIds(
-                dataSources.stream().map(ConnectionConfig::getId).collect(Collectors.toSet()));
-        databases.removeIf(e -> Boolean.FALSE.equals(e.getExisted())
-                || e.getObjectSyncStatus() == DBObjectSyncStatus.PENDING);
+    public void submitTaskByDataSources(@NonNull ConnectionConfig dataSource) {
+        List<Database> databases = databaseService.listExistDatabasesByConnectionId(dataSource.getId());
+        databases.removeIf(e -> e.getObjectSyncStatus() == DBObjectSyncStatus.PENDING);
         if (CollectionUtils.isEmpty(databases)) {
             return;
         }

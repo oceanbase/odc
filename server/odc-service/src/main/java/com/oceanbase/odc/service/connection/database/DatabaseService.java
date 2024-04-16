@@ -356,7 +356,7 @@ public class DatabaseService {
             try {
                 dbSchemaSyncTaskManager.submitTaskByDatabases(Collections.singleton(result));
             } catch (Exception e) {
-                log.warn("Submit database schema sync task failed, databaseId={}", result.getId(), e);
+                log.warn("Submit sync database schema task failed, databaseId={}", result.getId(), e);
             }
             return result;
         } catch (Exception ex) {
@@ -467,7 +467,14 @@ public class DatabaseService {
     @Transactional(rollbackFor = Exception.class)
     @PreAuthenticate(actions = "update", resourceType = "ODC_CONNECTION", indexOfIdParam = 0)
     public Boolean syncDataSourceSchemas(@NonNull Long dataSourceId) throws InterruptedException {
-        return internalSyncDataSourceSchemas(dataSourceId);
+        Boolean res = internalSyncDataSourceSchemas(dataSourceId);
+        try {
+            dbSchemaSyncTaskManager
+                    .submitTaskByDataSources(connectionService.getBasicWithoutPermissionCheck(dataSourceId));
+        } catch (Exception e) {
+            log.warn("Submit sync database schema task failed, dataSourceId={}", dataSourceId, e);
+        }
+        return res;
     }
 
     @SkipAuthorize("internal usage")

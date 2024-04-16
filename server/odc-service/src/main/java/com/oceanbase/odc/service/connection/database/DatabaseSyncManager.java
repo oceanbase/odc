@@ -15,7 +15,6 @@
  */
 package com.oceanbase.odc.service.connection.database;
 
-import java.util.Collections;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
@@ -83,7 +82,11 @@ public class DatabaseSyncManager {
             Long creatorId = connection.getCreatorId();
             SecurityContextUtils.setCurrentUser(creatorId, connection.getOrganizationId(), getAccountName(creatorId));
             Boolean res = databaseService.internalSyncDataSourceSchemas(connection.getId());
-            dbSchemaSyncTaskManager.submitTaskByDataSources(Collections.singletonList(connection));
+            try {
+                dbSchemaSyncTaskManager.submitTaskByDataSources(connection);
+            } catch (Exception e) {
+                log.warn("Submit sync database schema task failed, dataSourceId={}", connection.getId(), e);
+            }
             return res;
         }));
     }
