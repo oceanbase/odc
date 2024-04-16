@@ -28,6 +28,7 @@ import com.oceanbase.odc.metadb.connection.ConnectionConfigRepository;
 import com.oceanbase.odc.metadb.iam.OrganizationRepository;
 import com.oceanbase.odc.service.connection.database.DatabaseService;
 import com.oceanbase.odc.service.connection.database.model.Database;
+import com.oceanbase.odc.service.db.schema.model.DBObjectSyncStatus;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -62,6 +63,8 @@ public class DBSchemaSyncScheduler {
             return;
         }
         List<Database> databases = databaseService.listDatabasesByConnectionIds(connectionIds);
+        databases.removeIf(e -> Boolean.FALSE.equals(e.getExisted())
+                || e.getObjectSyncStatus() == DBObjectSyncStatus.PENDING);
         try {
             dbSchemaSyncTaskManager.submitDBSchemaSyncTask(databases);
         } catch (Exception e) {

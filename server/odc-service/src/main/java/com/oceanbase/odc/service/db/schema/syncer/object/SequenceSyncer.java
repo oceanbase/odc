@@ -49,7 +49,7 @@ public class SequenceSyncer extends AbstractDBObjectSyncer {
 
     @Override
     public boolean support(@NonNull DialectType dialectType) {
-        return dialectType.isOceanbase();
+        return dialectType.isOracle();
     }
 
 }
