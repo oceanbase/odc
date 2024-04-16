@@ -94,6 +94,7 @@ import com.oceanbase.odc.service.connection.database.model.QueryDatabaseParams;
 import com.oceanbase.odc.service.connection.database.model.TransferDatabasesReq;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.db.DBSchemaService;
+import com.oceanbase.odc.service.db.schema.DBSchemaSyncTaskManager;
 import com.oceanbase.odc.service.db.schema.model.DBObjectSyncStatus;
 import com.oceanbase.odc.service.iam.HorizontalDataPermissionValidator;
 import com.oceanbase.odc.service.iam.OrganizationService;
@@ -204,6 +205,9 @@ public class DatabaseService {
 
     @Autowired
     private UserService userService;
+
+    @Autowired
+    private DBSchemaSyncTaskManager dbSchemaSyncTaskManager;
 
     @Transactional(rollbackFor = Exception.class)
     @SkipAuthorize("internal authenticated")
@@ -348,7 +352,13 @@ public class DatabaseService {
             List<UserResourceRole> userResourceRoles = buildUserResourceRoles(Collections.singleton(saved.getId()),
                     req.getOwnerIds());
             resourceRoleService.saveAll(userResourceRoles);
-            return entityToModel(saved, false);
+            Database result = entityToModel(saved, false);
+            try {
+                dbSchemaSyncTaskManager.submitTaskByDatabases(Collections.singleton(result));
+            } catch (Exception e) {
+                log.warn("Submit database schema sync task failed, databaseId={}", result.getId(), e);
+            }
+            return result;
         } catch (Exception ex) {
             throw new BadRequestException(SqlExecuteResult.getTrackMessage(ex));
         } finally {
@@ -450,7 +460,6 @@ public class DatabaseService {
         deleteDatabasePermissionByIds(databaseIds);
         dbColumnRepository.deleteByDatabaseIdIn(req.getDatabaseIds());
         dbObjectRepository.deleteByDatabaseIdIn(req.getDatabaseIds());
-        resourceRoleService.deleteByResourceTypeAndIdIn(ResourceType.ODC_DATABASE, databaseIds);
         databaseRepository.deleteAll(saved);
         return true;
     }
@@ -476,6 +485,11 @@ public class DatabaseService {
                     syncIndividualDataSources(connection);
                 } else {
                     syncTeamDataSources(connection);
+                    try {
+                        dbSchemaSyncTaskManager.submitTaskByDataSources(Collections.singleton(connection));
+                    } catch (Exception e) {
+                        log.warn("Submit database schema sync task failed, dataSourceId={}", dataSourceId, e);
+                    }
                 }
             });
             return true;
@@ -659,18 +673,22 @@ public class DatabaseService {
             return 0;
         }
         deleteDatabasePermissionByIds(databaseIds);
+        dbColumnRepository.deleteByDatabaseIdIn(databaseIds);
+        dbObjectRepository.deleteByDatabaseIdIn(databaseIds);
         return databaseRepository.deleteByConnectionIds(dataSourceId);
     }
 
     @Transactional(rollbackFor = Exception.class)
     @SkipAuthorize("internal usage")
     public int deleteByDataSourceId(@NonNull Long dataSourceId) {
-        List<Long> databaseIds = databaseRepository.findByConnectionId(dataSourceId).stream().map(DatabaseEntity::getId)
-                .collect(Collectors.toList());
+        List<Long> databaseIds = databaseRepository.findByConnectionId(dataSourceId).stream()
+                .map(DatabaseEntity::getId).collect(Collectors.toList());
         if (CollectionUtils.isEmpty(databaseIds)) {
             return 0;
         }
         deleteDatabasePermissionByIds(databaseIds);
+        dbColumnRepository.deleteByDatabaseIdIn(databaseIds);
+        dbObjectRepository.deleteByDatabaseIdIn(databaseIds);
         return databaseRepository.deleteByConnectionId(dataSourceId);
     }
 

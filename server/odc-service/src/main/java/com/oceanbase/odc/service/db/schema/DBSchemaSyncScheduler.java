@@ -66,7 +66,7 @@ public class DBSchemaSyncScheduler {
         databases.removeIf(e -> Boolean.FALSE.equals(e.getExisted())
                 || e.getObjectSyncStatus() == DBObjectSyncStatus.PENDING);
         try {
-            dbSchemaSyncTaskManager.submitDBSchemaSyncTask(databases);
+            dbSchemaSyncTaskManager.submitTaskByDatabases(databases);
             log.info("Submit database schema sync task success, dbCount: {}", databases.size());
         } catch (Exception e) {
             log.warn("Submit database schema sync task failed", e);

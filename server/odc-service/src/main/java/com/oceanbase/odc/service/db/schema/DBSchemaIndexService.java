@@ -203,7 +203,7 @@ public class DBSchemaIndexService {
         databases.removeIf(e -> Boolean.FALSE.equals(e.getExisted())
                 || e.getObjectSyncStatus() == DBObjectSyncStatus.PENDING
                 || e.getObjectSyncStatus() == DBObjectSyncStatus.SYNCING);
-        dbSchemaSyncTaskManager.submitDBSchemaSyncTask(databases);
+        dbSchemaSyncTaskManager.submitTaskByDatabases(databases);
         return true;
     }
 

@@ -16,6 +16,7 @@
 package com.oceanbase.odc.service.db.schema;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.stream.Collectors;
@@ -28,6 +29,7 @@ import org.springframework.stereotype.Component;
 
 import com.oceanbase.odc.service.connection.database.DatabaseService;
 import com.oceanbase.odc.service.connection.database.model.Database;
+import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.db.schema.model.DBObjectSyncStatus;
 
 /**
@@ -47,7 +49,29 @@ public class DBSchemaSyncTaskManager {
     @Autowired
     private DatabaseService databaseService;
 
-    public void submitDBSchemaSyncTask(Collection<Database> databases) {
+    public void submitTaskByDatabases(Collection<Database> databases) {
+        if (CollectionUtils.isEmpty(databases)) {
+            return;
+        }
+        Set<Long> databaseIds = databases.stream().map(Database::getId).collect(Collectors.toSet());
+        databaseService.updateObjectSyncStatus(databaseIds, DBObjectSyncStatus.PENDING);
+        databases.forEach(database -> {
+            Callable<Void> task = () -> {
+                dbSchemaSyncService.sync(database);
+                return null;
+            };
+            executor.submit(task);
+        });
+    }
+
+    public void submitTaskByDataSources(Collection<ConnectionConfig> dataSources) {
+        if (CollectionUtils.isEmpty(dataSources)) {
+            return;
+        }
+        List<Database> databases = databaseService.listDatabasesByConnectionIds(
+                dataSources.stream().map(ConnectionConfig::getId).collect(Collectors.toSet()));
+        databases.removeIf(e -> Boolean.FALSE.equals(e.getExisted())
+                || e.getObjectSyncStatus() == DBObjectSyncStatus.PENDING);
         if (CollectionUtils.isEmpty(databases)) {
             return;
         }

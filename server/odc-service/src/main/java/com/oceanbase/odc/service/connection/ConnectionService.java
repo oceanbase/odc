@@ -318,7 +318,7 @@ public class ConnectionService {
     @PreAuthenticate(actions = "delete", resourceType = "ODC_CONNECTION", indexOfIdParam = 0)
     public ConnectionConfig delete(@NotNull Long id) {
         ConnectionConfig connection = internalGet(id);
-        log.info("Delete related permission entity, id={}", id);
+        log.info("Delete related metadata entity, id={}", id);
         int affectRows = databaseService.deleteByDataSourceId(id);
         log.info("delete related databases successfully, affectRows={}, id={}", affectRows, id);
         affectRows = attributeRepository.deleteByConnectionId(id);
@@ -349,7 +349,7 @@ public class ConnectionService {
 
         List<PermissionEntity> permissionEntities = this.permissionService.deleteResourceRelatedPermissions(
                 ids, ResourceType.ODC_CONNECTION);
-        log.info("Delete datasource-related permission entity, affectEntities={}", permissionEntities.size());
+        log.info("Delete datasource-related metadata entity, affectEntities={}", permissionEntities.size());
         int affectRows = databaseService.deleteByDataSourceIds(ids);
         log.info("delete datasource-related databases successfully, affectRows={}", affectRows);
         affectRows = repository.deleteByIds(ids);
