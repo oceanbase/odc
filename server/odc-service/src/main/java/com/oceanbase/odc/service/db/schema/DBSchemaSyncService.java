@@ -27,6 +27,7 @@ import javax.annotation.PostConstruct;
 
 import org.springframework.beans.factory.ListableBeanFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.core.Ordered;
 import org.springframework.integration.jdbc.lock.JdbcLockRegistry;
 import org.springframework.stereotype.Service;
@@ -62,6 +63,7 @@ public class DBSchemaSyncService {
     private ListableBeanFactory beanFactory;
 
     @Autowired
+    @Lazy
     private DatabaseService databaseService;
 
     @Autowired
