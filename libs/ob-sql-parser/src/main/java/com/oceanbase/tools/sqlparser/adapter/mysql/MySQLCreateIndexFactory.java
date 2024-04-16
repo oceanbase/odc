@@ -78,7 +78,11 @@ public class MySQLCreateIndexFactory extends OBParserBaseVisitor<CreateIndex> im
         if (ctx.IF() != null && ctx.not() != null && ctx.EXISTS() != null) {
             index.setIfNotExists(true);
         }
-        index.setPartition(new MySQLPartitionFactory(ctx.opt_partition_option()).generate());
+        if (ctx.partition_option() != null) {
+            index.setPartition(new MySQLPartitionFactory(ctx.partition_option()).generate());
+        } else if (ctx.auto_partition_option() != null) {
+            index.setPartition(new MySQLPartitionFactory(ctx.auto_partition_option()).generate());
+        }
         return index;
     }
 
