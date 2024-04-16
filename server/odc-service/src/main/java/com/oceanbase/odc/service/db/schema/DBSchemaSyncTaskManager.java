@@ -24,6 +24,7 @@ import java.util.stream.Collectors;
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Component;
 
@@ -47,6 +48,7 @@ public class DBSchemaSyncTaskManager {
     private DBSchemaSyncService dbSchemaSyncService;
 
     @Autowired
+    @Lazy
     private DatabaseService databaseService;
 
     public void submitTaskByDatabases(Collection<Database> databases) {
