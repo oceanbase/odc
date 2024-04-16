@@ -48,10 +48,6 @@ public class PrivateConnectionPermission extends ResourcePermission {
         super(resourceId, ResourceType.ODC_PRIVATE_CONNECTION.name(), action);
     }
 
-    public PrivateConnectionPermission(String resourceId, int mask) {
-        super(resourceId, ResourceType.ODC_PRIVATE_CONNECTION.name(), mask);
-    }
-
     @Override
     protected int getMaskFromAction(String action) {
         int mask = super.getMaskFromAction(action);
@@ -110,7 +106,8 @@ public class PrivateConnectionPermission extends ResourcePermission {
 
     @Override
     public String toString() {
-        return "PrivateConnectionPermission " + this.resourceType + ":" + this.resourceId + " " + getActions(this.mask);
+        return ResourceType.ODC_PRIVATE_CONNECTION.getLocalizedMessage()
+                + ":" + this.resourceId + ": " + getActions(this.mask);
     }
 
 }
