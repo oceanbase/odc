@@ -50,7 +50,7 @@ public interface DBColumnRepository extends OdcJpaRepository<DBColumnEntity, Lon
 
     @Modifying
     @Transactional
-    @Query(value = "delete from database_schema_column t where t.database_id = :databaseId and t.objectIds in (:objectIds)",
+    @Query(value = "delete from database_schema_column t where t.database_id = :databaseId and t.object_id in (:objectIds)",
             nativeQuery = true)
     int deleteByDatabaseIdAndObjectIdIn(@Param("databaseId") Long databaseId,
             @Param("objectIds") Collection<Long> objectIds);
