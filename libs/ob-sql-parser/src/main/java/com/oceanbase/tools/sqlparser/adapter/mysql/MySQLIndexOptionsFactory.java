@@ -75,10 +75,10 @@ public class MySQLIndexOptionsFactory extends OBParserBaseVisitor<IndexOptions>
                 indexOptions.setStoring(getReference(option));
             } else if (option.CTXCAT() != null) {
                 indexOptions.setCtxcat(getReference(option));
-            } else if (option.WITH_ROWID() != null) {
-                indexOptions.setWithRowId(true);
             } else if (option.WITH() != null && option.PARSER() != null) {
                 indexOptions.setWithParser(option.STRING_VALUE().getText());
+            } else if (option.WITH() != null && option.ROWID() != null) {
+                indexOptions.setWithRowId(true);
             } else if (option.index_using_algorithm() != null) {
                 indexOptions.merge(visit(option.index_using_algorithm()));
             } else if (option.visibility_option() != null) {

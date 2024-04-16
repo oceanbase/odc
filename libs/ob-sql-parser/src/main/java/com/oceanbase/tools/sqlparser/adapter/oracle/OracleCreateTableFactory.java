@@ -52,10 +52,10 @@ public class OracleCreateTableFactory extends OBParserBaseVisitor<CreateTable>
         CreateTable createTable = new CreateTable(ctx, OracleFromReferenceFactory.getRelation(ctx.relation_factor()));
         createTable.setSchema(OracleFromReferenceFactory.getSchemaName(ctx.relation_factor()));
         createTable.setUserVariable(OracleFromReferenceFactory.getUserVariable(ctx.relation_factor()));
-        if (ctx.temporary_option().GLOBAL() != null && ctx.temporary_option().TEMPORARY() != null) {
+        if (ctx.special_table_type().GLOBAL() != null && ctx.special_table_type().TEMPORARY() != null) {
             createTable.setGlobal(true);
             createTable.setTemporary(true);
-        } else if (ctx.temporary_option().EXTERNAL() != null) {
+        } else if (ctx.special_table_type().EXTERNAL() != null) {
             createTable.setExternal(true);
         }
         if (ctx.table_element_list() != null) {
@@ -81,8 +81,10 @@ public class OracleCreateTableFactory extends OBParserBaseVisitor<CreateTable>
         if (ctx.table_option_list() != null) {
             createTable.setTableOptions(new OracleTableOptionsFactory(ctx.table_option_list()).generate());
         }
-        if (ctx.opt_partition_option() != null) {
-            createTable.setPartition(new OraclePartitionFactory(ctx.opt_partition_option()).generate());
+        if (ctx.partition_option() != null) {
+            createTable.setPartition(new OraclePartitionFactory(ctx.partition_option()).generate());
+        } else if (ctx.auto_partition_option() != null) {
+            createTable.setPartition(new OraclePartitionFactory(ctx.auto_partition_option()).generate());
         }
         return createTable;
     }
