@@ -228,6 +228,34 @@ public class ScheduleService {
         scheduleRepository.updateStatusById(scheduleConfig.getId(), ScheduleStatus.TERMINATION);
     }
 
+    /**
+     * The method detects whether the database required for scheduled task operation exists. It returns
+     * true and terminates the scheduled task if the database does not exist. If the database exists, it
+     * returns false.
+     */
+    public boolean terminateIfDatabaseNotExisted(Long scheduleId) {
+        Optional<ScheduleEntity> scheduleEntityOptional = scheduleRepository.findById(scheduleId);
+        if (scheduleEntityOptional.isPresent()) {
+            Database database;
+            try{
+                database = databaseService.getBasicSkipPermissionCheck(scheduleEntityOptional.get().getDatabaseId());
+            }catch (NotFoundException e){
+                database = null;
+            }
+            if(database == null || !database.getExisted()){
+                try {
+                    log.info("The database for scheduled task operation does not exist, and the schedule is being terminated.scheduleId={}", scheduleId);
+                    terminate(scheduleEntityOptional.get());
+                } catch (SchedulerException e) {
+                    log.warn("Terminate schedule failed,scheduleId={}", scheduleId);
+                }
+                return true;
+            }
+            return false;
+        }
+        return true;
+    }
+
     public ScheduleDetailResp triggerJob(Long scheduleId, String jobType) {
         ScheduleEntity entity = nullSafeGetByIdWithCheckPermission(scheduleId, true);
         if (StringUtils.isEmpty(jobType)) {
