@@ -18,9 +18,9 @@ package com.oceanbase.odc.service.queryprofile.helper;
 import java.util.stream.Collectors;
 
 import com.oceanbase.odc.common.graph.GraphEdge;
+import com.oceanbase.odc.service.queryprofile.display.PlanGraph;
 import com.oceanbase.odc.service.queryprofile.display.PlanGraphEdge;
 import com.oceanbase.odc.service.queryprofile.display.PlanGraphOperator;
-import com.oceanbase.odc.service.queryprofile.display.PlanGraph;
 import com.oceanbase.odc.service.queryprofile.model.Operator;
 import com.oceanbase.odc.service.queryprofile.model.SqlPlanGraph;
 
