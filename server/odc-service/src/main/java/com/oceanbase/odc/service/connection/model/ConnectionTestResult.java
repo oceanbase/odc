@@ -68,12 +68,11 @@ public class ConnectionTestResult extends TestResult {
         return new ConnectionTestResult(TestResult.unknownError(throwable), null);
     }
 
-    public static ConnectionTestResult initScriptFailed(Throwable throwable) {
-        String message = "Unknown error";
-        if (throwable != null) {
-            message = throwable.getLocalizedMessage();
+    public static ConnectionTestResult initScriptFailed(String[] args) {
+        if (args != null) {
+            return fail(ErrorCodes.ConnectionInitScriptFailed, args);
         }
-        return fail(ErrorCodes.ConnectionInitScriptFailed, new String[] {message});
+        return fail(ErrorCodes.ConnectionInitScriptFailed, new String[] {"Unknown error"});
     }
 
     public static ConnectionTestResult connectTypeMismatch() {

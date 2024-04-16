@@ -16,12 +16,7 @@
 package com.oceanbase.odc.service.connection;
 
 import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.SQLException;
-import java.sql.Statement;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
 import java.util.Objects;
 import java.util.Properties;
 
@@ -34,7 +29,6 @@ import org.springframework.stereotype.Component;
 import org.springframework.validation.annotation.Validated;
 
 import com.oceanbase.odc.common.util.StringUtils;
-import com.oceanbase.odc.core.datasource.ConnectionInitializer;
 import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.core.shared.constant.ConnectType;
 import com.oceanbase.odc.core.shared.constant.ConnectionAccountType;
@@ -166,11 +160,11 @@ public class ConnectionTesting {
 
             TestResult result = connectionExtensionPoint.test(
                     connectionExtensionPoint.generateJdbcUrl(jdbcUrlProperties),
-                    testConnectionProperties, queryTimeoutSeconds);
+                    testConnectionProperties, queryTimeoutSeconds, Arrays.asList(new BackupInstanceInitializer(config),
+                            new DataSourceInitScriptInitializer(config, false)));
             log.info("Test connection completed, result: {}", result);
             if (result.getErrorCode() != null) {
                 if (type != null && !type.isCloud()
-
                         && StringUtils.endsWithAny(config.getHost(), ConnectTypeUtil.CLOUD_SUFFIX)) {
                     return ConnectionTestResult.connectTypeMismatch();
                 }
@@ -182,6 +176,9 @@ public class ConnectionTesting {
                         && type.getDialectType().isOceanbase()) {
                     return ConnectionTestResult.fail(ErrorCodes.ObWeakReadConsistencyRequired, null);
                 }
+                if (result.getErrorCode() == ErrorCodes.ConnectionInitScriptFailed) {
+                    return ConnectionTestResult.initScriptFailed(result.getArgs());
+                }
                 return new ConnectionTestResult(result, null);
             }
             ConnectType connectType = ConnectTypeUtil.getConnectType(
@@ -190,11 +187,6 @@ public class ConnectionTesting {
             ConnectionTestResult testResult = new ConnectionTestResult(result, connectType);
             if (type != null && connectType != null && !Objects.equals(connectType, type)) {
                 return ConnectionTestResult.connectTypeMismatch(connectType);
-            }
-            try {
-                testInitScript(connectionExtensionPoint, schema, config);
-            } catch (Exception e) {
-                return ConnectionTestResult.initScriptFailed(e);
             }
             return testResult;
         } catch (Exception e) {
@@ -247,29 +239,4 @@ public class ConnectionTesting {
         config.setSslConfig(req.getSslConfig());
         return config;
     }
-
-    private void testInitScript(ConnectionExtensionPoint extensionPoint,
-            String schema, ConnectionConfig config) throws SQLException {
-        String jdbcUrl =
-                extensionPoint.generateJdbcUrl(getJdbcUrlProperties(config, schema));
-
-        Properties properties = getTestConnectionProperties(config);
-        properties.setProperty("socketTimeout", ConnectTypeUtil.REACHABLE_TIMEOUT_MILLIS + "");
-        properties.setProperty("connectTimeout", ConnectTypeUtil.REACHABLE_TIMEOUT_MILLIS + "");
-
-        List<ConnectionInitializer> initializers = new ArrayList<>();
-        initializers.addAll(
-                Arrays.asList(new BackupInstanceInitializer(config),
-                        new DataSourceInitScriptInitializer(config, false)));
-        try (Connection connection = DriverManager.getConnection(jdbcUrl, properties);
-                Statement statement = connection.createStatement()) {
-            if (queryTimeoutSeconds >= 0) {
-                statement.setQueryTimeout(queryTimeoutSeconds);
-            }
-            for (ConnectionInitializer initializer : initializers) {
-                initializer.init(connection);
-            }
-        }
-    }
-
 }

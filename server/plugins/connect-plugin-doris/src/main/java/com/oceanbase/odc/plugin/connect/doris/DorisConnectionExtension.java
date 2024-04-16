@@ -17,11 +17,13 @@ package com.oceanbase.odc.plugin.connect.doris;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.util.List;
 import java.util.Properties;
 
 import org.pf4j.Extension;
 
 import com.oceanbase.odc.common.util.VersionUtils;
+import com.oceanbase.odc.core.datasource.ConnectionInitializer;
 import com.oceanbase.odc.plugin.connect.api.TestResult;
 import com.oceanbase.odc.plugin.connect.mysql.MySQLConnectionExtension;
 
@@ -40,13 +42,14 @@ public class DorisConnectionExtension extends MySQLConnectionExtension {
     private final String MIN_VERSION_SUPPORTED = "5.7.0";
 
     @Override
-    public TestResult test(String jdbcUrl, Properties properties, int queryTimeout) {
+    public TestResult test(String jdbcUrl, Properties properties, int queryTimeout,
+            List<ConnectionInitializer> initializers) {
         // fix arbitrary file reading vulnerability
         properties.setProperty("allowLoadLocalInfile", "false");
         properties.setProperty("allowUrlInLocalInfile", "false");
         properties.setProperty("allowLoadLocalInfileInPath", "");
         properties.setProperty("autoDeserialize", "false");
-        TestResult testResult = super.internalTest(jdbcUrl, properties, queryTimeout);
+        TestResult testResult = super.internalTest(jdbcUrl, properties, queryTimeout, initializers);
         if (testResult.getErrorCode() != null) {
             return testResult;
         }
