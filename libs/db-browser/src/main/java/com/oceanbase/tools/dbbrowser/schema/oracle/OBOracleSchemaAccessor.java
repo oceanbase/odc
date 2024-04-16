@@ -82,7 +82,7 @@ import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * 适用于的 DB 版本：[4.0.0, ~)
+ * 适用于的 DB 版本：[4.1.0, ~)
  * 
  * @author jingtian
  */
@@ -100,7 +100,7 @@ public class OBOracleSchemaAccessor extends OracleSchemaAccessor {
     public OBOracleSchemaAccessor(JdbcOperations jdbcOperations,
             OracleDataDictTableNames dataDictTableNames) {
         super(jdbcOperations, dataDictTableNames);
-        this.sqlMapper = DBSchemaAccessorSqlMappers.get(StatementsFiles.OBORACLE_4_0_x);
+        this.sqlMapper = DBSchemaAccessorSqlMappers.get(StatementsFiles.OBORACLE_4_1_x);
     }
 
     @Override

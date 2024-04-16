@@ -20,9 +20,8 @@ import java.sql.Connection;
 
 import org.pf4j.Extension;
 
-import com.oceanbase.odc.common.util.JdbcOperationsUtil;
 import com.oceanbase.odc.plugin.schema.oboracle.OBOracleDatabaseExtension;
-import com.oceanbase.odc.plugin.schema.oracle.browser.DBSchemaAccessors;
+import com.oceanbase.odc.plugin.schema.oracle.utils.DBAccessorUtil;
 import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
 
 /**
@@ -34,7 +33,7 @@ import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
 public class OracleDatabaseExtension extends OBOracleDatabaseExtension {
     @Override
     protected DBSchemaAccessor getSchemaAccessor(Connection connection) {
-        return DBSchemaAccessors.create(JdbcOperationsUtil.getJdbcOperations(connection));
+        return DBAccessorUtil.getSchemaAccessor(connection);
     }
 
 }

@@ -17,15 +17,10 @@ package com.oceanbase.odc.plugin.schema.mysql.utils;
 
 import java.sql.Connection;
 
-import org.springframework.jdbc.core.JdbcOperations;
-
 import com.oceanbase.odc.common.util.JdbcOperationsUtil;
-import com.oceanbase.odc.common.util.VersionUtils;
-import com.oceanbase.odc.core.shared.exception.UnsupportedException;
 import com.oceanbase.odc.plugin.connect.mysql.MySQLInformationExtension;
 import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
-import com.oceanbase.tools.dbbrowser.schema.mysql.MySQLNoLessThan5600SchemaAccessor;
-import com.oceanbase.tools.dbbrowser.schema.mysql.MySQLNoLessThan5700SchemaAccessor;
+import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessors;
 import com.oceanbase.tools.dbbrowser.stats.DBStatsAccessor;
 import com.oceanbase.tools.dbbrowser.stats.mysql.MySQLNoLessThan5700StatsAccessor;
 
@@ -41,15 +36,8 @@ public class DBAccessorUtil {
     }
 
     public static DBSchemaAccessor getSchemaAccessor(Connection connection) {
-        String dbVersion = getDbVersion(connection);
-        JdbcOperations jdbcOperations = JdbcOperationsUtil.getJdbcOperations(connection);
-        if (VersionUtils.isGreaterThanOrEqualsTo(dbVersion, "5.7.0")) {
-            return new MySQLNoLessThan5700SchemaAccessor(jdbcOperations);
-        } else if (VersionUtils.isGreaterThanOrEqualsTo(dbVersion, "5.6.0")) {
-            return new MySQLNoLessThan5600SchemaAccessor(jdbcOperations);
-        } else {
-            throw new UnsupportedException(String.format("MySQL version '%s' not supported", dbVersion));
-        }
+        return DBSchemaAccessors.createForMySQL(JdbcOperationsUtil.getJdbcOperations(connection),
+                getDbVersion(connection));
     }
 
     public static DBStatsAccessor getStatsAccessor(Connection connection) {
