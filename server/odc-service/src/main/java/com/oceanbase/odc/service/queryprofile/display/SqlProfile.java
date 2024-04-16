@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 OceanBase.
+ * Copyright (c) 2024 OceanBase.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,12 +26,11 @@ import lombok.Data;
  * @date 2024/4/11
  */
 @Data
-public class SqlProfileData {
+public class SqlProfile {
     private Date startTime;
     private Date endTime;
     private Status status;
     private Long duration;
     private String traceId;
     private String sqlText;
-    private SqlPlanGraphData graph;
 }
