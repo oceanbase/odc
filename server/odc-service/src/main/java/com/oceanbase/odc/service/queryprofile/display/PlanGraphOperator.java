@@ -13,30 +13,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.core.flow.graph;
+package com.oceanbase.odc.service.queryprofile.display;
 
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
-import lombok.NonNull;
-import lombok.Setter;
+import java.util.Map;
+
+import com.oceanbase.odc.service.queryprofile.model.SqlProfile.Status;
+
+import lombok.Data;
 
 /**
- * Edge of the graph
- *
- * @author yh263208
- * @date 2022-01-14 16:47
- * @since ODC_release_3.3.0
+ * @author liuyizhuo.lyz
+ * @date 2024/4/11
  */
-@Setter
-@Getter
-@EqualsAndHashCode(callSuper = true, exclude = {"from", "to"})
-public class GraphEdge extends BaseGraphElement {
-    private GraphVertex from;
-    private GraphVertex to;
-    private float weight;
-
-    public GraphEdge(@NonNull String id, @NonNull String name) {
-        super(id, name);
-    }
-
+@Data
+public class PlanGraphOperator {
+    private String graphId;
+    private String name;
+    private String title;
+    private Status status;
+    private Map<String, Object> attributes;
+    private Map<String, String> statistics;
+    private Map<String, String> overview;
 }
