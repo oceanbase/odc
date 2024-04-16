@@ -15,6 +15,7 @@
  */
 package com.oceanbase.odc.metadb.dbobject;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -88,6 +89,21 @@ public class DBObjectRepositoryTest extends ServiceTestEnv {
                 Arrays.asList(1L, 2L), Collections.singletonList(DBObjectType.VIEW.name()), "%test%");
         Assert.assertEquals(1, entities.size());
         Assert.assertEquals("view_for_test_1", entities.get(0).getName());
+    }
+
+    @Test
+    public void test_batchCreate() {
+        List<DBObjectEntity> entities = new ArrayList<>();
+        for (int i = 0; i < 1000; i++) {
+            DBObjectEntity entity = TestRandom.nextObject(DBObjectEntity.class);
+            entity.setId(null);
+            entity.setDatabaseId(1L);
+            entity.setType(DBObjectType.TABLE);
+            entity.setName("table_for_test_" + i);
+            entities.add(entity);
+        }
+        List<DBObjectEntity> saved = dbObjectRepository.batchCreate(entities);
+        Assert.assertEquals(entities.size(), saved.size());
     }
 
 }

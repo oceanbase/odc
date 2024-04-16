@@ -76,7 +76,7 @@ public interface DBObjectRepository extends OdcJpaRepository<DBObjectEntity, Lon
                 .add(e -> e.getType().name())
                 .add(DBObjectEntity::getOrganizationId)
                 .build();
-        return batchCreate(entities, sql, getter, DBObjectEntity::setId);
+        return batchCreate(entities, sql, getter, DBObjectEntity::setId, 200);
     }
 
 }

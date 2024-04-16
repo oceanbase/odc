@@ -73,7 +73,7 @@ public interface DBColumnRepository extends OdcJpaRepository<DBColumnEntity, Lon
                 .add(DBColumnEntity::getObjectId)
                 .add(DBColumnEntity::getOrganizationId)
                 .build();
-        return batchCreate(entities, sql, getter, DBColumnEntity::setId);
+        return batchCreate(entities, sql, getter, DBColumnEntity::setId, 200);
     }
 
 }
