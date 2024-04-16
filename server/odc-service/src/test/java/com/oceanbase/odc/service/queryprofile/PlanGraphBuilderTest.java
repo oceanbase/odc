@@ -26,7 +26,7 @@ import org.junit.Test;
 
 import com.oceanbase.odc.common.graph.GraphVertex;
 import com.oceanbase.odc.service.queryprofile.helper.PlanGraphBuilder;
-import com.oceanbase.odc.service.queryprofile.model.OBPlanRecord;
+import com.oceanbase.odc.service.queryprofile.model.OBSqlPlan;
 import com.oceanbase.odc.service.queryprofile.model.PredicateKey;
 import com.oceanbase.odc.service.queryprofile.model.SqlPlanGraph;
 
@@ -47,7 +47,7 @@ public class PlanGraphBuilderTest {
 
     @Test
     public void test_BuildPlanGraph_BuildSuccess() {
-        List<OBPlanRecord> records = getPlanRecords();
+        List<OBSqlPlan> records = getPlanRecords();
         SqlPlanGraph graph = PlanGraphBuilder.buildPlanGraph(records);
         List<GraphVertex> vertices = graph.getTopoOrderedVertices();
         Assert.assertEquals(vertices.size(), records.size());
@@ -71,23 +71,23 @@ public class PlanGraphBuilderTest {
                 colums);
     }
 
-    private List<OBPlanRecord> getPlanRecords() {
-        OBPlanRecord plan1 = new OBPlanRecord();
+    private List<OBSqlPlan> getPlanRecords() {
+        OBSqlPlan plan1 = new OBSqlPlan();
         plan1.setId("0");
         plan1.setParentId("-1");
         plan1.setObjectName("O1");
 
-        OBPlanRecord plan2 = new OBPlanRecord();
+        OBSqlPlan plan2 = new OBSqlPlan();
         plan2.setId("1");
         plan2.setParentId("0");
         plan2.setObjectName("O2");
 
-        OBPlanRecord plan3 = new OBPlanRecord();
+        OBSqlPlan plan3 = new OBSqlPlan();
         plan3.setId("2");
         plan3.setParentId("0");
         plan3.setObjectName("O3");
 
-        OBPlanRecord plan4 = new OBPlanRecord();
+        OBSqlPlan plan4 = new OBSqlPlan();
         plan4.setId("3");
         plan4.setParentId("2");
         plan4.setObjectName("O4");

@@ -13,17 +13,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.queryprofile.display;
+package com.oceanbase.odc.service.queryprofile.model;
+
+import java.util.Date;
 
 import lombok.Data;
 
 /**
  * @author liuyizhuo.lyz
- * @date 2024/4/11
+ * @date 2024/4/14
  */
 @Data
-public class GraphEdgeData {
-    private String from;
-    private String to;
-    private Float weight;
+public class SqlPlanMonitor {
+
+    private String svrIp;
+    private String svrPort;
+    private Date firstRefreshTime;
+    private Date lastRefreshTime;
+    private Date firstChangeTime;
+    private Date lastChangeTime;
+    private String planLineId;
+    private Long starts;
+    private Long outputRows;
+    private Long dbTime;
+    private Long userIOWaitTime;
+
 }

@@ -26,7 +26,7 @@ import java.util.regex.Pattern;
 
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.shared.exception.UnexpectedException;
-import com.oceanbase.odc.service.queryprofile.model.OBPlanRecord;
+import com.oceanbase.odc.service.queryprofile.model.OBSqlPlan;
 import com.oceanbase.odc.service.queryprofile.model.Operator;
 import com.oceanbase.odc.service.queryprofile.model.PredicateKey;
 import com.oceanbase.odc.service.queryprofile.model.SqlPlanGraph;
@@ -44,11 +44,11 @@ public class PlanGraphBuilder {
     private static final Pattern VALUE_GROUP_PATTERN = Pattern.compile("\\[([^]]+)]");
     private static final String EMPTY_PREDICATE = "nil";
 
-    public static SqlPlanGraph buildPlanGraph(List<OBPlanRecord> records) {
+    public static SqlPlanGraph buildPlanGraph(List<OBSqlPlan> records) {
         SqlPlanGraph graph = new SqlPlanGraph();
         Map<String, Operator> map = new HashMap<>();
         Map<String, String> parameters = new HashMap<>();
-        for (OBPlanRecord record : records) {
+        for (OBSqlPlan record : records) {
             Operator operator = parseResult(record, parameters);
             operator.setStatus(Status.PREPARING);
             graph.insertVertex(operator);
@@ -65,7 +65,7 @@ public class PlanGraphBuilder {
         return graph;
     }
 
-    private static Operator parseResult(OBPlanRecord record, Map<String, String> parameters) {
+    private static Operator parseResult(OBSqlPlan record, Map<String, String> parameters) {
         Operator operator = new Operator(record.getId(), record.getOperator());
         // set object info
         String objectName = parseObjectName(record);
@@ -153,7 +153,7 @@ public class PlanGraphBuilder {
         }
     }
 
-    private static String parseObjectName(OBPlanRecord record) {
+    private static String parseObjectName(OBSqlPlan record) {
         String name = record.getObjectName();
         return record.getObjectOwner() == null ? name : String.format("%s.%s", record.getObjectOwner(), name);
     }

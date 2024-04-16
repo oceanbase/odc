@@ -13,27 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.queryprofile.model;
+package com.oceanbase.odc.service.queryprofile.display;
 
 import lombok.Data;
 
 /**
  * @author liuyizhuo.lyz
- * @date 2024/4/12
+ * @date 2024/4/11
  */
 @Data
-public class OBPlanRecord {
-
-    private String id;
-    private String parentId;
-    private String operator;
-    private String objectOwner;
-    private String objectName;
-    private String objectAlias;
-    private String other;
-    private String accessPredicates;
-    private String filterPredicates;
-    private String projection;
-    private String specialPredicates;
-
+public class PlanGraphEdge {
+    private String from;
+    private String to;
+    private Float weight;
 }

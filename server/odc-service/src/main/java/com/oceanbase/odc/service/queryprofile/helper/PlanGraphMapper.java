@@ -18,9 +18,9 @@ package com.oceanbase.odc.service.queryprofile.helper;
 import java.util.stream.Collectors;
 
 import com.oceanbase.odc.common.graph.GraphEdge;
-import com.oceanbase.odc.service.queryprofile.display.GraphEdgeData;
-import com.oceanbase.odc.service.queryprofile.display.OperatorData;
-import com.oceanbase.odc.service.queryprofile.display.SqlPlanGraphData;
+import com.oceanbase.odc.service.queryprofile.display.PlanGraphEdge;
+import com.oceanbase.odc.service.queryprofile.display.PlanGraphOperator;
+import com.oceanbase.odc.service.queryprofile.display.PlanGraph;
 import com.oceanbase.odc.service.queryprofile.model.Operator;
 import com.oceanbase.odc.service.queryprofile.model.SqlPlanGraph;
 
@@ -30,27 +30,27 @@ import com.oceanbase.odc.service.queryprofile.model.SqlPlanGraph;
  */
 public class PlanGraphMapper {
 
-    public static SqlPlanGraphData toVO(SqlPlanGraph graph) {
-        SqlPlanGraphData vo = new SqlPlanGraphData();
+    public static PlanGraph toVO(SqlPlanGraph graph) {
+        PlanGraph vo = new PlanGraph();
         vo.setOverview(graph.getOverview());
         vo.setStatistics(graph.getStatistics());
-        vo.setVertexList(graph.getVertexList().stream()
+        vo.setVertexes(graph.getVertexList().stream()
                 .map(vertex -> mapVertex((Operator) vertex)).collect(Collectors.toList()));
-        vo.setEdgeList(graph.getEdgeList().stream()
+        vo.setEdges(graph.getEdgeList().stream()
                 .map(PlanGraphMapper::mapEdge).collect(Collectors.toList()));
         return vo;
     }
 
-    private static GraphEdgeData mapEdge(GraphEdge edge) {
-        GraphEdgeData vo = new GraphEdgeData();
+    private static PlanGraphEdge mapEdge(GraphEdge edge) {
+        PlanGraphEdge vo = new PlanGraphEdge();
         vo.setFrom(edge.getFrom().getGraphId());
         vo.setTo(edge.getTo().getGraphId());
         vo.setWeight(edge.getWeight());
         return vo;
     }
 
-    private static OperatorData mapVertex(Operator vertex) {
-        OperatorData vo = new OperatorData();
+    private static PlanGraphOperator mapVertex(Operator vertex) {
+        PlanGraphOperator vo = new PlanGraphOperator();
         vo.setGraphId(vertex.getGraphId());
         vo.setName(vertex.getName());
         vo.setTitle(vertex.getTitle());

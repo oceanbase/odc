@@ -15,9 +15,8 @@
  */
 package com.oceanbase.odc.service.queryprofile.display;
 
+import java.util.List;
 import java.util.Map;
-
-import com.oceanbase.odc.service.queryprofile.model.SqlProfile.Status;
 
 import lombok.Data;
 
@@ -26,12 +25,10 @@ import lombok.Data;
  * @date 2024/4/11
  */
 @Data
-public class OperatorData {
-    private String graphId;
-    private String name;
-    private String title;
-    private Status status;
-    private Map<String, Object> attributes;
+public class PlanGraph {
+    private List<PlanGraphEdge> edges;
+    private List<PlanGraphOperator> vertexes;
     private Map<String, String> statistics;
     private Map<String, String> overview;
+    private Map<String, List<String>> topNodes;
 }
