@@ -44,7 +44,7 @@ public class QuartzConfiguration {
     private OdcJobListener odcJobListener;
     @Autowired
     private OdcTriggerListener odcTriggerListener;
-    @Value("${odc.task.maxConcurrentTaskCount:10}")
+    @Value("${odc.task.max-concurrent-task-count:10}")
     private Long maxConcurrentTaskCount;
 
     private final String defaultSchedulerName = "ODC-SCHEDULER";
