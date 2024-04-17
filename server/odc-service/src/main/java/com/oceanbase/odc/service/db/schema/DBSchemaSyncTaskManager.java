@@ -29,6 +29,7 @@ import org.springframework.context.annotation.Lazy;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Component;
 
+import com.oceanbase.odc.core.shared.exception.ConflictException;
 import com.oceanbase.odc.service.connection.database.DatabaseService;
 import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
@@ -86,6 +87,8 @@ public class DBSchemaSyncTaskManager {
                 } else {
                     databaseService.updateObjectLastSyncTimeAndStatus(database.getId(), DBObjectSyncStatus.FAILED);
                 }
+            } catch (ConflictException e) {
+                // Ignore conflict exception because it means the database is being synchronized by another thread
             } catch (Exception e) {
                 databaseService.updateObjectLastSyncTimeAndStatus(database.getId(), DBObjectSyncStatus.FAILED);
                 log.warn("Failed to synchronize schema for database id={}", database.getId(), e);

@@ -790,5 +790,7 @@ INSERT INTO config_system_configuration(`key`, `value`, `description`) VALUES('o
 ---
 --- v4.3.0
 ---
- INSERT INTO config_system_configuration(`key`, `value`, `description`) VALUES('odc.database.schema.sync-cron-expression',
-  '0 0 2 * * ?', 'cron expression for synchronizing full database schema') ON DUPLICATE KEY UPDATE `id`=`id`;
+INSERT INTO config_system_configuration(`key`, `value`, `description`) VALUES('odc.database.schema.sync-cron-expression',
+ '0 0 2 * * ?', 'cron expression for synchronizing full database schema') ON DUPLICATE KEY UPDATE `id`=`id`;
+INSERT INTO config_system_configuration(`key`, `value`, `description`) VALUES('odc.database.schema.sync-thread-count',
+ '8', 'thread count for synchronizing database schema') ON DUPLICATE KEY UPDATE `id`=`id`;

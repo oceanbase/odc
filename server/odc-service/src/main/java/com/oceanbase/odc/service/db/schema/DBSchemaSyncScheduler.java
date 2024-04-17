@@ -15,6 +15,7 @@
  */
 package com.oceanbase.odc.service.db.schema;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
@@ -23,6 +24,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
+import com.google.common.collect.Iterables;
 import com.oceanbase.odc.core.shared.constant.OrganizationType;
 import com.oceanbase.odc.metadb.connection.ConnectionConfigRepository;
 import com.oceanbase.odc.metadb.iam.OrganizationRepository;
@@ -52,6 +54,8 @@ public class DBSchemaSyncScheduler {
     @Autowired
     private ConnectionConfigRepository connectionConfigRepository;
 
+    private static final int BATCH_SIZE = 200;
+
     @Scheduled(cron = "${odc.database.schema.sync-cron-expression:0 0 2 * * ?}")
     public void sync() {
         List<Long> teamOrgIds = organizationRepository.findIdByType(OrganizationType.TEAM);
@@ -65,8 +69,12 @@ public class DBSchemaSyncScheduler {
         List<Database> databases = databaseService.listDatabasesByConnectionIds(connectionIds);
         databases.removeIf(e -> Boolean.FALSE.equals(e.getExisted())
                 || e.getObjectSyncStatus() == DBObjectSyncStatus.PENDING);
+        Collections.shuffle(databases);
         try {
-            dbSchemaSyncTaskManager.submitTaskByDatabases(databases);
+            Iterable<List<Database>> partitions = Iterables.partition(databases, BATCH_SIZE);
+            for (List<Database> partition : partitions) {
+                dbSchemaSyncTaskManager.submitTaskByDatabases(partition);
+            }
             log.info("Submit sync database schema task success, dbCount: {}", databases.size());
         } catch (Exception e) {
             log.warn("Submit sync database schema task failed", e);

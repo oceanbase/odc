@@ -201,8 +201,7 @@ public class DBSchemaIndexService {
             throw new IllegalArgumentException("Unsupported resource type: " + req.getResourceType());
         }
         databases.removeIf(e -> Boolean.FALSE.equals(e.getExisted())
-                || e.getObjectSyncStatus() == DBObjectSyncStatus.PENDING
-                || e.getObjectSyncStatus() == DBObjectSyncStatus.SYNCING);
+                || e.getObjectSyncStatus() == DBObjectSyncStatus.PENDING);
         dbSchemaSyncTaskManager.submitTaskByDatabases(databases);
         return true;
     }

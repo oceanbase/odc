@@ -18,6 +18,7 @@ package com.oceanbase.odc.config;
 import java.util.concurrent.ThreadPoolExecutor;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Lazy;
@@ -47,6 +48,9 @@ public class ScheduleConfiguration {
 
     @Autowired
     private SystemConfigService systemConfigService;
+
+    @Value("${odc.database.schema.sync-thread-count:8}")
+    private int syncDBSchemaThreadCount;
 
     @Bean(name = "connectionStatusCheckExecutor")
     public ThreadPoolTaskExecutor connectionStatusCheckExecutor() {
@@ -216,9 +220,8 @@ public class ScheduleConfiguration {
     @Bean(name = "syncDBSchemaTaskExecutor")
     public ThreadPoolTaskExecutor syncDBSchemaTaskExecutor() {
         ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
-        int poolSize = Math.max(SystemUtils.availableProcessors() * 4, 16);
-        executor.setCorePoolSize(poolSize);
-        executor.setMaxPoolSize(poolSize);
+        executor.setCorePoolSize(syncDBSchemaThreadCount);
+        executor.setMaxPoolSize(syncDBSchemaThreadCount);
         executor.setThreadNamePrefix("database-schema-sync-");
         executor.setWaitForTasksToCompleteOnShutdown(true);
         executor.setAwaitTerminationSeconds(5);
