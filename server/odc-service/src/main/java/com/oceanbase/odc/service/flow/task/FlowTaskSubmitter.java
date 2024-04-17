@@ -24,6 +24,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Component;
 
+import com.oceanbase.odc.common.util.RetryExecutor;
 import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.service.flow.BeanInjectedClassDelegate;
@@ -42,6 +43,8 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @Component
 public class FlowTaskSubmitter implements JavaDelegate {
+    private static final RetryExecutor RETRY_EXECUTOR =
+            RetryExecutor.builder().retryIntervalMillis(1000).retryTimes(5).build();
 
     @Qualifier("flowTaskExecutor")
     @Autowired
@@ -64,15 +67,18 @@ public class FlowTaskSubmitter implements JavaDelegate {
     }
 
     private BaseRuntimeFlowableDelegate<?> getDelegateInstance(DelegateExecution execution) throws Exception {
-        Optional<FlowTaskInstance> flowTaskInstance = flowableAdaptor.getTaskInstanceByActivityId(
-                execution.getCurrentActivityId(), FlowTaskUtil.getFlowInstanceId(execution));
+        Optional<Optional<FlowTaskInstance>> flowTaskInstance = RETRY_EXECUTOR.run(
+                () -> flowableAdaptor.getTaskInstanceByActivityId(
+                        execution.getCurrentActivityId(), FlowTaskUtil.getFlowInstanceId(execution)),
+                Optional::isPresent);
+
         PreConditions.validExists(ResourceType.ODC_FLOW_TASK_INSTANCE, "activityId",
                 execution.getCurrentActivityId(), flowTaskInstance::isPresent);
 
         OdcRuntimeDelegateMapper mapper = new OdcRuntimeDelegateMapper();
         Class<? extends BaseRuntimeFlowableDelegate<?>> delegateClass =
-                mapper.map(flowTaskInstance.get().getTaskType());
-        flowTaskInstance.get().dealloc();
+                mapper.map(flowTaskInstance.get().get().getTaskType());
+        flowTaskInstance.get().get().dealloc();
         return BeanInjectedClassDelegate.instantiateDelegate(delegateClass);
     }
 
