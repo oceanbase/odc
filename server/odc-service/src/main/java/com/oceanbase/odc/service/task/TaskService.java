@@ -210,7 +210,7 @@ public class TaskService {
         switch (type) {
             case MULTIPLE_ASYNC:
                 filePath = String.format(MULTIPLE_ASYNC_LOG_PATH_PATTERN, logFilePrefix, userId, taskId,
-                    logLevel.name().toLowerCase());
+                        logLevel.name().toLowerCase());
                 break;
             case ASYNC:
                 filePath = String.format(ASYNC_LOG_PATH_PATTERN, logFilePrefix, userId, taskId,
@@ -282,16 +282,16 @@ public class TaskService {
     public void succeed(Long id, Object taskResult) {
         TaskEntity taskEntity = nullSafeFindById(id);
         // 多库需要修改
-        if(taskEntity.getTaskType()== TaskType.MULTIPLE_ASYNC){
+        if (taskEntity.getTaskType() == TaskType.MULTIPLE_ASYNC) {
             MultipleDatabaseChangeParameters multipleDatabaseChangeParameters = JsonUtils.fromJson(
-                taskEntity.getParametersJson(), MultipleDatabaseChangeParameters.class);
+                    taskEntity.getParametersJson(), MultipleDatabaseChangeParameters.class);
             Integer batchId = multipleDatabaseChangeParameters.getBatchId();
             int size = multipleDatabaseChangeParameters.getOrderedDatabaseIds().size();
-            taskEntity.setProgressPercentage((double) batchId*100/size);
-            if(batchId==size){
+            taskEntity.setProgressPercentage(batchId * 100D / size);
+            if (batchId == size) {
                 taskEntity.setStatus(TaskStatus.DONE);
             }
-        }else {
+        } else {
             taskEntity.setStatus(TaskStatus.DONE);
             taskEntity.setProgressPercentage(100);
         }

@@ -117,22 +117,23 @@ public class PreCheckRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Void> {
     @Autowired
     private PreCheckTaskProperties preCheckTaskProperties;
     @Autowired
-    private              ObjectStorageFacade storageFacade;
+    private ObjectStorageFacade storageFacade;
     @Autowired
-    private              ConnectionService     connectionService;
+    private ConnectionService connectionService;
     @Autowired
-    private              EnvironmentRepository environmentRepository;
+    private EnvironmentRepository environmentRepository;
     @Autowired
     private FlowableAdaptor flowableAdaptor;
-    private static final String                CHECK_RESULT_FILE_NAME = "sql-check-result.json";
+    private static final String CHECK_RESULT_FILE_NAME = "sql-check-result.json";
     private final Map<String, Object> riskLevelResult = new HashMap<>();
 
     @Override
     protected Void start(Long taskId, TaskService taskService, DelegateExecution execution) throws Exception {
         this.serviceTaskRepository.updateStatusById(getTargetTaskInstanceId(), FlowNodeStatus.EXECUTING);
-        //this.preCheckTaskId = FlowTaskUtil.getPreCheckTaskId(execution);
+        // this.preCheckTaskId = FlowTaskUtil.getPreCheckTaskId(execution);
         FlowTaskInstance flowTaskInstance = flowableAdaptor.getTaskInstanceByActivityId(
-             execution.getCurrentActivityId(), getFlowInstanceId()) .orElseThrow(() -> new RuntimeException("获取流程实例对象失败"));
+                execution.getCurrentActivityId(), getFlowInstanceId())
+                .orElseThrow(() -> new RuntimeException("获取流程实例对象失败"));
         this.preCheckTaskId = flowTaskInstance.getTargetTaskId();
         TaskEntity preCheckTaskEntity = taskService.detail(this.preCheckTaskId);
         TaskEntity taskEntity = taskService.detail(taskId);
@@ -145,20 +146,22 @@ public class PreCheckRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Void> {
         this.creatorId = FlowTaskUtil.getTaskCreator(execution).getId();
         RiskLevelDescriber riskLevelDescriber = null;
         try {
-            if(taskEntity.getTaskType()==TaskType.MULTIPLE_ASYNC){
+            if (taskEntity.getTaskType() == TaskType.MULTIPLE_ASYNC) {
                 // 多库的数据源连接
                 Database database = databaseService.detail(preCheckTaskEntity.getDatabaseId());
-                this.connectionConfig = connectionService.getForConnectionSkipPermissionCheck(preCheckTaskEntity.getConnectionId());
+                this.connectionConfig =
+                        connectionService.getForConnectionSkipPermissionCheck(preCheckTaskEntity.getConnectionId());
                 // 多库的风险描述器
-                EnvironmentEntity env = environmentRepository.findById(connectionConfig.getEnvironmentId()).orElse(null);
-                riskLevelDescriber= RiskLevelDescriber.builder()
-                    .projectName(database.getProject().getName())
-                    .taskType(TaskType.MULTIPLE_ASYNC.name())
-                    .environmentId(env == null ? null : String.valueOf(env.getId()))
-                    .environmentName(env == null ? null : env.getName())
-                    .databaseName(database.getName())
-                    .build();
-            }else {
+                EnvironmentEntity env =
+                        environmentRepository.findById(connectionConfig.getEnvironmentId()).orElse(null);
+                riskLevelDescriber = RiskLevelDescriber.builder()
+                        .projectName(database.getProject().getName())
+                        .taskType(TaskType.MULTIPLE_ASYNC.name())
+                        .environmentId(env == null ? null : String.valueOf(env.getId()))
+                        .environmentName(env == null ? null : env.getName())
+                        .databaseName(database.getName())
+                        .build();
+            } else {
                 this.connectionConfig = FlowTaskUtil.getConnectionConfig(execution);
                 riskLevelDescriber = FlowTaskUtil.getRiskLevelDescriber(execution);
             }
@@ -167,7 +170,7 @@ public class PreCheckRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Void> {
             log.info(e.getMessage());
         }
         // todo 多库需要生成风险描述器
-        //RiskLevelDescriber riskLevelDescriber = FlowTaskUtil.getRiskLevelDescriber(execution);
+        // RiskLevelDescriber riskLevelDescriber = FlowTaskUtil.getRiskLevelDescriber(execution);
         if (Objects.nonNull(this.connectionConfig)) {
             // Skip SQL pre-check if connection config is null
             // todo 此处tasktype为多库，需要做修改

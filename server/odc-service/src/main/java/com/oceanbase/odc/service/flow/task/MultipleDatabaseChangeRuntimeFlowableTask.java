@@ -68,7 +68,7 @@ public class MultipleDatabaseChangeRuntimeFlowableTask extends BaseODCFlowTaskDe
     @Autowired
     private ServiceTaskInstanceRepository serviceTaskInstanceRepository;
     @Autowired
-    private AuthenticationFacade          authenticationFacade;
+    private AuthenticationFacade authenticationFacade;
 
     @Override
     public boolean cancel(boolean mayInterruptIfRunning, Long taskId, TaskService taskService) {
@@ -160,7 +160,7 @@ public class MultipleDatabaseChangeRuntimeFlowableTask extends BaseODCFlowTaskDe
             this.isFailure = true;
             this.isSuccessful = false;
             throw e;
-        }finally {
+        } finally {
             TaskContextHolder.clear();
         }
     }
@@ -181,7 +181,7 @@ public class MultipleDatabaseChangeRuntimeFlowableTask extends BaseODCFlowTaskDe
             log.warn("multiple database task failed, taskId={}", taskId);
             updateFlowInstanceStatus(FlowStatus.EXECUTION_FAILED);
             super.onFailure(taskId, taskService);
-        }finally {
+        } finally {
             TaskContextHolder.clear();
         }
     }
@@ -194,13 +194,13 @@ public class MultipleDatabaseChangeRuntimeFlowableTask extends BaseODCFlowTaskDe
             if (this.batchId == batchNumber - 1) {
                 // 查询所有单库工单是否成功。
                 List<ServiceTaskInstanceEntity> byTargetTaskId = serviceTaskInstanceRepository.findByTargetTaskId(
-                    taskId).orElseThrow(() -> new NoSuchElementException("获取工单列表失败"));
+                        taskId).orElseThrow(() -> new NoSuchElementException("获取工单列表失败"));
                 List<FlowInstanceEntity> flowInstanceByParentId = flowInstanceService.getFlowInstanceByParentId(
-                    byTargetTaskId.get(0).getFlowInstanceId());
+                        byTargetTaskId.get(0).getFlowInstanceId());
                 boolean allSucceeded = flowInstanceByParentId.stream()
-                    .map(FlowInstanceEntity::getId)
-                    .map(flowInstanceService::detail)
-                    .allMatch(detail -> FlowStatus.EXECUTION_SUCCEEDED.equals(detail.getStatus()));
+                        .map(FlowInstanceEntity::getId)
+                        .map(flowInstanceService::detail)
+                        .allMatch(detail -> FlowStatus.EXECUTION_SUCCEEDED.equals(detail.getStatus()));
                 if (allSucceeded) {
                     updateFlowInstanceStatus(FlowStatus.EXECUTION_SUCCEEDED);
                 } else {
@@ -209,9 +209,9 @@ public class MultipleDatabaseChangeRuntimeFlowableTask extends BaseODCFlowTaskDe
             }
             taskService.succeed(taskId, generateResult(true));
             super.onSuccessful(taskId, taskService);
-        }catch (Exception e){
+        } catch (Exception e) {
             log.warn("Failed to record structure comparison task successful result", e);
-        }finally {
+        } finally {
             TraceContextHolder.clear();
         }
     }
@@ -221,7 +221,7 @@ public class MultipleDatabaseChangeRuntimeFlowableTask extends BaseODCFlowTaskDe
         try {
             taskService.fail(taskId, 100, generateResult(false));
             log.warn("multiple database task timeout, taskId={}", taskId);
-        }finally {
+        } finally {
             TraceContextHolder.clear();
         }
         super.onTimeout(taskId, taskService);
