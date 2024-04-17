@@ -322,7 +322,7 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
             taskResultPublisherExecutor.execute(() -> publisher
                     .publishEvent(new JobTerminateEvent(taskResult.getJobIdentity(), taskResult.getStatus())));
             if (taskResult.getStatus() == JobStatus.FAILED) {
-                AlarmUtils.info(AlarmEventNames.TASK_EXECUTION_FAILED,
+                AlarmUtils.alarm(AlarmEventNames.TASK_EXECUTION_FAILED,
                         MessageFormat.format("Job execution failed, jobId={0}", taskResult.getJobIdentity().getId()));
             }
         }

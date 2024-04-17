@@ -78,7 +78,7 @@ public class DestroyExecutorJob implements Job {
                     getConfiguration().getJobDispatcher().destroy(JobIdentity.of(lockedEntity.getId()));
                 } catch (JobException e) {
                     log.warn("Destroy executor occur error, jobId={}: ", lockedEntity.getId(), e);
-                    AlarmUtils.warn(AlarmEventNames.TASK_EXECUTOR_DESTROY_FAILED,
+                    AlarmUtils.alarm(AlarmEventNames.TASK_EXECUTOR_DESTROY_FAILED,
                             MessageFormat.format("Job executor destroy failed, jobId={0}",
                                     lockedEntity.getId()));
                     throw new TaskRuntimeException(e);
