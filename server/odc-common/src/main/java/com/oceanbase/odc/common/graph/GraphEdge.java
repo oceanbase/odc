@@ -13,37 +13,30 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.core.flow.builder;
+package com.oceanbase.odc.common.graph;
 
-import org.flowable.bpmn.model.EndEvent;
-
-import com.oceanbase.odc.common.graph.GraphEdge;
-
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
 import lombok.NonNull;
+import lombok.Setter;
 
 /**
- * Refer to {@link org.flowable.bpmn.model.EndEvent}
+ * Edge of the graph
  *
  * @author yh263208
- * @date 2022-01-18 17:36
+ * @date 2022-01-14 16:47
  * @since ODC_release_3.3.0
  */
-public class EndEventBuilder extends BaseProcessNodeBuilder<EndEvent> {
+@Setter
+@Getter
+@EqualsAndHashCode(callSuper = true, exclude = {"from", "to"})
+public class GraphEdge extends BaseGraphElement {
+    private GraphVertex from;
+    private GraphVertex to;
+    private float weight;
 
-    public EndEventBuilder() {
-        super("End Node");
-    }
-
-    @Override
-    public boolean addOutEdge(@NonNull GraphEdge outEdge) {
-        throw new UnsupportedOperationException("Can not add out edge for End Node");
-    }
-
-    @Override
-    public EndEvent build() {
-        EndEvent endEvent = new EndEvent();
-        init(endEvent);
-        return endEvent;
+    public GraphEdge(@NonNull String id, @NonNull String name) {
+        super(id, name);
     }
 
 }

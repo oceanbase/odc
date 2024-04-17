@@ -13,30 +13,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.core.flow.graph;
+package com.oceanbase.odc.core.sql.execute.mapper;
 
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
+import java.io.IOException;
+import java.sql.SQLException;
+
+import com.oceanbase.tools.dbbrowser.model.datatype.DataType;
+
 import lombok.NonNull;
-import lombok.Setter;
 
 /**
- * Edge of the graph
- *
- * @author yh263208
- * @date 2022-01-14 16:47
- * @since ODC_release_3.3.0
+ * @author jingtian
+ * @date 2024/4/15
+ * @since ODC_release_4.3.0
  */
-@Setter
-@Getter
-@EqualsAndHashCode(callSuper = true, exclude = {"from", "to"})
-public class GraphEdge extends BaseGraphElement {
-    private GraphVertex from;
-    private GraphVertex to;
-    private float weight;
-
-    public GraphEdge(@NonNull String id, @NonNull String name) {
-        super(id, name);
+public class OBOracleGeometryMapper implements JdbcColumnMapper {
+    @Override
+    public Object mapCell(@NonNull CellData data) throws SQLException, IOException {
+        return data.getString();
     }
 
+    @Override
+    public boolean supports(@NonNull DataType dataType) {
+        return "GEOMETRY".equalsIgnoreCase(dataType.getDataTypeName());
+    }
 }
