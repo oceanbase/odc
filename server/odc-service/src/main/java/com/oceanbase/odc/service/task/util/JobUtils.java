@@ -168,7 +168,7 @@ public class JobUtils {
     }
 
     public static void putEnvToSysProperties(String environmentKey) {
-        if (System.getenv(environmentKey) != null && System.getProperty(environmentKey) == null) {
+        if (System.getenv(environmentKey) != null) {
             System.setProperty(environmentKey, System.getenv(environmentKey));
         }
     }

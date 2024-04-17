@@ -116,12 +116,11 @@ public class ExportOutput {
             }
         }
         for (DumpDBObject dumpDbObject : dumpDbObjects) {
-            String dirName = dumpDbObject.getObjectType().getName();
-            FileUtils.forceMkdir(new File(parent + dirName));
+            File dir = Paths.get(parent, "data", dumpDbObject.getObjectType().getName()).toFile();
+            FileUtils.forceMkdir(dir);
             for (AbstractOutputFile outputFile : dumpDbObject.getOutputFiles()) {
-                String name = parent + dirName + File.separator + outputFile.getFileName();
                 try (InputStream inputStream = outputFile.getUrl().openStream();
-                        OutputStream outputStream = new FileOutputStream(name)) {
+                        OutputStream outputStream = new FileOutputStream(new File(dir, outputFile.getFileName()))) {
                     IOUtils.copy(inputStream, outputStream);
                 }
             }

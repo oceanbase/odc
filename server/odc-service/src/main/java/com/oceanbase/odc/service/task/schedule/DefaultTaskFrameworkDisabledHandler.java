@@ -63,6 +63,13 @@ public class DefaultTaskFrameworkDisabledHandler implements TaskFrameworkDisable
             if (je.getStatus().isTerminated()) {
                 return;
             }
+            int rows = configuration.getTaskFrameworkService().updateStatusDescriptionByIdOldStatus(ji.getId(),
+                    je.getStatus(), JobStatus.FAILED, "Update status to FAILED due to task-framework disabled.");
+            if (rows > 0) {
+                log.info("Update status to FAILED completed, jobId={}", ji.getId());
+            } else {
+                throw new TaskRuntimeException("Update status to FAILED occur error.");
+            }
 
             if (je.getStatus() == JobStatus.RUNNING) {
                 try {
@@ -71,22 +78,8 @@ public class DefaultTaskFrameworkDisabledHandler implements TaskFrameworkDisable
                     throw new TaskRuntimeException(e);
                 }
             }
-            if (je.getStatus() == JobStatus.RUNNING &&
-                    configuration.getTaskFrameworkService().find(ji.getId())
-                            .getExecutorDestroyedTime() == null) {
-                log.warn("Job executor has not been destroyed, may not on this machine, jobId={}", ji.getId());
-                return;
-            }
-
-            int rows = configuration.getTaskFrameworkService().updateStatusDescriptionByIdOldStatus(ji.getId(),
-                    je.getStatus(), JobStatus.FAILED, "Update status to FAILED due to task-framework disabled.");
-            if (rows > 0) {
-                log.info("Update status to FAILED completed, jobId={}", ji.getId());
-                configuration.getEventPublisher()
-                        .publishEvent(new JobTerminateEvent(ji, JobStatus.FAILED));
-            } else {
-                throw new TaskRuntimeException("Update status to FAILED occur error.");
-            }
+            configuration.getEventPublisher()
+                    .publishEvent(new JobTerminateEvent(ji, JobStatus.FAILED));
         });
     }
 }

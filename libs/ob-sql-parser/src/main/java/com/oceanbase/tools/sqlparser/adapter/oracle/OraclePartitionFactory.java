@@ -24,16 +24,14 @@ import org.antlr.v4.runtime.ParserRuleContext;
 import com.oceanbase.tools.sqlparser.adapter.StatementFactory;
 import com.oceanbase.tools.sqlparser.oboracle.OBParser.Auto_partition_optionContext;
 import com.oceanbase.tools.sqlparser.oboracle.OBParser.Auto_range_typeContext;
-import com.oceanbase.tools.sqlparser.oboracle.OBParser.Column_partition_optionContext;
 import com.oceanbase.tools.sqlparser.oboracle.OBParser.Hash_partition_optionContext;
 import com.oceanbase.tools.sqlparser.oboracle.OBParser.List_partition_optionContext;
-import com.oceanbase.tools.sqlparser.oboracle.OBParser.Opt_partition_optionContext;
+import com.oceanbase.tools.sqlparser.oboracle.OBParser.Partition_optionContext;
 import com.oceanbase.tools.sqlparser.oboracle.OBParser.Range_partition_optionContext;
 import com.oceanbase.tools.sqlparser.oboracle.OBParser.Subpartition_optionContext;
 import com.oceanbase.tools.sqlparser.oboracle.OBParser.Vertical_column_nameContext;
 import com.oceanbase.tools.sqlparser.oboracle.OBParserBaseVisitor;
 import com.oceanbase.tools.sqlparser.statement.Expression;
-import com.oceanbase.tools.sqlparser.statement.createtable.ColumnPartition;
 import com.oceanbase.tools.sqlparser.statement.createtable.HashPartition;
 import com.oceanbase.tools.sqlparser.statement.createtable.HashPartitionElement;
 import com.oceanbase.tools.sqlparser.statement.createtable.ListPartition;
@@ -58,8 +56,12 @@ public class OraclePartitionFactory extends OBParserBaseVisitor<Partition> imple
 
     private final ParserRuleContext parserRuleContext;
 
-    public OraclePartitionFactory(@NonNull Opt_partition_optionContext optPartitionOptionContext) {
-        this.parserRuleContext = optPartitionOptionContext;
+    public OraclePartitionFactory(@NonNull Partition_optionContext partitionOptionContext) {
+        this.parserRuleContext = partitionOptionContext;
+    }
+
+    public OraclePartitionFactory(@NonNull Auto_partition_optionContext autoPartitionOptionContext) {
+        this.parserRuleContext = autoPartitionOptionContext;
     }
 
     public OraclePartitionFactory(@NonNull Hash_partition_optionContext ctx) {
@@ -142,16 +144,6 @@ public class OraclePartitionFactory extends OBParserBaseVisitor<Partition> imple
                 .collect(Collectors.toList());
         return new ListPartition(ctx, targets, partitionElts, getSubPartitionOption(ctx.subpartition_option()), null,
                 false);
-    }
-
-    @Override
-    public Partition visitColumn_partition_option(Column_partition_optionContext ctx) {
-        List<ColumnReference> targets = getColumnReferences(ctx.vertical_column_name());
-        if (ctx.aux_column_list() != null) {
-            targets.addAll(ctx.aux_column_list().vertical_column_name().stream()
-                    .flatMap(c -> getColumnReferences(c).stream()).collect(Collectors.toList()));
-        }
-        return new ColumnPartition(ctx, targets);
     }
 
     private List<ColumnReference> getColumnReferences(Vertical_column_nameContext cxt) {

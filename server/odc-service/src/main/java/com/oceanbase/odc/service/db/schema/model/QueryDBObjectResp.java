@@ -13,30 +13,32 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.core.flow.graph;
+package com.oceanbase.odc.service.db.schema.model;
 
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
-import lombok.NonNull;
-import lombok.Setter;
+import java.util.List;
+
+import com.oceanbase.odc.service.connection.database.model.Database;
+
+import lombok.Data;
 
 /**
- * Edge of the graph
- *
- * @author yh263208
- * @date 2022-01-14 16:47
- * @since ODC_release_3.3.0
+ * @author gaoda.xy
+ * @date 2024/3/29 15:56
  */
-@Setter
-@Getter
-@EqualsAndHashCode(callSuper = true, exclude = {"from", "to"})
-public class GraphEdge extends BaseGraphElement {
-    private GraphVertex from;
-    private GraphVertex to;
-    private float weight;
+@Data
+public class QueryDBObjectResp {
 
-    public GraphEdge(@NonNull String id, @NonNull String name) {
-        super(id, name);
-    }
+    /**
+     * List of databases.
+     */
+    private List<Database> databases;
+    /**
+     * List of DB objects, such as table, view, function, procedure, package, trigger, type, etc.
+     */
+    private List<OdcDBObject> dbObjects;
+    /**
+     * List of DB columns of a table or view.
+     */
+    private List<OdcDBColumn> dbColumns;
 
 }

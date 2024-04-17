@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import javax.annotation.PostConstruct;
@@ -59,6 +60,18 @@ public class UserConfigService {
             .maximumSize(500).expireAfterWrite(60, TimeUnit.SECONDS)
             .build(this::internalGetUserConfigurations);
 
+    private List<Consumer<Configuration>> configurationConsumers = new ArrayList<>();
+
+    @SkipAuthorize("odc internal usage")
+    public void addConfigurationConsumer(Consumer<Configuration> consumer) {
+        this.configurationConsumers.add(consumer);
+    }
+
+    @SkipAuthorize("odc internal usage")
+    public List<Consumer<Configuration>> getConfigurationConsumer() {
+        return this.configurationConsumers;
+    }
+
     @PostConstruct
     public void init() {
         List<ConfigurationMeta> allConfigMetas = userConfigMetaService.listAllConfigMetas();
@@ -95,6 +108,9 @@ public class UserConfigService {
         for (Configuration configuration : configurations) {
             if (keyToConfiguration.containsKey(configuration.getKey())) {
                 configuration.setValue(keyToConfiguration.get(configuration.getKey()).getValue());
+            }
+            for (Consumer<Configuration> consumer : getConfigurationConsumer()) {
+                consumer.accept(configuration);
             }
         }
         return configurations;

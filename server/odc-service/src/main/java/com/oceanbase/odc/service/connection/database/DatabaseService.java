@@ -92,6 +92,7 @@ import com.oceanbase.odc.service.connection.database.model.QueryDatabaseParams;
 import com.oceanbase.odc.service.connection.database.model.TransferDatabasesReq;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.db.DBSchemaService;
+import com.oceanbase.odc.service.db.schema.model.DBObjectSyncStatus;
 import com.oceanbase.odc.service.iam.HorizontalDataPermissionValidator;
 import com.oceanbase.odc.service.iam.OrganizationService;
 import com.oceanbase.odc.service.iam.ProjectPermissionValidator;
@@ -201,6 +202,7 @@ public class DatabaseService {
     public Database detail(@NonNull Long id) {
         Database database = entityToModel(databaseRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException(ResourceType.ODC_DATABASE, "id", id)), true);
+        horizontalDataPermissionValidator.checkCurrentOrganization(database);
         if (Objects.nonNull(database.getProject()) && Objects.nonNull(database.getProject().getId())) {
             projectPermissionValidator.checkProjectRole(database.getProject().getId(), ResourceRoleName.all());
             return database;
@@ -333,6 +335,7 @@ public class DatabaseService {
             database.setSyncStatus(DatabaseSyncStatus.SUCCEEDED);
             database.setOrganizationId(authenticationFacade.currentOrganizationId());
             database.setLastSyncTime(new Date(System.currentTimeMillis()));
+            database.setObjectSyncStatus(DBObjectSyncStatus.INITIALIZED);
             DatabaseEntity saved = databaseRepository.saveAndFlush(database);
             List<UserResourceRole> userResourceRoles = buildUserResourceRoles(Collections.singleton(saved.getId()),
                     req.getOwnerIds());
@@ -358,6 +361,12 @@ public class DatabaseService {
     }
 
     @SkipAuthorize("internal usage")
+    public Set<Long> listExistDatabaseIdsByProjectId(@NonNull Long projectId) {
+        return databaseRepository.findByProjectIdAndExisted(projectId, true).stream().map(DatabaseEntity::getId)
+                .collect(Collectors.toSet());
+    }
+
+    @SkipAuthorize("internal usage")
     public Set<Long> listDatabaseIdsByConnectionIds(@NotEmpty Collection<Long> connectionIds) {
         return databaseRepository.findByConnectionIdIn(connectionIds).stream().map(DatabaseEntity::getId)
                 .collect(Collectors.toSet());
@@ -370,9 +379,21 @@ public class DatabaseService {
     }
 
     @SkipAuthorize("internal usage")
+    public List<Database> listDatabasesDetailsByIds(@NotEmpty Collection<Long> ids) {
+        Specification<DatabaseEntity> specs = DatabaseSpecs.idIn(ids);
+        return entitiesToModels(databaseRepository.findAll(specs, Pageable.unpaged()), true).getContent();
+    }
+
+    @SkipAuthorize("internal usage")
     public List<Database> listDatabasesByConnectionIds(@NotEmpty Collection<Long> connectionIds) {
         return databaseRepository.findByConnectionIdIn(connectionIds).stream().map(databaseMapper::entityToModel)
                 .collect(Collectors.toList());
+    }
+
+    @SkipAuthorize("internal usage")
+    public List<Database> listExistDatabasesByConnectionId(@NotNull Long connectionId) {
+        return databaseRepository.findByConnectionIdAndExisted(connectionId, true).stream()
+                .map(databaseMapper::entityToModel).collect(Collectors.toList());
     }
 
     @SkipAuthorize("internal usage")
@@ -469,6 +490,7 @@ public class DatabaseService {
                         entity.setConnectionId(connection.getId());
                         entity.setSyncStatus(DatabaseSyncStatus.SUCCEEDED);
                         entity.setProjectId(currentProjectId);
+                        entity.setObjectSyncStatus(DBObjectSyncStatus.INITIALIZED);
                         if (databaseSyncProperties.isBlockInternalDatabase()
                                 && blockedDatabaseNames.contains(database.getName())) {
                             entity.setProjectId(null);
@@ -499,13 +521,14 @@ public class DatabaseService {
                             database.getCharsetName(),
                             database.getCollationName(),
                             database.getTableCount(),
-                            database.getExisted()
+                            database.getExisted(),
+                            database.getObjectSyncStatus().name()
                     }).collect(Collectors.toList());
 
             JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
             if (CollectionUtils.isNotEmpty(toAdd)) {
                 jdbcTemplate.batchUpdate(
-                        "insert into connect_database(database_id, organization_id, name, project_id, connection_id, environment_id, sync_status, charset_name, collation_name, table_count, is_existed) values(?,?,?,?,?,?,?,?,?,?,?)",
+                        "insert into connect_database(database_id, organization_id, name, project_id, connection_id, environment_id, sync_status, charset_name, collation_name, table_count, is_existed, object_sync_status) values(?,?,?,?,?,?,?,?,?,?,?,?)",
                         toAdd);
             }
             List<Object[]> toDelete = existedDatabasesInDb.stream()
@@ -578,14 +601,15 @@ public class DatabaseService {
                             latestDatabaseName,
                             connection.getId(),
                             connection.getEnvironmentId(),
-                            DatabaseSyncStatus.SUCCEEDED.name()
+                            DatabaseSyncStatus.SUCCEEDED.name(),
+                            DBObjectSyncStatus.INITIALIZED.name()
                     })
                     .collect(Collectors.toList());
 
             JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
             if (CollectionUtils.isNotEmpty(toAdd)) {
                 jdbcTemplate.batchUpdate(
-                        "insert into connect_database(database_id, organization_id, name, connection_id, environment_id, sync_status) values(?,?,?,?,?,?)",
+                        "insert into connect_database(database_id, organization_id, name, connection_id, environment_id, sync_status, object_sync_status) values(?,?,?,?,?,?,?)",
                         toAdd);
             }
 

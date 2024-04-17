@@ -26,7 +26,7 @@ import com.oceanbase.odc.service.connection.model.OBTenant;
 import com.oceanbase.odc.service.connection.model.OBTenantEndpoint;
 
 @Component
-public class ConnectionEnvironmentAdapter {
+public class DefaultConnectionAdapter implements ConnectionAdapter {
 
     @Autowired
     private CloudMetadataClient cloudMetadataClient;
@@ -71,5 +71,4 @@ public class ConnectionEnvironmentAdapter {
         connectionConfig.setEndpoint(endpoint);
         return connectionConfig;
     }
-
 }

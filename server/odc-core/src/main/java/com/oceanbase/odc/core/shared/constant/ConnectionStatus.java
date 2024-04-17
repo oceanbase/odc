@@ -32,10 +32,6 @@ public enum ConnectionStatus {
      */
     TESTING,
     /**
-     * 密码未保存，不进行检测
-     */
-    NOPASSWORD,
-    /**
      * 连接已禁用，不进行检测
      */
     DISABLED,

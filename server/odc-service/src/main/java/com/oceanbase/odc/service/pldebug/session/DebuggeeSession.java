@@ -19,7 +19,9 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.SQLSyntaxErrorException;
 import java.sql.Statement;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -58,26 +60,22 @@ public class DebuggeeSession extends AbstractDebugSession {
 
     public DebuggeeSession(ConnectionSession connectionSession, ThreadPoolExecutor debugThreadPoolExecutor,
             StartPLDebugReq req) throws Exception {
-
-        acquireNewConnection(connectionSession, () -> acquireDataSource(connectionSession));
-
+        // 设置超时时间, 单位：us
+        // 设置debug工作线程的超时时间，单位：s 2min
+        List<String> initSqls = Arrays.asList(
+                String.format("set session ob_query_timeout = %s;", DEBUG_TIMEOUT_MS * 1000),
+                String.format("select dbms_debug.set_timeout(%s) from dual;", 120));
+        acquireNewConnection(connectionSession, () -> acquireDataSource(connectionSession, initSqls));
         // OceanBaseConnection can accept null as executor
         // 0 for timeout means wait infinitely
         connection.setNetworkTimeout(null, 0);
-
         try (Statement stmt = connection.createStatement()) {
-            // 设置超时时间, 单位：us
-            stmt.execute(String.format("set session ob_query_timeout = %s;", DEBUG_TIMEOUT_MS * 1000));
-            // 设置debug工作线程的超时时间，单位：s
-            stmt.execute(String.format("select dbms_debug.set_timeout(%s) from dual;", 120)); // 2min
             // 设置debug工作线程的超时行为
             DBPLParam param = DBPLParam.of("behaviour", DBPLParamMode.IN, "int");
             param.setDefaultValue(String.valueOf(DEBUGGEE_TIMEOUT_BEHAVIOUR));
-
             DBProcedure dbProcedure =
                     DBProcedure.of("DBMS_DEBUG", "SET_TIMEOUT_BEHAVIOUR", Collections.singletonList(param));
             executeProcedure(dbProcedure);
-
             // 初始化debug_id
             stmt.executeQuery("select dbms_debug.initialize() from dual;");
             try (ResultSet resultSet = stmt.getResultSet()) {
