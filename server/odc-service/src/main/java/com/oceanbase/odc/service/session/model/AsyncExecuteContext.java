@@ -23,12 +23,15 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Queue;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.function.BiConsumer;
 
 import org.springframework.jdbc.core.StatementCallback;
 
@@ -65,10 +68,11 @@ public class AsyncExecuteContext {
 
     private final ConnectionSession session;
     private final List<SqlTuple> sqlTuples;
-    private final List<SqlExecuteResult> results = new ArrayList<>();
+    private final Queue<SqlExecuteResult> results = new ConcurrentLinkedQueue<>();
     private final Map<String, Object> contextMap = new HashMap<>();
     private final SqlExecuteInterceptorService sqlInterceptService;
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
+    private final List<BiConsumer<ConnectionSession, String>> traceIdHooks = new ArrayList<>();
     private final User user;
     private final List<String> sessionIds;
     private final boolean queryRuntimeTrace;
@@ -110,10 +114,17 @@ public class AsyncExecuteContext {
     }
 
     public List<SqlExecuteResult> getResults() {
-        synchronized (results) {
-            ArrayList<SqlExecuteResult> copiedResults = new ArrayList<>(results);
-            results.clear();
-            return copiedResults;
+        List<SqlExecuteResult> copiedResults = new ArrayList<>();
+        while (!results.isEmpty()) {
+            copiedResults.add(results.poll());
+        }
+        return copiedResults;
+    }
+
+    public void setCurrentTraceId(String traceId) {
+        currentTraceId = traceId;
+        for (BiConsumer<ConnectionSession, String> hook : traceIdHooks) {
+            hook.accept(session, traceId);
         }
     }
 
@@ -145,15 +156,16 @@ public class AsyncExecuteContext {
         if (handle != null && !handle.isDone()) {
             handle.cancel(true);
         }
-        synchronized (this.results) {
-            SecurityContextUtils.setCurrentUser(user);
-            try {
-                for (JdbcGeneralResult result : results) {
-                    this.results.add(mapResult(result));
+        SecurityContextUtils.setCurrentUser(user);
+        try {
+            for (JdbcGeneralResult result : results) {
+                this.results.add(mapResult(result));
+                for (BiConsumer<ConnectionSession, String> hook : traceIdHooks) {
+                    hook.accept(session, result.getTraceId());
                 }
-            } finally {
-                SecurityContextUtils.clear();
             }
+        } finally {
+            SecurityContextUtils.clear();
         }
     }
 

@@ -200,6 +200,7 @@ public class OdcStatementCallBack implements StatementCallback<List<JdbcGeneralR
                     try {
                         executeResults = doExecuteSql(statement, sqlTuple, latch);
                     } catch (Exception exception) {
+                        latch.countDown();
                         executeResults = Collections.singletonList(JdbcGeneralResult.failedResult(sqlTuple, exception));
                     }
                 } else {
