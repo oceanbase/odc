@@ -15,6 +15,8 @@
  */
 package com.oceanbase.odc.service.session;
 
+import static com.oceanbase.odc.service.session.model.AsyncExecuteContext.SHOW_TABLE_COLUMN_INFO;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
@@ -24,6 +26,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -72,6 +76,7 @@ import com.oceanbase.odc.core.sql.execute.cache.table.ResultSetVirtualTable;
 import com.oceanbase.odc.core.sql.execute.cache.table.VirtualElement;
 import com.oceanbase.odc.core.sql.execute.cache.table.VirtualTable;
 import com.oceanbase.odc.core.sql.execute.model.JdbcGeneralResult;
+import com.oceanbase.odc.core.sql.execute.model.SqlExecuteStatus;
 import com.oceanbase.odc.core.sql.execute.model.SqlTuple;
 import com.oceanbase.odc.core.sql.parser.AbstractSyntaxTree;
 import com.oceanbase.odc.core.sql.parser.AbstractSyntaxTreeFactories;
@@ -88,11 +93,14 @@ import com.oceanbase.odc.service.db.session.KillSessionOrQueryReq;
 import com.oceanbase.odc.service.db.session.KillSessionResult;
 import com.oceanbase.odc.service.dml.ValueEncodeType;
 import com.oceanbase.odc.service.feature.AllFeatures;
+import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.permission.database.model.DatabasePermissionType;
 import com.oceanbase.odc.service.permission.database.model.UnauthorizedDatabase;
 import com.oceanbase.odc.service.session.interceptor.SqlCheckInterceptor;
 import com.oceanbase.odc.service.session.interceptor.SqlConsoleInterceptor;
 import com.oceanbase.odc.service.session.interceptor.SqlExecuteInterceptorService;
+import com.oceanbase.odc.service.session.model.AsyncExecuteContext;
+import com.oceanbase.odc.service.session.model.AsyncExecuteResultResp;
 import com.oceanbase.odc.service.session.model.BinaryContent;
 import com.oceanbase.odc.service.session.model.OdcResultSetMetaData.OdcTable;
 import com.oceanbase.odc.service.session.model.QueryTableOrViewDataReq;
@@ -124,7 +132,9 @@ import lombok.extern.slf4j.Slf4j;
 public class ConnectConsoleService {
 
     public static final int DEFAULT_GET_RESULT_TIMEOUT_SECONDS = 3;
-    private static final String SHOW_TABLE_COLUMN_INFO = "SHOW_TABLE_COLUMN_INFO";
+    public static final int DEFAULT_GET_RESULT_TIMEOUT_SECONDS_V2 = 1;
+    private final Executor queryProfileMonitor =
+            Executors.newFixedThreadPool(5, r -> new Thread(r, "query-profile-monitor-" + r.hashCode()));
     @Autowired
     private ConnectSessionService sessionService;
     @Autowired
@@ -139,6 +149,8 @@ public class ConnectConsoleService {
     private ConnectionService connectionService;
     @Autowired
     private UserConfigFacade userConfigFacade;
+    @Autowired
+    private AuthenticationFacade authenticationFacade;
 
     public SqlExecuteResult queryTableOrViewData(@NotNull String sessionId,
             @NotNull @Valid QueryTableOrViewDataReq req) throws Exception {
@@ -306,6 +318,93 @@ public class ConnectConsoleService {
         return response;
     }
 
+    public SqlAsyncExecuteResp executeV2(@NotNull String sessionId,
+            @NotNull @Valid SqlAsyncExecuteReq request, boolean needSqlRuleCheck) throws Exception {
+        ConnectionSession connectionSession = sessionService.nullSafeGet(sessionId, true);
+
+        long maxSqlLength = sessionProperties.getMaxSqlLength();
+        if (maxSqlLength > 0) {
+            PreConditions.lessThanOrEqualTo("sqlLength", LimitMetric.SQL_LENGTH,
+                    StringUtils.length(request.getSql()), maxSqlLength);
+        }
+        SqlAsyncExecuteResp result = filterKillSession(connectionSession, request);
+        if (result != null) {
+            return result;
+        }
+        List<OffsetString> sqls = request.ifSplitSqls()
+                ? SqlUtils.splitWithOffset(connectionSession, request.getSql(),
+                        sessionProperties.isOracleRemoveCommentPrefix())
+                : Collections.singletonList(new OffsetString(0, request.getSql()));
+        if (sqls.size() == 0) {
+            /**
+             * if a sql only contains delimiter setting(eg. delimiter $$), code will do this
+             */
+            SqlTuple sqlTuple = SqlTuple.newTuple(request.getSql());
+            String id = ConnectionSessionUtil.setFutureJdbc(connectionSession,
+                    FutureResult.successResultList(JdbcGeneralResult.successResult(sqlTuple)), null);
+            return SqlAsyncExecuteResp.newSqlAsyncExecuteResp(id, Collections.singletonList(sqlTuple));
+        }
+
+        long maxSqlStatementCount = sessionProperties.getMaxSqlStatementCount();
+        if (maxSqlStatementCount > 0) {
+            PreConditions.lessThanOrEqualTo("sqlStatementCount",
+                    LimitMetric.SQL_STATEMENT_COUNT, sqls.size(), maxSqlStatementCount);
+        }
+
+        List<SqlTuple> sqlTuples = generateSqlTuple(sqls, connectionSession, request);
+        SqlAsyncExecuteResp response = SqlAsyncExecuteResp.newSqlAsyncExecuteResp(sqlTuples);
+        Map<String, Object> context = new HashMap<>();
+        context.put(SHOW_TABLE_COLUMN_INFO, request.getShowTableColumnInfo());
+        context.put(SqlCheckInterceptor.NEED_SQL_CHECK_KEY, needSqlRuleCheck);
+        context.put(SqlConsoleInterceptor.NEED_SQL_CONSOLE_CHECK, needSqlRuleCheck);
+        List<TraceStage> stages = sqlTuples.stream()
+                .map(s -> s.getSqlWatch().start(SqlExecuteStages.SQL_PRE_CHECK))
+                .collect(Collectors.toList());
+        try {
+            if (!sqlInterceptService.preHandle(request, response, connectionSession, context)) {
+                return response;
+            }
+        } finally {
+            for (TraceStage stage : stages) {
+                try {
+                    stage.close();
+                } catch (Exception e) {
+                    // eat exception
+                }
+            }
+        }
+        Integer queryLimit = checkQueryLimit(request.getQueryLimit());
+        boolean continueExecutionOnError =
+                Objects.nonNull(request.getContinueExecutionOnError()) ? request.getContinueExecutionOnError()
+                        : userConfigFacade.isContinueExecutionOnError();
+        boolean stopOnError = !continueExecutionOnError;
+        AsyncExecuteContext executeContext =
+                new AsyncExecuteContext(connectionSession, sqlTuples, sqlInterceptService,
+                        authenticationFacade.currentUser());
+        executeContext.getContextMap().putAll(context);
+        OdcStatementCallBack statementCallBack = new OdcStatementCallBack(sqlTuples, connectionSession,
+                request.getAutoCommit(), queryLimit, stopOnError, executeContext);
+
+        statementCallBack.setDbmsoutputMaxRows(sessionProperties.getDbmsOutputMaxRows());
+
+        boolean fullLinkTraceEnabled =
+                Objects.nonNull(request.getFullLinkTraceEnabled()) ? request.getFullLinkTraceEnabled()
+                        : userConfigFacade.isFullLinkTraceEnabled();
+        statementCallBack.setUseFullLinkTrace(fullLinkTraceEnabled);
+
+        statementCallBack.setFullLinkTraceTimeout(sessionProperties.getFullLinkTraceTimeoutSeconds());
+        statementCallBack.setMaxCachedSize(sessionProperties.getResultSetMaxCachedSize());
+        statementCallBack.setMaxCachedLines(sessionProperties.getResultSetMaxCachedLines());
+        statementCallBack.setLocale(LocaleContextHolder.getLocale());
+
+        Future<List<JdbcGeneralResult>> futureResult = connectionSession.getAsyncJdbcExecutor(
+                ConnectionSessionConstants.CONSOLE_DS_KEY).execute(statementCallBack);
+        executeContext.setFuture(futureResult);
+        String id = ConnectionSessionUtil.setExecuteContext(connectionSession, executeContext);
+        response.setRequestId(id);
+        return response;
+    }
+
     public List<SqlExecuteResult> getAsyncResult(@NotNull String sessionId, @NotNull String requestId) {
         return getAsyncResult(sessionId, requestId, DEFAULT_GET_RESULT_TIMEOUT_SECONDS);
     }
@@ -338,6 +437,28 @@ public class ConnectConsoleService {
                         timeoutException);
             }
             return Collections.emptyList();
+        }
+    }
+
+    public AsyncExecuteResultResp getAsyncResultV2(@NotNull String sessionId, String requestId,
+            Integer timeoutSeconds) {
+        PreConditions.validArgumentState(Objects.nonNull(requestId), ErrorCodes.SqlRegulationRuleBlocked, null, null);
+        ConnectionSession connectionSession = sessionService.nullSafeGet(sessionId);
+        Long sessionUserId = ConnectionSessionUtil.getUserId(connectionSession);
+        if (sessionUserId != authenticationFacade.currentUserId()) {
+            throw new AccessDeniedException();
+        }
+        AsyncExecuteContext executeContext =
+                (AsyncExecuteContext) ConnectionSessionUtil.getExecuteContext(connectionSession, requestId);
+        int timeout = Objects.isNull(timeoutSeconds) ? DEFAULT_GET_RESULT_TIMEOUT_SECONDS_V2 : timeoutSeconds;
+        if (executeContext.await(timeout, TimeUnit.SECONDS)) {
+            ConnectionSessionUtil.removeExecuteContext(connectionSession, requestId);
+            return new AsyncExecuteResultResp(SqlExecuteStatus.SUCCESS, executeContext);
+        } else {
+            if (log.isDebugEnabled()) {
+                log.debug("Get sql execution result timed out, sessionId={}, requestId={}", sessionId, requestId);
+            }
+            return new AsyncExecuteResultResp(SqlExecuteStatus.RUNNING, executeContext);
         }
     }
 

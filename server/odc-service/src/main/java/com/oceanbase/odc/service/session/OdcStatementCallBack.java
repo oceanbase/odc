@@ -35,6 +35,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiPredicate;
 import java.util.regex.Matcher;
@@ -78,6 +79,7 @@ import com.oceanbase.odc.core.sql.execute.model.SqlTuple;
 import com.oceanbase.odc.core.sql.util.FullLinkTraceUtil;
 import com.oceanbase.odc.core.sql.util.OBUtils;
 import com.oceanbase.odc.service.plugin.ConnectionPluginUtil;
+import com.oceanbase.odc.service.session.model.AsyncExecuteContext;
 
 import lombok.Getter;
 import lombok.NonNull;
@@ -114,6 +116,7 @@ public class OdcStatementCallBack implements StatementCallback<List<JdbcGeneralR
     private final boolean stopWhenError;
     private final BinaryDataManager binaryDataManager;
     private final ConnectionSession connectionSession;
+    private final AsyncExecuteContext executeContext;
     @Setter
     private boolean useFullLinkTrace = false;
     @Setter
@@ -136,6 +139,11 @@ public class OdcStatementCallBack implements StatementCallback<List<JdbcGeneralR
 
     public OdcStatementCallBack(@NonNull List<SqlTuple> sqls, @NonNull ConnectionSession connectionSession,
             Boolean autoCommit, Integer queryLimit, boolean stopWhenError) {
+        this(sqls, connectionSession, autoCommit, queryLimit, stopWhenError, null);
+    }
+
+    public OdcStatementCallBack(@NonNull List<SqlTuple> sqls, @NonNull ConnectionSession connectionSession,
+            Boolean autoCommit, Integer queryLimit, boolean stopWhenError, AsyncExecuteContext executeContext) {
         this.sqls = sqls;
         this.autoCommit = autoCommit == null ? connectionSession.getDefaultAutoCommit() : autoCommit;
         this.connectType = connectionSession.getConnectType();
@@ -149,6 +157,7 @@ public class OdcStatementCallBack implements StatementCallback<List<JdbcGeneralR
         this.stopWhenError = stopWhenError;
         this.binaryDataManager = ConnectionSessionUtil.getBinaryDataManager(connectionSession);
         Validate.notNull(this.binaryDataManager, "BinaryDataManager can not be null");
+        this.executeContext = executeContext;
     }
 
     @Override
@@ -158,11 +167,15 @@ public class OdcStatementCallBack implements StatementCallback<List<JdbcGeneralR
         }
         if (ConnectionSessionUtil.isConsoleSessionReset(connectionSession)) {
             ConnectionSessionUtil.setConsoleSessionResetFlag(connectionSession, false);
-            return this.sqls.stream().map(sqlTuple -> {
+            List<JdbcGeneralResult> results = this.sqls.stream().map(sqlTuple -> {
                 JdbcGeneralResult result = JdbcGeneralResult.canceledResult(sqlTuple);
                 result.setConnectionReset(true);
                 return result;
             }).collect(Collectors.toList());
+            if (executeContext != null) {
+                executeContext.finishQuery(results);
+            }
+            return results;
         }
         List<JdbcGeneralResult> returnVal = new LinkedList<>();
         boolean currentAutoCommit = statement.getConnection().getAutoCommit();
@@ -179,9 +192,13 @@ public class OdcStatementCallBack implements StatementCallback<List<JdbcGeneralR
                     log.warn("Init driver statistic collect failed, reason={}", e.getMessage());
                 }
                 List<JdbcGeneralResult> executeResults;
+                CountDownLatch latch = new CountDownLatch(1);
+                if (executeContext != null) {
+                    executeContext.startQuery(latch);
+                }
                 if (returnVal.stream().noneMatch(r -> r.getStatus() == SqlExecuteStatus.FAILED) || !stopWhenError) {
                     try {
-                        executeResults = doExecuteSql(statement, sqlTuple);
+                        executeResults = doExecuteSql(statement, sqlTuple, latch);
                     } catch (Exception exception) {
                         executeResults = Collections.singletonList(JdbcGeneralResult.failedResult(sqlTuple, exception));
                     }
@@ -189,6 +206,9 @@ public class OdcStatementCallBack implements StatementCallback<List<JdbcGeneralR
                     executeResults = Collections.singletonList(JdbcGeneralResult.canceledResult(sqlTuple));
                 }
                 returnVal.addAll(executeResults);
+                if (executeContext != null) {
+                    executeContext.finishQuery(executeResults);
+                }
             }
             Optional<JdbcGeneralResult> failed = returnVal
                     .stream().filter(r -> r.getStatus() == SqlExecuteStatus.FAILED).findFirst();
@@ -304,7 +324,8 @@ public class OdcStatementCallBack implements StatementCallback<List<JdbcGeneralR
         return executeResults;
     }
 
-    protected List<JdbcGeneralResult> doExecuteSql(Statement statement, SqlTuple sqlTuple) throws Exception {
+    protected List<JdbcGeneralResult> doExecuteSql(Statement statement, SqlTuple sqlTuple,
+            CountDownLatch latch) throws Exception {
         String sql = sqlTuple.getExecutedSql();
         if (!ifFunctionCallExists(sql)) {
             // use text protocal
@@ -313,8 +334,10 @@ public class OdcStatementCallBack implements StatementCallback<List<JdbcGeneralR
                 try {
                     isResultSet = statement.execute(sql);
                 } catch (Exception e) {
+                    latch.countDown();
                     return handleException(e, statement, sqlTuple);
                 }
+                latch.countDown();
                 return consumeStatement(statement, sqlTuple, isResultSet);
             }
         }
@@ -345,6 +368,7 @@ public class OdcStatementCallBack implements StatementCallback<List<JdbcGeneralR
                 }
             }
             boolean isResult = preparedStatement.execute();
+            latch.countDown();
             return consumeStatement(preparedStatement, sqlTuple, isResult);
         }
     }

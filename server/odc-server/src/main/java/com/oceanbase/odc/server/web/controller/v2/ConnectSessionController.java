@@ -55,6 +55,7 @@ import com.oceanbase.odc.service.partitionplan.model.PartitionPlanPreViewResp;
 import com.oceanbase.odc.service.partitionplan.model.PartitionPlanPreviewReq;
 import com.oceanbase.odc.service.session.ConnectConsoleService;
 import com.oceanbase.odc.service.session.ConnectSessionService;
+import com.oceanbase.odc.service.session.model.AsyncExecuteResultResp;
 import com.oceanbase.odc.service.session.model.BinaryContent;
 import com.oceanbase.odc.service.session.model.QueryTableOrViewDataReq;
 import com.oceanbase.odc.service.session.model.SqlAsyncExecuteReq;
@@ -118,6 +119,13 @@ public class ConnectSessionController {
         return Responses.success(consoleService.execute(SidUtils.getSessionId(sessionId), req));
     }
 
+    @RequestMapping(value = {"/sessions/{sessionId}/sqls/asyncExecuteV2"}, method = RequestMethod.POST)
+    @StatefulRoute(stateName = StateName.DB_SESSION, stateIdExpression = "#sessionId")
+    public SuccessResponse<SqlAsyncExecuteResp> asyncSqlExecuteV2(@PathVariable String sessionId,
+            @RequestBody SqlAsyncExecuteReq req) throws Exception {
+        return Responses.success(consoleService.executeV2(SidUtils.getSessionId(sessionId), req, true));
+    }
+
     /**
      * 获取异步执行sql的结果 Todo 这里的sqlIds后续需要改成一个string类型的requestId，异步api请求需要有超时机制
      *
@@ -130,6 +138,13 @@ public class ConnectSessionController {
     public SuccessResponse<List<SqlExecuteResult>> getAsyncSqlExecute(@PathVariable String sessionId,
             @RequestParam String requestId) {
         return Responses.success(consoleService.getAsyncResult(SidUtils.getSessionId(sessionId), requestId, null));
+    }
+
+    @RequestMapping(value = "/sessions/{sessionId}/sqls/getResultV2", method = RequestMethod.GET)
+    @StatefulRoute(stateName = StateName.DB_SESSION, stateIdExpression = "#sessionId")
+    public SuccessResponse<AsyncExecuteResultResp> getAsyncSqlExecuteV2(@PathVariable String sessionId,
+            @RequestParam String requestId) {
+        return Responses.success(consoleService.getAsyncResultV2(SidUtils.getSessionId(sessionId), requestId, null));
     }
 
     /**

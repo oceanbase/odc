@@ -15,6 +15,7 @@
  */
 package com.oceanbase.odc.service.connection.util;
 
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 
@@ -23,9 +24,11 @@ import javax.sql.DataSource;
 import org.springframework.jdbc.core.ConnectionCallback;
 import org.springframework.jdbc.core.StatementCallback;
 
+import com.oceanbase.odc.common.util.VersionUtils;
 import com.oceanbase.odc.core.datasource.DataSourceFactory;
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionConstants;
+import com.oceanbase.odc.core.session.ConnectionSessionUtil;
 import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.sql.execute.GeneralSyncJdbcExecutor;
@@ -61,6 +64,11 @@ public class ConnectionInfoUtil {
             String sessionId = queryConnectionId(statement, connectionSession.getDialectType());
             Verify.notNull(sessionId, "SessionId");
             connectionSession.setAttribute(ConnectionSessionConstants.CONNECTION_ID_KEY, sessionId);
+            if (connectionSession.getDialectType().isOceanbase() && VersionUtils.isGreaterThanOrEqualsTo(
+                    ConnectionSessionUtil.getVersion(connectionSession), "4.2")) {
+                String proxySessId = queryProxySessId(statement, connectionSession.getDialectType(), sessionId);
+                connectionSession.setAttribute(ConnectionSessionConstants.CONNECTION_PROXY_SESSID_KEY, proxySessId);
+            }
         } catch (Exception exception) {
             log.warn("Failed to get database session ID, session={}", connectionSession, exception);
         }
@@ -69,6 +77,21 @@ public class ConnectionInfoUtil {
     public static String queryConnectionId(@NonNull Statement statement, @NonNull DialectType dialectType)
             throws SQLException {
         return ConnectionPluginUtil.getSessionExtension(dialectType).getConnectionId(statement.getConnection());
+    }
+
+    public static String queryProxySessId(@NonNull Statement statement, @NonNull DialectType dialectType,
+            @NonNull String connectionId) throws SQLException {
+        String proxySessId = null;
+        String sql = "select proxy_sessid from "
+                + (dialectType.isMysql() ? "oceanbase" : "sys")
+                + ".v$ob_processlist where id = "
+                + connectionId;
+        try (ResultSet rs = statement.executeQuery(sql)) {
+            if (rs.next()) {
+                proxySessId = rs.getString(1);
+            }
+        }
+        return proxySessId;
     }
 
     public static void initSessionVersion(@NonNull ConnectionSession connectionSession) {
