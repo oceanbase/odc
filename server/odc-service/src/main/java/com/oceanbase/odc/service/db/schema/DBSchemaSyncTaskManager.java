@@ -34,6 +34,7 @@ import com.oceanbase.odc.service.connection.database.DatabaseService;
 import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.db.schema.model.DBObjectSyncStatus;
+import com.oceanbase.odc.service.db.schema.syncer.DBSchemaSyncProperties;
 
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
@@ -57,6 +58,9 @@ public class DBSchemaSyncTaskManager {
     @Lazy
     private DatabaseService databaseService;
 
+    @Autowired
+    private DBSchemaSyncProperties syncProperties;
+
     public void submitTaskByDatabases(@NonNull Collection<Database> databases) {
         if (CollectionUtils.isEmpty(databases)) {
             return;
@@ -66,15 +70,11 @@ public class DBSchemaSyncTaskManager {
         databases.forEach(database -> executor.submit(generateTask(database)));
     }
 
-    public void submitTaskByDataSources(@NonNull ConnectionConfig dataSource) {
+    public void submitTaskByDataSource(@NonNull ConnectionConfig dataSource) {
         List<Database> databases = databaseService.listExistDatabasesByConnectionId(dataSource.getId());
-        databases.removeIf(e -> e.getObjectSyncStatus() == DBObjectSyncStatus.PENDING);
-        if (CollectionUtils.isEmpty(databases)) {
-            return;
-        }
-        Set<Long> databaseIds = databases.stream().map(Database::getId).collect(Collectors.toSet());
-        databaseService.updateObjectSyncStatus(databaseIds, DBObjectSyncStatus.PENDING);
-        databases.forEach(database -> executor.submit(generateTask(database)));
+        databases.removeIf(e -> syncProperties.getExcludeSchemas(dataSource.getDialectType()).contains(e.getName())
+                || e.getObjectSyncStatus() == DBObjectSyncStatus.PENDING);
+        submitTaskByDatabases(databases);
     }
 
     private Callable<Void> generateTask(@NonNull Database database) {

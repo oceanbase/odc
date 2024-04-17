@@ -397,6 +397,12 @@ public class ConnectionService {
                 .map(mapper::entityToModel).collect(Collectors.toList());
     }
 
+    @SkipAuthorize("odc internal usage")
+    public List<ConnectionConfig> listByOrganizationIdIn(@NonNull Collection<Long> organizationIds) {
+        return repository.findByOrganizationIdIn(organizationIds).stream()
+                .map(mapper::entityToModel).collect(Collectors.toList());
+    }
+
     @Transactional(rollbackFor = Exception.class)
     @PreAuthenticate(hasAnyResourceRole = {"OWNER, DBA, DEVELOPER, SECURITY_ADMINISTRATOR"},
             resourceType = "ODC_PROJECT", indexOfIdParam = 0)

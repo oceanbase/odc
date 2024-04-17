@@ -794,3 +794,11 @@ INSERT INTO config_system_configuration(`key`, `value`, `description`) VALUES('o
  '0 0 2 * * ?', 'cron expression for synchronizing full database schema') ON DUPLICATE KEY UPDATE `id`=`id`;
 INSERT INTO config_system_configuration(`key`, `value`, `description`) VALUES('odc.database.schema.sync-thread-count',
  '8', 'thread count for synchronizing database schema') ON DUPLICATE KEY UPDATE `id`=`id`;
+INSERT INTO config_system_configuration(`key`, `value`, `description`) VALUES('odc.database.schema.sync.oracle-exclude-schemas',
+ 'SYS, SYSTEM, SYSMAN, SCOTT, HR, OE, SH, PM, IX, BI, ORDSYS, ORDSAMPLE, ORDDATA, MDSYS, OLAPSYS, XDB', 'schema exclusions when synchronizing Oracle database schema') ON DUPLICATE KEY UPDATE `id`=`id`;
+INSERT INTO config_system_configuration(`key`, `value`, `description`) VALUES('odc.database.schema.sync.mysql-exclude-schemas',
+ 'mysql, information_schema, test', 'schema exclusions when synchronizing MySQL database schema') ON DUPLICATE KEY UPDATE `id`=`id`;
+INSERT INTO config_system_configuration(`key`, `value`, `description`) VALUES('odc.database.schema.sync.ob-mysql-exclude-schemas',
+ 'mysql, information_schema, test, oceanbase', 'schema exclusions when synchronizing OceanBase MySQL mode database schema') ON DUPLICATE KEY UPDATE `id`=`id`;
+INSERT INTO config_system_configuration(`key`, `value`, `description`) VALUES('odc.database.schema.sync.ob-oracle-exclude-schemas',
+ 'SYS, LBACSYS, ORAAUDITOR', 'schema exclusions when synchronizing OceanBase Oracle mode database schema') ON DUPLICATE KEY UPDATE `id`=`id`;

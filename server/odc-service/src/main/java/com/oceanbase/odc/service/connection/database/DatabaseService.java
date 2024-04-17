@@ -464,7 +464,7 @@ public class DatabaseService {
         Boolean res = internalSyncDataSourceSchemas(dataSourceId);
         try {
             dbSchemaSyncTaskManager
-                    .submitTaskByDataSources(connectionService.getBasicWithoutPermissionCheck(dataSourceId));
+                    .submitTaskByDataSource(connectionService.getBasicWithoutPermissionCheck(dataSourceId));
         } catch (Exception e) {
             log.warn("Submit sync database schema task failed, dataSourceId={}", dataSourceId, e);
         }

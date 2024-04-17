@@ -15,22 +15,17 @@
  */
 package com.oceanbase.odc.service.db.schema;
 
-import java.util.Collections;
 import java.util.List;
-import java.util.Set;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
-import com.google.common.collect.Iterables;
 import com.oceanbase.odc.core.shared.constant.OrganizationType;
-import com.oceanbase.odc.metadb.connection.ConnectionConfigRepository;
 import com.oceanbase.odc.metadb.iam.OrganizationRepository;
-import com.oceanbase.odc.service.connection.database.DatabaseService;
-import com.oceanbase.odc.service.connection.database.model.Database;
-import com.oceanbase.odc.service.db.schema.model.DBObjectSyncStatus;
+import com.oceanbase.odc.service.connection.ConnectionService;
+import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -46,15 +41,10 @@ public class DBSchemaSyncScheduler {
     private DBSchemaSyncTaskManager dbSchemaSyncTaskManager;
 
     @Autowired
-    private DatabaseService databaseService;
+    private ConnectionService connectionService;
 
     @Autowired
     private OrganizationRepository organizationRepository;
-
-    @Autowired
-    private ConnectionConfigRepository connectionConfigRepository;
-
-    private static final int BATCH_SIZE = 200;
 
     @Scheduled(cron = "${odc.database.schema.sync-cron-expression:0 0 2 * * ?}")
     public void sync() {
@@ -62,23 +52,18 @@ public class DBSchemaSyncScheduler {
         if (CollectionUtils.isEmpty(teamOrgIds)) {
             return;
         }
-        Set<Long> connectionIds = connectionConfigRepository.findIdsByOrganizationIdIn(teamOrgIds);
-        if (CollectionUtils.isEmpty(connectionIds)) {
+        List<ConnectionConfig> dataSources = connectionService.listByOrganizationIdIn(teamOrgIds);
+        if (CollectionUtils.isEmpty(dataSources)) {
             return;
         }
-        List<Database> databases = databaseService.listDatabasesByConnectionIds(connectionIds);
-        databases.removeIf(e -> Boolean.FALSE.equals(e.getExisted())
-                || e.getObjectSyncStatus() == DBObjectSyncStatus.PENDING);
-        Collections.shuffle(databases);
-        try {
-            Iterable<List<Database>> partitions = Iterables.partition(databases, BATCH_SIZE);
-            for (List<Database> partition : partitions) {
-                dbSchemaSyncTaskManager.submitTaskByDatabases(partition);
+        for (ConnectionConfig dataSource : dataSources) {
+            try {
+                dbSchemaSyncTaskManager.submitTaskByDataSource(dataSource);
+            } catch (Exception e) {
+                log.warn("Submit sync database schema task failed, dataSourceId={}", dataSource.getId(), e);
             }
-            log.info("Submit sync database schema task success, dbCount: {}", databases.size());
-        } catch (Exception e) {
-            log.warn("Submit sync database schema task failed", e);
         }
+
     }
 
 }

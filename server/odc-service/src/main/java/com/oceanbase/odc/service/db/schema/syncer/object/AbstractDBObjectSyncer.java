@@ -22,7 +22,6 @@ import java.util.stream.Collectors;
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.Ordered;
-import org.springframework.transaction.annotation.Transactional;
 
 import com.oceanbase.odc.metadb.dbobject.DBColumnRepository;
 import com.oceanbase.odc.metadb.dbobject.DBObjectEntity;
@@ -46,7 +45,6 @@ public abstract class AbstractDBObjectSyncer implements DBSchemaSyncer {
     private DBColumnRepository dbColumnRepository;
 
     @Override
-    @Transactional(rollbackFor = Exception.class)
     public void sync(@NonNull DBSchemaAccessor accessor, @NonNull Database database) {
         Set<String> latestObjectNames = getLatestObjectNames(accessor, database);
         List<DBObjectEntity> existingObjects =

@@ -83,7 +83,7 @@ public class DatabaseSyncManager {
             SecurityContextUtils.setCurrentUser(creatorId, connection.getOrganizationId(), getAccountName(creatorId));
             Boolean res = databaseService.internalSyncDataSourceSchemas(connection.getId());
             try {
-                dbSchemaSyncTaskManager.submitTaskByDataSources(connection);
+                dbSchemaSyncTaskManager.submitTaskByDataSource(connection);
             } catch (Exception e) {
                 log.warn("Submit sync database schema task failed, dataSourceId={}", connection.getId(), e);
             }

@@ -47,6 +47,8 @@ public interface ConnectionConfigRepository
 
     List<ConnectionEntity> findByOrganizationId(Long organizationId);
 
+    List<ConnectionEntity> findByOrganizationIdIn(Collection<Long> organizationIds);
+
     List<ConnectionEntity> findByProjectId(Long projectId);
 
     @Transactional
@@ -83,9 +85,6 @@ public interface ConnectionConfigRepository
     @Query("SELECT e.id FROM #{#entityName} e"
             + " WHERE e.organizationId=:organizationId")
     Set<Long> findIdsByOrganizationId(@Param("organizationId") Long organizationId);
-
-    @Query("SELECT e.id FROM #{#entityName} e WHERE e.organizationId in (:organizationIds)")
-    Set<Long> findIdsByOrganizationIdIn(@Param("organizationIds") Collection<Long> organizationIds);
 
     @Query(value = "update connect_connection set `password`=:passwordEncyrpted,"
             + " sys_tenant_password=:sysTenantPasswordEncyrpted,"
