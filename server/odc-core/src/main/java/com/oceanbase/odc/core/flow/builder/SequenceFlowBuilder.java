@@ -17,8 +17,8 @@ package com.oceanbase.odc.core.flow.builder;
 
 import org.flowable.bpmn.model.SequenceFlow;
 
+import com.oceanbase.odc.common.graph.GraphEdge;
 import com.oceanbase.odc.core.flow.ProcessElementBuilder;
-import com.oceanbase.odc.core.flow.graph.GraphEdge;
 import com.oceanbase.odc.core.flow.util.FlowIdGenerators;
 
 import lombok.NonNull;

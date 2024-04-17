@@ -55,5 +55,9 @@ public class QueryConnectionParams {
     private List<String> permittedActions;
     private String hostPort;
     private String name;
+    /**
+     * Database username
+     */
+    private String username;
 
 }

@@ -139,8 +139,12 @@ public class OBMySQLSchemaAccessor extends MySQLNoLessThan5700SchemaAccessor {
             if (StringUtils.isNotBlank(tableNameLike)) {
                 queryMysqlTable.append(" and tables_in_mysql like ").value("%" + tableNameLike + "%");
             }
-            jdbcOperations.query(queryMysqlTable.toString(),
-                    (rs, num) -> results.add(DBObjectIdentity.of("mysql", DBObjectType.TABLE, rs.getString(1))));
+            try {
+                jdbcOperations.query(queryMysqlTable.toString(),
+                        (rs, num) -> results.add(DBObjectIdentity.of("mysql", DBObjectType.TABLE, rs.getString(1))));
+            } catch (Exception e) {
+                log.warn("List base tables from 'mysql' failed, reason={}", e.getMessage());
+            }
         }
         return results;
     }

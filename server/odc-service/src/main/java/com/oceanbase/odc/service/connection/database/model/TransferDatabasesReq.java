@@ -43,6 +43,5 @@ public class TransferDatabasesReq {
 
     private Long projectId;
 
-    @NonNull
     private Set<Long> ownerIds = new HashSet<>();
 }

@@ -29,7 +29,9 @@ import com.oceanbase.odc.core.shared.OrganizationIsolated;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.service.collaboration.environment.model.Environment;
 import com.oceanbase.odc.service.collaboration.project.model.Project;
+import com.oceanbase.odc.service.common.model.InnerUser;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
+import com.oceanbase.odc.service.db.schema.model.DBObjectSyncStatus;
 import com.oceanbase.odc.service.permission.database.model.DatabasePermissionType;
 
 import lombok.AllArgsConstructor;
@@ -88,18 +90,14 @@ public class Database implements SecurityResource, OrganizationIsolated, Seriali
     @JsonProperty(access = Access.READ_ONLY)
     private Set<DatabasePermissionType> authorizedPermissionTypes;
 
-    private List<DatabaseOwner> owners;
 
-    @Data
-    @NoArgsConstructor
-    @AllArgsConstructor
-    public static class DatabaseOwner {
-        private Long id;
+    @JsonProperty(access = Access.READ_ONLY)
+    private DBObjectSyncStatus objectSyncStatus;
 
-        private String accountName;
+    @JsonProperty(access = Access.READ_ONLY)
+    private Date objectLastSyncTime;
 
-        private String name;
-    }
+    private List<InnerUser> owners;
 
     @Override
     public String resourceId() {

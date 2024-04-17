@@ -72,7 +72,11 @@ public class OracleCreateIndexFactory extends OBParserBaseVisitor<CreateIndex>
         if (ctx.UNIQUE() != null) {
             index.setUnique(true);
         }
-        index.setPartition(new OraclePartitionFactory(ctx.opt_partition_option()).generate());
+        if (ctx.partition_option() != null) {
+            index.setPartition(new OraclePartitionFactory(ctx.partition_option()).generate());
+        } else if (ctx.auto_partition_option() != null) {
+            index.setPartition(new OraclePartitionFactory(ctx.auto_partition_option()).generate());
+        }
         return index;
     }
 

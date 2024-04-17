@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -167,7 +168,7 @@ public class ConnectionService {
     private ConnectProperties connectProperties;
 
     @Autowired
-    private ConnectionEnvironmentAdapter environmentAdapter;
+    private ConnectionAdapter environmentAdapter;
 
     @Autowired
     private ConnectionSSLAdaptor connectionSSLAdaptor;
@@ -294,6 +295,7 @@ public class ConnectionService {
                 PreConditions.notNull(connection.getPassword(), "connection.password");
             } else {
                 connection.setPassword(null);
+                connection.setPasswordEncrypted(null);
             }
             connectionEncryption.encryptPasswords(connection);
 
@@ -359,7 +361,9 @@ public class ConnectionService {
 
     @PreAuthenticate(actions = "read", resourceType = "ODC_CONNECTION", indexOfIdParam = 0)
     public ConnectionConfig detail(@NotNull Long id) {
-        return getWithoutPermissionCheck(id);
+        ConnectionConfig conn = getWithoutPermissionCheck(id);
+        conn.setDbObjectLastSyncTime(getEarliestObjectSyncTime(conn.getId()));
+        return conn;
     }
 
     @Transactional(rollbackFor = Exception.class)
@@ -588,6 +592,9 @@ public class ConnectionService {
                                     new Object[] {connection.getName()}, "same datasource name exists");
                         }
                     });
+            if (Boolean.FALSE.equals(connection.getPasswordSaved())) {
+                connection.setPassword(null);
+            }
             connectionEncryption.encryptPasswords(connection);
             connection.fillEncryptedPasswordFromSavedIfNull(saved);
 
@@ -747,6 +754,9 @@ public class ConnectionService {
                 .and(ConnectionSpecs.nameLike(params.getName()));
         if (CollectionUtils.isNotEmpty(params.getIds())) {
             spec = spec.and(ConnectionSpecs.idIn(params.getIds()));
+        }
+        if (Objects.nonNull(params.getUsername())) {
+            spec = spec.and(ConnectionSpecs.usernameEqual(params.getUsername()));
         }
         spec = spec.and(ConnectionSpecs.sort(pageable.getSort()));
         Pageable page = pageable.equals(Pageable.unpaged()) ? pageable
@@ -950,6 +960,18 @@ public class ConnectionService {
         if (Objects.nonNull(properties) && StringUtils.equals(properties.get("maskHost"), "true")) {
             connection.setHost("trial_connection_host");
         }
+    }
+
+    private Date getEarliestObjectSyncTime(@NotNull Long connectionId) {
+        List<DatabaseEntity> entities = databaseRepository.findByConnectionIdAndExisted(connectionId, true);
+        if (CollectionUtils.isEmpty(entities)) {
+            return null;
+        }
+        Set<Date> syncTimes = entities.stream().map(DatabaseEntity::getObjectLastSyncTime).collect(Collectors.toSet());
+        if (syncTimes.contains(null)) {
+            return null;
+        }
+        return syncTimes.stream().min(Date::compareTo).orElse(null);
     }
 
 }

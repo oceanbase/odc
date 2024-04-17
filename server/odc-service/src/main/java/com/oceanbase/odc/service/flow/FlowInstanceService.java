@@ -156,6 +156,8 @@ import com.oceanbase.odc.service.notification.NotificationProperties;
 import com.oceanbase.odc.service.notification.helper.EventBuilder;
 import com.oceanbase.odc.service.notification.model.Event;
 import com.oceanbase.odc.service.permission.database.DatabasePermissionHelper;
+import com.oceanbase.odc.service.permission.database.model.ApplyDatabaseParameter;
+import com.oceanbase.odc.service.permission.database.model.ApplyDatabaseParameter.ApplyDatabase;
 import com.oceanbase.odc.service.permission.database.model.DatabasePermissionType;
 import com.oceanbase.odc.service.permission.table.TablePermissionService;
 import com.oceanbase.odc.service.regulation.approval.model.ApprovalFlowConfig;
@@ -268,6 +270,7 @@ public class FlowInstanceService {
     private static final long MAX_EXPORT_OBJECT_COUNT = 10000;
     private static final String ODC_SITE_URL = "odc.site.url";
     private String environmentName;
+    private static final int MAX_APPLY_DATABASE_SIZE = 10;
 
     @PostConstruct
     public void init() {
@@ -312,6 +315,26 @@ public class FlowInstanceService {
     @EnablePreprocess
     @Transactional(rollbackFor = Throwable.class, propagation = Propagation.REQUIRED)
     public List<FlowInstanceDetailResp> create(@NotNull @Valid CreateFlowInstanceReq createReq) {
+        if (createReq.getTaskType() == TaskType.APPLY_DATABASE_PERMISSION) {
+            ApplyDatabaseParameter parameter = (ApplyDatabaseParameter) createReq.getParameters();
+            List<ApplyDatabase> databases = new ArrayList<>(parameter.getDatabases());
+            if (CollectionUtils.isNotEmpty(databases) && databases.size() > MAX_APPLY_DATABASE_SIZE) {
+                throw new IllegalStateException("The number of databases to apply for exceeds the maximum limit");
+            }
+            return databases.stream().map(e -> {
+                List<ApplyDatabase> applyDatabases = new ArrayList<>();
+                applyDatabases.add(e);
+                parameter.setDatabases(applyDatabases);
+                createReq.setDatabaseId(e.getId());
+                createReq.setParameters(parameter);
+                return innerCreate(createReq);
+            }).collect(Collectors.toList()).stream().flatMap(Collection::stream).collect(Collectors.toList());
+        } else {
+            return innerCreate(createReq);
+        }
+    }
+
+    private List<FlowInstanceDetailResp> innerCreate(@NotNull @Valid CreateFlowInstanceReq createReq) {
         // TODO 原终止逻辑想表达的语意是终止执行中的计划，但目前线上的语意是终止审批流。暂保留逻辑，待前端修改后删除。
         checkCreateFlowInstancePermission(createReq);
         if (createReq.getTaskType() == TaskType.ALTER_SCHEDULE) {
@@ -925,7 +948,6 @@ public class FlowInstanceService {
                         targetConfigurer);
             }
             flowInstance.buildTopology();
-
             flowInstanceReq.setId(flowInstance.getId());
         } catch (Exception e) {
             log.warn("Failed to build FlowInstance, flowInstanceReq={}", flowInstanceReq, e);
@@ -985,7 +1007,6 @@ public class FlowInstanceService {
             if (Objects.nonNull(resourceRoleId)) {
                 Long candidateResourceId;
                 Optional<ResourceRoleEntity> resourceRole = resourceRoleService.findResourceRoleById(resourceRoleId);
-
                 if (resourceRole.isPresent() && resourceRole.get().getResourceType() == ResourceType.ODC_DATABASE) {
                     candidateResourceId = flowInstanceReq.getDatabaseId();
                 } else {
@@ -1082,9 +1103,9 @@ public class FlowInstanceService {
         TemplateVariables variables = new TemplateVariables();
         // set task url
         String odcTaskUrl = String.format(
-                "#/task?taskId=%d&taskType=%s&organizationId=%s",
-                flowInstanceReq.getId(), flowInstanceReq.getTaskType().toString(),
-                authenticationFacade.currentOrganizationId());
+            "#/task?taskId=%d&taskType=%s&organizationId=%s",
+            flowInstanceReq.getId(), flowInstanceReq.getTaskType().toString(),
+            authenticationFacade.currentOrganizationId());
         variables.setAttribute(Variable.ODC_TASK_URL, odcTaskUrl);
         // set user related variables
         variables.setAttribute(Variable.USER_ID, authenticationFacade.currentUserId());
@@ -1108,14 +1129,14 @@ public class FlowInstanceService {
         }
         // set project owner related variables
         List<UserResourceRole> projectUserResourceRole = resourceRoleService.getUserIdsByResourceIdAndTypeAndName(
-                flowInstanceReq.getProjectId(), ResourceType.ODC_PROJECT,
-                "OWNER");
+            flowInstanceReq.getProjectId(), ResourceType.ODC_PROJECT,
+            "OWNER");
         List<User> projectOwnerUsers = projectUserResourceRole.stream()
-                .map(userResourceRole -> {
-                    User user = userService.deailById(userResourceRole.getUserId());
-                    return user;
-                })
-                .collect(Collectors.toList());
+            .map(userResourceRole -> {
+                User user = userService.deailById(userResourceRole.getUserId());
+                return user;
+            })
+            .collect(Collectors.toList());
         List<Long> projectOwnerIds = new ArrayList<>();
         List<String> projectOwnerAccounts = new ArrayList<>();
         List<String> projectOwnerNames = new ArrayList<>();
@@ -1136,13 +1157,13 @@ public class FlowInstanceService {
             String environmentNameKey = database.getEnvironment().getName();
             if (StringUtils.isTranslatable(environmentNameKey)) {
                 String environmentName =
-                        I18n.translate(StringUtils.getTranslatableKey(environmentNameKey), null,
-                                LocaleContextHolder.getLocale());
+                    I18n.translate(StringUtils.getTranslatableKey(environmentNameKey), null,
+                        LocaleContextHolder.getLocale());
                 variables.setAttribute(Variable.ENVIRONMENT_NAME, environmentName);
             } ;
             variables.setAttribute(Variable.DATABASE_NAME, database.getName());
             GetDatabaseOwnerResp databasesOwner =
-                    databaseService.getDatabasesOwner(flowInstanceReq.getProjectId(), database.getId());
+                databaseService.getDatabasesOwner(flowInstanceReq.getProjectId(), database.getId());
             if (Objects.nonNull(databasesOwner)) {
                 List<Long> ownerIds = databasesOwner.getMembers().stream().map(member -> {
                     return member.getId();
@@ -1171,7 +1192,7 @@ public class FlowInstanceService {
             variables.setAttribute(Variable.SQL_CONTENT, JsonUtils.toJson(params.getSqlContent()));
             if (StringUtils.isNotBlank(params.getSqlContent())) {
                 List<String> splitSqlList =
-                        SqlUtils.split(config.getDialectType(), params.getSqlContent(), params.getDelimiter());
+                    SqlUtils.split(config.getDialectType(), params.getSqlContent(), params.getDelimiter());
                 variables.setAttribute(Variable.SQL_CONTENT_JSON_ARRAY, JsonUtils.toJson(splitSqlList));
             }
         } else {

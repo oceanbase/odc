@@ -29,6 +29,7 @@ import com.oceanbase.odc.core.flow.BaseFlowableDelegate;
 import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.core.shared.constant.FlowStatus;
 import com.oceanbase.odc.metadb.flow.FlowInstanceRepository;
+import com.oceanbase.odc.metadb.regulation.risklevel.RiskLevelEntity;
 import com.oceanbase.odc.metadb.regulation.risklevel.RiskLevelRepository;
 import com.oceanbase.odc.service.flow.FlowableAdaptor;
 import com.oceanbase.odc.service.flow.instance.FlowApprovalInstance;
@@ -62,9 +63,9 @@ public class CreateExternalApprovalTask extends BaseFlowableDelegate {
     private FlowInstanceRepository flowInstanceRepository;
     @Autowired
     private RiskLevelService riskLevelService;
-
     @Autowired
-    RiskLevelRepository riskLevelRepository;
+    private RiskLevelRepository riskLevelRepository;
+
     private final RetryExecutor retryExecutor = RetryExecutor.builder().retryIntervalMillis(1000).retryTimes(3).build();
 
     @Override
@@ -90,17 +91,17 @@ public class CreateExternalApprovalTask extends BaseFlowableDelegate {
             IntegrationConfig config = integrationService.detailWithoutPermissionCheck(externalApprovalId);
             ApprovalProperties properties = ApprovalProperties.from(config);
             TemplateVariables variables = FlowTaskUtil.getTemplateVariables(execution.getVariables());
-
             // add riskLevel to variables
-            String riskLevelNameKey =
-                    riskLevelService.findRawById(Long.valueOf(FlowTaskUtil.getRiskLevel(execution))).get().getName();
-            if (StringUtils.isTranslatable(riskLevelNameKey)) {
-                String riskLevelName =
-                        I18n.translate(StringUtils.getTranslatableKey(riskLevelNameKey), null,
-                                LocaleContextHolder.getLocale());
-                variables.setAttribute(Variable.RISK_LEVEL, riskLevelName);
-            } ;
-
+            Optional<RiskLevelEntity> riskLevelOpt =
+                    riskLevelRepository.findById(Long.valueOf(FlowTaskUtil.getRiskLevel(execution)));
+            if (riskLevelOpt.isPresent()) {
+                String riskLevelNameKey = riskLevelOpt.get().getName();
+                if (StringUtils.isTranslatable(riskLevelNameKey)) {
+                    String riskLevelName = I18n.translate(StringUtils.getTranslatableKey(riskLevelNameKey), null,
+                            LocaleContextHolder.getLocale());
+                    variables.setAttribute(Variable.RISK_LEVEL, riskLevelName);
+                }
+            }
             String externalFlowInstanceId = approvalClient.start(properties, variables);
             flowApprovalInstance.setExternalFlowInstanceId(externalFlowInstanceId);
             flowApprovalInstance.update();

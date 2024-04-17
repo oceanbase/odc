@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.core.flow.graph;
+package com.oceanbase.odc.common.graph;
 
 import java.util.LinkedList;
 import java.util.List;

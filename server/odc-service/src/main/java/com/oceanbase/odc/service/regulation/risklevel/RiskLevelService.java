@@ -117,10 +117,6 @@ public class RiskLevelService {
         return riskLevelRepository.findById(id).map(this::entityToModel);
     }
 
-    @SkipAuthorize("internal usage")
-    public Optional<RiskLevel> findRawById(@NonNull Long id) {
-        return riskLevelRepository.findById(id).map(this::rawEntityToModel);
-    }
 
     @SkipAuthorize("internal usage")
     public boolean exists(@NonNull Long organizationId, @NonNull Long id) {
@@ -154,11 +150,6 @@ public class RiskLevelService {
     private RiskLevel entityToModel(RiskLevelEntity entity) {
         RiskLevel model = riskLevelMapper.entityToModel(entity);
         model.setApprovalFlowConfig(approvalFlowConfigService.findById(entity.getApprovalFlowConfigId()));
-        return model;
-    }
-
-    private RiskLevel rawEntityToModel(RiskLevelEntity entity) {
-        RiskLevel model = riskLevelMapper.entityToModel(entity);
         return model;
     }
 }

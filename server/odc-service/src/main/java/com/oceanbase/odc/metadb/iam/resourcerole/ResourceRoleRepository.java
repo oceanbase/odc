@@ -29,6 +29,4 @@ public interface ResourceRoleRepository
     List<ResourceRoleEntity> findByResourceType(ResourceType resourceType);
 
     List<ResourceRoleEntity> findByResourceTypeIn(List<ResourceType> resourceType);
-
-    ResourceRoleEntity findByResourceTypeAndRoleName(ResourceType resourceType, ResourceRoleName roleName);
 }
