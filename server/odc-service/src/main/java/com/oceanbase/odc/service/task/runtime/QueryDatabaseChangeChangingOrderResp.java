@@ -20,7 +20,7 @@ import java.util.List;
 import lombok.Data;
 
 @Data
-public class QueryDatabaseChangeChangineOrderResp {
+public class QueryDatabaseChangeChangingOrderResp {
 
     private Long id;
 
@@ -34,6 +34,5 @@ public class QueryDatabaseChangeChangineOrderResp {
      * 数据库编排顺序 [[{},{}],[{},{}]]
      */
     private List<List> databaseSequenceList;
-
 
 }

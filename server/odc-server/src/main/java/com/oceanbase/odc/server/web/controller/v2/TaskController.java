@@ -37,7 +37,7 @@ import com.oceanbase.odc.service.datasecurity.DataMaskingService;
 import com.oceanbase.odc.service.task.executor.server.HeartRequest;
 import com.oceanbase.odc.service.task.executor.task.DefaultTaskResult;
 import com.oceanbase.odc.service.task.runtime.CreateDatabaseChangeChangingOrderReq;
-import com.oceanbase.odc.service.task.runtime.QueryDatabaseChangeChangineOrderResp;
+import com.oceanbase.odc.service.task.runtime.QueryDatabaseChangeChangingOrderResp;
 import com.oceanbase.odc.service.task.runtime.QuerySensitiveColumnReq;
 import com.oceanbase.odc.service.task.runtime.QuerySensitiveColumnResp;
 import com.oceanbase.odc.service.task.service.DatabaseChangeChangingOrderTemplateService;
@@ -97,13 +97,13 @@ public class TaskController {
 
     @ApiOperation(value = "queryDatabaseTemplateById", notes = "根据id查询模版详情")
     @GetMapping("/databasechange/changingorder/templates/{id:[\\d]+}")
-    public SuccessResponse<QueryDatabaseChangeChangineOrderResp> queryDatabaseTemplateById(@PathVariable Long id) {
+    public SuccessResponse<QueryDatabaseChangeChangingOrderResp> queryDatabaseTemplateById(@PathVariable Long id) {
         return Responses.success(databaseChangeChangingOrderTemplateService.queryDatabaseTemplateById(id));
     }
 
     @ApiOperation(value = "listDatabaseTemplate", notes = "获取模版列表")
     @GetMapping("/databasechange/changingorder/templates")
-    public PaginatedResponse<QueryDatabaseChangeChangineOrderResp> listDatabaseTemplate(
+    public PaginatedResponse<QueryDatabaseChangeChangingOrderResp> listDatabaseTemplate(
             @PageableDefault(size = Integer.MAX_VALUE, sort = {"id"}, direction = Direction.DESC) Pageable pageable) {
         return Responses.paginated(databaseChangeChangingOrderTemplateService.listDatabaseTemplate(pageable));
     }

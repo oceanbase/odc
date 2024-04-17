@@ -151,10 +151,7 @@ public class ConnectSessionController {
     @ApiOperation(value = "sqlCheck", notes = "对多个sql 脚本的内容进行静态检查")
     @PostMapping("sessions/sqlCheck")
     public ListResponse<CheckResult> multipleCheck(@RequestBody MultipleSqlCheckReq req) {
-        for (String sessionId : req.getSessionIds()) {
-            ConnectionSession connectionSession = sessionService.nullSafeGet(SidUtils.getSessionId(sessionId), true);
-        }
-        return null;
+        throw new RuntimeException("本次pr暂不实现，交由后续pr提交");
     }
 
     /**
