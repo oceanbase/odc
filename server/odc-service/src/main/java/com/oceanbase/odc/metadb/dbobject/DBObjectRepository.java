@@ -38,21 +38,6 @@ public interface DBObjectRepository extends OdcJpaRepository<DBObjectEntity, Lon
 
     List<DBObjectEntity> findByDatabaseIdAndType(Long databaseId, DBObjectType type);
 
-    @Transactional
-    @Query(value = "select t.* from database_schema_object as t where t.database_id in (:databaseIds) and "
-            + "t.name like :nameKey order by t.database_id desc LIMIT 1000;",
-            nativeQuery = true)
-    List<DBObjectEntity> findTop1000ByDatabaseIdInAndNameLike(@Param("databaseIds") Collection<Long> databaseIds,
-            @Param("nameKey") String nameKey);
-
-    @Transactional
-    @Query(value = "select t.* from database_schema_object as t where t.database_id in (:databaseIds) and "
-            + "t.type in (:types) and t.name like :nameKey order by t.database_id desc LIMIT 1000;",
-            nativeQuery = true)
-    List<DBObjectEntity> findTop1000ByDatabaseIdInAndTypeInAndNameLike(
-            @Param("databaseIds") Collection<Long> databaseIds, @Param("types") Collection<String> types,
-            @Param("nameKey") String nameKey);
-
     @Modifying
     @Transactional
     @Query(value = "delete from database_schema_object t where t.id in (:ids)", nativeQuery = true)

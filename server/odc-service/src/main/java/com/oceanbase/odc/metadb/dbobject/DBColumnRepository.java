@@ -36,13 +36,6 @@ public interface DBColumnRepository extends OdcJpaRepository<DBColumnEntity, Lon
 
     List<DBColumnEntity> findByDatabaseIdAndObjectIdIn(Long databaseId, Collection<Long> objectIds);
 
-    @Transactional
-    @Query(value = "select t.* from database_schema_column as t where t.database_id in (:databaseIds) and "
-            + "t.name like :nameKey order by t.database_id desc, t.object_id desc LIMIT 1000;",
-            nativeQuery = true)
-    List<DBColumnEntity> findTop1000ByDatabaseIdInAndNameLike(@Param("databaseIds") Collection<Long> databaseIds,
-            @Param("nameKey") String nameKey);
-
     @Modifying
     @Transactional
     @Query(value = "delete from database_schema_column t where t.id in (:ids)", nativeQuery = true)
