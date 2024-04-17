@@ -304,6 +304,8 @@ public class UserService {
         PreConditions.notBlank(createUserReq.getName(), "user.name");
         PreConditions.notBlank(createUserReq.getAccountName(), "user.accountName");
         PreConditions.notBlank(createUserReq.getPassword(), "user.password");
+        PreConditions.validPassword(createUserReq.getPassword());
+
         Optional<UserEntity> sameAccountNameUser = userRepository.findByAccountName(createUserReq.getAccountName());
         PreConditions.validNoDuplicated(ResourceType.ODC_USER, "accountName", createUserReq.getAccountName(),
                 sameAccountNameUser::isPresent);
