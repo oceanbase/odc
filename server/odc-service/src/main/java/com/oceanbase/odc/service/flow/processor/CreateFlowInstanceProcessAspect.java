@@ -175,7 +175,7 @@ public class CreateFlowInstanceProcessAspect implements InitializingBean {
     private void adaptDatabaseCreateFlowInstanceReqForMultiple(CreateFlowInstanceReq req) {
 
         MultipleDatabaseChangeParameters parameters = (MultipleDatabaseChangeParameters) req.getParameters();
-        // todo 耗时多
+        // todo 耗时
         List<Database> databases = (List<Database>) parameters.getOrderedDatabaseIds().stream().flatMap(List::stream)
                 .map(
                         x -> databaseService.detail(Long.valueOf(x.toString())))
@@ -189,7 +189,6 @@ public class CreateFlowInstanceProcessAspect implements InitializingBean {
         req.setProjectId(project.getId());
         req.setProjectName(
                 project.getName());
-
         DescriptionGenerator.generateDescription(req);
     }
 

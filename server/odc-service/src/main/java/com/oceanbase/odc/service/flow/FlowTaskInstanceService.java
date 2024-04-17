@@ -739,10 +739,12 @@ public class FlowTaskInstanceService {
             return Optional.empty();
         }
         /**
-         * todo 限制任务流程节点实例唯一，多库需要改
+         * The other types of taskInstances are limited to unique, except for the MULTIPLE_ASYNC
          */
-        Verify.singleton(taskInstances, "TaskInstances");
-
+        FlowInstanceDetailResp detail = flowInstanceService.detail(flowInstanceId);
+        if (detail != null && detail.getType() != TaskType.MULTIPLE_ASYNC) {
+            Verify.singleton(taskInstances, "TaskInstances");
+        }
         FlowTaskInstance flowTaskInstance = taskInstances.get(0);
         Long targetTaskId = flowTaskInstance.getTargetTaskId();
         Verify.notNull(targetTaskId, "TargetTaskId can not be null");

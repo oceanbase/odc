@@ -747,7 +747,6 @@ public class FlowInstanceService {
 
         Set<Long> taskIds = entities.stream().filter(entity -> entity.getTargetTaskId() != null)
                 .map(ServiceTaskInstanceEntity::getTargetTaskId).collect(Collectors.toSet());
-        // todo 多库需要修改
         Verify.singleton(taskIds, "Multi task for one instance is not allowed, id " + id);
         Long taskId = taskIds.iterator().next();
         return taskService.detail(taskId);
@@ -936,14 +935,7 @@ public class FlowInstanceService {
         }).map(x -> taskService.create(x, (int) TimeUnit.SECONDS
                 .convert(flowTaskProperties.getDefaultExecutionExpirationIntervalHours(), TimeUnit.HOURS))).collect(
                         Collectors.toList());
-
-        /*
-         * List<TaskEntity> taskEntities = new ArrayList<>(); for (long i = 0; i <
-         * parameters.getOrderedDatabaseIds().size(); i++) { parameters.setBatchId(i); TaskEntity taskEntity
-         * = taskService.create(flowInstanceReq, (int) TimeUnit.SECONDS
-         * .convert(flowTaskProperties.getDefaultExecutionExpirationIntervalHours(), TimeUnit.HOURS));
-         * Verify.notNull(taskEntity.getId(), "TaskId can not be null"); taskEntities.add(taskEntity); }
-         */
+        // 生成任务实体
         TaskEntity taskEntity = taskService.create(flowInstanceReq, (int) TimeUnit.SECONDS
                 .convert(flowTaskProperties.getDefaultExecutionExpirationIntervalHours(), TimeUnit.HOURS));
         Verify.notNull(taskEntity.getId(), "TaskId can not be null");
@@ -956,16 +948,31 @@ public class FlowInstanceService {
         Verify.notNull(flowInstance.getId(), "FlowInstance id can not be null");
 
         try {
-            // 生成多个预检查的任务节点
-            FlowTaskInstance riskDetectInstance = flowFactory.generateFlowTaskInstance(flowInstance.getId(), true,
-                    false, TaskType.PRE_CHECK,
-                    ExecutionStrategyConfig.autoStrategy());
-            riskDetectInstance.setTargetTaskId(preCheckTaskEntityList.get(0).getId());
-            FlowGatewayInstance riskLevelGateway =
-                    flowFactory.generateFlowGatewayInstance(flowInstance.getId(), false, true);
-            FlowInstanceConfigurer startConfigurer =
-                    flowInstance.newFlowInstance().next(riskDetectInstance).next(riskLevelGateway);
-            // 为每个风险生成对应的审批流程和任务节点，风险网关使用排他网管
+            // todo 生成多个sql预检查的任务节点
+            FlowInstanceConfigurer startConfigurer = flowInstance.newFlowInstance();
+            for (int i = 0; i < preCheckTaskEntityList.size(); i++) {
+                FlowTaskInstance riskDetectInstance;
+                if (i == 0) {
+                    riskDetectInstance = flowFactory.generateFlowTaskInstance(flowInstance.getId(), true,
+                            false, TaskType.PRE_CHECK,
+                            ExecutionStrategyConfig.autoStrategy());
+                } else {
+                    riskDetectInstance = flowFactory.generateFlowTaskInstance(flowInstance.getId(), false,
+                            false, TaskType.PRE_CHECK,
+                            ExecutionStrategyConfig.autoStrategy());
+                }
+
+                riskDetectInstance.setTargetTaskId(preCheckTaskEntityList.get(i).getId());
+                startConfigurer.next(riskDetectInstance);
+                // 最后一个节点生成风险等级网关
+                if (i == preCheckTaskEntityList.size() - 1) {
+                    FlowGatewayInstance riskLevelGateway =
+                            flowFactory.generateFlowGatewayInstance(flowInstance.getId(), false, true);
+                    startConfigurer.next(riskLevelGateway);
+                }
+            }
+
+            // 根据风险等级生成对应的审批流程和任务节点，风险网关使用排他网管
             for (int i = 0; i < riskLevels.size(); i++) {
                 // 分批次创建和编排任务节点
                 FlowInstanceConfigurer targetConfigurer =
@@ -984,7 +991,7 @@ public class FlowInstanceService {
         } finally {
             flowInstance.dealloc();
         }
-        // todo 流程变量需要改进，目前采用单库的实现
+        // todo 流程变量需要改进，目前采用单库的设置
         Map<String, Object> variables = new HashMap<>();
         FlowTaskUtil.setFlowInstanceId(variables, flowInstance.getId());
         FlowTaskUtil.setTemplateVariables(variables, buildTemplateVariables(flowInstanceReq,

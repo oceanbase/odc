@@ -111,7 +111,8 @@ public enum TaskType implements Translatable {
     }
 
     public boolean needsPreCheck() {
-        return this == ASYNC || this == ONLINE_SCHEMA_CHANGE || this == ALTER_SCHEDULE || this == EXPORT_RESULT_SET;
+        return this == ASYNC || this == ONLINE_SCHEMA_CHANGE || this == ALTER_SCHEDULE || this == EXPORT_RESULT_SET
+                || this == MULTIPLE_ASYNC;
     }
 
     public boolean needForExecutionStrategy() {

@@ -51,6 +51,7 @@ import com.oceanbase.odc.metadb.task.TaskSpecs;
 import com.oceanbase.odc.service.common.model.HostProperties;
 import com.oceanbase.odc.service.flow.model.CreateFlowInstanceReq;
 import com.oceanbase.odc.service.flow.model.QueryTaskInstanceParams;
+import com.oceanbase.odc.service.flow.task.model.MultipleDatabaseChangeParameters;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.task.model.ExecutorInfo;
 import com.oceanbase.odc.service.task.model.OdcTaskLogLevel;
@@ -78,6 +79,7 @@ public class TaskService {
     private HostProperties properties;
 
     private static String logFilePrefix;
+    private static final String MULTIPLE_ASYNC_LOG_PATH_PATTERN = "%s/multiple-async/%d/%s/multiple-asynctask.%s";
     private static final String ASYNC_LOG_PATH_PATTERN = "%s/async/%d/%s/asynctask.%s";
     private static final String MOCKDATA_LOG_PATH_PATTERN = "%s/data-mocker/%s/ob-mocker.%s";
     private static final String DATATRANSFER_LOG_PATH_PATTERN = "%s/data-transfer/%s/ob-loader-dumper.%s";
@@ -206,6 +208,10 @@ public class TaskService {
             throws NotFoundException {
         String filePath;
         switch (type) {
+            case MULTIPLE_ASYNC:
+                filePath = String.format(MULTIPLE_ASYNC_LOG_PATH_PATTERN, logFilePrefix, userId, taskId,
+                    logLevel.name().toLowerCase());
+                break;
             case ASYNC:
                 filePath = String.format(ASYNC_LOG_PATH_PATTERN, logFilePrefix, userId, taskId,
                         logLevel.name().toLowerCase());
@@ -275,8 +281,20 @@ public class TaskService {
     @Transactional(rollbackFor = Exception.class)
     public void succeed(Long id, Object taskResult) {
         TaskEntity taskEntity = nullSafeFindById(id);
-        taskEntity.setStatus(TaskStatus.DONE);
-        taskEntity.setProgressPercentage(100);
+        // 多库需要修改
+        if(taskEntity.getTaskType()== TaskType.MULTIPLE_ASYNC){
+            MultipleDatabaseChangeParameters multipleDatabaseChangeParameters = JsonUtils.fromJson(
+                taskEntity.getParametersJson(), MultipleDatabaseChangeParameters.class);
+            Integer batchId = multipleDatabaseChangeParameters.getBatchId();
+            int size = multipleDatabaseChangeParameters.getOrderedDatabaseIds().size();
+            taskEntity.setProgressPercentage((double) batchId*100/size);
+            if(batchId==size){
+                taskEntity.setStatus(TaskStatus.DONE);
+            }
+        }else {
+            taskEntity.setStatus(TaskStatus.DONE);
+            taskEntity.setProgressPercentage(100);
+        }
         taskEntity.setResultJson(JsonUtils.toJson(taskResult));
         taskRepository.save(taskEntity);
         log.info("Task ended: taskId={}", id);

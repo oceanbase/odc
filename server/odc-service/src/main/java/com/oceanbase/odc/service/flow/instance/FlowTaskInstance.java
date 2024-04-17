@@ -284,7 +284,7 @@ public class FlowTaskInstance extends BaseFlowNodeInstance {
         List<Task> tasks = taskService.createTaskQuery().processInstanceId(pid).list().stream()
                 .filter(t -> elements.stream().anyMatch(e -> Objects.equals(e.getName(), t.getName())))
                 .collect(Collectors.toList());
-        // todo 暂时关闭
+        // todo
         Verify.verify(tasks.size() == elements.size(), "Some tasks is not found");
         Map<String, Object> variables = new HashMap<>();
         variables.putIfAbsent(ABORT_VARIABLE_NAME, aborted);
