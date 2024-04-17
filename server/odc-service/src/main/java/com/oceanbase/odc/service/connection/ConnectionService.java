@@ -242,17 +242,26 @@ public class ConnectionService {
         return saved;
     }
 
-    @Transactional(rollbackFor = Exception.class)
     @PreAuthenticate(actions = "create", resourceType = "ODC_CONNECTION", isForAll = true)
     public List<ConnectionConfig> batchCreate(@NotEmpty @Valid List<ConnectionConfig> connections) {
+        TransactionDefinition transactionDefinition = new DefaultTransactionDefinition();
+        TransactionStatus transactionStatus = transactionManager.getTransaction(transactionDefinition);
         List<ConnectionConfig> connectionConfigs = new ArrayList<>();
-        for (ConnectionConfig connection : connections) {
-            ConnectionConfig saved = innerCreate(connection, currentUserId(), false);
-            databaseSyncManager.submitSyncDataSourceAndDBSchemaTask(saved);
-            userPermissionService.bindUserAndDataSourcePermission(currentUserId(), currentOrganizationId(),
-                    saved.getId(),
-                    Arrays.asList("read", "update", "delete"));
-            connectionConfigs.add(saved);
+        try {
+            for (ConnectionConfig connection : connections) {
+                ConnectionConfig saved = innerCreate(connection, currentUserId(), false);
+                userPermissionService.bindUserAndDataSourcePermission(currentUserId(), currentOrganizationId(),
+                        saved.getId(),
+                        Arrays.asList("read", "update", "delete"));
+                connectionConfigs.add(saved);
+            }
+            transactionManager.commit(transactionStatus);
+        } catch (Exception e) {
+            transactionManager.rollback(transactionStatus);
+            throw e;
+        }
+        for (ConnectionConfig connection : connectionConfigs) {
+            databaseSyncManager.submitSyncDataSourceAndDBSchemaTask(connection);
         }
         return connectionConfigs;
     }
