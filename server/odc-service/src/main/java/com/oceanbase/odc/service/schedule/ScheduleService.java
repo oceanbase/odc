@@ -245,7 +245,7 @@ public class ScheduleService {
             if (database == null || !database.getExisted()) {
                 try {
                     log.info(
-                            "The database for scheduled task operation does not exist, and the schedule is being terminated.scheduleId={}",
+                            "The database for scheduled task operation does not exist, and the schedule is being terminated, scheduleId={}",
                             scheduleId);
                     terminate(scheduleEntityOptional.get());
                 } catch (SchedulerException e) {
