@@ -41,7 +41,7 @@ function create_node_env() {
         return 6
     fi
 
-    if ! npm install -g pnpm; then
+    if ! npm install -g pnpm@8; then
         echo "install pnpm failed"
         return 7
     fi
