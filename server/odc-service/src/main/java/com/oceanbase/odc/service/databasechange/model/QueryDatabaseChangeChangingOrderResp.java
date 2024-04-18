@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 OceanBase.
+ * Copyright (c) 2024 OceanBase.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,27 +13,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.task.runtime;
+package com.oceanbase.odc.service.databasechange.model;
 
 import java.util.List;
 
-import javax.validation.constraints.NotBlank;
-import javax.validation.constraints.NotEmpty;
+import com.oceanbase.odc.metadb.connection.DatabaseEntity;
 
 import lombok.Data;
 
 @Data
-public class CreateDatabaseChangeChangingOrderReq {
+public class QueryDatabaseChangeChangingOrderResp {
 
     private Long id;
 
-    @NotBlank
     private String name;
 
-    /**
-     * [[1,2],[3,4]]，json转换成list
-     */
-    @NotEmpty
-    private List<List> orders;
+    private Long creatorId;
+
+    private Long organizationId;
+
+    private List<List<DatabaseEntity>> databaseSequenceList;
 
 }

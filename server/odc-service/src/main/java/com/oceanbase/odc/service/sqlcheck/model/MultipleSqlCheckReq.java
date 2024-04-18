@@ -25,11 +25,10 @@ import lombok.Data;
 @Data
 public class MultipleSqlCheckReq {
 
-    private List<String> sessionIds;
+    private List<Long> databaseIds;
     @NotBlank
     private String scriptContent;
     @NotNull
     private String delimiter;
-    private List<String> schemaName;
 
 }

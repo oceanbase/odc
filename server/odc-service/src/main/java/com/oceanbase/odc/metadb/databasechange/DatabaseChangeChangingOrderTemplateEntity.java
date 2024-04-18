@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 OceanBase.
+ * Copyright (c) 2024 OceanBase.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,11 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.metadb.task;
+package com.oceanbase.odc.metadb.databasechange;
 
 import java.util.Date;
+import java.util.List;
 
 import javax.persistence.Column;
+import javax.persistence.Convert;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
@@ -26,6 +28,8 @@ import javax.persistence.Table;
 
 import org.hibernate.annotations.Generated;
 import org.hibernate.annotations.GenerationTime;
+
+import com.oceanbase.odc.common.jpa.JsonListConverter;
 
 import lombok.Data;
 
@@ -49,7 +53,8 @@ public class DatabaseChangeChangingOrderTemplateEntity {
     private Long organizationId;
 
     @Column(name = "database_sequences", nullable = false)
-    private String databaseSequences;
+    @Convert(converter = JsonListConverter.class)
+    private List<List<Long>> databaseSequences;
 
     @Generated(GenerationTime.ALWAYS)
     @Column(name = "create_time", insertable = false, updatable = false)

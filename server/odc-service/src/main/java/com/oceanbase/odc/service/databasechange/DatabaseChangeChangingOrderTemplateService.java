@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 OceanBase.
+ * Copyright (c) 2024 OceanBase.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.task.service;
+package com.oceanbase.odc.service.databasechange;
 
 import javax.validation.Valid;
 import javax.validation.constraints.Min;
@@ -27,32 +27,39 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
 
-import com.oceanbase.odc.service.task.runtime.CreateDatabaseChangeChangingOrderReq;
-import com.oceanbase.odc.service.task.runtime.QueryDatabaseChangeChangingOrderResp;
+import com.oceanbase.odc.core.shared.exception.NotImplementedException;
+import com.oceanbase.odc.service.databasechange.model.CreateDatabaseChangeChangingOrderReq;
+import com.oceanbase.odc.service.databasechange.model.QueryDatabaseChangeChangingOrderResp;
 
 @Service
 @Validated
 public class DatabaseChangeChangingOrderTemplateService {
 
     @Transactional
-    public Boolean createOrModifyDatabaseTemplate(
+    public Boolean createDatabaseChangingOrderTemplate(
             @NotNull @Valid CreateDatabaseChangeChangingOrderReq req) {
-        throw new RuntimeException("本次pr暂不实现，交由后续pr提交");
-    }
-
-    public QueryDatabaseChangeChangingOrderResp queryDatabaseTemplateById(@NotNull @Min(value = 0) Long id) {
-        throw new RuntimeException("本次pr暂不实现，交由后续pr提交");
-    }
-
-
-    public Page<QueryDatabaseChangeChangingOrderResp> listDatabaseTemplate(
-            @PageableDefault(size = Integer.MAX_VALUE, sort = {"id"}, direction = Direction.DESC) Pageable pageable) {
-        throw new RuntimeException("本次pr暂不实现，交由后续pr提交");
+        throw new NotImplementedException("Unsupported now");
     }
 
     @Transactional
-    public Boolean deleteDatabseTemplateById(@NotNull @Min(value = 0) Long id) {
-        throw new RuntimeException("本次pr暂不实现，交由后续pr提交");
+    public Boolean modifyDatabaseChangingOrderTemplate(
+        @NotNull @Valid CreateDatabaseChangeChangingOrderReq req) {
+        throw new NotImplementedException("Unsupported now");
+    }
+
+    public QueryDatabaseChangeChangingOrderResp queryDatabaseChangingOrderTemplateById(@NotNull @Min(value = 0) Long id) {
+        throw new NotImplementedException("Unsupported now");
+    }
+
+
+    public Page<QueryDatabaseChangeChangingOrderResp> listDatabaseChangingOrderTemplates(
+            @PageableDefault(size = Integer.MAX_VALUE, sort = {"id"}, direction = Direction.DESC) Pageable pageable) {
+        throw new NotImplementedException("Unsupported now");
+    }
+
+    @Transactional
+    public Boolean deleteDatabaseChangingOrderTemplateById(@NotNull @Min(value = 0) Long id) {
+        throw new NotImplementedException("Unsupported now");
     }
 
 }

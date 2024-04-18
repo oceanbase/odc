@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 OceanBase.
+ * Copyright (c) 2024 OceanBase.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.metadb.task;
+package com.oceanbase.odc.metadb.databasechange;
 
 import java.util.List;
 import java.util.Optional;
@@ -37,7 +37,7 @@ public interface DatabaseChangeChangingOrderTemplateRepository
 
     Optional<DatabaseChangeChangingOrderTemplateEntity> findByIdAndCreatorId(Long id, Long creatorId);
 
-    Optional<List<DatabaseChangeChangingOrderTemplateEntity>> findByNameAndCreatorId(String name, Long creatorId);
+    List<DatabaseChangeChangingOrderTemplateEntity> findByNameAndCreatorId(String name, Long creatorId);
 
     void deleteByIdAndCreatorId(Long id, Long creatorId);
 
