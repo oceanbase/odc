@@ -113,6 +113,7 @@ public class ImmediateJobDispatcher implements JobDispatcher {
         podConfig.setMaxNodeCount(k8s.getMaxNodeCount());
         podConfig.setNodeCpu(k8s.getNodeCpu());
         podConfig.setNodeMemInMB(k8s.getNodeMemInMB());
+        podConfig.setPodPendingTimeoutSeconds(k8s.getPodPendingTimeoutSeconds());
         return podConfig;
     }
 
