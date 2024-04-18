@@ -32,6 +32,7 @@ import com.oceanbase.odc.core.migrate.JdbcMigratable;
 import com.oceanbase.odc.core.migrate.Migratable;
 import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.core.shared.Verify;
+import com.oceanbase.odc.core.shared.exception.HttpException;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -62,7 +63,15 @@ public class V4131InitialPasswordMigrate implements JdbcMigratable {
             log.info("Environment variable 'ODC_ADMIN_INITIAL_PASSWORD' not set, skip initial password");
             return;
         }
-        PreConditions.validPassword(initialPassword);
+        try {
+            PreConditions.validPassword(initialPassword);
+        } catch (HttpException ex) {
+            log.warn("Invalid initial password!  {}", ex.getLocalizedMessage());
+            log.info("Please correct value of environment variable 'ODC_ADMIN_INITIAL_PASSWORD', "
+                    + "try start ODC Server again.");
+            throw ex;
+        }
+
         String encodedPassword = PASSWORD_ENCODER.encode(initialPassword);
 
         TransactionTemplate txTemplate = new TransactionTemplate(new DataSourceTransactionManager(dataSource));
