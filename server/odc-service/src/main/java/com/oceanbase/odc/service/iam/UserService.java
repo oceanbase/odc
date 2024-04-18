@@ -42,6 +42,7 @@ import javax.validation.constraints.NotNull;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang.Validate;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -60,7 +61,6 @@ import org.springframework.validation.annotation.Validated;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.LoadingCache;
 import com.google.common.base.MoreObjects;
-import com.oceanbase.odc.common.security.PasswordUtils;
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.authority.permission.Permission;
 import com.oceanbase.odc.core.authority.permission.ResourcePermission;
@@ -71,7 +71,6 @@ import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.core.shared.constant.Cipher;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
-import com.oceanbase.odc.core.shared.constant.OdcConstants;
 import com.oceanbase.odc.core.shared.constant.PermissionType;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.core.shared.constant.RoleType;
@@ -96,6 +95,7 @@ import com.oceanbase.odc.metadb.iam.UserRoleEntity;
 import com.oceanbase.odc.metadb.iam.UserRoleRepository;
 import com.oceanbase.odc.metadb.iam.UserSpecs;
 import com.oceanbase.odc.service.automation.model.TriggerEvent;
+import com.oceanbase.odc.service.collaboration.project.ProjectService;
 import com.oceanbase.odc.service.common.response.CustomPage;
 import com.oceanbase.odc.service.common.response.PaginatedData;
 import com.oceanbase.odc.service.common.util.SpringContextUtil;
@@ -176,6 +176,12 @@ public class UserService {
     @Autowired
     private UserOrganizationService userOrganizationService;
 
+    @Autowired
+    private ProjectService projectService;
+
+    @Value("${odc.integration.bastion.enabled:false}")
+    private boolean bastionEnabled;
+
     private final PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
     private final List<Consumer<PasswordChangeEvent>> postPasswordChangeHooks = new ArrayList<>();
     private final List<Consumer<UserDeleteEvent>> postUserDeleteHooks = new ArrayList<>();
@@ -192,44 +198,59 @@ public class UserService {
                     .build(key -> new FailedLoginAttemptLimiter(FAILED_LOGIN_ATTEMPT_TIMES,
                             FAILED_LOGIN_ATTEMPT_LOCK_TIMEOUT));
 
+    /**
+     * Create user if not exists, or update user if extraPropertiesJson is different
+     * 
+     * @param userEntity user entity, must not be null
+     * @param roleNames role names, only for create new user
+     * @return created or updated user
+     */
     @SkipAuthorize("odc internal usage")
     @Transactional(rollbackFor = Exception.class)
-    public User createUserIfNotExists(Long organizationId, String accountName, String name, List<String> roleNames) {
-        Optional<UserEntity> userEntityOptional = userRepository.findByAccountName(accountName);
-        if (userEntityOptional.isPresent()) {
-            log.info("User already exists, accountName={}", accountName);
-            return new User(userEntityOptional.get());
-        }
-        UserEntity userEntity = initUser(organizationId, accountName, name);
-        userRepository.saveAndFlush(userEntity);
-        UserEntity userEntityCreated = userRepository.findByAccountName(userEntity.getAccountName()).get();
-        Long userId = userEntityCreated.getId();
-        User user = new User(userEntityCreated);
-        if (Objects.nonNull(roleNames)) {
-            List<Long> roleIds = new ArrayList<>();
-            List<Role> roles = new ArrayList<>();
-            for (String roleName : roleNames) {
-                Optional<RoleEntity> roleEntity = roleRepository.findByNameAndOrganizationId(roleName, organizationId);
-                PreConditions.validExists(ResourceType.ODC_ROLE, "roleName", roleName, roleEntity::isPresent);
-                PreConditions.validArgumentState(roleEntity.get().getType() != RoleType.INTERNAL,
-                        ErrorCodes.BadArgument,
-                        new Object[] {"Internal role does not allow operation"},
-                        "Internal role does not allow operation");
-                Long roleId = roleEntity.get().getId();
-                UserRoleEntity userRoleEntity = new UserRoleEntity();
-                userRoleEntity.setUserId(userId);
-                userRoleEntity.setRoleId(roleId);
-                userRoleEntity.setOrganizationId(organizationId);
-                userRoleEntity.setCreatorId(OdcConstants.DEFAULT_ADMIN_USER_ID);
-                userRoleRepository.saveAndFlush(userRoleEntity);
-
-                roleIds.add(roleId);
-                roles.add(new Role(roleEntity.get()));
+    public User createIfNotExistsOrUpdate(UserEntity userEntity, List<String> roleNames) {
+        User user;
+        Optional<UserEntity> optionalUser = userRepository.findByAccountName(userEntity.getAccountName());
+        if (optionalUser.isPresent()) {
+            User existed = new User(optionalUser.get());
+            if (!Objects.equals(existed.getExtraProperties(), userEntity.getExtraPropertiesJson())) {
+                user = save(userEntity);
+                log.info("Update user extra properties successfully, accountName={}, new properties={}",
+                        user.getAccountName(), user.getExtraProperties());
+            } else {
+                user = existed;
+                log.info("User already exists, accountName={}", existed.getAccountName());
             }
-            user.setRoleIds(roleIds);
-            user.setRoles(roles);
+        } else {
+            user = save(userEntity);
+            if (CollectionUtils.isNotEmpty(roleNames)) {
+                List<Long> roleIds = new ArrayList<>();
+                List<Role> roles = new ArrayList<>();
+                for (String roleName : roleNames) {
+                    RoleEntity roleEntity =
+                            roleRepository.findByNameAndOrganizationId(roleName, user.getOrganizationId())
+                                    .orElseThrow(() -> new NotFoundException(ResourceType.ODC_ROLE, "name", roleName));
+                    PreConditions.validArgumentState(roleEntity.getType() != RoleType.INTERNAL, ErrorCodes.BadArgument,
+                            new Object[] {"Internal role does not allow operation"},
+                            "Internal role does not allow operation");
+                    Long roleId = roleEntity.getId();
+                    UserRoleEntity userRoleEntity = new UserRoleEntity();
+                    userRoleEntity.setUserId(user.getId());
+                    userRoleEntity.setRoleId(roleId);
+                    userRoleEntity.setOrganizationId(user.getOrganizationId());
+                    userRoleEntity.setCreatorId(user.getId());
+                    userRoleRepository.saveAndFlush(userRoleEntity);
+                    roleIds.add(roleId);
+                    roles.add(new Role(roleEntity));
+                }
+                user.setRoleIds(roleIds);
+                user.setRoles(roles);
+                log.info("Create user successfully, accountName={}", userEntity.getAccountName());
+            }
         }
-        log.info("Created user successfully, organizationId={}, accountName={}", organizationId, accountName);
+        // Check if the project is valid when enabling bastion integration
+        if (bastionEnabled) {
+            projectService.createProjectIfNotExists(user);
+        }
         return user;
     }
 
@@ -274,27 +295,6 @@ public class UserService {
     @SkipAuthorize("for exists name judge while create user")
     public boolean exists(String accountName) {
         return userRepository.findByAccountName(accountName).isPresent();
-    }
-
-    private UserEntity initUser(Long organizationId, String accountName, String name) {
-        PreConditions.notNull(organizationId, "organizationId");
-        PreConditions.notBlank(accountName, "accountName");
-        PreConditions.notBlank(name, "name");
-        UserEntity userEntity = new UserEntity();
-        userEntity.setType(UserType.USER);
-        userEntity.setAccountName(accountName);
-        userEntity.setName(name);
-        userEntity.setPassword(encodePassword(PasswordUtils.random()));
-        userEntity.setEnabled(true);
-        userEntity.setCipher(Cipher.BCRYPT);
-        userEntity.setActive(true);
-        userEntity.setCreatorId(OdcConstants.DEFAULT_ADMIN_USER_ID);
-        userEntity.setBuiltIn(false);
-        userEntity.setOrganizationId(organizationId);
-        userEntity.setDescription("Auto generated user");
-        userEntity.setUserCreateTime(new Timestamp(System.currentTimeMillis()));
-        userEntity.setUserUpdateTime(new Timestamp(System.currentTimeMillis()));
-        return userEntity;
     }
 
     @Transactional(rollbackFor = Exception.class)

@@ -133,6 +133,11 @@ public class ProjectService {
 
     private final ProjectMapper projectMapper = ProjectMapper.INSTANCE;
 
+    /**
+     * Create a built-in project for bastion user if not exists
+     * 
+     * @param user bastion user
+     */
     @SkipAuthorize("odc internal usage")
     @Transactional(rollbackFor = Exception.class)
     public void createProjectIfNotExists(@NotNull User user) {

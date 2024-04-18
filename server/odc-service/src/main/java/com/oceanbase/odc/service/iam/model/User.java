@@ -25,6 +25,8 @@ import java.util.Set;
 
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.core.oidc.OidcIdToken;
 import org.springframework.security.oauth2.core.oidc.OidcUserInfo;
 import org.springframework.security.oauth2.core.oidc.user.OidcUser;
@@ -33,15 +35,19 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonProperty.Access;
 import com.oceanbase.odc.common.json.SensitiveInput;
+import com.oceanbase.odc.common.security.PasswordUtils;
 import com.oceanbase.odc.core.authority.model.SecurityResource;
 import com.oceanbase.odc.core.shared.OrganizationIsolated;
 import com.oceanbase.odc.core.shared.PreConditions;
+import com.oceanbase.odc.core.shared.constant.Cipher;
+import com.oceanbase.odc.core.shared.constant.OdcConstants;
 import com.oceanbase.odc.core.shared.constant.OrganizationType;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.core.shared.constant.UserType;
 import com.oceanbase.odc.metadb.iam.UserEntity;
 
 import lombok.Data;
+import lombok.NonNull;
 import lombok.ToString;
 
 /**
@@ -53,6 +59,7 @@ import lombok.ToString;
 @ToString(exclude = {"password"})
 public class User implements Principal, UserDetails, SecurityResource, OrganizationIsolated, OidcUser {
     private static final long serialVersionUID = -7525670432276629968L;
+    private static final PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
     @JsonProperty(access = Access.READ_ONLY)
     private Long id;
@@ -145,6 +152,23 @@ public class User implements Principal, UserDetails, SecurityResource, Organizat
         this.loginTime = userEntity.getLastLoginTime();
         this.builtIn = userEntity.getBuiltIn();
         this.extraProperties = userEntity.getExtraPropertiesJson();
+    }
+
+    public static UserEntity innerEntity(@NonNull String account, @NonNull String name, @NonNull Long organizationId) {
+        UserEntity userEntity = new UserEntity();
+        userEntity.setType(UserType.USER);
+        userEntity.setAccountName(account);
+        userEntity.setName(name);
+        userEntity.setPassword(passwordEncoder.encode(PasswordUtils.random()));
+        userEntity.setCipher(Cipher.BCRYPT);
+        userEntity.setEnabled(true);
+        userEntity.setActive(true);
+        userEntity.setBuiltIn(false);
+        userEntity.setCreatorId(OdcConstants.DEFAULT_ADMIN_USER_ID);
+        userEntity.setOrganizationId(organizationId);
+        userEntity.setUserCreateTime(new Timestamp(System.currentTimeMillis()));
+        userEntity.setUserUpdateTime(new Timestamp(System.currentTimeMillis()));
+        return userEntity;
     }
 
     @Override
