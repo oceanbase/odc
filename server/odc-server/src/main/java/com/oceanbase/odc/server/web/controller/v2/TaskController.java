@@ -73,5 +73,4 @@ public class TaskController {
     public SuccessResponse<QuerySensitiveColumnResp> querySensitiveColumn(@RequestBody QuerySensitiveColumnReq req) {
         return Responses.success(dataMaskingService.querySensitiveColumn(req));
     }
-
 }
