@@ -45,4 +45,8 @@ public abstract class HttpException extends OdcException implements HttpError {
         return getErrorCode().getLocalizedMessage(args);
     }
 
+    public String getEnglishMessage() {
+        return getErrorCode().getEnglishMessage(args);
+    }
+
 }

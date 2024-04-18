@@ -66,7 +66,7 @@ public class V4131InitialPasswordMigrate implements JdbcMigratable {
         try {
             PreConditions.validPassword(initialPassword);
         } catch (HttpException ex) {
-            log.warn("Invalid initial password!  {}", ex.getLocalizedMessage());
+            log.warn("Invalid initial password!  {}", ex.getEnglishMessage());
             log.info("Please correct value of environment variable 'ODC_ADMIN_INITIAL_PASSWORD', "
                     + "try start ODC Server again.");
             throw ex;
