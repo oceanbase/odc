@@ -24,7 +24,7 @@ import com.oceanbase.odc.common.util.VersionUtils;
 import com.oceanbase.odc.core.shared.exception.UnsupportedException;
 import com.oceanbase.odc.plugin.connect.doris.DorisInformationExtension;
 import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
-import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessors;
+import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessorGenerator;
 import com.oceanbase.tools.dbbrowser.stats.DBStatsAccessor;
 import com.oceanbase.tools.dbbrowser.stats.mysql.DorisStatsAccessor;
 
@@ -40,7 +40,7 @@ public class DBAccessorUtil {
     }
 
     public static DBSchemaAccessor getSchemaAccessor(Connection connection) {
-        return DBSchemaAccessors.createForDoris(JdbcOperationsUtil.getJdbcOperations(connection),
+        return DBSchemaAccessorGenerator.createForDoris(JdbcOperationsUtil.getJdbcOperations(connection),
                 getDbVersion(connection));
     }
 

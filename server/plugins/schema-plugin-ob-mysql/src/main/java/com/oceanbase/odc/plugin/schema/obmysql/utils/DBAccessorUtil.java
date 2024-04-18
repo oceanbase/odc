@@ -21,7 +21,7 @@ import com.oceanbase.odc.common.util.JdbcOperationsUtil;
 import com.oceanbase.odc.plugin.connect.obmysql.OBMySQLInformationExtension;
 import com.oceanbase.odc.plugin.schema.obmysql.browser.DBStatsAccessors;
 import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
-import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessors;
+import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessorGenerator;
 import com.oceanbase.tools.dbbrowser.stats.DBStatsAccessor;
 
 /**
@@ -39,7 +39,7 @@ public class DBAccessorUtil {
          * sysJdbcOperations and tenantName is only used in getPartition method, this method will not be
          * called in plugin, so we just set it null here.
          */
-        return DBSchemaAccessors.createForOBMySQL(JdbcOperationsUtil.getJdbcOperations(connection), null,
+        return DBSchemaAccessorGenerator.createForOBMySQL(JdbcOperationsUtil.getJdbcOperations(connection), null,
                 getDbVersion(connection), null);
     }
 

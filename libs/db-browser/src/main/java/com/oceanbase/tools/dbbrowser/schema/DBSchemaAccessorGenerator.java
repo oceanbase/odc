@@ -40,7 +40,7 @@ import lombok.NonNull;
  * @author jingtian
  * @date 2024/4/16
  */
-public class DBSchemaAccessors {
+public class DBSchemaAccessorGenerator {
     public static DBSchemaAccessor createForOBOracle(@NonNull JdbcOperations jdbcOperations,
             @NonNull String dbVersion) {
         if (VersionUtils.isGreaterThanOrEqualsTo(dbVersion, "4.1.0")) {
