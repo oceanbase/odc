@@ -31,6 +31,7 @@ import javax.servlet.http.HttpServletResponse;
 import org.apache.commons.lang.Validate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.web.authentication.SavedRequestAwareAuthenticationSuccessHandler;
@@ -44,6 +45,7 @@ import com.oceanbase.odc.core.shared.constant.OrganizationType;
 import com.oceanbase.odc.metadb.iam.OrganizationRepository;
 import com.oceanbase.odc.service.automation.model.TriggerEvent;
 import com.oceanbase.odc.service.collaboration.OrganizationResourceMigrator;
+import com.oceanbase.odc.service.collaboration.project.ProjectService;
 import com.oceanbase.odc.service.common.response.Responses;
 import com.oceanbase.odc.service.common.response.SuccessResponse;
 import com.oceanbase.odc.service.common.util.SpringContextUtil;
@@ -73,6 +75,12 @@ public class CustomAuthenticationSuccessHandler extends SavedRequestAwareAuthent
     @Autowired
     @Qualifier("organizationResourceMigrator")
     private OrganizationResourceMigrator organizationResourceMigrator;
+
+    @Autowired
+    private ProjectService projectService;
+
+    @Value("${odc.integration.bastion.enabled:false}")
+    private boolean bastionEnabled;
 
     private final OrganizationMapper organizationMapper = OrganizationMapper.INSTANCE;
     private final SecurityManager securityManager;
@@ -114,6 +122,10 @@ public class CustomAuthenticationSuccessHandler extends SavedRequestAwareAuthent
             user.setOrganizationId(team.getId());
             user.setOrganizationType(OrganizationType.TEAM);
             SecurityContextUtils.switchCurrentUserOrganization(user, team, httpServletRequest, true);
+            // If bastion is enabled, every user must hold a built-in project for create temporary SQL console
+            if (bastionEnabled) {
+                projectService.createProjectIfNotExists(user);
+            }
         }
 
         // Login logic for Security Framework

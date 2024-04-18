@@ -42,8 +42,6 @@ import javax.validation.constraints.NotNull;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang.Validate;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.annotation.Lazy;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -96,7 +94,6 @@ import com.oceanbase.odc.metadb.iam.UserRoleEntity;
 import com.oceanbase.odc.metadb.iam.UserRoleRepository;
 import com.oceanbase.odc.metadb.iam.UserSpecs;
 import com.oceanbase.odc.service.automation.model.TriggerEvent;
-import com.oceanbase.odc.service.collaboration.project.ProjectService;
 import com.oceanbase.odc.service.common.response.CustomPage;
 import com.oceanbase.odc.service.common.response.PaginatedData;
 import com.oceanbase.odc.service.common.util.SpringContextUtil;
@@ -177,13 +174,6 @@ public class UserService {
     @Autowired
     private UserOrganizationService userOrganizationService;
 
-    @Autowired
-    @Lazy
-    private ProjectService projectService;
-
-    @Value("${odc.integration.bastion.enabled:false}")
-    private boolean bastionEnabled;
-
     private final PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
     private final List<Consumer<PasswordChangeEvent>> postPasswordChangeHooks = new ArrayList<>();
     private final List<Consumer<UserDeleteEvent>> postUserDeleteHooks = new ArrayList<>();
@@ -248,10 +238,6 @@ public class UserService {
                 user.setRoles(roles);
                 log.info("Create user successfully, accountName={}", userEntity.getAccountName());
             }
-        }
-        // Check if the project is valid when enabling bastion integration
-        if (bastionEnabled) {
-            projectService.createProjectIfNotExists(user);
         }
         return user;
     }
@@ -375,6 +361,7 @@ public class UserService {
 
         UserDeleteEvent event = new UserDeleteEvent();
         event.setUserId(id);
+        event.setAccountName(userEntity.getAccountName());
         event.setOrganizationId(authenticationFacade.currentOrganizationId());
         for (Consumer<UserDeleteEvent> hook : preUserDeleteHooks) {
             hook.accept(event);
@@ -887,6 +874,7 @@ public class UserService {
     public static class UserDeleteEvent {
         private Long organizationId;
         private Long userId;
+        private String accountName;
     }
 
     private void inspectVerticalUnauthorized(User operator, List<Long> roleIdsToBeAttached) {
