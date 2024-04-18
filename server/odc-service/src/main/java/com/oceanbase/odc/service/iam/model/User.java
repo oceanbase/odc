@@ -154,7 +154,8 @@ public class User implements Principal, UserDetails, SecurityResource, Organizat
         this.extraProperties = userEntity.getExtraPropertiesJson();
     }
 
-    public static UserEntity innerEntity(@NonNull String account, @NonNull String name, @NonNull Long organizationId) {
+    public static UserEntity autoCreatedUserEntity(@NonNull String account, @NonNull String name,
+            @NonNull Long organizationId) {
         UserEntity userEntity = new UserEntity();
         userEntity.setType(UserType.USER);
         userEntity.setAccountName(account);

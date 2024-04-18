@@ -57,7 +57,7 @@ public class BastionUserDetailService implements AuthenticationUserDetailsServic
         String username = bastionAccount.getUsername();
         String nickName = bastionAccount.getNickName();
         TraceContextHolder.setAccountName(username);
-        UserEntity entity = User.innerEntity(username, nickName, OdcConstants.DEFAULT_ORGANIZATION_ID);
+        UserEntity entity = User.autoCreatedUserEntity(username, nickName, OdcConstants.DEFAULT_ORGANIZATION_ID);
         entity.setDescription("Auto generated user for bastion integration");
         User user = userService.createIfNotExistsOrUpdate(entity, null);
         TraceContextHolder.setUserId(user.getId());

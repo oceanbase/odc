@@ -56,7 +56,7 @@ public class PlaysiteUserDetailService
         String accountName = token.getName();
         // 如果是新用户，则用 passportId 作为 accountName 创建一个新的 ODC 用户
         // 官网账号 API 不提供昵称，使用 accountName 作为 name
-        UserEntity entity = User.innerEntity(accountName, accountName, OdcConstants.DEFAULT_ORGANIZATION_ID);
+        UserEntity entity = User.autoCreatedUserEntity(accountName, accountName, OdcConstants.DEFAULT_ORGANIZATION_ID);
         entity.setDescription("Auto generated user for play site");
         User user = userService.createIfNotExistsOrUpdate(entity, null);
         TraceContextHolder.setUserId(user.getId());
