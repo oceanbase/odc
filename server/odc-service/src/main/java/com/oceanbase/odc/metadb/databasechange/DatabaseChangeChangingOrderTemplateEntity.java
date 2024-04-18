@@ -35,7 +35,7 @@ import lombok.Data;
 
 @Data
 @Entity
-@Table(name = "task_databasechange_changingorder_template")
+@Table(name = "databasechange_changingorder_template")
 public class DatabaseChangeChangingOrderTemplateEntity {
 
     @Id
@@ -51,6 +51,9 @@ public class DatabaseChangeChangingOrderTemplateEntity {
 
     @Column(name = "organization_id", nullable = false)
     private Long organizationId;
+
+    @Column(name = "project_id", nullable = false)
+    private Long projectId;
 
     @Column(name = "database_sequences", nullable = false)
     @Convert(converter = JsonListConverter.class)
