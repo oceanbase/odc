@@ -136,7 +136,7 @@ jobs:
           echo "Start build front static resources"
           pushd client
           echo "Run npm install pnpm -g"
-          npm install pnpm -g
+          npm install pnpm@8 -g
           echo "Run pnpm install"
           pnpm install
           echo "Run npm run build:odc"
