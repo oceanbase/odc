@@ -763,12 +763,13 @@ public class UserService {
      * change password only refer to current user
      */
     @Transactional(rollbackFor = Exception.class)
-    public User changePassword(ChangePasswordReq changePasswordReq) {
+    public User changePassword(ChangePasswordReq req) {
+        PreConditions.validPassword(req.getNewPassword());
         UserEntity userEntity;
-        if (changePasswordReq.getUsername() != null) {
-            userEntity = nullSafeGet(changePasswordReq.getUsername());
+        if (req.getUsername() != null) {
+            userEntity = nullSafeGet(req.getUsername());
             PreConditions.validRequestState(
-                    !passwordEncoder.matches(changePasswordReq.getNewPassword(), userEntity.getPassword()),
+                    !passwordEncoder.matches(req.getNewPassword(), userEntity.getPassword()),
                     ErrorCodes.UserIllegalNewPassword, new Object[] {},
                     "New password has to be different from old password");
             SecurityContextUtils.setCurrentUser(new User(userEntity));
@@ -780,12 +781,12 @@ public class UserService {
         FailedLoginAttemptLimiter attemptLimiter = userIdChangePasswordAttamptCache.get(userEntity.getId());
         Verify.notNull(attemptLimiter, "AttemptLimiter");
         Boolean validateResult = attemptLimiter.attempt(
-                () -> passwordEncoder.matches(changePasswordReq.getCurrentPassword(), userEntity.getPassword()));
+                () -> passwordEncoder.matches(req.getCurrentPassword(), userEntity.getPassword()));
         PreConditions.validRequestState(validateResult, ErrorCodes.UserWrongPasswordOrNotFound,
                 new Object[] {attemptLimiter.getRemainAttempt() < 0 ? "unlimited" : attemptLimiter.getRemainAttempt()},
                 "currentPassword is not correct");
 
-        userEntity.setPassword(encodePassword(changePasswordReq.getNewPassword()));
+        userEntity.setPassword(encodePassword(req.getNewPassword()));
         userEntity.setActive(true);
         userRepository.updatePassword(userEntity);
 
@@ -824,6 +825,7 @@ public class UserService {
         permissionValidator.checkCurrentOrganization(new User(userEntity));
         String previousPassword = userEntity.getPassword();
 
+        PreConditions.validPassword(password);
         userEntity.setPassword(encodePassword(password));
         userRepository.updatePassword(userEntity);
         userEntity.setActive(false);
