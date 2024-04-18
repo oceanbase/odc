@@ -90,7 +90,7 @@ public class ChannelConfigValidator {
         Verify.verify(
                 channelConfig.getWebhook().startsWith("http://") || channelConfig.getWebhook().startsWith("https://"),
                 "Webhook should start with 'http://' or 'https://'");
-        Verify.verify(SSRFChecker.checkUrlInWhiteList(channelConfig.getWebhook(),
+        Verify.verify(SSRFChecker.checkUrlInWhiteListStrictly(channelConfig.getWebhook(),
                 integrationConfigProperties.getUrlWhiteList()),
                 "The webhook is not in white list, please add it into system configuration with the key 'odc.integration.url-white-list'");
 
