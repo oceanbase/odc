@@ -15,11 +15,6 @@
  */
 package com.oceanbase.odc.metadb.databasechange;
 
-import java.util.List;
-import java.util.Optional;
-
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.stereotype.Repository;
@@ -29,18 +24,4 @@ public interface DatabaseChangeChangingOrderTemplateRepository
         extends JpaRepository<DatabaseChangeChangingOrderTemplateEntity, Long>,
         JpaSpecificationExecutor<DatabaseChangeChangingOrderTemplateEntity> {
 
-
-    Boolean existsByNameAndCreatorId(String name, Long creatorId);
-
-    Boolean existsByIdAndCreatorId(Long id, Long creatorId);
-
-
-    Optional<DatabaseChangeChangingOrderTemplateEntity> findByIdAndCreatorId(Long id, Long creatorId);
-
-    List<DatabaseChangeChangingOrderTemplateEntity> findByNameAndCreatorId(String name, Long creatorId);
-
-    void deleteByIdAndCreatorId(Long id, Long creatorId);
-
-
-    Page<DatabaseChangeChangingOrderTemplateEntity> findByCreatorId(Long creatorId, Pageable pageable);
 }

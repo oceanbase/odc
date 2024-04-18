@@ -30,6 +30,8 @@ public class QueryDatabaseChangeChangingOrderResp {
 
     private Long creatorId;
 
+    private Long projectId;
+
     private Long organizationId;
 
     private List<List<DatabaseEntity>> databaseSequenceList;
