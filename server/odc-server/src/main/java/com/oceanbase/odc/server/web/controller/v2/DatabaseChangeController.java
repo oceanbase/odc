@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 OceanBase.
+ * Copyright (c) 2023 OceanBase.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.oceanbase.odc.server.web.controller.v2;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,9 +31,9 @@ import org.springframework.web.bind.annotation.RestController;
 import com.oceanbase.odc.service.common.response.PaginatedResponse;
 import com.oceanbase.odc.service.common.response.Responses;
 import com.oceanbase.odc.service.common.response.SuccessResponse;
+import com.oceanbase.odc.service.databasechange.DatabaseChangeChangingOrderTemplateService;
 import com.oceanbase.odc.service.databasechange.model.CreateDatabaseChangeChangingOrderReq;
 import com.oceanbase.odc.service.databasechange.model.QueryDatabaseChangeChangingOrderResp;
-import com.oceanbase.odc.service.databasechange.DatabaseChangeChangingOrderTemplateService;
 
 import io.swagger.annotations.ApiOperation;
 import lombok.extern.slf4j.Slf4j;
@@ -53,33 +52,41 @@ public class DatabaseChangeController {
     @ApiOperation(value = "createDatabaseChangingOrderTemplate", notes = "create database changing order template")
     @PostMapping("/changingorder/templates")
     public SuccessResponse<Boolean> createDatabaseChangingOrderTemplate(
-        @RequestBody CreateDatabaseChangeChangingOrderReq req) {
+            @RequestBody CreateDatabaseChangeChangingOrderReq req) {
         return Responses.success(databaseChangeChangingOrderTemplateService.createDatabaseChangingOrderTemplate(req));
     }
 
-    @ApiOperation(value = "modifyDatabaseChangingOrderTemplate/{id:[\\d]+}", notes = "modify database changing order template")
+    @ApiOperation(value = "modifyDatabaseChangingOrderTemplate/{id:[\\d]+}",
+            notes = "modify database changing order template")
     @PutMapping("/changingorder/templates/{id:[\\d]+}")
     public SuccessResponse<Boolean> modifyDatabaseChangingOrderTemplate(@PathVariable Long id,
-        @RequestBody CreateDatabaseChangeChangingOrderReq req) {
+            @RequestBody CreateDatabaseChangeChangingOrderReq req) {
         return Responses.success(databaseChangeChangingOrderTemplateService.modifyDatabaseChangingOrderTemplate(req));
     }
-    @ApiOperation(value = "queryDatabaseChangingOrderTemplateById", notes = "query database changing order template's detail by id")
+
+    @ApiOperation(value = "queryDatabaseChangingOrderTemplateById",
+            notes = "query database changing order template's detail by id")
     @GetMapping("/changingorder/templates/{id:[\\d]+}")
-    public SuccessResponse<QueryDatabaseChangeChangingOrderResp> queryDatabaseChangingOrderTemplateById(@PathVariable Long id) {
+    public SuccessResponse<QueryDatabaseChangeChangingOrderResp> queryDatabaseChangingOrderTemplateById(
+            @PathVariable Long id) {
         return Responses.success(databaseChangeChangingOrderTemplateService.queryDatabaseChangingOrderTemplateById(id));
     }
 
-    @ApiOperation(value = "listDatabaseChangingOrderTemplates", notes = "get a list of database changing order templates")
+    @ApiOperation(value = "listDatabaseChangingOrderTemplates",
+            notes = "get a list of database changing order templates")
     @GetMapping("/changingorder/templates")
     public PaginatedResponse<QueryDatabaseChangeChangingOrderResp> listDatabaseChangingOrderTemplates(
-        @PageableDefault(size = Integer.MAX_VALUE, sort = {"id"}, direction = Direction.DESC) Pageable pageable) {
-        return Responses.paginated(databaseChangeChangingOrderTemplateService.listDatabaseChangingOrderTemplates(pageable));
+            @PageableDefault(size = Integer.MAX_VALUE, sort = {"id"}, direction = Direction.DESC) Pageable pageable) {
+        return Responses
+                .paginated(databaseChangeChangingOrderTemplateService.listDatabaseChangingOrderTemplates(pageable));
     }
 
-    @ApiOperation(value = "deleteDatabaseChangingOrderTemplateById", notes = "delete database changing order template by id")
+    @ApiOperation(value = "deleteDatabaseChangingOrderTemplateById",
+            notes = "delete database changing order template by id")
     @DeleteMapping("/changingorder/templates/{id:[\\d]+}")
     public SuccessResponse<Boolean> deleteDatabaseChangingOrderTemplateById(@PathVariable Long id) {
-        return Responses.success(databaseChangeChangingOrderTemplateService.deleteDatabaseChangingOrderTemplateById(id));
+        return Responses
+                .success(databaseChangeChangingOrderTemplateService.deleteDatabaseChangingOrderTemplateById(id));
     }
 }
 

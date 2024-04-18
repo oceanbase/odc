@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 OceanBase.
+ * Copyright (c) 2023 OceanBase.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,11 +43,12 @@ public class DatabaseChangeChangingOrderTemplateService {
 
     @Transactional
     public Boolean modifyDatabaseChangingOrderTemplate(
-        @NotNull @Valid CreateDatabaseChangeChangingOrderReq req) {
+            @NotNull @Valid CreateDatabaseChangeChangingOrderReq req) {
         throw new NotImplementedException("Unsupported now");
     }
 
-    public QueryDatabaseChangeChangingOrderResp queryDatabaseChangingOrderTemplateById(@NotNull @Min(value = 0) Long id) {
+    public QueryDatabaseChangeChangingOrderResp queryDatabaseChangingOrderTemplateById(
+            @NotNull @Min(value = 0) Long id) {
         throw new NotImplementedException("Unsupported now");
     }
 
