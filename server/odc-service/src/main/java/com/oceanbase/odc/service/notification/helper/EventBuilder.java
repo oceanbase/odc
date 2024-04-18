@@ -70,6 +70,7 @@ import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.flow.task.model.DatabaseChangeParameters;
 import com.oceanbase.odc.service.iam.UserService;
 import com.oceanbase.odc.service.iam.model.User;
+import com.oceanbase.odc.service.iam.util.SecurityContextUtils;
 import com.oceanbase.odc.service.notification.model.Event;
 import com.oceanbase.odc.service.notification.model.EventLabels;
 import com.oceanbase.odc.service.notification.model.EventStatus;
@@ -254,7 +255,15 @@ public class EventBuilder {
 
     private <T> void resolveLabels(EventLabels labels, T task) {
         Verify.notNull(labels, "event.labels");
-
+        if (labels.containsKey(CREATOR_ID)) {
+            try {
+                UserEntity user = userService.nullSafeGet(labels.getLongFromString(CREATOR_ID));
+                labels.putIfNonNull(CREATOR_NAME, user.getName());
+                SecurityContextUtils.setCurrentUser(new User(user));
+            } catch (Exception e) {
+                log.warn("failed to query creator info.", e);
+            }
+        }
         if (labels.containsKey(CONNECTION_ID)) {
             try {
                 ConnectionConfig connectionConfig = connectionService.getForConnectionSkipPermissionCheck(
@@ -266,14 +275,6 @@ public class EventBuilder {
                 labels.put(ENVIRONMENT, environment.getName());
             } catch (Exception e) {
                 log.warn("failed to query connection info.", e);
-            }
-        }
-        if (labels.containsKey(CREATOR_ID)) {
-            try {
-                UserEntity user = userService.nullSafeGet(labels.getLongFromString(CREATOR_ID));
-                labels.putIfNonNull(CREATOR_NAME, user.getName());
-            } catch (Exception e) {
-                log.warn("failed to query creator info.", e);
             }
         }
         if (labels.containsKey(APPROVER_ID)) {
@@ -334,6 +335,7 @@ public class EventBuilder {
         } catch (Exception e) {
             log.warn("failed to get ticket url.", e);
         }
+        SecurityContextUtils.clear();
     }
 
     private <T> String getTicketUrl(EventLabels labels, T task) {
