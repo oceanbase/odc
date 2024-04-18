@@ -144,7 +144,7 @@ public class ConnectSessionController {
     @StatefulRoute(stateName = StateName.DB_SESSION, stateIdExpression = "#sessionId")
     public SuccessResponse<AsyncExecuteResultResp> getAsyncSqlExecuteV2(@PathVariable String sessionId,
             @RequestParam String requestId) {
-        return Responses.success(consoleService.getAsyncResultV2(SidUtils.getSessionId(sessionId), requestId, null));
+        return Responses.success(consoleService.getAsyncResultV2(SidUtils.getSessionId(sessionId), requestId));
     }
 
     /**

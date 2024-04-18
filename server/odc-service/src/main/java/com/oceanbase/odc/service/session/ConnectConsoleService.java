@@ -132,7 +132,6 @@ import lombok.extern.slf4j.Slf4j;
 public class ConnectConsoleService {
 
     public static final int DEFAULT_GET_RESULT_TIMEOUT_SECONDS = 3;
-    public static final int DEFAULT_GET_RESULT_TIMEOUT_SECONDS_V2 = 1;
     private final Executor queryProfileMonitor =
             Executors.newFixedThreadPool(5, r -> new Thread(r, "query-profile-monitor-" + r.hashCode()));
     @Autowired
@@ -378,10 +377,17 @@ public class ConnectConsoleService {
                 Objects.nonNull(request.getContinueExecutionOnError()) ? request.getContinueExecutionOnError()
                         : userConfigFacade.isContinueExecutionOnError();
         boolean stopOnError = !continueExecutionOnError;
-        AsyncExecuteContext executeContext =
-                new AsyncExecuteContext(connectionSession, sqlTuples, sqlInterceptService,
-                        authenticationFacade.currentUser());
-        executeContext.getContextMap().putAll(context);
+        AsyncExecuteContext<SqlExecuteResult> executeContext =
+                new AsyncExecuteContext<>(connectionSession, sqlTuples, jdbcResult -> {
+                    SqlExecuteResult res = generateResult(connectionSession, jdbcResult, context);
+                    try (TraceStage stage =
+                            res.getSqlTuple().getSqlWatch().start(SqlExecuteStages.SQL_AFTER_CHECK)) {
+                        sqlInterceptService.afterCompletion(res, connectionSession, context);
+                    } catch (Exception e) {
+                        throw new IllegalStateException(e);
+                    }
+                    return res;
+                }, authenticationFacade.currentUser(), 1100L);
         OdcStatementCallBack statementCallBack = new OdcStatementCallBack(sqlTuples, connectionSession,
                 request.getAutoCommit(), queryLimit, stopOnError, executeContext);
 
@@ -440,18 +446,12 @@ public class ConnectConsoleService {
         }
     }
 
-    public AsyncExecuteResultResp getAsyncResultV2(@NotNull String sessionId, String requestId,
-            Integer timeoutSeconds) {
+    public AsyncExecuteResultResp getAsyncResultV2(@NotNull String sessionId, String requestId) {
         PreConditions.validArgumentState(Objects.nonNull(requestId), ErrorCodes.SqlRegulationRuleBlocked, null, null);
         ConnectionSession connectionSession = sessionService.nullSafeGet(sessionId);
-        Long sessionUserId = ConnectionSessionUtil.getUserId(connectionSession);
-        if (sessionUserId != authenticationFacade.currentUserId()) {
-            throw new AccessDeniedException();
-        }
-        AsyncExecuteContext executeContext =
+        AsyncExecuteContext<SqlExecuteResult> executeContext =
                 (AsyncExecuteContext) ConnectionSessionUtil.getExecuteContext(connectionSession, requestId);
-        int timeout = Objects.isNull(timeoutSeconds) ? DEFAULT_GET_RESULT_TIMEOUT_SECONDS_V2 : timeoutSeconds;
-        if (executeContext.await(timeout, TimeUnit.SECONDS)) {
+        if (executeContext.getFuture().isDone()) {
             ConnectionSessionUtil.removeExecuteContext(connectionSession, requestId);
             return new AsyncExecuteResultResp(SqlExecuteStatus.SUCCESS, executeContext);
         } else {

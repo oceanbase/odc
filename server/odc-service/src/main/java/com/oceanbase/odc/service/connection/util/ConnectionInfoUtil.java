@@ -66,8 +66,8 @@ public class ConnectionInfoUtil {
             connectionSession.setAttribute(ConnectionSessionConstants.CONNECTION_ID_KEY, sessionId);
             if (connectionSession.getDialectType().isOceanbase() && VersionUtils.isGreaterThanOrEqualsTo(
                     ConnectionSessionUtil.getVersion(connectionSession), "4.2")) {
-                String proxySessId = queryProxySessId(statement, connectionSession.getDialectType(), sessionId);
-                connectionSession.setAttribute(ConnectionSessionConstants.CONNECTION_PROXY_SESSID_KEY, proxySessId);
+                String proxySessId = queryOBProxySessId(statement, connectionSession.getDialectType(), sessionId);
+                connectionSession.setAttribute(ConnectionSessionConstants.OB_PROXY_SESSID_KEY, proxySessId);
             }
         } catch (Exception exception) {
             log.warn("Failed to get database session ID, session={}", connectionSession, exception);
@@ -79,7 +79,7 @@ public class ConnectionInfoUtil {
         return ConnectionPluginUtil.getSessionExtension(dialectType).getConnectionId(statement.getConnection());
     }
 
-    public static String queryProxySessId(@NonNull Statement statement, @NonNull DialectType dialectType,
+    public static String queryOBProxySessId(@NonNull Statement statement, @NonNull DialectType dialectType,
             @NonNull String connectionId) throws SQLException {
         String proxySessId = null;
         String sql = "select proxy_sessid from "

@@ -86,7 +86,7 @@ public class ConnectionSessionConstants {
      * of attributes, this is the key
      */
     public static final String CONNECTION_ID_KEY = "CONNECTION_ID";
-    public static final String CONNECTION_PROXY_SESSID_KEY = "PROXY_SESSID";
+    public static final String OB_PROXY_SESSID_KEY = "PROXY_SESSID";
     /**
      * The {@link BinaryDataManager} session needs to be stored in the database session in the form of
      * attributes, this is the key

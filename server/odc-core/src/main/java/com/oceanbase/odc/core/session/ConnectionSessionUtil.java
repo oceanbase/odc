@@ -569,7 +569,8 @@ public class ConnectionSessionUtil {
     }
 
     public static String getConsoleConnectionProxySessId(@NonNull ConnectionSession connectionSession) {
-        return (String) connectionSession.getAttribute(ConnectionSessionConstants.CONNECTION_PROXY_SESSID_KEY);
+        Object proxySessId = connectionSession.getAttribute(ConnectionSessionConstants.OB_PROXY_SESSID_KEY);
+        return proxySessId == null ? null : (String) proxySessId;
     }
 
     public static String getVersion(@NonNull ConnectionSession connectionSession) {

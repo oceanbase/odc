@@ -33,7 +33,7 @@ public class AsyncExecuteResultResp {
     private int count;
     private SqlExecuteStatus status;
 
-    public AsyncExecuteResultResp(SqlExecuteStatus status, AsyncExecuteContext context) {
+    public AsyncExecuteResultResp(SqlExecuteStatus status, AsyncExecuteContext<SqlExecuteResult> context) {
         this.status = status;
         results = context.getResults();
         traceId = context.getCurrentTraceId();
