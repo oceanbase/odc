@@ -32,6 +32,7 @@ import org.flowable.engine.impl.bpmn.parser.factory.DefaultListenerFactory;
 import org.flowable.job.service.impl.asyncexecutor.DefaultAsyncJobExecutor;
 import org.flowable.spring.SpringProcessEngineConfiguration;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.orm.jpa.EntityManagerFactoryBuilder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.orm.jpa.JpaTransactionManager;
@@ -64,7 +65,8 @@ public abstract class BaseFlowableConfiguration {
     private ServiceTaskInstanceRepository serviceRepository;
 
     @Bean
-    public SpringProcessEngineConfiguration springProcessEngineConfiguration(EntityManagerFactoryBuilder builder) {
+    public SpringProcessEngineConfiguration springProcessEngineConfiguration(EntityManagerFactoryBuilder builder,
+        @Autowired @Qualifier("metadbTransactionManager") PlatformTransactionManager platformTransactionManager) {
         DataSource dataSource = getFlowableDataSource();
         SpringProcessEngineConfiguration processEngineCfg =
                 new OdcProcessEngineConfiguration(flowInstanceRepository, serviceRepository,
@@ -74,7 +76,7 @@ public abstract class BaseFlowableConfiguration {
                 .setCreateDiagramOnDeploy(false)
                 .setAsyncExecutorActivate(true);
         processEngineCfg.setAsyncExecutorNumberOfRetries(0);
-        processEngineCfg.setTransactionManager(getTransactionManager(dataSource, builder));
+        processEngineCfg.setTransactionManager(platformTransactionManager);
         return processEngineCfg;
     }
 
