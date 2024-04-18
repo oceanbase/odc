@@ -15,12 +15,15 @@
  */
 package com.oceanbase.odc.service.quartz.config;
 
+import java.util.Properties;
+
 import javax.sql.DataSource;
 
 import org.quartz.Scheduler;
 import org.quartz.SchedulerException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.scheduling.quartz.SchedulerFactoryBean;
@@ -41,6 +44,8 @@ public class QuartzConfiguration {
     private OdcJobListener odcJobListener;
     @Autowired
     private OdcTriggerListener odcTriggerListener;
+    @Value("${odc.task.max-concurrent-task-count:10}")
+    private Long maxConcurrentTaskCount;
 
     private final String defaultSchedulerName = "ODC-SCHEDULER";
 
@@ -49,6 +54,9 @@ public class QuartzConfiguration {
         SchedulerFactoryBean schedulerFactoryBean = new SchedulerFactoryBean();
         schedulerFactoryBean.setDataSource(dataSource);
         schedulerFactoryBean.setSchedulerName(defaultSchedulerName);
+        Properties properties = new Properties();
+        properties.put("org.quartz.threadPool.threadCount", maxConcurrentTaskCount.toString());
+        schedulerFactoryBean.setQuartzProperties(properties);
         return schedulerFactoryBean;
     }
 
