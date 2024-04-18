@@ -1103,9 +1103,9 @@ public class FlowInstanceService {
         TemplateVariables variables = new TemplateVariables();
         // set task url
         String odcTaskUrl = String.format(
-            "#/task?taskId=%d&taskType=%s&organizationId=%s",
-            flowInstanceReq.getId(), flowInstanceReq.getTaskType().toString(),
-            authenticationFacade.currentOrganizationId());
+                "#/task?taskId=%d&taskType=%s&organizationId=%s",
+                flowInstanceReq.getId(), flowInstanceReq.getTaskType().toString(),
+                authenticationFacade.currentOrganizationId());
         variables.setAttribute(Variable.ODC_TASK_URL, odcTaskUrl);
         // set user related variables
         variables.setAttribute(Variable.USER_ID, authenticationFacade.currentUserId());
@@ -1129,14 +1129,14 @@ public class FlowInstanceService {
         }
         // set project owner related variables
         List<UserResourceRole> projectUserResourceRole = resourceRoleService.getUserIdsByResourceIdAndTypeAndName(
-            flowInstanceReq.getProjectId(), ResourceType.ODC_PROJECT,
-            "OWNER");
+                flowInstanceReq.getProjectId(), ResourceType.ODC_PROJECT,
+                "OWNER");
         List<User> projectOwnerUsers = projectUserResourceRole.stream()
-            .map(userResourceRole -> {
-                User user = userService.deailById(userResourceRole.getUserId());
-                return user;
-            })
-            .collect(Collectors.toList());
+                .map(userResourceRole -> {
+                    User user = userService.deailById(userResourceRole.getUserId());
+                    return user;
+                })
+                .collect(Collectors.toList());
         List<Long> projectOwnerIds = new ArrayList<>();
         List<String> projectOwnerAccounts = new ArrayList<>();
         List<String> projectOwnerNames = new ArrayList<>();
@@ -1157,13 +1157,13 @@ public class FlowInstanceService {
             String environmentNameKey = database.getEnvironment().getName();
             if (StringUtils.isTranslatable(environmentNameKey)) {
                 String environmentName =
-                    I18n.translate(StringUtils.getTranslatableKey(environmentNameKey), null,
-                        LocaleContextHolder.getLocale());
+                        I18n.translate(StringUtils.getTranslatableKey(environmentNameKey), null,
+                                LocaleContextHolder.getLocale());
                 variables.setAttribute(Variable.ENVIRONMENT_NAME, environmentName);
             } ;
             variables.setAttribute(Variable.DATABASE_NAME, database.getName());
             GetDatabaseOwnerResp databasesOwner =
-                databaseService.getDatabasesOwner(flowInstanceReq.getProjectId(), database.getId());
+                    databaseService.getDatabasesOwner(flowInstanceReq.getProjectId(), database.getId());
             if (Objects.nonNull(databasesOwner)) {
                 List<Long> ownerIds = databasesOwner.getMembers().stream().map(member -> {
                     return member.getId();
@@ -1192,7 +1192,7 @@ public class FlowInstanceService {
             variables.setAttribute(Variable.SQL_CONTENT, JsonUtils.toJson(params.getSqlContent()));
             if (StringUtils.isNotBlank(params.getSqlContent())) {
                 List<String> splitSqlList =
-                    SqlUtils.split(config.getDialectType(), params.getSqlContent(), params.getDelimiter());
+                        SqlUtils.split(config.getDialectType(), params.getSqlContent(), params.getDelimiter());
                 variables.setAttribute(Variable.SQL_CONTENT_JSON_ARRAY, JsonUtils.toJson(splitSqlList));
             }
         } else {

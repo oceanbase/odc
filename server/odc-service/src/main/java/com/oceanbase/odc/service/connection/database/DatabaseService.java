@@ -84,7 +84,6 @@ import com.oceanbase.odc.service.common.model.InnerUser;
 import com.oceanbase.odc.service.connection.ConnectionService;
 import com.oceanbase.odc.service.connection.database.model.CreateDatabaseReq;
 import com.oceanbase.odc.service.connection.database.model.Database;
-import com.oceanbase.odc.service.connection.database.model.Database.DatabaseOwner;
 import com.oceanbase.odc.service.connection.database.model.DatabaseSyncProperties;
 import com.oceanbase.odc.service.connection.database.model.DatabaseSyncStatus;
 import com.oceanbase.odc.service.connection.database.model.DatabaseUser;
@@ -805,24 +804,24 @@ public class DatabaseService {
     @SkipAuthorize("odc internal usage")
     public GetDatabaseOwnerResp getDatabasesOwner(@NotNull Long projectId, @NotNull Long databaseId) {
         List<UserResourceRole> userResourceRoles = resourceRoleService.listByResourceTypeAndId(
-            ResourceType.ODC_DATABASE, databaseId);
+                ResourceType.ODC_DATABASE, databaseId);
 
         // 如果userResourceRoles是空的，就查询ODC_PROJECT表，获取项目的owner
         if (CollectionUtils.isEmpty(userResourceRoles)) {
             userResourceRoles = resourceRoleService.getUserIdsByResourceIdAndTypeAndName(
-                projectId, ResourceType.ODC_PROJECT, "OWNER");
+                    projectId, ResourceType.ODC_PROJECT, "OWNER");
         }
 
         List<InnerUser> members = userResourceRoles.stream()
-            .map(userResourceRole -> {
-                User user = userService.deailById(userResourceRole.getUserId());
-                InnerUser member = new InnerUser();
-                member.setId(user.getId());
-                member.setName(user.getName());
-                member.setAccountName(user.getAccountName());
-                return member;
-            })
-            .collect(Collectors.toList());
+                .map(userResourceRole -> {
+                    User user = userService.deailById(userResourceRole.getUserId());
+                    InnerUser member = new InnerUser();
+                    member.setId(user.getId());
+                    member.setName(user.getName());
+                    member.setAccountName(user.getAccountName());
+                    return member;
+                })
+                .collect(Collectors.toList());
 
         GetDatabaseOwnerResp getDatabaseOwnerResp = new GetDatabaseOwnerResp();
         getDatabaseOwnerResp.setDatabaseId(databaseId);
