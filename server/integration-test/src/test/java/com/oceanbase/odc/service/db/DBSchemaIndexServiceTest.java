@@ -104,6 +104,9 @@ public class DBSchemaIndexServiceTest extends ServiceTestEnv {
     @Before
     public void setUp() {
         tearDown();
+        databaseRepository.flush();
+        dbObjectRepository.flush();
+        dbColumnRepository.flush();
         // Create metadata
         List<Database> databases = createDatabaseEntity(2, VALID_PROJECT_ID);
         validDatabaseIds = databases.stream().map(Database::getId).collect(Collectors.toList());
