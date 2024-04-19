@@ -23,32 +23,32 @@ import org.springframework.stereotype.Component;
 
 import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.service.connection.database.model.Database;
-import com.oceanbase.tools.dbbrowser.model.DBObjectIdentity;
 import com.oceanbase.tools.dbbrowser.model.DBObjectType;
+import com.oceanbase.tools.dbbrowser.model.DBPLObjectIdentity;
 import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
 
 import lombok.NonNull;
 
 /**
  * @author gaoda.xy
- * @date 2024/4/9 20:45
+ * @date 2024/4/9 20:32
  */
 @Component
-public class SequenceSyncer extends AbstractDBObjectSyncer {
+public class DBPackageSyncer extends AbstractDBObjectSyncer {
 
     @Override
     Set<String> getLatestObjectNames(@NonNull DBSchemaAccessor accessor, @NonNull Database database) {
-        List<DBObjectIdentity> sequences = accessor.listSequences(database.getName());
-        return sequences.stream().map(DBObjectIdentity::getName).collect(Collectors.toSet());
+        List<DBPLObjectIdentity> packages = accessor.listPackages(database.getName());
+        return packages.stream().map(DBPLObjectIdentity::getName).collect(Collectors.toSet());
     }
 
     @Override
     public DBObjectType getObjectType() {
-        return DBObjectType.SEQUENCE;
+        return DBObjectType.PACKAGE;
     }
 
     @Override
-    public boolean support(@NonNull DialectType dialectType) {
+    public boolean supports(@NonNull DialectType dialectType) {
         return dialectType.isOracle();
     }
 

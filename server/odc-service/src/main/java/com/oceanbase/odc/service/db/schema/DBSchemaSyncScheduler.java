@@ -15,6 +15,7 @@
  */
 package com.oceanbase.odc.service.db.schema;
 
+import java.util.Collections;
 import java.util.List;
 
 import org.apache.commons.collections4.CollectionUtils;
@@ -46,7 +47,7 @@ public class DBSchemaSyncScheduler {
     @Autowired
     private OrganizationRepository organizationRepository;
 
-    @Scheduled(cron = "${odc.database.schema.sync-cron-expression:0 0 2 * * ?}")
+    @Scheduled(cron = "${odc.database.schema.sync.cron-expression:0 0 2 * * ?}")
     public void sync() {
         List<Long> teamOrgIds = organizationRepository.findIdByType(OrganizationType.TEAM);
         if (CollectionUtils.isEmpty(teamOrgIds)) {
@@ -56,6 +57,7 @@ public class DBSchemaSyncScheduler {
         if (CollectionUtils.isEmpty(dataSources)) {
             return;
         }
+        Collections.shuffle(dataSources);
         for (ConnectionConfig dataSource : dataSources) {
             try {
                 dbSchemaSyncTaskManager.submitTaskByDataSource(dataSource);

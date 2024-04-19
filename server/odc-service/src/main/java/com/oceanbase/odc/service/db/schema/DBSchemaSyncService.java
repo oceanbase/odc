@@ -88,7 +88,7 @@ public class DBSchemaSyncService {
                 DBSchemaAccessor accessor = DBSchemaAccessors.create(session);
                 boolean success = true;
                 for (DBSchemaSyncer syncer : syncers) {
-                    if (syncer.support(config.getDialectType())) {
+                    if (syncer.supports(config.getDialectType())) {
                         try {
                             syncer.sync(accessor, database);
                         } catch (Exception e) {

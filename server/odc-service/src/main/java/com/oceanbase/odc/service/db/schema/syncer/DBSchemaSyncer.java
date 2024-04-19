@@ -51,6 +51,6 @@ public interface DBSchemaSyncer extends Ordered {
      * @param dialectType dialect type
      * @return true if support
      */
-    boolean support(@NonNull DialectType dialectType);
+    boolean supports(@NonNull DialectType dialectType);
 
 }

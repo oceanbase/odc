@@ -85,7 +85,6 @@ import com.oceanbase.odc.service.common.model.InnerUser;
 import com.oceanbase.odc.service.connection.ConnectionService;
 import com.oceanbase.odc.service.connection.database.model.CreateDatabaseReq;
 import com.oceanbase.odc.service.connection.database.model.Database;
-import com.oceanbase.odc.service.connection.database.model.DatabaseSyncProperties;
 import com.oceanbase.odc.service.connection.database.model.DatabaseSyncStatus;
 import com.oceanbase.odc.service.connection.database.model.DatabaseUser;
 import com.oceanbase.odc.service.connection.database.model.DeleteDatabasesReq;
@@ -96,6 +95,7 @@ import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.db.DBSchemaService;
 import com.oceanbase.odc.service.db.schema.DBSchemaSyncTaskManager;
 import com.oceanbase.odc.service.db.schema.model.DBObjectSyncStatus;
+import com.oceanbase.odc.service.db.schema.syncer.DBSchemaSyncProperties;
 import com.oceanbase.odc.service.iam.HorizontalDataPermissionValidator;
 import com.oceanbase.odc.service.iam.OrganizationService;
 import com.oceanbase.odc.service.iam.ProjectPermissionValidator;
@@ -177,9 +177,6 @@ public class DatabaseService {
     private OrganizationService organizationService;
 
     @Autowired
-    private DatabaseSyncProperties databaseSyncProperties;
-
-    @Autowired
     private UserDatabasePermissionRepository userDatabasePermissionRepository;
 
     @Autowired
@@ -208,6 +205,9 @@ public class DatabaseService {
 
     @Autowired
     private DBSchemaSyncTaskManager dbSchemaSyncTaskManager;
+
+    @Autowired
+    private DBSchemaSyncProperties dbSchemaSyncProperties;
 
     @Transactional(rollbackFor = Exception.class)
     @SkipAuthorize("internal authenticated")
@@ -499,7 +499,8 @@ public class DatabaseService {
 
     private void syncTeamDataSources(ConnectionConfig connection) {
         Long currentProjectId = connection.getProjectId();
-        List<String> blockedDatabaseNames = listBlockedDatabaseNames(connection.getDialectType());
+        boolean blockExcludeSchemas = dbSchemaSyncProperties.isBlockExclusionsWhenSyncDbToProject();
+        List<String> excludeSchemas = dbSchemaSyncProperties.getExcludeSchemas(connection.getDialectType());
         DataSource teamDataSource = new OBConsoleDataSourceFactory(connection, true, false).getDataSource();
         try (Connection conn = teamDataSource.getConnection()) {
             List<DatabaseEntity> latestDatabases = dbSchemaService.listDatabases(connection.getDialectType(), conn)
@@ -517,8 +518,7 @@ public class DatabaseService {
                         entity.setSyncStatus(DatabaseSyncStatus.SUCCEEDED);
                         entity.setProjectId(currentProjectId);
                         entity.setObjectSyncStatus(DBObjectSyncStatus.INITIALIZED);
-                        if (databaseSyncProperties.isBlockInternalDatabase()
-                                && blockedDatabaseNames.contains(database.getName())) {
+                        if (blockExcludeSchemas && excludeSchemas.contains(database.getName())) {
                             entity.setProjectId(null);
                         }
                         return entity;
@@ -559,7 +559,7 @@ public class DatabaseService {
             }
             List<Object[]> toDelete = existedDatabasesInDb.stream()
                     .filter(database -> !latestDatabaseNames.contains(database.getName()))
-                    .map(database -> new Object[] {getProjectId(database, currentProjectId, blockedDatabaseNames),
+                    .map(database -> new Object[] {getProjectId(database, currentProjectId, excludeSchemas),
                             database.getId()})
                     .collect(Collectors.toList());
             /**
@@ -574,7 +574,7 @@ public class DatabaseService {
                     .map(database -> {
                         DatabaseEntity latest = latestDatabaseName2Database.get(database.getName()).get(0);
                         return new Object[] {latest.getTableCount(), latest.getCollationName(), latest.getCharsetName(),
-                                getProjectId(database, currentProjectId, blockedDatabaseNames), database.getId()};
+                                getProjectId(database, currentProjectId, excludeSchemas), database.getId()};
                     })
                     .collect(Collectors.toList());
             if (CollectionUtils.isNotEmpty(toUpdate)) {
@@ -599,7 +599,8 @@ public class DatabaseService {
         Long projectId;
         if (currentProjectId != null) {
             projectId = currentProjectId;
-            if (databaseSyncProperties.isBlockInternalDatabase() && blockedDatabaseNames.contains(database.getName())) {
+            if (dbSchemaSyncProperties.isBlockExclusionsWhenSyncDbToProject()
+                    && blockedDatabaseNames.contains(database.getName())) {
                 projectId = database.getProjectId();
             }
         } else {
@@ -777,21 +778,6 @@ public class DatabaseService {
         }
     }
 
-    @SkipAuthorize("odc internal usage")
-    public List<String> listBlockedDatabaseNames(DialectType dialectType) {
-        List<String> names = new ArrayList<>();
-        if (dialectType.isOracle()) {
-            names.add("SYS");
-        }
-        if (dialectType.isMysql() || dialectType.isDoris()) {
-            names.addAll(Arrays.asList("mysql", "information_schema", "test"));
-        }
-        if (dialectType.isOBMysql()) {
-            names.add("oceanbase");
-        }
-        return names;
-    }
-
     @Transactional(rollbackFor = Exception.class)
     @PreAuthenticate(hasAnyResourceRole = {"OWNER", "DBA"}, resourceType = "ODC_PROJECT", indexOfIdParam = 0)
     public boolean modifyDatabasesOwners(@NotNull Long projectId, @NotNull @Valid ModifyDatabaseOwnerReq req) {
@@ -873,11 +859,11 @@ public class DatabaseService {
                 ErrorCodes.AccessDenied, null, "Lack of update permission on current datasource");
         Map<Long, ConnectionConfig> id2Conn = connectionService.innerListByIds(connectionIds).stream()
                 .collect(Collectors.toMap(ConnectionConfig::getId, c -> c, (c1, c2) -> c2));
-        if (databaseSyncProperties.isBlockInternalDatabase()) {
+        if (dbSchemaSyncProperties.isBlockExclusionsWhenSyncDbToProject()) {
             connectionIds = databases.stream().filter(database -> {
                 ConnectionConfig connection = id2Conn.get(database.getConnectionId());
-                return connection != null
-                        && !listBlockedDatabaseNames(connection.getDialectType()).contains(database.getName());
+                return connection != null && !dbSchemaSyncProperties.getExcludeSchemas(connection.getDialectType())
+                        .contains(database.getName());
             }).map(DatabaseEntity::getConnectionId).collect(Collectors.toList());
         }
         connectionIds.forEach(c -> {

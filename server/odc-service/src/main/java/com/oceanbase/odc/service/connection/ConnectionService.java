@@ -109,6 +109,7 @@ import com.oceanbase.odc.service.connection.model.QueryConnectionParams;
 import com.oceanbase.odc.service.connection.ssl.ConnectionSSLAdaptor;
 import com.oceanbase.odc.service.connection.util.ConnectionIdList;
 import com.oceanbase.odc.service.connection.util.ConnectionMapper;
+import com.oceanbase.odc.service.db.schema.syncer.DBSchemaSyncProperties;
 import com.oceanbase.odc.service.iam.HorizontalDataPermissionValidator;
 import com.oceanbase.odc.service.iam.PermissionService;
 import com.oceanbase.odc.service.iam.ProjectPermissionValidator;
@@ -211,6 +212,9 @@ public class ConnectionService {
 
     @Autowired
     private JdbcLockRegistry jdbcLockRegistry;
+
+    @Autowired
+    private DBSchemaSyncProperties dbSchemaSyncProperties;
 
     private final ConnectionMapper mapper = ConnectionMapper.INSTANCE;
 
@@ -635,7 +639,7 @@ public class ConnectionService {
             transactionManager.rollback(transactionStatus);
             throw e;
         }
-        databaseSyncManager.submitSyncDataSourceTask(updated);
+        databaseSyncManager.submitSyncDataSourceAndDBSchemaTask(updated);
         return updated;
     }
 
@@ -658,7 +662,7 @@ public class ConnectionService {
         }
         try {
             List<DatabaseEntity> entities = databaseRepository.findByConnectionId(entity.getId());
-            List<String> blockDatabaseNames = databaseService.listBlockedDatabaseNames(entity.getDialectType());
+            List<String> blockDatabaseNames = dbSchemaSyncProperties.getExcludeSchemas(entity.getDialectType());
             entities.forEach(e -> {
                 if (!blockInternalDatabase || !blockDatabaseNames.contains(e.getName())) {
                     e.setProjectId(projectId);

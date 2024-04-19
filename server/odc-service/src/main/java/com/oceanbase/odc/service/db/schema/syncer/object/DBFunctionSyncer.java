@@ -31,24 +31,24 @@ import lombok.NonNull;
 
 /**
  * @author gaoda.xy
- * @date 2024/4/9 20:30
+ * @date 2024/4/9 20:27
  */
 @Component
-public class ProcedureSyncer extends AbstractDBObjectSyncer {
+public class DBFunctionSyncer extends AbstractDBObjectSyncer {
 
     @Override
     Set<String> getLatestObjectNames(@NonNull DBSchemaAccessor accessor, @NonNull Database database) {
-        List<DBPLObjectIdentity> procedures = accessor.listProcedures(database.getName());
-        return procedures.stream().map(DBPLObjectIdentity::getName).collect(Collectors.toSet());
+        List<DBPLObjectIdentity> functions = accessor.listFunctions(database.getName());
+        return functions.stream().map(DBPLObjectIdentity::getName).collect(Collectors.toSet());
     }
 
     @Override
     public DBObjectType getObjectType() {
-        return DBObjectType.PROCEDURE;
+        return DBObjectType.FUNCTION;
     }
 
     @Override
-    public boolean support(@NonNull DialectType dialectType) {
+    public boolean supports(@NonNull DialectType dialectType) {
         return dialectType.isMysql() || dialectType.isOracle() || dialectType.isDoris();
     }
 

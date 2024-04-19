@@ -13,38 +13,43 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.db.schema.syncer.column;
+package com.oceanbase.odc.service.db.schema.syncer.object;
 
-import java.util.Map;
+import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Component;
 
+import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.tools.dbbrowser.model.DBObjectType;
-import com.oceanbase.tools.dbbrowser.model.DBTableColumn;
+import com.oceanbase.tools.dbbrowser.model.DBPLObjectIdentity;
 import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
 
 import lombok.NonNull;
 
 /**
  * @author gaoda.xy
- * @date 2024/4/10 20:22
+ * @date 2024/4/9 20:33
  */
 @Component
-public class ViewColumnSyncer extends TableColumnSyncer {
+public class DBTriggerSyncer extends AbstractDBObjectSyncer {
 
     @Override
-    Map<String, Set<String>> getLatestObjectToColumns(@NonNull DBSchemaAccessor accessor, @NonNull Database database) {
-        return accessor.listBasicViewColumns(database.getName()).entrySet().stream()
-                .collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue()
-                        .stream().map(DBTableColumn::getName).collect(Collectors.toSet())));
+    Set<String> getLatestObjectNames(@NonNull DBSchemaAccessor accessor, @NonNull Database database) {
+        List<DBPLObjectIdentity> triggers = accessor.listTriggers(database.getName());
+        return triggers.stream().map(DBPLObjectIdentity::getName).collect(Collectors.toSet());
     }
 
     @Override
     public DBObjectType getObjectType() {
-        return DBObjectType.VIEW;
+        return DBObjectType.TRIGGER;
+    }
+
+    @Override
+    public boolean supports(@NonNull DialectType dialectType) {
+        return dialectType.isOracle();
     }
 
 }

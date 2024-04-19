@@ -15,13 +15,15 @@
  */
 package com.oceanbase.odc.service.db.schema.syncer.object;
 
-import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Component;
 
 import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.service.connection.database.model.Database;
+import com.oceanbase.tools.dbbrowser.model.DBObjectIdentity;
 import com.oceanbase.tools.dbbrowser.model.DBObjectType;
 import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
 
@@ -29,23 +31,24 @@ import lombok.NonNull;
 
 /**
  * @author gaoda.xy
- * @date 2024/4/9 17:18
+ * @date 2024/4/9 20:11
  */
 @Component
-public class TableSyncer extends AbstractDBObjectSyncer {
+public class DBViewSyncer extends AbstractDBObjectSyncer {
 
     @Override
-    protected Set<String> getLatestObjectNames(@NonNull DBSchemaAccessor accessor, @NonNull Database database) {
-        return new HashSet<>(accessor.showTables(database.getName()));
+    Set<String> getLatestObjectNames(@NonNull DBSchemaAccessor accessor, @NonNull Database database) {
+        List<DBObjectIdentity> views = accessor.listViews(database.getName());
+        return views.stream().map(DBObjectIdentity::getName).collect(Collectors.toSet());
     }
 
     @Override
     public DBObjectType getObjectType() {
-        return DBObjectType.TABLE;
+        return DBObjectType.VIEW;
     }
 
     @Override
-    public boolean support(@NonNull DialectType dialectType) {
+    public boolean supports(@NonNull DialectType dialectType) {
         return dialectType.isMysql() || dialectType.isOracle() || dialectType.isDoris();
     }
 

@@ -17,6 +17,7 @@ package com.oceanbase.odc.service.db.schema.syncer;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.cloud.context.config.annotation.RefreshScope;
@@ -25,6 +26,7 @@ import org.springframework.context.annotation.Configuration;
 import com.oceanbase.odc.core.shared.constant.DialectType;
 
 import lombok.Data;
+import lombok.NonNull;
 
 /**
  * @author gaoda.xy
@@ -36,26 +38,18 @@ import lombok.Data;
 @ConfigurationProperties(prefix = "odc.database.schema.sync")
 public class DBSchemaSyncProperties {
 
-    private List<String> oracleExcludeSchemas;
+    private String cronExpression;
+    private int executorThreadCount;
+    private boolean blockExclusionsWhenSyncDbToProject;
+    private boolean blockExclusionsWhenSyncDbSchemas;
+    private Map<String, List<String>> excludeSchemas;
 
-    private List<String> mysqlExcludeSchemas;
-
-    private List<String> obMysqlExcludeSchemas;
-
-    private List<String> obOracleExcludeSchemas;
-
-    public List<String> getExcludeSchemas(DialectType dialect) {
-        if (dialect == DialectType.ORACLE) {
-            return oracleExcludeSchemas;
-        } else if (dialect == DialectType.MYSQL || dialect == DialectType.DORIS) {
-            return mysqlExcludeSchemas;
-        } else if (dialect == DialectType.OB_MYSQL || dialect == DialectType.ODP_SHARDING_OB_MYSQL) {
-            return obMysqlExcludeSchemas;
-        } else if (dialect == DialectType.OB_ORACLE) {
-            return obOracleExcludeSchemas;
-        } else {
+    public List<String> getExcludeSchemas(@NonNull DialectType dialect) {
+        if (excludeSchemas == null || excludeSchemas.isEmpty()) {
             return Collections.emptyList();
         }
+        String key = dialect.name().toLowerCase().replace("_", "-");
+        return excludeSchemas.getOrDefault(key, Collections.emptyList());
     }
 
 }

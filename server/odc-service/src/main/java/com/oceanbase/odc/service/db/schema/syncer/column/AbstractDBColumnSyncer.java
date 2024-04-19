@@ -44,10 +44,10 @@ import lombok.NonNull;
 public abstract class AbstractDBColumnSyncer implements DBSchemaSyncer {
 
     @Autowired
-    protected DBObjectRepository dbObjectRepository;
+    private DBObjectRepository dbObjectRepository;
 
     @Autowired
-    protected DBColumnRepository dbColumnRepository;
+    private DBColumnRepository dbColumnRepository;
 
     @Override
     public void sync(@NonNull DBSchemaAccessor accessor, @NonNull Database database) {
