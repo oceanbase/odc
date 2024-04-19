@@ -63,11 +63,4 @@ public class SSRFChecker {
         return false;
     }
 
-    public static boolean checkUrlInWhiteListStrictly(String url, List<String> urlWhiteList) {
-        if (Objects.isNull(urlWhiteList) || urlWhiteList.isEmpty()) {
-            return false;
-        }
-        return checkUrlInWhiteList(url, urlWhiteList);
-    }
-
 }
