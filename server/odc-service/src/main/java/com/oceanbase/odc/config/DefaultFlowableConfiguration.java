@@ -40,34 +40,13 @@ import lombok.NonNull;
  */
 public class DefaultFlowableConfiguration extends BaseFlowableConfiguration {
 
-    private final static String JDBC_DRIVER_CLASS = "com.oceanbase.jdbc.Driver";
-    @Value("${ODC_DATABASE_HOST}")
-    private String host;
-    @Value("${ODC_DATABASE_PORT}")
-    private String port;
-    @Value("${ODC_DATABASE_NAME}")
-    private String schema;
-    @Value("${ODC_DATABASE_USERNAME}")
-    private String username;
-    @Value("${ODC_DATABASE_PASSWORD}")
-    private String password;
-
     @Override
-    protected DataSource getFlowableDataSource() {
-        HikariDataSource dataSource = new HikariDataSource();
-        dataSource.setJdbcUrl(getJdbcUrl());
-        dataSource.setUsername(username);
-        dataSource.setPassword(password);
-        dataSource.setDriverClassName(JDBC_DRIVER_CLASS);
-        dataSource.setMaximumPoolSize(POOL_SIZE);
+    protected DataSource getFlowableDataSource(DataSource dataSource) {
         ProxyDataSource proxyDataSource = new ProxyDataSource(dataSource);
         proxyDataSource.setInitializer(new NoForeignKeyInitializer());
         return proxyDataSource;
     }
 
-    private String getJdbcUrl() {
-        return String.format("jdbc:oceanbase://%s:%s/%s?allowMultiQueries=true", host, port, schema);
-    }
 
     static class NoForeignKeyInitializer implements ConnectionInitializer {
 

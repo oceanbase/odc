@@ -15,7 +15,6 @@
  */
 package com.oceanbase.odc.config;
 
-import java.util.Objects;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -33,10 +32,7 @@ import org.flowable.job.service.impl.asyncexecutor.DefaultAsyncJobExecutor;
 import org.flowable.spring.SpringProcessEngineConfiguration;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.boot.orm.jpa.EntityManagerFactoryBuilder;
 import org.springframework.context.annotation.Bean;
-import org.springframework.orm.jpa.JpaTransactionManager;
-import org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean;
 import org.springframework.transaction.PlatformTransactionManager;
 
 import com.oceanbase.odc.metadb.flow.FlowInstanceRepository;
@@ -65,14 +61,14 @@ public abstract class BaseFlowableConfiguration {
     private ServiceTaskInstanceRepository serviceRepository;
 
     @Bean
-    public SpringProcessEngineConfiguration springProcessEngineConfiguration(EntityManagerFactoryBuilder builder,
-        @Autowired @Qualifier("metadbTransactionManager") PlatformTransactionManager platformTransactionManager) {
-        DataSource dataSource = getFlowableDataSource();
+    public SpringProcessEngineConfiguration springProcessEngineConfiguration(
+            @Autowired @Qualifier("metadbTransactionManager") PlatformTransactionManager platformTransactionManager,
+            DataSource dataSource) {
         SpringProcessEngineConfiguration processEngineCfg =
                 new OdcProcessEngineConfiguration(flowInstanceRepository, serviceRepository,
                         MAX_CONCURRENT_SIZE, MIN_CONCURRENT_SIZE);
         processEngineCfg.setAsyncExecutorAsyncJobAcquisitionEnabled(false)
-                .setDataSource(dataSource)
+                .setDataSource(getFlowableDataSource(dataSource))
                 .setCreateDiagramOnDeploy(false)
                 .setAsyncExecutorActivate(true);
         processEngineCfg.setAsyncExecutorNumberOfRetries(0);
@@ -80,23 +76,7 @@ public abstract class BaseFlowableConfiguration {
         return processEngineCfg;
     }
 
-    protected abstract DataSource getFlowableDataSource();
-
-    protected PlatformTransactionManager getTransactionManager(DataSource dataSource,
-            EntityManagerFactoryBuilder builder) {
-        return byUsingCustomTransactionManager(dataSource, builder);
-    }
-
-    /**
-     * web版模式下，如果是使用内建数据源（H2），调用此方法获取TransactionManager
-     */
-    private PlatformTransactionManager byUsingCustomTransactionManager(DataSource dataSource,
-            EntityManagerFactoryBuilder builder) {
-        LocalContainerEntityManagerFactoryBean bean =
-                builder.dataSource(dataSource).packages("com.oceanbase.odc.metadb").build();
-        bean.afterPropertiesSet();
-        return new JpaTransactionManager(Objects.requireNonNull(bean.getObject()));
-    }
+    protected abstract DataSource getFlowableDataSource(DataSource dataSource);
 
     @Slf4j
     public static class OdcProcessEngineConfiguration extends SpringProcessEngineConfiguration {
