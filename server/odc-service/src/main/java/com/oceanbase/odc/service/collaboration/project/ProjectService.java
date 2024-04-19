@@ -255,9 +255,10 @@ public class ProjectService {
 
     @Transactional(rollbackFor = Exception.class)
     @SkipAuthorize("permission check inside")
-    public List<Project> listBasicInfoForApply(Boolean archived) {
+    public List<Project> listBasicInfoForApply(Boolean archived, Boolean builtin) {
         Specification<ProjectEntity> specs = ProjectSpecs.organizationIdEqual(currentOrganizationId())
-                .and(ProjectSpecs.archivedEqual(archived));
+                .and(ProjectSpecs.archivedEqual(archived))
+                .and(ProjectSpecs.builtInEqual(builtin));
         return repository.findAll(specs).stream().map(projectMapper::entityToModel).collect(Collectors.toList());
     }
 
@@ -284,6 +285,7 @@ public class ProjectService {
         Specification<ProjectEntity> specs =
                 ProjectSpecs.nameLike(params.getName())
                         .and(ProjectSpecs.archivedEqual(params.getArchived()))
+                        .and(ProjectSpecs.builtInEqual(params.getBuiltin()))
                         .and(ProjectSpecs.organizationIdEqual(currentOrganizationId()))
                         .and(ProjectSpecs.idIn(joinedProjectIds));
         return repository.findAll(specs, pageable);
