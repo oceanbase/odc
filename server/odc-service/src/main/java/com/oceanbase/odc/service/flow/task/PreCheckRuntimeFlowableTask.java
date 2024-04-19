@@ -47,13 +47,19 @@ import com.oceanbase.odc.core.shared.exception.VerifyException;
 import com.oceanbase.odc.core.sql.execute.model.SqlTuple;
 import com.oceanbase.odc.core.sql.split.OffsetString;
 import com.oceanbase.odc.core.sql.split.SqlStatementIterator;
+import com.oceanbase.odc.metadb.collaboration.EnvironmentEntity;
+import com.oceanbase.odc.metadb.collaboration.EnvironmentRepository;
 import com.oceanbase.odc.metadb.task.TaskEntity;
 import com.oceanbase.odc.service.common.FileManager;
 import com.oceanbase.odc.service.common.model.FileBucket;
 import com.oceanbase.odc.service.common.util.SqlUtils;
+import com.oceanbase.odc.service.connection.ConnectionService;
 import com.oceanbase.odc.service.connection.database.DatabaseService;
+import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
+import com.oceanbase.odc.service.flow.FlowableAdaptor;
 import com.oceanbase.odc.service.flow.exception.ServiceTaskError;
+import com.oceanbase.odc.service.flow.instance.FlowTaskInstance;
 import com.oceanbase.odc.service.flow.model.FlowNodeStatus;
 import com.oceanbase.odc.service.flow.model.PreCheckTaskResult;
 import com.oceanbase.odc.service.flow.task.model.DatabaseChangeParameters;
@@ -112,14 +118,23 @@ public class PreCheckRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Void> {
     private PreCheckTaskProperties preCheckTaskProperties;
     @Autowired
     private ObjectStorageFacade storageFacade;
-
+    @Autowired
+    private ConnectionService connectionService;
+    @Autowired
+    private EnvironmentRepository environmentRepository;
+    @Autowired
+    private FlowableAdaptor flowableAdaptor;
     private static final String CHECK_RESULT_FILE_NAME = "sql-check-result.json";
     private final Map<String, Object> riskLevelResult = new HashMap<>();
 
     @Override
     protected Void start(Long taskId, TaskService taskService, DelegateExecution execution) throws Exception {
         this.serviceTaskRepository.updateStatusById(getTargetTaskInstanceId(), FlowNodeStatus.EXECUTING);
-        this.preCheckTaskId = FlowTaskUtil.getPreCheckTaskId(execution);
+        // this.preCheckTaskId = FlowTaskUtil.getPreCheckTaskId(execution);
+        FlowTaskInstance flowTaskInstance = flowableAdaptor.getTaskInstanceByActivityId(
+                execution.getCurrentActivityId(), getFlowInstanceId())
+                .orElseThrow(() -> new RuntimeException("获取流程实例对象失败"));
+        this.preCheckTaskId = flowTaskInstance.getTargetTaskId();
         TaskEntity preCheckTaskEntity = taskService.detail(this.preCheckTaskId);
         TaskEntity taskEntity = taskService.detail(taskId);
         if (taskEntity == null) {
@@ -129,14 +144,36 @@ public class PreCheckRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Void> {
             throw new ServiceTaskError(new RuntimeException("Can not find task entity by id " + preCheckTaskId));
         }
         this.creatorId = FlowTaskUtil.getTaskCreator(execution).getId();
+        RiskLevelDescriber riskLevelDescriber = null;
         try {
-            this.connectionConfig = FlowTaskUtil.getConnectionConfig(execution);
+            if (taskEntity.getTaskType() == TaskType.MULTIPLE_ASYNC) {
+                // 多库的数据源连接
+                Database database = databaseService.detail(preCheckTaskEntity.getDatabaseId());
+                this.connectionConfig =
+                        connectionService.getForConnectionSkipPermissionCheck(preCheckTaskEntity.getConnectionId());
+                // 多库的风险描述器
+                EnvironmentEntity env =
+                        environmentRepository.findById(connectionConfig.getEnvironmentId()).orElse(null);
+                riskLevelDescriber = RiskLevelDescriber.builder()
+                        .projectName(database.getProject().getName())
+                        .taskType(TaskType.MULTIPLE_ASYNC.name())
+                        .environmentId(env == null ? null : String.valueOf(env.getId()))
+                        .environmentName(env == null ? null : env.getName())
+                        .databaseName(database.getName())
+                        .build();
+            } else {
+                this.connectionConfig = FlowTaskUtil.getConnectionConfig(execution);
+                riskLevelDescriber = FlowTaskUtil.getRiskLevelDescriber(execution);
+            }
+
         } catch (VerifyException e) {
             log.info(e.getMessage());
         }
-        RiskLevelDescriber riskLevelDescriber = FlowTaskUtil.getRiskLevelDescriber(execution);
+        // todo 多库需要生成风险描述器
+        // RiskLevelDescriber riskLevelDescriber = FlowTaskUtil.getRiskLevelDescriber(execution);
         if (Objects.nonNull(this.connectionConfig)) {
             // Skip SQL pre-check if connection config is null
+            // todo 此处tasktype为多库，需要做修改
             loadUserInputSqlContent(taskEntity.getTaskType(), taskEntity.getParametersJson());
             loadUploadFileInputStream(taskEntity.getTaskType(), taskEntity.getParametersJson());
             try {
@@ -281,6 +318,7 @@ public class PreCheckRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Void> {
         List<UnauthorizedDatabase> unauthorizedDatabases = new ArrayList<>();
         List<CheckViolation> violations = new ArrayList<>();
         if (CollectionUtils.isNotEmpty(sqls)) {
+            // todo 多库的describer.getEnvironmentId需要有值。
             violations.addAll(this.sqlCheckService.check(Long.valueOf(describer.getEnvironmentId()),
                     describer.getDatabaseName(), sqls, connectionConfig));
             Map<String, Set<SqlType>> schemaName2SqlTypes = SchemaExtractor.listSchemaName2SqlTypes(
@@ -349,7 +387,7 @@ public class PreCheckRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Void> {
     private void loadUserInputSqlContent(TaskType taskType, String parameter) {
         String sqlContent = null;
         String delimiter = ";";
-        if (taskType == TaskType.ASYNC) {
+        if (taskType == TaskType.ASYNC || taskType == taskType.MULTIPLE_ASYNC) {
             DatabaseChangeParameters params = JsonUtils.fromJson(parameter, DatabaseChangeParameters.class);
             sqlContent = params.getSqlContent();
             delimiter = params.getDelimiter();
@@ -377,7 +415,7 @@ public class PreCheckRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Void> {
     private void loadUploadFileInputStream(TaskType taskType, String parametersJson) {
         String bucketName = "async".concat(File.separator).concat(this.creatorId.toString());
         DatabaseChangeParameters params = null;
-        if (taskType == TaskType.ASYNC) {
+        if (taskType == TaskType.ASYNC || taskType == TaskType.MULTIPLE_ASYNC) {
             params = JsonUtils.fromJson(parametersJson, DatabaseChangeParameters.class);
         } else if (taskType == TaskType.ALTER_SCHEDULE) {
             AlterScheduleParameters asParams = JsonUtils.fromJson(parametersJson, AlterScheduleParameters.class);

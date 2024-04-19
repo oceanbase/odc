@@ -86,6 +86,7 @@ import com.oceanbase.odc.service.flow.task.model.DBStructureComparisonTaskResult
 import com.oceanbase.odc.service.flow.task.model.DatabaseChangeResult;
 import com.oceanbase.odc.service.flow.task.model.MockDataTaskResult;
 import com.oceanbase.odc.service.flow.task.model.MockProperties;
+import com.oceanbase.odc.service.flow.task.model.MultipleDatabaseChangeTaskResult;
 import com.oceanbase.odc.service.flow.task.model.OnlineSchemaChangeTaskResult;
 import com.oceanbase.odc.service.flow.task.model.PartitionPlanTaskResult;
 import com.oceanbase.odc.service.flow.task.model.ResultSetExportResult;
@@ -163,6 +164,7 @@ public class FlowTaskInstanceService {
                 filterTaskInstance(id, instance -> instance.getStatus() == FlowNodeStatus.PENDING);
         PreConditions.validExists(ResourceType.ODC_FLOW_TASK_INSTANCE, "flowInstanceId", id,
                 () -> instances.size() > 0);
+        // todo 多库时暂时关闭
         Verify.singleton(instances, "FlowTaskInstance");
 
         FlowTaskInstance taskInstance = instances.get(0);
@@ -239,6 +241,8 @@ public class FlowTaskInstanceService {
             return getDataTransferResult(taskEntity);
         } else if (taskEntity.getTaskType() == TaskType.ASYNC) {
             return getAsyncResult(taskEntity);
+        } else if (taskEntity.getTaskType() == TaskType.MULTIPLE_ASYNC) {
+            return getMultipleAsyncResult(taskEntity);
         } else if (taskEntity.getTaskType() == TaskType.MOCKDATA) {
             return getMockDataResult(taskEntity);
         } else if (taskEntity.getTaskType() == TaskType.IMPORT) {
@@ -585,6 +589,18 @@ public class FlowTaskInstanceService {
                 }).collect(Collectors.toList()), false);
     }
 
+    /**
+     * todo 多库逻辑需要完善
+     *
+     * @param taskEntity
+     * @return
+     * @throws IOException
+     */
+    private List<MultipleDatabaseChangeTaskResult> getMultipleAsyncResult(@NonNull TaskEntity taskEntity)
+            throws IOException {
+        return innerGetResult(taskEntity, MultipleDatabaseChangeTaskResult.class);
+    }
+
     private List<DatabaseChangeResult> getAsyncResult(@NonNull TaskEntity taskEntity) throws IOException {
         if (!dispatchChecker.isTaskEntityOnThisMachine(taskEntity)) {
             /**
@@ -722,8 +738,13 @@ public class FlowTaskInstanceService {
         if (CollectionUtils.isEmpty(taskInstances)) {
             return Optional.empty();
         }
-        Verify.singleton(taskInstances, "TaskInstances");
-
+        /**
+         * The other types of taskInstances are limited to unique, except for the MULTIPLE_ASYNC
+         */
+        FlowInstanceDetailResp detail = flowInstanceService.detail(flowInstanceId);
+        if (detail != null && detail.getType() != TaskType.MULTIPLE_ASYNC) {
+            Verify.singleton(taskInstances, "TaskInstances");
+        }
         FlowTaskInstance flowTaskInstance = taskInstances.get(0);
         Long targetTaskId = flowTaskInstance.getTargetTaskId();
         Verify.notNull(targetTaskId, "TargetTaskId can not be null");

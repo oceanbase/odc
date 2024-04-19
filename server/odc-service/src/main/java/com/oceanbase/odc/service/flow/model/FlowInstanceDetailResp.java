@@ -50,6 +50,7 @@ import com.oceanbase.odc.service.flow.instance.FlowTaskInstance;
 import com.oceanbase.odc.service.flow.model.FlowNodeInstanceDetailResp.FlowNodeInstanceMapper;
 import com.oceanbase.odc.service.flow.task.model.DBStructureComparisonParameter;
 import com.oceanbase.odc.service.flow.task.model.DatabaseChangeParameters;
+import com.oceanbase.odc.service.flow.task.model.MultipleDatabaseChangeParameters;
 import com.oceanbase.odc.service.flow.task.model.OdcMockTaskConfig;
 import com.oceanbase.odc.service.flow.task.model.ShadowTableSyncTaskParameter;
 import com.oceanbase.odc.service.flow.util.FlowInstanceUtil;
@@ -283,6 +284,9 @@ public class FlowInstanceDetailResp {
             resp.setRiskLevel(getRiskLevel(taskEntity));
             String parameterJson = taskEntity.getParametersJson();
             switch (taskEntity.getTaskType()) {
+                case MULTIPLE_ASYNC:
+                    resp.setParameters(JsonUtils.fromJson(parameterJson, MultipleDatabaseChangeParameters.class));
+                    break;
                 case ASYNC:
                     resp.setParameters(JsonUtils.fromJson(parameterJson, DatabaseChangeParameters.class));
                     break;
