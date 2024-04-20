@@ -75,10 +75,11 @@ public class DoCancelingJob implements Job {
                 // For transaction atomic, first update to CANCELED, then stop remote job in executor,
                 // if stop remote failed, transaction will be rollback
                 int rows = getConfiguration().getTaskFrameworkService()
-                    .updateStatusDescriptionByIdOldStatus(lockedEntity.getId(),
-                        JobStatus.CANCELING, JobStatus.CANCELED, "stop job completed.");
+                        .updateStatusDescriptionByIdOldStatus(lockedEntity.getId(),
+                                JobStatus.CANCELING, JobStatus.CANCELED, "stop job completed.");
                 if (rows <= 0) {
-                    throw new TaskRuntimeException("Update job status to CANCELED failed, jobId="+lockedEntity.getId());
+                    throw new TaskRuntimeException(
+                            "Update job status to CANCELED failed, jobId=" + lockedEntity.getId());
                 }
                 log.info("Prepare cancel task, jobId={}.", lockedEntity.getId());
                 try {
@@ -91,7 +92,7 @@ public class DoCancelingJob implements Job {
                 }
                 log.info("Job be cancelled successfully, jobId=", lockedEntity.getId());
                 getConfiguration().getEventPublisher().publishEvent(
-                    new JobTerminateEvent(JobIdentity.of(lockedEntity.getId()), JobStatus.CANCELED));
+                        new JobTerminateEvent(JobIdentity.of(lockedEntity.getId()), JobStatus.CANCELED));
             }
 
         });

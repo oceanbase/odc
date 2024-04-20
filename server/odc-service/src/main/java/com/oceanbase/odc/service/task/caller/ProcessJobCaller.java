@@ -120,7 +120,7 @@ public class ProcessJobCaller extends BaseJobCaller {
             return;
         }
         throw new JobException(ODC_EXECUTOR_CANNOT_BE_DESTROYED +
-                               "Connect to target odc server succeed, but cannot destroy process,"
+                "Connect to target odc server succeed, but cannot destroy process,"
                 + " may not on this machine, jodId={0}, identifier={1}", ji.getId(), ei);
     }
 

@@ -105,7 +105,7 @@ public class CheckRunningJob implements Job {
             getConfiguration().getJobDispatcher().stop(JobIdentity.of(a.getId()));
         } catch (JobException e) {
             // Process will continue if stop failed and not rollback transaction
-            log.warn("Try to stop remote failed, jobId={}.",a.getId(),e);
+            log.warn("Try to stop remote failed, jobId={}.", a.getId(), e);
         }
 
         // Second destroy executor

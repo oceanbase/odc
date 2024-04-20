@@ -76,7 +76,7 @@ public class K8sJobCaller extends BaseJobCaller {
                     // Pod cannot be deleted when pod pending is not timeout,
                     // so throw exception representative delete failed
                     throw new JobException(ODC_EXECUTOR_CANNOT_BE_DESTROYED +
-                                           "Destroy pod failed, jodId={0}, identifier={1}, podStatus={2}",
+                            "Destroy pod failed, jodId={0}, identifier={1}, podStatus={2}",
                             ji.getId(), ei.getExecutorName(), k8sJobResponse.get().getResourceStatus());
                 }
             }
