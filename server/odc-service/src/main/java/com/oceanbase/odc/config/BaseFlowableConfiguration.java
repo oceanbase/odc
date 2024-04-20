@@ -23,8 +23,6 @@ import java.util.concurrent.TimeUnit;
 import javax.sql.DataSource;
 
 import org.apache.commons.lang3.concurrent.BasicThreadFactory;
-import org.flowable.common.engine.impl.cfg.standalone.StandaloneMybatisTransactionContextFactory;
-import org.flowable.common.engine.impl.interceptor.CommandInterceptor;
 import org.flowable.engine.impl.bpmn.parser.factory.AbstractBehaviorFactory;
 import org.flowable.engine.impl.bpmn.parser.factory.DefaultActivityBehaviorFactory;
 import org.flowable.engine.impl.bpmn.parser.factory.DefaultListenerFactory;
@@ -68,15 +66,13 @@ public abstract class BaseFlowableConfiguration {
                 new OdcProcessEngineConfiguration(flowInstanceRepository, serviceRepository,
                         MAX_CONCURRENT_SIZE, MIN_CONCURRENT_SIZE);
         processEngineCfg.setAsyncExecutorAsyncJobAcquisitionEnabled(false)
-                .setDataSource(getFlowableDataSource(dataSource))
+                .setDataSource(dataSource)
                 .setCreateDiagramOnDeploy(false)
                 .setAsyncExecutorActivate(true);
         processEngineCfg.setAsyncExecutorNumberOfRetries(0);
         processEngineCfg.setTransactionManager(platformTransactionManager);
         return processEngineCfg;
     }
-
-    protected abstract DataSource getFlowableDataSource(DataSource dataSource);
 
     @Slf4j
     public static class OdcProcessEngineConfiguration extends SpringProcessEngineConfiguration {
@@ -100,18 +96,6 @@ public abstract class BaseFlowableConfiguration {
             }
             this.maxConcurrentSize = maxConcurrentSize;
             this.minConcurrentSize = minConcurrentSize;
-        }
-
-        @Override
-        public CommandInterceptor createTransactionInterceptor() {
-            return null;
-        }
-
-        @Override
-        public void initTransactionContextFactory() {
-            if (transactionContextFactory == null) {
-                transactionContextFactory = new StandaloneMybatisTransactionContextFactory();
-            }
         }
 
         @Override

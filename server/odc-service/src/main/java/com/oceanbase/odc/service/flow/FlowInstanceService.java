@@ -160,7 +160,6 @@ import com.oceanbase.odc.service.schedule.flowtask.OperationType;
 import com.oceanbase.odc.service.schedule.model.JobType;
 import com.oceanbase.odc.service.schedule.model.ScheduleStatus;
 import com.oceanbase.odc.service.task.TaskService;
-import com.oceanbase.odc.service.task.exception.TaskRuntimeException;
 import com.oceanbase.odc.service.task.model.ExecutorInfo;
 
 import lombok.AllArgsConstructor;
@@ -860,9 +859,6 @@ public class FlowInstanceService {
                     flowInstance.getId());
         } else if (flowInstanceReq.getTaskType() == TaskType.EXPORT) {
             consumeDataTransferHook((DataTransferConfig) flowInstanceReq.getParameters(), taskEntity.getId());
-        }
-        if(!variables.isEmpty()) {
-            throw new TaskRuntimeException("test");
         }
         log.info("New flow instance succeeded, instanceId={}, flowInstanceReq={}",
                 flowInstance.getId(), flowInstanceReq);

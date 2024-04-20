@@ -15,13 +15,7 @@
  */
 package com.oceanbase.odc.config;
 
-import java.sql.Connection;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
-import java.util.Collection;
 import java.util.Objects;
-import java.util.Properties;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -54,21 +48,13 @@ import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 
 import com.alibaba.druid.DbType;
-import com.alibaba.druid.filter.FilterChain;
+import com.alibaba.druid.filter.Filter;
 import com.alibaba.druid.filter.stat.StatFilter;
-import com.alibaba.druid.pool.DruidDataSource;
-import com.alibaba.druid.proxy.jdbc.ConnectionProxy;
 import com.alibaba.druid.support.spring.stat.DruidStatInterceptor;
 import com.oceanbase.odc.common.concurrent.ExecutorUtils;
 import com.oceanbase.odc.common.util.SystemUtils;
-import com.oceanbase.odc.config.DefaultFlowableConfiguration.NoForeignKeyInitializer;
 import com.oceanbase.odc.config.jpa.EnhancedJpaRepository;
-import com.oceanbase.odc.core.datasource.ConnectionInitializer;
-import com.oceanbase.odc.core.datasource.ProxyDataSource;
-import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.core.task.TaskThreadFactory;
-
-import lombok.NonNull;
 
 /**
  * @author shaobo.zsb
@@ -122,17 +108,16 @@ public class MetaDBConfiguration {
     @Bean
     @ConditionalOnProperty(value = "odc.system.monitor.enabled", havingValue = "true")
     public StatFilter statFilter() {
-        StatFilter statFilter = new StatFilter(){
-            @Override
-            public ConnectionProxy connection_connect(FilterChain chain, Properties info) throws SQLException {
-                // disable foreign key
-                return super.connection_connect(chain, info);
-            }
-        };
+        StatFilter statFilter = new StatFilter();
         // use mysql parser to merge sql
         statFilter.setDbType(DbType.mysql);
         statFilter.setMergeSql(true);
         return statFilter;
+    }
+
+    @Bean
+    public Filter foreignKeyChecksFilter() {
+        return new ForeignKeyChecksFilter();
     }
 
     @Primary
@@ -155,37 +140,4 @@ public class MetaDBConfiguration {
         builder.setBootstrapExecutor(new ConcurrentTaskExecutor(bootstrapExecutor));
         return builder.dataSource(dataSource).packages("com.oceanbase.odc.metadb").build();
     }
-
-
-
-    public static class ProxyDruidDataSource extends DruidDataSource {
-
-
-    }
-
-
-    static class NoForeignKeyInitializer implements ConnectionInitializer {
-
-        @Override
-        public void init(Connection connection) throws SQLException {
-            String result = getForeignKeyChecks(connection);
-            if ("OFF".equalsIgnoreCase(result)) {
-                return;
-            }
-            try (Statement statement = connection.createStatement()) {
-                statement.execute("set session foreign_key_checks='OFF'");
-            }
-        }
-
-        private String getForeignKeyChecks(@NonNull Connection connection) throws SQLException {
-            try (Statement statement = connection.createStatement()) {
-                try (ResultSet resultSet = statement.executeQuery("show variables like 'foreign_key_checks'")) {
-                    Verify.verify(resultSet.next(), "No variable value");
-                    return resultSet.getString(2);
-                }
-            }
-        }
-    }
-
-
 }

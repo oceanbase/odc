@@ -38,11 +38,6 @@ import org.springframework.transaction.PlatformTransactionManager;
 public class DesktopFlowableConfiguration extends BaseFlowableConfiguration {
 
     @Override
-    protected DataSource getFlowableDataSource(DataSource dataSource) {
-        return dataSource;
-    }
-
-    @Override
     public SpringProcessEngineConfiguration springProcessEngineConfiguration(
             @Autowired @Qualifier("metadbTransactionManager") PlatformTransactionManager platformTransactionManager,
             DataSource dataSource) {
