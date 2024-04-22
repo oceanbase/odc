@@ -19,6 +19,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Map;
 
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.MapUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -28,6 +29,7 @@ import com.oceanbase.odc.common.util.SSRFChecker;
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.core.shared.exception.NotImplementedException;
+import com.oceanbase.odc.service.integration.HttpOperationService.IntegrationConfigProperties;
 import com.oceanbase.odc.service.notification.NotificationProperties;
 import com.oceanbase.odc.service.notification.model.BaseChannelConfig;
 import com.oceanbase.odc.service.notification.model.ChannelType;
@@ -47,6 +49,8 @@ public class ChannelConfigValidator {
     private static final String FEISHU_WEBHOOK_PREFIX = "https://open.feishu.cn/open-apis/bot";
     private static final String WECOM_WEBHOOK_PREFIX = "https://qyapi.weixin.qq.com/cgi-bin/webhook";
 
+    @Autowired
+    private IntegrationConfigProperties integrationConfigProperties;
     @Autowired
     private NotificationProperties notificationProperties;
 
@@ -93,8 +97,15 @@ public class ChannelConfigValidator {
                 channelConfig.getWebhook().startsWith("http://") || channelConfig.getWebhook().startsWith("https://"),
                 "Webhook should start with 'http://' or 'https://'");
         try {
-            Verify.verify(SSRFChecker.checkHostNotInBlackList(new URL(channelConfig.getWebhook()).getHost(),
-                    notificationProperties.getHostBlackList()), "The webhook is forbidden due to SSRF protection");
+            if (CollectionUtils.isNotEmpty(integrationConfigProperties.getUrlWhiteList())) {
+                Verify.verify(SSRFChecker.checkUrlInWhiteList(channelConfig.getWebhook(),
+                        integrationConfigProperties.getUrlWhiteList()),
+                        "The webhook is forbidden due to SSRF protection");
+            } else {
+                Verify.verify(SSRFChecker.checkHostNotInBlackList(new URL(channelConfig.getWebhook()).getHost(),
+                        notificationProperties.getHostBlackList()),
+                        "The webhook is forbidden due to SSRF protection");
+            }
         } catch (MalformedURLException e) {
             throw new RuntimeException(e);
         }
