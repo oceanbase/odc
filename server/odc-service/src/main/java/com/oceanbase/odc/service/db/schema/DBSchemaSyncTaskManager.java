@@ -67,7 +67,14 @@ public class DBSchemaSyncTaskManager {
         }
         Set<Long> databaseIds = databases.stream().map(Database::getId).collect(Collectors.toSet());
         databaseService.updateObjectSyncStatus(databaseIds, DBObjectSyncStatus.PENDING);
-        databases.forEach(database -> executor.submit(generateTask(database)));
+        databases.forEach(database -> {
+            try {
+                executor.submit(generateTask(database));
+            } catch (Exception e) {
+                databaseService.updateObjectLastSyncTimeAndStatus(database.getId(), DBObjectSyncStatus.FAILED);
+                log.warn("Failed to submit sync database schema task for database id={}", database.getId(), e);
+            }
+        });
     }
 
     public void submitTaskByDataSource(@NonNull ConnectionConfig dataSource) {

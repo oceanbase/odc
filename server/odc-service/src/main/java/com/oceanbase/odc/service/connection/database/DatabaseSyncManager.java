@@ -29,10 +29,12 @@ import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
+import com.oceanbase.odc.core.shared.constant.OrganizationType;
 import com.oceanbase.odc.core.shared.exception.BadRequestException;
 import com.oceanbase.odc.metadb.iam.UserEntity;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.db.schema.DBSchemaSyncTaskManager;
+import com.oceanbase.odc.service.iam.OrganizationService;
 import com.oceanbase.odc.service.iam.UserService;
 import com.oceanbase.odc.service.iam.util.SecurityContextUtils;
 
@@ -51,6 +53,8 @@ public class DatabaseSyncManager {
     private DatabaseService databaseService;
     @Autowired
     private UserService userService;
+    @Autowired
+    private OrganizationService organizationService;
     @Autowired
     DBSchemaSyncTaskManager dbSchemaSyncTaskManager;
     @Autowired
@@ -75,11 +79,17 @@ public class DatabaseSyncManager {
     public Future<Boolean> submitSyncDataSourceAndDBSchemaTask(@NonNull ConnectionConfig connection) {
         return doExecute(() -> executor.submit(() -> {
             Boolean res = syncDBForDataSource(connection);
-            try {
-                dbSchemaSyncTaskManager.submitTaskByDataSource(connection);
-            } catch (Exception e) {
-                log.warn("Submit sync database schema task failed, dataSourceId={}", connection.getId(), e);
-            }
+            // only sync db schema for team organization
+            organizationService.get(connection.getOrganizationId()).ifPresent(organization -> {
+                if (organization.getType() == OrganizationType.TEAM) {
+                    try {
+                        dbSchemaSyncTaskManager.submitTaskByDataSource(connection);
+                    } catch (Exception e) {
+                        log.warn("Failed to submit sync database schema task for datasource id={}", connection.getId(),
+                                e);
+                    }
+                }
+            });
             return res;
         }));
     }

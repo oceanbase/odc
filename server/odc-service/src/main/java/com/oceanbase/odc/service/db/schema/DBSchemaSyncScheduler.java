@@ -62,7 +62,7 @@ public class DBSchemaSyncScheduler {
             try {
                 dbSchemaSyncTaskManager.submitTaskByDataSource(dataSource);
             } catch (Exception e) {
-                log.warn("Submit sync database schema task failed, dataSourceId={}", dataSource.getId(), e);
+                log.warn("Failed to submit sync database schema task for datasource id={}", dataSource.getId(), e);
             }
         }
 

@@ -466,7 +466,7 @@ public class DatabaseService {
             dbSchemaSyncTaskManager
                     .submitTaskByDataSource(connectionService.getBasicWithoutPermissionCheck(dataSourceId));
         } catch (Exception e) {
-            log.warn("Submit sync database schema task failed, dataSourceId={}", dataSourceId, e);
+            log.warn("Failed to submit sync database schema task for datasource id={}", dataSourceId, e);
         }
         return res;
     }
