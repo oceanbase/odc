@@ -64,6 +64,8 @@ public class AsyncExecuteContext<T> {
     @Setter
     private Future<List<JdbcGeneralResult>> future;
     private String currentTraceId;
+    @Setter
+    private String sql;
     private int count = 0;
 
     public AsyncExecuteContext(ConnectionSession session, List<SqlTuple> sqlTuples,
@@ -95,8 +97,9 @@ public class AsyncExecuteContext<T> {
         }
     }
 
-    public void onQueryStart() {
+    public void onQueryStart(String sql) {
         count++;
+        this.sql = sql;
     }
 
     public void onQueryExecuting() {

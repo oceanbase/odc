@@ -32,6 +32,7 @@ public class AsyncExecuteResultResp {
     private int total;
     private int count;
     private SqlExecuteStatus status;
+    private String sql;
 
     public AsyncExecuteResultResp(SqlExecuteStatus status, AsyncExecuteContext<SqlExecuteResult> context) {
         this.status = status;
@@ -39,5 +40,6 @@ public class AsyncExecuteResultResp {
         traceId = context.getCurrentTraceId();
         total = context.getTotal();
         count = context.getCount();
+        sql = context.getSql();
     }
 }

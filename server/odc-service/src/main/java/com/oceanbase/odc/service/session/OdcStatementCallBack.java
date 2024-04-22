@@ -202,7 +202,7 @@ public class OdcStatementCallBack implements StatementCallback<List<JdbcGeneralR
                     }
                 }
                 if (context != null) {
-                    context.onQueryStart();
+                    context.onQueryStart(sqlTuple.getExecutedSql());
                 }
                 try {
                     applyConnectionSettings(statement);
