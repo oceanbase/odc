@@ -29,18 +29,14 @@ public interface DatabaseChangeChangingOrderTemplateRepository
         extends JpaRepository<DatabaseChangeChangingOrderTemplateEntity, Long>,
         JpaSpecificationExecutor<DatabaseChangeChangingOrderTemplateEntity> {
 
+    Boolean existsByNameAndProjectId(String name, Long projectId);
 
-    Boolean existsByNameAndCreatorId(String name, Long creatorId);
+    Optional<DatabaseChangeChangingOrderTemplateEntity> findByIdAndProjectId(Long id, Long projectId);
 
-    Boolean existsByIdAndCreatorId(Long id, Long creatorId);
+    List<DatabaseChangeChangingOrderTemplateEntity> findByNameAndProjectId(String name, Long projectId);
 
-
-    Optional<DatabaseChangeChangingOrderTemplateEntity> findByIdAndCreatorId(Long id, Long creatorId);
-
-    Optional<List<DatabaseChangeChangingOrderTemplateEntity>> findByNameAndCreatorId(String name, Long creatorId);
-
-    void deleteByIdAndCreatorId(Long id, Long creatorId);
+    void deleteByIdAndProjectId(Long id, Long projectId);
 
 
-    Page<DatabaseChangeChangingOrderTemplateEntity> findByCreatorId(Long creatorId, Pageable pageable);
+    Page<DatabaseChangeChangingOrderTemplateEntity> findByProjectId(Long projectId, Pageable pageable);
 }

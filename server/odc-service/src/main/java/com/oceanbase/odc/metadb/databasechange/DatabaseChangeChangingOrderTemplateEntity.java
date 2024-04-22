@@ -16,10 +16,8 @@
 package com.oceanbase.odc.metadb.databasechange;
 
 import java.util.Date;
-import java.util.List;
 
 import javax.persistence.Column;
-import javax.persistence.Convert;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
@@ -28,8 +26,6 @@ import javax.persistence.Table;
 
 import org.hibernate.annotations.Generated;
 import org.hibernate.annotations.GenerationTime;
-
-import com.oceanbase.odc.common.jpa.JsonListConverter;
 
 import lombok.Data;
 
@@ -56,8 +52,8 @@ public class DatabaseChangeChangingOrderTemplateEntity {
     private Long projectId;
 
     @Column(name = "database_sequences", nullable = false)
-    @Convert(converter = JsonListConverter.class)
-    private List<List<Long>> databaseSequences;
+    //@Convert(converter = JsonListConverter.class)
+    private String databaseSequences;
 
     @Generated(GenerationTime.ALWAYS)
     @Column(name = "create_time", insertable = false, updatable = false)

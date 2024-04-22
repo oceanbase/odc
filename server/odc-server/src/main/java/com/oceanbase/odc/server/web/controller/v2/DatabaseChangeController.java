@@ -61,7 +61,8 @@ public class DatabaseChangeController {
     @PutMapping("/changingorder/templates/{id:[\\d]+}")
     public SuccessResponse<Boolean> modifyDatabaseChangingOrderTemplate(@PathVariable Long id,
             @RequestBody CreateDatabaseChangeChangingOrderReq req) {
-        return Responses.success(databaseChangeChangingOrderTemplateService.modifyDatabaseChangingOrderTemplate(req));
+        return Responses
+                .success(databaseChangeChangingOrderTemplateService.modifyDatabaseChangingOrderTemplate(id, req));
     }
 
     @ApiOperation(value = "queryDatabaseChangingOrderTemplateById",
