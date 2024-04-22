@@ -148,6 +148,7 @@ public class OdcStatementCallBack implements StatementCallback<List<JdbcGeneralR
         this.connectionSession = connectionSession;
         this.stopWhenError = stopWhenError;
         this.binaryDataManager = ConnectionSessionUtil.getBinaryDataManager(connectionSession);
+        ConnectionSessionUtil.setConsoleSessionKillQueryFlag(connectionSession, false);
         Validate.notNull(this.binaryDataManager, "BinaryDataManager can not be null");
     }
 
@@ -180,10 +181,15 @@ public class OdcStatementCallBack implements StatementCallback<List<JdbcGeneralR
                 }
                 List<JdbcGeneralResult> executeResults;
                 if (returnVal.stream().noneMatch(r -> r.getStatus() == SqlExecuteStatus.FAILED) || !stopWhenError) {
-                    try {
-                        executeResults = doExecuteSql(statement, sqlTuple);
-                    } catch (Exception exception) {
-                        executeResults = Collections.singletonList(JdbcGeneralResult.failedResult(sqlTuple, exception));
+                    if (Thread.currentThread().isInterrupted()
+                            || ConnectionSessionUtil.isConsoleSessionKillQuery(connectionSession)) {
+                        executeResults = Collections.singletonList(JdbcGeneralResult.canceledResult(sqlTuple));
+                    } else {
+                        try {
+                            executeResults = doExecuteSql(statement, sqlTuple);
+                        } catch (Exception exp) {
+                            executeResults = Collections.singletonList(JdbcGeneralResult.failedResult(sqlTuple, exp));
+                        }
                     }
                 } else {
                     executeResults = Collections.singletonList(JdbcGeneralResult.canceledResult(sqlTuple));
