@@ -72,6 +72,10 @@ public class CheckRunningJob implements Job {
 
     private void doHandleJobRetryingOrFailed(JobEntity jobEntity) {
         JobEntity a = getConfiguration().getTaskFrameworkService().findWithPessimisticLock(jobEntity.getId());
+        if (a.getStatus() != JobStatus.RUNNING) {
+            log.warn("Current job is not RUNNING, abort continue, jobId={}.", a.getId());
+            return;
+        }
         boolean isNeedRetry = checkJobIfRetryNecessary(a);
         if (isNeedRetry) {
             log.info("Need to restart job, try to set status to RETRYING, jobId={}.", a.getId());

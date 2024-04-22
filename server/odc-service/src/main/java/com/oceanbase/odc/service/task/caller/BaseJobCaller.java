@@ -123,12 +123,12 @@ public abstract class BaseJobCaller implements JobCaller {
     }
 
     protected void afterStopSucceed(JobIdentity ji) {
-        log.info("Stop job {}, set status to CANCELED successfully.", ji.getId());
+        log.info("Stop job successfully, jobId={}.", ji.getId());
         publishEvent(new JobCallerEvent(ji, JobCallerAction.STOP, true, null));
     }
 
     protected void afterStopFailed(JobIdentity ji, Exception e) throws JobException {
-        log.info("Stop job {} failed.", ji.getId());
+        log.info("Stop job failed,jobId={}.", ji.getId());
         publishEvent(new JobCallerEvent(ji, JobCallerAction.STOP, false, null));
         throw new JobException("job be stop failed, jobId={0}.", e, ji.getId());
     }

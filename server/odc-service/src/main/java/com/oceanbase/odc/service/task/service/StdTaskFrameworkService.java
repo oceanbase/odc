@@ -305,7 +305,7 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
             log.warn("Job identity is null");
             return;
         }
-        JobEntity je = find(taskResult.getJobIdentity().getId());
+        JobEntity je = findWithPessimisticLock(taskResult.getJobIdentity().getId());
         if (je == null) {
             log.warn("Job identity is not exists by id {}", taskResult.getJobIdentity().getId());
             return;
@@ -314,16 +314,18 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
             log.warn("Job {} is finished, ignore result, currentStatus={}", je.getId(), je.getStatus());
             return;
         }
-
-        updateJobScheduleEntity(taskResult);
-        taskResultPublisherExecutor
-                .execute(() -> publisher.publishEvent(new DefaultJobProcessUpdateEvent(taskResult)));
-        if (publisher != null && taskResult.getStatus() != null && taskResult.getStatus().isTerminated()) {
-            taskResultPublisherExecutor.execute(() -> publisher
-                    .publishEvent(new JobTerminateEvent(taskResult.getJobIdentity(), taskResult.getStatus())));
-            if (taskResult.getStatus() == JobStatus.FAILED) {
-                AlarmUtils.alarm(AlarmEventNames.TASK_EXECUTION_FAILED,
-                        MessageFormat.format("Job execution failed, jobId={0}", taskResult.getJobIdentity().getId()));
+        int rows = updateJobScheduleEntity(taskResult);
+        if (rows > 0) {
+            taskResultPublisherExecutor
+                    .execute(() -> publisher.publishEvent(new DefaultJobProcessUpdateEvent(taskResult)));
+            if (publisher != null && taskResult.getStatus() != null && taskResult.getStatus().isTerminated()) {
+                taskResultPublisherExecutor.execute(() -> publisher
+                        .publishEvent(new JobTerminateEvent(taskResult.getJobIdentity(), taskResult.getStatus())));
+                if (taskResult.getStatus() == JobStatus.FAILED) {
+                    AlarmUtils.alarm(AlarmEventNames.TASK_EXECUTION_FAILED,
+                            MessageFormat.format("Job execution failed, jobId={0}",
+                                    taskResult.getJobIdentity().getId()));
+                }
             }
         }
 
@@ -348,7 +350,7 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
 
     }
 
-    private void updateJobScheduleEntity(TaskResult taskResult) {
+    private int updateJobScheduleEntity(TaskResult taskResult) {
         JobEntity jse = find(taskResult.getJobIdentity().getId());
         jse.setResultJson(taskResult.getResultJson());
         jse.setStatus(taskResult.getStatus());
@@ -358,11 +360,11 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
         if (taskResult.getStatus() != null && taskResult.getStatus().isTerminated()) {
             jse.setFinishedTime(JobDateUtils.getCurrentDate());
         }
-        jobRepository.update(jse);
-
-        if (taskResult.getLogMetadata() != null && taskResult.getStatus().isTerminated()) {
+        int rows = jobRepository.update(jse);
+        if (rows > 0 && taskResult.getLogMetadata() != null && taskResult.getStatus().isTerminated()) {
             saveOrUpdateLogMetadata(taskResult, jse);
         }
+        return rows;
     }
 
     private void saveOrUpdateLogMetadata(TaskResult taskResult, JobEntity jse) {
