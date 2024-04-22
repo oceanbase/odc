@@ -1,4 +1,7 @@
 grammar LogicalTableExpression;
+@header {
+package com.oceanbase.odc.service.connection.logicaldatabase;
+}
 
 logicalTableExpression: schemaExpression DOT tableExpression ;
 
@@ -6,9 +9,13 @@ schemaExpression: (schemaSliceRangeWithBracket IDENTIFIER?)* IDENTIFIER (schemaS
 
 tableExpression: (tableSliceRangeWithBracket IDENTIFIER?)* IDENTIFIER (tableSliceRangeWithBracket IDENTIFIER?)* ;
 
-schemaSliceRangeWithBracket: LEFT_BRACKET sliceRange RIGHT_BRACKET ;
+schemaSliceRangeWithBracket: sliceRangeWithSingeBracket ;
 
-tableSliceRangeWithBracket: schemaSliceRangeWithBracket | DOBULE_LEFT_BRACKET sliceRange DOUBLE_RIGHT_BRACKET;
+tableSliceRangeWithBracket: sliceRangeWithSingeBracket | sliceRangeWithDoubleBracket ;
+
+sliceRangeWithSingeBracket: LEFT_BRACKET sliceRange RIGHT_BRACKET ;
+
+sliceRangeWithDoubleBracket: DOBULE_LEFT_BRACKET sliceRange DOUBLE_RIGHT_BRACKET ;
 
 sliceRange: consecutiveRange | steppedRange | enumRange ;
 
