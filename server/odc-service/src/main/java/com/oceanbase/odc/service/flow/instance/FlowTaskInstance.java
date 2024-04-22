@@ -50,7 +50,7 @@ import com.oceanbase.odc.service.flow.model.FlowNodeType;
 import com.oceanbase.odc.service.flow.model.FlowTaskExecutionStrategy;
 import com.oceanbase.odc.service.flow.task.BaseRuntimeFlowableDelegate;
 import com.oceanbase.odc.service.flow.task.mapper.RuntimeDelegateMapper;
-import com.oceanbase.odc.service.flow.task.model.CallBackUserTaskConstants;
+import com.oceanbase.odc.service.flow.task.model.RuntimeTaskConstants;
 
 import lombok.Getter;
 import lombok.NonNull;
@@ -269,7 +269,7 @@ public class FlowTaskInstance extends BaseFlowNodeInstance {
 
         List<FlowableElement> elements =
                 flowableAdaptor.getFlowableElementByType(getId(), getNodeType(), FlowableElementType.USER_TASK)
-                        .stream().filter(t -> !t.getName().contains(CallBackUserTaskConstants.CALL_BACK))
+                        .stream().filter(t -> !t.getName().contains(RuntimeTaskConstants.CALLBACK_TASK))
                         .collect(Collectors.toList());
         Verify.verify(!elements.isEmpty(), "Can not find any user task related to task instance, id " + getId());
         log.info("Get the execution node of the task instance, instanceId={}, elements={}", getId(), elements);
