@@ -13,23 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.collaboration.project.model;
+package com.oceanbase.odc.metadb.jpa;
 
-import lombok.Builder;
-import lombok.Data;
-import net.minidev.json.annotate.JsonIgnore;
+import com.oceanbase.odc.config.jpa.OdcJpaRepository;
 
-/**
- * @Author: Lebie
- * @Date: 2023/4/20 21:23
- * @Description: []
- */
-@Data
-@Builder
-public class QueryProjectParams {
-    private String name;
-    private Boolean archived;
-    private Boolean builtin;
-    @JsonIgnore
-    private Long userId;
+public interface JsonExampleRepository extends OdcJpaRepository<JsonExampleEntity, Long> {
 }

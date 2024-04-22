@@ -117,8 +117,8 @@ public class UserServiceTest extends MockedAuthorityTestEnv {
         roleRepository.saveAndFlush(roleEntity1);
         RoleEntity roleEntity2 = createRoleEntity("roleEntity2", ORGANIZATION_ID);
         roleRepository.saveAndFlush(roleEntity2);
-        User createdUser = userService.createUserIfNotExists(ORGANIZATION_ID, "accountName", "notExistsUser",
-                Arrays.asList("role1", "roleEntity2"));
+        UserEntity userEntity = UserEntity.autoCreatedEntity("accountName", "notExistsUser", ORGANIZATION_ID);
+        User createdUser = userService.upsert(userEntity, Arrays.asList("role1", "roleEntity2"));
         Assert.assertNotNull(createdUser);
         Assert.assertEquals(2, createdUser.getRoles().size());
     }
