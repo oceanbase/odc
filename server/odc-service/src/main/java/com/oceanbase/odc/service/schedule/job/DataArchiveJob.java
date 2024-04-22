@@ -23,7 +23,10 @@ import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionConstants;
+import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.shared.constant.TaskStatus;
+import com.oceanbase.odc.core.sql.parser.AbstractSyntaxTreeFactories;
+import com.oceanbase.odc.core.sql.parser.AbstractSyntaxTreeFactory;
 import com.oceanbase.odc.metadb.schedule.ScheduleTaskEntity;
 import com.oceanbase.odc.service.db.browser.DBSchemaAccessors;
 import com.oceanbase.odc.service.dlm.DataSourceInfoBuilder;
@@ -34,6 +37,9 @@ import com.oceanbase.odc.service.dlm.utils.DataArchiveConditionUtil;
 import com.oceanbase.odc.service.session.factory.DefaultConnectSessionFactory;
 import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
 import com.oceanbase.tools.migrator.common.enums.JobType;
+import com.oceanbase.tools.sqlparser.adapter.mysql.MySQLFromReferenceFactory;
+import com.oceanbase.tools.sqlparser.obmysql.OBParser.Create_table_stmtContext;
+import com.oceanbase.tools.sqlparser.statement.common.RelationFactor;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -139,6 +145,7 @@ public class DataArchiveJob extends AbstractDlmJob {
         try {
             DBSchemaAccessor sourceDsAccessor = DBSchemaAccessors.create(srcSession);
             tableDDL = sourceDsAccessor.getTableDDL(dlmTask.getSourceDs().getDefaultSchema(), dlmTask.getTableName());
+            tableDDL = buildCreateTableDDL(tableDDL, dlmTask.getTargetTableName());
         } finally {
             srcSession.expire();
         }
@@ -158,6 +165,17 @@ public class DataArchiveJob extends AbstractDlmJob {
         } finally {
             targetSession.expire();
         }
+    }
+
+    public static String buildCreateTableDDL(String createSql, String targetTableName) {
+        AbstractSyntaxTreeFactory factory = AbstractSyntaxTreeFactories.getAstFactory(DialectType.OB_MYSQL, 0);
+        Create_table_stmtContext context = (Create_table_stmtContext) factory.buildAst(createSql).getRoot();
+        RelationFactor factor = MySQLFromReferenceFactory.getRelationFactor(context.relation_factor());
+        StringBuilder sb = new StringBuilder();
+        sb.append(createSql, 0, factor.getStart());
+        sb.append("`").append(targetTableName).append("`");
+        sb.append(createSql, factor.getStop() + 1, createSql.length());
+        return sb.toString();
     }
 
 }
