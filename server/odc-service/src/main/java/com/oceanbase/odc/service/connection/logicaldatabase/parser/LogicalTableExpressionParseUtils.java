@@ -104,13 +104,13 @@ public class LogicalTableExpressionParseUtils {
     private static void cartesianProductRecursive(List<List<String>> lists, List<List<String>> result, int depth,
             List<String> current) {
         if (depth == lists.size()) {
-            result.add(new ArrayList<>(current)); // Use a copy to avoid unexpected modification
+            result.add(new ArrayList<>(current));
             return;
         }
 
         for (String s : lists.get(depth)) {
-            List<String> newCurrent = new ArrayList<>(current); // Create a new list with current elements
-            newCurrent.add(s); // Add the new item
+            List<String> newCurrent = new ArrayList<>(current);
+            newCurrent.add(s);
             cartesianProductRecursive(lists, result, depth + 1, newCurrent);
         }
     }
