@@ -76,7 +76,7 @@ public class SSRFChecker {
                 blackHostPattern = blackHost.replaceAll("\\.", "\\\\.");
             }
             Pattern whitePattern = Pattern.compile(
-                "^([a-z0-9_\\-]+\\.)*" + blackHostPattern + "$", Pattern.CASE_INSENSITIVE);
+                    "^([a-z0-9_\\-]+\\.)*" + blackHostPattern + "$", Pattern.CASE_INSENSITIVE);
             Matcher uriMatcher = whitePattern.matcher(host);
             if (uriMatcher.find()) {
                 return true;
