@@ -39,7 +39,6 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.oceanbase.odc.core.session.ConnectionSession;
-import com.oceanbase.odc.core.shared.exception.NotImplementedException;
 import com.oceanbase.odc.service.common.response.ListResponse;
 import com.oceanbase.odc.service.common.response.Responses;
 import com.oceanbase.odc.service.common.response.SuccessResponse;
@@ -155,9 +154,9 @@ public class ConnectSessionController {
      * @return
      */
     @ApiOperation(value = "sqlCheck", notes = "statically check the contents of multiple sql scripts")
-    @PostMapping("sessions/sqlCheck")
+    @PostMapping("/sessions/sqlCheck")
     public ListResponse<CheckResult> multipleCheck(@RequestBody MultipleSqlCheckReq req) {
-        throw new NotImplementedException("Unsupported now");
+        return Responses.list(this.sqlCheckService.multipleCheck(req));
     }
 
     /**

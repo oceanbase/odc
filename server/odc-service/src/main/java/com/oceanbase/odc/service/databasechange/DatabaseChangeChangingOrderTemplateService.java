@@ -15,7 +15,7 @@
  */
 package com.oceanbase.odc.service.databasechange;
 
-import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
@@ -28,10 +28,8 @@ import javax.validation.constraints.NotNull;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort.Direction;
-import org.springframework.data.web.PageableDefault;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
@@ -46,7 +44,9 @@ import com.oceanbase.odc.metadb.connection.DatabaseEntity;
 import com.oceanbase.odc.metadb.connection.DatabaseRepository;
 import com.oceanbase.odc.metadb.databasechange.DatabaseChangeChangingOrderTemplateEntity;
 import com.oceanbase.odc.metadb.databasechange.DatabaseChangeChangingOrderTemplateRepository;
+import com.oceanbase.odc.metadb.databasechange.DatabaseChangeChangingOrderTemplateSpecs;
 import com.oceanbase.odc.service.databasechange.model.CreateDatabaseChangeChangingOrderReq;
+import com.oceanbase.odc.service.databasechange.model.QueryDatabaseChangeChangingOrderParams;
 import com.oceanbase.odc.service.databasechange.model.QueryDatabaseChangeChangingOrderResp;
 import com.oceanbase.odc.service.iam.ProjectPermissionValidator;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
@@ -96,9 +96,6 @@ public class DatabaseChangeChangingOrderTemplateService {
         if (!databaseChangeChangingOrderTemplateRepository.existsById(id)) {
             throw new IllegalArgumentException("the current template doesn't exist");
         }
-        if (databaseChangeChangingOrderTemplateRepository.existsByNameAndProjectId(req.getName(), req.getProjectId())) {
-            throw new IllegalArgumentException("The name '"+ req.getName() +"' has been used by another template. Please change the name");
-        }
         long userId = authenticationFacade.currentUserId();
         Long organizationId = authenticationFacade.currentOrganizationId();
         DatabaseChangeChangingOrderTemplateEntity databaseChangeChangingOrderTemplateEntity =
@@ -144,23 +141,15 @@ public class DatabaseChangeChangingOrderTemplateService {
     }
 
 
-    public Page<QueryDatabaseChangeChangingOrderResp> listDatabaseChangingOrderTemplates(
-            @PageableDefault(size = Integer.MAX_VALUE, sort = {"id"}, direction = Direction.DESC) Pageable pageable) {
-        Page<DatabaseChangeChangingOrderTemplateEntity> pageByCreatorId =
-                databaseChangeChangingOrderTemplateRepository.findByProjectId(
-                        authenticationFacade.currentUserId(), pageable);
-        List<DatabaseChangeChangingOrderTemplateEntity> content = pageByCreatorId.getContent();
-        List<QueryDatabaseChangeChangingOrderResp> queryDatabaseChangeChangineOrderResps = new ArrayList<>();
-        for (DatabaseChangeChangingOrderTemplateEntity databaseChangeChangingOrderTemplateEntity : content) {
-            QueryDatabaseChangeChangingOrderResp queryDatabaseChangeChangineOrderResp =
-                    new QueryDatabaseChangeChangingOrderResp();
-            queryDatabaseChangeChangineOrderResp.setId(databaseChangeChangingOrderTemplateEntity.getId());
-            queryDatabaseChangeChangineOrderResp.setName(databaseChangeChangingOrderTemplateEntity.getName());
-            queryDatabaseChangeChangineOrderResps.add(queryDatabaseChangeChangineOrderResp);
-        }
-        Page<QueryDatabaseChangeChangingOrderResp> page = new PageImpl<>(
-                queryDatabaseChangeChangineOrderResps, pageable, pageByCreatorId.getTotalElements());
-        return page;
+    public Page<DatabaseChangeChangingOrderTemplateEntity> listDatabaseChangingOrderTemplates(
+        @NotNull Pageable pageable,
+        @NotNull QueryDatabaseChangeChangingOrderParams params) {
+        projectPermissionValidator.checkProjectRole(params.getProjectId(), ResourceRoleName.all());
+        Specification<DatabaseChangeChangingOrderTemplateEntity> specification = Specification
+            .where(DatabaseChangeChangingOrderTemplateSpecs.nameLikes(params.getName()))
+            .and(DatabaseChangeChangingOrderTemplateSpecs.projectIdEquals(params.getProjectId()))
+            .and(DatabaseChangeChangingOrderTemplateSpecs.creatorIdIn(Collections.singleton(params.getCreatorId())));
+       return databaseChangeChangingOrderTemplateRepository.findAll(specification, pageable);
     }
 
     @Transactional

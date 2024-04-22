@@ -49,9 +49,11 @@ import com.oceanbase.odc.service.regulation.ruleset.model.Rule;
 import com.oceanbase.odc.service.regulation.ruleset.model.Rule.RuleViolation;
 import com.oceanbase.odc.service.regulation.ruleset.model.RuleMetadata;
 import com.oceanbase.odc.service.regulation.ruleset.model.RuleType;
+import com.oceanbase.odc.service.session.ConnectSessionService;
 import com.oceanbase.odc.service.session.factory.OBConsoleDataSourceFactory;
 import com.oceanbase.odc.service.sqlcheck.model.CheckResult;
 import com.oceanbase.odc.service.sqlcheck.model.CheckViolation;
+import com.oceanbase.odc.service.sqlcheck.model.MultipleSqlCheckReq;
 import com.oceanbase.odc.service.sqlcheck.model.SqlCheckReq;
 import com.oceanbase.odc.service.sqlcheck.rule.SqlCheckRules;
 
@@ -76,6 +78,9 @@ public class SqlCheckService {
     @Autowired
     private EnvironmentService environmentService;
 
+    @Autowired
+    private ConnectSessionService sessionService;
+
     public List<CheckResult> check(@NotNull ConnectionSession session,
             @NotNull @Valid SqlCheckReq req) {
         Long ruleSetId = ConnectionSessionUtil.getRuleSetId(session);
@@ -91,6 +96,19 @@ public class SqlCheckService {
         List<CheckViolation> checkViolations = sqlChecker.check(req.getScriptContent());
         fullFillRiskLevel(rules, checkViolations);
         return SqlCheckUtil.buildCheckResults(checkViolations);
+    }
+
+    public List<CheckResult> multipleCheck(@NotNull @Valid MultipleSqlCheckReq req) {
+        ArrayList<CheckResult> checkResults = new ArrayList<CheckResult>();
+        List<Long> databaseIds = req.getDatabaseIds();
+        for (Long databaseId : databaseIds) {
+            ConnectionSession session = sessionService.create(null, databaseId);
+            SqlCheckReq sqlCheckReq = new SqlCheckReq();
+            sqlCheckReq.setDelimiter(req.getDelimiter());
+            sqlCheckReq.setScriptContent(req.getScriptContent());
+            checkResults.add(check(session,sqlCheckReq).get(0));
+        }
+        return checkResults;
     }
 
     public List<CheckViolation> check(@NotNull Long environmentId, @NonNull String databaseName,

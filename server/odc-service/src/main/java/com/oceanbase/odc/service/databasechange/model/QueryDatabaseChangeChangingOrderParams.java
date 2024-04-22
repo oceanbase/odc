@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 OceanBase.
+ * Copyright (c) 2024 OceanBase.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,23 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.sqlcheck.model;
 
-import java.util.List;
+package com.oceanbase.odc.service.databasechange.model;
 
-import javax.validation.constraints.NotBlank;
-import javax.validation.constraints.NotEmpty;
-import javax.validation.constraints.NotNull;
-
+import lombok.Builder;
 import lombok.Data;
 
+/**
+ * @author: zijia.cj
+ * @date: 2024/4/22
+ */
 @Data
-public class MultipleSqlCheckReq {
-    @NotEmpty
-    private List<Long> databaseIds;
-    @NotBlank
-    private String scriptContent;
-    @NotNull
-    private String delimiter;
+@Builder
+public class QueryDatabaseChangeChangingOrderParams {
+
+    private String name;
+
+    private Long projectId;
+
+    private Long creatorId;
 
 }

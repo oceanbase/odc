@@ -26,13 +26,16 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.oceanbase.odc.metadb.databasechange.DatabaseChangeChangingOrderTemplateEntity;
 import com.oceanbase.odc.service.common.response.PaginatedResponse;
 import com.oceanbase.odc.service.common.response.Responses;
 import com.oceanbase.odc.service.common.response.SuccessResponse;
 import com.oceanbase.odc.service.databasechange.DatabaseChangeChangingOrderTemplateService;
 import com.oceanbase.odc.service.databasechange.model.CreateDatabaseChangeChangingOrderReq;
+import com.oceanbase.odc.service.databasechange.model.QueryDatabaseChangeChangingOrderParams;
 import com.oceanbase.odc.service.databasechange.model.QueryDatabaseChangeChangingOrderResp;
 
 import io.swagger.annotations.ApiOperation;
@@ -76,10 +79,19 @@ public class DatabaseChangeController {
     @ApiOperation(value = "listDatabaseChangingOrderTemplates",
             notes = "get a list of database changing order templates")
     @GetMapping("/changingorder/templates")
-    public PaginatedResponse<QueryDatabaseChangeChangingOrderResp> listDatabaseChangingOrderTemplates(
-            @PageableDefault(size = Integer.MAX_VALUE, sort = {"id"}, direction = Direction.DESC) Pageable pageable) {
+    public PaginatedResponse<DatabaseChangeChangingOrderTemplateEntity> listDatabaseChangingOrderTemplates(
+            @PageableDefault(size = Integer.MAX_VALUE, sort = {"id"}, direction = Direction.DESC) Pageable pageable,
+        @RequestParam(required = false, name = "name") String name,
+        @RequestParam(required = false, name = "creatorId") Long creatorId,
+        @RequestParam(required = true, name = "projectId") Long projectId  ) {
+        QueryDatabaseChangeChangingOrderParams queryDatabaseChangeChangingOrderParams
+            = QueryDatabaseChangeChangingOrderParams.builder()
+            .name(name)
+            .creatorId(creatorId)
+            .projectId(projectId)
+            .build();
         return Responses
-                .paginated(databaseChangeChangingOrderTemplateService.listDatabaseChangingOrderTemplates(pageable));
+                .paginated(databaseChangeChangingOrderTemplateService.listDatabaseChangingOrderTemplates(pageable,queryDatabaseChangeChangingOrderParams));
     }
 
     @ApiOperation(value = "deleteDatabaseChangingOrderTemplateById",
