@@ -15,9 +15,12 @@
  */
 package com.oceanbase.odc.service.connection.logicaldatabase.parser;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.antlr.v4.runtime.ParserRuleContext;
+
+import com.oceanbase.odc.core.shared.Verify;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -41,6 +44,28 @@ public class LogicalTableExpression extends BaseLogicalTableExpression {
 
     @Override
     public List<String> listNames() {
-        return null;
+        List<String> schemaNames = schemaExpression.listNames();
+        List<String> tableNames = tableExpression.listNames();
+        Verify.notEmpty(schemaNames, "schemaNames");
+        Verify.notEmpty(tableNames, "tableNames");
+
+        List<String> names = new ArrayList<>();
+        if (tableExpression.isRepeat()) {
+            for (String schemaName : schemaNames) {
+                for (String tableName : tableNames) {
+                    names.add(schemaName + "." + tableName);
+                }
+            }
+            return names;
+        }
+
+        Verify.equals(0, tableNames.size() % schemaNames.size(), "schemaNameCount % tableNameCount");
+        int groupCount = tableNames.size() / schemaNames.size();
+        for (int i = 0; i < schemaNames.size(); i++) {
+            for (int j = groupCount * i; j < groupCount * (i + 1); j++) {
+                names.add(schemaNames.get(i) + "." + tableNames.get(j));
+            }
+        }
+        return names;
     }
 }

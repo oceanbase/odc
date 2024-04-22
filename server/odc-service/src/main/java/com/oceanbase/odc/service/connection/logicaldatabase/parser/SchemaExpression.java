@@ -32,8 +32,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class SchemaExpression extends BaseLogicalTableExpression {
-    private List<String> identifiers;
-    private List<BaseRangeExpression> sliceRanges;
+    protected List<BaseRangeExpression> sliceRanges;
 
     SchemaExpression(ParserRuleContext ruleNode) {
         super(ruleNode);
@@ -41,6 +40,6 @@ public class SchemaExpression extends BaseLogicalTableExpression {
 
     @Override
     public List<String> listNames() {
-        return null;
+        return LogicalTableExpressionParseUtils.listNames(this.getText(), this.getStart(), this.sliceRanges);
     }
 }

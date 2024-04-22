@@ -57,7 +57,6 @@ public class LogicalTableExpressionVisitor extends LogicalTableExpressionBaseVis
     public BaseStatement visitSchemaExpression(SchemaExpressionContext ctx) {
         PreConditions.notEmpty(ctx.IDENTIFIER(), "schemaExpression.IDENTIFIER");
         SchemaExpression expression = new SchemaExpression(ctx);
-        expression.setIdentifiers(ctx.IDENTIFIER().stream().map(node -> node.getText()).collect(Collectors.toList()));
         if (ctx.schemaSliceRangeWithBracket() != null) {
             List<BaseRangeExpression> ranges = new ArrayList<>();
             for (SchemaSliceRangeWithBracketContext sliceRange : ctx.schemaSliceRangeWithBracket()) {
@@ -72,7 +71,6 @@ public class LogicalTableExpressionVisitor extends LogicalTableExpressionBaseVis
     public BaseStatement visitTableExpression(TableExpressionContext ctx) {
         PreConditions.notEmpty(ctx.IDENTIFIER(), "tableExpression.IDENTIFIER");
         TableExpression expression = new TableExpression(ctx);
-        expression.setIdentifiers(ctx.IDENTIFIER().stream().map(node -> node.getText()).collect(Collectors.toList()));
         if (ctx.tableSliceRangeWithBracket() != null) {
             List<BaseRangeExpression> ranges = new ArrayList<>();
             for (TableSliceRangeWithBracketContext sliceRange : ctx.tableSliceRangeWithBracket()) {

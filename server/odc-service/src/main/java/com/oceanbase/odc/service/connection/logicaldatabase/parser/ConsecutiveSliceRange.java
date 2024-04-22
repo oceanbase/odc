@@ -43,6 +43,6 @@ public class ConsecutiveSliceRange extends BaseRangeExpression {
 
     @Override
     public List<String> listRanges() {
-        return null;
+        return LogicalTableExpressionParseUtils.listSteppedRanges(rangeStart, rangeEnd, "1");
     }
 }

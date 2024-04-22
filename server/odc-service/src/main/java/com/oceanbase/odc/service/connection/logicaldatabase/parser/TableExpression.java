@@ -15,8 +15,6 @@
  */
 package com.oceanbase.odc.service.connection.logicaldatabase.parser;
 
-import java.util.List;
-
 import org.antlr.v4.runtime.ParserRuleContext;
 
 import lombok.AllArgsConstructor;
@@ -31,17 +29,10 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class TableExpression extends BaseLogicalTableExpression {
-    private List<String> identifiers;
-    private List<BaseRangeExpression> sliceRanges;
+public class TableExpression extends SchemaExpression {
     private boolean repeat;
 
     TableExpression(ParserRuleContext ruleNode) {
         super(ruleNode);
-    }
-
-    @Override
-    List<String> listNames() {
-        return null;
     }
 }
