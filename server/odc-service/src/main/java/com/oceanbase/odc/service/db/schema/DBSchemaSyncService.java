@@ -37,6 +37,8 @@ import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.exception.ConflictException;
+import com.oceanbase.odc.core.shared.exception.NotImplementedException;
+import com.oceanbase.odc.core.shared.exception.UnsupportedException;
 import com.oceanbase.odc.service.connection.ConnectionService;
 import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
@@ -89,6 +91,8 @@ public class DBSchemaSyncService {
                 for (DBSchemaSyncer syncer : syncers) {
                     try {
                         syncer.sync(conn, database, config.getDialectType());
+                    } catch (UnsupportedOperationException | UnsupportedException | NotImplementedException e) {
+                        // ignore unsupported exception
                     } catch (Exception e) {
                         success = false;
                         log.warn("Failed to synchronize {} for database id={}", syncer.getObjectType(),
