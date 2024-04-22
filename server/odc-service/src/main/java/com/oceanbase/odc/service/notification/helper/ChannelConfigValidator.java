@@ -93,7 +93,7 @@ public class ChannelConfigValidator {
                 channelConfig.getWebhook().startsWith("http://") || channelConfig.getWebhook().startsWith("https://"),
                 "Webhook should start with 'http://' or 'https://'");
         try {
-            Verify.verify(!SSRFChecker.checkHostInBlackList(new URL(channelConfig.getWebhook()).getHost(),
+            Verify.verify(SSRFChecker.checkHostNotInBlackList(new URL(channelConfig.getWebhook()).getHost(),
                     notificationProperties.getHostBlackList()), "The webhook is forbidden due to SSRF protection");
         } catch (MalformedURLException e) {
             throw new RuntimeException(e);

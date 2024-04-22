@@ -90,22 +90,22 @@ public class SSRFCheckerTest {
 
     @Test
     public void checkHostBlackList_EmptyBlackList_ReturnFalse() {
-        assertFalse(SSRFChecker.checkHostInBlackList("127.0.0.1", Collections.emptyList()));
+        assertTrue(SSRFChecker.checkHostNotInBlackList("127.0.0.1", Collections.emptyList()));
     }
 
     @Test
     public void checkHostBlackList_EmptyHost_ReturnTrue() {
-        assertTrue(SSRFChecker.checkHostInBlackList("", urlBlackList));
+        assertFalse(SSRFChecker.checkHostNotInBlackList("", urlBlackList));
     }
 
     @Test
     public void checkHostBlackList_HostInBlackList_ReturnTrue() {
-        assertTrue(SSRFChecker.checkHostInBlackList("127.0.0.1", urlBlackList));
+        assertFalse(SSRFChecker.checkHostNotInBlackList("127.0.0.1", urlBlackList));
     }
 
     @Test
     public void checkHostBlackList_HostNotInBlackList_ReturnFalse() {
-        assertFalse(SSRFChecker.checkHostInBlackList("127.0.0.2", urlBlackList));
+        assertTrue(SSRFChecker.checkHostNotInBlackList("127.0.0.2", urlBlackList));
     }
 
 }
