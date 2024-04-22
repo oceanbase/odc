@@ -15,7 +15,6 @@
  */
 package com.oceanbase.odc.config;
 
-import java.util.Objects;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -24,18 +23,14 @@ import java.util.concurrent.TimeUnit;
 import javax.sql.DataSource;
 
 import org.apache.commons.lang3.concurrent.BasicThreadFactory;
-import org.flowable.common.engine.impl.cfg.standalone.StandaloneMybatisTransactionContextFactory;
-import org.flowable.common.engine.impl.interceptor.CommandInterceptor;
 import org.flowable.engine.impl.bpmn.parser.factory.AbstractBehaviorFactory;
 import org.flowable.engine.impl.bpmn.parser.factory.DefaultActivityBehaviorFactory;
 import org.flowable.engine.impl.bpmn.parser.factory.DefaultListenerFactory;
 import org.flowable.job.service.impl.asyncexecutor.DefaultAsyncJobExecutor;
 import org.flowable.spring.SpringProcessEngineConfiguration;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.orm.jpa.EntityManagerFactoryBuilder;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
-import org.springframework.orm.jpa.JpaTransactionManager;
-import org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean;
 import org.springframework.transaction.PlatformTransactionManager;
 
 import com.oceanbase.odc.metadb.flow.FlowInstanceRepository;
@@ -64,8 +59,9 @@ public abstract class BaseFlowableConfiguration {
     private ServiceTaskInstanceRepository serviceRepository;
 
     @Bean
-    public SpringProcessEngineConfiguration springProcessEngineConfiguration(EntityManagerFactoryBuilder builder) {
-        DataSource dataSource = getFlowableDataSource();
+    public SpringProcessEngineConfiguration springProcessEngineConfiguration(
+            @Autowired @Qualifier("metadbTransactionManager") PlatformTransactionManager platformTransactionManager,
+            DataSource dataSource) {
         SpringProcessEngineConfiguration processEngineCfg =
                 new OdcProcessEngineConfiguration(flowInstanceRepository, serviceRepository,
                         MAX_CONCURRENT_SIZE, MIN_CONCURRENT_SIZE);
@@ -74,26 +70,8 @@ public abstract class BaseFlowableConfiguration {
                 .setCreateDiagramOnDeploy(false)
                 .setAsyncExecutorActivate(true);
         processEngineCfg.setAsyncExecutorNumberOfRetries(0);
-        processEngineCfg.setTransactionManager(getTransactionManager(dataSource, builder));
+        processEngineCfg.setTransactionManager(platformTransactionManager);
         return processEngineCfg;
-    }
-
-    protected abstract DataSource getFlowableDataSource();
-
-    protected PlatformTransactionManager getTransactionManager(DataSource dataSource,
-            EntityManagerFactoryBuilder builder) {
-        return byUsingCustomTransactionManager(dataSource, builder);
-    }
-
-    /**
-     * web版模式下，如果是使用内建数据源（H2），调用此方法获取TransactionManager
-     */
-    private PlatformTransactionManager byUsingCustomTransactionManager(DataSource dataSource,
-            EntityManagerFactoryBuilder builder) {
-        LocalContainerEntityManagerFactoryBean bean =
-                builder.dataSource(dataSource).packages("com.oceanbase.odc.metadb").build();
-        bean.afterPropertiesSet();
-        return new JpaTransactionManager(Objects.requireNonNull(bean.getObject()));
     }
 
     @Slf4j
@@ -118,18 +96,6 @@ public abstract class BaseFlowableConfiguration {
             }
             this.maxConcurrentSize = maxConcurrentSize;
             this.minConcurrentSize = minConcurrentSize;
-        }
-
-        @Override
-        public CommandInterceptor createTransactionInterceptor() {
-            return null;
-        }
-
-        @Override
-        public void initTransactionContextFactory() {
-            if (transactionContextFactory == null) {
-                transactionContextFactory = new StandaloneMybatisTransactionContextFactory();
-            }
         }
 
         @Override

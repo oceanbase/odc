@@ -48,6 +48,7 @@ import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 
 import com.alibaba.druid.DbType;
+import com.alibaba.druid.filter.Filter;
 import com.alibaba.druid.filter.stat.StatFilter;
 import com.alibaba.druid.support.spring.stat.DruidStatInterceptor;
 import com.oceanbase.odc.common.concurrent.ExecutorUtils;
@@ -114,6 +115,11 @@ public class MetaDBConfiguration {
         return statFilter;
     }
 
+    @Bean
+    public Filter foreignKeyChecksFilter() {
+        return new ForeignKeyChecksFilter();
+    }
+
     @Primary
     @Bean(name = "metadbSqlSessionFactory")
     @DependsOn("metadbMigrate")
@@ -134,5 +140,4 @@ public class MetaDBConfiguration {
         builder.setBootstrapExecutor(new ConcurrentTaskExecutor(bootstrapExecutor));
         return builder.dataSource(dataSource).packages("com.oceanbase.odc.metadb").build();
     }
-
 }
