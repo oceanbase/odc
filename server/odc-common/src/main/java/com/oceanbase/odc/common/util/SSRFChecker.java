@@ -63,4 +63,26 @@ public class SSRFChecker {
         return false;
     }
 
+    public static boolean checkHostInBlackList(String host, List<String> hostBlackList) {
+        if (Objects.isNull(hostBlackList) || hostBlackList.isEmpty()) {
+            return false;
+        }
+        if (StringUtils.isBlank(host)) {
+            return true;
+        }
+        for (String blackHost : hostBlackList) {
+            String blackHostPattern = blackHost;
+            if (StringUtils.contains(blackHost, ".")) {
+                blackHostPattern = blackHost.replaceAll("\\.", "\\\\.");
+            }
+            Pattern whitePattern = Pattern.compile(
+                "^([a-z0-9_\\-]+\\.)*" + blackHostPattern + "$", Pattern.CASE_INSENSITIVE);
+            Matcher uriMatcher = whitePattern.matcher(host);
+            if (uriMatcher.find()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
 }
