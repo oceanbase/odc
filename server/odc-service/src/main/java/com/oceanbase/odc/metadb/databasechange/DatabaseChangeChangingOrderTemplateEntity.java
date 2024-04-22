@@ -52,7 +52,7 @@ public class DatabaseChangeChangingOrderTemplateEntity {
     private Long projectId;
 
     @Column(name = "database_sequences", nullable = false)
-    //@Convert(converter = JsonListConverter.class)
+    // @Convert(converter = JsonListConverter.class)
     private String databaseSequences;
 
     @Generated(GenerationTime.ALWAYS)

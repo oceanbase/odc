@@ -106,7 +106,7 @@ public class SqlCheckService {
             SqlCheckReq sqlCheckReq = new SqlCheckReq();
             sqlCheckReq.setDelimiter(req.getDelimiter());
             sqlCheckReq.setScriptContent(req.getScriptContent());
-            checkResults.add(check(session,sqlCheckReq).get(0));
+            checkResults.add(check(session, sqlCheckReq).get(0));
         }
         return checkResults;
     }

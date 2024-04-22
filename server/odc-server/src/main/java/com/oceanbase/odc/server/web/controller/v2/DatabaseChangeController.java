@@ -81,17 +81,18 @@ public class DatabaseChangeController {
     @GetMapping("/changingorder/templates")
     public PaginatedResponse<DatabaseChangeChangingOrderTemplateEntity> listDatabaseChangingOrderTemplates(
             @PageableDefault(size = Integer.MAX_VALUE, sort = {"id"}, direction = Direction.DESC) Pageable pageable,
-        @RequestParam(required = false, name = "name") String name,
-        @RequestParam(required = false, name = "creatorId") Long creatorId,
-        @RequestParam(required = true, name = "projectId") Long projectId  ) {
-        QueryDatabaseChangeChangingOrderParams queryDatabaseChangeChangingOrderParams
-            = QueryDatabaseChangeChangingOrderParams.builder()
-            .name(name)
-            .creatorId(creatorId)
-            .projectId(projectId)
-            .build();
+            @RequestParam(required = false, name = "name") String name,
+            @RequestParam(required = false, name = "creatorId") Long creatorId,
+            @RequestParam(required = true, name = "projectId") Long projectId) {
+        QueryDatabaseChangeChangingOrderParams queryDatabaseChangeChangingOrderParams =
+                QueryDatabaseChangeChangingOrderParams.builder()
+                        .name(name)
+                        .creatorId(creatorId)
+                        .projectId(projectId)
+                        .build();
         return Responses
-                .paginated(databaseChangeChangingOrderTemplateService.listDatabaseChangingOrderTemplates(pageable,queryDatabaseChangeChangingOrderParams));
+                .paginated(databaseChangeChangingOrderTemplateService.listDatabaseChangingOrderTemplates(pageable,
+                        queryDatabaseChangeChangingOrderParams));
     }
 
     @ApiOperation(value = "deleteDatabaseChangingOrderTemplateById",

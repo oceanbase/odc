@@ -73,7 +73,8 @@ public class DatabaseChangeChangingOrderTemplateService {
             @NotNull @Valid CreateDatabaseChangeChangingOrderReq req) {
         invalidPermission(req);
         if (databaseChangeChangingOrderTemplateRepository.existsByNameAndProjectId(req.getName(), req.getProjectId())) {
-            throw new IllegalArgumentException("The name '"+ req.getName() +"' has been used by another template. Please change the name");
+            throw new IllegalArgumentException(
+                    "The name '" + req.getName() + "' has been used by another template. Please change the name");
         }
         long userId = authenticationFacade.currentUserId();
         Long organizationId = authenticationFacade.currentOrganizationId();
@@ -115,9 +116,11 @@ public class DatabaseChangeChangingOrderTemplateService {
         DatabaseChangeChangingOrderTemplateEntity databaseChangeChangingOrderTemplateEntity =
                 databaseChangeChangingOrderTemplateRepository.findById(id).orElseThrow(
                         () -> new NoSuchElementException("the template does not exist"));
-        projectPermissionValidator.checkProjectRole(databaseChangeChangingOrderTemplateEntity.getProjectId(), ResourceRoleName.all());
+        projectPermissionValidator.checkProjectRole(databaseChangeChangingOrderTemplateEntity.getProjectId(),
+                ResourceRoleName.all());
         String databaseSequencesJson = databaseChangeChangingOrderTemplateEntity.getDatabaseSequences();
-        List<List<Long>> databaseSequences = JsonUtils.fromJson(databaseSequencesJson, new TypeReference<List<List<Long>>>() {});
+        List<List<Long>> databaseSequences =
+                JsonUtils.fromJson(databaseSequencesJson, new TypeReference<List<List<Long>>>() {});
         List<Long> ids = databaseSequences.stream().flatMap(x -> x.stream()).distinct().collect(
                 Collectors.toList());
         List<DatabaseEntity> byIdIn = databaseRepository.findByIdIn(ids);
@@ -142,22 +145,24 @@ public class DatabaseChangeChangingOrderTemplateService {
 
 
     public Page<DatabaseChangeChangingOrderTemplateEntity> listDatabaseChangingOrderTemplates(
-        @NotNull Pageable pageable,
-        @NotNull QueryDatabaseChangeChangingOrderParams params) {
+            @NotNull Pageable pageable,
+            @NotNull QueryDatabaseChangeChangingOrderParams params) {
         projectPermissionValidator.checkProjectRole(params.getProjectId(), ResourceRoleName.all());
         Specification<DatabaseChangeChangingOrderTemplateEntity> specification = Specification
-            .where(DatabaseChangeChangingOrderTemplateSpecs.nameLikes(params.getName()))
-            .and(DatabaseChangeChangingOrderTemplateSpecs.projectIdEquals(params.getProjectId()))
-            .and(DatabaseChangeChangingOrderTemplateSpecs.creatorIdIn(Collections.singleton(params.getCreatorId())));
-       return databaseChangeChangingOrderTemplateRepository.findAll(specification, pageable);
+                .where(DatabaseChangeChangingOrderTemplateSpecs.nameLikes(params.getName()))
+                .and(DatabaseChangeChangingOrderTemplateSpecs.projectIdEquals(params.getProjectId()))
+                .and(DatabaseChangeChangingOrderTemplateSpecs
+                        .creatorIdIn(Collections.singleton(params.getCreatorId())));
+        return databaseChangeChangingOrderTemplateRepository.findAll(specification, pageable);
     }
 
     @Transactional
     public Boolean deleteDatabaseChangingOrderTemplateById(@NotNull @Min(value = 0) Long id) {
         DatabaseChangeChangingOrderTemplateEntity databaseChangeChangingOrderTemplateEntity =
-            databaseChangeChangingOrderTemplateRepository.findById(id).orElseThrow(
-                () -> new NoSuchElementException("the template does not exist"));
-        projectPermissionValidator.checkProjectRole(databaseChangeChangingOrderTemplateEntity.getProjectId(), ResourceRoleName.all());
+                databaseChangeChangingOrderTemplateRepository.findById(id).orElseThrow(
+                        () -> new NoSuchElementException("the template does not exist"));
+        projectPermissionValidator.checkProjectRole(databaseChangeChangingOrderTemplateEntity.getProjectId(),
+                ResourceRoleName.all());
         databaseChangeChangingOrderTemplateRepository.deleteByIdAndProjectId(id, authenticationFacade.currentUserId());
         return true;
     }
