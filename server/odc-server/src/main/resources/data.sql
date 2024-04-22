@@ -792,9 +792,9 @@ INSERT INTO config_system_configuration(`key`, `value`, `description`) VALUES('o
 INSERT INTO config_system_configuration(`key`, `value`, `description`) VALUES('odc.database.schema.sync.executor-thread-count',
  '8', 'thread count for synchronizing database schema') ON DUPLICATE KEY UPDATE `id`=`id`;
 INSERT INTO config_system_configuration(`key`, `value`, `description`) VALUES('odc.database.schema.sync.block-exclusions-when-sync-db-to-project',
- 'mysql, information_schema, test', 'whether to block exclusions when syncing the database to the project') ON DUPLICATE KEY UPDATE `id`=`id`;
+ 'true', 'whether to block exclusions when syncing the database to the project') ON DUPLICATE KEY UPDATE `id`=`id`;
 INSERT INTO config_system_configuration(`key`, `value`, `description`) VALUES('odc.database.schema.sync.block-exclusions-when-sync-db-schemas',
- 'mysql, information_schema, test', 'whether to block exclusions when syncing the database schemas') ON DUPLICATE KEY UPDATE `id`=`id`;
+ 'true', 'whether to block exclusions when syncing the database schemas') ON DUPLICATE KEY UPDATE `id`=`id`;
 INSERT INTO config_system_configuration(`key`, `value`, `description`) VALUES('odc.database.schema.sync.exclude-schemas.ob-mysql',
  'mysql, information_schema, test, oceanbase', 'schema exclusions when synchronizing OceanBase MySQL mode database schema') ON DUPLICATE KEY UPDATE `id`=`id`;
 INSERT INTO config_system_configuration(`key`, `value`, `description`) VALUES('odc.database.schema.sync.exclude-schemas.ob-oracle',

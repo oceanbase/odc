@@ -15,6 +15,7 @@
  */
 package com.oceanbase.odc.service.db.schema.syncer.column;
 
+import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -24,16 +25,19 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.apache.commons.collections4.CollectionUtils;
+import org.pf4j.ExtensionPoint;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.Ordered;
 
+import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.metadb.dbobject.DBColumnEntity;
 import com.oceanbase.odc.metadb.dbobject.DBColumnRepository;
 import com.oceanbase.odc.metadb.dbobject.DBObjectEntity;
 import com.oceanbase.odc.metadb.dbobject.DBObjectRepository;
 import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.db.schema.syncer.DBSchemaSyncer;
-import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
+import com.oceanbase.odc.service.plugin.SchemaPluginUtil;
+import com.oceanbase.tools.dbbrowser.model.DBObjectType;
 
 import lombok.NonNull;
 
@@ -50,10 +54,13 @@ public abstract class AbstractDBColumnSyncer implements DBSchemaSyncer {
     private DBColumnRepository dbColumnRepository;
 
     @Override
-    public void sync(@NonNull DBSchemaAccessor accessor, @NonNull Database database) {
-        Map<String, Set<String>> latestObject2Columns = getLatestObjectToColumns(accessor, database);
+    public void sync(@NonNull Connection connection, @NonNull Database database, @NonNull DialectType dialectType) {
+        if (getExtensionPoint(dialectType) == null) {
+            return;
+        }
+        Map<String, Set<String>> latestObject2Columns = getLatestObjectToColumns(connection, database, dialectType);
         Map<String, DBObjectEntity> existingObject2Entity =
-                dbObjectRepository.findByDatabaseIdAndType(database.getId(), getObjectType()).stream()
+                dbObjectRepository.findByDatabaseIdAndType(database.getId(), getColumnRelatedObjectType()).stream()
                         .collect(Collectors.toMap(DBObjectEntity::getName, e -> e, (e1, e2) -> e1));
         if (CollectionUtils.isEmpty(existingObject2Entity.entrySet())) {
             return;
@@ -100,11 +107,25 @@ public abstract class AbstractDBColumnSyncer implements DBSchemaSyncer {
     }
 
     @Override
+    public DBObjectType getObjectType() {
+        return DBObjectType.COLUMN;
+    }
+
+    @Override
     public int getOrder() {
         return Ordered.LOWEST_PRECEDENCE;
     }
 
-    abstract Map<String, Set<String>> getLatestObjectToColumns(@NonNull DBSchemaAccessor accessor,
-            @NonNull Database database);
+    protected ExtensionPoint getExtensionPoint(@NonNull DialectType dialectType) {
+        List<? extends ExtensionPoint> points = SchemaPluginUtil.getExtensions(dialectType, getExtensionPointClass());
+        return CollectionUtils.isEmpty(points) ? null : points.get(0);
+    }
+
+    abstract DBObjectType getColumnRelatedObjectType();
+
+    abstract Class<? extends ExtensionPoint> getExtensionPointClass();
+
+    abstract Map<String, Set<String>> getLatestObjectToColumns(@NonNull Connection accessor, @NonNull Database database,
+            @NonNull DialectType dialectType);
 
 }

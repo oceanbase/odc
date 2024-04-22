@@ -15,12 +15,13 @@
  */
 package com.oceanbase.odc.service.db.schema.syncer;
 
+import java.sql.Connection;
+
 import org.springframework.core.Ordered;
 
 import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.tools.dbbrowser.model.DBObjectType;
-import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
 
 import lombok.NonNull;
 
@@ -33,10 +34,11 @@ public interface DBSchemaSyncer extends Ordered {
     /**
      * Sync database metadata
      * 
-     * @param accessor db schema accessor, refer to {@link DBSchemaAccessor}
+     * @param connection JDBC connection that is connected to the target database
      * @param database target database, refer to {@link Database}
+     * @param dialectType dialect type, refer to {@link DialectType}
      */
-    void sync(@NonNull DBSchemaAccessor accessor, @NonNull Database database);
+    void sync(@NonNull Connection connection, @NonNull Database database, @NonNull DialectType dialectType);
 
     /**
      * Get the object type that the synchronizer supports
@@ -44,13 +46,5 @@ public interface DBSchemaSyncer extends Ordered {
      * @return object type, refer to {@link DBObjectType}
      */
     DBObjectType getObjectType();
-
-    /**
-     * Whether the synchronizer supports the specified dialect type
-     * 
-     * @param dialectType dialect type
-     * @return true if support
-     */
-    boolean supports(@NonNull DialectType dialectType);
 
 }

@@ -15,6 +15,8 @@
  */
 package com.oceanbase.odc.service.db.schema;
 
+import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -23,6 +25,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 
 import javax.annotation.PostConstruct;
+import javax.sql.DataSource;
 
 import org.springframework.beans.factory.ListableBeanFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,17 +34,14 @@ import org.springframework.integration.jdbc.lock.JdbcLockRegistry;
 import org.springframework.stereotype.Service;
 
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
-import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.exception.ConflictException;
 import com.oceanbase.odc.service.connection.ConnectionService;
 import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
-import com.oceanbase.odc.service.db.browser.DBSchemaAccessors;
 import com.oceanbase.odc.service.db.schema.syncer.DBSchemaSyncer;
-import com.oceanbase.odc.service.session.factory.DefaultConnectSessionFactory;
-import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
+import com.oceanbase.odc.service.session.factory.OBConsoleDataSourceFactory;
 
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
@@ -74,7 +74,7 @@ public class DBSchemaSyncService {
         this.syncers = implementations;
     }
 
-    public boolean sync(@NonNull Database database) throws InterruptedException {
+    public boolean sync(@NonNull Database database) throws InterruptedException, SQLException {
         PreConditions.notNull(database.getDataSource(), "database.dataSource");
         Long dataSourceId = database.getDataSource().getId();
         Lock lock = jdbcLockRegistry.obtain("sync-datasource-" + dataSourceId + "-database-" + database.getId());
@@ -83,24 +83,19 @@ public class DBSchemaSyncService {
         }
         try {
             ConnectionConfig config = connectionService.getForConnectionSkipPermissionCheck(dataSourceId);
-            ConnectionSession session = new DefaultConnectSessionFactory(config).generateSession();
-            try {
-                DBSchemaAccessor accessor = DBSchemaAccessors.create(session);
+            DataSource dataSource = new OBConsoleDataSourceFactory(config, true).getDataSource();
+            try (Connection conn = dataSource.getConnection()) {
                 boolean success = true;
                 for (DBSchemaSyncer syncer : syncers) {
-                    if (syncer.supports(config.getDialectType())) {
-                        try {
-                            syncer.sync(accessor, database);
-                        } catch (Exception e) {
-                            success = false;
-                            log.warn("Failed to synchronize {} for database id={}", syncer.getObjectType(),
-                                    database.getId(), e);
-                        }
+                    try {
+                        syncer.sync(conn, database, config.getDialectType());
+                    } catch (Exception e) {
+                        success = false;
+                        log.warn("Failed to synchronize {} for database id={}", syncer.getObjectType(),
+                                database.getId(), e);
                     }
                 }
                 return success;
-            } finally {
-                session.expire();
             }
         } finally {
             lock.unlock();

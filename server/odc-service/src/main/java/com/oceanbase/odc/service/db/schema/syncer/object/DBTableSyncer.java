@@ -15,15 +15,18 @@
  */
 package com.oceanbase.odc.service.db.schema.syncer.object;
 
-import java.util.HashSet;
+import java.sql.Connection;
 import java.util.Set;
+import java.util.stream.Collectors;
 
+import org.pf4j.ExtensionPoint;
 import org.springframework.stereotype.Component;
 
 import com.oceanbase.odc.core.shared.constant.DialectType;
+import com.oceanbase.odc.plugin.schema.api.TableExtensionPoint;
 import com.oceanbase.odc.service.connection.database.model.Database;
+import com.oceanbase.tools.dbbrowser.model.DBObjectIdentity;
 import com.oceanbase.tools.dbbrowser.model.DBObjectType;
-import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
 
 import lombok.NonNull;
 
@@ -35,18 +38,21 @@ import lombok.NonNull;
 public class DBTableSyncer extends AbstractDBObjectSyncer {
 
     @Override
-    protected Set<String> getLatestObjectNames(@NonNull DBSchemaAccessor accessor, @NonNull Database database) {
-        return new HashSet<>(accessor.showTables(database.getName()));
+    Class<? extends ExtensionPoint> getExtensionPointClass() {
+        return TableExtensionPoint.class;
+    }
+
+    @Override
+    protected Set<String> getLatestObjectNames(@NonNull Connection connection, @NonNull Database database,
+            @NonNull DialectType dialectType) {
+        TableExtensionPoint point = (TableExtensionPoint) getExtensionPoint(dialectType);
+        return point.list(connection, database.getName()).stream().map(DBObjectIdentity::getName)
+                .collect(Collectors.toSet());
     }
 
     @Override
     public DBObjectType getObjectType() {
         return DBObjectType.TABLE;
-    }
-
-    @Override
-    public boolean supports(@NonNull DialectType dialectType) {
-        return dialectType.isMysql() || dialectType.isOracle() || dialectType.isDoris();
     }
 
 }

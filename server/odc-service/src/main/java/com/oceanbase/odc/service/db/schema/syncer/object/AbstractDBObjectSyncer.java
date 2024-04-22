@@ -15,20 +15,23 @@
  */
 package com.oceanbase.odc.service.db.schema.syncer.object;
 
+import java.sql.Connection;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.apache.commons.collections4.CollectionUtils;
+import org.pf4j.ExtensionPoint;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.Ordered;
 
+import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.metadb.dbobject.DBColumnRepository;
 import com.oceanbase.odc.metadb.dbobject.DBObjectEntity;
 import com.oceanbase.odc.metadb.dbobject.DBObjectRepository;
 import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.db.schema.syncer.DBSchemaSyncer;
-import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
+import com.oceanbase.odc.service.plugin.SchemaPluginUtil;
 
 import lombok.NonNull;
 
@@ -45,8 +48,11 @@ public abstract class AbstractDBObjectSyncer implements DBSchemaSyncer {
     private DBColumnRepository dbColumnRepository;
 
     @Override
-    public void sync(@NonNull DBSchemaAccessor accessor, @NonNull Database database) {
-        Set<String> latestObjectNames = getLatestObjectNames(accessor, database);
+    public void sync(@NonNull Connection connection, @NonNull Database database, @NonNull DialectType dialectType) {
+        if (getExtensionPoint(dialectType) == null) {
+            return;
+        }
+        Set<String> latestObjectNames = getLatestObjectNames(connection, database, dialectType);
         List<DBObjectEntity> existingObjects =
                 dbObjectRepository.findByDatabaseIdAndType(database.getId(), getObjectType());
         // Insert objects that are not in the existing object list
@@ -79,6 +85,14 @@ public abstract class AbstractDBObjectSyncer implements DBSchemaSyncer {
         return Ordered.HIGHEST_PRECEDENCE;
     }
 
-    abstract Set<String> getLatestObjectNames(@NonNull DBSchemaAccessor accessor, @NonNull Database database);
+    protected ExtensionPoint getExtensionPoint(@NonNull DialectType dialectType) {
+        List<? extends ExtensionPoint> points = SchemaPluginUtil.getExtensions(dialectType, getExtensionPointClass());
+        return CollectionUtils.isEmpty(points) ? null : points.get(0);
+    }
+
+    abstract Class<? extends ExtensionPoint> getExtensionPointClass();
+
+    abstract Set<String> getLatestObjectNames(@NonNull Connection connection, @NonNull Database database,
+            @NonNull DialectType dialectType);
 
 }

@@ -15,16 +15,18 @@
  */
 package com.oceanbase.odc.service.db.schema.syncer.column;
 
+import java.sql.Connection;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Component;
 
+import com.oceanbase.odc.core.shared.constant.DialectType;
+import com.oceanbase.odc.plugin.schema.api.ColumnExtensionPoint;
 import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.tools.dbbrowser.model.DBObjectType;
 import com.oceanbase.tools.dbbrowser.model.DBTableColumn;
-import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
 
 import lombok.NonNull;
 
@@ -36,14 +38,16 @@ import lombok.NonNull;
 public class DBViewColumnSyncer extends DBTableColumnSyncer {
 
     @Override
-    Map<String, Set<String>> getLatestObjectToColumns(@NonNull DBSchemaAccessor accessor, @NonNull Database database) {
-        return accessor.listBasicViewColumns(database.getName()).entrySet().stream()
+    Map<String, Set<String>> getLatestObjectToColumns(@NonNull Connection connection, @NonNull Database database,
+            @NonNull DialectType dialectType) {
+        ColumnExtensionPoint point = (ColumnExtensionPoint) getExtensionPoint(dialectType);
+        return point.listBasicViewColumns(connection, database.getName()).entrySet().stream()
                 .collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue()
                         .stream().map(DBTableColumn::getName).collect(Collectors.toSet())));
     }
 
     @Override
-    public DBObjectType getObjectType() {
+    public DBObjectType getColumnRelatedObjectType() {
         return DBObjectType.VIEW;
     }
 

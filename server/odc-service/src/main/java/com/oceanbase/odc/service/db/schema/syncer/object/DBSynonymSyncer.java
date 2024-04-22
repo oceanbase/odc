@@ -15,18 +15,19 @@
  */
 package com.oceanbase.odc.service.db.schema.syncer.object;
 
-import java.util.List;
+import java.sql.Connection;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import org.pf4j.ExtensionPoint;
 import org.springframework.stereotype.Component;
 
 import com.oceanbase.odc.core.shared.constant.DialectType;
+import com.oceanbase.odc.plugin.schema.api.SynonymExtensionPoint;
 import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.tools.dbbrowser.model.DBObjectIdentity;
 import com.oceanbase.tools.dbbrowser.model.DBObjectType;
 import com.oceanbase.tools.dbbrowser.model.DBSynonymType;
-import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
 
 import lombok.NonNull;
 
@@ -38,19 +39,21 @@ import lombok.NonNull;
 public class DBSynonymSyncer extends AbstractDBObjectSyncer {
 
     @Override
-    Set<String> getLatestObjectNames(@NonNull DBSchemaAccessor accessor, @NonNull Database database) {
-        List<DBObjectIdentity> synonyms = accessor.listSynonyms(database.getName(), DBSynonymType.COMMON);
-        return synonyms.stream().map(DBObjectIdentity::getName).collect(Collectors.toSet());
+    Class<? extends ExtensionPoint> getExtensionPointClass() {
+        return SynonymExtensionPoint.class;
+    }
+
+    @Override
+    protected Set<String> getLatestObjectNames(@NonNull Connection connection, @NonNull Database database,
+            @NonNull DialectType dialectType) {
+        SynonymExtensionPoint point = (SynonymExtensionPoint) getExtensionPoint(dialectType);
+        return point.list(connection, database.getName(), DBSynonymType.COMMON).stream().map(DBObjectIdentity::getName)
+                .collect(Collectors.toSet());
     }
 
     @Override
     public DBObjectType getObjectType() {
         return DBObjectType.SYNONYM;
-    }
-
-    @Override
-    public boolean supports(@NonNull DialectType dialectType) {
-        return dialectType.isOracle();
     }
 
 }
