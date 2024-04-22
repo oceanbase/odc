@@ -25,6 +25,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.jdbc.JdbcTestUtils;
 
 import com.oceanbase.odc.ServiceTestEnv;
+import com.oceanbase.odc.core.shared.exception.BadArgumentException;
 import com.oceanbase.odc.migrate.jdbc.common.MigrateTestUtils;
 
 public class V4131InitialPasswordMigrateTest extends ServiceTestEnv {
@@ -42,8 +43,8 @@ public class V4131InitialPasswordMigrateTest extends ServiceTestEnv {
         jdbcTemplate.update("update iam_user set is_active=0 where account_name='admin'");
     }
 
-    @Test(expected = IllegalArgumentException.class)
-    public void migrate_WeakPassword_IllegalArgumentException() {
+    @Test(expected = BadArgumentException.class)
+    public void migrate_WeakPassword_BadArgumentException() {
         System.setProperty("ODC_ADMIN_INITIAL_PASSWORD", "weak");
         V4131InitialPasswordMigrate migrate = new V4131InitialPasswordMigrate();
         migrate.migrate(dataSource);

@@ -42,9 +42,10 @@ import org.springframework.web.multipart.MultipartFile;
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.authority.util.Authenticated;
 import com.oceanbase.odc.core.authority.util.PreAuthenticate;
+import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
-import com.oceanbase.odc.core.shared.exception.VerifyException;
+import com.oceanbase.odc.core.shared.exception.HttpException;
 import com.oceanbase.odc.service.common.util.FileConvertUtils;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.iam.model.BatchImportUser;
@@ -61,11 +62,9 @@ import lombok.extern.slf4j.Slf4j;
 public class UserBatchImportPreviewer {
 
     private static final Pattern ACCOUNT_NAME_PATTERN = Pattern.compile("^[\\w.+@#$%]{4,64}$");
-    private static final Pattern PASSWORD_PATTERN = Pattern.compile(
-            "^(?=(?:[^0-9]*[0-9]){2})(?=(?:[^A-Z]*[A-Z]){2})(?=(?:[^a-z]*[a-z]){2})"
-                    + "(?=(?:[^._+@#$%]*[._+@#$%]){2})[\\w._+@#$%]{8,32}$");
     private static final Pattern SPACE_PATTERN = Pattern.compile("^(?=\\S).{1,64}(?<=[^.\\s])$");
     public static final int DESCRIPTION_MAX_LENGTH = 140;
+
     @Autowired
     private RoleService roleService;
     @Autowired
@@ -92,7 +91,7 @@ public class UserBatchImportPreviewer {
             BatchImportUser batchImportUser;
             try {
                 batchImportUser = createBatchImportUser(map, accountNames, roleName2RoleMap);
-            } catch (VerifyException e) {
+            } catch (HttpException e) {
                 batchImportUser = BatchImportUser.ofFail(e.getLocalizedMessage());
                 batchImportUser.setName(map.get(USER_NAME.getLocalizedMessage()));
             }
@@ -132,9 +131,7 @@ public class UserBatchImportPreviewer {
         batchImportUser.setAccountName(accountName);
 
         String password = map.get(USER_PASSWORD.getLocalizedMessage());
-        Verify.verify(PASSWORD_PATTERN.matcher(password).matches(),
-                "password must be 8 to 32 characters long and include at least 2 digits, 2 uppercase letters, "
-                        + "2 lowercase letters, and 2 special characters from ._+@#$%");
+        PreConditions.validPassword(password);
         batchImportUser.setPassword(password);
 
         String enabled = map.get(USER_ENABLED.getLocalizedMessage());

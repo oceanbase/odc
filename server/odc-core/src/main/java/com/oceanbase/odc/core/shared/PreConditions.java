@@ -25,6 +25,7 @@ import java.util.function.BooleanSupplier;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
 
+import com.oceanbase.odc.common.security.PasswordChecker;
 import com.oceanbase.odc.common.security.SqlInjectionDetector;
 import com.oceanbase.odc.common.util.FilePathTraversalChecker;
 import com.oceanbase.odc.common.util.SSRFChecker;
@@ -114,6 +115,12 @@ public class PreConditions {
                     String.format("%s was negative, value=%d", parameterName, value));
         }
         return value;
+    }
+
+    public static void validPassword(String password) {
+        if (!PasswordChecker.checkPassword(password)) {
+            throw new BadArgumentException(ErrorCodes.UserInvalidPassword, null, "invalid password");
+        }
     }
 
     public static void validArgumentState(final boolean expression, ErrorCode errorCode, Object[] args,
