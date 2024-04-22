@@ -199,7 +199,7 @@ public class UserService {
      */
     @SkipAuthorize("odc internal usage")
     @Transactional(rollbackFor = Exception.class)
-    public User createIfNotExistsOrUpdate(UserEntity userEntity, List<String> roleNames) {
+    public User upsert(UserEntity userEntity, List<String> roleNames) {
         User user;
         Optional<UserEntity> optionalUser = userRepository.findByAccountName(userEntity.getAccountName());
         if (optionalUser.isPresent()) {
@@ -221,9 +221,7 @@ public class UserService {
                     RoleEntity roleEntity =
                             roleRepository.findByNameAndOrganizationId(roleName, user.getOrganizationId())
                                     .orElseThrow(() -> new NotFoundException(ResourceType.ODC_ROLE, "name", roleName));
-                    PreConditions.validArgumentState(roleEntity.getType() != RoleType.INTERNAL, ErrorCodes.BadArgument,
-                            new Object[] {"Internal role does not allow operation"},
-                            "Internal role does not allow operation");
+                    Verify.verify(roleEntity.getType() != RoleType.INTERNAL, "Internal role does not allow operation");
                     Long roleId = roleEntity.getId();
                     UserRoleEntity userRoleEntity = new UserRoleEntity();
                     userRoleEntity.setUserId(user.getId());

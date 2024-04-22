@@ -78,11 +78,11 @@ public class SsoUserDetailService {
         TraceContextHolder.setAccountName(accountName);
         OrganizationEntity organization = organizationRepository.findById(mappingResult.getOrganizationId())
                 .orElseThrow(() -> new NotFoundException(ODC_ORGANIZATION, "id", mappingResult.getOrganizationId()));
-        UserEntity entity = User.autoCreatedUserEntity(accountName, MoreObjects.firstNonNull(nickName, accountName),
+        UserEntity entity = UserEntity.autoCreatedEntity(accountName, MoreObjects.firstNonNull(nickName, accountName),
                 organization.getId());
         entity.setDescription("Auto generated user for OAuth2 integration");
         entity.setExtraPropertiesJson(mappingResult.getExtraInfo());
-        User user = userService.createIfNotExistsOrUpdate(entity, null);
+        User user = userService.upsert(entity, null);
         sourceUserInfoMap.put("odcUserId", user.getId());
         sourceUserInfoMap.put("organizationId", user.getOrganizationId());
         applicationContext.publishEvent(new TriggerEvent(OAUTH_2_FIRST_TIME_LOGIN, sourceUserInfoMap));
