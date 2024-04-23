@@ -39,6 +39,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.oceanbase.odc.core.session.ConnectionSession;
+import com.oceanbase.odc.core.shared.exception.NotImplementedException;
 import com.oceanbase.odc.service.common.response.ListResponse;
 import com.oceanbase.odc.service.common.response.Responses;
 import com.oceanbase.odc.service.common.response.SuccessResponse;
@@ -63,6 +64,7 @@ import com.oceanbase.odc.service.session.model.SqlAsyncExecuteResp;
 import com.oceanbase.odc.service.session.model.SqlExecuteResult;
 import com.oceanbase.odc.service.sqlcheck.SqlCheckService;
 import com.oceanbase.odc.service.sqlcheck.model.CheckResult;
+import com.oceanbase.odc.service.sqlcheck.model.MultipleSqlCheckReq;
 import com.oceanbase.odc.service.sqlcheck.model.SqlCheckReq;
 import com.oceanbase.odc.service.state.model.StateName;
 import com.oceanbase.odc.service.state.model.StatefulRoute;
@@ -159,6 +161,18 @@ public class ConnectSessionController {
     public ListResponse<CheckResult> check(@PathVariable String sessionId, @RequestBody SqlCheckReq req) {
         ConnectionSession connectionSession = sessionService.nullSafeGet(SidUtils.getSessionId(sessionId), true);
         return Responses.list(this.sqlCheckService.check(connectionSession, req));
+    }
+
+    /**
+     * 对多个数据库进行sql检查 todo 待完善
+     * 
+     * @param req
+     * @return
+     */
+    @ApiOperation(value = "sqlCheck", notes = "statically check the contents of multiple sql scripts")
+    @PostMapping("sessions/sqlCheck")
+    public ListResponse<CheckResult> multipleCheck(@RequestBody MultipleSqlCheckReq req) {
+        throw new NotImplementedException("Unsupported now");
     }
 
     /**
