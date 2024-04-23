@@ -26,6 +26,8 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import com.oceanbase.odc.service.task.enums.JobStatus;
+
 /**
  * @author yaobin
  * @date 2023-12-06
@@ -36,13 +38,14 @@ public interface JobRepository extends JpaRepository<JobEntity, Long>,
         JpaSpecificationExecutor<JobEntity> {
 
     @Transactional
-    @Query("update JobEntity set "
-            + " executorEndpoint=:#{#param.executorEndpoint},status=:#{#param.status},"
-            + " progressPercentage=:#{#param.progressPercentage},resultJson=:#{#param.resultJson},"
-            + " finishedTime=:#{#param.finishedTime},lastReportTime=:#{#param.lastReportTime}"
-            + " where id=:#{#param.id}")
+    @Query(value = "update job_job set "
+            + " executor_endpoint=:#{#param.executorEndpoint},status=:#{#param.status.name()},"
+            + " progress_percentage=:#{#param.progressPercentage},result_json=:#{#param.resultJson},"
+            + " finished_time=:#{#param.finishedTime},last_report_time=:#{#param.lastReportTime}"
+            + " where id=:id and status =:#{#oldStatus.name()}", nativeQuery = true)
     @Modifying
-    int update(@Param("param") JobEntity entity);
+    int updateReportResult(@Param("param") JobEntity entity, @Param("id") Long id,
+            @Param("oldStatus") JobStatus oldStatus);
 
     @Transactional
     @Query("update JobEntity set "

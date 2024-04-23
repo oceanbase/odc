@@ -305,7 +305,7 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
             log.warn("Job identity is null");
             return;
         }
-        JobEntity je = findWithPessimisticLock(taskResult.getJobIdentity().getId());
+        JobEntity je = find(taskResult.getJobIdentity().getId());
         if (je == null) {
             log.warn("Job identity is not exists by id {}", taskResult.getJobIdentity().getId());
             return;
@@ -314,7 +314,7 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
             log.warn("Job {} is finished, ignore result, currentStatus={}", je.getId(), je.getStatus());
             return;
         }
-        int rows = updateJobScheduleEntity(taskResult);
+        int rows = updateJobScheduleEntity(taskResult, je);
         if (rows > 0) {
             taskResultPublisherExecutor
                     .execute(() -> publisher.publishEvent(new DefaultJobProcessUpdateEvent(taskResult)));
@@ -350,8 +350,8 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
 
     }
 
-    private int updateJobScheduleEntity(TaskResult taskResult) {
-        JobEntity jse = find(taskResult.getJobIdentity().getId());
+    private int updateJobScheduleEntity(TaskResult taskResult, JobEntity currentJob) {
+        JobEntity jse = new JobEntity();
         jse.setResultJson(taskResult.getResultJson());
         jse.setStatus(taskResult.getStatus());
         jse.setProgressPercentage(taskResult.getProgress());
@@ -360,7 +360,7 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
         if (taskResult.getStatus() != null && taskResult.getStatus().isTerminated()) {
             jse.setFinishedTime(JobDateUtils.getCurrentDate());
         }
-        int rows = jobRepository.update(jse);
+        int rows = jobRepository.updateReportResult(jse, currentJob.getId(), currentJob.getStatus());
         if (rows > 0 && taskResult.getLogMetadata() != null && taskResult.getStatus().isTerminated()) {
             saveOrUpdateLogMetadata(taskResult, jse);
         }
