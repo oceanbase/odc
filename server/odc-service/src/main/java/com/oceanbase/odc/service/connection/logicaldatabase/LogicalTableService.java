@@ -25,7 +25,7 @@ import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.exception.UnexpectedException;
 import com.oceanbase.odc.service.connection.logicaldatabase.model.DataNode;
 import com.oceanbase.odc.service.connection.logicaldatabase.parser.DefaultLogicalTableExpressionParser;
-import com.oceanbase.odc.service.connection.logicaldatabase.parser.LogicalTableExpression;
+import com.oceanbase.odc.service.connection.logicaldatabase.parser.LogicalTableExpressions;
 import com.oceanbase.odc.service.connection.logicaldatabase.parser.SyntaxErrorException;
 
 /**
@@ -39,9 +39,9 @@ public class LogicalTableService {
 
     public List<DataNode> resolve(String expression) {
         PreConditions.notEmpty(expression, "expression");
-        LogicalTableExpression logicalTableExpression;
+        LogicalTableExpressions logicalTableExpression;
         try {
-            logicalTableExpression = (LogicalTableExpression) parser.parse(expression);
+            logicalTableExpression = (LogicalTableExpressions) parser.parse(expression);
         } catch (SyntaxErrorException e) {
             throw new BadExpressionException(ErrorCodes.BadLogicalTableExpressionSyntax,
                     new Object[] {e.getErrorText()},

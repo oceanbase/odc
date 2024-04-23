@@ -2,6 +2,7 @@ grammar LogicalTableExpression;
 @header {
 package com.oceanbase.odc.service.connection.logicaldatabase;
 }
+logicalTableExpressionList: logicalTableExpression (COMMA logicalTableExpression)* ;
 
 logicalTableExpression: schemaExpression DOT tableExpression ;
 

@@ -17,3 +17,15 @@
 - id: 5
   expression: "db_[0-3].tb_[0-2]"
   error_message_abstract: "The number of tables 3 cannot be evenly divided by the number of databases 4. Please ensure that tables can be evenly distributed across databases and try again."
+
+- id: 6
+  expression: "db_[0-3].tb_[0-3],"
+  error_message_abstract: "tb_[0-3],"
+
+- id: 7
+  expression: "db_[0-3].tb_[0-3], bad_db"
+  error_message_abstract: "bad_db"
+
+- id: 8
+  expression: "db_[1,2,3].tb_[1,2,3,4,5,6], bad_db.tb_[]"
+  error_message_abstract: "tb_[]"

@@ -24,6 +24,7 @@ import org.antlr.v4.runtime.tree.TerminalNode;
 import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.service.connection.logicaldatabase.LogicalTableExpressionBaseVisitor;
+import com.oceanbase.odc.service.connection.logicaldatabase.LogicalTableExpressionParser;
 import com.oceanbase.odc.service.connection.logicaldatabase.LogicalTableExpressionParser.ConsecutiveRangeContext;
 import com.oceanbase.odc.service.connection.logicaldatabase.LogicalTableExpressionParser.EnumRangeContext;
 import com.oceanbase.odc.service.connection.logicaldatabase.LogicalTableExpressionParser.LogicalTableExpressionContext;
@@ -43,6 +44,19 @@ import com.oceanbase.tools.sqlparser.statement.BaseStatement;
  * @Description: []
  */
 public class LogicalTableExpressionVisitor extends LogicalTableExpressionBaseVisitor<BaseStatement> {
+    @Override
+    public BaseStatement visitLogicalTableExpressionList(
+            LogicalTableExpressionParser.LogicalTableExpressionListContext ctx) {
+        PreConditions.notEmpty(ctx.logicalTableExpression(), "logicalTableExpression");
+        LogicalTableExpressions expressions = new LogicalTableExpressions(ctx);
+        List<LogicalTableExpression> expressionList = new ArrayList<>();
+        for (LogicalTableExpressionContext expression : ctx.logicalTableExpression()) {
+            expressionList.add((LogicalTableExpression) visitLogicalTableExpression(expression));
+        }
+        expressions.setExpressions(expressionList);
+        return expressions;
+    }
+
     @Override
     public BaseStatement visitLogicalTableExpression(LogicalTableExpressionContext ctx) {
         PreConditions.notNull(ctx.schemaExpression(), "schemaExpression");

@@ -38,6 +38,6 @@ public class DefaultLogicalTableExpressionParser {
         parser.addErrorListener(new FastFailErrorListener());
         parser.setErrorHandler(new FastFailErrorStrategy());
         LogicalTableExpressionVisitor visitor = new LogicalTableExpressionVisitor();
-        return visitor.visit(parser.logicalTableExpression());
+        return visitor.visit(parser.logicalTableExpressionList());
     }
 }
