@@ -163,6 +163,7 @@ public class OdcStatementCallBack implements StatementCallback<List<JdbcGeneralR
         this.connectionSession = connectionSession;
         this.stopWhenError = stopWhenError;
         this.binaryDataManager = ConnectionSessionUtil.getBinaryDataManager(connectionSession);
+        ConnectionSessionUtil.setConsoleSessionKillQueryFlag(connectionSession, false);
         Validate.notNull(this.binaryDataManager, "BinaryDataManager can not be null");
         this.context = context;
     }
@@ -211,20 +212,25 @@ public class OdcStatementCallBack implements StatementCallback<List<JdbcGeneralR
                 }
                 List<JdbcGeneralResult> executeResults;
                 if (returnVal.stream().noneMatch(r -> r.getStatus() == SqlExecuteStatus.FAILED) || !stopWhenError) {
-                    CountDownLatch latch = new CountDownLatch(1);
-                    if (context != null) {
-                        handle = executor.submit(() -> {
-                            try {
-                                if (!latch.await(1100, TimeUnit.MILLISECONDS)) {
-                                    context.onQueryExecuting();
+                    if (Thread.currentThread().isInterrupted()
+                            || ConnectionSessionUtil.isConsoleSessionKillQuery(connectionSession)) {
+                        executeResults = Collections.singletonList(JdbcGeneralResult.canceledResult(sqlTuple));
+                    } else {
+                        CountDownLatch latch = new CountDownLatch(1);
+                        if (context != null) {
+                            handle = executor.submit(() -> {
+                                try {
+                                    if (!latch.await(1100, TimeUnit.MILLISECONDS)) {
+                                        context.onQueryExecuting();
+                                    }
+                                } catch (InterruptedException e) {
+                                    log.warn("Failed to call back.", e);
                                 }
-                            } catch (InterruptedException e) {
-                                log.warn("Failed to call back.", e);
-                            }
-                            return null;
-                        });
+                                return null;
+                            });
+                        }
+                        executeResults = doExecuteSql(statement, sqlTuple);
                     }
-                    executeResults = doExecuteSql(statement, sqlTuple, latch);
                 } else {
                     executeResults = Collections.singletonList(JdbcGeneralResult.canceledResult(sqlTuple));
                 }

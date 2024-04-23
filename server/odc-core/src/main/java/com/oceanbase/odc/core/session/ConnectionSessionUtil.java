@@ -326,6 +326,19 @@ public class ConnectionSessionUtil {
         return (Boolean) value;
     }
 
+    public static void setConsoleSessionKillQueryFlag(@NonNull ConnectionSession connectionSession,
+            @NonNull Boolean killQuery) {
+        connectionSession.setAttribute(ConnectionSessionConstants.CONNECTION_KILLQUERY_KEY, killQuery);
+    }
+
+    public static boolean isConsoleSessionKillQuery(@NonNull ConnectionSession connectionSession) {
+        Object value = connectionSession.getAttribute(ConnectionSessionConstants.CONNECTION_KILLQUERY_KEY);
+        if (value == null) {
+            return false;
+        }
+        return (Boolean) value;
+    }
+
     public static void setColumnAccessor(@NonNull ConnectionSession connectionSession, @NonNull Object columnAccessor) {
         connectionSession.setAttribute(ConnectionSessionConstants.COLUMN_ACCESSOR_KEY, columnAccessor);
     }

@@ -588,7 +588,9 @@ public class ConnectConsoleService {
 
     @SkipAuthorize
     public boolean killCurrentQuery(@NotNull String sessionId) {
-        return dbSessionManageFacade.killCurrentQuery(sessionService.nullSafeGet(sessionId));
+        ConnectionSession session = this.sessionService.nullSafeGet(sessionId);
+        ConnectionSessionUtil.setConsoleSessionKillQueryFlag(session, true);
+        return this.dbSessionManageFacade.killCurrentQuery(session);
     }
 
     @SkipAuthorize
