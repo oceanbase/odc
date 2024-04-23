@@ -233,8 +233,10 @@ public class OdcStatementCallBack implements StatementCallback<List<JdbcGeneralR
                             for (SqlExecutionListener listener : sortedListeners) {
                                 long waitTs = System.currentTimeMillis() - startTs;
                                 Long expectedTs = listener.getOnExecutionStartAfterMillis();
-                                if (waitTs > expectedTs || !latch.await(expectedTs - waitTs, TimeUnit.MILLISECONDS)) {
+                                if (!latch.await(expectedTs - waitTs, TimeUnit.MILLISECONDS)) {
                                     listener.onExecutionStartAfter(sqlTuple, context);
+                                } else {
+                                    break;
                                 }
                             }
                             return null;
