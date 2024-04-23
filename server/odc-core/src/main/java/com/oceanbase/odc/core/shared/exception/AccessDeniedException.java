@@ -34,7 +34,7 @@ public class AccessDeniedException extends HttpException implements NonTransient
     }
 
     public AccessDeniedException(ErrorCode errorCode, String message) {
-        super(errorCode, null, message);
+        super(errorCode, new Object[] {message}, message);
     }
 
     @Override
