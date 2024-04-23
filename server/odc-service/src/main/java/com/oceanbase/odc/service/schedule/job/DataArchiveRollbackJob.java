@@ -92,6 +92,9 @@ public class DataArchiveRollbackJob extends AbstractDlmJob {
                     i));
             taskUnit.setSourceDatabaseId(taskUnit.getTargetDatabaseId());
             taskUnit.setTargetDatabaseId(temp);
+            String srcTableName = taskUnit.getTableName();
+            taskUnit.setTableName(taskUnit.getTargetTableName());
+            taskUnit.setTargetTableName(srcTableName);
             taskUnit.setJobType(JobType.ROLLBACK);
             taskUnit.setStatus(taskUnit.getStatus() == TaskStatus.PREPARING ? TaskStatus.DONE : TaskStatus.PREPARING);
         }
