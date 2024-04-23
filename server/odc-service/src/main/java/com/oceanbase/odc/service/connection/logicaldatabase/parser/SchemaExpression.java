@@ -15,9 +15,17 @@
  */
 package com.oceanbase.odc.service.connection.logicaldatabase.parser;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.antlr.v4.runtime.ParserRuleContext;
+import org.apache.commons.collections.CollectionUtils;
+
+import com.oceanbase.odc.common.lang.Pair;
+import com.oceanbase.odc.core.shared.PreConditions;
+import com.oceanbase.odc.core.shared.Verify;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -40,6 +48,36 @@ public class SchemaExpression extends BaseLogicalTableExpression {
 
     @Override
     public List<String> listNames() {
-        return LogicalTableExpressionParseUtils.listNames(this.getText(), this.getStart(), this.sliceRanges);
+        PreConditions.notEmpty(this.getText(), "expression");
+
+        if (CollectionUtils.isEmpty(sliceRanges)) {
+            return Arrays.asList(this.getText());
+        }
+
+        Verify.notGreaterThan(sliceRanges.size(), 2, "range expression");
+
+        List<Pair<Integer, Integer>> rangeIndexes =
+                sliceRanges.stream()
+                        .map(stmt -> new Pair<>(stmt.getStart() - this.getStart(), stmt.getStop() - this.getStart()))
+                        .collect(
+                                Collectors.toList());
+        List<List<String>> ranges = LogicalTableExpressionParseUtils
+                .cartesianProduct(sliceRanges.stream().map(BaseRangeExpression::listRanges)
+                        .collect(Collectors.toList()));
+        List<String> names = new ArrayList<>();
+        /**
+         * we need to iterate in reverse order to replace the ranges from right to left; otherwise, we may
+         * lose the correct indexes of the original expression!
+         */
+        for (int i = ranges.size() - 1; i >= 0; i--) {
+            List<String> range = ranges.get(i);
+            StringBuilder sb = new StringBuilder(this.getText());
+            for (int j = range.size() - 1; j >= 0; j--) {
+                Pair<Integer, Integer> rangeIndex = rangeIndexes.get(j);
+                sb.replace(rangeIndex.left, rangeIndex.right + 1, range.get(j));
+            }
+            names.add(sb.toString());
+        }
+        return names;
     }
 }
