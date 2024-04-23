@@ -41,7 +41,6 @@ public class SyntaxErrorException extends ParseCancellationException {
     public SyntaxErrorException(@NonNull Recognizer<?, ?> recognizer, @NonNull RecognitionException e) {
         super(e);
         if (recognizer instanceof Lexer) {
-            // 词法解析器报错
             CharStream charStream = (CharStream) recognizer.getInputStream();
             String token = charStream.getText(Interval.of(charStream.index(), charStream.index()));
             this.errorText = escapeWhitespace(token);
