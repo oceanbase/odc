@@ -48,7 +48,7 @@ public class SchemaExpression extends BaseLogicalTableExpression {
     }
 
     @Override
-    public List<String> listNames() throws BadExpressionException {
+    public List<String> evaluate() throws BadExpressionException {
         PreConditions.notEmpty(this.getText(), "expression");
 
         if (CollectionUtils.isEmpty(sliceRanges)) {

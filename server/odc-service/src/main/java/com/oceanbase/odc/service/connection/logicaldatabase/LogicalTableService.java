@@ -49,7 +49,7 @@ public class LogicalTableService {
         } catch (Exception e) {
             throw new UnexpectedException("failed to parse logical table expression", e);
         }
-        return logicalTableExpression.listNames().stream().map(name -> {
+        return logicalTableExpression.evaluate().stream().map(name -> {
             String[] parts = name.split("\\.");
             if (parts.length != 2) {
                 throw new UnexpectedException("invalid logical table expression");

@@ -47,9 +47,9 @@ public class LogicalTableExpression extends BaseLogicalTableExpression {
     }
 
     @Override
-    public List<String> listNames() throws BadExpressionException {
-        List<String> schemaNames = schemaExpression.listNames();
-        List<String> tableNames = tableExpression.listNames();
+    public List<String> evaluate() throws BadExpressionException {
+        List<String> schemaNames = schemaExpression.evaluate();
+        List<String> tableNames = tableExpression.evaluate();
         Verify.notEmpty(schemaNames, "schemaNames");
         Verify.notEmpty(tableNames, "tableNames");
 

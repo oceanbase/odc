@@ -42,8 +42,8 @@ public class LogicalTableExpressions extends BaseLogicalTableExpression {
     }
 
     @Override
-    public List<String> listNames() throws BadExpressionException {
-        return this.expressions.stream().flatMap(expression -> expression.listNames().stream())
+    public List<String> evaluate() throws BadExpressionException {
+        return this.expressions.stream().flatMap(expression -> expression.evaluate().stream())
                 .collect(Collectors.toList());
     }
 }
