@@ -104,9 +104,6 @@ public class DBSchemaIndexServiceTest extends ServiceTestEnv {
     @Before
     public void setUp() {
         tearDown();
-        databaseRepository.flush();
-        dbObjectRepository.flush();
-        dbColumnRepository.flush();
         // Create metadata
         List<Database> databases = createDatabaseEntity(2, VALID_PROJECT_ID);
         validDatabaseIds = databases.stream().map(Database::getId).collect(Collectors.toList());
@@ -253,6 +250,7 @@ public class DBSchemaIndexServiceTest extends ServiceTestEnv {
         List<Database> result = new ArrayList<>();
         for (int i = 0; i < quantity; i++) {
             DatabaseEntity entity = TestRandom.nextObject(DatabaseEntity.class);
+            entity.setId(null);
             entity.setProjectId(projectId);
             entity.setConnectionId(CONNECTION_ID);
             entity.setExisted(true);
@@ -267,6 +265,7 @@ public class DBSchemaIndexServiceTest extends ServiceTestEnv {
         List<DBObjectEntity> result = new ArrayList<>();
         for (int i = 0; i < quantity; i++) {
             DBObjectEntity entity = TestRandom.nextObject(DBObjectEntity.class);
+            entity.setId(null);
             entity.setDatabaseId(databaseId);
             entity.setName("database-" + databaseId + "-type-" + type + "-test-" + i);
             entity.setType(type);
@@ -280,6 +279,7 @@ public class DBSchemaIndexServiceTest extends ServiceTestEnv {
         List<DBColumnEntity> result = new ArrayList<>();
         for (int i = 0; i < quantity; i++) {
             DBColumnEntity entity = TestRandom.nextObject(DBColumnEntity.class);
+            entity.setId(null);
             entity.setDatabaseId(databaseId);
             entity.setObjectId(objectId);
             entity.setName("database-" + databaseId + "-object-" + objectId + "-test-" + i);
