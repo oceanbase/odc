@@ -16,7 +16,6 @@
 package com.oceanbase.odc.migrate.jdbc.web;
 
 import java.util.List;
-import java.util.regex.Pattern;
 
 import javax.sql.DataSource;
 
@@ -31,7 +30,9 @@ import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.common.util.SystemUtils;
 import com.oceanbase.odc.core.migrate.JdbcMigratable;
 import com.oceanbase.odc.core.migrate.Migratable;
+import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.core.shared.Verify;
+import com.oceanbase.odc.core.shared.exception.HttpException;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -62,14 +63,13 @@ public class V4131InitialPasswordMigrate implements JdbcMigratable {
             log.info("Environment variable 'ODC_ADMIN_INITIAL_PASSWORD' not set, skip initial password");
             return;
         }
-        boolean passwordValid = PasswordChecker.checkPassword(initialPassword);
-        if (!passwordValid) {
-            // 密码长度8~32位，至少包含2位数字、2位大写字母、2位小写字母和2位特殊字符(即：._+@#$%).
-            throw new IllegalArgumentException("Illegal password, please check your password, a valid password should:"
-                    + "1. has length between 8~32;"
-                    + "2. contains at least 2 number;"
-                    + "3. contains at least 2 alpha;"
-                    + "4. contains at least 2 special character(._+@#$%);");
+        try {
+            PreConditions.validPassword(initialPassword);
+        } catch (HttpException ex) {
+            log.warn("Invalid initial password!  {}", ex.getEnglishMessage());
+            log.info("Please correct value of environment variable 'ODC_ADMIN_INITIAL_PASSWORD', "
+                    + "try start ODC Server again.");
+            throw ex;
         }
 
         String encodedPassword = PASSWORD_ENCODER.encode(initialPassword);
@@ -102,33 +102,6 @@ public class V4131InitialPasswordMigrate implements JdbcMigratable {
 
     private String getInitialPassword() {
         return SystemUtils.getEnvOrProperty(ENV_INITIAL_PASSWORD);
-    }
-
-    private static class PasswordChecker {
-
-        /**
-         * 密码长度8~32位，至少包含2位数字、2位大写字母、2位小写字母和2位特殊字符(即：._+@#$%).
-         *
-         * <ul>
-         * <li>(?=(.*\\d){2,}) : at least two digits</li>
-         * <li>(?=(.*[a-z]){2,}) : at least two lower case letters</li>
-         * <li>(?=(.*[A-Z]){2,}) : at least two upper case letters</li>
-         * <li>(?=(.*[._+@#$%]){2,}) : at least two special characters</li>
-         * <li>[0-9a-zA-Z._+@#$%] : no whitespace and other special characters, length 8-32</li>
-         * </ul>
-         */
-        private static final String PASSWORD_PATTERN_EXPRESSION = "(" +
-                "(?=(.*\\d){2,})" +
-                "(?=(.*[a-z]){2,})" +
-                "(?=(.*[A-Z]){2,})" +
-                "(?=(.*[._+@#$%]){2,})" +
-                "[0-9a-zA-Z._+@#$%]{8,32})";
-
-        private static final Pattern PASSWORD_PATTERN = Pattern.compile(PASSWORD_PATTERN_EXPRESSION);
-
-        public static boolean checkPassword(String password) {
-            return PASSWORD_PATTERN.matcher(password).matches();
-        }
     }
 
 }
