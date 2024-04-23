@@ -30,6 +30,7 @@ import java.sql.SQLTransientConnectionException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
@@ -83,7 +84,6 @@ import com.oceanbase.odc.core.sql.util.FullLinkTraceUtil;
 import com.oceanbase.odc.core.sql.util.OBUtils;
 import com.oceanbase.odc.service.plugin.ConnectionPluginUtil;
 import com.oceanbase.odc.service.session.model.AsyncExecuteContext;
-import com.oceanbase.odc.service.session.model.SqlExecuteResult;
 
 import lombok.Getter;
 import lombok.NonNull;
@@ -120,7 +120,8 @@ public class OdcStatementCallBack implements StatementCallback<List<JdbcGeneralR
     private final boolean stopWhenError;
     private final BinaryDataManager binaryDataManager;
     private final ConnectionSession connectionSession;
-    private final AsyncExecuteContext<SqlExecuteResult> context;
+    private final AsyncExecuteContext context;
+    private final List<SqlExecutionListener> listeners = new ArrayList<>();
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
     @Setter
     private boolean useFullLinkTrace = false;
@@ -149,8 +150,7 @@ public class OdcStatementCallBack implements StatementCallback<List<JdbcGeneralR
     }
 
     public OdcStatementCallBack(@NonNull List<SqlTuple> sqls, @NonNull ConnectionSession connectionSession,
-            Boolean autoCommit, Integer queryLimit, boolean stopWhenError,
-            AsyncExecuteContext<SqlExecuteResult> context) {
+            Boolean autoCommit, Integer queryLimit, boolean stopWhenError, AsyncExecuteContext context) {
         this.sqls = sqls;
         this.autoCommit = autoCommit == null ? connectionSession.getDefaultAutoCommit() : autoCommit;
         this.connectType = connectionSession.getConnectType();
@@ -175,15 +175,16 @@ public class OdcStatementCallBack implements StatementCallback<List<JdbcGeneralR
         }
         if (ConnectionSessionUtil.isConsoleSessionReset(connectionSession)) {
             ConnectionSessionUtil.setConsoleSessionResetFlag(connectionSession, false);
-            List<JdbcGeneralResult> results = this.sqls.stream().map(sqlTuple -> {
+            return this.sqls.stream().map(sqlTuple -> {
                 JdbcGeneralResult result = JdbcGeneralResult.canceledResult(sqlTuple);
                 result.setConnectionReset(true);
+                if (context != null) {
+                    context.addResult(result);
+                }
+                listeners.forEach(
+                        listener -> listener.onExecutionCanceled(sqlTuple, Collections.singletonList(result), context));
                 return result;
             }).collect(Collectors.toList());
-            if (context != null) {
-                context.onQueryFinish(results);
-            }
-            return results;
         }
         boolean currentAutoCommit = statement.getConnection().getAutoCommit();
         List<JdbcGeneralResult> returnVal = new LinkedList<>();
@@ -203,8 +204,10 @@ public class OdcStatementCallBack implements StatementCallback<List<JdbcGeneralR
                     }
                 }
                 if (context != null) {
-                    context.onQueryStart(sqlTuple.getExecutedSql());
+                    context.setCurrentExecutingSql(sqlTuple.getExecutedSql());
+                    context.addCount();
                 }
+                listeners.forEach(listener -> listener.onExecutionStart(sqlTuple, context));
                 try {
                     applyConnectionSettings(statement);
                 } catch (Exception e) {
@@ -215,36 +218,44 @@ public class OdcStatementCallBack implements StatementCallback<List<JdbcGeneralR
                     if (Thread.currentThread().isInterrupted()
                             || ConnectionSessionUtil.isConsoleSessionKillQuery(connectionSession)) {
                         executeResults = Collections.singletonList(JdbcGeneralResult.canceledResult(sqlTuple));
+                        listeners.forEach(listener -> listener.onExecutionCanceled(sqlTuple, executeResults, context));
                     } else {
                         CountDownLatch latch = new CountDownLatch(1);
-                        if (context != null) {
-                            handle = executor.submit(() -> {
-                                try {
-                                    if (!latch.await(context.getWaitTimeMillis(), TimeUnit.MILLISECONDS)) {
-                                        context.onQueryExecuting();
-                                    }
-                                } catch (InterruptedException e) {
-                                    log.warn("Failed to call back.", e);
+                        handle = executor.submit(() -> {
+                            long startTs = System.currentTimeMillis();
+                            List<SqlExecutionListener> sortedListeners = listeners.stream()
+                                    .filter(listener -> listener.getOnExecutionStartAfterMillis() != null
+                                            && listener.getOnExecutionStartAfterMillis() > 0)
+                                    .sorted(Comparator
+                                            .comparingLong(SqlExecutionListener::getOnExecutionStartAfterMillis))
+                                    .collect(Collectors.toList());
+                            for (SqlExecutionListener listener : sortedListeners) {
+                                long waitTs = System.currentTimeMillis() - startTs;
+                                Long expectedTs = listener.getOnExecutionStartAfterMillis();
+                                if (waitTs > expectedTs || !latch.await(expectedTs - waitTs, TimeUnit.MILLISECONDS)) {
+                                    listener.onExecutionStartAfter(sqlTuple, context);
                                 }
-                                return null;
-                            });
-                        }
+                            }
+                            return null;
+                        });
                         executeResults = doExecuteSql(statement, sqlTuple, latch);
+                        listeners.forEach(listener -> listener.onExecutionEnd(sqlTuple, executeResults, context));
                     }
                 } else {
                     executeResults = Collections.singletonList(JdbcGeneralResult.canceledResult(sqlTuple));
+                    listeners.forEach(listener -> listener.onExecutionCanceled(sqlTuple, executeResults, context));
+                }
+                if (context != null) {
+                    context.addResults(executeResults);
                 }
                 returnVal.addAll(executeResults);
-                if (context != null) {
-                    context.onQueryFinish(executeResults);
-                }
             }
             Optional<JdbcGeneralResult> failed = returnVal
                     .stream().filter(r -> r.getStatus() == SqlExecuteStatus.FAILED).findFirst();
             if (failed.isPresent()) {
                 throw failed.get().getThrown();
             }
-        } catch (Exception e){
+        } catch (Exception e) {
             try {
                 ConnectionSessionUtil.logSocketInfo(statement.getConnection(), "console error");
             } catch (Exception exception) {
