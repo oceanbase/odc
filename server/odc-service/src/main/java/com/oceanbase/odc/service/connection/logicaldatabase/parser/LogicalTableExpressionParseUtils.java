@@ -50,7 +50,7 @@ public class LogicalTableExpressionParseUtils {
         int leadingZerosCount = includeLeadingZeros ? start.length() - String.valueOf(startInt).length() : 0;
 
         List<String> result = new ArrayList<>();
-        for (int i = startInt; i <= endInt; i++) {
+        for (int i = startInt; i <= endInt; i += stepInt) {
             String format = includeLeadingZeros ? "%0" + (leadingZerosCount + String.valueOf(i).length()) + "d" : "%d";
             result.add(String.format(format, i));
         }

@@ -1,0 +1,111 @@
+- id: 1
+  expression: "db.tb"
+  data_nodes:
+    - table_name: "tb"
+      schema_name: "db"
+
+- id: 2
+  expression: "db.tb_[0-3]"
+  data_nodes:
+    - table_name: "tb_0"
+      schema_name: "db"
+    - table_name: "tb_1"
+      schema_name: "db"
+    - table_name: "tb_2"
+      schema_name: "db"
+    - table_name: "tb_3"
+      schema_name: "db"
+
+- id: 3
+  expression: "db.tb_[0-6:2]"
+  data_nodes:
+    - table_name: "tb_0"
+      schema_name: "db"
+    - table_name: "tb_2"
+      schema_name: "db"
+    - table_name: "tb_4"
+      schema_name: "db"
+    - table_name: "tb_6"
+      schema_name: "db"
+
+- id: 4
+  expression: "db.tb_[1,3,9]"
+  data_nodes:
+    - table_name: "tb_1"
+      schema_name: "db"
+    - table_name: "tb_3"
+      schema_name: "db"
+    - table_name: "tb_9"
+      schema_name: "db"
+
+- id: 5
+  expression: "db.tb_[000-003]_[1-2]"
+  data_nodes:
+    - table_name: "tb_000_1"
+      schema_name: "db"
+    - table_name: "tb_000_2"
+      schema_name: "db"
+    - table_name: "tb_001_1"
+      schema_name: "db"
+    - table_name: "tb_001_2"
+      schema_name: "db"
+    - table_name: "tb_002_1"
+      schema_name: "db"
+    - table_name: "tb_002_2"
+      schema_name: "db"
+    - table_name: "tb_003_1"
+      schema_name: "db"
+    - table_name: "tb_003_2"
+      schema_name: "db"
+
+- id: 6
+  expression: "db_[0-3].tb_[000-003]"
+  data_nodes:
+    - table_name: "tb_000"
+      schema_name: "db_0"
+    - table_name: "tb_001"
+      schema_name: "db_1"
+    - table_name: "tb_002"
+      schema_name: "db_2"
+    - table_name: "tb_003"
+      schema_name: "db_3"
+
+- id: 7
+  expression: "db_[0-3].tb_[000-003]_[1-3:2]"
+  data_nodes:
+    - table_name: "tb_000_1"
+      schema_name: "db_0"
+    - table_name: "tb_000_3"
+      schema_name: "db_0"
+    - table_name: "tb_001_1"
+      schema_name: "db_1"
+    - table_name: "tb_001_3"
+      schema_name: "db_1"
+    - table_name: "tb_002_1"
+      schema_name: "db_2"
+    - table_name: "tb_002_3"
+      schema_name: "db_2"
+    - table_name: "tb_003_1"
+      schema_name: "db_3"
+    - table_name: "tb_003_3"
+      schema_name: "db_3"
+
+- id: 8
+  expression: "db_[0-3].tb_[[01-02]]"
+  data_nodes:
+    - table_name: "tb_01"
+      schema_name: "db_0"
+    - table_name: "tb_02"
+      schema_name: "db_0"
+    - table_name: "tb_01"
+      schema_name: "db_1"
+    - table_name: "tb_02"
+      schema_name: "db_1"
+    - table_name: "tb_01"
+      schema_name: "db_2"
+    - table_name: "tb_02"
+      schema_name: "db_2"
+    - table_name: "tb_01"
+      schema_name: "db_3"
+    - table_name: "tb_02"
+      schema_name: "db_3"

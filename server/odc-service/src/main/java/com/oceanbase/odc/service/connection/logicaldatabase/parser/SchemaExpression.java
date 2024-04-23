@@ -17,6 +17,7 @@ package com.oceanbase.odc.service.connection.logicaldatabase.parser;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -78,6 +79,7 @@ public class SchemaExpression extends BaseLogicalTableExpression {
             }
             names.add(sb.toString());
         }
+        Collections.reverse(names);
         return names;
     }
 }
