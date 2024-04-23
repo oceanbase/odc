@@ -206,6 +206,7 @@ public class OdcStatementCallBack implements StatementCallback<List<JdbcGeneralR
                 if (context != null) {
                     context.setCurrentExecutingSql(sqlTuple.getExecutedSql());
                     context.addCount();
+                    context.setCurrentExecutingSqlTraceId(null);
                 }
                 listeners.forEach(listener -> listener.onExecutionStart(sqlTuple, context));
                 try {
