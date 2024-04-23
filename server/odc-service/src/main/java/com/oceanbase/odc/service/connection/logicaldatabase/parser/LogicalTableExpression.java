@@ -15,6 +15,8 @@
  */
 package com.oceanbase.odc.service.connection.logicaldatabase.parser;
 
+import static com.oceanbase.odc.core.shared.constant.ErrorCodes.NotEvenlyDividedInLogicalTableExpression;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -61,10 +63,10 @@ public class LogicalTableExpression extends BaseLogicalTableExpression {
             return names;
         }
         if (tableNames.size() % schemaNames.size() != 0) {
-            String errorMessage = "The number of tables must be a multiple of the number of schemas, table count: "
-                    + tableNames.size() + ", schema count: " + schemaNames.size();
-            throw new BadExpressionException(ErrorCodes.BadLogicalTableExpressionSemantic, new Object[] {errorMessage},
-                    errorMessage);
+            throw new BadExpressionException(
+                    NotEvenlyDividedInLogicalTableExpression, new Object[] {tableNames.size(), schemaNames.size()},
+                    NotEvenlyDividedInLogicalTableExpression
+                            .getEnglishMessage(new Object[] {tableNames.size(), schemaNames.size()}));
         }
         int groupCount = tableNames.size() / schemaNames.size();
         for (int i = 0; i < schemaNames.size(); i++) {

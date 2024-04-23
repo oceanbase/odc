@@ -113,7 +113,7 @@ public enum ErrorCodes implements ErrorCode {
     ConnectionTempOnly,
     ConnectionFlowConfigNotExists,
     BadLogicalTableExpressionSyntax,
-    BadLogicalTableExpressionSemantic,
+    NotEvenlyDividedInLogicalTableExpression,
 
     // File
     FileWriteFailed,
