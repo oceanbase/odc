@@ -15,9 +15,11 @@
  */
 package com.oceanbase.odc.common.util;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 import org.junit.Test;
@@ -28,6 +30,8 @@ public class SSRFCheckerTest {
     private final List<String> hostWhiteList = Arrays.asList("127.0.0.1", "1.1.1.1", "aliyun.com");
 
     private final List<String> urlWhiteList = Arrays.asList("http://127.0.0.1/api");
+
+    private final List<String> urlBlackList = Arrays.asList("127.0.0.1");
 
     @Test
     public void checkHostWhiteList_IpNotInWhiteList_ReturnFalse() {
@@ -82,6 +86,26 @@ public class SSRFCheckerTest {
     @Test
     public void checkUrlWhiteList_UrlNotInWhiteList_ReturnFalse_2() {
         assertFalse(SSRFChecker.checkUrlInWhiteList("http://127.0.0.1/API", urlWhiteList));
+    }
+
+    @Test
+    public void checkHostBlackList_EmptyBlackList_ReturnFalse() {
+        assertTrue(SSRFChecker.checkHostNotInBlackList("127.0.0.1", Collections.emptyList()));
+    }
+
+    @Test
+    public void checkHostBlackList_EmptyHost_ReturnTrue() {
+        assertFalse(SSRFChecker.checkHostNotInBlackList("", urlBlackList));
+    }
+
+    @Test
+    public void checkHostBlackList_HostInBlackList_ReturnTrue() {
+        assertFalse(SSRFChecker.checkHostNotInBlackList("127.0.0.1", urlBlackList));
+    }
+
+    @Test
+    public void checkHostBlackList_HostNotInBlackList_ReturnFalse() {
+        assertTrue(SSRFChecker.checkHostNotInBlackList("127.0.0.2", urlBlackList));
     }
 
 }

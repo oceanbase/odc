@@ -15,6 +15,8 @@
  */
 package com.oceanbase.odc.service.notification;
 
+import java.util.List;
+
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.cloud.context.config.annotation.RefreshScope;
 import org.springframework.context.annotation.Configuration;
@@ -46,5 +48,7 @@ public class NotificationProperties {
     private int dequeueFailedNotificationFixedDelayMillis;
 
     private int dequeueSendingNotificationFixedDelayMillis;
+
+    private List<String> hostBlackList;
 
 }
