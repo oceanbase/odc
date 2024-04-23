@@ -21,9 +21,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.antlr.v4.runtime.ParserRuleContext;
+import org.apache.commons.collections4.CollectionUtils;
 
 import com.oceanbase.odc.core.shared.Verify;
-import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.service.connection.logicaldatabase.BadExpressionException;
 
 import lombok.AllArgsConstructor;
@@ -59,6 +59,13 @@ public class LogicalTableExpression extends BaseLogicalTableExpression {
                 for (String tableName : tableNames) {
                     names.add(schemaName + "." + tableName);
                 }
+            }
+            return names;
+        }
+        if (CollectionUtils.isEmpty(tableExpression.getSliceRanges())) {
+            Verify.singleton(tableNames, "tableNames");
+            for (String schemaName : schemaNames) {
+                names.add(schemaName + "." + tableNames.get(0));
             }
             return names;
         }

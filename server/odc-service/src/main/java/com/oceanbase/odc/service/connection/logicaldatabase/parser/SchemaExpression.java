@@ -26,8 +26,6 @@ import org.apache.commons.collections.CollectionUtils;
 
 import com.oceanbase.odc.common.lang.Pair;
 import com.oceanbase.odc.core.shared.PreConditions;
-import com.oceanbase.odc.core.shared.Verify;
-import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.service.connection.logicaldatabase.BadExpressionException;
 
 import lombok.AllArgsConstructor;

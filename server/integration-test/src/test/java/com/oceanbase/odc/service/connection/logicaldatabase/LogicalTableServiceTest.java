@@ -81,7 +81,7 @@ public class LogicalTableServiceTest extends ServiceTestEnv {
                         StringUtils.containsIgnoreCase(ex.getMessage(), testCase.getErrorMessageAbstract()));
                 continue;
             }
-            Assert.fail(String.format("test case id = %d", testCase.getId()));
+            Assert.fail(String.format("test case id = %d, exception expected but not thrown", testCase.getId()));
         }
     }
 
