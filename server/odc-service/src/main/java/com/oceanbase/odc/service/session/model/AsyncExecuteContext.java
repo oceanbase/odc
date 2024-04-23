@@ -50,8 +50,6 @@ import lombok.extern.slf4j.Slf4j;
 @Getter
 @Slf4j
 public class AsyncExecuteContext<T> {
-    public static final String SHOW_TABLE_COLUMN_INFO = "SHOW_TABLE_COLUMN_INFO";
-
     private final Function<JdbcGeneralResult, T> mapper;
     private final ConnectionSession session;
     private final List<SqlTuple> sqlTuples;
@@ -76,6 +74,10 @@ public class AsyncExecuteContext<T> {
         this.user = user;
         this.waitTimeMillis = waitTimeMillis;
         this.sessionIds = initSessionIds(session);
+    }
+
+    public boolean isFinished() {
+        return future.isDone();
     }
 
     public int getTotal() {

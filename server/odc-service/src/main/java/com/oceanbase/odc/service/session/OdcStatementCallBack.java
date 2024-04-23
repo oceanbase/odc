@@ -186,13 +186,13 @@ public class OdcStatementCallBack implements StatementCallback<List<JdbcGeneralR
             return results;
         }
         boolean currentAutoCommit = statement.getConnection().getAutoCommit();
+        List<JdbcGeneralResult> returnVal = new LinkedList<>();
         try {
             applyStatementSettings(statement);
             // 对于修改表数据DML，如果是自动提交，为了保证原子性，在执行过程设置为手动，执行完成后再进行reset
             if (this.autoCommit ^ currentAutoCommit) {
                 statement.getConnection().setAutoCommit(this.autoCommit);
             }
-            List<JdbcGeneralResult> returnVal = new LinkedList<>();
             Future<Void> handle = null;
             for (SqlTuple sqlTuple : this.sqls) {
                 if (handle != null) {
@@ -220,7 +220,7 @@ public class OdcStatementCallBack implements StatementCallback<List<JdbcGeneralR
                         if (context != null) {
                             handle = executor.submit(() -> {
                                 try {
-                                    if (!latch.await(1100, TimeUnit.MILLISECONDS)) {
+                                    if (!latch.await(context.getWaitTimeMillis(), TimeUnit.MILLISECONDS)) {
                                         context.onQueryExecuting();
                                     }
                                 } catch (InterruptedException e) {
@@ -229,7 +229,7 @@ public class OdcStatementCallBack implements StatementCallback<List<JdbcGeneralR
                                 return null;
                             });
                         }
-                        executeResults = doExecuteSql(statement, sqlTuple);
+                        executeResults = doExecuteSql(statement, sqlTuple, latch);
                     }
                 } else {
                     executeResults = Collections.singletonList(JdbcGeneralResult.canceledResult(sqlTuple));
@@ -242,13 +242,14 @@ public class OdcStatementCallBack implements StatementCallback<List<JdbcGeneralR
             Optional<JdbcGeneralResult> failed = returnVal
                     .stream().filter(r -> r.getStatus() == SqlExecuteStatus.FAILED).findFirst();
             if (failed.isPresent()) {
-                try {
-                    ConnectionSessionUtil.logSocketInfo(statement.getConnection(), "console error");
-                } catch (Exception exception) {
-                    log.warn("Failed to execute abnormal replenishment logic", exception);
-                }
+                throw failed.get().getThrown();
             }
-            return returnVal;
+        } catch (Exception e){
+            try {
+                ConnectionSessionUtil.logSocketInfo(statement.getConnection(), "console error");
+            } catch (Exception exception) {
+                log.warn("Failed to execute abnormal replenishment logic", exception);
+            }
         } finally {
             if (this.autoCommit ^ currentAutoCommit) {
                 statement.getConnection().setAutoCommit(currentAutoCommit);
@@ -260,6 +261,7 @@ public class OdcStatementCallBack implements StatementCallback<List<JdbcGeneralR
                 }
             }
         }
+        return returnVal;
     }
 
     private void applyConnectionSettings(Statement statement) throws SQLException {

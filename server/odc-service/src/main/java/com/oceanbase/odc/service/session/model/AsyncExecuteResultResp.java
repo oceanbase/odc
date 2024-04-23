@@ -17,8 +17,6 @@ package com.oceanbase.odc.service.session.model;
 
 import java.util.List;
 
-import com.oceanbase.odc.core.sql.execute.model.SqlExecuteStatus;
-
 import lombok.Data;
 
 /**
@@ -31,11 +29,11 @@ public class AsyncExecuteResultResp {
     private String traceId;
     private int total;
     private int count;
-    private SqlExecuteStatus status;
+    private boolean finished;
     private String sql;
 
-    public AsyncExecuteResultResp(SqlExecuteStatus status, AsyncExecuteContext<SqlExecuteResult> context) {
-        this.status = status;
+    public AsyncExecuteResultResp(boolean finished, AsyncExecuteContext<SqlExecuteResult> context) {
+        this.finished = finished;
         results = context.getResults();
         traceId = context.getCurrentTraceId();
         total = context.getTotal();

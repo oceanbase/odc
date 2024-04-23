@@ -33,6 +33,7 @@ import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.sql.execute.GeneralSyncJdbcExecutor;
 import com.oceanbase.odc.core.sql.execute.SyncJdbcExecutor;
+import com.oceanbase.odc.core.sql.util.OBUtils;
 import com.oceanbase.odc.plugin.connect.api.InformationExtensionPoint;
 import com.oceanbase.odc.service.plugin.ConnectionPluginUtil;
 
@@ -66,7 +67,7 @@ public class ConnectionInfoUtil {
             connectionSession.setAttribute(ConnectionSessionConstants.CONNECTION_ID_KEY, sessionId);
             if (connectionSession.getDialectType().isOceanbase() && VersionUtils.isGreaterThanOrEqualsTo(
                     ConnectionSessionUtil.getVersion(connectionSession), "4.2")) {
-                String proxySessId = queryOBProxySessId(statement, connectionSession.getDialectType(), sessionId);
+                String proxySessId = OBUtils.queryOBProxySessId(statement, connectionSession.getDialectType(), sessionId);
                 connectionSession.setAttribute(ConnectionSessionConstants.OB_PROXY_SESSID_KEY, proxySessId);
             }
         } catch (Exception exception) {
@@ -77,21 +78,6 @@ public class ConnectionInfoUtil {
     public static String queryConnectionId(@NonNull Statement statement, @NonNull DialectType dialectType)
             throws SQLException {
         return ConnectionPluginUtil.getSessionExtension(dialectType).getConnectionId(statement.getConnection());
-    }
-
-    public static String queryOBProxySessId(@NonNull Statement statement, @NonNull DialectType dialectType,
-            @NonNull String connectionId) throws SQLException {
-        String proxySessId = null;
-        String sql = "select proxy_sessid from "
-                + (dialectType.isMysql() ? "oceanbase" : "sys")
-                + ".v$ob_processlist where id = "
-                + connectionId;
-        try (ResultSet rs = statement.executeQuery(sql)) {
-            if (rs.next()) {
-                proxySessId = rs.getString(1);
-            }
-        }
-        return proxySessId;
     }
 
     public static void initSessionVersion(@NonNull ConnectionSession connectionSession) {

@@ -382,6 +382,21 @@ public class OBUtils {
         }
     }
 
+    public static String queryOBProxySessId(@NonNull Statement statement, @NonNull DialectType dialectType,
+            @NonNull String connectionId) throws SQLException {
+        String proxySessId = null;
+        String sql = "select proxy_sessid from "
+                + (dialectType.isMysql() ? "oceanbase" : "sys")
+                + ".v$ob_processlist where id = "
+                + connectionId;
+        try (ResultSet rs = statement.executeQuery(sql)) {
+            if (rs.next()) {
+                proxySessId = rs.getString(1);
+            }
+        }
+        return proxySessId;
+    }
+
     public static List<String> querySessionIdsByProxySessId(@NonNull Statement statement,
             @NonNull String proxySessId, ConnectType connectType) throws SQLException {
         DialectType dialectType = connectType.getDialectType();
@@ -431,7 +446,7 @@ public class OBUtils {
         SqlBuilder sqlBuilder = getBuilder(connectType)
                 .append("select plan_id from ")
                 .append(dialectType.isMysql() ? "oceanbase" : "sys")
-                .append(".active_session_history where trace_id=")
+                .append(".v$active_session_history where trace_id=")
                 .value(traceId);
         try (ResultSet rs = statement.executeQuery(sqlBuilder.toString())) {
             if (!rs.next()) {

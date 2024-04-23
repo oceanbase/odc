@@ -15,8 +15,6 @@
  */
 package com.oceanbase.odc.service.session;
 
-import static com.oceanbase.odc.service.session.model.AsyncExecuteContext.SHOW_TABLE_COLUMN_INFO;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
@@ -26,8 +24,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -76,7 +72,6 @@ import com.oceanbase.odc.core.sql.execute.cache.table.ResultSetVirtualTable;
 import com.oceanbase.odc.core.sql.execute.cache.table.VirtualElement;
 import com.oceanbase.odc.core.sql.execute.cache.table.VirtualTable;
 import com.oceanbase.odc.core.sql.execute.model.JdbcGeneralResult;
-import com.oceanbase.odc.core.sql.execute.model.SqlExecuteStatus;
 import com.oceanbase.odc.core.sql.execute.model.SqlTuple;
 import com.oceanbase.odc.core.sql.parser.AbstractSyntaxTree;
 import com.oceanbase.odc.core.sql.parser.AbstractSyntaxTreeFactories;
@@ -132,8 +127,9 @@ import lombok.extern.slf4j.Slf4j;
 public class ConnectConsoleService {
 
     public static final int DEFAULT_GET_RESULT_TIMEOUT_SECONDS = 3;
-    private final Executor queryProfileMonitor =
-            Executors.newFixedThreadPool(5, r -> new Thread(r, "query-profile-monitor-" + r.hashCode()));
+    public static final String SHOW_TABLE_COLUMN_INFO = "SHOW_TABLE_COLUMN_INFO";
+    private static final Long EXECUTING_CONTEXT_WAIT_MILLIS = 1100L;
+
     @Autowired
     private ConnectSessionService sessionService;
     @Autowired
@@ -387,7 +383,7 @@ public class ConnectConsoleService {
                         throw new IllegalStateException(e);
                     }
                     return res;
-                }, authenticationFacade.currentUser(), 1100L);
+                }, authenticationFacade.currentUser(), EXECUTING_CONTEXT_WAIT_MILLIS);
         OdcStatementCallBack statementCallBack = new OdcStatementCallBack(sqlTuples, connectionSession,
                 request.getAutoCommit(), queryLimit, stopOnError, executeContext);
 
@@ -451,14 +447,14 @@ public class ConnectConsoleService {
         ConnectionSession connectionSession = sessionService.nullSafeGet(sessionId);
         AsyncExecuteContext<SqlExecuteResult> executeContext =
                 (AsyncExecuteContext) ConnectionSessionUtil.getExecuteContext(connectionSession, requestId);
-        if (executeContext.getFuture().isDone()) {
+        if (executeContext.isFinished()) {
             ConnectionSessionUtil.removeExecuteContext(connectionSession, requestId);
-            return new AsyncExecuteResultResp(SqlExecuteStatus.SUCCESS, executeContext);
+            return new AsyncExecuteResultResp(true, executeContext);
         } else {
             if (log.isDebugEnabled()) {
                 log.debug("Get sql execution result timed out, sessionId={}, requestId={}", sessionId, requestId);
             }
-            return new AsyncExecuteResultResp(SqlExecuteStatus.RUNNING, executeContext);
+            return new AsyncExecuteResultResp(false, executeContext);
         }
     }
 
