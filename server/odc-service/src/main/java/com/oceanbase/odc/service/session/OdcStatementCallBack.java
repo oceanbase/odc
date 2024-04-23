@@ -373,7 +373,7 @@ public class OdcStatementCallBack implements StatementCallback<List<JdbcGeneralR
                     boolean isResultSet;
                     try {
                         isResultSet = statement.execute(sql);
-                    } catch (SQLException e) {
+                    } catch (Exception e) {
                         return handleException(e, statement, sqlTuple);
                     }
                     latch.countDown();
@@ -409,7 +409,7 @@ public class OdcStatementCallBack implements StatementCallback<List<JdbcGeneralR
                 boolean isResultSet;
                 try {
                     isResultSet = preparedStatement.execute();
-                } catch (SQLException e) {
+                } catch (Exception e) {
                     return handleException(e, statement, sqlTuple);
                 }
                 latch.countDown();
