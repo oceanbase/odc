@@ -22,6 +22,7 @@ import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import com.oceanbase.odc.ServiceTestEnv;
+import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.common.util.YamlUtils;
 import com.oceanbase.odc.service.connection.logicaldatabase.model.DataNode;
 
@@ -35,17 +36,19 @@ import lombok.NoArgsConstructor;
  * @Description: []
  */
 public class LogicalTableServiceTest extends ServiceTestEnv {
-    private static final String TEST_RESOURCE_FILE_PATH =
-            "connection/logicaldatabase/logical_table_expression_resolve.yaml";
-
+    private static final String TEST_RESOURCE_VALID_EXPRESSION_FILE_PATH =
+            "connection/logicaldatabase/valid_logical_table_expression_resolve.yaml";
+    private static final String TEST_RESOURCE_INVALID_EXPRESSION_FILE_PATH =
+            "connection/logicaldatabase/invalid_logical_table_expression_resolve.yaml";
 
     @Autowired
     private LogicalTableService logicalTableService;
 
     @Test
-    public void testResolve() {
+    public void testResolve_ValidExpression() {
         List<LogicalTableExpressionResolveTestCase> testCases =
-                YamlUtils.fromYamlList(TEST_RESOURCE_FILE_PATH, LogicalTableExpressionResolveTestCase.class);
+                YamlUtils.fromYamlList(TEST_RESOURCE_VALID_EXPRESSION_FILE_PATH,
+                        LogicalTableExpressionResolveTestCase.class);
         for (LogicalTableExpressionResolveTestCase testCase : testCases) {
             List<DataNode> actual = logicalTableService.resolve(testCase.getExpression());
             List<DataNode> expected = testCase.getDataNodes();
@@ -63,6 +66,25 @@ public class LogicalTableServiceTest extends ServiceTestEnv {
         }
     }
 
+    @Test
+    public void testResolve_InvalidExpression() {
+        List<LogicalTableExpressionResolveTestCase> testCases =
+                YamlUtils.fromYamlList(TEST_RESOURCE_INVALID_EXPRESSION_FILE_PATH,
+                        LogicalTableExpressionResolveTestCase.class);
+        for (LogicalTableExpressionResolveTestCase testCase : testCases) {
+            try {
+                logicalTableService.resolve(testCase.getExpression());
+            } catch (Exception ex) {
+                Assert.assertTrue(
+                        String.format("test case id = %d, expected = %s, actual = %s", testCase.getId(),
+                                ex.getMessage(), testCase.getErrorMessageAbstract()),
+                        StringUtils.containsIgnoreCase(ex.getMessage(), testCase.getErrorMessageAbstract()));
+                continue;
+            }
+            Assert.fail(String.format("test case id = %d", testCase.getId()));
+        }
+    }
+
     @Data
     @NoArgsConstructor
     @AllArgsConstructor
@@ -70,5 +92,6 @@ public class LogicalTableServiceTest extends ServiceTestEnv {
         private Long id;
         private String expression;
         private List<DataNode> dataNodes;
+        private String errorMessageAbstract;
     }
 }

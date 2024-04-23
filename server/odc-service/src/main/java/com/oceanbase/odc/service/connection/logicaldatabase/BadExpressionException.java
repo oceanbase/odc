@@ -13,22 +13,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.connection.logicaldatabase.parser;
+package com.oceanbase.odc.service.connection.logicaldatabase;
 
-import java.util.List;
+import org.springframework.http.HttpStatus;
 
-import org.antlr.v4.runtime.ParserRuleContext;
+import com.oceanbase.odc.core.shared.constant.ErrorCode;
+import com.oceanbase.odc.core.shared.exception.HttpException;
 
-import com.oceanbase.odc.service.connection.logicaldatabase.BadExpressionException;
-import com.oceanbase.tools.sqlparser.statement.BaseStatement;
+/**
+ * @Author: Lebie
+ * @Date: 2024/4/23 14:03
+ * @Description: []
+ */
+public class BadExpressionException extends HttpException {
 
-public abstract class BaseLogicalTableExpression extends BaseStatement {
-
-    public abstract List<String> listNames() throws BadExpressionException;
-
-    BaseLogicalTableExpression(ParserRuleContext ruleNode) {
-        super(ruleNode);
+    public BadExpressionException(ErrorCode errorCode, Object[] args, String message) {
+        super(errorCode, args, message);
     }
 
-    BaseLogicalTableExpression() {}
+    @Override
+    public HttpStatus httpStatus() {
+        return HttpStatus.BAD_REQUEST;
+    }
 }

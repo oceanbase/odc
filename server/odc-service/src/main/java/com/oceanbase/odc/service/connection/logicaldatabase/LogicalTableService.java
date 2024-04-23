@@ -15,19 +15,21 @@
  */
 package com.oceanbase.odc.service.connection.logicaldatabase;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import org.apache.hadoop.util.StringUtils;
 import org.springframework.stereotype.Service;
 
+import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.shared.PreConditions;
-import com.oceanbase.odc.core.shared.exception.BadArgumentException;
+import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.exception.UnexpectedException;
 import com.oceanbase.odc.service.connection.logicaldatabase.model.DataNode;
 import com.oceanbase.odc.service.connection.logicaldatabase.parser.DefaultLogicalTableExpressionParser;
 import com.oceanbase.odc.service.connection.logicaldatabase.parser.LogicalTableExpression;
+import com.oceanbase.odc.service.connection.logicaldatabase.parser.SyntaxErrorException;
 
 /**
  * @Author: Lebie
@@ -38,22 +40,29 @@ import com.oceanbase.odc.service.connection.logicaldatabase.parser.LogicalTableE
 public class LogicalTableService {
     private final DefaultLogicalTableExpressionParser parser = new DefaultLogicalTableExpressionParser();
 
-    public List<DataNode> resolve(String expression) {
-        PreConditions.notEmpty(expression, "expression");
-
-        List<String> expressions = Arrays.asList(StringUtils.split(expression, ','));
-        LogicalTableExpression logicalTableExpression;
-        try {
-            logicalTableExpression = (LogicalTableExpression) parser.parse(expression);
-        } catch (Exception e) {
-            throw new BadArgumentException("invalid logical table expression", e);
-        }
-        return logicalTableExpression.listNames().stream().map(name -> {
-            String[] parts = name.split("\\.");
-            if (parts.length != 2) {
-                throw new UnexpectedException("invalid logical table expression");
+    public List<DataNode> resolve(String expressions) {
+        PreConditions.notEmpty(expressions, "expressions");
+        List<DataNode> dataNodes = new ArrayList<>();
+        List<String> expressionList = Arrays.asList(StringUtils.split(expressions, ','));
+        for (String expression : expressionList) {
+            LogicalTableExpression logicalTableExpression;
+            try {
+                logicalTableExpression = (LogicalTableExpression) parser.parse(expression);
+            } catch (SyntaxErrorException e) {
+                throw new BadExpressionException(ErrorCodes.BadLogicalTableExpressionSyntax,
+                        new Object[] {e.getErrorText()},
+                        ErrorCodes.BadLogicalTableExpressionSyntax.getEnglishMessage(new Object[] {e.getErrorText()}));
+            } catch (Exception e) {
+                throw new UnexpectedException("failed to parse logical table expression", e);
             }
-            return new DataNode(parts[0], parts[1]);
-        }).collect(Collectors.toList());
+            dataNodes.addAll(logicalTableExpression.listNames().stream().map(name -> {
+                String[] parts = name.split("\\.");
+                if (parts.length != 2) {
+                    throw new UnexpectedException("invalid logical table expression");
+                }
+                return new DataNode(parts[0], parts[1]);
+            }).collect(Collectors.toList()));
+        }
+        return dataNodes;
     }
 }

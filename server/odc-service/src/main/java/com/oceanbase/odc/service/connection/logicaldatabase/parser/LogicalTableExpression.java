@@ -21,6 +21,8 @@ import java.util.List;
 import org.antlr.v4.runtime.ParserRuleContext;
 
 import com.oceanbase.odc.core.shared.Verify;
+import com.oceanbase.odc.core.shared.constant.ErrorCodes;
+import com.oceanbase.odc.service.connection.logicaldatabase.BadExpressionException;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -43,7 +45,7 @@ public class LogicalTableExpression extends BaseLogicalTableExpression {
     }
 
     @Override
-    public List<String> listNames() {
+    public List<String> listNames() throws BadExpressionException {
         List<String> schemaNames = schemaExpression.listNames();
         List<String> tableNames = tableExpression.listNames();
         Verify.notEmpty(schemaNames, "schemaNames");
@@ -58,8 +60,12 @@ public class LogicalTableExpression extends BaseLogicalTableExpression {
             }
             return names;
         }
-
-        Verify.equals(0, tableNames.size() % schemaNames.size(), "schemaNameCount % tableNameCount");
+        if (tableNames.size() % schemaNames.size() != 0) {
+            String errorMessage = "The number of tables must be a multiple of the number of schemas, table count: "
+                    + tableNames.size() + ", schema count: " + schemaNames.size();
+            throw new BadExpressionException(ErrorCodes.BadLogicalTableExpressionSemantic, new Object[] {errorMessage},
+                    errorMessage);
+        }
         int groupCount = tableNames.size() / schemaNames.size();
         for (int i = 0; i < schemaNames.size(); i++) {
             for (int j = groupCount * i; j < groupCount * (i + 1); j++) {

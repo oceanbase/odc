@@ -28,11 +28,15 @@ import com.oceanbase.tools.sqlparser.statement.Statement;
  * @Description: []
  */
 public class DefaultLogicalTableExpressionParser {
-    public Statement parse(String expression) {
+    public Statement parse(String expression) throws SyntaxErrorException {
         LogicalTableExpressionLexer lexer = new LogicalTableExpressionLexer(CharStreams.fromString(expression));
+        lexer.removeErrorListeners();
+        lexer.addErrorListener(new FastFailErrorListener());
         CommonTokenStream tokens = new CommonTokenStream(lexer);
         LogicalTableExpressionParser parser = new LogicalTableExpressionParser(tokens);
-
+        parser.removeErrorListeners();
+        parser.addErrorListener(new FastFailErrorListener());
+        parser.setErrorHandler(new FastFailErrorStrategy());
         LogicalTableExpressionVisitor visitor = new LogicalTableExpressionVisitor();
         return visitor.visit(parser.logicalTableExpression());
     }

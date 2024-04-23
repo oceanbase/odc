@@ -15,20 +15,19 @@
  */
 package com.oceanbase.odc.service.connection.logicaldatabase.parser;
 
-import java.util.List;
+import org.antlr.v4.runtime.BaseErrorListener;
+import org.antlr.v4.runtime.RecognitionException;
+import org.antlr.v4.runtime.Recognizer;
 
-import org.antlr.v4.runtime.ParserRuleContext;
-
-import com.oceanbase.odc.service.connection.logicaldatabase.BadExpressionException;
-import com.oceanbase.tools.sqlparser.statement.BaseStatement;
-
-public abstract class BaseLogicalTableExpression extends BaseStatement {
-
-    public abstract List<String> listNames() throws BadExpressionException;
-
-    BaseLogicalTableExpression(ParserRuleContext ruleNode) {
-        super(ruleNode);
+/**
+ * @Author: Lebie
+ * @Date: 2024/4/23 15:58
+ * @Description: []
+ */
+public class FastFailErrorListener extends BaseErrorListener {
+    @Override
+    public void syntaxError(Recognizer<?, ?> recognizer, Object offsetToken, int line, int col, String msg,
+            RecognitionException e) {
+        throw new SyntaxErrorException(recognizer, e);
     }
-
-    BaseLogicalTableExpression() {}
 }

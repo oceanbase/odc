@@ -109,3 +109,23 @@
       schema_name: "db_3"
     - table_name: "tb_02"
       schema_name: "db_3"
+
+- id: 9
+  expression: "db_[0-3]_[0-1].tb_[001-008]"
+  data_nodes:
+    - table_name: "tb_001"
+      schema_name: "db_0_0"
+    - table_name: "tb_002"
+      schema_name: "db_0_1"
+    - table_name: "tb_003"
+      schema_name: "db_1_0"
+    - table_name: "tb_004"
+      schema_name: "db_1_1"
+    - table_name: "tb_005"
+      schema_name: "db_2_0"
+    - table_name: "tb_006"
+      schema_name: "db_2_1"
+    - table_name: "tb_007"
+      schema_name: "db_3_0"
+    - table_name: "tb_008"
+      schema_name: "db_3_1"

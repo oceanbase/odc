@@ -1,0 +1,7 @@
+- id: 1
+  expression: "db.tb[0-3"
+  error_message_abstract: "db.tb[0-3"
+
+- id: 2
+  expression: "db[].tb[0-3]"
+  error_message_abstract: "db[]"

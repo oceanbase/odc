@@ -27,6 +27,7 @@ import org.apache.commons.collections.CollectionUtils;
 import com.oceanbase.odc.common.lang.Pair;
 import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.core.shared.Verify;
+import com.oceanbase.odc.service.connection.logicaldatabase.BadExpressionException;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -48,7 +49,7 @@ public class SchemaExpression extends BaseLogicalTableExpression {
     }
 
     @Override
-    public List<String> listNames() {
+    public List<String> listNames() throws BadExpressionException {
         PreConditions.notEmpty(this.getText(), "expression");
 
         if (CollectionUtils.isEmpty(sliceRanges)) {
