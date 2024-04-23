@@ -145,7 +145,7 @@ public class OdcStatementCallBack implements StatementCallback<List<JdbcGeneralR
 
     public OdcStatementCallBack(@NonNull List<SqlTuple> sqls, @NonNull ConnectionSession connectionSession,
             Boolean autoCommit, Integer queryLimit, boolean stopWhenError) {
-        this(sqls, connectionSession, autoCommit, queryLimit, true, null);
+        this(sqls, connectionSession, autoCommit, queryLimit, stopWhenError, null);
     }
 
     public OdcStatementCallBack(@NonNull List<SqlTuple> sqls, @NonNull ConnectionSession connectionSession,
@@ -471,7 +471,7 @@ public class OdcStatementCallBack implements StatementCallback<List<JdbcGeneralR
         try {
             StopWatch stopWatch = StopWatch.createStarted();
             String version = ConnectionSessionUtil.getVersion(connectionSession);
-            SqlExecTime executeDetails = new SqlExecTime();;
+            SqlExecTime executeDetails = new SqlExecTime();
             if (useFullLinkTrace && VersionUtils.isGreaterThanOrEqualsTo(version, "4.1") &&
                     connectionSession.getDialectType().isOceanbase()) {
                 try {
