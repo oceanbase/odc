@@ -79,7 +79,8 @@ public class DBSchemaSyncTaskManager {
 
     public void submitTaskByDataSource(@NonNull ConnectionConfig dataSource) {
         List<Database> databases = databaseService.listExistDatabasesByConnectionId(dataSource.getId());
-        databases.removeIf(e -> syncProperties.getExcludeSchemas(dataSource.getDialectType()).contains(e.getName())
+        databases.removeIf(e -> (syncProperties.isBlockExclusionsWhenSyncDbSchemas()
+                && syncProperties.getExcludeSchemas(dataSource.getDialectType()).contains(e.getName()))
                 || e.getObjectSyncStatus() == DBObjectSyncStatus.PENDING);
         submitTaskByDatabases(databases);
     }

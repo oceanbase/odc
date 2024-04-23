@@ -45,7 +45,7 @@ import lombok.NonNull;
  * @author gaoda.xy
  * @date 2024/4/10 10:05
  */
-public abstract class AbstractDBColumnSyncer implements DBSchemaSyncer {
+public abstract class AbstractDBColumnSyncer<T extends ExtensionPoint> implements DBSchemaSyncer {
 
     @Autowired
     private DBObjectRepository dbObjectRepository;
@@ -55,10 +55,11 @@ public abstract class AbstractDBColumnSyncer implements DBSchemaSyncer {
 
     @Override
     public void sync(@NonNull Connection connection, @NonNull Database database, @NonNull DialectType dialectType) {
-        if (getExtensionPoint(dialectType) == null) {
+        T extensionPoint = getExtensionPoint(dialectType);
+        if (extensionPoint == null) {
             return;
         }
-        Map<String, Set<String>> latestObject2Columns = getLatestObjectToColumns(connection, database, dialectType);
+        Map<String, Set<String>> latestObject2Columns = getLatestObjectToColumns(extensionPoint, connection, database);
         Map<String, DBObjectEntity> existingObject2Entity =
                 dbObjectRepository.findByDatabaseIdAndType(database.getId(), getColumnRelatedObjectType()).stream()
                         .collect(Collectors.toMap(DBObjectEntity::getName, e -> e, (e1, e2) -> e1));
@@ -107,6 +108,11 @@ public abstract class AbstractDBColumnSyncer implements DBSchemaSyncer {
     }
 
     @Override
+    public boolean supports(@NonNull DialectType dialectType) {
+        return getExtensionPoint(dialectType) != null;
+    }
+
+    @Override
     public DBObjectType getObjectType() {
         return DBObjectType.COLUMN;
     }
@@ -116,16 +122,16 @@ public abstract class AbstractDBColumnSyncer implements DBSchemaSyncer {
         return Ordered.LOWEST_PRECEDENCE;
     }
 
-    protected ExtensionPoint getExtensionPoint(@NonNull DialectType dialectType) {
-        List<? extends ExtensionPoint> points = SchemaPluginUtil.getExtensions(dialectType, getExtensionPointClass());
+    private T getExtensionPoint(@NonNull DialectType dialectType) {
+        List<T> points = SchemaPluginUtil.getExtensions(dialectType, getExtensionPointClass());
         return CollectionUtils.isEmpty(points) ? null : points.get(0);
     }
 
+    abstract Map<String, Set<String>> getLatestObjectToColumns(@NonNull T extensionPoint,
+            @NonNull Connection connection, @NonNull Database database);
+
     abstract DBObjectType getColumnRelatedObjectType();
 
-    abstract Class<? extends ExtensionPoint> getExtensionPointClass();
-
-    abstract Map<String, Set<String>> getLatestObjectToColumns(@NonNull Connection accessor, @NonNull Database database,
-            @NonNull DialectType dialectType);
+    abstract Class<T> getExtensionPointClass();
 
 }

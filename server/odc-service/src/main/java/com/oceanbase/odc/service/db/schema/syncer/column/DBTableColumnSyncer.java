@@ -20,10 +20,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import org.pf4j.ExtensionPoint;
 import org.springframework.stereotype.Component;
 
-import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.plugin.schema.api.ColumnExtensionPoint;
 import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.tools.dbbrowser.model.DBObjectType;
@@ -36,13 +34,12 @@ import lombok.NonNull;
  * @date 2024/4/10 20:13
  */
 @Component
-public class DBTableColumnSyncer extends AbstractDBColumnSyncer {
+public class DBTableColumnSyncer extends AbstractDBColumnSyncer<ColumnExtensionPoint> {
 
     @Override
-    Map<String, Set<String>> getLatestObjectToColumns(@NonNull Connection connection, @NonNull Database database,
-            @NonNull DialectType dialectType) {
-        ColumnExtensionPoint point = (ColumnExtensionPoint) getExtensionPoint(dialectType);
-        return point.listBasicTableColumns(connection, database.getName()).entrySet().stream()
+    Map<String, Set<String>> getLatestObjectToColumns(@NonNull ColumnExtensionPoint extensionPoint,
+            @NonNull Connection connection, @NonNull Database database) {
+        return extensionPoint.listBasicTableColumns(connection, database.getName()).entrySet().stream()
                 .collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue()
                         .stream().map(DBTableColumn::getName).collect(Collectors.toSet())));
     }
@@ -53,7 +50,7 @@ public class DBTableColumnSyncer extends AbstractDBColumnSyncer {
     }
 
     @Override
-    Class<? extends ExtensionPoint> getExtensionPointClass() {
+    Class<ColumnExtensionPoint> getExtensionPointClass() {
         return ColumnExtensionPoint.class;
     }
 

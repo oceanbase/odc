@@ -41,6 +41,14 @@ public interface DBSchemaSyncer extends Ordered {
     void sync(@NonNull Connection connection, @NonNull Database database, @NonNull DialectType dialectType);
 
     /**
+     * Check if the synchronizer supports the dialect type
+     * 
+     * @param dialectType dialect type, refer to {@link DialectType}
+     * @return true if the synchronizer supports the dialect type, otherwise false
+     */
+    boolean supports(@NonNull DialectType dialectType);
+
+    /**
      * Get the object type that the synchronizer supports
      *
      * @return object type, refer to {@link DBObjectType}

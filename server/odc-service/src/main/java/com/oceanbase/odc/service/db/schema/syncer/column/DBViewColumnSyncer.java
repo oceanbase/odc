@@ -22,7 +22,6 @@ import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Component;
 
-import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.plugin.schema.api.ColumnExtensionPoint;
 import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.tools.dbbrowser.model.DBObjectType;
@@ -38,10 +37,9 @@ import lombok.NonNull;
 public class DBViewColumnSyncer extends DBTableColumnSyncer {
 
     @Override
-    Map<String, Set<String>> getLatestObjectToColumns(@NonNull Connection connection, @NonNull Database database,
-            @NonNull DialectType dialectType) {
-        ColumnExtensionPoint point = (ColumnExtensionPoint) getExtensionPoint(dialectType);
-        return point.listBasicViewColumns(connection, database.getName()).entrySet().stream()
+    Map<String, Set<String>> getLatestObjectToColumns(@NonNull ColumnExtensionPoint extensionPoint,
+            @NonNull Connection connection, @NonNull Database database) {
+        return extensionPoint.listBasicViewColumns(connection, database.getName()).entrySet().stream()
                 .collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue()
                         .stream().map(DBTableColumn::getName).collect(Collectors.toSet())));
     }

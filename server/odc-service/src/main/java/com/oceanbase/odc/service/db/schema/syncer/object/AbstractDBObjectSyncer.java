@@ -39,7 +39,7 @@ import lombok.NonNull;
  * @author gaoda.xy
  * @date 2024/4/9 17:06
  */
-public abstract class AbstractDBObjectSyncer implements DBSchemaSyncer {
+public abstract class AbstractDBObjectSyncer<T extends ExtensionPoint> implements DBSchemaSyncer {
 
     @Autowired
     private DBObjectRepository dbObjectRepository;
@@ -49,10 +49,11 @@ public abstract class AbstractDBObjectSyncer implements DBSchemaSyncer {
 
     @Override
     public void sync(@NonNull Connection connection, @NonNull Database database, @NonNull DialectType dialectType) {
-        if (getExtensionPoint(dialectType) == null) {
+        T extensionPoint = getExtensionPoint(dialectType);
+        if (extensionPoint == null) {
             return;
         }
-        Set<String> latestObjectNames = getLatestObjectNames(connection, database, dialectType);
+        Set<String> latestObjectNames = getLatestObjectNames(extensionPoint, connection, database);
         List<DBObjectEntity> existingObjects =
                 dbObjectRepository.findByDatabaseIdAndType(database.getId(), getObjectType());
         // Insert objects that are not in the existing object list
@@ -81,18 +82,23 @@ public abstract class AbstractDBObjectSyncer implements DBSchemaSyncer {
     }
 
     @Override
+    public boolean supports(@NonNull DialectType dialectType) {
+        return getExtensionPoint(dialectType) != null;
+    }
+
+    @Override
     public int getOrder() {
         return Ordered.HIGHEST_PRECEDENCE;
     }
 
-    protected ExtensionPoint getExtensionPoint(@NonNull DialectType dialectType) {
-        List<? extends ExtensionPoint> points = SchemaPluginUtil.getExtensions(dialectType, getExtensionPointClass());
+    private T getExtensionPoint(@NonNull DialectType dialectType) {
+        List<T> points = SchemaPluginUtil.getExtensions(dialectType, getExtensionPointClass());
         return CollectionUtils.isEmpty(points) ? null : points.get(0);
     }
 
-    abstract Class<? extends ExtensionPoint> getExtensionPointClass();
+    abstract Set<String> getLatestObjectNames(@NonNull T extensionPoint, @NonNull Connection connection,
+            @NonNull Database database);
 
-    abstract Set<String> getLatestObjectNames(@NonNull Connection connection, @NonNull Database database,
-            @NonNull DialectType dialectType);
+    abstract Class<T> getExtensionPointClass();
 
 }

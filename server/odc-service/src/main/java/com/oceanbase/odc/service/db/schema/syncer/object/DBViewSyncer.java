@@ -19,10 +19,8 @@ import java.sql.Connection;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import org.pf4j.ExtensionPoint;
 import org.springframework.stereotype.Component;
 
-import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.plugin.schema.api.ViewExtensionPoint;
 import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.tools.dbbrowser.model.DBObjectIdentity;
@@ -35,19 +33,18 @@ import lombok.NonNull;
  * @date 2024/4/9 20:11
  */
 @Component
-public class DBViewSyncer extends AbstractDBObjectSyncer {
+public class DBViewSyncer extends AbstractDBObjectSyncer<ViewExtensionPoint> {
 
     @Override
-    Class<? extends ExtensionPoint> getExtensionPointClass() {
-        return ViewExtensionPoint.class;
+    protected Set<String> getLatestObjectNames(@NonNull ViewExtensionPoint extensionPoint,
+            @NonNull Connection connection, @NonNull Database database) {
+        return extensionPoint.list(connection, database.getName()).stream().map(DBObjectIdentity::getName)
+                .collect(Collectors.toSet());
     }
 
     @Override
-    protected Set<String> getLatestObjectNames(@NonNull Connection connection, @NonNull Database database,
-            @NonNull DialectType dialectType) {
-        ViewExtensionPoint point = (ViewExtensionPoint) getExtensionPoint(dialectType);
-        return point.list(connection, database.getName()).stream().map(DBObjectIdentity::getName)
-                .collect(Collectors.toSet());
+    Class<ViewExtensionPoint> getExtensionPointClass() {
+        return ViewExtensionPoint.class;
     }
 
     @Override

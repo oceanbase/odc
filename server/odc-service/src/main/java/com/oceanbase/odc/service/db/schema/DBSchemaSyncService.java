@@ -25,7 +25,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 
 import javax.annotation.PostConstruct;
-import javax.sql.DataSource;
 
 import org.springframework.beans.factory.ListableBeanFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -34,6 +33,7 @@ import org.springframework.integration.jdbc.lock.JdbcLockRegistry;
 import org.springframework.stereotype.Service;
 
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
+import com.oceanbase.odc.core.datasource.SingleConnectionDataSource;
 import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.exception.ConflictException;
@@ -85,18 +85,21 @@ public class DBSchemaSyncService {
         }
         try {
             ConnectionConfig config = connectionService.getForConnectionSkipPermissionCheck(dataSourceId);
-            DataSource dataSource = new OBConsoleDataSourceFactory(config, true).getDataSource();
-            try (Connection conn = dataSource.getConnection()) {
+            OBConsoleDataSourceFactory factory = new OBConsoleDataSourceFactory(config, true);
+            try (SingleConnectionDataSource dataSource = (SingleConnectionDataSource) factory.getDataSource();
+                    Connection conn = dataSource.getConnection()) {
                 boolean success = true;
                 for (DBSchemaSyncer syncer : syncers) {
-                    try {
-                        syncer.sync(conn, database, config.getDialectType());
-                    } catch (UnsupportedOperationException | UnsupportedException | NotImplementedException e) {
-                        // ignore unsupported exception
-                    } catch (Exception e) {
-                        success = false;
-                        log.warn("Failed to synchronize {} for database id={}", syncer.getObjectType(),
-                                database.getId(), e);
+                    if (syncer.supports(config.getDialectType())) {
+                        try {
+                            syncer.sync(conn, database, config.getDialectType());
+                        } catch (UnsupportedOperationException | UnsupportedException | NotImplementedException e) {
+                            // ignore unsupported exception
+                        } catch (Exception e) {
+                            success = false;
+                            log.warn("Failed to synchronize {} for database id={}", syncer.getObjectType(),
+                                    database.getId(), e);
+                        }
                     }
                 }
                 return success;
