@@ -373,17 +373,7 @@ public class ConnectConsoleService {
                 Objects.nonNull(request.getContinueExecutionOnError()) ? request.getContinueExecutionOnError()
                         : userConfigFacade.isContinueExecutionOnError();
         boolean stopOnError = !continueExecutionOnError;
-        AsyncExecuteContext<SqlExecuteResult> executeContext =
-                new AsyncExecuteContext<>(connectionSession, sqlTuples, jdbcResult -> {
-                    SqlExecuteResult res = generateResult(connectionSession, jdbcResult, context);
-                    try (TraceStage stage =
-                            res.getSqlTuple().getSqlWatch().start(SqlExecuteStages.SQL_AFTER_CHECK)) {
-                        sqlInterceptService.afterCompletion(res, connectionSession, context);
-                    } catch (Exception e) {
-                        throw new IllegalStateException(e);
-                    }
-                    return res;
-                }, authenticationFacade.currentUser(), EXECUTING_CONTEXT_WAIT_MILLIS);
+        AsyncExecuteContext executeContext = new AsyncExecuteContext(sqlTuples, context);
         OdcStatementCallBack statementCallBack = new OdcStatementCallBack(sqlTuples, connectionSession,
                 request.getAutoCommit(), queryLimit, stopOnError, executeContext);
 
@@ -398,6 +388,9 @@ public class ConnectConsoleService {
         statementCallBack.setMaxCachedSize(sessionProperties.getResultSetMaxCachedSize());
         statementCallBack.setMaxCachedLines(sessionProperties.getResultSetMaxCachedLines());
         statementCallBack.setLocale(LocaleContextHolder.getLocale());
+        if (connectionSession.getDialectType().isOceanbase() && sqlTuples.size() <= 10) {
+            statementCallBack.getListeners().add(new OBExecutionListener(connectionSession));
+        }
 
         Future<List<JdbcGeneralResult>> futureResult = connectionSession.getAsyncJdbcExecutor(
                 ConnectionSessionConstants.CONSOLE_DS_KEY).execute(statementCallBack);
@@ -445,16 +438,26 @@ public class ConnectConsoleService {
     public AsyncExecuteResultResp getAsyncResultV2(@NotNull String sessionId, String requestId) {
         PreConditions.validArgumentState(Objects.nonNull(requestId), ErrorCodes.SqlRegulationRuleBlocked, null, null);
         ConnectionSession connectionSession = sessionService.nullSafeGet(sessionId);
-        AsyncExecuteContext<SqlExecuteResult> executeContext =
+        AsyncExecuteContext context =
                 (AsyncExecuteContext) ConnectionSessionUtil.getExecuteContext(connectionSession, requestId);
-        if (executeContext.isFinished()) {
+        List<JdbcGeneralResult> resultList = context.getResults();
+        List<SqlExecuteResult> results = resultList.stream().map(jdbcGeneralResult -> {
+            SqlExecuteResult result = generateResult(connectionSession, jdbcGeneralResult, context.getContextMap());
+            try (TraceStage stage = result.getSqlTuple().getSqlWatch().start(SqlExecuteStages.SQL_AFTER_CHECK)) {
+                sqlInterceptService.afterCompletion(result, connectionSession, context.getContextMap());
+            } catch (Exception e) {
+                throw new IllegalStateException(e);
+            }
+            return result;
+        }).collect(Collectors.toList());
+        if (context.isFinished()) {
             ConnectionSessionUtil.removeExecuteContext(connectionSession, requestId);
-            return new AsyncExecuteResultResp(true, executeContext);
+            return new AsyncExecuteResultResp(true, context, results);
         } else {
             if (log.isDebugEnabled()) {
                 log.debug("Get sql execution result timed out, sessionId={}, requestId={}", sessionId, requestId);
             }
-            return new AsyncExecuteResultResp(false, executeContext);
+            return new AsyncExecuteResultResp(false, context, results);
         }
     }
 

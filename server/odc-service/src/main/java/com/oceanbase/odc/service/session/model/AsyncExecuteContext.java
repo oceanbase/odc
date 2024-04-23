@@ -15,29 +15,15 @@
  */
 package com.oceanbase.odc.service.session.model;
 
-import static com.oceanbase.odc.core.session.ConnectionSessionConstants.BACKEND_DS_KEY;
-import static com.oceanbase.odc.core.session.ConnectionSessionConstants.CONSOLE_DS_KEY;
-
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Future;
-import java.util.function.BiConsumer;
-import java.util.function.Function;
 
-import org.springframework.jdbc.core.StatementCallback;
-
-import com.oceanbase.odc.common.util.StringUtils;
-import com.oceanbase.odc.common.util.VersionUtils;
-import com.oceanbase.odc.core.session.ConnectionSession;
-import com.oceanbase.odc.core.session.ConnectionSessionUtil;
 import com.oceanbase.odc.core.sql.execute.model.JdbcGeneralResult;
 import com.oceanbase.odc.core.sql.execute.model.SqlTuple;
-import com.oceanbase.odc.core.sql.util.OBUtils;
-import com.oceanbase.odc.service.iam.model.User;
-import com.oceanbase.odc.service.iam.util.SecurityContextUtils;
 
 import lombok.Getter;
 import lombok.Setter;
@@ -48,95 +34,49 @@ import lombok.extern.slf4j.Slf4j;
  * @date 2024/4/15
  */
 @Getter
+@Setter
 @Slf4j
-public class AsyncExecuteContext<T> {
-    private final Function<JdbcGeneralResult, T> mapper;
-    private final ConnectionSession session;
+public class AsyncExecuteContext {
     private final List<SqlTuple> sqlTuples;
-    private final Queue<T> results = new ConcurrentLinkedQueue<>();
-    private final List<BiConsumer<ConnectionSession, String>> traceIdHooks = new ArrayList<>();
-    private final User user;
-    private final Long waitTimeMillis;
-    private final List<String> sessionIds;
+    private final Queue<JdbcGeneralResult> results = new ConcurrentLinkedQueue<>();
+    private final Map<String, Object> contextMap;
 
-    @Setter
     private Future<List<JdbcGeneralResult>> future;
-    private String currentTraceId;
-    @Setter
-    private String sql;
-    private int count = 0;
+    private String currentExecutingSqlTraceId;
+    private String currentExecutingSql;
+    private int totalSqlExecutedCount = 0;
 
-    public AsyncExecuteContext(ConnectionSession session, List<SqlTuple> sqlTuples,
-            Function<JdbcGeneralResult, T> mapper, User user, Long waitTimeMillis) {
-        this.session = session;
+    public AsyncExecuteContext(List<SqlTuple> sqlTuples, Map<String, Object> contextMap) {
         this.sqlTuples = sqlTuples;
-        this.mapper = mapper;
-        this.user = user;
-        this.waitTimeMillis = waitTimeMillis;
-        this.sessionIds = initSessionIds(session);
+        this.contextMap = contextMap;
     }
 
     public boolean isFinished() {
         return future.isDone();
     }
 
+    public void addCount() {
+        totalSqlExecutedCount++;
+    }
+
     public int getTotal() {
         return sqlTuples.size();
     }
 
-    public List<T> getResults() {
-        List<T> copiedResults = new ArrayList<>();
+    public List<JdbcGeneralResult> getResults() {
+        List<JdbcGeneralResult> copiedResults = new ArrayList<>();
         while (!results.isEmpty()) {
             copiedResults.add(results.poll());
         }
         return copiedResults;
     }
 
-    public void setCurrentTraceId(String traceId) {
-        currentTraceId = traceId;
-        for (BiConsumer<ConnectionSession, String> hook : traceIdHooks) {
-            hook.accept(session, traceId);
-        }
+    public void addResult(JdbcGeneralResult result) {
+        this.results.add(result);
     }
 
-    public void onQueryStart(String sql) {
-        count++;
-        this.sql = sql;
+    public void addResults(List<JdbcGeneralResult> results) {
+        this.results.addAll(results);
     }
 
-    public void onQueryExecuting() {
-        String traceId = session.getSyncJdbcExecutor(BACKEND_DS_KEY)
-                .execute((StatementCallback<String>) stmt -> OBUtils
-                        .queryTraceIdFromASH(stmt, sessionIds, session.getConnectType()));
-        if (traceId != null) {
-            setCurrentTraceId(traceId);
-        }
-    }
-
-    public void onQueryFinish(List<JdbcGeneralResult> results) {
-        SecurityContextUtils.setCurrentUser(user);
-        try {
-            for (JdbcGeneralResult result : results) {
-                this.results.add(mapper.apply(result));
-                for (BiConsumer<ConnectionSession, String> hook : traceIdHooks) {
-                    hook.accept(session, result.getTraceId());
-                }
-            }
-        } finally {
-            SecurityContextUtils.clear();
-        }
-    }
-
-    private List<String> initSessionIds(ConnectionSession session) {
-        if (VersionUtils.isLessThan(ConnectionSessionUtil.getVersion(session), "4.2")
-                || sqlTuples.size() > 10) {
-            return null;
-        }
-        String proxySessId = ConnectionSessionUtil.getConsoleConnectionProxySessId(session);
-        if (StringUtils.isEmpty(proxySessId)) {
-            return Collections.singletonList(ConnectionSessionUtil.getConsoleConnectionId(session));
-        }
-        return session.getSyncJdbcExecutor(CONSOLE_DS_KEY).execute((StatementCallback<List<String>>) stmt -> OBUtils
-                .querySessionIdsByProxySessId(stmt, proxySessId, session.getConnectType()));
-    }
 }
