@@ -39,6 +39,7 @@ import com.oceanbase.tools.dbbrowser.editor.oracle.OracleColumnEditor;
 import com.oceanbase.tools.dbbrowser.editor.oracle.OracleConstraintEditor;
 import com.oceanbase.tools.dbbrowser.editor.oracle.OracleDBTablePartitionEditor;
 import com.oceanbase.tools.dbbrowser.editor.oracle.OracleTableEditor;
+import com.oceanbase.tools.dbbrowser.model.DBConstraintType;
 import com.oceanbase.tools.dbbrowser.model.DBTable;
 import com.oceanbase.tools.dbbrowser.model.DBTable.DBTableOptions;
 import com.oceanbase.tools.dbbrowser.model.DBTableColumn;
@@ -124,12 +125,19 @@ public class OBOracleTableExtension extends OBMySQLTableExtension {
         List<DBTableIndex> indexes = parser.listIndexes();
         List<String> constraintNames = parser.listConstraints().stream().map(DBTableConstraint::getName).filter(
                 Objects::nonNull).collect(Collectors.toList());
+        List<DBTableConstraint> constraintNameIsNull =
+                parser.listConstraints().stream().filter(cons -> Objects.isNull(cons.getName())).collect(
+                        Collectors.toList());
         for (DBTableIndex index : indexes) {
             /**
              * If it is a unique index and the corresponding unique constraint is already included in the DDL of
              * the table, there is no need to obtain the DDL of the index, otherwise it will be repeated.
              */
-            if (index.getPrimary() || constraintNames.contains(index.getName())) {
+            if (index.getPrimary() || constraintNames.contains(index.getName())
+                    || constraintNameIsNull.stream()
+                            .anyMatch(con -> DBConstraintType.UNIQUE_KEY == con.getType()
+                                    && con.getColumnNames().containsAll(index.getColumnNames())
+                                    && index.getColumnNames().containsAll(con.getColumnNames()))) {
                 continue;
             }
             String indexDdl = parser.getIndexName2Ddl().get(index.getName());
