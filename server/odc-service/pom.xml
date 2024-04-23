@@ -11,7 +11,7 @@
     <artifactId>odc-service</artifactId>
     <properties>
         <root-project.basedir>${project.parent.basedir}</root-project.basedir>
-        <antlr-output-base-path>target/generated-sources/antlr/com/oceanbase/odc/service/connection/logicaldatabase</antlr-output-base-path>
+        <antlr-output-base-path>target/generated-sources/antlr</antlr-output-base-path>
         <antlr-source-base-path>src/main/resources/antlr</antlr-source-base-path>
     </properties>
     <dependencyManagement>
@@ -308,7 +308,7 @@
                             <visitor>true</visitor>
                             <listener>true</listener>
                             <sourceDirectory>${antlr-source-base-path}/logicaldatabase</sourceDirectory>
-                            <outputDirectory>${antlr-output-base-path}</outputDirectory>
+                            <outputDirectory>${antlr-output-base-path}/com/oceanbase/odc/service/connection/logicaldatabase</outputDirectory>
                         </configuration>
                     </execution>
                 </executions>
