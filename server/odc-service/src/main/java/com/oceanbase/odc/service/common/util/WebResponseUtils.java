@@ -18,10 +18,12 @@ package com.oceanbase.odc.service.common.util;
 import java.io.IOException;
 import java.util.Locale;
 
+import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.apache.commons.lang.Validate;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -30,6 +32,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.servlet.LocaleResolver;
 import org.springframework.web.util.UriUtils;
 
+import com.google.common.net.InetAddresses;
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.common.util.SystemUtils;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
@@ -51,6 +54,7 @@ import lombok.extern.slf4j.Slf4j;
 public class WebResponseUtils {
     private static final String DATA_URI_PREFIX_V1 = "/api/v1";
     private static final String DATA_URI_PREFIX_V2 = "/api/v2";
+    private static final String XSRF_TOKEN_KEY = "XSRF-TOKEN";
 
     public static void writeBackLoginExpiredJson(HttpServletRequest httpServletRequest,
             HttpServletResponse httpServletResponse,
@@ -60,6 +64,8 @@ public class WebResponseUtils {
         try {
             Locale locale = localeResolver.resolveLocale(httpServletRequest);
             LocaleContextHolder.setLocale(locale);
+
+            resetCookie(httpServletRequest, httpServletResponse, XSRF_TOKEN_KEY);
 
             if (httpServletRequest.getRequestURI().startsWith(DATA_URI_PREFIX_V1)) {
                 WebResponseUtils.writeJsonObjectWithUnauthorizedStatus(OdcErrorResult.error(ErrorCodes.LoginExpired),
@@ -80,6 +86,20 @@ public class WebResponseUtils {
             // recover to current locale
             LocaleContextHolder.setLocale(currentLocale);
         }
+    }
+
+    public static void resetCookie(HttpServletRequest request, HttpServletResponse response, String cookieName) {
+        Cookie cookie = new Cookie(cookieName, null);
+        cookie.setMaxAge(0);
+        addCookie(request, response, cookie);
+    }
+
+    public static void addCookie(HttpServletRequest request, HttpServletResponse response, Cookie cookie) {
+        String requestHost = WebRequestUtils.getRequestHost(request);
+        String domain = InetAddresses.isInetAddress(requestHost) ? requestHost : calcParentDomain(requestHost);
+        cookie.setDomain(domain);
+        cookie.setPath(getRequestContext(request));
+        response.addCookie(cookie);
     }
 
     public static <T> void writeJsonObjectWithOkStatus(T responseBody, HttpServletRequest request,
@@ -152,4 +172,16 @@ public class WebResponseUtils {
                 request.getMethod(), fullURL, method, clientAddress, userId, body, userAgent);
     }
 
+    private static String calcParentDomain(String host) {
+        if (StringUtils.isEmpty(host)) {
+            return host;
+        }
+        String[] items = host.split("\\.");
+        return host.replace(items[0] + ".", "");
+    }
+
+    private static String getRequestContext(HttpServletRequest request) {
+        String contextPath = request.getContextPath();
+        return (contextPath.length() > 0) ? contextPath : "/";
+    }
 }
