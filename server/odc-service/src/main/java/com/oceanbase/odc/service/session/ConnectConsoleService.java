@@ -384,9 +384,6 @@ public class ConnectConsoleService {
                     }
                     return res;
                 }, authenticationFacade.currentUser(), EXECUTING_CONTEXT_WAIT_MILLIS);
-        executeContext.getTraceIdHooks().add((session, traceId) -> {
-            profileManager.addProfile(session, traceId);
-        });
         OdcStatementCallBack statementCallBack = new OdcStatementCallBack(sqlTuples, connectionSession,
                 request.getAutoCommit(), queryLimit, stopOnError, executeContext);
 

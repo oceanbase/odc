@@ -15,7 +15,6 @@
  */
 package com.oceanbase.odc.service.connection.util;
 
-import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 
@@ -67,7 +66,8 @@ public class ConnectionInfoUtil {
             connectionSession.setAttribute(ConnectionSessionConstants.CONNECTION_ID_KEY, sessionId);
             if (connectionSession.getDialectType().isOceanbase() && VersionUtils.isGreaterThanOrEqualsTo(
                     ConnectionSessionUtil.getVersion(connectionSession), "4.2")) {
-                String proxySessId = OBUtils.queryOBProxySessId(statement, connectionSession.getDialectType(), sessionId);
+                String proxySessId =
+                        OBUtils.queryOBProxySessId(statement, connectionSession.getDialectType(), sessionId);
                 connectionSession.setAttribute(ConnectionSessionConstants.OB_PROXY_SESSID_KEY, proxySessId);
             }
         } catch (Exception exception) {
