@@ -72,6 +72,10 @@ public class CheckRunningJob implements Job {
 
     private void doHandleJobRetryingOrFailed(JobEntity jobEntity) {
         JobEntity a = getConfiguration().getTaskFrameworkService().findWithPessimisticLock(jobEntity.getId());
+        if (a.getStatus() != JobStatus.RUNNING) {
+            log.warn("Current job is not RUNNING, abort continue, jobId={}.", a.getId());
+            return;
+        }
         boolean isNeedRetry = checkJobIfRetryNecessary(a);
         if (isNeedRetry) {
             log.info("Need to restart job, try to set status to RETRYING, jobId={}.", a.getId());
@@ -100,6 +104,15 @@ public class CheckRunningJob implements Job {
             }
         }
 
+        // First try to stop remote job
+        try {
+            getConfiguration().getJobDispatcher().stop(JobIdentity.of(a.getId()));
+        } catch (JobException e) {
+            // Process will continue if stop failed and not rollback transaction
+            log.warn("Try to stop remote failed, jobId={}.", a.getId(), e);
+        }
+
+        // Second destroy executor
         try {
             getConfiguration().getJobDispatcher().destroy(JobIdentity.of(a.getId()));
         } catch (JobException e) {

@@ -23,6 +23,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import com.oceanbase.odc.ServiceTestEnv;
 import com.oceanbase.odc.service.task.enums.JobStatus;
 import com.oceanbase.odc.service.task.runtime.DatabaseChangeTask;
+import com.oceanbase.odc.service.task.util.JobDateUtils;
 
 /**
  * @author yaobin
@@ -39,6 +40,21 @@ public class JobRepositoryTest extends ServiceTestEnv {
         JobEntity je = createJobEntity();
         Assert.assertNotNull(je);
     }
+
+    @Test
+    public void test_updateReportResult() {
+        JobEntity currentJob = createJobEntity();
+        JobEntity jse = new JobEntity();
+        jse.setResultJson("");
+        jse.setStatus(JobStatus.RUNNING);
+        jse.setProgressPercentage(1L);
+        jse.setExecutorEndpoint("");
+        jse.setLastReportTime(JobDateUtils.getCurrentDate());
+        jse.setFinishedTime(JobDateUtils.getCurrentDate());
+        int rows = jobRepository.updateReportResult(jse, currentJob.getId(), currentJob.getStatus());
+        Assert.assertTrue(rows > 0);
+    }
+
 
 
     private JobEntity createJobEntity() {

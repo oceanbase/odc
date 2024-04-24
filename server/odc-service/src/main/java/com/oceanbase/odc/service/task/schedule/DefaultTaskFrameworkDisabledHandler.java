@@ -73,6 +73,13 @@ public class DefaultTaskFrameworkDisabledHandler implements TaskFrameworkDisable
 
             if (je.getStatus() == JobStatus.RUNNING) {
                 try {
+                    configuration.getJobDispatcher().stop(ji);
+                } catch (JobException e) {
+                    // Process will continue if stop failed and not rollback transaction
+                    log.warn("Try to stop remote failed, jobId={}.", ji, e);
+                }
+
+                try {
                     configuration.getJobDispatcher().destroy(ji);
                 } catch (JobException e) {
                     throw new TaskRuntimeException(e);

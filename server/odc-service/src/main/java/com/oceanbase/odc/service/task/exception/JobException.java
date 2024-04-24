@@ -16,6 +16,8 @@
 package com.oceanbase.odc.service.task.exception;
 
 import java.text.MessageFormat;
+import java.util.Arrays;
+import java.util.stream.Collectors;
 
 /**
  * @author yaobin
@@ -29,7 +31,9 @@ public class JobException extends Exception {
      * @param arguments message pattern arguments
      */
     public JobException(String messagePattern, Object... arguments) {
-        super(MessageFormat.format(messagePattern, arguments));
+        super(MessageFormat.format(messagePattern,
+                Arrays.asList(arguments).stream().map(String::valueOf).collect(
+                        Collectors.toList())));
     }
 
     public JobException(String message, Throwable cause) {
@@ -42,7 +46,10 @@ public class JobException extends Exception {
      * @param arguments message pattern arguments
      */
     public JobException(String messagePattern, Throwable cause, Object... arguments) {
-        super(MessageFormat.format(messagePattern, arguments), cause);
+        super(MessageFormat.format(messagePattern,
+                Arrays.asList(arguments).stream().map(String::valueOf).collect(
+                        Collectors.toList())),
+                cause);
     }
 
 }
