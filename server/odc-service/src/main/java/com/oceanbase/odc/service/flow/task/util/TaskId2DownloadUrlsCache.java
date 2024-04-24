@@ -47,9 +47,6 @@ import lombok.extern.slf4j.Slf4j;
 @Service
 @Slf4j
 public class TaskId2DownloadUrlsCache {
-    /**
-     * 异步任务 ID 到 OSS 下载链接的映射关系
-     */
     private final LoadingCache<Long, TaskDownloadUrls> taskId2OssUrls;
 
     @Autowired
