@@ -77,7 +77,7 @@ public class LogicalTableServiceTest extends ServiceTestEnv {
             } catch (Exception ex) {
                 Assert.assertTrue(
                         String.format("test case id = %d, expected = %s, actual = %s", testCase.getId(),
-                                ex.getMessage(), testCase.getErrorMessageAbstract()),
+                                testCase.getErrorMessageAbstract(), ex.getMessage()),
                         StringUtils.containsIgnoreCase(ex.getMessage(), testCase.getErrorMessageAbstract()));
                 continue;
             }

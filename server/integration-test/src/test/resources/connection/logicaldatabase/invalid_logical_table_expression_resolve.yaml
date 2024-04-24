@@ -29,3 +29,15 @@
 - id: 8
   expression: "db_[1,2,3].tb_[1,2,3,4,5,6], bad_db.tb_[]"
   error_message_abstract: "tb_[]"
+
+- id: 9
+  expression: "db.tb_[2-1]"
+  error_message_abstract: "The start value 2 for [2-1] in your expression cannot be greater than the end value 1, please modify it and try again."
+
+- id: 10
+  expression: "db.tb_[1-2:0]"
+  error_message_abstract: "The step 0 in your expression for [1-2:0] must be a positive number, please modify it and try again."
+
+- id: 11
+  expression: "db.tb_[1-2147483648:1]"
+  error_message_abstract: "In your expression, the range for [1-2147483648:1] must consist of valid positive integers."

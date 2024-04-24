@@ -15,12 +15,14 @@
  */
 package com.oceanbase.odc.service.connection.logicaldatabase.parser;
 
+import static com.oceanbase.odc.core.shared.constant.ErrorCodes.NotPositiveLogicalTableExpressionStep;
+
 import java.util.ArrayList;
 import java.util.List;
 
 import com.oceanbase.odc.core.shared.PreConditions;
-import com.oceanbase.odc.core.shared.Verify;
-import com.oceanbase.odc.core.shared.exception.BadArgumentException;
+import com.oceanbase.odc.core.shared.constant.ErrorCodes;
+import com.oceanbase.odc.service.connection.logicaldatabase.BadExpressionException;
 
 /**
  * @Author: Lebie
@@ -28,7 +30,8 @@ import com.oceanbase.odc.core.shared.exception.BadArgumentException;
  * @Description: []
  */
 public class LogicalTableExpressionParseUtils {
-    public static List<String> listSteppedRanges(String start, String end, String step) {
+    public static List<String> listSteppedRanges(String start, String end, String step, String text)
+            throws BadExpressionException {
         PreConditions.notEmpty(start, "start");
         PreConditions.notEmpty(end, "end");
         PreConditions.notEmpty(step, "step");
@@ -39,11 +42,21 @@ public class LogicalTableExpressionParseUtils {
             endInt = Integer.parseInt(end);
             stepInt = Integer.parseInt(step);
         } catch (NumberFormatException e) {
-            throw new BadArgumentException("Input strings must be valid integers", e);
+            throw new BadExpressionException(ErrorCodes.NotValidIntegerRangeInLogicalTableExpression,
+                    new Object[] {text},
+                    ErrorCodes.NotValidIntegerRangeInLogicalTableExpression.getEnglishMessage(new Object[] {text}));
         }
 
-        Verify.greaterThan(stepInt, 0, "step");
-        Verify.lessThan(startInt, endInt, "start");
+        if (stepInt <= 0) {
+            throw new BadExpressionException(NotPositiveLogicalTableExpressionStep, new Object[] {text, stepInt},
+                    NotPositiveLogicalTableExpressionStep.getEnglishMessage(new Object[] {text, stepInt}));
+        }
+        if (startInt > endInt) {
+            throw new BadExpressionException(ErrorCodes.RangeStartGreaterThanEndInLogicalTableExpression,
+                    new Object[] {text, startInt, endInt},
+                    ErrorCodes.RangeStartGreaterThanEndInLogicalTableExpression
+                            .getEnglishMessage(new Object[] {text, startInt, endInt}));
+        }
 
         boolean includeLeadingZeros = start.length() > String.valueOf(startInt).length();
 

@@ -19,27 +19,37 @@ import java.util.List;
 
 import org.antlr.v4.runtime.ParserRuleContext;
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import com.oceanbase.odc.core.shared.constant.ErrorCodes;
+import com.oceanbase.odc.service.connection.logicaldatabase.BadExpressionException;
+
+import lombok.Getter;
 
 /**
  * @Author: Lebie
  * @Date: 2024/4/22 13:31
  * @Description: []
  */
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
+@Getter
 public class EnumRange extends BaseRangeExpression {
     private List<String> enumValues;
 
-    EnumRange(ParserRuleContext ruleNode) {
+    EnumRange(ParserRuleContext ruleNode, List<String> enumValues) {
         super(ruleNode);
+        this.enumValues = enumValues;
     }
 
     @Override
-    public List<String> listRanges() {
+    public List<String> listRanges() throws BadExpressionException {
+        enumValues.stream().forEach(value -> {
+            try {
+                Integer.parseInt(value);
+            } catch (NumberFormatException e) {
+                throw new BadExpressionException(ErrorCodes.NotValidIntegerRangeInLogicalTableExpression,
+                        new Object[] {this.getText()},
+                        ErrorCodes.NotValidIntegerRangeInLogicalTableExpression
+                                .getEnglishMessage(new Object[] {this.getText()}));
+            }
+        });
         return this.enumValues;
     }
 }

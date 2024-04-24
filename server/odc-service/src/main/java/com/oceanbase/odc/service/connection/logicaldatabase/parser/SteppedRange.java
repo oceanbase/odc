@@ -19,29 +19,30 @@ import java.util.List;
 
 import org.antlr.v4.runtime.ParserRuleContext;
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import com.oceanbase.odc.service.connection.logicaldatabase.BadExpressionException;
+
+import lombok.Getter;
 
 /**
  * @Author: Lebie
  * @Date: 2024/4/22 13:30
  * @Description: []
  */
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
+@Getter
 public class SteppedRange extends BaseRangeExpression {
     private String rangeStart;
     private String rangeEnd;
     private String rangeStep;
 
-    SteppedRange(ParserRuleContext ruleNode) {
+    SteppedRange(ParserRuleContext ruleNode, String rangeStart, String rangeEnd, String rangeStep) {
         super(ruleNode);
+        this.rangeStart = rangeStart;
+        this.rangeEnd = rangeEnd;
+        this.rangeStep = rangeStep;
     }
 
     @Override
-    public List<String> listRanges() {
-        return LogicalTableExpressionParseUtils.listSteppedRanges(rangeStart, rangeEnd, rangeStep);
+    public List<String> listRanges() throws BadExpressionException {
+        return LogicalTableExpressionParseUtils.listSteppedRanges(rangeStart, rangeEnd, rangeStep, this.getText());
     }
 }

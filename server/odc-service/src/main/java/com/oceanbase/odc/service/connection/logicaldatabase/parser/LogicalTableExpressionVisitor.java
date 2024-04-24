@@ -150,29 +150,23 @@ public class LogicalTableExpressionVisitor extends LogicalTableExpressionBaseVis
     public BaseStatement visitConsecutiveRange(ConsecutiveRangeContext ctx) {
         List<TerminalNode> numbers = ctx.NUMBER();
         Verify.equals(2, numbers.size(), "consecutiveRange.NUMBER");
-        ConsecutiveSliceRange range = new ConsecutiveSliceRange(ctx.getParent().getParent());
-        range.setRangeStart(numbers.get(0).getText());
-        range.setRangeEnd(numbers.get(1).getText());
-        return range;
+        return new ConsecutiveSliceRange(ctx.getParent().getParent(), numbers.get(0).getText(),
+                numbers.get(1).getText());
     }
 
     @Override
     public BaseStatement visitSteppedRange(SteppedRangeContext ctx) {
         List<TerminalNode> numbers = ctx.NUMBER();
         Verify.equals(3, numbers.size(), "steppedRange.NUMBER");
-        SteppedRange range = new SteppedRange(ctx.getParent().getParent());
-        range.setRangeStart(numbers.get(0).getText());
-        range.setRangeEnd(numbers.get(1).getText());
-        range.setRangeStep(numbers.get(2).getText());
-        return range;
+        return new SteppedRange(ctx.getParent().getParent(), numbers.get(0).getText(),
+                numbers.get(1).getText(), numbers.get(2).getText());
     }
 
     @Override
     public BaseStatement visitEnumRange(EnumRangeContext ctx) {
         List<TerminalNode> numbers = ctx.NUMBER();
         Verify.notEmpty(numbers, "enumRange.NUMBER");
-        EnumRange range = new EnumRange(ctx.getParent().getParent());
-        range.setEnumValues(numbers.stream().map(node -> node.getText()).collect(Collectors.toList()));
-        return range;
+        return new EnumRange(ctx.getParent().getParent(),
+                numbers.stream().map(node -> node.getText()).collect(Collectors.toList()));
     }
 }

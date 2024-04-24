@@ -19,30 +19,30 @@ import java.util.List;
 
 import org.antlr.v4.runtime.ParserRuleContext;
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import com.oceanbase.odc.service.connection.logicaldatabase.BadExpressionException;
+
+import lombok.Getter;
 
 /**
  * @Author: Lebie
  * @Date: 2024/4/22 13:29
  * @Description: []
  */
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
+@Getter
 public class ConsecutiveSliceRange extends BaseRangeExpression {
     private String rangeStart;
 
     private String rangeEnd;
 
-    ConsecutiveSliceRange(ParserRuleContext ruleNode) {
+    ConsecutiveSliceRange(ParserRuleContext ruleNode, String rangeStart, String rangeEnd) {
         super(ruleNode);
+        this.rangeStart = rangeStart;
+        this.rangeEnd = rangeEnd;
     }
 
 
     @Override
-    public List<String> listRanges() {
-        return LogicalTableExpressionParseUtils.listSteppedRanges(rangeStart, rangeEnd, "1");
+    public List<String> listRanges() throws BadExpressionException {
+        return LogicalTableExpressionParseUtils.listSteppedRanges(rangeStart, rangeEnd, "1", this.getText());
     }
 }

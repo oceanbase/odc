@@ -114,6 +114,9 @@ public enum ErrorCodes implements ErrorCode {
     ConnectionFlowConfigNotExists,
     BadLogicalTableExpressionSyntax,
     NotEvenlyDividedInLogicalTableExpression,
+    NotPositiveLogicalTableExpressionStep,
+    RangeStartGreaterThanEndInLogicalTableExpression,
+    NotValidIntegerRangeInLogicalTableExpression,
 
     // File
     FileWriteFailed,
