@@ -169,14 +169,17 @@ public class DatabaseChangeChangingOrderTemplateService {
         return true;
     }
 
-    public DatabaseChangingOrderTemplateExists exists(String name,Long projectId){
-        if(databaseChangeChangingOrderTemplateRepository.existsByNameAndProjectId(name,projectId)) {
-            return DatabaseChangingOrderTemplateExists.builder().exists(true).errorMessage(ErrorCodes.DuplicatedExists.getLocalizedMessage(
-                    new Object[] {ResourceType.ODC_DATABASE_CHANGE_ORDER_TEMPLATE.getLocalizedMessage(), "name", name}))
-                .build();
-            }
-        return DatabaseChangingOrderTemplateExists.builder().exists(false).build();
+    public DatabaseChangingOrderTemplateExists exists(String name, Long projectId) {
+        if (databaseChangeChangingOrderTemplateRepository.existsByNameAndProjectId(name, projectId)) {
+            return DatabaseChangingOrderTemplateExists
+                    .builder().exists(true).errorMessage(ErrorCodes.DuplicatedExists.getLocalizedMessage(
+                            new Object[] {ResourceType.ODC_DATABASE_CHANGE_ORDER_TEMPLATE.getLocalizedMessage(), "name",
+                                    name}))
+                    .build();
         }
+        return DatabaseChangingOrderTemplateExists.builder().exists(false).build();
+    }
+
     private void invalidPermission(CreateDatabaseChangeChangingOrderReq req) {
         // project是否存在
         if (projectRepository.existsById(req.getProjectId()) == false) {

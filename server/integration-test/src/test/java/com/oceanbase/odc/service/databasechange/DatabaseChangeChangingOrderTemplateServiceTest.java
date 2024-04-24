@@ -60,10 +60,10 @@ public class DatabaseChangeChangingOrderTemplateServiceTest extends ServiceTestE
 
     private static final Long PROJECT_ID = 1L;
     private static final Long CURRENT_USER_ID = 1L;
-    
-    private static final Long ORGANIZATION_ID= 1L;
-    private static final String TEMPLATE_NAME ="template";
-    private static final String TEMPLATE_RENAME  = "template_rename";
+
+    private static final Long ORGANIZATION_ID = 1L;
+    private static final String TEMPLATE_NAME = "template";
+    private static final String TEMPLATE_RENAME = "template_rename";
 
     @Autowired
     private DatabaseChangeChangingOrderTemplateService databaseChangeChangingOrderTemplateService;
@@ -77,6 +77,7 @@ public class DatabaseChangeChangingOrderTemplateServiceTest extends ServiceTestE
     private ProjectRepository projectRepository;
     @MockBean
     private ProjectPermissionValidator projectPermissionValidator;
+
     @Before
     public void setUp() {
         databaseChangeChangingOrderTemplateRepository.deleteAll();
@@ -103,7 +104,7 @@ public class DatabaseChangeChangingOrderTemplateServiceTest extends ServiceTestE
         Boolean result = databaseChangeChangingOrderTemplateService.createDatabaseChangingOrderTemplate(req);
         int size = databaseChangeChangingOrderTemplateRepository.findAll().size();
         assertTrue(result);
-        Assert.assertEquals(1,size);
+        Assert.assertEquals(1, size);
     }
 
     @Test(expected = IllegalArgumentException.class)
@@ -111,7 +112,7 @@ public class DatabaseChangeChangingOrderTemplateServiceTest extends ServiceTestE
         createDatabaseChangingOrderTemplate_saveEntity_succeed();
         createDatabaseChangingOrderTemplate_saveEntity_succeed();
     }
-    
+
 
     @Test(expected = NotFoundException.class)
     public void createDatabaseChangingOrderTemplate_projectIsNotExist_throwIllegalArgumentException() {
@@ -147,17 +148,19 @@ public class DatabaseChangeChangingOrderTemplateServiceTest extends ServiceTestE
     @Test
     public void modifyDatabaseChangingOrderTemplate_modifyTemplate_succeed() {
         createDatabaseChangingOrderTemplate_saveEntity_succeed();
-        DatabaseChangeChangingOrderTemplateEntity byNameAndProjectId
-            = databaseChangeChangingOrderTemplateRepository.findByNameAndProjectId(TEMPLATE_NAME, PROJECT_ID).get();
+        DatabaseChangeChangingOrderTemplateEntity byNameAndProjectId =
+                databaseChangeChangingOrderTemplateRepository.findByNameAndProjectId(TEMPLATE_NAME, PROJECT_ID).get();
         CreateDatabaseChangeChangingOrderReq req = new CreateDatabaseChangeChangingOrderReq();
         req.setProjectId(PROJECT_ID);
         req.setName(TEMPLATE_RENAME);
-        req.setOrders(JsonUtils.fromJson(byNameAndProjectId.getDatabaseSequences(), new TypeReference<List<List<Long>>>() {}) );
-        Boolean result = databaseChangeChangingOrderTemplateService.modifyDatabaseChangingOrderTemplate(byNameAndProjectId.getId(), req);
+        req.setOrders(JsonUtils.fromJson(byNameAndProjectId.getDatabaseSequences(),
+                new TypeReference<List<List<Long>>>() {}));
+        Boolean result = databaseChangeChangingOrderTemplateService
+                .modifyDatabaseChangingOrderTemplate(byNameAndProjectId.getId(), req);
         assertTrue(result);
-        Optional<DatabaseChangeChangingOrderTemplateEntity> byId
-            = databaseChangeChangingOrderTemplateRepository.findById(byNameAndProjectId.getId());
-        assertEquals(TEMPLATE_RENAME,byId.get().getName());
+        Optional<DatabaseChangeChangingOrderTemplateEntity> byId =
+                databaseChangeChangingOrderTemplateRepository.findById(byNameAndProjectId.getId());
+        assertEquals(TEMPLATE_RENAME, byId.get().getName());
 
     }
 
@@ -178,30 +181,31 @@ public class DatabaseChangeChangingOrderTemplateServiceTest extends ServiceTestE
     @Test
     public void modifyDatabaseChangingOrderTemplate_projectNotExists_throwNotFoundException() {
         createDatabaseChangingOrderTemplate_saveEntity_succeed();
-        DatabaseChangeChangingOrderTemplateEntity byNameAndProjectId
-            = databaseChangeChangingOrderTemplateRepository.findByNameAndProjectId(TEMPLATE_NAME, PROJECT_ID).get();
+        DatabaseChangeChangingOrderTemplateEntity byNameAndProjectId =
+                databaseChangeChangingOrderTemplateRepository.findByNameAndProjectId(TEMPLATE_NAME, PROJECT_ID).get();
         CreateDatabaseChangeChangingOrderReq req = new CreateDatabaseChangeChangingOrderReq();
         req.setName(TEMPLATE_RENAME);
         req.setProjectId(2L);
         req.setOrders(Arrays.asList(Arrays.asList(1L, 2L)));
         when(projectRepository.existsById(2L)).thenReturn(false);
         assertThrows(NotFoundException.class, () -> {
-            databaseChangeChangingOrderTemplateService.modifyDatabaseChangingOrderTemplate(byNameAndProjectId.getId(), req);
+            databaseChangeChangingOrderTemplateService.modifyDatabaseChangingOrderTemplate(byNameAndProjectId.getId(),
+                    req);
         });
     }
 
     @Test
     public void queryDatabaseChangingOrderTemplateById_findExistingTemplate_succeed() {
         createDatabaseChangingOrderTemplate_saveEntity_succeed();
-        DatabaseChangeChangingOrderTemplateEntity byNameAndProjectId
-            = databaseChangeChangingOrderTemplateRepository.findByNameAndProjectId(TEMPLATE_NAME, PROJECT_ID).get();
+        DatabaseChangeChangingOrderTemplateEntity byNameAndProjectId =
+                databaseChangeChangingOrderTemplateRepository.findByNameAndProjectId(TEMPLATE_NAME, PROJECT_ID).get();
         when(databaseRepository.findByIdIn(anyList())).thenReturn(Arrays.asList(new DatabaseEntity()));
-        QueryDatabaseChangeChangingOrderResp queryDatabaseChangeChangingOrderResp
-            = databaseChangeChangingOrderTemplateService.queryDatabaseChangingOrderTemplateById(
-            byNameAndProjectId.getId());
-        assertEquals(PROJECT_ID,queryDatabaseChangeChangingOrderResp.getProjectId());
-        assertEquals(TEMPLATE_NAME,queryDatabaseChangeChangingOrderResp.getName());
-        assertEquals(PROJECT_ID,queryDatabaseChangeChangingOrderResp.getProjectId());
+        QueryDatabaseChangeChangingOrderResp queryDatabaseChangeChangingOrderResp =
+                databaseChangeChangingOrderTemplateService.queryDatabaseChangingOrderTemplateById(
+                        byNameAndProjectId.getId());
+        assertEquals(PROJECT_ID, queryDatabaseChangeChangingOrderResp.getProjectId());
+        assertEquals(TEMPLATE_NAME, queryDatabaseChangeChangingOrderResp.getName());
+        assertEquals(PROJECT_ID, queryDatabaseChangeChangingOrderResp.getProjectId());
 
     }
 
@@ -209,28 +213,26 @@ public class DatabaseChangeChangingOrderTemplateServiceTest extends ServiceTestE
     public void listDatabaseChangingOrderTemplates_useQueryCondition_succeed() {
         createDatabaseChangingOrderTemplate_saveEntity_succeed();
         Pageable pageable = Pageable.unpaged();
-        QueryDatabaseChangeChangingOrderParams params = QueryDatabaseChangeChangingOrderParams.builder().projectId(PROJECT_ID).creatorId(CURRENT_USER_ID).name(TEMPLATE_NAME).build();
-        Page<DatabaseChangeChangingOrderTemplateEntity> result = databaseChangeChangingOrderTemplateService.listDatabaseChangingOrderTemplates(pageable, params);
+        QueryDatabaseChangeChangingOrderParams params = QueryDatabaseChangeChangingOrderParams.builder()
+                .projectId(PROJECT_ID).creatorId(CURRENT_USER_ID).name(TEMPLATE_NAME).build();
+        Page<DatabaseChangeChangingOrderTemplateEntity> result =
+                databaseChangeChangingOrderTemplateService.listDatabaseChangingOrderTemplates(pageable, params);
         Assert.assertNotNull(result);
         Assert.assertEquals(1, result.getContent().size());
     }
 
 
     @Test
-    public void deleteDatabaseChangingOrderTemplateById_deleteExistingTemplate_succeed(){
+    public void deleteDatabaseChangingOrderTemplateById_deleteExistingTemplate_succeed() {
         createDatabaseChangingOrderTemplate_saveEntity_succeed();
-        DatabaseChangeChangingOrderTemplateEntity databaseChangeChangingOrderTemplateEntity
-            = databaseChangeChangingOrderTemplateRepository.findByNameAndProjectId(TEMPLATE_NAME, PROJECT_ID).get();
+        DatabaseChangeChangingOrderTemplateEntity databaseChangeChangingOrderTemplateEntity =
+                databaseChangeChangingOrderTemplateRepository.findByNameAndProjectId(TEMPLATE_NAME, PROJECT_ID).get();
         Boolean result = databaseChangeChangingOrderTemplateService.deleteDatabaseChangingOrderTemplateById(
-            databaseChangeChangingOrderTemplateEntity.getId());
+                databaseChangeChangingOrderTemplateEntity.getId());
         assertTrue(result);
         int size = databaseChangeChangingOrderTemplateRepository.findAll().size();
-        assertEquals(0,size);
-    }}
-
-
-
-
-
+        assertEquals(0, size);
+    }
+}
 
 

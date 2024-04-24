@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 OceanBase.
+ * Copyright (c) 2023 OceanBase.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.oceanbase.odc.metadb.databasechange;
 
 import static org.junit.Assert.assertEquals;
@@ -38,8 +37,8 @@ public class DatabaseChangeChangingOrderTemplateRepositoryTest extends ServiceTe
     private static final Long PROJECT_ID = 1L;
     private static final Long CURRENT_USER_ID = 1L;
 
-    private static final Long ORGANIZATION_ID= 1L;
-    private static final String TEMPLATE_NAME ="template";
+    private static final Long ORGANIZATION_ID = 1L;
+    private static final String TEMPLATE_NAME = "template";
 
     @Autowired
     private DatabaseChangeChangingOrderTemplateRepository databaseChangeChangingOrderTemplateRepository;
@@ -50,7 +49,7 @@ public class DatabaseChangeChangingOrderTemplateRepositoryTest extends ServiceTe
     }
 
     @After
-    public void clear(){
+    public void clear() {
         databaseChangeChangingOrderTemplateRepository.deleteAll();
     }
 
@@ -58,27 +57,30 @@ public class DatabaseChangeChangingOrderTemplateRepositoryTest extends ServiceTe
     @Test
     public void existsByNameAndProjectId_checkTemplateExist_succeed() {
         create();
-        Boolean result = databaseChangeChangingOrderTemplateRepository.existsByNameAndProjectId(TEMPLATE_NAME,PROJECT_ID);
+        Boolean result =
+                databaseChangeChangingOrderTemplateRepository.existsByNameAndProjectId(TEMPLATE_NAME, PROJECT_ID);
         assertTrue(result);
     }
 
     @Test
     public void findByNameAndProjectId_getTemplate_succeed() {
         DatabaseChangeChangingOrderTemplateEntity databaseChangeChangingOrderTemplateEntity = create();
-        Optional<DatabaseChangeChangingOrderTemplateEntity> result = databaseChangeChangingOrderTemplateRepository.findByNameAndProjectId(TEMPLATE_NAME, PROJECT_ID);
+        Optional<DatabaseChangeChangingOrderTemplateEntity> result =
+                databaseChangeChangingOrderTemplateRepository.findByNameAndProjectId(TEMPLATE_NAME, PROJECT_ID);
         assertNotNull(result.get());
         assertEquals(databaseChangeChangingOrderTemplateEntity, result.get());
     }
+
     private DatabaseChangeChangingOrderTemplateEntity create() {
-        DatabaseChangeChangingOrderTemplateEntity databaseChangeChangingOrderTemplateEntity
-            = new DatabaseChangeChangingOrderTemplateEntity();
+        DatabaseChangeChangingOrderTemplateEntity databaseChangeChangingOrderTemplateEntity =
+                new DatabaseChangeChangingOrderTemplateEntity();
         databaseChangeChangingOrderTemplateEntity.setName(TEMPLATE_NAME);
         databaseChangeChangingOrderTemplateEntity.setProjectId(PROJECT_ID);
         databaseChangeChangingOrderTemplateEntity.setOrganizationId(ORGANIZATION_ID);
         databaseChangeChangingOrderTemplateEntity.setCreatorId(CURRENT_USER_ID);
         databaseChangeChangingOrderTemplateEntity.setDatabaseSequences("[[1,2],[3,4]]");
         return databaseChangeChangingOrderTemplateRepository.save(
-            databaseChangeChangingOrderTemplateEntity);
+                databaseChangeChangingOrderTemplateEntity);
     }
 }
 
