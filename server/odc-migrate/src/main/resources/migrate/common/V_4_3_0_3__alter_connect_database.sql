@@ -1,0 +1,2 @@
+alter table connect_database modify column connection_id bigint(20) DEFAULT NULL COMMENT 'refernce to connect_connection.id';
+alter table connect_database add column `type` varchar(32)  NOT NULL DEFAULT 'PHYSICAL' COMMENT 'optional value: PHYSICAL, LOGICAL';
