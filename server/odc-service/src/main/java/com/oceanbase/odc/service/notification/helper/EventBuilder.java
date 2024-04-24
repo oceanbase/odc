@@ -69,6 +69,7 @@ import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.flow.task.model.DatabaseChangeParameters;
 import com.oceanbase.odc.service.iam.UserService;
+import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.iam.model.User;
 import com.oceanbase.odc.service.iam.util.SecurityContextUtils;
 import com.oceanbase.odc.service.notification.model.Event;
@@ -118,6 +119,8 @@ public class EventBuilder {
     private HostProperties hostProperties;
     @Autowired
     private SiteUrlResolver siteUrlResolver;
+    @Autowired
+    private AuthenticationFacade authenticationFacade;
 
     public Event ofFailedTask(TaskEntity task) {
         Event event = ofTask(task, TaskEvent.EXECUTION_FAILED);
@@ -254,6 +257,12 @@ public class EventBuilder {
     }
 
     private <T> void resolveLabels(EventLabels labels, T task) {
+        User currentUser = null;
+        try {
+            currentUser = authenticationFacade.currentUser();
+        } catch (Exception e) {
+            // ignore
+        }
         Verify.notNull(labels, "event.labels");
         if (labels.containsKey(CREATOR_ID)) {
             try {
@@ -337,7 +346,11 @@ public class EventBuilder {
                 log.warn("failed to get ticket url.", e);
             }
         } finally {
-            SecurityContextUtils.clear();
+            if (currentUser != null) {
+                SecurityContextUtils.setCurrentUser(currentUser);
+            } else {
+                SecurityContextUtils.clear();
+            }
         }
     }
 
