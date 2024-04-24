@@ -4,7 +4,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.oceanbase</groupId>
     <artifactId>db-browser</artifactId>
-    <version>1.1.1</version>
+    <version>1.1.2</version>
     <name>db-browser</name>
     <url>https://github.com/oceanbase/odc/tree/main/libs/db-browser</url>
 
