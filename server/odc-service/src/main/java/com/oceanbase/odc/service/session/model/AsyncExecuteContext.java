@@ -44,7 +44,7 @@ public class AsyncExecuteContext {
     private Future<List<JdbcGeneralResult>> future;
     private String currentExecutingSqlTraceId;
     private String currentExecutingSql;
-    private int totalSqlExecutedCount = 0;
+    private int totalExecutedSqlCount = 0;
 
     public AsyncExecuteContext(List<SqlTuple> sqlTuples, Map<String, Object> contextMap) {
         this.sqlTuples = sqlTuples;
@@ -52,18 +52,25 @@ public class AsyncExecuteContext {
     }
 
     public boolean isFinished() {
-        return future.isDone();
+        return future != null && future.isDone();
     }
 
-    public void addCount() {
-        totalSqlExecutedCount++;
+    public boolean isCancelled() {
+        return future != null && future.isCancelled();
     }
 
-    public int getTotal() {
+    public void incrementTotalExecutedSqlCount() {
+        totalExecutedSqlCount++;
+    }
+
+    public int getToBeExecutedSqlCount() {
         return sqlTuples.size();
     }
 
-    public List<JdbcGeneralResult> getResults() {
+    /**
+     * only return the incremental results
+     */
+    public List<JdbcGeneralResult> getFinishedSqlExecutionResults() {
         List<JdbcGeneralResult> copiedResults = new ArrayList<>();
         while (!results.isEmpty()) {
             copiedResults.add(results.poll());
@@ -71,11 +78,7 @@ public class AsyncExecuteContext {
         return copiedResults;
     }
 
-    public void addResult(JdbcGeneralResult result) {
-        this.results.add(result);
-    }
-
-    public void addResults(List<JdbcGeneralResult> results) {
+    public void addSqlExecutionResults(List<JdbcGeneralResult> results) {
         this.results.addAll(results);
     }
 

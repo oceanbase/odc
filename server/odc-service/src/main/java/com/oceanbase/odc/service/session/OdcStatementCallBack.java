@@ -178,11 +178,7 @@ public class OdcStatementCallBack implements StatementCallback<List<JdbcGeneralR
             return this.sqls.stream().map(sqlTuple -> {
                 JdbcGeneralResult result = JdbcGeneralResult.canceledResult(sqlTuple);
                 result.setConnectionReset(true);
-                if (context != null) {
-                    context.addResult(result);
-                }
-                listeners.forEach(
-                        listener -> listener.onExecutionCanceled(sqlTuple, Collections.singletonList(result), context));
+                onExecutionCancelled(sqlTuple, Collections.singletonList(result));
                 return result;
             }).collect(Collectors.toList());
         }
@@ -203,12 +199,7 @@ public class OdcStatementCallBack implements StatementCallback<List<JdbcGeneralR
                         // eat exception
                     }
                 }
-                if (context != null) {
-                    context.setCurrentExecutingSql(sqlTuple.getExecutedSql());
-                    context.addCount();
-                    context.setCurrentExecutingSqlTraceId(null);
-                }
-                listeners.forEach(listener -> listener.onExecutionStart(sqlTuple, context));
+                onExecutionStart(sqlTuple);
                 try {
                     applyConnectionSettings(statement);
                 } catch (Exception e) {
@@ -219,37 +210,16 @@ public class OdcStatementCallBack implements StatementCallback<List<JdbcGeneralR
                     if (Thread.currentThread().isInterrupted()
                             || ConnectionSessionUtil.isConsoleSessionKillQuery(connectionSession)) {
                         executeResults = Collections.singletonList(JdbcGeneralResult.canceledResult(sqlTuple));
-                        listeners.forEach(listener -> listener.onExecutionCanceled(sqlTuple, executeResults, context));
+                        onExecutionCancelled(sqlTuple, executeResults);
                     } else {
                         CountDownLatch latch = new CountDownLatch(1);
-                        handle = executor.submit(() -> {
-                            long startTs = System.currentTimeMillis();
-                            List<SqlExecutionListener> sortedListeners = listeners.stream()
-                                    .filter(listener -> listener.getOnExecutionStartAfterMillis() != null
-                                            && listener.getOnExecutionStartAfterMillis() > 0)
-                                    .sorted(Comparator
-                                            .comparingLong(SqlExecutionListener::getOnExecutionStartAfterMillis))
-                                    .collect(Collectors.toList());
-                            for (SqlExecutionListener listener : sortedListeners) {
-                                long waitTs = System.currentTimeMillis() - startTs;
-                                Long expectedTs = listener.getOnExecutionStartAfterMillis();
-                                if (!latch.await(expectedTs - waitTs, TimeUnit.MILLISECONDS)) {
-                                    listener.onExecutionStartAfter(sqlTuple, context);
-                                } else {
-                                    break;
-                                }
-                            }
-                            return null;
-                        });
+                        handle = executor.submit(() -> onExecutionStartAfterMillis(sqlTuple, latch));
                         executeResults = doExecuteSql(statement, sqlTuple, latch);
-                        listeners.forEach(listener -> listener.onExecutionEnd(sqlTuple, executeResults, context));
+                        onExecutionEnd(sqlTuple, executeResults);
                     }
                 } else {
                     executeResults = Collections.singletonList(JdbcGeneralResult.canceledResult(sqlTuple));
-                    listeners.forEach(listener -> listener.onExecutionCanceled(sqlTuple, executeResults, context));
-                }
-                if (context != null) {
-                    context.addResults(executeResults);
+                    onExecutionCancelled(sqlTuple, executeResults);
                 }
                 returnVal.addAll(executeResults);
             }
@@ -274,6 +244,7 @@ public class OdcStatementCallBack implements StatementCallback<List<JdbcGeneralR
                     log.info("Clear dbms_output cache, dbmsInfo={}", dbmsInfo);
                 }
             }
+            executor.shutdownNow();
         }
         return returnVal;
     }
@@ -594,6 +565,73 @@ public class OdcStatementCallBack implements StatementCallback<List<JdbcGeneralR
         } catch (SQLException exception) {
             log.warn("Rollback failed", exception);
         }
+    }
+
+    private void onExecutionStart(SqlTuple sqlTuple) {
+        if (context != null) {
+            context.setCurrentExecutingSql(sqlTuple.getExecutedSql());
+            context.incrementTotalExecutedSqlCount();
+            context.setCurrentExecutingSqlTraceId(null);
+        }
+        listeners.forEach(listener -> {
+            try {
+                listener.onExecutionStart(sqlTuple, context);
+            } catch (Exception e) {
+                log.warn("An error occurred in listener {}.", listener.getClass(), e);
+            }
+        });
+    }
+
+    private void onExecutionCancelled(SqlTuple sqlTuple, List<JdbcGeneralResult> results) {
+        if (context != null) {
+            context.addSqlExecutionResults(results);
+        }
+        listeners.forEach(listener -> {
+            try {
+                listener.onExecutionCancelled(sqlTuple, results, context);
+            } catch (Exception e) {
+                log.warn("An error occurred in listener {}.", listener.getClass(), e);
+            }
+        });
+    }
+
+    private void onExecutionEnd(SqlTuple sqlTuple, List<JdbcGeneralResult> results) {
+        if (context != null) {
+            context.addSqlExecutionResults(results);
+        }
+        listeners.forEach(listener -> {
+            try {
+                listener.onExecutionEnd(sqlTuple, results, context);
+            } catch (Exception e) {
+                log.warn("An error occurred in listener {}.", listener.getClass(), e);
+            }
+        });
+    }
+
+    private Void onExecutionStartAfterMillis(SqlTuple sqlTuple, CountDownLatch latch) {
+        long startTs = System.currentTimeMillis();
+        List<SqlExecutionListener> sortedListeners = listeners.stream()
+                .filter(listener -> listener.getOnExecutionStartAfterMillis() != null
+                        && listener.getOnExecutionStartAfterMillis() > 0)
+                .sorted(Comparator
+                        .comparingLong(SqlExecutionListener::getOnExecutionStartAfterMillis))
+                .collect(Collectors.toList());
+        for (SqlExecutionListener listener : sortedListeners) {
+            long waitTs = System.currentTimeMillis() - startTs;
+            Long expectedTs = listener.getOnExecutionStartAfterMillis();
+            try {
+                if (!latch.await(expectedTs - waitTs, TimeUnit.MILLISECONDS)) {
+                    listener.onExecutionStartAfter(sqlTuple, context);
+                } else {
+                    break;
+                }
+            } catch (InterruptedException e) {
+                return null;
+            } catch (Exception e) {
+                log.warn("An error occurred in listener {}.", listener.getClass(), e);
+            }
+        }
+        return null;
     }
 
     @Getter

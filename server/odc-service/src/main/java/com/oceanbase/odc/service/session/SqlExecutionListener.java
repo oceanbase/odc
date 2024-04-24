@@ -31,7 +31,7 @@ public interface SqlExecutionListener {
 
     void onExecutionEnd(SqlTuple sqlTuple, List<JdbcGeneralResult> results, AsyncExecuteContext context);
 
-    void onExecutionCanceled(SqlTuple sqlTuple, List<JdbcGeneralResult> results, AsyncExecuteContext context);
+    void onExecutionCancelled(SqlTuple sqlTuple, List<JdbcGeneralResult> results, AsyncExecuteContext context);
 
     void onExecutionStartAfter(SqlTuple sqlTuple, AsyncExecuteContext context);
 

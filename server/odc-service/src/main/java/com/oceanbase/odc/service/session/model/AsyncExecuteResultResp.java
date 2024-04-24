@@ -32,12 +32,12 @@ public class AsyncExecuteResultResp {
     private boolean finished;
     private String sql;
 
-    public AsyncExecuteResultResp(boolean finished, AsyncExecuteContext context, List<SqlExecuteResult> results) {
-        this.finished = finished;
+    public AsyncExecuteResultResp(AsyncExecuteContext context, List<SqlExecuteResult> results) {
+        this.finished = context.isFinished();
         this.results = results;
         traceId = context.getCurrentExecutingSqlTraceId();
-        total = context.getTotal();
-        count = context.getTotalSqlExecutedCount();
+        total = context.getToBeExecutedSqlCount();
+        count = context.getTotalExecutedSqlCount();
         sql = context.getCurrentExecutingSql();
     }
 }

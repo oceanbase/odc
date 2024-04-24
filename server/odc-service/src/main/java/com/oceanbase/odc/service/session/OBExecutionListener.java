@@ -56,7 +56,7 @@ public class OBExecutionListener implements SqlExecutionListener {
     public void onExecutionEnd(SqlTuple sqlTuple, List<JdbcGeneralResult> results, AsyncExecuteContext context) {}
 
     @Override
-    public void onExecutionCanceled(SqlTuple sqlTuple, List<JdbcGeneralResult> results, AsyncExecuteContext context) {}
+    public void onExecutionCancelled(SqlTuple sqlTuple, List<JdbcGeneralResult> results, AsyncExecuteContext context) {}
 
     public void onExecutionStartAfter(SqlTuple sqlTuple, AsyncExecuteContext context) {
         if (CollectionUtils.isEmpty(sessionIds)) {

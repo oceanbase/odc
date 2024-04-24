@@ -37,6 +37,7 @@ import com.oceanbase.odc.core.sql.execute.model.SqlExecuteStatus;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.regulation.ruleset.RuleService;
 import com.oceanbase.odc.service.regulation.ruleset.model.Rule;
+import com.oceanbase.odc.service.session.model.AsyncExecuteContext;
 import com.oceanbase.odc.service.session.model.SqlAsyncExecuteReq;
 import com.oceanbase.odc.service.session.model.SqlAsyncExecuteResp;
 import com.oceanbase.odc.service.session.model.SqlExecuteResult;
@@ -74,11 +75,12 @@ public class SqlCheckInterceptor extends BaseTimeConsumingInterceptor {
 
     @Override
     public boolean doPreHandle(@NonNull SqlAsyncExecuteReq request, @NonNull SqlAsyncExecuteResp response,
-            @NonNull ConnectionSession session, @NonNull Map<String, Object> context) {
-        boolean sqlCheckIntercepted = handle(request, response, session, context);
-        context.put(SQL_CHECK_INTERCEPTED, sqlCheckIntercepted);
-        if (Objects.nonNull(context.get(SqlConsoleInterceptor.SQL_CONSOLE_INTERCEPTED))) {
-            return sqlCheckIntercepted && (Boolean) context.get(SqlConsoleInterceptor.SQL_CONSOLE_INTERCEPTED);
+            @NonNull ConnectionSession session, @NonNull AsyncExecuteContext context) {
+        Map<String, Object> ctx = context.getContextMap();
+        boolean sqlCheckIntercepted = handle(request, response, session, ctx);
+        ctx.put(SQL_CHECK_INTERCEPTED, sqlCheckIntercepted);
+        if (Objects.nonNull(ctx.get(SqlConsoleInterceptor.SQL_CONSOLE_INTERCEPTED))) {
+            return sqlCheckIntercepted && (Boolean) ctx.get(SqlConsoleInterceptor.SQL_CONSOLE_INTERCEPTED);
         } else {
             return true;
         }
@@ -132,11 +134,12 @@ public class SqlCheckInterceptor extends BaseTimeConsumingInterceptor {
     @Override
     @SuppressWarnings("all")
     public void afterCompletion(@NonNull SqlExecuteResult response, @NonNull ConnectionSession session,
-            @NonNull Map<String, Object> context) throws Exception {
-        if (!context.containsKey(SQL_CHECK_RESULT_KEY)) {
+            @NonNull AsyncExecuteContext context) throws Exception {
+        Map<String, Object> ctx = context.getContextMap();
+        if (!ctx.containsKey(SQL_CHECK_RESULT_KEY)) {
             return;
         }
-        Map<Integer, List<CheckViolation>> map = (Map<Integer, List<CheckViolation>>) context.get(SQL_CHECK_RESULT_KEY);
+        Map<Integer, List<CheckViolation>> map = (Map<Integer, List<CheckViolation>>) ctx.get(SQL_CHECK_RESULT_KEY);
         List<CheckViolation> results = map.get(response.getSqlTuple().getOffset());
         if (CollectionUtils.isEmpty(results)) {
             return;

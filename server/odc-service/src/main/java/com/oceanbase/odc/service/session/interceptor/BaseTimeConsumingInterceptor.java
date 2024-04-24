@@ -17,11 +17,11 @@
 package com.oceanbase.odc.service.session.interceptor;
 
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 
 import com.oceanbase.odc.common.util.TraceStage;
 import com.oceanbase.odc.core.session.ConnectionSession;
+import com.oceanbase.odc.service.session.model.AsyncExecuteContext;
 import com.oceanbase.odc.service.session.model.SqlAsyncExecuteReq;
 import com.oceanbase.odc.service.session.model.SqlAsyncExecuteResp;
 import com.oceanbase.odc.service.session.model.SqlExecuteResult;
@@ -32,7 +32,7 @@ public abstract class BaseTimeConsumingInterceptor implements SqlExecuteIntercep
 
     @Override
     public boolean preHandle(@NonNull SqlAsyncExecuteReq request, @NonNull SqlAsyncExecuteResp response,
-            @NonNull ConnectionSession session, @NonNull Map<String, Object> context) throws Exception {
+            @NonNull ConnectionSession session, @NonNull AsyncExecuteContext context) throws Exception {
         List<TraceStage> stageList = response.getSqls().stream()
                 .map(v -> v.getSqlTuple().getSqlWatch().start(getExecuteStageName()))
                 .collect(Collectors.toList());
@@ -51,19 +51,19 @@ public abstract class BaseTimeConsumingInterceptor implements SqlExecuteIntercep
 
     @Override
     public void afterCompletion(@NonNull SqlExecuteResult response,
-            @NonNull ConnectionSession session, @NonNull Map<String, Object> context) throws Exception {
+            @NonNull ConnectionSession session, @NonNull AsyncExecuteContext context) throws Exception {
         try (TraceStage stage = response.getSqlTuple().getSqlWatch().start(getExecuteStageName())) {
             doAfterCompletion(response, session, context);
         }
     }
 
     protected boolean doPreHandle(@NonNull SqlAsyncExecuteReq request, @NonNull SqlAsyncExecuteResp response,
-            @NonNull ConnectionSession session, @NonNull Map<String, Object> context) throws Exception {
+            @NonNull ConnectionSession session, @NonNull AsyncExecuteContext context) throws Exception {
         return true;
     }
 
     protected void doAfterCompletion(@NonNull SqlExecuteResult response,
-            @NonNull ConnectionSession session, @NonNull Map<String, Object> context) throws Exception {}
+            @NonNull ConnectionSession session, @NonNull AsyncExecuteContext context) throws Exception {}
 
     protected abstract String getExecuteStageName();
 
