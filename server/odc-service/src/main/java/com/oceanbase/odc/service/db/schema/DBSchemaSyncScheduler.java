@@ -17,9 +17,12 @@ package com.oceanbase.odc.service.db.schema;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.Lock;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.integration.jdbc.lock.JdbcLockRegistry;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
@@ -47,8 +50,29 @@ public class DBSchemaSyncScheduler {
     @Autowired
     private OrganizationRepository organizationRepository;
 
+    @Autowired
+    private JdbcLockRegistry jdbcLockRegistry;
+
+    private static final String LOCK_KEY = "db-schema-sync-schedule-lock";
+    private static final long LOCK_HOLD_TIME_SECONDS = 10;
+
     @Scheduled(cron = "${odc.database.schema.sync.cron-expression:0 0 2 * * ?}")
-    public void sync() {
+    public void sync() throws InterruptedException {
+        Lock lock = jdbcLockRegistry.obtain(LOCK_KEY);
+        if (!lock.tryLock()) {
+            log.info("Skip syncing database schema due to trying lock failed, may other odc-server node is handling");
+            return;
+        }
+        try {
+            doSync();
+            // Sleep for a while before unlock to avoid other nodes acquiring the lock again.
+            TimeUnit.SECONDS.sleep(LOCK_HOLD_TIME_SECONDS);
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    private void doSync() {
         List<Long> teamOrgIds = organizationRepository.findIdByType(OrganizationType.TEAM);
         if (CollectionUtils.isEmpty(teamOrgIds)) {
             return;
@@ -65,7 +89,6 @@ public class DBSchemaSyncScheduler {
                 log.warn("Failed to submit sync database schema task for datasource id={}", dataSource.getId(), e);
             }
         }
-
     }
 
 }
