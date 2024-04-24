@@ -71,7 +71,6 @@ import com.oceanbase.odc.service.flow.task.model.DatabaseChangeParameters;
 import com.oceanbase.odc.service.iam.UserService;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.iam.model.User;
-import com.oceanbase.odc.service.iam.util.SecurityContextUtils;
 import com.oceanbase.odc.service.notification.model.Event;
 import com.oceanbase.odc.service.notification.model.EventLabels;
 import com.oceanbase.odc.service.notification.model.EventStatus;
@@ -257,100 +256,85 @@ public class EventBuilder {
     }
 
     private <T> void resolveLabels(EventLabels labels, T task) {
-        User currentUser = null;
-        try {
-            currentUser = authenticationFacade.currentUser();
-        } catch (Exception e) {
-            // ignore
-        }
         Verify.notNull(labels, "event.labels");
         if (labels.containsKey(CREATOR_ID)) {
             try {
                 UserEntity user = userService.nullSafeGet(labels.getLongFromString(CREATOR_ID));
                 labels.putIfNonNull(CREATOR_NAME, user.getName());
-                SecurityContextUtils.setCurrentUser(new User(user));
             } catch (Exception e) {
                 log.warn("failed to query creator info.", e);
             }
         }
-        try {
-            if (labels.containsKey(CONNECTION_ID)) {
-                try {
-                    ConnectionConfig connectionConfig = connectionService.getForConnectionSkipPermissionCheck(
-                            labels.getLongFromString(CONNECTION_ID));
-                    labels.put(CLUSTER_NAME, connectionConfig.getClusterName());
-                    labels.put(TENANT_NAME, connectionConfig.getTenantName());
-                    Environment environment =
-                            environmentService.detailSkipPermissionCheck(connectionConfig.getEnvironmentId());
-                    labels.put(ENVIRONMENT, environment.getName());
-                } catch (Exception e) {
-                    log.warn("failed to query connection info.", e);
-                }
+        if (labels.containsKey(CONNECTION_ID)) {
+            try {
+                ConnectionConfig connectionConfig = connectionService.getBasicWithoutPermissionCheck(
+                        labels.getLongFromString(CONNECTION_ID));
+                labels.put(CLUSTER_NAME, connectionConfig.getClusterName());
+                labels.put(TENANT_NAME, connectionConfig.getTenantName());
+                Environment environment =
+                        environmentService.detailSkipPermissionCheck(connectionConfig.getEnvironmentId());
+                labels.put(ENVIRONMENT, environment.getName());
+            } catch (Exception e) {
+                log.warn("failed to query connection info.", e);
             }
-            if (labels.containsKey(APPROVER_ID)) {
-                try {
-                    if ("null".equals(labels.get(APPROVER_ID))) {
-                        labels.putIfNonNull(APPROVER_NAME, AUTO_APPROVAL_KEY);
-                    } else if (labels.get(APPROVER_ID).startsWith("[")) {
-                        List<Long> approverIds = JsonUtils.fromJsonList(labels.get(APPROVER_ID), Long.class);
-                        List<User> approvers = userService.batchNullSafeGet(approverIds);
-                        labels.putIfNonNull(APPROVER_NAME,
-                                String.join(" | ", approvers.stream().map(User::getName).collect(Collectors.toSet())));
-                    } else {
-                        UserEntity user = userService.nullSafeGet(labels.getLongFromString(APPROVER_ID));
-                        labels.putIfNonNull(APPROVER_NAME, user.getName());
-                    }
-                } catch (Exception e) {
-                    log.warn("failed to query approver.", e);
+        }
+        if (labels.containsKey(APPROVER_ID)) {
+            try {
+                if ("null".equals(labels.get(APPROVER_ID))) {
+                    labels.putIfNonNull(APPROVER_NAME, AUTO_APPROVAL_KEY);
+                } else if (labels.get(APPROVER_ID).startsWith("[")) {
+                    List<Long> approverIds = JsonUtils.fromJsonList(labels.get(APPROVER_ID), Long.class);
+                    List<User> approvers = userService.batchNullSafeGet(approverIds);
+                    labels.putIfNonNull(APPROVER_NAME,
+                            String.join(" | ", approvers.stream().map(User::getName).collect(Collectors.toSet())));
+                } else {
+                    UserEntity user = userService.nullSafeGet(labels.getLongFromString(APPROVER_ID));
+                    labels.putIfNonNull(APPROVER_NAME, user.getName());
                 }
+            } catch (Exception e) {
+                log.warn("failed to query approver.", e);
             }
-            if (task instanceof TaskEntity && labels.containsKey(TASK_ENTITY_ID)) {
-                try {
-                    List<FlowInstanceEntity> flowInstances =
-                            flowInstanceRepository.findByTaskId(labels.getLongFromString(TASK_ENTITY_ID));
-                    Verify.singleton(flowInstances, "flow instance");
-                    Long parentInstanceId = flowInstances.get(0).getParentInstanceId();
-                    TaskEntity taskEntity = ((TaskEntity) task);
-                    if (taskEntity.getTaskType() == TaskType.ASYNC) {
-                        DatabaseChangeParameters parameters = JsonUtils.fromJson(taskEntity.getParametersJson(),
-                                DatabaseChangeParameters.class);
-                        if (Objects.nonNull(parameters.getParentJobType())) {
-                            labels.putIfNonNull(TASK_TYPE, parameters.getParentJobType());
-                            labels.putIfNonNull(TASK_ID, parentInstanceId);
-                        } else {
-                            labels.putIfNonNull(TASK_ID, flowInstances.get(0).getId());
-                        }
-                    } else if (taskEntity.getTaskType() == TaskType.ALTER_SCHEDULE) {
-                        AlterScheduleParameters parameters = JsonUtils.fromJson(taskEntity.getParametersJson(),
-                                AlterScheduleParameters.class);
-                        labels.putIfNonNull(TASK_TYPE, parameters.getType());
+        }
+        if (task instanceof TaskEntity && labels.containsKey(TASK_ENTITY_ID)) {
+            try {
+                List<FlowInstanceEntity> flowInstances =
+                        flowInstanceRepository.findByTaskId(labels.getLongFromString(TASK_ENTITY_ID));
+                Verify.singleton(flowInstances, "flow instance");
+                Long parentInstanceId = flowInstances.get(0).getParentInstanceId();
+                TaskEntity taskEntity = ((TaskEntity) task);
+                if (taskEntity.getTaskType() == TaskType.ASYNC) {
+                    DatabaseChangeParameters parameters = JsonUtils.fromJson(taskEntity.getParametersJson(),
+                            DatabaseChangeParameters.class);
+                    if (Objects.nonNull(parameters.getParentJobType())) {
+                        labels.putIfNonNull(TASK_TYPE, parameters.getParentJobType());
                         labels.putIfNonNull(TASK_ID, parentInstanceId);
                     } else {
                         labels.putIfNonNull(TASK_ID, flowInstances.get(0).getId());
                     }
-                } catch (Exception e) {
-                    log.warn("failed to query task info.", e);
+                } else if (taskEntity.getTaskType() == TaskType.ALTER_SCHEDULE) {
+                    AlterScheduleParameters parameters = JsonUtils.fromJson(taskEntity.getParametersJson(),
+                            AlterScheduleParameters.class);
+                    labels.putIfNonNull(TASK_TYPE, parameters.getType());
+                    labels.putIfNonNull(TASK_ID, parentInstanceId);
+                } else {
+                    labels.putIfNonNull(TASK_ID, flowInstances.get(0).getId());
                 }
-            }
-            if (labels.containsKey(PROJECT_ID)) {
-                try {
-                    Project project = projectService.getBasicSkipPermissionCheck(labels.getLongFromString(PROJECT_ID));
-                    labels.putIfNonNull(PROJECT_NAME, project.getName());
-                } catch (Exception e) {
-                    log.warn("failed to query project info.", e);
-                }
-            }
-            try {
-                labels.putIfNonNull(TICKET_URL, getTicketUrl(labels, task));
             } catch (Exception e) {
-                log.warn("failed to get ticket url.", e);
+                log.warn("failed to query task info.", e);
             }
-        } finally {
-            if (currentUser != null) {
-                SecurityContextUtils.setCurrentUser(currentUser);
-            } else {
-                SecurityContextUtils.clear();
+        }
+        if (labels.containsKey(PROJECT_ID)) {
+            try {
+                Project project = projectService.getBasicSkipPermissionCheck(labels.getLongFromString(PROJECT_ID));
+                labels.putIfNonNull(PROJECT_NAME, project.getName());
+            } catch (Exception e) {
+                log.warn("failed to query project info.", e);
             }
+        }
+        try {
+            labels.putIfNonNull(TICKET_URL, getTicketUrl(labels, task));
+        } catch (Exception e) {
+            log.warn("failed to get ticket url.", e);
         }
     }
 
