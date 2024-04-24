@@ -15,11 +15,8 @@
  */
 package com.oceanbase.odc.metadb.databasechange;
 
-import java.util.List;
 import java.util.Optional;
 
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.stereotype.Repository;
@@ -31,12 +28,6 @@ public interface DatabaseChangeChangingOrderTemplateRepository
 
     Boolean existsByNameAndProjectId(String name, Long projectId);
 
-    Optional<DatabaseChangeChangingOrderTemplateEntity> findByIdAndProjectId(Long id, Long projectId);
+    Optional<DatabaseChangeChangingOrderTemplateEntity> findByNameAndProjectId(String name, Long projectId);
 
-    List<DatabaseChangeChangingOrderTemplateEntity> findByNameAndProjectId(String name, Long projectId);
-
-    void deleteByIdAndProjectId(Long id, Long projectId);
-
-
-    Page<DatabaseChangeChangingOrderTemplateEntity> findByProjectId(Long projectId, Pageable pageable);
 }

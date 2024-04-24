@@ -17,9 +17,12 @@ package com.oceanbase.odc.service.databasechange.model;
 
 import java.util.List;
 
+import javax.validation.Valid;
+import javax.validation.constraints.Min;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Size;
 
 import lombok.Data;
 
@@ -27,12 +30,13 @@ import lombok.Data;
 public class CreateDatabaseChangeChangingOrderReq {
 
     @NotBlank
+    @Size(max = 256, message = "name is out of range [0, 256]")
     private String name;
 
     @NotNull
+    @Min(value = 1, message = "projectId can not be smaller than 1")
     private Long projectId;
 
     @NotEmpty
-    private List<List<Long>> orders;
-
+    private List<@Valid @NotEmpty List<@NotNull @Min(1) Long>> orders;
 }

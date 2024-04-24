@@ -26,6 +26,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -35,6 +36,7 @@ import com.oceanbase.odc.service.common.response.Responses;
 import com.oceanbase.odc.service.common.response.SuccessResponse;
 import com.oceanbase.odc.service.databasechange.DatabaseChangeChangingOrderTemplateService;
 import com.oceanbase.odc.service.databasechange.model.CreateDatabaseChangeChangingOrderReq;
+import com.oceanbase.odc.service.databasechange.model.DatabaseChangingOrderTemplateExists;
 import com.oceanbase.odc.service.databasechange.model.QueryDatabaseChangeChangingOrderParams;
 import com.oceanbase.odc.service.databasechange.model.QueryDatabaseChangeChangingOrderResp;
 
@@ -101,6 +103,12 @@ public class DatabaseChangeController {
     public SuccessResponse<Boolean> deleteDatabaseChangingOrderTemplateById(@PathVariable Long id) {
         return Responses
                 .success(databaseChangeChangingOrderTemplateService.deleteDatabaseChangingOrderTemplateById(id));
+    }
+
+    @ApiOperation(value = "exists", notes = "Returns whether an database changing order template exists")
+    @RequestMapping(value = "/changingorder/templates/exists", method = RequestMethod.POST)
+    public SuccessResponse<DatabaseChangingOrderTemplateExists> exists(@RequestParam String name,@RequestParam Long projectId) {
+        return Responses.success(databaseChangeChangingOrderTemplateService.exists(name,projectId));
     }
 }
 

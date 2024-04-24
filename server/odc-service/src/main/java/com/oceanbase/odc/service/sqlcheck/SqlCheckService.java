@@ -99,7 +99,7 @@ public class SqlCheckService {
     }
 
     public List<CheckResult> multipleCheck(@NotNull @Valid MultipleSqlCheckReq req) {
-        ArrayList<CheckResult> checkResults = new ArrayList<CheckResult>();
+        List<CheckResult> checkResults = new ArrayList<CheckResult>();
         List<Long> databaseIds = req.getDatabaseIds();
         for (Long databaseId : databaseIds) {
             ConnectionSession session = sessionService.create(null, databaseId);

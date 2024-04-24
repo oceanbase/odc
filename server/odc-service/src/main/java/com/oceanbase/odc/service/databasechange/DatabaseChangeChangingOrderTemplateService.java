@@ -16,10 +16,10 @@
 package com.oceanbase.odc.service.databasechange;
 
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 import javax.validation.Valid;
@@ -36,6 +36,7 @@ import org.springframework.validation.annotation.Validated;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.oceanbase.odc.common.json.JsonUtils;
+import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.constant.ResourceRoleName;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.core.shared.exception.NotFoundException;
@@ -46,6 +47,7 @@ import com.oceanbase.odc.metadb.databasechange.DatabaseChangeChangingOrderTempla
 import com.oceanbase.odc.metadb.databasechange.DatabaseChangeChangingOrderTemplateRepository;
 import com.oceanbase.odc.metadb.databasechange.DatabaseChangeChangingOrderTemplateSpecs;
 import com.oceanbase.odc.service.databasechange.model.CreateDatabaseChangeChangingOrderReq;
+import com.oceanbase.odc.service.databasechange.model.DatabaseChangingOrderTemplateExists;
 import com.oceanbase.odc.service.databasechange.model.QueryDatabaseChangeChangingOrderParams;
 import com.oceanbase.odc.service.databasechange.model.QueryDatabaseChangeChangingOrderResp;
 import com.oceanbase.odc.service.iam.ProjectPermissionValidator;
@@ -112,7 +114,7 @@ public class DatabaseChangeChangingOrderTemplateService {
     }
 
     public QueryDatabaseChangeChangingOrderResp queryDatabaseChangingOrderTemplateById(
-            @NotNull @Min(value = 0) Long id) {
+            @NotNull @Min(value = 1) Long id) {
         DatabaseChangeChangingOrderTemplateEntity databaseChangeChangingOrderTemplateEntity =
                 databaseChangeChangingOrderTemplateRepository.findById(id).orElseThrow(
                         () -> new NoSuchElementException("the template does not exist"));
@@ -146,7 +148,7 @@ public class DatabaseChangeChangingOrderTemplateService {
 
     public Page<DatabaseChangeChangingOrderTemplateEntity> listDatabaseChangingOrderTemplates(
             @NotNull Pageable pageable,
-            @NotNull QueryDatabaseChangeChangingOrderParams params) {
+            @NotNull @Valid QueryDatabaseChangeChangingOrderParams params) {
         projectPermissionValidator.checkProjectRole(params.getProjectId(), ResourceRoleName.all());
         Specification<DatabaseChangeChangingOrderTemplateEntity> specification = Specification
                 .where(DatabaseChangeChangingOrderTemplateSpecs.nameLikes(params.getName()))
@@ -157,16 +159,24 @@ public class DatabaseChangeChangingOrderTemplateService {
     }
 
     @Transactional
-    public Boolean deleteDatabaseChangingOrderTemplateById(@NotNull @Min(value = 0) Long id) {
+    public Boolean deleteDatabaseChangingOrderTemplateById(@NotNull @Min(value = 1) Long id) {
         DatabaseChangeChangingOrderTemplateEntity databaseChangeChangingOrderTemplateEntity =
                 databaseChangeChangingOrderTemplateRepository.findById(id).orElseThrow(
                         () -> new NoSuchElementException("the template does not exist"));
         projectPermissionValidator.checkProjectRole(databaseChangeChangingOrderTemplateEntity.getProjectId(),
                 ResourceRoleName.all());
-        databaseChangeChangingOrderTemplateRepository.deleteByIdAndProjectId(id, authenticationFacade.currentUserId());
+        databaseChangeChangingOrderTemplateRepository.deleteById(id);
         return true;
     }
 
+    public DatabaseChangingOrderTemplateExists exists(String name,Long projectId){
+        if(databaseChangeChangingOrderTemplateRepository.existsByNameAndProjectId(name,projectId)) {
+            return DatabaseChangingOrderTemplateExists.builder().exists(true).errorMessage(ErrorCodes.DuplicatedExists.getLocalizedMessage(
+                    new Object[] {ResourceType.ODC_DATABASE_CHANGE_ORDER_TEMPLATE.getLocalizedMessage(), "name", name}))
+                .build();
+            }
+        return DatabaseChangingOrderTemplateExists.builder().exists(false).build();
+        }
     private void invalidPermission(CreateDatabaseChangeChangingOrderReq req) {
         // project是否存在
         if (projectRepository.existsById(req.getProjectId()) == false) {
@@ -174,8 +184,13 @@ public class DatabaseChangeChangingOrderTemplateService {
         }
         // 当前用户是否有权访问此项目
         projectPermissionValidator.checkProjectRole(req.getProjectId(), ResourceRoleName.all());
+        // 必须为多库
+        List<Long> list = req.getOrders().stream().flatMap(x -> x.stream()).collect(Collectors.toList());
+        if (list.size() <= 1) {
+            throw new IllegalArgumentException("The number of databases must be greater than 1");
+        }
         // 模板中数据库是否都属于此项目
-        Set<Long> ids = req.getOrders().stream().flatMap(x -> x.stream()).collect(Collectors.toSet());
+        HashSet<Long> ids = new HashSet<>(list);
         List<DatabaseEntity> byIdIn = databaseRepository.findByIdIn(ids);
         if ((byIdIn.stream().allMatch(x -> x.getProjectId() == req.getProjectId())) == false) {
             throw new IllegalArgumentException("all databases must belong to the current project");
