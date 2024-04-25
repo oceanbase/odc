@@ -13,30 +13,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.db.schema.model;
+package com.oceanbase.odc.plugin.schema.oboracle;
 
-import javax.validation.constraints.NotNull;
+import java.sql.Connection;
 
-import com.oceanbase.odc.core.shared.constant.ResourceType;
+import org.pf4j.Extension;
 
-import lombok.Data;
+import com.oceanbase.odc.plugin.schema.obmysql.OBMySQLColumnExtension;
+import com.oceanbase.odc.plugin.schema.oboracle.utils.DBAccessorUtil;
+import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
 
 /**
  * @author gaoda.xy
- * @date 2024/3/29 17:24
+ * @date 2024/4/21 21:10
  */
-@Data
-public class SyncDBObjectReq {
+@Extension
+public class OBOracleColumnExtension extends OBMySQLColumnExtension {
 
-    /**
-     * Specify resource type, optional values: ODC_CONNECTION, ODC_PROJECT, ODC_DATABASE
-     */
-    @NotNull
-    private ResourceType resourceType;
-    /**
-     * Specify resource id
-     */
-    @NotNull
-    private Long resourceId;
+    @Override
+    protected DBSchemaAccessor getSchemaAccessor(Connection connection) {
+        return DBAccessorUtil.getSchemaAccessor(connection);
+    }
 
 }

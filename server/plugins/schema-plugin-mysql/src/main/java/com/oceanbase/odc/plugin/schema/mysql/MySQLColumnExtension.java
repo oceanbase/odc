@@ -13,26 +13,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package com.oceanbase.odc.plugin.schema.mysql;
 
-package com.oceanbase.odc.service.connection.database.model;
+import java.sql.Connection;
 
-import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.cloud.context.config.annotation.RefreshScope;
-import org.springframework.context.annotation.Configuration;
+import org.pf4j.Extension;
 
-import lombok.Data;
+import com.oceanbase.odc.plugin.schema.mysql.utils.DBAccessorUtil;
+import com.oceanbase.odc.plugin.schema.obmysql.OBMySQLColumnExtension;
+import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
 
 /**
  * @author gaoda.xy
- * @date 2023/12/1 11:12
+ * @date 2024/4/21 21:08
  */
-@Data
-@Configuration
-@RefreshScope
-@ConfigurationProperties(prefix = "odc.connect.database.sync")
-public class DatabaseSyncProperties {
+@Extension
+public class MySQLColumnExtension extends OBMySQLColumnExtension {
 
-    private long intervalMillis;
-    private boolean blockInternalDatabase;
+    @Override
+    protected DBSchemaAccessor getSchemaAccessor(Connection connection) {
+        return DBAccessorUtil.getSchemaAccessor(connection);
+    }
 
 }
