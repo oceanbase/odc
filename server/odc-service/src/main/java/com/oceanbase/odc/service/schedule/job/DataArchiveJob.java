@@ -134,8 +134,11 @@ public class DataArchiveJob extends AbstractDlmJob {
      */
     private void createTargetTable(DlmTask dlmTask) {
 
-        if (dlmTask.getSourceDs().getDialectType() != dlmTask.getTargetDs().getDialectType()) {
-            log.info("Data sources of different types do not currently support automatic creation of target tables.");
+
+        if (dlmTask.getSourceDs().getDialectType() != dlmTask.getTargetDs().getDialectType()
+                || !dlmTask.getSourceDs().getDialectType().isMysql()) {
+            log.info("Automatic table creation is not supported,sourceType={},targetType={}",
+                    dlmTask.getSourceDs().getDialectType(), dlmTask.getTargetDs().getDialectType());
             return;
         }
         DefaultConnectSessionFactory sourceConnectionSessionFactory =
