@@ -63,6 +63,7 @@ public class StartPreparingJob implements Job {
         JobConfigurationValidator.validComponent();
 
         if (!configuration.getTaskFrameworkEnabledProperties().isEnabled()) {
+            log.warn("Task-framework isEnabled={}", configuration.getTaskFrameworkEnabledProperties().isEnabled());
             configuration.getTaskFrameworkDisabledHandler().handleJobToFailed();
             return;
         }
