@@ -70,7 +70,7 @@ public class AsyncExecuteContext {
     /**
      * only return the incremental results
      */
-    public List<JdbcGeneralResult> getFinishedSqlExecutionResults() {
+    public List<JdbcGeneralResult> getMoreSqlExecutionResults() {
         List<JdbcGeneralResult> copiedResults = new ArrayList<>();
         while (!results.isEmpty()) {
             copiedResults.add(results.poll());
