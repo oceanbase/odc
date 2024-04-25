@@ -64,6 +64,7 @@ import com.oceanbase.odc.service.flow.task.model.DatabaseChangeParameters;
 import com.oceanbase.odc.service.flow.task.model.DatabaseChangeResult;
 import com.oceanbase.odc.service.flow.task.model.SizeAwareInputStream;
 import com.oceanbase.odc.service.flow.task.util.DatabaseChangeFileReader;
+import com.oceanbase.odc.service.flow.task.util.TaskDownloadUrlsProvider;
 import com.oceanbase.odc.service.objectstorage.ObjectStorageFacade;
 import com.oceanbase.odc.service.objectstorage.cloud.CloudObjectStorageService;
 import com.oceanbase.odc.service.session.DBSessionManageFacade;
@@ -409,7 +410,8 @@ public class DatabaseChangeThread extends Thread {
                 File tempZipFile = new File(String.format("%s.zip", zipFileRootPath));
                 try {
                     String objectName = cloudObjectStorageService.uploadTemp(zipFileId + ".zip", tempZipFile);
-                    zipFileDownloadUrl = cloudObjectStorageService.getBucketName() + "/" + objectName;
+                    zipFileDownloadUrl = TaskDownloadUrlsProvider
+                            .concatBucketAndObjectName(cloudObjectStorageService.getBucketName(), objectName);
                     log.info("upload database change task result set zip file to OSS, file name={}", zipFileId);
                 } catch (Exception exception) {
                     log.warn("upload database change task result set zip file to OSS failed, file name={}", zipFileId);
