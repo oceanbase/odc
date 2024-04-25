@@ -20,6 +20,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.Validate;
 import org.pf4j.Extension;
@@ -38,7 +39,7 @@ import com.oceanbase.tools.dbbrowser.editor.oracle.OracleColumnEditor;
 import com.oceanbase.tools.dbbrowser.editor.oracle.OracleConstraintEditor;
 import com.oceanbase.tools.dbbrowser.editor.oracle.OracleDBTablePartitionEditor;
 import com.oceanbase.tools.dbbrowser.editor.oracle.OracleTableEditor;
-import com.oceanbase.tools.dbbrowser.model.DBIndexType;
+import com.oceanbase.tools.dbbrowser.model.DBConstraintType;
 import com.oceanbase.tools.dbbrowser.model.DBTable;
 import com.oceanbase.tools.dbbrowser.model.DBTable.DBTableOptions;
 import com.oceanbase.tools.dbbrowser.model.DBTableColumn;
@@ -122,11 +123,19 @@ public class OBOracleTableExtension extends OBMySQLTableExtension {
             }
         }
         List<DBTableIndex> indexes = parser.listIndexes();
+        List<String> constraintNames = parser.listConstraints().stream().map(DBTableConstraint::getName).filter(
+                Objects::nonNull).collect(Collectors.toList());
+        List<DBTableConstraint> constraintNameIsNull =
+                parser.listConstraints().stream().filter(cons -> Objects.isNull(cons.getName())).collect(
+                        Collectors.toList());
         for (DBTableIndex index : indexes) {
             /**
-             * 如果有唯一索引，则在表的 DDL 里已经包含了对应的唯一约束 这里就不需要再去获取索引的 DDL 了，否则会重复
+             * If it is a unique index and the corresponding unique constraint is already included in the DDL of
+             * the table, there is no need to obtain the DDL of the index, otherwise it will be repeated.
              */
-            if (index.getType() == DBIndexType.UNIQUE || index.getPrimary()) {
+            if (index.getPrimary() || constraintNames.contains(index.getName())
+                    || constraintNameIsNull.stream().anyMatch(con -> DBConstraintType.UNIQUE_KEY == con.getType()
+                            && con.getColumnNames().equals(index.getColumnNames()))) {
                 continue;
             }
             String indexDdl = parser.getIndexName2Ddl().get(index.getName());
