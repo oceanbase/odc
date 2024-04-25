@@ -46,7 +46,7 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Service
 @Slf4j
-public class TaskId2DownloadUrlsCache {
+public class TaskDownloadUrlsProvider {
     private final LoadingCache<Long, TaskDownloadUrls> taskId2OssUrls;
 
     @Autowired
@@ -56,7 +56,7 @@ public class TaskId2DownloadUrlsCache {
     @Autowired
     private CloudObjectStorageService cloudObjectStorageService;
 
-    public TaskId2DownloadUrlsCache() {
+    public TaskDownloadUrlsProvider() {
         taskId2OssUrls = Caffeine.newBuilder()
                 .maximumSize(1000)
                 .expireAfterWrite(1, TimeUnit.HOURS)

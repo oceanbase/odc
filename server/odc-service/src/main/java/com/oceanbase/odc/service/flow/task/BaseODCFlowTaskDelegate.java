@@ -53,7 +53,7 @@ import com.oceanbase.odc.service.flow.model.ExecutionStrategyConfig;
 import com.oceanbase.odc.service.flow.model.FlowNodeStatus;
 import com.oceanbase.odc.service.flow.model.FlowTaskExecutionStrategy;
 import com.oceanbase.odc.service.flow.task.model.RuntimeTaskConstants;
-import com.oceanbase.odc.service.flow.task.util.TaskId2DownloadUrlsCache;
+import com.oceanbase.odc.service.flow.task.util.TaskDownloadUrlsProvider;
 import com.oceanbase.odc.service.flow.util.FlowTaskUtil;
 import com.oceanbase.odc.service.flow.util.TaskLogFilenameGenerator;
 import com.oceanbase.odc.service.iam.util.SecurityContextUtils;
@@ -351,7 +351,7 @@ public abstract class BaseODCFlowTaskDelegate<T> extends BaseRuntimeFlowableDele
             String fileName = TaskLogFilenameGenerator.generate(flowInstanceId);
             try {
                 String objectName = cloudObjectStorageService.uploadTemp(fileName, logFile);
-                downloadUrl = TaskId2DownloadUrlsCache
+                downloadUrl = TaskDownloadUrlsProvider
                         .concatBucketAndObjectName(cloudObjectStorageService.getBucketName(), objectName);
                 log.info("Upload task log file to OSS, taskId={}, logFileName={}", taskId, fileName);
             } catch (Exception e) {

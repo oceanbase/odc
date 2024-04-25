@@ -93,8 +93,8 @@ import com.oceanbase.odc.service.flow.task.model.ResultSetExportResult;
 import com.oceanbase.odc.service.flow.task.model.RollbackPlanTaskResult;
 import com.oceanbase.odc.service.flow.task.model.ShadowTableSyncTaskResult;
 import com.oceanbase.odc.service.flow.task.model.SqlCheckTaskResult;
-import com.oceanbase.odc.service.flow.task.util.TaskId2DownloadUrlsCache;
-import com.oceanbase.odc.service.flow.task.util.TaskId2DownloadUrlsCache.TaskDownloadUrls;
+import com.oceanbase.odc.service.flow.task.util.TaskDownloadUrlsProvider;
+import com.oceanbase.odc.service.flow.task.util.TaskDownloadUrlsProvider.TaskDownloadUrls;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.logger.LoggerService;
 import com.oceanbase.odc.service.objectstorage.ObjectStorageFacade;
@@ -148,7 +148,7 @@ public class FlowTaskInstanceService {
     @Autowired
     private TaskDispatchChecker dispatchChecker;
     @Autowired
-    private TaskId2DownloadUrlsCache databaseChangeOssUrlCache;
+    private TaskDownloadUrlsProvider databaseChangeOssUrlCache;
     @Autowired
     private LocalFileManager localFileManager;
     @Autowired
