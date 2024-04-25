@@ -121,11 +121,11 @@ public class ConnectSessionController {
         return Responses.success(consoleService.execute(SidUtils.getSessionId(sessionId), req));
     }
 
-    @RequestMapping(value = {"/sessions/{sessionId}/sqls/asyncExecuteV2"}, method = RequestMethod.POST)
+    @RequestMapping(value = {"/sessions/{sessionId}/sqls/streamExecute"}, method = RequestMethod.POST)
     @StatefulRoute(stateName = StateName.DB_SESSION, stateIdExpression = "#sessionId")
-    public SuccessResponse<SqlAsyncExecuteResp> asyncSqlExecuteV2(@PathVariable String sessionId,
+    public SuccessResponse<SqlAsyncExecuteResp> streamExecute(@PathVariable String sessionId,
             @RequestBody SqlAsyncExecuteReq req) throws Exception {
-        return Responses.success(consoleService.executeV2(SidUtils.getSessionId(sessionId), req, true));
+        return Responses.success(consoleService.streamExecute(SidUtils.getSessionId(sessionId), req, true));
     }
 
     /**
@@ -142,11 +142,11 @@ public class ConnectSessionController {
         return Responses.success(consoleService.getAsyncResult(SidUtils.getSessionId(sessionId), requestId, null));
     }
 
-    @RequestMapping(value = "/sessions/{sessionId}/sqls/getResultV2", method = RequestMethod.GET)
+    @RequestMapping(value = "/sessions/{sessionId}/sqls/getMoreResults", method = RequestMethod.GET)
     @StatefulRoute(stateName = StateName.DB_SESSION, stateIdExpression = "#sessionId")
-    public SuccessResponse<AsyncExecuteResultResp> getAsyncSqlExecuteV2(@PathVariable String sessionId,
+    public SuccessResponse<AsyncExecuteResultResp> getMoreResults(@PathVariable String sessionId,
             @RequestParam String requestId) {
-        return Responses.success(consoleService.getAsyncResultV2(SidUtils.getSessionId(sessionId), requestId));
+        return Responses.success(consoleService.getMoreResults(SidUtils.getSessionId(sessionId), requestId));
     }
 
     /**

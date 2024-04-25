@@ -313,7 +313,7 @@ public class ConnectConsoleService {
         return response;
     }
 
-    public SqlAsyncExecuteResp executeV2(@NotNull String sessionId,
+    public SqlAsyncExecuteResp streamExecute(@NotNull String sessionId,
             @NotNull @Valid SqlAsyncExecuteReq request, boolean needSqlRuleCheck) throws Exception {
         ConnectionSession connectionSession = sessionService.nullSafeGet(sessionId, true);
 
@@ -435,14 +435,14 @@ public class ConnectConsoleService {
         }
     }
 
-    public AsyncExecuteResultResp getAsyncResultV2(@NotNull String sessionId, String requestId) {
+    public AsyncExecuteResultResp getMoreResults(@NotNull String sessionId, String requestId) {
         PreConditions.validArgumentState(Objects.nonNull(requestId), ErrorCodes.SqlRegulationRuleBlocked, null, null);
         ConnectionSession connectionSession = sessionService.nullSafeGet(sessionId);
         AsyncExecuteContext context =
                 (AsyncExecuteContext) ConnectionSessionUtil.getExecuteContext(connectionSession, requestId);
         boolean shouldRemoveContext = context.isFinished();
         try {
-            List<JdbcGeneralResult> resultList = context.getFinishedSqlExecutionResults();
+            List<JdbcGeneralResult> resultList = context.getMoreSqlExecutionResults();
             List<SqlExecuteResult> results = resultList.stream().map(jdbcGeneralResult -> {
                 SqlExecuteResult result = generateResult(connectionSession, jdbcGeneralResult, context.getContextMap());
                 try (TraceStage stage = result.getSqlTuple().getSqlWatch().start(SqlExecuteStages.SQL_AFTER_CHECK)) {
