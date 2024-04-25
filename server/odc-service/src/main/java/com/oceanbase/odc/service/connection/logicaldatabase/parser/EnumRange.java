@@ -44,9 +44,9 @@ public class EnumRange extends BaseRangeExpression {
             try {
                 Integer.parseInt(value);
             } catch (NumberFormatException e) {
-                throw new BadExpressionException(ErrorCodes.NotValidIntegerRangeInLogicalTableExpression,
+                throw new BadExpressionException(ErrorCodes.LogicalTableExpressionNotValidIntegerRange,
                         new Object[] {this.getText()},
-                        ErrorCodes.NotValidIntegerRangeInLogicalTableExpression
+                        ErrorCodes.LogicalTableExpressionNotValidIntegerRange
                                 .getEnglishMessage(new Object[] {this.getText()}));
             }
         });

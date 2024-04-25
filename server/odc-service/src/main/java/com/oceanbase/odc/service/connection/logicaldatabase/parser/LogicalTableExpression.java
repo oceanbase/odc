@@ -15,7 +15,7 @@
  */
 package com.oceanbase.odc.service.connection.logicaldatabase.parser;
 
-import static com.oceanbase.odc.core.shared.constant.ErrorCodes.NotEvenlyDividedInLogicalTableExpression;
+import static com.oceanbase.odc.core.shared.constant.ErrorCodes.LogicalTableExpressionNotEvenlyDivided;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -71,8 +71,8 @@ public class LogicalTableExpression extends BaseLogicalTableExpression {
         }
         if (tableNames.size() % schemaNames.size() != 0) {
             throw new BadExpressionException(
-                    NotEvenlyDividedInLogicalTableExpression, new Object[] {tableNames.size(), schemaNames.size()},
-                    NotEvenlyDividedInLogicalTableExpression
+                    LogicalTableExpressionNotEvenlyDivided, new Object[] {tableNames.size(), schemaNames.size()},
+                    LogicalTableExpressionNotEvenlyDivided
                             .getEnglishMessage(new Object[] {tableNames.size(), schemaNames.size()}));
         }
         int groupCount = tableNames.size() / schemaNames.size();

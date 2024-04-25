@@ -43,9 +43,9 @@ public class LogicalTableService {
         try {
             logicalTableExpression = (LogicalTableExpressions) parser.parse(expression);
         } catch (SyntaxErrorException e) {
-            throw new BadExpressionException(ErrorCodes.BadLogicalTableExpressionSyntax,
+            throw new BadExpressionException(ErrorCodes.LogicalTableBadExpressionSyntax,
                     new Object[] {e.getErrorText()},
-                    ErrorCodes.BadLogicalTableExpressionSyntax.getEnglishMessage(new Object[] {e.getErrorText()}));
+                    ErrorCodes.LogicalTableBadExpressionSyntax.getEnglishMessage(new Object[] {e.getErrorText()}));
         } catch (Exception e) {
             throw new UnexpectedException("failed to parse logical table expression", e);
         }

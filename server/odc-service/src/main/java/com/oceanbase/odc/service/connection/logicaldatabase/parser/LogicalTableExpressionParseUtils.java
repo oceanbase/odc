@@ -15,7 +15,7 @@
  */
 package com.oceanbase.odc.service.connection.logicaldatabase.parser;
 
-import static com.oceanbase.odc.core.shared.constant.ErrorCodes.NotPositiveLogicalTableExpressionStep;
+import static com.oceanbase.odc.core.shared.constant.ErrorCodes.LogicalTableExpressionNotPositiveStep;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -42,19 +42,19 @@ public class LogicalTableExpressionParseUtils {
             endInt = Integer.parseInt(end);
             stepInt = Integer.parseInt(step);
         } catch (NumberFormatException e) {
-            throw new BadExpressionException(ErrorCodes.NotValidIntegerRangeInLogicalTableExpression,
+            throw new BadExpressionException(ErrorCodes.LogicalTableExpressionNotValidIntegerRange,
                     new Object[] {text},
-                    ErrorCodes.NotValidIntegerRangeInLogicalTableExpression.getEnglishMessage(new Object[] {text}));
+                    ErrorCodes.LogicalTableExpressionNotValidIntegerRange.getEnglishMessage(new Object[] {text}));
         }
 
         if (stepInt <= 0) {
-            throw new BadExpressionException(NotPositiveLogicalTableExpressionStep, new Object[] {text, stepInt},
-                    NotPositiveLogicalTableExpressionStep.getEnglishMessage(new Object[] {text, stepInt}));
+            throw new BadExpressionException(LogicalTableExpressionNotPositiveStep, new Object[] {text, stepInt},
+                    LogicalTableExpressionNotPositiveStep.getEnglishMessage(new Object[] {text, stepInt}));
         }
         if (startInt > endInt) {
-            throw new BadExpressionException(ErrorCodes.RangeStartGreaterThanEndInLogicalTableExpression,
+            throw new BadExpressionException(ErrorCodes.LogicalTableExpressionRangeStartGreaterThanEnd,
                     new Object[] {text, startInt, endInt},
-                    ErrorCodes.RangeStartGreaterThanEndInLogicalTableExpression
+                    ErrorCodes.LogicalTableExpressionRangeStartGreaterThanEnd
                             .getEnglishMessage(new Object[] {text, startInt, endInt}));
         }
 
