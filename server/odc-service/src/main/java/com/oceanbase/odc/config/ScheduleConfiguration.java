@@ -28,6 +28,7 @@ import com.oceanbase.odc.common.trace.TraceDecorator;
 import com.oceanbase.odc.common.util.SystemUtils;
 import com.oceanbase.odc.service.config.SystemConfigService;
 import com.oceanbase.odc.service.datasecurity.SensitiveColumnScanningResultCache;
+import com.oceanbase.odc.service.db.schema.syncer.DBSchemaSyncProperties;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -47,6 +48,9 @@ public class ScheduleConfiguration {
 
     @Autowired
     private SystemConfigService systemConfigService;
+
+    @Autowired
+    private DBSchemaSyncProperties dbSchemaSyncProperties;
 
     @Bean(name = "connectionStatusCheckExecutor")
     public ThreadPoolTaskExecutor connectionStatusCheckExecutor() {
@@ -213,6 +217,20 @@ public class ScheduleConfiguration {
         return executor;
     }
 
+    @Bean(name = "syncDBSchemaTaskExecutor")
+    public ThreadPoolTaskExecutor syncDBSchemaTaskExecutor() {
+        ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
+        executor.setCorePoolSize(dbSchemaSyncProperties.getExecutorThreadCount());
+        executor.setMaxPoolSize(dbSchemaSyncProperties.getExecutorThreadCount());
+        executor.setThreadNamePrefix("database-schema-sync-");
+        executor.setWaitForTasksToCompleteOnShutdown(true);
+        executor.setAwaitTerminationSeconds(5);
+        executor.setTaskDecorator(new TraceDecorator<>());
+        executor.setRejectedExecutionHandler(new ThreadPoolExecutor.DiscardPolicy());
+        executor.initialize();
+        log.info("syncDBSchemaTaskExecutor initialized");
+        return executor;
+    }
 
     @Lazy
     @Bean(name = "taskResultPublisherExecutor")

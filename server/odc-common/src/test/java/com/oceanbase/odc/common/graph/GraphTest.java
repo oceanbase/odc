@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.core.flow;
+package com.oceanbase.odc.common.graph;
 
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -31,10 +31,6 @@ import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
 import com.oceanbase.odc.common.lang.Pair;
-import com.oceanbase.odc.core.flow.graph.Graph;
-import com.oceanbase.odc.core.flow.graph.GraphConfigurer;
-import com.oceanbase.odc.core.flow.graph.GraphEdge;
-import com.oceanbase.odc.core.flow.graph.GraphVertex;
 
 /**
  * Test cases for {@link Graph}

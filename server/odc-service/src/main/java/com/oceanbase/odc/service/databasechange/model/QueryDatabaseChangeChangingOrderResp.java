@@ -13,26 +13,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package com.oceanbase.odc.service.databasechange.model;
 
-package com.oceanbase.odc.service.connection.database.model;
+import java.util.List;
 
-import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.cloud.context.config.annotation.RefreshScope;
-import org.springframework.context.annotation.Configuration;
+import com.oceanbase.odc.metadb.connection.DatabaseEntity;
 
 import lombok.Data;
 
-/**
- * @author gaoda.xy
- * @date 2023/12/1 11:12
- */
 @Data
-@Configuration
-@RefreshScope
-@ConfigurationProperties(prefix = "odc.connect.database.sync")
-public class DatabaseSyncProperties {
+public class QueryDatabaseChangeChangingOrderResp {
 
-    private long intervalMillis;
-    private boolean blockInternalDatabase;
+    private Long id;
+
+    private String name;
+
+    private Long creatorId;
+
+    private Long projectId;
+
+    private Long organizationId;
+
+    private List<List<DatabaseEntity>> databaseSequenceList;
 
 }

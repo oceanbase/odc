@@ -37,7 +37,10 @@ public class DataConverters {
 
     private DataConverters(@NonNull DialectType dialectType, String serverTimeZoneId) {
         converterList = new LinkedList<>();
-        if (dialectType.isOracle()) {
+        if (DialectType.OB_ORACLE == dialectType) {
+            initForOracleMode(serverTimeZoneId);
+            converterList.add(new OBOracleGeometryConverter());
+        } else if (DialectType.ORACLE == dialectType) {
             initForOracleMode(serverTimeZoneId);
         } else if (dialectType.isMysql()) {
             initForMysqlMode();

@@ -15,6 +15,7 @@
  */
 package com.oceanbase.odc.metadb.dbobject;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -57,19 +58,18 @@ public class DBColumnRepositoryTest extends ServiceTestEnv {
     }
 
     @Test
-    public void test_findTop1000ByDatabaseIdInAndNameLike() {
-        DBColumnEntity entity1 = TestRandom.nextObject(DBColumnEntity.class);
-        entity1.setDatabaseId(1L);
-        entity1.setName("database_for_test_1");
-        DBColumnEntity entity2 = TestRandom.nextObject(DBColumnEntity.class);
-        entity2.setDatabaseId(2L);
-        entity2.setName("database_for_test_2");
-        dbColumnRepository.saveAll(Arrays.asList(entity1, entity2));
-        List<DBColumnEntity> entities =
-                dbColumnRepository.findTop1000ByDatabaseIdInAndNameLike(Arrays.asList(1L, 2L, 3L), "%test_1");
-        Assert.assertEquals(1, entities.size());
-        entities = dbColumnRepository.findTop1000ByDatabaseIdInAndNameLike(Arrays.asList(1L, 2L, 3L), "%test%");
-        Assert.assertEquals(2, entities.size());
+    public void test_batchCreate() {
+        List<DBColumnEntity> entities = new ArrayList<>();
+        for (int i = 0; i < 1000; i++) {
+            DBColumnEntity entity = TestRandom.nextObject(DBColumnEntity.class);
+            entity.setId(null);
+            entity.setDatabaseId(1L);
+            entity.setObjectId(1L);
+            entity.setName("table_for_test_" + i);
+            entities.add(entity);
+        }
+        List<DBColumnEntity> saved = dbColumnRepository.batchCreate(entities);
+        Assert.assertEquals(entities.size(), saved.size());
     }
 
 }

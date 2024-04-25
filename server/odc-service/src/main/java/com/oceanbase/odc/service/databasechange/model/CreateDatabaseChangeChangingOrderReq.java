@@ -13,30 +13,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.core.flow.graph;
+package com.oceanbase.odc.service.databasechange.model;
 
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
-import lombok.NonNull;
-import lombok.Setter;
+import java.util.List;
 
-/**
- * Edge of the graph
- *
- * @author yh263208
- * @date 2022-01-14 16:47
- * @since ODC_release_3.3.0
- */
-@Setter
-@Getter
-@EqualsAndHashCode(callSuper = true, exclude = {"from", "to"})
-public class GraphEdge extends BaseGraphElement {
-    private GraphVertex from;
-    private GraphVertex to;
-    private float weight;
+import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.NotEmpty;
+import javax.validation.constraints.NotNull;
 
-    public GraphEdge(@NonNull String id, @NonNull String name) {
-        super(id, name);
-    }
+import lombok.Data;
+
+@Data
+public class CreateDatabaseChangeChangingOrderReq {
+
+    @NotBlank
+    private String name;
+
+    @NotNull
+    private Long projectId;
+
+    @NotEmpty
+    private List<List<Long>> orders;
 
 }
