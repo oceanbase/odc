@@ -97,7 +97,6 @@ public class MultipleDatabaseChangeRuntimeFlowableTask extends BaseODCFlowTaskDe
             multipleDatabaseChangeParameters.setBatchId(this.batchId + 1);
             detail.setParametersJson(JsonUtils.toJson(multipleDatabaseChangeParameters));
             taskService.updateParametersJson(detail);
-            // this.batchId = multipleDatabaseChangeParameters.getBatchId();
             this.batchNumber = multipleDatabaseChangeParameters.getOrderedDatabaseIds().size();
             List<Long> batchDatabaseIds =
                     multipleDatabaseChangeParameters.getOrderedDatabaseIds().get(this.batchId);

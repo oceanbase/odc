@@ -133,7 +133,7 @@ public class PreCheckRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Void> {
         // this.preCheckTaskId = FlowTaskUtil.getPreCheckTaskId(execution);
         FlowTaskInstance flowTaskInstance = flowableAdaptor.getTaskInstanceByActivityId(
                 execution.getCurrentActivityId(), getFlowInstanceId())
-                .orElseThrow(() -> new RuntimeException("获取流程实例对象失败"));
+                .orElseThrow(() -> new RuntimeException("Can not find flowTaskInstance"));
         this.preCheckTaskId = flowTaskInstance.getTargetTaskId();
         TaskEntity preCheckTaskEntity = taskService.detail(this.preCheckTaskId);
         TaskEntity taskEntity = taskService.detail(taskId);
@@ -147,11 +147,9 @@ public class PreCheckRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Void> {
         RiskLevelDescriber riskLevelDescriber = null;
         try {
             if (taskEntity.getTaskType() == TaskType.MULTIPLE_ASYNC) {
-                // 多库的数据源连接
                 Database database = databaseService.detail(preCheckTaskEntity.getDatabaseId());
                 this.connectionConfig =
                         connectionService.getForConnectionSkipPermissionCheck(preCheckTaskEntity.getConnectionId());
-                // 多库的风险描述器
                 EnvironmentEntity env =
                         environmentRepository.findById(connectionConfig.getEnvironmentId()).orElse(null);
                 riskLevelDescriber = RiskLevelDescriber.builder()
@@ -169,11 +167,8 @@ public class PreCheckRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Void> {
         } catch (VerifyException e) {
             log.info(e.getMessage());
         }
-        // todo 多库需要生成风险描述器
-        // RiskLevelDescriber riskLevelDescriber = FlowTaskUtil.getRiskLevelDescriber(execution);
         if (Objects.nonNull(this.connectionConfig)) {
             // Skip SQL pre-check if connection config is null
-            // todo 此处tasktype为多库，需要做修改
             loadUserInputSqlContent(taskEntity.getTaskType(), taskEntity.getParametersJson());
             loadUploadFileInputStream(taskEntity.getTaskType(), taskEntity.getParametersJson());
             try {
@@ -318,7 +313,6 @@ public class PreCheckRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Void> {
         List<UnauthorizedDatabase> unauthorizedDatabases = new ArrayList<>();
         List<CheckViolation> violations = new ArrayList<>();
         if (CollectionUtils.isNotEmpty(sqls)) {
-            // todo 多库的describer.getEnvironmentId需要有值。
             violations.addAll(this.sqlCheckService.check(Long.valueOf(describer.getEnvironmentId()),
                     describer.getDatabaseName(), sqls, connectionConfig));
             Map<String, Set<SqlType>> schemaName2SqlTypes = SchemaExtractor.listSchemaName2SqlTypes(

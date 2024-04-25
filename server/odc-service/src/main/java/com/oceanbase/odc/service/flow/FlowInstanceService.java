@@ -373,7 +373,7 @@ public class FlowInstanceService {
                     x.getTenantName()), x.getInstanceType(), false, CloudPermissionAction.READONLY));
         }
         if (createReq.getTaskType() == TaskType.MULTIPLE_ASYNC) {
-            return Collections.singletonList(buildFlowInstanceForMultiple(riskLevels, createReq, conns));
+            return Collections.singletonList(buildFlowInstanceForMultipleDatabase(riskLevels, createReq, conns));
         } else {
             return Collections.singletonList(buildFlowInstance(riskLevels, createReq, conn));
         }
@@ -918,7 +918,7 @@ public class FlowInstanceService {
         return FlowInstanceDetailResp.withIdAndType(flowInstance.getId(), flowInstanceReq.getTaskType());
     }
 
-    private FlowInstanceDetailResp buildFlowInstanceForMultiple(List<RiskLevel> riskLevels,
+    private FlowInstanceDetailResp buildFlowInstanceForMultipleDatabase(List<RiskLevel> riskLevels,
             CreateFlowInstanceReq flowInstanceReq, List<ConnectionConfig> connectionConfigs) {
         log.info("Start creating flow instance, flowInstanceReq={}", flowInstanceReq);
         MultipleDatabaseChangeParameters parameters =
@@ -968,7 +968,7 @@ public class FlowInstanceService {
 
             for (int i = 0; i < riskLevels.size(); i++) {
                 FlowInstanceConfigurer targetConfigurer =
-                        buildConfigurerForMultiple(riskLevels.get(i).getApprovalFlowConfig(),
+                        buildConfigurerForMultipleDatabase(riskLevels.get(i).getApprovalFlowConfig(),
                                 flowInstance, flowInstanceReq.getTaskType(),
                                 taskEntity.getId(),
                                 flowInstanceReq.getParameters(), flowInstanceReq);
@@ -1000,9 +1000,11 @@ public class FlowInstanceService {
             DBStructureComparisonParameter parameters = (DBStructureComparisonParameter) req.getParameters();
             return "structure_comparison_" + parameters.getSourceDatabaseId() + "_" + parameters.getTargetDatabaseId();
         }
-        /**
-         * todo 可以补充多库流程的取名，先不填，不影响
-         */
+        if (req.getTaskType() == TaskType.MULTIPLE_ASYNC) {
+            MultipleDatabaseChangeParameters parameters = (MultipleDatabaseChangeParameters) req.getParameters();
+            return "multiple_database_" + parameters.getOrderedDatabaseIds();
+        }
+
         String schemaName = req.getDatabaseName();
         String connectionName = req.getConnectionId() == null ? "no_connection" : req.getConnectionId() + "";
         if (schemaName == null) {
@@ -1074,7 +1076,7 @@ public class FlowInstanceService {
         return configurers.get(0);
     }
 
-    private FlowInstanceConfigurer buildConfigurerForMultiple(
+    private FlowInstanceConfigurer buildConfigurerForMultipleDatabase(
             @NonNull ApprovalFlowConfig approvalFlowConfig,
             @NonNull FlowInstance flowInstance,
             @NonNull TaskType taskType,
