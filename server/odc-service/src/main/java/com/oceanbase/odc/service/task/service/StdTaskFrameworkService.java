@@ -362,20 +362,20 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
         }
         int rows = jobRepository.updateReportResult(jse, currentJob.getId(), currentJob.getStatus());
         if (rows > 0 && taskResult.getLogMetadata() != null && taskResult.getStatus().isTerminated()) {
-            saveOrUpdateLogMetadata(taskResult, jse);
+            saveOrUpdateLogMetadata(taskResult, currentJob.getId());
         }
         return rows;
     }
 
-    private void saveOrUpdateLogMetadata(TaskResult taskResult, JobEntity jse) {
+    private void saveOrUpdateLogMetadata(TaskResult taskResult, Long jobId) {
         taskResult.getLogMetadata().forEach((k, v) -> {
             // log key may exist if job is retrying
-            Optional<String> logValue = findByJobIdAndAttributeKey(jse.getId(), k);
+            Optional<String> logValue = findByJobIdAndAttributeKey(jobId, k);
             if (logValue.isPresent()) {
-                updateJobAttributeValue(jse.getId(), k, v);
+                updateJobAttributeValue(jobId, k, v);
             } else {
                 JobAttributeEntity jobAttribute = new JobAttributeEntity();
-                jobAttribute.setJobId(jse.getId());
+                jobAttribute.setJobId(jobId);
                 jobAttribute.setAttributeKey(k);
                 jobAttribute.setAttributeValue(v);
                 jobAttributeRepository.save(jobAttribute);
