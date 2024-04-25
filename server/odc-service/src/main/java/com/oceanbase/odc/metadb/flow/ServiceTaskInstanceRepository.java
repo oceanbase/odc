@@ -43,7 +43,7 @@ import com.oceanbase.odc.service.flow.model.FlowNodeType;
  */
 public interface ServiceTaskInstanceRepository extends OdcJpaRepository<ServiceTaskInstanceEntity, Long>,
         JpaSpecificationExecutor<ServiceTaskInstanceEntity> {
-    Optional<List<ServiceTaskInstanceEntity>> findByTargetTaskId(Long id);
+    List<ServiceTaskInstanceEntity> findByTargetTaskId(Long id);
 
     @Transactional
     @Query("update ServiceTaskInstanceEntity as st set st.targetTaskId=:#{#param.targetTaskId},st.status=:#{#param.status},"

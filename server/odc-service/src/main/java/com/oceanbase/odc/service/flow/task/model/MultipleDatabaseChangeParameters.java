@@ -34,16 +34,10 @@ import lombok.Data;
 @Data
 public class MultipleDatabaseChangeParameters implements Serializable, TaskParameters {
     /**
-     * 多库执行顺序
+     * multiple database change execution sequence
      */
-    private List<List> orderedDatabaseIds;
-    /**
-     * 所有数据库集合
-     */
+    private List<List<Long>> orderedDatabaseIds;
     private List<Database> databases;
-    /**
-     * 当前批次
-     */
     private Integer batchId;
     private String sqlContent;
     // 用于前端展示执行SQL文件名

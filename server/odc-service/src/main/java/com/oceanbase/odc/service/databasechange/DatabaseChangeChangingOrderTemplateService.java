@@ -70,7 +70,7 @@ public class DatabaseChangeChangingOrderTemplateService {
     @Autowired
     private ProjectPermissionValidator projectPermissionValidator;
 
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public Boolean createDatabaseChangingOrderTemplate(
             @NotNull @Valid CreateDatabaseChangeChangingOrderReq req) {
         invalidPermission(req);
@@ -92,7 +92,7 @@ public class DatabaseChangeChangingOrderTemplateService {
         return true;
     }
 
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public Boolean modifyDatabaseChangingOrderTemplate(Long id,
             @NotNull @Valid CreateDatabaseChangeChangingOrderReq req) {
         invalidPermission(req);
@@ -158,7 +158,7 @@ public class DatabaseChangeChangingOrderTemplateService {
         return databaseChangeChangingOrderTemplateRepository.findAll(specification, pageable);
     }
 
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public Boolean deleteDatabaseChangingOrderTemplateById(@NotNull @Min(value = 1) Long id) {
         DatabaseChangeChangingOrderTemplateEntity databaseChangeChangingOrderTemplateEntity =
                 databaseChangeChangingOrderTemplateRepository.findById(id).orElseThrow(
@@ -181,18 +181,14 @@ public class DatabaseChangeChangingOrderTemplateService {
     }
 
     private void invalidPermission(CreateDatabaseChangeChangingOrderReq req) {
-        // project是否存在
         if (projectRepository.existsById(req.getProjectId()) == false) {
             throw new NotFoundException(ResourceType.ODC_PROJECT, "id", req.getProjectId());
         }
-        // 当前用户是否有权访问此项目
         projectPermissionValidator.checkProjectRole(req.getProjectId(), ResourceRoleName.all());
-        // 必须为多库
         List<Long> list = req.getOrders().stream().flatMap(x -> x.stream()).collect(Collectors.toList());
         if (list.size() <= 1) {
             throw new IllegalArgumentException("The number of databases must be greater than 1");
         }
-        // 模板中数据库是否都属于此项目
         HashSet<Long> ids = new HashSet<>(list);
         List<DatabaseEntity> byIdIn = databaseRepository.findByIdIn(ids);
         if ((byIdIn.stream().allMatch(x -> x.getProjectId() == req.getProjectId())) == false) {

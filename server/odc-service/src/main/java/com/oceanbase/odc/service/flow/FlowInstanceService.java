@@ -364,7 +364,6 @@ public class FlowInstanceService {
             cloudMetadataClient.checkPermission(OBTenant.of(conn.getClusterName(),
                     conn.getTenantName()), conn.getInstanceType(), false, CloudPermissionAction.READONLY);
         } else {
-            // 针对多库的数据源的连接权限检查
             MultipleDatabaseChangeParameters taskParameters =
                     (MultipleDatabaseChangeParameters) createReq.getParameters();
             conns = taskParameters.getDatabases().stream().map(
@@ -919,7 +918,6 @@ public class FlowInstanceService {
         return FlowInstanceDetailResp.withIdAndType(flowInstance.getId(), flowInstanceReq.getTaskType());
     }
 
-    // todo 创建多个数据源连接id的流程实例
     private FlowInstanceDetailResp buildFlowInstanceForMultiple(List<RiskLevel> riskLevels,
             CreateFlowInstanceReq flowInstanceReq, List<ConnectionConfig> connectionConfigs) {
         log.info("Start creating flow instance, flowInstanceReq={}", flowInstanceReq);
@@ -935,11 +933,9 @@ public class FlowInstanceService {
         }).map(x -> taskService.create(x, (int) TimeUnit.SECONDS
                 .convert(flowTaskProperties.getDefaultExecutionExpirationIntervalHours(), TimeUnit.HOURS))).collect(
                         Collectors.toList());
-        // 生成任务实体
         TaskEntity taskEntity = taskService.create(flowInstanceReq, (int) TimeUnit.SECONDS
                 .convert(flowTaskProperties.getDefaultExecutionExpirationIntervalHours(), TimeUnit.HOURS));
         Verify.notNull(taskEntity.getId(), "TaskId can not be null");
-        // 生成流程实例
 
         FlowInstance flowInstance = flowFactory.generateFlowInstance(generateFlowInstanceName(flowInstanceReq),
                 flowInstanceReq.getParentFlowInstanceId(),
@@ -948,7 +944,6 @@ public class FlowInstanceService {
         Verify.notNull(flowInstance.getId(), "FlowInstance id can not be null");
 
         try {
-            // todo 生成多个sql预检查的任务节点
             FlowInstanceConfigurer startConfigurer = flowInstance.newFlowInstance();
             for (int i = 0; i < preCheckTaskEntityList.size(); i++) {
                 FlowTaskInstance riskDetectInstance;
@@ -964,7 +959,6 @@ public class FlowInstanceService {
 
                 riskDetectInstance.setTargetTaskId(preCheckTaskEntityList.get(i).getId());
                 startConfigurer.next(riskDetectInstance);
-                // 最后一个节点生成风险等级网关
                 if (i == preCheckTaskEntityList.size() - 1) {
                     FlowGatewayInstance riskLevelGateway =
                             flowFactory.generateFlowGatewayInstance(flowInstance.getId(), false, true);
@@ -972,9 +966,7 @@ public class FlowInstanceService {
                 }
             }
 
-            // 根据风险等级生成对应的审批流程和任务节点，风险网关使用排他网管
             for (int i = 0; i < riskLevels.size(); i++) {
-                // 分批次创建和编排任务节点
                 FlowInstanceConfigurer targetConfigurer =
                         buildConfigurerForMultiple(riskLevels.get(i).getApprovalFlowConfig(),
                                 flowInstance, flowInstanceReq.getTaskType(),
@@ -991,7 +983,6 @@ public class FlowInstanceService {
         } finally {
             flowInstance.dealloc();
         }
-        // todo 流程变量需要改进，目前采用单库的设置
         Map<String, Object> variables = new HashMap<>();
         FlowTaskUtil.setFlowInstanceId(variables, flowInstance.getId());
         FlowTaskUtil.setTemplateVariables(variables, buildTemplateVariables(flowInstanceReq,
@@ -1090,45 +1081,30 @@ public class FlowInstanceService {
             @NonNull Long taskId,
             @NonNull TaskParameters parameters,
             @NonNull CreateFlowInstanceReq flowInstanceReq) {
-        // 获取审批节点配置列表
         List<ApprovalNodeConfig> nodeConfigs = approvalFlowConfig.getNodes();
         Verify.verify(!nodeConfigs.isEmpty(), "Approval Nodes size can not be equal to zero");
-        // 创建一个空的流程实例配置器列表
         List<FlowInstanceConfigurer> configurers = new LinkedList<>();
-        // 遍历审批节点配置列表
         for (int nodeSequence = 0; nodeSequence < nodeConfigs.size(); nodeSequence++) {
             FlowInstanceConfigurer configurer;
             ApprovalNodeConfig nodeConfig = nodeConfigs.get(nodeSequence);
-            // 获取资源角色id
             Long resourceRoleId = nodeConfig.getResourceRoleId();
-            // 创建一个审批流程实例，并根据节点配置的属性设置实例的各种参数
             FlowApprovalInstance approvalInstance = flowFactory.generateFlowApprovalInstance(flowInstance.getId(),
                     false, false,
                     nodeConfig.getAutoApproval(), approvalFlowConfig.getApprovalExpirationIntervalSeconds(),
                     nodeConfig.getExternalApprovalId());
-            // 如果节点配置中定义了资源角色ID，则为审批实例设置候选人
             if (Objects.nonNull(resourceRoleId)) {
                 approvalInstance.setCandidate(StringUtils.join(flowInstanceReq.getProjectId(), ":", resourceRoleId));
             }
-            // 创建一个审批网关流程实例
             FlowGatewayInstance approvalGatewayInstance =
                     flowFactory.generateFlowGatewayInstance(flowInstance.getId(), false, true);
-            // 创建流程实例配置器，并将之前创建的审批实例添加到配置器中
             configurer = flowInstance.newFlowInstanceConfigurer(approvalInstance);
-            // 配置审批实例的下一步为审批网关实例，并使用 route 方法设置流程变量以控制流程的走向
             configurer = configurer.next(approvalGatewayInstance).route(String.format("${!%s}",
                     FlowApprovalInstance.APPROVAL_VARIABLE_NAME), flowInstance.endFlowInstance());
-            /**
-             * 如果当前审批节点是审批流程中的最后一个节点
-             */
             if (nodeSequence == nodeConfigs.size() - 1) {
                 FlowInstanceConfigurer taskConfigurer = null;
-                // 按批次创建
                 int orders = ((MultipleDatabaseChangeParameters) flowInstanceReq.getParameters())
                         .getOrderedDatabaseIds().size();
                 for (int i = 0; i < orders; i++) {
-                    // 创建审批节点
-                    // 创建一个任务实例，并根据任务类型和参数配置任务实例
                     ExecutionStrategyConfig strategyConfig = ExecutionStrategyConfig.from(flowInstanceReq,
                             approvalFlowConfig.getWaitExecutionExpirationIntervalSeconds());
                     FlowTaskInstance taskInstance;

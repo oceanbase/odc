@@ -281,7 +281,6 @@ public class TaskService {
     @Transactional(rollbackFor = Exception.class)
     public void succeed(Long id, Object taskResult) {
         TaskEntity taskEntity = nullSafeFindById(id);
-        // 多库需要修改
         if (taskEntity.getTaskType() == TaskType.MULTIPLE_ASYNC) {
             MultipleDatabaseChangeParameters multipleDatabaseChangeParameters = JsonUtils.fromJson(
                     taskEntity.getParametersJson(), MultipleDatabaseChangeParameters.class);

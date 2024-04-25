@@ -167,21 +167,23 @@ public class CreateFlowInstanceProcessAspect implements InitializingBean {
         }
     }
 
-    /**
-     * todo 多库的入参待定。
-     * 
-     * @param req
-     */
     private void adaptDatabaseCreateFlowInstanceReqForMultiple(CreateFlowInstanceReq req) {
 
         MultipleDatabaseChangeParameters parameters = (MultipleDatabaseChangeParameters) req.getParameters();
-        // todo 耗时
-        List<Database> databases = (List<Database>) parameters.getOrderedDatabaseIds().stream().flatMap(List::stream)
-                .map(
-                        x -> databaseService.detail(Long.valueOf(x.toString())))
+        List<Long> ids = parameters.getOrderedDatabaseIds().stream().flatMap(List::stream).collect(
+                Collectors.toList());
+        if (ids.size() <= 1) {
+            throw new IllegalArgumentException("the number of databases must be greater than 1");
+        }
+        List<Database> databases = ids.stream().map(
+                id -> databaseService.detail(id))
                 .collect(Collectors.toList());
+        if (databases.stream().map(database -> database != null ? database.getProject() : null).distinct()
+                .count() != 1) {
+            throw new IllegalArgumentException("all databases must belong to the same project");
+        }
         parameters.setDatabases(databases);
-        Project project = databases != null && databases.isEmpty() ? null : databases.get(0).getProject();
+        Project project = databases.isEmpty() && databases.get(0) == null ? null : databases.get(0).getProject();
         if (Objects.isNull(project)
                 && authenticationFacade.currentUser().getOrganizationType() == OrganizationType.TEAM) {
             throw new BadRequestException("Cannot create flow under default project in TEAM organization");
