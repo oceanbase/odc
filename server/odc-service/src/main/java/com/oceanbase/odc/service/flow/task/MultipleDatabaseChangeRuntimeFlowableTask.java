@@ -15,9 +15,8 @@
  */
 package com.oceanbase.odc.service.flow.task;
 
-import java.util.HashSet;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 
 import org.flowable.engine.delegate.DelegateExecution;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -100,10 +99,10 @@ public class MultipleDatabaseChangeRuntimeFlowableTask extends BaseODCFlowTaskDe
             this.batchNumber = multipleDatabaseChangeParameters.getOrderedDatabaseIds().size();
             List<Long> batchDatabaseIds =
                     multipleDatabaseChangeParameters.getOrderedDatabaseIds().get(this.batchId);
-            Set<Long> flowInstanceIds = new HashSet<>();
+            List<Long> flowInstanceIds = new ArrayList<>();
             for (Long batchDatabaseId : batchDatabaseIds) {
                 CreateFlowInstanceReq createFlowInstanceReq = new CreateFlowInstanceReq();
-                createFlowInstanceReq.setDatabaseId(Long.valueOf(batchDatabaseId));
+                createFlowInstanceReq.setDatabaseId(batchDatabaseId);
                 createFlowInstanceReq.setTaskType(TaskType.ASYNC);
                 createFlowInstanceReq.setExecutionStrategy(FlowTaskExecutionStrategy.AUTO);
                 createFlowInstanceReq.setParentFlowInstanceId(FlowTaskUtil.getFlowInstanceId(execution));

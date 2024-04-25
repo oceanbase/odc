@@ -215,6 +215,29 @@ public class DatabaseService {
         throw new NotFoundException(ResourceType.ODC_DATABASE, "id", id);
     }
 
+    @Transactional(rollbackFor = Exception.class)
+    @SkipAuthorize("internal authenticated")
+    public List<Database> detailForMultipleDatabase(@NotEmpty List<Long> ids) {
+        List<DatabaseEntity> databaseEntities = databaseRepository.findAllById(ids);
+        List<Database> databases = databaseEntities.stream()
+                .map(entity -> entityToModel(entity, true))
+                .collect(Collectors.toList());
+        databases.forEach(database -> {
+            horizontalDataPermissionValidator.checkCurrentOrganization(database);
+            if (Objects.nonNull(database.getProject()) && Objects.nonNull(database.getProject().getId())) {
+                projectPermissionValidator.checkProjectRole(database.getProject().getId(), ResourceRoleName.all());
+            } else {
+                Permission requiredPermission = securityManager
+                        .getPermissionByActions(database.getDataSource(), Collections.singletonList("read"));
+                if (!securityManager.isPermitted(requiredPermission)) {
+                    throw new BadRequestException("You do not have access to the database: "
+                            + database.getDataSource().getName() + ":" + database.getName());
+                }
+            }
+        });
+        return databases;
+    }
+
     @SkipAuthorize("odc internal usage")
     public Database getBasicSkipPermissionCheck(Long id) {
         return databaseMapper.entityToModel(databaseRepository.findById(id)

@@ -40,6 +40,7 @@ import org.springframework.data.domain.Pageable;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.oceanbase.odc.ServiceTestEnv;
 import com.oceanbase.odc.common.json.JsonUtils;
+import com.oceanbase.odc.core.shared.exception.BadArgumentException;
 import com.oceanbase.odc.core.shared.exception.NotFoundException;
 import com.oceanbase.odc.metadb.collaboration.ProjectRepository;
 import com.oceanbase.odc.metadb.connection.DatabaseEntity;
@@ -107,7 +108,7 @@ public class DatabaseChangeChangingOrderTemplateServiceTest extends ServiceTestE
         Assert.assertEquals(1, size);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test(expected = BadArgumentException.class)
     public void createDatabaseChangingOrderTemplate_tempaltNameIsDuplicate_throwIllegalArgumentException() {
         createDatabaseChangingOrderTemplate_saveEntity_succeed();
         createDatabaseChangingOrderTemplate_saveEntity_succeed();
@@ -127,7 +128,7 @@ public class DatabaseChangeChangingOrderTemplateServiceTest extends ServiceTestE
         databaseChangeChangingOrderTemplateService.createDatabaseChangingOrderTemplate(req);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test(expected = BadArgumentException.class)
     public void createDatabaseChangingOrderTemplate_databaseNotBelongToProject_throwIllegalArgumentException() {
         CreateDatabaseChangeChangingOrderReq req = new CreateDatabaseChangeChangingOrderReq();
         req.setProjectId(PROJECT_ID);
@@ -164,7 +165,7 @@ public class DatabaseChangeChangingOrderTemplateServiceTest extends ServiceTestE
 
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test(expected = BadArgumentException.class)
     public void modifyDatabaseChangingOrderTemplate_notFoundTemplate_throwIllegalArgumentException() {
         CreateDatabaseChangeChangingOrderReq req = new CreateDatabaseChangeChangingOrderReq();
         req.setProjectId(PROJECT_ID);

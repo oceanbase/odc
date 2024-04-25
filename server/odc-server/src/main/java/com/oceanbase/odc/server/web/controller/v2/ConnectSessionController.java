@@ -148,8 +148,8 @@ public class ConnectSessionController {
     }
 
     /**
-     * 对多个数据库进行sql检查 todo 待完善
-     * 
+     * check the contents of multiple sql scripts
+     *
      * @param req
      * @return
      */

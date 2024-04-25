@@ -19,6 +19,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.aspectj.lang.JoinPoint;
@@ -30,8 +31,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import com.oceanbase.odc.core.shared.PreConditions;
+import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.constant.OrganizationType;
 import com.oceanbase.odc.core.shared.constant.TaskType;
+import com.oceanbase.odc.core.shared.exception.BadArgumentException;
 import com.oceanbase.odc.core.shared.exception.BadRequestException;
 import com.oceanbase.odc.metadb.schedule.ScheduleEntity;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferConfig;
@@ -89,7 +92,7 @@ public class CreateFlowInstanceProcessAspect implements InitializingBean {
         if (Objects.nonNull(req.getDatabaseId()) && req.getTaskType() != TaskType.MULTIPLE_ASYNC) {
             adaptCreateFlowInstanceReq(req);
         } else {
-            adaptDatabaseCreateFlowInstanceReqForMultiple(req);
+            adaptDatabaseCreateFlowInstanceReqForMultipleDatabase(req);
         }
         if (req.getTaskType() != TaskType.ALTER_SCHEDULE) {
             if (flowTaskPreprocessors.containsKey(req.getTaskType())) {
@@ -167,31 +170,25 @@ public class CreateFlowInstanceProcessAspect implements InitializingBean {
         }
     }
 
-    private void adaptDatabaseCreateFlowInstanceReqForMultiple(CreateFlowInstanceReq req) {
-
+    private void adaptDatabaseCreateFlowInstanceReqForMultipleDatabase(CreateFlowInstanceReq req) {
         MultipleDatabaseChangeParameters parameters = (MultipleDatabaseChangeParameters) req.getParameters();
-        List<Long> ids = parameters.getOrderedDatabaseIds().stream().flatMap(List::stream).collect(
-                Collectors.toList());
+        List<Long> ids = parameters.getOrderedDatabaseIds().stream().flatMap(List::stream).collect(Collectors.toList());
         if (ids.size() <= 1) {
-            throw new IllegalArgumentException("the number of databases must be greater than 1");
+            throw new BadArgumentException(ErrorCodes.IllegalArgument,
+                    "The number of databases must be greater than 1.");
         }
-        List<Database> databases = ids.stream().map(
-                id -> databaseService.detail(id))
-                .collect(Collectors.toList());
-        if (databases.stream().map(database -> database != null ? database.getProject() : null).distinct()
-                .count() != 1) {
-            throw new IllegalArgumentException("all databases must belong to the same project");
+        List<Database> databases = databaseService.detailForMultipleDatabase(ids);
+        Set<Long> projectIds = databases.stream()
+                .map(database -> database.getProject() != null ? database.getProject().getId() : null)
+                .collect(Collectors.toSet());
+        if (projectIds.size() != 1 || projectIds.contains(null)) {
+            throw new BadArgumentException(ErrorCodes.IllegalArgument,
+                    "All databases must belong to the same project and project must be non-null.");
         }
-        parameters.setDatabases(databases);
-        Project project = databases.isEmpty() && databases.get(0) == null ? null : databases.get(0).getProject();
-        if (Objects.isNull(project)
-                && authenticationFacade.currentUser().getOrganizationType() == OrganizationType.TEAM) {
-            throw new BadRequestException("Cannot create flow under default project in TEAM organization");
-        }
+        Project project = databases.get(0).getProject();
         req.setProjectId(project.getId());
-        req.setProjectName(
-                project.getName());
+        req.setProjectName(project.getName());
+        parameters.setDatabases(databases);
         DescriptionGenerator.generateDescription(req);
     }
-
 }
