@@ -68,7 +68,7 @@ public class TaskDownloadUrlsProvider {
     }
 
 
-    public TaskDownloadUrls loadUrls(Long taskId) {
+    private TaskDownloadUrls loadUrls(Long taskId) {
         TaskEntity taskEntity = taskService.detail(taskId);
         TaskDownloadUrls urls = new TaskDownloadUrls();
         if (StringUtils.isNotEmpty(taskEntity.getResultJson())) {
