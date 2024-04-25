@@ -72,7 +72,7 @@ public class OBOracleTableExtension extends OBMySQLTableExtension {
         DBTable table = new DBTable();
         table.setSchemaName(schemaName);
         table.setOwner(schemaName);
-        table.setName(accessor.isLowerCaseTableName() ? tableName.toLowerCase() : tableName);
+        table.setName(tableName);
         table.setColumns(columns);
         /**
          * If the constraint name cannot be obtained through ddl of the table, then the constraint
