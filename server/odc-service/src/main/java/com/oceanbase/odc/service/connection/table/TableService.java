@@ -140,7 +140,8 @@ public class TableService {
                 .statuses(Arrays.asList(ExpirationStatusFilter.NOT_EXPIRED))
                 .build();
         List<UserTablePermission> userTablePermissionList =
-                tablePermissionService.listWithoutPage(databaseDetail.getProject().getId(), params);
+                tablePermissionService.list(databaseDetail.getProject().getId(), params, Pageable.unpaged())
+                        .getContent();
         listTables = dbTablesToTables(DBTableList, userTablePermissionList);
 
         // 组装库的权限
@@ -197,7 +198,8 @@ public class TableService {
                 .statuses(Arrays.asList(ExpirationStatusFilter.NOT_EXPIRED))
                 .build();
         List<UserTablePermission> userTablePermissionList =
-                tablePermissionService.listWithoutPage(databaseDetail.getProject().getId(), params);
+                tablePermissionService.list(databaseDetail.getProject().getId(), params, Pageable.unpaged())
+                        .getContent();
         listTables = dbTablesToTables(DBTableList, userTablePermissionList);
         return listTables;
     }

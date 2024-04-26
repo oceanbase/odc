@@ -59,6 +59,10 @@ public class UserTablePermissionSpec {
         return SpecificationUtil.columnLike(UserTablePermissionEntity_.DATABASE_NAME, fuzzyDatabaseName);
     }
 
+    public static Specification<UserTablePermissionEntity> tableNameLike(String fuzzyTableName) {
+        return SpecificationUtil.columnLike(UserTablePermissionEntity_.TABLE_NAME, fuzzyTableName);
+    }
+
     public static Specification<UserTablePermissionEntity> dataSourceNameLike(String fuzzyDataSourceName) {
         return SpecificationUtil.columnLike(UserTablePermissionEntity_.DATA_SOURCE_NAME, fuzzyDataSourceName);
     }

@@ -66,6 +66,7 @@ public class TablePermissionController {
             @RequestParam(name = "type", required = false) List<DatabasePermissionType> types,
             @RequestParam(name = "authorizationType", required = false) AuthorizationType authorizationType,
             @RequestParam(name = "status", required = false) List<ExpirationStatusFilter> statuses,
+            @RequestParam(name = "tableName", required = false) String fuzzyTableName,
             @PageableDefault(size = Integer.MAX_VALUE, sort = {"id"}, direction = Direction.DESC) Pageable pageable) {
         QueryTablePermissionParams params = QueryTablePermissionParams.builder()
                 .userId(userId)
@@ -75,6 +76,7 @@ public class TablePermissionController {
                 .types(types)
                 .authorizationType(authorizationType)
                 .statuses(statuses)
+                .fuzzyTableName(fuzzyTableName)
                 .build();
         return Responses.paginated(tablePermissionService.list(projectId, params, pageable));
     }

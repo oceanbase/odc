@@ -39,6 +39,7 @@ public class QueryTablePermissionParams {
     private Long ticketId;
     private String fuzzyDatabaseName;
     private Long databaseId;
+    private String fuzzyTableName;
     private String fuzzyDataSourceName;
     private Long dataSourceId;
     private List<DatabasePermissionType> types;

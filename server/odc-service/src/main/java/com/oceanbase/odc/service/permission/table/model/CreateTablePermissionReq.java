@@ -21,6 +21,7 @@ import java.util.List;
 import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
 
+import com.oceanbase.odc.core.shared.constant.AuthorizationType;
 import com.oceanbase.odc.service.permission.database.model.DatabasePermissionType;
 
 import lombok.Data;
@@ -51,6 +52,8 @@ public class CreateTablePermissionReq {
 
     @NotNull
     private Long userId;
+
+    AuthorizationType authorizationType = AuthorizationType.USER_AUTHORIZATION;
 
     @Data
     public static class TablePermission {

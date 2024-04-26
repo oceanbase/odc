@@ -49,7 +49,6 @@ import com.oceanbase.odc.common.util.TimeUtils;
 import com.oceanbase.odc.core.authority.util.Authenticated;
 import com.oceanbase.odc.core.authority.util.PreAuthenticate;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
-import com.oceanbase.odc.core.shared.constant.AuthorizationType;
 import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.shared.constant.PermissionType;
 import com.oceanbase.odc.core.shared.constant.ResourceRoleName;
@@ -144,6 +143,11 @@ public class TablePermissionService {
 
     private static final Set<String> MYSQL_DATA_DICTIONARY = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
 
+    static {
+        ORACLE_DATA_DICTIONARY.add("SYS");
+        MYSQL_DATA_DICTIONARY.add("information_schema");
+    }
+
     @Transactional(rollbackFor = Exception.class)
     @SkipAuthorize("permission check inside")
     public Page<UserTablePermission> list(@NotNull Long projectId, @NotNull QueryTablePermissionParams params,
@@ -163,6 +167,7 @@ public class TablePermissionService {
                 .and(UserTablePermissionSpec.userIdEqual(params.getUserId()))
                 .and(UserTablePermissionSpec.ticketIdEqual(params.getTicketId()))
                 .and(UserTablePermissionSpec.databaseNameLike(params.getFuzzyDatabaseName()))
+                .and(UserTablePermissionSpec.tableNameLike(params.getFuzzyTableName()))
                 .and(UserTablePermissionSpec.dataSourceNameLike(params.getFuzzyDataSourceName()))
                 .and(UserTablePermissionSpec.typeIn(params.getTypes()))
                 .and(UserTablePermissionSpec.authorizationTypeEqual(params.getAuthorizationType()))
@@ -180,71 +185,6 @@ public class TablePermissionService {
                     }
                     return permission;
                 });
-    }
-
-    @Transactional(rollbackFor = Exception.class)
-    @SkipAuthorize("permission check inside")
-    public List<UserTablePermission> listWithoutPage(@NotNull Long projectId,
-            @NotNull QueryTablePermissionParams params) {
-        if (params.getUserId() == null || params.getUserId() != authenticationFacade.currentUserId()) {
-            projectPermissionValidator.checkProjectRole(projectId,
-                    Arrays.asList(ResourceRoleName.OWNER, ResourceRoleName.DBA));
-        } else {
-            projectPermissionValidator.checkProjectRole(projectId, ResourceRoleName.all());
-        }
-        Date expiredTime = new Date(System.currentTimeMillis() - expiredRetentionTimeSeconds * 1000);
-        permissionService.deleteExpiredPermission(expiredTime);
-        Date expireTimeThreshold = TimeUtils.getStartOfDay(new Date());
-        Specification<UserTablePermissionEntity> spec = Specification
-                .where(UserTablePermissionSpec.projectIdEqual(projectId))
-                .and(UserTablePermissionSpec.organizationIdEqual(authenticationFacade.currentOrganizationId()))
-                .and(UserTablePermissionSpec.userIdEqual(params.getUserId()))
-                .and(UserTablePermissionSpec.ticketIdEqual(params.getTicketId()))
-                .and(UserTablePermissionSpec.databaseNameLike(params.getFuzzyDatabaseName()))
-                .and(UserTablePermissionSpec.dataSourceNameLike(params.getFuzzyDataSourceName()))
-                .and(UserTablePermissionSpec.typeIn(params.getTypes()))
-                .and(UserTablePermissionSpec.authorizationTypeEqual(params.getAuthorizationType()))
-                .and(UserTablePermissionSpec.filterByExpirationStatus(params.getStatuses(), expireTimeThreshold));
-        return userTablePermissionRepository.findAll(spec).stream().map(
-                e -> {
-                    UserTablePermission permission = mapper.entityToModel(e);
-                    Date expireTime = permission.getExpireTime();
-                    if (expireTime.before(expireTimeThreshold)) {
-                        permission.setStatus(ExpirationStatusFilter.EXPIRED);
-                    } else if (expireTime.before(DateUtils.addDays(expireTimeThreshold, EXPIRING_DAYS))) {
-                        permission.setStatus(ExpirationStatusFilter.EXPIRING);
-                    } else {
-                        permission.setStatus(ExpirationStatusFilter.NOT_EXPIRED);
-                    }
-                    return permission;
-                }).collect(Collectors.toList());
-    }
-
-    @Transactional(rollbackFor = Exception.class)
-    @SkipAuthorize("odc internal usage")
-    public List<UserTablePermission> listWithoutPageByDataSourceId(@NotNull Long dataSourceId,
-            @NotNull QueryTablePermissionParams params) {
-        Date expiredTime = new Date(System.currentTimeMillis() - expiredRetentionTimeSeconds * 1000);
-        permissionService.deleteExpiredPermission(expiredTime);
-        Date expireTimeThreshold = TimeUtils.getStartOfDay(new Date());
-        Specification<UserTablePermissionEntity> spec = Specification
-                .where(UserTablePermissionSpec.dataSourceId(dataSourceId))
-                .and(UserTablePermissionSpec.organizationIdEqual(authenticationFacade.currentOrganizationId()))
-                .and(UserTablePermissionSpec.userIdEqual(params.getUserId()))
-                .and(UserTablePermissionSpec.filterByExpirationStatus(params.getStatuses(), expireTimeThreshold));
-        return userTablePermissionRepository.findAll(spec).stream().map(
-                e -> {
-                    UserTablePermission permission = mapper.entityToModel(e);
-                    Date expireTime = permission.getExpireTime();
-                    if (expireTime.before(expireTimeThreshold)) {
-                        permission.setStatus(ExpirationStatusFilter.EXPIRED);
-                    } else if (expireTime.before(DateUtils.addDays(expireTimeThreshold, EXPIRING_DAYS))) {
-                        permission.setStatus(ExpirationStatusFilter.EXPIRING);
-                    } else {
-                        permission.setStatus(ExpirationStatusFilter.NOT_EXPIRED);
-                    }
-                    return permission;
-                }).collect(Collectors.toList());
     }
 
     @Transactional(rollbackFor = Exception.class)
@@ -316,7 +256,7 @@ public class TablePermissionService {
                 entity.setOrganizationId(organizationId);
                 entity.setBuiltIn(false);
                 entity.setExpireTime(expireTime);
-                entity.setAuthorizationType(AuthorizationType.USER_AUTHORIZATION);
+                entity.setAuthorizationType(req.getAuthorizationType());
                 entity.setResourceType(ResourceType.ODC_TABLE);
                 entity.setResourceId(table.getId());
                 permissionEntities.add(entity);
@@ -330,69 +270,70 @@ public class TablePermissionService {
                 .collect(Collectors.toList());
     }
 
-    @Transactional(rollbackFor = Exception.class)
-    @SkipAuthorize("odc internal usage")
-    public List<UserTablePermission> taskBatchCreate(@NotNull Long projectId,
-            @NotNull @Valid CreateTablePermissionReq req) {
-        Set<Long> projectIds = projectService.getMemberProjectIds(req.getUserId());
-        if (!projectIds.contains(projectId)) {
-            throw new AccessDeniedException();
-        }
-        List<TablePermission> tables = req.getTables();
-        // 检查要授权的表是否存在,不存在就写入connect_table表
-        // connect_table已有的表
-        List<Table> tableList = new ArrayList<>();
-        // connect_table新增的表
-        List<Table> newTableList = new ArrayList<>();
-        tables.forEach(t -> {
-            List<String> tableNames = t.getTableNames();
-            tableNames.forEach(tableName -> {
-                Table table1 = new Table();
-                table1.setDatabaseId(t.getDatabaseId());
-                Table table = tableService.getByDatabaseIdAndName(t.getDatabaseId(), tableName);
-                if (table == null) {
-                    table1.setName(tableName);
-                    table1.setSyncStatus(DatabaseSyncStatus.SUCCEEDED);
-                    newTableList.add(table1);
-                } else {
-                    tableList.add(table);
-                }
-            });
-        });
-        if (newTableList.size() > 0) {
-            List<Table> finalNewTableList = tableService.saveAll(newTableList);
-            tableList.addAll(finalNewTableList);
-        }
-
-        // 写入权限
-        List<PermissionEntity> permissionEntities = new ArrayList<>();
-        Date expireTime = req.getExpireTime() == null ? TimeUtils.getMySQLMaxDatetime()
-                : TimeUtils.getEndOfDay(req.getExpireTime());
-        for (Table table : tableList) {
-            for (DatabasePermissionType permissionType : req.getTypes()) {
-                PermissionEntity entity = new PermissionEntity();
-                entity.setAction(permissionType.getAction());
-                entity.setResourceIdentifier(ResourceType.ODC_DATABASE.name() + ":" + table.getDatabaseId() + "/"
-                        + ResourceType.ODC_TABLE.name() + ":" + table.getId());
-                entity.setType(PermissionType.PUBLIC_RESOURCE);
-                entity.setCreatorId(req.getCreatorId());
-                entity.setOrganizationId(req.getOrganizationId());
-                entity.setBuiltIn(false);
-                entity.setExpireTime(expireTime);
-                entity.setAuthorizationType(AuthorizationType.TICKET_APPLICATION);
-                entity.setResourceType(ResourceType.ODC_TABLE);
-                entity.setResourceId(table.getId());
-                entity.setTicketId(req.getTicketId());
-                permissionEntities.add(entity);
-            }
-        }
-        List<PermissionEntity> permissionEntitieList = permissionRepository.batchCreate(permissionEntities);
-        List<UserPermissionEntity> userPermissionEntities = permissionEntities2UserPermissionEntities(
-                permissionEntitieList, req, req.getCreatorId(), req.getOrganizationId());
-        userPermissionRepository.batchCreate(userPermissionEntities);
-        return permissionEntitieList.stream().map(PermissionEntity::getId).map(UserTablePermission::from)
-                .collect(Collectors.toList());
-    }
+    // @Transactional(rollbackFor = Exception.class)
+    // @SkipAuthorize("odc internal usage")
+    // public List<UserTablePermission> taskBatchCreate(@NotNull Long projectId,
+    // @NotNull @Valid CreateTablePermissionReq req) {
+    // Set<Long> projectIds = projectService.getMemberProjectIds(req.getUserId());
+    // if (!projectIds.contains(projectId)) {
+    // throw new AccessDeniedException();
+    // }
+    // List<TablePermission> tables = req.getTables();
+    // // 检查要授权的表是否存在,不存在就写入connect_table表
+    // // connect_table已有的表
+    // List<Table> tableList = new ArrayList<>();
+    // // connect_table新增的表
+    // List<Table> newTableList = new ArrayList<>();
+    // tables.forEach(t -> {
+    // List<String> tableNames = t.getTableNames();
+    // tableNames.forEach(tableName -> {
+    // Table table1 = new Table();
+    // table1.setDatabaseId(t.getDatabaseId());
+    // Table table = tableService.getByDatabaseIdAndName(t.getDatabaseId(), tableName);
+    // if (table == null) {
+    // table1.setName(tableName);
+    // table1.setSyncStatus(DatabaseSyncStatus.SUCCEEDED);
+    // newTableList.add(table1);
+    // } else {
+    // tableList.add(table);
+    // }
+    // });
+    // });
+    // if (newTableList.size() > 0) {
+    // List<Table> finalNewTableList = tableService.saveAll(newTableList);
+    // tableList.addAll(finalNewTableList);
+    // }
+    //
+    // // 写入权限
+    // List<PermissionEntity> permissionEntities = new ArrayList<>();
+    // Date expireTime = req.getExpireTime() == null ? TimeUtils.getMySQLMaxDatetime()
+    // : TimeUtils.getEndOfDay(req.getExpireTime());
+    // for (Table table : tableList) {
+    // for (DatabasePermissionType permissionType : req.getTypes()) {
+    // PermissionEntity entity = new PermissionEntity();
+    // entity.setAction(permissionType.getAction());
+    // entity.setResourceIdentifier(ResourceType.ODC_DATABASE.name() + ":" + table.getDatabaseId() + "/"
+    // + ResourceType.ODC_TABLE.name() + ":" + table.getId());
+    // entity.setType(PermissionType.PUBLIC_RESOURCE);
+    // entity.setCreatorId(req.getCreatorId());
+    // entity.setOrganizationId(req.getOrganizationId());
+    // entity.setBuiltIn(false);
+    // entity.setExpireTime(expireTime);
+    // entity.setAuthorizationType(AuthorizationType.TICKET_APPLICATION);
+    // entity.setResourceType(ResourceType.ODC_TABLE);
+    // entity.setResourceId(table.getId());
+    // entity.setTicketId(req.getTicketId());
+    // permissionEntities.add(entity);
+    // }
+    // }
+    // List<PermissionEntity> permissionEntitieList =
+    // permissionRepository.batchCreate(permissionEntities);
+    // List<UserPermissionEntity> userPermissionEntities = permissionEntities2UserPermissionEntities(
+    // permissionEntitieList, req, req.getCreatorId(), req.getOrganizationId());
+    // userPermissionRepository.batchCreate(userPermissionEntities);
+    // return permissionEntitieList.stream().map(PermissionEntity::getId).map(UserTablePermission::from)
+    // .collect(Collectors.toList());
+    // }
 
     private static List<UserPermissionEntity> permissionEntities2UserPermissionEntities(
             List<PermissionEntity> permissionEntityList,
@@ -458,8 +399,8 @@ public class TablePermissionService {
         QueryTablePermissionParams queryTablePermissionParams = QueryTablePermissionParams.builder()
                 .userId(authenticationFacade.currentUserId()).dataSourceId(dataSourceId)
                 .statuses(Arrays.asList(ExpirationStatusFilter.NOT_EXPIRED)).build();
-        List<UserTablePermission> userTablePermissions = listWithoutPageByDataSourceId(dataSource.getId(),
-                queryTablePermissionParams);
+        List<UserTablePermission> userTablePermissions = list(databases.get(0).getProject().getId(),
+                queryTablePermissionParams, Pageable.unpaged()).getContent();
         List<UnauthorizedResource> unauthorizedResources = new ArrayList<>();
         Set<Long> involvedProjectIds = projectService.getMemberProjectIds(authenticationFacade.currentUserId());
         for (RelationFactor relationFactor : tableName2PermissionTypes.keySet()) {
@@ -555,8 +496,8 @@ public class TablePermissionService {
                 .statuses(Arrays.asList(ExpirationStatusFilter.NOT_EXPIRED))
                 .build();
         List<UserTablePermission> userTablePermissions =
-                listWithoutPageByDataSourceId(databaseDetail.getDataSource().getId(),
-                        queryTablePermissionParams);
+                list(databaseDetail.getProject().getId(),
+                        queryTablePermissionParams, Pageable.unpaged()).getContent();
         List<UnauthorizedResource> unauthorizedResources = new ArrayList<>();
 
         Set<Long> involvedProjectIds = projectService.getMemberProjectIds(authenticationFacade.currentUserId());
