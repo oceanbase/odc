@@ -452,7 +452,7 @@ public class ConnectConsoleService {
                 }
                 return result;
             }).collect(Collectors.toList());
-            return new AsyncExecuteResultResp(context, results);
+            return new AsyncExecuteResultResp(shouldRemoveContext, context, results);
         } catch (Exception e) {
             shouldRemoveContext = true;
             throw e;
