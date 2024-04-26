@@ -87,7 +87,8 @@ public class DestroyExecutorJob implements Job {
                     }
                     throw new TaskRuntimeException(e);
                 }
-                log.info("Job destroy executor succeed, jobId={}.", lockedEntity.getId());
+                log.info("Job destroy executor succeed, jobId={}, status={}.", lockedEntity.getId(),
+                        lockedEntity.getStatus());
             }
         });
     }

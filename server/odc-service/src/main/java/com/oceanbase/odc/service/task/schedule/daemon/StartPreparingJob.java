@@ -63,7 +63,7 @@ public class StartPreparingJob implements Job {
         JobConfigurationValidator.validComponent();
 
         if (!configuration.getTaskFrameworkEnabledProperties().isEnabled()) {
-            log.warn("Task-framework isEnabled={}", configuration.getTaskFrameworkEnabledProperties().isEnabled());
+            log.warn("Task-framework isEnabled={}.", configuration.getTaskFrameworkEnabledProperties().isEnabled());
             configuration.getTaskFrameworkDisabledHandler().handleJobToFailed();
             return;
         }
@@ -89,7 +89,7 @@ public class StartPreparingJob implements Job {
                     startJob(taskFrameworkService, a);
                 }
             } catch (Throwable e) {
-                log.warn("try to start job {} failed: ", a.getId(), e);
+                log.warn("Start job failed, jobId={}.", a.getId(), e);
             }
         }
 
@@ -106,14 +106,13 @@ public class StartPreparingJob implements Job {
                     TraceContextHolder.setUserId(jobEntity.getCreatorId());
                 }
 
-                log.info("Job {} current status is {}, prepare start job.",
-                        lockedEntity.getId(), lockedEntity.getStatus());
+                log.info("Prepare start job, jobId={}, currentStatus={}.",
+                    lockedEntity.getId(), lockedEntity.getStatus());
                 JobContext jc =
                         new DefaultJobContextBuilder().build(lockedEntity, getConfiguration().getHostUrlProvider());
                 try {
                     getConfiguration().getJobDispatcher().start(jc);
                 } catch (JobException e) {
-                    log.warn("Start job occur error: ", e);
                     AlarmUtils.alarm(AlarmEventNames.TASK_START_FAILED,
                             MessageFormat.format("Start job failed, jobId={0}", lockedEntity.getId()));
                     throw new TaskRuntimeException(e);
