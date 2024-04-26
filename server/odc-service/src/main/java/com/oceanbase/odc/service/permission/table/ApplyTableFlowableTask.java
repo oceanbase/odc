@@ -26,6 +26,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import com.oceanbase.odc.common.trace.TaskContextHolder;
+import com.oceanbase.odc.core.shared.constant.AuthorizationType;
 import com.oceanbase.odc.core.shared.constant.FlowStatus;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.core.shared.exception.NotFoundException;
@@ -110,6 +111,7 @@ public class ApplyTableFlowableTask extends BaseODCFlowTaskDelegate<ApplyTableRe
                     createTablePermissionReq.setUserId(this.creatorId);
                     createTablePermissionReq.setTicketId(FlowTaskUtil.getFlowInstanceId(execution));
                     createTablePermissionReq.setOrganizationId(FlowTaskUtil.getOrganizationId(execution));
+                    createTablePermissionReq.setAuthorizationType(AuthorizationType.TICKET_APPLICATION);
                     List<TablePermission> tablePermissions = new ArrayList<>();
                     for (ApplyTable table : parameter.getTables()) {
                         TablePermission tablePermission = new TablePermission();
@@ -119,7 +121,7 @@ public class ApplyTableFlowableTask extends BaseODCFlowTaskDelegate<ApplyTableRe
                     }
                     createTablePermissionReq.setTables(tablePermissions);
 
-                    tablePermissionService.taskBatchCreate(parameter.getProject().getId(), createTablePermissionReq);
+                    tablePermissionService.batchCreate(parameter.getProject().getId(), createTablePermissionReq);
                     success = true;
                 } catch (Exception e) {
                     failure = true;
