@@ -79,7 +79,7 @@ public class CheckRunningJob implements Job {
         boolean isNeedRetry = checkJobIfRetryNecessary(a);
         if (isNeedRetry) {
             log.info("Need to restart job, try to set status to RETRYING, jobId={}, oldStatus={}.",
-                a.getId(), a.getStatus());
+                    a.getId(), a.getStatus());
             int rows = getConfiguration().getTaskFrameworkService()
                     .updateStatusDescriptionByIdOldStatus(a.getId(), JobStatus.RUNNING,
                             JobStatus.RETRYING, "Heart timeout and retrying job");
@@ -91,7 +91,7 @@ public class CheckRunningJob implements Job {
 
         } else {
             log.info("No need to restart job, try to set status to FAILED, jobId={},oldStatus={}.",
-                a.getId(), a.getStatus());
+                    a.getId(), a.getStatus());
             TaskFrameworkProperties taskFrameworkProperties = getConfiguration().getTaskFrameworkProperties();
             int rows = getConfiguration().getTaskFrameworkService()
                     .updateStatusToFailedWhenHeartTimeout(a.getId(),

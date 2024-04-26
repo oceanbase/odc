@@ -107,7 +107,7 @@ public class StartPreparingJob implements Job {
                 }
 
                 log.info("Prepare start job, jobId={}, currentStatus={}.",
-                    lockedEntity.getId(), lockedEntity.getStatus());
+                        lockedEntity.getId(), lockedEntity.getStatus());
                 JobContext jc =
                         new DefaultJobContextBuilder().build(lockedEntity, getConfiguration().getHostUrlProvider());
                 try {
