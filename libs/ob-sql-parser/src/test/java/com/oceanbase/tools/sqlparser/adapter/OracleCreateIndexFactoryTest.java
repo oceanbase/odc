@@ -16,6 +16,8 @@
 package com.oceanbase.tools.sqlparser.adapter;
 
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
 import org.antlr.v4.runtime.BailErrorStrategy;
 import org.antlr.v4.runtime.CharStreams;
@@ -28,6 +30,7 @@ import com.oceanbase.tools.sqlparser.adapter.oracle.OracleCreateTableFactory;
 import com.oceanbase.tools.sqlparser.oboracle.OBLexer;
 import com.oceanbase.tools.sqlparser.oboracle.OBParser;
 import com.oceanbase.tools.sqlparser.oboracle.OBParser.Create_index_stmtContext;
+import com.oceanbase.tools.sqlparser.statement.common.ColumnGroup;
 import com.oceanbase.tools.sqlparser.statement.common.RelationFactor;
 import com.oceanbase.tools.sqlparser.statement.createindex.CreateIndex;
 import com.oceanbase.tools.sqlparser.statement.createtable.IndexOptions;
@@ -92,6 +95,51 @@ public class OracleCreateIndexFactoryTest {
         indexOptions.setUsingBtree(true);
         indexOptions.setUsingHash(true);
         expect.setIndexOptions(indexOptions);
+        Assert.assertEquals(expect, actual);
+    }
+
+    @Test
+    public void generate_createIndexWithColumnGroup_allColumns_succeed() {
+        StatementFactory<CreateIndex> factory = new OracleCreateIndexFactory(
+                getCreateIdxContext("create index abc on tb (col, col1) with column group(all columns)"));
+        CreateIndex actual = factory.generate();
+
+        CreateIndex expect = new CreateIndex(new RelationFactor("abc"),
+                new RelationFactor("tb"), Arrays.asList(
+                        new SortColumn(new RelationReference("col", null)),
+                        new SortColumn(new RelationReference("col1", null))));
+        expect.setColumnGroups(Collections.singletonList(new ColumnGroup(true, false)));
+        Assert.assertEquals(expect, actual);
+    }
+
+    @Test
+    public void generate_createIndexWithColumnGroup_allColumns_eachColumn_succeed() {
+        StatementFactory<CreateIndex> factory = new OracleCreateIndexFactory(
+                getCreateIdxContext("create index abc on tb (col, col1) with column group(all columns, each column)"));
+        CreateIndex actual = factory.generate();
+
+        CreateIndex expect = new CreateIndex(new RelationFactor("abc"),
+                new RelationFactor("tb"), Arrays.asList(
+                        new SortColumn(new RelationReference("col", null)),
+                        new SortColumn(new RelationReference("col1", null))));
+        expect.setColumnGroups(Arrays.asList(new ColumnGroup(true, false), new ColumnGroup(false, true)));
+        Assert.assertEquals(expect, actual);
+    }
+
+    @Test
+    public void generate_withColumnGroup_customGroup_succeed() {
+        StatementFactory<CreateIndex> factory = new OracleCreateIndexFactory(
+                getCreateIdxContext("create index abc on tb (col, col1) with column group(g1(col), g2(col, col1))"));
+        CreateIndex actual = factory.generate();
+
+        CreateIndex expect = new CreateIndex(new RelationFactor("abc"),
+                new RelationFactor("tb"), Arrays.asList(
+                        new SortColumn(new RelationReference("col", null)),
+                        new SortColumn(new RelationReference("col1", null))));
+        List<ColumnGroup> columnGroups = Arrays.asList(
+                new ColumnGroup("g1", Collections.singletonList("col")),
+                new ColumnGroup("g2", Arrays.asList("col", "col1")));
+        expect.setColumnGroups(columnGroups);
         Assert.assertEquals(expect, actual);
     }
 
