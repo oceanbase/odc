@@ -27,6 +27,7 @@ import com.oceanbase.odc.core.shared.constant.ConnectType;
 import com.oceanbase.odc.core.sql.execute.model.SqlExecuteStatus;
 import com.oceanbase.odc.core.sql.execute.model.SqlTuple;
 import com.oceanbase.odc.service.session.interceptor.NlsFormatInterceptor;
+import com.oceanbase.odc.service.session.model.AsyncExecuteContext;
 import com.oceanbase.odc.service.session.model.SqlExecuteResult;
 
 /**
@@ -43,7 +44,7 @@ public class NlsFormatInterceptorTest {
         ConnectionSession session = getConnectionSession(ConnectType.OB_MYSQL);
         NlsFormatInterceptor interceptor = new NlsFormatInterceptor();
         SqlExecuteResult r = getResponse("set session nls_date_format='DD-MON-RR'", SqlExecuteStatus.SUCCESS);
-        interceptor.afterCompletion(r, session, new HashMap<>());
+        interceptor.afterCompletion(r, session, getContext());
         Assert.assertNull(ConnectionSessionUtil.getNlsDateFormat(session));
     }
 
@@ -52,7 +53,7 @@ public class NlsFormatInterceptorTest {
         ConnectionSession session = getConnectionSession(ConnectType.OB_ORACLE);
         NlsFormatInterceptor interceptor = new NlsFormatInterceptor();
         SqlExecuteResult r = getResponse("set session nls_date_format='DD-MON-RR'", SqlExecuteStatus.FAILED);
-        interceptor.afterCompletion(r, session, new HashMap<>());
+        interceptor.afterCompletion(r, session, getContext());
         Assert.assertNull(ConnectionSessionUtil.getNlsDateFormat(session));
     }
 
@@ -65,7 +66,7 @@ public class NlsFormatInterceptorTest {
                 + "begin\n"
                 + "dbms_output.put_line('aaaa');\n"
                 + "end;", SqlExecuteStatus.SUCCESS);
-        interceptor.afterCompletion(r, session, new HashMap<>());
+        interceptor.afterCompletion(r, session, getContext());
         Assert.assertNull(ConnectionSessionUtil.getNlsDateFormat(session));
     }
 
@@ -74,7 +75,7 @@ public class NlsFormatInterceptorTest {
         ConnectionSession session = getConnectionSession(ConnectType.OB_ORACLE);
         NlsFormatInterceptor interceptor = new NlsFormatInterceptor();
         SqlExecuteResult r = getResponse("-- comment\nselect 123 from dual;", SqlExecuteStatus.SUCCESS);
-        interceptor.afterCompletion(r, session, new HashMap<>());
+        interceptor.afterCompletion(r, session, getContext());
         Assert.assertNull(ConnectionSessionUtil.getNlsDateFormat(session));
     }
 
@@ -85,7 +86,7 @@ public class NlsFormatInterceptorTest {
         String expect = "DD-MON-RR";
         SqlExecuteResult r = getResponse("-- comment\nset session nls_date_format='" + expect + "';",
                 SqlExecuteStatus.SUCCESS);
-        interceptor.afterCompletion(r, session, new HashMap<>());
+        interceptor.afterCompletion(r, session, getContext());
         Assert.assertEquals(expect, ConnectionSessionUtil.getNlsDateFormat(session));
     }
 
@@ -96,7 +97,7 @@ public class NlsFormatInterceptorTest {
         String expect = "DD-MON-RR";
         SqlExecuteResult r = getResponse("/*asdasdasd*/    set session nls_date_format='" + expect + "';",
                 SqlExecuteStatus.SUCCESS);
-        interceptor.afterCompletion(r, session, new HashMap<>());
+        interceptor.afterCompletion(r, session, getContext());
         Assert.assertEquals(expect, ConnectionSessionUtil.getNlsDateFormat(session));
     }
 
@@ -107,7 +108,7 @@ public class NlsFormatInterceptorTest {
         String expect = "DD-MON-RR";
         SqlExecuteResult r = getResponse("/*asdasdasd*/    set session nls_timestamp_format='" + expect + "';",
                 SqlExecuteStatus.SUCCESS);
-        interceptor.afterCompletion(r, session, new HashMap<>());
+        interceptor.afterCompletion(r, session, getContext());
         Assert.assertEquals(expect, ConnectionSessionUtil.getNlsTimestampFormat(session));
     }
 
@@ -118,7 +119,7 @@ public class NlsFormatInterceptorTest {
         String expect = "DD-MON-RR";
         SqlExecuteResult r = getResponse("/*asdasdasd*/    set session nls_timestamp_tz_format='" + expect + "';",
                 SqlExecuteStatus.SUCCESS);
-        interceptor.afterCompletion(r, session, new HashMap<>());
+        interceptor.afterCompletion(r, session, getContext());
         Assert.assertEquals(expect, ConnectionSessionUtil.getNlsTimestampTZFormat(session));
     }
 
@@ -129,7 +130,7 @@ public class NlsFormatInterceptorTest {
         String expect = "DD-MON-RR";
         SqlExecuteResult r = getResponse("/*asdasdasd*/    set global nls_timestamp_tz_format='" + expect + "';",
                 SqlExecuteStatus.SUCCESS);
-        interceptor.afterCompletion(r, session, new HashMap<>());
+        interceptor.afterCompletion(r, session, getContext());
         Assert.assertNull(ConnectionSessionUtil.getNlsTimestampTZFormat(session));
     }
 
@@ -140,7 +141,7 @@ public class NlsFormatInterceptorTest {
         String expect = "DD-MON-RR";
         SqlExecuteResult r = getResponse("/*asdsd*/  alter   session \n\t\r set \"nls_date_format\"='" + expect + "';",
                 SqlExecuteStatus.SUCCESS);
-        interceptor.afterCompletion(r, session, new HashMap<>());
+        interceptor.afterCompletion(r, session, getContext());
         Assert.assertEquals(expect, ConnectionSessionUtil.getNlsDateFormat(session));
     }
 
@@ -157,6 +158,10 @@ public class NlsFormatInterceptorTest {
         session.removeAttribute(ConnectionSessionConstants.NLS_DATE_FORMAT_NAME);
         session.removeAttribute(ConnectionSessionConstants.NLS_TIMESTAMP_FORMAT_NAME);
         return session;
+    }
+
+    private AsyncExecuteContext getContext() {
+        return new AsyncExecuteContext(null, new HashMap<>());
     }
 
 }
