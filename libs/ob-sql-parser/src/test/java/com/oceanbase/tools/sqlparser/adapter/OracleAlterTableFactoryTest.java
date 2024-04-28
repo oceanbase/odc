@@ -29,9 +29,11 @@ import com.oceanbase.tools.sqlparser.adapter.oracle.OracleAlterTableFactory;
 import com.oceanbase.tools.sqlparser.oboracle.OBLexer;
 import com.oceanbase.tools.sqlparser.oboracle.OBParser;
 import com.oceanbase.tools.sqlparser.oboracle.OBParser.Alter_table_stmtContext;
+import com.oceanbase.tools.sqlparser.statement.alter.table.AlterColumnGroupOption;
 import com.oceanbase.tools.sqlparser.statement.alter.table.AlterTable;
 import com.oceanbase.tools.sqlparser.statement.alter.table.AlterTableAction;
 import com.oceanbase.tools.sqlparser.statement.common.CharacterType;
+import com.oceanbase.tools.sqlparser.statement.common.ColumnGroup;
 import com.oceanbase.tools.sqlparser.statement.createtable.ColumnDefinition;
 import com.oceanbase.tools.sqlparser.statement.createtable.TableOptions;
 import com.oceanbase.tools.sqlparser.statement.expression.ColumnReference;
@@ -70,6 +72,32 @@ public class OracleAlterTableFactoryTest {
         expect.setSchema("a");
         expect.setUserVariable("@c");
         expect.setExternal(true);
+        Assert.assertEquals(expect, actual);
+    }
+
+    @Test
+    public void generate_alterTable_addColumnGroup_succeed() {
+        StatementFactory<AlterTable> factory = new OracleAlterTableFactory(
+                getAlterContext("alter table a.b add column group(all columns)"));
+        AlterTable actual = factory.generate();
+
+        AlterColumnGroupOption a =
+                new AlterColumnGroupOption(true, Collections.singletonList(new ColumnGroup(true, false)));
+        AlterTable expect = new AlterTable("b", a);
+        expect.setSchema("a");
+        Assert.assertEquals(expect, actual);
+    }
+
+    @Test
+    public void generate_alterTable_dropColumnGroup_succeed() {
+        StatementFactory<AlterTable> factory = new OracleAlterTableFactory(
+                getAlterContext("alter table a.b drop column group(all columns)"));
+        AlterTable actual = factory.generate();
+
+        AlterColumnGroupOption a =
+                new AlterColumnGroupOption(false, Collections.singletonList(new ColumnGroup(true, false)));
+        AlterTable expect = new AlterTable("b", a);
+        expect.setSchema("a");
         Assert.assertEquals(expect, actual);
     }
 

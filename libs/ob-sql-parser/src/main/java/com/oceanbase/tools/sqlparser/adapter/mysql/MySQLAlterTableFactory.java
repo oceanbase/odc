@@ -17,15 +17,19 @@ package com.oceanbase.tools.sqlparser.adapter.mysql;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.antlr.v4.runtime.ParserRuleContext;
 
 import com.oceanbase.tools.sqlparser.adapter.StatementFactory;
+import com.oceanbase.tools.sqlparser.obmysql.OBParser.Alter_column_group_optionContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Alter_table_actionsContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Alter_table_stmtContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParserBaseVisitor;
+import com.oceanbase.tools.sqlparser.statement.alter.table.AlterColumnGroupOption;
 import com.oceanbase.tools.sqlparser.statement.alter.table.AlterTable;
 import com.oceanbase.tools.sqlparser.statement.alter.table.AlterTableAction;
+import com.oceanbase.tools.sqlparser.statement.common.ColumnGroup;
 import com.oceanbase.tools.sqlparser.statement.common.RelationFactor;
 
 import lombok.NonNull;
@@ -53,9 +57,16 @@ public class MySQLAlterTableFactory extends OBParserBaseVisitor<AlterTable> impl
     @Override
     public AlterTable visitAlter_table_stmt(Alter_table_stmtContext ctx) {
         RelationFactor factor = MySQLFromReferenceFactory.getRelationFactor(ctx.relation_factor());
-        AlterTable alterTable = new AlterTable(ctx,
-                factor.getRelation(),
-                getAlterTableActions(ctx.alter_table_actions()));
+        AlterTable alterTable;
+        if (ctx.alter_table_actions() != null) {
+            alterTable = new AlterTable(ctx,
+                    factor.getRelation(),
+                    getAlterTableActions(ctx.alter_table_actions()));
+        } else {
+            alterTable = new AlterTable(ctx,
+                    factor.getRelation(),
+                    getAlterColumnGroupOption(ctx.alter_column_group_option()));
+        }
         if (ctx.EXTERNAL() != null) {
             alterTable.setExternal(true);
         }
@@ -76,6 +87,16 @@ public class MySQLAlterTableFactory extends OBParserBaseVisitor<AlterTable> impl
             actions.add(new MySQLAlterTableActionFactory(context.alter_table_action()).generate());
         }
         return actions;
+    }
+
+    private AlterColumnGroupOption getAlterColumnGroupOption(Alter_column_group_optionContext context) {
+        if (context == null) {
+            return null;
+        }
+        boolean isAdd = context.ADD() != null;
+        List<ColumnGroup> columnGroups = context.column_group_list().column_group_element()
+                .stream().map(c -> new MySQLColumnGroupElementFactory(c).generate()).collect(Collectors.toList());
+        return new AlterColumnGroupOption(context, isAdd, columnGroups);
     }
 
 }

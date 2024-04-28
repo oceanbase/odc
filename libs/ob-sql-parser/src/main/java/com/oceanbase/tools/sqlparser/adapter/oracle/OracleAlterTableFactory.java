@@ -21,10 +21,13 @@ import java.util.stream.Collectors;
 import org.antlr.v4.runtime.ParserRuleContext;
 
 import com.oceanbase.tools.sqlparser.adapter.StatementFactory;
+import com.oceanbase.tools.sqlparser.oboracle.OBParser.Alter_column_group_optionContext;
 import com.oceanbase.tools.sqlparser.oboracle.OBParser.Alter_table_stmtContext;
 import com.oceanbase.tools.sqlparser.oboracle.OBParserBaseVisitor;
+import com.oceanbase.tools.sqlparser.statement.alter.table.AlterColumnGroupOption;
 import com.oceanbase.tools.sqlparser.statement.alter.table.AlterTable;
 import com.oceanbase.tools.sqlparser.statement.alter.table.AlterTableAction;
+import com.oceanbase.tools.sqlparser.statement.common.ColumnGroup;
 
 import lombok.NonNull;
 
@@ -50,10 +53,19 @@ public class OracleAlterTableFactory extends OBParserBaseVisitor<AlterTable> imp
 
     @Override
     public AlterTable visitAlter_table_stmt(Alter_table_stmtContext ctx) {
-        List<AlterTableAction> actions = ctx.alter_table_actions().alter_table_action().stream()
-                .map(c -> new OracleAlterTableActionFactory(c).generate()).collect(Collectors.toList());
-        AlterTable alterTable = new AlterTable(ctx,
-                OracleFromReferenceFactory.getRelation(ctx.relation_factor()), actions);
+        String relation = OracleFromReferenceFactory.getRelation(ctx.relation_factor());
+        AlterTable alterTable;
+        if (ctx.alter_table_actions() != null) {
+            List<AlterTableAction> actions = ctx.alter_table_actions().alter_table_action().stream()
+                    .map(c -> new OracleAlterTableActionFactory(c).generate()).collect(Collectors.toList());
+            alterTable = new AlterTable(ctx, relation, actions);
+        } else {
+            Alter_column_group_optionContext columnGroupContext = ctx.alter_column_group_option();
+            boolean isAdd = columnGroupContext.ADD() != null;
+            List<ColumnGroup> columnGroups = columnGroupContext.column_group_list().column_group_element()
+                    .stream().map(c -> new OracleColumnGroupElementFactory(c).generate()).collect(Collectors.toList());
+            alterTable = new AlterTable(ctx, relation, new AlterColumnGroupOption(ctx, isAdd, columnGroups));
+        }
         if (ctx.EXTERNAL() != null) {
             alterTable.setExternal(true);
         }

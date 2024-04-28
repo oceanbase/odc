@@ -45,17 +45,34 @@ public class AlterTable extends BaseStatement {
     private boolean external;
     private final String tableName;
     private final List<AlterTableAction> alterTableActions;
+    private final AlterColumnGroupOption alterColumnGroupOption;
 
     public AlterTable(@NonNull ParserRuleContext context,
             @NonNull String tableName, List<AlterTableAction> alterTableActions) {
         super(context);
         this.tableName = tableName;
         this.alterTableActions = alterTableActions;
+        this.alterColumnGroupOption = null;
+    }
+
+    public AlterTable(@NonNull ParserRuleContext ruleNode, @NonNull String tableName,
+            AlterColumnGroupOption alterColumnGroupOption) {
+        super(ruleNode);
+        this.tableName = tableName;
+        this.alterColumnGroupOption = alterColumnGroupOption;
+        this.alterTableActions = null;
     }
 
     public AlterTable(@NonNull String tableName, List<AlterTableAction> alterTableActions) {
         this.tableName = tableName;
         this.alterTableActions = alterTableActions;
+        this.alterColumnGroupOption = null;
+    }
+
+    public AlterTable(@NonNull String tableName, AlterColumnGroupOption alterColumnGroupOption) {
+        this.tableName = tableName;
+        this.alterColumnGroupOption = alterColumnGroupOption;
+        this.alterTableActions = null;
     }
 
     @Override
@@ -77,6 +94,9 @@ public class AlterTable extends BaseStatement {
         if (CollectionUtils.isNotEmpty(this.alterTableActions)) {
             builder.append(" ").append(this.alterTableActions.stream()
                     .map(AlterTableAction::toString).collect(Collectors.joining(",")));
+        }
+        if (this.alterColumnGroupOption != null) {
+            builder.append(alterColumnGroupOption);
         }
         return builder.toString();
     }

@@ -18,6 +18,7 @@ package com.oceanbase.tools.sqlparser.adapter;
 import java.math.BigDecimal;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 
 import org.antlr.v4.runtime.BailErrorStrategy;
 import org.antlr.v4.runtime.CharStreams;
@@ -29,9 +30,11 @@ import com.oceanbase.tools.sqlparser.adapter.mysql.MySQLAlterTableFactory;
 import com.oceanbase.tools.sqlparser.obmysql.OBLexer;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Alter_table_stmtContext;
+import com.oceanbase.tools.sqlparser.statement.alter.table.AlterColumnGroupOption;
 import com.oceanbase.tools.sqlparser.statement.alter.table.AlterTable;
 import com.oceanbase.tools.sqlparser.statement.alter.table.AlterTableAction;
 import com.oceanbase.tools.sqlparser.statement.common.CharacterType;
+import com.oceanbase.tools.sqlparser.statement.common.ColumnGroup;
 import com.oceanbase.tools.sqlparser.statement.createtable.ColumnDefinition;
 import com.oceanbase.tools.sqlparser.statement.createtable.TableOptions;
 import com.oceanbase.tools.sqlparser.statement.expression.ColumnReference;
@@ -66,7 +69,7 @@ public class MySQLAlterTableFactoryTest {
                 getAlterContext("alter table a.b"));
         AlterTable actual = factory.generate();
 
-        AlterTable expect = new AlterTable("b", null);
+        AlterTable expect = new AlterTable("b", (List<AlterTableAction>) null);
         expect.setSchema("a");
         Assert.assertEquals(expect, actual);
     }
@@ -81,6 +84,32 @@ public class MySQLAlterTableFactoryTest {
         a.setRefresh(true);
         AlterTable expect = new AlterTable("b", Collections.singletonList(a));
         expect.setExternal(true);
+        expect.setSchema("a");
+        Assert.assertEquals(expect, actual);
+    }
+
+    @Test
+    public void generate_alterTable_addColumnGroup_succeed() {
+        StatementFactory<AlterTable> factory = new MySQLAlterTableFactory(
+                getAlterContext("alter table a.b add column group(all columns)"));
+        AlterTable actual = factory.generate();
+
+        AlterColumnGroupOption a =
+                new AlterColumnGroupOption(true, Collections.singletonList(new ColumnGroup(true, false)));
+        AlterTable expect = new AlterTable("b", a);
+        expect.setSchema("a");
+        Assert.assertEquals(expect, actual);
+    }
+
+    @Test
+    public void generate_alterTable_dropColumnGroup_succeed() {
+        StatementFactory<AlterTable> factory = new MySQLAlterTableFactory(
+                getAlterContext("alter table a.b drop column group(all columns)"));
+        AlterTable actual = factory.generate();
+
+        AlterColumnGroupOption a =
+                new AlterColumnGroupOption(false, Collections.singletonList(new ColumnGroup(true, false)));
+        AlterTable expect = new AlterTable("b", a);
         expect.setSchema("a");
         Assert.assertEquals(expect, actual);
     }
