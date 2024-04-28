@@ -90,7 +90,8 @@ public class DoCancelingJob implements Job {
                             MessageFormat.format("Cancel job failed, jobId={0}", lockedEntity.getId()));
                     throw new TaskRuntimeException(e);
                 }
-                log.info("Job be cancelled successfully, jobId=", lockedEntity.getId());
+                log.info("Job be cancelled successfully, jobId={}, oldStatus={}.", lockedEntity.getId(),
+                        lockedEntity.getStatus());
                 getConfiguration().getEventPublisher().publishEvent(
                         new JobTerminateEvent(JobIdentity.of(lockedEntity.getId()), JobStatus.CANCELED));
             }
