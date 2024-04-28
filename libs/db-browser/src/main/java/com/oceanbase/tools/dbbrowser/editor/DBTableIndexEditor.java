@@ -49,6 +49,11 @@ public abstract class DBTableIndexEditor implements DBObjectEditor<DBTableIndex>
         appendIndexColumns(index, sqlBuilder);
         sqlBuilder.append(")");
         appendIndexOptions(index, sqlBuilder);
+        if (CollectionUtils.isNotEmpty(index.getColumnGroups())) {
+            sqlBuilder.append(" WITH COLUMN GROUP(")
+                    .append(String.join(",", index.getColumnGroups()))
+                    .append(")");
+        }
         return sqlBuilder.toString().trim() + ";\n";
     }
 
@@ -62,6 +67,11 @@ public abstract class DBTableIndexEditor implements DBObjectEditor<DBTableIndex>
         appendIndexColumns(index, sqlBuilder);
         sqlBuilder.append(")");
         appendIndexOptions(index, sqlBuilder);
+        if (CollectionUtils.isNotEmpty(index.getColumnGroups())) {
+            sqlBuilder.append(" WITH COLUMN GROUP(")
+                    .append(String.join(",", index.getColumnGroups()))
+                    .append(")");
+        }
         return sqlBuilder.toString().trim();
     }
 

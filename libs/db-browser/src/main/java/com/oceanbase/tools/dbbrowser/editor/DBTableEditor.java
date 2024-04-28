@@ -15,7 +15,9 @@
  */
 package com.oceanbase.tools.dbbrowser.editor;
 
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -112,6 +114,11 @@ public abstract class DBTableEditor implements DBObjectEditor<DBTable> {
         if (Objects.nonNull(table.getPartition())) {
             sqlBuilder.append(partitionEditor.generateCreateDefinitionDDL(table.getPartition()));
         }
+        if (CollectionUtils.isNotEmpty(table.getColumnGroups())) {
+            sqlBuilder.append(" WITH COLUMN GROUP(")
+                    .append(String.join(",", table.getColumnGroups()))
+                    .append(")");
+        }
         sqlBuilder.append(";\n");
         appendTableComment(table, sqlBuilder);
         appendColumnComment(table, sqlBuilder);
@@ -153,6 +160,7 @@ public abstract class DBTableEditor implements DBObjectEditor<DBTable> {
         sqlBuilder.append(
                 constraintEditor.generateUpdateObjectListDDL(oldTable.getConstraints(), newTable.getConstraints()));
         sqlBuilder.append(partitionEditor.generateUpdateObjectDDL(oldTable.getPartition(), newTable.getPartition()));
+        sqlBuilder.append(generateUpdateColumnGroupDDL(oldTable, newTable));
         return sqlBuilder.toString();
     }
 
@@ -281,6 +289,51 @@ public abstract class DBTableEditor implements DBObjectEditor<DBTable> {
             constraint.setSchemaName(schemaName);
             constraint.setTableName(tableName);
         }
+    }
+
+    private String generateUpdateColumnGroupDDL(DBTable oldTable, DBTable newTable) {
+        SqlBuilder sqlBuilder = sqlBuilder();
+        HashSet<String> oldColumnGroups = new HashSet<>(oldTable.getColumnGroups());
+        HashSet<String> newColumnGroups = new HashSet<>(newTable.getColumnGroups());
+        List<String> columnsToBeDropped = new ArrayList<>();
+        List<String> columnsToBeCreated = new ArrayList<>();
+        for (String columnGroup : oldColumnGroups) {
+            if (!newColumnGroups.contains(columnGroup)) {
+                columnsToBeDropped.add(columnGroup);
+            }
+        }
+        for (String columnGroup : newColumnGroups) {
+            if (!oldColumnGroups.contains(columnGroup)) {
+                columnsToBeCreated.add(columnGroup);
+            }
+        }
+        if (!columnsToBeDropped.isEmpty()) {
+            sqlBuilder.append(generateDropColumnGroupDDL(columnsToBeDropped, oldTable));
+        }
+        if (!columnsToBeCreated.isEmpty()) {
+            sqlBuilder.append(generateCreateColumnGroupDDL(columnsToBeCreated, newTable));
+        }
+        return sqlBuilder.toString();
+    }
+
+    private String generateDropColumnGroupDDL(List<String> columnGroups, DBTable table) {
+        SqlBuilder sqlBuilder = sqlBuilder();
+        sqlBuilder.append("ALTER TABLE ")
+                .append(getFullyQualifiedTableName(table))
+                .append(" DROP COLUMN GROUP(")
+                .append(String.join(",", columnGroups))
+                .append(");");
+        return sqlBuilder.toString();
+    }
+
+    private String generateCreateColumnGroupDDL(List<String> columnGroups, DBTable table) {
+        SqlBuilder sqlBuilder = sqlBuilder();
+        sqlBuilder.append("ALTER TABLE ")
+                .append(getFullyQualifiedTableName(table))
+                .append(" ADD COLUMN GROUP(")
+                .append(String.join(",", columnGroups))
+                .append(");");
+        return sqlBuilder.toString();
     }
 
 }
