@@ -20,8 +20,6 @@ import java.util.stream.Collectors;
 
 import org.antlr.v4.runtime.ParserRuleContext;
 
-import com.oceanbase.odc.service.connection.logicaldatabase.BadExpressionException;
-
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;

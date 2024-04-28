@@ -24,7 +24,6 @@ import org.antlr.v4.runtime.ParserRuleContext;
 import org.apache.commons.collections4.CollectionUtils;
 
 import com.oceanbase.odc.core.shared.Verify;
-import com.oceanbase.odc.service.connection.logicaldatabase.BadExpressionException;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

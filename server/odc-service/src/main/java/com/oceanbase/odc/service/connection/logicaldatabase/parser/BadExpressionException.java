@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.connection.logicaldatabase;
+package com.oceanbase.odc.service.connection.logicaldatabase.parser;
 
 import org.apache.commons.lang.StringUtils;
 import org.springframework.http.HttpStatus;
@@ -28,7 +28,7 @@ import com.oceanbase.tools.sqlparser.SyntaxErrorException;
  * @Date: 2024/4/23 14:03
  * @Description: []
  */
-public class BadExpressionException extends HttpException {
+class BadExpressionException extends HttpException {
 
     public BadExpressionException(ErrorCode errorCode, Object[] args, String message) {
         super(errorCode, args, message);

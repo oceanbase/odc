@@ -25,6 +25,7 @@ import com.oceanbase.odc.ServiceTestEnv;
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.common.util.YamlUtils;
 import com.oceanbase.odc.service.connection.logicaldatabase.model.DataNode;
+import com.oceanbase.odc.service.connection.logicaldatabase.parser.LogicalTableService;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

@@ -20,7 +20,6 @@ import java.util.List;
 import org.antlr.v4.runtime.ParserRuleContext;
 
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
-import com.oceanbase.odc.service.connection.logicaldatabase.BadExpressionException;
 
 import lombok.Getter;
 

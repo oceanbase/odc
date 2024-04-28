@@ -25,8 +25,8 @@ import org.antlr.v4.runtime.ParserRuleContext;
 import org.apache.commons.collections.CollectionUtils;
 
 import com.oceanbase.odc.common.lang.Pair;
+import com.oceanbase.odc.common.util.ListUtils;
 import com.oceanbase.odc.core.shared.PreConditions;
-import com.oceanbase.odc.service.connection.logicaldatabase.BadExpressionException;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -60,9 +60,8 @@ public class SchemaExpression extends BaseLogicalTableExpression {
                         .map(stmt -> new Pair<>(stmt.getStart() - this.getStart(), stmt.getStop() - this.getStart()))
                         .collect(
                                 Collectors.toList());
-        List<List<String>> ranges = LogicalTableExpressionParseUtils
-                .cartesianProduct(sliceRanges.stream().map(BaseRangeExpression::listRanges)
-                        .collect(Collectors.toList()));
+        List<List<String>> ranges = ListUtils.cartesianProduct(sliceRanges.stream().map(BaseRangeExpression::listRanges)
+                .collect(Collectors.toList()));
         List<String> names = new ArrayList<>();
         /**
          * we need to iterate in reverse order to replace the ranges from right to left; otherwise, we may

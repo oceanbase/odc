@@ -19,7 +19,6 @@ import java.util.List;
 
 import org.antlr.v4.runtime.ParserRuleContext;
 
-import com.oceanbase.odc.service.connection.logicaldatabase.BadExpressionException;
 import com.oceanbase.tools.sqlparser.statement.BaseStatement;
 
 public abstract class BaseRangeExpression extends BaseStatement {

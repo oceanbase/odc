@@ -22,7 +22,6 @@ import java.util.List;
 
 import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
-import com.oceanbase.odc.service.connection.logicaldatabase.BadExpressionException;
 
 /**
  * @Author: Lebie
@@ -69,25 +68,5 @@ public class LogicalTableExpressionParseUtils {
         }
 
         return result;
-    }
-
-    public static List<List<String>> cartesianProduct(List<List<String>> lists) {
-        List<List<String>> result = new ArrayList<>();
-        cartesianProductRecursive(lists, result, 0, new ArrayList<>());
-        return result;
-    }
-
-    private static void cartesianProductRecursive(List<List<String>> lists, List<List<String>> result, int depth,
-            List<String> current) {
-        if (depth == lists.size()) {
-            result.add(new ArrayList<>(current));
-            return;
-        }
-
-        for (String s : lists.get(depth)) {
-            List<String> newCurrent = new ArrayList<>(current);
-            newCurrent.add(s);
-            cartesianProductRecursive(lists, result, depth + 1, newCurrent);
-        }
     }
 }
