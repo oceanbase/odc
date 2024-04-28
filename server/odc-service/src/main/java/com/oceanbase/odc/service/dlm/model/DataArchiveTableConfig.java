@@ -15,6 +15,8 @@
  */
 package com.oceanbase.odc.service.dlm.model;
 
+import java.util.List;
+
 import lombok.Data;
 
 /**
@@ -29,6 +31,8 @@ public class DataArchiveTableConfig {
     private String tableName;
 
     private String targetTableName;
+
+    private List<String> partitions;
 
     // the sql condition such as "gmt_create < '2023-01-01'"
     private String conditionExpression;

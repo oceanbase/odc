@@ -18,6 +18,7 @@ package com.oceanbase.odc.service.dlm.model;
 import java.util.List;
 
 import com.oceanbase.odc.core.flow.model.TaskParameters;
+import com.oceanbase.tools.dbbrowser.model.DBObjectType;
 import com.oceanbase.tools.migrator.common.enums.MigrationInsertAction;
 import com.oceanbase.tools.migrator.common.enums.ShardingStrategy;
 
@@ -66,4 +67,8 @@ public class DataArchiveParameters implements TaskParameters {
     private ShardingStrategy shardingStrategy;
 
     private RateLimitConfiguration rateLimit;
+
+    private Long taskExecutionDurationHours = Long.MAX_VALUE;
+
+    private List<DBObjectType> syncTableStructure;
 }
