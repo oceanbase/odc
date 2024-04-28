@@ -24,6 +24,7 @@ import org.antlr.v4.runtime.ParserRuleContext;
 
 import com.oceanbase.tools.sqlparser.adapter.StatementFactory;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Alter_column_behaviorContext;
+import com.oceanbase.tools.sqlparser.obmysql.OBParser.Alter_column_group_optionContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Alter_column_optionContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Alter_constraint_optionContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Alter_index_optionContext;
@@ -36,6 +37,8 @@ import com.oceanbase.tools.sqlparser.obmysql.OBParser.Opt_partition_range_or_lis
 import com.oceanbase.tools.sqlparser.obmysql.OBParserBaseVisitor;
 import com.oceanbase.tools.sqlparser.statement.alter.table.AlterTableAction;
 import com.oceanbase.tools.sqlparser.statement.alter.table.AlterTableAction.AlterColumnBehavior;
+import com.oceanbase.tools.sqlparser.statement.common.ColumnGroup;
+import com.oceanbase.tools.sqlparser.statement.common.ColumnGroupElement;
 import com.oceanbase.tools.sqlparser.statement.createtable.ColumnDefinition;
 import com.oceanbase.tools.sqlparser.statement.createtable.ConstraintState;
 import com.oceanbase.tools.sqlparser.statement.createtable.OutOfLineConstraint;
@@ -58,6 +61,10 @@ public class MySQLAlterTableActionFactory extends OBParserBaseVisitor<AlterTable
     private final ParserRuleContext parserRuleContext;
 
     public MySQLAlterTableActionFactory(@NonNull Alter_table_actionContext alterTableActionContext) {
+        this.parserRuleContext = alterTableActionContext;
+    }
+
+    public MySQLAlterTableActionFactory(@NonNull Alter_column_group_optionContext alterTableActionContext) {
         this.parserRuleContext = alterTableActionContext;
     }
 
@@ -230,6 +237,20 @@ public class MySQLAlterTableActionFactory extends OBParserBaseVisitor<AlterTable
             ConstraintState state = new ConstraintState(ctx.check_state());
             state.setEnforced(ctx.check_state().NOT() == null);
             action.modifyConstraint(ctx.constraint_name().getText(), state);
+        }
+        return action;
+    }
+
+    @Override
+    public AlterTableAction visitAlter_column_group_option(Alter_column_group_optionContext ctx) {
+        AlterTableAction action = new AlterTableAction(ctx);
+        List<ColumnGroupElement> columnGroupElements = ctx.column_group_list().column_group_element()
+                .stream().map(c -> new MySQLColumnGroupElementFactory(c).generate()).collect(Collectors.toList());
+        ColumnGroup columnGroup = new ColumnGroup(ctx, columnGroupElements);
+        if (ctx.ADD() != null) {
+            action.setAddColumnGroup(columnGroup);
+        } else {
+            action.setDropColumnGroup(columnGroup);
         }
         return action;
     }

@@ -24,6 +24,7 @@ import org.apache.commons.collections4.CollectionUtils;
 
 import com.oceanbase.tools.sqlparser.statement.BaseStatement;
 import com.oceanbase.tools.sqlparser.statement.Expression;
+import com.oceanbase.tools.sqlparser.statement.common.ColumnGroup;
 import com.oceanbase.tools.sqlparser.statement.common.RelationFactor;
 import com.oceanbase.tools.sqlparser.statement.createtable.ColumnDefinition;
 import com.oceanbase.tools.sqlparser.statement.createtable.ConstraintState;
@@ -144,6 +145,8 @@ public class AlterTableAction extends BaseStatement {
     private String renameFromSubPartitionName;
     @Setter(AccessLevel.NONE)
     private String renameToSubPartitionName;
+    private ColumnGroup addColumnGroup;
+    private ColumnGroup dropColumnGroup;
 
     public AlterTableAction(@NonNull ParserRuleContext context) {
         super(context);
@@ -406,6 +409,12 @@ public class AlterTableAction extends BaseStatement {
         }
         if (Boolean.TRUE.equals(this.removePartitioning)) {
             builder.append(" REMOVE PARTITIONING");
+        }
+        if (addColumnGroup != null) {
+            builder.append(" ADD").append(addColumnGroup);
+        }
+        if (dropColumnGroup != null) {
+            builder.append(" DROP").append(dropColumnGroup);
         }
         return builder.length() == 0 ? "" : builder.substring(1);
     }

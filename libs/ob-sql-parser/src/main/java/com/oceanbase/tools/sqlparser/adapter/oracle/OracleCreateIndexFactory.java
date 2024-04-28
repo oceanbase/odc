@@ -22,7 +22,7 @@ import com.oceanbase.tools.sqlparser.adapter.StatementFactory;
 import com.oceanbase.tools.sqlparser.oboracle.OBParser.Create_index_stmtContext;
 import com.oceanbase.tools.sqlparser.oboracle.OBParser.Index_using_algorithmContext;
 import com.oceanbase.tools.sqlparser.oboracle.OBParserBaseVisitor;
-import com.oceanbase.tools.sqlparser.statement.common.ColumnGroup;
+import com.oceanbase.tools.sqlparser.statement.common.ColumnGroupElement;
 import com.oceanbase.tools.sqlparser.statement.createindex.CreateIndex;
 import com.oceanbase.tools.sqlparser.statement.createtable.IndexOptions;
 import com.oceanbase.tools.sqlparser.statement.createtable.SortColumn;
@@ -79,10 +79,10 @@ public class OracleCreateIndexFactory extends OBParserBaseVisitor<CreateIndex>
             index.setPartition(new OraclePartitionFactory(ctx.auto_partition_option()).generate());
         }
         if (ctx.with_column_group() != null) {
-            List<ColumnGroup> columnGroups = ctx.with_column_group()
+            List<ColumnGroupElement> columnGroupElements = ctx.with_column_group()
                     .column_group_list().column_group_element().stream()
                     .map(c -> new OracleColumnGroupElementFactory(c).generate()).collect(Collectors.toList());
-            index.setColumnGroups(columnGroups);
+            index.setColumnGroupElements(columnGroupElements);
         }
         return index;
     }

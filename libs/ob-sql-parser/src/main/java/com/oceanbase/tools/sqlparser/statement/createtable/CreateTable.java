@@ -59,7 +59,7 @@ public class CreateTable extends BaseStatement {
     private String commitOption;
     private Partition partition;
     private final String tableName;
-    private List<ColumnGroup> columnGroups;
+    private ColumnGroup columnGroup;
 
     public CreateTable(@NonNull ParserRuleContext context, @NonNull String tableName) {
         super(context);
@@ -159,10 +159,8 @@ public class CreateTable extends BaseStatement {
         if (this.commitOption != null) {
             builder.append(" ON COMMIT ").append(this.commitOption.toUpperCase()).append(" ROWS");
         }
-        if (this.columnGroups != null) {
-            builder.append(" WITH COLUMN GROUP(")
-                    .append(columnGroups.stream().map(ColumnGroup::toString).collect(Collectors.joining(",")))
-                    .append(")");
+        if (this.columnGroup != null) {
+            builder.append(" WITH").append(columnGroup);
         }
         if (this.as != null) {
             builder.append(" AS ").append(this.as);

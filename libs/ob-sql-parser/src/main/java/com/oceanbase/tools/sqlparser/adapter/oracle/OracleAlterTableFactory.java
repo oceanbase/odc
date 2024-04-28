@@ -15,19 +15,17 @@
  */
 package com.oceanbase.tools.sqlparser.adapter.oracle;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
 import org.antlr.v4.runtime.ParserRuleContext;
 
 import com.oceanbase.tools.sqlparser.adapter.StatementFactory;
-import com.oceanbase.tools.sqlparser.oboracle.OBParser.Alter_column_group_optionContext;
 import com.oceanbase.tools.sqlparser.oboracle.OBParser.Alter_table_stmtContext;
 import com.oceanbase.tools.sqlparser.oboracle.OBParserBaseVisitor;
-import com.oceanbase.tools.sqlparser.statement.alter.table.AlterColumnGroupOption;
 import com.oceanbase.tools.sqlparser.statement.alter.table.AlterTable;
 import com.oceanbase.tools.sqlparser.statement.alter.table.AlterTableAction;
-import com.oceanbase.tools.sqlparser.statement.common.ColumnGroup;
 
 import lombok.NonNull;
 
@@ -60,11 +58,8 @@ public class OracleAlterTableFactory extends OBParserBaseVisitor<AlterTable> imp
                     .map(c -> new OracleAlterTableActionFactory(c).generate()).collect(Collectors.toList());
             alterTable = new AlterTable(ctx, relation, actions);
         } else {
-            Alter_column_group_optionContext columnGroupContext = ctx.alter_column_group_option();
-            boolean isAdd = columnGroupContext.ADD() != null;
-            List<ColumnGroup> columnGroups = columnGroupContext.column_group_list().column_group_element()
-                    .stream().map(c -> new OracleColumnGroupElementFactory(c).generate()).collect(Collectors.toList());
-            alterTable = new AlterTable(ctx, relation, new AlterColumnGroupOption(ctx, isAdd, columnGroups));
+            alterTable = new AlterTable(ctx, relation, Collections
+                    .singletonList(new OracleAlterTableActionFactory(ctx.alter_column_group_option()).generate()));
         }
         if (ctx.EXTERNAL() != null) {
             alterTable.setExternal(true);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 OceanBase.
+ * Copyright (c) 2024 OceanBase.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,9 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.oceanbase.tools.sqlparser.statement.common;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.antlr.v4.runtime.ParserRuleContext;
 
@@ -32,41 +34,22 @@ import lombok.Getter;
 @EqualsAndHashCode(callSuper = false)
 public class ColumnGroup extends BaseStatement {
 
-    private boolean allColumns;
-    private boolean eachColumn;
-    private String groupName;
-    private List<String> columnNames;
+    private final List<ColumnGroupElement> columnGroupElements;
 
-    public ColumnGroup(boolean allColumns, boolean eachColumn) {
-        this.allColumns = allColumns;
-        this.eachColumn = eachColumn;
-    }
-
-    public ColumnGroup(String groupName, List<String> columnNames) {
-        this.groupName = groupName;
-        this.columnNames = columnNames;
-    }
-
-    public ColumnGroup(ParserRuleContext ruleNode, boolean allColumns, boolean eachColumn) {
+    public ColumnGroup(ParserRuleContext ruleNode, List<ColumnGroupElement> columnGroupElements) {
         super(ruleNode);
-        this.allColumns = allColumns;
-        this.eachColumn = eachColumn;
+        this.columnGroupElements = columnGroupElements;
     }
 
-    public ColumnGroup(ParserRuleContext ruleNode, String groupName, List<String> columnNames) {
-        super(ruleNode);
-        this.groupName = groupName;
-        this.columnNames = columnNames;
+    public ColumnGroup(List<ColumnGroupElement> columnGroupElements) {
+        this.columnGroupElements = columnGroupElements;
     }
 
     @Override
     public String toString() {
-        if (isAllColumns()) {
-            return "all columns";
-        } else if (isEachColumn()) {
-            return "each column";
-        }
-        return String.format("%s(%s)", groupName, String.join(",", columnNames));
+        return " COLUMN GROUP(" +
+                columnGroupElements.stream().map(ColumnGroupElement::toString).collect(Collectors.joining(","))
+                + ")";
     }
 
 }

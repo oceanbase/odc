@@ -30,7 +30,7 @@ import com.oceanbase.tools.sqlparser.adapter.oracle.OracleCreateTableFactory;
 import com.oceanbase.tools.sqlparser.oboracle.OBLexer;
 import com.oceanbase.tools.sqlparser.oboracle.OBParser;
 import com.oceanbase.tools.sqlparser.oboracle.OBParser.Create_index_stmtContext;
-import com.oceanbase.tools.sqlparser.statement.common.ColumnGroup;
+import com.oceanbase.tools.sqlparser.statement.common.ColumnGroupElement;
 import com.oceanbase.tools.sqlparser.statement.common.RelationFactor;
 import com.oceanbase.tools.sqlparser.statement.createindex.CreateIndex;
 import com.oceanbase.tools.sqlparser.statement.createtable.IndexOptions;
@@ -108,7 +108,7 @@ public class OracleCreateIndexFactoryTest {
                 new RelationFactor("tb"), Arrays.asList(
                         new SortColumn(new RelationReference("col", null)),
                         new SortColumn(new RelationReference("col1", null))));
-        expect.setColumnGroups(Collections.singletonList(new ColumnGroup(true, false)));
+        expect.setColumnGroupElements(Collections.singletonList(new ColumnGroupElement(true, false)));
         Assert.assertEquals(expect, actual);
     }
 
@@ -122,7 +122,7 @@ public class OracleCreateIndexFactoryTest {
                 new RelationFactor("tb"), Arrays.asList(
                         new SortColumn(new RelationReference("col", null)),
                         new SortColumn(new RelationReference("col1", null))));
-        expect.setColumnGroups(Arrays.asList(new ColumnGroup(true, false), new ColumnGroup(false, true)));
+        expect.setColumnGroupElements(Arrays.asList(new ColumnGroupElement(true, false), new ColumnGroupElement(false, true)));
         Assert.assertEquals(expect, actual);
     }
 
@@ -136,10 +136,10 @@ public class OracleCreateIndexFactoryTest {
                 new RelationFactor("tb"), Arrays.asList(
                         new SortColumn(new RelationReference("col", null)),
                         new SortColumn(new RelationReference("col1", null))));
-        List<ColumnGroup> columnGroups = Arrays.asList(
-                new ColumnGroup("g1", Collections.singletonList("col")),
-                new ColumnGroup("g2", Arrays.asList("col", "col1")));
-        expect.setColumnGroups(columnGroups);
+        List<ColumnGroupElement> columnGroupElements = Arrays.asList(
+                new ColumnGroupElement("g1", Collections.singletonList("col")),
+                new ColumnGroupElement("g2", Arrays.asList("col", "col1")));
+        expect.setColumnGroupElements(columnGroupElements);
         Assert.assertEquals(expect, actual);
     }
 

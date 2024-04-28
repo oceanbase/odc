@@ -21,7 +21,7 @@ import java.util.stream.Collectors;
 import org.antlr.v4.runtime.ParserRuleContext;
 
 import com.oceanbase.tools.sqlparser.statement.BaseStatement;
-import com.oceanbase.tools.sqlparser.statement.common.ColumnGroup;
+import com.oceanbase.tools.sqlparser.statement.common.ColumnGroupElement;
 import com.oceanbase.tools.sqlparser.statement.common.RelationFactor;
 import com.oceanbase.tools.sqlparser.statement.createtable.IndexOptions;
 import com.oceanbase.tools.sqlparser.statement.createtable.Partition;
@@ -52,8 +52,8 @@ public class CreateIndex extends BaseStatement {
     private RelationFactor relation;
     private IndexOptions indexOptions;
     private Partition partition;
-    private final List<SortColumn> columns;
-    private List<ColumnGroup> columnGroups;
+    private final List<SortColumn>   columns;
+    private List<ColumnGroupElement> columnGroupElements;
 
     public CreateIndex(@NonNull ParserRuleContext context,
             @NonNull RelationFactor relation, @NonNull RelationFactor on,
@@ -98,9 +98,9 @@ public class CreateIndex extends BaseStatement {
         if (this.partition != null) {
             builder.append("\n").append(this.partition);
         }
-        if (this.columnGroups != null) {
+        if (this.columnGroupElements != null) {
             builder.append(" WITH COLUMN GROUP(")
-                    .append(columnGroups.stream().map(ColumnGroup::toString).collect(Collectors.joining(",")))
+                    .append(columnGroupElements.stream().map(ColumnGroupElement::toString).collect(Collectors.joining(",")))
                     .append(")");
         }
         return builder.toString();
