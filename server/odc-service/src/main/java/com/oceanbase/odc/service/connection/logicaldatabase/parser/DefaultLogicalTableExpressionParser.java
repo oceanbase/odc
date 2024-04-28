@@ -15,11 +15,16 @@
  */
 package com.oceanbase.odc.service.connection.logicaldatabase.parser;
 
+import java.io.IOException;
+import java.io.Reader;
+
 import org.antlr.v4.runtime.CharStreams;
-import org.antlr.v4.runtime.CommonTokenStream;
+import org.antlr.v4.runtime.TokenStream;
+import org.antlr.v4.runtime.tree.ParseTree;
 
 import com.oceanbase.odc.service.connection.logicaldatabase.LogicalTableExpressionLexer;
 import com.oceanbase.odc.service.connection.logicaldatabase.LogicalTableExpressionParser;
+import com.oceanbase.tools.sqlparser.BaseSQLParser;
 import com.oceanbase.tools.sqlparser.statement.Statement;
 
 /**
@@ -27,17 +32,31 @@ import com.oceanbase.tools.sqlparser.statement.Statement;
  * @Date: 2024/4/23 10:13
  * @Description: []
  */
-public class DefaultLogicalTableExpressionParser {
-    public Statement parse(String expression) throws SyntaxErrorException {
-        LogicalTableExpressionLexer lexer = new LogicalTableExpressionLexer(CharStreams.fromString(expression));
-        lexer.removeErrorListeners();
-        lexer.addErrorListener(new FastFailErrorListener());
-        CommonTokenStream tokens = new CommonTokenStream(lexer);
-        LogicalTableExpressionParser parser = new LogicalTableExpressionParser(tokens);
-        parser.removeErrorListeners();
-        parser.addErrorListener(new FastFailErrorListener());
-        parser.setErrorHandler(new FastFailErrorStrategy());
-        LogicalTableExpressionVisitor visitor = new LogicalTableExpressionVisitor();
-        return visitor.visit(parser.logicalTableExpressionList());
+public class DefaultLogicalTableExpressionParser
+        extends BaseSQLParser<LogicalTableExpressionLexer, LogicalTableExpressionParser> {
+
+    @Override
+    protected ParseTree doParse(LogicalTableExpressionParser parser) {
+        return parser.logicalTableExpressionList();
+    }
+
+    @Override
+    protected LogicalTableExpressionLexer getLexer(Reader statementReader) throws IOException {
+        return new LogicalTableExpressionLexer(CharStreams.fromReader(statementReader));
+    }
+
+    @Override
+    protected LogicalTableExpressionParser getParser(TokenStream tokens) {
+        return new LogicalTableExpressionParser(tokens);
+    }
+
+    @Override
+    protected String getStatementFactoryBasePackage() {
+        return null;
+    }
+
+    @Override
+    public Statement buildStatement(ParseTree root) {
+        return new LogicalTableExpressionVisitor().visit(root);
     }
 }

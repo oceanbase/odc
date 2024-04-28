@@ -15,10 +15,13 @@
  */
 package com.oceanbase.odc.service.connection.logicaldatabase;
 
+import org.apache.commons.lang.StringUtils;
 import org.springframework.http.HttpStatus;
 
 import com.oceanbase.odc.core.shared.constant.ErrorCode;
+import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.exception.HttpException;
+import com.oceanbase.tools.sqlparser.SyntaxErrorException;
 
 /**
  * @Author: Lebie
@@ -31,8 +34,36 @@ public class BadExpressionException extends HttpException {
         super(errorCode, args, message);
     }
 
+    public BadExpressionException(SyntaxErrorException ex) {
+        super(ErrorCodes.LogicalTableBadExpressionSyntax,
+                new Object[] {buildErrorMessage(ex.getText(), ex.getStart(), ex.getStop())},
+                ErrorCodes.LogicalTableBadExpressionSyntax.getEnglishMessage(
+                        new Object[] {buildErrorMessage(ex.getText(), ex.getStart(), ex.getStop())}));
+    }
+
     @Override
     public HttpStatus httpStatus() {
         return HttpStatus.BAD_REQUEST;
+    }
+
+    private static String buildErrorMessage(String original, int start, int stop) {
+        start = Math.max(start - 15, 0);
+        return escapeWhitespace(StringUtils.substring(original, start, stop + 1));
+    }
+
+    private static String escapeWhitespace(String s) {
+        StringBuilder buf = new StringBuilder();
+        for (char c : s.toCharArray()) {
+            if (c == '\t') {
+                buf.append("\\t");
+            } else if (c == '\n') {
+                buf.append("\\n");
+            } else if (c == '\r') {
+                buf.append("\\r");
+            } else {
+                buf.append(c);
+            }
+        }
+        return buf.toString();
     }
 }

@@ -15,18 +15,18 @@
  */
 package com.oceanbase.odc.service.connection.logicaldatabase;
 
+import java.io.StringReader;
 import java.util.List;
 import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 
 import com.oceanbase.odc.core.shared.PreConditions;
-import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.exception.UnexpectedException;
 import com.oceanbase.odc.service.connection.logicaldatabase.model.DataNode;
 import com.oceanbase.odc.service.connection.logicaldatabase.parser.DefaultLogicalTableExpressionParser;
 import com.oceanbase.odc.service.connection.logicaldatabase.parser.LogicalTableExpressions;
-import com.oceanbase.odc.service.connection.logicaldatabase.parser.SyntaxErrorException;
+import com.oceanbase.tools.sqlparser.SyntaxErrorException;
 
 /**
  * @Author: Lebie
@@ -41,11 +41,9 @@ public class LogicalTableService {
         PreConditions.notEmpty(expression, "expression");
         LogicalTableExpressions logicalTableExpression;
         try {
-            logicalTableExpression = (LogicalTableExpressions) parser.parse(expression);
+            logicalTableExpression = (LogicalTableExpressions) parser.parse(new StringReader(expression));
         } catch (SyntaxErrorException e) {
-            throw new BadExpressionException(ErrorCodes.LogicalTableBadExpressionSyntax,
-                    new Object[] {e.getErrorText()},
-                    ErrorCodes.LogicalTableBadExpressionSyntax.getEnglishMessage(new Object[] {e.getErrorText()}));
+            throw new BadExpressionException(e);
         } catch (Exception e) {
             throw new UnexpectedException("failed to parse logical table expression", e);
         }
