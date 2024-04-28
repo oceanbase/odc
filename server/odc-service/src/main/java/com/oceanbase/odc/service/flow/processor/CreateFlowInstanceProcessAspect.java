@@ -19,7 +19,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.aspectj.lang.JoinPoint;
@@ -88,11 +87,10 @@ public class CreateFlowInstanceProcessAspect implements InitializingBean {
             DBStructureComparisonParameter parameters = (DBStructureComparisonParameter) req.getParameters();
             req.setDatabaseId(parameters.getSourceDatabaseId());
         }
-        // 多库时为null
         if (Objects.nonNull(req.getDatabaseId()) && req.getTaskType() != TaskType.MULTIPLE_ASYNC) {
             adaptCreateFlowInstanceReq(req);
         } else {
-            adaptDatabaseCreateFlowInstanceReqForMultipleDatabase(req);
+            adaptCreateFlowInstanceReqForMultipleDatabase(req);
         }
         if (req.getTaskType() != TaskType.ALTER_SCHEDULE) {
             if (flowTaskPreprocessors.containsKey(req.getTaskType())) {
@@ -170,7 +168,7 @@ public class CreateFlowInstanceProcessAspect implements InitializingBean {
         }
     }
 
-    private void adaptDatabaseCreateFlowInstanceReqForMultipleDatabase(CreateFlowInstanceReq req) {
+    private void adaptCreateFlowInstanceReqForMultipleDatabase(CreateFlowInstanceReq req) {
         MultipleDatabaseChangeParameters parameters = (MultipleDatabaseChangeParameters) req.getParameters();
         List<Long> ids = parameters.getOrderedDatabaseIds().stream().flatMap(List::stream).collect(Collectors.toList());
         if (ids.size() <= 1) {
@@ -178,13 +176,6 @@ public class CreateFlowInstanceProcessAspect implements InitializingBean {
                     "The number of databases must be greater than 1.");
         }
         List<Database> databases = databaseService.detailForMultipleDatabase(ids);
-        Set<Long> projectIds = databases.stream()
-                .map(database -> database.getProject() != null ? database.getProject().getId() : null)
-                .collect(Collectors.toSet());
-        if (projectIds.size() != 1 || projectIds.contains(null)) {
-            throw new BadArgumentException(ErrorCodes.IllegalArgument,
-                    "All databases must belong to the same project and project must be non-null.");
-        }
         Project project = databases.get(0).getProject();
         req.setProjectId(project.getId());
         req.setProjectName(project.getName());

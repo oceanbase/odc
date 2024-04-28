@@ -55,7 +55,7 @@ public class MultipleDatabaseChangeRuntimeFlowableTask extends BaseODCFlowTaskDe
 
     private Integer batchId;
 
-    private Integer batchNumber;
+    private Integer batchSum;
 
     @Autowired
     private FlowInstanceService flowInstanceService;
@@ -84,6 +84,7 @@ public class MultipleDatabaseChangeRuntimeFlowableTask extends BaseODCFlowTaskDe
         TaskContextHolder.trace(authenticationFacade.currentUser().getId(), taskId);
         try {
             log.info("multiple database task start, taskId={}", taskId);
+            taskService.start(taskId, generateResult(false));
             TaskEntity detail = taskService.detail(taskId);
             MultipleDatabaseChangeParameters multipleDatabaseChangeParameters = JsonUtils.fromJson(
                     detail.getParametersJson(), MultipleDatabaseChangeParameters.class);
@@ -96,7 +97,7 @@ public class MultipleDatabaseChangeRuntimeFlowableTask extends BaseODCFlowTaskDe
             multipleDatabaseChangeParameters.setBatchId(this.batchId + 1);
             detail.setParametersJson(JsonUtils.toJson(multipleDatabaseChangeParameters));
             taskService.updateParametersJson(detail);
-            this.batchNumber = multipleDatabaseChangeParameters.getOrderedDatabaseIds().size();
+            this.batchSum = multipleDatabaseChangeParameters.getOrderedDatabaseIds().size();
             List<Long> batchDatabaseIds =
                     multipleDatabaseChangeParameters.getOrderedDatabaseIds().get(this.batchId);
             List<Long> flowInstanceIds = new ArrayList<>();
@@ -114,36 +115,34 @@ public class MultipleDatabaseChangeRuntimeFlowableTask extends BaseODCFlowTaskDe
             }
 
             long originalTime = System.currentTimeMillis();
-
-            boolean flag = true;
+            boolean flagForTaskSucceed = true;
             while (System.currentTimeMillis() - originalTime <= multipleDatabaseChangeParameters.getTimeoutMillis()) {
-                // the flag for end loop
-                int number = 0;
+                int numberForEndLoop = 0;
                 for (Long flowInstanceId : flowInstanceIds) {
                     FlowInstanceDetailResp detailById = flowInstanceService.detail(flowInstanceId);
                     if (detailById != null) {
                         switch (detailById.getStatus()) {
                             case EXECUTION_SUCCEEDED:
-                                number++;
+                                numberForEndLoop++;
                                 break;
                             case EXECUTION_FAILED:
                             case EXECUTION_EXPIRED:
-                                flag = false;
-                                number++;
+                                flagForTaskSucceed = false;
+                                numberForEndLoop++;
                                 break;
                             default:
                                 break;
                         }
                     }
                 }
-                if (number == multipleDatabaseChangeParameters.getOrderedDatabaseIds().get(
+                if (numberForEndLoop == multipleDatabaseChangeParameters.getOrderedDatabaseIds().get(
                         this.batchId).size()) {
                     break;
                 }
                 Thread.sleep(1000);
             }
 
-            if (flag) {
+            if (flagForTaskSucceed) {
                 this.isFailure = false;
                 this.isSuccessful = true;
             } else {
@@ -186,7 +185,7 @@ public class MultipleDatabaseChangeRuntimeFlowableTask extends BaseODCFlowTaskDe
     protected void onSuccessful(Long taskId, TaskService taskService) {
         try {
             log.info("multiple database task succeed, taskId={}", taskId);
-            if (this.batchId == batchNumber - 1) {
+            if (this.batchId == batchSum - 1) {
                 List<ServiceTaskInstanceEntity> byTargetTaskId = serviceTaskInstanceRepository.findByTargetTaskId(
                         taskId);
                 List<FlowInstanceEntity> flowInstanceByParentId = flowInstanceService.getFlowInstanceByParentId(

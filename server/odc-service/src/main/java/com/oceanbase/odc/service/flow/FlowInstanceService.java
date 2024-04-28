@@ -366,11 +366,12 @@ public class FlowInstanceService {
         } else {
             MultipleDatabaseChangeParameters taskParameters =
                     (MultipleDatabaseChangeParameters) createReq.getParameters();
-            conns = taskParameters.getDatabases().stream().map(
-                    x -> (connectionService.getForConnectionSkipPermissionCheck(x.getDataSource().getId()))).collect(
+            conns = taskParameters.getDatabases().stream().map(database -> database.getDataSource().getId()).distinct()
+                    .map(dataSourceId -> (connectionService.getForConnectionSkipPermissionCheck(dataSourceId))).collect(
                             Collectors.toList());
-            conns.forEach(x -> cloudMetadataClient.checkPermission(OBTenant.of(x.getClusterName(),
-                    x.getTenantName()), x.getInstanceType(), false, CloudPermissionAction.READONLY));
+
+            conns.forEach(con -> cloudMetadataClient.checkPermission(OBTenant.of(con.getClusterName(),
+                    con.getTenantName()), con.getInstanceType(), false, CloudPermissionAction.READONLY));
         }
         if (createReq.getTaskType() == TaskType.MULTIPLE_ASYNC) {
             return Collections.singletonList(buildFlowInstanceForMultipleDatabase(riskLevels, createReq, conns));

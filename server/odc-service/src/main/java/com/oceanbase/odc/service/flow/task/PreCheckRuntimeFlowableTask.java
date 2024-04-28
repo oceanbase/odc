@@ -42,7 +42,9 @@ import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.common.unit.BinarySizeUnit;
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.shared.PreConditions;
+import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.core.shared.constant.TaskType;
+import com.oceanbase.odc.core.shared.exception.NotFoundException;
 import com.oceanbase.odc.core.shared.exception.VerifyException;
 import com.oceanbase.odc.core.sql.execute.model.SqlTuple;
 import com.oceanbase.odc.core.sql.split.OffsetString;
@@ -133,7 +135,8 @@ public class PreCheckRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Void> {
         // this.preCheckTaskId = FlowTaskUtil.getPreCheckTaskId(execution);
         FlowTaskInstance flowTaskInstance = flowableAdaptor.getTaskInstanceByActivityId(
                 execution.getCurrentActivityId(), getFlowInstanceId())
-                .orElseThrow(() -> new RuntimeException("Can not find flowTaskInstance"));
+                .orElseThrow(() -> new NotFoundException(ResourceType.ODC_FLOW_TASK_INSTANCE, "flowInstanceId",
+                        getFlowInstanceId()));
         this.preCheckTaskId = flowTaskInstance.getTargetTaskId();
         TaskEntity preCheckTaskEntity = taskService.detail(this.preCheckTaskId);
         TaskEntity taskEntity = taskService.detail(taskId);
@@ -193,7 +196,12 @@ public class PreCheckRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Void> {
             }
         }
         try {
-            RiskLevel riskLevel = approvalFlowConfigSelector.select(riskLevelDescriber);
+            RiskLevel riskLevel;
+            if (taskEntity.getTaskType() == TaskType.MULTIPLE_ASYNC) {
+                riskLevel = approvalFlowConfigSelector.selectForMultipleDatabase(riskLevelDescriber);
+            } else {
+                riskLevel = approvalFlowConfigSelector.select(riskLevelDescriber);
+            }
             taskEntity.setRiskLevelId(riskLevel.getId());
             taskEntity.setExecutionExpirationIntervalSeconds(
                     riskLevel.getApprovalFlowConfig().getExecutionExpirationIntervalSeconds());

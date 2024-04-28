@@ -35,6 +35,7 @@ import org.springframework.validation.annotation.Validated;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.oceanbase.odc.common.json.JsonUtils;
+import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.constant.ResourceRoleName;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
@@ -57,7 +58,7 @@ import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 @Validated
 public class DatabaseChangeChangingOrderTemplateService {
     @Autowired
-    private DatabaseChangeChangingOrderTemplateRepository databaseChangeChangingOrderTemplateRepository;
+    private DatabaseChangeChangingOrderTemplateRepository templateRepository;
     @Autowired
     private AuthenticationFacade authenticationFacade;
 
@@ -71,13 +72,11 @@ public class DatabaseChangeChangingOrderTemplateService {
     private ProjectPermissionValidator projectPermissionValidator;
 
     @Transactional(rollbackFor = Exception.class)
-    public Boolean createDatabaseChangingOrderTemplate(
+    public Boolean create(
             @NotNull @Valid CreateDatabaseChangeChangingOrderReq req) {
-        invalidPermission(req);
-        if (databaseChangeChangingOrderTemplateRepository.existsByNameAndProjectId(req.getName(), req.getProjectId())) {
-            throw new BadArgumentException(ErrorCodes.IllegalArgument,
-                    "The name '" + req.getName() + "' has been used by another template. Please change the name");
-        }
+        validPermission(req);
+        PreConditions.validNoDuplicated(ResourceType.ODC_DATABASE_CHANGE_ORDER_TEMPLATE, "name", req.getName(),
+                () -> templateRepository.existsByNameAndProjectId(req.getName(), req.getProjectId()));
         long userId = authenticationFacade.currentUserId();
         Long organizationId = authenticationFacade.currentOrganizationId();
         DatabaseChangeChangingOrderTemplateEntity databaseChangeChangingOrderTemplateEntity =
@@ -87,16 +86,16 @@ public class DatabaseChangeChangingOrderTemplateService {
         databaseChangeChangingOrderTemplateEntity.setProjectId(req.getProjectId());
         databaseChangeChangingOrderTemplateEntity.setOrganizationId(organizationId);
         databaseChangeChangingOrderTemplateEntity.setDatabaseSequences(JsonUtils.toJson(req.getOrders()));
-        databaseChangeChangingOrderTemplateRepository.save(
+        templateRepository.save(
                 databaseChangeChangingOrderTemplateEntity);
         return true;
     }
 
     @Transactional(rollbackFor = Exception.class)
-    public Boolean modifyDatabaseChangingOrderTemplate(Long id,
+    public Boolean modify(Long id,
             @NotNull @Valid CreateDatabaseChangeChangingOrderReq req) {
-        invalidPermission(req);
-        if (!databaseChangeChangingOrderTemplateRepository.existsById(id)) {
+        validPermission(req);
+        if (!templateRepository.existsById(id)) {
             throw new BadArgumentException(ErrorCodes.IllegalArgument, "the current template doesn't exist");
         }
         long userId = authenticationFacade.currentUserId();
@@ -109,14 +108,14 @@ public class DatabaseChangeChangingOrderTemplateService {
         databaseChangeChangingOrderTemplateEntity.setProjectId(req.getProjectId());
         databaseChangeChangingOrderTemplateEntity.setOrganizationId(organizationId);
         databaseChangeChangingOrderTemplateEntity.setDatabaseSequences(JsonUtils.toJson(req.getOrders()));
-        databaseChangeChangingOrderTemplateRepository.save(databaseChangeChangingOrderTemplateEntity);
+        templateRepository.save(databaseChangeChangingOrderTemplateEntity);
         return true;
     }
 
-    public QueryDatabaseChangeChangingOrderResp queryDatabaseChangingOrderTemplateById(
+    public QueryDatabaseChangeChangingOrderResp query(
             @NotNull @Min(value = 1) Long id) {
         DatabaseChangeChangingOrderTemplateEntity databaseChangeChangingOrderTemplateEntity =
-                databaseChangeChangingOrderTemplateRepository.findById(id).orElseThrow(
+                templateRepository.findById(id).orElseThrow(
                         () -> new NotFoundException(ResourceType.ODC_DATABASE_CHANGE_ORDER_TEMPLATE, "id", id));
         projectPermissionValidator.checkProjectRole(databaseChangeChangingOrderTemplateEntity.getProjectId(),
                 ResourceRoleName.all());
@@ -146,31 +145,33 @@ public class DatabaseChangeChangingOrderTemplateService {
     }
 
 
-    public Page<DatabaseChangeChangingOrderTemplateEntity> listDatabaseChangingOrderTemplates(
+    public Page<DatabaseChangeChangingOrderTemplateEntity> lists(
             @NotNull Pageable pageable,
             @NotNull @Valid QueryDatabaseChangeChangingOrderParams params) {
         projectPermissionValidator.checkProjectRole(params.getProjectId(), ResourceRoleName.all());
         Specification<DatabaseChangeChangingOrderTemplateEntity> specification = Specification
-                .where(DatabaseChangeChangingOrderTemplateSpecs.nameLikes(params.getName()))
-                .and(DatabaseChangeChangingOrderTemplateSpecs.projectIdEquals(params.getProjectId()))
-                .and(DatabaseChangeChangingOrderTemplateSpecs
-                        .creatorIdIn(Collections.singleton(params.getCreatorId())));
-        return databaseChangeChangingOrderTemplateRepository.findAll(specification, pageable);
+                .where(DatabaseChangeChangingOrderTemplateSpecs.projectIdEquals(params.getProjectId()))
+                .and(params.getName() == null ? null
+                        : DatabaseChangeChangingOrderTemplateSpecs.nameLikes(params.getName()))
+                .and(params.getCreatorId() == null ? null
+                        : DatabaseChangeChangingOrderTemplateSpecs
+                                .creatorIdIn(Collections.singleton(params.getCreatorId())));
+        return templateRepository.findAll(specification, pageable);
     }
 
     @Transactional(rollbackFor = Exception.class)
-    public Boolean deleteDatabaseChangingOrderTemplateById(@NotNull @Min(value = 1) Long id) {
+    public Boolean delete(@NotNull @Min(value = 1) Long id) {
         DatabaseChangeChangingOrderTemplateEntity databaseChangeChangingOrderTemplateEntity =
-                databaseChangeChangingOrderTemplateRepository.findById(id).orElseThrow(
+                templateRepository.findById(id).orElseThrow(
                         () -> new NotFoundException(ResourceType.ODC_DATABASE_CHANGE_ORDER_TEMPLATE, "id", id));
         projectPermissionValidator.checkProjectRole(databaseChangeChangingOrderTemplateEntity.getProjectId(),
                 ResourceRoleName.all());
-        databaseChangeChangingOrderTemplateRepository.deleteById(id);
+        templateRepository.deleteById(id);
         return true;
     }
 
     public DatabaseChangingOrderTemplateExists exists(String name, Long projectId) {
-        if (databaseChangeChangingOrderTemplateRepository.existsByNameAndProjectId(name, projectId)) {
+        if (templateRepository.existsByNameAndProjectId(name, projectId)) {
             return DatabaseChangingOrderTemplateExists
                     .builder().exists(true).errorMessage(ErrorCodes.DuplicatedExists.getLocalizedMessage(
                             new Object[] {ResourceType.ODC_DATABASE_CHANGE_ORDER_TEMPLATE.getLocalizedMessage(), "name",
@@ -180,10 +181,9 @@ public class DatabaseChangeChangingOrderTemplateService {
         return DatabaseChangingOrderTemplateExists.builder().exists(false).build();
     }
 
-    private void invalidPermission(CreateDatabaseChangeChangingOrderReq req) {
-        if (projectRepository.existsById(req.getProjectId()) == false) {
-            throw new NotFoundException(ResourceType.ODC_PROJECT, "id", req.getProjectId());
-        }
+    private void validPermission(CreateDatabaseChangeChangingOrderReq req) {
+        PreConditions.validExists(ResourceType.ODC_PROJECT, "projectId", req.getProjectId(),
+                () -> projectRepository.existsById(req.getProjectId()));
         projectPermissionValidator.checkProjectRole(req.getProjectId(), ResourceRoleName.all());
         List<Long> list = req.getOrders().stream().flatMap(x -> x.stream()).collect(Collectors.toList());
         if (list.size() <= 1) {

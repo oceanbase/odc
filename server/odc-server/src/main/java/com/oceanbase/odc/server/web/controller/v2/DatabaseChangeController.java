@@ -58,7 +58,7 @@ public class DatabaseChangeController {
     @PostMapping("/changingorder/templates")
     public SuccessResponse<Boolean> createDatabaseChangingOrderTemplate(
             @RequestBody CreateDatabaseChangeChangingOrderReq req) {
-        return Responses.success(databaseChangeChangingOrderTemplateService.createDatabaseChangingOrderTemplate(req));
+        return Responses.success(databaseChangeChangingOrderTemplateService.create(req));
     }
 
     @ApiOperation(value = "modifyDatabaseChangingOrderTemplate/{id:[\\d]+}",
@@ -67,7 +67,7 @@ public class DatabaseChangeController {
     public SuccessResponse<Boolean> modifyDatabaseChangingOrderTemplate(@PathVariable Long id,
             @RequestBody CreateDatabaseChangeChangingOrderReq req) {
         return Responses
-                .success(databaseChangeChangingOrderTemplateService.modifyDatabaseChangingOrderTemplate(id, req));
+                .success(databaseChangeChangingOrderTemplateService.modify(id, req));
     }
 
     @ApiOperation(value = "queryDatabaseChangingOrderTemplateById",
@@ -75,7 +75,7 @@ public class DatabaseChangeController {
     @GetMapping("/changingorder/templates/{id:[\\d]+}")
     public SuccessResponse<QueryDatabaseChangeChangingOrderResp> queryDatabaseChangingOrderTemplateById(
             @PathVariable Long id) {
-        return Responses.success(databaseChangeChangingOrderTemplateService.queryDatabaseChangingOrderTemplateById(id));
+        return Responses.success(databaseChangeChangingOrderTemplateService.query(id));
     }
 
     @ApiOperation(value = "listDatabaseChangingOrderTemplates",
@@ -93,7 +93,7 @@ public class DatabaseChangeController {
                         .projectId(projectId)
                         .build();
         return Responses
-                .paginated(databaseChangeChangingOrderTemplateService.listDatabaseChangingOrderTemplates(pageable,
+                .paginated(databaseChangeChangingOrderTemplateService.lists(pageable,
                         queryDatabaseChangeChangingOrderParams));
     }
 
@@ -102,7 +102,7 @@ public class DatabaseChangeController {
     @DeleteMapping("/changingorder/templates/{id:[\\d]+}")
     public SuccessResponse<Boolean> deleteDatabaseChangingOrderTemplateById(@PathVariable Long id) {
         return Responses
-                .success(databaseChangeChangingOrderTemplateService.deleteDatabaseChangingOrderTemplateById(id));
+                .success(databaseChangeChangingOrderTemplateService.delete(id));
     }
 
     @ApiOperation(value = "exists", notes = "Returns whether an database changing order template exists")

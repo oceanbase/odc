@@ -15,6 +15,9 @@
  */
 package com.oceanbase.odc.service.databasechange.model;
 
+import javax.validation.constraints.Min;
+import javax.validation.constraints.NotNull;
+
 import lombok.Builder;
 import lombok.Data;
 
@@ -27,7 +30,8 @@ import lombok.Data;
 public class QueryDatabaseChangeChangingOrderParams {
 
     private String name;
-
+    @NotNull
+    @Min(value = 1, message = "projectId can not be smaller than 1")
     private Long projectId;
 
     private Long creatorId;

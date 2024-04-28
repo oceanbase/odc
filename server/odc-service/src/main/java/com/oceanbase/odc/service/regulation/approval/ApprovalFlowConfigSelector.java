@@ -70,4 +70,10 @@ public class ApprovalFlowConfigSelector {
          */
         return riskLevelService.findHighestRiskLevel(matched);
     }
+
+    @SkipAuthorize("internal usage")
+    public RiskLevel selectForMultipleDatabase(RiskLevelDescriber describer) {
+        return riskLevelService.findHighestRiskLevel();
+    }
+
 }
