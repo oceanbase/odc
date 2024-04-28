@@ -19,6 +19,7 @@ import java.math.BigDecimal;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.antlr.v4.runtime.BailErrorStrategy;
@@ -35,6 +36,7 @@ import com.oceanbase.tools.sqlparser.obmysql.OBParser.Create_table_stmtContext;
 import com.oceanbase.tools.sqlparser.statement.Expression;
 import com.oceanbase.tools.sqlparser.statement.Operator;
 import com.oceanbase.tools.sqlparser.statement.common.CharacterType;
+import com.oceanbase.tools.sqlparser.statement.common.ColumnGroup;
 import com.oceanbase.tools.sqlparser.statement.common.DataType;
 import com.oceanbase.tools.sqlparser.statement.common.RelationFactor;
 import com.oceanbase.tools.sqlparser.statement.createtable.ColumnDefinition;
@@ -411,6 +413,52 @@ public class MySQLCreateTableFactoryTest {
         e2.setPartitionOptions(o1);
         expect.setPartition(new HashPartition(Collections.singletonList(
                 new ColumnReference(null, null, "a")), Arrays.asList(e1, e2), null, 12));
+        Assert.assertEquals(expect, actual);
+    }
+
+    @Test
+    public void generate_withColumnGroup_allColumns_succeed() {
+        Create_table_stmtContext ctx = getCreateTableContext(
+                "create table column_group_tbl (id varchar(64)) with column group(all columns)");
+        MySQLCreateTableFactory factory = new MySQLCreateTableFactory(ctx);
+        CreateTable actual = factory.generate();
+
+        CreateTable expect = new CreateTable("column_group_tbl");
+        expect.setColumnGroups(Collections.singletonList(new ColumnGroup(true, false)));
+        DataType dataType = new CharacterType("varchar", new BigDecimal("64"));
+        expect.setTableElements(
+                Collections.singletonList(new ColumnDefinition(new ColumnReference(null, null, "id"), dataType)));
+        Assert.assertEquals(expect, actual);
+    }
+
+    @Test
+    public void generate_withColumnGroup_allColumns_eachColumn_succeed() {
+        Create_table_stmtContext ctx = getCreateTableContext(
+                "create table column_group_tbl (id varchar(64)) with column group(all columns, each column)");
+        MySQLCreateTableFactory factory = new MySQLCreateTableFactory(ctx);
+        CreateTable actual = factory.generate();
+
+        CreateTable expect = new CreateTable("column_group_tbl");
+        expect.setColumnGroups(Arrays.asList(new ColumnGroup(true, false), new ColumnGroup(false, true)));
+        DataType dataType = new CharacterType("varchar", new BigDecimal("64"));
+        expect.setTableElements(
+                Collections.singletonList(new ColumnDefinition(new ColumnReference(null, null, "id"), dataType)));
+        Assert.assertEquals(expect, actual);
+    }
+
+    @Test
+    public void generate_withColumnGroup_customGroup_succeed() {
+        Create_table_stmtContext ctx = getCreateTableContext(
+                "create table column_group_tbl (id varchar(64)) with column group(g1(id))");
+        MySQLCreateTableFactory factory = new MySQLCreateTableFactory(ctx);
+        CreateTable actual = factory.generate();
+
+        CreateTable expect = new CreateTable("column_group_tbl");
+        List<String> columnNames = Collections.singletonList("id");
+        expect.setColumnGroups(Collections.singletonList(new ColumnGroup("g1", columnNames)));
+        DataType dataType = new CharacterType("varchar", new BigDecimal("64"));
+        expect.setTableElements(
+                Collections.singletonList(new ColumnDefinition(new ColumnReference(null, null, "id"), dataType)));
         Assert.assertEquals(expect, actual);
     }
 
