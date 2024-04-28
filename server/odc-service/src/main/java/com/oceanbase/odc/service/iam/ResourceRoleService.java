@@ -222,4 +222,17 @@ public class ResourceRoleService {
         return model;
     }
 
+    public List<UserResourceRole> getUserIdsByResourceIdAndTypeAndName(Long resourceId, ResourceType resourceType,
+            String roleName) {
+        List<UserResourceRoleEntity> entities = userResourceRoleRepository.findByResourceIdAndTypeAndName(resourceId,
+                resourceType,
+                roleName);
+        return entities.stream().map(e -> {
+            ResourceRoleEntity resourceRole = resourceRoleRepository
+                    .findById(e.getResourceRoleId())
+                    .orElseThrow(() -> new UnexpectedException("resource role not found, id=" + e.getResourceRoleId()));
+            return fromEntity(e, resourceRole);
+        }).collect(Collectors.toList());
+    }
+
 }

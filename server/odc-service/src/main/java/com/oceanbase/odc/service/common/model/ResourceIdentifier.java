@@ -35,6 +35,7 @@ public class ResourceIdentifier {
     public static final String TABLE_KEY = ":t:";
     public static final String VARIABLE_SCOPE_KEY = ":var:";
     public static final String DATABASE_KEY = ":d:";
+    public static final String DATABASE_ID_KEY = ":did:";
     public static final String SID_KEY = "sid:";
 
     private String sid;
@@ -52,6 +53,7 @@ public class ResourceIdentifier {
     private String trigger;
     private String synonym;
     private String type;
+    private Long databaseId;
 
     public void setValue(String key, String value) {
         switch (key) {
@@ -99,6 +101,9 @@ public class ResourceIdentifier {
                 break;
             case TYPE_KEY:
                 this.type = value;
+                break;
+            case DATABASE_ID_KEY:
+                this.databaseId = Long.parseLong(value);
                 break;
         }
     }

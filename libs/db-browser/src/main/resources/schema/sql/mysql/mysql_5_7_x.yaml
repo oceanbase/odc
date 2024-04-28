@@ -140,7 +140,7 @@ sqls:
       any_value(SUBPARTITION_EXPRESSION) as SUBPARTITION_EXPRESSION,
       any_value(PARTITION_DESCRIPTION) as PARTITION_DESCRIPTION
     FROM
-      information_schema.partitions
+      information_schema.`partitions`
     WHERE
       TABLE_SCHEMA = ? AND TABLE_NAME = ?
     GROUP BY

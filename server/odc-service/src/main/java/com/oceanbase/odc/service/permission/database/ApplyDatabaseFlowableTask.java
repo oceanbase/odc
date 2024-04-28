@@ -114,6 +114,8 @@ public class ApplyDatabaseFlowableTask extends BaseODCFlowTaskDelegate<ApplyData
                             permissionEntity.setExpireTime(parameter.getExpireTime());
                             permissionEntity.setAuthorizationType(AuthorizationType.TICKET_APPLICATION);
                             permissionEntity.setTicketId(FlowTaskUtil.getFlowInstanceId(execution));
+                            permissionEntity.setResourceType(ResourceType.ODC_DATABASE);
+                            permissionEntity.setResourceId(database.getId());
                             permissionEntities.add(permissionEntity);
                         }
                     }

@@ -513,3 +513,19 @@
   in_connection: 0
   enabled: 1
   id: 95
+
+# TABLE_PERMISSION_MANAGEMENT
+- type: "TABLE_PERMISSION_MANAGEMENT"
+  action: "GRANT_TABLE_PERMISSION"
+  method_signature: "com.oceanbase.odc.server.web.controller.v2.TablePermissionController.batchCreate"
+  sid_extract_expression: ""
+  in_connection: 0
+  enabled: 1
+  id: 96
+- type: "TABLE_PERMISSION_MANAGEMENT"
+  action: "REVOKE_TABLE_PERMISSION"
+  method_signature: "com.oceanbase.odc.server.web.controller.v2.TablePermissionController.batchRevoke"
+  sid_extract_expression: ""
+  in_connection: 0
+  enabled: 1
+  id: 97

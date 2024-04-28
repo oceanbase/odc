@@ -39,7 +39,9 @@ public enum DatabasePermissionType implements Translatable {
 
     QUERY("query"),
     CHANGE("change"),
-    EXPORT("export");
+    EXPORT("export"),
+    // add access permission,allow show list and create database connection.
+    ACCESS("access");
 
     private final String action;
 

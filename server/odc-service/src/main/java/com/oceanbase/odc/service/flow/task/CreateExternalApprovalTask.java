@@ -42,6 +42,7 @@ import com.oceanbase.odc.service.integration.model.ApprovalProperties;
 import com.oceanbase.odc.service.integration.model.IntegrationConfig;
 import com.oceanbase.odc.service.integration.model.TemplateVariables;
 import com.oceanbase.odc.service.integration.model.TemplateVariables.Variable;
+import com.oceanbase.odc.service.regulation.risklevel.RiskLevelService;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -60,6 +61,8 @@ public class CreateExternalApprovalTask extends BaseFlowableDelegate {
     private ApprovalClient approvalClient;
     @Autowired
     private FlowInstanceRepository flowInstanceRepository;
+    @Autowired
+    private RiskLevelService riskLevelService;
     @Autowired
     private RiskLevelRepository riskLevelRepository;
 

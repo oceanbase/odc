@@ -35,7 +35,7 @@ public class ResourceIDParser {
             ResourceIdentifier.FUNCTION_KEY, ResourceIdentifier.INDEX_KEY,
             ResourceIdentifier.COLUMN_KEY, ResourceIdentifier.VIEW_KEY,
             ResourceIdentifier.TABLE_KEY, ResourceIdentifier.VARIABLE_SCOPE_KEY,
-            ResourceIdentifier.DATABASE_KEY, ResourceIdentifier.SID_KEY);
+            ResourceIdentifier.DATABASE_KEY, ResourceIdentifier.DATABASE_ID_KEY, ResourceIdentifier.SID_KEY);
 
     public static ResourceIdentifier parse(String rId) {
         // sid represent static connection id like '1001', or dynamic session id like 'sid:1001-1'

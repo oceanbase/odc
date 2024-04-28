@@ -49,7 +49,7 @@ public class PackageValidator {
         Validate.notNull(connectionSession, "connectionSession can not be null for PackageValidator.exist");
         Validate.notEmpty(objectName, "ObjectName can not be empty for PackageValidator.exist");
         Validate.notNull(objectType, "ObjectType can not be null for PackageValidator.exist");
-        Validate.notEmpty(owner, "Owner can not be empty for PackageValidator.exist");
+        Validate.notEmpty(owner, "DatabaseOwner can not be empty for PackageValidator.exist");
 
         String validateSql =
                 String.format("select count(1) from all_source where owner=%s and name=%s and type=%s",

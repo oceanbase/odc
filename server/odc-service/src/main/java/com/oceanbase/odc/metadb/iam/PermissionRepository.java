@@ -115,6 +115,8 @@ public interface PermissionRepository
                 .field(PermissionEntity_.expireTime)
                 .field(PermissionEntity_.authorizationType)
                 .field(PermissionEntity_.ticketId)
+                .field(PermissionEntity_.resourceType)
+                .field(PermissionEntity_.resourceId)
                 .build();
         List<Function<PermissionEntity, Object>> getter = valueGetterBuilder()
                 .add(PermissionEntity::getAction)
@@ -126,7 +128,10 @@ public interface PermissionRepository
                 .add(PermissionEntity::getExpireTime)
                 .add((PermissionEntity e) -> e.getAuthorizationType().name())
                 .add(PermissionEntity::getTicketId)
+                .add((PermissionEntity e) -> e.getResourceType().name())
+                .add(PermissionEntity::getResourceId)
                 .build();
+
         return batchCreate(entities, sql, getter, PermissionEntity::setId);
     }
 

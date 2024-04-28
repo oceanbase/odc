@@ -26,6 +26,7 @@ import java.util.stream.Collectors;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
 import com.oceanbase.odc.core.session.ConnectionSession;
@@ -36,11 +37,11 @@ import com.oceanbase.odc.service.connection.database.DatabaseService;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.permission.database.model.DatabasePermissionType;
-import com.oceanbase.odc.service.permission.database.model.UnauthorizedDatabase;
 import com.oceanbase.odc.service.session.model.SqlAsyncExecuteReq;
 import com.oceanbase.odc.service.session.model.SqlAsyncExecuteResp;
 import com.oceanbase.odc.service.session.model.SqlExecuteResult;
 import com.oceanbase.odc.service.session.model.SqlTuplesWithViolation;
+import com.oceanbase.odc.service.session.model.UnauthorizedResource;
 import com.oceanbase.odc.service.session.util.SchemaExtractor;
 import com.oceanbase.tools.dbbrowser.parser.constant.SqlType;
 
@@ -54,7 +55,8 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 @Component
-public class DatabasePermissionInterceptor extends BaseTimeConsumingInterceptor {
+@Order(1)
+public class DatabasePermissionInterceptor {
 
     @Autowired
     private DatabaseService databaseService;
@@ -62,12 +64,12 @@ public class DatabasePermissionInterceptor extends BaseTimeConsumingInterceptor 
     @Autowired
     private AuthenticationFacade authenticationFacade;
 
-    @Override
+    // @Override
     public int getOrder() {
         return 0;
     }
 
-    @Override
+    // @Override
     public boolean doPreHandle(@NonNull SqlAsyncExecuteReq request, @NonNull SqlAsyncExecuteResp response,
             @NonNull ConnectionSession session, @NonNull Map<String, Object> context) throws Exception {
         if (authenticationFacade.currentUser().getOrganizationType() == OrganizationType.INDIVIDUAL) {
@@ -89,20 +91,20 @@ public class DatabasePermissionInterceptor extends BaseTimeConsumingInterceptor 
                 }
             }
         }
-        List<UnauthorizedDatabase> unauthorizedDatabases =
+        List<UnauthorizedResource> unauthorizedResource =
                 databaseService.filterUnauthorizedDatabases(schemaName2PermissionTypes, connectionConfig.getId(), true);
-        if (CollectionUtils.isNotEmpty(unauthorizedDatabases)) {
-            response.setUnauthorizedDatabases(unauthorizedDatabases);
+        if (CollectionUtils.isNotEmpty(unauthorizedResource)) {
+            response.setUnauthorizedResource(unauthorizedResource);
             return false;
         }
         return true;
     }
 
-    @Override
+    // @Override
     public void afterCompletion(@NonNull SqlExecuteResult response, @NonNull ConnectionSession session,
             @NonNull Map<String, Object> context) {}
 
-    @Override
+    // @Override
     protected String getExecuteStageName() {
         return SqlExecuteStages.DATABASE_PERMISSION_CHECK;
     }

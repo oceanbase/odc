@@ -74,6 +74,7 @@ import com.oceanbase.odc.metadb.iam.PermissionRepository;
 import com.oceanbase.odc.metadb.iam.UserDatabasePermissionEntity;
 import com.oceanbase.odc.metadb.iam.UserDatabasePermissionRepository;
 import com.oceanbase.odc.metadb.iam.UserPermissionRepository;
+import com.oceanbase.odc.metadb.iam.resourcerole.UserResourceRoleRepository;
 import com.oceanbase.odc.service.collaboration.environment.EnvironmentService;
 import com.oceanbase.odc.service.collaboration.environment.model.Environment;
 import com.oceanbase.odc.service.collaboration.project.ProjectService;
@@ -87,6 +88,7 @@ import com.oceanbase.odc.service.connection.database.model.DatabaseSyncPropertie
 import com.oceanbase.odc.service.connection.database.model.DatabaseSyncStatus;
 import com.oceanbase.odc.service.connection.database.model.DatabaseUser;
 import com.oceanbase.odc.service.connection.database.model.DeleteDatabasesReq;
+import com.oceanbase.odc.service.connection.database.model.GetDatabaseOwnerResp;
 import com.oceanbase.odc.service.connection.database.model.ModifyDatabaseOwnerReq;
 import com.oceanbase.odc.service.connection.database.model.QueryDatabaseParams;
 import com.oceanbase.odc.service.connection.database.model.TransferDatabasesReq;
@@ -107,11 +109,12 @@ import com.oceanbase.odc.service.onlineschemachange.ddl.OscDBAccessorFactory;
 import com.oceanbase.odc.service.onlineschemachange.rename.OscDBUserUtil;
 import com.oceanbase.odc.service.permission.database.DatabasePermissionHelper;
 import com.oceanbase.odc.service.permission.database.model.DatabasePermissionType;
-import com.oceanbase.odc.service.permission.database.model.UnauthorizedDatabase;
+import com.oceanbase.odc.service.permission.table.TablePermissionService;
 import com.oceanbase.odc.service.plugin.SchemaPluginUtil;
 import com.oceanbase.odc.service.session.factory.DefaultConnectSessionFactory;
 import com.oceanbase.odc.service.session.factory.OBConsoleDataSourceFactory;
 import com.oceanbase.odc.service.session.model.SqlExecuteResult;
+import com.oceanbase.odc.service.session.model.UnauthorizedResource;
 import com.oceanbase.odc.service.task.runtime.PreCheckTaskParameters.AuthorizedDatabase;
 import com.oceanbase.tools.dbbrowser.model.DBDatabase;
 
@@ -186,16 +189,21 @@ public class DatabaseService {
     private UserPermissionRepository userPermissionRepository;
 
     @Autowired
-    private DatabasePermissionHelper databasePermissionHelper;
+    private UserResourceRoleRepository userResourceRoleRepository;
 
     @Autowired
-    private SecurityManager securityManager;
+    private DatabasePermissionHelper databasePermissionHelper;
 
     @Autowired
     private ResourceRoleService resourceRoleService;
 
     @Autowired
     private UserService userService;
+
+    private SecurityManager securityManager;
+
+    @Autowired
+    private TablePermissionService tablePermissionService;
 
     @Transactional(rollbackFor = Exception.class)
     @SkipAuthorize("internal authenticated")
@@ -414,6 +422,7 @@ public class DatabaseService {
         databaseRepository.setProjectIdByIdIn(req.getProjectId(), databaseIds);
         deleteDatabasePermissionByIds(databaseIds);
         resourceRoleService.deleteByResourceTypeAndIdIn(ResourceType.ODC_DATABASE, databaseIds);
+        tablePermissionService.deleteByDatabaseIds(req.getDatabaseIds());
         List<UserResourceRole> userResourceRoles = buildUserResourceRoles(databaseIds, req.getOwnerIds());
         resourceRoleService.saveAll(userResourceRoles);
         return true;
@@ -436,6 +445,12 @@ public class DatabaseService {
         deleteDatabasePermissionByIds(databaseIds);
         resourceRoleService.deleteByResourceTypeAndIdIn(ResourceType.ODC_DATABASE, databaseIds);
         databaseRepository.deleteAll(saved);
+
+        // Delete the original owner
+        req.getDatabaseIds().forEach(
+                databaseId -> {
+                    resourceRoleService.deleteByResourceTypeAndId(ResourceType.ODC_DATABASE, databaseId);
+                });
         return true;
     }
 
@@ -659,9 +674,9 @@ public class DatabaseService {
     }
 
     @SkipAuthorize("odc internal usage")
-    public List<UnauthorizedDatabase> filterUnauthorizedDatabases(
+    public List<UnauthorizedResource> filterUnauthorizedDatabases(
             Map<String, Set<DatabasePermissionType>> schemaName2PermissionTypes, @NotNull Long dataSourceId,
-            boolean ignoreDataDirectory) {
+            boolean ignoreDataDictionary) {
         if (schemaName2PermissionTypes == null || schemaName2PermissionTypes.isEmpty()) {
             return Collections.emptyList();
         }
@@ -672,7 +687,7 @@ public class DatabaseService {
         databases.forEach(d -> name2Database.put(d.getName(), d));
         Map<Long, Set<DatabasePermissionType>> id2Types = databasePermissionHelper
                 .getPermissions(databases.stream().map(Database::getId).collect(Collectors.toList()));
-        List<UnauthorizedDatabase> unauthorizedDatabases = new ArrayList<>();
+        List<UnauthorizedResource> unauthorizedResources = new ArrayList<>();
         Set<Long> involvedProjectIds = projectService.getMemberProjectIds(authenticationFacade.currentUserId());
         for (Map.Entry<String, Set<DatabasePermissionType>> entry : schemaName2PermissionTypes.entrySet()) {
             String schemaName = entry.getKey();
@@ -686,36 +701,36 @@ public class DatabaseService {
                         database.getProject() != null && involvedProjectIds.contains(database.getProject().getId());
                 Set<DatabasePermissionType> authorized = id2Types.get(database.getId());
                 if (CollectionUtils.isEmpty(authorized)) {
-                    unauthorizedDatabases.add(UnauthorizedDatabase.from(database, needs, applicable));
+                    unauthorizedResources.add(UnauthorizedResource.from(database, needs, applicable));
                 } else {
                     Set<DatabasePermissionType> unauthorized =
                             needs.stream().filter(p -> !authorized.contains(p)).collect(Collectors.toSet());
                     if (CollectionUtils.isNotEmpty(unauthorized)) {
-                        unauthorizedDatabases.add(UnauthorizedDatabase.from(database, unauthorized, applicable));
+                        unauthorizedResources.add(UnauthorizedResource.from(database, unauthorized, applicable));
                     }
                 }
             } else {
                 Database unknownDatabase = new Database();
                 unknownDatabase.setName(schemaName);
                 unknownDatabase.setDataSource(dataSource);
-                unauthorizedDatabases.add(UnauthorizedDatabase.from(unknownDatabase, needs, false));
+                unauthorizedResources.add(UnauthorizedResource.from(unknownDatabase, needs, false));
             }
         }
-        if (ignoreDataDirectory) {
+        if (ignoreDataDictionary) {
             DialectType dialectType = dataSource.getDialectType();
             if (dialectType != null) {
                 if (dialectType.isOracle()) {
-                    unauthorizedDatabases =
-                            unauthorizedDatabases.stream().filter(d -> !ORACLE_DATA_DICTIONARY.contains(d.getName()))
+                    unauthorizedResources =
+                            unauthorizedResources.stream().filter(d -> !ORACLE_DATA_DICTIONARY.contains(d.getName()))
                                     .collect(Collectors.toList());
                 } else if (dialectType.isMysql()) {
-                    unauthorizedDatabases = unauthorizedDatabases.stream()
+                    unauthorizedResources = unauthorizedResources.stream()
                             .filter(d -> !MYSQL_DATA_DICTIONARY.contains(d.getName()))
                             .collect(Collectors.toList());
                 }
             }
         }
-        return unauthorizedDatabases;
+        return unauthorizedResources;
     }
 
     @SkipAuthorize("internal usage")
@@ -784,6 +799,36 @@ public class DatabaseService {
         });
         resourceRoleService.saveAll(userResourceRoles);
         return true;
+    }
+
+    @SkipAuthorize("odc internal usage")
+    public GetDatabaseOwnerResp getDatabasesOwner(@NotNull Long projectId, @NotNull Long databaseId) {
+        List<UserResourceRole> userResourceRoles = resourceRoleService.listByResourceTypeAndId(
+                ResourceType.ODC_DATABASE, databaseId);
+
+        // 如果userResourceRoles是空的，就查询ODC_PROJECT表，获取项目的owner
+        if (CollectionUtils.isEmpty(userResourceRoles)) {
+            userResourceRoles = resourceRoleService.getUserIdsByResourceIdAndTypeAndName(
+                    projectId, ResourceType.ODC_PROJECT, "OWNER");
+        }
+
+        List<InnerUser> members = userResourceRoles.stream()
+                .map(userResourceRole -> {
+                    User user = userService.deailById(userResourceRole.getUserId());
+                    InnerUser member = new InnerUser();
+                    member.setId(user.getId());
+                    member.setName(user.getName());
+                    member.setAccountName(user.getAccountName());
+                    return member;
+                })
+                .collect(Collectors.toList());
+
+        GetDatabaseOwnerResp getDatabaseOwnerResp = new GetDatabaseOwnerResp();
+        getDatabaseOwnerResp.setDatabaseId(databaseId);
+        getDatabaseOwnerResp.setProjectId(projectId);
+        getDatabaseOwnerResp.setMembers(members);
+
+        return getDatabaseOwnerResp;
     }
 
     private void checkPermission(Long projectId, Long dataSourceId) {
@@ -885,6 +930,7 @@ public class DatabaseService {
             if (includesPermittedAction) {
                 database.setAuthorizedPermissionTypes(finalId2PermittedActions.get(entity.getId()));
             }
+
             // Set the owner of the database
             List<UserResourceRole> resourceRoles = finalDatabaseId2UserResourceRole.get(entity.getId());
             if (CollectionUtils.isNotEmpty(resourceRoles)) {
@@ -957,5 +1003,4 @@ public class DatabaseService {
         });
         return userResourceRoles;
     }
-
 }
