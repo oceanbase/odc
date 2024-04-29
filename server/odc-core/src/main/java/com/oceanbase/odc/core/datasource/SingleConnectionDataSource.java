@@ -76,13 +76,24 @@ public class SingleConnectionDataSource extends BaseClassBasedDataSource impleme
     public Connection getConnection() throws SQLException {
         if (Objects.isNull(this.connection)) {
             return innerCreateConnection();
-        } else if (this.connection.isClosed() || !this.connection.isValid(getLoginTimeout())) {
-            if (!autoReconnect) {
-                throw new SQLException("Connection was closed or not valid");
-            }
-            resetConnection();
         }
-        return getConnectionProxy(connection);
+        if (!tryLock()) {
+            throw new ConflictException(ErrorCodes.ConnectionOccupied, new Object[] {},
+                    "Connection is occupied, waited " + this.timeOutMillis + " millis");
+        }
+        try {
+            if (this.connection.isClosed() || !this.connection.isValid(getLoginTimeout())) {
+                if (!autoReconnect) {
+                    throw new SQLException("Connection was closed or not valid");
+                }
+                resetConnection();
+            }
+            return getConnectionProxy(connection);
+        } catch (Exception e) {
+            log.warn("Get connection error unlock, hashcode=" + this.lock.hashCode());
+            this.lock.unlock();
+            throw e;
+        }
     }
 
     @Override
@@ -136,7 +147,7 @@ public class SingleConnectionDataSource extends BaseClassBasedDataSource impleme
             }
             return locked;
         } catch (InterruptedException e) {
-            throw new RuntimeException(e);
+            throw new IllegalStateException(e);
         }
     }
 
