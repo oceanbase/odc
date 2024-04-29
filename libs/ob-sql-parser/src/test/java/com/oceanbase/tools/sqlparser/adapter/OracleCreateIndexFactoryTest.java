@@ -122,7 +122,8 @@ public class OracleCreateIndexFactoryTest {
                 new RelationFactor("tb"), Arrays.asList(
                         new SortColumn(new RelationReference("col", null)),
                         new SortColumn(new RelationReference("col1", null))));
-        expect.setColumnGroupElements(Arrays.asList(new ColumnGroupElement(true, false), new ColumnGroupElement(false, true)));
+        expect.setColumnGroupElements(
+                Arrays.asList(new ColumnGroupElement(true, false), new ColumnGroupElement(false, true)));
         Assert.assertEquals(expect, actual);
     }
 

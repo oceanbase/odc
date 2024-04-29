@@ -63,6 +63,7 @@ import com.oceanbase.tools.sqlparser.oboracle.OBParser.Js_agg_on_nullContext;
 import com.oceanbase.tools.sqlparser.oboracle.OBParser.Js_agg_returning_type_optContext;
 import com.oceanbase.tools.sqlparser.oboracle.OBParser.Json_array_contentContext;
 import com.oceanbase.tools.sqlparser.oboracle.OBParser.Json_array_exprContext;
+import com.oceanbase.tools.sqlparser.oboracle.OBParser.Json_equal_exprContext;
 import com.oceanbase.tools.sqlparser.oboracle.OBParser.Json_exists_exprContext;
 import com.oceanbase.tools.sqlparser.oboracle.OBParser.Json_exists_response_typeContext;
 import com.oceanbase.tools.sqlparser.oboracle.OBParser.Json_mergepatch_exprContext;
@@ -916,6 +917,25 @@ public class OracleExpressionFactory extends OBParserBaseVisitor<Expression> imp
         return fCall;
     }
 
+    public Expression visitJson_equal_expr(Json_equal_exprContext ctx) {
+        List<FunctionParam> params = new ArrayList<>();
+        if (ctx.func_param_list() != null) {
+            params.addAll(ctx.func_param_list().func_param().stream()
+                    .map(this::visitFunctionParam).collect(Collectors.toList()));
+        }
+        FunctionCall fCall = new FunctionCall(ctx, ctx.getChild(0).getText(), params);
+        if (ctx.json_equal_option() != null) {
+            JsonOnOption jsonOnOption = new JsonOnOption(ctx.json_equal_option());
+            if (ctx.json_equal_option().BOOL_VALUE() != null) {
+                jsonOnOption.setOnError(new BoolValue(ctx.json_equal_option().BOOL_VALUE()));
+            } else {
+                jsonOnOption.setOnError(new ConstExpression(ctx.json_equal_option().ERROR_P(0)));
+            }
+            fCall.addOption(jsonOnOption);
+        }
+        return fCall;
+    }
+
     @Override
     public Expression visitJson_exists_response_type(Json_exists_response_typeContext ctx) {
         if (ctx.BOOL_VALUE() != null) {
@@ -964,6 +984,8 @@ public class OracleExpressionFactory extends OBParserBaseVisitor<Expression> imp
                 operator = Operator.GT;
             } else if (boolPri.COMP_NE_PL() != null) {
                 operator = Operator.NE_PL;
+            } else if (boolPri.COMP_NSEQ() != null) {
+                operator = Operator.NSEQ;
             }
             if (operator == null) {
                 throw new IllegalStateException("Missing operator");
@@ -1218,6 +1240,7 @@ public class OracleExpressionFactory extends OBParserBaseVisitor<Expression> imp
             } else {
                 jsonOnOption.setOnError(new ConstExpression(ctx.json_equal_option().ERROR_P(0)));
             }
+            fCall.addOption(jsonOnOption);
         }
         return fCall;
     }

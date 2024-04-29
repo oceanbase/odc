@@ -45,6 +45,7 @@ import com.oceanbase.tools.sqlparser.oboracle.OBParser.Opt_generated_column_attr
 import com.oceanbase.tools.sqlparser.oboracle.OBParser.Opt_generated_option_listContext;
 import com.oceanbase.tools.sqlparser.oboracle.OBParser.Opt_identity_attributeContext;
 import com.oceanbase.tools.sqlparser.oboracle.OBParser.Opt_index_optionsContext;
+import com.oceanbase.tools.sqlparser.oboracle.OBParser.Opt_skip_index_type_listContext;
 import com.oceanbase.tools.sqlparser.oboracle.OBParser.Out_of_line_constraintContext;
 import com.oceanbase.tools.sqlparser.oboracle.OBParser.Out_of_line_indexContext;
 import com.oceanbase.tools.sqlparser.oboracle.OBParser.Out_of_line_index_stateContext;
@@ -408,6 +409,15 @@ public class OracleTableElementFactory extends OBParserBaseVisitor<TableElement>
                 Expression expr = new OracleExpressionFactory(ctx.expr()).generate();
                 attributes.setConstraints(Collections.singletonList(
                         new InLineCheckConstraint(ctx, name, state, expr)));
+            } else if (ctx.SKIP_INDEX() != null) {
+                List<String> skipIndexTypes = new ArrayList<>();
+                if (ctx.opt_skip_index_type_list() != null) {
+                    getSkipIndexTypes(ctx.opt_skip_index_type_list(), skipIndexTypes);
+                }
+                if (ctx.skip_index_type() != null) {
+                    skipIndexTypes.add(ctx.skip_index_type().getText());
+                }
+                attributes.setSkipIndexTypes(skipIndexTypes);
             } else {
                 attributes.setConstraints(Collections.singletonList(new InLineForeignConstraint(
                         ctx, name, state, visitForeignReference(ctx.references_clause()))));
@@ -575,6 +585,15 @@ public class OracleTableElementFactory extends OBParserBaseVisitor<TableElement>
             return visitSignedLiteralParams(context.signed_literal_params());
         }
         return OracleExpressionFactory.getExpression(context.signed_literal());
+    }
+
+    private void getSkipIndexTypes(Opt_skip_index_type_listContext ctx, List<String> types) {
+        if (ctx.opt_skip_index_type_list() != null) {
+            getSkipIndexTypes(ctx.opt_skip_index_type_list(), types);
+        }
+        if (ctx.skip_index_type() != null) {
+            types.add(ctx.skip_index_type().getText());
+        }
     }
 
     private interface ColumnContextProvider {
