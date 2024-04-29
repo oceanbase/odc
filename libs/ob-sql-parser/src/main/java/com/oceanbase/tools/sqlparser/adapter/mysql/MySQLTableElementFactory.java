@@ -35,6 +35,7 @@ import com.oceanbase.tools.sqlparser.obmysql.OBParser.Opt_column_attribute_listC
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Opt_generated_column_attribute_listContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Opt_index_optionsContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Opt_reference_option_listContext;
+import com.oceanbase.tools.sqlparser.obmysql.OBParser.Opt_skip_index_type_listContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Out_of_line_constraintContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Out_of_line_indexContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Out_of_line_primary_indexContext;
@@ -426,6 +427,15 @@ public class MySQLTableElementFactory extends OBParserBaseVisitor<TableElement>
             attributes.setSrid(Integer.valueOf(ctx.INTNUM().getText()));
         } else if (ctx.collation_name() != null) {
             attributes.setCollation(ctx.collation_name().getText());
+        } else if (ctx.SKIP_INDEX() != null) {
+            List<String> skipIndexTypes = new ArrayList<>();
+            if (ctx.opt_skip_index_type_list() != null) {
+                getSkipIndexTypes(ctx.opt_skip_index_type_list(), skipIndexTypes);
+            }
+            if (ctx.skip_index_type() != null) {
+                skipIndexTypes.add(ctx.skip_index_type().getText());
+            }
+            attributes.setSkipIndexTypes(skipIndexTypes);
         }
         return attributes;
     }
@@ -486,6 +496,15 @@ public class MySQLTableElementFactory extends OBParserBaseVisitor<TableElement>
     private List<SortColumn> getSortColumns(@NonNull Sort_column_listContext ctx) {
         return ctx.sort_column_key().stream().map(c -> new MySQLSortColumnFactory(c).generate())
                 .collect(Collectors.toList());
+    }
+
+    private void getSkipIndexTypes(Opt_skip_index_type_listContext ctx, List<String> types) {
+        if (ctx.opt_skip_index_type_list() != null) {
+            getSkipIndexTypes(ctx.opt_skip_index_type_list(), types);
+        }
+        if (ctx.skip_index_type() != null) {
+            types.add(ctx.skip_index_type().getText());
+        }
     }
 
 }

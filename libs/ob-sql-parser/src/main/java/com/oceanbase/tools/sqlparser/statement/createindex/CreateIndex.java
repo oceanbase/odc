@@ -52,7 +52,7 @@ public class CreateIndex extends BaseStatement {
     private RelationFactor relation;
     private IndexOptions indexOptions;
     private Partition partition;
-    private final List<SortColumn>   columns;
+    private final List<SortColumn> columns;
     private List<ColumnGroupElement> columnGroupElements;
 
     public CreateIndex(@NonNull ParserRuleContext context,
@@ -100,7 +100,8 @@ public class CreateIndex extends BaseStatement {
         }
         if (this.columnGroupElements != null) {
             builder.append(" WITH COLUMN GROUP(")
-                    .append(columnGroupElements.stream().map(ColumnGroupElement::toString).collect(Collectors.joining(",")))
+                    .append(columnGroupElements.stream().map(ColumnGroupElement::toString)
+                            .collect(Collectors.joining(",")))
                     .append(")");
         }
         return builder.toString();

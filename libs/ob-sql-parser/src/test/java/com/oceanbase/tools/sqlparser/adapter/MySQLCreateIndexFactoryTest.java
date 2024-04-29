@@ -169,7 +169,8 @@ public class MySQLCreateIndexFactoryTest {
                 new RelationFactor("tb"), Arrays.asList(
                         new SortColumn(new ColumnReference(null, null, "col")),
                         new SortColumn(new ColumnReference(null, null, "col1"))));
-        expect.setColumnGroupElements(Arrays.asList(new ColumnGroupElement(true, false), new ColumnGroupElement(false, true)));
+        expect.setColumnGroupElements(
+                Arrays.asList(new ColumnGroupElement(true, false), new ColumnGroupElement(false, true)));
         Assert.assertEquals(expect, actual);
     }
 
