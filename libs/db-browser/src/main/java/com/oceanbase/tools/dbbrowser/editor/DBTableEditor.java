@@ -293,8 +293,14 @@ public abstract class DBTableEditor implements DBObjectEditor<DBTable> {
 
     private String generateUpdateColumnGroupDDL(DBTable oldTable, DBTable newTable) {
         SqlBuilder sqlBuilder = sqlBuilder();
-        HashSet<String> oldColumnGroups = new HashSet<>(oldTable.getColumnGroups());
-        HashSet<String> newColumnGroups = new HashSet<>(newTable.getColumnGroups());
+        HashSet<String> oldColumnGroups = new HashSet<>();
+        if (oldTable.getColumnGroups() != null) {
+            oldColumnGroups.addAll(oldTable.getColumnGroups());
+        }
+        HashSet<String> newColumnGroups = new HashSet<>();
+        if (newTable.getColumnGroups() != null) {
+            newColumnGroups.addAll(newTable.getColumnGroups());
+        }
         List<String> columnsToBeDropped = new ArrayList<>();
         List<String> columnsToBeCreated = new ArrayList<>();
         for (String columnGroup : oldColumnGroups) {
