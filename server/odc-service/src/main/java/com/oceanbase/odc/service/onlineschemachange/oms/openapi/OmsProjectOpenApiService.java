@@ -21,6 +21,7 @@ import com.oceanbase.odc.service.onlineschemachange.oms.request.CreateOmsProject
 import com.oceanbase.odc.service.onlineschemachange.oms.request.ListOmsProjectFullVerifyResultRequest;
 import com.oceanbase.odc.service.onlineschemachange.oms.request.ListOmsProjectRequest;
 import com.oceanbase.odc.service.onlineschemachange.oms.request.OmsProjectControlRequest;
+import com.oceanbase.odc.service.onlineschemachange.oms.request.UpdateProjectConfigRequest;
 import com.oceanbase.odc.service.onlineschemachange.oms.response.OmsProjectFullVerifyResultResponse;
 import com.oceanbase.odc.service.onlineschemachange.oms.response.OmsProjectProgressResponse;
 import com.oceanbase.odc.service.onlineschemachange.oms.response.OmsProjectResponse;
@@ -93,5 +94,12 @@ public interface OmsProjectOpenApiService {
      * @return
      */
     OmsProjectFullVerifyResultResponse listProjectFullVerifyResult(ListOmsProjectFullVerifyResultRequest request);
+
+    /**
+     * update project config
+     * 
+     * @param request config
+     */
+    void updateProjectConfig(UpdateProjectConfigRequest request);
 
 }

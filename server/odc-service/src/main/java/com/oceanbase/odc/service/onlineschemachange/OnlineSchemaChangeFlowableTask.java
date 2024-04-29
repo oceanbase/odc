@@ -45,6 +45,7 @@ import com.oceanbase.odc.service.onlineschemachange.configuration.OnlineSchemaCh
 import com.oceanbase.odc.service.onlineschemachange.model.OnlineSchemaChangeParameters;
 import com.oceanbase.odc.service.onlineschemachange.model.OnlineSchemaChangeScheduleTaskParameters;
 import com.oceanbase.odc.service.onlineschemachange.model.OnlineSchemaChangeScheduleTaskResult;
+import com.oceanbase.odc.service.onlineschemachange.model.OscFlowTaskResult;
 import com.oceanbase.odc.service.onlineschemachange.subtask.OscTaskCompleteHandler;
 import com.oceanbase.odc.service.quartz.QuartzJobService;
 import com.oceanbase.odc.service.quartz.model.MisfireStrategy;
@@ -94,7 +95,6 @@ public class OnlineSchemaChangeFlowableTask extends BaseODCFlowTaskDelegate<Void
 
     @Override
     protected Void start(Long taskId, TaskService taskService, DelegateExecution execution) throws Exception {
-        taskService.start(taskId);
         User creator = FlowTaskUtil.getTaskCreator(execution);
         this.creatorId = creator.getId();
         this.organizationId = creator.getOrganizationId();
@@ -110,6 +110,10 @@ public class OnlineSchemaChangeFlowableTask extends BaseODCFlowTaskDelegate<Void
         OnlineSchemaChangeContextHolder.trace(this.creatorId, flowTaskId, this.organizationId);
         ScheduleEntity schedule = createScheduleEntity(connectionConfig, parameter, schema);
         scheduleId = schedule.getId();
+
+        OscFlowTaskResult flowTaskResult = new OscFlowTaskResult();
+        flowTaskResult.setScheduleId(scheduleId);
+        taskService.start(taskId, flowTaskResult);
         try {
             List<ScheduleTaskEntity> tasks = parameter.generateSubTaskParameters(connectionConfig, schema).stream()
                     .map(param -> {

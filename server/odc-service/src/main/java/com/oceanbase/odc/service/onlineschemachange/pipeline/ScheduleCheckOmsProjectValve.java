@@ -16,6 +16,7 @@
 package com.oceanbase.odc.service.onlineschemachange.pipeline;
 
 import java.util.List;
+import java.util.Objects;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -31,14 +32,19 @@ import com.oceanbase.odc.service.onlineschemachange.configuration.OnlineSchemaCh
 import com.oceanbase.odc.service.onlineschemachange.exception.OscException;
 import com.oceanbase.odc.service.onlineschemachange.logger.DefaultTableFactory;
 import com.oceanbase.odc.service.onlineschemachange.model.FullVerificationResult;
+import com.oceanbase.odc.service.onlineschemachange.model.OnlineSchemaChangeParameters;
 import com.oceanbase.odc.service.onlineschemachange.model.OnlineSchemaChangeScheduleTaskParameters;
 import com.oceanbase.odc.service.onlineschemachange.model.OnlineSchemaChangeScheduleTaskResult;
 import com.oceanbase.odc.service.onlineschemachange.model.PrecheckResult;
 import com.oceanbase.odc.service.onlineschemachange.model.SwapTableType;
+import com.oceanbase.odc.service.onlineschemachange.oms.enums.OmsProjectStatusEnum;
 import com.oceanbase.odc.service.onlineschemachange.oms.enums.OmsStepName;
 import com.oceanbase.odc.service.onlineschemachange.oms.openapi.OmsProjectOpenApiService;
+import com.oceanbase.odc.service.onlineschemachange.oms.request.FullTransferConfig;
+import com.oceanbase.odc.service.onlineschemachange.oms.request.IncrTransferConfig;
 import com.oceanbase.odc.service.onlineschemachange.oms.request.ListOmsProjectFullVerifyResultRequest;
 import com.oceanbase.odc.service.onlineschemachange.oms.request.OmsProjectControlRequest;
+import com.oceanbase.odc.service.onlineschemachange.oms.request.UpdateProjectConfigRequest;
 import com.oceanbase.odc.service.onlineschemachange.oms.response.OmsProjectFullVerifyResultResponse;
 import com.oceanbase.odc.service.onlineschemachange.oms.response.OmsProjectProgressResponse;
 import com.oceanbase.odc.service.onlineschemachange.oms.response.OmsProjectStepVO;
@@ -73,6 +79,7 @@ public class ScheduleCheckOmsProjectValve extends BaseValve {
         log.debug("Start execute {}, schedule task id {}", getClass().getSimpleName(), scheduleTask.getId());
 
         OnlineSchemaChangeScheduleTaskParameters taskParameter = context.getTaskParameter();
+        OnlineSchemaChangeParameters inputParameters = context.getParameter();
 
         OmsProjectControlRequest projectRequest = getProjectRequest(taskParameter);
         List<OmsProjectStepVO> projectSteps = projectOpenApiService.describeProjectSteps(projectRequest);
@@ -95,6 +102,7 @@ public class ScheduleCheckOmsProjectValve extends BaseValve {
                             return null;
                         })
                         .getCheckerResult();
+        updateOmsProjectConfig(scheduleTask.getId(), taskParameter, inputParameters, progress.getStatus());
 
         OnlineSchemaChangeScheduleTaskResult result = new OnlineSchemaChangeScheduleTaskResult(taskParameter);
 
@@ -109,6 +117,55 @@ public class ScheduleCheckOmsProjectValve extends BaseValve {
         recordCurrentProgress(taskParameter.getOmsProjectId(), result);
         handleOmsProjectStepResult(valveContext, projectStepResult, result,
                 context.getParameter().getSwapTableType(), scheduleTask);
+    }
+
+    private void updateOmsProjectConfig(Long scheduleTaskId, OnlineSchemaChangeScheduleTaskParameters taskParameter,
+            OnlineSchemaChangeParameters inputParameters, OmsProjectStatusEnum omsProjectStatus) {
+        // if throttle parameters is changed, try to stop and restart project
+        if (Objects.equals(inputParameters.getFullTransfer(), taskParameter.getFullTransfer()) &&
+                Objects.equals(inputParameters.getIncrTransfer(), taskParameter.getIncrTransfer())) {
+            return;
+        }
+        log.info("Input throttle has changed.");
+        OmsProjectControlRequest controlRequest = new OmsProjectControlRequest();
+        controlRequest.setId(taskParameter.getOmsProjectId());
+        controlRequest.setUid(taskParameter.getUid());
+        if (omsProjectStatus == OmsProjectStatusEnum.RUNNING) {
+            log.info("Try to stop oms project, omsProjectId={}, scheduleTaskId={}.",
+                    taskParameter.getOmsProjectId(), scheduleTaskId);
+            projectOpenApiService.stopProject(controlRequest);
+            log.info("Stop oms project completed, omsProjectId={}, scheduleTaskId={}.",
+                    taskParameter.getOmsProjectId(), scheduleTaskId);
+        } else if (omsProjectStatus == OmsProjectStatusEnum.SUSPEND) {
+
+            UpdateProjectConfigRequest request = new UpdateProjectConfigRequest();
+            request.setId(taskParameter.getOmsProjectId());
+            FullTransferConfig ftc = new FullTransferConfig();
+            ftc.setThrottleRps(inputParameters.getFullTransfer().getThrottleRps());
+            ftc.setThrottleIOPS(inputParameters.getFullTransfer().getThrottleIOPS());
+            request.setFullTransferConfig(ftc);
+
+            IncrTransferConfig itc = new IncrTransferConfig();
+            itc.setThrottleRps(inputParameters.getFullTransfer().getThrottleRps());
+            itc.setThrottleIOPS(inputParameters.getFullTransfer().getThrottleIOPS());
+            request.setIncrTransferConfig(itc);
+            log.info("Try to update oms project, omsProjectId={}, scheduleTaskId={},"
+                    + " request={}.", taskParameter.getOmsProjectId(), scheduleTaskId, JsonUtils.toJson(request));
+            projectOpenApiService.updateProjectConfig(request);
+            log.info("Update oms project completed, Try to start project, omsProjectId={},"
+                    + " scheduleTaskId={}", taskParameter.getOmsProjectId(), scheduleTaskId);
+
+            projectOpenApiService.startProject(controlRequest);
+            log.info("Start oms project completed,omsProjectId={}, scheduleTaskId={}",
+                    taskParameter.getOmsProjectId(), scheduleTaskId);
+            // update task parameters
+            taskParameter.setFullTransfer(inputParameters.getFullTransfer());
+            taskParameter.setIncrTransfer(inputParameters.getIncrTransfer());
+            int rows = scheduleTaskRepository.updateTaskParameters(scheduleTaskId, JsonUtils.toJson(taskParameter));
+            if (rows > 0) {
+                log.info("Update throttle completed, scheduleTaskId={}", scheduleTaskId);
+            }
+        }
     }
 
     private void handleOmsProjectStepResult(ValveContext valveContext, ProjectStepResult projectStepResult,

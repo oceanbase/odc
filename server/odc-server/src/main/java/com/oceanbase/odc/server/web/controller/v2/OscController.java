@@ -26,6 +26,7 @@ import com.oceanbase.odc.service.common.response.SuccessResponse;
 import com.oceanbase.odc.service.onlineschemachange.OscService;
 import com.oceanbase.odc.service.onlineschemachange.model.OscLockDatabaseUserInfo;
 import com.oceanbase.odc.service.onlineschemachange.model.OscSwapTableVO;
+import com.oceanbase.odc.service.onlineschemachange.model.UpdateThrottleConfigRequest;
 
 import io.swagger.annotations.ApiOperation;
 
@@ -52,6 +53,12 @@ public class OscController {
     @RequestMapping(value = "/swapTable/{scheduleTaskId:[\\d]+}", method = RequestMethod.POST)
     public SuccessResponse<OscSwapTableVO> swapTable(@PathVariable Long scheduleTaskId) {
         return Responses.success(oscService.swapTable(scheduleTaskId));
+    }
+
+    @ApiOperation(value = "updateThrottleConfig", notes = "update osc throttle config")
+    @RequestMapping(value = "/updateThrottleConfig", method = RequestMethod.POST)
+    public SuccessResponse<Boolean> updateThrottleConfig(UpdateThrottleConfigRequest updateThrottleConfig) {
+        return Responses.success(oscService.updateThrottle(updateThrottleConfig));
     }
 
 }

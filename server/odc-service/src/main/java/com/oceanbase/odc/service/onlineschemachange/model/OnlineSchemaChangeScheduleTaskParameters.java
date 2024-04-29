@@ -95,6 +95,10 @@ public class OnlineSchemaChangeScheduleTaskParameters {
 
     private ReplaceResult replaceResult;
 
+    private TransferConfig fullTransfer = new TransferConfig();
+
+    private TransferConfig incrTransfer = new TransferConfig();
+
     public String getOriginTableNameWithSchema() {
         return tableNameWithSchema(originTableName);
     }

@@ -15,6 +15,8 @@
  */
 package com.oceanbase.odc.service.onlineschemachange.oms.request;
 
+import com.oceanbase.odc.service.onlineschemachange.model.ThrottleConfig;
+
 import lombok.Data;
 
 /**
@@ -25,7 +27,7 @@ import lombok.Data;
  * @since 4.2.0
  */
 @Data
-public class FullTransferConfig {
+public class FullTransferConfig implements ThrottleConfig {
 
     /**
      * 在处理源端无唯一索引表德的全量迁移时，是否 truncate 目标表（清空目标表数据）,组件层面默认为 true 目前场景：PolarDB-X 1.0
@@ -46,4 +48,9 @@ public class FullTransferConfig {
      * 全量校验 配置(STEADY：平稳，NORMAL：正常，FAST：快速)。
      */
     private String fullVerifySpeedMode = "STEADY";
+
+    private Integer throttleRps;
+
+    private Integer throttleIOPS;
+
 }
