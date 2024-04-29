@@ -128,6 +128,7 @@
         <flowable.version>6.3.1</flowable.version>
         <maven-antrun-plugin.version>3.1.0</maven-antrun-plugin.version>
         <maven-pmd-plugin.version>3.21.0</maven-pmd-plugin.version>
+        <antlr4-maven-plugin.version>4.9.1</antlr4-maven-plugin.version>
 
         <!-- default test profile for unit testing-->
         <spring.profiles.active>clientMode,test,jdbc</spring.profiles.active>
@@ -1217,6 +1218,11 @@
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-pmd-plugin</artifactId>
                     <version>${maven-pmd-plugin.version}</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.antlr</groupId>
+                    <artifactId>antlr4-maven-plugin</artifactId>
+                    <version>${antlr4-maven-plugin.version}</version>
                 </plugin>
             </plugins>
         </pluginManagement>
