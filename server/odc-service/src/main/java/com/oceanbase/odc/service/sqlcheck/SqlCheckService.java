@@ -42,6 +42,8 @@ import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.sql.split.OffsetString;
 import com.oceanbase.odc.service.collaboration.environment.EnvironmentService;
 import com.oceanbase.odc.service.collaboration.environment.model.Environment;
+import com.oceanbase.odc.service.connection.database.DatabaseService;
+import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.regulation.ruleset.RuleService;
 import com.oceanbase.odc.service.regulation.ruleset.model.QueryRuleMetadataParams;
@@ -54,6 +56,7 @@ import com.oceanbase.odc.service.session.factory.OBConsoleDataSourceFactory;
 import com.oceanbase.odc.service.sqlcheck.model.CheckResult;
 import com.oceanbase.odc.service.sqlcheck.model.CheckViolation;
 import com.oceanbase.odc.service.sqlcheck.model.MultipleSqlCheckReq;
+import com.oceanbase.odc.service.sqlcheck.model.MultipleSqlCheckResult;
 import com.oceanbase.odc.service.sqlcheck.model.SqlCheckReq;
 import com.oceanbase.odc.service.sqlcheck.rule.SqlCheckRules;
 
@@ -81,6 +84,9 @@ public class SqlCheckService {
     @Autowired
     private ConnectSessionService sessionService;
 
+    @Autowired
+    private DatabaseService databaseService;
+
     public List<CheckResult> check(@NotNull ConnectionSession session,
             @NotNull @Valid SqlCheckReq req) {
         Long ruleSetId = ConnectionSessionUtil.getRuleSetId(session);
@@ -98,17 +104,23 @@ public class SqlCheckService {
         return SqlCheckUtil.buildCheckResults(checkViolations);
     }
 
-    public List<CheckResult> multipleCheck(@NotNull @Valid MultipleSqlCheckReq req) {
-        List<CheckResult> checkResults = new ArrayList<CheckResult>();
+    public List<MultipleSqlCheckResult> multipleCheck(@NotNull @Valid MultipleSqlCheckReq req) {
         List<Long> databaseIds = req.getDatabaseIds();
-        for (Long databaseId : databaseIds) {
-            ConnectionSession session = sessionService.create(null, databaseId);
+        List<Database> databases = databaseService.listDatabasesDetailsByIds(databaseIds);
+        ArrayList<MultipleSqlCheckResult> multipleSqlCheckResults = new ArrayList<>();
+        for (int i = 0; i < databaseIds.size(); i++) {
+            ConnectionSession session =
+                    sessionService.create(databases.get(i).getDataSource().getId(), databaseIds.get(i));
             SqlCheckReq sqlCheckReq = new SqlCheckReq();
             sqlCheckReq.setDelimiter(req.getDelimiter());
             sqlCheckReq.setScriptContent(req.getScriptContent());
-            checkResults.add(check(session, sqlCheckReq).get(0));
+            List<CheckResult> check = check(session, sqlCheckReq);
+            MultipleSqlCheckResult multipleSqlCheckResult = new MultipleSqlCheckResult();
+            multipleSqlCheckResult.setCheckResult(check.get(0));
+            multipleSqlCheckResult.setDatabase(databases.get(i));
+            multipleSqlCheckResults.add(multipleSqlCheckResult);
         }
-        return checkResults;
+        return multipleSqlCheckResults;
     }
 
     public List<CheckViolation> check(@NotNull Long environmentId, @NonNull String databaseName,

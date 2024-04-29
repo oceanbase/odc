@@ -93,6 +93,8 @@ import com.oceanbase.odc.metadb.iam.resourcerole.ResourceRoleEntity;
 import com.oceanbase.odc.metadb.schedule.ScheduleEntity;
 import com.oceanbase.odc.metadb.task.TaskEntity;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferConfig;
+import com.oceanbase.odc.service.collaboration.environment.EnvironmentService;
+import com.oceanbase.odc.service.collaboration.environment.model.Environment;
 import com.oceanbase.odc.service.common.response.SuccessResponse;
 import com.oceanbase.odc.service.common.util.SqlUtils;
 import com.oceanbase.odc.service.config.SystemConfigService;
@@ -252,6 +254,8 @@ public class FlowInstanceService {
     private CloudMetadataClient cloudMetadataClient;
     @Autowired
     private EnvironmentRepository environmentRepository;
+    @Autowired
+    private EnvironmentService environmentService;
 
     private final List<Consumer<DataTransferTaskInitEvent>> dataTransferTaskInitHooks = new ArrayList<>();
     private final List<Consumer<ShadowTableComparingUpdateEvent>> shadowTableComparingTaskHooks = new ArrayList<>();
@@ -547,11 +551,31 @@ public class FlowInstanceService {
     }
 
     public FlowInstanceDetailResp detail(@NotNull Long id) {
-        return mapFlowInstance(id, flowInstance -> {
+        FlowInstanceDetailResp flowInstanceDetailResp = mapFlowInstance(id, flowInstance -> {
             FlowInstanceMapper instanceMapper = mapperFactory.generateMapperByInstance(flowInstance);
             FlowNodeInstanceMapper nodeInstanceMapper = mapperFactory.generateNodeMapperByInstance(flowInstance);
             return instanceMapper.map(flowInstance, nodeInstanceMapper);
         }, false);
+        // Add environment objects to a multiple databases separately
+        if (flowInstanceDetailResp.getType() == TaskType.MULTIPLE_ASYNC) {
+            MultipleDatabaseChangeParameters parameters =
+                    (MultipleDatabaseChangeParameters) flowInstanceDetailResp.getParameters();
+            List<Database> databases = parameters.getDatabases();
+            Set<Long> environmentIds = databases.stream().map(
+                    database -> database.getDataSource().getEnvironmentId()).collect(Collectors.toSet());
+            List<EnvironmentEntity> environmentEntities = environmentRepository.findAllById(environmentIds);
+            Map<Long, Environment> environmentMap = environmentService.detailSkipPermissionCheckForMultipleDatabase(
+                    environmentEntities).stream()
+                    .collect(Collectors.toMap(Environment::getId, environment -> environment));
+            for (Database database : databases) {
+                if (environmentMap.containsKey(database.getDataSource().getEnvironmentId())) {
+                    database.setEnvironment(environmentMap.get(database.getDataSource().getEnvironmentId()));
+                }
+            }
+            parameters.setDatabases(databases);
+            flowInstanceDetailResp.setParameters(parameters);
+        }
+        return flowInstanceDetailResp;
     }
 
     @Transactional(rollbackFor = Exception.class)

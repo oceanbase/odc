@@ -24,6 +24,7 @@ import java.util.stream.Collectors;
 
 import javax.annotation.PostConstruct;
 import javax.validation.Valid;
+import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -158,6 +159,11 @@ public class EnvironmentService {
     @SkipAuthorize("odc internal usage")
     public Environment detailSkipPermissionCheck(@NonNull Long id) {
         return innerDetailWithoutPermissionCheck(id);
+    }
+
+    @SkipAuthorize("odc internal usage")
+    public List<Environment> detailSkipPermissionCheckForMultipleDatabase(@NotEmpty List<EnvironmentEntity> list) {
+        return list.stream().map(environmentEntity -> entityToModel(environmentEntity)).collect(Collectors.toList());
     }
 
     @PreAuthenticate(actions = "update", resourceType = "ODC_ENVIRONMENT", indexOfIdParam = 0)

@@ -63,6 +63,7 @@ import com.oceanbase.odc.service.session.model.SqlExecuteResult;
 import com.oceanbase.odc.service.sqlcheck.SqlCheckService;
 import com.oceanbase.odc.service.sqlcheck.model.CheckResult;
 import com.oceanbase.odc.service.sqlcheck.model.MultipleSqlCheckReq;
+import com.oceanbase.odc.service.sqlcheck.model.MultipleSqlCheckResult;
 import com.oceanbase.odc.service.sqlcheck.model.SqlCheckReq;
 import com.oceanbase.odc.service.state.model.StateName;
 import com.oceanbase.odc.service.state.model.StatefulRoute;
@@ -155,7 +156,7 @@ public class ConnectSessionController {
      */
     @ApiOperation(value = "sqlCheck", notes = "statically check the contents of multiple sql scripts")
     @PostMapping("/sessions/sqlCheck")
-    public ListResponse<CheckResult> multipleCheck(@RequestBody MultipleSqlCheckReq req) {
+    public ListResponse<MultipleSqlCheckResult> multipleCheck(@RequestBody MultipleSqlCheckReq req) {
         return Responses.list(this.sqlCheckService.multipleCheck(req));
     }
 

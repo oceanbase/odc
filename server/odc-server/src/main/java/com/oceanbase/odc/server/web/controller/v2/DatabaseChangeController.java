@@ -106,7 +106,7 @@ public class DatabaseChangeController {
     }
 
     @ApiOperation(value = "exists", notes = "Returns whether an database changing order template exists")
-    @RequestMapping(value = "/changingorder/templates/exists", method = RequestMethod.POST)
+    @RequestMapping(value = "/changingorder/templates/exists", method = RequestMethod.GET)
     public SuccessResponse<DatabaseChangingOrderTemplateExists> exists(@RequestParam String name,
             @RequestParam Long projectId) {
         return Responses.success(databaseChangeChangingOrderTemplateService.exists(name, projectId));
