@@ -948,16 +948,14 @@ public class FlowInstanceService {
         log.info("Start creating flow instance, flowInstanceReq={}", flowInstanceReq);
         MultipleDatabaseChangeParameters parameters =
                 (MultipleDatabaseChangeParameters) flowInstanceReq.getParameters();
-        List<TaskEntity> preCheckTaskEntityList = parameters.getDatabases().stream().map(x -> {
-            CreateFlowInstanceReq preCheckReq = new CreateFlowInstanceReq();
-            preCheckReq.setTaskType(TaskType.PRE_CHECK);
-            preCheckReq.setConnectionId(x.getDataSource().getId());
-            preCheckReq.setDatabaseId(x.getId());
-            preCheckReq.setDatabaseName(flowInstanceReq.getDatabaseName());
-            return preCheckReq;
-        }).map(x -> taskService.create(x, (int) TimeUnit.SECONDS
-                .convert(flowTaskProperties.getDefaultExecutionExpirationIntervalHours(), TimeUnit.HOURS))).collect(
-                        Collectors.toList());
+        CreateFlowInstanceReq preCheckReq = new CreateFlowInstanceReq();
+        preCheckReq.setTaskType(TaskType.PRE_CHECK);
+        preCheckReq.setConnectionId(parameters.getDatabases().get(0).getDataSource().getId());
+        preCheckReq.setDatabaseId(parameters.getDatabases().get(0).getId());
+        preCheckReq.setDatabaseName(parameters.getDatabases().get(0).getName());
+        preCheckReq.setParameters(parameters);
+        TaskEntity preCheckTaskEntity = taskService.create(preCheckReq, (int) TimeUnit.SECONDS
+                .convert(flowTaskProperties.getDefaultExecutionExpirationIntervalHours(), TimeUnit.HOURS));
         TaskEntity taskEntity = taskService.create(flowInstanceReq, (int) TimeUnit.SECONDS
                 .convert(flowTaskProperties.getDefaultExecutionExpirationIntervalHours(), TimeUnit.HOURS));
         Verify.notNull(taskEntity.getId(), "TaskId can not be null");
@@ -969,27 +967,14 @@ public class FlowInstanceService {
         Verify.notNull(flowInstance.getId(), "FlowInstance id can not be null");
 
         try {
-            FlowInstanceConfigurer startConfigurer = flowInstance.newFlowInstance();
-            for (int i = 0; i < preCheckTaskEntityList.size(); i++) {
-                FlowTaskInstance riskDetectInstance;
-                if (i == 0) {
-                    riskDetectInstance = flowFactory.generateFlowTaskInstance(flowInstance.getId(), true,
-                            false, TaskType.PRE_CHECK,
-                            ExecutionStrategyConfig.autoStrategy());
-                } else {
-                    riskDetectInstance = flowFactory.generateFlowTaskInstance(flowInstance.getId(), false,
-                            false, TaskType.PRE_CHECK,
-                            ExecutionStrategyConfig.autoStrategy());
-                }
-
-                riskDetectInstance.setTargetTaskId(preCheckTaskEntityList.get(i).getId());
-                startConfigurer.next(riskDetectInstance);
-                if (i == preCheckTaskEntityList.size() - 1) {
-                    FlowGatewayInstance riskLevelGateway =
-                            flowFactory.generateFlowGatewayInstance(flowInstance.getId(), false, true);
-                    startConfigurer.next(riskLevelGateway);
-                }
-            }
+            FlowTaskInstance riskDetectInstance = flowFactory.generateFlowTaskInstance(flowInstance.getId(), true,
+                    false, TaskType.PRE_CHECK,
+                    ExecutionStrategyConfig.autoStrategy());
+            riskDetectInstance.setTargetTaskId(preCheckTaskEntity.getId());
+            FlowGatewayInstance riskLevelGateway =
+                    flowFactory.generateFlowGatewayInstance(flowInstance.getId(), false, true);
+            FlowInstanceConfigurer startConfigurer =
+                    flowInstance.newFlowInstance().next(riskDetectInstance).next(riskLevelGateway);
 
             for (int i = 0; i < riskLevels.size(); i++) {
                 FlowInstanceConfigurer targetConfigurer =
@@ -1002,6 +987,7 @@ public class FlowInstanceService {
                         targetConfigurer);
             }
             flowInstance.buildTopology();
+            flowInstanceReq.setId(flowInstance.getId());
         } catch (Exception e) {
             log.warn("Failed to build FlowInstance, flowInstanceReq={}", flowInstanceReq, e);
             throw e;
@@ -1012,7 +998,7 @@ public class FlowInstanceService {
         FlowTaskUtil.setFlowInstanceId(variables, flowInstance.getId());
         FlowTaskUtil.setTemplateVariables(variables, buildTemplateVariables(flowInstanceReq,
                 connectionConfigs.get(0)));
-        initVariables(variables, taskEntity, preCheckTaskEntityList.get(0), connectionConfigs.get(0),
+        initVariables(variables, taskEntity, preCheckTaskEntity, connectionConfigs.get(0),
                 buildRiskLevelDescriber(flowInstanceReq));
         flowInstance.start(variables);
         log.info("New flow instance succeeded, instanceId={}, flowInstanceReq={}",

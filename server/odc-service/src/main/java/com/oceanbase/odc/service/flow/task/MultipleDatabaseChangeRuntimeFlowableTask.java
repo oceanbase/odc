@@ -83,8 +83,8 @@ public class MultipleDatabaseChangeRuntimeFlowableTask extends BaseODCFlowTaskDe
             throws InterruptedException {
         TaskContextHolder.trace(authenticationFacade.currentUser().getId(), taskId);
         try {
-            log.info("multiple database task start, taskId={}", taskId);
-            taskService.start(taskId, generateResult(false));
+            log.info("multiple database task start, taskId={}, batchId={}", taskId,
+                    this.batchId == null ? 1 : this.batchId + 1);
             TaskEntity detail = taskService.detail(taskId);
             MultipleDatabaseChangeParameters multipleDatabaseChangeParameters = JsonUtils.fromJson(
                     detail.getParametersJson(), MultipleDatabaseChangeParameters.class);
@@ -151,7 +151,8 @@ public class MultipleDatabaseChangeRuntimeFlowableTask extends BaseODCFlowTaskDe
             }
             return null;
         } catch (Exception e) {
-            log.warn("multiple database task failed, taskId={}", taskId, e);
+            log.warn("multiple database task failed, taskId={}, batchId={}", taskId,
+                    this.batchId == null ? 1 : this.batchId + 1, e);
             this.isFailure = true;
             this.isSuccessful = false;
             throw e;
@@ -173,7 +174,8 @@ public class MultipleDatabaseChangeRuntimeFlowableTask extends BaseODCFlowTaskDe
     @Override
     protected void onFailure(Long taskId, TaskService taskService) {
         try {
-            log.warn("multiple database task failed, taskId={}", taskId);
+            log.warn("multiple database task failed, taskId={}, batchId={}", taskId,
+                    this.batchId == null ? 1 : this.batchId + 1);
             updateFlowInstanceStatus(FlowStatus.EXECUTION_FAILED);
             super.onFailure(taskId, taskService);
         } finally {
@@ -184,7 +186,8 @@ public class MultipleDatabaseChangeRuntimeFlowableTask extends BaseODCFlowTaskDe
     @Override
     protected void onSuccessful(Long taskId, TaskService taskService) {
         try {
-            log.info("multiple database task succeed, taskId={}", taskId);
+            log.info("multiple database task succeed, taskId={}, batchId={}", taskId,
+                    this.batchId == null ? 1 : this.batchId + 1);
             if (this.batchId == batchSum - 1) {
                 List<ServiceTaskInstanceEntity> byTargetTaskId = serviceTaskInstanceRepository.findByTargetTaskId(
                         taskId);
@@ -203,7 +206,8 @@ public class MultipleDatabaseChangeRuntimeFlowableTask extends BaseODCFlowTaskDe
             taskService.succeed(taskId, generateResult(true));
             super.onSuccessful(taskId, taskService);
         } catch (Exception e) {
-            log.warn("Failed to record structure comparison task successful result", e);
+            log.warn("multiple database task failed, taskId={}, batchId={}", taskId,
+                    this.batchId == null ? 1 : this.batchId + 1, e);
         } finally {
             TraceContextHolder.clear();
         }
@@ -213,7 +217,8 @@ public class MultipleDatabaseChangeRuntimeFlowableTask extends BaseODCFlowTaskDe
     protected void onTimeout(Long taskId, TaskService taskService) {
         try {
             taskService.fail(taskId, 100, generateResult(false));
-            log.warn("multiple database task timeout, taskId={}", taskId);
+            log.warn("multiple database task timeout, taskId={}, batchId={}", taskId,
+                    this.batchId == null ? 1 : this.batchId + 1);
         } finally {
             TraceContextHolder.clear();
         }

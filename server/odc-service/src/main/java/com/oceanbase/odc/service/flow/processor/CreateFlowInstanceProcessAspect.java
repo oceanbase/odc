@@ -180,6 +180,6 @@ public class CreateFlowInstanceProcessAspect implements InitializingBean {
         req.setProjectId(project.getId());
         req.setProjectName(project.getName());
         parameters.setDatabases(databases);
-        DescriptionGenerator.generateDescription(req);
+        DescriptionGenerator.generationDescriptionForMultipleDatabase(req);
     }
 }
