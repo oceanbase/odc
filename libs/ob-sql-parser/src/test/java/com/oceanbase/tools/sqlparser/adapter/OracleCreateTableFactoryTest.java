@@ -38,6 +38,7 @@ import com.oceanbase.tools.sqlparser.statement.common.CharacterType;
 import com.oceanbase.tools.sqlparser.statement.common.ColumnGroup;
 import com.oceanbase.tools.sqlparser.statement.common.ColumnGroupElement;
 import com.oceanbase.tools.sqlparser.statement.common.DataType;
+import com.oceanbase.tools.sqlparser.statement.createtable.ColumnAttributes;
 import com.oceanbase.tools.sqlparser.statement.createtable.ColumnDefinition;
 import com.oceanbase.tools.sqlparser.statement.createtable.CreateTable;
 import com.oceanbase.tools.sqlparser.statement.createtable.RangePartition;
@@ -419,6 +420,23 @@ public class OracleCreateTableFactoryTest {
         DataType dataType = new CharacterType("varchar", new BigDecimal("64"));
         expect.setTableElements(
                 Collections.singletonList(new ColumnDefinition(new ColumnReference(null, null, "id"), dataType)));
+        Assert.assertEquals(expect, actual);
+    }
+
+    @Test
+    public void generate_skipIndex_succeed() {
+        Create_table_stmtContext ctx = getCreateTableContext(
+                "create table skip_index_tbl (id varchar(64) SKIP_INDEX(MIN_MAX,SUM))");
+        OracleCreateTableFactory factory = new OracleCreateTableFactory(ctx);
+        CreateTable actual = factory.generate();
+
+        CreateTable expect = new CreateTable("skip_index_tbl");
+        DataType dataType = new CharacterType("varchar", new BigDecimal("64"));
+        ColumnAttributes attributes = new ColumnAttributes();
+        attributes.setSkipIndexTypes(Arrays.asList("MIN_MAX", "SUM"));
+        ColumnDefinition column = new ColumnDefinition(new ColumnReference(null, null, "id"), dataType);
+        column.setColumnAttributes(attributes);
+        expect.setTableElements(Collections.singletonList(column));
         Assert.assertEquals(expect, actual);
     }
 

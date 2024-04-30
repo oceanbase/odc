@@ -387,6 +387,15 @@ public class OracleTableElementFactory extends OBParserBaseVisitor<TableElement>
             attributes.setOrigDefault(visitNowOrSignedLiteral(ctx.now_or_signed_literal()));
         } else if (ctx.ID() != null) {
             attributes.setId(Integer.valueOf(ctx.INTNUM().getText()));
+        } else if (ctx.SKIP_INDEX() != null) {
+            List<String> skipIndexTypes = new ArrayList<>();
+            if (ctx.opt_skip_index_type_list() != null) {
+                getSkipIndexTypes(ctx.opt_skip_index_type_list(), skipIndexTypes);
+            }
+            if (ctx.skip_index_type() != null) {
+                skipIndexTypes.add(ctx.skip_index_type().getText());
+            }
+            attributes.setSkipIndexTypes(skipIndexTypes);
         } else {
             String name = null;
             if (ctx.constraint_and_name() != null) {
@@ -409,15 +418,6 @@ public class OracleTableElementFactory extends OBParserBaseVisitor<TableElement>
                 Expression expr = new OracleExpressionFactory(ctx.expr()).generate();
                 attributes.setConstraints(Collections.singletonList(
                         new InLineCheckConstraint(ctx, name, state, expr)));
-            } else if (ctx.SKIP_INDEX() != null) {
-                List<String> skipIndexTypes = new ArrayList<>();
-                if (ctx.opt_skip_index_type_list() != null) {
-                    getSkipIndexTypes(ctx.opt_skip_index_type_list(), skipIndexTypes);
-                }
-                if (ctx.skip_index_type() != null) {
-                    skipIndexTypes.add(ctx.skip_index_type().getText());
-                }
-                attributes.setSkipIndexTypes(skipIndexTypes);
             } else {
                 attributes.setConstraints(Collections.singletonList(new InLineForeignConstraint(
                         ctx, name, state, visitForeignReference(ctx.references_clause()))));
