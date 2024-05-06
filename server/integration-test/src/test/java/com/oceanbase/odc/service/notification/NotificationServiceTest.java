@@ -126,6 +126,20 @@ public class NotificationServiceTest extends AuthorityTestEnv {
     }
 
     @Test
+    public void test_UpdateChannel_withSign() {
+        Channel channel = getChannel();
+        ((DingTalkChannelConfig) channel.getChannelConfig()).setSign("password");
+        Channel saved = notificationService.createChannel(PROJECT_ID, channel);
+        DingTalkChannelConfig config = new DingTalkChannelConfig();
+        config.setWebhook("https://oapi.dingtalk.com/robot");
+        saved.setChannelConfig(config);
+        Channel updated = notificationService.updateChannel(PROJECT_ID, saved);
+
+        Channel updatedWithConfig = notificationService.detailChannel(PROJECT_ID, updated.getId());
+        Assert.assertEquals("password", ((DingTalkChannelConfig) updatedWithConfig.getChannelConfig()).getSign());
+    }
+
+    @Test
     public void test_DeleteChannel() {
         Channel saved = notificationService.createChannel(PROJECT_ID, getChannel());
         notificationService.deleteChannel(PROJECT_ID, saved.getId());
