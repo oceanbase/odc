@@ -59,6 +59,7 @@ import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.flow.FlowableAdaptor;
 import com.oceanbase.odc.service.flow.exception.ServiceTaskError;
 import com.oceanbase.odc.service.flow.model.FlowNodeStatus;
+import com.oceanbase.odc.service.flow.model.MultiplePreCheckTaskResult;
 import com.oceanbase.odc.service.flow.model.PreCheckTaskResult;
 import com.oceanbase.odc.service.flow.task.model.DatabaseChangeParameters;
 import com.oceanbase.odc.service.flow.task.model.DatabasePermissionCheckResult;
@@ -100,9 +101,9 @@ public class PreCheckRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Void> {
 
     private volatile boolean success = false;
     private volatile boolean overLimit = false;
-    private volatile SqlCheckTaskResult sqlCheckResult = null;
-    private volatile MultipleSqlCheckTaskResult multipleCheckTaskResult = null;
-    private volatile DatabasePermissionCheckResult permissionCheckResult = null;
+    private volatile SqlCheckTaskResult            sqlCheckResult             = null;
+    private volatile MultipleSqlCheckTaskResult    multipleSqlCheckTaskResult = null;
+    private volatile DatabasePermissionCheckResult permissionCheckResult      = null;
     private Long creatorId;
     private List<OffsetString> userInputSqls;
     private InputStream uploadFileInputStream;
@@ -110,6 +111,7 @@ public class PreCheckRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Void> {
     private ConnectionConfig connectionConfig;
     private Long preCheckTaskId;
     private List<Database> databaseList;
+    private TaskEntity taskEntity;
     @Autowired
     private ApprovalFlowConfigSelector approvalFlowConfigSelector;
     @Autowired
@@ -138,6 +140,7 @@ public class PreCheckRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Void> {
         if (taskEntity == null) {
             throw new ServiceTaskError(new RuntimeException("Can not find task entity by id " + taskId));
         }
+        this.taskEntity=taskEntity;
         if (preCheckTaskEntity == null) {
             throw new ServiceTaskError(new RuntimeException("Can not find task entity by id " + preCheckTaskId));
         }
@@ -232,7 +235,11 @@ public class PreCheckRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Void> {
     protected void onFailure(Long taskId, TaskService taskService) {
         log.warn("RiskLevel Detect task failed, taskId={}", this.preCheckTaskId);
         try {
-            taskService.fail(this.preCheckTaskId, 100, buildPreCheckResult());
+            if(this.taskEntity.getTaskType()==TaskType.MULTIPLE_ASYNC){
+                taskService.fail(this.preCheckTaskId,100,buildMultiplePreCheckResult());
+            }else {
+                taskService.fail(this.preCheckTaskId, 100, buildPreCheckResult());
+            }
             this.serviceTaskRepository.updateStatusById(getTargetTaskInstanceId(), FlowNodeStatus.FAILED);
         } catch (Exception e) {
             log.warn("Failed to store task result", e);
@@ -244,7 +251,11 @@ public class PreCheckRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Void> {
     protected void onSuccessful(Long taskId, TaskService taskService) {
         log.info("Risk detect task succeed, taskId={}", this.preCheckTaskId);
         try {
-            taskService.succeed(this.preCheckTaskId, buildPreCheckResult());
+            if(this.taskEntity.getTaskType()==TaskType.MULTIPLE_ASYNC){
+                taskService.succeed(this.preCheckTaskId,buildMultiplePreCheckResult());
+            }else {
+                taskService.succeed(this.preCheckTaskId, buildPreCheckResult());
+            }
             this.serviceTaskRepository.updateStatusById(getTargetTaskInstanceId(), FlowNodeStatus.COMPLETED);
         } catch (Exception e) {
             log.warn("Failed to store task result", e);
@@ -396,21 +407,21 @@ public class PreCheckRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Void> {
                 SqlCheckTaskResult sqlCheckResult = SqlCheckTaskResult.success(violations);
                 sqlCheckTaskResultList.add(sqlCheckResult);
             }
-            this.multipleCheckTaskResult = new MultipleSqlCheckTaskResult();
-            this.multipleCheckTaskResult.setSqlCheckTaskResultList(sqlCheckTaskResultList);
-            this.multipleCheckTaskResult.setDatabaseList(this.databaseList);
-            this.multipleCheckTaskResult.setSuccess(true);
-            this.multipleCheckTaskResult.setIssueCount(this.multipleCheckTaskResult.getSqlCheckTaskResultList().stream()
+            this.multipleSqlCheckTaskResult = new MultipleSqlCheckTaskResult();
+            this.multipleSqlCheckTaskResult.setSqlCheckTaskResultList(sqlCheckTaskResultList);
+            this.multipleSqlCheckTaskResult.setDatabaseList(this.databaseList);
+            this.multipleSqlCheckTaskResult.setSuccess(true);
+            this.multipleSqlCheckTaskResult.setIssueCount(this.multipleSqlCheckTaskResult.getSqlCheckTaskResultList().stream()
                     .map(sqlCheckTaskResult -> sqlCheckTaskResult.getIssueCount())
                     .reduce((sum, account) -> sum = sum + account).get());
-            this.multipleCheckTaskResult.setMaxLevel(
+            this.multipleSqlCheckTaskResult.setMaxLevel(
                     Math.toIntExact(approvalFlowConfigSelector.selectForMultipleDatabase().getId()));
-            this.multipleCheckTaskResult.setError(null);
-            this.multipleCheckTaskResult.setFileName(CHECK_RESULT_FILE_NAME);
+            this.multipleSqlCheckTaskResult.setError(null);
+            this.multipleSqlCheckTaskResult.setFileName(CHECK_RESULT_FILE_NAME);
         }
         try {
-            storeTaskResultToFile(preCheckTaskEntity.getId(), this.multipleCheckTaskResult);
-            this.multipleCheckTaskResult.setFileName(CHECK_RESULT_FILE_NAME);
+            storeTaskResultToFile(preCheckTaskEntity.getId(), this.multipleSqlCheckTaskResult);
+            this.multipleSqlCheckTaskResult.setFileName(CHECK_RESULT_FILE_NAME);
         } catch (Exception e) {
             throw new ServiceTaskError(e);
         }
@@ -568,6 +579,18 @@ public class PreCheckRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Void> {
             this.sqlCheckResult.setResults(null);
         }
         result.setSqlCheckResult(this.sqlCheckResult);
+        result.setPermissionCheckResult(this.permissionCheckResult);
+        return result;
+    }
+
+    private MultiplePreCheckTaskResult buildMultiplePreCheckResult() {
+        MultiplePreCheckTaskResult result = new MultiplePreCheckTaskResult();
+        result.setExecutorInfo(new ExecutorInfo(this.hostProperties));
+        result.setOverLimit(this.overLimit);
+        if (Objects.nonNull(this.multipleSqlCheckTaskResult)) {
+            this.multipleSqlCheckTaskResult.setSqlCheckTaskResultList(null);
+        }
+        result.setMultipleSqlCheckTaskResult(this.multipleSqlCheckTaskResult);
         result.setPermissionCheckResult(this.permissionCheckResult);
         return result;
     }

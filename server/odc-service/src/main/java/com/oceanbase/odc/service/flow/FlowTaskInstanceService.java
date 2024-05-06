@@ -80,6 +80,7 @@ import com.oceanbase.odc.service.flow.model.FileBasedDataResult;
 import com.oceanbase.odc.service.flow.model.FlowInstanceDetailResp;
 import com.oceanbase.odc.service.flow.model.FlowNodeStatus;
 import com.oceanbase.odc.service.flow.model.FlowNodeType;
+import com.oceanbase.odc.service.flow.model.MultiplePreCheckTaskResult;
 import com.oceanbase.odc.service.flow.model.PreCheckTaskResult;
 import com.oceanbase.odc.service.flow.task.OssTaskReferManager;
 import com.oceanbase.odc.service.flow.task.model.DBStructureComparisonTaskResult;
@@ -87,6 +88,7 @@ import com.oceanbase.odc.service.flow.task.model.DatabaseChangeResult;
 import com.oceanbase.odc.service.flow.task.model.MockDataTaskResult;
 import com.oceanbase.odc.service.flow.task.model.MockProperties;
 import com.oceanbase.odc.service.flow.task.model.MultipleDatabaseChangeTaskResult;
+import com.oceanbase.odc.service.flow.task.model.MultipleSqlCheckTaskResult;
 import com.oceanbase.odc.service.flow.task.model.OnlineSchemaChangeTaskResult;
 import com.oceanbase.odc.service.flow.task.model.PartitionPlanTaskResult;
 import com.oceanbase.odc.service.flow.task.model.ResultSetExportResult;
@@ -282,30 +284,60 @@ public class FlowTaskInstanceService {
                 || taskInstance.getTaskType() == TaskType.PRE_CHECK) {
             Long taskId = taskInstance.getTargetTaskId();
             TaskEntity taskEntity = this.taskService.detail(taskId);
-            PreCheckTaskResult result = JsonUtils.fromJson(taskEntity.getResultJson(), PreCheckTaskResult.class);
-            if (Objects.isNull(result)) {
-                return Collections.emptyList();
-            }
-            SqlCheckTaskResult checkTaskResult = result.getSqlCheckResult();
-            ExecutorInfo info = result.getExecutorInfo();
-            if (!this.dispatchChecker.isThisMachine(info)) {
-                DispatchResponse response = requestDispatcher.forward(info.getHost(), info.getPort());
-                return response.getContentByType(
+            // 多库需要修改
+            if (taskEntity.getParametersJson()==null){
+                PreCheckTaskResult result = JsonUtils.fromJson(taskEntity.getResultJson(), PreCheckTaskResult.class);
+                if (Objects.isNull(result)) {
+                    return Collections.emptyList();
+                }
+                SqlCheckTaskResult checkTaskResult = result.getSqlCheckResult();
+                ExecutorInfo info = result.getExecutorInfo();
+                if (!this.dispatchChecker.isThisMachine(info)) {
+                    DispatchResponse response = requestDispatcher.forward(info.getHost(), info.getPort());
+                    return response.getContentByType(
                         new TypeReference<ListResponse<SqlCheckTaskResult>>() {}).getData().getContents();
-            }
-            String dir = FileManager.generateDir(FileBucket.PRE_CHECK) + File.separator + taskId;
-            Verify.notNull(checkTaskResult.getFileName(), "SqlCheckResultFileName");
-            File jsonFile = new File(dir + File.separator + checkTaskResult.getFileName());
-            if (!jsonFile.exists()) {
-                throw new NotFoundException(ErrorCodes.NotFound, new Object[] {
+                }
+                String dir = FileManager.generateDir(FileBucket.PRE_CHECK) + File.separator + taskId;
+                Verify.notNull(checkTaskResult.getFileName(), "SqlCheckResultFileName");
+                File jsonFile = new File(dir + File.separator + checkTaskResult.getFileName());
+                if (!jsonFile.exists()) {
+                    throw new NotFoundException(ErrorCodes.NotFound, new Object[] {
                         ResourceType.ODC_FILE.getLocalizedMessage(), "file", jsonFile.getName()}, "File is not found");
+                }
+                String content = FileUtils.readFileToString(jsonFile, Charsets.UTF_8);
+                checkTaskResult = JsonUtils.fromJson(content, SqlCheckTaskResult.class);
+                checkTaskResult.setFileName(null);
+                result.setSqlCheckResult(checkTaskResult);
+                result.setExecutorInfo(null);
+                return Collections.singletonList(result);
+            }else {
+                MultiplePreCheckTaskResult multiplePreCheckTaskResult = JsonUtils.fromJson(taskEntity.getResultJson(), MultiplePreCheckTaskResult.class);
+                if (Objects.isNull(multiplePreCheckTaskResult)) {
+                    return Collections.emptyList();
+                }
+                MultipleSqlCheckTaskResult multipleSqlCheckTaskResult
+                    = multiplePreCheckTaskResult.getMultipleSqlCheckTaskResult();
+                ExecutorInfo info = multiplePreCheckTaskResult.getExecutorInfo();
+                if (!this.dispatchChecker.isThisMachine(info)) {
+                    DispatchResponse response = requestDispatcher.forward(info.getHost(), info.getPort());
+                    return response.getContentByType(
+                        new TypeReference<ListResponse<MultiplePreCheckTaskResult>>() {}).getData().getContents();
+                }
+                String dir = FileManager.generateDir(FileBucket.PRE_CHECK) + File.separator + taskId;
+                Verify.notNull(multipleSqlCheckTaskResult.getFileName(), "SqlCheckResultFileName");
+                File jsonFile = new File(dir + File.separator + multipleSqlCheckTaskResult.getFileName());
+                if (!jsonFile.exists()) {
+                    throw new NotFoundException(ErrorCodes.NotFound, new Object[] {
+                        ResourceType.ODC_FILE.getLocalizedMessage(), "file", jsonFile.getName()}, "File is not found");
+                }
+                String content = FileUtils.readFileToString(jsonFile, Charsets.UTF_8);
+                multipleSqlCheckTaskResult = JsonUtils.fromJson(content, MultipleSqlCheckTaskResult.class);
+                multipleSqlCheckTaskResult.setFileName(null);
+                multiplePreCheckTaskResult.setMultipleSqlCheckTaskResult(multipleSqlCheckTaskResult);
+                multiplePreCheckTaskResult.setExecutorInfo(null);
+                return Collections.singletonList(multiplePreCheckTaskResult);
             }
-            String content = FileUtils.readFileToString(jsonFile, Charsets.UTF_8);
-            checkTaskResult = JsonUtils.fromJson(content, SqlCheckTaskResult.class);
-            checkTaskResult.setFileName(null);
-            result.setSqlCheckResult(checkTaskResult);
-            result.setExecutorInfo(null);
-            return Collections.singletonList(result);
+
         } else {
             throw new UnsupportedException(ErrorCodes.Unsupported, new Object[] {ResourceType.ODC_TASK},
                     "Unsupported task type: " + taskInstance.getTaskType());
