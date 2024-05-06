@@ -76,28 +76,30 @@ public class SingleConnectionDataSourceTest {
         Thread slowSql = new Thread(() -> {
             try (Connection connection = dataSource.getConnection()) {
                 try (Statement statement = connection.createStatement()) {
-                    try (ResultSet resultSet = statement.executeQuery("select  /*+ QUERY_TIMEOUT (48000000) */  sleep(15)from dual ;")) {
+                    try (ResultSet resultSet =
+                            statement.executeQuery("select  /*+ QUERY_TIMEOUT (48000000) */  sleep(15)from dual ;")) {
                     }
                 }
-            } catch (Exception e){
+            } catch (Exception e) {
                 throw new RuntimeException(e);
             }
         });
         Thread quick = new Thread(() -> {
             try {
                 Thread.sleep(1000);
-            }catch (Exception e){}
+            } catch (Exception e) {
+            }
             long start = System.currentTimeMillis();
             try (Connection connection = dataSource.getConnection()) {
                 connection.isValid(0);
                 long end = System.currentTimeMillis();
                 System.out.println(end - start);
-                if(end - start > 10 * 1000){
+                if (end - start > 10 * 1000) {
                     throw new RuntimeException("Failed to acquire lock within 10 seconds");
                 }
-            } catch (ConflictException e){
+            } catch (ConflictException e) {
                 exceptions.add(e);
-            }catch (Exception e){
+            } catch (Exception e) {
                 throw new RuntimeException(e);
             }
         });
