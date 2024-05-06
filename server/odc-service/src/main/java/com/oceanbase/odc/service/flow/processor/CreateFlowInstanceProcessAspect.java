@@ -16,6 +16,7 @@
 package com.oceanbase.odc.service.flow.processor;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -174,6 +175,10 @@ public class CreateFlowInstanceProcessAspect implements InitializingBean {
         if (ids.size() <= 1) {
             throw new BadArgumentException(ErrorCodes.IllegalArgument,
                     "The number of databases must be greater than 1.");
+        }
+        if( new HashSet<Long>(ids).size()!=ids.size()){
+            throw new BadArgumentException(ErrorCodes.IllegalArgument,
+                "Database cannot be duplicated.");
         }
         List<Database> databases = databaseService.detailForMultipleDatabase(ids);
         Project project = databases.get(0).getProject();

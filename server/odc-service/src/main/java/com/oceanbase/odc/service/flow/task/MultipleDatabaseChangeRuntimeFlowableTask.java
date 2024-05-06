@@ -17,23 +17,29 @@ package com.oceanbase.odc.service.flow.task;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.flowable.engine.delegate.DelegateExecution;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.core.shared.constant.FlowStatus;
 import com.oceanbase.odc.core.shared.constant.TaskType;
 import com.oceanbase.odc.metadb.flow.FlowInstanceEntity;
-import com.oceanbase.odc.metadb.flow.ServiceTaskInstanceEntity;
 import com.oceanbase.odc.metadb.flow.ServiceTaskInstanceRepository;
 import com.oceanbase.odc.metadb.task.TaskEntity;
+import com.oceanbase.odc.service.connection.database.DatabaseService;
+import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.databasechange.MultipleDatabaseChangeTraceContextHolder;
+import com.oceanbase.odc.service.databasechange.model.DatabaseChangingRecord;
 import com.oceanbase.odc.service.flow.FlowInstanceService;
-import com.oceanbase.odc.service.flow.FlowableAdaptor;
 import com.oceanbase.odc.service.flow.model.CreateFlowInstanceReq;
 import com.oceanbase.odc.service.flow.model.FlowInstanceDetailResp;
 import com.oceanbase.odc.service.flow.model.FlowTaskExecutionStrategy;
+import com.oceanbase.odc.service.flow.model.QueryFlowInstanceParams;
 import com.oceanbase.odc.service.flow.task.model.MultipleDatabaseChangeParameters;
 import com.oceanbase.odc.service.flow.task.model.MultipleDatabaseChangeTaskResult;
 import com.oceanbase.odc.service.flow.util.FlowTaskUtil;
@@ -55,17 +61,17 @@ public class MultipleDatabaseChangeRuntimeFlowableTask extends BaseODCFlowTaskDe
     private Integer batchId;
 
     private Integer batchSum;
+    List<List<Long>> orderedDatabaseIds;
 
     @Autowired
     private FlowInstanceService flowInstanceService;
 
     @Autowired
-    private FlowableAdaptor flowableAdaptor;
-
-    @Autowired
     private ServiceTaskInstanceRepository serviceTaskInstanceRepository;
     @Autowired
     private AuthenticationFacade authenticationFacade;
+    @Autowired
+    private DatabaseService databaseService;
 
     @Override
     public boolean cancel(boolean mayInterruptIfRunning, Long taskId, TaskService taskService) {
@@ -85,6 +91,7 @@ public class MultipleDatabaseChangeRuntimeFlowableTask extends BaseODCFlowTaskDe
             TaskEntity detail = taskService.detail(taskId);
             MultipleDatabaseChangeParameters multipleDatabaseChangeParameters = JsonUtils.fromJson(
                     detail.getParametersJson(), MultipleDatabaseChangeParameters.class);
+            this.orderedDatabaseIds = multipleDatabaseChangeParameters.getOrderedDatabaseIds();
             Integer value = multipleDatabaseChangeParameters.getBatchId();
             if (value == null) {
                 this.batchId = 0;
@@ -187,10 +194,8 @@ public class MultipleDatabaseChangeRuntimeFlowableTask extends BaseODCFlowTaskDe
         try {
             log.info("multiple database task succeed, taskId={}, batchId={}", taskId, this.batchId + 1);
             if (this.batchId == batchSum - 1) {
-                List<ServiceTaskInstanceEntity> byTargetTaskId = serviceTaskInstanceRepository.findByTargetTaskId(
-                        taskId);
                 List<FlowInstanceEntity> flowInstanceByParentId = flowInstanceService.getFlowInstanceByParentId(
-                        byTargetTaskId.get(0).getFlowInstanceId());
+                        getFlowInstanceId());
                 boolean allSucceeded = flowInstanceByParentId.stream()
                         .map(FlowInstanceEntity::getId)
                         .map(flowInstanceService::detail)
@@ -228,6 +233,29 @@ public class MultipleDatabaseChangeRuntimeFlowableTask extends BaseODCFlowTaskDe
 
     private MultipleDatabaseChangeTaskResult generateResult(boolean success) {
         MultipleDatabaseChangeTaskResult result = new MultipleDatabaseChangeTaskResult();
+        Long flowInstanceId = getFlowInstanceId();
+        QueryFlowInstanceParams param = QueryFlowInstanceParams.builder().parentInstanceId(flowInstanceId)
+            .build();
+        Page<FlowInstanceDetailResp> page = flowInstanceService.list(Pageable.unpaged(), param);
+        List<FlowInstanceDetailResp> flowInstanceDetailRespList = page.getContent();
+        Map<Long, FlowInstanceDetailResp> map = flowInstanceDetailRespList.stream().collect(
+            Collectors.toMap(flowInstanceDetailResp -> flowInstanceDetailResp.getDatabase().getId(),
+                flowInstanceDetailResp -> flowInstanceDetailResp));
+        List<Long> idList = this.orderedDatabaseIds.stream().flatMap(x->x.stream()).collect(Collectors.toList());
+        List<Database> databaseList = databaseService.listDatabasesByIds(idList);
+        ArrayList<DatabaseChangingRecord> databaseChangingRecords = new ArrayList<>();
+        for (Database database : databaseList) {
+            DatabaseChangingRecord databaseChangingRecord = new DatabaseChangingRecord();
+            databaseChangingRecord.setDatabase(database);
+            if(map.containsKey(database.getId())){
+                databaseChangingRecord.setFlowInstanceDetailResp(map.get(database.getId()));
+                databaseChangingRecord.setStatus(map.get(database.getId()).getStatus());
+            }else {
+                databaseChangingRecord.setStatus(FlowStatus.WAIT_FOR_EXECUTION);
+            }
+            databaseChangingRecords.add(databaseChangingRecord);
+        }
+        result.setDatabaseChangingRecordList(databaseChangingRecords);
         result.setSuccess(success);
         return result;
     }

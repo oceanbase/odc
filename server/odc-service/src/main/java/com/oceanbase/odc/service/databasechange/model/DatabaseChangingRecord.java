@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 OceanBase.
+ * Copyright (c) 2024 OceanBase.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,23 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.flow.task.model;
 
-import java.util.List;
+package com.oceanbase.odc.service.databasechange.model;
 
-import com.oceanbase.odc.core.flow.model.FlowTaskResult;
-import com.oceanbase.odc.service.databasechange.model.DatabaseChangingRecord;
+import com.oceanbase.odc.core.shared.constant.FlowStatus;
+import com.oceanbase.odc.service.connection.database.model.Database;
+import com.oceanbase.odc.service.flow.model.FlowInstanceDetailResp;
 
-import lombok.Getter;
-import lombok.Setter;
+import lombok.Data;
 
 /**
  * @author: zijia.cj
- * @date: 2024/4/7
+ * @date: 2024/5/6
  */
-@Getter
-@Setter
-public class MultipleDatabaseChangeTaskResult implements FlowTaskResult {
-    private List<DatabaseChangingRecord> databaseChangingRecordList;
-    private boolean                      success;
+@Data
+public class DatabaseChangingRecord {
+    private Database               database;
+    private FlowInstanceDetailResp flowInstanceDetailResp;
+    private FlowStatus             status;
 }
