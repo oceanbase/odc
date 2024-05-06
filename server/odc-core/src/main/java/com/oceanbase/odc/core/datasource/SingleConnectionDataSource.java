@@ -76,13 +76,27 @@ public class SingleConnectionDataSource extends BaseClassBasedDataSource impleme
     public Connection getConnection() throws SQLException {
         if (Objects.isNull(this.connection)) {
             return innerCreateConnection();
-        } else if (this.connection.isClosed() || !this.connection.isValid(getLoginTimeout())) {
-            if (!autoReconnect) {
-                throw new SQLException("Connection was closed or not valid");
-            }
-            resetConnection();
         }
+        resetIfNeed();
         return getConnectionProxy(connection);
+    }
+
+    private void resetIfNeed() throws SQLException {
+        if (!tryLock()) {
+            throw new ConflictException(ErrorCodes.ConnectionOccupied, new Object[] {},
+                    "Connection is occupied, waited " + this.timeOutMillis + " millis");
+        }
+        try {
+            if (this.connection.isClosed() || !this.connection.isValid(getLoginTimeout())) {
+                if (!autoReconnect) {
+                    throw new SQLException("Connection was closed or not valid");
+                }
+                resetConnection();
+            }
+        } finally {
+            lock.unlock();
+        }
+
     }
 
     @Override
