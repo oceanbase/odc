@@ -25,6 +25,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -59,16 +60,22 @@ import com.oceanbase.odc.core.shared.exception.BadRequestException;
 import com.oceanbase.odc.core.shared.exception.InternalServerError;
 import com.oceanbase.odc.core.shared.exception.NotFoundException;
 import com.oceanbase.odc.core.shared.exception.UnsupportedException;
+import com.oceanbase.odc.metadb.collaboration.EnvironmentEntity;
+import com.oceanbase.odc.metadb.collaboration.EnvironmentRepository;
 import com.oceanbase.odc.metadb.flow.FlowInstanceRepository;
 import com.oceanbase.odc.metadb.task.TaskEntity;
 import com.oceanbase.odc.metadb.task.TaskRepository;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferConfig;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferTaskResult;
+import com.oceanbase.odc.service.collaboration.environment.EnvironmentService;
+import com.oceanbase.odc.service.collaboration.environment.model.Environment;
 import com.oceanbase.odc.service.common.FileManager;
 import com.oceanbase.odc.service.common.model.FileBucket;
 import com.oceanbase.odc.service.common.response.ListResponse;
 import com.oceanbase.odc.service.common.response.SuccessResponse;
 import com.oceanbase.odc.service.common.util.OdcFileUtil;
+import com.oceanbase.odc.service.connection.database.model.Database;
+import com.oceanbase.odc.service.databasechange.model.DatabaseChangingRecord;
 import com.oceanbase.odc.service.datatransfer.LocalFileManager;
 import com.oceanbase.odc.service.dispatch.DispatchResponse;
 import com.oceanbase.odc.service.dispatch.RequestDispatcher;
@@ -155,9 +162,14 @@ public class FlowTaskInstanceService {
     @Autowired
     private TaskFrameworkEnabledProperties taskFrameworkProperties;
     @Autowired
-    private LoggerService loggerService;
+    private LoggerService         loggerService;
+    @Autowired
+    private EnvironmentRepository environmentRepository;
+    @Autowired
+    private EnvironmentService    environmentService;
+
     @Value("${odc.task.async.result-preview-max-size-bytes:5242880}")
-    private long resultPreviewMaxSizeBytes;
+    private long                  resultPreviewMaxSizeBytes;
 
     private final Set<String> supportedBucketName = new HashSet<>(Arrays.asList("async", "structure-comparison"));
 
@@ -284,7 +296,7 @@ public class FlowTaskInstanceService {
                 || taskInstance.getTaskType() == TaskType.PRE_CHECK) {
             Long taskId = taskInstance.getTargetTaskId();
             TaskEntity taskEntity = this.taskService.detail(taskId);
-            // 多库需要修改
+            // When ParametersJson()==null, pre-check is for single database;When ParametersJson()!=null, pre-check is for multiple databases
             if (taskEntity.getParametersJson()==null){
                 PreCheckTaskResult result = JsonUtils.fromJson(taskEntity.getResultJson(), PreCheckTaskResult.class);
                 if (Objects.isNull(result)) {
@@ -333,6 +345,20 @@ public class FlowTaskInstanceService {
                 String content = FileUtils.readFileToString(jsonFile, Charsets.UTF_8);
                 multipleSqlCheckTaskResult = JsonUtils.fromJson(content, MultipleSqlCheckTaskResult.class);
                 multipleSqlCheckTaskResult.setFileName(null);
+                // Add environment element
+                List<Database> databaseList = multipleSqlCheckTaskResult.getDatabaseList();
+                Set<Long> environmentIds = databaseList.stream().map(
+                    database -> database.getDataSource().getEnvironmentId()).collect(Collectors.toSet());
+                List<EnvironmentEntity> environmentEntities = environmentRepository.findAllById(environmentIds);
+                Map<Long, Environment> environmentMap = environmentService.detailSkipPermissionCheckForMultipleDatabase(
+                        environmentEntities).stream()
+                    .collect(Collectors.toMap(Environment::getId, environment -> environment));
+                for (Database database : databaseList) {
+                    if(environmentMap.containsKey(database.getDataSource().getEnvironmentId())){
+                        database.setEnvironment(environmentMap.get(database.getDataSource().getEnvironmentId()));
+                    }
+                }
+                //multipleSqlCheckTaskResult.setDatabaseList(databaseList);
                 multiplePreCheckTaskResult.setMultipleSqlCheckTaskResult(multipleSqlCheckTaskResult);
                 multiplePreCheckTaskResult.setExecutorInfo(null);
                 return Collections.singletonList(multiplePreCheckTaskResult);
@@ -622,7 +648,30 @@ public class FlowTaskInstanceService {
 
     private List<MultipleDatabaseChangeTaskResult> getMultipleAsyncResult(@NonNull TaskEntity taskEntity)
             throws IOException {
-        return innerGetResult(taskEntity, MultipleDatabaseChangeTaskResult.class);
+        List<MultipleDatabaseChangeTaskResult> multipleDatabaseChangeTaskResults = innerGetResult(taskEntity,
+            MultipleDatabaseChangeTaskResult.class);
+        // Add environment element
+        List<DatabaseChangingRecord> databaseChangingRecordList = multipleDatabaseChangeTaskResults.get(0)
+            .getDatabaseChangingRecordList();
+        List<Database> databaseList = multipleDatabaseChangeTaskResults.get(0).getDatabaseChangingRecordList().stream().map(
+            databaseChangingRecord -> databaseChangingRecord.getDatabase()).collect(
+            Collectors.toList());
+        Set<Long> environmentIds = databaseList.stream().map(
+            database -> database.getDataSource().getEnvironmentId()).collect(Collectors.toSet());
+        List<EnvironmentEntity> environmentEntities = environmentRepository.findAllById(environmentIds);
+        Map<Long, Environment> environmentMap = environmentService.detailSkipPermissionCheckForMultipleDatabase(
+                environmentEntities).stream()
+            .collect(Collectors.toMap(Environment::getId, environment -> environment));
+        for (int i = 0; i < databaseList.size(); i++) {
+            if (environmentMap.containsKey(databaseList.get(i).getDataSource().getEnvironmentId())) {
+                databaseList.get(i).setEnvironment(environmentMap.get(databaseList.get(i).getDataSource().getEnvironmentId()));
+                if(databaseChangingRecordList.get(i)!=null){
+                    databaseChangingRecordList.get(i).setDatabase(databaseList.get(i));
+                }
+            }
+        }
+        multipleDatabaseChangeTaskResults.get(0).setDatabaseChangingRecordList(databaseChangingRecordList);
+        return multipleDatabaseChangeTaskResults;
     }
 
     private List<DatabaseChangeResult> getAsyncResult(@NonNull TaskEntity taskEntity) throws IOException {
