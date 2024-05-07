@@ -21,7 +21,6 @@ import java.util.stream.Collectors;
 import com.oceanbase.tools.sqlparser.adapter.StatementFactory;
 import com.oceanbase.tools.sqlparser.oboracle.OBParser.Create_table_stmtContext;
 import com.oceanbase.tools.sqlparser.oboracle.OBParserBaseVisitor;
-import com.oceanbase.tools.sqlparser.statement.common.ColumnGroup;
 import com.oceanbase.tools.sqlparser.statement.common.ColumnGroupElement;
 import com.oceanbase.tools.sqlparser.statement.createtable.CreateTable;
 import com.oceanbase.tools.sqlparser.statement.select.Select;
@@ -93,7 +92,7 @@ public class OracleCreateTableFactory extends OBParserBaseVisitor<CreateTable>
             List<ColumnGroupElement> columnGroupElements = ctx.with_column_group()
                     .column_group_list().column_group_element().stream()
                     .map(c -> new OracleColumnGroupElementFactory(c).generate()).collect(Collectors.toList());
-            createTable.setColumnGroup(new ColumnGroup(columnGroupElements));
+            createTable.setColumnGroupElements(columnGroupElements);
         }
         return createTable;
     }

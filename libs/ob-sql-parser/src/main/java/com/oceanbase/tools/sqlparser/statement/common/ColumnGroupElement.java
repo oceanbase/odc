@@ -62,9 +62,9 @@ public class ColumnGroupElement extends BaseStatement {
     @Override
     public String toString() {
         if (isAllColumns()) {
-            return "all columns";
+            return "ALL COLUMNS";
         } else if (isEachColumn()) {
-            return "each column";
+            return "EACH COLUMN";
         }
         return String.format("%s(%s)", groupName, String.join(",", columnNames));
     }

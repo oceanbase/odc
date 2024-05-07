@@ -37,7 +37,6 @@ import com.oceanbase.tools.sqlparser.obmysql.OBParser.Opt_partition_range_or_lis
 import com.oceanbase.tools.sqlparser.obmysql.OBParserBaseVisitor;
 import com.oceanbase.tools.sqlparser.statement.alter.table.AlterTableAction;
 import com.oceanbase.tools.sqlparser.statement.alter.table.AlterTableAction.AlterColumnBehavior;
-import com.oceanbase.tools.sqlparser.statement.common.ColumnGroup;
 import com.oceanbase.tools.sqlparser.statement.common.ColumnGroupElement;
 import com.oceanbase.tools.sqlparser.statement.createtable.ColumnDefinition;
 import com.oceanbase.tools.sqlparser.statement.createtable.ConstraintState;
@@ -246,11 +245,10 @@ public class MySQLAlterTableActionFactory extends OBParserBaseVisitor<AlterTable
         AlterTableAction action = new AlterTableAction(ctx);
         List<ColumnGroupElement> columnGroupElements = ctx.column_group_list().column_group_element()
                 .stream().map(c -> new MySQLColumnGroupElementFactory(c).generate()).collect(Collectors.toList());
-        ColumnGroup columnGroup = new ColumnGroup(ctx, columnGroupElements);
         if (ctx.ADD() != null) {
-            action.setAddColumnGroup(columnGroup);
+            action.setAddColumnGroupElements(columnGroupElements);
         } else {
-            action.setDropColumnGroup(columnGroup);
+            action.setDropColumnGroupElements(columnGroupElements);
         }
         return action;
     }

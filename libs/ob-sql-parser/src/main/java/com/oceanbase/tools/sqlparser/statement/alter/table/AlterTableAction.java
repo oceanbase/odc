@@ -24,7 +24,7 @@ import org.apache.commons.collections4.CollectionUtils;
 
 import com.oceanbase.tools.sqlparser.statement.BaseStatement;
 import com.oceanbase.tools.sqlparser.statement.Expression;
-import com.oceanbase.tools.sqlparser.statement.common.ColumnGroup;
+import com.oceanbase.tools.sqlparser.statement.common.ColumnGroupElement;
 import com.oceanbase.tools.sqlparser.statement.common.RelationFactor;
 import com.oceanbase.tools.sqlparser.statement.createtable.ColumnDefinition;
 import com.oceanbase.tools.sqlparser.statement.createtable.ConstraintState;
@@ -145,8 +145,8 @@ public class AlterTableAction extends BaseStatement {
     private String renameFromSubPartitionName;
     @Setter(AccessLevel.NONE)
     private String renameToSubPartitionName;
-    private ColumnGroup addColumnGroup;
-    private ColumnGroup dropColumnGroup;
+    private List<ColumnGroupElement> addColumnGroupElements;
+    private List<ColumnGroupElement> dropColumnGroupElements;
 
     public AlterTableAction(@NonNull ParserRuleContext context) {
         super(context);
@@ -410,11 +410,17 @@ public class AlterTableAction extends BaseStatement {
         if (Boolean.TRUE.equals(this.removePartitioning)) {
             builder.append(" REMOVE PARTITIONING");
         }
-        if (addColumnGroup != null) {
-            builder.append(" ADD").append(addColumnGroup);
+        if (addColumnGroupElements != null) {
+            builder.append(" ADD COLUMN GROUP(")
+                    .append(addColumnGroupElements.stream().map(ColumnGroupElement::toString)
+                            .collect(Collectors.joining(",")))
+                    .append(")");
         }
-        if (dropColumnGroup != null) {
-            builder.append(" DROP").append(dropColumnGroup);
+        if (dropColumnGroupElements != null) {
+            builder.append(" DROP COLUMN GROUP(")
+                    .append(dropColumnGroupElements.stream().map(ColumnGroupElement::toString)
+                            .collect(Collectors.joining(",")))
+                    .append(")");
         }
         return builder.length() == 0 ? "" : builder.substring(1);
     }

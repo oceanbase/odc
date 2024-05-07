@@ -45,7 +45,6 @@ import com.oceanbase.tools.sqlparser.oboracle.OBParser.Split_range_partitionCont
 import com.oceanbase.tools.sqlparser.oboracle.OBParserBaseVisitor;
 import com.oceanbase.tools.sqlparser.statement.alter.table.AlterTableAction;
 import com.oceanbase.tools.sqlparser.statement.alter.table.PartitionSplitActions;
-import com.oceanbase.tools.sqlparser.statement.common.ColumnGroup;
 import com.oceanbase.tools.sqlparser.statement.common.ColumnGroupElement;
 import com.oceanbase.tools.sqlparser.statement.common.RelationFactor;
 import com.oceanbase.tools.sqlparser.statement.createtable.ColumnDefinition;
@@ -334,11 +333,10 @@ public class OracleAlterTableActionFactory extends OBParserBaseVisitor<AlterTabl
         AlterTableAction action = new AlterTableAction(ctx);
         List<ColumnGroupElement> columnGroupElements = ctx.column_group_list().column_group_element()
                 .stream().map(c -> new OracleColumnGroupElementFactory(c).generate()).collect(Collectors.toList());
-        ColumnGroup columnGroup = new ColumnGroup(ctx, columnGroupElements);
         if (ctx.ADD() != null) {
-            action.setAddColumnGroup(columnGroup);
+            action.setAddColumnGroupElements(columnGroupElements);
         } else {
-            action.setDropColumnGroup(columnGroup);
+            action.setDropColumnGroupElements(columnGroupElements);
         }
         return action;
     }

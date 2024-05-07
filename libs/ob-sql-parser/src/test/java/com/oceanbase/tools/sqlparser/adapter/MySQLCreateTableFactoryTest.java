@@ -36,7 +36,6 @@ import com.oceanbase.tools.sqlparser.obmysql.OBParser.Create_table_stmtContext;
 import com.oceanbase.tools.sqlparser.statement.Expression;
 import com.oceanbase.tools.sqlparser.statement.Operator;
 import com.oceanbase.tools.sqlparser.statement.common.CharacterType;
-import com.oceanbase.tools.sqlparser.statement.common.ColumnGroup;
 import com.oceanbase.tools.sqlparser.statement.common.ColumnGroupElement;
 import com.oceanbase.tools.sqlparser.statement.common.DataType;
 import com.oceanbase.tools.sqlparser.statement.common.RelationFactor;
@@ -443,7 +442,7 @@ public class MySQLCreateTableFactoryTest {
         CreateTable actual = factory.generate();
 
         CreateTable expect = new CreateTable("column_group_tbl");
-        expect.setColumnGroup(new ColumnGroup(Collections.singletonList(new ColumnGroupElement(true, false))));
+        expect.setColumnGroupElements(Collections.singletonList(new ColumnGroupElement(true, false)));
         DataType dataType = new CharacterType("varchar", new BigDecimal("64"));
         expect.setTableElements(
                 Collections.singletonList(new ColumnDefinition(new ColumnReference(null, null, "id"), dataType)));
@@ -458,8 +457,8 @@ public class MySQLCreateTableFactoryTest {
         CreateTable actual = factory.generate();
 
         CreateTable expect = new CreateTable("column_group_tbl");
-        expect.setColumnGroup(new ColumnGroup(
-                Arrays.asList(new ColumnGroupElement(true, false), new ColumnGroupElement(false, true))));
+        expect.setColumnGroupElements(
+                Arrays.asList(new ColumnGroupElement(true, false), new ColumnGroupElement(false, true)));
         DataType dataType = new CharacterType("varchar", new BigDecimal("64"));
         expect.setTableElements(
                 Collections.singletonList(new ColumnDefinition(new ColumnReference(null, null, "id"), dataType)));
@@ -475,7 +474,7 @@ public class MySQLCreateTableFactoryTest {
 
         CreateTable expect = new CreateTable("column_group_tbl");
         List<String> columnNames = Collections.singletonList("id");
-        expect.setColumnGroup(new ColumnGroup(Collections.singletonList(new ColumnGroupElement("g1", columnNames))));
+        expect.setColumnGroupElements(Collections.singletonList(new ColumnGroupElement("g1", columnNames)));
         DataType dataType = new CharacterType("varchar", new BigDecimal("64"));
         expect.setTableElements(
                 Collections.singletonList(new ColumnDefinition(new ColumnReference(null, null, "id"), dataType)));

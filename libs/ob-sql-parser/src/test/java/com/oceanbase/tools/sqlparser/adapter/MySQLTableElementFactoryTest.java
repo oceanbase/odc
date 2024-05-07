@@ -34,6 +34,7 @@ import com.oceanbase.tools.sqlparser.obmysql.OBParser.Table_elementContext;
 import com.oceanbase.tools.sqlparser.statement.Expression;
 import com.oceanbase.tools.sqlparser.statement.Operator;
 import com.oceanbase.tools.sqlparser.statement.common.CharacterType;
+import com.oceanbase.tools.sqlparser.statement.common.ColumnGroupElement;
 import com.oceanbase.tools.sqlparser.statement.common.DataType;
 import com.oceanbase.tools.sqlparser.statement.common.GeneralDataType;
 import com.oceanbase.tools.sqlparser.statement.createtable.ColumnAttributes;
@@ -1079,6 +1080,33 @@ public class MySQLTableElementFactoryTest {
         ColumnReference r2 = new ColumnReference(null, null, "col3");
         ForeignReference reference = new ForeignReference("a", "b", Arrays.asList(r1, r2));
         OutOfLineForeignConstraint expect = new OutOfLineForeignConstraint(null, Arrays.asList(s1, s2), reference);
+        Assert.assertEquals(expect, actual);
+    }
+
+    @Test
+    public void generate_indexWithColumnGroup_allColumns_succeed() {
+        StatementFactory<TableElement> factory = new MySQLTableElementFactory(getTableElementContext(
+                "index idx_name (col) with column group(all columns)"));
+
+        OutOfLineIndex actual = (OutOfLineIndex) factory.generate();
+
+        SortColumn s1 = new SortColumn(new ColumnReference(null, null, "col"));
+        OutOfLineIndex expect = new OutOfLineIndex("idx_name", Collections.singletonList(s1));
+        expect.setColumnGroupElements(Collections.singletonList(new ColumnGroupElement(true, false)));
+        Assert.assertEquals(expect, actual);
+    }
+
+    @Test
+    public void generate_uniqueIndexWithColumnGroup_allColumns_succeed() {
+        StatementFactory<TableElement> factory = new MySQLTableElementFactory(
+                getTableElementContext(
+                        "unique index idx_name (col) with column group(all columns)"));
+        TableElement actual = factory.generate();
+
+        SortColumn s1 = new SortColumn(new ColumnReference(null, null, "col"));
+        OutOfLineConstraint expect = new OutOfLineConstraint(null, Collections.singletonList(s1));
+        expect.setUniqueKey(true);
+        expect.setIndexName("idx_name");
         Assert.assertEquals(expect, actual);
     }
 

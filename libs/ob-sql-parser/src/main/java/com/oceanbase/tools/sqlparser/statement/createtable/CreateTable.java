@@ -23,7 +23,7 @@ import org.antlr.v4.runtime.ParserRuleContext;
 import org.apache.commons.collections4.CollectionUtils;
 
 import com.oceanbase.tools.sqlparser.statement.BaseStatement;
-import com.oceanbase.tools.sqlparser.statement.common.ColumnGroup;
+import com.oceanbase.tools.sqlparser.statement.common.ColumnGroupElement;
 import com.oceanbase.tools.sqlparser.statement.common.RelationFactor;
 import com.oceanbase.tools.sqlparser.statement.select.Select;
 
@@ -59,7 +59,7 @@ public class CreateTable extends BaseStatement {
     private String commitOption;
     private Partition partition;
     private final String tableName;
-    private ColumnGroup columnGroup;
+    private List<ColumnGroupElement> columnGroupElements;
 
     public CreateTable(@NonNull ParserRuleContext context, @NonNull String tableName) {
         super(context);
@@ -159,8 +159,11 @@ public class CreateTable extends BaseStatement {
         if (this.commitOption != null) {
             builder.append(" ON COMMIT ").append(this.commitOption.toUpperCase()).append(" ROWS");
         }
-        if (this.columnGroup != null) {
-            builder.append(" WITH").append(columnGroup);
+        if (this.columnGroupElements != null) {
+            builder.append(" WITH COLUMN GROUP(")
+                    .append(columnGroupElements.stream()
+                            .map(ColumnGroupElement::toString).collect(Collectors.joining(",")))
+                    .append(")");
         }
         if (this.as != null) {
             builder.append(" AS ").append(this.as);

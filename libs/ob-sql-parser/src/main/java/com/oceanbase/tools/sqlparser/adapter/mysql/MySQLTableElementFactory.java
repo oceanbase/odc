@@ -49,6 +49,7 @@ import com.oceanbase.tools.sqlparser.obmysql.OBParser.Table_elementContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParserBaseVisitor;
 import com.oceanbase.tools.sqlparser.statement.Expression;
 import com.oceanbase.tools.sqlparser.statement.Operator;
+import com.oceanbase.tools.sqlparser.statement.common.ColumnGroupElement;
 import com.oceanbase.tools.sqlparser.statement.common.DataType;
 import com.oceanbase.tools.sqlparser.statement.common.RelationFactor;
 import com.oceanbase.tools.sqlparser.statement.createtable.ColumnAttributes;
@@ -151,6 +152,12 @@ public class MySQLTableElementFactory extends OBParserBaseVisitor<TableElement>
         } else if (ctx.auto_partition_option() != null) {
             index.setPartition(new MySQLPartitionFactory(ctx.auto_partition_option()).generate());
         }
+        if (ctx.with_column_group() != null) {
+            List<ColumnGroupElement> columnGroupElements = ctx.with_column_group()
+                    .column_group_list().column_group_element().stream()
+                    .map(c -> new MySQLColumnGroupElementFactory(c).generate()).collect(Collectors.toList());
+            index.setColumnGroupElements(columnGroupElements);
+        }
         return index;
     }
 
@@ -197,6 +204,12 @@ public class MySQLTableElementFactory extends OBParserBaseVisitor<TableElement>
         OutOfLineConstraint constraint = new OutOfLineConstraint(ctx, state, getSortColumns(ctx.sort_column_list()));
         constraint.setUniqueKey(true);
         constraint.setIndexName(ctx.index_name() == null ? null : ctx.index_name().getText());
+        if (ctx.with_column_group() != null) {
+            List<ColumnGroupElement> columnGroupElements = ctx.with_column_group()
+                    .column_group_list().column_group_element().stream()
+                    .map(c -> new MySQLColumnGroupElementFactory(c).generate()).collect(Collectors.toList());
+            constraint.setColumnGroupElements(columnGroupElements);
+        }
         return constraint;
     }
 

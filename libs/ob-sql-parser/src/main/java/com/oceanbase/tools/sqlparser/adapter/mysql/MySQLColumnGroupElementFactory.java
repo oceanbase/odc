@@ -21,8 +21,6 @@ import java.util.stream.Collectors;
 import com.oceanbase.tools.sqlparser.adapter.StatementFactory;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Column_group_elementContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Column_nameContext;
-import com.oceanbase.tools.sqlparser.obmysql.OBParser.Column_name_listContext;
-import com.oceanbase.tools.sqlparser.obmysql.OBParser.Relation_nameContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParserBaseVisitor;
 import com.oceanbase.tools.sqlparser.statement.common.ColumnGroupElement;
 
@@ -53,10 +51,8 @@ public class MySQLColumnGroupElementFactory extends OBParserBaseVisitor<ColumnGr
         if (ctx.relation_name() == null || ctx.column_name_list() == null) {
             throw new IllegalStateException("Missing column group");
         }
-        Relation_nameContext relationNameContext = ctx.relation_name();
-        String relationName = relationNameContext.getText();
-        Column_name_listContext columnNameListContext = ctx.column_name_list();
-        List<Column_nameContext> columnNameContexts = columnNameListContext.column_name();
+        String relationName = ctx.relation_name().getText();
+        List<Column_nameContext> columnNameContexts = ctx.column_name_list().column_name();
         return new ColumnGroupElement(ctx, relationName,
                 columnNameContexts.stream().map(Column_nameContext::getText).collect(Collectors.toList()));
     }

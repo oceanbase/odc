@@ -32,7 +32,6 @@ import com.oceanbase.tools.sqlparser.obmysql.OBParser.Alter_table_stmtContext;
 import com.oceanbase.tools.sqlparser.statement.alter.table.AlterTable;
 import com.oceanbase.tools.sqlparser.statement.alter.table.AlterTableAction;
 import com.oceanbase.tools.sqlparser.statement.common.CharacterType;
-import com.oceanbase.tools.sqlparser.statement.common.ColumnGroup;
 import com.oceanbase.tools.sqlparser.statement.common.ColumnGroupElement;
 import com.oceanbase.tools.sqlparser.statement.createtable.ColumnDefinition;
 import com.oceanbase.tools.sqlparser.statement.createtable.TableOptions;
@@ -94,7 +93,7 @@ public class MySQLAlterTableFactoryTest {
         AlterTable actual = factory.generate();
 
         AlterTableAction action = new AlterTableAction();
-        action.setAddColumnGroup(new ColumnGroup(Collections.singletonList(new ColumnGroupElement(true, false))));
+        action.setAddColumnGroupElements(Collections.singletonList(new ColumnGroupElement(true, false)));
         AlterTable expect = new AlterTable("b", Collections.singletonList(action));
         expect.setSchema("a");
         Assert.assertEquals(expect, actual);
@@ -107,7 +106,7 @@ public class MySQLAlterTableFactoryTest {
         AlterTable actual = factory.generate();
 
         AlterTableAction action = new AlterTableAction();
-        action.setDropColumnGroup(new ColumnGroup(Collections.singletonList(new ColumnGroupElement(true, false))));
+        action.setDropColumnGroupElements(Collections.singletonList(new ColumnGroupElement(true, false)));
         AlterTable expect = new AlterTable("b", Collections.singletonList(action));
         expect.setSchema("a");
         Assert.assertEquals(expect, actual);
