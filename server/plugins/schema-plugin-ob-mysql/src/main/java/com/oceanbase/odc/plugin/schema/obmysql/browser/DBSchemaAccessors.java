@@ -35,6 +35,11 @@ import lombok.NonNull;
 public class DBSchemaAccessors {
 
     public static DBSchemaAccessor create(@NonNull JdbcOperations jdbcOperations, @NonNull String dbVersion) {
+        return create(jdbcOperations, dbVersion, null);
+    }
+
+    public static DBSchemaAccessor create(@NonNull JdbcOperations jdbcOperations,
+            @NonNull String dbVersion, String tenantName) {
         if (VersionUtils.isGreaterThanOrEqualsTo(dbVersion, "4.0.0")) {
             // OB 版本 >= 4.0.0
             return new OBMySQLSchemaAccessor(jdbcOperations);
@@ -51,7 +56,8 @@ public class DBSchemaAccessors {
             // OB 版本 <= 1.4.79
             // sysJdbcOperations and tenantName is only used in getPartition method, this method will not be
             // called in plugin, so we just set it null here.
-            return new OBMySQLNoGreaterThan1479SchemaAccessor(jdbcOperations, null, null);
+            return new OBMySQLNoGreaterThan1479SchemaAccessor(jdbcOperations, null, tenantName);
         }
     }
+
 }

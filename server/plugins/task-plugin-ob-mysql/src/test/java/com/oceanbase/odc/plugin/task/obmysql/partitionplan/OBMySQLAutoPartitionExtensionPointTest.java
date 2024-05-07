@@ -264,7 +264,7 @@ public class OBMySQLAutoPartitionExtensionPointTest {
         TestDBConfiguration configuration = TestDBConfigurations.getInstance().getTestOBMysqlConfiguration();
         try (Connection connection = configuration.getDataSource().getConnection()) {
             AutoPartitionExtensionPoint extensionPoint = new OBMySQLAutoPartitionExtensionPoint();
-            List<DBTable> actual = extensionPoint.listAllPartitionedTables(connection,
+            List<DBTable> actual = extensionPoint.listAllPartitionedTables(connection, null,
                     configuration.getDefaultDBName(), null);
             Assert.assertEquals(4, actual.size());
         }

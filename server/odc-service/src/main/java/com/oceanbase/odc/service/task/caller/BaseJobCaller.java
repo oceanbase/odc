@@ -71,7 +71,7 @@ public abstract class BaseJobCaller implements JobCaller {
     }
 
     private void afterStartSucceed(ExecutorIdentifier executorIdentifier, JobIdentity ji) {
-        log.info("Start job {} succeed.", ji.getId());
+        log.info("Start job succeed, jobId={}.", ji.getId());
         publishEvent(new JobCallerEvent(ji, JobCallerAction.START, true, executorIdentifier, null));
     }
 
