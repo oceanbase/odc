@@ -238,7 +238,8 @@ public class ScheduleService {
      */
     public boolean terminateIfDatabaseNotExisted(Long scheduleId) {
         Optional<ScheduleEntity> scheduleEntityOptional = scheduleRepository.findById(scheduleId);
-        if (scheduleEntityOptional.isPresent()) {
+        if (scheduleEntityOptional.isPresent() &&
+                scheduleEntityOptional.get().getJobType() != JobType.ONLINE_SCHEMA_CHANGE_COMPLETE) {
             Database database;
             try {
                 database = databaseService.getBasicSkipPermissionCheck(scheduleEntityOptional.get().getDatabaseId());

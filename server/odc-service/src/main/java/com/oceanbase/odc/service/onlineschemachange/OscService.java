@@ -185,7 +185,12 @@ public class OscService {
         incrTransfer.setThrottleRps(req.getIncrTransfer().getThrottleRps());
         parameters.setIncrTransfer(incrTransfer);
 
-        scheduleRepository.updateJobParametersById(scheduleEntity.getId(), JsonUtils.toJson(parameters));
+        String parameterJson = JsonUtils.toJson(parameters);
+        int rows = scheduleRepository.updateJobParametersById(scheduleEntity.getId(), parameterJson);
+        if (rows > 1) {
+            log.info("Update transfer config in job parameters completed, scheduleId={}, parameterJson={}.",
+                    scheduleEntity.getId(), parameterJson);
+        }
         return true;
     }
 
