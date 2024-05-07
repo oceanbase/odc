@@ -74,7 +74,7 @@ public class QuartzJobService {
             TriggerKey triggerKey = QuartzKeyGenerator.generateTriggerKey(req.getScheduleId(), req.getType());
             Trigger trigger = buildTrigger(triggerKey, req.getTriggerConfig(), req.getMisfireStrategy(), triData);
             JobDetail jobDetail = JobBuilder.newJob(clazz).withIdentity(jobKey)
-                    .usingJobData(req.getJobDataMap()).build();
+                    .usingJobData(req.getJobDataMap()).requestRecovery().build();
             scheduler.scheduleJob(jobDetail, trigger);
         } else {
             JobDetail jobDetail = JobBuilder.newJob(clazz).withIdentity(jobKey)

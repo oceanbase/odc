@@ -15,6 +15,8 @@
  */
 package com.oceanbase.odc.service.quartz.util;
 
+import java.util.Objects;
+
 import org.quartz.JobDataMap;
 import org.quartz.JobExecutionContext;
 
@@ -35,7 +37,7 @@ public class ScheduleTaskUtils {
 
     public static Long getTargetTaskId(JobExecutionContext context) {
         JobDataMap triggerDataMap = context.getTrigger().getJobDataMap();
-        if (triggerDataMap != null && !triggerDataMap.isEmpty()) {
+        if (triggerDataMap != null && !triggerDataMap.isEmpty() && Objects.nonNull(triggerDataMap.get(id))) {
             return Long.parseLong(triggerDataMap.get(id).toString());
         }
         return null;

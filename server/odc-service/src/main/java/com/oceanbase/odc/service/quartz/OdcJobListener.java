@@ -44,6 +44,7 @@ import com.oceanbase.odc.service.notification.helper.EventBuilder;
 import com.oceanbase.odc.service.quartz.util.ScheduleTaskUtils;
 import com.oceanbase.odc.service.schedule.flowtask.ScheduleTaskContextHolder;
 import com.oceanbase.odc.service.schedule.model.JobType;
+import com.oceanbase.odc.service.task.config.TaskFrameworkEnabledProperties;
 import com.oceanbase.odc.service.task.model.ExecutorInfo;
 
 import lombok.extern.slf4j.Slf4j;
@@ -72,6 +73,8 @@ public class OdcJobListener implements JobListener {
     private EventBuilder eventBuilder;
     @Autowired
     private NotificationProperties notificationProperties;
+    @Autowired
+    private TaskFrameworkEnabledProperties taskFrameworkEnabledProperties;
     private static final String ODC_JOB_LISTENER = "ODC_JOB_LISTENER";
 
     @Override
@@ -98,7 +101,8 @@ public class OdcJobListener implements JobListener {
                 scheduleEntity.getOrganizationId(), scheduleEntity.getProjectId(), scheduleEntity.getDatabaseId(),
                 scheduleEntity.getJobType());
         // Ignore this schedule if scheduler has executing job.
-        if (scheduleEntity.getJobType().executeInTaskFramework() && !scheduleEntity.getAllowConcurrent()
+        if (taskFrameworkEnabledProperties.isEnabled() && scheduleEntity.getJobType().executeInTaskFramework()
+                && !scheduleEntity.getAllowConcurrent()
                 && !taskRepository.findByJobNameAndStatusIn(scheduleId.toString(), TaskStatus.getProcessingStatus())
                         .isEmpty()) {
             log.warn("Concurrent is not allowed for scheduler {}.", scheduleId);

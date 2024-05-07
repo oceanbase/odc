@@ -17,15 +17,20 @@ package com.oceanbase.odc.service.quartz;
 
 import static com.oceanbase.odc.core.alarm.AlarmEventNames.SCHEDULING_FAILED;
 
+import java.util.Optional;
+
 import org.quartz.JobExecutionContext;
 import org.quartz.JobKey;
 import org.quartz.Trigger;
 import org.quartz.listeners.TriggerListenerSupport;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import com.oceanbase.odc.core.alarm.AlarmUtils;
 import com.oceanbase.odc.metadb.schedule.ScheduleRepository;
+import com.oceanbase.odc.metadb.schedule.ScheduleTaskEntity;
+import com.oceanbase.odc.metadb.schedule.ScheduleTaskRepository;
 import com.oceanbase.odc.service.common.util.SpringContextUtil;
 import com.oceanbase.odc.service.notification.Broker;
 import com.oceanbase.odc.service.notification.NotificationProperties;
@@ -33,6 +38,7 @@ import com.oceanbase.odc.service.notification.helper.EventBuilder;
 import com.oceanbase.odc.service.notification.model.Event;
 import com.oceanbase.odc.service.quartz.util.ScheduleTaskUtils;
 import com.oceanbase.odc.service.schedule.ScheduleService;
+import com.oceanbase.odc.service.schedule.model.JobType;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -46,6 +52,8 @@ public class OdcTriggerListener extends TriggerListenerSupport {
 
     @Autowired
     private ScheduleRepository scheduleRepository;
+    @Autowired
+    private ScheduleTaskRepository taskRepository;
 
     @Autowired
     private NotificationProperties notificationProperties;
@@ -53,6 +61,8 @@ public class OdcTriggerListener extends TriggerListenerSupport {
     private Broker broker;
     @Autowired
     private EventBuilder eventBuilder;
+    @Value("${odc.task.allow-recovery:true}")
+    private boolean allowRecovery;
 
     @Override
     public String getName() {
@@ -61,6 +71,27 @@ public class OdcTriggerListener extends TriggerListenerSupport {
 
     @Override
     public boolean vetoJobExecution(Trigger trigger, JobExecutionContext context) {
+
+        if (context.isRecovering() && !allowRecovery) {
+            log.info("Recovery is not allowed,jobKey={}", trigger.getJobKey());
+        }
+        // If the Job is being re-executed because of a 'recovery' situation,bind it to an existing
+        // execution record.
+        if (context.isRecovering() && JobType.valueOf(context.getJobDetail().getKey().getGroup()).shouldRecover()) {
+            Long targetTaskId = ScheduleTaskUtils.getTargetTaskId(context);
+            Optional<ScheduleTaskEntity> targetTask = targetTaskId == null ? taskRepository.findLatestTaskByJobName(
+                    context.getJobDetail().getKey().getName()) : taskRepository.findById(targetTaskId);
+
+            if (!targetTask.isPresent() || targetTask.get().getStatus().isTerminated()) {
+                log.info(
+                        "The scheduled task has already been completed or cannot exist. No recovery is needed.Job key={}",
+                        context.getJobDetail().getKey());
+                return true;
+            }
+            context.getTrigger().getJobDataMap()
+                    .putAll(ScheduleTaskUtils.buildTriggerDataMap(targetTask.get().getId()));
+        }
+
         return SpringContextUtil.getBean(ScheduleService.class)
                 .terminateIfDatabaseNotExisted(ScheduleTaskUtils.getScheduleId(context));
     }
