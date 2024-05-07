@@ -89,10 +89,9 @@ public class SingleConnectionDataSource extends BaseClassBasedDataSource impleme
                 resetConnection();
             }
             return getConnectionProxy(connection);
-        } catch (Exception e) {
-            log.warn("Get connection error unlock, hashcode=" + this.lock.hashCode());
+        } finally {
+            log.info("Get connection unlock, hashcode=" + this.lock.hashCode());
             this.lock.unlock();
-            throw e;
         }
     }
 
