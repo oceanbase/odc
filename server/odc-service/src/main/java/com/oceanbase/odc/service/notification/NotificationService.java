@@ -174,17 +174,18 @@ public class NotificationService {
 
         BaseChannelConfig channelConfig = channel.getChannelConfig();
         if (channelConfig instanceof WebhookChannelConfig && ((WebhookChannelConfig) channelConfig).getSign() == null) {
-            channelPropertyRepository.deleteByChannelIdAndKeyNotEquals(entity.getId(), "sign");
-        } else {
-            channelPropertyRepository.deleteByChannelId(entity.getId());
+            String sign = ((WebhookChannelConfig) channelMapper.fromEntityWithConfig(entity).getChannelConfig())
+                    .getSign();
+            ((WebhookChannelConfig) channelConfig).setSign((sign));
         }
 
         ChannelEntity toBeSaved = channelMapper.toEntity(channel);
-        toBeSaved.setCreatorId(authenticationFacade.currentUserId());
-        toBeSaved.setOrganizationId(authenticationFacade.currentOrganizationId());
-        toBeSaved.setProjectId(projectId);
+        channelRepository.update(toBeSaved);
 
-        return channelMapper.fromEntity(channelRepository.save(toBeSaved));
+        channelPropertyRepository.deleteByChannelId(channel.getId());
+        toBeSaved.getProperties().forEach(property -> channelPropertyRepository.save(property));
+
+        return channelMapper.fromEntity(nullSafeGetChannel(channel.getId()));
     }
 
     @Transactional(rollbackFor = Exception.class)

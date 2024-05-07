@@ -94,6 +94,10 @@ public class ChannelMapper {
         if (Objects.nonNull(channelConfig)) {
             Map<String, Object> properties =
                     JsonUtils.fromJsonMap(JsonUtils.toJsonIgnoreNull(channelConfig), String.class, Object.class);
+            if (channelConfig instanceof WebhookChannelConfig
+                    && ((WebhookChannelConfig) channelConfig).getSign() != null) {
+                properties.put("sign", ((WebhookChannelConfig) channelConfig).getSign());
+            }
             entity.setProperties(properties.entrySet().stream()
                     .map(entry -> {
                         ChannelPropertyEntity property = new ChannelPropertyEntity();
