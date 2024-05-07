@@ -70,13 +70,14 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @Component
 public class QueryProfileManager {
+    private static final String PROFILE_KEY_PREFIX = "query-profile-";
 
     private final ExecutorService executor =
             Executors.newFixedThreadPool(5, r -> new Thread(r, "query-profile-" + r.hashCode()));
 
     public void submitProfile(ConnectionSession session, @NonNull String traceId) {
         executor.execute(() -> {
-            if (ConnectionSessionUtil.getBinaryContentMetadata(session, traceId) == null) {
+            if (ConnectionSessionUtil.getBinaryContentMetadata(session, PROFILE_KEY_PREFIX + traceId) == null) {
                 SqlProfile profile = new SqlProfile(traceId, session);
                 initiateProfile(profile);
                 saveProfile(profile);
@@ -85,7 +86,8 @@ public class QueryProfileManager {
     }
 
     public SqlProfile getProfile(@NonNull String traceId, ConnectionSession session) throws IOException {
-        BinaryContentMetaData metadata = ConnectionSessionUtil.getBinaryContentMetadata(session, traceId);
+        BinaryContentMetaData metadata =
+                ConnectionSessionUtil.getBinaryContentMetadata(session, PROFILE_KEY_PREFIX + traceId);
         if (metadata != null) {
             InputStream stream = ConnectionSessionUtil.getBinaryDataManager(session).read(metadata);
             SqlProfile profile =
@@ -118,7 +120,6 @@ public class QueryProfileManager {
     public void refreshProfile(SqlProfile profile) {
         ConnectionSession session = profile.getSession();
         if (session.isExpired()) {
-            log.warn("session is expired, profile with traceId={} will be thrown.", profile.getTraceId());
             return;
         }
         List<SqlPlanMonitor> spmStats = session.getSyncJdbcExecutor(BACKEND_DS_KEY).execute(
@@ -136,7 +137,8 @@ public class QueryProfileManager {
         try {
             BinaryContentMetaData metaData = binaryDataManager.write(
                     new ByteArrayInputStream(JsonUtils.toJson(profile).getBytes()));
-            ConnectionSessionUtil.setBinaryContentMetadata(session, profile.getTraceId(), metaData);
+            String key = PROFILE_KEY_PREFIX + profile.getTraceId();
+            ConnectionSessionUtil.setBinaryContentMetadata(session, key, metaData);
         } catch (IOException e) {
             log.warn("Failed to persist profile.", e);
         }

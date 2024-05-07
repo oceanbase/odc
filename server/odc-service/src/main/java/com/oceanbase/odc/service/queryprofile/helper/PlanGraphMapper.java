@@ -16,9 +16,7 @@
 package com.oceanbase.odc.service.queryprofile.helper;
 
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -35,7 +33,6 @@ import com.oceanbase.odc.service.queryprofile.display.PlanGraphOperator;
  * @date 2024/4/12
  */
 public class PlanGraphMapper {
-    private static final int DEFAULT_TOP_NUM = 5;
 
     public static PlanGraph toVO(SqlPlanGraph graph) {
         PlanGraph vo = new PlanGraph();
@@ -43,12 +40,6 @@ public class PlanGraphMapper {
         vo.setStatistics(graph.getStatistics());
         vo.setVertexes(graph.getVertexList().stream()
                 .map(vertex -> mapVertex((Operator) vertex)).collect(Collectors.toList()));
-        Map<String, List<String>> topNodes = new HashMap<>();
-        vo.setTopNodes(topNodes);
-        List<String> sortByDuration = sort(DEFAULT_TOP_NUM, vo.getVertexes(),
-                Comparator.comparingLong(PlanGraphOperator::getDuration),
-                PlanGraphOperator::getGraphId);
-        topNodes.put("duration", sortByDuration);
         return vo;
     }
 

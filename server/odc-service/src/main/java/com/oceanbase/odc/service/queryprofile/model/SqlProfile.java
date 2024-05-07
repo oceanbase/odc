@@ -23,12 +23,14 @@ import com.oceanbase.odc.core.shared.model.QueryStatus;
 import com.oceanbase.odc.service.queryprofile.display.PlanGraph;
 
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 /**
  * @author liuyizhuo.lyz
  * @date 2024/4/10
  */
 @Data
+@NoArgsConstructor
 public class SqlProfile {
     private Date startTime;
     private Date endTime;

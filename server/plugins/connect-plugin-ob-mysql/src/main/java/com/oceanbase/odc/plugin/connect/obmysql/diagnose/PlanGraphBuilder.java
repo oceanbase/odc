@@ -40,7 +40,7 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 public class PlanGraphBuilder {
-    private static final Pattern PARAMETER_PATTERN = Pattern.compile("^\\s+(:\\d+) => ('.+')&");
+    private static final Pattern PARAMETER_PATTERN = Pattern.compile("\\s+(:\\d+) => (.+)");
     private static final Pattern VALUE_GROUP_PATTERN = Pattern.compile("\\[([^]]+)]");
     private static final String EMPTY_PREDICATE = "nil";
 
