@@ -273,7 +273,7 @@ public class OnlineSchemaChangeFlowableTask extends BaseODCFlowTaskDelegate<Void
         scheduleEntity.setAllowConcurrent(false);
         scheduleEntity.setCreatorId(creatorId);
         scheduleEntity.setOrganizationId(organizationId);
-        // todo project id database id
+        // todo project id
         scheduleEntity.setProjectId(1L);
         scheduleEntity.setDatabaseId(databaseId);
         scheduleEntity.setModifierId(scheduleEntity.getCreatorId());
