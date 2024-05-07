@@ -65,7 +65,7 @@ import lombok.ToString;
         "passwordEncrypted", "sysTenantPasswordEncrypted", "readonlyPasswordEncrypted", "sslFileEntry"})
 public class ConnectionConfig
         implements SecurityResource, OrganizationIsolated, CloudConnectionConfig, SSLConnectionConfig, Serializable {
-    private static final long serialVersionUID = 5046073730218796286L;
+    private static final long serialVersionUID = -7198204983655038981L;
     private static final String SESSION_INIT_SCRIPT_KEY = "SESSION_INIT_SCRIPT";
     private static final String JDBC_URL_PARAMETERS_KEY = "JDBC_URL_PARAMETERS";
     /**
