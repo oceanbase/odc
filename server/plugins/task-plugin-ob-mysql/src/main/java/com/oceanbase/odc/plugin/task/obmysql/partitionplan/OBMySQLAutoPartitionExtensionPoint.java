@@ -82,8 +82,8 @@ public class OBMySQLAutoPartitionExtensionPoint implements AutoPartitionExtensio
 
     @Override
     public List<DBTable> listAllPartitionedTables(@NonNull Connection connection,
-            @NonNull String schemaName, List<String> tableNames) {
-        DBSchemaAccessor accessor = getDBSchemaAccessor(connection);
+            String tenantName, @NonNull String schemaName, List<String> tableNames) {
+        DBSchemaAccessor accessor = getDBSchemaAccessor(connection, tenantName);
         Map<String, DBTablePartition> tblName2Parti = accessor.listTablePartitions(schemaName, tableNames);
         tblName2Parti = tblName2Parti.entrySet().stream()
                 .filter(e -> supports(e.getValue()))
@@ -214,9 +214,9 @@ public class OBMySQLAutoPartitionExtensionPoint implements AutoPartitionExtensio
         }
     }
 
-    protected DBSchemaAccessor getDBSchemaAccessor(@NonNull Connection connection) {
+    protected DBSchemaAccessor getDBSchemaAccessor(@NonNull Connection connection, String tenantName) {
         JdbcOperations jdbc = new JdbcTemplate(new SingleConnectionDataSource(connection, false));
-        return DBSchemaAccessors.create(jdbc, new OBMySQLInformationExtension().getDBVersion(connection));
+        return DBSchemaAccessors.create(jdbc, new OBMySQLInformationExtension().getDBVersion(connection), tenantName);
     }
 
     static private class RangePartiExprParser extends OBMySQLParser {

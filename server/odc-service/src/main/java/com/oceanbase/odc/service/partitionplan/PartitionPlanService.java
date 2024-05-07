@@ -172,9 +172,9 @@ public class PartitionPlanService {
             tblName2PartiConfig = new HashMap<>();
         }
         Database database = this.databaseService.detail(databaseId);
-        List<DBTable> dbTables =
-                getJdbcOpt(connectionSession).execute((ConnectionCallback<List<DBTable>>) con -> extensionPoint
-                        .listAllPartitionedTables(con, database.getName(), null));
+        List<DBTable> dbTables = getJdbcOpt(connectionSession)
+                .execute((ConnectionCallback<List<DBTable>>) con -> extensionPoint.listAllPartitionedTables(con,
+                        ConnectionSessionUtil.getTenantName(connectionSession), database.getName(), null));
         return dbTables.stream().map(dbTable -> {
             PartitionPlanDBTable partitionPlanTable = new PartitionPlanDBTable();
             partitionPlanTable.setName(dbTable.getName());
@@ -205,6 +205,7 @@ public class PartitionPlanService {
         JdbcOperations jdbc = getJdbcOpt(connectionSession);
         Map<String, DBTable> name2Table =
                 jdbc.execute((ConnectionCallback<List<DBTable>>) con -> extensionPoint.listAllPartitionedTables(con,
+                        ConnectionSessionUtil.getTenantName(connectionSession),
                         schema, tableNames)).stream().collect(Collectors.toMap(DBTable::getName, dbTable -> dbTable));
         if (Boolean.TRUE.equals(onlyForPartitionName)) {
             return tableConfigs.stream().map(i -> jdbc.execute((ConnectionCallback<PartitionPlanPreViewResp>) con -> {

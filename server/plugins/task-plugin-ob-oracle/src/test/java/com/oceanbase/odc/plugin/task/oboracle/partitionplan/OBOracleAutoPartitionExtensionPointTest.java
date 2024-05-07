@@ -211,7 +211,7 @@ public class OBOracleAutoPartitionExtensionPointTest {
         TestDBConfiguration configuration = TestDBConfigurations.getInstance().getTestOBOracleConfiguration();
         try (Connection connection = configuration.getDataSource().getConnection()) {
             AutoPartitionExtensionPoint extensionPoint = new OBOracleAutoPartitionExtensionPoint();
-            List<DBTable> actual = extensionPoint.listAllPartitionedTables(connection,
+            List<DBTable> actual = extensionPoint.listAllPartitionedTables(connection, null,
                     configuration.getDefaultDBName(), Collections.singletonList(RANGE_TABLE_NAME));
             Assert.assertEquals(1, actual.size());
         }
