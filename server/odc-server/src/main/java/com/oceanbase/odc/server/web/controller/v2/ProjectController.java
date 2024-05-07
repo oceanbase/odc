@@ -15,6 +15,7 @@
  */
 package com.oceanbase.odc.server.web.controller.v2;
 
+import java.io.ObjectStreamClass;
 import java.util.List;
 
 import javax.validation.Valid;
@@ -41,15 +42,18 @@ import com.oceanbase.odc.service.common.response.Responses;
 import com.oceanbase.odc.service.common.response.SuccessResponse;
 import com.oceanbase.odc.service.connection.database.DatabaseService;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
+import com.oceanbase.odc.service.integration.model.TemplateVariables;
+import com.oceanbase.odc.service.task.model.ExecutorInfo;
 
 import io.swagger.annotations.ApiOperation;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * @Author: Lebie
  * @Date: 2023/4/11 16:05
  * @Description: []
  */
-
+@Slf4j
 @RestController
 @RequestMapping("/api/v2/collaboration")
 public class ProjectController {
@@ -68,6 +72,12 @@ public class ProjectController {
     @ApiOperation(value = "getProject", notes = "Detail a project")
     @RequestMapping(value = "/projects/{id:[\\d]+}", method = RequestMethod.GET)
     public SuccessResponse<Project> getProject(@PathVariable Long id) {
+        log.info("ConnectionConfig的serialVersionUID={}",
+                ObjectStreamClass.lookup(ConnectionConfig.class).getSerialVersionUID());
+        log.info("TemplateVariables的serialVersionUID={}",
+                ObjectStreamClass.lookup(TemplateVariables.class).getSerialVersionUID());
+        log.info("ExecutorInfo的serialVersionUID={}",
+                ObjectStreamClass.lookup(ExecutorInfo.class).getSerialVersionUID());
         return Responses.success(projectService.detail(id));
     }
 
