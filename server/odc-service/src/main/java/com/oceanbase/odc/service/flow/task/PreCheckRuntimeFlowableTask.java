@@ -101,9 +101,9 @@ public class PreCheckRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Void> {
 
     private volatile boolean success = false;
     private volatile boolean overLimit = false;
-    private volatile SqlCheckTaskResult            sqlCheckResult             = null;
-    private volatile MultipleSqlCheckTaskResult    multipleSqlCheckTaskResult = null;
-    private volatile DatabasePermissionCheckResult permissionCheckResult      = null;
+    private volatile SqlCheckTaskResult sqlCheckResult = null;
+    private volatile MultipleSqlCheckTaskResult multipleSqlCheckTaskResult = null;
+    private volatile DatabasePermissionCheckResult permissionCheckResult = null;
     private Long creatorId;
     private List<OffsetString> userInputSqls;
     private InputStream uploadFileInputStream;
@@ -140,7 +140,7 @@ public class PreCheckRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Void> {
         if (taskEntity == null) {
             throw new ServiceTaskError(new RuntimeException("Can not find task entity by id " + taskId));
         }
-        this.taskEntity=taskEntity;
+        this.taskEntity = taskEntity;
         if (preCheckTaskEntity == null) {
             throw new ServiceTaskError(new RuntimeException("Can not find task entity by id " + preCheckTaskId));
         }
@@ -235,9 +235,9 @@ public class PreCheckRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Void> {
     protected void onFailure(Long taskId, TaskService taskService) {
         log.warn("RiskLevel Detect task failed, taskId={}", this.preCheckTaskId);
         try {
-            if(this.taskEntity.getTaskType()==TaskType.MULTIPLE_ASYNC){
-                taskService.fail(this.preCheckTaskId,100,buildMultiplePreCheckResult());
-            }else {
+            if (this.taskEntity.getTaskType() == TaskType.MULTIPLE_ASYNC) {
+                taskService.fail(this.preCheckTaskId, 100, buildMultiplePreCheckResult());
+            } else {
                 taskService.fail(this.preCheckTaskId, 100, buildPreCheckResult());
             }
             this.serviceTaskRepository.updateStatusById(getTargetTaskInstanceId(), FlowNodeStatus.FAILED);
@@ -251,9 +251,9 @@ public class PreCheckRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Void> {
     protected void onSuccessful(Long taskId, TaskService taskService) {
         log.info("Risk detect task succeed, taskId={}", this.preCheckTaskId);
         try {
-            if(this.taskEntity.getTaskType()==TaskType.MULTIPLE_ASYNC){
-                taskService.succeed(this.preCheckTaskId,buildMultiplePreCheckResult());
-            }else {
+            if (this.taskEntity.getTaskType() == TaskType.MULTIPLE_ASYNC) {
+                taskService.succeed(this.preCheckTaskId, buildMultiplePreCheckResult());
+            } else {
                 taskService.succeed(this.preCheckTaskId, buildPreCheckResult());
             }
             this.serviceTaskRepository.updateStatusById(getTargetTaskInstanceId(), FlowNodeStatus.COMPLETED);
@@ -411,9 +411,10 @@ public class PreCheckRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Void> {
             this.multipleSqlCheckTaskResult.setSqlCheckTaskResultList(sqlCheckTaskResultList);
             this.multipleSqlCheckTaskResult.setDatabaseList(this.databaseList);
             this.multipleSqlCheckTaskResult.setSuccess(true);
-            this.multipleSqlCheckTaskResult.setIssueCount(this.multipleSqlCheckTaskResult.getSqlCheckTaskResultList().stream()
-                    .map(sqlCheckTaskResult -> sqlCheckTaskResult.getIssueCount())
-                    .reduce((sum, account) -> sum = sum + account).get());
+            this.multipleSqlCheckTaskResult
+                    .setIssueCount(this.multipleSqlCheckTaskResult.getSqlCheckTaskResultList().stream()
+                            .map(sqlCheckTaskResult -> sqlCheckTaskResult.getIssueCount())
+                            .reduce((sum, account) -> sum = sum + account).get());
             this.multipleSqlCheckTaskResult.setMaxLevel(
                     Math.toIntExact(approvalFlowConfigSelector.selectForMultipleDatabase().getId()));
             this.multipleSqlCheckTaskResult.setError(null);

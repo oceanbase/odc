@@ -567,13 +567,13 @@ public class FlowInstanceService {
             Map<Long, Environment> environmentMap = environmentService.detailSkipPermissionCheckForMultipleDatabase(
                     environmentEntities).stream()
                     .collect(Collectors.toMap(Environment::getId, environment -> environment));
-            for (Database database : databases) {
-                if (environmentMap.containsKey(database.getDataSource().getEnvironmentId())) {
-                    database.setEnvironment(environmentMap.get(database.getDataSource().getEnvironmentId()));
+            databases.forEach(database -> {
+                Long environmentId = database.getDataSource().getEnvironmentId();
+                Environment environment = environmentMap.get(environmentId);
+                if (environment != null) {
+                    database.setEnvironment(environment);
                 }
-            }
-            parameters.setDatabases(databases);
-            flowInstanceDetailResp.setParameters(parameters);
+            });
         }
         return flowInstanceDetailResp;
     }

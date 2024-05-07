@@ -99,7 +99,7 @@ public class MultipleDatabaseChangeRuntimeFlowableTask extends BaseODCFlowTaskDe
                 this.batchId = value;
             }
             log.info("multiple database task start, taskId={}, batchId={}", taskId,
-                this.batchId +1);
+                    this.batchId + 1);
             multipleDatabaseChangeParameters.setBatchId(this.batchId + 1);
             detail.setParametersJson(JsonUtils.toJson(multipleDatabaseChangeParameters));
             taskService.updateParametersJson(detail);
@@ -235,22 +235,22 @@ public class MultipleDatabaseChangeRuntimeFlowableTask extends BaseODCFlowTaskDe
         MultipleDatabaseChangeTaskResult result = new MultipleDatabaseChangeTaskResult();
         Long flowInstanceId = getFlowInstanceId();
         QueryFlowInstanceParams param = QueryFlowInstanceParams.builder().parentInstanceId(flowInstanceId)
-            .build();
+                .build();
         Page<FlowInstanceDetailResp> page = flowInstanceService.list(Pageable.unpaged(), param);
         List<FlowInstanceDetailResp> flowInstanceDetailRespList = page.getContent();
         Map<Long, FlowInstanceDetailResp> map = flowInstanceDetailRespList.stream().collect(
-            Collectors.toMap(flowInstanceDetailResp -> flowInstanceDetailResp.getDatabase().getId(),
-                flowInstanceDetailResp -> flowInstanceDetailResp));
-        List<Long> idList = this.orderedDatabaseIds.stream().flatMap(x->x.stream()).collect(Collectors.toList());
+                Collectors.toMap(flowInstanceDetailResp -> flowInstanceDetailResp.getDatabase().getId(),
+                        flowInstanceDetailResp -> flowInstanceDetailResp));
+        List<Long> idList = this.orderedDatabaseIds.stream().flatMap(x -> x.stream()).collect(Collectors.toList());
         List<Database> databaseList = databaseService.detailForMultipleDatabase(idList);
         ArrayList<DatabaseChangingRecord> databaseChangingRecords = new ArrayList<>();
         for (Database database : databaseList) {
             DatabaseChangingRecord databaseChangingRecord = new DatabaseChangingRecord();
             databaseChangingRecord.setDatabase(database);
-            if(map.containsKey(database.getId())){
+            if (map.containsKey(database.getId())) {
                 databaseChangingRecord.setFlowInstanceDetailResp(map.get(database.getId()));
                 databaseChangingRecord.setStatus(map.get(database.getId()).getStatus());
-            }else {
+            } else {
                 databaseChangingRecord.setStatus(FlowStatus.WAIT_FOR_EXECUTION);
             }
             databaseChangingRecords.add(databaseChangingRecord);

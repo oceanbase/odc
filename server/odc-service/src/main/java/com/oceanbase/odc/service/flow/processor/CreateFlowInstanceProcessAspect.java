@@ -176,9 +176,9 @@ public class CreateFlowInstanceProcessAspect implements InitializingBean {
             throw new BadArgumentException(ErrorCodes.IllegalArgument,
                     "The number of databases must be greater than 1.");
         }
-        if( new HashSet<Long>(ids).size()!=ids.size()){
+        if (new HashSet<Long>(ids).size() != ids.size()) {
             throw new BadArgumentException(ErrorCodes.IllegalArgument,
-                "Database cannot be duplicated.");
+                    "Database cannot be duplicated.");
         }
         List<Database> databases = databaseService.detailForMultipleDatabase(ids);
         Project project = databases.get(0).getProject();

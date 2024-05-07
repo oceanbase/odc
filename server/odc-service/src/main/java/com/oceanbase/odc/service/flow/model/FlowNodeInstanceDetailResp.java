@@ -148,9 +148,9 @@ public class FlowNodeInstanceDetailResp {
             }
             if (taskEntity != null && taskEntity.getTaskType() == TaskType.PRE_CHECK) {
                 // Determine whether to perform a multiple database pre-check based on ParametersJson
-                if(taskEntity.getParametersJson()==null){
+                if (taskEntity.getParametersJson() == null) {
                     PreCheckTaskResult result =
-                        JsonUtils.fromJson(taskEntity.getResultJson(), PreCheckTaskResult.class);
+                            JsonUtils.fromJson(taskEntity.getResultJson(), PreCheckTaskResult.class);
                     if (result != null) {
                         resp.setPreCheckOverLimit(result.isOverLimit());
                         if (Objects.nonNull(result.getSqlCheckResult())) {
@@ -160,17 +160,18 @@ public class FlowNodeInstanceDetailResp {
                             resp.setUnauthorizedDatabases(result.getPermissionCheckResult().getUnauthorizedDatabases());
                         }
                     }
-                }else {
+                } else {
                     MultiplePreCheckTaskResult multiplePreCheckTaskResult = JsonUtils.fromJson(
-                        taskEntity.getResultJson(), MultiplePreCheckTaskResult.class);
+                            taskEntity.getResultJson(), MultiplePreCheckTaskResult.class);
                     if (multiplePreCheckTaskResult != null) {
                         resp.setPreCheckOverLimit(multiplePreCheckTaskResult.isOverLimit());
                         if (Objects.nonNull(multiplePreCheckTaskResult.getMultipleSqlCheckTaskResult())) {
                             resp.setIssueCount(multiplePreCheckTaskResult.getMultipleSqlCheckTaskResult()
-                                .getIssueCount());
+                                    .getIssueCount());
                         }
                         if (Objects.nonNull(multiplePreCheckTaskResult.getPermissionCheckResult())) {
-                            resp.setUnauthorizedDatabases(multiplePreCheckTaskResult.getPermissionCheckResult().getUnauthorizedDatabases());
+                            resp.setUnauthorizedDatabases(
+                                    multiplePreCheckTaskResult.getPermissionCheckResult().getUnauthorizedDatabases());
                         }
                     }
                 }

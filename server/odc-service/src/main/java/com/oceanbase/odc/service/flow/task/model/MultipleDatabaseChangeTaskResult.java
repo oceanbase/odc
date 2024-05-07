@@ -31,5 +31,5 @@ import lombok.Setter;
 @Setter
 public class MultipleDatabaseChangeTaskResult implements FlowTaskResult {
     private List<DatabaseChangingRecord> databaseChangingRecordList;
-    private boolean                      success;
+    private boolean success;
 }

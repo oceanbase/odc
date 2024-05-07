@@ -162,14 +162,14 @@ public class FlowTaskInstanceService {
     @Autowired
     private TaskFrameworkEnabledProperties taskFrameworkProperties;
     @Autowired
-    private LoggerService         loggerService;
+    private LoggerService loggerService;
     @Autowired
     private EnvironmentRepository environmentRepository;
     @Autowired
-    private EnvironmentService    environmentService;
+    private EnvironmentService environmentService;
 
     @Value("${odc.task.async.result-preview-max-size-bytes:5242880}")
-    private long                  resultPreviewMaxSizeBytes;
+    private long resultPreviewMaxSizeBytes;
 
     private final Set<String> supportedBucketName = new HashSet<>(Arrays.asList("async", "structure-comparison"));
 
@@ -296,8 +296,9 @@ public class FlowTaskInstanceService {
                 || taskInstance.getTaskType() == TaskType.PRE_CHECK) {
             Long taskId = taskInstance.getTargetTaskId();
             TaskEntity taskEntity = this.taskService.detail(taskId);
-            // When ParametersJson()==null, pre-check is for single database;When ParametersJson()!=null, pre-check is for multiple databases
-            if (taskEntity.getParametersJson()==null){
+            // When ParametersJson()==null, pre-check is for single database;When ParametersJson()!=null,
+            // pre-check is for multiple databases
+            if (taskEntity.getParametersJson() == null) {
                 PreCheckTaskResult result = JsonUtils.fromJson(taskEntity.getResultJson(), PreCheckTaskResult.class);
                 if (Objects.isNull(result)) {
                     return Collections.emptyList();
@@ -307,14 +308,15 @@ public class FlowTaskInstanceService {
                 if (!this.dispatchChecker.isThisMachine(info)) {
                     DispatchResponse response = requestDispatcher.forward(info.getHost(), info.getPort());
                     return response.getContentByType(
-                        new TypeReference<ListResponse<SqlCheckTaskResult>>() {}).getData().getContents();
+                            new TypeReference<ListResponse<SqlCheckTaskResult>>() {}).getData().getContents();
                 }
                 String dir = FileManager.generateDir(FileBucket.PRE_CHECK) + File.separator + taskId;
                 Verify.notNull(checkTaskResult.getFileName(), "SqlCheckResultFileName");
                 File jsonFile = new File(dir + File.separator + checkTaskResult.getFileName());
                 if (!jsonFile.exists()) {
                     throw new NotFoundException(ErrorCodes.NotFound, new Object[] {
-                        ResourceType.ODC_FILE.getLocalizedMessage(), "file", jsonFile.getName()}, "File is not found");
+                            ResourceType.ODC_FILE.getLocalizedMessage(), "file", jsonFile.getName()},
+                            "File is not found");
                 }
                 String content = FileUtils.readFileToString(jsonFile, Charsets.UTF_8);
                 checkTaskResult = JsonUtils.fromJson(content, SqlCheckTaskResult.class);
@@ -322,25 +324,27 @@ public class FlowTaskInstanceService {
                 result.setSqlCheckResult(checkTaskResult);
                 result.setExecutorInfo(null);
                 return Collections.singletonList(result);
-            }else {
-                MultiplePreCheckTaskResult multiplePreCheckTaskResult = JsonUtils.fromJson(taskEntity.getResultJson(), MultiplePreCheckTaskResult.class);
+            } else {
+                MultiplePreCheckTaskResult multiplePreCheckTaskResult =
+                        JsonUtils.fromJson(taskEntity.getResultJson(), MultiplePreCheckTaskResult.class);
                 if (Objects.isNull(multiplePreCheckTaskResult)) {
                     return Collections.emptyList();
                 }
-                MultipleSqlCheckTaskResult multipleSqlCheckTaskResult
-                    = multiplePreCheckTaskResult.getMultipleSqlCheckTaskResult();
+                MultipleSqlCheckTaskResult multipleSqlCheckTaskResult =
+                        multiplePreCheckTaskResult.getMultipleSqlCheckTaskResult();
                 ExecutorInfo info = multiplePreCheckTaskResult.getExecutorInfo();
                 if (!this.dispatchChecker.isThisMachine(info)) {
                     DispatchResponse response = requestDispatcher.forward(info.getHost(), info.getPort());
                     return response.getContentByType(
-                        new TypeReference<ListResponse<MultiplePreCheckTaskResult>>() {}).getData().getContents();
+                            new TypeReference<ListResponse<MultiplePreCheckTaskResult>>() {}).getData().getContents();
                 }
                 String dir = FileManager.generateDir(FileBucket.PRE_CHECK) + File.separator + taskId;
                 Verify.notNull(multipleSqlCheckTaskResult.getFileName(), "SqlCheckResultFileName");
                 File jsonFile = new File(dir + File.separator + multipleSqlCheckTaskResult.getFileName());
                 if (!jsonFile.exists()) {
                     throw new NotFoundException(ErrorCodes.NotFound, new Object[] {
-                        ResourceType.ODC_FILE.getLocalizedMessage(), "file", jsonFile.getName()}, "File is not found");
+                            ResourceType.ODC_FILE.getLocalizedMessage(), "file", jsonFile.getName()},
+                            "File is not found");
                 }
                 String content = FileUtils.readFileToString(jsonFile, Charsets.UTF_8);
                 multipleSqlCheckTaskResult = JsonUtils.fromJson(content, MultipleSqlCheckTaskResult.class);
@@ -348,17 +352,17 @@ public class FlowTaskInstanceService {
                 // Add environment element
                 List<Database> databaseList = multipleSqlCheckTaskResult.getDatabaseList();
                 Set<Long> environmentIds = databaseList.stream().map(
-                    database -> database.getDataSource().getEnvironmentId()).collect(Collectors.toSet());
+                        database -> database.getDataSource().getEnvironmentId()).collect(Collectors.toSet());
                 List<EnvironmentEntity> environmentEntities = environmentRepository.findAllById(environmentIds);
                 Map<Long, Environment> environmentMap = environmentService.detailSkipPermissionCheckForMultipleDatabase(
                         environmentEntities).stream()
-                    .collect(Collectors.toMap(Environment::getId, environment -> environment));
+                        .collect(Collectors.toMap(Environment::getId, environment -> environment));
                 for (Database database : databaseList) {
-                    if(environmentMap.containsKey(database.getDataSource().getEnvironmentId())){
+                    if (environmentMap.containsKey(database.getDataSource().getEnvironmentId())) {
                         database.setEnvironment(environmentMap.get(database.getDataSource().getEnvironmentId()));
                     }
                 }
-                //multipleSqlCheckTaskResult.setDatabaseList(databaseList);
+                // multipleSqlCheckTaskResult.setDatabaseList(databaseList);
                 multiplePreCheckTaskResult.setMultipleSqlCheckTaskResult(multipleSqlCheckTaskResult);
                 multiplePreCheckTaskResult.setExecutorInfo(null);
                 return Collections.singletonList(multiplePreCheckTaskResult);
@@ -649,28 +653,31 @@ public class FlowTaskInstanceService {
     private List<MultipleDatabaseChangeTaskResult> getMultipleAsyncResult(@NonNull TaskEntity taskEntity)
             throws IOException {
         List<MultipleDatabaseChangeTaskResult> multipleDatabaseChangeTaskResults = innerGetResult(taskEntity,
-            MultipleDatabaseChangeTaskResult.class);
+                MultipleDatabaseChangeTaskResult.class);
         // Add environment element
         List<DatabaseChangingRecord> databaseChangingRecordList = multipleDatabaseChangeTaskResults.get(0)
-            .getDatabaseChangingRecordList();
-        List<Database> databaseList = multipleDatabaseChangeTaskResults.get(0).getDatabaseChangingRecordList().stream().map(
-            databaseChangingRecord -> databaseChangingRecord.getDatabase()).collect(
-            Collectors.toList());
+                .getDatabaseChangingRecordList();
+        List<Database> databaseList = multipleDatabaseChangeTaskResults.get(0).getDatabaseChangingRecordList().stream()
+                .map(
+                        databaseChangingRecord -> databaseChangingRecord.getDatabase())
+                .collect(
+                        Collectors.toList());
         Set<Long> environmentIds = databaseList.stream().map(
-            database -> database.getDataSource().getEnvironmentId()).collect(Collectors.toSet());
+                database -> database.getDataSource().getEnvironmentId()).collect(Collectors.toSet());
         List<EnvironmentEntity> environmentEntities = environmentRepository.findAllById(environmentIds);
         Map<Long, Environment> environmentMap = environmentService.detailSkipPermissionCheckForMultipleDatabase(
                 environmentEntities).stream()
-            .collect(Collectors.toMap(Environment::getId, environment -> environment));
+                .collect(Collectors.toMap(Environment::getId, environment -> environment));
         for (int i = 0; i < databaseList.size(); i++) {
             if (environmentMap.containsKey(databaseList.get(i).getDataSource().getEnvironmentId())) {
-                databaseList.get(i).setEnvironment(environmentMap.get(databaseList.get(i).getDataSource().getEnvironmentId()));
-                if(databaseChangingRecordList.get(i)!=null){
+                databaseList.get(i)
+                        .setEnvironment(environmentMap.get(databaseList.get(i).getDataSource().getEnvironmentId()));
+                if (databaseChangingRecordList.get(i) != null) {
                     databaseChangingRecordList.get(i).setDatabase(databaseList.get(i));
                 }
             }
         }
-        multipleDatabaseChangeTaskResults.get(0).setDatabaseChangingRecordList(databaseChangingRecordList);
+        // multipleDatabaseChangeTaskResults.get(0).setDatabaseChangingRecordList(databaseChangingRecordList);
         return multipleDatabaseChangeTaskResults;
     }
 
