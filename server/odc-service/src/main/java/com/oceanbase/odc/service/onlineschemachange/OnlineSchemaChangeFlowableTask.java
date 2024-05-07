@@ -83,7 +83,8 @@ public class OnlineSchemaChangeFlowableTask extends BaseODCFlowTaskDelegate<Void
     private OrganizationService organizationService;
     @Autowired
     private OnlineSchemaChangeProperties onlineSchemaChangeProperties;
-
+    @Autowired
+    private TaskService taskService;
     private volatile TaskStatus status;
     private volatile long scheduleId;
     private volatile long creatorId;
@@ -108,7 +109,8 @@ public class OnlineSchemaChangeFlowableTask extends BaseODCFlowTaskDelegate<Void
         String schema = FlowTaskUtil.getSchemaName(execution);
         continueOnError = parameter.isContinueOnError();
         OnlineSchemaChangeContextHolder.trace(this.creatorId, flowTaskId, this.organizationId);
-        ScheduleEntity schedule = createScheduleEntity(connectionConfig, parameter, schema);
+        TaskEntity taskEntity = taskService.detail(taskId);
+        ScheduleEntity schedule = createScheduleEntity(connectionConfig, parameter, schema, taskEntity.getDatabaseId());
         scheduleId = schedule.getId();
         try {
             List<ScheduleTaskEntity> tasks = parameter.generateSubTaskParameters(connectionConfig, schema).stream()
@@ -258,7 +260,7 @@ public class OnlineSchemaChangeFlowableTask extends BaseODCFlowTaskDelegate<Void
     }
 
     private ScheduleEntity createScheduleEntity(ConnectionConfig connectionConfig,
-            OnlineSchemaChangeParameters parameter, String schema) {
+            OnlineSchemaChangeParameters parameter, String schema, Long databaseId) {
         ScheduleEntity scheduleEntity = new ScheduleEntity();
         scheduleEntity.setConnectionId(connectionConfig.id());
         scheduleEntity.setDatabaseName(schema);
@@ -269,7 +271,7 @@ public class OnlineSchemaChangeFlowableTask extends BaseODCFlowTaskDelegate<Void
         scheduleEntity.setOrganizationId(organizationId);
         // todo project id database id
         scheduleEntity.setProjectId(1L);
-        scheduleEntity.setDatabaseId(1L);
+        scheduleEntity.setDatabaseId(databaseId);
         scheduleEntity.setModifierId(scheduleEntity.getCreatorId());
         TriggerConfig triggerConfig = new TriggerConfig();
         triggerConfig.setTriggerStrategy(TriggerStrategy.CRON);
