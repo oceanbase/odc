@@ -74,6 +74,7 @@ public class OdcTriggerListener extends TriggerListenerSupport {
 
         if (context.isRecovering() && !allowRecovery) {
             log.info("Recovery is not allowed,jobKey={}", trigger.getJobKey());
+            return true;
         }
         // If the Job is being re-executed because of a 'recovery' situation,bind it to an existing
         // execution record.
