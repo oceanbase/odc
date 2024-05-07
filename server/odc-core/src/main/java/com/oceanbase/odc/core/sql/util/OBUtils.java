@@ -22,7 +22,9 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Types;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
@@ -39,7 +41,9 @@ import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.exception.BadRequestException;
 import com.oceanbase.odc.core.shared.exception.UnexpectedException;
+import com.oceanbase.odc.core.shared.model.OBSqlPlan;
 import com.oceanbase.odc.core.shared.model.SqlExecDetail;
+import com.oceanbase.odc.core.shared.model.SqlPlanMonitor;
 import com.oceanbase.odc.core.sql.execute.SyncJdbcExecutor;
 import com.oceanbase.odc.core.sql.execute.model.SqlExecTime;
 import com.oceanbase.tools.dbbrowser.util.MySQLSqlBuilder;
@@ -440,7 +444,8 @@ public class OBUtils {
      * OceanBase only supports ASH views in versions higher than 4.0. Therefore, this method is not
      * applicable to earlier versions, please use sql_audit instead.
      */
-    public static String queryPlanIdByTraceId(@NonNull Statement statement, String traceId, ConnectType connectType)
+    public static String queryPlanIdByTraceIdFromASH(@NonNull Statement statement, String traceId,
+            ConnectType connectType)
             throws SQLException {
         DialectType dialectType = connectType.getDialectType();
         SqlBuilder sqlBuilder = getBuilder(connectType)
@@ -454,6 +459,117 @@ public class OBUtils {
             }
             return rs.getString(1);
         }
+    }
+
+    public static String queryPlanIdByTraceIdFromAudit(@NonNull Statement statement, String traceId,
+            ConnectType connectType)
+            throws SQLException {
+        DialectType dialectType = connectType.getDialectType();
+        SqlBuilder sqlBuilder = getBuilder(connectType)
+                .append("select plan_id from ")
+                .append(dialectType.isMysql() ? "oceanbase" : "sys")
+                .append(".v$ob_sql_audit where trace_id=")
+                .value(traceId);
+        try (ResultSet rs = statement.executeQuery(sqlBuilder.toString())) {
+            if (!rs.next()) {
+                throw new SQLException("No result found in sql_audit.");
+            }
+            return rs.getString(1);
+        }
+    }
+
+    public static List<OBSqlPlan> queryOBSqlPlanByPlanId(@NonNull Statement statement, @NonNull String planId,
+            ConnectType connectType) throws SQLException {
+        DialectType dialectType = connectType.getDialectType();
+        SqlBuilder sqlBuilder = getBuilder(connectType)
+                .append("select id, parent_id, operator, object_owner, object_name, object_alias, ")
+                .append("other, access_predicates, filter_predicates, projection, special_predicates from ")
+                .append(dialectType.isMysql() ? "oceanbase" : "sys")
+                .append(".v$ob_sql_plan where plan_id=")
+                .value(planId)
+                .append(" order by id asc");
+        List<OBSqlPlan> records = new ArrayList<>();
+        try (ResultSet rs = statement.executeQuery(sqlBuilder.toString())) {
+            while (rs.next()) {
+                OBSqlPlan plan = new OBSqlPlan();
+                plan.setId(rs.getString("id"));
+                plan.setParentId(rs.getString("parent_id"));
+                plan.setOperator(rs.getString("operator"));
+                plan.setObjectOwner(rs.getString("object_owner"));
+                plan.setObjectName(rs.getString("object_name"));
+                plan.setObjectAlias(rs.getString("object_alias"));
+                plan.setOther(rs.getString("other"));
+                plan.setAccessPredicates(rs.getString("access_predicates"));
+                plan.setFilterPredicates(rs.getString("filter_predicates"));
+                plan.setProjection(rs.getString("projection"));
+                plan.setSpecialPredicates(rs.getString("special_predicates"));
+                records.add(plan);
+            }
+        }
+        Verify.notEmpty(records, "plan records");
+        return records;
+    }
+
+    public static List<SqlPlanMonitor> querySqlPlanMonitorStats(@NonNull Statement statement, @NonNull String traceId,
+            ConnectType connectType, Map<String, String> statId2Name) throws SQLException {
+        DialectType dialectType = connectType.getDialectType();
+        SqlBuilder sqlBuilder = getBuilder(connectType)
+                .append("select svr_ip,svr_port,first_refresh_time,last_refresh_time,first_change_time,")
+                .append("last_change_time,plan_line_id,starts,output_rows,db_time,user_io_wait_time,workarea_mem,")
+                .append("workarea_tempseg,");
+        for (int i = 1; i <= 10; i++) {
+            sqlBuilder.append("otherstat_").append(i).append("_id,");
+            sqlBuilder.append("otherstat_").append(i).append("_value,");
+        }
+        sqlBuilder.append("current_timestamp(6) current_ts from ")
+                .append(dialectType.isMysql() ? "oceanbase" : "sys")
+                .append(".v$sql_plan_monitor where trace_id=")
+                .value(traceId);
+        List<SqlPlanMonitor> records = new ArrayList<>();
+        try (ResultSet rs = statement.executeQuery(sqlBuilder.toString())) {
+            while (rs.next()) {
+                SqlPlanMonitor record = new SqlPlanMonitor();
+                record.setSvrIp(rs.getString("svr_ip"));
+                record.setSvrPort(rs.getString("svr_port"));
+                record.setFirstRefreshTime(rs.getTimestamp("first_refresh_time"));
+                record.setLastRefreshTime(rs.getTimestamp("last_refresh_time"));
+                record.setFirstChangeTime(rs.getTimestamp("first_change_time"));
+                record.setLastChangeTime(rs.getTimestamp("last_change_time"));
+                record.setCurrentTime(rs.getTimestamp("current_ts"));
+                record.setPlanLineId(rs.getString("plan_line_id"));
+                record.setStarts(rs.getLong("starts"));
+                record.setOutputRows(rs.getLong("output_rows"));
+                record.setDbTime(rs.getLong("db_time"));
+                record.setUserIOWaitTime(rs.getLong("user_io_wait_time"));
+                Map<String, String> otherstats = new HashMap<>();
+                for (int i = 1; i <= 10; i++) {
+                    String key = "otherstat_" + i + "_id";
+                    String statKey = rs.getString(key);
+                    if (statKey == null || otherstats.containsKey(statKey) || !statId2Name.containsKey(statKey)) {
+                        continue;
+                    }
+                    otherstats.put(statId2Name.get(statKey), rs.getString("otherstat_" + i + "_value"));
+                }
+                record.setOtherstats(otherstats);
+                records.add(record);
+            }
+        }
+        return records;
+    }
+
+    public static Map<String, String> querySPMStatNames(@NonNull Statement statement, ConnectType connectType)
+            throws SQLException {
+        SqlBuilder sqlBuilder = getBuilder(connectType)
+                .append("select id, name from ")
+                .append(connectType.getDialectType().isMysql() ? "oceanbase" : "sys")
+                .append(".v$sql_monitor_statname");
+        Map<String, String> statId2Name = new HashMap<>();
+        try (ResultSet rs = statement.executeQuery(sqlBuilder.toString())) {
+            while (rs.next()) {
+                statId2Name.put(rs.getString("id"), rs.getString("name"));
+            }
+        }
+        return statId2Name;
     }
 
 }

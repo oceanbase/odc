@@ -13,17 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.queryprofile.model;
+package com.oceanbase.odc.core.shared.model;
 
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
 import com.oceanbase.odc.common.graph.Graph;
-import com.oceanbase.odc.common.graph.GraphVertex;
 
 import lombok.Getter;
-import lombok.NonNull;
 
 /**
  * @author liuyizhuo.lyz
@@ -33,27 +30,4 @@ import lombok.NonNull;
 public class SqlPlanGraph extends Graph {
     private final Map<String, String> overview = new LinkedHashMap<>();
     private final Map<String, String> statistics = new LinkedHashMap<>();
-    private final Map<String, GraphVertex> operatorMap = new HashMap<>();
-
-    public void setStatistic(String key, String value) {
-        if (value != null) {
-            statistics.put(key, value);
-        }
-    }
-
-    public void setOverview(String key, String value) {
-        if (value != null) {
-            overview.put(key, value);
-        }
-    }
-
-    @Override
-    public GraphVertex insertVertex(@NonNull GraphVertex vertex) {
-        operatorMap.put(vertex.getGraphId(), vertex);
-        return super.insertVertex(vertex);
-    }
-
-    public GraphVertex getVertex(@NonNull String id) {
-        return operatorMap.get(id);
-    }
 }

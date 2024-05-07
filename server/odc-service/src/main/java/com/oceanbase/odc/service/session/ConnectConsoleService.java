@@ -91,6 +91,7 @@ import com.oceanbase.odc.service.feature.AllFeatures;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.permission.database.model.DatabasePermissionType;
 import com.oceanbase.odc.service.permission.database.model.UnauthorizedDatabase;
+import com.oceanbase.odc.service.queryprofile.QueryProfileManager;
 import com.oceanbase.odc.service.session.interceptor.SqlCheckInterceptor;
 import com.oceanbase.odc.service.session.interceptor.SqlConsoleInterceptor;
 import com.oceanbase.odc.service.session.interceptor.SqlExecuteInterceptorService;
@@ -145,6 +146,8 @@ public class ConnectConsoleService {
     private UserConfigFacade userConfigFacade;
     @Autowired
     private AuthenticationFacade authenticationFacade;
+    @Autowired
+    private QueryProfileManager profileManager;
 
     public SqlExecuteResult queryTableOrViewData(@NotNull String sessionId,
             @NotNull @Valid QueryTableOrViewDataReq req) throws Exception {
@@ -389,7 +392,7 @@ public class ConnectConsoleService {
         statementCallBack.setMaxCachedLines(sessionProperties.getResultSetMaxCachedLines());
         statementCallBack.setLocale(LocaleContextHolder.getLocale());
         if (connectionSession.getDialectType().isOceanbase() && sqlTuples.size() <= 10) {
-            statementCallBack.getListeners().add(new OBExecutionListener(connectionSession));
+            statementCallBack.getListeners().add(new OBExecutionListener(connectionSession, profileManager));
         }
 
         Future<List<JdbcGeneralResult>> futureResult = connectionSession.getAsyncJdbcExecutor(

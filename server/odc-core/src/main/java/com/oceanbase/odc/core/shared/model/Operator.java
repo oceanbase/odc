@@ -13,12 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.queryprofile.model;
+package com.oceanbase.odc.core.shared.model;
 
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 import com.oceanbase.odc.common.graph.GraphVertex;
-import com.oceanbase.odc.service.queryprofile.model.SqlProfile.Status;
 
 import lombok.Getter;
 import lombok.NonNull;
@@ -32,9 +32,10 @@ import lombok.Setter;
 @Setter
 public class Operator extends GraphVertex {
     private String title;
-    private Status status;
-    private Map<String, String> overview;
-    private Map<String, String> statistics;
+    private QueryStatus status;
+    private Long duration;
+    private Map<String, String> overview = new LinkedHashMap<>();
+    private Map<String, String> statistics = new LinkedHashMap<>();
 
     public Operator(@NonNull String id, String name) {
         super(id, name);

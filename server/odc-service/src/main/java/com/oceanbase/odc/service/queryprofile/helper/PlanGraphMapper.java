@@ -15,20 +15,27 @@
  */
 package com.oceanbase.odc.service.queryprofile.helper;
 
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import com.google.common.collect.Comparators;
 import com.oceanbase.odc.common.graph.GraphEdge;
+import com.oceanbase.odc.core.shared.model.Operator;
+import com.oceanbase.odc.core.shared.model.SqlPlanGraph;
 import com.oceanbase.odc.service.queryprofile.display.PlanGraph;
 import com.oceanbase.odc.service.queryprofile.display.PlanGraphEdge;
 import com.oceanbase.odc.service.queryprofile.display.PlanGraphOperator;
-import com.oceanbase.odc.service.queryprofile.model.Operator;
-import com.oceanbase.odc.service.queryprofile.model.SqlPlanGraph;
 
 /**
  * @author liuyizhuo.lyz
  * @date 2024/4/12
  */
 public class PlanGraphMapper {
+    private static final int DEFAULT_TOP_NUM = 5;
 
     public static PlanGraph toVO(SqlPlanGraph graph) {
         PlanGraph vo = new PlanGraph();
@@ -36,8 +43,12 @@ public class PlanGraphMapper {
         vo.setStatistics(graph.getStatistics());
         vo.setVertexes(graph.getVertexList().stream()
                 .map(vertex -> mapVertex((Operator) vertex)).collect(Collectors.toList()));
-        vo.setEdges(graph.getEdgeList().stream()
-                .map(PlanGraphMapper::mapEdge).collect(Collectors.toList()));
+        Map<String, List<String>> topNodes = new HashMap<>();
+        vo.setTopNodes(topNodes);
+        List<String> sortByDuration = sort(DEFAULT_TOP_NUM, vo.getVertexes(),
+                Comparator.comparingLong(PlanGraphOperator::getDuration),
+                PlanGraphOperator::getGraphId);
+        topNodes.put("duration", sortByDuration);
         return vo;
     }
 
@@ -55,10 +66,21 @@ public class PlanGraphMapper {
         vo.setName(vertex.getName());
         vo.setTitle(vertex.getTitle());
         vo.setStatus(vertex.getStatus());
+        vo.setDuration(vertex.getDuration());
         vo.setAttributes(vertex.getAttributes());
         vo.setOverview(vertex.getOverview());
         vo.setStatistics(vertex.getStatistics());
+        vo.setInEdges(vertex.getInEdges().stream().map(PlanGraphMapper::mapEdge).collect(Collectors.toList()));
+        vo.setOutEdges(vertex.getOutEdges().stream().map(PlanGraphMapper::mapEdge).collect(Collectors.toList()));
         return vo;
+    }
+
+    private static <T> List<T> sort(int k, List<PlanGraphOperator> vertexes, Comparator<PlanGraphOperator> comparator,
+            Function<PlanGraphOperator, T> mapper) {
+        return vertexes.stream()
+                .collect(Comparators.greatest(k, comparator))
+                .stream().map(mapper)
+                .collect(Collectors.toList());
     }
 
 }

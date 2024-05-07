@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.queryprofile.helper;
+package com.oceanbase.odc.plugin.connect.obmysql.diagnose;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -26,11 +26,11 @@ import java.util.regex.Pattern;
 
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.shared.exception.UnexpectedException;
-import com.oceanbase.odc.service.queryprofile.model.OBSqlPlan;
-import com.oceanbase.odc.service.queryprofile.model.Operator;
-import com.oceanbase.odc.service.queryprofile.model.PredicateKey;
-import com.oceanbase.odc.service.queryprofile.model.SqlPlanGraph;
-import com.oceanbase.odc.service.queryprofile.model.SqlProfile.Status;
+import com.oceanbase.odc.core.shared.model.OBSqlPlan;
+import com.oceanbase.odc.core.shared.model.Operator;
+import com.oceanbase.odc.core.shared.model.PredicateKey;
+import com.oceanbase.odc.core.shared.model.QueryStatus;
+import com.oceanbase.odc.core.shared.model.SqlPlanGraph;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -50,7 +50,7 @@ public class PlanGraphBuilder {
         Map<String, String> parameters = new HashMap<>();
         for (OBSqlPlan record : records) {
             Operator operator = parseResult(record, parameters);
-            operator.setStatus(Status.PREPARING);
+            operator.setStatus(QueryStatus.PREPARING);
             graph.insertVertex(operator);
             map.put(record.getId(), operator);
             if ("-1".equals(record.getParentId())) {
@@ -77,17 +77,19 @@ public class PlanGraphBuilder {
             parseParameters(record.getOther(), parameters);
         }
         // parse access predicates
-        if (record.getAccessPredicates() != null) {
+        if (StringUtils.isNotEmpty(record.getAccessPredicates())) {
             Map<String, List<String>> access = parsePredicates(record.getAccessPredicates(), parameters);
-            operator.setAttribute("Access predicates", String.join(",", access.get("access")));
+            operator.setAttribute("Access predicates",
+                    String.join(",", access.get(PredicateKey.getLabel("access"))));
         }
         // parse filter predicates
-        if (record.getFilterPredicates() != null) {
+        if (StringUtils.isNotEmpty(record.getFilterPredicates())) {
             Map<String, List<String>> filter = parsePredicates(record.getFilterPredicates(), parameters);
-            operator.setAttribute("Filter predicates", String.join(" AND ", filter.get("filter")));
+            operator.setAttribute("Filter predicates",
+                    String.join(" AND ", filter.get(PredicateKey.getLabel("filter"))));
         }
         // parse special predicates
-        if (record.getSpecialPredicates() != null) {
+        if (StringUtils.isNotEmpty(record.getSpecialPredicates())) {
             Map<String, List<String>> special = parsePredicates(record.getSpecialPredicates(), parameters);
             operator.getAttributes().putAll(special);
         }
@@ -119,6 +121,9 @@ public class PlanGraphBuilder {
                 if (depth == 0) {
                     try {
                         String predicateKey = PredicateKey.getLabel(keyBuilder.toString().trim());
+                        if (predicateKey == null) {
+                            continue;
+                        }
                         String predicate = valueBuilder.toString();
                         if (predicate.startsWith("[")) {
                             LinkedList<String> values = new LinkedList<>();
@@ -132,9 +137,10 @@ public class PlanGraphBuilder {
                         }
                     } catch (Exception e) {
                         // eat exception
+                    } finally {
+                        keyBuilder = new StringBuilder();
+                        valueBuilder = new StringBuilder();
                     }
-                    keyBuilder = new StringBuilder();
-                    valueBuilder = new StringBuilder();
                     continue;
                 }
             }
@@ -155,7 +161,8 @@ public class PlanGraphBuilder {
 
     private static String parseObjectName(OBSqlPlan record) {
         String name = record.getObjectName();
-        return record.getObjectOwner() == null ? name : String.format("%s.%s", record.getObjectOwner(), name);
+        return StringUtils.isEmpty(record.getObjectOwner()) ? name
+                : String.format("%s.%s", record.getObjectOwner(), name);
     }
 
 }

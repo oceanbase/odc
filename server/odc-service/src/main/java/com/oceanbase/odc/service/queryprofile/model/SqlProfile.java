@@ -17,7 +17,10 @@ package com.oceanbase.odc.service.queryprofile.model;
 
 import java.util.Date;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.oceanbase.odc.core.session.ConnectionSession;
+import com.oceanbase.odc.core.shared.model.QueryStatus;
+import com.oceanbase.odc.service.queryprofile.display.PlanGraph;
 
 import lombok.Data;
 
@@ -29,23 +32,18 @@ import lombok.Data;
 public class SqlProfile {
     private Date startTime;
     private Date endTime;
-    private Status status;
+    private QueryStatus status;
     private Long duration;
     private String traceId;
-    private String planId;
     private String sqlText;
-    private SqlPlanGraph graph;
+    private PlanGraph graph;
 
-    private Long creatorId;
-    private Long organizationId;
-    private Long projectId;
+    // internal usage
+    @JsonIgnore
+    private ConnectionSession session;
 
-    ConnectionSession session;
-
-    public enum Status {
-        PREPARING,
-        RUNNING,
-        FINISHED,
-        FAILED,
+    public SqlProfile(String traceId, ConnectionSession session) {
+        this.traceId = traceId;
+        this.session = session;
     }
 }

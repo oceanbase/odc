@@ -33,6 +33,7 @@ import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.exception.OBException;
 import com.oceanbase.odc.core.shared.model.SqlExecDetail;
 import com.oceanbase.odc.core.shared.model.SqlExplain;
+import com.oceanbase.odc.core.shared.model.SqlPlanGraph;
 import com.oceanbase.odc.plugin.connect.api.SqlDiagnoseExtensionPoint;
 
 import lombok.NonNull;
@@ -92,4 +93,10 @@ public class MySQLDiagnoseExtensionPoint implements SqlDiagnoseExtensionPoint {
     public SqlExecDetail getExecutionDetailBySql(Connection connection, @NonNull String sql) throws SQLException {
         throw new UnsupportedOperationException("Not supported for mysql mode");
     }
+
+    @Override
+    public SqlPlanGraph getSqlPlanGraphByTraceId(Connection connection, @NonNull String traceId) throws SQLException {
+        throw new UnsupportedOperationException("Not supported for mysql mode");
+    }
+
 }

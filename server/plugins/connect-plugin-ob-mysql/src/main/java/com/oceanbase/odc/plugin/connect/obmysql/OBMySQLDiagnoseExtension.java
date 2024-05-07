@@ -29,13 +29,19 @@ import org.pf4j.Extension;
 
 import com.alibaba.fastjson.JSON;
 import com.oceanbase.odc.common.util.VersionUtils;
+import com.oceanbase.odc.core.shared.constant.ConnectType;
+import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.exception.OBException;
+import com.oceanbase.odc.core.shared.model.OBSqlPlan;
 import com.oceanbase.odc.core.shared.model.PlanNode;
 import com.oceanbase.odc.core.shared.model.SqlExecDetail;
 import com.oceanbase.odc.core.shared.model.SqlExplain;
+import com.oceanbase.odc.core.shared.model.SqlPlanGraph;
+import com.oceanbase.odc.core.sql.util.OBUtils;
 import com.oceanbase.odc.plugin.connect.api.SqlDiagnoseExtensionPoint;
 import com.oceanbase.odc.plugin.connect.obmysql.diagnose.DiagnoseUtil;
+import com.oceanbase.odc.plugin.connect.obmysql.diagnose.PlanGraphBuilder;
 
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
@@ -248,6 +254,21 @@ public class OBMySQLDiagnoseExtension implements SqlDiagnoseExtensionPoint {
         return innerGetExecutionDetail(connection, appendSql, null);
     }
 
+    @Override
+    public SqlPlanGraph getSqlPlanGraphByTraceId(Connection connection, @NonNull String traceId) throws SQLException {
+        try (Statement stmt = connection.createStatement()) {
+            ConnectType connectType = ConnectType.from(getDialectType());
+            String planId;
+            try {
+                planId = OBUtils.queryPlanIdByTraceIdFromASH(stmt, traceId, connectType);
+            } catch (SQLException e) {
+                planId = OBUtils.queryPlanIdByTraceIdFromAudit(stmt, traceId, connectType);
+            }
+            List<OBSqlPlan> planRecords = OBUtils.queryOBSqlPlanByPlanId(stmt, planId, connectType);
+            return PlanGraphBuilder.buildPlanGraph(planRecords);
+        }
+    }
+
     protected SqlExecDetail innerGetExecutionDetail(Connection connection, String appendSql, String traceId)
             throws SQLException {
         OBMySQLInformationExtension informationExtension = new OBMySQLInformationExtension();
@@ -269,6 +290,10 @@ public class OBMySQLDiagnoseExtension implements SqlDiagnoseExtensionPoint {
             throw OBException.executeFailed(ErrorCodes.ObGetExecuteDetailFailed,
                     String.format("Failed to get execution detail, traceId=%s, message=%s", traceId, e.getMessage()));
         }
+    }
+
+    protected DialectType getDialectType() {
+        return DialectType.OB_MYSQL;
     }
 
 }

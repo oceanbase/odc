@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.queryprofile;
+package com.oceanbase.odc.plugin.connect.obmysql.queryprofile;
 
 import java.util.Map;
 
@@ -21,7 +21,7 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import com.google.common.collect.ImmutableMap;
-import com.oceanbase.odc.service.queryprofile.helper.PlanParameterSubstitutor;
+import com.oceanbase.odc.plugin.connect.obmysql.diagnose.PlanParameterSubstitutor;
 
 /**
  * @author liuyizhuo.lyz

@@ -22,6 +22,7 @@ import org.pf4j.Extension;
 
 import com.oceanbase.odc.core.shared.model.SqlExecDetail;
 import com.oceanbase.odc.core.shared.model.SqlExplain;
+import com.oceanbase.odc.core.shared.model.SqlPlanGraph;
 import com.oceanbase.odc.plugin.connect.api.SqlDiagnoseExtensionPoint;
 import com.oceanbase.odc.plugin.connect.mysql.MySQLDiagnoseExtensionPoint;
 
@@ -57,6 +58,11 @@ public class DorisDiagnoseExtensionPoint extends MySQLDiagnoseExtensionPoint imp
 
     @Override
     public SqlExecDetail getExecutionDetailBySql(Connection connection, @NonNull String sql) throws SQLException {
+        throw new UnsupportedOperationException("Not supported for doris mode");
+    }
+
+    @Override
+    public SqlPlanGraph getSqlPlanGraphByTraceId(Connection connection, @NonNull String traceId) throws SQLException {
         throw new UnsupportedOperationException("Not supported for doris mode");
     }
 }

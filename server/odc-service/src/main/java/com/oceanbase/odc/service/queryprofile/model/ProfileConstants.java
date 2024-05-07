@@ -15,25 +15,19 @@
  */
 package com.oceanbase.odc.service.queryprofile.model;
 
-import lombok.Data;
-
 /**
- * @author liuyizhuo.lyz
- * @date 2024/4/12
+ * @author: liuyizhuo.lyz
+ * @date: 2024/4/19
  */
-@Data
-public class OBSqlPlan {
+public class ProfileConstants {
 
-    private String id;
-    private String parentId;
-    private String operator;
-    private String objectOwner;
-    private String objectName;
-    private String objectAlias;
-    private String other;
-    private String accessPredicates;
-    private String filterPredicates;
-    private String projection;
-    private String specialPredicates;
+    public static final String DB_TIME = "DB Time";
+    public static final String CHANGE_TIME = "Change Time";
+    public static final String IO_READ_BYTES = "io bytes read from disk";
+    public static final String BYTES_IN_TOTAL = "total bytes processed by storage";
+    public static final String ROWS_IN_TOTAL = "total rows processed by storage";
+    public static final String RESCAN_TIMES = "rescan times";
+    public static final String OTHER_STATS = "Other Stats";
+    public static final String STATUS = "Status";
 
 }

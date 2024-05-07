@@ -24,6 +24,7 @@ import org.pf4j.Extension;
 
 import com.alibaba.fastjson.JSON;
 import com.oceanbase.odc.common.util.VersionUtils;
+import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.exception.OBException;
 import com.oceanbase.odc.core.shared.model.PlanNode;
@@ -172,4 +173,8 @@ public class OBOracleDiagnoseExtension extends OBMySQLDiagnoseExtension {
         }
     }
 
+    @Override
+    protected DialectType getDialectType() {
+        return DialectType.OB_ORACLE;
+    }
 }

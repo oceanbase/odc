@@ -31,6 +31,7 @@ import com.oceanbase.odc.core.session.ConnectionSessionUtil;
 import com.oceanbase.odc.core.sql.execute.model.JdbcGeneralResult;
 import com.oceanbase.odc.core.sql.execute.model.SqlTuple;
 import com.oceanbase.odc.core.sql.util.OBUtils;
+import com.oceanbase.odc.service.queryprofile.QueryProfileManager;
 import com.oceanbase.odc.service.session.model.AsyncExecuteContext;
 
 /**
@@ -39,13 +40,15 @@ import com.oceanbase.odc.service.session.model.AsyncExecuteContext;
  */
 public class OBExecutionListener implements SqlExecutionListener {
     private static final Long DEFAULT_QUERY_TRACE_ID_WAIT_MILLIS = 1100L;
-    private static final String ENABLE_QUERY_PROFILE_VERSION = "4.2";
+    private static final String ENABLE_QUERY_PROFILE_VERSION = "4.2.4";
 
     private final ConnectionSession session;
     private final List<String> sessionIds;
+    private final QueryProfileManager profileManager;
 
-    public OBExecutionListener(ConnectionSession session) {
+    public OBExecutionListener(ConnectionSession session, QueryProfileManager profileManager) {
         this.session = session;
+        this.profileManager = profileManager;
         sessionIds = getSessionIds();
     }
 
@@ -53,7 +56,13 @@ public class OBExecutionListener implements SqlExecutionListener {
     public void onExecutionStart(SqlTuple sqlTuple, AsyncExecuteContext context) {}
 
     @Override
-    public void onExecutionEnd(SqlTuple sqlTuple, List<JdbcGeneralResult> results, AsyncExecuteContext context) {}
+    public void onExecutionEnd(SqlTuple sqlTuple, List<JdbcGeneralResult> results, AsyncExecuteContext context) {
+        results.forEach(result -> {
+            if (StringUtils.isNotEmpty(result.getTraceId())) {
+                profileManager.submitProfile(session, result.getTraceId());
+            }
+        });
+    }
 
     @Override
     public void onExecutionCancelled(SqlTuple sqlTuple, List<JdbcGeneralResult> results, AsyncExecuteContext context) {}
@@ -66,6 +75,7 @@ public class OBExecutionListener implements SqlExecutionListener {
                 .queryTraceIdFromASH(stmt, sessionIds, session.getConnectType()));
         if (traceId != null) {
             context.setCurrentExecutingSqlTraceId(traceId);
+            profileManager.submitProfile(session, traceId);
         }
     }
 

@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.queryprofile;
+package com.oceanbase.odc.plugin.connect.obmysql.queryprofile;
 
 import java.util.Arrays;
 import java.util.LinkedHashMap;
@@ -25,10 +25,10 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import com.oceanbase.odc.common.graph.GraphVertex;
-import com.oceanbase.odc.service.queryprofile.helper.PlanGraphBuilder;
-import com.oceanbase.odc.service.queryprofile.model.OBSqlPlan;
-import com.oceanbase.odc.service.queryprofile.model.PredicateKey;
-import com.oceanbase.odc.service.queryprofile.model.SqlPlanGraph;
+import com.oceanbase.odc.core.shared.model.OBSqlPlan;
+import com.oceanbase.odc.core.shared.model.PredicateKey;
+import com.oceanbase.odc.core.shared.model.SqlPlanGraph;
+import com.oceanbase.odc.plugin.connect.obmysql.diagnose.PlanGraphBuilder;
 
 /**
  * @author liuyizhuo.lyz
