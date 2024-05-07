@@ -159,11 +159,11 @@ public class DataArchiveJob extends AbstractDlmJob {
         try {
             DBSchemaAccessor targetDsAccessor = DBSchemaAccessors.create(targetSession);
             List<String> tableNames = targetDsAccessor.showTables(dlmTask.getTargetDs().getDefaultSchema());
-            if (tableNames.contains(dlmTask.getTableName())) {
+            if (tableNames.contains(dlmTask.getTargetTableName())) {
                 log.info("Target table exist,tableName={}", dlmTask.getTableName());
                 return;
             }
-            log.info("Begin to create target table...");
+            log.info("Begin to create target table,tableDDL={}", tableDDL);
             targetSession.getSyncJdbcExecutor(ConnectionSessionConstants.CONSOLE_DS_KEY).execute(tableDDL);
         } finally {
             targetSession.expire();
