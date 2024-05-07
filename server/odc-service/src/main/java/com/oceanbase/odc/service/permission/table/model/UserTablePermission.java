@@ -13,13 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.permission.table;
+package com.oceanbase.odc.service.permission.table.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonProperty.Access;
 import com.oceanbase.odc.service.permission.database.model.UserDatabasePermission;
 
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 /**
  * ClassName: UserTablePermission Package: com.oceanbase.odc.service.permission.table.model.table
@@ -30,7 +31,11 @@ import lombok.Data;
  * @Version 1.0
  */
 @Data
+@EqualsAndHashCode(callSuper = true)
 public class UserTablePermission extends UserDatabasePermission {
+
+    @JsonProperty(access = Access.READ_ONLY)
+    private String tableId;
 
     @JsonProperty(access = Access.READ_ONLY)
     private String tableName;

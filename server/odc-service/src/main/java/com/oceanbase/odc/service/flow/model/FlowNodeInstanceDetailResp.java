@@ -31,11 +31,11 @@ import com.oceanbase.odc.metadb.iam.RoleEntity;
 import com.oceanbase.odc.metadb.iam.UserEntity;
 import com.oceanbase.odc.metadb.task.TaskEntity;
 import com.oceanbase.odc.service.common.model.InnerUser;
+import com.oceanbase.odc.service.connection.database.model.UnauthorizedDBResource;
 import com.oceanbase.odc.service.flow.instance.BaseFlowNodeInstance;
 import com.oceanbase.odc.service.flow.instance.FlowApprovalInstance;
 import com.oceanbase.odc.service.flow.instance.FlowGatewayInstance;
 import com.oceanbase.odc.service.flow.instance.FlowTaskInstance;
-import com.oceanbase.odc.service.session.model.UnauthorizedResource;
 
 import lombok.Builder;
 import lombok.Data;
@@ -63,8 +63,7 @@ public class FlowNodeInstanceDetailResp {
     private String externalApprovalName;
     private String externalFlowInstanceUrl;
     private Integer issueCount;
-    // private List<UnauthorizedDatabase> unauthorizedDatabases;
-    private List<UnauthorizedResource> unauthorizedResources;
+    private List<UnauthorizedDBResource> unauthorizedDBResources;
     private Boolean preCheckOverLimit;
 
     public static FlowNodeInstanceMapper mapper() {
@@ -156,7 +155,7 @@ public class FlowNodeInstanceDetailResp {
                         resp.setIssueCount(result.getSqlCheckResult().getIssueCount());
                     }
                     if (Objects.nonNull(result.getPermissionCheckResult())) {
-                        resp.setUnauthorizedResources(result.getPermissionCheckResult().getUnauthorizedResource());
+                        resp.setUnauthorizedDBResources(result.getPermissionCheckResult().getUnauthorizedDBResources());
                     }
                 }
             }

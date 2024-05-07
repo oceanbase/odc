@@ -15,9 +15,11 @@
  */
 package com.oceanbase.odc.service.permission.table;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,8 +29,13 @@ import com.oceanbase.odc.common.i18n.I18n;
 import com.oceanbase.odc.common.util.TimeUtils;
 import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.core.shared.constant.ResourceRoleName;
+import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.core.shared.constant.TaskType;
+import com.oceanbase.odc.core.shared.exception.AccessDeniedException;
+import com.oceanbase.odc.core.shared.exception.NotFoundException;
 import com.oceanbase.odc.metadb.collaboration.ProjectEntity;
+import com.oceanbase.odc.metadb.dbobject.DBObjectEntity;
+import com.oceanbase.odc.metadb.dbobject.DBObjectRepository;
 import com.oceanbase.odc.service.collaboration.project.ProjectService;
 import com.oceanbase.odc.service.connection.ConnectionService;
 import com.oceanbase.odc.service.connection.database.DatabaseService;
@@ -43,8 +50,6 @@ import com.oceanbase.odc.service.permission.table.model.ApplyTableParameter;
 import com.oceanbase.odc.service.permission.table.model.ApplyTableParameter.ApplyTable;
 
 /**
- * ClassName: ApplyTablePermissionPreprocessor Package: com.oceanbase.odc.service.permission.table
- * Description:
  *
  * @Author: fenghao
  * @Create 2024/3/18 17:38
@@ -52,6 +57,7 @@ import com.oceanbase.odc.service.permission.table.model.ApplyTableParameter.Appl
  */
 @FlowTaskPreprocessor(type = TaskType.APPLY_TABLE_PERMISSION)
 public class ApplyTablePermissionPreprocessor implements Preprocessor {
+
     @Autowired
     private ProjectService projectService;
 
@@ -64,6 +70,9 @@ public class ApplyTablePermissionPreprocessor implements Preprocessor {
     @Autowired
     private ConnectionService connectionService;
 
+    @Autowired
+    private DBObjectRepository dbObjectRepository;
+
     @Override
     public void process(CreateFlowInstanceReq req) {
         ApplyTableParameter parameter = (ApplyTableParameter) req.getParameters();
@@ -71,25 +80,52 @@ public class ApplyTablePermissionPreprocessor implements Preprocessor {
         Verify.notEmpty(parameter.getTables(), "tables");
         Verify.notEmpty(parameter.getTypes(), "types");
         Verify.notEmpty(parameter.getApplyReason(), "applyReason");
-
+        // Check project permission and fill in project name
         Long projectId = parameter.getProject().getId();
         ProjectEntity projectEntity = projectService.nullSafeGet(projectId);
         Verify.verify(Boolean.FALSE.equals(projectEntity.getArchived()), "Project is archived");
         projectPermissionValidator.checkProjectRole(projectId, ResourceRoleName.all());
         parameter.getProject().setName(projectEntity.getName());
-        req.setProjectName(projectEntity.getName());
+        // Check table permission and fill in table related information
+        List<ApplyTable> tables = parameter.getTables();
+        Set<Long> tableIds = tables.stream().map(ApplyTable::getTableId).collect(Collectors.toSet());
+        Map<Long, DBObjectEntity> id2TableEntity = dbObjectRepository.findByIdIn(tableIds).stream()
+                .collect(Collectors.toMap(DBObjectEntity::getId, t -> t, (t1, t2) -> t1));
+        Set<Long> databaseIds =
+                id2TableEntity.values().stream().map(DBObjectEntity::getDatabaseId).collect(Collectors.toSet());
+        Map<Long, Database> id2Database = databaseService.listDatabasesByIds(databaseIds).stream()
+                .collect(Collectors.toMap(Database::getId, d -> d, (d1, d2) -> d1));
+        Set<Long> dataSourceIds =
+                id2Database.values().stream().map(d -> d.getDataSource().getId()).collect(Collectors.toSet());
+        Map<Long, ConnectionConfig> id2DataSource = connectionService.innerListByIds(dataSourceIds).stream()
+                .collect(Collectors.toMap(ConnectionConfig::getId, d -> d, (d1, d2) -> d1));
+        for (ApplyTable table : tables) {
+            DBObjectEntity tableEntity = id2TableEntity.get(table.getTableId());
+            if (tableEntity == null) {
+                throw new NotFoundException(ResourceType.ODC_TABLE, "id", table.getTableId());
+            }
+            table.setTableName(tableEntity.getName());
+            Database database = id2Database.get(tableEntity.getDatabaseId());
+            if (database == null) {
+                throw new NotFoundException(ResourceType.ODC_DATABASE, "id", tableEntity.getDatabaseId());
+            }
+            if (database.getProject() == null || !Objects.equals(database.getProject().getId(), projectId)) {
+                throw new AccessDeniedException();
+            }
+            table.setDatabaseId(database.getId());
+            table.setDatabaseName(database.getName());
+            ConnectionConfig dataSource = id2DataSource.get(database.getDataSource().getId());
+            if (dataSource == null) {
+                throw new NotFoundException(ResourceType.ODC_CONNECTION, "id", database.getDataSource().getId());
+            }
+            table.setDataSourceId(dataSource.getId());
+            table.setDataSourceName(dataSource.getName());
+        }
         parameter.setExpireTime(parameter.getExpireTime() == null ? TimeUtils.getMySQLMaxDatetime()
                 : TimeUtils.getEndOfDay(parameter.getExpireTime()));
-        Database database = databaseService.detail(req.getDatabaseId());
-
-        List<ConnectionConfig> connectionConfigs = connectionService.innerListByIds(
-                (Arrays.asList(database.getDataSource().getId())));
-        Verify.notEmpty(connectionConfigs, "dataSourceId");
-        for (ApplyTable table : parameter.getTables()) {
-            table.setDatabaseName(database.getName());
-            table.setDataSourceName(connectionConfigs.get(0).getName());
-            table.setDataSourceId(connectionConfigs.get(0).getId());
-        }
+        // Fill in other parameters
+        req.setProjectId(projectId);
+        req.setProjectName(projectEntity.getName());
         Locale locale = LocaleContextHolder.getLocale();
         String i18nKey = "com.oceanbase.odc.builtin-resource.permission-apply.table.description";
         req.setDescription(I18n.translate(
@@ -97,6 +133,6 @@ public class ApplyTablePermissionPreprocessor implements Preprocessor {
                 new Object[] {parameter.getTypes().stream().map(DatabasePermissionType::getLocalizedMessage)
                         .collect(Collectors.joining(","))},
                 locale));
-
     }
+
 }

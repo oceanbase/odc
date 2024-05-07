@@ -397,8 +397,8 @@ public class ProjectService {
 
     @SkipAuthorize("internal usage")
     public Set<Long> getMemberProjectIds(Long userId) {
-        return resourceRoleService.listByUserId(userId).stream().map(UserResourceRole::getResourceId)
-                .collect(Collectors.toSet());
+        return resourceRoleService.listByUserId(userId).stream().filter(UserResourceRole::isProjectMember)
+                .map(UserResourceRole::getResourceId).collect(Collectors.toSet());
     }
 
     @SkipAuthorize("odc internal usage")
@@ -471,7 +471,7 @@ public class ProjectService {
     private void deleteMemberRelatedDatabasePermissions(@NonNull Long userId, @NonNull Long projectId) {
         List<Long> permissionIds = userDatabasePermissionRepository.findByUserIdAndProjectId(userId, projectId).stream()
                 .map(UserDatabasePermissionEntity::getId).collect(Collectors.toList());
-        if (!CollectionUtils.isEmpty(permissionIds)) {
+        if (CollectionUtils.isNotEmpty(permissionIds)) {
             permissionRepository.deleteByIds(permissionIds);
             userPermissionRepository.deleteByPermissionIds(permissionIds);
         }
@@ -480,7 +480,7 @@ public class ProjectService {
     private void deleteMemberRelatedTablePermissions(@NonNull Long userId, @NonNull Long projectId) {
         List<Long> permissionIds = userTablePermissionRepository.findByUserIdAndProjectId(userId, projectId).stream()
                 .map(UserTablePermissionEntity::getId).collect(Collectors.toList());
-        if (!CollectionUtils.isEmpty(permissionIds)) {
+        if (CollectionUtils.isNotEmpty(permissionIds)) {
             permissionRepository.deleteByIds(permissionIds);
             userPermissionRepository.deleteByPermissionIds(permissionIds);
         }

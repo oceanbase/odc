@@ -38,7 +38,7 @@ import io.swagger.annotations.ApiOperation;
  */
 @RestController
 @RequestMapping("/api/v1/database")
-public class DBSchemaController {
+public class DBSchemaControllerV1 {
 
     @Autowired
     private DBSchemaService databaseService;

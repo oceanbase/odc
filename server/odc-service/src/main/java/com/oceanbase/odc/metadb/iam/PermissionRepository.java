@@ -30,6 +30,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.oceanbase.odc.common.jpa.InsertSqlTemplateBuilder;
 import com.oceanbase.odc.config.jpa.OdcJpaRepository;
 import com.oceanbase.odc.core.shared.constant.PermissionType;
+import com.oceanbase.odc.core.shared.constant.ResourceType;
 
 /**
  * Find all <code>PermissionEntity</code> for a specific <code>User</code>
@@ -81,6 +82,8 @@ public interface PermissionRepository
     List<PermissionEntity> findByTypeAndOrganizationId(PermissionType type, Long organizationId);
 
     List<PermissionEntity> findByOrganizationId(Long organizationId);
+
+    List<PermissionEntity> findByResourceTypeAndResourceIdIn(ResourceType resourceType, Collection<Long> resourceIds);
 
     List<PermissionEntity> findByOrganizationIdAndResourceIdentifier(Long organizationId, String resourceIdentifier);
 

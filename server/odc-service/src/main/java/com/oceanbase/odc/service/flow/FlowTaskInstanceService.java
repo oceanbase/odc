@@ -711,7 +711,8 @@ public class FlowTaskInstanceService {
                         && instance.getTaskType() != TaskType.PRE_CHECK
                         && instance.getTaskType() != TaskType.GENERATE_ROLLBACK
                         && instance.getTaskType() != TaskType.APPLY_PROJECT_PERMISSION
-                        && instance.getTaskType() != TaskType.APPLY_DATABASE_PERMISSION;
+                        && instance.getTaskType() != TaskType.APPLY_DATABASE_PERMISSION
+                        && instance.getTaskType() != TaskType.APPLY_TABLE_PERMISSION;
             }
         });
     }

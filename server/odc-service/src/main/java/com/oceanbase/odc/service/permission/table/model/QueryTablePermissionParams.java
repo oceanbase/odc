@@ -15,35 +15,23 @@
  */
 package com.oceanbase.odc.service.permission.table.model;
 
-import java.util.List;
+import com.oceanbase.odc.service.permission.database.model.QueryDatabasePermissionParams;
 
-import com.oceanbase.odc.core.shared.constant.AuthorizationType;
-import com.oceanbase.odc.service.permission.database.model.DatabasePermissionType;
-import com.oceanbase.odc.service.permission.database.model.ExpirationStatusFilter;
-
-import lombok.Builder;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.experimental.SuperBuilder;
 
 /**
- * ClassName: QueryTablePermissionParams Package: com.oceanbase.odc.service.permission.table.model
- * Description:
  *
  * @Author: fenghao
  * @Create 2024/3/11 20:46
  * @Version 1.0
  */
 @Data
-@Builder
-public class QueryTablePermissionParams {
-    private Long userId;
-    private Long ticketId;
-    private String fuzzyDatabaseName;
-    private Long databaseId;
+@SuperBuilder
+@EqualsAndHashCode(callSuper = true)
+public class QueryTablePermissionParams extends QueryDatabasePermissionParams {
+
     private String fuzzyTableName;
-    private String fuzzyDataSourceName;
-    private Long dataSourceId;
-    private List<DatabasePermissionType> types;
-    private AuthorizationType authorizationType;
-    private List<ExpirationStatusFilter> statuses;
 
 }

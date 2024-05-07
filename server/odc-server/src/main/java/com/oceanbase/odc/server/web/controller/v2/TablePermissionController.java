@@ -35,9 +35,9 @@ import com.oceanbase.odc.service.common.response.Responses;
 import com.oceanbase.odc.service.permission.database.model.DatabasePermissionType;
 import com.oceanbase.odc.service.permission.database.model.ExpirationStatusFilter;
 import com.oceanbase.odc.service.permission.table.TablePermissionService;
-import com.oceanbase.odc.service.permission.table.UserTablePermission;
 import com.oceanbase.odc.service.permission.table.model.CreateTablePermissionReq;
 import com.oceanbase.odc.service.permission.table.model.QueryTablePermissionParams;
+import com.oceanbase.odc.service.permission.table.model.UserTablePermission;
 
 import io.swagger.annotations.ApiOperation;
 
@@ -54,45 +54,45 @@ import io.swagger.annotations.ApiOperation;
 public class TablePermissionController {
 
     @Autowired
-    private TablePermissionService tablePermissionService;
+    private TablePermissionService service;
 
     @ApiOperation(value = "listTablePermissions", notes = "List table permissions")
     @RequestMapping(value = "", method = RequestMethod.GET)
     public PaginatedResponse<UserTablePermission> list(@PathVariable Long projectId,
             @RequestParam(name = "userId", required = false) Long userId,
             @RequestParam(name = "ticketId", required = false) Long ticketId,
+            @RequestParam(name = "tableName", required = false) String fuzzyTableName,
             @RequestParam(name = "databaseName", required = false) String fuzzyDatabaseName,
             @RequestParam(name = "dataSourceName", required = false) String fuzzyDataSourceName,
             @RequestParam(name = "type", required = false) List<DatabasePermissionType> types,
             @RequestParam(name = "authorizationType", required = false) AuthorizationType authorizationType,
             @RequestParam(name = "status", required = false) List<ExpirationStatusFilter> statuses,
-            @RequestParam(name = "tableName", required = false) String fuzzyTableName,
             @PageableDefault(size = Integer.MAX_VALUE, sort = {"id"}, direction = Direction.DESC) Pageable pageable) {
         QueryTablePermissionParams params = QueryTablePermissionParams.builder()
                 .userId(userId)
                 .ticketId(ticketId)
+                .fuzzyTableName(fuzzyTableName)
                 .fuzzyDatabaseName(fuzzyDatabaseName)
                 .fuzzyDataSourceName(fuzzyDataSourceName)
                 .types(types)
                 .authorizationType(authorizationType)
                 .statuses(statuses)
-                .fuzzyTableName(fuzzyTableName)
                 .build();
-        return Responses.paginated(tablePermissionService.list(projectId, params, pageable));
+        return Responses.paginated(service.list(projectId, params, pageable));
     }
 
     @ApiOperation(value = "batchCreateTablePermissions", notes = "Batch create table permissions")
     @RequestMapping(value = "/batchCreate", method = RequestMethod.POST)
     public ListResponse<UserTablePermission> batchCreate(@PathVariable Long projectId,
             @RequestBody CreateTablePermissionReq req) {
-        return Responses.list(tablePermissionService.batchCreate(projectId, req));
+        return Responses.list(service.batchCreate(projectId, req));
     }
 
     @ApiOperation(value = "batchRevokeTablePermission", notes = "Batch revoke table permissions")
-    @RequestMapping(value = "/batchRevoke", method = RequestMethod.DELETE)
+    @RequestMapping(value = "/batchRevoke", method = RequestMethod.POST)
     public ListResponse<UserTablePermission> batchRevoke(@PathVariable Long projectId,
             @RequestBody List<Long> ids) {
-        return Responses.list(tablePermissionService.batchRevoke(projectId, ids));
+        return Responses.list(service.batchRevoke(projectId, ids));
     }
 
 }

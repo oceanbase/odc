@@ -315,6 +315,9 @@ public class FlowInstanceDetailResp {
                 case APPLY_DATABASE_PERMISSION:
                     resp.setParameters(JsonUtils.fromJson(parameterJson, ApplyDatabaseParameter.class));
                     break;
+                case APPLY_TABLE_PERMISSION:
+                    resp.setParameters(JsonUtils.fromJson(parameterJson, ApplyTableParameter.class));
+                    break;
                 case STRUCTURE_COMPARISON:
                     DBStructureComparisonParameter dbStructureComparisonParameter = JsonUtils.fromJson(parameterJson,
                             DBStructureComparisonParameter.class);
@@ -323,9 +326,6 @@ public class FlowInstanceDetailResp {
                         resp.setRelatedDatabase(
                                 this.getDatabaseById.apply(dbStructureComparisonParameter.getTargetDatabaseId()));
                     }
-                    break;
-                case APPLY_TABLE_PERMISSION:
-                    resp.setParameters(JsonUtils.fromJson(parameterJson, ApplyTableParameter.class));
                     break;
                 default:
                     throw new UnsupportedException("Unsupported task type " + taskEntity.getTaskType());

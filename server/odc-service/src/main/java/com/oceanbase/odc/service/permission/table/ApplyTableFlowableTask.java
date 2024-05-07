@@ -27,31 +27,35 @@ import org.springframework.transaction.support.TransactionTemplate;
 
 import com.oceanbase.odc.common.trace.TaskContextHolder;
 import com.oceanbase.odc.core.shared.constant.AuthorizationType;
+import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.constant.FlowStatus;
+import com.oceanbase.odc.core.shared.constant.PermissionType;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.core.shared.exception.NotFoundException;
+import com.oceanbase.odc.core.shared.exception.UnsupportedException;
 import com.oceanbase.odc.metadb.collaboration.ProjectRepository;
 import com.oceanbase.odc.metadb.connection.DatabaseEntity;
 import com.oceanbase.odc.metadb.connection.DatabaseRepository;
+import com.oceanbase.odc.metadb.dbobject.DBObjectEntity;
+import com.oceanbase.odc.metadb.dbobject.DBObjectRepository;
+import com.oceanbase.odc.metadb.iam.PermissionEntity;
 import com.oceanbase.odc.metadb.iam.PermissionRepository;
+import com.oceanbase.odc.metadb.iam.UserPermissionEntity;
 import com.oceanbase.odc.metadb.iam.UserPermissionRepository;
 import com.oceanbase.odc.metadb.iam.UserRepository;
 import com.oceanbase.odc.metadb.iam.resourcerole.UserResourceRoleEntity;
 import com.oceanbase.odc.metadb.iam.resourcerole.UserResourceRoleRepository;
 import com.oceanbase.odc.service.flow.task.BaseODCFlowTaskDelegate;
 import com.oceanbase.odc.service.flow.util.FlowTaskUtil;
+import com.oceanbase.odc.service.permission.database.model.DatabasePermissionType;
 import com.oceanbase.odc.service.permission.table.model.ApplyTableParameter;
 import com.oceanbase.odc.service.permission.table.model.ApplyTableParameter.ApplyTable;
 import com.oceanbase.odc.service.permission.table.model.ApplyTableResult;
-import com.oceanbase.odc.service.permission.table.model.CreateTablePermissionReq;
-import com.oceanbase.odc.service.permission.table.model.CreateTablePermissionReq.TablePermission;
 import com.oceanbase.odc.service.task.TaskService;
 
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * ClassName: ApplyTableFlowableTask Package: com.oceanbase.odc.service.permission.table
- * Description:
  *
  * @Author: fenghao
  * @Create 2024/3/14 17:25
@@ -67,6 +71,12 @@ public class ApplyTableFlowableTask extends BaseODCFlowTaskDelegate<ApplyTableRe
     private UserRepository userRepository;
 
     @Autowired
+    private PermissionRepository permissionRepository;
+
+    @Autowired
+    private UserPermissionRepository userPermissionRepository;
+
+    @Autowired
     private ProjectRepository projectRepository;
 
     @Autowired
@@ -76,13 +86,7 @@ public class ApplyTableFlowableTask extends BaseODCFlowTaskDelegate<ApplyTableRe
     private UserResourceRoleRepository userResourceRoleRepository;
 
     @Autowired
-    private PermissionRepository permissionRepository;
-
-    @Autowired
-    private UserPermissionRepository userPermissionRepository;
-
-    @Autowired
-    private TablePermissionService tablePermissionService;
+    private DBObjectRepository dbObjectRepository;
 
     private volatile boolean success = false;
     private volatile boolean failure = false;
@@ -102,26 +106,38 @@ public class ApplyTableFlowableTask extends BaseODCFlowTaskDelegate<ApplyTableRe
                     ApplyTableParameter parameter = FlowTaskUtil.getApplyTableParameter(execution);
                     result.setParameter(parameter);
                     checkResourceAndPermission(parameter);
-                    // List<PermissionEntity> permissionEntities = new ArrayList<>();
-                    // 组装授权请求
-                    CreateTablePermissionReq createTablePermissionReq = new CreateTablePermissionReq();
-                    createTablePermissionReq.setCreatorId(this.creatorId);
-                    createTablePermissionReq.setTypes(parameter.getTypes());
-                    createTablePermissionReq.setExpireTime(parameter.getExpireTime());
-                    createTablePermissionReq.setUserId(this.creatorId);
-                    createTablePermissionReq.setTicketId(FlowTaskUtil.getFlowInstanceId(execution));
-                    createTablePermissionReq.setOrganizationId(FlowTaskUtil.getOrganizationId(execution));
-                    createTablePermissionReq.setAuthorizationType(AuthorizationType.TICKET_APPLICATION);
-                    List<TablePermission> tablePermissions = new ArrayList<>();
+                    List<PermissionEntity> permissionEntities = new ArrayList<>();
+                    Long organizationId = FlowTaskUtil.getOrganizationId(execution);
                     for (ApplyTable table : parameter.getTables()) {
-                        TablePermission tablePermission = new TablePermission();
-                        tablePermission.setTableNames(table.getTableNames());
-                        tablePermission.setDatabaseId(table.getDatabaseId());
-                        tablePermissions.add(tablePermission);
+                        for (DatabasePermissionType permissionType : parameter.getTypes()) {
+                            PermissionEntity permissionEntity = new PermissionEntity();
+                            permissionEntity.setAction(permissionType.getAction());
+                            permissionEntity.setResourceIdentifier(
+                                    ResourceType.ODC_DATABASE.name() + ":" + table.getDatabaseId() + "/"
+                                            + ResourceType.ODC_TABLE.name() + ":" + table.getTableId());
+                            permissionEntity.setType(PermissionType.PUBLIC_RESOURCE);
+                            permissionEntity.setCreatorId(this.creatorId);
+                            permissionEntity.setOrganizationId(organizationId);
+                            permissionEntity.setBuiltIn(false);
+                            permissionEntity.setExpireTime(parameter.getExpireTime());
+                            permissionEntity.setAuthorizationType(AuthorizationType.TICKET_APPLICATION);
+                            permissionEntity.setTicketId(FlowTaskUtil.getFlowInstanceId(execution));
+                            permissionEntity.setResourceType(ResourceType.ODC_TABLE);
+                            permissionEntity.setResourceId(table.getTableId());
+                            permissionEntities.add(permissionEntity);
+                        }
                     }
-                    createTablePermissionReq.setTables(tablePermissions);
-
-                    tablePermissionService.batchCreate(parameter.getProject().getId(), createTablePermissionReq);
+                    List<PermissionEntity> saved = permissionRepository.batchCreate(permissionEntities);
+                    List<UserPermissionEntity> userPermissionEntities = new ArrayList<>();
+                    for (PermissionEntity permissionEntity : saved) {
+                        UserPermissionEntity userPermissionEntity = new UserPermissionEntity();
+                        userPermissionEntity.setUserId(this.creatorId);
+                        userPermissionEntity.setPermissionId(permissionEntity.getId());
+                        userPermissionEntity.setCreatorId(this.creatorId);
+                        userPermissionEntity.setOrganizationId(organizationId);
+                        userPermissionEntities.add(userPermissionEntity);
+                    }
+                    userPermissionRepository.batchCreate(userPermissionEntities);
                     success = true;
                 } catch (Exception e) {
                     failure = true;
@@ -159,18 +175,11 @@ public class ApplyTableFlowableTask extends BaseODCFlowTaskDelegate<ApplyTableRe
     }
 
     @Override
-    protected void onProgressUpdate(Long taskId, TaskService taskService) {
-
-    }
-
-    @Override
-    protected boolean cancel(boolean mayInterruptIfRunning, Long taskId, TaskService taskService) {
-        return false;
-    }
-
-    @Override
-    public boolean isCancelled() {
-        return false;
+    protected void onFailure(Long taskId, TaskService taskService) {
+        TaskContextHolder.trace(getTaskCreatorId(taskId, taskService), taskId);
+        log.warn("Apply table task failed, taskId={}", taskId);
+        TaskContextHolder.clear();
+        super.onFailure(taskId, taskService);
     }
 
     @Override
@@ -178,8 +187,32 @@ public class ApplyTableFlowableTask extends BaseODCFlowTaskDelegate<ApplyTableRe
         TaskContextHolder.trace(getTaskCreatorId(taskId, taskService), taskId);
         log.info("Apply table task succeed, taskId={}", taskId);
         TaskContextHolder.clear();
-        updateFlowInstanceStatus(FlowStatus.EXECUTION_SUCCEEDED);
         super.onSuccessful(taskId, taskService);
+        updateFlowInstanceStatus(FlowStatus.EXECUTION_SUCCEEDED);
+    }
+
+    @Override
+    protected void onTimeout(Long taskId, TaskService taskService) {
+        TaskContextHolder.trace(getTaskCreatorId(taskId, taskService), taskId);
+        log.warn("Apply table permission task timeout, taskId={}", taskId);
+        TaskContextHolder.clear();
+        super.onTimeout(taskId, taskService);
+    }
+
+    @Override
+    protected void onProgressUpdate(Long taskId, TaskService taskService) {
+
+    }
+
+    @Override
+    protected boolean cancel(boolean mayInterruptIfRunning, Long taskId, TaskService taskService) {
+        throw new UnsupportedException(ErrorCodes.RunningTaskNotTerminable, null,
+                "The task is not terminable during execution");
+    }
+
+    @Override
+    public boolean isCancelled() {
+        return false;
     }
 
     private long getTaskCreatorId(Long taskId, TaskService taskService) {
@@ -190,7 +223,6 @@ public class ApplyTableFlowableTask extends BaseODCFlowTaskDelegate<ApplyTableRe
     }
 
     private void checkResourceAndPermission(ApplyTableParameter parameter) {
-        // TODO 当前只校验项目，库是否存在，后面可能会校验表是否存在
         // Check project still exists
         Long projectId = parameter.getProject().getId();
         projectRepository.findById(projectId).orElseThrow(
@@ -211,20 +243,29 @@ public class ApplyTableFlowableTask extends BaseODCFlowTaskDelegate<ApplyTableRe
             throw new IllegalStateException("User not member of project");
         }
         // Check databases still exists and belong to the project
+        List<Long> tableIds = parameter.getTables().stream().map(ApplyTable::getTableId).collect(Collectors.toList());
         List<Long> databaseIds =
                 parameter.getTables().stream().map(ApplyTable::getDatabaseId).collect(Collectors.toList());
-        Map<Long, DatabaseEntity> id2databaseEntities = databaseRepository.findByIdIn(databaseIds).stream()
+        Map<Long, DBObjectEntity> id2tableEntity = dbObjectRepository.findByIdIn(tableIds).stream()
+                .collect(Collectors.toMap(DBObjectEntity::getId, t -> t, (t1, t2) -> t1));
+        Map<Long, DatabaseEntity> id2databaseEntity = databaseRepository.findByIdIn(databaseIds).stream()
                 .collect(Collectors.toMap(DatabaseEntity::getId, d -> d, (d1, d2) -> d1));
-        for (Long id : databaseIds) {
-            if (!id2databaseEntities.containsKey(id)) {
-                log.warn("Database not found, id={}", id);
-                throw new NotFoundException(ResourceType.ODC_DATABASE, "id", id);
+        for (Long tableId : tableIds) {
+            if (!id2tableEntity.containsKey(tableId)) {
+                log.warn("Table not found, id={}", tableId);
+                throw new NotFoundException(ResourceType.ODC_TABLE, "id", tableId);
             }
-            DatabaseEntity databaseEntity = id2databaseEntities.get(id);
+            Long databaseId = id2tableEntity.get(tableId).getDatabaseId();
+            DatabaseEntity databaseEntity = id2databaseEntity.get(databaseId);
+            if (databaseEntity == null) {
+                log.warn("Database not found, id={}", databaseId);
+                throw new NotFoundException(ResourceType.ODC_DATABASE, "id", databaseId);
+            }
             if (databaseEntity.getProjectId() == null || !databaseEntity.getProjectId().equals(projectId)) {
-                log.warn("Database not belong to project, databaseId={}, projectId={}", id, projectId);
+                log.warn("Database not belong to project, databaseId={}, projectId={}", databaseId, projectId);
                 throw new IllegalStateException("Database not belong to project");
             }
         }
     }
+
 }

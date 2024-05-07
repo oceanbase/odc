@@ -22,6 +22,7 @@ import org.mapstruct.factory.Mappers;
 
 import com.oceanbase.odc.metadb.iam.UserTablePermissionEntity;
 import com.oceanbase.odc.service.permission.database.model.DatabasePermissionType;
+import com.oceanbase.odc.service.permission.table.model.UserTablePermission;
 
 /**
  * ClassName: UserTablePermissionMapper.java Package: com.oceanbase.odc.service.permission.table

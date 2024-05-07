@@ -15,51 +15,59 @@
  */
 package com.oceanbase.odc.service.connection.table;
 
+import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.Lock;
 import java.util.stream.Collectors;
 
-import javax.validation.constraints.NotNull;
+import javax.validation.Valid;
 
+import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.jdbc.core.ConnectionCallback;
+import org.springframework.integration.jdbc.lock.JdbcLockRegistry;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
 
-import com.oceanbase.odc.core.authority.util.Authenticated;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
+import com.oceanbase.odc.core.datasource.SingleConnectionDataSource;
 import com.oceanbase.odc.core.session.ConnectionSession;
-import com.oceanbase.odc.core.session.ConnectionSessionConstants;
-import com.oceanbase.odc.metadb.connection.TableEntity;
-import com.oceanbase.odc.metadb.connection.TableRepository;
+import com.oceanbase.odc.core.shared.constant.DialectType;
+import com.oceanbase.odc.core.shared.constant.ErrorCodes;
+import com.oceanbase.odc.core.shared.constant.OrganizationType;
+import com.oceanbase.odc.core.shared.constant.ResourceType;
+import com.oceanbase.odc.core.shared.exception.ConflictException;
+import com.oceanbase.odc.core.shared.exception.UnsupportedException;
+import com.oceanbase.odc.metadb.dbobject.DBObjectEntity;
+import com.oceanbase.odc.metadb.dbobject.DBObjectRepository;
 import com.oceanbase.odc.plugin.schema.api.TableExtensionPoint;
 import com.oceanbase.odc.service.connection.database.DatabaseService;
 import com.oceanbase.odc.service.connection.database.model.Database;
-import com.oceanbase.odc.service.connection.database.model.QueryDatabaseParams;
+import com.oceanbase.odc.service.connection.model.ConnectionConfig;
+import com.oceanbase.odc.service.connection.table.model.QueryTableParams;
 import com.oceanbase.odc.service.connection.table.model.Table;
+import com.oceanbase.odc.service.db.DBTableService;
+import com.oceanbase.odc.service.db.schema.syncer.object.DBTableSyncer;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
+import com.oceanbase.odc.service.permission.DBResourcePermissionHelper;
 import com.oceanbase.odc.service.permission.database.model.DatabasePermissionType;
-import com.oceanbase.odc.service.permission.database.model.ExpirationStatusFilter;
-import com.oceanbase.odc.service.permission.table.TablePermissionService;
-import com.oceanbase.odc.service.permission.table.UserTablePermission;
-import com.oceanbase.odc.service.permission.table.model.QueryTablePermissionParams;
 import com.oceanbase.odc.service.plugin.SchemaPluginUtil;
 import com.oceanbase.odc.service.session.factory.DefaultConnectSessionFactory;
+import com.oceanbase.odc.service.session.factory.OBConsoleDataSourceFactory;
 import com.oceanbase.tools.dbbrowser.model.DBObjectIdentity;
+import com.oceanbase.tools.dbbrowser.model.DBObjectType;
 import com.oceanbase.tools.dbbrowser.model.DBTable;
 
-import lombok.extern.slf4j.Slf4j;
+import lombok.NonNull;
 
 /**
- * ClassName: TableService Package: com.oceanbase.odc.service.connection.table Description:
  *
  * @Author: fenghao
  * @Create 2024/3/12 21:21
@@ -67,184 +75,106 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Service
 @Validated
-@Slf4j
-@Authenticated
 public class TableService {
-    private final TableMapper tableMapper = TableMapper.INSTANCE;
-    @Autowired
-    private TableRepository tableRepository;
 
     @Autowired
     private DatabaseService databaseService;
 
     @Autowired
-    private TablePermissionService tablePermissionService;
+    private DBTableService dbTableService;
 
     @Autowired
     private AuthenticationFacade authenticationFacade;
 
-    @SkipAuthorize("permission check inside")
-    public List<Table> getByDatabaseId(Long databaseId) {
-        return tableRepository.findByDatabaseId(databaseId).stream()
-                .map(TableMapper.INSTANCE::entityToModel)
-                .collect(Collectors.toList());
-    }
+    @Autowired
+    private DBObjectRepository dbObjectRepository;
 
-    @SkipAuthorize("permission check inside")
-    public List<Table> getByDatabaseIds(Set<Long> databaseIds) {
-        return tableRepository.findByDatabaseIdIn(databaseIds).stream()
-                .map(TableMapper.INSTANCE::entityToModel)
-                .collect(Collectors.toList());
-    }
+    @Autowired
+    private DBTableSyncer dbTableSyncer;
+
+    @Autowired
+    private JdbcLockRegistry lockRegistry;
+
+    @Autowired
+    private DBResourcePermissionHelper dbResourcePermissionHelper;
 
     @Transactional(rollbackFor = Exception.class)
     @SkipAuthorize("permission check inside")
-    public Table save(Table table) {
-        return TableMapper.INSTANCE
-                .entityToModel(tableRepository.saveAndFlush(TableMapper.INSTANCE.modelToEntity(table)));
-    }
-
-    @Transactional(rollbackFor = Exception.class)
-    @SkipAuthorize("permission check inside")
-    public List<Table> saveAll(List<Table> tables) {
-        List<TableEntity> tableEntityList = tableRepository
-                .saveAllAndFlush(tables.stream().map(TableMapper.INSTANCE::modelToEntity).collect(Collectors.toList()));
-        return tableEntityList.stream().map(TableMapper.INSTANCE::entityToModel).collect(Collectors.toList());
-    }
-
-    @SkipAuthorize("permission check inside")
-    public Table getByDatabaseIdAndName(Long databaseId, String tableName) {
-        TableEntity tableEntity = tableRepository.findByDatabaseIdAndName(databaseId, tableName);
-        if (tableEntity == null) {
-            return null;
-        } else {
-            return TableMapper.INSTANCE.entityToModel(tableEntity);
-        }
-    }
-
-    public List<Table> listTablesWithoutPage(@NotNull ConnectionSession connectionSession, Long databaseId) {
-        List<Table> listTables = new ArrayList<>();
-        Database databaseDetail = databaseService.detail(databaseId);
-        List<DBTable> DBTableList = connectionSession.getSyncJdbcExecutor(ConnectionSessionConstants.BACKEND_DS_KEY)
-                .execute((ConnectionCallback<List<DBObjectIdentity>>) con -> getTableExtensionPoint(connectionSession)
-                        .list(con, databaseDetail.getName()))
-                .stream().map(item -> {
-                    DBTable table = new DBTable();
-                    table.setName(item.getName());
-                    table.setSchemaName(databaseDetail.getName());
-                    return table;
+    public List<Table> list(@NonNull @Valid QueryTableParams params) throws SQLException, InterruptedException {
+        Database database = databaseService.detail(params.getDatabaseId());
+        if (authenticationFacade.currentUser().getOrganizationType() == OrganizationType.INDIVIDUAL) {
+            ConnectionSession session = new DefaultConnectSessionFactory(database.getDataSource()).generateSession();
+            try {
+                List<DBTable> dbTables = dbTableService.listTables(session, database.getName());
+                return dbTables.stream().map(e -> {
+                    Table t = new Table();
+                    t.setName(e.getName());
+                    t.setAuthorizedPermissionTypes(new HashSet<>(DatabasePermissionType.all()));
+                    return t;
                 }).collect(Collectors.toList());
-        QueryTablePermissionParams params = QueryTablePermissionParams.builder()
-                .userId(authenticationFacade.currentUserId())
-                .databaseId(databaseDetail.getId())
-                .statuses(Arrays.asList(ExpirationStatusFilter.NOT_EXPIRED))
-                .build();
-        List<UserTablePermission> userTablePermissionList =
-                tablePermissionService.list(databaseDetail.getProject().getId(), params, Pageable.unpaged())
-                        .getContent();
-        listTables = dbTablesToTables(DBTableList, userTablePermissionList);
-
-        // 组装库的权限
-        QueryDatabaseParams queryDatabaseParams = QueryDatabaseParams.builder()
-                .dataSourceId(databaseDetail.getDataSource().getId())
-                .existed(true)
-                .environmentId(databaseDetail.getEnvironment().getId())
-                .schemaName(databaseDetail.getName())
-                .includesPermittedAction(true)
-                .projectId(databaseDetail.getProject().getId()).build();
-        Page<Database> databaseList = databaseService.list(queryDatabaseParams, Pageable.unpaged());
-
-        List<Table> finalListTables = listTables;
-        databaseList.getContent().forEach(database -> {
-            finalListTables.forEach(table -> {
-                if (table.getDatabaseName().equals(database.getName())) {
-                    Set<DatabasePermissionType> dbAuthorizedPermissionTypes = database.getAuthorizedPermissionTypes();
-                    // 如果dbAuthorizedPermissionTypes中有ACCESS权限，需要去掉
-                    if (dbAuthorizedPermissionTypes != null) {
-                        dbAuthorizedPermissionTypes.remove(DatabasePermissionType.ACCESS);
-                    }
-
-                    Set<DatabasePermissionType> tableAuthorizedPermissionTypes = table.getAuthorizedPermissionTypes();
-                    if (tableAuthorizedPermissionTypes == null) {
-                        tableAuthorizedPermissionTypes = dbAuthorizedPermissionTypes;
-                    } else {
-                        tableAuthorizedPermissionTypes.addAll(dbAuthorizedPermissionTypes);
-                    }
-                    table.setAuthorizedPermissionTypes(tableAuthorizedPermissionTypes);
-                }
-            });
-        });
-
-        return finalListTables;
-    }
-
-    public List<Table> listTablesWithoutPageByDatabaseId(Long databaseId) {
-        List<Table> listTables = new ArrayList<>();
-        Database databaseDetail = databaseService.detail(databaseId);
-        ConnectionSession connectionSession =
-                new DefaultConnectSessionFactory(databaseDetail.getDataSource()).generateSession();
-        List<DBTable> DBTableList = connectionSession.getSyncJdbcExecutor(ConnectionSessionConstants.BACKEND_DS_KEY)
-                .execute((ConnectionCallback<List<DBObjectIdentity>>) con -> getTableExtensionPoint(connectionSession)
-                        .list(con, databaseDetail.getName()))
-                .stream().map(item -> {
-                    DBTable table = new DBTable();
-                    table.setName(item.getName());
-                    table.setSchemaName(databaseDetail.getName());
-                    return table;
-                }).collect(Collectors.toList());
-        QueryTablePermissionParams params = QueryTablePermissionParams.builder()
-                .userId(authenticationFacade.currentUserId())
-                .databaseId(databaseDetail.getId())
-                .statuses(Arrays.asList(ExpirationStatusFilter.NOT_EXPIRED))
-                .build();
-        List<UserTablePermission> userTablePermissionList =
-                tablePermissionService.list(databaseDetail.getProject().getId(), params, Pageable.unpaged())
-                        .getContent();
-        listTables = dbTablesToTables(DBTableList, userTablePermissionList);
-        return listTables;
-    }
-
-
-    private TableExtensionPoint getTableExtensionPoint(@NotNull ConnectionSession connectionSession) {
-        return SchemaPluginUtil.getTableExtension(connectionSession.getDialectType());
-    }
-
-
-    private Table dbTableToTable(DBTable dbTable) {
-        Table table = new Table();
-        table.setName(dbTable.getName());
-        table.setTableName(dbTable.getName());
-        table.setDatabaseName(dbTable.getSchemaName());
-        table.setSchemaName(dbTable.getSchemaName());
-        return table;
-    }
-
-    private List<Table> dbTablesToTables(List<DBTable> dbTables, List<UserTablePermission> userTablePermissionList) {
-        List<Table> tableList = dbTables.stream().map(this::dbTableToTable).collect(Collectors.toList());
-        Map<String, Set<DatabasePermissionType>> tableNameToPermissionTypes = new HashMap<>();
-        for (UserTablePermission userTablePermission : userTablePermissionList) {
-            if (tableNameToPermissionTypes.get(userTablePermission.getTableName()) == null) {
-                tableNameToPermissionTypes.put(userTablePermission.getTableName(),
-                        new HashSet<>(Arrays.asList(userTablePermission.getType())));;
-            } else {
-                Set<DatabasePermissionType> databasePermissionTypes = tableNameToPermissionTypes.get(
-                        userTablePermission.getTableName());
-                databasePermissionTypes.add(userTablePermission.getType());
-                tableNameToPermissionTypes.put(userTablePermission.getTableName(), databasePermissionTypes);
+            } finally {
+                session.expire();
             }
         }
-        tableList = tableList.stream().map(
-                item -> {
-                    Set<DatabasePermissionType> databasePermissionTypes =
-                            tableNameToPermissionTypes.get(item.getName());
-                    if (databasePermissionTypes != null) {
-                        item.setAuthorizedPermissionTypes(databasePermissionTypes);
-                    }
-                    return item;
-                }).collect(Collectors.toList());
+        List<DBObjectEntity> tables;
+        ConnectionConfig dataSource = database.getDataSource();
+        OBConsoleDataSourceFactory factory = new OBConsoleDataSourceFactory(database.getDataSource(), true);
+        try (SingleConnectionDataSource ds = (SingleConnectionDataSource) factory.getDataSource();
+                Connection conn = ds.getConnection()) {
+            tables = dbObjectRepository.findByDatabaseIdAndType(params.getDatabaseId(), DBObjectType.TABLE);
+            Set<String> existTableNames = tables.stream().map(DBObjectEntity::getName).collect(Collectors.toSet());
+            TableExtensionPoint point = SchemaPluginUtil.getTableExtension(dataSource.getDialectType());
+            Set<String> latestTableNames = point.list(conn, database.getName()).stream().map(DBObjectIdentity::getName)
+                    .collect(Collectors.toSet());
+            if (latestTableNames.size() != existTableNames.size() || !existTableNames.containsAll(latestTableNames)) {
+                syncDBTables(conn, database, dataSource.getDialectType());
+                tables = dbObjectRepository.findByDatabaseIdAndType(params.getDatabaseId(), DBObjectType.TABLE);
+            }
+        }
+        return entitiesToModels(tables, database, params.getIncludePermittedAction());
+    }
 
+    private void syncDBTables(Connection connection, Database database, DialectType dialectType)
+            throws InterruptedException {
+        Lock lock = lockRegistry
+                .obtain("sync-datasource-" + database.getDataSource().getId() + "-database-" + database.getId());
+        if (!lock.tryLock(3, TimeUnit.SECONDS)) {
+            throw new ConflictException(ErrorCodes.ResourceSynchronizing,
+                    new Object[] {ResourceType.ODC_TABLE.getLocalizedMessage()}, "Can not acquire jdbc lock");
+        }
+        try {
+            if (dbTableSyncer.supports(dialectType)) {
+                dbTableSyncer.sync(connection, database, dialectType);
+            } else {
+                throw new UnsupportedException("Unsupported dialect type: " + dialectType);
+            }
+        } finally {
+            lock.unlock();
+        }
+    }
 
-        return tableList;
+    private List<Table> entitiesToModels(Collection<DBObjectEntity> entities, Database database,
+            boolean includePermittedAction) {
+        List<Table> tables = new ArrayList<>();
+        if (CollectionUtils.isEmpty(entities)) {
+            return tables;
+        }
+        Map<Long, Set<DatabasePermissionType>> id2Types = dbResourcePermissionHelper
+                .getTablePermissions(entities.stream().map(DBObjectEntity::getId).collect(Collectors.toSet()));
+        for (DBObjectEntity entity : entities) {
+            Table table = new Table();
+            table.setId(entity.getId());
+            table.setName(entity.getName());
+            table.setDatabase(database);
+            table.setCreateTime(entity.getCreateTime());
+            table.setUpdateTime(entity.getUpdateTime());
+            table.setOrganizationId(entity.getOrganizationId());
+            if (includePermittedAction) {
+                table.setAuthorizedPermissionTypes(id2Types.get(entity.getId()));
+            }
+            tables.add(table);
+        }
+        return tables;
     }
 
 }

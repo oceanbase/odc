@@ -21,14 +21,11 @@ import java.util.List;
 import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
 
-import com.oceanbase.odc.core.shared.constant.AuthorizationType;
 import com.oceanbase.odc.service.permission.database.model.DatabasePermissionType;
 
 import lombok.Data;
 
 /**
- * ClassName: CreateTablePermissionReq.java Package:
- * com.oceanbase.odc.service.permission.table.model Description:
  *
  * @Author: fenghao
  * @Create 2024/3/11 20:26
@@ -36,30 +33,16 @@ import lombok.Data;
  */
 @Data
 public class CreateTablePermissionReq {
+
     @NotEmpty
-    private List<TablePermission> tables;
-
-    private Long creatorId;
-
-    private Long ticketId;
+    private List<Long> tableIds;
 
     @NotEmpty
     private List<DatabasePermissionType> types;
 
     private Date expireTime;
 
-    private Long organizationId;
-
     @NotNull
     private Long userId;
 
-    AuthorizationType authorizationType = AuthorizationType.USER_AUTHORIZATION;
-
-    @Data
-    public static class TablePermission {
-        @NotNull(message = "operate cannot be null")
-        private Long databaseId;
-        @NotNull(message = "operate cannot be null")
-        private List<String> tableNames;
-    }
 }

@@ -290,7 +290,7 @@ public class PreCheckRuntimeFlowableTaskCopied extends BaseODCFlowTaskDelegate<V
             }
         }
         if (Objects.nonNull(permissionCheckResult)) {
-            return CollectionUtils.isNotEmpty(permissionCheckResult.getUnauthorizedResource());
+            return CollectionUtils.isNotEmpty(permissionCheckResult.getUnauthorizedDBResources());
         }
         return false;
     }

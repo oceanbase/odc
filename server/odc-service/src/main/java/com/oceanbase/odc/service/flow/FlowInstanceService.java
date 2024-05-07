@@ -77,7 +77,6 @@ import com.oceanbase.odc.core.shared.exception.NotFoundException;
 import com.oceanbase.odc.core.shared.exception.OverLimitException;
 import com.oceanbase.odc.core.shared.exception.UnsupportedException;
 import com.oceanbase.odc.core.shared.exception.VerifyException;
-import com.oceanbase.odc.core.sql.execute.model.SqlTuple;
 import com.oceanbase.odc.metadb.collaboration.EnvironmentEntity;
 import com.oceanbase.odc.metadb.collaboration.EnvironmentRepository;
 import com.oceanbase.odc.metadb.flow.FlowInstanceEntity;
@@ -103,8 +102,9 @@ import com.oceanbase.odc.service.connection.CloudMetadataClient;
 import com.oceanbase.odc.service.connection.CloudMetadataClient.CloudPermissionAction;
 import com.oceanbase.odc.service.connection.ConnectionService;
 import com.oceanbase.odc.service.connection.database.DatabaseService;
+import com.oceanbase.odc.service.connection.database.model.DBResource;
 import com.oceanbase.odc.service.connection.database.model.Database;
-import com.oceanbase.odc.service.connection.database.model.GetDatabaseOwnerResp;
+import com.oceanbase.odc.service.connection.database.model.UnauthorizedDBResource;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.connection.model.OBTenant;
 import com.oceanbase.odc.service.dispatch.DispatchResponse;
@@ -155,24 +155,22 @@ import com.oceanbase.odc.service.notification.Broker;
 import com.oceanbase.odc.service.notification.NotificationProperties;
 import com.oceanbase.odc.service.notification.helper.EventBuilder;
 import com.oceanbase.odc.service.notification.model.Event;
-import com.oceanbase.odc.service.permission.database.DatabasePermissionHelper;
+import com.oceanbase.odc.service.permission.DBResourcePermissionHelper;
 import com.oceanbase.odc.service.permission.database.model.ApplyDatabaseParameter;
 import com.oceanbase.odc.service.permission.database.model.ApplyDatabaseParameter.ApplyDatabase;
 import com.oceanbase.odc.service.permission.database.model.DatabasePermissionType;
-import com.oceanbase.odc.service.permission.table.TablePermissionService;
+import com.oceanbase.odc.service.permission.table.model.ApplyTableParameter;
+import com.oceanbase.odc.service.permission.table.model.ApplyTableParameter.ApplyTable;
 import com.oceanbase.odc.service.regulation.approval.model.ApprovalFlowConfig;
 import com.oceanbase.odc.service.regulation.approval.model.ApprovalNodeConfig;
 import com.oceanbase.odc.service.regulation.risklevel.RiskLevelService;
 import com.oceanbase.odc.service.regulation.risklevel.model.RiskLevel;
 import com.oceanbase.odc.service.regulation.risklevel.model.RiskLevelDescriber;
-import com.oceanbase.odc.service.resultset.ResultSetExportTaskParameter;
 import com.oceanbase.odc.service.schedule.ScheduleService;
 import com.oceanbase.odc.service.schedule.flowtask.AlterScheduleParameters;
 import com.oceanbase.odc.service.schedule.flowtask.OperationType;
 import com.oceanbase.odc.service.schedule.model.JobType;
 import com.oceanbase.odc.service.schedule.model.ScheduleStatus;
-import com.oceanbase.odc.service.session.interceptor.ResourcePermissionInterceptor;
-import com.oceanbase.odc.service.session.model.UnauthorizedResource;
 import com.oceanbase.odc.service.task.TaskService;
 import com.oceanbase.odc.service.task.model.ExecutorInfo;
 import com.oceanbase.tools.loaddump.common.enums.ObjectType;
@@ -248,7 +246,7 @@ public class FlowInstanceService {
     @Autowired
     private ResourceRoleService resourceRoleService;
     @Autowired
-    private DatabasePermissionHelper databasePermissionHelper;
+    private DBResourcePermissionHelper permissionHelper;
     @Autowired
     private NotificationProperties notificationProperties;
     @Autowired
@@ -259,17 +257,13 @@ public class FlowInstanceService {
     private CloudMetadataClient cloudMetadataClient;
     @Autowired
     private EnvironmentRepository environmentRepository;
-
     @Autowired
-    private TablePermissionService tablePermissionService;
+    private DBResourcePermissionHelper dbResourcePermissionHelper;
 
-    @Autowired
-    private ResourcePermissionInterceptor resourcePermissionInterceptor;
     private final List<Consumer<DataTransferTaskInitEvent>> dataTransferTaskInitHooks = new ArrayList<>();
     private final List<Consumer<ShadowTableComparingUpdateEvent>> shadowTableComparingTaskHooks = new ArrayList<>();
     private static final long MAX_EXPORT_OBJECT_COUNT = 10000;
     private static final String ODC_SITE_URL = "odc.site.url";
-    private String environmentName;
     private static final int MAX_APPLY_DATABASE_SIZE = 10;
 
     @PostConstruct
@@ -326,6 +320,21 @@ public class FlowInstanceService {
                 applyDatabases.add(e);
                 parameter.setDatabases(applyDatabases);
                 createReq.setDatabaseId(e.getId());
+                createReq.setParameters(parameter);
+                return innerCreate(createReq);
+            }).collect(Collectors.toList()).stream().flatMap(Collection::stream).collect(Collectors.toList());
+        } else if (createReq.getTaskType() == TaskType.APPLY_TABLE_PERMISSION) {
+            ApplyTableParameter parameter = (ApplyTableParameter) createReq.getParameters();
+            List<ApplyTable> tables = new ArrayList<>(parameter.getTables());
+            Map<Long, List<ApplyTable>> databaseId2Tables =
+                    tables.stream().collect(Collectors.groupingBy(ApplyTable::getDatabaseId));
+            if (CollectionUtils.isNotEmpty(databaseId2Tables.keySet())
+                    && databaseId2Tables.keySet().size() > MAX_APPLY_DATABASE_SIZE) {
+                throw new IllegalStateException("The number of databases to apply for exceeds the maximum limit");
+            }
+            return databaseId2Tables.entrySet().stream().map(e -> {
+                parameter.setTables(new ArrayList<>(e.getValue()));
+                createReq.setDatabaseId(e.getKey());
                 createReq.setParameters(parameter);
                 return innerCreate(createReq);
             }).collect(Collectors.toList()).stream().flatMap(Collection::stream).collect(Collectors.toList());
@@ -749,69 +758,29 @@ public class FlowInstanceService {
         if (authenticationFacade.currentUser().getOrganizationType() == OrganizationType.INDIVIDUAL) {
             return;
         }
-        // 权限申请工单，跳过权限校验
-        if (req.getTaskType() == TaskType.APPLY_DATABASE_PERMISSION
-                || req.getTaskType() == TaskType.APPLY_TABLE_PERMISSION
-                || req.getTaskType() == TaskType.APPLY_PROJECT_PERMISSION) {
-            return;
-        }
-        Database databaseDetail = databaseService.detail(req.getDatabaseId());
-
-        // TODO: 数据变更工单,数据导出工单，数据集导出工单进行表级别校验，其他工单进行库级别校验
-        if (req.getTaskType() == TaskType.ASYNC) {
-            DatabaseChangeParameters parameters = (DatabaseChangeParameters) req.getParameters();
-
-            List<String> listSqls = SqlUtils.split(databaseDetail.getDataSource().getDialectType(),
-                    parameters.getSqlContent(), parameters.getDelimiter());
-            List<SqlTuple> sqlTuples = SqlTuple.newTuples(listSqls);
-            try {
-                resourcePermissionInterceptor.doPreHandle(sqlTuples, databaseDetail.getId(), new HashSet<>());
-                return;
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
-        }
-        // EXPORT工单表级别鉴权
         if (req.getTaskType() == TaskType.EXPORT) {
             DataTransferConfig parameters = (DataTransferConfig) req.getParameters();
-            Map<String, Set<DatabasePermissionType>> tableNames = new HashMap<>();
+            Map<DBResource, Set<DatabasePermissionType>> resource2Types = new HashMap<>();
             if (CollectionUtils.isNotEmpty(parameters.getExportDbObjects())) {
-                parameters.getExportDbObjects().stream().forEach(item -> {
+                ConnectionConfig config = connectionService.getBasicWithoutPermissionCheck(req.getConnectionId());
+                parameters.getExportDbObjects().forEach(item -> {
                     if (item.getDbObjectType() == ObjectType.TABLE) {
-                        Set<DatabasePermissionType> databasePermissionTypes = new HashSet<>();
-                        databasePermissionTypes.addAll(DatabasePermissionType.from(TaskType.EXPORT));
-                        tableNames.put(item.getObjectName(), databasePermissionTypes);
+                        resource2Types.put(DBResource.from(config, req.getDatabaseName(), item.getObjectName()),
+                                DatabasePermissionType.from(TaskType.EXPORT));
                     }
                 });
-            } ;
-            List<UnauthorizedResource> unauthorizedResources =
-                    tablePermissionService.filterUnauthorizedTablesByTableNames(tableNames, req.getDatabaseId());
-            if (CollectionUtils.isNotEmpty(unauthorizedResources)) {
+            }
+            List<UnauthorizedDBResource> unauthorizedDBResources =
+                    dbResourcePermissionHelper.filterUnauthorizedDBResources(resource2Types, false);
+            if (CollectionUtils.isNotEmpty(unauthorizedDBResources)) {
                 throw new BadRequestException(ErrorCodes.DatabaseAccessDenied,
-                        new Object[] {
-                                unauthorizedResources.stream().map(UnauthorizedResource::getUnauthorizedPermissionTypes)
-                                        .flatMap(Collection::stream).map(DatabasePermissionType::getLocalizedMessage)
-                                        .collect(Collectors.joining(","))},
+                        new Object[] {unauthorizedDBResources.stream()
+                                .map(UnauthorizedDBResource::getUnauthorizedPermissionTypes).flatMap(Collection::stream)
+                                .map(DatabasePermissionType::getLocalizedMessage).collect(Collectors.joining(","))},
                         "Lack permission for the database with id " + req.getDatabaseId());
-            } else {
-                return;
             }
+            return;
         }
-        // EXPORT_RESULT_SET工单表级别鉴权
-        if (req.getTaskType() == TaskType.EXPORT_RESULT_SET) {
-            ResultSetExportTaskParameter parameters = (ResultSetExportTaskParameter) req.getParameters();
-            Set<DatabasePermissionType> databasePermissionTypes = new HashSet<>();
-            databasePermissionTypes.addAll(DatabasePermissionType.from(TaskType.EXPORT_RESULT_SET));
-            List<String> listSqls = Arrays.asList(parameters.getSql());
-            List<SqlTuple> sqlTuples = SqlTuple.newTuples(listSqls);
-            try {
-                resourcePermissionInterceptor.doPreHandle(sqlTuples, databaseDetail.getId(), databasePermissionTypes);
-                return;
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
-        }
-
         Set<Long> databaseIds = new HashSet<>();
         if (Objects.nonNull(req.getDatabaseId())) {
             databaseIds.add(req.getDatabaseId());
@@ -848,7 +817,7 @@ public class FlowInstanceService {
             databaseIds.add(p.getTargetDatabaseId());
             databaseIds.add(p.getSourceDatabaseId());
         }
-        databasePermissionHelper.checkPermissions(databaseIds, DatabasePermissionType.from(req.getTaskType()));
+        permissionHelper.checkDBPermissions(databaseIds, DatabasePermissionType.from(req.getTaskType()));
     }
 
 
@@ -1102,10 +1071,8 @@ public class FlowInstanceService {
     private TemplateVariables buildTemplateVariables(CreateFlowInstanceReq flowInstanceReq, ConnectionConfig config) {
         TemplateVariables variables = new TemplateVariables();
         // set task url
-        String odcTaskUrl = String.format(
-                "#/task?taskId=%d&taskType=%s&organizationId=%s",
-                flowInstanceReq.getId(), flowInstanceReq.getTaskType().toString(),
-                authenticationFacade.currentOrganizationId());
+        String odcTaskUrl = String.format("#/task?taskId=%d&taskType=%s&organizationId=%s", flowInstanceReq.getId(),
+                flowInstanceReq.getTaskType().toString(), authenticationFacade.currentOrganizationId());
         variables.setAttribute(Variable.ODC_TASK_URL, odcTaskUrl);
         // set user related variables
         variables.setAttribute(Variable.USER_ID, authenticationFacade.currentUserId());
@@ -1118,67 +1085,58 @@ public class FlowInstanceService {
         variables.setAttribute(Variable.TASK_DESCRIPTION, flowInstanceReq.getDescription());
         // set connection related variables
         if (Objects.nonNull(config)) {
-            variables.setAttribute(Variable.CONNECTION_NAME, JsonUtils.toJson(config.getName()));
-            variables.setAttribute(Variable.CONNECTION_TENANT, JsonUtils.toJson(config.getTenantName()));
+            variables.setAttribute(Variable.CONNECTION_NAME, config.getName());
+            variables.setAttribute(Variable.CONNECTION_TENANT, config.getTenantName());
             for (Entry<String, String> entry : config.getProperties().entrySet()) {
                 variables.setAttribute(Variable.CONNECTION_PROPERTIES, entry.getKey(), entry.getValue());
             }
         } else {
-            variables.setAttribute(Variable.CONNECTION_NAME, JsonUtils.toJson(""));
-            variables.setAttribute(Variable.CONNECTION_TENANT, JsonUtils.toJson(""));
+            variables.setAttribute(Variable.CONNECTION_NAME, "");
+            variables.setAttribute(Variable.CONNECTION_TENANT, "");
         }
-        // set project owner related variables
-        List<UserResourceRole> projectUserResourceRole = resourceRoleService.getUserIdsByResourceIdAndTypeAndName(
-                flowInstanceReq.getProjectId(), ResourceType.ODC_PROJECT,
-                "OWNER");
-        List<User> projectOwnerUsers = projectUserResourceRole.stream()
-                .map(userResourceRole -> {
-                    User user = userService.deailById(userResourceRole.getUserId());
-                    return user;
-                })
-                .collect(Collectors.toList());
-        List<Long> projectOwnerIds = new ArrayList<>();
-        List<String> projectOwnerAccounts = new ArrayList<>();
-        List<String> projectOwnerNames = new ArrayList<>();
-        projectOwnerUsers.forEach(user -> {
-            projectOwnerIds.add(user.getId());
-            projectOwnerAccounts.add(user.getAccountName());
-            projectOwnerNames.add(user.getName());
-        });
+        // set project related variables
+        List<User> projectOwners = new ArrayList<>();
+        List<UserResourceRole> projectUserResourceRoles = resourceRoleService.listByResourceIdAndTypeAndName(
+                flowInstanceReq.getProjectId(), ResourceType.ODC_PROJECT, ResourceRoleName.OWNER.name());
+        if (CollectionUtils.isNotEmpty(projectUserResourceRoles)) {
+            projectOwners = userService.batchNullSafeGet(
+                    projectUserResourceRoles.stream().map(UserResourceRole::getUserId).collect(Collectors.toSet()));
+        }
+        List<Long> projectOwnerIds = projectOwners.stream().map(User::getId).collect(Collectors.toList());
         variables.setAttribute(Variable.PROJECT_OWNER_IDS, JsonUtils.toJson(projectOwnerIds));
+        List<String> projectOwnerAccounts =
+                projectOwners.stream().map(User::getAccountName).collect(Collectors.toList());
         variables.setAttribute(Variable.PROJECT_OWNER_ACCOUNTS, JsonUtils.toJson(projectOwnerAccounts));
+        List<String> projectOwnerNames = projectOwners.stream().map(User::getName).collect(Collectors.toList());
         variables.setAttribute(Variable.PROJECT_OWNER_NAMES, JsonUtils.toJson(projectOwnerNames));
-        // set database owner related variables
-        Database database = new Database();
-        if (flowInstanceReq.getDatabaseId() != null) {
-            database = databaseService.detail(flowInstanceReq.getDatabaseId());
-        }
-        if (database != null && database.getId() != null) {
-            String environmentNameKey = database.getEnvironment().getName();
-            if (StringUtils.isTranslatable(environmentNameKey)) {
-                String environmentName =
-                        I18n.translate(StringUtils.getTranslatableKey(environmentNameKey), null,
-                                LocaleContextHolder.getLocale());
-                variables.setAttribute(Variable.ENVIRONMENT_NAME, environmentName);
-            } ;
+        // set database related variables
+        if (Objects.nonNull(flowInstanceReq.getDatabaseId())) {
+            Database database = databaseService.detail(flowInstanceReq.getDatabaseId());
             variables.setAttribute(Variable.DATABASE_NAME, database.getName());
-            GetDatabaseOwnerResp databasesOwner =
-                    databaseService.getDatabasesOwner(flowInstanceReq.getProjectId(), database.getId());
-            if (Objects.nonNull(databasesOwner)) {
-                List<Long> ownerIds = databasesOwner.getMembers().stream().map(member -> {
-                    return member.getId();
-                }).collect(Collectors.toList());
-                variables.setAttribute(Variable.DATABASE_OWNERS_IDS, JsonUtils.toJson(ownerIds));
-                List<String> ownerAccount = databasesOwner.getMembers().stream().map(member -> {
-                    return member.getAccountName();
-                }).collect(Collectors.toList());
-                variables.setAttribute(Variable.DATABASE_OWNERS_ACCOUNTS, JsonUtils.toJson(ownerAccount));
-
-                List<String> ownerNames = databasesOwner.getMembers().stream().map(member -> {
-                    return member.getName();
-                }).collect(Collectors.toList());
-                variables.setAttribute(Variable.DATABASE_OWNERS_NAMES, JsonUtils.toJson(ownerNames));
+            if (Objects.nonNull(database.getEnvironment())) {
+                String environmentNameKey = database.getEnvironment().getName();
+                if (StringUtils.isTranslatable(environmentNameKey)) {
+                    String environmentName = I18n.translate(StringUtils.getTranslatableKey(environmentNameKey), null,
+                            LocaleContextHolder.getLocale());
+                    variables.setAttribute(Variable.ENVIRONMENT_NAME, environmentName);
+                }
             }
+            List<User> databaseOwners = new ArrayList<>();
+            List<UserResourceRole> userResourceRoles =
+                    resourceRoleService.listByResourceTypeAndId(ResourceType.ODC_DATABASE, database.getId());
+            if (CollectionUtils.isNotEmpty(userResourceRoles)) {
+                Set<Long> userIds =
+                        userResourceRoles.stream().map(UserResourceRole::getUserId).collect(Collectors.toSet());
+                databaseOwners = userService.batchNullSafeGet(userIds);
+            } else {
+                databaseOwners = projectOwners;
+            }
+            List<Long> ownerIds = databaseOwners.stream().map(User::getId).collect(Collectors.toList());
+            variables.setAttribute(Variable.DATABASE_OWNERS_IDS, JsonUtils.toJson(ownerIds));
+            List<String> ownerAccounts = databaseOwners.stream().map(User::getAccountName).collect(Collectors.toList());
+            variables.setAttribute(Variable.DATABASE_OWNERS_ACCOUNTS, JsonUtils.toJson(ownerAccounts));
+            List<String> ownerNames = databaseOwners.stream().map(User::getName).collect(Collectors.toList());
+            variables.setAttribute(Variable.DATABASE_OWNERS_NAMES, JsonUtils.toJson(ownerNames));
         } else {
             variables.setAttribute(Variable.ENVIRONMENT_NAME, "");
             variables.setAttribute(Variable.DATABASE_NAME, "");
@@ -1196,8 +1154,7 @@ public class FlowInstanceService {
                 variables.setAttribute(Variable.SQL_CONTENT_JSON_ARRAY, JsonUtils.toJson(splitSqlList));
             }
         } else {
-            String sql = "";
-            variables.setAttribute(Variable.SQL_CONTENT, JsonUtils.toJson(sql));
+            variables.setAttribute(Variable.SQL_CONTENT, "");
             variables.setAttribute(Variable.SQL_CONTENT_JSON_ARRAY, JsonUtils.toJson(Collections.emptyList()));
         }
         // set ODC URL site

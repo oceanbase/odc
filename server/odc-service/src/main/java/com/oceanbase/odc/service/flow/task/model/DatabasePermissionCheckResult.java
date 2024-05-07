@@ -17,7 +17,7 @@ package com.oceanbase.odc.service.flow.task.model;
 
 import java.util.List;
 
-import com.oceanbase.odc.service.session.model.UnauthorizedResource;
+import com.oceanbase.odc.service.connection.database.model.UnauthorizedDBResource;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -34,5 +34,5 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class DatabasePermissionCheckResult {
-    private List<UnauthorizedResource> unauthorizedResource;
+    private List<UnauthorizedDBResource> unauthorizedDBResources;
 }

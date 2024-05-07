@@ -24,7 +24,6 @@ import org.springframework.data.repository.query.Param;
 import com.oceanbase.odc.metadb.flow.ReadOnlyRepository;
 
 /**
- * ClassName: UserTablePermissionRepository.java Package: com.oceanbase.odc.metadb.iam Description:
  *
  * @Author: fenghao
  * @Create 2024/3/11 20:26
@@ -37,89 +36,19 @@ public interface UserTablePermissionRepository extends ReadOnlyRepository<UserTa
 
     List<UserTablePermissionEntity> findByDatabaseIdIn(Collection<Long> databaseIds);
 
-    @Query(value = "select"
-            + "  i_p.`id` as `id`,"
-            + "  i_up.`user_id` as `user_id`,"
-            + "  i_p.`action` as `action`,"
-            + "  i_p.`authorization_type` as `authorization_type`,"
-            + "  i_p.`ticket_id` as `ticket_id`,"
-            + "  i_p.`create_time` as `create_time`,"
-            + "  i_p.`expire_time` as `expire_time`,"
-            + "  i_p.`creator_id` as `creator_id`,"
-            + "  i_p.`organization_id` as `organization_id`,"
-            + "  c_d.`project_id` as `project_id`,"
-            + "  c_d.`id` as `database_id`,"
-            + "  c_d.`name` as `database_name`,"
-            + "  c_c.`id` as `data_source_id`,"
-            + "  c_c.`name` as `data_source_name`,"
-            + "  c_t.`name` as `table_name`"
-            + "from"
-            + "  `iam_permission` as i_p"
-            + "  inner join `iam_user_permission` as i_up on i_p.`id` = i_up.`permission_id`"
-            + "  inner join `connect_table` as c_t on  c_t.`id` = i_p.`resource_id`"
-            + "  inner join `connect_database` as c_d on c_t.database_id = c_d.`id`"
-            + "  inner join `connect_connection` as c_c on c_d.`connection_id` = c_c.`id`"
-            + "  where i_p.`resource_type` = 'ODC_TABLE'"
-            + "  and i_up.user_id = :userId"
-            + "  and c_d.`id` in(:databaseIds)", nativeQuery = true)
+    @Query(value = "select v.* from list_user_table_permission_view v where v.expire_time > now() "
+            + "and v.user_id = :userId and v.database_id in (:databaseIds)", nativeQuery = true)
     List<UserTablePermissionEntity> findNotExpiredByUserIdAndDatabaseIdIn(@Param("userId") Long userId,
             @Param("databaseIds") Collection<Long> databaseIds);
 
-    @Query(value = "select"
-            + "  i_p.`id` as `id`,"
-            + "  i_up.`user_id` as `user_id`,"
-            + "  i_p.`action` as `action`,"
-            + "  i_p.`authorization_type` as `authorization_type`,"
-            + "  i_p.`ticket_id` as `ticket_id`,"
-            + "  i_p.`create_time` as `create_time`,"
-            + "  i_p.`expire_time` as `expire_time`,"
-            + "  i_p.`creator_id` as `creator_id`,"
-            + "  i_p.`organization_id` as `organization_id`,"
-            + "  c_d.`project_id` as `project_id`,"
-            + "  c_d.`id` as `database_id`,"
-            + "  c_d.`name` as `database_name`,"
-            + "  c_c.`id` as `data_source_id`,"
-            + "  c_c.`name` as `data_source_name`,"
-            + "  c_t.`name` as `table_name`"
-            + "from"
-            + "  `iam_permission` as i_p"
-            + "  inner join `iam_user_permission` as i_up on i_p.`id` = i_up.`permission_id`"
-            + "  inner join `connect_table` as c_t on  c_t.`id` = i_p.`resource_id`"
-            + "  inner join `connect_database` as c_d on c_t.database_id = c_d.`id`"
-            + "  inner join `connect_connection` as c_c on c_d.`connection_id` = c_c.`id`"
-            + "  where i_p.`resource_type` = 'ODC_TABLE'"
-            + "  and i_up.user_id = :userId"
-            + "  and c_d.`project_id` = :projectId", nativeQuery = true)
+    @Query(value = "select v.* from list_user_table_permission_view v where v.expire_time > now() "
+            + "and v.user_id = :userId and v.table_id in (:tableIds)", nativeQuery = true)
+    List<UserTablePermissionEntity> findNotExpiredByUserIdAndTableIdIn(@Param("userId") Long userId,
+            @Param("tableIds") Collection<Long> tableIds);
+
+    @Query(value = "select v.* from list_user_table_permission_view v where v.user_id = :userId "
+            + "and v.project_id = :projectId", nativeQuery = true)
     List<UserTablePermissionEntity> findByUserIdAndProjectId(@Param("userId") Long userId,
             @Param("projectId") Long projectId);
-
-    @Query(value = "select"
-            + "  i_p.`id` as `id`,"
-            + "  i_up.`user_id` as `user_id`,"
-            + "  i_p.`action` as `action`,"
-            + "  i_p.`authorization_type` as `authorization_type`,"
-            + "  i_p.`ticket_id` as `ticket_id`,"
-            + "  i_p.`create_time` as `create_time`,"
-            + "  i_p.`expire_time` as `expire_time`,"
-            + "  i_p.`creator_id` as `creator_id`,"
-            + "  i_p.`organization_id` as `organization_id`,"
-            + "  c_d.`project_id` as `project_id`,"
-            + "  c_d.`id` as `database_id`,"
-            + "  c_d.`name` as `database_name`,"
-            + "  c_c.`id` as `data_source_id`,"
-            + "  c_c.`name` as `data_source_name`,"
-            + "  c_t.`name` as `table_name`"
-            + "from"
-            + "  `iam_permission` as i_p"
-            + "  inner join `iam_user_permission` as i_up on i_p.`id` = i_up.`permission_id`"
-            + "  inner join `connect_table` as c_t on  c_t.`id` = i_p.`resource_id`"
-            + "  inner join `connect_database` as c_d on c_t.database_id = c_d.`id`"
-            + "  inner join `connect_connection` as c_c on c_d.`connection_id` = c_c.`id`"
-            + "  where i_p.`resource_type` = 'ODC_TABLE'"
-            + "  and i_up.user_id= :userId"
-            + "  and c_d.`id` = :databaseId"
-            + "  and c_t.`name` = :tableName", nativeQuery = true)
-    List<UserTablePermissionEntity> findNotExpiredByUserIdAndDatabaseIdAndTableName(@Param("userId") Long userId,
-            @Param("databaseId") Long databaseId, @Param("tableName") String tableName);
 
 }

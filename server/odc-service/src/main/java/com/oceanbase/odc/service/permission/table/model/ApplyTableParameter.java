@@ -18,18 +18,15 @@ package com.oceanbase.odc.service.permission.table.model;
 import java.io.Serializable;
 import java.util.Date;
 import java.util.List;
-import java.util.Objects;
 
 import com.oceanbase.odc.core.flow.model.TaskParameters;
-import com.oceanbase.odc.service.connection.table.model.Table;
 import com.oceanbase.odc.service.permission.database.model.DatabasePermissionType;
 import com.oceanbase.odc.service.permission.project.ApplyProjectParameter.ApplyProject;
+import com.oceanbase.odc.service.permission.table.ApplyTablePermissionPreprocessor;
 
 import lombok.Data;
 
 /**
- * ClassName: ApplyTableParameter Package: com.oceanbase.odc.service.permission.table.model
- * Description:
  *
  * @Author: fenghao
  * @Create 2024/3/14 16:30
@@ -37,15 +34,15 @@ import lombok.Data;
  */
 @Data
 public class ApplyTableParameter implements Serializable, TaskParameters {
+
     private static final long serialVersionUID = -2482302525012272875L;
 
-
     /**
-     * Project to be applied for, the
+     * Project to be applied for, required
      */
     private ApplyProject project;
     /**
-     * Databases to be applied for, required
+     * Tables to be applied for, required
      */
     private List<ApplyTable> tables;
     /**
@@ -63,29 +60,22 @@ public class ApplyTableParameter implements Serializable, TaskParameters {
 
     @Data
     public static class ApplyTable implements Serializable {
+
         private static final long serialVersionUID = -8433967513537417701L;
 
+        /**
+         * ID of the table to be applied for, required
+         */
+        private Long tableId;
+        /**
+         * Following fields are all filled in by the {@link ApplyTablePermissionPreprocessor}
+         */
+        private String tableName;
         private Long databaseId;
         private String databaseName;
         private Long dataSourceId;
         private String dataSourceName;
-        private Long tableId;
-        private String tableName;
-        private List<String> tableNames;
 
-        public static ApplyTable from(Table table) {
-            ApplyTable applyTable = new ApplyTable();
-            if (Objects.isNull(applyTable)) {
-                return null;
-            }
-            applyTable.setTableId(table.getId());
-            applyTable.setTableName(table.getName());
-            applyTable.setDatabaseId(table.getDatabaseId());
-            applyTable.setDatabaseName(table.getDatabaseName());
-            applyTable.setDataSourceId(table.getDataSourceId());
-            applyTable.setDataSourceName(table.getDataSourceName());
-            return applyTable;
-        }
     }
 
 }

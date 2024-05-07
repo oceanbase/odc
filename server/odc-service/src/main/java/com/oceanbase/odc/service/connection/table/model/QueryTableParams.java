@@ -13,32 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.connection.database.model;
+package com.oceanbase.odc.service.connection.table.model;
 
-import java.util.List;
+import javax.validation.constraints.NotNull;
 
-import com.oceanbase.odc.service.common.model.InnerUser;
-
-import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
-import lombok.NoArgsConstructor;
 
 /**
- * ClassName: GetDatabaseOwnerResp Package: com.oceanbase.odc.service.connection.database.model
- * Description:
- *
- * @Author: fenghao
- * @Create 2024/2/26 15:40
- * @Version 1.0
+ * @author gaoda.xy
+ * @date 2024/4/28 19:17
  */
 @Data
-@NoArgsConstructor
-@AllArgsConstructor
-public class GetDatabaseOwnerResp {
+@Builder
+public class QueryTableParams {
 
+    @NotNull
     private Long databaseId;
+    @NotNull
+    private Boolean includePermittedAction;
 
-    private Long projectId;
-
-    private List<InnerUser> members;
 }

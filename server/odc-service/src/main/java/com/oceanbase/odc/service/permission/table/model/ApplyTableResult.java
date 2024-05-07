@@ -20,8 +20,6 @@ import com.oceanbase.odc.core.flow.model.FlowTaskResult;
 import lombok.Data;
 
 /**
- * ClassName: ApplyTableResult Package: com.oceanbase.odc.service.permission.table.model
- * Description:
  *
  * @Author: fenghao
  * @Create 2024/3/18 16:51
@@ -29,6 +27,8 @@ import lombok.Data;
  */
 @Data
 public class ApplyTableResult implements FlowTaskResult {
+
     private boolean success;
     private ApplyTableParameter parameter;
+
 }

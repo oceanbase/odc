@@ -32,7 +32,6 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 
 /**
- * ClassName: DatabasePermissionService.java Package: com.oceanbase.odc.metadb.iam Description:
  *
  * @Author: fenghao
  * @Create 2024/3/11 20:26
@@ -88,6 +87,9 @@ public class UserTablePermissionEntity {
 
     @Column(name = "data_source_name")
     private String dataSourceName;
+
+    @Column(name = "table_id")
+    private Long tableId;
 
     @Column(name = "table_name")
     private String tableName;

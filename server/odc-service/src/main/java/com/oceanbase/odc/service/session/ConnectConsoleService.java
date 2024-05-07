@@ -81,6 +81,7 @@ import com.oceanbase.odc.service.common.util.SqlUtils;
 import com.oceanbase.odc.service.common.util.WebResponseUtils;
 import com.oceanbase.odc.service.config.UserConfigFacade;
 import com.oceanbase.odc.service.connection.ConnectionService;
+import com.oceanbase.odc.service.connection.database.model.UnauthorizedDBResource;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.db.browser.DBSchemaAccessors;
 import com.oceanbase.odc.service.db.session.DefaultDBSessionManage;
@@ -101,7 +102,6 @@ import com.oceanbase.odc.service.session.model.QueryTableOrViewDataReq;
 import com.oceanbase.odc.service.session.model.SqlAsyncExecuteReq;
 import com.oceanbase.odc.service.session.model.SqlAsyncExecuteResp;
 import com.oceanbase.odc.service.session.model.SqlExecuteResult;
-import com.oceanbase.odc.service.session.model.UnauthorizedResource;
 import com.oceanbase.odc.service.session.util.SqlRewriteUtil;
 import com.oceanbase.tools.dbbrowser.parser.result.BasicResult;
 import com.oceanbase.tools.dbbrowser.parser.result.ParseSqlResult;
@@ -191,13 +191,13 @@ public class ConnectConsoleService {
         asyncExecuteReq.setFullLinkTraceEnabled(false);
         SqlAsyncExecuteResp resp = execute(sessionId, asyncExecuteReq, false);
 
-        List<UnauthorizedResource> unauthorizedResources = resp.getUnauthorizedResource();
-        if (CollectionUtils.isNotEmpty(unauthorizedResources)) {
-            UnauthorizedResource unauthorizedResource = unauthorizedResources.get(0);
+        List<UnauthorizedDBResource> unauthorizedDBResources = resp.getUnauthorizedDBResources();
+        if (CollectionUtils.isNotEmpty(unauthorizedDBResources)) {
+            UnauthorizedDBResource unauthorizedDBResource = unauthorizedDBResources.get(0);
             throw new BadRequestException(ErrorCodes.DatabaseAccessDenied,
-                    new Object[] {unauthorizedResource.getUnauthorizedPermissionTypes().stream()
+                    new Object[] {unauthorizedDBResource.getUnauthorizedPermissionTypes().stream()
                             .map(DatabasePermissionType::getLocalizedMessage).collect(Collectors.joining(","))},
-                    "Lack permission for the database with id " + unauthorizedResource.getId());
+                    "Lack permission for the database with id " + unauthorizedDBResource.getDatabaseId());
         }
 
         String requestId = resp.getRequestId();

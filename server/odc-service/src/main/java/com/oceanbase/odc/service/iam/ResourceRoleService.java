@@ -145,12 +145,6 @@ public class ResourceRoleService {
 
     @Transactional(rollbackFor = Exception.class)
     @SkipAuthorize("internal usage")
-    public int deleteByResourceTypeAndId(@NonNull ResourceType resourceType, @NonNull Long resourceId) {
-        return userResourceRoleRepository.deleteByResourceTypeAndId(resourceType, resourceId);
-    }
-
-    @Transactional(rollbackFor = Exception.class)
-    @SkipAuthorize("internal usage")
     public int deleteByResourceTypeAndIdIn(@NonNull ResourceType resourceType, @NotEmpty Collection<Long> resourceIds) {
         return userResourceRoleRepository.deleteByResourceTypeAndIdIn(resourceType, resourceIds);
     }
@@ -220,19 +214,6 @@ public class ResourceRoleService {
         model.setResourceId(entity.getResourceId());
         model.setUserId(entity.getUserId());
         return model;
-    }
-
-    public List<UserResourceRole> getUserIdsByResourceIdAndTypeAndName(Long resourceId, ResourceType resourceType,
-            String roleName) {
-        List<UserResourceRoleEntity> entities = userResourceRoleRepository.findByResourceIdAndTypeAndName(resourceId,
-                resourceType,
-                roleName);
-        return entities.stream().map(e -> {
-            ResourceRoleEntity resourceRole = resourceRoleRepository
-                    .findById(e.getResourceRoleId())
-                    .orElseThrow(() -> new UnexpectedException("resource role not found, id=" + e.getResourceRoleId()));
-            return fromEntity(e, resourceRole);
-        }).collect(Collectors.toList());
     }
 
 }

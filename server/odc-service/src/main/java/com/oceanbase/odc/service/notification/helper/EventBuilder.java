@@ -212,8 +212,7 @@ public class EventBuilder {
             projectId = parameter.getProject().getId();
             labels.putIfNonNull(PROJECT_ID, projectId);
             List<String> tableNames =
-                    parameter.getTables().stream().map(ApplyTable::getTableNames).flatMap(List::stream)
-                            .collect(Collectors.toList());
+                    parameter.getTables().stream().map(ApplyTable::getTableName).collect(Collectors.toList());
             labels.putIfNonNull(TABLE_NAME, tableNames);
         } else if (task.getTaskType() == TaskType.APPLY_PROJECT_PERMISSION) {
             ApplyProjectParameter parameter =
