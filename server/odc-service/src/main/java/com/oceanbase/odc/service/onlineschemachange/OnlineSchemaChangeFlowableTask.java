@@ -35,6 +35,8 @@ import com.oceanbase.odc.metadb.schedule.ScheduleEntity;
 import com.oceanbase.odc.metadb.schedule.ScheduleTaskEntity;
 import com.oceanbase.odc.metadb.schedule.ScheduleTaskRepository;
 import com.oceanbase.odc.metadb.task.TaskEntity;
+import com.oceanbase.odc.service.connection.database.DatabaseService;
+import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.flow.task.BaseODCFlowTaskDelegate;
 import com.oceanbase.odc.service.flow.task.model.OnlineSchemaChangeTaskResult;
@@ -83,7 +85,10 @@ public class OnlineSchemaChangeFlowableTask extends BaseODCFlowTaskDelegate<Void
     private OrganizationService organizationService;
     @Autowired
     private OnlineSchemaChangeProperties onlineSchemaChangeProperties;
-
+    @Autowired
+    private DatabaseService databaseService;
+    @Autowired
+    private TaskService taskService;
     private volatile TaskStatus status;
     private volatile long scheduleId;
     private volatile long creatorId;
@@ -108,7 +113,10 @@ public class OnlineSchemaChangeFlowableTask extends BaseODCFlowTaskDelegate<Void
         String schema = FlowTaskUtil.getSchemaName(execution);
         continueOnError = parameter.isContinueOnError();
         OnlineSchemaChangeContextHolder.trace(this.creatorId, flowTaskId, this.organizationId);
-        ScheduleEntity schedule = createScheduleEntity(connectionConfig, parameter, schema);
+        TaskEntity taskEntity = taskService.detail(taskId);
+        Database database = databaseService.getBasicSkipPermissionCheck(taskEntity.getDatabaseId());
+        ScheduleEntity schedule = createScheduleEntity(connectionConfig, parameter, schema, taskEntity.getDatabaseId(),
+                database.getProject().getId());
         scheduleId = schedule.getId();
         try {
             List<ScheduleTaskEntity> tasks = parameter.generateSubTaskParameters(connectionConfig, schema).stream()
@@ -258,7 +266,7 @@ public class OnlineSchemaChangeFlowableTask extends BaseODCFlowTaskDelegate<Void
     }
 
     private ScheduleEntity createScheduleEntity(ConnectionConfig connectionConfig,
-            OnlineSchemaChangeParameters parameter, String schema) {
+            OnlineSchemaChangeParameters parameter, String schema, Long databaseId, Long projectId) {
         ScheduleEntity scheduleEntity = new ScheduleEntity();
         scheduleEntity.setConnectionId(connectionConfig.id());
         scheduleEntity.setDatabaseName(schema);
@@ -267,9 +275,8 @@ public class OnlineSchemaChangeFlowableTask extends BaseODCFlowTaskDelegate<Void
         scheduleEntity.setAllowConcurrent(false);
         scheduleEntity.setCreatorId(creatorId);
         scheduleEntity.setOrganizationId(organizationId);
-        // todo project id database id
-        scheduleEntity.setProjectId(1L);
-        scheduleEntity.setDatabaseId(1L);
+        scheduleEntity.setProjectId(projectId);
+        scheduleEntity.setDatabaseId(databaseId);
         scheduleEntity.setModifierId(scheduleEntity.getCreatorId());
         TriggerConfig triggerConfig = new TriggerConfig();
         triggerConfig.setTriggerStrategy(TriggerStrategy.CRON);
