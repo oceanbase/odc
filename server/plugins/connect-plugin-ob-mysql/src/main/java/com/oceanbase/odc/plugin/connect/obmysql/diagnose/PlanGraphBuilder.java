@@ -15,7 +15,8 @@
  */
 package com.oceanbase.odc.plugin.connect.obmysql.diagnose;
 
-import java.util.Collections;
+import static java.util.Collections.singletonList;
+
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
@@ -70,8 +71,8 @@ public class PlanGraphBuilder {
         // set object info
         String objectName = parseObjectName(record);
         operator.setTitle(objectName);
-        operator.setAttribute("Full object name", objectName);
-        operator.setAttribute("Alias", record.getObjectAlias());
+        operator.setAttribute("Full object name", singletonList(objectName));
+        operator.setAttribute("Alias", singletonList(record.getObjectAlias()));
         // init parameters
         if (StringUtils.isNotEmpty(record.getOther()) && parameters.isEmpty()) {
             parseParameters(record.getOther(), parameters);
@@ -80,13 +81,13 @@ public class PlanGraphBuilder {
         if (StringUtils.isNotEmpty(record.getAccessPredicates())) {
             Map<String, List<String>> access = parsePredicates(record.getAccessPredicates(), parameters);
             operator.setAttribute("Access predicates",
-                    String.join(",", access.get(PredicateKey.getLabel("access"))));
+                    singletonList(String.join(",", access.get(PredicateKey.getLabel("access")))));
         }
         // parse filter predicates
         if (StringUtils.isNotEmpty(record.getFilterPredicates())) {
             Map<String, List<String>> filter = parsePredicates(record.getFilterPredicates(), parameters);
             operator.setAttribute("Filter predicates",
-                    String.join(" AND ", filter.get(PredicateKey.getLabel("filter"))));
+                    singletonList(String.join(" AND ", filter.get(PredicateKey.getLabel("filter")))));
         }
         // parse special predicates
         if (StringUtils.isNotEmpty(record.getSpecialPredicates())) {
@@ -133,7 +134,7 @@ public class PlanGraphBuilder {
                             }
                             map.put(predicateKey, values);
                         } else if (!EMPTY_PREDICATE.equals(predicate)) {
-                            map.put(predicateKey, Collections.singletonList(predicate));
+                            map.put(predicateKey, singletonList(predicate));
                         }
                     } catch (Exception e) {
                         // eat exception

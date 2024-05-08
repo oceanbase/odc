@@ -45,7 +45,7 @@ import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.objectstorage.ObjectStorageFacade;
 import com.oceanbase.odc.service.objectstorage.model.ObjectMetadata;
 import com.oceanbase.odc.service.plugin.ConnectionPluginUtil;
-import com.oceanbase.odc.service.queryprofile.QueryProfileManager;
+import com.oceanbase.odc.service.queryprofile.OBQueryProfileManager;
 import com.oceanbase.odc.service.queryprofile.model.SqlProfile;
 
 @Service
@@ -56,7 +56,7 @@ public class SqlDiagnoseService {
     @Autowired
     private AuthenticationFacade authenticationFacade;
     @Autowired
-    private QueryProfileManager profileManager;
+    private OBQueryProfileManager profileManager;
 
     public SqlExplain explain(ConnectionSession session, ResourceSql odcSql) {
         return session.getSyncJdbcExecutor(ConnectionSessionConstants.BACKEND_DS_KEY)

@@ -31,7 +31,7 @@ import com.oceanbase.odc.core.session.ConnectionSessionUtil;
 import com.oceanbase.odc.core.sql.execute.model.JdbcGeneralResult;
 import com.oceanbase.odc.core.sql.execute.model.SqlTuple;
 import com.oceanbase.odc.core.sql.util.OBUtils;
-import com.oceanbase.odc.service.queryprofile.QueryProfileManager;
+import com.oceanbase.odc.service.queryprofile.OBQueryProfileManager;
 import com.oceanbase.odc.service.session.model.AsyncExecuteContext;
 
 /**
@@ -44,9 +44,9 @@ public class OBExecutionListener implements SqlExecutionListener {
 
     private final ConnectionSession session;
     private final List<String> sessionIds;
-    private final QueryProfileManager profileManager;
+    private final OBQueryProfileManager profileManager;
 
-    public OBExecutionListener(ConnectionSession session, QueryProfileManager profileManager) {
+    public OBExecutionListener(ConnectionSession session, OBQueryProfileManager profileManager) {
         this.session = session;
         this.profileManager = profileManager;
         sessionIds = getSessionIds();

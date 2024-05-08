@@ -36,6 +36,7 @@ import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.jdbc.core.StatementCallback;
@@ -69,7 +70,7 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 @Component
-public class QueryProfileManager {
+public class OBQueryProfileManager {
     private static final String PROFILE_KEY_PREFIX = "query-profile-";
 
     private final ExecutorService executor =
@@ -210,7 +211,9 @@ public class QueryProfileManager {
             graph.putStatistics(BYTES_IN_TOTAL, stats.getOtherstats().get(BYTES_IN_TOTAL));
             graph.putStatistics(ROWS_IN_TOTAL, stats.getOtherstats().get(ROWS_IN_TOTAL));
             // attributes
-            operator.putAttribute(OTHER_STATS, stats.getOtherstats());
+            operator.putAttribute(OTHER_STATS, stats.getOtherstats().entrySet()
+                    .stream().map(entry -> String.format("%s : %s", entry.getKey(), entry.getValue()))
+                    .collect(Collectors.toList()));
             // output rows
             List<PlanGraphEdge> inEdges = operator.getInEdges();
             if (inEdges.size() == 1) {

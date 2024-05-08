@@ -18,8 +18,11 @@ package com.oceanbase.odc.service.queryprofile.display;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 
+import com.fasterxml.jackson.annotation.JsonGetter;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.oceanbase.odc.common.unit.BinarySizeUnit;
 import com.oceanbase.odc.common.util.StringUtils;
 
 import lombok.Data;
@@ -70,4 +73,19 @@ public class PlanGraph {
     public PlanGraphOperator getOperator(String id) {
         return graphId2Operator.get(id);
     }
+
+    @JsonGetter
+    public Map<String, String> getStatistics() {
+        if (statistics == null || statistics.isEmpty()) {
+            return statistics;
+        }
+        for (Entry<String, String> entry : statistics.entrySet()) {
+            if (entry.getKey().contains("byte") && StringUtils.isNumeric(entry.getValue())) {
+                long bytes = Long.parseLong(entry.getValue());
+                entry.setValue(BinarySizeUnit.B.of(bytes).toString());
+            }
+        }
+        return statistics;
+    }
+
 }

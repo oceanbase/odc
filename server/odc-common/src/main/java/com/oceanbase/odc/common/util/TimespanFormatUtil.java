@@ -36,10 +36,6 @@ public class TimespanFormatUtil {
     }
 
     /**
-     * Formats the given time with a specified time unit according to predefined time units. The
-     * formatting is done at a precision from microseconds up to days, depending on the length of the
-     * time span provided.
-     * 
      * <pre>
      * Examples:
      *  - (555555, TimeUnit.MICROSECONDS, "") ==> returns "555.555ms"
@@ -47,11 +43,7 @@ public class TimespanFormatUtil {
      *  - (24, TimeUnit.HOURS, "-") ==> "1.000-d"
      * </pre>
      *
-     * @param time The time value to format.
-     * @param timeUnit The unit of the given time.
      * @param delimiter The separator to use between the number and unit.
-     * @return A formatted string representing the time span with the specified unit, or "0" if the time
-     *         is zero.
      */
     public static String formatTimespan(long time, TimeUnit timeUnit, String delimiter) {
         if (time == 0) {
