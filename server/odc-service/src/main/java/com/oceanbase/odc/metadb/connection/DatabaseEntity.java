@@ -30,6 +30,7 @@ import org.hibernate.annotations.Generated;
 import org.hibernate.annotations.GenerationTime;
 
 import com.oceanbase.odc.service.connection.database.model.DatabaseSyncStatus;
+import com.oceanbase.odc.service.connection.database.model.DatabaseType;
 import com.oceanbase.odc.service.db.schema.model.DBObjectSyncStatus;
 
 import lombok.Data;
@@ -68,10 +69,17 @@ public class DatabaseEntity {
     @Column(name = "name", updatable = false, nullable = false)
     private String name;
 
+    @Column(name = "alias")
+    private String alias;
+
+    @Enumerated(value = EnumType.STRING)
+    @Column(name = "type", updatable = false, nullable = false)
+    private DatabaseType type;
+
     @Column(name = "project_id")
     private Long projectId;
 
-    @Column(name = "connection_id", updatable = false, nullable = false)
+    @Column(name = "connection_id", updatable = false)
     private Long connectionId;
 
     @Column(name = "environment_id", nullable = false)

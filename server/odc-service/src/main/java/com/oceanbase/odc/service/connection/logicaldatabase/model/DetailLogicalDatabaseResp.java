@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 OceanBase.
+ * Copyright (c) 2024 OceanBase.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,39 +13,35 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.connection.database.model;
+
+package com.oceanbase.odc.service.connection.logicaldatabase.model;
 
 import java.util.List;
-import java.util.Set;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
+import com.oceanbase.odc.core.shared.constant.DialectType;
+import com.oceanbase.odc.service.collaboration.environment.model.Environment;
+import com.oceanbase.odc.service.connection.database.model.Database;
+
 import lombok.Data;
-import lombok.NoArgsConstructor;
 
 /**
  * @Author: Lebie
- * @Date: 2023/6/5 15:33
+ * @Date: 2024/5/7 16:44
  * @Description: []
  */
 @Data
-@Builder
-@NoArgsConstructor
-@AllArgsConstructor
-public class QueryDatabaseParams {
-    private String schemaName;
+public class DetailLogicalDatabaseResp {
+    private Long id;
 
-    private List<DatabaseType> types;
+    private String name;
 
-    private Long projectId;
+    private String alias;
 
-    private Long dataSourceId;
+    private DialectType dialectType;
 
-    private Long environmentId;
+    private Environment environment;
 
-    private Boolean existed;
+    private List<Database> physicalDatabases;
 
-    private Boolean containsUnassigned;
-
-    private Boolean includesPermittedAction;
+    private List<DetailLogicalTableResp> logicalTables;
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 OceanBase.
+ * Copyright (c) 2024 OceanBase.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,21 +13,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.connection.logicaldatabase.parser;
 
-import java.util.List;
+package com.oceanbase.odc.service.connection.logicaldatabase.model;
 
-import org.antlr.v4.runtime.ParserRuleContext;
+import java.util.Date;
 
-import com.oceanbase.tools.sqlparser.statement.BaseStatement;
+import lombok.Data;
 
-public abstract class BaseLogicalTableExpression extends BaseStatement {
+/**
+ * @Author: Lebie
+ * @Date: 2024/5/7 19:39
+ * @Description: []
+ */
 
-    public abstract List<String> evaluate() throws BadExpressionException;
+@Data
+public class DetailLogicalTableResp {
+    private Long id;
 
-    BaseLogicalTableExpression(ParserRuleContext ruleNode) {
-        super(ruleNode);
-    }
+    private String name;
 
-    BaseLogicalTableExpression() {}
+    private String expression;
+
+    private Integer physicalTableCount;
+
+    private Date lastSyncTime;
 }

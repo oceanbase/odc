@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.connection.logicaldatabase.parser;
+package com.oceanbase.odc.service.connection.logicaldatabase.core.parser;
 
 import java.io.StringReader;
 import java.util.List;
@@ -23,7 +23,7 @@ import org.springframework.stereotype.Service;
 
 import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.core.shared.exception.UnexpectedException;
-import com.oceanbase.odc.service.connection.logicaldatabase.model.DataNode;
+import com.oceanbase.odc.service.connection.logicaldatabase.core.model.DataNode;
 import com.oceanbase.tools.sqlparser.SyntaxErrorException;
 
 /**

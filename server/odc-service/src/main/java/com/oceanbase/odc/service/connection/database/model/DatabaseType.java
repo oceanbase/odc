@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 OceanBase.
+ * Copyright (c) 2024 OceanBase.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,18 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.connection.logicaldatabase.parser;
 
-import java.util.List;
+package com.oceanbase.odc.service.connection.database.model;
 
-import org.antlr.v4.runtime.ParserRuleContext;
-
-import com.oceanbase.tools.sqlparser.statement.BaseStatement;
-
-public abstract class BaseRangeExpression extends BaseStatement {
-    public abstract List<String> listRanges() throws BadExpressionException;
-
-    BaseRangeExpression(ParserRuleContext ruleNode) {
-        super(ruleNode);
-    }
+public enum DatabaseType {
+    LOGICAL,
+    PHYSICAL,
 }

@@ -16,6 +16,7 @@
 package com.oceanbase.odc.metadb.connection;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 
@@ -23,6 +24,7 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.data.jpa.domain.Specification;
 
 import com.oceanbase.odc.common.util.StringUtils;
+import com.oceanbase.odc.service.connection.database.model.DatabaseType;
 
 /**
  * @Author: Lebie
@@ -72,6 +74,11 @@ public class DatabaseSpecs {
 
     public static Specification<DatabaseEntity> projectIdIsNull() {
         return (root, query, builder) -> builder.isNull(root.get("projectId"));
+    }
+
+    public static Specification<DatabaseEntity> typeIn(List<DatabaseType> types) {
+        return (root, query, builder) -> CollectionUtils.isEmpty(types) ? builder.disjunction()
+            : root.get("type").in(types);
     }
 
 }

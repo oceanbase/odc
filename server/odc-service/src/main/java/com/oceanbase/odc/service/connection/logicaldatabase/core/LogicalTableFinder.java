@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 OceanBase.
+ * Copyright (c) 2024 OceanBase.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.connection.logicaldatabase;
+package com.oceanbase.odc.service.connection.logicaldatabase.core;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -28,8 +28,8 @@ import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionFactory;
 import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.service.connection.database.model.Database;
-import com.oceanbase.odc.service.connection.logicaldatabase.model.DataNode;
-import com.oceanbase.odc.service.connection.logicaldatabase.model.LogicalTable;
+import com.oceanbase.odc.service.connection.logicaldatabase.core.model.DataNode;
+import com.oceanbase.odc.service.connection.logicaldatabase.core.model.LogicalTable;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.db.browser.DBSchemaAccessors;
 import com.oceanbase.odc.service.session.factory.DefaultConnectSessionFactory;

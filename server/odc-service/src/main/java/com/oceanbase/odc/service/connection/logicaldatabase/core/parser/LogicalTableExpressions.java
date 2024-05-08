@@ -13,34 +13,35 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.connection.logicaldatabase.parser;
+package com.oceanbase.odc.service.connection.logicaldatabase.core.parser;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.antlr.v4.runtime.ParserRuleContext;
 
-import lombok.Getter;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 /**
  * @Author: Lebie
- * @Date: 2024/4/22 13:29
+ * @Date: 2024/4/23 19:38
  * @Description: []
  */
-@Getter
-public class ConsecutiveSliceRange extends BaseRangeExpression {
-    private String rangeStart;
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+public class LogicalTableExpressions extends BaseLogicalTableExpression {
+    private List<LogicalTableExpression> expressions;
 
-    private String rangeEnd;
-
-    ConsecutiveSliceRange(ParserRuleContext ruleNode, String rangeStart, String rangeEnd) {
+    LogicalTableExpressions(ParserRuleContext ruleNode) {
         super(ruleNode);
-        this.rangeStart = rangeStart;
-        this.rangeEnd = rangeEnd;
     }
 
-
     @Override
-    public List<String> listRanges() throws BadExpressionException {
-        return LogicalTableExpressionParseUtils.listSteppedRanges(rangeStart, rangeEnd, "1", this.getText());
+    public List<String> evaluate() throws BadExpressionException {
+        return this.expressions.stream().flatMap(expression -> expression.evaluate().stream())
+                .collect(Collectors.toList());
     }
 }

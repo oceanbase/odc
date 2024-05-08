@@ -13,39 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.connection.database.model;
+package com.oceanbase.odc.service.connection.logicaldatabase.core.parser;
 
 import java.util.List;
-import java.util.Set;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import org.antlr.v4.runtime.ParserRuleContext;
 
-/**
- * @Author: Lebie
- * @Date: 2023/6/5 15:33
- * @Description: []
- */
-@Data
-@Builder
-@NoArgsConstructor
-@AllArgsConstructor
-public class QueryDatabaseParams {
-    private String schemaName;
+import com.oceanbase.tools.sqlparser.statement.BaseStatement;
 
-    private List<DatabaseType> types;
+public abstract class BaseLogicalTableExpression extends BaseStatement {
 
-    private Long projectId;
+    public abstract List<String> evaluate() throws BadExpressionException;
 
-    private Long dataSourceId;
+    BaseLogicalTableExpression(ParserRuleContext ruleNode) {
+        super(ruleNode);
+    }
 
-    private Long environmentId;
-
-    private Boolean existed;
-
-    private Boolean containsUnassigned;
-
-    private Boolean includesPermittedAction;
+    BaseLogicalTableExpression() {}
 }

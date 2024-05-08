@@ -13,35 +13,34 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.connection.logicaldatabase.parser;
+package com.oceanbase.odc.service.connection.logicaldatabase.core.parser;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 import org.antlr.v4.runtime.ParserRuleContext;
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.Getter;
 
 /**
  * @Author: Lebie
- * @Date: 2024/4/23 19:38
+ * @Date: 2024/4/22 13:30
  * @Description: []
  */
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
-public class LogicalTableExpressions extends BaseLogicalTableExpression {
-    private List<LogicalTableExpression> expressions;
+@Getter
+public class SteppedRange extends BaseRangeExpression {
+    private String rangeStart;
+    private String rangeEnd;
+    private String rangeStep;
 
-    LogicalTableExpressions(ParserRuleContext ruleNode) {
+    SteppedRange(ParserRuleContext ruleNode, String rangeStart, String rangeEnd, String rangeStep) {
         super(ruleNode);
+        this.rangeStart = rangeStart;
+        this.rangeEnd = rangeEnd;
+        this.rangeStep = rangeStep;
     }
 
     @Override
-    public List<String> evaluate() throws BadExpressionException {
-        return this.expressions.stream().flatMap(expression -> expression.evaluate().stream())
-                .collect(Collectors.toList());
+    public List<String> listRanges() throws BadExpressionException {
+        return LogicalTableExpressionParseUtils.listSteppedRanges(rangeStart, rangeEnd, rangeStep, this.getText());
     }
 }

@@ -13,26 +13,32 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.connection.logicaldatabase.parser;
+package com.oceanbase.odc.service.connection.logicaldatabase.core.model;
 
-import org.antlr.v4.runtime.ParserRuleContext;
+import java.util.List;
+
+import com.oceanbase.odc.service.connection.database.model.Database;
 
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 /**
  * @Author: Lebie
- * @Date: 2024/4/22 11:04
+ * @Date: 2024/3/22 11:35
  * @Description: []
  */
 @Data
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class TableExpression extends SchemaExpression {
-    private boolean repeat;
+public class LogicalDatabase {
+    private String name;
 
-    TableExpression(ParserRuleContext ruleNode) {
-        super(ruleNode);
-    }
+    private String alias;
+
+    private List<Database> physicalDatabases;
+
+    private List<LogicalTable> logicalTables;
 }

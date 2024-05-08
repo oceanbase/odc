@@ -24,8 +24,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import com.oceanbase.odc.ServiceTestEnv;
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.common.util.YamlUtils;
-import com.oceanbase.odc.service.connection.logicaldatabase.model.DataNode;
-import com.oceanbase.odc.service.connection.logicaldatabase.parser.LogicalTableService;
+import com.oceanbase.odc.service.connection.logicaldatabase.core.model.DataNode;
+import com.oceanbase.odc.service.connection.logicaldatabase.core.parser.LogicalTableService;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
