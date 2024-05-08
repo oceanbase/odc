@@ -30,6 +30,7 @@ public enum ScheduleStatus {
     ENABLED,
     TERMINATION,
 
-    COMPLETED
+    COMPLETED,
+    EXECUTION_FAILED;
 
 }
