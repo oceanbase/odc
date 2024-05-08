@@ -15,6 +15,9 @@
  */
 package com.oceanbase.odc.service.onlineschemachange.model;
 
+import javax.validation.Valid;
+import javax.validation.constraints.NotNull;
+
 import lombok.Data;
 
 /**
@@ -22,16 +25,13 @@ import lombok.Data;
  * @date 2024-04-28
  * @since 4.2.4
  */
+@Valid
 @Data
-public class TransferConfig implements ThrottleConfig {
+public class UpdateRateLimiterConfigRequest {
 
-    /**
-     * throttle max row size per second
-     */
-    private Integer throttleRps;
+    @NotNull
+    private Long flowInstanceId;
 
-    /**
-     * throttle max IO size per second, Unit is MB
-     */
-    private Integer throttleIOPS;
+    private RateLimiterConfig rateLimiter = new RateLimiterConfig();
+
 }

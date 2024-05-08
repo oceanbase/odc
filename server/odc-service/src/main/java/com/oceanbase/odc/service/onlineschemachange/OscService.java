@@ -55,9 +55,9 @@ import com.oceanbase.odc.service.onlineschemachange.model.OnlineSchemaChangeSche
 import com.oceanbase.odc.service.onlineschemachange.model.OscFlowTaskResult;
 import com.oceanbase.odc.service.onlineschemachange.model.OscLockDatabaseUserInfo;
 import com.oceanbase.odc.service.onlineschemachange.model.OscSwapTableVO;
+import com.oceanbase.odc.service.onlineschemachange.model.RateLimiterConfig;
 import com.oceanbase.odc.service.onlineschemachange.model.SwapTableType;
-import com.oceanbase.odc.service.onlineschemachange.model.TransferConfig;
-import com.oceanbase.odc.service.onlineschemachange.model.UpdateThrottleConfigRequest;
+import com.oceanbase.odc.service.onlineschemachange.model.UpdateRateLimiterConfigRequest;
 import com.oceanbase.odc.service.onlineschemachange.rename.OscDBUserUtil;
 import com.oceanbase.odc.service.schedule.ScheduleService;
 import com.oceanbase.odc.service.schedule.ScheduleTaskService;
@@ -164,7 +164,7 @@ public class OscService {
 
     @Transactional(rollbackFor = Exception.class)
     @SkipAuthorize("internal authenticated")
-    public boolean updateThrottle(UpdateThrottleConfigRequest req) {
+    public boolean updateRateLimiterConfig(UpdateRateLimiterConfigRequest req) {
 
         checkPermission(req.getFlowInstanceId());
         TaskEntity task = flowInstanceService.getTaskByFlowInstanceId(req.getFlowInstanceId());
@@ -176,19 +176,15 @@ public class OscService {
         ScheduleEntity scheduleEntity = scheduleService.nullSafeGetById(taskResult.getScheduleId());
         OnlineSchemaChangeParameters parameters = JsonUtils.fromJson(
                 scheduleEntity.getJobParametersJson(), OnlineSchemaChangeParameters.class);
-        TransferConfig fullTransfer = parameters.getFullTransfer();
-        fullTransfer.setThrottleIOPS(req.getFullTransfer().getThrottleIOPS());
-        fullTransfer.setThrottleRps(req.getFullTransfer().getThrottleRps());
-
-        TransferConfig incrTransfer = parameters.getIncrTransfer();
-        incrTransfer.setThrottleIOPS(req.getIncrTransfer().getThrottleIOPS());
-        incrTransfer.setThrottleRps(req.getIncrTransfer().getThrottleRps());
-        parameters.setIncrTransfer(incrTransfer);
+        RateLimiterConfig rateLimiter = parameters.getRateLimiter();
+        rateLimiter.setDataSizeLimit(req.getRateLimiter().getDataSizeLimit());
+        rateLimiter.setRowLimit(req.getRateLimiter().getRowLimit());
+        parameters.setRateLimiter(rateLimiter);
 
         String parameterJson = JsonUtils.toJson(parameters);
         int rows = scheduleRepository.updateJobParametersById(scheduleEntity.getId(), parameterJson);
         if (rows > 1) {
-            log.info("Update transfer config in job parameters completed, scheduleId={}, parameterJson={}.",
+            log.info("Update rate limiter config in job parameters completed, scheduleId={}, parameterJson={}.",
                     scheduleEntity.getId(), parameterJson);
         }
         return true;

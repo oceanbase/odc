@@ -95,9 +95,8 @@ public class OnlineSchemaChangeScheduleTaskParameters {
 
     private ReplaceResult replaceResult;
 
-    private TransferConfig fullTransfer = new TransferConfig();
+    private RateLimiterConfig rateLimiter = new RateLimiterConfig();
 
-    private TransferConfig incrTransfer = new TransferConfig();
 
     public String getOriginTableNameWithSchema() {
         return tableNameWithSchema(originTableName);

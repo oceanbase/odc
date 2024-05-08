@@ -26,7 +26,7 @@ import com.oceanbase.odc.service.common.response.SuccessResponse;
 import com.oceanbase.odc.service.onlineschemachange.OscService;
 import com.oceanbase.odc.service.onlineschemachange.model.OscLockDatabaseUserInfo;
 import com.oceanbase.odc.service.onlineschemachange.model.OscSwapTableVO;
-import com.oceanbase.odc.service.onlineschemachange.model.UpdateThrottleConfigRequest;
+import com.oceanbase.odc.service.onlineschemachange.model.UpdateRateLimiterConfigRequest;
 
 import io.swagger.annotations.ApiOperation;
 
@@ -55,10 +55,10 @@ public class OscController {
         return Responses.success(oscService.swapTable(scheduleTaskId));
     }
 
-    @ApiOperation(value = "updateThrottleConfig", notes = "update osc throttle config")
+    @ApiOperation(value = "updateRateLimiterConfig", notes = "update osc throttle config")
     @RequestMapping(value = "/updateThrottleConfig", method = RequestMethod.POST)
-    public SuccessResponse<Boolean> updateThrottleConfig(UpdateThrottleConfigRequest updateThrottleConfig) {
-        return Responses.success(oscService.updateThrottle(updateThrottleConfig));
+    public SuccessResponse<Boolean> updateThrottleConfig(UpdateRateLimiterConfigRequest updateRateLimiterConfig) {
+        return Responses.success(oscService.updateRateLimiterConfig(updateRateLimiterConfig));
     }
 
 }

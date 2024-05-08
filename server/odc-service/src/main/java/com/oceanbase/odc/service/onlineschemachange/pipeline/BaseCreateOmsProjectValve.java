@@ -187,16 +187,12 @@ public abstract class BaseCreateOmsProjectValve extends BaseValve {
         CommonTransferConfig commonTransferConfig = new CommonTransferConfig();
         request.setCommonTransferConfig(commonTransferConfig);
         FullTransferConfig fullTransferConfig = new FullTransferConfig();
-        if (oscParameters.getFullTransfer() != null) {
-            fullTransferConfig.setThrottleIOPS(oscParameters.getFullTransfer().getThrottleIOPS());
-            fullTransferConfig.setThrottleRps(oscParameters.getFullTransfer().getThrottleRps());
-        }
-        request.setFullTransferConfig(fullTransferConfig);
         IncrTransferConfig incrTransferConfig = new IncrTransferConfig();
-        if (oscParameters.getIncrTransfer() != null) {
-            incrTransferConfig.setThrottleIOPS(oscParameters.getIncrTransfer().getThrottleIOPS());
-            incrTransferConfig.setThrottleRps(oscParameters.getIncrTransfer().getThrottleRps());
-        }
+        fullTransferConfig.setThrottleIOPS(oscParameters.getRateLimiter().getDataSizeLimit());
+        incrTransferConfig.setThrottleIOPS(oscParameters.getRateLimiter().getDataSizeLimit());
+        fullTransferConfig.setThrottleRps(oscParameters.getRateLimiter().getRowLimit());
+        incrTransferConfig.setThrottleRps(oscParameters.getRateLimiter().getRowLimit());
+        request.setFullTransferConfig(fullTransferConfig);
         request.setIncrTransferConfig(incrTransferConfig);
         request.setUid(oscScheduleTaskParameters.getUid());
         return request;

@@ -75,8 +75,7 @@ public class OnlineSchemaChangeParameters implements Serializable, TaskParameter
     private List<String> lockUsers;
     private SwapTableType swapTableType;
     private Long flowInstanceId;
-    private TransferConfig fullTransfer = new TransferConfig();
-    private TransferConfig incrTransfer = new TransferConfig();
+    private RateLimiterConfig rateLimiter = new RateLimiterConfig();
 
     public boolean isContinueOnError() {
         return this.errorStrategy == TaskErrorStrategy.CONTINUE;
