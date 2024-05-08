@@ -55,6 +55,11 @@ public class DataNode {
 
     private String tableName;
 
+    public DataNode(String schemaName, String tableName) {
+        this.schemaName = schemaName;
+        this.tableName = tableName;
+    }
+
     public String getFullName() {
         return schemaName + DELIMITER + tableName;
     }

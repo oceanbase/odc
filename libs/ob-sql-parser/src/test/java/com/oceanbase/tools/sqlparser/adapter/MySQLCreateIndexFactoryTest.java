@@ -16,6 +16,8 @@
 package com.oceanbase.tools.sqlparser.adapter;
 
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
 import org.antlr.v4.runtime.BailErrorStrategy;
 import org.antlr.v4.runtime.CharStreams;
@@ -27,6 +29,7 @@ import com.oceanbase.tools.sqlparser.adapter.mysql.MySQLCreateIndexFactory;
 import com.oceanbase.tools.sqlparser.obmysql.OBLexer;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Create_index_stmtContext;
+import com.oceanbase.tools.sqlparser.statement.common.ColumnGroupElement;
 import com.oceanbase.tools.sqlparser.statement.common.RelationFactor;
 import com.oceanbase.tools.sqlparser.statement.createindex.CreateIndex;
 import com.oceanbase.tools.sqlparser.statement.createtable.IndexOptions;
@@ -139,6 +142,52 @@ public class MySQLCreateIndexFactoryTest {
         indexOptions.setUsingBtree(true);
         indexOptions.setUsingHash(true);
         expect.setIndexOptions(indexOptions);
+        Assert.assertEquals(expect, actual);
+    }
+
+    @Test
+    public void generate_createIndexWithColumnGroup_allColumns_succeed() {
+        StatementFactory<CreateIndex> factory = new MySQLCreateIndexFactory(
+                getCreateIdxContext("create index abc on tb (col, col1) with column group(all columns)"));
+        CreateIndex actual = factory.generate();
+
+        CreateIndex expect = new CreateIndex(new RelationFactor("abc"),
+                new RelationFactor("tb"), Arrays.asList(
+                        new SortColumn(new ColumnReference(null, null, "col")),
+                        new SortColumn(new ColumnReference(null, null, "col1"))));
+        expect.setColumnGroupElements(Collections.singletonList(new ColumnGroupElement(true, false)));
+        Assert.assertEquals(expect, actual);
+    }
+
+    @Test
+    public void generate_createIndexWithColumnGroup_allColumns_eachColumn_succeed() {
+        StatementFactory<CreateIndex> factory = new MySQLCreateIndexFactory(
+                getCreateIdxContext("create index abc on tb (col, col1) with column group(all columns, each column)"));
+        CreateIndex actual = factory.generate();
+
+        CreateIndex expect = new CreateIndex(new RelationFactor("abc"),
+                new RelationFactor("tb"), Arrays.asList(
+                        new SortColumn(new ColumnReference(null, null, "col")),
+                        new SortColumn(new ColumnReference(null, null, "col1"))));
+        expect.setColumnGroupElements(
+                Arrays.asList(new ColumnGroupElement(true, false), new ColumnGroupElement(false, true)));
+        Assert.assertEquals(expect, actual);
+    }
+
+    @Test
+    public void generate_withColumnGroup_customGroup_succeed() {
+        StatementFactory<CreateIndex> factory = new MySQLCreateIndexFactory(
+                getCreateIdxContext("create index abc on tb (col, col1) with column group(g1(col), g2(col, col1))"));
+        CreateIndex actual = factory.generate();
+
+        CreateIndex expect = new CreateIndex(new RelationFactor("abc"),
+                new RelationFactor("tb"), Arrays.asList(
+                        new SortColumn(new ColumnReference(null, null, "col")),
+                        new SortColumn(new ColumnReference(null, null, "col1"))));
+        List<ColumnGroupElement> columnGroupElements = Arrays.asList(
+                new ColumnGroupElement("g1", Collections.singletonList("col")),
+                new ColumnGroupElement("g2", Arrays.asList("col", "col1")));
+        expect.setColumnGroupElements(columnGroupElements);
         Assert.assertEquals(expect, actual);
     }
 

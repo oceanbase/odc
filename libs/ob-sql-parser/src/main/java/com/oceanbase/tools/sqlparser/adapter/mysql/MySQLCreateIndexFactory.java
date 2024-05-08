@@ -22,6 +22,7 @@ import com.oceanbase.tools.sqlparser.adapter.StatementFactory;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Create_index_stmtContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Index_using_algorithmContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParserBaseVisitor;
+import com.oceanbase.tools.sqlparser.statement.common.ColumnGroupElement;
 import com.oceanbase.tools.sqlparser.statement.createindex.CreateIndex;
 import com.oceanbase.tools.sqlparser.statement.createtable.IndexOptions;
 import com.oceanbase.tools.sqlparser.statement.createtable.SortColumn;
@@ -82,6 +83,12 @@ public class MySQLCreateIndexFactory extends OBParserBaseVisitor<CreateIndex> im
             index.setPartition(new MySQLPartitionFactory(ctx.partition_option()).generate());
         } else if (ctx.auto_partition_option() != null) {
             index.setPartition(new MySQLPartitionFactory(ctx.auto_partition_option()).generate());
+        }
+        if (ctx.with_column_group() != null) {
+            List<ColumnGroupElement> columnGroupElements = ctx.with_column_group()
+                    .column_group_list().column_group_element().stream()
+                    .map(c -> new MySQLColumnGroupElementFactory(c).generate()).collect(Collectors.toList());
+            index.setColumnGroupElements(columnGroupElements);
         }
         return index;
     }

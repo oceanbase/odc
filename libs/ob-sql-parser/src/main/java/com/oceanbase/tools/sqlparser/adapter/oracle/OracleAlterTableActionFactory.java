@@ -27,6 +27,7 @@ import org.antlr.v4.runtime.misc.Interval;
 import com.oceanbase.tools.sqlparser.adapter.StatementFactory;
 import com.oceanbase.tools.sqlparser.oboracle.OBParser.Add_range_or_list_partitionContext;
 import com.oceanbase.tools.sqlparser.oboracle.OBParser.Add_range_or_list_subpartitionContext;
+import com.oceanbase.tools.sqlparser.oboracle.OBParser.Alter_column_group_optionContext;
 import com.oceanbase.tools.sqlparser.oboracle.OBParser.Alter_column_optionContext;
 import com.oceanbase.tools.sqlparser.oboracle.OBParser.Alter_index_optionContext;
 import com.oceanbase.tools.sqlparser.oboracle.OBParser.Alter_partition_optionContext;
@@ -44,6 +45,7 @@ import com.oceanbase.tools.sqlparser.oboracle.OBParser.Split_range_partitionCont
 import com.oceanbase.tools.sqlparser.oboracle.OBParserBaseVisitor;
 import com.oceanbase.tools.sqlparser.statement.alter.table.AlterTableAction;
 import com.oceanbase.tools.sqlparser.statement.alter.table.PartitionSplitActions;
+import com.oceanbase.tools.sqlparser.statement.common.ColumnGroupElement;
 import com.oceanbase.tools.sqlparser.statement.common.RelationFactor;
 import com.oceanbase.tools.sqlparser.statement.createtable.ColumnDefinition;
 import com.oceanbase.tools.sqlparser.statement.createtable.ConstraintState;
@@ -71,6 +73,10 @@ public class OracleAlterTableActionFactory extends OBParserBaseVisitor<AlterTabl
 
     public OracleAlterTableActionFactory(@NonNull Alter_table_actionContext alterTableActionContext) {
         this.parserRuleContext = alterTableActionContext;
+    }
+
+    public OracleAlterTableActionFactory(@NonNull Alter_column_group_optionContext alterColumnGroupOptionContext) {
+        this.parserRuleContext = alterColumnGroupOptionContext;
     }
 
     @Override
@@ -320,6 +326,19 @@ public class OracleAlterTableActionFactory extends OBParserBaseVisitor<AlterTabl
             alterTableAction.setModifyPartition(new OraclePartitionFactory(ctx.range_partition_option()).generate());
         }
         return alterTableAction;
+    }
+
+    @Override
+    public AlterTableAction visitAlter_column_group_option(Alter_column_group_optionContext ctx) {
+        AlterTableAction action = new AlterTableAction(ctx);
+        List<ColumnGroupElement> columnGroupElements = ctx.column_group_list().column_group_element()
+                .stream().map(c -> new OracleColumnGroupElementFactory(c).generate()).collect(Collectors.toList());
+        if (ctx.ADD() != null) {
+            action.setAddColumnGroupElements(columnGroupElements);
+        } else {
+            action.setDropColumnGroupElements(columnGroupElements);
+        }
+        return action;
     }
 
     private RelationFactor getRelationFactor(Relation_factorContext ctx) {
