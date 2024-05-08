@@ -33,6 +33,7 @@ import lombok.ToString;
 @EqualsAndHashCode(exclude = {"pid", "jvmStartTime"})
 public class ExecutorInfo implements Serializable {
 
+    private static final long serialVersionUID = -5583825823147254396L;
     private String host;
     private Integer port;
     private String hostName;
