@@ -17,7 +17,6 @@ package com.oceanbase.odc.service.flow;
 
 import static org.mockito.Mockito.when;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
@@ -143,10 +142,6 @@ public class FlowableAdaptorTest extends ServiceTestEnv {
         Pair<BaseFlowNodeInstance, FlowableElement> elt = new Pair<>(gatewayInstance,
                 new FlowableElement(activityId, UUID.randomUUID().toString(), FlowableElementType.EXCLUSIVE_GATEWAY));
         flowableAdaptor.setFlowableElements(Collections.singletonList(elt));
-        List<Pair<BaseFlowNodeInstance, FlowableElement>> elts = new ArrayList<>();
-        elts.add(elt);
-        elts.add(elt);
-        flowableAdaptor.setFlowableElements(elts);
 
         Assert.assertEquals(1, nodeInstanceEntityRepository.findAll().size());
     }

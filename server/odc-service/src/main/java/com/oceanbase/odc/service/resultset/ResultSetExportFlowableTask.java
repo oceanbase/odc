@@ -23,6 +23,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 import com.oceanbase.odc.core.shared.constant.FlowStatus;
 import com.oceanbase.odc.core.shared.constant.TaskStatus;
+import com.oceanbase.odc.metadb.task.TaskEntity;
 import com.oceanbase.odc.service.datasecurity.DataMaskingService;
 import com.oceanbase.odc.service.flow.task.BaseODCFlowTaskDelegate;
 import com.oceanbase.odc.service.flow.task.model.ResultSetExportResult;
@@ -53,6 +54,8 @@ public class ResultSetExportFlowableTask extends BaseODCFlowTaskDelegate<ResultS
 
         ResultSetExportTaskParameter parameter = FlowTaskUtil.getResultSetExportTaskParameter(execution);
         parameter.setDatabase(FlowTaskUtil.getSchemaName(execution));
+        TaskEntity taskEntity = taskService.detail(taskId);
+        parameter.setExecutionTimeoutSeconds(taskEntity.getExecutionExpirationIntervalSeconds());
 
         context = taskManager.start(FlowTaskUtil.getConnectionConfig(execution), parameter, taskId.toString());
 
@@ -80,11 +83,11 @@ public class ResultSetExportFlowableTask extends BaseODCFlowTaskDelegate<ResultS
         log.info("Result set export task succeed, taskId={}", taskId);
         try {
             taskService.succeed(taskId, context.get());
+            super.onSuccessful(taskId, taskService);
             updateFlowInstanceStatus(FlowStatus.EXECUTION_SUCCEEDED);
         } catch (Exception e) {
             log.warn("Failed to get result.", e);
         }
-        super.onSuccessful(taskId, taskService);
     }
 
     @Override
@@ -98,6 +101,7 @@ public class ResultSetExportFlowableTask extends BaseODCFlowTaskDelegate<ResultS
     protected void onTimeout(Long taskId, TaskService taskService) {
         log.warn("Result set export task timeout, taskId={}", taskId);
         taskService.fail(taskId, context == null ? 0.0 : context.progress(), "");
+        super.onTimeout(taskId, taskService);
     }
 
     @Override

@@ -28,7 +28,6 @@ import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 import com.oceanbase.odc.common.lang.Holder;
 import com.oceanbase.odc.common.util.StringUtils;
@@ -74,7 +73,7 @@ public class SqlCommentProcessor {
     @Getter
     private boolean preserveMultiComments = false;
 
-    private static Pattern pattern = Pattern.compile("\n");
+    private static Pattern pattern = Pattern.compile("\\r\\n|\\r|\\n");
 
 
     public SqlCommentProcessor(boolean preserveFormat, String delimiter) {
@@ -166,6 +165,8 @@ public class SqlCommentProcessor {
                     addLineMysql(offsetStrings, buffer, bufferOrder, item);
                 } else if (Objects.nonNull(this.dialectType) && this.dialectType.isOracle()) {
                     addLineOracle(offsetStrings, buffer, bufferOrder, item);
+                } else if (Objects.nonNull(this.dialectType) && this.dialectType.isDoris()) {
+                    addLineMysql(offsetStrings, buffer, bufferOrder, item);
                 } else {
                     throw new IllegalArgumentException("dialect type is illegal");
                 }
@@ -228,17 +229,17 @@ public class SqlCommentProcessor {
                     break;
                 }
                 if (inString != '\0' || inChar == 'N') {
-                    lines[out++] = lines[pos - 1];
+                    lines[out++] = OrderChar.newOrderChar(lines[pos - 1]);
                     if (inChar == '`' && inString == inChar) {
                         pos--;
                     } else {
-                        lines[out++] = lines[pos];
+                        lines[out++] = OrderChar.newOrderChar(lines[pos]);
                     }
                     continue;
                 }
                 // 非mysql model或没有检索到正确的命令，直接将转义符号及转义字符放入缓冲
-                lines[out++] = lines[pos - 1];
-                lines[out++] = lines[pos];
+                lines[out++] = OrderChar.newOrderChar(lines[pos - 1]);
+                lines[out++] = OrderChar.newOrderChar(lines[pos]);
             } else if (!mlComment && inString == '\0' && ssComment != SSC.HINT
                     && isPrefix(lines, pos, delimiter)) {
                 // 不是多行注释，未在字符串中，不是hint且以delimiter开头，通常是扫描到了sql的末尾
@@ -269,7 +270,7 @@ public class SqlCommentProcessor {
                 if (preserveSingleComments) {
                     // 如果保留单行注释则需要将注释完整地拷贝到缓冲中不能丢弃
                     for (; pos < lineLength; pos++) {
-                        lines[out++] = lines[pos];
+                        lines[out++] = OrderChar.newOrderChar(lines[pos]);
                     }
                     if (isOnlyWhiteSpace(buffer)) {
                         // 缓冲中全部是空格，或者缓冲为空说明注释要么处于第一行要么处于个已经完结的sql语句之后
@@ -368,13 +369,13 @@ public class SqlCommentProcessor {
                     }
                     needSpace = false;
                     // 正常的SQL语句，将其放入line缓冲当中，在合适的实际flush如buffer缓存
-                    lines[out++] = inOrderChar;
+                    lines[out++] = OrderChar.newOrderChar(inOrderChar);
                     if (inChar != ' ') {
                         inNormalSql = true;
                     }
                 } else if (preserveMultiComments) {
                     // 保留多行注释
-                    lines[out++] = inOrderChar;
+                    lines[out++] = OrderChar.newOrderChar(inOrderChar);
                 }
             }
         }
@@ -473,7 +474,7 @@ public class SqlCommentProcessor {
                 if (preserveSingleComments) {
                     // 如果保留单行注释则需要将注释完整地拷贝到缓冲中不能丢弃
                     for (; pos < lineLength; pos++) {
-                        lines[out++] = lines[pos];
+                        lines[out++] = OrderChar.newOrderChar(lines[pos]);
                     }
                     if (isOnlyWhiteSpace(buffer)) {
                         // 缓冲中全部是空格，或者缓冲为空说明注释要么处于第一行要么处于个已经完结的sql语句之后
@@ -633,11 +634,11 @@ public class SqlCommentProcessor {
      * 当前SQL是否是以分隔符开头
      */
     private boolean isPrefix(OrderChar[] line, int pos, String delim) {
-        boolean res = IntStream.range(pos, pos + delim.length())
-                .mapToObj(i -> line[i].getCh())
-                .collect(StringBuilder::new, StringBuilder::append, StringBuilder::append)
-                .toString().startsWith(delim);
-
+        StringBuilder builder = new StringBuilder();
+        for (int i = 0; i < line.length - pos; i++) {
+            builder.append(line[pos + i].getCh());
+        }
+        boolean res = builder.toString().startsWith(delim);
         if (!res || !"/".equals(delim) || line.length <= 1) {
             return res;
         }
@@ -792,6 +793,10 @@ public class SqlCommentProcessor {
                         processor.addLineOracle(holder, buffer, bufferOrder, line.chars()
                                 .mapToObj(c -> new OrderChar((char) c, lastLineOrder++))
                                 .collect(Collectors.toList()));
+                    } else if (processor.dialectType.isDoris()) {
+                        processor.addLineMysql(holder, buffer, bufferOrder, line.chars()
+                                .mapToObj(c -> new OrderChar((char) c, lastLineOrder++))
+                                .collect(Collectors.toList()));
                     }
                     // consider \n in the end of each line
                     lastLineOrder++;
@@ -819,6 +824,10 @@ public class SqlCommentProcessor {
     static class OrderChar {
         private char ch;
         private int order;
+
+        static OrderChar newOrderChar(OrderChar orderChar) {
+            return new OrderChar(orderChar.getCh(), orderChar.getOrder());
+        }
     }
 
 }

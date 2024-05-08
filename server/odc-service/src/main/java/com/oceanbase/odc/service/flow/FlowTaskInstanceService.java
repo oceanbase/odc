@@ -48,6 +48,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.google.common.base.Charsets;
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
+import com.oceanbase.odc.core.flow.model.AbstractFlowTaskResult;
 import com.oceanbase.odc.core.flow.model.FlowTaskResult;
 import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.core.shared.Verify;
@@ -82,24 +83,28 @@ import com.oceanbase.odc.service.flow.model.FlowNodeStatus;
 import com.oceanbase.odc.service.flow.model.FlowNodeType;
 import com.oceanbase.odc.service.flow.model.PreCheckTaskResult;
 import com.oceanbase.odc.service.flow.task.OssTaskReferManager;
+import com.oceanbase.odc.service.flow.task.model.DBStructureComparisonTaskResult;
 import com.oceanbase.odc.service.flow.task.model.DatabaseChangeResult;
 import com.oceanbase.odc.service.flow.task.model.MockDataTaskResult;
 import com.oceanbase.odc.service.flow.task.model.MockProperties;
 import com.oceanbase.odc.service.flow.task.model.OnlineSchemaChangeTaskResult;
 import com.oceanbase.odc.service.flow.task.model.PartitionPlanTaskResult;
 import com.oceanbase.odc.service.flow.task.model.ResultSetExportResult;
+import com.oceanbase.odc.service.flow.task.model.RollbackPlanTaskResult;
 import com.oceanbase.odc.service.flow.task.model.ShadowTableSyncTaskResult;
 import com.oceanbase.odc.service.flow.task.model.SqlCheckTaskResult;
-import com.oceanbase.odc.service.flow.task.util.DatabaseChangeOssUrlCache;
+import com.oceanbase.odc.service.flow.task.util.TaskDownloadUrlsProvider;
+import com.oceanbase.odc.service.flow.task.util.TaskDownloadUrlsProvider.TaskDownloadUrls;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
+import com.oceanbase.odc.service.logger.LoggerService;
 import com.oceanbase.odc.service.objectstorage.ObjectStorageFacade;
 import com.oceanbase.odc.service.objectstorage.cloud.CloudObjectStorageService;
-import com.oceanbase.odc.service.partitionplan.PartitionPlanService;
 import com.oceanbase.odc.service.permission.database.model.ApplyDatabaseResult;
 import com.oceanbase.odc.service.permission.project.ApplyProjectResult;
 import com.oceanbase.odc.service.schedule.flowtask.AlterScheduleResult;
 import com.oceanbase.odc.service.session.model.SqlExecuteResult;
 import com.oceanbase.odc.service.task.TaskService;
+import com.oceanbase.odc.service.task.config.TaskFrameworkEnabledProperties;
 import com.oceanbase.odc.service.task.model.ExecutorInfo;
 import com.oceanbase.odc.service.task.model.OdcTaskLogLevel;
 
@@ -143,14 +148,17 @@ public class FlowTaskInstanceService {
     @Autowired
     private TaskDispatchChecker dispatchChecker;
     @Autowired
-    private DatabaseChangeOssUrlCache databaseChangeOssUrlCache;
+    private TaskDownloadUrlsProvider databaseChangeOssUrlCache;
     @Autowired
     private LocalFileManager localFileManager;
     @Autowired
-    private PartitionPlanService partitionPlanService;
-
+    private TaskFrameworkEnabledProperties taskFrameworkProperties;
+    @Autowired
+    private LoggerService loggerService;
     @Value("${odc.task.async.result-preview-max-size-bytes:5242880}")
     private long resultPreviewMaxSizeBytes;
+
+    private final Set<String> supportedBucketName = new HashSet<>(Arrays.asList("async", "structure-comparison"));
 
     public FlowInstanceDetailResp executeTask(@NotNull Long id) throws IOException {
         List<FlowTaskInstance> instances =
@@ -174,23 +182,18 @@ public class FlowTaskInstanceService {
         return FlowInstanceDetailResp.withIdAndType(id, taskInstance.getTaskType());
     }
 
-    public String getLog(@NotNull Long id, OdcTaskLogLevel level) throws IOException {
-        Optional<TaskEntity> taskEntityOptional = getTaskEntity(id,
-                instance -> (instance.getStatus().isFinalStatus() || instance.getStatus() == FlowNodeStatus.EXECUTING)
-                        && instance.getTaskType() != TaskType.SQL_CHECK
-                        && instance.getTaskType() != TaskType.PRE_CHECK
-                        && instance.getTaskType() != TaskType.GENERATE_ROLLBACK);
+    public String getLog(@NotNull Long flowInstanceId, OdcTaskLogLevel level) throws IOException {
+        Optional<TaskEntity> taskEntityOptional = getLogDownloadableTaskEntity(flowInstanceId);
         if (!taskEntityOptional.isPresent()) {
             return null;
         }
         TaskEntity taskEntity = taskEntityOptional.get();
-        if (taskEntity.getResultJson() == null) {
-            return null;
+        if (taskFrameworkProperties.isEnabled() && taskEntity.getJobId() != null) {
+            // TODO: get the latest part of log when task framework is enabled @krihy
+            return loggerService.getLogByTaskFramework(level, taskEntity.getJobId());
         }
         if (!dispatchChecker.isTaskEntityOnThisMachine(taskEntity)) {
-            /**
-             * 任务不在当前机器上，需要进行 {@code RPC} 转发获取
-             */
+            // The task is not executing on current machine, need to forward the request
             ExecutorInfo executorInfo = JsonUtils.fromJson(taskEntity.getExecutor(), ExecutorInfo.class);
             DispatchResponse response = requestDispatcher.forward(executorInfo.getHost(), executorInfo.getPort());
             return response.getContentByType(new TypeReference<SuccessResponse<String>>() {}).getData();
@@ -198,41 +201,74 @@ public class FlowTaskInstanceService {
         return taskService.getLog(taskEntity.getCreatorId(), taskEntity.getId() + "", taskEntity.getTaskType(), level);
     }
 
+    public List<BinaryDataResult> downloadLog(@NotNull Long flowInstanceId) throws IOException {
+        Optional<TaskEntity> taskEntityOptional = getLogDownloadableTaskEntity(flowInstanceId);
+        if (!taskEntityOptional.isPresent() || taskEntityOptional.get().getResultJson() == null) {
+            return Collections.emptyList();
+        }
+        TaskEntity taskEntity = taskEntityOptional.get();
+        // TODO: download log file when task framework is enabled @krihy
+        if (!dispatchChecker.isTaskEntityOnThisMachine(taskEntity)) {
+            // The task is not executing on current machine, need to forward the request
+            return dispatchRequest(taskEntity);
+        }
+        try {
+            File logFile = taskService.getLogFile(taskEntity.getCreatorId(), taskEntity.getId() + "",
+                    taskEntity.getTaskType(), OdcTaskLogLevel.ALL);
+            return Collections.singletonList(new FileBasedDataResult(logFile));
+        } catch (NotFoundException ex) {
+            return Collections.emptyList();
+        }
+    }
+
     public List<? extends FlowTaskResult> getResult(@NotNull Long id) throws IOException {
         TaskEntity task = flowInstanceService.getTaskByFlowInstanceId(id);
-        if (task.getTaskType() == TaskType.ONLINE_SCHEMA_CHANGE) {
-            return getOnlineSchemaChangeResult(task);
-        } else if (task.getTaskType() == TaskType.EXPORT) {
-            return getDataTransferResult(task);
+        if (task.getTaskType() == TaskType.ONLINE_SCHEMA_CHANGE || task.getTaskType() == TaskType.EXPORT) {
+            return getTaskResultFromEntity(task, true);
         }
-
         Optional<TaskEntity> taskEntityOptional = getCompleteTaskEntity(id);
         if (!taskEntityOptional.isPresent()) {
             return Collections.emptyList();
         }
         TaskEntity taskEntity = taskEntityOptional.get();
-        if (taskEntity.getTaskType() == TaskType.ASYNC) {
-            return getAsyncResult(taskEntity);
+        return getTaskResultFromEntity(taskEntity, true);
+    }
+
+    public List<? extends FlowTaskResult> getTaskResultFromEntity(@NotNull TaskEntity taskEntity,
+            boolean setDownloadUrls) throws IOException {
+        List<? extends FlowTaskResult> results;
+        if (taskEntity.getTaskType() == TaskType.ONLINE_SCHEMA_CHANGE) {
+            results = getOnlineSchemaChangeResult(taskEntity);
+        } else if (taskEntity.getTaskType() == TaskType.EXPORT) {
+            results = getDataTransferResult(taskEntity);
+        } else if (taskEntity.getTaskType() == TaskType.ASYNC) {
+            results = getAsyncResult(taskEntity);
         } else if (taskEntity.getTaskType() == TaskType.MOCKDATA) {
-            return getMockDataResult(taskEntity);
+            results = getMockDataResult(taskEntity);
         } else if (taskEntity.getTaskType() == TaskType.IMPORT) {
-            return getDataTransferResult(taskEntity);
+            results = getDataTransferResult(taskEntity);
         } else if (taskEntity.getTaskType() == TaskType.SHADOWTABLE_SYNC) {
-            return getShadowTableSyncTaskResult(taskEntity);
+            results = getShadowTableSyncTaskResult(taskEntity);
         } else if (taskEntity.getTaskType() == TaskType.PARTITION_PLAN) {
-            return getPartitionPlanResult(taskEntity);
+            results = getPartitionPlanResult(taskEntity);
         } else if (taskEntity.getTaskType() == TaskType.ALTER_SCHEDULE) {
-            return getAlterScheduleResult(taskEntity);
+            results = getAlterScheduleResult(taskEntity);
         } else if (taskEntity.getTaskType() == TaskType.EXPORT_RESULT_SET) {
-            return getResultSetExportResult(taskEntity);
+            results = getResultSetExportResult(taskEntity);
         } else if (taskEntity.getTaskType() == TaskType.APPLY_PROJECT_PERMISSION) {
-            return getApplyProjectResult(taskEntity);
+            results = getApplyProjectResult(taskEntity);
         } else if (taskEntity.getTaskType() == TaskType.APPLY_DATABASE_PERMISSION) {
-            return getApplyDatabaseResult(taskEntity);
+            results = getApplyDatabaseResult(taskEntity);
+        } else if (taskEntity.getTaskType() == TaskType.STRUCTURE_COMPARISON) {
+            results = getStructureComparisonResult(taskEntity);
         } else {
             throw new UnsupportedException(ErrorCodes.Unsupported, new Object[] {ResourceType.ODC_TASK},
                     "Unsupported task type: " + taskEntity.getTaskType());
         }
+        if (setDownloadUrls) {
+            setDownloadUrlsIfNecessary(taskEntity.getId(), results);
+        }
+        return results;
     }
 
     public List<? extends FlowTaskResult> getResult(
@@ -291,25 +327,46 @@ public class FlowTaskInstanceService {
                 taskEntityOptional::isPresent);
         TaskEntity taskEntity = taskEntityOptional.get();
         if (!dispatchChecker.isTaskEntityOnThisMachine(taskEntity)) {
-            /**
-             * 任务不在该节点上，需要进行请求转发
-             */
-            ExecutorInfo executorInfo = JsonUtils.fromJson(taskEntity.getExecutor(), ExecutorInfo.class);
-            DispatchResponse dispatchResponse =
-                    requestDispatcher.forward(executorInfo.getHost(), executorInfo.getPort());
-            HttpHeaders headers = dispatchResponse.getResponseHeaders();
-            if (headers == null) {
-                return Collections
-                        .singletonList(new ByteArrayDataResult("download.data", dispatchResponse.getContent()));
-            }
-            String fileName = headers.getContentDisposition().getFilename();
-            if (fileName == null) {
-                return Collections
-                        .singletonList(new ByteArrayDataResult("download.data", dispatchResponse.getContent()));
-            }
-            return Collections.singletonList(new ByteArrayDataResult(fileName, dispatchResponse.getContent()));
+            // The task is not executing on current machine, need to forward the request
+            return dispatchRequest(taskEntity);
         }
         return internalDownload(taskEntity, targetFileName);
+    }
+
+    public List<BinaryDataResult> downRollbackPlanResult(@NonNull Long flowInstanceId) throws IOException {
+        Optional<TaskEntity> taskEntityOptional = getTaskEntity(flowInstanceId,
+                instance -> instance.getStatus().isFinalStatus() && instance.getTaskType() == TaskType.ASYNC);
+        PreConditions.validExists(ResourceType.ODC_FILE, "flowInstanceId", flowInstanceId,
+                taskEntityOptional::isPresent);
+        TaskEntity taskEntity = taskEntityOptional.get();
+        if (!dispatchChecker.isTaskEntityOnThisMachine(taskEntity)) {
+            // The task is not executing on current machine, need to forward the request
+            return dispatchRequest(taskEntity);
+        }
+        List<File> targetFiles = getAsyncResult(taskEntity).stream().map(value -> {
+            RollbackPlanTaskResult result = value.getRollbackPlanResult();
+            String fileId = result.getResultFileId();
+            String filePath = FileManager.generatePath(FileBucket.ROLLBACK_PLAN, fileId) + ".sql";
+            return new File(filePath);
+        }).collect(Collectors.toList());
+        return targetFiles.stream().map(FileBasedDataResult::new).collect(Collectors.toList());
+    }
+
+    private List<BinaryDataResult> dispatchRequest(@NonNull TaskEntity taskEntity) throws IOException {
+        ExecutorInfo executorInfo = JsonUtils.fromJson(taskEntity.getExecutor(), ExecutorInfo.class);
+        DispatchResponse dispatchResponse =
+                requestDispatcher.forward(executorInfo.getHost(), executorInfo.getPort());
+        HttpHeaders headers = dispatchResponse.getResponseHeaders();
+        if (headers == null) {
+            return Collections
+                    .singletonList(new ByteArrayDataResult("download.data", dispatchResponse.getContent()));
+        }
+        String fileName = headers.getContentDisposition().getFilename();
+        if (fileName == null) {
+            return Collections
+                    .singletonList(new ByteArrayDataResult("download.data", dispatchResponse.getContent()));
+        }
+        return Collections.singletonList(new ByteArrayDataResult(fileName, dispatchResponse.getContent()));
     }
 
     /**
@@ -452,7 +509,10 @@ public class FlowTaskInstanceService {
         }
     }
 
-    public List<String> getAsyncDownloadUrl(Long id, List<String> objectIds) {
+    public List<String> getAsyncDownloadUrl(Long id, List<String> objectIds, String bucket) {
+        if (!supportedBucketName.contains(bucket)) {
+            throw new IllegalArgumentException("Bucket name is illegal, bucket=" + bucket);
+        }
         Set<Long> creatorIdSet = flowInstanceRepository.findCreatorIdById(id);
         if (creatorIdSet.stream().anyMatch(creatorId -> creatorId == authenticationFacade.currentUserId())
                 || approvalPermissionService.getApprovableApprovalInstances()
@@ -460,7 +520,7 @@ public class FlowTaskInstanceService {
             List<String> downloadUrls = Lists.newArrayList();
             for (String objectId : objectIds) {
                 downloadUrls.add(objectStorageFacade.getDownloadUrl(
-                        "async".concat(File.separator).concat(creatorIdSet.iterator().next().toString()),
+                        bucket.concat(File.separator).concat(creatorIdSet.iterator().next().toString()),
                         objectId));
             }
             return downloadUrls;
@@ -577,9 +637,6 @@ public class FlowTaskInstanceService {
                 }
             }
         }
-        if (cloudObjectStorageService.supported()) {
-            result.setZipFileDownloadUrl(databaseChangeOssUrlCache.get(taskEntity.getId()));
-        }
         return Collections.singletonList(result);
     }
 
@@ -596,15 +653,7 @@ public class FlowTaskInstanceService {
     }
 
     private List<PartitionPlanTaskResult> getPartitionPlanResult(@NonNull TaskEntity taskEntity) {
-        List<PartitionPlanTaskResult> partitionPlanTaskResults = innerGetResult(taskEntity,
-                PartitionPlanTaskResult.class);
-        if (partitionPlanTaskResults.isEmpty()) {
-            return null;
-        }
-        Long flowInstanceId = partitionPlanTaskResults.get(0).getFlowInstanceId();
-        partitionPlanTaskResults.get(0).setDatabasePartitionPlan(
-                partitionPlanService.findDatabasePartitionPlanByFlowInstanceId(flowInstanceId));
-        return partitionPlanTaskResults;
+        return innerGetResult(taskEntity, PartitionPlanTaskResult.class);
     }
 
     private List<AlterScheduleResult> getAlterScheduleResult(@NonNull TaskEntity taskEntity) {
@@ -621,6 +670,10 @@ public class FlowTaskInstanceService {
 
     private List<ApplyDatabaseResult> getApplyDatabaseResult(@NonNull TaskEntity taskEntity) {
         return innerGetResult(taskEntity, ApplyDatabaseResult.class);
+    }
+
+    private List<DBStructureComparisonTaskResult> getStructureComparisonResult(@NonNull TaskEntity taskEntity) {
+        return innerGetResult(taskEntity, DBStructureComparisonTaskResult.class);
     }
 
     private <T extends FlowTaskResult> List<T> innerGetResult(@NonNull TaskEntity taskEntity,
@@ -661,6 +714,13 @@ public class FlowTaskInstanceService {
         });
     }
 
+    private Optional<TaskEntity> getLogDownloadableTaskEntity(@NotNull Long flowInstanceId) {
+        return getTaskEntity(flowInstanceId,
+                instance -> (instance.getStatus().isFinalStatus() || instance.getStatus() == FlowNodeStatus.EXECUTING)
+                        && instance.getTaskType() != TaskType.SQL_CHECK && instance.getTaskType() != TaskType.PRE_CHECK
+                        && instance.getTaskType() != TaskType.GENERATE_ROLLBACK);
+    }
+
     private Optional<TaskEntity> getTaskEntity(@NonNull Long flowInstanceId,
             @NonNull Predicate<FlowTaskInstance> predicate) {
         List<FlowTaskInstance> taskInstances = filterTaskInstance(flowInstanceId, predicate);
@@ -681,4 +741,24 @@ public class FlowTaskInstanceService {
     private URL generatePresignedUrl(String objectName, Long expirationSeconds) throws IOException {
         return cloudObjectStorageService.generateDownloadUrl(objectName, expirationSeconds);
     }
+
+    private void setDownloadUrlsIfNecessary(Long taskId, List<? extends FlowTaskResult> results) {
+        if (cloudObjectStorageService.supported()) {
+            for (FlowTaskResult result : results) {
+                TaskDownloadUrls urls = databaseChangeOssUrlCache.get(taskId);
+                if (result instanceof AbstractFlowTaskResult) {
+                    ((AbstractFlowTaskResult) result)
+                            .setFullLogDownloadUrl(urls.getLogDownloadUrl());
+                }
+                if (result instanceof DatabaseChangeResult) {
+                    ((DatabaseChangeResult) result).setZipFileDownloadUrl(urls.getDatabaseChangeZipFileDownloadUrl());
+                    if (Objects.nonNull(((DatabaseChangeResult) result).getRollbackPlanResult())) {
+                        ((DatabaseChangeResult) result).getRollbackPlanResult()
+                                .setResultFileDownloadUrl(urls.getRollBackPlanResultFileDownloadUrl());
+                    }
+                }
+            }
+        }
+    }
+
 }

@@ -17,9 +17,7 @@
 package com.oceanbase.odc.plugin.task.obmysql.datatransfer.factory;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
@@ -40,8 +38,6 @@ import com.oceanbase.tools.loaddump.common.enums.DataFormat;
 import com.oceanbase.tools.loaddump.common.enums.ObjectType;
 import com.oceanbase.tools.loaddump.common.model.LoadParameter;
 import com.oceanbase.tools.loaddump.common.model.MapObject;
-import com.oceanbase.tools.loaddump.function.context.ControlContext;
-import com.oceanbase.tools.loaddump.manager.ControlManager;
 import com.oceanbase.tools.loaddump.utils.SerializeUtils;
 
 import lombok.extern.slf4j.Slf4j;
@@ -125,11 +121,14 @@ public class LoadParameterFactory extends BaseParameterFactory<LoadParameter> {
          * only CSV format would save the manifest {@link com.oceanbase.tools.loaddump.client.DumpClient}
          */
         if (manifest.exists() && manifest.isFile()) {
-            try (InputStream inputStream = new FileInputStream(manifest)) {
-                if (SerializeUtils.deserializeObjectByKryo(inputStream) == null) {
+            try {
+                if (SerializeUtils.deserializeObjectByKryo(manifest.getPath()) == null) {
                     log.warn("Failed to deserialize MANIFEST.BIN, please check if different versions of ODC or "
                             + "ob-loader-dumper were used between export and import.");
                 }
+            } catch (Exception e) {
+                log.warn("Failed to deserialize MANIFEST.BIN, please check if different versions of ODC or "
+                        + "ob-loader-dumper were used between export and import.");
             }
         }
 
@@ -183,9 +182,6 @@ public class LoadParameterFactory extends BaseParameterFactory<LoadParameter> {
         }
         String tableName = dbObjects.get(0).getObjectName();
         parameter.getColumnNameMapping().put(tableName, csvMapping);
-        ControlManager controlManager = ControlManager.newInstance();
-        controlManager.register(transferConfig.getSchemaName(), tableName, new ControlContext());
-        parameter.setControlManager(controlManager);
     }
 
     /**

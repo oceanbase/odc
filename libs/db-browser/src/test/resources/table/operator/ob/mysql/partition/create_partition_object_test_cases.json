@@ -1,0 +1,284 @@
+[
+  {
+    "id": 1,
+    "name": "case1",
+    "description": "RANGE 分区，单分区",
+    "input": {
+      "current": {
+        "schemaName": "schema",
+        "tableName": "table",
+        "partitionOption": {
+          "type": "RANGE",
+          "expression": "col1"
+        },
+        "partitionDefinitions": [
+          {
+            "name": "p1",
+            "maxValues": [
+              "1000"
+            ]
+          }
+        ]
+      }
+    },
+    "output": "ALTER TABLE `schema`.`table`  PARTITION BY RANGE(col1) (\nPARTITION `p1` VALUES LESS THAN (1000)\n);\n"
+  },
+  {
+    "id": 2,
+    "name": "case2",
+    "description": "RANGE 分区，多个分区",
+    "input": {
+      "current": {
+        "schemaName": "schema",
+        "tableName": "table",
+        "partitionOption": {
+          "type": "RANGE",
+          "expression": "col1"
+        },
+        "partitionDefinitions": [
+          {
+            "name": "p1",
+            "maxValues": [
+              "1000"
+            ]
+          },
+          {
+            "name": "p2",
+            "maxValues": [
+              "2000"
+            ]
+          }
+        ]
+      }
+    },
+    "output": "ALTER TABLE `schema`.`table`  PARTITION BY RANGE(col1) (\nPARTITION `p1` VALUES LESS THAN (1000),\nPARTITION `p2` VALUES LESS THAN (2000)\n);\n"
+  },
+  {
+    "id": 3,
+    "name": "case3",
+    "description": "RANGE COLUMNS 分区，单个分区",
+    "input": {
+      "current": {
+        "schemaName": "schema",
+        "tableName": "table",
+        "partitionOption": {
+          "type": "RANGE_COLUMNS",
+          "columnNames": [
+            "col1",
+            "col2"
+          ]
+        },
+        "partitionDefinitions": [
+          {
+            "name": "p1",
+            "maxValues": [
+              "1",
+              "2"
+            ]
+          }
+        ]
+      }
+    },
+    "output": "ALTER TABLE `schema`.`table`  PARTITION BY RANGE COLUMNS(col1,col2) (\nPARTITION `p1` VALUES LESS THAN (1,2)\n);\n"
+  },
+  {
+    "id": 4,
+    "name": "case4",
+    "description": "RANGE COLUMNS 分区，多分区",
+    "input": {
+      "current": {
+        "schemaName": "schema",
+        "tableName": "table",
+        "partitionOption": {
+          "type": "RANGE_COLUMNS",
+          "columnNames": [
+            "col1",
+            "col2"
+          ]
+        },
+        "partitionDefinitions": [
+          {
+            "name": "p1",
+            "maxValues": [
+              "1",
+              "2"
+            ]
+          },
+          {
+            "name": "p2",
+            "maxValues": [
+              "10",
+              "20"
+            ]
+          }
+        ]
+      }
+    },
+    "output": "ALTER TABLE `schema`.`table`  PARTITION BY RANGE COLUMNS(col1,col2) (\nPARTITION `p1` VALUES LESS THAN (1,2),\nPARTITION `p2` VALUES LESS THAN (10,20)\n);\n"
+  },
+  {
+    "id": 5,
+    "name": "case5",
+    "description": "List 分区",
+    "input": {
+      "current": {
+        "schemaName": "schema",
+        "tableName": "table",
+        "partitionOption": {
+          "type": "LIST",
+          "expression": "col1+1"
+        },
+        "partitionDefinitions": [
+          {
+            "name": "p1",
+            "valuesList": [
+              [
+                "1"
+              ],
+              [
+                "2"
+              ],
+              [
+                "3"
+              ]
+            ]
+          }
+        ]
+      }
+    },
+    "output": "ALTER TABLE `schema`.`table`  PARTITION BY LIST(col1+1) (\nPARTITION `p1` VALUES IN (1,2,3)\n);\n"
+  },
+  {
+    "id": 6,
+    "name": "case6",
+    "description": "List Columns 分区",
+    "input": {
+      "current": {
+        "schemaName": "schema",
+        "tableName": "table",
+        "partitionOption": {
+          "type": "LIST_COLUMNS",
+          "columnNames": [
+            "col1",
+            "col2"
+          ]
+        },
+        "partitionDefinitions": [
+          {
+            "name": "p1",
+            "valuesList": [
+              [
+                "1",
+                "2"
+              ]
+            ]
+          },
+          {
+            "name": "p2",
+            "valuesList": [
+              [
+                "2",
+                "3"
+              ]
+            ]
+          }
+        ]
+      }
+    },
+    "output": "ALTER TABLE `schema`.`table`  PARTITION BY LIST COLUMNS(col1,col2) (\nPARTITION `p1` VALUES IN ((1,2)),\nPARTITION `p2` VALUES IN ((2,3))\n);\n"
+  },
+  {
+    "id": 7,
+    "name": "case7",
+    "description": "Hash 分区",
+    "input": {
+      "current": {
+        "schemaName": "schema",
+        "tableName": "table",
+        "partitionOption": {
+          "type": "HASH",
+          "expression": "col1",
+          "partitionsNum": 20
+        }
+      }
+    },
+    "output": "ALTER TABLE `schema`.`table`  PARTITION BY HASH(col1) \nPARTITIONS 20;\n"
+  },
+  {
+    "id": 8,
+    "name": "case8",
+    "description": "Key 分区",
+    "input": {
+      "current": {
+        "schemaName": "schema",
+        "tableName": "table",
+        "partitionOption": {
+          "type": "KEY",
+          "partitionsNum": 20,
+          "columnNames": [
+            "col1",
+            "col2"
+          ]
+        }
+      }
+    },
+    "output": "ALTER TABLE `schema`.`table`  PARTITION BY KEY(col1,col2) \nPARTITIONS 20;\n"
+  },
+  {
+    "id": 9,
+    "name": "case9",
+    "description": "Hash 分区 + 模板化二级 Hash 分区",
+    "input": {
+      "current": {
+        "schemaName": "schema",
+        "tableName": "table",
+        "partitionOption": {
+          "type": "HASH",
+          "expression": "col1",
+          "partitionsNum": 20
+        },
+        "subpartitionTemplated": true,
+        "subpartition": {
+          "schemaName": "schema",
+          "tableName": "table",
+          "partitionOption": {
+            "type": "HASH",
+            "expression": "col1",
+            "partitionsNum": 20
+          }
+        }
+      }
+    },
+    "output": "ALTER TABLE `schema`.`table`  PARTITION BY HASH(col1) SUBPARTITION BY HASH(col1) subpartitions 20\nPARTITIONS 20;\n"
+  },
+  {
+    "id": 10,
+    "name": "case10",
+    "description": "Hash 分区 + 模板化二级 Key 分区",
+    "input": {
+      "current": {
+        "schemaName": "schema",
+        "tableName": "table",
+        "partitionOption": {
+          "type": "HASH",
+          "expression": "col1",
+          "partitionsNum": 20
+        },
+        "subpartitionTemplated": true,
+        "subpartition": {
+          "schemaName": "schema",
+          "tableName": "table",
+          "partitionOption": {
+            "type": "KEY",
+            "partitionsNum": 20,
+            "columnNames": [
+              "col1",
+              "col2"
+            ]
+          }
+        }
+      }
+    },
+    "output": "ALTER TABLE `schema`.`table`  PARTITION BY HASH(col1) SUBPARTITION BY KEY(col1,col2) subpartitions 20\nPARTITIONS 20;\n"
+  }
+]

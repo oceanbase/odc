@@ -186,7 +186,8 @@ public abstract class BaseRuntimeFlowableDelegate<T> extends BaseFlowableDelegat
     }
 
     public void bindToFlowTaskInstance(@NonNull FlowTaskInstance taskInstance) {
-        if (Objects.equals(taskInstance.getId(), targetTaskInstanceId)) {
+        if (taskInstance.getId() != null && targetTaskInstanceId != null
+                && Objects.equals(taskInstance.getId(), targetTaskInstanceId)) {
             taskInstance.bindServiceTask(this);
             log.info("Monitor task instance creation and bind tasks, taskInstanceId={}, activityId={}",
                     taskInstance.getId(), activityId);

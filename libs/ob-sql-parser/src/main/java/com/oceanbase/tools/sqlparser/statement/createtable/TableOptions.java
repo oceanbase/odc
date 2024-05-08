@@ -21,6 +21,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import org.antlr.v4.runtime.ParserRuleContext;
+import org.apache.commons.collections4.CollectionUtils;
 
 import com.oceanbase.tools.sqlparser.statement.BaseStatement;
 import com.oceanbase.tools.sqlparser.statement.Expression;
@@ -91,6 +92,10 @@ public class TableOptions extends BaseOptions {
     private String location;
     private Map<String, Expression> format;
     private String pattern;
+    private List<Expression> ttls;
+    private String kvAttributes;
+    private Integer defaultLobInRowThreshold;
+    private Integer lobInRowThreshold;
 
     public TableOptions(@NonNull ParserRuleContext context) {
         super(context);
@@ -236,6 +241,19 @@ public class TableOptions extends BaseOptions {
         }
         if (this.pattern != null) {
             builder.append(" PATTERN=").append(this.pattern);
+        }
+        if (CollectionUtils.isNotEmpty(this.ttls)) {
+            builder.append(" TTL(").append(this.ttls.stream().map(Object::toString)
+                    .collect(Collectors.joining(","))).append(")");
+        }
+        if (this.kvAttributes != null) {
+            builder.append(" KV_ATTRIBUTES=").append(this.kvAttributes);
+        }
+        if (this.defaultLobInRowThreshold != null) {
+            builder.append(" DEFAULT_LOB_INROW_THRESHOLD=").append(this.defaultLobInRowThreshold);
+        }
+        if (this.lobInRowThreshold != null) {
+            builder.append(" LOB_INROW_THRESHOLD=").append(this.lobInRowThreshold);
         }
         return builder.length() == 0 ? "" : builder.substring(1);
     }

@@ -18,21 +18,18 @@ package com.oceanbase.odc.service.structurecompare;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import javax.sql.DataSource;
 
-import org.apache.commons.compress.utils.Lists;
-
 import com.oceanbase.odc.common.util.JdbcOperationsUtil;
-import com.oceanbase.odc.common.util.VersionUtils;
 import com.oceanbase.odc.core.shared.constant.ConnectType;
 import com.oceanbase.odc.core.shared.constant.DialectType;
-import com.oceanbase.odc.plugin.schema.obmysql.parser.OBMySQLGetDBTableByParser;
 import com.oceanbase.odc.service.db.browser.DBSchemaAccessors;
 import com.oceanbase.odc.service.db.browser.DBTableEditorFactory;
+import com.oceanbase.odc.service.flow.task.model.DBStructureComparisonParameter.ComparisonScope;
 import com.oceanbase.odc.service.plugin.ConnectionPluginUtil;
 import com.oceanbase.odc.service.structurecompare.comparedbobject.DBTableStructureComparator;
 import com.oceanbase.odc.service.structurecompare.model.ComparisonResult;
@@ -41,12 +38,9 @@ import com.oceanbase.odc.service.structurecompare.model.DBStructureComparisonCon
 import com.oceanbase.tools.dbbrowser.editor.DBTableEditor;
 import com.oceanbase.tools.dbbrowser.model.DBObjectType;
 import com.oceanbase.tools.dbbrowser.model.DBTable;
-import com.oceanbase.tools.dbbrowser.model.DBTable.DBTableOptions;
-import com.oceanbase.tools.dbbrowser.model.DBTableColumn;
-import com.oceanbase.tools.dbbrowser.model.DBTableConstraint;
-import com.oceanbase.tools.dbbrowser.model.DBTableIndex;
 import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
 
+import lombok.NoArgsConstructor;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
@@ -55,16 +49,26 @@ import lombok.extern.slf4j.Slf4j;
  * @date 2024/1/4
  * @since ODC_release_4.2.4
  */
+@NoArgsConstructor
 @Slf4j
 public class DefaultDBStructureComparator implements DBStructureComparator {
     private final List<DialectType> supportedDialectTypes =
             Arrays.asList(DialectType.MYSQL, DialectType.OB_MYSQL, DialectType.OB_ORACLE);
     private final List<DBObjectType> supportedDBObjectTypes = Arrays.asList(DBObjectType.TABLE);
+    private DBTableStructureComparator tableComparator;
+    private ComparisonScope scope;
+    private Integer totalObjectCount = null;
+    private Integer completedObjectCount = 0;
 
     @Override
     public List<DBObjectComparisonResult> compare(@NonNull DBStructureComparisonConfig srcConfig,
             @NonNull DBStructureComparisonConfig tgtConfig) throws SQLException {
         List<DBObjectComparisonResult> returnVal = new ArrayList<>();
+        if (srcConfig.getBlackListMap().isEmpty()) {
+            this.scope = ComparisonScope.ALL;
+        } else {
+            this.scope = ComparisonScope.PART;
+        }
         checkUnsupportedConfiguration(srcConfig, tgtConfig);
 
         String srcDbVersion = getDBVersion(srcConfig.getConnectType(), srcConfig.getDataSource());
@@ -77,12 +81,17 @@ public class DefaultDBStructureComparator implements DBStructureComparator {
 
         DBTableEditor tgtTableEditor = getDBTableEditor(tgtConfig.getConnectType(), tgtDbVersion);
 
-        Map<String, DBTable> srcTableName2Table = buildSchemaTables(srcAccessor, srcConfig.getSchemaName(),
-                srcConfig.getConnectType().getDialectType(), srcDbVersion);
-        Map<String, DBTable> tgtTableName2Table = buildSchemaTables(tgtAccessor, tgtConfig.getSchemaName(),
-                tgtConfig.getConnectType().getDialectType(), tgtDbVersion);
+        log.info(
+                "DefaultDBStructureComparator start to build source and target schema tables, source schema name={}, target schema name={}",
+                srcConfig.getSchemaName(), tgtConfig.getSchemaName());
+        long startTimestamp = System.currentTimeMillis();
+        Map<String, DBTable> srcTableName2Table = srcAccessor.getTables(srcConfig.getSchemaName(), null);
+        Map<String, DBTable> tgtTableName2Table = tgtAccessor.getTables(tgtConfig.getSchemaName(), null);
+        log.info(
+                "DefaultDBStructureComparator build source and target schema tables success, time consuming={} seconds",
+                (System.currentTimeMillis() - startTimestamp) / 1000);
 
-        DBTableStructureComparator tableComparator = new DBTableStructureComparator(tgtTableEditor,
+        tableComparator = new DBTableStructureComparator(tgtTableEditor,
                 tgtConfig.getConnectType().getDialectType(),
                 srcConfig.getSchemaName(), tgtConfig.getSchemaName());
 
@@ -97,14 +106,18 @@ public class DefaultDBStructureComparator implements DBStructureComparator {
             /**
              * Compare specified tables between source database and target database.
              */
-            for (String tableName : srcConfig.getBlackListMap().get(DBObjectType.TABLE)) {
+            Set<String> tableNamesToBeCompared = srcConfig.getBlackListMap().get(DBObjectType.TABLE);
+            this.totalObjectCount = tableNamesToBeCompared.size();
+            for (String tableName : tableNamesToBeCompared) {
                 if (srcTableName2Table.containsKey(tableName)) {
                     returnVal.add(tableComparator.compare(srcTableName2Table.get(tableName),
                             tgtTableName2Table.get(tableName)));
+                    this.completedObjectCount++;
                 } else {
                     DBObjectComparisonResult result = new DBObjectComparisonResult(DBObjectType.TABLE, tableName,
                             srcConfig.getSchemaName(), tgtConfig.getSchemaName());
                     result.setComparisonResult(ComparisonResult.MISSING_IN_SOURCE);
+                    this.completedObjectCount++;
                     returnVal.add(result);
                 }
             }
@@ -114,11 +127,6 @@ public class DefaultDBStructureComparator implements DBStructureComparator {
 
     private DBSchemaAccessor getDBSchemaAccessor(ConnectType connectType, DataSource dataSource, String dbVersion)
             throws SQLException {
-        /**
-         * sysJdbcOperations and tenantName are required for OBMySQLNoGreaterThan1479SchemaAccessor to get
-         * table partition, this method will be replaced by OBMySQLGetDBTableByParser, so we just set it
-         * null here.
-         */
         return DBSchemaAccessors.create(JdbcOperationsUtil.getJdbcOperations(dataSource.getConnection()), null,
                 connectType, dbVersion, null);
     }
@@ -150,42 +158,23 @@ public class DefaultDBStructureComparator implements DBStructureComparator {
         });
     }
 
-    private Map<String, DBTable> buildSchemaTables(DBSchemaAccessor accessor, String schemaName,
-            DialectType dialectType, String dbVersion) {
-        Map<String, DBTable> returnVal = new HashMap<>();
-        List<String> tableNames = accessor.showTables(schemaName);
-        if (tableNames.isEmpty()) {
-            return returnVal;
-        }
-        Map<String, List<DBTableColumn>> tableName2Columns = accessor.listTableColumns(schemaName);
-        Map<String, List<DBTableIndex>> tableName2Indexes = accessor.listTableIndexes(schemaName);
-        Map<String, List<DBTableConstraint>> tableName2Constraints = accessor.listTableConstraints(schemaName);
-        Map<String, DBTableOptions> tableName2Options = accessor.listTableOptions(schemaName);
-        for (String tableName : tableNames) {
-            if (!tableName2Columns.containsKey(tableName)) {
-                log.warn("Failed to query table column metadata information, table name: {}, schema name: {}",
-                        tableName, schemaName);
-                continue;
-            }
-            DBTable table = new DBTable();
-            table.setSchemaName(schemaName);
-            table.setOwner(schemaName);
-            table.setName(tableName);
-            table.setColumns(tableName2Columns.getOrDefault(tableName, Lists.newArrayList()));
-            table.setIndexes(tableName2Indexes.getOrDefault(tableName, Lists.newArrayList()));
-            table.setConstraints(tableName2Constraints.getOrDefault(tableName, Lists.newArrayList()));
-            table.setTableOptions(tableName2Options.getOrDefault(tableName, new DBTableOptions()));
-            if (DialectType.OB_MYSQL.equals(dialectType) && VersionUtils.isLessThanOrEqualsTo(dbVersion, "1.4.79")) {
-                // Remove dependence on sys account
-                String ddl = accessor.getTableDDL(schemaName, tableName);
-                OBMySQLGetDBTableByParser parser = new OBMySQLGetDBTableByParser(ddl);
-                table.setPartition(parser.getPartition());
+    @Override
+    public Double getProgress() {
+        if (this.scope == ComparisonScope.ALL) {
+            if (tableComparator != null) {
+                return tableComparator.getProgress();
             } else {
-                table.setPartition(accessor.getPartition(schemaName, tableName));
+                return 0.0D;
             }
-            table.setDDL(accessor.getTableDDL(schemaName, tableName));
-            returnVal.put(tableName, table);
+        } else {
+            if (totalObjectCount == null) {
+                return 0.0D;
+            } else if (totalObjectCount == 0) {
+                return 100.0D;
+            } else {
+                double progress = completedObjectCount * 100D / totalObjectCount;
+                return Math.min(progress, 100.0D);
+            }
         }
-        return returnVal;
     }
 }

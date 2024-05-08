@@ -26,7 +26,9 @@ import com.oceanbase.odc.core.shared.constant.ConnectType;
 import com.oceanbase.odc.core.shared.exception.UnsupportedException;
 import com.oceanbase.odc.core.sql.execute.SyncJdbcExecutor;
 import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
-import com.oceanbase.tools.dbbrowser.schema.mysql.MySQLNoGreaterThan5740SchemaAccessor;
+import com.oceanbase.tools.dbbrowser.schema.doris.DorisSchemaAccessor;
+import com.oceanbase.tools.dbbrowser.schema.mysql.MySQLNoLessThan5600SchemaAccessor;
+import com.oceanbase.tools.dbbrowser.schema.mysql.MySQLNoLessThan5700SchemaAccessor;
 import com.oceanbase.tools.dbbrowser.schema.mysql.OBMySQLBetween220And225XSchemaAccessor;
 import com.oceanbase.tools.dbbrowser.schema.mysql.OBMySQLBetween2260And2276SchemaAccessor;
 import com.oceanbase.tools.dbbrowser.schema.mysql.OBMySQLBetween2277And3XSchemaAccessor;
@@ -57,12 +59,12 @@ public class DBSchemaAccessors {
                 connectionSession.getSyncJdbcExecutor(dataSourceName);
         PreConditions.notNull(connectType, "connectType");
         PreConditions.notNull(syncJdbcExecutor, "syncJdbcExecutor");
-        String obVersion = ConnectionSessionUtil.getVersion(connectionSession);
-        PreConditions.notNull(obVersion, "obVersion");
+        String dbVersion = ConnectionSessionUtil.getVersion(connectionSession);
+        PreConditions.notNull(dbVersion, "obVersion");
 
         SyncJdbcExecutor sysSyncJdbcExecutor = null;
         String tenantName = null;
-        if (VersionUtils.isGreaterThanOrEqualsTo(obVersion, "1.4.79")) {
+        if (VersionUtils.isGreaterThanOrEqualsTo(dbVersion, "1.4.79")) {
             try {
                 sysSyncJdbcExecutor =
                         connectionSession.getSyncJdbcExecutor(ConnectionSessionConstants.SYS_DS_KEY);
@@ -72,22 +74,22 @@ public class DBSchemaAccessors {
             }
         }
 
-        return create(syncJdbcExecutor, sysSyncJdbcExecutor, connectType, obVersion, tenantName);
+        return create(syncJdbcExecutor, sysSyncJdbcExecutor, connectType, dbVersion, tenantName);
     }
 
     public static DBSchemaAccessor create(@NonNull JdbcOperations syncJdbcExecutor, JdbcOperations sysJdbcExecutor,
-            @NonNull ConnectType connectType, @NonNull String obVersion, String tenantName) {
+            @NonNull ConnectType connectType, @NonNull String dbVersion, String tenantName) {
         if (connectType == ConnectType.OB_MYSQL || connectType == ConnectType.CLOUD_OB_MYSQL) {
-            if (VersionUtils.isGreaterThanOrEqualsTo(obVersion, "4.0.0")) {
+            if (VersionUtils.isGreaterThanOrEqualsTo(dbVersion, "4.0.0")) {
                 // OB 版本 >= 4.0.0
                 return new OBMySQLSchemaAccessor(syncJdbcExecutor);
-            } else if (VersionUtils.isGreaterThan(obVersion, "2.2.76")) {
+            } else if (VersionUtils.isGreaterThan(dbVersion, "2.2.76")) {
                 // OB 版本为 [2.2.77, 4.0.0)
                 return new OBMySQLBetween2277And3XSchemaAccessor(syncJdbcExecutor);
-            } else if (VersionUtils.isGreaterThan(obVersion, "2.2.60")) {
+            } else if (VersionUtils.isGreaterThan(dbVersion, "2.2.60")) {
                 // OB 版本为 [2.2.60, 2.2.77)
                 return new OBMySQLBetween2260And2276SchemaAccessor(syncJdbcExecutor);
-            } else if (VersionUtils.isGreaterThan(obVersion, "1.4.79")) {
+            } else if (VersionUtils.isGreaterThan(dbVersion, "1.4.79")) {
                 // OB 版本为 (1.4.79, 2.2.60)
                 return new OBMySQLBetween220And225XSchemaAccessor(syncJdbcExecutor);
             } else {
@@ -95,20 +97,28 @@ public class DBSchemaAccessors {
                 return new OBMySQLNoGreaterThan1479SchemaAccessor(syncJdbcExecutor, sysJdbcExecutor, tenantName);
             }
         } else if (connectType == ConnectType.OB_ORACLE || connectType == ConnectType.CLOUD_OB_ORACLE) {
-            if (VersionUtils.isGreaterThanOrEqualsTo(obVersion, "4.0.0")) {
+            if (VersionUtils.isGreaterThanOrEqualsTo(dbVersion, "4.0.0")) {
                 // OB 版本 >= 4.0.0
                 return new OBOracleSchemaAccessor(syncJdbcExecutor, new ALLDataDictTableNames());
-            } else if (VersionUtils.isGreaterThanOrEqualsTo(obVersion, "2.2.7")) {
-                // OB 版本为 [2.2.7, 4.0.0)
+            } else if (VersionUtils.isGreaterThanOrEqualsTo(dbVersion, "2.2.70")) {
+                // OB 版本为 [2.2.70, 4.0.0)
                 return new OBOracleLessThan400SchemaAccessor(syncJdbcExecutor, new ALLDataDictTableNames());
             } else {
-                // OB 版本 < 2.2.7
+                // OB 版本 < 2.2.70
                 return new OBOracleLessThan2270SchemaAccessor(syncJdbcExecutor, new ALLDataDictTableNames());
             }
         } else if (connectType == ConnectType.ODP_SHARDING_OB_MYSQL) {
             return new ODPOBMySQLSchemaAccessor(syncJdbcExecutor);
         } else if (connectType == ConnectType.MYSQL) {
-            return new MySQLNoGreaterThan5740SchemaAccessor(syncJdbcExecutor);
+            if (VersionUtils.isGreaterThanOrEqualsTo(dbVersion, "5.7.0")) {
+                return new MySQLNoLessThan5700SchemaAccessor(syncJdbcExecutor);
+            } else if (VersionUtils.isGreaterThanOrEqualsTo(dbVersion, "5.6.0")) {
+                return new MySQLNoLessThan5600SchemaAccessor(syncJdbcExecutor);
+            } else {
+                throw new UnsupportedException(String.format("MySQL version '%s' not supported", dbVersion));
+            }
+        } else if (connectType == ConnectType.DORIS) {
+            return new DorisSchemaAccessor(syncJdbcExecutor);
         } else if (connectType == ConnectType.ORACLE) {
             return new OracleSchemaAccessor(syncJdbcExecutor, new ALLDataDictTableNames());
         } else {

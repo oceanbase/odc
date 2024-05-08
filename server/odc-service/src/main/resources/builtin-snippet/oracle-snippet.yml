@@ -1,0 +1,119 @@
+# built-in snippet for Oracle
+- name: oracle create table
+  dialect_type: ORACLE
+  tags: [ 'developer','oracle', 'table', 'create' ]
+  type: DDL
+  description: 'Create a new table for Oracle'
+  prefix: create_table
+  body: |
+    CREATE SEQUENCE ${1:TABLE_NAME}_ID_SEQ START WITH 1 INCREMENT BY 1;
+    
+    CREATE TABLE ${1:TABLE_NAME} (
+    ID         NUMBER PRIMARY KEY,
+    CREATE_TIME TIMESTAMP(6) DEFAULT SYSDATE NOT NULL,
+    UPDATE_TIME TIMESTAMP(6) NULL,
+    ${2:COLUMN_NAME} VARCHAR2(64) NOT NULL
+    );
+    
+    CREATE OR REPLACE TRIGGER ${1:TABLE_NAME}_INSERT_ID_TRIGGER
+    BEFORE INSERT ON ${1:TABLE_NAME}
+    FOR EACH ROW
+    BEGIN
+      SELECT ${1:TABLE_NAME}_ID_SEQ.NEXTVAL INTO :NEW.id FROM DUAL;
+    END
+    /
+    
+    CREATE OR REPLACE TRIGGER ${1:TABLE_NAME}_UPDATE_TIME_TRIGGER
+    BEFORE UPDATE ON ${1:TABLE_NAME}
+    FOR EACH ROW
+    BEGIN
+      :NEW.UPDATE_TIME := SYSTIMESTAMP;
+    END
+    /
+    
+    COMMENT ON TABLE ${1:TABLE_NAME} IS '';
+    COMMENT ON COLUMN ${1:TABLE_NAME}.ID IS 'auto increment id';
+    COMMENT ON COLUMN ${1:TABLE_NAME}.CREATE_TIME IS 'record create time';
+    COMMENT ON COLUMN ${1:TABLE_NAME}.UPDATE_TIME IS 'record update time';
+- name: oracle generate doc for all table columns
+  dialect_type: ORACLE
+  tags: [ 'developer','oracle', 'table', 'doc' ]
+  type: DDL
+  description: 'Generate doc all tables for current schema in Oracle'
+  prefix: doc_all_tables_for_current_schema
+  body: |
+    SELECT
+      TC.TABLE_NAME AS TABLE_NAME,
+      TC.COLUMN_NAME AS COLUMN_NAME,
+      CC.COMMENTS AS DESCRIPTION,
+      TC.DATA_TYPE AS TYPE,
+      TC.DATA_LENGTH AS "LENGTH/PRECISION",
+      TC.NULLABLE AS IS_NULLABLE,
+      CASE
+       WHEN PK_COL.COLUMN_NAME IS NOT NULL THEN 'Y'
+       ELSE 'N'
+      END AS IS_PRIMARY_KEY
+    FROM
+      ALL_TAB_COLUMNS TC
+      JOIN ALL_COL_COMMENTS CC ON TC.OWNER = CC.OWNER
+      AND TC.TABLE_NAME = CC.TABLE_NAME
+      AND TC.COLUMN_NAME = CC.COLUMN_NAME
+      LEFT JOIN (
+        SELECT
+          CONS.OWNER AS OWNER,
+          CONS.TABLE_NAME AS TABLE_NAME,
+          CONS.CONSTRAINT_NAME AS CONSTRAINT_NAME,
+          CONS.CONSTRAINT_TYPE AS CONSTRAINT_TYPE,
+          CONSC.COLUMN_NAME AS COLUMN_NAME
+        FROM
+          ALL_CONSTRAINTS CONS
+          JOIN ALL_CONS_COLUMNS CONSC ON CONS.OWNER = CONSC.OWNER
+          AND CONS.TABLE_NAME = CONSC.TABLE_NAME
+          AND CONS.CONSTRAINT_NAME = CONSC.CONSTRAINT_NAME
+        WHERE
+          CONS.CONSTRAINT_TYPE = 'P'
+      ) PK_COL ON TC.OWNER = PK_COL.OWNER
+      AND TC.TABLE_NAME = PK_COL.TABLE_NAME
+      AND TC.COLUMN_NAME = PK_COL.COLUMN_NAME
+    WHERE
+      TC.OWNER = SYS_CONTEXT('USERENV', 'CURRENT_SCHEMA')
+    ORDER BY
+      TC.OWNER ASC,
+      TC.TABLE_NAME ASC,
+      TC.COLUMN_ID ASC;
+- name: oracle set date time format
+  dialect_type: ORACLE
+  tags: [ 'developer','oracle', 'datetime' ]
+  type: DDL
+  description: 'Set date time format for Oracle'
+  prefix: set_date_time_format
+  body: |
+    ALTER SESSION SET nls_date_format='YYYY-MM-DD';
+    ALTER SESSION SET nls_timestamp_format='YYYY-MM-DD HH:MI:SS.XFF3';
+    ALTER SESSION SET nls_timestamp_tz_format='YYYY-MM-DD HH24:MI:SS.XFF3 TZH:TZM';
+- name: oracle list users
+  dialect_type: ORACLE
+  tags: [ 'developer','oracle', 'user' ]
+  type: DQL
+  description: 'List users in Oracle'
+  prefix: query_user_list
+  body: |
+    SELECT
+      USERNAME,
+      CREATED,
+      (
+        CASE ACCOUNT_STATUS
+        WHEN 'OPEN' THEN 0
+        ELSE 1
+        END
+      ) AS IS_LOCKED
+    FROM
+      DBA_USERS;
+- name: oracle list roles
+  dialect_type: ORACLE
+  tags: [ 'developer','oracle', 'role' ]
+  type: DQL
+  description: 'List roles in Oracle'
+  prefix: query_role_list
+  body: |
+    SELECT ROLE FROM DBA_ROLES;

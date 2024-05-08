@@ -20,12 +20,39 @@
             <groupId>com.oceanbase</groupId>
             <artifactId>task-plugin-ob-mysql</artifactId>
         </dependency>
+        <dependency>
+            <groupId>com.oceanbase</groupId>
+            <artifactId>connect-plugin-ob-mysql</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.oceanbase</groupId>
+            <artifactId>connect-plugin-ob-oracle</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.oceanbase</groupId>
+            <artifactId>schema-plugin-ob-oracle</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.oceanbase</groupId>
+            <artifactId>odc-test</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.oceanbase</groupId>
+            <artifactId>schema-plugin-ob-mysql</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <properties>
         <root-project.basedir>${project.parent.parent.basedir}</root-project.basedir>
         <plugin.class>com.oceanbase.odc.plugin.task.oboracle.OBOracleTaskPlugin</plugin.class>
-        <plugin.dependencies>task-plugin-ob-mysql</plugin.dependencies>
+        <plugin.dependencies>
+            task-plugin-ob-mysql,connect-plugin-ob-mysql,connect-plugin-ob-oracle,schema-plugin-ob-oracle
+        </plugin.dependencies>
     </properties>
 
     <build>

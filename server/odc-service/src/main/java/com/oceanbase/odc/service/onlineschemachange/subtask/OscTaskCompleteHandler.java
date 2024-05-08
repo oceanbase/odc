@@ -22,7 +22,7 @@ import org.springframework.stereotype.Component;
 
 import com.oceanbase.odc.core.shared.constant.TaskStatus;
 import com.oceanbase.odc.metadb.schedule.ScheduleTaskRepository;
-import com.oceanbase.odc.service.onlineschemachange.oms.request.ProjectControlRequest;
+import com.oceanbase.odc.service.onlineschemachange.oms.request.OmsProjectControlRequest;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -53,7 +53,7 @@ public class OscTaskCompleteHandler {
             TaskStatus status) {
         try {
             updateScheduleTask(scheduleTaskId, status);
-            ProjectControlRequest projectControlRequest = new ProjectControlRequest();
+            OmsProjectControlRequest projectControlRequest = new OmsProjectControlRequest();
             projectControlRequest.setUid(uid);
             projectControlRequest.setId(omsProjectId);
             resourceCleanHandler.checkAndReleaseProject(projectControlRequest);

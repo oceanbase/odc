@@ -36,12 +36,12 @@ import com.oceanbase.odc.service.onlineschemachange.model.OnlineSchemaChangeSche
 import com.oceanbase.odc.service.onlineschemachange.model.PrecheckResult;
 import com.oceanbase.odc.service.onlineschemachange.model.SwapTableType;
 import com.oceanbase.odc.service.onlineschemachange.oms.enums.OmsStepName;
-import com.oceanbase.odc.service.onlineschemachange.oms.openapi.ProjectOpenApiService;
-import com.oceanbase.odc.service.onlineschemachange.oms.request.ListProjectFullVerifyResultRequest;
-import com.oceanbase.odc.service.onlineschemachange.oms.request.ProjectControlRequest;
-import com.oceanbase.odc.service.onlineschemachange.oms.response.ProjectFullVerifyResultResponse;
-import com.oceanbase.odc.service.onlineschemachange.oms.response.ProjectProgressResponse;
-import com.oceanbase.odc.service.onlineschemachange.oms.response.ProjectStepVO;
+import com.oceanbase.odc.service.onlineschemachange.oms.openapi.OmsProjectOpenApiService;
+import com.oceanbase.odc.service.onlineschemachange.oms.request.ListOmsProjectFullVerifyResultRequest;
+import com.oceanbase.odc.service.onlineschemachange.oms.request.OmsProjectControlRequest;
+import com.oceanbase.odc.service.onlineschemachange.oms.response.OmsProjectFullVerifyResultResponse;
+import com.oceanbase.odc.service.onlineschemachange.oms.response.OmsProjectProgressResponse;
+import com.oceanbase.odc.service.onlineschemachange.oms.response.OmsProjectStepVO;
 import com.oceanbase.odc.service.onlineschemachange.pipeline.ProjectStepResultChecker.ProjectStepResult;
 import com.oceanbase.odc.service.onlineschemachange.rename.SwapTableUtil;
 import com.oceanbase.odc.service.onlineschemachange.subtask.OscTaskCompleteHandler;
@@ -57,7 +57,7 @@ import lombok.extern.slf4j.Slf4j;
 @Component
 public class ScheduleCheckOmsProjectValve extends BaseValve {
     @Autowired
-    private ProjectOpenApiService projectOpenApiService;
+    private OmsProjectOpenApiService projectOpenApiService;
     @Autowired
     private OscTaskCompleteHandler completeHandler;
     @Autowired
@@ -74,16 +74,20 @@ public class ScheduleCheckOmsProjectValve extends BaseValve {
 
         OnlineSchemaChangeScheduleTaskParameters taskParameter = context.getTaskParameter();
 
-        ProjectControlRequest projectRequest = getProjectRequest(taskParameter);
-        List<ProjectStepVO> projectSteps = projectOpenApiService.describeProjectSteps(projectRequest);
+        OmsProjectControlRequest projectRequest = getProjectRequest(taskParameter);
+        List<OmsProjectStepVO> projectSteps = projectOpenApiService.describeProjectSteps(projectRequest);
         if (log.isDebugEnabled()) {
             log.debug("Get project step list from projectOpenApiService is {} ", JsonUtils.toJson(projectSteps));
         }
+        OnlineSchemaChangeScheduleTaskResult lastResult = JsonUtils.fromJson(scheduleTask.getResultJson(),
+                OnlineSchemaChangeScheduleTaskResult.class);
 
-        ProjectProgressResponse progress = projectOpenApiService.describeProjectProgress(projectRequest);
+        OmsProjectProgressResponse progress = projectOpenApiService.describeProjectProgress(projectRequest);
 
         ProjectStepResult projectStepResult = new ProjectStepResultChecker(progress, projectSteps,
-                onlineSchemaChangeProperties.isEnableFullVerify())
+                onlineSchemaChangeProperties.isEnableFullVerify(),
+                onlineSchemaChangeProperties.getOms().getCheckProjectStepFailedTimeoutSeconds(),
+                lastResult.getCheckFailedTime())
                         .withCheckerVerifyResult(() -> listProjectFullVerifyResult(taskParameter.getOmsProjectId(),
                                 taskParameter.getDatabaseName(), taskParameter.getUid()))
                         .withResumeProject(() -> {
@@ -93,8 +97,7 @@ public class ScheduleCheckOmsProjectValve extends BaseValve {
                         .getCheckerResult();
 
         OnlineSchemaChangeScheduleTaskResult result = new OnlineSchemaChangeScheduleTaskResult(taskParameter);
-        OnlineSchemaChangeScheduleTaskResult lastResult = JsonUtils.fromJson(scheduleTask.getResultJson(),
-                OnlineSchemaChangeScheduleTaskResult.class);
+
         if (lastResult != null) {
             result.setManualSwapTableEnabled(lastResult.isManualSwapTableEnabled());
             result.setManualSwapTableStarted(lastResult.isManualSwapTableStarted());
@@ -117,8 +120,8 @@ public class ScheduleCheckOmsProjectValve extends BaseValve {
 
             boolean isEnableSwapTable = SwapTableUtil.isSwapTableEnable(swapTableType,
                     scheduleTask.getStatus(), result.getFullTransferProgressPercentage(),
-                    result.getFullVerificationResult(), result.isManualSwapTableStarted());
-            if (isEnableSwapTable) {
+                    result.getFullVerificationResult());
+            if (isEnableSwapTable && !result.isManualSwapTableStarted()) {
                 if (!result.isManualSwapTableEnabled()) {
                     // open manual swap table
                     result.setManualSwapTableEnabled(true);
@@ -139,6 +142,8 @@ public class ScheduleCheckOmsProjectValve extends BaseValve {
     private void continueHandleProjectStepResult(ProjectStepResult projectStepResult) {
         if (projectStepResult.getPreCheckResult() == PrecheckResult.FAILED) {
             throw new OscException(ErrorCodes.OmsPreCheckFailed, projectStepResult.getErrorMsg());
+        } else if (projectStepResult.getTaskStatus() == TaskStatus.FAILED) {
+            throw new OscException(ErrorCodes.OmsProjectExecutingFailed, projectStepResult.getErrorMsg());
         } else if (projectStepResult.getFullVerificationResult() == FullVerificationResult.INCONSISTENT) {
             throw new OscException(ErrorCodes.OmsDataCheckInconsistent,
                     "Task failed for origin table has inconsistent data with new table, result: "
@@ -146,9 +151,9 @@ public class ScheduleCheckOmsProjectValve extends BaseValve {
         }
     }
 
-    private ProjectFullVerifyResultResponse listProjectFullVerifyResult(String projectId, String databaseName,
+    private OmsProjectFullVerifyResultResponse listProjectFullVerifyResult(String projectId, String databaseName,
             String uid) {
-        ListProjectFullVerifyResultRequest request = new ListProjectFullVerifyResultRequest();
+        ListOmsProjectFullVerifyResultRequest request = new ListOmsProjectFullVerifyResultRequest();
         request.setProjectId(projectId);
         request.setSourceSchemas(new String[] {databaseName});
         request.setDestSchemas(new String[] {databaseName});
@@ -157,7 +162,7 @@ public class ScheduleCheckOmsProjectValve extends BaseValve {
         request.setPageNumber(1);
         request.setUid(uid);
 
-        ProjectFullVerifyResultResponse response = projectOpenApiService.listProjectFullVerifyResult(request);
+        OmsProjectFullVerifyResultResponse response = projectOpenApiService.listProjectFullVerifyResult(request);
         if (log.isDebugEnabled()) {
             log.debug("Get project full verify result from projectOpenApiService is {} ", JsonUtils.toJson(response));
         }
@@ -174,10 +179,11 @@ public class ScheduleCheckOmsProjectValve extends BaseValve {
         result.setCurrentStep(projectStepResult.getCurrentStep());
         result.setCurrentStepStatus(projectStepResult.getCurrentStepStatus());
         result.setPrecheckResult(projectStepResult.getPreCheckResult());
+        result.setCheckFailedTime(projectStepResult.getCheckFailedTime());
     }
 
-    private ProjectControlRequest getProjectRequest(OnlineSchemaChangeScheduleTaskParameters taskParam) {
-        ProjectControlRequest projectRequest = new ProjectControlRequest();
+    private OmsProjectControlRequest getProjectRequest(OnlineSchemaChangeScheduleTaskParameters taskParam) {
+        OmsProjectControlRequest projectRequest = new OmsProjectControlRequest();
         projectRequest.setUid(taskParam.getUid());
         projectRequest.setId(taskParam.getOmsProjectId());
         return projectRequest;

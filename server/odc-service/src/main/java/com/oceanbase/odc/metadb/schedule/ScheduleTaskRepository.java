@@ -66,6 +66,13 @@ public interface ScheduleTaskRepository extends JpaRepository<ScheduleTaskEntity
 
     @Transactional
     @Modifying
+    @Query("update ScheduleTaskEntity st set st.jobId = ?2 where st.id = ?1")
+    int updateJobIdById(Long id, Long jobId);
+
+    List<ScheduleTaskEntity> findByJobId(Long jobId);
+
+    @Transactional
+    @Modifying
     @Query("update ScheduleTaskEntity st set st.parametersJson=:#{#entity.parametersJson},"
             + "st.status=:#{#entity.status},st.progressPercentage=:#{#entity.progressPercentage},"
             + "st.resultJson=:#{#entity.resultJson} where st.id=:#{#entity.id}")

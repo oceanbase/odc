@@ -26,6 +26,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 
 import com.oceanbase.odc.core.authority.model.SecurityResource;
+import com.oceanbase.odc.core.shared.constant.ResourceType;
 
 import lombok.Getter;
 import lombok.NonNull;
@@ -265,7 +266,13 @@ public class ResourcePermission implements Permission, Serializable {
 
     @Override
     public String toString() {
-        return "ResourcePermission " + this.resourceType + ":" + this.resourceId + " " + getActions(this.mask);
+        String resource = this.resourceType;
+        try {
+            resource = ResourceType.valueOf(this.resourceType).getLocalizedMessage();
+        } catch (Exception e) {
+            // eat exception
+        }
+        return resource + ":" + this.resourceId + ": " + getActions(this.mask);
     }
 
 }

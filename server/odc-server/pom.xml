@@ -230,6 +230,9 @@
                                     <location>${project.basedir}/../../script/start-odc.sh</location>
                                 </source>
                                 <source>
+                                    <location>${project.basedir}/../../script/start-job.sh</location>
+                                </source>
+                                <source>
                                     <location>${project.basedir}/../../script/kill-odc.sh</location>
                                 </source>
                                 <source>
@@ -257,6 +260,9 @@
                             <sources>
                                 <source>
                                     <location>target/classes/log4j2.xml</location>
+                                </source>
+                                <source>
+                                    <location>target/classes/log4j2-task.xml</location>
                                 </source>
                                 <source>
                                     <location>${project.basedir}/../../distribution/docker/resources/nginx.conf.template</location>

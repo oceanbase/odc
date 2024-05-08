@@ -31,6 +31,8 @@ import javax.servlet.http.HttpServletResponse;
 import org.apache.commons.lang.Validate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.web.authentication.SavedRequestAwareAuthenticationSuccessHandler;
 import org.springframework.stereotype.Component;
@@ -43,6 +45,7 @@ import com.oceanbase.odc.core.shared.constant.OrganizationType;
 import com.oceanbase.odc.metadb.iam.OrganizationRepository;
 import com.oceanbase.odc.service.automation.model.TriggerEvent;
 import com.oceanbase.odc.service.collaboration.OrganizationResourceMigrator;
+import com.oceanbase.odc.service.collaboration.project.ProjectService;
 import com.oceanbase.odc.service.common.response.Responses;
 import com.oceanbase.odc.service.common.response.SuccessResponse;
 import com.oceanbase.odc.service.common.util.SpringContextUtil;
@@ -64,6 +67,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Component
+@ConditionalOnProperty(value = "odc.iam.auth.method", havingValue = "jsession")
 public class CustomAuthenticationSuccessHandler extends SavedRequestAwareAuthenticationSuccessHandler {
     @Autowired
     private OrganizationRepository organizationRepository;
@@ -71,6 +75,12 @@ public class CustomAuthenticationSuccessHandler extends SavedRequestAwareAuthent
     @Autowired
     @Qualifier("organizationResourceMigrator")
     private OrganizationResourceMigrator organizationResourceMigrator;
+
+    @Autowired
+    private ProjectService projectService;
+
+    @Value("${odc.integration.bastion.enabled:false}")
+    private boolean bastionEnabled;
 
     private final OrganizationMapper organizationMapper = OrganizationMapper.INSTANCE;
     private final SecurityManager securityManager;
@@ -112,6 +122,10 @@ public class CustomAuthenticationSuccessHandler extends SavedRequestAwareAuthent
             user.setOrganizationId(team.getId());
             user.setOrganizationType(OrganizationType.TEAM);
             SecurityContextUtils.switchCurrentUserOrganization(user, team, httpServletRequest, true);
+            // If bastion is enabled, every user must hold a built-in project for create temporary SQL console
+            if (bastionEnabled) {
+                projectService.createProjectIfNotExists(user);
+            }
         }
 
         // Login logic for Security Framework
@@ -136,8 +150,7 @@ public class CustomAuthenticationSuccessHandler extends SavedRequestAwareAuthent
             // if login api, set response to OK
             // not affect BUC(/login/oauth2/code/buc)
             if (requestURI.contains("/login")) {
-                SuccessResponse<String> successResponse = Responses.success("ok");
-                WebResponseUtils.writeJsonObjectWithOkStatus(successResponse, httpServletRequest, httpServletResponse);
+                handleAfterSucceed(httpServletRequest, httpServletResponse, authentication);
             } else {
                 log.info("Login from non-login API, requestURI={}", requestURI);
             }
@@ -151,5 +164,11 @@ public class CustomAuthenticationSuccessHandler extends SavedRequestAwareAuthent
         }
         // or else, try redirect to original url, will redirect to '/' if no original url detected
         super.onAuthenticationSuccess(httpServletRequest, httpServletResponse, authentication);
+    }
+
+    protected void handleAfterSucceed(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse,
+            Authentication authentication) throws IOException {
+        SuccessResponse<String> successResponse = Responses.success("ok");
+        WebResponseUtils.writeJsonObjectWithOkStatus(successResponse, httpServletRequest, httpServletResponse);
     }
 }

@@ -17,7 +17,11 @@ package com.oceanbase.odc.service.session.factory;
 
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.Properties;
 
 import javax.sql.DataSource;
@@ -27,10 +31,12 @@ import com.oceanbase.odc.core.datasource.CloneableDataSourceFactory;
 import com.oceanbase.odc.core.datasource.ConnectionInitializer;
 import com.oceanbase.odc.core.datasource.DataSourceFactory;
 import com.oceanbase.odc.core.shared.jdbc.JdbcUrlParser;
+import com.oceanbase.odc.plugin.connect.model.ConnectionPropertiesBuilder;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.connection.util.ConnectionMapper;
 import com.oceanbase.odc.service.plugin.ConnectionPluginUtil;
-import com.oceanbase.odc.service.session.initializer.SessionCreatedInitializer;
+import com.oceanbase.odc.service.session.initializer.BackupInstanceInitializer;
+import com.oceanbase.odc.service.session.initializer.DataSourceInitScriptInitializer;
 
 import lombok.NonNull;
 
@@ -56,17 +62,23 @@ public class DruidDataSourceFactory extends OBConsoleDataSourceFactory {
         String jdbcUrl = getJdbcUrl();
         String username = getUsername();
         String password = getPassword();
-        DruidDataSource dataSource = new InnerDataSource(new SessionCreatedInitializer(connectionConfig));
+        DruidDataSource dataSource = new InnerDataSource(Arrays.asList(new BackupInstanceInitializer(connectionConfig),
+                new DataSourceInitScriptInitializer(connectionConfig)));
         dataSource.setUrl(jdbcUrl);
         dataSource.setUsername(username);
         dataSource.setPassword(password);
+        if (Objects.nonNull(this.userRole)) {
+            dataSource.setConnectProperties(ConnectionPropertiesBuilder.getBuilder().userRole(this.userRole).build());
+        }
         dataSource.setDriverClassName(connectionExtensionPoint.getDriverClassName());
         init(dataSource);
         return dataSource;
     }
 
     private void init(DruidDataSource dataSource) {
-        String validationQuery = getConnectType().getDialectType().isMysql() ? "select 1" : "select 1 from dual";
+        String validationQuery =
+                getConnectType().getDialectType().isMysql() || getConnectType().getDialectType().isDoris() ? "select 1"
+                        : "select 1 from dual";
         dataSource.setValidationQuery(validationQuery);
         dataSource.setTestWhileIdle(true);
         dataSource.setTimeBetweenEvictionRunsMillis(30000);
@@ -74,7 +86,7 @@ public class DruidDataSourceFactory extends OBConsoleDataSourceFactory {
         dataSource.setMaxActive(5);
         dataSource.setInitialSize(2);
         // wait for get available connection from connection pool
-        dataSource.setMaxWait(10_000L);
+        dataSource.setMaxWait(5000L);
         /**
          * {@link DruidDataSource#init()} will set these two properties to
          * {@link com.alibaba.druid.pool.DruidAbstractDataSource#DEFAULT_TIME_SOCKET_TIMEOUT_MILLIS} if we
@@ -87,7 +99,7 @@ public class DruidDataSourceFactory extends OBConsoleDataSourceFactory {
         dataSource.setSocketTimeout(DEFAULT_TIMEOUT_MILLIS);
         dataSource.setConnectTimeout(DEFAULT_TIMEOUT_MILLIS);
         // fix arbitrary file reading vulnerability
-        Properties properties = new Properties();
+        Properties properties = Optional.ofNullable(dataSource.getConnectProperties()).orElseGet(Properties::new);
         properties.setProperty("allowLoadLocalInfile", "false");
         properties.setProperty("allowUrlInLocalInfile", "false");
         properties.setProperty("allowLoadLocalInfileInPath", "");
@@ -108,7 +120,7 @@ public class DruidDataSourceFactory extends OBConsoleDataSourceFactory {
 
     private void setConnectAndSocketTimeoutFromJdbcUrl(DruidDataSource dataSource) throws SQLException {
         JdbcUrlParser jdbcUrlParser = ConnectionPluginUtil
-                .getConnectionExtension(connectionConfig.getDialectType()).getJdbcUrlParser(getJdbcUrl());
+                .getConnectionExtension(connectionConfig.getDialectType()).getConnectionInfo(getJdbcUrl(), null);
         Object socketTimeout = jdbcUrlParser.getParameters().get("socketTimeout");
         Object connectTimeout = jdbcUrlParser.getParameters().get("connectTimeout");
         if (socketTimeout != null) {
@@ -129,10 +141,10 @@ public class DruidDataSourceFactory extends OBConsoleDataSourceFactory {
 
     static class InnerDataSource extends DruidDataSource {
 
-        private final ConnectionInitializer initializer;
+        private final List<ConnectionInitializer> initializers;
 
-        private InnerDataSource(@NonNull ConnectionInitializer initializer) {
-            this.initializer = initializer;
+        private InnerDataSource(@NonNull List<ConnectionInitializer> initializers) {
+            this.initializers = initializers;
         }
 
         @Override
@@ -142,7 +154,9 @@ public class DruidDataSourceFactory extends OBConsoleDataSourceFactory {
                 super.initPhysicalConnection(conn, variables, globalVariables);
             } finally {
                 try {
-                    this.initializer.init(conn);
+                    for (ConnectionInitializer initializer : initializers) {
+                        initializer.init(conn);
+                    }
                 } catch (Exception e) {
                     // eat exception
                 }

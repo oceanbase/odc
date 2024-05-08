@@ -23,6 +23,9 @@ import org.pf4j.Extension;
 
 import com.oceanbase.jdbc.OceanBaseConnection;
 import com.oceanbase.odc.common.util.JdbcOperationsUtil;
+import com.oceanbase.odc.common.util.ReflectionUtils;
+import com.oceanbase.odc.core.datasource.SingleConnectionDataSource.CloseIgnoreInvocationHandler;
+import com.oceanbase.odc.core.shared.exception.UnexpectedException;
 import com.oceanbase.odc.plugin.connect.api.SessionExtensionPoint;
 
 import lombok.extern.slf4j.Slf4j;
@@ -65,8 +68,28 @@ public class OBMySQLSessionExtension implements SessionExtensionPoint {
         } catch (Exception e) {
             if (connection instanceof OceanBaseConnection) {
                 connectionId = ((OceanBaseConnection) connection).getServerThreadId() + "";
+            } else {
+                OceanBaseConnection actual =
+                        ReflectionUtils.getProxiedFieldValue(connection, CloseIgnoreInvocationHandler.class, "target");
+                connectionId = actual == null ? "" : actual.getServerThreadId() + "";
             }
         }
         return connectionId;
+    }
+
+    @Override
+    public String getVariable(Connection connection, String variableName) {
+        String querySql = "show session variables like '" + variableName + "'";
+        try {
+            return JdbcOperationsUtil.getJdbcOperations(connection).query(querySql, rs -> {
+                if (rs.next()) {
+                    return rs.getString(2);
+                }
+                throw new UnexpectedException("variable does not exist: " + variableName);
+            });
+        } catch (Exception e) {
+            log.warn("Failed to get variable {}, message={}", variableName, e.getMessage());
+        }
+        return null;
     }
 }

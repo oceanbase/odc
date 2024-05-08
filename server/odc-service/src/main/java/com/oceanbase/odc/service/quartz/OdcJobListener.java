@@ -15,23 +15,17 @@
  */
 package com.oceanbase.odc.service.quartz;
 
-import java.util.Date;
-import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
-import org.quartz.JobDataMap;
 import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
 import org.quartz.JobKey;
 import org.quartz.JobListener;
-import org.quartz.SchedulerException;
-import org.quartz.Trigger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import com.oceanbase.odc.common.json.JsonUtils;
-import com.oceanbase.odc.common.util.SystemUtils;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.core.shared.constant.TaskStatus;
 import com.oceanbase.odc.core.shared.exception.NotFoundException;
@@ -46,14 +40,10 @@ import com.oceanbase.odc.service.iam.model.User;
 import com.oceanbase.odc.service.iam.util.SecurityContextUtils;
 import com.oceanbase.odc.service.notification.Broker;
 import com.oceanbase.odc.service.notification.NotificationProperties;
-import com.oceanbase.odc.service.notification.constant.EventLabelKeys;
-import com.oceanbase.odc.service.notification.model.Event;
-import com.oceanbase.odc.service.notification.model.EventLabels;
-import com.oceanbase.odc.service.notification.model.EventStatus;
+import com.oceanbase.odc.service.notification.helper.EventBuilder;
 import com.oceanbase.odc.service.quartz.util.ScheduleTaskUtils;
+import com.oceanbase.odc.service.schedule.flowtask.ScheduleTaskContextHolder;
 import com.oceanbase.odc.service.schedule.model.JobType;
-import com.oceanbase.odc.service.schedule.model.QuartzKeyGenerator;
-import com.oceanbase.odc.service.schedule.model.ScheduleStatus;
 import com.oceanbase.odc.service.task.model.ExecutorInfo;
 
 import lombok.extern.slf4j.Slf4j;
@@ -79,6 +69,8 @@ public class OdcJobListener implements JobListener {
     @Autowired
     private Broker broker;
     @Autowired
+    private EventBuilder eventBuilder;
+    @Autowired
     private NotificationProperties notificationProperties;
     private static final String ODC_JOB_LISTENER = "ODC_JOB_LISTENER";
 
@@ -92,7 +84,6 @@ public class OdcJobListener implements JobListener {
      */
     @Override
     public void jobToBeExecuted(JobExecutionContext context) {
-
         // todo skip osc task
         if (Objects.equals(context.getJobDetail().getKey().getGroup(), JobType.ONLINE_SCHEMA_CHANGE_COMPLETE.name())) {
             return;
@@ -102,6 +93,17 @@ public class OdcJobListener implements JobListener {
         ScheduleEntity scheduleEntity =
                 scheduleRepository.findById(scheduleId)
                         .orElseThrow(() -> new NotFoundException(ResourceType.ODC_SCHEDULE, "id", scheduleId));
+        ScheduleTaskContextHolder.trace(scheduleEntity.getId(), scheduleEntity.getJobType().name(), null);
+        log.info("Job to be executed.OrganizationId={},ProjectId={},DatabaseId={},JobType={}",
+                scheduleEntity.getOrganizationId(), scheduleEntity.getProjectId(), scheduleEntity.getDatabaseId(),
+                scheduleEntity.getJobType());
+        // Ignore this schedule if scheduler has executing job.
+        if (scheduleEntity.getJobType().executeInTaskFramework() && !scheduleEntity.getAllowConcurrent()
+                && !taskRepository.findByJobNameAndStatusIn(scheduleId.toString(), TaskStatus.getProcessingStatus())
+                        .isEmpty()) {
+            log.warn("Concurrent is not allowed for scheduler {}.", scheduleId);
+            return;
+        }
         UserEntity userEntity = userService.nullSafeGet(scheduleEntity.getCreatorId());
         userEntity.setOrganizationId(scheduleEntity.getOrganizationId());
         User taskCreator = new User(userEntity);
@@ -130,6 +132,7 @@ public class OdcJobListener implements JobListener {
             entity = taskRepository.findById(targetTaskId).orElseThrow(() -> new NotFoundException(
                     ResourceType.ODC_SCHEDULE_TASK, "id", targetTaskId));
         }
+        ScheduleTaskContextHolder.trace(scheduleEntity.getId(), entity.getJobGroup(), entity.getId());
         taskRepository.updateExecutor(entity.getId(), JsonUtils.toJson(new ExecutorInfo(hostProperties)));
         context.setResult(entity);
         log.info("Task is prepared,taskId={}", entity.getId());
@@ -142,47 +145,18 @@ public class OdcJobListener implements JobListener {
 
     @Override
     public void jobWasExecuted(JobExecutionContext context, JobExecutionException jobException) {
-        if (notificationProperties.isEnabled() && jobException != null) {
-            try {
-                JobDataMap dataMap = context.getMergedJobDataMap();
-                EventLabels labels = new EventLabels();
-                labels.put(EventLabelKeys.IDENTIFIER_KEY_TASK_TYPE, context.getJobInstance().getClass().getName());
-                labels.put(EventLabelKeys.IDENTIFIER_KEY_ACTION, "failed");
-                labels.put(EventLabelKeys.VARIABLE_KEY_REGION, SystemUtils.getEnvOrProperty("OB_ARN_PARTITION"));
-                labels.put("taskInfo", JsonUtils.toJson(context.getMergedJobDataMap()));
-                labels.put("errorMessage", jobException.getMessage());
-                broker.enqueueEvent(Event.builder()
-                        .status(EventStatus.CREATED)
-                        .creatorId(dataMap.getLongFromString("creatorId"))
-                        .organizationId(dataMap.getLongFromString("organizationId"))
-                        .triggerTime(new Date(System.currentTimeMillis()))
-                        .labels(labels)
-                        .build());
-            } catch (Exception e) {
-                log.warn("Enqueue event failed, jobException:{}", jobException, e);
-            }
-        }
-        List<? extends Trigger> jobTriggers;
+        ScheduleTaskContextHolder.clear();
         Optional<ScheduleEntity> scheduleEntityOptional =
                 scheduleRepository.findById(ScheduleTaskUtils.getScheduleId(context));
         if (scheduleEntityOptional.isPresent()) {
             ScheduleEntity scheduleEntity = scheduleEntityOptional.get();
-            JobKey key = QuartzKeyGenerator.generateJobKey(scheduleEntity.getId(), scheduleEntity.getJobType());
-            try {
-                jobTriggers = context.getScheduler().getTriggersOfJob(key);
-            } catch (SchedulerException e) {
-                log.warn("Get job triggers failed and don't update order status.JobKey={}", key);
-                return;
-            }
-            for (Trigger trigger : jobTriggers) {
-                if (trigger.getFinalFireTime() == null
-                        || trigger.getFinalFireTime().compareTo(context.getFireTime()) > 0) {
-                    return;
+            if (jobException != null && notificationProperties.isEnabled()) {
+                try {
+                    broker.enqueueEvent(eventBuilder.ofFailedTask(scheduleEntity));
+                } catch (Exception e) {
+                    log.warn("Failed to enqueue event.", e);
                 }
             }
-            ScheduleStatus status = jobException == null ? ScheduleStatus.COMPLETED : ScheduleStatus.EXECUTION_FAILED;
-            log.info("The job is completed,jobKey={},status={}", key, status);
-            scheduleRepository.updateStatusById(ScheduleTaskUtils.getScheduleId(context), status);
         }
     }
 }

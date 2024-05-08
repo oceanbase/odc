@@ -17,9 +17,7 @@ package com.oceanbase.odc.service.flow;
 
 import java.util.Collections;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
-import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 
@@ -188,7 +186,8 @@ public class FlowableAdaptorImpl implements FlowableAdaptor {
         Optional<ServiceTaskInstanceEntity> optional = serviceTaskInstanceRepository
                 .findByInstanceTypeAndActivityId(FlowNodeType.SERVICE_TASK, activityId, flowInstanceId);
         return innerConvert(optional, this,
-                (entity, flowService) -> new FlowTaskInstance(entity, new OdcRuntimeDelegateMapper(), flowService,
+                (entity, flowService) -> new FlowTaskInstance(entity,
+                        new OdcRuntimeDelegateMapper(), flowService,
                         eventPublisher, taskService, nodeInstanceRepository, sequenceRepository,
                         serviceTaskInstanceRepository));
     }
@@ -229,13 +228,7 @@ public class FlowableAdaptorImpl implements FlowableAdaptor {
 
     @Override
     public void setFlowableElements(@NonNull List<Pair<BaseFlowNodeInstance, FlowableElement>> elements) {
-        Set<Long> ids = elements.stream().map(p -> p.left.getId()).collect(Collectors.toSet());
-        List<NodeInstanceEntity> entities = this.nodeInstanceRepository.findByInstanceIdIn(ids);
         List<NodeInstanceEntity> nodes = elements.stream()
-                .filter(p -> entities.stream()
-                        .noneMatch(e -> Objects.equals(e.getFlowableElementType(), p.right.getType())
-                                && (Objects.equals(e.getName(), p.right.getName())
-                                        || Objects.equals(e.getActivityId(), p.right.getActivityId()))))
                 .map(p -> {
                     NodeInstanceEntity entity = new NodeInstanceEntity();
                     entity.setActivityId(p.right.getActivityId());

@@ -37,6 +37,7 @@ import com.oceanbase.odc.core.flow.builder.EndEventBuilder;
 import com.oceanbase.odc.core.flow.builder.ErrorBoundaryEventBuilder;
 import com.oceanbase.odc.core.flow.builder.ExclusiveGatewayBuilder;
 import com.oceanbase.odc.core.flow.builder.FlowableProcessBuilder;
+import com.oceanbase.odc.core.flow.builder.SequenceFlowBuilder;
 import com.oceanbase.odc.core.flow.builder.ServiceTaskBuilder;
 import com.oceanbase.odc.core.flow.builder.TimerBoundaryEventBuilder;
 import com.oceanbase.odc.core.flow.builder.UserTaskBuilder;
@@ -45,6 +46,7 @@ import com.oceanbase.odc.core.flow.model.FlowableElement;
 import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.core.shared.constant.ErrorCode;
 import com.oceanbase.odc.service.flow.FlowableAdaptor;
+import com.oceanbase.odc.service.flow.listener.ApprovalStatusNotifyListener;
 import com.oceanbase.odc.service.flow.listener.ApprovalTaskExpiredListener;
 import com.oceanbase.odc.service.flow.listener.BaseTaskBindUserTaskListener;
 import com.oceanbase.odc.service.flow.listener.BaseTaskExecutingCompleteListener;
@@ -55,8 +57,8 @@ import com.oceanbase.odc.service.flow.listener.ServiceTaskPendingListener;
 import com.oceanbase.odc.service.flow.model.ExecutionStrategyConfig;
 import com.oceanbase.odc.service.flow.model.FlowNodeType;
 import com.oceanbase.odc.service.flow.model.FlowTaskExecutionStrategy;
-import com.oceanbase.odc.service.flow.task.BaseRuntimeFlowableDelegate;
 import com.oceanbase.odc.service.flow.task.CreateExternalApprovalTask;
+import com.oceanbase.odc.service.flow.task.FlowTaskSubmitter;
 import com.oceanbase.odc.service.flow.task.model.RuntimeTaskConstants;
 
 import lombok.Getter;
@@ -130,6 +132,7 @@ public class FlowInstanceConfigurer extends GraphConfigurer<FlowInstance, BaseFl
         return next(nextNode, (Consumer<UserTaskBuilder>) userTaskBuilder -> {
             userTaskBuilder.addTaskListener(BaseTaskBindUserTaskListener.class);
             userTaskBuilder.addExecutionListener(BaseTaskExecutingCompleteListener.class);
+            userTaskBuilder.addExecutionListener(ApprovalStatusNotifyListener.class);
             Integer expireIntervalSeconds = nextNode.getExpireIntervalSeconds();
             if (expireIntervalSeconds == null || expireIntervalSeconds <= 0) {
                 return;
@@ -239,12 +242,42 @@ public class FlowInstanceConfigurer extends GraphConfigurer<FlowInstance, BaseFl
             @NonNull Consumer<ServiceTaskBuilder> serviceTaskConsumer,
             @NonNull Consumer<UserTaskBuilder> userManuTaskConsumer,
             @NonNull Consumer<UserTaskBuilder> userTimerTaskConsumer) {
-        Class<? extends BaseRuntimeFlowableDelegate<?>> clazz = nextNode.getTargetDelegateClass();
-        Verify.notNull(clazz, "AbstractRuntimeFlowableDelegate.class");
+
+        FlowInstanceConfigurer configurer = nextInternal(nextNode, serviceTaskConsumer,
+                userManuTaskConsumer, userTimerTaskConsumer);
+        String userTaskName =
+                FlowNodeType.APPROVAL_TASK.name() + RuntimeTaskConstants.CALLBACK_TASK + getNameSuffix(nextNode);
+        UserTaskBuilder userTaskBuilder = nullSafeGetNodeBuilder(userTaskName, nextNode, () -> {
+            UserTaskBuilder utb = new UserTaskBuilder(userTaskName);
+            return utb;
+        });
+        targetExecution.next(userTaskBuilder);
+        nextNode.bindFlowableElement(new FlowableElement(userTaskBuilder));
+        String gatewayName = FlowNodeType.APPROVAL_TASK.name()
+                + "_callback_gateway_" + getNameSuffix(nextNode);
+        ExclusiveGatewayBuilder gatewayBuilder = nullSafeGetNodeBuilder(gatewayName, nextNode,
+                () -> new ExclusiveGatewayBuilder(gatewayName));
+        targetExecution.next(gatewayBuilder);
+
+        // save as next GraphEdge
+        SequenceFlowBuilder sequenceFlowBuilder = new ConditionSequenceFlowBuilder(
+                gatewayBuilder.getGraphId() + " -> " + "_task_execute_succeed_",
+                String.format("${%s}", FlowApprovalInstance.APPROVAL_VARIABLE_NAME));
+
+        targetExecution.setPreviousGraphEdge(sequenceFlowBuilder);
+        targetExecution.route(String.format("${!%s}", FlowApprovalInstance.APPROVAL_VARIABLE_NAME),
+                this.targetProcessBuilder.endProcess());
+        return configurer;
+    }
+
+    protected FlowInstanceConfigurer nextInternal(@NonNull FlowTaskInstance nextNode,
+            @NonNull Consumer<ServiceTaskBuilder> serviceTaskConsumer,
+            @NonNull Consumer<UserTaskBuilder> userManuTaskConsumer,
+            @NonNull Consumer<UserTaskBuilder> userTimerTaskConsumer) {
 
         String serviceTaskName = FlowNodeType.SERVICE_TASK.name() + "_service_task_" + getNameSuffix(nextNode);
         ServiceTaskBuilder serviceTaskBuilder = nullSafeGetNodeBuilder(serviceTaskName, nextNode, () -> {
-            ServiceTaskBuilder taskBuilder = new ServiceTaskBuilder(serviceTaskName, clazz);
+            ServiceTaskBuilder taskBuilder = new ServiceTaskBuilder(serviceTaskName, FlowTaskSubmitter.class);
             serviceTaskConsumer.accept(taskBuilder);
             return taskBuilder;
         });

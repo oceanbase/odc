@@ -23,6 +23,7 @@ import com.oceanbase.odc.core.flow.util.EmptyExecutionListener;
 import com.oceanbase.odc.core.shared.constant.FlowStatus;
 import com.oceanbase.odc.metadb.flow.FlowInstanceRepository;
 import com.oceanbase.odc.metadb.flow.UserTaskInstanceRepository;
+import com.oceanbase.odc.service.flow.FlowInstanceService;
 import com.oceanbase.odc.service.flow.FlowableAdaptor;
 import com.oceanbase.odc.service.flow.instance.FlowApprovalInstance;
 import com.oceanbase.odc.service.flow.model.FlowNodeStatus;
@@ -46,6 +47,8 @@ public class BaseTaskExecutingCompleteListener extends BaseStatusModifyListener<
     private FlowInstanceRepository flowInstanceRepository;
     @Autowired
     private UserTaskInstanceRepository userTaskInstanceRepository;
+    @Autowired
+    private FlowInstanceService flowInstanceService;
 
     @Override
     protected FlowNodeStatus doModifyStatusOnStart(FlowApprovalInstance target) {

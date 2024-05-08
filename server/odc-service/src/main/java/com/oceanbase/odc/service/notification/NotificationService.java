@@ -20,18 +20,17 @@ import static com.oceanbase.odc.service.notification.constant.Constants.CHANNEL_
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.TreeMap;
 import java.util.stream.Collectors;
 
 import javax.annotation.PostConstruct;
 import javax.sql.DataSource;
-import javax.transaction.Transactional;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
@@ -43,12 +42,13 @@ import org.springframework.context.annotation.DependsOn;
 import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
 
 import com.oceanbase.odc.common.i18n.I18n;
 import com.oceanbase.odc.common.util.ExceptionUtils;
+import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.authority.util.Authenticated;
 import com.oceanbase.odc.core.authority.util.PreAuthenticate;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
@@ -69,14 +69,17 @@ import com.oceanbase.odc.metadb.notification.PolicyMetadataEntity;
 import com.oceanbase.odc.metadb.notification.PolicyMetadataRepository;
 import com.oceanbase.odc.service.iam.UserService;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
+import com.oceanbase.odc.service.notification.helper.ChannelConfigValidator;
 import com.oceanbase.odc.service.notification.helper.ChannelMapper;
 import com.oceanbase.odc.service.notification.helper.PolicyMapper;
+import com.oceanbase.odc.service.notification.model.BaseChannelConfig;
 import com.oceanbase.odc.service.notification.model.Channel;
 import com.oceanbase.odc.service.notification.model.Message;
+import com.oceanbase.odc.service.notification.model.MessageSendResult;
 import com.oceanbase.odc.service.notification.model.NotificationPolicy;
 import com.oceanbase.odc.service.notification.model.QueryChannelParams;
 import com.oceanbase.odc.service.notification.model.QueryMessageParams;
-import com.oceanbase.odc.service.notification.model.TestChannelResult;
+import com.oceanbase.odc.service.notification.model.WebhookChannelConfig;
 
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
@@ -113,18 +116,19 @@ public class NotificationService {
     @Autowired
     private ChannelMapper channelMapper;
     @Autowired
-    private PolicyMapper policyMapper;
+    private MessageSenderMapper messageSenderMapper;
     @Autowired
-    private ChannelFactory channelFactory;
+    private ChannelConfigValidator validator;
 
-    private TreeMap<Long, NotificationPolicy> metaPolicies;
+    private Map<Long, NotificationPolicy> metaPolicies;
 
+    @SkipAuthorize("odc internal usage")
     @PostConstruct
     public void init() {
-        metaPolicies = policyMetadataRepository.findAll(Sort.by("id")).stream()
+        metaPolicies = policyMetadataRepository.findAllOrderByCategoryAndName().stream()
                 .map(PolicyMetadataEntity::toPolicy)
                 .collect(Collectors.toMap(
-                        NotificationPolicy::getPolicyMetadataId, policy -> policy, (p1, p2) -> p1, TreeMap::new));
+                        NotificationPolicy::getPolicyMetadataId, policy -> policy, (p1, p2) -> p1, LinkedHashMap::new));
     }
 
     @PreAuthenticate(hasAnyResourceRole = {"OWNER"}, resourceType = "ODC_PROJECT", indexOfIdParam = 0)
@@ -135,24 +139,24 @@ public class NotificationService {
         return channels;
     }
 
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     @PreAuthenticate(hasAnyResourceRole = {"OWNER"}, resourceType = "ODC_PROJECT", indexOfIdParam = 0)
     public Channel detailChannel(@NotNull Long projectId, @NotNull Long channelId) {
-        Channel channel = channelMapper.fromEntityWithConfig(nullSafeGetChannel(channelId));
-        if (!Objects.equals(projectId, channel.getProjectId())) {
-            throw new AccessDeniedException("Channel does not belong to this project");
-        }
-        return channel;
+        return channelMapper.fromEntityWithConfig(nullSafeGetChannel(channelId, projectId));
     }
 
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     @PreAuthenticate(hasAnyResourceRole = {"OWNER"}, resourceType = "ODC_PROJECT", indexOfIdParam = 0)
     public Channel createChannel(@NotNull Long projectId, @NotNull Channel channel) {
         PreConditions.notBlank(channel.getName(), "channel.name");
         PreConditions.notNull(channel.getType(), "channel.type");
         PreConditions.validNoDuplicated(ResourceType.ODC_NOTIFICATION_CHANNEL, "channel.name", channel.getName(),
                 () -> existsChannel(projectId, channel.getName()));
+        validator.validate(channel.getType(), channel.getChannelConfig());
 
+        if (StringUtils.isEmpty(channel.getChannelConfig().getTitleTemplate())) {
+            channel.getChannelConfig().setTitleTemplate("${taskType}-${taskStatus}");
+        }
         ChannelEntity entity = channelMapper.toEntity(channel);
         entity.setCreatorId(authenticationFacade.currentUserId());
         entity.setOrganizationId(authenticationFacade.currentOrganizationId());
@@ -161,32 +165,33 @@ public class NotificationService {
         return channelMapper.fromEntity(channelRepository.save(entity));
     }
 
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     @PreAuthenticate(hasAnyResourceRole = {"OWNER"}, resourceType = "ODC_PROJECT", indexOfIdParam = 0)
     public Channel updateChannel(@NotNull Long projectId, @NotNull Channel channel) {
         PreConditions.notNull(channel.getId(), "channel.id");
-        ChannelEntity entity = nullSafeGetChannel(channel.getId());
-        if (!Objects.equals(projectId, entity.getProjectId())) {
-            throw new AccessDeniedException("Channel does not belong to this project");
-        }
+        validator.validate(channel.getType(), channel.getChannelConfig());
+        ChannelEntity entity = nullSafeGetChannel(channel.getId(), projectId);
 
-        channelPropertyRepository.deleteByChannelId(entity.getId());
+        BaseChannelConfig channelConfig = channel.getChannelConfig();
+        if (channelConfig instanceof WebhookChannelConfig && ((WebhookChannelConfig) channelConfig).getSign() == null) {
+            String sign = ((WebhookChannelConfig) channelMapper.fromEntityWithConfig(entity).getChannelConfig())
+                    .getSign();
+            ((WebhookChannelConfig) channelConfig).setSign((sign));
+        }
 
         ChannelEntity toBeSaved = channelMapper.toEntity(channel);
-        toBeSaved.setCreatorId(authenticationFacade.currentUserId());
-        toBeSaved.setOrganizationId(authenticationFacade.currentOrganizationId());
-        toBeSaved.setProjectId(projectId);
+        channelRepository.update(toBeSaved);
 
-        return channelMapper.fromEntity(channelRepository.save(toBeSaved));
+        channelPropertyRepository.deleteByChannelId(channel.getId());
+        toBeSaved.getProperties().forEach(property -> channelPropertyRepository.save(property));
+
+        return channelMapper.fromEntity(nullSafeGetChannel(channel.getId()));
     }
 
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     @PreAuthenticate(hasAnyResourceRole = {"OWNER"}, resourceType = "ODC_PROJECT", indexOfIdParam = 0)
     public Channel deleteChannel(@NotNull Long projectId, @NotNull Long channelId) {
-        ChannelEntity entity = nullSafeGetChannel(channelId);
-        if (!Objects.equals(projectId, entity.getProjectId())) {
-            throw new AccessDeniedException("Channel does not belong to this project");
-        }
+        ChannelEntity entity = nullSafeGetChannel(channelId, projectId);
 
         channelRepository.deleteById(channelId);
         relationRepository.deleteByChannelId(channelId);
@@ -194,19 +199,32 @@ public class NotificationService {
         return channelMapper.fromEntity(entity);
     }
 
-    @SkipAuthorize("Any user could test channel")
-    public TestChannelResult testChannel(@NotNull Channel channel) {
+    @Transactional(rollbackFor = Exception.class)
+    @PreAuthenticate(hasAnyResourceRole = {"OWNER"}, resourceType = "ODC_PROJECT", indexOfIdParam = 0)
+    public MessageSendResult testChannel(@NotNull Long projectId, @NotNull Channel channel) {
         PreConditions.notNull(channel.getType(), "channel.type");
         PreConditions.notNull(channel.getChannelConfig(), "channel.config");
-        MessageChannel sender = channelFactory.generate(channel);
+        validator.validate(channel.getType(), channel.getChannelConfig());
 
+        BaseChannelConfig channelConfig = channel.getChannelConfig();
+        if (channelConfig instanceof WebhookChannelConfig && ((WebhookChannelConfig) channelConfig).getSign() == null
+                && channel.getId() != null) {
+            ChannelEntity entity = nullSafeGetChannel(channel.getId(), projectId);
+            String sign = ((WebhookChannelConfig) channelMapper.fromEntityWithConfig(entity).getChannelConfig())
+                    .getSign();
+            ((WebhookChannelConfig) channelConfig).setSign((sign));
+        }
+
+        MessageSender sender = messageSenderMapper.get(channel);
         String testMessage = I18n.translate(CHANNEL_TEST_MESSAGE_KEY, null, LocaleContextHolder.getLocale());
         try {
-            sender.send(Message.builder().content(testMessage).build());
+            return sender.send(Message.builder()
+                    .title(testMessage)
+                    .content(testMessage)
+                    .channel(channel).build());
         } catch (Exception e) {
-            return TestChannelResult.ofFail(ExceptionUtils.getRootCauseMessage(e));
+            return MessageSendResult.ofFail(ExceptionUtils.getRootCauseMessage(e));
         }
-        return TestChannelResult.ofSuccess();
     }
 
     @PreAuthenticate(hasAnyResourceRole = {"OWNER"}, resourceType = "ODC_PROJECT", indexOfIdParam = 0)
@@ -217,13 +235,13 @@ public class NotificationService {
 
     @PreAuthenticate(hasAnyResourceRole = {"OWNER"}, resourceType = "ODC_PROJECT", indexOfIdParam = 0)
     public List<NotificationPolicy> listPolicies(@NotNull Long projectId) {
-        TreeMap<Long, NotificationPolicy> policies = new TreeMap<>(metaPolicies);
+        Map<Long, NotificationPolicy> policies = new LinkedHashMap<>(metaPolicies);
 
         List<NotificationPolicyEntity> actual = policyRepository.findByProjectId(projectId);
         if (CollectionUtils.isNotEmpty(actual)) {
             for (NotificationPolicyEntity entity : actual) {
                 Long metadataId = entity.getPolicyMetadataId();
-                NotificationPolicy policy = policyMapper.fromEntity(entity);
+                NotificationPolicy policy = PolicyMapper.fromEntity(entity);
                 policy.setEventName(policies.get(metadataId).getEventName());
                 policy.setChannels(getChannelsByPolicyId(policy.getId()));
                 policies.put(metadataId, policy);
@@ -239,12 +257,12 @@ public class NotificationService {
             throw new AccessDeniedException("Policy does not belong to this project");
         }
 
-        NotificationPolicy policy = policyMapper.fromEntity(entity);
+        NotificationPolicy policy = PolicyMapper.fromEntity(entity);
         policy.setChannels(getChannelsByPolicyId(policy.getId()));
         return policy;
     }
 
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     @PreAuthenticate(hasAnyResourceRole = {"OWNER"}, resourceType = "ODC_PROJECT", indexOfIdParam = 0)
     public List<NotificationPolicy> batchUpdatePolicies(@NotNull Long projectId,
             @NotEmpty List<NotificationPolicy> policies) {
@@ -308,7 +326,7 @@ public class NotificationService {
             innerBatchCreateRelation(projectId,
                     saved.stream().collect(Collectors.toMap(NotificationPolicyEntity::getId, e -> channels)));
         }
-        return saved.stream().map(policyMapper::fromEntity).collect(Collectors.toList());
+        return saved.stream().map(PolicyMapper::fromEntity).collect(Collectors.toList());
     }
 
     private List<NotificationPolicy> innerBatchUpdatePolicies(Long projectId, List<NotificationPolicy> policies) {
@@ -330,7 +348,7 @@ public class NotificationService {
         innerBatchCreateRelation(projectId, policies.stream()
                 .filter(policy -> CollectionUtils.isNotEmpty(policy.getChannels()))
                 .collect(Collectors.toMap(NotificationPolicy::getId, NotificationPolicy::getChannels)));
-        return entities.stream().map(policyMapper::fromEntity).collect(Collectors.toList());
+        return entities.stream().map(PolicyMapper::fromEntity).collect(Collectors.toList());
     }
 
     private void innerBatchCreateRelation(Long projectId, Map<Long, List<Channel>> policyId2Channels) {
@@ -366,6 +384,11 @@ public class NotificationService {
     private ChannelEntity nullSafeGetChannel(@NonNull Long channelId) {
         Optional<ChannelEntity> optional = channelRepository.findById(channelId);
         return optional
+                .orElseThrow(() -> new NotFoundException(ResourceType.ODC_NOTIFICATION_CHANNEL, "id", channelId));
+    }
+
+    private ChannelEntity nullSafeGetChannel(@NonNull Long channelId, @NonNull Long projectId) {
+        return channelRepository.findByIdAndProjectId(channelId, projectId)
                 .orElseThrow(() -> new NotFoundException(ResourceType.ODC_NOTIFICATION_CHANNEL, "id", channelId));
     }
 

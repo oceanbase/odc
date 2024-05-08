@@ -15,14 +15,37 @@
  */
 package com.oceanbase.odc.service.notification.model;
 
+import org.springframework.http.HttpMethod;
+
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonProperty.Access;
+import com.oceanbase.odc.common.json.SensitiveInput;
+
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+
 /**
  * @author liuyizhuo.lyz
  * @date 2024/1/4
  */
+@Data
+@EqualsAndHashCode(callSuper = true)
 public class WebhookChannelConfig extends BaseChannelConfig {
 
     private String webhook;
 
+    @SensitiveInput
+    @JsonProperty(access = Access.WRITE_ONLY)
     private String sign;
+
+    private String httpProxy;
+
+    private HttpMethod httpMethod;
+
+    private String headersTemplate;
+
+    private String bodyTemplate;
+
+    private String responseValidation;
 
 }

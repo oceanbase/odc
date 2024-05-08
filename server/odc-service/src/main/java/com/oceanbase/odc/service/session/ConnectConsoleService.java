@@ -79,6 +79,7 @@ import com.oceanbase.odc.core.sql.parser.EmptyAstFactory;
 import com.oceanbase.odc.core.sql.split.OffsetString;
 import com.oceanbase.odc.service.common.util.SqlUtils;
 import com.oceanbase.odc.service.common.util.WebResponseUtils;
+import com.oceanbase.odc.service.config.UserConfigFacade;
 import com.oceanbase.odc.service.connection.ConnectionService;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.db.browser.DBSchemaAccessors;
@@ -87,6 +88,8 @@ import com.oceanbase.odc.service.db.session.KillSessionOrQueryReq;
 import com.oceanbase.odc.service.db.session.KillSessionResult;
 import com.oceanbase.odc.service.dml.ValueEncodeType;
 import com.oceanbase.odc.service.feature.AllFeatures;
+import com.oceanbase.odc.service.permission.database.model.DatabasePermissionType;
+import com.oceanbase.odc.service.permission.database.model.UnauthorizedDatabase;
 import com.oceanbase.odc.service.session.interceptor.SqlCheckInterceptor;
 import com.oceanbase.odc.service.session.interceptor.SqlConsoleInterceptor;
 import com.oceanbase.odc.service.session.interceptor.SqlExecuteInterceptorService;
@@ -121,7 +124,7 @@ import lombok.extern.slf4j.Slf4j;
 public class ConnectConsoleService {
 
     public static final int DEFAULT_GET_RESULT_TIMEOUT_SECONDS = 3;
-    private static String SHOW_TABLE_COLUMN_INFO = "SHOW_TABLE_COLUMN_INFO";
+    private static final String SHOW_TABLE_COLUMN_INFO = "SHOW_TABLE_COLUMN_INFO";
     @Autowired
     private ConnectSessionService sessionService;
     @Autowired
@@ -134,6 +137,8 @@ public class ConnectConsoleService {
     private DefaultDBSessionManage defaultDbSessionManage;
     @Autowired
     private ConnectionService connectionService;
+    @Autowired
+    private UserConfigFacade userConfigFacade;
 
     public SqlExecuteResult queryTableOrViewData(@NotNull String sessionId,
             @NotNull @Valid QueryTableOrViewDataReq req) throws Exception {
@@ -144,6 +149,8 @@ public class ConnectConsoleService {
             sqlBuilder = new MySQLSqlBuilder();
         } else if (dialectType.isOracle()) {
             sqlBuilder = new OracleSqlBuilder();
+        } else if (dialectType.isDoris()) {
+            sqlBuilder = new MySQLSqlBuilder();
         } else {
             throw new IllegalArgumentException("Unsupported dialect type, " + dialectType);
         }
@@ -155,13 +162,15 @@ public class ConnectConsoleService {
                 .schemaPrefixIfNotBlank(req.getSchemaName()).identifier(req.getTableOrViewName()).append(" t");
 
         Integer queryLimit = checkQueryLimit(req.getQueryLimit());
-        if (connectionSession.getDialectType().isOracle()) {
+        if (DialectType.OB_ORACLE == connectionSession.getDialectType()) {
             String version = ConnectionSessionUtil.getVersion(connectionSession);
             if (VersionUtils.isGreaterThanOrEqualsTo(version, "2.2.50")) {
                 sqlBuilder.append(" FETCH FIRST ").append(queryLimit.toString()).append(" ROWS ONLY");
             } else {
                 sqlBuilder.append(" WHERE ROWNUM <= ").append(queryLimit.toString());
             }
+        } else if (DialectType.ORACLE == connectionSession.getDialectType()) {
+            sqlBuilder.append(" WHERE ROWNUM <= ").append(queryLimit.toString());
         } else {
             sqlBuilder.append(" LIMIT ").append(queryLimit.toString());
         }
@@ -171,10 +180,21 @@ public class ConnectConsoleService {
         // avoid rewrite while execute
         asyncExecuteReq.setAddROWID(false);
         asyncExecuteReq.setQueryLimit(queryLimit);
-
+        asyncExecuteReq.setShowTableColumnInfo(true);
+        asyncExecuteReq.setContinueExecutionOnError(true);
+        asyncExecuteReq.setFullLinkTraceEnabled(false);
         SqlAsyncExecuteResp resp = execute(sessionId, asyncExecuteReq, false);
-        String requestId = resp.getRequestId();
 
+        List<UnauthorizedDatabase> unauthorizedDatabases = resp.getUnauthorizedDatabases();
+        if (CollectionUtils.isNotEmpty(unauthorizedDatabases)) {
+            UnauthorizedDatabase unauthorizedDatabase = unauthorizedDatabases.get(0);
+            throw new BadRequestException(ErrorCodes.DatabaseAccessDenied,
+                    new Object[] {unauthorizedDatabase.getUnauthorizedPermissionTypes().stream()
+                            .map(DatabasePermissionType::getLocalizedMessage).collect(Collectors.joining(","))},
+                    "Lack permission for the database with id " + unauthorizedDatabase.getId());
+        }
+
+        String requestId = resp.getRequestId();
         ConnectionConfig connConfig = (ConnectionConfig) ConnectionSessionUtil.getConnectionConfig(connectionSession);
         List<SqlExecuteResult> results = getAsyncResult(sessionId, requestId, connConfig.queryTimeoutSeconds());
         if (CollectionUtils.isEmpty(results)) {
@@ -183,7 +203,20 @@ public class ConnectConsoleService {
                     .format("Query data failed, get result-set timeout, requestId=%s, sqlId=%s", requestId, sqlId));
         }
         Verify.verify(results.size() == 1, "Expect results.size=1, but " + results.size());
-        return results.get(0);
+        SqlExecuteResult result = results.get(0);
+        /**
+         * editable will always be false because ResultSetMetaData#getTableName will return blank in oracle
+         * JDBC, but the resultSet can be edited in this single-table query scenario, so we just set it to
+         * true.
+         */
+        if (DialectType.ORACLE == connectionSession.getDialectType()) {
+            if (result.getResultSetMetaData() != null) {
+                result.getResultSetMetaData().setEditable(true);
+                result.getResultSetMetaData().getFieldMetaDataList()
+                        .forEach(jdbcColumnMetaData -> jdbcColumnMetaData.setEditable(true));
+            }
+        }
+        return result;
     }
 
     public SqlAsyncExecuteResp execute(@NotNull String sessionId, @NotNull @Valid SqlAsyncExecuteReq request)
@@ -247,10 +280,20 @@ public class ConnectConsoleService {
             }
         }
         Integer queryLimit = checkQueryLimit(request.getQueryLimit());
-        OdcStatementCallBack statementCallBack =
-                new OdcStatementCallBack(sqlTuples, connectionSession, request.getAutoCommit(), queryLimit);
+        boolean continueExecutionOnError =
+                Objects.nonNull(request.getContinueExecutionOnError()) ? request.getContinueExecutionOnError()
+                        : userConfigFacade.isContinueExecutionOnError();
+        boolean stopOnError = !continueExecutionOnError;
+        OdcStatementCallBack statementCallBack = new OdcStatementCallBack(sqlTuples, connectionSession,
+                request.getAutoCommit(), queryLimit, stopOnError);
+
         statementCallBack.setDbmsoutputMaxRows(sessionProperties.getDbmsOutputMaxRows());
-        statementCallBack.setUseFullLinkTrace(sessionProperties.isEnableFullLinkTrace());
+
+        boolean fullLinkTraceEnabled =
+                Objects.nonNull(request.getFullLinkTraceEnabled()) ? request.getFullLinkTraceEnabled()
+                        : userConfigFacade.isFullLinkTraceEnabled();
+        statementCallBack.setUseFullLinkTrace(fullLinkTraceEnabled);
+
         statementCallBack.setFullLinkTraceTimeout(sessionProperties.getFullLinkTraceTimeoutSeconds());
         statementCallBack.setMaxCachedSize(sessionProperties.getResultSetMaxCachedSize());
         statementCallBack.setMaxCachedLines(sessionProperties.getResultSetMaxCachedLines());
@@ -404,7 +447,6 @@ public class ConnectConsoleService {
             }
             if (Objects.isNull(request.getQueryLimit())
                     || !request.ifAddROWID()
-                    || !sessionProperties.isAddInternalRowId()
                     || session.getDialectType() != DialectType.OB_ORACLE) {
                 return target;
             }

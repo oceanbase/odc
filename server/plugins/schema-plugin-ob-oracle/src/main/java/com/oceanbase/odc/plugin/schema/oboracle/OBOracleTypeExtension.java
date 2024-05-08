@@ -27,6 +27,7 @@ import com.oceanbase.tools.dbbrowser.editor.oracle.OracleObjectOperator;
 import com.oceanbase.tools.dbbrowser.model.DBObjectType;
 import com.oceanbase.tools.dbbrowser.model.DBPLObjectIdentity;
 import com.oceanbase.tools.dbbrowser.model.DBType;
+import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
 import com.oceanbase.tools.dbbrowser.template.DBObjectTemplate;
 import com.oceanbase.tools.dbbrowser.template.oracle.OracleTypeTemplate;
 
@@ -42,12 +43,12 @@ public class OBOracleTypeExtension implements TypeExtensionPoint {
 
     @Override
     public List<DBPLObjectIdentity> list(@NonNull Connection connection, @NonNull String schemaName) {
-        return DBAccessorUtil.getSchemaAccessor(connection).listTypes(schemaName);
+        return getSchemaAccessor(connection).listTypes(schemaName);
     }
 
     @Override
     public DBType getDetail(@NonNull Connection connection, @NonNull String schemaName, @NonNull String typeName) {
-        return DBAccessorUtil.getSchemaAccessor(connection).getType(schemaName, typeName);
+        return getSchemaAccessor(connection).getType(schemaName, typeName);
     }
 
     @Override
@@ -60,5 +61,9 @@ public class OBOracleTypeExtension implements TypeExtensionPoint {
     public String generateCreateTemplate(@NonNull DBType type) {
         DBObjectTemplate<DBType> template = new OracleTypeTemplate();
         return template.generateCreateObjectTemplate(type);
+    }
+
+    protected DBSchemaAccessor getSchemaAccessor(Connection connection) {
+        return DBAccessorUtil.getSchemaAccessor(connection);
     }
 }

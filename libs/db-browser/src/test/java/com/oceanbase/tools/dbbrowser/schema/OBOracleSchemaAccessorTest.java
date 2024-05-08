@@ -19,6 +19,7 @@ import static com.oceanbase.tools.dbbrowser.editor.DBObjectUtilsTest.loadAsStrin
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -45,6 +46,7 @@ import com.oceanbase.tools.dbbrowser.model.DBProcedure;
 import com.oceanbase.tools.dbbrowser.model.DBSequence;
 import com.oceanbase.tools.dbbrowser.model.DBSynonym;
 import com.oceanbase.tools.dbbrowser.model.DBSynonymType;
+import com.oceanbase.tools.dbbrowser.model.DBTable;
 import com.oceanbase.tools.dbbrowser.model.DBTable.DBTableOptions;
 import com.oceanbase.tools.dbbrowser.model.DBTableColumn;
 import com.oceanbase.tools.dbbrowser.model.DBTableConstraint;
@@ -192,8 +194,16 @@ public class OBOracleSchemaAccessorTest extends BaseTestEnv {
 
     @Test
     public void listTableColumns_TestGetAllColumnInSchema_Success() {
-        Map<String, List<DBTableColumn>> table2Columns = accessor.listTableColumns(getOBOracleSchema());
+        Map<String, List<DBTableColumn>> table2Columns =
+                accessor.listTableColumns(getOBOracleSchema(), Collections.emptyList());
         Assert.assertTrue(table2Columns.size() > 0);
+    }
+
+    @Test
+    public void listTableColumns_filterByTableName_Success() {
+        Map<String, List<DBTableColumn>> table2Columns = accessor.listTableColumns(getOBOracleSchema(),
+                Arrays.asList("TEST_FK_PARENT", "TEST_PK_INDEX"));
+        Assert.assertEquals(2, table2Columns.size());
     }
 
     @Test
@@ -223,6 +233,16 @@ public class OBOracleSchemaAccessorTest extends BaseTestEnv {
     }
 
     @Test
+    public void listTableIndex_listSchemaIndex_Success() {
+        Map<String, List<DBTableIndex>> tableName2Indexes = accessor.listTableIndexes(getOBOracleSchema());
+        Assert.assertEquals(4, tableName2Indexes.size());
+        Assert.assertEquals(2, tableName2Indexes.get("TEST_INDEX_TYPE").size());
+        Assert.assertEquals(2, tableName2Indexes.get("TEST_INDEX_RANGE").size());
+        Assert.assertEquals(1, tableName2Indexes.get("TEST_FK_PARENT").size());
+        Assert.assertEquals(1, tableName2Indexes.get("TEST_PK_INDEX").size());
+    }
+
+    @Test
     public void listTableConstraint_TestForeignKey_Success() {
         List<DBTableConstraint> constraintListList =
                 accessor.listTableConstraints(getOBOracleSchema(), "TEST_FK_CHILD");
@@ -245,6 +265,29 @@ public class OBOracleSchemaAccessorTest extends BaseTestEnv {
     }
 
     @Test
+    public void listTableConstraint_listSchemaConstraints_Success() {
+        Map<String, List<DBTableConstraint>> tableName2Constraints = accessor.listTableConstraints(getOBOracleSchema());
+        Assert.assertEquals(6, tableName2Constraints.size());
+        Assert.assertEquals(1, tableName2Constraints.get("TEST_FK_CHILD").size());
+        Assert.assertEquals(1, tableName2Constraints.get("TEST_FK_PARENT").size());
+        Assert.assertEquals(2, tableName2Constraints.get("TEST_INDEX_TYPE").size());
+        Assert.assertEquals(1, tableName2Constraints.get("TEST_OTHER_THAN_DATA_TYPE").size());
+        Assert.assertEquals(2, tableName2Constraints.get("TEST_PK_INDEX").size());
+        Assert.assertEquals(1, tableName2Constraints.get("part_hash").size());
+    }
+
+    @Test
+    public void listTableOptions_listSchemaTableOptions_Success() {
+        Map<String, DBTableOptions> tableName2Options = accessor.listTableOptions(getOBOracleSchema());
+        Assert.assertFalse(tableName2Options.isEmpty());
+        tableName2Options.values().forEach(options -> {
+            Assert.assertNotNull(options.getCharsetName());
+            Assert.assertNotNull(options.getCollationName());
+        });
+        Assert.assertEquals("this is a comment", tableName2Options.get("part_hash").getComment());
+    }
+
+    @Test
     public void listTableConstraint_TestPrimaryKeyIndex_Success() {
         List<DBTableIndex> indexes =
                 accessor.listTableIndexes(getOBOracleSchema(), "TEST_PK_INDEX");
@@ -258,6 +301,31 @@ public class OBOracleSchemaAccessorTest extends BaseTestEnv {
                 accessor.getPartition(getOBOracleSchema(), "part_hash");
         Assert.assertEquals(5L, partition.getPartitionOption().getPartitionsNum().longValue());
         Assert.assertEquals(DBTablePartitionType.HASH, partition.getPartitionOption().getType());
+    }
+
+    @Test
+    public void listTablePartitions_noCandidates_listSucceed() {
+        Map<String, DBTablePartition> actual = accessor.listTablePartitions(getOBOracleSchema(), null);
+        DBTablePartition partiHash = actual.get("part_hash");
+        Assert.assertEquals(5L, partiHash.getPartitionOption().getPartitionsNum().longValue());
+        Assert.assertEquals(DBTablePartitionType.HASH, partiHash.getPartitionOption().getType());
+
+        DBTablePartition partiRange = actual.get("RANGE_PARTI_TIME_TYPE");
+        Assert.assertEquals(1L, partiRange.getPartitionOption().getPartitionsNum().longValue());
+        Assert.assertEquals(DBTablePartitionType.RANGE, partiRange.getPartitionOption().getType());
+        Assert.assertEquals(Collections.singletonList("TO_DATE(' 2022-12-31 23:59:59', 'SYYYY-MM-DD HH24:MI:SS', "
+                + "'NLS_CALENDAR=GREGORIAN'),Timestamp '2022-12-31 23:59:59.000000000'"),
+                partiRange.getPartitionDefinitions().get(0).getMaxValues());
+    }
+
+    @Test
+    public void listTablePartitions_candidatesExists_listSucceed() {
+        Map<String, DBTablePartition> actual =
+                accessor.listTablePartitions(getOBOracleSchema(), Collections.singletonList("part_hash"));
+        DBTablePartition partiHash = actual.get("part_hash");
+        Assert.assertEquals(5L, partiHash.getPartitionOption().getPartitionsNum().longValue());
+        Assert.assertEquals(DBTablePartitionType.HASH, partiHash.getPartitionOption().getType());
+        Assert.assertNull(actual.get("RANGE_PARTI_TIME_TYPE"));
     }
 
     @Test
@@ -586,6 +654,12 @@ public class OBOracleSchemaAccessorTest extends BaseTestEnv {
         Assert.assertNull(columns.get(1).getDefaultValue());
         Assert.assertNull(columns.get(2).getDefaultValue());
         Assert.assertEquals("'null'", columns.get(3).getDefaultValue());
+    }
+
+    @Test
+    public void getTables_success() {
+        Map<String, DBTable> tables = accessor.getTables(getOBOracleSchema(), null);
+        Assert.assertTrue(tables.size() > 0);
     }
 
     private static void initVerifyColumnAttributes() {

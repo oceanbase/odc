@@ -26,13 +26,16 @@ import com.oceanbase.odc.core.sql.execute.mapper.JdbcColumnMapper;
 import com.oceanbase.odc.core.sql.execute.mapper.MySQLBitMapper;
 import com.oceanbase.odc.core.sql.execute.mapper.MySQLDatetimeMapper;
 import com.oceanbase.odc.core.sql.execute.mapper.MySQLGeometryMapper;
+import com.oceanbase.odc.core.sql.execute.mapper.MySQLNumberMapper;
 import com.oceanbase.odc.core.sql.execute.mapper.MySQLTimestampMapper;
 import com.oceanbase.odc.core.sql.execute.mapper.MySQLYearMapper;
+import com.oceanbase.odc.core.sql.execute.mapper.OracleBinaryNumberMapper;
 import com.oceanbase.odc.core.sql.execute.mapper.OracleGeneralDateMapper;
 import com.oceanbase.odc.core.sql.execute.mapper.OracleGeneralTimestampLTZMapper;
 import com.oceanbase.odc.core.sql.execute.mapper.OracleGeneralTimestampMapper;
 import com.oceanbase.odc.core.sql.execute.mapper.OracleGeneralTimestampTZMapper;
 import com.oceanbase.odc.core.sql.execute.mapper.OracleIntervalMapper;
+import com.oceanbase.odc.core.sql.execute.mapper.OracleNumberMapper;
 
 import lombok.NonNull;
 
@@ -42,18 +45,21 @@ public class RollBackPlanJdbcRowMapper extends BaseDialectBasedRowMapper {
 
     public RollBackPlanJdbcRowMapper(@NonNull DialectType dialectType, String timeZone) {
         super(dialectType);
-        if (dialectType == DialectType.OB_MYSQL) {
+        if (dialectType.isMysql()) {
             mapperList.add(new MySQLBitMapper());
             mapperList.add(new MySQLDatetimeMapper());
             mapperList.add(new MySQLYearMapper());
             mapperList.add(new MySQLTimestampMapper());
             mapperList.add(new MySQLGeometryMapper());
-        } else if (dialectType == DialectType.OB_ORACLE) {
+            mapperList.add(new MySQLNumberMapper());
+        } else if (dialectType.isOracle()) {
             mapperList.add(new OracleGeneralDateMapper());
             mapperList.add(new OracleGeneralTimestampTZMapper());
             mapperList.add(new OracleGeneralTimestampLTZMapper(timeZone));
             mapperList.add(new OracleIntervalMapper());
             mapperList.add(new OracleGeneralTimestampMapper());
+            mapperList.add(new OracleNumberMapper());
+            mapperList.add(new OracleBinaryNumberMapper());
         }
         mapperList.add(new GeneralLobMapper());
     }

@@ -77,6 +77,13 @@ public class CommonSecurityProperties {
             "/template/zh-cn/*",
             "/template/zh-tw/*"};
 
+
+    private static final String[] TASK_WHITE_LIST = new String[] {
+            "/api/v2/task/heart",
+            "/api/v2/task/result",
+            "/api/v2/task/querySensitiveColumn"
+    };
+
     private static final String LOGOUT_URI = "/api/v2/iam/logout";
     private static final String LOGIN_URI = "/api/v2/iam/login";
     private static final String LOGIN_PAGE = "/index.html";
@@ -103,6 +110,10 @@ public class CommonSecurityProperties {
     @Value("${odc.web.security.cors.enabled:false}")
     private boolean corsEnabled;
 
+    @Getter
+    @Value("${odc.web.security.basic-authentication.enabled:false}")
+    private boolean basicAuthenticationEnabled;
+
     /**
      * CORS 允许的 origins domain 列表，当 odc.web.security.cors.enabled=true 时配置有效
      */
@@ -118,7 +129,11 @@ public class CommonSecurityProperties {
     }
 
     public String[] getAuthWhitelist() {
-        return ArrayUtils.addAll(buildInAuthWhitelist);
+        return ArrayUtils.addAll(buildInAuthWhitelist, TASK_WHITE_LIST);
+    }
+
+    public String[] getTaskWhiteList() {
+        return ArrayUtils.addAll(TASK_WHITE_LIST);
     }
 
     public String[] getStaticResources() {

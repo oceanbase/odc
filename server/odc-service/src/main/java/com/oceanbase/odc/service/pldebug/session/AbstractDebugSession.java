@@ -18,6 +18,7 @@ package com.oceanbase.odc.service.pldebug.session;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.Arrays;
 import java.util.List;
 import java.util.function.Supplier;
 
@@ -29,6 +30,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.SingleConnectionDataSource;
 
 import com.oceanbase.odc.common.util.StringUtils;
+import com.oceanbase.odc.core.datasource.ConnectionInitializer;
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionConstants;
 import com.oceanbase.odc.core.session.ConnectionSessionUtil;
@@ -41,7 +43,8 @@ import com.oceanbase.odc.core.sql.util.OdcDBSessionRowMapper;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.pldebug.util.CallProcedureCallBack;
 import com.oceanbase.odc.service.pldebug.util.OBOracleCallFunctionCallBack;
-import com.oceanbase.odc.service.session.initializer.SessionCreatedInitializer;
+import com.oceanbase.odc.service.session.initializer.BackupInstanceInitializer;
+import com.oceanbase.odc.service.session.initializer.DataSourceInitScriptInitializer;
 import com.oceanbase.tools.dbbrowser.model.DBFunction;
 import com.oceanbase.tools.dbbrowser.model.DBPLParam;
 import com.oceanbase.tools.dbbrowser.model.DBProcedure;
@@ -73,7 +76,6 @@ public abstract class AbstractDebugSession implements AutoCloseable {
     public abstract boolean detectSessionAlive();
 
     public List<DBPLParam> executeProcedure(DBProcedure procedure) {
-
         try {
             // -1 means statement queryTimeout will be default 0,
             // By default there is no limit on the amount of time allowed for a running statement to complete
@@ -109,9 +111,9 @@ public abstract class AbstractDebugSession implements AutoCloseable {
         this.connection = newDataSource.getConnection();
     }
 
-    protected DebugDataSource acquireDataSource(ConnectionSession connectionSession) {
+    protected DebugDataSource acquireDataSource(ConnectionSession connectionSession, List<String> initSqls) {
         ConnectionConfig config = (ConnectionConfig) ConnectionSessionUtil.getConnectionConfig(connectionSession);
-        DebugDataSource dataSource = new DebugDataSource(config);
+        DebugDataSource dataSource = new DebugDataSource(config, initSqls);
         String schema = ConnectionSessionUtil.getCurrentSchema(connectionSession);
         String host;
         Integer port;
@@ -190,18 +192,29 @@ public abstract class AbstractDebugSession implements AutoCloseable {
 
     static class DebugDataSource extends SingleConnectionDataSource {
 
-        private final SessionCreatedInitializer initializer;
+        private final List<String> initSqls;
+        private final List<ConnectionInitializer> initializers;
 
-        public DebugDataSource(@NonNull ConnectionConfig connectionConfig) {
-            this.initializer = new SessionCreatedInitializer(connectionConfig, true);
+        public DebugDataSource(@NonNull ConnectionConfig connectionConfig, List<String> initSqls) {
+            this.initSqls = initSqls;
+            this.initializers = Arrays.asList(new BackupInstanceInitializer(connectionConfig),
+                    new DataSourceInitScriptInitializer(connectionConfig, true));
         }
 
         @Override
         protected void prepareConnection(Connection con) throws SQLException {
             super.prepareConnection(con);
-            this.initializer.init(con);
+            if (CollectionUtils.isNotEmpty(this.initSqls)) {
+                try (Statement statement = con.createStatement()) {
+                    for (String stmt : this.initSqls) {
+                        statement.execute(stmt);
+                    }
+                }
+            }
+            for (ConnectionInitializer initializer : this.initializers) {
+                initializer.init(con);
+            }
         }
-
     }
 
 }

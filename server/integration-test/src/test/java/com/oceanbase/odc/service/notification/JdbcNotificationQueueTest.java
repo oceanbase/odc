@@ -42,9 +42,9 @@ import com.oceanbase.odc.service.notification.helper.ChannelMapper;
 import com.oceanbase.odc.service.notification.helper.EventMapper;
 import com.oceanbase.odc.service.notification.model.Channel;
 import com.oceanbase.odc.service.notification.model.ChannelType;
+import com.oceanbase.odc.service.notification.model.Event;
 import com.oceanbase.odc.service.notification.model.Message;
 import com.oceanbase.odc.service.notification.model.MessageSendingStatus;
-import com.oceanbase.odc.service.notification.model.Notification;
 
 public class JdbcNotificationQueueTest extends ServiceTestEnv {
     public static final Long ORGANIZATION_ID = 1L;
@@ -94,7 +94,7 @@ public class JdbcNotificationQueueTest extends ServiceTestEnv {
 
     @Test
     public void testOffer_NotificationNotEmpty_Success() {
-        Assert.assertTrue(queue.offer(Arrays.asList(getNotification())));
+        Assert.assertTrue(queue.offer(Arrays.asList(getMessage())));
         List<MessageEntity> messages = messageRepository.findAll();
 
         Assert.assertEquals(1, messages.size());
@@ -106,9 +106,9 @@ public class JdbcNotificationQueueTest extends ServiceTestEnv {
 
         when(channelRepository.findById(anyLong()))
                 .thenReturn(Optional.of(getChannelEntity()));
-        List<Notification> notifications = queue.peek(1, MessageSendingStatus.CREATED);
+        List<Message> messages = queue.peek(1, MessageSendingStatus.CREATED);
 
-        Assert.assertEquals(MessageSendingStatus.CREATED, notifications.get(0).getMessage().getStatus());
+        Assert.assertEquals(MessageSendingStatus.CREATED, messages.get(0).getStatus());
     }
 
     @Test
@@ -117,16 +117,9 @@ public class JdbcNotificationQueueTest extends ServiceTestEnv {
 
         when(channelRepository.findById(anyLong()))
                 .thenReturn(Optional.empty());
-        List<Notification> notifications = queue.peek(1, MessageSendingStatus.CREATED);
+        List<Message> messages = queue.peek(1, MessageSendingStatus.CREATED);
 
-        Assert.assertEquals(0, notifications.size());
-    }
-
-    private Notification getNotification() {
-        Notification notification = new Notification();
-        notification.setMessage(getMessage());
-        notification.setChannel(getChannel());
-        return notification;
+        Assert.assertEquals(0, messages.size());
     }
 
     private Channel getChannel() {
@@ -150,6 +143,8 @@ public class JdbcNotificationQueueTest extends ServiceTestEnv {
     }
 
     private Message getMessage() {
+        Event event = new Event();
+        event.setId(1L);
         return Message.builder()
                 .title("test title")
                 .content("test content")
@@ -160,6 +155,7 @@ public class JdbcNotificationQueueTest extends ServiceTestEnv {
                 .organizationId(ORGANIZATION_ID)
                 .projectId(1L)
                 .channel(getChannel())
+                .event(event)
                 .build();
     }
 

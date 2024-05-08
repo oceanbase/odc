@@ -16,9 +16,11 @@
 package com.oceanbase.odc.service.schedule;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -50,6 +52,8 @@ import com.oceanbase.odc.core.shared.exception.AccessDeniedException;
 import com.oceanbase.odc.core.shared.exception.NotFoundException;
 import com.oceanbase.odc.core.shared.exception.UnexpectedException;
 import com.oceanbase.odc.core.shared.exception.UnsupportedException;
+import com.oceanbase.odc.metadb.collaboration.EnvironmentEntity;
+import com.oceanbase.odc.metadb.collaboration.EnvironmentRepository;
 import com.oceanbase.odc.metadb.flow.FlowInstanceRepository;
 import com.oceanbase.odc.metadb.flow.ServiceTaskInstanceEntity;
 import com.oceanbase.odc.metadb.flow.ServiceTaskInstanceRepository;
@@ -67,9 +71,11 @@ import com.oceanbase.odc.service.dispatch.RequestDispatcher;
 import com.oceanbase.odc.service.dispatch.TaskDispatchChecker;
 import com.oceanbase.odc.service.flow.model.FlowNodeStatus;
 import com.oceanbase.odc.service.flow.task.model.DatabaseChangeParameters;
+import com.oceanbase.odc.service.iam.ProjectPermissionValidator;
 import com.oceanbase.odc.service.iam.UserService;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.iam.model.User;
+import com.oceanbase.odc.service.logger.LoggerService;
 import com.oceanbase.odc.service.objectstorage.ObjectStorageFacade;
 import com.oceanbase.odc.service.quartz.QuartzJobService;
 import com.oceanbase.odc.service.quartz.util.ScheduleTaskUtils;
@@ -90,8 +96,11 @@ import com.oceanbase.odc.service.schedule.model.ScheduleTaskMapper;
 import com.oceanbase.odc.service.schedule.model.ScheduleTaskResp;
 import com.oceanbase.odc.service.schedule.model.TriggerConfig;
 import com.oceanbase.odc.service.schedule.model.TriggerStrategy;
+import com.oceanbase.odc.service.task.config.TaskFrameworkEnabledProperties;
+import com.oceanbase.odc.service.task.exception.JobException;
 import com.oceanbase.odc.service.task.model.ExecutorInfo;
 import com.oceanbase.odc.service.task.model.OdcTaskLogLevel;
+import com.oceanbase.odc.service.task.schedule.JobScheduler;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -117,6 +126,9 @@ public class ScheduleService {
     private ObjectStorageFacade objectStorageFacade;
 
     @Autowired
+    private LoggerService loggerService;
+
+    @Autowired
     private TaskRepository taskRepository;
     @Autowired
     private ServiceTaskInstanceRepository serviceTaskRepository;
@@ -134,15 +146,26 @@ public class ScheduleService {
     private ProjectService projectService;
 
     @Autowired
+    private ProjectPermissionValidator projectPermissionValidator;
+
+    @Autowired
     private ApprovalFlowConfigSelector approvalFlowConfigSelector;
 
     @Autowired
     private DatabaseService databaseService;
 
     @Autowired
+    private EnvironmentRepository environmentRepository;
+
+    @Autowired
     private TaskDispatchChecker dispatchChecker;
     @Autowired
     private RequestDispatcher requestDispatcher;
+    @Autowired
+    private TaskFrameworkEnabledProperties taskFrameworkEnabledProperties;
+
+    @Autowired
+    private JobScheduler jobScheduler;
     private final ScheduleTaskMapper scheduleTaskMapper = ScheduleTaskMapper.INSTANCE;
 
     public ScheduleEntity create(ScheduleEntity scheduleConfig) {
@@ -203,9 +226,39 @@ public class ScheduleService {
 
     @Transactional(rollbackFor = Exception.class)
     public void terminate(ScheduleEntity scheduleConfig) throws SchedulerException {
-        Trigger trigger = getScheduleTrigger(scheduleConfig);
-        quartzJobService.deleteJob(trigger.getJobKey());
+        JobKey jobKey = QuartzKeyGenerator.generateJobKey(scheduleConfig.getId(), scheduleConfig.getJobType());
+        quartzJobService.deleteJob(jobKey);
         scheduleRepository.updateStatusById(scheduleConfig.getId(), ScheduleStatus.TERMINATION);
+    }
+
+    /**
+     * The method detects whether the database required for scheduled task operation exists. It returns
+     * true and terminates the scheduled task if the database does not exist. If the database exists, it
+     * returns false.
+     */
+    public boolean terminateIfDatabaseNotExisted(Long scheduleId) {
+        Optional<ScheduleEntity> scheduleEntityOptional = scheduleRepository.findById(scheduleId);
+        if (scheduleEntityOptional.isPresent()) {
+            Database database;
+            try {
+                database = databaseService.getBasicSkipPermissionCheck(scheduleEntityOptional.get().getDatabaseId());
+            } catch (NotFoundException e) {
+                database = null;
+            }
+            if (database == null || !database.getExisted()) {
+                try {
+                    log.info(
+                            "The database for scheduled task operation does not exist, and the schedule is being terminated, scheduleId={}",
+                            scheduleId);
+                    terminate(scheduleEntityOptional.get());
+                } catch (SchedulerException e) {
+                    log.warn("Terminate schedule failed,scheduleId={}", scheduleId);
+                }
+                return true;
+            }
+            return false;
+        }
+        return true;
     }
 
     public ScheduleDetailResp triggerJob(Long scheduleId, String jobType) {
@@ -226,6 +279,15 @@ public class ScheduleService {
         ScheduleEntity entity = nullSafeGetByIdWithCheckPermission(scheduleId, true);
         ScheduleTaskEntity taskEntity = scheduleTaskService.nullSafeGetById(taskId);
         ExecutorInfo executorInfo = JsonUtils.fromJson(taskEntity.getExecutor(), ExecutorInfo.class);
+        if (taskFrameworkEnabledProperties.isEnabled() && taskEntity.getJobId() != null) {
+            try {
+                jobScheduler.cancelJob(taskEntity.getJobId());
+                return ScheduleDetailResp.withId(scheduleId);
+            } catch (JobException e) {
+                log.warn("Cancel job failed,jobId={}", taskEntity.getJobId(), e);
+                throw new UnexpectedException("Cancel job failed!", e);
+            }
+        }
         // Local interrupt task.
         if (dispatchChecker.isThisMachine(executorInfo)) {
             JobKey jobKey = QuartzKeyGenerator.generateJobKey(scheduleId, JobType.valueOf(taskEntity.getJobGroup()));
@@ -370,6 +432,41 @@ public class ScheduleService {
         scheduleRepository.updateStatusById(id, status);
     }
 
+    public void refreshScheduleStatus(Long scheduleId) {
+        ScheduleEntity scheduleEntity = nullSafeGetById(scheduleId);
+        JobKey key = QuartzKeyGenerator.generateJobKey(scheduleEntity.getId(), scheduleEntity.getJobType());
+        ScheduleStatus status = scheduleEntity.getStatus();
+        if (status == ScheduleStatus.PAUSE) {
+            return;
+        }
+        int runningTask = scheduleTaskService.listTaskByJobNameAndStatus(scheduleId.toString(),
+                TaskStatus.getProcessingStatus()).size();
+        if (runningTask > 0) {
+            status = ScheduleStatus.ENABLED;
+        } else {
+            try {
+                List<? extends Trigger> jobTriggers = quartzJobService.getJobTriggers(key);
+                if (jobTriggers.isEmpty()) {
+                    status = ScheduleStatus.COMPLETED;
+                }
+                for (Trigger trigger : jobTriggers) {
+                    if (trigger.mayFireAgain()) {
+                        status = ScheduleStatus.ENABLED;
+                        break;
+                    } else {
+                        status = ScheduleStatus.COMPLETED;
+                    }
+                }
+            } catch (SchedulerException e) {
+                log.warn("Get job triggers failed and don't update schedule status.scheduleId={}", scheduleId);
+                return;
+            }
+        }
+        scheduleRepository.updateStatusById(scheduleId, status);
+        log.info("Update schedule status from {} to {} success,scheduleId={}}", scheduleEntity.getStatus(), status,
+                scheduleId);
+    }
+
     public void updateStatusByFlowInstanceId(Long id, ScheduleStatus status) {
         Long scheduleId = flowInstanceRepository.findScheduleIdByFlowInstanceId(id);
         if (scheduleId != null) {
@@ -423,15 +520,36 @@ public class ScheduleService {
 
     public String getLog(Long scheduleId, Long taskId, OdcTaskLogLevel logLevel) {
         nullSafeGetByIdWithCheckPermission(scheduleId);
+        ScheduleTaskEntity taskEntity = scheduleTaskService.nullSafeGetById(taskId);
+        if (taskFrameworkEnabledProperties.isEnabled() && taskEntity.getJobId() != null) {
+            try {
+                return loggerService.getLogByTaskFramework(logLevel, taskEntity.getJobId());
+            } catch (IOException e) {
+                log.warn("Copy input stream to file failed.", e);
+                throw new UnexpectedException("Copy input stream to file failed.");
+            }
+        }
+        ExecutorInfo executorInfo = JsonUtils.fromJson(taskEntity.getExecutor(), ExecutorInfo.class);
+        if (!dispatchChecker.isThisMachine(executorInfo)) {
+            try {
+                DispatchResponse response =
+                        requestDispatcher.forward(executorInfo.getHost(), executorInfo.getPort());
+                log.info("Remote get task log succeed,taskId={}", taskId);
+                return response.getContentByType(
+                        new TypeReference<SuccessResponse<String>>() {}).getData();
+            } catch (Exception e) {
+                log.warn("Remote get task log failed, taskId={}", taskId, e);
+                throw new UnexpectedException(String.format("Remote interrupt task failed, taskId=%s", taskId));
+            }
+        }
         return scheduleTaskService.getScheduleTaskLog(taskId, logLevel);
     }
 
     public boolean hasExecutingAsyncTask(ScheduleEntity schedule) {
-        Set<Long> executingTaskIds = serviceTaskRepository.findByScheduleIdAndTaskType(
-                schedule.getId(), TaskType.ASYNC).stream()
-                .filter(entity -> !FlowNodeStatus.isFinalStatus(entity.getStatus()))
-                .map(ServiceTaskInstanceEntity::getTargetTaskId).collect(
-                        Collectors.toSet());
+        Set<Long> executingTaskIds = serviceTaskRepository.findByScheduleIdAndTaskTypeAndStatusIn(schedule.getId(),
+                TaskType.ASYNC, FlowNodeStatus.getNotFinalStatuses()).stream().map(
+                        ServiceTaskInstanceEntity::getTargetTaskId)
+                .collect(Collectors.toSet());
         List<TaskEntity> taskEntities = taskRepository.findByIdIn(executingTaskIds);
         for (TaskEntity taskEntity : taskEntities) {
             Long timeoutMillis = JsonUtils.fromJson(taskEntity.getParametersJson(), DatabaseChangeParameters.class)
@@ -443,20 +561,31 @@ public class ScheduleService {
         return false;
     }
 
+    public boolean hasExecutingScheduleTask(Long scheduleId) {
+        return !scheduleTaskService.listTaskByJobNameAndStatus(
+                scheduleId.toString(), TaskStatus.getProcessingStatus()).isEmpty();
+    }
+
     public ScheduleEntity nullSafeGetByIdWithCheckPermission(Long id) {
         return nullSafeGetByIdWithCheckPermission(id, false);
     }
 
     public ScheduleEntity nullSafeGetByIdWithCheckPermission(Long id, boolean isWrite) {
         ScheduleEntity scheduleEntity = nullSafeGetById(id);
+        Long projectId = scheduleEntity.getProjectId();
         if (isWrite) {
             List<ResourceRoleName> resourceRoleNames = getApproverRoleNames(scheduleEntity);
-            if (!projectService.checkPermission(scheduleEntity.getProjectId(), resourceRoleNames)
-                    && authenticationFacade.currentUserId() != scheduleEntity.getCreatorId()) {
+            if (resourceRoleNames.isEmpty()) {
+                resourceRoleNames = ResourceRoleName.all();
+            }
+            if ((Objects.nonNull(projectId)
+                    && !projectPermissionValidator.hasProjectRole(projectId, resourceRoleNames))) {
                 throw new AccessDeniedException();
             }
         } else {
-            if (!projectService.checkPermission(scheduleEntity.getProjectId(), ResourceRoleName.all())) {
+
+            if (Objects.nonNull(projectId)
+                    && !projectPermissionValidator.hasProjectRole(projectId, ResourceRoleName.all())) {
                 throw new AccessDeniedException();
             }
         }
@@ -503,10 +632,12 @@ public class ScheduleService {
 
     private List<ResourceRoleName> getApproverRoleNames(ScheduleEntity entity) {
         Database database = databaseService.detail(entity.getDatabaseId());
+        EnvironmentEntity environment = environmentRepository.findById(database.getEnvironment().getId()).orElse(null);
         RiskLevelDescriber riskLevelDescriber = new RiskLevelDescriber();
         riskLevelDescriber.setDatabaseName(database.getName());
         riskLevelDescriber.setProjectName(database.getProject().getName());
         riskLevelDescriber.setEnvironmentId(database.getEnvironment().getId().toString());
+        riskLevelDescriber.setEnvironmentName(environment == null ? null : environment.getName());
         riskLevelDescriber.setTaskType(TaskType.ALTER_SCHEDULE.name());
         RiskLevel riskLevel = approvalFlowConfigSelector.select(riskLevelDescriber);
         return riskLevel.getApprovalFlowConfig().getNodes().stream().filter(node -> node.getResourceRoleName() != null)

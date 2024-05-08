@@ -37,8 +37,9 @@ import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferConfig;
 import com.oceanbase.odc.service.connection.database.DatabaseService;
 import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.flow.model.CreateFlowInstanceReq;
+import com.oceanbase.odc.service.flow.task.model.DBStructureComparisonParameter;
+import com.oceanbase.odc.service.flow.util.DescriptionGenerator;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
-import com.oceanbase.odc.service.order.utils.DescriptionGenerator;
 import com.oceanbase.odc.service.schedule.ScheduleService;
 import com.oceanbase.odc.service.schedule.flowtask.AlterScheduleParameters;
 import com.oceanbase.odc.service.schedule.flowtask.OperationType;
@@ -77,6 +78,10 @@ public class CreateFlowInstanceProcessAspect implements InitializingBean {
     @Before("processBeforeCreateFlowInstance()")
     public void preprocess(JoinPoint point) throws Throwable {
         CreateFlowInstanceReq req = (CreateFlowInstanceReq) point.getArgs()[0];
+        if (req.getTaskType() == TaskType.STRUCTURE_COMPARISON) {
+            DBStructureComparisonParameter parameters = (DBStructureComparisonParameter) req.getParameters();
+            req.setDatabaseId(parameters.getSourceDatabaseId());
+        }
         if (Objects.nonNull(req.getDatabaseId())) {
             adaptCreateFlowInstanceReq(req);
         }

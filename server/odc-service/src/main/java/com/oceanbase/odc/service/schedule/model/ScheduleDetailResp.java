@@ -33,7 +33,11 @@ import com.oceanbase.odc.metadb.flow.FlowInstanceEntity;
 import com.oceanbase.odc.metadb.iam.UserEntity;
 import com.oceanbase.odc.metadb.schedule.ScheduleEntity;
 import com.oceanbase.odc.service.common.model.InnerUser;
+import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
+import com.oceanbase.odc.service.dlm.model.DataArchiveParameters;
+import com.oceanbase.odc.service.dlm.model.DataDeleteParameters;
+import com.oceanbase.odc.service.dlm.model.RateLimitConfiguration;
 import com.oceanbase.odc.service.quartz.model.MisfireStrategy;
 import com.oceanbase.odc.service.quartz.util.QuartzCronExpressionUtils;
 
@@ -55,10 +59,8 @@ public class ScheduleDetailResp implements OrganizationIsolated {
     private Long id;
     private Long organizationId;
     private JobType type;
-    private Long databaseId;
-    private InnerConnection datasource;
+    private Database database;
     private Long projectId;
-    private String databaseName;
     private InnerUser creator;
     private Date createTime;
     private Date updateTime;
@@ -120,9 +122,12 @@ public class ScheduleDetailResp implements OrganizationIsolated {
         private Function<Long, UserEntity> getUserById = null;
         private Function<Long, Long> getApproveInstanceIdById = null;
 
-        private Function<Long, ConnectionConfig> getDatasourceById = null;
+        private Function<Long, Database> getDatabaseById = null;
 
         private Function<Long, Set<UserEntity>> getCandidatesById = null;
+
+        private Function<Long, RateLimitConfiguration> getDLMRateLimitConfigurationById = null;
+
 
         public ScheduleResponseMapper withGetUserById(@NonNull Function<Long, UserEntity> getUserById) {
             this.getUserById = getUserById;
@@ -135,15 +140,21 @@ public class ScheduleDetailResp implements OrganizationIsolated {
             return this;
         }
 
-        public ScheduleResponseMapper withGetDatasourceById(
-                @NonNull Function<Long, ConnectionConfig> getDatasourceById) {
-            this.getDatasourceById = getDatasourceById;
+        public ScheduleResponseMapper withGetDatabaseById(
+                @NonNull Function<Long, Database> getDatabaseById) {
+            this.getDatabaseById = getDatabaseById;
             return this;
         }
 
         public ScheduleResponseMapper withGetCandidatesById(
                 @NonNull Function<Long, Set<UserEntity>> getCandidatesById) {
             this.getCandidatesById = getCandidatesById;
+            return this;
+        }
+
+        public ScheduleResponseMapper withGetDLMRateLimitConfigurationById(
+                @NonNull Function<Long, RateLimitConfiguration> getCandidatesById) {
+            this.getDLMRateLimitConfigurationById = getCandidatesById;
             return this;
         }
 
@@ -156,18 +167,12 @@ public class ScheduleDetailResp implements OrganizationIsolated {
             resp.setStatus(entity.getStatus());
 
             resp.setOrganizationId(entity.getOrganizationId());
-            resp.setDatabaseId(entity.getDatabaseId());
             resp.setProjectId(entity.getProjectId());
-            resp.setDatabaseName(entity.getDatabaseName());
-            ConnectionConfig datasource = getDatasourceById.apply(entity.getConnectionId());
-            if (datasource != null) {
-                resp.setDatasource(new InnerConnection(datasource));
-            }
-
-            resp.setJobParameters(entity.getJobParametersJson());
+            resp.setDatabase(getDatabaseById.apply(entity.getDatabaseId()));
+            resp.setJobParameters(getJobParameters(entity));
             resp.setTriggerConfig(entity.getTriggerConfigJson());
             resp.setNextFireTimes(
-                    QuartzCronExpressionUtils.getNextFireTimes(JsonUtils.fromJson(entity.getTriggerConfigJson(),
+                    QuartzCronExpressionUtils.getNextFiveFireTimes(JsonUtils.fromJson(entity.getTriggerConfigJson(),
                             TriggerConfig.class).getCronExpression()));
             UserEntity user = getUserById.apply(entity.getCreatorId());
             if (user != null) {
@@ -189,6 +194,32 @@ public class ScheduleDetailResp implements OrganizationIsolated {
             }
 
             return resp;
+        }
+
+        private String getJobParameters(ScheduleEntity entity) {
+            RateLimitConfiguration rateLimitConfig = getDLMRateLimitConfigurationById.apply(entity.getId());
+            if (rateLimitConfig == null) {
+                return entity.getJobParametersJson();
+            }
+            switch (entity.getJobType()) {
+                case DATA_ARCHIVE: {
+                    DataArchiveParameters parameters =
+                            JsonUtils.fromJson(entity.getJobParametersJson(), DataArchiveParameters.class);
+                    parameters.setRateLimit(rateLimitConfig);
+                    return JsonUtils.toJson(parameters);
+                }
+                case DATA_DELETE: {
+                    DataDeleteParameters parameters =
+                            JsonUtils.fromJson(entity.getJobParametersJson(), DataDeleteParameters.class);
+                    parameters.setRateLimit(rateLimitConfig);
+                    return JsonUtils.toJson(parameters);
+
+                }
+                default: {
+                    return entity.getJobParametersJson();
+                }
+            }
+
         }
 
     }

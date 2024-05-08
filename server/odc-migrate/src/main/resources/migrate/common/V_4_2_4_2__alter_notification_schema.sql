@@ -76,6 +76,7 @@ CREATE TABLE IF NOT EXISTS `notification_message` (
   `cc_recipients` varchar(2048) DEFAULT NULL comment 'odc users who will receive this message by copy',
   `error_message` varchar(2048) DEFAULT NULL comment 'reason for message sending failure',
   `last_sent_time` datetime DEFAULT NULL COMMENT 'the last attempt to send current message',
+  `event_id` bigint(20) NOT NULL COMMENT 'event id, reference to notification_event.id',
   CONSTRAINT pk_notification_message_id PRIMARY KEY (`id`),
   KEY `idx_status_retry_times_max_retry_times` (`status`, `retry_times`, `max_retry_times`),
   KEY `idx_notification_message_channel_id` (`channel_id`),

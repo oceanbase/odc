@@ -27,6 +27,7 @@ import java.util.Enumeration;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
 
 import javax.servlet.http.HttpServletRequest;
 
@@ -37,6 +38,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
@@ -71,9 +73,32 @@ public class RequestDispatcher {
     private DispatchProperties dispatchProperties;
 
     public DispatchResponse forward(@NonNull String ip, @NonNull Integer port) throws IOException {
-        HttpServletRequest request = requestProvider.getRequest();
-        Verify.notNull(request, "HttpServletRequest");
+        return forward(ip, port, requestProvider.getRequest(), requestProvider.getRequestBody());
+    }
 
+    public DispatchResponse forward(@NonNull String ip, @NonNull Integer port, HttpServletRequest request,
+            ByteArrayOutputStream requestBody) throws IOException {
+        String hostUrl = getHostUrl(ip, port);
+        return forward(hostUrl, request, requestBody);
+    }
+
+    private DispatchResponse forward(String hostUrl, HttpServletRequest request, ByteArrayOutputStream requestBody)
+            throws IOException {
+        Verify.notNull(request, "HttpServletRequest");
+        String requestUrl = getRequestUrlByRequest(request);
+        HttpMethod method = HttpMethod.valueOf(request.getMethod());
+        HttpHeaders headers = getRequestHeaders(request);
+        if (requestBody == null) {
+            return forward(hostUrl, method, requestUrl, headers, null);
+        }
+        return forward(hostUrl, method, requestUrl, headers, requestBody.toByteArray());
+    }
+
+    public String getHostUrl(@NonNull String ip, @NonNull Integer port) {
+        return String.format("%s://%s:%s", PROTOCAL, ip, port);
+    }
+
+    public String getRequestUrlByRequest(HttpServletRequest request) {
         StringBuilder uriBuilder = new StringBuilder(request.getRequestURI());
         Map<String, String[]> parametersMap = request.getParameterMap();
         if (parametersMap.size() != 0) {
@@ -87,22 +112,17 @@ public class RequestDispatcher {
             }
             uriBuilder.append(String.join("&", parameters));
         }
-        HttpMethod method = HttpMethod.valueOf(request.getMethod());
-        HttpHeaders headers = getRequestHeaders(request);
-        ByteArrayOutputStream outputStream = requestProvider.getRequestBody();
-        if (outputStream == null) {
-            return forward(ip, port, method, uriBuilder.toString(), headers, null);
-        }
-        return forward(ip, port, method, uriBuilder.toString(), headers, outputStream.toByteArray());
+        return uriBuilder.toString();
     }
 
-    public DispatchResponse forward(@NonNull String ip, @NonNull Integer port, @NonNull HttpMethod method,
+    public DispatchResponse forward(@NonNull String hostUrl, @NonNull HttpMethod method,
             @NonNull String requestUri, @NonNull HttpHeaders headers, byte[] requestBody) throws IOException {
         verifyAndReduceTtl(headers);
-        String realUri = generateRealUri(ip, port, requestUri);
+        String realUri = generateRealUri(hostUrl, requestUri);
         log.info("Request dispatch starts, uri={}", realUri);
         HttpHeaders responseHeaders = new HttpHeaders();
         RestTemplate restTemplate = dispatchRestTemplate();
+        AtomicReference<HttpStatus> statusCode = new AtomicReference<>();
         ByteArrayInputStream inputStream = restTemplate.execute(URI.create(realUri), method, clientRequest -> {
             clientRequest.getHeaders().addAll(headers);
             if (requestBody == null) {
@@ -111,16 +131,13 @@ public class RequestDispatcher {
             IOUtils.write(requestBody, clientRequest.getBody());
         }, clientResponse -> {
             responseHeaders.addAll(clientResponse.getHeaders());
+            statusCode.set(clientResponse.getStatusCode());
             return new ByteArrayInputStream(IOUtils.toByteArray(clientResponse.getBody()));
         });
         Verify.notNull(inputStream, "CallResult");
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         IOUtils.copy(inputStream, outputStream);
-        return DispatchResponse.of(outputStream.toByteArray(), responseHeaders);
-    }
-
-    public HttpHeaders getRequestHeaders() {
-        return getRequestHeaders(requestProvider.getRequest());
+        return DispatchResponse.of(outputStream.toByteArray(), responseHeaders, statusCode.get());
     }
 
     private void verifyAndReduceTtl(HttpHeaders httpHeaders) {
@@ -142,15 +159,15 @@ public class RequestDispatcher {
         }
     }
 
-    private String generateRealUri(String ip, Integer port, @NonNull String uri) {
+    private String generateRealUri(String hostUrl, @NonNull String uri) {
         URI requestUri = URI.create(uri);
         String parameters = requestUri.getRawQuery() == null ? "" : "?" + requestUri.getRawQuery();
         String rawPath = requestUri.getRawPath();
         rawPath = rawPath.startsWith("/") ? rawPath : "/" + rawPath;
-        return String.format("%s://%s:%s%s%s", PROTOCAL, ip, port, rawPath, parameters);
+        return String.format("%s%s%s", hostUrl, rawPath, parameters);
     }
 
-    private HttpHeaders getRequestHeaders(@NonNull HttpServletRequest request) {
+    public HttpHeaders getRequestHeaders(@NonNull HttpServletRequest request) {
         HttpHeaders headers = new HttpHeaders();
         Enumeration<String> headerNames = request.getHeaderNames();
         while (headerNames.hasMoreElements()) {

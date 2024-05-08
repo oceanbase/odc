@@ -15,14 +15,23 @@
  */
 package com.oceanbase.odc.server.web.controller.v2;
 
+import javax.validation.Valid;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.oceanbase.odc.service.collaboration.environment.EnvironmentService;
+import com.oceanbase.odc.service.collaboration.environment.model.CreateEnvironmentReq;
 import com.oceanbase.odc.service.collaboration.environment.model.Environment;
+import com.oceanbase.odc.service.collaboration.environment.model.EnvironmentExists;
+import com.oceanbase.odc.service.collaboration.environment.model.QueryEnvironmentParam;
+import com.oceanbase.odc.service.collaboration.environment.model.UpdateEnvironmentReq;
+import com.oceanbase.odc.service.common.model.SetEnabledReq;
 import com.oceanbase.odc.service.common.response.ListResponse;
 import com.oceanbase.odc.service.common.response.Responses;
 import com.oceanbase.odc.service.common.response.SuccessResponse;
@@ -43,8 +52,10 @@ public class EnvironmentController {
 
     @ApiOperation(value = "listEnvironments", notes = "List all environments")
     @RequestMapping(value = "/environments", method = RequestMethod.GET)
-    public ListResponse<Environment> listEnvironments() {
-        return Responses.list(environmentService.list());
+    public ListResponse<Environment> listEnvironments(
+            @RequestParam(required = false, name = "enabled") Boolean enabled) {
+        QueryEnvironmentParam param = QueryEnvironmentParam.builder().enabled(enabled).build();
+        return Responses.list(environmentService.list(param));
     }
 
     @ApiOperation(value = "getEnvironments", notes = "Detail an environment")
@@ -53,4 +64,34 @@ public class EnvironmentController {
         return Responses.success(environmentService.detail(id));
     }
 
+    @ApiOperation(value = "createEnvironment", notes = "Create an environment")
+    @RequestMapping(value = "/environments", method = RequestMethod.POST)
+    public SuccessResponse<Environment> createEnvironment(@RequestBody @Valid CreateEnvironmentReq req) {
+        return Responses.success(environmentService.create(req));
+    }
+
+    @ApiOperation(value = "updateEnvironment", notes = "Update an environment")
+    @RequestMapping(value = "/environments/{id:[\\d]+}", method = RequestMethod.PUT)
+    public SuccessResponse<Environment> updateEnvironment(@PathVariable Long id,
+            @RequestBody @Valid UpdateEnvironmentReq req) {
+        return Responses.success(environmentService.update(id, req));
+    }
+
+    @ApiOperation(value = "deleteEnvironment", notes = "Delete an environment")
+    @RequestMapping(value = "/environments/{id:[\\d]+}", method = RequestMethod.DELETE)
+    public SuccessResponse<Environment> deleteEnvironment(@PathVariable Long id) {
+        return Responses.success(environmentService.delete(id));
+    }
+
+    @ApiOperation(value = "setEnvironmentEnabled", notes = "Set an environment enabled/disabled")
+    @RequestMapping(value = "/environments/{id:[\\d]+}/setEnabled", method = RequestMethod.POST)
+    public SuccessResponse<Boolean> setEnabled(@PathVariable Long id, @RequestBody @Valid SetEnabledReq req) {
+        return Responses.success(environmentService.setEnabled(id, req));
+    }
+
+    @ApiOperation(value = "exists", notes = "Returns whether an environment exists")
+    @RequestMapping(value = "/environments/exists", method = RequestMethod.POST)
+    public SuccessResponse<EnvironmentExists> exists(@RequestParam String name) {
+        return Responses.success(environmentService.exists(name));
+    }
 }

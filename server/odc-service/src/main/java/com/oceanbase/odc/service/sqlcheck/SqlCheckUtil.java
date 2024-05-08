@@ -26,8 +26,12 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.Validate;
 
 import com.oceanbase.odc.common.util.StringUtils;
+import com.oceanbase.odc.core.shared.constant.DialectType;
+import com.oceanbase.odc.core.sql.parser.AbstractSyntaxTreeFactories;
+import com.oceanbase.odc.core.sql.parser.AbstractSyntaxTreeFactory;
 import com.oceanbase.odc.service.sqlcheck.model.CheckResult;
 import com.oceanbase.odc.service.sqlcheck.model.CheckViolation;
 import com.oceanbase.odc.service.sqlcheck.model.SqlCheckRuleType;
@@ -47,6 +51,7 @@ import com.oceanbase.tools.sqlparser.statement.select.SelectBody;
 import com.oceanbase.tools.sqlparser.statement.update.Update;
 
 import lombok.NonNull;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * {@link SqlCheckUtil}
@@ -55,6 +60,7 @@ import lombok.NonNull;
  * @date 2022-12-14 16:47
  * @since ODC_release_4.1.0
  */
+@Slf4j
 public class SqlCheckUtil {
 
     public static List<Expression> findAll(@NonNull Expression expr,
@@ -164,14 +170,14 @@ public class SqlCheckUtil {
                     } else if (CollectionUtils.isNotEmpty(a.getModifyColumns())) {
                         return true;
                     }
-                    return a.getChangColumnDefinition() != null;
+                    return a.getChangeColumnDefinition() != null;
                 }).flatMap(a -> {
                     if (CollectionUtils.isNotEmpty(a.getAddColumns())) {
                         return a.getAddColumns().stream();
                     } else if (CollectionUtils.isNotEmpty(a.getModifyColumns())) {
                         return a.getModifyColumns().stream();
                     }
-                    return Stream.of(a.getChangColumnDefinition());
+                    return Stream.of(a.getChangeColumnDefinition());
                 });
     }
 
@@ -221,6 +227,17 @@ public class SqlCheckUtil {
             r = (RelationReference) r.getReference();
         }
         return tmp;
+    }
+
+    public static Statement parseSingleSql(DialectType dialectType, String sql) {
+        try {
+            AbstractSyntaxTreeFactory factory = AbstractSyntaxTreeFactories.getAstFactory(dialectType, 0);
+            Validate.notNull(factory, "AbstractSyntaxTreeFactory can not be null");
+            return factory.buildAst(sql).getStatement();
+        } catch (Exception e) {
+            log.warn("Failed to parse sql, sql={}, error={}", sql, e.getMessage());
+            return null;
+        }
     }
 
 }

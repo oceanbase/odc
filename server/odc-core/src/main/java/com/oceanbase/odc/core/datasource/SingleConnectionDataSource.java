@@ -58,7 +58,7 @@ public class SingleConnectionDataSource extends BaseClassBasedDataSource impleme
     private final boolean autoReconnect;
     @Setter
     private EventPublisher eventPublisher;
-    protected Connection connection;
+    protected volatile Connection connection;
     private final List<ConnectionInitializer> initializerList = new LinkedList<>();
     private Lock lock;
     @Setter
@@ -76,13 +76,23 @@ public class SingleConnectionDataSource extends BaseClassBasedDataSource impleme
     public Connection getConnection() throws SQLException {
         if (Objects.isNull(this.connection)) {
             return innerCreateConnection();
-        } else if (this.connection.isClosed() || !this.connection.isValid(getLoginTimeout())) {
-            if (!autoReconnect) {
-                throw new SQLException("Connection was closed or not valid");
-            }
-            resetConnection();
         }
-        return getConnectionProxy(connection);
+        if (!tryLock()) {
+            throw new ConflictException(ErrorCodes.ConnectionOccupied, new Object[] {},
+                    "Connection is occupied, waited " + this.timeOutMillis + " millis");
+        }
+        try {
+            if (this.connection.isClosed() || !this.connection.isValid(getLoginTimeout())) {
+                if (!autoReconnect) {
+                    throw new SQLException("Connection was closed or not valid");
+                }
+                resetConnection();
+            }
+            return getConnectionProxy(connection);
+        } finally {
+            log.info("Get connection unlock, hashcode=" + this.lock.hashCode());
+            this.lock.unlock();
+        }
     }
 
     @Override
@@ -96,7 +106,7 @@ public class SingleConnectionDataSource extends BaseClassBasedDataSource impleme
     /**
      * Reset a {@code Connection}
      */
-    public void resetConnection() throws SQLException {
+    public synchronized void resetConnection() throws SQLException {
         log.info("The connection will be reset soon");
         close();
         this.connection = null;
@@ -130,9 +140,13 @@ public class SingleConnectionDataSource extends BaseClassBasedDataSource impleme
 
     private boolean tryLock() {
         try {
-            return this.lock.tryLock(timeOutMillis, TimeUnit.MILLISECONDS);
+            boolean locked = this.lock.tryLock(timeOutMillis, TimeUnit.MILLISECONDS);
+            if (locked) {
+                log.info("Get connection lock success, lock={}", this.lock.hashCode());
+            }
+            return locked;
         } catch (InterruptedException e) {
-            throw new RuntimeException(e);
+            throw new IllegalStateException(e);
         }
     }
 
@@ -146,6 +160,7 @@ public class SingleConnectionDataSource extends BaseClassBasedDataSource impleme
                     new Class[] {Connection.class},
                     new CloseIgnoreInvocationHandler(connection, this.lock));
         } catch (Exception e) {
+            log.warn("Get connection error unlock, hashcode=" + this.lock.hashCode());
             this.lock.unlock();
             throw e;
         }
@@ -181,16 +196,14 @@ public class SingleConnectionDataSource extends BaseClassBasedDataSource impleme
         }
     }
 
-    private Connection innerCreateConnection() throws SQLException {
+    private synchronized Connection innerCreateConnection() throws SQLException {
         if (this.connection != null) {
             throw new IllegalStateException("Connection is not null");
         }
         try {
             this.connection = newConnectionFromDriver(getUsername(), getPassword());
             this.lock = new ReentrantLock();
-            if (log.isDebugEnabled()) {
-                log.debug("Established shared JDBC Connection");
-            }
+            log.info("Established shared JDBC Connection,lock=" + this.lock.hashCode());
             prepareConnection(this.connection);
             return getConnectionProxy(this.connection);
         } catch (Throwable e) {
@@ -206,7 +219,7 @@ public class SingleConnectionDataSource extends BaseClassBasedDataSource impleme
      * @since ODC_release_3.2.2
      * @see java.lang.reflect.InvocationHandler
      */
-    private static class CloseIgnoreInvocationHandler implements InvocationHandler {
+    public static class CloseIgnoreInvocationHandler implements InvocationHandler {
         private final Connection target;
         private final Lock lock;
 
@@ -231,6 +244,7 @@ public class SingleConnectionDataSource extends BaseClassBasedDataSource impleme
                     return true;
                 }
             } else if ("close".equals(method.getName())) {
+                log.info("Get connection unlock, hashcode=" + this.lock.hashCode());
                 lock.unlock();
                 return null;
             } else if ("isClosed".equals(method.getName())) {

@@ -16,6 +16,7 @@
 
 package com.oceanbase.odc.service.onlineschemachange;
 
+import java.util.Objects;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,14 +33,20 @@ import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.core.shared.constant.TaskType;
-import com.oceanbase.odc.metadb.connection.DatabaseEntity;
+import com.oceanbase.odc.core.shared.exception.NotFoundException;
 import com.oceanbase.odc.metadb.connection.DatabaseRepository;
 import com.oceanbase.odc.metadb.schedule.ScheduleEntity;
 import com.oceanbase.odc.metadb.schedule.ScheduleRepository;
 import com.oceanbase.odc.metadb.schedule.ScheduleTaskEntity;
 import com.oceanbase.odc.metadb.schedule.ScheduleTaskRepository;
 import com.oceanbase.odc.service.connection.ConnectionService;
+import com.oceanbase.odc.service.connection.database.DatabaseService;
+import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
+import com.oceanbase.odc.service.flow.factory.FlowFactory;
+import com.oceanbase.odc.service.flow.instance.FlowInstance;
+import com.oceanbase.odc.service.iam.HorizontalDataPermissionValidator;
+import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.onlineschemachange.model.OnlineSchemaChangeParameters;
 import com.oceanbase.odc.service.onlineschemachange.model.OnlineSchemaChangeScheduleTaskResult;
 import com.oceanbase.odc.service.onlineschemachange.model.OscLockDatabaseUserInfo;
@@ -69,17 +76,23 @@ public class OscService {
     private ScheduleTaskRepository scheduleTaskRepository;
     @Autowired
     private ScheduleRepository scheduleRepository;
+    @Autowired
+    private AuthenticationFacade authenticationFacade;
+    @Autowired
+    private HorizontalDataPermissionValidator permissionValidator;
+    @Autowired
+    private FlowFactory flowFactory;
+    @Autowired
+    private DatabaseService databaseService;
+
 
     @SkipAuthorize("internal authenticated")
     public OscLockDatabaseUserInfo getOscDatabaseInfo(@NonNull Long id) {
-        Optional<DatabaseEntity> database = databaseRepository.findById(id);
+
+        Database database = databaseService.detail(id);
         OscLockDatabaseUserInfo oscDatabase = new OscLockDatabaseUserInfo();
-        if (!database.isPresent()) {
-            return oscDatabase;
-        }
-        DatabaseEntity databaseEntity = database.get();
-        oscDatabase.setDatabaseId(databaseEntity.getDatabaseId());
-        oscDatabase.setLockDatabaseUserRequired(getLockUserIsRequired(databaseEntity.getConnectionId()));
+        oscDatabase.setDatabaseId(database.getDatabaseId());
+        oscDatabase.setLockDatabaseUserRequired(getLockUserIsRequired(database.getDataSource().getId()));
         return oscDatabase;
     }
 
@@ -102,6 +115,21 @@ public class OscService {
         OnlineSchemaChangeParameters oscParameters = JsonUtils.fromJson(scheduleEntity.get().getJobParametersJson(),
                 OnlineSchemaChangeParameters.class);
 
+        Optional<FlowInstance> optional = flowFactory.getFlowInstance(oscParameters.getFlowInstanceId());
+        FlowInstance flowInstance = optional.orElseThrow(
+                () -> new NotFoundException(ResourceType.ODC_FLOW_INSTANCE, "id", oscParameters.getFlowInstanceId()));
+        try {
+            permissionValidator.checkCurrentOrganization(flowInstance);
+        } finally {
+            flowInstance.dealloc();
+        }
+
+        // check user permission, only creator can swap table manual
+        PreConditions.validHasPermission(
+                Objects.equals(authenticationFacade.currentUserId(), scheduleEntity.get().getCreatorId()),
+                ErrorCodes.AccessDenied,
+                "no permission swap table.");
+
         OnlineSchemaChangeScheduleTaskResult result = JsonUtils.fromJson(scheduleTask.getResultJson(),
                 OnlineSchemaChangeScheduleTaskResult.class);
 
@@ -115,8 +143,12 @@ public class OscService {
                 ErrorCodes.BadArgument, new Object[] {oscParameters.getSwapTableType()},
                 "Swap table type is not " + SwapTableType.MANUAL.name());
 
+        PreConditions.validArgumentState(!result.isManualSwapTableStarted(),
+                ErrorCodes.OscSwapTableStarted, new Object[] {},
+                "Swap table has started");
+
         PreConditions.validArgumentState(result.isManualSwapTableEnabled(),
-                ErrorCodes.BadArgument, new Object[] {result.isManualSwapTableEnabled()},
+                ErrorCodes.BadRequest, new Object[] {result.isManualSwapTableEnabled()},
                 "Manual Swap table type is not enable ");
 
         // close manual swap table

@@ -19,12 +19,15 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
+import javax.transaction.Transactional;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import com.oceanbase.odc.config.jpa.OdcJpaRepository;
 import com.oceanbase.odc.service.notification.model.QueryChannelParams;
@@ -38,6 +41,8 @@ public interface ChannelRepository extends OdcJpaRepository<ChannelEntity, Long>
 
     Optional<ChannelEntity> findByProjectIdAndName(Long projectId, String name);
 
+    Optional<ChannelEntity> findByIdAndProjectId(Long id, Long projectId);
+
     @Modifying
     @Query(value = "select c.* from notification_channel c inner join notification_policy_channel_relation cr "
             + "on c.id=cr.channel_id WHERE cr.notification_policy_id=?1", nativeQuery = true)
@@ -50,5 +55,12 @@ public interface ChannelRepository extends OdcJpaRepository<ChannelEntity, Long>
                 .and(OdcJpaRepository.in(ChannelEntity_.type, params.getChannelTypes()));
         return findAll(specs, pageable);
     }
+
+    @Modifying
+    @Transactional
+    @Query(value = "update notification_channel set name=:#{#channel.name}, type=:#{#channel.type.name()}, "
+            + "description=:#{#channel.description} where id=:#{#channel.id}",
+            nativeQuery = true)
+    int update(@Param("channel") ChannelEntity channel);
 
 }

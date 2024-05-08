@@ -82,4 +82,7 @@ public class ScheduleTaskEntity {
     @Column(name = "update_time", insertable = false, updatable = false)
     private Date updateTime;
 
+    @Column(name = "job_id")
+    private Long jobId;
+
 }

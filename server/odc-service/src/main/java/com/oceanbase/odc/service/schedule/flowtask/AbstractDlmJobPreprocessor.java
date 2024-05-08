@@ -30,7 +30,6 @@ import com.oceanbase.odc.core.shared.exception.UnsupportedException;
 import com.oceanbase.odc.core.sql.execute.SyncJdbcExecutor;
 import com.oceanbase.odc.metadb.schedule.ScheduleEntity;
 import com.oceanbase.odc.service.connection.database.model.Database;
-import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.dlm.DlmLimiterService;
 import com.oceanbase.odc.service.dlm.model.DataArchiveTableConfig;
 import com.oceanbase.odc.service.dlm.model.OffsetConfig;
@@ -83,20 +82,22 @@ public class AbstractDlmJobPreprocessor implements Preprocessor {
         checkDataArchiveSql(connectionSession, sqlMap);
     }
 
-    public void checkDatasource(ConnectionConfig datasource) {
-        if (datasource.getDialectType().isOracle()) {
-            throw new UnsupportedException("DLM is not supported for Oracle data sources.");
-        }
-    }
-
     private void checkShardKey(ConnectionSession connectionSession, String databaseName,
             List<DataArchiveTableConfig> tables) {
         SyncJdbcExecutor syncJdbcExecutor = connectionSession.getSyncJdbcExecutor(
                 ConnectionSessionConstants.CONSOLE_DS_KEY);
-        SqlBuilder sqlBuilder = new MySQLSqlBuilder();
-        sqlBuilder.append(
-                "SELECT TABLE_NAME from INFORMATION_SCHEMA.STATISTICS where NON_UNIQUE = 0 AND NULLABLE != 'YES' ");
-        sqlBuilder.append(String.format("AND TABLE_SCHEMA='%s' GROUP BY TABLE_NAME", databaseName));
+        SqlBuilder sqlBuilder;
+        if (connectionSession.getDialectType().isMysql()) {
+            sqlBuilder = new MySQLSqlBuilder();
+            sqlBuilder.append(
+                    "SELECT TABLE_NAME from INFORMATION_SCHEMA.STATISTICS where NON_UNIQUE = 0 AND NULLABLE != 'YES' ");
+            sqlBuilder.append(String.format("AND TABLE_SCHEMA='%s' GROUP BY TABLE_NAME", databaseName));
+        } else {
+            sqlBuilder = new OracleSqlBuilder();
+            sqlBuilder.append(
+                    String.format("select table_name from all_constraints where constraint_type = 'P' and owner = '%s'",
+                            databaseName));
+        }
         HashSet<String> tableNames =
                 new HashSet<>(syncJdbcExecutor.query(sqlBuilder.toString(), (rs, num) -> rs.getString(1)));
         tables.forEach(tableConfig -> {
@@ -138,13 +139,12 @@ public class AbstractDlmJobPreprocessor implements Preprocessor {
                 throw new UnsupportedException();
             }
             SqlBuilder sqlBuilder = dbType.isMysql() ? new MySQLSqlBuilder() : new OracleSqlBuilder();
-            sqlBuilder.append("SELECT 1 FROM").identifier(database.getName(), table.getTableName());
+            sqlBuilder.append("SELECT 1 FROM ").identifier(database.getName(), table.getTableName());
             if (StringUtils.isNotEmpty(table.getConditionExpression())) {
                 sqlBuilder.append(" WHERE ")
                         .append(DataArchiveConditionUtil.parseCondition(table.getConditionExpression(),
                                 variables, new Date()));
             }
-            sqlBuilder.append(" LIMIT 1;");
             return sqlBuilder.toString();
         } catch (Exception e) {
             throw new IllegalArgumentException(String.format("Parse condition error,message=%s", e.getMessage()));
@@ -163,7 +163,8 @@ public class AbstractDlmJobPreprocessor implements Preprocessor {
         if (limiterConfig.getBatchSize() == null) {
             limiterConfig.setBatchSize(defaultLimiterConfig.getBatchSize());
         }
-        limiterService.createAndBindToOrder(scheduleId, limiterConfig);
+        limiterConfig.setOrderId(scheduleId);
+        limiterService.create(limiterConfig);
     }
 
 }

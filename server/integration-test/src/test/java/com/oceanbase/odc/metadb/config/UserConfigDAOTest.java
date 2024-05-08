@@ -15,85 +15,74 @@
  */
 package com.oceanbase.odc.metadb.config;
 
-import java.util.Collections;
+import java.util.Arrays;
 import java.util.List;
 
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.test.jdbc.JdbcTestUtils;
 
 import com.oceanbase.odc.ServiceTestEnv;
-import com.oceanbase.odc.test.tool.TestRandom;
 
 public class UserConfigDAOTest extends ServiceTestEnv {
-
+    private static final Long USER_ID = 1L;
     @Autowired
     private UserConfigDAO userConfigDAO;
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
 
-    @Test
-    public void insert_insertUserConfig_insertSucceed() {
-        UserConfigDO expect = TestRandom.nextObject(UserConfigDO.class);
-        Assert.assertEquals(1, userConfigDAO.insert(expect));
+    @Before
+    public void setUp() throws Exception {
+        JdbcTestUtils.deleteFromTables(jdbcTemplate, "config_user_configuration");
     }
 
     @Test
-    public void get_getByUserIdAndKey_getSucceed() {
-        UserConfigDO expect = TestRandom.nextObject(UserConfigDO.class);
-        userConfigDAO.insert(expect);
-        UserConfigDO actual = userConfigDAO.get(expect.getUserId(), expect.getKey());
-        expect.setUpdateTime(null);
-        actual.setUpdateTime(null);
-        expect.setCreateTime(null);
-        actual.setCreateTime(null);
-        Assert.assertEquals(expect, actual);
+    public void queryByUserId_NotConfigured_Empty() {
+        List<UserConfigEntity> entities = userConfigDAO.queryByUserId(USER_ID);
+        Assert.assertEquals(0, entities.size());
     }
 
     @Test
-    public void get_noCandidate_getFailed() {
-        UserConfigDO expect = TestRandom.nextObject(UserConfigDO.class);
-        userConfigDAO.insert(expect);
-        UserConfigDO actual = userConfigDAO.get(expect.getUserId(), expect.getKey() + "sss");
-        Assert.assertNull(actual);
+    public void queryByUserIdAndKey() {
+        userConfigDAO.batchUpsert(Arrays.asList(createEntity()));
+        UserConfigEntity entity = userConfigDAO.queryByUserIdAndKey(USER_ID, "key1");
+        Assert.assertEquals("value1", entity.getValue());
     }
 
     @Test
-    public void listByUserId_listByUserId_listSucceed() {
-        UserConfigDO expect = TestRandom.nextObject(UserConfigDO.class);
-        userConfigDAO.insert(expect);
-        long userId = expect.getUserId();
-        expect = TestRandom.nextObject(UserConfigDO.class);
-        expect.setUserId(userId + 1);
-        userConfigDAO.insert(expect);
-        List<UserConfigDO> actual = userConfigDAO.listByUserId(expect.getUserId());
-        expect.setCreateTime(null);
-        expect.setUpdateTime(null);
-        actual.forEach(i -> {
-            i.setUpdateTime(null);
-            i.setCreateTime(null);
-        });
-        Assert.assertEquals(Collections.singletonList(expect), actual);
+    public void batchUpsert_NotExists_Insert() {
+        userConfigDAO.batchUpsert(Arrays.asList(createEntity()));
+        Assert.assertEquals(1, JdbcTestUtils.countRowsInTable(jdbcTemplate, "config_user_configuration"));
     }
 
     @Test
-    public void update_updateConfig_updateSucceed() {
-        UserConfigDO expect = TestRandom.nextObject(UserConfigDO.class);
-        userConfigDAO.insert(expect);
-        expect.setValue("new value");
-        expect.setDescription("new desp");
-        userConfigDAO.update(expect);
-        UserConfigDO actual = userConfigDAO.get(expect.getUserId(), expect.getKey());
-        expect.setUpdateTime(null);
-        actual.setUpdateTime(null);
-        expect.setCreateTime(null);
-        actual.setCreateTime(null);
-        Assert.assertEquals(expect, actual);
+    public void batchUpsert_Exists_Update() {
+        UserConfigEntity entity = createEntity();
+        userConfigDAO.batchUpsert(Arrays.asList(entity));
+        userConfigDAO.batchUpsert(Arrays.asList(entity));
+        Assert.assertEquals(1, JdbcTestUtils.countRowsInTable(jdbcTemplate, "config_user_configuration"));
     }
 
     @Test
-    public void delete_deleteByUserIdAndKey_deleteSucceed() {
-        UserConfigDO expect = TestRandom.nextObject(UserConfigDO.class);
-        userConfigDAO.insert(expect);
-        Assert.assertEquals(1, userConfigDAO.delete(expect.getUserId(), expect.getKey()));
+    public void deleteByUserId_Exists_ReturnAffectRows() {
+        UserConfigEntity entity = createEntity();
+        userConfigDAO.batchUpsert(Arrays.asList(entity));
+
+        int affectRows = userConfigDAO.deleteByUserId(USER_ID);
+
+        Assert.assertEquals(1, affectRows);
+    }
+
+    private UserConfigEntity createEntity() {
+        UserConfigEntity entity = new UserConfigEntity();
+        entity.setUserId(USER_ID);
+        entity.setKey("key1");
+        entity.setValue("value1");
+        entity.setDescription("desc");
+        return entity;
     }
 
 }

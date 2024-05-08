@@ -34,8 +34,10 @@ import com.oceanbase.odc.metadb.flow.UserTaskInstanceEntity;
 import com.oceanbase.odc.metadb.iam.UserEntity;
 import com.oceanbase.odc.metadb.iam.UserRepository;
 import com.oceanbase.odc.metadb.schedule.ScheduleEntity;
-import com.oceanbase.odc.service.connection.ConnectionService;
-import com.oceanbase.odc.service.connection.model.ConnectionConfig;
+import com.oceanbase.odc.service.connection.database.DatabaseService;
+import com.oceanbase.odc.service.connection.database.model.Database;
+import com.oceanbase.odc.service.dlm.DlmLimiterService;
+import com.oceanbase.odc.service.dlm.model.RateLimitConfiguration;
 import com.oceanbase.odc.service.flow.ApprovalPermissionService;
 import com.oceanbase.odc.service.flow.model.FlowNodeStatus;
 import com.oceanbase.odc.service.schedule.model.ScheduleDetailResp.ScheduleResponseMapper;
@@ -58,21 +60,27 @@ public class ScheduleResponseMapperFactory {
     @Autowired
     private ApprovalPermissionService approvalPermissionService;
     @Autowired
-    private ConnectionService connectionService;
+    private DatabaseService databaseService;
+
+    @Autowired
+    private DlmLimiterService dlmLimiterService;
 
     public ScheduleResponseMapper generate(ScheduleEntity entity) {
         return generate(Collections.singletonList(entity));
     }
 
     public ScheduleResponseMapper generate(@NonNull Collection<ScheduleEntity> entities) {
+        if (entities.isEmpty()) {
+            return new ScheduleResponseMapper();
+        }
         Set<Long> scheduleIds = entities.stream().map(ScheduleEntity::getId).collect(Collectors.toSet());
         Set<Long> creators = entities.stream().map(ScheduleEntity::getCreatorId).collect(Collectors.toSet());
         List<UserEntity> userEntities = userRepository.findByUserIds(creators);
         Map<Long, UserEntity> userEntityMap = userEntities.stream().collect(
                 Collectors.toMap(UserEntity::getId, userEntity -> userEntity));
-        Set<Long> connectionIds = entities.stream().map(ScheduleEntity::getConnectionId).collect(Collectors.toSet());
-        Map<Long, ConnectionConfig> id2Datasource = connectionService.innerListByIds(connectionIds).stream().collect(
-                Collectors.toMap(ConnectionConfig::getId, o -> o));
+        Set<Long> databaseIds = entities.stream().map(ScheduleEntity::getDatabaseId).collect(Collectors.toSet());
+        Map<Long, Database> id2Database = databaseService.listDatabasesByIds(databaseIds).stream().collect(
+                Collectors.toMap(Database::getId, o -> o));
 
         Set<Long> approvableFlowInstanceIds = approvalPermissionService.getApprovableApprovalInstances()
                 .stream()
@@ -98,10 +106,15 @@ public class ScheduleResponseMapperFactory {
                 .filter(entry -> flowInstanceId2Candidates.get(entry.getValue()) != null).collect(
                         Collectors.toMap(Entry::getKey, entry -> flowInstanceId2Candidates.get(entry.getValue())));
 
+        Map<Long, RateLimitConfiguration> scheduleId2RateLimitConfiguration =
+                dlmLimiterService.findByOrderIds(scheduleIds).stream().collect(
+                        Collectors.toMap(RateLimitConfiguration::getOrderId, o -> o));
+
         return new ScheduleResponseMapper()
                 .withGetUserById(userEntityMap::get)
                 .withGetApproveInstanceIdById(approveInstanceIdMap::get)
-                .withGetDatasourceById(id2Datasource::get)
-                .withGetCandidatesById(scheduleId2Candidates::get);
+                .withGetDatabaseById(id2Database::get)
+                .withGetCandidatesById(scheduleId2Candidates::get)
+                .withGetDLMRateLimitConfigurationById(scheduleId2RateLimitConfiguration::get);
     }
 }

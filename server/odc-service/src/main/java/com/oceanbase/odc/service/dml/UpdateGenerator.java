@@ -18,18 +18,13 @@ package com.oceanbase.odc.service.dml;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.stream.Collectors;
 
 import com.oceanbase.odc.common.util.StringUtils;
-import com.oceanbase.odc.core.session.ConnectionSession;
-import com.oceanbase.odc.core.session.ConnectionSessionUtil;
 import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.exception.BadRequestException;
-import com.oceanbase.odc.service.db.browser.DBSchemaAccessors;
 import com.oceanbase.odc.service.dml.model.DataModifyUnit;
 import com.oceanbase.tools.dbbrowser.model.DBTableColumn;
-import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
 import com.oceanbase.tools.dbbrowser.util.SqlBuilder;
 
 import lombok.NonNull;
@@ -45,13 +40,12 @@ import lombok.NonNull;
 public class UpdateGenerator implements DMLGenerator {
 
     private final DMLBuilder dmlBuilder;
-    private final ConnectionSession connectionSession;
+    private final Map<String, DBTableColumn> columnName2Column;
     private boolean affectMultiRows;
 
-    public UpdateGenerator(@NonNull DMLBuilder dmlBuilder,
-            @NonNull ConnectionSession connectionSession) {
+    public UpdateGenerator(@NonNull DMLBuilder dmlBuilder, @NonNull Map<String, DBTableColumn> columnName2Column) {
         this.dmlBuilder = dmlBuilder;
-        this.connectionSession = connectionSession;
+        this.columnName2Column = columnName2Column;
     }
 
     @Override
@@ -59,7 +53,6 @@ public class UpdateGenerator implements DMLGenerator {
         List<DataModifyUnit> modifyUnits = this.dmlBuilder.getModifyUnits();
         SqlBuilder newBuilder = this.dmlBuilder.createSQLBuilder();
         SqlBuilder oldBuilder = this.dmlBuilder.createSQLBuilder();
-        Map<String, DBTableColumn> columnName2Column = getColumnName2Column();
         boolean hasBasicType = false;
         for (DataModifyUnit unit : modifyUnits) {
             if (unit.isUseDefault() || !StringUtils.equals(unit.getOldData(), unit.getNewData())) {
@@ -120,16 +113,6 @@ public class UpdateGenerator implements DMLGenerator {
                 "Cannot generate where condition, at least one unique key collection should offered");
         PreConditions.validRequestState(newBuilder.length() > 2, ErrorCodes.BadRequest, null,
                 "Cannot generate update DML, at least one column should be updated");
-    }
-
-    private Map<String, DBTableColumn> getColumnName2Column() {
-        DBSchemaAccessor accessor = DBSchemaAccessors.create(this.connectionSession);
-        String schema = this.dmlBuilder.getSchema();
-        if (schema == null) {
-            schema = ConnectionSessionUtil.getCurrentSchema(connectionSession);
-        }
-        return accessor.listTableColumns(schema, this.dmlBuilder.getTableName())
-                .stream().collect(Collectors.toMap(DBTableColumn::getName, c -> c));
     }
 
 }

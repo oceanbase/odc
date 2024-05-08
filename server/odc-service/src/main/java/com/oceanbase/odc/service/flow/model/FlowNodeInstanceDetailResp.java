@@ -15,7 +15,6 @@
  */
 package com.oceanbase.odc.service.flow.model;
 
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Objects;
@@ -36,6 +35,7 @@ import com.oceanbase.odc.service.flow.instance.BaseFlowNodeInstance;
 import com.oceanbase.odc.service.flow.instance.FlowApprovalInstance;
 import com.oceanbase.odc.service.flow.instance.FlowGatewayInstance;
 import com.oceanbase.odc.service.flow.instance.FlowTaskInstance;
+import com.oceanbase.odc.service.permission.database.model.UnauthorizedDatabase;
 
 import lombok.Builder;
 import lombok.Data;
@@ -63,7 +63,7 @@ public class FlowNodeInstanceDetailResp {
     private String externalApprovalName;
     private String externalFlowInstanceUrl;
     private Integer issueCount;
-    private List<String> unauthorizedDatabaseNames;
+    private List<UnauthorizedDatabase> unauthorizedDatabases;
     private Boolean preCheckOverLimit;
 
     public static FlowNodeInstanceMapper mapper() {
@@ -155,8 +155,7 @@ public class FlowNodeInstanceDetailResp {
                         resp.setIssueCount(result.getSqlCheckResult().getIssueCount());
                     }
                     if (Objects.nonNull(result.getPermissionCheckResult())) {
-                        resp.setUnauthorizedDatabaseNames(
-                                new ArrayList<>(result.getPermissionCheckResult().getUnauthorizedDatabaseNames()));
+                        resp.setUnauthorizedDatabases(result.getPermissionCheckResult().getUnauthorizedDatabases());
                     }
                 }
             }

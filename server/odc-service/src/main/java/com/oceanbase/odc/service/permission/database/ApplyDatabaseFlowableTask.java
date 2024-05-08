@@ -102,7 +102,7 @@ public class ApplyDatabaseFlowableTask extends BaseODCFlowTaskDelegate<ApplyData
                     List<PermissionEntity> permissionEntities = new ArrayList<>();
                     Long organizationId = FlowTaskUtil.getOrganizationId(execution);
                     for (ApplyDatabase database : parameter.getDatabases()) {
-                        for (DatabasePermissionType permissionType : parameter.getPermissionTypes()) {
+                        for (DatabasePermissionType permissionType : parameter.getTypes()) {
                             PermissionEntity permissionEntity = new PermissionEntity();
                             permissionEntity.setAction(permissionType.getAction());
                             permissionEntity
@@ -177,8 +177,8 @@ public class ApplyDatabaseFlowableTask extends BaseODCFlowTaskDelegate<ApplyData
         TaskContextHolder.trace(getTaskCreatorId(taskId, taskService), taskId);
         log.info("Apply database task succeed, taskId={}", taskId);
         TaskContextHolder.clear();
-        updateFlowInstanceStatus(FlowStatus.EXECUTION_SUCCEEDED);
         super.onSuccessful(taskId, taskService);
+        updateFlowInstanceStatus(FlowStatus.EXECUTION_SUCCEEDED);
     }
 
     @Override
@@ -186,6 +186,7 @@ public class ApplyDatabaseFlowableTask extends BaseODCFlowTaskDelegate<ApplyData
         TaskContextHolder.trace(getTaskCreatorId(taskId, taskService), taskId);
         log.warn("Apply database permission task timeout, taskId={}", taskId);
         TaskContextHolder.clear();
+        super.onTimeout(taskId, taskService);
     }
 
     @Override
@@ -195,7 +196,7 @@ public class ApplyDatabaseFlowableTask extends BaseODCFlowTaskDelegate<ApplyData
 
     @Override
     protected boolean cancel(boolean mayInterruptIfRunning, Long taskId, TaskService taskService) {
-        throw new UnsupportedException(ErrorCodes.TaskNotTerminable, null,
+        throw new UnsupportedException(ErrorCodes.RunningTaskNotTerminable, null,
                 "The task is not terminable during execution");
     }
 

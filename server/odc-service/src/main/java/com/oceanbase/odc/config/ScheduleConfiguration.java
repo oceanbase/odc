@@ -20,6 +20,7 @@ import java.util.concurrent.ThreadPoolExecutor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 
@@ -103,7 +104,6 @@ public class ScheduleConfiguration {
         int poolSize = Math.max(SystemUtils.availableProcessors(), 5);
         executor.setCorePoolSize(poolSize);
         executor.setMaxPoolSize(poolSize);
-        executor.setQueueCapacity(0);
         executor.setThreadNamePrefix("auto-approval-");
         executor.setWaitForTasksToCompleteOnShutdown(true);
         executor.setAwaitTerminationSeconds(5);
@@ -111,6 +111,21 @@ public class ScheduleConfiguration {
         executor.setRejectedExecutionHandler(new ThreadPoolExecutor.CallerRunsPolicy());
         executor.initialize();
         log.info("autoApprovalExecutor initialized");
+        return executor;
+    }
+
+    @Bean(name = "flowTaskExecutor")
+    public ThreadPoolTaskExecutor flowTaskExecutor() {
+        ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
+        executor.setCorePoolSize(CORE_NUMBER * 2);
+        executor.setMaxPoolSize(CORE_NUMBER * 10);
+        executor.setThreadNamePrefix("flow-task-executor-");
+        executor.setWaitForTasksToCompleteOnShutdown(true);
+        executor.setAwaitTerminationSeconds(5);
+        executor.setTaskDecorator(new TraceDecorator<>());
+        executor.setRejectedExecutionHandler(new ThreadPoolExecutor.AbortPolicy());
+        executor.initialize();
+        log.info("flowTaskExecutor initialized");
         return executor;
     }
 
@@ -195,6 +210,41 @@ public class ScheduleConfiguration {
         executor.setRejectedExecutionHandler(new ThreadPoolExecutor.AbortPolicy());
         executor.initialize();
         log.info("scanSensitiveColumnExecutor initialized");
+        return executor;
+    }
+
+
+    @Lazy
+    @Bean(name = "taskResultPublisherExecutor")
+    public ThreadPoolTaskExecutor taskResultPublisherExecutor() {
+        ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
+        int corePoolSize = Math.max(SystemUtils.availableProcessors() * 2, 8);
+        int MaxPoolSize = Math.max(SystemUtils.availableProcessors() * 8, 64);
+        executor.setCorePoolSize(corePoolSize);
+        executor.setMaxPoolSize(MaxPoolSize);
+        executor.setThreadNamePrefix("task-result-publish-");
+        executor.setWaitForTasksToCompleteOnShutdown(true);
+        executor.setAwaitTerminationSeconds(5);
+        executor.setTaskDecorator(new TraceDecorator<>());
+        executor.setRejectedExecutionHandler(new ThreadPoolExecutor.DiscardPolicy());
+        executor.initialize();
+        log.info("taskResultPublisherExecutor initialized");
+        return executor;
+    }
+
+    @Lazy
+    @Bean(name = "taskFrameworkMonitorExecutor")
+    public ThreadPoolTaskExecutor taskFrameworkMonitorExecutor() {
+        ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
+        executor.setCorePoolSize(4);
+        executor.setMaxPoolSize(4);
+        executor.setThreadNamePrefix("task-framework-monitoring-");
+        executor.setWaitForTasksToCompleteOnShutdown(true);
+        executor.setAwaitTerminationSeconds(5);
+        executor.setTaskDecorator(new TraceDecorator<>());
+        executor.setRejectedExecutionHandler(new ThreadPoolExecutor.DiscardPolicy());
+        executor.initialize();
+        log.info("taskFrameworkMonitorExecutor initialized");
         return executor;
     }
 

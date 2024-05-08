@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 
+import com.oceanbase.odc.common.util.ExceptionUtils;
 import com.oceanbase.odc.core.datasource.DataSourceFactory;
 import com.oceanbase.odc.core.shared.constant.ConnectType;
 import com.oceanbase.odc.core.shared.constant.DialectType;
@@ -56,6 +57,11 @@ public abstract class BaseConnectionSessionManager implements ConnectionSessionM
         try {
             doStoreSession(session);
         } catch (Throwable e) {
+            try {
+                session.expire();
+            } catch (Exception e1) {
+                log.warn("Failed to expire session, session storage failed, sessId={}", session.getId(), e1);
+            }
             log.warn("Failed to store a session, session={}", session, e);
             try {
                 onCreateFailed(session, e);
@@ -262,7 +268,9 @@ public abstract class BaseConnectionSessionManager implements ConnectionSessionM
             try {
                 consumer.accept(listener);
             } catch (Throwable e) {
-                log.warn("Failed to call listener's method", e);
+                StackTraceElement element = Thread.currentThread().getStackTrace()[2];
+                log.warn("Failed to call listener {}#{}, error={}", listener.getClass().getName(),
+                        element.getMethodName(), ExceptionUtils.getRootCauseReason(e));
             }
         }
     }

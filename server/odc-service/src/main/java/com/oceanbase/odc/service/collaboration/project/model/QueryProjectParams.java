@@ -29,6 +29,7 @@ import net.minidev.json.annotate.JsonIgnore;
 public class QueryProjectParams {
     private String name;
     private Boolean archived;
+    private Boolean builtin;
     @JsonIgnore
     private Long userId;
 }

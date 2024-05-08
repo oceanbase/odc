@@ -23,6 +23,10 @@ ACCESS
     : ( A C C E S S )
     ;
 
+OBJECT_ID
+    : O B J E C T '_' I D
+    ;
+
 ACCESSIBLE
     : ( A C C E S S I B L E )
     ;
@@ -1886,6 +1890,22 @@ FOLLOWING
     : F O L L O W I N G
     ;
 
+DEFAULT_LOB_INROW_THRESHOLD
+    : D E F A U L T '_' L O B '_' I N R O W '_' T H R E S H O L D
+    ;
+
+LOB_INROW_THRESHOLD
+    : L O B '_' I N R O W '_' T H R E S H O L D
+    ;
+
+SCHEMA_ID
+    : S C H E M A '_' I D
+    ;
+
+LATERAL
+    : L A T E R A L
+    ;
+
 ROLLBACK
     : R O L L B A C K
     ;
@@ -2882,6 +2902,10 @@ CACHE
     : C A C H E
     ;
 
+KV_ATTRIBUTES
+    : K V '_' A T T R I B U T E S
+    ;
+
 CURRENT
     : C U R R E N T
     ;
@@ -3052,6 +3076,10 @@ REPLICA_TYPE
 
 AGGREGATE
     : A G G R E G A T E
+    ;
+
+TRANSFER
+    : T R A N S F E R
     ;
 
 JSON_ARRAYAGG
@@ -3304,6 +3332,10 @@ ANY
 
 UNIT_GROUP
     : U N I T '_' G R O U P
+    ;
+
+TTL
+    : T T L
     ;
 
 HIGHER_PARENS
@@ -4141,6 +4173,14 @@ TENANT
 DECIMAL_VAL
     : ([0-9]+ E [-+]?[0-9]+ | [0-9]+'.'[0-9]* E [-+]?[0-9]+ | '.'[0-9]+ E [-+]?[0-9]+)
     | ([0-9]+'.'[0-9]* | '.'[0-9]+)
+    ;
+
+ST_ASMVT
+    : '_' S T '_' A S M V T
+    ;
+
+STORE
+    : S T O R E
     ;
 
 BOOL_VALUE

@@ -16,13 +16,15 @@
 package com.oceanbase.odc.service.task;
 
 import java.io.File;
-import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 
 import javax.validation.constraints.NotNull;
 
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.LineIterator;
+import org.apache.commons.io.input.ReversedLinesFileReader;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
@@ -82,14 +84,16 @@ public class TaskService {
     private static final String SHADOWTABLE_LOG_PATH_PATTERN = "%s/shadowtable/%d/%s/shadowtable.%s";
 
     private static final String ALTER_SCHEDULE_LOG_PATH_PATTERN = "%s/alterschedule/%d/%s/alterschedule.%s";
-    private static final String PARTITIONPLAN_LOG_PATH_PATTERN = "%s/partitionplan/%d/%s/partitionplan.%s";
-    private static final long MAX_LOG_LINE_COUNT = 10000;
-    private static final long MAX_LOG_BYTE_COUNT = 1024 * 1024;
+    private static final String PARTITIONPLAN_LOG_PATH_PATTERN = "%s/partition-plan/%s/partition-plan.%s";
+    private static final int MAX_LOG_LINE_COUNT = 10000;
+    private static final int MAX_LOG_BYTE_COUNT = 1024 * 1024;
     private static final String ONLINE_SCHEMA_CHANGE_LOG_PATH_PATTERN =
             "%s/onlineschemachange/%d/%s/onlineschemachange.%s";
     private static final String EXPORT_RESULT_SET_LOG_PATH_PATTERN = "%s/result-set-export/%s/ob-loader-dumper.%s";
     private static final String APPLY_PROJECT_LOG_PATH_PATTERN = "%s/apply-project/%d/%s/apply-project-task.%s";
     private static final String APPLY_DATABASE_LOG_PATH_PATTERN = "%s/apply-database/%d/%s/apply-database-task.%s";
+    private static final String STRUCTURE_COMPARISON_LOG_PATH_PATTERN =
+            "%s/structure-comparison/%d/%s/structure-comparison.%s";
 
     @Autowired
     public TaskService(@Value("${odc.log.directory:./log}") String baseTaskLogDir) {
@@ -166,8 +170,40 @@ public class TaskService {
         return nullSafeFindById(id);
     }
 
-    public String getLog(Long userId, String taskId, TaskType type, OdcTaskLogLevel logLevel) throws IOException {
-        // TODO: fix file path traversal issue
+    public String getLog(Long userId, String taskId, TaskType type, OdcTaskLogLevel logLevel) {
+        File logFile;
+        try {
+            logFile = getLogFile(userId, taskId, type, logLevel);
+        } catch (NotFoundException ex) {
+            return ErrorCodes.TaskLogNotFound.getLocalizedMessage(new Object[] {"Id", taskId});
+        }
+        try (ReversedLinesFileReader reader = new ReversedLinesFileReader(logFile, StandardCharsets.UTF_8)) {
+            List<String> lines = new ArrayList<>();
+            int bytes = 0;
+            String line;
+            while ((line = reader.readLine()) != null) {
+                lines.add(line);
+                bytes += line.getBytes().length;
+                if (lines.size() >= MAX_LOG_LINE_COUNT || bytes >= MAX_LOG_BYTE_COUNT) {
+                    lines.add("[ODC INFO]: \n"
+                            + "Logs exceed max limitation (10000 rows or 1 MB), only the latest part is displayed.\n"
+                            + "Please download the log file for the full content.");
+                    break;
+                }
+            }
+            StringBuilder logBuilder = new StringBuilder();
+            for (int i = lines.size() - 1; i >= 0; i--) {
+                logBuilder.append(lines.get(i)).append("\n");
+            }
+            return logBuilder.toString();
+        } catch (Exception ex) {
+            log.warn("Read task log file failed, details={}", ex.getMessage());
+            throw new UnexpectedException("Read task log file failed, details: " + ex.getMessage(), ex);
+        }
+    }
+
+    public File getLogFile(Long userId, String taskId, TaskType type, OdcTaskLogLevel logLevel)
+            throws NotFoundException {
         String filePath;
         switch (type) {
             case ASYNC:
@@ -188,7 +224,7 @@ public class TaskService {
                         logLevel.name().toLowerCase());
                 break;
             case PARTITION_PLAN:
-                filePath = String.format(PARTITIONPLAN_LOG_PATH_PATTERN, logFilePrefix, userId, taskId,
+                filePath = String.format(PARTITIONPLAN_LOG_PATH_PATTERN, logFilePrefix, taskId,
                         logLevel.name().toLowerCase());
                 break;
             case ALTER_SCHEDULE:
@@ -211,37 +247,19 @@ public class TaskService {
                 filePath = String.format(APPLY_DATABASE_LOG_PATH_PATTERN, logFilePrefix, userId, taskId,
                         logLevel.name().toLowerCase());
                 break;
+            case STRUCTURE_COMPARISON:
+                filePath = String.format(STRUCTURE_COMPARISON_LOG_PATH_PATTERN, logFilePrefix, userId, taskId,
+                        logLevel.name().toLowerCase());
+                break;
             default:
                 throw new UnsupportedException(ErrorCodes.Unsupported, new Object[] {ResourceType.ODC_TASK},
                         "Unsupported task type: " + type);
         }
-
-        if (!new File(filePath).exists()) {
-            return ErrorCodes.TaskLogNotFound.getLocalizedMessage(new Object[] {"Id", taskId});
+        File logFile = new File(filePath);
+        if (!logFile.exists()) {
+            throw new NotFoundException(ResourceType.ODC_FILE, "Path", filePath);
         }
-        LineIterator it = null;
-        StringBuilder sb = new StringBuilder();
-        int lineCount = 1;
-        int byteCount = 0;
-        try {
-            it = FileUtils.lineIterator(new File(filePath));
-            while (it.hasNext()) {
-                if (lineCount > MAX_LOG_LINE_COUNT || byteCount > MAX_LOG_BYTE_COUNT) {
-                    sb.append("Logs exceed max limitation (10000 rows or 1 MB), please download logs directly");
-                    break;
-                }
-                String line = it.nextLine();
-                sb.append(line).append("\n");
-                lineCount++;
-                byteCount = byteCount + line.getBytes().length;
-            }
-            return sb.toString();
-        } catch (Exception ex) {
-            log.warn("read task log file failed, reason={}", ex.getMessage());
-            throw new UnexpectedException("read task log file failed, reason: " + ex.getMessage(), ex);
-        } finally {
-            LineIterator.closeQuietly(it);
-        }
+        return logFile;
     }
 
     @Transactional(rollbackFor = Exception.class)
@@ -312,6 +330,16 @@ public class TaskService {
         log.info("Task has been deleted: taskId={}", id);
     }
 
+    public Optional<TaskEntity> findByJobId(@NonNull Long jobId) {
+        return taskRepository.findByJobId(jobId);
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    public void updateJobId(Long id, Long jobId) {
+        taskRepository.updateJobId(id, jobId);
+    }
+
+
     private TaskEntity nullSafeFindById(Long id) {
         return taskRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException(ResourceType.ODC_TASK, "id", id));
@@ -320,10 +348,10 @@ public class TaskService {
     private void innerCancel(@NonNull Long id, Object taskResult) {
         TaskEntity taskEntity = nullSafeFindById(id);
         taskEntity.setStatus(TaskStatus.CANCELED);
-        taskRepository.save(taskEntity);
         if (Objects.nonNull(taskResult)) {
             taskEntity.setResultJson(JsonUtils.toJson(taskResult));
         }
+        taskRepository.save(taskEntity);
         log.info("Task has been canceled: taskId={}", id);
     }
 

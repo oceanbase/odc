@@ -43,6 +43,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
 
 import com.oceanbase.odc.common.util.StringUtils;
+import com.oceanbase.odc.common.util.TimeUtils;
 import com.oceanbase.odc.core.authority.model.DefaultSecurityResource;
 import com.oceanbase.odc.core.authority.model.SecurityResource;
 import com.oceanbase.odc.core.authority.permission.ResourcePermission;
@@ -434,6 +435,7 @@ public class RoleService {
                 permission.setCreatorId(authenticationFacade.currentUserId());
                 permission.setOrganizationId(organizationId);
                 permission.setBuiltIn(false);
+                permission.setExpireTime(TimeUtils.getMySQLMaxDatetime());
                 permission.setAuthorizationType(AuthorizationType.USER_AUTHORIZATION);
                 permissionRepository.saveAndFlush(permission);
 

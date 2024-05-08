@@ -291,7 +291,7 @@ public class DataTransferService {
                     .withQuote(csvConfig.getColumnDelimiter())
                     .withRecordSeparator(format.toChar(csvConfig.getLineSeparator()))
                     .withNullString("\\N")
-                    .withEmptyString("")
+                    .withEmptyString("\\E")
                     .withIgnoreEmptyLines(true)
                     .withIgnoreSurroundingSpaces(true);
             if (csvConfig.isBlankToNull()) {
@@ -351,7 +351,7 @@ public class DataTransferService {
         }
         DataTransferTaskResult result = new DataTransferTaskResult();
         List<ObjectResult> objects = config.getExportDbObjects().stream().map(
-                obj -> new ObjectResult(config.getSchemaName(), obj.getObjectName(), obj.getDbObjectType().getName()))
+                obj -> new ObjectResult(config.getSchemaName(), obj.getObjectName(), obj.getDbObjectType().name()))
                 .collect(Collectors.toList());
         if (config.isTransferDDL()) {
             result.setSchemaObjectsInfo(objects);
@@ -398,6 +398,9 @@ public class DataTransferService {
     }
 
     private String truncateValue(String val) {
+        if (Objects.isNull(val)) {
+            return val;
+        }
         return val.substring(0, Math.min(val.length(), PREVIEW_PRESERVE_LENGTH));
     }
 }

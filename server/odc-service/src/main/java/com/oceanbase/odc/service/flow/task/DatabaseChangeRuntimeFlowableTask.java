@@ -15,9 +15,13 @@
  */
 package com.oceanbase.odc.service.flow.task;
 
+import java.io.File;
+import java.io.InputStream;
+import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
+import org.apache.commons.collections4.CollectionUtils;
 import org.flowable.engine.delegate.DelegateExecution;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -28,7 +32,9 @@ import com.oceanbase.odc.core.session.ConnectionSessionUtil;
 import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.shared.constant.FlowStatus;
+import com.oceanbase.odc.core.sql.split.OffsetString;
 import com.oceanbase.odc.core.sql.split.SqlCommentProcessor;
+import com.oceanbase.odc.core.sql.split.SqlStatementIterator;
 import com.oceanbase.odc.metadb.task.TaskEntity;
 import com.oceanbase.odc.service.connection.model.ConnectProperties;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
@@ -39,13 +45,20 @@ import com.oceanbase.odc.service.flow.exception.ServiceTaskError;
 import com.oceanbase.odc.service.flow.exception.ServiceTaskExpiredException;
 import com.oceanbase.odc.service.flow.task.model.DatabaseChangeParameters;
 import com.oceanbase.odc.service.flow.task.model.DatabaseChangeResult;
+import com.oceanbase.odc.service.flow.task.model.DatabaseChangeSqlContent;
+import com.oceanbase.odc.service.flow.task.model.FlowTaskProperties;
 import com.oceanbase.odc.service.flow.task.model.RollbackPlanTaskResult;
+import com.oceanbase.odc.service.flow.task.util.DatabaseChangeFileReader;
 import com.oceanbase.odc.service.flow.util.FlowTaskUtil;
 import com.oceanbase.odc.service.objectstorage.ObjectStorageFacade;
-import com.oceanbase.odc.service.objectstorage.cloud.CloudObjectStorageService;
 import com.oceanbase.odc.service.session.DBSessionManageFacade;
 import com.oceanbase.odc.service.session.factory.DefaultConnectSessionFactory;
+import com.oceanbase.odc.service.sqlcheck.SqlCheckUtil;
 import com.oceanbase.odc.service.task.TaskService;
+import com.oceanbase.tools.sqlparser.statement.Statement;
+import com.oceanbase.tools.sqlparser.statement.alter.table.AlterTable;
+import com.oceanbase.tools.sqlparser.statement.createindex.CreateIndex;
+import com.oceanbase.tools.sqlparser.statement.createtable.OutOfLineConstraint;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -61,8 +74,6 @@ public class DatabaseChangeRuntimeFlowableTask extends BaseODCFlowTaskDelegate<D
     private volatile boolean isSuccessful = false;
     private volatile boolean isFailure = false;
     @Autowired
-    private CloudObjectStorageService cloudObjectStorageService;
-    @Autowired
     private ConnectProperties connectProperties;
     @Autowired
     private DataMaskingService maskingService;
@@ -70,6 +81,13 @@ public class DatabaseChangeRuntimeFlowableTask extends BaseODCFlowTaskDelegate<D
     private ObjectStorageFacade objectStorageFacade;
     @Autowired
     private DBSessionManageFacade sessionManageFacade;
+    @Autowired
+    private TaskService taskService;
+    @Autowired
+    private FlowTaskProperties flowTaskProperties;
+    private boolean autoModifyTimeout = false;
+    @Autowired
+    private ObjectStorageFacade storageFacade;
 
     @Override
     public boolean cancel(boolean mayInterruptIfRunning, Long taskId, TaskService taskService) {
@@ -101,6 +119,7 @@ public class DatabaseChangeRuntimeFlowableTask extends BaseODCFlowTaskDelegate<D
             }
             result = asyncTaskThread.getResult();
             result.setRollbackPlanResult(rollbackPlanTaskResult);
+            result.setAutoModifyTimeout(this.autoModifyTimeout);
             if (asyncTaskThread.isAbort()) {
                 isFailure = true;
                 taskService.fail(taskId, asyncTaskThread.getProgressPercentage(), result);
@@ -149,13 +168,14 @@ public class DatabaseChangeRuntimeFlowableTask extends BaseODCFlowTaskDelegate<D
     @Override
     protected void onSuccessful(Long taskId, TaskService taskService) {
         log.info("Async task succeed, taskId={}", taskId);
-        updateFlowInstanceStatus(FlowStatus.EXECUTION_SUCCEEDED);
         super.onSuccessful(taskId, taskService);
+        updateFlowInstanceStatus(FlowStatus.EXECUTION_SUCCEEDED);
     }
 
     @Override
     protected void onTimeout(Long taskId, TaskService taskService) {
         log.warn("Async task timeout, taskId={}", taskId);
+        super.onTimeout(taskId, taskService);
     }
 
     @Override
@@ -173,11 +193,12 @@ public class DatabaseChangeRuntimeFlowableTask extends BaseODCFlowTaskDelegate<D
         Long creatorId = FlowTaskUtil.getTaskCreator(execution).getId();
         DatabaseChangeParameters parameters = FlowTaskUtil.getAsyncParameter(execution);
         ConnectionConfig connectionConfig = FlowTaskUtil.getConnectionConfig(execution);
+        modifyTimeoutIfTimeConsumingSqlExists(execution, parameters, connectionConfig.getDialectType(), creatorId);
         connectionConfig.setQueryTimeoutSeconds((int) TimeUnit.MILLISECONDS.toSeconds(parameters.getTimeoutMillis()));
         DefaultConnectSessionFactory sessionFactory = new DefaultConnectSessionFactory(connectionConfig);
         sessionFactory.setSessionTimeoutMillis(parameters.getTimeoutMillis());
         ConnectionSession connectionSession = sessionFactory.generateSession();
-        if (connectionSession.getDialectType() == DialectType.OB_ORACLE) {
+        if (connectionSession.getDialectType().isOracle()) {
             ConnectionSessionUtil.initConsoleSessionTimeZone(connectionSession, connectProperties.getDefaultTimeZone());
         }
         SqlCommentProcessor processor = new SqlCommentProcessor(connectionConfig.getDialectType(), true, true);
@@ -190,6 +211,76 @@ public class DatabaseChangeRuntimeFlowableTask extends BaseODCFlowTaskDelegate<D
         returnVal.setFlowInstanceId(this.getFlowInstanceId());
         returnVal.setUserId(creatorId);
         return returnVal;
+    }
+
+    private void modifyTimeoutIfTimeConsumingSqlExists(DelegateExecution execution,
+            DatabaseChangeParameters parameters, DialectType dialectType, Long creatorId) {
+        long autoModifiedTimeout = flowTaskProperties.getIndexChangeMaxTimeoutMillisecond();
+        if (!parameters.isModifyTimeoutIfTimeConsumingSqlExists() || !dialectType.isOceanbase()
+                || autoModifiedTimeout <= parameters.getTimeoutMillis()) {
+            return;
+        }
+        List<OffsetString> userInputSqls = null;
+        SqlStatementIterator uploadFileSqlIterator = null;
+        InputStream uploadFileInputStream = null;
+        try {
+            DatabaseChangeSqlContent sqlContent =
+                    DatabaseChangeFileReader.getSqlContent(storageFacade, parameters, dialectType,
+                            "async".concat(File.separator).concat(creatorId.toString()));
+            userInputSqls = sqlContent.getUserInputSqls();
+            uploadFileSqlIterator = sqlContent.getUploadFileSqlIterator();
+            uploadFileInputStream = sqlContent.getUploadFileInputStream();
+            while (CollectionUtils.isNotEmpty(userInputSqls)
+                    || (uploadFileSqlIterator != null && uploadFileSqlIterator.hasNext())) {
+                String sql = CollectionUtils.isNotEmpty(userInputSqls) ? userInputSqls.remove(0).getStr()
+                        : uploadFileSqlIterator.next().getStr();
+                if (checkTimeConsumingSql(SqlCheckUtil.parseSingleSql(dialectType, sql))) {
+                    this.autoModifyTimeout = true;
+                    parameters.setTimeoutMillis(autoModifiedTimeout);
+                    Long taskId = FlowTaskUtil.getTaskId(execution);
+                    TaskEntity databaseChangeTaskEntity = taskService.detail(taskId);
+                    databaseChangeTaskEntity.setParametersJson(JsonUtils.toJson(parameters));
+                    taskService.updateParametersJson(databaseChangeTaskEntity);
+                    break;
+                }
+            }
+        } catch (Exception e) {
+            log.error("Error occurs while modify database change task timeout if time-consuming SQL exists", e);
+        } finally {
+            if (uploadFileInputStream != null) {
+                try {
+                    uploadFileInputStream.close();
+                } catch (Exception e) {
+                    // ignore
+                }
+            }
+        }
+
+    }
+
+    /**
+     * Check whether there is any SQL that may be time-consuming such as creating indexes, modifying
+     * primary key, etc.
+     *
+     * @param statement SQL parse statement
+     * @return true if involves time-consuming SQL, otherwise false
+     */
+    private boolean checkTimeConsumingSql(Statement statement) {
+        if (statement instanceof AlterTable) {
+            return ((AlterTable) statement).getAlterTableActions().stream().anyMatch(action -> {
+                if (action.getAddIndex() != null || action.getModifyPrimaryKey() != null) {
+                    return true;
+                } else if (action.getAddConstraint() != null) {
+                    OutOfLineConstraint addConstraint = action.getAddConstraint();
+                    return addConstraint.isPrimaryKey() || addConstraint.isUniqueKey();
+                } else {
+                    return false;
+                }
+            });
+        } else if (statement instanceof CreateIndex) {
+            return true;
+        }
+        return false;
     }
 
 }

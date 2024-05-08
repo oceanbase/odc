@@ -15,14 +15,29 @@
  */
 package com.oceanbase.odc.service.notification;
 
+import static com.oceanbase.odc.service.notification.model.RateLimitConfig.OverLimitStrategy.THROWN;
+
+import java.util.Objects;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
+import com.oceanbase.odc.core.shared.Verify;
+import com.oceanbase.odc.core.shared.exception.UnexpectedException;
+import com.oceanbase.odc.metadb.notification.EventEntity;
+import com.oceanbase.odc.metadb.notification.EventRepository;
 import com.oceanbase.odc.metadb.notification.MessageRepository;
+import com.oceanbase.odc.metadb.notification.MessageSendingHistoryEntity;
+import com.oceanbase.odc.metadb.notification.MessageSendingHistoryRepository;
+import com.oceanbase.odc.service.notification.helper.EventMapper;
 import com.oceanbase.odc.service.notification.model.Channel;
+import com.oceanbase.odc.service.notification.model.Message;
+import com.oceanbase.odc.service.notification.model.MessageSendResult;
 import com.oceanbase.odc.service.notification.model.MessageSendingStatus;
-import com.oceanbase.odc.service.notification.model.Notification;
+import com.oceanbase.odc.service.notification.model.RateLimitConfig;
+
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * @Author: Lebie
@@ -30,23 +45,55 @@ import com.oceanbase.odc.service.notification.model.Notification;
  * @Description: []
  */
 @Service
+@Slf4j
 @SkipAuthorize("odc internal usage")
 public class NotificationDispatcher {
     @Autowired
     private MessageRepository messageRepository;
-
     @Autowired
-    private ChannelFactory channelFactory;
+    private MessageSendingHistoryRepository sendingHistoryRepository;
+    @Autowired
+    private MessageSenderMapper messageSenderMapper;
+    @Autowired
+    private EventRepository eventRepository;
+    @Autowired
+    private EventMapper eventMapper;
 
-    public void dispatch(Notification notification) {
-        Channel channelConfig = notification.getChannel();
-        MessageChannel channel = channelFactory.generate(channelConfig);
-        if (channel.send(notification.getMessage())) {
-            messageRepository.updateStatusById(notification.getMessage().getId(),
-                    MessageSendingStatus.SENT_SUCCESSFULLY);
-        } else {
-            messageRepository.updateStatusAndRetryTimesById(notification.getMessage().getId(),
-                    MessageSendingStatus.SENT_FAILED);
+    public void dispatch(Message message) throws Exception {
+        Channel channel = message.getChannel();
+        Verify.notNull(channel.getChannelConfig(), "channel.config");
+
+        RateLimitConfig rateLimitConfig = channel.getChannelConfig().getRateLimitConfig();
+        if (Objects.nonNull(rateLimitConfig) && isChannelRestricted(channel.getId(), rateLimitConfig)) {
+            MessageSendingStatus status = rateLimitConfig.getOverLimitStrategy() == THROWN ? MessageSendingStatus.THROWN
+                    : MessageSendingStatus.CREATED;
+            log.info("channel with id={} is restricted, the message with id={} will be converted into {}",
+                    channel.getId(), message.getId(), status);
+            messageRepository.updateStatusById(message.getId(), status);
+            return;
         }
+
+        EventEntity event = eventRepository.findById(message.getEvent().getId()).orElseThrow(
+                () -> new UnexpectedException("Event not found by id=" + message.getEvent().getId()));
+        message.setEvent(eventMapper.fromEntity(event));
+        MessageSender sender = messageSenderMapper.get(channel);
+        MessageSendResult result = sender.send(message);
+        if (result.isActive()) {
+            messageRepository.updateStatusAndSentTimeById(message.getId(), MessageSendingStatus.SENT_SUCCESSFULLY);
+            sendingHistoryRepository
+                    .save(new MessageSendingHistoryEntity(message.getId(), MessageSendingStatus.SENT_SUCCESSFULLY));
+        } else {
+            messageRepository.updateStatusAndRetryTimesAndErrorMessageById(message.getId(),
+                    MessageSendingStatus.SENT_FAILED, result.getErrorMessage());
+            sendingHistoryRepository.save(new MessageSendingHistoryEntity(message.getId(),
+                    MessageSendingStatus.SENT_FAILED, result.getErrorMessage()));
+        }
+    }
+
+    private boolean isChannelRestricted(Long channelId, RateLimitConfig rateLimitConfig) {
+        long time = rateLimitConfig.getTime() <= 0 ? 1 : rateLimitConfig.getTime();
+        int sendingTimes = sendingHistoryRepository.countMessageSendingTimesByChannelId(channelId,
+                rateLimitConfig.getTimeUnit().toMinutes(time));
+        return rateLimitConfig.getLimit() <= sendingTimes;
     }
 }

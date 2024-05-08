@@ -49,6 +49,9 @@ public class Environment implements SecurityResource, OrganizationIsolated, Seri
     @Internationalizable
     private String name;
 
+    @JsonProperty(access = Access.READ_ONLY)
+    private String originalName;
+
     @Size(max = 2048, message = "Environment description is out of range [0,2048]")
     @Internationalizable
     private String description;
@@ -66,6 +69,9 @@ public class Environment implements SecurityResource, OrganizationIsolated, Seri
 
     @JsonProperty(access = Access.READ_ONLY)
     private Boolean builtIn;
+
+    @JsonProperty(access = Access.READ_ONLY)
+    private Boolean enabled;
 
     @JsonProperty(access = Access.READ_ONLY)
     private Date createTime;

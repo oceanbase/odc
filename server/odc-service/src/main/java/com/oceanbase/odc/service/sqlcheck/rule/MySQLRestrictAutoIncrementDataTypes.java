@@ -83,7 +83,7 @@ public class MySQLRestrictAutoIncrementDataTypes implements SqlCheckRule {
                 return false;
             }
             return Boolean.TRUE.equals(ca.getAutoIncrement());
-        }).filter(d -> this.allowedTypeNames.stream()
+        }).filter(d -> d.getDataType() != null && this.allowedTypeNames.stream()
                 .noneMatch(s -> StringUtils.equalsIgnoreCase(s, d.getDataType().getName())))
                 .map(d -> {
                     DataType type = d.getDataType();

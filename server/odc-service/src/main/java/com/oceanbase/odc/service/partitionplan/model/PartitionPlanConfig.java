@@ -16,9 +16,15 @@
 package com.oceanbase.odc.service.partitionplan.model;
 
 import java.io.Serializable;
+import java.util.Collections;
+import java.util.Date;
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonProperty.Access;
 import com.oceanbase.odc.core.flow.model.TaskParameters;
+import com.oceanbase.odc.core.shared.constant.TaskErrorStrategy;
+import com.oceanbase.odc.service.quartz.util.QuartzCronExpressionUtils;
 import com.oceanbase.odc.service.schedule.model.TriggerConfig;
 
 import lombok.Getter;
@@ -41,13 +47,38 @@ public class PartitionPlanConfig implements Serializable, TaskParameters {
     private Long id;
     private boolean enabled;
     private Long databaseId;
+    private Long flowInstanceId;
+    private Long taskId;
     private Long timeoutMillis;
-    /**
-     * (~, 0] -> ignore any errors (0, ~) -> meaningful value
-     */
-    private Integer maxErrors = -1;
+    private TaskErrorStrategy errorStrategy = TaskErrorStrategy.CONTINUE;
     private TriggerConfig creationTrigger;
     private TriggerConfig droppingTrigger;
     private List<PartitionPlanTableConfig> partitionTableConfigs;
+
+    @JsonProperty(access = Access.READ_ONLY)
+    public List<Date> getCreateTriggerNextFireTimes() {
+        if (this.creationTrigger == null) {
+            return Collections.emptyList();
+        }
+        try {
+            return QuartzCronExpressionUtils.getNextFiveFireTimes(
+                    this.creationTrigger.getCronExpression());
+        } catch (Exception e) {
+            return Collections.emptyList();
+        }
+    }
+
+    @JsonProperty(access = Access.READ_ONLY)
+    public List<Date> getDropTriggerNextFireTimes() {
+        if (this.droppingTrigger == null) {
+            return Collections.emptyList();
+        }
+        try {
+            return QuartzCronExpressionUtils.getNextFiveFireTimes(
+                    this.droppingTrigger.getCronExpression());
+        } catch (Exception e) {
+            return Collections.emptyList();
+        }
+    }
 
 }

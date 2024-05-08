@@ -20,7 +20,6 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.SequenceInputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -63,9 +62,11 @@ import com.oceanbase.odc.service.datasecurity.model.SensitiveColumn;
 import com.oceanbase.odc.service.datasecurity.util.DataMaskingUtil;
 import com.oceanbase.odc.service.flow.task.model.DatabaseChangeParameters;
 import com.oceanbase.odc.service.flow.task.model.DatabaseChangeResult;
+import com.oceanbase.odc.service.flow.task.model.SizeAwareInputStream;
+import com.oceanbase.odc.service.flow.task.util.DatabaseChangeFileReader;
+import com.oceanbase.odc.service.flow.task.util.TaskDownloadUrlsProvider;
 import com.oceanbase.odc.service.objectstorage.ObjectStorageFacade;
 import com.oceanbase.odc.service.objectstorage.cloud.CloudObjectStorageService;
-import com.oceanbase.odc.service.objectstorage.model.StorageObject;
 import com.oceanbase.odc.service.session.DBSessionManageFacade;
 import com.oceanbase.odc.service.session.OdcStatementCallBack;
 import com.oceanbase.odc.service.session.initializer.ConsoleTimeoutInitializer;
@@ -165,54 +166,23 @@ public class DatabaseChangeThread extends Thread {
                         throw new IllegalArgumentException(
                                 "Timeout settings is too large, " + parameters.getTimeoutMillis());
                     }
-                    ConnectionInitializer initializer = new ConsoleTimeoutInitializer(timeoutUs);
+                    ConnectionInitializer initializer =
+                            new ConsoleTimeoutInitializer(timeoutUs, connectionSession.getDialectType());
                     executor.execute((ConnectionCallback<Void>) con -> {
                         initializer.init(con);
                         return null;
                     });
-                    List<JdbcGeneralResult> results =
-                            executor.execute((StatementCallback<List<JdbcGeneralResult>>) stmt -> {
-                                stmt.setQueryTimeout(
-                                        (int) TimeUnit.MILLISECONDS.toSeconds(parameters.getTimeoutMillis()));
-                                return statementCallback.doInStatement(stmt);
-                            });
-                    Verify.notEmpty(results, "resultList");
-                    GeneralSqlType sqlType = parseSqlType(sql);
-                    for (JdbcGeneralResult result : results) {
-                        SqlExecuteResult executeResult = new SqlExecuteResult(result);
-                        if (GeneralSqlType.DQL == sqlType) {
-                            this.isContainQuery = true;
-                            if (maskingService.isMaskingEnabled()) {
-                                try {
-                                    dynamicDataMasking(executeResult);
-                                } catch (Exception e) {
-                                    // Eat exception and skip data masking
-                                    log.warn("Failed to mask query result set in database change task, sql={}",
-                                            executeResult.getExecuteSql(), e);
-                                }
-                            }
-                        }
-                        queryResultSetBuffer.add(executeResult);
-                    }
+                    RetryResult result = new RetryResult();
+                    retryStatement(result, executor, statementCallback, sql);
                     appendResultToJsonFile(queryResultSetBuffer, index == 1, !sqlIterator.hasNext());
                     writeCsvFiles(queryResultSetBuffer);
                     queryResultSetBuffer.clear();
-                    boolean success = true;
-                    for (JdbcGeneralResult result : results) {
-                        SqlExecuteResult executeResult = new SqlExecuteResult(result);
-                        if (executeResult.getStatus() != SqlExecuteStatus.SUCCESS) {
-                            failCount++;
-                            log.warn("Error occurs when executing sql: {}, error message: {}", sql,
-                                    executeResult.getTrack());
-                            // only record info of failed sqls
-                            addErrorRecordsToFile(index, sql, executeResult.getTrack());
-                            success = false;
-                            break;
-                        }
-                    }
-                    if (success) {
+
+                    if (result.success) {
                         successCount++;
                     } else {
+                        failCount++;
+                        addErrorRecordsToFile(index, sql, result.track);
                         if (TaskErrorStrategy.ABORT.equals(parameters.getErrorStrategy())) {
                             abort = true;
                             break;
@@ -244,6 +214,68 @@ public class DatabaseChangeThread extends Thread {
         }
     }
 
+    private void retryStatement(RetryResult retryResult, JdbcOperations executor,
+            StatementCallback<List<JdbcGeneralResult>> statementCallback, String sql) {
+        boolean success = true;
+        GeneralSqlType sqlType = parseSqlType(sql);
+        for (int retryCount = 0; retryCount <= parameters.getRetryTimes() && !stop; retryCount++) {
+            success = true;
+            try {
+                queryResultSetBuffer.clear();
+                List<JdbcGeneralResult> results =
+                        executor.execute((StatementCallback<List<JdbcGeneralResult>>) stmt -> {
+                            stmt.setQueryTimeout(
+                                    (int) TimeUnit.MILLISECONDS.toSeconds(parameters.getTimeoutMillis()));
+                            return statementCallback.doInStatement(stmt);
+                        });
+                Verify.notEmpty(results, "resultList");
+                for (JdbcGeneralResult result : results) {
+                    SqlExecuteResult executeResult = new SqlExecuteResult(result);
+                    if (GeneralSqlType.DQL == sqlType) {
+                        this.isContainQuery = true;
+                        if (maskingService.isMaskingEnabled()) {
+                            try {
+                                dynamicDataMasking(executeResult);
+                            } catch (Exception e) {
+                                // Eat exception and skip data masking
+                                log.warn("Failed to mask query result set in database change task, sql={}",
+                                        executeResult.getExecuteSql(), e);
+                            }
+                        }
+                    }
+                    queryResultSetBuffer.add(executeResult);
+
+                    if (executeResult.getStatus() != SqlExecuteStatus.SUCCESS) {
+                        log.warn("Error occurs when executing sql: {}, error message: {}", sql,
+                                executeResult.getTrack());
+                        success = false;
+                        retryResult.track = executeResult.getTrack();
+                    }
+                }
+            } catch (Exception e) {
+                if (retryCount == parameters.getRetryTimes()) {
+                    throw e;
+                }
+                success = false;
+                log.warn("Error occurs when executing sql: {}, error message: {}", sql, e.getMessage());
+            }
+            if (success || retryCount == parameters.getRetryTimes()) {
+                break;
+            } else {
+                log.warn(String.format("Will retry for the %sth time in %s seconds...", retryCount + 1,
+                        parameters.getRetryIntervalMillis() / 1000));
+                try {
+                    Thread.sleep(parameters.getRetryIntervalMillis());
+                } catch (InterruptedException e) {
+                    log.warn("Database change task is interrupted, task will exit", e);
+                    stop = true;
+                    break;
+                }
+            }
+        }
+        retryResult.success = success;
+    }
+
     private void init(Long userId) {
         log.info("Start read sql content, taskId={}", this.getTaskId());
         List<String> objectIds = parameters.getSqlObjectIds();
@@ -253,7 +285,11 @@ public class DatabaseChangeThread extends Thread {
             sqlTotalBytes = sqlBytes.length;
         } else {
             try {
-                sqlInputStream = readSqlFilesStream(userId, objectIds);
+                SizeAwareInputStream sizeAwareInputStream =
+                        DatabaseChangeFileReader.readSqlFilesStream(objectStorageFacade,
+                                "async".concat(File.separator).concat(String.valueOf(userId)), objectIds, null);
+                sqlInputStream = sizeAwareInputStream.getInputStream();
+                sqlTotalBytes = sizeAwareInputStream.getTotalBytes();
             } catch (IOException exception) {
                 throw new InternalServerError("load database change task file failed", exception);
             }
@@ -273,29 +309,6 @@ public class DatabaseChangeThread extends Thread {
         } catch (Exception exception) {
             throw new InternalServerError("create database change task file dir failed", exception);
         }
-    }
-
-    private InputStream readSqlFilesStream(Long userId, List<String> objectIds) throws IOException {
-        InputStream inputStream = new ByteArrayInputStream(new byte[0]);
-        for (String objectId : objectIds) {
-            String bucket = "async".concat(File.separator).concat(String.valueOf(userId));
-            StorageObject object = objectStorageFacade.loadObject(bucket, objectId);
-            InputStream current = object.getContent();
-            sqlTotalBytes += object.getMetadata().getTotalLength();
-            // remove UTF-8 BOM if exists
-            current.mark(3);
-            byte[] byteSql = new byte[3];
-            if (current.read(byteSql) >= 3 && byteSql[0] == (byte) 0xef && byteSql[1] == (byte) 0xbb
-                    && byteSql[2] == (byte) 0xbf) {
-                current.reset();
-                current.skip(3);
-                sqlTotalBytes -= 3;
-            } else {
-                current.reset();
-            }
-            inputStream = new SequenceInputStream(inputStream, current);
-        }
-        return inputStream;
     }
 
     private void addErrorRecordsToFile(int index, String sql, String errorMsg) {
@@ -397,7 +410,8 @@ public class DatabaseChangeThread extends Thread {
                 File tempZipFile = new File(String.format("%s.zip", zipFileRootPath));
                 try {
                     String objectName = cloudObjectStorageService.uploadTemp(zipFileId + ".zip", tempZipFile);
-                    zipFileDownloadUrl = cloudObjectStorageService.getBucketName() + "/" + objectName;
+                    zipFileDownloadUrl = TaskDownloadUrlsProvider
+                            .concatBucketAndObjectName(cloudObjectStorageService.getBucketName(), objectName);
                     log.info("upload database change task result set zip file to OSS, file name={}", zipFileId);
                 } catch (Exception exception) {
                     log.warn("upload database change task result set zip file to OSS failed, file name={}", zipFileId);
@@ -457,6 +471,11 @@ public class DatabaseChangeThread extends Thread {
             this.sql = sql;
             this.fileName = fileName;
         }
+    }
+
+    private static class RetryResult {
+        boolean success;
+        String track;
     }
 
 }

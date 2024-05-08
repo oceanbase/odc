@@ -126,6 +126,8 @@ public class DBRecyclebinSettingsService {
     private SqlBuilder getBuilder(ConnectionSession session) {
         if (session.getDialectType().isMysql()) {
             return new MySQLSqlBuilder();
+        } else if (session.getDialectType().isDoris()) {
+            return new MySQLSqlBuilder();
         } else if (session.getDialectType().isOracle()) {
             return new OracleSqlBuilder();
         }

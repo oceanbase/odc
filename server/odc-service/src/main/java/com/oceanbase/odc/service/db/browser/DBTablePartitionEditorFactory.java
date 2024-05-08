@@ -21,7 +21,10 @@ import com.oceanbase.odc.core.shared.constant.ConnectType;
 import com.oceanbase.odc.core.shared.exception.UnsupportedException;
 import com.oceanbase.tools.dbbrowser.editor.DBTablePartitionEditor;
 import com.oceanbase.tools.dbbrowser.editor.mysql.MySQLDBTablePartitionEditor;
+import com.oceanbase.tools.dbbrowser.editor.mysql.OBMySQLDBTablePartitionEditor;
 import com.oceanbase.tools.dbbrowser.editor.mysql.OBMySQLLessThan2277PartitionEditor;
+import com.oceanbase.tools.dbbrowser.editor.mysql.OBMySQLLessThan400DBTablePartitionEditor;
+import com.oceanbase.tools.dbbrowser.editor.oracle.OBOracleLessThan400DBTablePartitionEditor;
 import com.oceanbase.tools.dbbrowser.editor.oracle.OracleDBTablePartitionEditor;
 
 /**
@@ -41,13 +44,19 @@ public class DBTablePartitionEditorFactory extends DBObjectEditorFactory<DBTable
         if (connectType == ConnectType.OB_MYSQL || connectType == ConnectType.CLOUD_OB_MYSQL) {
             if (VersionUtils.isLessThan(dbVersion, "2.2.77")) {
                 return new OBMySQLLessThan2277PartitionEditor();
+            } else if (VersionUtils.isLessThan(dbVersion, "4.0.0")) {
+                return new OBMySQLLessThan400DBTablePartitionEditor();
             } else {
-                return new MySQLDBTablePartitionEditor();
+                return new OBMySQLDBTablePartitionEditor();
             }
         } else if (connectType == ConnectType.MYSQL || connectType == ConnectType.ODP_SHARDING_OB_MYSQL) {
             return new MySQLDBTablePartitionEditor();
-        } else if (connectType == ConnectType.ORACLE || connectType == ConnectType.OB_ORACLE
-                || connectType == ConnectType.CLOUD_OB_ORACLE) {
+        } else if (connectType == ConnectType.OB_ORACLE || connectType == ConnectType.CLOUD_OB_ORACLE) {
+            if (VersionUtils.isLessThan(dbVersion, "4.0.0")) {
+                return new OBOracleLessThan400DBTablePartitionEditor();
+            }
+            return new OracleDBTablePartitionEditor();
+        } else if (connectType == ConnectType.ORACLE) {
             return new OracleDBTablePartitionEditor();
         } else {
             throw new UnsupportedException(String.format("ConnectType '%s' not supported", connectType));

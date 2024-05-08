@@ -33,6 +33,7 @@ import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.core.shared.exception.UnsupportedException;
 import com.oceanbase.odc.service.collaboration.environment.EnvironmentService;
+import com.oceanbase.odc.service.collaboration.environment.model.QueryEnvironmentParam;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.integration.IntegrationEvent;
 import com.oceanbase.odc.service.integration.IntegrationEventHandler;
@@ -92,7 +93,9 @@ public class SqlInterceptorEventHandler implements IntegrationEventHandler {
             }
         }
         if (!ruleSetIds.isEmpty()) {
-            String names = environmentService.list(authenticationFacade.currentOrganizationId()).stream()
+            String names = environmentService
+                    .list(authenticationFacade.currentOrganizationId(), QueryEnvironmentParam.builder().build())
+                    .stream()
                     .filter(e -> ruleSetIds.contains(e.getRulesetId())).map(e -> {
                         Locale locale = LocaleContextHolder.getLocale();
                         String i18nKey = e.getName().substring(2, e.getName().length() - 1);

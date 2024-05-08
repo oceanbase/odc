@@ -24,6 +24,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 
+import com.oceanbase.odc.common.util.TimeUtils;
 import com.oceanbase.odc.core.authority.DefaultLoginSecurityManager;
 import com.oceanbase.odc.core.shared.constant.AuthorizationType;
 import com.oceanbase.odc.core.shared.constant.Cipher;
@@ -139,6 +140,7 @@ public abstract class AuthorityTestEnv extends ServiceTestEnv {
         entity.setCreatorId(ADMIN_USER_ID);
         entity.setOrganizationId(ORGANIZATION_ID);
         entity.setBuiltIn(false);
+        entity.setExpireTime(TimeUtils.getMySQLMaxDatetime());
         entity.setAuthorizationType(AuthorizationType.USER_AUTHORIZATION);
         return permissionRepository.saveAndFlush(entity);
     }

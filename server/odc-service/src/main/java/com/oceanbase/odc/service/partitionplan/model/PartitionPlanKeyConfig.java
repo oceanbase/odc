@@ -36,9 +36,10 @@ import lombok.ToString;
 public class PartitionPlanKeyConfig implements Serializable {
 
     private static final long serialVersionUID = 7176051008183974787L;
+    private Long id;
     private PartitionPlanStrategy strategy;
     private String partitionKey;
     private String partitionKeyInvoker;
-    private Map<String, Serializable> partitionKeyInvokerParameters;
+    private Map<String, Object> partitionKeyInvokerParameters;
 
 }

@@ -16,11 +16,11 @@
 package com.oceanbase.odc.service.connection.model;
 
 import com.alibaba.druid.util.StringUtils;
-import com.alibaba.fastjson.annotation.JSONCreator;
-import com.alibaba.fastjson.annotation.JSONField;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
 import com.oceanbase.odc.common.i18n.Translatable;
+
+import lombok.Getter;
 
 /**
  * @Author: Lebie
@@ -30,15 +30,13 @@ import com.oceanbase.odc.common.i18n.Translatable;
 public enum OBInstanceType implements Translatable {
     CLUSTER("cluster"),
     MYSQL_TENANT("mtenant"),
-    ORACLE_TENANT("otenant");
+    ORACLE_TENANT("otenant"),
+    MYSQL_SERVERLESS("mtenant_serverless"),
+    ORACLE_SERVERLESS("otenant_serverless"),
+    DEDICATED("DEDICATED");
 
-
+    @Getter
     private String value;
-
-    @JSONField(name = "value")
-    public String getValue() {
-        return this.value;
-    }
 
     @JsonValue
     public String getName() {
@@ -50,7 +48,6 @@ public enum OBInstanceType implements Translatable {
     }
 
     @JsonCreator
-    @JSONCreator
     public static OBInstanceType fromValue(String value) {
         for (OBInstanceType instanceType : OBInstanceType.values()) {
             if (StringUtils.equalsIgnoreCase(instanceType.value, value)) {

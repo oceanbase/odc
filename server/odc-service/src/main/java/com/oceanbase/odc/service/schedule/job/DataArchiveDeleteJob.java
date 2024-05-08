@@ -39,7 +39,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class DataArchiveDeleteJob extends AbstractDlmJob {
     @Override
-    public void execute(JobExecutionContext context) {
+    public void executeJob(JobExecutionContext context) {
 
         jobThread = Thread.currentThread();
         ScheduleTaskEntity taskEntity = (ScheduleTaskEntity) context.getResult();
@@ -51,7 +51,7 @@ public class DataArchiveDeleteJob extends AbstractDlmJob {
                 scheduleTaskRepository.findById(dataArchiveClearParameters.getDataArchiveTaskId());
 
         if (!dataArchiveTaskOption.isPresent()) {
-            log.warn("Data archive task not found,rollback task fast failed.dataArchiveTaskId={}",
+            log.warn("Data archive task not found,rollback task fast failed.scheduleTaskId={}",
                     dataArchiveClearParameters.getDataArchiveTaskId());
             scheduleTaskRepository.updateStatusById(taskEntity.getId(), TaskStatus.FAILED);
             return;
@@ -60,21 +60,33 @@ public class DataArchiveDeleteJob extends AbstractDlmJob {
         ScheduleTaskEntity dataArchiveTask = dataArchiveTaskOption.get();
 
         if (dataArchiveTask.getStatus() != TaskStatus.DONE) {
-            log.warn("Data archive task do not finish,data archive task id = {}", dataArchiveTask.getId());
+            log.warn("Data archive task do not finish,scheduleTaskId = {}", dataArchiveTask.getId());
             scheduleTaskRepository.updateStatusById(taskEntity.getId(), TaskStatus.FAILED);
+            return;
+        }
+
+        // execute in task framework.
+        if (taskFrameworkProperties.isEnabled()) {
+            DLMJobParameters parameters = getDLMJobParameters(dataArchiveTask.getJobId());
+            parameters.setJobType(JobType.DELETE);
+            Long jobId = publishJob(parameters);
+            log.info("Publish DLM job to task framework succeed,scheduleTaskId={},jobIdentity={}", taskEntity.getId(),
+                    jobId);
+            scheduleTaskRepository.updateJobIdById(taskEntity.getId(), jobId);
+            scheduleTaskRepository.updateTaskResult(taskEntity.getId(), JsonUtils.toJson(parameters));
             return;
         }
 
         // prepare tasks for clear
         List<DlmTask> taskUnits = JsonUtils.fromJson(dataArchiveTask.getResultJson(),
                 new TypeReference<List<DlmTask>>() {});
-        taskUnits.forEach(taskUnit -> {
-            taskUnit.setId(DlmJobIdUtil.generateHistoryJobId(taskEntity.getJobName(), taskEntity.getJobGroup(),
+        for (int i = 0; i < taskUnits.size(); i++) {
+            taskUnits.get(i).setId(DlmJobIdUtil.generateHistoryJobId(taskEntity.getJobName(), taskEntity.getJobGroup(),
                     taskEntity.getId(),
-                    taskUnits.size()));
-            taskUnit.setJobType(JobType.DELETE);
-            taskUnit.setStatus(TaskStatus.PREPARING);
-        });
+                    i));
+            taskUnits.get(i).setJobType(JobType.DELETE);
+            taskUnits.get(i).setStatus(TaskStatus.PREPARING);
+        }
         executeTask(taskEntity.getId(), taskUnits);
         TaskStatus taskStatus = getTaskStatus(taskUnits);
         scheduleTaskRepository.updateStatusById(taskEntity.getId(), taskStatus);

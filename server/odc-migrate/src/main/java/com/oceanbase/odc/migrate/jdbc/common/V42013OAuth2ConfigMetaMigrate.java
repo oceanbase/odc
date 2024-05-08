@@ -35,7 +35,7 @@ import com.oceanbase.odc.common.crypto.Encryptors;
 import com.oceanbase.odc.common.crypto.TextEncryptor;
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.common.util.HashUtils;
-import com.oceanbase.odc.common.util.JdbcTemplateUtils;
+import com.oceanbase.odc.common.util.JdbcOperationsUtil;
 import com.oceanbase.odc.common.util.ObjectUtil;
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.migrate.JdbcMigratable;
@@ -102,7 +102,7 @@ public class V42013OAuth2ConfigMetaMigrate implements JdbcMigratable {
     @Override
     public void migrate(DataSource dataSource) {
         this.jdbcTemplate = new JdbcTemplate(dataSource);
-        this.transactionTemplate = JdbcTemplateUtils.getTransactionTemplate(dataSource);
+        this.transactionTemplate = JdbcOperationsUtil.getTransactionTemplate(dataSource);
         String authType = selectValueByKey("odc.iam.auth.type");
         boolean passwordLoginEnabled = authType.contains("local");
         if (authType.toLowerCase().contains("oauth2")) {

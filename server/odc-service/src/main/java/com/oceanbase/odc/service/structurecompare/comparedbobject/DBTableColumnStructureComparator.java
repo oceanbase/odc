@@ -26,7 +26,6 @@ import org.springframework.beans.BeanUtils;
 
 import com.oceanbase.odc.service.structurecompare.model.ComparisonResult;
 import com.oceanbase.odc.service.structurecompare.model.DBObjectComparisonResult;
-import com.oceanbase.odc.service.structurecompare.util.StructureCompareUtil;
 import com.oceanbase.tools.dbbrowser.editor.DBTableColumnEditor;
 import com.oceanbase.tools.dbbrowser.model.DBObjectType;
 import com.oceanbase.tools.dbbrowser.model.DBTableColumn;
@@ -86,9 +85,7 @@ public class DBTableColumnStructureComparator extends AbstractDBObjectStructureC
         DBObjectComparisonResult result = new DBObjectComparisonResult(DBObjectType.COLUMN, tgtDbObject.getName(),
                 srcSchemaName, tgtSchemaName);
         result.setComparisonResult(ComparisonResult.ONLY_IN_TARGET);
-        result.setChangeScript(
-                StructureCompareUtil.appendDelimiterIfNotExist(
-                        this.tgtColumnEditor.generateDropObjectDDL(tgtDbObject)));
+        result.setChangeScript(this.tgtColumnEditor.generateDropObjectDDL(tgtDbObject));
         return result;
     }
 
@@ -97,9 +94,8 @@ public class DBTableColumnStructureComparator extends AbstractDBObjectStructureC
         DBObjectComparisonResult result = new DBObjectComparisonResult(DBObjectType.COLUMN, srcDbObject.getName(),
                 srcSchemaName, tgtSchemaName);
         result.setComparisonResult(ComparisonResult.ONLY_IN_SOURCE);
-        result.setChangeScript(StructureCompareUtil
-                .appendDelimiterIfNotExist(tgtColumnEditor
-                        .generateCreateObjectDDL(copySrcColumnWithTgtSchemaName(srcDbObject, tgtSchemaName))));
+        result.setChangeScript(
+                tgtColumnEditor.generateCreateObjectDDL(copySrcColumnWithTgtSchemaName(srcDbObject, tgtSchemaName)));
         return result;
     }
 
@@ -115,7 +111,7 @@ public class DBTableColumnStructureComparator extends AbstractDBObjectStructureC
         if (!ddl.isEmpty()) {
             // column to be updated
             result.setComparisonResult(ComparisonResult.INCONSISTENT);
-            result.setChangeScript(StructureCompareUtil.appendDelimiterIfNotExist(ddl));
+            result.setChangeScript(ddl);
         } else {
             result.setComparisonResult(ComparisonResult.CONSISTENT);
         }

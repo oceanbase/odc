@@ -50,6 +50,7 @@ import com.oceanbase.odc.service.flow.model.FlowNodeType;
 import com.oceanbase.odc.service.flow.model.FlowTaskExecutionStrategy;
 import com.oceanbase.odc.service.flow.task.BaseRuntimeFlowableDelegate;
 import com.oceanbase.odc.service.flow.task.mapper.RuntimeDelegateMapper;
+import com.oceanbase.odc.service.flow.task.model.RuntimeTaskConstants;
 
 import lombok.Getter;
 import lombok.NonNull;
@@ -177,7 +178,8 @@ public class FlowTaskInstance extends BaseFlowNodeInstance {
     }
 
     public void bindServiceTask(@NonNull BaseRuntimeFlowableDelegate<?> target) {
-        if (!Objects.equals(target.getTargetTaskInstanceId(), getId())) {
+        if (target.getTargetTaskInstanceId() == null || getId() == null
+                || !Objects.equals(target.getTargetTaskInstanceId(), getId())) {
             return;
         }
         this.targetTaskHandle = target;
@@ -266,7 +268,9 @@ public class FlowTaskInstance extends BaseFlowNodeInstance {
         Verify.verify(getStatus() == FlowNodeStatus.PENDING, "Task status is illegal: " + getStatus());
 
         List<FlowableElement> elements =
-                flowableAdaptor.getFlowableElementByType(getId(), getNodeType(), FlowableElementType.USER_TASK);
+                flowableAdaptor.getFlowableElementByType(getId(), getNodeType(), FlowableElementType.USER_TASK)
+                        .stream().filter(t -> !t.getName().contains(RuntimeTaskConstants.CALLBACK_TASK))
+                        .collect(Collectors.toList());
         Verify.verify(!elements.isEmpty(), "Can not find any user task related to task instance, id " + getId());
         log.info("Get the execution node of the task instance, instanceId={}, elements={}", getId(), elements);
 

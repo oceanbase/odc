@@ -19,6 +19,9 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Objects;
 import java.util.Properties;
 
@@ -39,9 +42,13 @@ import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.plugin.connect.api.ConnectionExtensionPoint;
 import com.oceanbase.odc.plugin.connect.api.TestResult;
+import com.oceanbase.odc.plugin.connect.model.ConnectionPropertiesBuilder;
+import com.oceanbase.odc.plugin.connect.model.JdbcUrlProperty;
+import com.oceanbase.odc.service.connection.CloudMetadataClient.CloudPermissionAction;
 import com.oceanbase.odc.service.connection.model.ConnectProperties;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.connection.model.ConnectionTestResult;
+import com.oceanbase.odc.service.connection.model.OBTenant;
 import com.oceanbase.odc.service.connection.model.OBTenantEndpoint;
 import com.oceanbase.odc.service.connection.model.OceanBaseAccessMode;
 import com.oceanbase.odc.service.connection.model.TestConnectionReq;
@@ -49,7 +56,8 @@ import com.oceanbase.odc.service.connection.ssl.ConnectionSSLAdaptor;
 import com.oceanbase.odc.service.connection.util.ConnectTypeUtil;
 import com.oceanbase.odc.service.plugin.ConnectionPluginUtil;
 import com.oceanbase.odc.service.session.factory.OBConsoleDataSourceFactory;
-import com.oceanbase.odc.service.session.initializer.SessionCreatedInitializer;
+import com.oceanbase.odc.service.session.initializer.BackupInstanceInitializer;
+import com.oceanbase.odc.service.session.initializer.DataSourceInitScriptInitializer;
 
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
@@ -68,18 +76,21 @@ public class ConnectionTesting {
     @Autowired
     private ConnectProperties connectProperties;
     @Autowired
-    private ConnectionEnvironmentAdapter environmentAdapter;
+    private ConnectionAdapter environmentAdapter;
     @Autowired
     private ConnectionSSLAdaptor connectionSSLAdaptor;
+    @Autowired
+    private CloudMetadataClient cloudMetadataClient;
     @Value("${odc.sdk.test-connect.query-timeout-seconds:2}")
     private int queryTimeoutSeconds = 2;
 
     public ConnectionTestResult test(@NotNull @Valid TestConnectionReq req) {
         PreConditions.notNull(req, "req");
+        environmentAdapter.adaptConfig(req);
         PreConditions.validArgumentState(Objects.nonNull(req.getPassword()),
                 ErrorCodes.ConnectionPasswordMissed, null, "password required for connection without password saved");
-
-        environmentAdapter.adaptConfig(req);
+        cloudMetadataClient.checkPermission(OBTenant.of(req.getClusterName(),
+                req.getTenantName()), req.getInstanceType(), false, CloudPermissionAction.READONLY);
         connectionSSLAdaptor.adapt(req);
 
         PreConditions.validNotSqlInjection(req.getUsername(), "username");
@@ -137,29 +148,29 @@ public class ConnectionTesting {
             String schema;
             if (type == null) {
                 schema = OBConsoleDataSourceFactory.getDefaultSchema(config);
-            } else if (type.getDialectType() == DialectType.OB_ORACLE) {
+            } else if (type.getDialectType().isOracle()) {
                 schema = null;
             } else if (type.getDialectType().isMysql()) {
+                schema = OBConsoleDataSourceFactory.getDefaultSchema(config);
+            } else if (type.getDialectType().isDoris()) {
                 schema = OBConsoleDataSourceFactory.getDefaultSchema(config);
             } else {
                 throw new UnsupportedOperationException("Unsupported type, " + type);
             }
-            config.setType(null);
 
             ConnectionExtensionPoint connectionExtensionPoint = ConnectionPluginUtil.getConnectionExtension(
                     (type != null) ? type.getDialectType() : DialectType.OB_MYSQL);
+
+            JdbcUrlProperty jdbcUrlProperties = getJdbcUrlProperties(config, schema);
+            Properties testConnectionProperties = getTestConnectionProperties(config);
+
             TestResult result = connectionExtensionPoint.test(
-                    connectionExtensionPoint.generateJdbcUrl(
-                            config.getHost(),
-                            config.getPort(),
-                            schema,
-                            OBConsoleDataSourceFactory.getJdbcParams(config)),
-                    OBConsoleDataSourceFactory.getUsername(config),
-                    OBConsoleDataSourceFactory.getPassword(config),
-                    queryTimeoutSeconds);
+                    connectionExtensionPoint.generateJdbcUrl(jdbcUrlProperties),
+                    testConnectionProperties, queryTimeoutSeconds);
             log.info("Test connection completed, result: {}", result);
             if (result.getErrorCode() != null) {
                 if (type != null && !type.isCloud()
+
                         && StringUtils.endsWithAny(config.getHost(), ConnectTypeUtil.CLOUD_SUFFIX)) {
                     return ConnectionTestResult.connectTypeMismatch();
                 }
@@ -170,14 +181,8 @@ public class ConnectionTesting {
                 return new ConnectionTestResult(result, null);
             }
             ConnectType connectType = ConnectTypeUtil.getConnectType(
-                    connectionExtensionPoint.generateJdbcUrl(
-                            config.getHost(),
-                            config.getPort(),
-                            schema,
-                            OBConsoleDataSourceFactory.getJdbcParams(config)),
-                    OBConsoleDataSourceFactory.getUsername(config),
-                    OBConsoleDataSourceFactory.getPassword(config),
-                    queryTimeoutSeconds);
+                    connectionExtensionPoint.generateJdbcUrl(jdbcUrlProperties),
+                    testConnectionProperties, queryTimeoutSeconds);
             ConnectionTestResult testResult = new ConnectionTestResult(result, connectType);
             if (type != null && connectType != null && !Objects.equals(connectType, type)) {
                 return ConnectionTestResult.connectTypeMismatch(connectType);
@@ -193,6 +198,18 @@ public class ConnectionTesting {
         } finally {
             config.setType(type);
         }
+    }
+
+    private JdbcUrlProperty getJdbcUrlProperties(ConnectionConfig config, String schema) {
+        return new JdbcUrlProperty(config.getHost(), config.getPort(), schema,
+                OBConsoleDataSourceFactory.getJdbcParams(config), config.getSid(),
+                config.getServiceName());
+    }
+
+    private Properties getTestConnectionProperties(ConnectionConfig config) {
+        return ConnectionPropertiesBuilder.getBuilder().user(OBConsoleDataSourceFactory.getUsername(config))
+                .password(OBConsoleDataSourceFactory.getPassword(config)).userRole(config.getUserRole())
+                .build();
     }
 
     private ConnectionConfig reqToConnectionConfig(TestConnectionReq req) {
@@ -211,10 +228,12 @@ public class ConnectionTesting {
         config.setDefaultSchema(req.getDefaultSchema());
         config.setSessionInitScript(req.getSessionInitScript());
         config.setJdbcUrlParameters(req.getJdbcUrlParameters());
+        config.setSid(req.getSid());
+        config.setServiceName(req.getServiceName());
+        config.setUserRole(req.getUserRole());
 
         OBTenantEndpoint endpoint = req.getEndpoint();
         if (Objects.nonNull(endpoint) && OceanBaseAccessMode.IC_PROXY == endpoint.getAccessMode()) {
-            config.setClusterName(null);
             config.setEndpoint(endpoint);
         }
         if (StringUtils.isNotBlank(req.getOBTenantName())) {
@@ -227,30 +246,25 @@ public class ConnectionTesting {
 
     private void testInitScript(ConnectionExtensionPoint extensionPoint,
             String schema, ConnectionConfig config) throws SQLException {
-        if (StringUtils.isEmpty(config.getSessionInitScript())) {
-            return;
-        }
-        String jdbcUrl = extensionPoint.generateJdbcUrl(config.getHost(),
-                config.getPort(), schema, OBConsoleDataSourceFactory.getJdbcParams(config));
-        String username = OBConsoleDataSourceFactory.getUsername(config);
-        String password = OBConsoleDataSourceFactory.getPassword(config);
-        Properties properties = new Properties();
-        properties.setProperty("user", username);
-        if (password == null) {
-            properties.setProperty("password", "");
-        } else {
-            properties.setProperty("password", password);
-        }
+        String jdbcUrl =
+                extensionPoint.generateJdbcUrl(getJdbcUrlProperties(config, schema));
+
+        Properties properties = getTestConnectionProperties(config);
         properties.setProperty("socketTimeout", ConnectTypeUtil.REACHABLE_TIMEOUT_MILLIS + "");
         properties.setProperty("connectTimeout", ConnectTypeUtil.REACHABLE_TIMEOUT_MILLIS + "");
 
-        ConnectionInitializer initializer = new SessionCreatedInitializer(config, false);
+        List<ConnectionInitializer> initializers = new ArrayList<>();
+        initializers.addAll(
+                Arrays.asList(new BackupInstanceInitializer(config),
+                        new DataSourceInitScriptInitializer(config, false)));
         try (Connection connection = DriverManager.getConnection(jdbcUrl, properties);
                 Statement statement = connection.createStatement()) {
             if (queryTimeoutSeconds >= 0) {
                 statement.setQueryTimeout(queryTimeoutSeconds);
             }
-            initializer.init(connection);
+            for (ConnectionInitializer initializer : initializers) {
+                initializer.init(connection);
+            }
         }
     }
 

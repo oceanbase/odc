@@ -37,7 +37,6 @@ sqls:
       NUMERIC_SCALE,
       NUMERIC_PRECISION,
       DATETIME_PRECISION,
-      NUMERIC_SCALE,
       CHARACTER_MAXIMUM_LENGTH,
       EXTRA,
       CHARACTER_SET_NAME,
@@ -133,6 +132,61 @@ sqls:
     where
       d.database_name = ?
       and t.table_name = ?
+      and d.tenant_id = t.tenant_id
+      and d.database_id = t.database_id
+      and t.tenant_id = p.tenant_id
+      and t.table_id = p.table_id
+    order by
+      part_id asc
+  list-partitions: |-
+    select
+      t.table_name,
+      t.part_level,
+      case
+      when t.part_func_type = 0 then 'HASH'
+      when t.part_func_type = 1 then 'KEY'
+      when t.part_func_type = 2 then 'KEY'
+      when t.part_func_type = 3 then 'RANGE'
+      when t.part_func_type = 4 then 'RANGE COLUMNS'
+      when t.part_func_type = 5 then 'LIST'
+      when t.part_func_type = 6 then 'KEY'
+      when t.part_func_type = 7 then 'LIST COLUMNS'
+      when t.part_func_type = 8 then 'HASH'
+      when t.part_func_type = 9 then 'KEY'
+      when t.part_func_type = 10 then 'KEY'
+      else 'UNKNOWN'
+    end
+      as partition_method,
+      t.part_func_expr,
+      t.part_num,
+      case
+      when t.sub_part_func_type = 0 then 'HASH'
+      when t.sub_part_func_type = 1 then 'KEY'
+      when t.sub_part_func_type = 2 then 'KEY'
+      when t.sub_part_func_type = 3 then 'RANGE'
+      when t.sub_part_func_type = 4 then 'RANGE COLUMNS'
+      when t.sub_part_func_type = 5 then 'LIST'
+      when t.sub_part_func_type = 6 then 'KEY'
+      when t.sub_part_func_type = 7 then 'LIST COLUMNS'
+      when t.sub_part_func_type = 8 then 'HASH'
+      when t.sub_part_func_type = 9 then 'KEY'
+      when t.sub_part_func_type = 10 then 'KEY'
+      else 'UNKNOWN'
+    end
+      as subpartition_method,
+      t.sub_part_func_expr,
+      t.sub_part_num,
+      '1' as is_sub_part_template,
+      p.part_id,
+      p.part_name,
+      p.high_bound_val,
+      p.list_val
+    from
+      oceanbase.__all_database d,
+      oceanbase.__all_table_v2 t,
+      oceanbase.__all_part p
+    where
+      d.database_name = ?
       and d.tenant_id = t.tenant_id
       and d.database_id = t.database_id
       and t.tenant_id = p.tenant_id

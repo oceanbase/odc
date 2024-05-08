@@ -100,7 +100,7 @@ import lombok.extern.slf4j.Slf4j;
 @Builder
 @Slf4j
 public class DataTransferTask implements Callable<DataTransferTaskResult> {
-    private static final Set<String> OUTPUT_FILTER_FILES = new HashSet<>();
+    public static final Set<String> OUTPUT_FILTER_FILES = new HashSet<>();
     private static final Logger LOGGER = LoggerFactory.getLogger("DataTransferLogger");
 
     private final DataMaskingService maskingService;
@@ -273,14 +273,14 @@ public class DataTransferTask implements Callable<DataTransferTaskResult> {
 
         if (dataPath.exists()) {
             boolean deleteRes = FileUtils.deleteQuietly(dataPath);
-            log.info("Delete data directory, dir={}, result={}", dataPath.getAbsolutePath(), deleteRes);
+            LOGGER.info("Delete data directory, dir={}, result={}", dataPath.getAbsolutePath(), deleteRes);
         }
         for (File subFile : workingDir.listFiles()) {
             if (subFile.isDirectory()) {
                 continue;
             }
             boolean deleteRes = FileUtils.deleteQuietly(subFile);
-            log.info("Deleted file, fileName={}, result={}", subFile.getName(), deleteRes);
+            LOGGER.info("Deleted file, fileName={}, result={}", subFile.getName(), deleteRes);
         }
     }
 
@@ -290,31 +290,25 @@ public class DataTransferTask implements Callable<DataTransferTaskResult> {
         }
         File exportPath = Paths.get(workingDir.getPath(), "data").toFile();
         copyExportedFiles(result, exportPath.getPath());
-        File dest = new File(workingDir.getPath() + File.separator + workingDir.getName() + "_export_file.zip");
-        try {
-            ExportOutput output = new ExportOutput(exportPath);
-            output.toZip(dest, file -> !OUTPUT_FILTER_FILES.contains(file.getFileName()));
-            if (config.isMergeSchemaFiles()) {
+
+        if (config.isMergeSchemaFiles()) {
+            try {
+                ExportOutput output = new ExportOutput(exportPath);
                 File schemaFile =
                         new File(workingDir.getPath() + File.separator + workingDir.getName() + "_schema.sql");
-                try {
-                    ConnectType connectType = config.getConnectionInfo().getConnectType();
-                    SchemaMergeOperator operator =
-                            new SchemaMergeOperator(output, config.getSchemaName(), connectType.getDialectType());
-                    operator.mergeSchemaFiles(schemaFile, filename -> !OUTPUT_FILTER_FILES.contains(filename));
-                    // delete zip file if merge succeeded
-                    FileUtils.deleteQuietly(dest);
-                    dest = schemaFile;
-                } catch (Exception ex) {
-                    log.warn("merge schema failed, origin files will still be used, reason=", ex);
-                }
+                ConnectType connectType = config.getConnectionInfo().getConnectType();
+                SchemaMergeOperator operator =
+                        new SchemaMergeOperator(output, config.getSchemaName(), connectType.getDialectType());
+                operator.mergeSchemaFiles(schemaFile, filename -> !OUTPUT_FILTER_FILES.contains(filename));
+                // delete data file if merge succeeded
+                FileUtils.deleteQuietly(exportPath);
+                exportPath = schemaFile;
+            } catch (Exception ex) {
+                LOGGER.warn("merge schema failed, origin files will still be used, reason=", ex);
             }
-            result.setExportZipFilePath(dest.getName());
-        } finally {
-            boolean deleteRes = FileUtils.deleteQuietly(exportPath);
-            log.info("Delete export directory, dir={}, result={}", exportPath.getAbsolutePath(), deleteRes);
         }
-        adapter.afterHandle(config, result, dest);
+
+        adapter.afterHandle(config, result, exportPath);
     }
 
     private void validateSuccessful(DataTransferTaskResult result) {
@@ -325,6 +319,8 @@ public class DataTransferTask implements Callable<DataTransferTaskResult> {
                 .collect(Collectors.toList());
         if (CollectionUtils.isNotEmpty(failedObjects)) {
             LOGGER.warn("Data transfer task completed with unfinished objects! Details : {}", failedObjects);
+            throw new IllegalStateException(
+                    "Data transfer task completed with unfinished objects! Details :" + failedObjects);
         }
     }
 
@@ -333,7 +329,7 @@ public class DataTransferTask implements Callable<DataTransferTaskResult> {
         Validate.isTrue(CollectionUtils.isNotEmpty(fileNames), "No script found");
         Validate.notNull(format, "DataTransferFormat can not be null");
         if (DataTransferFormat.CSV.equals(format) && fileNames.size() > 1) {
-            log.warn("Multiple files for CSV format is invalid, importFileNames={}", fileNames);
+            LOGGER.warn("Multiple files for CSV format is invalid, importFileNames={}", fileNames);
             throw new IllegalArgumentException("Multiple files isn't accepted for CSV format");
         }
         LocalFileManager fileManager = SpringContextUtil.getBean(LocalFileManager.class);
@@ -347,7 +343,7 @@ public class DataTransferTask implements Callable<DataTransferTaskResult> {
                     OutputStream outputStream = new FileOutputStream(dest)) {
                 IOUtils.copy(inputStream, outputStream);
             }
-            log.info("Copy script to working dir, from={}, dest={}", from.getAbsolutePath(), dest.getAbsolutePath());
+            LOGGER.info("Copy script to working dir, from={}, dest={}", from.getAbsolutePath(), dest.getAbsolutePath());
             inputs.add(dest.toURI().toURL());
         }
         return inputs;
@@ -355,19 +351,17 @@ public class DataTransferTask implements Callable<DataTransferTaskResult> {
 
     private ExportOutput copyImportZip(List<String> fileNames, File destDir) throws IOException {
         if (fileNames == null || fileNames.size() != 1) {
-            log.warn("Single zip file is available, importFileNames={}", fileNames);
+            LOGGER.warn("Single zip file is available, importFileNames={}", fileNames);
             throw new IllegalArgumentException("Single zip file is available");
         }
         String fileName = fileNames.get(0);
         LocalFileManager fileManager = SpringContextUtil.getBean(LocalFileManager.class);
         Optional<File> uploadFile = fileManager.findByName(TaskType.IMPORT, LocalFileManager.UPLOAD_BUCKET, fileName);
         File from = uploadFile.orElseThrow(() -> new FileNotFoundException("File not found, " + fileName));
-        File dest = new File(destDir.getAbsolutePath() + File.separator + "data");
-        FileUtils.forceMkdir(dest);
         ExportOutput exportOutput = new ExportOutput(from);
-        exportOutput.toFolder(dest);
-        log.info("Unzip file to working dir, from={}, dest={}", from.getAbsolutePath(), dest.getAbsolutePath());
-        return new ExportOutput(dest);
+        exportOutput.toFolder(destDir);
+        LOGGER.info("Unzip file to working dir, from={}, dest={}", from.getAbsolutePath(), destDir.getAbsolutePath());
+        return new ExportOutput(destDir);
     }
 
     private void copyExportedFiles(DataTransferTaskResult result, String exportPath) {

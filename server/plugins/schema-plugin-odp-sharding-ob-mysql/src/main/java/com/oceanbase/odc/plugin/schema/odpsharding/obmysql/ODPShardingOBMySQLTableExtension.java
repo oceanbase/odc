@@ -21,8 +21,6 @@ import org.pf4j.Extension;
 
 import com.oceanbase.odc.common.util.JdbcOperationsUtil;
 import com.oceanbase.odc.plugin.schema.obmysql.OBMySQLTableExtension;
-import com.oceanbase.tools.dbbrowser.editor.DBTablePartitionEditor;
-import com.oceanbase.tools.dbbrowser.editor.mysql.MySQLDBTablePartitionEditor;
 import com.oceanbase.tools.dbbrowser.model.DBTable;
 import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
 import com.oceanbase.tools.dbbrowser.schema.mysql.ODPOBMySQLSchemaAccessor;
@@ -38,6 +36,7 @@ import lombok.NonNull;
  */
 @Extension
 public class ODPShardingOBMySQLTableExtension extends OBMySQLTableExtension {
+
     @Override
     public DBTable getDetail(@NonNull Connection connection, @NonNull String schemaName, @NonNull String tableName) {
         DBTable table = super.getDetail(connection, schemaName, tableName);
@@ -60,8 +59,4 @@ public class ODPShardingOBMySQLTableExtension extends OBMySQLTableExtension {
         return new ODPOBMySQLStatsAccessor("");
     }
 
-    @Override
-    protected DBTablePartitionEditor getDBTablePartitionEditor(Connection connection) {
-        return new MySQLDBTablePartitionEditor();
-    }
 }

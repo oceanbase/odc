@@ -86,9 +86,14 @@ public class SqlUtils {
     }
 
     public static List<OffsetString> splitWithOffset(DialectType dialectType, String sql, String delimiter) {
+        return splitWithOffset(dialectType, sql, delimiter, false);
+    }
+
+    public static List<OffsetString> splitWithOffset(DialectType dialectType, String sql, String delimiter,
+            boolean removeCommentPrefix) {
         SqlCommentProcessor processor = new SqlCommentProcessor(dialectType, true, true);
         processor.setDelimiter(delimiter);
-        return split(dialectType, processor, sql, false);
+        return split(dialectType, processor, sql, removeCommentPrefix);
     }
 
     /**
@@ -112,14 +117,12 @@ public class SqlUtils {
         return split(connectionSession.getDialectType(), processor, sql, removeCommentPrefix);
     }
 
-
-
     private static List<OffsetString> split(DialectType dialectType, SqlCommentProcessor processor, String sql,
             boolean removeCommentPrefix) {
         PreConditions.notBlank(processor.getDelimiter(), "delimiter", "Empty or blank delimiter is not allowed");
-        if (DialectType.OB_ORACLE == dialectType
+        if (dialectType.isOracle()
                 && (";".equals(processor.getDelimiter()) || "/".equals(processor.getDelimiter()))) {
-            SqlSplitter sqlSplitter = new SqlSplitter(PlSqlLexer.class, processor.getDelimiter());
+            SqlSplitter sqlSplitter = new SqlSplitter(PlSqlLexer.class, processor.getDelimiter(), false);
             sqlSplitter.setRemoveCommentPrefix(removeCommentPrefix);
             List<OffsetString> sqls = sqlSplitter.split(sql);
             processor.setDelimiter(sqlSplitter.getDelimiter());
@@ -131,13 +134,16 @@ public class SqlUtils {
             if (bufferStr.trim().length() != 0) {
                 // if buffer is not empty, there will be some errors in syntax
                 log.info("sql processor's buffer is not empty, there may be some errors. buffer={}", bufferStr);
+                int lastSqlOffset;
                 if (sqls.size() == 0) {
-                    sqls.add(new OffsetString(0, bufferStr));
+                    int index = sql.indexOf(bufferStr.trim(), 0);
+                    lastSqlOffset = index == -1 ? 0 : index;
                 } else {
-                    sqls.add(new OffsetString(
-                            sqls.get(sqls.size() - 1).getOffset() + sqls.get(sqls.size() - 1).getStr().length(),
-                            bufferStr));
+                    int from = sqls.get(sqls.size() - 1).getOffset() + sqls.get(sqls.size() - 1).getStr().length();
+                    int index = sql.indexOf(bufferStr.trim(), from);
+                    lastSqlOffset = index == -1 ? from : index;
                 }
+                sqls.add(new OffsetString(lastSqlOffset, bufferStr));
             }
             return sqls;
         }
@@ -159,9 +165,9 @@ public class SqlUtils {
     private static SqlStatementIterator iterator(InputStream input, Charset charset, DialectType dialectType,
             SqlCommentProcessor processor) {
         PreConditions.notBlank(processor.getDelimiter(), "delimiter", "Empty or blank delimiter is not allowed");
-        if (DialectType.OB_ORACLE == dialectType
+        if (Objects.nonNull(dialectType) && dialectType.isOracle()
                 && (";".equals(processor.getDelimiter()) || "/".equals(processor.getDelimiter()))) {
-            return SqlSplitter.iterator(input, charset, processor.getDelimiter());
+            return SqlSplitter.iterator(input, charset, processor.getDelimiter(), false);
         } else {
             return SqlCommentProcessor.iterator(input, charset, processor);
         }

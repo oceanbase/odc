@@ -18,9 +18,12 @@ package com.oceanbase.odc.service.connection;
 import java.util.List;
 
 import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.NotNull;
 
+import com.oceanbase.odc.core.authority.exception.AccessDeniedException;
 import com.oceanbase.odc.service.connection.model.OBDatabaseUser;
 import com.oceanbase.odc.service.connection.model.OBInstance;
+import com.oceanbase.odc.service.connection.model.OBInstanceType;
 import com.oceanbase.odc.service.connection.model.OBTenant;
 import com.oceanbase.odc.service.connection.model.OBTenantEndpoint;
 import com.oceanbase.odc.service.connection.model.OceanBaseAccessMode;
@@ -36,6 +39,16 @@ public interface CloudMetadataClient {
     boolean needsOBTenantName();
 
     boolean needsSysTenantUser();
+
+    /**
+     * Permission check hook. If you want to check some permission additionally, you can override this
+     * method. The default implementation will do nothing.
+     * 
+     * @param tenant, the tenant to be checked
+     * @param type, instance type
+     */
+    default void checkPermission(OBTenant tenant, OBInstanceType type, boolean isForAll,
+            @NotNull CloudMetadataClient.CloudPermissionAction action) throws AccessDeniedException {}
 
     /**
      * if cluster name should be included in jdbc username
@@ -70,4 +83,9 @@ public interface CloudMetadataClient {
     OBTenantEndpoint getTenantEndpoint(@NotBlank String instanceId, @NotBlank String tenantId);
 
     OBDatabaseUser getSysTenantUser(@NotBlank String instanceId);
+
+    enum CloudPermissionAction {
+        READONLY,
+        FULL
+    }
 }

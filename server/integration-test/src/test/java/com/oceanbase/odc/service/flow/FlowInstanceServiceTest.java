@@ -15,6 +15,7 @@
  */
 package com.oceanbase.odc.service.flow;
 
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.when;
 
 import java.io.IOException;
@@ -46,6 +47,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 
 import com.oceanbase.odc.ServiceTestEnv;
@@ -96,6 +98,7 @@ import com.oceanbase.odc.service.iam.ResourceRoleService;
 import com.oceanbase.odc.service.iam.UserService;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.iam.model.User;
+import com.oceanbase.odc.service.permission.database.DatabasePermissionHelper;
 import com.oceanbase.odc.service.regulation.approval.ApprovalFlowConfigSelector;
 import com.oceanbase.odc.service.regulation.approval.model.ApprovalFlowConfig;
 import com.oceanbase.odc.service.regulation.approval.model.ApprovalNodeConfig;
@@ -172,9 +175,12 @@ public class FlowInstanceServiceTest extends ServiceTestEnv {
     public ExpectedException thrown = ExpectedException.none();
     @Autowired
     private UserTaskInstanceCandidateRepository userTaskInstanceCandidateRepository;
+    @MockBean
+    private DatabasePermissionHelper databasePermissionHelper;
 
     @Before
     public void setUp() {
+        taskRepository.deleteAll();
         flowInstanceRepository.deleteAll();
         serviceTaskRepository.deleteAll();
         nodeRepository.deleteAll();
@@ -194,6 +200,7 @@ public class FlowInstanceServiceTest extends ServiceTestEnv {
         when(databaseService.detail(Mockito.anyLong())).thenReturn(database);
         when(riskLevelService.findDefaultRiskLevel()).thenReturn(getRiskLevel());
         when(riskLevelService.list()).thenReturn(Arrays.asList(getRiskLevel(), getRiskLevel()));
+        doNothing().when(databasePermissionHelper).checkPermissions(Mockito.anyCollection(), Mockito.anyCollection());
     }
 
     @Test
@@ -279,6 +286,32 @@ public class FlowInstanceServiceTest extends ServiceTestEnv {
                 .type(TaskType.ASYNC).build();
         Page<FlowInstanceDetailResp> page = flowInstanceService.list(Pageable.unpaged(), params);
         Assert.assertEquals(2, page.getTotalElements());
+    }
+
+    @Test
+    public void list_ThreePages_ReturnCorrectTotalElements() {
+
+        for (int i = 0; i < 5; i++) {
+            FlowInstance flowInstance = createFlowInstance("test" + i);
+            buildFlowInstance(flowInstance);
+        }
+
+        User user = new User();
+        user.setRoleIds(Collections.emptyList());
+        when(userService.detailCurrentUser()).thenReturn(user);
+        when(databaseService.listDatabasesByConnectionIds(Mockito.anyCollection()))
+                .thenReturn(Collections.singletonList(getDatabase()));
+
+        QueryFlowInstanceParams params = QueryFlowInstanceParams.builder()
+                .approveByCurrentUser(false)
+                .createdByCurrentUser(true)
+                .containsAll(false)
+                .startTime(new Date(System.currentTimeMillis() - 10000))
+                .endTime(new Date(System.currentTimeMillis() + 10000))
+                .type(TaskType.ASYNC).build();
+        Page<FlowInstanceDetailResp> page = flowInstanceService.list(PageRequest.of(1, 2), params);
+        Assert.assertEquals(5, page.getTotalElements());
+        Assert.assertEquals(3, page.getTotalPages());
     }
 
     @Test

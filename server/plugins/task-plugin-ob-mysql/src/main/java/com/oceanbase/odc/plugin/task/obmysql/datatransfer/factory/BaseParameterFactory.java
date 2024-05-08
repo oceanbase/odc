@@ -16,6 +16,8 @@
 
 package com.oceanbase.odc.plugin.task.obmysql.datatransfer.factory;
 
+import static com.oceanbase.odc.core.shared.constant.OdcConstants.DEFAULT_ZERO_DATE_TIME_BEHAVIOR;
+
 import java.io.File;
 import java.io.IOException;
 import java.sql.Connection;
@@ -25,10 +27,13 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Predicate;
 
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
 
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.common.util.VersionUtils;
@@ -45,12 +50,15 @@ import com.oceanbase.odc.plugin.task.obmysql.datatransfer.util.ConnectionUtil;
 import com.oceanbase.odc.plugin.task.obmysql.datatransfer.util.PluginUtil;
 import com.oceanbase.tools.loaddump.common.enums.ObjectType;
 import com.oceanbase.tools.loaddump.common.model.BaseParameter;
+import com.oceanbase.tools.loaddump.common.model.SessionConfig;
 
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public abstract class BaseParameterFactory<T extends BaseParameter> {
+    private static final String SESSION_CONFIG_FILE_PATH = "/session.config.json";
+
     protected final DataTransferConfig transferConfig;
     protected final File workingDir;
     protected final File logDir;
@@ -65,6 +73,7 @@ public abstract class BaseParameterFactory<T extends BaseParameter> {
         T parameter = doGenerate(workingDir);
         parameter.setLogPath(logDir.getPath());
         setSessionInfo(parameter);
+        setInitSqls(parameter);
         setFileConfig(parameter, workingDir);
         parameter.setThreads(3);
         if (transferConfig.getDataTransferFormat() == DataTransferFormat.SQL) {
@@ -86,7 +95,7 @@ public abstract class BaseParameterFactory<T extends BaseParameter> {
     private void setSessionInfo(@NonNull T parameter) {
         ConnectionInfo target = transferConfig.getConnectionInfo();
         parameter.setHost(target.getHost());
-        parameter.setPort(target.getPort());
+        parameter.setPort(target.getPort() + "");
         parameter.setPassword(target.getPassword());
         parameter.setCluster(target.getClusterName());
         parameter.setTenant(target.getTenantName());
@@ -98,7 +107,7 @@ public abstract class BaseParameterFactory<T extends BaseParameter> {
             parameter.setConnectDatabaseName("\"" + transferConfig.getSchemaName() + "\"");
         } else {
             parameter.setUser(username);
-            parameter.setDatabaseName("`" + transferConfig.getSchemaName() + "`");
+            parameter.setDatabaseName(transferConfig.getSchemaName());
             parameter.setConnectDatabaseName(transferConfig.getSchemaName());
         }
 
@@ -136,6 +145,26 @@ public abstract class BaseParameterFactory<T extends BaseParameter> {
         if (StringUtils.isNotBlank(target.getOBTenant())) {
             parameter.setTenant(target.getOBTenant());
         }
+    }
+
+    private void setInitSqls(BaseParameter parameter) throws IOException {
+        File sessionFile = new File(workingDir, "session.config");
+        IOUtils.copy(getClass().getResource(SESSION_CONFIG_FILE_PATH), sessionFile);
+        SessionConfig sessionConfig = SessionConfig.fromJson(sessionFile);
+
+        sessionConfig.setJdbcOption("useServerPrepStmts", transferConfig.isUsePrepStmts() + "");
+        sessionConfig.setJdbcOption("useCursorFetch", transferConfig.isUsePrepStmts() + "");
+        sessionConfig.setJdbcOption("zeroDateTimeBehavior", DEFAULT_ZERO_DATE_TIME_BEHAVIOR);
+        sessionConfig.setJdbcOption("sendConnectionAttributes", "false");
+        Optional.ofNullable(transferConfig.getExecutionTimeoutSeconds())
+                .ifPresent(timeout -> {
+                    sessionConfig.setJdbcOption("socketTimeout", timeout * 1000 + "");
+                    sessionConfig.setJdbcOption("connectTimeout", timeout * 1000 + "");
+                    sessionConfig.addInitSql4Both("set ob_query_timeout = " + timeout * 1000000L);
+                });
+
+        parameter.setSessionConfig(sessionConfig);
+        FileUtils.deleteQuietly(sessionFile);
     }
 
     private void setCsvInfo(BaseParameter parameter) {

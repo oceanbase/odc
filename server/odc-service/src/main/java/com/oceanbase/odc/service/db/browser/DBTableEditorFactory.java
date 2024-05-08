@@ -15,6 +15,7 @@
  */
 package com.oceanbase.odc.service.db.browser;
 
+import com.oceanbase.odc.common.util.VersionUtils;
 import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.core.shared.constant.ConnectType;
 import com.oceanbase.odc.core.shared.exception.UnsupportedException;
@@ -24,6 +25,7 @@ import com.oceanbase.tools.dbbrowser.editor.DBTableEditor;
 import com.oceanbase.tools.dbbrowser.editor.DBTableIndexEditor;
 import com.oceanbase.tools.dbbrowser.editor.DBTablePartitionEditor;
 import com.oceanbase.tools.dbbrowser.editor.mysql.MySQLTableEditor;
+import com.oceanbase.tools.dbbrowser.editor.mysql.OBMySQLLessThan400TableEditor;
 import com.oceanbase.tools.dbbrowser.editor.mysql.OBMySQLTableEditor;
 import com.oceanbase.tools.dbbrowser.editor.oracle.OracleTableEditor;
 
@@ -55,8 +57,13 @@ public class DBTableEditorFactory extends DBObjectEditorFactory<DBTableEditor> {
             case OB_MYSQL:
             case CLOUD_OB_MYSQL:
             case ODP_SHARDING_OB_MYSQL:
+                if (VersionUtils.isLessThan(dbVersion, "4.0.0")) {
+                    return new OBMySQLLessThan400TableEditor(indexEditorFactory.create(), columnEditorFactory.create(),
+                            constraintEditorFactory.create(), partitionEditorFactory.create());
+                }
                 return new OBMySQLTableEditor(indexEditorFactory.create(), columnEditorFactory.create(),
                         constraintEditorFactory.create(), partitionEditorFactory.create());
+            case DORIS:
             case MYSQL:
                 return new MySQLTableEditor(indexEditorFactory.create(), columnEditorFactory.create(),
                         constraintEditorFactory.create(), partitionEditorFactory.create());

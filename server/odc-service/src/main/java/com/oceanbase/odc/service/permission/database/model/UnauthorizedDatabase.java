@@ -15,7 +15,7 @@
  */
 package com.oceanbase.odc.service.permission.database.model;
 
-import java.util.List;
+import java.util.Set;
 
 import com.oceanbase.odc.service.connection.database.model.Database;
 
@@ -30,6 +30,21 @@ import lombok.EqualsAndHashCode;
 @EqualsAndHashCode(callSuper = true)
 public class UnauthorizedDatabase extends Database {
 
-    private List<DatabasePermissionType> unauthorizedPermissionTypes;
+    private static final long serialVersionUID = 2659094834615671659L;
+
+    private Set<DatabasePermissionType> unauthorizedPermissionTypes;
+
+    private Boolean applicable;
+
+    public static UnauthorizedDatabase from(Database database, Set<DatabasePermissionType> types, boolean applicable) {
+        UnauthorizedDatabase obj = new UnauthorizedDatabase();
+        obj.setId(database.getId());
+        obj.setName(database.getName());
+        obj.setDataSource(database.getDataSource());
+        obj.setProject(database.getProject());
+        obj.setUnauthorizedPermissionTypes(types);
+        obj.setApplicable(applicable);
+        return obj;
+    }
 
 }

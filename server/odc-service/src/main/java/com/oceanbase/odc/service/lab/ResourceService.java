@@ -33,6 +33,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.oceanbase.odc.common.util.TimeUtils;
 import com.oceanbase.odc.core.authority.model.DefaultSecurityResource;
 import com.oceanbase.odc.core.authority.model.SecurityResource;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
@@ -237,6 +238,7 @@ public class ResourceService {
         permission.setCreatorId(1L);
         permission.setOrganizationId(organizationId);
         permission.setBuiltIn(false);
+        permission.setExpireTime(TimeUtils.getMySQLMaxDatetime());
         permission.setAuthorizationType(AuthorizationType.USER_AUTHORIZATION);
         permissionRepository.saveAndFlush(permission);
 

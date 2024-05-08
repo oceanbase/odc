@@ -92,8 +92,8 @@ public class OBMySQLResourceService {
                 statement.execute(script);
 
                 connection.commit();
-                resourceInfo.setConnectType(getConnectType(ep.getJdbcUrlParser(
-                        dataSourceContext.getConnectionProperty().getJdbcUrl()), statement));
+                resourceInfo.setConnectType(getConnectType(ep.getConnectionInfo(
+                        dataSourceContext.getConnectionProperty().getJdbcUrl(), null), statement));
                 log.info("Created Ob resource, username={}, dbName={}", dbUsername, dbName);
                 return resourceInfo;
             } catch (SQLException ex) {

@@ -16,8 +16,7 @@
 package com.oceanbase.odc.core.flow.builder;
 
 import org.flowable.bpmn.model.ServiceTask;
-
-import com.oceanbase.odc.core.flow.BaseFlowableDelegate;
+import org.flowable.engine.delegate.JavaDelegate;
 
 import lombok.NonNull;
 
@@ -33,7 +32,7 @@ public class ServiceTaskBuilder extends BaseTaskBuilder<ServiceTask> {
 
     private final String implClassName;
 
-    public ServiceTaskBuilder(@NonNull String name, @NonNull Class<? extends BaseFlowableDelegate> clazz) {
+    public ServiceTaskBuilder(@NonNull String name, @NonNull Class<? extends JavaDelegate> clazz) {
         super(name);
         this.implClassName = clazz.getName();
     }

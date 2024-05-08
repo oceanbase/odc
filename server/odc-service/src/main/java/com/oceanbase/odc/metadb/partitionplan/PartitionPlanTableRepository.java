@@ -15,8 +15,20 @@
  */
 package com.oceanbase.odc.metadb.partitionplan;
 
-import org.springframework.data.jpa.repository.JpaRepository;
+import java.util.List;
+import java.util.function.Function;
+
+import javax.persistence.LockModeType;
+import javax.transaction.Transactional;
+
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.jpa.repository.Lock;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+
+import com.oceanbase.odc.common.jpa.InsertSqlTemplateBuilder;
+import com.oceanbase.odc.config.jpa.OdcJpaRepository;
 
 /**
  * {@link PartitionPlanTableRepository}
@@ -25,6 +37,40 @@ import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
  * @date 2024-01-10 17:04
  * @since ODC_release_4.2.4
  */
-public interface PartitionPlanTableRepository extends JpaRepository<PartitionPlanTableEntity, Long>,
+public interface PartitionPlanTableRepository extends OdcJpaRepository<PartitionPlanTableEntity, Long>,
         JpaSpecificationExecutor<PartitionPlanTableEntity> {
+
+    List<PartitionPlanTableEntity> findByPartitionPlanIdIn(List<Long> partitionPlanIds);
+
+    List<PartitionPlanTableEntity> findByPartitionPlanIdInAndEnabled(List<Long> partitionPlanIds, Boolean enabled);
+
+    @Transactional
+    @Lock(value = LockModeType.PESSIMISTIC_WRITE)
+    List<PartitionPlanTableEntity> findByIdIn(List<Long> ids);
+
+    @Transactional
+    @Query("update PartitionPlanTableEntity set enabled=:enabled where id in (:ids)")
+    @Modifying
+    int updateEnabledByIdIn(@Param("ids") List<Long> ids, @Param("enabled") Boolean enabled);
+
+    default List<PartitionPlanTableEntity> batchCreate(List<PartitionPlanTableEntity> entities) {
+        String sql = InsertSqlTemplateBuilder.from("partitionplan_table")
+                .field(PartitionPlanTableEntity_.tableName)
+                .field("partitionplan_id")
+                .field(PartitionPlanTableEntity_.scheduleId)
+                .field("is_enabled")
+                .field(PartitionPlanTableEntity_.partitionNameInvoker)
+                .field(PartitionPlanTableEntity_.partitionNameInvokerParameters)
+                .build();
+        List<Function<PartitionPlanTableEntity, Object>> getter = valueGetterBuilder()
+                .add(PartitionPlanTableEntity::getTableName)
+                .add(PartitionPlanTableEntity::getPartitionPlanId)
+                .add(PartitionPlanTableEntity::getScheduleId)
+                .add(PartitionPlanTableEntity::getEnabled)
+                .add(PartitionPlanTableEntity::getPartitionNameInvoker)
+                .add(PartitionPlanTableEntity::getPartitionNameInvokerParameters)
+                .build();
+        return batchCreate(entities, sql, getter, PartitionPlanTableEntity::setId);
+    }
+
 }

@@ -129,10 +129,6 @@ public class OdcStatementCallBack implements StatementCallback<List<JdbcGeneralR
     @Setter
     private Locale locale;
 
-    public OdcStatementCallBack(@NonNull List<SqlTuple> sqls, @NonNull ConnectionSession connectionSession) {
-        this(sqls, connectionSession, null, null);
-    }
-
     public OdcStatementCallBack(@NonNull List<SqlTuple> sqls, @NonNull ConnectionSession connectionSession,
             Boolean autoCommit, Integer queryLimit) {
         this(sqls, connectionSession, autoCommit, queryLimit, true);
@@ -202,9 +198,6 @@ public class OdcStatementCallBack implements StatementCallback<List<JdbcGeneralR
 
         } catch (Exception e) {
             try {
-                if (!statement.getConnection().getAutoCommit()) {
-                    rollback(statement.getConnection());
-                }
                 ConnectionSessionUtil.logSocketInfo(statement.getConnection(), "console error");
             } catch (Exception exception) {
                 log.warn("Failed to execute abnormal replenishment logic", exception);
@@ -213,7 +206,7 @@ public class OdcStatementCallBack implements StatementCallback<List<JdbcGeneralR
             if (this.autoCommit ^ currentAutoCommit) {
                 statement.getConnection().setAutoCommit(currentAutoCommit);
             }
-            if (DialectType.OB_ORACLE.equals(this.dialectType)) {
+            if (this.dialectType.isOracle()) {
                 String dbmsInfo = queryDBMSOutput(statement);
                 if (dbmsInfo != null) {
                     log.info("Clear dbms_output cache, dbmsInfo={}", dbmsInfo);
@@ -303,7 +296,7 @@ public class OdcStatementCallBack implements StatementCallback<List<JdbcGeneralR
             executeResults.add(executeResult);
         }
         // get pl log，not support for mysql mode
-        if (DialectType.OB_ORACLE.equals(this.dialectType)) {
+        if (this.dialectType.isOracle()) {
             try (TraceStage s = traceWatch.start(SqlExecuteStages.QUERY_DBMS_OUTPUT)) {
                 executeResults.forEach(jdbcResult -> jdbcResult.setDbmsOutput(queryDBMSOutput(statement)));
             }
@@ -418,7 +411,7 @@ public class OdcStatementCallBack implements StatementCallback<List<JdbcGeneralR
             StopWatch stopWatch = StopWatch.createStarted();
             String version = ConnectionSessionUtil.getVersion(connectionSession);
             SqlExecTime executeDetails = new SqlExecTime();;
-            if (useFullLinkTrace && VersionUtils.isGreaterThanOrEqualsTo(version, "4.1") &&
+            if (useFullLinkTrace && VersionUtils.isGreaterThanOrEqualsTo(version, "4.2") &&
                     connectionSession.getDialectType().isOceanbase()) {
                 try {
                     executeDetails = FullLinkTraceUtil.getFullLinkTraceDetail(statement, fullLinkTraceTimeout);
@@ -432,7 +425,9 @@ public class OdcStatementCallBack implements StatementCallback<List<JdbcGeneralR
                 executeDetails = ConnectionPluginUtil.getTraceExtension(connectionSession.getDialectType())
                         .getExecuteDetail(statement, version);
                 executeDetails.setWithFullLinkTrace(false);
-                executeDetails.setTraceEmptyReason(ErrorCodes.ObFullLinkTraceNotSupported.getLocalizedMessage(null));
+                executeDetails.setTraceEmptyReason(
+                        useFullLinkTrace ? ErrorCodes.ObFullLinkTraceNotSupported.getLocalizedMessage(null)
+                                : ErrorCodes.ObFullLinkTraceNotEnabled.getLocalizedMessage(null));
             }
             cacheTraceSpan(executeDetails.getTraceSpan());
             setExecuteTraceStage(traceWatch, executeDetails, stopWatch);

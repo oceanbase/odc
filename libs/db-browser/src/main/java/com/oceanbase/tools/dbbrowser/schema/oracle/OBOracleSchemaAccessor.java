@@ -17,7 +17,9 @@ package com.oceanbase.tools.dbbrowser.schema.oracle;
 
 import java.sql.ResultSetMetaData;
 import java.sql.Timestamp;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -49,9 +51,11 @@ import com.oceanbase.tools.dbbrowser.model.DBProcedure;
 import com.oceanbase.tools.dbbrowser.model.DBSequence;
 import com.oceanbase.tools.dbbrowser.model.DBSynonym;
 import com.oceanbase.tools.dbbrowser.model.DBSynonymType;
+import com.oceanbase.tools.dbbrowser.model.DBTable;
 import com.oceanbase.tools.dbbrowser.model.DBTable.DBTableOptions;
 import com.oceanbase.tools.dbbrowser.model.DBTableColumn;
 import com.oceanbase.tools.dbbrowser.model.DBTableColumn.CharUnit;
+import com.oceanbase.tools.dbbrowser.model.DBTableConstraint;
 import com.oceanbase.tools.dbbrowser.model.DBTableIndex;
 import com.oceanbase.tools.dbbrowser.model.DBTrigger;
 import com.oceanbase.tools.dbbrowser.model.DBType;
@@ -167,6 +171,11 @@ public class OBOracleSchemaAccessor extends OracleSchemaAccessor {
     public List<DBTableIndex> listTableIndexes(String schemaName, String tableName) {
         List<DBTableIndex> indexList = super.listTableIndexes(schemaName, tableName);
         fillIndexRange(indexList);
+        fillIndexTypeAndAlgorithm(indexList);
+        return indexList;
+    }
+
+    protected void fillIndexTypeAndAlgorithm(List<DBTableIndex> indexList) {
         for (DBTableIndex index : indexList) {
             if (index.getType() == DBIndexType.UNKNOWN) {
                 if (index.isNonUnique()) {
@@ -179,7 +188,16 @@ public class OBOracleSchemaAccessor extends OracleSchemaAccessor {
                 index.setAlgorithm(DBIndexAlgorithm.BTREE);
             }
         }
-        return indexList;
+    }
+
+    @Override
+    public Map<String, List<DBTableIndex>> listTableIndexes(String schemaName) {
+        Map<String, List<DBTableIndex>> tableName2Indexes = super.listTableIndexes(schemaName);
+        List<DBTableIndex> indexList =
+                tableName2Indexes.values().stream().flatMap(List::stream).collect(Collectors.toList());
+        fillIndexRange(indexList);
+        fillIndexTypeAndAlgorithm(indexList);
+        return tableName2Indexes;
     }
 
     @Override
@@ -208,6 +226,9 @@ public class OBOracleSchemaAccessor extends OracleSchemaAccessor {
                         DBSchemaAccessorUtil.fillWarning(index, index.type(), "parse index DDL failed");
                         index.setGlobal(true);
                     } else {
+                        if (index.getType() != DBIndexType.UNIQUE) {
+                            index.setDdl(indexDdl);
+                        }
                         // we get one single create index statement for each table index
                         // so here we should only get one index object from this statement
                         index.setGlobal("GLOBAL".equalsIgnoreCase(result.getIndexes().get(0).getRange().name()));
@@ -226,7 +247,7 @@ public class OBOracleSchemaAccessor extends OracleSchemaAccessor {
     }
 
     @Override
-    protected RowMapper listColumnsRowMapper() {
+    protected RowMapper<DBTableColumn> listColumnsRowMapper() {
         final int[] hiddenColumnOrdinaryPosition = {-1};
         return (rs, romNum) -> {
             DBTableColumn tableColumn = new DBTableColumn();
@@ -327,18 +348,26 @@ public class OBOracleSchemaAccessor extends OracleSchemaAccessor {
     }
 
     @Override
-    protected void obtainTableCharset(DBTableOptions tableOptions) {
+    protected void obtainTableCharset(List<DBTableOptions> tableOptions) {
         String sql = "SHOW VARIABLES LIKE 'nls_characterset'";
+        AtomicReference<String> charset = new AtomicReference<>();
         jdbcOperations.query(sql, t -> {
-            tableOptions.setCharsetName(t.getString("VALUE"));
+            charset.set(t.getString("VALUE"));
+        });
+        tableOptions.forEach(option -> {
+            option.setCharsetName(charset.get());
         });
     }
 
     @Override
-    protected void obtainTableCollation(DBTableOptions tableOptions) {
+    protected void obtainTableCollation(List<DBTableOptions> tableOptions) {
         String sql = "SHOW VARIABLES LIKE 'nls_sort'";
+        AtomicReference<String> collation = new AtomicReference<>();
         jdbcOperations.query(sql, t -> {
-            tableOptions.setCollationName(t.getString("VALUE"));
+            collation.set(t.getString("VALUE"));
+        });
+        tableOptions.forEach(option -> {
+            option.setCollationName(collation.get());
         });
     }
 
@@ -423,7 +452,7 @@ public class OBOracleSchemaAccessor extends OracleSchemaAccessor {
             view.setDefiner(rs.getString("OWNER"));
             partDdl.set(rs.getClob("TEXT").toString());
         });
-
+        fullFillComment(view);
         boolean updatable = fillOracleUpdatableInfo(view);
         String ddl = String.format("CREATE VIEW %s AS %s",
                 StringUtils.quoteOracleIdentifier(viewName), partDdl);
@@ -461,10 +490,21 @@ public class OBOracleSchemaAccessor extends OracleSchemaAccessor {
     }
 
     private DBView fillColumnInfoByDesc(DBView view) {
+        Map<String, List<DBTableColumn>> name2Cols = new HashMap<>();
+        try {
+            List<DBTableColumn> columns = listBasicTableColumns(view.getSchemaName(), view.getViewName());
+            if (CollectionUtils.isNotEmpty(columns)) {
+                name2Cols = columns.stream().collect(Collectors.groupingBy(DBTableColumn::getName));
+            }
+        } catch (Exception e) {
+            log.warn("Failed to query view column comments, viewName={}, errorMessage={}", view.getViewName(),
+                    e.getMessage());
+        }
         OracleSqlBuilder sb = new OracleSqlBuilder();
         sb.append("desc ");
         sb.identifier(view.getViewName());
 
+        Map<String, List<DBTableColumn>> finalName2Cols = name2Cols;
         List<DBTableColumn> columns = jdbcOperations.query(sb.toString(), (rs, rowNum) -> {
             DBTableColumn column = new DBTableColumn();
             column.setName(rs.getString("FIELD"));
@@ -473,6 +513,10 @@ public class OBOracleSchemaAccessor extends OracleSchemaAccessor {
             column.setDefaultValue(rs.getString("DEFAULT"));
             column.setOrdinalPosition(rowNum);
             column.setTableName(view.getViewName());
+            List<DBTableColumn> cols = finalName2Cols.get(column.getName());
+            if (CollectionUtils.isNotEmpty(cols)) {
+                column.setComment(cols.get(0).getComment());
+            }
             return column;
         });
         view.setColumns(columns);
@@ -938,4 +982,36 @@ public class OBOracleSchemaAccessor extends OracleSchemaAccessor {
         }
     }
 
+    @Override
+    public Map<String, DBTable> getTables(@NonNull String schemaName, List<String> tableNames) {
+        // TODO: Only query the table information of tableNames passed upstream
+        Map<String, DBTable> returnVal = new HashMap<>();
+        tableNames = showTables(schemaName);
+        if (tableNames.isEmpty()) {
+            return returnVal;
+        }
+        Map<String, List<DBTableColumn>> tableName2Columns = listTableColumns(schemaName, Collections.emptyList());
+        Map<String, List<DBTableIndex>> tableName2Indexes = listTableIndexes(schemaName);
+        Map<String, List<DBTableConstraint>> tableName2Constraints = listTableConstraints(schemaName);
+        Map<String, DBTableOptions> tableName2Options = listTableOptions(schemaName);
+        for (String tableName : tableNames) {
+            if (!tableName2Columns.containsKey(tableName)) {
+                continue;
+            }
+            DBTable table = new DBTable();
+            table.setSchemaName(schemaName);
+            table.setOwner(schemaName);
+            table.setName(tableName);
+            List<DBTableColumn> columns = tableName2Columns.getOrDefault(tableName, new ArrayList<>());
+            List<DBTableIndex> indexes = tableName2Indexes.getOrDefault(tableName, new ArrayList<>());
+            table.setColumns(columns);
+            table.setIndexes(indexes);
+            table.setConstraints(tableName2Constraints.getOrDefault(tableName, new ArrayList<>()));
+            table.setTableOptions(tableName2Options.getOrDefault(tableName, new DBTableOptions()));
+            table.setPartition(getPartition(schemaName, tableName));
+            table.setDDL(getTableDDL(schemaName, tableName, columns, indexes));
+            returnVal.put(tableName, table);
+        }
+        return returnVal;
+    }
 }

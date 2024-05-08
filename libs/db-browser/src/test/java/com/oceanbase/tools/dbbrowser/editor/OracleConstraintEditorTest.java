@@ -30,7 +30,7 @@ import com.oceanbase.tools.dbbrowser.model.DBTableConstraint;
 public class OracleConstraintEditorTest {
 
     private DBTableConstraintEditor constraintEditor;
-    private final String BASE_DIR = "src/test/resources/table/operator/oracle/constraint";
+    private final String BASE_DIR = "src/test/resources/table/operator/ob/oracle/constraint";
 
     @Before
     public void setUp() {

@@ -40,6 +40,7 @@ import org.springframework.validation.annotation.Validated;
 
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.LoadingCache;
+import com.oceanbase.odc.common.security.OdcBigDecimalChecker;
 import com.oceanbase.odc.core.authority.util.Authenticated;
 import com.oceanbase.odc.core.authority.util.PreAuthenticate;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
@@ -199,8 +200,7 @@ public class MaskingAlgorithmService {
     }
 
     @SkipAuthorize("odc internal usages")
-    public Long getSystemDefaultAlgorithmId() {
-        Long organizationId = authenticationFacade.currentOrganizationId();
+    public Long getDefaultAlgorithmIdByOrganizationId(@NonNull Long organizationId) {
         List<MaskingAlgorithmEntity> entities =
                 algorithmRepository.findByNameAndOrganizationId(SYSTEM_DEFAULT_ALGORITHM_NAME, organizationId);
         Verify.singleton(entities, "maskingAlgorithmEntities");
@@ -208,8 +208,8 @@ public class MaskingAlgorithmService {
     }
 
     @SkipAuthorize("odc internal usages")
-    public List<MaskingAlgorithm> getMaskingAlgorithms() {
-        return organizationId2Algorithms.get(authenticationFacade.currentOrganizationId());
+    public List<MaskingAlgorithm> getMaskingAlgorithmsByOrganizationId(@NonNull Long organizationId) {
+        return organizationId2Algorithms.get(organizationId);
     }
 
     private MaskingAlgorithm internalTest(@NotNull MaskingAlgorithm algorithm) {
@@ -219,6 +219,8 @@ public class MaskingAlgorithmService {
         ValueMeta valueMeta = new ValueMeta("string", "test_field");
         if (algorithm.getType() == MaskingAlgorithmType.ROUNDING) {
             valueMeta.setDataType("double");
+            Verify.verify(OdcBigDecimalChecker.checkBigDecimalDoS(algorithm.getSampleContent()),
+                    "Invalid double value");
         }
         String result = masker.mask(algorithm.getSampleContent(), valueMeta);
         algorithm.setMaskedContent(result);

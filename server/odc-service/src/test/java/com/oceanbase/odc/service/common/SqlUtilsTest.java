@@ -15,11 +15,14 @@
  */
 package com.oceanbase.odc.service.common;
 
+import java.util.List;
+
 import org.junit.Assert;
 import org.junit.Test;
 
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.shared.constant.DialectType;
+import com.oceanbase.odc.core.sql.split.OffsetString;
 import com.oceanbase.odc.core.sql.split.SqlCommentProcessor;
 import com.oceanbase.odc.service.common.util.SqlUtils;
 
@@ -65,4 +68,35 @@ public class SqlUtilsTest {
 
     }
 
+    @Test
+    public void lastSqlHasNoDelimiter_MySQL_OffsetIsCorrect() {
+        String sql = "\n\n\nselect 1 from dual";
+        List<OffsetString> offsetStrings = SqlUtils.splitWithOffset(DialectType.MYSQL, sql, ";");
+        Assert.assertEquals(1, offsetStrings.size());
+        Assert.assertEquals(3, offsetStrings.get(0).getOffset());
+    }
+
+    @Test
+    public void lastSqlHasNoDelimiterMultiSqls_MySQL_OffsetIsCorrect() {
+        String sql = "\n\n\nselect 1 from dual; \nselect 1 from dual";
+        List<OffsetString> offsetStrings = SqlUtils.splitWithOffset(DialectType.MYSQL, sql, ";");
+        Assert.assertEquals(2, offsetStrings.size());
+        Assert.assertEquals(24, offsetStrings.get(1).getOffset());
+    }
+
+    @Test
+    public void lastSqlHasNoDelimiter_Oracle_OffsetIsCorrect() {
+        String sql = "\n\n\nCREATE TABLE TEST(A VARCHAR(20))";
+        List<OffsetString> offsetStrings = SqlUtils.splitWithOffset(DialectType.ORACLE, sql, ";");
+        Assert.assertEquals(1, offsetStrings.size());
+        Assert.assertEquals(3, offsetStrings.get(0).getOffset());
+    }
+
+    @Test
+    public void lastSqlHasNoDelimiterMultiSqls_Oracle_OffsetIsCorrect() {
+        String sql = "\n\n\nCREATE TABLE TEST(A VARCHAR(20));  \nCREATE TABLE TEST(A VARCHAR(20))";
+        List<OffsetString> offsetStrings = SqlUtils.splitWithOffset(DialectType.ORACLE, sql, ";");
+        Assert.assertEquals(2, offsetStrings.size());
+        Assert.assertEquals(39, offsetStrings.get(1).getOffset());
+    }
 }

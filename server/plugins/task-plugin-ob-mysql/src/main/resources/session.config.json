@@ -1,0 +1,39 @@
+{
+  "init_sql": {
+    "oracle": [
+      "set names utf8",
+      "set autocommit=1",
+      "set session ob_trx_timeout=180000000",
+      "set session net_read_timeout=86400",
+      "set session net_write_timeout=86400",
+      "set session sql_select_limit=9223372036854775807",
+      "alter session set nls_date_format='YYYY-MM-DD HH24:MI:SS'",
+      "alter session set nls_timestamp_format='YYYY-MM-DD HH24:MI:SS:FF9'",
+      "alter session set nls_timestamp_tz_format='YYYY-MM-DD HH24:MI:SS.FF TZR TZD'"
+    ],
+    "mysql": [
+      "set names utf8",
+      "set autocommit=1",
+      "set session ob_trx_timeout=180000000",
+      "set session net_read_timeout=86400",
+      "set session net_write_timeout=86400",
+      "set session sql_select_limit=9223372036854775807"
+    ]
+  },
+  "jdbc_url_options": {
+    "characterEncoding": "utf8",
+    "socketTimeout": 1800000,
+    "connectTimeout": 1800000,
+    "zeroDateTimeBehavior": "convertToNull",
+    "useServerPrepStmts": true,
+    "noDatetimeStringSync": true,
+    "useCompression": true,
+    "log": false,
+    "allowMultiQueries": true,
+    "useLocalSessionState": true,
+    "cachePrepStmts": true,
+    "useSqlStringCache": true,
+    "extendOracleResultSetClass": true
+  },
+  "jdbc_hamode": null
+}
