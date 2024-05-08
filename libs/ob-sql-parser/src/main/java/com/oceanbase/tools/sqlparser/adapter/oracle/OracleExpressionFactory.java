@@ -918,6 +918,7 @@ public class OracleExpressionFactory extends OBParserBaseVisitor<Expression> imp
         return fCall;
     }
 
+    @Override
     public Expression visitJson_equal_expr(Json_equal_exprContext ctx) {
         List<FunctionParam> params = new ArrayList<>();
         if (ctx.func_param_list() != null) {
