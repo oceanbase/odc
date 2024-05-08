@@ -38,12 +38,12 @@ public class EnumRange extends BaseRangeExpression {
     }
 
     @Override
-    public List<String> listRanges() throws BadExpressionException {
+    public List<String> listRanges() throws BadLogicalTableExpressionException {
         enumValues.stream().forEach(value -> {
             try {
                 Integer.parseInt(value);
             } catch (NumberFormatException e) {
-                throw new BadExpressionException(ErrorCodes.LogicalTableExpressionNotValidIntegerRange,
+                throw new BadLogicalTableExpressionException(ErrorCodes.LogicalTableExpressionNotValidIntegerRange,
                         new Object[] {this.getText()},
                         ErrorCodes.LogicalTableExpressionNotValidIntegerRange
                                 .getEnglishMessage(new Object[] {this.getText()}));

@@ -78,7 +78,7 @@ public class DatabaseSpecs {
 
     public static Specification<DatabaseEntity> typeIn(List<DatabaseType> types) {
         return (root, query, builder) -> CollectionUtils.isEmpty(types) ? builder.disjunction()
-            : root.get("type").in(types);
+                : root.get("type").in(types);
     }
 
 }

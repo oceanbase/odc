@@ -89,13 +89,13 @@ public class DatabaseEntity {
     @Column(name = "sync_status", nullable = false)
     private DatabaseSyncStatus syncStatus;
 
-    @Column(name = "last_sync_time", nullable = false)
+    @Column(name = "last_sync_time")
     private Date lastSyncTime;
 
-    @Column(name = "charset_name", nullable = false)
+    @Column(name = "charset_name")
     private String charsetName;
 
-    @Column(name = "collation_name", nullable = false)
+    @Column(name = "collation_name")
     private String collationName;
 
     @Column(name = "table_count")

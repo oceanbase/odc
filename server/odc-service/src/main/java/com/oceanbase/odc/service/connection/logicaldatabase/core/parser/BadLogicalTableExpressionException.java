@@ -28,13 +28,13 @@ import com.oceanbase.tools.sqlparser.SyntaxErrorException;
  * @Date: 2024/4/23 14:03
  * @Description: []
  */
-class BadExpressionException extends HttpException {
+public class BadLogicalTableExpressionException extends HttpException {
 
-    public BadExpressionException(ErrorCode errorCode, Object[] args, String message) {
+    public BadLogicalTableExpressionException(ErrorCode errorCode, Object[] args, String message) {
         super(errorCode, args, message);
     }
 
-    public BadExpressionException(SyntaxErrorException ex) {
+    public BadLogicalTableExpressionException(SyntaxErrorException ex) {
         super(ErrorCodes.LogicalTableBadExpressionSyntax,
                 new Object[] {buildErrorMessage(ex.getText(), ex.getStart(), ex.getStop())},
                 ErrorCodes.LogicalTableBadExpressionSyntax.getEnglishMessage(

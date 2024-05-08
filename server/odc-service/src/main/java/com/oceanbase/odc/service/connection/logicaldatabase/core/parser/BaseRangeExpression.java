@@ -22,7 +22,7 @@ import org.antlr.v4.runtime.ParserRuleContext;
 import com.oceanbase.tools.sqlparser.statement.BaseStatement;
 
 public abstract class BaseRangeExpression extends BaseStatement {
-    public abstract List<String> listRanges() throws BadExpressionException;
+    public abstract List<String> listRanges() throws BadLogicalTableExpressionException;
 
     BaseRangeExpression(ParserRuleContext ruleNode) {
         super(ruleNode);

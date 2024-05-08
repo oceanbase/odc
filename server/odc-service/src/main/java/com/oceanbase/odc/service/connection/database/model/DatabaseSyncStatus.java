@@ -20,5 +20,5 @@ public enum DatabaseSyncStatus {
 
     SUCCEEDED,
 
-    PENDING,
+    INITIALIZED,
 }

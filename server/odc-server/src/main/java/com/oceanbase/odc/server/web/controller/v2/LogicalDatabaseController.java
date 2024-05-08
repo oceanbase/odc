@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 OceanBase.
+ * Copyright (c) 2023 OceanBase.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.oceanbase.odc.server.web.controller.v2;
 
 import org.springframework.web.bind.annotation.PathVariable;
@@ -23,10 +22,7 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.oceanbase.odc.core.shared.exception.NotImplementedException;
-import com.oceanbase.odc.service.common.response.Responses;
 import com.oceanbase.odc.service.common.response.SuccessResponse;
-import com.oceanbase.odc.service.connection.database.model.CreateDatabaseReq;
-import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.connection.logicaldatabase.model.CreateLogicalDatabaseReq;
 import com.oceanbase.odc.service.connection.logicaldatabase.model.DetailLogicalDatabaseResp;
 
@@ -53,15 +49,19 @@ public class LogicalDatabaseController {
         throw new NotImplementedException();
     }
 
-    @RequestMapping(value = "/logicaldatabases/{logicalDatabaseId:[\\d]+}/logicaltables/{logicalTableId:[\\d]+}/check", method = RequestMethod.POST)
-    public SuccessResponse<Boolean> checkLogicalTable(@PathVariable Long logicalDatabaseId, @PathVariable Long logicalTableId) {
+    @RequestMapping(
+            value = "/logicaldatabases/{logicalDatabaseId:[\\d]+}/logicaltables/{logicalTableId:[\\d]+}/checkStructureConsistency",
+            method = RequestMethod.POST)
+    public SuccessResponse<Boolean> checkLogicalTable(@PathVariable Long logicalDatabaseId,
+            @PathVariable Long logicalTableId) {
         throw new NotImplementedException();
     }
 
-    @RequestMapping(value = "/logicaldatabases/{logicalDatabaseId:[\\d]+}/logicaltables/{logicalTableId:[\\d]+}", method = RequestMethod.DELETE)
-    public SuccessResponse<Boolean> deleteLogicalTable(@PathVariable Long logicalDatabaseId, @PathVariable Long logicalTableId) {
+    @RequestMapping(value = "/logicaldatabases/{logicalDatabaseId:[\\d]+}/logicaltables/{logicalTableId:[\\d]+}",
+            method = RequestMethod.DELETE)
+    public SuccessResponse<Boolean> deleteLogicalTable(@PathVariable Long logicalDatabaseId,
+            @PathVariable Long logicalTableId) {
         throw new NotImplementedException();
     }
-
 
 }

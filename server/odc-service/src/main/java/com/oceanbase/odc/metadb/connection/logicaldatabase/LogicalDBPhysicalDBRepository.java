@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 OceanBase.
+ * Copyright (c) 2023 OceanBase.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,12 +13,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.oceanbase.odc.metadb.connection.logicaldatabase;
 
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import java.util.List;
+import java.util.function.Function;
 
-public interface LogicalDBPhysicalDBRepository extends JpaRepository<LogicalDBPhysicalDBEntity, Long>,
-    JpaSpecificationExecutor<LogicalDBPhysicalDBEntity> {
+import com.oceanbase.odc.common.jpa.InsertSqlTemplateBuilder;
+import com.oceanbase.odc.config.jpa.OdcJpaRepository;
+import com.oceanbase.odc.metadb.dbobject.DBObjectEntity;
+import com.oceanbase.odc.metadb.dbobject.DBObjectEntity_;
+
+public interface LogicalDBPhysicalDBRepository extends OdcJpaRepository<LogicalDBPhysicalDBEntity, Long> {
+    default List<LogicalDBPhysicalDBEntity> batchCreate(List<LogicalDBPhysicalDBEntity> entities) {
+        String sql = InsertSqlTemplateBuilder.from("connect_logical_db_physical_db")
+            .field(LogicalDBPhysicalDBEntity_.LOGICAL_DATABASE_ID)
+            .field(LogicalDBPhysicalDBEntity_.PHYSICAL_DATABASE_ID)
+            .field(LogicalDBPhysicalDBEntity_.ORGANIZATION_ID)
+            .build();
+        List<Function<LogicalDBPhysicalDBEntity, Object>> getter = valueGetterBuilder()
+            .add(LogicalDBPhysicalDBEntity::getLogicalDatabaseId)
+            .add(LogicalDBPhysicalDBEntity::getPhysicalDatabaseId)
+            .add(LogicalDBPhysicalDBEntity::getOrganizationId)
+            .build();
+        return batchCreate(entities, sql, getter, LogicalDBPhysicalDBEntity::setId, 200);
+    }
 }

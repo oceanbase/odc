@@ -40,7 +40,7 @@ public class SteppedRange extends BaseRangeExpression {
     }
 
     @Override
-    public List<String> listRanges() throws BadExpressionException {
+    public List<String> listRanges() throws BadLogicalTableExpressionException {
         return LogicalTableExpressionParseUtils.listSteppedRanges(rangeStart, rangeEnd, rangeStep, this.getText());
     }
 }

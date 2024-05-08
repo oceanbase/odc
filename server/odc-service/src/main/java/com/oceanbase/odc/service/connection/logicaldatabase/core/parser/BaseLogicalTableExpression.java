@@ -23,7 +23,7 @@ import com.oceanbase.tools.sqlparser.statement.BaseStatement;
 
 public abstract class BaseLogicalTableExpression extends BaseStatement {
 
-    public abstract List<String> evaluate() throws BadExpressionException;
+    public abstract List<String> evaluate() throws BadLogicalTableExpressionException;
 
     BaseLogicalTableExpression(ParserRuleContext ruleNode) {
         super(ruleNode);

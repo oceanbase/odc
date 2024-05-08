@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 OceanBase.
+ * Copyright (c) 2023 OceanBase.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.oceanbase.odc.service.connection.logicaldatabase.model;
 
 import java.util.Set;
@@ -30,6 +29,9 @@ import lombok.Data;
  */
 @Data
 public class CreateLogicalDatabaseReq {
+    @NotNull
+    private Long projectId;
+
     @NotNull
     private String alias;
 

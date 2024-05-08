@@ -46,7 +46,7 @@ public class LogicalTableExpression extends BaseLogicalTableExpression {
     }
 
     @Override
-    public List<String> evaluate() throws BadExpressionException {
+    public List<String> evaluate() throws BadLogicalTableExpressionException {
         List<String> schemaNames = schemaExpression.evaluate();
         List<String> tableNames = tableExpression.evaluate();
         Verify.notEmpty(schemaNames, "schemaNames");
@@ -69,7 +69,7 @@ public class LogicalTableExpression extends BaseLogicalTableExpression {
             return names;
         }
         if (tableNames.size() % schemaNames.size() != 0) {
-            throw new BadExpressionException(
+            throw new BadLogicalTableExpressionException(
                     LogicalTableExpressionNotEvenlyDivided, new Object[] {tableNames.size(), schemaNames.size()},
                     LogicalTableExpressionNotEvenlyDivided
                             .getEnglishMessage(new Object[] {tableNames.size(), schemaNames.size()}));

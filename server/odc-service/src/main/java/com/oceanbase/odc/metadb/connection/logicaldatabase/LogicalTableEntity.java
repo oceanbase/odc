@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 OceanBase.
+ * Copyright (c) 2023 OceanBase.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.oceanbase.odc.metadb.connection.logicaldatabase;
 
 import java.util.Date;
@@ -55,14 +54,20 @@ public class LogicalTableEntity {
     @Column(name = "organization_id", updatable = false, nullable = false)
     private Long organizationId;
 
+    @Column(name = "logical_database_id", updatable = false, nullable = false)
+    private Long logicalDatabaseId;
+
     @Column(name = "name", updatable = false, nullable = false)
     private String name;
 
     @Column(name = "expression", updatable = false, nullable = false)
     private String expression;
 
-    @Column(name = "structure_signature_sha1", updatable = false, nullable = false)
+    @Column(name = "structure_signature_sha1", nullable = false)
     private String structureSignatureSha1;
+
+    @Column(name = "base_physical_table_id", nullable = false)
+    private Long basePhysicalTableId;
 
     @Column(name = "last_sync_time", nullable = false)
     private Date lastSyncTime;

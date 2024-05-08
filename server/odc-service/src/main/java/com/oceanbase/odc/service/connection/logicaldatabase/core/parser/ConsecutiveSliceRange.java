@@ -40,7 +40,7 @@ public class ConsecutiveSliceRange extends BaseRangeExpression {
 
 
     @Override
-    public List<String> listRanges() throws BadExpressionException {
+    public List<String> listRanges() throws BadLogicalTableExpressionException {
         return LogicalTableExpressionParseUtils.listSteppedRanges(rangeStart, rangeEnd, "1", this.getText());
     }
 }

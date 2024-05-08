@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 OceanBase.
+ * Copyright (c) 2023 OceanBase.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,6 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import com.oceanbase.odc.common.util.YamlUtils;
-import com.oceanbase.odc.service.connection.logicaldatabase.core.LogicalTableRecognitionUtils;
 import com.oceanbase.odc.service.connection.logicaldatabase.core.model.DataNode;
 import com.oceanbase.odc.service.connection.logicaldatabase.core.model.LogicalTable;
 

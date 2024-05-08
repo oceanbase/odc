@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 OceanBase.
+ * Copyright (c) 2023 OceanBase.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,14 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.oceanbase.odc.metadb.connection.logicaldatabase;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 
-import com.oceanbase.odc.metadb.connection.ConnectionAttributeEntity;
-
 public interface LogicalDatabaseMetaRepository extends JpaRepository<LogicalDatabaseMetaEntity, Long>,
-    JpaSpecificationExecutor<LogicalDatabaseMetaEntity> {
+        JpaSpecificationExecutor<LogicalDatabaseMetaEntity> {
 }

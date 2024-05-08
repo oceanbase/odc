@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.connection.logicaldatabase.core.parser;
+package com.oceanbase.odc.service.connection.logicaldatabase;
 
 import java.io.StringReader;
 import java.util.List;
@@ -24,6 +24,9 @@ import org.springframework.stereotype.Service;
 import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.core.shared.exception.UnexpectedException;
 import com.oceanbase.odc.service.connection.logicaldatabase.core.model.DataNode;
+import com.oceanbase.odc.service.connection.logicaldatabase.core.parser.BadLogicalTableExpressionException;
+import com.oceanbase.odc.service.connection.logicaldatabase.core.parser.DefaultLogicalTableExpressionParser;
+import com.oceanbase.odc.service.connection.logicaldatabase.core.parser.LogicalTableExpressions;
 import com.oceanbase.tools.sqlparser.SyntaxErrorException;
 
 /**
@@ -41,7 +44,7 @@ public class LogicalTableService {
         try {
             logicalTableExpression = (LogicalTableExpressions) parser.parse(new StringReader(expression));
         } catch (SyntaxErrorException e) {
-            throw new BadExpressionException(e);
+            throw new BadLogicalTableExpressionException(e);
         } catch (Exception e) {
             throw new UnexpectedException("failed to parse logical table expression", e);
         }

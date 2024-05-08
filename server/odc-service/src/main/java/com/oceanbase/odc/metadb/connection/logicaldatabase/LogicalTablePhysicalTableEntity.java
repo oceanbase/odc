@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 OceanBase.
+ * Copyright (c) 2023 OceanBase.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.oceanbase.odc.metadb.connection.logicaldatabase;
 
 import java.util.Date;
@@ -32,13 +31,13 @@ import lombok.Data;
 
 /**
  * @Author: Lebie
- * @Date: 2024/5/7 14:51
+ * @Date: 2024/5/8 16:26
  * @Description: []
  */
 @Data
 @Entity
-@Table(name = "connect_logical_db_logical_table")
-public class LogicalDBLogicalTableEntity {
+@Table(name = "connect_logical_table_physical_table")
+public class LogicalTablePhysicalTableEntity {
     @Id
     @Column(name = "id", nullable = false)
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -55,9 +54,9 @@ public class LogicalDBLogicalTableEntity {
     @Column(name = "organization_id", updatable = false, nullable = false)
     private Long organizationId;
 
-    @Column(name = "logical_database_id", updatable = false, nullable = false)
-    private Long logicalDatabaseId;
-
     @Column(name = "logical_table_id", updatable = false, nullable = false)
     private Long logicalTableId;
+
+    @Column(name = "physical_table_id", updatable = false, nullable = false)
+    private Long physicalTableId;
 }
