@@ -35,12 +35,33 @@ public class ExceptionUtilsTest {
             rootCauseReason = ExceptionUtils.getRootCauseReason(e);
         }
         Assert.assertEquals(
-                " \tat com.oceanbase.odc.common.util.ExceptionUtilsTest.rethrowException(ExceptionUtilsTest.java:50)"
+                " \tat com.oceanbase.odc.common.util.ExceptionUtilsTest.rethrowException(ExceptionUtilsTest.java:71)"
                         + "  [wrapped] java.lang.RuntimeException: rethrow: "
-                        + " \tat com.oceanbase.odc.common.util.ExceptionUtilsTest.rethrowException(ExceptionUtilsTest.java:48)"
+                        + " \tat com.oceanbase.odc.common.util.ExceptionUtilsTest.rethrowException(ExceptionUtilsTest.java:69)"
                         + " \tat com.oceanbase.odc.common.util.ExceptionUtilsTest.lambda$null$1(ExceptionUtilsTest.java:31)"
                         + " java.lang.RuntimeException: root cause",
                 rootCauseReason);
+    }
+
+    @Test
+    public void getCauseReason() {
+        String causeReason = null;
+        try {
+            rethrowException(() -> {
+                rethrowException(() -> {
+                    rethrowException(() -> {
+                    });
+                    throw new RuntimeException("root cause");
+                });
+            });
+        } catch (Exception e) {
+            causeReason = ExceptionUtils.getCauseReason(e);
+        }
+        Assert.assertEquals(
+                " at com.oceanbase.odc.common.util.ExceptionUtilsTest.getCauseReason(ExceptionUtilsTest.java:50) "
+                        + "at com.oceanbase.odc.common.util.ExceptionUtilsTest.rethrowException(ExceptionUtilsTest.java:71) "
+                        + "java.lang.RuntimeException: rethrow: ",
+                causeReason);
     }
 
     private void rethrowException(Runnable runnable) {
