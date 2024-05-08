@@ -39,6 +39,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.oceanbase.odc.core.session.ConnectionSession;
+import com.oceanbase.odc.core.shared.exception.NotImplementedException;
 import com.oceanbase.odc.service.common.response.ListResponse;
 import com.oceanbase.odc.service.common.response.Responses;
 import com.oceanbase.odc.service.common.response.SuccessResponse;
@@ -55,6 +56,7 @@ import com.oceanbase.odc.service.partitionplan.model.PartitionPlanPreViewResp;
 import com.oceanbase.odc.service.partitionplan.model.PartitionPlanPreviewReq;
 import com.oceanbase.odc.service.session.ConnectConsoleService;
 import com.oceanbase.odc.service.session.ConnectSessionService;
+import com.oceanbase.odc.service.session.model.AsyncExecuteResultResp;
 import com.oceanbase.odc.service.session.model.BinaryContent;
 import com.oceanbase.odc.service.session.model.QueryTableOrViewDataReq;
 import com.oceanbase.odc.service.session.model.SqlAsyncExecuteReq;
@@ -62,6 +64,7 @@ import com.oceanbase.odc.service.session.model.SqlAsyncExecuteResp;
 import com.oceanbase.odc.service.session.model.SqlExecuteResult;
 import com.oceanbase.odc.service.sqlcheck.SqlCheckService;
 import com.oceanbase.odc.service.sqlcheck.model.CheckResult;
+import com.oceanbase.odc.service.sqlcheck.model.MultipleSqlCheckReq;
 import com.oceanbase.odc.service.sqlcheck.model.SqlCheckReq;
 import com.oceanbase.odc.service.state.model.StateName;
 import com.oceanbase.odc.service.state.model.StatefulRoute;
@@ -118,6 +121,13 @@ public class ConnectSessionController {
         return Responses.success(consoleService.execute(SidUtils.getSessionId(sessionId), req));
     }
 
+    @RequestMapping(value = {"/sessions/{sessionId}/sqls/streamExecute"}, method = RequestMethod.POST)
+    @StatefulRoute(stateName = StateName.DB_SESSION, stateIdExpression = "#sessionId")
+    public SuccessResponse<SqlAsyncExecuteResp> streamExecute(@PathVariable String sessionId,
+            @RequestBody SqlAsyncExecuteReq req) throws Exception {
+        return Responses.success(consoleService.streamExecute(SidUtils.getSessionId(sessionId), req, true));
+    }
+
     /**
      * 获取异步执行sql的结果 Todo 这里的sqlIds后续需要改成一个string类型的requestId，异步api请求需要有超时机制
      *
@@ -132,6 +142,13 @@ public class ConnectSessionController {
         return Responses.success(consoleService.getAsyncResult(SidUtils.getSessionId(sessionId), requestId, null));
     }
 
+    @RequestMapping(value = "/sessions/{sessionId}/sqls/getMoreResults", method = RequestMethod.GET)
+    @StatefulRoute(stateName = StateName.DB_SESSION, stateIdExpression = "#sessionId")
+    public SuccessResponse<AsyncExecuteResultResp> getMoreResults(@PathVariable String sessionId,
+            @RequestParam String requestId) {
+        return Responses.success(consoleService.getMoreResults(SidUtils.getSessionId(sessionId), requestId));
+    }
+
     /**
      * 对 sql 脚本的内容进行静态检查
      *
@@ -144,6 +161,18 @@ public class ConnectSessionController {
     public ListResponse<CheckResult> check(@PathVariable String sessionId, @RequestBody SqlCheckReq req) {
         ConnectionSession connectionSession = sessionService.nullSafeGet(SidUtils.getSessionId(sessionId), true);
         return Responses.list(this.sqlCheckService.check(connectionSession, req));
+    }
+
+    /**
+     * 对多个数据库进行sql检查 todo 待完善
+     * 
+     * @param req
+     * @return
+     */
+    @ApiOperation(value = "sqlCheck", notes = "statically check the contents of multiple sql scripts")
+    @PostMapping("sessions/sqlCheck")
+    public ListResponse<CheckResult> multipleCheck(@RequestBody MultipleSqlCheckReq req) {
+        throw new NotImplementedException("Unsupported now");
     }
 
     /**

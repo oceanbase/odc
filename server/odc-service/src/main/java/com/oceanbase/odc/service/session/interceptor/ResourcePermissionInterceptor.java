@@ -42,6 +42,7 @@ import com.oceanbase.odc.service.connection.table.TableService;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.permission.database.model.DatabasePermissionType;
 import com.oceanbase.odc.service.permission.table.TablePermissionService;
+import com.oceanbase.odc.service.session.model.AsyncExecuteContext;
 import com.oceanbase.odc.service.session.model.SqlAsyncExecuteReq;
 import com.oceanbase.odc.service.session.model.SqlAsyncExecuteResp;
 import com.oceanbase.odc.service.session.model.SqlExecuteResult;
@@ -90,7 +91,7 @@ public class ResourcePermissionInterceptor extends BaseTimeConsumingInterceptor 
 
     @Override
     public boolean doPreHandle(@NonNull SqlAsyncExecuteReq request, @NonNull SqlAsyncExecuteResp response,
-            @NonNull ConnectionSession session, @NonNull Map<String, Object> context) throws Exception {
+            @NonNull ConnectionSession session, @NonNull AsyncExecuteContext context) throws Exception {
         if (authenticationFacade.currentUser().getOrganizationType() == OrganizationType.INDIVIDUAL) {
             return true;
         }
@@ -160,7 +161,7 @@ public class ResourcePermissionInterceptor extends BaseTimeConsumingInterceptor 
 
     @Override
     public void afterCompletion(@NonNull SqlExecuteResult response, @NonNull ConnectionSession session,
-            @NonNull Map<String, Object> context) {}
+            @NonNull AsyncExecuteContext context) {}
 
     @Override
     protected String getExecuteStageName() {

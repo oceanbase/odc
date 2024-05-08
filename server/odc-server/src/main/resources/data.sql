@@ -724,9 +724,6 @@ INSERT INTO config_system_configuration ( `key`, `value`, `description` ) VALUES
 INSERT INTO config_system_configuration ( `key`, `value`, `description` ) VALUES( 'odc.server.obclient.command-black-list',
  'connect,conn,edit,nopager,notee,pager,print,prompt,rehash,system,tee,resetconnection', 'Prohibited commands that can be executed by obclient' ) ON DUPLICATE KEY UPDATE `id` = `id`;
 
-INSERT INTO config_system_configuration ( `key`, `value`, `description` ) VALUES( 'odc.connect.database.sync.block-internal-database', 'true',
- 'Whether block internal databases during synchronizing databases when the datasource is bound to a project. Default true.') ON DUPLICATE KEY UPDATE `id`=`id`;
-
 INSERT INTO config_system_configuration(`key`, `value`, `description`) VALUES('odc.task.pre-check.max-sql-content-bytes',
  '5242880', '预检查时所允许检查的 SQL 内容的最大长度，超过该上限将终止预检查并将检查结果置为最高风险等级。单位：字节，默认值：5242880（即 5MB），修改后重启生效') ON DUPLICATE KEY UPDATE `id`=`id`;
 
@@ -786,3 +783,25 @@ INSERT INTO config_system_configuration(`key`, `value`, `description`) VALUES('o
 
 INSERT INTO config_system_configuration(`key`, `value`, `description`) VALUES('odc.iam.auth.method',
  'jsession', 'The authentication mode used for login, there are two alternatives: jwt and jsession, the default is jsession') ON DUPLICATE KEY UPDATE `id`=`id`;
+
+---
+--- v4.3.0
+---
+INSERT INTO config_system_configuration(`key`, `value`, `description`) VALUES('odc.database.schema.sync.cron-expression',
+ '0 0 2 * * ?', 'cron expression for synchronizing full database schema') ON DUPLICATE KEY UPDATE `id`=`id`;
+INSERT INTO config_system_configuration(`key`, `value`, `description`) VALUES('odc.database.schema.sync.executor-thread-count',
+ '8', 'thread count for synchronizing database schema') ON DUPLICATE KEY UPDATE `id`=`id`;
+INSERT INTO config_system_configuration(`key`, `value`, `description`) VALUES('odc.database.schema.sync.block-exclusions-when-sync-db-to-project',
+ 'true', 'whether to block exclusions when syncing the database to the project') ON DUPLICATE KEY UPDATE `id`=`id`;
+INSERT INTO config_system_configuration(`key`, `value`, `description`) VALUES('odc.database.schema.sync.block-exclusions-when-sync-db-schemas',
+ 'true', 'whether to block exclusions when syncing the database schemas') ON DUPLICATE KEY UPDATE `id`=`id`;
+INSERT INTO config_system_configuration(`key`, `value`, `description`) VALUES('odc.database.schema.sync.exclude-schemas.ob-mysql',
+ 'mysql, information_schema, test, oceanbase', 'schema exclusions when synchronizing OceanBase MySQL mode database schema') ON DUPLICATE KEY UPDATE `id`=`id`;
+INSERT INTO config_system_configuration(`key`, `value`, `description`) VALUES('odc.database.schema.sync.exclude-schemas.ob-oracle',
+ 'SYS, LBACSYS, ORAAUDITOR', 'schema exclusions when synchronizing OceanBase Oracle mode database schema') ON DUPLICATE KEY UPDATE `id`=`id`;
+INSERT INTO config_system_configuration(`key`, `value`, `description`) VALUES('odc.database.schema.sync.exclude-schemas.oracle',
+ 'SYS, SYSTEM, SYSMAN, SCOTT, HR, OE, SH, PM, IX, BI, ORDSYS, ORDSAMPLE, ORDDATA, MDSYS, OLAPSYS, XDB', 'schema exclusions when synchronizing Oracle database schema') ON DUPLICATE KEY UPDATE `id`=`id`;
+INSERT INTO config_system_configuration(`key`, `value`, `description`) VALUES('odc.database.schema.sync.exclude-schemas.mysql',
+ 'mysql, information_schema, test', 'schema exclusions when synchronizing MySQL database schema') ON DUPLICATE KEY UPDATE `id`=`id`;
+INSERT INTO config_system_configuration(`key`, `value`, `description`) VALUES('odc.database.schema.sync.exclude-schemas.doris',
+ 'mysql, information_schema, test', 'schema exclusions when synchronizing MySQL database schema') ON DUPLICATE KEY UPDATE `id`=`id`;

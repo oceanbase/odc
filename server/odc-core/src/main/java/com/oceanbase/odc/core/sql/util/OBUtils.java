@@ -21,6 +21,8 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Types;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
@@ -377,6 +379,80 @@ public class OBUtils {
             callableStatement.registerOutParameter(2, Types.CLOB);
             callableStatement.executeQuery();
             return callableStatement.getString(2);
+        }
+    }
+
+    public static String queryOBProxySessId(@NonNull Statement statement, @NonNull DialectType dialectType,
+            @NonNull String connectionId) throws SQLException {
+        String proxySessId = null;
+        String sql = "select proxy_sessid from "
+                + (dialectType.isMysql() ? "oceanbase" : "sys")
+                + ".v$ob_processlist where id = "
+                + connectionId;
+        try (ResultSet rs = statement.executeQuery(sql)) {
+            if (rs.next()) {
+                proxySessId = rs.getString(1);
+            }
+        }
+        return proxySessId;
+    }
+
+    public static List<String> querySessionIdsByProxySessId(@NonNull Statement statement,
+            @NonNull String proxySessId, ConnectType connectType) throws SQLException {
+        DialectType dialectType = connectType.getDialectType();
+        SqlBuilder sqlBuilder = getBuilder(connectType)
+                .append("select id from ")
+                .append(dialectType.isMysql() ? "oceanbase" : "sys")
+                .append(".v$ob_processlist where proxy_sessid = ")
+                .append(proxySessId);
+        List<String> ids = new ArrayList<>();
+        try (ResultSet rs = statement.executeQuery(sqlBuilder.toString())) {
+            while (rs.next()) {
+                ids.add(rs.getString(1));
+            }
+        }
+        return ids;
+    }
+
+    /**
+     * OceanBase only supports ASH views in versions higher than 4.0. Therefore, this method is not
+     * applicable to earlier versions, please use sql_audit instead.
+     */
+    public static String queryTraceIdFromASH(@NonNull Statement statement,
+            @NonNull List<String> sessionIds, ConnectType connectType) throws SQLException {
+        DialectType dialectType = connectType.getDialectType();
+        SqlBuilder sqlBuilder = getBuilder(connectType)
+                .append("select trace_id from ")
+                .append(dialectType.isMysql() ? "oceanbase" : "sys")
+                .append(".v$active_session_history where session_id in (")
+                .append(String.join(",", sessionIds))
+                .append(")")
+                .append(dialectType.isMysql() ? " limit 1" : " and rownum=1");
+        try (ResultSet rs = statement.executeQuery(sqlBuilder.toString())) {
+            if (!rs.next()) {
+                throw new SQLException("No result found in ASH.");
+            }
+            return rs.getString(1);
+        }
+    }
+
+    /**
+     * OceanBase only supports ASH views in versions higher than 4.0. Therefore, this method is not
+     * applicable to earlier versions, please use sql_audit instead.
+     */
+    public static String queryPlanIdByTraceId(@NonNull Statement statement, String traceId, ConnectType connectType)
+            throws SQLException {
+        DialectType dialectType = connectType.getDialectType();
+        SqlBuilder sqlBuilder = getBuilder(connectType)
+                .append("select plan_id from ")
+                .append(dialectType.isMysql() ? "oceanbase" : "sys")
+                .append(".v$active_session_history where trace_id=")
+                .value(traceId);
+        try (ResultSet rs = statement.executeQuery(sqlBuilder.toString())) {
+            if (!rs.next()) {
+                throw new SQLException("No result found in ASH.");
+            }
+            return rs.getString(1);
         }
     }
 

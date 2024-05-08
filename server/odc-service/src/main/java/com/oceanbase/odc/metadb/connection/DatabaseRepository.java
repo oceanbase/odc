@@ -16,6 +16,7 @@
 package com.oceanbase.odc.metadb.connection;
 
 import java.util.Collection;
+import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -26,6 +27,8 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.transaction.annotation.Transactional;
+
+import com.oceanbase.odc.service.db.schema.model.DBObjectSyncStatus;
 
 public interface DatabaseRepository extends JpaRepository<DatabaseEntity, Long>,
         JpaSpecificationExecutor<DatabaseEntity> {
@@ -59,6 +62,20 @@ public interface DatabaseRepository extends JpaRepository<DatabaseEntity, Long>,
     @Transactional
     @Query(value = "update connect_database t set t.is_existed = :existed where t.id in (:ids)", nativeQuery = true)
     int setExistedByIdIn(@Param("existed") Boolean existed, @Param("ids") Collection<Long> ids);
+
+    @Modifying
+    @Transactional
+    @Query(value = "update connect_database t set t.object_sync_status = :#{#status.name()} where t.id in (:ids)",
+            nativeQuery = true)
+    int setObjectSyncStatusByIdIn(@Param("ids") Collection<Long> ids, @Param("status") DBObjectSyncStatus status);
+
+    @Modifying
+    @Transactional
+    @Query(value = "update connect_database t set t.object_sync_status = :#{#status.name()}, t.object_last_sync_time = :syncTime where t.id = :id",
+            nativeQuery = true)
+    int setObjectLastSyncTimeAndStatusById(@Param("id") Long id, @Param("syncTime") Date syncTime,
+            @Param("status") DBObjectSyncStatus status);
+
 
     @Transactional
     @Query(value = "update `connect_database` t set t.project_id = :projectId where t.id in (:ids)", nativeQuery = true)

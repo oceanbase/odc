@@ -112,6 +112,11 @@ public enum ErrorCodes implements ErrorCode {
     ConnectHostNotAllowed,
     ConnectionTempOnly,
     ConnectionFlowConfigNotExists,
+    LogicalTableBadExpressionSyntax,
+    LogicalTableExpressionNotEvenlyDivided,
+    LogicalTableExpressionNotPositiveStep,
+    LogicalTableExpressionRangeStartGreaterThanEnd,
+    LogicalTableExpressionNotValidIntegerRange,
 
     // File
     FileWriteFailed,

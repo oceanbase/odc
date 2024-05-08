@@ -43,6 +43,7 @@ import org.springframework.data.jpa.repository.support.SimpleJpaRepository;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.lang.Nullable;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.Assert;
 
 import com.google.common.base.Preconditions;
@@ -78,6 +79,7 @@ public class EnhancedJpaRepository<T, ID extends Serializable> extends SimpleJpa
     }
 
     @SneakyThrows
+    @Transactional
     public List<T> batchCreate(List<T> entities, String sql, Map<Integer, Function<T, Object>> valueGetter,
             BiConsumer<T, Long> idSetter) {
         Preconditions.checkArgument(entities.stream().allMatch(e -> entityInformation.getId(e) == null),
@@ -86,11 +88,30 @@ public class EnhancedJpaRepository<T, ID extends Serializable> extends SimpleJpa
     }
 
     @SneakyThrows
+    @Transactional
     public List<T> batchCreate(List<T> entities, String sql, List<Function<T, Object>> valueGetter,
             BiConsumer<T, Long> idSetter) {
         Map<Integer, Function<T, Object>> valueGetterMap = new HashMap<>();
         IntStream.range(1, valueGetter.size() + 1).forEach(i -> valueGetterMap.put(i, valueGetter.get(i - 1)));
         return batchCreate(entities, sql, valueGetterMap, idSetter);
+    }
+
+    @SneakyThrows
+    @Transactional
+    public List<T> batchCreate(List<T> entities, String sql, Map<Integer, Function<T, Object>> valueGetter,
+            BiConsumer<T, Long> idSetter, int batchSize) {
+        Preconditions.checkArgument(entities.stream().allMatch(e -> entityInformation.getId(e) == null),
+                "can't create entity, cause not new entities");
+        return JdbcOperationsUtil.batchCreate(getJdbcTemplate(), entities, sql, valueGetter, idSetter, batchSize);
+    }
+
+    @SneakyThrows
+    @Transactional
+    public List<T> batchCreate(List<T> entities, String sql, List<Function<T, Object>> valueGetter,
+            BiConsumer<T, Long> idSetter, int batchSize) {
+        Map<Integer, Function<T, Object>> valueGetterMap = new HashMap<>();
+        IntStream.range(1, valueGetter.size() + 1).forEach(i -> valueGetterMap.put(i, valueGetter.get(i - 1)));
+        return batchCreate(entities, sql, valueGetterMap, idSetter, batchSize);
     }
 
     @Override
