@@ -29,9 +29,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout workspace
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Setup JDK 8
-        uses: actions/setup-java@v3
+        uses: actions/setup-java@v4
         with:
           java-version: "8"
           distribution: "temurin"
@@ -46,9 +46,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout workspace
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Setup JDK 8
-        uses: actions/setup-java@v3
+        uses: actions/setup-java@v4
         with:
           java-version: "8"
           distribution: "temurin"
@@ -80,7 +80,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout workspace
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: action by obfarm++odc_ut++COMMIT=${{ github.event.pull_request.head.sha }}
         uses: ./.github/obfarm/
         id: odc_ut
@@ -97,7 +97,7 @@ jobs:
       odc_rpm_release_number: ${{ steps.calculate_version.outputs.odc_rpm_release_number }}
     steps:
       - name: Checkout workspace
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Calculate version number
         id: calculate_version
         run: |
@@ -113,17 +113,17 @@ jobs:
       odc_rpm_release_number: ${{ needs.calculate-version.outputs.odc_rpm_release_number }}
     steps:
       - name: Checkout workspace
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           submodules: "recursive"
       - name: Setup JDK 8
-        uses: actions/setup-java@v3
+        uses: actions/setup-java@v4
         with:
           java-version: "8"
           distribution: "temurin"
           cache: maven
       - name: Setup node 16
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: "16"
       - name: Set release version
@@ -168,7 +168,7 @@ jobs:
           mkdir -p distribution/docker/resources/
           mv --verbose server/odc-server/target/rpm/odc-server/RPMS/*/odc-*.rpm distribution/docker/resources/
       - name: Upload rpm (x86_64)
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: odc-server-${{ steps.set_release_version.outputs.new_version }}.x86_64.rpm
           path: distribution/docker/resources/odc-*.rpm
