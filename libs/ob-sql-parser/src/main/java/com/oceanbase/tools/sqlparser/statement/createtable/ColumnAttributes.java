@@ -57,6 +57,7 @@ public class ColumnAttributes extends BaseOptions {
     private String collation;
     private Integer srid;
     private List<InLineConstraint> constraints;
+    private List<String> skipIndexTypes;
 
     public ColumnAttributes(@NonNull ParserRuleContext context) {
         super(context);
@@ -123,6 +124,11 @@ public class ColumnAttributes extends BaseOptions {
         }
         if (this.collation != null) {
             builder.append(" COLLATE ").append(this.collation);
+        }
+        if (this.skipIndexTypes != null) {
+            builder.append(" SKIP_INDEX (")
+                    .append(String.join(",", skipIndexTypes))
+                    .append(")");
         }
         return builder.length() == 0 ? "" : builder.substring(1);
     }

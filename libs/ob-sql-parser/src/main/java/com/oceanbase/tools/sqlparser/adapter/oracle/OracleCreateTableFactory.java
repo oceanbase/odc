@@ -15,11 +15,13 @@
  */
 package com.oceanbase.tools.sqlparser.adapter.oracle;
 
+import java.util.List;
 import java.util.stream.Collectors;
 
 import com.oceanbase.tools.sqlparser.adapter.StatementFactory;
 import com.oceanbase.tools.sqlparser.oboracle.OBParser.Create_table_stmtContext;
 import com.oceanbase.tools.sqlparser.oboracle.OBParserBaseVisitor;
+import com.oceanbase.tools.sqlparser.statement.common.ColumnGroupElement;
 import com.oceanbase.tools.sqlparser.statement.createtable.CreateTable;
 import com.oceanbase.tools.sqlparser.statement.select.Select;
 
@@ -85,6 +87,12 @@ public class OracleCreateTableFactory extends OBParserBaseVisitor<CreateTable>
             createTable.setPartition(new OraclePartitionFactory(ctx.partition_option()).generate());
         } else if (ctx.auto_partition_option() != null) {
             createTable.setPartition(new OraclePartitionFactory(ctx.auto_partition_option()).generate());
+        }
+        if (ctx.with_column_group() != null) {
+            List<ColumnGroupElement> columnGroupElements = ctx.with_column_group()
+                    .column_group_list().column_group_element().stream()
+                    .map(c -> new OracleColumnGroupElementFactory(c).generate()).collect(Collectors.toList());
+            createTable.setColumnGroupElements(columnGroupElements);
         }
         return createTable;
     }

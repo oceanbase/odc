@@ -2891,6 +2891,21 @@ public class OracleExpressionFactoryTest {
         Assert.assertEquals(expect, actual);
     }
 
+    @Test
+    public void generate_jsonEqualExpr_generateSucceed() {
+        ExprContext context = getExprContext("json_equal('[1,]', '[1]' false on error_p)");
+        StatementFactory<Expression> factory = new OracleExpressionFactory(context);
+        Expression actual = factory.generate();
+
+        ExpressionParam p1 = new ExpressionParam(new ConstExpression("'[1,]'"));
+        ExpressionParam p2 = new ExpressionParam(new ConstExpression("'[1]'"));
+        FunctionCall expect = new FunctionCall("json_equal", Arrays.asList(p1, p2));
+        JsonOnOption jsonOnOption = new JsonOnOption();
+        jsonOnOption.setOnError(new BoolValue(false));
+        expect.addOption(jsonOnOption);
+        Assert.assertEquals(expect, actual);
+    }
+
     private Bit_exprContext getBitExprContext(String expr) {
         OBLexer lexer = new OBLexer(CharStreams.fromString(expr));
         CommonTokenStream tokens = new CommonTokenStream(lexer);

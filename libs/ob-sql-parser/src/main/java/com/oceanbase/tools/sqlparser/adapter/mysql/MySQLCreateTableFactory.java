@@ -15,6 +15,7 @@
  */
 package com.oceanbase.tools.sqlparser.adapter.mysql;
 
+import java.util.List;
 import java.util.stream.Collectors;
 
 import org.antlr.v4.runtime.ParserRuleContext;
@@ -24,6 +25,7 @@ import com.oceanbase.tools.sqlparser.obmysql.OBParser.Create_table_like_stmtCont
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Create_table_stmtContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Special_table_typeContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParserBaseVisitor;
+import com.oceanbase.tools.sqlparser.statement.common.ColumnGroupElement;
 import com.oceanbase.tools.sqlparser.statement.common.RelationFactor;
 import com.oceanbase.tools.sqlparser.statement.createtable.CreateTable;
 
@@ -105,6 +107,12 @@ public class MySQLCreateTableFactory extends OBParserBaseVisitor<CreateTable> im
         }
         if (ctx.auto_partition_option() != null) {
             createTable.setPartition(new MySQLPartitionFactory(ctx.auto_partition_option()).generate());
+        }
+        if (ctx.with_column_group() != null) {
+            List<ColumnGroupElement> columnGroupElements = ctx.with_column_group()
+                    .column_group_list().column_group_element().stream()
+                    .map(c -> new MySQLColumnGroupElementFactory(c).generate()).collect(Collectors.toList());
+            createTable.setColumnGroupElements(columnGroupElements);
         }
         return createTable;
     }
