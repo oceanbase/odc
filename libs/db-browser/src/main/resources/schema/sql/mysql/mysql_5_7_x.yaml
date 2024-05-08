@@ -146,7 +146,7 @@ sqls:
     GROUP BY
       PARTITION_NAME
     ORDER BY
-      PARTITION_NAME ASC
+      PARTITION_ORDINAL_POSITION ASC
   list-partitions: |-
     SELECT
       PARTITION_NAME as PARTITION_NAME,
@@ -162,6 +162,8 @@ sqls:
       information_schema.partitions
     WHERE
       TABLE_SCHEMA = ? AND PARTITION_NAME is not null
+    ORDER BY
+      PARTITION_ORDINAL_POSITION ASC
   list-schema-index: |-
     SELECT 
       TABLE_SCHEMA, 
