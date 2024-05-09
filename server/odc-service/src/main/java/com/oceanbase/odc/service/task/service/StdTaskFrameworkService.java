@@ -310,11 +310,8 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
             log.warn("Job identity is not exists by id {}", taskResult.getJobIdentity().getId());
             return;
         }
-        if (taskResult.getLogMetadata() != null) {
-            log.info("Save or update log metadata, jobId={}, currentStatus={}, taskResult={}",
-                    je.getId(), je.getStatus(), JsonUtils.toJson(taskResult));
-            saveOrUpdateLogMetadata(taskResult, je.getId());
-        }
+        saveOrUpdateLogMetadata(taskResult, je.getId(), je.getStatus());
+
         if (je.getStatus().isTerminated() || je.getStatus() == JobStatus.CANCELING) {
             log.warn("Job is finished, ignore result, jobId={}, currentStatus={}", je.getId(), je.getStatus());
             return;
@@ -368,20 +365,24 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
         return jobRepository.updateReportResult(jse, currentJob.getId(), currentJob.getStatus());
     }
 
-    private void saveOrUpdateLogMetadata(TaskResult taskResult, Long jobId) {
-        taskResult.getLogMetadata().forEach((k, v) -> {
-            // log key may exist if job is retrying
-            Optional<String> logValue = findByJobIdAndAttributeKey(jobId, k);
-            if (logValue.isPresent()) {
-                updateJobAttributeValue(jobId, k, v);
-            } else {
-                JobAttributeEntity jobAttribute = new JobAttributeEntity();
-                jobAttribute.setJobId(jobId);
-                jobAttribute.setAttributeKey(k);
-                jobAttribute.setAttributeValue(v);
-                jobAttributeRepository.save(jobAttribute);
-            }
-        });
+    private void saveOrUpdateLogMetadata(TaskResult taskResult, Long jobId, JobStatus currentStatus) {
+        if (taskResult.getLogMetadata() != null) {
+            log.info("Save or update log metadata, jobId={}, currentStatus={}, taskResult={}",
+                    jobId, currentStatus, JsonUtils.toJson(taskResult));
+            taskResult.getLogMetadata().forEach((k, v) -> {
+                // log key may exist if job is retrying
+                Optional<String> logValue = findByJobIdAndAttributeKey(jobId, k);
+                if (logValue.isPresent()) {
+                    updateJobAttributeValue(jobId, k, v);
+                } else {
+                    JobAttributeEntity jobAttribute = new JobAttributeEntity();
+                    jobAttribute.setJobId(jobId);
+                    jobAttribute.setAttributeKey(k);
+                    jobAttribute.setAttributeValue(v);
+                    jobAttributeRepository.save(jobAttribute);
+                }
+            });
+        }
     }
 
     private void updateJobAttributeValue(Long id, String key, String value) {
