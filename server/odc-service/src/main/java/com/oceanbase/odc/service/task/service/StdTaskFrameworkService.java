@@ -313,8 +313,7 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
             log.warn("Job identity is not exists by id {}", taskResult.getJobIdentity().getId());
             return;
         }
-        if (je.getStatus() == JobStatus.CANCELING ||
-                (!taskFrameworkEnabledProperties.isEnabled() && je.getStatus() == JobStatus.FAILED)) {
+        if (je.getStatus() == JobStatus.CANCELING || !taskFrameworkEnabledProperties.isEnabled()) {
             saveOrUpdateLogMetadata(taskResult, je.getId(), je.getStatus());
             return;
         } else if (je.getStatus().isTerminated()) {
