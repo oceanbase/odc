@@ -480,11 +480,13 @@ public class OracleModeSqlParserListener extends OBParserBaseListener implements
                 }
             }
         }
-        List<String> columnGroups = ctx.with_column_group()
-                .column_group_list().column_group_element().stream()
-                .map(c -> new OracleColumnGroupElementFactory(c).generate().toString().toLowerCase())
-                .collect(Collectors.toList());
-        index.setColumnGroups(columnGroups);
+        if (Objects.nonNull(ctx.with_column_group())) {
+            List<String> columnGroups = ctx.with_column_group()
+                    .column_group_list().column_group_element().stream()
+                    .map(c -> new OracleColumnGroupElementFactory(c).generate().toString().toLowerCase())
+                    .collect(Collectors.toList());
+            index.setColumnGroups(columnGroups);
+        }
         indexes.add(index);
     }
 
