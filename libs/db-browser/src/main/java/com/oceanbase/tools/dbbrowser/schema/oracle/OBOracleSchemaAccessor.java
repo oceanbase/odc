@@ -170,7 +170,7 @@ public class OBOracleSchemaAccessor extends OracleSchemaAccessor {
     @Override
     public List<DBTableIndex> listTableIndexes(String schemaName, String tableName) {
         List<DBTableIndex> indexList = super.listTableIndexes(schemaName, tableName);
-        fillIndexRange(indexList);
+        fillIndexInfo(indexList);
         fillIndexTypeAndAlgorithm(indexList);
         return indexList;
     }
@@ -195,7 +195,7 @@ public class OBOracleSchemaAccessor extends OracleSchemaAccessor {
         Map<String, List<DBTableIndex>> tableName2Indexes = super.listTableIndexes(schemaName);
         List<DBTableIndex> indexList =
                 tableName2Indexes.values().stream().flatMap(List::stream).collect(Collectors.toList());
-        fillIndexRange(indexList);
+        fillIndexInfo(indexList);
         fillIndexTypeAndAlgorithm(indexList);
         return tableName2Indexes;
     }
@@ -210,7 +210,7 @@ public class OBOracleSchemaAccessor extends OracleSchemaAccessor {
         return false;
     }
 
-    protected void fillIndexRange(List<DBTableIndex> indexList) {
+    protected void fillIndexInfo(List<DBTableIndex> indexList) {
         for (DBTableIndex index : indexList) {
             try {
                 OracleSqlBuilder sb = new OracleSqlBuilder();
@@ -232,6 +232,7 @@ public class OBOracleSchemaAccessor extends OracleSchemaAccessor {
                         // we get one single create index statement for each table index
                         // so here we should only get one index object from this statement
                         index.setGlobal("GLOBAL".equalsIgnoreCase(result.getIndexes().get(0).getRange().name()));
+                        index.setColumnGroups(result.getIndexes().get(0).getColumnGroups());
                     }
                     return indexDdl;
                 });

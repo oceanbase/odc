@@ -32,6 +32,7 @@ import com.oceanbase.tools.dbbrowser.model.DBObjectType;
 import com.oceanbase.tools.dbbrowser.model.DBTableConstraint;
 import com.oceanbase.tools.dbbrowser.parser.constant.SqlType;
 import com.oceanbase.tools.dbbrowser.util.StringUtils;
+import com.oceanbase.tools.sqlparser.adapter.oracle.OracleColumnGroupElementFactory;
 import com.oceanbase.tools.sqlparser.oboracle.OBLexer;
 import com.oceanbase.tools.sqlparser.oboracle.OBParser;
 import com.oceanbase.tools.sqlparser.oboracle.OBParser.Alter_database_stmtContext;
@@ -479,6 +480,11 @@ public class OracleModeSqlParserListener extends OBParserBaseListener implements
                 }
             }
         }
+        List<String> columnGroups = ctx.with_column_group()
+                .column_group_list().column_group_element().stream()
+                .map(c -> new OracleColumnGroupElementFactory(c).generate().toString().toLowerCase())
+                .collect(Collectors.toList());
+        index.setColumnGroups(columnGroups);
         indexes.add(index);
     }
 

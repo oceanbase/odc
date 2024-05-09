@@ -204,7 +204,7 @@ public class OBMySQLSchemaAccessor extends MySQLNoLessThan5700SchemaAccessor {
     @Override
     public List<DBTableIndex> listTableIndexes(String schemaName, String tableName) {
         List<DBTableIndex> indexList = super.listTableIndexes(schemaName, tableName);
-        fillIndexRange(indexList, schemaName, tableName);
+        fillIndexInfo(indexList, schemaName, tableName);
         for (DBTableIndex index : indexList) {
             if (index.getAlgorithm() == DBIndexAlgorithm.UNKNOWN) {
                 index.setAlgorithm(DBIndexAlgorithm.BTREE);
@@ -226,7 +226,7 @@ public class OBMySQLSchemaAccessor extends MySQLNoLessThan5700SchemaAccessor {
     public Map<String, List<DBTableIndex>> listTableIndexes(String schemaName) {
         Map<String, List<DBTableIndex>> tableName2Indexes = super.listTableIndexes(schemaName);
         for (Map.Entry<String, List<DBTableIndex>> entry : tableName2Indexes.entrySet()) {
-            fillIndexRange(entry.getValue(), schemaName, entry.getKey());
+            fillIndexInfo(entry.getValue(), schemaName, entry.getKey());
             for (DBTableIndex index : entry.getValue()) {
                 if (index.getAlgorithm() == DBIndexAlgorithm.UNKNOWN) {
                     index.setAlgorithm(DBIndexAlgorithm.BTREE);
@@ -240,9 +240,9 @@ public class OBMySQLSchemaAccessor extends MySQLNoLessThan5700SchemaAccessor {
         Map<String, List<DBTableIndex>> tableName2Indexes = super.listTableIndexes(schemaName);
         tableName2Indexes.keySet().forEach(tableName -> {
             if (tableName2Ddl.containsKey(tableName)) {
-                parseDdlToSetIndexRange(tableName2Ddl.get(tableName), tableName2Indexes.get(tableName));
+                parseDdlToSetIndexInfo(tableName2Ddl.get(tableName), tableName2Indexes.get(tableName));
             } else {
-                fillIndexRange(tableName2Indexes.get(tableName), schemaName, tableName);
+                fillIndexInfo(tableName2Indexes.get(tableName), schemaName, tableName);
             }
         });
         return tableName2Indexes;
@@ -253,12 +253,12 @@ public class OBMySQLSchemaAccessor extends MySQLNoLessThan5700SchemaAccessor {
         return true;
     }
 
-    protected void fillIndexRange(List<DBTableIndex> indexList, String schemaName,
+    protected void fillIndexInfo(List<DBTableIndex> indexList, String schemaName,
             String tableName) {
-        setIndexRangeByDDL(indexList, schemaName, tableName);
+        setIndexInfoByDDL(indexList, schemaName, tableName);
     }
 
-    protected void setIndexRangeByDDL(List<DBTableIndex> indexList, String schemaName, String tableName) {
+    protected void setIndexInfoByDDL(List<DBTableIndex> indexList, String schemaName, String tableName) {
         try {
             MySQLSqlBuilder sb = new MySQLSqlBuilder();
             sb.append("show create table ");
@@ -269,7 +269,7 @@ public class OBMySQLSchemaAccessor extends MySQLNoLessThan5700SchemaAccessor {
             if (CollectionUtils.isEmpty(ddl) || StringUtils.isBlank(ddl.get(0))) {
                 fillWarning(indexList, DBObjectType.INDEX, "get index DDL failed");
             } else {
-                parseDdlToSetIndexRange(ddl.get(0), indexList);
+                parseDdlToSetIndexInfo(ddl.get(0), indexList);
             }
         } catch (Exception e) {
             fillWarning(indexList, DBObjectType.INDEX, "query index ddl failed");
@@ -277,7 +277,7 @@ public class OBMySQLSchemaAccessor extends MySQLNoLessThan5700SchemaAccessor {
         }
     }
 
-    private void parseDdlToSetIndexRange(String ddl, List<DBTableIndex> indexList) {
+    private void parseDdlToSetIndexInfo(String ddl, List<DBTableIndex> indexList) {
         if (StringUtils.isBlank(ddl)) {
             fillWarning(indexList, DBObjectType.INDEX, "table ddl is blank, can not set index range by parse ddl");
             return;
@@ -289,6 +289,7 @@ public class OBMySQLSchemaAccessor extends MySQLNoLessThan5700SchemaAccessor {
             indexList.forEach(index -> result.getIndexes().forEach(dbIndex -> {
                 if (StringUtils.equals(index.getName(), dbIndex.getName())) {
                     index.setGlobal("GLOBAL".equalsIgnoreCase(dbIndex.getRange().name()));
+                    index.setColumnGroups(dbIndex.getColumnGroups());
                 }
             }));
         }

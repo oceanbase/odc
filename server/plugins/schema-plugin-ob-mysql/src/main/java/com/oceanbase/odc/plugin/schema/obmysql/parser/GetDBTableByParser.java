@@ -47,4 +47,6 @@ public interface GetDBTableByParser {
      * Get table partition info by parse table ddl
      */
     DBTablePartition getPartition();
+
+    List<String> getColumnGroups();
 }

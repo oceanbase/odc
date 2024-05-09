@@ -236,7 +236,7 @@ public class OBMySQLNoGreaterThan1479SchemaAccessor extends BaseOBMySQLLessThan2
     }
 
     @Override
-    protected void fillIndexRange(List<DBTableIndex> indexList, String schemaName, String tableName) {
+    protected void fillIndexInfo(List<DBTableIndex> indexList, String schemaName, String tableName) {
         /**
          * OBMySQL 1479 不支持 GLOBAL 索引，这里把所有 range 设置为 LOCAL
          */

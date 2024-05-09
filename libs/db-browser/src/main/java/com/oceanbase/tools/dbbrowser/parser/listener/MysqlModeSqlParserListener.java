@@ -18,6 +18,7 @@ package com.oceanbase.tools.dbbrowser.parser.listener;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.Token;
@@ -493,6 +494,10 @@ public class MysqlModeSqlParserListener extends OBParserBaseListener implements 
                     && !outOfLineIndex.getIndexOptions().getGlobal()) {
                 index.setRange(DBIndexRangeType.LOCAL);
             }
+            if (outOfLineIndex.getColumnGroupElements() != null) {
+                index.setColumnGroups(outOfLineIndex.getColumnGroupElements()
+                        .stream().map(cg -> cg.toString().toLowerCase()).collect(Collectors.toList()));
+            }
             indexes.add(index);
         } else if (elt instanceof OutOfLineConstraint) {
             OutOfLineConstraint outOfLineConstraint = (OutOfLineConstraint) elt;
@@ -504,6 +509,10 @@ public class MysqlModeSqlParserListener extends OBParserBaseListener implements 
                         && outOfLineConstraint.getState().getIndexOptions().getGlobal() != null
                         && !outOfLineConstraint.getState().getIndexOptions().getGlobal()) {
                     index.setRange(DBIndexRangeType.LOCAL);
+                }
+                if (outOfLineConstraint.getColumnGroupElements() != null) {
+                    index.setColumnGroups(outOfLineConstraint.getColumnGroupElements()
+                            .stream().map(cg -> cg.toString().toLowerCase()).collect(Collectors.toList()));
                 }
                 indexes.add(index);
             } else if (elt instanceof OutOfLineForeignConstraint) {
