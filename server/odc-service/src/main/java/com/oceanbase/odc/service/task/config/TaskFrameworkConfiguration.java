@@ -16,6 +16,8 @@
 
 package com.oceanbase.odc.service.task.config;
 
+import java.util.Properties;
+
 import javax.sql.DataSource;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -84,6 +86,9 @@ public class TaskFrameworkConfiguration {
         schedulerFactoryBean.setSchedulerName(taskFrameworkSchedulerName);
         schedulerFactoryBean.setStartupDelay(taskFrameworkProperties.getQuartzStartDelaySeconds());
         schedulerFactoryBean.setTaskExecutor(executor);
+        Properties properties = new Properties();
+        properties.put("org.quartz.jobStore.acquireTriggersWithinLock", false);
+        schedulerFactoryBean.setQuartzProperties(properties);
         return schedulerFactoryBean;
     }
 

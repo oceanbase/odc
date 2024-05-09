@@ -52,7 +52,6 @@ import lombok.extern.slf4j.Slf4j;
  * @since 4.2.4
  */
 @Slf4j
-@DisallowConcurrentExecution
 public class StartPreparingJob implements Job {
 
     private JobConfiguration configuration;
