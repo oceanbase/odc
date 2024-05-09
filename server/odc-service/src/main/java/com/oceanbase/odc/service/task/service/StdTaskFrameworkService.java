@@ -59,6 +59,7 @@ import com.oceanbase.odc.metadb.task.JobAttributeEntity;
 import com.oceanbase.odc.metadb.task.JobAttributeRepository;
 import com.oceanbase.odc.metadb.task.JobEntity;
 import com.oceanbase.odc.metadb.task.JobRepository;
+import com.oceanbase.odc.service.task.config.TaskFrameworkEnabledProperties;
 import com.oceanbase.odc.service.task.config.TaskFrameworkProperties;
 import com.oceanbase.odc.service.task.constants.JobAttributeEntityColumn;
 import com.oceanbase.odc.service.task.constants.JobEntityColumn;
@@ -107,6 +108,8 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
 
     @Autowired
     private EntityManager entityManager;
+    @Autowired
+    private TaskFrameworkEnabledProperties taskFrameworkEnabledProperties;
 
     @Override
     public JobEntity find(Long id) {
@@ -310,13 +313,12 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
             log.warn("Job identity is not exists by id {}", taskResult.getJobIdentity().getId());
             return;
         }
-        if (je.getStatus() == JobStatus.CANCELING) {
+        if (je.getStatus() == JobStatus.CANCELING ||
+                (!taskFrameworkEnabledProperties.isEnabled() && je.getStatus() == JobStatus.FAILED)) {
             saveOrUpdateLogMetadata(taskResult, je.getId(), je.getStatus());
             return;
-        }
-
-        if (je.getStatus().isTerminated()) {
-            log.warn("Job is finished, ignore result,jobId={}, currentStatus={}", je.getId(), je.getStatus());
+        } else if (je.getStatus().isTerminated()) {
+            log.warn("Job is finished, ignore result, jobId={}, currentStatus={}", je.getId(), je.getStatus());
             return;
         }
         int rows = updateJobScheduleEntity(taskResult, je);
