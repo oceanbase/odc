@@ -59,7 +59,6 @@ import com.oceanbase.odc.metadb.task.JobAttributeEntity;
 import com.oceanbase.odc.metadb.task.JobAttributeRepository;
 import com.oceanbase.odc.metadb.task.JobEntity;
 import com.oceanbase.odc.metadb.task.JobRepository;
-import com.oceanbase.odc.service.task.config.TaskFrameworkEnabledProperties;
 import com.oceanbase.odc.service.task.config.TaskFrameworkProperties;
 import com.oceanbase.odc.service.task.constants.JobAttributeEntityColumn;
 import com.oceanbase.odc.service.task.constants.JobEntityColumn;
@@ -108,8 +107,6 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
 
     @Autowired
     private EntityManager entityManager;
-    @Autowired
-    private TaskFrameworkEnabledProperties taskFrameworkEnabledProperties;
 
     @Override
     public JobEntity find(Long id) {
@@ -313,10 +310,9 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
             log.warn("Job identity is not exists by id {}", taskResult.getJobIdentity().getId());
             return;
         }
-        if (je.getStatus() == JobStatus.CANCELING || !taskFrameworkEnabledProperties.isEnabled()) {
-            saveOrUpdateLogMetadata(taskResult, je.getId(), je.getStatus());
-            return;
-        } else if (je.getStatus().isTerminated()) {
+        saveOrUpdateLogMetadata(taskResult, je.getId(), je.getStatus());
+
+        if (je.getStatus().isTerminated() || je.getStatus() == JobStatus.CANCELING) {
             log.warn("Job is finished, ignore result, jobId={}, currentStatus={}", je.getId(), je.getStatus());
             return;
         }
@@ -366,15 +362,11 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
         if (taskResult.getStatus() != null && taskResult.getStatus().isTerminated()) {
             jse.setFinishedTime(JobDateUtils.getCurrentDate());
         }
-        int rows = jobRepository.updateReportResult(jse, currentJob.getId(), currentJob.getStatus());
-        if (rows > 0) {
-            saveOrUpdateLogMetadata(taskResult, currentJob.getId(), currentJob.getStatus());
-        }
-        return rows;
+        return jobRepository.updateReportResult(jse, currentJob.getId(), currentJob.getStatus());
     }
 
     private void saveOrUpdateLogMetadata(TaskResult taskResult, Long jobId, JobStatus currentStatus) {
-        if (taskResult.getLogMetadata() != null && taskResult.getStatus().isTerminated()) {
+        if (taskResult.getLogMetadata() != null) {
             log.info("Save or update log metadata, jobId={}, currentStatus={}, taskResult={}",
                     jobId, currentStatus, JsonUtils.toJson(taskResult));
             taskResult.getLogMetadata().forEach((k, v) -> {
