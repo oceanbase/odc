@@ -77,6 +77,8 @@ public class DLMJobFactory extends JobFactory {
         logicTableConfig.setReaderTaskCount((int) (singleTaskThreadPoolSize * readWriteRatio / (1 + readWriteRatio)));
         logicTableConfig.setWriterTaskCount(singleTaskThreadPoolSize - logicTableConfig.getReaderTaskCount());
         logicTableConfig.setGeneratorBatchSize(defaultScanBatchSize);
+        logicTableConfig.setMigratePartitions(parameters.getLogicTableConfig().getMigratePartitions());
+
         DataSourceInfo sourceInfo = DataSourceInfoBuilder.build(parameters.getSourceDs());
         DataSourceInfo targetInfo = DataSourceInfoBuilder.build(parameters.getTargetDs());
         sourceInfo.setConnectionCount(2 * (logicTableConfig.getReaderTaskCount()
@@ -113,6 +115,7 @@ public class DLMJobFactory extends JobFactory {
         logicTableConfig.setReaderTaskCount(params.getReadThreadCount());
         logicTableConfig.setWriterTaskCount(params.getWriteThreadCount());
         logicTableConfig.setGeneratorBatchSize(params.getScanBatchSize());
+        logicTableConfig.setMigratePartitions(params.getTables().get(tableIndex).getPartitions());
 
 
         JobReq req =

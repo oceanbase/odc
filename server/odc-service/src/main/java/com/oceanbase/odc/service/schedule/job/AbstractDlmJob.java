@@ -197,6 +197,7 @@ public abstract class AbstractDlmJob implements OdcJob {
             logicTableConfig.setReaderBatchSize(limiterConfig.getBatchSize());
             logicTableConfig.setWriterBatchSize(limiterConfig.getBatchSize());
             logicTableConfig.setMigrationInsertAction(parameters.getMigrationInsertAction());
+            logicTableConfig.setMigratePartitions(table.getPartitions());
             taskUnit.setLogicTableConfig(logicTableConfig);
             taskUnit.setStatus(TaskStatus.PREPARING);
             taskUnit.setJobType(JobType.MIGRATE);
