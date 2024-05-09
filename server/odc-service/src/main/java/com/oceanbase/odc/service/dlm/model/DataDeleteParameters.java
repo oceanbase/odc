@@ -51,6 +51,4 @@ public class DataDeleteParameters implements TaskParameters {
 
     private int scanBatchSize;
 
-    private Long taskExecutionDurationHours = Long.MAX_VALUE;
-
 }
