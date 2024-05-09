@@ -15,6 +15,8 @@
  */
 package com.oceanbase.tools.dbbrowser.editor;
 
+import java.util.Collections;
+
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -24,6 +26,7 @@ import com.oceanbase.tools.dbbrowser.editor.mysql.MySQLConstraintEditor;
 import com.oceanbase.tools.dbbrowser.editor.mysql.MySQLDBTablePartitionEditor;
 import com.oceanbase.tools.dbbrowser.editor.mysql.OBMySQLIndexEditor;
 import com.oceanbase.tools.dbbrowser.editor.mysql.OBMySQLTableEditor;
+import com.oceanbase.tools.dbbrowser.model.DBTable;
 
 public class MySQLTableEditorTest {
 
@@ -48,7 +51,7 @@ public class MySQLTableEditorTest {
                 + "CONSTRAINT `new_constraint` UNIQUE (`col1`, `col2`)\n"
                 + ") AUTO_INCREMENT = 1 DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_bin COMPRESSION = 'zstd_1.0' "
                 + "REPLICA_NUM = 1 USE_BLOOM_FILTER = FALSE TABLET_SIZE = 134217728 COMMENT = 'this is a "
-                + "comment' ;\n",
+                + "comment'  WITH COLUMN GROUP(each column);\n",
                 ddl);
     }
 
@@ -66,6 +69,19 @@ public class MySQLTableEditorTest {
                 "ALTER TABLE `old_table` RENAME TO `whatever_table`;\n"
                         + "ALTER TABLE `whatever_schema`.`whatever_table` CHARACTER SET = utf8mb4;\n"
                         + "ALTER TABLE `whatever_schema`.`whatever_table` COLLATE = utf8mb4_bin;\n",
+                ddl);
+    }
+
+    @Test
+    public void generateUpdateObjectDDL_addAndDropColumnGroup() {
+        DBTable oldTable = DBObjectUtilsTest.getOldTable();
+        DBTable newTable = DBObjectUtilsTest.getOldTable();
+
+        newTable.setColumnGroups(Collections.singletonList("all columns"));
+        String ddl = tableEditor.generateUpdateObjectDDL(oldTable, newTable);
+        Assert.assertEquals(
+                "ALTER TABLE `whatever_schema`.`old_table` DROP COLUMN GROUP(each column);\n"
+                        + "ALTER TABLE `whatever_schema`.`old_table` ADD COLUMN GROUP(all columns);\n",
                 ddl);
     }
 

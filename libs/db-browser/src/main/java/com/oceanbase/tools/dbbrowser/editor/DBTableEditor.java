@@ -328,7 +328,7 @@ public abstract class DBTableEditor implements DBObjectEditor<DBTable> {
                 .append(getFullyQualifiedTableName(table))
                 .append(" DROP COLUMN GROUP(")
                 .append(String.join(",", columnGroups))
-                .append(");");
+                .append(");\n");
         return sqlBuilder.toString();
     }
 
@@ -338,7 +338,7 @@ public abstract class DBTableEditor implements DBObjectEditor<DBTable> {
                 .append(getFullyQualifiedTableName(table))
                 .append(" ADD COLUMN GROUP(")
                 .append(String.join(",", columnGroups))
-                .append(");");
+                .append(");\n");
         return sqlBuilder.toString();
     }
 
