@@ -34,6 +34,10 @@ import lombok.Data;
 @Data
 public class MultipleDatabaseChangeParameters implements Serializable, TaskParameters {
     /**
+     * All databases must belong to this project
+     */
+    private Long projectId;
+    /**
      * multiple database change execution sequence
      */
     private List<List<Long>> orderedDatabaseIds;

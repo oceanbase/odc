@@ -116,7 +116,10 @@ public class SqlCheckService {
             sqlCheckReq.setScriptContent(req.getScriptContent());
             List<CheckResult> check = check(session, sqlCheckReq);
             MultipleSqlCheckResult multipleSqlCheckResult = new MultipleSqlCheckResult();
-            multipleSqlCheckResult.setCheckResult(check.isEmpty() ? null : check.get(0));
+            if (CollectionUtils.isEmpty(check)) {
+                return Collections.emptyList();
+            }
+            multipleSqlCheckResult.setCheckResult(check.get(0));
             multipleSqlCheckResult.setDatabase(databases.get(i));
             multipleSqlCheckResults.add(multipleSqlCheckResult);
         }

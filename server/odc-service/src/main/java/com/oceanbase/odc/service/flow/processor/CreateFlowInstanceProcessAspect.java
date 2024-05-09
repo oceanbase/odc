@@ -38,6 +38,7 @@ import com.oceanbase.odc.core.shared.exception.BadArgumentException;
 import com.oceanbase.odc.core.shared.exception.BadRequestException;
 import com.oceanbase.odc.metadb.schedule.ScheduleEntity;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferConfig;
+import com.oceanbase.odc.service.collaboration.project.ProjectService;
 import com.oceanbase.odc.service.collaboration.project.model.Project;
 import com.oceanbase.odc.service.connection.database.DatabaseService;
 import com.oceanbase.odc.service.connection.database.model.Database;
@@ -73,6 +74,8 @@ public class CreateFlowInstanceProcessAspect implements InitializingBean {
     private ScheduleService scheduleService;
     @Autowired
     private List<Preprocessor> preprocessors;
+    @Autowired
+    private ProjectService projectService;
 
     private final Map<JobType, Preprocessor> scheduleTaskPreprocessors = new HashMap<>();
 
@@ -183,7 +186,22 @@ public class CreateFlowInstanceProcessAspect implements InitializingBean {
                     "Database cannot be duplicated.");
         }
         List<Database> databases = databaseService.detailForMultipleDatabase(ids);
-        Project project = databases.get(0).getProject();
+        // todo The front-end request should include the projectId. The following code will be modified after the front-end modification.
+        Project project;
+        if(parameters.getProjectId()!=null){
+            project = projectService.detail(parameters.getProjectId());
+        if(databases.get(0).getProject().getId()!= parameters.getProjectId()){
+            throw new BadArgumentException(ErrorCodes.IllegalArgument,
+                "All databases must belong to the project："+project.getName());
+        }
+        }else {
+            project = databases.get(0).getProject();
+        }
+        /*Project project = projectService.detail(parameters.getProjectId());
+        if(databases.get(0).getProject().getId()!= parameters.getProjectId()){
+            throw new BadArgumentException(ErrorCodes.IllegalArgument,
+                "All databases must belong to the project："+project.getName() );
+        }*/
         req.setProjectId(project.getId());
         req.setProjectName(project.getName());
         parameters.setDatabases(databases);

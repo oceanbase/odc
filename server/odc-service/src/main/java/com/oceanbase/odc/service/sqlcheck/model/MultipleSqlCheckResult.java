@@ -15,6 +15,8 @@
  */
 package com.oceanbase.odc.service.sqlcheck.model;
 
+import java.io.Serializable;
+
 import com.oceanbase.odc.service.connection.database.model.Database;
 
 import lombok.AllArgsConstructor;
@@ -35,7 +37,8 @@ import lombok.ToString;
 @EqualsAndHashCode
 @NoArgsConstructor
 @AllArgsConstructor
-public class MultipleSqlCheckResult {
+public class MultipleSqlCheckResult implements Serializable {
+    private static final long serialVersionUID = -5963934702315211337L;
     private Database database;
     private CheckResult checkResult;
 }

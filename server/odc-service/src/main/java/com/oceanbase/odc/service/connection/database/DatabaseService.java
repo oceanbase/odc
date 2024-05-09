@@ -231,7 +231,7 @@ public class DatabaseService {
             throw new BadArgumentException(ErrorCodes.IllegalArgument,
                     "All databases must belong to the same organization");
         }
-        if (databases.get(0).getDatabaseId() == null) {
+        if (databases.get(0).getOrganizationId() == null) {
             throw new BadArgumentException(ErrorCodes.IllegalArgument,
                     "All databases must belong to a non-empty organization");
         }
