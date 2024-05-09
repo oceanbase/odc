@@ -19,7 +19,9 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import com.oceanbase.odc.core.shared.constant.Cipher;
+import com.oceanbase.odc.core.shared.constant.ConnectType;
 import com.oceanbase.odc.core.shared.constant.ConnectionVisibleScope;
+import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.metadb.connection.ConnectionEntity;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig.SSLConfig;
@@ -63,6 +65,7 @@ public class ConnectionConfigMapperTest {
     @Test
     public void modelToEntity() {
         ConnectionConfig connection = new ConnectionConfig();
+        connection.setType(ConnectType.OB_MYSQL);
         connection.setSslConfig(sslConfig());
         connection.setEnvironmentId(1L);
         connection.setId(1L);
@@ -75,6 +78,9 @@ public class ConnectionConfigMapperTest {
         connection.setTemp(false);
 
         ConnectionEntity expected = new ConnectionEntity();
+        expected.setType(ConnectType.OB_MYSQL);
+        expected.setDialectType(DialectType.OB_MYSQL);
+        expected.setDefaultSchema("information_schema");
         expected.setEnvironmentId(1L);
         expected.setSslEnabled(false);
         expected.setSslCACertObjectId("1");
