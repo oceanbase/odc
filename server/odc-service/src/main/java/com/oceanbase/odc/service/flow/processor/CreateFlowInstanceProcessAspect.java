@@ -41,6 +41,7 @@ import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferConfig;
 import com.oceanbase.odc.service.collaboration.project.model.Project;
 import com.oceanbase.odc.service.connection.database.DatabaseService;
 import com.oceanbase.odc.service.connection.database.model.Database;
+import com.oceanbase.odc.service.databasechange.model.DatabaseChangeProperties;
 import com.oceanbase.odc.service.flow.model.CreateFlowInstanceReq;
 import com.oceanbase.odc.service.flow.task.model.DBStructureComparisonParameter;
 import com.oceanbase.odc.service.flow.task.model.MultipleDatabaseChangeParameters;
@@ -172,9 +173,10 @@ public class CreateFlowInstanceProcessAspect implements InitializingBean {
     private void adaptCreateFlowInstanceReqForMultipleDatabase(CreateFlowInstanceReq req) {
         MultipleDatabaseChangeParameters parameters = (MultipleDatabaseChangeParameters) req.getParameters();
         List<Long> ids = parameters.getOrderedDatabaseIds().stream().flatMap(List::stream).collect(Collectors.toList());
-        if (ids.size() <= 1) {
+        // Limit the number of multi-databases change
+        if (ids.size() <= DatabaseChangeProperties.MIN_DATABASE_COUNT || ids.size() > DatabaseChangeProperties.MAX_DATABASE_COUNT) {
             throw new BadArgumentException(ErrorCodes.IllegalArgument,
-                    "The number of databases must be greater than 1.");
+                    "The number of databases must be greater than "+DatabaseChangeProperties.MIN_DATABASE_COUNT+" and not more than "+DatabaseChangeProperties.MAX_DATABASE_COUNT+".");
         }
         if (new HashSet<Long>(ids).size() != ids.size()) {
             throw new BadArgumentException(ErrorCodes.IllegalArgument,

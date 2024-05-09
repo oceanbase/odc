@@ -48,6 +48,7 @@ import com.oceanbase.odc.metadb.databasechange.DatabaseChangeChangingOrderTempla
 import com.oceanbase.odc.metadb.databasechange.DatabaseChangeChangingOrderTemplateRepository;
 import com.oceanbase.odc.metadb.databasechange.DatabaseChangeChangingOrderTemplateSpecs;
 import com.oceanbase.odc.service.databasechange.model.CreateDatabaseChangeChangingOrderReq;
+import com.oceanbase.odc.service.databasechange.model.DatabaseChangeProperties;
 import com.oceanbase.odc.service.databasechange.model.DatabaseChangingOrderTemplateExists;
 import com.oceanbase.odc.service.databasechange.model.QueryDatabaseChangeChangingOrderParams;
 import com.oceanbase.odc.service.databasechange.model.QueryDatabaseChangeChangingOrderResp;
@@ -74,6 +75,16 @@ public class DatabaseChangeChangingOrderTemplateService {
     @Transactional(rollbackFor = Exception.class)
     public Boolean create(
             @NotNull @Valid CreateDatabaseChangeChangingOrderReq req) {
+        List< List< Long>> orders = req.getOrders();
+        List<Long> databaseIds = orders.stream().flatMap(List::stream).collect(Collectors.toList());
+        if (databaseIds.size() <= DatabaseChangeProperties.MIN_DATABASE_COUNT || databaseIds.size() > DatabaseChangeProperties.MAX_DATABASE_COUNT) {
+            throw new BadArgumentException(ErrorCodes.IllegalArgument,
+                "The number of databases must be greater than "+DatabaseChangeProperties.MIN_DATABASE_COUNT+" and not more than "+DatabaseChangeProperties.MAX_DATABASE_COUNT+".");
+        }
+        if (new HashSet<Long>(databaseIds).size() != databaseIds.size()) {
+            throw new BadArgumentException(ErrorCodes.IllegalArgument,
+                "Database cannot be duplicated.");
+        }
         validPermission(req);
         PreConditions.validNoDuplicated(ResourceType.ODC_DATABASE_CHANGE_ORDER_TEMPLATE, "name", req.getName(),
                 () -> templateRepository.existsByNameAndProjectId(req.getName(), req.getProjectId()));
