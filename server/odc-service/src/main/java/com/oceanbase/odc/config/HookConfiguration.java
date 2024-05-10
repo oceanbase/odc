@@ -17,6 +17,7 @@ package com.oceanbase.odc.config;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -34,6 +35,7 @@ import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.constant.ResourceRoleName;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.core.shared.exception.BadRequestException;
+import com.oceanbase.odc.core.shared.exception.UnexpectedException;
 import com.oceanbase.odc.metadb.collaboration.ProjectEntity;
 import com.oceanbase.odc.metadb.collaboration.ProjectRepository;
 import com.oceanbase.odc.service.collaboration.environment.EnvironmentService;
@@ -142,18 +144,22 @@ public class HookConfiguration {
     }
 
     private void projectReferenceCheck(Long userId, Long organizationId) {
+        Map<Long, ProjectEntity> id2Project =
+                projectRepository.findAllByOrganizationId(organizationId).stream().filter(p -> !p.getArchived())
+                        .collect(Collectors.toMap(ProjectEntity::getId, p -> p));
+
         Map<Long, Set<ResourceRoleName>> projectId2ResourceRoleNames =
                 resourceRoleService.getProjectId2ResourceRoleNames(userId).entrySet().stream()
                         .filter(e -> e.getValue().contains(ResourceRoleName.OWNER)
                                 || e.getValue().contains(ResourceRoleName.DBA))
+                        .filter(e -> id2Project.containsKey(e.getKey()))
                         .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
         if (projectId2ResourceRoleNames.size() == 0) {
             return;
         }
-        Map<Long, ProjectEntity> id2Project =
-                projectRepository.findAllByOrganizationId(organizationId).stream().filter(p -> p.getArchived() == false)
-                        .collect(Collectors.toMap(ProjectEntity::getId, p -> p));
-        String names = projectId2ResourceRoleNames.keySet().stream().map(id -> id2Project.get(id).getName())
+        String names = projectId2ResourceRoleNames.keySet().stream()
+                .map(id -> Optional.ofNullable(id2Project.get(id))
+                        .map(ProjectEntity::getName).orElseThrow(() -> new UnexpectedException("空指针异常！")))
                 .collect(Collectors.joining(", "));
 
         String errorMessage = String.format(
