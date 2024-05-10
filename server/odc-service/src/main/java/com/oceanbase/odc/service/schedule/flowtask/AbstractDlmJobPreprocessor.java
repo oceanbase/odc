@@ -83,12 +83,12 @@ public class AbstractDlmJobPreprocessor implements Preprocessor {
     }
 
     public void checkTableShardKey(ConnectionSession connectionSession, String databaseName,
-        List<DataArchiveTableConfig> tables, boolean checkTargetTable) {
+            List<DataArchiveTableConfig> tables, boolean checkTargetTable) {
         checkShardKey(connectionSession, databaseName, tables, checkTargetTable);
     }
 
     private void checkShardKey(ConnectionSession connectionSession, String databaseName,
-            List<DataArchiveTableConfig> tables , boolean checkTargetTable) {
+            List<DataArchiveTableConfig> tables, boolean checkTargetTable) {
         SyncJdbcExecutor syncJdbcExecutor = connectionSession.getSyncJdbcExecutor(
                 ConnectionSessionConstants.CONSOLE_DS_KEY);
         SqlBuilder sqlBuilder;

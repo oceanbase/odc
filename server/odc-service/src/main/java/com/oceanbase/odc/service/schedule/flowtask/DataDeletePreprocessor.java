@@ -81,7 +81,7 @@ public class DataDeletePreprocessor extends AbstractDlmJobPreprocessor {
             try {
                 checkTableAndCondition(connectionSession, sourceDb, dataDeleteParameters.getTables(),
                         dataDeleteParameters.getVariables());
-                checkTableShardKey(targetSession,targetDb.getName(),dataDeleteParameters.getTables(),
+                checkTableShardKey(targetSession, targetDb.getName(), dataDeleteParameters.getTables(),
                         dataDeleteParameters.getNeedCheckBeforeDelete());
             } finally {
                 connectionSession.expire();
@@ -110,7 +110,7 @@ public class DataDeletePreprocessor extends AbstractDlmJobPreprocessor {
         parameters.setQueryTimeout(dlmConfiguration.getTaskConnectionQueryTimeout());
         // if no need check before delete, set default target table name.
         // else target table name not null
-        if(!parameters.getNeedCheckBeforeDelete()){
+        if (!parameters.getNeedCheckBeforeDelete()) {
             parameters.getTables().forEach(tableConfig -> {
                 tableConfig.setTargetTableName(tableConfig.getTableName());
             });
