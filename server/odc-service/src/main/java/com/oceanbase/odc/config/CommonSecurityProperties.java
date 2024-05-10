@@ -15,8 +15,10 @@
  */
 package com.oceanbase.odc.config;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Stream;
 
 import javax.annotation.PostConstruct;
 
@@ -121,6 +123,9 @@ public class CommonSecurityProperties {
     @Value("${odc.web.security.cors.allowedOrigins:*}")
     private List<String> corsAllowedOrigins;
 
+    @Value("${odc.web.security.auth-white_list:}")
+    private List<String> securityAuthWhiteList;
+
     @PostConstruct
     public void init() {
         log.info("Common security properties initialized, "
@@ -129,7 +134,9 @@ public class CommonSecurityProperties {
     }
 
     public String[] getAuthWhitelist() {
-        return ArrayUtils.addAll(buildInAuthWhitelist, TASK_WHITE_LIST);
+        return Stream.of(buildInAuthWhitelist, TASK_WHITE_LIST, securityAuthWhiteList.toArray(new String[0]))
+                .flatMap(Arrays::stream)
+                .toArray(String[]::new);
     }
 
     public String[] getTaskWhiteList() {
