@@ -20,21 +20,22 @@ import java.util.function.Function;
 
 import com.oceanbase.odc.common.jpa.InsertSqlTemplateBuilder;
 import com.oceanbase.odc.config.jpa.OdcJpaRepository;
-import com.oceanbase.odc.metadb.dbobject.DBObjectEntity;
-import com.oceanbase.odc.metadb.dbobject.DBObjectEntity_;
 
 public interface LogicalDBPhysicalDBRepository extends OdcJpaRepository<LogicalDBPhysicalDBEntity, Long> {
+
+    List<LogicalDBPhysicalDBEntity> findByLogicalDatabaseId(Long logicalDatabaseId);
+
     default List<LogicalDBPhysicalDBEntity> batchCreate(List<LogicalDBPhysicalDBEntity> entities) {
         String sql = InsertSqlTemplateBuilder.from("connect_logical_db_physical_db")
-            .field(LogicalDBPhysicalDBEntity_.LOGICAL_DATABASE_ID)
-            .field(LogicalDBPhysicalDBEntity_.PHYSICAL_DATABASE_ID)
-            .field(LogicalDBPhysicalDBEntity_.ORGANIZATION_ID)
-            .build();
+                .field(LogicalDBPhysicalDBEntity_.LOGICAL_DATABASE_ID)
+                .field(LogicalDBPhysicalDBEntity_.PHYSICAL_DATABASE_ID)
+                .field(LogicalDBPhysicalDBEntity_.ORGANIZATION_ID)
+                .build();
         List<Function<LogicalDBPhysicalDBEntity, Object>> getter = valueGetterBuilder()
-            .add(LogicalDBPhysicalDBEntity::getLogicalDatabaseId)
-            .add(LogicalDBPhysicalDBEntity::getPhysicalDatabaseId)
-            .add(LogicalDBPhysicalDBEntity::getOrganizationId)
-            .build();
+                .add(LogicalDBPhysicalDBEntity::getLogicalDatabaseId)
+                .add(LogicalDBPhysicalDBEntity::getPhysicalDatabaseId)
+                .add(LogicalDBPhysicalDBEntity::getOrganizationId)
+                .build();
         return batchCreate(entities, sql, getter, LogicalDBPhysicalDBEntity::setId, 200);
     }
 }

@@ -24,8 +24,10 @@ import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.oceanbase.odc.common.util.StringUtils;
+import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.core.shared.constant.ResourceRoleName;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
@@ -39,9 +41,14 @@ import com.oceanbase.odc.metadb.connection.logicaldatabase.LogicalDBPhysicalDBEn
 import com.oceanbase.odc.metadb.connection.logicaldatabase.LogicalDBPhysicalDBRepository;
 import com.oceanbase.odc.metadb.connection.logicaldatabase.LogicalDatabaseMetaEntity;
 import com.oceanbase.odc.metadb.connection.logicaldatabase.LogicalDatabaseMetaRepository;
+import com.oceanbase.odc.service.collaboration.environment.EnvironmentService;
+import com.oceanbase.odc.service.collaboration.environment.model.Environment;
+import com.oceanbase.odc.service.connection.database.DatabaseService;
+import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.connection.database.model.DatabaseSyncStatus;
 import com.oceanbase.odc.service.connection.database.model.DatabaseType;
 import com.oceanbase.odc.service.connection.logicaldatabase.model.CreateLogicalDatabaseReq;
+import com.oceanbase.odc.service.connection.logicaldatabase.model.DetailLogicalDatabaseResp;
 import com.oceanbase.odc.service.iam.ProjectPermissionValidator;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 
@@ -51,6 +58,7 @@ import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
  * @Description: []
  */
 @Service
+@SkipAuthorize
 public class LogicalDatabaseService {
 
     @Autowired
@@ -71,6 +79,16 @@ public class LogicalDatabaseService {
     @Autowired
     private AuthenticationFacade authenticationFacade;
 
+    @Autowired
+    private EnvironmentService environmentService;
+
+    @Autowired
+    private DatabaseService databaseService;
+
+    @Autowired
+    private LogicalTableService tableService;
+
+    @Transactional(rollbackFor = Exception.class)
     public Boolean create(CreateLogicalDatabaseReq req) {
         preCheck(req);
 
@@ -80,6 +98,7 @@ public class LogicalDatabaseService {
                         ResourceType.ODC_DATABASE, "id", req.getPhysicalDatabaseIds().iterator().next()));
         DatabaseEntity logicalDatabase = new DatabaseEntity();
         logicalDatabase.setProjectId(req.getProjectId());
+        logicalDatabase.setName(req.getName());
         logicalDatabase.setAlias(req.getAlias());
         logicalDatabase.setEnvironmentId(basePhysicalDatabase.getEnvironmentId());
         logicalDatabase.setDatabaseId(StringUtils.uuid());
@@ -112,7 +131,33 @@ public class LogicalDatabaseService {
         return true;
     }
 
+    public DetailLogicalDatabaseResp detail(Long id) {
+        DatabaseEntity logicalDatabase = databaseRepository.findById(id).orElseThrow(() -> new NotFoundException(
+                ResourceType.ODC_DATABASE, "id", id));
+        Verify.equals(logicalDatabase.getType(), DatabaseType.LOGICAL, "database type");
+        projectPermissionValidator.checkProjectRole(logicalDatabase.getProjectId(), ResourceRoleName.all());
+        LogicalDatabaseMetaEntity meta = logicalDatabaseMetaRepository.findByDatabaseId(logicalDatabase.getId())
+                .orElseThrow(() -> new NotFoundException(
+                        ResourceType.ODC_DATABASE, "database id", logicalDatabase.getId()));
 
+        Environment environment = environmentService.detailSkipPermissionCheck(meta.getEnvironmentId());
+
+        Set<Long> physicalDBIds =
+                logicalDBPhysicalDBRepository.findByLogicalDatabaseId(logicalDatabase.getId()).stream()
+                        .map(LogicalDBPhysicalDBEntity::getPhysicalDatabaseId).collect(Collectors.toSet());
+        List<Database> physicalDatabases = databaseService.listDatabasesByIds(physicalDBIds);
+
+        DetailLogicalDatabaseResp resp = new DetailLogicalDatabaseResp();
+        resp.setId(logicalDatabase.getId());
+        resp.setName(logicalDatabase.getName());
+        resp.setAlias(logicalDatabase.getAlias());
+        resp.setDialectType(meta.getDialectType());
+        resp.setEnvironment(environment);
+        resp.setPhysicalDatabases(physicalDatabases);
+        resp.setLogicalTables(tableService.list(logicalDatabase.getId()));
+
+        return resp;
+    }
 
     private void preCheck(CreateLogicalDatabaseReq req) {
         projectPermissionValidator.checkProjectRole(req.getProjectId(),

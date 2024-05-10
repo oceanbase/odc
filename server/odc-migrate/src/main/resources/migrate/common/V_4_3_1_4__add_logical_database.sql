@@ -47,8 +47,11 @@ create table if not exists `connect_logical_table_physical_table`(
     `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
     `update_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     `logical_table_id` bigint(20) NOT NULL COMMENT 'reference to database_logical_table.id',
-    `physical_table_id` bigint(20) NOT NULL COMMENT 'reference to database_schema_object.id whose type is TABLE',
+    `physical_database_id` bigint(20) NOT NULL COMMENT 'reference to connect_database.id whose type is PHYSICAL',
+    `physical_database_name` varchar(256) NOT NULL COMMENT 'reference to connect_database.name whose type is PHYSICAL',
+    `physical_table_name` varchar(256) NOT NULL COMMENT 'physical table name',
+    `is_consistent` tinyint(1) NOT NULL DEFAULT 1 COMMENT '0: inconsistent, 1: consistent',
     `organization_id` bigint(20) NOT NULL COMMENT 'reference to iam_organization.id',
     PRIMARY KEY (`id`),
-    UNIQUE KEY `uk_connect_logical_table_physical_table_lti_pti` (`logical_table_id`, `physical_table_id`)
+    UNIQUE KEY `uk_connect_logical_table_physical_table_lti_pdi_ptn` (`logical_table_id`, `physical_database_id`, `physical_table_name`)
 );

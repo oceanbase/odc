@@ -57,6 +57,15 @@ public class LogicalTablePhysicalTableEntity {
     @Column(name = "logical_table_id", updatable = false, nullable = false)
     private Long logicalTableId;
 
-    @Column(name = "physical_table_id", updatable = false, nullable = false)
-    private Long physicalTableId;
+    @Column(name = "physical_database_id", updatable = false, nullable = false)
+    private Long physicalDatabaseId;
+
+    @Column(name = "physical_database_name", updatable = false, nullable = false)
+    private String physicalDatabaseName;
+
+    @Column(name = "physical_table_name", updatable = false, nullable = false)
+    private String physicalTableName;
+
+    @Column(name = "is_consistent", nullable = false)
+    private Boolean consistent;
 }

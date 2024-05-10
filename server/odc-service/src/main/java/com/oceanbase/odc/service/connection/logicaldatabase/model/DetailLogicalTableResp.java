@@ -18,6 +18,7 @@ package com.oceanbase.odc.service.connection.logicaldatabase.model;
 import java.util.Date;
 import java.util.List;
 
+import com.oceanbase.odc.service.connection.logicaldatabase.core.model.DataNode;
 import com.oceanbase.tools.dbbrowser.model.DBTable;
 
 import lombok.Data;
@@ -40,7 +41,7 @@ public class DetailLogicalTableResp {
 
     private Date lastSyncTime;
 
-    private List<String> inconsistentPhysicalTables;
+    private List<DataNode> inconsistentPhysicalTables;
 
     private DBTable basePhysicalTable;
 }

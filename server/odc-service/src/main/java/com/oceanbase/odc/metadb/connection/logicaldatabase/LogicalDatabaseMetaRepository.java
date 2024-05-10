@@ -15,9 +15,12 @@
  */
 package com.oceanbase.odc.metadb.connection.logicaldatabase;
 
+import java.util.Optional;
+
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 
 public interface LogicalDatabaseMetaRepository extends JpaRepository<LogicalDatabaseMetaEntity, Long>,
         JpaSpecificationExecutor<LogicalDatabaseMetaEntity> {
+    Optional<LogicalDatabaseMetaEntity> findByDatabaseId(Long databaseId);
 }

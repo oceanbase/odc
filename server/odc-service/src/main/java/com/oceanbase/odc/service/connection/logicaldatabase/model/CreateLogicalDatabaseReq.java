@@ -33,6 +33,9 @@ public class CreateLogicalDatabaseReq {
     private Long projectId;
 
     @NotNull
+    private String name;
+
+    @NotNull
     private String alias;
 
     @NotEmpty

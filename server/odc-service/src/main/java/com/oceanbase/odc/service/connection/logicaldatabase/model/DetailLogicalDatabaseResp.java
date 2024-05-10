@@ -21,7 +21,10 @@ import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.service.collaboration.environment.model.Environment;
 import com.oceanbase.odc.service.connection.database.model.Database;
 
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 /**
  * @Author: Lebie
@@ -29,6 +32,9 @@ import lombok.Data;
  * @Description: []
  */
 @Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class DetailLogicalDatabaseResp {
     private Long id;
 

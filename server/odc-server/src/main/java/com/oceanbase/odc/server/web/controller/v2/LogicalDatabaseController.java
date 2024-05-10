@@ -15,6 +15,7 @@
  */
 package com.oceanbase.odc.server.web.controller.v2;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -22,7 +23,10 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.oceanbase.odc.core.shared.exception.NotImplementedException;
+import com.oceanbase.odc.service.common.response.Responses;
 import com.oceanbase.odc.service.common.response.SuccessResponse;
+import com.oceanbase.odc.service.connection.logicaldatabase.LogicalDatabaseService;
+import com.oceanbase.odc.service.connection.logicaldatabase.LogicalTableService;
 import com.oceanbase.odc.service.connection.logicaldatabase.model.CreateLogicalDatabaseReq;
 import com.oceanbase.odc.service.connection.logicaldatabase.model.DetailLogicalDatabaseResp;
 
@@ -34,14 +38,28 @@ import com.oceanbase.odc.service.connection.logicaldatabase.model.DetailLogicalD
 @RestController
 @RequestMapping("/api/v2/connect/logicaldatabase")
 public class LogicalDatabaseController {
+    @Autowired
+    private LogicalDatabaseService databaseService;
+
+    @Autowired
+    private LogicalTableService tableService;
+
     @RequestMapping(value = "/logicaldatabases", method = RequestMethod.POST)
     public SuccessResponse<Boolean> create(@RequestBody CreateLogicalDatabaseReq req) {
-        throw new NotImplementedException();
+        return Responses.success(databaseService.create(req));
     }
 
     @RequestMapping(value = "/logicaldatabases/{id:[\\d]+}", method = RequestMethod.POST)
     public SuccessResponse<DetailLogicalDatabaseResp> detail(@PathVariable Long id) {
-        throw new NotImplementedException();
+        return Responses.success(databaseService.detail(id));
+    }
+
+
+    @RequestMapping(value = "/logicaldatabases/{logicalDatabaseId:[\\d]+}/logicaltables/{logicalTableId:[\\d]+}",
+            method = RequestMethod.DELETE)
+    public SuccessResponse<Boolean> deleteLogicalTable(@PathVariable Long logicalDatabaseId,
+            @PathVariable Long logicalTableId) {
+        return Responses.success(tableService.delete(logicalDatabaseId, logicalTableId));
     }
 
     @RequestMapping(value = "/logicaldatabases/{id:[\\d]+}/logicaltables/extract", method = RequestMethod.POST)
@@ -56,12 +74,4 @@ public class LogicalDatabaseController {
             @PathVariable Long logicalTableId) {
         throw new NotImplementedException();
     }
-
-    @RequestMapping(value = "/logicaldatabases/{logicalDatabaseId:[\\d]+}/logicaltables/{logicalTableId:[\\d]+}",
-            method = RequestMethod.DELETE)
-    public SuccessResponse<Boolean> deleteLogicalTable(@PathVariable Long logicalDatabaseId,
-            @PathVariable Long logicalTableId) {
-        throw new NotImplementedException();
-    }
-
 }

@@ -15,9 +15,15 @@
  */
 package com.oceanbase.odc.metadb.connection.logicaldatabase;
 
+import java.util.Collection;
+import java.util.List;
+
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 
 public interface LogicalTablePhysicalTableRepository extends JpaRepository<LogicalTablePhysicalTableEntity, Long>,
         JpaSpecificationExecutor<LogicalTablePhysicalTableEntity> {
+    List<LogicalTablePhysicalTableEntity> findByLogicalTableIdIn(Collection<Long> logicalTableId);
+
+    void deleteByLogicalTableId(Long logicalTableId);
 }
