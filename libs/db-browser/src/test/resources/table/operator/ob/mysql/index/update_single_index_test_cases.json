@@ -119,7 +119,10 @@
         "algorithm": "BTREE",
         "ordinalPosition": null,
         "columnGroups": [
-          "each column"
+          {
+            "allColumns": false,
+            "eachColumn": true
+          }
         ]
       },
       "current": {
@@ -135,7 +138,10 @@
         "algorithm": "HASH",
         "ordinalPosition": null,
         "columnGroups": [
-          "all columns"
+          {
+            "allColumns": true,
+            "eachColumn": false
+          }
         ]
       }
     },

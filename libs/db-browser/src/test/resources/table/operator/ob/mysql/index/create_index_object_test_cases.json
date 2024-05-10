@@ -82,7 +82,10 @@
         "algorithm": "BTREE",
         "ordinalPosition": null,
         "columnGroups": [
-          "each column"
+          {
+            "allColumns": false,
+            "eachColumn": true
+          }
         ]
       }
     },
