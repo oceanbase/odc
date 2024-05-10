@@ -61,7 +61,7 @@ public class ScheduleTaskUnitEntity {
 
     @Column(name = "start_time")
     private Date startTime;
-    @Column(name = "start_time")
+    @Column(name = "end_time")
     private Date endTime;
 
     @Column(name = "status", nullable = false)

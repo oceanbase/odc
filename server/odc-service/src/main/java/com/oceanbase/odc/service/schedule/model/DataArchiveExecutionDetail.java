@@ -39,9 +39,4 @@ public class DataArchiveExecutionDetail implements ExecutionDetail {
     private Long avgWriteRowCount;
 
     private String userCondition;
-
-    private Date startTime;
-
-    private Date endTime;
-
 }
