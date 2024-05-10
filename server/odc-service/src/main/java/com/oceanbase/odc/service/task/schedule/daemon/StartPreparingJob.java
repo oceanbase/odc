@@ -66,9 +66,6 @@ public class StartPreparingJob implements Job {
             configuration.getTaskFrameworkDisabledHandler().handleJobToFailed();
             return;
         }
-        if (!ResourceDetectUtil.isResourceAvailable(configuration.getTaskFrameworkProperties())) {
-            return;
-        }
         TaskFrameworkProperties taskFrameworkProperties = configuration.getTaskFrameworkProperties();
         // scan preparing job
         TaskFrameworkService taskFrameworkService = configuration.getTaskFrameworkService();
