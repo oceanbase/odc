@@ -16,11 +16,31 @@
 package com.oceanbase.odc.metadb.connection.logicaldatabase;
 
 import java.util.List;
+import java.util.function.Function;
 
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import com.oceanbase.odc.common.jpa.InsertSqlTemplateBuilder;
+import com.oceanbase.odc.config.jpa.OdcJpaRepository;
 
-public interface LogicalTableRepository extends JpaRepository<LogicalTableEntity, Long>,
-        JpaSpecificationExecutor<LogicalTableEntity> {
+public interface LogicalTableRepository extends OdcJpaRepository<LogicalTableEntity, Long> {
     List<LogicalTableEntity> findByLogicalDatabaseId(Long logicalDatabaseId);
+
+
+    default List<LogicalTableEntity> batchCreate(List<LogicalTableEntity> entities) {
+        String sql = InsertSqlTemplateBuilder.from("connect_logical_table")
+                .field(LogicalTableEntity_.LOGICAL_DATABASE_ID)
+                .field(LogicalTableEntity_.EXPRESSION)
+                .field(LogicalTableEntity_.NAME)
+                .field(LogicalTableEntity_.ORGANIZATION_ID)
+                .field(LogicalTableEntity_.LAST_SYNC_TIME)
+                .build();
+        List<Function<LogicalTableEntity, Object>> getter = valueGetterBuilder()
+                .add(LogicalTableEntity::getLogicalDatabaseId)
+                .add(LogicalTableEntity::getExpression)
+                .add(LogicalTableEntity::getName)
+                .add(LogicalTableEntity::getOrganizationId)
+                .add(LogicalTableEntity::getLastSyncTime)
+                .build();
+        return batchCreate(entities, sql, getter, LogicalTableEntity::setId, 200);
+    }
+
 }

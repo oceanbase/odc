@@ -51,6 +51,8 @@ public class DataNode {
     @JsonIgnore
     private ConnectionConfig dataSourceConfig;
 
+    private Long databaseId;
+
     private String schemaName;
 
     private String tableName;

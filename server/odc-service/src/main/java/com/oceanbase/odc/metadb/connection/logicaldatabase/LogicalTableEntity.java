@@ -63,12 +63,6 @@ public class LogicalTableEntity {
     @Column(name = "expression", updatable = false, nullable = false)
     private String expression;
 
-    @Column(name = "structure_signature_sha1", nullable = false)
-    private String structureSignatureSha1;
-
-    @Column(name = "base_physical_table_id", nullable = false)
-    private Long basePhysicalTableId;
-
     @Column(name = "last_sync_time", nullable = false)
     private Date lastSyncTime;
 }

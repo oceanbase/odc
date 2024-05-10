@@ -17,13 +17,34 @@ package com.oceanbase.odc.metadb.connection.logicaldatabase;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.function.Function;
 
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import com.oceanbase.odc.common.jpa.InsertSqlTemplateBuilder;
+import com.oceanbase.odc.config.jpa.OdcJpaRepository;
 
-public interface LogicalTablePhysicalTableRepository extends JpaRepository<LogicalTablePhysicalTableEntity, Long>,
-        JpaSpecificationExecutor<LogicalTablePhysicalTableEntity> {
+public interface LogicalTablePhysicalTableRepository extends OdcJpaRepository<LogicalTablePhysicalTableEntity, Long> {
     List<LogicalTablePhysicalTableEntity> findByLogicalTableIdIn(Collection<Long> logicalTableId);
 
     void deleteByLogicalTableId(Long logicalTableId);
+
+    default List<LogicalTablePhysicalTableEntity> batchCreate(List<LogicalTablePhysicalTableEntity> entities) {
+        String sql = InsertSqlTemplateBuilder.from("connect_logical_table")
+                .field(LogicalTablePhysicalTableEntity_.LOGICAL_TABLE_ID)
+                .field(LogicalTablePhysicalTableEntity_.PHYSICAL_DATABASE_ID)
+                .field(LogicalTablePhysicalTableEntity_.PHYSICAL_DATABASE_NAME)
+                .field(LogicalTablePhysicalTableEntity_.PHYSICAL_TABLE_NAME)
+                .field(LogicalTablePhysicalTableEntity_.CONSISTENT)
+                .field(LogicalTablePhysicalTableEntity_.ORGANIZATION_ID)
+                .build();
+        List<Function<LogicalTablePhysicalTableEntity, Object>> getter = valueGetterBuilder()
+                .add(LogicalTablePhysicalTableEntity::getLogicalTableId)
+                .add(LogicalTablePhysicalTableEntity::getPhysicalDatabaseId)
+                .add(LogicalTablePhysicalTableEntity::getPhysicalDatabaseName)
+                .add(LogicalTablePhysicalTableEntity::getPhysicalTableName)
+                .add(LogicalTablePhysicalTableEntity::getConsistent)
+                .add(LogicalTablePhysicalTableEntity::getOrganizationId)
+                .build();
+        return batchCreate(entities, sql, getter, LogicalTablePhysicalTableEntity::setId, 200);
+    }
+
 }

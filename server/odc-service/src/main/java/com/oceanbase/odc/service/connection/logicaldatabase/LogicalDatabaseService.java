@@ -22,6 +22,8 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import javax.validation.constraints.NotNull;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -88,6 +90,10 @@ public class LogicalDatabaseService {
     @Autowired
     private LogicalTableService tableService;
 
+    @Autowired
+    private LogicalDatabaseSyncManager syncManager;
+
+
     @Transactional(rollbackFor = Exception.class)
     public Boolean create(CreateLogicalDatabaseReq req) {
         preCheck(req);
@@ -131,6 +137,7 @@ public class LogicalDatabaseService {
         return true;
     }
 
+    // TODO: add database permission check after @GaoDa's PR merged
     public DetailLogicalDatabaseResp detail(Long id) {
         DatabaseEntity logicalDatabase = databaseRepository.findById(id).orElseThrow(() -> new NotFoundException(
                 ResourceType.ODC_DATABASE, "id", id));
@@ -157,6 +164,15 @@ public class LogicalDatabaseService {
         resp.setLogicalTables(tableService.list(logicalDatabase.getId()));
 
         return resp;
+    }
+
+    // TODO: add database permission check after @GaoDa's PR merged
+    public boolean extractLogicalTables(@NotNull Long logicalDatabaseId) {
+        Database logicalDatabase =
+                databaseService.getBasicSkipPermissionCheck(logicalDatabaseId);
+        Verify.equals(logicalDatabase.getType(), DatabaseType.LOGICAL, "database type");
+        syncManager.submitExtractLogicalTablesTask(logicalDatabase);
+        return true;
     }
 
     private void preCheck(CreateLogicalDatabaseReq req) {

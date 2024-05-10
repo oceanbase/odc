@@ -64,7 +64,7 @@ public class LogicalDatabaseController {
 
     @RequestMapping(value = "/logicaldatabases/{id:[\\d]+}/logicaltables/extract", method = RequestMethod.POST)
     public SuccessResponse<Boolean> extractLogicalTables(@PathVariable Long id) {
-        throw new NotImplementedException();
+        return Responses.success(databaseService.extractLogicalTables(id));
     }
 
     @RequestMapping(

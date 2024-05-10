@@ -21,12 +21,14 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionFactory;
 import com.oceanbase.odc.core.shared.PreConditions;
+import com.oceanbase.odc.core.shared.exception.UnexpectedException;
 import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.connection.logicaldatabase.core.model.DataNode;
 import com.oceanbase.odc.service.connection.logicaldatabase.core.model.LogicalTable;
@@ -48,7 +50,7 @@ import lombok.extern.slf4j.Slf4j;
 public class LogicalTableFinder {
     private List<Database> databases;
 
-    LogicalTableFinder(List<Database> databases) {
+    public LogicalTableFinder(List<Database> databases) {
         this.databases = databases;
     }
 
@@ -64,12 +66,18 @@ public class LogicalTableFinder {
         Set<Long> dataSourceIds = dataSourceId2Databases.keySet();
         for (Long dataSourceId : dataSourceIds) {
             List<Database> groupedDatabases = dataSourceId2Databases.get(dataSourceId);
+            Map<String, Database> name2Database =
+                    groupedDatabases.stream().collect(Collectors.toMap(Database::getName, database -> database));
             ConnectionConfig dataSource = id2DataSource.get(dataSourceId);
             getSchemaName2TableNames(dataSource, groupedDatabases).entrySet().forEach(entry -> {
                 String databaseName = entry.getKey();
                 List<String> tableNames = entry.getValue();
                 tableNames.forEach(tableName -> {
-                    DataNode dataNode = new DataNode(dataSource, databaseName, tableName);
+                    Database database = name2Database.get(databaseName);
+                    if (Objects.isNull(database)) {
+                        throw new UnexpectedException("Database not found: " + databaseName);
+                    }
+                    DataNode dataNode = new DataNode(dataSource, database.getId(), databaseName, tableName);
                     dataNodes.add(dataNode);
                 });
             });

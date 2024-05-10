@@ -34,8 +34,6 @@ create table if not exists `connect_logical_table`(
     `logical_database_id` bigint(20) NOT NULL COMMENT 'reference to connect_database.id whose type is LOGICAL',
     `name` varchar(256) NOT NULL COMMENT 'logical table name',
     `expression` varchar(1024) NOT NULL COMMENT 'logical table expression, e.g., db_[0-3].tb_[0-3]',
-    `structure_signature_sha1` varchar(64) NOT NULL COMMENT 'identify the logical table structure',
-    `base_physical_table_id` bigint(20) NOT NULL COMMENT 'reference to database_schema_object.id whose type is TABLE',
     `last_sync_time` datetime DEFAULT NULL COMMENT 'logical table last sync time',
     `organization_id` bigint(20) NOT NULL COMMENT 'reference to iam_organization.id',
     PRIMARY KEY (`id`),
