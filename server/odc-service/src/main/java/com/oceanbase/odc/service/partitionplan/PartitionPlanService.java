@@ -240,14 +240,14 @@ public class PartitionPlanService {
                     if (CollectionUtils.isEmpty(resp.get(PartitionPlanStrategy.DROP))
                             && i.getPartitionKeyConfigs().stream()
                                     .anyMatch(c -> c.getStrategy() == PartitionPlanStrategy.DROP)) {
-                        returnVal.getSqls().add("-- "
-                                + ErrorCodes.NoPartitionDropPreviewSqlGenerated.getLocalizedMessage(new Object[] {}));
+                        returnVal.getSqls().add("-- " + ErrorCodes.PartitionPlanNoDropPreviewSqlGenerated
+                                .getLocalizedMessage(new Object[] {}));
                     }
                     if (CollectionUtils.isEmpty(resp.get(PartitionPlanStrategy.CREATE))
                             && i.getPartitionKeyConfigs().stream()
                                     .anyMatch(c -> c.getStrategy() == PartitionPlanStrategy.CREATE)) {
-                        returnVal.getSqls().add("-- "
-                                + ErrorCodes.NoPartitionCreatePreviewSqlGenerated.getLocalizedMessage(new Object[] {}));
+                        returnVal.getSqls().add("-- " + ErrorCodes.PartitionPlanNoCreatePreviewSqlGenerated
+                                .getLocalizedMessage(new Object[] {}));
                     }
                 }
                 return returnVal;

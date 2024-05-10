@@ -164,8 +164,8 @@ public enum ErrorCodes implements ErrorCode {
     InvalidCronExpression,
 
     // Partition plan
-    NoPartitionDropPreviewSqlGenerated,
-    NoPartitionCreatePreviewSqlGenerated,
+    PartitionPlanNoDropPreviewSqlGenerated,
+    PartitionPlanNoCreatePreviewSqlGenerated,
     InvalidSqlExpression,
     PartitionKeyDataTypeMismatch,
     TimeDataTypePrecisionMismatch,
