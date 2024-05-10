@@ -202,6 +202,8 @@ public class CreateFlowInstanceProcessAspect implements InitializingBean {
             throw new BadArgumentException(ErrorCodes.IllegalArgument,
                 "All databases must belong to the project："+project.getName() );
         }*/
+        // must reset the batchid when initiating a multiple database flow again
+        parameters.setBatchId(null);
         req.setProjectId(project.getId());
         req.setProjectName(project.getName());
         parameters.setDatabases(databases);
