@@ -17,11 +17,14 @@ package com.oceanbase.odc.service.schedule.model;
 
 import java.util.Date;
 
+import lombok.Data;
+
 /**
  * @Author：tinker
  * @Date: 2024/5/9 09:39
  * @Descripition:
  */
+@Data
 public class DataArchiveExecutionDetail implements ExecutionDetail {
 
     private String tableName;

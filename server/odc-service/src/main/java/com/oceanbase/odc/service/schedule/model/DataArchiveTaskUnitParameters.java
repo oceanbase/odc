@@ -15,10 +15,14 @@
  */
 package com.oceanbase.odc.service.schedule.model;
 
+import lombok.Data;
+
 /**
  * @Author：tinker
  * @Date: 2024/5/10 11:13
  * @Descripition:
  */
+@Data
 public class DataArchiveTaskUnitParameters implements TaskUnitParameters {
+    private Long id;
 }

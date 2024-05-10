@@ -18,6 +18,7 @@ package com.oceanbase.odc.service.schedule;
 import java.io.File;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -45,6 +46,9 @@ import com.oceanbase.odc.metadb.schedule.ScheduleTaskSpecs;
 import com.oceanbase.odc.metadb.schedule.ScheduleTaskUnitRepository;
 import com.oceanbase.odc.service.quartz.QuartzJobService;
 import com.oceanbase.odc.service.quartz.util.ScheduleTaskUtils;
+import com.oceanbase.odc.service.schedule.model.DataArchiveExecutionDetail;
+import com.oceanbase.odc.service.schedule.model.DataArchiveTaskUnitParameters;
+import com.oceanbase.odc.service.schedule.model.JobType;
 import com.oceanbase.odc.service.schedule.model.ScheduleTaskMapper;
 import com.oceanbase.odc.service.schedule.model.ScheduleTaskResp;
 import com.oceanbase.odc.service.schedule.model.ScheduleTaskUnit;
@@ -86,6 +90,28 @@ public class ScheduleTaskService {
         List<ScheduleTaskUnit> taskUnits = scheduleTaskUnitRepository.findByScheduleTaskId(id).stream().map(
                 ScheduleTaskUnitMapper::toModel).collect(
                         Collectors.toList());
+
+        ScheduleTaskUnit taskUnit = new ScheduleTaskUnit();
+        DataArchiveTaskUnitParameters dataArchiveTaskUnitParameters = new DataArchiveTaskUnitParameters();
+        dataArchiveTaskUnitParameters.setId(1L);
+        taskUnit.setTaskUnitParameters(dataArchiveTaskUnitParameters);
+        DataArchiveExecutionDetail detail = new DataArchiveExecutionDetail();
+        detail.setAvgReadRowCount(100L);
+        detail.setAvgWriteRowCount(100L);
+        detail.setStatus("RUNNING");
+        detail.setTableName("table_name");
+        detail.setProcessRowCount(10000L);
+        detail.setUserCondition("create_time < '2022-09-01'");
+        detail.setReadRowCount(20000L);
+        detail.setType(JobType.DATA_ARCHIVE.name());
+        taskUnit.setExecutionDetail(detail);
+        taskUnit.setStartTime(new Date());
+        taskUnit.setEndTime(new Date());
+        taskUnit.setType(JobType.DATA_ARCHIVE);
+        taskUnit.setScheduleTaskId(id);
+        taskUnit.setId(1L);
+        taskUnits.add(taskUnit);
+        taskUnits.add(taskUnit);
         scheduleTaskResp.setTaskUnits(taskUnits);
         return scheduleTaskResp;
     }
