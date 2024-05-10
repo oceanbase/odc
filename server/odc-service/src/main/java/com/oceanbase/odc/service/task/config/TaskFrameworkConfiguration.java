@@ -87,7 +87,8 @@ public class TaskFrameworkConfiguration {
         schedulerFactoryBean.setStartupDelay(taskFrameworkProperties.getQuartzStartDelaySeconds());
         schedulerFactoryBean.setTaskExecutor(executor);
         Properties properties = new Properties();
-        properties.put("org.quartz.jobStore.acquireTriggersWithinLock", false);
+        //properties.put("org.quartz.jobStore.acquireTriggersWithinLock", false);
+        properties.put("org.quartz.jobStore.isClustered", false);
         schedulerFactoryBean.setQuartzProperties(properties);
         return schedulerFactoryBean;
     }
