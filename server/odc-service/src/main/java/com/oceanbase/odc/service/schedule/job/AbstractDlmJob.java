@@ -186,6 +186,7 @@ public abstract class AbstractDlmJob implements OdcJob {
                     taskEntity.getId(),
                     taskUnits.size()));
             taskUnit.setTableName(table.getTableName());
+            taskUnit.setTargetTableName(table.getTargetTableName());
             taskUnit.setSourceDatabaseId(parameters.getSourceDatabaseId());
             taskUnit.setTargetDatabaseId(parameters.getTargetDataBaseId());
             taskUnit.setFireTime(taskEntity.getFireTime());
