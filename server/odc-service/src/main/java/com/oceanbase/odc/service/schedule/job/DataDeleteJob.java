@@ -82,8 +82,9 @@ public class DataDeleteJob extends AbstractDlmJob {
                     taskEntity.getId(),
                     dlmTasks.size()));
             dlmTask.setTableName(table.getTableName());
+            dlmTask.setTargetTableName(table.getTargetTableName());
             dlmTask.setSourceDatabaseId(parameters.getDatabaseId());
-            dlmTask.setTargetDatabaseId(parameters.getDatabaseId());
+            dlmTask.setTargetDatabaseId(parameters.getTargetDatabaseId());
             dlmTask.setFireTime(taskEntity.getFireTime());
 
             LogicTableConfig logicTableConfig = new LogicTableConfig();
@@ -91,7 +92,8 @@ public class DataDeleteJob extends AbstractDlmJob {
             logicTableConfig.setCheckMode(CheckMode.MULTIPLE_GET);
             dlmTask.setLogicTableConfig(logicTableConfig);
             dlmTask.setStatus(TaskStatus.PREPARING);
-            dlmTask.setJobType(parameters.getDeleteByUniqueKey() ? JobType.QUICK_DELETE : JobType.DEIRECT_DELETE);
+            JobType jobType = parameters.getNeedCheckBeforeDelete() ? JobType.DELETE : JobType.QUICK_DELETE;
+            dlmTask.setJobType(parameters.getDeleteByUniqueKey() ? jobType : JobType.DEIRECT_DELETE);
             dlmTasks.add(dlmTask);
         });
         return dlmTasks;
@@ -125,9 +127,9 @@ public class DataDeleteJob extends AbstractDlmJob {
                         databaseService.findDataSourceForConnectById(dataDeleteParameters.getDatabaseId())));
         parameters
                 .setTargetDs(DataSourceInfoBuilder.build(
-                        databaseService.findDataSourceForConnectById(dataDeleteParameters.getDatabaseId())));
+                        databaseService.findDataSourceForConnectById(dataDeleteParameters.getTargetDatabaseId())));
         parameters.getSourceDs().setDatabaseName(dataDeleteParameters.getDatabaseName());
-        parameters.getTargetDs().setDatabaseName(dataDeleteParameters.getDatabaseName());
+        parameters.getTargetDs().setDatabaseName(dataDeleteParameters.getTargetDatabaseName());
         parameters.getSourceDs().setConnectionCount(2 * (parameters.getReadThreadCount()
                 + parameters.getWriteThreadCount()));
         parameters.getTargetDs().setConnectionCount(parameters.getSourceDs().getConnectionCount());

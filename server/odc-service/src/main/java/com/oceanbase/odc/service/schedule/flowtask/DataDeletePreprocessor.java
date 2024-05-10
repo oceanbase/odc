@@ -69,16 +69,23 @@ public class DataDeletePreprocessor extends AbstractDlmJobPreprocessor {
             // Throw exception when the specified database does not exist or the current user does not have
             // permission to access it.
             Database sourceDb = databaseService.detail(dataDeleteParameters.getDatabaseId());
+            Database targetDb = databaseService.detail(dataDeleteParameters.getTargetDatabaseId());
             dataDeleteParameters.setDatabaseName(sourceDb.getName());
+            dataDeleteParameters.setTargetDatabaseName(targetDb.getName());
             ConnectionConfig dataSource = sourceDb.getDataSource();
             dataSource.setDefaultSchema(sourceDb.getName());
             ConnectionSessionFactory connectionSessionFactory = new DefaultConnectSessionFactory(dataSource);
+            ConnectionSessionFactory targetSessionFactory = new DefaultConnectSessionFactory(targetDb.getDataSource());
             ConnectionSession connectionSession = connectionSessionFactory.generateSession();
+            ConnectionSession targetSession = targetSessionFactory.generateSession();
             try {
                 checkTableAndCondition(connectionSession, sourceDb, dataDeleteParameters.getTables(),
                         dataDeleteParameters.getVariables());
+                checkTableShardKey(targetSession,targetDb.getName(),dataDeleteParameters.getTables(),
+                        dataDeleteParameters.getNeedCheckBeforeDelete());
             } finally {
                 connectionSession.expire();
+                targetSession.expire();
             }
             log.info("QUICK-DELETE job preprocessing has been completed.");
             // pre create
@@ -101,10 +108,14 @@ public class DataDeletePreprocessor extends AbstractDlmJobPreprocessor {
                 .setWriteThreadCount(dlmConfiguration.getSingleTaskThreadPoolSize() - parameters.getReadThreadCount());
         parameters.setScanBatchSize(dlmConfiguration.getDefaultScanBatchSize());
         parameters.setQueryTimeout(dlmConfiguration.getTaskConnectionQueryTimeout());
-        // set default target table name.
-        parameters.getTables().forEach(tableConfig -> {
-            tableConfig.setTargetTableName(tableConfig.getTableName());
-        });
+        // if no need check before delete, set default target table name.
+        // else target table name not null
+        if(!parameters.getNeedCheckBeforeDelete()){
+            parameters.getTables().forEach(tableConfig -> {
+                tableConfig.setTargetTableName(tableConfig.getTableName());
+            });
+        }
+
     }
 
 }

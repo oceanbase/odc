@@ -33,6 +33,10 @@ public class DataDeleteParameters implements TaskParameters {
 
     private String databaseName;
 
+    private Long targetDatabaseId;
+
+    private String targetDatabaseName;
+
     private List<OffsetConfig> variables;
 
     private List<DataArchiveTableConfig> tables;
@@ -40,6 +44,8 @@ public class DataDeleteParameters implements TaskParameters {
     private RateLimitConfiguration rateLimit;
 
     private Boolean deleteByUniqueKey = true;
+
+    private Boolean needCheckBeforeDelete = false;
 
     private boolean needPrintSqlTrace = false;
 
