@@ -26,6 +26,7 @@ import com.oceanbase.tools.dbbrowser.editor.mysql.MySQLConstraintEditor;
 import com.oceanbase.tools.dbbrowser.editor.mysql.MySQLDBTablePartitionEditor;
 import com.oceanbase.tools.dbbrowser.editor.mysql.OBMySQLIndexEditor;
 import com.oceanbase.tools.dbbrowser.editor.mysql.OBMySQLTableEditor;
+import com.oceanbase.tools.dbbrowser.model.DBColumnGroupElement;
 import com.oceanbase.tools.dbbrowser.model.DBTable;
 
 public class MySQLTableEditorTest {
@@ -77,7 +78,9 @@ public class MySQLTableEditorTest {
         DBTable oldTable = DBObjectUtilsTest.getOldTable();
         DBTable newTable = DBObjectUtilsTest.getOldTable();
 
-        newTable.setColumnGroups(Collections.singletonList("all columns"));
+        DBColumnGroupElement cg = new DBColumnGroupElement();
+        cg.setAllColumns(true);
+        newTable.setColumnGroups(Collections.singletonList(cg));
         String ddl = tableEditor.generateUpdateObjectDDL(oldTable, newTable);
         Assert.assertEquals(
                 "ALTER TABLE `whatever_schema`.`old_table` DROP COLUMN GROUP(each column);\n"

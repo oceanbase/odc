@@ -17,6 +17,7 @@ package com.oceanbase.odc.plugin.schema.obmysql.parser;
 
 import java.util.List;
 
+import com.oceanbase.tools.dbbrowser.model.DBColumnGroupElement;
 import com.oceanbase.tools.dbbrowser.model.DBTableColumn;
 import com.oceanbase.tools.dbbrowser.model.DBTableConstraint;
 import com.oceanbase.tools.dbbrowser.model.DBTableIndex;
@@ -48,5 +49,5 @@ public interface GetDBTableByParser {
      */
     DBTablePartition getPartition();
 
-    List<String> getColumnGroups();
+    List<DBColumnGroupElement> getColumnGroups();
 }

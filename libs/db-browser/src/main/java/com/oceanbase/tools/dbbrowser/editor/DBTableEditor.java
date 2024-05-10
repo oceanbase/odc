@@ -31,6 +31,7 @@ import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.util.Strings;
 
+import com.oceanbase.tools.dbbrowser.model.DBColumnGroupElement;
 import com.oceanbase.tools.dbbrowser.model.DBConstraintType;
 import com.oceanbase.tools.dbbrowser.model.DBIndexType;
 import com.oceanbase.tools.dbbrowser.model.DBTable;
@@ -116,7 +117,8 @@ public abstract class DBTableEditor implements DBObjectEditor<DBTable> {
         }
         if (CollectionUtils.isNotEmpty(table.getColumnGroups())) {
             sqlBuilder.append(" WITH COLUMN GROUP(")
-                    .append(String.join(",", table.getColumnGroups()))
+                    .append(table.getColumnGroups().stream().map(DBColumnGroupElement::toString)
+                            .collect(Collectors.joining(",")))
                     .append(")");
         }
         sqlBuilder.append(";\n");
@@ -293,22 +295,22 @@ public abstract class DBTableEditor implements DBObjectEditor<DBTable> {
 
     private String generateUpdateColumnGroupDDL(DBTable oldTable, DBTable newTable) {
         SqlBuilder sqlBuilder = sqlBuilder();
-        HashSet<String> oldColumnGroups = new HashSet<>();
+        HashSet<DBColumnGroupElement> oldColumnGroups = new HashSet<>();
         if (oldTable.getColumnGroups() != null) {
             oldColumnGroups.addAll(oldTable.getColumnGroups());
         }
-        HashSet<String> newColumnGroups = new HashSet<>();
+        HashSet<DBColumnGroupElement> newColumnGroups = new HashSet<>();
         if (newTable.getColumnGroups() != null) {
             newColumnGroups.addAll(newTable.getColumnGroups());
         }
-        List<String> columnsToBeDropped = new ArrayList<>();
-        List<String> columnsToBeCreated = new ArrayList<>();
-        for (String columnGroup : oldColumnGroups) {
+        List<DBColumnGroupElement> columnsToBeDropped = new ArrayList<>();
+        List<DBColumnGroupElement> columnsToBeCreated = new ArrayList<>();
+        for (DBColumnGroupElement columnGroup : oldColumnGroups) {
             if (!newColumnGroups.contains(columnGroup)) {
                 columnsToBeDropped.add(columnGroup);
             }
         }
-        for (String columnGroup : newColumnGroups) {
+        for (DBColumnGroupElement columnGroup : newColumnGroups) {
             if (!oldColumnGroups.contains(columnGroup)) {
                 columnsToBeCreated.add(columnGroup);
             }
@@ -322,22 +324,22 @@ public abstract class DBTableEditor implements DBObjectEditor<DBTable> {
         return sqlBuilder.toString();
     }
 
-    private String generateDropColumnGroupDDL(List<String> columnGroups, DBTable table) {
+    private String generateDropColumnGroupDDL(List<DBColumnGroupElement> columnGroups, DBTable table) {
         SqlBuilder sqlBuilder = sqlBuilder();
         sqlBuilder.append("ALTER TABLE ")
                 .append(getFullyQualifiedTableName(table))
                 .append(" DROP COLUMN GROUP(")
-                .append(String.join(",", columnGroups))
+                .append(columnGroups.stream().map(DBColumnGroupElement::toString).collect(Collectors.joining(",")))
                 .append(");\n");
         return sqlBuilder.toString();
     }
 
-    private String generateCreateColumnGroupDDL(List<String> columnGroups, DBTable table) {
+    private String generateCreateColumnGroupDDL(List<DBColumnGroupElement> columnGroups, DBTable table) {
         SqlBuilder sqlBuilder = sqlBuilder();
         sqlBuilder.append("ALTER TABLE ")
                 .append(getFullyQualifiedTableName(table))
                 .append(" ADD COLUMN GROUP(")
-                .append(String.join(",", columnGroups))
+                .append(columnGroups.stream().map(DBColumnGroupElement::toString).collect(Collectors.joining(",")))
                 .append(");\n");
         return sqlBuilder.toString();
     }

@@ -30,5 +30,5 @@ public class DBIndex {
     private String databaseName;
     private String name;
     private DBIndexRangeType range;
-    private List<String> columnGroups;
+    private List<DBColumnGroupElement> columnGroups;
 }

@@ -26,6 +26,7 @@ import com.oceanbase.tools.dbbrowser.editor.oracle.OracleConstraintEditor;
 import com.oceanbase.tools.dbbrowser.editor.oracle.OracleDBTablePartitionEditor;
 import com.oceanbase.tools.dbbrowser.editor.oracle.OracleIndexEditor;
 import com.oceanbase.tools.dbbrowser.editor.oracle.OracleTableEditor;
+import com.oceanbase.tools.dbbrowser.model.DBColumnGroupElement;
 import com.oceanbase.tools.dbbrowser.model.DBTable;
 
 public class OracleTableEditorTest {
@@ -82,7 +83,9 @@ public class OracleTableEditorTest {
         DBTable oldTable = DBObjectUtilsTest.getOldTable();
         DBTable newTable = DBObjectUtilsTest.getOldTable();
 
-        newTable.setColumnGroups(Collections.singletonList("all columns"));
+        DBColumnGroupElement cg = new DBColumnGroupElement();
+        cg.setAllColumns(true);
+        newTable.setColumnGroups(Collections.singletonList(cg));
         String ddl = tableEditor.generateUpdateObjectDDL(oldTable, newTable);
         Assert.assertEquals(
                 "ALTER TABLE \"whatever_schema\".\"old_table\" DROP COLUMN GROUP(each column);\n"

@@ -25,6 +25,7 @@ import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.TerminalNode;
 
+import com.oceanbase.tools.dbbrowser.model.DBColumnGroupElement;
 import com.oceanbase.tools.dbbrowser.model.DBConstraintType;
 import com.oceanbase.tools.dbbrowser.model.DBIndex;
 import com.oceanbase.tools.dbbrowser.model.DBIndexRangeType;
@@ -481,9 +482,10 @@ public class OracleModeSqlParserListener extends OBParserBaseListener implements
             }
         }
         if (Objects.nonNull(ctx.with_column_group())) {
-            List<String> columnGroups = ctx.with_column_group()
+            List<DBColumnGroupElement> columnGroups = ctx.with_column_group()
                     .column_group_list().column_group_element().stream()
-                    .map(c -> new OracleColumnGroupElementFactory(c).generate().toString().toLowerCase())
+                    .map(c -> DBColumnGroupElement
+                            .ofColumnGroupElement(new OracleColumnGroupElementFactory(c).generate()))
                     .collect(Collectors.toList());
             index.setColumnGroups(columnGroups);
         }

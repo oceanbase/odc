@@ -20,11 +20,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 import javax.validation.constraints.NotNull;
 
 import org.apache.commons.collections4.CollectionUtils;
 
+import com.oceanbase.tools.dbbrowser.model.DBColumnGroupElement;
 import com.oceanbase.tools.dbbrowser.model.DBIndexType;
 import com.oceanbase.tools.dbbrowser.model.DBTableIndex;
 import com.oceanbase.tools.dbbrowser.util.SqlBuilder;
@@ -51,7 +53,8 @@ public abstract class DBTableIndexEditor implements DBObjectEditor<DBTableIndex>
         appendIndexOptions(index, sqlBuilder);
         if (CollectionUtils.isNotEmpty(index.getColumnGroups())) {
             sqlBuilder.append(" WITH COLUMN GROUP(")
-                    .append(String.join(",", index.getColumnGroups()))
+                    .append(index.getColumnGroups().stream().map(DBColumnGroupElement::toString)
+                            .collect(Collectors.joining(",")))
                     .append(")");
         }
         return sqlBuilder.toString().trim() + ";\n";
@@ -69,7 +72,8 @@ public abstract class DBTableIndexEditor implements DBObjectEditor<DBTableIndex>
         appendIndexOptions(index, sqlBuilder);
         if (CollectionUtils.isNotEmpty(index.getColumnGroups())) {
             sqlBuilder.append(" WITH COLUMN GROUP(")
-                    .append(String.join(",", index.getColumnGroups()))
+                    .append(index.getColumnGroups().stream().map(DBColumnGroupElement::toString)
+                            .collect(Collectors.joining(",")))
                     .append(")");
         }
         return sqlBuilder.toString().trim();

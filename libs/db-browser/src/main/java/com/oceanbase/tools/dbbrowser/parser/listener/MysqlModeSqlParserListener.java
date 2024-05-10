@@ -25,6 +25,7 @@ import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.TerminalNode;
 
+import com.oceanbase.tools.dbbrowser.model.DBColumnGroupElement;
 import com.oceanbase.tools.dbbrowser.model.DBConstraintType;
 import com.oceanbase.tools.dbbrowser.model.DBIndex;
 import com.oceanbase.tools.dbbrowser.model.DBIndexRangeType;
@@ -496,7 +497,7 @@ public class MysqlModeSqlParserListener extends OBParserBaseListener implements 
             }
             if (outOfLineIndex.getColumnGroupElements() != null) {
                 index.setColumnGroups(outOfLineIndex.getColumnGroupElements()
-                        .stream().map(cg -> cg.toString().toLowerCase()).collect(Collectors.toList()));
+                        .stream().map(DBColumnGroupElement::ofColumnGroupElement).collect(Collectors.toList()));
             }
             indexes.add(index);
         } else if (elt instanceof OutOfLineConstraint) {
@@ -512,7 +513,7 @@ public class MysqlModeSqlParserListener extends OBParserBaseListener implements 
                 }
                 if (outOfLineConstraint.getColumnGroupElements() != null) {
                     index.setColumnGroups(outOfLineConstraint.getColumnGroupElements()
-                            .stream().map(cg -> cg.toString().toLowerCase()).collect(Collectors.toList()));
+                            .stream().map(DBColumnGroupElement::ofColumnGroupElement).collect(Collectors.toList()));
                 }
                 indexes.add(index);
             } else if (elt instanceof OutOfLineForeignConstraint) {
