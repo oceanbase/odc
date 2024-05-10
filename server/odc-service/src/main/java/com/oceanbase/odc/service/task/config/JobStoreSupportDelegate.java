@@ -16,12 +16,16 @@
 
 package com.oceanbase.odc.service.task.config;
 
+import java.util.LinkedList;
 import java.util.List;
 
 import org.quartz.JobPersistenceException;
+import org.quartz.TriggerKey;
 import org.quartz.spi.OperableTrigger;
 import org.springframework.scheduling.quartz.LocalDataSourceJobStore;
 
+import com.oceanbase.odc.service.common.util.SpringContextUtil;
+import com.oceanbase.odc.service.task.constants.JobConstants;
 import com.oceanbase.odc.service.task.schedule.ResourceDetectUtil;
 
 /**
@@ -31,22 +35,36 @@ import com.oceanbase.odc.service.task.schedule.ResourceDetectUtil;
  */
 public class JobStoreSupportDelegate extends LocalDataSourceJobStore {
 
-    private final TaskFrameworkEnabledProperties taskFrameworkEnabledProperties;
-
-    public JobStoreSupportDelegate(TaskFrameworkEnabledProperties taskFrameworkEnabledProperties) {
-        this.taskFrameworkEnabledProperties = taskFrameworkEnabledProperties;
-    }
-
     @Override
     public List<OperableTrigger> acquireNextTriggers(long noLaterThan, int maxCount, long timeWindow)
             throws JobPersistenceException {
-        TaskFrameworkProperties taskFrameworkProperties = TaskFrameworkPropertiesSupplier.getSupplier().get();
-        // if resource is not available return null and give a chance to other node acquire trigger
-        if (taskFrameworkEnabledProperties.isEnabled()
-                && !ResourceDetectUtil.isResourceAvailable(taskFrameworkProperties)) {
-            return null;
-        }
 
-        return super.acquireNextTriggers(noLaterThan, maxCount, timeWindow);
+        List<OperableTrigger> triggers = super.acquireNextTriggers(noLaterThan, maxCount, timeWindow);
+        if (triggers == null || triggers.isEmpty() ||
+                !SpringContextUtil.getBean(TaskFrameworkEnabledProperties.class).isEnabled()) {
+            return triggers;
+        }
+        List<OperableTrigger> filteredTriggers = new LinkedList<>();
+        for (OperableTrigger trigger : triggers) {
+            if (shouldAcquire(trigger)) {
+                filteredTriggers.add(trigger);
+            } else {
+                releaseAcquiredTrigger(trigger);
+            }
+        }
+        return filteredTriggers;
     }
+
+    private boolean shouldAcquire(OperableTrigger trigger) {
+        TaskFrameworkProperties taskFrameworkProperties = TaskFrameworkPropertiesSupplier.getSupplier().get();
+        // If resource is not available return null and give a chance to other node acquire trigger
+        if (!ResourceDetectUtil.isResourceAvailable(taskFrameworkProperties)) {
+            if (TriggerKey.triggerKey("startPreparingJob", JobConstants.ODC_JOB_MONITORING)
+                    .equals(trigger.getKey())) {
+                return false;
+            }
+        }
+        return true;
+    }
+
 }
