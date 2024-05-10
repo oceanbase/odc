@@ -123,7 +123,7 @@ public class CommonSecurityProperties {
     @Value("${odc.web.security.cors.allowedOrigins:*}")
     private List<String> corsAllowedOrigins;
 
-    @Value("${odc.web.security.auth-white_list:}")
+    @Value("${odc.web.security.auth-white-list:}")
     private List<String> securityAuthWhiteList;
 
     @PostConstruct
