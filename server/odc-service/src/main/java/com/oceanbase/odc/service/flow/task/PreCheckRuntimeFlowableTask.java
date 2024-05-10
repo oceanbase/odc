@@ -530,7 +530,7 @@ public class PreCheckRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Void> {
                             -1);
             if (Objects.nonNull(this.uploadFileInputStream)) {
                 this.uploadFileSqlIterator = SqlUtils.iterator(
-                        this.databaseList.get(0).getDataSource().getDialectType(), params.getDelimiter(),
+                        this.databaseList.get(0).getDataSource().getDialectType(), multipleParams.getDelimiter(),
                         this.uploadFileInputStream, StandardCharsets.UTF_8);
             }
         }
