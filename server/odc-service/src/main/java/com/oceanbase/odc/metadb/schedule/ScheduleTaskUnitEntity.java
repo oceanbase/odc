@@ -18,6 +18,7 @@ package com.oceanbase.odc.metadb.schedule;
 import java.util.Date;
 
 import javax.persistence.Column;
+import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
 import javax.persistence.GeneratedValue;
@@ -38,6 +39,7 @@ import lombok.Data;
  * @Descripition:
  */
 @Data
+@Entity
 @Table(name = "schedule_task_unit")
 public class ScheduleTaskUnitEntity {
 

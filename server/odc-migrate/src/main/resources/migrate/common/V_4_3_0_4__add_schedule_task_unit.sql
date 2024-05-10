@@ -9,5 +9,5 @@ CREATE TABLE IF NOT EXISTS `schedule_task_unit` (
   `status` varchar(120) NOT NULL COMMENT 'Task status',
   `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'Record insertion time',
   `update_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'Record modification time',
-  INDEX `idx_schedule_task_id` USING BTREE (`schedule_task_id`) GLOBAL
-)
+  INDEX `idx_schedule_task_unit_schedule_task_id`  (`schedule_task_id`)
+);
