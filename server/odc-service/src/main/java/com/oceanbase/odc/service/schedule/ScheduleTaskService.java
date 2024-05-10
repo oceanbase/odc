@@ -20,6 +20,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import org.apache.commons.io.input.ReversedLinesFileReader;
 import org.quartz.JobKey;
@@ -41,9 +42,13 @@ import com.oceanbase.odc.core.shared.exception.UnexpectedException;
 import com.oceanbase.odc.metadb.schedule.ScheduleTaskEntity;
 import com.oceanbase.odc.metadb.schedule.ScheduleTaskRepository;
 import com.oceanbase.odc.metadb.schedule.ScheduleTaskSpecs;
+import com.oceanbase.odc.metadb.schedule.ScheduleTaskUnitRepository;
 import com.oceanbase.odc.service.quartz.QuartzJobService;
 import com.oceanbase.odc.service.quartz.util.ScheduleTaskUtils;
+import com.oceanbase.odc.service.schedule.model.ScheduleTaskMapper;
 import com.oceanbase.odc.service.schedule.model.ScheduleTaskResp;
+import com.oceanbase.odc.service.schedule.model.ScheduleTaskUnit;
+import com.oceanbase.odc.service.schedule.utils.ScheduleTaskUnitMapper;
 import com.oceanbase.odc.service.task.model.OdcTaskLogLevel;
 
 import lombok.extern.slf4j.Slf4j;
@@ -63,12 +68,27 @@ public class ScheduleTaskService {
     private ScheduleTaskRepository scheduleTaskRepository;
 
     @Autowired
+    private ScheduleTaskUnitRepository scheduleTaskUnitRepository;
+
+    @Autowired
     private QuartzJobService quartzJobService;
+
+    private final ScheduleTaskMapper scheduleTaskMapper = ScheduleTaskMapper.INSTANCE;
 
     @Value("${odc.log.directory:./log}")
     private String logDirectory;
 
     private static final String LOG_PATH_PATTERN = "%s/scheduleTask/%s-%s/%s/log.%s";
+
+    public ScheduleTaskResp detail(Long id) {
+        ScheduleTaskEntity entity = nullSafeGetById(id);
+        ScheduleTaskResp scheduleTaskResp = scheduleTaskMapper.entityToModel(entity);
+        List<ScheduleTaskUnit> taskUnits = scheduleTaskUnitRepository.findByScheduleTaskId(id).stream().map(
+                ScheduleTaskUnitMapper::toModel).collect(
+                        Collectors.toList());
+        scheduleTaskResp.setTaskUnits(taskUnits);
+        return scheduleTaskResp;
+    }
 
     public ScheduleTaskEntity create(ScheduleTaskEntity taskEntity) {
         return scheduleTaskRepository.save(taskEntity);

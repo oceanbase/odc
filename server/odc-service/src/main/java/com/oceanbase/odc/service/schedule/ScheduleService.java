@@ -454,6 +454,11 @@ public class ScheduleService {
         return mapper.map(entity);
     }
 
+    public ScheduleTaskResp detailScheduleTask(Long scheduleId, Long scheduleTaskId) {
+        nullSafeGetByIdWithCheckPermission(scheduleId);
+        return scheduleTaskService.detail(scheduleTaskId);
+    }
+
     public Page<ScheduleDetailResp> list(@NotNull Pageable pageable, @NotNull QueryScheduleParams params) {
         if (StringUtils.isNotBlank(params.getCreator())) {
             params.setCreatorIds(userService.getUsersByFuzzyNameWithoutPermissionCheck(
