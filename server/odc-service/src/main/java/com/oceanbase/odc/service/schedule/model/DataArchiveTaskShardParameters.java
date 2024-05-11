@@ -15,10 +15,25 @@
  */
 package com.oceanbase.odc.service.schedule.model;
 
+import java.util.Date;
+
+import com.oceanbase.tools.migrator.common.configure.LogicTableConfig;
+
 /**
  * @Author：tinker
  * @Date: 2024/5/10 11:13
  * @Descripition:
  */
 public class DataArchiveTaskShardParameters implements TaskShardParameters {
+
+    private String tableName;
+
+    private Date fireTime;
+
+    private Long sourceDatabaseId;
+
+    private Long targetDatabaseId;
+
+    private LogicTableConfig logicTableConfig;
+
 }
