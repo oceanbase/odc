@@ -15,6 +15,7 @@
  */
 package com.oceanbase.tools.dbbrowser.schema.mysql;
 
+import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -27,6 +28,7 @@ import java.util.stream.Collectors;
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.jdbc.core.JdbcOperations;
 
+import com.oceanbase.tools.dbbrowser.model.DBColumnGroupElement;
 import com.oceanbase.tools.dbbrowser.model.DBDatabase;
 import com.oceanbase.tools.dbbrowser.model.DBIndexAlgorithm;
 import com.oceanbase.tools.dbbrowser.model.DBObjectIdentity;
@@ -44,6 +46,9 @@ import com.oceanbase.tools.dbbrowser.schema.constant.StatementsFiles;
 import com.oceanbase.tools.dbbrowser.util.DBSchemaAccessorUtil;
 import com.oceanbase.tools.dbbrowser.util.MySQLSqlBuilder;
 import com.oceanbase.tools.dbbrowser.util.StringUtils;
+import com.oceanbase.tools.sqlparser.OBMySQLParser;
+import com.oceanbase.tools.sqlparser.SQLParser;
+import com.oceanbase.tools.sqlparser.statement.createtable.CreateTable;
 
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
@@ -246,6 +251,17 @@ public class OBMySQLSchemaAccessor extends MySQLNoLessThan5700SchemaAccessor {
             }
         });
         return tableName2Indexes;
+    }
+
+    public List<DBColumnGroupElement> listTableColumnGroups(String schemaName, String tableName) {
+        return listTableColumnGroups(schemaName, tableName, getTableDDL(schemaName, tableName));
+    }
+
+    public List<DBColumnGroupElement> listTableColumnGroups(String schemaName, String ddl, String tableName) {
+        SQLParser sqlParser = new OBMySQLParser();
+        CreateTable stmt = (CreateTable) sqlParser.parse(new StringReader(ddl));
+        return stmt.getColumnGroupElements().stream()
+                .map(DBColumnGroupElement::ofColumnGroupElement).collect(Collectors.toList());
     }
 
     @Override

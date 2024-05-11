@@ -52,6 +52,7 @@ import org.springframework.jdbc.core.JdbcOperations;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.lang.NonNull;
 
+import com.oceanbase.tools.dbbrowser.model.DBColumnGroupElement;
 import com.oceanbase.tools.dbbrowser.model.DBColumnTypeDisplay;
 import com.oceanbase.tools.dbbrowser.model.DBConstraintType;
 import com.oceanbase.tools.dbbrowser.model.DBDatabase;
@@ -1057,6 +1058,16 @@ public class MySQLNoLessThan5700SchemaAccessor implements DBSchemaAccessor {
             log.warn("Failed to get table options by parse table ddl, message={}", e.getMessage());
         }
         return dbTableOptions;
+    }
+
+    @Override
+    public List<DBColumnGroupElement> listTableColumnGroups(String schemaName, String tableName) {
+        throw new UnsupportedOperationException("Not supported yet");
+    }
+
+    @Override
+    public List<DBColumnGroupElement> listTableColumnGroups(String schemaName, String ddl, String tableName) {
+        throw new UnsupportedOperationException("Not supported yet");
     }
 
     private void obtainOptionsByQuery(String schemaName, String tableName, DBTableOptions dbTableOptions) {

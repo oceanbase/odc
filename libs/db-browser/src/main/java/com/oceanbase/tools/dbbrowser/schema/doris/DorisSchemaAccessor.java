@@ -962,6 +962,16 @@ public class DorisSchemaAccessor implements DBSchemaAccessor {
         return dbTableOptions;
     }
 
+    @Override
+    public List<DBColumnGroupElement> listTableColumnGroups(String schemaName, String tableName) {
+        throw new UnsupportedOperationException("Not supported yet");
+    }
+
+    @Override
+    public List<DBColumnGroupElement> listTableColumnGroups(String schemaName, String ddl, String tableName) {
+        throw new UnsupportedOperationException("Not supported yet");
+    }
+
     private void obtainOptionsByQuery(String schemaName, String tableName, DBTable.DBTableOptions dbTableOptions) {
         String sql = this.sqlMapper.getSql(Statements.GET_TABLE_OPTION);
         jdbcOperations.query(sql, new Object[] {schemaName, tableName}, t -> {

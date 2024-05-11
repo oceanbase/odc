@@ -15,6 +15,7 @@
  */
 package com.oceanbase.tools.dbbrowser.schema.oracle;
 
+import java.io.StringReader;
 import java.sql.ResultSetMetaData;
 import java.sql.Timestamp;
 import java.util.ArrayList;
@@ -35,6 +36,7 @@ import org.springframework.jdbc.core.BeanPropertyRowMapper;
 import org.springframework.jdbc.core.JdbcOperations;
 import org.springframework.jdbc.core.RowMapper;
 
+import com.oceanbase.tools.dbbrowser.model.DBColumnGroupElement;
 import com.oceanbase.tools.dbbrowser.model.DBColumnTypeDisplay;
 import com.oceanbase.tools.dbbrowser.model.DBDatabase;
 import com.oceanbase.tools.dbbrowser.model.DBFunction;
@@ -77,6 +79,9 @@ import com.oceanbase.tools.dbbrowser.util.OracleSqlBuilder;
 import com.oceanbase.tools.dbbrowser.util.PLObjectErrMsgUtils;
 import com.oceanbase.tools.dbbrowser.util.SqlBuilder;
 import com.oceanbase.tools.dbbrowser.util.StringUtils;
+import com.oceanbase.tools.sqlparser.OBOracleSQLParser;
+import com.oceanbase.tools.sqlparser.SQLParser;
+import com.oceanbase.tools.sqlparser.statement.createtable.CreateTable;
 
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
@@ -433,6 +438,17 @@ public class OBOracleSchemaAccessor extends OracleSchemaAccessor {
         }
 
         return function;
+    }
+
+    public List<DBColumnGroupElement> listTableColumnGroups(String schemaName, String tableName) {
+        return listTableColumnGroups(schemaName, tableName, getTableDDL(schemaName, tableName));
+    }
+
+    public List<DBColumnGroupElement> listTableColumnGroups(String schemaName, String ddl, String tableName) {
+        SQLParser sqlParser = new OBOracleSQLParser();
+        CreateTable stmt = (CreateTable) sqlParser.parse(new StringReader(ddl));
+        return stmt.getColumnGroupElements().stream()
+                .map(DBColumnGroupElement::ofColumnGroupElement).collect(Collectors.toList());
     }
 
     @Override
