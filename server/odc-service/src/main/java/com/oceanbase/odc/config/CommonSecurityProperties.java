@@ -37,7 +37,6 @@ public class CommonSecurityProperties {
     private static String[] buildInAuthWhitelist = new String[] {
             "/api/v1/heartbeat/isHealthy",
             "/api/v1/heartbeat/getMetaStatus",
-            "/api/v1/user/csrfToken",
             "/api/v1/time",
             "/api/v1/info",
             "/api/v1/build-info",

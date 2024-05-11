@@ -52,6 +52,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class OrganizationAuthenticationInterceptor implements HandlerInterceptor {
     private final String[] ORGANIZATION_AUTH_WHITE_LIST = new String[] {
+            "/api/v1/user/csrfToken",
             "/api/v2/iam/users/me/organizations",
             "/api/v2/iam/login",
             "/api/v2/flow/flowInstances/*/tasks/download",
