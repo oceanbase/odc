@@ -9,5 +9,6 @@ CREATE TABLE IF NOT EXISTS `schedule_task_shard` (
   `status` varchar(120) NOT NULL COMMENT 'Task status',
   `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'Record insertion time',
   `update_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'Record modification time',
-  INDEX `idx_schedule_task_shard_schedule_task_id`  (`schedule_task_id`)
+CONSTRAINT `pk_schedule_task_shard_id` PRIMARY KEY (`id`),
+INDEX `idx_schedule_task_shard_schedule_task_id`  (`schedule_task_id`)
 );
