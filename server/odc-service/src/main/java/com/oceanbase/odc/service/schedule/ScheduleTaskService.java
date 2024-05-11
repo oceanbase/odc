@@ -41,14 +41,14 @@ import com.oceanbase.odc.core.shared.exception.NotFoundException;
 import com.oceanbase.odc.core.shared.exception.UnexpectedException;
 import com.oceanbase.odc.metadb.schedule.ScheduleTaskEntity;
 import com.oceanbase.odc.metadb.schedule.ScheduleTaskRepository;
+import com.oceanbase.odc.metadb.schedule.ScheduleTaskShardRepository;
 import com.oceanbase.odc.metadb.schedule.ScheduleTaskSpecs;
-import com.oceanbase.odc.metadb.schedule.ScheduleTaskUnitRepository;
 import com.oceanbase.odc.service.quartz.QuartzJobService;
 import com.oceanbase.odc.service.quartz.util.ScheduleTaskUtils;
 import com.oceanbase.odc.service.schedule.model.ScheduleTaskMapper;
 import com.oceanbase.odc.service.schedule.model.ScheduleTaskResp;
-import com.oceanbase.odc.service.schedule.model.ScheduleTaskUnit;
-import com.oceanbase.odc.service.schedule.utils.ScheduleTaskUnitMapper;
+import com.oceanbase.odc.service.schedule.model.ScheduleTaskShard;
+import com.oceanbase.odc.service.schedule.utils.ScheduleTaskShardMapper;
 import com.oceanbase.odc.service.task.model.OdcTaskLogLevel;
 
 import lombok.extern.slf4j.Slf4j;
@@ -68,7 +68,7 @@ public class ScheduleTaskService {
     private ScheduleTaskRepository scheduleTaskRepository;
 
     @Autowired
-    private ScheduleTaskUnitRepository scheduleTaskUnitRepository;
+    private ScheduleTaskShardRepository scheduleTaskShardRepository;
 
     @Autowired
     private QuartzJobService quartzJobService;
@@ -83,8 +83,8 @@ public class ScheduleTaskService {
     public ScheduleTaskResp detail(Long id) {
         ScheduleTaskEntity entity = nullSafeGetById(id);
         ScheduleTaskResp scheduleTaskResp = scheduleTaskMapper.entityToModel(entity);
-        List<ScheduleTaskUnit> taskUnits = scheduleTaskUnitRepository.findByScheduleTaskId(id).stream().map(
-                ScheduleTaskUnitMapper::toModel).collect(
+        List<ScheduleTaskShard> taskUnits = scheduleTaskShardRepository.findByScheduleTaskId(id).stream().map(
+                ScheduleTaskShardMapper::toModel).collect(
                         Collectors.toList());
         scheduleTaskResp.setTaskUnits(taskUnits);
         return scheduleTaskResp;

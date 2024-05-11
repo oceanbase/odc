@@ -15,10 +15,31 @@
  */
 package com.oceanbase.odc.service.schedule.model;
 
+import java.util.Date;
+
+import lombok.Data;
+
 /**
  * @Author：tinker
- * @Date: 2024/5/10 11:12
+ * @Date: 2024/5/10 14:14
  * @Descripition:
  */
-public interface TaskUnitParameters {
+@Data
+public class ScheduleTaskShard {
+
+    private Long id;
+
+    private JobType type;
+
+    private Long scheduleTaskId;
+
+    private TaskShardParameters taskParameters;
+
+    private ExecutionDetail executionDetail;
+
+    private Date startTime;
+
+    private Date endTime;
+
+    private String status;
 }

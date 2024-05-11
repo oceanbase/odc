@@ -17,8 +17,8 @@ package com.oceanbase.odc.service.schedule.model;
 
 /**
  * @Author：tinker
- * @Date: 2024/5/10 11:13
+ * @Date: 2024/5/10 11:12
  * @Descripition:
  */
-public class DataArchiveTaskUnitParameters implements TaskUnitParameters {
+public interface TaskShardParameters {
 }

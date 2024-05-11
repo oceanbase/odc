@@ -42,7 +42,7 @@ public class ScheduleTaskResp {
 
     private double progressPercentage;
 
-    private List<ScheduleTaskUnit> taskUnits;
+    private List<ScheduleTaskShard> taskShards;
 
     private String resultJson;
 

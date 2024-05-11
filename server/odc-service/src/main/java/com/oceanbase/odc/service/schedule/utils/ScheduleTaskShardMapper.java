@@ -16,32 +16,32 @@
 package com.oceanbase.odc.service.schedule.utils;
 
 import com.oceanbase.odc.common.json.JsonUtils;
-import com.oceanbase.odc.metadb.schedule.ScheduleTaskUnitEntity;
+import com.oceanbase.odc.metadb.schedule.ScheduleTaskShardEntity;
 import com.oceanbase.odc.service.schedule.model.DataArchiveExecutionDetail;
-import com.oceanbase.odc.service.schedule.model.DataArchiveTaskUnitParameters;
-import com.oceanbase.odc.service.schedule.model.ScheduleTaskUnit;
+import com.oceanbase.odc.service.schedule.model.DataArchiveTaskShardParameters;
+import com.oceanbase.odc.service.schedule.model.ScheduleTaskShard;
 
 /**
  * @Author：tinker
  * @Date: 2024/5/10 14:27
  * @Descripition:
  */
-public class ScheduleTaskUnitMapper {
+public class ScheduleTaskShardMapper {
 
-    public static ScheduleTaskUnitEntity toEntity(ScheduleTaskUnit model) {
-        ScheduleTaskUnitEntity entity = new ScheduleTaskUnitEntity();
+    public static ScheduleTaskShardEntity toEntity(ScheduleTaskShard model) {
+        ScheduleTaskShardEntity entity = new ScheduleTaskShardEntity();
         entity.setScheduleTaskId(model.getScheduleTaskId());
         entity.setType(model.getType());
         entity.setStartTime(model.getStartTime());
         entity.setEndTime(model.getEndTime());
         entity.setStatus(model.getStatus());
         entity.setExecutionDetail(JsonUtils.toJson(model.getExecutionDetail()));
-        entity.setTaskUnitParameters(JsonUtils.toJson(model.getTaskUnitParameters()));
+        entity.setTaskParameters(JsonUtils.toJson(model.getTaskParameters()));
         return entity;
     }
 
-    public static ScheduleTaskUnit toModel(ScheduleTaskUnitEntity entity) {
-        ScheduleTaskUnit model = new ScheduleTaskUnit();
+    public static ScheduleTaskShard toModel(ScheduleTaskShardEntity entity) {
+        ScheduleTaskShard model = new ScheduleTaskShard();
         model.setScheduleTaskId(entity.getScheduleTaskId());
         model.setEndTime(entity.getEndTime());
         model.setStartTime(entity.getStartTime());
@@ -53,8 +53,8 @@ public class ScheduleTaskUnitMapper {
             case DATA_ARCHIVE:
             case DATA_ARCHIVE_DELETE:
             case DATA_ARCHIVE_ROLLBACK: {
-                model.setTaskUnitParameters(JsonUtils.fromJson(entity.getTaskUnitParameters(),
-                        DataArchiveTaskUnitParameters.class));
+                model.setTaskParameters(JsonUtils.fromJson(entity.getTaskParameters(),
+                        DataArchiveTaskShardParameters.class));
                 model.setExecutionDetail(
                         JsonUtils.fromJson(entity.getExecutionDetail(), DataArchiveExecutionDetail.class));
                 break;

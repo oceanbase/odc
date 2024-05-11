@@ -31,13 +31,13 @@ import org.springframework.stereotype.Repository;
  * @Descripition:
  */
 @Repository
-public interface ScheduleTaskUnitRepository extends JpaRepository<ScheduleTaskUnitEntity, Long>,
-        JpaSpecificationExecutor<ScheduleTaskUnitEntity> {
+public interface ScheduleTaskShardRepository extends JpaRepository<ScheduleTaskShardEntity, Long>,
+        JpaSpecificationExecutor<ScheduleTaskShardEntity> {
 
-    List<ScheduleTaskUnitEntity> findByScheduleTaskId(Long scheduleTaskId);
+    List<ScheduleTaskShardEntity> findByScheduleTaskId(Long scheduleTaskId);
 
     @Transactional
     @Modifying
-    @Query("update ScheduleTaskUnitEntity e set e.executionDetail = ?2 where e.id = ?1")
+    @Query("update ScheduleTaskShardEntity e set e.executionDetail = ?2 where e.id = ?1")
     int updateExecutionDetailById(Long id, String executionDetail);
 }

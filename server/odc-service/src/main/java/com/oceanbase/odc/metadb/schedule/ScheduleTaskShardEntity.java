@@ -40,8 +40,8 @@ import lombok.Data;
  */
 @Data
 @Entity
-@Table(name = "schedule_task_unit")
-public class ScheduleTaskUnitEntity {
+@Table(name = "schedule_task_shard")
+public class ScheduleTaskShardEntity {
 
     @Id
     @Column(name = "id", nullable = false)
@@ -55,8 +55,8 @@ public class ScheduleTaskUnitEntity {
     @Column(name = "type", nullable = false)
     private JobType type;
 
-    @Column(name = "task_unit_parameters", nullable = false)
-    private String taskUnitParameters;
+    @Column(name = "task_parameters", nullable = false)
+    private String taskParameters;
 
     @Column(name = "execution_detail", nullable = false)
     private String executionDetail;
