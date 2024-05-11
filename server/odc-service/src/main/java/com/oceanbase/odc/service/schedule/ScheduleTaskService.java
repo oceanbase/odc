@@ -86,7 +86,7 @@ public class ScheduleTaskService {
         List<ScheduleTaskShard> taskUnits = scheduleTaskShardRepository.findByScheduleTaskId(id).stream().map(
                 ScheduleTaskShardMapper::toModel).collect(
                         Collectors.toList());
-        scheduleTaskResp.setTaskUnits(taskUnits);
+        scheduleTaskResp.setTaskShards(taskUnits);
         return scheduleTaskResp;
     }
 
