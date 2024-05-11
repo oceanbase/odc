@@ -440,11 +440,12 @@ public class OBOracleSchemaAccessor extends OracleSchemaAccessor {
         return function;
     }
 
+    @Override
     public List<DBColumnGroupElement> listTableColumnGroups(String schemaName, String tableName) {
-        return listTableColumnGroups(schemaName, tableName, getTableDDLOnly(schemaName, tableName));
+        return listTableColumnGroups(getTableDDLOnly(schemaName, tableName));
     }
 
-    public List<DBColumnGroupElement> listTableColumnGroups(String schemaName, String tableName, String ddl) {
+    private List<DBColumnGroupElement> listTableColumnGroups(String ddl) {
         SQLParser sqlParser = new OBOracleSQLParser();
         CreateTable stmt = (CreateTable) sqlParser.parse(new StringReader(ddl));
         return stmt.getColumnGroupElements() == null ? Collections.emptyList()
@@ -1028,7 +1029,7 @@ public class OBOracleSchemaAccessor extends OracleSchemaAccessor {
             table.setTableOptions(tableName2Options.getOrDefault(tableName, new DBTableOptions()));
             table.setPartition(getPartition(schemaName, tableName));
             table.setDDL(getTableDDL(schemaName, tableName, columns, indexes));
-            table.setColumnGroups(listTableColumnGroups(schemaName, tableName, getTableDDLOnly(schemaName, tableName)));
+            table.setColumnGroups(listTableColumnGroups(getTableDDLOnly(schemaName, tableName)));
             returnVal.put(tableName, table);
         }
         return returnVal;

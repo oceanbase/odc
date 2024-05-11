@@ -253,11 +253,12 @@ public class OBMySQLSchemaAccessor extends MySQLNoLessThan5700SchemaAccessor {
         return tableName2Indexes;
     }
 
+    @Override
     public List<DBColumnGroupElement> listTableColumnGroups(String schemaName, String tableName) {
-        return listTableColumnGroups(schemaName, tableName, getTableDDL(schemaName, tableName));
+        return listTableColumnGroups(getTableDDL(schemaName, tableName));
     }
 
-    public List<DBColumnGroupElement> listTableColumnGroups(String schemaName, String tableName, String ddl) {
+    private List<DBColumnGroupElement> listTableColumnGroups(String ddl) {
         SQLParser sqlParser = new OBMySQLParser();
         CreateTable stmt = (CreateTable) sqlParser.parse(new StringReader(ddl));
         return stmt.getColumnGroupElements() == null ? Collections.emptyList()
@@ -361,7 +362,7 @@ public class OBMySQLSchemaAccessor extends MySQLNoLessThan5700SchemaAccessor {
             table.setIndexes(tableName2Indexes.getOrDefault(tableName, new ArrayList<>()));
             table.setConstraints(tableName2Constraints.getOrDefault(tableName, new ArrayList<>()));
             table.setTableOptions(tableName2Options.getOrDefault(tableName, new DBTableOptions()));
-            table.setColumnGroups(listTableColumnGroups(schemaName, tableName, tableName2Ddl.get(tableName)));
+            table.setColumnGroups(listTableColumnGroups(tableName2Ddl.get(tableName)));
             try {
                 table.setPartition(getPartition(schemaName, tableName));
             } catch (Exception e) {

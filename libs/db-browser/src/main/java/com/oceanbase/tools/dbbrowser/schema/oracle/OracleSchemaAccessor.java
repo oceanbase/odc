@@ -1204,11 +1204,6 @@ public class OracleSchemaAccessor implements DBSchemaAccessor {
         throw new UnsupportedOperationException("Not supported yet");
     }
 
-    @Override
-    public List<DBColumnGroupElement> listTableColumnGroups(String schemaName, String tableName, String ddl) {
-        throw new UnsupportedOperationException("Not supported yet");
-    }
-
     protected void obtainTableCharset(List<DBTableOptions> tableOptions) {
         String sql = "select value from v$nls_parameters where PARAMETER = 'NLS_CHARACTERSET'";
         String charset = jdbcOperations.queryForObject(sql, String.class);

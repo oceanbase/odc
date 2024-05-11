@@ -1065,11 +1065,6 @@ public class MySQLNoLessThan5700SchemaAccessor implements DBSchemaAccessor {
         throw new UnsupportedOperationException("Not supported yet");
     }
 
-    @Override
-    public List<DBColumnGroupElement> listTableColumnGroups(String schemaName, String tableName, String ddl) {
-        throw new UnsupportedOperationException("Not supported yet");
-    }
-
     private void obtainOptionsByQuery(String schemaName, String tableName, DBTableOptions dbTableOptions) {
         String sql = this.sqlMapper.getSql(Statements.GET_TABLE_OPTION);
         jdbcOperations.query(sql, new Object[] {schemaName, tableName}, t -> {

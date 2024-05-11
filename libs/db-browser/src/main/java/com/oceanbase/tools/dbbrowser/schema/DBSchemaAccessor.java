@@ -239,8 +239,6 @@ public interface DBSchemaAccessor {
 
     List<DBColumnGroupElement> listTableColumnGroups(String schemaName, String tableName);
 
-    List<DBColumnGroupElement> listTableColumnGroups(String schemaName, String tableName, String ddl);
-
     DBView getView(String schemaName, String viewName);
 
     DBFunction getFunction(String schemaName, String functionName);
