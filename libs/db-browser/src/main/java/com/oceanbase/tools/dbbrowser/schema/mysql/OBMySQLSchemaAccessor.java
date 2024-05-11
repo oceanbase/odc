@@ -360,6 +360,7 @@ public class OBMySQLSchemaAccessor extends MySQLNoLessThan5700SchemaAccessor {
             table.setIndexes(tableName2Indexes.getOrDefault(tableName, new ArrayList<>()));
             table.setConstraints(tableName2Constraints.getOrDefault(tableName, new ArrayList<>()));
             table.setTableOptions(tableName2Options.getOrDefault(tableName, new DBTableOptions()));
+            table.setColumnGroups(listTableColumnGroups(schemaName, tableName, tableName2Ddl.get(tableName)));
             try {
                 table.setPartition(getPartition(schemaName, tableName));
             } catch (Exception e) {

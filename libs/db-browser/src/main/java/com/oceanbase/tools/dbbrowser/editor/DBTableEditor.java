@@ -187,6 +187,7 @@ public abstract class DBTableEditor implements DBObjectEditor<DBTable> {
                 excludeUniqueConstraint(oldTable.getIndexes(), oldTable.getConstraints()),
                 excludeUniqueConstraint(newTable.getIndexes(), newTable.getConstraints()),
                 constraintEditor, sqlBuilder);
+        sqlBuilder.append(generateUpdateColumnGroupDDL(oldTable, newTable));
         DBTablePartitionEditor editor = (DBTablePartitionEditor) partitionEditor;
         sqlBuilder.append(editor.generateShadowTableUpdateObjectDDL(oldTable.getPartition(), newTable.getPartition()));
         return sqlBuilder.toString();
@@ -293,7 +294,7 @@ public abstract class DBTableEditor implements DBObjectEditor<DBTable> {
         }
     }
 
-    private String generateUpdateColumnGroupDDL(DBTable oldTable, DBTable newTable) {
+    public String generateUpdateColumnGroupDDL(DBTable oldTable, DBTable newTable) {
         SqlBuilder sqlBuilder = sqlBuilder();
         HashSet<DBColumnGroupElement> oldColumnGroups = new HashSet<>();
         if (oldTable.getColumnGroups() != null) {

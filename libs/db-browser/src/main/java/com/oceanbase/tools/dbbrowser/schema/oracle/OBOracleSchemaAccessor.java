@@ -1027,6 +1027,7 @@ public class OBOracleSchemaAccessor extends OracleSchemaAccessor {
             table.setTableOptions(tableName2Options.getOrDefault(tableName, new DBTableOptions()));
             table.setPartition(getPartition(schemaName, tableName));
             table.setDDL(getTableDDL(schemaName, tableName, columns, indexes));
+            table.setColumnGroups(listTableColumnGroups(schemaName, tableName, getTableDDL(schemaName, tableName)));
             returnVal.put(tableName, table);
         }
         return returnVal;
