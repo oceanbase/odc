@@ -30,8 +30,6 @@ public class DataArchiveExecutionDetail implements ExecutionDetail {
 
     private Long readRowCount;
 
-    private String status;
-
     private Long avgReadRowCount;
 
     private Long avgWriteRowCount;
