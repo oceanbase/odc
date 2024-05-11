@@ -29,11 +29,11 @@ public class ScheduleTaskShard {
 
     private Long id;
 
-    private JobType type;
+    private JobType scheduleTaskType;
 
     private Long scheduleTaskId;
 
-    private TaskShardParameters taskParameters;
+    private TaskShardParameters parameters;
 
     private ExecutionDetail executionDetail;
 
@@ -41,5 +41,5 @@ public class ScheduleTaskShard {
 
     private Date endTime;
 
-    private String status;
+    private TaskShardStatus status;
 }

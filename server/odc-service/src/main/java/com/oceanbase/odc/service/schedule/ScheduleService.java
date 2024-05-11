@@ -455,8 +455,13 @@ public class ScheduleService {
     }
 
     public ScheduleTaskResp detailScheduleTask(Long scheduleId, Long scheduleTaskId) {
-        nullSafeGetByIdWithCheckPermission(scheduleId);
-        return scheduleTaskService.detail(scheduleTaskId);
+        ScheduleEntity scheduleEntity = nullSafeGetByIdWithCheckPermission(scheduleId);
+        ScheduleTaskResp detail = scheduleTaskService.detail(scheduleTaskId);
+        // Throw a NotFoundException if the schedule task does not belong to the schedule.
+        if (!detail.getJobName().equals(scheduleEntity.getId().toString())) {
+            throw new NotFoundException(ResourceType.ODC_SCHEDULE_TASK, "scheduleTaskId", scheduleTaskId);
+        }
+        return detail;
     }
 
     public Page<ScheduleDetailResp> list(@NotNull Pageable pageable, @NotNull QueryScheduleParams params) {

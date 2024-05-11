@@ -31,12 +31,12 @@ public class ScheduleTaskShardMapper {
     public static ScheduleTaskShardEntity toEntity(ScheduleTaskShard model) {
         ScheduleTaskShardEntity entity = new ScheduleTaskShardEntity();
         entity.setScheduleTaskId(model.getScheduleTaskId());
-        entity.setType(model.getType());
+        entity.setScheduleTaskType(model.getScheduleTaskType());
         entity.setStartTime(model.getStartTime());
         entity.setEndTime(model.getEndTime());
         entity.setStatus(model.getStatus());
         entity.setExecutionDetail(JsonUtils.toJson(model.getExecutionDetail()));
-        entity.setTaskParameters(JsonUtils.toJson(model.getTaskParameters()));
+        entity.setParameters(JsonUtils.toJson(model.getParameters()));
         return entity;
     }
 
@@ -47,13 +47,13 @@ public class ScheduleTaskShardMapper {
         model.setStartTime(entity.getStartTime());
         model.setStatus(entity.getStatus());
         model.setId(entity.getId());
-        model.setType(entity.getType());
-        switch (entity.getType()) {
+        model.setScheduleTaskType(entity.getScheduleTaskType());
+        switch (entity.getScheduleTaskType()) {
             case DATA_DELETE:
             case DATA_ARCHIVE:
             case DATA_ARCHIVE_DELETE:
             case DATA_ARCHIVE_ROLLBACK: {
-                model.setTaskParameters(JsonUtils.fromJson(entity.getTaskParameters(),
+                model.setParameters(JsonUtils.fromJson(entity.getParameters(),
                         DataArchiveTaskShardParameters.class));
                 model.setExecutionDetail(
                         JsonUtils.fromJson(entity.getExecutionDetail(), DataArchiveExecutionDetail.class));

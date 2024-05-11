@@ -30,6 +30,7 @@ import org.hibernate.annotations.Generated;
 import org.hibernate.annotations.GenerationTime;
 
 import com.oceanbase.odc.service.schedule.model.JobType;
+import com.oceanbase.odc.service.schedule.model.TaskShardStatus;
 
 import lombok.Data;
 
@@ -52,11 +53,11 @@ public class ScheduleTaskShardEntity {
     private Long scheduleTaskId;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "type", nullable = false)
-    private JobType type;
+    @Column(name = "schedule_task_type", nullable = false)
+    private JobType scheduleTaskType;
 
-    @Column(name = "task_parameters", nullable = false)
-    private String taskParameters;
+    @Column(name = "parameters", nullable = false)
+    private String parameters;
 
     @Column(name = "execution_detail", nullable = false)
     private String executionDetail;
@@ -66,8 +67,9 @@ public class ScheduleTaskShardEntity {
     @Column(name = "end_time")
     private Date endTime;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false)
-    private String status;
+    private TaskShardStatus status;
 
     @Generated(GenerationTime.ALWAYS)
     @Column(name = "create_time", insertable = false, updatable = false)

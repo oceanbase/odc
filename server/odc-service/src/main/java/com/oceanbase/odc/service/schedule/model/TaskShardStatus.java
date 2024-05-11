@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 OceanBase.
+ * Copyright (c) 2024 OceanBase.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,28 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.schedule.model;
 
-import java.util.Date;
+package com.oceanbase.odc.service.schedule.model;
 
 /**
  * @Author：tinker
- * @Date: 2024/5/9 09:39
+ * @Date: 2024/5/11 15:34
  * @Descripition:
  */
-public class DataArchiveExecutionDetail implements ExecutionDetail {
+public enum TaskShardStatus {
 
-    private String tableName;
+    PREPARING,
 
-    private Long processedRowCount;
+    RUNNING,
 
-    private Long readRowCount;
+    FAILED,
 
-    private String status;
+    CANCELED,
 
-    private Long avgReadRowCount;
+    DONE
 
-    private Long avgWriteRowCount;
-
-    private String userCondition;
 }
