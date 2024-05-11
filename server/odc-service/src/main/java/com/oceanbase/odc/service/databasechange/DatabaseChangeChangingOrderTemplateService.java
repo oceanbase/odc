@@ -75,15 +75,17 @@ public class DatabaseChangeChangingOrderTemplateService {
     @Transactional(rollbackFor = Exception.class)
     public Boolean create(
             @NotNull @Valid CreateDatabaseChangeChangingOrderReq req) {
-        List< List< Long>> orders = req.getOrders();
+        List<List<Long>> orders = req.getOrders();
         List<Long> databaseIds = orders.stream().flatMap(List::stream).collect(Collectors.toList());
-        if (databaseIds.size() <= DatabaseChangeProperties.MIN_DATABASE_COUNT || databaseIds.size() > DatabaseChangeProperties.MAX_DATABASE_COUNT) {
+        if (databaseIds.size() <= DatabaseChangeProperties.MIN_DATABASE_COUNT
+                || databaseIds.size() > DatabaseChangeProperties.MAX_DATABASE_COUNT) {
             throw new BadArgumentException(ErrorCodes.IllegalArgument,
-                "The number of databases must be greater than "+DatabaseChangeProperties.MIN_DATABASE_COUNT+" and not more than "+DatabaseChangeProperties.MAX_DATABASE_COUNT+".");
+                    "The number of databases must be greater than " + DatabaseChangeProperties.MIN_DATABASE_COUNT
+                            + " and not more than " + DatabaseChangeProperties.MAX_DATABASE_COUNT + ".");
         }
         if (new HashSet<Long>(databaseIds).size() != databaseIds.size()) {
             throw new BadArgumentException(ErrorCodes.IllegalArgument,
-                "Database cannot be duplicated.");
+                    "Database cannot be duplicated.");
         }
         validPermission(req);
         PreConditions.validNoDuplicated(ResourceType.ODC_DATABASE_CHANGE_ORDER_TEMPLATE, "name", req.getName(),

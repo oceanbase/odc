@@ -177,31 +177,35 @@ public class CreateFlowInstanceProcessAspect implements InitializingBean {
         MultipleDatabaseChangeParameters parameters = (MultipleDatabaseChangeParameters) req.getParameters();
         List<Long> ids = parameters.getOrderedDatabaseIds().stream().flatMap(List::stream).collect(Collectors.toList());
         // Limit the number of multi-databases change
-        if (ids.size() <= DatabaseChangeProperties.MIN_DATABASE_COUNT || ids.size() > DatabaseChangeProperties.MAX_DATABASE_COUNT) {
+        if (ids.size() <= DatabaseChangeProperties.MIN_DATABASE_COUNT
+                || ids.size() > DatabaseChangeProperties.MAX_DATABASE_COUNT) {
             throw new BadArgumentException(ErrorCodes.IllegalArgument,
-                    "The number of databases must be greater than "+DatabaseChangeProperties.MIN_DATABASE_COUNT+" and not more than "+DatabaseChangeProperties.MAX_DATABASE_COUNT+".");
+                    "The number of databases must be greater than " + DatabaseChangeProperties.MIN_DATABASE_COUNT
+                            + " and not more than " + DatabaseChangeProperties.MAX_DATABASE_COUNT + ".");
         }
         if (new HashSet<Long>(ids).size() != ids.size()) {
             throw new BadArgumentException(ErrorCodes.IllegalArgument,
                     "Database cannot be duplicated.");
         }
         List<Database> databases = databaseService.detailForMultipleDatabase(ids);
-        // todo The front-end request should include the projectId. The following code will be modified after the front-end modification.
+        // todo The front-end request should include the projectId. The following code will be modified
+        // after the front-end modification.
         Project project;
-        if(parameters.getProjectId()!=null){
+        if (parameters.getProjectId() != null) {
             project = projectService.detail(parameters.getProjectId());
-        if(databases.get(0).getProject().getId()!= parameters.getProjectId()){
-            throw new BadArgumentException(ErrorCodes.IllegalArgument,
-                "All databases must belong to the project："+project.getName());
-        }
-        }else {
+            if (databases.get(0).getProject().getId() != parameters.getProjectId()) {
+                throw new BadArgumentException(ErrorCodes.IllegalArgument,
+                        "All databases must belong to the project：" + project.getName());
+            }
+        } else {
             project = databases.get(0).getProject();
         }
-        /*Project project = projectService.detail(parameters.getProjectId());
-        if(databases.get(0).getProject().getId()!= parameters.getProjectId()){
-            throw new BadArgumentException(ErrorCodes.IllegalArgument,
-                "All databases must belong to the project："+project.getName() );
-        }*/
+        /*
+         * Project project = projectService.detail(parameters.getProjectId());
+         * if(databases.get(0).getProject().getId()!= parameters.getProjectId()){ throw new
+         * BadArgumentException(ErrorCodes.IllegalArgument,
+         * "All databases must belong to the project："+project.getName() ); }
+         */
         // must reset the batchid when initiating a multiple database flow again
         parameters.setBatchId(null);
         req.setProjectId(project.getId());
