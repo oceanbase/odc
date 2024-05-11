@@ -23,10 +23,7 @@ import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
-import org.apache.commons.collections4.CollectionUtils;
-
 import com.oceanbase.odc.common.util.StringUtils;
-import com.oceanbase.tools.dbbrowser.model.DBColumnGroupElement;
 import com.oceanbase.tools.dbbrowser.model.DBConstraintType;
 import com.oceanbase.tools.dbbrowser.model.DBForeignKeyModifyRule;
 import com.oceanbase.tools.dbbrowser.model.DBTableColumn;
@@ -273,15 +270,6 @@ public class OBMySQLGetDBTableByParser implements GetDBTableByParser {
             partition.setWarning("Only support HASH/KEY subpartition currently");
         }
         return partition;
-    }
-
-    @Override
-    public List<DBColumnGroupElement> getColumnGroups() {
-        if (Objects.isNull(createTableStmt) || CollectionUtils.isEmpty(createTableStmt.getColumnGroupElements())) {
-            return Collections.emptyList();
-        }
-        return createTableStmt.getColumnGroupElements()
-                .stream().map(DBColumnGroupElement::ofColumnGroupElement).collect(Collectors.toList());
     }
 
     private void parseHashPartitionStmt(HashPartition statement, DBTablePartition partition) {

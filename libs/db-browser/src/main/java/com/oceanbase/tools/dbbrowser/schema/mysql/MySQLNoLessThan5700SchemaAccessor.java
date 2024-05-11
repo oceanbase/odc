@@ -1066,7 +1066,7 @@ public class MySQLNoLessThan5700SchemaAccessor implements DBSchemaAccessor {
     }
 
     @Override
-    public List<DBColumnGroupElement> listTableColumnGroups(String schemaName, String ddl, String tableName) {
+    public List<DBColumnGroupElement> listTableColumnGroups(String schemaName, String tableName, String ddl) {
         throw new UnsupportedOperationException("Not supported yet");
     }
 

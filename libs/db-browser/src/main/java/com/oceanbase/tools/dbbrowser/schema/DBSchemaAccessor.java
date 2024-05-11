@@ -239,7 +239,7 @@ public interface DBSchemaAccessor {
 
     List<DBColumnGroupElement> listTableColumnGroups(String schemaName, String tableName);
 
-    List<DBColumnGroupElement> listTableColumnGroups(String schemaName, String ddl, String tableName);
+    List<DBColumnGroupElement> listTableColumnGroups(String schemaName, String tableName, String ddl);
 
     DBView getView(String schemaName, String viewName);
 

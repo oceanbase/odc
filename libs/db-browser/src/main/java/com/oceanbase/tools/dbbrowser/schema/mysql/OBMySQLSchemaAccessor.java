@@ -257,11 +257,12 @@ public class OBMySQLSchemaAccessor extends MySQLNoLessThan5700SchemaAccessor {
         return listTableColumnGroups(schemaName, tableName, getTableDDL(schemaName, tableName));
     }
 
-    public List<DBColumnGroupElement> listTableColumnGroups(String schemaName, String ddl, String tableName) {
+    public List<DBColumnGroupElement> listTableColumnGroups(String schemaName, String tableName, String ddl) {
         SQLParser sqlParser = new OBMySQLParser();
         CreateTable stmt = (CreateTable) sqlParser.parse(new StringReader(ddl));
-        return stmt.getColumnGroupElements().stream()
-                .map(DBColumnGroupElement::ofColumnGroupElement).collect(Collectors.toList());
+        return stmt.getColumnGroupElements() == null ? Collections.emptyList()
+                : stmt.getColumnGroupElements().stream()
+                        .map(DBColumnGroupElement::ofColumnGroupElement).collect(Collectors.toList());
     }
 
     @Override

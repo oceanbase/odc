@@ -26,12 +26,9 @@ import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
-import org.apache.commons.collections4.CollectionUtils;
-
 import com.oceanbase.odc.common.util.JdbcOperationsUtil;
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.plugin.schema.obmysql.parser.GetDBTableByParser;
-import com.oceanbase.tools.dbbrowser.model.DBColumnGroupElement;
 import com.oceanbase.tools.dbbrowser.model.DBConstraintDeferability;
 import com.oceanbase.tools.dbbrowser.model.DBConstraintType;
 import com.oceanbase.tools.dbbrowser.model.DBForeignKeyModifyRule;
@@ -402,15 +399,6 @@ public class OBOracleGetDBTableByParser implements GetDBTableByParser {
             }
         }
         return partition;
-    }
-
-    @Override
-    public List<DBColumnGroupElement> getColumnGroups() {
-        if (Objects.isNull(createTableStmt) || CollectionUtils.isEmpty(createTableStmt.getColumnGroupElements())) {
-            return Collections.emptyList();
-        }
-        return createTableStmt.getColumnGroupElements()
-                .stream().map(DBColumnGroupElement::ofColumnGroupElement).collect(Collectors.toList());
     }
 
     private void parseHashPartitionStmt(HashPartition statement, DBTablePartition partition) {

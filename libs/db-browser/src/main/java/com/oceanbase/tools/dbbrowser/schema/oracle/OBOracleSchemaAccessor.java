@@ -441,14 +441,15 @@ public class OBOracleSchemaAccessor extends OracleSchemaAccessor {
     }
 
     public List<DBColumnGroupElement> listTableColumnGroups(String schemaName, String tableName) {
-        return listTableColumnGroups(schemaName, tableName, getTableDDL(schemaName, tableName));
+        return listTableColumnGroups(schemaName, tableName, getTableDDLOnly(schemaName, tableName));
     }
 
-    public List<DBColumnGroupElement> listTableColumnGroups(String schemaName, String ddl, String tableName) {
+    public List<DBColumnGroupElement> listTableColumnGroups(String schemaName, String tableName, String ddl) {
         SQLParser sqlParser = new OBOracleSQLParser();
         CreateTable stmt = (CreateTable) sqlParser.parse(new StringReader(ddl));
-        return stmt.getColumnGroupElements().stream()
-                .map(DBColumnGroupElement::ofColumnGroupElement).collect(Collectors.toList());
+        return stmt.getColumnGroupElements() == null ? Collections.emptyList()
+                : stmt.getColumnGroupElements().stream()
+                        .map(DBColumnGroupElement::ofColumnGroupElement).collect(Collectors.toList());
     }
 
     @Override
@@ -1027,7 +1028,7 @@ public class OBOracleSchemaAccessor extends OracleSchemaAccessor {
             table.setTableOptions(tableName2Options.getOrDefault(tableName, new DBTableOptions()));
             table.setPartition(getPartition(schemaName, tableName));
             table.setDDL(getTableDDL(schemaName, tableName, columns, indexes));
-            table.setColumnGroups(listTableColumnGroups(schemaName, tableName, getTableDDL(schemaName, tableName)));
+            table.setColumnGroups(listTableColumnGroups(schemaName, tableName, getTableDDLOnly(schemaName, tableName)));
             returnVal.put(tableName, table);
         }
         return returnVal;
