@@ -87,7 +87,7 @@ public class TaskFrameworkConfiguration {
         schedulerFactoryBean.setStartupDelay(taskFrameworkProperties.getQuartzStartDelaySeconds());
         schedulerFactoryBean.setTaskExecutor(executor);
         Properties properties = new Properties();
-        properties.put("org.quartz.jobStore.class", JobStoreSupportDelegate.class.getName());
+        properties.put("org.quartz.jobStore.class", ResourceDetectJobStore.class.getName());
         schedulerFactoryBean.setQuartzProperties(properties);
         return schedulerFactoryBean;
     }

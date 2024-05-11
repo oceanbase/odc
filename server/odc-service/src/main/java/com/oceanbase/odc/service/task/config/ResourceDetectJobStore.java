@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 OceanBase.
+ * Copyright (c) 2023 OceanBase.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.oceanbase.odc.service.task.config;
 
 import java.util.LinkedList;
@@ -28,12 +27,15 @@ import com.oceanbase.odc.service.common.util.SpringContextUtil;
 import com.oceanbase.odc.service.task.constants.JobConstants;
 import com.oceanbase.odc.service.task.schedule.ResourceDetectUtil;
 
+import lombok.extern.slf4j.Slf4j;
+
 /**
  * @author yaobin
  * @date 2024-05-10
  * @since 4.2.4
  */
-public class JobStoreSupportDelegate extends LocalDataSourceJobStore {
+@Slf4j
+public class ResourceDetectJobStore extends LocalDataSourceJobStore {
 
     @Override
     public List<OperableTrigger> acquireNextTriggers(long noLaterThan, int maxCount, long timeWindow)
@@ -61,6 +63,7 @@ public class JobStoreSupportDelegate extends LocalDataSourceJobStore {
         if (!ResourceDetectUtil.isResourceAvailable(taskFrameworkProperties)) {
             if (TriggerKey.triggerKey("startPreparingJob", JobConstants.ODC_JOB_MONITORING)
                     .equals(trigger.getKey())) {
+                log.debug("StartPreparingJob trigger is discarded because no resource.");
                 return false;
             }
         }

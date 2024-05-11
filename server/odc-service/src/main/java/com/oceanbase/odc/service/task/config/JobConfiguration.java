@@ -19,6 +19,7 @@ package com.oceanbase.odc.service.task.config;
 import org.quartz.Scheduler;
 
 import com.oceanbase.odc.common.event.EventPublisher;
+import com.oceanbase.odc.service.common.model.HostProperties;
 import com.oceanbase.odc.service.connection.ConnectionService;
 import com.oceanbase.odc.service.objectstorage.cloud.model.CloudEnvConfigurations;
 import com.oceanbase.odc.service.schedule.ScheduleTaskService;
@@ -72,4 +73,6 @@ public interface JobConfiguration {
     TaskFrameworkDisabledHandler getTaskFrameworkDisabledHandler();
 
     JasyptEncryptorConfigProperties getJasyptEncryptorConfigProperties();
+
+    HostProperties getHostProperties();
 }

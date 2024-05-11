@@ -20,6 +20,7 @@ import org.springframework.boot.context.properties.NestedConfigurationProperty;
 import org.springframework.cloud.context.config.annotation.RefreshScope;
 import org.springframework.context.annotation.Configuration;
 
+import com.oceanbase.odc.service.common.model.HostProperties;
 import com.oceanbase.odc.service.task.enums.TaskRunMode;
 
 import lombok.Data;
@@ -87,5 +88,7 @@ public class DefaultTaskFrameworkProperties implements TaskFrameworkProperties {
     private String doCancelingJobCronExpression;
 
     private String destroyExecutorJobCronExpression;
+
+    private HostProperties hostProperties;
 
 }

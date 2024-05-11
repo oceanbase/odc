@@ -39,7 +39,6 @@ import com.oceanbase.odc.service.task.enums.JobStatus;
 import com.oceanbase.odc.service.task.exception.JobException;
 import com.oceanbase.odc.service.task.exception.TaskRuntimeException;
 import com.oceanbase.odc.service.task.schedule.DefaultJobContextBuilder;
-import com.oceanbase.odc.service.task.schedule.ResourceDetectUtil;
 import com.oceanbase.odc.service.task.schedule.SingleJobProperties;
 import com.oceanbase.odc.service.task.service.TaskFrameworkService;
 import com.oceanbase.odc.service.task.util.JobDateUtils;
