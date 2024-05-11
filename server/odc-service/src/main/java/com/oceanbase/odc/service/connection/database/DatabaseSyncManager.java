@@ -29,9 +29,12 @@ import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
+import com.oceanbase.odc.core.shared.constant.OrganizationType;
 import com.oceanbase.odc.core.shared.exception.BadRequestException;
 import com.oceanbase.odc.metadb.iam.UserEntity;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
+import com.oceanbase.odc.service.db.schema.DBSchemaSyncTaskManager;
+import com.oceanbase.odc.service.iam.OrganizationService;
 import com.oceanbase.odc.service.iam.UserService;
 import com.oceanbase.odc.service.iam.util.SecurityContextUtils;
 
@@ -50,7 +53,10 @@ public class DatabaseSyncManager {
     private DatabaseService databaseService;
     @Autowired
     private UserService userService;
-
+    @Autowired
+    private OrganizationService organizationService;
+    @Autowired
+    DBSchemaSyncTaskManager dbSchemaSyncTaskManager;
     @Autowired
     @Qualifier("syncDatabaseTaskExecutor")
     private ThreadPoolTaskExecutor executor;
@@ -66,11 +72,32 @@ public class DatabaseSyncManager {
 
     @SkipAuthorize("internal usage")
     public Future<Boolean> submitSyncDataSourceTask(@NonNull ConnectionConfig connection) {
+        return doExecute(() -> executor.submit(() -> syncDBForDataSource(connection)));
+    }
+
+    @SkipAuthorize("internal usage")
+    public Future<Boolean> submitSyncDataSourceAndDBSchemaTask(@NonNull ConnectionConfig connection) {
         return doExecute(() -> executor.submit(() -> {
-            Long creatorId = connection.getCreatorId();
-            SecurityContextUtils.setCurrentUser(creatorId, connection.getOrganizationId(), getAccountName(creatorId));
-            return databaseService.internalSyncDataSourceSchemas(connection.getId());
+            Boolean res = syncDBForDataSource(connection);
+            // only sync db schema for team organization
+            organizationService.get(connection.getOrganizationId()).ifPresent(organization -> {
+                if (organization.getType() == OrganizationType.TEAM) {
+                    try {
+                        dbSchemaSyncTaskManager.submitTaskByDataSource(connection);
+                    } catch (Exception e) {
+                        log.warn("Failed to submit sync database schema task for datasource id={}", connection.getId(),
+                                e);
+                    }
+                }
+            });
+            return res;
         }));
+    }
+
+    private Boolean syncDBForDataSource(@NonNull ConnectionConfig dataSource) throws InterruptedException {
+        Long creatorId = dataSource.getCreatorId();
+        SecurityContextUtils.setCurrentUser(creatorId, dataSource.getOrganizationId(), getAccountName(creatorId));
+        return databaseService.internalSyncDataSourceSchemas(dataSource.getId());
     }
 
     private Future<Boolean> doExecute(Supplier<Future<Boolean>> supplier) {

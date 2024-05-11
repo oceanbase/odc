@@ -30,11 +30,16 @@ import java.sql.SQLTransientConnectionException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiPredicate;
 import java.util.regex.Matcher;
@@ -78,6 +83,7 @@ import com.oceanbase.odc.core.sql.execute.model.SqlTuple;
 import com.oceanbase.odc.core.sql.util.FullLinkTraceUtil;
 import com.oceanbase.odc.core.sql.util.OBUtils;
 import com.oceanbase.odc.service.plugin.ConnectionPluginUtil;
+import com.oceanbase.odc.service.session.model.AsyncExecuteContext;
 
 import lombok.Getter;
 import lombok.NonNull;
@@ -114,6 +120,9 @@ public class OdcStatementCallBack implements StatementCallback<List<JdbcGeneralR
     private final boolean stopWhenError;
     private final BinaryDataManager binaryDataManager;
     private final ConnectionSession connectionSession;
+    private final AsyncExecuteContext context;
+    private final List<SqlExecutionListener> listeners = new ArrayList<>();
+    private final ExecutorService executor = Executors.newSingleThreadExecutor();
     @Setter
     private boolean useFullLinkTrace = false;
     @Setter
@@ -134,8 +143,14 @@ public class OdcStatementCallBack implements StatementCallback<List<JdbcGeneralR
         this(sqls, connectionSession, autoCommit, queryLimit, true);
     }
 
+
     public OdcStatementCallBack(@NonNull List<SqlTuple> sqls, @NonNull ConnectionSession connectionSession,
             Boolean autoCommit, Integer queryLimit, boolean stopWhenError) {
+        this(sqls, connectionSession, autoCommit, queryLimit, stopWhenError, null);
+    }
+
+    public OdcStatementCallBack(@NonNull List<SqlTuple> sqls, @NonNull ConnectionSession connectionSession,
+            Boolean autoCommit, Integer queryLimit, boolean stopWhenError, AsyncExecuteContext context) {
         this.sqls = sqls;
         this.autoCommit = autoCommit == null ? connectionSession.getDefaultAutoCommit() : autoCommit;
         this.connectType = connectionSession.getConnectType();
@@ -150,6 +165,7 @@ public class OdcStatementCallBack implements StatementCallback<List<JdbcGeneralR
         this.binaryDataManager = ConnectionSessionUtil.getBinaryDataManager(connectionSession);
         ConnectionSessionUtil.setConsoleSessionKillQueryFlag(connectionSession, false);
         Validate.notNull(this.binaryDataManager, "BinaryDataManager can not be null");
+        this.context = context;
     }
 
     @Override
@@ -162,18 +178,28 @@ public class OdcStatementCallBack implements StatementCallback<List<JdbcGeneralR
             return this.sqls.stream().map(sqlTuple -> {
                 JdbcGeneralResult result = JdbcGeneralResult.canceledResult(sqlTuple);
                 result.setConnectionReset(true);
+                onExecutionCancelled(sqlTuple, Collections.singletonList(result));
                 return result;
             }).collect(Collectors.toList());
         }
-        List<JdbcGeneralResult> returnVal = new LinkedList<>();
         boolean currentAutoCommit = statement.getConnection().getAutoCommit();
+        List<JdbcGeneralResult> returnVal = new LinkedList<>();
         try {
             applyStatementSettings(statement);
             // 对于修改表数据DML，如果是自动提交，为了保证原子性，在执行过程设置为手动，执行完成后再进行reset
             if (this.autoCommit ^ currentAutoCommit) {
                 statement.getConnection().setAutoCommit(this.autoCommit);
             }
+            Future<Void> handle = null;
             for (SqlTuple sqlTuple : this.sqls) {
+                if (handle != null) {
+                    try {
+                        handle.get();
+                    } catch (Exception e) {
+                        // eat exception
+                    }
+                }
+                onExecutionStart(sqlTuple);
                 try {
                     applyConnectionSettings(statement);
                 } catch (Exception e) {
@@ -184,15 +210,16 @@ public class OdcStatementCallBack implements StatementCallback<List<JdbcGeneralR
                     if (Thread.currentThread().isInterrupted()
                             || ConnectionSessionUtil.isConsoleSessionKillQuery(connectionSession)) {
                         executeResults = Collections.singletonList(JdbcGeneralResult.canceledResult(sqlTuple));
+                        onExecutionCancelled(sqlTuple, executeResults);
                     } else {
-                        try {
-                            executeResults = doExecuteSql(statement, sqlTuple);
-                        } catch (Exception exp) {
-                            executeResults = Collections.singletonList(JdbcGeneralResult.failedResult(sqlTuple, exp));
-                        }
+                        CountDownLatch latch = new CountDownLatch(1);
+                        handle = executor.submit(() -> onExecutionStartAfterMillis(sqlTuple, latch));
+                        executeResults = doExecuteSql(statement, sqlTuple, latch);
+                        onExecutionEnd(sqlTuple, executeResults);
                     }
                 } else {
                     executeResults = Collections.singletonList(JdbcGeneralResult.canceledResult(sqlTuple));
+                    onExecutionCancelled(sqlTuple, executeResults);
                 }
                 returnVal.addAll(executeResults);
             }
@@ -201,7 +228,6 @@ public class OdcStatementCallBack implements StatementCallback<List<JdbcGeneralR
             if (failed.isPresent()) {
                 throw failed.get().getThrown();
             }
-
         } catch (Exception e) {
             try {
                 ConnectionSessionUtil.logSocketInfo(statement.getConnection(), "console error");
@@ -218,6 +244,7 @@ public class OdcStatementCallBack implements StatementCallback<List<JdbcGeneralR
                     log.info("Clear dbms_output cache, dbmsInfo={}", dbmsInfo);
                 }
             }
+            executor.shutdownNow();
         }
         return returnVal;
     }
@@ -310,52 +337,65 @@ public class OdcStatementCallBack implements StatementCallback<List<JdbcGeneralR
         return executeResults;
     }
 
-    protected List<JdbcGeneralResult> doExecuteSql(Statement statement, SqlTuple sqlTuple) throws Exception {
-        String sql = sqlTuple.getExecutedSql();
-        if (!ifFunctionCallExists(sql)) {
-            // use text protocal
-            try (TraceStage stage = sqlTuple.getSqlWatch().start(SqlExecuteStages.EXECUTE)) {
+    protected List<JdbcGeneralResult> doExecuteSql(Statement statement, SqlTuple sqlTuple, CountDownLatch latch) {
+        try {
+            String sql = sqlTuple.getExecutedSql();
+            if (!ifFunctionCallExists(sql)) {
+                // use text protocal
+                try (TraceStage stage = sqlTuple.getSqlWatch().start(SqlExecuteStages.EXECUTE)) {
+                    boolean isResultSet;
+                    try {
+                        isResultSet = statement.execute(sql);
+                    } catch (Exception e) {
+                        return handleException(e, statement, sqlTuple);
+                    }
+                    latch.countDown();
+                    return consumeStatement(statement, sqlTuple, isResultSet);
+                }
+            }
+            // use ps protocal
+            String preparedSql = OBJECT_VALUE_PATTERN.matcher(sql).replaceAll("?");
+            log.info(
+                    "Load_file call is detected in sql, use ps protocol to rewrite "
+                            + "the original sql, originalSql={}, modifiedSql={}",
+                    sql, preparedSql);
+            List<FunctionDefinition> definitions = retrieveFunctionCalls(sql);
+            log.info("There is a function call in sql, functions={}", definitions);
+            try (PreparedStatement preparedStatement = statement.getConnection().prepareStatement(preparedSql);
+                    TraceStage stage = sqlTuple.getSqlWatch().start(SqlExecuteStages.EXECUTE)) {
+                for (int i = 0; i < definitions.size(); i++) {
+                    FunctionDefinition definition = definitions.get(i);
+                    if ("load_file".equalsIgnoreCase(definition.getFunctionName())) {
+                        // load binary data
+                        String fileName = retrieveFileNameFromParameters(definition);
+                        File file = nullSafeFindFileByName(fileName);
+                        preparedStatement.setBinaryStream(i + 1, new FileInputStream(file));
+                    } else if ("load_clob_file".equalsIgnoreCase(definition.getFunctionName())) {
+                        // load clob data
+                        String fileName = retrieveFileNameFromParameters(definition);
+                        File file = nullSafeFindFileByName(fileName);
+                        preparedStatement.setClob(i + 1, new FileReader(file));
+                    } else {
+                        throw new NotImplementedException("Unsupport function call " + definition.getFunctionName());
+                    }
+                }
                 boolean isResultSet;
                 try {
-                    isResultSet = statement.execute(sql);
+                    isResultSet = preparedStatement.execute();
                 } catch (Exception e) {
                     return handleException(e, statement, sqlTuple);
                 }
+                latch.countDown();
                 return consumeStatement(statement, sqlTuple, isResultSet);
             }
-        }
-        // use ps protocal
-        String preparedSql = OBJECT_VALUE_PATTERN.matcher(sql).replaceAll("?");
-        log.info(
-                "Load_file call is detected in sql, use ps protocol to rewrite "
-                        + "the original sql, originalSql={}, modifiedSql={}",
-                sql, preparedSql);
-        List<FunctionDefinition> definitions = retrieveFunctionCalls(sql);
-        log.info("There is a function call in sql, functions={}", definitions);
-        try (PreparedStatement preparedStatement = statement.getConnection().prepareStatement(preparedSql);
-                TraceStage stage = sqlTuple.getSqlWatch().start(SqlExecuteStages.EXECUTE)) {
-            for (int i = 0; i < definitions.size(); i++) {
-                FunctionDefinition definition = definitions.get(i);
-                if ("load_file".equalsIgnoreCase(definition.getFunctionName())) {
-                    // load binary data
-                    String fileName = retrieveFileNameFromParameters(definition);
-                    File file = nullSafeFindFileByName(fileName);
-                    preparedStatement.setBinaryStream(i + 1, new FileInputStream(file));
-                } else if ("load_clob_file".equalsIgnoreCase(definition.getFunctionName())) {
-                    // load clob data
-                    String fileName = retrieveFileNameFromParameters(definition);
-                    File file = nullSafeFindFileByName(fileName);
-                    preparedStatement.setClob(i + 1, new FileReader(file));
-                } else {
-                    throw new NotImplementedException("Unsupport function call " + definition.getFunctionName());
-                }
-            }
-            boolean isResult = preparedStatement.execute();
-            return consumeStatement(preparedStatement, sqlTuple, isResult);
+        } catch (Exception e) {
+            return Collections.singletonList(JdbcGeneralResult.failedResult(sqlTuple, e));
+        } finally {
+            latch.countDown();
         }
     }
 
-    private List<JdbcGeneralResult> handleException(Exception exception, Statement statement, SqlTuple sqlTuple) {
+    protected List<JdbcGeneralResult> handleException(Exception exception, Statement statement, SqlTuple sqlTuple) {
         if (exception instanceof SQLTransientConnectionException
                 && ((SQLTransientConnectionException) exception).getErrorCode() == 1094) {
             // ERROR 1094 (HY000) : Unknown thread id: %lu when kill a not exists session
@@ -416,7 +456,7 @@ public class OdcStatementCallBack implements StatementCallback<List<JdbcGeneralR
         try {
             StopWatch stopWatch = StopWatch.createStarted();
             String version = ConnectionSessionUtil.getVersion(connectionSession);
-            SqlExecTime executeDetails = new SqlExecTime();;
+            SqlExecTime executeDetails = new SqlExecTime();
             if (useFullLinkTrace && VersionUtils.isGreaterThanOrEqualsTo(version, "4.1") &&
                     connectionSession.getDialectType().isOceanbase()) {
                 try {
@@ -525,6 +565,73 @@ public class OdcStatementCallBack implements StatementCallback<List<JdbcGeneralR
         } catch (SQLException exception) {
             log.warn("Rollback failed", exception);
         }
+    }
+
+    private void onExecutionStart(SqlTuple sqlTuple) {
+        if (context != null) {
+            context.setCurrentExecutingSql(sqlTuple.getExecutedSql());
+            context.incrementTotalExecutedSqlCount();
+            context.setCurrentExecutingSqlTraceId(null);
+        }
+        listeners.forEach(listener -> {
+            try {
+                listener.onExecutionStart(sqlTuple, context);
+            } catch (Exception e) {
+                log.warn("An error occurred in listener {}.", listener.getClass(), e);
+            }
+        });
+    }
+
+    private void onExecutionCancelled(SqlTuple sqlTuple, List<JdbcGeneralResult> results) {
+        if (context != null) {
+            context.addSqlExecutionResults(results);
+        }
+        listeners.forEach(listener -> {
+            try {
+                listener.onExecutionCancelled(sqlTuple, results, context);
+            } catch (Exception e) {
+                log.warn("An error occurred in listener {}.", listener.getClass(), e);
+            }
+        });
+    }
+
+    private void onExecutionEnd(SqlTuple sqlTuple, List<JdbcGeneralResult> results) {
+        if (context != null) {
+            context.addSqlExecutionResults(results);
+        }
+        listeners.forEach(listener -> {
+            try {
+                listener.onExecutionEnd(sqlTuple, results, context);
+            } catch (Exception e) {
+                log.warn("An error occurred in listener {}.", listener.getClass(), e);
+            }
+        });
+    }
+
+    private Void onExecutionStartAfterMillis(SqlTuple sqlTuple, CountDownLatch latch) {
+        long startTs = System.currentTimeMillis();
+        List<SqlExecutionListener> sortedListeners = listeners.stream()
+                .filter(listener -> listener.getOnExecutionStartAfterMillis() != null
+                        && listener.getOnExecutionStartAfterMillis() > 0)
+                .sorted(Comparator
+                        .comparingLong(SqlExecutionListener::getOnExecutionStartAfterMillis))
+                .collect(Collectors.toList());
+        for (SqlExecutionListener listener : sortedListeners) {
+            long waitTs = System.currentTimeMillis() - startTs;
+            Long expectedTs = listener.getOnExecutionStartAfterMillis();
+            try {
+                if (!latch.await(expectedTs - waitTs, TimeUnit.MILLISECONDS)) {
+                    listener.onExecutionStartAfter(sqlTuple, context);
+                } else {
+                    break;
+                }
+            } catch (InterruptedException e) {
+                return null;
+            } catch (Exception e) {
+                log.warn("An error occurred in listener {}.", listener.getClass(), e);
+            }
+        }
+        return null;
     }
 
     @Getter

@@ -200,6 +200,52 @@ public class ConnectionSessionUtil {
         id2FutureResult.remove(requestId);
     }
 
+    @SuppressWarnings("all")
+    public static <T> String setExecuteContext(@NonNull ConnectionSession connectionSession,
+            @NonNull Object context) {
+        Object value = connectionSession.getAttribute(ConnectionSessionConstants.ASYNC_EXECUTE_CONTEXT_KEY);
+        Map<String, Object> id2ExecuteContext;
+        if (value instanceof Map) {
+            id2ExecuteContext = (Map<String, Object>) value;
+        } else {
+            id2ExecuteContext = new ConcurrentHashMap<>();
+            connectionSession.setAttribute(ConnectionSessionConstants.ASYNC_EXECUTE_CONTEXT_KEY, id2ExecuteContext);
+        }
+        String uuid = UUID.randomUUID().toString();
+        id2ExecuteContext.putIfAbsent(uuid, context);
+        return uuid;
+    }
+
+    @SuppressWarnings("all")
+    public static <T> Object getExecuteContext(@NonNull ConnectionSession connectionSession,
+            @NonNull String requestId) {
+        Object value = connectionSession.getAttribute(ConnectionSessionConstants.ASYNC_EXECUTE_CONTEXT_KEY);
+        Map<String, Object> id2ExecuteContext;
+        if (value instanceof Map) {
+            id2ExecuteContext = (Map<String, Object>) value;
+        } else {
+            throw new NotFoundException(ResourceType.ODC_ASYNC_SQL_RESULT, "session id", connectionSession.getId());
+        }
+        Object context = id2ExecuteContext.get(requestId);
+        if (context == null) {
+            throw new NotFoundException(ResourceType.ODC_ASYNC_SQL_RESULT, "request id", requestId);
+        }
+        return context;
+    }
+
+    @SuppressWarnings("all")
+    public static <T> void removeExecuteContext(@NonNull ConnectionSession connectionSession,
+            @NonNull String requestId) {
+        Object value = connectionSession.getAttribute(ConnectionSessionConstants.ASYNC_EXECUTE_CONTEXT_KEY);
+        Map<String, Object> id2ExecuteContext;
+        if (!(value instanceof Map)) {
+            throw new NullPointerException("Result not found by session id " + connectionSession.getId());
+        } else {
+            id2ExecuteContext = (Map<String, Object>) value;
+        }
+        id2ExecuteContext.remove(requestId);
+    }
+
     public static void setUserId(@NonNull ConnectionSession connectionSession, @NonNull Long userId) {
         connectionSession.setAttribute(ConnectionSessionConstants.USER_ID_KEY, userId);
     }
@@ -533,6 +579,11 @@ public class ConnectionSessionUtil {
 
     public static String getConsoleConnectionId(@NonNull ConnectionSession connectionSession) {
         return (String) connectionSession.getAttribute(ConnectionSessionConstants.CONNECTION_ID_KEY);
+    }
+
+    public static String getConsoleConnectionProxySessId(@NonNull ConnectionSession connectionSession) {
+        Object proxySessId = connectionSession.getAttribute(ConnectionSessionConstants.OB_PROXY_SESSID_KEY);
+        return proxySessId == null ? null : (String) proxySessId;
     }
 
     public static String getVersion(@NonNull ConnectionSession connectionSession) {

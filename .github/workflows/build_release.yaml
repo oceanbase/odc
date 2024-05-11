@@ -39,9 +39,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout workspace
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Setup JDK 8
-        uses: actions/setup-java@v3
+        uses: actions/setup-java@v4
         with:
           java-version: "8"
           distribution: "temurin"
@@ -56,9 +56,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout workspace
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Setup JDK 8
-        uses: actions/setup-java@v3
+        uses: actions/setup-java@v4
         with:
           java-version: "8"
           distribution: "temurin"
@@ -77,7 +77,7 @@ jobs:
       odc_docker_image_tag: ${{ steps.calculate_version.outputs.odc_docker_image_tag }}
     steps:
       - name: Checkout workspace
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Calculate version number
         id: calculate_version
         run: |
@@ -101,17 +101,17 @@ jobs:
       odc_docker_image_tag: ${{ needs.calculate-version.outputs.odc_docker_image_tag }}
     steps:
       - name: Checkout workspace
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           submodules: "recursive"
       - name: Setup JDK 8
-        uses: actions/setup-java@v3
+        uses: actions/setup-java@v4
         with:
           java-version: "8"
           distribution: "temurin"
           cache: maven
       - name: Setup node 16
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: "16"
       - name: Build front static resources
@@ -165,7 +165,7 @@ jobs:
           cp -fv distribution/jar/odc.jar distribution/jar/odc-slim.jar
           zip -d distribution/jar/odc-slim.jar "BOOT-INF/classes/static/*"
       - name: Upload jar
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: odc-artifact-jar
           path: |
@@ -173,7 +173,7 @@ jobs:
             distribution/starters/*.jar
             distribution/jar/*.jar
       - name: Upload rpm (x86_64)
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: odc-server-${{ steps.set_release_version.outputs.new_version }}.x86_64.rpm
           path: distribution/docker/resources/odc-*.rpm
@@ -186,7 +186,7 @@ jobs:
           docker save -o resources/odc-${odc_docker_image_tag}.tar.gz docker.io/oceanbase/odc:${odc_docker_image_tag}
           popd
       - name: Upload docker image (x86_64)
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: odc-${{ env.odc_docker_image_tag }}.tar.gz
           path: distribution/docker/resources/odc-*.tar.gz
@@ -201,11 +201,11 @@ jobs:
         target: [ win, mac, linux_x86, linux_aarch64 ]
     steps:
       - name: Checkout workspace
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           submodules: "recursive"
       - name: Download resources
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: odc-artifact-jar
           path: jar-dist
@@ -218,11 +218,11 @@ jobs:
           mkdir -p client/libraries/java/starters
           cp -R jar-dist/starters/. client/libraries/java/starters
       - name: Setup node 16
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: "16"
       - name: Install dependencies
-        uses: pnpm/action-setup@v2
+        uses: pnpm/action-setup@v4
         with:
           version: 8
           run_install: false
@@ -230,7 +230,7 @@ jobs:
         shell: bash
         run: |
           echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
-      - uses: actions/cache@v3
+      - uses: actions/cache@v4
         name: Setup pnpm cache
         with:
           path: ${{ env.STORE_PATH }}
@@ -272,7 +272,7 @@ jobs:
           export CSC_IDENTITY_AUTO_DISCOVERY=false
           node ./scripts/client/build.js ${{ matrix.target }}
       - name: Upload artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: odc-client-pkg-${{ matrix.target }}
           path: |

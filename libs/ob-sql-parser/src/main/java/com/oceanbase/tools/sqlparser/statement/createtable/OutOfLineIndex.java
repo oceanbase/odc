@@ -21,6 +21,7 @@ import java.util.stream.Collectors;
 import org.antlr.v4.runtime.ParserRuleContext;
 
 import com.oceanbase.tools.sqlparser.statement.BaseStatement;
+import com.oceanbase.tools.sqlparser.statement.common.ColumnGroupElement;
 
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
@@ -46,6 +47,7 @@ public class OutOfLineIndex extends BaseStatement implements TableElement {
     private boolean spatial;
     private final String indexName;
     private final List<SortColumn> columns;
+    private List<ColumnGroupElement> columnGroupElements;
 
     public OutOfLineIndex(@NonNull ParserRuleContext context, String indexName,
             @NonNull List<SortColumn> columns) {
@@ -81,6 +83,12 @@ public class OutOfLineIndex extends BaseStatement implements TableElement {
         }
         if (this.partition != null) {
             builder.append(" ").append(this.partition.toString());
+        }
+        if (this.columnGroupElements != null) {
+            builder.append(" WITH COLUMN GROUP(")
+                    .append(columnGroupElements.stream()
+                            .map(ColumnGroupElement::toString).collect(Collectors.joining(",")))
+                    .append(")");
         }
         return builder.toString();
     }

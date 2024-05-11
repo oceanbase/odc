@@ -16,11 +16,13 @@
 package com.oceanbase.tools.sqlparser.adapter.mysql;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import org.antlr.v4.runtime.ParserRuleContext;
 
 import com.oceanbase.tools.sqlparser.adapter.StatementFactory;
+import com.oceanbase.tools.sqlparser.obmysql.OBParser.Alter_column_group_optionContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Alter_table_actionsContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Alter_table_stmtContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParserBaseVisitor;
@@ -53,9 +55,13 @@ public class MySQLAlterTableFactory extends OBParserBaseVisitor<AlterTable> impl
     @Override
     public AlterTable visitAlter_table_stmt(Alter_table_stmtContext ctx) {
         RelationFactor factor = MySQLFromReferenceFactory.getRelationFactor(ctx.relation_factor());
-        AlterTable alterTable = new AlterTable(ctx,
-                factor.getRelation(),
-                getAlterTableActions(ctx.alter_table_actions()));
+        List<AlterTableAction> actions = null;
+        if (ctx.alter_table_actions() != null) {
+            actions = getAlterTableActions(ctx.alter_table_actions());
+        } else if (ctx.alter_column_group_option() != null) {
+            actions = getAlterTableActions(ctx.alter_column_group_option());
+        }
+        AlterTable alterTable = new AlterTable(ctx, factor.getRelation(), actions);
         if (ctx.EXTERNAL() != null) {
             alterTable.setExternal(true);
         }
@@ -76,6 +82,10 @@ public class MySQLAlterTableFactory extends OBParserBaseVisitor<AlterTable> impl
             actions.add(new MySQLAlterTableActionFactory(context.alter_table_action()).generate());
         }
         return actions;
+    }
+
+    private List<AlterTableAction> getAlterTableActions(Alter_column_group_optionContext context) {
+        return Collections.singletonList(new MySQLAlterTableActionFactory(context).generate());
     }
 
 }
