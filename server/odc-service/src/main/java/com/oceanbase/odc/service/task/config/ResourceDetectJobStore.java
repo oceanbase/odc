@@ -59,7 +59,7 @@ public class ResourceDetectJobStore extends LocalDataSourceJobStore {
 
     private boolean shouldAcquire(OperableTrigger trigger) {
         TaskFrameworkProperties taskFrameworkProperties = TaskFrameworkPropertiesSupplier.getSupplier().get();
-        // If resource is not available return null and give a chance to other node acquire trigger
+        // If resource is not available return false and give a chance to other node acquire trigger
         if (!ResourceDetectUtil.isResourceAvailable(taskFrameworkProperties)) {
             if (TriggerKey.triggerKey("startPreparingJob", JobConstants.ODC_JOB_MONITORING)
                     .equals(trigger.getKey())) {
