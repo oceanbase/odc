@@ -16,11 +16,9 @@
 package com.oceanbase.odc.service.flow.processor;
 
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.stream.Collectors;
 
 import org.aspectj.lang.JoinPoint;
 import org.aspectj.lang.annotation.Aspect;
@@ -31,21 +29,16 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import com.oceanbase.odc.core.shared.PreConditions;
-import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.constant.OrganizationType;
 import com.oceanbase.odc.core.shared.constant.TaskType;
-import com.oceanbase.odc.core.shared.exception.BadArgumentException;
 import com.oceanbase.odc.core.shared.exception.BadRequestException;
 import com.oceanbase.odc.metadb.schedule.ScheduleEntity;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferConfig;
 import com.oceanbase.odc.service.collaboration.project.ProjectService;
-import com.oceanbase.odc.service.collaboration.project.model.Project;
 import com.oceanbase.odc.service.connection.database.DatabaseService;
 import com.oceanbase.odc.service.connection.database.model.Database;
-import com.oceanbase.odc.service.databasechange.model.DatabaseChangeProperties;
 import com.oceanbase.odc.service.flow.model.CreateFlowInstanceReq;
 import com.oceanbase.odc.service.flow.task.model.DBStructureComparisonParameter;
-import com.oceanbase.odc.service.flow.task.model.MultipleDatabaseChangeParameters;
 import com.oceanbase.odc.service.flow.util.DescriptionGenerator;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.schedule.ScheduleService;
@@ -94,8 +87,6 @@ public class CreateFlowInstanceProcessAspect implements InitializingBean {
         }
         if (Objects.nonNull(req.getDatabaseId()) && req.getTaskType() != TaskType.MULTIPLE_ASYNC) {
             adaptCreateFlowInstanceReq(req);
-        } else {
-            adaptCreateFlowInstanceReqForMultipleDatabase(req);
         }
         if (req.getTaskType() != TaskType.ALTER_SCHEDULE) {
             if (flowTaskPreprocessors.containsKey(req.getTaskType())) {
@@ -171,46 +162,5 @@ public class CreateFlowInstanceProcessAspect implements InitializingBean {
             DataTransferConfig config = (DataTransferConfig) req.getParameters();
             config.setDatabaseId(req.getDatabaseId());
         }
-    }
-
-    private void adaptCreateFlowInstanceReqForMultipleDatabase(CreateFlowInstanceReq req) {
-        MultipleDatabaseChangeParameters parameters = (MultipleDatabaseChangeParameters) req.getParameters();
-        List<Long> ids = parameters.getOrderedDatabaseIds().stream().flatMap(List::stream).collect(Collectors.toList());
-        // Limit the number of multi-databases change
-        if (ids.size() <= DatabaseChangeProperties.MIN_DATABASE_COUNT
-                || ids.size() > DatabaseChangeProperties.MAX_DATABASE_COUNT) {
-            throw new BadArgumentException(ErrorCodes.IllegalArgument,
-                    "The number of databases must be greater than " + DatabaseChangeProperties.MIN_DATABASE_COUNT
-                            + " and not more than " + DatabaseChangeProperties.MAX_DATABASE_COUNT + ".");
-        }
-        if (new HashSet<Long>(ids).size() != ids.size()) {
-            throw new BadArgumentException(ErrorCodes.IllegalArgument,
-                    "Database cannot be duplicated.");
-        }
-        List<Database> databases = databaseService.detailForMultipleDatabase(ids);
-        // todo The front-end request should include the projectId. The following code will be modified
-        // after the front-end modification.
-        Project project;
-        if (parameters.getProjectId() != null) {
-            project = projectService.detail(parameters.getProjectId());
-            if (databases.get(0).getProject().getId() != parameters.getProjectId()) {
-                throw new BadArgumentException(ErrorCodes.IllegalArgument,
-                        "All databases must belong to the project：" + project.getName());
-            }
-        } else {
-            project = databases.get(0).getProject();
-        }
-        /*
-         * Project project = projectService.detail(parameters.getProjectId());
-         * if(databases.get(0).getProject().getId()!= parameters.getProjectId()){ throw new
-         * BadArgumentException(ErrorCodes.IllegalArgument,
-         * "All databases must belong to the project："+project.getName() ); }
-         */
-        // must reset the batchid when initiating a multiple database flow again
-        parameters.setBatchId(null);
-        req.setProjectId(project.getId());
-        req.setProjectName(project.getName());
-        parameters.setDatabases(databases);
-        DescriptionGenerator.generationDescriptionForMultipleDatabase(req);
     }
 }

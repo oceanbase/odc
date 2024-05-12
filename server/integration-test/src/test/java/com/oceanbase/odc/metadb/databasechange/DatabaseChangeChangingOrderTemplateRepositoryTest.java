@@ -19,6 +19,9 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Optional;
 
 import org.junit.After;
@@ -78,7 +81,10 @@ public class DatabaseChangeChangingOrderTemplateRepositoryTest extends ServiceTe
         databaseChangeChangingOrderTemplateEntity.setProjectId(PROJECT_ID);
         databaseChangeChangingOrderTemplateEntity.setOrganizationId(ORGANIZATION_ID);
         databaseChangeChangingOrderTemplateEntity.setCreatorId(CURRENT_USER_ID);
-        databaseChangeChangingOrderTemplateEntity.setDatabaseSequences("[[1,2],[3,4]]");
+        List<List<Long>> orders = new ArrayList<>();
+        orders.add(Arrays.asList(1L, 2L));
+        orders.add(Arrays.asList(3L, 4L));
+        databaseChangeChangingOrderTemplateEntity.setDatabaseSequences(orders);
         return databaseChangeChangingOrderTemplateRepository.save(
                 databaseChangeChangingOrderTemplateEntity);
     }

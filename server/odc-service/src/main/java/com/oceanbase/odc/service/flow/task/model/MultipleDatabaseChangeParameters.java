@@ -15,15 +15,11 @@
  */
 package com.oceanbase.odc.service.flow.task.model;
 
-import java.io.Serializable;
 import java.util.List;
 
-import javax.validation.constraints.NotNull;
-
-import com.oceanbase.odc.core.flow.model.TaskParameters;
 import com.oceanbase.odc.core.shared.constant.TaskErrorStrategy;
+import com.oceanbase.odc.service.collaboration.project.model.Project;
 import com.oceanbase.odc.service.connection.database.model.Database;
-import com.oceanbase.odc.service.schedule.model.JobType;
 
 import lombok.Data;
 
@@ -32,39 +28,26 @@ import lombok.Data;
  * @date: 2024/3/27
  */
 @Data
-public class MultipleDatabaseChangeParameters implements Serializable, TaskParameters {
+public class MultipleDatabaseChangeParameters extends DatabaseChangeParameters {
     /**
      * All databases must belong to this project
      */
     private Long projectId;
+    private Project project;
     /**
-     * multiple database change execution sequence
+     * multiple databases change execution sequence
      */
     private List<List<Long>> orderedDatabaseIds;
     private List<Database> databases;
-    private Integer batchId;
-    private String sqlContent;
-    // 用于前端展示执行SQL文件名
-    private List<String> sqlObjectNames;
-    private List<String> sqlObjectIds;
-    // 用于前端展示回滚SQL文件名
-    private List<String> rollbackSqlObjectNames;
-    private String rollbackSqlContent;
-    private List<String> rollbackSqlObjectIds;
-    private Long timeoutMillis = 172800000L;// 2d for default
-    private TaskErrorStrategy errorStrategy;
-    private String delimiter = ";";
-    private Integer queryLimit = 1000;
-    private Integer riskLevelIndex;
-    @NotNull
-    private Boolean generateRollbackPlan;
-    private boolean modifyTimeoutIfTimeConsumingSqlExists = true;
-    // internal usage for notification
-    private JobType parentJobType;
-
-    public void setErrorStrategy(String errorStrategy) {
-        this.errorStrategy = TaskErrorStrategy.valueOf(errorStrategy);
-    }
+    private Integer           batchId;
+    /**
+     * Error strategy in multiple databases auto execution mode
+     */
+    private TaskErrorStrategy autoErrorStrategy;
+    /**
+     * TimeoutMillis in multiple databases manual execution mode
+     */
+    private Long manualTimeoutMillis = 1000*60*60*24*2L;// 2d for default
 
     public DatabaseChangeParameters convertIntoDatabaseChangeParameters(
             MultipleDatabaseChangeParameters multipleDatabaseChangeParameters) {

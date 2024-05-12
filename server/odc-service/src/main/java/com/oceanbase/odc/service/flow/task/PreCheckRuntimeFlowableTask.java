@@ -156,7 +156,7 @@ public class PreCheckRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Void> {
                     preCheckTaskEntity.getParametersJson(), MultipleDatabaseChangeParameters.class);
             List<Long> ids = multipleDatabaseChangeParameters.getOrderedDatabaseIds().stream().flatMap(List::stream)
                     .collect(Collectors.toList());
-            this.databaseList = databaseService.detailForMultipleDatabase(ids);
+            this.databaseList = databaseService.listDatabasesDetailsByIds(ids);
         } else {
             riskLevelDescriber = FlowTaskUtil.getRiskLevelDescriber(execution);
         }

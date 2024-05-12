@@ -21,6 +21,6 @@ package com.oceanbase.odc.service.databasechange.model;
  */
 public class DatabaseChangeProperties {
     public static final int MIN_DATABASE_COUNT = 1;
-    public static final int MAX_DATABASE_COUNT = 20;
+    public static final int MAX_DATABASE_COUNT = 100;
 
 }

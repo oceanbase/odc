@@ -634,8 +634,8 @@
             <Routes pattern="$${ctx:taskId}">
                 <Route>
                     <RollingFile name="Rolling-${ctx:taskId}"
-                                 fileName="${LOG_DIRECTORY}/multiple-async/${ctx:multipleDatabaseChangeWorkSpace}/${ctx:taskId}/multiple-asynctask.all"
-                                 filePattern="${LOG_DIRECTORY}/multiple-asynctask/${ctx:multipleDatabaseChangeWorkSpace}/${ctx:taskId}/${date:yyyy-MM}/multiple-asynctask-task-%d{yyyy-MM-dd}-%i.all.gz">
+                                 fileName="${LOG_DIRECTORY}/multiple-async/${ctx:taskId}/multiple-asynctask.all"
+                                 filePattern="${LOG_DIRECTORY}/multiple-asynctask/${ctx:taskId}/${date:yyyy-MM}/multiple-asynctask-task-%d{yyyy-MM-dd}-%i.all.gz">
                         <PatternLayout>
                             <pattern>%d{yyyy-MM-dd HH:mm:ss} %p %c{1.} - %m%n</pattern>
                         </PatternLayout>
@@ -656,8 +656,8 @@
             <Routes pattern="$${ctx:taskId}">
                 <Route>
                     <RollingFile name="Rolling-${ctx:taskId}"
-                                 fileName="${LOG_DIRECTORY}/multiple-async/${ctx:multipleDatabaseChangeWorkSpace}/${ctx:taskId}/multiple-asynctask.warn"
-                                 filePattern="${LOG_DIRECTORY}/multiple-asynctask/${ctx:multipleDatabaseChangeWorkSpace}/${ctx:taskId}/${date:yyyy-MM}/multiple-asynctask-%d{yyyy-MM-dd}-%i.warn.gz">
+                                 fileName="${LOG_DIRECTORY}/multiple-async/${ctx:taskId}/multiple-asynctask.warn"
+                                 filePattern="${LOG_DIRECTORY}/multiple-asynctask/${ctx:taskId}/${date:yyyy-MM}/multiple-asynctask-%d{yyyy-MM-dd}-%i.warn.gz">
                         <PatternLayout>
                             <pattern>%d{yyyy-MM-dd HH:mm:ss} %p %c{1.} - %m%n</pattern>
                         </PatternLayout>

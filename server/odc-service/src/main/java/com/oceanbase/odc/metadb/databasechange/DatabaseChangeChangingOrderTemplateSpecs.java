@@ -26,24 +26,20 @@ import com.oceanbase.odc.common.jpa.SpecificationUtil;
  * @date: 2024/4/22
  */
 public class DatabaseChangeChangingOrderTemplateSpecs {
-    private static final String DATABASE_CHANGE_CHANGING_ORDER_TEMPLATE_ID_NAME = "id";
-    private static final String DATABASE_CHANGE_CHANGING_ORDER_TEMPLATE_NAME_NAME = "name";
-    private static final String DATABASE_CHANGE_CHANGING_ORDER_TEMPLATE_CREATOR_ID_NAME = "creatorId";
-    private static final String DATABASE_CHANGE_CHANGING_ORDER_TEMPLATE_PROJECT_ID_NAME = "projectId";
 
     public static Specification<DatabaseChangeChangingOrderTemplateEntity> idEquals(Long id) {
-        return SpecificationUtil.columnEqual(DATABASE_CHANGE_CHANGING_ORDER_TEMPLATE_ID_NAME, id);
+        return SpecificationUtil.columnEqual(DatabaseChangeChangingOrderTemplateEntity_.ID, id);
     }
 
     public static Specification<DatabaseChangeChangingOrderTemplateEntity> nameLikes(String name) {
-        return SpecificationUtil.columnLike(DATABASE_CHANGE_CHANGING_ORDER_TEMPLATE_NAME_NAME, name);
+        return SpecificationUtil.columnLike(DatabaseChangeChangingOrderTemplateEntity_.NAME, name);
     }
 
     public static Specification<DatabaseChangeChangingOrderTemplateEntity> creatorIdIn(Collection<Long> userIds) {
-        return SpecificationUtil.columnIn(DATABASE_CHANGE_CHANGING_ORDER_TEMPLATE_CREATOR_ID_NAME, userIds);
+        return SpecificationUtil.columnIn(DatabaseChangeChangingOrderTemplateEntity_.CREATOR_ID, userIds);
     }
 
     public static Specification<DatabaseChangeChangingOrderTemplateEntity> projectIdEquals(Long projectId) {
-        return SpecificationUtil.columnEqual(DATABASE_CHANGE_CHANGING_ORDER_TEMPLATE_PROJECT_ID_NAME, projectId);
+        return SpecificationUtil.columnEqual(DatabaseChangeChangingOrderTemplateEntity_.PROJECT_ID, projectId);
     }
 }

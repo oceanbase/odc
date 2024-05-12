@@ -370,11 +370,9 @@ public class FlowInstanceService {
         } else {
             MultipleDatabaseChangeParameters taskParameters =
                     (MultipleDatabaseChangeParameters) createReq.getParameters();
-            conns = taskParameters.getDatabases().stream().map(database -> database.getDataSource().getId()).distinct()
-                    .map(dataSourceId -> (connectionService.getForConnectionSkipPermissionCheck(dataSourceId))).collect(
-                            Collectors.toList());
-
-            conns.forEach(con -> cloudMetadataClient.checkPermission(OBTenant.of(con.getClusterName(),
+            conns = taskParameters.getDatabases().stream().map(
+                database -> database.getDataSource()).distinct().collect(Collectors.toList());
+                conns.forEach(con -> cloudMetadataClient.checkPermission(OBTenant.of(con.getClusterName(),
                     con.getTenantName()), con.getInstanceType(), false, CloudPermissionAction.READONLY));
         }
         if (createReq.getTaskType() == TaskType.MULTIPLE_ASYNC) {
@@ -561,18 +559,17 @@ public class FlowInstanceService {
             MultipleDatabaseChangeParameters parameters =
                     (MultipleDatabaseChangeParameters) flowInstanceDetailResp.getParameters();
             List<Database> databases = parameters.getDatabases();
-            Set<Long> environmentIds = databases.stream().map(
-                    database -> database.getDataSource().getEnvironmentId()).collect(Collectors.toSet());
-            List<EnvironmentEntity> environmentEntities = environmentRepository.findAllById(environmentIds);
-            Map<Long, Environment> environmentMap = environmentService.detailSkipPermissionCheckForMultipleDatabase(
-                    environmentEntities).stream()
-                    .collect(Collectors.toMap(Environment::getId, environment -> environment));
+            List<Long> environmentIds = databases.stream().map(
+                    database -> database.getDataSource().getEnvironmentId()).distinct().collect(Collectors.toList());
+            Map<Long, Environment> environmentMap = environmentService.list(
+                    environmentIds).stream()
+                .collect(Collectors.toMap(Environment::getId, environment -> environment));
             databases.forEach(database -> {
                 Long environmentId = database.getDataSource().getEnvironmentId();
-                Environment environment = environmentMap.get(environmentId);
-                if (environment != null) {
-                    database.setEnvironment(environment);
-                }
+                Environment environment = new Environment();
+                environment.setName(environmentMap.get(environmentId).getName());
+                environment.setStyle(environmentMap.get(environmentId).getStyle());
+                database.setEnvironment(environment);
             });
         }
         return flowInstanceDetailResp;
@@ -760,6 +757,22 @@ public class FlowInstanceService {
         }
     }
 
+    public TaskEntity getMultipleAsyncTaskByFlowInstanceId(Long id) {
+        List<ServiceTaskInstanceEntity> entities = serviceTaskRepository
+                .findAll(ServiceTaskInstanceSpecs.flowInstanceIdEquals(id))
+                .stream()
+                .filter(e -> e.getTaskType() != TaskType.GENERATE_ROLLBACK && e.getTaskType() != TaskType.SQL_CHECK
+                        && e.getTaskType() != TaskType.PRE_CHECK)
+                .collect(Collectors.toList());
+        Verify.verify(CollectionUtils.isNotEmpty(entities), "TaskEntities can not be empty");
+
+        Set<Long> taskIds = entities.stream().filter(entity -> entity.getTargetTaskId() != null)
+                .map(ServiceTaskInstanceEntity::getTargetTaskId).collect(Collectors.toSet());
+        Verify.singleton(taskIds, "Multi task for one instance is not allowed, id " + id);
+        Long taskId = taskIds.iterator().next();
+        return taskService.detail(taskId);
+    }
+
     public TaskEntity getTaskByFlowInstanceId(Long id) {
         List<ServiceTaskInstanceEntity> entities = serviceTaskRepository
                 .findAll(ServiceTaskInstanceSpecs.flowInstanceIdEquals(id))
@@ -817,7 +830,7 @@ public class FlowInstanceService {
             databaseIds.add(p.getSourceDatabaseId());
         } else if (taskType == TaskType.MULTIPLE_ASYNC) {
             MultipleDatabaseChangeParameters parameters = (MultipleDatabaseChangeParameters) req.getParameters();
-            databaseIds = parameters.getDatabases().stream().map(x -> x.getId()).collect(Collectors.toSet());
+            databaseIds = parameters.getOrderedDatabaseIds().stream().flatMap(Collection::stream).collect(Collectors.toSet());
         }
         databasePermissionHelper.checkPermissions(databaseIds, DatabasePermissionType.from(req.getTaskType()));
     }

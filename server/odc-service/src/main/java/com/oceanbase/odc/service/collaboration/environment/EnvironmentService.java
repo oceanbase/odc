@@ -162,8 +162,10 @@ public class EnvironmentService {
     }
 
     @SkipAuthorize("odc internal usage")
-    public List<Environment> detailSkipPermissionCheckForMultipleDatabase(@NotEmpty List<EnvironmentEntity> list) {
-        return list.stream().map(environmentEntity -> entityToModel(environmentEntity)).collect(Collectors.toList());
+    public List<Environment> list(@NotEmpty List<Long> ids) {
+        return environmentRepository.findAllById(ids).stream()
+                .filter(x -> x.getOrganizationId().equals(authenticationFacade.currentOrganizationId()))
+                .map(this::entityToModel).collect(Collectors.toList());
     }
 
     @PreAuthenticate(actions = "update", resourceType = "ODC_ENVIRONMENT", indexOfIdParam = 0)

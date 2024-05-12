@@ -37,9 +37,7 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.oceanbase.odc.ServiceTestEnv;
-import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.core.shared.exception.BadArgumentException;
 import com.oceanbase.odc.core.shared.exception.BadRequestException;
 import com.oceanbase.odc.core.shared.exception.NotFoundException;
@@ -68,9 +66,9 @@ public class DatabaseChangeChangingOrderTemplateServiceTest extends ServiceTestE
     private static final String TEMPLATE_RENAME = "template_rename";
 
     @Autowired
-    private DatabaseChangeChangingOrderTemplateService databaseChangeChangingOrderTemplateService;
+    private DatabaseChangeChangingOrderTemplateService templateService;
     @Autowired
-    private DatabaseChangeChangingOrderTemplateRepository databaseChangeChangingOrderTemplateRepository;
+    private DatabaseChangeChangingOrderTemplateRepository templateRepository;
     @MockBean
     private AuthenticationFacade authenticationFacade;
     @MockBean
@@ -82,7 +80,7 @@ public class DatabaseChangeChangingOrderTemplateServiceTest extends ServiceTestE
 
     @Before
     public void setUp() {
-        databaseChangeChangingOrderTemplateRepository.deleteAll();
+        templateRepository.deleteAll();
         when(authenticationFacade.currentUserId()).thenReturn(CURRENT_USER_ID);
         when(authenticationFacade.currentOrganizationId()).thenReturn(ORGANIZATION_ID);
         when(projectRepository.existsById(any())).thenReturn(true);
@@ -91,7 +89,7 @@ public class DatabaseChangeChangingOrderTemplateServiceTest extends ServiceTestE
 
     @After
     public void clear() {
-        databaseChangeChangingOrderTemplateRepository.deleteAll();
+        templateRepository.deleteAll();
     }
 
     @Test
@@ -103,8 +101,8 @@ public class DatabaseChangeChangingOrderTemplateServiceTest extends ServiceTestE
         orders.add(Arrays.asList(1L, 2L));
         orders.add(Arrays.asList(3L, 4L));
         req.setOrders(orders);
-        Boolean result = databaseChangeChangingOrderTemplateService.create(req);
-        int size = databaseChangeChangingOrderTemplateRepository.findAll().size();
+        Boolean result = templateService.create(req);
+        int size = templateRepository.findAll().size();
         assertTrue(result);
         Assert.assertEquals(1, size);
     }
@@ -126,7 +124,7 @@ public class DatabaseChangeChangingOrderTemplateServiceTest extends ServiceTestE
         orders.add(list);
         req.setOrders(orders);
         when(projectRepository.existsById(any())).thenReturn(false);
-        databaseChangeChangingOrderTemplateService.create(req);
+        templateService.create(req);
     }
 
     @Test(expected = BadArgumentException.class)
@@ -144,29 +142,31 @@ public class DatabaseChangeChangingOrderTemplateServiceTest extends ServiceTestE
         databases.add(database);
         when(projectRepository.existsById(any())).thenReturn(true);
         when(databaseRepository.findByIdIn(any())).thenReturn(databases);
-        databaseChangeChangingOrderTemplateService.create(req);
+        templateService.create(req);
     }
 
     @Test
     public void modifyDatabaseChangingOrderTemplate_modifyTemplate_succeed() {
         createDatabaseChangingOrderTemplate_saveEntity_succeed();
         DatabaseChangeChangingOrderTemplateEntity byNameAndProjectId =
-                databaseChangeChangingOrderTemplateRepository.findByNameAndProjectId(TEMPLATE_NAME, PROJECT_ID).get();
+                templateRepository.findByNameAndProjectId(TEMPLATE_NAME, PROJECT_ID).get();
         CreateDatabaseChangeChangingOrderReq req = new CreateDatabaseChangeChangingOrderReq();
         req.setProjectId(PROJECT_ID);
         req.setName(TEMPLATE_RENAME);
-        req.setOrders(JsonUtils.fromJson(byNameAndProjectId.getDatabaseSequences(),
-                new TypeReference<List<List<Long>>>() {}));
-        Boolean result = databaseChangeChangingOrderTemplateService
-                .modify(byNameAndProjectId.getId(), req);
+        List<List<Long>> orders = new ArrayList<>();
+        orders.add(Arrays.asList(1L, 2L));
+        orders.add(Arrays.asList(3L, 4L));
+        req.setOrders(orders);
+        Boolean result = templateService
+                .update(byNameAndProjectId.getId(), req);
         assertTrue(result);
         Optional<DatabaseChangeChangingOrderTemplateEntity> byId =
-                databaseChangeChangingOrderTemplateRepository.findById(byNameAndProjectId.getId());
+                templateRepository.findById(byNameAndProjectId.getId());
         assertEquals(TEMPLATE_RENAME, byId.get().getName());
 
     }
 
-    @Test(expected = BadArgumentException.class)
+    @Test(expected = NotFoundException.class)
     public void modifyDatabaseChangingOrderTemplate_notFoundTemplate_throwIllegalArgumentException() {
         CreateDatabaseChangeChangingOrderReq req = new CreateDatabaseChangeChangingOrderReq();
         req.setProjectId(PROJECT_ID);
@@ -177,21 +177,21 @@ public class DatabaseChangeChangingOrderTemplateServiceTest extends ServiceTestE
         req.setOrders(orders);
         when(authenticationFacade.currentUserId()).thenReturn(1L);
         when(authenticationFacade.currentOrganizationId()).thenReturn(1L);
-        databaseChangeChangingOrderTemplateService.modify(1L, req);
+        templateService.update(1L, req);
     }
 
     @Test
     public void modifyDatabaseChangingOrderTemplate_projectNotExists_throwNotFoundException() {
         createDatabaseChangingOrderTemplate_saveEntity_succeed();
         DatabaseChangeChangingOrderTemplateEntity byNameAndProjectId =
-                databaseChangeChangingOrderTemplateRepository.findByNameAndProjectId(TEMPLATE_NAME, PROJECT_ID).get();
+                templateRepository.findByNameAndProjectId(TEMPLATE_NAME, PROJECT_ID).get();
         CreateDatabaseChangeChangingOrderReq req = new CreateDatabaseChangeChangingOrderReq();
         req.setName(TEMPLATE_RENAME);
         req.setProjectId(2L);
         req.setOrders(Arrays.asList(Arrays.asList(1L, 2L)));
         when(projectRepository.existsById(2L)).thenReturn(false);
         assertThrows(NotFoundException.class, () -> {
-            databaseChangeChangingOrderTemplateService.modify(byNameAndProjectId.getId(),
+            templateService.update(byNameAndProjectId.getId(),
                     req);
         });
     }
@@ -200,10 +200,10 @@ public class DatabaseChangeChangingOrderTemplateServiceTest extends ServiceTestE
     public void queryDatabaseChangingOrderTemplateById_findExistingTemplate_succeed() {
         createDatabaseChangingOrderTemplate_saveEntity_succeed();
         DatabaseChangeChangingOrderTemplateEntity byNameAndProjectId =
-                databaseChangeChangingOrderTemplateRepository.findByNameAndProjectId(TEMPLATE_NAME, PROJECT_ID).get();
+                templateRepository.findByNameAndProjectId(TEMPLATE_NAME, PROJECT_ID).get();
         when(databaseRepository.findByIdIn(anyList())).thenReturn(Arrays.asList(new DatabaseEntity()));
         QueryDatabaseChangeChangingOrderResp queryDatabaseChangeChangingOrderResp =
-                databaseChangeChangingOrderTemplateService.query(
+                templateService.detail(
                         byNameAndProjectId.getId());
         assertEquals(PROJECT_ID, queryDatabaseChangeChangingOrderResp.getProjectId());
         assertEquals(TEMPLATE_NAME, queryDatabaseChangeChangingOrderResp.getName());
@@ -218,7 +218,7 @@ public class DatabaseChangeChangingOrderTemplateServiceTest extends ServiceTestE
         QueryDatabaseChangeChangingOrderParams params = QueryDatabaseChangeChangingOrderParams.builder()
                 .projectId(PROJECT_ID).creatorId(CURRENT_USER_ID).name(TEMPLATE_NAME).build();
         Page<DatabaseChangeChangingOrderTemplateEntity> result =
-                databaseChangeChangingOrderTemplateService.lists(pageable, params);
+                templateService.listTemplates(pageable, params);
         Assert.assertNotNull(result);
         Assert.assertEquals(1, result.getContent().size());
     }
@@ -228,11 +228,11 @@ public class DatabaseChangeChangingOrderTemplateServiceTest extends ServiceTestE
     public void deleteDatabaseChangingOrderTemplateById_deleteExistingTemplate_succeed() {
         createDatabaseChangingOrderTemplate_saveEntity_succeed();
         DatabaseChangeChangingOrderTemplateEntity databaseChangeChangingOrderTemplateEntity =
-                databaseChangeChangingOrderTemplateRepository.findByNameAndProjectId(TEMPLATE_NAME, PROJECT_ID).get();
-        Boolean result = databaseChangeChangingOrderTemplateService.delete(
+                templateRepository.findByNameAndProjectId(TEMPLATE_NAME, PROJECT_ID).get();
+        Boolean result = templateService.delete(
                 databaseChangeChangingOrderTemplateEntity.getId());
         assertTrue(result);
-        int size = databaseChangeChangingOrderTemplateRepository.findAll().size();
+        int size = templateRepository.findAll().size();
         assertEquals(0, size);
     }
 }

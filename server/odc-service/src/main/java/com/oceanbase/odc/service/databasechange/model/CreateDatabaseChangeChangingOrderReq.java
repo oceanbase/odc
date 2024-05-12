@@ -18,7 +18,6 @@ package com.oceanbase.odc.service.databasechange.model;
 import java.util.List;
 
 import javax.validation.Valid;
-import javax.validation.constraints.Min;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
@@ -34,9 +33,8 @@ public class CreateDatabaseChangeChangingOrderReq {
     private String name;
 
     @NotNull
-    @Min(value = 1, message = "projectId can not be smaller than 1")
     private Long projectId;
 
     @NotEmpty
-    private List<@Valid @NotEmpty List<@NotNull @Min(1) Long>> orders;
+    private List<@Valid @NotEmpty List<@NotNull Long>> orders;
 }

@@ -64,7 +64,6 @@ import com.oceanbase.odc.core.shared.constant.OrganizationType;
 import com.oceanbase.odc.core.shared.constant.ResourceRoleName;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.core.shared.exception.AccessDeniedException;
-import com.oceanbase.odc.core.shared.exception.BadArgumentException;
 import com.oceanbase.odc.core.shared.exception.BadRequestException;
 import com.oceanbase.odc.core.shared.exception.ConflictException;
 import com.oceanbase.odc.core.shared.exception.NotFoundException;
@@ -226,51 +225,6 @@ public class DatabaseService {
             return database;
         }
         throw new NotFoundException(ResourceType.ODC_DATABASE, "id", id);
-    }
-
-    @Transactional(rollbackFor = Exception.class)
-    @SkipAuthorize("internal authenticated")
-    public List<Database> detailForMultipleDatabase(@NotEmpty List<Long> ids) {
-        List<DatabaseEntity> databaseEntities = databaseRepository.findAllById(ids);
-        List<Database> databases = databaseEntities.stream()
-                .map(entity -> entityToModel(entity, true))
-                .collect(Collectors.toList());
-        // All databases must belong to the same organization , and the organization cannot be empty
-        Set<Long> organizationIds = databases.stream()
-                .map(Database::getOrganizationId)
-                .collect(Collectors.toSet());
-        if (organizationIds.size() != 1) {
-            throw new BadArgumentException(ErrorCodes.IllegalArgument,
-                    "All databases must belong to the same organization");
-        }
-        if (databases.get(0).getOrganizationId() == null) {
-            throw new BadArgumentException(ErrorCodes.IllegalArgument,
-                    "All databases must belong to a non-empty organization");
-        }
-        // All databases must belong to the same project , and the project cannot be empty
-        Set<Long> projectIds = databases.stream()
-                .map((database -> database.getProject().getId()))
-                .collect(Collectors.toSet());
-        if (projectIds.size() != 1) {
-            throw new BadArgumentException(ErrorCodes.IllegalArgument, "All databases must belong to the same project");
-        }
-        if (databases.get(0).getProject().getId() == null) {
-            throw new BadArgumentException(ErrorCodes.IllegalArgument,
-                    "All databases must belong to a non-empty project");
-        }
-        horizontalDataPermissionValidator.checkCurrentOrganization(databases.get(0));
-        if (Objects.nonNull(databases.get(0).getProject()) && Objects.nonNull(databases.get(0).getProject().getId())) {
-            projectPermissionValidator.checkProjectRole(databases.get(0).getProject().getId(), ResourceRoleName.all());
-            return databases;
-        }
-        // Verify the current user's read permissions to all data sources
-        Set<Permission> requiredPermissions = databases.stream().map(database -> this.securityManager
-                .getPermissionByActions(database.getDataSource(), Collections.singletonList("read"))).collect(
-                        Collectors.toSet());
-        if (this.securityManager.isPermitted(requiredPermissions)) {
-            return databases;
-        }
-        throw new NotFoundException(ResourceType.ODC_DATABASE, "ids", ids);
     }
 
     @SkipAuthorize("odc internal usage")

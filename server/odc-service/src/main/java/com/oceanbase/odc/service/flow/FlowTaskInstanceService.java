@@ -60,7 +60,6 @@ import com.oceanbase.odc.core.shared.exception.BadRequestException;
 import com.oceanbase.odc.core.shared.exception.InternalServerError;
 import com.oceanbase.odc.core.shared.exception.NotFoundException;
 import com.oceanbase.odc.core.shared.exception.UnsupportedException;
-import com.oceanbase.odc.metadb.collaboration.EnvironmentEntity;
 import com.oceanbase.odc.metadb.collaboration.EnvironmentRepository;
 import com.oceanbase.odc.metadb.flow.FlowInstanceRepository;
 import com.oceanbase.odc.metadb.task.TaskEntity;
@@ -351,16 +350,18 @@ public class FlowTaskInstanceService {
                 multipleSqlCheckTaskResult.setFileName(null);
                 // Add environment element
                 List<Database> databaseList = multipleSqlCheckTaskResult.getDatabaseList();
-                Set<Long> environmentIds = databaseList.stream().map(
-                        database -> database.getDataSource().getEnvironmentId()).collect(Collectors.toSet());
-                List<EnvironmentEntity> environmentEntities = environmentRepository.findAllById(environmentIds);
-                Map<Long, Environment> environmentMap = environmentService.detailSkipPermissionCheckForMultipleDatabase(
-                        environmentEntities).stream()
+                List<Long> environmentIds = databaseList.stream().map(
+                        database -> database.getDataSource().getEnvironmentId()).distinct()
+                        .collect(Collectors.toList());
+                Map<Long, Environment> environmentMap = environmentService.list(
+                        environmentIds).stream()
                         .collect(Collectors.toMap(Environment::getId, environment -> environment));
                 for (Database database : databaseList) {
-                    if (environmentMap.containsKey(database.getDataSource().getEnvironmentId())) {
-                        database.setEnvironment(environmentMap.get(database.getDataSource().getEnvironmentId()));
-                    }
+                    Long environmentId = database.getDataSource().getEnvironmentId();
+                    Environment environment = new Environment();
+                    environment.setName(environmentMap.get(environmentId).getName());
+                    environment.setStyle(environmentMap.get(environmentId).getStyle());
+                    database.setEnvironment(environment);
                 }
                 // multipleSqlCheckTaskResult.setDatabaseList(databaseList);
                 multiplePreCheckTaskResult.setMultipleSqlCheckTaskResult(multipleSqlCheckTaskResult);
@@ -662,22 +663,20 @@ public class FlowTaskInstanceService {
                         databaseChangingRecord -> databaseChangingRecord.getDatabase())
                 .collect(
                         Collectors.toList());
-        Set<Long> environmentIds = databaseList.stream().map(
-                database -> database.getDataSource().getEnvironmentId()).collect(Collectors.toSet());
-        List<EnvironmentEntity> environmentEntities = environmentRepository.findAllById(environmentIds);
-        Map<Long, Environment> environmentMap = environmentService.detailSkipPermissionCheckForMultipleDatabase(
-                environmentEntities).stream()
+        List<Long> environmentIds = databaseList.stream().map(
+                database -> database.getDataSource().getEnvironmentId()).distinct().collect(Collectors.toList());
+        Map<Long, Environment> environmentMap = environmentService.list(
+                environmentIds).stream()
                 .collect(Collectors.toMap(Environment::getId, environment -> environment));
         for (int i = 0; i < databaseList.size(); i++) {
             if (environmentMap.containsKey(databaseList.get(i).getDataSource().getEnvironmentId())) {
-                databaseList.get(i)
-                        .setEnvironment(environmentMap.get(databaseList.get(i).getDataSource().getEnvironmentId()));
+                databaseList.get(i).getEnvironment().setName(environmentMap.get(databaseList.get(i).getDataSource().getEnvironmentId()).getName());
+                databaseList.get(i).getEnvironment().setStyle(environmentMap.get(databaseList.get(i).getDataSource().getEnvironmentId()).getStyle());
                 if (databaseChangingRecordList.get(i) != null) {
                     databaseChangingRecordList.get(i).setDatabase(databaseList.get(i));
                 }
             }
         }
-        // multipleDatabaseChangeTaskResults.get(0).setDatabaseChangingRecordList(databaseChangingRecordList);
         return multipleDatabaseChangeTaskResults;
     }
 
