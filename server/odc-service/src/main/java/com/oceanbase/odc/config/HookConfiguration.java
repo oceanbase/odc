@@ -159,7 +159,7 @@ public class HookConfiguration {
         }
         String names = projectId2ResourceRoleNames.keySet().stream()
                 .map(id -> Optional.ofNullable(id2Project.get(id))
-                        .map(ProjectEntity::getName).orElseThrow(() -> new UnexpectedException("空指针异常！")))
+                        .map(ProjectEntity::getName).orElseThrow(() -> new UnexpectedException("NullPointerException")))
                 .collect(Collectors.joining(", "));
 
         String errorMessage = String.format(
