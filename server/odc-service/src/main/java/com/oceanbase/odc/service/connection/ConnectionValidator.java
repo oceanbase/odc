@@ -53,9 +53,6 @@ public class ConnectionValidator {
         if (connection.getType().isDefaultSchemaRequired()) {
             PreConditions.notBlank(connection.getDefaultSchema(), "connection.defaultSchema");
         }
-        if (connection.getDialectType().isOracle()) {
-            connection.setDefaultSchema(null);
-        }
     }
 
     void validateForUpdate(ConnectionConfig connection, ConnectionConfig saved) {

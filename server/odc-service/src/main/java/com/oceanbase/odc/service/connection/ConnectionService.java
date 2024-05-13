@@ -263,10 +263,12 @@ public class ConnectionService {
         TransactionStatus transactionStatus = transactionManager.getTransaction(transactionDefinition);
         ConnectionConfig created;
         try {
-
             environmentAdapter.adaptConfig(connection);
             connectionSSLAdaptor.adapt(connection);
 
+            if (!connection.getType().isDefaultSchemaRequired()) {
+                connection.setDefaultSchema(null);
+            }
             connectionValidator.validateForUpsert(connection);
             connectionValidator.validatePrivateConnectionTempOnly(connection.getTemp());
 
@@ -580,6 +582,10 @@ public class ConnectionService {
             connection.setTemp(saved.getTemp());
             connection.setPasswordEncrypted(null);
             connection.setSysTenantPasswordEncrypted(null);
+
+            if (!connection.getType().isDefaultSchemaRequired()) {
+                connection.setDefaultSchema(null);
+            }
             connectionValidator.validateForUpsert(connection);
             // validate same name while rename connection
             repository.findByOrganizationIdAndName(connection.getOrganizationId(), connection.getName())
