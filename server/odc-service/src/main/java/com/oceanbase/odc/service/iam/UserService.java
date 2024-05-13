@@ -203,14 +203,14 @@ public class UserService {
         User user;
         Optional<UserEntity> optionalUser = userRepository.findByAccountName(userEntity.getAccountName());
         if (optionalUser.isPresent()) {
-            User existed = new User(optionalUser.get());
-            if (!Objects.equals(existed.getExtraProperties(), userEntity.getExtraPropertiesJson())) {
-                user = save(userEntity);
+            UserEntity existed = optionalUser.get();
+            if (!Objects.equals(existed.getExtraPropertiesJson(), userEntity.getExtraPropertiesJson())) {
+                existed.setExtraPropertiesJson(userEntity.getExtraPropertiesJson());
+                user = save(existed);
                 log.info("Update user extra properties successfully, accountName={}, new properties={}",
                         user.getAccountName(), user.getExtraProperties());
             } else {
-                user = existed;
-                log.info("User already exists, accountName={}", existed.getAccountName());
+                user = new User(existed);
             }
         } else {
             user = save(userEntity);
@@ -234,8 +234,8 @@ public class UserService {
                 }
                 user.setRoleIds(roleIds);
                 user.setRoles(roles);
-                log.info("Create user successfully, accountName={}", userEntity.getAccountName());
             }
+            log.info("Create user successfully, accountName={}", user.getAccountName());
         }
         return user;
     }
