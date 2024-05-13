@@ -670,14 +670,19 @@ public class FlowTaskInstanceService {
                 .collect(Collectors.toMap(Environment::getId, environment -> environment));
         for (int i = 0; i < databaseList.size(); i++) {
             if (environmentMap.containsKey(databaseList.get(i).getDataSource().getEnvironmentId())) {
-                databaseList.get(i).getEnvironment().setName(environmentMap.get(databaseList.get(i).getDataSource().getEnvironmentId()).getName());
-                databaseList.get(i).getEnvironment().setStyle(environmentMap.get(databaseList.get(i).getDataSource().getEnvironmentId()).getStyle());
+                Environment environment = new Environment();
+                environment
+                        .setName(environmentMap.get(databaseList.get(i).getDataSource().getEnvironmentId()).getName());
+                environment.setStyle(
+                        environmentMap.get(databaseList.get(i).getDataSource().getEnvironmentId()).getStyle());
+                databaseList.get(i).setEnvironment(environment);
                 if (databaseChangingRecordList.get(i) != null) {
                     databaseChangingRecordList.get(i).setDatabase(databaseList.get(i));
                 }
             }
         }
         return multipleDatabaseChangeTaskResults;
+
     }
 
     private List<DatabaseChangeResult> getAsyncResult(@NonNull TaskEntity taskEntity) throws IOException {

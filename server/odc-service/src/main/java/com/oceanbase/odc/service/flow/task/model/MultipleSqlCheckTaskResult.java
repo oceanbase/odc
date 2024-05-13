@@ -33,6 +33,7 @@ import lombok.ToString;
 @Setter
 @ToString
 public class MultipleSqlCheckTaskResult implements Serializable, FlowTaskResult {
+    private static final long serialVersionUID = -1410986697860096629L;
     private List<SqlCheckTaskResult> sqlCheckTaskResultList;
     private List<Database> databaseList;
     private boolean success;

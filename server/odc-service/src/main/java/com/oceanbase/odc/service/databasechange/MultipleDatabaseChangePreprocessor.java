@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 OceanBase.
+ * Copyright (c) 2023 OceanBase.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.oceanbase.odc.service.databasechange;
 
 import java.util.HashSet;
@@ -25,14 +24,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import com.oceanbase.odc.core.authority.SecurityManager;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.constant.ResourceRoleName;
-import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.core.shared.constant.TaskType;
 import com.oceanbase.odc.core.shared.exception.BadArgumentException;
-import com.oceanbase.odc.core.shared.exception.NotFoundException;
-import com.oceanbase.odc.metadb.collaboration.ProjectEntity;
 import com.oceanbase.odc.metadb.collaboration.ProjectRepository;
 import com.oceanbase.odc.metadb.connection.DatabaseRepository;
 import com.oceanbase.odc.service.collaboration.project.ProjectService;
+import com.oceanbase.odc.service.collaboration.project.model.Project;
 import com.oceanbase.odc.service.connection.database.DatabaseService;
 import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.databasechange.model.DatabaseChangeProperties;
@@ -56,56 +53,59 @@ import lombok.extern.slf4j.Slf4j;
 @FlowTaskPreprocessor(type = TaskType.MULTIPLE_ASYNC)
 public class MultipleDatabaseChangePreprocessor implements Preprocessor {
     @Autowired
-    private DatabaseService      databaseService;
+    private DatabaseService databaseService;
     @Autowired
     private AuthenticationFacade authenticationFacade;
     @Autowired
-    private ScheduleService      scheduleService;
+    private ScheduleService scheduleService;
     @Autowired
-    private List<Preprocessor>   preprocessors;
+    private List<Preprocessor> preprocessors;
     @Autowired
-    private ProjectService       projectService;
+    private ProjectService projectService;
     @Autowired
-    private DatabaseRepository   databaseRepository;
+    private DatabaseRepository databaseRepository;
     @Autowired
     private ProjectRepository projectRepository;
     @Autowired
     private HorizontalDataPermissionValidator horizontalDataPermissionValidator;
     @Autowired
-    private ProjectPermissionValidator        projectPermissionValidator;
+    private ProjectPermissionValidator projectPermissionValidator;
 
     @Autowired
     private SecurityManager securityManager;
+
     @Override
     public void process(CreateFlowInstanceReq req) {
         MultipleDatabaseChangeParameters parameters = (MultipleDatabaseChangeParameters) req.getParameters();
-        ProjectEntity projectEntity = projectRepository.findById(parameters.getProjectId()).orElseThrow(
-            () -> new NotFoundException(ResourceType.ODC_PROJECT, "id", req.getProjectId()));
+        Project project = projectService.detail(parameters.getProjectId());
         // Check the project permission
-        projectPermissionValidator.checkProjectRole(projectEntity.getId(), ResourceRoleName.all());
+        projectPermissionValidator.checkProjectRole(parameters.getProjectId(), ResourceRoleName.all());
         List<Long> ids = parameters.getOrderedDatabaseIds().stream().flatMap(List::stream).collect(Collectors.toList());
         // Limit the number of multi-databases change
         if (ids.size() <= DatabaseChangeProperties.MIN_DATABASE_COUNT
-            || ids.size() > DatabaseChangeProperties.MAX_DATABASE_COUNT) {
+                || ids.size() > DatabaseChangeProperties.MAX_DATABASE_COUNT) {
             throw new BadArgumentException(ErrorCodes.IllegalArgument,
-                "The number of databases must be greater than " + DatabaseChangeProperties.MIN_DATABASE_COUNT
-                + " and not more than " + DatabaseChangeProperties.MAX_DATABASE_COUNT + ".");
+                    "The number of databases must be greater than " + DatabaseChangeProperties.MIN_DATABASE_COUNT
+                            + " and not more than " + DatabaseChangeProperties.MAX_DATABASE_COUNT + ".");
         }
         // Databases with the same name are not allowed
         if (new HashSet<>(ids).size() != ids.size()) {
             throw new BadArgumentException(ErrorCodes.IllegalArgument,
-                "Database cannot be duplicated.");
+                    "Database cannot be duplicated.");
         }
         List<Database> databases = databaseService.listDatabasesDetailsByIds(ids);
         // All databases must belong to the project
-        if(!databases.stream().allMatch(databaseEntity -> databaseEntity.getProject().getId()==parameters.getProjectId())){
-            throw new BadArgumentException(ErrorCodes.IllegalArgument, "All databases must belong to the same project："+ projectEntity.getName());
+        if (!databases.stream()
+                .allMatch(databaseEntity -> databaseEntity.getProject().getId() == parameters.getProjectId())) {
+            throw new BadArgumentException(ErrorCodes.IllegalArgument,
+                    "All databases must belong to the same project：" + project.getName());
         }
         // must reset the batchid when initiating a multiple database flow again
         parameters.setBatchId(null);
+        parameters.setProject(project);
         parameters.setDatabases(databases);
         req.setProjectId(parameters.getProjectId());
-        req.setProjectName(projectEntity.getName());
+        req.setProjectName(project.getName());
         DescriptionGenerator.generateDescription(req);
     }
 }

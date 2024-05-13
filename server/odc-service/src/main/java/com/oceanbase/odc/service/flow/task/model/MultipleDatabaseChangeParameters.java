@@ -30,16 +30,20 @@ import lombok.Data;
 @Data
 public class MultipleDatabaseChangeParameters extends DatabaseChangeParameters {
     /**
-     * All databases must belong to this project
+     * Because ids in a Project cannot be deserialized, this property is needed instead of receiving
+     * front-end data
      */
     private Long projectId;
+    /**
+     * All databases must belong to this project
+     */
     private Project project;
     /**
      * multiple databases change execution sequence
      */
     private List<List<Long>> orderedDatabaseIds;
     private List<Database> databases;
-    private Integer           batchId;
+    private Integer batchId;
     /**
      * Error strategy in multiple databases auto execution mode
      */
@@ -47,7 +51,7 @@ public class MultipleDatabaseChangeParameters extends DatabaseChangeParameters {
     /**
      * TimeoutMillis in multiple databases manual execution mode
      */
-    private Long manualTimeoutMillis = 1000*60*60*24*2L;// 2d for default
+    private Long manualTimeoutMillis = 1000 * 60 * 60 * 24 * 2L;// 2d for default
 
     public DatabaseChangeParameters convertIntoDatabaseChangeParameters(
             MultipleDatabaseChangeParameters multipleDatabaseChangeParameters) {
@@ -59,6 +63,7 @@ public class MultipleDatabaseChangeParameters extends DatabaseChangeParameters {
                 .setRollbackSqlObjectNames(multipleDatabaseChangeParameters.getRollbackSqlObjectNames());
         databaseChangeParameters.setRollbackSqlContent(multipleDatabaseChangeParameters.getRollbackSqlContent());
         databaseChangeParameters.setRollbackSqlObjectIds(multipleDatabaseChangeParameters.getRollbackSqlObjectIds());
+        // Error strategy for sql changes in a single database
         databaseChangeParameters.setErrorStrategy(multipleDatabaseChangeParameters.getErrorStrategy().toString());
         databaseChangeParameters.setDelimiter(multipleDatabaseChangeParameters.getDelimiter());
         databaseChangeParameters.setGenerateRollbackPlan(multipleDatabaseChangeParameters.getGenerateRollbackPlan());

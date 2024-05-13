@@ -371,8 +371,8 @@ public class FlowInstanceService {
             MultipleDatabaseChangeParameters taskParameters =
                     (MultipleDatabaseChangeParameters) createReq.getParameters();
             conns = taskParameters.getDatabases().stream().map(
-                database -> database.getDataSource()).distinct().collect(Collectors.toList());
-                conns.forEach(con -> cloudMetadataClient.checkPermission(OBTenant.of(con.getClusterName(),
+                    database -> database.getDataSource()).distinct().collect(Collectors.toList());
+            conns.forEach(con -> cloudMetadataClient.checkPermission(OBTenant.of(con.getClusterName(),
                     con.getTenantName()), con.getInstanceType(), false, CloudPermissionAction.READONLY));
         }
         if (createReq.getTaskType() == TaskType.MULTIPLE_ASYNC) {
@@ -563,7 +563,7 @@ public class FlowInstanceService {
                     database -> database.getDataSource().getEnvironmentId()).distinct().collect(Collectors.toList());
             Map<Long, Environment> environmentMap = environmentService.list(
                     environmentIds).stream()
-                .collect(Collectors.toMap(Environment::getId, environment -> environment));
+                    .collect(Collectors.toMap(Environment::getId, environment -> environment));
             databases.forEach(database -> {
                 Long environmentId = database.getDataSource().getEnvironmentId();
                 Environment environment = new Environment();
@@ -830,7 +830,8 @@ public class FlowInstanceService {
             databaseIds.add(p.getSourceDatabaseId());
         } else if (taskType == TaskType.MULTIPLE_ASYNC) {
             MultipleDatabaseChangeParameters parameters = (MultipleDatabaseChangeParameters) req.getParameters();
-            databaseIds = parameters.getOrderedDatabaseIds().stream().flatMap(Collection::stream).collect(Collectors.toSet());
+            databaseIds =
+                    parameters.getOrderedDatabaseIds().stream().flatMap(Collection::stream).collect(Collectors.toSet());
         }
         databasePermissionHelper.checkPermissions(databaseIds, DatabasePermissionType.from(req.getTaskType()));
     }
@@ -1011,8 +1012,8 @@ public class FlowInstanceService {
         FlowTaskUtil.setFlowInstanceId(variables, flowInstance.getId());
         FlowTaskUtil.setTemplateVariables(variables, buildTemplateVariables(flowInstanceReq,
                 connectionConfigs.get(0)));
-        initVariables(variables, taskEntity, preCheckTaskEntity, connectionConfigs.get(0),
-                buildRiskLevelDescriber(flowInstanceReq));
+        initVariablesForMultiple(variables, taskEntity, preCheckTaskEntity, connectionConfigs,
+                buildRiskLevelDescriberList(flowInstanceReq));
         flowInstance.start(variables);
         log.info("New flow instance succeeded, instanceId={}, flowInstanceReq={}",
                 flowInstance.getId(), flowInstanceReq);
@@ -1107,6 +1108,8 @@ public class FlowInstanceService {
             @NonNull Long taskId,
             @NonNull TaskParameters parameters,
             @NonNull CreateFlowInstanceReq flowInstanceReq) {
+        MultipleDatabaseChangeParameters multipleDatabaseChangeParameters =
+                (MultipleDatabaseChangeParameters) parameters;
         List<ApprovalNodeConfig> nodeConfigs = approvalFlowConfig.getNodes();
         Verify.verify(!nodeConfigs.isEmpty(), "Approval Nodes size can not be equal to zero");
         List<FlowInstanceConfigurer> configurers = new LinkedList<>();
@@ -1131,8 +1134,9 @@ public class FlowInstanceService {
                 int orders = ((MultipleDatabaseChangeParameters) flowInstanceReq.getParameters())
                         .getOrderedDatabaseIds().size();
                 for (int i = 0; i < orders; i++) {
+                    // ExecutionStrategyConfig for multiple databases change flow
                     ExecutionStrategyConfig strategyConfig = ExecutionStrategyConfig.from(flowInstanceReq,
-                            approvalFlowConfig.getWaitExecutionExpirationIntervalSeconds());
+                            Math.toIntExact(multipleDatabaseChangeParameters.getManualTimeoutMillis()) / 1000);
                     FlowTaskInstance taskInstance;
                     if (i == orders - 1) {
                         taskInstance = flowFactory.generateFlowTaskInstance(flowInstance.getId(), false, true,
@@ -1212,6 +1216,32 @@ public class FlowInstanceService {
         FlowTaskUtil.setRiskLevelDescriber(variables, riskLevelDescriber);
         FlowTaskUtil.setCloudMainAccountId(variables, authenticationFacade.currentUser().getParentUid());
     }
+
+    private void initVariablesForMultiple(Map<String, Object> variables, TaskEntity taskEntity, TaskEntity preCheckTaskEntity,
+        List<ConnectionConfig> configs, List<RiskLevelDescriber> riskLevelDescribers) {
+        FlowTaskUtil.setTaskId(variables, taskEntity.getId());
+        if (Objects.nonNull(preCheckTaskEntity)) {
+            FlowTaskUtil.setPreCheckTaskId(variables, preCheckTaskEntity.getId());
+        }
+        if (configs != null) {
+            FlowTaskUtil.setConnectionConfigList(variables, configs);
+        }
+        FlowTaskUtil.setExecutionExpirationInterval(variables,
+            taskEntity.getExecutionExpirationIntervalSeconds(), TimeUnit.SECONDS);
+        FlowTaskUtil.setParameters(variables, taskEntity.getParametersJson());
+        if (taskEntity.getDatabaseName() != null) {
+            FlowTaskUtil.setSchemaName(variables, taskEntity.getDatabaseName());
+        }
+        if (taskEntity.getDatabaseId() != null) {
+            FlowTaskUtil.setSchemaName(variables, databaseService.detail(taskEntity.getDatabaseId()).getName());
+        }
+        FlowTaskUtil.setTaskCreator(variables, authenticationFacade.currentUser());
+        FlowTaskUtil.setOrganizationId(variables, authenticationFacade.currentOrganizationId());
+        FlowTaskUtil.setTaskSubmitter(variables, JsonUtils.fromJson(taskEntity.getSubmitter(), ExecutorInfo.class));
+        FlowTaskUtil.setRiskLevelDescriberList(variables, riskLevelDescribers);
+        FlowTaskUtil.setCloudMainAccountId(variables, authenticationFacade.currentUser().getParentUid());
+    }
+
 
     private TemplateVariables buildTemplateVariables(CreateFlowInstanceReq flowInstanceReq, ConnectionConfig config) {
         TemplateVariables variables = new TemplateVariables();
@@ -1365,6 +1395,23 @@ public class FlowInstanceService {
                 .environmentName(env == null ? null : env.getName())
                 .databaseName(req.getDatabaseName())
                 .build();
+    }
+
+    private List<RiskLevelDescriber> buildRiskLevelDescriberList(CreateFlowInstanceReq req){
+        TaskParameters parameters = req.getParameters();
+        MultipleDatabaseChangeParameters parameter = (MultipleDatabaseChangeParameters) parameters;
+        List<Database> databaseList = parameter.getDatabases();
+        List<RiskLevelDescriber> riskLevelDescribers = new ArrayList<>();
+        for (Database database : databaseList) {
+           riskLevelDescribers.add(RiskLevelDescriber.builder()
+               .projectName(database.getProject().getName())
+               .taskType(req.getTaskType().name())
+               .environmentId(database.getEnvironment() == null ? null : String.valueOf(database.getEnvironment().getId()))
+               .environmentName(database.getEnvironment() == null ? null : database.getEnvironment().getName())
+               .databaseName(database.getName())
+               .build()) ;
+        }
+        return riskLevelDescribers;
     }
 
     public List<FlowInstanceEntity> getFlowInstanceByParentId(Long parentFlowInstanceId) {

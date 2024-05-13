@@ -62,6 +62,13 @@ public class DatabaseChangeChangingOrderTemplateEntity {
     @Column(name = "database_sequences", nullable = false)
     private List<List<Long>> databaseSequences;
 
+
+    /**
+     * if this database actually existed in the datasource instance
+     */
+    @Column(name = "is_enabled", nullable = false)
+    private Boolean enabled;
+
     @Generated(GenerationTime.ALWAYS)
     @Column(name = "create_time", insertable = false, updatable = false)
     private Date createTime;

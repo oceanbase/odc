@@ -36,6 +36,7 @@ import com.oceanbase.odc.service.common.response.Responses;
 import com.oceanbase.odc.service.common.response.SuccessResponse;
 import com.oceanbase.odc.service.databasechange.DatabaseChangeChangingOrderTemplateService;
 import com.oceanbase.odc.service.databasechange.model.CreateDatabaseChangeChangingOrderReq;
+import com.oceanbase.odc.service.databasechange.model.DatabaseChangingOrderTemplateEnables;
 import com.oceanbase.odc.service.databasechange.model.DatabaseChangingOrderTemplateExists;
 import com.oceanbase.odc.service.databasechange.model.QueryDatabaseChangeChangingOrderParams;
 import com.oceanbase.odc.service.databasechange.model.QueryDatabaseChangeChangingOrderResp;
@@ -110,6 +111,12 @@ public class DatabaseChangeController {
     public SuccessResponse<DatabaseChangingOrderTemplateExists> exists(@RequestParam String name,
             @RequestParam Long projectId) {
         return Responses.success(templateService.exists(name, projectId));
+    }
+
+    @ApiOperation(value = "enables", notes = "Returns whether an database changing order template enables")
+    @RequestMapping(value = "/changingorder/templates/enables", method = RequestMethod.GET)
+    public SuccessResponse<DatabaseChangingOrderTemplateEnables> enables(@RequestParam Long id ) {
+        return Responses.success(templateService.enables(id));
     }
 }
 

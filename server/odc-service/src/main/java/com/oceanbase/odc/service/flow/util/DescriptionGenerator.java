@@ -36,7 +36,7 @@ public class DescriptionGenerator {
 
     public static void generateDescription(CreateFlowInstanceReq req) {
         if (StringUtils.isEmpty(req.getDescription())) {
-            if(req.getTaskType() == TaskType.MULTIPLE_ASYNC){
+            if (req.getTaskType() == TaskType.MULTIPLE_ASYNC) {
                 MultipleDatabaseChangeParameters parameters = (MultipleDatabaseChangeParameters) req.getParameters();
                 List<Database> databases = parameters.getDatabases();
                 String descFormat;
@@ -46,17 +46,18 @@ public class DescriptionGenerator {
                     descFormat = "[%s] %s.%s";
                 }
                 String description = databases.stream()
-                    .map(db -> String.format(descFormat, db.getEnvironment().getName(), db.getDataSource().getName(),
-                        db.getName()))
-                    .collect(Collectors.joining(" + "));
+                        .map(db -> String.format(descFormat, db.getEnvironment().getName(),
+                                db.getDataSource().getName(),
+                                db.getName()))
+                        .collect(Collectors.joining(" + "));
                 req.setDescription(description);
-            }  else {
+            } else {
                 String descFormat = "[%s] %s.%s";
                 if (LocaleContextHolder.getLocale().getLanguage().equals(Locale.CHINESE.getLanguage())) {
                     descFormat = "【%s】%s.%s";
                 }
                 req.setDescription(String.format(descFormat, req.getEnvironmentName(), req.getConnectionName(),
-                    req.getDatabaseName()));
+                        req.getDatabaseName()));
             }
         }
     }

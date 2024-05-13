@@ -36,4 +36,6 @@ public class QueryDatabaseChangeChangingOrderResp {
 
     private List<List<DatabaseEntity>> databaseSequenceList;
 
+    private Boolean enabled;
+
 }

@@ -119,7 +119,7 @@ public class SqlCheckService {
             if (CollectionUtils.isEmpty(check)) {
                 return Collections.emptyList();
             }
-            multipleSqlCheckResult.setCheckResult(check.get(0));
+            multipleSqlCheckResult.setCheckResultList(check);
             multipleSqlCheckResult.setDatabase(databases.get(i));
             multipleSqlCheckResults.add(multipleSqlCheckResult);
         }
