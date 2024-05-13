@@ -1,0 +1,2 @@
+ALTER TABLE `collaboration_project` ADD COLUMN `unique_identifier` VARCHAR(128) DEFAULT NULL COMMENT 'Unique identifier, from external system';
+CREATE INDEX `idx_collaboration_project_unique_identifier` ON `collaboration_project` (`unique_identifier`);
