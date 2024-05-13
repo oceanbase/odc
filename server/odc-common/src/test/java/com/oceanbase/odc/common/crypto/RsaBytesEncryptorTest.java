@@ -16,8 +16,6 @@
 
 package com.oceanbase.odc.common.crypto;
 
-import static org.junit.Assert.*;
-
 import java.nio.charset.StandardCharsets;
 
 import org.junit.Assert;
@@ -80,6 +78,20 @@ public class RsaBytesEncryptorTest extends EncryptorTest {
         RsaBytesEncryptor decryptor = new RsaBytesEncryptor(RsaEncryptorType.DECRYPT_MODE, null, keyPair.right);
         String origin = "This is the origin string";
         decryptor.encrypt(origin.getBytes(StandardCharsets.UTF_8));
+    }
+
+    @Test
+    public void test_concurrentDecrypt() {
+        RsaBytesEncryptor encryptor = new RsaBytesEncryptor(RsaEncryptorType.ENCRYPT_MODE, keyPair.left, null);
+        RsaBytesEncryptor decryptor = new RsaBytesEncryptor(RsaEncryptorType.DECRYPT_MODE, null, keyPair.right);
+        String origin = "This is the origin string";
+        byte[] encrypted = encryptor.encrypt(origin.getBytes(StandardCharsets.UTF_8));
+        for (int i = 0; i < 100; i++) {
+            new Thread(() -> {
+                String decrypted = new String(decryptor.decrypt(encrypted), StandardCharsets.UTF_8);
+                Assert.assertEquals(origin, decrypted);
+            }).start();
+        }
     }
 
 }
