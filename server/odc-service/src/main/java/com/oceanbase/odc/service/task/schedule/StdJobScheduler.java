@@ -173,7 +173,7 @@ public class StdJobScheduler implements JobScheduler {
     }
 
     private void initStartPreparingJob() {
-        String key = "startPreparingJob";
+        String key = JobConstants.START_PREPARING_JOB;
         initCronJob(key,
                 configuration.getTaskFrameworkProperties().getStartPreparingJobCronExpression(),
                 StartPreparingJob.class);
