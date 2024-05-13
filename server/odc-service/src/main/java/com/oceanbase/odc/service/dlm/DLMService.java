@@ -19,10 +19,13 @@ import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
+import com.oceanbase.odc.metadb.dlm.DlmJobStatisticEntity;
+import com.oceanbase.odc.metadb.dlm.DlmJobStatisticRepository;
 import com.oceanbase.odc.service.dlm.model.PreviewSqlStatementsReq;
 import com.oceanbase.odc.service.dlm.utils.DataArchiveConditionUtil;
 
@@ -33,6 +36,9 @@ import com.oceanbase.odc.service.dlm.utils.DataArchiveConditionUtil;
  */
 @Service
 public class DLMService {
+
+    @Autowired
+    private DlmJobStatisticRepository dlmJobStatisticRepository;
 
     @SkipAuthorize("do not access any resources")
     public List<String> previewSqlStatements(PreviewSqlStatementsReq req) {
@@ -46,5 +52,9 @@ public class DLMService {
                                     .parseCondition(tableConfig.getConditionExpression(), req.getVariables(), now)));
         });
         return returnValue;
+    }
+
+    public List<DlmJobStatisticEntity> listJobStatisticByJobId(List<String> jobId) {
+        return dlmJobStatisticRepository.findByDlmJobIdIn(jobId);
     }
 }

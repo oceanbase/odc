@@ -23,6 +23,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
+import com.oceanbase.odc.metadb.dlm.DlmJobStatisticEntity;
+import com.oceanbase.odc.metadb.dlm.DlmJobStatisticRepository;
 import com.oceanbase.odc.metadb.dlm.TaskGeneratorEntity;
 import com.oceanbase.odc.metadb.dlm.TaskGeneratorRepository;
 import com.oceanbase.odc.metadb.dlm.TaskUnitEntity;
@@ -40,6 +42,7 @@ import com.oceanbase.tools.migrator.core.meta.ClusterMeta;
 import com.oceanbase.tools.migrator.core.meta.JobMeta;
 import com.oceanbase.tools.migrator.core.meta.TaskMeta;
 import com.oceanbase.tools.migrator.core.meta.TenantMeta;
+import com.oceanbase.tools.migrator.core.stat.JobStat;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -60,6 +63,8 @@ public class DataArchiveJobStore implements IJobStore {
     private TaskGeneratorRepository taskGeneratorRepository;
     @Autowired
     private TaskUnitRepository taskUnitRepository;
+    @Autowired
+    private DlmJobStatisticRepository jobStatisticRepository;
 
     private final TaskGeneratorMapper taskGeneratorMapper = TaskGeneratorMapper.INSTANCE;
     private final TaskUnitMapper taskUnitMapper = TaskUnitMapper.INSTANCE;
@@ -105,7 +110,14 @@ public class DataArchiveJobStore implements IJobStore {
 
     @Override
     public void storeJobStatistic(JobMeta jobMeta) {
-        jobMeta.getJobStat().buildReportData();
+        JobStat jobStat = jobMeta.getJobStat();
+        DlmJobStatisticEntity dlmJobStatisticEntity = new DlmJobStatisticEntity();
+        dlmJobStatisticEntity.setDlmJobId(jobMeta.getJobId());
+        dlmJobStatisticEntity.setProcessedRowCount(jobStat.getRowCount());
+        dlmJobStatisticEntity.setReadRowCount(jobStat.getReadRowCount());
+        dlmJobStatisticEntity.setReadRowsPerSecond(jobStat.getAvgReadRowCount());
+        dlmJobStatisticEntity.setProcessedRowsPerSecond(jobStat.getAvgRowCount());
+        jobStatisticRepository.save(dlmJobStatisticEntity);
     }
 
     @Override

@@ -16,7 +16,6 @@
 package com.oceanbase.odc.service.schedule.model;
 
 import java.util.Date;
-import java.util.List;
 
 import com.oceanbase.odc.core.shared.constant.TaskStatus;
 
@@ -42,7 +41,7 @@ public class ScheduleTaskResp {
 
     private double progressPercentage;
 
-    private List<ScheduleTaskShard> taskShards;
+    private String executionDetails;
 
     private String resultJson;
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 OceanBase.
+ * Copyright (c) 2024 OceanBase.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,12 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.schedule.model;
+
+package com.oceanbase.odc.metadb.dlm;
+
+import java.util.List;
+
+import com.oceanbase.odc.config.jpa.OdcJpaRepository;
 
 /**
  * @Author：tinker
- * @Date: 2024/5/10 11:12
+ * @Date: 2024/5/13 11:44
  * @Descripition:
  */
-public interface TaskShardParameters {
+public interface DlmJobStatisticRepository extends OdcJpaRepository<DlmJobStatisticEntity, Long> {
+
+    List<DlmJobStatisticEntity> findByDlmJobIdIn(List<String> dlmJobIds);
+
 }

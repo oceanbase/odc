@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 OceanBase.
+ * Copyright (c) 2024 OceanBase.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,14 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.metadb.schedule;
+
+package com.oceanbase.odc.metadb.dlm;
 
 import java.util.Date;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
-import javax.persistence.EnumType;
-import javax.persistence.Enumerated;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
@@ -29,47 +28,37 @@ import javax.persistence.Table;
 import org.hibernate.annotations.Generated;
 import org.hibernate.annotations.GenerationTime;
 
-import com.oceanbase.odc.service.schedule.model.JobType;
-import com.oceanbase.odc.service.schedule.model.TaskShardStatus;
-
 import lombok.Data;
 
 /**
  * @Author：tinker
- * @Date: 2024/4/28 16:34
+ * @Date: 2024/5/13 11:15
  * @Descripition:
  */
-@Data
-@Entity
-@Table(name = "schedule_task_shard")
-public class ScheduleTaskShardEntity {
 
+@Entity
+@Data
+@Table(name = "dlm_task_statistic")
+public class DlmJobStatisticEntity {
     @Id
-    @Column(name = "id", nullable = false)
+    @Column(name = "id", nullable = false, updatable = false)
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "schedule_task_id", nullable = false)
-    private Long scheduleTaskId;
+    @Column(name = "dlm_job_id", nullable = false)
+    private String dlmJobId;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "schedule_task_type", nullable = false)
-    private JobType scheduleTaskType;
+    @Column(name = "processed_row_count", nullable = false)
+    private Long processedRowCount;
 
-    @Column(name = "parameters", nullable = false)
-    private String parameters;
+    @Column(name = "read_row_count")
+    private Long readRowCount;
 
-    @Column(name = "execution_detail", nullable = false)
-    private String executionDetail;
+    @Column(name = "processed_rows_per_second")
+    private Long processedRowsPerSecond;
 
-    @Column(name = "start_time")
-    private Date startTime;
-    @Column(name = "end_time")
-    private Date endTime;
-
-    @Enumerated(EnumType.STRING)
-    @Column(name = "status", nullable = false)
-    private TaskShardStatus status;
+    @Column(name = "read_rows_per_second")
+    private Long readRowsPerSecond;
 
     @Generated(GenerationTime.ALWAYS)
     @Column(name = "create_time", insertable = false, updatable = false)
@@ -78,5 +67,4 @@ public class ScheduleTaskShardEntity {
     @Generated(GenerationTime.ALWAYS)
     @Column(name = "update_time", insertable = false, updatable = false)
     private Date updateTime;
-
 }

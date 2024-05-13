@@ -15,25 +15,28 @@
  */
 package com.oceanbase.odc.service.schedule.model;
 
-import java.util.Date;
-
-import com.oceanbase.tools.migrator.common.configure.LogicTableConfig;
+import lombok.Data;
 
 /**
  * @Author：tinker
- * @Date: 2024/5/10 11:13
+ * @Date: 2024/5/9 09:39
  * @Descripition:
  */
-public class DataArchiveTaskShardParameters implements TaskShardParameters {
+@Data
+public class DlmExecutionDetail {
+
+    private String dlmJobId;
 
     private String tableName;
 
-    private Date fireTime;
+    private String userCondition;
 
-    private Long sourceDatabaseId;
+    private Long processedRowCount;
 
-    private Long targetDatabaseId;
+    private Long readRowCount;
 
-    private LogicTableConfig logicTableConfig;
+    private Long processedRowsPerSecond;
+
+    private Long readRowsPerSecond;
 
 }
