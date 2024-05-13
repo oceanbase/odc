@@ -74,7 +74,7 @@ public class RsaBytesEncryptor implements BytesEncryptor {
     }
 
     @Override
-    public byte[] encrypt(byte[] origin) {
+    public synchronized byte[] encrypt(byte[] origin) {
         if (type == RsaEncryptorType.DECRYPT_MODE) {
             throw new IllegalStateException("The encryptor only support decrypt");
         }
@@ -85,7 +85,7 @@ public class RsaBytesEncryptor implements BytesEncryptor {
     }
 
     @Override
-    public byte[] decrypt(byte[] encrypted) {
+    public synchronized byte[] decrypt(byte[] encrypted) {
         if (type == RsaEncryptorType.ENCRYPT_MODE) {
             throw new IllegalStateException("The encryptor only support encrypt");
         }
