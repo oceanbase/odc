@@ -89,9 +89,9 @@ public class OBMySQLBetween2277And3XSchemaAccessor extends OBMySQLSchemaAccessor
     }
 
     @Override
-    protected void fillIndexRange(List<DBTableIndex> indexList, String schemaName,
+    protected void fillIndexInfo(List<DBTableIndex> indexList, String schemaName,
             String tableName) {
-        setIndexRangeByDDL(indexList, schemaName, tableName);
+        setIndexInfoByDDL(indexList, schemaName, tableName);
         if (indexList.stream().anyMatch(idx -> Objects.isNull(idx.getGlobal()))) {
             setIndexRangeByQuery(indexList, schemaName, tableName);
         }

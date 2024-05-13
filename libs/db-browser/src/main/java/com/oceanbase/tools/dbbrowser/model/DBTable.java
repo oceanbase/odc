@@ -49,6 +49,7 @@ public class DBTable implements DBObject, DBObjectWarningDescriptor {
     private List<DBTableConstraint> constraints;
     private DBTablePartition partition;
 
+    private List<DBColumnGroupElement> columnGroups;
 
     @JsonProperty(access = Access.READ_ONLY)
     private String DDL;

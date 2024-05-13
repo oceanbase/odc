@@ -41,5 +41,32 @@
       }
     },
     "output": "CREATE  INDEX \"a\" USING BTREE ON \"schema\".\"table\" (\"a\", \"b\") LOCAL;\n"
+  },
+  {
+    "id": 3,
+    "name": "case3",
+    "description": "普通索引，单列，列存",
+    "input": {
+      "current": {
+        "name": "a",
+        "schemaName": "schema",
+        "tableName": "table",
+        "type": "NORMAL",
+        "global": true,
+        "visible": true,
+        "columnNames": [
+          "a"
+        ],
+        "algorithm": "BTREE",
+        "ordinalPosition": null,
+        "columnGroups": [
+          {
+            "allColumns": false,
+            "eachColumn": true
+          }
+        ]
+      }
+    },
+    "output": "CREATE  INDEX \"a\" USING BTREE ON \"schema\".\"table\" (\"a\") GLOBAL  WITH COLUMN GROUP(each column);\n"
   }
 ]

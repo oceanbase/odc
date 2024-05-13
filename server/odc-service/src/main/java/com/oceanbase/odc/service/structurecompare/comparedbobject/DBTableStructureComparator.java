@@ -274,6 +274,7 @@ public class DBTableStructureComparator implements DBObjectStructureComparator<D
         BeanUtils.copyProperties(sourceTable, copiedSrcTable);
         copiedSrcTable.setSchemaName(targetTable.getSchemaName());
         this.tgtTableEditor.generateUpdateTableOptionDDL(targetTable, copiedSrcTable, tableOptionDdl);
+        tableOptionDdl.append(tgtTableEditor.generateUpdateColumnGroupDDL(targetTable, copiedSrcTable));
         result.setChangeScript(tableOptionDdl.toString());
         result.setSourceDdl(sourceTable.getDDL());
         result.setTargetDdl(targetTable.getDDL());

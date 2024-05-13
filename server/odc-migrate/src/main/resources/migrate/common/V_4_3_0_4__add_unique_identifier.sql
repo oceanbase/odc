@@ -1,0 +1,1 @@
+ALTER TABLE `collaboration_project` ADD COLUMN `unique_identifier` VARCHAR(128) DEFAULT NULL COMMENT 'Unique identifier, from external system';
