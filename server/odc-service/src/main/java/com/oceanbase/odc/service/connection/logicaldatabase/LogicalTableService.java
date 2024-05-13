@@ -122,6 +122,13 @@ public class LogicalTableService {
         return true;
     }
 
+    public Boolean detectConsistency(@NotNull Long logicalDatabaseId, @NotNull Long logicalTableId) {
+        LogicalTableEntity tableEntity = tableRepository.findById(logicalTableId)
+                .orElseThrow(() -> new NotFoundException(ResourceType.ODC_LOGICAL_TABLE, "id", logicalTableId));
+        Verify.equals(tableEntity.getLogicalDatabaseId(), logicalDatabaseId, "logical database id");
+        return true;
+    }
+
 
     public List<DataNode> resolve(String expression) {
         PreConditions.notEmpty(expression, "expression");

@@ -70,8 +70,7 @@ public class LogicalDatabaseController {
     @RequestMapping(
             value = "/logicaldatabases/{logicalDatabaseId:[\\d]+}/logicaltables/{logicalTableId:[\\d]+}/checkStructureConsistency",
             method = RequestMethod.POST)
-    public SuccessResponse<Boolean> checkLogicalTable(@PathVariable Long logicalDatabaseId,
-            @PathVariable Long logicalTableId) {
+    public SuccessResponse<Boolean> checkLogicalTable(@PathVariable Long logicalDatabaseId, @PathVariable Long logicalTableId) {
         throw new NotImplementedException();
     }
 }
