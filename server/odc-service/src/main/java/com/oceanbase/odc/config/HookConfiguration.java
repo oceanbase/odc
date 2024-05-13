@@ -158,8 +158,7 @@ public class HookConfiguration {
             return;
         }
         String names = projectId2ResourceRoleNames.keySet().stream()
-                .map(id -> Optional.ofNullable(id2Project.get(id))
-                        .map(ProjectEntity::getName).orElseThrow(() -> new UnexpectedException("NullPointerException")))
+                .map(id -> id2Project.get(id).getName())
                 .collect(Collectors.joining(", "));
 
         String errorMessage = String.format(
