@@ -92,6 +92,7 @@ public class OBMySQLTableExtension implements TableExtensionPoint {
         table.setDDL(ddl);
         table.setTableOptions(schemaAccessor.getTableOptions(schemaName, tableName));
         table.setStats(getTableStats(connection, schemaName, tableName));
+        table.setColumnGroups(schemaAccessor.listTableColumnGroups(schemaName, tableName));
         return table;
     }
 

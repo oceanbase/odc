@@ -38,6 +38,7 @@ import org.springframework.jdbc.core.RowMapper;
 import org.springframework.lang.NonNull;
 
 import com.oceanbase.tools.dbbrowser.model.DBBasicPLObject;
+import com.oceanbase.tools.dbbrowser.model.DBColumnGroupElement;
 import com.oceanbase.tools.dbbrowser.model.DBColumnTypeDisplay;
 import com.oceanbase.tools.dbbrowser.model.DBConstraintDeferability;
 import com.oceanbase.tools.dbbrowser.model.DBConstraintType;
@@ -1196,6 +1197,11 @@ public class OracleSchemaAccessor implements DBSchemaAccessor {
     @Override
     public DBTableOptions getTableOptions(String schemaName, String tableName, String ddl) {
         return getTableOptions(schemaName, tableName);
+    }
+
+    @Override
+    public List<DBColumnGroupElement> listTableColumnGroups(String schemaName, String tableName) {
+        throw new UnsupportedOperationException("Not supported yet");
     }
 
     protected void obtainTableCharset(List<DBTableOptions> tableOptions) {

@@ -63,5 +63,32 @@
       }
     },
     "output": "CREATE UNIQUE INDEX `a` USING BTREE ON `schema`.`table` (`a`, `b`) GLOBAL;\n"
+  },
+  {
+    "id": 4,
+    "name": "case4",
+    "description": "普通索引，单列，列存",
+    "input": {
+      "current": {
+        "name": "a",
+        "schemaName": "schema",
+        "tableName": "table",
+        "type": "NORMAL",
+        "global": true,
+        "visible": true,
+        "columnNames": [
+          "a"
+        ],
+        "algorithm": "BTREE",
+        "ordinalPosition": null,
+        "columnGroups": [
+          {
+            "allColumns": false,
+            "eachColumn": true
+          }
+        ]
+      }
+    },
+    "output": "CREATE  INDEX `a` USING BTREE ON `schema`.`table` (`a`) GLOBAL  WITH COLUMN GROUP(each column);\n"
   }
 ]

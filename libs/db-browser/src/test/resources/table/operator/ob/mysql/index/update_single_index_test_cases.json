@@ -100,5 +100,51 @@
       }
     },
     "output": "ALTER TABLE `schema`.`table` ALTER INDEX `a` INVISIBLE;\n"
+  },
+  {
+    "id": 4,
+    "name": "case4",
+    "description": "修改存储格式，列存 --> 行存",
+    "input": {
+      "previous": {
+        "name": "a",
+        "schemaName": "schema",
+        "tableName": "table",
+        "type": "NORMAL",
+        "global": true,
+        "visible": true,
+        "columnNames": [
+          "a"
+        ],
+        "algorithm": "BTREE",
+        "ordinalPosition": null,
+        "columnGroups": [
+          {
+            "allColumns": false,
+            "eachColumn": true
+          }
+        ]
+      },
+      "current": {
+        "name": "b",
+        "schemaName": "schema",
+        "tableName": "table",
+        "type": "NORMAL",
+        "global": true,
+        "visible": true,
+        "columnNames": [
+          "a"
+        ],
+        "algorithm": "HASH",
+        "ordinalPosition": null,
+        "columnGroups": [
+          {
+            "allColumns": true,
+            "eachColumn": false
+          }
+        ]
+      }
+    },
+    "output": "ALTER TABLE `schema`.`table` DROP INDEX `a`;\nCREATE  INDEX `b` USING HASH ON `schema`.`table` (`a`) GLOBAL  WITH COLUMN GROUP(all columns);\n"
   }
 ]
