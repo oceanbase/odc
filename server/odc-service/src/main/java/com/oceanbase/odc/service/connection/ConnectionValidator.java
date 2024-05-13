@@ -50,6 +50,9 @@ public class ConnectionValidator {
         PreConditions.validInHostWhiteList(connection.getHost(), connectProperties.getHostWhiteList());
         PreConditions.validArgumentState(environmentService.exists(connection.getEnvironmentId()),
                 ErrorCodes.BadRequest, null, "invalid environment id");
+        if (connection.getType().isDefaultSchemaRequired()) {
+            PreConditions.notBlank(connection.getDefaultSchema(), "connection.defaultSchema");
+        }
     }
 
     void validateForUpdate(ConnectionConfig connection, ConnectionConfig saved) {
@@ -58,11 +61,6 @@ public class ConnectionValidator {
                         || Objects.equals(connection.getType(), saved.getType()),
                 ErrorCodes.FieldUpdateNotSupported, new Object[] {"connection.type"},
                 "Cannot change field 'connection.type'");
-        PreConditions.validRequestState(
-                Objects.isNull(connection.getDialectType())
-                        || Objects.equals(connection.getDialectType(), saved.getDialectType()),
-                ErrorCodes.FieldUpdateNotSupported, new Object[] {"connection.dialectType"},
-                "Cannot change field 'connection.dialectType'");
     }
 
     void validatePrivateConnectionTempOnly(Boolean temp) {

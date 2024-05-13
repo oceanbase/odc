@@ -222,7 +222,6 @@ public class ConnectionConfig
      * 默认 schema，对应 /api/v1 的 defaultDBName 字段
      */
     @Size(max = 128, message = "Schema name is out of range [0, 128]")
-    @JsonIgnore
     private String defaultSchema;
     /**
      * 查询超时时间（单位：秒），对应 /api/v1 的 sessionTimeoutS 字段
@@ -346,14 +345,15 @@ public class ConnectionConfig
 
     @JsonProperty(access = Access.READ_ONLY)
     public DialectType getDialectType() {
-        return Objects.nonNull(this.type) ? this.type.getDialectType() : null;
+        return Objects.nonNull(this.type) ? this.type.getDialectType() : DialectType.UNKNOWN;
     }
 
     public String getDefaultSchema() {
         DialectType dialectType = getDialectType();
         if (dialectType == null) {
             return this.defaultSchema;
-        } else if (StringUtils.isNotBlank(this.defaultSchema)) {
+        }
+        if (StringUtils.isNotBlank(this.defaultSchema)) {
             return ConnectionSessionUtil.getUserOrSchemaString(this.defaultSchema, dialectType);
         }
         switch (dialectType) {

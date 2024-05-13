@@ -52,6 +52,10 @@ public enum ConnectType {
         return this == ODP_SHARDING_OB_MYSQL || this == ODP_SHARDING_OB_ORACLE;
     }
 
+    public boolean isDefaultSchemaRequired() {
+        return isODPSharding();
+    }
+
     public static ConnectType from(DialectType dialectType) {
         return dialectType == null ? null : ConnectType.valueOf(dialectType.toString());
     }

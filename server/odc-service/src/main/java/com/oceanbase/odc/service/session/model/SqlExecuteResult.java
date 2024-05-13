@@ -33,9 +33,9 @@ import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang3.exception.ExceptionUtils;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.oceanbase.odc.common.util.ExceptionUtils;
 import com.oceanbase.odc.common.util.TraceStage;
 import com.oceanbase.odc.common.util.TraceWatch;
 import com.oceanbase.odc.core.session.ConnectionSession;
@@ -241,7 +241,8 @@ public class SqlExecuteResult {
                     columnMap.put(ColumnIdentity.of(table, column.getName()), column);
                 }
             } catch (Exception e) {
-                log.warn("get column list failed, table={}, reason={}", table, e.getMessage());
+                log.warn("get column list failed, table={}, reason={}",
+                        table, ExceptionUtils.getSimpleReason(e));
             }
         }
         // attach column comment into field metadata
