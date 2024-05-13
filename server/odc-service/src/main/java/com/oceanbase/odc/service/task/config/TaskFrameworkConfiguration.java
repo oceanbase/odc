@@ -20,6 +20,7 @@ import java.util.Properties;
 
 import javax.sql.DataSource;
 
+import org.quartz.impl.StdSchedulerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -87,7 +88,7 @@ public class TaskFrameworkConfiguration {
         schedulerFactoryBean.setStartupDelay(taskFrameworkProperties.getQuartzStartDelaySeconds());
         schedulerFactoryBean.setTaskExecutor(executor);
         Properties properties = new Properties();
-        properties.put("org.quartz.jobStore.class", ResourceDetectJobStore.class.getName());
+        properties.put(StdSchedulerFactory.PROP_JOB_STORE_CLASS, ResourceDetectJobStore.class.getName());
         schedulerFactoryBean.setQuartzProperties(properties);
         return schedulerFactoryBean;
     }

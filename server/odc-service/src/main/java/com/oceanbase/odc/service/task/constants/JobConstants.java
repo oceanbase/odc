@@ -59,6 +59,8 @@ public class JobConstants {
 
     public static final String ODC_JOB_MONITORING = "odcJobMonitoring";
 
+    public static final String START_PREPARING_JOB = "startPreparingJob";
+
     public static final String ODC_EXECUTOR_CANNOT_BE_DESTROYED = "odcExecutorCannotBeDestroyed";
 
 

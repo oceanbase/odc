@@ -15,6 +15,8 @@
  */
 package com.oceanbase.odc.service.task.config;
 
+import static com.oceanbase.odc.service.task.constants.JobConstants.START_PREPARING_JOB;
+
 import java.util.LinkedList;
 import java.util.List;
 
@@ -61,7 +63,7 @@ public class ResourceDetectJobStore extends LocalDataSourceJobStore {
         TaskFrameworkProperties taskFrameworkProperties = TaskFrameworkPropertiesSupplier.getSupplier().get();
         // If resource is not available return false and give a chance to other node acquire trigger
         if (!ResourceDetectUtil.isResourceAvailable(taskFrameworkProperties)) {
-            if (TriggerKey.triggerKey("startPreparingJob", JobConstants.ODC_JOB_MONITORING)
+            if (TriggerKey.triggerKey(START_PREPARING_JOB, JobConstants.ODC_JOB_MONITORING)
                     .equals(trigger.getKey())) {
                 log.debug("StartPreparingJob trigger is discarded because no resource.");
                 return false;
