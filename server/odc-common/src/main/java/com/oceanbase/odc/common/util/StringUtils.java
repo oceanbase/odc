@@ -18,6 +18,7 @@ package com.oceanbase.odc.common.util;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
@@ -25,8 +26,12 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.apache.commons.text.StringSubstitutor;
+import org.springframework.util.CollectionUtils;
 
 import com.google.common.primitives.Chars;
+import com.oceanbase.tools.dbbrowser.model.DBTable;
+import com.oceanbase.tools.dbbrowser.model.DBTableColumn;
+import com.oceanbase.tools.dbbrowser.model.datatype.DataTypeUtil;
 
 import lombok.NonNull;
 
@@ -161,6 +166,31 @@ public abstract class StringUtils extends org.apache.commons.lang3.StringUtils {
         }
         String unwrap = unwrap(str, wrapChar);
         return unescapeUseDouble(unwrap, escapeChars);
+    }
+
+    public static void quoteColumnDefaultValuesForMySQL(DBTable table) {
+        if (!CollectionUtils.isEmpty(table.getColumns())) {
+            table.getColumns().forEach(column -> {
+                String defaultValue = column.getDefaultValue();
+                if (StringUtils.isNotEmpty(defaultValue)) {
+                    if (!isDefaultValueBuiltInFunction(column)) {
+                        column.setDefaultValue("'".concat(defaultValue.replace("'", "''")).concat("'"));
+                    }
+                }
+            });
+        }
+    }
+
+    /**
+     * Check whether the data_default contain built in function. Any of the synonyms for
+     * CURRENT_TIMESTAMP have the same meaning as CURRENT_TIMESTAMP. These are CURRENT_TIMESTAMP(),
+     * NOW(), LOCALTIME, LOCALTIME(), LOCALTIMESTAMP, and LOCALTIMESTAMP().
+     */
+    private static boolean isDefaultValueBuiltInFunction(DBTableColumn column) {
+        return com.oceanbase.tools.dbbrowser.util.StringUtils.isEmpty(column.getDefaultValue())
+                || (!DataTypeUtil.isStringType(column.getTypeName())
+                        && column.getDefaultValue().trim().toUpperCase(Locale.getDefault())
+                                .startsWith("CURRENT_TIMESTAMP"));
     }
 
     public static String singleLine(final String str) {
