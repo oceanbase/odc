@@ -440,7 +440,8 @@ public class DatabaseService {
         List<String> blockedDatabaseNames = listBlockedDatabaseNames(connection.getDialectType());
         DataSource teamDataSource = new OBConsoleDataSourceFactory(connection, true, false).getDataSource();
         ExecutorService executorService = Executors.newFixedThreadPool(1);
-        Future<Connection> connectionFuture = executorService.submit(() -> teamDataSource.getConnection());
+        Future<Connection> connectionFuture = executorService.submit(
+                (Callable<Connection>) teamDataSource::getConnection);
         Connection conn = null;
         try {
             conn = connectionFuture.get(5, TimeUnit.SECONDS);
