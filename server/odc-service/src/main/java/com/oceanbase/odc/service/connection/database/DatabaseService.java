@@ -16,7 +16,6 @@
 package com.oceanbase.odc.service.connection.database;
 
 import java.sql.Connection;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -30,6 +29,10 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 import java.util.stream.Collectors;
@@ -433,7 +436,11 @@ public class DatabaseService {
         Long currentProjectId = connection.getProjectId();
         List<String> blockedDatabaseNames = listBlockedDatabaseNames(connection.getDialectType());
         DataSource teamDataSource = new OBConsoleDataSourceFactory(connection, true, false).getDataSource();
-        try (Connection conn = teamDataSource.getConnection()) {
+        ExecutorService executorService = Executors.newFixedThreadPool(1);
+        Future<Connection> connectionFuture = executorService.submit(() -> teamDataSource.getConnection());
+        Connection conn = null;
+        try {
+            conn = connectionFuture.get(5, TimeUnit.SECONDS);
             List<DatabaseEntity> latestDatabases = dbSchemaService.listDatabases(connection.getDialectType(), conn)
                     .stream().map(database -> {
                         DatabaseEntity entity = new DatabaseEntity();
@@ -512,11 +519,20 @@ public class DatabaseService {
                         "update connect_database set table_count=?, collation_name=?, charset_name=?, project_id=? where id = ?";
                 jdbcTemplate.batchUpdate(update, toUpdate);
             }
-        } catch (SQLException e) {
+        } catch (ExecutionException e) {
             deleteDatabaseIfClusterNotExists(e, connection.getId(),
                     "update connect_database set is_existed = 0 where connection_id=?");
             throw new IllegalStateException(e);
+        } catch (Exception e) {
+            throw new IllegalStateException(e);
         } finally {
+            if (conn != null) {
+                try {
+                    conn.close();
+                } catch (Exception e) {
+                    log.warn("close connection failed, ", e);
+                }
+            }
             if (teamDataSource instanceof AutoCloseable) {
                 try {
                     ((AutoCloseable) teamDataSource).close();
@@ -542,7 +558,11 @@ public class DatabaseService {
 
     private void syncIndividualDataSources(ConnectionConfig connection) {
         DataSource individualDataSource = new OBConsoleDataSourceFactory(connection, true, false).getDataSource();
-        try (Connection conn = individualDataSource.getConnection()) {
+        ExecutorService executorService = Executors.newFixedThreadPool(1);
+        Future<Connection> connectionFuture = executorService.submit(() -> individualDataSource.getConnection());
+        Connection conn = null;
+        try {
+            conn = connectionFuture.get(5, TimeUnit.SECONDS);
             Set<String> latestDatabaseNames = dbSchemaService.showDatabases(connection.getDialectType(), conn);
             List<DatabaseEntity> existedDatabasesInDb =
                     databaseRepository.findByConnectionId(connection.getId()).stream()
@@ -578,11 +598,20 @@ public class DatabaseService {
             if (!CollectionUtils.isEmpty(toDelete)) {
                 jdbcTemplate.batchUpdate("delete from connect_database where id = ?", toDelete);
             }
-        } catch (SQLException e) {
+        } catch (ExecutionException e) {
             deleteDatabaseIfClusterNotExists(e, connection.getId(),
                     "delete from connect_database where connection_id=?");
             throw new IllegalStateException(e);
+        } catch (Exception e) {
+            throw new IllegalStateException(e);
         } finally {
+            if (conn != null) {
+                try {
+                    conn.close();
+                } catch (Exception e) {
+                    log.warn("close connection failed, ", e);
+                }
+            }
             if (individualDataSource instanceof AutoCloseable) {
                 try {
                     ((AutoCloseable) individualDataSource).close();
@@ -839,7 +868,7 @@ public class DatabaseService {
     }
 
 
-    private void deleteDatabaseIfClusterNotExists(SQLException e, Long connectionId, String deleteSql) {
+    private void deleteDatabaseIfClusterNotExists(ExecutionException e, Long connectionId, String deleteSql) {
         if (StringUtils.containsIgnoreCase(e.getMessage(), "cluster not exist")) {
             log.info(
                     "Cluster not exist, set existed to false for all databases in this data source, data source id = {}",
