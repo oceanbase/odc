@@ -16,6 +16,7 @@
 package com.oceanbase.odc.service.connection.database;
 
 import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -29,11 +30,13 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.locks.Lock;
 import java.util.stream.Collectors;
 
@@ -519,25 +522,32 @@ public class DatabaseService {
                         "update connect_database set table_count=?, collation_name=?, charset_name=?, project_id=? where id = ?";
                 jdbcTemplate.batchUpdate(update, toUpdate);
             }
-        } catch (ExecutionException e) {
-            deleteDatabaseIfClusterNotExists(e, connection.getId(),
-                    "update connect_database set is_existed = 0 where connection_id=?");
-            throw new IllegalStateException(e);
-        } catch (Exception e) {
-            throw new IllegalStateException(e);
+        } catch (ExecutionException | InterruptedException | TimeoutException e) {
+            log.warn("Failed to obtain the connection, errorMessage={}", e.getMessage());
+            Throwable rootCause = e.getCause();
+            if (rootCause instanceof SQLException) {
+                deleteDatabaseIfClusterNotExists((SQLException) rootCause,
+                        connection.getId(), "update connect_database set is_existed = 0 where connection_id=?");
+                throw new IllegalStateException(rootCause);
+            }
         } finally {
+            try {
+                executorService.shutdownNow();
+            } catch (Exception e) {
+                // eat the exception
+            }
             if (conn != null) {
                 try {
                     conn.close();
                 } catch (Exception e) {
-                    log.warn("close connection failed, ", e);
+                    log.warn("Close connection failed, errorMessage={}", e.getMessage());
                 }
             }
             if (teamDataSource instanceof AutoCloseable) {
                 try {
                     ((AutoCloseable) teamDataSource).close();
                 } catch (Exception e) {
-                    log.warn("Failed to close datasource", e);
+                    log.warn("Failed to close datasource, errorMessgae={}", e.getMessage());
                 }
             }
         }
@@ -559,7 +569,8 @@ public class DatabaseService {
     private void syncIndividualDataSources(ConnectionConfig connection) {
         DataSource individualDataSource = new OBConsoleDataSourceFactory(connection, true, false).getDataSource();
         ExecutorService executorService = Executors.newFixedThreadPool(1);
-        Future<Connection> connectionFuture = executorService.submit(() -> individualDataSource.getConnection());
+        Future<Connection> connectionFuture = executorService.submit(
+                (Callable<Connection>) individualDataSource::getConnection);
         Connection conn = null;
         try {
             conn = connectionFuture.get(5, TimeUnit.SECONDS);
@@ -598,25 +609,32 @@ public class DatabaseService {
             if (!CollectionUtils.isEmpty(toDelete)) {
                 jdbcTemplate.batchUpdate("delete from connect_database where id = ?", toDelete);
             }
-        } catch (ExecutionException e) {
-            deleteDatabaseIfClusterNotExists(e, connection.getId(),
-                    "delete from connect_database where connection_id=?");
-            throw new IllegalStateException(e);
-        } catch (Exception e) {
-            throw new IllegalStateException(e);
+        } catch (ExecutionException | InterruptedException | TimeoutException e) {
+            log.warn("Failed to obtain the connection, errorMessage={}", e.getMessage());
+            Throwable rootCause = e.getCause();
+            if (rootCause instanceof SQLException) {
+                deleteDatabaseIfClusterNotExists((SQLException) rootCause,
+                        connection.getId(), "delete from connect_database where connection_id=?");
+                throw new IllegalStateException(rootCause);
+            }
         } finally {
+            try {
+                executorService.shutdownNow();
+            } catch (Exception e) {
+                // eat the exception
+            }
             if (conn != null) {
                 try {
                     conn.close();
                 } catch (Exception e) {
-                    log.warn("close connection failed, ", e);
+                    log.warn("Close connection failed, errorMessage={}", e.getMessage());
                 }
             }
             if (individualDataSource instanceof AutoCloseable) {
                 try {
                     ((AutoCloseable) individualDataSource).close();
                 } catch (Exception e) {
-                    log.warn("Failed to close datasource", e);
+                    log.warn("Failed to close datasource, errorMessgae={}", e.getMessage());
                 }
             }
         }
@@ -868,7 +886,7 @@ public class DatabaseService {
     }
 
 
-    private void deleteDatabaseIfClusterNotExists(ExecutionException e, Long connectionId, String deleteSql) {
+    private void deleteDatabaseIfClusterNotExists(SQLException e, Long connectionId, String deleteSql) {
         if (StringUtils.containsIgnoreCase(e.getMessage(), "cluster not exist")) {
             log.info(
                     "Cluster not exist, set existed to false for all databases in this data source, data source id = {}",
