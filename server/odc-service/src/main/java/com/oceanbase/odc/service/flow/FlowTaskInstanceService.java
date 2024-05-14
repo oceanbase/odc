@@ -297,33 +297,8 @@ public class FlowTaskInstanceService {
             TaskEntity taskEntity = this.taskService.detail(taskId);
             // When ParametersJson()==null, pre-check is for single database;When ParametersJson()!=null,
             // pre-check is for multiple databases
-            if (taskEntity.getParametersJson() == null) {
-                PreCheckTaskResult result = JsonUtils.fromJson(taskEntity.getResultJson(), PreCheckTaskResult.class);
-                if (Objects.isNull(result)) {
-                    return Collections.emptyList();
-                }
-                SqlCheckTaskResult checkTaskResult = result.getSqlCheckResult();
-                ExecutorInfo info = result.getExecutorInfo();
-                if (!this.dispatchChecker.isThisMachine(info)) {
-                    DispatchResponse response = requestDispatcher.forward(info.getHost(), info.getPort());
-                    return response.getContentByType(
-                            new TypeReference<ListResponse<SqlCheckTaskResult>>() {}).getData().getContents();
-                }
-                String dir = FileManager.generateDir(FileBucket.PRE_CHECK) + File.separator + taskId;
-                Verify.notNull(checkTaskResult.getFileName(), "SqlCheckResultFileName");
-                File jsonFile = new File(dir + File.separator + checkTaskResult.getFileName());
-                if (!jsonFile.exists()) {
-                    throw new NotFoundException(ErrorCodes.NotFound, new Object[] {
-                            ResourceType.ODC_FILE.getLocalizedMessage(), "file", jsonFile.getName()},
-                            "File is not found");
-                }
-                String content = FileUtils.readFileToString(jsonFile, Charsets.UTF_8);
-                checkTaskResult = JsonUtils.fromJson(content, SqlCheckTaskResult.class);
-                checkTaskResult.setFileName(null);
-                result.setSqlCheckResult(checkTaskResult);
-                result.setExecutorInfo(null);
-                return Collections.singletonList(result);
-            } else {
+            FlowInstanceDetailResp detail = flowInstanceService.detail(flowInstanceId);
+            if (detail.getType() == TaskType.MULTIPLE_ASYNC) {
                 MultiplePreCheckTaskResult multiplePreCheckTaskResult =
                         JsonUtils.fromJson(taskEntity.getResultJson(), MultiplePreCheckTaskResult.class);
                 if (Objects.isNull(multiplePreCheckTaskResult)) {
@@ -367,6 +342,32 @@ public class FlowTaskInstanceService {
                 multiplePreCheckTaskResult.setMultipleSqlCheckTaskResult(multipleSqlCheckTaskResult);
                 multiplePreCheckTaskResult.setExecutorInfo(null);
                 return Collections.singletonList(multiplePreCheckTaskResult);
+            } else {
+                PreCheckTaskResult result = JsonUtils.fromJson(taskEntity.getResultJson(), PreCheckTaskResult.class);
+                if (Objects.isNull(result)) {
+                    return Collections.emptyList();
+                }
+                SqlCheckTaskResult checkTaskResult = result.getSqlCheckResult();
+                ExecutorInfo info = result.getExecutorInfo();
+                if (!this.dispatchChecker.isThisMachine(info)) {
+                    DispatchResponse response = requestDispatcher.forward(info.getHost(), info.getPort());
+                    return response.getContentByType(
+                            new TypeReference<ListResponse<SqlCheckTaskResult>>() {}).getData().getContents();
+                }
+                String dir = FileManager.generateDir(FileBucket.PRE_CHECK) + File.separator + taskId;
+                Verify.notNull(checkTaskResult.getFileName(), "SqlCheckResultFileName");
+                File jsonFile = new File(dir + File.separator + checkTaskResult.getFileName());
+                if (!jsonFile.exists()) {
+                    throw new NotFoundException(ErrorCodes.NotFound, new Object[] {
+                            ResourceType.ODC_FILE.getLocalizedMessage(), "file", jsonFile.getName()},
+                            "File is not found");
+                }
+                String content = FileUtils.readFileToString(jsonFile, Charsets.UTF_8);
+                checkTaskResult = JsonUtils.fromJson(content, SqlCheckTaskResult.class);
+                checkTaskResult.setFileName(null);
+                result.setSqlCheckResult(checkTaskResult);
+                result.setExecutorInfo(null);
+                return Collections.singletonList(result);
             }
 
         } else {

@@ -21,13 +21,10 @@ import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 
-import com.oceanbase.odc.core.authority.SecurityManager;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.constant.ResourceRoleName;
 import com.oceanbase.odc.core.shared.constant.TaskType;
 import com.oceanbase.odc.core.shared.exception.BadArgumentException;
-import com.oceanbase.odc.metadb.collaboration.ProjectRepository;
-import com.oceanbase.odc.metadb.connection.DatabaseRepository;
 import com.oceanbase.odc.service.collaboration.project.ProjectService;
 import com.oceanbase.odc.service.collaboration.project.model.Project;
 import com.oceanbase.odc.service.connection.database.DatabaseService;
@@ -38,10 +35,7 @@ import com.oceanbase.odc.service.flow.processor.FlowTaskPreprocessor;
 import com.oceanbase.odc.service.flow.processor.Preprocessor;
 import com.oceanbase.odc.service.flow.task.model.MultipleDatabaseChangeParameters;
 import com.oceanbase.odc.service.flow.util.DescriptionGenerator;
-import com.oceanbase.odc.service.iam.HorizontalDataPermissionValidator;
 import com.oceanbase.odc.service.iam.ProjectPermissionValidator;
-import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
-import com.oceanbase.odc.service.schedule.ScheduleService;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -55,24 +49,9 @@ public class MultipleDatabaseChangePreprocessor implements Preprocessor {
     @Autowired
     private DatabaseService databaseService;
     @Autowired
-    private AuthenticationFacade authenticationFacade;
-    @Autowired
-    private ScheduleService scheduleService;
-    @Autowired
-    private List<Preprocessor> preprocessors;
-    @Autowired
     private ProjectService projectService;
     @Autowired
-    private DatabaseRepository databaseRepository;
-    @Autowired
-    private ProjectRepository projectRepository;
-    @Autowired
-    private HorizontalDataPermissionValidator horizontalDataPermissionValidator;
-    @Autowired
     private ProjectPermissionValidator projectPermissionValidator;
-
-    @Autowired
-    private SecurityManager securityManager;
 
     @Override
     public void process(CreateFlowInstanceReq req) {

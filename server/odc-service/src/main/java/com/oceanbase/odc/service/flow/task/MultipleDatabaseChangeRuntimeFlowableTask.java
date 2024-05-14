@@ -230,11 +230,11 @@ public class MultipleDatabaseChangeRuntimeFlowableTask extends BaseODCFlowTaskDe
             }
             if (this.batchId == batchSum - 1) {
                 List<FlowInstanceEntity> flowInstanceByParentId = flowInstanceService.getFlowInstanceByParentId(
-                    getFlowInstanceId());
+                        getFlowInstanceId());
                 boolean allSucceeded = flowInstanceByParentId.stream()
-                    .map(FlowInstanceEntity::getId)
-                    .map(flowInstanceService::detail)
-                    .allMatch(detail -> FlowStatus.EXECUTION_SUCCEEDED.equals(detail.getStatus()));
+                        .map(FlowInstanceEntity::getId)
+                        .map(flowInstanceService::detail)
+                        .allMatch(detail -> FlowStatus.EXECUTION_SUCCEEDED.equals(detail.getStatus()));
                 if (allSucceeded) {
                     updateFlowInstanceStatus(FlowStatus.EXECUTION_SUCCEEDED);
                 } else {
@@ -276,7 +276,7 @@ public class MultipleDatabaseChangeRuntimeFlowableTask extends BaseODCFlowTaskDe
         Map<Long, FlowInstanceDetailResp> map = flowInstanceDetailRespList.stream().collect(
                 Collectors.toMap(flowInstanceDetailResp -> flowInstanceDetailResp.getDatabase().getId(),
                         flowInstanceDetailResp -> flowInstanceDetailResp));
-        // todo 有安全风险
+        // todo 数据显示有安全风险
         List<Long> idList = this.orderedDatabaseIds.stream().flatMap(Collection::stream).collect(Collectors.toList());
         List<Database> databaseList = databaseService.listDatabasesDetailsByIds(idList);
         ArrayList<DatabaseChangingRecord> databaseChangingRecords = new ArrayList<>();
