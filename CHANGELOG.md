@@ -1,4 +1,87 @@
-## 4.2.4 (2024-04-02)
+## 4.2.4_bp2 (2024-05-14)
+
+### Bug fixes
+
+Data source
+
+- Unable to connect to ODP-Sharding data source [#2339](https://github.com/oceanbase/odc/pull/2339)
+
+User Management
+
+- Unable to delete OWNER or DBA user of archived project [#2359](https://github.com/oceanbase/odc/pull/2359)
+
+Shadow table synchronization
+
+- The generated statement syntax error [#2388](https://github.com/oceanbase/odc/pull/2388)
+
+Data Security
+
+- When there is an invalid database with the same name, desensitization fails [#2385](https://github.com/oceanbase/odc/pull/2385)
+
+Command line window
+
+- When entering a long SQL, the statement cannot be fully echoed [#2353](https://github.com/oceanbase/odc/pull/2353)
+
+Database archiving/cleaning
+
+- Status was incorrectly set to success when the task was terminated [#2340](https://github.com/oceanbase/odc/pull/2340)
+- There is no problem with OceanBase MySQL archiving custom table name reports [#2313](https://github.com/oceanbase/odc/pull/2313)
+
+ResultSet export
+
+- Timeout occurred when exporting result set [#2315](https://github.com/oceanbase/odc/pull/2315)
+
+Notification
+
+- Editing the message channel will cause the signing key to be lost [#2314](https://github.com/oceanbase/odc/pull/2314)
+
+Partition plan
+
+- Partitions are missing and partitions are not created in OceanBase 4.x version [#2327](https://github.com/oceanbase/odc/pull/2327)
+- Unable to initiate partition scheduled tasks in versions below OceanBase 3.x [#2323](https://github.com/oceanbase/odc/pull/2323)
+- Partition intervals are not shown in partition plan details
+
+System integration
+
+- In third-party user integration, users who modify extra_properties will no longer be able to log in to ODC [#2336](https://github.com/oceanbase/odc/pull/2336)
+- SQL console cannot be opened when using OAuth and bastion host integration at the same time [#2253](https://github.com/oceanbase/odc/pull/2253)
+
+Other
+
+- Work orders whose life cycle spans the release process cannot be promoted normally [#2065](https://github.com/oceanbase/odc/pull/2065)
+- Unable to manually execute live termination tasks [#2272](https://github.com/oceanbase/odc/pull/2272)
+
+### Usability improvements
+
+- The partition plan adds copywriting tips for the case where no partition pre-creation statement or partition deletion statement is generated [#2351](https://github.com/oceanbase/odc/pull/2351)
+- OceanBase versions before 4.2 disable full-link diagnostics [#2219](https://github.com/oceanbase/odc/pull/2219)
+
+### Dependency library upgrade
+
+- Upgrade data-lifecycle-manager version to 1.1.1 [#2281](https://github.com/oceanbase/odc/pull/2281)
+
+### Security
+
+- Remove snappy-java dependency [#2317](https://github.com/oceanbase/odc/pull/2317)
+- Data desensitization increases verification to avoid DDos risks caused by BigDecimal [#2271](https://github.com/oceanbase/odc/pull/2271)
+
+## 4.2.4_bp1 (2024-04-12)
+
+### Bug fixes
+
+PL debugging
+
+- PL debug timeout parameter cannot be set via connection initialization script [#2179](https://github.com/oceanbase/odc/pull/2179)
+
+Other
+
+- Application startup failed [#2158](https://github.com/oceanbase/odc/pull/2158)
+
+### Security
+
+- Upgrade okio-jvm version to 3.4.0 [#2200](https://github.com/oceanbase/odc/pull/2200)
+
+## 4.2.4 (2024-04-03)
 
 ### Feature Changes
 
