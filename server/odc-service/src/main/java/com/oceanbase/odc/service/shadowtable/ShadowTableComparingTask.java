@@ -17,7 +17,6 @@ package com.oceanbase.odc.service.shadowtable;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.Callable;
@@ -45,8 +44,6 @@ import com.oceanbase.odc.service.shadowtable.model.TableComparingResult;
 import com.oceanbase.tools.dbbrowser.editor.DBTableEditor;
 import com.oceanbase.tools.dbbrowser.model.DBConstraintType;
 import com.oceanbase.tools.dbbrowser.model.DBTable;
-import com.oceanbase.tools.dbbrowser.model.DBTableColumn;
-import com.oceanbase.tools.dbbrowser.model.datatype.DataTypeUtil;
 
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
@@ -108,7 +105,7 @@ public class ShadowTableComparingTask implements Callable<Void> {
                                 .filter(entry -> allRealTableNames.contains(entry.getKey()))
                                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
                 if (connectionSession.getDialectType().isMysql()) {
-                    tableName2Tables.values().stream().forEach(table -> quoteColumnDefaultValues(table));
+                    tableName2Tables.values().forEach(StringUtils::quoteColumnDefaultValues);
                 }
 
             } catch (Exception ex) {
@@ -215,30 +212,5 @@ public class ShadowTableComparingTask implements Callable<Void> {
                 .currentIdentity(TableIdentity.of(req.getCurrent().getSchemaName(), req.getCurrent().getName()))
                 .previousIdentity(TableIdentity.of(req.getPrevious().getSchemaName(), req.getPrevious().getName()))
                 .build();
-    }
-
-    private void quoteColumnDefaultValues(DBTable table) {
-        if (!CollectionUtils.isEmpty(table.getColumns())) {
-            table.getColumns().forEach(column -> {
-                String defaultValue = column.getDefaultValue();
-                if (StringUtils.isNotEmpty(defaultValue)) {
-                    if (!isDefaultValueBuiltInFunction(column)) {
-                        column.setDefaultValue("'".concat(defaultValue.replace("'", "''")).concat("'"));
-                    }
-                }
-            });
-        }
-    }
-
-    /**
-     * Check whether the data_default contain built in function. Any of the synonyms for
-     * CURRENT_TIMESTAMP have the same meaning as CURRENT_TIMESTAMP. These are CURRENT_TIMESTAMP(),
-     * NOW(), LOCALTIME, LOCALTIME(), LOCALTIMESTAMP, and LOCALTIMESTAMP().
-     */
-    private boolean isDefaultValueBuiltInFunction(DBTableColumn column) {
-        return com.oceanbase.tools.dbbrowser.util.StringUtils.isEmpty(column.getDefaultValue())
-                || (!DataTypeUtil.isStringType(column.getTypeName())
-                        && column.getDefaultValue().trim().toUpperCase(Locale.getDefault())
-                                .startsWith("CURRENT_TIMESTAMP"));
     }
 }
