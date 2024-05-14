@@ -30,4 +30,6 @@ public interface DatabaseChangeChangingOrderTemplateRepository
 
     Optional<DatabaseChangeChangingOrderTemplateEntity> findByNameAndProjectId(String name, Long projectId);
 
+    Optional<DatabaseChangeChangingOrderTemplateEntity> findByIdAndProjectId(Long id, Long projectId);
+
 }

@@ -1217,8 +1217,9 @@ public class FlowInstanceService {
         FlowTaskUtil.setCloudMainAccountId(variables, authenticationFacade.currentUser().getParentUid());
     }
 
-    private void initVariablesForMultiple(Map<String, Object> variables, TaskEntity taskEntity, TaskEntity preCheckTaskEntity,
-        List<ConnectionConfig> configs, List<RiskLevelDescriber> riskLevelDescribers) {
+    private void initVariablesForMultiple(Map<String, Object> variables, TaskEntity taskEntity,
+            TaskEntity preCheckTaskEntity,
+            List<ConnectionConfig> configs, List<RiskLevelDescriber> riskLevelDescribers) {
         FlowTaskUtil.setTaskId(variables, taskEntity.getId());
         if (Objects.nonNull(preCheckTaskEntity)) {
             FlowTaskUtil.setPreCheckTaskId(variables, preCheckTaskEntity.getId());
@@ -1227,7 +1228,7 @@ public class FlowInstanceService {
             FlowTaskUtil.setConnectionConfigList(variables, configs);
         }
         FlowTaskUtil.setExecutionExpirationInterval(variables,
-            taskEntity.getExecutionExpirationIntervalSeconds(), TimeUnit.SECONDS);
+                taskEntity.getExecutionExpirationIntervalSeconds(), TimeUnit.SECONDS);
         FlowTaskUtil.setParameters(variables, taskEntity.getParametersJson());
         if (taskEntity.getDatabaseName() != null) {
             FlowTaskUtil.setSchemaName(variables, taskEntity.getDatabaseName());
@@ -1397,19 +1398,20 @@ public class FlowInstanceService {
                 .build();
     }
 
-    private List<RiskLevelDescriber> buildRiskLevelDescriberList(CreateFlowInstanceReq req){
+    private List<RiskLevelDescriber> buildRiskLevelDescriberList(CreateFlowInstanceReq req) {
         TaskParameters parameters = req.getParameters();
         MultipleDatabaseChangeParameters parameter = (MultipleDatabaseChangeParameters) parameters;
         List<Database> databaseList = parameter.getDatabases();
         List<RiskLevelDescriber> riskLevelDescribers = new ArrayList<>();
         for (Database database : databaseList) {
-           riskLevelDescribers.add(RiskLevelDescriber.builder()
-               .projectName(database.getProject().getName())
-               .taskType(req.getTaskType().name())
-               .environmentId(database.getEnvironment() == null ? null : String.valueOf(database.getEnvironment().getId()))
-               .environmentName(database.getEnvironment() == null ? null : database.getEnvironment().getName())
-               .databaseName(database.getName())
-               .build()) ;
+            riskLevelDescribers.add(RiskLevelDescriber.builder()
+                    .projectName(database.getProject().getName())
+                    .taskType(req.getTaskType().name())
+                    .environmentId(database.getEnvironment() == null ? null
+                            : String.valueOf(database.getEnvironment().getId()))
+                    .environmentName(database.getEnvironment() == null ? null : database.getEnvironment().getName())
+                    .databaseName(database.getName())
+                    .build());
         }
         return riskLevelDescribers;
     }

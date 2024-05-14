@@ -40,6 +40,7 @@ import com.oceanbase.odc.service.databasechange.model.DatabaseChangingOrderTempl
 import com.oceanbase.odc.service.databasechange.model.DatabaseChangingOrderTemplateExists;
 import com.oceanbase.odc.service.databasechange.model.QueryDatabaseChangeChangingOrderParams;
 import com.oceanbase.odc.service.databasechange.model.QueryDatabaseChangeChangingOrderResp;
+import com.oceanbase.odc.service.databasechange.model.UpdateDatabaseChangeChangingOrderReq;
 
 import io.swagger.annotations.ApiOperation;
 import lombok.extern.slf4j.Slf4j;
@@ -66,7 +67,7 @@ public class DatabaseChangeController {
             notes = "modify database changing order template")
     @PutMapping("/changingorder/templates/{id:[\\d]+}")
     public SuccessResponse<Boolean> update(@PathVariable Long id,
-            @RequestBody CreateDatabaseChangeChangingOrderReq req) {
+            @RequestBody UpdateDatabaseChangeChangingOrderReq req) {
         return Responses
                 .success(templateService.update(id, req));
     }
@@ -115,7 +116,7 @@ public class DatabaseChangeController {
 
     @ApiOperation(value = "enables", notes = "Returns whether an database changing order template enables")
     @RequestMapping(value = "/changingorder/templates/enables", method = RequestMethod.GET)
-    public SuccessResponse<DatabaseChangingOrderTemplateEnables> enables(@RequestParam Long id ) {
+    public SuccessResponse<DatabaseChangingOrderTemplateEnables> enables(@RequestParam Long id) {
         return Responses.success(templateService.enables(id));
     }
 }

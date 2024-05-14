@@ -62,10 +62,6 @@ public class DatabaseChangeChangingOrderTemplateEntity {
     @Column(name = "database_sequences", nullable = false)
     private List<List<Long>> databaseSequences;
 
-
-    /**
-     * if this database actually existed in the datasource instance
-     */
     @Column(name = "is_enabled", nullable = false)
     private Boolean enabled;
 

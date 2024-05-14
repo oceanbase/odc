@@ -44,16 +44,16 @@ public class DatabaseChangeChangingOrderTemplateRepositoryTest extends ServiceTe
     private static final String TEMPLATE_NAME = "template";
 
     @Autowired
-    private DatabaseChangeChangingOrderTemplateRepository databaseChangeChangingOrderTemplateRepository;
+    private DatabaseChangeChangingOrderTemplateRepository templateRepository;
 
     @Before
     public void setUp() {
-        databaseChangeChangingOrderTemplateRepository.deleteAll();
+        templateRepository.deleteAll();
     }
 
     @After
     public void clear() {
-        databaseChangeChangingOrderTemplateRepository.deleteAll();
+        templateRepository.deleteAll();
     }
 
 
@@ -61,7 +61,7 @@ public class DatabaseChangeChangingOrderTemplateRepositoryTest extends ServiceTe
     public void existsByNameAndProjectId_checkTemplateExist_succeed() {
         create();
         Boolean result =
-                databaseChangeChangingOrderTemplateRepository.existsByNameAndProjectId(TEMPLATE_NAME, PROJECT_ID);
+                templateRepository.existsByNameAndProjectId(TEMPLATE_NAME, PROJECT_ID);
         assertTrue(result);
     }
 
@@ -69,7 +69,7 @@ public class DatabaseChangeChangingOrderTemplateRepositoryTest extends ServiceTe
     public void findByNameAndProjectId_getTemplate_succeed() {
         DatabaseChangeChangingOrderTemplateEntity databaseChangeChangingOrderTemplateEntity = create();
         Optional<DatabaseChangeChangingOrderTemplateEntity> result =
-                databaseChangeChangingOrderTemplateRepository.findByNameAndProjectId(TEMPLATE_NAME, PROJECT_ID);
+                templateRepository.findByNameAndProjectId(TEMPLATE_NAME, PROJECT_ID);
         assertNotNull(result.get());
         assertEquals(databaseChangeChangingOrderTemplateEntity, result.get());
     }
@@ -85,7 +85,7 @@ public class DatabaseChangeChangingOrderTemplateRepositoryTest extends ServiceTe
         orders.add(Arrays.asList(1L, 2L));
         orders.add(Arrays.asList(3L, 4L));
         databaseChangeChangingOrderTemplateEntity.setDatabaseSequences(orders);
-        return databaseChangeChangingOrderTemplateRepository.save(
+        return templateRepository.save(
                 databaseChangeChangingOrderTemplateEntity);
     }
 }

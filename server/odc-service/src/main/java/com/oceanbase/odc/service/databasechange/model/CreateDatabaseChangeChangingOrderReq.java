@@ -23,6 +23,8 @@ import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 
+import com.oceanbase.odc.common.validate.Name;
+
 import lombok.Data;
 
 @Data
@@ -30,6 +32,7 @@ public class CreateDatabaseChangeChangingOrderReq {
 
     @NotBlank
     @Size(max = 256, message = "name is out of range [0, 256]")
+    @Name(message = "Role name cannot start or end with whitespaces")
     private String name;
 
     @NotNull

@@ -35,7 +35,7 @@ public class RuntimeTaskConstants {
     public static final String INTERCEPT_SQL_STATUS = "interceptSqlStatus";
     public static final String INTEGRATION_TEMPLATE_VARIABLES = "integrationTemplateVariables";
     public static final Integer DEFAULT_TASK_CHECK_INTERVAL_SECONDS = 5;
-    public static final String RISKLEVEL_DESCRIBER      = "riskLevelDescriber";
+    public static final String RISKLEVEL_DESCRIBER = "riskLevelDescriber";
     public static final String RISKLEVEL_DESCRIBER_LIST = "riskLevelDescriberList";
 
     public static final String RISKLEVEL = "riskLevel";

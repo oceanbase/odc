@@ -172,7 +172,7 @@ public class PreCheckRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Void> {
             loadUploadFileInputStream(taskEntity.getTaskType(), taskEntity.getParametersJson());
             try {
                 if (taskEntity.getTaskType() == TaskType.MULTIPLE_ASYNC) {
-                    preCheck(taskEntity, preCheckTaskEntity,riskLevelDescriberList);
+                    preCheck(taskEntity, preCheckTaskEntity, riskLevelDescriberList);
                 } else {
                     preCheck(taskEntity, preCheckTaskEntity, riskLevelDescriber);
                 }
@@ -188,15 +188,16 @@ public class PreCheckRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Void> {
                     }
                 }
             }
-            if (taskEntity.getTaskType() == TaskType.MULTIPLE_ASYNC ){
-                if (this.multipleSqlCheckTaskResult!=null){
-                    List<SqlCheckTaskResult> sqlCheckTaskResultList
-                        = multipleSqlCheckTaskResult.getSqlCheckTaskResultList();
+            if (taskEntity.getTaskType() == TaskType.MULTIPLE_ASYNC) {
+                if (this.multipleSqlCheckTaskResult != null) {
+                    List<SqlCheckTaskResult> sqlCheckTaskResultList =
+                            multipleSqlCheckTaskResult.getSqlCheckTaskResultList();
                     for (int i = 0; i < sqlCheckTaskResultList.size(); i++) {
-                        if(sqlCheckTaskResultList!=null&&sqlCheckTaskResultList.get(i)!=null){
-                            riskLevelDescriberList.get(i).setSqlCheckResult(sqlCheckTaskResultList.get(i).getMaxLevel() + "");
+                        if (sqlCheckTaskResultList != null && sqlCheckTaskResultList.get(i) != null) {
+                            riskLevelDescriberList.get(i)
+                                    .setSqlCheckResult(sqlCheckTaskResultList.get(i).getMaxLevel() + "");
                         }
-                        if (this.overLimit){
+                        if (this.overLimit) {
                             riskLevelDescriberList.get(i).setOverLimit(true);
                         }
                     }
@@ -216,10 +217,11 @@ public class PreCheckRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Void> {
             if (taskEntity.getTaskType() == TaskType.MULTIPLE_ASYNC) {
                 List<RiskLevel> riskLevels = new ArrayList<>();
                 for (RiskLevelDescriber levelDescriber : riskLevelDescriberList) {
-                    riskLevels.add(approvalFlowConfigSelector.select(levelDescriber)) ;
+                    riskLevels.add(approvalFlowConfigSelector.select(levelDescriber));
                 }
-                riskLevel= riskLevels.stream().max(Comparator.comparingInt(RiskLevel::getLevel)).orElseThrow(()->new NotFoundException(
-                    ResourceType.ODC_RISK_LEVEL,"riskLevelList",riskLevels));
+                riskLevel = riskLevels.stream().max(Comparator.comparingInt(RiskLevel::getLevel))
+                        .orElseThrow(() -> new NotFoundException(
+                                ResourceType.ODC_RISK_LEVEL, "riskLevelList", riskLevels));
             } else {
                 riskLevel = approvalFlowConfigSelector.select(riskLevelDescriber);
             }
@@ -323,9 +325,10 @@ public class PreCheckRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Void> {
         }
     }
 
-    private void preCheck(TaskEntity taskEntity, TaskEntity preCheckTaskEntity,List<RiskLevelDescriber> riskLevelDescriberList) {
+    private void preCheck(TaskEntity taskEntity, TaskEntity preCheckTaskEntity,
+            List<RiskLevelDescriber> riskLevelDescriberList) {
         TaskType taskType = taskEntity.getTaskType();
-        doMultipleSqlCheckAndDatabasePermissionCheck(preCheckTaskEntity, riskLevelDescriberList,taskType);
+        doMultipleSqlCheckAndDatabasePermissionCheck(preCheckTaskEntity, riskLevelDescriberList, taskType);
         this.permissionCheckResult.setUnauthorizedDatabases(
                 this.permissionCheckResult.getUnauthorizedDatabases().stream().distinct().collect(Collectors.toList()));
         if (isIntercepted(this.sqlCheckResult, this.permissionCheckResult)) {
@@ -392,7 +395,8 @@ public class PreCheckRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Void> {
         }
     }
 
-    private void doMultipleSqlCheckAndDatabasePermissionCheck(TaskEntity preCheckTaskEntity, List<RiskLevelDescriber> riskLevelDescriberList,TaskType taskType) {
+    private void doMultipleSqlCheckAndDatabasePermissionCheck(TaskEntity preCheckTaskEntity,
+            List<RiskLevelDescriber> riskLevelDescriberList, TaskType taskType) {
         List<OffsetString> sqls = new ArrayList<>();
         this.overLimit = getSqlContentUntilOverLimit(sqls, preCheckTaskProperties.getMaxSqlContentBytes());
 
@@ -403,17 +407,17 @@ public class PreCheckRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Void> {
                 List<CheckViolation> violations = new ArrayList<>();
                 violations.addAll(this.sqlCheckService.check(
                         Long.valueOf(riskLevelDescriberList.get(i).getEnvironmentId()),
-                    databaseList.get(i).getName(), sqls, databaseList.get(i).getDataSource()));
+                        databaseList.get(i).getName(), sqls, databaseList.get(i).getDataSource()));
                 Map<String, Set<SqlType>> schemaName2SqlTypes = SchemaExtractor.listSchemaName2SqlTypes(
-                    sqls.stream().map(e -> SqlTuple.newTuple(e.getStr())).collect(Collectors.toList()),
-                    databaseList.get(i).getName(), databaseList.get(i).getDataSource().getDialectType());
+                        sqls.stream().map(e -> SqlTuple.newTuple(e.getStr())).collect(Collectors.toList()),
+                        databaseList.get(i).getName(), databaseList.get(i).getDataSource().getDialectType());
                 Map<String, Set<DatabasePermissionType>> schemaName2PermissionTypes = new HashMap<>();
                 for (Entry<String, Set<SqlType>> entry : schemaName2SqlTypes.entrySet()) {
                     Set<SqlType> sqlTypes = entry.getValue();
                     if (CollectionUtils.isNotEmpty(sqlTypes)) {
                         Set<DatabasePermissionType> permissionTypes =
-                            sqlTypes.stream().map(DatabasePermissionType::from)
-                                .filter(Objects::nonNull).collect(Collectors.toSet());
+                                sqlTypes.stream().map(DatabasePermissionType::from)
+                                        .filter(Objects::nonNull).collect(Collectors.toSet());
                         permissionTypes.addAll(DatabasePermissionType.from(taskType));
                         if (CollectionUtils.isNotEmpty(permissionTypes)) {
                             schemaName2PermissionTypes.put(entry.getKey(), permissionTypes);
@@ -421,9 +425,9 @@ public class PreCheckRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Void> {
                     }
                 }
                 unauthorizedDatabases =
-                    databaseService.filterUnauthorizedDatabases(schemaName2PermissionTypes,
-                        databaseList.get(i).getDataSource().getId(),
-                        true);
+                        databaseService.filterUnauthorizedDatabases(schemaName2PermissionTypes,
+                                databaseList.get(i).getDataSource().getId(),
+                                true);
                 if (this.permissionCheckResult == null) {
                     this.permissionCheckResult = new DatabasePermissionCheckResult(unauthorizedDatabases);
                 } else {

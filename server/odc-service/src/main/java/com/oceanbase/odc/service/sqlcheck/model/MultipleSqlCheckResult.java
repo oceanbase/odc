@@ -40,6 +40,6 @@ import lombok.ToString;
 @AllArgsConstructor
 public class MultipleSqlCheckResult implements Serializable {
     private static final long serialVersionUID = -5963934702315211337L;
-    private Database          database;
+    private Database database;
     private List<CheckResult> checkResultList;
 }

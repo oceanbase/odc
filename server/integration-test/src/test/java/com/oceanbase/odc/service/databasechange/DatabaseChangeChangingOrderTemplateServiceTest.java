@@ -49,6 +49,7 @@ import com.oceanbase.odc.metadb.databasechange.DatabaseChangeChangingOrderTempla
 import com.oceanbase.odc.service.databasechange.model.CreateDatabaseChangeChangingOrderReq;
 import com.oceanbase.odc.service.databasechange.model.QueryDatabaseChangeChangingOrderParams;
 import com.oceanbase.odc.service.databasechange.model.QueryDatabaseChangeChangingOrderResp;
+import com.oceanbase.odc.service.databasechange.model.UpdateDatabaseChangeChangingOrderReq;
 import com.oceanbase.odc.service.iam.ProjectPermissionValidator;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 
@@ -150,13 +151,12 @@ public class DatabaseChangeChangingOrderTemplateServiceTest extends ServiceTestE
         createDatabaseChangingOrderTemplate_saveEntity_succeed();
         DatabaseChangeChangingOrderTemplateEntity byNameAndProjectId =
                 templateRepository.findByNameAndProjectId(TEMPLATE_NAME, PROJECT_ID).get();
-        CreateDatabaseChangeChangingOrderReq req = new CreateDatabaseChangeChangingOrderReq();
+        UpdateDatabaseChangeChangingOrderReq req = new UpdateDatabaseChangeChangingOrderReq();
         req.setProjectId(PROJECT_ID);
         req.setName(TEMPLATE_RENAME);
         List<List<Long>> orders = new ArrayList<>();
         orders.add(Arrays.asList(1L, 2L));
         orders.add(Arrays.asList(3L, 4L));
-        req.setOrders(orders);
         Boolean result = templateService
                 .update(byNameAndProjectId.getId(), req);
         assertTrue(result);
@@ -168,13 +168,12 @@ public class DatabaseChangeChangingOrderTemplateServiceTest extends ServiceTestE
 
     @Test(expected = NotFoundException.class)
     public void modifyDatabaseChangingOrderTemplate_notFoundTemplate_throwIllegalArgumentException() {
-        CreateDatabaseChangeChangingOrderReq req = new CreateDatabaseChangeChangingOrderReq();
+        UpdateDatabaseChangeChangingOrderReq req = new UpdateDatabaseChangeChangingOrderReq();
         req.setProjectId(PROJECT_ID);
         req.setName(TEMPLATE_RENAME);
         List<List<Long>> orders = new ArrayList<>();
         List<Long> list = Arrays.asList(1L, 2L);
         orders.add(list);
-        req.setOrders(orders);
         when(authenticationFacade.currentUserId()).thenReturn(1L);
         when(authenticationFacade.currentOrganizationId()).thenReturn(1L);
         templateService.update(1L, req);
@@ -185,10 +184,9 @@ public class DatabaseChangeChangingOrderTemplateServiceTest extends ServiceTestE
         createDatabaseChangingOrderTemplate_saveEntity_succeed();
         DatabaseChangeChangingOrderTemplateEntity byNameAndProjectId =
                 templateRepository.findByNameAndProjectId(TEMPLATE_NAME, PROJECT_ID).get();
-        CreateDatabaseChangeChangingOrderReq req = new CreateDatabaseChangeChangingOrderReq();
+        UpdateDatabaseChangeChangingOrderReq req = new UpdateDatabaseChangeChangingOrderReq();
         req.setName(TEMPLATE_RENAME);
         req.setProjectId(2L);
-        req.setOrders(Arrays.asList(Arrays.asList(1L, 2L)));
         when(projectRepository.existsById(2L)).thenReturn(false);
         assertThrows(NotFoundException.class, () -> {
             templateService.update(byNameAndProjectId.getId(),
