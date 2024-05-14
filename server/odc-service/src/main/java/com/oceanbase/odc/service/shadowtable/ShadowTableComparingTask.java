@@ -105,7 +105,7 @@ public class ShadowTableComparingTask implements Callable<Void> {
                                 .filter(entry -> allRealTableNames.contains(entry.getKey()))
                                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
                 if (connectionSession.getDialectType().isMysql()) {
-                    tableName2Tables.values().forEach(StringUtils::quoteColumnDefaultValues);
+                    tableName2Tables.values().forEach(StringUtils::quoteColumnDefaultValuesForMySQL);
                 }
 
             } catch (Exception ex) {

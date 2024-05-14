@@ -168,7 +168,7 @@ public abstract class StringUtils extends org.apache.commons.lang3.StringUtils {
         return unescapeUseDouble(unwrap, escapeChars);
     }
 
-    public static void quoteColumnDefaultValues(DBTable table) {
+    public static void quoteColumnDefaultValuesForMySQL(DBTable table) {
         if (!CollectionUtils.isEmpty(table.getColumns())) {
             table.getColumns().forEach(column -> {
                 String defaultValue = column.getDefaultValue();

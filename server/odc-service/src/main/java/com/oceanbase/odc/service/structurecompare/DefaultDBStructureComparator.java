@@ -90,8 +90,8 @@ public class DefaultDBStructureComparator implements DBStructureComparator {
         Map<String, DBTable> tgtTableName2Table = tgtAccessor.getTables(tgtConfig.getSchemaName(), null);
 
         if (srcConfig.getConnectType().getDialectType().isMysql()) {
-            srcTableName2Table.values().forEach(StringUtils::quoteColumnDefaultValues);
-            tgtTableName2Table.values().forEach(StringUtils::quoteColumnDefaultValues);
+            srcTableName2Table.values().forEach(StringUtils::quoteColumnDefaultValuesForMySQL);
+            tgtTableName2Table.values().forEach(StringUtils::quoteColumnDefaultValuesForMySQL);
         }
         log.info(
                 "DefaultDBStructureComparator build source and target schema tables success, time consuming={} seconds",
