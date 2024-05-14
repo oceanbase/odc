@@ -200,6 +200,7 @@ public abstract class AbstractDlmJob implements OdcJob {
             taskUnit.setLogicTableConfig(logicTableConfig);
             taskUnit.setStatus(TaskStatus.PREPARING);
             taskUnit.setJobType(JobType.MIGRATE);
+            taskUnit.setSyncDBObjectTypes(parameters.getSyncTableStructure());
             taskUnits.add(taskUnit);
         });
         return taskUnits;
