@@ -25,6 +25,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import javax.sql.DataSource;
+
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.session.factory.DruidDataSourceFactory;
@@ -77,6 +79,8 @@ public class DLMTableStructureSynchronizer {
         } catch (Exception e) {
             log.warn("Sync table structure failed!", e);
         }
+        closeDataSource(sourceConfig.getDataSource());
+        closeDataSource(targetConfig.getDataSource());
     }
 
     private static DBStructureComparisonConfig initDBStructureComparisonConfig(ConnectionConfig config,
@@ -90,6 +94,16 @@ public class DLMTableStructureSynchronizer {
         blackListMap.put(DBObjectType.TABLE, new HashSet<>(tableNames));
         returnValue.setBlackListMap(blackListMap);
         return returnValue;
+    }
+
+    private static void closeDataSource(DataSource dataSource) {
+        if (dataSource instanceof AutoCloseable) {
+            try {
+                ((AutoCloseable) dataSource).close();
+            } catch (Exception e) {
+                log.warn("Structure comparison failed to close dataSource!", e);
+            }
+        }
     }
 
 }
