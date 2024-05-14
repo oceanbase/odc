@@ -99,6 +99,7 @@ public class DatabaseChangeChangingOrderTemplateService {
         databaseChangeChangingOrderTemplateEntity.setProjectId(req.getProjectId());
         databaseChangeChangingOrderTemplateEntity.setOrganizationId(organizationId);
         databaseChangeChangingOrderTemplateEntity.setDatabaseSequences(req.getOrders());
+        databaseChangeChangingOrderTemplateEntity.setEnabled(true);
         templateRepository.save(
                 databaseChangeChangingOrderTemplateEntity);
         return true;
@@ -121,6 +122,7 @@ public class DatabaseChangeChangingOrderTemplateService {
         databaseChangeChangingOrderTemplateEntity.setProjectId(req.getProjectId());
         databaseChangeChangingOrderTemplateEntity.setOrganizationId(organizationId);
         databaseChangeChangingOrderTemplateEntity.setDatabaseSequences(req.getOrders());
+        databaseChangeChangingOrderTemplateEntity.setEnabled(true);
         templateRepository.save(databaseChangeChangingOrderTemplateEntity);
         return true;
     }
