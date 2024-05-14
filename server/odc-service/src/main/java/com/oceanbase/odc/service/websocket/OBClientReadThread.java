@@ -29,6 +29,8 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class OBClientReadThread extends Thread {
+    // when client sends a row of data that exceeds a certain length, a ' \r' will be added, causing
+    // errors in the ODC front-end display. This charsequence should be filtered.
     private static final Pattern UNEXPECTED_SEQUENCE_PATTERN = Pattern.compile(" \\r");
 
     private Consumer<String> messageConsumer;
