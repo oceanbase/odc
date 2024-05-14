@@ -63,12 +63,12 @@ public class DataArchiveTask extends BaseTask<Boolean> {
                 log.info("Job is terminated,jobIdentity={}", context.getJobIdentity());
                 break;
             }
-            if (parameters.getJobType() == JobType.MIGRATE && parameters.isTableStructureSyncEnabled()) {
+            if (parameters.getJobType() == JobType.MIGRATE && !parameters.getSyncTableStructure().isEmpty()) {
                 try {
                     DLMTableStructureSynchronizer.sync(
                             DataSourceInfoMapper.toConnectionConfig(parameters.getSourceDs()),
                             DataSourceInfoMapper.toConnectionConfig(parameters.getTargetDs()),
-                            parameters.getTables().get(tableIndex).getTableName());
+                            parameters.getTables().get(tableIndex).getTableName(), parameters.getSyncTableStructure());
                 } catch (Exception e) {
                     log.warn("Failed to sync target table structure,table will be ignored,tableName={}",
                             parameters.getTables().get(tableIndex), e);

@@ -23,10 +23,9 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import com.oceanbase.odc.common.util.StringUtils;
-import com.oceanbase.odc.core.shared.constant.DialectType;
-import com.oceanbase.odc.metadb.structurecompare.StructureComparisonTaskResultEntity;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.session.factory.DruidDataSourceFactory;
 import com.oceanbase.odc.service.structurecompare.DefaultDBStructureComparator;
@@ -45,32 +44,38 @@ import lombok.extern.slf4j.Slf4j;
 public class DLMTableStructureSynchronizer {
 
     public static void sync(ConnectionConfig sourceConnectionConfig, ConnectionConfig targetConnectionConfig,
-            String tableName) throws SQLException {
+            String tableName, Set<DBObjectType> targetType) throws SQLException {
         HashSet<String> tableNames = new HashSet<>();
         tableNames.add(tableName);
-        sync(sourceConnectionConfig, targetConnectionConfig, tableNames);
+        sync(sourceConnectionConfig, targetConnectionConfig, tableNames, targetType);
     }
 
     public static void sync(ConnectionConfig sourceConnectionConfig, ConnectionConfig targetConnectionConfig,
-            Set<String> tableNames) throws SQLException {
+            Set<String> tableNames, Set<DBObjectType> targetType) throws SQLException {
         DBStructureComparisonConfig sourceConfig = initDBStructureComparisonConfig(
                 sourceConnectionConfig, tableNames);
         DBStructureComparisonConfig targetConfig = initDBStructureComparisonConfig(
                 targetConnectionConfig, tableNames);
         DefaultDBStructureComparator comparator = new DefaultDBStructureComparator();
-        List<DBObjectComparisonResult> compare = comparator.compare(sourceConfig, targetConfig);
-        StructureComparisonTaskResultEntity res = compare.get(0).toEntity(1L,
-                DialectType.OB_MYSQL);
-        if (StringUtils.isNotEmpty(res.getChangeSqlScript())) {
-            log.info("Start to sync target table structure,sqls={}", res.getChangeSqlScript());
-            try (Connection conn = targetConfig.getDataSource().getConnection()) {
-                conn.prepareStatement(res.getChangeSqlScript()).execute();
-            } catch (Exception e) {
-                log.warn("Sync table structure failed!", e);
+        List<DBObjectComparisonResult> results = comparator.compare(sourceConfig, targetConfig).stream()
+                .peek(o -> o.setSubDBObjectComparisonResult(o.getSubDBObjectComparisonResult().stream()
+                        .filter(sb -> targetType.contains(sb.getDbObjectType())).collect(
+                                Collectors.toList())))
+                .collect(Collectors.toList());
+        try (Connection conn = targetConfig.getDataSource().getConnection()) {
+            for (DBObjectComparisonResult result : results) {
+                String changeSqlScript =
+                        result.toEntity(1L, targetConnectionConfig.getDialectType()).getChangeSqlScript();
+                if (StringUtils.isNotEmpty(changeSqlScript)) {
+                    log.info("Start to sync target table structure,sqls={}", changeSqlScript);
+                    conn.prepareStatement(changeSqlScript).execute();
+                    log.info("Sync table structure success.");
+                } else {
+                    log.info("Table structure comparison has finished,no action is necessary.");
+                }
             }
-            log.info("Sync table structure success.");
-        } else {
-            log.info("Table structure comparison has finished,no action is necessary.");
+        } catch (Exception e) {
+            log.warn("Sync table structure failed!", e);
         }
     }
 
