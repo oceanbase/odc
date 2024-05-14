@@ -255,6 +255,7 @@ public class ProjectServiceTest extends ServiceTestEnv {
         entity.setOrganizationId(1L);
         entity.setLastModifierId(1L);
         entity.setCreatorId(1L);
+        entity.setUniqueIdentifier("ODC_" + UUID.randomUUID());
         return entity;
     }
 
