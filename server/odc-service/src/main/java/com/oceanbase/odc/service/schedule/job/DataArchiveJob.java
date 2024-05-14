@@ -29,7 +29,7 @@ import com.oceanbase.odc.service.db.browser.DBSchemaAccessors;
 import com.oceanbase.odc.service.dlm.DataSourceInfoBuilder;
 import com.oceanbase.odc.service.dlm.model.DataArchiveParameters;
 import com.oceanbase.odc.service.dlm.model.DataArchiveTableConfig;
-import com.oceanbase.odc.service.dlm.model.DlmTask;
+import com.oceanbase.odc.service.dlm.model.DlmJob;
 import com.oceanbase.odc.service.dlm.utils.DataArchiveConditionUtil;
 import com.oceanbase.odc.service.session.factory.DefaultConnectSessionFactory;
 import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
@@ -55,10 +55,10 @@ public class DataArchiveJob extends AbstractDlmJob {
 
         ScheduleTaskEntity taskEntity = (ScheduleTaskEntity) context.getResult();
 
-        List<DlmTask> taskUnits = getTaskUnits(taskEntity);
+        List<DlmJob> taskUnits = getTaskUnits(taskEntity);
 
         executeTask(taskEntity.getId(), taskUnits);
-        TaskStatus taskStatus = getTaskStatus(taskUnits);
+        TaskStatus taskStatus = getTaskStatus(taskEntity.getId());
         scheduleTaskRepository.updateStatusById(taskEntity.getId(), taskStatus);
 
         DataArchiveParameters parameters = JsonUtils.fromJson(taskEntity.getParametersJson(),
@@ -72,9 +72,9 @@ public class DataArchiveJob extends AbstractDlmJob {
     }
 
     @Override
-    public void initTask(DlmTask taskUnit) {
-        super.initTask(taskUnit);
-        createTargetTable(taskUnit);
+    public void initTask(DlmJob dlmJob) {
+        super.initTask(dlmJob);
+        createTargetTable(dlmJob);
     }
 
     private void executeInTaskFramework(JobExecutionContext context) {
@@ -126,7 +126,7 @@ public class DataArchiveJob extends AbstractDlmJob {
     /**
      * Create the table in the target database before migrating the data.
      */
-    private void createTargetTable(DlmTask dlmTask) {
+    private void createTargetTable(DlmJob dlmTask) {
 
         if (dlmTask.getSourceDs().getDialectType() != dlmTask.getTargetDs().getDialectType()) {
             log.info("Data sources of different types do not currently support automatic creation of target tables.");

@@ -27,10 +27,10 @@ import com.oceanbase.odc.metadb.schedule.ScheduleTaskEntity;
 import com.oceanbase.odc.service.dlm.DataSourceInfoBuilder;
 import com.oceanbase.odc.service.dlm.model.DataArchiveTableConfig;
 import com.oceanbase.odc.service.dlm.model.DataDeleteParameters;
-import com.oceanbase.odc.service.dlm.model.DlmTask;
+import com.oceanbase.odc.service.dlm.model.DlmJob;
 import com.oceanbase.odc.service.dlm.utils.DataArchiveConditionUtil;
 import com.oceanbase.odc.service.dlm.utils.DlmJobIdUtil;
-import com.oceanbase.tools.migrator.common.configure.LogicTableConfig;
+import com.oceanbase.tools.migrator.common.dto.JobParameter;
 import com.oceanbase.tools.migrator.common.enums.JobType;
 import com.oceanbase.tools.migrator.task.CheckMode;
 
@@ -58,41 +58,40 @@ public class DataDeleteJob extends AbstractDlmJob {
             return;
         }
 
-        List<DlmTask> dlmTasks = getTaskUnits(taskEntity);
+        List<DlmJob> dlmTasks = getTaskUnits(taskEntity);
 
         executeTask(taskEntity.getId(), dlmTasks);
-        TaskStatus taskStatus = getTaskStatus(dlmTasks);
+        TaskStatus taskStatus = getTaskStatus(taskEntity.getId());
         scheduleTaskRepository.updateStatusById(taskEntity.getId(), taskStatus);
     }
 
     @Override
-    public List<DlmTask> splitTask(ScheduleTaskEntity taskEntity) {
+    public List<DlmJob> splitTask(ScheduleTaskEntity taskEntity) {
 
         DataDeleteParameters parameters = JsonUtils.fromJson(taskEntity.getParametersJson(),
                 DataDeleteParameters.class);
-        List<DlmTask> dlmTasks = new LinkedList<>();
+        List<DlmJob> dlmTasks = new LinkedList<>();
         parameters.getTables().forEach(table -> {
             String condition = StringUtils.isNotEmpty(table.getConditionExpression())
                     ? DataArchiveConditionUtil.parseCondition(table.getConditionExpression(), parameters.getVariables(),
                             taskEntity.getFireTime())
                     : "";
-            DlmTask dlmTask = new DlmTask();
-
-            dlmTask.setId(DlmJobIdUtil.generateHistoryJobId(taskEntity.getJobName(), taskEntity.getJobGroup(),
+            DlmJob dlmJob = new DlmJob();
+            dlmJob.setScheduleTaskId(taskEntity.getId());
+            dlmJob.setId(DlmJobIdUtil.generateHistoryJobId(taskEntity.getJobName(), taskEntity.getJobGroup(),
                     taskEntity.getId(),
                     dlmTasks.size()));
-            dlmTask.setTableName(table.getTableName());
-            dlmTask.setSourceDatabaseId(parameters.getDatabaseId());
-            dlmTask.setTargetDatabaseId(parameters.getDatabaseId());
-            dlmTask.setFireTime(taskEntity.getFireTime());
-
-            LogicTableConfig logicTableConfig = new LogicTableConfig();
-            logicTableConfig.setMigrateRule(condition);
-            logicTableConfig.setCheckMode(CheckMode.MULTIPLE_GET);
-            dlmTask.setLogicTableConfig(logicTableConfig);
-            dlmTask.setStatus(TaskStatus.PREPARING);
-            dlmTask.setJobType(parameters.getDeleteByUniqueKey() ? JobType.QUICK_DELETE : JobType.DEIRECT_DELETE);
-            dlmTasks.add(dlmTask);
+            dlmJob.setTableName(table.getTableName());
+            dlmJob.setSourceDatabaseId(parameters.getDatabaseId());
+            dlmJob.setTargetDatabaseId(parameters.getDatabaseId());
+            dlmJob.setFireTime(taskEntity.getFireTime());
+            JobParameter parameter = new JobParameter();
+            parameter.setMigrateRule(condition);
+            parameter.setCheckMode(CheckMode.MULTIPLE_GET);
+            dlmJob.setParameters(parameter);
+            dlmJob.setStatus(TaskStatus.PREPARING);
+            dlmJob.setType(parameters.getDeleteByUniqueKey() ? JobType.QUICK_DELETE : JobType.DEIRECT_DELETE);
+            dlmTasks.add(dlmJob);
         });
         return dlmTasks;
     }

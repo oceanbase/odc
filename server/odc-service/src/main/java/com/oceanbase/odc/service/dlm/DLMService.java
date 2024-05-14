@@ -18,16 +18,26 @@ package com.oceanbase.odc.service.dlm;
 import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
+import com.oceanbase.odc.core.shared.constant.TaskStatus;
+import com.oceanbase.odc.metadb.dlm.DlmJobEntity;
+import com.oceanbase.odc.metadb.dlm.DlmJobRepository;
 import com.oceanbase.odc.metadb.dlm.DlmJobStatisticEntity;
 import com.oceanbase.odc.metadb.dlm.DlmJobStatisticRepository;
+import com.oceanbase.odc.service.dlm.model.DlmJob;
 import com.oceanbase.odc.service.dlm.model.PreviewSqlStatementsReq;
 import com.oceanbase.odc.service.dlm.utils.DataArchiveConditionUtil;
+import com.oceanbase.odc.service.dlm.utils.DlmJobMapper;
+import com.oceanbase.odc.service.schedule.model.DlmExecutionDetail;
+import com.oceanbase.tools.migrator.common.dto.JobParameter;
 
 /**
  * @Author：tinker
@@ -39,6 +49,8 @@ public class DLMService {
 
     @Autowired
     private DlmJobStatisticRepository dlmJobStatisticRepository;
+    @Autowired
+    private DlmJobRepository dlmJobRepository;
 
     @SkipAuthorize("do not access any resources")
     public List<String> previewSqlStatements(PreviewSqlStatementsReq req) {
@@ -52,6 +64,44 @@ public class DLMService {
                                     .parseCondition(tableConfig.getConditionExpression(), req.getVariables(), now)));
         });
         return returnValue;
+    }
+
+    public List<DlmExecutionDetail> getExecutionDetailByScheduleTaskId(Long scheduleTaskId) {
+
+        List<DlmExecutionDetail> details = dlmJobRepository.findByScheduleTaskId(scheduleTaskId).stream().map(o -> {
+            DlmExecutionDetail detail = new DlmExecutionDetail();
+            detail.setDlmJobId(o.getDlmJobId());
+            JobParameter jobParameter = JsonUtils.fromJson(o.getParameters(), JobParameter.class);
+            detail.setUserCondition(jobParameter.getMigrateRule());
+            detail.setTableName(o.getTableName());
+            return detail;
+        }).collect(Collectors.toList());
+        Map<String, DlmJobStatisticEntity> jobId2JobStatistic =
+                listJobStatisticByJobId(details.stream().map(DlmExecutionDetail::getDlmJobId).collect(
+                        Collectors.toList()))
+                                .stream().collect(Collectors.toMap(DlmJobStatisticEntity::getDlmJobId, o -> o));
+        details.forEach(detail -> {
+            DlmJobStatisticEntity jobStatistic = jobId2JobStatistic.get(detail.getDlmJobId());
+            detail.setReadRowCount(jobStatistic.getReadRowCount());
+            detail.setProcessedRowCount(jobStatistic.getProcessedRowCount());
+            detail.setReadRowsPerSecond(jobStatistic.getReadRowsPerSecond());
+            detail.setProcessedRowsPerSecond(jobStatistic.getProcessedRowsPerSecond());
+        });
+        return details;
+    }
+
+    public List<DlmJobEntity> createJob(List<DlmJob> jobs) {
+        List<DlmJobEntity> jobEntities = jobs.stream().map(DlmJobMapper::modelToEntity).collect(Collectors.toList());
+        return dlmJobRepository.saveAll(jobEntities);
+    }
+
+    public void updateDlmJobStatus(String dlmJobId, TaskStatus status) {
+        dlmJobRepository.updateStatusByDlmJobId(dlmJobId, status);
+    }
+
+    public List<DlmJob> findByScheduleTaskId(Long scheduleTaskId) {
+        return dlmJobRepository.findByScheduleTaskId(scheduleTaskId).stream().map(DlmJobMapper::entityToModel).collect(
+                Collectors.toList());
     }
 
     public List<DlmJobStatisticEntity> listJobStatisticByJobId(List<String> jobId) {

@@ -140,7 +140,7 @@ public class DLMJobStore implements IJobStore {
 
     @Override
     public void storeJobStatistic(JobMeta jobMeta) throws JobSqlException {
-        jobMeta.getJobStat().buildReportData();
+        jobMeta.getJobStat().refresh();
     }
 
     @Override

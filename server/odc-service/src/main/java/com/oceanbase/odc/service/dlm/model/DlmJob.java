@@ -20,7 +20,7 @@ import java.util.Date;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.oceanbase.odc.core.shared.constant.TaskStatus;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
-import com.oceanbase.tools.migrator.common.configure.LogicTableConfig;
+import com.oceanbase.tools.migrator.common.dto.JobParameter;
 import com.oceanbase.tools.migrator.common.enums.JobType;
 
 import lombok.Data;
@@ -33,11 +33,15 @@ import lombok.Data;
  */
 
 @Data
-public class DlmTask {
+public class DlmJob {
 
     private String id;
 
+    private Long scheduleTaskId;
+
     private String tableName;
+
+    private String targetTableName;
 
     private Date fireTime;
 
@@ -45,13 +49,11 @@ public class DlmTask {
 
     private Long targetDatabaseId;
 
-    private String taskGeneratorId;
-
-    private LogicTableConfig logicTableConfig;
+    private JobParameter parameters;
 
     private TaskStatus status;
 
-    private JobType jobType;
+    private JobType type;
 
 
     @JsonIgnore

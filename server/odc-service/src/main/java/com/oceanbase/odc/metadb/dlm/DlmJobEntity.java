@@ -20,6 +20,8 @@ import java.util.Date;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
@@ -28,37 +30,58 @@ import javax.persistence.Table;
 import org.hibernate.annotations.Generated;
 import org.hibernate.annotations.GenerationTime;
 
+import com.oceanbase.odc.core.shared.constant.TaskStatus;
+import com.oceanbase.tools.migrator.common.enums.JobType;
+
 import lombok.Data;
 
 /**
  * @Author：tinker
- * @Date: 2024/5/13 11:15
+ * @Date: 2024/5/13 20:49
  * @Descripition:
  */
 
 @Entity
+@Table(name = "dlm_job")
 @Data
-@Table(name = "dlm_job_statistic")
-public class DlmJobStatisticEntity {
+public class DlmJobEntity {
+
     @Id
     @Column(name = "id", nullable = false, updatable = false)
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(name = "schedule_task_id", nullable = false)
+    private Long scheduleTaskId;
+
     @Column(name = "dlm_job_id", nullable = false)
     private String dlmJobId;
 
-    @Column(name = "processed_row_count", nullable = false)
-    private Long processedRowCount;
+    @Column(name = "table_name", nullable = false)
+    private String tableName;
 
-    @Column(name = "read_row_count")
-    private Long readRowCount;
+    @Column(name = "target_table_name")
+    private String targetTableName;
 
-    @Column(name = "processed_rows_per_second")
-    private Long processedRowsPerSecond;
+    @Column(name = "fire_time", nullable = false)
+    private Date fireTime;
 
-    @Column(name = "read_rows_per_second")
-    private Long readRowsPerSecond;
+    @Column(name = "source_database_id", nullable = false)
+    private Long sourceDatabaseId;
+
+    @Column(name = "target_database_id")
+    private Long targetDatabaseId;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status", nullable = false)
+    private TaskStatus status;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "type", nullable = false)
+    private JobType type;
+
+    @Column(name = "parameters", nullable = false)
+    private String parameters;
 
     @Generated(GenerationTime.ALWAYS)
     @Column(name = "create_time", insertable = false, updatable = false)

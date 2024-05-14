@@ -19,9 +19,7 @@ import java.io.File;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 import org.apache.commons.io.input.ReversedLinesFileReader;
 import org.quartz.JobKey;
@@ -33,7 +31,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
@@ -42,12 +39,10 @@ import com.oceanbase.odc.core.shared.constant.TaskStatus;
 import com.oceanbase.odc.core.shared.exception.InternalServerError;
 import com.oceanbase.odc.core.shared.exception.NotFoundException;
 import com.oceanbase.odc.core.shared.exception.UnexpectedException;
-import com.oceanbase.odc.metadb.dlm.DlmJobStatisticEntity;
 import com.oceanbase.odc.metadb.schedule.ScheduleTaskEntity;
 import com.oceanbase.odc.metadb.schedule.ScheduleTaskRepository;
 import com.oceanbase.odc.metadb.schedule.ScheduleTaskSpecs;
 import com.oceanbase.odc.service.dlm.DLMService;
-import com.oceanbase.odc.service.dlm.model.DlmTask;
 import com.oceanbase.odc.service.quartz.QuartzJobService;
 import com.oceanbase.odc.service.quartz.util.ScheduleTaskUtils;
 import com.oceanbase.odc.service.schedule.model.DlmExecutionDetail;
@@ -93,25 +88,7 @@ public class ScheduleTaskService {
             case DATA_ARCHIVE_ROLLBACK:
             case DATA_ARCHIVE_DELETE:
             case DATA_DELETE: {
-                List<DlmExecutionDetail> details = JsonUtils.fromJson(scheduleTaskResp.getResultJson(),
-                        new TypeReference<List<DlmTask>>() {}).stream().map(o -> {
-                            DlmExecutionDetail detail = new DlmExecutionDetail();
-                            detail.setDlmJobId(o.getId());
-                            detail.setUserCondition(o.getLogicTableConfig().getMigrateRule());
-                            detail.setTableName(o.getTableName());
-                            return detail;
-                        }).collect(Collectors.toList());
-                Map<String, DlmJobStatisticEntity> jobId2JobStatistic = dlmService
-                        .listJobStatisticByJobId(details.stream().map(DlmExecutionDetail::getDlmJobId).collect(
-                                Collectors.toList()))
-                        .stream().collect(Collectors.toMap(DlmJobStatisticEntity::getDlmJobId, o -> o));
-                details.forEach(detail -> {
-                    DlmJobStatisticEntity jobStatistic = jobId2JobStatistic.get(detail.getDlmJobId());
-                    detail.setReadRowCount(jobStatistic.getReadRowCount());
-                    detail.setProcessedRowCount(jobStatistic.getProcessedRowCount());
-                    detail.setReadRowsPerSecond(jobStatistic.getReadRowsPerSecond());
-                    detail.setProcessedRowsPerSecond(jobStatistic.getProcessedRowsPerSecond());
-                });
+                List<DlmExecutionDetail> details = dlmService.getExecutionDetailByScheduleTaskId(id);
                 scheduleTaskResp.setExecutionDetails(JsonUtils.toJson(details));
             }
             default:
