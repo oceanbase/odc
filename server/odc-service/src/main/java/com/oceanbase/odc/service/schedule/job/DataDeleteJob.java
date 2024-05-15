@@ -82,6 +82,7 @@ public class DataDeleteJob extends AbstractDlmJob {
                     taskEntity.getId(),
                     dlmTasks.size()));
             dlmTask.setTableName(table.getTableName());
+            dlmTask.setTargetTableName(table.getTableName());
             dlmTask.setSourceDatabaseId(parameters.getDatabaseId());
             dlmTask.setTargetDatabaseId(parameters.getDatabaseId());
             dlmTask.setFireTime(taskEntity.getFireTime());

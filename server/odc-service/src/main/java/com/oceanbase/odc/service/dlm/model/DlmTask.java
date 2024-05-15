@@ -41,6 +41,8 @@ public class DlmTask {
 
     private String tableName;
 
+    private String targetTableName;
+
     private Date fireTime;
 
     private Long sourceDatabaseId;

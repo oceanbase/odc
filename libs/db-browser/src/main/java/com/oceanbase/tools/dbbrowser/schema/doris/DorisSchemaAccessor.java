@@ -458,7 +458,7 @@ public class DorisSchemaAccessor implements DBSchemaAccessor {
         sb.append(
                 "select TABLE_NAME, TABLE_SCHEMA, ORDINAL_POSITION, COLUMN_NAME, DATA_TYPE, COLUMN_TYPE, NUMERIC_SCALE, "
                         + "NUMERIC_PRECISION, "
-                        + "DATETIME_PRECISION, NUMERIC_SCALE, CHARACTER_MAXIMUM_LENGTH, EXTRA, CHARACTER_SET_NAME, "
+                        + "DATETIME_PRECISION, CHARACTER_MAXIMUM_LENGTH, EXTRA, CHARACTER_SET_NAME, "
                         + "COLLATION_NAME, COLUMN_COMMENT, COLUMN_DEFAULT, IS_NULLABLE, GENERATION_EXPRESSION, "
                         + "COLUMN_KEY from information_schema.columns where TABLE_SCHEMA = ");
         sb.value(schemaName);

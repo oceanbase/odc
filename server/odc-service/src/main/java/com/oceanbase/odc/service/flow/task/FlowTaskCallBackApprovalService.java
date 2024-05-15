@@ -46,6 +46,7 @@ import com.oceanbase.odc.metadb.flow.ServiceTaskInstanceRepository;
 import com.oceanbase.odc.service.flow.FlowableAdaptor;
 import com.oceanbase.odc.service.flow.model.FlowNodeStatus;
 import com.oceanbase.odc.service.flow.model.FlowNodeType;
+import com.oceanbase.odc.service.flow.task.model.RuntimeTaskConstants;
 import com.oceanbase.odc.service.schedule.ScheduleService;
 import com.oceanbase.odc.service.schedule.model.ScheduleStatus;
 
@@ -175,7 +176,7 @@ public class FlowTaskCallBackApprovalService {
         List<Task> tasks = flowableTaskService.createTaskQuery().taskName(taskName)
                 .processInstanceId(flowInstance.getProcessInstanceId())
                 .processDefinitionId(flowInstance.getProcessDefinitionId())
-                .list().stream().filter(a -> taskName != null && taskName.contains("callback"))
+                .list().stream().filter(a -> taskName != null && taskName.contains(RuntimeTaskConstants.CALLBACK_TASK))
                 .collect(Collectors.toList());
         if (CollectionUtils.isEmpty(tasks)) {
             log.info("Task not found, processInstanceId={}, processDefinitionId={}, taskName={}.",
@@ -192,7 +193,7 @@ public class FlowTaskCallBackApprovalService {
                 this.flowableAdaptor.getFlowableElementByType(flowTaskInstanceId, FlowNodeType.SERVICE_TASK,
                         FlowableElementType.USER_TASK).stream()
                         .filter(a -> a.getName() != null && a.getName()
-                                .contains("callback"))
+                                .contains(RuntimeTaskConstants.CALLBACK_TASK))
                         .collect(Collectors.toList());
         if (CollectionUtils.isEmpty(flowableElements)) {
             throw new IllegalStateException("No flowable element is found by id " + flowTaskInstanceId);

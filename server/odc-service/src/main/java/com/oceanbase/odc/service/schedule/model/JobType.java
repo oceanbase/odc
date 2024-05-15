@@ -38,4 +38,9 @@ public enum JobType {
         return this == DATA_ARCHIVE || this == DATA_ARCHIVE_DELETE || this == DATA_DELETE
                 || this == DATA_ARCHIVE_ROLLBACK;
     }
+
+    public boolean isSync() {
+        return this == DATA_ARCHIVE || this == DATA_ARCHIVE_DELETE || this == DATA_DELETE
+                || this == DATA_ARCHIVE_ROLLBACK;
+    }
 }

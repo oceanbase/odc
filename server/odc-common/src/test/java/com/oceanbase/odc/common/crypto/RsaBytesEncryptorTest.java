@@ -16,8 +16,6 @@
 
 package com.oceanbase.odc.common.crypto;
 
-import static org.junit.Assert.*;
-
 import java.nio.charset.StandardCharsets;
 
 import org.junit.Assert;
@@ -26,10 +24,13 @@ import org.junit.Test;
 import com.oceanbase.odc.common.crypto.RsaBytesEncryptor.RsaEncryptorType;
 import com.oceanbase.odc.common.lang.Pair;
 
+import lombok.extern.slf4j.Slf4j;
+
 /**
  * @author gaoda.xy
  * @date 2023/8/23 14:57
  */
+@Slf4j
 public class RsaBytesEncryptorTest extends EncryptorTest {
 
     private static final Pair<String, String> keyPair = RsaBytesEncryptor.generateBase64EncodeKeyPair();
@@ -80,6 +81,39 @@ public class RsaBytesEncryptorTest extends EncryptorTest {
         RsaBytesEncryptor decryptor = new RsaBytesEncryptor(RsaEncryptorType.DECRYPT_MODE, null, keyPair.right);
         String origin = "This is the origin string";
         decryptor.encrypt(origin.getBytes(StandardCharsets.UTF_8));
+    }
+
+    @Test
+    public void test_concurrentDecrypt() {
+        RsaBytesEncryptor encryptor = new RsaBytesEncryptor(RsaEncryptorType.ENCRYPT_MODE, keyPair.left, null);
+        RsaBytesEncryptor decryptor = new RsaBytesEncryptor(RsaEncryptorType.DECRYPT_MODE, null, keyPair.right);
+        String origin = "This is the origin string";
+        byte[] encrypted = encryptor.encrypt(origin.getBytes(StandardCharsets.UTF_8));
+        for (int i = 0; i < 100; i++) {
+            new Thread(() -> {
+                String decrypted = new String(decryptor.decrypt(encrypted), StandardCharsets.UTF_8);
+                Assert.assertEquals(origin, decrypted);
+            }).start();
+        }
+    }
+
+    @Test
+    public void test_decryptInvalidInput_andThenDecryptValidInput() {
+        RsaBytesEncryptor wrongEncryptor = new RsaBytesEncryptor(RsaEncryptorType.ENCRYPT_MODE,
+                RsaBytesEncryptor.generateBase64EncodeKeyPair(4096).left, null);
+        Pair<String, String> keyPair = RsaBytesEncryptor.generateBase64EncodeKeyPair();
+        RsaBytesEncryptor encryptor = new RsaBytesEncryptor(RsaEncryptorType.ENCRYPT_MODE, keyPair.left, null);
+        RsaBytesEncryptor decryptor = new RsaBytesEncryptor(RsaEncryptorType.DECRYPT_MODE, null, keyPair.right);
+        String origin = "This is the origin string";
+        byte[] encrypted = wrongEncryptor.encrypt(origin.getBytes(StandardCharsets.UTF_8));
+        try {
+            decryptor.decrypt(encrypted);
+        } catch (Exception e) {
+            log.info("Decrypt failed when encrypt content using wrong public key");
+        }
+        encrypted = encryptor.encrypt(origin.getBytes(StandardCharsets.UTF_8));
+        String decrypted = new String(decryptor.decrypt(encrypted), StandardCharsets.UTF_8);
+        Assert.assertEquals(origin, decrypted);
     }
 
 }

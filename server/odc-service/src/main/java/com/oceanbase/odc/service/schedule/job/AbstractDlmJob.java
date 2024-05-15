@@ -44,7 +44,6 @@ import com.oceanbase.odc.service.dlm.utils.DataArchiveConditionUtil;
 import com.oceanbase.odc.service.dlm.utils.DlmJobIdUtil;
 import com.oceanbase.odc.service.quartz.util.ScheduleTaskUtils;
 import com.oceanbase.odc.service.schedule.ScheduleService;
-import com.oceanbase.odc.service.schedule.flowtask.ScheduleTaskContextHolder;
 import com.oceanbase.odc.service.task.config.TaskFrameworkEnabledProperties;
 import com.oceanbase.odc.service.task.constants.JobParametersKeyConstants;
 import com.oceanbase.odc.service.task.executor.task.DataArchiveTask;
@@ -125,15 +124,13 @@ public abstract class AbstractDlmJob implements OdcJob {
                 taskUnit.setStatus(TaskStatus.DONE);
                 log.info("DLM job succeed,taskId={},unitId={}", taskId, taskUnit.getId());
             } catch (JobException e) {
-                // used to stop several sub-threads.
-                if (job.getJobMeta().isToStop()) {
-                    log.info("Data archive task is Interrupted,taskId={}", taskId);
-                    taskUnit.setStatus(TaskStatus.CANCELED);
-                } else {
-                    log.error("Data archive task is failed,taskId={},errorMessage={}", taskId, e);
-                    taskUnit.setStatus(TaskStatus.FAILED);
-                }
+                log.error("Data archive task is failed,taskId={}}", taskId, e);
+                taskUnit.setStatus(TaskStatus.FAILED);
             } finally {
+                if (job.getJobMeta().isToStop()) {
+                    log.info("{} task is Interrupted,taskId={}", job.getJobMeta().getJobType(), taskId);
+                    taskUnit.setStatus(TaskStatus.CANCELED);
+                }
                 scheduleTaskRepository.updateTaskResult(taskId, JsonUtils.toJson(taskUnits));
             }
         }
@@ -186,6 +183,7 @@ public abstract class AbstractDlmJob implements OdcJob {
                     taskEntity.getId(),
                     taskUnits.size()));
             taskUnit.setTableName(table.getTableName());
+            taskUnit.setTargetTableName(table.getTargetTableName());
             taskUnit.setSourceDatabaseId(parameters.getSourceDatabaseId());
             taskUnit.setTargetDatabaseId(parameters.getTargetDataBaseId());
             taskUnit.setFireTime(taskEntity.getFireTime());
@@ -249,8 +247,6 @@ public abstract class AbstractDlmJob implements OdcJob {
                     context.getJobDetail().getKey());
             return;
         }
-        ScheduleTaskEntity scheduleTask = (ScheduleTaskEntity) context.getResult();
-        ScheduleTaskContextHolder.trace(scheduleTask.getJobName(), scheduleTask.getJobGroup(), scheduleTask.getId());
         executeJob(context);
     }
 
@@ -265,7 +261,6 @@ public abstract class AbstractDlmJob implements OdcJob {
     @Override
     public void after(JobExecutionContext context) {
         scheduleService.refreshScheduleStatus(ScheduleTaskUtils.getScheduleId(context));
-        ScheduleTaskContextHolder.clear();
     }
 
     @Override
