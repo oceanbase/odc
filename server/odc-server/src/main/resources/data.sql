@@ -658,6 +658,9 @@ VALUES
   ( 'odc.rollback.query-data-batch-size', '1000', '生成备份回滚方案批量查询数据的数量' )
   ON DUPLICATE KEY UPDATE `id` = `id`;
 
+INSERT INTO config_system_configuration(`key`, `value`, `description`) VALUES('odc.osc.rate-limit.enabled','false', 'enable OSC rate limit')
+  ON DUPLICATE KEY UPDATE `id`=`id`;
+
 INSERT INTO config_system_configuration(`key`, `value`, `description`) VALUES('odc.osc.cloud.enabled-instance-ids',
   '', 'instances that enable OSC')
   ON DUPLICATE KEY UPDATE `id`=`id`;
