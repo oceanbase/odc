@@ -78,7 +78,10 @@ public class DLMJobFactory extends JobFactory {
         targetInfo.setQueryTimeout(taskConnectionQueryTimeout);
         log.info("Begin to create dlm job,params={}", jobParameter);
         // ClusterMeta and TenantMeta used to calculate min limit size.
-        JobReq req = new JobReq(historyJob, sourceInfo, targetInfo);
+        JobReq req = new JobReq();
+        req.setHistoryJob(historyJob);
+        req.setSourceDs(sourceInfo);
+        req.setTargetDs(targetInfo);
         return super.createJob(req);
     }
 
@@ -103,7 +106,10 @@ public class DLMJobFactory extends JobFactory {
         jobParameter.setReaderBatchSize(params.getRateLimit().getBatchSize());
         jobParameter.setWriterBatchSize(params.getRateLimit().getBatchSize());
 
-        JobReq req = new JobReq(historyJob, params.getSourceDs(), params.getTargetDs());
+        JobReq req = new JobReq();
+        req.setHistoryJob(historyJob);
+        req.setSourceDs(params.getSourceDs());
+        req.setTargetDs(params.getTargetDs());
         return createJob(req);
     }
 }
