@@ -16,6 +16,7 @@
 package com.oceanbase.odc.service.dlm;
 
 import java.sql.Connection;
+import java.sql.Date;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -23,14 +24,19 @@ import java.util.LinkedList;
 import java.util.List;
 
 import com.alibaba.druid.pool.DruidDataSource;
+import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
+import com.oceanbase.odc.service.dlm.model.DLMJobParameters;
+import com.oceanbase.odc.service.dlm.model.DlmJob;
 import com.oceanbase.odc.service.dlm.model.RateLimitConfiguration;
 import com.oceanbase.odc.service.dlm.utils.DlmJobIdUtil;
 import com.oceanbase.odc.service.session.factory.DruidDataSourceFactory;
+import com.oceanbase.tools.migrator.common.configure.DataSourceInfo;
 import com.oceanbase.tools.migrator.common.dto.JobStatistic;
 import com.oceanbase.tools.migrator.common.dto.TableSizeInfo;
 import com.oceanbase.tools.migrator.common.dto.TaskGenerator;
 import com.oceanbase.tools.migrator.common.element.PrimaryKey;
+import com.oceanbase.tools.migrator.common.enums.JobType;
 import com.oceanbase.tools.migrator.common.enums.TaskStatus;
 import com.oceanbase.tools.migrator.common.exception.JobException;
 import com.oceanbase.tools.migrator.common.exception.JobSqlException;
@@ -64,6 +70,63 @@ public class DLMJobStore implements IJobStore {
     public void destroy() {
         dataSource.close();
     }
+
+    public List<DlmJob> getDlmJobs(Long scheduleTaskId) throws SQLException {
+        try (Connection conn = dataSource.getConnection()) {
+            PreparedStatement ps = conn.prepareStatement("select * from dlm_job where schedule_task_id = ?");
+            ps.setLong(1, scheduleTaskId);
+            ResultSet resultSet = ps.executeQuery();
+            List<DlmJob> dlmJobs = new LinkedList<>();
+            while (resultSet.next()) {
+                DlmJob dlmJob = new DlmJob();
+                dlmJob.setDlmJobId(resultSet.getString("dlm_job_id"));
+                dlmJob.setType(JobType.valueOf(resultSet.getString("type")));
+                dlmJob.setTableName(resultSet.getString("table_name"));
+                dlmJob.setTargetTableName(resultSet.getString("target_table_name"));
+                dlmJob.setFireTime(resultSet.getDate("fire_time"));
+                dlmJob.setStatus(
+                        com.oceanbase.odc.core.shared.constant.TaskStatus.valueOf(resultSet.getString("status")));
+                dlmJob.setScheduleTaskId(resultSet.getLong("schedule_task_id"));
+                dlmJob.setSourceDatasourceInfo(JsonUtils.fromJson(resultSet.getString("source_datasource_info"),
+                        DataSourceInfo.class));
+                dlmJob.setTargetDatasourceInfo(JsonUtils.fromJson(resultSet.getString("target_datasource_info"),
+                        DataSourceInfo.class));
+                dlmJob.setParameters(JsonUtils.fromJson(resultSet.getString("parameters"), DLMJobParameters.class));
+                dlmJobs.add(dlmJob);
+            }
+            return dlmJobs;
+        }
+    }
+
+    public void storeDlmJob(List<DlmJob> dlmJobs) throws SQLException {
+        String sql = "INSERT INTO dlm_job (schedule_task_id, dlm_job_id, table_name, fire_time, " +
+                "target_table_name, source_datasource_info, target_datasource_info, status, type, " +
+                "parameters, create_time, update_time) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+
+        // Try-with-resources statement ensures that each resource is closed at the end of the statement
+        try (Connection conn = dataSource.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
+            int count = 0;
+            for (DlmJob job : dlmJobs) {
+                ps.setLong(1, job.getScheduleTaskId());
+                ps.setString(2, job.getDlmJobId());
+                ps.setString(3, job.getTableName());
+                ps.setDate(4, new Date(job.getFireTime().getTime()));
+                ps.setString(5, job.getTargetTableName());
+                ps.setString(6, JsonUtils.toJson(job.getSourceDatasourceInfo()));
+                ps.setString(7, JsonUtils.toJson(job.getTargetDatasourceInfo()));
+                ps.setString(8, job.getStatus().name());
+                ps.setString(9, job.getType().name());
+                ps.setString(10, JsonUtils.toJson(job.getParameters()));
+                ps.addBatch();
+                if (++count % 100 == 0 || count == dlmJobs.size()) {
+                    ps.executeBatch();
+                    ps.clearBatch();
+                }
+            }
+        }
+    }
+
+
 
     @Override
     public TaskGenerator getTaskGenerator(String generatorId, String jobId) throws SQLException {

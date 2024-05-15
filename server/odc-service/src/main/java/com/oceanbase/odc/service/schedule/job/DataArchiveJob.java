@@ -15,7 +15,6 @@
  */
 package com.oceanbase.odc.service.schedule.job;
 
-import java.sql.SQLException;
 import java.util.List;
 
 import org.quartz.JobExecutionContext;
@@ -24,7 +23,6 @@ import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.shared.constant.TaskStatus;
 import com.oceanbase.odc.metadb.schedule.ScheduleTaskEntity;
-import com.oceanbase.odc.service.dlm.DLMTableStructureSynchronizer;
 import com.oceanbase.odc.service.dlm.DataSourceInfoMapper;
 import com.oceanbase.odc.service.dlm.model.DataArchiveParameters;
 import com.oceanbase.odc.service.dlm.model.DataArchiveTableConfig;
@@ -68,22 +66,11 @@ public class DataArchiveJob extends AbstractDlmJob {
         }
     }
 
-    @Override
-    public void initTask(DlmJob dlmJob) {
-        super.initTask(dlmJob);
-        try {
-            DLMTableStructureSynchronizer.sync(dlmJob.getSourceDs(), dlmJob.getTargetDs(), dlmJob.getTableName(),
-                    dlmJob.getSyncDBObjectTypes());
-        } catch (SQLException e) {
-            log.warn("Sync table structure failed,tableName={}", dlmJob.getTableName(), e);
-        }
-    }
-
     private void executeInTaskFramework(JobExecutionContext context) {
         ScheduleTaskEntity taskEntity = (ScheduleTaskEntity) context.getResult();
         DataArchiveParameters dataArchiveParameters = JsonUtils.fromJson(taskEntity.getParametersJson(),
                 DataArchiveParameters.class);
-        DLMJobParameters parameters = new DLMJobParameters();
+        DLMJobReq parameters = new DLMJobReq();
         parameters.setJobName(taskEntity.getJobName());
         parameters.setScheduleTaskId(taskEntity.getId());
         parameters.setJobType(JobType.MIGRATE);

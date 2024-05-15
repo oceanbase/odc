@@ -15,6 +15,7 @@
  */
 package com.oceanbase.odc.service.schedule.job;
 
+import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -28,7 +29,6 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.shared.constant.TaskStatus;
-import com.oceanbase.odc.core.shared.exception.InternalServerError;
 import com.oceanbase.odc.metadb.schedule.ScheduleTaskEntity;
 import com.oceanbase.odc.metadb.schedule.ScheduleTaskRepository;
 import com.oceanbase.odc.service.common.util.SpringContextUtil;
@@ -37,7 +37,10 @@ import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.dlm.DLMJobFactory;
 import com.oceanbase.odc.service.dlm.DLMService;
+import com.oceanbase.odc.service.dlm.DLMTableStructureSynchronizer;
+import com.oceanbase.odc.service.dlm.DataSourceInfoMapper;
 import com.oceanbase.odc.service.dlm.DlmLimiterService;
+import com.oceanbase.odc.service.dlm.model.DLMJobParameters;
 import com.oceanbase.odc.service.dlm.model.DataArchiveParameters;
 import com.oceanbase.odc.service.dlm.model.DlmJob;
 import com.oceanbase.odc.service.dlm.model.RateLimitConfiguration;
@@ -53,7 +56,7 @@ import com.oceanbase.odc.service.task.schedule.DefaultJobDefinition;
 import com.oceanbase.odc.service.task.schedule.JobScheduler;
 import com.oceanbase.odc.service.task.schedule.SingleJobProperties;
 import com.oceanbase.odc.service.task.service.TaskFrameworkService;
-import com.oceanbase.tools.migrator.common.dto.JobParameter;
+import com.oceanbase.tools.migrator.common.configure.DataSourceInfo;
 import com.oceanbase.tools.migrator.common.enums.JobType;
 import com.oceanbase.tools.migrator.common.exception.JobException;
 import com.oceanbase.tools.migrator.job.Job;
@@ -99,41 +102,47 @@ public abstract class AbstractDlmJob implements OdcJob {
         }
     }
 
-    public void executeTask(Long taskId, List<DlmJob> taskUnits) {
+    public void executeTask(Long taskId, List<DlmJob> dlmJobs) {
         scheduleTaskRepository.updateStatusById(taskId, TaskStatus.RUNNING);
         log.info("Task is ready,taskId={}", taskId);
-        for (DlmJob taskUnit : taskUnits) {
+        for (DlmJob dlmJob : dlmJobs) {
             if (jobThread.isInterrupted()) {
-                dlmService.updateDlmJobStatus(taskUnit.getId(), TaskStatus.CANCELED);
+                dlmService.updateDlmJobStatus(dlmJob.getDlmJobId(), TaskStatus.CANCELED);
                 log.info("Task interrupted and will exit.TaskId={}", taskId);
                 continue;
             }
-            if (taskUnit.getStatus() == TaskStatus.DONE) {
-                log.info("The task unit had been completed,taskId={},tableName={}", taskId, taskUnit.getTableName());
+            if (dlmJob.getStatus() == TaskStatus.DONE) {
+                log.info("The task unit had been completed,taskId={},tableName={}", taskId, dlmJob.getTableName());
                 continue;
             }
             try {
-                initTask(taskUnit);
-                job = jobFactory.createJob(taskUnit);
-                log.info("Create dlm job succeed,taskId={},task parameters={}", taskId, taskUnit);
+                try {
+                    DLMTableStructureSynchronizer.sync(dlmJob.getSourceDatasourceInfo(),
+                            dlmJob.getTargetDatasourceInfo(), dlmJob.getTableName(),
+                            dlmJob.getParameters().getSyncDBObjectType());
+                } catch (SQLException e) {
+                    log.warn("Sync table structure failed,tableName={}", dlmJob.getTableName(), e);
+                }
+                job = jobFactory.createJob(dlmJob);
+                log.info("Create dlm job succeed,taskId={},task parameters={}", taskId, dlmJob);
             } catch (Exception e) {
                 log.warn("Create dlm job failed,taskId={},tableName={},errorMessage={}", taskId,
-                        taskUnit.getTableName(), e);
-                dlmService.updateDlmJobStatus(taskUnit.getId(), TaskStatus.FAILED);
+                        dlmJob.getTableName(), e);
+                dlmService.updateDlmJobStatus(dlmJob.getDlmJobId(), TaskStatus.FAILED);
                 continue;
             }
             try {
                 job.run();
-                dlmService.updateDlmJobStatus(taskUnit.getId(), TaskStatus.DONE);
-                log.info("DLM job succeed,taskId={},unitId={}", taskId, taskUnit.getId());
+                dlmService.updateDlmJobStatus(dlmJob.getDlmJobId(), TaskStatus.DONE);
+                log.info("DLM job succeed,taskId={},unitId={}", taskId, dlmJob.getDlmJobId());
             } catch (JobException e) {
                 // used to stop several sub-threads.
                 if (job.getJobMeta().isToStop()) {
                     log.info("Data archive task is Interrupted,taskId={}", taskId);
-                    dlmService.updateDlmJobStatus(taskUnit.getId(), TaskStatus.CANCELED);
+                    dlmService.updateDlmJobStatus(dlmJob.getDlmJobId(), TaskStatus.CANCELED);
                 } else {
                     log.error("Data archive task is failed,taskId={},errorMessage={}", taskId, e);
-                    dlmService.updateDlmJobStatus(taskUnit.getId(), TaskStatus.FAILED);
+                    dlmService.updateDlmJobStatus(dlmJob.getDlmJobId(), TaskStatus.FAILED);
                 }
             }
         }
@@ -157,19 +166,11 @@ public abstract class AbstractDlmJob implements OdcJob {
 
     public List<DlmJob> getTaskUnits(ScheduleTaskEntity taskEntity) {
         // Resume or retry an existing task.
-        if (StringUtils.isNotEmpty(taskEntity.getResultJson())) {
-            try {
-                return JsonUtils.fromJson(taskEntity.getResultJson(),
-                        new TypeReference<List<DlmJob>>() {});
-            } catch (Exception e) {
-                // Fast failed and cannot retry.
-                log.warn("Read task result failed and will migrate all tables.TaskId={}", taskEntity.getId());
-                throw new InternalServerError(
-                        String.format("Load task progress failed,errorMessage=%s", e.getMessage()));
-            }
-        } else {
-            return splitTask(taskEntity);
+        List<DlmJob> dlmJobs = dlmService.findByScheduleTaskId(taskEntity.getId());
+        if (!dlmJobs.isEmpty()) {
+            return dlmJobs;
         }
+        return splitTask(taskEntity);
     }
 
     public List<DlmJob> splitTask(ScheduleTaskEntity taskEntity) {
@@ -184,7 +185,7 @@ public abstract class AbstractDlmJob implements OdcJob {
                     : "";
             DlmJob dlmJob = new DlmJob();
             dlmJob.setScheduleTaskId(taskEntity.getId());
-            JobParameter jobParameter = new JobParameter();
+            DLMJobParameters jobParameter = new DLMJobParameters();
             jobParameter.setMigrateRule(condition);
             RateLimitConfiguration limiterConfig =
                     limiterService.getByOrderIdOrElseDefaultConfig(Long.parseLong(taskEntity.getJobName()));
@@ -193,38 +194,33 @@ public abstract class AbstractDlmJob implements OdcJob {
             jobParameter.setReaderBatchSize(limiterConfig.getBatchSize());
             jobParameter.setWriterBatchSize(limiterConfig.getBatchSize());
             jobParameter.setMigrationInsertAction(parameters.getMigrationInsertAction());
+            jobParameter.setSyncDBObjectType(parameters.getSyncTableStructure());
             dlmJob.setParameters(jobParameter);
-            dlmJob.setId(DlmJobIdUtil.generateHistoryJobId(taskEntity.getJobName(), taskEntity.getJobGroup(),
+            dlmJob.setDlmJobId(DlmJobIdUtil.generateHistoryJobId(taskEntity.getJobName(), taskEntity.getJobGroup(),
                     taskEntity.getId(),
                     dlmJobs.size()));
             dlmJob.setTableName(table.getTableName());
-            dlmJob.setSourceDatabaseId(parameters.getSourceDatabaseId());
-            dlmJob.setTargetDatabaseId(parameters.getTargetDataBaseId());
+            dlmJob.setTargetTableName(table.getTargetTableName());
+            dlmJob.setSourceDatasourceInfo(getDataSourceInfo(parameters.getSourceDatabaseId()));
+            dlmJob.setTargetDatasourceInfo(getDataSourceInfo(parameters.getTargetDataBaseId()));
             dlmJob.setFireTime(taskEntity.getFireTime());
             dlmJob.setStatus(TaskStatus.PREPARING);
             dlmJob.setType(JobType.MIGRATE);
-            dlmJob.setSyncDBObjectTypes(parameters.getSyncTableStructure());
             dlmJobs.add(dlmJob);
         });
         dlmService.createJob(dlmJobs);
         return dlmJobs;
     }
 
-    public void initTask(DlmJob taskUnit) {
-        Database sourceDb = databaseService.detail(taskUnit.getSourceDatabaseId());
-        Database targetDb = databaseService.detail(taskUnit.getTargetDatabaseId());
-        ConnectionConfig sourceConfig = databaseService.findDataSourceForConnectById(
-                taskUnit.getSourceDatabaseId());
-        ConnectionConfig targetConfig = databaseService.findDataSourceForConnectById(
-                taskUnit.getTargetDatabaseId());
-        sourceConfig.setDefaultSchema(sourceDb.getName());
-        targetConfig.setDefaultSchema(targetDb.getName());
-        // Init dataSourceInfo
-        taskUnit.setSourceDs(sourceConfig);
-        taskUnit.setTargetDs(targetConfig);
+    public DataSourceInfo getDataSourceInfo(Long databaseId) {
+        Database db = databaseService.detail(databaseId);
+        ConnectionConfig config = databaseService.findDataSourceForConnectById(databaseId);
+        DataSourceInfo dataSourceInfo = DataSourceInfoMapper.toDataSourceInfo(config);
+        dataSourceInfo.setDatabaseName(db.getName());
+        return dataSourceInfo;
     }
 
-    public Long publishJob(DLMJobParameters parameters) {
+    public Long publishJob(DLMJobReq parameters) {
         Map<String, String> jobData = new HashMap<>();
         jobData.put(JobParametersKeyConstants.META_TASK_PARAMETER_JSON,
                 JsonUtils.toJson(parameters));
@@ -238,11 +234,11 @@ public abstract class AbstractDlmJob implements OdcJob {
         return jobScheduler.scheduleJobNow(jobDefinition);
     }
 
-    public DLMJobParameters getDLMJobParameters(Long jobId) {
+    public DLMJobReq getDLMJobReq(Long jobId) {
         return JsonUtils.fromJson(JsonUtils.fromJson(
                 taskFrameworkService.find(jobId).getJobParametersJson(),
                 new TypeReference<Map<String, String>>() {}).get(JobParametersKeyConstants.META_TASK_PARAMETER_JSON),
-                DLMJobParameters.class);
+                DLMJobReq.class);
     }
 
 

@@ -63,7 +63,7 @@ public class DataArchiveRollbackJob extends AbstractDlmJob {
 
         // execute in task framework.
         if (taskFrameworkProperties.isEnabled()) {
-            DLMJobParameters parameters = getDLMJobParameters(dataArchiveTask.getJobId());
+            DLMJobReq parameters = getDLMJobReq(dataArchiveTask.getJobId());
             parameters.setJobType(JobType.ROLLBACK);
             DataSourceInfo tempDataSource = parameters.getSourceDs();
             parameters.setSourceDs(parameters.getTargetDs());
@@ -84,12 +84,12 @@ public class DataArchiveRollbackJob extends AbstractDlmJob {
         List<DlmJob> dlmJobs = dlmService.findByScheduleTaskId(dataArchiveTask.getId());
         for (int i = 0; i < dlmJobs.size(); i++) {
             DlmJob dlmJob = dlmJobs.get(i);
-            Long temp = dlmJob.getSourceDatabaseId();
-            dlmJob.setId(DlmJobIdUtil.generateHistoryJobId(taskEntity.getJobName(), taskEntity.getJobGroup(),
+            DataSourceInfo temp = dlmJob.getSourceDatasourceInfo();
+            dlmJob.setDlmJobId(DlmJobIdUtil.generateHistoryJobId(taskEntity.getJobName(), taskEntity.getJobGroup(),
                     taskEntity.getId(),
                     i));
-            dlmJob.setSourceDatabaseId(dlmJob.getTargetDatabaseId());
-            dlmJob.setTargetDatabaseId(temp);
+            dlmJob.setSourceDatasourceInfo(dlmJob.getTargetDatasourceInfo());
+            dlmJob.setTargetDatasourceInfo(temp);
             dlmJob.setType(JobType.ROLLBACK);
             dlmJob.setStatus(dlmJob.getStatus() == TaskStatus.PREPARING ? TaskStatus.DONE : TaskStatus.PREPARING);
         }

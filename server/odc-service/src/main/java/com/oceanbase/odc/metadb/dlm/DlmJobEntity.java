@@ -65,11 +65,11 @@ public class DlmJobEntity {
     @Column(name = "fire_time", nullable = false)
     private Date fireTime;
 
-    @Column(name = "source_database_id", nullable = false)
-    private Long sourceDatabaseId;
+    @Column(name = "source_datasource_info", nullable = false)
+    private String sourceDatasourceInfo;
 
-    @Column(name = "target_database_id")
-    private Long targetDatabaseId;
+    @Column(name = "target_datasource_info")
+    private String targetDatasourceInfo;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false)

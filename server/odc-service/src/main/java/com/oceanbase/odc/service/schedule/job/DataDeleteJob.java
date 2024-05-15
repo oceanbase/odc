@@ -25,12 +25,12 @@ import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.shared.constant.TaskStatus;
 import com.oceanbase.odc.metadb.schedule.ScheduleTaskEntity;
 import com.oceanbase.odc.service.dlm.DataSourceInfoMapper;
+import com.oceanbase.odc.service.dlm.model.DLMJobParameters;
 import com.oceanbase.odc.service.dlm.model.DataArchiveTableConfig;
 import com.oceanbase.odc.service.dlm.model.DataDeleteParameters;
 import com.oceanbase.odc.service.dlm.model.DlmJob;
 import com.oceanbase.odc.service.dlm.utils.DataArchiveConditionUtil;
 import com.oceanbase.odc.service.dlm.utils.DlmJobIdUtil;
-import com.oceanbase.tools.migrator.common.dto.JobParameter;
 import com.oceanbase.tools.migrator.common.enums.JobType;
 import com.oceanbase.tools.migrator.task.CheckMode;
 
@@ -78,14 +78,14 @@ public class DataDeleteJob extends AbstractDlmJob {
                     : "";
             DlmJob dlmJob = new DlmJob();
             dlmJob.setScheduleTaskId(taskEntity.getId());
-            dlmJob.setId(DlmJobIdUtil.generateHistoryJobId(taskEntity.getJobName(), taskEntity.getJobGroup(),
+            dlmJob.setDlmJobId(DlmJobIdUtil.generateHistoryJobId(taskEntity.getJobName(), taskEntity.getJobGroup(),
                     taskEntity.getId(),
                     dlmTasks.size()));
             dlmJob.setTableName(table.getTableName());
-            dlmJob.setSourceDatabaseId(parameters.getDatabaseId());
-            dlmJob.setTargetDatabaseId(parameters.getDatabaseId());
+            dlmJob.setSourceDatasourceInfo(getDataSourceInfo(parameters.getDatabaseId()));
+            dlmJob.setTargetDatasourceInfo(dlmJob.getSourceDatasourceInfo());
             dlmJob.setFireTime(taskEntity.getFireTime());
-            JobParameter parameter = new JobParameter();
+            DLMJobParameters parameter = new DLMJobParameters();
             parameter.setMigrateRule(condition);
             parameter.setCheckMode(CheckMode.MULTIPLE_GET);
             dlmJob.setParameters(parameter);
@@ -101,7 +101,7 @@ public class DataDeleteJob extends AbstractDlmJob {
         ScheduleTaskEntity taskEntity = (ScheduleTaskEntity) context.getResult();
         DataDeleteParameters dataDeleteParameters = JsonUtils.fromJson(taskEntity.getParametersJson(),
                 DataDeleteParameters.class);
-        DLMJobParameters parameters = new DLMJobParameters();
+        DLMJobReq parameters = new DLMJobReq();
         parameters.setJobName(taskEntity.getJobName());
         parameters.setScheduleTaskId(taskEntity.getId());
         parameters.setJobType(JobType.DELETE);

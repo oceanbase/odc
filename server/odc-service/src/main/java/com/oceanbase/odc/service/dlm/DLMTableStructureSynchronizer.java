@@ -34,6 +34,7 @@ import com.oceanbase.odc.service.structurecompare.DefaultDBStructureComparator;
 import com.oceanbase.odc.service.structurecompare.model.DBObjectComparisonResult;
 import com.oceanbase.odc.service.structurecompare.model.DBStructureComparisonConfig;
 import com.oceanbase.tools.dbbrowser.model.DBObjectType;
+import com.oceanbase.tools.migrator.common.configure.DataSourceInfo;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -44,6 +45,13 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 public class DLMTableStructureSynchronizer {
+
+    public static void sync(DataSourceInfo sourceInfo, DataSourceInfo targetInfo, String tableName,
+            Set<DBObjectType> targetType)
+            throws SQLException {
+        sync(DataSourceInfoMapper.toConnectionConfig(sourceInfo), DataSourceInfoMapper.toConnectionConfig(targetInfo),
+                tableName, targetType);
+    }
 
     public static void sync(ConnectionConfig sourceConnectionConfig, ConnectionConfig targetConnectionConfig,
             String tableName, Set<DBObjectType> targetType) throws SQLException {

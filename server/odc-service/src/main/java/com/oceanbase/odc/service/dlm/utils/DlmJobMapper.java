@@ -17,8 +17,9 @@ package com.oceanbase.odc.service.dlm.utils;
 
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.metadb.dlm.DlmJobEntity;
+import com.oceanbase.odc.service.dlm.model.DLMJobParameters;
 import com.oceanbase.odc.service.dlm.model.DlmJob;
-import com.oceanbase.tools.migrator.common.dto.JobParameter;
+import com.oceanbase.tools.migrator.common.configure.DataSourceInfo;
 
 /**
  * @Author：tinker
@@ -30,14 +31,14 @@ public class DlmJobMapper {
 
     public static DlmJob entityToModel(DlmJobEntity entity) {
         DlmJob dlmJob = new DlmJob();
-        dlmJob.setId(entity.getDlmJobId());
+        dlmJob.setDlmJobId(entity.getDlmJobId());
         dlmJob.setFireTime(entity.getFireTime());
-        dlmJob.setParameters(JsonUtils.fromJson(entity.getParameters(), JobParameter.class));
+        dlmJob.setParameters(JsonUtils.fromJson(entity.getParameters(), DLMJobParameters.class));
         dlmJob.setScheduleTaskId(entity.getScheduleTaskId());
         dlmJob.setStatus(entity.getStatus());
         dlmJob.setType(entity.getType());
-        dlmJob.setSourceDatabaseId(entity.getSourceDatabaseId());
-        dlmJob.setTargetDatabaseId(entity.getTargetDatabaseId());
+        dlmJob.setSourceDatasourceInfo(JsonUtils.fromJson(entity.getSourceDatasourceInfo(), DataSourceInfo.class));
+        dlmJob.setTargetDatasourceInfo(JsonUtils.fromJson(entity.getTargetDatasourceInfo(), DataSourceInfo.class));
         dlmJob.setTableName(entity.getTableName());
         dlmJob.setTargetTableName(entity.getTargetTableName());
         return dlmJob;
@@ -45,14 +46,14 @@ public class DlmJobMapper {
 
     public static DlmJobEntity modelToEntity(DlmJob model) {
         DlmJobEntity entity = new DlmJobEntity();
-        entity.setDlmJobId(model.getId());
+        entity.setDlmJobId(model.getDlmJobId());
         entity.setFireTime(model.getFireTime());
         entity.setParameters(JsonUtils.toJson(model.getParameters()));
         entity.setScheduleTaskId(model.getScheduleTaskId());
         entity.setStatus(model.getStatus());
         entity.setType(model.getType());
-        entity.setSourceDatabaseId(model.getSourceDatabaseId());
-        entity.setTargetDatabaseId(model.getTargetDatabaseId());
+        entity.setSourceDatasourceInfo(JsonUtils.toJson(model.getSourceDatasourceInfo()));
+        entity.setTargetDatasourceInfo(JsonUtils.toJson(model.getTargetDatasourceInfo()));
         entity.setTableName(model.getTableName());
         entity.setTargetTableName(model.getTargetTableName());
         return entity;

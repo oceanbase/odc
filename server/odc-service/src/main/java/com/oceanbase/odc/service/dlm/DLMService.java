@@ -80,13 +80,15 @@ public class DLMService {
                 listJobStatisticByJobId(details.stream().map(DlmExecutionDetail::getDlmJobId).collect(
                         Collectors.toList()))
                                 .stream().collect(Collectors.toMap(DlmJobStatisticEntity::getDlmJobId, o -> o));
-        details.forEach(detail -> {
-            DlmJobStatisticEntity jobStatistic = jobId2JobStatistic.get(detail.getDlmJobId());
-            detail.setReadRowCount(jobStatistic.getReadRowCount());
-            detail.setProcessedRowCount(jobStatistic.getProcessedRowCount());
-            detail.setReadRowsPerSecond(jobStatistic.getReadRowsPerSecond());
-            detail.setProcessedRowsPerSecond(jobStatistic.getProcessedRowsPerSecond());
-        });
+        details = details.stream().peek(detail -> {
+            if (jobId2JobStatistic.containsKey(detail.getDlmJobId())) {
+                DlmJobStatisticEntity jobStatistic = jobId2JobStatistic.get(detail.getDlmJobId());
+                detail.setReadRowCount(jobStatistic.getReadRowCount());
+                detail.setProcessedRowCount(jobStatistic.getProcessedRowCount());
+                detail.setReadRowsPerSecond(jobStatistic.getReadRowsPerSecond());
+                detail.setProcessedRowsPerSecond(jobStatistic.getProcessedRowsPerSecond());
+            }
+        }).collect(Collectors.toList());
         return details;
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 OceanBase.
+ * Copyright (c) 2024 OceanBase.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,21 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.metadb.dlm;
 
-import java.util.List;
-import java.util.Optional;
+package com.oceanbase.odc.service.dlm.model;
 
-import com.oceanbase.odc.config.jpa.OdcJpaRepository;
+import java.util.Set;
+
+import com.oceanbase.tools.dbbrowser.model.DBObjectType;
+import com.oceanbase.tools.migrator.common.dto.JobParameter;
+
+import lombok.Data;
 
 /**
  * @Author：tinker
- * @Date: 2024/5/13 11:44
+ * @Date: 2024/5/15 15:56
  * @Descripition:
  */
-public interface DlmJobStatisticRepository extends OdcJpaRepository<DlmJobStatisticEntity, Long> {
 
-    List<DlmJobStatisticEntity> findByDlmJobIdIn(List<String> dlmJobIds);
+@Data
+public class DLMJobParameters extends JobParameter {
 
-    Optional<DlmJobStatisticEntity> findByDlmJobId(String dlmJobId);
+    private Set<DBObjectType> syncDBObjectType;
 }

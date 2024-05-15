@@ -111,7 +111,8 @@ public class DataArchiveJobStore implements IJobStore {
     @Override
     public void storeJobStatistic(JobMeta jobMeta) {
         JobStat jobStat = jobMeta.getJobStat();
-        DlmJobStatisticEntity dlmJobStatisticEntity = new DlmJobStatisticEntity();
+        Optional<DlmJobStatisticEntity> optional = jobStatisticRepository.findByDlmJobId(jobMeta.getJobId());
+        DlmJobStatisticEntity dlmJobStatisticEntity = optional.orElseGet(DlmJobStatisticEntity::new);
         dlmJobStatisticEntity.setDlmJobId(jobMeta.getJobId());
         dlmJobStatisticEntity.setProcessedRowCount(jobStat.getRowCount());
         dlmJobStatisticEntity.setReadRowCount(jobStat.getReadRowCount());
