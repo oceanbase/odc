@@ -6,7 +6,7 @@ Data source
 
 - Unable to connect to ODP-Sharding data source [#2339](https://github.com/oceanbase/odc/pull/2339)
 
-User Management
+User management
 
 - Unable to delete OWNER or DBA user of archived project [#2359](https://github.com/oceanbase/odc/pull/2359)
 
@@ -14,32 +14,32 @@ Shadow table synchronization
 
 - Syntax errors may occur in statements generated when a column has a default value [#2388](https://github.com/oceanbase/odc/pull/2388)
 
-Data Security
+Data security
 
 - When there is an invalid database with the same name, desensitization fails [#2385](https://github.com/oceanbase/odc/pull/2385)
 
 Command line window
 
-- When entering a long SQL, the statement cannot be fully echoed [#2353](https://github.com/oceanbase/odc/pull/2353)
+- When entering a long SQL statement, the statement cannot be fully echoed [#2353](https://github.com/oceanbase/odc/pull/2353)
 
 Database archiving/cleaning
 
 - The status may be incorrectly set to success when a task is terminated [#2340](https://github.com/oceanbase/odc/pull/2340)
-- There is no problem with OceanBase MySQL archiving custom table name reports [#2313](https://github.com/oceanbase/odc/pull/2313)
+- If the table names are different between the source and target when configuring data archiving tasks, an error occurs stating that the table does not exist [#2313](https://github.com/oceanbase/odc/pull/2313)
 
-ResultSet export
+Result set export
 
 - When database access is slow, exporting the result set fails due to timeout [#2315](https://github.com/oceanbase/odc/pull/2315)
 
 Notification
 
-- Editing the message channel will cause the signing key to be lost [#2314](https://github.com/oceanbase/odc/pull/2314)
+- Editing the notification channel will cause the signing key to be lost [#2314](https://github.com/oceanbase/odc/pull/2314)
 
-Partition plan
+Partitioning plan
 
 - Partitions are missing and partitions are not created in OceanBase 4.x version [#2327](https://github.com/oceanbase/odc/pull/2327)
-- Unable to initiate partition scheduled tasks in versions below OceanBase 3.x [#2323](https://github.com/oceanbase/odc/pull/2323)
-- Partition intervals are not shown in partition plan details
+- Unable to initiate partitioning plan tasks in versions below OceanBase 3.x [#2323](https://github.com/oceanbase/odc/pull/2323)
+- Partition intervals are not shown in partitioning plan details
 
 System integration
 
@@ -48,15 +48,15 @@ System integration
 
 Other
 
-- Work orders whose life cycle spans the release process cannot be promoted normally [#2065](https://github.com/oceanbase/odc/pull/2065)
+- Tickets whose life cycle spans the release process cannot be promoted normally [#2065](https://github.com/oceanbase/odc/pull/2065)
 - Unable to execute or terminate tasks manually [#2272](https://github.com/oceanbase/odc/pull/2272)
-- After running for a period of time, you cannot use the account password to log in and you need to restart ODCServer to recover [#2389](https://github.com/oceanbase/odc/pull/2389)
-- There is a conflict between Basic authentication method calling API and CSRF protection [#2370](https://github.com/oceanbase/odc/pull/2370)
+- After running for a period of time, you cannot use the account password to log in and you need to restart ODC Server to recover [#2389](https://github.com/oceanbase/odc/pull/2389)
+- Conflicts occur between Basic Authentication and CSRF prevention [#2370](https://github.com/oceanbase/odc/pull/2370)
 
 ### Usability improvements
 
-- The partition plan adds copywriting tips for the case where no partition pre-creation statement or partition deletion statement is generated [#2351](https://github.com/oceanbase/odc/pull/2351)
-- OceanBase versions before 4.2 disable full-link diagnostics [#2219](https://github.com/oceanbase/odc/pull/2219)
+- Prompts are added for partitioning plans when no partition creation/deletion statements are generated [#2351](https://github.com/oceanbase/odc/pull/2351)
+- OceanBase versions before 4.2 disable end-to-end trace diagnostics [#2219](https://github.com/oceanbase/odc/pull/2219)
 
 ### Dependency library upgrade
 
@@ -65,7 +65,7 @@ Other
 ### Security
 
 - Remove snappy-java dependency [#2317](https://github.com/oceanbase/odc/pull/2317)
-- Data desensitization increases verification to avoid DDos risks caused by BigDecimal [#2271](https://github.com/oceanbase/odc/pull/2271)
+- Data desensitization increases verification to avoid DDoS risks caused by BigDecimal [#2271](https://github.com/oceanbase/odc/pull/2271)
 
 ## 4.2.4_bp1 (2024-04-12)
 
@@ -73,11 +73,11 @@ Other
 
 PL debugging
 
-- PL debug timeout parameter cannot be set via connection initialization script [#2179](https://github.com/oceanbase/odc/pull/2179)
+- PL debugging timeout parameter cannot be set via connection initialization script [#2179](https://github.com/oceanbase/odc/pull/2179)
 
 Other
 
-- ODC Server fails to start when there is a partition plan history task [#2158](https://github.com/oceanbase/odc/pull/2158)
+- ODC Server fails to start when there is a historical task of partitioning plan [#2158](https://github.com/oceanbase/odc/pull/2158)
 
 ### Security
 
