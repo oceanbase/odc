@@ -84,7 +84,7 @@
         <lombok.version>1.18.10</lombok.version>
         <druid.version>1.2.18</druid.version>
         <hikari.version>4.0.3</hikari.version>
-        <fastjson.version>1.2.83_noneautotype</fastjson.version>
+        <fastjson.version>1.2.25.sec10</fastjson.version>
         <mockito.version>3.11.2</mockito.version>
         <moco.version>1.4.0</moco.version>
         <apsara-audit-starter.version>3.17.0-SNAPSHOT</apsara-audit-starter.version>
