@@ -126,7 +126,9 @@ public abstract class BaseODCFlowTaskDelegate<T> extends BaseRuntimeFlowableDele
         int interval = RuntimeTaskConstants.DEFAULT_TASK_CHECK_INTERVAL_SECONDS;
         scheduleExecutor.scheduleAtFixedRate(() -> {
             try {
-                onProgressUpdate(taskId, taskService);
+                if (taskLatch.getCount() > 0) {
+                    onProgressUpdate(taskId, taskService);
+                }
             } catch (Exception e) {
                 log.warn("Update task progress callback failed, taskId={}", taskId, e);
             }
