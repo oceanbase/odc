@@ -15,14 +15,29 @@
  */
 package com.oceanbase.tools.dbbrowser.schema.doris;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.Reader;
+import java.io.StringReader;
+import java.io.StringWriter;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.charset.UnsupportedCharsetException;
 import java.sql.Blob;
 import java.sql.SQLException;
 import java.sql.Timestamp;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
@@ -36,7 +51,35 @@ import org.springframework.jdbc.core.JdbcOperations;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.lang.NonNull;
 
-import com.oceanbase.tools.dbbrowser.model.*;
+import com.oceanbase.tools.dbbrowser.model.DBColumnGroupElement;
+import com.oceanbase.tools.dbbrowser.model.DBColumnTypeDisplay;
+import com.oceanbase.tools.dbbrowser.model.DBConstraintType;
+import com.oceanbase.tools.dbbrowser.model.DBDatabase;
+import com.oceanbase.tools.dbbrowser.model.DBFunction;
+import com.oceanbase.tools.dbbrowser.model.DBIndexAlgorithm;
+import com.oceanbase.tools.dbbrowser.model.DBIndexType;
+import com.oceanbase.tools.dbbrowser.model.DBObjectIdentity;
+import com.oceanbase.tools.dbbrowser.model.DBObjectType;
+import com.oceanbase.tools.dbbrowser.model.DBPLObjectIdentity;
+import com.oceanbase.tools.dbbrowser.model.DBPackage;
+import com.oceanbase.tools.dbbrowser.model.DBProcedure;
+import com.oceanbase.tools.dbbrowser.model.DBSequence;
+import com.oceanbase.tools.dbbrowser.model.DBSynonym;
+import com.oceanbase.tools.dbbrowser.model.DBSynonymType;
+import com.oceanbase.tools.dbbrowser.model.DBTable;
+import com.oceanbase.tools.dbbrowser.model.DBTableColumn;
+import com.oceanbase.tools.dbbrowser.model.DBTableConstraint;
+import com.oceanbase.tools.dbbrowser.model.DBTableIndex;
+import com.oceanbase.tools.dbbrowser.model.DBTablePartition;
+import com.oceanbase.tools.dbbrowser.model.DBTablePartitionDefinition;
+import com.oceanbase.tools.dbbrowser.model.DBTablePartitionOption;
+import com.oceanbase.tools.dbbrowser.model.DBTablePartitionType;
+import com.oceanbase.tools.dbbrowser.model.DBTableSubpartitionDefinition;
+import com.oceanbase.tools.dbbrowser.model.DBTrigger;
+import com.oceanbase.tools.dbbrowser.model.DBType;
+import com.oceanbase.tools.dbbrowser.model.DBVariable;
+import com.oceanbase.tools.dbbrowser.model.DBView;
+import com.oceanbase.tools.dbbrowser.model.MySQLConstants;
 import com.oceanbase.tools.dbbrowser.parser.PLParser;
 import com.oceanbase.tools.dbbrowser.parser.result.ParseMysqlPLResult;
 import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
@@ -960,6 +1003,11 @@ public class DorisSchemaAccessor implements DBSchemaAccessor {
             log.warn("Failed to get table options by parse table ddl, message={}", e.getMessage());
         }
         return dbTableOptions;
+    }
+
+    @Override
+    public List<DBColumnGroupElement> listTableColumnGroups(String schemaName, String tableName) {
+        throw new UnsupportedOperationException("Not supported yet");
     }
 
     private void obtainOptionsByQuery(String schemaName, String tableName, DBTable.DBTableOptions dbTableOptions) {

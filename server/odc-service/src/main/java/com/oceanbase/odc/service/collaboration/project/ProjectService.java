@@ -22,6 +22,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
@@ -150,6 +151,7 @@ public class ProjectService {
         projectEntity.setLastModifierId(user.getCreatorId());
         projectEntity.setOrganizationId(user.getOrganizationId());
         projectEntity.setDescription("Built-in project for bastion user " + user.getAccountName());
+        projectEntity.setUniqueIdentifier(generateProjectUniqueIdentifier());
         ProjectEntity saved = repository.saveAndFlush(projectEntity);
         // Grant DEVELOPER role to bastion user, and all other roles to user creator(admin)
         Map<ResourceRoleName, ResourceRoleEntity> resourceRoleName2Entity =
@@ -179,6 +181,7 @@ public class ProjectService {
         project.setLastModifier(currentInnerUser());
         project.setArchived(false);
         project.setBuiltin(false);
+        project.setUniqueIdentifier(generateProjectUniqueIdentifier());
         ProjectEntity saved = repository.save(modelToEntity(project));
         List<UserResourceRole> userResourceRoles = resourceRoleService.saveAll(
                 project.getMembers().stream()
@@ -517,5 +520,9 @@ public class ProjectService {
 
     private InnerUser currentInnerUser() {
         return new InnerUser(authenticationFacade.currentUser(), null);
+    }
+
+    private String generateProjectUniqueIdentifier() {
+        return "ODC_" + UUID.randomUUID().toString();
     }
 }

@@ -83,7 +83,7 @@
         <commons-collections4.version>4.4</commons-collections4.version>
         <log4j.version>2.18.0</log4j.version>
         <fastjson.version>1.2.83</fastjson.version>
-        <ob-sql-parser.version>1.2.0</ob-sql-parser.version>
+        <ob-sql-parser.version>1.3.0</ob-sql-parser.version>
         <commons-cli.version>1.4</commons-cli.version>
         <oceanbase-client.version>2.4.7.1</oceanbase-client.version>
         <root-project.basedir>${project.basedir}</root-project.basedir>

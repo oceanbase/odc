@@ -188,6 +188,7 @@ public abstract class AbstractDlmJob implements OdcJob {
             jobParameter.setMigrateRule(condition);
             RateLimitConfiguration limiterConfig =
                     limiterService.getByOrderIdOrElseDefaultConfig(Long.parseLong(taskEntity.getJobName()));
+            jobParameter.setSyncDBObjectTypes(parameters.getSyncTableStructure());
             jobParameter.setMigrateRule(condition);
             jobParameter.setCheckMode(CheckMode.MULTIPLE_GET);
             jobParameter.setReaderBatchSize(limiterConfig.getBatchSize());

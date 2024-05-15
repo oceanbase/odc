@@ -104,7 +104,8 @@ public class DLMJobFactory extends JobFactory {
         jobParameter.setReaderTaskCount(params.getReadThreadCount());
         jobParameter.setWriterTaskCount(params.getWriteThreadCount());
         jobParameter.setGeneratorBatchSize(params.getScanBatchSize());
-
+        jobParameter.setReaderBatchSize(params.getRateLimit().getBatchSize());
+        jobParameter.setWriterBatchSize(params.getRateLimit().getBatchSize());
 
         JobReq req = new JobReq(historyJob, params.getSourceDs(), params.getTargetDs());
         return createJob(req);
