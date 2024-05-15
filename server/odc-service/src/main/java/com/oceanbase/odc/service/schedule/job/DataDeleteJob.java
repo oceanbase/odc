@@ -86,7 +86,7 @@ public class DataDeleteJob extends AbstractDlmJob {
             dlmTask.setTargetTableName(table.getTargetTableName());
             dlmTask.setSourceDatabaseId(parameters.getDatabaseId());
             Long targetDatabaseId = Objects.isNull(parameters.getTargetDatabaseId()) ? parameters.getDatabaseId()
-                : parameters.getTargetDatabaseId();
+                    : parameters.getTargetDatabaseId();
             dlmTask.setTargetDatabaseId(targetDatabaseId);
             dlmTask.setFireTime(taskEntity.getFireTime());
 
