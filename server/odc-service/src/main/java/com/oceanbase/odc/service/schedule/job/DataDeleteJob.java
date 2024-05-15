@@ -83,32 +83,20 @@ public class DataDeleteJob extends AbstractDlmJob {
                     taskEntity.getId(),
                     dlmTasks.size()));
             dlmJob.setTableName(table.getTableName());
+            dlmJob.setTargetTableName(table.getTargetTableName());
             dlmJob.setSourceDatasourceInfo(getDataSourceInfo(parameters.getDatabaseId()));
-            dlmJob.setTargetDatasourceInfo(dlmJob.getSourceDatasourceInfo());
+            dlmJob.setTargetDatasourceInfo(
+                    Objects.isNull(parameters.getTargetDatabaseId()) ? dlmJob.getSourceDatasourceInfo()
+                            : getDataSourceInfo(parameters.getTargetDatabaseId()));
             dlmJob.setFireTime(taskEntity.getFireTime());
             DLMJobParameters parameter = new DLMJobParameters();
             parameter.setMigrateRule(condition);
             parameter.setCheckMode(CheckMode.MULTIPLE_GET);
             dlmJob.setParameters(parameter);
             dlmJob.setStatus(TaskStatus.PREPARING);
-            dlmJob.setType(parameters.getDeleteByUniqueKey() ? JobType.QUICK_DELETE : JobType.DEIRECT_DELETE);
-            dlmTasks.add(dlmJob);
-            dlmTask.setTableName(table.getTableName());
-            dlmTask.setTargetTableName(table.getTargetTableName());
-            dlmTask.setSourceDatabaseId(parameters.getDatabaseId());
-            Long targetDatabaseId = Objects.isNull(parameters.getTargetDatabaseId()) ? parameters.getDatabaseId()
-                    : parameters.getTargetDatabaseId();
-            dlmTask.setTargetDatabaseId(targetDatabaseId);
-            dlmTask.setFireTime(taskEntity.getFireTime());
-
-            LogicTableConfig logicTableConfig = new LogicTableConfig();
-            logicTableConfig.setMigrateRule(condition);
-            logicTableConfig.setCheckMode(CheckMode.MULTIPLE_GET);
-            dlmTask.setLogicTableConfig(logicTableConfig);
-            dlmTask.setStatus(TaskStatus.PREPARING);
             JobType jobType = parameters.getNeedCheckBeforeDelete() ? JobType.DELETE : JobType.QUICK_DELETE;
-            dlmTask.setJobType(parameters.getDeleteByUniqueKey() ? jobType : JobType.DEIRECT_DELETE);
-            dlmTasks.add(dlmTask);
+            dlmJob.setType(parameters.getDeleteByUniqueKey() ? jobType : JobType.DEIRECT_DELETE);
+            dlmTasks.add(dlmJob);
         });
         return dlmTasks;
     }
