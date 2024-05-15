@@ -32,6 +32,6 @@ public class UpdateRateLimiterConfigRequest {
     @NotNull
     private Long flowInstanceId;
 
-    private RateLimiterConfig rateLimiter = new RateLimiterConfig();
+    private RateLimiterConfig rateLimitConfig = new RateLimiterConfig();
 
 }

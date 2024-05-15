@@ -48,11 +48,11 @@ import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.flow.FlowInstanceService;
 import com.oceanbase.odc.service.flow.factory.FlowFactory;
 import com.oceanbase.odc.service.flow.instance.FlowInstance;
+import com.oceanbase.odc.service.flow.task.model.OnlineSchemaChangeTaskResult;
 import com.oceanbase.odc.service.iam.HorizontalDataPermissionValidator;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.onlineschemachange.model.OnlineSchemaChangeParameters;
 import com.oceanbase.odc.service.onlineschemachange.model.OnlineSchemaChangeScheduleTaskResult;
-import com.oceanbase.odc.service.onlineschemachange.model.OscFlowTaskResult;
 import com.oceanbase.odc.service.onlineschemachange.model.OscLockDatabaseUserInfo;
 import com.oceanbase.odc.service.onlineschemachange.model.OscSwapTableVO;
 import com.oceanbase.odc.service.onlineschemachange.model.RateLimiterConfig;
@@ -165,21 +165,22 @@ public class OscService {
     @Transactional(rollbackFor = Exception.class)
     @SkipAuthorize("internal authenticated")
     public boolean updateRateLimiterConfig(UpdateRateLimiterConfigRequest req) {
-
+        log.info("Get updateRateLimiterConfig from request, req={}", JsonUtils.toJson(req));
         checkPermission(req.getFlowInstanceId());
         TaskEntity task = flowInstanceService.getTaskByFlowInstanceId(req.getFlowInstanceId());
         PreConditions.notNull(task.getParametersJson(), "result json",
                 "Task result is empty, taskId=" + task.getId() + ",flowInstanceId=" + req.getFlowInstanceId());
 
-        OscFlowTaskResult taskResult =
-                JsonUtils.fromJson(task.getResultJson(), new TypeReference<OscFlowTaskResult>() {});
-        ScheduleEntity scheduleEntity = scheduleService.nullSafeGetById(taskResult.getScheduleId());
+        OnlineSchemaChangeTaskResult taskResult =
+                JsonUtils.fromJson(task.getResultJson(), new TypeReference<OnlineSchemaChangeTaskResult>() {});
+        Long scheduleId = Long.parseLong(taskResult.getTasks().get(0).getJobName());
+        ScheduleEntity scheduleEntity = scheduleService.nullSafeGetById(scheduleId);
         OnlineSchemaChangeParameters parameters = JsonUtils.fromJson(
                 scheduleEntity.getJobParametersJson(), OnlineSchemaChangeParameters.class);
-        RateLimiterConfig rateLimiter = parameters.getRateLimiter();
-        rateLimiter.setDataSizeLimit(req.getRateLimiter().getDataSizeLimit());
-        rateLimiter.setRowLimit(req.getRateLimiter().getRowLimit());
-        parameters.setRateLimiter(rateLimiter);
+        RateLimiterConfig rateLimiter = parameters.getRateLimitConfig();
+        rateLimiter.setDataSizeLimit(req.getRateLimitConfig().getDataSizeLimit());
+        rateLimiter.setRowLimit(req.getRateLimitConfig().getRowLimit());
+        parameters.setRateLimitConfig(rateLimiter);
 
         String parameterJson = JsonUtils.toJson(parameters);
         int rows = scheduleRepository.updateJobParametersById(scheduleEntity.getId(), parameterJson);

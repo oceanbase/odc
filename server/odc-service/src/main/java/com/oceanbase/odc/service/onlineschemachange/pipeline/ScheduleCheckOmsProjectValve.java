@@ -122,13 +122,13 @@ public class ScheduleCheckOmsProjectValve extends BaseValve {
     private void updateOmsProjectConfig(Long scheduleTaskId, OnlineSchemaChangeScheduleTaskParameters taskParameters,
             OnlineSchemaChangeParameters inputParameters, OmsProjectStatusEnum omsProjectStatus) {
         // if rate limiter parameters is changed, try to stop and restart project
-        if (Objects.equals(inputParameters.getRateLimiter(), taskParameters.getRateLimiter())) {
+        if (Objects.equals(inputParameters.getRateLimitConfig(), taskParameters.getRateLimitConfig())) {
             return;
         }
         log.info("Input rate limiter has changed, currentOmsProjectStatus={}, rateLimiterConfig={}, "
                 + "oldRateLimiterConfig={}.",
-                omsProjectStatus.name(), JsonUtils.toJson(taskParameters.getRateLimiter()),
-                JsonUtils.toJson(inputParameters.getRateLimiter()));
+                omsProjectStatus.name(), JsonUtils.toJson(taskParameters.getRateLimitConfig()),
+                JsonUtils.toJson(inputParameters.getRateLimitConfig()));
 
         if (omsProjectStatus == OmsProjectStatusEnum.RUNNING) {
             OmsProjectControlRequest controlRequest = new OmsProjectControlRequest();
@@ -153,10 +153,10 @@ public class ScheduleCheckOmsProjectValve extends BaseValve {
         request.setId(taskParameters.getOmsProjectId());
         FullTransferConfig fullTransferConfig = new FullTransferConfig();
         IncrTransferConfig incrTransferConfig = new IncrTransferConfig();
-        fullTransferConfig.setThrottleIOPS(oscParameters.getRateLimiter().getDataSizeLimit());
-        incrTransferConfig.setThrottleIOPS(oscParameters.getRateLimiter().getDataSizeLimit());
-        fullTransferConfig.setThrottleRps(oscParameters.getRateLimiter().getRowLimit());
-        incrTransferConfig.setThrottleRps(oscParameters.getRateLimiter().getRowLimit());
+        fullTransferConfig.setThrottleIOPS(oscParameters.getRateLimitConfig().getDataSizeLimit());
+        incrTransferConfig.setThrottleIOPS(oscParameters.getRateLimitConfig().getDataSizeLimit());
+        fullTransferConfig.setThrottleRps(oscParameters.getRateLimitConfig().getRowLimit());
+        incrTransferConfig.setThrottleRps(oscParameters.getRateLimitConfig().getRowLimit());
         request.setFullTransferConfig(fullTransferConfig);
         request.setIncrTransferConfig(incrTransferConfig);
 
@@ -170,7 +170,7 @@ public class ScheduleCheckOmsProjectValve extends BaseValve {
         log.info("Start oms project completed,omsProjectId={}, scheduleTaskId={}",
                 taskParameters.getOmsProjectId(), scheduleTaskId);
         // update task parameters
-        taskParameters.setRateLimiter(oscParameters.getRateLimiter());
+        taskParameters.setRateLimitConfig(oscParameters.getRateLimitConfig());
         int rows = scheduleTaskRepository.updateTaskParameters(scheduleTaskId, JsonUtils.toJson(taskParameters));
         if (rows > 0) {
             log.info("Update throttle completed, scheduleTaskId={}", scheduleTaskId);

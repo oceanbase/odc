@@ -95,7 +95,7 @@ public class OnlineSchemaChangeScheduleTaskParameters {
 
     private ReplaceResult replaceResult;
 
-    private RateLimiterConfig rateLimiter = new RateLimiterConfig();
+    private RateLimiterConfig rateLimitConfig = new RateLimiterConfig();
 
 
     public String getOriginTableNameWithSchema() {
