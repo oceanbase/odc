@@ -757,22 +757,6 @@ public class FlowInstanceService {
         }
     }
 
-    public TaskEntity getMultipleAsyncTaskByFlowInstanceId(Long id) {
-        List<ServiceTaskInstanceEntity> entities = serviceTaskRepository
-                .findAll(ServiceTaskInstanceSpecs.flowInstanceIdEquals(id))
-                .stream()
-                .filter(e -> e.getTaskType() != TaskType.GENERATE_ROLLBACK && e.getTaskType() != TaskType.SQL_CHECK
-                        && e.getTaskType() != TaskType.PRE_CHECK)
-                .collect(Collectors.toList());
-        Verify.verify(CollectionUtils.isNotEmpty(entities), "TaskEntities can not be empty");
-
-        Set<Long> taskIds = entities.stream().filter(entity -> entity.getTargetTaskId() != null)
-                .map(ServiceTaskInstanceEntity::getTargetTaskId).collect(Collectors.toSet());
-        Verify.singleton(taskIds, "Multi task for one instance is not allowed, id " + id);
-        Long taskId = taskIds.iterator().next();
-        return taskService.detail(taskId);
-    }
-
     public TaskEntity getTaskByFlowInstanceId(Long id) {
         List<ServiceTaskInstanceEntity> entities = serviceTaskRepository
                 .findAll(ServiceTaskInstanceSpecs.flowInstanceIdEquals(id))
@@ -962,6 +946,7 @@ public class FlowInstanceService {
         log.info("Start creating flow instance, flowInstanceReq={}", flowInstanceReq);
         MultipleDatabaseChangeParameters parameters =
                 (MultipleDatabaseChangeParameters) flowInstanceReq.getParameters();
+        //parameters.setDatabases(null);
         CreateFlowInstanceReq preCheckReq = new CreateFlowInstanceReq();
         preCheckReq.setTaskType(TaskType.PRE_CHECK);
         preCheckReq.setConnectionId(parameters.getDatabases().get(0).getDataSource().getId());
