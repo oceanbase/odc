@@ -196,9 +196,9 @@ sqls:
       p.high_bound_val as MAX_VALUE,
       p.list_val as LIST_VALUE
     from
-      SYS.ALL_VIRTUAL_DATABASE_REAL_AGENT d,
-      SYS.ALL_VIRTUAL_TABLE_REAL_AGENT t,
-      SYS.ALL_VIRTUAL_PART_REAL_AGENT p
+      SYS.ALL_VIRTUAL_DATABASE_AGENT d,
+      SYS.ALL_VIRTUAL_TABLE_AGENT t,
+      SYS.ALL_VIRTUAL_PART_AGENT p
       where d.database_name=? and t.table_name=? and d.tenant_id=t.tenant_id 
       and d.database_id=t.database_id and t.tenant_id=p.tenant_id and t.table_id=p.table_id
       order by part_id asc
@@ -219,9 +219,9 @@ sqls:
       p.high_bound_val as MAX_VALUE,
       p.list_val as LIST_VALUE
     from
-      SYS.ALL_VIRTUAL_DATABASE_REAL_AGENT d,
-      SYS.ALL_VIRTUAL_TABLE_REAL_AGENT t,
-      SYS.ALL_VIRTUAL_PART_REAL_AGENT p
+      SYS.ALL_VIRTUAL_DATABASE_AGENT d,
+      SYS.ALL_VIRTUAL_TABLE_AGENT t,
+      SYS.ALL_VIRTUAL_PART_AGENT p
       where d.database_name=? and d.tenant_id=t.tenant_id
       and d.database_id=t.database_id and t.tenant_id=p.tenant_id and t.table_id=p.table_id
       order by part_id asc

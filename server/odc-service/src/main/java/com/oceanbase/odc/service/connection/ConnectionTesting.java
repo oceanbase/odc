@@ -19,6 +19,9 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Objects;
 import java.util.Properties;
 
@@ -53,7 +56,8 @@ import com.oceanbase.odc.service.connection.ssl.ConnectionSSLAdaptor;
 import com.oceanbase.odc.service.connection.util.ConnectTypeUtil;
 import com.oceanbase.odc.service.plugin.ConnectionPluginUtil;
 import com.oceanbase.odc.service.session.factory.OBConsoleDataSourceFactory;
-import com.oceanbase.odc.service.session.initializer.SessionCreatedInitializer;
+import com.oceanbase.odc.service.session.initializer.BackupInstanceInitializer;
+import com.oceanbase.odc.service.session.initializer.DataSourceInitScriptInitializer;
 
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
@@ -153,7 +157,6 @@ public class ConnectionTesting {
             } else {
                 throw new UnsupportedOperationException("Unsupported type, " + type);
             }
-            config.setType(null);
 
             ConnectionExtensionPoint connectionExtensionPoint = ConnectionPluginUtil.getConnectionExtension(
                     (type != null) ? type.getDialectType() : DialectType.OB_MYSQL);
@@ -243,9 +246,6 @@ public class ConnectionTesting {
 
     private void testInitScript(ConnectionExtensionPoint extensionPoint,
             String schema, ConnectionConfig config) throws SQLException {
-        if (StringUtils.isEmpty(config.getSessionInitScript())) {
-            return;
-        }
         String jdbcUrl =
                 extensionPoint.generateJdbcUrl(getJdbcUrlProperties(config, schema));
 
@@ -253,13 +253,18 @@ public class ConnectionTesting {
         properties.setProperty("socketTimeout", ConnectTypeUtil.REACHABLE_TIMEOUT_MILLIS + "");
         properties.setProperty("connectTimeout", ConnectTypeUtil.REACHABLE_TIMEOUT_MILLIS + "");
 
-        ConnectionInitializer initializer = new SessionCreatedInitializer(config, false);
+        List<ConnectionInitializer> initializers = new ArrayList<>();
+        initializers.addAll(
+                Arrays.asList(new BackupInstanceInitializer(config),
+                        new DataSourceInitScriptInitializer(config, false)));
         try (Connection connection = DriverManager.getConnection(jdbcUrl, properties);
                 Statement statement = connection.createStatement()) {
             if (queryTimeoutSeconds >= 0) {
                 statement.setQueryTimeout(queryTimeoutSeconds);
             }
-            initializer.init(connection);
+            for (ConnectionInitializer initializer : initializers) {
+                initializer.init(connection);
+            }
         }
     }
 

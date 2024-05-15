@@ -85,7 +85,13 @@ public class DatabasePermission extends ResourcePermission {
 
     @Override
     public String toString() {
-        return "DatabasePermission " + this.resourceType + ":" + this.resourceId + " " + getActions(this.mask);
+        String resource = this.resourceType;
+        try {
+            resource = ResourceType.valueOf(this.resourceType).getLocalizedMessage();
+        } catch (Exception e) {
+            // eat exception
+        }
+        return resource + ":" + this.resourceId + ": " + getActions(this.mask);
     }
 
     public static Set<String> getAllActions() {

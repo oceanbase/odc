@@ -16,12 +16,10 @@
 package com.oceanbase.odc.service.flow.util;
 
 import java.util.List;
-import java.util.Locale;
 import java.util.stream.Collectors;
 
-import org.springframework.context.i18n.LocaleContextHolder;
-
 import com.oceanbase.odc.common.util.StringUtils;
+import com.oceanbase.odc.core.shared.constant.Symbols;
 import com.oceanbase.odc.core.shared.constant.TaskType;
 import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.flow.model.CreateFlowInstanceReq;
@@ -36,29 +34,23 @@ public class DescriptionGenerator {
 
     public static void generateDescription(CreateFlowInstanceReq req) {
         if (StringUtils.isEmpty(req.getDescription())) {
+            String descFormat = Symbols.LEFT_BRACKET.getLocalizedMessage()
+                    + "%s" + Symbols.RIGHT_BRACKET.getLocalizedMessage() + "%s.%s";
             if (req.getTaskType() == TaskType.MULTIPLE_ASYNC) {
                 MultipleDatabaseChangeParameters parameters = (MultipleDatabaseChangeParameters) req.getParameters();
                 List<Database> databases = parameters.getDatabases();
-                String descFormat;
-                if (LocaleContextHolder.getLocale().getLanguage().equals(Locale.CHINESE.getLanguage())) {
-                    descFormat = "【%s】%s.%s";
-                } else {
-                    descFormat = "[%s] %s.%s";
-                }
                 String description = databases.stream()
                         .map(db -> String.format(descFormat, db.getEnvironment().getName(),
                                 db.getDataSource().getName(),
                                 db.getName()))
-                        .collect(Collectors.joining(" + "));
+                        .collect(Collectors.joining(","));
                 req.setDescription(description);
             } else {
-                String descFormat = "[%s] %s.%s";
-                if (LocaleContextHolder.getLocale().getLanguage().equals(Locale.CHINESE.getLanguage())) {
-                    descFormat = "【%s】%s.%s";
-                }
-                req.setDescription(String.format(descFormat, req.getEnvironmentName(), req.getConnectionName(),
-                        req.getDatabaseName()));
+
+                req.setDescription(String.format(descFormat,
+                        req.getEnvironmentName(), req.getConnectionName(), req.getDatabaseName()));
             }
+
         }
     }
 }

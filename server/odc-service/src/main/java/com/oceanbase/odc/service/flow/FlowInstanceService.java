@@ -895,8 +895,7 @@ public class FlowInstanceService {
         Verify.notNull(taskEntity.getId(), "TaskId can not be null");
         FlowInstance flowInstance = flowFactory.generateFlowInstance(generateFlowInstanceName(flowInstanceReq),
                 flowInstanceReq.getParentFlowInstanceId(),
-                flowInstanceReq.getProjectId(),
-                flowInstanceReq.getDescription());
+                flowInstanceReq.getProjectId(), flowInstanceReq.getDescription());
         Verify.notNull(flowInstance.getId(), "FlowInstance id can not be null");
 
         try {
@@ -946,7 +945,7 @@ public class FlowInstanceService {
         log.info("Start creating flow instance, flowInstanceReq={}", flowInstanceReq);
         MultipleDatabaseChangeParameters parameters =
                 (MultipleDatabaseChangeParameters) flowInstanceReq.getParameters();
-        //parameters.setDatabases(null);
+        // parameters.setDatabases(null);
         CreateFlowInstanceReq preCheckReq = new CreateFlowInstanceReq();
         preCheckReq.setTaskType(TaskType.PRE_CHECK);
         preCheckReq.setConnectionId(parameters.getDatabases().get(0).getDataSource().getId());

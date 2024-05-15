@@ -15,24 +15,21 @@
  */
 package com.oceanbase.odc.service.schedule.job;
 
+import java.sql.SQLException;
 import java.util.List;
 
 import org.quartz.JobExecutionContext;
 
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.common.util.StringUtils;
-import com.oceanbase.odc.core.session.ConnectionSession;
-import com.oceanbase.odc.core.session.ConnectionSessionConstants;
 import com.oceanbase.odc.core.shared.constant.TaskStatus;
 import com.oceanbase.odc.metadb.schedule.ScheduleTaskEntity;
-import com.oceanbase.odc.service.db.browser.DBSchemaAccessors;
-import com.oceanbase.odc.service.dlm.DataSourceInfoBuilder;
+import com.oceanbase.odc.service.dlm.DLMTableStructureSynchronizer;
+import com.oceanbase.odc.service.dlm.DataSourceInfoMapper;
 import com.oceanbase.odc.service.dlm.model.DataArchiveParameters;
 import com.oceanbase.odc.service.dlm.model.DataArchiveTableConfig;
 import com.oceanbase.odc.service.dlm.model.DlmTask;
 import com.oceanbase.odc.service.dlm.utils.DataArchiveConditionUtil;
-import com.oceanbase.odc.service.session.factory.DefaultConnectSessionFactory;
-import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
 import com.oceanbase.tools.migrator.common.enums.JobType;
 
 import lombok.extern.slf4j.Slf4j;
@@ -74,7 +71,12 @@ public class DataArchiveJob extends AbstractDlmJob {
     @Override
     public void initTask(DlmTask taskUnit) {
         super.initTask(taskUnit);
-        createTargetTable(taskUnit);
+        try {
+            DLMTableStructureSynchronizer.sync(taskUnit.getSourceDs(), taskUnit.getTargetDs(), taskUnit.getTableName(),
+                    taskUnit.getSyncDBObjectTypes());
+        } catch (SQLException e) {
+            log.warn("Sync table structure failed,tableName={}", taskUnit.getTableName(), e);
+        }
     }
 
     private void executeInTaskFramework(JobExecutionContext context) {
@@ -103,16 +105,17 @@ public class DataArchiveJob extends AbstractDlmJob {
         parameters.setShardingStrategy(dataArchiveParameters.getShardingStrategy());
         parameters.setScanBatchSize(dataArchiveParameters.getScanBatchSize());
         parameters
-                .setSourceDs(DataSourceInfoBuilder.build(
+                .setSourceDs(DataSourceInfoMapper.toDataSourceInfo(
                         databaseService.findDataSourceForConnectById(dataArchiveParameters.getSourceDatabaseId())));
         parameters
-                .setTargetDs(DataSourceInfoBuilder.build(
+                .setTargetDs(DataSourceInfoMapper.toDataSourceInfo(
                         databaseService.findDataSourceForConnectById(dataArchiveParameters.getTargetDataBaseId())));
         parameters.getSourceDs().setDatabaseName(dataArchiveParameters.getSourceDatabaseName());
         parameters.getTargetDs().setDatabaseName(dataArchiveParameters.getTargetDatabaseName());
         parameters.getSourceDs().setConnectionCount(2 * (parameters.getReadThreadCount()
                 + parameters.getWriteThreadCount()));
         parameters.getTargetDs().setConnectionCount(parameters.getSourceDs().getConnectionCount());
+        parameters.setSyncTableStructure(dataArchiveParameters.getSyncTableStructure());
 
         Long jobId = publishJob(parameters);
         scheduleTaskRepository.updateJobIdById(taskEntity.getId(), jobId);
@@ -120,44 +123,6 @@ public class DataArchiveJob extends AbstractDlmJob {
         log.info("Publish data-archive job to task framework succeed,scheduleTaskId={},jobIdentity={}",
                 taskEntity.getId(),
                 jobId);
-    }
-
-
-    /**
-     * Create the table in the target database before migrating the data.
-     */
-    private void createTargetTable(DlmTask dlmTask) {
-
-        if (dlmTask.getSourceDs().getDialectType() != dlmTask.getTargetDs().getDialectType()) {
-            log.info("Data sources of different types do not currently support automatic creation of target tables.");
-            return;
-        }
-        DefaultConnectSessionFactory sourceConnectionSessionFactory =
-                new DefaultConnectSessionFactory(dlmTask.getSourceDs());
-        ConnectionSession srcSession = sourceConnectionSessionFactory.generateSession();
-        String tableDDL;
-        try {
-            DBSchemaAccessor sourceDsAccessor = DBSchemaAccessors.create(srcSession);
-            tableDDL = sourceDsAccessor.getTableDDL(dlmTask.getSourceDs().getDefaultSchema(), dlmTask.getTableName());
-        } finally {
-            srcSession.expire();
-        }
-
-        DefaultConnectSessionFactory targetConnectionSessionFactory =
-                new DefaultConnectSessionFactory(dlmTask.getTargetDs());
-        ConnectionSession targetSession = targetConnectionSessionFactory.generateSession();
-        try {
-            DBSchemaAccessor targetDsAccessor = DBSchemaAccessors.create(targetSession);
-            List<String> tableNames = targetDsAccessor.showTables(dlmTask.getTargetDs().getDefaultSchema());
-            if (tableNames.contains(dlmTask.getTableName())) {
-                log.info("Target table exist,tableName={}", dlmTask.getTableName());
-                return;
-            }
-            log.info("Begin to create target table...");
-            targetSession.getSyncJdbcExecutor(ConnectionSessionConstants.CONSOLE_DS_KEY).execute(tableDDL);
-        } finally {
-            targetSession.expire();
-        }
     }
 
 }

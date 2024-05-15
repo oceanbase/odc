@@ -121,18 +121,18 @@ public abstract class BaseOBMySQLLessThan2277SchemaAccessor extends OBMySQLBetwe
         };
     }
 
-
     @Override
     protected String getListTableColumnsSql(String schemaName) {
         MySQLSqlBuilder sb = new MySQLSqlBuilder();
         sb.append(
                 "select TABLE_NAME, TABLE_SCHEMA, ORDINAL_POSITION, COLUMN_NAME, DATA_TYPE, COLUMN_TYPE, NUMERIC_SCALE, "
                         + "NUMERIC_PRECISION, "
-                        + "DATETIME_PRECISION, NUMERIC_SCALE, CHARACTER_MAXIMUM_LENGTH, EXTRA, CHARACTER_SET_NAME, "
+                        + "DATETIME_PRECISION, CHARACTER_MAXIMUM_LENGTH, EXTRA, CHARACTER_SET_NAME, "
                         + "COLLATION_NAME, COLUMN_COMMENT, COLUMN_DEFAULT, IS_NULLABLE, "
                         + "COLUMN_KEY from information_schema.columns where TABLE_SCHEMA = ");
         sb.value(schemaName);
         sb.append(" ORDER BY TABLE_NAME, ORDINAL_POSITION");
         return sb.toString();
     }
+
 }
