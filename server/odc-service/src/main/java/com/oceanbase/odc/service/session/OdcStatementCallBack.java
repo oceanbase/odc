@@ -411,7 +411,7 @@ public class OdcStatementCallBack implements StatementCallback<List<JdbcGeneralR
             StopWatch stopWatch = StopWatch.createStarted();
             String version = ConnectionSessionUtil.getVersion(connectionSession);
             SqlExecTime executeDetails = new SqlExecTime();;
-            if (useFullLinkTrace && VersionUtils.isGreaterThanOrEqualsTo(version, "4.1") &&
+            if (useFullLinkTrace && VersionUtils.isGreaterThanOrEqualsTo(version, "4.2") &&
                     connectionSession.getDialectType().isOceanbase()) {
                 try {
                     executeDetails = FullLinkTraceUtil.getFullLinkTraceDetail(statement, fullLinkTraceTimeout);

@@ -42,6 +42,7 @@ import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionConstants;
 import com.oceanbase.odc.core.session.ConnectionSessionUtil;
 import com.oceanbase.odc.core.shared.constant.DialectType;
+import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.core.shared.exception.HttpException;
 import com.oceanbase.odc.core.shared.exception.NotFoundException;
@@ -172,9 +173,9 @@ public class PartitionPlanService {
             tblName2PartiConfig = new HashMap<>();
         }
         Database database = this.databaseService.detail(databaseId);
-        List<DBTable> dbTables =
-                getJdbcOpt(connectionSession).execute((ConnectionCallback<List<DBTable>>) con -> extensionPoint
-                        .listAllPartitionedTables(con, database.getName(), null));
+        List<DBTable> dbTables = getJdbcOpt(connectionSession)
+                .execute((ConnectionCallback<List<DBTable>>) con -> extensionPoint.listAllPartitionedTables(con,
+                        ConnectionSessionUtil.getTenantName(connectionSession), database.getName(), null));
         return dbTables.stream().map(dbTable -> {
             PartitionPlanDBTable partitionPlanTable = new PartitionPlanDBTable();
             partitionPlanTable.setName(dbTable.getName());
@@ -205,6 +206,7 @@ public class PartitionPlanService {
         JdbcOperations jdbc = getJdbcOpt(connectionSession);
         Map<String, DBTable> name2Table =
                 jdbc.execute((ConnectionCallback<List<DBTable>>) con -> extensionPoint.listAllPartitionedTables(con,
+                        ConnectionSessionUtil.getTenantName(connectionSession),
                         schema, tableNames)).stream().collect(Collectors.toMap(DBTable::getName, dbTable -> dbTable));
         if (Boolean.TRUE.equals(onlyForPartitionName)) {
             return tableConfigs.stream().map(i -> jdbc.execute((ConnectionCallback<PartitionPlanPreViewResp>) con -> {
@@ -234,6 +236,20 @@ public class PartitionPlanService {
                 PartitionPlanPreViewResp returnVal = new PartitionPlanPreViewResp();
                 returnVal.setTableName(tableName);
                 returnVal.setSqls(resp.values().stream().flatMap(Collection::stream).collect(Collectors.toList()));
+                if (CollectionUtils.isNotEmpty(i.getPartitionKeyConfigs())) {
+                    if (CollectionUtils.isEmpty(resp.get(PartitionPlanStrategy.DROP))
+                            && i.getPartitionKeyConfigs().stream()
+                                    .anyMatch(c -> c.getStrategy() == PartitionPlanStrategy.DROP)) {
+                        returnVal.getSqls().add("-- " + ErrorCodes.PartitionPlanNoDropPreviewSqlGenerated
+                                .getLocalizedMessage(new Object[] {}));
+                    }
+                    if (CollectionUtils.isEmpty(resp.get(PartitionPlanStrategy.CREATE))
+                            && i.getPartitionKeyConfigs().stream()
+                                    .anyMatch(c -> c.getStrategy() == PartitionPlanStrategy.CREATE)) {
+                        returnVal.getSqls().add("-- " + ErrorCodes.PartitionPlanNoCreatePreviewSqlGenerated
+                                .getLocalizedMessage(new Object[] {}));
+                    }
+                }
                 return returnVal;
             } catch (Exception e) {
                 log.warn("Failed to generate partition ddl", e);

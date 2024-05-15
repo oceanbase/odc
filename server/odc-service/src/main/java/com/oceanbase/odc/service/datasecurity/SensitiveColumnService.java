@@ -431,9 +431,9 @@ public class SensitiveColumnService {
             tableColumns.forEach(t -> tableSensitiveColumns.add(new HashSet<>()));
             return tableSensitiveColumns;
         }
-        Map<String, Long> databaseName2Id =
-                databaseService.listDatabasesByConnectionIds(Collections.singleton(datasourceId)).stream()
-                        .collect(Collectors.toMap(Database::getName, Database::getId, (d1, d2) -> d1));
+        Map<String, Long> databaseName2Id = databaseService
+                .listDatabasesByConnectionIds(Collections.singleton(datasourceId)).stream().filter(Database::getExisted)
+                .collect(Collectors.toMap(Database::getName, Database::getId, (d1, d2) -> d1));
         Map<Long, String> databaseId2Name = new HashMap<>();
         for (String databaseName : databaseNames) {
             databaseId2Name.put(databaseName2Id.get(databaseName), databaseName);

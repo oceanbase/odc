@@ -310,20 +310,24 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
             log.warn("Job identity is not exists by id {}", taskResult.getJobIdentity().getId());
             return;
         }
+        saveOrUpdateLogMetadata(taskResult, je.getId(), je.getStatus());
+
         if (je.getStatus().isTerminated() || je.getStatus() == JobStatus.CANCELING) {
-            log.warn("Job {} is finished, ignore result, currentStatus={}", je.getId(), je.getStatus());
+            log.warn("Job is finished, ignore result, jobId={}, currentStatus={}", je.getId(), je.getStatus());
             return;
         }
-
-        updateJobScheduleEntity(taskResult);
-        taskResultPublisherExecutor
-                .execute(() -> publisher.publishEvent(new DefaultJobProcessUpdateEvent(taskResult)));
-        if (publisher != null && taskResult.getStatus() != null && taskResult.getStatus().isTerminated()) {
-            taskResultPublisherExecutor.execute(() -> publisher
-                    .publishEvent(new JobTerminateEvent(taskResult.getJobIdentity(), taskResult.getStatus())));
-            if (taskResult.getStatus() == JobStatus.FAILED) {
-                AlarmUtils.info(AlarmEventNames.TASK_EXECUTION_FAILED,
-                        MessageFormat.format("Job execution failed, jobId={0}", taskResult.getJobIdentity().getId()));
+        int rows = updateJobScheduleEntity(taskResult, je);
+        if (rows > 0) {
+            taskResultPublisherExecutor
+                    .execute(() -> publisher.publishEvent(new DefaultJobProcessUpdateEvent(taskResult)));
+            if (publisher != null && taskResult.getStatus() != null && taskResult.getStatus().isTerminated()) {
+                taskResultPublisherExecutor.execute(() -> publisher
+                        .publishEvent(new JobTerminateEvent(taskResult.getJobIdentity(), taskResult.getStatus())));
+                if (taskResult.getStatus() == JobStatus.FAILED) {
+                    AlarmUtils.alarm(AlarmEventNames.TASK_EXECUTION_FAILED,
+                            MessageFormat.format("Job execution failed, jobId={0}",
+                                    taskResult.getJobIdentity().getId()));
+                }
             }
         }
 
@@ -348,8 +352,8 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
 
     }
 
-    private void updateJobScheduleEntity(TaskResult taskResult) {
-        JobEntity jse = find(taskResult.getJobIdentity().getId());
+    private int updateJobScheduleEntity(TaskResult taskResult, JobEntity currentJob) {
+        JobEntity jse = new JobEntity();
         jse.setResultJson(taskResult.getResultJson());
         jse.setStatus(taskResult.getStatus());
         jse.setProgressPercentage(taskResult.getProgress());
@@ -358,27 +362,27 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
         if (taskResult.getStatus() != null && taskResult.getStatus().isTerminated()) {
             jse.setFinishedTime(JobDateUtils.getCurrentDate());
         }
-        jobRepository.update(jse);
-
-        if (taskResult.getLogMetadata() != null && taskResult.getStatus().isTerminated()) {
-            saveOrUpdateLogMetadata(taskResult, jse);
-        }
+        return jobRepository.updateReportResult(jse, currentJob.getId(), currentJob.getStatus());
     }
 
-    private void saveOrUpdateLogMetadata(TaskResult taskResult, JobEntity jse) {
-        taskResult.getLogMetadata().forEach((k, v) -> {
-            // log key may exist if job is retrying
-            Optional<String> logValue = findByJobIdAndAttributeKey(jse.getId(), k);
-            if (logValue.isPresent()) {
-                updateJobAttributeValue(jse.getId(), k, v);
-            } else {
-                JobAttributeEntity jobAttribute = new JobAttributeEntity();
-                jobAttribute.setJobId(jse.getId());
-                jobAttribute.setAttributeKey(k);
-                jobAttribute.setAttributeValue(v);
-                jobAttributeRepository.save(jobAttribute);
-            }
-        });
+    private void saveOrUpdateLogMetadata(TaskResult taskResult, Long jobId, JobStatus currentStatus) {
+        if (taskResult.getLogMetadata() != null) {
+            log.info("Save or update log metadata, jobId={}, currentStatus={}, taskResult={}",
+                    jobId, currentStatus, JsonUtils.toJson(taskResult));
+            taskResult.getLogMetadata().forEach((k, v) -> {
+                // log key may exist if job is retrying
+                Optional<String> logValue = findByJobIdAndAttributeKey(jobId, k);
+                if (logValue.isPresent()) {
+                    updateJobAttributeValue(jobId, k, v);
+                } else {
+                    JobAttributeEntity jobAttribute = new JobAttributeEntity();
+                    jobAttribute.setJobId(jobId);
+                    jobAttribute.setAttributeKey(k);
+                    jobAttribute.setAttributeValue(v);
+                    jobAttributeRepository.save(jobAttribute);
+                }
+            });
+        }
     }
 
     private void updateJobAttributeValue(Long id, String key, String value) {
