@@ -12,7 +12,7 @@ User Management
 
 Shadow table synchronization
 
-- The generated statement syntax error [#2388](https://github.com/oceanbase/odc/pull/2388)
+- Syntax errors may occur in statements generated when a column has a default value [#2388](https://github.com/oceanbase/odc/pull/2388)
 
 Data Security
 
@@ -24,12 +24,12 @@ Command line window
 
 Database archiving/cleaning
 
-- Status was incorrectly set to success when the task was terminated [#2340](https://github.com/oceanbase/odc/pull/2340)
+- The status may be incorrectly set to success when a task is terminated [#2340](https://github.com/oceanbase/odc/pull/2340)
 - There is no problem with OceanBase MySQL archiving custom table name reports [#2313](https://github.com/oceanbase/odc/pull/2313)
 
 ResultSet export
 
-- Timeout occurred when exporting result set [#2315](https://github.com/oceanbase/odc/pull/2315)
+- When database access is slow, exporting the result set fails due to timeout [#2315](https://github.com/oceanbase/odc/pull/2315)
 
 Notification
 
@@ -49,7 +49,9 @@ System integration
 Other
 
 - Work orders whose life cycle spans the release process cannot be promoted normally [#2065](https://github.com/oceanbase/odc/pull/2065)
-- Unable to manually execute live termination tasks [#2272](https://github.com/oceanbase/odc/pull/2272)
+- Unable to execute or terminate tasks manually [#2272](https://github.com/oceanbase/odc/pull/2272)
+- After running for a period of time, you cannot use the account password to log in and you need to restart ODCServer to recover [#2389](https://github.com/oceanbase/odc/pull/2389)
+- There is a conflict between Basic authentication method calling API and CSRF protection [#2370](https://github.com/oceanbase/odc/pull/2370)
 
 ### Usability improvements
 
@@ -75,7 +77,7 @@ PL debugging
 
 Other
 
-- Application startup failed [#2158](https://github.com/oceanbase/odc/pull/2158)
+- ODC Server fails to start when there is a partition plan history task [#2158](https://github.com/oceanbase/odc/pull/2158)
 
 ### Security
 

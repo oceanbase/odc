@@ -14,7 +14,7 @@
 
 影子表同步
 
-- 生成的语句语法错误 [#2388](https://github.com/oceanbase/odc/pull/2388)
+- 列存在默认值时生成的语句可能出现语法错误 [#2388](https://github.com/oceanbase/odc/pull/2388)
 
 数据脱敏
 
@@ -26,12 +26,12 @@
 
 数据库归档/清理
 
-- 任务被终止时状态被错误地设置为成功 [#2340](https://github.com/oceanbase/odc/pull/2340)
+- 任务被终止时状态可能被错误地设置为成功 [#2340](https://github.com/oceanbase/odc/pull/2340)
 - OceanBase MySQL 归档自定义表名报表不存在问题 [#2313](https://github.com/oceanbase/odc/pull/2313)
 
 结果集导出
 
-- 导出结果集时发生超时 [#2315](https://github.com/oceanbase/odc/pull/2315)
+- 数据库访问较慢时导出结果集会因为超时而失败 [#2315](https://github.com/oceanbase/odc/pull/2315)
 
 消息通知
 
@@ -51,7 +51,9 @@
 其他
 
 - 生命周期横跨发布过程的工单无法正常推进 [#2065](https://github.com/oceanbase/odc/pull/2065)
-- 无法手动执行活终止任务 [#2272](https://github.com/oceanbase/odc/pull/2272)
+- 无法手动执行或终止任务 [#2272](https://github.com/oceanbase/odc/pull/2272)
+- 运行一段时间之后无法使用帐密登陆需要重启 ODCServer 才能恢复 [#2389](https://github.com/oceanbase/odc/pull/2389)
+- Basic 认证方式调用 API 和 CSRF 防护存在冲突 [#2370](https://github.com/oceanbase/odc/pull/2370)
 
 ### 易用性改进
 
@@ -77,7 +79,7 @@ PL 调试
 
 其他
 
-- 应用启动失败 [#2158](https://github.com/oceanbase/odc/pull/2158)
+- 存在分区计划历史任务时 ODC Server 启动失败 [#2158](https://github.com/oceanbase/odc/pull/2158)
 
 ### 安全加固
 
