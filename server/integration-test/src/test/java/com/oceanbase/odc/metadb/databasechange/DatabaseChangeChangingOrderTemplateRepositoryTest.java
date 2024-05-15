@@ -85,6 +85,7 @@ public class DatabaseChangeChangingOrderTemplateRepositoryTest extends ServiceTe
         orders.add(Arrays.asList(1L, 2L));
         orders.add(Arrays.asList(3L, 4L));
         databaseChangeChangingOrderTemplateEntity.setDatabaseSequences(orders);
+        databaseChangeChangingOrderTemplateEntity.setEnabled(true);
         return templateRepository.save(
                 databaseChangeChangingOrderTemplateEntity);
     }

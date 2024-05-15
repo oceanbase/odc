@@ -17,7 +17,6 @@ package com.oceanbase.odc.service.databasechange;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThrows;
-import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyLong;
@@ -102,9 +101,11 @@ public class DatabaseChangeChangingOrderTemplateServiceTest extends ServiceTestE
         orders.add(Arrays.asList(1L, 2L));
         orders.add(Arrays.asList(3L, 4L));
         req.setOrders(orders);
-        Boolean result = templateService.create(req);
+        DatabaseChangeChangingOrderTemplateEntity templateEntity = templateService.create(
+                req);
         int size = templateRepository.findAll().size();
-        assertTrue(result);
+        Assert.assertEquals(TEMPLATE_NAME, templateEntity.getName());
+        Assert.assertEquals(PROJECT_ID, templateEntity.getProjectId());
         Assert.assertEquals(1, size);
     }
 
@@ -157,9 +158,9 @@ public class DatabaseChangeChangingOrderTemplateServiceTest extends ServiceTestE
         List<List<Long>> orders = new ArrayList<>();
         orders.add(Arrays.asList(1L, 2L));
         orders.add(Arrays.asList(3L, 4L));
-        Boolean result = templateService
+        DatabaseChangeChangingOrderTemplateEntity update = templateService
                 .update(byNameAndProjectId.getId(), req);
-        assertTrue(result);
+        assertEquals(TEMPLATE_RENAME, update.getName());
         Optional<DatabaseChangeChangingOrderTemplateEntity> byId =
                 templateRepository.findById(byNameAndProjectId.getId());
         assertEquals(TEMPLATE_RENAME, byId.get().getName());
@@ -227,9 +228,8 @@ public class DatabaseChangeChangingOrderTemplateServiceTest extends ServiceTestE
         createDatabaseChangingOrderTemplate_saveEntity_succeed();
         DatabaseChangeChangingOrderTemplateEntity databaseChangeChangingOrderTemplateEntity =
                 templateRepository.findByNameAndProjectId(TEMPLATE_NAME, PROJECT_ID).get();
-        Boolean result = templateService.delete(
+        DatabaseChangeChangingOrderTemplateEntity delete = templateService.delete(
                 databaseChangeChangingOrderTemplateEntity.getId());
-        assertTrue(result);
         int size = templateRepository.findAll().size();
         assertEquals(0, size);
     }

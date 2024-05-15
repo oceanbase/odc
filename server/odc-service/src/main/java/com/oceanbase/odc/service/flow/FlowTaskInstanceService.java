@@ -657,33 +657,36 @@ public class FlowTaskInstanceService {
         List<MultipleDatabaseChangeTaskResult> multipleDatabaseChangeTaskResults = innerGetResult(taskEntity,
                 MultipleDatabaseChangeTaskResult.class);
         // Add environment element
-        List<DatabaseChangingRecord> databaseChangingRecordList = multipleDatabaseChangeTaskResults.get(0)
-                .getDatabaseChangingRecordList();
-        List<Database> databaseList = multipleDatabaseChangeTaskResults.get(0).getDatabaseChangingRecordList().stream()
-                .map(
-                        databaseChangingRecord -> databaseChangingRecord.getDatabase())
-                .collect(
-                        Collectors.toList());
-        List<Long> environmentIds = databaseList.stream().map(
-                database -> database.getDataSource().getEnvironmentId()).distinct().collect(Collectors.toList());
-        Map<Long, Environment> environmentMap = environmentService.list(
-                environmentIds).stream()
-                .collect(Collectors.toMap(Environment::getId, environment -> environment));
-        for (int i = 0; i < databaseList.size(); i++) {
-            if (environmentMap.containsKey(databaseList.get(i).getDataSource().getEnvironmentId())) {
-                Environment environment = new Environment();
-                environment
-                        .setName(environmentMap.get(databaseList.get(i).getDataSource().getEnvironmentId()).getName());
-                environment.setStyle(
-                        environmentMap.get(databaseList.get(i).getDataSource().getEnvironmentId()).getStyle());
-                databaseList.get(i).setEnvironment(environment);
-                if (databaseChangingRecordList.get(i) != null) {
-                    databaseChangingRecordList.get(i).setDatabase(databaseList.get(i));
+        if (!multipleDatabaseChangeTaskResults.isEmpty()) {
+            List<DatabaseChangingRecord> databaseChangingRecordList = multipleDatabaseChangeTaskResults.get(0)
+                    .getDatabaseChangingRecordList();
+            List<Database> databaseList =
+                    multipleDatabaseChangeTaskResults.get(0).getDatabaseChangingRecordList().stream()
+                            .map(
+                                    databaseChangingRecord -> databaseChangingRecord.getDatabase())
+                            .collect(
+                                    Collectors.toList());
+            List<Long> environmentIds = databaseList.stream().map(
+                    database -> database.getDataSource().getEnvironmentId()).distinct().collect(Collectors.toList());
+            Map<Long, Environment> environmentMap = environmentService.list(
+                    environmentIds).stream()
+                    .collect(Collectors.toMap(Environment::getId, environment -> environment));
+            for (int i = 0; i < databaseList.size(); i++) {
+                if (environmentMap.containsKey(databaseList.get(i).getDataSource().getEnvironmentId())) {
+                    Environment environment = new Environment();
+                    environment
+                            .setName(environmentMap.get(databaseList.get(i).getDataSource().getEnvironmentId())
+                                    .getName());
+                    environment.setStyle(
+                            environmentMap.get(databaseList.get(i).getDataSource().getEnvironmentId()).getStyle());
+                    databaseList.get(i).setEnvironment(environment);
+                    if (databaseChangingRecordList.get(i) != null) {
+                        databaseChangingRecordList.get(i).setDatabase(databaseList.get(i));
+                    }
                 }
             }
         }
         return multipleDatabaseChangeTaskResults;
-
     }
 
     private List<DatabaseChangeResult> getAsyncResult(@NonNull TaskEntity taskEntity) throws IOException {

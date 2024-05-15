@@ -34,6 +34,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
 
+import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.constant.ResourceRoleName;
@@ -48,7 +49,6 @@ import com.oceanbase.odc.metadb.databasechange.DatabaseChangeChangingOrderTempla
 import com.oceanbase.odc.metadb.databasechange.DatabaseChangeChangingOrderTemplateSpecs;
 import com.oceanbase.odc.service.databasechange.model.CreateDatabaseChangeChangingOrderReq;
 import com.oceanbase.odc.service.databasechange.model.DatabaseChangeProperties;
-import com.oceanbase.odc.service.databasechange.model.DatabaseChangingOrderTemplateEnables;
 import com.oceanbase.odc.service.databasechange.model.DatabaseChangingOrderTemplateExists;
 import com.oceanbase.odc.service.databasechange.model.QueryDatabaseChangeChangingOrderParams;
 import com.oceanbase.odc.service.databasechange.model.QueryDatabaseChangeChangingOrderResp;
@@ -58,6 +58,7 @@ import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 
 @Service
 @Validated
+@SkipAuthorize("permission check inside")
 public class DatabaseChangeChangingOrderTemplateService {
     @Autowired
     private DatabaseChangeChangingOrderTemplateRepository templateRepository;
@@ -74,8 +75,11 @@ public class DatabaseChangeChangingOrderTemplateService {
     private ProjectPermissionValidator projectPermissionValidator;
 
     @Transactional(rollbackFor = Exception.class)
-    public Boolean create(
+    public DatabaseChangeChangingOrderTemplateEntity create(
             @NotNull @Valid CreateDatabaseChangeChangingOrderReq req) {
+        PreConditions.validExists(ResourceType.ODC_PROJECT, "projectId", req.getProjectId(),
+                () -> projectRepository.existsById(req.getProjectId()));
+        projectPermissionValidator.checkProjectRole(req.getProjectId(), ResourceRoleName.all());
         List<List<Long>> orders = req.getOrders();
         List<Long> databaseIds = orders.stream().flatMap(List::stream).collect(Collectors.toList());
         if (databaseIds.size() <= DatabaseChangeProperties.MIN_DATABASE_COUNT
@@ -88,9 +92,13 @@ public class DatabaseChangeChangingOrderTemplateService {
             throw new BadArgumentException(ErrorCodes.IllegalArgument,
                     "Database cannot be duplicated.");
         }
-        validPermission(req);
         PreConditions.validNoDuplicated(ResourceType.ODC_DATABASE_CHANGE_ORDER_TEMPLATE, "name", req.getName(),
                 () -> templateRepository.existsByNameAndProjectId(req.getName(), req.getProjectId()));
+        List<DatabaseEntity> byIdIn = databaseRepository.findByIdIn(databaseIds);
+        if (!(byIdIn.stream().allMatch(x -> x.getProjectId().equals(req.getProjectId())))) {
+            throw new BadArgumentException(ErrorCodes.IllegalArgument,
+                    "all databases must belong to the current project");
+        }
         long userId = authenticationFacade.currentUserId();
         Long organizationId = authenticationFacade.currentOrganizationId();
         DatabaseChangeChangingOrderTemplateEntity templateEntity =
@@ -101,13 +109,13 @@ public class DatabaseChangeChangingOrderTemplateService {
         templateEntity.setOrganizationId(organizationId);
         templateEntity.setDatabaseSequences(req.getOrders());
         templateEntity.setEnabled(true);
-        templateRepository.save(
+        return templateRepository.save(
                 templateEntity);
-        return true;
+
     }
 
     @Transactional(rollbackFor = Exception.class)
-    public Boolean update(Long id,
+    public DatabaseChangeChangingOrderTemplateEntity update(Long id,
             @NotNull @Valid UpdateDatabaseChangeChangingOrderReq req) {
         PreConditions.validExists(ResourceType.ODC_PROJECT, "projectId", req.getProjectId(),
                 () -> projectRepository.existsById(req.getProjectId()));
@@ -115,9 +123,10 @@ public class DatabaseChangeChangingOrderTemplateService {
         DatabaseChangeChangingOrderTemplateEntity originEntity =
                 templateRepository.findByIdAndProjectId(id, req.getProjectId()).orElseThrow(
                         () -> new NotFoundException(ResourceType.ODC_DATABASE_CHANGE_ORDER_TEMPLATE, "id", id));
+        PreConditions.validNoDuplicated(ResourceType.ODC_DATABASE_CHANGE_ORDER_TEMPLATE, "name", req.getName(),
+                () -> templateRepository.existsByNameAndProjectId(req.getName(), req.getProjectId()));
         originEntity.setName(req.getName());
-        templateRepository.save(originEntity);
-        return true;
+        return templateRepository.save(originEntity);
     }
 
     public QueryDatabaseChangeChangingOrderResp detail(
@@ -167,14 +176,14 @@ public class DatabaseChangeChangingOrderTemplateService {
     }
 
     @Transactional(rollbackFor = Exception.class)
-    public Boolean delete(@NotNull @Min(value = 1) Long id) {
-        DatabaseChangeChangingOrderTemplateEntity databaseChangeChangingOrderTemplateEntity =
+    public DatabaseChangeChangingOrderTemplateEntity delete(@NotNull @Min(value = 1) Long id) {
+        DatabaseChangeChangingOrderTemplateEntity templateEntity =
                 templateRepository.findById(id).orElseThrow(
                         () -> new NotFoundException(ResourceType.ODC_DATABASE_CHANGE_ORDER_TEMPLATE, "id", id));
-        projectPermissionValidator.checkProjectRole(databaseChangeChangingOrderTemplateEntity.getProjectId(),
+        projectPermissionValidator.checkProjectRole(templateEntity.getProjectId(),
                 ResourceRoleName.all());
         templateRepository.deleteById(id);
-        return true;
+        return templateEntity;
     }
 
     public DatabaseChangingOrderTemplateExists exists(String name, Long projectId) {
@@ -186,39 +195,6 @@ public class DatabaseChangeChangingOrderTemplateService {
                     .build();
         }
         return DatabaseChangingOrderTemplateExists.builder().exists(false).build();
-    }
-
-    public DatabaseChangingOrderTemplateEnables enables(Long id) {
-        DatabaseChangeChangingOrderTemplateEntity templateEntity =
-                templateRepository.findById(id).orElseThrow(
-                        () -> new NotFoundException(ResourceType.ODC_DATABASE_CHANGE_ORDER_TEMPLATE, "id", id));
-        projectPermissionValidator.checkProjectRole(templateEntity.getProjectId(),
-                ResourceRoleName.all());
-        List<List<Long>> databaseSequences = templateEntity.getDatabaseSequences();
-        List<Long> ids = databaseSequences.stream().flatMap(Collection::stream).distinct().collect(
-                Collectors.toList());
-        List<DatabaseEntity> databaseEntities = databaseRepository.findByIdIn(ids);
-        // If the database does not belong to the project of the current template, the template is invalid
-        if (!databaseEntities.stream()
-                .allMatch(databaseEntity -> databaseEntity.getProjectId().equals(templateEntity.getProjectId()))) {
-            return DatabaseChangingOrderTemplateEnables.builder().enables(false)
-                    .errorMessage("The template is invalid. Please delete it").build();
-        }
-
-        return DatabaseChangingOrderTemplateEnables.builder().enables(true).build();
-    }
-
-    private void validPermission(CreateDatabaseChangeChangingOrderReq req) {
-        PreConditions.validExists(ResourceType.ODC_PROJECT, "projectId", req.getProjectId(),
-                () -> projectRepository.existsById(req.getProjectId()));
-        projectPermissionValidator.checkProjectRole(req.getProjectId(), ResourceRoleName.all());
-        List<Long> list = req.getOrders().stream().flatMap(x -> x.stream()).collect(Collectors.toList());
-        HashSet<Long> ids = new HashSet<>(list);
-        List<DatabaseEntity> byIdIn = databaseRepository.findByIdIn(ids);
-        if (!(byIdIn.stream().allMatch(x -> x.getProjectId().equals(req.getProjectId())))) {
-            throw new BadArgumentException(ErrorCodes.IllegalArgument,
-                    "all databases must belong to the current project");
-        }
     }
 
 }
