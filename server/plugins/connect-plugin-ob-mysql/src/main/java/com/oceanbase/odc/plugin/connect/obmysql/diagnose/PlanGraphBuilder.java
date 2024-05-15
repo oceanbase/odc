@@ -66,6 +66,40 @@ public class PlanGraphBuilder {
         return graph;
     }
 
+    /**
+     * build by query plan in json format
+     */
+    public static SqlPlanGraph buildPlanGraph(Map<String, Object> map, Map<String, String> outputFilters) {
+        SqlPlanGraph graph = new SqlPlanGraph();
+        parsePlanByJsonMap(map, graph, new HashMap<>(), outputFilters, "-1");
+        return graph;
+    }
+
+    private static void parsePlanByJsonMap(Map<String, Object> jsonMap, SqlPlanGraph graph,
+            Map<String, Operator> id2Operator, Map<String, String> outputFilter, String parentId) {
+        String id = Integer.toString((int) jsonMap.get("ID"));
+        Operator operator = new Operator(id, (String) jsonMap.get("OPERATOR"));
+        graph.insertVertex(operator);
+        id2Operator.put(operator.getGraphId(), operator);
+        if (!"-1".equals(parentId)) {
+            graph.insertEdge(id2Operator.get(parentId), operator, (int) jsonMap.get("EST.ROWS"));
+        }
+        operator.setStatus(QueryStatus.PREPARING);
+        String name = (String) jsonMap.get("NAME");
+        if (StringUtils.isNotEmpty(name)) {
+            operator.setTitle(name);
+            operator.setAttribute("Object name", singletonList(name));
+        }
+        long dbTime = (int) jsonMap.get("EST.TIME(us)");
+        operator.setDuration(dbTime);
+        operator.getOverview().put("EST.TIME(us)", dbTime + "");
+        Map<String, List<String>> special = parsePredicates(outputFilter.get(id), new HashMap<>());
+        operator.getAttributes().putAll(special);
+        jsonMap.entrySet().stream()
+                .filter(entry -> entry.getKey().startsWith("CHILD_"))
+                .forEach(entry -> parsePlanByJsonMap((Map) entry.getValue(), graph, id2Operator, outputFilter, id));
+    }
+
     private static Operator parseResult(OBSqlPlan record, Map<String, String> parameters) {
         Operator operator = new Operator(record.getId(), record.getOperator());
         // set object info
@@ -100,15 +134,28 @@ public class PlanGraphBuilder {
 
     public static Map<String, List<String>> parsePredicates(String predicates, Map<String, String> parameters) {
         Map<String, List<String>> map = new LinkedHashMap<>();
+        if (StringUtils.isEmpty(predicates)) {
+            return map;
+        }
         int depth = 0;
         char[] cs = predicates.toCharArray();
         StringBuilder keyBuilder = new StringBuilder();
         StringBuilder valueBuilder = new StringBuilder();
         for (char c : cs) {
+            if (c == '\n') {
+                continue;
+            }
             if (depth == 0) {
                 if (c == '(' || c == '[') {
                     depth++;
-                } else if (c == ',') {
+                } else if (c == ',' || c == ' ') {
+                    if (keyBuilder.indexOf("=") != -1) {
+                        String[] split = keyBuilder.toString().trim().split("=");
+                        String predicateKey = PredicateKey.getLabel(split[0]);
+                        if (predicateKey != null) {
+                            map.put(predicateKey, singletonList(split[1]));
+                        }
+                    }
                     keyBuilder = new StringBuilder();
                 } else {
                     keyBuilder.append(c);
@@ -126,7 +173,9 @@ public class PlanGraphBuilder {
                             continue;
                         }
                         String predicate = valueBuilder.toString();
-                        if (predicate.startsWith("[")) {
+                        if (predicate.isEmpty()) {
+                            continue;
+                        } else if (predicate.startsWith("[")) {
                             LinkedList<String> values = new LinkedList<>();
                             Matcher matcher = VALUE_GROUP_PATTERN.matcher(predicate);
                             while (matcher.find()) {

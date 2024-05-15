@@ -15,6 +15,7 @@
  */
 package com.oceanbase.odc.service.queryprofile.display;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -42,25 +43,28 @@ public class PlanGraphOperator {
     private List<PlanGraphEdge> outEdges;
 
     public void putAttribute(@NonNull String key, Object value) {
+        if (attributes == null) {
+            attributes = new HashMap<>();
+        }
         if (value != null) {
             attributes.put(key, value);
         }
     }
 
     public void putOverview(@NonNull String key, String value) {
-        if (value != null) {
+        if (overview == null) {
+            overview = new HashMap<>();
+        }
+        if (StringUtils.isNotEmpty(value)) {
             overview.put(key, value);
         }
     }
 
     public void putStatistics(@NonNull String key, String value) {
-        if (value == null) {
-            return;
+        if (statistics == null) {
+            statistics = new HashMap<>();
         }
-        if (StringUtils.isNumeric(value)) {
-            long val = Long.parseLong(value) + Long.parseLong(statistics.getOrDefault(key, "0"));
-            statistics.put(key, val + "");
-        } else {
+        if (StringUtils.isNotEmpty(value)) {
             statistics.put(key, value);
         }
     }

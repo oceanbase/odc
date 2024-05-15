@@ -21,6 +21,9 @@ import static com.oceanbase.odc.service.queryprofile.model.ProfileConstants.CHAN
 import static com.oceanbase.odc.service.queryprofile.model.ProfileConstants.DB_TIME;
 import static com.oceanbase.odc.service.queryprofile.model.ProfileConstants.IO_READ_BYTES;
 import static com.oceanbase.odc.service.queryprofile.model.ProfileConstants.OTHER_STATS;
+import static com.oceanbase.odc.service.queryprofile.model.ProfileConstants.REMOTE_BYTES_IN_TOTAL;
+import static com.oceanbase.odc.service.queryprofile.model.ProfileConstants.REMOTE_IO_READ_BYTES;
+import static com.oceanbase.odc.service.queryprofile.model.ProfileConstants.REMOTE_ROWS_IN_TOTAL;
 import static com.oceanbase.odc.service.queryprofile.model.ProfileConstants.RESCAN_TIMES;
 import static com.oceanbase.odc.service.queryprofile.model.ProfileConstants.ROWS_IN_TOTAL;
 import static com.oceanbase.odc.service.queryprofile.model.ProfileConstants.STATUS;
@@ -31,10 +34,13 @@ import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -44,6 +50,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.StreamUtils;
 
 import com.oceanbase.odc.common.json.JsonUtils;
+import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.common.util.TimespanFormatUtil;
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionUtil;
@@ -73,15 +80,23 @@ import lombok.extern.slf4j.Slf4j;
 public class OBQueryProfileManager {
     private static final String PROFILE_KEY_PREFIX = "query-profile-";
 
-    private final ExecutorService executor =
-            Executors.newFixedThreadPool(5, r -> new Thread(r, "query-profile-" + r.hashCode()));
+    private final ExecutorService executor = new ThreadPoolExecutor(5, 10, 60, TimeUnit.SECONDS,
+            new LinkedBlockingQueue<>(), r -> new Thread(r, "query-profile-" + r.hashCode()));
 
     public void submitProfile(ConnectionSession session, @NonNull String traceId) {
         executor.execute(() -> {
             if (ConnectionSessionUtil.getBinaryContentMetadata(session, PROFILE_KEY_PREFIX + traceId) == null) {
                 SqlProfile profile = new SqlProfile(traceId, session);
                 initiateProfile(profile);
-                saveProfile(profile);
+                BinaryDataManager binaryDataManager = ConnectionSessionUtil.getBinaryDataManager(session);
+                try {
+                    BinaryContentMetaData metaData = binaryDataManager.write(
+                            new ByteArrayInputStream(JsonUtils.toJson(profile).getBytes()));
+                    String key = PROFILE_KEY_PREFIX + profile.getTraceId();
+                    ConnectionSessionUtil.setBinaryContentMetadata(session, key, metaData);
+                } catch (IOException e) {
+                    log.warn("Failed to persist profile.", e);
+                }
             }
         });
     }
@@ -132,26 +147,15 @@ public class OBQueryProfileManager {
         replaceSPMStatsIntoProfile(spmStats, profile);
     }
 
-    public void saveProfile(SqlProfile profile) {
-        ConnectionSession session = profile.getSession();
-        BinaryDataManager binaryDataManager = ConnectionSessionUtil.getBinaryDataManager(session);
-        try {
-            BinaryContentMetaData metaData = binaryDataManager.write(
-                    new ByteArrayInputStream(JsonUtils.toJson(profile).getBytes()));
-            String key = PROFILE_KEY_PREFIX + profile.getTraceId();
-            ConnectionSessionUtil.setBinaryContentMetadata(session, key, metaData);
-        } catch (IOException e) {
-            log.warn("Failed to persist profile.", e);
-        }
-    }
-
     private void replaceSPMStatsIntoProfile(List<SqlPlanMonitor> records, SqlProfile profile) {
         if (CollectionUtils.isEmpty(records)) {
             return;
         }
-        PlanGraph graph = profile.getGraph();
         records.sort(Comparator.comparingInt(stat -> Integer.parseInt(stat.getPlanLineId())));
-        SqlPlanMonitor rootOperator = records.get(0);
+        List<SqlPlanMonitor> mergedRecords = mergePlanMonitorRecords(records);
+
+        PlanGraph graph = profile.getGraph();
+        SqlPlanMonitor rootOperator = mergedRecords.get(0);
         profile.setStartTime(rootOperator.getFirstRefreshTime());
 
         if (rootOperator.getLastRefreshTime() == null) {
@@ -175,12 +179,18 @@ public class OBQueryProfileManager {
             profile.setDuration(totalTs.toNanos() / 1000);
         }
 
-        graph.clearStatistics();
-        for (SqlPlanMonitor stats : records) {
+        for (SqlPlanMonitor stats : mergedRecords) {
             PlanGraphOperator operator = graph.getOperator(stats.getPlanLineId());
             // overview
-            if (stats.getLastChangeTime() != null) {
+            if (stats.getLastRefreshTime() != null) {
                 operator.setStatus(QueryStatus.FINISHED);
+            } else {
+                operator.setStatus(QueryStatus.RUNNING);
+            }
+            Long dbTime = stats.getDbTime();
+            operator.setDuration(dbTime);
+            operator.putOverview(DB_TIME, TimespanFormatUtil.formatTimespan(dbTime, TimeUnit.MICROSECONDS));
+            if (stats.getLastChangeTime() != null) {
                 Duration changeTs = Duration.between(stats.getFirstChangeTime().toInstant(),
                         stats.getLastChangeTime().toInstant());
                 operator.putOverview(CHANGE_TIME, TimespanFormatUtil.formatTimespan(changeTs));
@@ -188,28 +198,25 @@ public class OBQueryProfileManager {
                 if (stats.getFirstChangeTime() == null) {
                     operator.setStatus(QueryStatus.PREPARING);
                 } else {
-                    operator.setStatus(QueryStatus.RUNNING);
-                }
-                // if operator is interrupted, the last_change_time would also be null
-                if (stats.getLastRefreshTime() != null) {
-                    operator.setStatus(QueryStatus.FINISHED);
+                    Duration changeTs = Duration.between(stats.getFirstChangeTime().toInstant(),
+                            stats.getCurrentTime().toInstant());
+                    operator.putOverview(CHANGE_TIME, TimespanFormatUtil.formatTimespan(changeTs));
                 }
             }
-            Long dbTime = stats.getDbTime();
-            if (operator.getDuration() != null) {
-                dbTime = Math.max(dbTime, operator.getDuration());
-            }
-            operator.setDuration(dbTime);
-            operator.putOverview(DB_TIME,
-                    TimespanFormatUtil.formatTimespan(dbTime, TimeUnit.MICROSECONDS));
             // statistics
             operator.putStatistics(RESCAN_TIMES, stats.getStarts() + "");
             operator.putStatistics(IO_READ_BYTES, stats.getOtherstats().get(IO_READ_BYTES));
             operator.putStatistics(BYTES_IN_TOTAL, stats.getOtherstats().get(BYTES_IN_TOTAL));
             operator.putStatistics(ROWS_IN_TOTAL, stats.getOtherstats().get(ROWS_IN_TOTAL));
-            graph.putStatistics(IO_READ_BYTES, stats.getOtherstats().get(IO_READ_BYTES));
-            graph.putStatistics(BYTES_IN_TOTAL, stats.getOtherstats().get(BYTES_IN_TOTAL));
-            graph.putStatistics(ROWS_IN_TOTAL, stats.getOtherstats().get(ROWS_IN_TOTAL));
+            operator.putStatistics(REMOTE_IO_READ_BYTES, stats.getOtherstats().get(REMOTE_IO_READ_BYTES));
+            operator.putStatistics(REMOTE_BYTES_IN_TOTAL, stats.getOtherstats().get(REMOTE_BYTES_IN_TOTAL));
+            operator.putStatistics(REMOTE_ROWS_IN_TOTAL, stats.getOtherstats().get(REMOTE_ROWS_IN_TOTAL));
+            graph.addStatistics(IO_READ_BYTES, stats.getOtherstats().get(IO_READ_BYTES));
+            graph.addStatistics(BYTES_IN_TOTAL, stats.getOtherstats().get(BYTES_IN_TOTAL));
+            graph.addStatistics(ROWS_IN_TOTAL, stats.getOtherstats().get(ROWS_IN_TOTAL));
+            graph.addStatistics(REMOTE_IO_READ_BYTES, stats.getOtherstats().get(REMOTE_IO_READ_BYTES));
+            graph.addStatistics(REMOTE_BYTES_IN_TOTAL, stats.getOtherstats().get(REMOTE_BYTES_IN_TOTAL));
+            graph.addStatistics(REMOTE_ROWS_IN_TOTAL, stats.getOtherstats().get(REMOTE_ROWS_IN_TOTAL));
             // attributes
             operator.putAttribute(OTHER_STATS, stats.getOtherstats().entrySet()
                     .stream().map(entry -> String.format("%s : %s", entry.getKey(), entry.getValue()))
@@ -220,6 +227,69 @@ public class OBQueryProfileManager {
                 inEdges.get(0).setWeight(Float.valueOf(stats.getOutputRows()));
             }
         }
+    }
+
+    /**
+     * When an operator is called on different machines, it will have multiple records in
+     * sql_plan_monitor. We need to merge the data of these records based on the `plan_line_id`.
+     */
+    private List<SqlPlanMonitor> mergePlanMonitorRecords(List<SqlPlanMonitor> records) {
+        String local = formatIpPort(records.get(0));
+        Map<String, SqlPlanMonitor> planId2Records = new HashMap<>();
+        for (SqlPlanMonitor record : records) {
+            String planLineId = record.getPlanLineId();
+            if (StringUtils.isEmpty(planLineId)) {
+                continue;
+            }
+            if (!planId2Records.containsKey(planLineId)) {
+                planId2Records.put(planLineId, record);
+                continue;
+            }
+            SqlPlanMonitor realRecord = planId2Records.get(planLineId);
+
+            String host = formatIpPort(record);
+            if (StringUtils.equals(local, host)) {
+                realRecord.getOtherstats().put(REMOTE_IO_READ_BYTES,
+                        addStats(realRecord.getOtherstats().get(REMOTE_IO_READ_BYTES),
+                                record.getOtherstats().get(IO_READ_BYTES)));
+                realRecord.getOtherstats().put(REMOTE_BYTES_IN_TOTAL,
+                        addStats(realRecord.getOtherstats().get(REMOTE_BYTES_IN_TOTAL),
+                                record.getOtherstats().get(BYTES_IN_TOTAL)));
+                realRecord.getOtherstats().put(REMOTE_ROWS_IN_TOTAL,
+                        addStats(realRecord.getOtherstats().get(REMOTE_ROWS_IN_TOTAL),
+                                record.getOtherstats().get(ROWS_IN_TOTAL)));
+            } else {
+                realRecord.getOtherstats().put(IO_READ_BYTES,
+                        addStats(realRecord.getOtherstats().get(IO_READ_BYTES),
+                                record.getOtherstats().get(IO_READ_BYTES)));
+                realRecord.getOtherstats().put(BYTES_IN_TOTAL, addStats(realRecord.getOtherstats().get(BYTES_IN_TOTAL),
+                        record.getOtherstats().get(BYTES_IN_TOTAL)));
+                realRecord.getOtherstats().put(ROWS_IN_TOTAL,
+                        addStats(realRecord.getOtherstats().get(ROWS_IN_TOTAL),
+                                record.getOtherstats().get(ROWS_IN_TOTAL)));
+            }
+            realRecord.getOtherstats().put(RESCAN_TIMES,
+                    addStats(realRecord.getOtherstats().get(RESCAN_TIMES), record.getOtherstats().get(RESCAN_TIMES)));
+        }
+        return planId2Records.entrySet().stream()
+                .sorted(Comparator.comparingInt(entry -> Integer.parseInt(entry.getKey())))
+                .map(Entry::getValue)
+                .collect(Collectors.toList());
+    }
+
+    private String addStats(String a, String b) {
+        long res = 0;
+        if (StringUtils.isNumeric(a)) {
+            res += Long.parseLong(a);
+        }
+        if (StringUtils.isNumeric(b)) {
+            res += Long.parseLong(b);
+        }
+        return res == 0 ? null : res + "";
+    }
+
+    private String formatIpPort(SqlPlanMonitor stats) {
+        return String.format("%s:%s", stats.getSvrIp(), stats.getSvrPort());
     }
 
 }

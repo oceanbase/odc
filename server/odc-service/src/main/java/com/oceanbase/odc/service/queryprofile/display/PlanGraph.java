@@ -45,7 +45,7 @@ public class PlanGraph {
         vertexes.forEach(v -> graphId2Operator.put(v.getGraphId(), v));
     }
 
-    public void putStatistics(String key, String value) {
+    public void addStatistics(String key, String value) {
         if (value == null) {
             return;
         }
@@ -60,13 +60,6 @@ public class PlanGraph {
     public void putOverview(String key, String value) {
         if (value != null) {
             overview.put(key, value);
-        }
-    }
-
-    public void clearStatistics() {
-        statistics.clear();
-        for (PlanGraphOperator vertex : vertexes) {
-            vertex.getStatistics().clear();
         }
     }
 

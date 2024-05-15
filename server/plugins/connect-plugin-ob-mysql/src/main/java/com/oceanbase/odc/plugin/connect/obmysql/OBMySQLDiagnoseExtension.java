@@ -28,6 +28,7 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.pf4j.Extension;
 
 import com.alibaba.fastjson.JSON;
+import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.common.util.VersionUtils;
 import com.oceanbase.odc.core.shared.constant.ConnectType;
 import com.oceanbase.odc.core.shared.constant.DialectType;
@@ -98,6 +99,7 @@ public class OBMySQLDiagnoseExtension implements SqlDiagnoseExtensionPoint {
             // 设置原始的执行计划信息
             explain.setOriginalText(text);
             explain.setShowFormatInfo(true);
+            explain.setGraph(getSqlPlanGraphBySql(statement, sql));
         } catch (Exception e) {
             log.warn("Fail to parse explain result, origin plan text: {}", text, e);
             throw OBException.executeFailed(ErrorCodes.ObGetPlanExplainFailed,
@@ -267,6 +269,33 @@ public class OBMySQLDiagnoseExtension implements SqlDiagnoseExtensionPoint {
             List<OBSqlPlan> planRecords = OBUtils.queryOBSqlPlanByPlanId(stmt, planId, connectType);
             return PlanGraphBuilder.buildPlanGraph(planRecords);
         }
+    }
+
+    @Override
+    public SqlPlanGraph getSqlPlanGraphBySql(Statement statement, @NonNull String sql) throws SQLException {
+        String explain = "explain format=json " + sql;
+        StringBuilder planJson = new StringBuilder();
+        try (ResultSet rs = statement.executeQuery(explain)) {
+            while (rs.next()) {
+                planJson.append(rs.getString(1));
+            }
+        }
+        explain = "explain " + sql;
+        List<String> queryPlan = new ArrayList<>();
+        try (ResultSet rs = statement.executeQuery(explain)) {
+            while (rs.next()) {
+                queryPlan.add(rs.getString(1).trim());
+            }
+        }
+        String planText = String.join("\n", queryPlan);
+        String[] segs = planText.split("Outputs & filters");
+        String[] outputSegs = segs[1].split("Used Hint")[0].split("[0-9]+ - output");
+        Map<String, String> outputFilters = new HashMap<>();
+        for (int i = 0; i < outputSegs.length; i++) {
+            outputFilters.put(i + "", outputSegs[i]);
+        }
+        return PlanGraphBuilder.buildPlanGraph(
+                JsonUtils.fromJsonMap(planJson.toString(), String.class, Object.class), outputFilters);
     }
 
     protected SqlExecDetail innerGetExecutionDetail(Connection connection, String appendSql, String traceId)

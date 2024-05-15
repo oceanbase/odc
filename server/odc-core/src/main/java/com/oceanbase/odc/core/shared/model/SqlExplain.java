@@ -30,4 +30,5 @@ public class SqlExplain {
     private String outline;
     private String originalText;
     private Boolean showFormatInfo;
+    private SqlPlanGraph graph;
 }

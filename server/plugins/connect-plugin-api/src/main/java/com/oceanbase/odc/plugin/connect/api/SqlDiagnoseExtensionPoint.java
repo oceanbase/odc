@@ -46,4 +46,6 @@ public interface SqlDiagnoseExtensionPoint extends ExtensionPoint {
 
     SqlPlanGraph getSqlPlanGraphByTraceId(Connection connection, @NonNull String traceId) throws SQLException;
 
+    SqlPlanGraph getSqlPlanGraphBySql(Statement statement, @NonNull String sql) throws SQLException;
+
 }

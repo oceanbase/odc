@@ -99,4 +99,9 @@ public class MySQLDiagnoseExtensionPoint implements SqlDiagnoseExtensionPoint {
         throw new UnsupportedOperationException("Not supported for mysql mode");
     }
 
+    @Override
+    public SqlPlanGraph getSqlPlanGraphBySql(Statement statement, @NonNull String sql) throws SQLException {
+        throw new UnsupportedOperationException("Not supported for mysql mode");
+    }
+
 }

@@ -24,7 +24,9 @@ import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import com.google.common.collect.ImmutableMap;
 import com.oceanbase.odc.common.graph.GraphVertex;
+import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.core.shared.model.OBSqlPlan;
 import com.oceanbase.odc.core.shared.model.PredicateKey;
 import com.oceanbase.odc.core.shared.model.SqlPlanGraph;
@@ -69,6 +71,42 @@ public class PlanGraphBuilderTest {
         Assert.assertEquals(Arrays.asList(
                 "ORDERS.O_ORDERDATE >= '1995-01-01 00:00:00'", "ORDERS.O_ORDERDATE <= '1996-12-30 00:00:00'"),
                 colums);
+    }
+
+    @Test
+    public void test_BuildPlanGraphByJsonMap() {
+        String json = "{\n"
+                + "  \"ID\": 0,\n"
+                + "  \"OPERATOR\": \"SORT\",\n"
+                + "  \"NAME\": \"\",\n"
+                + "  \"EST.ROWS\": 697,\n"
+                + "  \"EST.TIME(us)\": 817249,\n"
+                + "  \"CHILD_1\": {\n"
+                + "    \"ID\": 1,\n"
+                + "    \"OPERATOR\": \"HASH GROUP BY\",\n"
+                + "    \"NAME\": \"\",\n"
+                + "    \"EST.ROWS\": 697,\n"
+                + "    \"EST.TIME(us)\": 817050\n"
+                + "  },\n"
+                + "  \"CHILD_2\": {\n"
+                + "    \"ID\": 2,\n"
+                + "    \"OPERATOR\": \"MATERIAL\",\n"
+                + "    \"NAME\": \"\",\n"
+                + "    \"EST.ROWS\": 25,\n"
+                + "    \"EST.TIME(us)\": 5,\n"
+                + "    \"output\": \"output([N2.N_NAME])\"\n"
+                + "  }\n"
+                + "}";
+        Map<String, String> outputFilters = ImmutableMap.of("0",
+                "output([ORDERS.O_ORDERKEY], [ORDERS.O_ORDERDATE], [ORDERS.O_CUSTKEY]), filter([ORDERS.O_ORDERDATE >= '1995-01-01 00:00:00'], [ORDERS.O_ORDERDATE <= \n"
+                        + "      '1996-12-30 00:00:00']), rowset=256\n"
+                        + "      access([ORDERS.O_ORDERKEY], [ORDERS.O_ORDERDATE], [ORDERS.O_CUSTKEY]), partitions(p0)\n"
+                        + "      is_index_back=false, is_global_index=false, filter_before_indexback[false,false], \n"
+                        + "      range_key([ORDERS.O_ORDERKEY], [ORDERS.O_ORDERDATE], [ORDERS.O_CUSTKEY]), range(MIN,MIN,MIN ; MAX,MAX,MAX)always true");
+        SqlPlanGraph graph = PlanGraphBuilder.buildPlanGraph(
+                JsonUtils.fromJsonMap(json, String.class, Object.class), outputFilters);
+        Assert.assertEquals(3, graph.getVertexList().size());
+        Assert.assertEquals(2, graph.getEdgeList().size());
     }
 
     private List<OBSqlPlan> getPlanRecords() {
