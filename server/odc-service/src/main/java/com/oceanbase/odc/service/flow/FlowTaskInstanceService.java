@@ -48,6 +48,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.google.common.base.Charsets;
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
+import com.oceanbase.odc.core.flow.model.AbstractFlowTaskResult;
 import com.oceanbase.odc.core.flow.model.FlowTaskResult;
 import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.core.shared.Verify;
@@ -92,7 +93,8 @@ import com.oceanbase.odc.service.flow.task.model.ResultSetExportResult;
 import com.oceanbase.odc.service.flow.task.model.RollbackPlanTaskResult;
 import com.oceanbase.odc.service.flow.task.model.ShadowTableSyncTaskResult;
 import com.oceanbase.odc.service.flow.task.model.SqlCheckTaskResult;
-import com.oceanbase.odc.service.flow.task.util.DatabaseChangeOssUrlCache;
+import com.oceanbase.odc.service.flow.task.util.TaskDownloadUrlsProvider;
+import com.oceanbase.odc.service.flow.task.util.TaskDownloadUrlsProvider.TaskDownloadUrls;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.logger.LoggerService;
 import com.oceanbase.odc.service.objectstorage.ObjectStorageFacade;
@@ -146,7 +148,7 @@ public class FlowTaskInstanceService {
     @Autowired
     private TaskDispatchChecker dispatchChecker;
     @Autowired
-    private DatabaseChangeOssUrlCache databaseChangeOssUrlCache;
+    private TaskDownloadUrlsProvider databaseChangeOssUrlCache;
     @Autowired
     private LocalFileManager localFileManager;
     @Autowired
@@ -222,45 +224,51 @@ public class FlowTaskInstanceService {
     public List<? extends FlowTaskResult> getResult(@NotNull Long id) throws IOException {
         TaskEntity task = flowInstanceService.getTaskByFlowInstanceId(id);
         if (task.getTaskType() == TaskType.ONLINE_SCHEMA_CHANGE || task.getTaskType() == TaskType.EXPORT) {
-            return getTaskResultFromEntity(task);
+            return getTaskResultFromEntity(task, true);
         }
         Optional<TaskEntity> taskEntityOptional = getCompleteTaskEntity(id);
         if (!taskEntityOptional.isPresent()) {
             return Collections.emptyList();
         }
         TaskEntity taskEntity = taskEntityOptional.get();
-        return getTaskResultFromEntity(taskEntity);
+        return getTaskResultFromEntity(taskEntity, true);
     }
 
-    public List<? extends FlowTaskResult> getTaskResultFromEntity(@NotNull TaskEntity taskEntity) throws IOException {
+    public List<? extends FlowTaskResult> getTaskResultFromEntity(@NotNull TaskEntity taskEntity,
+            boolean setDownloadUrls) throws IOException {
+        List<? extends FlowTaskResult> results;
         if (taskEntity.getTaskType() == TaskType.ONLINE_SCHEMA_CHANGE) {
-            return getOnlineSchemaChangeResult(taskEntity);
+            results = getOnlineSchemaChangeResult(taskEntity);
         } else if (taskEntity.getTaskType() == TaskType.EXPORT) {
-            return getDataTransferResult(taskEntity);
+            results = getDataTransferResult(taskEntity);
         } else if (taskEntity.getTaskType() == TaskType.ASYNC) {
-            return getAsyncResult(taskEntity);
+            results = getAsyncResult(taskEntity);
         } else if (taskEntity.getTaskType() == TaskType.MOCKDATA) {
-            return getMockDataResult(taskEntity);
+            results = getMockDataResult(taskEntity);
         } else if (taskEntity.getTaskType() == TaskType.IMPORT) {
-            return getDataTransferResult(taskEntity);
+            results = getDataTransferResult(taskEntity);
         } else if (taskEntity.getTaskType() == TaskType.SHADOWTABLE_SYNC) {
-            return getShadowTableSyncTaskResult(taskEntity);
+            results = getShadowTableSyncTaskResult(taskEntity);
         } else if (taskEntity.getTaskType() == TaskType.PARTITION_PLAN) {
-            return getPartitionPlanResult(taskEntity);
+            results = getPartitionPlanResult(taskEntity);
         } else if (taskEntity.getTaskType() == TaskType.ALTER_SCHEDULE) {
-            return getAlterScheduleResult(taskEntity);
+            results = getAlterScheduleResult(taskEntity);
         } else if (taskEntity.getTaskType() == TaskType.EXPORT_RESULT_SET) {
-            return getResultSetExportResult(taskEntity);
+            results = getResultSetExportResult(taskEntity);
         } else if (taskEntity.getTaskType() == TaskType.APPLY_PROJECT_PERMISSION) {
-            return getApplyProjectResult(taskEntity);
+            results = getApplyProjectResult(taskEntity);
         } else if (taskEntity.getTaskType() == TaskType.APPLY_DATABASE_PERMISSION) {
-            return getApplyDatabaseResult(taskEntity);
+            results = getApplyDatabaseResult(taskEntity);
         } else if (taskEntity.getTaskType() == TaskType.STRUCTURE_COMPARISON) {
-            return getStructureComparisonResult(taskEntity);
+            results = getStructureComparisonResult(taskEntity);
         } else {
             throw new UnsupportedException(ErrorCodes.Unsupported, new Object[] {ResourceType.ODC_TASK},
                     "Unsupported task type: " + taskEntity.getTaskType());
         }
+        if (setDownloadUrls) {
+            setDownloadUrlsIfNecessary(taskEntity.getId(), results);
+        }
+        return results;
     }
 
     public List<? extends FlowTaskResult> getResult(
@@ -629,9 +637,6 @@ public class FlowTaskInstanceService {
                 }
             }
         }
-        if (cloudObjectStorageService.supported()) {
-            result.setZipFileDownloadUrl(databaseChangeOssUrlCache.get(taskEntity.getId()));
-        }
         return Collections.singletonList(result);
     }
 
@@ -735,6 +740,25 @@ public class FlowTaskInstanceService {
 
     private URL generatePresignedUrl(String objectName, Long expirationSeconds) throws IOException {
         return cloudObjectStorageService.generateDownloadUrl(objectName, expirationSeconds);
+    }
+
+    private void setDownloadUrlsIfNecessary(Long taskId, List<? extends FlowTaskResult> results) {
+        if (cloudObjectStorageService.supported()) {
+            for (FlowTaskResult result : results) {
+                TaskDownloadUrls urls = databaseChangeOssUrlCache.get(taskId);
+                if (result instanceof AbstractFlowTaskResult) {
+                    ((AbstractFlowTaskResult) result)
+                            .setFullLogDownloadUrl(urls.getLogDownloadUrl());
+                }
+                if (result instanceof DatabaseChangeResult) {
+                    ((DatabaseChangeResult) result).setZipFileDownloadUrl(urls.getDatabaseChangeZipFileDownloadUrl());
+                    if (Objects.nonNull(((DatabaseChangeResult) result).getRollbackPlanResult())) {
+                        ((DatabaseChangeResult) result).getRollbackPlanResult()
+                                .setResultFileDownloadUrl(urls.getRollBackPlanResultFileDownloadUrl());
+                    }
+                }
+            }
+        }
     }
 
 }

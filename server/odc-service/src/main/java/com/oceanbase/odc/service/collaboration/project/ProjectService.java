@@ -32,6 +32,7 @@ import javax.validation.constraints.NotNull;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Example;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -134,12 +135,22 @@ public class ProjectService {
     @Autowired
     private ConnectionService connectionService;
 
+    @Value("${odc.integration.bastion.enabled:false}")
+    private boolean bastionEnabled;
+
     private final ProjectMapper projectMapper = ProjectMapper.INSTANCE;
 
+    private final static String BUILTIN_PROJECT_PREFIX = "USER_PROJECT_";
+
+    /**
+     * Create a built-in project for bastion user if not exists
+     *
+     * @param user bastion user
+     */
     @SkipAuthorize("odc internal usage")
     @Transactional(rollbackFor = Exception.class)
     public void createProjectIfNotExists(@NotNull User user) {
-        String projectName = "USER_PROJECT_" + user.getAccountName();
+        String projectName = BUILTIN_PROJECT_PREFIX + user.getAccountName();
         if (repository.findByNameAndOrganizationId(projectName, user.getOrganizationId()).isPresent()) {
             return;
         }
@@ -191,8 +202,7 @@ public class ProjectService {
     }
 
     @PreAuthenticate(hasAnyResourceRole = {"OWNER", "DBA", "DEVELOPER", "SECURITY_ADMINISTRATOR", "PARTICIPANT"},
-            resourceType = "ODC_PROJECT",
-            indexOfIdParam = 0)
+            resourceType = "ODC_PROJECT", indexOfIdParam = 0)
     @Transactional(rollbackFor = Exception.class)
     public Project detail(@NotNull Long id) {
         ProjectEntity entity = repository.findByIdAndOrganizationId(id, currentOrganizationId())
@@ -255,9 +265,10 @@ public class ProjectService {
 
     @Transactional(rollbackFor = Exception.class)
     @SkipAuthorize("permission check inside")
-    public List<Project> listBasicInfoForApply(Boolean archived) {
+    public List<Project> listBasicInfoForApply(Boolean archived, Boolean builtin) {
         Specification<ProjectEntity> specs = ProjectSpecs.organizationIdEqual(currentOrganizationId())
-                .and(ProjectSpecs.archivedEqual(archived));
+                .and(ProjectSpecs.archivedEqual(archived))
+                .and(ProjectSpecs.builtInEqual(builtin));
         return repository.findAll(specs).stream().map(projectMapper::entityToModel).collect(Collectors.toList());
     }
 
@@ -285,6 +296,7 @@ public class ProjectService {
         Specification<ProjectEntity> specs =
                 ProjectSpecs.nameLike(params.getName())
                         .and(ProjectSpecs.archivedEqual(params.getArchived()))
+                        .and(ProjectSpecs.builtInEqual(params.getBuiltin()))
                         .and(ProjectSpecs.organizationIdEqual(currentOrganizationId()))
                         .and(ProjectSpecs.idIn(joinedProjectIds));
         return repository.findAll(specs, pageable);
@@ -342,6 +354,20 @@ public class ProjectService {
         checkMemberRoles(detail(projectId).getMembers());
         deleteMemberRelatedDatabasePermissions(userId, projectId);
         return true;
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    @SkipAuthorize("internal usage")
+    public void deleteUserRelatedProjectResources(@NonNull Long userId, @NonNull String accountName,
+            @NonNull Long organizationId) {
+        resourceRoleService.deleteByUserId(userId);
+        String projectName = BUILTIN_PROJECT_PREFIX + accountName;
+        Optional<ProjectEntity> projectOpt = repository.findByNameAndOrganizationId(projectName, organizationId);
+        projectOpt.ifPresent(project -> {
+            if (Boolean.TRUE.equals(project.getBuiltin()) && bastionEnabled) {
+                repository.deleteById(project.getId());
+            }
+        });
     }
 
     @PreAuthenticate(hasAnyResourceRole = {"OWNER"}, resourceType = "ODC_PROJECT", indexOfIdParam = 0)

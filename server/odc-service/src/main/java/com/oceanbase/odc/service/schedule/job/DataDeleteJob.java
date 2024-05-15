@@ -17,6 +17,7 @@ package com.oceanbase.odc.service.schedule.job;
 
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Objects;
 
 import org.quartz.JobExecutionContext;
 
@@ -92,6 +93,22 @@ public class DataDeleteJob extends AbstractDlmJob {
             dlmJob.setStatus(TaskStatus.PREPARING);
             dlmJob.setType(parameters.getDeleteByUniqueKey() ? JobType.QUICK_DELETE : JobType.DEIRECT_DELETE);
             dlmTasks.add(dlmJob);
+            dlmTask.setTableName(table.getTableName());
+            dlmTask.setTargetTableName(table.getTargetTableName());
+            dlmTask.setSourceDatabaseId(parameters.getDatabaseId());
+            Long targetDatabaseId = Objects.isNull(parameters.getTargetDatabaseId()) ? parameters.getDatabaseId()
+                    : parameters.getTargetDatabaseId();
+            dlmTask.setTargetDatabaseId(targetDatabaseId);
+            dlmTask.setFireTime(taskEntity.getFireTime());
+
+            LogicTableConfig logicTableConfig = new LogicTableConfig();
+            logicTableConfig.setMigrateRule(condition);
+            logicTableConfig.setCheckMode(CheckMode.MULTIPLE_GET);
+            dlmTask.setLogicTableConfig(logicTableConfig);
+            dlmTask.setStatus(TaskStatus.PREPARING);
+            JobType jobType = parameters.getNeedCheckBeforeDelete() ? JobType.DELETE : JobType.QUICK_DELETE;
+            dlmTask.setJobType(parameters.getDeleteByUniqueKey() ? jobType : JobType.DEIRECT_DELETE);
+            dlmTasks.add(dlmTask);
         });
         return dlmTasks;
     }
@@ -124,9 +141,9 @@ public class DataDeleteJob extends AbstractDlmJob {
                         databaseService.findDataSourceForConnectById(dataDeleteParameters.getDatabaseId())));
         parameters
                 .setTargetDs(DataSourceInfoMapper.toDataSourceInfo(
-                        databaseService.findDataSourceForConnectById(dataDeleteParameters.getDatabaseId())));
+                        databaseService.findDataSourceForConnectById(dataDeleteParameters.getTargetDatabaseId())));
         parameters.getSourceDs().setDatabaseName(dataDeleteParameters.getDatabaseName());
-        parameters.getTargetDs().setDatabaseName(dataDeleteParameters.getDatabaseName());
+        parameters.getTargetDs().setDatabaseName(dataDeleteParameters.getTargetDatabaseName());
         parameters.getSourceDs().setConnectionCount(2 * (parameters.getReadThreadCount()
                 + parameters.getWriteThreadCount()));
         parameters.getTargetDs().setConnectionCount(parameters.getSourceDs().getConnectionCount());

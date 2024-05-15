@@ -28,10 +28,8 @@ import com.oceanbase.odc.service.task.config.JobConfigurationHolder;
 import com.oceanbase.odc.service.task.config.JobConfigurationValidator;
 import com.oceanbase.odc.service.task.constants.JobUrlConstants;
 import com.oceanbase.odc.service.task.enums.JobCallerAction;
-import com.oceanbase.odc.service.task.enums.JobStatus;
 import com.oceanbase.odc.service.task.exception.JobException;
 import com.oceanbase.odc.service.task.listener.JobCallerEvent;
-import com.oceanbase.odc.service.task.listener.JobTerminateEvent;
 import com.oceanbase.odc.service.task.schedule.JobIdentity;
 import com.oceanbase.odc.service.task.service.TaskFrameworkService;
 import com.oceanbase.odc.service.task.util.HttpUtil;
@@ -73,7 +71,7 @@ public abstract class BaseJobCaller implements JobCaller {
     }
 
     private void afterStartSucceed(ExecutorIdentifier executorIdentifier, JobIdentity ji) {
-        log.info("Start job {} succeed.", ji.getId());
+        log.info("Start job succeed, jobId={}.", ji.getId());
         publishEvent(new JobCallerEvent(ji, JobCallerAction.START, true, executorIdentifier, null));
     }
 
@@ -94,19 +92,10 @@ public abstract class BaseJobCaller implements JobCaller {
     @Override
     public void stop(JobIdentity ji) throws JobException {
         JobConfigurationValidator.validComponent();
-        // send stop to executor
         JobConfiguration jobConfiguration = JobConfigurationHolder.getJobConfiguration();
         TaskFrameworkService taskFrameworkService = jobConfiguration.getTaskFrameworkService();
         JobEntity jobEntity = taskFrameworkService.find(ji.getId());
         String executorEndpoint = jobEntity.getExecutorEndpoint();
-        // For transaction atomic, first update to CANCELED, then stop remote job in executor,
-        // if stop remote failed, transaction will be rollback
-        int rows = jobConfiguration.getTaskFrameworkService()
-                .updateStatusDescriptionByIdOldStatus(ji.getId(),
-                        JobStatus.CANCELING, JobStatus.CANCELED, "stop job completed");
-        if (rows <= 0) {
-            throw new JobException("Update job {0} status to CANCELED failed.", ji.getId());
-        }
         try {
             if (executorEndpoint != null
                     && isExecutorExist(ExecutorIdentifierParser.parser(jobEntity.getExecutorIdentifier()))) {
@@ -134,13 +123,12 @@ public abstract class BaseJobCaller implements JobCaller {
     }
 
     protected void afterStopSucceed(JobIdentity ji) {
-        log.info("Stop job {}, set status to CANCELED successfully.", ji.getId());
-        publishEvent(new JobTerminateEvent(ji, JobStatus.CANCELED));
+        log.info("Stop job successfully, jobId={}.", ji.getId());
         publishEvent(new JobCallerEvent(ji, JobCallerAction.STOP, true, null));
     }
 
     protected void afterStopFailed(JobIdentity ji, Exception e) throws JobException {
-        log.info("Stop job {} failed.", ji.getId());
+        log.info("Stop job failed,jobId={}.", ji.getId());
         publishEvent(new JobCallerEvent(ji, JobCallerAction.STOP, false, null));
         throw new JobException("job be stop failed, jobId={0}.", e, ji.getId());
     }

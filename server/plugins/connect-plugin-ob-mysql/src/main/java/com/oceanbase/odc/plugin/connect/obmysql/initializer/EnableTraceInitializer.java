@@ -38,11 +38,12 @@ public class EnableTraceInitializer implements ConnectionInitializer {
     @Override
     public void init(Connection connection) {
         try {
-            String sql = "set session %s='ON';";
             String version = OBUtils.getObVersion(connection);
             try (Statement statement = connection.createStatement()) {
+                String sql = "set session %s='ON';";
                 if (VersionUtils.isGreaterThanOrEqualsTo(version, "4.0.0")) {
                     statement.execute(String.format(sql, "ob_enable_show_trace"));
+                    statement.execute("CALL DBMS_MONITOR.OB_SESSION_TRACE_ENABLE(null, 1, 1, 'ALL')");
                 } else {
                     statement.execute(String.format(sql, "ob_enable_trace_log"));
                 }

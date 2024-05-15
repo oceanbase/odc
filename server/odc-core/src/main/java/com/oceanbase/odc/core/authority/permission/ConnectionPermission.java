@@ -119,7 +119,7 @@ public class ConnectionPermission extends ResourcePermission {
 
     @Override
     public String toString() {
-        return "ConnectionPermission " + this.resourceType + ":" + this.resourceId + " " + getActions(this.mask);
+        return ResourceType.ODC_CONNECTION.getLocalizedMessage() + ":" + this.resourceId + ": " + getActions(this.mask);
     }
 
 }
