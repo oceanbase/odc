@@ -128,6 +128,7 @@ public class DataArchiveTask extends BaseTask<Boolean> {
             jobParameter.setReaderBatchSize(req.getRateLimit().getBatchSize());
             jobParameter.setWriterBatchSize(req.getRateLimit().getBatchSize());
             jobParameter.setMigrationInsertAction(req.getMigrationInsertAction());
+            jobParameter.setMigratePartitions(table.getPartitions());
             jobParameter.setSyncDBObjectType(req.getSyncTableStructure());
             dlmJob.setParameters(jobParameter);
             dlmJob.setDlmJobId(DlmJobIdUtil.generateHistoryJobId(req.getJobName(), req.getJobType().name(),

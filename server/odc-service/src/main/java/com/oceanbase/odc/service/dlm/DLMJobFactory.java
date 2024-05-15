@@ -16,8 +16,6 @@
 package com.oceanbase.odc.service.dlm;
 
 import com.oceanbase.odc.service.dlm.model.DlmJob;
-import com.oceanbase.odc.service.dlm.utils.DlmJobIdUtil;
-import com.oceanbase.odc.service.schedule.job.DLMJobReq;
 import com.oceanbase.tools.migrator.common.dto.HistoryJob;
 import com.oceanbase.tools.migrator.common.dto.JobParameter;
 import com.oceanbase.tools.migrator.common.enums.ShardingStrategy;
@@ -25,7 +23,6 @@ import com.oceanbase.tools.migrator.core.IJobStore;
 import com.oceanbase.tools.migrator.core.JobFactory;
 import com.oceanbase.tools.migrator.core.JobReq;
 import com.oceanbase.tools.migrator.job.Job;
-import com.oceanbase.tools.migrator.task.CheckMode;
 
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
@@ -67,6 +64,8 @@ public class DLMJobFactory extends JobFactory {
         jobParameter.setReaderTaskCount((int) (singleTaskThreadPoolSize * readWriteRatio / (1 + readWriteRatio)));
         jobParameter.setWriterTaskCount(singleTaskThreadPoolSize - jobParameter.getReaderTaskCount());
         jobParameter.setGeneratorBatchSize(defaultScanBatchSize);
+        jobParameter.setShardingStrategy(defaultShardingStrategy);
+        jobParameter.setMigratePartitions(parameters.getParameters().getMigratePartitions());
         parameters.getSourceDatasourceInfo().setConnectionCount(2 * (jobParameter.getReaderTaskCount()
                 + jobParameter.getWriterTaskCount()));
         parameters.getTargetDatasourceInfo().setConnectionCount(2 * (jobParameter.getReaderTaskCount()
@@ -80,33 +79,5 @@ public class DLMJobFactory extends JobFactory {
         req.setSourceDs(parameters.getSourceDatasourceInfo());
         req.setTargetDs(parameters.getTargetDatasourceInfo());
         return super.createJob(req);
-    }
-
-    // adapt to task framework
-    public Job createJob(int tableIndex, DLMJobReq params) {
-        HistoryJob historyJob = new HistoryJob();
-        historyJob.setId(DlmJobIdUtil.generateHistoryJobId(params.getJobName(), params.getJobType().name(),
-                params.getScheduleTaskId(), tableIndex));
-        historyJob.setJobType(params.getJobType());
-        historyJob.setTableId(-1L);
-        historyJob.setPrintSqlTrace(false);
-        historyJob.setSourceTable(params.getTables().get(tableIndex).getTableName());
-        historyJob.setTargetTable(params.getTables().get(tableIndex).getTargetTableName());
-
-        JobParameter jobParameter = new JobParameter();
-        jobParameter.setMigrateRule(params.getTables().get(tableIndex).getConditionExpression());
-        jobParameter.setCheckMode(CheckMode.MULTIPLE_GET);
-        jobParameter.setMigrationInsertAction(params.getMigrationInsertAction());
-        jobParameter.setReaderTaskCount(params.getReadThreadCount());
-        jobParameter.setWriterTaskCount(params.getWriteThreadCount());
-        jobParameter.setGeneratorBatchSize(params.getScanBatchSize());
-        jobParameter.setReaderBatchSize(params.getRateLimit().getBatchSize());
-        jobParameter.setWriterBatchSize(params.getRateLimit().getBatchSize());
-
-        JobReq req = new JobReq();
-        req.setHistoryJob(historyJob);
-        req.setSourceDs(params.getSourceDs());
-        req.setTargetDs(params.getTargetDs());
-        return createJob(req);
     }
 }

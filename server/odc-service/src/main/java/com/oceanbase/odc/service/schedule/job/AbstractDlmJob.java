@@ -195,6 +195,7 @@ public abstract class AbstractDlmJob implements OdcJob {
             jobParameter.setWriterBatchSize(limiterConfig.getBatchSize());
             jobParameter.setMigrationInsertAction(parameters.getMigrationInsertAction());
             jobParameter.setSyncDBObjectType(parameters.getSyncTableStructure());
+            jobParameter.setMigratePartitions(table.getPartitions());
             dlmJob.setParameters(jobParameter);
             dlmJob.setDlmJobId(DlmJobIdUtil.generateHistoryJobId(taskEntity.getJobName(), taskEntity.getJobGroup(),
                     taskEntity.getId(),
