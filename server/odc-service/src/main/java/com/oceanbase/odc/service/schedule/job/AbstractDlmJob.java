@@ -19,6 +19,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -188,7 +189,9 @@ public abstract class AbstractDlmJob implements OdcJob {
             taskUnit.setTableName(table.getTableName());
             taskUnit.setTargetTableName(table.getTargetTableName());
             taskUnit.setSourceDatabaseId(parameters.getSourceDatabaseId());
-            taskUnit.setTargetDatabaseId(parameters.getTargetDataBaseId());
+            Long targetDatabaseId = Objects.isNull(parameters.getTargetDataBaseId()) ? parameters.getSourceDatabaseId()
+                    : parameters.getTargetDataBaseId();
+            taskUnit.setTargetDatabaseId(targetDatabaseId);
             taskUnit.setFireTime(taskEntity.getFireTime());
             RateLimitConfiguration limiterConfig =
                     limiterService.getByOrderIdOrElseDefaultConfig(Long.parseLong(taskEntity.getJobName()));

@@ -37,6 +37,10 @@ public class DataDeleteParameters implements TaskParameters {
 
     private String targetDatabaseName;
 
+    private String sourceDataSourceName;
+
+    private String targetDataSourceName;
+
     private List<OffsetConfig> variables;
 
     private List<DataArchiveTableConfig> tables;

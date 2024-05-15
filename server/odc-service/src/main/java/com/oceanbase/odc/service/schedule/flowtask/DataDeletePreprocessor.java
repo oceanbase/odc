@@ -15,6 +15,8 @@
  */
 package com.oceanbase.odc.service.schedule.flowtask;
 
+import java.util.Objects;
+
 import org.springframework.beans.factory.annotation.Autowired;
 
 import com.oceanbase.odc.core.session.ConnectionSession;
@@ -68,24 +70,27 @@ public class DataDeletePreprocessor extends AbstractDlmJobPreprocessor {
             initDefaultConfig(dataDeleteParameters);
             // Throw exception when the specified database does not exist or the current user does not have
             // permission to access it.
+            // if check before delete, need verify target database.
+            if (dataDeleteParameters.getNeedCheckBeforeDelete()) {
+                if (Objects.isNull(dataDeleteParameters.getTargetDatabaseId())) {
+                    throw new IllegalArgumentException("target database id can not be null");
+                }
+                Database targetDb = databaseService.detail(dataDeleteParameters.getTargetDatabaseId());
+                dataDeleteParameters.setTargetDatabaseName(targetDb.getName());
+                dataDeleteParameters.setTargetDataSourceName(targetDb.getDataSource().getName());
+            }
             Database sourceDb = databaseService.detail(dataDeleteParameters.getDatabaseId());
-            Database targetDb = databaseService.detail(dataDeleteParameters.getTargetDatabaseId());
             dataDeleteParameters.setDatabaseName(sourceDb.getName());
-            dataDeleteParameters.setTargetDatabaseName(targetDb.getName());
+            dataDeleteParameters.setSourceDataSourceName(sourceDb.getDataSource().getName());
             ConnectionConfig dataSource = sourceDb.getDataSource();
             dataSource.setDefaultSchema(sourceDb.getName());
             ConnectionSessionFactory connectionSessionFactory = new DefaultConnectSessionFactory(dataSource);
-            ConnectionSessionFactory targetSessionFactory = new DefaultConnectSessionFactory(targetDb.getDataSource());
             ConnectionSession connectionSession = connectionSessionFactory.generateSession();
-            ConnectionSession targetSession = targetSessionFactory.generateSession();
             try {
                 checkTableAndCondition(connectionSession, sourceDb, dataDeleteParameters.getTables(),
                         dataDeleteParameters.getVariables());
-                checkTableShardKey(targetSession, targetDb.getName(), dataDeleteParameters.getTables(),
-                        dataDeleteParameters.getNeedCheckBeforeDelete());
             } finally {
                 connectionSession.expire();
-                targetSession.expire();
             }
             log.info("QUICK-DELETE job preprocessing has been completed.");
             // pre create

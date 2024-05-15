@@ -77,18 +77,14 @@ public class AbstractDlmJobPreprocessor implements Preprocessor {
     public void checkTableAndCondition(ConnectionSession connectionSession, Database sourceDb,
             List<DataArchiveTableConfig> tables,
             List<OffsetConfig> variables) {
-        checkShardKey(connectionSession, sourceDb.getName(), tables, false);
+        checkShardKey(connectionSession, sourceDb.getName(), tables);
         Map<DataArchiveTableConfig, String> sqlMap = getDataArchiveSqls(sourceDb, tables, variables);
         checkDataArchiveSql(connectionSession, sqlMap);
     }
 
-    public void checkTableShardKey(ConnectionSession connectionSession, String databaseName,
-            List<DataArchiveTableConfig> tables, boolean checkTargetTable) {
-        checkShardKey(connectionSession, databaseName, tables, checkTargetTable);
-    }
 
     private void checkShardKey(ConnectionSession connectionSession, String databaseName,
-            List<DataArchiveTableConfig> tables, boolean checkTargetTable) {
+            List<DataArchiveTableConfig> tables) {
         SyncJdbcExecutor syncJdbcExecutor = connectionSession.getSyncJdbcExecutor(
                 ConnectionSessionConstants.CONSOLE_DS_KEY);
         SqlBuilder sqlBuilder;
@@ -106,8 +102,7 @@ public class AbstractDlmJobPreprocessor implements Preprocessor {
         HashSet<String> tableNames =
                 new HashSet<>(syncJdbcExecutor.query(sqlBuilder.toString(), (rs, num) -> rs.getString(1)));
         tables.forEach(tableConfig -> {
-            String tableName = checkTargetTable ? tableConfig.getTargetTableName() : tableConfig.getTableName();
-            if (!tableNames.contains(tableName)) {
+            if (!tableNames.contains(tableConfig.getTableName())) {
                 throw new IllegalArgumentException(
                         String.format("The table need to contain a primary key!tableName=%s",
                                 tableConfig.getTableName()));
