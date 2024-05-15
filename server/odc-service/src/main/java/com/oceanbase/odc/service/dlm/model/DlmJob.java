@@ -21,8 +21,8 @@ import java.util.Set;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.oceanbase.odc.core.shared.constant.TaskStatus;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
-import com.oceanbase.tools.migrator.common.dto.JobParameter;
 import com.oceanbase.tools.dbbrowser.model.DBObjectType;
+import com.oceanbase.tools.migrator.common.dto.JobParameter;
 import com.oceanbase.tools.migrator.common.enums.JobType;
 
 import lombok.Data;

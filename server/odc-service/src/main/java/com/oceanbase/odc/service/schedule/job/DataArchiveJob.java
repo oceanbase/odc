@@ -73,7 +73,7 @@ public class DataArchiveJob extends AbstractDlmJob {
         super.initTask(dlmJob);
         try {
             DLMTableStructureSynchronizer.sync(dlmJob.getSourceDs(), dlmJob.getTargetDs(), dlmJob.getTableName(),
-                dlmJob.getSyncDBObjectTypes());
+                    dlmJob.getSyncDBObjectTypes());
         } catch (SQLException e) {
             log.warn("Sync table structure failed,tableName={}", dlmJob.getTableName(), e);
         }
@@ -123,44 +123,6 @@ public class DataArchiveJob extends AbstractDlmJob {
         log.info("Publish data-archive job to task framework succeed,scheduleTaskId={},jobIdentity={}",
                 taskEntity.getId(),
                 jobId);
-    }
-
-
-    /**
-     * Create the table in the target database before migrating the data.
-     */
-    private void createTargetTable(DlmJob dlmTask) {
-
-        if (dlmTask.getSourceDs().getDialectType() != dlmTask.getTargetDs().getDialectType()) {
-            log.info("Data sources of different types do not currently support automatic creation of target tables.");
-            return;
-        }
-        DefaultConnectSessionFactory sourceConnectionSessionFactory =
-                new DefaultConnectSessionFactory(dlmTask.getSourceDs());
-        ConnectionSession srcSession = sourceConnectionSessionFactory.generateSession();
-        String tableDDL;
-        try {
-            DBSchemaAccessor sourceDsAccessor = DBSchemaAccessors.create(srcSession);
-            tableDDL = sourceDsAccessor.getTableDDL(dlmTask.getSourceDs().getDefaultSchema(), dlmTask.getTableName());
-        } finally {
-            srcSession.expire();
-        }
-
-        DefaultConnectSessionFactory targetConnectionSessionFactory =
-                new DefaultConnectSessionFactory(dlmTask.getTargetDs());
-        ConnectionSession targetSession = targetConnectionSessionFactory.generateSession();
-        try {
-            DBSchemaAccessor targetDsAccessor = DBSchemaAccessors.create(targetSession);
-            List<String> tableNames = targetDsAccessor.showTables(dlmTask.getTargetDs().getDefaultSchema());
-            if (tableNames.contains(dlmTask.getTableName())) {
-                log.info("Target table exist,tableName={}", dlmTask.getTableName());
-                return;
-            }
-            log.info("Begin to create target table...");
-            targetSession.getSyncJdbcExecutor(ConnectionSessionConstants.CONSOLE_DS_KEY).execute(tableDDL);
-        } finally {
-            targetSession.expire();
-        }
     }
 
 }

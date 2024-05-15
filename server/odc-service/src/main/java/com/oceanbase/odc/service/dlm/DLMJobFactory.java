@@ -15,8 +15,6 @@
  */
 package com.oceanbase.odc.service.dlm;
 
-import java.text.SimpleDateFormat;
-
 import com.oceanbase.odc.service.dlm.model.DlmJob;
 import com.oceanbase.odc.service.dlm.utils.DlmJobIdUtil;
 import com.oceanbase.odc.service.schedule.job.DLMJobParameters;
@@ -40,8 +38,6 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 public class DLMJobFactory extends JobFactory {
-
-    private final SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd");
 
     @Setter
     private int singleTaskThreadPoolSize;
@@ -72,8 +68,8 @@ public class DLMJobFactory extends JobFactory {
         jobParameter.setReaderTaskCount((int) (singleTaskThreadPoolSize * readWriteRatio / (1 + readWriteRatio)));
         jobParameter.setWriterTaskCount(singleTaskThreadPoolSize - jobParameter.getReaderTaskCount());
         jobParameter.setGeneratorBatchSize(defaultScanBatchSize);
-        DataSourceInfo sourceInfo = DataSourceInfoBuilder.build(parameters.getSourceDs());
-        DataSourceInfo targetInfo = DataSourceInfoBuilder.build(parameters.getTargetDs());
+        DataSourceInfo sourceInfo = DataSourceInfoMapper.toDataSourceInfo(parameters.getSourceDs());
+        DataSourceInfo targetInfo = DataSourceInfoMapper.toDataSourceInfo(parameters.getTargetDs());
         sourceInfo.setConnectionCount(2 * (jobParameter.getReaderTaskCount()
                 + jobParameter.getWriterTaskCount()));
         targetInfo.setConnectionCount(2 * (jobParameter.getReaderTaskCount()
