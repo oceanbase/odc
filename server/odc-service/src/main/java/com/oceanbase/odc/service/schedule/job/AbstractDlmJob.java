@@ -189,9 +189,7 @@ public abstract class AbstractDlmJob implements OdcJob {
             taskUnit.setTableName(table.getTableName());
             taskUnit.setTargetTableName(table.getTargetTableName());
             taskUnit.setSourceDatabaseId(parameters.getSourceDatabaseId());
-            Long targetDatabaseId = Objects.isNull(parameters.getTargetDataBaseId()) ? parameters.getSourceDatabaseId()
-                    : parameters.getTargetDataBaseId();
-            taskUnit.setTargetDatabaseId(targetDatabaseId);
+            taskUnit.setTargetDatabaseId(parameters.getTargetDataBaseId());
             taskUnit.setFireTime(taskEntity.getFireTime());
             RateLimitConfiguration limiterConfig =
                     limiterService.getByOrderIdOrElseDefaultConfig(Long.parseLong(taskEntity.getJobName()));

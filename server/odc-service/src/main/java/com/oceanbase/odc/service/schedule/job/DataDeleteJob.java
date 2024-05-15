@@ -17,6 +17,7 @@ package com.oceanbase.odc.service.schedule.job;
 
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Objects;
 
 import org.quartz.JobExecutionContext;
 
@@ -84,7 +85,9 @@ public class DataDeleteJob extends AbstractDlmJob {
             dlmTask.setTableName(table.getTableName());
             dlmTask.setTargetTableName(table.getTargetTableName());
             dlmTask.setSourceDatabaseId(parameters.getDatabaseId());
-            dlmTask.setTargetDatabaseId(parameters.getTargetDatabaseId());
+            Long targetDatabaseId = Objects.isNull(parameters.getTargetDatabaseId()) ? parameters.getDatabaseId()
+                : parameters.getTargetDatabaseId();
+            dlmTask.setTargetDatabaseId(targetDatabaseId);
             dlmTask.setFireTime(taskEntity.getFireTime());
 
             LogicTableConfig logicTableConfig = new LogicTableConfig();
