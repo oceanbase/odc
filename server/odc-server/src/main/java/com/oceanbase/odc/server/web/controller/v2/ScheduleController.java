@@ -88,7 +88,7 @@ public class ScheduleController {
     }
 
     @RequestMapping(value = "/scheduleConfigs/{id:[\\d]+}", method = RequestMethod.GET)
-    public SuccessResponse<ScheduleDetailResp> detail(@PathVariable Long id) {
+    public SuccessResponse<ScheduleDetailResp> detailSchedule(@PathVariable Long id) {
         return Responses.single(scheduleService.getById(id));
     }
 
