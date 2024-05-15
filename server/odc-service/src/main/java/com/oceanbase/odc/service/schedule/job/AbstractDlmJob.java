@@ -124,15 +124,13 @@ public abstract class AbstractDlmJob implements OdcJob {
                 taskUnit.setStatus(TaskStatus.DONE);
                 log.info("DLM job succeed,taskId={},unitId={}", taskId, taskUnit.getId());
             } catch (JobException e) {
-                // used to stop several sub-threads.
-                if (job.getJobMeta().isToStop()) {
-                    log.info("Data archive task is Interrupted,taskId={}", taskId);
-                    taskUnit.setStatus(TaskStatus.CANCELED);
-                } else {
-                    log.error("Data archive task is failed,taskId={},errorMessage={}", taskId, e);
-                    taskUnit.setStatus(TaskStatus.FAILED);
-                }
+                log.error("Data archive task is failed,taskId={}}", taskId, e);
+                taskUnit.setStatus(TaskStatus.FAILED);
             } finally {
+                if (job.getJobMeta().isToStop()) {
+                    log.info("{} task is Interrupted,taskId={}", job.getJobMeta().getJobType(), taskId);
+                    taskUnit.setStatus(TaskStatus.CANCELED);
+                }
                 scheduleTaskRepository.updateTaskResult(taskId, JsonUtils.toJson(taskUnits));
             }
         }
