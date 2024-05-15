@@ -99,6 +99,7 @@ public class OnlineSchemaChangeFlowableTask extends BaseODCFlowTaskDelegate<Void
 
     @Override
     protected Void start(Long taskId, TaskService taskService, DelegateExecution execution) throws Exception {
+        taskService.start(taskId);
         User creator = FlowTaskUtil.getTaskCreator(execution);
         this.creatorId = creator.getId();
         this.organizationId = creator.getOrganizationId();
@@ -117,8 +118,6 @@ public class OnlineSchemaChangeFlowableTask extends BaseODCFlowTaskDelegate<Void
         ScheduleEntity schedule = createScheduleEntity(connectionConfig, parameter, schema, taskEntity.getDatabaseId(),
                 database.getProject().getId());
         scheduleId = schedule.getId();
-
-        taskService.start(taskId, null);
         try {
             List<ScheduleTaskEntity> tasks = parameter.generateSubTaskParameters(connectionConfig, schema).stream()
                     .map(param -> {
