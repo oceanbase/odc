@@ -581,6 +581,9 @@ VALUES ('odc.notification.dequeue-sending-notification-fixed-delay-millis', '120
 insert into `config_system_configuration` (`key`, `value`, `application`, `profile`, `label`, `description`)
 VALUES ('odc.notification.max-resend-times', '3', 'odc', 'default', 'master', '重新处理 SENT_FAILED 消息的最大重试次数，默认 3') ON DUPLICATE KEY
 update `id`=`id`;
+insert into `config_system_configuration` (`key`, `value`, `application`, `profile`, `label`, `description`)
+VALUES ('odc.notification.host-black-list', '', 'odc', 'default', 'master', 'The Hosts in this black list are NOT allowed to prevent SSRF security vulnerabilities. The black list is empty by default, allowing access to all Hosts.') ON DUPLICATE KEY update `id`=`id`;
+
 INSERT INTO config_system_configuration(`key`, `value`, `description`) VALUES('odc.lab.resource.mysql-init-script-template',
 'create user if not exists {{dbUsername}}@''%'' identified by {{password}};  create database if not exists {{dbName}};  grant all privileges on {{dbName}}.* to {{dbUsername}}@''%'';  grant select on oceanbase.gv$tenant to {{dbUsername}}@''%'';  grant select on oceanbase.gv$unit to {{dbUsername}}@''%'';  grant select on oceanbase.gv$table to {{dbUsername}}@''%'';  grant select on oceanbase.gv$sysstat to {{dbUsername}}@''%'';  grant select on oceanbase.gv$memory to {{dbUsername}}@''%'';  grant select on oceanbase.gv$memstore to {{dbUsername}}@''%'';  grant select on oceanbase.gv$sql_audit to {{dbUsername}}@''%'';  grant select on oceanbase.gv$plan_cache_plan_stat to {{dbUsername}}@''%'';  grant select on oceanbase.gv$plan_cache_plan_explain to {{dbUsername}}@''%'';'
 , '实验室体验资源创建脚本模板，MySQL 模式，包含 create database/create user/grant privilege 过程，支持的变量包括 {{dbName}}, {{dbUsername}}, {{password}}'
@@ -685,6 +688,7 @@ INSERT INTO config_system_configuration(`key`, `value`, `description`) VALUES('o
 
 INSERT INTO config_system_configuration(`key`, `value`, `description`) VALUES('odc.features.task.osc.enabled', 'false',
 '是否开启无锁结构变更任务，默认不开启') ON DUPLICATE KEY UPDATE `id`=`id`;
+INSERT INTO config_system_configuration ( `key`, `value`, `description` ) VALUES( 'odc.task.max-concurrent-task-count', '30', '计划任务最大并发数' ) ON DUPLICATE KEY UPDATE `id` = `id`;
 
 INSERT INTO config_system_configuration ( `key`, `value`, `description` ) VALUES( 'odc.connect.database.sync.interval-millis', '180000', '同步数据源下所有数据库到 metadb 的间隔时间，默认 3 分钟，单位毫秒' ) ON DUPLICATE KEY UPDATE `id` = `id`;
 INSERT INTO config_system_configuration ( `key`, `value`, `description` ) VALUES( 'odc.task.dlm.default-single-task-row-limit', '20000', 'DLM 单个任务默认每秒行限制' ) ON DUPLICATE KEY UPDATE `id` = `id`;
@@ -756,6 +760,7 @@ INSERT INTO config_system_configuration ( `key`, `value`, `description` ) VALUES
 INSERT INTO config_system_configuration ( `key`, `value`, `description` ) VALUES( 'odc.task-framework.k8s-properties.mount-path', '', 'k8s pod mount path on host' ) ON DUPLICATE KEY UPDATE `id` = `id`;
 INSERT INTO config_system_configuration ( `key`, `value`, `description` ) VALUES( 'odc.task-framework.k8s-properties.mount-disk-size', '64', 'k8s pod mount disk size, unit is GB' ) ON DUPLICATE KEY UPDATE `id` = `id`;
 INSERT INTO config_system_configuration ( `key`, `value`, `description` ) VALUES( 'odc.task-framework.k8s-properties.pod-image-name', '', 'k8s pod image name' ) ON DUPLICATE KEY UPDATE `id` = `id`;
+INSERT INTO config_system_configuration ( `key`, `value`, `description` ) VALUES( 'odc.task-framework.k8s-properties.pod-pending-timeout-seconds', '3600', 'pod will be destroyed if pending exceed this time, default time is 1h' ) ON DUPLICATE KEY UPDATE `id` = `id`;
 INSERT INTO config_system_configuration ( `key`, `value`, `description` ) VALUES( 'odc.task.pre-check.execution-timeout-millis', '3600000', 'Pre-check task execution timeout, in milliseconds, default value: 3600000 i.e. 1 hour') ON DUPLICATE KEY UPDATE `id`=`id`;
 
 ---

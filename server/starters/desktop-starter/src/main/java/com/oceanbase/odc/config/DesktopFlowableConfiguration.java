@@ -19,12 +19,11 @@ import javax.sql.DataSource;
 
 import org.flowable.engine.ProcessEngineConfiguration;
 import org.flowable.spring.SpringProcessEngineConfiguration;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.orm.jpa.EntityManagerFactoryBuilder;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
-
-import com.zaxxer.hikari.HikariDataSource;
+import org.springframework.transaction.PlatformTransactionManager;
 
 /**
  * {@code Flowable} Configuration for client mode
@@ -38,29 +37,12 @@ import com.zaxxer.hikari.HikariDataSource;
 @Profile("clientMode")
 public class DesktopFlowableConfiguration extends BaseFlowableConfiguration {
 
-    @Value("${spring.datasource.url}")
-    private String url;
-    @Value("${spring.datasource.username}")
-    private String username;
-    @Value("${spring.datasource.password}")
-    private String password;
-    @Value("${spring.datasource.driver-class-name}")
-    private String driverClassName;
-
     @Override
-    protected DataSource getFlowableDataSource() {
-        HikariDataSource dataSource = new HikariDataSource();
-        dataSource.setJdbcUrl(url);
-        dataSource.setUsername(username);
-        dataSource.setPassword(password);
-        dataSource.setDriverClassName(driverClassName);
-        dataSource.setMaximumPoolSize(POOL_SIZE);
-        return dataSource;
-    }
-
-    @Override
-    public SpringProcessEngineConfiguration springProcessEngineConfiguration(EntityManagerFactoryBuilder builder) {
-        SpringProcessEngineConfiguration processEngineCfg = super.springProcessEngineConfiguration(builder);
+    public SpringProcessEngineConfiguration springProcessEngineConfiguration(
+            @Autowired @Qualifier("metadbTransactionManager") PlatformTransactionManager platformTransactionManager,
+            DataSource dataSource) {
+        SpringProcessEngineConfiguration processEngineCfg =
+                super.springProcessEngineConfiguration(platformTransactionManager, dataSource);
         processEngineCfg.setDatabaseSchemaUpdate(ProcessEngineConfiguration.DB_SCHEMA_UPDATE_TRUE);
         return processEngineCfg;
     }

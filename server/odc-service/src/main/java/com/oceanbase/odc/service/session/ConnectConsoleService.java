@@ -44,6 +44,7 @@ import org.springframework.validation.annotation.Validated;
 import com.oceanbase.odc.common.lang.Holder;
 import com.oceanbase.odc.common.unit.BinarySize;
 import com.oceanbase.odc.common.unit.BinarySizeUnit;
+import com.oceanbase.odc.common.util.ExceptionUtils;
 import com.oceanbase.odc.common.util.LogUtils;
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.common.util.TraceStage;
@@ -675,7 +676,7 @@ public class ConnectConsoleService {
             try (TraceStage s = watch.start(SqlExecuteStages.INIT_COLUMN_INFO)) {
                 result.initColumnInfo(connectionSession, resultTable, schemaAccessor);
             } catch (Exception e) {
-                log.warn("Failed to init column comment", e);
+                log.warn("Failed to init column comment, reason={}", ExceptionUtils.getSimpleReason(e));
             }
         }
         try (TraceStage s = watch.start(SqlExecuteStages.INIT_WARNING_MESSAGE)) {

@@ -104,6 +104,10 @@ public class ShadowTableComparingTask implements Callable<Void> {
                         dbTableService.getTables(connectionSession, schemaName).entrySet().stream()
                                 .filter(entry -> allRealTableNames.contains(entry.getKey()))
                                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+                if (connectionSession.getDialectType().isMysql()) {
+                    tableName2Tables.values().forEach(StringUtils::quoteColumnDefaultValuesForMySQL);
+                }
+
             } catch (Exception ex) {
                 log.warn("fetch table meta information failed, ex={}", ex);
                 comparingEntities.forEach(tableComparingEntity -> {

@@ -72,13 +72,13 @@ public class DLMJobFactory extends JobFactory {
         historyJob.setTableId(-1L);
         historyJob.setPrintSqlTrace(false);
         historyJob.setSourceTable(parameters.getTableName());
-        historyJob.setTargetTable(parameters.getTableName());
+        historyJob.setTargetTable(parameters.getTargetTableName());
         LogicTableConfig logicTableConfig = parameters.getLogicTableConfig();
         logicTableConfig.setReaderTaskCount((int) (singleTaskThreadPoolSize * readWriteRatio / (1 + readWriteRatio)));
         logicTableConfig.setWriterTaskCount(singleTaskThreadPoolSize - logicTableConfig.getReaderTaskCount());
         logicTableConfig.setGeneratorBatchSize(defaultScanBatchSize);
-        DataSourceInfo sourceInfo = DataSourceInfoBuilder.build(parameters.getSourceDs());
-        DataSourceInfo targetInfo = DataSourceInfoBuilder.build(parameters.getTargetDs());
+        DataSourceInfo sourceInfo = DataSourceInfoMapper.toDataSourceInfo(parameters.getSourceDs());
+        DataSourceInfo targetInfo = DataSourceInfoMapper.toDataSourceInfo(parameters.getTargetDs());
         sourceInfo.setConnectionCount(2 * (logicTableConfig.getReaderTaskCount()
                 + parameters.getLogicTableConfig().getWriterTaskCount()));
         targetInfo.setConnectionCount(2 * (logicTableConfig.getReaderTaskCount()
