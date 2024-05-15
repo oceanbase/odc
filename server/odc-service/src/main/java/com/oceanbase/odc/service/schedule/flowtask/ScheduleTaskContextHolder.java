@@ -25,16 +25,17 @@ import org.apache.logging.log4j.ThreadContext;
  */
 public class ScheduleTaskContextHolder {
 
-    public static final String JOB_NAME = "jobName";
-    public static final String JOB_GROUP = "jobGroup";
+    public static final String SCHEDULE_ID = "scheduleId";
+    public static final String JOB_TYPE = "jobType";
     public static final String SCHEDULE_TASK_ID = "scheduleTaskId";
 
     /**
      * 请求入口处，将任务日志meta信息写入上下文
      */
-    public static void trace(String jobName, String jobGroup, Long scheduleTaskId) {
-        ThreadContext.put(JOB_NAME, jobName);
-        ThreadContext.put(JOB_GROUP, jobGroup);
+
+    public static void trace(Long scheduleId, String jobType, Long scheduleTaskId) {
+        ThreadContext.put(SCHEDULE_ID, String.valueOf(scheduleId));
+        ThreadContext.put(JOB_TYPE, jobType);
         ThreadContext.put(SCHEDULE_TASK_ID, String.valueOf(scheduleTaskId));
     }
 
@@ -42,8 +43,8 @@ public class ScheduleTaskContextHolder {
      * 清除任务日志meta信息上下文
      */
     public static void clear() {
-        ThreadContext.remove(JOB_NAME);
-        ThreadContext.remove(JOB_GROUP);
+        ThreadContext.remove(SCHEDULE_ID);
+        ThreadContext.remove(JOB_TYPE);
         ThreadContext.remove(SCHEDULE_TASK_ID);
     }
 }

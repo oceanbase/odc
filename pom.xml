@@ -93,7 +93,7 @@
         <alipay.sdk.version>4.20.19.ALL</alipay.sdk.version>
         <bucket4j-core.version>4.10.0</bucket4j-core.version>
         <springfox-swagger-ui.version>2.10.0</springfox-swagger-ui.version>
-        <db-browser.version>1.1.1</db-browser.version>
+        <db-browser.version>1.1.2</db-browser.version>
         <ob-sql-parser.version>1.3.0</ob-sql-parser.version>
         <pf4j.version>3.10.0</pf4j.version>
         <bcpkix-jdk15on.version>1.64</bcpkix-jdk15on.version>
@@ -119,7 +119,7 @@
         <mina.version>2.1.6</mina.version>
 
         <!-- data-lifecycle-manager version -->
-        <data-lifecycle-manager.version>1.1.0</data-lifecycle-manager.version>
+        <data-lifecycle-manager.version>1.1.1</data-lifecycle-manager.version>
 
         <!-- plugin version -->
         <formatter-maven-plugin.version>2.11.0</formatter-maven-plugin.version>

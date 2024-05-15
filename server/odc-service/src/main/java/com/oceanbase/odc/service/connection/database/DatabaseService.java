@@ -30,7 +30,13 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.locks.Lock;
 import java.util.stream.Collectors;
 
@@ -40,6 +46,7 @@ import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
 
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -502,7 +509,12 @@ public class DatabaseService {
         boolean blockExcludeSchemas = dbSchemaSyncProperties.isBlockExclusionsWhenSyncDbToProject();
         List<String> excludeSchemas = dbSchemaSyncProperties.getExcludeSchemas(connection.getDialectType());
         DataSource teamDataSource = new OBConsoleDataSourceFactory(connection, true, false).getDataSource();
-        try (Connection conn = teamDataSource.getConnection()) {
+        ExecutorService executorService = Executors.newFixedThreadPool(1);
+        Future<Connection> connectionFuture = executorService.submit(
+                (Callable<Connection>) teamDataSource::getConnection);
+        Connection conn = null;
+        try {
+            conn = connectionFuture.get(5, TimeUnit.SECONDS);
             List<DatabaseEntity> latestDatabases = dbSchemaService.listDatabases(connection.getDialectType(), conn)
                     .stream().map(database -> {
                         DatabaseEntity entity = new DatabaseEntity();
@@ -582,14 +594,32 @@ public class DatabaseService {
                         "update connect_database set table_count=?, collation_name=?, charset_name=?, project_id=? where id = ?";
                 jdbcTemplate.batchUpdate(update, toUpdate);
             }
-        } catch (SQLException e) {
-            throw new IllegalStateException(e);
+        } catch (ExecutionException | InterruptedException | TimeoutException e) {
+            log.warn("Failed to obtain the connection, errorMessage={}", e.getMessage());
+            Throwable rootCause = e.getCause();
+            if (rootCause instanceof SQLException) {
+                deleteDatabaseIfClusterNotExists((SQLException) rootCause,
+                        connection.getId(), "update connect_database set is_existed = 0 where connection_id=?");
+                throw new IllegalStateException(rootCause);
+            }
         } finally {
+            try {
+                executorService.shutdownNow();
+            } catch (Exception e) {
+                // eat the exception
+            }
+            if (conn != null) {
+                try {
+                    conn.close();
+                } catch (Exception e) {
+                    log.warn("Close connection failed, errorMessage={}", e.getMessage());
+                }
+            }
             if (teamDataSource instanceof AutoCloseable) {
                 try {
                     ((AutoCloseable) teamDataSource).close();
                 } catch (Exception e) {
-                    log.warn("Failed to close datasource", e);
+                    log.warn("Failed to close datasource, errorMessgae={}", e.getMessage());
                 }
             }
         }
@@ -611,7 +641,12 @@ public class DatabaseService {
 
     private void syncIndividualDataSources(ConnectionConfig connection) {
         DataSource individualDataSource = new OBConsoleDataSourceFactory(connection, true, false).getDataSource();
-        try (Connection conn = individualDataSource.getConnection()) {
+        ExecutorService executorService = Executors.newFixedThreadPool(1);
+        Future<Connection> connectionFuture = executorService.submit(
+                (Callable<Connection>) individualDataSource::getConnection);
+        Connection conn = null;
+        try {
+            conn = connectionFuture.get(5, TimeUnit.SECONDS);
             Set<String> latestDatabaseNames = dbSchemaService.showDatabases(connection.getDialectType(), conn);
             List<DatabaseEntity> existedDatabasesInDb =
                     databaseRepository.findByConnectionId(connection.getId()).stream()
@@ -648,14 +683,32 @@ public class DatabaseService {
             if (!CollectionUtils.isEmpty(toDelete)) {
                 jdbcTemplate.batchUpdate("delete from connect_database where id = ?", toDelete);
             }
-        } catch (SQLException e) {
-            throw new IllegalStateException(e);
+        } catch (ExecutionException | InterruptedException | TimeoutException e) {
+            log.warn("Failed to obtain the connection, errorMessage={}", e.getMessage());
+            Throwable rootCause = e.getCause();
+            if (rootCause instanceof SQLException) {
+                deleteDatabaseIfClusterNotExists((SQLException) rootCause,
+                        connection.getId(), "delete from connect_database where connection_id=?");
+                throw new IllegalStateException(rootCause);
+            }
         } finally {
+            try {
+                executorService.shutdownNow();
+            } catch (Exception e) {
+                // eat the exception
+            }
+            if (conn != null) {
+                try {
+                    conn.close();
+                } catch (Exception e) {
+                    log.warn("Close connection failed, errorMessage={}", e.getMessage());
+                }
+            }
             if (individualDataSource instanceof AutoCloseable) {
                 try {
                     ((AutoCloseable) individualDataSource).close();
                 } catch (Exception e) {
-                    log.warn("Failed to close datasource", e);
+                    log.warn("Failed to close datasource, errorMessgae={}", e.getMessage());
                 }
             }
         }
@@ -990,4 +1043,19 @@ public class DatabaseService {
         return userResourceRoles;
     }
 
+
+    private void deleteDatabaseIfClusterNotExists(SQLException e, Long connectionId, String deleteSql) {
+        if (StringUtils.containsIgnoreCase(e.getMessage(), "cluster not exist")) {
+            log.info(
+                    "Cluster not exist, set existed to false for all databases in this data source, data source id = {}",
+                    connectionId);
+            JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
+            try {
+                jdbcTemplate.update(deleteSql, new Object[] {connectionId});
+            } catch (Exception ex) {
+                log.warn("Failed to delete databases when cluster not exist, errorMessage={}",
+                        ex.getLocalizedMessage());
+            }
+        }
+    }
 }

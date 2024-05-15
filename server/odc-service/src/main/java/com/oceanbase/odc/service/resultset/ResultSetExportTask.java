@@ -220,7 +220,7 @@ public class ResultSetExportTask implements Callable<ResultSetExportResult> {
         List<MaskingAlgorithm> algorithms = parameter.getRowDataMaskingAlgorithms();
         Map<String, Map<String, List<OrdinalColumn>>> catalog2TableColumns = new HashMap<>();
         try {
-            SyncJdbcExecutor syncJdbcExecutor = session.getSyncJdbcExecutor(ConnectionSessionConstants.BACKEND_DS_KEY);
+            SyncJdbcExecutor syncJdbcExecutor = session.getSyncJdbcExecutor(ConnectionSessionConstants.CONSOLE_DS_KEY);
             syncJdbcExecutor.execute((StatementCallback<?>) stmt -> {
                 stmt.setMaxRows(10);
                 new ConsoleTimeoutInitializer(parameter.getExecutionTimeoutSeconds() * 1000000L,

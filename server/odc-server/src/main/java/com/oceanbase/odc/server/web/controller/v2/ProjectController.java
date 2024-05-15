@@ -76,17 +76,19 @@ public class ProjectController {
     public PaginatedResponse<Project> listProjects(
             @RequestParam(required = false, name = "name") String name,
             @RequestParam(required = false, name = "archived") Boolean archived,
+            @RequestParam(required = false, name = "builtin", defaultValue = "false") Boolean builtin,
             @PageableDefault(size = Integer.MAX_VALUE, sort = {"id"}, direction = Direction.DESC) Pageable pageable) {
         QueryProjectParams params =
-                QueryProjectParams.builder().name(name).archived(archived).build();
+                QueryProjectParams.builder().name(name).archived(archived).builtin(builtin).build();
         return Responses.paginated(projectService.list(params, pageable));
     }
 
     @ApiOperation(value = "listBasicProjects", notes = "List all basic projects")
     @RequestMapping(value = "/projects/basic", method = RequestMethod.GET)
     public ListResponse<Project> listBasicProjects(
-            @RequestParam(required = false, name = "archived") Boolean archived) {
-        return Responses.list(projectService.listBasicInfoForApply(archived));
+            @RequestParam(required = false, name = "archived") Boolean archived,
+            @RequestParam(required = false, name = "builtin", defaultValue = "false") Boolean builtin) {
+        return Responses.list(projectService.listBasicInfoForApply(archived, builtin));
     }
 
     @ApiOperation(value = "updateProject", notes = "Update a project")
