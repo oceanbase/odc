@@ -27,7 +27,7 @@
 数据库归档/清理
 
 - 任务被终止时状态可能被错误地设置为成功 [#2340](https://github.com/oceanbase/odc/pull/2340)
-- OceanBase MySQL 归档自定义表名报表不存在问题 [#2313](https://github.com/oceanbase/odc/pull/2313)
+- 数据归档指定非同名目标表时，任务执行报错表不存在 [#2313](https://github.com/oceanbase/odc/pull/2313)
 
 结果集导出
 
