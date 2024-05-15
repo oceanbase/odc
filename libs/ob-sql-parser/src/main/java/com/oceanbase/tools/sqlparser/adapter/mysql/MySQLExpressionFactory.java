@@ -33,7 +33,6 @@ import com.oceanbase.tools.sqlparser.obmysql.OBLexer;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Bit_exprContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Bool_priContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Case_exprContext;
-import com.oceanbase.tools.sqlparser.obmysql.OBParser.Column_definition_refContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Complex_func_exprContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Complex_string_literalContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Cur_date_funcContext;
@@ -60,7 +59,6 @@ import com.oceanbase.tools.sqlparser.obmysql.OBParser.On_errorContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Opt_value_on_empty_or_error_or_mismatchContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Parameterized_trimContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.PredicateContext;
-import com.oceanbase.tools.sqlparser.obmysql.OBParser.Relation_nameContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Select_no_parensContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Simple_exprContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Simple_func_exprContext;
@@ -139,17 +137,6 @@ public class MySQLExpressionFactory extends OBParserBaseVisitor<Expression> impl
             return null;
         }
         return super.visit(tree);
-    }
-
-    @Override
-    public Expression visitColumn_definition_ref(Column_definition_refContext ctx) {
-        List<Relation_nameContext> relationNames = ctx.relation_name();
-        int relationNameCount = relationNames.size();
-        String schemaName = relationNameCount == 2 ? relationNames.get(0).getText() : null;
-        String tableName = relationNameCount == 1 ? relationNames.get(0).getText()
-                : relationNameCount == 2 ? relationNames.get(1).getText() : null;
-        String columnName = ctx.column_name().getText();
-        return new ColumnReference(ctx, schemaName, tableName, columnName);
     }
 
     @Override
@@ -727,7 +714,9 @@ public class MySQLExpressionFactory extends OBParserBaseVisitor<Expression> impl
     public Expression visitTtl_expr(Ttl_exprContext ctx) {
         Expression right = new IntervalExpression(ctx.INTERVAL(), ctx.ttl_unit(),
                 new ConstExpression(ctx.INTNUM()), ctx.ttl_unit().getText());
-        return new CompoundExpression(ctx, visit(ctx.column_definition_ref()), right, Operator.ADD);
+
+        return new CompoundExpression(ctx,
+                new MySQLColumnRefFactory(ctx.column_definition_ref()).generate(), right, Operator.ADD);
     }
 
     @Override

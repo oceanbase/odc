@@ -15,6 +15,8 @@
  */
 package com.oceanbase.tools.dbbrowser.model;
 
+import java.util.List;
+
 import lombok.Data;
 
 /**
@@ -28,4 +30,5 @@ public class DBIndex {
     private String databaseName;
     private String name;
     private DBIndexRangeType range;
+    private List<DBColumnGroupElement> columnGroups;
 }

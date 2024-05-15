@@ -848,8 +848,7 @@ public class FlowInstanceService {
         Verify.notNull(taskEntity.getId(), "TaskId can not be null");
         FlowInstance flowInstance = flowFactory.generateFlowInstance(generateFlowInstanceName(flowInstanceReq),
                 flowInstanceReq.getParentFlowInstanceId(),
-                flowInstanceReq.getProjectId(),
-                flowInstanceReq.getDescription());
+                flowInstanceReq.getProjectId(), flowInstanceReq.getDescription());
         Verify.notNull(flowInstance.getId(), "FlowInstance id can not be null");
 
         try {

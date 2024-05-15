@@ -174,7 +174,7 @@ public class OBOracleAutoPartitionExtensionPoint extends OBMySQLAutoPartitionExt
     }
 
     @Override
-    protected DBSchemaAccessor getDBSchemaAccessor(@NonNull Connection connection) {
+    protected DBSchemaAccessor getDBSchemaAccessor(@NonNull Connection connection, String tenantName) {
         JdbcOperations jdbc = new JdbcTemplate(new SingleConnectionDataSource(connection, false));
         return DBSchemaAccessors.create(jdbc, new OBOracleInformationExtension().getDBVersion(connection));
     }

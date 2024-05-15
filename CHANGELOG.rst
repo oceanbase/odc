@@ -3,6 +3,145 @@
 
 New
 ~~~
+- Feat(dlm): upgrade dlm sdk to 1.1.1 (#2281) [guowl3]
+- Feat(connect): supports connect backup instance (#2192) [pynzzZ]
+
+Changes
+~~~~~~~
+- Refactor(osc): modify i18n messages for white list (#2221) [krihy]
+
+Fix
+~~~
+- Fix(shadowtable): bad sql grammer when table column's default value is
+  a string type in MySQL (#2388) [jingtian, pynzzZ]
+- Fix(data-masking): unavailable when existing invalid database with
+  duplicated name (#2385) [XiaoYang]
+- Fix(obclient): remove unexpected characters to avoid obclient display
+  incorrectly (#2353) [LuckyLeo]
+- Fix(iam): failed to delete a user who is an archived project's Owner
+  or DBA (#2359) [yiminpeng]
+- Fix(account-integration): failed to login after updating user extra
+  properties (#2336) [XiaoYang]
+- Fix(encryption): exception occurs when invoking RSA decryption
+  concurrently (#2371) [XiaoYang]
+- Fix(web-framework): csrf prevention conflict with basic authentication
+  (#2370) [yizhou]
+- Fix(odp-sharding): cannot connect to odp sharding (#2339) [yizhou]
+- Fix(web-framework): csrfToken API does not return token (#2277)
+  [yizhou]
+- Fix(full-link-trace): enable trace by default on OB 4.x (#2347)
+  [LuckyLeo]
+- Fix(flow): task will be failed when its execution undergoes a version
+  upgrade #2342. [IL MARE]
+- Fix(taskframework): oss log info is ignored when cancel job (#2341)
+  [krihy]
+- Fix(schedule): status not found (#2333) [guowl3]
+- Fix(dlm): the task status was set to completed when the task was
+  canceled (#2340) [guowl3]
+- Fix(connection): add serialVersionUID for ConnectionConfig (#2065)
+  [Xiao Kang, yh263208, zijia.cj]
+- Fix(partition-plan): generated partition expression is not contiguous
+  (#2327) [IL MARE]
+- Fix(taskframework): always print warn log about "Task-framework
+  isEnabled" (#2331) [krihy]
+- Fix(dlm): correct the task status when the task exits abnormally
+  (#2330) [guowl3]
+- Fix(osc): osc job is terminated when database id is not exist (#2320)
+  [krihy]
+- Fix(partition-plan): failed to list partitioned tables on OceanBase
+  1.4.79 (#2323) [IL MARE]
+- Fix(connection): connection may be blocked (#2307) [IL MARE]
+- Fix(result-set-export): use console datasource to avoid socket timeout
+  (#2315) [LuckyLeo]
+- Fix(notification): lost sign when updating channel (#2314) [LuckyLeo]
+- Fix(alarm): alarm msg add request (#2319) [Ang]
+- Fix(dlm): the target table does not exist (#2313) [guowl3]
+- Fix(taskframework): optimize log content (#2299) [krihy]
+- Fix(dlm):get table ddl failed in oracle mode #2296. [guowl3]
+- Fix(taskframework): column 'job_id' cannot be null (#2292) [krihy]
+- Fix(objectstorage): wrong log/database change/rollback plan download
+  URLs if cloud storage is enabled (#2289) [pynzzZ]
+- Fix(ticket): access denied when approve a ticket (#2288) [XiaoYang]
+- Fix(partition-plan): failed to start up a partition plan on oceanbase
+  before 3.x #2287. [IL MARE]
+- Fix(taskframework): running task log is not found when close task-
+  framework && send mistake alarm (#2268) [krihy]
+- Fix(dlm): rollback task failed when customizing target table names
+  (#2279) [guowl3]
+- Fix(flow): cancel pending task cause "Some tasks is not found" (#2272)
+  [krihy]
+- Fix(dlm): get log failed when the task framework was switched during
+  task execution (#2276) [guowl3]
+- Fix(notification): use blacklist to check webhook instead of whitelist
+  (#2267) [LuckyLeo]
+- Fix(dlm): custom target table names invalid in non-task framework mode
+  (#2269) [guowl3]
+- Fix(taskframework): optimize flowable transaction manager (#2255)
+  [krihy]
+- Fix(notification): failed to query connection info (#2249) [LuckyLeo]
+- Fix(bastion): could not access SQL console when using OAuth for
+  account integration (#2253) [XiaoYang]
+- Fix(taskframework): add pod config from properties (#2250) [krihy]
+- Fix(taskframework): alarm notification is not effective (#2242)
+  [krihy]
+- Fix(permission): permission error message is not readable (#2227) [IL
+  MARE]
+- Fix(tag): change default tag key (#2225) [Ang]
+- Fix(security): horizontal privilege escalation issue of
+  getOscDatabaseInfo interface (#2209) [krihy]
+- Fix(sql-execute): disable full link trace on OB 4.1.x (#2219)
+  [LuckyLeo]
+- Fix(taskframework): pending pod timeout after exceed one hour (#2187)
+  [krihy]
+- Fix(tag): can‘t find tagServiceFacade (#2217) [Ang]
+- Fix(connection): add version check before set weak read consistency
+  (#2214) [pynzzZ]
+
+Security
+~~~~~~~~
+- Security: exclude dependency on snappy-java (#2317) [LuckyLeo]
+- Security: test masking using rounding algorithm may cause denial of
+  service (DoS) risk (##) [XiaoYang]
+
+
+v4.2.4_bp1 (2024-04-12)
+-----------------------
+
+New
+~~~
+- Feat(connection): supports query connections by username (#1981)
+  [zhangxiao]
+
+Fix
+~~~
+- Fix(configuration): add Configuration Consumer for UserConfigService
+  (#2198) [zhangxiao]
+- Fix(security): upgrade  okio-jvm to 3.4.0 (#2200) [krihy]
+- Fix(connection): add some log about datasource lock (#2196) [Ang]
+- Fix(security):horizontal privilege escalation issue of getDatabase
+  interface (#2194) [zhangxiao]
+- Fix(notification): failure to enqueue event will result in failure of
+  ticket rejection (#2185) [LuckyLeo]
+- Fix(db-browser): failed to listTables when lack mysql schema
+  permissions (#2184) [zhangxiao]
+- Fix(data-transfer): obloader fail to load MANIFEST.bin (#2181)
+  [LuckyLeo]
+- Fix(pl-debug): make timeout settings can be overwritten by session
+  init script (#2179) [IL MARE]
+- Fix(taskframework):  calculate capacity of task in  single node by
+  node memory (#2174) [krihy]
+- Fix(taskframework): dlm task show log not exists (#2169) [krihy]
+- Fix(partition-plan): failed to migrate historical partition plan data
+  (#2158) [IL MARE]
+- Fix(taskframework): load log configuration NPE in task pod (#2153)
+  [krihy]
+
+
+v4.2.4 (2024-04-03)
+-------------------
+
+New
+~~~
 - Feat(tag): add tag service (#2090) [Ang]
 - Feat(dlm): adapts to the task framework and supports OceanBase Oracle
   mode (#2059) [guowl3]
@@ -112,6 +251,18 @@ Changes
 
 Fix
 ~~~
+- Fix(log): correct the log routing path #2148. [guowl3]
+- Fix(environment): wrong default environment description (#2146)
+  [pynzzZ]
+- Fix(taskframework): fix refresh entity replaced by native sql (#2145)
+  [krihy]
+- Fix(taskframework): refresh entity from database after update destroy
+  time (#2141) [krihy]
+- Fix(partition-plan): migrate useless partition plan table config
+  (#2142) [IL MARE]
+- Fix(stateful): default disabled stateful route (#2138) [Ang]
+- Fix(alter-schedule): correct the log routing path #2137. [guowl3]
+- Fix(dlm):interrupt job failed (#2135) [guowl3]
 - Fix(taskframework): fix decrypt meta db password (#2129) [krihy]
 - Fix(session): failed to remove session when session is expired (#2125)
   [IL MARE]

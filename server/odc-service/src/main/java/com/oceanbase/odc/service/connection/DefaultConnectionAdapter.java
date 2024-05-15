@@ -45,10 +45,10 @@ public class DefaultConnectionAdapter implements ConnectionAdapter {
                     connectionConfig.getTenantName());
             connectionConfig.setHost(endpoint.getVirtualHost());
             connectionConfig.setPort(endpoint.getVirtualPort());
-
+            OBTenant tenant = cloudMetadataClient.getTenant(clusterName, tenantName);
+            connectionConfig.setInstanceRoleType(tenant.getInstanceRole());
             if (cloudMetadataClient.supportsTenantInstance()) {
                 // if supports tenant/serverless instance, then we need to get the clusterName
-                OBTenant tenant = cloudMetadataClient.getTenant(clusterName, tenantName);
                 connectionConfig.setClusterName(tenant.getClusterInstanceId());
                 connectionConfig.setTenantName(tenant.getId());
                 connectionConfig.setInstanceType(
@@ -58,7 +58,6 @@ public class DefaultConnectionAdapter implements ConnectionAdapter {
             }
             if (cloudMetadataClient.needsOBTenantName()) {
                 // 需要使用 observer 上真实的 tenantName 来建连，防止备库切主后无法连接
-                OBTenant tenant = cloudMetadataClient.getTenant(clusterName, tenantName);
                 connectionConfig.setOBTenantName(tenant.getObTenantName());
             }
             if (cloudMetadataClient.needsSysTenantUser()) {

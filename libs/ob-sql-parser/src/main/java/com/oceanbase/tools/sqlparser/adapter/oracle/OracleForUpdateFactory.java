@@ -61,7 +61,10 @@ public class OracleForUpdateFactory extends OBParserBaseVisitor<ForUpdate> imple
         }
         WaitOption waitOption = null;
         BigDecimal waitNum = null;
-        if (ctx.WAIT() != null) {
+        if (ctx.DECIMAL_VAL() != null) {
+            waitOption = WaitOption.WAIT;
+            waitNum = new BigDecimal(ctx.DECIMAL_VAL().getText());
+        } else if (ctx.INTNUM() != null) {
             waitOption = WaitOption.WAIT;
             waitNum = new BigDecimal(ctx.INTNUM().getText());
         } else if (ctx.NOWAIT() != null) {
