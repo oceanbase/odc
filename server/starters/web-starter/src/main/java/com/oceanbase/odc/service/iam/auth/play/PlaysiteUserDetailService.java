@@ -27,6 +27,7 @@ import com.oceanbase.odc.common.trace.TraceContextHolder;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.core.shared.constant.OdcConstants;
+import com.oceanbase.odc.metadb.iam.UserEntity;
 import com.oceanbase.odc.service.iam.UserService;
 import com.oceanbase.odc.service.iam.model.User;
 
@@ -55,8 +56,10 @@ public class PlaysiteUserDetailService
         String accountName = token.getName();
         // 如果是新用户，则用 passportId 作为 accountName 创建一个新的 ODC 用户
         // 官网账号 API 不提供昵称，使用 accountName 作为 name
-        User user = userService.createUserIfNotExists(
-                OdcConstants.DEFAULT_ORGANIZATION_ID, accountName, accountName, null);
+        UserEntity entity =
+                UserEntity.autoCreatedEntity(accountName, accountName, OdcConstants.DEFAULT_ORGANIZATION_ID);
+        entity.setDescription("Auto generated user for play site");
+        User user = userService.upsert(entity, null);
         TraceContextHolder.setUserId(user.getId());
         TraceContextHolder.setOrganizationId(user.getOrganizationId());
         return user;
