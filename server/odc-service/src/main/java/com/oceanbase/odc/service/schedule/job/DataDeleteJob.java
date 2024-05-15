@@ -24,7 +24,7 @@ import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.shared.constant.TaskStatus;
 import com.oceanbase.odc.metadb.schedule.ScheduleTaskEntity;
-import com.oceanbase.odc.service.dlm.DataSourceInfoBuilder;
+import com.oceanbase.odc.service.dlm.DataSourceInfoMapper;
 import com.oceanbase.odc.service.dlm.model.DataArchiveTableConfig;
 import com.oceanbase.odc.service.dlm.model.DataDeleteParameters;
 import com.oceanbase.odc.service.dlm.model.DlmTask;
@@ -121,10 +121,10 @@ public class DataDeleteJob extends AbstractDlmJob {
         parameters.setReadThreadCount(dataDeleteParameters.getReadThreadCount());
         parameters.setScanBatchSize(dataDeleteParameters.getScanBatchSize());
         parameters
-                .setSourceDs(DataSourceInfoBuilder.build(
+                .setSourceDs(DataSourceInfoMapper.toDataSourceInfo(
                         databaseService.findDataSourceForConnectById(dataDeleteParameters.getDatabaseId())));
         parameters
-                .setTargetDs(DataSourceInfoBuilder.build(
+                .setTargetDs(DataSourceInfoMapper.toDataSourceInfo(
                         databaseService.findDataSourceForConnectById(dataDeleteParameters.getDatabaseId())));
         parameters.getSourceDs().setDatabaseName(dataDeleteParameters.getDatabaseName());
         parameters.getTargetDs().setDatabaseName(dataDeleteParameters.getDatabaseName());
