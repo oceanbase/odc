@@ -100,6 +100,8 @@ public class DBTableIndex implements DBObject, DBObjectWarningDescriptor {
      */
     private String ddl;
 
+    private List<DBColumnGroupElement> columnGroups;
+
     @Override
     public String name() {
         return name;

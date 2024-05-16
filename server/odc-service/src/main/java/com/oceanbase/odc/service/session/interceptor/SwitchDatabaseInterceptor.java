@@ -16,7 +16,6 @@
 package com.oceanbase.odc.service.session.interceptor;
 
 import java.util.Collections;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -25,6 +24,7 @@ import org.springframework.stereotype.Component;
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionUtil;
 import com.oceanbase.odc.core.sql.execute.model.SqlExecuteStatus;
+import com.oceanbase.odc.service.session.model.AsyncExecuteContext;
 import com.oceanbase.odc.service.session.model.SqlExecuteResult;
 import com.oceanbase.odc.service.session.util.SchemaExtractor;
 
@@ -41,7 +41,7 @@ public class SwitchDatabaseInterceptor implements SqlExecuteInterceptor {
 
     @Override
     public void afterCompletion(@NonNull SqlExecuteResult response, @NonNull ConnectionSession session,
-            @NonNull Map<String, Object> context) throws Exception {
+            @NonNull AsyncExecuteContext context) throws Exception {
         if (response.getStatus() != SqlExecuteStatus.SUCCESS) {
             return;
         }

@@ -22,6 +22,7 @@ import org.antlr.v4.runtime.ParserRuleContext;
 import org.apache.commons.collections4.CollectionUtils;
 
 import com.oceanbase.tools.sqlparser.statement.BaseStatement;
+import com.oceanbase.tools.sqlparser.statement.common.ColumnGroupElement;
 
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
@@ -46,6 +47,7 @@ public class OutOfLineConstraint extends BaseStatement implements TableElement {
     private boolean primaryKey;
     private final ConstraintState state;
     private final List<SortColumn> columns;
+    private List<ColumnGroupElement> columnGroupElements;
 
     public OutOfLineConstraint(@NonNull ParserRuleContext context,
             ConstraintState state, @NonNull List<SortColumn> columns) {
@@ -95,6 +97,12 @@ public class OutOfLineConstraint extends BaseStatement implements TableElement {
         }
         if (this.state != null) {
             builder.append(" ").append(this.state);
+        }
+        if (this.columnGroupElements != null) {
+            builder.append(" WITH COLUMN GROUP(")
+                    .append(columnGroupElements.stream()
+                            .map(ColumnGroupElement::toString).collect(Collectors.joining(",")))
+                    .append(")");
         }
         return builder.length() == 0 ? "" : builder.substring(1);
     }

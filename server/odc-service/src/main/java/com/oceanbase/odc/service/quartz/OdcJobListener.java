@@ -15,6 +15,7 @@
  */
 package com.oceanbase.odc.service.quartz;
 
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -42,7 +43,9 @@ import com.oceanbase.odc.service.notification.Broker;
 import com.oceanbase.odc.service.notification.NotificationProperties;
 import com.oceanbase.odc.service.notification.helper.EventBuilder;
 import com.oceanbase.odc.service.quartz.util.ScheduleTaskUtils;
+import com.oceanbase.odc.service.schedule.flowtask.ScheduleTaskContextHolder;
 import com.oceanbase.odc.service.schedule.model.JobType;
+import com.oceanbase.odc.service.task.config.TaskFrameworkEnabledProperties;
 import com.oceanbase.odc.service.task.model.ExecutorInfo;
 
 import lombok.extern.slf4j.Slf4j;
@@ -71,6 +74,8 @@ public class OdcJobListener implements JobListener {
     private EventBuilder eventBuilder;
     @Autowired
     private NotificationProperties notificationProperties;
+    @Autowired
+    private TaskFrameworkEnabledProperties taskFrameworkEnabledProperties;
     private static final String ODC_JOB_LISTENER = "ODC_JOB_LISTENER";
 
     @Override
@@ -92,8 +97,25 @@ public class OdcJobListener implements JobListener {
         ScheduleEntity scheduleEntity =
                 scheduleRepository.findById(scheduleId)
                         .orElseThrow(() -> new NotFoundException(ResourceType.ODC_SCHEDULE, "id", scheduleId));
+        ScheduleTaskContextHolder.trace(scheduleEntity.getId(), scheduleEntity.getJobType().name(), null);
+        log.info("Job to be executed.OrganizationId={},ProjectId={},DatabaseId={},JobType={}",
+                scheduleEntity.getOrganizationId(), scheduleEntity.getProjectId(), scheduleEntity.getDatabaseId(),
+                scheduleEntity.getJobType());
+        // For tasks that do not allow concurrent execution, if they can be successfully scheduled, it
+        // indicates that the existing tasks have exited. If there are still tasks in the processing state,
+        // then it is necessary to correct their status.
+        if (!taskFrameworkEnabledProperties.isEnabled() && context.getJobDetail().isConcurrentExectionDisallowed()
+                && scheduleEntity.getJobType().isSync()) {
+            List<ScheduleTaskEntity> processingTask = taskRepository.findByJobNameAndStatusIn(
+                    scheduleId.toString(), TaskStatus.getProcessingStatus());
+            processingTask.forEach(task -> {
+                taskRepository.updateStatusById(task.getId(), TaskStatus.CANCELED);
+                log.info("Task status correction successful,scheduleTaskId={}", task.getId());
+            });
+        }
         // Ignore this schedule if scheduler has executing job.
-        if (scheduleEntity.getJobType().executeInTaskFramework() && !scheduleEntity.getAllowConcurrent()
+        if (taskFrameworkEnabledProperties.isEnabled() && scheduleEntity.getJobType().executeInTaskFramework()
+                && !scheduleEntity.getAllowConcurrent()
                 && !taskRepository.findByJobNameAndStatusIn(scheduleId.toString(), TaskStatus.getProcessingStatus())
                         .isEmpty()) {
             log.warn("Concurrent is not allowed for scheduler {}.", scheduleId);
@@ -127,6 +149,7 @@ public class OdcJobListener implements JobListener {
             entity = taskRepository.findById(targetTaskId).orElseThrow(() -> new NotFoundException(
                     ResourceType.ODC_SCHEDULE_TASK, "id", targetTaskId));
         }
+        ScheduleTaskContextHolder.trace(scheduleEntity.getId(), entity.getJobGroup(), entity.getId());
         taskRepository.updateExecutor(entity.getId(), JsonUtils.toJson(new ExecutorInfo(hostProperties)));
         context.setResult(entity);
         log.info("Task is prepared,taskId={}", entity.getId());
@@ -139,6 +162,7 @@ public class OdcJobListener implements JobListener {
 
     @Override
     public void jobWasExecuted(JobExecutionContext context, JobExecutionException jobException) {
+        ScheduleTaskContextHolder.clear();
         Optional<ScheduleEntity> scheduleEntityOptional =
                 scheduleRepository.findById(ScheduleTaskUtils.getScheduleId(context));
         if (scheduleEntityOptional.isPresent()) {

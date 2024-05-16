@@ -17,6 +17,7 @@
 package com.oceanbase.odc.service.dlm;
 
 import com.oceanbase.odc.common.util.StringUtils;
+import com.oceanbase.odc.core.shared.constant.ConnectType;
 import com.oceanbase.odc.core.shared.exception.UnsupportedException;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.session.factory.OBConsoleDataSourceFactory;
@@ -32,9 +33,20 @@ import lombok.extern.slf4j.Slf4j;
  * @Descripition:
  */
 @Slf4j
-public class DataSourceInfoBuilder {
+public class DataSourceInfoMapper {
 
-    public static DataSourceInfo build(ConnectionConfig connectionConfig) {
+    public static ConnectionConfig toConnectionConfig(DataSourceInfo dataSourceInfo) {
+        ConnectionConfig connectionConfig = new ConnectionConfig();
+        connectionConfig.setDefaultSchema(dataSourceInfo.getDatabaseName());
+        connectionConfig.setPassword(dataSourceInfo.getPassword());
+        connectionConfig.setHost(dataSourceInfo.getIp());
+        connectionConfig.setPort(dataSourceInfo.getPort());
+        connectionConfig.setUsername(dataSourceInfo.getFullUserName());
+        connectionConfig.setType(ConnectType.valueOf(dataSourceInfo.getDatabaseType().name()));
+        return connectionConfig;
+    }
+
+    public static DataSourceInfo toDataSourceInfo(ConnectionConfig connectionConfig) {
         DataSourceInfo dataSourceInfo = new DataSourceInfo();
         dataSourceInfo.setDatabaseName(connectionConfig.getDefaultSchema());
         dataSourceInfo.setQueryTimeout(connectionConfig.queryTimeoutSeconds());

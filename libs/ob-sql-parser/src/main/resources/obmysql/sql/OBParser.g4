@@ -194,9 +194,7 @@ expr_with_opt_alias
 
 column_ref
     : column_name
-    | (Dot?|relation_name Dot) relation_name Dot (column_name|mysql_reserved_keyword)
-    | (Dot?|relation_name Dot) mysql_reserved_keyword Dot mysql_reserved_keyword
-    | relation_name Dot (relation_name Dot)? Star
+    | (Dot?|relation_name Dot) (relation_name|mysql_reserved_keyword) Dot (column_name|mysql_reserved_keyword|Star)
     ;
 
 complex_string_literal
@@ -926,10 +924,8 @@ references_clause
     ;
 
 out_of_line_index
-    : key_or_index index_name? index_using_algorithm? LeftParen sort_column_list RightParen opt_index_options? (partition_option | auto_partition_option)?
-    | key_or_index index_name? index_using_algorithm? LeftParen sort_column_list RightParen opt_index_options? (partition_option | auto_partition_option)? with_column_group
-    | (FULLTEXT | SPATIAL) key_or_index? index_name? index_using_algorithm? LeftParen sort_column_list RightParen opt_index_options? (partition_option | auto_partition_option)?
-    | (FULLTEXT | SPATIAL) key_or_index? index_name? index_using_algorithm? LeftParen sort_column_list RightParen opt_index_options? (partition_option | auto_partition_option)? with_column_group
+    : key_or_index index_name? index_using_algorithm? LeftParen sort_column_list RightParen opt_index_options? (partition_option | auto_partition_option)? with_column_group?
+    | (FULLTEXT | SPATIAL) key_or_index? index_name? index_using_algorithm? LeftParen sort_column_list RightParen opt_index_options? (partition_option | auto_partition_option)? with_column_group?
     ;
 
 out_of_line_primary_index
@@ -937,8 +933,7 @@ out_of_line_primary_index
     ;
 
 out_of_line_unique_index
-    : UNIQUE key_or_index? index_name? index_using_algorithm? LeftParen sort_column_list RightParen opt_index_options? (partition_option | auto_partition_option)?
-    | UNIQUE key_or_index? index_name? index_using_algorithm? LeftParen sort_column_list RightParen opt_index_options? (partition_option | auto_partition_option)? with_column_group
+    : UNIQUE key_or_index? index_name? index_using_algorithm? LeftParen sort_column_list RightParen opt_index_options? (partition_option | auto_partition_option)? with_column_group?
     ;
 
 opt_reference_option_list
@@ -1681,8 +1676,7 @@ opt_tablet_id_no_empty
     ;
 
 create_index_stmt
-    : CREATE (FULLTEXT | SPATIAL | UNIQUE)? INDEX (IF not EXISTS)? normal_relation_factor index_using_algorithm? ON relation_factor LeftParen sort_column_list RightParen opt_index_options? (partition_option | auto_partition_option)?
-    | CREATE (FULLTEXT | SPATIAL | UNIQUE)? INDEX (IF not EXISTS)? normal_relation_factor index_using_algorithm? ON relation_factor LeftParen sort_column_list RightParen opt_index_options? (partition_option | auto_partition_option)? with_column_group
+    : CREATE (FULLTEXT | SPATIAL | UNIQUE)? INDEX (IF not EXISTS)? normal_relation_factor index_using_algorithm? ON relation_factor LeftParen sort_column_list RightParen opt_index_options? (partition_option | auto_partition_option)? with_column_group?
     ;
 
 index_name
@@ -1724,10 +1718,6 @@ index_option
     | WITH PARSER STRING_VALUE
     | index_using_algorithm
     | visibility_option
-    | DATA_TABLE_ID opt_equal_mark INTNUM
-    | INDEX_TABLE_ID opt_equal_mark INTNUM
-    | VIRTUAL_COLUMN_ID opt_equal_mark INTNUM
-    | MAX_USED_PART_ID opt_equal_mark INTNUM
     | parallel_option
     ;
 
@@ -1860,13 +1850,6 @@ insert_with_opt_hint
 
 column_list
     : column_definition_ref (Comma column_definition_ref)*
-    ;
-
-no_param_column_ref
-    : column_name
-    | (Dot?|relation_name Dot) relation_name Dot (column_name|mysql_reserved_keyword)
-    | (Dot?|relation_name Dot) mysql_reserved_keyword Dot mysql_reserved_keyword
-    | relation_name Dot (relation_name Dot)? Star
     ;
 
 insert_vals_list
@@ -2305,8 +2288,7 @@ relation_with_star_list
     ;
 
 relation_factor_with_star
-    : relation_name (Dot Star)?
-    | relation_name Dot relation_name (Dot Star)?
+    : relation_name (Dot relation_name)? (Dot Star)?
     ;
 
 normal_relation_factor
