@@ -4,7 +4,7 @@
 #   1. Manual trigger
 # Jobs:
 #   1. Calculate Version Number
-#   2. Build Web Artifact (include front resource and only x86_64 platform for now)
+#   2. Build Web Artifact
 #   3. Build Client Artifact
 ###
 
@@ -99,12 +99,14 @@ jobs:
           distribution: "temurin"
           cache: maven
       - name: action by obfarm++odc_build_arm++BUILD_DOCKER_IMAGE=1;BUILD_RPM=1;BUILD_RPM_VERSION=${{ inputs.rpm_release }};BUILD_DOCKER_TAG=${{ env.odc_docker_image_tag }}
+        if: ${{ github.event.inputs.build_rpm == 'true' || github.event.inputs.build_docker == 'true' }}
         uses: ./.github/obfarm/
         id: build-web-arm64
         with:
           pipeline_id: ${{ github.run_id }}
           project: ${{ github.repository }}
-      - name: Echo Build Result
+      - name: Echo build result
+        if: ${{ github.event.inputs.build_rpm == 'true' || github.event.inputs.build_docker == 'true' }}
         run: |
           main_version="$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout | cut -d - -f 1)"
           new_version="${main_version}-${odc_rpm_release_number}"

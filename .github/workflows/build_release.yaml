@@ -6,7 +6,7 @@
 #   1. Check Code Format
 #   2. PMD Scan
 #   3. Calculate Version Number
-#   4. Build Web Artifact (include front resource and only x86_64 platform for now)
+#   4. Build Web Artifact
 #   5. Build Client Artifact
 #   6. Release (TODO)
 #   7. Tag (TODO)
