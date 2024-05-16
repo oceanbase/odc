@@ -810,3 +810,8 @@ INSERT INTO config_system_configuration(`key`, `value`, `description`) VALUES('o
  'mysql, information_schema, test', 'schema exclusions when synchronizing MySQL database schema') ON DUPLICATE KEY UPDATE `id`=`id`;
 INSERT INTO config_system_configuration(`key`, `value`, `description`) VALUES('odc.database.schema.sync.exclude-schemas.doris',
  'mysql, information_schema, test', 'schema exclusions when synchronizing MySQL database schema') ON DUPLICATE KEY UPDATE `id`=`id`;
+
+INSERT INTO config_system_configuration(`key`, `value`, `description`) VALUES('odc.permission-check.whitelist.database.ob-mysql',
+ '', 'Permission check whitelist for database in OB MySQL dialect type') ON DUPLICATE KEY UPDATE `id`=`id`;
+INSERT INTO config_system_configuration(`key`, `value`, `description`) VALUES('odc.permission-check.whitelist.database.ob-oracle',
+ '', 'Permission check whitelist for database in OB Oracle dialect type') ON DUPLICATE KEY UPDATE `id`=`id`;
