@@ -97,16 +97,23 @@ public class DataArchiveTask extends BaseTask<Boolean> {
             }
             try {
                 job = jobFactory.createJob(dlmJob);
+                jobStore.updateDlmJobStatus(dlmJob.getDlmJobId(), TaskStatus.RUNNING.name());
                 log.info("Init {} job succeed,DLMJobId={}", job.getJobMeta().getJobType(), job.getJobMeta().getJobId());
                 log.info("{} job start,DLMJobId={}", job.getJobMeta().getJobType(), job.getJobMeta().getJobId());
                 job.run();
                 log.info("{} job finished,DLMJobId={}", job.getJobMeta().getJobType(), job.getJobMeta().getJobId());
+                jobStore.updateDlmJobStatus(dlmJob.getDlmJobId(), TaskStatus.DONE.name());
             } catch (Throwable e) {
                 log.error("{} job failed,DLMJobId={},errorMsg={}", job.getJobMeta().getJobType(),
                         job.getJobMeta().getJobId(),
                         e);
                 // set task status to failed if any job failed.
                 isSuccess = false;
+                if (job.getJobMeta().isToStop()) {
+                    jobStore.updateDlmJobStatus(dlmJob.getDlmJobId(), TaskStatus.CANCELED.name());
+                } else {
+                    jobStore.updateDlmJobStatus(dlmJob.getDlmJobId(), TaskStatus.FAILED.name());
+                }
             }
         }
         return isSuccess;

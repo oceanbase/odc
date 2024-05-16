@@ -98,6 +98,27 @@ public class DLMJobStore implements IJobStore {
         }
     }
 
+    public boolean updateDlmJobStatus(String dlmJobId, String status) {
+        // 更新SQL语句
+        String updateSql = "UPDATE dlm_job SET status = ? WHERE dlm_job_id = ?";
+
+        try (Connection connection = dataSource.getConnection();
+                PreparedStatement preparedStatement = connection.prepareStatement(updateSql)) {
+
+            preparedStatement.setString(1, status);
+            preparedStatement.setString(2, dlmJobId);
+
+            int rowsAffected = preparedStatement.executeUpdate();
+
+            return rowsAffected > 0;
+
+        } catch (SQLException e) {
+            log.warn("Update dlm job status failed,dlmJobId={}", dlmJobId, e);
+            return false;
+        }
+    }
+
+
     public void storeDlmJob(List<DlmJob> dlmJobs) throws SQLException {
         String sql = "INSERT INTO dlm_job (schedule_task_id, dlm_job_id, table_name, fire_time, " +
                 "target_table_name, source_datasource_info, target_datasource_info, status, type, " +
