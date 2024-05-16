@@ -33,7 +33,7 @@ import com.oceanbase.odc.service.dlm.model.RateLimitConfiguration;
 import com.oceanbase.odc.service.dlm.utils.DlmJobIdUtil;
 import com.oceanbase.odc.service.dlm.utils.TaskGeneratorMapper;
 import com.oceanbase.odc.service.dlm.utils.TaskUnitMapper;
-import com.oceanbase.odc.service.schedule.model.DlmExecutionDetail;
+import com.oceanbase.odc.service.schedule.model.DlmTableUnitStatistic;
 import com.oceanbase.tools.migrator.common.dto.JobStatistic;
 import com.oceanbase.tools.migrator.common.dto.TableSizeInfo;
 import com.oceanbase.tools.migrator.common.dto.TaskGenerator;
@@ -110,14 +110,12 @@ public class DataArchiveJobStore implements IJobStore {
 
     @Override
     public void storeJobStatistic(JobMeta jobMeta) {
-        DlmExecutionDetail dlmExecutionDetail = new DlmExecutionDetail();
-        dlmExecutionDetail.setTableName(jobMeta.getSourceTableMeta().getName());
-        dlmExecutionDetail.setUserCondition(jobMeta.getJobParameter().getMigrateRule());
+        DlmTableUnitStatistic dlmExecutionDetail = new DlmTableUnitStatistic();
         dlmExecutionDetail.setProcessedRowCount(jobMeta.getJobStat().getRowCount());
         dlmExecutionDetail.setProcessedRowsPerSecond(jobMeta.getJobStat().getAvgRowCount());
         dlmExecutionDetail.setReadRowCount(jobMeta.getJobStat().getReadRowCount());
         dlmExecutionDetail.setReadRowsPerSecond(jobMeta.getJobStat().getAvgReadRowCount());
-        dlmTableUnitRepository.updateExecutionDetailByDlmTableUnitId(jobMeta.getJobId(),
+        dlmTableUnitRepository.updateStatisticByDlmTableUnitId(jobMeta.getJobId(),
                 JsonUtils.toJson(dlmExecutionDetail));
     }
 

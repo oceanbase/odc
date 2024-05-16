@@ -33,7 +33,7 @@ import com.oceanbase.odc.service.dlm.model.DlmTableUnit;
 import com.oceanbase.odc.service.dlm.model.PreviewSqlStatementsReq;
 import com.oceanbase.odc.service.dlm.utils.DataArchiveConditionUtil;
 import com.oceanbase.odc.service.dlm.utils.DlmTableUnitMapper;
-import com.oceanbase.odc.service.schedule.model.DlmExecutionDetail;
+import com.oceanbase.odc.service.schedule.model.DlmTableUnitExecutionDetail;
 
 /**
  * @Author：tinker
@@ -44,7 +44,7 @@ import com.oceanbase.odc.service.schedule.model.DlmExecutionDetail;
 public class DLMService {
 
     @Autowired
-    private DlmTableUnitRepository dlmJobRepository;
+    private DlmTableUnitRepository dlmTableUnitRepository;
 
     @SkipAuthorize("do not access any resources")
     public List<String> previewSqlStatements(PreviewSqlStatementsReq req) {
@@ -60,23 +60,44 @@ public class DLMService {
         return returnValue;
     }
 
-    public List<DlmExecutionDetail> getExecutionDetailByScheduleTaskId(Long scheduleTaskId) {
-        return dlmJobRepository.findByScheduleTaskId(scheduleTaskId).stream()
-                .map(o -> JsonUtils.fromJson(o.getExecutionDetail(), DlmExecutionDetail.class))
-                .collect(Collectors.toList());
+    public String getExecutionDetailByScheduleTaskId(Long scheduleTaskId) {
+        List<DlmTableUnitExecutionDetail> details = dlmTableUnitRepository.findByScheduleTaskId(scheduleTaskId).stream()
+                .map(entity -> {
+                    DlmTableUnit dlmTableUnit = DlmTableUnitMapper.entityToModel(entity);
+                    DlmTableUnitExecutionDetail executionDetail = new DlmTableUnitExecutionDetail();
+                    executionDetail.setStartTime(dlmTableUnit.getStartTime());
+                    executionDetail.setEndTime(dlmTableUnit.getEndTime());
+                    executionDetail.setType(dlmTableUnit.getType());
+                    executionDetail.setStatus(dlmTableUnit.getStatus());
+                    executionDetail.setTableName(dlmTableUnit.getTableName());
+                    executionDetail.setProcessedRowCount(dlmTableUnit.getStatistic().getProcessedRowCount());
+                    executionDetail.setProcessedRowsPerSecond(dlmTableUnit.getStatistic().getProcessedRowsPerSecond());
+                    executionDetail.setReadRowCount(dlmTableUnit.getStatistic().getReadRowCount());
+                    executionDetail.setReadRowsPerSecond(dlmTableUnit.getStatistic().getReadRowsPerSecond());
+                    executionDetail.setUserCondition(dlmTableUnit.getParameters().getMigrateRule());
+                    return executionDetail;
+                }).collect(Collectors.toList());
+        return JsonUtils.toJson(details);
     }
 
-    public List<DlmTableUnitEntity> createJob(List<DlmTableUnit> dlmTableUnits) {
-        return dlmJobRepository
+    public List<DlmTableUnitEntity> createDlmTableUnits(List<DlmTableUnit> dlmTableUnits) {
+        return dlmTableUnitRepository
                 .saveAll(dlmTableUnits.stream().map(DlmTableUnitMapper::modelToEntity).collect(Collectors.toList()));
     }
 
-    public void updateDlmJobStatus(String dlmTableUnitId, TaskStatus status) {
-        dlmJobRepository.updateStatusByDlmTableUnitId(dlmTableUnitId, status);
+    public void updateStatusByDlmTableUnitId(String dlmTableUnitId, TaskStatus status) {
+        if (status == TaskStatus.RUNNING) {
+            dlmTableUnitRepository.updateStatusAndStartTimeByDlmTableUnitId(dlmTableUnitId, new Date(), status);
+        } else if (status.isTerminated()) {
+            dlmTableUnitRepository.updateStatusAndEndTimeByDlmTableUnitId(dlmTableUnitId, new Date(), status);
+        } else {
+            dlmTableUnitRepository.updateStatusByDlmTableUnitId(dlmTableUnitId, status);
+        }
     }
 
     public List<DlmTableUnit> findByScheduleTaskId(Long scheduleTaskId) {
-        return dlmJobRepository.findByScheduleTaskId(scheduleTaskId).stream().map(DlmTableUnitMapper::entityToModel)
+        return dlmTableUnitRepository.findByScheduleTaskId(scheduleTaskId).stream()
+                .map(DlmTableUnitMapper::entityToModel)
                 .collect(
                         Collectors.toList());
     }

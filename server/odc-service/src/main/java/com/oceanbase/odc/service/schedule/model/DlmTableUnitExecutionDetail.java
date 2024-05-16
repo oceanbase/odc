@@ -15,15 +15,21 @@
  */
 package com.oceanbase.odc.service.schedule.model;
 
+import java.util.Date;
+
+import com.oceanbase.odc.core.shared.constant.TaskStatus;
+import com.oceanbase.tools.migrator.common.enums.JobType;
+
 import lombok.Data;
 
 /**
  * @Author：tinker
- * @Date: 2024/5/9 09:39
+ * @Date: 2024/5/16 17:36
  * @Descripition:
  */
+
 @Data
-public class DlmExecutionDetail {
+public class DlmTableUnitExecutionDetail {
 
     private String tableName;
 
@@ -37,4 +43,11 @@ public class DlmExecutionDetail {
 
     private Long readRowsPerSecond;
 
+    private Date startTime;
+
+    private Date endTime;
+
+    private JobType type;
+
+    private TaskStatus status;
 }

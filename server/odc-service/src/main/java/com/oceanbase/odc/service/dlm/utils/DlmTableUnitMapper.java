@@ -19,7 +19,7 @@ import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.metadb.dlm.DlmTableUnitEntity;
 import com.oceanbase.odc.service.dlm.model.DlmTableUnit;
 import com.oceanbase.odc.service.dlm.model.DlmTableUnitParameters;
-import com.oceanbase.odc.service.schedule.model.DlmExecutionDetail;
+import com.oceanbase.odc.service.schedule.model.DlmTableUnitStatistic;
 import com.oceanbase.tools.migrator.common.configure.DataSourceInfo;
 
 /**
@@ -42,9 +42,11 @@ public class DlmTableUnitMapper {
                 .setSourceDatasourceInfo(JsonUtils.fromJson(entity.getSourceDatasourceInfo(), DataSourceInfo.class));
         dlmTableUnit
                 .setTargetDatasourceInfo(JsonUtils.fromJson(entity.getTargetDatasourceInfo(), DataSourceInfo.class));
-        dlmTableUnit.setExecutionDetail(JsonUtils.fromJson(entity.getExecutionDetail(), DlmExecutionDetail.class));
+        dlmTableUnit.setStatistic(JsonUtils.fromJson(entity.getStatistic(), DlmTableUnitStatistic.class));
         dlmTableUnit.setTableName(entity.getTableName());
         dlmTableUnit.setTargetTableName(entity.getTargetTableName());
+        dlmTableUnit.setStartTime(entity.getStartTime());
+        dlmTableUnit.setEndTime(entity.getEndTime());
         return dlmTableUnit;
     }
 
@@ -58,9 +60,11 @@ public class DlmTableUnitMapper {
         entity.setType(model.getType());
         entity.setSourceDatasourceInfo(JsonUtils.toJson(model.getSourceDatasourceInfo()));
         entity.setTargetDatasourceInfo(JsonUtils.toJson(model.getTargetDatasourceInfo()));
-        entity.setExecutionDetail(JsonUtils.toJson(model.getExecutionDetail()));
+        entity.setStatistic(JsonUtils.toJson(model.getStatistic()));
         entity.setTableName(model.getTableName());
         entity.setTargetTableName(model.getTargetTableName());
+        entity.setStartTime(model.getStartTime());
+        entity.setEndTime(model.getEndTime());
         return entity;
     }
 

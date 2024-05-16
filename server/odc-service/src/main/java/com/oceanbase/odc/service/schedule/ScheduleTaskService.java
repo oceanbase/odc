@@ -31,7 +31,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
-import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
@@ -45,7 +44,6 @@ import com.oceanbase.odc.metadb.schedule.ScheduleTaskSpecs;
 import com.oceanbase.odc.service.dlm.DLMService;
 import com.oceanbase.odc.service.quartz.QuartzJobService;
 import com.oceanbase.odc.service.quartz.util.ScheduleTaskUtils;
-import com.oceanbase.odc.service.schedule.model.DlmExecutionDetail;
 import com.oceanbase.odc.service.schedule.model.JobType;
 import com.oceanbase.odc.service.schedule.model.ScheduleTaskMapper;
 import com.oceanbase.odc.service.schedule.model.ScheduleTaskResp;
@@ -88,8 +86,7 @@ public class ScheduleTaskService {
             case DATA_ARCHIVE_ROLLBACK:
             case DATA_ARCHIVE_DELETE:
             case DATA_DELETE: {
-                List<DlmExecutionDetail> details = dlmService.getExecutionDetailByScheduleTaskId(id);
-                scheduleTaskResp.setExecutionDetails(JsonUtils.toJson(details));
+                scheduleTaskResp.setExecutionDetails(dlmService.getExecutionDetailByScheduleTaskId(id));
             }
             default:
                 break;

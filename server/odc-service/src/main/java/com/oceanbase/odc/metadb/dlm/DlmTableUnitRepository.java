@@ -15,6 +15,7 @@
  */
 package com.oceanbase.odc.metadb.dlm;
 
+import java.util.Date;
 import java.util.List;
 
 import javax.transaction.Transactional;
@@ -34,13 +35,23 @@ public interface DlmTableUnitRepository extends OdcJpaRepository<DlmTableUnitEnt
 
     @Transactional
     @Modifying
-    @Query("UPDATE DlmJobEntity e SET e.status = ?2 WHERE e.dlmTableUnitId = ?1")
+    @Query("UPDATE DlmTableUnitEntity e SET e.status = ?3,e.startTime = ?2 WHERE e.dlmTableUnitId = ?1")
+    int updateStatusAndStartTimeByDlmTableUnitId(String dlmTableUnitId, Date startTime, TaskStatus status);
+
+    @Transactional
+    @Modifying
+    @Query("UPDATE DlmTableUnitEntity e SET e.status = ?3,e.endTime = ?2 WHERE e.dlmTableUnitId = ?1")
+    int updateStatusAndEndTimeByDlmTableUnitId(String dlmTableUnitId, Date endTime, TaskStatus status);
+
+    @Transactional
+    @Modifying
+    @Query("UPDATE DlmTableUnitEntity e SET e.status = ?2 WHERE e.dlmTableUnitId = ?1")
     int updateStatusByDlmTableUnitId(String dlmTableUnitId, TaskStatus status);
 
     @Transactional
     @Modifying
-    @Query("UPDATE DlmJobEntity e SET e.executionDetail = ?2 WHERE e.dlmTableUnitId = ?1")
-    int updateExecutionDetailByDlmTableUnitId(String dlmTableUnitId, String executionDetail);
+    @Query("UPDATE DlmTableUnitEntity e SET e.statistic = ?2 WHERE e.dlmTableUnitId = ?1")
+    int updateStatisticByDlmTableUnitId(String dlmTableUnitId, String statistic);
 
     List<DlmTableUnitEntity> findByScheduleTaskId(Long scheduleTaskId);
 }

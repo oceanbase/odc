@@ -87,7 +87,7 @@ public class DataArchiveDeleteJob extends AbstractDlmJob {
             dlmTableUnits.get(i).setType(JobType.DELETE);
             dlmTableUnits.get(i).setStatus(TaskStatus.PREPARING);
         }
-        dlmService.createJob(dlmTableUnits);
+        dlmService.createDlmTableUnits(dlmTableUnits);
         executeTask(taskEntity.getId(), dlmTableUnits);
         TaskStatus taskStatus = getTaskStatus(taskEntity.getId());
         scheduleTaskRepository.updateStatusById(taskEntity.getId(), taskStatus);

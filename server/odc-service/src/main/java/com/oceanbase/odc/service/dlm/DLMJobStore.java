@@ -30,7 +30,7 @@ import com.oceanbase.odc.service.dlm.model.DlmTableUnit;
 import com.oceanbase.odc.service.dlm.model.DlmTableUnitParameters;
 import com.oceanbase.odc.service.dlm.model.RateLimitConfiguration;
 import com.oceanbase.odc.service.dlm.utils.DlmJobIdUtil;
-import com.oceanbase.odc.service.schedule.model.DlmExecutionDetail;
+import com.oceanbase.odc.service.schedule.model.DlmTableUnitStatistic;
 import com.oceanbase.odc.service.session.factory.DruidDataSourceFactory;
 import com.oceanbase.tools.migrator.common.configure.DataSourceInfo;
 import com.oceanbase.tools.migrator.common.dto.JobStatistic;
@@ -225,19 +225,17 @@ public class DLMJobStore implements IJobStore {
 
     @Override
     public void storeJobStatistic(JobMeta jobMeta) throws JobSqlException {
-        DlmExecutionDetail dlmExecutionDetail = new DlmExecutionDetail();
-        dlmExecutionDetail.setTableName(jobMeta.getSourceTableMeta().getName());
-        dlmExecutionDetail.setUserCondition(jobMeta.getJobParameter().getMigrateRule());
-        dlmExecutionDetail.setProcessedRowCount(jobMeta.getJobStat().getRowCount());
-        dlmExecutionDetail.setProcessedRowsPerSecond(jobMeta.getJobStat().getAvgRowCount());
-        dlmExecutionDetail.setReadRowCount(jobMeta.getJobStat().getReadRowCount());
-        dlmExecutionDetail.setReadRowsPerSecond(jobMeta.getJobStat().getAvgReadRowCount());
-        String updateSql = "UPDATE dlm_job SET execution_detail = ? WHERE dlm_job_id = ?";
+        DlmTableUnitStatistic statistic = new DlmTableUnitStatistic();
+        statistic.setProcessedRowCount(jobMeta.getJobStat().getRowCount());
+        statistic.setProcessedRowsPerSecond(jobMeta.getJobStat().getAvgRowCount());
+        statistic.setReadRowCount(jobMeta.getJobStat().getReadRowCount());
+        statistic.setReadRowsPerSecond(jobMeta.getJobStat().getAvgReadRowCount());
+        String updateSql = "UPDATE dlm_job SET statistic = ? WHERE dlm_job_id = ?";
 
         try (Connection connection = dataSource.getConnection();
                 PreparedStatement preparedStatement = connection.prepareStatement(updateSql)) {
 
-            preparedStatement.setString(1, JsonUtils.toJson(dlmExecutionDetail));
+            preparedStatement.setString(1, JsonUtils.toJson(statistic));
             preparedStatement.setString(2, jobMeta.getJobId());
 
             preparedStatement.executeUpdate();

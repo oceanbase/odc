@@ -18,7 +18,7 @@ package com.oceanbase.odc.service.dlm.model;
 import java.util.Date;
 
 import com.oceanbase.odc.core.shared.constant.TaskStatus;
-import com.oceanbase.odc.service.schedule.model.DlmExecutionDetail;
+import com.oceanbase.odc.service.schedule.model.DlmTableUnitStatistic;
 import com.oceanbase.tools.migrator.common.configure.DataSourceInfo;
 import com.oceanbase.tools.migrator.common.enums.JobType;
 
@@ -48,12 +48,16 @@ public class DlmTableUnit {
 
     private DataSourceInfo targetDatasourceInfo;
 
-    private DlmExecutionDetail executionDetail;
+    private DlmTableUnitStatistic statistic;
 
     private DlmTableUnitParameters parameters;
 
     private TaskStatus status;
 
     private JobType type;
+
+    private Date startTime;
+
+    private Date endTime;
 
 }

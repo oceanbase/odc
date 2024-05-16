@@ -106,7 +106,7 @@ public abstract class AbstractDlmJob implements OdcJob {
         log.info("Task is ready,taskId={}", taskId);
         for (DlmTableUnit dlmTableUnit : dlmTableUnits) {
             if (jobThread.isInterrupted()) {
-                dlmService.updateDlmJobStatus(dlmTableUnit.getDlmTableUnitId(), TaskStatus.CANCELED);
+                dlmService.updateStatusByDlmTableUnitId(dlmTableUnit.getDlmTableUnitId(), TaskStatus.CANCELED);
                 log.info("Task interrupted and will exit.TaskId={}", taskId);
                 continue;
             }
@@ -128,21 +128,22 @@ public abstract class AbstractDlmJob implements OdcJob {
             } catch (Exception e) {
                 log.warn("Create dlm job failed,taskId={},tableName={},errorMessage={}", taskId,
                         dlmTableUnit.getTableName(), e);
-                dlmService.updateDlmJobStatus(dlmTableUnit.getDlmTableUnitId(), TaskStatus.FAILED);
+                dlmService.updateStatusByDlmTableUnitId(dlmTableUnit.getDlmTableUnitId(), TaskStatus.FAILED);
                 continue;
             }
             try {
+                dlmService.updateStatusByDlmTableUnitId(dlmTableUnit.getDlmTableUnitId(), TaskStatus.RUNNING);
                 job.run();
-                dlmService.updateDlmJobStatus(dlmTableUnit.getDlmTableUnitId(), TaskStatus.DONE);
+                dlmService.updateStatusByDlmTableUnitId(dlmTableUnit.getDlmTableUnitId(), TaskStatus.DONE);
                 log.info("DLM job succeed,taskId={},unitId={}", taskId, dlmTableUnit.getDlmTableUnitId());
             } catch (JobException e) {
                 // used to stop several sub-threads.
                 if (job.getJobMeta().isToStop()) {
                     log.info("Data archive task is Interrupted,taskId={}", taskId);
-                    dlmService.updateDlmJobStatus(dlmTableUnit.getDlmTableUnitId(), TaskStatus.CANCELED);
+                    dlmService.updateStatusByDlmTableUnitId(dlmTableUnit.getDlmTableUnitId(), TaskStatus.CANCELED);
                 } else {
                     log.error("Data archive task is failed,taskId={},errorMessage={}", taskId, e);
-                    dlmService.updateDlmJobStatus(dlmTableUnit.getDlmTableUnitId(), TaskStatus.FAILED);
+                    dlmService.updateStatusByDlmTableUnitId(dlmTableUnit.getDlmTableUnitId(), TaskStatus.FAILED);
                 }
             }
         }
@@ -210,7 +211,7 @@ public abstract class AbstractDlmJob implements OdcJob {
             dlmTableUnit.setType(JobType.MIGRATE);
             dlmTableUnits.add(dlmTableUnit);
         });
-        dlmService.createJob(dlmTableUnits);
+        dlmService.createDlmTableUnits(dlmTableUnits);
         return dlmTableUnits;
     }
 

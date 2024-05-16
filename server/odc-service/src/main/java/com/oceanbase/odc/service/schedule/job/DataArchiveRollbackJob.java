@@ -95,7 +95,7 @@ public class DataArchiveRollbackJob extends AbstractDlmJob {
             dlmTableUnit.setStatus(
                     dlmTableUnit.getStatus() == TaskStatus.PREPARING ? TaskStatus.DONE : TaskStatus.PREPARING);
         }
-        dlmService.createJob(dlmTableUnits);
+        dlmService.createDlmTableUnits(dlmTableUnits);
         executeTask(taskEntity.getId(), dlmTableUnits);
         TaskStatus taskStatus = getTaskStatus(taskEntity.getId());
         scheduleTaskRepository.updateStatusById(taskEntity.getId(), taskStatus);

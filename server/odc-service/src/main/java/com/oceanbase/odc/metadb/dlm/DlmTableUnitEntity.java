@@ -65,14 +65,20 @@ public class DlmTableUnitEntity {
     @Column(name = "fire_time", nullable = false)
     private Date fireTime;
 
+    @Column(name = "start_time", nullable = false)
+    private Date startTime;
+
+    @Column(name = "end_time", nullable = false)
+    private Date endTime;
+
     @Column(name = "source_datasource_info", nullable = false)
     private String sourceDatasourceInfo;
 
     @Column(name = "target_datasource_info")
     private String targetDatasourceInfo;
 
-    @Column(name = "execution_detail")
-    private String executionDetail;
+    @Column(name = "statistic")
+    private String statistic;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false)
