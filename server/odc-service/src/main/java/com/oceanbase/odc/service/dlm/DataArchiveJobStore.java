@@ -24,7 +24,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import com.oceanbase.odc.common.json.JsonUtils;
-import com.oceanbase.odc.metadb.dlm.DlmJobRepository;
+import com.oceanbase.odc.metadb.dlm.DlmTableUnitRepository;
 import com.oceanbase.odc.metadb.dlm.TaskGeneratorEntity;
 import com.oceanbase.odc.metadb.dlm.TaskGeneratorRepository;
 import com.oceanbase.odc.metadb.dlm.TaskUnitEntity;
@@ -64,7 +64,7 @@ public class DataArchiveJobStore implements IJobStore {
     @Autowired
     private TaskUnitRepository taskUnitRepository;
     @Autowired
-    private DlmJobRepository dlmJobRepository;
+    private DlmTableUnitRepository dlmTableUnitRepository;
 
     private final TaskGeneratorMapper taskGeneratorMapper = TaskGeneratorMapper.INSTANCE;
     private final TaskUnitMapper taskUnitMapper = TaskUnitMapper.INSTANCE;
@@ -117,7 +117,8 @@ public class DataArchiveJobStore implements IJobStore {
         dlmExecutionDetail.setProcessedRowsPerSecond(jobMeta.getJobStat().getAvgRowCount());
         dlmExecutionDetail.setReadRowCount(jobMeta.getJobStat().getReadRowCount());
         dlmExecutionDetail.setReadRowsPerSecond(jobMeta.getJobStat().getAvgReadRowCount());
-        dlmJobRepository.updateExecutionDetailByDlmJobId(jobMeta.getJobId(), JsonUtils.toJson(dlmExecutionDetail));
+        dlmTableUnitRepository.updateExecutionDetailByDlmTableUnitId(jobMeta.getJobId(),
+                JsonUtils.toJson(dlmExecutionDetail));
     }
 
     @Override

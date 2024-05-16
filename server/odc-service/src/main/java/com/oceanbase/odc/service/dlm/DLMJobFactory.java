@@ -15,7 +15,7 @@
  */
 package com.oceanbase.odc.service.dlm;
 
-import com.oceanbase.odc.service.dlm.model.DlmJob;
+import com.oceanbase.odc.service.dlm.model.DlmTableUnit;
 import com.oceanbase.tools.migrator.common.dto.HistoryJob;
 import com.oceanbase.tools.migrator.common.dto.JobParameter;
 import com.oceanbase.tools.migrator.common.enums.ShardingStrategy;
@@ -52,9 +52,9 @@ public class DLMJobFactory extends JobFactory {
         super(jobStore);
     }
 
-    public Job createJob(DlmJob parameters) {
+    public Job createJob(DlmTableUnit parameters) {
         HistoryJob historyJob = new HistoryJob();
-        historyJob.setId(parameters.getDlmJobId());
+        historyJob.setId(parameters.getDlmTableUnitId());
         historyJob.setJobType(parameters.getType());
         historyJob.setTableId(-1L);
         historyJob.setPrintSqlTrace(false);

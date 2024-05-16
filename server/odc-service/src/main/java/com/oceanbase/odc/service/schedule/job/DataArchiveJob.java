@@ -26,7 +26,7 @@ import com.oceanbase.odc.metadb.schedule.ScheduleTaskEntity;
 import com.oceanbase.odc.service.dlm.DataSourceInfoMapper;
 import com.oceanbase.odc.service.dlm.model.DataArchiveParameters;
 import com.oceanbase.odc.service.dlm.model.DataArchiveTableConfig;
-import com.oceanbase.odc.service.dlm.model.DlmJob;
+import com.oceanbase.odc.service.dlm.model.DlmTableUnit;
 import com.oceanbase.odc.service.dlm.utils.DataArchiveConditionUtil;
 import com.oceanbase.tools.migrator.common.enums.JobType;
 
@@ -50,9 +50,9 @@ public class DataArchiveJob extends AbstractDlmJob {
 
         ScheduleTaskEntity taskEntity = (ScheduleTaskEntity) context.getResult();
 
-        List<DlmJob> taskUnits = getTaskUnits(taskEntity);
+        List<DlmTableUnit> dlmTableUnits = getTaskUnits(taskEntity);
 
-        executeTask(taskEntity.getId(), taskUnits);
+        executeTask(taskEntity.getId(), dlmTableUnits);
         TaskStatus taskStatus = getTaskStatus(taskEntity.getId());
         scheduleTaskRepository.updateStatusById(taskEntity.getId(), taskStatus);
 

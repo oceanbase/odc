@@ -41,9 +41,9 @@ import lombok.Data;
  */
 
 @Entity
-@Table(name = "dlm_job")
+@Table(name = "dlm_table_unit")
 @Data
-public class DlmJobEntity {
+public class DlmTableUnitEntity {
 
     @Id
     @Column(name = "id", nullable = false, updatable = false)
@@ -53,8 +53,8 @@ public class DlmJobEntity {
     @Column(name = "schedule_task_id", nullable = false)
     private Long scheduleTaskId;
 
-    @Column(name = "dlm_job_id", nullable = false)
-    private String dlmJobId;
+    @Column(name = "dlm_table_unit_id", nullable = false)
+    private String dlmTableUnitId;
 
     @Column(name = "table_name", nullable = false)
     private String tableName;

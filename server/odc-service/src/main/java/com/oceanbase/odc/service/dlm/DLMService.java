@@ -27,12 +27,12 @@ import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.shared.constant.TaskStatus;
-import com.oceanbase.odc.metadb.dlm.DlmJobEntity;
-import com.oceanbase.odc.metadb.dlm.DlmJobRepository;
-import com.oceanbase.odc.service.dlm.model.DlmJob;
+import com.oceanbase.odc.metadb.dlm.DlmTableUnitEntity;
+import com.oceanbase.odc.metadb.dlm.DlmTableUnitRepository;
+import com.oceanbase.odc.service.dlm.model.DlmTableUnit;
 import com.oceanbase.odc.service.dlm.model.PreviewSqlStatementsReq;
 import com.oceanbase.odc.service.dlm.utils.DataArchiveConditionUtil;
-import com.oceanbase.odc.service.dlm.utils.DlmJobMapper;
+import com.oceanbase.odc.service.dlm.utils.DlmTableUnitMapper;
 import com.oceanbase.odc.service.schedule.model.DlmExecutionDetail;
 
 /**
@@ -44,7 +44,7 @@ import com.oceanbase.odc.service.schedule.model.DlmExecutionDetail;
 public class DLMService {
 
     @Autowired
-    private DlmJobRepository dlmJobRepository;
+    private DlmTableUnitRepository dlmJobRepository;
 
     @SkipAuthorize("do not access any resources")
     public List<String> previewSqlStatements(PreviewSqlStatementsReq req) {
@@ -66,18 +66,19 @@ public class DLMService {
                 .collect(Collectors.toList());
     }
 
-    public List<DlmJobEntity> createJob(List<DlmJob> jobs) {
-        List<DlmJobEntity> jobEntities = jobs.stream().map(DlmJobMapper::modelToEntity).collect(Collectors.toList());
-        return dlmJobRepository.saveAll(jobEntities);
+    public List<DlmTableUnitEntity> createJob(List<DlmTableUnit> dlmTableUnits) {
+        return dlmJobRepository
+                .saveAll(dlmTableUnits.stream().map(DlmTableUnitMapper::modelToEntity).collect(Collectors.toList()));
     }
 
-    public void updateDlmJobStatus(String dlmJobId, TaskStatus status) {
-        dlmJobRepository.updateStatusByDlmJobId(dlmJobId, status);
+    public void updateDlmJobStatus(String dlmTableUnitId, TaskStatus status) {
+        dlmJobRepository.updateStatusByDlmTableUnitId(dlmTableUnitId, status);
     }
 
-    public List<DlmJob> findByScheduleTaskId(Long scheduleTaskId) {
-        return dlmJobRepository.findByScheduleTaskId(scheduleTaskId).stream().map(DlmJobMapper::entityToModel).collect(
-                Collectors.toList());
+    public List<DlmTableUnit> findByScheduleTaskId(Long scheduleTaskId) {
+        return dlmJobRepository.findByScheduleTaskId(scheduleTaskId).stream().map(DlmTableUnitMapper::entityToModel)
+                .collect(
+                        Collectors.toList());
     }
 
 }

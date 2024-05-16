@@ -40,9 +40,9 @@ import com.oceanbase.odc.service.dlm.DLMService;
 import com.oceanbase.odc.service.dlm.DLMTableStructureSynchronizer;
 import com.oceanbase.odc.service.dlm.DataSourceInfoMapper;
 import com.oceanbase.odc.service.dlm.DlmLimiterService;
-import com.oceanbase.odc.service.dlm.model.DLMJobParameters;
 import com.oceanbase.odc.service.dlm.model.DataArchiveParameters;
-import com.oceanbase.odc.service.dlm.model.DlmJob;
+import com.oceanbase.odc.service.dlm.model.DlmTableUnit;
+import com.oceanbase.odc.service.dlm.model.DlmTableUnitParameters;
 import com.oceanbase.odc.service.dlm.model.RateLimitConfiguration;
 import com.oceanbase.odc.service.dlm.utils.DataArchiveConditionUtil;
 import com.oceanbase.odc.service.dlm.utils.DlmJobIdUtil;
@@ -101,47 +101,48 @@ public abstract class AbstractDlmJob implements OdcJob {
         }
     }
 
-    public void executeTask(Long taskId, List<DlmJob> dlmJobs) {
+    public void executeTask(Long taskId, List<DlmTableUnit> dlmTableUnits) {
         scheduleTaskRepository.updateStatusById(taskId, TaskStatus.RUNNING);
         log.info("Task is ready,taskId={}", taskId);
-        for (DlmJob dlmJob : dlmJobs) {
+        for (DlmTableUnit dlmTableUnit : dlmTableUnits) {
             if (jobThread.isInterrupted()) {
-                dlmService.updateDlmJobStatus(dlmJob.getDlmJobId(), TaskStatus.CANCELED);
+                dlmService.updateDlmJobStatus(dlmTableUnit.getDlmTableUnitId(), TaskStatus.CANCELED);
                 log.info("Task interrupted and will exit.TaskId={}", taskId);
                 continue;
             }
-            if (dlmJob.getStatus() == TaskStatus.DONE) {
-                log.info("The task unit had been completed,taskId={},tableName={}", taskId, dlmJob.getTableName());
+            if (dlmTableUnit.getStatus() == TaskStatus.DONE) {
+                log.info("The task unit had been completed,taskId={},tableName={}", taskId,
+                        dlmTableUnit.getTableName());
                 continue;
             }
             try {
                 try {
-                    DLMTableStructureSynchronizer.sync(dlmJob.getSourceDatasourceInfo(),
-                            dlmJob.getTargetDatasourceInfo(), dlmJob.getTableName(),
-                            dlmJob.getParameters().getSyncDBObjectType());
+                    DLMTableStructureSynchronizer.sync(dlmTableUnit.getSourceDatasourceInfo(),
+                            dlmTableUnit.getTargetDatasourceInfo(), dlmTableUnit.getTableName(),
+                            dlmTableUnit.getParameters().getSyncDBObjectType());
                 } catch (SQLException e) {
-                    log.warn("Sync table structure failed,tableName={}", dlmJob.getTableName(), e);
+                    log.warn("Sync table structure failed,tableName={}", dlmTableUnit.getTableName(), e);
                 }
-                job = jobFactory.createJob(dlmJob);
-                log.info("Create dlm job succeed,taskId={},task parameters={}", taskId, dlmJob);
+                job = jobFactory.createJob(dlmTableUnit);
+                log.info("Create dlm job succeed,taskId={},task parameters={}", taskId, dlmTableUnit);
             } catch (Exception e) {
                 log.warn("Create dlm job failed,taskId={},tableName={},errorMessage={}", taskId,
-                        dlmJob.getTableName(), e);
-                dlmService.updateDlmJobStatus(dlmJob.getDlmJobId(), TaskStatus.FAILED);
+                        dlmTableUnit.getTableName(), e);
+                dlmService.updateDlmJobStatus(dlmTableUnit.getDlmTableUnitId(), TaskStatus.FAILED);
                 continue;
             }
             try {
                 job.run();
-                dlmService.updateDlmJobStatus(dlmJob.getDlmJobId(), TaskStatus.DONE);
-                log.info("DLM job succeed,taskId={},unitId={}", taskId, dlmJob.getDlmJobId());
+                dlmService.updateDlmJobStatus(dlmTableUnit.getDlmTableUnitId(), TaskStatus.DONE);
+                log.info("DLM job succeed,taskId={},unitId={}", taskId, dlmTableUnit.getDlmTableUnitId());
             } catch (JobException e) {
                 // used to stop several sub-threads.
                 if (job.getJobMeta().isToStop()) {
                     log.info("Data archive task is Interrupted,taskId={}", taskId);
-                    dlmService.updateDlmJobStatus(dlmJob.getDlmJobId(), TaskStatus.CANCELED);
+                    dlmService.updateDlmJobStatus(dlmTableUnit.getDlmTableUnitId(), TaskStatus.CANCELED);
                 } else {
                     log.error("Data archive task is failed,taskId={},errorMessage={}", taskId, e);
-                    dlmService.updateDlmJobStatus(dlmJob.getDlmJobId(), TaskStatus.FAILED);
+                    dlmService.updateDlmJobStatus(dlmTableUnit.getDlmTableUnitId(), TaskStatus.FAILED);
                 }
             }
         }
@@ -149,7 +150,7 @@ public abstract class AbstractDlmJob implements OdcJob {
 
     public TaskStatus getTaskStatus(Long scheduleTaskId) {
         Set<TaskStatus> collect =
-                dlmService.findByScheduleTaskId(scheduleTaskId).stream().map(DlmJob::getStatus).collect(
+                dlmService.findByScheduleTaskId(scheduleTaskId).stream().map(DlmTableUnit::getStatus).collect(
                         Collectors.toSet());
         if (collect.contains(TaskStatus.DONE) && collect.size() == 1) {
             return TaskStatus.DONE;
@@ -163,28 +164,28 @@ public abstract class AbstractDlmJob implements OdcJob {
         return TaskStatus.CANCELED;
     }
 
-    public List<DlmJob> getTaskUnits(ScheduleTaskEntity taskEntity) {
+    public List<DlmTableUnit> getTaskUnits(ScheduleTaskEntity taskEntity) {
         // Resume or retry an existing task.
-        List<DlmJob> dlmJobs = dlmService.findByScheduleTaskId(taskEntity.getId());
+        List<DlmTableUnit> dlmJobs = dlmService.findByScheduleTaskId(taskEntity.getId());
         if (!dlmJobs.isEmpty()) {
             return dlmJobs;
         }
         return splitTask(taskEntity);
     }
 
-    public List<DlmJob> splitTask(ScheduleTaskEntity taskEntity) {
+    public List<DlmTableUnit> splitTask(ScheduleTaskEntity taskEntity) {
 
         DataArchiveParameters parameters = JsonUtils.fromJson(taskEntity.getParametersJson(),
                 DataArchiveParameters.class);
-        List<DlmJob> dlmJobs = new LinkedList<>();
+        List<DlmTableUnit> dlmTableUnits = new LinkedList<>();
         parameters.getTables().forEach(table -> {
             String condition = StringUtils.isNotEmpty(table.getConditionExpression())
                     ? DataArchiveConditionUtil.parseCondition(table.getConditionExpression(), parameters.getVariables(),
                             taskEntity.getFireTime())
                     : "";
-            DlmJob dlmJob = new DlmJob();
-            dlmJob.setScheduleTaskId(taskEntity.getId());
-            DLMJobParameters jobParameter = new DLMJobParameters();
+            DlmTableUnit dlmTableUnit = new DlmTableUnit();
+            dlmTableUnit.setScheduleTaskId(taskEntity.getId());
+            DlmTableUnitParameters jobParameter = new DlmTableUnitParameters();
             jobParameter.setMigrateRule(condition);
             RateLimitConfiguration limiterConfig =
                     limiterService.getByOrderIdOrElseDefaultConfig(Long.parseLong(taskEntity.getJobName()));
@@ -195,21 +196,22 @@ public abstract class AbstractDlmJob implements OdcJob {
             jobParameter.setMigrationInsertAction(parameters.getMigrationInsertAction());
             jobParameter.setSyncDBObjectType(parameters.getSyncTableStructure());
             jobParameter.setMigratePartitions(table.getPartitions());
-            dlmJob.setParameters(jobParameter);
-            dlmJob.setDlmJobId(DlmJobIdUtil.generateHistoryJobId(taskEntity.getJobName(), taskEntity.getJobGroup(),
-                    taskEntity.getId(),
-                    dlmJobs.size()));
-            dlmJob.setTableName(table.getTableName());
-            dlmJob.setTargetTableName(table.getTargetTableName());
-            dlmJob.setSourceDatasourceInfo(getDataSourceInfo(parameters.getSourceDatabaseId()));
-            dlmJob.setTargetDatasourceInfo(getDataSourceInfo(parameters.getTargetDataBaseId()));
-            dlmJob.setFireTime(taskEntity.getFireTime());
-            dlmJob.setStatus(TaskStatus.PREPARING);
-            dlmJob.setType(JobType.MIGRATE);
-            dlmJobs.add(dlmJob);
+            dlmTableUnit.setParameters(jobParameter);
+            dlmTableUnit.setDlmTableUnitId(
+                    DlmJobIdUtil.generateHistoryJobId(taskEntity.getJobName(), taskEntity.getJobGroup(),
+                            taskEntity.getId(),
+                            dlmTableUnits.size()));
+            dlmTableUnit.setTableName(table.getTableName());
+            dlmTableUnit.setTargetTableName(table.getTargetTableName());
+            dlmTableUnit.setSourceDatasourceInfo(getDataSourceInfo(parameters.getSourceDatabaseId()));
+            dlmTableUnit.setTargetDatasourceInfo(getDataSourceInfo(parameters.getTargetDataBaseId()));
+            dlmTableUnit.setFireTime(taskEntity.getFireTime());
+            dlmTableUnit.setStatus(TaskStatus.PREPARING);
+            dlmTableUnit.setType(JobType.MIGRATE);
+            dlmTableUnits.add(dlmTableUnit);
         });
-        dlmService.createJob(dlmJobs);
-        return dlmJobs;
+        dlmService.createJob(dlmTableUnits);
+        return dlmTableUnits;
     }
 
     public DataSourceInfo getDataSourceInfo(Long databaseId) {

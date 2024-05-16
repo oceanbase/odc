@@ -23,7 +23,7 @@ import org.quartz.JobExecutionContext;
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.core.shared.constant.TaskStatus;
 import com.oceanbase.odc.metadb.schedule.ScheduleTaskEntity;
-import com.oceanbase.odc.service.dlm.model.DlmJob;
+import com.oceanbase.odc.service.dlm.model.DlmTableUnit;
 import com.oceanbase.odc.service.dlm.utils.DlmJobIdUtil;
 import com.oceanbase.odc.service.schedule.model.DataArchiveRollbackParameters;
 import com.oceanbase.tools.migrator.common.configure.DataSourceInfo;
@@ -81,20 +81,22 @@ public class DataArchiveRollbackJob extends AbstractDlmJob {
             return;
         }
         // prepare tasks for rollback
-        List<DlmJob> dlmJobs = dlmService.findByScheduleTaskId(dataArchiveTask.getId());
-        for (int i = 0; i < dlmJobs.size(); i++) {
-            DlmJob dlmJob = dlmJobs.get(i);
-            DataSourceInfo temp = dlmJob.getSourceDatasourceInfo();
-            dlmJob.setDlmJobId(DlmJobIdUtil.generateHistoryJobId(taskEntity.getJobName(), taskEntity.getJobGroup(),
-                    taskEntity.getId(),
-                    i));
-            dlmJob.setSourceDatasourceInfo(dlmJob.getTargetDatasourceInfo());
-            dlmJob.setTargetDatasourceInfo(temp);
-            dlmJob.setType(JobType.ROLLBACK);
-            dlmJob.setStatus(dlmJob.getStatus() == TaskStatus.PREPARING ? TaskStatus.DONE : TaskStatus.PREPARING);
+        List<DlmTableUnit> dlmTableUnits = dlmService.findByScheduleTaskId(dataArchiveTask.getId());
+        for (int i = 0; i < dlmTableUnits.size(); i++) {
+            DlmTableUnit dlmTableUnit = dlmTableUnits.get(i);
+            DataSourceInfo temp = dlmTableUnit.getSourceDatasourceInfo();
+            dlmTableUnit.setDlmTableUnitId(
+                    DlmJobIdUtil.generateHistoryJobId(taskEntity.getJobName(), taskEntity.getJobGroup(),
+                            taskEntity.getId(),
+                            i));
+            dlmTableUnit.setSourceDatasourceInfo(dlmTableUnit.getTargetDatasourceInfo());
+            dlmTableUnit.setTargetDatasourceInfo(temp);
+            dlmTableUnit.setType(JobType.ROLLBACK);
+            dlmTableUnit.setStatus(
+                    dlmTableUnit.getStatus() == TaskStatus.PREPARING ? TaskStatus.DONE : TaskStatus.PREPARING);
         }
-        dlmService.createJob(dlmJobs);
-        executeTask(taskEntity.getId(), dlmJobs);
+        dlmService.createJob(dlmTableUnits);
+        executeTask(taskEntity.getId(), dlmTableUnits);
         TaskStatus taskStatus = getTaskStatus(taskEntity.getId());
         scheduleTaskRepository.updateStatusById(taskEntity.getId(), taskStatus);
     }

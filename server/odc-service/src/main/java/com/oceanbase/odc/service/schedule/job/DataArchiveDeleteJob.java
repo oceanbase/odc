@@ -23,7 +23,7 @@ import org.quartz.JobExecutionContext;
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.core.shared.constant.TaskStatus;
 import com.oceanbase.odc.metadb.schedule.ScheduleTaskEntity;
-import com.oceanbase.odc.service.dlm.model.DlmJob;
+import com.oceanbase.odc.service.dlm.model.DlmTableUnit;
 import com.oceanbase.odc.service.dlm.utils.DlmJobIdUtil;
 import com.oceanbase.odc.service.schedule.model.DataArchiveClearParameters;
 import com.oceanbase.tools.migrator.common.enums.JobType;
@@ -77,17 +77,18 @@ public class DataArchiveDeleteJob extends AbstractDlmJob {
         }
 
         // prepare tasks for clear
-        List<DlmJob> dlmJobs = dlmService.findByScheduleTaskId(dataArchiveTask.getId());
-        for (int i = 0; i < dlmJobs.size(); i++) {
-            dlmJobs.get(i)
-                    .setDlmJobId(DlmJobIdUtil.generateHistoryJobId(taskEntity.getJobName(), taskEntity.getJobGroup(),
-                            taskEntity.getId(),
-                            i));
-            dlmJobs.get(i).setType(JobType.DELETE);
-            dlmJobs.get(i).setStatus(TaskStatus.PREPARING);
+        List<DlmTableUnit> dlmTableUnits = dlmService.findByScheduleTaskId(dataArchiveTask.getId());
+        for (int i = 0; i < dlmTableUnits.size(); i++) {
+            dlmTableUnits.get(i)
+                    .setDlmTableUnitId(
+                            DlmJobIdUtil.generateHistoryJobId(taskEntity.getJobName(), taskEntity.getJobGroup(),
+                                    taskEntity.getId(),
+                                    i));
+            dlmTableUnits.get(i).setType(JobType.DELETE);
+            dlmTableUnits.get(i).setStatus(TaskStatus.PREPARING);
         }
-        dlmService.createJob(dlmJobs);
-        executeTask(taskEntity.getId(), dlmJobs);
+        dlmService.createJob(dlmTableUnits);
+        executeTask(taskEntity.getId(), dlmTableUnits);
         TaskStatus taskStatus = getTaskStatus(taskEntity.getId());
         scheduleTaskRepository.updateStatusById(taskEntity.getId(), taskStatus);
     }

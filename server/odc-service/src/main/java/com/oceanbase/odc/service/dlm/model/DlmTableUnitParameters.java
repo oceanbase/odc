@@ -29,7 +29,7 @@ import lombok.Data;
  */
 
 @Data
-public class DLMJobParameters extends JobParameter {
+public class DlmTableUnitParameters extends JobParameter {
 
     private Set<DBObjectType> syncDBObjectType;
 }

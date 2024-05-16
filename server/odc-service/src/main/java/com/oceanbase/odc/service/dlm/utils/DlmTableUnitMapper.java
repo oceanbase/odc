@@ -16,9 +16,9 @@
 package com.oceanbase.odc.service.dlm.utils;
 
 import com.oceanbase.odc.common.json.JsonUtils;
-import com.oceanbase.odc.metadb.dlm.DlmJobEntity;
-import com.oceanbase.odc.service.dlm.model.DLMJobParameters;
-import com.oceanbase.odc.service.dlm.model.DlmJob;
+import com.oceanbase.odc.metadb.dlm.DlmTableUnitEntity;
+import com.oceanbase.odc.service.dlm.model.DlmTableUnit;
+import com.oceanbase.odc.service.dlm.model.DlmTableUnitParameters;
 import com.oceanbase.odc.service.schedule.model.DlmExecutionDetail;
 import com.oceanbase.tools.migrator.common.configure.DataSourceInfo;
 
@@ -28,27 +28,29 @@ import com.oceanbase.tools.migrator.common.configure.DataSourceInfo;
  * @Descripition:
  */
 
-public class DlmJobMapper {
+public class DlmTableUnitMapper {
 
-    public static DlmJob entityToModel(DlmJobEntity entity) {
-        DlmJob dlmJob = new DlmJob();
-        dlmJob.setDlmJobId(entity.getDlmJobId());
-        dlmJob.setFireTime(entity.getFireTime());
-        dlmJob.setParameters(JsonUtils.fromJson(entity.getParameters(), DLMJobParameters.class));
-        dlmJob.setScheduleTaskId(entity.getScheduleTaskId());
-        dlmJob.setStatus(entity.getStatus());
-        dlmJob.setType(entity.getType());
-        dlmJob.setSourceDatasourceInfo(JsonUtils.fromJson(entity.getSourceDatasourceInfo(), DataSourceInfo.class));
-        dlmJob.setTargetDatasourceInfo(JsonUtils.fromJson(entity.getTargetDatasourceInfo(), DataSourceInfo.class));
-        dlmJob.setExecutionDetail(JsonUtils.fromJson(entity.getExecutionDetail(), DlmExecutionDetail.class));
-        dlmJob.setTableName(entity.getTableName());
-        dlmJob.setTargetTableName(entity.getTargetTableName());
-        return dlmJob;
+    public static DlmTableUnit entityToModel(DlmTableUnitEntity entity) {
+        DlmTableUnit dlmTableUnit = new DlmTableUnit();
+        dlmTableUnit.setDlmTableUnitId(entity.getDlmTableUnitId());
+        dlmTableUnit.setFireTime(entity.getFireTime());
+        dlmTableUnit.setParameters(JsonUtils.fromJson(entity.getParameters(), DlmTableUnitParameters.class));
+        dlmTableUnit.setScheduleTaskId(entity.getScheduleTaskId());
+        dlmTableUnit.setStatus(entity.getStatus());
+        dlmTableUnit.setType(entity.getType());
+        dlmTableUnit
+                .setSourceDatasourceInfo(JsonUtils.fromJson(entity.getSourceDatasourceInfo(), DataSourceInfo.class));
+        dlmTableUnit
+                .setTargetDatasourceInfo(JsonUtils.fromJson(entity.getTargetDatasourceInfo(), DataSourceInfo.class));
+        dlmTableUnit.setExecutionDetail(JsonUtils.fromJson(entity.getExecutionDetail(), DlmExecutionDetail.class));
+        dlmTableUnit.setTableName(entity.getTableName());
+        dlmTableUnit.setTargetTableName(entity.getTargetTableName());
+        return dlmTableUnit;
     }
 
-    public static DlmJobEntity modelToEntity(DlmJob model) {
-        DlmJobEntity entity = new DlmJobEntity();
-        entity.setDlmJobId(model.getDlmJobId());
+    public static DlmTableUnitEntity modelToEntity(DlmTableUnit model) {
+        DlmTableUnitEntity entity = new DlmTableUnitEntity();
+        entity.setDlmTableUnitId(model.getDlmTableUnitId());
         entity.setFireTime(model.getFireTime());
         entity.setParameters(JsonUtils.toJson(model.getParameters()));
         entity.setScheduleTaskId(model.getScheduleTaskId());

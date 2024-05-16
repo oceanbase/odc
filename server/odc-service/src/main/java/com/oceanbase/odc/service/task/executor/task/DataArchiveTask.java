@@ -26,8 +26,8 @@ import com.oceanbase.odc.service.dlm.DLMJobFactory;
 import com.oceanbase.odc.service.dlm.DLMJobStore;
 import com.oceanbase.odc.service.dlm.DLMTableStructureSynchronizer;
 import com.oceanbase.odc.service.dlm.DataSourceInfoMapper;
-import com.oceanbase.odc.service.dlm.model.DLMJobParameters;
-import com.oceanbase.odc.service.dlm.model.DlmJob;
+import com.oceanbase.odc.service.dlm.model.DlmTableUnit;
+import com.oceanbase.odc.service.dlm.model.DlmTableUnitParameters;
 import com.oceanbase.odc.service.dlm.utils.DlmJobIdUtil;
 import com.oceanbase.odc.service.schedule.job.DLMJobReq;
 import com.oceanbase.odc.service.task.caller.JobContext;
@@ -70,15 +70,15 @@ public class DataArchiveTask extends BaseTask<Boolean> {
         if (parameters.getFireTime() == null) {
             parameters.setFireTime(new Date());
         }
-        List<DlmJob> dlmJobs;
+        List<DlmTableUnit> dlmTableUnits;
         try {
-            dlmJobs = getDlmJobs(parameters);
+            dlmTableUnits = getDlmTableUnits(parameters);
         } catch (Exception e) {
             log.warn("Get dlm job failed!", e);
             return false;
         }
 
-        for (DlmJob dlmJob : dlmJobs) {
+        for (DlmTableUnit dlmTableUnit : dlmTableUnits) {
             if (getStatus().isTerminated()) {
                 log.info("Job is terminated,jobIdentity={}", context.getJobIdentity());
                 break;
@@ -88,21 +88,21 @@ public class DataArchiveTask extends BaseTask<Boolean> {
                     DLMTableStructureSynchronizer.sync(
                             DataSourceInfoMapper.toConnectionConfig(parameters.getSourceDs()),
                             DataSourceInfoMapper.toConnectionConfig(parameters.getTargetDs()),
-                            dlmJob.getTableName(), parameters.getSyncTableStructure());
+                            dlmTableUnit.getTableName(), parameters.getSyncTableStructure());
                 } catch (Exception e) {
                     log.warn("Failed to sync target table structure,table will be ignored,tableName={}",
-                            dlmJob.getTableName(), e);
+                            dlmTableUnit.getTableName(), e);
                     continue;
                 }
             }
             try {
-                job = jobFactory.createJob(dlmJob);
-                jobStore.updateDlmJobStatus(dlmJob.getDlmJobId(), TaskStatus.RUNNING.name());
+                job = jobFactory.createJob(dlmTableUnit);
+                jobStore.updateDlmTableUnitStatus(dlmTableUnit.getDlmTableUnitId(), TaskStatus.RUNNING.name());
                 log.info("Init {} job succeed,DLMJobId={}", job.getJobMeta().getJobType(), job.getJobMeta().getJobId());
                 log.info("{} job start,DLMJobId={}", job.getJobMeta().getJobType(), job.getJobMeta().getJobId());
                 job.run();
                 log.info("{} job finished,DLMJobId={}", job.getJobMeta().getJobType(), job.getJobMeta().getJobId());
-                jobStore.updateDlmJobStatus(dlmJob.getDlmJobId(), TaskStatus.DONE.name());
+                jobStore.updateDlmTableUnitStatus(dlmTableUnit.getDlmTableUnitId(), TaskStatus.DONE.name());
             } catch (Throwable e) {
                 log.error("{} job failed,DLMJobId={},errorMsg={}", job.getJobMeta().getJobType(),
                         job.getJobMeta().getJobId(),
@@ -110,26 +110,26 @@ public class DataArchiveTask extends BaseTask<Boolean> {
                 // set task status to failed if any job failed.
                 isSuccess = false;
                 if (job.getJobMeta().isToStop()) {
-                    jobStore.updateDlmJobStatus(dlmJob.getDlmJobId(), TaskStatus.CANCELED.name());
+                    jobStore.updateDlmTableUnitStatus(dlmTableUnit.getDlmTableUnitId(), TaskStatus.CANCELED.name());
                 } else {
-                    jobStore.updateDlmJobStatus(dlmJob.getDlmJobId(), TaskStatus.FAILED.name());
+                    jobStore.updateDlmTableUnitStatus(dlmTableUnit.getDlmTableUnitId(), TaskStatus.FAILED.name());
                 }
             }
         }
         return isSuccess;
     }
 
-    private List<DlmJob> getDlmJobs(DLMJobReq req) throws SQLException {
+    private List<DlmTableUnit> getDlmTableUnits(DLMJobReq req) throws SQLException {
 
-        List<DlmJob> existsDlmJobs = jobStore.getDlmJobs(req.getScheduleTaskId());
+        List<DlmTableUnit> existsDlmJobs = jobStore.getDlmJobs(req.getScheduleTaskId());
         if (!existsDlmJobs.isEmpty()) {
             return existsDlmJobs;
         }
-        List<DlmJob> dlmJobs = new LinkedList<>();
+        List<DlmTableUnit> dlmTableUnits = new LinkedList<>();
         req.getTables().forEach(table -> {
-            DlmJob dlmJob = new DlmJob();
-            dlmJob.setScheduleTaskId(req.getScheduleTaskId());
-            DLMJobParameters jobParameter = new DLMJobParameters();
+            DlmTableUnit dlmTableUnit = new DlmTableUnit();
+            dlmTableUnit.setScheduleTaskId(req.getScheduleTaskId());
+            DlmTableUnitParameters jobParameter = new DlmTableUnitParameters();
             jobParameter.setMigrateRule(table.getConditionExpression());
             jobParameter.setCheckMode(CheckMode.MULTIPLE_GET);
             jobParameter.setReaderBatchSize(req.getRateLimit().getBatchSize());
@@ -137,20 +137,20 @@ public class DataArchiveTask extends BaseTask<Boolean> {
             jobParameter.setMigrationInsertAction(req.getMigrationInsertAction());
             jobParameter.setMigratePartitions(table.getPartitions());
             jobParameter.setSyncDBObjectType(req.getSyncTableStructure());
-            dlmJob.setParameters(jobParameter);
-            dlmJob.setDlmJobId(DlmJobIdUtil.generateHistoryJobId(req.getJobName(), req.getJobType().name(),
-                    req.getScheduleTaskId(), dlmJobs.size()));
-            dlmJob.setTableName(table.getTableName());
-            dlmJob.setTargetTableName(table.getTargetTableName());
-            dlmJob.setSourceDatasourceInfo(req.getSourceDs());
-            dlmJob.setTargetDatasourceInfo(req.getTargetDs());
-            dlmJob.setFireTime(req.getFireTime());
-            dlmJob.setStatus(TaskStatus.PREPARING);
-            dlmJob.setType(JobType.MIGRATE);
-            dlmJobs.add(dlmJob);
+            dlmTableUnit.setParameters(jobParameter);
+            dlmTableUnit.setDlmTableUnitId(DlmJobIdUtil.generateHistoryJobId(req.getJobName(), req.getJobType().name(),
+                    req.getScheduleTaskId(), dlmTableUnits.size()));
+            dlmTableUnit.setTableName(table.getTableName());
+            dlmTableUnit.setTargetTableName(table.getTargetTableName());
+            dlmTableUnit.setSourceDatasourceInfo(req.getSourceDs());
+            dlmTableUnit.setTargetDatasourceInfo(req.getTargetDs());
+            dlmTableUnit.setFireTime(req.getFireTime());
+            dlmTableUnit.setStatus(TaskStatus.PREPARING);
+            dlmTableUnit.setType(JobType.MIGRATE);
+            dlmTableUnits.add(dlmTableUnit);
         });
-        jobStore.storeDlmJob(dlmJobs);
-        return dlmJobs;
+        jobStore.storeDlmTableUnit(dlmTableUnits);
+        return dlmTableUnits;
     }
 
     @Override

@@ -30,17 +30,17 @@ import com.oceanbase.odc.core.shared.constant.TaskStatus;
  * @Date: 2024/5/13 20:49
  * @Descripition:
  */
-public interface DlmJobRepository extends OdcJpaRepository<DlmJobEntity, Long> {
+public interface DlmTableUnitRepository extends OdcJpaRepository<DlmTableUnitEntity, Long> {
 
     @Transactional
     @Modifying
-    @Query("UPDATE DlmJobEntity e SET e.status = ?2 WHERE e.dlmJobId = ?1")
-    int updateStatusByDlmJobId(String dlmJobId, TaskStatus status);
+    @Query("UPDATE DlmJobEntity e SET e.status = ?2 WHERE e.dlmTableUnitId = ?1")
+    int updateStatusByDlmTableUnitId(String dlmTableUnitId, TaskStatus status);
 
     @Transactional
     @Modifying
-    @Query("UPDATE DlmJobEntity e SET e.executionDetail = ?2 WHERE e.dlmJobId = ?1")
-    int updateExecutionDetailByDlmJobId(String dlmJobId, String executionDetail);
+    @Query("UPDATE DlmJobEntity e SET e.executionDetail = ?2 WHERE e.dlmTableUnitId = ?1")
+    int updateExecutionDetailByDlmTableUnitId(String dlmTableUnitId, String executionDetail);
 
-    List<DlmJobEntity> findByScheduleTaskId(Long scheduleTaskId);
+    List<DlmTableUnitEntity> findByScheduleTaskId(Long scheduleTaskId);
 }

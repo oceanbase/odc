@@ -32,9 +32,9 @@ import lombok.Data;
  */
 
 @Data
-public class DlmJob {
+public class DlmTableUnit {
 
-    private String dlmJobId;
+    private String dlmTableUnitId;
 
     private Long scheduleTaskId;
 
@@ -50,7 +50,7 @@ public class DlmJob {
 
     private DlmExecutionDetail executionDetail;
 
-    private DLMJobParameters parameters;
+    private DlmTableUnitParameters parameters;
 
     private TaskStatus status;
 
