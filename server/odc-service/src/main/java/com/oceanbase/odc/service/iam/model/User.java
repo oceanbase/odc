@@ -52,6 +52,7 @@ import lombok.ToString;
 @Data
 @ToString(exclude = {"password"})
 public class User implements Principal, UserDetails, SecurityResource, OrganizationIsolated, OidcUser {
+
     private static final long serialVersionUID = -7525670432276629968L;
 
     @JsonProperty(access = Access.READ_ONLY)

@@ -66,7 +66,7 @@ import lombok.ToString;
         "passwordEncrypted", "sysTenantPasswordEncrypted", "readonlyPasswordEncrypted", "sslFileEntry"})
 public class ConnectionConfig
         implements SecurityResource, OrganizationIsolated, CloudConnectionConfig, SSLConnectionConfig, Serializable {
-
+    private static final long serialVersionUID = -7198204983655038981L;
     private static final String SESSION_INIT_SCRIPT_KEY = "SESSION_INIT_SCRIPT";
     private static final String JDBC_URL_PARAMETERS_KEY = "JDBC_URL_PARAMETERS";
     /**
@@ -222,7 +222,6 @@ public class ConnectionConfig
      * 默认 schema，对应 /api/v1 的 defaultDBName 字段
      */
     @Size(max = 128, message = "Schema name is out of range [0, 128]")
-    @JsonIgnore
     private String defaultSchema;
     /**
      * 查询超时时间（单位：秒），对应 /api/v1 的 sessionTimeoutS 字段
@@ -303,6 +302,9 @@ public class ConnectionConfig
     private OBInstanceType instanceType;
 
     @JsonIgnore
+    private OBInstanceRoleType instanceRoleType;
+
+    @JsonIgnore
     private transient Map<String, Object> attributes;
 
     /**
@@ -346,14 +348,15 @@ public class ConnectionConfig
 
     @JsonProperty(access = Access.READ_ONLY)
     public DialectType getDialectType() {
-        return Objects.nonNull(this.type) ? this.type.getDialectType() : null;
+        return Objects.nonNull(this.type) ? this.type.getDialectType() : DialectType.UNKNOWN;
     }
 
     public String getDefaultSchema() {
         DialectType dialectType = getDialectType();
         if (dialectType == null) {
             return this.defaultSchema;
-        } else if (StringUtils.isNotBlank(this.defaultSchema)) {
+        }
+        if (StringUtils.isNotBlank(this.defaultSchema)) {
             return ConnectionSessionUtil.getUserOrSchemaString(this.defaultSchema, dialectType);
         }
         switch (dialectType) {

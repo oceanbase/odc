@@ -86,7 +86,6 @@ public enum Operator {
     POW_PL("**"),
     MOD("MOD"),
     SET_VAR(":="),
-    // for mysql
     NSEQ("<=>"),
     // for mysql, regexp 'xxx'
     REGEXP("regexp"),

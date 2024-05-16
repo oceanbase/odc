@@ -80,11 +80,13 @@ public class ConnectionSessionConstants {
      */
     public static final String QUERY_CACHE_KEY = "QUERY_CACHE";
     public static final String FUTURE_JDBC_RESULT_KEY = "FUTURE_JDBC_RESULT";
+    public static final String ASYNC_EXECUTE_CONTEXT_KEY = "ASYNC_EXECUTE_CONTEXT";
     /**
      * The connection_id current database session needs to be stored in the database session in the form
      * of attributes, this is the key
      */
     public static final String CONNECTION_ID_KEY = "CONNECTION_ID";
+    public static final String OB_PROXY_SESSID_KEY = "PROXY_SESSID";
     /**
      * The {@link BinaryDataManager} session needs to be stored in the database session in the form of
      * attributes, this is the key

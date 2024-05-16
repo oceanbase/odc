@@ -84,7 +84,9 @@ public class TraceHandlerInterceptor implements HandlerInterceptor {
                     methodName, rt, userAgent, clientAddress);
             log.info(apiMsg);
             if (rt > getAlarmRtMillSecond()) {
-                AlarmUtils.alarm(API_TOO_LONG_RT_TIME, apiMsg);
+                String requestId = TraceContextHolder.getRequestId();
+                String alarmMsg = apiMsg + "requestId=" + requestId;
+                AlarmUtils.alarm(API_TOO_LONG_RT_TIME, alarmMsg);
             }
         } finally {
             TraceContextHolder.clear();

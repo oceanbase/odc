@@ -18,6 +18,7 @@ package com.oceanbase.tools.dbbrowser.schema;
 import java.util.List;
 import java.util.Map;
 
+import com.oceanbase.tools.dbbrowser.model.DBColumnGroupElement;
 import com.oceanbase.tools.dbbrowser.model.DBDatabase;
 import com.oceanbase.tools.dbbrowser.model.DBFunction;
 import com.oceanbase.tools.dbbrowser.model.DBObjectIdentity;
@@ -235,6 +236,8 @@ public interface DBSchemaAccessor {
     DBTableOptions getTableOptions(String schemaName, String tableName);
 
     DBTableOptions getTableOptions(String schemaName, String tableName, String ddl);
+
+    List<DBColumnGroupElement> listTableColumnGroups(String schemaName, String tableName);
 
     DBView getView(String schemaName, String viewName);
 

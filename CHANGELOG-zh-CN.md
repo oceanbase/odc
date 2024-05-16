@@ -1,6 +1,91 @@
 # OceanBase Developer Center (ODC) CHANGELOG
 
-## 4.2.4 （2024-04-02）
+## 4.2.4_bp2（2024-05-14）
+
+### 缺陷修复
+
+数据源
+
+- 无法连接 ODP-Sharding 数据源 [#2339](https://github.com/oceanbase/odc/pull/2339)
+
+用户管理
+
+- 无法删除已归档项目的 OWNER 或 DBA 用户 [#2359](https://github.com/oceanbase/odc/pull/2359)
+
+影子表同步
+
+- 列存在默认值时生成的语句可能出现语法错误 [#2388](https://github.com/oceanbase/odc/pull/2388)
+
+数据脱敏
+
+- 存在重名的无效数据库时，脱敏失效 [#2385](https://github.com/oceanbase/odc/pull/2385)
+
+命令行窗口
+
+- 输入较长 SQL 时，无法完全回显语句 [#2353](https://github.com/oceanbase/odc/pull/2353)
+
+数据库归档/清理
+
+- 任务被终止时状态可能被错误地设置为成功 [#2340](https://github.com/oceanbase/odc/pull/2340)
+- 数据归档指定非同名目标表时，任务执行报错表不存在 [#2313](https://github.com/oceanbase/odc/pull/2313)
+
+结果集导出
+
+- 数据库访问较慢时导出结果集会因为超时而失败 [#2315](https://github.com/oceanbase/odc/pull/2315)
+
+消息通知
+
+- 编辑消息通道会导致签名密钥丢失 [#2314](https://github.com/oceanbase/odc/pull/2314)
+
+分区计划
+
+- 在 OceanBase 4.x 版本下漏删分区以及少建分区 [#2327](https://github.com/oceanbase/odc/pull/2327)
+- 无法在 OceanBase 3.x 以下的版本发起分区计划任务 [#2323](https://github.com/oceanbase/odc/pull/2323)
+- 分区计划详情中不显示分区间隔
+
+系统集成
+
+- 第三方用户集成中，用户如果修改了 extra_properties 将无法再登录 ODC [#2336](https://github.com/oceanbase/odc/pull/2336)
+- 同时使用 OAuth 和堡垒机集成时无法打开 SQL 控制台 [#2253](https://github.com/oceanbase/odc/pull/2253)
+
+其他
+
+- 生命周期横跨发布过程的工单无法正常推进 [#2065](https://github.com/oceanbase/odc/pull/2065)
+- 无法手动执行或终止任务 [#2272](https://github.com/oceanbase/odc/pull/2272)
+- 运行一段时间之后无法使用帐密登陆需要重启 ODCServer 才能恢复 [#2389](https://github.com/oceanbase/odc/pull/2389)
+- Basic 认证方式调用 API 和 CSRF 防护存在冲突 [#2370](https://github.com/oceanbase/odc/pull/2370)
+
+### 易用性改进
+
+- 分区计划针对没有分区预创建语句或分区删除语句生成的情况下增加文案提示 [#2351](https://github.com/oceanbase/odc/pull/2351)
+- OceanBase 4.2 之前的版本禁用全链路诊断 [#2219](https://github.com/oceanbase/odc/pull/2219)
+
+### 依赖库升级
+
+- 升级 data-lifecycle-manager 版本至 1.1.1 [#2281](https://github.com/oceanbase/odc/pull/2281)
+
+### 安全加固
+
+- 移除 snappy-java 依赖 [#2317](https://github.com/oceanbase/odc/pull/2317)
+- 数据脱敏增加校验，避免因为 BigDecimal 导致的 DDos 风险 [#2271](https://github.com/oceanbase/odc/pull/2271)
+
+## 4.2.4_bp1（2024-04-12）
+
+### 缺陷修复
+
+PL 调试
+
+- PL 调试超时参数无法通过连接初始化脚本设置 [#2179](https://github.com/oceanbase/odc/pull/2179)
+
+其他
+
+- 存在分区计划历史任务时 ODC Server 启动失败 [#2158](https://github.com/oceanbase/odc/pull/2158)
+
+### 安全加固
+
+- 升级 okio-jvm 版本至 3.4.0 [#2200](https://github.com/oceanbase/odc/pull/2200)
+
+## 4.2.4 （2024-04-03）
 
 ### 功能变化
 

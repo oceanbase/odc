@@ -54,44 +54,54 @@ public class RsaBytesEncryptor implements BytesEncryptor {
     private final RsaEncryptorType type;
     private final Cipher encryptor;
     private final Cipher decryptor;
+    private final RSAPublicKey publicKey;
+    private final RSAPrivateKey privateKey;
 
     public RsaBytesEncryptor(@NonNull RsaEncryptorType type, String publicKeyBase64, String privateKeyBase64) {
         this.type = type;
         if (type == RsaEncryptorType.ENCRYPT_MODE) {
             Validate.notBlank(publicKeyBase64, "The public key is required");
-            this.encryptor = createCipher(Cipher.ENCRYPT_MODE, transformToPublicKey(publicKeyBase64));
+            this.encryptor = createCipher();
             this.decryptor = null;
+            this.publicKey = transformToPublicKey(publicKeyBase64);
+            this.privateKey = null;
         } else if (type == RsaEncryptorType.DECRYPT_MODE) {
             Validate.notBlank(privateKeyBase64, "The private key is required");
             this.encryptor = null;
-            this.decryptor = createCipher(Cipher.DECRYPT_MODE, transformToPrivateKey(privateKeyBase64));
+            this.decryptor = createCipher();
+            this.privateKey = transformToPrivateKey(privateKeyBase64);
+            this.publicKey = null;
         } else {
             Validate.notBlank(publicKeyBase64, "The public key is required");
-            this.encryptor = createCipher(Cipher.ENCRYPT_MODE, transformToPublicKey(publicKeyBase64));
+            this.encryptor = createCipher();
+            this.publicKey = transformToPublicKey(publicKeyBase64);
             Validate.notBlank(privateKeyBase64, "The private key is required");
-            this.decryptor = createCipher(Cipher.DECRYPT_MODE, transformToPrivateKey(privateKeyBase64));
+            this.decryptor = createCipher();
+            this.privateKey = transformToPrivateKey(privateKeyBase64);
         }
     }
 
     @Override
-    public byte[] encrypt(byte[] origin) {
+    public synchronized byte[] encrypt(byte[] origin) {
         if (type == RsaEncryptorType.DECRYPT_MODE) {
             throw new IllegalStateException("The encryptor only support decrypt");
         }
         if (encryptor == null) {
             throw new IllegalStateException("The encryptor is required but null");
         }
+        initCipher(encryptor, Cipher.ENCRYPT_MODE, publicKey);
         return doFinal(encryptor, origin);
     }
 
     @Override
-    public byte[] decrypt(byte[] encrypted) {
+    public synchronized byte[] decrypt(byte[] encrypted) {
         if (type == RsaEncryptorType.ENCRYPT_MODE) {
             throw new IllegalStateException("The encryptor only support encrypt");
         }
         if (decryptor == null) {
             throw new IllegalStateException("The decryptor is required but null");
         }
+        initCipher(decryptor, Cipher.DECRYPT_MODE, privateKey);
         return doFinal(decryptor, encrypted);
     }
 
@@ -115,17 +125,21 @@ public class RsaBytesEncryptor implements BytesEncryptor {
         return new Pair<>(publicKeyBase64, privateKeyBase64);
     }
 
-    private Cipher createCipher(int mode, Key key) {
+    private Cipher createCipher() {
         try {
-            Cipher cipher = Cipher.getInstance(ALGORITHM_NAME_WITH_PADDING);
-            cipher.init(mode, key);
-            return cipher;
+            return Cipher.getInstance(ALGORITHM_NAME_WITH_PADDING);
         } catch (NoSuchAlgorithmException e) {
             throw new IllegalArgumentException("Not a valid encryption algorithm", e);
         } catch (NoSuchPaddingException e) {
             throw new IllegalStateException("Should not happen", e);
+        }
+    }
+
+    private void initCipher(Cipher cipher, int mode, Key key) {
+        try {
+            cipher.init(mode, key);
         } catch (InvalidKeyException e) {
-            throw new IllegalArgumentException("Not a valid secret key", e);
+            throw new IllegalArgumentException("Not a valid key", e);
         }
     }
 

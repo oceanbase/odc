@@ -17,6 +17,7 @@ package com.oceanbase.odc.service.quartz;
 
 import static com.oceanbase.odc.core.alarm.AlarmEventNames.SCHEDULING_FAILED;
 
+import org.quartz.JobExecutionContext;
 import org.quartz.JobKey;
 import org.quartz.Trigger;
 import org.quartz.listeners.TriggerListenerSupport;
@@ -25,10 +26,13 @@ import org.springframework.stereotype.Component;
 
 import com.oceanbase.odc.core.alarm.AlarmUtils;
 import com.oceanbase.odc.metadb.schedule.ScheduleRepository;
+import com.oceanbase.odc.service.common.util.SpringContextUtil;
 import com.oceanbase.odc.service.notification.Broker;
 import com.oceanbase.odc.service.notification.NotificationProperties;
 import com.oceanbase.odc.service.notification.helper.EventBuilder;
 import com.oceanbase.odc.service.notification.model.Event;
+import com.oceanbase.odc.service.quartz.util.ScheduleTaskUtils;
+import com.oceanbase.odc.service.schedule.ScheduleService;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -42,6 +46,7 @@ public class OdcTriggerListener extends TriggerListenerSupport {
 
     @Autowired
     private ScheduleRepository scheduleRepository;
+
     @Autowired
     private NotificationProperties notificationProperties;
     @Autowired
@@ -52,6 +57,12 @@ public class OdcTriggerListener extends TriggerListenerSupport {
     @Override
     public String getName() {
         return "ODC_TRIGGER_LISTENER";
+    }
+
+    @Override
+    public boolean vetoJobExecution(Trigger trigger, JobExecutionContext context) {
+        return SpringContextUtil.getBean(ScheduleService.class)
+                .terminateIfDatabaseNotExisted(ScheduleTaskUtils.getScheduleId(context));
     }
 
     @Override

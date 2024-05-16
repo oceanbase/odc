@@ -152,7 +152,7 @@ function init_node_env() {
     fi
 
     if ! is_cmd_exists pnpm; then
-        if ! npm install -g pnpm; then
+        if ! npm install -g pnpm@8; then
             func_echo "install pnpm failed"
             return 6
         fi
@@ -211,7 +211,7 @@ function build_sqlconsole() {
         return 1
     fi
 
-    if ! npm install pnpm -g; then
+    if ! npm install pnpm@8 -g; then
         func_echo "npm install pnpm -g failed"
         return 2
     fi
