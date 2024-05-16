@@ -30,6 +30,7 @@ import com.oceanbase.odc.service.dlm.model.DLMJobParameters;
 import com.oceanbase.odc.service.dlm.model.DlmJob;
 import com.oceanbase.odc.service.dlm.model.RateLimitConfiguration;
 import com.oceanbase.odc.service.dlm.utils.DlmJobIdUtil;
+import com.oceanbase.odc.service.schedule.model.DlmExecutionDetail;
 import com.oceanbase.odc.service.session.factory.DruidDataSourceFactory;
 import com.oceanbase.tools.migrator.common.configure.DataSourceInfo;
 import com.oceanbase.tools.migrator.common.dto.JobStatistic;
@@ -223,7 +224,26 @@ public class DLMJobStore implements IJobStore {
 
     @Override
     public void storeJobStatistic(JobMeta jobMeta) throws JobSqlException {
-        jobMeta.getJobStat().refresh();
+        DlmExecutionDetail dlmExecutionDetail = new DlmExecutionDetail();
+        dlmExecutionDetail.setTableName(jobMeta.getSourceTableMeta().getName());
+        dlmExecutionDetail.setUserCondition(jobMeta.getJobParameter().getMigrateRule());
+        dlmExecutionDetail.setProcessedRowCount(jobMeta.getJobStat().getRowCount());
+        dlmExecutionDetail.setProcessedRowsPerSecond(jobMeta.getJobStat().getAvgRowCount());
+        dlmExecutionDetail.setReadRowCount(jobMeta.getJobStat().getReadRowCount());
+        dlmExecutionDetail.setReadRowsPerSecond(jobMeta.getJobStat().getAvgReadRowCount());
+        String updateSql = "UPDATE dlm_job SET execution_detail = ? WHERE dlm_job_id = ?";
+
+        try (Connection connection = dataSource.getConnection();
+                PreparedStatement preparedStatement = connection.prepareStatement(updateSql)) {
+
+            preparedStatement.setString(1, JsonUtils.toJson(dlmExecutionDetail));
+            preparedStatement.setString(2, jobMeta.getJobId());
+
+            preparedStatement.executeUpdate();
+
+        } catch (SQLException e) {
+            log.warn("Update dlm job status failed,dlmJobId={}", jobMeta.getJobId(), e);
+        }
     }
 
     @Override

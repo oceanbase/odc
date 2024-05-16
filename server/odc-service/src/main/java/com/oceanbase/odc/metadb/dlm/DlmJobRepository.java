@@ -37,5 +37,10 @@ public interface DlmJobRepository extends OdcJpaRepository<DlmJobEntity, Long> {
     @Query("UPDATE DlmJobEntity e SET e.status = ?2 WHERE e.dlmJobId = ?1")
     int updateStatusByDlmJobId(String dlmJobId, TaskStatus status);
 
+    @Transactional
+    @Modifying
+    @Query("UPDATE DlmJobEntity e SET e.executionDetail = ?2 WHERE e.dlmJobId = ?1")
+    int updateExecutionDetailByDlmJobId(String dlmJobId, String executionDetail);
+
     List<DlmJobEntity> findByScheduleTaskId(Long scheduleTaskId);
 }

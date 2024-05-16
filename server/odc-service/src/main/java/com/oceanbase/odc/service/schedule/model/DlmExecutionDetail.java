@@ -25,8 +25,6 @@ import lombok.Data;
 @Data
 public class DlmExecutionDetail {
 
-    private String dlmJobId;
-
     private String tableName;
 
     private String userCondition;

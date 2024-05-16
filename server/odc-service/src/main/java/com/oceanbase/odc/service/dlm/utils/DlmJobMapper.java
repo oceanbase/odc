@@ -19,6 +19,7 @@ import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.metadb.dlm.DlmJobEntity;
 import com.oceanbase.odc.service.dlm.model.DLMJobParameters;
 import com.oceanbase.odc.service.dlm.model.DlmJob;
+import com.oceanbase.odc.service.schedule.model.DlmExecutionDetail;
 import com.oceanbase.tools.migrator.common.configure.DataSourceInfo;
 
 /**
@@ -39,6 +40,7 @@ public class DlmJobMapper {
         dlmJob.setType(entity.getType());
         dlmJob.setSourceDatasourceInfo(JsonUtils.fromJson(entity.getSourceDatasourceInfo(), DataSourceInfo.class));
         dlmJob.setTargetDatasourceInfo(JsonUtils.fromJson(entity.getTargetDatasourceInfo(), DataSourceInfo.class));
+        dlmJob.setExecutionDetail(JsonUtils.fromJson(entity.getExecutionDetail(), DlmExecutionDetail.class));
         dlmJob.setTableName(entity.getTableName());
         dlmJob.setTargetTableName(entity.getTargetTableName());
         return dlmJob;
@@ -54,6 +56,7 @@ public class DlmJobMapper {
         entity.setType(model.getType());
         entity.setSourceDatasourceInfo(JsonUtils.toJson(model.getSourceDatasourceInfo()));
         entity.setTargetDatasourceInfo(JsonUtils.toJson(model.getTargetDatasourceInfo()));
+        entity.setExecutionDetail(JsonUtils.toJson(model.getExecutionDetail()));
         entity.setTableName(model.getTableName());
         entity.setTargetTableName(model.getTargetTableName());
         return entity;

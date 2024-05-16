@@ -71,6 +71,9 @@ public class DlmJobEntity {
     @Column(name = "target_datasource_info")
     private String targetDatasourceInfo;
 
+    @Column(name = "execution_detail")
+    private String executionDetail;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false)
     private TaskStatus status;

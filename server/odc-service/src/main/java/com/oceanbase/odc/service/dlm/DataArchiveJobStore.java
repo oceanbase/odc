@@ -23,8 +23,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
-import com.oceanbase.odc.metadb.dlm.DlmJobStatisticEntity;
-import com.oceanbase.odc.metadb.dlm.DlmJobStatisticRepository;
+import com.oceanbase.odc.common.json.JsonUtils;
+import com.oceanbase.odc.metadb.dlm.DlmJobRepository;
 import com.oceanbase.odc.metadb.dlm.TaskGeneratorEntity;
 import com.oceanbase.odc.metadb.dlm.TaskGeneratorRepository;
 import com.oceanbase.odc.metadb.dlm.TaskUnitEntity;
@@ -33,6 +33,7 @@ import com.oceanbase.odc.service.dlm.model.RateLimitConfiguration;
 import com.oceanbase.odc.service.dlm.utils.DlmJobIdUtil;
 import com.oceanbase.odc.service.dlm.utils.TaskGeneratorMapper;
 import com.oceanbase.odc.service.dlm.utils.TaskUnitMapper;
+import com.oceanbase.odc.service.schedule.model.DlmExecutionDetail;
 import com.oceanbase.tools.migrator.common.dto.JobStatistic;
 import com.oceanbase.tools.migrator.common.dto.TableSizeInfo;
 import com.oceanbase.tools.migrator.common.dto.TaskGenerator;
@@ -42,7 +43,6 @@ import com.oceanbase.tools.migrator.core.meta.ClusterMeta;
 import com.oceanbase.tools.migrator.core.meta.JobMeta;
 import com.oceanbase.tools.migrator.core.meta.TaskMeta;
 import com.oceanbase.tools.migrator.core.meta.TenantMeta;
-import com.oceanbase.tools.migrator.core.stat.JobStat;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -64,7 +64,7 @@ public class DataArchiveJobStore implements IJobStore {
     @Autowired
     private TaskUnitRepository taskUnitRepository;
     @Autowired
-    private DlmJobStatisticRepository jobStatisticRepository;
+    private DlmJobRepository dlmJobRepository;
 
     private final TaskGeneratorMapper taskGeneratorMapper = TaskGeneratorMapper.INSTANCE;
     private final TaskUnitMapper taskUnitMapper = TaskUnitMapper.INSTANCE;
@@ -110,15 +110,14 @@ public class DataArchiveJobStore implements IJobStore {
 
     @Override
     public void storeJobStatistic(JobMeta jobMeta) {
-        JobStat jobStat = jobMeta.getJobStat();
-        Optional<DlmJobStatisticEntity> optional = jobStatisticRepository.findByDlmJobId(jobMeta.getJobId());
-        DlmJobStatisticEntity dlmJobStatisticEntity = optional.orElseGet(DlmJobStatisticEntity::new);
-        dlmJobStatisticEntity.setDlmJobId(jobMeta.getJobId());
-        dlmJobStatisticEntity.setProcessedRowCount(jobStat.getRowCount());
-        dlmJobStatisticEntity.setReadRowCount(jobStat.getReadRowCount());
-        dlmJobStatisticEntity.setReadRowsPerSecond(jobStat.getAvgReadRowCount());
-        dlmJobStatisticEntity.setProcessedRowsPerSecond(jobStat.getAvgRowCount());
-        jobStatisticRepository.save(dlmJobStatisticEntity);
+        DlmExecutionDetail dlmExecutionDetail = new DlmExecutionDetail();
+        dlmExecutionDetail.setTableName(jobMeta.getSourceTableMeta().getName());
+        dlmExecutionDetail.setUserCondition(jobMeta.getJobParameter().getMigrateRule());
+        dlmExecutionDetail.setProcessedRowCount(jobMeta.getJobStat().getRowCount());
+        dlmExecutionDetail.setProcessedRowsPerSecond(jobMeta.getJobStat().getAvgRowCount());
+        dlmExecutionDetail.setReadRowCount(jobMeta.getJobStat().getReadRowCount());
+        dlmExecutionDetail.setReadRowsPerSecond(jobMeta.getJobStat().getAvgReadRowCount());
+        dlmJobRepository.updateExecutionDetailByDlmJobId(jobMeta.getJobId(), JsonUtils.toJson(dlmExecutionDetail));
     }
 
     @Override
