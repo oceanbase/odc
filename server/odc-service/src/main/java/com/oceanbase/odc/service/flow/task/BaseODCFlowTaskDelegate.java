@@ -270,8 +270,8 @@ public abstract class BaseODCFlowTaskDelegate<T> extends BaseRuntimeFlowableDele
         try {
             setDownloadLogUrl(flowInstanceId);
         } catch (Exception e) {
-            log.warn("Failed to set download log URL, either because the log file does not exist "
-                    + "or the upload of the OSS failed, flowInstanceId={}", flowInstanceId, e);
+            log.warn("Failed to set download log URL, either because the log file does not exist or the upload of the "
+                    + "OSS failed, flowInstanceId={}, flowTaskInstanceId={}", flowInstanceId, flowTaskInstanceId, e);
         }
         flowTaskCallBackApprovalService.approval(flowInstanceId, flowTaskInstanceId, flowNodeStatus, approvalVariables);
     }
@@ -340,6 +340,9 @@ public abstract class BaseODCFlowTaskDelegate<T> extends BaseRuntimeFlowableDele
 
     private void setDownloadLogUrl(@NonNull Long flowInstanceId) throws IOException, NotFoundException {
         TaskEntity taskEntity = taskService.detail(taskId);
+        if (!taskEntity.getStatus().isTerminated()) {
+            return;
+        }
         File logFile;
         try {
             logFile = taskService.getLogFile(taskEntity.getCreatorId(), taskId + "", taskEntity.getTaskType(),
