@@ -99,7 +99,6 @@ public class DLMJobStore implements IJobStore {
     }
 
     public boolean updateDlmJobStatus(String dlmJobId, String status) {
-        // 更新SQL语句
         String updateSql = "UPDATE dlm_job SET status = ? WHERE dlm_job_id = ?";
 
         try (Connection connection = dataSource.getConnection();
