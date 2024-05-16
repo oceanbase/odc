@@ -17,6 +17,7 @@ package com.oceanbase.odc.service.databasechange;
 
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -63,21 +64,22 @@ public class MultipleDatabaseChangePreprocessor implements Preprocessor {
         // Limit the number of multi-databases change
         if (ids.size() <= DatabaseChangeProperties.MIN_DATABASE_COUNT
                 || ids.size() > DatabaseChangeProperties.MAX_DATABASE_COUNT) {
-            throw new BadArgumentException(ErrorCodes.IllegalArgument,
-                    "The number of databases must be greater than " + DatabaseChangeProperties.MIN_DATABASE_COUNT
-                            + " and not more than " + DatabaseChangeProperties.MAX_DATABASE_COUNT + ".");
+            throw new BadArgumentException(ErrorCodes.BadArgument,
+                    String.format("The number of databases must be greater than %s and not more than %s.",
+                            DatabaseChangeProperties.MIN_DATABASE_COUNT, DatabaseChangeProperties.MAX_DATABASE_COUNT));
         }
         // Databases with the same name are not allowed
         if (new HashSet<>(ids).size() != ids.size()) {
-            throw new BadArgumentException(ErrorCodes.IllegalArgument,
+            throw new BadArgumentException(ErrorCodes.BadArgument,
                     "Database cannot be duplicated.");
         }
         List<Database> databases = databaseService.listDatabasesDetailsByIds(ids);
         // All databases must belong to the project
         if (!databases.stream()
-                .allMatch(databaseEntity -> databaseEntity.getProject().getId() == parameters.getProjectId())) {
-            throw new BadArgumentException(ErrorCodes.IllegalArgument,
-                    "All databases must belong to the same project：" + project.getName());
+                .allMatch(databaseEntity -> databaseEntity.getProject() != null && Objects.equals(
+                        databaseEntity.getProject().getId(), parameters.getProjectId()))) {
+            throw new BadArgumentException(ErrorCodes.BadArgument,
+                    String.format("All databases must belong to the same project: %s", project.getName()));
         }
         // must reset the batchid when initiating a multiple database flow again
         parameters.setBatchId(null);

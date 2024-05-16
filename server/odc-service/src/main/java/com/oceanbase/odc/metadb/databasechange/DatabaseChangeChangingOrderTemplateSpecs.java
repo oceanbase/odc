@@ -42,4 +42,8 @@ public class DatabaseChangeChangingOrderTemplateSpecs {
     public static Specification<DatabaseChangeChangingOrderTemplateEntity> projectIdEquals(Long projectId) {
         return SpecificationUtil.columnEqual(DatabaseChangeChangingOrderTemplateEntity_.PROJECT_ID, projectId);
     }
+
+    public static Specification<DatabaseChangeChangingOrderTemplateEntity> enabledEquals(Boolean enabled) {
+        return SpecificationUtil.columnEqual(DatabaseChangeChangingOrderTemplateEntity_.ENABLED, enabled);
+    }
 }

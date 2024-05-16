@@ -84,19 +84,19 @@ public class DatabaseChangeChangingOrderTemplateService {
         List<Long> databaseIds = orders.stream().flatMap(List::stream).collect(Collectors.toList());
         if (databaseIds.size() <= DatabaseChangeProperties.MIN_DATABASE_COUNT
                 || databaseIds.size() > DatabaseChangeProperties.MAX_DATABASE_COUNT) {
-            throw new BadArgumentException(ErrorCodes.IllegalArgument,
-                    "The number of databases must be greater than " + DatabaseChangeProperties.MIN_DATABASE_COUNT
-                            + " and not more than " + DatabaseChangeProperties.MAX_DATABASE_COUNT + ".");
+            throw new BadArgumentException(ErrorCodes.BadArgument,
+                    String.format("The number of databases must be greater than %s and not more than %s.",
+                            DatabaseChangeProperties.MIN_DATABASE_COUNT, DatabaseChangeProperties.MAX_DATABASE_COUNT));
         }
         if (new HashSet<Long>(databaseIds).size() != databaseIds.size()) {
-            throw new BadArgumentException(ErrorCodes.IllegalArgument,
-                    "Database cannot be duplicated.");
+            throw new BadArgumentException(ErrorCodes.BadArgument,
+                    "Databases cannot be duplicated.");
         }
         PreConditions.validNoDuplicated(ResourceType.ODC_DATABASE_CHANGE_ORDER_TEMPLATE, "name", req.getName(),
                 () -> templateRepository.existsByNameAndProjectId(req.getName(), req.getProjectId()));
         List<DatabaseEntity> byIdIn = databaseRepository.findByIdIn(databaseIds);
         if (!(byIdIn.stream().allMatch(x -> x.getProjectId().equals(req.getProjectId())))) {
-            throw new BadArgumentException(ErrorCodes.IllegalArgument,
+            throw new BadArgumentException(ErrorCodes.BadArgument,
                     "all databases must belong to the current project");
         }
         long userId = authenticationFacade.currentUserId();
@@ -109,9 +109,7 @@ public class DatabaseChangeChangingOrderTemplateService {
         templateEntity.setOrganizationId(organizationId);
         templateEntity.setDatabaseSequences(req.getOrders());
         templateEntity.setEnabled(true);
-        return templateRepository.save(
-                templateEntity);
-
+        return templateRepository.save(templateEntity);
     }
 
     @Transactional(rollbackFor = Exception.class)
@@ -172,6 +170,12 @@ public class DatabaseChangeChangingOrderTemplateService {
                 .and(params.getCreatorId() == null ? null
                         : DatabaseChangeChangingOrderTemplateSpecs
                                 .creatorIdIn(Collections.singleton(params.getCreatorId())));
+        return templateRepository.findAll(specification, pageable);
+    }
+
+    public Page<DatabaseChangeChangingOrderTemplateEntity> listTemplates(
+            @NotNull Pageable pageable,
+            Specification<DatabaseChangeChangingOrderTemplateEntity> specification) {
         return templateRepository.findAll(specification, pageable);
     }
 

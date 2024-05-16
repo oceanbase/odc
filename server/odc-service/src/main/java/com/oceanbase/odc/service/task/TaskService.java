@@ -79,7 +79,7 @@ public class TaskService {
     private HostProperties properties;
 
     private static String logFilePrefix;
-    private static final String MULTIPLE_ASYNC_LOG_PATH_PATTERN = "%s/multiple-async/%s/multiple-asynctask.%s";
+    private static final String MULTIPLE_ASYNC_LOG_PATH_PATTERN = "%s/multiple-async/%s/multiple-async.%s";
     private static final String ASYNC_LOG_PATH_PATTERN = "%s/async/%d/%s/asynctask.%s";
     private static final String MOCKDATA_LOG_PATH_PATTERN = "%s/data-mocker/%s/ob-mocker.%s";
     private static final String DATATRANSFER_LOG_PATH_PATTERN = "%s/data-transfer/%s/ob-loader-dumper.%s";
