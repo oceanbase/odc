@@ -75,11 +75,10 @@ public class TaskFrameworkConfiguration {
 
     @Lazy
     @Bean("taskFrameworkSchedulerFactoryBean")
-    public SchedulerFactoryBean taskFrameworkSchedulerFactoryBean(DataSource dataSource,
+    public SchedulerFactoryBean taskFrameworkSchedulerFactoryBean(
             TaskFrameworkProperties taskFrameworkProperties,
             @Qualifier("taskFrameworkMonitorExecutor") ThreadPoolTaskExecutor executor) {
         SchedulerFactoryBean schedulerFactoryBean = new SchedulerFactoryBean();
-        schedulerFactoryBean.setDataSource(dataSource);
         String taskFrameworkSchedulerName = "TASK-FRAMEWORK-SCHEDULER";
         schedulerFactoryBean.setSchedulerName(taskFrameworkSchedulerName);
         schedulerFactoryBean.setStartupDelay(taskFrameworkProperties.getQuartzStartDelaySeconds());
