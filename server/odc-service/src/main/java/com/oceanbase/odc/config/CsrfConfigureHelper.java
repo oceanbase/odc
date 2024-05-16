@@ -104,7 +104,21 @@ public class CsrfConfigureHelper {
 
         public boolean matches(HttpServletRequest request) {
             String requestURI = request.getRequestURI();
-            return !this.allowedMethods.contains(request.getMethod()) && !allowedUrls.contains(requestURI);
+            if (allowedMethods.contains(request.getMethod())) {
+                return false;
+            }
+            if (allowedUrls.contains(requestURI)) {
+                return false;
+            }
+            if (isBasicAuth(request)) {
+                return false;
+            }
+            return true;
+        }
+
+        private boolean isBasicAuth(HttpServletRequest request) {
+            String authHeader = request.getHeader("Authorization");
+            return (authHeader != null && authHeader.startsWith("Basic "));
         }
     }
 

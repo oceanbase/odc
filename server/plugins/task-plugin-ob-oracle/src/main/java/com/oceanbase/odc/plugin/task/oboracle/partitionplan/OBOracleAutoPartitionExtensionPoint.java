@@ -171,7 +171,7 @@ public class OBOracleAutoPartitionExtensionPoint extends OBMySQLAutoPartitionExt
     }
 
     @Override
-    protected DBSchemaAccessor getDBSchemaAccessor(@NonNull Connection connection) {
+    protected DBSchemaAccessor getDBSchemaAccessor(@NonNull Connection connection, String tenantName) {
         return DBAccessorUtil.getSchemaAccessor(connection);
     }
 

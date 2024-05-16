@@ -19,6 +19,7 @@ import java.io.StringReader;
 import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -52,6 +53,7 @@ import com.oceanbase.odc.plugin.task.obmysql.partitionplan.invoker.partitionname
 import com.oceanbase.odc.plugin.task.obmysql.partitionplan.util.DBTablePartitionEditors;
 import com.oceanbase.tools.dbbrowser.editor.DBTablePartitionEditor;
 import com.oceanbase.tools.dbbrowser.model.DBTable;
+import com.oceanbase.tools.dbbrowser.model.DBTableAbstractPartitionDefinition;
 import com.oceanbase.tools.dbbrowser.model.DBTableColumn;
 import com.oceanbase.tools.dbbrowser.model.DBTablePartition;
 import com.oceanbase.tools.dbbrowser.model.DBTablePartitionOption;
@@ -79,12 +81,17 @@ public class OBMySQLAutoPartitionExtensionPoint implements AutoPartitionExtensio
 
     @Override
     public List<DBTable> listAllPartitionedTables(@NonNull Connection connection,
-            @NonNull String schemaName, List<String> tableNames) {
-        DBSchemaAccessor accessor = getDBSchemaAccessor(connection);
+            String tenantName, @NonNull String schemaName, List<String> tableNames) {
+        DBSchemaAccessor accessor = getDBSchemaAccessor(connection, tenantName);
         Map<String, DBTablePartition> tblName2Parti = accessor.listTablePartitions(schemaName, tableNames);
         tblName2Parti = tblName2Parti.entrySet().stream()
                 .filter(e -> supports(e.getValue()))
                 .collect(Collectors.toMap(Entry::getKey, Entry::getValue));
+        if (tblName2Parti.values().stream().anyMatch(p -> p.getPartitionDefinitions().stream()
+                .anyMatch(definition -> definition.getOrdinalPosition() != null))) {
+            tblName2Parti.values().forEach(p -> p.getPartitionDefinitions()
+                    .sort(Comparator.comparing(DBTableAbstractPartitionDefinition::getOrdinalPosition)));
+        }
         Map<String, List<DBTableColumn>> tblName2Cols = accessor.listTableColumns(
                 schemaName, new ArrayList<>(tblName2Parti.keySet()));
         return tblName2Parti.entrySet().stream().map(e -> {
@@ -211,8 +218,8 @@ public class OBMySQLAutoPartitionExtensionPoint implements AutoPartitionExtensio
         }
     }
 
-    protected DBSchemaAccessor getDBSchemaAccessor(@NonNull Connection connection) {
-        return DBAccessorUtil.getSchemaAccessor(connection);
+    protected DBSchemaAccessor getDBSchemaAccessor(@NonNull Connection connection, String tenantName) {
+        return DBAccessorUtil.getSchemaAccessor(connection, tenantName);
     }
 
     static private class RangePartiExprParser extends OBMySQLParser {

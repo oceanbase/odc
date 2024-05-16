@@ -15,6 +15,7 @@
  */
 package com.oceanbase.tools.dbbrowser.schema.oracle;
 
+import java.io.StringReader;
 import java.sql.ResultSetMetaData;
 import java.sql.Timestamp;
 import java.util.ArrayList;
@@ -35,6 +36,7 @@ import org.springframework.jdbc.core.BeanPropertyRowMapper;
 import org.springframework.jdbc.core.JdbcOperations;
 import org.springframework.jdbc.core.RowMapper;
 
+import com.oceanbase.tools.dbbrowser.model.DBColumnGroupElement;
 import com.oceanbase.tools.dbbrowser.model.DBColumnTypeDisplay;
 import com.oceanbase.tools.dbbrowser.model.DBDatabase;
 import com.oceanbase.tools.dbbrowser.model.DBFunction;
@@ -77,6 +79,9 @@ import com.oceanbase.tools.dbbrowser.util.OracleSqlBuilder;
 import com.oceanbase.tools.dbbrowser.util.PLObjectErrMsgUtils;
 import com.oceanbase.tools.dbbrowser.util.SqlBuilder;
 import com.oceanbase.tools.dbbrowser.util.StringUtils;
+import com.oceanbase.tools.sqlparser.OBOracleSQLParser;
+import com.oceanbase.tools.sqlparser.SQLParser;
+import com.oceanbase.tools.sqlparser.statement.createtable.CreateTable;
 
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
@@ -170,7 +175,7 @@ public class OBOracleSchemaAccessor extends OracleSchemaAccessor {
     @Override
     public List<DBTableIndex> listTableIndexes(String schemaName, String tableName) {
         List<DBTableIndex> indexList = super.listTableIndexes(schemaName, tableName);
-        fillIndexRange(indexList);
+        fillIndexInfo(indexList);
         fillIndexTypeAndAlgorithm(indexList);
         return indexList;
     }
@@ -195,7 +200,7 @@ public class OBOracleSchemaAccessor extends OracleSchemaAccessor {
         Map<String, List<DBTableIndex>> tableName2Indexes = super.listTableIndexes(schemaName);
         List<DBTableIndex> indexList =
                 tableName2Indexes.values().stream().flatMap(List::stream).collect(Collectors.toList());
-        fillIndexRange(indexList);
+        fillIndexInfo(indexList);
         fillIndexTypeAndAlgorithm(indexList);
         return tableName2Indexes;
     }
@@ -210,7 +215,7 @@ public class OBOracleSchemaAccessor extends OracleSchemaAccessor {
         return false;
     }
 
-    protected void fillIndexRange(List<DBTableIndex> indexList) {
+    protected void fillIndexInfo(List<DBTableIndex> indexList) {
         for (DBTableIndex index : indexList) {
             try {
                 OracleSqlBuilder sb = new OracleSqlBuilder();
@@ -232,6 +237,7 @@ public class OBOracleSchemaAccessor extends OracleSchemaAccessor {
                         // we get one single create index statement for each table index
                         // so here we should only get one index object from this statement
                         index.setGlobal("GLOBAL".equalsIgnoreCase(result.getIndexes().get(0).getRange().name()));
+                        index.setColumnGroups(result.getIndexes().get(0).getColumnGroups());
                     }
                     return indexDdl;
                 });
@@ -432,6 +438,19 @@ public class OBOracleSchemaAccessor extends OracleSchemaAccessor {
         }
 
         return function;
+    }
+
+    @Override
+    public List<DBColumnGroupElement> listTableColumnGroups(String schemaName, String tableName) {
+        return listTableColumnGroups(getTableDDLOnly(schemaName, tableName));
+    }
+
+    private List<DBColumnGroupElement> listTableColumnGroups(String ddl) {
+        SQLParser sqlParser = new OBOracleSQLParser();
+        CreateTable stmt = (CreateTable) sqlParser.parse(new StringReader(ddl));
+        return stmt.getColumnGroupElements() == null ? Collections.emptyList()
+                : stmt.getColumnGroupElements().stream()
+                        .map(DBColumnGroupElement::ofColumnGroupElement).collect(Collectors.toList());
     }
 
     @Override
@@ -1010,6 +1029,7 @@ public class OBOracleSchemaAccessor extends OracleSchemaAccessor {
             table.setTableOptions(tableName2Options.getOrDefault(tableName, new DBTableOptions()));
             table.setPartition(getPartition(schemaName, tableName));
             table.setDDL(getTableDDL(schemaName, tableName, columns, indexes));
+            table.setColumnGroups(listTableColumnGroups(getTableDDLOnly(schemaName, tableName)));
             returnVal.put(tableName, table);
         }
         return returnVal;

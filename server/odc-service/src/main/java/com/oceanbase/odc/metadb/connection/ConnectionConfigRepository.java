@@ -47,6 +47,8 @@ public interface ConnectionConfigRepository
 
     List<ConnectionEntity> findByOrganizationId(Long organizationId);
 
+    List<ConnectionEntity> findByOrganizationIdIn(Collection<Long> organizationIds);
+
     List<ConnectionEntity> findByProjectId(Long projectId);
 
     @Transactional

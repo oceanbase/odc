@@ -35,12 +35,13 @@ public class DBAccessorUtil {
     }
 
     public static DBSchemaAccessor getSchemaAccessor(Connection connection) {
-        /**
-         * sysJdbcOperations and tenantName is only used in getPartition method, this method will not be
-         * called in plugin, so we just set it null here.
-         */
         return DBSchemaAccessorGenerator.createForOBMySQL(JdbcOperationsUtil.getJdbcOperations(connection), null,
                 getDbVersion(connection), null);
+    }
+
+    public static DBSchemaAccessor getSchemaAccessor(Connection connection, String tenantName) {
+        return DBSchemaAccessorGenerator.createForOBMySQL(JdbcOperationsUtil.getJdbcOperations(connection), null,
+                getDbVersion(connection), tenantName);
     }
 
     public static DBStatsAccessor getStatsAccessor(Connection connection) {

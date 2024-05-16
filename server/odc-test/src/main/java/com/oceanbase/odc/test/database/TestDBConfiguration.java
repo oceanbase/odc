@@ -100,6 +100,10 @@ public class TestDBConfiguration {
         dataSource.setUrl(JdbcUtil.buildUrl(host, port, defaultDBName, type));
         dataSource.setUsername(JdbcUtil.buildUser(username, tenant, cluster));
         dataSource.setPassword(password);
+        dataSource.setConnectTimeout(3000);
+        dataSource.setSocketTimeout(15000);
+        dataSource.setQueryTimeout(10);
+        dataSource.setMaxWait(5000L);
         String validationQuery =
                 type == TestDBType.OB_MYSQL || type == TestDBType.DORIS ? "select 1" : "select 1 from dual";
         dataSource.setValidationQuery(validationQuery);
@@ -117,6 +121,9 @@ public class TestDBConfiguration {
         dataSource.setUrl(JdbcUtil.buildUrl(host, port, SID, serviceName));
         dataSource.setUsername(username);
         dataSource.setPassword(password);
+        dataSource.setConnectTimeout(3000);
+        dataSource.setQueryTimeout(10);
+        dataSource.setMaxWait(5000L);
         Properties properties = new Properties();
         properties.setProperty("internal_logon", role);
         dataSource.setConnectProperties(properties);

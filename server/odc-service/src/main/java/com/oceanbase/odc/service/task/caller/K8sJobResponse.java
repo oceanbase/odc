@@ -13,26 +13,33 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-package com.oceanbase.odc.service.connection.database.model;
-
-import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.cloud.context.config.annotation.RefreshScope;
-import org.springframework.context.annotation.Configuration;
-
-import lombok.Data;
+package com.oceanbase.odc.service.task.caller;
 
 /**
- * @author gaoda.xy
- * @date 2023/12/1 11:12
+ * @author yaobin
+ * @date 2024-04-09
+ * @since 4.2.4
  */
-@Data
-@Configuration
-@RefreshScope
-@ConfigurationProperties(prefix = "odc.connect.database.sync")
-public class DatabaseSyncProperties {
+public interface K8sJobResponse {
 
-    private long intervalMillis;
-    private boolean blockInternalDatabase;
 
+    /**
+     * deploy region
+     */
+    String getRegion();
+
+    /**
+     * job identity string
+     */
+    String getArn();
+
+    /**
+     * job alias name
+     */
+    String getName();
+
+    /**
+     * pod status
+     */
+    String getResourceStatus();
 }

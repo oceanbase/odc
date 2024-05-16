@@ -41,6 +41,7 @@ import lombok.NonNull;
 public class SyntaxErrorException extends ParseCancellationException {
 
     private final int start;
+    private final int stop;
     private final String text;
 
     public SyntaxErrorException(@NonNull Recognizer<?, ?> recognizer, @NonNull RecognitionException e) {
@@ -48,6 +49,7 @@ public class SyntaxErrorException extends ParseCancellationException {
         if (recognizer instanceof Parser) {
             Token token = e.getOffendingToken();
             this.start = token.getStartIndex();
+            this.stop = token.getStopIndex();
             TokenStream tokens = (CommonTokenStream) recognizer.getInputStream();
             if (tokens == null) {
                 this.text = null;
@@ -57,6 +59,7 @@ public class SyntaxErrorException extends ParseCancellationException {
         } else {
             CharStream text = (CharStream) recognizer.getInputStream();
             this.start = text.index();
+            this.stop = text.index();
             this.text = text.toString();
         }
     }
