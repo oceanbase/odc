@@ -87,6 +87,7 @@ import com.oceanbase.odc.metadb.iam.RolePermissionEntity;
 import com.oceanbase.odc.metadb.iam.RolePermissionRepository;
 import com.oceanbase.odc.metadb.iam.RoleRepository;
 import com.oceanbase.odc.metadb.iam.UserEntity;
+import com.oceanbase.odc.metadb.iam.UserOrganizationRepository;
 import com.oceanbase.odc.metadb.iam.UserPermissionEntity;
 import com.oceanbase.odc.metadb.iam.UserPermissionRepository;
 import com.oceanbase.odc.metadb.iam.UserRepository;
@@ -173,6 +174,9 @@ public class UserService {
 
     @Autowired
     private UserOrganizationService userOrganizationService;
+
+    @Autowired
+    private UserOrganizationRepository userOrganizationRepository;
 
     private final PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
     private final List<Consumer<PasswordChangeEvent>> postPasswordChangeHooks = new ArrayList<>();
@@ -369,7 +373,7 @@ public class UserService {
 
         userRepository.deleteById(id);
         userRoleRepository.deleteByUserId(id);
-        deleteRelatedPermissions(id);
+        deleteRelatedPermissions(id, null);
         permissionService.deleteResourceRelatedPermissions(id, ResourceType.ODC_USER, PermissionType.SYSTEM);
 
         for (Consumer<UserDeleteEvent> hook : postUserDeleteHooks) {
@@ -377,6 +381,16 @@ public class UserService {
         }
         log.info("User deleted, id={}", id);
         return new User(userEntity);
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    @SkipAuthorize("odc internal usage")
+    public boolean removeFromOrganization(@NotNull Long id, @NotNull Long organizationId) {
+        userRoleRepository.deleteByOrganizationIdAndUserId(organizationId, id);
+        deleteRelatedPermissions(id, organizationId);
+        userOrganizationRepository.deleteByUserIdAndOrganizationId(id, organizationId);
+        log.info("User removed from organization, userId={}, organizationId={}", id, organizationId);
+        return true;
     }
 
     @PreAuthenticate(actions = "read", resourceType = "ODC_USER", indexOfIdParam = 0)
@@ -906,8 +920,13 @@ public class UserService {
         return userIds.stream().distinct().collect(Collectors.toList());
     }
 
-    private void deleteRelatedPermissions(Long userId) {
-        List<UserPermissionEntity> userPermissionEntities = userPermissionRepository.findByUserId(userId);
+    private void deleteRelatedPermissions(@NotNull Long userId, Long organizationId) {
+        List<UserPermissionEntity> userPermissionEntities;
+        if (Objects.isNull(organizationId)) {
+            userPermissionEntities = userPermissionRepository.findByUserId(userId);
+        } else {
+            userPermissionEntities = userPermissionRepository.findByUserIdAndOrganizationId(userId, organizationId);
+        }
         List<Long> permissionIds =
                 userPermissionEntities.stream().map(UserPermissionEntity::getPermissionId).collect(Collectors.toList());
         if (CollectionUtils.isNotEmpty(permissionIds)) {

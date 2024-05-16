@@ -15,6 +15,10 @@
  */
 package com.oceanbase.odc.service.iam;
 
+import java.util.Collections;
+import java.util.List;
+import java.util.stream.Collectors;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Example;
 import org.springframework.stereotype.Service;
@@ -24,6 +28,7 @@ import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.metadb.iam.UserOrganizationEntity;
 import com.oceanbase.odc.metadb.iam.UserOrganizationRepository;
 import com.oceanbase.odc.metadb.iam.UserRepository;
+import com.oceanbase.odc.service.iam.model.User;
 
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
@@ -60,4 +65,14 @@ public class UserOrganizationService {
         return userOrganizationRepository.save(entity);
     }
 
+    @SkipAuthorize
+    public List<User> listUsersByOrganizationId(@NonNull Long organizationId) {
+        List<UserOrganizationEntity> entities = userOrganizationRepository.findByOrganizationId(organizationId);
+        if (entities.isEmpty()) {
+            return Collections.emptyList();
+        }
+        return userRepository
+                .findByIdIn(entities.stream().map(UserOrganizationEntity::getUserId).collect(Collectors.toList()))
+                .stream().map(User::new).collect(Collectors.toList());
+    }
 }

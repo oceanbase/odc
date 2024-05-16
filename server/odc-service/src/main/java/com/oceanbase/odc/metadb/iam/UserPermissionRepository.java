@@ -37,6 +37,9 @@ public interface UserPermissionRepository
 
     List<UserPermissionEntity> findByUserId(@Param("userId") Long userId);
 
+    List<UserPermissionEntity> findByUserIdAndOrganizationId(@Param("userId") Long userId,
+            @Param("organizationId") Long organizationId);
+
     List<UserPermissionEntity> findByPermissionId(@Param("permissionId") Long permissionId);
 
     List<UserPermissionEntity> findByUserIdIn(@Param("userIds") Collection<Long> userIds);
