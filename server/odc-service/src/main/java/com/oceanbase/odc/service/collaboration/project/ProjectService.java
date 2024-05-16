@@ -16,11 +16,13 @@
 package com.oceanbase.odc.service.collaboration.project;
 
 import java.util.Collections;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
@@ -28,6 +30,7 @@ import javax.validation.Valid;
 import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
 
+import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Example;
@@ -36,7 +39,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.util.CollectionUtils;
 import org.springframework.validation.annotation.Validated;
 
 import com.oceanbase.odc.core.authority.util.Authenticated;
@@ -53,6 +55,7 @@ import com.oceanbase.odc.metadb.collaboration.ProjectRepository;
 import com.oceanbase.odc.metadb.collaboration.ProjectSpecs;
 import com.oceanbase.odc.metadb.connection.ConnectionConfigRepository;
 import com.oceanbase.odc.metadb.connection.ConnectionEntity;
+import com.oceanbase.odc.metadb.connection.DatabaseEntity;
 import com.oceanbase.odc.metadb.connection.DatabaseRepository;
 import com.oceanbase.odc.metadb.iam.PermissionRepository;
 import com.oceanbase.odc.metadb.iam.UserDatabasePermissionEntity;
@@ -141,7 +144,7 @@ public class ProjectService {
 
     /**
      * Create a built-in project for bastion user if not exists
-     * 
+     *
      * @param user bastion user
      */
     @SkipAuthorize("odc internal usage")
@@ -159,6 +162,7 @@ public class ProjectService {
         projectEntity.setLastModifierId(user.getCreatorId());
         projectEntity.setOrganizationId(user.getOrganizationId());
         projectEntity.setDescription("Built-in project for bastion user " + user.getAccountName());
+        projectEntity.setUniqueIdentifier(generateProjectUniqueIdentifier());
         ProjectEntity saved = repository.saveAndFlush(projectEntity);
         // Grant DEVELOPER role to bastion user, and all other roles to user creator(admin)
         Map<ResourceRoleName, ResourceRoleEntity> resourceRoleName2Entity =
@@ -176,7 +180,7 @@ public class ProjectService {
             entity.setOrganizationId(user.getOrganizationId());
             return entity;
         }).collect(Collectors.toList());
-        userResourceRoleRepository.saveAll(userResourceRoleEntities);
+        userResourceRoleRepository.batchCreate(userResourceRoleEntities);
     }
 
     @PreAuthenticate(actions = "create", resourceType = "ODC_PROJECT", isForAll = true)
@@ -188,6 +192,7 @@ public class ProjectService {
         project.setLastModifier(currentInnerUser());
         project.setArchived(false);
         project.setBuiltin(false);
+        project.setUniqueIdentifier(generateProjectUniqueIdentifier());
         ProjectEntity saved = repository.save(modelToEntity(project));
         List<UserResourceRole> userResourceRoles = resourceRoleService.saveAll(
                 project.getMembers().stream()
@@ -202,8 +207,11 @@ public class ProjectService {
     public Project detail(@NotNull Long id) {
         ProjectEntity entity = repository.findByIdAndOrganizationId(id, currentOrganizationId())
                 .orElseThrow(() -> new NotFoundException(ResourceType.ODC_PROJECT, "id", id));
-        List<UserResourceRole> userResourceRoles = resourceRoleService.listByResourceId(entity.getId());
-        return entityToModel(entity, userResourceRoles);
+        List<UserResourceRole> userResourceRoles =
+                resourceRoleService.listByResourceTypeAndId(ResourceType.ODC_PROJECT, entity.getId());
+        Project project = entityToModel(entity, userResourceRoles);
+        project.setDbObjectLastSyncTime(getEarliestObjectSyncTime(id));
+        return project;
     }
 
     @SkipAuthorize("odc internal usage")
@@ -221,7 +229,8 @@ public class ProjectService {
          * not allowed to update a built-in project or an archived project
          */
         if (previous.getBuiltin() || previous.getArchived()) {
-            return entityToModel(previous, resourceRoleService.listByResourceId(previous.getId()));
+            return entityToModel(previous,
+                    resourceRoleService.listByResourceTypeAndId(ResourceType.ODC_PROJECT, previous.getId()));
         }
 
         previous.setLastModifierId(authenticationFacade.currentUserId());
@@ -232,7 +241,8 @@ public class ProjectService {
          * save project
          */
         ProjectEntity saved = repository.save(previous);
-        return entityToModel(saved, resourceRoleService.listByResourceId(saved.getId()));
+        return entityToModel(saved,
+                resourceRoleService.listByResourceTypeAndId(ResourceType.ODC_PROJECT, saved.getId()));
     }
 
     @PreAuthenticate(hasAnyResourceRole = {"OWNER"}, resourceType = "ODC_PROJECT", indexOfIdParam = 0)
@@ -268,7 +278,8 @@ public class ProjectService {
         params.setUserId(currentUserId());
         Page<ProjectEntity> projectEntities = innerList(params, pageable, UserResourceRole::isProjectMember);
         return projectEntities.map(project -> {
-            List<UserResourceRole> members = resourceRoleService.listByResourceId(project.getId());
+            List<UserResourceRole> members =
+                    resourceRoleService.listByResourceTypeAndId(ResourceType.ODC_PROJECT, project.getId());
             return entityToModel(project, members);
         });
     }
@@ -328,14 +339,18 @@ public class ProjectService {
         if (currentUserId().longValue() == userId.longValue()) {
             throw new BadRequestException("Not allowed to delete yourself");
         }
-        Set<Long> memberIds = resourceRoleService.listByResourceIdIn(Collections.singleton(projectId)).stream()
-                .filter(Objects::nonNull)
-                .map(UserResourceRole::getUserId).collect(
-                        Collectors.toSet());
+        Set<Long> memberIds = resourceRoleService.listByResourceTypeAndId(ResourceType.ODC_PROJECT, projectId).stream()
+                .filter(Objects::nonNull).map(UserResourceRole::getUserId).collect(Collectors.toSet());
         if (!memberIds.contains(userId)) {
             throw new BadRequestException("User not belongs to this project");
         }
-        resourceRoleService.deleteByUserIdAndResourceIdIn(userId, Collections.singleton(projectId));
+        resourceRoleService.deleteByUserIdAndResourceIdAndResourceType(userId, projectId, ResourceType.ODC_PROJECT);
+        List<Long> relatedDatabaseIds = databaseRepository.findByProjectId(projectId).stream()
+                .map(DatabaseEntity::getId).collect(Collectors.toList());
+        if (CollectionUtils.isNotEmpty(relatedDatabaseIds)) {
+            resourceRoleService.deleteByUserIdAndResourceIdInAndResourceType(userId, relatedDatabaseIds,
+                    ResourceType.ODC_DATABASE);
+        }
         checkMemberRoles(detail(projectId).getMembers());
         deleteMemberRelatedDatabasePermissions(userId, projectId);
         return true;
@@ -362,15 +377,15 @@ public class ProjectService {
         ProjectEntity project = repository.findByIdAndOrganizationId(projectId, currentOrganizationId())
                 .orElseThrow(() -> new NotFoundException(ResourceType.ODC_PROJECT, "id", projectId));
         Map<Long, List<UserResourceRole>> userId2ResourceRoles =
-                resourceRoleService.listByResourceId(project.getId()).stream()
+                resourceRoleService.listByResourceTypeAndId(ResourceType.ODC_PROJECT, project.getId()).stream()
                         .collect(Collectors.groupingBy(UserResourceRole::getUserId));
         if (CollectionUtils.isEmpty(userId2ResourceRoles.keySet())) {
             return false;
         }
-        if (!userId2ResourceRoles.keySet().contains(userId)) {
+        if (!userId2ResourceRoles.containsKey(userId)) {
             throw new BadRequestException("User not belongs to this project");
         }
-        resourceRoleService.deleteByResourceIdAndUserId(projectId, userId);
+        resourceRoleService.deleteByUserIdAndResourceIdAndResourceType(userId, projectId, ResourceType.ODC_PROJECT);
         if (CollectionUtils.isEmpty(members)) {
             return true;
         }
@@ -395,11 +410,11 @@ public class ProjectService {
     @SkipAuthorize("permission check inside")
     public Map<Long, Set<ResourceRoleName>> getProjectId2ResourceRoleNames() {
         List<UserResourceRole> userResourceRoles =
-                resourceRoleService.listByOrganizationIdAndUserId(currentOrganizationId(),
-                        currentUserId());
+                resourceRoleService.listByOrganizationIdAndUserId(currentOrganizationId(), currentUserId());
         Map<Long, Set<ResourceRoleName>> projectId2Members =
-                userResourceRoles.stream().collect(Collectors.groupingBy(UserResourceRole::getResourceId,
-                        Collectors.mapping(UserResourceRole::getResourceRole, Collectors.toSet())));
+                userResourceRoles.stream().filter(UserResourceRole::isProjectMember)
+                        .collect(Collectors.groupingBy(UserResourceRole::getResourceId,
+                                Collectors.mapping(UserResourceRole::getResourceRole, Collectors.toSet())));
         return projectId2Members;
     }
 
@@ -509,6 +524,18 @@ public class ProjectService {
         return userResourceRole;
     }
 
+    private Date getEarliestObjectSyncTime(@NotNull Long projectId) {
+        List<DatabaseEntity> entities = databaseRepository.findByProjectIdAndExisted(projectId, true);
+        if (CollectionUtils.isEmpty(entities)) {
+            return null;
+        }
+        Set<Date> syncTimes = entities.stream().map(DatabaseEntity::getObjectLastSyncTime).collect(Collectors.toSet());
+        if (syncTimes.contains(null)) {
+            return null;
+        }
+        return syncTimes.stream().min(Date::compareTo).orElse(null);
+    }
+
     private Long currentOrganizationId() {
         return authenticationFacade.currentOrganizationId();
     }
@@ -519,5 +546,9 @@ public class ProjectService {
 
     private InnerUser currentInnerUser() {
         return new InnerUser(authenticationFacade.currentUser(), null);
+    }
+
+    private String generateProjectUniqueIdentifier() {
+        return "ODC_" + UUID.randomUUID().toString();
     }
 }

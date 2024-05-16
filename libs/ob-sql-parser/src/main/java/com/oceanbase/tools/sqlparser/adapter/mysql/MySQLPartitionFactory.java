@@ -25,18 +25,15 @@ import org.antlr.v4.runtime.ParserRuleContext;
 import com.oceanbase.tools.sqlparser.adapter.StatementFactory;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Auto_partition_optionContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Auto_range_typeContext;
-import com.oceanbase.tools.sqlparser.obmysql.OBParser.Column_partition_optionContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Hash_partition_optionContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Key_partition_optionContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.List_partition_optionContext;
-import com.oceanbase.tools.sqlparser.obmysql.OBParser.Opt_partition_optionContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Partition_optionContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Partition_optionsContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Range_partition_optionContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Vertical_column_nameContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParserBaseVisitor;
 import com.oceanbase.tools.sqlparser.statement.Expression;
-import com.oceanbase.tools.sqlparser.statement.createtable.ColumnPartition;
 import com.oceanbase.tools.sqlparser.statement.createtable.HashPartition;
 import com.oceanbase.tools.sqlparser.statement.createtable.HashPartitionElement;
 import com.oceanbase.tools.sqlparser.statement.createtable.KeyPartition;
@@ -61,10 +58,6 @@ import lombok.NonNull;
 public class MySQLPartitionFactory extends OBParserBaseVisitor<Partition> implements StatementFactory<Partition> {
 
     private final ParserRuleContext parserRuleContext;
-
-    public MySQLPartitionFactory(@NonNull Opt_partition_optionContext optPartitionOptionContext) {
-        this.parserRuleContext = optPartitionOptionContext;
-    }
 
     public MySQLPartitionFactory(@NonNull Partition_optionContext partitionOptionContext) {
         this.parserRuleContext = partitionOptionContext;
@@ -157,16 +150,6 @@ public class MySQLPartitionFactory extends OBParserBaseVisitor<Partition> implem
                 .collect(Collectors.toList());
         return new RangePartition(ctx, targets, partitionElts, getSubPartitionOption(ctx.partition_options()),
                 getPartitionNum(ctx.partition_options()), ctx.COLUMNS() != null);
-    }
-
-    @Override
-    public Partition visitColumn_partition_option(Column_partition_optionContext ctx) {
-        List<ColumnReference> targets = getColumnReferences(ctx.vertical_column_name());
-        if (ctx.aux_column_list() != null) {
-            targets.addAll(ctx.aux_column_list().vertical_column_name().stream()
-                    .flatMap(c -> getColumnReferences(c).stream()).collect(Collectors.toList()));
-        }
-        return new ColumnPartition(ctx, targets);
     }
 
     @Override

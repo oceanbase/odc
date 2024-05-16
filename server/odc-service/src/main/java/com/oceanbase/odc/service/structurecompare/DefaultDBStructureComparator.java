@@ -25,6 +25,7 @@ import java.util.Set;
 import javax.sql.DataSource;
 
 import com.oceanbase.odc.common.util.JdbcOperationsUtil;
+import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.shared.constant.ConnectType;
 import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.service.db.browser.DBSchemaAccessors;
@@ -87,6 +88,11 @@ public class DefaultDBStructureComparator implements DBStructureComparator {
         long startTimestamp = System.currentTimeMillis();
         Map<String, DBTable> srcTableName2Table = srcAccessor.getTables(srcConfig.getSchemaName(), null);
         Map<String, DBTable> tgtTableName2Table = tgtAccessor.getTables(tgtConfig.getSchemaName(), null);
+
+        if (srcConfig.getConnectType().getDialectType().isMysql()) {
+            srcTableName2Table.values().forEach(StringUtils::quoteColumnDefaultValuesForMySQL);
+            tgtTableName2Table.values().forEach(StringUtils::quoteColumnDefaultValuesForMySQL);
+        }
         log.info(
                 "DefaultDBStructureComparator build source and target schema tables success, time consuming={} seconds",
                 (System.currentTimeMillis() - startTimestamp) / 1000);

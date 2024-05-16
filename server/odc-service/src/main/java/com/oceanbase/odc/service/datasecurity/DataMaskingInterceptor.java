@@ -20,7 +20,6 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -40,6 +39,7 @@ import com.oceanbase.odc.service.datasecurity.model.SensitiveColumn;
 import com.oceanbase.odc.service.datasecurity.util.DataMaskingUtil;
 import com.oceanbase.odc.service.db.browser.DBSchemaAccessors;
 import com.oceanbase.odc.service.session.interceptor.BaseTimeConsumingInterceptor;
+import com.oceanbase.odc.service.session.model.AsyncExecuteContext;
 import com.oceanbase.odc.service.session.model.DBResultSetMetaData;
 import com.oceanbase.odc.service.session.model.SqlAsyncExecuteReq;
 import com.oceanbase.odc.service.session.model.SqlAsyncExecuteResp;
@@ -64,14 +64,14 @@ public class DataMaskingInterceptor extends BaseTimeConsumingInterceptor {
 
     @Override
     public boolean preHandle(@NonNull SqlAsyncExecuteReq request, @NonNull SqlAsyncExecuteResp response,
-            @NonNull ConnectionSession session, @NonNull Map<String, Object> context) {
+            @NonNull ConnectionSession session, @NonNull AsyncExecuteContext context) {
         return true;
     }
 
     @Override
     @SuppressWarnings("all")
     public void doAfterCompletion(@NonNull SqlExecuteResult response, @NonNull ConnectionSession session,
-            @NonNull Map<String, Object> context) throws Exception {
+            @NonNull AsyncExecuteContext context) throws Exception {
         // TODO: May intercept sensitive column operation (WHERE / ORDER BY / HAVING)
         if (!maskingService.isMaskingEnabled()) {
             return;

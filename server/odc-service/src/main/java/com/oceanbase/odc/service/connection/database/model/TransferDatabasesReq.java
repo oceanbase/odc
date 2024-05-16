@@ -15,7 +15,9 @@
  */
 package com.oceanbase.odc.service.connection.database.model;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import javax.validation.constraints.NotEmpty;
 
@@ -39,4 +41,6 @@ public class TransferDatabasesReq {
     private List<Long> databaseIds;
 
     private Long projectId;
+
+    private Set<Long> ownerIds = new HashSet<>();
 }

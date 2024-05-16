@@ -15,11 +15,10 @@
  */
 package com.oceanbase.odc.service.session.interceptor;
 
-import java.util.Map;
-
 import org.springframework.core.Ordered;
 
 import com.oceanbase.odc.core.session.ConnectionSession;
+import com.oceanbase.odc.service.session.model.AsyncExecuteContext;
 import com.oceanbase.odc.service.session.model.SqlAsyncExecuteReq;
 import com.oceanbase.odc.service.session.model.SqlAsyncExecuteResp;
 import com.oceanbase.odc.service.session.model.SqlExecuteResult;
@@ -44,11 +43,11 @@ public interface SqlExecuteInterceptor extends Ordered {
      * @return whether to execute this sql
      */
     default boolean preHandle(@NonNull SqlAsyncExecuteReq request, @NonNull SqlAsyncExecuteResp response,
-            @NonNull ConnectionSession session, @NonNull Map<String, Object> context) throws Exception {
+            @NonNull ConnectionSession session, @NonNull AsyncExecuteContext context) throws Exception {
         return true;
     }
 
     default void afterCompletion(@NonNull SqlExecuteResult response,
-            @NonNull ConnectionSession session, @NonNull Map<String, Object> context) throws Exception {}
+            @NonNull ConnectionSession session, @NonNull AsyncExecuteContext context) throws Exception {}
 
 }

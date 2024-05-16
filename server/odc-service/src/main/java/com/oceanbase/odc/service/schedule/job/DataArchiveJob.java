@@ -15,31 +15,22 @@
  */
 package com.oceanbase.odc.service.schedule.job;
 
+import java.sql.SQLException;
 import java.util.List;
 
 import org.quartz.JobExecutionContext;
 
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.common.util.StringUtils;
-import com.oceanbase.odc.core.session.ConnectionSession;
-import com.oceanbase.odc.core.session.ConnectionSessionConstants;
-import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.shared.constant.TaskStatus;
-import com.oceanbase.odc.core.sql.parser.AbstractSyntaxTreeFactories;
-import com.oceanbase.odc.core.sql.parser.AbstractSyntaxTreeFactory;
 import com.oceanbase.odc.metadb.schedule.ScheduleTaskEntity;
-import com.oceanbase.odc.service.db.browser.DBSchemaAccessors;
-import com.oceanbase.odc.service.dlm.DataSourceInfoBuilder;
+import com.oceanbase.odc.service.dlm.DLMTableStructureSynchronizer;
+import com.oceanbase.odc.service.dlm.DataSourceInfoMapper;
 import com.oceanbase.odc.service.dlm.model.DataArchiveParameters;
 import com.oceanbase.odc.service.dlm.model.DataArchiveTableConfig;
 import com.oceanbase.odc.service.dlm.model.DlmTask;
 import com.oceanbase.odc.service.dlm.utils.DataArchiveConditionUtil;
-import com.oceanbase.odc.service.session.factory.DefaultConnectSessionFactory;
-import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
 import com.oceanbase.tools.migrator.common.enums.JobType;
-import com.oceanbase.tools.sqlparser.adapter.mysql.MySQLFromReferenceFactory;
-import com.oceanbase.tools.sqlparser.obmysql.OBParser.Create_table_stmtContext;
-import com.oceanbase.tools.sqlparser.statement.common.RelationFactor;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -80,7 +71,12 @@ public class DataArchiveJob extends AbstractDlmJob {
     @Override
     public void initTask(DlmTask taskUnit) {
         super.initTask(taskUnit);
-        createTargetTable(taskUnit);
+        try {
+            DLMTableStructureSynchronizer.sync(taskUnit.getSourceDs(), taskUnit.getTargetDs(), taskUnit.getTableName(),
+                    taskUnit.getSyncDBObjectTypes());
+        } catch (SQLException e) {
+            log.warn("Sync table structure failed,tableName={}", taskUnit.getTableName(), e);
+        }
     }
 
     private void executeInTaskFramework(JobExecutionContext context) {
@@ -109,16 +105,17 @@ public class DataArchiveJob extends AbstractDlmJob {
         parameters.setShardingStrategy(dataArchiveParameters.getShardingStrategy());
         parameters.setScanBatchSize(dataArchiveParameters.getScanBatchSize());
         parameters
-                .setSourceDs(DataSourceInfoBuilder.build(
+                .setSourceDs(DataSourceInfoMapper.toDataSourceInfo(
                         databaseService.findDataSourceForConnectById(dataArchiveParameters.getSourceDatabaseId())));
         parameters
-                .setTargetDs(DataSourceInfoBuilder.build(
+                .setTargetDs(DataSourceInfoMapper.toDataSourceInfo(
                         databaseService.findDataSourceForConnectById(dataArchiveParameters.getTargetDataBaseId())));
         parameters.getSourceDs().setDatabaseName(dataArchiveParameters.getSourceDatabaseName());
         parameters.getTargetDs().setDatabaseName(dataArchiveParameters.getTargetDatabaseName());
         parameters.getSourceDs().setConnectionCount(2 * (parameters.getReadThreadCount()
                 + parameters.getWriteThreadCount()));
         parameters.getTargetDs().setConnectionCount(parameters.getSourceDs().getConnectionCount());
+        parameters.setSyncTableStructure(dataArchiveParameters.getSyncTableStructure());
 
         Long jobId = publishJob(parameters);
         scheduleTaskRepository.updateJobIdById(taskEntity.getId(), jobId);
@@ -126,59 +123,6 @@ public class DataArchiveJob extends AbstractDlmJob {
         log.info("Publish data-archive job to task framework succeed,scheduleTaskId={},jobIdentity={}",
                 taskEntity.getId(),
                 jobId);
-    }
-
-
-    /**
-     * Create the table in the target database before migrating the data.
-     */
-    private void createTargetTable(DlmTask dlmTask) {
-
-
-        if (dlmTask.getSourceDs().getDialectType() != dlmTask.getTargetDs().getDialectType()
-                || !dlmTask.getSourceDs().getDialectType().isMysql()) {
-            log.info("Automatic table creation is not supported,sourceType={},targetType={}",
-                    dlmTask.getSourceDs().getDialectType(), dlmTask.getTargetDs().getDialectType());
-            return;
-        }
-        DefaultConnectSessionFactory sourceConnectionSessionFactory =
-                new DefaultConnectSessionFactory(dlmTask.getSourceDs());
-        ConnectionSession srcSession = sourceConnectionSessionFactory.generateSession();
-        String tableDDL;
-        try {
-            DBSchemaAccessor sourceDsAccessor = DBSchemaAccessors.create(srcSession);
-            tableDDL = sourceDsAccessor.getTableDDL(dlmTask.getSourceDs().getDefaultSchema(), dlmTask.getTableName());
-            tableDDL = buildCreateTableDDL(tableDDL, dlmTask.getTargetTableName());
-        } finally {
-            srcSession.expire();
-        }
-
-        DefaultConnectSessionFactory targetConnectionSessionFactory =
-                new DefaultConnectSessionFactory(dlmTask.getTargetDs());
-        ConnectionSession targetSession = targetConnectionSessionFactory.generateSession();
-        try {
-            DBSchemaAccessor targetDsAccessor = DBSchemaAccessors.create(targetSession);
-            List<String> tableNames = targetDsAccessor.showTables(dlmTask.getTargetDs().getDefaultSchema());
-            if (tableNames.contains(dlmTask.getTargetTableName())) {
-                log.info("Target table exist,tableName={}", dlmTask.getTableName());
-                return;
-            }
-            log.info("Begin to create target table,tableDDL={}", tableDDL);
-            targetSession.getSyncJdbcExecutor(ConnectionSessionConstants.CONSOLE_DS_KEY).execute(tableDDL);
-        } finally {
-            targetSession.expire();
-        }
-    }
-
-    public static String buildCreateTableDDL(String createSql, String targetTableName) {
-        AbstractSyntaxTreeFactory factory = AbstractSyntaxTreeFactories.getAstFactory(DialectType.OB_MYSQL, 0);
-        Create_table_stmtContext context = (Create_table_stmtContext) factory.buildAst(createSql).getRoot();
-        RelationFactor factor = MySQLFromReferenceFactory.getRelationFactor(context.relation_factor());
-        StringBuilder sb = new StringBuilder();
-        sb.append(createSql, 0, factor.getStart());
-        sb.append("`").append(targetTableName).append("`");
-        sb.append(createSql, factor.getStop() + 1, createSql.length());
-        return sb.toString();
     }
 
 }

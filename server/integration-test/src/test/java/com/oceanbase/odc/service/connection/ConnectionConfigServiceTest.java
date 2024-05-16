@@ -25,11 +25,14 @@ import static org.mockito.Mockito.when;
 
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 
+import org.apache.commons.lang3.time.DateUtils;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -54,6 +57,8 @@ import com.oceanbase.odc.core.shared.constant.UserType;
 import com.oceanbase.odc.core.shared.exception.BadRequestException;
 import com.oceanbase.odc.core.shared.exception.NotFoundException;
 import com.oceanbase.odc.metadb.connection.ConnectionConfigRepository;
+import com.oceanbase.odc.metadb.connection.DatabaseEntity;
+import com.oceanbase.odc.metadb.connection.DatabaseRepository;
 import com.oceanbase.odc.metadb.iam.UserEntity;
 import com.oceanbase.odc.metadb.resourcegroup.ResourceGroupRepository;
 import com.oceanbase.odc.service.collaboration.environment.EnvironmentService;
@@ -87,6 +92,8 @@ public class ConnectionConfigServiceTest extends MockedAuthorityTestEnv {
     private ConnectionConfigRepository repository;
     @Autowired
     private ResourceGroupRepository resourceGroupRepository;
+    @Autowired
+    private DatabaseRepository databaseRepository;
     @MockBean
     private AuthenticationFacade authenticationFacade;
     @MockBean
@@ -129,8 +136,8 @@ public class ConnectionConfigServiceTest extends MockedAuthorityTestEnv {
         doNothing().when(userPermissionService).bindUserAndDataSourcePermission(eq(CREATOR_ID), eq(ORGANIZATION_ID),
                 any(Long.class), eq(Arrays.asList("read", "update", "delete")));
 
-
         repository.deleteAll();
+        databaseRepository.deleteAll();
         resourceGroupRepository.deleteAll();
 
         grantAllPermissions(ResourceType.ODC_CONNECTION, ResourceType.ODC_RESOURCE_GROUP, ResourceType.ODC_USER,
@@ -140,8 +147,29 @@ public class ConnectionConfigServiceTest extends MockedAuthorityTestEnv {
     @After
     public void tearDown() {
         repository.deleteAll();
+        databaseRepository.deleteAll();
         DefaultLoginSecurityManager.removeSecurityContext();
         DefaultLoginSecurityManager.removeContext();
+    }
+
+    @Test
+    public void test_detail_syncTimeIsNull() {
+        Date syncTime = new Date();
+        ConnectionConfig connection = createConnection(ConnectionVisibleScope.ORGANIZATION, NAME);
+        createDatabase(connection.getId(), syncTime);
+        createDatabase(connection.getId(), null);
+        ConnectionConfig detail = service.detail(connection.getId());
+        Assert.assertNull(detail.getDbObjectLastSyncTime());
+    }
+
+    @Test
+    public void test_detail_syncTimeIsNotNull() {
+        Date syncTime = new Date();
+        ConnectionConfig connection = createConnection(ConnectionVisibleScope.ORGANIZATION, NAME);
+        createDatabase(connection.getId(), syncTime);
+        createDatabase(connection.getId(), DateUtils.addDays(syncTime, 1));
+        ConnectionConfig detail = service.detail(connection.getId());
+        Assert.assertEquals(syncTime, detail.getDbObjectLastSyncTime());
     }
 
     @Test
@@ -380,4 +408,14 @@ public class ConnectionConfigServiceTest extends MockedAuthorityTestEnv {
         environment.setName("fake_env");
         return environment;
     }
+
+    private void createDatabase(Long dataSourceId, Date lastSyncTime) {
+        DatabaseEntity entity = TestRandom.nextObject(DatabaseEntity.class);
+        entity.setConnectionId(dataSourceId);
+        entity.setDatabaseId(UUID.randomUUID().toString());
+        entity.setExisted(true);
+        entity.setObjectLastSyncTime(lastSyncTime);
+        databaseRepository.save(entity);
+    }
+
 }
