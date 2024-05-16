@@ -50,7 +50,6 @@ import lombok.NonNull;
  */
 public class LogicalTableExtractTask implements Runnable {
     private final Database logicalDatabase;
-    private final DatabaseRepository databaseRepository;
     private final DatabaseService databaseService;
     private final LogicalDBPhysicalDBRepository dbRelationRepository;
     private final LogicalTablePhysicalTableRepository tableRelationRepository;
@@ -63,7 +62,6 @@ public class LogicalTableExtractTask implements Runnable {
             @NonNull LogicalTablePhysicalTableRepository tableRelationRepository,
             @NonNull JdbcLockRegistry jdbcLockRegistry) {
         this.logicalDatabase = logicalDatabase;
-        this.databaseRepository = databaseRepository;
         this.dbRelationRepository = dbRelationRepository;
         this.databaseService = databaseService;
         this.tableRepository = tableRepository;
@@ -89,7 +87,7 @@ public class LogicalTableExtractTask implements Runnable {
                 throw new ConflictException(ErrorCodes.ResourceModifying, "Can not acquire jdbc lock");
             }
         } catch (InterruptedException e) {
-            throw new RuntimeException("Can not acquire jdbc lock", e);
+            throw new RuntimeException(e);
         }
 
         try {
@@ -121,7 +119,9 @@ public class LogicalTableExtractTask implements Runnable {
                 tableRelationRepository.batchCreate(physicalTableEntities);
             });
         } finally {
-            lock.unlock();
+            if (lock != null) {
+                lock.unlock();
+            }
         }
     }
 }

@@ -27,6 +27,7 @@ import javax.validation.constraints.NotNull;
 
 import org.apache.commons.collections.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.task.TaskRejectedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -51,6 +52,8 @@ import com.oceanbase.odc.service.iam.ProjectPermissionValidator;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.tools.sqlparser.SyntaxErrorException;
 
+import lombok.extern.slf4j.Slf4j;
+
 /**
  * @Author: Lebie
  * @Date: 2024/4/23 11:31
@@ -58,6 +61,7 @@ import com.oceanbase.tools.sqlparser.SyntaxErrorException;
  */
 @Service
 @SkipAuthorize
+@Slf4j
 public class LogicalTableService {
     private final DefaultLogicalTableExpressionParser parser = new DefaultLogicalTableExpressionParser();
 
@@ -78,6 +82,9 @@ public class LogicalTableService {
 
     @Autowired
     private ProjectPermissionValidator projectPermissionValidator;
+
+    @Autowired
+    private LogicalDatabaseSyncManager syncManager;
 
     // TODO: database permission check after @GaoDa's PR merged
     public List<DetailLogicalTableResp> list(@NotNull Long logicalDatabaseId) {
@@ -122,10 +129,17 @@ public class LogicalTableService {
         return true;
     }
 
-    public Boolean detectConsistency(@NotNull Long logicalDatabaseId, @NotNull Long logicalTableId) {
-        LogicalTableEntity tableEntity = tableRepository.findById(logicalTableId)
+    public Boolean checkStructureConsistency(@NotNull Long logicalDatabaseId, @NotNull Long logicalTableId) {
+        LogicalTableEntity table = tableRepository.findById(logicalTableId)
                 .orElseThrow(() -> new NotFoundException(ResourceType.ODC_LOGICAL_TABLE, "id", logicalTableId));
-        Verify.equals(tableEntity.getLogicalDatabaseId(), logicalDatabaseId, "logical database id");
+        Verify.equals(table.getLogicalDatabaseId(), logicalDatabaseId, "logical database id");
+        try {
+            syncManager.submitCheckConsistencyTask(table);
+        } catch (TaskRejectedException ex) {
+            log.warn("submit check logical table structure consistency task rejected, logical table id={}",
+                    logicalTableId);
+            return false;
+        }
         return true;
     }
 

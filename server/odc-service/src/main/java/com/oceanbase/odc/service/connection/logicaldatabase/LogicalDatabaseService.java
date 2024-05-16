@@ -25,6 +25,7 @@ import java.util.stream.Collectors;
 import javax.validation.constraints.NotNull;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.task.TaskRejectedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -54,6 +55,8 @@ import com.oceanbase.odc.service.connection.logicaldatabase.model.DetailLogicalD
 import com.oceanbase.odc.service.iam.ProjectPermissionValidator;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 
+import lombok.extern.slf4j.Slf4j;
+
 /**
  * @Author: Lebie
  * @Date: 2024/5/8 17:33
@@ -61,6 +64,7 @@ import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
  */
 @Service
 @SkipAuthorize
+@Slf4j
 public class LogicalDatabaseService {
 
     @Autowired
@@ -171,7 +175,12 @@ public class LogicalDatabaseService {
         Database logicalDatabase =
                 databaseService.getBasicSkipPermissionCheck(logicalDatabaseId);
         Verify.equals(logicalDatabase.getType(), DatabaseType.LOGICAL, "database type");
-        syncManager.submitExtractLogicalTablesTask(logicalDatabase);
+        try {
+            syncManager.submitExtractLogicalTablesTask(logicalDatabase);
+        } catch (TaskRejectedException ex) {
+            log.warn("submit extract logical tables task rejected, logical database id={}", logicalDatabaseId);
+            return false;
+        }
         return true;
     }
 

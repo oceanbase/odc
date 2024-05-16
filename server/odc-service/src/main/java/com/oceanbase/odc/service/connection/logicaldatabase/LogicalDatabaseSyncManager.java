@@ -29,6 +29,7 @@ import org.springframework.stereotype.Service;
 import com.oceanbase.odc.core.shared.exception.BadRequestException;
 import com.oceanbase.odc.metadb.connection.DatabaseRepository;
 import com.oceanbase.odc.metadb.connection.logicaldatabase.LogicalDBPhysicalDBRepository;
+import com.oceanbase.odc.metadb.connection.logicaldatabase.LogicalTableEntity;
 import com.oceanbase.odc.metadb.connection.logicaldatabase.LogicalTablePhysicalTableRepository;
 import com.oceanbase.odc.metadb.connection.logicaldatabase.LogicalTableRepository;
 import com.oceanbase.odc.service.connection.database.DatabaseService;
@@ -65,6 +66,10 @@ public class LogicalDatabaseSyncManager {
         doExecute(() -> executor
                 .submit(new LogicalTableExtractTask(logicalDatabase, databaseRepository, dbRelationRepository,
                         databaseService, tableRepository, tableRelationRepository, jdbcLockRegistry)));
+    }
+
+    public void submitCheckConsistencyTask(@NotNull LogicalTableEntity logicalTable) {
+
     }
 
     private Future<?> doExecute(Supplier<Future<?>> supplier) {

@@ -62,6 +62,12 @@ public class DataNode {
         this.tableName = tableName;
     }
 
+    public DataNode(Long databaseId, String schemaName, String tableName) {
+        this.databaseId = databaseId;
+        this.schemaName = schemaName;
+        this.tableName = tableName;
+    }
+
     public String getFullName() {
         return schemaName + DELIMITER + tableName;
     }

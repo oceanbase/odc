@@ -25,6 +25,9 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import javax.validation.constraints.NotEmpty;
+
+import com.mysql.cj.jdbc.exceptions.ConnectionFeatureNotAvailableException;
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionFactory;
 import com.oceanbase.odc.core.shared.PreConditions;
@@ -49,19 +52,19 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class LogicalTableFinder {
     private List<Database> databases;
+    private Map<Long, ConnectionConfig> id2DataSource;
+    private Map<Long, List<Database>> dataSourceId2Databases;
 
-    public LogicalTableFinder(List<Database> databases) {
+    public LogicalTableFinder(@NotEmpty List<Database> databases) {
         this.databases = databases;
+        this.id2DataSource = new HashMap<>();
+        this.dataSourceId2Databases =
+                databases.stream().collect(Collectors.groupingBy(database -> database.getDataSource().getId()));
+        databases.stream()
+                .forEach(database -> this.id2DataSource.put(database.getDataSource().getId(), database.getDataSource()));
     }
 
-    public List<LogicalTable> find() {
-        PreConditions.notEmpty(databases, "LogicalTableFinder#find.databases");
-        Map<Long, List<Database>> dataSourceId2Databases =
-                databases.stream().collect(Collectors.groupingBy(database -> database.getDataSource().getId()));
-        Map<Long, ConnectionConfig> id2DataSource = new HashMap<>();
-        databases.stream()
-                .forEach(database -> id2DataSource.put(database.getDataSource().getId(), database.getDataSource()));
-
+    public List<DataNode> transferToDataNodes() {
         List<DataNode> dataNodes = new ArrayList<>();
         Set<Long> dataSourceIds = dataSourceId2Databases.keySet();
         for (Long dataSourceId : dataSourceIds) {
@@ -82,6 +85,12 @@ public class LogicalTableFinder {
                 });
             });
         }
+        return dataNodes;
+    }
+
+    public List<LogicalTable> find() {
+        List<DataNode> dataNodes = transferToDataNodes();
+
         List<LogicalTable> logicalTableCandidates = LogicalTableRecognitionUtils.recognizeLogicalTables(dataNodes);
 
         Map<Long, List<DataNode>> dataSourceId2DataNodes = logicalTableCandidates.stream()
@@ -126,7 +135,7 @@ public class LogicalTableFinder {
         return finalLogicalTables;
     }
 
-    private static Map<String, List<String>> getSchemaName2TableNames(ConnectionConfig dataSource,
+    public static Map<String, List<String>> getSchemaName2TableNames(ConnectionConfig dataSource,
             List<Database> groupedDatabases) {
         ConnectionSessionFactory connectionSessionFactory = new DefaultConnectSessionFactory(dataSource);
         ConnectionSession connectionSession = connectionSessionFactory.generateSession();
