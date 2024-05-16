@@ -7,7 +7,7 @@
 #   1. Check Code Format
 #   2. PMD Scan
 #   3. Calculate Version Number
-#   4. Build Web Artifact (include front resource and only x86_64 platform for now)
+#   4. Build Web Artifact
 #   5. Build Client Artifact
 ###
 
@@ -107,6 +107,35 @@ jobs:
           if [[ -n "${{ inputs.image_tag }}" ]]; then odc_docker_image_tag="${{ inputs.image_tag }}"; fi
           echo "odc_docker_image_tag=${odc_docker_image_tag}" >> $GITHUB_OUTPUT
           echo "odc_docker_image_tag=${odc_docker_image_tag}"
+
+  build-web-arm64:
+    name: Build Web Artifact (ARM64)
+    needs: [ calculate-version ]
+    runs-on: ubuntu-latest
+    env:
+      odc_rpm_release_number: ${{ needs.calculate-version.outputs.odc_rpm_release_number }}
+      odc_docker_image_tag: ${{ needs.calculate-version.outputs.odc_docker_image_tag }}
+    steps:
+      - name: Checkout workspace
+        uses: actions/checkout@v4
+      - name: Setup JDK 8
+        uses: actions/setup-java@v4
+        with:
+          java-version: "8"
+          distribution: "temurin"
+          cache: maven
+      - name: action by obfarm++odc_build_arm++BUILD_DOCKER_IMAGE=1;BUILD_RPM=1;BUILD_RPM_VERSION=${{ inputs.rpm_release }};BUILD_DOCKER_TAG=${{ env.odc_docker_image_tag }}
+        uses: ./.github/obfarm/
+        id: build-web-arm64
+        with:
+          pipeline_id: ${{ github.run_id }}
+          project: ${{ github.repository }}
+      - name: Echo Build Result
+        run: |
+          main_version="$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout | cut -d - -f 1)"
+          new_version="${main_version}-${odc_rpm_release_number}"
+          echo "::notice ::BUILD RPM DOWNLOAD URL https://farm-use-for-odc.obs.cn-east-3.myhuaweicloud.com/odc-rpm/$GITHUB_RUN_ID/odc-server-${new_version}.aarch64.rpm"
+          echo "::notice ::BUILD DOCKER IMAGE DOWNLOAD URL https://farm-use-for-odc.obs.cn-east-3.myhuaweicloud.com/odc-image/$GITHUB_RUN_ID/odc-${{ env.odc_docker_image_tag }}-arm64.tar.gz"
 
   build-web-x86_64:
     name: Build Web Artifact (x86_64)

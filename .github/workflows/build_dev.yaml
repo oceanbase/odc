@@ -5,11 +5,8 @@
 #   2. Pull-Request
 # Jobs:
 #   1. Check Code Format
-#   2. PMD Scan
-#   3. Unit Test
-#   4. Calculate Version Number
-#   5. Build RPM (exclude front resources and only x86_64 platform for now)
-#   (Job 3 to 5 are executed only when Pull-Request)
+#   2. Maven Install and PMD Scan
+#   3. Unit Test (executed by OBFarm and triggered when Pull-Request)
 ###
 
 name: Build Dev
@@ -87,88 +84,3 @@ jobs:
         with:
           pipeline_id: ${{ github.run_id }}
           project: ${{ github.repository }}
-
-  calculate-version:
-    name: Calculate Version Number
-    needs: [ check-format, pmd-scan, unit-test-odc ]
-    if: ${{ github.event_name == 'pull_request' }}
-    runs-on: ubuntu-latest
-    outputs:
-      odc_rpm_release_number: ${{ steps.calculate_version.outputs.odc_rpm_release_number }}
-    steps:
-      - name: Checkout workspace
-        uses: actions/checkout@v4
-      - name: Calculate version number
-        id: calculate_version
-        run: |
-          odc_rpm_release_number=$(date +%Y%m%d%H%M%S)
-          echo "odc_rpm_release_number=${odc_rpm_release_number}" >> $GITHUB_OUTPUT
-          echo "odc_rpm_release_number=${odc_rpm_release_number}"
-
-  build-rpm-x86_64:
-    name: Build RPM (x86_64)
-    needs: [ calculate-version ]
-    runs-on: ubuntu-latest
-    env:
-      odc_rpm_release_number: ${{ needs.calculate-version.outputs.odc_rpm_release_number }}
-    steps:
-      - name: Checkout workspace
-        uses: actions/checkout@v4
-        with:
-          submodules: "recursive"
-      - name: Setup JDK 8
-        uses: actions/setup-java@v4
-        with:
-          java-version: "8"
-          distribution: "temurin"
-          cache: maven
-      - name: Setup node 16
-        uses: actions/setup-node@v4
-        with:
-          node-version: "16"
-      - name: Set release version
-        id: set_release_version
-        run: |
-          main_version="$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout | cut -d - -f 1)"
-          new_version="${main_version}-${odc_rpm_release_number}"
-          echo "new_version=${new_version}" >> $GITHUB_OUTPUT
-          echo "RPM's version is "${new_version}
-          mvn versions:set -DnewVersion="${new_version}"
-          mvn versions:commit
-      - name: Install ob-sql-parser
-        run: |
-          echo "Start install ob-sql-parser"
-          pushd libs/ob-sql-parser
-          echo "Current dir is "`pwd`
-          mvn clean install -Dmaven.test.skip=true
-          echo "Install ob-sql-parser success"
-          popd
-      - name: Install db-browser
-        run: |
-          echo "Start install db-browser"
-          pushd libs/db-browser
-          echo "Current dir is "`pwd`
-          mvn clean install -Dmaven.test.skip=true
-          echo "Install db-browser success"
-          popd
-      - name: Build jar & rpm (x86_64)
-        run: |
-          echo "Start prepare oceanbase-client"
-          pushd import
-          echo "Current dir is "`pwd`
-          cp ../build-resource/obclient/2.2.4/linux_x86/obclient.tar.gz obclient.tar.gz
-          popd
-          echo "Prepare oceanbase-client success"
-          echo "Start build rpm package"
-          mvn help:system
-          mvn clean install -Dmaven.test.skip=true
-          mvn --file server/odc-server/pom.xml rpm:rpm -Drpm.prefix=/opt
-          echo "Build rpm package success"
-          rm --force --recursive --verbose distribution/docker/resources/odc-*.rpm
-          mkdir -p distribution/docker/resources/
-          mv --verbose server/odc-server/target/rpm/odc-server/RPMS/*/odc-*.rpm distribution/docker/resources/
-      - name: Upload rpm (x86_64)
-        uses: actions/upload-artifact@v4
-        with:
-          name: odc-server-${{ steps.set_release_version.outputs.new_version }}.x86_64.rpm
-          path: distribution/docker/resources/odc-*.rpm
