@@ -25,12 +25,12 @@ import lombok.Data;
 @Data
 public class DlmTableUnitStatistic {
 
-    private Long processedRowCount;
+    private Long processedRowCount = 0L;
 
-    private Long readRowCount;
+    private Long readRowCount = 0L;
 
-    private Long processedRowsPerSecond;
+    private Long processedRowsPerSecond = 0L;
 
-    private Long readRowsPerSecond;
+    private Long readRowsPerSecond = 0L;
 
 }

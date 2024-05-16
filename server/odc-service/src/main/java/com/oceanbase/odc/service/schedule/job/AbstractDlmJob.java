@@ -48,6 +48,7 @@ import com.oceanbase.odc.service.dlm.utils.DataArchiveConditionUtil;
 import com.oceanbase.odc.service.dlm.utils.DlmJobIdUtil;
 import com.oceanbase.odc.service.quartz.util.ScheduleTaskUtils;
 import com.oceanbase.odc.service.schedule.ScheduleService;
+import com.oceanbase.odc.service.schedule.model.DlmTableUnitStatistic;
 import com.oceanbase.odc.service.task.config.TaskFrameworkEnabledProperties;
 import com.oceanbase.odc.service.task.constants.JobParametersKeyConstants;
 import com.oceanbase.odc.service.task.executor.task.DataArchiveTask;
@@ -209,6 +210,7 @@ public abstract class AbstractDlmJob implements OdcJob {
             dlmTableUnit.setFireTime(taskEntity.getFireTime());
             dlmTableUnit.setStatus(TaskStatus.PREPARING);
             dlmTableUnit.setType(JobType.MIGRATE);
+            dlmTableUnit.setStatistic(new DlmTableUnitStatistic());
             dlmTableUnits.add(dlmTableUnit);
         });
         dlmService.createDlmTableUnits(dlmTableUnits);
