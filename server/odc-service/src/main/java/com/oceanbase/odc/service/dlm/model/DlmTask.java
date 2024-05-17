@@ -16,10 +16,12 @@
 package com.oceanbase.odc.service.dlm.model;
 
 import java.util.Date;
+import java.util.Set;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.oceanbase.odc.core.shared.constant.TaskStatus;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
+import com.oceanbase.tools.dbbrowser.model.DBObjectType;
 import com.oceanbase.tools.migrator.common.configure.LogicTableConfig;
 import com.oceanbase.tools.migrator.common.enums.JobType;
 
@@ -39,6 +41,8 @@ public class DlmTask {
 
     private String tableName;
 
+    private String targetTableName;
+
     private Date fireTime;
 
     private Long sourceDatabaseId;
@@ -52,6 +56,8 @@ public class DlmTask {
     private TaskStatus status;
 
     private JobType jobType;
+
+    private Set<DBObjectType> syncDBObjectTypes;
 
 
     @JsonIgnore

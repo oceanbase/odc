@@ -27,11 +27,17 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 import javax.persistence.Transient;
 
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
+
+import com.oceanbase.odc.common.security.PasswordUtils;
 import com.oceanbase.odc.core.shared.constant.Cipher;
+import com.oceanbase.odc.core.shared.constant.OdcConstants;
 import com.oceanbase.odc.core.shared.constant.UserType;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import lombok.NonNull;
 import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
 
@@ -100,4 +106,26 @@ public class UserEntity {
 
     @Column(name = "extra_properties_json")
     private String extraPropertiesJson;
+
+
+    private static final PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
+
+    public static UserEntity autoCreatedEntity(@NonNull String account, @NonNull String name,
+            @NonNull Long organizationId) {
+        UserEntity userEntity = new UserEntity();
+        userEntity.setType(UserType.USER);
+        userEntity.setAccountName(account);
+        userEntity.setName(name);
+        userEntity.setPassword(passwordEncoder.encode(PasswordUtils.random()));
+        userEntity.setCipher(Cipher.BCRYPT);
+        userEntity.setEnabled(true);
+        userEntity.setActive(true);
+        userEntity.setBuiltIn(false);
+        userEntity.setCreatorId(OdcConstants.DEFAULT_ADMIN_USER_ID);
+        userEntity.setOrganizationId(organizationId);
+        userEntity.setUserCreateTime(new Timestamp(System.currentTimeMillis()));
+        userEntity.setUserUpdateTime(new Timestamp(System.currentTimeMillis()));
+        return userEntity;
+    }
+
 }

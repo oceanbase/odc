@@ -37,6 +37,7 @@ import com.oceanbase.odc.core.shared.exception.BadRequestException;
 import com.oceanbase.odc.metadb.collaboration.ProjectEntity;
 import com.oceanbase.odc.metadb.collaboration.ProjectRepository;
 import com.oceanbase.odc.service.collaboration.environment.EnvironmentService;
+import com.oceanbase.odc.service.collaboration.project.ProjectService;
 import com.oceanbase.odc.service.config.UserConfigService;
 import com.oceanbase.odc.service.connection.ConnectionService;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
@@ -71,6 +72,9 @@ public class HookConfiguration {
     private RiskLevelService riskLevelService;
 
     @Autowired
+    private ProjectService projectService;
+
+    @Autowired
     private ResourceRoleService resourceRoleService;
 
     @Autowired
@@ -92,7 +96,7 @@ public class HookConfiguration {
     public void init() {
         userService.addPostUserDeleteHook(event -> {
             Long userId = event.getUserId();
-            resourceRoleService.deleteByUserId(userId);
+            projectService.deleteUserRelatedProjectResources(userId, event.getAccountName(), event.getOrganizationId());
             userConfigService.deleteUserConfigurations(userId);
         });
         log.info("PostUserDeleteHook added");
@@ -138,18 +142,21 @@ public class HookConfiguration {
     }
 
     private void projectReferenceCheck(Long userId, Long organizationId) {
+        Map<Long, ProjectEntity> id2Project =
+                projectRepository.findAllByOrganizationId(organizationId).stream().filter(p -> !p.getArchived())
+                        .collect(Collectors.toMap(ProjectEntity::getId, p -> p));
+
         Map<Long, Set<ResourceRoleName>> projectId2ResourceRoleNames =
                 resourceRoleService.getProjectId2ResourceRoleNames(userId).entrySet().stream()
                         .filter(e -> e.getValue().contains(ResourceRoleName.OWNER)
                                 || e.getValue().contains(ResourceRoleName.DBA))
+                        .filter(e -> id2Project.containsKey(e.getKey()))
                         .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
         if (projectId2ResourceRoleNames.size() == 0) {
             return;
         }
-        Map<Long, ProjectEntity> id2Project =
-                projectRepository.findAllByOrganizationId(organizationId).stream().filter(p -> p.getArchived() == false)
-                        .collect(Collectors.toMap(ProjectEntity::getId, p -> p));
-        String names = projectId2ResourceRoleNames.keySet().stream().map(id -> id2Project.get(id).getName())
+        String names = projectId2ResourceRoleNames.keySet().stream()
+                .map(id -> id2Project.get(id).getName())
                 .collect(Collectors.joining(", "));
 
         String errorMessage = String.format(

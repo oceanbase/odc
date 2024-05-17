@@ -93,6 +93,7 @@ public class TaskFrameworkConfiguration {
         TaskFrameworkEnabledProperties properties = new TaskFrameworkEnabledProperties();
         boolean enabled = taskFrameworkProperties.isEnabled();
         properties.setEnabled(enabled);
+        log.info("Task-framework isEnabled={}.", properties.isEnabled());
         return properties;
     }
 

@@ -27,6 +27,7 @@ import org.junit.Ignore;
 import org.junit.Test;
 
 import com.oceanbase.odc.service.task.caller.K8sJobClient;
+import com.oceanbase.odc.service.task.caller.K8sJobResponse;
 import com.oceanbase.odc.service.task.caller.NativeK8sJobClient;
 import com.oceanbase.odc.service.task.caller.PodConfig;
 import com.oceanbase.odc.service.task.config.K8sProperties;
@@ -65,7 +66,7 @@ public class NativeK8sClientTest {
         String generateJobOfName = k8sClient.create("default", exceptedJobName, imageName, cmd, podParam);
         Assert.assertEquals(exceptedJobName, generateJobOfName);
 
-        Optional<String> queryJobName = k8sClient.get("default", exceptedJobName);
+        Optional<K8sJobResponse> queryJobName = k8sClient.get("default", exceptedJobName);
         Assert.assertTrue(queryJobName.isPresent());
         Assert.assertEquals(exceptedJobName, queryJobName.get());
 
