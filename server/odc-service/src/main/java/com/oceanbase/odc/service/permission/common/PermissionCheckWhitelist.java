@@ -23,6 +23,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.cloud.context.config.annotation.RefreshScope;
 import org.springframework.context.annotation.Configuration;
 
+import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.shared.constant.DialectType;
 
 import lombok.Data;
@@ -46,6 +47,16 @@ public class PermissionCheckWhitelist {
         }
         String key = dialect.name().toLowerCase().replace("_", "-");
         return database.getOrDefault(key, Collections.emptyList());
+    }
+
+    public boolean containsDatabase(@NonNull String database, @NonNull DialectType dialect) {
+        List<String> whitelist = getDatabaseWhitelist(dialect);
+        for (String item : whitelist) {
+            if (StringUtils.equalsIgnoreCase(item, database)) {
+                return true;
+            }
+        }
+        return false;
     }
 
 }

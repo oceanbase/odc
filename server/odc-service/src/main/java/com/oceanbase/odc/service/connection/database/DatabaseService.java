@@ -770,8 +770,7 @@ public class DatabaseService {
         for (Map.Entry<String, Set<DatabasePermissionType>> entry : schemaName2PermissionTypes.entrySet()) {
             String schemaName = entry.getKey();
             Set<DatabasePermissionType> needs = entry.getValue();
-            if (permissionCheckWhitelist.getDatabaseWhitelist(dialectType).contains(schemaName.toLowerCase())
-                    || CollectionUtils.isEmpty(needs)) {
+            if (CollectionUtils.isEmpty(needs) || permissionCheckWhitelist.containsDatabase(schemaName, dialectType)) {
                 continue;
             }
             if (name2Database.containsKey(schemaName)) {

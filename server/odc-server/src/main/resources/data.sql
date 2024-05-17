@@ -812,6 +812,8 @@ INSERT INTO config_system_configuration(`key`, `value`, `description`) VALUES('o
  'mysql, information_schema, test', 'schema exclusions when synchronizing MySQL database schema') ON DUPLICATE KEY UPDATE `id`=`id`;
 
 INSERT INTO config_system_configuration(`key`, `value`, `description`) VALUES('odc.permission-check.whitelist.database.ob-mysql',
- '', 'Permission check whitelist for database in OB MySQL dialect type') ON DUPLICATE KEY UPDATE `id`=`id`;
+ 'DBMS_RESOURCE_MANAGER, DBMS_STATS, DBMS_UDR, DBMS_XPLAN, DBMS_WORKLOAD_REPOSITORY',
+ 'Permission check whitelist for database in OB MySQL dialect type') ON DUPLICATE KEY UPDATE `id`=`id`;
 INSERT INTO config_system_configuration(`key`, `value`, `description`) VALUES('odc.permission-check.whitelist.database.ob-oracle',
- '', 'Permission check whitelist for database in OB Oracle dialect type') ON DUPLICATE KEY UPDATE `id`=`id`;
+ 'DBMS_APPLICATION_INFO, DBMS_AUDIT_MGMT, DBMS_CRYPTO, DBMS_DEBUG, DBMS_DESCRIBE, DBMS_JOB, DBMS_LOB, DBMS_LOCK, DBMS_METADATA, DBMS_OUTPUT, DBMS_PLAN_CACHE, DBMS_RANDOM, DBMS_RESOURCE_MANAGER, DBMS_SCHEDULER, DBMS_SESSION, DBMS_SQL, DBMS_STATS, DBMS_UDR, DBMS_UTILITY, DBMS_WORKLOAD_REPOSITORY, DBMS_XA, DBMS_XMLGEN, DBMS_XPLAN, ODCIConst, UTL_ENCODE, UTL_FILE, UTL_I18N, UTL_RAW, ANYDATA TYPE, XMLType',
+ 'Permission check whitelist for database in OB Oracle dialect type') ON DUPLICATE KEY UPDATE `id`=`id`;
