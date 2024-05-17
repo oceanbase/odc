@@ -30,15 +30,14 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.oceanbase.odc.metadb.databasechange.DatabaseChangeChangingOrderTemplateEntity;
 import com.oceanbase.odc.service.common.response.PaginatedResponse;
 import com.oceanbase.odc.service.common.response.Responses;
 import com.oceanbase.odc.service.common.response.SuccessResponse;
 import com.oceanbase.odc.service.databasechange.DatabaseChangeChangingOrderTemplateService;
-import com.oceanbase.odc.service.databasechange.model.CreateDatabaseChangeChangingOrderReq;
+import com.oceanbase.odc.service.databasechange.model.CreateDatabaseChangeChangingOrderTemplateReq;
+import com.oceanbase.odc.service.databasechange.model.DatabaseChangeChangingOrderTemplateResp;
 import com.oceanbase.odc.service.databasechange.model.DatabaseChangingOrderTemplateExists;
 import com.oceanbase.odc.service.databasechange.model.QueryDatabaseChangeChangingOrderParams;
-import com.oceanbase.odc.service.databasechange.model.QueryDatabaseChangeChangingOrderResp;
 import com.oceanbase.odc.service.databasechange.model.UpdateDatabaseChangeChangingOrderReq;
 
 import io.swagger.annotations.ApiOperation;
@@ -57,15 +56,15 @@ public class DatabaseChangeController {
 
     @ApiOperation(value = "createDatabaseChangingOrderTemplate", notes = "create database changing order template")
     @PostMapping("/changingorder/templates")
-    public SuccessResponse<DatabaseChangeChangingOrderTemplateEntity> createDatabaseChangingOrderTemplate(
-            @RequestBody CreateDatabaseChangeChangingOrderReq req) {
+    public SuccessResponse<DatabaseChangeChangingOrderTemplateResp> create(
+            @RequestBody CreateDatabaseChangeChangingOrderTemplateReq req) {
         return Responses.success(templateService.create(req));
     }
 
     @ApiOperation(value = "modifyDatabaseChangingOrderTemplate",
             notes = "modify database changing order template")
     @PutMapping("/changingorder/templates/{id:[\\d]+}")
-    public SuccessResponse<DatabaseChangeChangingOrderTemplateEntity> update(@PathVariable Long id,
+    public SuccessResponse<DatabaseChangeChangingOrderTemplateResp> update(@PathVariable Long id,
             @RequestBody UpdateDatabaseChangeChangingOrderReq req) {
         return Responses
                 .success(templateService.update(id, req));
@@ -74,7 +73,7 @@ public class DatabaseChangeController {
     @ApiOperation(value = "queryDatabaseChangingOrderTemplateById",
             notes = "query database changing order template's detail by id")
     @GetMapping("/changingorder/templates/{id:[\\d]+}")
-    public SuccessResponse<QueryDatabaseChangeChangingOrderResp> queryDatabaseChangingOrderTemplateById(
+    public SuccessResponse<DatabaseChangeChangingOrderTemplateResp> detail(
             @PathVariable Long id) {
         return Responses.success(templateService.detail(id));
     }
@@ -82,7 +81,7 @@ public class DatabaseChangeController {
     @ApiOperation(value = "listDatabaseChangingOrderTemplates",
             notes = "get a list of database changing order templates")
     @GetMapping("/changingorder/templates")
-    public PaginatedResponse<DatabaseChangeChangingOrderTemplateEntity> listDatabaseChangingOrderTemplates(
+    public PaginatedResponse<DatabaseChangeChangingOrderTemplateResp> list(
             @PageableDefault(size = Integer.MAX_VALUE, sort = {"id"}, direction = Direction.DESC) Pageable pageable,
             @RequestParam(required = false, name = "name") String name,
             @RequestParam(required = false, name = "creatorId") Long creatorId,
@@ -101,7 +100,7 @@ public class DatabaseChangeController {
     @ApiOperation(value = "deleteDatabaseChangingOrderTemplateById",
             notes = "delete database changing order template by id")
     @DeleteMapping("/changingorder/templates/{id:[\\d]+}")
-    public SuccessResponse<DatabaseChangeChangingOrderTemplateEntity> deleteDatabaseChangingOrderTemplateById(
+    public SuccessResponse<DatabaseChangeChangingOrderTemplateResp> delete(
             @PathVariable Long id) {
         return Responses
                 .success(templateService.delete(id));

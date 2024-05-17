@@ -404,6 +404,13 @@ public class DatabaseService {
     }
 
     @SkipAuthorize("internal usage")
+    public Map<Long, List<Database>> listDatabasesByProjectIds(@NonNull List<Long> projectIds) {
+        return databaseRepository.findByProjectIdIn(projectIds).stream()
+                .map(databaseMapper::entityToModel)
+                .collect(Collectors.groupingBy(database -> database.getProject().getId()));
+    }
+
+    @SkipAuthorize("internal usage")
     public List<Database> listDatabasesByConnectionIds(@NotEmpty Collection<Long> connectionIds) {
         return databaseRepository.findByConnectionIdIn(connectionIds).stream().map(databaseMapper::entityToModel)
                 .collect(Collectors.toList());

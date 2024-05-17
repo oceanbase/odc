@@ -112,10 +112,10 @@ public class TaskService {
         TaskType taskType = req.getTaskType();
         taskEntity.setTaskType(taskType);
         if (taskType == TaskType.MULTIPLE_ASYNC) {
-            MultipleDatabaseChangeParameters parameters = (MultipleDatabaseChangeParameters) req.getParameters();
-            taskEntity.setDatabaseId(parameters.getDatabases().get(0).getId());
-            taskEntity.setConnectionId(parameters.getDatabases().get(0).getDataSource().getId());
-            taskEntity.setDatabaseName(parameters.getDatabases().get(0).getName());
+            //MultipleDatabaseChangeParameters parameters = (MultipleDatabaseChangeParameters) req.getParameters();
+            //taskEntity.setDatabaseId(parameters.getDatabases().get(0).getId());
+            //taskEntity.setConnectionId(parameters.getDatabases().get(0).getDataSource().getId());
+            //taskEntity.setDatabaseName(parameters.getDatabases().get(0).getName());
         } else {
             taskEntity.setConnectionId(req.getConnectionId());
             taskEntity.setDatabaseName(req.getDatabaseName());

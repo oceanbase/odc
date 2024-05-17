@@ -15,20 +15,30 @@
  */
 package com.oceanbase.odc.metadb.databasechange;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
 @Repository
 public interface DatabaseChangeChangingOrderTemplateRepository
         extends JpaRepository<DatabaseChangeChangingOrderTemplateEntity, Long>,
         JpaSpecificationExecutor<DatabaseChangeChangingOrderTemplateEntity> {
-
     Boolean existsByNameAndProjectId(String name, Long projectId);
 
     Optional<DatabaseChangeChangingOrderTemplateEntity> findByNameAndProjectId(String name, Long projectId);
 
     Optional<DatabaseChangeChangingOrderTemplateEntity> findByIdAndProjectId(Long id, Long projectId);
+
+    @Transactional
+    @Modifying
+    @Query("update DatabaseChangeChangingOrderTemplateEntity as t set t.enabled = false where t.id in :ids")
+    int updateEnabledByIds(@Param("ids") List<Long> ids);
+
 }

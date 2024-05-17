@@ -15,20 +15,29 @@
  */
 package com.oceanbase.odc.service.databasechange.model;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import java.util.List;
 
-/**
- * @author: zijia.cj
- * @date: 2024/5/13
- */
+import javax.validation.Valid;
+import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.NotEmpty;
+import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Size;
+
+import com.oceanbase.odc.common.validate.Name;
+
+import lombok.Data;
+
 @Data
-@Builder
-@NoArgsConstructor
-@AllArgsConstructor
-public class DatabaseChangingOrderTemplateEnables {
-    private Boolean enables;
-    private String errorMessage;
+public class CreateDatabaseChangeChangingOrderTemplateReq {
+
+    @NotBlank
+    @Size(max = 256, message = "name is out of range [0, 256]")
+    @Name(message = "Role name cannot start or end with whitespaces")
+    private String name;
+
+    @NotNull
+    private Long projectId;
+
+    @NotEmpty
+    private List<@Valid @NotEmpty List<@NotNull Long>> orders;
 }

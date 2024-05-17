@@ -15,12 +15,23 @@
  */
 package com.oceanbase.odc.service.databasechange.model;
 
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cloud.context.config.annotation.RefreshScope;
+import org.springframework.context.annotation.Configuration;
+
+import lombok.Data;
+
 /**
  * @author: zijia.cj
  * @date: 2024/5/8
  */
+@Data
+@RefreshScope
+@Configuration
 public class DatabaseChangeProperties {
-    public static final int MIN_DATABASE_COUNT = 1;
-    public static final int MAX_DATABASE_COUNT = 100;
 
+    @Value("${odc.task.databasechange.min-database-count:1}")
+    private int minDatabaseCount = 1;
+    @Value("${odc.task.databasechange.min-database-count:100}")
+    private int maxDatabaseCount = 100;
 }

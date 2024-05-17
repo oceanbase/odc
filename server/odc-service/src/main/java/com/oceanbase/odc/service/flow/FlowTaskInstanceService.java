@@ -303,7 +303,6 @@ public class FlowTaskInstanceService {
                 || taskInstance.getTaskType() == TaskType.PRE_CHECK) {
             Long taskId = taskInstance.getTargetTaskId();
             TaskEntity taskEntity = this.taskService.detail(taskId);
-            // When ParametersJson()==null, pre-check is for single database;When ParametersJson()!=null,
             // pre-check is for multiple databases
             FlowInstanceDetailResp detail = flowInstanceService.detail(flowInstanceId);
             if (detail.getType() == TaskType.MULTIPLE_ASYNC) {
@@ -834,8 +833,7 @@ public class FlowTaskInstanceService {
         /**
          * The other types of taskInstances are limited to unique, except for the MULTIPLE_ASYNC
          */
-        FlowInstanceDetailResp detail = flowInstanceService.detail(flowInstanceId);
-        if (detail != null && detail.getType() != TaskType.MULTIPLE_ASYNC) {
+        if (taskInstances.get(0).getTaskType() != TaskType.MULTIPLE_ASYNC) {
             Verify.singleton(taskInstances, "TaskInstances");
         }
         FlowTaskInstance flowTaskInstance = taskInstances.get(0);

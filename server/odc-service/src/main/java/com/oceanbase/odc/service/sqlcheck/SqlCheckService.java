@@ -109,19 +109,25 @@ public class SqlCheckService {
         List<Database> databases = databaseService.listDatabasesDetailsByIds(databaseIds);
         ArrayList<MultipleSqlCheckResult> multipleSqlCheckResults = new ArrayList<>();
         for (int i = 0; i < databaseIds.size(); i++) {
-            ConnectionSession session =
-                    sessionService.create(databases.get(i).getDataSource().getId(), databaseIds.get(i));
-            SqlCheckReq sqlCheckReq = new SqlCheckReq();
-            sqlCheckReq.setDelimiter(req.getDelimiter());
-            sqlCheckReq.setScriptContent(req.getScriptContent());
-            List<CheckResult> check = check(session, sqlCheckReq);
-            MultipleSqlCheckResult multipleSqlCheckResult = new MultipleSqlCheckResult();
-            if (CollectionUtils.isEmpty(check)) {
-                return Collections.emptyList();
+            ConnectionSession session = null;
+            try {
+                session = sessionService.create(databases.get(i).getDataSource().getId(), databaseIds.get(i));
+                SqlCheckReq sqlCheckReq = new SqlCheckReq();
+                sqlCheckReq.setDelimiter(req.getDelimiter());
+                sqlCheckReq.setScriptContent(req.getScriptContent());
+                List<CheckResult> check = check(session, sqlCheckReq);
+                MultipleSqlCheckResult multipleSqlCheckResult = new MultipleSqlCheckResult();
+                if (CollectionUtils.isEmpty(check)) {
+                    return Collections.emptyList();
+                }
+                multipleSqlCheckResult.setCheckResultList(check);
+                multipleSqlCheckResult.setDatabase(databases.get(i));
+                multipleSqlCheckResults.add(multipleSqlCheckResult);
+            } finally {
+                if (session != null) {
+                    session.expire();
+                }
             }
-            multipleSqlCheckResult.setCheckResultList(check);
-            multipleSqlCheckResult.setDatabase(databases.get(i));
-            multipleSqlCheckResults.add(multipleSqlCheckResult);
         }
         return multipleSqlCheckResults;
     }

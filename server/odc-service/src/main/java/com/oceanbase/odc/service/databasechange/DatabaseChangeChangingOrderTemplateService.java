@@ -19,15 +19,15 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 import javax.validation.Valid;
-import javax.validation.constraints.Min;
 import javax.validation.constraints.NotNull;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
@@ -39,6 +39,7 @@ import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.constant.ResourceRoleName;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
+import com.oceanbase.odc.core.shared.exception.AccessDeniedException;
 import com.oceanbase.odc.core.shared.exception.BadArgumentException;
 import com.oceanbase.odc.core.shared.exception.NotFoundException;
 import com.oceanbase.odc.metadb.collaboration.ProjectRepository;
@@ -47,11 +48,12 @@ import com.oceanbase.odc.metadb.connection.DatabaseRepository;
 import com.oceanbase.odc.metadb.databasechange.DatabaseChangeChangingOrderTemplateEntity;
 import com.oceanbase.odc.metadb.databasechange.DatabaseChangeChangingOrderTemplateRepository;
 import com.oceanbase.odc.metadb.databasechange.DatabaseChangeChangingOrderTemplateSpecs;
-import com.oceanbase.odc.service.databasechange.model.CreateDatabaseChangeChangingOrderReq;
+import com.oceanbase.odc.service.databasechange.model.CreateDatabaseChangeChangingOrderTemplateReq;
+import com.oceanbase.odc.service.databasechange.model.DatabaseChangeChangingOrderTemplateResp;
 import com.oceanbase.odc.service.databasechange.model.DatabaseChangeProperties;
 import com.oceanbase.odc.service.databasechange.model.DatabaseChangingOrderTemplateExists;
+import com.oceanbase.odc.service.databasechange.model.DatabaseResp;
 import com.oceanbase.odc.service.databasechange.model.QueryDatabaseChangeChangingOrderParams;
-import com.oceanbase.odc.service.databasechange.model.QueryDatabaseChangeChangingOrderResp;
 import com.oceanbase.odc.service.databasechange.model.UpdateDatabaseChangeChangingOrderReq;
 import com.oceanbase.odc.service.iam.ProjectPermissionValidator;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
@@ -73,25 +75,18 @@ public class DatabaseChangeChangingOrderTemplateService {
 
     @Autowired
     private ProjectPermissionValidator projectPermissionValidator;
+    @Autowired
+    private DatabaseChangeProperties databaseChangeProperties;
 
     @Transactional(rollbackFor = Exception.class)
-    public DatabaseChangeChangingOrderTemplateEntity create(
-            @NotNull @Valid CreateDatabaseChangeChangingOrderReq req) {
+    public DatabaseChangeChangingOrderTemplateResp create(
+            @NotNull @Valid CreateDatabaseChangeChangingOrderTemplateReq req) {
         PreConditions.validExists(ResourceType.ODC_PROJECT, "projectId", req.getProjectId(),
                 () -> projectRepository.existsById(req.getProjectId()));
         projectPermissionValidator.checkProjectRole(req.getProjectId(), ResourceRoleName.all());
         List<List<Long>> orders = req.getOrders();
         List<Long> databaseIds = orders.stream().flatMap(List::stream).collect(Collectors.toList());
-        if (databaseIds.size() <= DatabaseChangeProperties.MIN_DATABASE_COUNT
-                || databaseIds.size() > DatabaseChangeProperties.MAX_DATABASE_COUNT) {
-            throw new BadArgumentException(ErrorCodes.BadArgument,
-                    String.format("The number of databases must be greater than %s and not more than %s.",
-                            DatabaseChangeProperties.MIN_DATABASE_COUNT, DatabaseChangeProperties.MAX_DATABASE_COUNT));
-        }
-        if (new HashSet<Long>(databaseIds).size() != databaseIds.size()) {
-            throw new BadArgumentException(ErrorCodes.BadArgument,
-                    "Databases cannot be duplicated.");
-        }
+        validateSizeAndNotDuplicated(databaseIds);
         PreConditions.validNoDuplicated(ResourceType.ODC_DATABASE_CHANGE_ORDER_TEMPLATE, "name", req.getName(),
                 () -> templateRepository.existsByNameAndProjectId(req.getName(), req.getProjectId()));
         List<DatabaseEntity> byIdIn = databaseRepository.findByIdIn(databaseIds);
@@ -109,11 +104,50 @@ public class DatabaseChangeChangingOrderTemplateService {
         templateEntity.setOrganizationId(organizationId);
         templateEntity.setDatabaseSequences(req.getOrders());
         templateEntity.setEnabled(true);
-        return templateRepository.save(templateEntity);
+        DatabaseChangeChangingOrderTemplateEntity savedEntity = templateRepository.save(templateEntity);
+        DatabaseChangeChangingOrderTemplateResp templateResp = new DatabaseChangeChangingOrderTemplateResp();
+        templateResp.setId(savedEntity.getId());
+        templateResp.setName(savedEntity.getName());
+        templateResp.setCreatorId(savedEntity.getCreatorId());
+        templateResp.setOrganizationId(savedEntity.getOrganizationId());
+        List<List<Long>> databaseSequences = savedEntity.getDatabaseSequences();
+        // Map<Long, DatabaseResp> DatabaseEntityId2DatabaseResp =
+        // databaseSequences.stream().flatMap(Collection::stream).collect(Collectors.toMap(
+        // id -> id, id -> {
+        // DatabaseResp databaseResp = new DatabaseResp();
+        // databaseResp.setId(id);
+        // return databaseResp;
+        // }));
+        List<List<DatabaseResp>> databaseSequenceList = databaseSequences.stream()
+                .map(sequence -> sequence.stream()
+                        .map(databaseId -> {
+                            DatabaseResp databaseResp = new DatabaseResp();
+                            databaseResp.setId(databaseId);
+                            return databaseResp;
+                        })
+                        .collect(Collectors.toList()))
+                .collect(Collectors.toList());
+        templateResp.setDatabaseSequenceList(databaseSequenceList);
+        templateResp.setEnabled(true);
+        return templateResp;
+    }
+
+    public void validateSizeAndNotDuplicated(List<Long> databaseIds) {
+        if (databaseIds.size() <= databaseChangeProperties.getMinDatabaseCount()
+                || databaseIds.size() > databaseChangeProperties.getMaxDatabaseCount()) {
+            throw new BadArgumentException(ErrorCodes.BadArgument,
+                    String.format("The number of databases must be greater than %s and not more than %s.",
+                            databaseChangeProperties.getMinDatabaseCount(),
+                            databaseChangeProperties.getMaxDatabaseCount()));
+        }
+        if (new HashSet<Long>(databaseIds).size() != databaseIds.size()) {
+            throw new BadArgumentException(ErrorCodes.BadArgument,
+                    "Databases cannot be duplicated.");
+        }
     }
 
     @Transactional(rollbackFor = Exception.class)
-    public DatabaseChangeChangingOrderTemplateEntity update(Long id,
+    public DatabaseChangeChangingOrderTemplateResp update(Long id,
             @NotNull @Valid UpdateDatabaseChangeChangingOrderReq req) {
         PreConditions.validExists(ResourceType.ODC_PROJECT, "projectId", req.getProjectId(),
                 () -> projectRepository.existsById(req.getProjectId()));
@@ -124,10 +158,35 @@ public class DatabaseChangeChangingOrderTemplateService {
         PreConditions.validNoDuplicated(ResourceType.ODC_DATABASE_CHANGE_ORDER_TEMPLATE, "name", req.getName(),
                 () -> templateRepository.existsByNameAndProjectId(req.getName(), req.getProjectId()));
         originEntity.setName(req.getName());
-        return templateRepository.save(originEntity);
+        DatabaseChangeChangingOrderTemplateEntity savedEntity = templateRepository.save(originEntity);
+        DatabaseChangeChangingOrderTemplateResp templateResp = new DatabaseChangeChangingOrderTemplateResp();
+        templateResp.setId(savedEntity.getId());
+        templateResp.setName(savedEntity.getName());
+        templateResp.setCreatorId(savedEntity.getCreatorId());
+        templateResp.setOrganizationId(savedEntity.getOrganizationId());
+        List<List<Long>> databaseSequences = savedEntity.getDatabaseSequences();
+        // Map<Long, DatabaseResp> DatabaseEntityId2DatabaseResp =
+        // databaseSequences.stream().flatMap(Collection::stream).collect(Collectors.toMap(
+        // id -> id, id -> {
+        // DatabaseResp databaseResp = new DatabaseResp();
+        // databaseResp.setId(id);
+        // return databaseResp;
+        // }));
+        List<List<DatabaseResp>> databaseSequenceList = databaseSequences.stream()
+                .map(sequence -> sequence.stream()
+                        .map(databaseId -> {
+                            DatabaseResp databaseResp = new DatabaseResp();
+                            databaseResp.setId(databaseId);
+                            return databaseResp;
+                        })
+                        .collect(Collectors.toList()))
+                .collect(Collectors.toList());
+        templateResp.setDatabaseSequenceList(databaseSequenceList);
+        templateResp.setEnabled(true);
+        return templateResp;
     }
 
-    public QueryDatabaseChangeChangingOrderResp detail(
+    public DatabaseChangeChangingOrderTemplateResp detail(
             @NotNull Long id) {
         DatabaseChangeChangingOrderTemplateEntity templateEntity =
                 templateRepository.findById(id).orElseThrow(
@@ -138,28 +197,52 @@ public class DatabaseChangeChangingOrderTemplateService {
         List<Long> ids = databaseSequences.stream().flatMap(Collection::stream).distinct().collect(
                 Collectors.toList());
         List<DatabaseEntity> databaseEntities = databaseRepository.findByIdIn(ids);
-        Map<Long, DatabaseEntity> map = databaseEntities.stream().collect(Collectors.toMap(x -> x.getId(), x -> x));
-        List<List<DatabaseEntity>> databaseSequenceList = databaseSequences.stream()
+        // Template disabled handling policy
+        if (!databaseEntities.stream().allMatch(databaseEntity -> Objects.equals(databaseEntity.getProjectId(),
+                templateEntity.getProjectId()))) {
+            templateEntity.setEnabled(false);
+            templateRepository.save(templateEntity);
+            throw new AccessDeniedException(ErrorCodes.BuiltInResourceNotAvailable,
+                    "The template is disabled, you can delete it");
+        }
+        // Map<Long, DatabaseResp> templateId2DatabaseResp =
+        // databaseEntities.stream().collect(Collectors.toMap(
+        // databaseEntity -> databaseEntity.getId(), databaseEntity -> {
+        // DatabaseResp databaseResp = new DatabaseResp();
+        // databaseResp.setId(databaseEntity.getId());
+        // return databaseResp;
+        // }));
+        // List<List<DatabaseResp>> databaseSequenceList = databaseSequences.stream()
+        // .map(sequence -> sequence.stream()
+        // .map(x -> templateId2DatabaseResp.get(x))
+        // .collect(Collectors.toList()))
+        // .collect(Collectors.toList());
+        DatabaseChangeChangingOrderTemplateResp templateResp =
+                new DatabaseChangeChangingOrderTemplateResp();
+        templateResp.setId(templateEntity.getId());
+        templateResp.setName(templateEntity.getName());
+        templateResp
+                .setCreatorId(templateEntity.getCreatorId());
+        templateResp.setProjectId(templateEntity.getProjectId());
+        templateResp
+                .setOrganizationId(templateEntity.getOrganizationId());
+        // List<List<Long>> databaseSequences = templateEntity.getDatabaseSequences();
+        List<List<DatabaseResp>> databaseSequenceList = databaseSequences.stream()
                 .map(sequence -> sequence.stream()
-                        .map(x -> map.get(x))
+                        .map(databaseId -> {
+                            DatabaseResp databaseResp = new DatabaseResp();
+                            databaseResp.setId(databaseId);
+                            return databaseResp;
+                        })
                         .collect(Collectors.toList()))
                 .collect(Collectors.toList());
-        QueryDatabaseChangeChangingOrderResp queryDatabaseChangeChangingOrderResp =
-                new QueryDatabaseChangeChangingOrderResp();
-        queryDatabaseChangeChangingOrderResp.setId(templateEntity.getId());
-        queryDatabaseChangeChangingOrderResp.setName(templateEntity.getName());
-        queryDatabaseChangeChangingOrderResp
-                .setCreatorId(templateEntity.getCreatorId());
-        queryDatabaseChangeChangingOrderResp.setProjectId(templateEntity.getProjectId());
-        queryDatabaseChangeChangingOrderResp
-                .setOrganizationId(templateEntity.getOrganizationId());
-        queryDatabaseChangeChangingOrderResp.setDatabaseSequenceList(databaseSequenceList);
-        queryDatabaseChangeChangingOrderResp.setEnabled(templateEntity.getEnabled());
-        return queryDatabaseChangeChangingOrderResp;
+        templateResp.setDatabaseSequenceList(databaseSequenceList);
+        templateResp.setEnabled(templateEntity.getEnabled());
+        return templateResp;
     }
 
 
-    public Page<DatabaseChangeChangingOrderTemplateEntity> listTemplates(
+    public Page<DatabaseChangeChangingOrderTemplateResp> listTemplates(
             @NotNull Pageable pageable,
             @NotNull @Valid QueryDatabaseChangeChangingOrderParams params) {
         projectPermissionValidator.checkProjectRole(params.getProjectId(), ResourceRoleName.all());
@@ -170,7 +253,20 @@ public class DatabaseChangeChangingOrderTemplateService {
                 .and(params.getCreatorId() == null ? null
                         : DatabaseChangeChangingOrderTemplateSpecs
                                 .creatorIdIn(Collections.singleton(params.getCreatorId())));
-        return templateRepository.findAll(specification, pageable);
+        Page<DatabaseChangeChangingOrderTemplateEntity> pageResult =
+                templateRepository.findAll(specification, pageable);
+        List<DatabaseChangeChangingOrderTemplateEntity> entityList = pageResult.getContent();
+        List<DatabaseChangeChangingOrderTemplateResp> templateRespList = entityList.stream().map(entity -> {
+            DatabaseChangeChangingOrderTemplateResp templateResp = new DatabaseChangeChangingOrderTemplateResp();
+            templateResp.setId(entity.getId());
+            templateResp.setName(entity.getName());
+            templateResp.setCreatorId(entity.getCreatorId());
+            templateResp.setProjectId(entity.getProjectId());
+            templateResp.setOrganizationId(entity.getOrganizationId());
+            templateResp.setEnabled(entity.getEnabled());
+            return templateResp;
+        }).collect(Collectors.toList());
+        return new PageImpl<>(templateRespList, pageable, pageResult.getTotalElements());
     }
 
     public Page<DatabaseChangeChangingOrderTemplateEntity> listTemplates(
@@ -180,14 +276,38 @@ public class DatabaseChangeChangingOrderTemplateService {
     }
 
     @Transactional(rollbackFor = Exception.class)
-    public DatabaseChangeChangingOrderTemplateEntity delete(@NotNull @Min(value = 1) Long id) {
+    public DatabaseChangeChangingOrderTemplateResp delete(@NotNull Long id) {
         DatabaseChangeChangingOrderTemplateEntity templateEntity =
                 templateRepository.findById(id).orElseThrow(
                         () -> new NotFoundException(ResourceType.ODC_DATABASE_CHANGE_ORDER_TEMPLATE, "id", id));
         projectPermissionValidator.checkProjectRole(templateEntity.getProjectId(),
                 ResourceRoleName.all());
         templateRepository.deleteById(id);
-        return templateEntity;
+        DatabaseChangeChangingOrderTemplateResp templateResp = new DatabaseChangeChangingOrderTemplateResp();
+        templateResp.setId(templateEntity.getId());
+        templateResp.setName(templateEntity.getName());
+        templateResp.setCreatorId(templateEntity.getCreatorId());
+        templateResp.setOrganizationId(templateEntity.getOrganizationId());
+        List<List<Long>> databaseSequences = templateEntity.getDatabaseSequences();
+        // Map<Long, DatabaseResp> DatabaseEntityId2DatabaseResp =
+        // databaseSequences.stream().flatMap(Collection::stream).collect(Collectors.toMap(
+        // id -> id, id -> {
+        // DatabaseResp databaseResp = new DatabaseResp();
+        // databaseResp.setId(id);
+        // return databaseResp;
+        // }));
+        List<List<DatabaseResp>> databaseSequenceList = databaseSequences.stream()
+                .map(sequence -> sequence.stream()
+                        .map(databaseId -> {
+                            DatabaseResp databaseResp = new DatabaseResp();
+                            databaseResp.setId(databaseId);
+                            return databaseResp;
+                        })
+                        .collect(Collectors.toList()))
+                .collect(Collectors.toList());
+        templateResp.setDatabaseSequenceList(databaseSequenceList);
+        templateResp.setEnabled(true);
+        return templateResp;
     }
 
     public DatabaseChangingOrderTemplateExists exists(String name, Long projectId) {

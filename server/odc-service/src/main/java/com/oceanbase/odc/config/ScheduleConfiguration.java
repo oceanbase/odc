@@ -266,23 +266,6 @@ public class ScheduleConfiguration {
         return executor;
     }
 
-    @Bean(name = "syncTemplateTaskExecutor")
-    public ThreadPoolTaskExecutor syncTemplateTaskExecutor() {
-        ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
-        int poolSize = Math.max(SystemUtils.availableProcessors() * 8, 64);
-        executor.setCorePoolSize(poolSize);
-        executor.setMaxPoolSize(poolSize);
-        executor.setQueueCapacity(0);
-        executor.setThreadNamePrefix("database-sync-");
-        executor.setWaitForTasksToCompleteOnShutdown(true);
-        executor.setAwaitTerminationSeconds(5);
-        executor.setTaskDecorator(new TraceDecorator<>());
-        executor.setRejectedExecutionHandler(new ThreadPoolExecutor.DiscardPolicy());
-        executor.initialize();
-        log.info("syncTemplateTaskExecutor initialized");
-        return executor;
-    }
-
     @Scheduled(fixedDelay = REFRESH_CONFIG_RATE_MILLIS)
     public void refreshSysConfig() {
         systemConfigService.refresh();

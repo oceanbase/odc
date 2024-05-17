@@ -115,7 +115,7 @@ public class MultipleDatabaseChangeRuntimeFlowableTask extends BaseODCFlowTaskDe
     @Override
     protected Void start(Long taskId, TaskService taskService, DelegateExecution execution)
             throws InterruptedException {
-        MultipleDatabaseChangeTraceContextHolder.trace(authenticationFacade.currentUser().getId(), taskId);
+        MultipleDatabaseChangeTraceContextHolder.trace(taskId);
         try {
             FlowInstanceDetailResp flowInstanceDetailResp = flowInstanceService.detail(getFlowInstanceId());
             this.flowTaskExecutionStrategy = flowInstanceDetailResp.getExecutionStrategy();
@@ -204,7 +204,7 @@ public class MultipleDatabaseChangeRuntimeFlowableTask extends BaseODCFlowTaskDe
     @Override
     protected void onFailure(Long taskId, TaskService taskService) {
         try {
-            MultipleDatabaseChangeTraceContextHolder.trace(authenticationFacade.currentUser().getId(), taskId);
+            MultipleDatabaseChangeTraceContextHolder.trace(taskId);
             log.warn("multiple database task failed, taskId={}, batchId={}", taskId,
                     this.batchId == null ? null : this.batchId + 1);
             updateFlowInstanceStatus(FlowStatus.EXECUTION_FAILED);
@@ -218,7 +218,7 @@ public class MultipleDatabaseChangeRuntimeFlowableTask extends BaseODCFlowTaskDe
     @Override
     protected void onSuccessful(Long taskId, TaskService taskService) {
         try {
-            MultipleDatabaseChangeTraceContextHolder.trace(authenticationFacade.currentUser().getId(), taskId);
+            MultipleDatabaseChangeTraceContextHolder.trace(taskId);
             log.info("multiple database task succeed, taskId={}, batchId={}", taskId, this.batchId + 1);
             if (this.batchId == batchSum - 1) {
                 List<FlowInstanceEntity> list = flowInstanceService.getFlowInstanceByParentId(
@@ -251,7 +251,7 @@ public class MultipleDatabaseChangeRuntimeFlowableTask extends BaseODCFlowTaskDe
     @Override
     protected void onTimeout(Long taskId, TaskService taskService) {
         try {
-            MultipleDatabaseChangeTraceContextHolder.trace(authenticationFacade.currentUser().getId(), taskId);
+            MultipleDatabaseChangeTraceContextHolder.trace(taskId);
             taskService.fail(taskId, 100, generateResult());
             log.warn("multiple database task timeout, taskId={}, batchId={}", taskId,
                     this.batchId == null ? null : this.batchId + 1);
@@ -272,15 +272,15 @@ public class MultipleDatabaseChangeRuntimeFlowableTask extends BaseODCFlowTaskDe
         Page<FlowInstanceDetailResp> page = flowInstanceService.list(Pageable.unpaged(), param);
         List<FlowInstanceDetailResp> flowInstanceDetailRespList = page.getContent();
         // todo At present multi-databases changes do not include databases with the same name
-        Map<Long, FlowInstanceDetailResp> map = flowInstanceDetailRespList.stream().collect(
-                Collectors.toMap(flowInstanceDetailResp -> flowInstanceDetailResp.getDatabase().getId(),
-                        flowInstanceDetailResp -> flowInstanceDetailResp));
-        // todo 数据显示有安全风险
+        Map<Long, FlowInstanceDetailResp> databaseId2FlowInstanceDetailResp =
+                flowInstanceDetailRespList.stream().collect(
+                        Collectors.toMap(flowInstanceDetailResp -> flowInstanceDetailResp.getDatabase().getId(),
+                                flowInstanceDetailResp -> flowInstanceDetailResp));
         List<Long> idList = this.orderedDatabaseIds.stream().flatMap(Collection::stream).collect(Collectors.toList());
         List<Database> databaseList = databaseService.listDatabasesDetailsByIds(idList);
         ArrayList<DatabaseChangingRecord> databaseChangingRecords = new ArrayList<>();
         for (Database database : databaseList) {
-            FlowInstanceDetailResp flowInstanceDetailResp = map.get(database.getId());
+            FlowInstanceDetailResp flowInstanceDetailResp = databaseId2FlowInstanceDetailResp.get(database.getId());
             DatabaseChangingRecord databaseChangingRecord = new DatabaseChangingRecord();
             databaseChangingRecord.setDatabase(database);
             databaseChangingRecord.setFlowInstanceDetailResp(flowInstanceDetailResp);

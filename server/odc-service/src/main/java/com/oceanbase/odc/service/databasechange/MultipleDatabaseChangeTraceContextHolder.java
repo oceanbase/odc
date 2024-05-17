@@ -26,7 +26,7 @@ public final class MultipleDatabaseChangeTraceContextHolder {
 
     private MultipleDatabaseChangeTraceContextHolder() {}
 
-    public static void trace(long userId, long taskId) {
+    public static void trace(long taskId) {
         MDC.put(TASK_ID, String.valueOf(taskId));
     }
 
