@@ -19,7 +19,9 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
+import java.util.Collections;
 
+import com.oceanbase.tools.dbbrowser.model.DBColumnGroupElement;
 import com.oceanbase.tools.dbbrowser.model.DBConstraintType;
 import com.oceanbase.tools.dbbrowser.model.DBForeignKeyMatchType;
 import com.oceanbase.tools.dbbrowser.model.DBForeignKeyModifyRule;
@@ -67,6 +69,9 @@ public class DBObjectUtilsTest {
         table.setColumns(Arrays.asList(getNewColumn(), getOldColumn()));
         table.setConstraints(Arrays.asList(getOldFKConstraint(), getOldUKConstraint()));
         table.setIndexes(Arrays.asList(getNewIndex(), getOldIndex()));
+        DBColumnGroupElement cg = new DBColumnGroupElement();
+        cg.setEachColumn(true);
+        table.setColumnGroups(Collections.singletonList(cg));
         DBTableOptions options = new DBTableOptions();
         table.setTableOptions(options);
         options.setAutoIncrementInitialValue(1L);

@@ -182,7 +182,7 @@ public class ProjectServiceTest extends ServiceTestEnv {
     @Test
     public void test_listBasicInfoForApply() {
         ProjectEntity entity = projectRepository.save(getProjectEntity());
-        List<Project> projects = projectService.listBasicInfoForApply(null);
+        List<Project> projects = projectService.listBasicInfoForApply(null, null);
         Assert.assertEquals(1, projects.size());
         Assert.assertEquals(entity.getId(), projects.get(0).getId());
     }
@@ -255,6 +255,7 @@ public class ProjectServiceTest extends ServiceTestEnv {
         entity.setOrganizationId(1L);
         entity.setLastModifierId(1L);
         entity.setCreatorId(1L);
+        entity.setUniqueIdentifier("ODC_" + UUID.randomUUID());
         return entity;
     }
 

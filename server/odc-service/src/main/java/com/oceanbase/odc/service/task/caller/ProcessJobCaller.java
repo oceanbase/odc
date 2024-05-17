@@ -16,7 +16,10 @@
 
 package com.oceanbase.odc.service.task.caller;
 
+import static com.oceanbase.odc.service.task.constants.JobConstants.ODC_EXECUTOR_CANNOT_BE_DESTROYED;
+
 import java.text.MessageFormat;
+import java.util.Objects;
 import java.util.Optional;
 
 import com.oceanbase.odc.common.util.SystemUtils;
@@ -73,7 +76,8 @@ public class ProcessJobCaller extends BaseJobCaller {
                     pid, executorName);
         }
 
-        String portString = Optional.ofNullable(SystemUtils.getEnvOrProperty("server.port"))
+        JobConfiguration jobConfiguration = JobConfigurationHolder.getJobConfiguration();
+        String portString = Optional.ofNullable(jobConfiguration.getHostProperties().getPort())
                 .orElse(DefaultExecutorIdentifier.DEFAULT_PORT + "");
         // set process id as namespace
         return DefaultExecutorIdentifier.builder().host(SystemUtils.getLocalIpAddress())
@@ -97,7 +101,10 @@ public class ProcessJobCaller extends BaseJobCaller {
             return;
         }
 
-        if (SystemUtils.getLocalIpAddress().equals(ei.getHost())) {
+        JobConfiguration jobConfiguration = JobConfigurationHolder.getJobConfiguration();
+        String portString = Optional.ofNullable(jobConfiguration.getHostProperties().getPort())
+                .orElse(DefaultExecutorIdentifier.DEFAULT_PORT + "");
+        if (SystemUtils.getLocalIpAddress().equals(ei.getHost()) && Objects.equals(portString, ei.getPort() + "")) {
             updateExecutorDestroyed(ji);
             return;
         }
@@ -117,7 +124,8 @@ public class ProcessJobCaller extends BaseJobCaller {
                     ji.getId(), ei);
             return;
         }
-        throw new JobException("Connect to target odc server succeed, but cannot destroy process,"
+        throw new JobException(ODC_EXECUTOR_CANNOT_BE_DESTROYED +
+                "Connect to target odc server succeed, but cannot destroy process,"
                 + " may not on this machine, jodId={0}, identifier={1}", ji.getId(), ei);
     }
 

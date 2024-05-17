@@ -91,6 +91,7 @@ public class Project implements SecurityResource, OrganizationIsolated, Serializ
 
     @JsonProperty(access = Access.READ_ONLY)
     private Date dbObjectLastSyncTime;
+    private String uniqueIdentifier;
 
     @Override
     public String resourceId() {

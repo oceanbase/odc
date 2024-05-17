@@ -16,9 +16,11 @@
 package com.oceanbase.odc.service.schedule.job;
 
 import java.util.List;
+import java.util.Set;
 
 import com.oceanbase.odc.service.dlm.model.DataArchiveTableConfig;
 import com.oceanbase.odc.service.dlm.model.RateLimitConfiguration;
+import com.oceanbase.tools.dbbrowser.model.DBObjectType;
 import com.oceanbase.tools.migrator.common.configure.DataSourceInfo;
 import com.oceanbase.tools.migrator.common.enums.JobType;
 import com.oceanbase.tools.migrator.common.enums.MigrationInsertAction;
@@ -60,6 +62,8 @@ public class DLMJobParameters {
     private int writeThreadCount;
 
     private ShardingStrategy shardingStrategy;
+
+    private Set<DBObjectType> syncTableStructure;
 
     private int scanBatchSize;
 
