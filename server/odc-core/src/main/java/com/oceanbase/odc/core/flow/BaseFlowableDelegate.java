@@ -46,33 +46,11 @@ public abstract class BaseFlowableDelegate implements JavaDelegate {
     protected abstract void run(DelegateExecution execution) throws Exception;
 
     @Override
-    public void execute(DelegateExecution execution) {
+    public void execute(DelegateExecution execution){
         try {
             run(execution);
-        } catch (Exception exception) {
-            log.warn("Service task execution failed", exception);
-            String ids = execution.getProcessDefinitionId();
-            String aId = execution.getCurrentActivityId();
-            List<ErrorEventDefinition> defs =
-                    FlowUtil.getBoundaryEventDefinitions(ids, aId, ErrorEventDefinition.class);
-            if (defs.isEmpty()) {
-                log.warn("No error boundary is defined to handle events, processInstanceId={}, activityId={}", ids,
-                        aId);
-            } else if (exception instanceof BaseFlowException) {
-                BaseFlowException flowException = (BaseFlowException) exception;
-                String targetErrorCode = flowException.getErrorCode().code();
-                for (ErrorEventDefinition eventDefinition : defs) {
-                    String acceptErrorCode = eventDefinition.getErrorCode();
-                    if (Objects.equals(acceptErrorCode, targetErrorCode)) {
-                        throw new BpmnError(targetErrorCode);
-                    }
-                }
-                log.warn("Exception has no error boundary event, pId={}, activityId={}, acceptErrorCodes={}",
-                        ids, aId, defs.stream().map(ErrorEventDefinition::getErrorCode).collect(Collectors.toList()));
-            } else {
-                log.warn("Exception has to be an instance of FlowException, pId={}, activityId={}, acceptErrorCodes={}",
-                        ids, aId, defs.stream().map(ErrorEventDefinition::getErrorCode).collect(Collectors.toList()));
-            }
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
     }
 
