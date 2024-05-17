@@ -483,6 +483,7 @@ public class OBUtils {
         DialectType dialectType = connectType.getDialectType();
         SqlBuilder sqlBuilder = getBuilder(connectType)
                 .append("select id, parent_id, operator, object_owner, object_name, object_alias, ")
+                .append("depth, cost, cardinality, ")
                 .append("other, access_predicates, filter_predicates, projection, special_predicates from ")
                 .append(dialectType.isMysql() ? "oceanbase" : "sys")
                 .append(".v$ob_sql_plan where plan_id=")
@@ -494,6 +495,9 @@ public class OBUtils {
                 OBSqlPlan plan = new OBSqlPlan();
                 plan.setId(rs.getString("id"));
                 plan.setParentId(rs.getString("parent_id"));
+                plan.setDepth(rs.getString("depth"));
+                plan.setCost(rs.getString("cost"));
+                plan.setCardinality(rs.getString("cardinality"));
                 plan.setOperator(rs.getString("operator"));
                 plan.setObjectOwner(rs.getString("object_owner"));
                 plan.setObjectName(rs.getString("object_name"));

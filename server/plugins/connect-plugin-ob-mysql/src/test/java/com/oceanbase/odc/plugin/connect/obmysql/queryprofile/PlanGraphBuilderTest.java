@@ -25,11 +25,11 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import com.google.common.collect.ImmutableMap;
-import com.oceanbase.odc.common.graph.GraphVertex;
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.core.shared.model.OBSqlPlan;
 import com.oceanbase.odc.core.shared.model.PredicateKey;
-import com.oceanbase.odc.core.shared.model.SqlPlanGraph;
+import com.oceanbase.odc.plugin.connect.model.diagnose.PlanGraph;
+import com.oceanbase.odc.plugin.connect.model.diagnose.PlanGraphOperator;
 import com.oceanbase.odc.plugin.connect.obmysql.diagnose.PlanGraphBuilder;
 
 /**
@@ -50,8 +50,8 @@ public class PlanGraphBuilderTest {
     @Test
     public void test_BuildPlanGraph_BuildSuccess() {
         List<OBSqlPlan> records = getPlanRecords();
-        SqlPlanGraph graph = PlanGraphBuilder.buildPlanGraph(records);
-        List<GraphVertex> vertices = graph.getTopoOrderedVertices();
+        PlanGraph graph = PlanGraphBuilder.buildPlanGraph(records);
+        List<PlanGraphOperator> vertices = graph.getVertexes();
         Assert.assertEquals(vertices.size(), records.size());
     }
 
@@ -103,10 +103,9 @@ public class PlanGraphBuilderTest {
                         + "      access([ORDERS.O_ORDERKEY], [ORDERS.O_ORDERDATE], [ORDERS.O_CUSTKEY]), partitions(p0)\n"
                         + "      is_index_back=false, is_global_index=false, filter_before_indexback[false,false], \n"
                         + "      range_key([ORDERS.O_ORDERKEY], [ORDERS.O_ORDERDATE], [ORDERS.O_CUSTKEY]), range(MIN,MIN,MIN ; MAX,MAX,MAX)always true");
-        SqlPlanGraph graph = PlanGraphBuilder.buildPlanGraph(
+        PlanGraph graph = PlanGraphBuilder.buildPlanGraph(
                 JsonUtils.fromJsonMap(json, String.class, Object.class), outputFilters);
-        Assert.assertEquals(3, graph.getVertexList().size());
-        Assert.assertEquals(2, graph.getEdgeList().size());
+        Assert.assertEquals(3, graph.getVertexes().size());
     }
 
     private List<OBSqlPlan> getPlanRecords() {

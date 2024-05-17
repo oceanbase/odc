@@ -26,6 +26,9 @@ public class OBSqlPlan {
 
     private String id;
     private String parentId;
+    private String depth;
+    private String cost;
+    private String cardinality;
     private String operator;
     private String objectOwner;
     private String objectName;

@@ -25,13 +25,14 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import com.oceanbase.odc.common.graph.Graph;
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.shared.exception.UnexpectedException;
 import com.oceanbase.odc.core.shared.model.OBSqlPlan;
 import com.oceanbase.odc.core.shared.model.Operator;
 import com.oceanbase.odc.core.shared.model.PredicateKey;
 import com.oceanbase.odc.core.shared.model.QueryStatus;
-import com.oceanbase.odc.core.shared.model.SqlPlanGraph;
+import com.oceanbase.odc.plugin.connect.model.diagnose.PlanGraph;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -45,8 +46,8 @@ public class PlanGraphBuilder {
     private static final Pattern VALUE_GROUP_PATTERN = Pattern.compile("\\[([^]]+)]");
     private static final String EMPTY_PREDICATE = "nil";
 
-    public static SqlPlanGraph buildPlanGraph(List<OBSqlPlan> records) {
-        SqlPlanGraph graph = new SqlPlanGraph();
+    public static PlanGraph buildPlanGraph(List<OBSqlPlan> records) {
+        Graph graph = new Graph();
         Map<String, Operator> map = new HashMap<>();
         Map<String, String> parameters = new HashMap<>();
         for (OBSqlPlan record : records) {
@@ -63,19 +64,19 @@ public class PlanGraphBuilder {
             }
             graph.insertEdge(map.get(record.getParentId()), operator, 0f);
         }
-        return graph;
+        return PlanGraphMapper.toVO(graph);
     }
 
     /**
      * build by query plan in json format
      */
-    public static SqlPlanGraph buildPlanGraph(Map<String, Object> map, Map<String, String> outputFilters) {
-        SqlPlanGraph graph = new SqlPlanGraph();
+    public static PlanGraph buildPlanGraph(Map<String, Object> map, Map<String, String> outputFilters) {
+        Graph graph = new Graph();
         parsePlanByJsonMap(map, graph, new HashMap<>(), outputFilters, "-1");
-        return graph;
+        return PlanGraphMapper.toVO(graph);
     }
 
-    private static void parsePlanByJsonMap(Map<String, Object> jsonMap, SqlPlanGraph graph,
+    private static void parsePlanByJsonMap(Map<String, Object> jsonMap, Graph graph,
             Map<String, Operator> id2Operator, Map<String, String> outputFilter, String parentId) {
         String id = Integer.toString((int) jsonMap.get("ID"));
         Operator operator = new Operator(id, (String) jsonMap.get("OPERATOR"));
@@ -104,9 +105,14 @@ public class PlanGraphBuilder {
         Operator operator = new Operator(record.getId(), record.getOperator());
         // set object info
         String objectName = parseObjectName(record);
-        operator.setTitle(objectName);
-        operator.setAttribute("Full object name", singletonList(objectName));
-        operator.setAttribute("Alias", singletonList(record.getObjectAlias()));
+        if (StringUtils.isNotEmpty(objectName)) {
+            operator.setTitle(objectName);
+            operator.setAttribute("Full object name", singletonList(objectName));
+        }
+        if (StringUtils.isNotEmpty(record.getObjectAlias())
+                && StringUtils.equals(record.getObjectAlias(), record.getObjectName())) {
+            operator.setAttribute("Alias", singletonList(record.getObjectAlias()));
+        }
         // init parameters
         if (StringUtils.isNotEmpty(record.getOther()) && parameters.isEmpty()) {
             parseParameters(record.getOther(), parameters);

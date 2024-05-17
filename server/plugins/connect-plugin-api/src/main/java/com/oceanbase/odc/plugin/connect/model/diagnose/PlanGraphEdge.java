@@ -13,22 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.core.shared.model;
+package com.oceanbase.odc.plugin.connect.model.diagnose;
 
 import lombok.Data;
 
 /**
- * {@link SqlExplain}
- *
- * @author yh263208
- * @date 2023-03-10 14:22
- * @since ODC_release_4.2.0
+ * @author liuyizhuo.lyz
+ * @date 2024/4/11
  */
 @Data
-public class SqlExplain {
-    private String expTree;
-    private String outline;
-    private String originalText;
-    private Boolean showFormatInfo;
-    private SqlPlanGraph graph;
+public class PlanGraphEdge {
+    private String from;
+    private String to;
+    private Float weight;
 }

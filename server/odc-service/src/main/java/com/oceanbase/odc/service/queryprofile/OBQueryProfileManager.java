@@ -39,16 +39,17 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.collections4.MapUtils;
 import org.springframework.jdbc.core.StatementCallback;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StreamUtils;
 
+import com.google.common.collect.Comparators;
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.common.util.TimespanFormatUtil;
@@ -56,17 +57,15 @@ import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionUtil;
 import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.core.shared.model.QueryStatus;
-import com.oceanbase.odc.core.shared.model.SqlPlanGraph;
 import com.oceanbase.odc.core.shared.model.SqlPlanMonitor;
 import com.oceanbase.odc.core.sql.execute.cache.BinaryDataManager;
 import com.oceanbase.odc.core.sql.execute.cache.model.BinaryContentMetaData;
 import com.oceanbase.odc.core.sql.util.OBUtils;
+import com.oceanbase.odc.plugin.connect.model.diagnose.PlanGraph;
+import com.oceanbase.odc.plugin.connect.model.diagnose.PlanGraphEdge;
+import com.oceanbase.odc.plugin.connect.model.diagnose.PlanGraphOperator;
+import com.oceanbase.odc.plugin.connect.model.diagnose.SqlExplain;
 import com.oceanbase.odc.service.plugin.ConnectionPluginUtil;
-import com.oceanbase.odc.service.queryprofile.display.PlanGraph;
-import com.oceanbase.odc.service.queryprofile.display.PlanGraphEdge;
-import com.oceanbase.odc.service.queryprofile.display.PlanGraphOperator;
-import com.oceanbase.odc.service.queryprofile.helper.PlanGraphMapper;
-import com.oceanbase.odc.service.queryprofile.model.SqlProfile;
 
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
@@ -80,19 +79,25 @@ import lombok.extern.slf4j.Slf4j;
 public class OBQueryProfileManager {
     private static final String PROFILE_KEY_PREFIX = "query-profile-";
 
-    private final ExecutorService executor = new ThreadPoolExecutor(5, 10, 60, TimeUnit.SECONDS,
-            new LinkedBlockingQueue<>(), r -> new Thread(r, "query-profile-" + r.hashCode()));
+    private final ExecutorService executor =
+            Executors.newFixedThreadPool(5, r -> new Thread(r, "query-profile-" + r.hashCode()));
 
     public void submitProfile(ConnectionSession session, @NonNull String traceId) {
         executor.execute(() -> {
             if (ConnectionSessionUtil.getBinaryContentMetadata(session, PROFILE_KEY_PREFIX + traceId) == null) {
-                SqlProfile profile = new SqlProfile(traceId, session);
-                initiateProfile(profile);
+                if (session.isExpired()) {
+                    log.warn("session is expired, profile with traceId={} will be thrown.", traceId);
+                    return;
+                }
+                SqlExplain profile = session.getSyncJdbcExecutor(BACKEND_DS_KEY).execute(
+                        (StatementCallback<SqlExplain>) stmt -> ConnectionPluginUtil
+                                .getDiagnoseExtension(session.getConnectType().getDialectType())
+                                .getQueryProfileByTraceId(stmt.getConnection(), traceId));
                 BinaryDataManager binaryDataManager = ConnectionSessionUtil.getBinaryDataManager(session);
                 try {
                     BinaryContentMetaData metaData = binaryDataManager.write(
                             new ByteArrayInputStream(JsonUtils.toJson(profile).getBytes()));
-                    String key = PROFILE_KEY_PREFIX + profile.getTraceId();
+                    String key = PROFILE_KEY_PREFIX + traceId;
                     ConnectionSessionUtil.setBinaryContentMetadata(session, key, metaData);
                 } catch (IOException e) {
                     log.warn("Failed to persist profile.", e);
@@ -101,40 +106,26 @@ public class OBQueryProfileManager {
         });
     }
 
-    public SqlProfile getProfile(@NonNull String traceId, ConnectionSession session) throws IOException {
+    public SqlExplain getProfile(@NonNull String traceId, ConnectionSession session) throws IOException {
         BinaryContentMetaData metadata =
                 ConnectionSessionUtil.getBinaryContentMetadata(session, PROFILE_KEY_PREFIX + traceId);
         if (metadata != null) {
             InputStream stream = ConnectionSessionUtil.getBinaryDataManager(session).read(metadata);
-            SqlProfile profile =
-                    JsonUtils.fromJson(StreamUtils.copyToString(stream, StandardCharsets.UTF_8), SqlProfile.class);
-            profile.setSession(session);
-            refreshProfile(profile);
+            SqlExplain profile =
+                    JsonUtils.fromJson(StreamUtils.copyToString(stream, StandardCharsets.UTF_8), SqlExplain.class);
+            refreshGraph(profile.getGraph(), session);
             return profile;
         }
-        SqlProfile profile = new SqlProfile(traceId, session);
-        initiateProfile(profile);
-        refreshProfile(profile);
+        SqlExplain profile = session.getSyncJdbcExecutor(BACKEND_DS_KEY).execute(
+                (StatementCallback<SqlExplain>) stmt -> ConnectionPluginUtil
+                        .getDiagnoseExtension(session.getConnectType().getDialectType())
+                        .getQueryProfileByTraceId(stmt.getConnection(), traceId));
+        Verify.notNull(profile, "profile graph");
+        refreshGraph(profile.getGraph(), session);
         return profile;
     }
 
-    public void initiateProfile(SqlProfile profile) {
-        ConnectionSession session = profile.getSession();
-        if (session.isExpired()) {
-            log.warn("session is expired, profile with traceId={} will be thrown.", profile.getTraceId());
-            return;
-        }
-        String traceId = profile.getTraceId();
-        SqlPlanGraph graph = session.getSyncJdbcExecutor(BACKEND_DS_KEY).execute(
-                (StatementCallback<SqlPlanGraph>) stmt -> ConnectionPluginUtil
-                        .getDiagnoseExtension(session.getConnectType().getDialectType())
-                        .getSqlPlanGraphByTraceId(stmt.getConnection(), traceId));
-        Verify.notNull(graph, "plan graph");
-        profile.setGraph(PlanGraphMapper.toVO(graph));
-    }
-
-    public void refreshProfile(SqlProfile profile) {
-        ConnectionSession session = profile.getSession();
+    public void refreshGraph(PlanGraph graph, ConnectionSession session) {
         if (session.isExpired()) {
             return;
         }
@@ -142,41 +133,37 @@ public class OBQueryProfileManager {
                 (StatementCallback<List<SqlPlanMonitor>>) stmt -> {
                     Map<String, String> statId2Name = OBUtils.querySPMStatNames(stmt, session.getConnectType());
                     return OBUtils.querySqlPlanMonitorStats(
-                            stmt, profile.getTraceId(), session.getConnectType(), statId2Name);
+                            stmt, graph.getTraceId(), session.getConnectType(), statId2Name);
                 });
-        replaceSPMStatsIntoProfile(spmStats, profile);
+        replaceSPMStatsIntoProfile(spmStats, graph);
+
+        Map<String, List<String>> topNodes = new HashMap<>();
+        graph.setTopNodes(topNodes);
+        topNodes.put("duration", graph.getVertexes()
+                .stream().collect(Comparators.greatest(5, Comparator.comparingLong(PlanGraphOperator::getDuration)))
+                .stream().map(PlanGraphOperator::getGraphId).collect(Collectors.toList()));
     }
 
-    private void replaceSPMStatsIntoProfile(List<SqlPlanMonitor> records, SqlProfile profile) {
+    private void replaceSPMStatsIntoProfile(List<SqlPlanMonitor> records, PlanGraph graph) {
         if (CollectionUtils.isEmpty(records)) {
             return;
         }
         records.sort(Comparator.comparingInt(stat -> Integer.parseInt(stat.getPlanLineId())));
         List<SqlPlanMonitor> mergedRecords = mergePlanMonitorRecords(records);
 
-        PlanGraph graph = profile.getGraph();
         SqlPlanMonitor rootOperator = mergedRecords.get(0);
-        profile.setStartTime(rootOperator.getFirstRefreshTime());
-
         if (rootOperator.getLastRefreshTime() == null) {
             graph.putOverview(STATUS, QueryStatus.RUNNING.name());
-
             Duration totalTs = Duration.between(rootOperator.getFirstRefreshTime().toInstant(),
                     rootOperator.getCurrentTime().toInstant());
             graph.putOverview(DB_TIME, TimespanFormatUtil.formatTimespan(totalTs));
-
-            profile.setStatus(QueryStatus.RUNNING);
-            profile.setDuration(totalTs.toNanos() / 1000);
+            graph.setDuration(totalTs.toNanos() / 1000);
         } else {
             graph.putOverview(STATUS, QueryStatus.FINISHED.name());
-
             Duration totalTs = Duration.between(rootOperator.getFirstRefreshTime().toInstant(),
                     rootOperator.getLastRefreshTime().toInstant());
             graph.putOverview(DB_TIME, TimespanFormatUtil.formatTimespan(totalTs));
-
-            profile.setEndTime(rootOperator.getLastRefreshTime());
-            profile.setStatus(QueryStatus.FINISHED);
-            profile.setDuration(totalTs.toNanos() / 1000);
+            graph.setDuration(totalTs.toNanos() / 1000);
         }
 
         for (SqlPlanMonitor stats : mergedRecords) {
@@ -218,9 +205,11 @@ public class OBQueryProfileManager {
             graph.addStatistics(REMOTE_BYTES_IN_TOTAL, stats.getOtherstats().get(REMOTE_BYTES_IN_TOTAL));
             graph.addStatistics(REMOTE_ROWS_IN_TOTAL, stats.getOtherstats().get(REMOTE_ROWS_IN_TOTAL));
             // attributes
-            operator.putAttribute(OTHER_STATS, stats.getOtherstats().entrySet()
-                    .stream().map(entry -> String.format("%s : %s", entry.getKey(), entry.getValue()))
-                    .collect(Collectors.toList()));
+            if (MapUtils.isNotEmpty(stats.getOtherstats())) {
+                operator.putAttribute(OTHER_STATS, stats.getOtherstats().entrySet()
+                        .stream().map(entry -> String.format("%s : %s", entry.getKey(), entry.getValue()))
+                        .collect(Collectors.toList()));
+            }
             // output rows
             List<PlanGraphEdge> inEdges = operator.getInEdges();
             if (inEdges.size() == 1) {

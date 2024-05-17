@@ -23,14 +23,14 @@ public class ProfileConstants {
 
     public static final String DB_TIME = "DB Time";
     public static final String CHANGE_TIME = "Change Time";
-    public static final String IO_READ_BYTES = "Io bytes read from disk";
-    public static final String BYTES_IN_TOTAL = "Total bytes processed by storage";
-    public static final String ROWS_IN_TOTAL = "Total rows processed by storage";
-    public static final String RESCAN_TIMES = "Rescan times";
+    public static final String IO_READ_BYTES = "total io bytes read from disk";
+    public static final String BYTES_IN_TOTAL = "total bytes processed by storage";
+    public static final String ROWS_IN_TOTAL = "total rows processed by storage";
+    public static final String RESCAN_TIMES = "rescan times";
 
-    public static final String REMOTE_IO_READ_BYTES = "Remote io bytes";
-    public static final String REMOTE_BYTES_IN_TOTAL = "Remote bytes processed";
-    public static final String REMOTE_ROWS_IN_TOTAL = "Remote rows processed";
+    public static final String REMOTE_IO_READ_BYTES = "remote io bytes";
+    public static final String REMOTE_BYTES_IN_TOTAL = "remote bytes processed";
+    public static final String REMOTE_ROWS_IN_TOTAL = "remote rows processed";
 
     public static final String OTHER_STATS = "Other Stats";
     public static final String STATUS = "Status";

@@ -26,15 +26,14 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.core.shared.model.SqlExecDetail;
-import com.oceanbase.odc.core.shared.model.SqlExplain;
 import com.oceanbase.odc.core.shared.model.TraceSpan;
+import com.oceanbase.odc.plugin.connect.model.diagnose.SqlExplain;
 import com.oceanbase.odc.service.common.model.ResourceSql;
 import com.oceanbase.odc.service.common.response.OdcResult;
 import com.oceanbase.odc.service.common.response.Responses;
 import com.oceanbase.odc.service.common.response.SuccessResponse;
 import com.oceanbase.odc.service.common.util.SidUtils;
 import com.oceanbase.odc.service.diagnose.SqlDiagnoseService;
-import com.oceanbase.odc.service.queryprofile.model.SqlProfile;
 import com.oceanbase.odc.service.session.ConnectSessionService;
 import com.oceanbase.odc.service.state.model.StateName;
 import com.oceanbase.odc.service.state.model.StatefulRoute;
@@ -100,7 +99,7 @@ public class SqlDiagnoseController {
     @ApiOperation(value = "getQueryProfile")
     @RequestMapping(value = "/getQueryProfile/{sid}", method = RequestMethod.POST)
     @StatefulRoute(stateName = StateName.DB_SESSION, stateIdExpression = "#sid")
-    public SuccessResponse<SqlProfile> getQueryProfile(@PathVariable String sid,
+    public SuccessResponse<SqlExplain> getQueryProfile(@PathVariable String sid,
             @RequestBody ResourceSql resource) throws IOException {
         String traceId = resource.getTag();
         PreConditions.notEmpty(traceId, "trace id");

@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.queryprofile.helper;
+package com.oceanbase.odc.plugin.connect.obmysql.diagnose;
 
 import java.util.Comparator;
 import java.util.List;
@@ -21,12 +21,12 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import com.google.common.collect.Comparators;
+import com.oceanbase.odc.common.graph.Graph;
 import com.oceanbase.odc.common.graph.GraphEdge;
 import com.oceanbase.odc.core.shared.model.Operator;
-import com.oceanbase.odc.core.shared.model.SqlPlanGraph;
-import com.oceanbase.odc.service.queryprofile.display.PlanGraph;
-import com.oceanbase.odc.service.queryprofile.display.PlanGraphEdge;
-import com.oceanbase.odc.service.queryprofile.display.PlanGraphOperator;
+import com.oceanbase.odc.plugin.connect.model.diagnose.PlanGraph;
+import com.oceanbase.odc.plugin.connect.model.diagnose.PlanGraphEdge;
+import com.oceanbase.odc.plugin.connect.model.diagnose.PlanGraphOperator;
 
 /**
  * @author liuyizhuo.lyz
@@ -34,10 +34,8 @@ import com.oceanbase.odc.service.queryprofile.display.PlanGraphOperator;
  */
 public class PlanGraphMapper {
 
-    public static PlanGraph toVO(SqlPlanGraph graph) {
+    public static PlanGraph toVO(Graph graph) {
         PlanGraph vo = new PlanGraph();
-        vo.setOverview(graph.getOverview());
-        vo.setStatistics(graph.getStatistics());
         vo.setVertexes(graph.getVertexList().stream()
                 .map(vertex -> mapVertex((Operator) vertex)).collect(Collectors.toList()));
         return vo;

@@ -29,7 +29,7 @@ import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.exception.OBException;
 import com.oceanbase.odc.core.shared.model.PlanNode;
 import com.oceanbase.odc.core.shared.model.SqlExecDetail;
-import com.oceanbase.odc.core.shared.model.SqlExplain;
+import com.oceanbase.odc.plugin.connect.model.diagnose.SqlExplain;
 import com.oceanbase.odc.plugin.connect.obmysql.OBMySQLDiagnoseExtension;
 import com.oceanbase.odc.plugin.connect.obmysql.diagnose.DiagnoseUtil;
 

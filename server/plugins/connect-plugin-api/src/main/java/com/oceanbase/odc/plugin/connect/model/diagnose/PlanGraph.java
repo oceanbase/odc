@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.queryprofile.display;
+package com.oceanbase.odc.plugin.connect.model.diagnose;
 
 import java.util.HashMap;
 import java.util.List;
@@ -33,10 +33,13 @@ import lombok.Data;
  */
 @Data
 public class PlanGraph {
+    private String traceId;
+    private Long duration;
     private List<PlanGraphOperator> vertexes;
     private Map<String, String> statistics;
     private Map<String, String> overview;
     private Map<String, List<String>> topNodes;
+
     @JsonIgnore
     private final Map<String, PlanGraphOperator> graphId2Operator = new HashMap<>();
 
@@ -49,6 +52,9 @@ public class PlanGraph {
         if (value == null) {
             return;
         }
+        if (statistics == null) {
+            statistics = new HashMap<>();
+        }
         if (StringUtils.isNumeric(value)) {
             long val = Long.parseLong(value) + Long.parseLong(statistics.getOrDefault(key, "0"));
             statistics.put(key, val + "");
@@ -59,6 +65,9 @@ public class PlanGraph {
 
     public void putOverview(String key, String value) {
         if (value != null) {
+            if (overview == null) {
+                overview = new HashMap<>();
+            }
             overview.put(key, value);
         }
     }
