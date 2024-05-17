@@ -17,6 +17,7 @@ package com.oceanbase.odc.metadb.dlm;
 
 import java.util.Date;
 import java.util.List;
+import java.util.Optional;
 
 import javax.transaction.Transactional;
 
@@ -24,7 +25,6 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 
 import com.oceanbase.odc.config.jpa.OdcJpaRepository;
-import com.oceanbase.odc.core.shared.constant.TaskStatus;
 
 /**
  * @Author：tinker
@@ -32,26 +32,12 @@ import com.oceanbase.odc.core.shared.constant.TaskStatus;
  * @Descripition:
  */
 public interface DlmTableUnitRepository extends OdcJpaRepository<DlmTableUnitEntity, Long> {
-
-    @Transactional
-    @Modifying
-    @Query("UPDATE DlmTableUnitEntity e SET e.status = ?3,e.startTime = ?2 WHERE e.dlmTableUnitId = ?1")
-    int updateStatusAndStartTimeByDlmTableUnitId(String dlmTableUnitId, Date startTime, TaskStatus status);
-
-    @Transactional
-    @Modifying
-    @Query("UPDATE DlmTableUnitEntity e SET e.status = ?3,e.endTime = ?2 WHERE e.dlmTableUnitId = ?1")
-    int updateStatusAndEndTimeByDlmTableUnitId(String dlmTableUnitId, Date endTime, TaskStatus status);
-
-    @Transactional
-    @Modifying
-    @Query("UPDATE DlmTableUnitEntity e SET e.status = ?2 WHERE e.dlmTableUnitId = ?1")
-    int updateStatusByDlmTableUnitId(String dlmTableUnitId, TaskStatus status);
-
     @Transactional
     @Modifying
     @Query("UPDATE DlmTableUnitEntity e SET e.statistic = ?2 WHERE e.dlmTableUnitId = ?1")
     int updateStatisticByDlmTableUnitId(String dlmTableUnitId, String statistic);
 
     List<DlmTableUnitEntity> findByScheduleTaskId(Long scheduleTaskId);
+
+    Optional<DlmTableUnitEntity> findByDlmTableUnitId(String dlmTableUnitId);
 }

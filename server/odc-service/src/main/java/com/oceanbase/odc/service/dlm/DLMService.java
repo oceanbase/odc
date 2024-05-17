@@ -18,15 +18,19 @@ package com.oceanbase.odc.service.dlm;
 import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
+import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.core.shared.constant.TaskStatus;
+import com.oceanbase.odc.core.shared.exception.NotFoundException;
 import com.oceanbase.odc.metadb.dlm.DlmTableUnitEntity;
 import com.oceanbase.odc.metadb.dlm.DlmTableUnitRepository;
 import com.oceanbase.odc.service.dlm.model.DlmTableUnit;
@@ -85,14 +89,20 @@ public class DLMService {
                 .saveAll(dlmTableUnits.stream().map(DlmTableUnitMapper::modelToEntity).collect(Collectors.toList()));
     }
 
+    @Transactional(rollbackFor = Exception.class)
     public void updateStatusByDlmTableUnitId(String dlmTableUnitId, TaskStatus status) {
-        if (status == TaskStatus.RUNNING) {
-            dlmTableUnitRepository.updateStatusAndStartTimeByDlmTableUnitId(dlmTableUnitId, new Date(), status);
-        } else if (status.isTerminated()) {
-            dlmTableUnitRepository.updateStatusAndEndTimeByDlmTableUnitId(dlmTableUnitId, new Date(), status);
-        } else {
-            dlmTableUnitRepository.updateStatusByDlmTableUnitId(dlmTableUnitId, status);
+        Optional<DlmTableUnitEntity> optional = dlmTableUnitRepository.findByDlmTableUnitId(dlmTableUnitId);
+        if (!optional.isPresent()) {
+            throw new NotFoundException(ResourceType.ODC_DLM_TABLE_UNIT, "dlmTableUnitId", dlmTableUnitId);
         }
+        DlmTableUnitEntity entity = optional.get();
+        entity.setStatus(status);
+        if (status == TaskStatus.RUNNING && entity.getStartTime() == null) {
+            entity.setStartTime(new Date());
+        } else if (status.isTerminated()) {
+            entity.setEndTime(new Date());
+        }
+        dlmTableUnitRepository.save(entity);
     }
 
     public List<DlmTableUnit> findByScheduleTaskId(Long scheduleTaskId) {

@@ -30,6 +30,7 @@ import com.oceanbase.odc.service.dlm.model.DlmTableUnit;
 import com.oceanbase.odc.service.dlm.model.DlmTableUnitParameters;
 import com.oceanbase.odc.service.dlm.utils.DlmJobIdUtil;
 import com.oceanbase.odc.service.schedule.job.DLMJobReq;
+import com.oceanbase.odc.service.schedule.model.DlmTableUnitStatistic;
 import com.oceanbase.odc.service.task.caller.JobContext;
 import com.oceanbase.odc.service.task.constants.JobParametersKeyConstants;
 import com.oceanbase.odc.service.task.util.JobUtils;
@@ -97,12 +98,12 @@ public class DataArchiveTask extends BaseTask<Boolean> {
             }
             try {
                 job = jobFactory.createJob(dlmTableUnit);
-                jobStore.updateDlmTableUnitStatus(dlmTableUnit.getDlmTableUnitId(), TaskStatus.RUNNING.name());
+                jobStore.updateDlmTableUnitStatus(dlmTableUnit.getDlmTableUnitId(), TaskStatus.RUNNING);
                 log.info("Init {} job succeed,DLMJobId={}", job.getJobMeta().getJobType(), job.getJobMeta().getJobId());
                 log.info("{} job start,DLMJobId={}", job.getJobMeta().getJobType(), job.getJobMeta().getJobId());
                 job.run();
                 log.info("{} job finished,DLMJobId={}", job.getJobMeta().getJobType(), job.getJobMeta().getJobId());
-                jobStore.updateDlmTableUnitStatus(dlmTableUnit.getDlmTableUnitId(), TaskStatus.DONE.name());
+                jobStore.updateDlmTableUnitStatus(dlmTableUnit.getDlmTableUnitId(), TaskStatus.DONE);
             } catch (Throwable e) {
                 log.error("{} job failed,DLMJobId={},errorMsg={}", job.getJobMeta().getJobType(),
                         job.getJobMeta().getJobId(),
@@ -110,9 +111,9 @@ public class DataArchiveTask extends BaseTask<Boolean> {
                 // set task status to failed if any job failed.
                 isSuccess = false;
                 if (job.getJobMeta().isToStop()) {
-                    jobStore.updateDlmTableUnitStatus(dlmTableUnit.getDlmTableUnitId(), TaskStatus.CANCELED.name());
+                    jobStore.updateDlmTableUnitStatus(dlmTableUnit.getDlmTableUnitId(), TaskStatus.CANCELED);
                 } else {
-                    jobStore.updateDlmTableUnitStatus(dlmTableUnit.getDlmTableUnitId(), TaskStatus.FAILED.name());
+                    jobStore.updateDlmTableUnitStatus(dlmTableUnit.getDlmTableUnitId(), TaskStatus.FAILED);
                 }
             }
         }
@@ -121,7 +122,7 @@ public class DataArchiveTask extends BaseTask<Boolean> {
 
     private List<DlmTableUnit> getDlmTableUnits(DLMJobReq req) throws SQLException {
 
-        List<DlmTableUnit> existsDlmJobs = jobStore.getDlmJobs(req.getScheduleTaskId());
+        List<DlmTableUnit> existsDlmJobs = jobStore.getDlmTableUnits(req.getScheduleTaskId());
         if (!existsDlmJobs.isEmpty()) {
             return existsDlmJobs;
         }
@@ -147,6 +148,7 @@ public class DataArchiveTask extends BaseTask<Boolean> {
             dlmTableUnit.setFireTime(req.getFireTime());
             dlmTableUnit.setStatus(TaskStatus.PREPARING);
             dlmTableUnit.setType(JobType.MIGRATE);
+            dlmTableUnit.setStatistic(new DlmTableUnitStatistic());
             dlmTableUnits.add(dlmTableUnit);
         });
         jobStore.storeDlmTableUnit(dlmTableUnits);

@@ -25,6 +25,7 @@ import java.util.List;
 
 import com.alibaba.druid.pool.DruidDataSource;
 import com.oceanbase.odc.common.json.JsonUtils;
+import com.oceanbase.odc.core.shared.constant.TaskStatus;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.dlm.model.DlmTableUnit;
 import com.oceanbase.odc.service.dlm.model.DlmTableUnitParameters;
@@ -38,7 +39,6 @@ import com.oceanbase.tools.migrator.common.dto.TableSizeInfo;
 import com.oceanbase.tools.migrator.common.dto.TaskGenerator;
 import com.oceanbase.tools.migrator.common.element.PrimaryKey;
 import com.oceanbase.tools.migrator.common.enums.JobType;
-import com.oceanbase.tools.migrator.common.enums.TaskStatus;
 import com.oceanbase.tools.migrator.common.exception.JobException;
 import com.oceanbase.tools.migrator.common.exception.JobSqlException;
 import com.oceanbase.tools.migrator.common.meta.TableMeta;
@@ -72,7 +72,7 @@ public class DLMJobStore implements IJobStore {
         dataSource.close();
     }
 
-    public List<DlmTableUnit> getDlmJobs(Long scheduleTaskId) throws SQLException {
+    public List<DlmTableUnit> getDlmTableUnits(Long scheduleTaskId) throws SQLException {
         try (Connection conn = dataSource.getConnection()) {
             PreparedStatement ps = conn.prepareStatement("select * from dlm_job where schedule_task_id = ?");
             ps.setLong(1, scheduleTaskId);
@@ -100,45 +100,44 @@ public class DLMJobStore implements IJobStore {
         }
     }
 
-    public boolean updateDlmTableUnitStatus(String dlmTableUnitId, String status) {
-        String updateSql = "UPDATE dlm_job SET status = ? WHERE dlm_job_id = ?";
+    public void updateDlmTableUnitStatus(String dlmTableUnitId, TaskStatus status) throws SQLException {
+        String sql = "UPDATE dlm_table_unit " +
+                "SET status = ?, " +
+                "start_time = CASE WHEN ? = 'RUNNING' AND start_time IS NULL THEN CURRENT_TIMESTAMP ELSE start_time END, "
+                +
+                "end_time = CASE WHEN ? IN ('CANCELED', 'DONE', 'FAILED') THEN CURRENT_TIMESTAMP ELSE end_time END " +
+                "WHERE dlm_table_unit_id = ?";
 
-        try (Connection connection = dataSource.getConnection();
-                PreparedStatement preparedStatement = connection.prepareStatement(updateSql)) {
-
-            preparedStatement.setString(1, status);
-            preparedStatement.setString(2, dlmTableUnitId);
-
-            int rowsAffected = preparedStatement.executeUpdate();
-
-            return rowsAffected > 0;
-
-        } catch (SQLException e) {
-            log.warn("Update dlm job status failed,dlmTableUnitId={}", dlmTableUnitId, e);
-            return false;
+        try (PreparedStatement pstmt = dataSource.getConnection().prepareStatement(sql)) {
+            pstmt.setString(1, status.name());
+            pstmt.setString(2, status.name());
+            pstmt.setString(3, status.name());
+            pstmt.setString(4, dlmTableUnitId);
+            pstmt.executeUpdate();
         }
     }
 
 
     public void storeDlmTableUnit(List<DlmTableUnit> dlmTableUnits) throws SQLException {
-        String sql = "INSERT INTO dlm_job (schedule_task_id, dlm_job_id, table_name, fire_time, " +
+        String sql = "INSERT INTO dlm_table_unit (schedule_task_id, dlm_job_id, table_name, fire_time, " +
                 "target_table_name, source_datasource_info, target_datasource_info, status, type, " +
-                "parameters, create_time, update_time) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                "parameters, statistic) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
         // Try-with-resources statement ensures that each resource is closed at the end of the statement
         try (Connection conn = dataSource.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
             int count = 0;
-            for (DlmTableUnit job : dlmTableUnits) {
-                ps.setLong(1, job.getScheduleTaskId());
-                ps.setString(2, job.getDlmTableUnitId());
-                ps.setString(3, job.getTableName());
-                ps.setDate(4, new Date(job.getFireTime().getTime()));
-                ps.setString(5, job.getTargetTableName());
-                ps.setString(6, JsonUtils.toJson(job.getSourceDatasourceInfo()));
-                ps.setString(7, JsonUtils.toJson(job.getTargetDatasourceInfo()));
-                ps.setString(8, job.getStatus().name());
-                ps.setString(9, job.getType().name());
-                ps.setString(10, JsonUtils.toJson(job.getParameters()));
+            for (DlmTableUnit dlmTableUnit : dlmTableUnits) {
+                ps.setLong(1, dlmTableUnit.getScheduleTaskId());
+                ps.setString(2, dlmTableUnit.getDlmTableUnitId());
+                ps.setString(3, dlmTableUnit.getTableName());
+                ps.setDate(4, new Date(dlmTableUnit.getFireTime().getTime()));
+                ps.setString(5, dlmTableUnit.getTargetTableName());
+                ps.setString(6, JsonUtils.toJson(dlmTableUnit.getSourceDatasourceInfo()));
+                ps.setString(7, JsonUtils.toJson(dlmTableUnit.getTargetDatasourceInfo()));
+                ps.setString(8, dlmTableUnit.getStatus().name());
+                ps.setString(9, dlmTableUnit.getType().name());
+                ps.setString(10, JsonUtils.toJson(dlmTableUnit.getParameters()));
+                ps.setString(11, JsonUtils.toJson(dlmTableUnit.getStatistic()));
                 ps.addBatch();
                 if (++count % 100 == 0 || count == dlmTableUnits.size()) {
                     ps.executeBatch();
@@ -259,7 +258,8 @@ public class DLMJobStore implements IJobStore {
                     taskMeta.setTaskIndex(resultSet.getLong("task_index"));
                     taskMeta.setJobMeta(jobMeta);
                     taskMeta.setGeneratorId(resultSet.getString("generator_id"));
-                    taskMeta.setTaskStatus(TaskStatus.valueOf(resultSet.getString("status")));
+                    taskMeta.setTaskStatus(com.oceanbase.tools.migrator.common.enums.TaskStatus
+                            .valueOf(resultSet.getString("status")));
                     taskMeta.setMinPrimaryKey(PrimaryKey.valuesOf(resultSet.getString("lower_bound_primary_key")));
                     taskMeta.setMaxPrimaryKey(PrimaryKey.valuesOf(resultSet.getString("upper_bound_primary_key")));
                     taskMeta.setCursorPrimaryKey(PrimaryKey.valuesOf(resultSet.getString("primary_key_cursor")));
