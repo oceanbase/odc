@@ -114,4 +114,8 @@ public enum TaskType implements Translatable {
         return !(this == PRE_CHECK || this == SQL_CHECK || this == GENERATE_ROLLBACK);
     }
 
+    public boolean needsSetLogDownloadUrl() {
+        return !(this == PRE_CHECK || this == SQL_CHECK || this == GENERATE_ROLLBACK);
+    }
+
 }

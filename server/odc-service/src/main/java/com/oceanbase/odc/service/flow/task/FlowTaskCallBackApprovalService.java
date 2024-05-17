@@ -103,7 +103,7 @@ public class FlowTaskCallBackApprovalService {
         FlowInstanceEntity flowInstance = getFlowInstance(flowInstanceId);
         FlowableElement flowableElement = getFlowableElementOfUserTask(flowTaskInstanceId);
 
-        Await.await().timeout(60).timeUnit(TimeUnit.SECONDS)
+        Await.await().timeout(60).timeUnit(TimeUnit.SECONDS).period(1).periodTimeUnit(TimeUnit.SECONDS)
                 .until(getFlowableTask(flowInstance, flowableElement.getName())::isPresent).build().start();
         Task task = getFlowableTask(flowInstance, flowableElement.getName()).get();
         doCompleteTask(flowInstanceId, flowTaskInstanceId, flowNodeStatus, approvalVariables, task.getId());
