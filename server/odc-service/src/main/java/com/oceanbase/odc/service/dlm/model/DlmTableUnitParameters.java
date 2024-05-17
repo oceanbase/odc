@@ -13,46 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.schedule.model;
+package com.oceanbase.odc.service.dlm.model;
 
-import java.util.Date;
+import java.util.Set;
 
-import com.oceanbase.odc.core.shared.constant.TaskStatus;
+import com.oceanbase.tools.dbbrowser.model.DBObjectType;
+import com.oceanbase.tools.migrator.common.dto.JobParameter;
 
 import lombok.Data;
-import lombok.NonNull;
 
 /**
  * @Author：tinker
- * @Date: 2023/5/24 15:35
+ * @Date: 2024/5/15 15:56
  * @Descripition:
  */
 
 @Data
-public class ScheduleTaskResp {
+public class DlmTableUnitParameters extends JobParameter {
 
-    private Long id;
-
-    private String jobName;
-
-    private String jobGroup;
-
-    private TaskStatus status;
-
-    private double progressPercentage;
-
-    private String executionDetails;
-
-    private String resultJson;
-
-    private Date createTime;
-
-    private Date updateTime;
-
-    public static ScheduleTaskResp withId(@NonNull Long id) {
-        ScheduleTaskResp resp = new ScheduleTaskResp();
-        resp.setId(id);
-        return resp;
-    }
-
+    private Set<DBObjectType> syncDBObjectType;
 }

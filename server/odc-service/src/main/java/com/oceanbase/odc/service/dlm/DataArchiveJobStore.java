@@ -23,6 +23,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
+import com.oceanbase.odc.common.json.JsonUtils;
+import com.oceanbase.odc.metadb.dlm.DlmTableUnitRepository;
 import com.oceanbase.odc.metadb.dlm.TaskGeneratorEntity;
 import com.oceanbase.odc.metadb.dlm.TaskGeneratorRepository;
 import com.oceanbase.odc.metadb.dlm.TaskUnitEntity;
@@ -31,6 +33,7 @@ import com.oceanbase.odc.service.dlm.model.RateLimitConfiguration;
 import com.oceanbase.odc.service.dlm.utils.DlmJobIdUtil;
 import com.oceanbase.odc.service.dlm.utils.TaskGeneratorMapper;
 import com.oceanbase.odc.service.dlm.utils.TaskUnitMapper;
+import com.oceanbase.odc.service.schedule.model.DlmTableUnitStatistic;
 import com.oceanbase.tools.migrator.common.dto.JobStatistic;
 import com.oceanbase.tools.migrator.common.dto.TableSizeInfo;
 import com.oceanbase.tools.migrator.common.dto.TaskGenerator;
@@ -60,6 +63,8 @@ public class DataArchiveJobStore implements IJobStore {
     private TaskGeneratorRepository taskGeneratorRepository;
     @Autowired
     private TaskUnitRepository taskUnitRepository;
+    @Autowired
+    private DlmTableUnitRepository dlmTableUnitRepository;
 
     private final TaskGeneratorMapper taskGeneratorMapper = TaskGeneratorMapper.INSTANCE;
     private final TaskUnitMapper taskUnitMapper = TaskUnitMapper.INSTANCE;
@@ -105,7 +110,13 @@ public class DataArchiveJobStore implements IJobStore {
 
     @Override
     public void storeJobStatistic(JobMeta jobMeta) {
-        jobMeta.getJobStat().buildReportData();
+        DlmTableUnitStatistic dlmExecutionDetail = new DlmTableUnitStatistic();
+        dlmExecutionDetail.setProcessedRowCount(jobMeta.getJobStat().getRowCount());
+        dlmExecutionDetail.setProcessedRowsPerSecond(jobMeta.getJobStat().getAvgRowCount());
+        dlmExecutionDetail.setReadRowCount(jobMeta.getJobStat().getReadRowCount());
+        dlmExecutionDetail.setReadRowsPerSecond(jobMeta.getJobStat().getAvgReadRowCount());
+        dlmTableUnitRepository.updateStatisticByDlmTableUnitId(jobMeta.getJobId(),
+                JsonUtils.toJson(dlmExecutionDetail));
     }
 
     @Override

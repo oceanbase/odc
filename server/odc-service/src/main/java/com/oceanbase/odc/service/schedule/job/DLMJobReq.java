@@ -15,6 +15,7 @@
  */
 package com.oceanbase.odc.service.schedule.job;
 
+import java.util.Date;
 import java.util.List;
 import java.util.Set;
 
@@ -35,9 +36,11 @@ import lombok.Data;
  */
 
 @Data
-public class DLMJobParameters {
+public class DLMJobReq {
 
     private String jobName;
+
+    private Date fireTime;
 
     private Long scheduleTaskId;
 
