@@ -16,8 +16,6 @@
 
 package com.oceanbase.odc.service.task.config;
 
-import javax.sql.DataSource;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -75,11 +73,10 @@ public class TaskFrameworkConfiguration {
 
     @Lazy
     @Bean("taskFrameworkSchedulerFactoryBean")
-    public SchedulerFactoryBean taskFrameworkSchedulerFactoryBean(DataSource dataSource,
+    public SchedulerFactoryBean taskFrameworkSchedulerFactoryBean(
             TaskFrameworkProperties taskFrameworkProperties,
             @Qualifier("taskFrameworkMonitorExecutor") ThreadPoolTaskExecutor executor) {
         SchedulerFactoryBean schedulerFactoryBean = new SchedulerFactoryBean();
-        schedulerFactoryBean.setDataSource(dataSource);
         String taskFrameworkSchedulerName = "TASK-FRAMEWORK-SCHEDULER";
         schedulerFactoryBean.setSchedulerName(taskFrameworkSchedulerName);
         schedulerFactoryBean.setStartupDelay(taskFrameworkProperties.getQuartzStartDelaySeconds());
