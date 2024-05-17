@@ -29,6 +29,7 @@ import com.oceanbase.odc.service.collaboration.project.ProjectService;
 import com.oceanbase.odc.service.collaboration.project.model.Project;
 import com.oceanbase.odc.service.connection.database.DatabaseService;
 import com.oceanbase.odc.service.connection.database.model.Database;
+import com.oceanbase.odc.service.databasechange.model.DatabaseChangeDatabase;
 import com.oceanbase.odc.service.flow.model.CreateFlowInstanceReq;
 import com.oceanbase.odc.service.flow.processor.FlowTaskPreprocessor;
 import com.oceanbase.odc.service.flow.processor.Preprocessor;
@@ -77,9 +78,10 @@ public class MultipleDatabaseChangePreprocessor implements Preprocessor {
         // must reset the batchid when initiating a multiple database flow again
         parameters.setBatchId(null);
         parameters.setProject(project);
-        parameters.setDatabases(databases);
+        parameters.setDatabases(databases.stream().map(DatabaseChangeDatabase::new).collect(Collectors.toList()));
         req.setProjectId(parameters.getProjectId());
         req.setProjectName(project.getName());
         DescriptionGenerator.generateDescription(req);
     }
+
 }

@@ -21,7 +21,7 @@ import java.util.stream.Collectors;
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.shared.constant.Symbols;
 import com.oceanbase.odc.core.shared.constant.TaskType;
-import com.oceanbase.odc.service.connection.database.model.Database;
+import com.oceanbase.odc.service.databasechange.model.DatabaseChangeDatabase;
 import com.oceanbase.odc.service.flow.model.CreateFlowInstanceReq;
 import com.oceanbase.odc.service.flow.task.model.MultipleDatabaseChangeParameters;
 
@@ -38,19 +38,17 @@ public class DescriptionGenerator {
                     + "%s" + Symbols.RIGHT_BRACKET.getLocalizedMessage() + "%s.%s";
             if (req.getTaskType() == TaskType.MULTIPLE_ASYNC) {
                 MultipleDatabaseChangeParameters parameters = (MultipleDatabaseChangeParameters) req.getParameters();
-                List<Database> databases = parameters.getDatabases();
+                List<DatabaseChangeDatabase> databases = parameters.getDatabases();
                 String description = databases.stream()
                         .map(db -> String.format(descFormat, db.getEnvironment().getName(),
-                                db.getDataSource().getName(),
-                                db.getName()))
+                                db.getDataSource().getName(), db.getName()))
                         .collect(Collectors.joining(","));
                 req.setDescription(description);
             } else {
-
                 req.setDescription(String.format(descFormat,
                         req.getEnvironmentName(), req.getConnectionName(), req.getDatabaseName()));
             }
-
         }
     }
+
 }

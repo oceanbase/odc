@@ -50,9 +50,9 @@ import com.oceanbase.odc.metadb.databasechange.DatabaseChangeChangingOrderTempla
 import com.oceanbase.odc.metadb.databasechange.DatabaseChangeChangingOrderTemplateSpecs;
 import com.oceanbase.odc.service.databasechange.model.CreateDatabaseChangeChangingOrderTemplateReq;
 import com.oceanbase.odc.service.databasechange.model.DatabaseChangeChangingOrderTemplateResp;
+import com.oceanbase.odc.service.databasechange.model.DatabaseChangeDatabase;
 import com.oceanbase.odc.service.databasechange.model.DatabaseChangeProperties;
 import com.oceanbase.odc.service.databasechange.model.DatabaseChangingOrderTemplateExists;
-import com.oceanbase.odc.service.databasechange.model.DatabaseResp;
 import com.oceanbase.odc.service.databasechange.model.QueryDatabaseChangeChangingOrderParams;
 import com.oceanbase.odc.service.databasechange.model.UpdateDatabaseChangeChangingOrderReq;
 import com.oceanbase.odc.service.iam.ProjectPermissionValidator;
@@ -111,21 +111,8 @@ public class DatabaseChangeChangingOrderTemplateService {
         templateResp.setCreatorId(savedEntity.getCreatorId());
         templateResp.setOrganizationId(savedEntity.getOrganizationId());
         List<List<Long>> databaseSequences = savedEntity.getDatabaseSequences();
-        // Map<Long, DatabaseResp> DatabaseEntityId2DatabaseResp =
-        // databaseSequences.stream().flatMap(Collection::stream).collect(Collectors.toMap(
-        // id -> id, id -> {
-        // DatabaseResp databaseResp = new DatabaseResp();
-        // databaseResp.setId(id);
-        // return databaseResp;
-        // }));
-        List<List<DatabaseResp>> databaseSequenceList = databaseSequences.stream()
-                .map(sequence -> sequence.stream()
-                        .map(databaseId -> {
-                            DatabaseResp databaseResp = new DatabaseResp();
-                            databaseResp.setId(databaseId);
-                            return databaseResp;
-                        })
-                        .collect(Collectors.toList()))
+        List<List<DatabaseChangeDatabase>> databaseSequenceList = databaseSequences.stream()
+                .map(s -> s.stream().map(DatabaseChangeDatabase::new).collect(Collectors.toList()))
                 .collect(Collectors.toList());
         templateResp.setDatabaseSequenceList(databaseSequenceList);
         templateResp.setEnabled(true);
@@ -165,21 +152,8 @@ public class DatabaseChangeChangingOrderTemplateService {
         templateResp.setCreatorId(savedEntity.getCreatorId());
         templateResp.setOrganizationId(savedEntity.getOrganizationId());
         List<List<Long>> databaseSequences = savedEntity.getDatabaseSequences();
-        // Map<Long, DatabaseResp> DatabaseEntityId2DatabaseResp =
-        // databaseSequences.stream().flatMap(Collection::stream).collect(Collectors.toMap(
-        // id -> id, id -> {
-        // DatabaseResp databaseResp = new DatabaseResp();
-        // databaseResp.setId(id);
-        // return databaseResp;
-        // }));
-        List<List<DatabaseResp>> databaseSequenceList = databaseSequences.stream()
-                .map(sequence -> sequence.stream()
-                        .map(databaseId -> {
-                            DatabaseResp databaseResp = new DatabaseResp();
-                            databaseResp.setId(databaseId);
-                            return databaseResp;
-                        })
-                        .collect(Collectors.toList()))
+        List<List<DatabaseChangeDatabase>> databaseSequenceList = databaseSequences.stream()
+                .map(s -> s.stream().map(DatabaseChangeDatabase::new).collect(Collectors.toList()))
                 .collect(Collectors.toList());
         templateResp.setDatabaseSequenceList(databaseSequenceList);
         templateResp.setEnabled(true);
@@ -205,18 +179,6 @@ public class DatabaseChangeChangingOrderTemplateService {
             throw new AccessDeniedException(ErrorCodes.BuiltInResourceNotAvailable,
                     "The template is disabled, you can delete it");
         }
-        // Map<Long, DatabaseResp> templateId2DatabaseResp =
-        // databaseEntities.stream().collect(Collectors.toMap(
-        // databaseEntity -> databaseEntity.getId(), databaseEntity -> {
-        // DatabaseResp databaseResp = new DatabaseResp();
-        // databaseResp.setId(databaseEntity.getId());
-        // return databaseResp;
-        // }));
-        // List<List<DatabaseResp>> databaseSequenceList = databaseSequences.stream()
-        // .map(sequence -> sequence.stream()
-        // .map(x -> templateId2DatabaseResp.get(x))
-        // .collect(Collectors.toList()))
-        // .collect(Collectors.toList());
         DatabaseChangeChangingOrderTemplateResp templateResp =
                 new DatabaseChangeChangingOrderTemplateResp();
         templateResp.setId(templateEntity.getId());
@@ -226,15 +188,8 @@ public class DatabaseChangeChangingOrderTemplateService {
         templateResp.setProjectId(templateEntity.getProjectId());
         templateResp
                 .setOrganizationId(templateEntity.getOrganizationId());
-        // List<List<Long>> databaseSequences = templateEntity.getDatabaseSequences();
-        List<List<DatabaseResp>> databaseSequenceList = databaseSequences.stream()
-                .map(sequence -> sequence.stream()
-                        .map(databaseId -> {
-                            DatabaseResp databaseResp = new DatabaseResp();
-                            databaseResp.setId(databaseId);
-                            return databaseResp;
-                        })
-                        .collect(Collectors.toList()))
+        List<List<DatabaseChangeDatabase>> databaseSequenceList = databaseSequences.stream()
+                .map(s -> s.stream().map(DatabaseChangeDatabase::new).collect(Collectors.toList()))
                 .collect(Collectors.toList());
         templateResp.setDatabaseSequenceList(databaseSequenceList);
         templateResp.setEnabled(templateEntity.getEnabled());
@@ -269,12 +224,6 @@ public class DatabaseChangeChangingOrderTemplateService {
         return new PageImpl<>(templateRespList, pageable, pageResult.getTotalElements());
     }
 
-    public Page<DatabaseChangeChangingOrderTemplateEntity> listTemplates(
-            @NotNull Pageable pageable,
-            Specification<DatabaseChangeChangingOrderTemplateEntity> specification) {
-        return templateRepository.findAll(specification, pageable);
-    }
-
     @Transactional(rollbackFor = Exception.class)
     public DatabaseChangeChangingOrderTemplateResp delete(@NotNull Long id) {
         DatabaseChangeChangingOrderTemplateEntity templateEntity =
@@ -289,21 +238,8 @@ public class DatabaseChangeChangingOrderTemplateService {
         templateResp.setCreatorId(templateEntity.getCreatorId());
         templateResp.setOrganizationId(templateEntity.getOrganizationId());
         List<List<Long>> databaseSequences = templateEntity.getDatabaseSequences();
-        // Map<Long, DatabaseResp> DatabaseEntityId2DatabaseResp =
-        // databaseSequences.stream().flatMap(Collection::stream).collect(Collectors.toMap(
-        // id -> id, id -> {
-        // DatabaseResp databaseResp = new DatabaseResp();
-        // databaseResp.setId(id);
-        // return databaseResp;
-        // }));
-        List<List<DatabaseResp>> databaseSequenceList = databaseSequences.stream()
-                .map(sequence -> sequence.stream()
-                        .map(databaseId -> {
-                            DatabaseResp databaseResp = new DatabaseResp();
-                            databaseResp.setId(databaseId);
-                            return databaseResp;
-                        })
-                        .collect(Collectors.toList()))
+        List<List<DatabaseChangeDatabase>> databaseSequenceList = databaseSequences.stream()
+                .map(s -> s.stream().map(DatabaseChangeDatabase::new).collect(Collectors.toList()))
                 .collect(Collectors.toList());
         templateResp.setDatabaseSequenceList(databaseSequenceList);
         templateResp.setEnabled(true);

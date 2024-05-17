@@ -15,25 +15,28 @@
  */
 package com.oceanbase.odc.service.databasechange.model;
 
-import java.util.List;
+import java.io.Serializable;
+
+import com.oceanbase.odc.common.i18n.Internationalizable;
+import com.oceanbase.odc.service.collaboration.project.model.Project;
 
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Data
-public class DatabaseChangeChangingOrderTemplateResp {
+@NoArgsConstructor
+public class DatabaseChangeProject implements Serializable {
 
+    private static final long serialVersionUID = -5013749085190365604L;
     private Long id;
-
+    @Internationalizable
     private String name;
 
-    private Long creatorId;
-
-    private Long projectId;
-
-    private Long organizationId;
-
-    private List<List<DatabaseChangeDatabase>> databaseSequenceList;
-
-    private Boolean enabled;
+    public DatabaseChangeProject(Project project) {
+        if (project != null) {
+            this.id = project.getId();
+            this.name = project.getName();
+        }
+    }
 
 }

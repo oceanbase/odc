@@ -59,10 +59,10 @@ import com.oceanbase.odc.service.connection.ConnectionService;
 import com.oceanbase.odc.service.connection.database.DatabaseService;
 import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
+import com.oceanbase.odc.service.databasechange.model.DatabaseChangeDatabase;
 import com.oceanbase.odc.service.flow.FlowableAdaptor;
 import com.oceanbase.odc.service.flow.exception.ServiceTaskError;
 import com.oceanbase.odc.service.flow.model.FlowNodeStatus;
-import com.oceanbase.odc.service.flow.model.MultiplePreCheckTaskResult;
 import com.oceanbase.odc.service.flow.model.PreCheckTaskResult;
 import com.oceanbase.odc.service.flow.task.model.DatabaseChangeParameters;
 import com.oceanbase.odc.service.flow.task.model.DatabasePermissionCheckResult;
@@ -439,7 +439,8 @@ public class PreCheckRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Void> {
             }
             this.multipleSqlCheckTaskResult = new MultipleSqlCheckTaskResult();
             this.multipleSqlCheckTaskResult.setSqlCheckTaskResultList(sqlCheckTaskResultList);
-            this.multipleSqlCheckTaskResult.setDatabaseList(this.databaseList);
+            this.multipleSqlCheckTaskResult.setDatabaseList(this.databaseList.stream()
+                    .map(DatabaseChangeDatabase::new).collect(Collectors.toList()));
             this.multipleSqlCheckTaskResult.setSuccess(true);
             this.multipleSqlCheckTaskResult
                     .setIssueCount(this.multipleSqlCheckTaskResult.getSqlCheckTaskResultList().stream()
@@ -613,8 +614,8 @@ public class PreCheckRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Void> {
         return result;
     }
 
-    private MultiplePreCheckTaskResult buildMultiplePreCheckResult() {
-        MultiplePreCheckTaskResult result = new MultiplePreCheckTaskResult();
+    private PreCheckTaskResult buildMultiplePreCheckResult() {
+        PreCheckTaskResult result = new PreCheckTaskResult();
         result.setExecutorInfo(new ExecutorInfo(this.hostProperties));
         result.setOverLimit(this.overLimit);
         if (Objects.nonNull(this.multipleSqlCheckTaskResult)) {

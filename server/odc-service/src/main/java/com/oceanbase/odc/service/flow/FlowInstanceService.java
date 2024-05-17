@@ -94,7 +94,6 @@ import com.oceanbase.odc.metadb.schedule.ScheduleEntity;
 import com.oceanbase.odc.metadb.task.TaskEntity;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferConfig;
 import com.oceanbase.odc.service.collaboration.environment.EnvironmentService;
-import com.oceanbase.odc.service.collaboration.environment.model.Environment;
 import com.oceanbase.odc.service.common.response.SuccessResponse;
 import com.oceanbase.odc.service.common.util.SqlUtils;
 import com.oceanbase.odc.service.config.SystemConfigService;
@@ -106,6 +105,8 @@ import com.oceanbase.odc.service.connection.database.DatabaseService;
 import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.connection.model.OBTenant;
+import com.oceanbase.odc.service.databasechange.model.DatabaseChangeConnection;
+import com.oceanbase.odc.service.databasechange.model.DatabaseChangeDatabase;
 import com.oceanbase.odc.service.dispatch.DispatchResponse;
 import com.oceanbase.odc.service.dispatch.RequestDispatcher;
 import com.oceanbase.odc.service.dispatch.TaskDispatchChecker;
@@ -356,7 +357,6 @@ public class FlowInstanceService {
         List<RiskLevel> riskLevels = riskLevelService.list();
         Verify.notEmpty(riskLevels, "riskLevels");
         ConnectionConfig conn = null;
-        List<ConnectionConfig> conns = null;
         if (Objects.nonNull(createReq.getConnectionId())) {
             conn = connectionService.getForConnectionSkipPermissionCheck(createReq.getConnectionId());
             cloudMetadataClient.checkPermission(OBTenant.of(conn.getClusterName(),
@@ -364,16 +364,12 @@ public class FlowInstanceService {
         } else if (createReq.getTaskType() == TaskType.MULTIPLE_ASYNC) {
             MultipleDatabaseChangeParameters taskParameters =
                     (MultipleDatabaseChangeParameters) createReq.getParameters();
-            conns = taskParameters.getDatabases().stream().map(
-                    database -> database.getDataSource()).distinct().collect(Collectors.toList());
+            List<DatabaseChangeConnection> conns = taskParameters.getDatabases().stream().map(
+                    DatabaseChangeDatabase::getDataSource).distinct().collect(Collectors.toList());
             conns.forEach(con -> cloudMetadataClient.checkPermission(OBTenant.of(con.getClusterName(),
                     con.getTenantName()), con.getInstanceType(), false, CloudPermissionAction.READONLY));
         }
-        if (createReq.getTaskType() == TaskType.MULTIPLE_ASYNC) {
-            return Collections.singletonList(buildFlowInstance(riskLevels, createReq, null));
-        } else {
-            return Collections.singletonList(buildFlowInstance(riskLevels, createReq, conn));
-        }
+        return Collections.singletonList(buildFlowInstance(riskLevels, createReq, conn));
     }
 
     public Page<FlowInstanceDetailResp> list(@NotNull Pageable pageable, @NotNull QueryFlowInstanceParams params) {
@@ -493,7 +489,7 @@ public class FlowInstanceService {
                         resourceRoleService.getProjectId2ResourceRoleNames();
                 Set<Long> ownerProjectIds = currentUserProjectId2ResourceRoleNames.entrySet().stream()
                         .filter(entry -> entry.getValue().contains(ResourceRoleName.OWNER))
-                        .map(Map.Entry::getKey)
+                        .map(Entry::getKey)
                         .collect(Collectors.toSet());
                 Set<Long> otherRoleProjectIds = new HashSet<>(currentUserProjectId2ResourceRoleNames.keySet());
                 otherRoleProjectIds.removeAll(ownerProjectIds);
@@ -543,30 +539,11 @@ public class FlowInstanceService {
     }
 
     public FlowInstanceDetailResp detail(@NotNull Long id) {
-        FlowInstanceDetailResp flowInstanceDetailResp = mapFlowInstance(id, flowInstance -> {
+        return mapFlowInstance(id, flowInstance -> {
             FlowInstanceMapper instanceMapper = mapperFactory.generateMapperByInstance(flowInstance);
             FlowNodeInstanceMapper nodeInstanceMapper = mapperFactory.generateNodeMapperByInstance(flowInstance);
             return instanceMapper.map(flowInstance, nodeInstanceMapper);
         }, false);
-        // Add environment objects to a multiple databases separately
-        if (flowInstanceDetailResp.getType() == TaskType.MULTIPLE_ASYNC) {
-            MultipleDatabaseChangeParameters parameters =
-                    (MultipleDatabaseChangeParameters) flowInstanceDetailResp.getParameters();
-            List<Database> databases = parameters.getDatabases();
-            List<Long> environmentIds = databases.stream().map(
-                    database -> database.getDataSource().getEnvironmentId()).distinct().collect(Collectors.toList());
-            Map<Long, Environment> environmentMap = environmentService.list(
-                    environmentIds).stream()
-                    .collect(Collectors.toMap(Environment::getId, environment -> environment));
-            databases.forEach(database -> {
-                Long environmentId = database.getDataSource().getEnvironmentId();
-                Environment environment = new Environment();
-                environment.setName(environmentMap.get(environmentId).getName());
-                environment.setStyle(environmentMap.get(environmentId).getStyle());
-                database.setEnvironment(environment);
-            });
-        }
-        return flowInstanceDetailResp;
     }
 
     @Transactional(rollbackFor = Exception.class)
@@ -878,17 +855,9 @@ public class FlowInstanceService {
         log.info("Start creating flow instance, flowInstanceReq={}", flowInstanceReq);
         CreateFlowInstanceReq preCheckReq = new CreateFlowInstanceReq();
         preCheckReq.setTaskType(TaskType.PRE_CHECK);
-        if (flowInstanceReq.getTaskType() == TaskType.MULTIPLE_ASYNC) {
-            //MultipleDatabaseChangeParameters parameters =
-            //        (MultipleDatabaseChangeParameters) flowInstanceReq.getParameters();
-            //preCheckReq.setConnectionId(parameters.getDatabases().get(0).getDataSource().getId());
-            //preCheckReq.setDatabaseId(parameters.getDatabases().get(0).getId());
-            //preCheckReq.setDatabaseName(parameters.getDatabases().get(0).getName());
-        } else {
-            preCheckReq.setConnectionId(flowInstanceReq.getConnectionId());
-            preCheckReq.setDatabaseId(flowInstanceReq.getDatabaseId());
-            preCheckReq.setDatabaseName(flowInstanceReq.getDatabaseName());
-        }
+        preCheckReq.setConnectionId(flowInstanceReq.getConnectionId());
+        preCheckReq.setDatabaseId(flowInstanceReq.getDatabaseId());
+        preCheckReq.setDatabaseName(flowInstanceReq.getDatabaseName());
         TaskEntity preCheckTaskEntity = taskService.create(preCheckReq, (int) TimeUnit.SECONDS
                 .convert(flowTaskProperties.getDefaultExecutionExpirationIntervalHours(), TimeUnit.HOURS));
 

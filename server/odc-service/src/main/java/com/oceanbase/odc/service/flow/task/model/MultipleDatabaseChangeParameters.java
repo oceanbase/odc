@@ -19,7 +19,7 @@ import java.util.List;
 
 import com.oceanbase.odc.core.shared.constant.TaskErrorStrategy;
 import com.oceanbase.odc.service.collaboration.project.model.Project;
-import com.oceanbase.odc.service.connection.database.model.Database;
+import com.oceanbase.odc.service.databasechange.model.DatabaseChangeDatabase;
 
 import lombok.Data;
 
@@ -42,7 +42,7 @@ public class MultipleDatabaseChangeParameters extends DatabaseChangeParameters {
      * multiple databases change execution sequence
      */
     private List<List<Long>> orderedDatabaseIds;
-    private List<Database> databases;
+    private List<DatabaseChangeDatabase> databases;
     private Integer batchId;
     /**
      * Error strategy in multiple databases auto execution mode

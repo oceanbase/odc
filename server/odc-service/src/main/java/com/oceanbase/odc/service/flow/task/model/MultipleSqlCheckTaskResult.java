@@ -19,7 +19,7 @@ import java.io.Serializable;
 import java.util.List;
 
 import com.oceanbase.odc.core.flow.model.FlowTaskResult;
-import com.oceanbase.odc.service.connection.database.model.Database;
+import com.oceanbase.odc.service.databasechange.model.DatabaseChangeDatabase;
 
 import lombok.Getter;
 import lombok.Setter;
@@ -35,7 +35,7 @@ import lombok.ToString;
 public class MultipleSqlCheckTaskResult implements Serializable, FlowTaskResult {
     private static final long serialVersionUID = -1410986697860096629L;
     private List<SqlCheckTaskResult> sqlCheckTaskResultList;
-    private List<Database> databaseList;
+    private List<DatabaseChangeDatabase> databaseList;
     private boolean success;
     private Integer issueCount;
     private Integer maxLevel;
