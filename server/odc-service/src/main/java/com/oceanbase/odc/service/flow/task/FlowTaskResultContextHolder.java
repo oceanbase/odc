@@ -23,8 +23,20 @@ import java.util.Map;
  * @date 2024-05-17
  * @since 4.2.4
  */
-public class FlowTaskContextHolder {
+public class FlowTaskResultContextHolder {
 
 
-    public static final ThreadLocal<Map<String, Object>> 
+    public static final ThreadLocal<Map<String, Object>> RESULT_CONTEXT = new ThreadLocal<>();
+
+    public static void putContext(Map<String, Object> context) {
+        RESULT_CONTEXT.set(context);
+    }
+
+    public static Map<String, Object> getContext() {
+        return RESULT_CONTEXT.get();
+    }
+
+    public static void cleanContext() {
+        RESULT_CONTEXT.remove();
+    }
 }
