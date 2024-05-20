@@ -38,7 +38,7 @@ import io.swagger.annotations.ApiOperation;
  * @Version 1.0
  */
 @RestController
-@RequestMapping("/api/v2/database-schema")
+@RequestMapping("/api/v2/databaseSchema")
 public class DBSchemaController {
 
     @Autowired
