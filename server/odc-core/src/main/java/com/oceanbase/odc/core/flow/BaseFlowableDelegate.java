@@ -15,17 +15,8 @@
  */
 package com.oceanbase.odc.core.flow;
 
-import java.util.List;
-import java.util.Objects;
-import java.util.stream.Collectors;
-
-import org.flowable.bpmn.model.ErrorEventDefinition;
-import org.flowable.engine.delegate.BpmnError;
 import org.flowable.engine.delegate.DelegateExecution;
 import org.flowable.engine.delegate.JavaDelegate;
-
-import com.oceanbase.odc.core.flow.exception.BaseFlowException;
-import com.oceanbase.odc.core.flow.util.FlowUtil;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -46,7 +37,7 @@ public abstract class BaseFlowableDelegate implements JavaDelegate {
     protected abstract void run(DelegateExecution execution) throws Exception;
 
     @Override
-    public void execute(DelegateExecution execution){
+    public void execute(DelegateExecution execution) {
         try {
             run(execution);
         } catch (Exception e) {
