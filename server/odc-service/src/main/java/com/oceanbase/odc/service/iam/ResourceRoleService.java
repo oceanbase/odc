@@ -145,12 +145,6 @@ public class ResourceRoleService {
 
     @Transactional(rollbackFor = Exception.class)
     @SkipAuthorize("internal usage")
-    public int deleteByResourceTypeAndId(@NonNull ResourceType resourceType, @NonNull Long resourceId) {
-        return userResourceRoleRepository.deleteByResourceTypeAndId(resourceType, resourceId);
-    }
-
-    @Transactional(rollbackFor = Exception.class)
-    @SkipAuthorize("internal usage")
     public int deleteByResourceTypeAndIdIn(@NonNull ResourceType resourceType, @NotEmpty Collection<Long> resourceIds) {
         return userResourceRoleRepository.deleteByResourceTypeAndIdIn(resourceType, resourceIds);
     }

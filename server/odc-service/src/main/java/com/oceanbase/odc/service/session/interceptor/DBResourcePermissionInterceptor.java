@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.oceanbase.odc.service.session.interceptor;
 
 import java.util.HashMap;
@@ -33,35 +32,41 @@ import com.oceanbase.odc.core.session.ConnectionSessionUtil;
 import com.oceanbase.odc.core.shared.constant.OrganizationType;
 import com.oceanbase.odc.core.sql.execute.SqlExecuteStages;
 import com.oceanbase.odc.service.connection.database.DatabaseService;
+import com.oceanbase.odc.service.connection.database.model.DBResource;
+import com.oceanbase.odc.service.connection.database.model.UnauthorizedDBResource;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
+import com.oceanbase.odc.service.permission.DBResourcePermissionHelper;
 import com.oceanbase.odc.service.permission.database.model.DatabasePermissionType;
-import com.oceanbase.odc.service.permission.database.model.UnauthorizedDatabase;
 import com.oceanbase.odc.service.session.model.AsyncExecuteContext;
 import com.oceanbase.odc.service.session.model.SqlAsyncExecuteReq;
 import com.oceanbase.odc.service.session.model.SqlAsyncExecuteResp;
 import com.oceanbase.odc.service.session.model.SqlExecuteResult;
 import com.oceanbase.odc.service.session.model.SqlTuplesWithViolation;
-import com.oceanbase.odc.service.session.util.SchemaExtractor;
+import com.oceanbase.odc.service.session.util.DBSchemaExtractor;
+import com.oceanbase.odc.service.session.util.DBSchemaExtractor.DBSchemaIdentity;
 import com.oceanbase.tools.dbbrowser.parser.constant.SqlType;
 
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * @Author: Lebie
- * @Date: 2023/8/8 22:23
- * @Description: []
+ *
+ * @Author: fenghao
+ * @Create 2024/3/20 14:44
+ * @Version 1.0
  */
 @Slf4j
 @Component
-public class DatabasePermissionInterceptor extends BaseTimeConsumingInterceptor {
-
+public class DBResourcePermissionInterceptor extends BaseTimeConsumingInterceptor {
     @Autowired
     private DatabaseService databaseService;
 
     @Autowired
     private AuthenticationFacade authenticationFacade;
+
+    @Autowired
+    private DBResourcePermissionHelper dbResourcePermissionHelper;
 
     @Override
     public int getOrder() {
@@ -76,24 +81,27 @@ public class DatabasePermissionInterceptor extends BaseTimeConsumingInterceptor 
         }
         ConnectionConfig connectionConfig = (ConnectionConfig) ConnectionSessionUtil.getConnectionConfig(session);
         String currentSchema = ConnectionSessionUtil.getCurrentSchema(session);
-        Map<String, Set<SqlType>> schemaName2SqlTypes = SchemaExtractor.listSchemaName2SqlTypes(
+        Map<DBSchemaIdentity, Set<SqlType>> identity2Types = DBSchemaExtractor.listDBSchemasWithSqlTypes(
                 response.getSqls().stream().map(SqlTuplesWithViolation::getSqlTuple).collect(Collectors.toList()),
-                currentSchema, session.getDialectType());
-        Map<String, Set<DatabasePermissionType>> schemaName2PermissionTypes = new HashMap<>();
-        for (Entry<String, Set<SqlType>> entry : schemaName2SqlTypes.entrySet()) {
+                session.getDialectType(), currentSchema);
+        Map<DBResource, Set<DatabasePermissionType>> resource2PermissionTypes = new HashMap<>();
+        for (Entry<DBSchemaIdentity, Set<SqlType>> entry : identity2Types.entrySet()) {
+            DBSchemaIdentity identity = entry.getKey();
             Set<SqlType> sqlTypes = entry.getValue();
             if (CollectionUtils.isNotEmpty(sqlTypes)) {
                 Set<DatabasePermissionType> permissionTypes = sqlTypes.stream().map(DatabasePermissionType::from)
                         .filter(Objects::nonNull).collect(Collectors.toSet());
                 if (CollectionUtils.isNotEmpty(permissionTypes)) {
-                    schemaName2PermissionTypes.put(entry.getKey(), permissionTypes);
+                    resource2PermissionTypes.put(
+                            DBResource.from(connectionConfig, identity.getSchema(), identity.getTable()),
+                            permissionTypes);
                 }
             }
         }
-        List<UnauthorizedDatabase> unauthorizedDatabases =
-                databaseService.filterUnauthorizedDatabases(schemaName2PermissionTypes, connectionConfig.getId(), true);
-        if (CollectionUtils.isNotEmpty(unauthorizedDatabases)) {
-            response.setUnauthorizedDatabases(unauthorizedDatabases);
+        List<UnauthorizedDBResource> unauthorizedDBResource = dbResourcePermissionHelper
+                .filterUnauthorizedDBResources(resource2PermissionTypes, false);
+        if (CollectionUtils.isNotEmpty(unauthorizedDBResource)) {
+            response.setUnauthorizedDBResources(unauthorizedDBResource);
             return false;
         }
         return true;

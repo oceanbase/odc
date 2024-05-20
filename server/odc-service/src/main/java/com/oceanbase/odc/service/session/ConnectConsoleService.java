@@ -44,6 +44,7 @@ import org.springframework.validation.annotation.Validated;
 import com.oceanbase.odc.common.lang.Holder;
 import com.oceanbase.odc.common.unit.BinarySize;
 import com.oceanbase.odc.common.unit.BinarySizeUnit;
+import com.oceanbase.odc.common.util.ExceptionUtils;
 import com.oceanbase.odc.common.util.LogUtils;
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.common.util.TraceStage;
@@ -81,6 +82,7 @@ import com.oceanbase.odc.service.common.util.SqlUtils;
 import com.oceanbase.odc.service.common.util.WebResponseUtils;
 import com.oceanbase.odc.service.config.UserConfigFacade;
 import com.oceanbase.odc.service.connection.ConnectionService;
+import com.oceanbase.odc.service.connection.database.model.UnauthorizedDBResource;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.db.browser.DBSchemaAccessors;
 import com.oceanbase.odc.service.db.session.DefaultDBSessionManage;
@@ -90,7 +92,6 @@ import com.oceanbase.odc.service.dml.ValueEncodeType;
 import com.oceanbase.odc.service.feature.AllFeatures;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.permission.database.model.DatabasePermissionType;
-import com.oceanbase.odc.service.permission.database.model.UnauthorizedDatabase;
 import com.oceanbase.odc.service.session.interceptor.SqlCheckInterceptor;
 import com.oceanbase.odc.service.session.interceptor.SqlConsoleInterceptor;
 import com.oceanbase.odc.service.session.interceptor.SqlExecuteInterceptorService;
@@ -191,13 +192,13 @@ public class ConnectConsoleService {
         asyncExecuteReq.setFullLinkTraceEnabled(false);
         SqlAsyncExecuteResp resp = execute(sessionId, asyncExecuteReq, false);
 
-        List<UnauthorizedDatabase> unauthorizedDatabases = resp.getUnauthorizedDatabases();
-        if (CollectionUtils.isNotEmpty(unauthorizedDatabases)) {
-            UnauthorizedDatabase unauthorizedDatabase = unauthorizedDatabases.get(0);
+        List<UnauthorizedDBResource> unauthorizedDBResources = resp.getUnauthorizedDBResources();
+        if (CollectionUtils.isNotEmpty(unauthorizedDBResources)) {
+            UnauthorizedDBResource unauthorizedDBResource = unauthorizedDBResources.get(0);
             throw new BadRequestException(ErrorCodes.DatabaseAccessDenied,
-                    new Object[] {unauthorizedDatabase.getUnauthorizedPermissionTypes().stream()
+                    new Object[] {unauthorizedDBResource.getUnauthorizedPermissionTypes().stream()
                             .map(DatabasePermissionType::getLocalizedMessage).collect(Collectors.joining(","))},
-                    "Lack permission for the database with id " + unauthorizedDatabase.getId());
+                    "Lack permission for the database with id " + unauthorizedDBResource.getDatabaseId());
         }
 
         String requestId = resp.getRequestId();
@@ -675,7 +676,7 @@ public class ConnectConsoleService {
             try (TraceStage s = watch.start(SqlExecuteStages.INIT_COLUMN_INFO)) {
                 result.initColumnInfo(connectionSession, resultTable, schemaAccessor);
             } catch (Exception e) {
-                log.warn("Failed to init column comment", e);
+                log.warn("Failed to init column comment, reason={}", ExceptionUtils.getSimpleReason(e));
             }
         }
         try (TraceStage s = watch.start(SqlExecuteStages.INIT_WARNING_MESSAGE)) {

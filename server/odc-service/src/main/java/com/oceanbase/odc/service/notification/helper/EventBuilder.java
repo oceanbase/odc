@@ -27,6 +27,7 @@ import static com.oceanbase.odc.service.notification.constant.EventLabelKeys.ENV
 import static com.oceanbase.odc.service.notification.constant.EventLabelKeys.PROJECT_ID;
 import static com.oceanbase.odc.service.notification.constant.EventLabelKeys.PROJECT_NAME;
 import static com.oceanbase.odc.service.notification.constant.EventLabelKeys.REGION;
+import static com.oceanbase.odc.service.notification.constant.EventLabelKeys.TABLE_NAME;
 import static com.oceanbase.odc.service.notification.constant.EventLabelKeys.TASK_ENTITY_ID;
 import static com.oceanbase.odc.service.notification.constant.EventLabelKeys.TASK_ID;
 import static com.oceanbase.odc.service.notification.constant.EventLabelKeys.TASK_STATUS;
@@ -69,6 +70,7 @@ import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.flow.task.model.DatabaseChangeParameters;
 import com.oceanbase.odc.service.iam.UserService;
+import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.iam.model.User;
 import com.oceanbase.odc.service.notification.model.Event;
 import com.oceanbase.odc.service.notification.model.EventLabels;
@@ -77,6 +79,8 @@ import com.oceanbase.odc.service.notification.model.TaskEvent;
 import com.oceanbase.odc.service.permission.database.model.ApplyDatabaseParameter;
 import com.oceanbase.odc.service.permission.database.model.ApplyDatabaseParameter.ApplyDatabase;
 import com.oceanbase.odc.service.permission.project.ApplyProjectParameter;
+import com.oceanbase.odc.service.permission.table.model.ApplyTableParameter;
+import com.oceanbase.odc.service.permission.table.model.ApplyTableParameter.ApplyTable;
 import com.oceanbase.odc.service.schedule.flowtask.AlterScheduleParameters;
 import com.oceanbase.odc.service.schedule.model.JobType;
 
@@ -117,6 +121,8 @@ public class EventBuilder {
     private HostProperties hostProperties;
     @Autowired
     private SiteUrlResolver siteUrlResolver;
+    @Autowired
+    private AuthenticationFacade authenticationFacade;
 
     public Event ofFailedTask(TaskEntity task) {
         Event event = ofTask(task, TaskEvent.EXECUTION_FAILED);
@@ -200,6 +206,17 @@ public class EventBuilder {
             labels.putIfNonNull(DATABASE_NAME, dbNames);
             projectId = parameter.getProject().getId();
             labels.putIfNonNull(PROJECT_ID, projectId);
+        } else if (task.getTaskType() == TaskType.APPLY_TABLE_PERMISSION) {
+            ApplyTableParameter parameter =
+                    JsonUtils.fromJson(task.getParametersJson(), ApplyTableParameter.class);
+            List<String> dbNames =
+                    parameter.getTables().stream().map(ApplyTable::getDatabaseName).collect(Collectors.toList());
+            labels.putIfNonNull(DATABASE_NAME, dbNames);
+            projectId = parameter.getProject().getId();
+            labels.putIfNonNull(PROJECT_ID, projectId);
+            List<String> tableNames =
+                    parameter.getTables().stream().map(ApplyTable::getTableName).collect(Collectors.toList());
+            labels.putIfNonNull(TABLE_NAME, tableNames);
         } else if (task.getTaskType() == TaskType.APPLY_PROJECT_PERMISSION) {
             ApplyProjectParameter parameter =
                     JsonUtils.fromJson(task.getParametersJson(), ApplyProjectParameter.class);
@@ -254,10 +271,17 @@ public class EventBuilder {
 
     private <T> void resolveLabels(EventLabels labels, T task) {
         Verify.notNull(labels, "event.labels");
-
+        if (labels.containsKey(CREATOR_ID)) {
+            try {
+                UserEntity user = userService.nullSafeGet(labels.getLongFromString(CREATOR_ID));
+                labels.putIfNonNull(CREATOR_NAME, user.getName());
+            } catch (Exception e) {
+                log.warn("failed to query creator info.", e);
+            }
+        }
         if (labels.containsKey(CONNECTION_ID)) {
             try {
-                ConnectionConfig connectionConfig = connectionService.getForConnectionSkipPermissionCheck(
+                ConnectionConfig connectionConfig = connectionService.getBasicWithoutPermissionCheck(
                         labels.getLongFromString(CONNECTION_ID));
                 labels.put(CLUSTER_NAME, connectionConfig.getClusterName());
                 labels.put(TENANT_NAME, connectionConfig.getTenantName());
@@ -266,14 +290,6 @@ public class EventBuilder {
                 labels.put(ENVIRONMENT, environment.getName());
             } catch (Exception e) {
                 log.warn("failed to query connection info.", e);
-            }
-        }
-        if (labels.containsKey(CREATOR_ID)) {
-            try {
-                UserEntity user = userService.nullSafeGet(labels.getLongFromString(CREATOR_ID));
-                labels.putIfNonNull(CREATOR_NAME, user.getName());
-            } catch (Exception e) {
-                log.warn("failed to query creator info.", e);
             }
         }
         if (labels.containsKey(APPROVER_ID)) {

@@ -92,6 +92,7 @@ public class Database implements SecurityResource, OrganizationIsolated, Seriali
     @JsonProperty(access = Access.READ_ONLY)
     private Set<DatabasePermissionType> authorizedPermissionTypes;
 
+
     @JsonProperty(access = Access.READ_ONLY)
     private DBObjectSyncStatus objectSyncStatus;
 

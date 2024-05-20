@@ -38,6 +38,7 @@ import com.oceanbase.odc.service.onlineschemachange.model.OnlineSchemaChangePara
 import com.oceanbase.odc.service.partitionplan.model.PartitionPlanConfig;
 import com.oceanbase.odc.service.permission.database.model.ApplyDatabaseParameter;
 import com.oceanbase.odc.service.permission.project.ApplyProjectParameter;
+import com.oceanbase.odc.service.permission.table.model.ApplyTableParameter;
 import com.oceanbase.odc.service.resultset.ResultSetExportTaskParameter;
 import com.oceanbase.odc.service.schedule.flowtask.AlterScheduleParameters;
 
@@ -98,6 +99,7 @@ public class CreateFlowInstanceReq {
             @JsonSubTypes.Type(value = ResultSetExportTaskParameter.class, name = "EXPORT_RESULT_SET"),
             @JsonSubTypes.Type(value = ApplyProjectParameter.class, name = "APPLY_PROJECT_PERMISSION"),
             @JsonSubTypes.Type(value = ApplyDatabaseParameter.class, name = "APPLY_DATABASE_PERMISSION"),
+            @JsonSubTypes.Type(value = ApplyTableParameter.class, name = "APPLY_TABLE_PERMISSION"),
             @JsonSubTypes.Type(value = DBStructureComparisonParameter.class, name = "STRUCTURE_COMPARISON")
     })
     private TaskParameters parameters;

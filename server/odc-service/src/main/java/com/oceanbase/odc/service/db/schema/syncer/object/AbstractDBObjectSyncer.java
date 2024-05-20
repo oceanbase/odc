@@ -42,10 +42,10 @@ import lombok.NonNull;
 public abstract class AbstractDBObjectSyncer<T extends ExtensionPoint> implements DBSchemaSyncer {
 
     @Autowired
-    private DBObjectRepository dbObjectRepository;
+    protected DBObjectRepository dbObjectRepository;
 
     @Autowired
-    private DBColumnRepository dbColumnRepository;
+    protected DBColumnRepository dbColumnRepository;
 
     @Override
     public void sync(@NonNull Connection connection, @NonNull Database database, @NonNull DialectType dialectType) {
@@ -77,6 +77,7 @@ public abstract class AbstractDBObjectSyncer<T extends ExtensionPoint> implement
         if (CollectionUtils.isNotEmpty(toBeDeleted)) {
             Set<Long> toBeDeletedIds = toBeDeleted.stream().map(DBObjectEntity::getId).collect(Collectors.toSet());
             dbObjectRepository.deleteByIds(toBeDeletedIds);
+            preDelete(toBeDeletedIds);
             dbColumnRepository.deleteByDatabaseIdAndObjectIdIn(database.getId(), toBeDeletedIds);
         }
     }
@@ -91,10 +92,12 @@ public abstract class AbstractDBObjectSyncer<T extends ExtensionPoint> implement
         return Ordered.HIGHEST_PRECEDENCE;
     }
 
-    private T getExtensionPoint(@NonNull DialectType dialectType) {
+    protected T getExtensionPoint(@NonNull DialectType dialectType) {
         List<T> points = SchemaPluginUtil.getExtensions(dialectType, getExtensionPointClass());
         return CollectionUtils.isEmpty(points) ? null : points.get(0);
     }
+
+    void preDelete(@NonNull Set<Long> toBeDeletedIds) {}
 
     abstract Set<String> getLatestObjectNames(@NonNull T extensionPoint, @NonNull Connection connection,
             @NonNull Database database);

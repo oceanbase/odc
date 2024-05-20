@@ -15,6 +15,8 @@
  */
 package com.oceanbase.odc.service.schedule.flowtask;
 
+import java.util.Objects;
+
 import org.springframework.beans.factory.annotation.Autowired;
 
 import com.oceanbase.odc.core.session.ConnectionSession;
@@ -68,8 +70,18 @@ public class DataDeletePreprocessor extends AbstractDlmJobPreprocessor {
             initDefaultConfig(dataDeleteParameters);
             // Throw exception when the specified database does not exist or the current user does not have
             // permission to access it.
+            // if check before delete, need verify target database.
+            if (dataDeleteParameters.getNeedCheckBeforeDelete()) {
+                if (Objects.isNull(dataDeleteParameters.getTargetDatabaseId())) {
+                    throw new IllegalArgumentException("target database id can not be null");
+                }
+                Database targetDb = databaseService.detail(dataDeleteParameters.getTargetDatabaseId());
+                dataDeleteParameters.setTargetDatabaseName(targetDb.getName());
+                dataDeleteParameters.setTargetDataSourceName(targetDb.getDataSource().getName());
+            }
             Database sourceDb = databaseService.detail(dataDeleteParameters.getDatabaseId());
             dataDeleteParameters.setDatabaseName(sourceDb.getName());
+            dataDeleteParameters.setSourceDataSourceName(sourceDb.getDataSource().getName());
             ConnectionConfig dataSource = sourceDb.getDataSource();
             dataSource.setDefaultSchema(sourceDb.getName());
             ConnectionSessionFactory connectionSessionFactory = new DefaultConnectSessionFactory(dataSource);
@@ -101,10 +113,14 @@ public class DataDeletePreprocessor extends AbstractDlmJobPreprocessor {
                 .setWriteThreadCount(dlmConfiguration.getSingleTaskThreadPoolSize() - parameters.getReadThreadCount());
         parameters.setScanBatchSize(dlmConfiguration.getDefaultScanBatchSize());
         parameters.setQueryTimeout(dlmConfiguration.getTaskConnectionQueryTimeout());
-        // set default target table name.
-        parameters.getTables().forEach(tableConfig -> {
-            tableConfig.setTargetTableName(tableConfig.getTableName());
-        });
+        // if no need check before delete, set default target table name.
+        // else target table name not null
+        if (!parameters.getNeedCheckBeforeDelete()) {
+            parameters.getTables().forEach(tableConfig -> {
+                tableConfig.setTargetTableName(tableConfig.getTableName());
+            });
+        }
+
     }
 
 }

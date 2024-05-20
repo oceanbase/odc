@@ -22,6 +22,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
@@ -31,6 +32,7 @@ import javax.validation.constraints.NotNull;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Example;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -61,6 +63,8 @@ import com.oceanbase.odc.metadb.iam.UserDatabasePermissionRepository;
 import com.oceanbase.odc.metadb.iam.UserEntity;
 import com.oceanbase.odc.metadb.iam.UserPermissionRepository;
 import com.oceanbase.odc.metadb.iam.UserRepository;
+import com.oceanbase.odc.metadb.iam.UserTablePermissionEntity;
+import com.oceanbase.odc.metadb.iam.UserTablePermissionRepository;
 import com.oceanbase.odc.metadb.iam.resourcerole.ResourceRoleEntity;
 import com.oceanbase.odc.metadb.iam.resourcerole.ResourceRoleRepository;
 import com.oceanbase.odc.metadb.iam.resourcerole.UserResourceRoleEntity;
@@ -125,6 +129,9 @@ public class ProjectService {
     private UserDatabasePermissionRepository userDatabasePermissionRepository;
 
     @Autowired
+    private UserTablePermissionRepository userTablePermissionRepository;
+
+    @Autowired
     private PermissionRepository permissionRepository;
 
     @Autowired
@@ -133,12 +140,22 @@ public class ProjectService {
     @Autowired
     private ConnectionService connectionService;
 
+    @Value("${odc.integration.bastion.enabled:false}")
+    private boolean bastionEnabled;
+
     private final ProjectMapper projectMapper = ProjectMapper.INSTANCE;
 
+    private final static String BUILTIN_PROJECT_PREFIX = "USER_PROJECT_";
+
+    /**
+     * Create a built-in project for bastion user if not exists
+     *
+     * @param user bastion user
+     */
     @SkipAuthorize("odc internal usage")
     @Transactional(rollbackFor = Exception.class)
     public void createProjectIfNotExists(@NotNull User user) {
-        String projectName = "USER_PROJECT_" + user.getAccountName();
+        String projectName = BUILTIN_PROJECT_PREFIX + user.getAccountName();
         if (repository.findByNameAndOrganizationId(projectName, user.getOrganizationId()).isPresent()) {
             return;
         }
@@ -150,6 +167,7 @@ public class ProjectService {
         projectEntity.setLastModifierId(user.getCreatorId());
         projectEntity.setOrganizationId(user.getOrganizationId());
         projectEntity.setDescription("Built-in project for bastion user " + user.getAccountName());
+        projectEntity.setUniqueIdentifier(generateProjectUniqueIdentifier());
         ProjectEntity saved = repository.saveAndFlush(projectEntity);
         // Grant DEVELOPER role to bastion user, and all other roles to user creator(admin)
         Map<ResourceRoleName, ResourceRoleEntity> resourceRoleName2Entity =
@@ -179,6 +197,7 @@ public class ProjectService {
         project.setLastModifier(currentInnerUser());
         project.setArchived(false);
         project.setBuiltin(false);
+        project.setUniqueIdentifier(generateProjectUniqueIdentifier());
         ProjectEntity saved = repository.save(modelToEntity(project));
         List<UserResourceRole> userResourceRoles = resourceRoleService.saveAll(
                 project.getMembers().stream()
@@ -188,8 +207,7 @@ public class ProjectService {
     }
 
     @PreAuthenticate(hasAnyResourceRole = {"OWNER", "DBA", "DEVELOPER", "SECURITY_ADMINISTRATOR", "PARTICIPANT"},
-            resourceType = "ODC_PROJECT",
-            indexOfIdParam = 0)
+            resourceType = "ODC_PROJECT", indexOfIdParam = 0)
     @Transactional(rollbackFor = Exception.class)
     public Project detail(@NotNull Long id) {
         ProjectEntity entity = repository.findByIdAndOrganizationId(id, currentOrganizationId())
@@ -252,9 +270,10 @@ public class ProjectService {
 
     @Transactional(rollbackFor = Exception.class)
     @SkipAuthorize("permission check inside")
-    public List<Project> listBasicInfoForApply(Boolean archived) {
+    public List<Project> listBasicInfoForApply(Boolean archived, Boolean builtin) {
         Specification<ProjectEntity> specs = ProjectSpecs.organizationIdEqual(currentOrganizationId())
-                .and(ProjectSpecs.archivedEqual(archived));
+                .and(ProjectSpecs.archivedEqual(archived))
+                .and(ProjectSpecs.builtInEqual(builtin));
         return repository.findAll(specs).stream().map(projectMapper::entityToModel).collect(Collectors.toList());
     }
 
@@ -282,6 +301,7 @@ public class ProjectService {
         Specification<ProjectEntity> specs =
                 ProjectSpecs.nameLike(params.getName())
                         .and(ProjectSpecs.archivedEqual(params.getArchived()))
+                        .and(ProjectSpecs.builtInEqual(params.getBuiltin()))
                         .and(ProjectSpecs.organizationIdEqual(currentOrganizationId()))
                         .and(ProjectSpecs.idIn(joinedProjectIds));
         return repository.findAll(specs, pageable);
@@ -338,7 +358,22 @@ public class ProjectService {
         }
         checkMemberRoles(detail(projectId).getMembers());
         deleteMemberRelatedDatabasePermissions(userId, projectId);
+        deleteMemberRelatedTablePermissions(userId, projectId);
         return true;
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    @SkipAuthorize("internal usage")
+    public void deleteUserRelatedProjectResources(@NonNull Long userId, @NonNull String accountName,
+            @NonNull Long organizationId) {
+        resourceRoleService.deleteByUserId(userId);
+        String projectName = BUILTIN_PROJECT_PREFIX + accountName;
+        Optional<ProjectEntity> projectOpt = repository.findByNameAndOrganizationId(projectName, organizationId);
+        projectOpt.ifPresent(project -> {
+            if (Boolean.TRUE.equals(project.getBuiltin()) && bastionEnabled) {
+                repository.deleteById(project.getId());
+            }
+        });
     }
 
     @PreAuthenticate(hasAnyResourceRole = {"OWNER"}, resourceType = "ODC_PROJECT", indexOfIdParam = 0)
@@ -391,8 +426,8 @@ public class ProjectService {
 
     @SkipAuthorize("internal usage")
     public Set<Long> getMemberProjectIds(Long userId) {
-        return resourceRoleService.listByUserId(userId).stream().map(UserResourceRole::getResourceId)
-                .collect(Collectors.toSet());
+        return resourceRoleService.listByUserId(userId).stream().filter(UserResourceRole::isProjectMember)
+                .map(UserResourceRole::getResourceId).collect(Collectors.toSet());
     }
 
     @SkipAuthorize("odc internal usage")
@@ -465,7 +500,16 @@ public class ProjectService {
     private void deleteMemberRelatedDatabasePermissions(@NonNull Long userId, @NonNull Long projectId) {
         List<Long> permissionIds = userDatabasePermissionRepository.findByUserIdAndProjectId(userId, projectId).stream()
                 .map(UserDatabasePermissionEntity::getId).collect(Collectors.toList());
-        if (!CollectionUtils.isEmpty(permissionIds)) {
+        if (CollectionUtils.isNotEmpty(permissionIds)) {
+            permissionRepository.deleteByIds(permissionIds);
+            userPermissionRepository.deleteByPermissionIds(permissionIds);
+        }
+    }
+
+    private void deleteMemberRelatedTablePermissions(@NonNull Long userId, @NonNull Long projectId) {
+        List<Long> permissionIds = userTablePermissionRepository.findByUserIdAndProjectId(userId, projectId).stream()
+                .map(UserTablePermissionEntity::getId).collect(Collectors.toList());
+        if (CollectionUtils.isNotEmpty(permissionIds)) {
             permissionRepository.deleteByIds(permissionIds);
             userPermissionRepository.deleteByPermissionIds(permissionIds);
         }
@@ -517,5 +561,9 @@ public class ProjectService {
 
     private InnerUser currentInnerUser() {
         return new InnerUser(authenticationFacade.currentUser(), null);
+    }
+
+    private String generateProjectUniqueIdentifier() {
+        return "ODC_" + UUID.randomUUID().toString();
     }
 }
