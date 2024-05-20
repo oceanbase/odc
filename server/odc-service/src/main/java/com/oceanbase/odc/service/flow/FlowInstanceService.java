@@ -1076,32 +1076,6 @@ public class FlowInstanceService {
         FlowTaskUtil.setCloudMainAccountId(variables, authenticationFacade.currentUser().getParentUid());
     }
 
-    private void initVariablesForMultiple(Map<String, Object> variables, TaskEntity taskEntity,
-            TaskEntity preCheckTaskEntity,
-            List<ConnectionConfig> configs, List<RiskLevelDescriber> riskLevelDescribers) {
-        FlowTaskUtil.setTaskId(variables, taskEntity.getId());
-        if (Objects.nonNull(preCheckTaskEntity)) {
-            FlowTaskUtil.setPreCheckTaskId(variables, preCheckTaskEntity.getId());
-        }
-        if (configs != null) {
-            FlowTaskUtil.setConnectionConfigList(variables, configs);
-        }
-        FlowTaskUtil.setExecutionExpirationInterval(variables,
-                taskEntity.getExecutionExpirationIntervalSeconds(), TimeUnit.SECONDS);
-        FlowTaskUtil.setParameters(variables, taskEntity.getParametersJson());
-        if (taskEntity.getDatabaseName() != null) {
-            FlowTaskUtil.setSchemaName(variables, taskEntity.getDatabaseName());
-        }
-        if (taskEntity.getDatabaseId() != null) {
-            FlowTaskUtil.setSchemaName(variables, databaseService.detail(taskEntity.getDatabaseId()).getName());
-        }
-        FlowTaskUtil.setTaskCreator(variables, authenticationFacade.currentUser());
-        FlowTaskUtil.setOrganizationId(variables, authenticationFacade.currentOrganizationId());
-        FlowTaskUtil.setTaskSubmitter(variables, JsonUtils.fromJson(taskEntity.getSubmitter(), ExecutorInfo.class));
-        FlowTaskUtil.setRiskLevelDescriberList(variables, riskLevelDescribers);
-        FlowTaskUtil.setCloudMainAccountId(variables, authenticationFacade.currentUser().getParentUid());
-    }
-
 
     private TemplateVariables buildTemplateVariables(CreateFlowInstanceReq flowInstanceReq, ConnectionConfig config) {
         TemplateVariables variables = new TemplateVariables();
