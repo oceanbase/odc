@@ -13,23 +13,31 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.sqlcheck.model;
+package com.oceanbase.odc.service.databasechange.model;
 
 import java.util.List;
 
+import javax.validation.Valid;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Size;
+
+import com.oceanbase.odc.common.validate.Name;
 
 import lombok.Data;
 
 @Data
-public class MultipleSqlCheckReq {
-    @NotEmpty
-    private List<Long> databaseIds;
-    @NotBlank
-    private String scriptContent;
-    @NotNull
-    private String delimiter;
+public class CreateDatabaseChangeChangingOrderTemplateReq {
 
+    @NotBlank
+    @Size(max = 256, message = "name is out of range [0, 256]")
+    @Name(message = "Template name cannot start or end with whitespaces")
+    private String name;
+
+    @NotNull
+    private Long projectId;
+
+    @NotEmpty
+    private List<@Valid @NotEmpty List<@NotNull Long>> orders;
 }

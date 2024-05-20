@@ -68,6 +68,7 @@ import com.oceanbase.odc.service.connection.database.DatabaseService;
 import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.flow.task.model.DatabaseChangeParameters;
+import com.oceanbase.odc.service.flow.task.model.MultipleDatabaseChangeParameters;
 import com.oceanbase.odc.service.iam.UserService;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.iam.model.User;
@@ -207,6 +208,11 @@ public class EventBuilder {
             ApplyProjectParameter parameter =
                     JsonUtils.fromJson(task.getParametersJson(), ApplyProjectParameter.class);
             projectId = parameter.getProject().getId();
+            labels.putIfNonNull(PROJECT_ID, projectId);
+        } else if (task.getTaskType() == TaskType.MULTIPLE_ASYNC) {
+            MultipleDatabaseChangeParameters parameter =
+                    JsonUtils.fromJson(task.getParametersJson(), MultipleDatabaseChangeParameters.class);
+            projectId = parameter.getProjectId();
             labels.putIfNonNull(PROJECT_ID, projectId);
         } else {
             throw new UnexpectedException("task.databaseId should not be null");

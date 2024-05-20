@@ -15,21 +15,31 @@
  */
 package com.oceanbase.odc.service.sqlcheck.model;
 
+import java.io.Serializable;
 import java.util.List;
 
-import javax.validation.constraints.NotBlank;
-import javax.validation.constraints.NotEmpty;
-import javax.validation.constraints.NotNull;
+import com.oceanbase.odc.service.connection.database.model.Database;
 
-import lombok.Data;
+import lombok.AllArgsConstructor;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import lombok.ToString;
 
-@Data
-public class MultipleSqlCheckReq {
-    @NotEmpty
-    private List<Long> databaseIds;
-    @NotBlank
-    private String scriptContent;
-    @NotNull
-    private String delimiter;
+/**
+ * @author: zijia.cj
+ * @date: 2024/4/29
+ */
 
+@Getter
+@Setter
+@ToString
+@EqualsAndHashCode
+@NoArgsConstructor
+@AllArgsConstructor
+public class MultipleSqlCheckResult implements Serializable {
+    private static final long serialVersionUID = -5963934702315211337L;
+    private Database database;
+    private List<CheckResult> checkResultList;
 }

@@ -13,23 +13,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.sqlcheck.model;
+package com.oceanbase.odc.service.databasechange.model;
 
-import java.util.List;
-
-import javax.validation.constraints.NotBlank;
-import javax.validation.constraints.NotEmpty;
+import javax.validation.constraints.Min;
 import javax.validation.constraints.NotNull;
 
+import lombok.Builder;
 import lombok.Data;
 
+/**
+ * @author: zijia.cj
+ * @date: 2024/4/22
+ */
 @Data
-public class MultipleSqlCheckReq {
-    @NotEmpty
-    private List<Long> databaseIds;
-    @NotBlank
-    private String scriptContent;
+@Builder
+public class QueryDatabaseChangeChangingOrderParams {
+
+    private String name;
     @NotNull
-    private String delimiter;
+    @Min(value = 1, message = "projectId can not be smaller than 1")
+    private Long projectId;
+
+    private Long creatorId;
 
 }

@@ -17,12 +17,10 @@ package com.oceanbase.odc.service.databasechange.model;
 
 import java.util.List;
 
-import com.oceanbase.odc.metadb.connection.DatabaseEntity;
-
 import lombok.Data;
 
 @Data
-public class QueryDatabaseChangeChangingOrderResp {
+public class DatabaseChangeChangingOrderTemplateResp {
 
     private Long id;
 
@@ -34,6 +32,8 @@ public class QueryDatabaseChangeChangingOrderResp {
 
     private Long organizationId;
 
-    private List<List<DatabaseEntity>> databaseSequenceList;
+    private List<List<DatabaseChangeDatabase>> databaseSequenceList;
+
+    private Boolean enabled;
 
 }

@@ -24,6 +24,7 @@ import com.oceanbase.odc.service.flow.task.DBStructureComparisonFlowableTask;
 import com.oceanbase.odc.service.flow.task.DataTransferRuntimeFlowableTask;
 import com.oceanbase.odc.service.flow.task.DatabaseChangeRuntimeFlowableTask;
 import com.oceanbase.odc.service.flow.task.MockDataRuntimeFlowableTask;
+import com.oceanbase.odc.service.flow.task.MultipleDatabaseChangeRuntimeFlowableTask;
 import com.oceanbase.odc.service.flow.task.PartitionPlanRuntimeFlowableTask;
 import com.oceanbase.odc.service.flow.task.PreCheckRuntimeFlowableTask;
 import com.oceanbase.odc.service.flow.task.RollbackPlanRuntimeFlowableTask;
@@ -48,6 +49,8 @@ public class OdcRuntimeDelegateMapper implements RuntimeDelegateMapper {
     @Override
     public Class<? extends BaseRuntimeFlowableDelegate<?>> map(@NonNull TaskType taskType) {
         switch (taskType) {
+            case MULTIPLE_ASYNC:
+                return MultipleDatabaseChangeRuntimeFlowableTask.class;
             case ASYNC:
                 return DatabaseChangeRuntimeFlowableTask.class;
             case MOCKDATA:

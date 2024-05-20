@@ -60,11 +60,13 @@ import com.oceanbase.odc.core.shared.exception.BadRequestException;
 import com.oceanbase.odc.core.shared.exception.InternalServerError;
 import com.oceanbase.odc.core.shared.exception.NotFoundException;
 import com.oceanbase.odc.core.shared.exception.UnsupportedException;
+import com.oceanbase.odc.metadb.collaboration.EnvironmentRepository;
 import com.oceanbase.odc.metadb.flow.FlowInstanceRepository;
 import com.oceanbase.odc.metadb.task.TaskEntity;
 import com.oceanbase.odc.metadb.task.TaskRepository;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferConfig;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferTaskResult;
+import com.oceanbase.odc.service.collaboration.environment.EnvironmentService;
 import com.oceanbase.odc.service.common.FileManager;
 import com.oceanbase.odc.service.common.model.FileBucket;
 import com.oceanbase.odc.service.common.response.ListResponse;
@@ -87,6 +89,8 @@ import com.oceanbase.odc.service.flow.task.model.DBStructureComparisonTaskResult
 import com.oceanbase.odc.service.flow.task.model.DatabaseChangeResult;
 import com.oceanbase.odc.service.flow.task.model.MockDataTaskResult;
 import com.oceanbase.odc.service.flow.task.model.MockProperties;
+import com.oceanbase.odc.service.flow.task.model.MultipleDatabaseChangeTaskResult;
+import com.oceanbase.odc.service.flow.task.model.MultipleSqlCheckTaskResult;
 import com.oceanbase.odc.service.flow.task.model.OnlineSchemaChangeTaskResult;
 import com.oceanbase.odc.service.flow.task.model.PartitionPlanTaskResult;
 import com.oceanbase.odc.service.flow.task.model.ResultSetExportResult;
@@ -155,6 +159,11 @@ public class FlowTaskInstanceService {
     private TaskFrameworkEnabledProperties taskFrameworkProperties;
     @Autowired
     private LoggerService loggerService;
+    @Autowired
+    private EnvironmentRepository environmentRepository;
+    @Autowired
+    private EnvironmentService environmentService;
+
     @Value("${odc.task.async.result-preview-max-size-bytes:5242880}")
     private long resultPreviewMaxSizeBytes;
 
@@ -243,6 +252,8 @@ public class FlowTaskInstanceService {
             results = getDataTransferResult(taskEntity);
         } else if (taskEntity.getTaskType() == TaskType.ASYNC) {
             results = getAsyncResult(taskEntity);
+        } else if (taskEntity.getTaskType() == TaskType.MULTIPLE_ASYNC) {
+            results = getMultipleAsyncResult(taskEntity);
         } else if (taskEntity.getTaskType() == TaskType.MOCKDATA) {
             results = getMockDataResult(taskEntity);
         } else if (taskEntity.getTaskType() == TaskType.IMPORT) {
@@ -287,11 +298,13 @@ public class FlowTaskInstanceService {
                 || taskInstance.getTaskType() == TaskType.PRE_CHECK) {
             Long taskId = taskInstance.getTargetTaskId();
             TaskEntity taskEntity = this.taskService.detail(taskId);
+            // pre-check is for multiple databases
             PreCheckTaskResult result = JsonUtils.fromJson(taskEntity.getResultJson(), PreCheckTaskResult.class);
             if (Objects.isNull(result)) {
                 return Collections.emptyList();
             }
             SqlCheckTaskResult checkTaskResult = result.getSqlCheckResult();
+            MultipleSqlCheckTaskResult multipleSqlCheckTaskResult = result.getMultipleSqlCheckTaskResult();
             ExecutorInfo info = result.getExecutorInfo();
             if (!this.dispatchChecker.isThisMachine(info)) {
                 DispatchResponse response = requestDispatcher.forward(info.getHost(), info.getPort());
@@ -299,16 +312,30 @@ public class FlowTaskInstanceService {
                         new TypeReference<ListResponse<SqlCheckTaskResult>>() {}).getData().getContents();
             }
             String dir = FileManager.generateDir(FileBucket.PRE_CHECK) + File.separator + taskId;
-            Verify.notNull(checkTaskResult.getFileName(), "SqlCheckResultFileName");
-            File jsonFile = new File(dir + File.separator + checkTaskResult.getFileName());
+            String fileName;
+            if (checkTaskResult != null) {
+                Verify.notNull(checkTaskResult.getFileName(), "SqlCheckResultFileName");
+                fileName = checkTaskResult.getFileName();
+            } else {
+                Verify.notNull(multipleSqlCheckTaskResult.getFileName(), "MultipleSqlCheckTaskResult");
+                fileName = multipleSqlCheckTaskResult.getFileName();
+            }
+            File jsonFile = new File(dir + File.separator + fileName);
             if (!jsonFile.exists()) {
                 throw new NotFoundException(ErrorCodes.NotFound, new Object[] {
-                        ResourceType.ODC_FILE.getLocalizedMessage(), "file", jsonFile.getName()}, "File is not found");
+                        ResourceType.ODC_FILE.getLocalizedMessage(), "file", jsonFile.getName()},
+                        "File is not found");
             }
             String content = FileUtils.readFileToString(jsonFile, Charsets.UTF_8);
-            checkTaskResult = JsonUtils.fromJson(content, SqlCheckTaskResult.class);
-            checkTaskResult.setFileName(null);
-            result.setSqlCheckResult(checkTaskResult);
+            if (checkTaskResult != null) {
+                checkTaskResult = JsonUtils.fromJson(content, SqlCheckTaskResult.class);
+                checkTaskResult.setFileName(null);
+                result.setSqlCheckResult(checkTaskResult);
+            } else {
+                multipleSqlCheckTaskResult = JsonUtils.fromJson(content, MultipleSqlCheckTaskResult.class);
+                multipleSqlCheckTaskResult.setFileName(null);
+                result.setMultipleSqlCheckTaskResult(multipleSqlCheckTaskResult);
+            }
             result.setExecutorInfo(null);
             return Collections.singletonList(result);
         } else {
@@ -593,6 +620,10 @@ public class FlowTaskInstanceService {
                 }).collect(Collectors.toList()), false);
     }
 
+    private List<MultipleDatabaseChangeTaskResult> getMultipleAsyncResult(@NonNull TaskEntity taskEntity) {
+        return innerGetResult(taskEntity, MultipleDatabaseChangeTaskResult.class);
+    }
+
     private List<DatabaseChangeResult> getAsyncResult(@NonNull TaskEntity taskEntity) throws IOException {
         if (!dispatchChecker.isTaskEntityOnThisMachine(taskEntity)) {
             /**
@@ -727,8 +758,12 @@ public class FlowTaskInstanceService {
         if (CollectionUtils.isEmpty(taskInstances)) {
             return Optional.empty();
         }
-        Verify.singleton(taskInstances, "TaskInstances");
-
+        /**
+         * The other types of taskInstances are limited to unique, except for the MULTIPLE_ASYNC
+         */
+        if (taskInstances.get(0).getTaskType() != TaskType.MULTIPLE_ASYNC) {
+            Verify.singleton(taskInstances, "TaskInstances");
+        }
         FlowTaskInstance flowTaskInstance = taskInstances.get(0);
         Long targetTaskId = flowTaskInstance.getTargetTaskId();
         Verify.notNull(targetTaskId, "TargetTaskId can not be null");

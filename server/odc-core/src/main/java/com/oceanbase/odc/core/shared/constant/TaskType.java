@@ -27,6 +27,10 @@ import com.oceanbase.odc.common.i18n.Translatable;
  */
 public enum TaskType implements Translatable {
     /**
+     * Multiple database change
+     */
+    MULTIPLE_ASYNC,
+    /**
      * Database change
      */
     ASYNC,
@@ -107,7 +111,8 @@ public enum TaskType implements Translatable {
     }
 
     public boolean needsPreCheck() {
-        return this == ASYNC || this == ONLINE_SCHEMA_CHANGE || this == ALTER_SCHEDULE || this == EXPORT_RESULT_SET;
+        return this == ASYNC || this == ONLINE_SCHEMA_CHANGE || this == ALTER_SCHEDULE || this == EXPORT_RESULT_SET
+                || this == MULTIPLE_ASYNC;
     }
 
     public boolean needForExecutionStrategy() {

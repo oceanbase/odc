@@ -13,23 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.sqlcheck.model;
+package com.oceanbase.odc.service.databasechange.model;
 
-import java.util.List;
-
-import javax.validation.constraints.NotBlank;
-import javax.validation.constraints.NotEmpty;
-import javax.validation.constraints.NotNull;
+import com.oceanbase.odc.core.shared.constant.FlowStatus;
 
 import lombok.Data;
 
+/**
+ * @author: zijia.cj
+ * @date: 2024/5/6
+ */
 @Data
-public class MultipleSqlCheckReq {
-    @NotEmpty
-    private List<Long> databaseIds;
-    @NotBlank
-    private String scriptContent;
-    @NotNull
-    private String delimiter;
-
+public class DatabaseChangingRecord {
+    private DatabaseChangeDatabase database;
+    private DatabaseChangeFlowInstanceDetailResp flowInstanceDetailResp;
+    private FlowStatus status;
 }

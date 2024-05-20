@@ -78,6 +78,7 @@ public class TaskService {
     private HostProperties properties;
 
     private static String logFilePrefix;
+    private static final String MULTIPLE_ASYNC_LOG_PATH_PATTERN = "%s/multiple-async/%s/multiple-async.%s";
     private static final String ASYNC_LOG_PATH_PATTERN = "%s/async/%d/%s/asynctask.%s";
     private static final String MOCKDATA_LOG_PATH_PATTERN = "%s/data-mocker/%s/ob-mocker.%s";
     private static final String DATATRANSFER_LOG_PATH_PATTERN = "%s/data-transfer/%s/ob-loader-dumper.%s";
@@ -110,9 +111,9 @@ public class TaskService {
         TaskType taskType = req.getTaskType();
         taskEntity.setTaskType(taskType);
         taskEntity.setConnectionId(req.getConnectionId());
-        taskEntity.setExecutionExpirationIntervalSeconds(executionExpirationIntervalSeconds);
         taskEntity.setDatabaseName(req.getDatabaseName());
         taskEntity.setDatabaseId(req.getDatabaseId());
+        taskEntity.setExecutionExpirationIntervalSeconds(executionExpirationIntervalSeconds);
         taskEntity.setDescription(req.getDescription());
         taskEntity.setParametersJson(JsonUtils.toJson(req.getParameters()));
 
@@ -206,6 +207,10 @@ public class TaskService {
             throws NotFoundException {
         String filePath;
         switch (type) {
+            case MULTIPLE_ASYNC:
+                filePath = String.format(MULTIPLE_ASYNC_LOG_PATH_PATTERN, logFilePrefix, taskId,
+                        logLevel.name().toLowerCase());
+                break;
             case ASYNC:
                 filePath = String.format(ASYNC_LOG_PATH_PATTERN, logFilePrefix, userId, taskId,
                         logLevel.name().toLowerCase());

@@ -13,23 +13,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.sqlcheck.model;
+package com.oceanbase.odc.service.databasechange.model;
 
-import java.util.List;
-
-import javax.validation.constraints.NotBlank;
-import javax.validation.constraints.NotEmpty;
-import javax.validation.constraints.NotNull;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cloud.context.config.annotation.RefreshScope;
+import org.springframework.context.annotation.Configuration;
 
 import lombok.Data;
 
+/**
+ * @author: zijia.cj
+ * @date: 2024/5/8
+ */
 @Data
-public class MultipleSqlCheckReq {
-    @NotEmpty
-    private List<Long> databaseIds;
-    @NotBlank
-    private String scriptContent;
-    @NotNull
-    private String delimiter;
+@RefreshScope
+@Configuration
+public class DatabaseChangeProperties {
 
+    @Value("${odc.task.databasechange.min-database-count:1}")
+    private int minDatabaseCount = 1;
+    @Value("${odc.task.databasechange.min-database-count:100}")
+    private int maxDatabaseCount = 100;
 }
