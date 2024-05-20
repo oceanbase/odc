@@ -70,7 +70,7 @@ public class FlowTaskSubmitter implements JavaDelegate {
         DelegateExecution executionFacade = new ExecutionEntityFacade(execution);
         List<FlowableBoundaryEvent<ErrorEventDefinition>> defs =
                 FlowUtil.getBoundaryEventDefinitions(execution.getProcessDefinitionId(),
-                    execution.getCurrentActivityId(), ErrorEventDefinition.class);
+                        execution.getCurrentActivityId(), ErrorEventDefinition.class);
         threadPoolTaskExecutor.submit(() -> {
             FlowTaskInstance flowTaskInstance = getFlowTaskInstance(executionFacade);
             try {
@@ -79,7 +79,7 @@ public class FlowTaskSubmitter implements JavaDelegate {
                         FlowNodeStatus.COMPLETED, FlowTaskResultContextHolder.getContext());
             } catch (Exception e) {
                 Exception rootCause = (Exception) e.getCause();
-                log.warn("Delegate task instance execute occur error.", rootCause);
+                log.warn("Delegate task instance execute occur error: ", rootCause);
                 handleException(execution, flowTaskInstance, rootCause, defs);
             } finally {
                 flowTaskInstance.dealloc();
@@ -124,21 +124,22 @@ public class FlowTaskSubmitter implements JavaDelegate {
     }
 
     private void callListener(DelegateExecution execution, List<FlowableListener> flowableListeners) {
-        flowableListeners.forEach(fl -> {
-            try {
-                Class<?> clazz = Class.forName(fl.getImplementation(), false,
-                        Thread.currentThread().getContextClassLoader());
-                if (ExecutionListener.class.isAssignableFrom(clazz) &&
-                        Objects.equals(fl.getEvent(), FlowConstants.EXECUTION_END_EVENT_NAME)) {
-                    ExecutionListener listener =
-                            (ExecutionListener) BeanInjectedClassDelegate.instantiateDelegate(clazz);
-                    execution.setEventName(fl.getEvent());
-                    listener.notify(execution);
-                }
-            } catch (Exception ex) {
-                log.warn("Call execution listener occur error: ", ex);
-            }
-        });
+        flowableListeners.stream()
+                .filter(fl -> FlowConstants.EXECUTION_END_EVENT_NAME.equals(fl.getEvent()))
+                .forEach(fl -> {
+                    try {
+                        Class<?> clazz = Class.forName(fl.getImplementation(), false,
+                                Thread.currentThread().getContextClassLoader());
+                        if (ExecutionListener.class.isAssignableFrom(clazz)) {
+                            ExecutionListener listener =
+                                    (ExecutionListener) BeanInjectedClassDelegate.instantiateDelegate(clazz);
+                            execution.setEventName(fl.getEvent());
+                            listener.notify(execution);
+                        }
+                    } catch (Exception ex) {
+                        log.warn("Call execution listener occur error: ", ex);
+                    }
+                });
     }
 
     private BaseRuntimeFlowableDelegate<?> getDelegateInstance(FlowTaskInstance flowTaskInstance) throws Exception {
