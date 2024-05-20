@@ -32,6 +32,7 @@ import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Component;
 
 import com.oceanbase.odc.core.flow.exception.BaseFlowException;
+import com.oceanbase.odc.core.flow.util.FlowConstants;
 import com.oceanbase.odc.core.flow.util.FlowUtil;
 import com.oceanbase.odc.core.flow.util.FlowableBoundaryEvent;
 import com.oceanbase.odc.core.shared.PreConditions;
@@ -124,15 +125,18 @@ public class FlowTaskSubmitter implements JavaDelegate {
     }
 
     private void callListener(DelegateExecution execution, List<FlowableListener> flowableListeners) {
-        flowableListeners.forEach(l -> {
+        flowableListeners.forEach(fl -> {
             try {
-                Object o = BeanInjectedClassDelegate.instantiateDelegate(l.getClass());
-                if (o instanceof ExecutionListener) {
+                Class<?> clazz = Class.forName(fl.getImplementation(), false,
+                        Thread.currentThread().getContextClassLoader());
+                if (ExecutionListener.class.isAssignableFrom(clazz) &&
+                        Objects.equals(fl.getEvent(), FlowConstants.EXECUTION_END_EVENT_NAME)) {
+                    Object o = BeanInjectedClassDelegate.instantiateDelegate(clazz);
                     ExecutionListener listener = (ExecutionListener) o;
                     listener.notify(execution);
                 }
             } catch (Exception ex) {
-                log.error("in");
+                log.warn("Call execution listener occur error: ", ex);
             }
         });
     }
