@@ -792,8 +792,10 @@ INSERT INTO config_system_configuration(`key`, `value`, `description`) VALUES('o
 ---
 --- v4.3.0
 ---
+INSERT INTO config_system_configuration(`key`, `value`, `description`) VALUES('odc.database.schema.global-search.enabled',
+ 'true', 'enable global searching database schema or not, true by default') ON DUPLICATE KEY UPDATE `id`=`id`;
 INSERT INTO config_system_configuration(`key`, `value`, `description`) VALUES('odc.database.schema.sync.cron-expression',
- '0 0 2 * * ?', 'cron expression for synchronizing full database schema') ON DUPLICATE KEY UPDATE `id`=`id`;
+ '0 0 2 * * ?', 'cron expression for synchronizing global database schema') ON DUPLICATE KEY UPDATE `id`=`id`;
 INSERT INTO config_system_configuration(`key`, `value`, `description`) VALUES('odc.database.schema.sync.executor-thread-count',
  '8', 'thread count for synchronizing database schema') ON DUPLICATE KEY UPDATE `id`=`id`;
 INSERT INTO config_system_configuration(`key`, `value`, `description`) VALUES('odc.database.schema.sync.block-exclusions-when-sync-db-to-project',

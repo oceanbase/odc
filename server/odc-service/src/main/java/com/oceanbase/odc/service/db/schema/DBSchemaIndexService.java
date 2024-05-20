@@ -183,21 +183,38 @@ public class DBSchemaIndexService {
         Set<Database> databases = new HashSet<>();
         if (req.getResourceType() == ResourceType.ODC_CONNECTION) {
             Set<Database> dbs = new HashSet<>(databaseService.listExistDatabasesByConnectionId(req.getResourceId()));
-            Set<Long> projectIds = projectService.getMemberProjectIds(authenticationFacade.currentUserId());
-            databases.addAll(dbs.stream()
-                    .filter(e -> e.getProject() != null && projectIds.contains(e.getProject().getId()))
-                    .collect(Collectors.toSet()));
+            if (authenticationFacade.currentUser().getOrganizationType() == OrganizationType.INDIVIDUAL) {
+                ConnectionConfig config = connectionService.getBasicWithoutPermissionCheck(req.getResourceId());
+                if (!Objects.equals(authenticationFacade.currentUserId(), config.getCreatorId())) {
+                    throw new NotFoundException(ResourceType.ODC_CONNECTION, "id", req.getResourceId());
+                }
+                databases.addAll(dbs);
+            } else {
+                Set<Long> projectIds = projectService.getMemberProjectIds(authenticationFacade.currentUserId());
+                databases.addAll(dbs.stream()
+                        .filter(e -> e.getProject() != null && projectIds.contains(e.getProject().getId()))
+                        .collect(Collectors.toSet()));
+            }
         } else if (req.getResourceType() == ResourceType.ODC_PROJECT) {
             projectPermissionValidator.checkProjectRole(req.getResourceId(), ResourceRoleName.all());
             databases.addAll(databaseService.listExistDatabasesByProjectId(req.getResourceId()));
         } else if (req.getResourceType() == ResourceType.ODC_DATABASE) {
             List<Database> dbs = databaseService.listDatabasesByIds(Collections.singleton(req.getResourceId()));
-            Set<Long> projectIds = projectService.getMemberProjectIds(authenticationFacade.currentUserId());
-            if (CollectionUtils.isEmpty(dbs) || dbs.get(0).getProject() == null
-                    || !projectIds.contains(dbs.get(0).getProject().getId())) {
-                throw new NotFoundException(ResourceType.ODC_DATABASE, "id", req.getResourceId());
+            if (authenticationFacade.currentUser().getOrganizationType() == OrganizationType.INDIVIDUAL) {
+                ConnectionConfig config =
+                        connectionService.getBasicWithoutPermissionCheck(dbs.get(0).getDataSource().getCreatorId());
+                if (!Objects.equals(authenticationFacade.currentUserId(), config.getCreatorId())) {
+                    throw new NotFoundException(ResourceType.ODC_DATABASE, "id", req.getResourceId());
+                }
+                databases.addAll(dbs);
+            } else {
+                Set<Long> projectIds = projectService.getMemberProjectIds(authenticationFacade.currentUserId());
+                if (CollectionUtils.isEmpty(dbs) || dbs.get(0).getProject() == null
+                        || !projectIds.contains(dbs.get(0).getProject().getId())) {
+                    throw new NotFoundException(ResourceType.ODC_DATABASE, "id", req.getResourceId());
+                }
+                databases.addAll(dbs);
             }
-            databases.add(dbs.get(0));
         } else {
             throw new IllegalArgumentException("Unsupported resource type: " + req.getResourceType());
         }
