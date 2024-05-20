@@ -69,7 +69,7 @@ public class FlowTaskCallBackApprovalService {
             doApproval(flowInstanceId, flowTaskInstanceId, flowNodeStatus, approvalVariables);
         } catch (Throwable e) {
             log.warn(
-                    "approval task callback node  failed, flowInstanceId={}, flowTaskInstanceId={}, FlowNodeStatus={}, ex={}",
+                    "approval task callback node  failed, flowInstanceId={}, flowTaskInstanceId={}, flowNodeStatus={}, ex={}",
                     flowInstanceId, flowTaskInstanceId, flowNodeStatus.name(), e);
         }
     }
@@ -94,15 +94,15 @@ public class FlowTaskCallBackApprovalService {
             Map<String, Object> approvalVariables, String taskId) {
         try {
             Map<String, Object> variables = new HashMap<>();
-            variables.putIfAbsent(APPROVAL_VARIABLE_NAME, flowNodeStatus == flowNodeStatus.COMPLETED);
+            variables.putIfAbsent(APPROVAL_VARIABLE_NAME, flowNodeStatus == FlowNodeStatus.COMPLETED);
             if (approvalVariables != null && !approvalVariables.isEmpty()) {
                 variables.putAll(approvalVariables);
             }
             flowableTaskService.complete(taskId, variables);
-            log.info("complete task succeed, flowInstanceId={}, flowTaskInstanceId={}, FlowNodeStatus={}.",
+            log.info("complete task succeed, flowInstanceId={}, flowTaskInstanceId={}, flowNodeStatus={}.",
                     flowInstanceId, flowTaskInstanceId, flowNodeStatus);
         } catch (Exception e) {
-            log.warn("complete task failed, flowInstanceId={}, flowTaskInstanceId={}, FlowNodeStatus={}, ex={}.",
+            log.warn("complete task failed, flowInstanceId={}, flowTaskInstanceId={}, flowNodeStatus={}, ex={}.",
                     flowInstanceId, flowTaskInstanceId, flowNodeStatus, e);
         }
     }
