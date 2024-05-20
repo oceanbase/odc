@@ -25,7 +25,7 @@ import java.util.Map;
 public class FlowTaskResultContextHolder {
 
 
-    public static final ThreadLocal<Map<String, Object>> RESULT_CONTEXT = new ThreadLocal<>();
+    private static final ThreadLocal<Map<String, Object>> RESULT_CONTEXT = new ThreadLocal<>();
 
     public static void putContext(Map<String, Object> context) {
         RESULT_CONTEXT.set(context);

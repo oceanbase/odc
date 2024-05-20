@@ -68,10 +68,9 @@ public class FlowTaskSubmitter implements JavaDelegate {
         // DelegateExecution will be changed when current thread return,
         // so use execution facade class to save execution properties
         DelegateExecution executionFacade = new ExecutionEntityFacade(execution);
-        String ids = execution.getProcessDefinitionId();
-        String aId = execution.getCurrentActivityId();
         List<FlowableBoundaryEvent<ErrorEventDefinition>> defs =
-                FlowUtil.getBoundaryEventDefinitions(ids, aId, ErrorEventDefinition.class);
+                FlowUtil.getBoundaryEventDefinitions(execution.getProcessDefinitionId(),
+                    execution.getCurrentActivityId(), ErrorEventDefinition.class);
         threadPoolTaskExecutor.submit(() -> {
             FlowTaskInstance flowTaskInstance = getFlowTaskInstance(executionFacade);
             try {
@@ -86,17 +85,16 @@ public class FlowTaskSubmitter implements JavaDelegate {
                 flowTaskInstance.dealloc();
                 FlowTaskResultContextHolder.cleanContext();
             }
-
         });
     }
 
     private void handleException(DelegateExecution execution, FlowTaskInstance flowTaskInstance, Exception e,
             List<FlowableBoundaryEvent<ErrorEventDefinition>> defs) {
-        String ids = execution.getProcessDefinitionId();
-        String aId = execution.getCurrentActivityId();
+        String processDefinitionId = execution.getProcessDefinitionId();
+        String activityId = execution.getCurrentActivityId();
         if (defs.isEmpty()) {
             log.warn("No error boundary is defined to handle events, processInstanceId={}, activityId={}",
-                    ids, aId);
+                    processDefinitionId, activityId);
         } else if (e instanceof BaseFlowException) {
             BaseFlowException flowException = (BaseFlowException) e;
             String targetErrorCode = flowException.getErrorCode().code();
@@ -113,11 +111,11 @@ public class FlowTaskSubmitter implements JavaDelegate {
                 }
             }
             log.warn("Exception has no error boundary event, pId={}, activityId={}, acceptErrorCodes={}",
-                    ids, aId,
+                    processDefinitionId, activityId,
                     defs.stream().map(a -> a.getEventDefinition().getErrorCode()).collect(Collectors.toList()));
         } else {
             log.warn("Exception has to be an instance of FlowException, pId={}, activityId={}, acceptErrorCodes={}",
-                    ids, aId,
+                    processDefinitionId, activityId,
                     defs.stream().map(a -> a.getEventDefinition().getErrorCode()).collect(Collectors.toList()));
         }
         flowTaskCallBackApprovalService.approval(flowTaskInstance.getFlowInstanceId(),
