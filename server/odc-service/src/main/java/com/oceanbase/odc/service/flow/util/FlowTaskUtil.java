@@ -53,6 +53,7 @@ import com.oceanbase.odc.service.onlineschemachange.model.OnlineSchemaChangePara
 import com.oceanbase.odc.service.partitionplan.model.PartitionPlanConfig;
 import com.oceanbase.odc.service.permission.database.model.ApplyDatabaseParameter;
 import com.oceanbase.odc.service.permission.project.ApplyProjectParameter;
+import com.oceanbase.odc.service.permission.table.model.ApplyTableParameter;
 import com.oceanbase.odc.service.plugin.ConnectionPluginUtil;
 import com.oceanbase.odc.service.regulation.risklevel.model.RiskLevelDescriber;
 import com.oceanbase.odc.service.resultset.ResultSetExportTaskParameter;
@@ -84,6 +85,11 @@ public class FlowTaskUtil {
     public static ApplyDatabaseParameter getApplyDatabaseParameter(@NonNull DelegateExecution execution) {
         return internalGetParameter(execution, ApplyDatabaseParameter.class).orElseThrow(
                 () -> new VerifyException("ApplyDatabaseParameter is absent"));
+    }
+
+    public static ApplyTableParameter getApplyTableParameter(@NonNull DelegateExecution execution) {
+        return internalGetParameter(execution, ApplyTableParameter.class).orElseThrow(
+                () -> new VerifyException("ApplyTableParameter is absent"));
     }
 
     public static ApplyProjectParameter getApplyProjectParameter(@NonNull DelegateExecution execution) {

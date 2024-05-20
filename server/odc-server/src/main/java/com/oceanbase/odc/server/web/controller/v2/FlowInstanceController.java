@@ -87,8 +87,7 @@ public class FlowInstanceController {
 
     @ApiOperation(value = "createFlowInstance", notes = "创建流程实例，返回流程实例")
     @RequestMapping(value = "/", method = RequestMethod.POST)
-    public ListResponse<FlowInstanceDetailResp> createFlowInstance(
-            @RequestBody CreateFlowInstanceReq flowInstanceReq) {
+    public ListResponse<FlowInstanceDetailResp> createFlowInstance(@RequestBody CreateFlowInstanceReq flowInstanceReq) {
         flowInstanceReq.validate();
         if (authenticationFacade.currentUser().getOrganizationType() == OrganizationType.INDIVIDUAL) {
             return Responses.list(flowInstanceService.createIndividualFlowInstance(flowInstanceReq));

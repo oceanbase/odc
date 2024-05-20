@@ -123,5 +123,4 @@ public interface UserResourceRoleRepository extends OdcJpaRepository<UserResourc
                 .build();
         return batchCreate(entities, sql, getter, UserResourceRoleEntity::setId);
     }
-
 }

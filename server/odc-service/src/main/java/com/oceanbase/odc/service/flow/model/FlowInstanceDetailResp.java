@@ -57,6 +57,7 @@ import com.oceanbase.odc.service.onlineschemachange.model.OnlineSchemaChangePara
 import com.oceanbase.odc.service.partitionplan.model.PartitionPlanConfig;
 import com.oceanbase.odc.service.permission.database.model.ApplyDatabaseParameter;
 import com.oceanbase.odc.service.permission.project.ApplyProjectParameter;
+import com.oceanbase.odc.service.permission.table.model.ApplyTableParameter;
 import com.oceanbase.odc.service.regulation.risklevel.model.RiskLevel;
 import com.oceanbase.odc.service.resultset.ResultSetExportTaskParameter;
 import com.oceanbase.odc.service.schedule.flowtask.AlterScheduleParameters;
@@ -313,6 +314,9 @@ public class FlowInstanceDetailResp {
                     break;
                 case APPLY_DATABASE_PERMISSION:
                     resp.setParameters(JsonUtils.fromJson(parameterJson, ApplyDatabaseParameter.class));
+                    break;
+                case APPLY_TABLE_PERMISSION:
+                    resp.setParameters(JsonUtils.fromJson(parameterJson, ApplyTableParameter.class));
                     break;
                 case STRUCTURE_COMPARISON:
                     DBStructureComparisonParameter dbStructureComparisonParameter = JsonUtils.fromJson(parameterJson,

@@ -38,6 +38,8 @@ public interface DBObjectRepository extends OdcJpaRepository<DBObjectEntity, Lon
 
     List<DBObjectEntity> findByDatabaseIdAndType(Long databaseId, DBObjectType type);
 
+    List<DBObjectEntity> findByDatabaseIdInAndType(Collection<Long> databaseIds, DBObjectType type);
+
     @Modifying
     @Transactional
     @Query(value = "delete from database_schema_object t where t.id in (:ids)", nativeQuery = true)
