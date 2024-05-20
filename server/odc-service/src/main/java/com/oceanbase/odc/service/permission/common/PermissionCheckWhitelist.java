@@ -15,15 +15,16 @@
  */
 package com.oceanbase.odc.service.permission.common;
 
-import java.util.Collections;
-import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.TreeSet;
+
+import javax.annotation.PostConstruct;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.cloud.context.config.annotation.RefreshScope;
 import org.springframework.context.annotation.Configuration;
 
-import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.shared.constant.DialectType;
 
 import lombok.Data;
@@ -39,24 +40,29 @@ import lombok.NonNull;
 @ConfigurationProperties(prefix = "odc.permission-check.whitelist")
 public class PermissionCheckWhitelist {
 
-    private Map<String, List<String>> database;
+    private Map<String, Set<String>> database;
 
-    public List<String> getDatabaseWhitelist(@NonNull DialectType dialect) {
+    @PostConstruct
+    private void init() {
+        if (database != null) {
+            for (Map.Entry<String, Set<String>> entry : database.entrySet()) {
+                Set<String> caseInsensitiveSet = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
+                caseInsensitiveSet.addAll(entry.getValue());
+                database.put(entry.getKey(), caseInsensitiveSet);
+            }
+        }
+    }
+
+    public Set<String> getDatabaseWhitelist(@NonNull DialectType dialect) {
         if (database == null || database.isEmpty()) {
-            return Collections.emptyList();
+            return new TreeSet<>();
         }
         String key = dialect.name().toLowerCase().replace("_", "-");
-        return database.getOrDefault(key, Collections.emptyList());
+        return database.getOrDefault(key, new TreeSet<>());
     }
 
     public boolean containsDatabase(@NonNull String database, @NonNull DialectType dialect) {
-        List<String> whitelist = getDatabaseWhitelist(dialect);
-        for (String item : whitelist) {
-            if (StringUtils.equalsIgnoreCase(item, database)) {
-                return true;
-            }
-        }
-        return false;
+        return getDatabaseWhitelist(dialect).contains(database);
     }
 
 }
