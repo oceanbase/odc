@@ -16,8 +16,6 @@
 package com.oceanbase.odc.service.databasechange.model;
 
 import com.oceanbase.odc.core.shared.constant.FlowStatus;
-import com.oceanbase.odc.service.connection.database.model.Database;
-import com.oceanbase.odc.service.flow.model.FlowInstanceDetailResp;
 
 import lombok.Data;
 
@@ -27,7 +25,7 @@ import lombok.Data;
  */
 @Data
 public class DatabaseChangingRecord {
-    private Database database;
-    private FlowInstanceDetailResp flowInstanceDetailResp;
+    private DatabaseChangeDatabase database;
+    private DatabaseChangeFlowInstanceDetailResp flowInstanceDetailResp;
     private FlowStatus status;
 }

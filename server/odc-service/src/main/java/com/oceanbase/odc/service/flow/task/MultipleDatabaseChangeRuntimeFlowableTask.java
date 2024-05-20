@@ -37,6 +37,8 @@ import com.oceanbase.odc.metadb.task.TaskEntity;
 import com.oceanbase.odc.service.connection.database.DatabaseService;
 import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.databasechange.MultipleDatabaseChangeTraceContextHolder;
+import com.oceanbase.odc.service.databasechange.model.DatabaseChangeDatabase;
+import com.oceanbase.odc.service.databasechange.model.DatabaseChangeFlowInstanceDetailResp;
 import com.oceanbase.odc.service.databasechange.model.DatabaseChangingRecord;
 import com.oceanbase.odc.service.flow.FlowInstanceService;
 import com.oceanbase.odc.service.flow.FlowableAdaptor;
@@ -282,8 +284,10 @@ public class MultipleDatabaseChangeRuntimeFlowableTask extends BaseODCFlowTaskDe
         for (Database database : databaseList) {
             FlowInstanceDetailResp flowInstanceDetailResp = databaseId2FlowInstanceDetailResp.get(database.getId());
             DatabaseChangingRecord databaseChangingRecord = new DatabaseChangingRecord();
-            databaseChangingRecord.setDatabase(database);
-            databaseChangingRecord.setFlowInstanceDetailResp(flowInstanceDetailResp);
+            databaseChangingRecord.setDatabase(new DatabaseChangeDatabase(database));
+            databaseChangingRecord.setFlowInstanceDetailResp(
+                    flowInstanceDetailResp != null ? new DatabaseChangeFlowInstanceDetailResp(flowInstanceDetailResp)
+                            : null);
             databaseChangingRecord.setStatus(flowInstanceDetailResp != null ? flowInstanceDetailResp.getStatus()
                     : FlowStatus.WAIT_FOR_EXECUTION);
             databaseChangingRecords.add(databaseChangingRecord);

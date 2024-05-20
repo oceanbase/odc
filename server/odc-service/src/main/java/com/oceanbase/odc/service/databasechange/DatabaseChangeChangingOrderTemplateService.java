@@ -109,6 +109,7 @@ public class DatabaseChangeChangingOrderTemplateService {
         templateResp.setId(savedEntity.getId());
         templateResp.setName(savedEntity.getName());
         templateResp.setCreatorId(savedEntity.getCreatorId());
+        templateResp.setProjectId(savedEntity.getProjectId());
         templateResp.setOrganizationId(savedEntity.getOrganizationId());
         List<List<Long>> databaseSequences = savedEntity.getDatabaseSequences();
         List<List<DatabaseChangeDatabase>> databaseSequenceList = databaseSequences.stream()
@@ -150,6 +151,7 @@ public class DatabaseChangeChangingOrderTemplateService {
         templateResp.setId(savedEntity.getId());
         templateResp.setName(savedEntity.getName());
         templateResp.setCreatorId(savedEntity.getCreatorId());
+        templateResp.setProjectId(savedEntity.getProjectId());
         templateResp.setOrganizationId(savedEntity.getOrganizationId());
         List<List<Long>> databaseSequences = savedEntity.getDatabaseSequences();
         List<List<DatabaseChangeDatabase>> databaseSequenceList = databaseSequences.stream()
@@ -236,6 +238,7 @@ public class DatabaseChangeChangingOrderTemplateService {
         templateResp.setId(templateEntity.getId());
         templateResp.setName(templateEntity.getName());
         templateResp.setCreatorId(templateEntity.getCreatorId());
+        templateResp.setProjectId(templateEntity.getProjectId());
         templateResp.setOrganizationId(templateEntity.getOrganizationId());
         List<List<Long>> databaseSequences = templateEntity.getDatabaseSequences();
         List<List<DatabaseChangeDatabase>> databaseSequenceList = databaseSequences.stream()

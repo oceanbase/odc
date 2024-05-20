@@ -47,6 +47,7 @@ import com.oceanbase.odc.metadb.databasechange.DatabaseChangeChangingOrderTempla
 import com.oceanbase.odc.metadb.databasechange.DatabaseChangeChangingOrderTemplateRepository;
 import com.oceanbase.odc.service.databasechange.model.CreateDatabaseChangeChangingOrderTemplateReq;
 import com.oceanbase.odc.service.databasechange.model.DatabaseChangeChangingOrderTemplateResp;
+import com.oceanbase.odc.service.databasechange.model.DatabaseChangingOrderTemplateExists;
 import com.oceanbase.odc.service.databasechange.model.QueryDatabaseChangeChangingOrderParams;
 import com.oceanbase.odc.service.databasechange.model.UpdateDatabaseChangeChangingOrderReq;
 import com.oceanbase.odc.service.iam.ProjectPermissionValidator;
@@ -101,11 +102,11 @@ public class DatabaseChangeChangingOrderTemplateServiceTest extends ServiceTestE
         orders.add(Arrays.asList(1L, 2L));
         orders.add(Arrays.asList(3L, 4L));
         req.setOrders(orders);
-        DatabaseChangeChangingOrderTemplateResp templateEntity = templateService.create(
+        DatabaseChangeChangingOrderTemplateResp templateResp = templateService.create(
                 req);
         int size = templateRepository.findAll().size();
-        Assert.assertEquals(TEMPLATE_NAME, templateEntity.getName());
-        Assert.assertEquals(PROJECT_ID, templateEntity.getProjectId());
+        Assert.assertEquals(TEMPLATE_NAME, templateResp.getName());
+        Assert.assertEquals(PROJECT_ID, templateResp.getProjectId());
         Assert.assertEquals(1, size);
     }
 
@@ -200,7 +201,9 @@ public class DatabaseChangeChangingOrderTemplateServiceTest extends ServiceTestE
         createDatabaseChangingOrderTemplate_saveEntity_succeed();
         DatabaseChangeChangingOrderTemplateEntity byNameAndProjectId =
                 templateRepository.findByNameAndProjectId(TEMPLATE_NAME, PROJECT_ID).get();
-        when(databaseRepository.findByIdIn(anyList())).thenReturn(Arrays.asList(new DatabaseEntity()));
+        DatabaseEntity database = new DatabaseEntity();
+        database.setProjectId(PROJECT_ID);
+        when(databaseRepository.findByIdIn(anyList())).thenReturn(Arrays.asList(database));
         DatabaseChangeChangingOrderTemplateResp databaseChangeChangingOrderTemplateResp =
                 templateService.detail(
                         byNameAndProjectId.getId());
@@ -232,6 +235,13 @@ public class DatabaseChangeChangingOrderTemplateServiceTest extends ServiceTestE
                 databaseChangeChangingOrderTemplateEntity.getId());
         int size = templateRepository.findAll().size();
         assertEquals(0, size);
+    }
+
+    @Test
+    public void exists_checkTemplateExist_true() {
+        createDatabaseChangingOrderTemplate_saveEntity_succeed();
+        DatabaseChangingOrderTemplateExists exists = templateService.exists(TEMPLATE_NAME, PROJECT_ID);
+        assertEquals(true, exists.getExists());
     }
 }
 

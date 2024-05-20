@@ -32,7 +32,7 @@ public class CreateDatabaseChangeChangingOrderTemplateReq {
 
     @NotBlank
     @Size(max = 256, message = "name is out of range [0, 256]")
-    @Name(message = "Role name cannot start or end with whitespaces")
+    @Name(message = "Template name cannot start or end with whitespaces")
     private String name;
 
     @NotNull

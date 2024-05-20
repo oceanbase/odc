@@ -21,6 +21,7 @@ import static org.junit.Assert.assertTrue;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -70,8 +71,30 @@ public class DatabaseChangeChangingOrderTemplateRepositoryTest extends ServiceTe
         DatabaseChangeChangingOrderTemplateEntity databaseChangeChangingOrderTemplateEntity = create();
         Optional<DatabaseChangeChangingOrderTemplateEntity> result =
                 templateRepository.findByNameAndProjectId(TEMPLATE_NAME, PROJECT_ID);
-        assertNotNull(result.get());
-        assertEquals(databaseChangeChangingOrderTemplateEntity, result.get());
+        DatabaseChangeChangingOrderTemplateEntity templateEntity = result.get();
+        assertNotNull(templateEntity);
+        assertEquals(databaseChangeChangingOrderTemplateEntity, templateEntity);
+    }
+
+    @Test
+    public void findByIdAndProjectId_getTemplate_succeed() {
+        DatabaseChangeChangingOrderTemplateEntity databaseChangeChangingOrderTemplateEntity = create();
+        Optional<DatabaseChangeChangingOrderTemplateEntity> result =
+                templateRepository.findByIdAndProjectId(databaseChangeChangingOrderTemplateEntity.getId(), PROJECT_ID);
+        DatabaseChangeChangingOrderTemplateEntity templateEntity = result.get();
+        assertNotNull(templateEntity);
+        assertEquals(databaseChangeChangingOrderTemplateEntity, templateEntity);
+    }
+
+    @Test
+    public void updateEnabledByIds_updateTemplate_succeed() {
+        DatabaseChangeChangingOrderTemplateEntity databaseChangeChangingOrderTemplateEntity = create();
+        templateRepository.updateEnabledByIds(
+                Collections.singletonList(databaseChangeChangingOrderTemplateEntity.getId()));
+        Optional<DatabaseChangeChangingOrderTemplateEntity> result = templateRepository.findById(
+                databaseChangeChangingOrderTemplateEntity.getId());
+        DatabaseChangeChangingOrderTemplateEntity templateEntity = result.get();
+        assertEquals(false, templateEntity.getEnabled());
     }
 
     private DatabaseChangeChangingOrderTemplateEntity create() {

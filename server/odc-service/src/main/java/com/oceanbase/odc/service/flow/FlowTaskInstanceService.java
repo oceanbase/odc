@@ -25,7 +25,6 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -68,14 +67,11 @@ import com.oceanbase.odc.metadb.task.TaskRepository;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferConfig;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferTaskResult;
 import com.oceanbase.odc.service.collaboration.environment.EnvironmentService;
-import com.oceanbase.odc.service.collaboration.environment.model.Environment;
 import com.oceanbase.odc.service.common.FileManager;
 import com.oceanbase.odc.service.common.model.FileBucket;
 import com.oceanbase.odc.service.common.response.ListResponse;
 import com.oceanbase.odc.service.common.response.SuccessResponse;
 import com.oceanbase.odc.service.common.util.OdcFileUtil;
-import com.oceanbase.odc.service.connection.database.model.Database;
-import com.oceanbase.odc.service.databasechange.model.DatabaseChangingRecord;
 import com.oceanbase.odc.service.datatransfer.LocalFileManager;
 import com.oceanbase.odc.service.dispatch.DispatchResponse;
 import com.oceanbase.odc.service.dispatch.RequestDispatcher;
@@ -624,41 +620,8 @@ public class FlowTaskInstanceService {
                 }).collect(Collectors.toList()), false);
     }
 
-    private List<MultipleDatabaseChangeTaskResult> getMultipleAsyncResult(@NonNull TaskEntity taskEntity)
-            throws IOException {
-        List<MultipleDatabaseChangeTaskResult> multipleDatabaseChangeTaskResults = innerGetResult(taskEntity,
-                MultipleDatabaseChangeTaskResult.class);
-        // Add environment element
-        if (!multipleDatabaseChangeTaskResults.isEmpty()) {
-            List<DatabaseChangingRecord> databaseChangingRecordList = multipleDatabaseChangeTaskResults.get(0)
-                    .getDatabaseChangingRecordList();
-            List<Database> databaseList =
-                    multipleDatabaseChangeTaskResults.get(0).getDatabaseChangingRecordList().stream()
-                            .map(
-                                    databaseChangingRecord -> databaseChangingRecord.getDatabase())
-                            .collect(
-                                    Collectors.toList());
-            List<Long> environmentIds = databaseList.stream().map(
-                    database -> database.getDataSource().getEnvironmentId()).distinct().collect(Collectors.toList());
-            Map<Long, Environment> environmentMap = environmentService.list(
-                    environmentIds).stream()
-                    .collect(Collectors.toMap(Environment::getId, environment -> environment));
-            for (int i = 0; i < databaseList.size(); i++) {
-                if (environmentMap.containsKey(databaseList.get(i).getDataSource().getEnvironmentId())) {
-                    Environment environment = new Environment();
-                    environment
-                            .setName(environmentMap.get(databaseList.get(i).getDataSource().getEnvironmentId())
-                                    .getName());
-                    environment.setStyle(
-                            environmentMap.get(databaseList.get(i).getDataSource().getEnvironmentId()).getStyle());
-                    databaseList.get(i).setEnvironment(environment);
-                    if (databaseChangingRecordList.get(i) != null) {
-                        databaseChangingRecordList.get(i).setDatabase(databaseList.get(i));
-                    }
-                }
-            }
-        }
-        return multipleDatabaseChangeTaskResults;
+    private List<MultipleDatabaseChangeTaskResult> getMultipleAsyncResult(@NonNull TaskEntity taskEntity) {
+        return innerGetResult(taskEntity, MultipleDatabaseChangeTaskResult.class);
     }
 
     private List<DatabaseChangeResult> getAsyncResult(@NonNull TaskEntity taskEntity) throws IOException {

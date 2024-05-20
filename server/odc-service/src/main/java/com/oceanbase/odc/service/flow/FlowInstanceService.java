@@ -368,6 +368,7 @@ public class FlowInstanceService {
                     DatabaseChangeDatabase::getDataSource).distinct().collect(Collectors.toList());
             conns.forEach(con -> cloudMetadataClient.checkPermission(OBTenant.of(con.getClusterName(),
                     con.getTenantName()), con.getInstanceType(), false, CloudPermissionAction.READONLY));
+            taskParameters.setDatabases(null);
         }
         return Collections.singletonList(buildFlowInstance(riskLevels, createReq, conn));
     }

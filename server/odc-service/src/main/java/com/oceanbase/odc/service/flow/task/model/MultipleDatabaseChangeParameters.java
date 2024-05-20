@@ -18,8 +18,8 @@ package com.oceanbase.odc.service.flow.task.model;
 import java.util.List;
 
 import com.oceanbase.odc.core.shared.constant.TaskErrorStrategy;
-import com.oceanbase.odc.service.collaboration.project.model.Project;
 import com.oceanbase.odc.service.databasechange.model.DatabaseChangeDatabase;
+import com.oceanbase.odc.service.databasechange.model.DatabaseChangeProject;
 
 import lombok.Data;
 
@@ -37,7 +37,7 @@ public class MultipleDatabaseChangeParameters extends DatabaseChangeParameters {
     /**
      * All databases must belong to this project
      */
-    private Project project;
+    private DatabaseChangeProject project;
     /**
      * multiple databases change execution sequence
      */
