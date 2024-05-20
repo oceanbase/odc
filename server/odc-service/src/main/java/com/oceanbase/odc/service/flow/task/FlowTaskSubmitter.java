@@ -131,8 +131,9 @@ public class FlowTaskSubmitter implements JavaDelegate {
                         Thread.currentThread().getContextClassLoader());
                 if (ExecutionListener.class.isAssignableFrom(clazz) &&
                         Objects.equals(fl.getEvent(), FlowConstants.EXECUTION_END_EVENT_NAME)) {
-                    Object o = BeanInjectedClassDelegate.instantiateDelegate(clazz);
-                    ExecutionListener listener = (ExecutionListener) o;
+                    ExecutionListener listener =
+                            (ExecutionListener) BeanInjectedClassDelegate.instantiateDelegate(clazz);
+                    execution.setEventName(fl.getEvent());
                     listener.notify(execution);
                 }
             } catch (Exception ex) {
