@@ -21,6 +21,7 @@ import com.google.common.collect.FluentIterable;
 import com.oceanbase.odc.service.common.model.Stats;
 
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 /**
  * 分页数据，包含 列表 和 分页信息 <br>
@@ -29,6 +30,7 @@ import lombok.Data;
  * @param <T>
  */
 @Data
+@NoArgsConstructor
 public class PaginatedData<T> {
 
     private CustomPage page;

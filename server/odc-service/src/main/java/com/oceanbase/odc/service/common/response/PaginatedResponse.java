@@ -15,6 +15,8 @@
  */
 package com.oceanbase.odc.service.common.response;
 
+import lombok.NoArgsConstructor;
+
 /**
  * 分页 response
  *
@@ -26,6 +28,7 @@ package com.oceanbase.odc.service.common.response;
  * @param <T>
  *
  */
+@NoArgsConstructor
 public class PaginatedResponse<T> extends SuccessResponse<PaginatedData<T>> {
 
     public PaginatedResponse(PaginatedData<T> data) {
