@@ -51,7 +51,6 @@ import com.oceanbase.odc.metadb.task.TaskSpecs;
 import com.oceanbase.odc.service.common.model.HostProperties;
 import com.oceanbase.odc.service.flow.model.CreateFlowInstanceReq;
 import com.oceanbase.odc.service.flow.model.QueryTaskInstanceParams;
-import com.oceanbase.odc.service.flow.task.model.MultipleDatabaseChangeParameters;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.task.model.ExecutorInfo;
 import com.oceanbase.odc.service.task.model.OdcTaskLogLevel;
@@ -281,19 +280,8 @@ public class TaskService {
     @Transactional(rollbackFor = Exception.class)
     public void succeed(Long id, Object taskResult) {
         TaskEntity taskEntity = nullSafeFindById(id);
-        if (taskEntity.getTaskType() == TaskType.MULTIPLE_ASYNC) {
-            MultipleDatabaseChangeParameters multipleDatabaseChangeParameters = JsonUtils.fromJson(
-                    taskEntity.getParametersJson(), MultipleDatabaseChangeParameters.class);
-            Integer batchId = multipleDatabaseChangeParameters.getBatchId();
-            int size = multipleDatabaseChangeParameters.getOrderedDatabaseIds().size();
-            taskEntity.setProgressPercentage(batchId * 100D / size);
-            if (batchId == size) {
-                taskEntity.setStatus(TaskStatus.DONE);
-            }
-        } else {
-            taskEntity.setStatus(TaskStatus.DONE);
-            taskEntity.setProgressPercentage(100);
-        }
+        taskEntity.setStatus(TaskStatus.DONE);
+        taskEntity.setProgressPercentage(100);
         taskEntity.setResultJson(JsonUtils.toJson(taskResult));
         taskRepository.save(taskEntity);
         log.info("Task ended: taskId={}", id);
