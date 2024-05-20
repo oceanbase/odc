@@ -29,6 +29,7 @@ import org.apache.commons.collections4.CollectionUtils;
 import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonSetter;
+import com.oceanbase.odc.common.i18n.Internationalizable;
 
 import lombok.Data;
 import lombok.NonNull;
@@ -72,6 +73,9 @@ public class TraceSpan {
     private String logTraceId;
     private Node node;
     private List<TraceSpan> subSpans = new ArrayList<>();
+
+    @Internationalizable
+    private String warning;
 
     @JsonSetter("start_ts")
     public void setStartTs(String ts) {

@@ -30,9 +30,11 @@ import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionUtil;
 import com.oceanbase.odc.core.sql.execute.model.JdbcGeneralResult;
 import com.oceanbase.odc.core.sql.execute.model.SqlTuple;
+import com.oceanbase.odc.core.sql.parser.AbstractSyntaxTree;
 import com.oceanbase.odc.core.sql.util.OBUtils;
 import com.oceanbase.odc.service.queryprofile.OBQueryProfileManager;
 import com.oceanbase.odc.service.session.model.AsyncExecuteContext;
+import com.oceanbase.tools.dbbrowser.parser.constant.SqlType;
 
 /**
  * @author: liuyizhuo.lyz
@@ -58,8 +60,8 @@ public class OBExecutionListener implements SqlExecutionListener {
     @Override
     public void onExecutionEnd(SqlTuple sqlTuple, List<JdbcGeneralResult> results, AsyncExecuteContext context) {
         results.forEach(result -> {
-            if (StringUtils.isNotEmpty(result.getTraceId())) {
-                profileManager.submitProfile(session, result.getTraceId());
+            if (StringUtils.isNotEmpty(result.getTraceId()) && isSelect(sqlTuple)) {
+                profileManager.submit(session, result.getTraceId());
             }
         });
     }
@@ -73,9 +75,9 @@ public class OBExecutionListener implements SqlExecutionListener {
         }
         String traceId = session.getSyncJdbcExecutor(BACKEND_DS_KEY).execute((StatementCallback<String>) stmt -> OBUtils
                 .queryTraceIdFromASH(stmt, sessionIds, session.getConnectType()));
-        if (traceId != null) {
+        if (traceId != null && isSelect(sqlTuple)) {
             context.setCurrentExecutingSqlTraceId(traceId);
-            profileManager.submitProfile(session, traceId);
+            profileManager.submit(session, traceId);
         }
     }
 
@@ -94,5 +96,15 @@ public class OBExecutionListener implements SqlExecutionListener {
         }
         return session.getSyncJdbcExecutor(CONSOLE_DS_KEY).execute((StatementCallback<List<String>>) stmt -> OBUtils
                 .querySessionIdsByProxySessId(stmt, proxySessId, session.getConnectType()));
+    }
+
+    private boolean isSelect(SqlTuple sqlTuple) {
+        try {
+            AbstractSyntaxTree ast = sqlTuple.getAst();
+            return ast.getParseResult().getSqlType() == SqlType.SELECT;
+        } catch (Exception e) {
+            // eat exception
+            return false;
+        }
     }
 }

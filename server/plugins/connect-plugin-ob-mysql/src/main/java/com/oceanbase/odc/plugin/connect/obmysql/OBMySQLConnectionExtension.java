@@ -23,7 +23,7 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.util.Collections;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -43,6 +43,7 @@ import com.oceanbase.odc.core.shared.jdbc.JdbcUrlParser;
 import com.oceanbase.odc.plugin.connect.api.ConnectionExtensionPoint;
 import com.oceanbase.odc.plugin.connect.api.TestResult;
 import com.oceanbase.odc.plugin.connect.model.JdbcUrlProperty;
+import com.oceanbase.odc.plugin.connect.obmysql.initializer.EnablePlanMonitorInitializer;
 import com.oceanbase.odc.plugin.connect.obmysql.initializer.EnableTraceInitializer;
 
 import lombok.NonNull;
@@ -89,7 +90,7 @@ public class OBMySQLConnectionExtension implements ConnectionExtensionPoint {
 
     @Override
     public List<ConnectionInitializer> getConnectionInitializers() {
-        return Collections.singletonList(new EnableTraceInitializer());
+        return Arrays.asList(new EnableTraceInitializer(), new EnablePlanMonitorInitializer());
     }
 
     @Override

@@ -35,4 +35,7 @@ public class ProfileConstants {
     public static final String OTHER_STATS = "Other Stats";
     public static final String STATUS = "Status";
 
+    public static final String PROFILE_NOT_SUPPORT = "${com.oceanbase.odc.ErrorCodes.ObQueryProfileNotSupported}";
+    public static final String SQL_TYPE_NOT_SUPPORT = "${com.oceanbase.odc.ErrorCodes.SqlTypeNotSupported}";
+
 }

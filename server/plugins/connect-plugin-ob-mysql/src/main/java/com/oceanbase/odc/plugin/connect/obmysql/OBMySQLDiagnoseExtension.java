@@ -38,6 +38,7 @@ import com.oceanbase.odc.common.util.tableformat.CellStyle.AbbreviationStyle;
 import com.oceanbase.odc.common.util.tableformat.CellStyle.HorizontalAlign;
 import com.oceanbase.odc.common.util.tableformat.CellStyle.NullStyle;
 import com.oceanbase.odc.common.util.tableformat.Table;
+import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.core.shared.constant.ConnectType;
 import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
@@ -278,6 +279,7 @@ public class OBMySQLDiagnoseExtension implements SqlDiagnoseExtensionPoint {
             } catch (SQLException e) {
                 planId = OBUtils.queryPlanIdByTraceIdFromAudit(stmt, traceId, connectType);
             }
+            Verify.notEmpty(planId, "plan id");
             List<OBSqlPlan> planRecords = OBUtils.queryOBSqlPlanByPlanId(stmt, planId, connectType);
             SqlExplain explain = innerGetSqlExplainByOBPlanRecords(planRecords);
             explain.getGraph().setTraceId(traceId);

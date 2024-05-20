@@ -53,6 +53,7 @@ import com.google.common.collect.Comparators;
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.common.util.TimespanFormatUtil;
+import com.oceanbase.odc.common.util.VersionUtils;
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionUtil;
 import com.oceanbase.odc.core.shared.Verify;
@@ -66,6 +67,7 @@ import com.oceanbase.odc.plugin.connect.model.diagnose.PlanGraphEdge;
 import com.oceanbase.odc.plugin.connect.model.diagnose.PlanGraphOperator;
 import com.oceanbase.odc.plugin.connect.model.diagnose.SqlExplain;
 import com.oceanbase.odc.service.plugin.ConnectionPluginUtil;
+import com.oceanbase.odc.service.queryprofile.model.ProfileConstants;
 
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
@@ -82,66 +84,81 @@ public class OBQueryProfileManager {
     private final ExecutorService executor =
             Executors.newFixedThreadPool(5, r -> new Thread(r, "query-profile-" + r.hashCode()));
 
-    public void submitProfile(ConnectionSession session, @NonNull String traceId) {
+    public void submit(ConnectionSession session, @NonNull String traceId) {
         executor.execute(() -> {
-            if (ConnectionSessionUtil.getBinaryContentMetadata(session, PROFILE_KEY_PREFIX + traceId) == null) {
-                if (session.isExpired()) {
-                    log.warn("session is expired, profile with traceId={} will be thrown.", traceId);
-                    return;
-                }
-                SqlExplain profile = session.getSyncJdbcExecutor(BACKEND_DS_KEY).execute(
-                        (StatementCallback<SqlExplain>) stmt -> ConnectionPluginUtil
-                                .getDiagnoseExtension(session.getConnectType().getDialectType())
-                                .getQueryProfileByTraceId(stmt.getConnection(), traceId));
-                BinaryDataManager binaryDataManager = ConnectionSessionUtil.getBinaryDataManager(session);
-                try {
-                    BinaryContentMetaData metaData = binaryDataManager.write(
-                            new ByteArrayInputStream(JsonUtils.toJson(profile).getBytes()));
-                    String key = PROFILE_KEY_PREFIX + traceId;
-                    ConnectionSessionUtil.setBinaryContentMetadata(session, key, metaData);
-                } catch (IOException e) {
-                    log.warn("Failed to persist profile.", e);
-                }
+            if (ConnectionSessionUtil.getBinaryContentMetadata(session, PROFILE_KEY_PREFIX + traceId) != null) {
+                return;
+            }
+            SqlExplain profile = session.getSyncJdbcExecutor(BACKEND_DS_KEY).execute(
+                    (StatementCallback<SqlExplain>) stmt -> ConnectionPluginUtil
+                            .getDiagnoseExtension(session.getConnectType().getDialectType())
+                            .getQueryProfileByTraceId(stmt.getConnection(), traceId));
+            BinaryDataManager binaryDataManager = ConnectionSessionUtil.getBinaryDataManager(session);
+            try {
+                BinaryContentMetaData metaData = binaryDataManager.write(
+                        new ByteArrayInputStream(JsonUtils.toJson(profile).getBytes()));
+                String key = PROFILE_KEY_PREFIX + traceId;
+                ConnectionSessionUtil.setBinaryContentMetadata(session, key, metaData);
+            } catch (IOException e) {
+                log.warn("Failed to cache profile.", e);
             }
         });
     }
 
     public SqlExplain getProfile(@NonNull String traceId, ConnectionSession session) throws IOException {
+        SqlExplain profile;
+        if (VersionUtils.isGreaterThanOrEqualsTo(ConnectionSessionUtil.getVersion(session), "4.2.4")) {
+            profile = new SqlExplain();
+            profile.setWarning(ProfileConstants.PROFILE_NOT_SUPPORT);
+            return profile;
+        }
         BinaryContentMetaData metadata =
                 ConnectionSessionUtil.getBinaryContentMetadata(session, PROFILE_KEY_PREFIX + traceId);
         if (metadata != null) {
             InputStream stream = ConnectionSessionUtil.getBinaryDataManager(session).read(metadata);
-            SqlExplain profile =
+            profile =
                     JsonUtils.fromJson(StreamUtils.copyToString(stream, StandardCharsets.UTF_8), SqlExplain.class);
-            refreshGraph(profile.getGraph(), session);
+            refreshGraph(profile, session);
             return profile;
         }
-        SqlExplain profile = session.getSyncJdbcExecutor(BACKEND_DS_KEY).execute(
-                (StatementCallback<SqlExplain>) stmt -> ConnectionPluginUtil
-                        .getDiagnoseExtension(session.getConnectType().getDialectType())
-                        .getQueryProfileByTraceId(stmt.getConnection(), traceId));
-        Verify.notNull(profile, "profile graph");
-        refreshGraph(profile.getGraph(), session);
+        try {
+            profile = session.getSyncJdbcExecutor(BACKEND_DS_KEY).execute(
+                    (StatementCallback<SqlExplain>) stmt -> ConnectionPluginUtil
+                            .getDiagnoseExtension(session.getConnectType().getDialectType())
+                            .getQueryProfileByTraceId(stmt.getConnection(), traceId));
+            Verify.notNull(profile, "profile graph");
+        } catch (Exception e) {
+            log.warn("Failed to get profile.", e);
+            profile = new SqlExplain();
+            profile.setWarning(ProfileConstants.SQL_TYPE_NOT_SUPPORT);
+            return profile;
+        }
+        refreshGraph(profile, session);
         return profile;
     }
 
-    public void refreshGraph(PlanGraph graph, ConnectionSession session) {
+    public void refreshGraph(SqlExplain profile, ConnectionSession session) {
         if (session.isExpired()) {
             return;
         }
-        List<SqlPlanMonitor> spmStats = session.getSyncJdbcExecutor(BACKEND_DS_KEY).execute(
-                (StatementCallback<List<SqlPlanMonitor>>) stmt -> {
-                    Map<String, String> statId2Name = OBUtils.querySPMStatNames(stmt, session.getConnectType());
-                    return OBUtils.querySqlPlanMonitorStats(
-                            stmt, graph.getTraceId(), session.getConnectType(), statId2Name);
-                });
-        replaceSPMStatsIntoProfile(spmStats, graph);
+        PlanGraph graph = profile.getGraph();
+        try {
+            List<SqlPlanMonitor> spmStats = session.getSyncJdbcExecutor(BACKEND_DS_KEY).execute(
+                    (StatementCallback<List<SqlPlanMonitor>>) stmt -> {
+                        Map<String, String> statId2Name = OBUtils.querySPMStatNames(stmt, session.getConnectType());
+                        return OBUtils.querySqlPlanMonitorStats(
+                                stmt, graph.getTraceId(), session.getConnectType(), statId2Name);
+                    });
+            replaceSPMStatsIntoProfile(spmStats, graph);
 
-        Map<String, List<String>> topNodes = new HashMap<>();
-        graph.setTopNodes(topNodes);
-        topNodes.put("duration", graph.getVertexes()
-                .stream().collect(Comparators.greatest(5, Comparator.comparingLong(PlanGraphOperator::getDuration)))
-                .stream().map(PlanGraphOperator::getGraphId).collect(Collectors.toList()));
+            Map<String, List<String>> topNodes = new HashMap<>();
+            graph.setTopNodes(topNodes);
+            topNodes.put("duration", graph.getVertexes()
+                    .stream().collect(Comparators.greatest(5, Comparator.comparingLong(PlanGraphOperator::getDuration)))
+                    .stream().map(PlanGraphOperator::getGraphId).collect(Collectors.toList()));
+        } catch (Exception e) {
+            profile.setWarning("Failed to get runtime profile. Reason:" + e.getMessage());
+        }
     }
 
     private void replaceSPMStatsIntoProfile(List<SqlPlanMonitor> records, PlanGraph graph) {

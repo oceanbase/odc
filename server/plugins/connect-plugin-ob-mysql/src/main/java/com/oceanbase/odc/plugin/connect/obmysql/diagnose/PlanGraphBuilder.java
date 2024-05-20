@@ -91,9 +91,10 @@ public class PlanGraphBuilder {
             operator.setTitle(name);
             operator.setAttribute("Object name", singletonList(name));
         }
-        long dbTime = (int) jsonMap.get("EST.TIME(us)");
+        String durationKey = jsonMap.containsKey("EST.TIME(us)") ? "EST.TIME(us)" : "COST";
+        long dbTime = (int) jsonMap.get(durationKey);
         operator.setDuration(dbTime);
-        operator.getOverview().put("EST.TIME(us)", dbTime + "");
+        operator.getOverview().put(durationKey, dbTime + "");
         Map<String, List<String>> special = parsePredicates(outputFilter.get(id), new HashMap<>());
         operator.getAttributes().putAll(special);
         jsonMap.entrySet().stream()

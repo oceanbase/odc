@@ -22,6 +22,7 @@ import org.pf4j.Extension;
 
 import com.oceanbase.odc.core.datasource.ConnectionInitializer;
 import com.oceanbase.odc.plugin.connect.obmysql.OBMySQLConnectionExtension;
+import com.oceanbase.odc.plugin.connect.obmysql.initializer.EnablePlanMonitorInitializer;
 import com.oceanbase.odc.plugin.connect.obmysql.initializer.EnableTraceInitializer;
 import com.oceanbase.odc.plugin.connect.oboracle.initializer.OracleDBMSOutputInitializer;
 
@@ -38,6 +39,7 @@ public class OBOracleConnectionExtension extends OBMySQLConnectionExtension {
         List<ConnectionInitializer> initializers = new ArrayList<>();
         initializers.add(new EnableTraceInitializer());
         initializers.add(new OracleDBMSOutputInitializer());
+        initializers.add(new EnablePlanMonitorInitializer());
         return initializers;
     }
 
