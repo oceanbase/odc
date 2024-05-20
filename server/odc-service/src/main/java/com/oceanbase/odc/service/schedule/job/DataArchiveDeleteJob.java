@@ -20,11 +20,10 @@ import java.util.Optional;
 
 import org.quartz.JobExecutionContext;
 
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.core.shared.constant.TaskStatus;
 import com.oceanbase.odc.metadb.schedule.ScheduleTaskEntity;
-import com.oceanbase.odc.service.dlm.model.DlmTask;
+import com.oceanbase.odc.service.dlm.model.DlmTableUnit;
 import com.oceanbase.odc.service.dlm.utils.DlmJobIdUtil;
 import com.oceanbase.odc.service.schedule.model.DataArchiveClearParameters;
 import com.oceanbase.tools.migrator.common.enums.JobType;
@@ -67,7 +66,7 @@ public class DataArchiveDeleteJob extends AbstractDlmJob {
 
         // execute in task framework.
         if (taskFrameworkProperties.isEnabled()) {
-            DLMJobParameters parameters = getDLMJobParameters(dataArchiveTask.getJobId());
+            DLMJobReq parameters = getDLMJobReq(dataArchiveTask.getJobId());
             parameters.setJobType(JobType.DELETE);
             Long jobId = publishJob(parameters);
             log.info("Publish DLM job to task framework succeed,scheduleTaskId={},jobIdentity={}", taskEntity.getId(),
@@ -78,17 +77,19 @@ public class DataArchiveDeleteJob extends AbstractDlmJob {
         }
 
         // prepare tasks for clear
-        List<DlmTask> taskUnits = JsonUtils.fromJson(dataArchiveTask.getResultJson(),
-                new TypeReference<List<DlmTask>>() {});
-        for (int i = 0; i < taskUnits.size(); i++) {
-            taskUnits.get(i).setId(DlmJobIdUtil.generateHistoryJobId(taskEntity.getJobName(), taskEntity.getJobGroup(),
-                    taskEntity.getId(),
-                    i));
-            taskUnits.get(i).setJobType(JobType.DELETE);
-            taskUnits.get(i).setStatus(TaskStatus.PREPARING);
+        List<DlmTableUnit> dlmTableUnits = dlmService.findByScheduleTaskId(dataArchiveTask.getId());
+        for (int i = 0; i < dlmTableUnits.size(); i++) {
+            dlmTableUnits.get(i)
+                    .setDlmTableUnitId(
+                            DlmJobIdUtil.generateHistoryJobId(taskEntity.getJobName(), taskEntity.getJobGroup(),
+                                    taskEntity.getId(),
+                                    i));
+            dlmTableUnits.get(i).setType(JobType.DELETE);
+            dlmTableUnits.get(i).setStatus(TaskStatus.PREPARING);
         }
-        executeTask(taskEntity.getId(), taskUnits);
-        TaskStatus taskStatus = getTaskStatus(taskUnits);
+        dlmService.createDlmTableUnits(dlmTableUnits);
+        executeTask(taskEntity.getId(), dlmTableUnits);
+        TaskStatus taskStatus = getTaskStatus(taskEntity.getId());
         scheduleTaskRepository.updateStatusById(taskEntity.getId(), taskStatus);
     }
 }

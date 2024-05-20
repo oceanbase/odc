@@ -32,7 +32,7 @@ import com.oceanbase.odc.metadb.task.TaskRepository;
 import com.oceanbase.odc.service.common.util.SpringContextUtil;
 import com.oceanbase.odc.service.schedule.ScheduleService;
 import com.oceanbase.odc.service.schedule.ScheduleTaskService;
-import com.oceanbase.odc.service.schedule.job.DLMJobParameters;
+import com.oceanbase.odc.service.schedule.job.DLMJobReq;
 import com.oceanbase.odc.service.task.constants.JobParametersKeyConstants;
 import com.oceanbase.odc.service.task.service.TaskFrameworkService;
 
@@ -67,11 +67,11 @@ public class DefaultJobTerminateListener extends AbstractEventListener<JobTermin
             scheduleTaskService.findByJobId(jobEntity.getId()).ifPresent(o -> {
                 taskRepository.updateStatusById(o.getId(), event.getStatus().convertTaskStatus());
                 log.info("Update schedule task status to {} succeed,scheduleTaskId={}", event.getStatus(), o.getId());
-                DLMJobParameters parameters = JsonUtils.fromJson(
+                DLMJobReq parameters = JsonUtils.fromJson(
                         JsonUtils
                                 .fromJson(jobEntity.getJobParametersJson(), new TypeReference<Map<String, String>>() {})
                                 .get(JobParametersKeyConstants.META_TASK_PARAMETER_JSON),
-                        DLMJobParameters.class);
+                        DLMJobReq.class);
                 scheduleService.refreshScheduleStatus(Long.parseLong(o.getJobName()));
                 // Trigger the data-delete job if necessary after the data-archive task is completed.
                 if (parameters.getJobType() == com.oceanbase.tools.migrator.common.enums.JobType.MIGRATE

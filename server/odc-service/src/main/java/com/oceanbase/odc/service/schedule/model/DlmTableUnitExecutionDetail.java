@@ -18,41 +18,36 @@ package com.oceanbase.odc.service.schedule.model;
 import java.util.Date;
 
 import com.oceanbase.odc.core.shared.constant.TaskStatus;
+import com.oceanbase.tools.migrator.common.enums.JobType;
 
 import lombok.Data;
-import lombok.NonNull;
 
 /**
  * @Author：tinker
- * @Date: 2023/5/24 15:35
+ * @Date: 2024/5/16 17:36
  * @Descripition:
  */
 
 @Data
-public class ScheduleTaskResp {
+public class DlmTableUnitExecutionDetail {
 
-    private Long id;
+    private String tableName;
 
-    private String jobName;
+    private String userCondition;
 
-    private String jobGroup;
+    private Long processedRowCount;
+
+    private Long readRowCount;
+
+    private Long processedRowsPerSecond;
+
+    private Long readRowsPerSecond;
+
+    private Date startTime;
+
+    private Date endTime;
+
+    private JobType type;
 
     private TaskStatus status;
-
-    private double progressPercentage;
-
-    private String executionDetails;
-
-    private String resultJson;
-
-    private Date createTime;
-
-    private Date updateTime;
-
-    public static ScheduleTaskResp withId(@NonNull Long id) {
-        ScheduleTaskResp resp = new ScheduleTaskResp();
-        resp.setId(id);
-        return resp;
-    }
-
 }
