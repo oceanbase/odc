@@ -63,23 +63,23 @@ public class FlowTaskCallBackApprovalService {
     @Autowired
     private FlowInstanceRepository flowInstanceRepository;
 
-    public void approval(long flowInstanceId, long flowTaskInstanceId, FlowNodeStatus FlowNodeStatus,
+    public void approval(long flowInstanceId, long flowTaskInstanceId, FlowNodeStatus flowNodeStatus,
             Map<String, Object> approvalVariables) {
         try {
-            doApproval(flowInstanceId, flowTaskInstanceId, FlowNodeStatus, approvalVariables);
+            doApproval(flowInstanceId, flowTaskInstanceId, flowNodeStatus, approvalVariables);
         } catch (Throwable e) {
             log.warn(
                     "approval task callback node  failed, flowInstanceId={}, flowTaskInstanceId={}, FlowNodeStatus={}, ex={}",
-                    flowInstanceId, flowTaskInstanceId, FlowNodeStatus.name(), e);
+                    flowInstanceId, flowTaskInstanceId, flowNodeStatus.name(), e);
         }
     }
 
-    private void doApproval(long flowInstanceId, long flowTaskInstanceId, FlowNodeStatus FlowNodeStatus,
+    private void doApproval(long flowInstanceId, long flowTaskInstanceId, FlowNodeStatus flowNodeStatus,
             Map<String, Object> approvalVariables) {
-        completeTask(flowInstanceId, flowTaskInstanceId, FlowNodeStatus, approvalVariables);
+        completeTask(flowInstanceId, flowTaskInstanceId, flowNodeStatus, approvalVariables);
     }
 
-    private void completeTask(long flowInstanceId, long flowTaskInstanceId, FlowNodeStatus FlowNodeStatus,
+    private void completeTask(long flowInstanceId, long flowTaskInstanceId, FlowNodeStatus flowNodeStatus,
             Map<String, Object> approvalVariables) {
         FlowInstanceEntity flowInstance = getFlowInstance(flowInstanceId);
         FlowableElement flowableElement = getFlowableElementOfUserTask(flowTaskInstanceId);
@@ -87,23 +87,23 @@ public class FlowTaskCallBackApprovalService {
         Await.await().timeout(60).timeUnit(TimeUnit.SECONDS).period(1).periodTimeUnit(TimeUnit.SECONDS)
                 .until(getFlowableTask(flowInstance, flowableElement.getName())::isPresent).build().start();
         Task task = getFlowableTask(flowInstance, flowableElement.getName()).get();
-        doCompleteTask(flowInstanceId, flowTaskInstanceId, FlowNodeStatus, approvalVariables, task.getId());
+        doCompleteTask(flowInstanceId, flowTaskInstanceId, flowNodeStatus, approvalVariables, task.getId());
     }
 
-    private void doCompleteTask(long flowInstanceId, long flowTaskInstanceId, FlowNodeStatus FlowNodeStatus,
+    private void doCompleteTask(long flowInstanceId, long flowTaskInstanceId, FlowNodeStatus flowNodeStatus,
             Map<String, Object> approvalVariables, String taskId) {
         try {
             Map<String, Object> variables = new HashMap<>();
-            variables.putIfAbsent(APPROVAL_VARIABLE_NAME, FlowNodeStatus == FlowNodeStatus.COMPLETED);
+            variables.putIfAbsent(APPROVAL_VARIABLE_NAME, flowNodeStatus == flowNodeStatus.COMPLETED);
             if (approvalVariables != null && !approvalVariables.isEmpty()) {
                 variables.putAll(approvalVariables);
             }
             flowableTaskService.complete(taskId, variables);
             log.info("complete task succeed, flowInstanceId={}, flowTaskInstanceId={}, FlowNodeStatus={}.",
-                    flowInstanceId, flowTaskInstanceId, FlowNodeStatus);
+                    flowInstanceId, flowTaskInstanceId, flowNodeStatus);
         } catch (Exception e) {
             log.warn("complete task failed, flowInstanceId={}, flowTaskInstanceId={}, FlowNodeStatus={}, ex={}.",
-                    flowInstanceId, flowTaskInstanceId, FlowNodeStatus, e);
+                    flowInstanceId, flowTaskInstanceId, flowNodeStatus, e);
         }
     }
 
