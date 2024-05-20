@@ -19,6 +19,7 @@ import com.oceanbase.odc.service.connection.database.model.Database;
 
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.NonNull;
 
 @Data
 @NoArgsConstructor
@@ -33,19 +34,17 @@ public class DatabaseChangeDatabase {
     private DatabaseChangeConnection dataSource;
     private DatabaseChangeEnvironment environment;
 
-    public DatabaseChangeDatabase(Database database) {
-        if (database != null) {
-            this.id = database.getId();
-            this.databaseId = database.getDatabaseId();
-            this.existed = database.getExisted();
-            this.name = database.getName();
-            this.project = new DatabaseChangeProject(database.getProject());
-            this.dataSource = new DatabaseChangeConnection(database.getDataSource());
-            this.environment = new DatabaseChangeEnvironment(database.getEnvironment());
-        }
+    public DatabaseChangeDatabase(@NonNull Database database) {
+        this.id = database.getId();
+        this.databaseId = database.getDatabaseId();
+        this.existed = database.getExisted();
+        this.name = database.getName();
+        this.project = new DatabaseChangeProject(database.getProject());
+        this.dataSource = new DatabaseChangeConnection(database.getDataSource());
+        this.environment = new DatabaseChangeEnvironment(database.getEnvironment());
     }
 
-    public DatabaseChangeDatabase(Long id) {
+    public DatabaseChangeDatabase(@NonNull Long id) {
         this.id = id;
     }
 

@@ -15,13 +15,11 @@
  */
 package com.oceanbase.odc.service.databasechange;
 
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
+import java.util.Map.Entry;
 import java.util.stream.Collectors;
 
-import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -30,13 +28,9 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
-import com.oceanbase.odc.metadb.collaboration.ProjectEntity;
-import com.oceanbase.odc.metadb.collaboration.ProjectRepository;
 import com.oceanbase.odc.metadb.databasechange.DatabaseChangeChangingOrderTemplateEntity;
 import com.oceanbase.odc.metadb.databasechange.DatabaseChangeChangingOrderTemplateRepository;
 import com.oceanbase.odc.metadb.databasechange.DatabaseChangeChangingOrderTemplateSpecs;
-import com.oceanbase.odc.service.connection.database.DatabaseService;
-import com.oceanbase.odc.service.connection.database.model.Database;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -47,61 +41,29 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @Component
 public class DatabaseChangeChangingOrderTemplateSchedules {
+
     private static final int PAGE_SIZE = 100;
     @Autowired
     private DatabaseChangeChangingOrderTemplateService templateService;
     @Autowired
     private DatabaseChangeChangingOrderTemplateRepository templateRepository;
-    @Autowired
-    private ProjectRepository projectRepository;
-    @Autowired
-    private DatabaseService databaseService;
-
 
     @Scheduled(fixedDelayString = "${odc.task.databasechange.update-enable-interval-millis:180000}")
     public void syncTemplates() {
         int page = 0;
         Pageable pageable;
         Page<DatabaseChangeChangingOrderTemplateEntity> pageResult;
-
         do {
             pageable = PageRequest.of(page, PAGE_SIZE);
             Specification<DatabaseChangeChangingOrderTemplateEntity> specification =
                     Specification.where(DatabaseChangeChangingOrderTemplateSpecs.enabledEquals(true));
-            pageResult = templateRepository.findAll(specification, pageable);
-            Map<Long, List<DatabaseChangeChangingOrderTemplateEntity>> projectId2TemplateEntityList = pageResult
-                    .getContent()
-                    .stream().collect(Collectors.groupingBy(DatabaseChangeChangingOrderTemplateEntity::getProjectId));
-            List<ProjectEntity> projectEntities = projectRepository.findByIdIn(projectId2TemplateEntityList.keySet());
-            List<Long> archivedProjectIds = projectEntities.stream()
-                    .filter(p -> Boolean.TRUE.equals(p.getArchived()))
-                    .map(ProjectEntity::getId).collect(Collectors.toList());
-            List<Long> disabledTemplateIds = projectId2TemplateEntityList.entrySet().stream()
-                    .filter(entry -> archivedProjectIds.contains(entry.getKey()))
-                    .flatMap(entry -> entry.getValue().stream()
-                            .map(DatabaseChangeChangingOrderTemplateEntity::getId))
-                    .collect(Collectors.toList());
-
-            List<Long> nonArchivedProjectIds = projectEntities.stream()
-                    .filter(p -> Boolean.FALSE.equals(p.getArchived()))
-                    .map(ProjectEntity::getId).collect(Collectors.toList());
-            Map<Long, List<Database>> projectId2Databases = this.databaseService
-                    .listDatabasesByProjectIds(nonArchivedProjectIds);
-            disabledTemplateIds.addAll(projectId2TemplateEntityList.entrySet().stream()
-                    // 留下未归档的projectId2TemplateEntityList
-                    .filter(entry -> nonArchivedProjectIds.contains(entry.getKey()))
-                    .flatMap(entry -> {
-                        List<Database> databases = projectId2Databases.get(entry.getKey());
-                        if (CollectionUtils.isEmpty(databases)) {
-                            return entry.getValue().stream().map(DatabaseChangeChangingOrderTemplateEntity::getId);
-                        }
-                        Set<Long> dbIds = databases.stream().map(Database::getId).collect(Collectors.toSet());
-                        return entry.getValue().stream().filter(en -> {
-                            Set<Long> templateDbIds = en.getDatabaseSequences().stream()
-                                    .flatMap(Collection::stream).collect(Collectors.toSet());
-                            return !CollectionUtils.containsAll(dbIds, templateDbIds);
-                        }).map(DatabaseChangeChangingOrderTemplateEntity::getId);
-                    }).collect(Collectors.toList()));
+            pageResult = this.templateRepository.findAll(specification, pageable);
+            Map<Long, Boolean> templateId2Status = this.templateService
+                    .getChangingOrderTemplateId2EnableStatus(pageResult.getContent().stream()
+                            .map(DatabaseChangeChangingOrderTemplateEntity::getId).collect(Collectors.toSet()));
+            List<Long> disabledTemplateIds = templateId2Status.entrySet().stream()
+                    .filter(e -> Boolean.FALSE.equals(e.getValue()))
+                    .map(Entry::getKey).collect(Collectors.toList());
             templateRepository.updateEnabledByIds(disabledTemplateIds);
             page++;
         } while (pageResult.hasNext());

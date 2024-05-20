@@ -19,12 +19,14 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Objects;
+import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 
+import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -39,15 +41,16 @@ import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.constant.ResourceRoleName;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
-import com.oceanbase.odc.core.shared.exception.AccessDeniedException;
 import com.oceanbase.odc.core.shared.exception.BadArgumentException;
 import com.oceanbase.odc.core.shared.exception.NotFoundException;
+import com.oceanbase.odc.metadb.collaboration.ProjectEntity;
 import com.oceanbase.odc.metadb.collaboration.ProjectRepository;
 import com.oceanbase.odc.metadb.connection.DatabaseEntity;
 import com.oceanbase.odc.metadb.connection.DatabaseRepository;
 import com.oceanbase.odc.metadb.databasechange.DatabaseChangeChangingOrderTemplateEntity;
 import com.oceanbase.odc.metadb.databasechange.DatabaseChangeChangingOrderTemplateRepository;
 import com.oceanbase.odc.metadb.databasechange.DatabaseChangeChangingOrderTemplateSpecs;
+import com.oceanbase.odc.service.connection.database.DatabaseService;
 import com.oceanbase.odc.service.databasechange.model.CreateDatabaseChangeChangingOrderTemplateReq;
 import com.oceanbase.odc.service.databasechange.model.DatabaseChangeChangingOrderTemplateResp;
 import com.oceanbase.odc.service.databasechange.model.DatabaseChangeDatabase;
@@ -72,11 +75,54 @@ public class DatabaseChangeChangingOrderTemplateService {
 
     @Autowired
     private ProjectRepository projectRepository;
+    @Autowired
+    private DatabaseService databaseService;
 
     @Autowired
     private ProjectPermissionValidator projectPermissionValidator;
     @Autowired
     private DatabaseChangeProperties databaseChangeProperties;
+
+    @SkipAuthorize("internal usage")
+    public Map<Long, Boolean> getChangingOrderTemplateId2EnableStatus(Set<Long> templateIds) {
+        List<DatabaseChangeChangingOrderTemplateEntity> templates =
+                this.templateRepository.findAllById(templateIds);
+        Map<Long, List<DatabaseChangeChangingOrderTemplateEntity>> projectId2TemplateEntityList = templates.stream()
+                .collect(Collectors.groupingBy(DatabaseChangeChangingOrderTemplateEntity::getProjectId));
+        List<ProjectEntity> projectEntities = projectRepository.findByIdIn(projectId2TemplateEntityList.keySet());
+        List<Long> archivedProjectIds = projectEntities.stream()
+                .filter(p -> Boolean.TRUE.equals(p.getArchived()))
+                .map(ProjectEntity::getId).collect(Collectors.toList());
+        List<Long> disabledTemplateIds = projectId2TemplateEntityList.entrySet().stream()
+                .filter(entry -> archivedProjectIds.contains(entry.getKey()))
+                .flatMap(entry -> entry.getValue().stream()
+                        .map(DatabaseChangeChangingOrderTemplateEntity::getId))
+                .collect(Collectors.toList());
+
+        List<Long> nonArchivedProjectIds = projectEntities.stream()
+                .filter(p -> Boolean.FALSE.equals(p.getArchived()))
+                .map(ProjectEntity::getId).collect(Collectors.toList());
+
+        Map<Long, List<DatabaseEntity>> projectId2Databases = this.databaseRepository
+                .findByProjectIdIn(nonArchivedProjectIds).stream()
+                .collect(Collectors.groupingBy(DatabaseEntity::getProjectId));
+        disabledTemplateIds.addAll(projectId2TemplateEntityList.entrySet().stream()
+                // 留下未归档的projectId2TemplateEntityList
+                .filter(entry -> nonArchivedProjectIds.contains(entry.getKey()))
+                .flatMap(entry -> {
+                    List<DatabaseEntity> databases = projectId2Databases.get(entry.getKey());
+                    if (CollectionUtils.isEmpty(databases)) {
+                        return entry.getValue().stream().map(DatabaseChangeChangingOrderTemplateEntity::getId);
+                    }
+                    Set<Long> dbIds = databases.stream().map(DatabaseEntity::getId).collect(Collectors.toSet());
+                    return entry.getValue().stream().filter(en -> {
+                        Set<Long> templateDbIds = en.getDatabaseSequences().stream()
+                                .flatMap(Collection::stream).collect(Collectors.toSet());
+                        return !CollectionUtils.containsAll(dbIds, templateDbIds);
+                    }).map(DatabaseChangeChangingOrderTemplateEntity::getId);
+                }).collect(Collectors.toList()));
+        return templateIds.stream().collect(Collectors.toMap(id -> id, id -> !disabledTemplateIds.contains(id)));
+    }
 
     @Transactional(rollbackFor = Exception.class)
     public DatabaseChangeChangingOrderTemplateResp create(
@@ -162,25 +208,13 @@ public class DatabaseChangeChangingOrderTemplateService {
         return templateResp;
     }
 
-    public DatabaseChangeChangingOrderTemplateResp detail(
-            @NotNull Long id) {
+    public DatabaseChangeChangingOrderTemplateResp detail(@NotNull Long id) {
         DatabaseChangeChangingOrderTemplateEntity templateEntity =
                 templateRepository.findById(id).orElseThrow(
                         () -> new NotFoundException(ResourceType.ODC_DATABASE_CHANGE_ORDER_TEMPLATE, "id", id));
         projectPermissionValidator.checkProjectRole(templateEntity.getProjectId(),
                 ResourceRoleName.all());
         List<List<Long>> databaseSequences = templateEntity.getDatabaseSequences();
-        List<Long> ids = databaseSequences.stream().flatMap(Collection::stream).distinct().collect(
-                Collectors.toList());
-        List<DatabaseEntity> databaseEntities = databaseRepository.findByIdIn(ids);
-        // Template disabled handling policy
-        if (!databaseEntities.stream().allMatch(databaseEntity -> Objects.equals(databaseEntity.getProjectId(),
-                templateEntity.getProjectId()))) {
-            templateEntity.setEnabled(false);
-            templateRepository.save(templateEntity);
-            throw new AccessDeniedException(ErrorCodes.BuiltInResourceNotAvailable,
-                    "The template is disabled, you can delete it");
-        }
         DatabaseChangeChangingOrderTemplateResp templateResp =
                 new DatabaseChangeChangingOrderTemplateResp();
         templateResp.setId(templateEntity.getId());
@@ -194,13 +228,14 @@ public class DatabaseChangeChangingOrderTemplateService {
                 .map(s -> s.stream().map(DatabaseChangeDatabase::new).collect(Collectors.toList()))
                 .collect(Collectors.toList());
         templateResp.setDatabaseSequenceList(databaseSequenceList);
-        templateResp.setEnabled(templateEntity.getEnabled());
+        Map<Long, Boolean> templateId2Status = getChangingOrderTemplateId2EnableStatus(
+                Collections.singleton(templateEntity.getId()));
+        templateResp.setEnabled(templateId2Status.getOrDefault(templateEntity.getId(), templateEntity.getEnabled()));
         return templateResp;
     }
 
 
-    public Page<DatabaseChangeChangingOrderTemplateResp> listTemplates(
-            @NotNull Pageable pageable,
+    public Page<DatabaseChangeChangingOrderTemplateResp> listTemplates(@NotNull Pageable pageable,
             @NotNull @Valid QueryDatabaseChangeChangingOrderParams params) {
         projectPermissionValidator.checkProjectRole(params.getProjectId(), ResourceRoleName.all());
         Specification<DatabaseChangeChangingOrderTemplateEntity> specification = Specification
