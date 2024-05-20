@@ -84,6 +84,7 @@ public class FlowTaskSubmitter implements JavaDelegate {
                 handleException(execution, flowTaskInstance, rootCause, defs);
             } finally {
                 flowTaskInstance.dealloc();
+                FlowTaskResultContextHolder.cleanContext();
             }
 
         });
