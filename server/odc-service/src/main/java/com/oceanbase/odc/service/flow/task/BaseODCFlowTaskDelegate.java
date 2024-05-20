@@ -271,7 +271,6 @@ public abstract class BaseODCFlowTaskDelegate<T> extends BaseRuntimeFlowableDele
             log.warn("Failed to set download log URL, either because the log file does not exist "
                     + "or the upload of the OSS failed, flowInstanceId={}", flowInstanceId, e);
         }
-       // flowTaskCallBackApprovalService.approval(flowInstanceId, flowTaskInstanceId, flowNodeStatus, approvalVariables);
     }
 
     /**

@@ -39,12 +39,10 @@ import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.metadb.flow.FlowInstanceEntity;
 import com.oceanbase.odc.metadb.flow.FlowInstanceRepository;
-import com.oceanbase.odc.metadb.flow.ServiceTaskInstanceRepository;
 import com.oceanbase.odc.service.flow.FlowableAdaptor;
 import com.oceanbase.odc.service.flow.model.FlowNodeStatus;
 import com.oceanbase.odc.service.flow.model.FlowNodeType;
 import com.oceanbase.odc.service.flow.task.model.RuntimeTaskConstants;
-import com.oceanbase.odc.service.schedule.ScheduleService;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -64,10 +62,6 @@ public class FlowTaskCallBackApprovalService {
     private TaskService flowableTaskService;
     @Autowired
     private FlowInstanceRepository flowInstanceRepository;
-    @Autowired
-    private ServiceTaskInstanceRepository serviceTaskRepository;
-    @Autowired
-    private ScheduleService scheduleService;
 
     public void approval(long flowInstanceId, long flowTaskInstanceId, FlowNodeStatus FlowNodeStatus,
             Map<String, Object> approvalVariables) {
