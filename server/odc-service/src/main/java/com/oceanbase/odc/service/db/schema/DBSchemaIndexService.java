@@ -92,8 +92,8 @@ public class DBSchemaIndexService {
     @Autowired
     private DBSchemaSyncTaskManager dbSchemaSyncTaskManager;
 
-    private static final int MAX_SEARCH_SIZE = 10000;
-    private static final int MAX_RETURN_SIZE_PER_TYPE = 1000;
+    private static final int MAX_SEARCH_SIZE = 5000;
+    private static final int MAX_RETURN_SIZE_PER_TYPE = 200;
 
     public QueryDBObjectResp listDatabaseObjects(@NonNull @Valid QueryDBObjectParams params) {
         QueryDBObjectResp resp = new QueryDBObjectResp();
