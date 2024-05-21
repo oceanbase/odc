@@ -32,7 +32,7 @@ public class ExecutionEntityFacade extends ExecutionEntityImpl {
     private Map<String, Object> variables = new HashMap<>();
 
     public ExecutionEntityFacade(DelegateExecution execution) {
-        execution.getVariables().forEach(this::setVariable);
+        execution.getVariables().forEach(super::setVariable);
         execution.getVariablesLocal().forEach(this::setVariableLocal);
         execution.getTransientVariables().forEach(this::setTransientVariable);
         execution.getTransientVariablesLocal().forEach(this::setTransientVariableLocal);
