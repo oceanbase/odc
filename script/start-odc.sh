@@ -171,6 +171,44 @@ function init_java_exec() {
     log_info "init java exec done, java_exec=${java_exec}"
 }
 
+function check_duplicated_jars() {
+    if [ $# -ne 1 ]; then
+        echo "Usage: $0 <directory>"
+        exit 1
+    fi
+    local check_directory=$1
+    declare -a name_list=()
+    declare -A jar_counts=()
+    while IFS= read -r -d '' file; do
+        # remove path and extension
+        file_name="${file##*/}"
+        base_name="${file_name%.*}"
+
+        # handle fat jar name like xxx-executable.jar
+        base_name=$(echo "$base_name" | sed 's/\-executable//')
+        # split by '-'
+        jar_name=$(echo "$base_name" | awk -F'-' '{ for (i=1; i<=NF-2; i++) printf (i<NF-2 ? "%s-" : "%s"),$i }')
+
+        # check if jar_name is already in name_list
+        if [[ ! " ${name_list[*]} " =~ " ${jar_name} " ]]; then
+            echo "find new jar, jar_name=${jar_name}"
+            name_list+=("$jar_name")
+        fi
+
+        ((jar_counts["$jar_name"] += 1))
+    done < <(find "$check_directory" -type f -name '*.jar' -print0)
+
+    for name in "${name_list[@]}"; do
+        if [ "${jar_counts[$name]}" -gt 1 ]; then
+            echo "ERROR! duplicated jar detected: $name has ${jar_counts[$name]} versions"
+            return 1
+        else
+            echo "$name has 1 version"
+        fi
+    done
+    return 0
+}
+
 main() {
     # if ODC_BOOT_MODE is TASK_EXECUTOR start odc server as task executor mode
     if [[ "${ODC_BOOT_MODE}" == "TASK_EXECUTOR" ]]; then
@@ -192,8 +230,10 @@ main() {
         log_error "FATAL ERROR!, jar file <${jar_file}> not found, cannot start odc-server"
         exit 1
     fi
-    if ! check_duplicated_jars; then
-        echo "duplicated jar exists, please check and remove duplicated jars"
+    if ! (check_duplicated_jars ${install_directory}/lib &&
+        check_duplicated_jars ${install_directory}/starters &&
+        check_duplicated_jars ${install_directory}/plugins); then
+        echo "FATAL ERROR!, duplicated jar exists, please check and remove duplicated jars"
         exit 1
     fi
 
