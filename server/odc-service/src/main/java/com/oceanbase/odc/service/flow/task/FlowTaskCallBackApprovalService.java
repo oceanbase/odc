@@ -28,6 +28,7 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.flowable.engine.TaskService;
 import org.flowable.task.api.Task;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 
 import com.oceanbase.odc.common.concurrent.Await;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
@@ -47,6 +48,7 @@ import lombok.extern.slf4j.Slf4j;
  * @since 4.2.4
  */
 @Slf4j
+@Service
 @SkipAuthorize("odc internal usage")
 public class FlowTaskCallBackApprovalService {
 
@@ -58,8 +60,8 @@ public class FlowTaskCallBackApprovalService {
     public void approval(String processInstanceId, long flowTaskInstanceId, Map<String, Object> approvalVariables) {
         try {
             completeTask(processInstanceId, flowTaskInstanceId, FlowNodeStatus.COMPLETED, approvalVariables);
-        } catch (Throwable e) {
-            log.warn("approval task callback node failed, flowInstanceId={}, flowTaskInstanceId={}",
+        } catch (Exception e) {
+            log.warn("approval task callback node failed, processInstanceId={}, flowTaskInstanceId={}.",
                     processInstanceId, flowTaskInstanceId, e);
         }
     }
@@ -67,8 +69,8 @@ public class FlowTaskCallBackApprovalService {
     public void reject(String processInstanceId, long flowTaskInstanceId, Map<String, Object> approvalVariables) {
         try {
             completeTask(processInstanceId, flowTaskInstanceId, FlowNodeStatus.FAILED, approvalVariables);
-        } catch (Throwable e) {
-            log.warn("approval task callback node failed, flowInstanceId={}, flowTaskInstanceId={}",
+        } catch (Exception e) {
+            log.warn("approval task callback node failed, processInstanceId={}, flowTaskInstanceId={}.",
                     processInstanceId, flowTaskInstanceId, e);
         }
     }
@@ -92,17 +94,16 @@ public class FlowTaskCallBackApprovalService {
                 variables.putAll(approvalVariables);
             }
             flowableTaskService.complete(taskId, variables);
-            log.info("complete task succeed, flowInstanceId={}, flowTaskInstanceId={}, flowNodeStatus={}.",
+            log.info("complete task succeed, processInstanceId={}, flowTaskInstanceId={}, flowNodeStatus={}.",
                     processInstanceId, flowTaskInstanceId, flowNodeStatus);
         } catch (Exception e) {
-            log.warn("complete task failed, flowInstanceId={}, flowTaskInstanceId={}, flowNodeStatus={}, ex={}.",
+            log.warn("complete task failed, processInstanceId={}, flowTaskInstanceId={}, flowNodeStatus={}.",
                     processInstanceId, flowTaskInstanceId, flowNodeStatus, e);
         }
     }
 
 
     private Optional<Task> getFlowableTask(String processInstanceId, String taskName) {
-
         List<Task> tasks = flowableTaskService.createTaskQuery().taskName(taskName)
                 .processInstanceId(processInstanceId)
                 .list().stream().filter(a -> taskName != null && taskName.contains(RuntimeTaskConstants.CALLBACK_TASK))
