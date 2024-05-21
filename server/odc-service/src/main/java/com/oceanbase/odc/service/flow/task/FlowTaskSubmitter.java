@@ -69,13 +69,15 @@ public class FlowTaskSubmitter implements JavaDelegate {
         // DelegateExecution will be changed when current thread return,
         // so use execution facade class to save execution properties
         ExecutionEntityFacade executionFacade = new ExecutionEntityFacade(execution);
+        long flowInstanceId = FlowTaskUtil.getFlowInstanceId(executionFacade);
+        String activityId = executionFacade.getActivityId();
         List<FlowableBoundaryEvent<ErrorEventDefinition>> defs =
                 FlowUtil.getBoundaryEventDefinitions(execution.getProcessDefinitionId(),
-                        execution.getCurrentActivityId(), ErrorEventDefinition.class);
+                        activityId, ErrorEventDefinition.class);
         threadPoolTaskExecutor.submit(() -> {
             FlowTaskInstance flowTaskInstance = null;
             try {
-                flowTaskInstance = getFlowTaskInstance(executionFacade);
+                flowTaskInstance = getFlowTaskInstance(flowInstanceId, activityId);
                 getDelegateInstance(flowTaskInstance).execute(executionFacade);
                 int affectRows = serviceTaskRepository.updateStatusById(flowTaskInstance.getFlowInstanceId(),
                         FlowNodeStatus.COMPLETED);
@@ -159,11 +161,11 @@ public class FlowTaskSubmitter implements JavaDelegate {
         return BeanInjectedClassDelegate.instantiateDelegate(delegateClass);
     }
 
-    private FlowTaskInstance getFlowTaskInstance(DelegateExecution execution) {
+    private FlowTaskInstance getFlowTaskInstance(long flowInstanceId, String activityId) {
         Optional<FlowTaskInstance> flowTaskInstance = flowableAdaptor.getTaskInstanceByActivityId(
-                execution.getCurrentActivityId(), FlowTaskUtil.getFlowInstanceId(execution));
+                activityId, flowInstanceId);
         PreConditions.validExists(ResourceType.ODC_FLOW_TASK_INSTANCE, "activityId",
-                execution.getCurrentActivityId(), flowTaskInstance::isPresent);
+                activityId, flowTaskInstance::isPresent);
         return flowTaskInstance.get();
     }
 
