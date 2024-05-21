@@ -44,16 +44,16 @@ public class DBSchemaAccessorGenerator {
     public static DBSchemaAccessor createForOBOracle(@NonNull JdbcOperations jdbcOperations,
             @NonNull String dbVersion) {
         if (VersionUtils.isGreaterThanOrEqualsTo(dbVersion, "4.1.0")) {
-            // OB 版本 >= 4.1.0
+            // OB version >= 4.1.0
             return new OBOracleSchemaAccessor(jdbcOperations, new ALLDataDictTableNames());
         } else if (VersionUtils.isGreaterThanOrEqualsTo(dbVersion, "4.0.0")) {
-            // OB 版本为 [4.0.0, 4.1.0)
+            // OB version between [4.0.0, 4.1.0)
             return new OBOracleBetween4000And4100SchemaAccessor(jdbcOperations, new ALLDataDictTableNames());
         } else if (VersionUtils.isGreaterThanOrEqualsTo(dbVersion, "2.2.70")) {
-            // OB 版本为 [2.2.7, 4.0.0)
+            // OB version between [2.2.7, 4.0.0)
             return new OBOracleLessThan400SchemaAccessor(jdbcOperations, new ALLDataDictTableNames());
         } else {
-            // OB 版本 < 2.2.70
+            // OB version < 2.2.70
             return new OBOracleLessThan2270SchemaAccessor(jdbcOperations, new ALLDataDictTableNames());
         }
     }
@@ -61,19 +61,19 @@ public class DBSchemaAccessorGenerator {
     public static DBSchemaAccessor createForOBMySQL(@NonNull JdbcOperations jdbcOperations,
             JdbcOperations sysJdbcOperations, @NonNull String dbVersion, String tenantName) {
         if (VersionUtils.isGreaterThanOrEqualsTo(dbVersion, "4.0.0")) {
-            // OB 版本 >= 4.0.0
+            // OB version >= 4.0.0
             return new OBMySQLSchemaAccessor(jdbcOperations);
         } else if (VersionUtils.isGreaterThan(dbVersion, "2.2.76")) {
-            // OB 版本为 [2.2.77, 4.0.0)
+            // OB version between [2.2.77, 4.0.0)
             return new OBMySQLBetween2277And3XSchemaAccessor(jdbcOperations);
         } else if (VersionUtils.isGreaterThan(dbVersion, "2.2.60")) {
-            // OB 版本为 [2.2.60, 2.2.77)
+            // OB version between [2.2.60, 2.2.77)
             return new OBMySQLBetween2260And2276SchemaAccessor(jdbcOperations);
         } else if (VersionUtils.isGreaterThan(dbVersion, "1.4.79")) {
-            // OB 版本为 (1.4.79, 2.2.60)
+            // OB version between (1.4.79, 2.2.60)
             return new OBMySQLBetween220And225XSchemaAccessor(jdbcOperations);
         } else {
-            // OB 版本 <= 1.4.79
+            // OB version <= 1.4.79
             return new OBMySQLNoGreaterThan1479SchemaAccessor(jdbcOperations, sysJdbcOperations, tenantName);
         }
     }
