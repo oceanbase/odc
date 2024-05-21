@@ -79,12 +79,12 @@ public class FlowTaskSubmitter implements JavaDelegate {
             try {
                 flowTaskInstance = getFlowTaskInstance(flowInstanceId, activityId);
                 getDelegateInstance(flowTaskInstance).execute(executionFacade);
-                updateFlowTaskInstance(flowTaskInstance, FlowNodeStatus.COMPLETED);
+                updateFlowTaskInstance(flowTaskInstance.getId(), FlowNodeStatus.COMPLETED);
                 flowTaskCallBackApprovalService.approval(executionFacade.getProcessInstanceId(),
                         flowTaskInstance.getId(), executionFacade.getFutureVariable());
             } catch (Exception e) {
                 log.warn("Delegate task instance execute occur error: ", e);
-                updateFlowTaskInstance(flowTaskInstance, FlowNodeStatus.FAILED);
+                updateFlowTaskInstance(flowTaskInstance.getId(), FlowNodeStatus.FAILED);
                 Exception rootCause = (Exception) e.getCause();
                 handleException(executionFacade, flowTaskInstance, rootCause, defs);
             } finally {
@@ -95,14 +95,14 @@ public class FlowTaskSubmitter implements JavaDelegate {
         });
     }
 
-    private void updateFlowTaskInstance(FlowTaskInstance flowTaskInstance, FlowNodeStatus flowNodeStatus) {
+    private void updateFlowTaskInstance(long flowTaskInstanceId, FlowNodeStatus flowNodeStatus) {
         try {
             int affectRows =
-                    serviceTaskRepository.updateStatusById(flowTaskInstance.getId(), flowNodeStatus);
+                    serviceTaskRepository.updateStatusById(flowTaskInstanceId, flowNodeStatus);
             log.info("Modify node instance status successfully, instanceId={}, flowNodeStatus={}, affectRows={}",
-                    flowTaskInstance.getId(), flowNodeStatus, affectRows);
+                flowTaskInstanceId, flowNodeStatus, affectRows);
         } catch (Exception ex) {
-            log.warn("Modify node instance status occur error, instanceId={}", flowTaskInstance.getId(), ex);
+            log.warn("Modify node instance status occur error, instanceId={}", flowTaskInstanceId, ex);
         }
     }
 
