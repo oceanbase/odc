@@ -19,7 +19,6 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Date;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
@@ -27,8 +26,6 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
-
-import javax.validation.constraints.NotNull;
 
 import org.flowable.engine.delegate.DelegateExecution;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -50,7 +47,6 @@ import com.oceanbase.odc.service.flow.exception.ServiceTaskCancelledException;
 import com.oceanbase.odc.service.flow.exception.ServiceTaskError;
 import com.oceanbase.odc.service.flow.exception.ServiceTaskExpiredException;
 import com.oceanbase.odc.service.flow.model.ExecutionStrategyConfig;
-import com.oceanbase.odc.service.flow.model.FlowNodeStatus;
 import com.oceanbase.odc.service.flow.model.FlowTaskExecutionStrategy;
 import com.oceanbase.odc.service.flow.task.model.RuntimeTaskConstants;
 import com.oceanbase.odc.service.flow.task.util.TaskDownloadUrlsProvider;
@@ -79,7 +75,7 @@ import lombok.extern.slf4j.Slf4j;
  * @see BaseRuntimeFlowableDelegate
  */
 @Slf4j
-public abstract class BaseODCFlowTaskDelegate<T> extends BaseRuntimeFlowableDelegate<T>  {
+public abstract class BaseODCFlowTaskDelegate<T> extends BaseRuntimeFlowableDelegate<T> {
 
     @Autowired
     private TaskService taskService;
