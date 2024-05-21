@@ -44,6 +44,8 @@ public enum AuditEventType implements Translatable {
 
     ASYNC,
 
+    MULTIPLE_ASYNC,
+
     MOCKDATA,
 
     IMPORT,
