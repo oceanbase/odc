@@ -23,6 +23,7 @@ import static com.oceanbase.odc.service.notification.constant.EventLabelKeys.CRE
 import static com.oceanbase.odc.service.notification.constant.EventLabelKeys.CREATOR_NAME;
 import static com.oceanbase.odc.service.notification.constant.EventLabelKeys.DATABASE_ID;
 import static com.oceanbase.odc.service.notification.constant.EventLabelKeys.DATABASE_NAME;
+import static com.oceanbase.odc.service.notification.constant.EventLabelKeys.DESCRIPTION;
 import static com.oceanbase.odc.service.notification.constant.EventLabelKeys.ENVIRONMENT;
 import static com.oceanbase.odc.service.notification.constant.EventLabelKeys.PROJECT_ID;
 import static com.oceanbase.odc.service.notification.constant.EventLabelKeys.PROJECT_NAME;
@@ -188,6 +189,7 @@ public class EventBuilder {
         labels.putIfNonNull(CREATOR_ID, task.getCreatorId());
         labels.putIfNonNull(TRIGGER_TIME, LocalDateTime.now().format(DATE_FORMATTER));
         labels.putIfNonNull(REGION, OB_ARN_PARTITION);
+        labels.putIfNonNull(DESCRIPTION, task.getDescription());
 
         Long projectId;
         if (Objects.nonNull(task.getDatabaseId())) {
@@ -233,6 +235,7 @@ public class EventBuilder {
         labels.putIfNonNull(TASK_STATUS, status.name());
         labels.putIfNonNull(TRIGGER_TIME, LocalDateTime.now().format(DATE_FORMATTER));
         labels.putIfNonNull(REGION, OB_ARN_PARTITION);
+        labels.putIfNonNull(DESCRIPTION, schedule.getDescription());
 
         switch (schedule.getJobType()) {
             case DATA_ARCHIVE:

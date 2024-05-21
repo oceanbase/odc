@@ -165,14 +165,18 @@ public class OdcJobListener implements JobListener {
         ScheduleTaskContextHolder.clear();
         Optional<ScheduleEntity> scheduleEntityOptional =
                 scheduleRepository.findById(ScheduleTaskUtils.getScheduleId(context));
-        if (scheduleEntityOptional.isPresent()) {
-            ScheduleEntity scheduleEntity = scheduleEntityOptional.get();
-            if (jobException != null && notificationProperties.isEnabled()) {
-                try {
+        if (notificationProperties.isEnabled() && scheduleEntityOptional.isPresent()) {
+            try {
+                ScheduleEntity scheduleEntity = scheduleEntityOptional.get();
+                if (jobException != null) {
                     broker.enqueueEvent(eventBuilder.ofFailedTask(scheduleEntity));
-                } catch (Exception e) {
-                    log.warn("Failed to enqueue event.", e);
+                } else if (!taskFrameworkEnabledProperties.isEnabled()
+                        && scheduleEntity.getJobType().executeInTaskFramework()) {
+                    // only create event for DLM jobs when task framework not enabled to avoid duplicate events
+                    broker.enqueueEvent(eventBuilder.ofSucceededTask(scheduleEntity));
                 }
+            } catch (Exception e) {
+                log.warn("Failed to enqueue event.", e);
             }
         }
     }
