@@ -418,7 +418,7 @@ function check_duplicated_jars() {
     for name in "${name_list[@]}"; do
         if [ "${jar_counts[$name]}" -gt 1 ]; then
             echo "ERROR! duplicated jar detected: ${check_directory}/${name} has ${jar_counts[$name]} versions"
-            ll ${check_directory}/${name}*.jar
+            ls -l ${check_directory}/${name}*.jar
             return 1
         fi
     done
