@@ -192,6 +192,10 @@ main() {
         log_error "FATAL ERROR!, jar file <${jar_file}> not found, cannot start odc-server"
         exit 1
     fi
+    if ! check_duplicated_jars; then
+        echo "duplicated jar exists, please check and remove duplicated jars"
+        exit 1
+    fi
 
     log_info "Starting odc-server..."
 
