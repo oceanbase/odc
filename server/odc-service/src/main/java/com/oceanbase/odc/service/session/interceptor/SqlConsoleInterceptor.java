@@ -42,6 +42,7 @@ import com.oceanbase.odc.service.regulation.ruleset.SqlConsoleRuleService;
 import com.oceanbase.odc.service.regulation.ruleset.model.Rule;
 import com.oceanbase.odc.service.regulation.ruleset.model.Rule.RuleViolation;
 import com.oceanbase.odc.service.regulation.ruleset.model.SqlConsoleRules;
+import com.oceanbase.odc.service.session.model.AsyncExecuteContext;
 import com.oceanbase.odc.service.session.model.SqlAsyncExecuteReq;
 import com.oceanbase.odc.service.session.model.SqlAsyncExecuteResp;
 import com.oceanbase.odc.service.session.model.SqlExecuteResult;
@@ -74,11 +75,12 @@ public class SqlConsoleInterceptor extends BaseTimeConsumingInterceptor {
 
     @Override
     public boolean doPreHandle(@NonNull SqlAsyncExecuteReq request, @NonNull SqlAsyncExecuteResp response,
-            @NonNull ConnectionSession session, @NonNull Map<String, Object> context) {
-        boolean sqlConsoleIntercepted = handle(request, response, session, context);
-        context.put(SQL_CONSOLE_INTERCEPTED, sqlConsoleIntercepted);
-        if (Objects.nonNull(context.get(SqlCheckInterceptor.SQL_CHECK_INTERCEPTED))) {
-            return sqlConsoleIntercepted && (Boolean) context.get(SqlCheckInterceptor.SQL_CHECK_INTERCEPTED);
+            @NonNull ConnectionSession session, @NonNull AsyncExecuteContext context) {
+        Map<String, Object> ctx = context.getContextMap();
+        boolean sqlConsoleIntercepted = handle(request, response, session, ctx);
+        ctx.put(SQL_CONSOLE_INTERCEPTED, sqlConsoleIntercepted);
+        if (Objects.nonNull(ctx.get(SqlCheckInterceptor.SQL_CHECK_INTERCEPTED))) {
+            return sqlConsoleIntercepted && (Boolean) ctx.get(SqlCheckInterceptor.SQL_CHECK_INTERCEPTED);
         } else {
             return true;
         }
@@ -199,7 +201,7 @@ public class SqlConsoleInterceptor extends BaseTimeConsumingInterceptor {
 
     @Override
     public void doAfterCompletion(@NonNull SqlExecuteResult response, @NonNull ConnectionSession session,
-            @NonNull Map<String, Object> context) {
+            @NonNull AsyncExecuteContext context) {
         if (response.getStatus() != SqlExecuteStatus.SUCCESS) {
             return;
         }

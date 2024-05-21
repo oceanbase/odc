@@ -46,7 +46,7 @@ public class MySQLTableExtension extends OBMySQLTableExtension {
         DBTable table = new DBTable();
         table.setSchemaName(schemaName);
         table.setOwner(schemaName);
-        table.setName(schemaAccessor.isLowerCaseTableName() ? tableName.toLowerCase() : tableName);
+        table.setName(tableName);
         table.setColumns(schemaAccessor.listTableColumns(schemaName, tableName));
         table.setConstraints(schemaAccessor.listTableConstraints(schemaName, tableName));
         table.setPartition(schemaAccessor.getPartition(schemaName, tableName));

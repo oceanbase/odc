@@ -15,9 +15,12 @@
  */
 package com.oceanbase.odc.service.dlm.model;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import com.oceanbase.odc.core.flow.model.TaskParameters;
+import com.oceanbase.tools.dbbrowser.model.DBObjectType;
 import com.oceanbase.tools.migrator.common.enums.MigrationInsertAction;
 import com.oceanbase.tools.migrator.common.enums.ShardingStrategy;
 
@@ -60,6 +63,8 @@ public class DataArchiveParameters implements TaskParameters {
     private int queryTimeout;
 
     private int scanBatchSize;
+
+    private Set<DBObjectType> syncTableStructure = new HashSet<>();
 
     private MigrationInsertAction migrationInsertAction = MigrationInsertAction.INSERT_NORMAL;
 

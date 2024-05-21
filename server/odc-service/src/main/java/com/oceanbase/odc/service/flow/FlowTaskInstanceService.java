@@ -48,6 +48,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.google.common.base.Charsets;
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
+import com.oceanbase.odc.core.flow.model.AbstractFlowTaskResult;
 import com.oceanbase.odc.core.flow.model.FlowTaskResult;
 import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.core.shared.Verify;
@@ -59,11 +60,13 @@ import com.oceanbase.odc.core.shared.exception.BadRequestException;
 import com.oceanbase.odc.core.shared.exception.InternalServerError;
 import com.oceanbase.odc.core.shared.exception.NotFoundException;
 import com.oceanbase.odc.core.shared.exception.UnsupportedException;
+import com.oceanbase.odc.metadb.collaboration.EnvironmentRepository;
 import com.oceanbase.odc.metadb.flow.FlowInstanceRepository;
 import com.oceanbase.odc.metadb.task.TaskEntity;
 import com.oceanbase.odc.metadb.task.TaskRepository;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferConfig;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferTaskResult;
+import com.oceanbase.odc.service.collaboration.environment.EnvironmentService;
 import com.oceanbase.odc.service.common.FileManager;
 import com.oceanbase.odc.service.common.model.FileBucket;
 import com.oceanbase.odc.service.common.response.ListResponse;
@@ -86,13 +89,16 @@ import com.oceanbase.odc.service.flow.task.model.DBStructureComparisonTaskResult
 import com.oceanbase.odc.service.flow.task.model.DatabaseChangeResult;
 import com.oceanbase.odc.service.flow.task.model.MockDataTaskResult;
 import com.oceanbase.odc.service.flow.task.model.MockProperties;
+import com.oceanbase.odc.service.flow.task.model.MultipleDatabaseChangeTaskResult;
+import com.oceanbase.odc.service.flow.task.model.MultipleSqlCheckTaskResult;
 import com.oceanbase.odc.service.flow.task.model.OnlineSchemaChangeTaskResult;
 import com.oceanbase.odc.service.flow.task.model.PartitionPlanTaskResult;
 import com.oceanbase.odc.service.flow.task.model.ResultSetExportResult;
 import com.oceanbase.odc.service.flow.task.model.RollbackPlanTaskResult;
 import com.oceanbase.odc.service.flow.task.model.ShadowTableSyncTaskResult;
 import com.oceanbase.odc.service.flow.task.model.SqlCheckTaskResult;
-import com.oceanbase.odc.service.flow.task.util.DatabaseChangeOssUrlCache;
+import com.oceanbase.odc.service.flow.task.util.TaskDownloadUrlsProvider;
+import com.oceanbase.odc.service.flow.task.util.TaskDownloadUrlsProvider.TaskDownloadUrls;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.logger.LoggerService;
 import com.oceanbase.odc.service.objectstorage.ObjectStorageFacade;
@@ -146,13 +152,18 @@ public class FlowTaskInstanceService {
     @Autowired
     private TaskDispatchChecker dispatchChecker;
     @Autowired
-    private DatabaseChangeOssUrlCache databaseChangeOssUrlCache;
+    private TaskDownloadUrlsProvider databaseChangeOssUrlCache;
     @Autowired
     private LocalFileManager localFileManager;
     @Autowired
     private TaskFrameworkEnabledProperties taskFrameworkProperties;
     @Autowired
     private LoggerService loggerService;
+    @Autowired
+    private EnvironmentRepository environmentRepository;
+    @Autowired
+    private EnvironmentService environmentService;
+
     @Value("${odc.task.async.result-preview-max-size-bytes:5242880}")
     private long resultPreviewMaxSizeBytes;
 
@@ -222,45 +233,53 @@ public class FlowTaskInstanceService {
     public List<? extends FlowTaskResult> getResult(@NotNull Long id) throws IOException {
         TaskEntity task = flowInstanceService.getTaskByFlowInstanceId(id);
         if (task.getTaskType() == TaskType.ONLINE_SCHEMA_CHANGE || task.getTaskType() == TaskType.EXPORT) {
-            return getTaskResultFromEntity(task);
+            return getTaskResultFromEntity(task, true);
         }
         Optional<TaskEntity> taskEntityOptional = getCompleteTaskEntity(id);
         if (!taskEntityOptional.isPresent()) {
             return Collections.emptyList();
         }
         TaskEntity taskEntity = taskEntityOptional.get();
-        return getTaskResultFromEntity(taskEntity);
+        return getTaskResultFromEntity(taskEntity, true);
     }
 
-    public List<? extends FlowTaskResult> getTaskResultFromEntity(@NotNull TaskEntity taskEntity) throws IOException {
+    public List<? extends FlowTaskResult> getTaskResultFromEntity(@NotNull TaskEntity taskEntity,
+            boolean setDownloadUrls) throws IOException {
+        List<? extends FlowTaskResult> results;
         if (taskEntity.getTaskType() == TaskType.ONLINE_SCHEMA_CHANGE) {
-            return getOnlineSchemaChangeResult(taskEntity);
+            results = getOnlineSchemaChangeResult(taskEntity);
         } else if (taskEntity.getTaskType() == TaskType.EXPORT) {
-            return getDataTransferResult(taskEntity);
+            results = getDataTransferResult(taskEntity);
         } else if (taskEntity.getTaskType() == TaskType.ASYNC) {
-            return getAsyncResult(taskEntity);
+            results = getAsyncResult(taskEntity);
+        } else if (taskEntity.getTaskType() == TaskType.MULTIPLE_ASYNC) {
+            results = getMultipleAsyncResult(taskEntity);
         } else if (taskEntity.getTaskType() == TaskType.MOCKDATA) {
-            return getMockDataResult(taskEntity);
+            results = getMockDataResult(taskEntity);
         } else if (taskEntity.getTaskType() == TaskType.IMPORT) {
-            return getDataTransferResult(taskEntity);
+            results = getDataTransferResult(taskEntity);
         } else if (taskEntity.getTaskType() == TaskType.SHADOWTABLE_SYNC) {
-            return getShadowTableSyncTaskResult(taskEntity);
+            results = getShadowTableSyncTaskResult(taskEntity);
         } else if (taskEntity.getTaskType() == TaskType.PARTITION_PLAN) {
-            return getPartitionPlanResult(taskEntity);
+            results = getPartitionPlanResult(taskEntity);
         } else if (taskEntity.getTaskType() == TaskType.ALTER_SCHEDULE) {
-            return getAlterScheduleResult(taskEntity);
+            results = getAlterScheduleResult(taskEntity);
         } else if (taskEntity.getTaskType() == TaskType.EXPORT_RESULT_SET) {
-            return getResultSetExportResult(taskEntity);
+            results = getResultSetExportResult(taskEntity);
         } else if (taskEntity.getTaskType() == TaskType.APPLY_PROJECT_PERMISSION) {
-            return getApplyProjectResult(taskEntity);
+            results = getApplyProjectResult(taskEntity);
         } else if (taskEntity.getTaskType() == TaskType.APPLY_DATABASE_PERMISSION) {
-            return getApplyDatabaseResult(taskEntity);
+            results = getApplyDatabaseResult(taskEntity);
         } else if (taskEntity.getTaskType() == TaskType.STRUCTURE_COMPARISON) {
-            return getStructureComparisonResult(taskEntity);
+            results = getStructureComparisonResult(taskEntity);
         } else {
             throw new UnsupportedException(ErrorCodes.Unsupported, new Object[] {ResourceType.ODC_TASK},
                     "Unsupported task type: " + taskEntity.getTaskType());
         }
+        if (setDownloadUrls) {
+            setDownloadUrlsIfNecessary(taskEntity.getId(), results);
+        }
+        return results;
     }
 
     public List<? extends FlowTaskResult> getResult(
@@ -279,11 +298,13 @@ public class FlowTaskInstanceService {
                 || taskInstance.getTaskType() == TaskType.PRE_CHECK) {
             Long taskId = taskInstance.getTargetTaskId();
             TaskEntity taskEntity = this.taskService.detail(taskId);
+            // pre-check is for multiple databases
             PreCheckTaskResult result = JsonUtils.fromJson(taskEntity.getResultJson(), PreCheckTaskResult.class);
             if (Objects.isNull(result)) {
                 return Collections.emptyList();
             }
             SqlCheckTaskResult checkTaskResult = result.getSqlCheckResult();
+            MultipleSqlCheckTaskResult multipleSqlCheckTaskResult = result.getMultipleSqlCheckTaskResult();
             ExecutorInfo info = result.getExecutorInfo();
             if (!this.dispatchChecker.isThisMachine(info)) {
                 DispatchResponse response = requestDispatcher.forward(info.getHost(), info.getPort());
@@ -291,16 +312,30 @@ public class FlowTaskInstanceService {
                         new TypeReference<ListResponse<SqlCheckTaskResult>>() {}).getData().getContents();
             }
             String dir = FileManager.generateDir(FileBucket.PRE_CHECK) + File.separator + taskId;
-            Verify.notNull(checkTaskResult.getFileName(), "SqlCheckResultFileName");
-            File jsonFile = new File(dir + File.separator + checkTaskResult.getFileName());
+            String fileName;
+            if (checkTaskResult != null) {
+                Verify.notNull(checkTaskResult.getFileName(), "SqlCheckResultFileName");
+                fileName = checkTaskResult.getFileName();
+            } else {
+                Verify.notNull(multipleSqlCheckTaskResult.getFileName(), "MultipleSqlCheckTaskResult");
+                fileName = multipleSqlCheckTaskResult.getFileName();
+            }
+            File jsonFile = new File(dir + File.separator + fileName);
             if (!jsonFile.exists()) {
                 throw new NotFoundException(ErrorCodes.NotFound, new Object[] {
-                        ResourceType.ODC_FILE.getLocalizedMessage(), "file", jsonFile.getName()}, "File is not found");
+                        ResourceType.ODC_FILE.getLocalizedMessage(), "file", jsonFile.getName()},
+                        "File is not found");
             }
             String content = FileUtils.readFileToString(jsonFile, Charsets.UTF_8);
-            checkTaskResult = JsonUtils.fromJson(content, SqlCheckTaskResult.class);
-            checkTaskResult.setFileName(null);
-            result.setSqlCheckResult(checkTaskResult);
+            if (checkTaskResult != null) {
+                checkTaskResult = JsonUtils.fromJson(content, SqlCheckTaskResult.class);
+                checkTaskResult.setFileName(null);
+                result.setSqlCheckResult(checkTaskResult);
+            } else {
+                multipleSqlCheckTaskResult = JsonUtils.fromJson(content, MultipleSqlCheckTaskResult.class);
+                multipleSqlCheckTaskResult.setFileName(null);
+                result.setMultipleSqlCheckTaskResult(multipleSqlCheckTaskResult);
+            }
             result.setExecutorInfo(null);
             return Collections.singletonList(result);
         } else {
@@ -585,6 +620,10 @@ public class FlowTaskInstanceService {
                 }).collect(Collectors.toList()), false);
     }
 
+    private List<MultipleDatabaseChangeTaskResult> getMultipleAsyncResult(@NonNull TaskEntity taskEntity) {
+        return innerGetResult(taskEntity, MultipleDatabaseChangeTaskResult.class);
+    }
+
     private List<DatabaseChangeResult> getAsyncResult(@NonNull TaskEntity taskEntity) throws IOException {
         if (!dispatchChecker.isTaskEntityOnThisMachine(taskEntity)) {
             /**
@@ -628,9 +667,6 @@ public class FlowTaskInstanceService {
                     result.setJsonFileBytes(attributes.size());
                 }
             }
-        }
-        if (cloudObjectStorageService.supported()) {
-            result.setZipFileDownloadUrl(databaseChangeOssUrlCache.get(taskEntity.getId()));
         }
         return Collections.singletonList(result);
     }
@@ -722,8 +758,12 @@ public class FlowTaskInstanceService {
         if (CollectionUtils.isEmpty(taskInstances)) {
             return Optional.empty();
         }
-        Verify.singleton(taskInstances, "TaskInstances");
-
+        /**
+         * The other types of taskInstances are limited to unique, except for the MULTIPLE_ASYNC
+         */
+        if (taskInstances.get(0).getTaskType() != TaskType.MULTIPLE_ASYNC) {
+            Verify.singleton(taskInstances, "TaskInstances");
+        }
         FlowTaskInstance flowTaskInstance = taskInstances.get(0);
         Long targetTaskId = flowTaskInstance.getTargetTaskId();
         Verify.notNull(targetTaskId, "TargetTaskId can not be null");
@@ -735,6 +775,25 @@ public class FlowTaskInstanceService {
 
     private URL generatePresignedUrl(String objectName, Long expirationSeconds) throws IOException {
         return cloudObjectStorageService.generateDownloadUrl(objectName, expirationSeconds);
+    }
+
+    private void setDownloadUrlsIfNecessary(Long taskId, List<? extends FlowTaskResult> results) {
+        if (cloudObjectStorageService.supported()) {
+            for (FlowTaskResult result : results) {
+                TaskDownloadUrls urls = databaseChangeOssUrlCache.get(taskId);
+                if (result instanceof AbstractFlowTaskResult) {
+                    ((AbstractFlowTaskResult) result)
+                            .setFullLogDownloadUrl(urls.getLogDownloadUrl());
+                }
+                if (result instanceof DatabaseChangeResult) {
+                    ((DatabaseChangeResult) result).setZipFileDownloadUrl(urls.getDatabaseChangeZipFileDownloadUrl());
+                    if (Objects.nonNull(((DatabaseChangeResult) result).getRollbackPlanResult())) {
+                        ((DatabaseChangeResult) result).getRollbackPlanResult()
+                                .setResultFileDownloadUrl(urls.getRollBackPlanResultFileDownloadUrl());
+                    }
+                }
+            }
+        }
     }
 
 }

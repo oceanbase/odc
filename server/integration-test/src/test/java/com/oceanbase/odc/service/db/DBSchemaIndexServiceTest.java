@@ -150,7 +150,7 @@ public class DBSchemaIndexServiceTest extends ServiceTestEnv {
     public void testList_specifyProjectId_all() {
         QueryDBObjectParams params = QueryDBObjectParams.builder()
                 .projectId(VALID_PROJECT_ID)
-                .searchKey("%test%").build();
+                .searchKey("test").build();
         QueryDBObjectResp resp = service.listDatabaseObjects(params);
         Assert.assertEquals(2, resp.getDatabases().size());
         Assert.assertEquals(12, resp.getDbColumns().size());
@@ -162,7 +162,7 @@ public class DBSchemaIndexServiceTest extends ServiceTestEnv {
         QueryDBObjectParams params = QueryDBObjectParams.builder()
                 .projectId(VALID_PROJECT_ID)
                 .databaseIds(validDatabaseIds.subList(0, 1))
-                .searchKey("%test%").build();
+                .searchKey("test").build();
         QueryDBObjectResp resp = service.listDatabaseObjects(params);
         Assert.assertEquals(1, resp.getDatabases().size());
         Assert.assertEquals(6, resp.getDbColumns().size());
@@ -175,7 +175,7 @@ public class DBSchemaIndexServiceTest extends ServiceTestEnv {
                 .projectId(VALID_PROJECT_ID)
                 .databaseIds(validDatabaseIds.subList(0, 1))
                 .types(Collections.singletonList(DBObjectType.SCHEMA))
-                .searchKey("%test%").build();
+                .searchKey("test").build();
         QueryDBObjectResp resp = service.listDatabaseObjects(params);
         Assert.assertEquals(1, resp.getDatabases().size());
         Assert.assertTrue(CollectionUtils.isEmpty(resp.getDbColumns()));
@@ -188,7 +188,7 @@ public class DBSchemaIndexServiceTest extends ServiceTestEnv {
                 .projectId(VALID_PROJECT_ID)
                 .databaseIds(validDatabaseIds.subList(0, 1))
                 .types(Collections.singletonList(DBObjectType.COLUMN))
-                .searchKey("%test%").build();
+                .searchKey("test").build();
         QueryDBObjectResp resp = service.listDatabaseObjects(params);
         Assert.assertEquals(6, resp.getDbColumns().size());
         Assert.assertTrue(CollectionUtils.isEmpty(resp.getDatabases()));
@@ -201,7 +201,7 @@ public class DBSchemaIndexServiceTest extends ServiceTestEnv {
                 .projectId(VALID_PROJECT_ID)
                 .databaseIds(validDatabaseIds.subList(0, 1))
                 .types(Arrays.asList(DBObjectType.SYNONYM, DBObjectType.PUBLIC_SYNONYM))
-                .searchKey("%test%").build();
+                .searchKey("test").build();
         QueryDBObjectResp resp = service.listDatabaseObjects(params);
         Assert.assertEquals(1, resp.getDbObjects().size());
         Assert.assertTrue(CollectionUtils.isEmpty(resp.getDatabases()));
@@ -212,7 +212,7 @@ public class DBSchemaIndexServiceTest extends ServiceTestEnv {
     public void testList_specifyInvalidProjectId_throwAccessDeniedException() {
         QueryDBObjectParams params = QueryDBObjectParams.builder()
                 .projectId(INVALID_PROJECT_ID)
-                .searchKey("%test%").build();
+                .searchKey("test").build();
         thrown.expect(AccessDeniedException.class);
         service.listDatabaseObjects(params);
     }
@@ -221,7 +221,7 @@ public class DBSchemaIndexServiceTest extends ServiceTestEnv {
     public void testList_specifyDatasourceId_all() {
         QueryDBObjectParams params = QueryDBObjectParams.builder()
                 .datasourceId(CONNECTION_ID)
-                .searchKey("%test%").build();
+                .searchKey("test").build();
         QueryDBObjectResp resp = service.listDatabaseObjects(params);
         Assert.assertEquals(2, resp.getDatabases().size());
         Assert.assertEquals(12, resp.getDbColumns().size());
@@ -233,7 +233,7 @@ public class DBSchemaIndexServiceTest extends ServiceTestEnv {
         QueryDBObjectParams params = QueryDBObjectParams.builder()
                 .projectId(VALID_PROJECT_ID)
                 .datasourceId(CONNECTION_ID)
-                .searchKey("%test%").build();
+                .searchKey("test").build();
         thrown.expect(IllegalArgumentException.class);
         service.listDatabaseObjects(params);
     }
@@ -241,37 +241,16 @@ public class DBSchemaIndexServiceTest extends ServiceTestEnv {
     @Test
     public void testList_specifyNeitherDatasourceIdAndProjectId_throwIllegalArgumentException() {
         QueryDBObjectParams params = QueryDBObjectParams.builder()
-                .searchKey("%test%").build();
+                .searchKey("test").build();
         thrown.expect(IllegalArgumentException.class);
         service.listDatabaseObjects(params);
-    }
-
-    @Test
-    public void testList_filterByPrefixMatching() {
-        QueryDBObjectParams params = QueryDBObjectParams.builder()
-                .projectId(VALID_PROJECT_ID)
-                .searchKey("database%").build();
-        QueryDBObjectResp resp = service.listDatabaseObjects(params);
-        Assert.assertTrue(CollectionUtils.isEmpty(resp.getDatabases()));
-        Assert.assertEquals(12, resp.getDbColumns().size());
-        Assert.assertEquals(26, resp.getDbObjects().size());
-    }
-
-    @Test
-    public void testList_filterBySuffixMatching() {
-        QueryDBObjectParams params = QueryDBObjectParams.builder()
-                .projectId(VALID_PROJECT_ID)
-                .searchKey("%test-0").build();
-        QueryDBObjectResp resp = service.listDatabaseObjects(params);
-        Assert.assertEquals(1, resp.getDatabases().size());
-        Assert.assertEquals(6, resp.getDbColumns().size());
-        Assert.assertEquals(18, resp.getDbObjects().size());
     }
 
     private List<Database> createDatabaseEntity(int quantity, Long projectId) {
         List<Database> result = new ArrayList<>();
         for (int i = 0; i < quantity; i++) {
             DatabaseEntity entity = TestRandom.nextObject(DatabaseEntity.class);
+            entity.setId(null);
             entity.setProjectId(projectId);
             entity.setConnectionId(CONNECTION_ID);
             entity.setExisted(true);
@@ -286,6 +265,7 @@ public class DBSchemaIndexServiceTest extends ServiceTestEnv {
         List<DBObjectEntity> result = new ArrayList<>();
         for (int i = 0; i < quantity; i++) {
             DBObjectEntity entity = TestRandom.nextObject(DBObjectEntity.class);
+            entity.setId(null);
             entity.setDatabaseId(databaseId);
             entity.setName("database-" + databaseId + "-type-" + type + "-test-" + i);
             entity.setType(type);
@@ -299,6 +279,7 @@ public class DBSchemaIndexServiceTest extends ServiceTestEnv {
         List<DBColumnEntity> result = new ArrayList<>();
         for (int i = 0; i < quantity; i++) {
             DBColumnEntity entity = TestRandom.nextObject(DBColumnEntity.class);
+            entity.setId(null);
             entity.setDatabaseId(databaseId);
             entity.setObjectId(objectId);
             entity.setName("database-" + databaseId + "-object-" + objectId + "-test-" + i);

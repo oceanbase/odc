@@ -15,6 +15,8 @@
  */
 package com.oceanbase.odc.service.db.schema.model;
 
+import javax.validation.constraints.NotNull;
+
 import com.oceanbase.odc.core.shared.constant.ResourceType;
 
 import lombok.Data;
@@ -29,10 +31,12 @@ public class SyncDBObjectReq {
     /**
      * Specify resource type, optional values: ODC_CONNECTION, ODC_PROJECT, ODC_DATABASE
      */
+    @NotNull
     private ResourceType resourceType;
     /**
      * Specify resource id
      */
+    @NotNull
     private Long resourceId;
 
 }

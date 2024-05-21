@@ -63,16 +63,27 @@ public class DefaultTaskFrameworkDisabledHandler implements TaskFrameworkDisable
             if (je.getStatus().isTerminated()) {
                 return;
             }
+            log.info("Try update status to FAILED due to task-framework disabled, jobId={}, oldStatus={}.", je.getId(),
+                    je.getStatus());
             int rows = configuration.getTaskFrameworkService().updateStatusDescriptionByIdOldStatus(ji.getId(),
                     je.getStatus(), JobStatus.FAILED, "Update status to FAILED due to task-framework disabled.");
             if (rows > 0) {
-                log.info("Update status to FAILED completed, jobId={}", ji.getId());
+                log.info("Update status to FAILED completed, jobId={}, oldStatus={}.", ji.getId(), je.getStatus());
             } else {
                 throw new TaskRuntimeException("Update status to FAILED occur error.");
             }
 
             if (je.getStatus() == JobStatus.RUNNING) {
                 try {
+                    log.info("Try to stop remote job, jobId={}.", ji.getId());
+                    configuration.getJobDispatcher().stop(ji);
+                } catch (JobException e) {
+                    // Process will continue if stop failed and not rollback transaction
+                    log.warn("Try to stop remote failed, jobId={}.", ji, e);
+                }
+
+                try {
+                    log.info("Try to destroy executor, jobId={}.", ji.getId());
                     configuration.getJobDispatcher().destroy(ji);
                 } catch (JobException e) {
                     throw new TaskRuntimeException(e);

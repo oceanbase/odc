@@ -68,7 +68,9 @@ import com.oceanbase.odc.service.connection.database.DatabaseService;
 import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.flow.task.model.DatabaseChangeParameters;
+import com.oceanbase.odc.service.flow.task.model.MultipleDatabaseChangeParameters;
 import com.oceanbase.odc.service.iam.UserService;
+import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.iam.model.User;
 import com.oceanbase.odc.service.notification.model.Event;
 import com.oceanbase.odc.service.notification.model.EventLabels;
@@ -117,6 +119,8 @@ public class EventBuilder {
     private HostProperties hostProperties;
     @Autowired
     private SiteUrlResolver siteUrlResolver;
+    @Autowired
+    private AuthenticationFacade authenticationFacade;
 
     public Event ofFailedTask(TaskEntity task) {
         Event event = ofTask(task, TaskEvent.EXECUTION_FAILED);
@@ -205,6 +209,11 @@ public class EventBuilder {
                     JsonUtils.fromJson(task.getParametersJson(), ApplyProjectParameter.class);
             projectId = parameter.getProject().getId();
             labels.putIfNonNull(PROJECT_ID, projectId);
+        } else if (task.getTaskType() == TaskType.MULTIPLE_ASYNC) {
+            MultipleDatabaseChangeParameters parameter =
+                    JsonUtils.fromJson(task.getParametersJson(), MultipleDatabaseChangeParameters.class);
+            projectId = parameter.getProjectId();
+            labels.putIfNonNull(PROJECT_ID, projectId);
         } else {
             throw new UnexpectedException("task.databaseId should not be null");
         }
@@ -254,10 +263,17 @@ public class EventBuilder {
 
     private <T> void resolveLabels(EventLabels labels, T task) {
         Verify.notNull(labels, "event.labels");
-
+        if (labels.containsKey(CREATOR_ID)) {
+            try {
+                UserEntity user = userService.nullSafeGet(labels.getLongFromString(CREATOR_ID));
+                labels.putIfNonNull(CREATOR_NAME, user.getName());
+            } catch (Exception e) {
+                log.warn("failed to query creator info.", e);
+            }
+        }
         if (labels.containsKey(CONNECTION_ID)) {
             try {
-                ConnectionConfig connectionConfig = connectionService.getForConnectionSkipPermissionCheck(
+                ConnectionConfig connectionConfig = connectionService.getBasicWithoutPermissionCheck(
                         labels.getLongFromString(CONNECTION_ID));
                 labels.put(CLUSTER_NAME, connectionConfig.getClusterName());
                 labels.put(TENANT_NAME, connectionConfig.getTenantName());
@@ -266,14 +282,6 @@ public class EventBuilder {
                 labels.put(ENVIRONMENT, environment.getName());
             } catch (Exception e) {
                 log.warn("failed to query connection info.", e);
-            }
-        }
-        if (labels.containsKey(CREATOR_ID)) {
-            try {
-                UserEntity user = userService.nullSafeGet(labels.getLongFromString(CREATOR_ID));
-                labels.putIfNonNull(CREATOR_NAME, user.getName());
-            } catch (Exception e) {
-                log.warn("failed to query creator info.", e);
             }
         }
         if (labels.containsKey(APPROVER_ID)) {

@@ -26,6 +26,7 @@ import org.apache.commons.text.StringSubstitutor;
  * @date 2023/3/28 19:52
  */
 public class TemplateVariables implements Serializable {
+    private static final long serialVersionUID = -2637663958709698205L;
     private final Map<String, Serializable> variables;
 
     public TemplateVariables() {

@@ -19,6 +19,9 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 import org.apache.commons.lang3.StringUtils;
 import org.junit.Assert;
@@ -27,6 +30,7 @@ import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
 import com.oceanbase.odc.core.shared.constant.DialectType;
+import com.oceanbase.odc.core.shared.exception.ConflictException;
 import com.oceanbase.odc.test.database.TestDBConfiguration;
 import com.oceanbase.odc.test.database.TestDBConfigurations;
 
@@ -93,6 +97,47 @@ public class SingleConnectionDataSourceTest {
         thrown.expect(SQLException.class);
         thrown.expectMessage("Invalid username or password");
         dataSource.getConnection(getPassword(DialectType.OB_MYSQL), getUsername(DialectType.OB_MYSQL));
+    }
+
+    @Test
+    public void testGetConnectionLock() throws Exception {
+        SingleConnectionDataSource dataSource = getDataSource(DialectType.OB_MYSQL);
+        final List<Exception> exceptions = Collections.synchronizedList(new ArrayList<>());
+        Thread slowSql = new Thread(() -> {
+            try (Connection connection = dataSource.getConnection()) {
+                try (Statement statement = connection.createStatement()) {
+                    try (ResultSet resultSet =
+                            statement.executeQuery("select  /*+ QUERY_TIMEOUT (48000000) */  sleep(15)from dual ;")) {
+                    }
+                }
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        });
+        Thread quick = new Thread(() -> {
+            try {
+                Thread.sleep(1000);
+            } catch (Exception e) {
+            }
+            long start = System.currentTimeMillis();
+            try (Connection connection = dataSource.getConnection()) {
+                connection.isValid(0);
+                long end = System.currentTimeMillis();
+                System.out.println(end - start);
+                if (end - start > 10 * 1000) {
+                    throw new RuntimeException("Failed to acquire lock within 10 seconds");
+                }
+            } catch (ConflictException e) {
+                exceptions.add(e);
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        });
+        slowSql.start();
+        quick.start();
+        slowSql.join();
+        Assert.assertFalse(exceptions.isEmpty());
+        Assert.assertTrue(exceptions.get(0) instanceof ConflictException);
     }
 
     private void checkConnection(SingleConnectionDataSource dataSource) throws SQLException {

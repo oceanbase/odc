@@ -112,6 +112,11 @@ public enum ErrorCodes implements ErrorCode {
     ConnectHostNotAllowed,
     ConnectionTempOnly,
     ConnectionFlowConfigNotExists,
+    LogicalTableBadExpressionSyntax,
+    LogicalTableExpressionNotEvenlyDivided,
+    LogicalTableExpressionNotPositiveStep,
+    LogicalTableExpressionRangeStartGreaterThanEnd,
+    LogicalTableExpressionNotValidIntegerRange,
 
     // File
     FileWriteFailed,
@@ -164,6 +169,8 @@ public enum ErrorCodes implements ErrorCode {
     InvalidCronExpression,
 
     // Partition plan
+    PartitionPlanNoDropPreviewSqlGenerated,
+    PartitionPlanNoCreatePreviewSqlGenerated,
     InvalidSqlExpression,
     PartitionKeyDataTypeMismatch,
     TimeDataTypePrecisionMismatch,

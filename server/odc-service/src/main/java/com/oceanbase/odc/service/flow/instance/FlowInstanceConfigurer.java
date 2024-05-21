@@ -28,6 +28,7 @@ import org.flowable.bpmn.model.FlowNode;
 import org.flowable.bpmn.model.Gateway;
 import org.flowable.bpmn.model.Task;
 
+import com.oceanbase.odc.common.graph.GraphConfigurer;
 import com.oceanbase.odc.core.flow.BaseExecutionListener;
 import com.oceanbase.odc.core.flow.ExecutionConfigurer;
 import com.oceanbase.odc.core.flow.builder.BaseProcessNodeBuilder;
@@ -41,7 +42,6 @@ import com.oceanbase.odc.core.flow.builder.SequenceFlowBuilder;
 import com.oceanbase.odc.core.flow.builder.ServiceTaskBuilder;
 import com.oceanbase.odc.core.flow.builder.TimerBoundaryEventBuilder;
 import com.oceanbase.odc.core.flow.builder.UserTaskBuilder;
-import com.oceanbase.odc.core.flow.graph.GraphConfigurer;
 import com.oceanbase.odc.core.flow.model.FlowableElement;
 import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.core.shared.constant.ErrorCode;
@@ -245,7 +245,8 @@ public class FlowInstanceConfigurer extends GraphConfigurer<FlowInstance, BaseFl
 
         FlowInstanceConfigurer configurer = nextInternal(nextNode, serviceTaskConsumer,
                 userManuTaskConsumer, userTimerTaskConsumer);
-        String userTaskName = FlowNodeType.APPROVAL_TASK.name() + "_callback_task_" + getNameSuffix(nextNode);
+        String userTaskName =
+                FlowNodeType.APPROVAL_TASK.name() + RuntimeTaskConstants.CALLBACK_TASK + getNameSuffix(nextNode);
         UserTaskBuilder userTaskBuilder = nullSafeGetNodeBuilder(userTaskName, nextNode, () -> {
             UserTaskBuilder utb = new UserTaskBuilder(userTaskName);
             return utb;

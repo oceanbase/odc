@@ -16,6 +16,8 @@
 
 package com.oceanbase.odc.service.task.caller;
 
+import static com.oceanbase.odc.service.task.constants.JobConstants.ODC_EXECUTOR_CANNOT_BE_DESTROYED;
+
 import java.text.MessageFormat;
 import java.util.Optional;
 
@@ -117,7 +119,8 @@ public class ProcessJobCaller extends BaseJobCaller {
                     ji.getId(), ei);
             return;
         }
-        throw new JobException("Connect to target odc server succeed, but cannot destroy process,"
+        throw new JobException(ODC_EXECUTOR_CANNOT_BE_DESTROYED +
+                "Connect to target odc server succeed, but cannot destroy process,"
                 + " may not on this machine, jodId={0}, identifier={1}", ji.getId(), ei);
     }
 

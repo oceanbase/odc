@@ -117,8 +117,8 @@ public class UserServiceTest extends MockedAuthorityTestEnv {
         roleRepository.saveAndFlush(roleEntity1);
         RoleEntity roleEntity2 = createRoleEntity("roleEntity2", ORGANIZATION_ID);
         roleRepository.saveAndFlush(roleEntity2);
-        User createdUser = userService.createUserIfNotExists(ORGANIZATION_ID, "accountName", "notExistsUser",
-                Arrays.asList("role1", "roleEntity2"));
+        UserEntity userEntity = UserEntity.autoCreatedEntity("accountName", "notExistsUser", ORGANIZATION_ID);
+        User createdUser = userService.upsert(userEntity, Arrays.asList("role1", "roleEntity2"));
         Assert.assertNotNull(createdUser);
         Assert.assertEquals(2, createdUser.getRoles().size());
     }
@@ -687,8 +687,8 @@ public class UserServiceTest extends MockedAuthorityTestEnv {
 
         ChangePasswordReq request = new ChangePasswordReq();
         request.setUsername(user.getAccountName());
-        request.setCurrentPassword("123456");
-        request.setNewPassword("654321");
+        request.setCurrentPassword("Ab123456");
+        request.setNewPassword("Ab654321");
 
         Mockito.when(authenticationFacade.currentUserId()).thenReturn(user.getId());
         Mockito.when(authorizationFacade.isImpliesPermissions(Mockito.any(), Mockito.anyCollection())).thenReturn(true);
@@ -735,7 +735,7 @@ public class UserServiceTest extends MockedAuthorityTestEnv {
         CreateUserReq createUserReq = new CreateUserReq();
         createUserReq.setName("odc_user_name");
         createUserReq.setAccountName(ACCOUNT_NAME_PREFIX + accountName);
-        createUserReq.setPassword("123456");
+        createUserReq.setPassword("Ab123456");
         createUserReq.setEnabled(true);
         createUserReq.setRoleIds(roleIds);
         createUserReq.setDescription("test user");

@@ -15,8 +15,8 @@
  */
 package com.oceanbase.odc.metadb.dbobject;
 
+import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 
 import org.junit.After;
@@ -59,35 +59,18 @@ public class DBObjectRepositoryTest extends ServiceTestEnv {
     }
 
     @Test
-    public void test_findTop1000ByDatabaseIdInAndNameLike() {
-        DBObjectEntity entity1 = TestRandom.nextObject(DBObjectEntity.class);
-        entity1.setDatabaseId(1L);
-        entity1.setName("object_for_test_1");
-        DBObjectEntity entity2 = TestRandom.nextObject(DBObjectEntity.class);
-        entity2.setDatabaseId(2L);
-        entity2.setName("object_for_test_2");
-        dbObjectRepository.saveAll(Arrays.asList(entity1, entity2));
-        dbObjectRepository.flush();
-        List<DBObjectEntity> entities =
-                dbObjectRepository.findTop1000ByDatabaseIdInAndNameLike(Arrays.asList(1L, 2L), "%test%");
-        Assert.assertEquals(2, entities.size());
-    }
-
-    @Test
-    public void test_findTop1000ByDatabaseIdInAndTypeAndNameLike() {
-        DBObjectEntity entity1 = TestRandom.nextObject(DBObjectEntity.class);
-        entity1.setDatabaseId(1L);
-        entity1.setType(DBObjectType.TABLE);
-        entity1.setName("table_for_test_1");
-        DBObjectEntity entity2 = TestRandom.nextObject(DBObjectEntity.class);
-        entity2.setDatabaseId(1L);
-        entity2.setType(DBObjectType.VIEW);
-        entity2.setName("view_for_test_1");
-        dbObjectRepository.saveAll(Arrays.asList(entity1, entity2));
-        List<DBObjectEntity> entities = dbObjectRepository.findTop1000ByDatabaseIdInAndTypeInAndNameLike(
-                Arrays.asList(1L, 2L), Collections.singletonList(DBObjectType.VIEW.name()), "%test%");
-        Assert.assertEquals(1, entities.size());
-        Assert.assertEquals("view_for_test_1", entities.get(0).getName());
+    public void test_batchCreate() {
+        List<DBObjectEntity> entities = new ArrayList<>();
+        for (int i = 0; i < 1000; i++) {
+            DBObjectEntity entity = TestRandom.nextObject(DBObjectEntity.class);
+            entity.setId(null);
+            entity.setDatabaseId(1L);
+            entity.setType(DBObjectType.TABLE);
+            entity.setName("table_for_test_" + i);
+            entities.add(entity);
+        }
+        List<DBObjectEntity> saved = dbObjectRepository.batchCreate(entities);
+        Assert.assertEquals(entities.size(), saved.size());
     }
 
 }

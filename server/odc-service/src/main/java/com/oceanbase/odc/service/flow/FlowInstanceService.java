@@ -93,6 +93,7 @@ import com.oceanbase.odc.metadb.iam.resourcerole.ResourceRoleEntity;
 import com.oceanbase.odc.metadb.schedule.ScheduleEntity;
 import com.oceanbase.odc.metadb.task.TaskEntity;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferConfig;
+import com.oceanbase.odc.service.collaboration.environment.EnvironmentService;
 import com.oceanbase.odc.service.common.response.SuccessResponse;
 import com.oceanbase.odc.service.common.util.SqlUtils;
 import com.oceanbase.odc.service.config.SystemConfigService;
@@ -104,6 +105,8 @@ import com.oceanbase.odc.service.connection.database.DatabaseService;
 import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.connection.model.OBTenant;
+import com.oceanbase.odc.service.databasechange.model.DatabaseChangeConnection;
+import com.oceanbase.odc.service.databasechange.model.DatabaseChangeDatabase;
 import com.oceanbase.odc.service.dispatch.DispatchResponse;
 import com.oceanbase.odc.service.dispatch.RequestDispatcher;
 import com.oceanbase.odc.service.dispatch.TaskDispatchChecker;
@@ -132,6 +135,7 @@ import com.oceanbase.odc.service.flow.task.BaseRuntimeFlowableDelegate;
 import com.oceanbase.odc.service.flow.task.model.DBStructureComparisonParameter;
 import com.oceanbase.odc.service.flow.task.model.DatabaseChangeParameters;
 import com.oceanbase.odc.service.flow.task.model.FlowTaskProperties;
+import com.oceanbase.odc.service.flow.task.model.MultipleDatabaseChangeParameters;
 import com.oceanbase.odc.service.flow.task.model.RuntimeTaskConstants;
 import com.oceanbase.odc.service.flow.task.model.ShadowTableSyncTaskParameter;
 import com.oceanbase.odc.service.flow.util.FlowTaskUtil;
@@ -251,6 +255,8 @@ public class FlowInstanceService {
     private CloudMetadataClient cloudMetadataClient;
     @Autowired
     private EnvironmentRepository environmentRepository;
+    @Autowired
+    private EnvironmentService environmentService;
 
     private final List<Consumer<DataTransferTaskInitEvent>> dataTransferTaskInitHooks = new ArrayList<>();
     private final List<Consumer<ShadowTableComparingUpdateEvent>> shadowTableComparingTaskHooks = new ArrayList<>();
@@ -355,6 +361,13 @@ public class FlowInstanceService {
             conn = connectionService.getForConnectionSkipPermissionCheck(createReq.getConnectionId());
             cloudMetadataClient.checkPermission(OBTenant.of(conn.getClusterName(),
                     conn.getTenantName()), conn.getInstanceType(), false, CloudPermissionAction.READONLY);
+        } else if (createReq.getTaskType() == TaskType.MULTIPLE_ASYNC) {
+            MultipleDatabaseChangeParameters taskParameters =
+                    (MultipleDatabaseChangeParameters) createReq.getParameters();
+            List<DatabaseChangeConnection> conns = taskParameters.getDatabases().stream().map(
+                    DatabaseChangeDatabase::getDataSource).distinct().collect(Collectors.toList());
+            conns.forEach(con -> cloudMetadataClient.checkPermission(OBTenant.of(con.getClusterName(),
+                    con.getTenantName()), con.getInstanceType(), false, CloudPermissionAction.READONLY));
         }
         return Collections.singletonList(buildFlowInstance(riskLevels, createReq, conn));
     }
@@ -434,6 +447,7 @@ public class FlowInstanceService {
         } else {
             // Task type which will be filtered independently
             List<TaskType> types = Arrays.asList(
+                    TaskType.MULTIPLE_ASYNC,
                     TaskType.EXPORT,
                     TaskType.IMPORT,
                     TaskType.MOCKDATA,
@@ -475,7 +489,7 @@ public class FlowInstanceService {
                         resourceRoleService.getProjectId2ResourceRoleNames();
                 Set<Long> ownerProjectIds = currentUserProjectId2ResourceRoleNames.entrySet().stream()
                         .filter(entry -> entry.getValue().contains(ResourceRoleName.OWNER))
-                        .map(Map.Entry::getKey)
+                        .map(Entry::getKey)
                         .collect(Collectors.toSet());
                 Set<Long> otherRoleProjectIds = new HashSet<>(currentUserProjectId2ResourceRoleNames.keySet());
                 otherRoleProjectIds.removeAll(ownerProjectIds);
@@ -769,6 +783,10 @@ public class FlowInstanceService {
             DBStructureComparisonParameter p = (DBStructureComparisonParameter) req.getParameters();
             databaseIds.add(p.getTargetDatabaseId());
             databaseIds.add(p.getSourceDatabaseId());
+        } else if (taskType == TaskType.MULTIPLE_ASYNC) {
+            MultipleDatabaseChangeParameters parameters = (MultipleDatabaseChangeParameters) req.getParameters();
+            databaseIds =
+                    parameters.getOrderedDatabaseIds().stream().flatMap(Collection::stream).collect(Collectors.toSet());
         }
         databasePermissionHelper.checkPermissions(databaseIds, DatabasePermissionType.from(req.getTaskType()));
     }
@@ -848,8 +866,7 @@ public class FlowInstanceService {
         Verify.notNull(taskEntity.getId(), "TaskId can not be null");
         FlowInstance flowInstance = flowFactory.generateFlowInstance(generateFlowInstanceName(flowInstanceReq),
                 flowInstanceReq.getParentFlowInstanceId(),
-                flowInstanceReq.getProjectId(),
-                flowInstanceReq.getDescription());
+                flowInstanceReq.getProjectId(), flowInstanceReq.getDescription());
         Verify.notNull(flowInstance.getId(), "FlowInstance id can not be null");
 
         try {
@@ -899,6 +916,11 @@ public class FlowInstanceService {
             DBStructureComparisonParameter parameters = (DBStructureComparisonParameter) req.getParameters();
             return "structure_comparison_" + parameters.getSourceDatabaseId() + "_" + parameters.getTargetDatabaseId();
         }
+        if (req.getTaskType() == TaskType.MULTIPLE_ASYNC) {
+            MultipleDatabaseChangeParameters parameters = (MultipleDatabaseChangeParameters) req.getParameters();
+            return "multiple_database_" + parameters.getOrderedDatabaseIds();
+        }
+
         String schemaName = req.getDatabaseName();
         String connectionName = req.getConnectionId() == null ? "no_connection" : req.getConnectionId() + "";
         if (schemaName == null) {
@@ -941,24 +963,58 @@ public class FlowInstanceService {
             configurer = configurer.next(approvalGatewayInstance).route(String.format("${!%s}",
                     FlowApprovalInstance.APPROVAL_VARIABLE_NAME), flowInstance.endFlowInstance());
             if (nodeSequence == nodeConfigs.size() - 1) {
-                ExecutionStrategyConfig strategyConfig = ExecutionStrategyConfig.from(flowInstanceReq,
-                        approvalFlowConfig.getWaitExecutionExpirationIntervalSeconds());
-                FlowTaskInstance taskInstance = flowFactory.generateFlowTaskInstance(flowInstance.getId(), false, true,
-                        taskType, strategyConfig);
-                taskInstance.setTargetTaskId(targetTaskId);
-                FlowInstanceConfigurer taskConfigurer;
-                if (taskType == TaskType.ASYNC
-                        && Boolean.TRUE.equals(((DatabaseChangeParameters) parameters).getGenerateRollbackPlan())) {
-                    FlowTaskInstance rollbackPlanInstance =
-                            flowFactory.generateFlowTaskInstance(flowInstance.getId(), false, false,
-                                    TaskType.GENERATE_ROLLBACK, ExecutionStrategyConfig.autoStrategy());
-                    taskConfigurer = flowInstance.newFlowInstanceConfigurer(rollbackPlanInstance).next(taskInstance);
+                if (taskType == TaskType.MULTIPLE_ASYNC) {
+                    MultipleDatabaseChangeParameters multipleDatabaseChangeParameters =
+                            (MultipleDatabaseChangeParameters) parameters;
+                    FlowInstanceConfigurer taskConfigurer = null;
+                    int orders = ((MultipleDatabaseChangeParameters) flowInstanceReq.getParameters())
+                            .getOrderedDatabaseIds().size();
+                    for (int i = 0; i < orders; i++) {
+                        // ExecutionStrategyConfig for multiple databases change flow
+                        ExecutionStrategyConfig strategyConfig = ExecutionStrategyConfig.from(flowInstanceReq,
+                                Math.toIntExact(multipleDatabaseChangeParameters.getManualTimeoutMillis()) / 1000);
+                        FlowTaskInstance taskInstance;
+                        if (i == orders - 1) {
+                            taskInstance = flowFactory.generateFlowTaskInstance(flowInstance.getId(), false, true,
+                                    taskType, strategyConfig);
+                        } else {
+                            taskInstance = flowFactory.generateFlowTaskInstance(flowInstance.getId(), false, false,
+                                    taskType, strategyConfig);
+                        }
+
+                        taskInstance.setTargetTaskId(targetTaskId);
+                        if (taskConfigurer == null) {
+                            taskConfigurer = flowInstance.newFlowInstanceConfigurer(taskInstance);
+                        } else {
+                            taskConfigurer.next(taskInstance);
+                        }
+                    }
+                    taskConfigurer.endFlowInstance();
+                    configurer.route(String.format("${%s}", FlowApprovalInstance.APPROVAL_VARIABLE_NAME),
+                            taskConfigurer);
                 } else {
-                    taskConfigurer = flowInstance.newFlowInstanceConfigurer(taskInstance);
+                    ExecutionStrategyConfig strategyConfig = ExecutionStrategyConfig.from(flowInstanceReq,
+                            approvalFlowConfig.getWaitExecutionExpirationIntervalSeconds());
+                    FlowTaskInstance taskInstance =
+                            flowFactory.generateFlowTaskInstance(flowInstance.getId(), false, true,
+                                    taskType, strategyConfig);
+                    taskInstance.setTargetTaskId(targetTaskId);
+                    FlowInstanceConfigurer taskConfigurer;
+                    if (taskType == TaskType.ASYNC
+                            && Boolean.TRUE.equals(((DatabaseChangeParameters) parameters).getGenerateRollbackPlan())) {
+                        FlowTaskInstance rollbackPlanInstance =
+                                flowFactory.generateFlowTaskInstance(flowInstance.getId(), false, false,
+                                        TaskType.GENERATE_ROLLBACK, ExecutionStrategyConfig.autoStrategy());
+                        taskConfigurer =
+                                flowInstance.newFlowInstanceConfigurer(rollbackPlanInstance).next(taskInstance);
+                    } else {
+                        taskConfigurer = flowInstance.newFlowInstanceConfigurer(taskInstance);
+                    }
+                    taskConfigurer.endFlowInstance();
+                    configurer.route(String.format("${%s}", FlowApprovalInstance.APPROVAL_VARIABLE_NAME),
+                            taskConfigurer);
                 }
-                taskConfigurer.endFlowInstance();
-                configurer.route(String.format("${%s}", FlowApprovalInstance.APPROVAL_VARIABLE_NAME),
-                        taskConfigurer);
+
             }
             configurers.add(configurer);
         }
@@ -1019,6 +1075,7 @@ public class FlowInstanceService {
         FlowTaskUtil.setRiskLevelDescriber(variables, riskLevelDescriber);
         FlowTaskUtil.setCloudMainAccountId(variables, authenticationFacade.currentUser().getParentUid());
     }
+
 
     private TemplateVariables buildTemplateVariables(CreateFlowInstanceReq flowInstanceReq, ConnectionConfig config) {
         TemplateVariables variables = new TemplateVariables();
@@ -1172,6 +1229,10 @@ public class FlowInstanceService {
                 .environmentName(env == null ? null : env.getName())
                 .databaseName(req.getDatabaseName())
                 .build();
+    }
+
+    public List<FlowInstanceEntity> getFlowInstanceByParentId(Long parentFlowInstanceId) {
+        return flowInstanceRepository.findByParentInstanceId(parentFlowInstanceId);
     }
 
     public Set<Long> getApprovingAlterScheduleById(Long parentFlowInstanceId) {

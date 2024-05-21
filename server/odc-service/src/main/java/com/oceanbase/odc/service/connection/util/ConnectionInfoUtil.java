@@ -23,13 +23,16 @@ import javax.sql.DataSource;
 import org.springframework.jdbc.core.ConnectionCallback;
 import org.springframework.jdbc.core.StatementCallback;
 
+import com.oceanbase.odc.common.util.VersionUtils;
 import com.oceanbase.odc.core.datasource.DataSourceFactory;
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionConstants;
+import com.oceanbase.odc.core.session.ConnectionSessionUtil;
 import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.sql.execute.GeneralSyncJdbcExecutor;
 import com.oceanbase.odc.core.sql.execute.SyncJdbcExecutor;
+import com.oceanbase.odc.core.sql.util.OBUtils;
 import com.oceanbase.odc.plugin.connect.api.InformationExtensionPoint;
 import com.oceanbase.odc.service.plugin.ConnectionPluginUtil;
 
@@ -61,6 +64,12 @@ public class ConnectionInfoUtil {
             String sessionId = queryConnectionId(statement, connectionSession.getDialectType());
             Verify.notNull(sessionId, "SessionId");
             connectionSession.setAttribute(ConnectionSessionConstants.CONNECTION_ID_KEY, sessionId);
+            if (connectionSession.getDialectType().isOceanbase() && VersionUtils.isGreaterThanOrEqualsTo(
+                    ConnectionSessionUtil.getVersion(connectionSession), "4.2")) {
+                String proxySessId =
+                        OBUtils.queryOBProxySessId(statement, connectionSession.getDialectType(), sessionId);
+                connectionSession.setAttribute(ConnectionSessionConstants.OB_PROXY_SESSID_KEY, proxySessId);
+            }
         } catch (Exception exception) {
             log.warn("Failed to get database session ID, session={}", connectionSession, exception);
         }

@@ -20,11 +20,10 @@ import java.util.Optional;
 
 import org.quartz.JobExecutionContext;
 
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.core.shared.constant.TaskStatus;
 import com.oceanbase.odc.metadb.schedule.ScheduleTaskEntity;
-import com.oceanbase.odc.service.dlm.model.DlmTask;
+import com.oceanbase.odc.service.dlm.model.DlmTableUnit;
 import com.oceanbase.odc.service.dlm.utils.DlmJobIdUtil;
 import com.oceanbase.odc.service.schedule.model.DataArchiveRollbackParameters;
 import com.oceanbase.tools.migrator.common.configure.DataSourceInfo;
@@ -64,7 +63,7 @@ public class DataArchiveRollbackJob extends AbstractDlmJob {
 
         // execute in task framework.
         if (taskFrameworkProperties.isEnabled()) {
-            DLMJobParameters parameters = getDLMJobParameters(dataArchiveTask.getJobId());
+            DLMJobReq parameters = getDLMJobReq(dataArchiveTask.getJobId());
             parameters.setJobType(JobType.ROLLBACK);
             DataSourceInfo tempDataSource = parameters.getSourceDs();
             parameters.setSourceDs(parameters.getTargetDs());
@@ -82,21 +81,23 @@ public class DataArchiveRollbackJob extends AbstractDlmJob {
             return;
         }
         // prepare tasks for rollback
-        List<DlmTask> taskUnits = JsonUtils.fromJson(dataArchiveTask.getResultJson(),
-                new TypeReference<List<DlmTask>>() {});
-        for (int i = 0; i < taskUnits.size(); i++) {
-            DlmTask taskUnit = taskUnits.get(i);
-            Long temp = taskUnit.getSourceDatabaseId();
-            taskUnit.setId(DlmJobIdUtil.generateHistoryJobId(taskEntity.getJobName(), taskEntity.getJobGroup(),
-                    taskEntity.getId(),
-                    i));
-            taskUnit.setSourceDatabaseId(taskUnit.getTargetDatabaseId());
-            taskUnit.setTargetDatabaseId(temp);
-            taskUnit.setJobType(JobType.ROLLBACK);
-            taskUnit.setStatus(taskUnit.getStatus() == TaskStatus.PREPARING ? TaskStatus.DONE : TaskStatus.PREPARING);
+        List<DlmTableUnit> dlmTableUnits = dlmService.findByScheduleTaskId(dataArchiveTask.getId());
+        for (int i = 0; i < dlmTableUnits.size(); i++) {
+            DlmTableUnit dlmTableUnit = dlmTableUnits.get(i);
+            DataSourceInfo temp = dlmTableUnit.getSourceDatasourceInfo();
+            dlmTableUnit.setDlmTableUnitId(
+                    DlmJobIdUtil.generateHistoryJobId(taskEntity.getJobName(), taskEntity.getJobGroup(),
+                            taskEntity.getId(),
+                            i));
+            dlmTableUnit.setSourceDatasourceInfo(dlmTableUnit.getTargetDatasourceInfo());
+            dlmTableUnit.setTargetDatasourceInfo(temp);
+            dlmTableUnit.setType(JobType.ROLLBACK);
+            dlmTableUnit.setStatus(
+                    dlmTableUnit.getStatus() == TaskStatus.PREPARING ? TaskStatus.DONE : TaskStatus.PREPARING);
         }
-        executeTask(taskEntity.getId(), taskUnits);
-        TaskStatus taskStatus = getTaskStatus(taskUnits);
+        dlmService.createDlmTableUnits(dlmTableUnits);
+        executeTask(taskEntity.getId(), dlmTableUnits);
+        TaskStatus taskStatus = getTaskStatus(taskEntity.getId());
         scheduleTaskRepository.updateStatusById(taskEntity.getId(), taskStatus);
     }
 }

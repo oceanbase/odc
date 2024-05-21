@@ -17,6 +17,7 @@ package com.oceanbase.odc.service.schedule.job;
 
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Objects;
 
 import org.quartz.JobExecutionContext;
 
@@ -24,13 +25,13 @@ import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.shared.constant.TaskStatus;
 import com.oceanbase.odc.metadb.schedule.ScheduleTaskEntity;
-import com.oceanbase.odc.service.dlm.DataSourceInfoBuilder;
+import com.oceanbase.odc.service.dlm.DataSourceInfoMapper;
 import com.oceanbase.odc.service.dlm.model.DataArchiveTableConfig;
 import com.oceanbase.odc.service.dlm.model.DataDeleteParameters;
-import com.oceanbase.odc.service.dlm.model.DlmTask;
+import com.oceanbase.odc.service.dlm.model.DlmTableUnit;
+import com.oceanbase.odc.service.dlm.model.DlmTableUnitParameters;
 import com.oceanbase.odc.service.dlm.utils.DataArchiveConditionUtil;
 import com.oceanbase.odc.service.dlm.utils.DlmJobIdUtil;
-import com.oceanbase.tools.migrator.common.configure.LogicTableConfig;
 import com.oceanbase.tools.migrator.common.enums.JobType;
 import com.oceanbase.tools.migrator.task.CheckMode;
 
@@ -58,41 +59,45 @@ public class DataDeleteJob extends AbstractDlmJob {
             return;
         }
 
-        List<DlmTask> dlmTasks = getTaskUnits(taskEntity);
+        List<DlmTableUnit> dlmTasks = getTaskUnits(taskEntity);
 
         executeTask(taskEntity.getId(), dlmTasks);
-        TaskStatus taskStatus = getTaskStatus(dlmTasks);
+        TaskStatus taskStatus = getTaskStatus(taskEntity.getId());
         scheduleTaskRepository.updateStatusById(taskEntity.getId(), taskStatus);
     }
 
     @Override
-    public List<DlmTask> splitTask(ScheduleTaskEntity taskEntity) {
+    public List<DlmTableUnit> splitTask(ScheduleTaskEntity taskEntity) {
 
         DataDeleteParameters parameters = JsonUtils.fromJson(taskEntity.getParametersJson(),
                 DataDeleteParameters.class);
-        List<DlmTask> dlmTasks = new LinkedList<>();
+        List<DlmTableUnit> dlmTasks = new LinkedList<>();
         parameters.getTables().forEach(table -> {
             String condition = StringUtils.isNotEmpty(table.getConditionExpression())
                     ? DataArchiveConditionUtil.parseCondition(table.getConditionExpression(), parameters.getVariables(),
                             taskEntity.getFireTime())
                     : "";
-            DlmTask dlmTask = new DlmTask();
-
-            dlmTask.setId(DlmJobIdUtil.generateHistoryJobId(taskEntity.getJobName(), taskEntity.getJobGroup(),
-                    taskEntity.getId(),
-                    dlmTasks.size()));
-            dlmTask.setTableName(table.getTableName());
-            dlmTask.setSourceDatabaseId(parameters.getDatabaseId());
-            dlmTask.setTargetDatabaseId(parameters.getDatabaseId());
-            dlmTask.setFireTime(taskEntity.getFireTime());
-
-            LogicTableConfig logicTableConfig = new LogicTableConfig();
-            logicTableConfig.setMigrateRule(condition);
-            logicTableConfig.setCheckMode(CheckMode.MULTIPLE_GET);
-            dlmTask.setLogicTableConfig(logicTableConfig);
-            dlmTask.setStatus(TaskStatus.PREPARING);
-            dlmTask.setJobType(parameters.getDeleteByUniqueKey() ? JobType.QUICK_DELETE : JobType.DEIRECT_DELETE);
-            dlmTasks.add(dlmTask);
+            DlmTableUnit dlmTableUnit = new DlmTableUnit();
+            dlmTableUnit.setScheduleTaskId(taskEntity.getId());
+            dlmTableUnit.setDlmTableUnitId(
+                    DlmJobIdUtil.generateHistoryJobId(taskEntity.getJobName(), taskEntity.getJobGroup(),
+                            taskEntity.getId(),
+                            dlmTasks.size()));
+            dlmTableUnit.setTableName(table.getTableName());
+            dlmTableUnit.setTargetTableName(table.getTargetTableName());
+            dlmTableUnit.setSourceDatasourceInfo(getDataSourceInfo(parameters.getDatabaseId()));
+            dlmTableUnit.setTargetDatasourceInfo(
+                    Objects.isNull(parameters.getTargetDatabaseId()) ? dlmTableUnit.getSourceDatasourceInfo()
+                            : getDataSourceInfo(parameters.getTargetDatabaseId()));
+            dlmTableUnit.setFireTime(taskEntity.getFireTime());
+            DlmTableUnitParameters parameter = new DlmTableUnitParameters();
+            parameter.setMigrateRule(condition);
+            parameter.setCheckMode(CheckMode.MULTIPLE_GET);
+            dlmTableUnit.setParameters(parameter);
+            dlmTableUnit.setStatus(TaskStatus.PREPARING);
+            JobType jobType = parameters.getNeedCheckBeforeDelete() ? JobType.DELETE : JobType.QUICK_DELETE;
+            dlmTableUnit.setType(parameters.getDeleteByUniqueKey() ? jobType : JobType.DEIRECT_DELETE);
+            dlmTasks.add(dlmTableUnit);
         });
         return dlmTasks;
     }
@@ -102,7 +107,7 @@ public class DataDeleteJob extends AbstractDlmJob {
         ScheduleTaskEntity taskEntity = (ScheduleTaskEntity) context.getResult();
         DataDeleteParameters dataDeleteParameters = JsonUtils.fromJson(taskEntity.getParametersJson(),
                 DataDeleteParameters.class);
-        DLMJobParameters parameters = new DLMJobParameters();
+        DLMJobReq parameters = new DLMJobReq();
         parameters.setJobName(taskEntity.getJobName());
         parameters.setScheduleTaskId(taskEntity.getId());
         parameters.setJobType(JobType.DELETE);
@@ -121,13 +126,13 @@ public class DataDeleteJob extends AbstractDlmJob {
         parameters.setReadThreadCount(dataDeleteParameters.getReadThreadCount());
         parameters.setScanBatchSize(dataDeleteParameters.getScanBatchSize());
         parameters
-                .setSourceDs(DataSourceInfoBuilder.build(
+                .setSourceDs(DataSourceInfoMapper.toDataSourceInfo(
                         databaseService.findDataSourceForConnectById(dataDeleteParameters.getDatabaseId())));
         parameters
-                .setTargetDs(DataSourceInfoBuilder.build(
-                        databaseService.findDataSourceForConnectById(dataDeleteParameters.getDatabaseId())));
+                .setTargetDs(DataSourceInfoMapper.toDataSourceInfo(
+                        databaseService.findDataSourceForConnectById(dataDeleteParameters.getTargetDatabaseId())));
         parameters.getSourceDs().setDatabaseName(dataDeleteParameters.getDatabaseName());
-        parameters.getTargetDs().setDatabaseName(dataDeleteParameters.getDatabaseName());
+        parameters.getTargetDs().setDatabaseName(dataDeleteParameters.getTargetDatabaseName());
         parameters.getSourceDs().setConnectionCount(2 * (parameters.getReadThreadCount()
                 + parameters.getWriteThreadCount()));
         parameters.getTargetDs().setConnectionCount(parameters.getSourceDs().getConnectionCount());

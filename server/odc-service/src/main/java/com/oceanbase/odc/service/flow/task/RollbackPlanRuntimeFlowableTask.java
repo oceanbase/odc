@@ -46,6 +46,7 @@ import com.oceanbase.odc.service.flow.task.model.DatabaseChangeResult;
 import com.oceanbase.odc.service.flow.task.model.DatabaseChangeSqlContent;
 import com.oceanbase.odc.service.flow.task.model.RollbackPlanTaskResult;
 import com.oceanbase.odc.service.flow.task.util.DatabaseChangeFileReader;
+import com.oceanbase.odc.service.flow.task.util.TaskDownloadUrlsProvider;
 import com.oceanbase.odc.service.flow.util.FlowTaskUtil;
 import com.oceanbase.odc.service.iam.model.User;
 import com.oceanbase.odc.service.objectstorage.ObjectStorageFacade;
@@ -210,7 +211,8 @@ public class RollbackPlanRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Rol
                     File tempFile = new File(filePath);
                     try {
                         String objectName = cloudObjectStorageService.uploadTemp(resultFileId + ".sql", tempFile);
-                        resultFileDownloadUrl = cloudObjectStorageService.getBucketName() + "/" + objectName;
+                        resultFileDownloadUrl = TaskDownloadUrlsProvider
+                                .concatBucketAndObjectName(cloudObjectStorageService.getBucketName(), objectName);
                         log.info("Upload generated rollback plan task result file to OSS, file name={}", resultFileId);
                     } finally {
                         OdcFileUtil.deleteFiles(tempFile);

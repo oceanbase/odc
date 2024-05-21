@@ -15,6 +15,7 @@
  */
 package com.oceanbase.tools.sqlparser.adapter.oracle;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -50,10 +51,16 @@ public class OracleAlterTableFactory extends OBParserBaseVisitor<AlterTable> imp
 
     @Override
     public AlterTable visitAlter_table_stmt(Alter_table_stmtContext ctx) {
-        List<AlterTableAction> actions = ctx.alter_table_actions().alter_table_action().stream()
-                .map(c -> new OracleAlterTableActionFactory(c).generate()).collect(Collectors.toList());
-        AlterTable alterTable = new AlterTable(ctx,
-                OracleFromReferenceFactory.getRelation(ctx.relation_factor()), actions);
+        String relation = OracleFromReferenceFactory.getRelation(ctx.relation_factor());
+        AlterTable alterTable;
+        if (ctx.alter_table_actions() != null) {
+            List<AlterTableAction> actions = ctx.alter_table_actions().alter_table_action().stream()
+                    .map(c -> new OracleAlterTableActionFactory(c).generate()).collect(Collectors.toList());
+            alterTable = new AlterTable(ctx, relation, actions);
+        } else {
+            alterTable = new AlterTable(ctx, relation, Collections
+                    .singletonList(new OracleAlterTableActionFactory(ctx.alter_column_group_option()).generate()));
+        }
         if (ctx.EXTERNAL() != null) {
             alterTable.setExternal(true);
         }

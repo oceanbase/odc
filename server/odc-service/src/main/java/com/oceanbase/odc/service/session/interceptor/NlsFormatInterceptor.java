@@ -17,7 +17,6 @@ package com.oceanbase.odc.service.session.interceptor;
 
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
@@ -36,6 +35,7 @@ import com.oceanbase.odc.core.sql.parser.AbstractSyntaxTree;
 import com.oceanbase.odc.core.sql.parser.AbstractSyntaxTreeFactories;
 import com.oceanbase.odc.core.sql.split.OffsetString;
 import com.oceanbase.odc.core.sql.split.SqlCommentProcessor;
+import com.oceanbase.odc.service.session.model.AsyncExecuteContext;
 import com.oceanbase.odc.service.session.model.SqlAsyncExecuteReq;
 import com.oceanbase.odc.service.session.model.SqlAsyncExecuteResp;
 import com.oceanbase.odc.service.session.model.SqlExecuteResult;
@@ -67,13 +67,13 @@ public class NlsFormatInterceptor extends BaseTimeConsumingInterceptor {
 
     @Override
     public boolean preHandle(@NonNull SqlAsyncExecuteReq request, @NonNull SqlAsyncExecuteResp response,
-            @NonNull ConnectionSession session, @NonNull Map<String, Object> context) {
+            @NonNull ConnectionSession session, @NonNull AsyncExecuteContext context) {
         return true;
     }
 
     @Override
     public void doAfterCompletion(@NonNull SqlExecuteResult response,
-            @NonNull ConnectionSession session, @NonNull Map<String, Object> context) {
+            @NonNull ConnectionSession session, @NonNull AsyncExecuteContext context) {
         DialectType dialect = session.getDialectType();
         if (response.getStatus() != SqlExecuteStatus.SUCCESS || dialect != DialectType.OB_ORACLE) {
             return;
