@@ -34,8 +34,8 @@ import com.oceanbase.odc.core.flow.exception.BaseFlowException;
 import com.oceanbase.odc.core.flow.util.FlowConstants;
 import com.oceanbase.odc.core.flow.util.FlowUtil;
 import com.oceanbase.odc.core.flow.util.FlowableBoundaryEvent;
-import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
+import com.oceanbase.odc.core.shared.exception.NotFoundException;
 import com.oceanbase.odc.metadb.flow.ServiceTaskInstanceRepository;
 import com.oceanbase.odc.service.flow.BeanInjectedClassDelegate;
 import com.oceanbase.odc.service.flow.FlowableAdaptor;
@@ -68,9 +68,9 @@ public class FlowTaskSubmitter implements JavaDelegate {
     public void execute(DelegateExecution execution) {
         // DelegateExecution will be changed when current thread return,
         // so use execution facade class to save execution properties
-        ExecutionEntityFacade executionFacade = new ExecutionEntityFacade(execution);
+        CustomDelegateExecution executionFacade = new CustomDelegateExecution(execution);
         long flowInstanceId = FlowTaskUtil.getFlowInstanceId(executionFacade);
-        String activityId = executionFacade.getActivityId();
+        String activityId = executionFacade.getCurrentActivityId();
         List<FlowableBoundaryEvent<ErrorEventDefinition>> defs =
                 FlowUtil.getBoundaryEventDefinitions(execution.getProcessDefinitionId(),
                         activityId, ErrorEventDefinition.class);
@@ -81,7 +81,7 @@ public class FlowTaskSubmitter implements JavaDelegate {
                 getDelegateInstance(flowTaskInstance).execute(executionFacade);
                 updateFlowTaskInstance(flowTaskInstance, FlowNodeStatus.COMPLETED);
                 flowTaskCallBackApprovalService.approval(executionFacade.getProcessInstanceId(),
-                        flowTaskInstance.getId(), executionFacade.getTaskVariables());
+                        flowTaskInstance.getId(), executionFacade.getFutureVariable());
             } catch (Exception e) {
                 log.warn("Delegate task instance execute occur error: ", e);
                 updateFlowTaskInstance(flowTaskInstance, FlowNodeStatus.FAILED);
@@ -98,7 +98,7 @@ public class FlowTaskSubmitter implements JavaDelegate {
     private void updateFlowTaskInstance(FlowTaskInstance flowTaskInstance, FlowNodeStatus flowNodeStatus) {
         try {
             int affectRows =
-                    serviceTaskRepository.updateStatusById(flowTaskInstance.getFlowInstanceId(), flowNodeStatus);
+                    serviceTaskRepository.updateStatusById(flowTaskInstance.getId(), flowNodeStatus);
             log.info("Modify node instance status successfully, instanceId={}, flowNodeStatus={}, affectRows={}",
                     flowTaskInstance.getId(), flowNodeStatus, affectRows);
         } catch (Exception ex) {
@@ -106,7 +106,8 @@ public class FlowTaskSubmitter implements JavaDelegate {
         }
     }
 
-    private void handleException(ExecutionEntityFacade executionFacade, FlowTaskInstance flowTaskInstance, Exception e,
+    private void handleException(CustomDelegateExecution executionFacade, FlowTaskInstance flowTaskInstance,
+            Exception e,
             List<FlowableBoundaryEvent<ErrorEventDefinition>> defs) {
         String processDefinitionId = executionFacade.getProcessDefinitionId();
         String activityId = executionFacade.getCurrentActivityId();
@@ -116,14 +117,17 @@ public class FlowTaskSubmitter implements JavaDelegate {
         } else if (e instanceof BaseFlowException) {
             BaseFlowException flowException = (BaseFlowException) e;
             String targetErrorCode = flowException.getErrorCode().code();
-            for (FlowableBoundaryEvent eventDefinition : defs) {
-                ErrorEventDefinition eed = (ErrorEventDefinition) eventDefinition.getEventDefinition();
+            for (FlowableBoundaryEvent<ErrorEventDefinition> eventDefinition : defs) {
+                ErrorEventDefinition eed = eventDefinition.getEventDefinition();
                 String acceptErrorCode = eed.getErrorCode();
                 if (Objects.equals(acceptErrorCode, targetErrorCode)) {
                     flowTaskCallBackApprovalService.reject(executionFacade.getProcessInstanceId(),
-                            flowTaskInstance.getId(), executionFacade.getTaskVariables());
+                            flowTaskInstance.getId(), executionFacade.getFutureVariable());
                     if (CollectionUtils.isNotEmpty(eventDefinition.getFlowableListeners())) {
-                        callListener(executionFacade, eventDefinition.getFlowableListeners());
+                        callListener(FlowConstants.EXECUTION_START_EVENT_NAME, executionFacade,
+                                eventDefinition.getFlowableListeners());
+                        callListener(FlowConstants.EXECUTION_END_EVENT_NAME, executionFacade,
+                                eventDefinition.getFlowableListeners());
                     }
                     return;
                 }
@@ -137,26 +141,24 @@ public class FlowTaskSubmitter implements JavaDelegate {
                     defs.stream().map(a -> a.getEventDefinition().getErrorCode()).collect(Collectors.toList()));
         }
         flowTaskCallBackApprovalService.approval(executionFacade.getProcessInstanceId(),
-                flowTaskInstance.getId(), executionFacade.getTaskVariables());
+                flowTaskInstance.getId(), executionFacade.getFutureVariable());
     }
 
-    private void callListener(DelegateExecution execution, List<FlowableListener> flowableListeners) {
-        flowableListeners.stream()
-                .filter(fl -> FlowConstants.EXECUTION_END_EVENT_NAME.equals(fl.getEvent()))
-                .forEach(fl -> {
-                    try {
-                        Class<?> clazz = Class.forName(fl.getImplementation(), false,
-                                Thread.currentThread().getContextClassLoader());
-                        if (ExecutionListener.class.isAssignableFrom(clazz)) {
-                            ExecutionListener listener =
-                                    (ExecutionListener) BeanInjectedClassDelegate.instantiateDelegate(clazz);
-                            execution.setEventName(fl.getEvent());
-                            listener.notify(execution);
-                        }
-                    } catch (Exception ex) {
-                        log.warn("Call execution listener occur error: ", ex);
-                    }
-                });
+    private void callListener(String eventName, DelegateExecution execution, List<FlowableListener> flowableListeners) {
+        flowableListeners.stream().filter(fl -> eventName.equals(fl.getEvent())).forEach(fl -> {
+            try {
+                Class<?> clazz = Class.forName(fl.getImplementation(), false,
+                        Thread.currentThread().getContextClassLoader());
+                if (ExecutionListener.class.isAssignableFrom(clazz)) {
+                    ExecutionListener listener =
+                            (ExecutionListener) BeanInjectedClassDelegate.instantiateDelegate(clazz);
+                    execution.setEventName(fl.getEvent());
+                    listener.notify(execution);
+                }
+            } catch (Exception ex) {
+                log.warn("Call execution listener occur error: ", ex);
+            }
+        });
     }
 
     private BaseRuntimeFlowableDelegate<?> getDelegateInstance(FlowTaskInstance flowTaskInstance) throws Exception {
@@ -167,11 +169,10 @@ public class FlowTaskSubmitter implements JavaDelegate {
     }
 
     private FlowTaskInstance getFlowTaskInstance(long flowInstanceId, String activityId) {
-        Optional<FlowTaskInstance> flowTaskInstance = flowableAdaptor.getTaskInstanceByActivityId(
-                activityId, flowInstanceId);
-        PreConditions.validExists(ResourceType.ODC_FLOW_TASK_INSTANCE, "activityId",
-                activityId, flowTaskInstance::isPresent);
-        return flowTaskInstance.get();
+        Optional<FlowTaskInstance> flowTaskInstance =
+                flowableAdaptor.getTaskInstanceByActivityId(activityId, flowInstanceId);
+        return flowTaskInstance.orElseThrow(
+                () -> new NotFoundException(ResourceType.ODC_FLOW_TASK_INSTANCE, "activityId", activityId));
     }
 
 }
