@@ -232,8 +232,7 @@ public class ResultSetExportTask implements Callable<ResultSetExportResult> {
             syncJdbcExecutor.execute((StatementCallback<?>) stmt -> {
                 stmt.setMaxRows(10);
                 new ConsoleTimeoutInitializer(parameter.getExecutionTimeoutSeconds() * 1000000L,
-                        config.getConnectionInfo().getConnectType().getDialectType())
-                        .init(stmt.getConnection());
+                        config.getConnectionInfo().getConnectType().getDialectType()).init(stmt.getConnection());
 
                 stmt.execute(parameter.getSql());
                 ResultSetMetaData rsMetaData = stmt.getResultSet().getMetaData();
