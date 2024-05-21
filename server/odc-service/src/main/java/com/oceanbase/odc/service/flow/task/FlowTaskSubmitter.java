@@ -95,12 +95,12 @@ public class FlowTaskSubmitter implements JavaDelegate {
         });
     }
 
-    private void updateFlowTaskInstance(FlowTaskInstance flowTaskInstance, FlowNodeStatus completed) {
+    private void updateFlowTaskInstance(FlowTaskInstance flowTaskInstance, FlowNodeStatus flowNodeStatus) {
         try {
-            int affectRows = serviceTaskRepository.updateStatusById(flowTaskInstance.getFlowInstanceId(),
-                    completed);
+            int affectRows =
+                    serviceTaskRepository.updateStatusById(flowTaskInstance.getFlowInstanceId(), flowNodeStatus);
             log.info("Modify node instance status successfully, instanceId={}, flowNodeStatus={}, affectRows={}",
-                    flowTaskInstance.getId(), completed, affectRows);
+                    flowTaskInstance.getId(), flowNodeStatus, affectRows);
         } catch (Exception ex) {
             log.warn("Modify node instance status occur error, instanceId={}", flowTaskInstance.getId(), ex);
         }
