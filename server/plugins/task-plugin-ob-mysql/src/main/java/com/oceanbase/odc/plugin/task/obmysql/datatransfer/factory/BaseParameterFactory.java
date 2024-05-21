@@ -16,8 +16,6 @@
 
 package com.oceanbase.odc.plugin.task.obmysql.datatransfer.factory;
 
-import static com.oceanbase.odc.core.shared.constant.OdcConstants.DEFAULT_ZERO_DATE_TIME_BEHAVIOR;
-
 import java.io.File;
 import java.io.IOException;
 import java.sql.Connection;
@@ -32,6 +30,7 @@ import java.util.Set;
 import java.util.function.Predicate;
 
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 
@@ -154,7 +153,6 @@ public abstract class BaseParameterFactory<T extends BaseParameter> {
 
         sessionConfig.setJdbcOption("useServerPrepStmts", transferConfig.isUsePrepStmts() + "");
         sessionConfig.setJdbcOption("useCursorFetch", transferConfig.isUsePrepStmts() + "");
-        sessionConfig.setJdbcOption("zeroDateTimeBehavior", DEFAULT_ZERO_DATE_TIME_BEHAVIOR);
         sessionConfig.setJdbcOption("sendConnectionAttributes", "false");
         Optional.ofNullable(transferConfig.getExecutionTimeoutSeconds())
                 .ifPresent(timeout -> {
@@ -162,6 +160,15 @@ public abstract class BaseParameterFactory<T extends BaseParameter> {
                     sessionConfig.setJdbcOption("connectTimeout", timeout * 1000 + "");
                     sessionConfig.addInitSql4Both("set ob_query_timeout = " + timeout * 1000000L);
                 });
+
+        ConnectionInfo connectionInfo = transferConfig.getConnectionInfo();
+        if (MapUtils.isNotEmpty(connectionInfo.getJdbcUrlParameters())) {
+            connectionInfo.getJdbcUrlParameters().forEach(
+                    (key, value) -> sessionConfig.setJdbcOption(key, value.toString()));
+        }
+        if (CollectionUtils.isNotEmpty(connectionInfo.getSessionInitScripts())) {
+            connectionInfo.getSessionInitScripts().forEach(sessionConfig::addInitSql4Both);
+        }
 
         parameter.setSessionConfig(sessionConfig);
         FileUtils.deleteQuietly(sessionFile);

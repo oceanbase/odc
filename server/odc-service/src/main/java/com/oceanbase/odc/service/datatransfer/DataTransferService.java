@@ -65,6 +65,8 @@ import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.core.shared.constant.TaskType;
 import com.oceanbase.odc.core.shared.exception.AccessDeniedException;
 import com.oceanbase.odc.core.shared.exception.NotFoundException;
+import com.oceanbase.odc.core.sql.split.OffsetString;
+import com.oceanbase.odc.core.sql.split.SqlCommentProcessor;
 import com.oceanbase.odc.plugin.task.api.datatransfer.dumper.ExportOutput;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.ConnectionInfo;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.CsvColumnMapping;
@@ -181,6 +183,11 @@ public class DataTransferService {
                     new Object[] {"ConnectionId can not be null"}, "ConnectionId can not be null");
             ConnectionConfig connectionConfig = connectionService.getForConnectionSkipPermissionCheck(connectionId);
             ConnectionInfo connectionInfo = connectionConfig.toConnectionInfo();
+            String initScript = connectionConfig.getSessionInitScript();
+            connectionInfo.setSessionInitScripts(SqlCommentProcessor
+                    .removeSqlComments(initScript, ";", connectionInfo.getConnectType().getDialectType(), false)
+                    .stream().map(OffsetString::getStr).collect(Collectors.toList()));
+
             connectionInfo.setSchema(transferConfig.getSchemaName());
             transferConfig.setConnectionInfo(connectionInfo);
             injectSysConfig(connectionConfig, transferConfig);
