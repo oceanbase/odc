@@ -29,7 +29,6 @@ import org.flowable.engine.delegate.JavaDelegate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
-import org.springframework.stereotype.Component;
 
 import com.oceanbase.odc.core.flow.exception.BaseFlowException;
 import com.oceanbase.odc.core.flow.util.FlowConstants;
@@ -37,6 +36,7 @@ import com.oceanbase.odc.core.flow.util.FlowUtil;
 import com.oceanbase.odc.core.flow.util.FlowableBoundaryEvent;
 import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
+import com.oceanbase.odc.metadb.flow.ServiceTaskInstanceRepository;
 import com.oceanbase.odc.service.flow.BeanInjectedClassDelegate;
 import com.oceanbase.odc.service.flow.FlowableAdaptor;
 import com.oceanbase.odc.service.flow.instance.FlowTaskInstance;
@@ -52,7 +52,6 @@ import lombok.extern.slf4j.Slf4j;
  * @since 4.2.4
  */
 @Slf4j
-@Component
 public class FlowTaskSubmitter implements JavaDelegate {
 
     @Qualifier("flowTaskExecutor")
@@ -62,12 +61,14 @@ public class FlowTaskSubmitter implements JavaDelegate {
     private FlowableAdaptor flowableAdaptor;
     @Autowired
     private FlowTaskCallBackApprovalService flowTaskCallBackApprovalService;
+    @Autowired
+    private ServiceTaskInstanceRepository serviceTaskRepository;
 
     @Override
     public void execute(DelegateExecution execution) {
         // DelegateExecution will be changed when current thread return,
         // so use execution facade class to save execution properties
-        DelegateExecution executionFacade = new ExecutionEntityFacade(execution);
+        ExecutionEntityFacade executionFacade = new ExecutionEntityFacade(execution);
         List<FlowableBoundaryEvent<ErrorEventDefinition>> defs =
                 FlowUtil.getBoundaryEventDefinitions(execution.getProcessDefinitionId(),
                         execution.getCurrentActivityId(), ErrorEventDefinition.class);
@@ -75,20 +76,27 @@ public class FlowTaskSubmitter implements JavaDelegate {
             FlowTaskInstance flowTaskInstance = getFlowTaskInstance(executionFacade);
             try {
                 getDelegateInstance(flowTaskInstance).execute(executionFacade);
-                flowTaskCallBackApprovalService.approval(flowTaskInstance.getFlowInstanceId(), flowTaskInstance.getId(),
-                        FlowNodeStatus.COMPLETED, FlowTaskResultContextHolder.getContext());
+                int affectRows = serviceTaskRepository.updateStatusById(flowTaskInstance.getFlowInstanceId(),
+                        FlowNodeStatus.COMPLETED);
+                log.info("Modify node instance status successfully, instanceId={}, affectRows={}",
+                        FlowNodeStatus.COMPLETED, affectRows);
+                flowTaskCallBackApprovalService.approval(executionFacade.getProcessInstanceId(),
+                        flowTaskInstance.getId(), executionFacade.getTaskVariables());
             } catch (Exception e) {
+                int affectRows = serviceTaskRepository.updateStatusById(flowTaskInstance.getFlowInstanceId(),
+                        FlowNodeStatus.FAILED);
+                log.info("Modify node instance status successfully, instanceId={}, affectRows={}",
+                        FlowNodeStatus.FAILED, affectRows);
                 Exception rootCause = (Exception) e.getCause();
                 log.warn("Delegate task instance execute occur error: ", rootCause);
-                handleException(execution, flowTaskInstance, rootCause, defs);
+                handleException(executionFacade, flowTaskInstance, rootCause, defs);
             } finally {
                 flowTaskInstance.dealloc();
-                FlowTaskResultContextHolder.cleanContext();
             }
         });
     }
 
-    private void handleException(DelegateExecution execution, FlowTaskInstance flowTaskInstance, Exception e,
+    private void handleException(ExecutionEntityFacade execution, FlowTaskInstance flowTaskInstance, Exception e,
             List<FlowableBoundaryEvent<ErrorEventDefinition>> defs) {
         String processDefinitionId = execution.getProcessDefinitionId();
         String activityId = execution.getCurrentActivityId();
@@ -102,8 +110,8 @@ public class FlowTaskSubmitter implements JavaDelegate {
                 ErrorEventDefinition eed = (ErrorEventDefinition) eventDefinition.getEventDefinition();
                 String acceptErrorCode = eed.getErrorCode();
                 if (Objects.equals(acceptErrorCode, targetErrorCode)) {
-                    flowTaskCallBackApprovalService.approval(flowTaskInstance.getFlowInstanceId(),
-                            flowTaskInstance.getId(), FlowNodeStatus.FAILED, FlowTaskResultContextHolder.getContext());
+                    flowTaskCallBackApprovalService.reject(execution.getProcessInstanceId(),
+                            flowTaskInstance.getId(), execution.getTaskVariables());
                     if (CollectionUtils.isNotEmpty(eventDefinition.getFlowableListeners())) {
                         callListener(execution, eventDefinition.getFlowableListeners());
                     }
@@ -118,9 +126,8 @@ public class FlowTaskSubmitter implements JavaDelegate {
                     processDefinitionId, activityId,
                     defs.stream().map(a -> a.getEventDefinition().getErrorCode()).collect(Collectors.toList()));
         }
-        flowTaskCallBackApprovalService.approval(flowTaskInstance.getFlowInstanceId(),
-                flowTaskInstance.getId(), FlowNodeStatus.COMPLETED,
-                FlowTaskResultContextHolder.getContext());
+        flowTaskCallBackApprovalService.approval(execution.getProcessInstanceId(),
+                flowTaskInstance.getId(), execution.getTaskVariables());
     }
 
     private void callListener(DelegateExecution execution, List<FlowableListener> flowableListeners) {

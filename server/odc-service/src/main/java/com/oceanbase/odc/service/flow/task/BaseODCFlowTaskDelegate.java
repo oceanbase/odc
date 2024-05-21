@@ -79,7 +79,7 @@ import lombok.extern.slf4j.Slf4j;
  * @see BaseRuntimeFlowableDelegate
  */
 @Slf4j
-public abstract class BaseODCFlowTaskDelegate<T> extends BaseRuntimeFlowableDelegate<T> implements FlowTaskCallBack {
+public abstract class BaseODCFlowTaskDelegate<T> extends BaseRuntimeFlowableDelegate<T>  {
 
     @Autowired
     private TaskService taskService;
@@ -103,8 +103,6 @@ public abstract class BaseODCFlowTaskDelegate<T> extends BaseRuntimeFlowableDele
     private ConnectionService connectionService;
     @Autowired
     private EventBuilder eventBuilder;
-    @Autowired
-    protected FlowTaskCallBackApprovalService flowTaskCallBackApprovalService;
     @Autowired
     protected CloudObjectStorageService cloudObjectStorageService;
     @Autowired
@@ -263,16 +261,14 @@ public abstract class BaseODCFlowTaskDelegate<T> extends BaseRuntimeFlowableDele
      */
     protected abstract boolean isFailure();
 
-    @Override
-    public void callback(@NotNull long flowInstanceId, @NotNull long flowTaskInstanceId,
-            @NotNull FlowNodeStatus flowNodeStatus, Map<String, Object> approvalVariables) {
+    protected void setDownloadLogUrl() {
         if (getTaskType().needsSetLogDownloadUrl()) {
             try {
-                setDownloadLogUrl();
+                doSetDownloadLogUrl();
             } catch (Exception e) {
                 log.warn("Failed to set download log URL, either because the log file does not exist or the upload of "
-                        + "the OSS failed, flowInstanceId={}, flowTaskInstanceId={}", flowInstanceId,
-                        flowTaskInstanceId, e);
+                        + "the OSS failed, flowInstanceId={}, flowTaskInstanceId={}", getFlowInstanceId(),
+                        getTargetTaskInstanceId(), e);
             }
         }
     }
@@ -281,7 +277,7 @@ public abstract class BaseODCFlowTaskDelegate<T> extends BaseRuntimeFlowableDele
      * The callback method when the task fails, which is used to update the status and other operations
      */
     protected void onFailure(Long taskId, TaskService taskService) {
-        callback(getFlowInstanceId(), getTargetTaskInstanceId(), FlowNodeStatus.FAILED, null);
+        setDownloadLogUrl();
         if (notificationProperties.isEnabled()) {
             try {
                 Event event = eventBuilder.ofFailedTask(taskService.detail(taskId));
@@ -296,7 +292,7 @@ public abstract class BaseODCFlowTaskDelegate<T> extends BaseRuntimeFlowableDele
      * The callback method when the task is successful, used to update the status and other operations
      */
     protected void onSuccessful(Long taskId, TaskService taskService) {
-        callback(getFlowInstanceId(), getTargetTaskInstanceId(), FlowNodeStatus.COMPLETED, null);
+        setDownloadLogUrl();
         if (notificationProperties.isEnabled()) {
             try {
                 Event event = eventBuilder.ofSucceededTask(taskService.detail(taskId));
@@ -312,7 +308,7 @@ public abstract class BaseODCFlowTaskDelegate<T> extends BaseRuntimeFlowableDele
      * operations
      */
     protected void onTimeout(Long taskId, TaskService taskService) {
-        callback(getFlowInstanceId(), getTargetTaskInstanceId(), FlowNodeStatus.EXPIRED, null);
+        setDownloadLogUrl();
         if (notificationProperties.isEnabled()) {
             try {
                 Event event = eventBuilder.ofTimeoutTask(taskService.detail(taskId));
@@ -332,14 +328,14 @@ public abstract class BaseODCFlowTaskDelegate<T> extends BaseRuntimeFlowableDele
     public boolean cancel(boolean mayInterruptIfRunning) {
         boolean result = cancel(mayInterruptIfRunning, taskId, taskService);
         if (result) {
-            callback(getFlowInstanceId(), getTargetTaskInstanceId(), FlowNodeStatus.CANCELLED, null);
+            setDownloadLogUrl();
         }
         return result;
     }
 
     protected abstract boolean cancel(boolean mayInterruptIfRunning, Long taskId, TaskService taskService);
 
-    private void setDownloadLogUrl() throws IOException, NotFoundException {
+    private void doSetDownloadLogUrl() throws IOException, NotFoundException {
         TaskEntity taskEntity = taskService.detail(taskId);
         File logFile;
         try {

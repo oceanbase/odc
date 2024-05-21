@@ -15,6 +15,9 @@
  */
 package com.oceanbase.odc.service.flow.task;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import org.flowable.engine.delegate.DelegateExecution;
 import org.flowable.engine.impl.persistence.entity.ExecutionEntityImpl;
 
@@ -25,6 +28,8 @@ import org.flowable.engine.impl.persistence.entity.ExecutionEntityImpl;
  * @since 4.2.4
  */
 public class ExecutionEntityFacade extends ExecutionEntityImpl {
+
+    private Map<String, Object> variables = new HashMap<>();
 
     public ExecutionEntityFacade(DelegateExecution execution) {
         execution.getVariables().forEach(this::setVariable);
@@ -38,5 +43,14 @@ public class ExecutionEntityFacade extends ExecutionEntityImpl {
         this.processDefinitionId = execution.getProcessDefinitionId();
         this.processInstanceId = execution.getProcessInstanceId();
         this.eventName = execution.getEventName();
+    }
+
+    @Override
+    public void setVariable(String variableName, Object value) {
+        variables.put(variableName, value);
+    }
+
+    public Map<String, Object> getTaskVariables() {
+        return variables;
     }
 }
