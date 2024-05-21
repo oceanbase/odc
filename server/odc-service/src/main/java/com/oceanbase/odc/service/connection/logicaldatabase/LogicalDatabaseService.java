@@ -17,6 +17,7 @@ package com.oceanbase.odc.service.connection.logicaldatabase;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
@@ -52,6 +53,7 @@ import com.oceanbase.odc.service.connection.database.model.DatabaseSyncStatus;
 import com.oceanbase.odc.service.connection.database.model.DatabaseType;
 import com.oceanbase.odc.service.connection.logicaldatabase.model.CreateLogicalDatabaseReq;
 import com.oceanbase.odc.service.connection.logicaldatabase.model.DetailLogicalDatabaseResp;
+import com.oceanbase.odc.service.db.schema.model.DBObjectSyncStatus;
 import com.oceanbase.odc.service.iam.ProjectPermissionValidator;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 
@@ -114,6 +116,7 @@ public class LogicalDatabaseService {
         logicalDatabase.setDatabaseId(StringUtils.uuid());
         logicalDatabase.setType(DatabaseType.LOGICAL);
         logicalDatabase.setSyncStatus(DatabaseSyncStatus.INITIALIZED);
+        logicalDatabase.setObjectSyncStatus(DBObjectSyncStatus.INITIALIZED);
         logicalDatabase.setExisted(true);
         logicalDatabase.setOrganizationId(organizationId);
         DatabaseEntity savedLogicalDatabase = databaseRepository.save(logicalDatabase);

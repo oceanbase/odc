@@ -29,12 +29,12 @@ public interface LogicalTablePhysicalTableRepository extends OdcJpaRepository<Lo
 
     default List<LogicalTablePhysicalTableEntity> batchCreate(List<LogicalTablePhysicalTableEntity> entities) {
         String sql = InsertSqlTemplateBuilder.from("connect_logical_table")
-                .field(LogicalTablePhysicalTableEntity_.LOGICAL_TABLE_ID)
-                .field(LogicalTablePhysicalTableEntity_.PHYSICAL_DATABASE_ID)
-                .field(LogicalTablePhysicalTableEntity_.PHYSICAL_DATABASE_NAME)
-                .field(LogicalTablePhysicalTableEntity_.PHYSICAL_TABLE_NAME)
-                .field(LogicalTablePhysicalTableEntity_.CONSISTENT)
-                .field(LogicalTablePhysicalTableEntity_.ORGANIZATION_ID)
+                .field(LogicalTablePhysicalTableEntity_.logicalTableId)
+                .field(LogicalTablePhysicalTableEntity_.physicalDatabaseId)
+                .field(LogicalTablePhysicalTableEntity_.physicalDatabaseName)
+                .field(LogicalTablePhysicalTableEntity_.physicalTableName)
+                .field(LogicalTablePhysicalTableEntity_.consistent)
+                .field(LogicalTablePhysicalTableEntity_.organizationId)
                 .build();
         List<Function<LogicalTablePhysicalTableEntity, Object>> getter = valueGetterBuilder()
                 .add(LogicalTablePhysicalTableEntity::getLogicalTableId)

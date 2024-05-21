@@ -27,11 +27,11 @@ public interface LogicalTableRepository extends OdcJpaRepository<LogicalTableEnt
 
     default List<LogicalTableEntity> batchCreate(List<LogicalTableEntity> entities) {
         String sql = InsertSqlTemplateBuilder.from("connect_logical_table")
-                .field(LogicalTableEntity_.LOGICAL_DATABASE_ID)
-                .field(LogicalTableEntity_.EXPRESSION)
-                .field(LogicalTableEntity_.NAME)
-                .field(LogicalTableEntity_.ORGANIZATION_ID)
-                .field(LogicalTableEntity_.LAST_SYNC_TIME)
+                .field(LogicalTableEntity_.logicalDatabaseId)
+                .field(LogicalTableEntity_.expression)
+                .field(LogicalTableEntity_.name)
+                .field(LogicalTableEntity_.organizationId)
+                .field(LogicalTableEntity_.lastSyncTime)
                 .build();
         List<Function<LogicalTableEntity, Object>> getter = valueGetterBuilder()
                 .add(LogicalTableEntity::getLogicalDatabaseId)

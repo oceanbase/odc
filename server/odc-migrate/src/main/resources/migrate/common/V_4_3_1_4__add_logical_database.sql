@@ -3,6 +3,8 @@ alter table connect_database modify column connection_id bigint(20) DEFAULT NULL
 alter table connect_database modify column connection_id bigint(20) DEFAULT NULL COMMENT 'refernce to connect_connection.id';
 alter table connect_database add column `type` varchar(32)  NOT NULL DEFAULT 'PHYSICAL' COMMENT 'optional value: PHYSICAL, LOGICAL';
 alter table connect_database add column `alias` varchar(256) DEFAULT NULL COMMENT 'alias name for database';
+alter table `connect_database` modify `last_sync_time` datetime default null comment 'last synchronizing time';
+
 
 create table if not exists `connect_logical_db_meta`(
     `id` bigint(20) NOT NULL AUTO_INCREMENT,
@@ -21,10 +23,10 @@ create table if not exists `connect_logical_db_physical_db`(
     `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
     `update_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     `logical_database_id` bigint(20) NOT NULL COMMENT 'reference to connect_database.id whose type is LOGICAL',
-    `pyhisical_database_id` bigint(20) NOT NULL COMMENT 'reference to connect_database.id whose type is PHYSICAL',
+    `physical_database_id` bigint(20) NOT NULL COMMENT 'reference to connect_database.id whose type is PHYSICAL',
     `organization_id` bigint(20) NOT NULL COMMENT 'reference to iam_organization.id',
     PRIMARY KEY (`id`),
-    UNIQUE KEY `uk_connect_logical_db_physical_db_ldi_pdi` (`logical_database_id`, `pyhisical_database_id`)
+    UNIQUE KEY `uk_connect_logical_db_physical_db_ldi_pdi` (`logical_database_id`, `physical_database_id`)
 );
 
 create table if not exists `connect_logical_table`(

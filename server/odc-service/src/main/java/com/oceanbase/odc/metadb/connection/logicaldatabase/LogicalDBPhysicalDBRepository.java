@@ -27,9 +27,9 @@ public interface LogicalDBPhysicalDBRepository extends OdcJpaRepository<LogicalD
 
     default List<LogicalDBPhysicalDBEntity> batchCreate(List<LogicalDBPhysicalDBEntity> entities) {
         String sql = InsertSqlTemplateBuilder.from("connect_logical_db_physical_db")
-                .field(LogicalDBPhysicalDBEntity_.LOGICAL_DATABASE_ID)
-                .field(LogicalDBPhysicalDBEntity_.PHYSICAL_DATABASE_ID)
-                .field(LogicalDBPhysicalDBEntity_.ORGANIZATION_ID)
+                .field(LogicalDBPhysicalDBEntity_.logicalDatabaseId)
+                .field(LogicalDBPhysicalDBEntity_.physicalDatabaseId)
+                .field(LogicalDBPhysicalDBEntity_.organizationId)
                 .build();
         List<Function<LogicalDBPhysicalDBEntity, Object>> getter = valueGetterBuilder()
                 .add(LogicalDBPhysicalDBEntity::getLogicalDatabaseId)

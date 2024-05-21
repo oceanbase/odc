@@ -42,7 +42,6 @@ import com.oceanbase.odc.metadb.connection.logicaldatabase.LogicalTableEntity;
 import com.oceanbase.odc.metadb.connection.logicaldatabase.LogicalTablePhysicalTableEntity;
 import com.oceanbase.odc.metadb.connection.logicaldatabase.LogicalTablePhysicalTableRepository;
 import com.oceanbase.odc.metadb.connection.logicaldatabase.LogicalTableRepository;
-import com.oceanbase.odc.metadb.dbobject.DBObjectRepository;
 import com.oceanbase.odc.service.connection.logicaldatabase.core.model.DataNode;
 import com.oceanbase.odc.service.connection.logicaldatabase.core.parser.BadLogicalTableExpressionException;
 import com.oceanbase.odc.service.connection.logicaldatabase.core.parser.DefaultLogicalTableExpressionParser;
@@ -73,9 +72,6 @@ public class LogicalTableService {
 
     @Autowired
     private LogicalTablePhysicalTableRepository relationRepository;
-
-    @Autowired
-    private DBObjectRepository dbObjectRepository;
 
     @Autowired
     private AuthenticationFacade authenticationFacade;
