@@ -36,6 +36,7 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.validation.annotation.Validated;
 
+import com.google.common.collect.Ordering;
 import com.oceanbase.odc.common.jpa.SpecificationUtil;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.shared.constant.OrganizationType;
@@ -90,6 +91,9 @@ public class DBSchemaIndexService {
     private DBObjectRepository dbObjectRepository;
     @Autowired
     private DBSchemaSyncTaskManager dbSchemaSyncTaskManager;
+
+    private static final int MAX_SEARCH_SIZE = 10000;
+    private static final int MAX_RETURN_SIZE_PER_TYPE = 1000;
 
     public QueryDBObjectResp listDatabaseObjects(@NonNull @Valid QueryDBObjectParams params) {
         QueryDBObjectResp resp = new QueryDBObjectResp();
@@ -153,7 +157,7 @@ public class DBSchemaIndexService {
             resp.setDatabases(databases.stream().filter(e -> e.getName().toLowerCase().contains(key))
                     .collect(Collectors.toList()));
         }
-        Pageable pageable = PageRequest.of(0, 1000, Sort.by(Direction.DESC, DBColumnEntity_.DATABASE_ID));
+        Pageable pageable = PageRequest.of(0, MAX_SEARCH_SIZE, Sort.by(Direction.DESC, DBColumnEntity_.DATABASE_ID));
         if (CollectionUtils.isEmpty(params.getTypes()) || params.getTypes().contains(DBObjectType.COLUMN)) {
             Specification<DBColumnEntity> columnSpec =
                     SpecificationUtil.columnIn(DBColumnEntity_.DATABASE_ID, queryDatabaseIds);
@@ -168,14 +172,11 @@ public class DBSchemaIndexService {
         Specification<DBObjectEntity> objectSpec =
                 SpecificationUtil.columnIn(DBObjectEntity_.DATABASE_ID, queryDatabaseIds);
         objectSpec = objectSpec.and(SpecificationUtil.columnLike(DBObjectEntity_.NAME, params.getSearchKey()));
-        if (CollectionUtils.isEmpty(params.getTypes())) {
-            List<DBObjectEntity> objects = dbObjectRepository.findAll(objectSpec, pageable).getContent();
-            resp.setDbObjects(objectEntitiesToModels(objects, id2Database));
-        } else {
+        if (CollectionUtils.isNotEmpty(params.getTypes())) {
             objectSpec = objectSpec.and(SpecificationUtil.columnIn(DBObjectEntity_.TYPE, params.getTypes()));
-            List<DBObjectEntity> objects = dbObjectRepository.findAll(objectSpec, pageable).getContent();
-            resp.setDbObjects(objectEntitiesToModels(objects, id2Database));
         }
+        List<DBObjectEntity> objects = dbObjectRepository.findAll(objectSpec, pageable).getContent();
+        resp.setDbObjects(objectEntitiesToModels(objects, id2Database));
         return resp;
     }
 
@@ -225,23 +226,35 @@ public class DBSchemaIndexService {
     }
 
     private List<OdcDBObject> objectEntitiesToModels(List<DBObjectEntity> entities, Map<Long, Database> id2Database) {
+        List<OdcDBObject> result = new ArrayList<>();
         if (CollectionUtils.isEmpty(entities)) {
-            return new ArrayList<>();
+            return result;
         }
-        return entities.stream().map(e -> {
-            OdcDBObject object = OdcDBObject.fromEntity(e);
-            if (e.getDatabaseId() != null && id2Database.containsKey(e.getDatabaseId())) {
-                object.setDatabase(id2Database.get(e.getDatabaseId()));
-            }
-            return object;
-        }).collect(Collectors.toList());
+        Ordering<DBObjectEntity> ordering = Ordering.natural().onResultOf(e -> e.getName().length());
+        ordering = ordering.compound(Ordering.natural().onResultOf(DBObjectEntity::getName));
+        Map<DBObjectType, List<DBObjectEntity>> type2Entities =
+                entities.stream().collect(Collectors.groupingBy(DBObjectEntity::getType));
+        for (DBObjectType type : type2Entities.keySet()) {
+            List<DBObjectEntity> sortedEntities = ordering.leastOf(type2Entities.get(type), MAX_RETURN_SIZE_PER_TYPE);
+            result.addAll(sortedEntities.stream().map(e -> {
+                OdcDBObject object = OdcDBObject.fromEntity(e);
+                if (e.getDatabaseId() != null && id2Database.containsKey(e.getDatabaseId())) {
+                    object.setDatabase(id2Database.get(e.getDatabaseId()));
+                }
+                return object;
+            }).collect(Collectors.toList()));
+        }
+        return result;
     }
 
     private List<OdcDBColumn> columnEntitiesToModels(List<DBColumnEntity> entities, Map<Long, OdcDBObject> id2Object) {
         if (CollectionUtils.isEmpty(entities)) {
             return new ArrayList<>();
         }
-        return entities.stream().map(e -> {
+        Ordering<DBColumnEntity> ordering = Ordering.natural().onResultOf(e -> e.getName().length());
+        ordering = ordering.compound(Ordering.natural().onResultOf(DBColumnEntity::getName));
+        List<DBColumnEntity> sortedEntities = ordering.leastOf(entities, MAX_RETURN_SIZE_PER_TYPE);
+        return sortedEntities.stream().map(e -> {
             OdcDBColumn column = OdcDBColumn.fromEntity(e);
             if (e.getObjectId() != null && id2Object.containsKey(e.getObjectId())) {
                 column.setDbObject(id2Object.get(e.getObjectId()));
