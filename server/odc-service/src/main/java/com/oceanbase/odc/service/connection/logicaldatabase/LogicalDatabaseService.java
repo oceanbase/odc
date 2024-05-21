@@ -119,7 +119,7 @@ public class LogicalDatabaseService {
         logicalDatabase.setObjectSyncStatus(DBObjectSyncStatus.INITIALIZED);
         logicalDatabase.setExisted(true);
         logicalDatabase.setOrganizationId(organizationId);
-        DatabaseEntity savedLogicalDatabase = databaseRepository.save(logicalDatabase);
+        DatabaseEntity savedLogicalDatabase = databaseRepository.saveAndFlush(logicalDatabase);
 
         ConnectionEntity baseConnection = connectionRepository.findById(basePhysicalDatabase.getConnectionId())
                 .orElseThrow(() -> new NotFoundException(
@@ -129,7 +129,7 @@ public class LogicalDatabaseService {
         logicalDatabaseMeta.setEnvironmentId(savedLogicalDatabase.getEnvironmentId());
         logicalDatabaseMeta.setDialectType(baseConnection.getDialectType());
         logicalDatabaseMeta.setOrganizationId(organizationId);
-        logicalDatabaseMetaRepository.save(logicalDatabaseMeta);
+        logicalDatabaseMetaRepository.saveAndFlush(logicalDatabaseMeta);
 
         List<LogicalDBPhysicalDBEntity> relations = new ArrayList<>();
         req.getPhysicalDatabaseIds().stream().forEach(physicalDatabaseId -> {

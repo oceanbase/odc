@@ -27,6 +27,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.junit.After;
 import org.junit.Assert;
@@ -42,8 +43,11 @@ import com.oceanbase.odc.metadb.connection.ConnectionEntity;
 import com.oceanbase.odc.metadb.connection.DatabaseEntity;
 import com.oceanbase.odc.metadb.connection.DatabaseRepository;
 import com.oceanbase.odc.metadb.connection.logicaldatabase.LogicalDatabaseMetaRepository;
+import com.oceanbase.odc.service.collaboration.environment.EnvironmentService;
+import com.oceanbase.odc.service.collaboration.environment.model.Environment;
 import com.oceanbase.odc.service.connection.database.DatabaseMapper;
 import com.oceanbase.odc.service.connection.database.model.Database;
+import com.oceanbase.odc.service.connection.database.model.DatabaseType;
 import com.oceanbase.odc.service.connection.logicaldatabase.model.CreateLogicalDatabaseReq;
 import com.oceanbase.odc.service.iam.ProjectPermissionValidator;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
@@ -77,25 +81,35 @@ public class LogicalDatabaseServiceTest extends ServiceTestEnv {
     private ProjectPermissionValidator projectPermissionValidator;
     @MockBean
     private ConnectionConfigRepository connectionRepository;
+    @MockBean
+    private EnvironmentService environmentService;
 
     @Before
     public void setUp() throws Exception {
         when(authenticationFacade.currentOrganizationId()).thenReturn(ORGANIZATION_ID);
         when(connectionRepository.findById(anyLong())).thenReturn(Optional.of(getConnectionEntity()));
-
+        when(environmentService.detailSkipPermissionCheck(anyLong())).thenReturn(TestRandom.nextObject(Environment.class));
         doNothing().when(projectPermissionValidator).checkProjectRole(anyLong(), anyList());
         createDatabaseEntity(4, PROJECT_ID);
+        CreateLogicalDatabaseReq req = new CreateLogicalDatabaseReq();
+        req.setProjectId(PROJECT_ID);
+        req.setAlias(LOGICAL_DATABASE_ALIAS);
+        req.setName(LOGICAL_DATABASE_NAME);
+        Set<Long> databaseIds = new HashSet<>();
+        databaseIds.addAll(Arrays.asList(1L, 2L, 3L, 4L));
+        req.setPhysicalDatabaseIds(databaseIds);
+        logicalDatabaseService.create(req);
     }
 
     @After
-    public void tearDown() {
-        databaseRepository.deleteAll();
+    public void tearDown() throws Exception {
         logicalDatabaseMetaRepository.deleteAll();
+        databaseRepository.deleteAll();
     }
 
 
     @Test
-    public void testCreate() {
+    public void testDetail() {
         CreateLogicalDatabaseReq req = new CreateLogicalDatabaseReq();
         req.setProjectId(PROJECT_ID);
         req.setAlias(LOGICAL_DATABASE_ALIAS);
@@ -104,15 +118,18 @@ public class LogicalDatabaseServiceTest extends ServiceTestEnv {
         databaseIds.addAll(Arrays.asList(1L, 2L, 3L, 4L));
         req.setPhysicalDatabaseIds(databaseIds);
 
-        Assert.assertTrue(logicalDatabaseService.create(req));
+        List<DatabaseEntity> databases = databaseRepository.findAll().stream().filter(database -> database.getType() == DatabaseType.LOGICAL).collect(
+            Collectors.toList());
+        Assert.assertEquals(1, databases.size());
+        Assert.assertNotNull(logicalDatabaseService.detail(databases.get(0).getId()));
     }
-
 
     private List<Database> createDatabaseEntity(int quantity, Long projectId) {
         List<Database> result = new ArrayList<>();
         for (int i = 0; i < quantity; i++) {
             DatabaseEntity entity = TestRandom.nextObject(DatabaseEntity.class);
             entity.setId((long) (i + 1));
+            entity.setType(DatabaseType.PHYSICAL);
             entity.setProjectId(projectId);
             entity.setConnectionId(CONNECTION_ID);
             entity.setEnvironmentId(ENVIRONMENT_ID);
