@@ -409,7 +409,6 @@ function check_duplicated_jars() {
 
         # check if jar_name is already in name_list
         if [[ ! " ${name_list[*]} " =~ " ${jar_name} " ]]; then
-            echo "find new jar, jar_name=${jar_name}"
             name_list+=("$jar_name")
         fi
 
@@ -418,10 +417,8 @@ function check_duplicated_jars() {
 
     for name in "${name_list[@]}"; do
         if [ "${jar_counts[$name]}" -gt 1 ]; then
-            echo "ERROR! duplicated jar detected: $name has ${jar_counts[$name]} versions"
+            echo "ERROR! duplicated jar detected: $check_directory/$name has ${jar_counts[$name]} versions"
             return 1
-        else
-            echo "$name has 1 version"
         fi
     done
     return 0
