@@ -73,7 +73,7 @@ public class LogicalTableExtractTask implements Runnable {
     public void run() {
         List<LogicalDBPhysicalDBEntity> relations =
                 dbRelationRepository.findByLogicalDatabaseId(logicalDatabase.getId());
-        List<Database> physicalDatabases = databaseService.listDatabasesByIds(
+        List<Database> physicalDatabases = databaseService.listDatabasesDetailsByIds(
                 relations.stream().map(LogicalDBPhysicalDBEntity::getPhysicalDatabaseId).collect(Collectors.toList()));
         List<LogicalTable> logicalTables = new LogicalTableFinder(physicalDatabases).find();
         if (CollectionUtils.isEmpty(logicalTables)) {
