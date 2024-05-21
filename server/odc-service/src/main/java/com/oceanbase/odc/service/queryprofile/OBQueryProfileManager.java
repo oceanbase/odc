@@ -254,7 +254,7 @@ public class OBQueryProfileManager {
             SqlPlanMonitor realRecord = planId2Records.get(planLineId);
 
             String host = formatIpPort(record);
-            if (StringUtils.equals(local, host)) {
+            if (!StringUtils.equals(local, host)) {
                 realRecord.getOtherstats().put(REMOTE_IO_READ_BYTES,
                         addStats(realRecord.getOtherstats().get(REMOTE_IO_READ_BYTES),
                                 record.getOtherstats().get(IO_READ_BYTES)));

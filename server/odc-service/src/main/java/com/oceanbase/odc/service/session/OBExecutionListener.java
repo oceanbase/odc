@@ -75,8 +75,11 @@ public class OBExecutionListener implements SqlExecutionListener {
         }
         String traceId = session.getSyncJdbcExecutor(BACKEND_DS_KEY).execute((StatementCallback<String>) stmt -> OBUtils
                 .queryTraceIdFromASH(stmt, sessionIds, session.getConnectType()));
-        if (traceId != null && isSelect(sqlTuple)) {
-            context.setCurrentExecutingSqlTraceId(traceId);
+        if (StringUtils.isEmpty(traceId)) {
+            return;
+        }
+        context.setCurrentExecutingSqlTraceId(traceId);
+        if (isSelect(sqlTuple)) {
             profileManager.submit(session, traceId);
         }
     }
