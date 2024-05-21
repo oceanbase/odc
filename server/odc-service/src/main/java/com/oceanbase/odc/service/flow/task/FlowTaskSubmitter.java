@@ -73,25 +73,28 @@ public class FlowTaskSubmitter implements JavaDelegate {
                 FlowUtil.getBoundaryEventDefinitions(execution.getProcessDefinitionId(),
                         execution.getCurrentActivityId(), ErrorEventDefinition.class);
         threadPoolTaskExecutor.submit(() -> {
-            FlowTaskInstance flowTaskInstance = getFlowTaskInstance(executionFacade);
+            FlowTaskInstance flowTaskInstance = null;
             try {
+                flowTaskInstance = getFlowTaskInstance(executionFacade);
                 getDelegateInstance(flowTaskInstance).execute(executionFacade);
                 int affectRows = serviceTaskRepository.updateStatusById(flowTaskInstance.getFlowInstanceId(),
                         FlowNodeStatus.COMPLETED);
-                log.info("Modify node instance status successfully, instanceId={}, affectRows={}",
-                        FlowNodeStatus.COMPLETED, affectRows);
+                log.info("Modify node instance status successfully, instanceId={}, flowNodeStatus={}, affectRows={}",
+                        flowTaskInstance.getId(), FlowNodeStatus.COMPLETED, affectRows);
                 flowTaskCallBackApprovalService.approval(executionFacade.getProcessInstanceId(),
                         flowTaskInstance.getId(), executionFacade.getTaskVariables());
             } catch (Exception e) {
                 log.warn("Delegate task instance execute occur error: ", e);
                 int affectRows = serviceTaskRepository.updateStatusById(flowTaskInstance.getFlowInstanceId(),
                         FlowNodeStatus.FAILED);
-                log.info("Modify node instance status successfully, instanceId={}, affectRows={}",
-                        FlowNodeStatus.FAILED, affectRows);
+                log.info("Modify node instance status successfully, instanceId={}, flowNodeStatus={}, affectRows={}",
+                        flowTaskInstance.getId(), FlowNodeStatus.FAILED, affectRows);
                 Exception rootCause = (Exception) e.getCause();
                 handleException(executionFacade, flowTaskInstance, rootCause, defs);
             } finally {
-                flowTaskInstance.dealloc();
+                if (flowTaskInstance != null) {
+                    flowTaskInstance.dealloc();
+                }
             }
         });
     }
