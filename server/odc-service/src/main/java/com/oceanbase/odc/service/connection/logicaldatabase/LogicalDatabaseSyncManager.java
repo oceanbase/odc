@@ -69,7 +69,9 @@ public class LogicalDatabaseSyncManager {
     }
 
     public void submitCheckConsistencyTask(@NotNull LogicalTableEntity logicalTable) {
-
+        doExecute(() -> executor
+                .submit(new LogicalTableCheckConsistencyTask(logicalTable, tableRelationRepository, databaseService,
+                        databaseRepository)));
     }
 
     private Future<?> doExecute(Supplier<Future<?>> supplier) {

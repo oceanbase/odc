@@ -21,14 +21,13 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
-import com.oceanbase.odc.common.concurrent.Await;
 import com.oceanbase.odc.core.shared.exception.UnexpectedException;
-import com.oceanbase.odc.metadb.connection.DatabaseEntity;
 import com.oceanbase.odc.metadb.connection.DatabaseRepository;
 import com.oceanbase.odc.metadb.connection.logicaldatabase.LogicalTableEntity;
 import com.oceanbase.odc.metadb.connection.logicaldatabase.LogicalTablePhysicalTableEntity;
@@ -37,10 +36,7 @@ import com.oceanbase.odc.service.connection.database.DatabaseService;
 import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.connection.logicaldatabase.core.LogicalTableFinder;
 import com.oceanbase.odc.service.connection.logicaldatabase.core.model.DataNode;
-import com.oceanbase.odc.service.connection.model.ConnectionConfig;
-
-import lombok.Builder;
-import lombok.Data;
+import com.oceanbase.tools.dbbrowser.model.DBTable;
 
 /**
  * @Author: Lebie
@@ -54,7 +50,8 @@ public class LogicalTableCheckConsistencyTask implements Runnable {
     private final DatabaseRepository databaseRepository;
 
     public LogicalTableCheckConsistencyTask(LogicalTableEntity table,
-            LogicalTablePhysicalTableRepository relationRepository, DatabaseService databaseService, DatabaseRepository databaseRepository) {
+            LogicalTablePhysicalTableRepository relationRepository, DatabaseService databaseService,
+            DatabaseRepository databaseRepository) {
         this.table = table;
         this.relationRepository = relationRepository;
         this.databaseService = databaseService;
@@ -66,15 +63,45 @@ public class LogicalTableCheckConsistencyTask implements Runnable {
         List<LogicalTablePhysicalTableEntity> relations =
                 relationRepository.findByLogicalTableIdIn(Collections.singleton(table.getId()));
 
-        Set<Long> databaseIds = relations.stream().map(LogicalTablePhysicalTableEntity::getPhysicalDatabaseId).collect(Collectors.toSet());
-        List<Database> databases = databaseService.listDatabasesDetailsByIds(databaseIds);
+        Set<Long> databaseIds = relations.stream().map(LogicalTablePhysicalTableEntity::getPhysicalDatabaseId)
+                .collect(Collectors.toSet());
+        Map<Long, Database> id2Databases = databaseService.listDatabasesDetailsByIds(databaseIds).stream()
+                .collect(Collectors.toMap(Database::getId, database -> database));
 
-        LogicalTableFinder finder = new LogicalTableFinder(databases);
-        List<DataNode> dataNodes = finder.transferToDataNodes();
+        Map<String, List<LogicalTablePhysicalTableEntity>> signature2Tables = new HashMap<>();
+        relations.stream().collect(Collectors.groupingBy(LogicalTablePhysicalTableEntity::getPhysicalDatabaseId))
+                .forEach((databaseId, physicalTables) -> {
+                    Database database = id2Databases.get(databaseId);
+                    if (Objects.isNull(database)) {
+                        throw new UnexpectedException("Database not found, databaseId=" + databaseId);
+                    }
+                    Map<String, DBTable> tableName2Tables =
+                            LogicalTableFinder.getTableName2Tables(database.getDataSource(), database.getName(),
+                                    physicalTables.stream().map(LogicalTablePhysicalTableEntity::getPhysicalTableName)
+                                            .collect(Collectors.toList()));
+                    physicalTables.forEach(physicalTable -> {
+                        DBTable table = tableName2Tables.get(physicalTable.getPhysicalTableName());
+                        if (Objects.isNull(table)) {
+                            return;
+                        }
+                        signature2Tables
+                                .computeIfAbsent(DataNode.getStructureSignature(table), key -> new ArrayList<>())
+                                .add(physicalTable);
+                    });
+                });
 
+        Optional<Entry<String, List<LogicalTablePhysicalTableEntity>>> largestEntryOptional =
+                signature2Tables.entrySet().stream()
+                        .max(Comparator.comparingInt(entry -> entry.getValue().size()));
 
+        if (largestEntryOptional.isPresent()) {
+            Entry<String, List<LogicalTablePhysicalTableEntity>> largestEntry = largestEntryOptional.get();
+            signature2Tables.values().stream()
+                    .flatMap(List::stream)
+                    .forEach(table -> table.setConsistent(false));
 
-
-
+            largestEntry.getValue().forEach(table -> table.setConsistent(true));
+            relationRepository.saveAll(relations);
+        }
     }
 }

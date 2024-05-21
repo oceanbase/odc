@@ -35,6 +35,7 @@ import com.oceanbase.tools.dbbrowser.model.DBTableIndex;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 
 /**
@@ -45,6 +46,7 @@ import lombok.NoArgsConstructor;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
+@EqualsAndHashCode(of = {"databaseId", "schemaName", "tableName"})
 public class DataNode {
     private static final String DELIMITER = ".";
 
@@ -74,7 +76,7 @@ public class DataNode {
 
 
     @JsonIgnore
-    public String getStructureSignature(DBTable table) {
+    public static String getStructureSignature(DBTable table) {
         if (Objects.isNull(table)) {
             return "[ODC] NULL OBJECT";
         }
@@ -86,7 +88,7 @@ public class DataNode {
                 .sha1(String.join("|||", columnSignature, indexSignature, constraintSignature, tableOptionSignature));
     }
 
-    private String getTableOptionSignature(DBTableOptions tableOptions) {
+    private static String getTableOptionSignature(DBTableOptions tableOptions) {
         if (tableOptions == null) {
             return "[ODC] NULL OBJECT";
         }
@@ -94,7 +96,7 @@ public class DataNode {
                 nullSafeGet(tableOptions.getCollationName()));
     }
 
-    private String getColumnsSignature(List<DBTableColumn> columns) {
+    private static String getColumnsSignature(List<DBTableColumn> columns) {
         if (CollectionUtils.isEmpty(columns)) {
             return "[ODC] NULL LIST";
         }
@@ -115,7 +117,7 @@ public class DataNode {
                 .collect(Collectors.joining("||"));
     }
 
-    private String getIndexesSignature(List<DBTableIndex> indexes) {
+    private static String getIndexesSignature(List<DBTableIndex> indexes) {
         if (CollectionUtils.isEmpty(indexes)) {
             return "[ODC] NULL LIST";
         }
@@ -135,7 +137,7 @@ public class DataNode {
                 .collect(Collectors.joining("||"));
     }
 
-    private String getConstraintsSignature(List<DBTableConstraint> constraints) {
+    private static String getConstraintsSignature(List<DBTableConstraint> constraints) {
         if (CollectionUtils.isEmpty(constraints)) {
             return "[ODC] NULL LIST";
         }
@@ -153,12 +155,12 @@ public class DataNode {
                 .collect(Collectors.joining("||"));
     }
 
-    private String nullSafeGet(Object obj) {
+    private static String nullSafeGet(Object obj) {
         if (obj instanceof Collection) {
             if (CollectionUtils.isEmpty((Collection) obj)) {
                 return "[ODC] NULL LIST";
             }
-            return (String) ((Collection) obj).stream().map(this::nullSafeGet).collect(Collectors.joining(","));
+            return (String) ((Collection) obj).stream().map(DataNode::nullSafeGet).collect(Collectors.joining(","));
         }
         return obj == null ? "[ODC] NULL OBJECT" : obj.toString();
     }

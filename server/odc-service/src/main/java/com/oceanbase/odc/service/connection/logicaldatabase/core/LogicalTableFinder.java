@@ -27,10 +27,9 @@ import java.util.stream.Collectors;
 
 import javax.validation.constraints.NotEmpty;
 
-import com.mysql.cj.jdbc.exceptions.ConnectionFeatureNotAvailableException;
+import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionFactory;
-import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.core.shared.exception.UnexpectedException;
 import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.connection.logicaldatabase.core.model.DataNode;
@@ -50,6 +49,7 @@ import lombok.extern.slf4j.Slf4j;
  * @Description: []
  */
 @Slf4j
+@SkipAuthorize("internal usage")
 public class LogicalTableFinder {
     private List<Database> databases;
     private Map<Long, ConnectionConfig> id2DataSource;
@@ -61,7 +61,8 @@ public class LogicalTableFinder {
         this.dataSourceId2Databases =
                 databases.stream().collect(Collectors.groupingBy(database -> database.getDataSource().getId()));
         databases.stream()
-                .forEach(database -> this.id2DataSource.put(database.getDataSource().getId(), database.getDataSource()));
+                .forEach(
+                        database -> this.id2DataSource.put(database.getDataSource().getId(), database.getDataSource()));
     }
 
     public List<DataNode> transferToDataNodes() {
@@ -135,7 +136,7 @@ public class LogicalTableFinder {
         return finalLogicalTables;
     }
 
-    public static Map<String, List<String>> getSchemaName2TableNames(ConnectionConfig dataSource,
+    private static Map<String, List<String>> getSchemaName2TableNames(ConnectionConfig dataSource,
             List<Database> groupedDatabases) {
         ConnectionSessionFactory connectionSessionFactory = new DefaultConnectSessionFactory(dataSource);
         ConnectionSession connectionSession = connectionSessionFactory.generateSession();
@@ -159,7 +160,7 @@ public class LogicalTableFinder {
         }
     }
 
-    private static Map<String, DBTable> getTableName2Tables(ConnectionConfig dataSource, String schemaName,
+    public static Map<String, DBTable> getTableName2Tables(ConnectionConfig dataSource, String schemaName,
             List<String> tableNames) {
         ConnectionSessionFactory connectionSessionFactory = new DefaultConnectSessionFactory(dataSource);
         ConnectionSession connectionSession = connectionSessionFactory.generateSession();
