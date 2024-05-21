@@ -35,7 +35,6 @@ public class DesktopAuditEventHandler implements AuditEventHandler {
 
     private final List<AuditEventAction> supportedAuditEventActionInClientMode =
             Arrays.asList(AuditEventAction.STOP_ASYNC_TASK,
-                    AuditEventAction.STOP_MULTIPLE_ASYNC_TASK,
                     AuditEventAction.STOP_MOCKDATA_TASK,
                     AuditEventAction.STOP_IMPORT_TASK,
                     AuditEventAction.STOP_EXPORT_TASK,
@@ -44,7 +43,6 @@ public class DesktopAuditEventHandler implements AuditEventHandler {
                     AuditEventAction.STOP_STRUCTURE_COMPARISON_TASK,
                     AuditEventAction.STOP_ALTER_SCHEDULE_TASK,
                     AuditEventAction.CREATE_ASYNC_TASK,
-                    AuditEventAction.CREATE_MULTIPLE_ASYNC_TASK,
                     AuditEventAction.CREATE_MOCKDATA_TASK,
                     AuditEventAction.CREATE_IMPORT_TASK,
                     AuditEventAction.CREATE_EXPORT_TASK,
