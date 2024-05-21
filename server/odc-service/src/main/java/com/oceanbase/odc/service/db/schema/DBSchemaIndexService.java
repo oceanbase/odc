@@ -30,8 +30,6 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
-import org.springframework.data.domain.Sort.Direction;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.validation.annotation.Validated;
@@ -157,7 +155,7 @@ public class DBSchemaIndexService {
             resp.setDatabases(databases.stream().filter(e -> e.getName().toLowerCase().contains(key))
                     .collect(Collectors.toList()));
         }
-        Pageable pageable = PageRequest.of(0, MAX_SEARCH_SIZE, Sort.by(Direction.DESC, DBColumnEntity_.DATABASE_ID));
+        Pageable pageable = PageRequest.of(0, MAX_SEARCH_SIZE);
         if (CollectionUtils.isEmpty(params.getTypes()) || params.getTypes().contains(DBObjectType.COLUMN)) {
             Specification<DBColumnEntity> columnSpec =
                     SpecificationUtil.columnIn(DBColumnEntity_.DATABASE_ID, queryDatabaseIds);
