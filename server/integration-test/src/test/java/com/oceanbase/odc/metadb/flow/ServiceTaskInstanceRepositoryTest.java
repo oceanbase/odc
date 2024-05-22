@@ -17,9 +17,11 @@ package com.oceanbase.odc.metadb.flow;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Random;
+import java.util.Set;
 import java.util.UUID;
 
 import org.junit.After;
@@ -63,6 +65,16 @@ public class ServiceTaskInstanceRepositoryTest extends ServiceTestEnv {
     @After
     public void clearAll() {
         repository.deleteAll();
+    }
+
+    @Test
+    public void findByTargetTaskIdIn_entityExists_returnNotEmpty() {
+        ServiceTaskInstanceEntity entity = createEntity();
+        entity = this.repository.save(entity);
+        Set<Long> ids = new HashSet<>();
+        ids.add(entity.getTargetTaskId());
+        List<ServiceTaskInstanceEntity> actual = this.repository.findByTargetTaskIdIn(ids);
+        Assert.assertEquals(Collections.singletonList(entity), actual);
     }
 
     @Test

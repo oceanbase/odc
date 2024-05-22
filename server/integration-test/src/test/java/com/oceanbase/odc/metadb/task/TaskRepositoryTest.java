@@ -15,6 +15,8 @@
  */
 package com.oceanbase.odc.metadb.task;
 
+import java.util.Date;
+import java.util.List;
 import java.util.Optional;
 
 import org.junit.Assert;
@@ -44,6 +46,32 @@ public class TaskRepositoryTest extends ServiceTestEnv {
         this.taskRepository.updateLastHeartbeatTimeById(taskEntity.getId());
         Optional<TaskEntity> optional = this.taskRepository.findById(taskEntity.getId());
         Assert.assertNotNull(optional.get().getLastHeartbeatTime());
+    }
+
+    @Test
+    public void findAllByLastHeartbeatTimeBefore_findBeforeNow_returnNotNull() {
+        TaskEntity taskEntity = TestRandom.nextObject(TaskEntity.class);
+        taskEntity.setId(null);
+        taskEntity.setLastHeartbeatTime(null);
+        taskEntity = this.taskRepository.save(taskEntity);
+        this.taskRepository.updateLastHeartbeatTimeById(taskEntity.getId());
+        Optional<TaskEntity> optional = this.taskRepository.findById(taskEntity.getId());
+        Date heartbeatTime = new Date(optional.get().getLastHeartbeatTime().getTime() + 1);
+        List<TaskEntity> actual = this.taskRepository.findAllByLastHeartbeatTimeBefore(heartbeatTime);
+        Assert.assertFalse(actual.isEmpty());
+    }
+
+    @Test
+    public void findAllByLastHeartbeatTimeBefore_findBeforeLastHeartbeatTime_returnEmpty() {
+        TaskEntity taskEntity = TestRandom.nextObject(TaskEntity.class);
+        taskEntity.setId(null);
+        taskEntity.setLastHeartbeatTime(null);
+        taskEntity = this.taskRepository.save(taskEntity);
+        this.taskRepository.updateLastHeartbeatTimeById(taskEntity.getId());
+        Optional<TaskEntity> optional = this.taskRepository.findById(taskEntity.getId());
+        List<TaskEntity> actual = this.taskRepository
+                .findAllByLastHeartbeatTimeBefore(optional.get().getLastHeartbeatTime());
+        Assert.assertTrue(actual.isEmpty());
     }
 
 }
