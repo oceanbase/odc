@@ -150,14 +150,22 @@ public class EventBuilder {
 
     public Event ofApprovedTask(TaskEntity task, Long approver) {
         Event event = ofTask(task, TaskEvent.APPROVED);
-        event.getLabels().put(APPROVER_ID, approver + "");
+        if (approver == null) {
+            event.getLabels().putIfNonNull(APPROVER_NAME, AUTO_APPROVAL_KEY);
+        } else {
+            event.getLabels().put(APPROVER_ID, approver + "");
+        }
         resolveLabels(event.getLabels(), task);
         return event;
     }
 
     public Event ofRejectedTask(TaskEntity task, Long approver) {
         Event event = ofTask(task, TaskEvent.APPROVAL_REJECTION);
-        event.getLabels().put(APPROVER_ID, approver + "");
+        if (approver == null) {
+            event.getLabels().putIfNonNull(APPROVER_NAME, AUTO_APPROVAL_KEY);
+        } else {
+            event.getLabels().put(APPROVER_ID, approver + "");
+        }
         resolveLabels(event.getLabels(), task);
         return event;
     }
