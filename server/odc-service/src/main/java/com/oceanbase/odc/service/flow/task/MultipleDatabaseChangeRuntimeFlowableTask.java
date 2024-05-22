@@ -183,7 +183,7 @@ public class MultipleDatabaseChangeRuntimeFlowableTask extends BaseODCFlowTaskDe
             }
             return null;
         } catch (Exception e) {
-            log.warn("multiple database task failed, taskId={}, batchId={}", taskId,
+            log.warn("Multiple database task failed, taskId={}, batchId={}", taskId,
                     this.batchId == null ? null : this.batchId + 1, e);
             this.isFailure = true;
             this.isSuccessful = false;
@@ -197,7 +197,7 @@ public class MultipleDatabaseChangeRuntimeFlowableTask extends BaseODCFlowTaskDe
     protected void onFailure(Long taskId, TaskService taskService) {
         try {
             MultipleDatabaseChangeTraceContextHolder.trace(taskId);
-            log.warn("multiple database task failed, taskId={}, batchId={}", taskId,
+            log.warn("Multiple database task failed, taskId={}, batchId={}", taskId,
                     this.batchId == null ? null : this.batchId + 1);
             updateFlowInstanceStatus(FlowStatus.EXECUTION_FAILED);
             taskService.fail(taskId, 100, generateResult());
@@ -211,7 +211,7 @@ public class MultipleDatabaseChangeRuntimeFlowableTask extends BaseODCFlowTaskDe
     protected void onSuccessful(Long taskId, TaskService taskService) {
         try {
             MultipleDatabaseChangeTraceContextHolder.trace(taskId);
-            log.info("multiple database task succeed, taskId={}, batchId={}", taskId, this.batchId + 1);
+            log.info("Multiple database task succeed, taskId={}, batchId={}", taskId, this.batchId + 1);
             if (this.batchId == batchSum - 1) {
                 List<FlowInstanceEntity> list = flowInstanceService
                         .getFlowInstanceByParentId(getFlowInstanceId());
@@ -232,7 +232,7 @@ public class MultipleDatabaseChangeRuntimeFlowableTask extends BaseODCFlowTaskDe
                         taskInstanceByActivityId.get().getId(), FlowNodeStatus.FAILED);
             }
         } catch (Exception e) {
-            log.warn("multiple database task failed, taskId={}, batchId={}", taskId,
+            log.warn("Multiple database task failed, taskId={}, batchId={}", taskId,
                     this.batchId == null ? null : this.batchId + 1, e);
         } finally {
             MultipleDatabaseChangeTraceContextHolder.clear();
@@ -244,7 +244,7 @@ public class MultipleDatabaseChangeRuntimeFlowableTask extends BaseODCFlowTaskDe
         try {
             MultipleDatabaseChangeTraceContextHolder.trace(taskId);
             taskService.fail(taskId, 100, generateResult());
-            log.warn("multiple database task timeout, taskId={}, batchId={}", taskId,
+            log.warn("Multiple database task timeout, taskId={}, batchId={}", taskId,
                     this.batchId == null ? null : this.batchId + 1);
         } finally {
             MultipleDatabaseChangeTraceContextHolder.clear();
