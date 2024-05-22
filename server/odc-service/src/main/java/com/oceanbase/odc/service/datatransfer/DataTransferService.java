@@ -49,6 +49,7 @@ import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.task.TaskRejectedException;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -214,11 +215,14 @@ public class DataTransferService {
             Future<DataTransferTaskResult> future = executor.submit(task);
 
             return new DataTransferTaskContext(future, task);
-
+        } catch (TaskRejectedException e) {
+            LOGGER.warn("Exceeded the maximum concurrent task limit, please try again later.", e);
+            throw e;
         } catch (Exception e) {
             LOGGER.warn("Failed to init data transfer task.", e);
-            TraceContextHolder.clear();
             throw e;
+        } finally {
+            TraceContextHolder.clear();
         }
     }
 
