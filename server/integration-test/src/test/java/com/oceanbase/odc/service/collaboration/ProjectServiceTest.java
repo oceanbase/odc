@@ -160,6 +160,13 @@ public class ProjectServiceTest extends ServiceTestEnv {
         Assert.assertEquals("another_name", updated.getName());
     }
 
+    @Test(expected = BadRequestException.class)
+    public void testUpdateProject_DuplicatedName_Fail() {
+        Mockito.when(resourceRoleService.saveAll(Mockito.any())).thenReturn(listUserResourceRole(1L));
+        Project saved = projectService.create(getProject());
+        projectService.update(saved.getId(), saved);
+    }
+
     @Test
     public void testArchiveProject_Archived() throws InterruptedException {
         Project saved = projectService.create(getProject());
