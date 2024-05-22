@@ -211,8 +211,8 @@ public class MultipleDatabaseChangeRuntimeFlowableTask extends BaseODCFlowTaskDe
             taskService.fail(taskId, 100, generateResult());
         } finally {
             MultipleDatabaseChangeTraceContextHolder.clear();
+            super.onFailure(taskId, taskService);
         }
-        super.onFailure(taskId, taskService);
     }
 
     @Override
