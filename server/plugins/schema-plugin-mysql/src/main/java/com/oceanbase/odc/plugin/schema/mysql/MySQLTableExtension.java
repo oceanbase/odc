@@ -22,11 +22,7 @@ import org.pf4j.Extension;
 import com.oceanbase.odc.plugin.schema.mysql.utils.DBAccessorUtil;
 import com.oceanbase.odc.plugin.schema.obmysql.OBMySQLTableExtension;
 import com.oceanbase.tools.dbbrowser.editor.DBTableEditor;
-import com.oceanbase.tools.dbbrowser.editor.mysql.MySQLColumnEditor;
-import com.oceanbase.tools.dbbrowser.editor.mysql.MySQLConstraintEditor;
-import com.oceanbase.tools.dbbrowser.editor.mysql.MySQLDBTablePartitionEditor;
-import com.oceanbase.tools.dbbrowser.editor.mysql.MySQLNoLessThan5700IndexEditor;
-import com.oceanbase.tools.dbbrowser.editor.mysql.MySQLTableEditor;
+import com.oceanbase.tools.dbbrowser.editor.generator.DBTableEditorGenerator;
 import com.oceanbase.tools.dbbrowser.model.DBTable;
 import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
 import com.oceanbase.tools.dbbrowser.stats.DBStatsAccessor;
@@ -59,9 +55,7 @@ public class MySQLTableExtension extends OBMySQLTableExtension {
 
     @Override
     protected DBTableEditor getTableEditor(@NonNull Connection connection) {
-        return new MySQLTableEditor(new MySQLNoLessThan5700IndexEditor(), new MySQLColumnEditor(),
-                new MySQLConstraintEditor(),
-                new MySQLDBTablePartitionEditor());
+        return new DBTableEditorGenerator().createForMySQL(DBAccessorUtil.getDbVersion(connection));
     }
 
     @Override

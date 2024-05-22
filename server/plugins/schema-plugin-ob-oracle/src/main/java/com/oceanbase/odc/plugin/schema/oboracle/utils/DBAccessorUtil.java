@@ -20,9 +20,9 @@ import java.sql.Connection;
 import com.oceanbase.odc.common.util.JdbcOperationsUtil;
 import com.oceanbase.odc.plugin.connect.oboracle.OBOracleInformationExtension;
 import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
-import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessorFactory;
+import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessorGenerator;
 import com.oceanbase.tools.dbbrowser.stats.DBStatsAccessor;
-import com.oceanbase.tools.dbbrowser.stats.DBStatsAccessorFactory;
+import com.oceanbase.tools.dbbrowser.stats.DBStatsAccessorGenerator;
 
 /**
  * @author jingtian
@@ -35,12 +35,12 @@ public class DBAccessorUtil {
     }
 
     public static DBSchemaAccessor getSchemaAccessor(Connection connection) {
-        return DBSchemaAccessorFactory.createForOBOracle(JdbcOperationsUtil.getJdbcOperations(connection),
+        return DBSchemaAccessorGenerator.createForOBOracle(JdbcOperationsUtil.getJdbcOperations(connection),
                 getDbVersion(connection));
     }
 
     public static DBStatsAccessor getStatsAccessor(Connection connection) {
-        return DBStatsAccessorFactory.createForOBOracle(JdbcOperationsUtil.getJdbcOperations(connection),
+        return DBStatsAccessorGenerator.createForOBOracle(JdbcOperationsUtil.getJdbcOperations(connection),
                 getDbVersion(connection));
     }
 

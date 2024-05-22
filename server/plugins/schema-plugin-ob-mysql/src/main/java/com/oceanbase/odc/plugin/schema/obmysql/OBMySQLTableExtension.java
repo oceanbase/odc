@@ -23,24 +23,13 @@ import org.pf4j.Extension;
 
 import com.oceanbase.odc.common.unit.BinarySizeUnit;
 import com.oceanbase.odc.common.util.JdbcOperationsUtil;
-import com.oceanbase.odc.common.util.VersionUtils;
 import com.oceanbase.odc.plugin.schema.api.TableExtensionPoint;
 import com.oceanbase.odc.plugin.schema.obmysql.parser.OBMySQLGetDBTableByParser;
 import com.oceanbase.odc.plugin.schema.obmysql.utils.DBAccessorUtil;
 import com.oceanbase.tools.dbbrowser.editor.DBObjectOperator;
-import com.oceanbase.tools.dbbrowser.editor.DBTableConstraintEditor;
 import com.oceanbase.tools.dbbrowser.editor.DBTableEditor;
-import com.oceanbase.tools.dbbrowser.editor.DBTablePartitionEditor;
-import com.oceanbase.tools.dbbrowser.editor.mysql.MySQLColumnEditor;
-import com.oceanbase.tools.dbbrowser.editor.mysql.MySQLConstraintEditor;
+import com.oceanbase.tools.dbbrowser.editor.generator.DBTableEditorGenerator;
 import com.oceanbase.tools.dbbrowser.editor.mysql.MySQLObjectOperator;
-import com.oceanbase.tools.dbbrowser.editor.mysql.OBMySQLDBTablePartitionEditor;
-import com.oceanbase.tools.dbbrowser.editor.mysql.OBMySQLIndexEditor;
-import com.oceanbase.tools.dbbrowser.editor.mysql.OBMySQLLessThan2277PartitionEditor;
-import com.oceanbase.tools.dbbrowser.editor.mysql.OBMySQLLessThan400ConstraintEditor;
-import com.oceanbase.tools.dbbrowser.editor.mysql.OBMySQLLessThan400DBTablePartitionEditor;
-import com.oceanbase.tools.dbbrowser.editor.mysql.OBMySQLLessThan400TableEditor;
-import com.oceanbase.tools.dbbrowser.editor.mysql.OBMySQLTableEditor;
 import com.oceanbase.tools.dbbrowser.model.DBObjectIdentity;
 import com.oceanbase.tools.dbbrowser.model.DBObjectType;
 import com.oceanbase.tools.dbbrowser.model.DBTable;
@@ -127,14 +116,7 @@ public class OBMySQLTableExtension implements TableExtensionPoint {
 
     protected DBTableEditor getTableEditor(Connection connection) {
         String dbVersion = DBAccessorUtil.getDbVersion(connection);
-        if (VersionUtils.isLessThan(dbVersion, "4.0.0")) {
-            return new OBMySQLLessThan400TableEditor(new OBMySQLIndexEditor(), new MySQLColumnEditor(),
-                    getDBTableConstraintEditor(connection, dbVersion),
-                    getDBTablePartitionEditor(connection, dbVersion));
-        }
-        return new OBMySQLTableEditor(new OBMySQLIndexEditor(), new MySQLColumnEditor(),
-                getDBTableConstraintEditor(connection, dbVersion),
-                getDBTablePartitionEditor(connection, dbVersion));
+        return new DBTableEditorGenerator().createForOBMySQL(dbVersion);
     }
 
     protected DBSchemaAccessor getSchemaAccessor(Connection connection) {
@@ -147,23 +129,6 @@ public class OBMySQLTableExtension implements TableExtensionPoint {
 
     private DBObjectOperator getTableOperator(Connection connection) {
         return new MySQLObjectOperator(JdbcOperationsUtil.getJdbcOperations(connection));
-    }
-
-    protected DBTablePartitionEditor getDBTablePartitionEditor(Connection connection, String dbVersion) {
-        if (VersionUtils.isLessThan(dbVersion, "2.2.77")) {
-            return new OBMySQLLessThan2277PartitionEditor();
-        } else if (VersionUtils.isLessThan(dbVersion, "4.0.0")) {
-            return new OBMySQLLessThan400DBTablePartitionEditor();
-        } else {
-            return new OBMySQLDBTablePartitionEditor();
-        }
-    }
-
-    protected DBTableConstraintEditor getDBTableConstraintEditor(Connection connection, String dbVersion) {
-        if (VersionUtils.isLessThan(dbVersion, "4.0.0")) {
-            return new OBMySQLLessThan400ConstraintEditor();
-        }
-        return new MySQLConstraintEditor();
     }
 
 }

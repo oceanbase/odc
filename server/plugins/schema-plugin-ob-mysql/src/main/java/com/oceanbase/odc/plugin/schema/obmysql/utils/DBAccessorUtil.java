@@ -20,9 +20,9 @@ import java.sql.Connection;
 import com.oceanbase.odc.common.util.JdbcOperationsUtil;
 import com.oceanbase.odc.plugin.connect.obmysql.OBMySQLInformationExtension;
 import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
-import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessorFactory;
+import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessorGenerator;
 import com.oceanbase.tools.dbbrowser.stats.DBStatsAccessor;
-import com.oceanbase.tools.dbbrowser.stats.DBStatsAccessorFactory;
+import com.oceanbase.tools.dbbrowser.stats.DBStatsAccessorGenerator;
 
 /**
  * @author jingtian
@@ -35,17 +35,17 @@ public class DBAccessorUtil {
     }
 
     public static DBSchemaAccessor getSchemaAccessor(Connection connection) {
-        return DBSchemaAccessorFactory.createForOBMySQL(JdbcOperationsUtil.getJdbcOperations(connection), null,
+        return DBSchemaAccessorGenerator.createForOBMySQL(JdbcOperationsUtil.getJdbcOperations(connection), null,
                 getDbVersion(connection), null);
     }
 
     public static DBSchemaAccessor getSchemaAccessor(Connection connection, String tenantName) {
-        return DBSchemaAccessorFactory.createForOBMySQL(JdbcOperationsUtil.getJdbcOperations(connection), null,
+        return DBSchemaAccessorGenerator.createForOBMySQL(JdbcOperationsUtil.getJdbcOperations(connection), null,
                 getDbVersion(connection), tenantName);
     }
 
     public static DBStatsAccessor getStatsAccessor(Connection connection) {
-        return DBStatsAccessorFactory.createForOBMySQL(JdbcOperationsUtil.getJdbcOperations(connection),
+        return DBStatsAccessorGenerator.createForOBMySQL(JdbcOperationsUtil.getJdbcOperations(connection),
                 getDbVersion(connection));
     }
 }

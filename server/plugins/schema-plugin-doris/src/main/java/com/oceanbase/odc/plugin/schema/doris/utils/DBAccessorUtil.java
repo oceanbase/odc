@@ -20,9 +20,9 @@ import java.sql.Connection;
 import com.oceanbase.odc.common.util.JdbcOperationsUtil;
 import com.oceanbase.odc.plugin.connect.doris.DorisInformationExtension;
 import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
-import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessorFactory;
+import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessorGenerator;
 import com.oceanbase.tools.dbbrowser.stats.DBStatsAccessor;
-import com.oceanbase.tools.dbbrowser.stats.DBStatsAccessorFactory;
+import com.oceanbase.tools.dbbrowser.stats.DBStatsAccessorGenerator;
 
 /**
  * @author gaoda.xy
@@ -36,12 +36,12 @@ public class DBAccessorUtil {
     }
 
     public static DBSchemaAccessor getSchemaAccessor(Connection connection) {
-        return DBSchemaAccessorFactory.createForDoris(JdbcOperationsUtil.getJdbcOperations(connection),
+        return DBSchemaAccessorGenerator.createForDoris(JdbcOperationsUtil.getJdbcOperations(connection),
                 getDbVersion(connection));
     }
 
     public static DBStatsAccessor getStatsAccessor(Connection connection) {
-        return DBStatsAccessorFactory.createForDoris(JdbcOperationsUtil.getJdbcOperations(connection),
+        return DBStatsAccessorGenerator.createForDoris(JdbcOperationsUtil.getJdbcOperations(connection),
                 getDbVersion(connection));
     }
 

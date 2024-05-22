@@ -35,7 +35,7 @@ import lombok.NonNull;
  * @date 2024/5/22
  * @since ODC_release_4.3.0
  */
-public class DBStatsAccessorFactory {
+public class DBStatsAccessorGenerator {
 
     public static DBStatsAccessor createForOBOracle(@NonNull JdbcOperations jdbcOperations, @NonNull String dbVersion) {
         if (VersionUtils.isGreaterThanOrEqualsTo(dbVersion, "4.0.0")) {
