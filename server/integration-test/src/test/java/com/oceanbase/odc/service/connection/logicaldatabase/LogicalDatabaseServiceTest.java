@@ -15,6 +15,7 @@
  */
 package com.oceanbase.odc.service.connection.logicaldatabase;
 
+import static org.mockito.ArgumentMatchers.anyCollection;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.doNothing;
@@ -51,6 +52,7 @@ import com.oceanbase.odc.service.connection.database.model.DatabaseType;
 import com.oceanbase.odc.service.connection.logicaldatabase.model.CreateLogicalDatabaseReq;
 import com.oceanbase.odc.service.iam.ProjectPermissionValidator;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
+import com.oceanbase.odc.service.permission.DBResourcePermissionHelper;
 import com.oceanbase.odc.test.tool.TestRandom;
 
 /**
@@ -83,13 +85,17 @@ public class LogicalDatabaseServiceTest extends ServiceTestEnv {
     private ConnectionConfigRepository connectionRepository;
     @MockBean
     private EnvironmentService environmentService;
+    @MockBean
+    private DBResourcePermissionHelper permissionHelper;
 
     @Before
     public void setUp() throws Exception {
         when(authenticationFacade.currentOrganizationId()).thenReturn(ORGANIZATION_ID);
         when(connectionRepository.findById(anyLong())).thenReturn(Optional.of(getConnectionEntity()));
-        when(environmentService.detailSkipPermissionCheck(anyLong())).thenReturn(TestRandom.nextObject(Environment.class));
+        when(environmentService.detailSkipPermissionCheck(anyLong()))
+                .thenReturn(TestRandom.nextObject(Environment.class));
         doNothing().when(projectPermissionValidator).checkProjectRole(anyLong(), anyList());
+        doNothing().when(permissionHelper).checkDBPermissions(anyCollection(), anyCollection());
         createDatabaseEntity(4, PROJECT_ID);
         CreateLogicalDatabaseReq req = new CreateLogicalDatabaseReq();
         req.setProjectId(PROJECT_ID);
@@ -118,8 +124,9 @@ public class LogicalDatabaseServiceTest extends ServiceTestEnv {
         databaseIds.addAll(Arrays.asList(1L, 2L, 3L, 4L));
         req.setPhysicalDatabaseIds(databaseIds);
 
-        List<DatabaseEntity> databases = databaseRepository.findAll().stream().filter(database -> database.getType() == DatabaseType.LOGICAL).collect(
-            Collectors.toList());
+        List<DatabaseEntity> databases = databaseRepository.findAll().stream()
+                .filter(database -> database.getType() == DatabaseType.LOGICAL).collect(
+                        Collectors.toList());
         Assert.assertEquals(1, databases.size());
         Assert.assertNotNull(logicalDatabaseService.detail(databases.get(0).getId()));
     }

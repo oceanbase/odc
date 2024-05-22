@@ -42,6 +42,7 @@ import com.oceanbase.odc.service.common.response.PageAndStats;
 import com.oceanbase.odc.service.connection.database.DatabaseService;
 import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.connection.database.model.DatabaseSyncStatus;
+import com.oceanbase.odc.service.connection.database.model.DatabaseType;
 import com.oceanbase.odc.service.connection.database.model.QueryDatabaseParams;
 import com.oceanbase.odc.service.connection.database.model.TransferDatabasesReq;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
@@ -170,6 +171,7 @@ public class DatabaseServiceTest extends AuthorityTestEnv {
 
     private DatabaseEntity getEntity() {
         DatabaseEntity entity = new DatabaseEntity();
+        entity.setType(DatabaseType.PHYSICAL);
         entity.setName("fake_db");
         entity.setDatabaseId("fake_id");
         entity.setExisted(true);

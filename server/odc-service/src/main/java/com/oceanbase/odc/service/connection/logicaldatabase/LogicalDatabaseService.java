@@ -16,7 +16,7 @@
 package com.oceanbase.odc.service.connection.logicaldatabase;
 
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Objects;
@@ -56,6 +56,8 @@ import com.oceanbase.odc.service.connection.logicaldatabase.model.DetailLogicalD
 import com.oceanbase.odc.service.db.schema.model.DBObjectSyncStatus;
 import com.oceanbase.odc.service.iam.ProjectPermissionValidator;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
+import com.oceanbase.odc.service.permission.DBResourcePermissionHelper;
+import com.oceanbase.odc.service.permission.database.model.DatabasePermissionType;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -98,6 +100,9 @@ public class LogicalDatabaseService {
 
     @Autowired
     private LogicalDatabaseSyncManager syncManager;
+
+    @Autowired
+    private DBResourcePermissionHelper permissionHelper;
 
 
     @Transactional(rollbackFor = Exception.class)
@@ -144,8 +149,8 @@ public class LogicalDatabaseService {
         return true;
     }
 
-    // TODO: add database permission check after @GaoDa's PR merged
     public DetailLogicalDatabaseResp detail(Long id) {
+        permissionHelper.checkDBPermissions(Collections.singleton(id), DatabasePermissionType.all());
         DatabaseEntity logicalDatabase = databaseRepository.findById(id).orElseThrow(() -> new NotFoundException(
                 ResourceType.ODC_DATABASE, "id", id));
         Verify.equals(logicalDatabase.getType(), DatabaseType.LOGICAL, "database type");
@@ -173,7 +178,6 @@ public class LogicalDatabaseService {
         return resp;
     }
 
-    // TODO: add database permission check after @GaoDa's PR merged
     public boolean extractLogicalTables(@NotNull Long logicalDatabaseId) {
         Database logicalDatabase =
                 databaseService.getBasicSkipPermissionCheck(logicalDatabaseId);
@@ -188,8 +192,7 @@ public class LogicalDatabaseService {
     }
 
     private void preCheck(CreateLogicalDatabaseReq req) {
-        projectPermissionValidator.checkProjectRole(req.getProjectId(),
-                Arrays.asList(ResourceRoleName.OWNER, ResourceRoleName.DBA));
+        permissionHelper.checkDBPermissions(req.getPhysicalDatabaseIds(), DatabasePermissionType.all());
         List<DatabaseEntity> databases = databaseRepository.findByIdIn(req.getPhysicalDatabaseIds());
         Verify.equals(databases.size(), req.getPhysicalDatabaseIds().size(), "physical database");
 
