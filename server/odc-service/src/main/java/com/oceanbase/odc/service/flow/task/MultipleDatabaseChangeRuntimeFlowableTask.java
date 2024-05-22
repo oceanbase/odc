@@ -235,6 +235,7 @@ public class MultipleDatabaseChangeRuntimeFlowableTask extends BaseODCFlowTaskDe
             } else {
                 taskService.updateProgress(taskId, (this.batchId + 1) * 100D / this.batchSum);
             }
+            super.onSuccessful(taskId, taskService);
             Optional<FlowTaskInstance> taskInstanceByActivityId = flowableAdaptor.getTaskInstanceByActivityId(
                     getActivityId(), getFlowInstanceId());
             if (!this.isSuccessful) {
@@ -247,7 +248,6 @@ public class MultipleDatabaseChangeRuntimeFlowableTask extends BaseODCFlowTaskDe
         } finally {
             MultipleDatabaseChangeTraceContextHolder.clear();
         }
-        super.onSuccessful(taskId, taskService);
     }
 
     @Override
