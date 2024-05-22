@@ -77,8 +77,15 @@ public class FlowTaskSubmitter implements JavaDelegate {
             FlowTaskInstance flowTaskInstance = null;
             try {
                 flowTaskInstance = getFlowTaskInstance(flowInstanceId, activityId);
-                getDelegateInstance(flowTaskInstance).execute(executionFacade);
-                updateFlowTaskInstance(flowTaskInstance.getId(), FlowNodeStatus.COMPLETED);
+                BaseRuntimeFlowableDelegate<?> delegate = getDelegateInstance(flowTaskInstance);
+                List<Class<? extends ExecutionListener>> list = delegate.getExecutionListenerClasses();
+                if (CollectionUtils.isNotEmpty(list)) {
+                    list.forEach(c -> doCallListener(FlowConstants.EXECUTION_START_EVENT_NAME, executionFacade, c));
+                }
+                delegate.execute(executionFacade);
+                if (CollectionUtils.isNotEmpty(list)) {
+                    list.forEach(c -> doCallListener(FlowConstants.EXECUTION_END_EVENT_NAME, executionFacade, c));
+                }
                 flowTaskCallBackApprovalService.approval(executionFacade.getProcessInstanceId(),
                         flowTaskInstance.getId(), executionFacade.getFutureVariable());
             } catch (Exception e) {
@@ -120,11 +127,10 @@ public class FlowTaskSubmitter implements JavaDelegate {
                 if (Objects.equals(acceptErrorCode, targetErrorCode)) {
                     flowTaskCallBackApprovalService.reject(execution.getProcessInstanceId(),
                             flowTaskInstance.getId(), execution.getFutureVariable());
-                    if (CollectionUtils.isNotEmpty(eventDefinition.getFlowableListeners())) {
-                        callListener(FlowConstants.EXECUTION_START_EVENT_NAME, execution,
-                                eventDefinition.getFlowableListeners());
-                        callListener(FlowConstants.EXECUTION_END_EVENT_NAME, execution,
-                                eventDefinition.getFlowableListeners());
+                    List<FlowableListener> listeners = eventDefinition.getFlowableListeners();
+                    if (CollectionUtils.isNotEmpty(listeners)) {
+                        callListener(FlowConstants.EXECUTION_START_EVENT_NAME, execution, listeners);
+                        callListener(FlowConstants.EXECUTION_END_EVENT_NAME, execution, listeners);
                     }
                     return;
                 }
@@ -141,21 +147,28 @@ public class FlowTaskSubmitter implements JavaDelegate {
                 flowTaskInstance.getId(), execution.getFutureVariable());
     }
 
-    private void callListener(String eventName, DelegateExecution execution, List<FlowableListener> flowableListeners) {
-        flowableListeners.stream().filter(fl -> eventName.equals(fl.getEvent())).forEach(fl -> {
+    private void callListener(String eventName, DelegateExecution execution, List<FlowableListener> listeners) {
+        listeners.stream().filter(fl -> eventName.equals(fl.getEvent())).forEach(fl -> {
             try {
-                Class<?> clazz = Class.forName(fl.getImplementation(), false,
-                        Thread.currentThread().getContextClassLoader());
-                if (ExecutionListener.class.isAssignableFrom(clazz)) {
-                    ExecutionListener listener =
-                            (ExecutionListener) BeanInjectedClassDelegate.instantiateDelegate(clazz);
-                    execution.setEventName(fl.getEvent());
-                    listener.notify(execution);
-                }
-            } catch (Exception ex) {
-                log.warn("Call execution listener occur error: ", ex);
+                doCallListener(fl.getEvent(), execution,
+                        Class.forName(fl.getImplementation(), false, Thread.currentThread().getContextClassLoader()));
+            } catch (Exception e) {
+                log.warn("Failed to load execution class, className={}", fl.getImplementation(), e);
             }
         });
+    }
+
+    private void doCallListener(String eventName, DelegateExecution execution, Class<?> listenerClass) {
+        try {
+            if (ExecutionListener.class.isAssignableFrom(listenerClass)) {
+                ExecutionListener listener =
+                        (ExecutionListener) BeanInjectedClassDelegate.instantiateDelegate(listenerClass);
+                execution.setEventName(eventName);
+                listener.notify(execution);
+            }
+        } catch (Exception e) {
+            log.warn("Failed to call execution listener", e);
+        }
     }
 
     private BaseRuntimeFlowableDelegate<?> getDelegateInstance(FlowTaskInstance flowTaskInstance) throws Exception {

@@ -16,9 +16,12 @@
 
 package com.oceanbase.odc.service.flow.task;
 
+import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 
 import org.flowable.engine.delegate.DelegateExecution;
+import org.flowable.engine.delegate.ExecutionListener;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.i18n.LocaleContextHolder;
 
@@ -33,6 +36,7 @@ import com.oceanbase.odc.metadb.regulation.risklevel.RiskLevelEntity;
 import com.oceanbase.odc.metadb.regulation.risklevel.RiskLevelRepository;
 import com.oceanbase.odc.service.flow.FlowableAdaptor;
 import com.oceanbase.odc.service.flow.instance.FlowApprovalInstance;
+import com.oceanbase.odc.service.flow.listener.ServiceTaskExecutingCompleteListener;
 import com.oceanbase.odc.service.flow.model.FlowNodeStatus;
 import com.oceanbase.odc.service.flow.task.model.RuntimeTaskConstants;
 import com.oceanbase.odc.service.flow.util.FlowTaskUtil;
@@ -138,6 +142,11 @@ public class CreateExternalApprovalTask extends BaseFlowableDelegate {
             throw new IllegalStateException("Can not find flow approval instance by activityId " + activityId);
         }
         return instanceOpt.get();
+    }
+
+    @Override
+    public List<Class<? extends ExecutionListener>> getExecutionListenerClasses() {
+        return Collections.singletonList(ServiceTaskExecutingCompleteListener.class);
     }
 
 }

@@ -15,7 +15,10 @@
  */
 package com.oceanbase.odc.core.flow;
 
+import java.util.List;
+
 import org.flowable.engine.delegate.DelegateExecution;
+import org.flowable.engine.delegate.ExecutionListener;
 import org.flowable.engine.delegate.JavaDelegate;
 
 import lombok.extern.slf4j.Slf4j;
@@ -35,6 +38,8 @@ public abstract class BaseFlowableDelegate implements JavaDelegate {
      * @param execution execution context
      */
     protected abstract void run(DelegateExecution execution) throws Exception;
+
+    protected abstract List<Class<? extends ExecutionListener>> getExecutionListenerClasses();
 
     @Override
     public void execute(DelegateExecution execution) {

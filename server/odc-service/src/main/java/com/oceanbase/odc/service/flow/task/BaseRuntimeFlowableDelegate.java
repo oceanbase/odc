@@ -15,6 +15,8 @@
  */
 package com.oceanbase.odc.service.flow.task;
 
+import java.util.Collections;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.Callable;
@@ -27,6 +29,7 @@ import java.util.concurrent.TimeoutException;
 import javax.annotation.PostConstruct;
 
 import org.flowable.engine.delegate.DelegateExecution;
+import org.flowable.engine.delegate.ExecutionListener;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import com.oceanbase.odc.common.event.EventPublisher;
@@ -44,6 +47,7 @@ import com.oceanbase.odc.service.flow.event.TaskInstanceCreatedListener;
 import com.oceanbase.odc.service.flow.exception.ServiceTaskError;
 import com.oceanbase.odc.service.flow.instance.FlowTaskInstance;
 import com.oceanbase.odc.service.flow.listener.ActiveTaskStatisticsListener;
+import com.oceanbase.odc.service.flow.listener.ServiceTaskExecutingCompleteListener;
 import com.oceanbase.odc.service.flow.model.ExecutionStrategyConfig;
 
 import lombok.Getter;
@@ -192,6 +196,11 @@ public abstract class BaseRuntimeFlowableDelegate<T> extends BaseFlowableDelegat
             log.info("Monitor task instance creation and bind tasks, taskInstanceId={}, activityId={}",
                     taskInstance.getId(), activityId);
         }
+    }
+
+    @Override
+    public List<Class<? extends ExecutionListener>> getExecutionListenerClasses() {
+        return Collections.singletonList(ServiceTaskExecutingCompleteListener.class);
     }
 
     protected void updateFlowInstanceStatus(@NonNull FlowStatus flowStatus) {
