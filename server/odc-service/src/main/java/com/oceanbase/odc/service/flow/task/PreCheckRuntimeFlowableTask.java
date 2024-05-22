@@ -65,7 +65,6 @@ import com.oceanbase.odc.service.flow.task.model.DatabasePermissionCheckResult;
 import com.oceanbase.odc.service.flow.task.model.MultipleDatabaseChangeParameters;
 import com.oceanbase.odc.service.flow.task.model.MultipleSqlCheckTaskResult;
 import com.oceanbase.odc.service.flow.task.model.PreCheckTaskProperties;
-import com.oceanbase.odc.service.flow.task.model.RuntimeTaskConstants;
 import com.oceanbase.odc.service.flow.task.model.SqlCheckTaskResult;
 import com.oceanbase.odc.service.flow.task.util.DatabaseChangeFileReader;
 import com.oceanbase.odc.service.flow.util.FlowTaskUtil;
@@ -121,7 +120,6 @@ public class PreCheckRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Void> {
     @Autowired
     private ObjectStorageFacade storageFacade;
     private static final String CHECK_RESULT_FILE_NAME = "sql-check-result.json";
-    private final Map<String, Object> riskLevelResult = new HashMap<>();
 
     @Override
     protected Void start(Long taskId, TaskService taskService, DelegateExecution execution) throws Exception {
@@ -224,8 +222,9 @@ public class PreCheckRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Void> {
             PreConditions.notNegative(executionExpirationSeconds, "ExecutionExpirationSeconds");
             long executionExpirationIntervalMilliSecs =
                     TimeUnit.MILLISECONDS.convert(executionExpirationSeconds, TimeUnit.SECONDS);
-            riskLevelResult.put(RuntimeTaskConstants.TIMEOUT_MILLI_SECONDS, executionExpirationIntervalMilliSecs);
-            riskLevelResult.put(RuntimeTaskConstants.RISKLEVEL, riskLevel.getLevel());
+            FlowTaskUtil.setExecutionExpirationInterval(execution, executionExpirationIntervalMilliSecs,
+                    TimeUnit.MILLISECONDS);
+            FlowTaskUtil.setRiskLevel(execution, riskLevel.getLevel());
             success = true;
         } catch (Exception ex) {
             log.warn("risk detect failed, ", ex);
@@ -266,13 +265,13 @@ public class PreCheckRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Void> {
         } catch (Exception e) {
             log.warn("Failed to store task result", e);
         }
-        super.callback(getFlowInstanceId(), getTargetTaskInstanceId(), FlowNodeStatus.COMPLETED, riskLevelResult);
+        setDownloadLogUrl();
 
     }
 
     @Override
     protected void onTimeout(Long taskId, TaskService taskService) {
-        super.callback(getFlowInstanceId(), getTargetTaskInstanceId(), FlowNodeStatus.EXPIRED, null);
+        setDownloadLogUrl();
     }
 
     @Override
