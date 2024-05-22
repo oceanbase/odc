@@ -200,9 +200,11 @@ public class ResultSetExportTask implements Callable<ResultSetExportResult> {
         ConnectionConfig connectionConfig = (ConnectionConfig) ConnectionSessionUtil.getConnectionConfig(session);
         ConnectionInfo connectionInfo = connectionConfig.toConnectionInfo();
         String initScript = connectionConfig.getSessionInitScript();
-        connectionInfo.setSessionInitScripts(SqlCommentProcessor
-                .removeSqlComments(initScript, ";", connectionInfo.getConnectType().getDialectType(), false)
-                .stream().map(OffsetString::getStr).collect(Collectors.toList()));
+        if (StringUtils.isNotEmpty(initScript)) {
+            connectionInfo.setSessionInitScripts(SqlCommentProcessor
+                    .removeSqlComments(initScript, ";", connectionInfo.getConnectType().getDialectType(), false)
+                    .stream().map(OffsetString::getStr).collect(Collectors.toList()));
+        }
 
         connectionInfo.setSchema(parameter.getDatabase());
         config.setConnectionInfo(connectionInfo);
