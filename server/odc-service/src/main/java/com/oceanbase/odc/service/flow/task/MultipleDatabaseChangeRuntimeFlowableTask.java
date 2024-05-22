@@ -32,6 +32,7 @@ import com.oceanbase.odc.core.shared.constant.FlowStatus;
 import com.oceanbase.odc.core.shared.constant.TaskErrorStrategy;
 import com.oceanbase.odc.core.shared.constant.TaskType;
 import com.oceanbase.odc.metadb.flow.FlowInstanceEntity;
+import com.oceanbase.odc.metadb.flow.FlowInstanceRepository;
 import com.oceanbase.odc.metadb.flow.ServiceTaskInstanceRepository;
 import com.oceanbase.odc.metadb.task.TaskEntity;
 import com.oceanbase.odc.service.connection.database.DatabaseService;
@@ -72,6 +73,8 @@ public class MultipleDatabaseChangeRuntimeFlowableTask extends BaseODCFlowTaskDe
     @Autowired
     private FlowInstanceService flowInstanceService;
     @Autowired
+    private FlowInstanceRepository flowInstanceRepository;
+    @Autowired
     private DatabaseService databaseService;
     @Autowired
     private FlowableAdaptor flowableAdaptor;
@@ -110,7 +113,8 @@ public class MultipleDatabaseChangeRuntimeFlowableTask extends BaseODCFlowTaskDe
             throws InterruptedException {
         MultipleDatabaseChangeTraceContextHolder.trace(taskId);
         try {
-            serviceTaskInstanceRepository.updateStatusById(getTargetTaskInstanceId(), FlowNodeStatus.EXECUTING);
+            this.flowInstanceRepository.updateStatusById(getFlowInstanceId(), FlowStatus.EXECUTING);
+            this.serviceTaskInstanceRepository.updateStatusById(getTargetTaskInstanceId(), FlowNodeStatus.EXECUTING);
             FlowInstanceDetailResp flowInstanceDetailResp = flowInstanceService.detail(getFlowInstanceId());
             this.flowTaskExecutionStrategy = flowInstanceDetailResp.getExecutionStrategy();
             TaskEntity detail = taskService.detail(taskId);
@@ -225,7 +229,10 @@ public class MultipleDatabaseChangeRuntimeFlowableTask extends BaseODCFlowTaskDe
             }
             super.onSuccessful(taskId, taskService);
             if (!this.isSuccessful) {
-                serviceTaskInstanceRepository.updateStatusById(getTargetTaskInstanceId(), FlowNodeStatus.FAILED);
+                this.serviceTaskInstanceRepository.updateStatusById(getTargetTaskInstanceId(), FlowNodeStatus.FAILED);
+            } else {
+                this.serviceTaskInstanceRepository.updateStatusById(getTargetTaskInstanceId(),
+                        FlowNodeStatus.COMPLETED);
             }
         } catch (Exception e) {
             log.warn("Multiple database task failed, taskId={}, batchId={}", taskId,

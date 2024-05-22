@@ -27,6 +27,7 @@ import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
+import org.apache.commons.collections4.CollectionUtils;
 import org.flowable.engine.delegate.DelegateExecution;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -119,12 +120,12 @@ public abstract class BaseODCFlowTaskDelegate<T> extends BaseRuntimeFlowableDele
         int interval = RuntimeTaskConstants.DEFAULT_TASK_CHECK_INTERVAL_SECONDS;
         scheduleExecutor.scheduleAtFixedRate(() -> {
             try {
+                try {
+                    this.taskService.updateHeartbeatTime(getTargetTaskId());
+                } catch (Exception e) {
+                    log.warn("Failed to update heartbeat time, taskId={}", getTargetTaskId(), e);
+                }
                 if (taskLatch.getCount() > 0) {
-                    try {
-                        this.taskService.updateHeartbeatTime(taskId);
-                    } catch (Exception e) {
-                        log.warn("Failed to update heartbeat time, taskId={}", taskId, e);
-                    }
                     onProgressUpdate(taskId, taskService);
                 }
             } catch (Exception e) {
@@ -363,6 +364,9 @@ public abstract class BaseODCFlowTaskDelegate<T> extends BaseRuntimeFlowableDele
         }
         List<? extends FlowTaskResult> flowTaskResults =
                 flowTaskInstanceService.getTaskResultFromEntity(taskEntity, false);
+        if (CollectionUtils.isEmpty(flowTaskResults)) {
+            return;
+        }
         Verify.singleton(flowTaskResults, "flowTaskResults");
         if (flowTaskResults.get(0) instanceof AbstractFlowTaskResult) {
             FlowTaskResult flowTaskResult = flowTaskResults.get(0);
