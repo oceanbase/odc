@@ -166,4 +166,7 @@ public class TaskEntity {
     @Column(name = "job_id")
     private Long jobId;
 
+    @Column(name = "last_heartbeat_time")
+    private Date lastHeartbeatTime;
+
 }

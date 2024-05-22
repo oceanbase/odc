@@ -126,6 +126,11 @@ public abstract class BaseODCFlowTaskDelegate<T> extends BaseRuntimeFlowableDele
         scheduleExecutor.scheduleAtFixedRate(() -> {
             try {
                 if (taskLatch.getCount() > 0) {
+                    try {
+                        this.taskService.updateHeartbeatTime(taskId);
+                    } catch (Exception e) {
+                        log.warn("Failed to update heartbeat time, taskId={}", taskId, e);
+                    }
                     onProgressUpdate(taskId, taskService);
                 }
             } catch (Exception e) {

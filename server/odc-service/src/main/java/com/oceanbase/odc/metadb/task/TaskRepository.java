@@ -44,6 +44,11 @@ public interface TaskRepository extends JpaRepository<TaskEntity, Long>, JpaSpec
     int update(@Param("param") TaskEntity entity);
 
     @Transactional
+    @Query(value = "update task_task set last_heartbeat_time=now() where id=:id", nativeQuery = true)
+    @Modifying
+    int updateLastHeartbeatTimeById(@Param("id") Long id);
+
+    @Transactional
     @Query("update TaskEntity set parametersJson=:#{#param.parametersJson} where id=:#{#param.id}")
     @Modifying
     int updateParametersJson(@Param("param") TaskEntity entity);
