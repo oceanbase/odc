@@ -215,6 +215,10 @@ public class EventBuilder {
             MultipleDatabaseChangeParameters parameter =
                     JsonUtils.fromJson(task.getParametersJson(), MultipleDatabaseChangeParameters.class);
             projectId = parameter.getProjectId();
+            labels.putIfNonNull(DATABASE_NAME, parameter.getDatabases().stream()
+                    .map(database -> String.format("【%s】%s", database.getEnvironment() == null ? ""
+                            : database.getEnvironment().getName(), database.getName()))
+                    .collect(Collectors.joining(",")));
             labels.putIfNonNull(PROJECT_ID, projectId);
         } else {
             throw new UnexpectedException("task.databaseId should not be null");
