@@ -21,7 +21,6 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.jdbc.JdbcTestUtils;
 
 import com.oceanbase.odc.ServiceTestEnv;
@@ -30,69 +29,69 @@ import com.oceanbase.odc.ServiceTestEnv;
  * @author liuyizhuo.lyz
  * @date 2024/3/21
  */
-public class SystemConfigDAOTest extends ServiceTestEnv {
+public class SystemConfigRepositoryTest extends ServiceTestEnv {
 
     @Autowired
-    private SystemConfigDAO systemConfigDAO;
-    @Autowired
-    private JdbcTemplate jdbcTemplate;
+    private SystemConfigRepository systemConfigRepository;
 
     @Before
     public void setUp() {
-        jdbcTemplate.batchUpdate("delete from config_system_configuration");
+        systemConfigRepository.getJdbcTemplate().batchUpdate("delete from config_system_configuration");
     }
 
     @Test
     public void test_Insert_NotExists() {
-        systemConfigDAO.insert(getConfigEntity());
-        Assert.assertEquals(1, JdbcTestUtils.countRowsInTable(jdbcTemplate, "config_system_configuration"));
+        systemConfigRepository.getJdbcTemplate().batchUpdate("delete from config_system_configuration");
+        systemConfigRepository.insert(getConfigEntity());
+        Assert.assertEquals(1, JdbcTestUtils.countRowsInTable(systemConfigRepository.getJdbcTemplate(), "config_system_configuration"));
     }
 
     @Test
     public void test_Insert_Exists() {
         SystemConfigEntity config = getConfigEntity();
-        systemConfigDAO.insert(config);
+        systemConfigRepository.insert(config);
 
         config.setValue("value1");
-        systemConfigDAO.insert(config);
+        systemConfigRepository.insert(config);
 
-        SystemConfigEntity entity = systemConfigDAO.queryByKey("dummy.key");
+        SystemConfigEntity entity = systemConfigRepository.queryByKey("dummy.key");
         Assert.assertEquals("value", entity.getValue());
     }
 
     @Test
     public void test_Upsert_NotExists() {
-        systemConfigDAO.upsert(getConfigEntity());
-        Assert.assertEquals(1, JdbcTestUtils.countRowsInTable(jdbcTemplate, "config_system_configuration"));
+        systemConfigRepository.getJdbcTemplate().batchUpdate("delete from config_system_configuration");
+        systemConfigRepository.upsert(getConfigEntity());
+        Assert.assertEquals(1, JdbcTestUtils.countRowsInTable(systemConfigRepository.getJdbcTemplate(), "config_system_configuration"));
     }
 
     @Test
     public void test_Upsert_Exists() {
         SystemConfigEntity config = getConfigEntity();
-        systemConfigDAO.upsert(config);
+        systemConfigRepository.upsert(config);
 
         config.setValue("value1");
-        systemConfigDAO.upsert(config);
+        systemConfigRepository.upsert(config);
 
-        SystemConfigEntity entity = systemConfigDAO.queryByKey("dummy.key");
+        SystemConfigEntity entity = systemConfigRepository.queryByKey("dummy.key");
         Assert.assertEquals("value1", entity.getValue());
     }
 
     @Test
     public void test_QueryByKeyPrefix() {
         SystemConfigEntity entity = getConfigEntity();
-        systemConfigDAO.upsert(entity);
+        systemConfigRepository.upsert(entity);
         entity.setKey("dummy.key1");
-        systemConfigDAO.upsert(entity);
+        systemConfigRepository.upsert(entity);
 
-        List<SystemConfigEntity> entities = systemConfigDAO.queryByKeyPrefix("dummy");
+        List<SystemConfigEntity> entities = systemConfigRepository.queryByKeyPrefix("dummy");
         Assert.assertEquals(2, entities.size());
     }
 
     @Test
     public void test_QueryByKey() {
-        systemConfigDAO.upsert(getConfigEntity());
-        SystemConfigEntity entity = systemConfigDAO.queryByKey("dummy.key");
+        systemConfigRepository.upsert(getConfigEntity());
+        SystemConfigEntity entity = systemConfigRepository.queryByKey("dummy.key");
         Assert.assertEquals("value", entity.getValue());
     }
 
