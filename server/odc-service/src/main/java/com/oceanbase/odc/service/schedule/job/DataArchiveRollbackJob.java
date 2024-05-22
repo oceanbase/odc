@@ -73,6 +73,7 @@ public class DataArchiveRollbackJob extends AbstractDlmJob {
                 o.setTableName(o.getTargetTableName());
                 o.setTargetTableName(temp);
             });
+            parameters.setScheduleTaskId(taskEntity.getId());
             Long jobId = publishJob(parameters);
             log.info("Publish DLM job to task framework succeed,scheduleTaskId={},jobIdentity={}", taskEntity.getId(),
                     jobId);
@@ -94,6 +95,7 @@ public class DataArchiveRollbackJob extends AbstractDlmJob {
             dlmTableUnit.setType(JobType.ROLLBACK);
             dlmTableUnit.setStatus(
                     dlmTableUnit.getStatus() == TaskStatus.PREPARING ? TaskStatus.DONE : TaskStatus.PREPARING);
+            dlmTableUnits.get(i).setScheduleTaskId(taskEntity.getId());
         }
         dlmService.createDlmTableUnits(dlmTableUnits);
         executeTask(taskEntity.getId(), dlmTableUnits);

@@ -68,6 +68,7 @@ public class DataArchiveDeleteJob extends AbstractDlmJob {
         if (taskFrameworkProperties.isEnabled()) {
             DLMJobReq parameters = getDLMJobReq(dataArchiveTask.getJobId());
             parameters.setJobType(JobType.DELETE);
+            parameters.setScheduleTaskId(taskEntity.getId());
             Long jobId = publishJob(parameters);
             log.info("Publish DLM job to task framework succeed,scheduleTaskId={},jobIdentity={}", taskEntity.getId(),
                     jobId);
@@ -86,6 +87,7 @@ public class DataArchiveDeleteJob extends AbstractDlmJob {
                                     i));
             dlmTableUnits.get(i).setType(JobType.DELETE);
             dlmTableUnits.get(i).setStatus(TaskStatus.PREPARING);
+            dlmTableUnits.get(i).setScheduleTaskId(taskEntity.getId());
         }
         dlmService.createDlmTableUnits(dlmTableUnits);
         executeTask(taskEntity.getId(), dlmTableUnits);
