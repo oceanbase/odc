@@ -105,12 +105,14 @@ public class FlowSchedules {
                     DBSchemaAccessorUtil.OB_MAX_IN_SIZE,
                     ids -> Collections.singletonList(flowInstanceRepository
                             .updateStatusByIds(ids, FlowStatus.CANCELLED)));
-            log.info("Update flow instance's status succeed, affectRows={}", executeResult);
+            log.info("Update flow instance's status succeed, affectRows={}, flowInstIds={}", executeResult,
+                    flowInstIds);
             executeResult = DBSchemaAccessorUtil.partitionFind(candidateIds,
                     DBSchemaAccessorUtil.OB_MAX_IN_SIZE,
                     ids -> Collections.singletonList(serviceTaskInstanceRepository
                             .updateStatusByIdIn(ids, FlowNodeStatus.CANCELLED)));
-            log.info("Update flow task instance's status succeed, affectRows={}", executeResult);
+            log.info("Update flow task instance's status succeed, affectRows={}, "
+                    + "flowTaskInstIds={}", executeResult, candidateIds);
         } catch (Exception e) {
             log.warn("Failed to sync flow instance's status", e);
         }
