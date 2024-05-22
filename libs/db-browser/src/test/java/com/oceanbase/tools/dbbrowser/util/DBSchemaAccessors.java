@@ -22,7 +22,7 @@ import org.apache.commons.lang3.Validate;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
-import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessorGenerator;
+import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessorFactory;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -79,23 +79,23 @@ public class DBSchemaAccessors {
 
     public DBSchemaAccessor createOBMysql() {
         this.version = getOBVersion();
-        return DBSchemaAccessorGenerator.createForOBMySQL(this.jdbcTemplate, null,
+        return DBSchemaAccessorFactory.createForOBMySQL(this.jdbcTemplate, null,
                 this.version, null);
     }
 
     public DBSchemaAccessor createOBOracle() {
         this.version = getOBVersion();
-        return DBSchemaAccessorGenerator.createForOBOracle(this.jdbcTemplate,
+        return DBSchemaAccessorFactory.createForOBOracle(this.jdbcTemplate,
                 this.version);
     }
 
     public DBSchemaAccessor createOracle() {
-        return DBSchemaAccessorGenerator.createForOracle(this.jdbcTemplate);
+        return DBSchemaAccessorFactory.createForOracle(this.jdbcTemplate);
     }
 
     public DBSchemaAccessor createMysql() {
         this.version = getMySQLVersion();
-        return DBSchemaAccessorGenerator.createForMySQL(this.jdbcTemplate, this.version);
+        return DBSchemaAccessorFactory.createForMySQL(this.jdbcTemplate, this.version);
     }
 
 }

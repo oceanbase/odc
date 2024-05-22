@@ -23,9 +23,9 @@ import com.oceanbase.odc.common.util.JdbcOperationsUtil;
 import com.oceanbase.odc.plugin.schema.obmysql.OBMySQLTableExtension;
 import com.oceanbase.tools.dbbrowser.model.DBTable;
 import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
-import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessorGenerator;
+import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessorFactory;
 import com.oceanbase.tools.dbbrowser.stats.DBStatsAccessor;
-import com.oceanbase.tools.dbbrowser.stats.mysql.ODPOBMySQLStatsAccessor;
+import com.oceanbase.tools.dbbrowser.stats.DBStatsAccessorFactory;
 
 import lombok.NonNull;
 
@@ -50,13 +50,13 @@ public class ODPShardingOBMySQLTableExtension extends OBMySQLTableExtension {
 
     @Override
     protected DBSchemaAccessor getSchemaAccessor(Connection connection) {
-        return DBSchemaAccessorGenerator.createForODPOBMySQL(JdbcOperationsUtil.getJdbcOperations(connection));
+        return DBSchemaAccessorFactory.createForODPOBMySQL(JdbcOperationsUtil.getJdbcOperations(connection));
     }
 
     @Override
     protected DBStatsAccessor getStatsAccessor(Connection consoleConnection) {
         // only use DBStatsAccessor.getTableStats() method in plugin, so we do not use connectionId
-        return new ODPOBMySQLStatsAccessor("");
+        return DBStatsAccessorFactory.createForODPOBMySQL("");
     }
 
 }

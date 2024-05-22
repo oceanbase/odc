@@ -26,7 +26,7 @@ import com.oceanbase.odc.core.shared.constant.ConnectType;
 import com.oceanbase.odc.core.shared.exception.UnsupportedException;
 import com.oceanbase.odc.core.sql.execute.SyncJdbcExecutor;
 import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
-import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessorGenerator;
+import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessorFactory;
 
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
@@ -67,19 +67,19 @@ public class DBSchemaAccessors {
     public static DBSchemaAccessor create(@NonNull JdbcOperations syncJdbcExecutor, JdbcOperations sysJdbcExecutor,
             @NonNull ConnectType connectType, @NonNull String dbVersion, String tenantName) {
         if (connectType == ConnectType.OB_MYSQL || connectType == ConnectType.CLOUD_OB_MYSQL) {
-            return DBSchemaAccessorGenerator.createForOBMySQL(syncJdbcExecutor,
+            return DBSchemaAccessorFactory.createForOBMySQL(syncJdbcExecutor,
                     sysJdbcExecutor, dbVersion, tenantName);
         } else if (connectType == ConnectType.OB_ORACLE || connectType == ConnectType.CLOUD_OB_ORACLE) {
-            return DBSchemaAccessorGenerator.createForOBOracle(syncJdbcExecutor,
+            return DBSchemaAccessorFactory.createForOBOracle(syncJdbcExecutor,
                     dbVersion);
         } else if (connectType == ConnectType.ODP_SHARDING_OB_MYSQL) {
-            return DBSchemaAccessorGenerator.createForODPOBMySQL(syncJdbcExecutor);
+            return DBSchemaAccessorFactory.createForODPOBMySQL(syncJdbcExecutor);
         } else if (connectType == ConnectType.MYSQL) {
-            return DBSchemaAccessorGenerator.createForMySQL(syncJdbcExecutor, dbVersion);
+            return DBSchemaAccessorFactory.createForMySQL(syncJdbcExecutor, dbVersion);
         } else if (connectType == ConnectType.DORIS) {
-            return DBSchemaAccessorGenerator.createForDoris(syncJdbcExecutor, dbVersion);
+            return DBSchemaAccessorFactory.createForDoris(syncJdbcExecutor, dbVersion);
         } else if (connectType == ConnectType.ORACLE) {
-            return DBSchemaAccessorGenerator.createForOracle(syncJdbcExecutor);
+            return DBSchemaAccessorFactory.createForOracle(syncJdbcExecutor);
         } else {
             throw new UnsupportedException(String.format("ConnectType '%s' not supported", connectType));
         }

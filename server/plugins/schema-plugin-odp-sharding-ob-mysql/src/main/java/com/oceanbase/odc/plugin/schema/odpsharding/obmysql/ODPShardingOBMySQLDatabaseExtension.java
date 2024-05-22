@@ -22,7 +22,7 @@ import org.pf4j.Extension;
 import com.oceanbase.odc.common.util.JdbcOperationsUtil;
 import com.oceanbase.odc.plugin.schema.obmysql.OBMySQLDatabaseExtension;
 import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
-import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessorGenerator;
+import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessorFactory;
 
 /**
  * @author jingtian
@@ -34,6 +34,6 @@ public class ODPShardingOBMySQLDatabaseExtension extends OBMySQLDatabaseExtensio
 
     @Override
     protected DBSchemaAccessor getSchemaAccessor(Connection connection) {
-        return DBSchemaAccessorGenerator.createForODPOBMySQL(JdbcOperationsUtil.getJdbcOperations(connection));
+        return DBSchemaAccessorFactory.createForODPOBMySQL(JdbcOperationsUtil.getJdbcOperations(connection));
     }
 }
