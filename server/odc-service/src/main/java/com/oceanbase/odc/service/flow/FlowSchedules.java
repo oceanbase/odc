@@ -15,9 +15,8 @@
  */
 package com.oceanbase.odc.service.flow;
 
-import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -68,38 +67,50 @@ public class FlowSchedules {
             if (timeoutSeconds < minTimeoutSeconds) {
                 timeoutSeconds = minTimeoutSeconds;
             }
-            Date timeoutBound = new Date(System.currentTimeMillis() - timeoutSeconds * 1000);
-            List<TaskEntity> taskEntities = this.taskRepository.findAllByLastHeartbeatTimeBefore(timeoutBound);
-            if (CollectionUtils.isEmpty(taskEntities)) {
+            List<ServiceTaskInstanceEntity> taskInstanceEntities = this.serviceTaskInstanceRepository
+                    .findByStatus(FlowNodeStatus.EXECUTING).stream()
+                    .filter(e -> e.getTargetTaskId() != null).collect(Collectors.toList());
+            if (CollectionUtils.isEmpty(taskInstanceEntities)) {
                 return;
             }
-            List<Long> taskIds = taskEntities.stream().map(TaskEntity::getId).collect(Collectors.toList());
-            log.info("Find the task with heartbeat timeout, timeoutSeconds={}, earliestHeartbeatTime={}, taskIds={}",
-                    timeoutSeconds, timeoutBound, taskIds);
+            List<Long> taskIds = taskInstanceEntities.stream()
+                    .map(ServiceTaskInstanceEntity::getTargetTaskId).distinct().collect(Collectors.toList());
+            Date timeoutBound = new Date(System.currentTimeMillis() - timeoutSeconds * 1000);
+            List<TaskEntity> heartbeatTimeoutTasks = DBSchemaAccessorUtil.partitionFind(taskIds,
+                    DBSchemaAccessorUtil.OB_MAX_IN_SIZE,
+                    ids -> taskRepository.findAllByLastHeartbeatTimeBeforeAndIdIn(timeoutBound, ids));
+            if (CollectionUtils.isEmpty(heartbeatTimeoutTasks)) {
+                return;
+            }
+            Set<Long> heartbeatTimeoutTaskIds = heartbeatTimeoutTasks.stream()
+                    .map(TaskEntity::getId).collect(Collectors.toSet());
+            log.info("Find the task with heartbeat timeout, timeoutSeconds={}, earliestHeartbeatTime={}, "
+                    + "heartbeatTimeoutTaskIds={}", timeoutSeconds, timeoutBound, heartbeatTimeoutTaskIds);
             /**
              * we just find such flow task instances:
              * <p>
              * 1. heartbeat timeout 2. flow task instance is executing
              * </p>
              */
-            List<ServiceTaskInstanceEntity> candidates = DBSchemaAccessorUtil.partitionFind(taskIds,
-                    DBSchemaAccessorUtil.OB_MAX_IN_SIZE,
-                    ids -> serviceTaskInstanceRepository.findByTargetTaskIdIn(new HashSet<>(ids))).stream()
-                    .filter(entity -> entity.getStatus() == FlowNodeStatus.EXECUTING).collect(Collectors.toList());
-            Set<Long> flowTaskInstIds = candidates.stream()
-                    .map(ServiceTaskInstanceEntity::getId).collect(Collectors.toSet());
+            List<ServiceTaskInstanceEntity> candidates = taskInstanceEntities.stream()
+                    .filter(e -> heartbeatTimeoutTaskIds.contains(e.getTargetTaskId()))
+                    .collect(Collectors.toList());
+            List<Long> candidateIds = candidates.stream()
+                    .map(ServiceTaskInstanceEntity::getId).distinct().collect(Collectors.toList());
             List<Long> flowInstIds = candidates.stream().map(ServiceTaskInstanceEntity::getFlowInstanceId)
                     .distinct().collect(Collectors.toList());
             log.info("Find heartbeat timeout flow task instance, timeoutSeconds={}, earliestHeartbeatTime={}, "
-                    + "flowTaskInstIds={}, flowInstIds={}", timeoutSeconds, timeoutBound, flowTaskInstIds, flowInstIds);
-            List<Integer> executeResult =
-                    DBSchemaAccessorUtil.partitionFind(flowInstIds, DBSchemaAccessorUtil.OB_MAX_IN_SIZE, ids -> {
-                        int affectRows = flowInstanceRepository.updateStatusByIds(ids, FlowStatus.CANCELLED);
-                        List<Integer> result = new ArrayList<>();
-                        result.add(affectRows);
-                        return result;
-                    });
+                    + "flowTaskInstIds={}, flowInstIds={}", timeoutSeconds, timeoutBound, candidateIds, flowInstIds);
+            List<Integer> executeResult = DBSchemaAccessorUtil.partitionFind(flowInstIds,
+                    DBSchemaAccessorUtil.OB_MAX_IN_SIZE,
+                    ids -> Collections.singletonList(flowInstanceRepository
+                            .updateStatusByIds(ids, FlowStatus.CANCELLED)));
             log.info("Update flow instance's status succeed, affectRows={}", executeResult);
+            executeResult = DBSchemaAccessorUtil.partitionFind(candidateIds,
+                    DBSchemaAccessorUtil.OB_MAX_IN_SIZE,
+                    ids -> Collections.singletonList(serviceTaskInstanceRepository
+                            .updateStatusByIdIn(ids, FlowNodeStatus.CANCELLED)));
+            log.info("Update flow task instance's status succeed, affectRows={}", executeResult);
         } catch (Exception e) {
             log.warn("Failed to sync flow instance's status", e);
         }

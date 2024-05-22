@@ -17,11 +17,9 @@ package com.oceanbase.odc.metadb.flow;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Random;
-import java.util.Set;
 import java.util.UUID;
 
 import org.junit.After;
@@ -70,10 +68,19 @@ public class ServiceTaskInstanceRepositoryTest extends ServiceTestEnv {
     @Test
     public void findByTargetTaskIdIn_entityExists_returnNotEmpty() {
         ServiceTaskInstanceEntity entity = createEntity();
+        entity.setStatus(FlowNodeStatus.CANCELLED);
         entity = this.repository.save(entity);
-        Set<Long> ids = new HashSet<>();
-        ids.add(entity.getTargetTaskId());
-        List<ServiceTaskInstanceEntity> actual = this.repository.findByTargetTaskIdIn(ids);
+        this.repository.updateStatusByIdIn(Collections.singletonList(entity.getId()), FlowNodeStatus.FAILED);
+        Optional<ServiceTaskInstanceEntity> optional = this.repository.findById(entity.getId());
+        entity.setStatus(FlowNodeStatus.FAILED);
+        Assert.assertEquals(entity, optional.get());
+    }
+
+    @Test
+    public void findByStatus_entityExists_returnNotEmpty() {
+        ServiceTaskInstanceEntity entity = createEntity();
+        entity = this.repository.save(entity);
+        List<ServiceTaskInstanceEntity> actual = this.repository.findByStatus(entity.getStatus());
         Assert.assertEquals(Collections.singletonList(entity), actual);
     }
 

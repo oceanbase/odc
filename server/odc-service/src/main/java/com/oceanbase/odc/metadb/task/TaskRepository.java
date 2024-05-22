@@ -49,7 +49,7 @@ public interface TaskRepository extends JpaRepository<TaskEntity, Long>, JpaSpec
     @Modifying
     int updateLastHeartbeatTimeById(@Param("id") Long id);
 
-    List<TaskEntity> findAllByLastHeartbeatTimeBefore(Date lastHeartbeatTime);
+    List<TaskEntity> findAllByLastHeartbeatTimeBeforeAndIdIn(Date lastHeartbeatTime, List<Long> ids);
 
     @Transactional
     @Query("update TaskEntity set parametersJson=:#{#param.parametersJson} where id=:#{#param.id}")

@@ -15,6 +15,7 @@
  */
 package com.oceanbase.odc.metadb.task;
 
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
@@ -49,7 +50,7 @@ public class TaskRepositoryTest extends ServiceTestEnv {
     }
 
     @Test
-    public void findAllByLastHeartbeatTimeBefore_findBeforeNow_returnNotNull() {
+    public void findAllByLastHeartbeatTimeBeforeAndIdIn_findBeforeNow_returnNotNull() {
         TaskEntity taskEntity = TestRandom.nextObject(TaskEntity.class);
         taskEntity.setId(null);
         taskEntity.setLastHeartbeatTime(null);
@@ -57,20 +58,21 @@ public class TaskRepositoryTest extends ServiceTestEnv {
         this.taskRepository.updateLastHeartbeatTimeById(taskEntity.getId());
         Optional<TaskEntity> optional = this.taskRepository.findById(taskEntity.getId());
         Date heartbeatTime = new Date(optional.get().getLastHeartbeatTime().getTime() + 1);
-        List<TaskEntity> actual = this.taskRepository.findAllByLastHeartbeatTimeBefore(heartbeatTime);
+        List<TaskEntity> actual = this.taskRepository.findAllByLastHeartbeatTimeBeforeAndIdIn(
+                heartbeatTime, Collections.singletonList(taskEntity.getId()));
         Assert.assertFalse(actual.isEmpty());
     }
 
     @Test
-    public void findAllByLastHeartbeatTimeBefore_findBeforeLastHeartbeatTime_returnEmpty() {
+    public void findAllByLastHeartbeatTimeBeforeAndIdIn_findBeforeLastHeartbeatTime_returnEmpty() {
         TaskEntity taskEntity = TestRandom.nextObject(TaskEntity.class);
         taskEntity.setId(null);
         taskEntity.setLastHeartbeatTime(null);
         taskEntity = this.taskRepository.save(taskEntity);
         this.taskRepository.updateLastHeartbeatTimeById(taskEntity.getId());
         Optional<TaskEntity> optional = this.taskRepository.findById(taskEntity.getId());
-        List<TaskEntity> actual = this.taskRepository
-                .findAllByLastHeartbeatTimeBefore(optional.get().getLastHeartbeatTime());
+        List<TaskEntity> actual = this.taskRepository.findAllByLastHeartbeatTimeBeforeAndIdIn(
+                optional.get().getLastHeartbeatTime(), Collections.singletonList(taskEntity.getId()));
         Assert.assertTrue(actual.isEmpty());
     }
 

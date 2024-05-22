@@ -62,7 +62,13 @@ public interface ServiceTaskInstanceRepository extends OdcJpaRepository<ServiceT
 
     List<ServiceTaskInstanceEntity> findByFlowInstanceIdIn(Set<Long> flowInstanceIds);
 
-    List<ServiceTaskInstanceEntity> findByTargetTaskIdIn(Set<Long> flowInstanceIds);
+    @Transactional
+    @Query(value = "update flow_instance_node_task set status=:#{#status.name()} where id in (:ids)",
+            nativeQuery = true)
+    @Modifying
+    int updateStatusByIdIn(@Param("ids") List<Long> ids, @Param("status") FlowNodeStatus status);
+
+    List<ServiceTaskInstanceEntity> findByStatus(FlowNodeStatus status);
 
     @Query(value = "select na.* from flow_instance_node_task as na inner join flow_instance_node as n on na.id=n.instance_id "
             + "where n.instance_type=:#{#instanceType.name()} and n.activity_id=:activityId and n.flow_instance_id=:flowInstanceId",
