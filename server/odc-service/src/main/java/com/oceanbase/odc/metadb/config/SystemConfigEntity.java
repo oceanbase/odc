@@ -15,6 +15,9 @@
  */
 package com.oceanbase.odc.metadb.config;
 
+import javax.persistence.Entity;
+import javax.persistence.Table;
+
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -25,6 +28,8 @@ import lombok.EqualsAndHashCode;
  */
 @Data
 @EqualsAndHashCode(callSuper = true)
+@Entity
+@Table(name = "config_system_configuration")
 public class SystemConfigEntity extends ConfigEntity {
 
     /**

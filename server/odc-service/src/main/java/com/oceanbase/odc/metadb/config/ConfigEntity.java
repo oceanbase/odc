@@ -17,6 +17,11 @@ package com.oceanbase.odc.metadb.config;
 
 import java.util.Date;
 
+import javax.persistence.Column;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.MappedSuperclass;
 import javax.validation.constraints.NotBlank;
 
 import lombok.Data;
@@ -27,26 +32,35 @@ import lombok.Data;
  * @Description: []
  */
 @Data
+@MappedSuperclass
 public class ConfigEntity {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
     /**
      * configuration key
      */
     @NotBlank
+    @Column(name = "`key`")
     private String key;
 
     /**
      * configuration value
      */
+    @Column(name = "`value`")
     private String value;
 
     /**
      * Created time
      */
+    @Column(name = "create_time")
     private Date createTime;
 
     /**
      * Latest update time
      */
+    @Column(name = "update_time")
     private Date updateTime;
 
     /**
