@@ -43,7 +43,8 @@ public class SystemConfigRepositoryTest extends ServiceTestEnv {
     public void test_Insert_NotExists() {
         systemConfigRepository.getJdbcTemplate().batchUpdate("delete from config_system_configuration");
         systemConfigRepository.insert(getConfigEntity());
-        Assert.assertEquals(1, JdbcTestUtils.countRowsInTable(systemConfigRepository.getJdbcTemplate(), "config_system_configuration"));
+        Assert.assertEquals(1, JdbcTestUtils.countRowsInTable(systemConfigRepository.getJdbcTemplate(),
+                "config_system_configuration"));
     }
 
     @Test
@@ -62,7 +63,8 @@ public class SystemConfigRepositoryTest extends ServiceTestEnv {
     public void test_Upsert_NotExists() {
         systemConfigRepository.getJdbcTemplate().batchUpdate("delete from config_system_configuration");
         systemConfigRepository.upsert(getConfigEntity());
-        Assert.assertEquals(1, JdbcTestUtils.countRowsInTable(systemConfigRepository.getJdbcTemplate(), "config_system_configuration"));
+        Assert.assertEquals(1, JdbcTestUtils.countRowsInTable(systemConfigRepository.getJdbcTemplate(),
+                "config_system_configuration"));
     }
 
     @Test
