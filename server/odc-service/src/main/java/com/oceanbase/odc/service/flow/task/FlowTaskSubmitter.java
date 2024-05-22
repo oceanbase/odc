@@ -71,9 +71,8 @@ public class FlowTaskSubmitter implements JavaDelegate {
         CustomDelegateExecution executionFacade = new CustomDelegateExecution(execution);
         long flowInstanceId = FlowTaskUtil.getFlowInstanceId(executionFacade);
         String activityId = executionFacade.getCurrentActivityId();
-        List<FlowableBoundaryEvent<ErrorEventDefinition>> defs =
-                FlowUtil.getBoundaryEventDefinitions(execution.getProcessDefinitionId(),
-                        activityId, ErrorEventDefinition.class);
+        List<FlowableBoundaryEvent<ErrorEventDefinition>> defs = FlowUtil.getBoundaryEventDefinitions(
+                execution.getProcessDefinitionId(), activityId, ErrorEventDefinition.class);
         threadPoolTaskExecutor.submit(() -> {
             FlowTaskInstance flowTaskInstance = null;
             try {
@@ -97,8 +96,7 @@ public class FlowTaskSubmitter implements JavaDelegate {
 
     private void updateFlowTaskInstance(long flowTaskInstanceId, FlowNodeStatus flowNodeStatus) {
         try {
-            int affectRows =
-                    serviceTaskRepository.updateStatusById(flowTaskInstanceId, flowNodeStatus);
+            int affectRows = serviceTaskRepository.updateStatusById(flowTaskInstanceId, flowNodeStatus);
             log.info("Modify node instance status successfully, instanceId={}, flowNodeStatus={}, affectRows={}",
                     flowTaskInstanceId, flowNodeStatus, affectRows);
         } catch (Exception ex) {
@@ -107,8 +105,7 @@ public class FlowTaskSubmitter implements JavaDelegate {
     }
 
     private void handleException(CustomDelegateExecution executionFacade, FlowTaskInstance flowTaskInstance,
-            Exception e,
-            List<FlowableBoundaryEvent<ErrorEventDefinition>> defs) {
+            Exception e, List<FlowableBoundaryEvent<ErrorEventDefinition>> defs) {
         String processDefinitionId = executionFacade.getProcessDefinitionId();
         String activityId = executionFacade.getCurrentActivityId();
         if (defs.isEmpty()) {
