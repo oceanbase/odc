@@ -44,7 +44,6 @@ import com.oceanbase.odc.plugin.task.api.datatransfer.model.CsvConfig;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferConfig;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferFormat;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferObject;
-import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferType;
 import com.oceanbase.odc.plugin.task.obmysql.datatransfer.util.ConnectionUtil;
 import com.oceanbase.odc.plugin.task.obmysql.datatransfer.util.PluginUtil;
 import com.oceanbase.tools.loaddump.common.enums.ObjectType;
@@ -75,15 +74,7 @@ public abstract class BaseParameterFactory<T extends BaseParameter> {
         setInitSqls(parameter);
         setFileConfig(parameter, workingDir);
         parameter.setThreads(3);
-        if (transferConfig.getDataTransferFormat() == DataTransferFormat.SQL) {
-            return parameter;
-        }
-        if (transferConfig.getTransferType() == DataTransferType.EXPORT) {
-            setCsvInfo(parameter);
-        } else if (!transferConfig.isCompressed()) {
-            /*
-             * csv 文件导入时需要手动设置 csv 文件相关解析参数
-             */
+        if (transferConfig.getDataTransferFormat() != DataTransferFormat.SQL) {
             setCsvInfo(parameter);
         }
         return parameter;

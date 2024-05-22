@@ -184,9 +184,11 @@ public class DataTransferService {
             ConnectionConfig connectionConfig = connectionService.getForConnectionSkipPermissionCheck(connectionId);
             ConnectionInfo connectionInfo = connectionConfig.toConnectionInfo();
             String initScript = connectionConfig.getSessionInitScript();
-            connectionInfo.setSessionInitScripts(SqlCommentProcessor
-                    .removeSqlComments(initScript, ";", connectionInfo.getConnectType().getDialectType(), false)
-                    .stream().map(OffsetString::getStr).collect(Collectors.toList()));
+            if (StringUtils.isNotEmpty(initScript)) {
+                connectionInfo.setSessionInitScripts(SqlCommentProcessor
+                        .removeSqlComments(initScript, ";", connectionInfo.getConnectType().getDialectType(), false)
+                        .stream().map(OffsetString::getStr).collect(Collectors.toList()));
+            }
 
             connectionInfo.setSchema(transferConfig.getSchemaName());
             transferConfig.setConnectionInfo(connectionInfo);
