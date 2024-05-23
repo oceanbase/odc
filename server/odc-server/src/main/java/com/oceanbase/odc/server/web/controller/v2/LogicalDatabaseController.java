@@ -53,6 +53,10 @@ public class LogicalDatabaseController {
         return Responses.success(databaseService.detail(id));
     }
 
+    @RequestMapping(value = "/logicaldatabases/{id:[\\d]+}", method = RequestMethod.DELETE)
+    public SuccessResponse<Boolean> delete(@PathVariable Long id) {
+        return Responses.success(databaseService.delete(id));
+    }
 
     @RequestMapping(value = "/logicaldatabases/{logicalDatabaseId:[\\d]+}/logicaltables/{logicalTableId:[\\d]+}",
             method = RequestMethod.DELETE)

@@ -18,12 +18,17 @@ package com.oceanbase.odc.metadb.connection.logicaldatabase;
 import java.util.List;
 import java.util.function.Function;
 
+import org.springframework.transaction.annotation.Transactional;
+
 import com.oceanbase.odc.common.jpa.InsertSqlTemplateBuilder;
 import com.oceanbase.odc.config.jpa.OdcJpaRepository;
 
 public interface DatabaseMappingRepository extends OdcJpaRepository<DatabaseMappingEntity, Long> {
 
     List<DatabaseMappingEntity> findByLogicalDatabaseId(Long logicalDatabaseId);
+
+    @Transactional
+    int deleteByLogicalDatabaseId(Long logicalDatabaseId);
 
     default List<DatabaseMappingEntity> batchCreate(List<DatabaseMappingEntity> entities) {
         String sql = InsertSqlTemplateBuilder.from("connect_database_mapping")

@@ -19,6 +19,11 @@ import java.util.Collection;
 import java.util.List;
 import java.util.function.Function;
 
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+import org.springframework.transaction.annotation.Transactional;
+
 import com.oceanbase.odc.common.jpa.InsertSqlTemplateBuilder;
 import com.oceanbase.odc.config.jpa.OdcJpaRepository;
 
@@ -27,7 +32,14 @@ public interface TableMappingRepository extends OdcJpaRepository<TableMappingEnt
 
     List<TableMappingEntity> findByLogicalTableId(Long logicalTableId);
 
-    void deleteByLogicalTableId(Long logicalTableId);
+    @Transactional
+    int deleteByLogicalTableId(Long logicalTableId);
+
+    @Modifying
+    @Transactional
+    @Query(value = "delete from database_table_mapping t where t.physical_database_id in (:physicalDatabaseIds)",
+            nativeQuery = true)
+    int deleteByPhysicalDatabaseIds(@Param("physicalDatabaseIds") Collection<Long> physicalDatabaseIds);
 
     default List<TableMappingEntity> batchCreate(List<TableMappingEntity> entities) {
         String sql = InsertSqlTemplateBuilder.from("database_table_mapping")

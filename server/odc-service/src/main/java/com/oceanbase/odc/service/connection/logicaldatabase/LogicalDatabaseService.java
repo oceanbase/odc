@@ -16,6 +16,7 @@
 package com.oceanbase.odc.service.connection.logicaldatabase;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
@@ -41,6 +42,8 @@ import com.oceanbase.odc.metadb.connection.DatabaseEntity;
 import com.oceanbase.odc.metadb.connection.DatabaseRepository;
 import com.oceanbase.odc.metadb.connection.logicaldatabase.DatabaseMappingEntity;
 import com.oceanbase.odc.metadb.connection.logicaldatabase.DatabaseMappingRepository;
+import com.oceanbase.odc.metadb.connection.logicaldatabase.TableMappingRepository;
+import com.oceanbase.odc.metadb.dbobject.DBObjectRepository;
 import com.oceanbase.odc.service.collaboration.environment.EnvironmentService;
 import com.oceanbase.odc.service.collaboration.environment.model.Environment;
 import com.oceanbase.odc.service.connection.database.DatabaseService;
@@ -75,6 +78,12 @@ public class LogicalDatabaseService {
 
     @Autowired
     private DatabaseMappingRepository databaseMappingRepository;
+
+    @Autowired
+    private DBObjectRepository dbObjectRepository;
+
+    @Autowired
+    private TableMappingRepository tableMappingRepository;
 
     @Autowired
     private ConnectionConfigRepository connectionRepository;
@@ -136,7 +145,7 @@ public class LogicalDatabaseService {
         return true;
     }
 
-    public DetailLogicalDatabaseResp detail(Long id) {
+    public DetailLogicalDatabaseResp detail(@NotNull Long id) {
         permissionHelper.checkDBPermissions(Collections.singleton(id), DatabasePermissionType.all());
         DatabaseEntity logicalDatabase = databaseRepository.findById(id).orElseThrow(() -> new NotFoundException(
                 ResourceType.ODC_DATABASE, "id", id));
@@ -159,6 +168,22 @@ public class LogicalDatabaseService {
         resp.setLogicalTables(tableService.list(logicalDatabase.getId()));
 
         return resp;
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    public Boolean delete(@NotNull Long id) {
+        permissionHelper.checkDBPermissions(Collections.singleton(id), Arrays.asList(DatabasePermissionType.CHANGE));
+        DatabaseEntity logicalDatabase = databaseRepository.findById(id).orElseThrow(() -> new NotFoundException(
+                ResourceType.ODC_DATABASE, "id", id));
+        Verify.equals(DatabaseType.LOGICAL, logicalDatabase.getType(), "database type");
+        databaseRepository.deleteById(id);
+        Set<Long> physicalDBIds = databaseMappingRepository.findByLogicalDatabaseId(id).stream()
+                .map(DatabaseMappingEntity::getId).collect(
+                        Collectors.toSet());
+        databaseMappingRepository.deleteByLogicalDatabaseId(id);
+        dbObjectRepository.deleteByDatabaseIdIn(Collections.singleton(id));
+        tableMappingRepository.deleteByPhysicalDatabaseIds(physicalDBIds);
+        return true;
     }
 
     public boolean extractLogicalTables(@NotNull Long logicalDatabaseId) {

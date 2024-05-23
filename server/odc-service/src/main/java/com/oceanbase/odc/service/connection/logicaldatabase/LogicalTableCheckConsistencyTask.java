@@ -54,15 +54,15 @@ public class LogicalTableCheckConsistencyTask implements Runnable {
 
     @Override
     public void run() {
-        List<TableMappingEntity> relations = relationRepository.findByLogicalTableId(this.tableId);
+        List<TableMappingEntity> mappings = relationRepository.findByLogicalTableId(this.tableId);
 
-        Set<Long> databaseIds = relations.stream().map(TableMappingEntity::getPhysicalDatabaseId)
+        Set<Long> databaseIds = mappings.stream().map(TableMappingEntity::getPhysicalDatabaseId)
                 .collect(Collectors.toSet());
         Map<Long, Database> id2Databases = databaseService.listDatabasesDetailsByIds(databaseIds).stream()
                 .collect(Collectors.toMap(Database::getId, database -> database));
 
         Map<String, List<TableMappingEntity>> signature2Tables = new HashMap<>();
-        relations.stream().collect(Collectors.groupingBy(TableMappingEntity::getPhysicalDatabaseId))
+        mappings.stream().collect(Collectors.groupingBy(TableMappingEntity::getPhysicalDatabaseId))
                 .forEach((databaseId, physicalTables) -> {
                     Database database = id2Databases.get(databaseId);
                     if (Objects.isNull(database)) {
@@ -94,7 +94,7 @@ public class LogicalTableCheckConsistencyTask implements Runnable {
                     .forEach(table -> table.setConsistent(false));
 
             largestEntry.getValue().forEach(table -> table.setConsistent(true));
-            relationRepository.saveAll(relations);
+            relationRepository.saveAll(mappings);
         }
     }
 }
