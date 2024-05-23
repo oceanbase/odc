@@ -50,6 +50,7 @@ import lombok.extern.slf4j.Slf4j;
 @Component
 public class FlowSchedules {
 
+    private static final Integer OB_MAX_IN_SIZE = 2000;
     @Autowired
     private FlowTaskProperties flowTaskProperties;
     @Autowired
@@ -80,8 +81,7 @@ public class FlowSchedules {
                     .map(ServiceTaskInstanceEntity::getTargetTaskId).distinct().collect(Collectors.toList());
             Date timeoutBound = new Date(System.currentTimeMillis() - timeoutSeconds * 1000);
             List<TaskEntity> heartbeatTimeoutTasks = DBSchemaAccessorUtil.partitionFind(taskIds,
-                    DBSchemaAccessorUtil.OB_MAX_IN_SIZE,
-                    ids -> taskRepository.findAllByLastHeartbeatTimeBeforeAndIdIn(timeoutBound, ids));
+                    OB_MAX_IN_SIZE, ids -> taskRepository.findAllByLastHeartbeatTimeBeforeAndIdIn(timeoutBound, ids));
             if (CollectionUtils.isEmpty(heartbeatTimeoutTasks)) {
                 return;
             }
@@ -105,15 +105,13 @@ public class FlowSchedules {
             log.info("Find heartbeat timeout flow task instance, timeoutSeconds={}, earliestHeartbeatTime={}, "
                     + "flowTaskInstIds={}, flowInstIds={}", timeoutSeconds, timeoutBound, candidateIds, flowInstIds);
             List<Integer> executeResult = DBSchemaAccessorUtil.partitionFind(flowInstIds,
-                    DBSchemaAccessorUtil.OB_MAX_IN_SIZE,
-                    ids -> Collections.singletonList(flowInstanceRepository
-                            .updateStatusByIds(ids, FlowStatus.CANCELLED)));
+                    OB_MAX_IN_SIZE, ids -> Collections.singletonList(
+                            flowInstanceRepository.updateStatusByIds(ids, FlowStatus.CANCELLED)));
             log.info("Update flow instance's status succeed, affectRows={}, flowInstIds={}", executeResult,
                     flowInstIds);
             executeResult = DBSchemaAccessorUtil.partitionFind(candidateIds,
-                    DBSchemaAccessorUtil.OB_MAX_IN_SIZE,
-                    ids -> Collections.singletonList(serviceTaskInstanceRepository
-                            .updateStatusByIdIn(ids, FlowNodeStatus.CANCELLED)));
+                    OB_MAX_IN_SIZE, ids -> Collections.singletonList(
+                            serviceTaskInstanceRepository.updateStatusByIdIn(ids, FlowNodeStatus.CANCELLED)));
             log.info("Update flow task instance's status succeed, affectRows={}, "
                     + "flowTaskInstIds={}", executeResult, candidateIds);
         } catch (Exception e) {
