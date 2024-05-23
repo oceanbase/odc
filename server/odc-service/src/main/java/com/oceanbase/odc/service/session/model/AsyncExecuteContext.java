@@ -44,6 +44,7 @@ public class AsyncExecuteContext {
     private Future<List<JdbcGeneralResult>> future;
     private String currentExecutingSqlTraceId;
     private String currentExecutingSql;
+    private String currentExecutingSqlId;
     private int totalExecutedSqlCount = 0;
 
     public AsyncExecuteContext(List<SqlTuple> sqlTuples, Map<String, Object> contextMap) {

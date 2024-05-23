@@ -20,12 +20,13 @@ import static com.oceanbase.odc.service.queryprofile.model.ProfileConstants.BYTE
 import static com.oceanbase.odc.service.queryprofile.model.ProfileConstants.CHANGE_TIME;
 import static com.oceanbase.odc.service.queryprofile.model.ProfileConstants.DB_TIME;
 import static com.oceanbase.odc.service.queryprofile.model.ProfileConstants.IO_READ_BYTES;
+import static com.oceanbase.odc.service.queryprofile.model.ProfileConstants.MEMSTORE_ROWS_IN_TOTAL;
 import static com.oceanbase.odc.service.queryprofile.model.ProfileConstants.OTHER_STATS;
 import static com.oceanbase.odc.service.queryprofile.model.ProfileConstants.REMOTE_BYTES_IN_TOTAL;
 import static com.oceanbase.odc.service.queryprofile.model.ProfileConstants.REMOTE_IO_READ_BYTES;
 import static com.oceanbase.odc.service.queryprofile.model.ProfileConstants.REMOTE_ROWS_IN_TOTAL;
 import static com.oceanbase.odc.service.queryprofile.model.ProfileConstants.RESCAN_TIMES;
-import static com.oceanbase.odc.service.queryprofile.model.ProfileConstants.ROWS_IN_TOTAL;
+import static com.oceanbase.odc.service.queryprofile.model.ProfileConstants.SSSTORE_ROWS_IN_TOTAL;
 import static com.oceanbase.odc.service.queryprofile.model.ProfileConstants.STATUS;
 
 import java.io.ByteArrayInputStream;
@@ -107,7 +108,7 @@ public class OBQueryProfileManager {
 
     public SqlExplain getProfile(@NonNull String traceId, ConnectionSession session) throws IOException {
         SqlExplain profile;
-        if (VersionUtils.isGreaterThanOrEqualsTo(ConnectionSessionUtil.getVersion(session), "4.2.4")) {
+        if (VersionUtils.isLessThan(ConnectionSessionUtil.getVersion(session), "4.2.4")) {
             profile = new SqlExplain();
             profile.setWarning(ProfileConstants.PROFILE_NOT_SUPPORT);
             return profile;
@@ -211,13 +212,15 @@ public class OBQueryProfileManager {
             operator.putStatistics(RESCAN_TIMES, stats.getStarts() + "");
             operator.putStatistics(IO_READ_BYTES, stats.getOtherstats().get(IO_READ_BYTES));
             operator.putStatistics(BYTES_IN_TOTAL, stats.getOtherstats().get(BYTES_IN_TOTAL));
-            operator.putStatistics(ROWS_IN_TOTAL, stats.getOtherstats().get(ROWS_IN_TOTAL));
+            operator.putStatistics(SSSTORE_ROWS_IN_TOTAL, stats.getOtherstats().get(SSSTORE_ROWS_IN_TOTAL));
+            operator.putStatistics(MEMSTORE_ROWS_IN_TOTAL, stats.getOtherstats().get(MEMSTORE_ROWS_IN_TOTAL));
             operator.putStatistics(REMOTE_IO_READ_BYTES, stats.getOtherstats().get(REMOTE_IO_READ_BYTES));
             operator.putStatistics(REMOTE_BYTES_IN_TOTAL, stats.getOtherstats().get(REMOTE_BYTES_IN_TOTAL));
             operator.putStatistics(REMOTE_ROWS_IN_TOTAL, stats.getOtherstats().get(REMOTE_ROWS_IN_TOTAL));
             graph.addStatistics(IO_READ_BYTES, stats.getOtherstats().get(IO_READ_BYTES));
             graph.addStatistics(BYTES_IN_TOTAL, stats.getOtherstats().get(BYTES_IN_TOTAL));
-            graph.addStatistics(ROWS_IN_TOTAL, stats.getOtherstats().get(ROWS_IN_TOTAL));
+            graph.addStatistics(SSSTORE_ROWS_IN_TOTAL, stats.getOtherstats().get(SSSTORE_ROWS_IN_TOTAL));
+            graph.addStatistics(MEMSTORE_ROWS_IN_TOTAL, stats.getOtherstats().get(MEMSTORE_ROWS_IN_TOTAL));
             graph.addStatistics(REMOTE_IO_READ_BYTES, stats.getOtherstats().get(REMOTE_IO_READ_BYTES));
             graph.addStatistics(REMOTE_BYTES_IN_TOTAL, stats.getOtherstats().get(REMOTE_BYTES_IN_TOTAL));
             graph.addStatistics(REMOTE_ROWS_IN_TOTAL, stats.getOtherstats().get(REMOTE_ROWS_IN_TOTAL));
@@ -263,16 +266,20 @@ public class OBQueryProfileManager {
                                 record.getOtherstats().get(BYTES_IN_TOTAL)));
                 realRecord.getOtherstats().put(REMOTE_ROWS_IN_TOTAL,
                         addStats(realRecord.getOtherstats().get(REMOTE_ROWS_IN_TOTAL),
-                                record.getOtherstats().get(ROWS_IN_TOTAL)));
+                                addStats(record.getOtherstats().get(SSSTORE_ROWS_IN_TOTAL),
+                                        record.getOtherstats().get(MEMSTORE_ROWS_IN_TOTAL))));
             } else {
                 realRecord.getOtherstats().put(IO_READ_BYTES,
                         addStats(realRecord.getOtherstats().get(IO_READ_BYTES),
                                 record.getOtherstats().get(IO_READ_BYTES)));
                 realRecord.getOtherstats().put(BYTES_IN_TOTAL, addStats(realRecord.getOtherstats().get(BYTES_IN_TOTAL),
                         record.getOtherstats().get(BYTES_IN_TOTAL)));
-                realRecord.getOtherstats().put(ROWS_IN_TOTAL,
-                        addStats(realRecord.getOtherstats().get(ROWS_IN_TOTAL),
-                                record.getOtherstats().get(ROWS_IN_TOTAL)));
+                realRecord.getOtherstats().put(SSSTORE_ROWS_IN_TOTAL,
+                        addStats(realRecord.getOtherstats().get(SSSTORE_ROWS_IN_TOTAL),
+                                record.getOtherstats().get(SSSTORE_ROWS_IN_TOTAL)));
+                realRecord.getOtherstats().put(MEMSTORE_ROWS_IN_TOTAL,
+                        addStats(realRecord.getOtherstats().get(MEMSTORE_ROWS_IN_TOTAL),
+                                record.getOtherstats().get(MEMSTORE_ROWS_IN_TOTAL)));
             }
             realRecord.getOtherstats().put(RESCAN_TIMES,
                     addStats(realRecord.getOtherstats().get(RESCAN_TIMES), record.getOtherstats().get(RESCAN_TIMES)));

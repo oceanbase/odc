@@ -24,8 +24,9 @@ public class ProfileConstants {
     public static final String DB_TIME = "DB Time";
     public static final String CHANGE_TIME = "Change Time";
     public static final String IO_READ_BYTES = "total io bytes read from disk";
-    public static final String BYTES_IN_TOTAL = "total bytes processed by storage";
-    public static final String ROWS_IN_TOTAL = "total rows processed by storage";
+    public static final String BYTES_IN_TOTAL = "total bytes processed by ssstore";
+    public static final String SSSTORE_ROWS_IN_TOTAL = "total rows processed by ssstore";
+    public static final String MEMSTORE_ROWS_IN_TOTAL = "total rows processed by memstore";
     public static final String RESCAN_TIMES = "rescan times";
 
     public static final String REMOTE_IO_READ_BYTES = "remote io bytes";

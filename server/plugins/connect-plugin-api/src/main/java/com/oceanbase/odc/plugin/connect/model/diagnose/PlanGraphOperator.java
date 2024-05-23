@@ -18,7 +18,10 @@ package com.oceanbase.odc.plugin.connect.model.diagnose;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 
+import com.fasterxml.jackson.annotation.JsonGetter;
+import com.oceanbase.odc.common.unit.BinarySizeUnit;
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.shared.model.QueryStatus;
 
@@ -68,4 +71,19 @@ public class PlanGraphOperator {
             statistics.put(key, value);
         }
     }
+
+    @JsonGetter
+    public Map<String, String> getStatistics() {
+        if (statistics == null || statistics.isEmpty()) {
+            return statistics;
+        }
+        for (Entry<String, String> entry : statistics.entrySet()) {
+            if (entry.getKey().contains("byte") && StringUtils.isNumeric(entry.getValue())) {
+                long bytes = Long.parseLong(entry.getValue());
+                entry.setValue(BinarySizeUnit.B.of(bytes).toString());
+            }
+        }
+        return statistics;
+    }
+
 }
