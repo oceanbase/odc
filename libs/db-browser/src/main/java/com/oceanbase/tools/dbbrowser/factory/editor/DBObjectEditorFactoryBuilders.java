@@ -21,23 +21,23 @@ import com.oceanbase.tools.dbbrowser.factory.editor.table.DBTableEditorFactoryBu
 
 public class DBObjectEditorFactoryBuilders {
 
-    public DBTableEditorFactoryBuilders table() {
+    public DBTableEditorFactoryBuilders tableEditor() {
         return new DBTableEditorFactoryBuilders();
     }
 
-    public DBTableIndexEditorFactoryBuilders tableIndex() {
+    public DBTableIndexEditorFactoryBuilders tableIndexEditor() {
         return new DBTableIndexEditorFactoryBuilders();
     }
 
-    public <Builders> Builders tableColumn() {
+    public <Builders> Builders tableColumnEditor() {
         return null;
     }
 
-    public <Builders> Builders tableConstraint() {
+    public <Builders> Builders tableConstraintEditor() {
         return null;
     }
 
-    public <Builders> Builders tablePartition() {
+    public <Builders> Builders tablePartitionEditor() {
         return null;
     }
 

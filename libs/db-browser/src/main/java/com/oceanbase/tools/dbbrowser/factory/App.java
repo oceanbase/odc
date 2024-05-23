@@ -32,6 +32,6 @@ public class App {
                 .setJdbcOperations(jdbcOperations)
                 .build().create();
 
-        DBTableEditor editor = DBBrowser.dbObjectEditor().table().forOBOracle().build().create();
+        DBTableEditor editor = DBBrowser.dbObjectEditor().tableEditor().forOBOracle().build().create();
     }
 }
