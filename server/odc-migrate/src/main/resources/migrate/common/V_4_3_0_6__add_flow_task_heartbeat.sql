@@ -1,1 +1,1 @@
-alter table `task_task` add column `last_heartbeat_time` datetime default null comment 'Last heart beat time';
+alter table `task_task` add column `last_heartbeat_time` datetime default null comment 'Last heartbeat time';
