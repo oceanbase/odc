@@ -39,8 +39,6 @@ public class DetailLogicalTableResp {
 
     private Integer physicalTableCount;
 
-    private Date lastSyncTime;
-
     private List<DataNode> inconsistentPhysicalTables;
 
     private DBTable basePhysicalTable;

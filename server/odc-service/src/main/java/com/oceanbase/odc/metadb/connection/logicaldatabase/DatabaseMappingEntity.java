@@ -36,8 +36,8 @@ import lombok.Data;
  */
 @Data
 @Entity
-@Table(name = "connect_logical_table")
-public class LogicalTableEntity {
+@Table(name = "connect_database_mapping")
+public class DatabaseMappingEntity {
     @Id
     @Column(name = "id", nullable = false)
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -57,12 +57,6 @@ public class LogicalTableEntity {
     @Column(name = "logical_database_id", updatable = false, nullable = false)
     private Long logicalDatabaseId;
 
-    @Column(name = "name", updatable = false, nullable = false)
-    private String name;
-
-    @Column(name = "expression", updatable = false, nullable = false)
-    private String expression;
-
-    @Column(name = "last_sync_time", nullable = false)
-    private Date lastSyncTime;
+    @Column(name = "physical_database_id", updatable = false, nullable = false)
+    private Long physicalDatabaseId;
 }

@@ -16,7 +16,6 @@
 package com.oceanbase.odc.service.connection.logicaldatabase;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
@@ -28,10 +27,8 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import com.oceanbase.odc.core.shared.exception.UnexpectedException;
-import com.oceanbase.odc.metadb.connection.DatabaseRepository;
-import com.oceanbase.odc.metadb.connection.logicaldatabase.LogicalTableEntity;
-import com.oceanbase.odc.metadb.connection.logicaldatabase.LogicalTablePhysicalTableEntity;
-import com.oceanbase.odc.metadb.connection.logicaldatabase.LogicalTablePhysicalTableRepository;
+import com.oceanbase.odc.metadb.connection.logicaldatabase.TableMappingEntity;
+import com.oceanbase.odc.metadb.connection.logicaldatabase.TableMappingRepository;
 import com.oceanbase.odc.service.connection.database.DatabaseService;
 import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.connection.logicaldatabase.core.LogicalTableFinder;
@@ -44,32 +41,28 @@ import com.oceanbase.tools.dbbrowser.model.DBTable;
  * @Description: []
  */
 public class LogicalTableCheckConsistencyTask implements Runnable {
-    private final LogicalTableEntity table;
-    private final LogicalTablePhysicalTableRepository relationRepository;
+    private final Long tableId;
+    private final TableMappingRepository relationRepository;
     private final DatabaseService databaseService;
-    private final DatabaseRepository databaseRepository;
 
-    public LogicalTableCheckConsistencyTask(LogicalTableEntity table,
-            LogicalTablePhysicalTableRepository relationRepository, DatabaseService databaseService,
-            DatabaseRepository databaseRepository) {
-        this.table = table;
+    public LogicalTableCheckConsistencyTask(Long tableId,
+            TableMappingRepository relationRepository, DatabaseService databaseService) {
+        this.tableId = tableId;
         this.relationRepository = relationRepository;
         this.databaseService = databaseService;
-        this.databaseRepository = databaseRepository;
     }
 
     @Override
     public void run() {
-        List<LogicalTablePhysicalTableEntity> relations =
-                relationRepository.findByLogicalTableIdIn(Collections.singleton(table.getId()));
+        List<TableMappingEntity> relations = relationRepository.findByLogicalTableId(this.tableId);
 
-        Set<Long> databaseIds = relations.stream().map(LogicalTablePhysicalTableEntity::getPhysicalDatabaseId)
+        Set<Long> databaseIds = relations.stream().map(TableMappingEntity::getPhysicalDatabaseId)
                 .collect(Collectors.toSet());
         Map<Long, Database> id2Databases = databaseService.listDatabasesDetailsByIds(databaseIds).stream()
                 .collect(Collectors.toMap(Database::getId, database -> database));
 
-        Map<String, List<LogicalTablePhysicalTableEntity>> signature2Tables = new HashMap<>();
-        relations.stream().collect(Collectors.groupingBy(LogicalTablePhysicalTableEntity::getPhysicalDatabaseId))
+        Map<String, List<TableMappingEntity>> signature2Tables = new HashMap<>();
+        relations.stream().collect(Collectors.groupingBy(TableMappingEntity::getPhysicalDatabaseId))
                 .forEach((databaseId, physicalTables) -> {
                     Database database = id2Databases.get(databaseId);
                     if (Objects.isNull(database)) {
@@ -77,7 +70,7 @@ public class LogicalTableCheckConsistencyTask implements Runnable {
                     }
                     Map<String, DBTable> tableName2Tables =
                             LogicalTableFinder.getTableName2Tables(database.getDataSource(), database.getName(),
-                                    physicalTables.stream().map(LogicalTablePhysicalTableEntity::getPhysicalTableName)
+                                    physicalTables.stream().map(TableMappingEntity::getPhysicalTableName)
                                             .collect(Collectors.toList()));
                     physicalTables.forEach(physicalTable -> {
                         DBTable table = tableName2Tables.get(physicalTable.getPhysicalTableName());
@@ -90,12 +83,12 @@ public class LogicalTableCheckConsistencyTask implements Runnable {
                     });
                 });
 
-        Optional<Entry<String, List<LogicalTablePhysicalTableEntity>>> largestEntryOptional =
+        Optional<Entry<String, List<TableMappingEntity>>> largestEntryOptional =
                 signature2Tables.entrySet().stream()
                         .max(Comparator.comparingInt(entry -> entry.getValue().size()));
 
         if (largestEntryOptional.isPresent()) {
-            Entry<String, List<LogicalTablePhysicalTableEntity>> largestEntry = largestEntryOptional.get();
+            Entry<String, List<TableMappingEntity>> largestEntry = largestEntryOptional.get();
             signature2Tables.values().stream()
                     .flatMap(List::stream)
                     .forEach(table -> table.setConsistent(false));

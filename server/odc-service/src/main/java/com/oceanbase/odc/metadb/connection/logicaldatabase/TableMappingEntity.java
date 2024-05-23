@@ -36,8 +36,8 @@ import lombok.Data;
  */
 @Data
 @Entity
-@Table(name = "connect_logical_table_physical_table")
-public class LogicalTablePhysicalTableEntity {
+@Table(name = "database_table_mapping")
+public class TableMappingEntity {
     @Id
     @Column(name = "id", nullable = false)
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -65,6 +65,9 @@ public class LogicalTablePhysicalTableEntity {
 
     @Column(name = "physical_table_name", updatable = false, nullable = false)
     private String physicalTableName;
+
+    @Column(name = "expression", updatable = false, nullable = false)
+    private String expression;
 
     @Column(name = "is_consistent", nullable = false)
     private Boolean consistent;

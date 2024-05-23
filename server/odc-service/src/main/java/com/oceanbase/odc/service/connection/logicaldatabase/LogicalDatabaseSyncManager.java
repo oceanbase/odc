@@ -28,10 +28,9 @@ import org.springframework.stereotype.Service;
 
 import com.oceanbase.odc.core.shared.exception.BadRequestException;
 import com.oceanbase.odc.metadb.connection.DatabaseRepository;
-import com.oceanbase.odc.metadb.connection.logicaldatabase.LogicalDBPhysicalDBRepository;
-import com.oceanbase.odc.metadb.connection.logicaldatabase.LogicalTableEntity;
-import com.oceanbase.odc.metadb.connection.logicaldatabase.LogicalTablePhysicalTableRepository;
-import com.oceanbase.odc.metadb.connection.logicaldatabase.LogicalTableRepository;
+import com.oceanbase.odc.metadb.connection.logicaldatabase.DatabaseMappingRepository;
+import com.oceanbase.odc.metadb.connection.logicaldatabase.TableMappingRepository;
+import com.oceanbase.odc.metadb.dbobject.DBObjectRepository;
 import com.oceanbase.odc.service.connection.database.DatabaseService;
 import com.oceanbase.odc.service.connection.database.model.Database;
 
@@ -54,24 +53,24 @@ public class LogicalDatabaseSyncManager {
     @Autowired
     private DatabaseService databaseService;
     @Autowired
-    private LogicalDBPhysicalDBRepository dbRelationRepository;
+    private DatabaseMappingRepository dbRelationRepository;
     @Autowired
-    private LogicalTablePhysicalTableRepository tableRelationRepository;
+    private TableMappingRepository tableRelationRepository;
     @Autowired
-    private LogicalTableRepository tableRepository;
+    private DBObjectRepository dbObjectRepository;
     @Autowired
     private JdbcLockRegistry jdbcLockRegistry;
 
     public void submitExtractLogicalTablesTask(@NotNull Database logicalDatabase) {
         doExecute(() -> executor
                 .submit(new LogicalTableExtractTask(logicalDatabase, databaseRepository, dbRelationRepository,
-                        databaseService, tableRepository, tableRelationRepository, jdbcLockRegistry)));
+                        databaseService, dbObjectRepository, tableRelationRepository, jdbcLockRegistry)));
     }
 
-    public void submitCheckConsistencyTask(@NotNull LogicalTableEntity logicalTable) {
+    public void submitCheckConsistencyTask(@NotNull Long logicalTableId) {
         doExecute(() -> executor
-                .submit(new LogicalTableCheckConsistencyTask(logicalTable, tableRelationRepository, databaseService,
-                        databaseRepository)));
+                .submit(new LogicalTableCheckConsistencyTask(logicalTableId, tableRelationRepository,
+                        databaseService)));
     }
 
     private Future<?> doExecute(Supplier<Future<?>> supplier) {

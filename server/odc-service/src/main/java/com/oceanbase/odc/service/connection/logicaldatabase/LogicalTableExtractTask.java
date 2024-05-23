@@ -16,7 +16,6 @@
 package com.oceanbase.odc.service.connection.logicaldatabase;
 
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -29,17 +28,18 @@ import org.springframework.integration.jdbc.lock.JdbcLockRegistry;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.exception.ConflictException;
 import com.oceanbase.odc.metadb.connection.DatabaseRepository;
-import com.oceanbase.odc.metadb.connection.logicaldatabase.LogicalDBPhysicalDBEntity;
-import com.oceanbase.odc.metadb.connection.logicaldatabase.LogicalDBPhysicalDBRepository;
-import com.oceanbase.odc.metadb.connection.logicaldatabase.LogicalTableEntity;
-import com.oceanbase.odc.metadb.connection.logicaldatabase.LogicalTablePhysicalTableEntity;
-import com.oceanbase.odc.metadb.connection.logicaldatabase.LogicalTablePhysicalTableRepository;
-import com.oceanbase.odc.metadb.connection.logicaldatabase.LogicalTableRepository;
+import com.oceanbase.odc.metadb.connection.logicaldatabase.DatabaseMappingEntity;
+import com.oceanbase.odc.metadb.connection.logicaldatabase.DatabaseMappingRepository;
+import com.oceanbase.odc.metadb.connection.logicaldatabase.TableMappingEntity;
+import com.oceanbase.odc.metadb.connection.logicaldatabase.TableMappingRepository;
+import com.oceanbase.odc.metadb.dbobject.DBObjectEntity;
+import com.oceanbase.odc.metadb.dbobject.DBObjectRepository;
 import com.oceanbase.odc.service.connection.database.DatabaseService;
 import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.connection.logicaldatabase.core.LogicalTableFinder;
 import com.oceanbase.odc.service.connection.logicaldatabase.core.model.DataNode;
 import com.oceanbase.odc.service.connection.logicaldatabase.core.model.LogicalTable;
+import com.oceanbase.tools.dbbrowser.model.DBObjectType;
 
 import lombok.NonNull;
 
@@ -51,30 +51,30 @@ import lombok.NonNull;
 public class LogicalTableExtractTask implements Runnable {
     private final Database logicalDatabase;
     private final DatabaseService databaseService;
-    private final LogicalDBPhysicalDBRepository dbRelationRepository;
-    private final LogicalTablePhysicalTableRepository tableRelationRepository;
-    private final LogicalTableRepository tableRepository;
+    private final DatabaseMappingRepository dbRelationRepository;
+    private final TableMappingRepository tableRelationRepository;
+    private final DBObjectRepository dbObjectRepository;
     private JdbcLockRegistry jdbcLockRegistry;
 
     public LogicalTableExtractTask(@NonNull Database logicalDatabase, @NonNull DatabaseRepository databaseRepository,
-            @NonNull LogicalDBPhysicalDBRepository dbRelationRepository, @NonNull DatabaseService databaseService,
-            @NonNull LogicalTableRepository tableRepository,
-            @NonNull LogicalTablePhysicalTableRepository tableRelationRepository,
+            @NonNull DatabaseMappingRepository dbRelationRepository, @NonNull DatabaseService databaseService,
+            @NonNull DBObjectRepository dbObjectRepository,
+            @NonNull TableMappingRepository tableRelationRepository,
             @NonNull JdbcLockRegistry jdbcLockRegistry) {
         this.logicalDatabase = logicalDatabase;
         this.dbRelationRepository = dbRelationRepository;
         this.databaseService = databaseService;
-        this.tableRepository = tableRepository;
+        this.dbObjectRepository = dbObjectRepository;
         this.tableRelationRepository = tableRelationRepository;
         this.jdbcLockRegistry = jdbcLockRegistry;
     }
 
     @Override
     public void run() {
-        List<LogicalDBPhysicalDBEntity> relations =
+        List<DatabaseMappingEntity> relations =
                 dbRelationRepository.findByLogicalDatabaseId(logicalDatabase.getId());
         List<Database> physicalDatabases = databaseService.listDatabasesDetailsByIds(
-                relations.stream().map(LogicalDBPhysicalDBEntity::getPhysicalDatabaseId).collect(Collectors.toList()));
+                relations.stream().map(DatabaseMappingEntity::getPhysicalDatabaseId).collect(Collectors.toList()));
         List<LogicalTable> logicalTables = new LogicalTableFinder(physicalDatabases).find();
         if (CollectionUtils.isEmpty(logicalTables)) {
             return;
@@ -91,28 +91,27 @@ public class LogicalTableExtractTask implements Runnable {
         }
 
         try {
-            Set<String> existedTables = tableRepository.findByLogicalDatabaseId(logicalDatabase.getId()).stream()
-                    .map(LogicalTableEntity::getName).collect(
-                            Collectors.toSet());
+            Set<String> existedTables = dbObjectRepository.findByDatabaseIdAndType(logicalDatabase.getId(),
+                    DBObjectType.LOGICAL_TABLE).stream().map(DBObjectEntity::getName).collect(Collectors.toSet());
 
             logicalTables.stream().filter(table -> !existedTables.contains(table.getName())).forEach(table -> {
-                LogicalTableEntity tableEntity = new LogicalTableEntity();
-                tableEntity.setLogicalDatabaseId(logicalDatabase.getId());
+                DBObjectEntity tableEntity = new DBObjectEntity();
+                tableEntity.setDatabaseId(logicalDatabase.getId());
+                tableEntity.setType(DBObjectType.LOGICAL_TABLE);
                 tableEntity.setName(table.getName());
-                tableEntity.setExpression(table.getFullNameExpression());
-                tableEntity.setLastSyncTime(new Date());
                 tableEntity.setOrganizationId(logicalDatabase.getOrganizationId());
-                LogicalTableEntity savedTableEntity = tableRepository.save(tableEntity);
+                DBObjectEntity savedTableEntity = dbObjectRepository.save(tableEntity);
 
                 List<DataNode> dataNodes = table.getActualDataNodes();
-                List<LogicalTablePhysicalTableEntity> physicalTableEntities = new ArrayList<>();
+                List<TableMappingEntity> physicalTableEntities = new ArrayList<>();
                 dataNodes.stream().forEach(dataNode -> {
-                    LogicalTablePhysicalTableEntity physicalTableEntity = new LogicalTablePhysicalTableEntity();
+                    TableMappingEntity physicalTableEntity = new TableMappingEntity();
                     physicalTableEntity.setLogicalTableId(savedTableEntity.getId());
                     physicalTableEntity.setOrganizationId(logicalDatabase.getOrganizationId());
                     physicalTableEntity.setPhysicalDatabaseId(dataNode.getDatabaseId());
                     physicalTableEntity.setPhysicalDatabaseName(dataNode.getSchemaName());
                     physicalTableEntity.setPhysicalTableName(dataNode.getTableName());
+                    physicalTableEntity.setExpression(table.getFullNameExpression());
                     physicalTableEntity.setConsistent(true);
                     physicalTableEntities.add(physicalTableEntity);
                 });

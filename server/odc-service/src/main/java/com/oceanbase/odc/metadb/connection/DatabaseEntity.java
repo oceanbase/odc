@@ -29,6 +29,7 @@ import javax.persistence.Table;
 import org.hibernate.annotations.Generated;
 import org.hibernate.annotations.GenerationTime;
 
+import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.service.connection.database.model.DatabaseSyncStatus;
 import com.oceanbase.odc.service.connection.database.model.DatabaseType;
 import com.oceanbase.odc.service.db.schema.model.DBObjectSyncStatus;
@@ -75,6 +76,10 @@ public class DatabaseEntity {
     @Enumerated(value = EnumType.STRING)
     @Column(name = "type", updatable = false, nullable = false)
     private DatabaseType type;
+
+    @Enumerated(value = EnumType.STRING)
+    @Column(name = "dialect_type", updatable = false)
+    private DialectType dialectType;
 
     @Column(name = "project_id")
     private Long projectId;

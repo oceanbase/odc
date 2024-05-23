@@ -17,7 +17,6 @@ package com.oceanbase.odc.service.connection.logicaldatabase;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Date;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
@@ -33,7 +32,6 @@ import org.springframework.transaction.annotation.Transactional;
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.shared.Verify;
-import com.oceanbase.odc.core.shared.constant.ResourceRoleName;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.core.shared.exception.BadRequestException;
 import com.oceanbase.odc.core.shared.exception.NotFoundException;
@@ -41,10 +39,8 @@ import com.oceanbase.odc.metadb.connection.ConnectionConfigRepository;
 import com.oceanbase.odc.metadb.connection.ConnectionEntity;
 import com.oceanbase.odc.metadb.connection.DatabaseEntity;
 import com.oceanbase.odc.metadb.connection.DatabaseRepository;
-import com.oceanbase.odc.metadb.connection.logicaldatabase.LogicalDBPhysicalDBEntity;
-import com.oceanbase.odc.metadb.connection.logicaldatabase.LogicalDBPhysicalDBRepository;
-import com.oceanbase.odc.metadb.connection.logicaldatabase.LogicalDatabaseMetaEntity;
-import com.oceanbase.odc.metadb.connection.logicaldatabase.LogicalDatabaseMetaRepository;
+import com.oceanbase.odc.metadb.connection.logicaldatabase.DatabaseMappingEntity;
+import com.oceanbase.odc.metadb.connection.logicaldatabase.DatabaseMappingRepository;
 import com.oceanbase.odc.service.collaboration.environment.EnvironmentService;
 import com.oceanbase.odc.service.collaboration.environment.model.Environment;
 import com.oceanbase.odc.service.connection.database.DatabaseService;
@@ -78,10 +74,7 @@ public class LogicalDatabaseService {
     private DatabaseRepository databaseRepository;
 
     @Autowired
-    private LogicalDatabaseMetaRepository logicalDatabaseMetaRepository;
-
-    @Autowired
-    private LogicalDBPhysicalDBRepository logicalDBPhysicalDBRepository;
+    private DatabaseMappingRepository databaseMappingRepository;
 
     @Autowired
     private ConnectionConfigRepository connectionRepository;
@@ -113,6 +106,9 @@ public class LogicalDatabaseService {
         DatabaseEntity basePhysicalDatabase = databaseRepository
                 .findById(req.getPhysicalDatabaseIds().iterator().next()).orElseThrow(() -> new NotFoundException(
                         ResourceType.ODC_DATABASE, "id", req.getPhysicalDatabaseIds().iterator().next()));
+        ConnectionEntity baseConnection = connectionRepository.findById(basePhysicalDatabase.getConnectionId())
+                .orElseThrow(() -> new NotFoundException(
+                        ResourceType.ODC_CONNECTION, "id", basePhysicalDatabase.getConnectionId()));
         DatabaseEntity logicalDatabase = new DatabaseEntity();
         logicalDatabase.setProjectId(req.getProjectId());
         logicalDatabase.setName(req.getName());
@@ -120,31 +116,22 @@ public class LogicalDatabaseService {
         logicalDatabase.setEnvironmentId(basePhysicalDatabase.getEnvironmentId());
         logicalDatabase.setDatabaseId(StringUtils.uuid());
         logicalDatabase.setType(DatabaseType.LOGICAL);
+        logicalDatabase.setDialectType(baseConnection.getDialectType());
         logicalDatabase.setSyncStatus(DatabaseSyncStatus.INITIALIZED);
         logicalDatabase.setObjectSyncStatus(DBObjectSyncStatus.INITIALIZED);
         logicalDatabase.setExisted(true);
         logicalDatabase.setOrganizationId(organizationId);
         DatabaseEntity savedLogicalDatabase = databaseRepository.saveAndFlush(logicalDatabase);
 
-        ConnectionEntity baseConnection = connectionRepository.findById(basePhysicalDatabase.getConnectionId())
-                .orElseThrow(() -> new NotFoundException(
-                        ResourceType.ODC_CONNECTION, "id", basePhysicalDatabase.getConnectionId()));
-        LogicalDatabaseMetaEntity logicalDatabaseMeta = new LogicalDatabaseMetaEntity();
-        logicalDatabaseMeta.setDatabaseId(savedLogicalDatabase.getId());
-        logicalDatabaseMeta.setEnvironmentId(savedLogicalDatabase.getEnvironmentId());
-        logicalDatabaseMeta.setDialectType(baseConnection.getDialectType());
-        logicalDatabaseMeta.setOrganizationId(organizationId);
-        logicalDatabaseMetaRepository.saveAndFlush(logicalDatabaseMeta);
-
-        List<LogicalDBPhysicalDBEntity> relations = new ArrayList<>();
+        List<DatabaseMappingEntity> mappings = new ArrayList<>();
         req.getPhysicalDatabaseIds().stream().forEach(physicalDatabaseId -> {
-            LogicalDBPhysicalDBEntity relation = new LogicalDBPhysicalDBEntity();
+            DatabaseMappingEntity relation = new DatabaseMappingEntity();
             relation.setLogicalDatabaseId(savedLogicalDatabase.getId());
             relation.setPhysicalDatabaseId(physicalDatabaseId);
             relation.setOrganizationId(organizationId);
-            relations.add(relation);
+            mappings.add(relation);
         });
-        logicalDBPhysicalDBRepository.batchCreate(relations);
+        databaseMappingRepository.batchCreate(mappings);
 
         return true;
     }
@@ -153,24 +140,20 @@ public class LogicalDatabaseService {
         permissionHelper.checkDBPermissions(Collections.singleton(id), DatabasePermissionType.all());
         DatabaseEntity logicalDatabase = databaseRepository.findById(id).orElseThrow(() -> new NotFoundException(
                 ResourceType.ODC_DATABASE, "id", id));
-        Verify.equals(logicalDatabase.getType(), DatabaseType.LOGICAL, "database type");
-        projectPermissionValidator.checkProjectRole(logicalDatabase.getProjectId(), ResourceRoleName.all());
-        LogicalDatabaseMetaEntity meta = logicalDatabaseMetaRepository.findByDatabaseId(logicalDatabase.getId())
-                .orElseThrow(() -> new NotFoundException(
-                        ResourceType.ODC_DATABASE, "database id", logicalDatabase.getId()));
+        Verify.equals(DatabaseType.LOGICAL, logicalDatabase.getType(), "database type");
 
-        Environment environment = environmentService.detailSkipPermissionCheck(meta.getEnvironmentId());
+        Environment environment = environmentService.detailSkipPermissionCheck(logicalDatabase.getEnvironmentId());
 
         Set<Long> physicalDBIds =
-                logicalDBPhysicalDBRepository.findByLogicalDatabaseId(logicalDatabase.getId()).stream()
-                        .map(LogicalDBPhysicalDBEntity::getPhysicalDatabaseId).collect(Collectors.toSet());
+                databaseMappingRepository.findByLogicalDatabaseId(logicalDatabase.getId()).stream()
+                        .map(DatabaseMappingEntity::getPhysicalDatabaseId).collect(Collectors.toSet());
         List<Database> physicalDatabases = databaseService.listDatabasesByIds(physicalDBIds);
 
         DetailLogicalDatabaseResp resp = new DetailLogicalDatabaseResp();
         resp.setId(logicalDatabase.getId());
         resp.setName(logicalDatabase.getName());
         resp.setAlias(logicalDatabase.getAlias());
-        resp.setDialectType(meta.getDialectType());
+        resp.setDialectType(logicalDatabase.getDialectType());
         resp.setEnvironment(environment);
         resp.setPhysicalDatabases(physicalDatabases);
         resp.setLogicalTables(tableService.list(logicalDatabase.getId()));
@@ -191,7 +174,7 @@ public class LogicalDatabaseService {
         return true;
     }
 
-    private void preCheck(CreateLogicalDatabaseReq req) {
+    protected void preCheck(CreateLogicalDatabaseReq req) {
         permissionHelper.checkDBPermissions(req.getPhysicalDatabaseIds(), DatabasePermissionType.all());
         List<DatabaseEntity> databases = databaseRepository.findByIdIn(req.getPhysicalDatabaseIds());
         Verify.equals(databases.size(), req.getPhysicalDatabaseIds().size(), "physical database");

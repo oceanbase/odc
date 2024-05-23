@@ -23,7 +23,7 @@ import static org.mockito.Mockito.when;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Date;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
@@ -43,11 +43,9 @@ import com.oceanbase.odc.metadb.connection.ConnectionConfigRepository;
 import com.oceanbase.odc.metadb.connection.ConnectionEntity;
 import com.oceanbase.odc.metadb.connection.DatabaseEntity;
 import com.oceanbase.odc.metadb.connection.DatabaseRepository;
-import com.oceanbase.odc.metadb.connection.logicaldatabase.LogicalDatabaseMetaRepository;
 import com.oceanbase.odc.service.collaboration.environment.EnvironmentService;
 import com.oceanbase.odc.service.collaboration.environment.model.Environment;
 import com.oceanbase.odc.service.connection.database.DatabaseMapper;
-import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.connection.database.model.DatabaseType;
 import com.oceanbase.odc.service.connection.logicaldatabase.model.CreateLogicalDatabaseReq;
 import com.oceanbase.odc.service.iam.ProjectPermissionValidator;
@@ -73,9 +71,7 @@ public class LogicalDatabaseServiceTest extends ServiceTestEnv {
 
     @Autowired
     private LogicalDatabaseService logicalDatabaseService;
-    @Autowired
-    private LogicalDatabaseMetaRepository logicalDatabaseMetaRepository;
-    @Autowired
+    @MockBean
     private DatabaseRepository databaseRepository;
     @MockBean
     private AuthenticationFacade authenticationFacade;
@@ -94,14 +90,16 @@ public class LogicalDatabaseServiceTest extends ServiceTestEnv {
         when(connectionRepository.findById(anyLong())).thenReturn(Optional.of(getConnectionEntity()));
         when(environmentService.detailSkipPermissionCheck(anyLong()))
                 .thenReturn(TestRandom.nextObject(Environment.class));
+        when(databaseRepository.findById(anyLong()))
+                .thenReturn(Optional.of(TestRandom.nextObject(DatabaseEntity.class)));
+        when(databaseRepository.findByProjectId(anyLong())).thenReturn(Collections.emptyList());
+        when(databaseRepository.findByIdIn(anyCollection())).thenReturn(listDatabases(4));
         doNothing().when(projectPermissionValidator).checkProjectRole(anyLong(), anyList());
         doNothing().when(permissionHelper).checkDBPermissions(anyCollection(), anyCollection());
-        createDatabaseEntity(4, PROJECT_ID);
     }
 
     @After
     public void tearDown() throws Exception {
-        logicalDatabaseMetaRepository.deleteAll();
         databaseRepository.deleteAll();
     }
 
@@ -123,29 +121,25 @@ public class LogicalDatabaseServiceTest extends ServiceTestEnv {
         Assert.assertNotNull(logicalDatabaseService.detail(databases.get(0).getId()));
     }
 
-    private List<Database> createDatabaseEntity(int quantity, Long projectId) {
-        List<Database> result = new ArrayList<>();
-        for (int i = 0; i < quantity; i++) {
-            DatabaseEntity entity = TestRandom.nextObject(DatabaseEntity.class);
-            entity.setId((long) (i + 1));
-            entity.setType(DatabaseType.PHYSICAL);
-            entity.setProjectId(projectId);
-            entity.setConnectionId(CONNECTION_ID);
-            entity.setEnvironmentId(ENVIRONMENT_ID);
-            entity.setExisted(true);
-            entity.setName("project-" + projectId + "-test-" + i);
-            DatabaseEntity saved = databaseRepository.saveAndFlush(entity);
-            result.add(databaseMapper.entityToModel(saved));
-        }
-        return result;
-    }
-
     private ConnectionEntity getConnectionEntity() {
         ConnectionEntity config = new ConnectionEntity();
         config.setId(CONNECTION_ID);
         config.setCreatorId(USER_ID);
         config.setDialectType(DialectType.OB_MYSQL);
         return config;
+    }
+
+    private List<DatabaseEntity> listDatabases(int quantity) {
+        List<DatabaseEntity> entities = new ArrayList<>();
+        for (int i = 0; i < quantity; i++) {
+            DatabaseEntity entity = TestRandom.nextObject(DatabaseEntity.class);
+            entity.setType(DatabaseType.PHYSICAL);
+            entity.setOrganizationId(ORGANIZATION_ID);
+            entity.setProjectId(PROJECT_ID);
+            entity.setEnvironmentId(ENVIRONMENT_ID);
+            entities.add(entity);
+        }
+        return entities;
     }
 
 }
