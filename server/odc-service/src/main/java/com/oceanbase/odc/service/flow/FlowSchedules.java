@@ -61,12 +61,15 @@ public class FlowSchedules {
 
     @Scheduled(fixedDelayString = "${odc.flow.task.heartbeat-timeout-check-interval-millis:15000}")
     public void cancelHeartbeatTimeoutFlow() {
+        long timeoutSeconds = this.flowTaskProperties.getHeartbeatTimeoutSeconds();
+        if (timeoutSeconds <= 0) {
+            return;
+        }
+        long minTimeoutSeconds = RuntimeTaskConstants.DEFAULT_TASK_CHECK_INTERVAL_SECONDS * 3;
+        if (timeoutSeconds < minTimeoutSeconds) {
+            timeoutSeconds = minTimeoutSeconds;
+        }
         try {
-            long minTimeoutSeconds = RuntimeTaskConstants.DEFAULT_TASK_CHECK_INTERVAL_SECONDS + 5;
-            long timeoutSeconds = this.flowTaskProperties.getHeartbeatTimeoutSeconds();
-            if (timeoutSeconds < minTimeoutSeconds) {
-                timeoutSeconds = minTimeoutSeconds;
-            }
             List<ServiceTaskInstanceEntity> taskInstanceEntities = this.serviceTaskInstanceRepository
                     .findByStatus(FlowNodeStatus.EXECUTING).stream()
                     .filter(e -> e.getTargetTaskId() != null).collect(Collectors.toList());
