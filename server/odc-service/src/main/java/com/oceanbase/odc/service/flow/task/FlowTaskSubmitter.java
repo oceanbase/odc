@@ -78,6 +78,7 @@ public class FlowTaskSubmitter implements JavaDelegate {
             try {
                 flowTaskInstance = getFlowTaskInstance(flowInstanceId, activityId);
                 BaseRuntimeFlowableDelegate<?> delegate = getDelegateInstance(flowTaskInstance);
+                delegate.updateHeartbeatTime();
                 List<Class<? extends ExecutionListener>> list = delegate.getExecutionListenerClasses();
                 if (CollectionUtils.isNotEmpty(list)) {
                     list.forEach(c -> doCallListener(FlowConstants.EXECUTION_START_EVENT_NAME, executionFacade, c));

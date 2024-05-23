@@ -79,8 +79,6 @@ import lombok.extern.slf4j.Slf4j;
 public abstract class BaseODCFlowTaskDelegate<T> extends BaseRuntimeFlowableDelegate<T> {
 
     @Autowired
-    private TaskService taskService;
-    @Autowired
     protected HostProperties hostProperties;
     @Autowired
     protected ServiceTaskInstanceRepository serviceTaskRepository;
@@ -120,11 +118,7 @@ public abstract class BaseODCFlowTaskDelegate<T> extends BaseRuntimeFlowableDele
         int interval = RuntimeTaskConstants.DEFAULT_TASK_CHECK_INTERVAL_SECONDS;
         scheduleExecutor.scheduleAtFixedRate(() -> {
             try {
-                try {
-                    this.taskService.updateHeartbeatTime(getTargetTaskId());
-                } catch (Exception e) {
-                    log.warn("Failed to update heartbeat time, taskId={}", getTargetTaskId(), e);
-                }
+                updateHeartbeatTime();
                 if (taskLatch.getCount() > 0) {
                     onProgressUpdate(taskId, taskService);
                 }

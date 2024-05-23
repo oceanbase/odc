@@ -49,6 +49,7 @@ import com.oceanbase.odc.service.flow.instance.FlowTaskInstance;
 import com.oceanbase.odc.service.flow.listener.ActiveTaskStatisticsListener;
 import com.oceanbase.odc.service.flow.listener.ServiceTaskExecutingCompleteListener;
 import com.oceanbase.odc.service.flow.model.ExecutionStrategyConfig;
+import com.oceanbase.odc.service.task.TaskService;
 
 import lombok.Getter;
 import lombok.NonNull;
@@ -81,6 +82,8 @@ public abstract class BaseRuntimeFlowableDelegate<T> extends BaseFlowableDelegat
     private FlowableAdaptor flowableAdaptor;
     @Autowired
     private EventPublisher eventPublisher;
+    @Autowired
+    protected TaskService taskService;
     @Autowired
     private FlowInstanceRepository flowInstanceRepository;
     private volatile T returnObject = null;
@@ -198,6 +201,14 @@ public abstract class BaseRuntimeFlowableDelegate<T> extends BaseFlowableDelegat
             taskInstance.bindServiceTask(this);
             log.info("Monitor task instance creation and bind tasks, taskInstanceId={}, activityId={}",
                     taskInstance.getId(), activityId);
+        }
+    }
+
+    public void updateHeartbeatTime() {
+        try {
+            this.taskService.updateHeartbeatTime(getTargetTaskId());
+        } catch (Exception e) {
+            log.warn("Failed to update heartbeat time, taskId={}", getTargetTaskId(), e);
         }
     }
 
