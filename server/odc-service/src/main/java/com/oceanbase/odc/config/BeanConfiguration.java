@@ -190,7 +190,7 @@ public class BeanConfiguration {
         }
 
         @Override
-        public boolean supportsCouldParentUid() {
+        public boolean supportsCloudParentUid() {
             return false;
         }
     }

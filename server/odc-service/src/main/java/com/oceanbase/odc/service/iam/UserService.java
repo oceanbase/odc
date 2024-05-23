@@ -373,7 +373,7 @@ public class UserService {
 
         userRepository.deleteById(id);
         userRoleRepository.deleteByUserId(id);
-        deleteRelatedPermissions(id, null);
+        deleteRelatedPermissions(id);
         permissionService.deleteResourceRelatedPermissions(id, ResourceType.ODC_USER, PermissionType.SYSTEM);
 
         for (Consumer<UserDeleteEvent> hook : postUserDeleteHooks) {
@@ -387,7 +387,10 @@ public class UserService {
     @SkipAuthorize("odc internal usage")
     public boolean removeFromOrganization(@NotNull Long id, @NotNull Long organizationId) {
         userRoleRepository.deleteByOrganizationIdAndUserId(organizationId, id);
-        deleteRelatedPermissions(id, organizationId);
+        List<UserPermissionEntity> userPermissionEntities =
+                userPermissionRepository.findByUserIdAndOrganizationId(id, organizationId);
+        userPermissionRepository.deleteByIds(userPermissionEntities.stream().map(UserPermissionEntity::getPermissionId)
+                .collect(Collectors.toList()));
         userOrganizationRepository.deleteByUserIdAndOrganizationId(id, organizationId);
         log.info("User removed from organization, userId={}, organizationId={}", id, organizationId);
         return true;
@@ -920,13 +923,8 @@ public class UserService {
         return userIds.stream().distinct().collect(Collectors.toList());
     }
 
-    private void deleteRelatedPermissions(@NotNull Long userId, Long organizationId) {
-        List<UserPermissionEntity> userPermissionEntities;
-        if (Objects.isNull(organizationId)) {
-            userPermissionEntities = userPermissionRepository.findByUserId(userId);
-        } else {
-            userPermissionEntities = userPermissionRepository.findByUserIdAndOrganizationId(userId, organizationId);
-        }
+    private void deleteRelatedPermissions(Long userId) {
+        List<UserPermissionEntity> userPermissionEntities = userPermissionRepository.findByUserId(userId);
         List<Long> permissionIds =
                 userPermissionEntities.stream().map(UserPermissionEntity::getPermissionId).collect(Collectors.toList());
         if (CollectionUtils.isNotEmpty(permissionIds)) {

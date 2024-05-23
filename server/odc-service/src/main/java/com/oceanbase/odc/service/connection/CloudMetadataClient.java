@@ -84,7 +84,7 @@ public interface CloudMetadataClient {
 
     OBDatabaseUser getSysTenantUser(@NotBlank String instanceId);
 
-    boolean supportsCouldParentUid();
+    boolean supportsCloudParentUid();
 
     enum CloudPermissionAction {
         READONLY,
