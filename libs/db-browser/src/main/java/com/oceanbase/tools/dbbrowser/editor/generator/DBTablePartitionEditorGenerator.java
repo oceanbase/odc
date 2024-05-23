@@ -29,9 +29,8 @@ import com.oceanbase.tools.dbbrowser.util.VersionUtils;
  * @date 2024/5/22
  * @since
  */
-public class DBTablePartitionEditorGenerator extends DBObjectEditorGenerator<DBTablePartitionEditor> {
-    @Override
-    public DBTablePartitionEditor createForOBMySQL(String dbVersion) {
+public class DBTablePartitionEditorGenerator {
+    public static DBTablePartitionEditor createForOBMySQL(String dbVersion) {
         if (VersionUtils.isLessThan(dbVersion, "2.2.77")) {
             return new OBMySQLLessThan2277PartitionEditor();
         } else if (VersionUtils.isLessThan(dbVersion, "4.0.0")) {
@@ -41,31 +40,26 @@ public class DBTablePartitionEditorGenerator extends DBObjectEditorGenerator<DBT
         }
     }
 
-    @Override
-    public DBTablePartitionEditor createForOBOracle(String dbVersion) {
+    public static DBTablePartitionEditor createForOBOracle(String dbVersion) {
         if (VersionUtils.isLessThan(dbVersion, "4.0.0")) {
             return new OBOracleLessThan400DBTablePartitionEditor();
         }
         return new OracleDBTablePartitionEditor();
     }
 
-    @Override
-    public DBTablePartitionEditor createForODPOBMySQL(String dbVersion) {
+    public static DBTablePartitionEditor createForODPOBMySQL(String dbVersion) {
         return new MySQLDBTablePartitionEditor();
     }
 
-    @Override
-    public DBTablePartitionEditor createForMySQL(String dbVersion) {
+    public static DBTablePartitionEditor createForMySQL(String dbVersion) {
         return new MySQLDBTablePartitionEditor();
     }
 
-    @Override
-    public DBTablePartitionEditor createForOracle(String dbVersion) {
+    public static DBTablePartitionEditor createForOracle(String dbVersion) {
         return new OracleDBTablePartitionEditor();
     }
 
-    @Override
-    public DBTablePartitionEditor createForDoris(String dbVersion) {
+    public static DBTablePartitionEditor createForDoris(String dbVersion) {
         return createForMySQL(dbVersion);
     }
 }

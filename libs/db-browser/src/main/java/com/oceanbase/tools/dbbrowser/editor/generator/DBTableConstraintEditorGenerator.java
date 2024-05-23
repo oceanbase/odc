@@ -26,40 +26,34 @@ import com.oceanbase.tools.dbbrowser.util.VersionUtils;
  * @author jingtian
  * @date 2024/5/22
  */
-public class DBTableConstraintEditorGenerator extends DBObjectEditorGenerator<DBTableConstraintEditor> {
-    @Override
-    public DBTableConstraintEditor createForOBMySQL(String dbVersion) {
+public class DBTableConstraintEditorGenerator {
+    public static DBTableConstraintEditor createForOBMySQL(String dbVersion) {
         if (VersionUtils.isLessThan(dbVersion, "4.0.0")) {
             return new OBMySQLLessThan400ConstraintEditor();
         }
         return new MySQLConstraintEditor();
     }
 
-    @Override
-    public DBTableConstraintEditor createForOBOracle(String dbVersion) {
+    public static DBTableConstraintEditor createForOBOracle(String dbVersion) {
         if (VersionUtils.isLessThan(dbVersion, "4.0.0")) {
             return new OBOracleLessThan400ConstraintEditor();
         }
         return new OracleConstraintEditor();
     }
 
-    @Override
-    public DBTableConstraintEditor createForODPOBMySQL(String dbVersion) {
+    public static DBTableConstraintEditor createForODPOBMySQL(String dbVersion) {
         return createForOBMySQL(dbVersion);
     }
 
-    @Override
-    public DBTableConstraintEditor createForMySQL(String dbVersion) {
+    public static DBTableConstraintEditor createForMySQL(String dbVersion) {
         return new MySQLConstraintEditor();
     }
 
-    @Override
-    public DBTableConstraintEditor createForOracle(String dbVersion) {
+    public static DBTableConstraintEditor createForOracle(String dbVersion) {
         return new OracleConstraintEditor();
     }
 
-    @Override
-    public DBTableConstraintEditor createForDoris(String dbVersion) {
+    public static DBTableConstraintEditor createForDoris(String dbVersion) {
         return createForMySQL(dbVersion);
     }
 }

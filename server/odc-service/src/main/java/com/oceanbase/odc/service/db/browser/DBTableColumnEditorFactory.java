@@ -35,19 +35,19 @@ public class DBTableColumnEditorFactory extends DBObjectEditorFactory<DBTableCol
     public DBTableColumnEditor create() {
         switch (connectType) {
             case MYSQL:
-                return new DBTableColumnEditorGenerator().createForMySQL(dbVersion);
+                return DBTableColumnEditorGenerator.createForMySQL(dbVersion);
             case DORIS:
-                return new DBTableColumnEditorGenerator().createForDoris(dbVersion);
+                return DBTableColumnEditorGenerator.createForDoris(dbVersion);
             case OB_MYSQL:
             case CLOUD_OB_MYSQL:
-                return new DBTableColumnEditorGenerator().createForOBMySQL(dbVersion);
+                return DBTableColumnEditorGenerator.createForOBMySQL(dbVersion);
             case ODP_SHARDING_OB_MYSQL:
-                return new DBTableColumnEditorGenerator().createForODPOBMySQL(dbVersion);
+                return DBTableColumnEditorGenerator.createForODPOBMySQL(dbVersion);
             case CLOUD_OB_ORACLE:
             case OB_ORACLE:
-                return new DBTableColumnEditorGenerator().createForOBOracle(dbVersion);
+                return DBTableColumnEditorGenerator.createForOBOracle(dbVersion);
             case ORACLE:
-                return new DBTableColumnEditorGenerator().createForOracle(dbVersion);
+                return DBTableColumnEditorGenerator.createForOracle(dbVersion);
             default:
                 throw new UnsupportedException(String.format("ConnectType '%s' not supported", connectType));
         }

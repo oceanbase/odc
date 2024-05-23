@@ -55,7 +55,7 @@ public class MySQLTableExtension extends OBMySQLTableExtension {
 
     @Override
     protected DBTableEditor getTableEditor(@NonNull Connection connection) {
-        return new DBTableEditorGenerator().createForMySQL(DBAccessorUtil.getDbVersion(connection));
+        return DBTableEditorGenerator.createForMySQL(DBAccessorUtil.getDbVersion(connection));
     }
 
     @Override

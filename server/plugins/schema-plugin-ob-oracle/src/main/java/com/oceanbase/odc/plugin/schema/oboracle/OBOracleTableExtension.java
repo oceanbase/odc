@@ -151,6 +151,6 @@ public class OBOracleTableExtension extends OBMySQLTableExtension {
     @Override
     protected DBTableEditor getTableEditor(Connection connection) {
         String dbVersion = DBAccessorUtil.getDbVersion(connection);
-        return new DBTableEditorGenerator().createForOBOracle(dbVersion);
+        return DBTableEditorGenerator.createForOBOracle(dbVersion);
     }
 }

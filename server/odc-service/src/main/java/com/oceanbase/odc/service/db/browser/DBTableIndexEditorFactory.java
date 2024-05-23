@@ -38,18 +38,18 @@ public class DBTableIndexEditorFactory extends DBObjectEditorFactory<DBTableInde
         switch (connectType) {
             case OB_MYSQL:
             case CLOUD_OB_MYSQL:
-                return new DBTableIndexEditorGenerator().createForOBMySQL(dbVersion);
+                return DBTableIndexEditorGenerator.createForOBMySQL(dbVersion);
             case ODP_SHARDING_OB_MYSQL:
-                return new DBTableIndexEditorGenerator().createForODPOBMySQL(dbVersion);
+                return DBTableIndexEditorGenerator.createForODPOBMySQL(dbVersion);
             case MYSQL:
-                return new DBTableIndexEditorGenerator().createForMySQL(dbVersion);
+                return DBTableIndexEditorGenerator.createForMySQL(dbVersion);
             case ORACLE:
-                return new DBTableIndexEditorGenerator().createForOracle(dbVersion);
+                return DBTableIndexEditorGenerator.createForOracle(dbVersion);
             case CLOUD_OB_ORACLE:
             case OB_ORACLE:
-                return new DBTableIndexEditorGenerator().createForOBOracle(dbVersion);
+                return DBTableIndexEditorGenerator.createForOBOracle(dbVersion);
             case DORIS:
-                return new DBTableIndexEditorGenerator().createForDoris(dbVersion);
+                return DBTableIndexEditorGenerator.createForDoris(dbVersion);
             default:
                 throw new UnsupportedException(String.format("ConnectType '%s' not supported", connectType));
         }

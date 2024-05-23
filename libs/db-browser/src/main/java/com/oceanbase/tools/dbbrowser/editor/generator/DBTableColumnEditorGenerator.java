@@ -23,34 +23,28 @@ import com.oceanbase.tools.dbbrowser.editor.oracle.OracleColumnEditor;
  * @author jingtian
  * @date 2024/5/22
  */
-public class DBTableColumnEditorGenerator extends DBObjectEditorGenerator<DBTableColumnEditor> {
-    @Override
-    public DBTableColumnEditor createForOBMySQL(String dbVersion) {
+public class DBTableColumnEditorGenerator {
+    public static DBTableColumnEditor createForOBMySQL(String dbVersion) {
         return createForMySQL(dbVersion);
     }
 
-    @Override
-    public DBTableColumnEditor createForOBOracle(String dbVersion) {
+    public static DBTableColumnEditor createForOBOracle(String dbVersion) {
         return createForOracle(dbVersion);
     }
 
-    @Override
-    public DBTableColumnEditor createForODPOBMySQL(String dbVersion) {
+    public static DBTableColumnEditor createForODPOBMySQL(String dbVersion) {
         return createForMySQL(dbVersion);
     }
 
-    @Override
-    public DBTableColumnEditor createForMySQL(String dbVersion) {
+    public static DBTableColumnEditor createForMySQL(String dbVersion) {
         return new MySQLColumnEditor();
     }
 
-    @Override
-    public DBTableColumnEditor createForOracle(String dbVersion) {
+    public static DBTableColumnEditor createForOracle(String dbVersion) {
         return new OracleColumnEditor();
     }
 
-    @Override
-    public DBTableColumnEditor createForDoris(String dbVersion) {
+    public static DBTableColumnEditor createForDoris(String dbVersion) {
         return createForMySQL(dbVersion);
     }
 }

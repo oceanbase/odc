@@ -30,47 +30,41 @@ import com.oceanbase.tools.dbbrowser.util.VersionUtils;
  * @author jingtian
  * @date 2024/5/22
  */
-public class DBTableEditorGenerator extends DBObjectEditorGenerator<DBTableEditor> {
-    @Override
-    public DBTableEditor createForOBMySQL(String dbVersion) {
-        DBTableIndexEditor indexEditor = new DBTableIndexEditorGenerator().createForOBMySQL(dbVersion);
-        DBTableColumnEditor columnEditor = new DBTableColumnEditorGenerator().createForOBMySQL(dbVersion);
-        DBTableConstraintEditor constraintEditor = new DBTableConstraintEditorGenerator().createForOBMySQL(dbVersion);
-        DBTablePartitionEditor partitionEditor = new DBTablePartitionEditorGenerator().createForOBMySQL(dbVersion);
+public class DBTableEditorGenerator {
+    public static DBTableEditor createForOBMySQL(String dbVersion) {
+        DBTableIndexEditor indexEditor = DBTableIndexEditorGenerator.createForOBMySQL(dbVersion);
+        DBTableColumnEditor columnEditor = DBTableColumnEditorGenerator.createForOBMySQL(dbVersion);
+        DBTableConstraintEditor constraintEditor = DBTableConstraintEditorGenerator.createForOBMySQL(dbVersion);
+        DBTablePartitionEditor partitionEditor = DBTablePartitionEditorGenerator.createForOBMySQL(dbVersion);
         if (VersionUtils.isLessThan(dbVersion, "4.0.0")) {
             return new OBMySQLLessThan400TableEditor(indexEditor, columnEditor, constraintEditor, partitionEditor);
         }
         return new OBMySQLTableEditor(indexEditor, columnEditor, constraintEditor, partitionEditor);
     }
 
-    @Override
-    public DBTableEditor createForOBOracle(String dbVersion) {
+    public static DBTableEditor createForOBOracle(String dbVersion) {
         return createForOracle(dbVersion);
     }
 
-    @Override
-    public DBTableEditor createForODPOBMySQL(String dbVersion) {
+    public static DBTableEditor createForODPOBMySQL(String dbVersion) {
         return createForOBMySQL(dbVersion);
     }
 
-    @Override
-    public DBTableEditor createForMySQL(String dbVersion) {
+    public static DBTableEditor createForMySQL(String dbVersion) {
         return new MySQLTableEditor(new DBTableIndexEditorGenerator().createForMySQL(dbVersion),
-                new DBTableColumnEditorGenerator().createForMySQL(dbVersion),
-                new DBTableConstraintEditorGenerator().createForMySQL(dbVersion),
-                new DBTablePartitionEditorGenerator().createForMySQL(dbVersion));
+                DBTableColumnEditorGenerator.createForMySQL(dbVersion),
+                DBTableConstraintEditorGenerator.createForMySQL(dbVersion),
+                DBTablePartitionEditorGenerator.createForMySQL(dbVersion));
     }
 
-    @Override
-    public DBTableEditor createForOracle(String dbVersion) {
+    public static DBTableEditor createForOracle(String dbVersion) {
         return new OracleTableEditor(new DBTableIndexEditorGenerator().createForOracle(dbVersion),
-                new DBTableColumnEditorGenerator().createForOracle(dbVersion),
-                new DBTableConstraintEditorGenerator().createForOracle(dbVersion),
-                new DBTablePartitionEditorGenerator().createForOracle(dbVersion));
+                DBTableColumnEditorGenerator.createForOracle(dbVersion),
+                DBTableConstraintEditorGenerator.createForOracle(dbVersion),
+                DBTablePartitionEditorGenerator.createForOracle(dbVersion));
     }
 
-    @Override
-    public DBTableEditor createForDoris(String dbVersion) {
+    public static DBTableEditor createForDoris(String dbVersion) {
         return createForMySQL(dbVersion);
     }
 }

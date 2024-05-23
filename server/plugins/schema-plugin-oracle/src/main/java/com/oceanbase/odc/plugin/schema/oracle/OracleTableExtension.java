@@ -82,6 +82,6 @@ public class OracleTableExtension extends OBOracleTableExtension {
 
     @Override
     protected DBTableEditor getTableEditor(Connection connection) {
-        return new DBTableEditorGenerator().createForOracle(DBAccessorUtil.getDbVersion(connection));
+        return DBTableEditorGenerator.createForOracle(DBAccessorUtil.getDbVersion(connection));
     }
 }

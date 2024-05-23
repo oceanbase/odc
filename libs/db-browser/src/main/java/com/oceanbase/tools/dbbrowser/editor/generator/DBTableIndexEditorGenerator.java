@@ -26,34 +26,28 @@ import com.oceanbase.tools.dbbrowser.editor.oracle.OracleIndexEditor;
  * @date 2024/5/22
  * @since
  */
-public class DBTableIndexEditorGenerator extends DBObjectEditorGenerator<DBTableIndexEditor> {
-    @Override
-    public DBTableIndexEditor createForOBMySQL(String dbVersion) {
+public class DBTableIndexEditorGenerator {
+    public static DBTableIndexEditor createForOBMySQL(String dbVersion) {
         return new OBMySQLIndexEditor();
     }
 
-    @Override
-    public DBTableIndexEditor createForOBOracle(String dbVersion) {
+    public static DBTableIndexEditor createForOBOracle(String dbVersion) {
         return new OBOracleIndexEditor();
     }
 
-    @Override
-    public DBTableIndexEditor createForODPOBMySQL(String dbVersion) {
+    public static DBTableIndexEditor createForODPOBMySQL(String dbVersion) {
         return createForOBMySQL(dbVersion);
     }
 
-    @Override
-    public DBTableIndexEditor createForMySQL(String dbVersion) {
+    public static DBTableIndexEditor createForMySQL(String dbVersion) {
         return new MySQLNoLessThan5700IndexEditor();
     }
 
-    @Override
-    public DBTableIndexEditor createForOracle(String dbVersion) {
+    public static DBTableIndexEditor createForOracle(String dbVersion) {
         return new OracleIndexEditor();
     }
 
-    @Override
-    public DBTableIndexEditor createForDoris(String dbVersion) {
+    public static DBTableIndexEditor createForDoris(String dbVersion) {
         return createForMySQL(dbVersion);
     }
 }

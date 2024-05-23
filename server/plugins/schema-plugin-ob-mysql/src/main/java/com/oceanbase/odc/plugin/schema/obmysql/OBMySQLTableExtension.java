@@ -116,7 +116,7 @@ public class OBMySQLTableExtension implements TableExtensionPoint {
 
     protected DBTableEditor getTableEditor(Connection connection) {
         String dbVersion = DBAccessorUtil.getDbVersion(connection);
-        return new DBTableEditorGenerator().createForOBMySQL(dbVersion);
+        return DBTableEditorGenerator.createForOBMySQL(dbVersion);
     }
 
     protected DBSchemaAccessor getSchemaAccessor(Connection connection) {

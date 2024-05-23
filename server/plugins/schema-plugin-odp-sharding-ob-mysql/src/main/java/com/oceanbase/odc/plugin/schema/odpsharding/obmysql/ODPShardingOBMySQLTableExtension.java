@@ -51,6 +51,6 @@ public class ODPShardingOBMySQLTableExtension extends OBMySQLTableExtension {
     @Override
     protected DBTableEditor getTableEditor(Connection connection) {
         String dbVersion = DBAccessorUtil.getDbVersion(connection);
-        return new DBTableEditorGenerator().createForODPOBMySQL(dbVersion);
+        return DBTableEditorGenerator.createForODPOBMySQL(dbVersion);
     }
 }

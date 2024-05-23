@@ -50,6 +50,6 @@ public class DorisTableExtension extends MySQLTableExtension {
 
     @Override
     protected DBTableEditor getTableEditor(@NonNull Connection connection) {
-        return new DBTableEditorGenerator().createForDoris(DBAccessorUtil.getDbVersion(connection));
+        return DBTableEditorGenerator.createForDoris(DBAccessorUtil.getDbVersion(connection));
     }
 }
