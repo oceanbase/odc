@@ -171,3 +171,13 @@
   default_value: 'true'
   nullable: false
   description: 'Whether the query is being rewritten in ob-oracle mode and increases the RowId.'
+- id: 18
+  category: 'user'
+  key: 'odc.database.default.enableGlobalObjectSearch'
+  type: 'boolean'
+  max_value: ~
+  min_value: ~
+  allowed_values: [ 'true','false' ]
+  default_value: 'true'
+  nullable: false
+  description: 'Whether enable global database object search.'
