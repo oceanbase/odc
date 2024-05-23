@@ -21,7 +21,6 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -37,8 +36,6 @@ import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import org.springframework.jdbc.datasource.SingleConnectionDataSource;
 import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.support.TransactionTemplate;
-
-import com.google.common.collect.Iterables;
 
 /**
  * @author yaobin
@@ -86,16 +83,6 @@ public class JdbcOperationsUtil {
                 }
             }
         });
-    }
-
-    public static <T> List<T> batchCreate(JdbcOperations jdbcOperations, List<T> entities, String sql,
-            Map<Integer, Function<T, Object>> valueGetter, BiConsumer<T, Long> idSetter, int batchSize) {
-        Iterable<List<T>> partitions = Iterables.partition(entities, batchSize);
-        List<T> result = new ArrayList<>();
-        for (List<T> partition : partitions) {
-            result.addAll(batchCreate(jdbcOperations, partition, sql, valueGetter, idSetter));
-        }
-        return result;
     }
 
     private static Long getGeneratedId(ResultSet resultSet) throws SQLException {

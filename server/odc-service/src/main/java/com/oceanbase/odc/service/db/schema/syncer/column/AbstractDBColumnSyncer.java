@@ -54,6 +54,8 @@ public abstract class AbstractDBColumnSyncer<T extends ExtensionPoint> implement
     @Autowired
     private DBColumnRepository dbColumnRepository;
 
+    private static final int BATCH_SIZE = 1000;
+
     @Override
     public void sync(@NonNull Connection connection, @NonNull Database database, @NonNull DialectType dialectType) {
         T extensionPoint = getExtensionPoint(dialectType);
@@ -100,7 +102,7 @@ public abstract class AbstractDBColumnSyncer<T extends ExtensionPoint> implement
             }
         }
         if (CollectionUtils.isNotEmpty(toBeInserted)) {
-            dbColumnRepository.batchCreate(toBeInserted);
+            dbColumnRepository.batchCreate(toBeInserted, BATCH_SIZE);
         }
         if (CollectionUtils.isNotEmpty(toBeDeleted)) {
             dbColumnRepository

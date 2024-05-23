@@ -15,6 +15,7 @@
  */
 package com.oceanbase.odc.metadb.dbobject;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.function.Function;
@@ -24,6 +25,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.google.common.collect.Iterables;
 import com.oceanbase.odc.common.jpa.InsertSqlTemplateBuilder;
 import com.oceanbase.odc.config.jpa.OdcJpaRepository;
 import com.oceanbase.tools.dbbrowser.model.DBObjectType;
@@ -50,7 +52,7 @@ public interface DBObjectRepository extends OdcJpaRepository<DBObjectEntity, Lon
     @Query(value = "delete from database_schema_object t where t.database_id in (:databaseIds)", nativeQuery = true)
     int deleteByDatabaseIdIn(@Param("databaseIds") Collection<Long> databaseIds);
 
-    default List<DBObjectEntity> batchCreate(List<DBObjectEntity> entities) {
+    default List<DBObjectEntity> batchCreate(List<DBObjectEntity> entities, int batchSize) {
         String sql = InsertSqlTemplateBuilder.from("database_schema_object")
                 .field(DBObjectEntity_.name)
                 .field(DBObjectEntity_.databaseId)
@@ -63,7 +65,12 @@ public interface DBObjectRepository extends OdcJpaRepository<DBObjectEntity, Lon
                 .add(e -> e.getType().name())
                 .add(DBObjectEntity::getOrganizationId)
                 .build();
-        return batchCreate(entities, sql, getter, DBObjectEntity::setId, 200);
+        Iterable<List<DBObjectEntity>> partitions = Iterables.partition(entities, batchSize);
+        List<DBObjectEntity> result = new ArrayList<>();
+        for (List<DBObjectEntity> partition : partitions) {
+            result.addAll(batchCreate(partition, sql, getter, DBObjectEntity::setId));
+        }
+        return result;
     }
 
 }
