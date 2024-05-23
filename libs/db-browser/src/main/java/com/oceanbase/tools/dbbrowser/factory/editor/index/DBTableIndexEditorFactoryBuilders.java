@@ -20,27 +20,27 @@ import com.oceanbase.tools.dbbrowser.factory.DBBrowserFactoryBuilders;
 
 public class DBTableIndexEditorFactoryBuilders implements DBBrowserFactoryBuilders {
     @Override
-    public <Builder> Builder getForMySQL() {
+    public <Builder> Builder forMySQL() {
         return null;
     }
 
     @Override
-    public <Builder> Builder getForOracle() {
+    public <Builder> Builder forOracle() {
         return null;
     }
 
     @Override
-    public OBMySQLDBTableIndexEditorFactoryBuilder getForOBMySQL() {
+    public OBMySQLDBTableIndexEditorFactoryBuilder forOBMySQL() {
         return new OBMySQLDBTableIndexEditorFactoryBuilder();
     }
 
     @Override
-    public OBOracleDBTableIndexEditorFactoryBuilder getForOBOracle() {
+    public OBOracleDBTableIndexEditorFactoryBuilder forOBOracle() {
         return new OBOracleDBTableIndexEditorFactoryBuilder();
     }
 
     @Override
-    public <Builder> Builder getForDoris() {
+    public <Builder> Builder forDoris() {
         return null;
     }
 }

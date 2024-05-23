@@ -18,14 +18,14 @@ package com.oceanbase.tools.dbbrowser.factory;
 
 public interface DBBrowserFactoryBuilders {
 
-    <Builder> Builder getForMySQL();
+    <Builder> Builder forMySQL();
 
-    <Builder> Builder getForOracle();
+    <Builder> Builder forOracle();
 
-    <Builder> Builder getForOBMySQL();
+    <Builder> Builder forOBMySQL();
 
-    <Builder> Builder getForOBOracle();
+    <Builder> Builder forOBOracle();
 
-    <Builder> Builder getForDoris();
+    <Builder> Builder forDoris();
 
 }

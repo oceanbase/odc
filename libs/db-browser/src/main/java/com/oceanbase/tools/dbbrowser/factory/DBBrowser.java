@@ -19,13 +19,13 @@ package com.oceanbase.tools.dbbrowser.factory;
 import com.oceanbase.tools.dbbrowser.factory.editor.DBObjectEditorFactoryBuilders;
 import com.oceanbase.tools.dbbrowser.factory.schema.DBSchemaAccessorFactoryBuilders;
 
-public class DBBrowsers {
+public class DBBrowser {
 
-    public static DBSchemaAccessorFactoryBuilders getDBSchemaAccessorFactoryBuilders() {
+    public static DBSchemaAccessorFactoryBuilders dbSchemaAccessor() {
         return new DBSchemaAccessorFactoryBuilders();
     }
 
-    public static DBObjectEditorFactoryBuilders getDBObjectEditorFactoryBuilders() {
+    public static DBObjectEditorFactoryBuilders dbObjectEditor() {
         return new DBObjectEditorFactoryBuilders();
     }
 

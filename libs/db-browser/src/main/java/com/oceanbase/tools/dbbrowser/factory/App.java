@@ -24,14 +24,14 @@ public class App {
 
     public static void main(String[] args) {
         JdbcOperations jdbcOperations = null;
-        DBSchemaAccessor accessor = DBBrowsers
-                .getDBSchemaAccessorFactoryBuilders()
-                .getForOBMySQL()
+        DBSchemaAccessor accessor = DBBrowser
+                .dbSchemaAccessor()
+                .forOBMySQL()
                 .setDbVersion("2.2.77")
                 .setTenantName("Oboralce")
                 .setJdbcOperations(jdbcOperations)
                 .build().create();
 
-        DBTableEditor editor = DBBrowsers.getDBObjectEditorFactoryBuilders().table().getForOBOracle().build().create();
+        DBTableEditor editor = DBBrowser.dbObjectEditor().table().forOBOracle().build().create();
     }
 }

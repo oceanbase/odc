@@ -21,27 +21,27 @@ import com.oceanbase.tools.dbbrowser.factory.editor.table.OBMySQLDBTableEditorFa
 
 public class DBTableEditorFactoryBuilders implements DBBrowserFactoryBuilders {
     @Override
-    public <Builder> Builder getForMySQL() {
+    public <Builder> Builder forMySQL() {
         return null;
     }
 
     @Override
-    public <Builder> Builder getForOracle() {
+    public <Builder> Builder forOracle() {
         return null;
     }
 
     @Override
-    public OBMySQLDBTableEditorFactoryBuilder getForOBMySQL() {
+    public OBMySQLDBTableEditorFactoryBuilder forOBMySQL() {
         return new OBMySQLDBTableEditorFactoryBuilder();
     }
 
     @Override
-    public OBOracleDBTableEditorFactoryBuilder getForOBOracle() {
+    public OBOracleDBTableEditorFactoryBuilder forOBOracle() {
         return new OBOracleDBTableEditorFactoryBuilder();
     }
 
     @Override
-    public <Builder> Builder getForDoris() {
+    public <Builder> Builder forDoris() {
         return null;
     }
 }

@@ -21,27 +21,27 @@ import com.oceanbase.tools.dbbrowser.factory.DBBrowserFactoryBuilders;
 public class DBSchemaAccessorFactoryBuilders implements DBBrowserFactoryBuilders {
 
     @Override
-    public <Builder> Builder getForMySQL() {
+    public <Builder> Builder forMySQL() {
         return null;
     }
 
     @Override
-    public <Builder> Builder getForOracle() {
+    public <Builder> Builder forOracle() {
         return null;
     }
 
     @Override
-    public OBMySQLDBSchemaAccessorFactoryBuilder getForOBMySQL() {
+    public OBMySQLDBSchemaAccessorFactoryBuilder forOBMySQL() {
         return new OBMySQLDBSchemaAccessorFactoryBuilder();
     }
 
     @Override
-    public OBOracleDBSchemaAccessorFactoryBuilder getForOBOracle() {
+    public OBOracleDBSchemaAccessorFactoryBuilder forOBOracle() {
         return new OBOracleDBSchemaAccessorFactoryBuilder();
     }
 
     @Override
-    public <Builder> Builder getForDoris() {
+    public <Builder> Builder forDoris() {
         return null;
     }
 
