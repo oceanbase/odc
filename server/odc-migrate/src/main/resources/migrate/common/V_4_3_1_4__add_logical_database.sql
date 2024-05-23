@@ -2,7 +2,7 @@ alter table connect_database modify column connection_id bigint(20) DEFAULT NULL
 alter table connect_database add column `type` varchar(32)  NOT NULL DEFAULT 'PHYSICAL' COMMENT 'optional value: PHYSICAL, LOGICAL';
 alter table connect_database add column `alias` varchar(256) DEFAULT NULL COMMENT 'alias name for database';
 alter table `connect_database` modify `last_sync_time` datetime default null comment 'last synchronizing time';
-alter table `connect_database` add column `dialect_type` varchar(64) DEFAULT NULL COMMENT 'database dialect type',
+alter table `connect_database` add column `dialect_type` varchar(64) DEFAULT NULL COMMENT 'database dialect type';
 
 create table if not exists `connect_database_mapping`(
     `id` bigint(20) NOT NULL AUTO_INCREMENT,

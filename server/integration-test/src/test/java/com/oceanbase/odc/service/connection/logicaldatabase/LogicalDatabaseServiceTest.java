@@ -23,14 +23,11 @@ import static org.mockito.Mockito.when;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Collectors;
 
-import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -43,6 +40,8 @@ import com.oceanbase.odc.metadb.connection.ConnectionConfigRepository;
 import com.oceanbase.odc.metadb.connection.ConnectionEntity;
 import com.oceanbase.odc.metadb.connection.DatabaseEntity;
 import com.oceanbase.odc.metadb.connection.DatabaseRepository;
+import com.oceanbase.odc.metadb.connection.logicaldatabase.DatabaseMappingEntity;
+import com.oceanbase.odc.metadb.connection.logicaldatabase.DatabaseMappingRepository;
 import com.oceanbase.odc.service.collaboration.environment.EnvironmentService;
 import com.oceanbase.odc.service.collaboration.environment.model.Environment;
 import com.oceanbase.odc.service.connection.database.DatabaseMapper;
@@ -64,14 +63,14 @@ public class LogicalDatabaseServiceTest extends ServiceTestEnv {
     private static final Long CONNECTION_ID = 1L;
     private static final Long ENVIRONMENT_ID = 1L;
     private static final Long PROJECT_ID = 1L;
+    private static final Long LOGICAL_DATABASE_ID = 5L;
     private static final String LOGICAL_DATABASE_NAME = "lebie_test";
     private static final String LOGICAL_DATABASE_ALIAS = "lebie_test_alias";
     private static final DatabaseMapper databaseMapper = DatabaseMapper.INSTANCE;
 
-
     @Autowired
     private LogicalDatabaseService logicalDatabaseService;
-    @MockBean
+    @Autowired
     private DatabaseRepository databaseRepository;
     @MockBean
     private AuthenticationFacade authenticationFacade;
@@ -83,6 +82,8 @@ public class LogicalDatabaseServiceTest extends ServiceTestEnv {
     private EnvironmentService environmentService;
     @MockBean
     private DBResourcePermissionHelper permissionHelper;
+    @MockBean
+    private DatabaseMappingRepository databaseMappingRepository;
 
     @Before
     public void setUp() throws Exception {
@@ -90,22 +91,14 @@ public class LogicalDatabaseServiceTest extends ServiceTestEnv {
         when(connectionRepository.findById(anyLong())).thenReturn(Optional.of(getConnectionEntity()));
         when(environmentService.detailSkipPermissionCheck(anyLong()))
                 .thenReturn(TestRandom.nextObject(Environment.class));
-        when(databaseRepository.findById(anyLong()))
-                .thenReturn(Optional.of(TestRandom.nextObject(DatabaseEntity.class)));
-        when(databaseRepository.findByProjectId(anyLong())).thenReturn(Collections.emptyList());
-        when(databaseRepository.findByIdIn(anyCollection())).thenReturn(listDatabases(4));
         doNothing().when(projectPermissionValidator).checkProjectRole(anyLong(), anyList());
         doNothing().when(permissionHelper).checkDBPermissions(anyCollection(), anyCollection());
+        List<DatabaseEntity> physicalDatabases = listDatabases(4);
+        databaseRepository.saveAllAndFlush(physicalDatabases);
     }
-
-    @After
-    public void tearDown() throws Exception {
-        databaseRepository.deleteAll();
-    }
-
 
     @Test
-    public void testDetail() {
+    public void testCreate() {
         CreateLogicalDatabaseReq req = new CreateLogicalDatabaseReq();
         req.setProjectId(PROJECT_ID);
         req.setAlias(LOGICAL_DATABASE_ALIAS);
@@ -113,12 +106,17 @@ public class LogicalDatabaseServiceTest extends ServiceTestEnv {
         Set<Long> databaseIds = new HashSet<>();
         databaseIds.addAll(Arrays.asList(1L, 2L, 3L, 4L));
         req.setPhysicalDatabaseIds(databaseIds);
-        logicalDatabaseService.create(req);
-        List<DatabaseEntity> databases = databaseRepository.findAll().stream()
-                .filter(database -> database.getType() == DatabaseType.LOGICAL).collect(
-                        Collectors.toList());
-        Assert.assertEquals(1, databases.size());
-        Assert.assertNotNull(logicalDatabaseService.detail(databases.get(0).getId()));
+        Assert.assertTrue(logicalDatabaseService.create(req));
+    }
+
+    @Test
+    public void testDetail() {
+        DatabaseEntity logicalDatabase = TestRandom.nextObject(DatabaseEntity.class);
+        logicalDatabase.setId(LOGICAL_DATABASE_ID);
+        logicalDatabase.setType(DatabaseType.LOGICAL);
+        databaseRepository.saveAndFlush(logicalDatabase);
+        when(databaseMappingRepository.findByLogicalDatabaseId(anyLong())).thenReturn(listDatabaseMappings(4));
+        Assert.assertNotNull(logicalDatabaseService.detail(LOGICAL_DATABASE_ID));
     }
 
     private ConnectionEntity getConnectionEntity() {
@@ -140,6 +138,19 @@ public class LogicalDatabaseServiceTest extends ServiceTestEnv {
             entities.add(entity);
         }
         return entities;
+    }
+
+    private List<DatabaseMappingEntity> listDatabaseMappings(int quantity) {
+        List<DatabaseMappingEntity> mappings = new ArrayList<>();
+        for (int i = 0; i < quantity; i++) {
+            DatabaseMappingEntity mapping = TestRandom.nextObject(DatabaseMappingEntity.class);
+            mapping.setOrganizationId(ORGANIZATION_ID);
+            mapping.setLogicalDatabaseId(LOGICAL_DATABASE_ID);
+            mapping.setPhysicalDatabaseId((long) i + 1);
+            mapping.setLogicalDatabaseId(PROJECT_ID);
+            mappings.add(mapping);
+        }
+        return mappings;
     }
 
 }
