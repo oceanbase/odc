@@ -53,21 +53,19 @@ public class MultipleDatabaseChangeParameters extends DatabaseChangeParameters {
      */
     private Long manualTimeoutMillis = 1000 * 60 * 60 * 24 * 2L;// 2d for default
 
-    public DatabaseChangeParameters convertIntoDatabaseChangeParameters(
-            MultipleDatabaseChangeParameters multipleDatabaseChangeParameters) {
+    public DatabaseChangeParameters convertIntoDatabaseChangeParameters(MultipleDatabaseChangeParameters parameter) {
         DatabaseChangeParameters databaseChangeParameters = new DatabaseChangeParameters();
-        databaseChangeParameters.setSqlContent(multipleDatabaseChangeParameters.getSqlContent());
-        databaseChangeParameters.setSqlObjectNames(multipleDatabaseChangeParameters.getSqlObjectNames());
-        databaseChangeParameters.setSqlObjectIds(multipleDatabaseChangeParameters.getSqlObjectIds());
+        databaseChangeParameters.setSqlContent(parameter.getSqlContent());
+        databaseChangeParameters.setSqlObjectNames(parameter.getSqlObjectNames());
+        databaseChangeParameters.setSqlObjectIds(parameter.getSqlObjectIds());
         databaseChangeParameters
-                .setRollbackSqlObjectNames(multipleDatabaseChangeParameters.getRollbackSqlObjectNames());
-        databaseChangeParameters.setRollbackSqlContent(multipleDatabaseChangeParameters.getRollbackSqlContent());
-        databaseChangeParameters.setRollbackSqlObjectIds(multipleDatabaseChangeParameters.getRollbackSqlObjectIds());
+                .setRollbackSqlObjectNames(parameter.getRollbackSqlObjectNames());
+        databaseChangeParameters.setRollbackSqlContent(parameter.getRollbackSqlContent());
+        databaseChangeParameters.setRollbackSqlObjectIds(parameter.getRollbackSqlObjectIds());
         // Error strategy for sql changes in a single database
-        databaseChangeParameters.setErrorStrategy(multipleDatabaseChangeParameters.getErrorStrategy().toString());
-        databaseChangeParameters.setDelimiter(multipleDatabaseChangeParameters.getDelimiter());
-        databaseChangeParameters.setGenerateRollbackPlan(multipleDatabaseChangeParameters.getGenerateRollbackPlan());
-        databaseChangeParameters.setParentJobType(multipleDatabaseChangeParameters.getParentJobType());
+        databaseChangeParameters.setErrorStrategy(parameter.getErrorStrategy().toString());
+        databaseChangeParameters.setDelimiter(parameter.getDelimiter());
+        databaseChangeParameters.setGenerateRollbackPlan(parameter.getGenerateRollbackPlan());
         return databaseChangeParameters;
     }
 

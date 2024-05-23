@@ -201,8 +201,6 @@ public class MultipleDatabaseChangeRuntimeFlowableTask extends BaseODCFlowTaskDe
         }
     }
 
-
-
     @Override
     protected void onFailure(Long taskId, TaskService taskService) {
         try {
@@ -211,9 +209,9 @@ public class MultipleDatabaseChangeRuntimeFlowableTask extends BaseODCFlowTaskDe
                     this.batchId == null ? null : this.batchId + 1);
             updateFlowInstanceStatus(FlowStatus.EXECUTION_FAILED);
             taskService.fail(taskId, 100, generateResult());
-            super.onFailure(taskId, taskService);
         } finally {
             MultipleDatabaseChangeTraceContextHolder.clear();
+            super.onFailure(taskId, taskService);
         }
     }
 
