@@ -15,6 +15,7 @@
  */
 package com.oceanbase.odc.metadb.config;
 
+import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Table;
 
@@ -31,6 +32,12 @@ import lombok.EqualsAndHashCode;
 @Entity
 @Table(name = "config_system_configuration")
 public class SystemConfigEntity extends ConfigEntity {
+
+    @Column(name = "creator_id")
+    private String creatorId;
+
+    @Column(name = "last_modifier_id")
+    private String lastModifierId;
 
     /**
      * application name
