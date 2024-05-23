@@ -115,6 +115,7 @@ import com.oceanbase.odc.service.onlineschemachange.ddl.DBUser;
 import com.oceanbase.odc.service.onlineschemachange.ddl.OscDBAccessor;
 import com.oceanbase.odc.service.onlineschemachange.ddl.OscDBAccessorFactory;
 import com.oceanbase.odc.service.onlineschemachange.rename.OscDBUserUtil;
+import com.oceanbase.odc.service.permission.common.PermissionCheckWhitelist;
 import com.oceanbase.odc.service.permission.database.DatabasePermissionHelper;
 import com.oceanbase.odc.service.permission.database.model.DatabasePermissionType;
 import com.oceanbase.odc.service.permission.database.model.UnauthorizedDatabase;
@@ -215,6 +216,9 @@ public class DatabaseService {
 
     @Autowired
     private DBSchemaSyncProperties dbSchemaSyncProperties;
+
+    @Autowired
+    private PermissionCheckWhitelist permissionCheckWhitelist;
 
     @Transactional(rollbackFor = Exception.class)
     @SkipAuthorize("internal authenticated")
@@ -746,6 +750,10 @@ public class DatabaseService {
     public List<UnauthorizedDatabase> filterUnauthorizedDatabases(
             Map<String, Set<DatabasePermissionType>> schemaName2PermissionTypes, @NotNull Long dataSourceId,
             boolean ignoreDataDirectory) {
+        if (authenticationFacade.currentUser() != null
+                && authenticationFacade.currentUser().getOrganizationType() == OrganizationType.INDIVIDUAL) {
+            return Collections.emptyList();
+        }
         if (schemaName2PermissionTypes == null || schemaName2PermissionTypes.isEmpty()) {
             return Collections.emptyList();
         }
@@ -758,10 +766,11 @@ public class DatabaseService {
                 .getPermissions(databases.stream().map(Database::getId).collect(Collectors.toList()));
         List<UnauthorizedDatabase> unauthorizedDatabases = new ArrayList<>();
         Set<Long> involvedProjectIds = projectService.getMemberProjectIds(authenticationFacade.currentUserId());
+        DialectType dialectType = dataSource.getDialectType();
         for (Map.Entry<String, Set<DatabasePermissionType>> entry : schemaName2PermissionTypes.entrySet()) {
             String schemaName = entry.getKey();
             Set<DatabasePermissionType> needs = entry.getValue();
-            if (CollectionUtils.isEmpty(needs)) {
+            if (CollectionUtils.isEmpty(needs) || permissionCheckWhitelist.containsDatabase(schemaName, dialectType)) {
                 continue;
             }
             if (name2Database.containsKey(schemaName)) {
@@ -786,7 +795,6 @@ public class DatabaseService {
             }
         }
         if (ignoreDataDirectory) {
-            DialectType dialectType = dataSource.getDialectType();
             if (dialectType != null) {
                 if (dialectType.isOracle()) {
                     unauthorizedDatabases =

@@ -15,19 +15,27 @@
  */
 package com.oceanbase.odc.service.db.schema;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
+import java.util.stream.Collectors;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.integration.jdbc.lock.JdbcLockRegistry;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 import com.oceanbase.odc.core.shared.constant.OrganizationType;
+import com.oceanbase.odc.metadb.iam.OrganizationEntity;
 import com.oceanbase.odc.metadb.iam.OrganizationRepository;
+import com.oceanbase.odc.service.config.UserConfigKeys;
+import com.oceanbase.odc.service.config.UserConfigService;
+import com.oceanbase.odc.service.config.model.Configuration;
 import com.oceanbase.odc.service.connection.ConnectionService;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 
@@ -51,13 +59,23 @@ public class DBSchemaSyncScheduler {
     private OrganizationRepository organizationRepository;
 
     @Autowired
+    private UserConfigService userConfigService;
+
+    @Autowired
     private JdbcLockRegistry jdbcLockRegistry;
+
+    @Value("${odc.database.schema.global-search.enabled:true}")
+    private boolean enableGlobalSearch;
 
     private static final String LOCK_KEY = "db-schema-sync-schedule-lock";
     private static final long LOCK_HOLD_TIME_SECONDS = 10;
 
     @Scheduled(cron = "${odc.database.schema.sync.cron-expression:0 0 2 * * ?}")
     public void sync() throws InterruptedException {
+        if (!enableGlobalSearch) {
+            log.info("Skip syncing database schema due to global search is disabled");
+            return;
+        }
         Lock lock = jdbcLockRegistry.obtain(LOCK_KEY);
         if (!lock.tryLock()) {
             log.info("Skip syncing database schema due to trying lock failed, may other odc-server node is handling");
@@ -73,13 +91,25 @@ public class DBSchemaSyncScheduler {
     }
 
     private void doSync() {
-        List<Long> teamOrgIds = organizationRepository.findIdByType(OrganizationType.TEAM);
-        if (CollectionUtils.isEmpty(teamOrgIds)) {
-            return;
+        List<ConnectionConfig> dataSources = new ArrayList<>();
+        Map<OrganizationType, List<OrganizationEntity>> orgMap = organizationRepository.findAll().stream()
+                .collect(Collectors.groupingBy(OrganizationEntity::getType));
+        if (CollectionUtils.isNotEmpty(orgMap.get(OrganizationType.TEAM))) {
+            dataSources.addAll(connectionService.listByOrganizationIdIn(orgMap.get(OrganizationType.TEAM).stream()
+                    .map(OrganizationEntity::getId).collect(Collectors.toList())));
         }
-        List<ConnectionConfig> dataSources = connectionService.listByOrganizationIdIn(teamOrgIds);
-        if (CollectionUtils.isEmpty(dataSources)) {
-            return;
+        if (CollectionUtils.isNotEmpty(orgMap.get(OrganizationType.INDIVIDUAL))) {
+            List<ConnectionConfig> individualDataSources =
+                    connectionService.listByOrganizationIdIn(orgMap.get(OrganizationType.INDIVIDUAL).stream()
+                            .map(OrganizationEntity::getId).collect(Collectors.toList()));
+            for (ConnectionConfig ds : individualDataSources) {
+                Map<String, Configuration> userConfigs =
+                        userConfigService.getUserConfigurationsFromCache(ds.getCreatorId());
+                Configuration config = userConfigs.get(UserConfigKeys.DEFAULT_ENABLE_GLOBAL_OBJECT_SEARCH);
+                if (config != null && config.getValue().equalsIgnoreCase("true")) {
+                    dataSources.add(ds);
+                }
+            }
         }
         Collections.shuffle(dataSources);
         for (ConnectionConfig dataSource : dataSources) {

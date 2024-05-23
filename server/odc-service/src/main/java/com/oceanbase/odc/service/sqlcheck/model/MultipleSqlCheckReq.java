@@ -18,13 +18,14 @@ package com.oceanbase.odc.service.sqlcheck.model;
 import java.util.List;
 
 import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
 
 import lombok.Data;
 
 @Data
 public class MultipleSqlCheckReq {
-
+    @NotEmpty
     private List<Long> databaseIds;
     @NotBlank
     private String scriptContent;

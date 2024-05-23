@@ -16,13 +16,10 @@
 package com.oceanbase.odc.service.dlm.model;
 
 import java.util.Date;
-import java.util.Set;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.oceanbase.odc.core.shared.constant.TaskStatus;
-import com.oceanbase.odc.service.connection.model.ConnectionConfig;
-import com.oceanbase.tools.dbbrowser.model.DBObjectType;
-import com.oceanbase.tools.migrator.common.configure.LogicTableConfig;
+import com.oceanbase.odc.service.schedule.model.DlmTableUnitStatistic;
+import com.oceanbase.tools.migrator.common.configure.DataSourceInfo;
 import com.oceanbase.tools.migrator.common.enums.JobType;
 
 import lombok.Data;
@@ -35,9 +32,11 @@ import lombok.Data;
  */
 
 @Data
-public class DlmTask {
+public class DlmTableUnit {
 
-    private String id;
+    private String dlmTableUnitId;
+
+    private Long scheduleTaskId;
 
     private String tableName;
 
@@ -45,25 +44,20 @@ public class DlmTask {
 
     private Date fireTime;
 
-    private Long sourceDatabaseId;
+    private DataSourceInfo sourceDatasourceInfo;
 
-    private Long targetDatabaseId;
+    private DataSourceInfo targetDatasourceInfo;
 
-    private String taskGeneratorId;
+    private DlmTableUnitStatistic statistic;
 
-    private LogicTableConfig logicTableConfig;
+    private DlmTableUnitParameters parameters;
 
     private TaskStatus status;
 
-    private JobType jobType;
+    private JobType type;
 
-    private Set<DBObjectType> syncDBObjectTypes;
+    private Date startTime;
 
-
-    @JsonIgnore
-    private ConnectionConfig sourceDs;
-
-    @JsonIgnore
-    private ConnectionConfig targetDs;
+    private Date endTime;
 
 }

@@ -41,8 +41,11 @@ import com.oceanbase.odc.core.shared.exception.UnexpectedException;
 import com.oceanbase.odc.metadb.schedule.ScheduleTaskEntity;
 import com.oceanbase.odc.metadb.schedule.ScheduleTaskRepository;
 import com.oceanbase.odc.metadb.schedule.ScheduleTaskSpecs;
+import com.oceanbase.odc.service.dlm.DLMService;
 import com.oceanbase.odc.service.quartz.QuartzJobService;
 import com.oceanbase.odc.service.quartz.util.ScheduleTaskUtils;
+import com.oceanbase.odc.service.schedule.model.JobType;
+import com.oceanbase.odc.service.schedule.model.ScheduleTaskMapper;
 import com.oceanbase.odc.service.schedule.model.ScheduleTaskResp;
 import com.oceanbase.odc.service.task.model.OdcTaskLogLevel;
 
@@ -65,10 +68,31 @@ public class ScheduleTaskService {
     @Autowired
     private QuartzJobService quartzJobService;
 
+    @Autowired
+    private DLMService dlmService;
+
+    private final ScheduleTaskMapper scheduleTaskMapper = ScheduleTaskMapper.INSTANCE;
+
     @Value("${odc.log.directory:./log}")
     private String logDirectory;
 
     private static final String LOG_PATH_PATTERN = "%s/scheduleTask/%s-%s/%s/log.%s";
+
+    public ScheduleTaskResp detail(Long id) {
+        ScheduleTaskEntity entity = nullSafeGetById(id);
+        ScheduleTaskResp scheduleTaskResp = scheduleTaskMapper.entityToModel(entity);
+        switch (JobType.valueOf(entity.getJobGroup())) {
+            case DATA_ARCHIVE:
+            case DATA_ARCHIVE_ROLLBACK:
+            case DATA_ARCHIVE_DELETE:
+            case DATA_DELETE: {
+                scheduleTaskResp.setExecutionDetails(dlmService.getExecutionDetailByScheduleTaskId(id));
+            }
+            default:
+                break;
+        }
+        return scheduleTaskResp;
+    }
 
     public ScheduleTaskEntity create(ScheduleTaskEntity taskEntity) {
         return scheduleTaskRepository.save(taskEntity);

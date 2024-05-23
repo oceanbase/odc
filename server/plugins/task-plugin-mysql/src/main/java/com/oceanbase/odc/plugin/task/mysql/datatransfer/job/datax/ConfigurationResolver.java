@@ -190,6 +190,8 @@ public class ConfigurationResolver {
         pluginParameter.setPassword(baseConfig.getConnectionInfo().getPassword());
         MySQLReaderPluginParameter.DataXConnection connection = new MySQLReaderPluginParameter.DataXConnection(
                 new String[] {url});
+        // session
+        pluginParameter.setSession(baseConfig.getConnectionInfo().getSessionInitScripts());
         // querySql
         if (Objects.nonNull(baseConfig.getQuerySql())) {
             connection.setQuerySql(new String[] {baseConfig.getQuerySql()});
@@ -219,6 +221,8 @@ public class ConfigurationResolver {
         pluginParameter.setPassword(baseConfig.getConnectionInfo().getPassword());
         DataXConnection connection = new DataXConnection(url, new String[] {table});
         pluginParameter.setConnection(Collections.singletonList(connection));
+        // session
+        pluginParameter.setSession(baseConfig.getConnectionInfo().getSessionInitScripts());
         // preSql
         List<String> preSql = Lists.newArrayList(Constants.DISABLE_FK);
         if (baseConfig.isTruncateTableBeforeImport()) {

@@ -55,7 +55,7 @@ COPY ./resources/*.rpm \
 # 1. supervisor 的配置更新就是拷贝文件，然后通过 docker entrypoint 指定启动程序为 supervisord
 # 2. timezone 的配置说明
 #   - 基础镜像 acs-reg.alipay.com/antstack/base:alios7u2_base 的缺省时区为 UTC
-#   - 设置为 UTC 时，oceanbase client 连接 oracle 租户会报 ORA-01882: timezone region 'UTC' not found
+#   - 设置为 UTC 时，oceanbase client 连接 oracle 租户会报 OBE-01882: timezone region 'UTC' not found
 #   - 为绕过此问题，设置时区为 Asia/Shanghai
 # 3. 禁止 ssh 帐密登录，禁用 root 账号密码
 RUN mkdir -p /etc/supervisor/conf.d \

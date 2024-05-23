@@ -13,26 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.databasechange.model;
-
-import java.util.List;
-
-import javax.validation.constraints.NotBlank;
-import javax.validation.constraints.NotEmpty;
-import javax.validation.constraints.NotNull;
+package com.oceanbase.odc.service.schedule.model;
 
 import lombok.Data;
 
+/**
+ * @Author：tinker
+ * @Date: 2024/5/9 09:39
+ * @Descripition:
+ */
 @Data
-public class CreateDatabaseChangeChangingOrderReq {
+public class DlmTableUnitStatistic {
 
-    @NotBlank
-    private String name;
+    private Long processedRowCount = 0L;
 
-    @NotNull
-    private Long projectId;
+    private Long readRowCount = 0L;
 
-    @NotEmpty
-    private List<List<Long>> orders;
+    private Long processedRowsPerSecond = 0L;
+
+    private Long readRowsPerSecond = 0L;
 
 }

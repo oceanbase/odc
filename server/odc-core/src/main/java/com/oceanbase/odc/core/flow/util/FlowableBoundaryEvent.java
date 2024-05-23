@@ -13,27 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.flow.task;
+package com.oceanbase.odc.core.flow.util;
 
-import java.util.Map;
+import java.util.List;
 
-import com.oceanbase.odc.service.flow.model.FlowNodeStatus;
+import org.flowable.bpmn.model.EventDefinition;
+import org.flowable.bpmn.model.FlowableListener;
+
+import lombok.Data;
 
 /**
  * @author yaobin
- * @date 2024-02-29
+ * @date 2024-05-17
  * @since 4.2.4
  */
-@FunctionalInterface
-public interface FlowTaskCallBack {
+@Data
+public class FlowableBoundaryEvent<T extends EventDefinition> {
 
-    /**
-     * approval next task in this flow instance id, decide process continue or not
-     * 
-     * @param flowInstanceId flow instance id
-     * @param flowTaskInstanceId reference flow task instance node#id
-     * @param flowNodeStatus flow node status
-     */
-    void callback(long flowInstanceId, long flowTaskInstanceId, FlowNodeStatus flowNodeStatus,
-            Map<String, Object> approvalVariables);
+    private T eventDefinition;
+
+    private List<FlowableListener> flowableListeners;
 }

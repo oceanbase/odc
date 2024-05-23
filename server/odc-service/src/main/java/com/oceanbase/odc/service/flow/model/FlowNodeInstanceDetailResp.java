@@ -147,12 +147,15 @@ public class FlowNodeInstanceDetailResp {
                 resp.setDeadlineTime(new Date(instance.getUpdateTime().getTime() + expireInterval));
             }
             if (taskEntity != null && taskEntity.getTaskType() == TaskType.PRE_CHECK) {
+                // Determine whether to perform a multiple database pre-check based on ParametersJson
                 PreCheckTaskResult result =
                         JsonUtils.fromJson(taskEntity.getResultJson(), PreCheckTaskResult.class);
                 if (result != null) {
                     resp.setPreCheckOverLimit(result.isOverLimit());
                     if (Objects.nonNull(result.getSqlCheckResult())) {
                         resp.setIssueCount(result.getSqlCheckResult().getIssueCount());
+                    } else if (Objects.nonNull(result.getMultipleSqlCheckTaskResult())) {
+                        resp.setIssueCount(result.getMultipleSqlCheckTaskResult().getIssueCount());
                     }
                     if (Objects.nonNull(result.getPermissionCheckResult())) {
                         resp.setUnauthorizedDatabases(result.getPermissionCheckResult().getUnauthorizedDatabases());

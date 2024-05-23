@@ -13,27 +13,41 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.databasechange.model;
+package com.oceanbase.odc.service.schedule.model;
 
-import java.util.List;
+import java.util.Date;
 
-import com.oceanbase.odc.metadb.connection.DatabaseEntity;
+import com.oceanbase.odc.core.shared.constant.TaskStatus;
+import com.oceanbase.tools.migrator.common.enums.JobType;
 
 import lombok.Data;
 
+/**
+ * @Author：tinker
+ * @Date: 2024/5/16 17:36
+ * @Descripition:
+ */
+
 @Data
-public class QueryDatabaseChangeChangingOrderResp {
+public class DlmTableUnitExecutionDetail {
 
-    private Long id;
+    private String tableName;
 
-    private String name;
+    private String userCondition;
 
-    private Long creatorId;
+    private Long processedRowCount;
 
-    private Long projectId;
+    private Long readRowCount;
 
-    private Long organizationId;
+    private Long processedRowsPerSecond;
 
-    private List<List<DatabaseEntity>> databaseSequenceList;
+    private Long readRowsPerSecond;
 
+    private Date startTime;
+
+    private Date endTime;
+
+    private JobType type;
+
+    private TaskStatus status;
 }

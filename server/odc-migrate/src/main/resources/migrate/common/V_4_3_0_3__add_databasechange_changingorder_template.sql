@@ -7,6 +7,7 @@ CREATE TABLE IF NOT EXISTS `databasechange_changingorder_template`(
   `project_id` bigint(20) NOT NULL COMMENT 'Reference collaboration_project(id)',
   `organization_id` bigint(20) NOT NULL COMMENT 'Reference iam_user_organization(id)',
   `database_sequences` varchar(1024) NOT NULL COMMENT 'Database Execution sequence',
+  `is_enabled` tinyint(1) NOT NULL DEFAULT '1',
   CONSTRAINT `pk_databasechange_changingorder_template_id` PRIMARY KEY(`id`),
   UNIQUE KEY `uk_databasechange_changingorder_template_project_id_name` (`project_id`,`name`)
 );
