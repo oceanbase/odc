@@ -70,8 +70,7 @@ public class DBSchemaAccessors {
             return DBSchemaAccessorGenerator.createForOBMySQL(syncJdbcExecutor,
                     sysJdbcExecutor, dbVersion, tenantName);
         } else if (connectType == ConnectType.OB_ORACLE || connectType == ConnectType.CLOUD_OB_ORACLE) {
-            return DBSchemaAccessorGenerator.createForOBOracle(syncJdbcExecutor,
-                    dbVersion);
+            return DBSchemaAccessorGenerator.createForOBOracle(syncJdbcExecutor, dbVersion);
         } else if (connectType == ConnectType.ODP_SHARDING_OB_MYSQL) {
             return DBSchemaAccessorGenerator.createForODPOBMySQL(syncJdbcExecutor);
         } else if (connectType == ConnectType.MYSQL) {

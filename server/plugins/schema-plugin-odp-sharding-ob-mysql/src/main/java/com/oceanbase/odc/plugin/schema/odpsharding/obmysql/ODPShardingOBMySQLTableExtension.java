@@ -59,7 +59,7 @@ public class ODPShardingOBMySQLTableExtension extends OBMySQLTableExtension {
     @Override
     protected DBStatsAccessor getStatsAccessor(Connection consoleConnection) {
         // only use DBStatsAccessor.getTableStats() method in plugin, so we do not use connectionId
-        return DBStatsAccessorGenerator.createForODPOBMySQL("");
+        return DBStatsAccessorGenerator.createForODPOBMySQL(null);
     }
 
     @Override
