@@ -17,6 +17,7 @@ package com.oceanbase.odc.service.db.schema.syncer.column;
 
 import java.sql.Connection;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -61,7 +62,7 @@ public abstract class AbstractDBColumnSyncer<T extends ExtensionPoint> implement
         }
         Map<String, Set<String>> latestObject2Columns = getLatestObjectToColumns(extensionPoint, connection, database);
         Map<String, DBObjectEntity> existingObject2Entity =
-                dbObjectRepository.findByDatabaseIdAndType(database.getId(), getColumnRelatedObjectType()).stream()
+                dbObjectRepository.findByDatabaseIdAndTypeIn(database.getId(), getColumnRelatedObjectTypes()).stream()
                         .collect(Collectors.toMap(DBObjectEntity::getName, e -> e, (e1, e2) -> e1));
         if (CollectionUtils.isEmpty(existingObject2Entity.entrySet())) {
             return;
@@ -130,7 +131,7 @@ public abstract class AbstractDBColumnSyncer<T extends ExtensionPoint> implement
     abstract Map<String, Set<String>> getLatestObjectToColumns(@NonNull T extensionPoint,
             @NonNull Connection connection, @NonNull Database database);
 
-    abstract DBObjectType getColumnRelatedObjectType();
+    abstract Collection<DBObjectType> getColumnRelatedObjectTypes();
 
     abstract Class<T> getExtensionPointClass();
 

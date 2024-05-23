@@ -16,6 +16,8 @@
 package com.oceanbase.odc.service.db.schema.syncer.column;
 
 import java.sql.Connection;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -34,19 +36,19 @@ import lombok.NonNull;
  * @date 2024/4/10 20:13
  */
 @Component
-public class DBTableColumnSyncer extends AbstractDBColumnSyncer<ColumnExtensionPoint> {
+public class DBTableAndViewColumnSyncer extends AbstractDBColumnSyncer<ColumnExtensionPoint> {
 
     @Override
     Map<String, Set<String>> getLatestObjectToColumns(@NonNull ColumnExtensionPoint extensionPoint,
             @NonNull Connection connection, @NonNull Database database) {
-        return extensionPoint.listBasicTableColumns(connection, database.getName()).entrySet().stream()
+        return extensionPoint.listBasicColumns(connection, database.getName()).entrySet().stream()
                 .collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue()
                         .stream().map(DBTableColumn::getName).collect(Collectors.toSet())));
     }
 
     @Override
-    public DBObjectType getColumnRelatedObjectType() {
-        return DBObjectType.TABLE;
+    public Collection<DBObjectType> getColumnRelatedObjectTypes() {
+        return Arrays.asList(DBObjectType.TABLE, DBObjectType.VIEW);
     }
 
     @Override

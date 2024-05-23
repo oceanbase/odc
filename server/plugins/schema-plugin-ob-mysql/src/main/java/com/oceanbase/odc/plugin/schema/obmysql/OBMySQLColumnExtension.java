@@ -43,6 +43,11 @@ public class OBMySQLColumnExtension implements ColumnExtensionPoint {
         return getSchemaAccessor(connection).listBasicViewColumns(schemaName);
     }
 
+    @Override
+    public Map<String, List<DBTableColumn>> listBasicColumns(Connection connection, String schemaName) {
+        return getSchemaAccessor(connection).listBasicColumns(schemaName);
+    }
+
     protected DBSchemaAccessor getSchemaAccessor(Connection connection) {
         return DBAccessorUtil.getSchemaAccessor(connection);
     }
