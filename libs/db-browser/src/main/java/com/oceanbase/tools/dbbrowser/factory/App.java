@@ -30,8 +30,8 @@ public class App {
                 .setDbVersion("2.2.77")
                 .setTenantName("Oboralce")
                 .setJdbcOperations(jdbcOperations)
-                .build().create();
+                .create();
 
-        DBTableEditor editor = DBBrowser.dbObjectEditor().tableEditor().forOBOracle().build().create();
+        DBTableEditor editor = DBBrowser.dbObjectEditor().tableEditor().forOBOracle().create();
     }
 }

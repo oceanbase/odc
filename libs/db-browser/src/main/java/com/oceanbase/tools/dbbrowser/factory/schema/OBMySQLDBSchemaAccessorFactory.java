@@ -21,19 +21,17 @@ import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
 import com.oceanbase.tools.dbbrowser.schema.mysql.OBMySQLSchemaAccessor;
 import lombok.Builder;
 import lombok.NonNull;
+import lombok.Setter;
+import lombok.experimental.Accessors;
 import org.springframework.jdbc.core.JdbcOperations;
 
+@Setter
+@Accessors(chain = true)
 public class OBMySQLDBSchemaAccessorFactory implements DBBrowserFactory<DBSchemaAccessor> {
 
-    private final JdbcOperations jdbcOperations;
-    private final String dbVersion;
-    private final String tenantName;
-
-    public OBMySQLDBSchemaAccessorFactory(@NonNull JdbcOperations jdbcOperations, @NonNull String dbVersion, @NonNull String tenantName) {
-        this.jdbcOperations = jdbcOperations;
-        this.dbVersion = dbVersion;
-        this.tenantName = tenantName;
-    }
+    private JdbcOperations jdbcOperations;
+    private String dbVersion;
+    private String tenantName;
 
     @Override
     public DBSchemaAccessor create() {

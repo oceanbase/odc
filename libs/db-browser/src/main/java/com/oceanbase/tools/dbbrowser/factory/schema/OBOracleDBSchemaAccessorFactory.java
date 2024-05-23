@@ -20,17 +20,16 @@ import com.oceanbase.tools.dbbrowser.factory.DBBrowserFactory;
 import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
 import lombok.Builder;
 import lombok.NonNull;
+import lombok.Setter;
+import lombok.experimental.Accessors;
 import org.springframework.jdbc.core.JdbcOperations;
 
+@Setter
+@Accessors(chain = true)
 public class OBOracleDBSchemaAccessorFactory implements DBBrowserFactory<DBSchemaAccessor> {
 
-    private final JdbcOperations jdbcOperations;
-    private final String dbVersion;
-
-    public OBOracleDBSchemaAccessorFactory(@NonNull JdbcOperations jdbcOperations, @NonNull String dbVersion) {
-        this.jdbcOperations = jdbcOperations;
-        this.dbVersion = dbVersion;
-    }
+    private JdbcOperations jdbcOperations;
+    private String dbVersion;
 
     @Override
     public DBSchemaAccessor create() {

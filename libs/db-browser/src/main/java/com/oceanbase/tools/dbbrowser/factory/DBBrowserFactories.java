@@ -14,13 +14,18 @@
  * limitations under the License.
  */
 
-package com.oceanbase.tools.dbbrowser.factory.editor.table;
+package com.oceanbase.tools.dbbrowser.factory;
 
-import com.oceanbase.tools.dbbrowser.factory.DBBrowserFactoryBuilder;
+public interface DBBrowserFactories {
 
-public class OBMySQLDBTableEditorFactoryBuilder implements DBBrowserFactoryBuilder<OBMySQLDBTableEditorFactory> {
-    @Override
-    public OBMySQLDBTableEditorFactory build() {
-        return null;
-    }
+    <Factory> Factory forMySQL();
+
+    <Factory> Factory forOracle();
+
+    <Factory> Factory forOBMySQL();
+
+    <Factory> Factory forOBOracle();
+
+    <Factory> Factory forDoris();
+
 }

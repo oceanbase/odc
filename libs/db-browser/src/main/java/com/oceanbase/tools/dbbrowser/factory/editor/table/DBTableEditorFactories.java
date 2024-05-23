@@ -16,32 +16,31 @@
 
 package com.oceanbase.tools.dbbrowser.factory.editor.table;
 
-import com.oceanbase.tools.dbbrowser.factory.DBBrowserFactoryBuilders;
-import com.oceanbase.tools.dbbrowser.factory.editor.table.OBMySQLDBTableEditorFactoryBuilder;
+import com.oceanbase.tools.dbbrowser.factory.DBBrowserFactories;
 
-public class DBTableEditorFactoryBuilders implements DBBrowserFactoryBuilders {
+public class DBTableEditorFactories implements DBBrowserFactories {
     @Override
-    public <Builder> Builder forMySQL() {
+    public <Factory> Factory forMySQL() {
         return null;
     }
 
     @Override
-    public <Builder> Builder forOracle() {
+    public <Factory> Factory forOracle() {
         return null;
     }
 
     @Override
-    public OBMySQLDBTableEditorFactoryBuilder forOBMySQL() {
-        return new OBMySQLDBTableEditorFactoryBuilder();
+    public OBMySQLDBTableEditorFactory forOBMySQL() {
+        return new OBMySQLDBTableEditorFactory();
     }
 
     @Override
-    public OBOracleDBTableEditorFactoryBuilder forOBOracle() {
-        return new OBOracleDBTableEditorFactoryBuilder();
+    public OBOracleDBTableEditorFactory forOBOracle() {
+        return new OBOracleDBTableEditorFactory();
     }
 
     @Override
-    public <Builder> Builder forDoris() {
+    public <Factory> Factory forDoris() {
         return null;
     }
 }

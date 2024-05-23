@@ -16,17 +16,17 @@
 
 package com.oceanbase.tools.dbbrowser.factory.editor;
 
-import com.oceanbase.tools.dbbrowser.factory.editor.index.DBTableIndexEditorFactoryBuilders;
-import com.oceanbase.tools.dbbrowser.factory.editor.table.DBTableEditorFactoryBuilders;
+import com.oceanbase.tools.dbbrowser.factory.editor.index.DBTableIndexEditorFactories;
+import com.oceanbase.tools.dbbrowser.factory.editor.table.DBTableEditorFactories;
 
-public class DBObjectEditorFactoryBuilders {
+public class DBObjectEditorFactories {
 
-    public DBTableEditorFactoryBuilders tableEditor() {
-        return new DBTableEditorFactoryBuilders();
+    public DBTableEditorFactories tableEditor() {
+        return new DBTableEditorFactories();
     }
 
-    public DBTableIndexEditorFactoryBuilders tableIndexEditor() {
-        return new DBTableIndexEditorFactoryBuilders();
+    public DBTableIndexEditorFactories tableIndexEditor() {
+        return new DBTableIndexEditorFactories();
     }
 
     public <Builders> Builders tableColumnEditor() {

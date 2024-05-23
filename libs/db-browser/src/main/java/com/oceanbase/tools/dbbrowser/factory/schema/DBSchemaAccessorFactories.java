@@ -14,33 +14,35 @@
  * limitations under the License.
  */
 
-package com.oceanbase.tools.dbbrowser.factory.editor.index;
+package com.oceanbase.tools.dbbrowser.factory.schema;
 
-import com.oceanbase.tools.dbbrowser.factory.DBBrowserFactoryBuilders;
+import com.oceanbase.tools.dbbrowser.factory.DBBrowserFactories;
 
-public class DBTableIndexEditorFactoryBuilders implements DBBrowserFactoryBuilders {
+public class DBSchemaAccessorFactories implements DBBrowserFactories {
+
     @Override
-    public <Builder> Builder forMySQL() {
+    public <Factory> Factory forMySQL() {
         return null;
     }
 
     @Override
-    public <Builder> Builder forOracle() {
+    public <Factory> Factory forOracle() {
         return null;
     }
 
     @Override
-    public OBMySQLDBTableIndexEditorFactoryBuilder forOBMySQL() {
-        return new OBMySQLDBTableIndexEditorFactoryBuilder();
+    public OBMySQLDBSchemaAccessorFactory forOBMySQL() {
+        return new OBMySQLDBSchemaAccessorFactory();
     }
 
     @Override
-    public OBOracleDBTableIndexEditorFactoryBuilder forOBOracle() {
-        return new OBOracleDBTableIndexEditorFactoryBuilder();
+    public OBOracleDBSchemaAccessorFactory forOBOracle() {
+        return new OBOracleDBSchemaAccessorFactory();
     }
 
     @Override
-    public <Builder> Builder forDoris() {
+    public <Factory> Factory forDoris() {
         return null;
     }
+
 }

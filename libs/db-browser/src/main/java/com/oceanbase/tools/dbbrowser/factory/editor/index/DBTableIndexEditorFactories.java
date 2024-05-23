@@ -16,11 +16,31 @@
 
 package com.oceanbase.tools.dbbrowser.factory.editor.index;
 
-import com.oceanbase.tools.dbbrowser.factory.DBBrowserFactoryBuilder;
+import com.oceanbase.tools.dbbrowser.factory.DBBrowserFactories;
 
-public class OBOracleDBTableIndexEditorFactoryBuilder implements DBBrowserFactoryBuilder<OBOracleDBTableIndexEditorFactory> {
+public class DBTableIndexEditorFactories implements DBBrowserFactories {
     @Override
-    public OBOracleDBTableIndexEditorFactory build() {
+    public <Factory> Factory forMySQL() {
+        return null;
+    }
+
+    @Override
+    public <Factory> Factory forOracle() {
+        return null;
+    }
+
+    @Override
+    public OBMySQLDBTableIndexEditorFactory forOBMySQL() {
+        return new OBMySQLDBTableIndexEditorFactory();
+    }
+
+    @Override
+    public OBOracleDBTableIndexEditorFactory forOBOracle() {
+        return new OBOracleDBTableIndexEditorFactory();
+    }
+
+    @Override
+    public <Factory> Factory forDoris() {
         return null;
     }
 }
