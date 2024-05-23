@@ -199,7 +199,7 @@ public class DataTransferTask implements Callable<DataTransferTaskResult> {
         // load csv config from MANIFEST
         try {
             Manifest manifest = SerializeUtils.deserializeObjectByKryo(
-                    Paths.get(workingDir.getPath(), "data", ExportOutput.MANIFEST).toString());
+                    Paths.get(workingDir.getPath(), ExportOutput.MANIFEST).toString());
             replaceManifestIntoParameter(manifest);
         } catch (Exception e) {
             LOGGER.info("Failed to deserialize MANIFEST.bin, will use default csv config. Reason: {}",

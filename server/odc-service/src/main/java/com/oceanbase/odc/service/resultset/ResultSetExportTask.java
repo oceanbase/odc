@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.Callable;
+import java.util.stream.Collectors;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.io.FileUtils;
@@ -50,6 +51,8 @@ import com.oceanbase.odc.core.shared.exception.OBException;
 import com.oceanbase.odc.core.shared.exception.UnexpectedException;
 import com.oceanbase.odc.core.shared.model.TableIdentity;
 import com.oceanbase.odc.core.sql.execute.SyncJdbcExecutor;
+import com.oceanbase.odc.core.sql.split.OffsetString;
+import com.oceanbase.odc.core.sql.split.SqlCommentProcessor;
 import com.oceanbase.odc.plugin.task.api.datatransfer.DataTransferJob;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.ConnectionInfo;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.CsvConfig;
@@ -194,8 +197,15 @@ public class ResultSetExportTask implements Callable<ResultSetExportResult> {
         }
         config.setCsvConfig(csvConfig);
 
-        ConnectionInfo connectionInfo =
-                ((ConnectionConfig) ConnectionSessionUtil.getConnectionConfig(session)).toConnectionInfo();
+        ConnectionConfig connectionConfig = (ConnectionConfig) ConnectionSessionUtil.getConnectionConfig(session);
+        ConnectionInfo connectionInfo = connectionConfig.toConnectionInfo();
+        String initScript = connectionConfig.getSessionInitScript();
+        if (StringUtils.isNotEmpty(initScript)) {
+            connectionInfo.setSessionInitScripts(SqlCommentProcessor
+                    .removeSqlComments(initScript, ";", connectionInfo.getConnectType().getDialectType(), false)
+                    .stream().map(OffsetString::getStr).collect(Collectors.toList()));
+        }
+
         connectionInfo.setSchema(parameter.getDatabase());
         config.setConnectionInfo(connectionInfo);
 
@@ -224,8 +234,7 @@ public class ResultSetExportTask implements Callable<ResultSetExportResult> {
             syncJdbcExecutor.execute((StatementCallback<?>) stmt -> {
                 stmt.setMaxRows(10);
                 new ConsoleTimeoutInitializer(parameter.getExecutionTimeoutSeconds() * 1000000L,
-                        config.getConnectionInfo().getConnectType().getDialectType())
-                                .init(stmt.getConnection());
+                        config.getConnectionInfo().getConnectType().getDialectType()).init(stmt.getConnection());
 
                 stmt.execute(parameter.getSql());
                 ResultSetMetaData rsMetaData = stmt.getResultSet().getMetaData();
