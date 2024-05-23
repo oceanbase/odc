@@ -97,14 +97,6 @@ public class LogicalDatabaseServiceTest extends ServiceTestEnv {
         doNothing().when(projectPermissionValidator).checkProjectRole(anyLong(), anyList());
         doNothing().when(permissionHelper).checkDBPermissions(anyCollection(), anyCollection());
         createDatabaseEntity(4, PROJECT_ID);
-        CreateLogicalDatabaseReq req = new CreateLogicalDatabaseReq();
-        req.setProjectId(PROJECT_ID);
-        req.setAlias(LOGICAL_DATABASE_ALIAS);
-        req.setName(LOGICAL_DATABASE_NAME);
-        Set<Long> databaseIds = new HashSet<>();
-        databaseIds.addAll(Arrays.asList(1L, 2L, 3L, 4L));
-        req.setPhysicalDatabaseIds(databaseIds);
-        logicalDatabaseService.create(req);
     }
 
     @After
@@ -123,7 +115,7 @@ public class LogicalDatabaseServiceTest extends ServiceTestEnv {
         Set<Long> databaseIds = new HashSet<>();
         databaseIds.addAll(Arrays.asList(1L, 2L, 3L, 4L));
         req.setPhysicalDatabaseIds(databaseIds);
-
+        logicalDatabaseService.create(req);
         List<DatabaseEntity> databases = databaseRepository.findAll().stream()
                 .filter(database -> database.getType() == DatabaseType.LOGICAL).collect(
                         Collectors.toList());
