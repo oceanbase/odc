@@ -115,14 +115,14 @@ public class FlowSchedules {
                         .map(ServiceTaskInstanceEntity::getId).distinct().collect(Collectors.toList());
                 List<Integer> result = DBSchemaAccessorUtil.partitionFind(candidateIds,
                         OB_MAX_IN_SIZE, ids -> Collections.singletonList(
-                                serviceTaskInstanceRepository.updateStatusByIdIn(ids, FlowNodeStatus.CANCELLED)));
+                                serviceTaskInstanceRepository.updateStatusByIdIn(ids, FlowNodeStatus.FAILED)));
                 log.info("Update flow task instance status succeed, affectRows={}, flowTaskInstIds={}",
                         result, candidateIds);
                 List<Long> flowInstIds = candidates.stream().map(ServiceTaskInstanceEntity::getFlowInstanceId)
                         .distinct().collect(Collectors.toList());
                 result = DBSchemaAccessorUtil.partitionFind(flowInstIds,
                         OB_MAX_IN_SIZE, ids -> Collections.singletonList(
-                                flowInstanceRepository.updateStatusByIds(ids, FlowStatus.CANCELLED)));
+                                flowInstanceRepository.updateStatusByIds(ids, FlowStatus.EXECUTION_FAILED)));
                 log.info("Update flow instance status succeed, affectRows={}, flowInstIds={}", result, flowInstIds);
             } catch (Exception e) {
                 log.warn("Failed to sync flow instance's status", e);
