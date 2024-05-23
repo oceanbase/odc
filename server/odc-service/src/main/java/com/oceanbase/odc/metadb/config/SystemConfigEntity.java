@@ -34,10 +34,10 @@ import lombok.EqualsAndHashCode;
 public class SystemConfigEntity extends ConfigEntity {
 
     @Column(name = "creator_id")
-    private String creatorId;
+    private Long creatorId;
 
     @Column(name = "last_modifier_id")
-    private String lastModifierId;
+    private Long lastModifierId;
 
     /**
      * application name
