@@ -15,6 +15,7 @@
  */
 package com.oceanbase.odc.service.connection.logicaldatabase;
 
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyCollection;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyLong;
@@ -63,14 +64,15 @@ public class LogicalDatabaseServiceTest extends ServiceTestEnv {
     private static final Long CONNECTION_ID = 1L;
     private static final Long ENVIRONMENT_ID = 1L;
     private static final Long PROJECT_ID = 1L;
-    private static final Long LOGICAL_DATABASE_ID = 5L;
+    private static final Long PHYSICAL_DATABASE_ID = 1L;
+    private static final Long LOGICAL_DATABASE_ID = 2L;
     private static final String LOGICAL_DATABASE_NAME = "lebie_test";
     private static final String LOGICAL_DATABASE_ALIAS = "lebie_test_alias";
     private static final DatabaseMapper databaseMapper = DatabaseMapper.INSTANCE;
 
     @Autowired
     private LogicalDatabaseService logicalDatabaseService;
-    @Autowired
+    @MockBean
     private DatabaseRepository databaseRepository;
     @MockBean
     private AuthenticationFacade authenticationFacade;
@@ -91,10 +93,12 @@ public class LogicalDatabaseServiceTest extends ServiceTestEnv {
         when(connectionRepository.findById(anyLong())).thenReturn(Optional.of(getConnectionEntity()));
         when(environmentService.detailSkipPermissionCheck(anyLong()))
                 .thenReturn(TestRandom.nextObject(Environment.class));
+        when(databaseRepository.findById(PHYSICAL_DATABASE_ID)).thenReturn(Optional.of(getPhysicalDatabase()));
+        when(databaseRepository.saveAndFlush(any(DatabaseEntity.class))).thenReturn(getLogicalDatabase());
+        when(databaseRepository.findById(LOGICAL_DATABASE_ID)).thenReturn(Optional.of(getLogicalDatabase()));
+        when(databaseRepository.findByIdIn(anyCollection())).thenReturn(Arrays.asList(getPhysicalDatabase()));
         doNothing().when(projectPermissionValidator).checkProjectRole(anyLong(), anyList());
         doNothing().when(permissionHelper).checkDBPermissions(anyCollection(), anyCollection());
-        List<DatabaseEntity> physicalDatabases = listDatabases(4);
-        databaseRepository.saveAllAndFlush(physicalDatabases);
     }
 
     @Test
@@ -104,18 +108,14 @@ public class LogicalDatabaseServiceTest extends ServiceTestEnv {
         req.setAlias(LOGICAL_DATABASE_ALIAS);
         req.setName(LOGICAL_DATABASE_NAME);
         Set<Long> databaseIds = new HashSet<>();
-        databaseIds.addAll(Arrays.asList(1L, 2L, 3L, 4L));
+        databaseIds.addAll(Arrays.asList(PHYSICAL_DATABASE_ID));
         req.setPhysicalDatabaseIds(databaseIds);
         Assert.assertTrue(logicalDatabaseService.create(req));
     }
 
     @Test
     public void testDetail() {
-        DatabaseEntity logicalDatabase = TestRandom.nextObject(DatabaseEntity.class);
-        logicalDatabase.setId(LOGICAL_DATABASE_ID);
-        logicalDatabase.setType(DatabaseType.LOGICAL);
-        databaseRepository.saveAndFlush(logicalDatabase);
-        when(databaseMappingRepository.findByLogicalDatabaseId(anyLong())).thenReturn(listDatabaseMappings(4));
+        when(databaseMappingRepository.findByLogicalDatabaseId(anyLong())).thenReturn(listDatabaseMappings(1));
         Assert.assertNotNull(logicalDatabaseService.detail(LOGICAL_DATABASE_ID));
     }
 
@@ -127,17 +127,14 @@ public class LogicalDatabaseServiceTest extends ServiceTestEnv {
         return config;
     }
 
-    private List<DatabaseEntity> listDatabases(int quantity) {
-        List<DatabaseEntity> entities = new ArrayList<>();
-        for (int i = 0; i < quantity; i++) {
-            DatabaseEntity entity = TestRandom.nextObject(DatabaseEntity.class);
-            entity.setType(DatabaseType.PHYSICAL);
-            entity.setOrganizationId(ORGANIZATION_ID);
-            entity.setProjectId(PROJECT_ID);
-            entity.setEnvironmentId(ENVIRONMENT_ID);
-            entities.add(entity);
-        }
-        return entities;
+    private DatabaseEntity getPhysicalDatabase() {
+        DatabaseEntity entity = TestRandom.nextObject(DatabaseEntity.class);
+        entity.setId(PHYSICAL_DATABASE_ID);
+        entity.setType(DatabaseType.PHYSICAL);
+        entity.setOrganizationId(ORGANIZATION_ID);
+        entity.setProjectId(PROJECT_ID);
+        entity.setEnvironmentId(ENVIRONMENT_ID);
+        return entity;
     }
 
     private List<DatabaseMappingEntity> listDatabaseMappings(int quantity) {
@@ -151,6 +148,16 @@ public class LogicalDatabaseServiceTest extends ServiceTestEnv {
             mappings.add(mapping);
         }
         return mappings;
+    }
+
+    private DatabaseEntity getLogicalDatabase() {
+        DatabaseEntity entity = TestRandom.nextObject(DatabaseEntity.class);
+        entity.setId(LOGICAL_DATABASE_ID);
+        entity.setType(DatabaseType.LOGICAL);
+        entity.setOrganizationId(ORGANIZATION_ID);
+        entity.setProjectId(PROJECT_ID);
+        entity.setEnvironmentId(ENVIRONMENT_ID);
+        return entity;
     }
 
 }
