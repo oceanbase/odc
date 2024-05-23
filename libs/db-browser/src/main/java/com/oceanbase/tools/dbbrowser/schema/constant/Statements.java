@@ -25,6 +25,7 @@ public final class Statements {
     public static final String LIST_BASIC_SCHEMA_TABLE_COLUMNS = "list-basic-schema-table-columns";
     public static final String LIST_BASIC_VIEW_COLUMNS = "list-basic-view-columns";
     public static final String LIST_BASIC_SCHEMA_VIEW_COLUMNS = "list-basic-schema-view-columns";
+    public static final String LIST_BASIC_SCHEMA_COLUMNS = "list-basic-schema-columns";
     public static final String LIST_TABLE_COLUMNS = "list-table-columns";
     public static final String LIST_SCHEMA_COLUMNS = "list-schema-columns";
     public static final String LIST_TABLE_INDEXES = "list-table-indexes";

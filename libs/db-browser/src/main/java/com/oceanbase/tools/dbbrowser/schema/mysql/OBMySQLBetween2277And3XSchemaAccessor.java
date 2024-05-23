@@ -299,6 +299,16 @@ public class OBMySQLBetween2277And3XSchemaAccessor extends OBMySQLSchemaAccessor
         return fillViewColumnInfoByDesc(schemaName, viewName);
     }
 
+    @Override
+    public Map<String, List<DBTableColumn>> listBasicColumns(String schemaName) {
+        String sql = sqlMapper.getSql(Statements.LIST_BASIC_SCHEMA_COLUMNS);
+        Map<String, List<DBTableColumn>> table2Columns =
+                jdbcOperations.query(sql, new Object[] {schemaName}, listBasicTableColumnIdentityRowMapper()).stream()
+                        .collect(Collectors.groupingBy(DBTableColumn::getTableName));
+        table2Columns.putAll(listBasicViewColumns(schemaName));
+        return table2Columns;
+    }
+
     protected List<DBTableColumn> fillViewColumnInfoByDesc(String schemaName, String viewName) {
         List<DBTableColumn> columns = new ArrayList<>();
         try {

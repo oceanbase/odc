@@ -183,6 +183,16 @@ public class OBOracleLessThan400SchemaAccessor extends OBOracleBetween4000And410
         return fillViewColumnInfoByDesc(schemaName, viewName);
     }
 
+    @Override
+    public Map<String, List<DBTableColumn>> listBasicColumns(String schemaName) {
+        String sql = sqlMapper.getSql(Statements.LIST_BASIC_SCHEMA_COLUMNS);
+        Map<String, List<DBTableColumn>> table2Columns =
+                jdbcOperations.query(sql, new Object[] {schemaName}, listBasicColumnsIdentityRowMapper()).stream()
+                        .collect(Collectors.groupingBy(DBTableColumn::getTableName));
+        table2Columns.putAll(listBasicViewColumns(schemaName));
+        return table2Columns;
+    }
+
     protected List<DBTableColumn> fillViewColumnInfoByDesc(String schemaName, String viewName) {
         List<DBTableColumn> columns = new ArrayList<>();
         try {

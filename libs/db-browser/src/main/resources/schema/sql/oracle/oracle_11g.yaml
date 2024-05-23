@@ -69,6 +69,18 @@ sqls:
     ORDER BY
       TABLE_NAME ASC,
       COLUMN_ID ASC
+  list-basic-schema-columns: |-
+    SELECT
+      OWNER,
+      TABLE_NAME,
+      COLUMN_NAME
+    FROM
+      SYS.ALL_TAB_COLS
+    WHERE
+      OWNER = ?
+    ORDER BY
+      TABLE_NAME ASC,
+      COLUMN_ID ASC
   list-table-columns: |-
     SELECT
       OWNER,

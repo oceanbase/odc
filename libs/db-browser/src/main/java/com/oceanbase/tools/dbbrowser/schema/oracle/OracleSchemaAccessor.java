@@ -592,6 +592,14 @@ public class OracleSchemaAccessor implements DBSchemaAccessor {
     }
 
     @Override
+    public Map<String, List<DBTableColumn>> listBasicColumns(String schemaName) {
+        String sql = sqlMapper.getSql(Statements.LIST_BASIC_SCHEMA_COLUMNS);
+        List<DBTableColumn> tableColumns =
+                jdbcOperations.query(sql, new Object[] {schemaName}, listBasicColumnsIdentityRowMapper());
+        return tableColumns.stream().collect(Collectors.groupingBy(DBTableColumn::getTableName));
+    }
+
+    @Override
     public Map<String, List<DBTableIndex>> listTableIndexes(String schemaName) {
         Map<String, List<DBTableIndex>> tableName2Indexes = new LinkedHashMap<>();
         String sql = sqlMapper.getSql(Statements.LIST_SCHEMA_INDEX);
@@ -815,7 +823,16 @@ public class OracleSchemaAccessor implements DBSchemaAccessor {
                     .setTypeName(DBSchemaAccessorUtil.normalizeTypeName(rs.getString(OracleConstants.COL_DATA_TYPE)));
             return tableColumn;
         };
+    }
 
+    protected RowMapper<DBTableColumn> listBasicColumnsIdentityRowMapper() {
+        return (rs, rowNum) -> {
+            DBTableColumn tableColumn = new DBTableColumn();
+            tableColumn.setSchemaName(rs.getString(OracleConstants.CONS_OWNER));
+            tableColumn.setTableName(rs.getString(OracleConstants.COL_TABLE_NAME));
+            tableColumn.setName(rs.getString(OracleConstants.COL_COLUMN_NAME));
+            return tableColumn;
+        };
     }
 
     @Override

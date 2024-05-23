@@ -137,6 +137,17 @@ public class OBMySQLSchemaAccessorTest extends BaseTestEnv {
     }
 
     @Test
+    public void listBasicColumns_Success() {
+        Map<String, List<DBTableColumn>> columns = accessor.listBasicColumns(getOBMySQLDataBaseName());
+        Assert.assertTrue(columns.containsKey("test_data_type"));
+        Assert.assertEquals(verifyDataTypes.size(), columns.get("test_data_type").size());
+        Assert.assertTrue(columns.containsKey("view_test1"));
+        Assert.assertTrue(columns.containsKey("view_test2"));
+        Assert.assertEquals(2, columns.get("view_test1").size());
+        Assert.assertEquals(1, columns.get("view_test2").size());
+    }
+
+    @Test
     public void listTableColumns_TestAllColumnDataTypes_Success() {
         List<DBTableColumn> columns =
                 accessor.listTableColumns(getOBMySQLDataBaseName(), "test_data_type");
