@@ -48,7 +48,7 @@ public class FlowTaskProperties {
     @Value("${odc.task.async.index-change-max-timeout-millis:432000000}")
     private long indexChangeMaxTimeoutMillisecond;
 
-    @Value("${odc.flow.task.heartbeat-timeout-seconds:15}")
+    @Value("${odc.flow.task.heartbeat-timeout-seconds:180}")
     private long heartbeatTimeoutSeconds;
 
 }
