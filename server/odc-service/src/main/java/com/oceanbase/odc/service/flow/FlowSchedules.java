@@ -25,6 +25,7 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import com.oceanbase.odc.core.shared.constant.FlowStatus;
 import com.oceanbase.odc.metadb.flow.FlowInstanceRepository;
@@ -51,6 +52,8 @@ import lombok.extern.slf4j.Slf4j;
 public class FlowSchedules {
 
     private static final Integer OB_MAX_IN_SIZE = 2000;
+    @Autowired
+    private TransactionTemplate transactionTemplate;
     @Autowired
     private FlowTaskProperties flowTaskProperties;
     @Autowired
@@ -95,28 +98,37 @@ public class FlowSchedules {
              * 1. heartbeat timeout 2. flow task instance is executing
              * </p>
              */
-            List<ServiceTaskInstanceEntity> candidates = taskInstanceEntities.stream()
+            cancelFlowTaskInstanceAndFlowInstance(taskInstanceEntities.stream()
                     .filter(e -> heartbeatTimeoutTaskIds.contains(e.getTargetTaskId()))
-                    .collect(Collectors.toList());
-            List<Long> candidateIds = candidates.stream()
-                    .map(ServiceTaskInstanceEntity::getId).distinct().collect(Collectors.toList());
-            List<Long> flowInstIds = candidates.stream().map(ServiceTaskInstanceEntity::getFlowInstanceId)
-                    .distinct().collect(Collectors.toList());
-            log.info("Find heartbeat timeout flow task instance, timeoutSeconds={}, earliestHeartbeatTime={}, "
-                    + "flowTaskInstIds={}, flowInstIds={}", timeoutSeconds, timeoutBound, candidateIds, flowInstIds);
-            List<Integer> executeResult = DBSchemaAccessorUtil.partitionFind(flowInstIds,
-                    OB_MAX_IN_SIZE, ids -> Collections.singletonList(
-                            flowInstanceRepository.updateStatusByIds(ids, FlowStatus.CANCELLED)));
-            log.info("Update flow instance's status succeed, affectRows={}, flowInstIds={}", executeResult,
-                    flowInstIds);
-            executeResult = DBSchemaAccessorUtil.partitionFind(candidateIds,
-                    OB_MAX_IN_SIZE, ids -> Collections.singletonList(
-                            serviceTaskInstanceRepository.updateStatusByIdIn(ids, FlowNodeStatus.CANCELLED)));
-            log.info("Update flow task instance's status succeed, affectRows={}, "
-                    + "flowTaskInstIds={}", executeResult, candidateIds);
+                    .map(ServiceTaskInstanceEntity::getId).distinct().collect(Collectors.toList()));
         } catch (Exception e) {
             log.warn("Failed to sync flow instance's status", e);
         }
+    }
+
+    private void cancelFlowTaskInstanceAndFlowInstance(List<Long> candidateFlowTaskInstanceIds) {
+        this.transactionTemplate.executeWithoutResult(tx -> {
+            try {
+                List<ServiceTaskInstanceEntity> candidates = serviceTaskInstanceRepository
+                        .findByIdInAndStatus(candidateFlowTaskInstanceIds, FlowNodeStatus.EXECUTING);
+                List<Long> candidateIds = candidates.stream()
+                        .map(ServiceTaskInstanceEntity::getId).distinct().collect(Collectors.toList());
+                List<Integer> result = DBSchemaAccessorUtil.partitionFind(candidateIds,
+                        OB_MAX_IN_SIZE, ids -> Collections.singletonList(
+                                serviceTaskInstanceRepository.updateStatusByIdIn(ids, FlowNodeStatus.CANCELLED)));
+                log.info("Update flow task instance status succeed, affectRows={}, flowTaskInstIds={}",
+                        result, candidateIds);
+                List<Long> flowInstIds = candidates.stream().map(ServiceTaskInstanceEntity::getFlowInstanceId)
+                        .distinct().collect(Collectors.toList());
+                result = DBSchemaAccessorUtil.partitionFind(flowInstIds,
+                        OB_MAX_IN_SIZE, ids -> Collections.singletonList(
+                                flowInstanceRepository.updateStatusByIds(ids, FlowStatus.CANCELLED)));
+                log.info("Update flow instance status succeed, affectRows={}, flowInstIds={}", result, flowInstIds);
+            } catch (Exception e) {
+                log.warn("Failed to sync flow instance's status", e);
+                tx.setRollbackOnly();
+            }
+        });
     }
 
 }
