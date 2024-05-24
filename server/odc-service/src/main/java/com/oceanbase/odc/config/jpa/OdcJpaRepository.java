@@ -62,6 +62,13 @@ public interface OdcJpaRepository<T, ID extends Serializable>
     List<T> batchCreate(List<T> entities, String sql, List<Function<T, Object>> valueGetter,
             BiConsumer<T, Long> idSetter);
 
+    List<T> batchCreate(List<T> entities, String sql, Map<Integer, Function<T, Object>> valueGetter,
+            BiConsumer<T, Long> idSetter, int batchSize);
+
+    List<T> batchCreate(List<T> entities, String sql, List<Function<T, Object>> valueGetter,
+            BiConsumer<T, Long> idSetter, int batchSize);
+
+
     class ValueGetterBuilder<T> {
 
         private final List<Function<T, Object>> valueGetter = new ArrayList<>();
