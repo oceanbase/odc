@@ -397,6 +397,15 @@ public enum AuditEventAction implements Translatable {
 
     DISABLE_SENSITIVE_COLUMN,
 
+    /**
+     * Database change changing order template management
+     */
+    CREATE_DATABASE_CHANGE_CHANGING_ORDER_TEMPLATE,
+
+    UPDATE_DATABASE_CHANGE_CHANGING_ORDER_TEMPLATE,
+
+    DELETE_DATABASE_CHANGE_CHANGING_ORDER_TEMPLATE,
+
     ;
 
     @Override

@@ -94,6 +94,8 @@ public enum AuditEventType implements Translatable {
 
     SENSITIVE_COLUMN_MANAGEMENT,
 
+    DATABASE_CHANGE_CHANGING_ORDER_TEMPLATE_MANAGEMENT,
+
     ;
 
 
