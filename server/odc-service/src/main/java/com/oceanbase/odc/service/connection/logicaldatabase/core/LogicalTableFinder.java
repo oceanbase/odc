@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.connection.logicaldatabase;
+package com.oceanbase.odc.service.connection.logicaldatabase.core;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -21,15 +21,19 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import javax.validation.constraints.NotEmpty;
+
+import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionFactory;
-import com.oceanbase.odc.core.shared.PreConditions;
+import com.oceanbase.odc.core.shared.exception.UnexpectedException;
 import com.oceanbase.odc.service.connection.database.model.Database;
-import com.oceanbase.odc.service.connection.logicaldatabase.model.DataNode;
-import com.oceanbase.odc.service.connection.logicaldatabase.model.LogicalTable;
+import com.oceanbase.odc.service.connection.logicaldatabase.core.model.DataNode;
+import com.oceanbase.odc.service.connection.logicaldatabase.core.model.LogicalTable;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.db.browser.DBSchemaAccessors;
 import com.oceanbase.odc.service.session.factory.DefaultConnectSessionFactory;
@@ -45,35 +49,49 @@ import lombok.extern.slf4j.Slf4j;
  * @Description: []
  */
 @Slf4j
+@SkipAuthorize("internal usage")
 public class LogicalTableFinder {
     private List<Database> databases;
+    private Map<Long, ConnectionConfig> id2DataSource;
+    private Map<Long, List<Database>> dataSourceId2Databases;
 
-    LogicalTableFinder(List<Database> databases) {
+    public LogicalTableFinder(@NotEmpty List<Database> databases) {
         this.databases = databases;
+        this.id2DataSource = new HashMap<>();
+        this.dataSourceId2Databases =
+                databases.stream().collect(Collectors.groupingBy(database -> database.getDataSource().getId()));
+        databases.stream()
+                .forEach(
+                        database -> this.id2DataSource.put(database.getDataSource().getId(), database.getDataSource()));
     }
 
-    public List<LogicalTable> find() {
-        PreConditions.notEmpty(databases, "LogicalTableFinder#find.databases");
-        Map<Long, List<Database>> dataSourceId2Databases =
-                databases.stream().collect(Collectors.groupingBy(database -> database.getDataSource().getId()));
-        Map<Long, ConnectionConfig> id2DataSource = new HashMap<>();
-        databases.stream()
-                .forEach(database -> id2DataSource.put(database.getDataSource().getId(), database.getDataSource()));
-
+    public List<DataNode> transferToDataNodes() {
         List<DataNode> dataNodes = new ArrayList<>();
         Set<Long> dataSourceIds = dataSourceId2Databases.keySet();
         for (Long dataSourceId : dataSourceIds) {
             List<Database> groupedDatabases = dataSourceId2Databases.get(dataSourceId);
+            Map<String, Database> name2Database =
+                    groupedDatabases.stream().collect(Collectors.toMap(Database::getName, database -> database));
             ConnectionConfig dataSource = id2DataSource.get(dataSourceId);
             getSchemaName2TableNames(dataSource, groupedDatabases).entrySet().forEach(entry -> {
                 String databaseName = entry.getKey();
                 List<String> tableNames = entry.getValue();
                 tableNames.forEach(tableName -> {
-                    DataNode dataNode = new DataNode(dataSource, databaseName, tableName);
+                    Database database = name2Database.get(databaseName);
+                    if (Objects.isNull(database)) {
+                        throw new UnexpectedException("Database not found: " + databaseName);
+                    }
+                    DataNode dataNode = new DataNode(dataSource, database.getId(), databaseName, tableName);
                     dataNodes.add(dataNode);
                 });
             });
         }
+        return dataNodes;
+    }
+
+    public List<LogicalTable> find() {
+        List<DataNode> dataNodes = transferToDataNodes();
+
         List<LogicalTable> logicalTableCandidates = LogicalTableRecognitionUtils.recognizeLogicalTables(dataNodes);
 
         Map<Long, List<DataNode>> dataSourceId2DataNodes = logicalTableCandidates.stream()
@@ -142,7 +160,7 @@ public class LogicalTableFinder {
         }
     }
 
-    private static Map<String, DBTable> getTableName2Tables(ConnectionConfig dataSource, String schemaName,
+    public static Map<String, DBTable> getTableName2Tables(ConnectionConfig dataSource, String schemaName,
             List<String> tableNames) {
         ConnectionSessionFactory connectionSessionFactory = new DefaultConnectSessionFactory(dataSource);
         ConnectionSession connectionSession = connectionSessionFactory.generateSession();

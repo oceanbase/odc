@@ -13,21 +13,31 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.connection.logicaldatabase.parser;
+package com.oceanbase.odc.service.connection.logicaldatabase.model;
 
-import java.util.List;
+import java.util.Set;
 
-import org.antlr.v4.runtime.ParserRuleContext;
+import javax.validation.constraints.NotEmpty;
+import javax.validation.constraints.NotNull;
 
-import com.oceanbase.tools.sqlparser.statement.BaseStatement;
+import lombok.Data;
 
-public abstract class BaseLogicalTableExpression extends BaseStatement {
+/**
+ * @Author: Lebie
+ * @Date: 2024/5/7 15:37
+ * @Description: []
+ */
+@Data
+public class CreateLogicalDatabaseReq {
+    @NotNull
+    private Long projectId;
 
-    public abstract List<String> evaluate() throws BadExpressionException;
+    @NotNull
+    private String name;
 
-    BaseLogicalTableExpression(ParserRuleContext ruleNode) {
-        super(ruleNode);
-    }
+    @NotNull
+    private String alias;
 
-    BaseLogicalTableExpression() {}
+    @NotEmpty
+    private Set<Long> physicalDatabaseIds;
 }

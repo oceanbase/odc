@@ -13,35 +13,40 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.connection.logicaldatabase.parser;
+package com.oceanbase.odc.service.connection.logicaldatabase.model;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
-import org.antlr.v4.runtime.ParserRuleContext;
+import com.oceanbase.odc.core.shared.constant.DialectType;
+import com.oceanbase.odc.service.collaboration.environment.model.Environment;
+import com.oceanbase.odc.service.connection.database.model.Database;
 
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 /**
  * @Author: Lebie
- * @Date: 2024/4/23 19:38
+ * @Date: 2024/5/7 16:44
  * @Description: []
  */
 @Data
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class LogicalTableExpressions extends BaseLogicalTableExpression {
-    private List<LogicalTableExpression> expressions;
+public class DetailLogicalDatabaseResp {
+    private Long id;
 
-    LogicalTableExpressions(ParserRuleContext ruleNode) {
-        super(ruleNode);
-    }
+    private String name;
 
-    @Override
-    public List<String> evaluate() throws BadExpressionException {
-        return this.expressions.stream().flatMap(expression -> expression.evaluate().stream())
-                .collect(Collectors.toList());
-    }
+    private String alias;
+
+    private DialectType dialectType;
+
+    private Environment environment;
+
+    private List<Database> physicalDatabases;
+
+    private List<DetailLogicalTableResp> logicalTables;
 }

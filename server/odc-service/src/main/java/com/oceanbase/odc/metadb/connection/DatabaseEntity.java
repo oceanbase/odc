@@ -29,7 +29,9 @@ import javax.persistence.Table;
 import org.hibernate.annotations.Generated;
 import org.hibernate.annotations.GenerationTime;
 
+import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.service.connection.database.model.DatabaseSyncStatus;
+import com.oceanbase.odc.service.connection.database.model.DatabaseType;
 import com.oceanbase.odc.service.db.schema.model.DBObjectSyncStatus;
 
 import lombok.Data;
@@ -68,10 +70,21 @@ public class DatabaseEntity {
     @Column(name = "name", updatable = false, nullable = false)
     private String name;
 
+    @Column(name = "alias")
+    private String alias;
+
+    @Enumerated(value = EnumType.STRING)
+    @Column(name = "type", updatable = false, nullable = false)
+    private DatabaseType type;
+
+    @Enumerated(value = EnumType.STRING)
+    @Column(name = "dialect_type", updatable = false)
+    private DialectType dialectType;
+
     @Column(name = "project_id")
     private Long projectId;
 
-    @Column(name = "connection_id", updatable = false, nullable = false)
+    @Column(name = "connection_id", updatable = false)
     private Long connectionId;
 
     @Column(name = "environment_id", nullable = false)
@@ -81,13 +94,13 @@ public class DatabaseEntity {
     @Column(name = "sync_status", nullable = false)
     private DatabaseSyncStatus syncStatus;
 
-    @Column(name = "last_sync_time", nullable = false)
+    @Column(name = "last_sync_time")
     private Date lastSyncTime;
 
-    @Column(name = "charset_name", nullable = false)
+    @Column(name = "charset_name")
     private String charsetName;
 
-    @Column(name = "collation_name", nullable = false)
+    @Column(name = "collation_name")
     private String collationName;
 
     @Column(name = "table_count")

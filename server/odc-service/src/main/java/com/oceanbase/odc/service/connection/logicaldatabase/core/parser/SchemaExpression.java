@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.connection.logicaldatabase.parser;
+package com.oceanbase.odc.service.connection.logicaldatabase.core.parser;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -48,7 +48,7 @@ public class SchemaExpression extends BaseLogicalTableExpression {
     }
 
     @Override
-    public List<String> evaluate() throws BadExpressionException {
+    public List<String> evaluate() throws BadLogicalTableExpressionException {
         PreConditions.notEmpty(this.getText(), "expression");
 
         if (CollectionUtils.isEmpty(sliceRanges)) {

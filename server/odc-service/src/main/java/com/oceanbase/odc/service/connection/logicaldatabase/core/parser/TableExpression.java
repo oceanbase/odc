@@ -13,34 +13,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.connection.logicaldatabase.parser;
-
-import java.util.List;
+package com.oceanbase.odc.service.connection.logicaldatabase.core.parser;
 
 import org.antlr.v4.runtime.ParserRuleContext;
 
-import lombok.Getter;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 /**
  * @Author: Lebie
- * @Date: 2024/4/22 13:30
+ * @Date: 2024/4/22 11:04
  * @Description: []
  */
-@Getter
-public class SteppedRange extends BaseRangeExpression {
-    private String rangeStart;
-    private String rangeEnd;
-    private String rangeStep;
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+public class TableExpression extends SchemaExpression {
+    private boolean repeat;
 
-    SteppedRange(ParserRuleContext ruleNode, String rangeStart, String rangeEnd, String rangeStep) {
+    TableExpression(ParserRuleContext ruleNode) {
         super(ruleNode);
-        this.rangeStart = rangeStart;
-        this.rangeEnd = rangeEnd;
-        this.rangeStep = rangeStep;
-    }
-
-    @Override
-    public List<String> listRanges() throws BadExpressionException {
-        return LogicalTableExpressionParseUtils.listSteppedRanges(rangeStart, rangeEnd, rangeStep, this.getText());
     }
 }

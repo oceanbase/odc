@@ -77,6 +77,7 @@ public enum ResourceType implements Translatable {
     ODC_PROJECT,
     ODC_ENVIRONMENT,
     ODC_DATABASE,
+    ODC_LOGICAL_TABLE,
     ODC_RULESET,
     ODC_RULE,
     ODC_SENSITIVE_COLUMN,

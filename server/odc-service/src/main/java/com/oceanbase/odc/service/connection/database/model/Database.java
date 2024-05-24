@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Set;
 
 import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.NotNull;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonProperty.Access;
@@ -56,6 +57,9 @@ public class Database implements SecurityResource, OrganizationIsolated, Seriali
 
     @NotBlank
     private String name;
+
+    @NotNull
+    private DatabaseType type;
 
     private Project project;
 

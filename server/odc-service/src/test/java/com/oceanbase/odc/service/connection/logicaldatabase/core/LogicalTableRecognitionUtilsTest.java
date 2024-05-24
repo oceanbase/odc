@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.connection.logicaldatabase;
+package com.oceanbase.odc.service.connection.logicaldatabase.core;
 
 import java.util.List;
 
@@ -21,8 +21,8 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import com.oceanbase.odc.common.util.YamlUtils;
-import com.oceanbase.odc.service.connection.logicaldatabase.model.DataNode;
-import com.oceanbase.odc.service.connection.logicaldatabase.model.LogicalTable;
+import com.oceanbase.odc.service.connection.logicaldatabase.core.model.DataNode;
+import com.oceanbase.odc.service.connection.logicaldatabase.core.model.LogicalTable;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

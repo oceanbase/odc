@@ -268,6 +268,7 @@ public class DatabaseService {
         Specification<DatabaseEntity> specs = DatabaseSpecs
                 .environmentIdEquals(params.getEnvironmentId())
                 .and(DatabaseSpecs.nameLike(params.getSchemaName()))
+                .and(DatabaseSpecs.typeIn(params.getTypes()))
                 .and(DatabaseSpecs.existedEquals(params.getExisted()))
                 .and(DatabaseSpecs.organizationIdEquals(authenticationFacade.currentOrganizationId()));
         Set<Long> joinedProjectIds =

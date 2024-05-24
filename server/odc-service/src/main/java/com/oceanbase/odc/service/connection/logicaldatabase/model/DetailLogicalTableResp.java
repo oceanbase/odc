@@ -15,30 +15,31 @@
  */
 package com.oceanbase.odc.service.connection.logicaldatabase.model;
 
+import java.util.Date;
 import java.util.List;
 
-import com.oceanbase.odc.service.connection.database.model.Database;
+import com.oceanbase.odc.service.connection.logicaldatabase.core.model.DataNode;
+import com.oceanbase.tools.dbbrowser.model.DBTable;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Data;
-import lombok.NoArgsConstructor;
 
 /**
  * @Author: Lebie
- * @Date: 2024/3/22 11:35
+ * @Date: 2024/5/7 19:39
  * @Description: []
  */
+
 @Data
-@Builder
-@NoArgsConstructor
-@AllArgsConstructor
-public class LogicalDatabase {
+public class DetailLogicalTableResp {
+    private Long id;
+
     private String name;
 
-    private String alias;
+    private String expression;
 
-    private List<Database> physicalDatabases;
+    private Integer physicalTableCount;
 
-    private List<LogicalTable> logicalTables;
+    private List<DataNode> inconsistentPhysicalTables;
+
+    private DBTable basePhysicalTable;
 }

@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.connection.logicaldatabase.parser;
+package com.oceanbase.odc.service.connection.logicaldatabase.core.parser;
 
 import static com.oceanbase.odc.core.shared.constant.ErrorCodes.LogicalTableExpressionNotPositiveStep;
 
@@ -30,7 +30,7 @@ import com.oceanbase.odc.core.shared.constant.ErrorCodes;
  */
 public class LogicalTableExpressionParseUtils {
     public static List<String> listSteppedRanges(String start, String end, String step, String text)
-            throws BadExpressionException {
+            throws BadLogicalTableExpressionException {
         PreConditions.notEmpty(start, "start");
         PreConditions.notEmpty(end, "end");
         PreConditions.notEmpty(step, "step");
@@ -41,17 +41,18 @@ public class LogicalTableExpressionParseUtils {
             endInt = Integer.parseInt(end);
             stepInt = Integer.parseInt(step);
         } catch (NumberFormatException e) {
-            throw new BadExpressionException(ErrorCodes.LogicalTableExpressionNotValidIntegerRange,
+            throw new BadLogicalTableExpressionException(ErrorCodes.LogicalTableExpressionNotValidIntegerRange,
                     new Object[] {text},
                     ErrorCodes.LogicalTableExpressionNotValidIntegerRange.getEnglishMessage(new Object[] {text}));
         }
 
         if (stepInt <= 0) {
-            throw new BadExpressionException(LogicalTableExpressionNotPositiveStep, new Object[] {text, stepInt},
+            throw new BadLogicalTableExpressionException(LogicalTableExpressionNotPositiveStep,
+                    new Object[] {text, stepInt},
                     LogicalTableExpressionNotPositiveStep.getEnglishMessage(new Object[] {text, stepInt}));
         }
         if (startInt > endInt) {
-            throw new BadExpressionException(ErrorCodes.LogicalTableExpressionRangeStartGreaterThanEnd,
+            throw new BadLogicalTableExpressionException(ErrorCodes.LogicalTableExpressionRangeStartGreaterThanEnd,
                     new Object[] {text, startInt, endInt},
                     ErrorCodes.LogicalTableExpressionRangeStartGreaterThanEnd
                             .getEnglishMessage(new Object[] {text, startInt, endInt}));
