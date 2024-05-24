@@ -12,7 +12,7 @@ create table if not exists `connect_database_mapping`(
     `physical_database_id` bigint(20) NOT NULL COMMENT 'reference to connect_database.id whose type is PHYSICAL',
     `organization_id` bigint(20) NOT NULL COMMENT 'reference to iam_organization.id',
     PRIMARY KEY (`id`),
-    UNIQUE KEY `uk_connect_logical_db_physical_db_ldi_pdi` (`logical_database_id`, `physical_database_id`)
+    UNIQUE KEY `uk_connect_database_mapping_pdi` (`physical_database_id`)
 );
 
 create table if not exists `database_table_mapping`(
@@ -27,5 +27,5 @@ create table if not exists `database_table_mapping`(
     `is_consistent` tinyint(1) NOT NULL DEFAULT 1 COMMENT '0: inconsistent, 1: consistent',
     `organization_id` bigint(20) NOT NULL COMMENT 'reference to iam_organization.id',
     PRIMARY KEY (`id`),
-    UNIQUE KEY `uk_connect_logical_table_physical_table_lti_pdi_ptn` (`logical_table_id`, `physical_database_id`, `physical_table_name`)
+    UNIQUE KEY `uk_database_table_mapping_pdi_ptn` (`physical_database_id`, `physical_table_name`)
 );

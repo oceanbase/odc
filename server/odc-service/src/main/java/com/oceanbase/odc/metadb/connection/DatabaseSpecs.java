@@ -23,6 +23,7 @@ import java.util.Set;
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.data.jpa.domain.Specification;
 
+import com.oceanbase.odc.common.jpa.SpecificationUtil;
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.service.connection.database.model.DatabaseType;
 
@@ -77,8 +78,7 @@ public class DatabaseSpecs {
     }
 
     public static Specification<DatabaseEntity> typeIn(List<DatabaseType> types) {
-        return (root, query, builder) -> CollectionUtils.isEmpty(types) ? builder.conjunction()
-                : root.get("type").in(types);
+        return SpecificationUtil.columnIn(DatabaseEntity_.TYPE, types);
     }
 
 }

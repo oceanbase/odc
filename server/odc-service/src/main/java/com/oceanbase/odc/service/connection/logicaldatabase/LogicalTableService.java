@@ -32,10 +32,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.task.TaskRejectedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.validation.annotation.Validated;
 
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.core.shared.Verify;
+import com.oceanbase.odc.core.shared.constant.ResourceRoleName;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.core.shared.exception.NotFoundException;
 import com.oceanbase.odc.core.shared.exception.UnexpectedException;
@@ -54,7 +56,6 @@ import com.oceanbase.odc.service.connection.logicaldatabase.model.DetailLogicalT
 import com.oceanbase.odc.service.iam.ProjectPermissionValidator;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.permission.DBResourcePermissionHelper;
-import com.oceanbase.odc.service.permission.database.model.DatabasePermissionType;
 import com.oceanbase.tools.dbbrowser.model.DBObjectType;
 import com.oceanbase.tools.sqlparser.SyntaxErrorException;
 
@@ -68,6 +69,7 @@ import lombok.extern.slf4j.Slf4j;
 @Service
 @SkipAuthorize
 @Slf4j
+@Validated
 public class LogicalTableService {
     private final DefaultLogicalTableExpressionParser parser = new DefaultLogicalTableExpressionParser();
 
@@ -93,11 +95,11 @@ public class LogicalTableService {
     private DBResourcePermissionHelper permissionHelper;
 
     public List<DetailLogicalTableResp> list(@NotNull Long logicalDatabaseId) {
-        permissionHelper.checkDBPermissions(Collections.singleton(logicalDatabaseId), DatabasePermissionType.all());
         DatabaseEntity logicalDatabase =
                 databaseRepository.findById(logicalDatabaseId).orElseThrow(() -> new NotFoundException(
                         ResourceType.ODC_DATABASE, "id", logicalDatabaseId));
         Verify.equals(DatabaseType.LOGICAL, logicalDatabase.getType(), "database type");
+        projectPermissionValidator.checkProjectRole(logicalDatabase.getProjectId(), ResourceRoleName.all());
 
         List<DBObjectEntity> logicalTables =
                 dbObjectRepository.findByDatabaseIdAndType(logicalDatabaseId, DBObjectType.LOGICAL_TABLE);
@@ -134,11 +136,15 @@ public class LogicalTableService {
 
     @Transactional(rollbackFor = Exception.class)
     public Boolean delete(@NotNull Long logicalDatabaseId, @NotNull Long logicalTableId) {
-        permissionHelper.checkDBPermissions(Collections.singleton(logicalDatabaseId),
-                Arrays.asList(DatabasePermissionType.CHANGE));
         DBObjectEntity logicalTable = dbObjectRepository.findById(logicalTableId)
                 .orElseThrow(() -> new NotFoundException(ResourceType.ODC_LOGICAL_TABLE, "id", logicalTableId));
         Verify.equals(logicalTable.getDatabaseId(), logicalDatabaseId, "logical database id");
+        DatabaseEntity logicalDatabase =
+                databaseRepository.findById(logicalDatabaseId).orElseThrow(() -> new NotFoundException(
+                        ResourceType.ODC_DATABASE, "id", logicalDatabaseId));
+        projectPermissionValidator.checkProjectRole(logicalDatabase.getProjectId(),
+                Arrays.asList(ResourceRoleName.DBA, ResourceRoleName.OWNER));
+
         dbObjectRepository.deleteById(logicalTableId);
         mappingRepository.deleteByLogicalTableId(logicalTableId);
         return true;

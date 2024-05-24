@@ -48,7 +48,7 @@ public class LogicalDatabaseController {
         return Responses.success(databaseService.create(req));
     }
 
-    @RequestMapping(value = "/logicaldatabases/{id:[\\d]+}", method = RequestMethod.POST)
+    @RequestMapping(value = "/logicaldatabases/{id:[\\d]+}", method = RequestMethod.GET)
     public SuccessResponse<DetailLogicalDatabaseResp> detail(@PathVariable Long id) {
         return Responses.success(databaseService.detail(id));
     }
