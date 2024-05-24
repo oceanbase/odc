@@ -55,7 +55,9 @@ public interface SystemConfigRepository extends OdcJpaRepository<SystemConfigEnt
                 entity.getValue());
     }
 
-    SystemConfigEntity findByKeyLike(String key);
+    List<SystemConfigEntity> findByKeyLike(String key);
+
+    SystemConfigEntity findByKey(String key);
 
 
 }
