@@ -74,24 +74,21 @@ public class DLMTableStructureSynchronizer {
                     Collections.singletonList(tgtTableName)).get(tgtTableName);
             DBTableStructureComparator comparator = new DBTableStructureComparator(tgtTableEditor,
                     tgtConfig.getType().getDialectType(), srcConfig.getDefaultSchema(), tgtConfig.getDefaultSchema());
-            DBObjectComparisonResult result = comparator.compare(srcTable, tgtTable);
             List<String> changeSqlScript = new LinkedList<>();
-            switch (result.getComparisonResult()) {
-                case ONLY_IN_SOURCE: {
-                    changeSqlScript.add(result.getChangeScript());
-                    break;
-                }
-                case INCONSISTENT: {
+            if (tgtTable == null) {
+                srcTable.setSchemaName(tgtConfig.getDefaultSchema());
+                srcTable.setName(tgtTableName);
+                changeSqlScript.add(tgtTableEditor.generateCreateObjectDDL(srcTable));
+            } else {
+                DBObjectComparisonResult result = comparator.compare(srcTable, tgtTable);
+                if (result.getComparisonResult() == ComparisonResult.INCONSISTENT) {
                     changeSqlScript = result.getSubDBObjectComparisonResult().stream()
                             .filter(o -> targetType.contains(o.getDbObjectType())
                                     && (o.getComparisonResult() == ComparisonResult.ONLY_IN_SOURCE
                                             || (o.getDbObjectType() == DBObjectType.PARTITION
                                                     && o.getComparisonResult() == ComparisonResult.INCONSISTENT)))
                             .map(DBObjectComparisonResult::getChangeScript).collect(Collectors.toList());
-                    break;
                 }
-                default:
-                    break;
             }
             if (!changeSqlScript.isEmpty()) {
                 log.info("Start to sync target table structure,sqls={}", changeSqlScript);
