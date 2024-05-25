@@ -89,7 +89,8 @@ public class DataArchiveTask extends BaseTask<Boolean> {
                     DLMTableStructureSynchronizer.sync(
                             DataSourceInfoMapper.toConnectionConfig(parameters.getSourceDs()),
                             DataSourceInfoMapper.toConnectionConfig(parameters.getTargetDs()),
-                            dlmTableUnit.getTableName(), parameters.getSyncTableStructure());
+                            dlmTableUnit.getTableName(), dlmTableUnit.getTargetTableName(),
+                            parameters.getSyncTableStructure());
                 } catch (Exception e) {
                     log.warn("Failed to sync target table structure,table will be ignored,tableName={}",
                             dlmTableUnit.getTableName(), e);

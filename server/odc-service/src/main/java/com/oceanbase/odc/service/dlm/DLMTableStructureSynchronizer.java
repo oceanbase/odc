@@ -19,23 +19,27 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 import javax.sql.DataSource;
 
+import com.oceanbase.odc.common.util.JdbcOperationsUtil;
+import com.oceanbase.odc.core.shared.constant.ConnectType;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
+import com.oceanbase.odc.service.db.browser.DBSchemaAccessors;
+import com.oceanbase.odc.service.db.browser.DBTableEditorFactory;
+import com.oceanbase.odc.service.plugin.ConnectionPluginUtil;
 import com.oceanbase.odc.service.session.factory.DruidDataSourceFactory;
-import com.oceanbase.odc.service.structurecompare.DefaultDBStructureComparator;
+import com.oceanbase.odc.service.structurecompare.comparedbobject.DBTableStructureComparator;
 import com.oceanbase.odc.service.structurecompare.model.ComparisonResult;
 import com.oceanbase.odc.service.structurecompare.model.DBObjectComparisonResult;
-import com.oceanbase.odc.service.structurecompare.model.DBStructureComparisonConfig;
+import com.oceanbase.tools.dbbrowser.editor.DBTableEditor;
 import com.oceanbase.tools.dbbrowser.model.DBObjectType;
+import com.oceanbase.tools.dbbrowser.model.DBTable;
+import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
 import com.oceanbase.tools.migrator.common.configure.DataSourceInfo;
 
 import lombok.extern.slf4j.Slf4j;
@@ -48,72 +52,80 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class DLMTableStructureSynchronizer {
 
-    public static void sync(DataSourceInfo sourceInfo, DataSourceInfo targetInfo, String tableName,
-            Set<DBObjectType> targetType)
-            throws SQLException {
+    public static void sync(DataSourceInfo sourceInfo, DataSourceInfo targetInfo, String srcTableName,
+            String tgtTableName, Set<DBObjectType> targetType) throws SQLException {
         sync(DataSourceInfoMapper.toConnectionConfig(sourceInfo), DataSourceInfoMapper.toConnectionConfig(targetInfo),
-                tableName, targetType);
+                srcTableName, tgtTableName, targetType);
     }
 
-    public static void sync(ConnectionConfig sourceConnectionConfig, ConnectionConfig targetConnectionConfig,
-            String tableName, Set<DBObjectType> targetType) throws SQLException {
-        HashSet<String> tableNames = new HashSet<>();
-        tableNames.add(tableName);
-        sync(sourceConnectionConfig, targetConnectionConfig, tableNames, targetType);
-    }
-
-    public static void sync(ConnectionConfig sourceConnectionConfig, ConnectionConfig targetConnectionConfig,
-            Set<String> tableNames, Set<DBObjectType> targetType) throws SQLException {
-        DBStructureComparisonConfig sourceConfig = initDBStructureComparisonConfig(
-                sourceConnectionConfig, tableNames);
-        DBStructureComparisonConfig targetConfig = initDBStructureComparisonConfig(
-                targetConnectionConfig, tableNames);
-        DefaultDBStructureComparator comparator = new DefaultDBStructureComparator();
-        DBObjectComparisonResult result = comparator.compare(sourceConfig, targetConfig).get(0);
-        List<String> changeSqlScript = new LinkedList<>();
-        switch (result.getComparisonResult()) {
-            case ONLY_IN_SOURCE: {
-                changeSqlScript.add(result.getChangeScript());
-                break;
-            }
-            case INCONSISTENT: {
-                changeSqlScript = result.getSubDBObjectComparisonResult().stream()
-                        .filter(o -> targetType.contains(o.getDbObjectType())
-                                && o.getComparisonResult() == ComparisonResult.ONLY_IN_SOURCE)
-                        .map(DBObjectComparisonResult::getChangeScript).collect(Collectors.toList());
-                break;
-            }
-            default:
-                break;
-        }
-        if (!changeSqlScript.isEmpty()) {
-            log.info("Start to sync target table structure,sqls={}", changeSqlScript);
-            try (Connection conn = targetConfig.getDataSource().getConnection();
-                    Statement statement = conn.createStatement()) {
-                for (String sql : changeSqlScript) {
-                    statement.addBatch(sql);
+    public static void sync(ConnectionConfig srcConfig, ConnectionConfig tgtConfig,
+            String srcTableName, String tgtTableName, Set<DBObjectType> targetType) throws SQLException {
+        DataSource sourceDs = new DruidDataSourceFactory(srcConfig).getDataSource();
+        DataSource targetDs = new DruidDataSourceFactory(tgtConfig).getDataSource();
+        try {
+            String tgtDbVersion = getDBVersion(tgtConfig.getType(), targetDs);
+            String srcDbVersion = getDBVersion(srcConfig.getType(), sourceDs);
+            DBTableEditor tgtTableEditor = getDBTableEditor(tgtConfig.getType(), tgtDbVersion);
+            DBSchemaAccessor srcAccessor = getDBSchemaAccessor(srcConfig.getType(), sourceDs, srcDbVersion);
+            DBSchemaAccessor tgtAccessor = getDBSchemaAccessor(tgtConfig.getType(), targetDs, tgtDbVersion);
+            DBTable srcTable = srcAccessor.getTables(srcConfig.getDefaultSchema(),
+                    Collections.singletonList(srcTableName)).get(srcTableName);
+            DBTable tgtTable = tgtAccessor.getTables(tgtConfig.getDefaultSchema(),
+                    Collections.singletonList(tgtTableName)).get(tgtTableName);
+            DBTableStructureComparator comparator = new DBTableStructureComparator(tgtTableEditor,
+                    tgtConfig.getType().getDialectType(), srcConfig.getDefaultSchema(), tgtConfig.getDefaultSchema());
+            DBObjectComparisonResult result = comparator.compare(srcTable, tgtTable);
+            List<String> changeSqlScript = new LinkedList<>();
+            switch (result.getComparisonResult()) {
+                case ONLY_IN_SOURCE: {
+                    changeSqlScript.add(result.getChangeScript());
+                    break;
                 }
-                statement.executeBatch();
-                log.info("Sync table structure success.");
-            } catch (Exception e) {
-                log.warn("Sync table structure failed!", e);
+                case INCONSISTENT: {
+                    changeSqlScript = result.getSubDBObjectComparisonResult().stream()
+                            .filter(o -> targetType.contains(o.getDbObjectType())
+                                    && (o.getComparisonResult() == ComparisonResult.ONLY_IN_SOURCE
+                                            || (o.getDbObjectType() == DBObjectType.PARTITION
+                                                    && o.getComparisonResult() == ComparisonResult.INCONSISTENT)))
+                            .map(DBObjectComparisonResult::getChangeScript).collect(Collectors.toList());
+                    break;
+                }
+                default:
+                    break;
             }
+            if (!changeSqlScript.isEmpty()) {
+                log.info("Start to sync target table structure,sqls={}", changeSqlScript);
+                try (Connection conn = targetDs.getConnection(); Statement statement = conn.createStatement()) {
+                    for (String sql : changeSqlScript) {
+                        statement.addBatch(sql);
+                    }
+                    statement.executeBatch();
+                    log.info("Sync table structure success.");
+                }
+            }
+        } catch (Exception e) {
+            log.warn("Sync table structure failed!", e);
+        } finally {
+            closeDataSource(sourceDs);
+            closeDataSource(targetDs);
         }
-        closeDataSource(sourceConfig.getDataSource());
-        closeDataSource(targetConfig.getDataSource());
     }
 
-    private static DBStructureComparisonConfig initDBStructureComparisonConfig(ConnectionConfig config,
-            Set<String> tableNames) {
-        DBStructureComparisonConfig returnValue = new DBStructureComparisonConfig();
-        returnValue.setSchemaName(config.getDefaultSchema());
-        returnValue.setConnectType(config.getType());
-        returnValue.setDataSource(new DruidDataSourceFactory(config).getDataSource());
-        returnValue.setToComparedObjectTypes(Collections.singleton(DBObjectType.TABLE));
-        Map<DBObjectType, Set<String>> blackListMap = new HashMap<>();
-        blackListMap.put(DBObjectType.TABLE, new HashSet<>(tableNames));
-        returnValue.setBlackListMap(blackListMap);
-        return returnValue;
+
+    private static String getDBVersion(ConnectType connectType, DataSource dataSource) throws SQLException {
+        return ConnectionPluginUtil.getInformationExtension(connectType.getDialectType())
+                .getDBVersion(dataSource.getConnection());
+    }
+
+    private static DBTableEditor getDBTableEditor(ConnectType connectType, String dbVersion) {
+        return new DBTableEditorFactory(connectType, dbVersion).create();
+    }
+
+    private static DBSchemaAccessor getDBSchemaAccessor(ConnectType connectType, DataSource dataSource,
+            String dbVersion)
+            throws SQLException {
+        return DBSchemaAccessors.create(JdbcOperationsUtil.getJdbcOperations(dataSource.getConnection()), null,
+                connectType, dbVersion, null);
     }
 
     private static void closeDataSource(DataSource dataSource) {
