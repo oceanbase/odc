@@ -233,7 +233,10 @@ public class MultipleDatabaseChangeRuntimeFlowableTask extends BaseODCFlowTaskDe
                 }
                 taskService.succeed(taskId, generateResult());
             } else {
-                taskService.updateProgress(taskId, (this.batchId + 1) * 100D / this.batchSum);
+                TaskEntity taskEntity = taskService.detail(taskId);
+                taskEntity.setResultJson(JsonUtils.toJson(generateResult()));
+                taskEntity.setProgressPercentage((this.batchId + 1) * 100D / this.batchSum);
+                taskService.update(taskEntity);
             }
             super.onSuccessful(taskId, taskService);
             Optional<FlowTaskInstance> taskInstanceByActivityId = flowableAdaptor.getTaskInstanceByActivityId(
