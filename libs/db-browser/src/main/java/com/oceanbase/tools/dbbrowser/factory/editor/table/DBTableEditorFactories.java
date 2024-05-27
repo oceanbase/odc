@@ -16,16 +16,15 @@
 package com.oceanbase.tools.dbbrowser.factory.editor.table;
 
 import com.oceanbase.tools.dbbrowser.editor.DBTableEditor;
-import com.oceanbase.tools.dbbrowser.factory.DBBrowserFactories;
+import com.oceanbase.tools.dbbrowser.factory.AbstractDBBrowserFactories;
 import com.oceanbase.tools.dbbrowser.factory.DBBrowserFactory;
-import com.oceanbase.tools.dbbrowser.factory.DBBrowserFactoryConfig;
 
 import lombok.Setter;
 import lombok.experimental.Accessors;
 
 @Setter
 @Accessors(chain = true)
-public class DBTableEditorFactories implements DBBrowserFactories<DBTableEditor> {
+public class DBTableEditorFactories extends AbstractDBBrowserFactories<DBTableEditor> {
 
     @Override
     public DBBrowserFactory<DBTableEditor> buildForMysql() {
@@ -50,11 +49,6 @@ public class DBTableEditorFactories implements DBBrowserFactories<DBTableEditor>
     @Override
     public DBBrowserFactory<DBTableEditor> buildForDoris() {
         return null;
-    }
-
-    @Override
-    public DBBrowserFactory<DBTableEditor> build(DBBrowserFactoryConfig config) {
-        return build(config.getType());
     }
 
 }

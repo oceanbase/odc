@@ -21,9 +21,8 @@ import javax.sql.DataSource;
 
 import org.springframework.jdbc.core.JdbcTemplate;
 
-import com.oceanbase.tools.dbbrowser.factory.DBBrowserFactories;
+import com.oceanbase.tools.dbbrowser.factory.AbstractDBBrowserFactories;
 import com.oceanbase.tools.dbbrowser.factory.DBBrowserFactory;
-import com.oceanbase.tools.dbbrowser.factory.DBBrowserFactoryConfig;
 import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
 
 import lombok.Setter;
@@ -31,7 +30,7 @@ import lombok.experimental.Accessors;
 
 @Setter
 @Accessors(chain = true)
-public class DBSchemaAccessorFactories implements DBBrowserFactories<DBSchemaAccessor> {
+public class DBSchemaAccessorFactories extends AbstractDBBrowserFactories<DBSchemaAccessor> {
 
     private String dbVersion;
     private DataSource dataSource;
@@ -45,7 +44,7 @@ public class DBSchemaAccessorFactories implements DBBrowserFactories<DBSchemaAcc
     @Override
     public DBBrowserFactory<DBSchemaAccessor> buildForOBMysql() {
         return new OBMySQLDBSchemaAccessorFactory(new JdbcTemplate(this.dataSource), this.dbVersion,
-                this.properties.getProperty(DBBrowserFactoryConfig.TENANTNAME_KEY));
+                this.properties.getProperty(OBMySQLDBSchemaAccessorFactory.TENANTNAME_KEY));
     }
 
     @Override
@@ -61,14 +60,6 @@ public class DBSchemaAccessorFactories implements DBBrowserFactories<DBSchemaAcc
     @Override
     public DBBrowserFactory<DBSchemaAccessor> buildForDoris() {
         return null;
-    }
-
-    @Override
-    public DBBrowserFactory<DBSchemaAccessor> build(DBBrowserFactoryConfig config) {
-        this.dbVersion = config.getDbVersion();
-        this.dataSource = config.getDataSource();
-        this.properties = config.getProperties();
-        return build(config.getType());
     }
 
 }

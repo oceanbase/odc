@@ -23,33 +23,6 @@ public interface DBBrowserFactories<T> {
     String ORACLE = "ORACLE";
     String DORIS = "DORIS";
 
-    DBBrowserFactory<T> build(DBBrowserFactoryConfig config);
-
-    default DBBrowserFactory<T> build(String type) {
-        switch (type) {
-            case ORACLE:
-                return buildForOracle();
-            case MYSQL:
-                return buildForMysql();
-            case DORIS:
-                return buildForDoris();
-            case OB_ORACLE:
-                return buildForOBOracle();
-            case OB_MYSQL:
-                return buildForOBMysql();
-            default:
-                throw new IllegalStateException("Not supported for the type, " + type);
-        }
-    }
-
-    DBBrowserFactory<T> buildForDoris();
-
-    DBBrowserFactory<T> buildForMysql();
-
-    DBBrowserFactory<T> buildForOBMysql();
-
-    DBBrowserFactory<T> buildForOBOracle();
-
-    DBBrowserFactory<T> buildForOracle();
+    DBBrowserFactory<T> build();
 
 }
