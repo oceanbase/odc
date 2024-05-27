@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 OceanBase.
+ * Copyright (c) 2023 OceanBase.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,19 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.oceanbase.tools.dbbrowser.factory.editor.index;
 
+import com.oceanbase.tools.dbbrowser.editor.DBTableIndexEditor;
 import com.oceanbase.tools.dbbrowser.factory.DBBrowserFactories;
+import com.oceanbase.tools.dbbrowser.factory.DBBrowserFactory;
 
-public class DBTableIndexEditorFactories implements DBBrowserFactories {
+public class DBTableIndexEditorFactories implements DBBrowserFactories<DBTableIndexEditor> {
     @Override
-    public <Factory> Factory forMySQL() {
+    public <Factory extends DBBrowserFactory<DBTableIndexEditor>> Factory forMySQL() {
         return null;
     }
 
     @Override
-    public <Factory> Factory forOracle() {
+    public <Factory extends DBBrowserFactory<DBTableIndexEditor>> Factory forOracle() {
         return null;
     }
 
@@ -40,7 +41,7 @@ public class DBTableIndexEditorFactories implements DBBrowserFactories {
     }
 
     @Override
-    public <Factory> Factory forDoris() {
+    public <Factory extends DBBrowserFactory<DBTableIndexEditor>> Factory forDoris() {
         return null;
     }
 }

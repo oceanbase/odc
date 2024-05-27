@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 OceanBase.
+ * Copyright (c) 2023 OceanBase.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,19 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.oceanbase.tools.dbbrowser.factory;
 
-public interface DBBrowserFactories {
+public interface DBBrowserFactories<T> {
 
-    <Factory> Factory forMySQL();
+    <Factory extends DBBrowserFactory<T>> Factory forMySQL();
 
-    <Factory> Factory forOracle();
+    <Factory extends DBBrowserFactory<T>> Factory forOracle();
 
-    <Factory> Factory forOBMySQL();
+    <Factory extends DBBrowserFactory<T>> Factory forOBMySQL();
 
-    <Factory> Factory forOBOracle();
+    <Factory extends DBBrowserFactory<T>> Factory forOBOracle();
 
-    <Factory> Factory forDoris();
+    <Factory extends DBBrowserFactory<T>> Factory forDoris();
 
 }
