@@ -153,7 +153,7 @@ public class DatabaseChangeChangingOrderTemplateService {
         templateEntity.setOrganizationId(organizationId);
         templateEntity.setDatabaseSequences(req.getOrders());
         templateEntity.setEnabled(true);
-        DatabaseChangeChangingOrderTemplateEntity savedEntity = templateRepository.save(templateEntity);
+        DatabaseChangeChangingOrderTemplateEntity savedEntity = templateRepository.saveAndFlush(templateEntity);
         DatabaseChangeChangingOrderTemplateResp templateResp = new DatabaseChangeChangingOrderTemplateResp();
         templateResp.setId(savedEntity.getId());
         templateResp.setName(savedEntity.getName());
@@ -209,7 +209,7 @@ public class DatabaseChangeChangingOrderTemplateService {
         }
         originEntity.setName(req.getName());
         originEntity.setDatabaseSequences(req.getOrders());
-        DatabaseChangeChangingOrderTemplateEntity savedEntity = templateRepository.save(originEntity);
+        DatabaseChangeChangingOrderTemplateEntity savedEntity = templateRepository.saveAndFlush(originEntity);
         DatabaseChangeChangingOrderTemplateResp templateResp = new DatabaseChangeChangingOrderTemplateResp();
         templateResp.setId(savedEntity.getId());
         templateResp.setName(savedEntity.getName());
@@ -247,7 +247,6 @@ public class DatabaseChangeChangingOrderTemplateService {
         Map<Long, Boolean> templateId2Status = getChangingOrderTemplateId2EnableStatus(
                 Collections.singleton(templateEntity.getId()));
         templateResp.setEnabled(templateId2Status.getOrDefault(templateEntity.getId(), templateEntity.getEnabled()));
-        List<Long> databaseIds = databaseSequences.stream().flatMap(List::stream).collect(Collectors.toList());
         if (!templateResp.getEnabled()) {
             templateEntity.setEnabled(false);
             templateRepository.save(templateEntity);
@@ -301,7 +300,7 @@ public class DatabaseChangeChangingOrderTemplateService {
                 .map(s -> s.stream().map(DatabaseChangeDatabase::new).collect(Collectors.toList()))
                 .collect(Collectors.toList());
         templateResp.setDatabaseSequenceList(databaseSequenceList);
-        templateResp.setEnabled(true);
+        templateResp.setEnabled(templateEntity.getEnabled());
         return templateResp;
     }
 
