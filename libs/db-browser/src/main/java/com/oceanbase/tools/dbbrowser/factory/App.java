@@ -15,7 +15,7 @@
  */
 package com.oceanbase.tools.dbbrowser.factory;
 
-import org.springframework.jdbc.core.JdbcOperations;
+import javax.sql.DataSource;
 
 import com.oceanbase.tools.dbbrowser.editor.DBTableEditor;
 import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
@@ -23,15 +23,14 @@ import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
 public class App {
 
     public static void main(String[] args) {
-        JdbcOperations jdbcOperations = null;
+        DataSource dataSource = null;
         DBSchemaAccessor accessor = DBBrowser
                 .dbSchemaAccessor()
-                .forOBMySQL()
+                .setDataSource(dataSource)
                 .setDbVersion("2.2.77")
-                .setTenantName("Oboralce")
-                .setJdbcOperations(jdbcOperations)
+                .type("OB_MYSQL")
                 .create();
 
-        DBTableEditor editor = DBBrowser.dbObjectEditor().tableEditor().forOBOracle().create();
+        DBTableEditor editor = DBBrowser.dbObjectEditor().tableEditor().type(DBBrowserFactories.OB_ORACLE).create();
     }
 }

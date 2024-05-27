@@ -20,16 +20,21 @@ import org.springframework.jdbc.core.JdbcOperations;
 import com.oceanbase.tools.dbbrowser.factory.DBBrowserFactory;
 import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
 
-import lombok.Setter;
-import lombok.experimental.Accessors;
+import lombok.NonNull;
 
-@Setter
-@Accessors(chain = true)
 public class OBMySQLDBSchemaAccessorFactory implements DBBrowserFactory<DBSchemaAccessor> {
 
-    private JdbcOperations jdbcOperations;
-    private String dbVersion;
-    private String tenantName;
+    public static final String TENANTNAME_KEY = "tenantName";
+    private final JdbcOperations jdbcOperations;
+    private final String dbVersion;
+    private final String tenantName;
+
+    public OBMySQLDBSchemaAccessorFactory(@NonNull JdbcOperations jdbcOperations,
+            @NonNull String dbVersion, @NonNull String tenantName) {
+        this.jdbcOperations = jdbcOperations;
+        this.dbVersion = dbVersion;
+        this.tenantName = tenantName;
+    }
 
     @Override
     public DBSchemaAccessor create() {

@@ -15,31 +15,40 @@
  */
 package com.oceanbase.tools.dbbrowser.factory.editor.index;
 
+import com.oceanbase.tools.dbbrowser.editor.DBTableIndexEditor;
 import com.oceanbase.tools.dbbrowser.factory.DBBrowserFactories;
+import com.oceanbase.tools.dbbrowser.factory.DBBrowserFactory;
 
-public class DBTableIndexEditorFactories implements DBBrowserFactories {
+import lombok.Setter;
+import lombok.experimental.Accessors;
+
+@Setter
+@Accessors(chain = true)
+public class DBTableIndexEditorFactories implements DBBrowserFactories<DBTableIndexEditor> {
+
     @Override
-    public <Factory> Factory forMySQL() {
+    public DBBrowserFactory<DBTableIndexEditor> mysql() {
         return null;
     }
 
     @Override
-    public <Factory> Factory forOracle() {
-        return null;
-    }
-
-    @Override
-    public OBMySQLDBTableIndexEditorFactory forOBMySQL() {
+    public DBBrowserFactory<DBTableIndexEditor> obmysql() {
         return new OBMySQLDBTableIndexEditorFactory();
     }
 
     @Override
-    public OBOracleDBTableIndexEditorFactory forOBOracle() {
+    public DBBrowserFactory<DBTableIndexEditor> oboracle() {
         return new OBOracleDBTableIndexEditorFactory();
     }
 
     @Override
-    public <Factory> Factory forDoris() {
+    public DBBrowserFactory<DBTableIndexEditor> oracle() {
         return null;
     }
+
+    @Override
+    public DBBrowserFactory<DBTableIndexEditor> doris() {
+        return null;
+    }
+
 }

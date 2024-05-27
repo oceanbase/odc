@@ -15,16 +15,39 @@
  */
 package com.oceanbase.tools.dbbrowser.factory;
 
-public interface DBBrowserFactories {
+public interface DBBrowserFactories<T> {
 
-    <Factory> Factory forMySQL();
+    String MYSQL = "MYSQL";
+    String OB_MYSQL = "OB_MYSQL";
+    String OB_ORACLE = "OB_ORACLE";
+    String ORACLE = "ORACLE";
+    String DORIS = "DORIS";
 
-    <Factory> Factory forOracle();
+    default DBBrowserFactory<T> type(String type) {
+        switch (type) {
+            case ORACLE:
+                return oracle();
+            case MYSQL:
+                return mysql();
+            case DORIS:
+                return doris();
+            case OB_ORACLE:
+                return oboracle();
+            case OB_MYSQL:
+                return obmysql();
+            default:
+                throw new IllegalStateException("Not supported for the type, " + type);
+        }
+    }
 
-    <Factory> Factory forOBMySQL();
+    DBBrowserFactory<T> doris();
 
-    <Factory> Factory forOBOracle();
+    DBBrowserFactory<T> mysql();
 
-    <Factory> Factory forDoris();
+    DBBrowserFactory<T> obmysql();
+
+    DBBrowserFactory<T> oboracle();
+
+    DBBrowserFactory<T> oracle();
 
 }

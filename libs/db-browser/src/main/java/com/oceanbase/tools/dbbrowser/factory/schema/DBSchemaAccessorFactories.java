@@ -15,32 +15,50 @@
  */
 package com.oceanbase.tools.dbbrowser.factory.schema;
 
+import java.util.Properties;
+
+import javax.sql.DataSource;
+
+import org.springframework.jdbc.core.JdbcTemplate;
+
 import com.oceanbase.tools.dbbrowser.factory.DBBrowserFactories;
+import com.oceanbase.tools.dbbrowser.factory.DBBrowserFactory;
+import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
 
-public class DBSchemaAccessorFactories implements DBBrowserFactories {
+import lombok.Setter;
+import lombok.experimental.Accessors;
+
+@Setter
+@Accessors(chain = true)
+public class DBSchemaAccessorFactories implements DBBrowserFactories<DBSchemaAccessor> {
+
+    private String dbVersion;
+    private DataSource dataSource;
+    private Properties properties;
 
     @Override
-    public <Factory> Factory forMySQL() {
+    public DBBrowserFactory<DBSchemaAccessor> mysql() {
         return null;
     }
 
     @Override
-    public <Factory> Factory forOracle() {
+    public DBBrowserFactory<DBSchemaAccessor> obmysql() {
+        return new OBMySQLDBSchemaAccessorFactory(new JdbcTemplate(this.dataSource), this.dbVersion,
+                this.properties.getProperty(OBMySQLDBSchemaAccessorFactory.TENANTNAME_KEY));
+    }
+
+    @Override
+    public DBBrowserFactory<DBSchemaAccessor> oboracle() {
+        return new OBOracleDBSchemaAccessorFactory(new JdbcTemplate(this.dataSource), this.dbVersion);
+    }
+
+    @Override
+    public DBBrowserFactory<DBSchemaAccessor> oracle() {
         return null;
     }
 
     @Override
-    public OBMySQLDBSchemaAccessorFactory forOBMySQL() {
-        return new OBMySQLDBSchemaAccessorFactory();
-    }
-
-    @Override
-    public OBOracleDBSchemaAccessorFactory forOBOracle() {
-        return new OBOracleDBSchemaAccessorFactory();
-    }
-
-    @Override
-    public <Factory> Factory forDoris() {
+    public DBBrowserFactory<DBSchemaAccessor> doris() {
         return null;
     }
 
