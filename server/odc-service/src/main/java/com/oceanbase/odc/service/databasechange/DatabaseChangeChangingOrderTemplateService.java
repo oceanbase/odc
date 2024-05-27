@@ -248,8 +248,9 @@ public class DatabaseChangeChangingOrderTemplateService {
                 Collections.singleton(templateEntity.getId()));
         templateResp.setEnabled(templateId2Status.getOrDefault(templateEntity.getId(), templateEntity.getEnabled()));
         List<Long> databaseIds = databaseSequences.stream().flatMap(List::stream).collect(Collectors.toList());
-        if (databaseRepository.countByIdIn(databaseIds) < databaseIds.size()) {
-            templateResp.setEnabled(false);
+        if (!templateResp.getEnabled()) {
+            templateEntity.setEnabled(false);
+            templateRepository.save(templateEntity);
         }
         return templateResp;
     }
