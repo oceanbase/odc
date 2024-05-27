@@ -39,14 +39,22 @@ public class SystemConfigEntity extends ConfigEntity {
     @Column(name = "last_modifier_id")
     private Long lastModifierId;
 
+
+    @Column(name = "`value_deprecated`")
+    private String valueDeprecated;
+
     /**
      * application name
      */
+    @Column(updatable = false)
     private String application;
-
     /**
      * profile for Spring Cloud Config
      */
+    @Column(updatable = false)
     private String profile;
+
+    @Column(updatable = false)
+    private String label;
 
 }
