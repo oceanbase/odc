@@ -24,8 +24,8 @@ import lombok.NonNull;
 
 public class OBOracleDBSchemaAccessorFactory implements DBBrowserFactory<DBSchemaAccessor> {
 
-    private JdbcOperations jdbcOperations;
-    private String dbVersion;
+    private final JdbcOperations jdbcOperations;
+    private final String dbVersion;
 
     public OBOracleDBSchemaAccessorFactory(@NonNull JdbcOperations jdbcOperations, @NonNull String dbVersion) {
         this.jdbcOperations = jdbcOperations;
