@@ -35,7 +35,8 @@ public class App {
                 .dbSchemaAccessor()
                 .build(DBBrowserFactoryConfig.builder()
                         .dataSource(dataSource)
-                        .dbVersion("4.2.1").build())
+                        .dbVersion("4.2.1")
+                        .type("OB_ORACLE").build())
                 .create();
 
         DBTableEditor editor = DBBrowser.dbObjectEditor().tableEditor().build(DBBrowserFactories.OB_ORACLE).create();
