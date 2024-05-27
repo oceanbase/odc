@@ -344,6 +344,10 @@ public class TaskService {
         taskRepository.updateJobId(id, jobId);
     }
 
+    @Transactional(rollbackFor = Exception.class)
+    public void updateHeartbeatTime(Long id) {
+        taskRepository.updateLastHeartbeatTimeById(id);
+    }
 
     private TaskEntity nullSafeFindById(Long id) {
         return taskRepository.findById(id)
