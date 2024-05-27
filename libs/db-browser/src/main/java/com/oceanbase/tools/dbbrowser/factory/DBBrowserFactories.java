@@ -15,16 +15,16 @@
  */
 package com.oceanbase.tools.dbbrowser.factory;
 
-public interface DBBrowserFactories<T> {
+public interface DBBrowserFactories {
 
-    <Factory extends DBBrowserFactory<T>> Factory forMySQL();
+    <Factory> Factory forMySQL();
 
-    <Factory extends DBBrowserFactory<T>> Factory forOracle();
+    <Factory> Factory forOracle();
 
-    <Factory extends DBBrowserFactory<T>> Factory forOBMySQL();
+    <Factory> Factory forOBMySQL();
 
-    <Factory extends DBBrowserFactory<T>> Factory forOBOracle();
+    <Factory> Factory forOBOracle();
 
-    <Factory extends DBBrowserFactory<T>> Factory forDoris();
+    <Factory> Factory forDoris();
 
 }

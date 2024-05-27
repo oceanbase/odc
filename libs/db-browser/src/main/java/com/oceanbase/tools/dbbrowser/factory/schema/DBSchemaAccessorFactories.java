@@ -16,18 +16,16 @@
 package com.oceanbase.tools.dbbrowser.factory.schema;
 
 import com.oceanbase.tools.dbbrowser.factory.DBBrowserFactories;
-import com.oceanbase.tools.dbbrowser.factory.DBBrowserFactory;
-import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
 
-public class DBSchemaAccessorFactories implements DBBrowserFactories<DBSchemaAccessor> {
+public class DBSchemaAccessorFactories implements DBBrowserFactories {
 
     @Override
-    public <Factory extends DBBrowserFactory<DBSchemaAccessor>> Factory forMySQL() {
+    public <Factory> Factory forMySQL() {
         return null;
     }
 
     @Override
-    public <Factory extends DBBrowserFactory<DBSchemaAccessor>> Factory forOracle() {
+    public <Factory> Factory forOracle() {
         return null;
     }
 
@@ -42,7 +40,7 @@ public class DBSchemaAccessorFactories implements DBBrowserFactories<DBSchemaAcc
     }
 
     @Override
-    public <Factory extends DBBrowserFactory<DBSchemaAccessor>> Factory forDoris() {
+    public <Factory> Factory forDoris() {
         return null;
     }
 

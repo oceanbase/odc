@@ -15,18 +15,16 @@
  */
 package com.oceanbase.tools.dbbrowser.factory.editor.index;
 
-import com.oceanbase.tools.dbbrowser.editor.DBTableIndexEditor;
 import com.oceanbase.tools.dbbrowser.factory.DBBrowserFactories;
-import com.oceanbase.tools.dbbrowser.factory.DBBrowserFactory;
 
-public class DBTableIndexEditorFactories implements DBBrowserFactories<DBTableIndexEditor> {
+public class DBTableIndexEditorFactories implements DBBrowserFactories {
     @Override
-    public <Factory extends DBBrowserFactory<DBTableIndexEditor>> Factory forMySQL() {
+    public <Factory> Factory forMySQL() {
         return null;
     }
 
     @Override
-    public <Factory extends DBBrowserFactory<DBTableIndexEditor>> Factory forOracle() {
+    public <Factory> Factory forOracle() {
         return null;
     }
 
@@ -41,7 +39,7 @@ public class DBTableIndexEditorFactories implements DBBrowserFactories<DBTableIn
     }
 
     @Override
-    public <Factory extends DBBrowserFactory<DBTableIndexEditor>> Factory forDoris() {
+    public <Factory> Factory forDoris() {
         return null;
     }
 }
