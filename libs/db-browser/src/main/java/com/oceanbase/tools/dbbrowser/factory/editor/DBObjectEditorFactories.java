@@ -15,17 +15,14 @@
  */
 package com.oceanbase.tools.dbbrowser.factory.editor;
 
-import com.oceanbase.tools.dbbrowser.factory.editor.index.DBTableIndexEditorFactories;
-import com.oceanbase.tools.dbbrowser.factory.editor.table.DBTableEditorFactories;
-
 public class DBObjectEditorFactories {
 
-    public DBTableEditorFactories tableEditor() {
-        return new DBTableEditorFactories();
+    public DBTableEditorFactory tableEditor() {
+        return new DBTableEditorFactory();
     }
 
-    public DBTableIndexEditorFactories tableIndexEditor() {
-        return new DBTableIndexEditorFactories();
+    public DBTableIndexEditorFactory tableIndexEditor() {
+        return new DBTableIndexEditorFactory();
     }
 
     public <Builders> Builders tableColumnEditor() {

@@ -16,12 +16,12 @@
 package com.oceanbase.tools.dbbrowser.factory;
 
 import com.oceanbase.tools.dbbrowser.factory.editor.DBObjectEditorFactories;
-import com.oceanbase.tools.dbbrowser.factory.schema.DBSchemaAccessorFactories;
+import com.oceanbase.tools.dbbrowser.factory.schema.DBSchemaAccessorFactory;
 
 public class DBBrowser {
 
-    public static DBSchemaAccessorFactories dbSchemaAccessor() {
-        return new DBSchemaAccessorFactories();
+    public static DBSchemaAccessorFactory dbSchemaAccessor() {
+        return new DBSchemaAccessorFactory();
     }
 
     public static DBObjectEditorFactories dbObjectEditor() {

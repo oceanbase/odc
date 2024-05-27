@@ -20,12 +20,12 @@ import lombok.experimental.Accessors;
 
 @Setter
 @Accessors(chain = true)
-public abstract class AbstractDBBrowserFactories<T> implements DBBrowserFactories<T> {
+public abstract class AbstractDBBrowserFactory<T> implements DBBrowserFactory<T> {
 
     private String type;
 
     @Override
-    public DBBrowserFactory<T> build() {
+    public T create() {
         switch (type) {
             case ORACLE:
                 return buildForOracle();
@@ -42,14 +42,14 @@ public abstract class AbstractDBBrowserFactories<T> implements DBBrowserFactorie
         }
     }
 
-    public abstract DBBrowserFactory<T> buildForDoris();
+    public abstract T buildForDoris();
 
-    public abstract DBBrowserFactory<T> buildForMysql();
+    public abstract T buildForMysql();
 
-    public abstract DBBrowserFactory<T> buildForOBMysql();
+    public abstract T buildForOBMysql();
 
-    public abstract DBBrowserFactory<T> buildForOBOracle();
+    public abstract T buildForOBOracle();
 
-    public abstract DBBrowserFactory<T> buildForOracle();
+    public abstract T buildForOracle();
 
 }

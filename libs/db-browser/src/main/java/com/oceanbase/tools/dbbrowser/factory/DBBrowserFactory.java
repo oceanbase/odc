@@ -17,6 +17,12 @@ package com.oceanbase.tools.dbbrowser.factory;
 
 public interface DBBrowserFactory<T> {
 
+    String MYSQL = "MYSQL";
+    String OB_MYSQL = "OB_MYSQL";
+    String OB_ORACLE = "OB_ORACLE";
+    String ORACLE = "ORACLE";
+    String DORIS = "DORIS";
+
     T create();
 
 }

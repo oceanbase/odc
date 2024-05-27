@@ -13,41 +13,40 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.tools.dbbrowser.factory.editor.table;
+package com.oceanbase.tools.dbbrowser.factory.editor;
 
 import com.oceanbase.tools.dbbrowser.editor.DBTableEditor;
-import com.oceanbase.tools.dbbrowser.factory.AbstractDBBrowserFactories;
-import com.oceanbase.tools.dbbrowser.factory.DBBrowserFactory;
+import com.oceanbase.tools.dbbrowser.factory.AbstractDBBrowserFactory;
 
 import lombok.Setter;
 import lombok.experimental.Accessors;
 
 @Setter
 @Accessors(chain = true)
-public class DBTableEditorFactories extends AbstractDBBrowserFactories<DBTableEditor> {
+public class DBTableEditorFactory extends AbstractDBBrowserFactory<DBTableEditor> {
 
     @Override
-    public DBBrowserFactory<DBTableEditor> buildForMysql() {
+    public DBTableEditor buildForMysql() {
         return null;
     }
 
     @Override
-    public DBBrowserFactory<DBTableEditor> buildForOBMysql() {
-        return new OBMySQLDBTableEditorFactory();
-    }
-
-    @Override
-    public DBBrowserFactory<DBTableEditor> buildForOBOracle() {
-        return new OBOracleDBTableEditorFactory();
-    }
-
-    @Override
-    public DBBrowserFactory<DBTableEditor> buildForOracle() {
+    public DBTableEditor buildForOBMysql() {
         return null;
     }
 
     @Override
-    public DBBrowserFactory<DBTableEditor> buildForDoris() {
+    public DBTableEditor buildForOBOracle() {
+        return null;
+    }
+
+    @Override
+    public DBTableEditor buildForOracle() {
+        return null;
+    }
+
+    @Override
+    public DBTableEditor buildForDoris() {
         return null;
     }
 

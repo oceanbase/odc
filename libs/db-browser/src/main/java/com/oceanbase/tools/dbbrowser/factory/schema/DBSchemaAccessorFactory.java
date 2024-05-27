@@ -19,10 +19,7 @@ import java.util.Properties;
 
 import javax.sql.DataSource;
 
-import org.springframework.jdbc.core.JdbcTemplate;
-
-import com.oceanbase.tools.dbbrowser.factory.AbstractDBBrowserFactories;
-import com.oceanbase.tools.dbbrowser.factory.DBBrowserFactory;
+import com.oceanbase.tools.dbbrowser.factory.AbstractDBBrowserFactory;
 import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
 
 import lombok.Setter;
@@ -30,35 +27,35 @@ import lombok.experimental.Accessors;
 
 @Setter
 @Accessors(chain = true)
-public class DBSchemaAccessorFactories extends AbstractDBBrowserFactories<DBSchemaAccessor> {
+public class DBSchemaAccessorFactory extends AbstractDBBrowserFactory<DBSchemaAccessor> {
 
+    public static final String TENANT_NAME_KEY = "tenantName";
     private String dbVersion;
     private DataSource dataSource;
     private Properties properties;
 
     @Override
-    public DBBrowserFactory<DBSchemaAccessor> buildForMysql() {
+    public DBSchemaAccessor buildForMysql() {
         return null;
     }
 
     @Override
-    public DBBrowserFactory<DBSchemaAccessor> buildForOBMysql() {
-        return new OBMySQLDBSchemaAccessorFactory(new JdbcTemplate(this.dataSource), this.dbVersion,
-                this.properties.getProperty(OBMySQLDBSchemaAccessorFactory.TENANTNAME_KEY));
-    }
-
-    @Override
-    public DBBrowserFactory<DBSchemaAccessor> buildForOBOracle() {
-        return new OBOracleDBSchemaAccessorFactory(new JdbcTemplate(this.dataSource), this.dbVersion);
-    }
-
-    @Override
-    public DBBrowserFactory<DBSchemaAccessor> buildForOracle() {
+    public DBSchemaAccessor buildForOBMysql() {
         return null;
     }
 
     @Override
-    public DBBrowserFactory<DBSchemaAccessor> buildForDoris() {
+    public DBSchemaAccessor buildForOBOracle() {
+        return null;
+    }
+
+    @Override
+    public DBSchemaAccessor buildForOracle() {
+        return null;
+    }
+
+    @Override
+    public DBSchemaAccessor buildForDoris() {
         return null;
     }
 

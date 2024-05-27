@@ -13,41 +13,40 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.tools.dbbrowser.factory.editor.index;
+package com.oceanbase.tools.dbbrowser.factory.editor;
 
 import com.oceanbase.tools.dbbrowser.editor.DBTableIndexEditor;
-import com.oceanbase.tools.dbbrowser.factory.AbstractDBBrowserFactories;
-import com.oceanbase.tools.dbbrowser.factory.DBBrowserFactory;
+import com.oceanbase.tools.dbbrowser.factory.AbstractDBBrowserFactory;
 
 import lombok.Setter;
 import lombok.experimental.Accessors;
 
 @Setter
 @Accessors(chain = true)
-public class DBTableIndexEditorFactories extends AbstractDBBrowserFactories<DBTableIndexEditor> {
+public class DBTableIndexEditorFactory extends AbstractDBBrowserFactory<DBTableIndexEditor> {
 
     @Override
-    public DBBrowserFactory<DBTableIndexEditor> buildForMysql() {
+    public DBTableIndexEditor buildForMysql() {
         return null;
     }
 
     @Override
-    public DBBrowserFactory<DBTableIndexEditor> buildForOBMysql() {
-        return new OBMySQLDBTableIndexEditorFactory();
-    }
-
-    @Override
-    public DBBrowserFactory<DBTableIndexEditor> buildForOBOracle() {
-        return new OBOracleDBTableIndexEditorFactory();
-    }
-
-    @Override
-    public DBBrowserFactory<DBTableIndexEditor> buildForOracle() {
+    public DBTableIndexEditor buildForOBMysql() {
         return null;
     }
 
     @Override
-    public DBBrowserFactory<DBTableIndexEditor> buildForDoris() {
+    public DBTableIndexEditor buildForOBOracle() {
+        return null;
+    }
+
+    @Override
+    public DBTableIndexEditor buildForOracle() {
+        return null;
+    }
+
+    @Override
+    public DBTableIndexEditor buildForDoris() {
         return null;
     }
 

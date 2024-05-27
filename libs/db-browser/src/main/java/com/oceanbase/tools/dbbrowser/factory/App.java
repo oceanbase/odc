@@ -29,10 +29,9 @@ public class App {
                 .setDataSource(dataSource)
                 .setDbVersion("2.2.77")
                 .setType("OB_MYSQL")
-                .build()
                 .create();
 
         DBTableEditor editor =
-                DBBrowser.dbObjectEditor().tableEditor().setType(DBBrowserFactories.OB_ORACLE).build().create();
+                DBBrowser.dbObjectEditor().tableEditor().setType(DBBrowserFactory.OB_ORACLE).create();
     }
 }
