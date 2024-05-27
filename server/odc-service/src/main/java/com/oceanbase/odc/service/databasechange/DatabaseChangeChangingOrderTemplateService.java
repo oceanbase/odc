@@ -216,7 +216,6 @@ public class DatabaseChangeChangingOrderTemplateService {
         templateResp.setCreatorId(savedEntity.getCreatorId());
         templateResp.setProjectId(savedEntity.getProjectId());
         templateResp.setOrganizationId(savedEntity.getOrganizationId());
-        // List<List<Long>> databaseSequences = savedEntity.getDatabaseSequences();
         List<List<DatabaseChangeDatabase>> databaseSequenceList = orders.stream()
                 .map(s -> s.stream().map(DatabaseChangeDatabase::new).collect(Collectors.toList()))
                 .collect(Collectors.toList());
