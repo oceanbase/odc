@@ -24,7 +24,6 @@ import lombok.NonNull;
 
 public class OBMySQLDBSchemaAccessorFactory implements DBBrowserFactory<DBSchemaAccessor> {
 
-    public static final String TENANTNAME_KEY = "tenantName";
     private final JdbcOperations jdbcOperations;
     private final String dbVersion;
     private final String tenantName;

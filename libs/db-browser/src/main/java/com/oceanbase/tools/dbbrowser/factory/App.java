@@ -28,9 +28,16 @@ public class App {
                 .dbSchemaAccessor()
                 .setDataSource(dataSource)
                 .setDbVersion("2.2.77")
-                .type("OB_MYSQL")
+                .build("OB_MYSQL")
                 .create();
 
-        DBTableEditor editor = DBBrowser.dbObjectEditor().tableEditor().type(DBBrowserFactories.OB_ORACLE).create();
+        accessor = DBBrowser
+                .dbSchemaAccessor()
+                .build(DBBrowserFactoryConfig.builder()
+                        .dataSource(dataSource)
+                        .dbVersion("4.2.1").build())
+                .create();
+
+        DBTableEditor editor = DBBrowser.dbObjectEditor().tableEditor().build(DBBrowserFactories.OB_ORACLE).create();
     }
 }

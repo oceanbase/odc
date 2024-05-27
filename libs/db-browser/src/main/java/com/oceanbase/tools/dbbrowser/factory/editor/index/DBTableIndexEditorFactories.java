@@ -18,6 +18,7 @@ package com.oceanbase.tools.dbbrowser.factory.editor.index;
 import com.oceanbase.tools.dbbrowser.editor.DBTableIndexEditor;
 import com.oceanbase.tools.dbbrowser.factory.DBBrowserFactories;
 import com.oceanbase.tools.dbbrowser.factory.DBBrowserFactory;
+import com.oceanbase.tools.dbbrowser.factory.DBBrowserFactoryConfig;
 
 import lombok.Setter;
 import lombok.experimental.Accessors;
@@ -27,28 +28,33 @@ import lombok.experimental.Accessors;
 public class DBTableIndexEditorFactories implements DBBrowserFactories<DBTableIndexEditor> {
 
     @Override
-    public DBBrowserFactory<DBTableIndexEditor> mysql() {
+    public DBBrowserFactory<DBTableIndexEditor> buildForMysql() {
         return null;
     }
 
     @Override
-    public DBBrowserFactory<DBTableIndexEditor> obmysql() {
+    public DBBrowserFactory<DBTableIndexEditor> buildForOBMysql() {
         return new OBMySQLDBTableIndexEditorFactory();
     }
 
     @Override
-    public DBBrowserFactory<DBTableIndexEditor> oboracle() {
+    public DBBrowserFactory<DBTableIndexEditor> buildForOBOracle() {
         return new OBOracleDBTableIndexEditorFactory();
     }
 
     @Override
-    public DBBrowserFactory<DBTableIndexEditor> oracle() {
+    public DBBrowserFactory<DBTableIndexEditor> buildForOracle() {
         return null;
     }
 
     @Override
-    public DBBrowserFactory<DBTableIndexEditor> doris() {
+    public DBBrowserFactory<DBTableIndexEditor> buildForDoris() {
         return null;
+    }
+
+    @Override
+    public DBBrowserFactory<DBTableIndexEditor> build(DBBrowserFactoryConfig config) {
+        return build(config.getType());
     }
 
 }

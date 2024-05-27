@@ -23,6 +23,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 
 import com.oceanbase.tools.dbbrowser.factory.DBBrowserFactories;
 import com.oceanbase.tools.dbbrowser.factory.DBBrowserFactory;
+import com.oceanbase.tools.dbbrowser.factory.DBBrowserFactoryConfig;
 import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
 
 import lombok.Setter;
@@ -37,29 +38,37 @@ public class DBSchemaAccessorFactories implements DBBrowserFactories<DBSchemaAcc
     private Properties properties;
 
     @Override
-    public DBBrowserFactory<DBSchemaAccessor> mysql() {
+    public DBBrowserFactory<DBSchemaAccessor> buildForMysql() {
         return null;
     }
 
     @Override
-    public DBBrowserFactory<DBSchemaAccessor> obmysql() {
+    public DBBrowserFactory<DBSchemaAccessor> buildForOBMysql() {
         return new OBMySQLDBSchemaAccessorFactory(new JdbcTemplate(this.dataSource), this.dbVersion,
-                this.properties.getProperty(OBMySQLDBSchemaAccessorFactory.TENANTNAME_KEY));
+                this.properties.getProperty(DBBrowserFactoryConfig.TENANTNAME_KEY));
     }
 
     @Override
-    public DBBrowserFactory<DBSchemaAccessor> oboracle() {
+    public DBBrowserFactory<DBSchemaAccessor> buildForOBOracle() {
         return new OBOracleDBSchemaAccessorFactory(new JdbcTemplate(this.dataSource), this.dbVersion);
     }
 
     @Override
-    public DBBrowserFactory<DBSchemaAccessor> oracle() {
+    public DBBrowserFactory<DBSchemaAccessor> buildForOracle() {
         return null;
     }
 
     @Override
-    public DBBrowserFactory<DBSchemaAccessor> doris() {
+    public DBBrowserFactory<DBSchemaAccessor> buildForDoris() {
         return null;
+    }
+
+    @Override
+    public DBBrowserFactory<DBSchemaAccessor> build(DBBrowserFactoryConfig config) {
+        this.dbVersion = config.getDbVersion();
+        this.dataSource = config.getDataSource();
+        this.properties = config.getProperties();
+        return build(config.getType());
     }
 
 }
