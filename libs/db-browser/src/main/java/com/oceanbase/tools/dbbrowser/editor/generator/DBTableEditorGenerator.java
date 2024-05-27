@@ -43,7 +43,10 @@ public class DBTableEditorGenerator {
     }
 
     public static DBTableEditor createForOBOracle(String dbVersion) {
-        return createForOracle(dbVersion);
+        return new OracleTableEditor(DBTableIndexEditorGenerator.createForOBOracle(dbVersion),
+                DBTableColumnEditorGenerator.createForOBOracle(dbVersion),
+                DBTableConstraintEditorGenerator.createForOBOracle(dbVersion),
+                DBTablePartitionEditorGenerator.createForOBOracle(dbVersion));
     }
 
     public static DBTableEditor createForODPOBMySQL(String dbVersion) {
@@ -51,14 +54,14 @@ public class DBTableEditorGenerator {
     }
 
     public static DBTableEditor createForMySQL(String dbVersion) {
-        return new MySQLTableEditor(new DBTableIndexEditorGenerator().createForMySQL(dbVersion),
+        return new MySQLTableEditor(DBTableIndexEditorGenerator.createForMySQL(dbVersion),
                 DBTableColumnEditorGenerator.createForMySQL(dbVersion),
                 DBTableConstraintEditorGenerator.createForMySQL(dbVersion),
                 DBTablePartitionEditorGenerator.createForMySQL(dbVersion));
     }
 
     public static DBTableEditor createForOracle(String dbVersion) {
-        return new OracleTableEditor(new DBTableIndexEditorGenerator().createForOracle(dbVersion),
+        return new OracleTableEditor(DBTableIndexEditorGenerator.createForOracle(dbVersion),
                 DBTableColumnEditorGenerator.createForOracle(dbVersion),
                 DBTableConstraintEditorGenerator.createForOracle(dbVersion),
                 DBTablePartitionEditorGenerator.createForOracle(dbVersion));
