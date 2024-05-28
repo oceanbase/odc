@@ -25,6 +25,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -41,6 +42,8 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpHeaders;
 import org.springframework.stereotype.Service;
 
@@ -72,6 +75,8 @@ import com.oceanbase.odc.service.common.model.FileBucket;
 import com.oceanbase.odc.service.common.response.ListResponse;
 import com.oceanbase.odc.service.common.response.SuccessResponse;
 import com.oceanbase.odc.service.common.util.OdcFileUtil;
+import com.oceanbase.odc.service.databasechange.model.DatabaseChangeFlowInstanceDetailResp;
+import com.oceanbase.odc.service.databasechange.model.DatabaseChangingRecord;
 import com.oceanbase.odc.service.datatransfer.LocalFileManager;
 import com.oceanbase.odc.service.dispatch.DispatchResponse;
 import com.oceanbase.odc.service.dispatch.RequestDispatcher;
@@ -84,6 +89,7 @@ import com.oceanbase.odc.service.flow.model.FlowInstanceDetailResp;
 import com.oceanbase.odc.service.flow.model.FlowNodeStatus;
 import com.oceanbase.odc.service.flow.model.FlowNodeType;
 import com.oceanbase.odc.service.flow.model.PreCheckTaskResult;
+import com.oceanbase.odc.service.flow.model.QueryFlowInstanceParams;
 import com.oceanbase.odc.service.flow.task.OssTaskReferManager;
 import com.oceanbase.odc.service.flow.task.model.DBStructureComparisonTaskResult;
 import com.oceanbase.odc.service.flow.task.model.DatabaseChangeResult;
@@ -235,12 +241,17 @@ public class FlowTaskInstanceService {
         if (task.getTaskType() == TaskType.ONLINE_SCHEMA_CHANGE || task.getTaskType() == TaskType.EXPORT) {
             return getTaskResultFromEntity(task, true);
         }
-        Optional<TaskEntity> taskEntityOptional = getCompleteTaskEntity(id);
-        if (!taskEntityOptional.isPresent()) {
-            return Collections.emptyList();
+        //The execution record of multiple database ticket should be dynamically displayed whether the ticket is completed or not
+        if (task.getTaskType() == TaskType.MULTIPLE_ASYNC){
+            return getTaskResultFromEntity(task, true);
+        }else {
+            Optional<TaskEntity> taskEntityOptional = getCompleteTaskEntity(id);
+            if (!taskEntityOptional.isPresent()) {
+                return Collections.emptyList();
+            }
+            TaskEntity taskEntity = taskEntityOptional.get();
+            return getTaskResultFromEntity(taskEntity, true);
         }
-        TaskEntity taskEntity = taskEntityOptional.get();
-        return getTaskResultFromEntity(taskEntity, true);
     }
 
     public List<? extends FlowTaskResult> getTaskResultFromEntity(@NotNull TaskEntity taskEntity,
@@ -621,7 +632,28 @@ public class FlowTaskInstanceService {
     }
 
     private List<MultipleDatabaseChangeTaskResult> getMultipleAsyncResult(@NonNull TaskEntity taskEntity) {
-        return innerGetResult(taskEntity, MultipleDatabaseChangeTaskResult.class);
+        List<MultipleDatabaseChangeTaskResult> multipleDatabaseChangeTaskResults = innerGetResult(taskEntity,
+            MultipleDatabaseChangeTaskResult.class);
+        MultipleDatabaseChangeTaskResult multipleDatabaseChangeTaskResult = multipleDatabaseChangeTaskResults.get(0);
+        Long parentFlowInstanceId = multipleDatabaseChangeTaskResult.getFlowInstanceId();
+        QueryFlowInstanceParams param = QueryFlowInstanceParams.builder().parentInstanceId(parentFlowInstanceId)
+            .build();
+        Page<FlowInstanceDetailResp> page = flowInstanceService.list(Pageable.unpaged(), param);
+        List<FlowInstanceDetailResp> flowInstanceDetailRespList = page.getContent();
+        Map<Long, FlowInstanceDetailResp> databaseId2FlowInstanceDetailResp =
+            flowInstanceDetailRespList.stream().collect(
+                Collectors.toMap(flowInstanceDetailResp -> flowInstanceDetailResp.getDatabase().getId(),
+                    flowInstanceDetailResp -> flowInstanceDetailResp));
+        for (DatabaseChangingRecord databaseChangingRecord :
+            multipleDatabaseChangeTaskResult.getDatabaseChangingRecordList()) {
+            if(databaseId2FlowInstanceDetailResp.containsKey(databaseChangingRecord .getDatabase().getId())){
+                FlowInstanceDetailResp flowInstanceDetailResp = databaseId2FlowInstanceDetailResp.get(
+                    databaseChangingRecord.getDatabase().getId());
+                databaseChangingRecord.setFlowInstanceDetailResp(new DatabaseChangeFlowInstanceDetailResp(flowInstanceDetailResp));
+                databaseChangingRecord.setStatus(flowInstanceDetailResp.getStatus());
+            }
+        }
+        return multipleDatabaseChangeTaskResults;
     }
 
     private List<DatabaseChangeResult> getAsyncResult(@NonNull TaskEntity taskEntity) throws IOException {

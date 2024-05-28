@@ -30,5 +30,6 @@ import lombok.Setter;
 @Getter
 @Setter
 public class MultipleDatabaseChangeTaskResult implements FlowTaskResult {
+    private Long flowInstanceId;
     private List<DatabaseChangingRecord> databaseChangingRecordList;
 }

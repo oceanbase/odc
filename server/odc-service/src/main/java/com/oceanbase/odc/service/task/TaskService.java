@@ -288,11 +288,30 @@ public class TaskService {
     }
 
     @Transactional(rollbackFor = Exception.class)
+    public void succeed(Long id) {
+        TaskEntity taskEntity = nullSafeFindById(id);
+        taskEntity.setStatus(TaskStatus.DONE);
+        taskEntity.setProgressPercentage(100);
+        taskRepository.save(taskEntity);
+        log.info("Task ended: taskId={}", id);
+    }
+
+    @Transactional(rollbackFor = Exception.class)
     public void fail(Long id, double percentage, Object taskResult) {
         TaskEntity taskEntity = nullSafeFindById(id);
         taskEntity.setStatus(TaskStatus.FAILED);
         taskEntity.setProgressPercentage(percentage);
         taskEntity.setResultJson(JsonUtils.toJson(taskResult));
+        taskRepository.save(taskEntity);
+        log.info("Task ended: taskId={}", id);
+    }
+
+
+    @Transactional(rollbackFor = Exception.class)
+    public void fail(Long id, double percentage) {
+        TaskEntity taskEntity = nullSafeFindById(id);
+        taskEntity.setStatus(TaskStatus.FAILED);
+        taskEntity.setProgressPercentage(percentage);
         taskRepository.save(taskEntity);
         log.info("Task ended: taskId={}", id);
     }

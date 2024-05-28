@@ -50,7 +50,6 @@ import com.oceanbase.odc.metadb.connection.DatabaseRepository;
 import com.oceanbase.odc.metadb.databasechange.DatabaseChangeChangingOrderTemplateEntity;
 import com.oceanbase.odc.metadb.databasechange.DatabaseChangeChangingOrderTemplateRepository;
 import com.oceanbase.odc.metadb.databasechange.DatabaseChangeChangingOrderTemplateSpecs;
-import com.oceanbase.odc.service.connection.database.DatabaseService;
 import com.oceanbase.odc.service.databasechange.model.CreateDatabaseChangeChangingOrderTemplateReq;
 import com.oceanbase.odc.service.databasechange.model.DatabaseChangeChangingOrderTemplateResp;
 import com.oceanbase.odc.service.databasechange.model.DatabaseChangeDatabase;
@@ -75,8 +74,6 @@ public class DatabaseChangeChangingOrderTemplateService {
 
     @Autowired
     private ProjectRepository projectRepository;
-    @Autowired
-    private DatabaseService databaseService;
 
     @Autowired
     private ProjectPermissionValidator projectPermissionValidator;
@@ -107,7 +104,6 @@ public class DatabaseChangeChangingOrderTemplateService {
                 .findByProjectIdIn(nonArchivedProjectIds).stream()
                 .collect(Collectors.groupingBy(DatabaseEntity::getProjectId));
         disabledTemplateIds.addAll(projectId2TemplateEntityList.entrySet().stream()
-                // 留下未归档的projectId2TemplateEntityList
                 .filter(entry -> nonArchivedProjectIds.contains(entry.getKey()))
                 .flatMap(entry -> {
                     List<DatabaseEntity> databases = projectId2Databases.get(entry.getKey());

@@ -107,6 +107,7 @@ import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.connection.model.OBTenant;
 import com.oceanbase.odc.service.databasechange.model.DatabaseChangeConnection;
 import com.oceanbase.odc.service.databasechange.model.DatabaseChangeDatabase;
+import com.oceanbase.odc.service.databasechange.model.DatabaseChangingRecord;
 import com.oceanbase.odc.service.dispatch.DispatchResponse;
 import com.oceanbase.odc.service.dispatch.RequestDispatcher;
 import com.oceanbase.odc.service.dispatch.TaskDispatchChecker;
@@ -136,6 +137,7 @@ import com.oceanbase.odc.service.flow.task.model.DBStructureComparisonParameter;
 import com.oceanbase.odc.service.flow.task.model.DatabaseChangeParameters;
 import com.oceanbase.odc.service.flow.task.model.FlowTaskProperties;
 import com.oceanbase.odc.service.flow.task.model.MultipleDatabaseChangeParameters;
+import com.oceanbase.odc.service.flow.task.model.MultipleDatabaseChangeTaskResult;
 import com.oceanbase.odc.service.flow.task.model.RuntimeTaskConstants;
 import com.oceanbase.odc.service.flow.task.model.ShadowTableSyncTaskParameter;
 import com.oceanbase.odc.service.flow.util.FlowTaskUtil;
@@ -900,6 +902,22 @@ public class FlowInstanceService {
         initVariables(variables, taskEntity, preCheckTaskEntity, connectionConfig,
                 buildRiskLevelDescriber(flowInstanceReq));
         flowInstance.start(variables);
+        if (flowInstanceReq.getTaskType() ==TaskType.MULTIPLE_ASYNC){
+            MultipleDatabaseChangeParameters parameters = (MultipleDatabaseChangeParameters) flowInstanceReq.getParameters();
+            MultipleDatabaseChangeTaskResult result = new MultipleDatabaseChangeTaskResult();
+            ArrayList<DatabaseChangingRecord> databaseChangingRecords = new ArrayList<>();
+            List<DatabaseChangeDatabase> databaseList = parameters.getDatabases();
+            for (DatabaseChangeDatabase database : databaseList) {
+                DatabaseChangingRecord databaseChangingRecord = new DatabaseChangingRecord();
+                databaseChangingRecord.setDatabase(database);
+                //databaseChangingRecord.setStatus(FlowStatus.UNCREATED);
+                databaseChangingRecords.add(databaseChangingRecord);
+            }
+            result.setDatabaseChangingRecordList(databaseChangingRecords);
+            result.setFlowInstanceId(flowInstance.getId());
+            taskEntity.setResultJson(JsonUtils.toJson(result));
+            taskService.update(taskEntity);
+        }
         if (flowInstanceReq.getTaskType() == TaskType.SHADOWTABLE_SYNC) {
             consumeShadowTableHook((ShadowTableSyncTaskParameter) flowInstanceReq.getParameters(),
                     flowInstance.getId());

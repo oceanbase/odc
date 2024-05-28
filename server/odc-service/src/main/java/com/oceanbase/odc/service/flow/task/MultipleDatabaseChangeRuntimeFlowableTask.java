@@ -16,16 +16,11 @@
 package com.oceanbase.odc.service.flow.task;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 
 import org.flowable.engine.delegate.DelegateExecution;
 import org.flowable.engine.delegate.ExecutionListener;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.core.shared.constant.FlowStatus;
@@ -36,20 +31,14 @@ import com.oceanbase.odc.metadb.flow.FlowInstanceRepository;
 import com.oceanbase.odc.metadb.flow.ServiceTaskInstanceRepository;
 import com.oceanbase.odc.metadb.task.TaskEntity;
 import com.oceanbase.odc.service.connection.database.DatabaseService;
-import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.databasechange.MultipleDatabaseChangeTraceContextHolder;
-import com.oceanbase.odc.service.databasechange.model.DatabaseChangeDatabase;
-import com.oceanbase.odc.service.databasechange.model.DatabaseChangeFlowInstanceDetailResp;
-import com.oceanbase.odc.service.databasechange.model.DatabaseChangingRecord;
 import com.oceanbase.odc.service.flow.FlowInstanceService;
 import com.oceanbase.odc.service.flow.FlowableAdaptor;
 import com.oceanbase.odc.service.flow.model.CreateFlowInstanceReq;
 import com.oceanbase.odc.service.flow.model.FlowInstanceDetailResp;
 import com.oceanbase.odc.service.flow.model.FlowNodeStatus;
 import com.oceanbase.odc.service.flow.model.FlowTaskExecutionStrategy;
-import com.oceanbase.odc.service.flow.model.QueryFlowInstanceParams;
 import com.oceanbase.odc.service.flow.task.model.MultipleDatabaseChangeParameters;
-import com.oceanbase.odc.service.flow.task.model.MultipleDatabaseChangeTaskResult;
 import com.oceanbase.odc.service.flow.util.FlowTaskUtil;
 import com.oceanbase.odc.service.task.TaskService;
 
@@ -204,7 +193,7 @@ public class MultipleDatabaseChangeRuntimeFlowableTask extends BaseODCFlowTaskDe
             log.warn("Multiple database task failed, taskId={}, batchId={}", taskId,
                     this.batchId == null ? null : this.batchId + 1);
             updateFlowInstanceStatus(FlowStatus.EXECUTION_FAILED);
-            taskService.fail(taskId, 100, generateResult());
+            taskService.fail(taskId, 100);
         } finally {
             MultipleDatabaseChangeTraceContextHolder.clear();
             super.onFailure(taskId, taskService);
@@ -223,10 +212,9 @@ public class MultipleDatabaseChangeRuntimeFlowableTask extends BaseODCFlowTaskDe
                 } else {
                     updateFlowInstanceStatus(FlowStatus.EXECUTION_FAILED);
                 }
-                taskService.succeed(taskId, generateResult());
+                taskService.succeed(taskId);
             } else {
                 TaskEntity taskEntity = taskService.detail(taskId);
-                taskEntity.setResultJson(JsonUtils.toJson(generateResult()));
                 taskEntity.setProgressPercentage((this.batchId + 1) * 100D / this.batchSum);
                 taskService.update(taskEntity);
             }
@@ -249,7 +237,7 @@ public class MultipleDatabaseChangeRuntimeFlowableTask extends BaseODCFlowTaskDe
     protected void onTimeout(Long taskId, TaskService taskService) {
         try {
             MultipleDatabaseChangeTraceContextHolder.trace(taskId);
-            taskService.fail(taskId, 100, generateResult());
+            taskService.fail(taskId, 100);
             log.warn("Multiple database task timeout, taskId={}, batchId={}", taskId,
                     this.batchId == null ? null : this.batchId + 1);
         } finally {
@@ -260,33 +248,6 @@ public class MultipleDatabaseChangeRuntimeFlowableTask extends BaseODCFlowTaskDe
 
     @Override
     protected void onProgressUpdate(Long taskId, TaskService taskService) {}
-
-    private MultipleDatabaseChangeTaskResult generateResult() {
-        MultipleDatabaseChangeTaskResult result = new MultipleDatabaseChangeTaskResult();
-        Long flowInstanceId = getFlowInstanceId();
-        QueryFlowInstanceParams param = QueryFlowInstanceParams.builder().parentInstanceId(flowInstanceId)
-                .build();
-        Page<FlowInstanceDetailResp> page = flowInstanceService.list(Pageable.unpaged(), param);
-        List<FlowInstanceDetailResp> flowInstanceDetailRespList = page.getContent();
-        // todo At present multi-databases changes do not include databases with the same name
-        Map<Long, FlowInstanceDetailResp> databaseId2FlowInstanceDetailResp =
-                flowInstanceDetailRespList.stream().collect(
-                        Collectors.toMap(flowInstanceDetailResp -> flowInstanceDetailResp.getDatabase().getId(),
-                                flowInstanceDetailResp -> flowInstanceDetailResp));
-        List<Long> idList = this.orderedDatabaseIds.stream().flatMap(Collection::stream).collect(Collectors.toList());
-        List<Database> databaseList = databaseService.listDatabasesDetailsByIds(idList);
-        ArrayList<DatabaseChangingRecord> records = new ArrayList<>();
-        for (Database database : databaseList) {
-            FlowInstanceDetailResp resp = databaseId2FlowInstanceDetailResp.get(database.getId());
-            DatabaseChangingRecord record = new DatabaseChangingRecord();
-            record.setDatabase(new DatabaseChangeDatabase(database));
-            record.setFlowInstanceDetailResp(resp != null ? new DatabaseChangeFlowInstanceDetailResp(resp) : null);
-            record.setStatus(resp != null ? resp.getStatus() : FlowStatus.WAIT_FOR_EXECUTION);
-            records.add(record);
-        }
-        result.setDatabaseChangingRecordList(records);
-        return result;
-    }
 
     private Boolean isContinue(FlowTaskExecutionStrategy flowTaskExecutionStrategy,
             TaskErrorStrategy autoTaskErrorStrategy) {

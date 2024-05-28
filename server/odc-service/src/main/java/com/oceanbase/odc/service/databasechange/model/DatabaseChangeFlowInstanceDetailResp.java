@@ -33,6 +33,7 @@ public class DatabaseChangeFlowInstanceDetailResp {
     private Date createTime;
     private Date executionTime;
     private Date completeTime;
+    private double progressPercentage;
 
     public DatabaseChangeFlowInstanceDetailResp(FlowInstanceDetailResp flowInstanceDetailResp) {
         if (flowInstanceDetailResp != null) {
@@ -40,6 +41,7 @@ public class DatabaseChangeFlowInstanceDetailResp {
             this.createTime = flowInstanceDetailResp.getCreateTime();
             this.executionTime = flowInstanceDetailResp.getExecutionTime();
             this.completeTime = flowInstanceDetailResp.getCompleteTime();
+            this.progressPercentage = flowInstanceDetailResp.getProgressPercentage();
         }
     }
 }
