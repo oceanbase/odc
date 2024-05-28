@@ -284,11 +284,11 @@ public class FlowTaskInstanceService {
     }
 
     public List<? extends FlowTaskResult> getResult(
-            @NotNull Long flowInstanceId, @NotNull Long nodeInstanceId) throws IOException {
+            @NotNull Long flowInstanceId, @NotNull Long nodeInstanceId, boolean skipAuth) throws IOException {
         List<FlowTaskInstance> taskInstances = this.flowInstanceService.mapFlowInstance(
                 flowInstanceId, i -> i.filterInstanceNode(f -> f instanceof FlowTaskInstance)
                         .stream().map(f -> (FlowTaskInstance) f).collect(Collectors.toList()),
-                false);
+                skipAuth);
         Optional<FlowTaskInstance> target = taskInstances.stream()
                 .filter(f -> f.getId().equals(nodeInstanceId)).findFirst();
         if (!target.isPresent()) {

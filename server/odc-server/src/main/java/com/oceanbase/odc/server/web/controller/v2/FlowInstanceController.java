@@ -202,7 +202,7 @@ public class FlowInstanceController {
     @RequestMapping(value = "/{flowInstanceId:[\\d]+}/tasks/{nodeInstanceId:[\\d]+}/result", method = RequestMethod.GET)
     public ListResponse<? extends FlowTaskResult> getResult(
             @PathVariable Long flowInstanceId, @PathVariable Long nodeInstanceId) throws IOException {
-        return Responses.list(flowTaskInstanceService.getResult(flowInstanceId, nodeInstanceId));
+        return Responses.list(flowTaskInstanceService.getResult(flowInstanceId, nodeInstanceId, false));
     }
 
     @ApiOperation(value = "download", notes = "下载任务数据，仅用于 模拟数据、导出、数据库变更 任务")
