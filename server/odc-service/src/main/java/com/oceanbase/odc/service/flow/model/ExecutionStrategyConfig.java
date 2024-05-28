@@ -61,7 +61,6 @@ public class ExecutionStrategyConfig implements Serializable {
     public static ExecutionStrategyConfig manualStrategy(long expireIntervalTime, @NonNull TimeUnit timeUnit) {
         PreConditions.notNegative(expireIntervalTime, "WaitExecExpireIntervalSeconds");
         int expireIntervalTimeSeconds = (int) TimeUnit.SECONDS.convert(expireIntervalTime, timeUnit);
-        Verify.verify(expireIntervalTime >= 0, "WaitExecExpireIntervalSeconds is invalid " + expireIntervalTime);
         return new ExecutionStrategyConfig(FlowTaskExecutionStrategy.MANUAL, expireIntervalTimeSeconds, null);
     }
 
