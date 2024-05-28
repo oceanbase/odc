@@ -166,8 +166,8 @@ public class OBOracleSchemaAccessorTest extends BaseTestEnv {
     }
 
     @Test
-    public void listBasicColumns_Success() {
-        Map<String, List<DBTableColumn>> columns = accessor.listBasicColumns(getOBOracleSchema());
+    public void listBasicColumnsInfo_Success() {
+        Map<String, List<DBTableColumn>> columns = accessor.listBasicColumnsInfo(getOBOracleSchema());
         Assert.assertTrue(columns.containsKey("TEST_DATA_TYPE"));
         Assert.assertEquals(verifyDataTypes.size(), columns.get("TEST_DATA_TYPE").size());
         Assert.assertTrue(columns.containsKey("VIEW_TEST1"));

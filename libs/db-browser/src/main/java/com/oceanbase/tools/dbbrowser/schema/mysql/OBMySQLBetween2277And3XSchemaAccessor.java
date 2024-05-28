@@ -300,8 +300,8 @@ public class OBMySQLBetween2277And3XSchemaAccessor extends OBMySQLSchemaAccessor
     }
 
     @Override
-    public Map<String, List<DBTableColumn>> listBasicColumns(String schemaName) {
-        String sql = sqlMapper.getSql(Statements.LIST_BASIC_SCHEMA_COLUMNS);
+    public Map<String, List<DBTableColumn>> listBasicColumnsInfo(String schemaName) {
+        String sql = sqlMapper.getSql(Statements.LIST_BASIC_SCHEMA_COLUMNS_INFO);
         Map<String, List<DBTableColumn>> table2Columns =
                 jdbcOperations.query(sql, new Object[] {schemaName}, listBasicTableColumnIdentityRowMapper()).stream()
                         .collect(Collectors.groupingBy(DBTableColumn::getTableName));

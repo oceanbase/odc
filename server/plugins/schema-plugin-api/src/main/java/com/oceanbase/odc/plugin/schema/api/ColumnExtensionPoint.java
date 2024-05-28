@@ -51,6 +51,6 @@ public interface ColumnExtensionPoint extends ExtensionPoint {
      * @param schemaName schema name
      * @return view columns, only basic information (schemaName, viewName, name) is included
      */
-    Map<String, List<DBTableColumn>> listBasicColumns(Connection connection, String schemaName);
+    Map<String, List<DBTableColumn>> listBasicColumnsInfo(Connection connection, String schemaName);
 
 }

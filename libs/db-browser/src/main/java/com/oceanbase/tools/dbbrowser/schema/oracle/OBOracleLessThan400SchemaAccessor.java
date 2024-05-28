@@ -184,8 +184,8 @@ public class OBOracleLessThan400SchemaAccessor extends OBOracleBetween4000And410
     }
 
     @Override
-    public Map<String, List<DBTableColumn>> listBasicColumns(String schemaName) {
-        String sql = sqlMapper.getSql(Statements.LIST_BASIC_SCHEMA_COLUMNS);
+    public Map<String, List<DBTableColumn>> listBasicColumnsInfo(String schemaName) {
+        String sql = sqlMapper.getSql(Statements.LIST_BASIC_SCHEMA_COLUMNS_INFO);
         Map<String, List<DBTableColumn>> table2Columns =
                 jdbcOperations.query(sql, new Object[] {schemaName}, listBasicColumnsIdentityRowMapper()).stream()
                         .collect(Collectors.groupingBy(DBTableColumn::getTableName));

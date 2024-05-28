@@ -15,7 +15,6 @@
  */
 package com.oceanbase.odc.metadb.dbobject;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.function.Function;
@@ -25,10 +24,10 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.google.common.collect.Iterables;
 import com.oceanbase.odc.common.jpa.InsertSqlTemplateBuilder;
 import com.oceanbase.odc.config.jpa.OdcJpaRepository;
 import com.oceanbase.tools.dbbrowser.model.DBObjectType;
+import com.oceanbase.tools.dbbrowser.util.DBSchemaAccessorUtil;
 
 /**
  * @author gaoda.xy
@@ -65,12 +64,8 @@ public interface DBObjectRepository extends OdcJpaRepository<DBObjectEntity, Lon
                 .add(e -> e.getType().name())
                 .add(DBObjectEntity::getOrganizationId)
                 .build();
-        Iterable<List<DBObjectEntity>> partitions = Iterables.partition(entities, batchSize);
-        List<DBObjectEntity> result = new ArrayList<>();
-        for (List<DBObjectEntity> partition : partitions) {
-            result.addAll(batchCreate(partition, sql, getter, DBObjectEntity::setId));
-        }
-        return result;
+        return DBSchemaAccessorUtil.partitionFind(entities, batchSize,
+                e -> batchCreate(e, sql, getter, DBObjectEntity::setId));
     }
 
 }

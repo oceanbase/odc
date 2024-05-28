@@ -448,8 +448,8 @@ public class MySQLNoLessThan5700SchemaAccessor implements DBSchemaAccessor {
     }
 
     @Override
-    public Map<String, List<DBTableColumn>> listBasicColumns(String schemaName) {
-        String sql = sqlMapper.getSql(Statements.LIST_BASIC_SCHEMA_COLUMNS);
+    public Map<String, List<DBTableColumn>> listBasicColumnsInfo(String schemaName) {
+        String sql = sqlMapper.getSql(Statements.LIST_BASIC_SCHEMA_COLUMNS_INFO);
         List<DBTableColumn> tableColumns =
                 jdbcOperations.query(sql, new Object[] {schemaName}, listBasicTableColumnIdentityRowMapper());
         return tableColumns.stream().collect(Collectors.groupingBy(DBTableColumn::getTableName));

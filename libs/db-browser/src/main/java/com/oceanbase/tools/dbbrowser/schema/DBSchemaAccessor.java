@@ -199,10 +199,10 @@ public interface DBSchemaAccessor {
     List<DBTableColumn> listBasicViewColumns(String schemaName, String viewName);
 
     /**
-     * Get all table and view columns(hold only basic info: schema, table and column name) in the
+     * Get all table and view columns info (hold only basic info: schema, table and column name) in the
      * specified schema
      */
-    Map<String, List<DBTableColumn>> listBasicColumns(String schemaName);
+    Map<String, List<DBTableColumn>> listBasicColumnsInfo(String schemaName);
 
     /**
      * Get all table indexs in the specified schema

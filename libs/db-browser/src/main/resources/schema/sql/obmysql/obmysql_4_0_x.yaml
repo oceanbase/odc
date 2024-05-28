@@ -69,7 +69,7 @@ sqls:
     ORDER BY
       TABLE_NAME ASC,
       ORDINAL_POSITION ASC
-  list-basic-schema-columns: |-
+  list-basic-schema-columns-info: |-
     SELECT
       TABLE_SCHEMA,
       TABLE_NAME,

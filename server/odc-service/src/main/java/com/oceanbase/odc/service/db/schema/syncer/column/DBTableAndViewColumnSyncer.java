@@ -41,7 +41,7 @@ public class DBTableAndViewColumnSyncer extends AbstractDBColumnSyncer<ColumnExt
     @Override
     Map<String, Set<String>> getLatestObjectToColumns(@NonNull ColumnExtensionPoint extensionPoint,
             @NonNull Connection connection, @NonNull Database database) {
-        return extensionPoint.listBasicColumns(connection, database.getName()).entrySet().stream()
+        return extensionPoint.listBasicColumnsInfo(connection, database.getName()).entrySet().stream()
                 .collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue()
                         .stream().map(DBTableColumn::getName).collect(Collectors.toSet())));
     }

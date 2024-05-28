@@ -592,8 +592,8 @@ public class OracleSchemaAccessor implements DBSchemaAccessor {
     }
 
     @Override
-    public Map<String, List<DBTableColumn>> listBasicColumns(String schemaName) {
-        String sql = sqlMapper.getSql(Statements.LIST_BASIC_SCHEMA_COLUMNS);
+    public Map<String, List<DBTableColumn>> listBasicColumnsInfo(String schemaName) {
+        String sql = sqlMapper.getSql(Statements.LIST_BASIC_SCHEMA_COLUMNS_INFO);
         List<DBTableColumn> tableColumns =
                 jdbcOperations.query(sql, new Object[] {schemaName}, listBasicColumnsIdentityRowMapper());
         return tableColumns.stream().collect(Collectors.groupingBy(DBTableColumn::getTableName));
