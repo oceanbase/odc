@@ -15,14 +15,10 @@
  */
 package com.oceanbase.odc.service.db.browser;
 
-import com.oceanbase.odc.common.util.VersionUtils;
 import com.oceanbase.odc.core.shared.constant.ConnectType;
 import com.oceanbase.odc.core.shared.exception.UnsupportedException;
 import com.oceanbase.tools.dbbrowser.editor.DBTableConstraintEditor;
-import com.oceanbase.tools.dbbrowser.editor.mysql.MySQLConstraintEditor;
-import com.oceanbase.tools.dbbrowser.editor.mysql.OBMySQLLessThan400ConstraintEditor;
-import com.oceanbase.tools.dbbrowser.editor.oracle.OBOracleLessThan400ConstraintEditor;
-import com.oceanbase.tools.dbbrowser.editor.oracle.OracleConstraintEditor;
+import com.oceanbase.tools.dbbrowser.editor.generator.DBTableConstraintEditorGenerator;
 
 /**
  * @Author: Lebie
@@ -39,22 +35,17 @@ public class DBTableConstraintEditorFactory extends DBObjectEditorFactory<DBTabl
     public DBTableConstraintEditor create() {
         switch (connectType) {
             case MYSQL:
-                return new MySQLConstraintEditor();
+                return DBTableConstraintEditorGenerator.createForMySQL(dbVersion);
             case OB_MYSQL:
             case CLOUD_OB_MYSQL:
+                return DBTableConstraintEditorGenerator.createForOBMySQL(dbVersion);
             case ODP_SHARDING_OB_MYSQL:
-                if (VersionUtils.isLessThan(dbVersion, "4.0.0")) {
-                    return new OBMySQLLessThan400ConstraintEditor();
-                }
-                return new MySQLConstraintEditor();
+                return DBTableConstraintEditorGenerator.createForODPOBMySQL(dbVersion);
             case CLOUD_OB_ORACLE:
             case OB_ORACLE:
-                if (VersionUtils.isLessThan(dbVersion, "4.0.0")) {
-                    return new OBOracleLessThan400ConstraintEditor();
-                }
-                return new OracleConstraintEditor();
+                return DBTableConstraintEditorGenerator.createForOBOracle(dbVersion);
             case ORACLE:
-                return new OracleConstraintEditor();
+                return DBTableConstraintEditorGenerator.createForOracle(dbVersion);
             default:
                 throw new UnsupportedException(String.format("ConnectType '%s' not supported", connectType));
         }

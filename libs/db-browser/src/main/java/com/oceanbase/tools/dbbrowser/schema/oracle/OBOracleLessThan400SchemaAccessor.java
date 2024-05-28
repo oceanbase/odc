@@ -50,7 +50,7 @@ import lombok.extern.slf4j.Slf4j;
  * @Description: 适用于的 OB 版本：[2270, 400)
  */
 @Slf4j
-public class OBOracleLessThan400SchemaAccessor extends OBOracleSchemaAccessor {
+public class OBOracleLessThan400SchemaAccessor extends OBOracleBetween4000And4100SchemaAccessor {
 
     public OBOracleLessThan400SchemaAccessor(JdbcOperations jdbcOperations,
             OracleDataDictTableNames dataDictTableNames) {

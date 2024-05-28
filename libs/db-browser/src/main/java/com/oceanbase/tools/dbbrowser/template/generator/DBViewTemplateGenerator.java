@@ -13,27 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package com.oceanbase.tools.dbbrowser.template.generator;
 
-package com.oceanbase.odc.plugin.schema.oracle;
-
-import java.sql.Connection;
-
-import org.pf4j.Extension;
-
-import com.oceanbase.odc.plugin.schema.oboracle.OBOracleDatabaseExtension;
-import com.oceanbase.odc.plugin.schema.oracle.utils.DBAccessorUtil;
-import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
+import com.oceanbase.tools.dbbrowser.template.BaseViewTemplate;
+import com.oceanbase.tools.dbbrowser.template.mysql.MySQLViewTemplate;
+import com.oceanbase.tools.dbbrowser.template.oracle.OracleViewTemplate;
 
 /**
  * @author jingtian
- * @date 2023/11/16
- * @since ODC_release_4.2.4
+ * @date 2024/5/22
  */
-@Extension
-public class OracleDatabaseExtension extends OBOracleDatabaseExtension {
+public class DBViewTemplateGenerator extends DBObjectTemplateGenerator<BaseViewTemplate> {
     @Override
-    protected DBSchemaAccessor getSchemaAccessor(Connection connection) {
-        return DBAccessorUtil.getSchemaAccessor(connection);
+    public MySQLViewTemplate createForMySQL(String dbVersion) {
+        return new MySQLViewTemplate();
     }
 
+    @Override
+    public OracleViewTemplate createForOracle(String dbVersion) {
+        return new OracleViewTemplate();
+    }
 }

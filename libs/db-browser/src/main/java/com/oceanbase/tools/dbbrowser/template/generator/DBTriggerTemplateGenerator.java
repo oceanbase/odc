@@ -13,27 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package com.oceanbase.tools.dbbrowser.template.generator;
 
-package com.oceanbase.odc.plugin.schema.oracle;
-
-import java.sql.Connection;
-
-import org.pf4j.Extension;
-
-import com.oceanbase.odc.plugin.schema.oboracle.OBOracleDatabaseExtension;
-import com.oceanbase.odc.plugin.schema.oracle.utils.DBAccessorUtil;
-import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
+import com.oceanbase.tools.dbbrowser.template.DBObjectTemplate;
+import com.oceanbase.tools.dbbrowser.template.oracle.OracleTriggerTemplate;
 
 /**
  * @author jingtian
- * @date 2023/11/16
- * @since ODC_release_4.2.4
+ * @date 2024/5/22
  */
-@Extension
-public class OracleDatabaseExtension extends OBOracleDatabaseExtension {
+public class DBTriggerTemplateGenerator extends DBObjectTemplateGenerator<DBObjectTemplate> {
     @Override
-    protected DBSchemaAccessor getSchemaAccessor(Connection connection) {
-        return DBAccessorUtil.getSchemaAccessor(connection);
+    public DBObjectTemplate createForMySQL(String dbVersion) {
+        throw new UnsupportedOperationException("Not supported yet");
     }
 
+    @Override
+    public OracleTriggerTemplate createForOracle(String dbVersion) {
+        return new OracleTriggerTemplate();
+    }
 }

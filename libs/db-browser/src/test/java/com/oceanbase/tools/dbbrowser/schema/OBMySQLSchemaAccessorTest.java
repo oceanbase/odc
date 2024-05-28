@@ -47,6 +47,7 @@ import com.oceanbase.tools.dbbrowser.model.DBTablePartitionType;
 import com.oceanbase.tools.dbbrowser.model.DBVariable;
 import com.oceanbase.tools.dbbrowser.model.DBView;
 import com.oceanbase.tools.dbbrowser.util.DBSchemaAccessorUtil;
+import com.oceanbase.tools.dbbrowser.util.DBSchemaAccessors;
 
 import lombok.Data;
 
