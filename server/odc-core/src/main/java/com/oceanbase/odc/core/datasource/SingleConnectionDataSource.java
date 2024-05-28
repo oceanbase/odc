@@ -204,7 +204,7 @@ public class SingleConnectionDataSource extends BaseClassBasedDataSource impleme
         }
         try {
             Connection connection = newConnectionFromDriver(getUsername(), getPassword());
-            prepareConnection(this.connection);
+            prepareConnection(connection);
             this.connection = connection;
             this.lock = new ReentrantLock();
             log.info("Established shared JDBC Connection,lock=" + this.lock.hashCode());
