@@ -61,7 +61,6 @@ public class ExecutionStrategyConfig implements Serializable {
     public static ExecutionStrategyConfig manualStrategy(long expireIntervalTime, @NonNull TimeUnit timeUnit) {
         PreConditions.notNegative(expireIntervalTime, "WaitExecExpireIntervalSeconds");
         int expireIntervalTimeSeconds = (int) TimeUnit.SECONDS.convert(expireIntervalTime, timeUnit);
-        // if the expression is false, it means that the message will be printed in the console
         Verify.verify(expireIntervalTime >= 0, "WaitExecExpireIntervalSeconds is too large " + expireIntervalTime);
         return new ExecutionStrategyConfig(FlowTaskExecutionStrategy.MANUAL, expireIntervalTimeSeconds, null);
     }
