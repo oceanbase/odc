@@ -47,6 +47,8 @@ public abstract class AbstractDBObjectSyncer<T extends ExtensionPoint> implement
     @Autowired
     private DBColumnRepository dbColumnRepository;
 
+    private static final int BATCH_SIZE = 1000;
+
     @Override
     public void sync(@NonNull Connection connection, @NonNull Database database, @NonNull DialectType dialectType) {
         T extensionPoint = getExtensionPoint(dialectType);
@@ -69,7 +71,7 @@ public abstract class AbstractDBObjectSyncer<T extends ExtensionPoint> implement
                     return entity;
                 }).collect(Collectors.toList());
         if (CollectionUtils.isNotEmpty(toBeInserted)) {
-            dbObjectRepository.batchCreate(toBeInserted);
+            dbObjectRepository.batchCreate(toBeInserted, BATCH_SIZE);
         }
         // Delete objects that are not in the latest object list
         List<DBObjectEntity> toBeDeleted = existingObjects.stream()
