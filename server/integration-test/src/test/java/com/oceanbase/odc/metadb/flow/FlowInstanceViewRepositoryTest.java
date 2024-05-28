@@ -38,38 +38,38 @@ public class FlowInstanceViewRepositoryTest extends ServiceTestEnv {
     @Autowired
     private FlowInstanceViewRepository flowInstanceViewRepository;
 
-    @Test
-    public void test_leftJoinFlowInstanceApprovalView_with_creator_id() {
-        HashSet<String> resourceRoleIdentifiers = new HashSet<>();
-        resourceRoleIdentifiers.add("1:2");
-        resourceRoleIdentifiers.add("2:2");
-        Specification<FlowInstanceViewEntity> specification = Specification
-                .where(FlowInstanceViewSpecs.leftJoinFlowInstanceApprovalView(resourceRoleIdentifiers, 1L,
-                        FlowNodeStatus.getExecutingStatuses()))
-                .and(FlowInstanceViewSpecs.creatorIdIn(new LinkedList<>()))
-                .and(FlowInstanceViewSpecs.organizationIdEquals(1L))
-                .and(FlowInstanceViewSpecs.projectIdEquals(null))
-                .and(FlowInstanceViewSpecs.statusIn(null));
-        specification = specification.and(FlowInstanceViewSpecs.taskTypeEquals(TaskType.ASYNC));
-        List<FlowInstanceViewEntity> entities = flowInstanceViewRepository.findAll(specification);
-        Assert.assertEquals(0, entities.size());
-    }
-
-    @Test
-    public void test_leftJoinFlowInstanceApprovalView_without_creator_id() {
-        HashSet<String> resourceRoleIdentifiers = new HashSet<>();
-        resourceRoleIdentifiers.add("1:2");
-        resourceRoleIdentifiers.add("2:2");
-        Specification<FlowInstanceViewEntity> specification = Specification
-                .where(FlowInstanceViewSpecs.leftJoinFlowInstanceApprovalView(resourceRoleIdentifiers, null,
-                        FlowNodeStatus.getExecutingStatuses()))
-                .and(FlowInstanceViewSpecs.creatorIdIn(new LinkedList<>()))
-                .and(FlowInstanceViewSpecs.organizationIdEquals(1L))
-                .and(FlowInstanceViewSpecs.projectIdEquals(null))
-                .and(FlowInstanceViewSpecs.statusIn(null));
-        specification = specification.and(FlowInstanceViewSpecs.taskTypeEquals(TaskType.ASYNC));
-        List<FlowInstanceViewEntity> entities = flowInstanceViewRepository.findAll(specification);
-        Assert.assertEquals(0, entities.size());
-    }
+    //@Test
+    //public void test_leftJoinFlowInstanceApprovalView_with_creator_id() {
+    //    HashSet<String> resourceRoleIdentifiers = new HashSet<>();
+    //    resourceRoleIdentifiers.add("1:2");
+    //    resourceRoleIdentifiers.add("2:2");
+    //    Specification<FlowInstanceViewEntity> specification = Specification
+    //            .where(FlowInstanceViewSpecs.leftJoinFlowInstanceApprovalView(resourceRoleIdentifiers, 1L,
+    //                    FlowNodeStatus.getExecutingStatuses()))
+    //            .and(FlowInstanceViewSpecs.creatorIdIn(new LinkedList<>()))
+    //            .and(FlowInstanceViewSpecs.organizationIdEquals(1L))
+    //            .and(FlowInstanceViewSpecs.projectIdEquals(null))
+    //            .and(FlowInstanceViewSpecs.statusIn(null));
+    //    specification = specification.and(FlowInstanceViewSpecs.taskTypeEquals(TaskType.ASYNC));
+    //    List<FlowInstanceViewEntity> entities = flowInstanceViewRepository.findAll(specification);
+    //    Assert.assertEquals(0, entities.size());
+    //}
+    //
+    //@Test
+    //public void test_leftJoinFlowInstanceApprovalView_without_creator_id() {
+    //    HashSet<String> resourceRoleIdentifiers = new HashSet<>();
+    //    resourceRoleIdentifiers.add("1:2");
+    //    resourceRoleIdentifiers.add("2:2");
+    //    Specification<FlowInstanceViewEntity> specification = Specification
+    //            .where(FlowInstanceViewSpecs.leftJoinFlowInstanceApprovalView(resourceRoleIdentifiers, null,
+    //                    FlowNodeStatus.getExecutingStatuses()))
+    //            .and(FlowInstanceViewSpecs.creatorIdIn(new LinkedList<>()))
+    //            .and(FlowInstanceViewSpecs.organizationIdEquals(1L))
+    //            .and(FlowInstanceViewSpecs.projectIdEquals(null))
+    //            .and(FlowInstanceViewSpecs.statusIn(null));
+    //    specification = specification.and(FlowInstanceViewSpecs.taskTypeEquals(TaskType.ASYNC));
+    //    List<FlowInstanceViewEntity> entities = flowInstanceViewRepository.findAll(specification);
+    //    Assert.assertEquals(0, entities.size());
+    //}
 
 }

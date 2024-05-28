@@ -107,18 +107,14 @@ public class FlowInstanceViewSpecs {
     }
 
     public static Specification<FlowInstanceViewEntity> leftJoinFlowInstanceApprovalView(
-            @NotNull Set<String> resourceRoleIdentifiers, Long creatorId, Set<FlowNodeStatus> statusList) {
+            @NotNull Set<String> resourceRoleIdentifiers, Set<FlowNodeStatus> statusList) {
         return (root, query, builder) -> {
             Join<FlowInstanceViewEntity, FlowInstanceApprovalViewEntity> join =
                     root.join(FLOW_INSTANCE_VIEW_2_FLOW_INSTANCE_APPROVAL_VIEW, JoinType.LEFT);
             query.distinct(true);
             Predicate rolePredicate = join.get(FLOW_INSTANCE_APPROVAL_VIEW_ROLE_IDENTIFIER).in(resourceRoleIdentifiers);
             Predicate statusPredicate = join.get(FLOW_INSTANCE_APPROVAL_VIEW_STATUS).in(statusList);
-            if (Objects.isNull(creatorId)) {
-                return builder.and(rolePredicate, statusPredicate);
-            }
-            Predicate creatorPredicate = builder.equal(root.get(FLOW_INSTANCE_VIEW_CREATOR_ID_NAME), creatorId);
-            return builder.or(builder.and(rolePredicate, statusPredicate), creatorPredicate);
+            return builder.and(rolePredicate, statusPredicate);
         };
     }
 
