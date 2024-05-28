@@ -77,25 +77,22 @@ public class SingleConnectionDataSource extends BaseClassBasedDataSource impleme
         if (Objects.isNull(this.connection)) {
             return innerCreateConnection();
         }
-        if (!tryLock()) {
+        Lock thisLock = this.lock;
+        if (!tryLock(thisLock)) {
             throw new ConflictException(ErrorCodes.ConnectionOccupied, new Object[] {},
                     "Connection is occupied, waited " + this.timeOutMillis + " millis");
         }
-        boolean reset = false;
         try {
             if (this.connection.isClosed() || !this.connection.isValid(getLoginTimeout())) {
                 if (!autoReconnect) {
                     throw new SQLException("Connection was closed or not valid");
                 }
-                reset = true;
                 resetConnection();
             }
             return getConnectionProxy(connection);
         } finally {
-            if (!reset) {
-                log.info("Get connection unlock, hashcode=" + this.lock.hashCode());
-                this.lock.unlock();
-            }
+            log.info("Get connection unlock, hashcode=" + thisLock.hashCode());
+            thisLock.unlock();
         }
     }
 
@@ -142,11 +139,11 @@ public class SingleConnectionDataSource extends BaseClassBasedDataSource impleme
         }
     }
 
-    private boolean tryLock() {
+    private boolean tryLock(Lock lock) {
         try {
-            boolean locked = this.lock.tryLock(timeOutMillis, TimeUnit.MILLISECONDS);
+            boolean locked = lock.tryLock(timeOutMillis, TimeUnit.MILLISECONDS);
             if (locked) {
-                log.info("Get connection lock success, lock={}", this.lock.hashCode());
+                log.info("Get connection lock success, lock={}", lock.hashCode());
             }
             return locked;
         } catch (InterruptedException e) {
@@ -155,17 +152,18 @@ public class SingleConnectionDataSource extends BaseClassBasedDataSource impleme
     }
 
     private Connection getConnectionProxy(@NonNull Connection connection) {
-        if (!tryLock()) {
+        Lock thisLock = this.lock;
+        if (!tryLock(thisLock)) {
             throw new ConflictException(ErrorCodes.ConnectionOccupied, new Object[] {},
                     "Connection is occupied, waited " + this.timeOutMillis + " millis");
         }
         try {
             return (Connection) Proxy.newProxyInstance(Connection.class.getClassLoader(),
                     new Class[] {Connection.class},
-                    new CloseIgnoreInvocationHandler(connection, this.lock));
+                    new CloseIgnoreInvocationHandler(connection, thisLock));
         } catch (Exception e) {
-            log.warn("Get connection error unlock, hashcode=" + this.lock.hashCode());
-            this.lock.unlock();
+            log.warn("Get connection error unlock, hashcode=" + thisLock.hashCode());
+            thisLock.unlock();
             throw e;
         }
     }
