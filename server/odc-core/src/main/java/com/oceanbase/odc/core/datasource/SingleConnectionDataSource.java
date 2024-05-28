@@ -60,7 +60,7 @@ public class SingleConnectionDataSource extends BaseClassBasedDataSource impleme
     private EventPublisher eventPublisher;
     protected volatile Connection connection;
     private final List<ConnectionInitializer> initializerList = new LinkedList<>();
-    private Lock lock;
+    private volatile Lock lock;
     @Setter
     private long timeOutMillis = 10 * 1000;
 
@@ -78,18 +78,19 @@ public class SingleConnectionDataSource extends BaseClassBasedDataSource impleme
             return innerCreateConnection();
         }
         Lock thisLock = this.lock;
+        Connection thisConnection = this.connection;
         if (!tryLock(thisLock)) {
             throw new ConflictException(ErrorCodes.ConnectionOccupied, new Object[] {},
                     "Connection is occupied, waited " + this.timeOutMillis + " millis");
         }
         try {
-            if (this.connection.isClosed() || !this.connection.isValid(getLoginTimeout())) {
-                if (!autoReconnect) {
+            if (thisConnection.isClosed() || !thisConnection.isValid(getLoginTimeout())) {
+                if (!this.autoReconnect) {
                     throw new SQLException("Connection was closed or not valid");
                 }
                 resetConnection();
             }
-            return getConnectionProxy(connection);
+            return getConnectionProxy(thisConnection, thisLock);
         } finally {
             log.info("Get connection unlock, hashcode=" + thisLock.hashCode());
             thisLock.unlock();
@@ -151,8 +152,7 @@ public class SingleConnectionDataSource extends BaseClassBasedDataSource impleme
         }
     }
 
-    private Connection getConnectionProxy(@NonNull Connection connection) {
-        Lock thisLock = this.lock;
+    private Connection getConnectionProxy(@NonNull Connection connection, @NonNull Lock thisLock) {
         if (!tryLock(thisLock)) {
             throw new ConflictException(ErrorCodes.ConnectionOccupied, new Object[] {},
                     "Connection is occupied, waited " + this.timeOutMillis + " millis");
@@ -208,7 +208,7 @@ public class SingleConnectionDataSource extends BaseClassBasedDataSource impleme
             this.connection = connection;
             this.lock = new ReentrantLock();
             log.info("Established shared JDBC Connection,lock=" + this.lock.hashCode());
-            return getConnectionProxy(this.connection);
+            return getConnectionProxy(this.connection, this.lock);
         } catch (Throwable e) {
             throw new SQLException(e);
         }
