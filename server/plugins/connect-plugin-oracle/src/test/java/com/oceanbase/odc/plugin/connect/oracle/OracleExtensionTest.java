@@ -89,7 +89,7 @@ public class OracleExtensionTest extends BaseExtensionPointTest {
         String url = connectionExtensionPoint.generateJdbcUrl(jdbcProperties);
         Properties testConnectionProperties = getTestConnectionProperties();
         testConnectionProperties.put(ConnectionPropertiesBuilder.USER_ROLE, configuration.getRole());
-        TestResult result = connectionExtensionPoint.test(url, testConnectionProperties, 30);
+        TestResult result = connectionExtensionPoint.test(url, testConnectionProperties, 30, null);
         Assert.assertTrue(result.isActive());
         Assert.assertNull(result.getErrorCode());
     }
@@ -101,7 +101,7 @@ public class OracleExtensionTest extends BaseExtensionPointTest {
         String url = connectionExtensionPoint.generateJdbcUrl(jdbcProperties);
         Properties testConnectionProperties = getTestConnectionProperties();
         testConnectionProperties.put(ConnectionPropertiesBuilder.USER_ROLE, configuration.getRole());
-        TestResult result = connectionExtensionPoint.test(url, testConnectionProperties, 30);
+        TestResult result = connectionExtensionPoint.test(url, testConnectionProperties, 30, null);
         Assert.assertTrue(result.isActive());
         Assert.assertNull(result.getErrorCode());
     }
@@ -116,7 +116,7 @@ public class OracleExtensionTest extends BaseExtensionPointTest {
         testConnectionProperties.put(ConnectionPropertiesBuilder.PASSWORD, "error");
         testConnectionProperties.put(ConnectionPropertiesBuilder.USER_ROLE, "sysdba");
 
-        TestResult result = connectionExtensionPoint.test(url, testConnectionProperties, 30);
+        TestResult result = connectionExtensionPoint.test(url, testConnectionProperties, 30, null);
         Assert.assertFalse(result.isActive());
     }
 
@@ -130,7 +130,7 @@ public class OracleExtensionTest extends BaseExtensionPointTest {
         Properties testConnectionProperties = getTestConnectionProperties();
         testConnectionProperties.put(ConnectionPropertiesBuilder.USER_ROLE, configuration.getRole());
 
-        TestResult result = connectionExtensionPoint.test(url, testConnectionProperties, 30);
+        TestResult result = connectionExtensionPoint.test(url, testConnectionProperties, 30, null);
 
         Assert.assertFalse(result.isActive());
     }
@@ -144,7 +144,7 @@ public class OracleExtensionTest extends BaseExtensionPointTest {
 
         Properties testConnectionProperties = getTestConnectionProperties();
         testConnectionProperties.put(ConnectionPropertiesBuilder.USER_ROLE, configuration.getRole());
-        TestResult result = connectionExtensionPoint.test(url, testConnectionProperties, 30);
+        TestResult result = connectionExtensionPoint.test(url, testConnectionProperties, 30, null);
 
         Assert.assertFalse(result.isActive());
     }
