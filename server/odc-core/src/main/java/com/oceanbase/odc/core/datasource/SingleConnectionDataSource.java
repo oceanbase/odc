@@ -203,10 +203,11 @@ public class SingleConnectionDataSource extends BaseClassBasedDataSource impleme
             throw new IllegalStateException("Connection is not null");
         }
         try {
-            this.connection = newConnectionFromDriver(getUsername(), getPassword());
+            Connection connection = newConnectionFromDriver(getUsername(), getPassword());
+            prepareConnection(this.connection);
+            this.connection = connection;
             this.lock = new ReentrantLock();
             log.info("Established shared JDBC Connection,lock=" + this.lock.hashCode());
-            prepareConnection(this.connection);
             return getConnectionProxy(this.connection);
         } catch (Throwable e) {
             throw new SQLException(e);
