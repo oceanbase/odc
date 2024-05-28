@@ -27,6 +27,7 @@ import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
+import org.apache.commons.collections4.CollectionUtils;
 import org.flowable.engine.delegate.DelegateExecution;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -78,8 +79,6 @@ import lombok.extern.slf4j.Slf4j;
 public abstract class BaseODCFlowTaskDelegate<T> extends BaseRuntimeFlowableDelegate<T> {
 
     @Autowired
-    private TaskService taskService;
-    @Autowired
     protected HostProperties hostProperties;
     @Autowired
     protected ServiceTaskInstanceRepository serviceTaskRepository;
@@ -119,6 +118,7 @@ public abstract class BaseODCFlowTaskDelegate<T> extends BaseRuntimeFlowableDele
         int interval = RuntimeTaskConstants.DEFAULT_TASK_CHECK_INTERVAL_SECONDS;
         scheduleExecutor.scheduleAtFixedRate(() -> {
             try {
+                updateHeartbeatTime();
                 if (taskLatch.getCount() > 0) {
                     onProgressUpdate(taskId, taskService);
                 }
@@ -358,6 +358,9 @@ public abstract class BaseODCFlowTaskDelegate<T> extends BaseRuntimeFlowableDele
         }
         List<? extends FlowTaskResult> flowTaskResults =
                 flowTaskInstanceService.getTaskResultFromEntity(taskEntity, false);
+        if (CollectionUtils.isEmpty(flowTaskResults)) {
+            return;
+        }
         Verify.singleton(flowTaskResults, "flowTaskResults");
         if (flowTaskResults.get(0) instanceof AbstractFlowTaskResult) {
             FlowTaskResult flowTaskResult = flowTaskResults.get(0);

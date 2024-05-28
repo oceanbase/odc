@@ -19,10 +19,10 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.flowable.engine.delegate.DelegateExecution;
+import org.flowable.engine.delegate.ExecutionListener;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -32,6 +32,7 @@ import com.oceanbase.odc.core.shared.constant.FlowStatus;
 import com.oceanbase.odc.core.shared.constant.TaskErrorStrategy;
 import com.oceanbase.odc.core.shared.constant.TaskType;
 import com.oceanbase.odc.metadb.flow.FlowInstanceEntity;
+import com.oceanbase.odc.metadb.flow.FlowInstanceRepository;
 import com.oceanbase.odc.metadb.flow.ServiceTaskInstanceRepository;
 import com.oceanbase.odc.metadb.task.TaskEntity;
 import com.oceanbase.odc.service.connection.database.DatabaseService;
@@ -42,7 +43,6 @@ import com.oceanbase.odc.service.databasechange.model.DatabaseChangeFlowInstance
 import com.oceanbase.odc.service.databasechange.model.DatabaseChangingRecord;
 import com.oceanbase.odc.service.flow.FlowInstanceService;
 import com.oceanbase.odc.service.flow.FlowableAdaptor;
-import com.oceanbase.odc.service.flow.instance.FlowTaskInstance;
 import com.oceanbase.odc.service.flow.model.CreateFlowInstanceReq;
 import com.oceanbase.odc.service.flow.model.FlowInstanceDetailResp;
 import com.oceanbase.odc.service.flow.model.FlowNodeStatus;
@@ -51,7 +51,6 @@ import com.oceanbase.odc.service.flow.model.QueryFlowInstanceParams;
 import com.oceanbase.odc.service.flow.task.model.MultipleDatabaseChangeParameters;
 import com.oceanbase.odc.service.flow.task.model.MultipleDatabaseChangeTaskResult;
 import com.oceanbase.odc.service.flow.util.FlowTaskUtil;
-import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.task.TaskService;
 
 import lombok.extern.slf4j.Slf4j;
@@ -67,25 +66,20 @@ public class MultipleDatabaseChangeRuntimeFlowableTask extends BaseODCFlowTaskDe
     private volatile boolean isFailure = false;
 
     private Integer batchId;
-
     private Integer batchSum;
-    List<List<Long>> orderedDatabaseIds;
-
+    private List<List<Long>> orderedDatabaseIds;
     private FlowTaskExecutionStrategy flowTaskExecutionStrategy;
-
     private MultipleDatabaseChangeParameters multipleDatabaseChangeParameters;
-
     @Autowired
     private FlowInstanceService flowInstanceService;
-
     @Autowired
-    private ServiceTaskInstanceRepository serviceTaskInstanceRepository;
-    @Autowired
-    private AuthenticationFacade authenticationFacade;
+    private FlowInstanceRepository flowInstanceRepository;
     @Autowired
     private DatabaseService databaseService;
     @Autowired
     private FlowableAdaptor flowableAdaptor;
+    @Autowired
+    private ServiceTaskInstanceRepository serviceTaskInstanceRepository;
 
     @Override
     public boolean cancel(boolean mayInterruptIfRunning, Long taskId, TaskService taskService) {
@@ -119,6 +113,8 @@ public class MultipleDatabaseChangeRuntimeFlowableTask extends BaseODCFlowTaskDe
             throws InterruptedException {
         MultipleDatabaseChangeTraceContextHolder.trace(taskId);
         try {
+            this.flowInstanceRepository.updateStatusById(getFlowInstanceId(), FlowStatus.EXECUTING);
+            this.serviceTaskInstanceRepository.updateStatusById(getTargetTaskInstanceId(), FlowNodeStatus.EXECUTING);
             FlowInstanceDetailResp flowInstanceDetailResp = flowInstanceService.detail(getFlowInstanceId());
             this.flowTaskExecutionStrategy = flowInstanceDetailResp.getExecutionStrategy();
             TaskEntity detail = taskService.detail(taskId);
@@ -131,7 +127,7 @@ public class MultipleDatabaseChangeRuntimeFlowableTask extends BaseODCFlowTaskDe
             } else {
                 this.batchId = value;
             }
-            log.info("multiple database task start, taskId={}, batchId={}", taskId,
+            log.info("Multiple database task start, taskId={}, batchId={}", taskId,
                     this.batchId + 1);
             multipleDatabaseChangeParameters.setBatchId(this.batchId + 1);
             detail.setParametersJson(JsonUtils.toJson(multipleDatabaseChangeParameters));
@@ -191,7 +187,7 @@ public class MultipleDatabaseChangeRuntimeFlowableTask extends BaseODCFlowTaskDe
             }
             return null;
         } catch (Exception e) {
-            log.warn("multiple database task failed, taskId={}, batchId={}", taskId,
+            log.warn("Multiple database task failed, taskId={}, batchId={}", taskId,
                     this.batchId == null ? null : this.batchId + 1, e);
             this.isFailure = true;
             this.isSuccessful = false;
@@ -205,7 +201,7 @@ public class MultipleDatabaseChangeRuntimeFlowableTask extends BaseODCFlowTaskDe
     protected void onFailure(Long taskId, TaskService taskService) {
         try {
             MultipleDatabaseChangeTraceContextHolder.trace(taskId);
-            log.warn("multiple database task failed, taskId={}, batchId={}", taskId,
+            log.warn("Multiple database task failed, taskId={}, batchId={}", taskId,
                     this.batchId == null ? null : this.batchId + 1);
             updateFlowInstanceStatus(FlowStatus.EXECUTION_FAILED);
             taskService.fail(taskId, 100, generateResult());
@@ -219,14 +215,10 @@ public class MultipleDatabaseChangeRuntimeFlowableTask extends BaseODCFlowTaskDe
     protected void onSuccessful(Long taskId, TaskService taskService) {
         try {
             MultipleDatabaseChangeTraceContextHolder.trace(taskId);
-            log.info("multiple database task succeed, taskId={}, batchId={}", taskId, this.batchId + 1);
+            log.info("Multiple database task succeed, taskId={}, batchId={}", taskId, this.batchId + 1);
             if (this.batchId == batchSum - 1) {
-                List<FlowInstanceEntity> list = flowInstanceService.getFlowInstanceByParentId(
-                        getFlowInstanceId());
-                boolean allSucceeded = list.stream()
-                        .allMatch(
-                                flowInstanceEntity -> FlowStatus.EXECUTION_SUCCEEDED == flowInstanceEntity.getStatus());
-                if (allSucceeded) {
+                List<FlowInstanceEntity> list = flowInstanceService.getFlowInstanceByParentId(getFlowInstanceId());
+                if (list.stream().allMatch(e -> FlowStatus.EXECUTION_SUCCEEDED == e.getStatus())) {
                     updateFlowInstanceStatus(FlowStatus.EXECUTION_SUCCEEDED);
                 } else {
                     updateFlowInstanceStatus(FlowStatus.EXECUTION_FAILED);
@@ -239,14 +231,14 @@ public class MultipleDatabaseChangeRuntimeFlowableTask extends BaseODCFlowTaskDe
                 taskService.update(taskEntity);
             }
             super.onSuccessful(taskId, taskService);
-            Optional<FlowTaskInstance> taskInstanceByActivityId = flowableAdaptor.getTaskInstanceByActivityId(
-                    getActivityId(), getFlowInstanceId());
             if (!this.isSuccessful) {
-                serviceTaskInstanceRepository.updateStatusById(taskInstanceByActivityId.get().getId(),
-                        FlowNodeStatus.FAILED);
+                this.serviceTaskInstanceRepository.updateStatusById(getTargetTaskInstanceId(), FlowNodeStatus.FAILED);
+            } else {
+                this.serviceTaskInstanceRepository.updateStatusById(getTargetTaskInstanceId(),
+                        FlowNodeStatus.COMPLETED);
             }
         } catch (Exception e) {
-            log.warn("multiple database task failed, taskId={}, batchId={}", taskId,
+            log.warn("Multiple database task failed, taskId={}, batchId={}", taskId,
                     this.batchId == null ? null : this.batchId + 1, e);
         } finally {
             MultipleDatabaseChangeTraceContextHolder.clear();
@@ -258,7 +250,7 @@ public class MultipleDatabaseChangeRuntimeFlowableTask extends BaseODCFlowTaskDe
         try {
             MultipleDatabaseChangeTraceContextHolder.trace(taskId);
             taskService.fail(taskId, 100, generateResult());
-            log.warn("multiple database task timeout, taskId={}, batchId={}", taskId,
+            log.warn("Multiple database task timeout, taskId={}, batchId={}", taskId,
                     this.batchId == null ? null : this.batchId + 1);
         } finally {
             MultipleDatabaseChangeTraceContextHolder.clear();
@@ -283,20 +275,16 @@ public class MultipleDatabaseChangeRuntimeFlowableTask extends BaseODCFlowTaskDe
                                 flowInstanceDetailResp -> flowInstanceDetailResp));
         List<Long> idList = this.orderedDatabaseIds.stream().flatMap(Collection::stream).collect(Collectors.toList());
         List<Database> databaseList = databaseService.listDatabasesDetailsByIds(idList);
-        ArrayList<DatabaseChangingRecord> databaseChangingRecords = new ArrayList<>();
+        ArrayList<DatabaseChangingRecord> records = new ArrayList<>();
         for (Database database : databaseList) {
-            FlowInstanceDetailResp flowInstanceDetailResp = databaseId2FlowInstanceDetailResp.get(database.getId());
-            DatabaseChangingRecord databaseChangingRecord = new DatabaseChangingRecord();
-            databaseChangingRecord.setDatabase(new DatabaseChangeDatabase(database));
-            databaseChangingRecord.setFlowInstanceDetailResp(
-                    flowInstanceDetailResp != null ? new DatabaseChangeFlowInstanceDetailResp(flowInstanceDetailResp)
-                            : null);
-            databaseChangingRecord.setStatus(flowInstanceDetailResp != null ? flowInstanceDetailResp.getStatus()
-                    : FlowStatus.WAIT_FOR_EXECUTION);
-            databaseChangingRecords.add(databaseChangingRecord);
+            FlowInstanceDetailResp resp = databaseId2FlowInstanceDetailResp.get(database.getId());
+            DatabaseChangingRecord record = new DatabaseChangingRecord();
+            record.setDatabase(new DatabaseChangeDatabase(database));
+            record.setFlowInstanceDetailResp(resp != null ? new DatabaseChangeFlowInstanceDetailResp(resp) : null);
+            record.setStatus(resp != null ? resp.getStatus() : FlowStatus.WAIT_FOR_EXECUTION);
+            records.add(record);
         }
-        result.setDatabaseChangingRecordList(databaseChangingRecords);
-
+        result.setDatabaseChangingRecordList(records);
         return result;
     }
 
@@ -309,6 +297,11 @@ public class MultipleDatabaseChangeRuntimeFlowableTask extends BaseODCFlowTaskDe
         } else {
             return this.isSuccessful;
         }
+    }
+
+    @Override
+    public List<Class<? extends ExecutionListener>> getExecutionListenerClasses() {
+        return null;
     }
 
 }

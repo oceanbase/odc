@@ -15,6 +15,7 @@
  */
 package com.oceanbase.odc.metadb.task;
 
+import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -42,6 +43,13 @@ public interface TaskRepository extends JpaRepository<TaskEntity, Long>, JpaSpec
             + " where id=:#{#param.id}")
     @Modifying
     int update(@Param("param") TaskEntity entity);
+
+    @Transactional
+    @Query(value = "update task_task set last_heartbeat_time=now() where id=:id", nativeQuery = true)
+    @Modifying
+    int updateLastHeartbeatTimeById(@Param("id") Long id);
+
+    List<TaskEntity> findAllByLastHeartbeatTimeBeforeAndIdIn(Date lastHeartbeatTime, List<Long> ids);
 
     @Transactional
     @Query("update TaskEntity set parametersJson=:#{#param.parametersJson} where id=:#{#param.id}")

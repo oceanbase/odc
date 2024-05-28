@@ -71,15 +71,22 @@ public class FlowTaskSubmitter implements JavaDelegate {
         CustomDelegateExecution executionFacade = new CustomDelegateExecution(execution);
         long flowInstanceId = FlowTaskUtil.getFlowInstanceId(executionFacade);
         String activityId = executionFacade.getCurrentActivityId();
-        List<FlowableBoundaryEvent<ErrorEventDefinition>> defs =
-                FlowUtil.getBoundaryEventDefinitions(execution.getProcessDefinitionId(),
-                        activityId, ErrorEventDefinition.class);
+        List<FlowableBoundaryEvent<ErrorEventDefinition>> defs = FlowUtil.getBoundaryEventDefinitions(
+                execution.getProcessDefinitionId(), activityId, ErrorEventDefinition.class);
         threadPoolTaskExecutor.submit(() -> {
             FlowTaskInstance flowTaskInstance = null;
             try {
                 flowTaskInstance = getFlowTaskInstance(flowInstanceId, activityId);
-                getDelegateInstance(flowTaskInstance).execute(executionFacade);
-                updateFlowTaskInstance(flowTaskInstance.getId(), FlowNodeStatus.COMPLETED);
+                BaseRuntimeFlowableDelegate<?> delegate = getDelegateInstance(flowTaskInstance);
+                delegate.updateHeartbeatTime();
+                List<Class<? extends ExecutionListener>> list = delegate.getExecutionListenerClasses();
+                if (CollectionUtils.isNotEmpty(list)) {
+                    list.forEach(c -> doCallListener(FlowConstants.EXECUTION_START_EVENT_NAME, executionFacade, c));
+                }
+                delegate.execute(executionFacade);
+                if (CollectionUtils.isNotEmpty(list)) {
+                    list.forEach(c -> doCallListener(FlowConstants.EXECUTION_END_EVENT_NAME, executionFacade, c));
+                }
                 flowTaskCallBackApprovalService.approval(executionFacade.getProcessInstanceId(),
                         flowTaskInstance.getId(), executionFacade.getFutureVariable());
             } catch (Exception e) {
@@ -97,8 +104,7 @@ public class FlowTaskSubmitter implements JavaDelegate {
 
     private void updateFlowTaskInstance(long flowTaskInstanceId, FlowNodeStatus flowNodeStatus) {
         try {
-            int affectRows =
-                    serviceTaskRepository.updateStatusById(flowTaskInstanceId, flowNodeStatus);
+            int affectRows = serviceTaskRepository.updateStatusById(flowTaskInstanceId, flowNodeStatus);
             log.info("Modify node instance status successfully, instanceId={}, flowNodeStatus={}, affectRows={}",
                     flowTaskInstanceId, flowNodeStatus, affectRows);
         } catch (Exception ex) {
@@ -106,11 +112,10 @@ public class FlowTaskSubmitter implements JavaDelegate {
         }
     }
 
-    private void handleException(CustomDelegateExecution executionFacade, FlowTaskInstance flowTaskInstance,
-            Exception e,
-            List<FlowableBoundaryEvent<ErrorEventDefinition>> defs) {
-        String processDefinitionId = executionFacade.getProcessDefinitionId();
-        String activityId = executionFacade.getCurrentActivityId();
+    private void handleException(CustomDelegateExecution execution, FlowTaskInstance flowTaskInstance,
+            Exception e, List<FlowableBoundaryEvent<ErrorEventDefinition>> defs) {
+        String processDefinitionId = execution.getProcessDefinitionId();
+        String activityId = execution.getCurrentActivityId();
         if (defs.isEmpty()) {
             log.warn("No error boundary is defined to handle events, processInstanceId={}, activityId={}",
                     processDefinitionId, activityId);
@@ -121,13 +126,12 @@ public class FlowTaskSubmitter implements JavaDelegate {
                 ErrorEventDefinition eed = eventDefinition.getEventDefinition();
                 String acceptErrorCode = eed.getErrorCode();
                 if (Objects.equals(acceptErrorCode, targetErrorCode)) {
-                    flowTaskCallBackApprovalService.reject(executionFacade.getProcessInstanceId(),
-                            flowTaskInstance.getId(), executionFacade.getFutureVariable());
-                    if (CollectionUtils.isNotEmpty(eventDefinition.getFlowableListeners())) {
-                        callListener(FlowConstants.EXECUTION_START_EVENT_NAME, executionFacade,
-                                eventDefinition.getFlowableListeners());
-                        callListener(FlowConstants.EXECUTION_END_EVENT_NAME, executionFacade,
-                                eventDefinition.getFlowableListeners());
+                    flowTaskCallBackApprovalService.reject(execution.getProcessInstanceId(),
+                            flowTaskInstance.getId(), execution.getFutureVariable());
+                    List<FlowableListener> listeners = eventDefinition.getFlowableListeners();
+                    if (CollectionUtils.isNotEmpty(listeners)) {
+                        callListener(FlowConstants.EXECUTION_START_EVENT_NAME, execution, listeners);
+                        callListener(FlowConstants.EXECUTION_END_EVENT_NAME, execution, listeners);
                     }
                     return;
                 }
@@ -140,25 +144,32 @@ public class FlowTaskSubmitter implements JavaDelegate {
                     processDefinitionId, activityId,
                     defs.stream().map(a -> a.getEventDefinition().getErrorCode()).collect(Collectors.toList()));
         }
-        flowTaskCallBackApprovalService.approval(executionFacade.getProcessInstanceId(),
-                flowTaskInstance.getId(), executionFacade.getFutureVariable());
+        flowTaskCallBackApprovalService.approval(execution.getProcessInstanceId(),
+                flowTaskInstance.getId(), execution.getFutureVariable());
     }
 
-    private void callListener(String eventName, DelegateExecution execution, List<FlowableListener> flowableListeners) {
-        flowableListeners.stream().filter(fl -> eventName.equals(fl.getEvent())).forEach(fl -> {
+    private void callListener(String eventName, DelegateExecution execution, List<FlowableListener> listeners) {
+        listeners.stream().filter(fl -> eventName.equals(fl.getEvent())).forEach(fl -> {
             try {
-                Class<?> clazz = Class.forName(fl.getImplementation(), false,
-                        Thread.currentThread().getContextClassLoader());
-                if (ExecutionListener.class.isAssignableFrom(clazz)) {
-                    ExecutionListener listener =
-                            (ExecutionListener) BeanInjectedClassDelegate.instantiateDelegate(clazz);
-                    execution.setEventName(fl.getEvent());
-                    listener.notify(execution);
-                }
-            } catch (Exception ex) {
-                log.warn("Call execution listener occur error: ", ex);
+                doCallListener(fl.getEvent(), execution,
+                        Class.forName(fl.getImplementation(), false, Thread.currentThread().getContextClassLoader()));
+            } catch (Exception e) {
+                log.warn("Failed to load execution class, className={}", fl.getImplementation(), e);
             }
         });
+    }
+
+    private void doCallListener(String eventName, DelegateExecution execution, Class<?> listenerClass) {
+        try {
+            if (ExecutionListener.class.isAssignableFrom(listenerClass)) {
+                ExecutionListener listener =
+                        (ExecutionListener) BeanInjectedClassDelegate.instantiateDelegate(listenerClass);
+                execution.setEventName(eventName);
+                listener.notify(execution);
+            }
+        } catch (Exception e) {
+            log.warn("Failed to call execution listener", e);
+        }
     }
 
     private BaseRuntimeFlowableDelegate<?> getDelegateInstance(FlowTaskInstance flowTaskInstance) throws Exception {
