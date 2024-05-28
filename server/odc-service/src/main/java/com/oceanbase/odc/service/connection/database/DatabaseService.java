@@ -644,7 +644,7 @@ public class DatabaseService {
             }
         });
         try {
-            Set<String> latestDatabaseNames = future.get(5, TimeUnit.SECONDS);
+            Set<String> latestDatabaseNames = future.get(10, TimeUnit.SECONDS);
             List<DatabaseEntity> existedDatabasesInDb = databaseRepository.findByConnectionId(connection.getId())
                     .stream().filter(DatabaseEntity::getExisted).collect(Collectors.toList());
             Map<String, List<DatabaseEntity>> existedDatabaseName2Database =
