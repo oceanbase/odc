@@ -81,17 +81,21 @@ public class SingleConnectionDataSource extends BaseClassBasedDataSource impleme
             throw new ConflictException(ErrorCodes.ConnectionOccupied, new Object[] {},
                     "Connection is occupied, waited " + this.timeOutMillis + " millis");
         }
+        boolean reset = false;
         try {
             if (this.connection.isClosed() || !this.connection.isValid(getLoginTimeout())) {
                 if (!autoReconnect) {
                     throw new SQLException("Connection was closed or not valid");
                 }
+                reset = true;
                 resetConnection();
             }
             return getConnectionProxy(connection);
         } finally {
-            log.info("Get connection unlock, hashcode=" + this.lock.hashCode());
-            this.lock.unlock();
+            if (!reset) {
+                log.info("Get connection unlock, hashcode=" + this.lock.hashCode());
+                this.lock.unlock();
+            }
         }
     }
 
