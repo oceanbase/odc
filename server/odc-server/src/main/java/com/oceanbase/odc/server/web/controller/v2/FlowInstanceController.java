@@ -195,7 +195,7 @@ public class FlowInstanceController {
     @ApiOperation(value = "getResult", notes = "获取任务结果")
     @RequestMapping(value = "/{id:[\\d]+}/tasks/result", method = RequestMethod.GET)
     public ListResponse<? extends FlowTaskResult> getResult(@PathVariable Long id) throws IOException {
-        return Responses.list(flowTaskInstanceService.getResult(id));
+        return Responses.list(flowTaskInstanceService.getResult(id, false));
     }
 
     @ApiOperation(value = "getResult", notes = "获取任务结果")
