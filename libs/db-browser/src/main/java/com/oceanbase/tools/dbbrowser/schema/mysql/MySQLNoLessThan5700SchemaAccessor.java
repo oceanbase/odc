@@ -145,9 +145,10 @@ public class MySQLNoLessThan5700SchemaAccessor implements DBSchemaAccessor {
 
     @Override
     public List<DBDatabase> listDatabases() {
+        Set<String> grantedDatabases = showDatabases().stream().collect(Collectors.toSet());
         String sql =
                 "SELECT SCHEMA_NAME, DEFAULT_CHARACTER_SET_NAME, DEFAULT_COLLATION_NAME FROM information_schema.schemata;";
-        return jdbcOperations.query(sql, (rs, num) -> {
+        List<DBDatabase> allDatabases = jdbcOperations.query(sql, (rs, num) -> {
             DBDatabase database = new DBDatabase();
             database.setId(rs.getString("SCHEMA_NAME"));
             database.setName(rs.getString("SCHEMA_NAME"));
@@ -155,6 +156,7 @@ public class MySQLNoLessThan5700SchemaAccessor implements DBSchemaAccessor {
             database.setCollation(rs.getString("DEFAULT_COLLATION_NAME"));
             return database;
         });
+        return allDatabases.stream().filter(db -> grantedDatabases.contains(db.getName())).collect(Collectors.toList());
     }
 
     @Override
