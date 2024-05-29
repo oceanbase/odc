@@ -15,7 +15,11 @@
  */
 package com.oceanbase.odc.service.databasechange.model;
 
+import java.util.List;
+
+import javax.validation.Valid;
 import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 
@@ -36,4 +40,7 @@ public class UpdateDatabaseChangeChangingOrderReq {
 
     @NotNull
     private Long projectId;
+
+    @NotEmpty
+    private List<@Valid @NotEmpty List<@NotNull Long>> orders;
 }

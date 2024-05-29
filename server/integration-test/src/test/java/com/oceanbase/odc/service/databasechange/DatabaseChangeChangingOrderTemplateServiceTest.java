@@ -24,6 +24,7 @@ import static org.mockito.Mockito.when;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -102,6 +103,11 @@ public class DatabaseChangeChangingOrderTemplateServiceTest extends ServiceTestE
         orders.add(Arrays.asList(1L, 2L));
         orders.add(Arrays.asList(3L, 4L));
         req.setOrders(orders);
+        List<DatabaseEntity> databaseEntities = new ArrayList<>();
+        DatabaseEntity databaseEntity = new DatabaseEntity();
+        databaseEntity.setProjectId(PROJECT_ID);
+        orders.stream().flatMap(Collection::stream).forEach(x -> databaseEntities.add(databaseEntity));
+        when(databaseRepository.findByIdIn(any())).thenReturn(databaseEntities);
         DatabaseChangeChangingOrderTemplateResp templateResp = templateService.create(
                 req);
         int size = templateRepository.findAll().size();
@@ -159,6 +165,7 @@ public class DatabaseChangeChangingOrderTemplateServiceTest extends ServiceTestE
         List<List<Long>> orders = new ArrayList<>();
         orders.add(Arrays.asList(1L, 2L));
         orders.add(Arrays.asList(3L, 4L));
+        req.setOrders(orders);
         DatabaseChangeChangingOrderTemplateResp update = templateService
                 .update(byNameAndProjectId.getId(), req);
         assertEquals(TEMPLATE_RENAME, update.getName());
@@ -176,6 +183,7 @@ public class DatabaseChangeChangingOrderTemplateServiceTest extends ServiceTestE
         List<List<Long>> orders = new ArrayList<>();
         List<Long> list = Arrays.asList(1L, 2L);
         orders.add(list);
+        req.setOrders(orders);
         when(authenticationFacade.currentUserId()).thenReturn(1L);
         when(authenticationFacade.currentOrganizationId()).thenReturn(1L);
         templateService.update(1L, req);
@@ -189,6 +197,10 @@ public class DatabaseChangeChangingOrderTemplateServiceTest extends ServiceTestE
         UpdateDatabaseChangeChangingOrderReq req = new UpdateDatabaseChangeChangingOrderReq();
         req.setName(TEMPLATE_RENAME);
         req.setProjectId(2L);
+        List<List<Long>> orders = new ArrayList<>();
+        List<Long> list = Arrays.asList(1L, 2L);
+        orders.add(list);
+        req.setOrders(orders);
         when(projectRepository.existsById(2L)).thenReturn(false);
         assertThrows(NotFoundException.class, () -> {
             templateService.update(byNameAndProjectId.getId(),
