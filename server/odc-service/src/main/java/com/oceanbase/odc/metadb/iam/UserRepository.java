@@ -53,6 +53,10 @@ public interface UserRepository extends OdcJpaRepository<UserEntity, Long> {
 
     List<UserEntity> findByOrganizationId(Long organizationId);
 
+    @Query(value = "select iu.* from iam_user iu join iam_user_organization iuo on iu.id = iuo.user_id where iuo.organization_id=:organizationId",
+            nativeQuery = true)
+    List<UserEntity> findByBoundOrganization(@Param("organizationId") Long organizationId);
+
     Optional<UserEntity> findByOrganizationIdAndAccountName(Long organizationId, String accountName);
 
     @Query(value = "select u.* from iam_user u INNER JOIN iam_organization o "

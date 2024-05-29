@@ -15,8 +15,6 @@
  */
 package com.oceanbase.odc.metadb.iam;
 
-import java.util.List;
-
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.transaction.annotation.Transactional;
@@ -26,8 +24,6 @@ public interface UserOrganizationRepository extends JpaRepository<UserOrganizati
     boolean existsByOrganizationId(Long organizationId);
 
     boolean existsByOrganizationIdAndUserId(Long organizationId, Long userId);
-
-    List<UserOrganizationEntity> findByOrganizationId(Long organizationId);
 
     @Transactional
     int deleteByUserIdAndOrganizationId(Long userId, Long organizationId);

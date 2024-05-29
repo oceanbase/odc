@@ -1045,4 +1045,10 @@ public class UserService {
         });
     }
 
+    @SkipAuthorize("odc internal usage")
+    public List<User> listByBoundOrganizationId(@NotNull Long organizationId) {
+        return userRepository.findByBoundOrganization(organizationId).stream().map(User::new)
+                .collect(Collectors.toList());
+    }
+
 }
