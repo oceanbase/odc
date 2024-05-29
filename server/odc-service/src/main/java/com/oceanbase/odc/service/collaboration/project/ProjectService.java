@@ -79,6 +79,7 @@ import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.iam.auth.AuthorizationFacade;
 import com.oceanbase.odc.service.iam.model.User;
 import com.oceanbase.odc.service.iam.model.UserResourceRole;
+import com.oceanbase.odc.service.schedule.ScheduleService;
 
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
@@ -134,6 +135,9 @@ public class ProjectService {
 
     @Autowired
     private ConnectionService connectionService;
+
+    @Autowired
+    private ScheduleService scheduleService;
 
     @Value("${odc.integration.bastion.enabled:false}")
     private boolean bastionEnabled;
@@ -255,6 +259,9 @@ public class ProjectService {
                 .orElseThrow(() -> new NotFoundException(ResourceType.ODC_PROJECT, "id", id));
         if (!req.getArchived()) {
             throw new BadRequestException("currently not allowed to recover projects");
+        }
+        if (scheduleService.hasEnabledScheduleInProject(id)) {
+            throw new BadRequestException("Please disable all active tickets in the project first.");
         }
         previous.setArchived(true);
         ProjectEntity saved = repository.save(previous);
