@@ -27,6 +27,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.oceanbase.odc.common.jpa.InsertSqlTemplateBuilder;
 import com.oceanbase.odc.config.jpa.OdcJpaRepository;
 import com.oceanbase.tools.dbbrowser.model.DBObjectType;
+import com.oceanbase.tools.dbbrowser.util.DBSchemaAccessorUtil;
 
 /**
  * @author gaoda.xy
@@ -38,6 +39,8 @@ public interface DBObjectRepository extends OdcJpaRepository<DBObjectEntity, Lon
 
     List<DBObjectEntity> findByDatabaseIdAndType(Long databaseId, DBObjectType type);
 
+    List<DBObjectEntity> findByDatabaseIdAndTypeIn(Long databaseId, Collection<DBObjectType> types);
+
     @Modifying
     @Transactional
     @Query(value = "delete from database_schema_object t where t.id in (:ids)", nativeQuery = true)
@@ -48,7 +51,7 @@ public interface DBObjectRepository extends OdcJpaRepository<DBObjectEntity, Lon
     @Query(value = "delete from database_schema_object t where t.database_id in (:databaseIds)", nativeQuery = true)
     int deleteByDatabaseIdIn(@Param("databaseIds") Collection<Long> databaseIds);
 
-    default List<DBObjectEntity> batchCreate(List<DBObjectEntity> entities) {
+    default List<DBObjectEntity> batchCreate(List<DBObjectEntity> entities, int batchSize) {
         String sql = InsertSqlTemplateBuilder.from("database_schema_object")
                 .field(DBObjectEntity_.name)
                 .field(DBObjectEntity_.databaseId)
@@ -61,7 +64,8 @@ public interface DBObjectRepository extends OdcJpaRepository<DBObjectEntity, Lon
                 .add(e -> e.getType().name())
                 .add(DBObjectEntity::getOrganizationId)
                 .build();
-        return batchCreate(entities, sql, getter, DBObjectEntity::setId, 200);
+        return DBSchemaAccessorUtil.partitionFind(entities, batchSize,
+                e -> batchCreate(e, sql, getter, DBObjectEntity::setId));
     }
 
 }

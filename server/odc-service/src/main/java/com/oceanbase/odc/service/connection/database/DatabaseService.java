@@ -30,7 +30,6 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -514,31 +513,31 @@ public class DatabaseService {
         List<String> excludeSchemas = dbSchemaSyncProperties.getExcludeSchemas(connection.getDialectType());
         DataSource teamDataSource = new OBConsoleDataSourceFactory(connection, true, false).getDataSource();
         ExecutorService executorService = Executors.newFixedThreadPool(1);
-        Future<Connection> connectionFuture = executorService.submit(
-                (Callable<Connection>) teamDataSource::getConnection);
-        Connection conn = null;
+        Future<List<DatabaseEntity>> future = executorService.submit(() -> {
+            try (Connection conn = teamDataSource.getConnection()) {
+                return dbSchemaService.listDatabases(connection.getDialectType(), conn).stream().map(database -> {
+                    DatabaseEntity entity = new DatabaseEntity();
+                    entity.setDatabaseId(com.oceanbase.odc.common.util.StringUtils.uuid());
+                    entity.setExisted(Boolean.TRUE);
+                    entity.setName(database.getName());
+                    entity.setCharsetName(database.getCharset());
+                    entity.setCollationName(database.getCollation());
+                    entity.setTableCount(0L);
+                    entity.setOrganizationId(connection.getOrganizationId());
+                    entity.setEnvironmentId(connection.getEnvironmentId());
+                    entity.setConnectionId(connection.getId());
+                    entity.setSyncStatus(DatabaseSyncStatus.SUCCEEDED);
+                    entity.setProjectId(currentProjectId);
+                    entity.setObjectSyncStatus(DBObjectSyncStatus.INITIALIZED);
+                    if (blockExcludeSchemas && excludeSchemas.contains(database.getName())) {
+                        entity.setProjectId(null);
+                    }
+                    return entity;
+                }).collect(Collectors.toList());
+            }
+        });
         try {
-            conn = connectionFuture.get(5, TimeUnit.SECONDS);
-            List<DatabaseEntity> latestDatabases = dbSchemaService.listDatabases(connection.getDialectType(), conn)
-                    .stream().map(database -> {
-                        DatabaseEntity entity = new DatabaseEntity();
-                        entity.setDatabaseId(com.oceanbase.odc.common.util.StringUtils.uuid());
-                        entity.setExisted(Boolean.TRUE);
-                        entity.setName(database.getName());
-                        entity.setCharsetName(database.getCharset());
-                        entity.setCollationName(database.getCollation());
-                        entity.setTableCount(0L);
-                        entity.setOrganizationId(connection.getOrganizationId());
-                        entity.setEnvironmentId(connection.getEnvironmentId());
-                        entity.setConnectionId(connection.getId());
-                        entity.setSyncStatus(DatabaseSyncStatus.SUCCEEDED);
-                        entity.setProjectId(currentProjectId);
-                        entity.setObjectSyncStatus(DBObjectSyncStatus.INITIALIZED);
-                        if (blockExcludeSchemas && excludeSchemas.contains(database.getName())) {
-                            entity.setProjectId(null);
-                        }
-                        return entity;
-                    }).collect(Collectors.toList());
+            List<DatabaseEntity> latestDatabases = future.get(10, TimeUnit.SECONDS);
             Map<String, List<DatabaseEntity>> latestDatabaseName2Database =
                     latestDatabases.stream().filter(Objects::nonNull)
                             .collect(Collectors.groupingBy(DatabaseEntity::getName));
@@ -612,13 +611,6 @@ public class DatabaseService {
             } catch (Exception e) {
                 // eat the exception
             }
-            if (conn != null) {
-                try {
-                    conn.close();
-                } catch (Exception e) {
-                    log.warn("Close connection failed, errorMessage={}", e.getMessage());
-                }
-            }
             if (teamDataSource instanceof AutoCloseable) {
                 try {
                     ((AutoCloseable) teamDataSource).close();
@@ -646,15 +638,15 @@ public class DatabaseService {
     private void syncIndividualDataSources(ConnectionConfig connection) {
         DataSource individualDataSource = new OBConsoleDataSourceFactory(connection, true, false).getDataSource();
         ExecutorService executorService = Executors.newFixedThreadPool(1);
-        Future<Connection> connectionFuture = executorService.submit(
-                (Callable<Connection>) individualDataSource::getConnection);
-        Connection conn = null;
+        Future<Set<String>> future = executorService.submit(() -> {
+            try (Connection conn = individualDataSource.getConnection()) {
+                return dbSchemaService.showDatabases(connection.getDialectType(), conn);
+            }
+        });
         try {
-            conn = connectionFuture.get(5, TimeUnit.SECONDS);
-            Set<String> latestDatabaseNames = dbSchemaService.showDatabases(connection.getDialectType(), conn);
-            List<DatabaseEntity> existedDatabasesInDb =
-                    databaseRepository.findByConnectionId(connection.getId()).stream()
-                            .filter(DatabaseEntity::getExisted).collect(Collectors.toList());
+            Set<String> latestDatabaseNames = future.get(10, TimeUnit.SECONDS);
+            List<DatabaseEntity> existedDatabasesInDb = databaseRepository.findByConnectionId(connection.getId())
+                    .stream().filter(DatabaseEntity::getExisted).collect(Collectors.toList());
             Map<String, List<DatabaseEntity>> existedDatabaseName2Database =
                     existedDatabasesInDb.stream().collect(Collectors.groupingBy(DatabaseEntity::getName));
             Set<String> existedDatabaseNames = existedDatabaseName2Database.keySet();
@@ -700,13 +692,6 @@ public class DatabaseService {
                 executorService.shutdownNow();
             } catch (Exception e) {
                 // eat the exception
-            }
-            if (conn != null) {
-                try {
-                    conn.close();
-                } catch (Exception e) {
-                    log.warn("Close connection failed, errorMessage={}", e.getMessage());
-                }
             }
             if (individualDataSource instanceof AutoCloseable) {
                 try {

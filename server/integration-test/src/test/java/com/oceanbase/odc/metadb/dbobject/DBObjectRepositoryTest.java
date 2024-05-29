@@ -69,7 +69,7 @@ public class DBObjectRepositoryTest extends ServiceTestEnv {
             entity.setName("table_for_test_" + i);
             entities.add(entity);
         }
-        List<DBObjectEntity> saved = dbObjectRepository.batchCreate(entities);
+        List<DBObjectEntity> saved = dbObjectRepository.batchCreate(entities, 200);
         Assert.assertEquals(entities.size(), saved.size());
     }
 

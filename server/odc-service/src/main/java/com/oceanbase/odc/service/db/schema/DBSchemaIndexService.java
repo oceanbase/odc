@@ -36,6 +36,7 @@ import org.springframework.validation.annotation.Validated;
 
 import com.google.common.collect.Ordering;
 import com.oceanbase.odc.common.jpa.SpecificationUtil;
+import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.shared.constant.OrganizationType;
 import com.oceanbase.odc.core.shared.constant.ResourceRoleName;
@@ -95,6 +96,10 @@ public class DBSchemaIndexService {
 
     public QueryDBObjectResp listDatabaseObjects(@NonNull @Valid QueryDBObjectParams params) {
         QueryDBObjectResp resp = new QueryDBObjectResp();
+        String searchKey = params.getSearchKey().trim();
+        if (StringUtils.isBlank(searchKey)) {
+            return resp;
+        }
         Set<Long> queryDatabaseIds = new HashSet<>();
         if (params.getProjectId() != null && params.getDatasourceId() != null) {
             throw new IllegalArgumentException("projectId and datasourceId cannot be set at the same time");
@@ -151,7 +156,7 @@ public class DBSchemaIndexService {
         Map<Long, Database> id2Database =
                 databases.stream().collect(Collectors.toMap(Database::getId, e -> e, (e1, e2) -> e1));
         if (CollectionUtils.isEmpty(params.getTypes()) || params.getTypes().contains(DBObjectType.SCHEMA)) {
-            String key = params.getSearchKey().toLowerCase();
+            String key = searchKey.toLowerCase();
             List<Database> matches = databases.stream().filter(e -> e.getName().toLowerCase().contains(key))
                     .collect(Collectors.toList());
             Ordering<Database> ordering = Ordering.natural().onResultOf(e -> e.getName().length());
@@ -162,7 +167,7 @@ public class DBSchemaIndexService {
         if (CollectionUtils.isEmpty(params.getTypes()) || params.getTypes().contains(DBObjectType.COLUMN)) {
             Specification<DBColumnEntity> columnSpec =
                     SpecificationUtil.columnIn(DBColumnEntity_.DATABASE_ID, queryDatabaseIds);
-            columnSpec = columnSpec.and(SpecificationUtil.columnLike(DBColumnEntity_.NAME, params.getSearchKey()));
+            columnSpec = columnSpec.and(SpecificationUtil.columnLike(DBColumnEntity_.NAME, searchKey));
             List<DBColumnEntity> matches = dbColumnRepository.findAll(columnSpec, pageable).getContent();
             Ordering<DBColumnEntity> ordering = Ordering.natural().onResultOf(e -> e.getName().length());
             ordering = ordering.compound(Ordering.natural().onResultOf(DBColumnEntity::getName));
@@ -175,7 +180,7 @@ public class DBSchemaIndexService {
         }
         Specification<DBObjectEntity> objectSpec =
                 SpecificationUtil.columnIn(DBObjectEntity_.DATABASE_ID, queryDatabaseIds);
-        objectSpec = objectSpec.and(SpecificationUtil.columnLike(DBObjectEntity_.NAME, params.getSearchKey()));
+        objectSpec = objectSpec.and(SpecificationUtil.columnLike(DBObjectEntity_.NAME, searchKey));
         if (CollectionUtils.isNotEmpty(params.getTypes())) {
             objectSpec = objectSpec.and(SpecificationUtil.columnIn(DBObjectEntity_.TYPE, params.getTypes()));
         }
