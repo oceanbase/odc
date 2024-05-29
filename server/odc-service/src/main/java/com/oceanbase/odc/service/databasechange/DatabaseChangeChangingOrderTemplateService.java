@@ -107,7 +107,6 @@ public class DatabaseChangeChangingOrderTemplateService {
                 .findByProjectIdIn(nonArchivedProjectIds).stream()
                 .collect(Collectors.groupingBy(DatabaseEntity::getProjectId));
         disabledTemplateIds.addAll(projectId2TemplateEntityList.entrySet().stream()
-                // 留下未归档的projectId2TemplateEntityList
                 .filter(entry -> nonArchivedProjectIds.contains(entry.getKey()))
                 .flatMap(entry -> {
                     List<DatabaseEntity> databases = projectId2Databases.get(entry.getKey());

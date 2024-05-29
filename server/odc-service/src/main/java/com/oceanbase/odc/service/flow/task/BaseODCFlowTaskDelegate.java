@@ -30,6 +30,8 @@ import java.util.concurrent.TimeUnit;
 import org.apache.commons.collections4.CollectionUtils;
 import org.flowable.engine.delegate.DelegateExecution;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.oceanbase.odc.common.json.JsonUtils;
@@ -116,8 +118,10 @@ public abstract class BaseODCFlowTaskDelegate<T> extends BaseRuntimeFlowableDele
                 .build();
         scheduleExecutor = new ScheduledThreadPoolExecutor(1, threadFactory);
         int interval = RuntimeTaskConstants.DEFAULT_TASK_CHECK_INTERVAL_SECONDS;
+        SecurityContext securityContext = SecurityContextHolder.getContext();
         scheduleExecutor.scheduleAtFixedRate(() -> {
             try {
+                SecurityContextHolder.setContext(securityContext);
                 updateHeartbeatTime();
                 if (taskLatch.getCount() > 0) {
                     onProgressUpdate(taskId, taskService);
@@ -132,6 +136,8 @@ public abstract class BaseODCFlowTaskDelegate<T> extends BaseRuntimeFlowableDele
             } catch (Exception e) {
                 log.warn("Task monitoring thread failed, taskId={}", taskId, e);
                 taskLatch.countDown();
+            } finally {
+                SecurityContextHolder.clearContext();
             }
         }, interval, interval, TimeUnit.SECONDS);
     }

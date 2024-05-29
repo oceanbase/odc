@@ -107,6 +107,7 @@ import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.connection.model.OBTenant;
 import com.oceanbase.odc.service.databasechange.model.DatabaseChangeConnection;
 import com.oceanbase.odc.service.databasechange.model.DatabaseChangeDatabase;
+import com.oceanbase.odc.service.databasechange.model.DatabaseChangingRecord;
 import com.oceanbase.odc.service.dispatch.DispatchResponse;
 import com.oceanbase.odc.service.dispatch.RequestDispatcher;
 import com.oceanbase.odc.service.dispatch.TaskDispatchChecker;
@@ -136,6 +137,7 @@ import com.oceanbase.odc.service.flow.task.model.DBStructureComparisonParameter;
 import com.oceanbase.odc.service.flow.task.model.DatabaseChangeParameters;
 import com.oceanbase.odc.service.flow.task.model.FlowTaskProperties;
 import com.oceanbase.odc.service.flow.task.model.MultipleDatabaseChangeParameters;
+import com.oceanbase.odc.service.flow.task.model.MultipleDatabaseChangeTaskResult;
 import com.oceanbase.odc.service.flow.task.model.RuntimeTaskConstants;
 import com.oceanbase.odc.service.flow.task.model.ShadowTableSyncTaskParameter;
 import com.oceanbase.odc.service.flow.util.FlowTaskUtil;
@@ -905,10 +907,28 @@ public class FlowInstanceService {
                     flowInstance.getId());
         } else if (flowInstanceReq.getTaskType() == TaskType.EXPORT) {
             consumeDataTransferHook((DataTransferConfig) flowInstanceReq.getParameters(), taskEntity.getId());
+        } else if (flowInstanceReq.getTaskType() == TaskType.MULTIPLE_ASYNC) {
+            generateMultipleDatabaseResult(flowInstanceReq, taskEntity);
         }
         log.info("New flow instance succeeded, instanceId={}, flowInstanceReq={}",
                 flowInstance.getId(), flowInstanceReq);
         return FlowInstanceDetailResp.withIdAndType(flowInstance.getId(), flowInstanceReq.getTaskType());
+    }
+
+    private void generateMultipleDatabaseResult(CreateFlowInstanceReq flowInstanceReq, TaskEntity taskEntity) {
+        MultipleDatabaseChangeParameters parameters =
+                (MultipleDatabaseChangeParameters) flowInstanceReq.getParameters();
+        MultipleDatabaseChangeTaskResult result = new MultipleDatabaseChangeTaskResult();
+        ArrayList<DatabaseChangingRecord> databaseChangingRecords = new ArrayList<>();
+        List<DatabaseChangeDatabase> databaseList = parameters.getDatabases();
+        for (DatabaseChangeDatabase database : databaseList) {
+            DatabaseChangingRecord databaseChangingRecord = new DatabaseChangingRecord();
+            databaseChangingRecord.setDatabase(database);
+            databaseChangingRecords.add(databaseChangingRecord);
+        }
+        result.setDatabaseChangingRecordList(databaseChangingRecords);
+        taskEntity.setResultJson(JsonUtils.toJson(result));
+        taskService.update(taskEntity);
     }
 
     private String generateFlowInstanceName(@NonNull CreateFlowInstanceReq req) {

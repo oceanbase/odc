@@ -232,7 +232,8 @@ public class FlowTaskInstanceService {
 
     public List<? extends FlowTaskResult> getResult(@NotNull Long id) throws IOException {
         TaskEntity task = flowInstanceService.getTaskByFlowInstanceId(id);
-        if (task.getTaskType() == TaskType.ONLINE_SCHEMA_CHANGE || task.getTaskType() == TaskType.EXPORT) {
+        if (task.getTaskType() == TaskType.ONLINE_SCHEMA_CHANGE || task.getTaskType() == TaskType.EXPORT
+                || task.getTaskType() == TaskType.MULTIPLE_ASYNC) {
             return getTaskResultFromEntity(task, true);
         }
         Optional<TaskEntity> taskEntityOptional = getCompleteTaskEntity(id);

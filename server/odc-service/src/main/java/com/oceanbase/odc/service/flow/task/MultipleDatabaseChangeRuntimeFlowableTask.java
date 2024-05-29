@@ -16,7 +16,6 @@
 package com.oceanbase.odc.service.flow.task;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -36,7 +35,6 @@ import com.oceanbase.odc.metadb.flow.FlowInstanceRepository;
 import com.oceanbase.odc.metadb.flow.ServiceTaskInstanceRepository;
 import com.oceanbase.odc.metadb.task.TaskEntity;
 import com.oceanbase.odc.service.connection.database.DatabaseService;
-import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.databasechange.MultipleDatabaseChangeTraceContextHolder;
 import com.oceanbase.odc.service.databasechange.model.DatabaseChangeDatabase;
 import com.oceanbase.odc.service.databasechange.model.DatabaseChangeFlowInstanceDetailResp;
@@ -64,7 +62,7 @@ public class MultipleDatabaseChangeRuntimeFlowableTask extends BaseODCFlowTaskDe
 
     private volatile boolean isSuccessful = false;
     private volatile boolean isFailure = false;
-
+    private volatile boolean isFinished = false;
     private Integer batchId;
     private Integer batchSum;
     private List<List<Long>> orderedDatabaseIds;
@@ -97,7 +95,9 @@ public class MultipleDatabaseChangeRuntimeFlowableTask extends BaseODCFlowTaskDe
         if (this.flowTaskExecutionStrategy == null) {
             return this.isSuccessful;
         }
-        return isContinue(this.flowTaskExecutionStrategy, multipleDatabaseChangeParameters.getAutoErrorStrategy());
+        return isFinished
+                ? isContinue(this.flowTaskExecutionStrategy, multipleDatabaseChangeParameters.getAutoErrorStrategy())
+                : false;
     }
 
     @Override
@@ -105,7 +105,9 @@ public class MultipleDatabaseChangeRuntimeFlowableTask extends BaseODCFlowTaskDe
         if (this.flowTaskExecutionStrategy == null) {
             return this.isFailure;
         }
-        return !isContinue(this.flowTaskExecutionStrategy, multipleDatabaseChangeParameters.getAutoErrorStrategy());
+        return isFinished
+                ? !isContinue(this.flowTaskExecutionStrategy, multipleDatabaseChangeParameters.getAutoErrorStrategy())
+                : false;
     }
 
     @Override
@@ -163,6 +165,7 @@ public class MultipleDatabaseChangeRuntimeFlowableTask extends BaseODCFlowTaskDe
                                 break;
                             case EXECUTION_FAILED:
                             case EXECUTION_EXPIRED:
+                            case CANCELLED:
                                 flagForTaskSucceed = false;
                                 numberForEndLoop++;
                                 break;
@@ -193,6 +196,7 @@ public class MultipleDatabaseChangeRuntimeFlowableTask extends BaseODCFlowTaskDe
             this.isSuccessful = false;
             throw e;
         } finally {
+            this.isFinished = true;
             MultipleDatabaseChangeTraceContextHolder.clear();
         }
     }
@@ -259,9 +263,17 @@ public class MultipleDatabaseChangeRuntimeFlowableTask extends BaseODCFlowTaskDe
     }
 
     @Override
-    protected void onProgressUpdate(Long taskId, TaskService taskService) {}
+    protected void onProgressUpdate(Long taskId, TaskService taskService) {
+        MultipleDatabaseChangeTaskResult multipleDatabaseChangeTaskResult = generateResult();
+        if (multipleDatabaseChangeTaskResult != null) {
+            taskService.updateResult(taskId, multipleDatabaseChangeTaskResult);
+        }
+    }
 
     private MultipleDatabaseChangeTaskResult generateResult() {
+        if (this.multipleDatabaseChangeParameters == null) {
+            return null;
+        }
         MultipleDatabaseChangeTaskResult result = new MultipleDatabaseChangeTaskResult();
         Long flowInstanceId = getFlowInstanceId();
         QueryFlowInstanceParams param = QueryFlowInstanceParams.builder().parentInstanceId(flowInstanceId)
@@ -273,15 +285,14 @@ public class MultipleDatabaseChangeRuntimeFlowableTask extends BaseODCFlowTaskDe
                 flowInstanceDetailRespList.stream().collect(
                         Collectors.toMap(flowInstanceDetailResp -> flowInstanceDetailResp.getDatabase().getId(),
                                 flowInstanceDetailResp -> flowInstanceDetailResp));
-        List<Long> idList = this.orderedDatabaseIds.stream().flatMap(Collection::stream).collect(Collectors.toList());
-        List<Database> databaseList = databaseService.listDatabasesDetailsByIds(idList);
+        List<DatabaseChangeDatabase> databases = this.multipleDatabaseChangeParameters.getDatabases();
         ArrayList<DatabaseChangingRecord> records = new ArrayList<>();
-        for (Database database : databaseList) {
+        for (DatabaseChangeDatabase database : databases) {
             FlowInstanceDetailResp resp = databaseId2FlowInstanceDetailResp.get(database.getId());
             DatabaseChangingRecord record = new DatabaseChangingRecord();
-            record.setDatabase(new DatabaseChangeDatabase(database));
+            record.setDatabase(database);
             record.setFlowInstanceDetailResp(resp != null ? new DatabaseChangeFlowInstanceDetailResp(resp) : null);
-            record.setStatus(resp != null ? resp.getStatus() : FlowStatus.WAIT_FOR_EXECUTION);
+            record.setStatus(resp != null ? resp.getStatus() : null);
             records.add(record);
         }
         result.setDatabaseChangingRecordList(records);
