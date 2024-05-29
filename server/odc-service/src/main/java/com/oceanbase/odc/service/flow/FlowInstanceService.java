@@ -38,6 +38,7 @@ import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Size;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.flowable.engine.HistoryService;
@@ -656,7 +657,10 @@ public class FlowInstanceService {
         return FlowInstanceDetailResp.withIdAndType(id, taskTypeHolder.getValue());
     }
 
-    public FlowInstanceDetailResp approve(@NotNull Long id, String message, Boolean skipAuth) throws IOException {
+    @Transactional(rollbackFor = Exception.class)
+    public FlowInstanceDetailResp approve(@NotNull Long id,
+            @Size(max = 1024, message = "The approval comment is out of range [0,1024]") String message,
+            Boolean skipAuth) throws IOException {
         TaskEntity taskEntity = getTaskByFlowInstanceId(id);
         if (taskEntity.getTaskType() == TaskType.IMPORT && !dispatchChecker.isTaskEntityOnThisMachine(taskEntity)) {
             /**
@@ -681,7 +685,9 @@ public class FlowInstanceService {
     }
 
     @Transactional(rollbackFor = Exception.class)
-    public FlowInstanceDetailResp reject(@NotNull Long id, String message, Boolean skipAuth) {
+    public FlowInstanceDetailResp reject(@NotNull Long id,
+            @Size(max = 1024, message = "The approval comment is out of range [0,1024]") String message,
+            Boolean skipAuth) {
         if (notificationProperties.isEnabled()) {
             try {
                 Event event =
