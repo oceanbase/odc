@@ -160,7 +160,8 @@ public class ConnectionTesting {
 
             TestResult result = connectionExtensionPoint.test(
                     connectionExtensionPoint.generateJdbcUrl(jdbcUrlProperties),
-                    testConnectionProperties, queryTimeoutSeconds, Arrays.asList(new BackupInstanceInitializer(config),
+                    testConnectionProperties, queryTimeoutSeconds, Arrays.asList(
+                            new BackupInstanceInitializer(config),
                             new DataSourceInitScriptInitializer(config, false)));
             log.info("Test connection completed, result: {}", result);
             if (result.getErrorCode() != null) {
