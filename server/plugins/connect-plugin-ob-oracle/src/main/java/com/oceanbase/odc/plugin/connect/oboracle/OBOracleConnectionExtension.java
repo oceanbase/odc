@@ -48,6 +48,6 @@ public class OBOracleConnectionExtension extends OBMySQLConnectionExtension {
 
     @Override
     protected void executeTestSqls(Statement statement) throws SQLException {
-        statement.execute("SELECT USER_ID FROM ALL_USERS WHERE ROWNUM < 1");
+        statement.execute("SELECT USERNAME FROM ALL_USERS WHERE ROWNUM < 1");
     }
 }
