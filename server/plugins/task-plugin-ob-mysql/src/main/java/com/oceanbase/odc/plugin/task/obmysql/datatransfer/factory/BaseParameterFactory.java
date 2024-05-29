@@ -16,8 +16,6 @@
 
 package com.oceanbase.odc.plugin.task.obmysql.datatransfer.factory;
 
-import static com.oceanbase.odc.core.shared.constant.OdcConstants.DEFAULT_ZERO_DATE_TIME_BEHAVIOR;
-
 import java.io.File;
 import java.io.IOException;
 import java.sql.Connection;
@@ -32,6 +30,7 @@ import java.util.Set;
 import java.util.function.Predicate;
 
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 
@@ -45,7 +44,6 @@ import com.oceanbase.odc.plugin.task.api.datatransfer.model.CsvConfig;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferConfig;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferFormat;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferObject;
-import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferType;
 import com.oceanbase.odc.plugin.task.obmysql.datatransfer.util.ConnectionUtil;
 import com.oceanbase.odc.plugin.task.obmysql.datatransfer.util.PluginUtil;
 import com.oceanbase.tools.loaddump.common.enums.ObjectType;
@@ -76,15 +74,7 @@ public abstract class BaseParameterFactory<T extends BaseParameter> {
         setInitSqls(parameter);
         setFileConfig(parameter, workingDir);
         parameter.setThreads(3);
-        if (transferConfig.getDataTransferFormat() == DataTransferFormat.SQL) {
-            return parameter;
-        }
-        if (transferConfig.getTransferType() == DataTransferType.EXPORT) {
-            setCsvInfo(parameter);
-        } else if (!transferConfig.isCompressed()) {
-            /*
-             * csv 文件导入时需要手动设置 csv 文件相关解析参数
-             */
+        if (transferConfig.getDataTransferFormat() != DataTransferFormat.SQL) {
             setCsvInfo(parameter);
         }
         return parameter;
@@ -154,7 +144,6 @@ public abstract class BaseParameterFactory<T extends BaseParameter> {
 
         sessionConfig.setJdbcOption("useServerPrepStmts", transferConfig.isUsePrepStmts() + "");
         sessionConfig.setJdbcOption("useCursorFetch", transferConfig.isUsePrepStmts() + "");
-        sessionConfig.setJdbcOption("zeroDateTimeBehavior", DEFAULT_ZERO_DATE_TIME_BEHAVIOR);
         sessionConfig.setJdbcOption("sendConnectionAttributes", "false");
         Optional.ofNullable(transferConfig.getExecutionTimeoutSeconds())
                 .ifPresent(timeout -> {
@@ -162,6 +151,15 @@ public abstract class BaseParameterFactory<T extends BaseParameter> {
                     sessionConfig.setJdbcOption("connectTimeout", timeout * 1000 + "");
                     sessionConfig.addInitSql4Both("set ob_query_timeout = " + timeout * 1000000L);
                 });
+
+        ConnectionInfo connectionInfo = transferConfig.getConnectionInfo();
+        if (MapUtils.isNotEmpty(connectionInfo.getJdbcUrlParameters())) {
+            connectionInfo.getJdbcUrlParameters().forEach(
+                    (key, value) -> sessionConfig.setJdbcOption(key, value.toString()));
+        }
+        if (CollectionUtils.isNotEmpty(connectionInfo.getSessionInitScripts())) {
+            connectionInfo.getSessionInitScripts().forEach(sessionConfig::addInitSql4Both);
+        }
 
         parameter.setSessionConfig(sessionConfig);
         FileUtils.deleteQuietly(sessionFile);

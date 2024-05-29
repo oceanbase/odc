@@ -18,8 +18,7 @@ package com.oceanbase.odc.service.db.browser;
 import com.oceanbase.odc.core.shared.constant.ConnectType;
 import com.oceanbase.odc.core.shared.exception.UnsupportedException;
 import com.oceanbase.tools.dbbrowser.editor.DBTableColumnEditor;
-import com.oceanbase.tools.dbbrowser.editor.mysql.MySQLColumnEditor;
-import com.oceanbase.tools.dbbrowser.editor.oracle.OracleColumnEditor;
+import com.oceanbase.tools.dbbrowser.editor.generator.DBTableColumnEditorGenerator;
 
 /**
  * @Author: Lebie
@@ -36,15 +35,19 @@ public class DBTableColumnEditorFactory extends DBObjectEditorFactory<DBTableCol
     public DBTableColumnEditor create() {
         switch (connectType) {
             case MYSQL:
+                return DBTableColumnEditorGenerator.createForMySQL(dbVersion);
             case DORIS:
+                return DBTableColumnEditorGenerator.createForDoris(dbVersion);
             case OB_MYSQL:
             case CLOUD_OB_MYSQL:
+                return DBTableColumnEditorGenerator.createForOBMySQL(dbVersion);
             case ODP_SHARDING_OB_MYSQL:
-                return new MySQLColumnEditor();
+                return DBTableColumnEditorGenerator.createForODPOBMySQL(dbVersion);
             case CLOUD_OB_ORACLE:
             case OB_ORACLE:
+                return DBTableColumnEditorGenerator.createForOBOracle(dbVersion);
             case ORACLE:
-                return new OracleColumnEditor();
+                return DBTableColumnEditorGenerator.createForOracle(dbVersion);
             default:
                 throw new UnsupportedException(String.format("ConnectType '%s' not supported", connectType));
         }

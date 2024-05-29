@@ -30,14 +30,11 @@ import java.util.stream.Stream;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.apache.commons.collections4.CollectionUtils;
 import org.pf4j.Extension;
-import org.springframework.jdbc.core.JdbcOperations;
-import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.datasource.SingleConnectionDataSource;
 
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.plugin.connect.api.InformationExtensionPoint;
 import com.oceanbase.odc.plugin.connect.obmysql.OBMySQLInformationExtension;
-import com.oceanbase.odc.plugin.schema.obmysql.browser.DBSchemaAccessors;
+import com.oceanbase.odc.plugin.schema.obmysql.utils.DBAccessorUtil;
 import com.oceanbase.odc.plugin.task.api.partitionplan.AutoPartitionExtensionPoint;
 import com.oceanbase.odc.plugin.task.api.partitionplan.invoker.create.PartitionExprGenerator;
 import com.oceanbase.odc.plugin.task.api.partitionplan.invoker.drop.DropPartitionGenerator;
@@ -222,8 +219,7 @@ public class OBMySQLAutoPartitionExtensionPoint implements AutoPartitionExtensio
     }
 
     protected DBSchemaAccessor getDBSchemaAccessor(@NonNull Connection connection, String tenantName) {
-        JdbcOperations jdbc = new JdbcTemplate(new SingleConnectionDataSource(connection, false));
-        return DBSchemaAccessors.create(jdbc, new OBMySQLInformationExtension().getDBVersion(connection), tenantName);
+        return DBAccessorUtil.getSchemaAccessor(connection, tenantName);
     }
 
     static private class RangePartiExprParser extends OBMySQLParser {

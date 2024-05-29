@@ -239,6 +239,7 @@ public enum ErrorCodes implements ErrorCode {
     ObProcedureExecuteRequireValueForInParam,
     ObAccessDenied,
     ObMysqlAccessDenied,
+    ObWeakReadConsistencyRequired,
     ObCommandDenied,
     ObGlobalVariableSetSessionScopeNotSupported,
 

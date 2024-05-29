@@ -67,6 +67,9 @@ public class MultipleDatabaseChangePreprocessor implements Preprocessor {
         List<Long> ids = parameters.getOrderedDatabaseIds().stream().flatMap(List::stream).collect(Collectors.toList());
         templateService.validateSizeAndNotDuplicated(ids);
         List<Database> databases = databaseService.listDatabasesDetailsByIds(ids);
+        if (databases.size() < ids.size()) {
+            throw new BadArgumentException(ErrorCodes.BadArgument, "some of these databases do not exist");
+        }
         // All databases must belong to the project
         if (!databases.stream()
                 .allMatch(databaseEntity -> databaseEntity.getProject() != null && Objects.equals(
@@ -76,7 +79,7 @@ public class MultipleDatabaseChangePreprocessor implements Preprocessor {
         }
         PreConditions.maxLength(parameters.getSqlContent(), "sql content",
                 flowTaskProperties.getSqlContentMaxLength());
-        // must reset the batchid when initiating a multiple database flow again
+        // must reset the batchId when initiating a multiple database flow again
         parameters.setBatchId(null);
         parameters.setProject(new DatabaseChangeProject(project));
         parameters.setDatabases(databases.stream().map(DatabaseChangeDatabase::new).collect(Collectors.toList()));

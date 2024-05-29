@@ -19,7 +19,6 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Date;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
@@ -28,8 +27,7 @@ import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
-import javax.validation.constraints.NotNull;
-
+import org.apache.commons.collections4.CollectionUtils;
 import org.flowable.engine.delegate.DelegateExecution;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -50,7 +48,6 @@ import com.oceanbase.odc.service.flow.exception.ServiceTaskCancelledException;
 import com.oceanbase.odc.service.flow.exception.ServiceTaskError;
 import com.oceanbase.odc.service.flow.exception.ServiceTaskExpiredException;
 import com.oceanbase.odc.service.flow.model.ExecutionStrategyConfig;
-import com.oceanbase.odc.service.flow.model.FlowNodeStatus;
 import com.oceanbase.odc.service.flow.model.FlowTaskExecutionStrategy;
 import com.oceanbase.odc.service.flow.task.model.RuntimeTaskConstants;
 import com.oceanbase.odc.service.flow.task.util.TaskDownloadUrlsProvider;
@@ -79,10 +76,8 @@ import lombok.extern.slf4j.Slf4j;
  * @see BaseRuntimeFlowableDelegate
  */
 @Slf4j
-public abstract class BaseODCFlowTaskDelegate<T> extends BaseRuntimeFlowableDelegate<T> implements FlowTaskCallBack {
+public abstract class BaseODCFlowTaskDelegate<T> extends BaseRuntimeFlowableDelegate<T> {
 
-    @Autowired
-    private TaskService taskService;
     @Autowired
     protected HostProperties hostProperties;
     @Autowired
@@ -104,8 +99,6 @@ public abstract class BaseODCFlowTaskDelegate<T> extends BaseRuntimeFlowableDele
     @Autowired
     private EventBuilder eventBuilder;
     @Autowired
-    protected FlowTaskCallBackApprovalService flowTaskCallBackApprovalService;
-    @Autowired
     protected CloudObjectStorageService cloudObjectStorageService;
     @Autowired
     private FlowTaskInstanceService flowTaskInstanceService;
@@ -125,6 +118,7 @@ public abstract class BaseODCFlowTaskDelegate<T> extends BaseRuntimeFlowableDele
         int interval = RuntimeTaskConstants.DEFAULT_TASK_CHECK_INTERVAL_SECONDS;
         scheduleExecutor.scheduleAtFixedRate(() -> {
             try {
+                updateHeartbeatTime();
                 if (taskLatch.getCount() > 0) {
                     onProgressUpdate(taskId, taskService);
                 }
@@ -263,26 +257,23 @@ public abstract class BaseODCFlowTaskDelegate<T> extends BaseRuntimeFlowableDele
      */
     protected abstract boolean isFailure();
 
-    @Override
-    public void callback(@NotNull long flowInstanceId, @NotNull long flowTaskInstanceId,
-            @NotNull FlowNodeStatus flowNodeStatus, Map<String, Object> approvalVariables) {
+    protected void setDownloadLogUrl() {
         if (getTaskType().needsSetLogDownloadUrl()) {
             try {
-                setDownloadLogUrl();
+                doSetDownloadLogUrl();
             } catch (Exception e) {
                 log.warn("Failed to set download log URL, either because the log file does not exist or the upload of "
-                        + "the OSS failed, flowInstanceId={}, flowTaskInstanceId={}", flowInstanceId,
-                        flowTaskInstanceId, e);
+                        + "the OSS failed, flowInstanceId={}, flowTaskInstanceId={}", getFlowInstanceId(),
+                        getTargetTaskInstanceId(), e);
             }
         }
-        flowTaskCallBackApprovalService.approval(flowInstanceId, flowTaskInstanceId, flowNodeStatus, approvalVariables);
     }
 
     /**
      * The callback method when the task fails, which is used to update the status and other operations
      */
     protected void onFailure(Long taskId, TaskService taskService) {
-        callback(getFlowInstanceId(), getTargetTaskInstanceId(), FlowNodeStatus.FAILED, null);
+        setDownloadLogUrl();
         if (notificationProperties.isEnabled()) {
             try {
                 Event event = eventBuilder.ofFailedTask(taskService.detail(taskId));
@@ -297,7 +288,7 @@ public abstract class BaseODCFlowTaskDelegate<T> extends BaseRuntimeFlowableDele
      * The callback method when the task is successful, used to update the status and other operations
      */
     protected void onSuccessful(Long taskId, TaskService taskService) {
-        callback(getFlowInstanceId(), getTargetTaskInstanceId(), FlowNodeStatus.COMPLETED, null);
+        setDownloadLogUrl();
         if (notificationProperties.isEnabled()) {
             try {
                 Event event = eventBuilder.ofSucceededTask(taskService.detail(taskId));
@@ -313,7 +304,7 @@ public abstract class BaseODCFlowTaskDelegate<T> extends BaseRuntimeFlowableDele
      * operations
      */
     protected void onTimeout(Long taskId, TaskService taskService) {
-        callback(getFlowInstanceId(), getTargetTaskInstanceId(), FlowNodeStatus.EXPIRED, null);
+        setDownloadLogUrl();
         if (notificationProperties.isEnabled()) {
             try {
                 Event event = eventBuilder.ofTimeoutTask(taskService.detail(taskId));
@@ -333,14 +324,14 @@ public abstract class BaseODCFlowTaskDelegate<T> extends BaseRuntimeFlowableDele
     public boolean cancel(boolean mayInterruptIfRunning) {
         boolean result = cancel(mayInterruptIfRunning, taskId, taskService);
         if (result) {
-            callback(getFlowInstanceId(), getTargetTaskInstanceId(), FlowNodeStatus.CANCELLED, null);
+            setDownloadLogUrl();
         }
         return result;
     }
 
     protected abstract boolean cancel(boolean mayInterruptIfRunning, Long taskId, TaskService taskService);
 
-    private void setDownloadLogUrl() throws IOException, NotFoundException {
+    private void doSetDownloadLogUrl() throws IOException, NotFoundException {
         TaskEntity taskEntity = taskService.detail(taskId);
         File logFile;
         try {
@@ -367,6 +358,9 @@ public abstract class BaseODCFlowTaskDelegate<T> extends BaseRuntimeFlowableDele
         }
         List<? extends FlowTaskResult> flowTaskResults =
                 flowTaskInstanceService.getTaskResultFromEntity(taskEntity, false);
+        if (CollectionUtils.isEmpty(flowTaskResults)) {
+            return;
+        }
         Verify.singleton(flowTaskResults, "flowTaskResults");
         if (flowTaskResults.get(0) instanceof AbstractFlowTaskResult) {
             FlowTaskResult flowTaskResult = flowTaskResults.get(0);

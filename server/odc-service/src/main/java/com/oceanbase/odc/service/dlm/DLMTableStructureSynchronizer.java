@@ -17,9 +17,11 @@ package com.oceanbase.odc.service.dlm;
 
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -27,10 +29,10 @@ import java.util.stream.Collectors;
 
 import javax.sql.DataSource;
 
-import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.session.factory.DruidDataSourceFactory;
 import com.oceanbase.odc.service.structurecompare.DefaultDBStructureComparator;
+import com.oceanbase.odc.service.structurecompare.model.ComparisonResult;
 import com.oceanbase.odc.service.structurecompare.model.DBObjectComparisonResult;
 import com.oceanbase.odc.service.structurecompare.model.DBStructureComparisonConfig;
 import com.oceanbase.tools.dbbrowser.model.DBObjectType;
@@ -67,25 +69,35 @@ public class DLMTableStructureSynchronizer {
         DBStructureComparisonConfig targetConfig = initDBStructureComparisonConfig(
                 targetConnectionConfig, tableNames);
         DefaultDBStructureComparator comparator = new DefaultDBStructureComparator();
-        List<DBObjectComparisonResult> results = comparator.compare(sourceConfig, targetConfig).stream()
-                .peek(o -> o.setSubDBObjectComparisonResult(o.getSubDBObjectComparisonResult().stream()
-                        .filter(sb -> targetType.contains(sb.getDbObjectType())).collect(
-                                Collectors.toList())))
-                .collect(Collectors.toList());
-        try (Connection conn = targetConfig.getDataSource().getConnection()) {
-            for (DBObjectComparisonResult result : results) {
-                String changeSqlScript =
-                        result.toEntity(1L, targetConnectionConfig.getDialectType()).getChangeSqlScript();
-                if (StringUtils.isNotEmpty(changeSqlScript)) {
-                    log.info("Start to sync target table structure,sqls={}", changeSqlScript);
-                    conn.prepareStatement(changeSqlScript).execute();
-                    log.info("Sync table structure success.");
-                } else {
-                    log.info("Table structure comparison has finished,no action is necessary.");
-                }
+        DBObjectComparisonResult result = comparator.compare(sourceConfig, targetConfig).get(0);
+        List<String> changeSqlScript = new LinkedList<>();
+        switch (result.getComparisonResult()) {
+            case ONLY_IN_SOURCE: {
+                changeSqlScript.add(result.getChangeScript());
+                break;
             }
-        } catch (Exception e) {
-            log.warn("Sync table structure failed!", e);
+            case INCONSISTENT: {
+                changeSqlScript = result.getSubDBObjectComparisonResult().stream()
+                        .filter(o -> targetType.contains(o.getDbObjectType())
+                                && o.getComparisonResult() == ComparisonResult.ONLY_IN_SOURCE)
+                        .map(DBObjectComparisonResult::getChangeScript).collect(Collectors.toList());
+                break;
+            }
+            default:
+                break;
+        }
+        if (!changeSqlScript.isEmpty()) {
+            log.info("Start to sync target table structure,sqls={}", changeSqlScript);
+            try (Connection conn = targetConfig.getDataSource().getConnection();
+                    Statement statement = conn.createStatement()) {
+                for (String sql : changeSqlScript) {
+                    statement.addBatch(sql);
+                }
+                statement.executeBatch();
+                log.info("Sync table structure success.");
+            } catch (Exception e) {
+                log.warn("Sync table structure failed!", e);
+            }
         }
         closeDataSource(sourceConfig.getDataSource());
         closeDataSource(targetConfig.getDataSource());

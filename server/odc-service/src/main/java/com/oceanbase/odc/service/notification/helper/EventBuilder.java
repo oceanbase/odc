@@ -23,6 +23,7 @@ import static com.oceanbase.odc.service.notification.constant.EventLabelKeys.CRE
 import static com.oceanbase.odc.service.notification.constant.EventLabelKeys.CREATOR_NAME;
 import static com.oceanbase.odc.service.notification.constant.EventLabelKeys.DATABASE_ID;
 import static com.oceanbase.odc.service.notification.constant.EventLabelKeys.DATABASE_NAME;
+import static com.oceanbase.odc.service.notification.constant.EventLabelKeys.DESCRIPTION;
 import static com.oceanbase.odc.service.notification.constant.EventLabelKeys.ENVIRONMENT;
 import static com.oceanbase.odc.service.notification.constant.EventLabelKeys.PROJECT_ID;
 import static com.oceanbase.odc.service.notification.constant.EventLabelKeys.PROJECT_NAME;
@@ -149,14 +150,22 @@ public class EventBuilder {
 
     public Event ofApprovedTask(TaskEntity task, Long approver) {
         Event event = ofTask(task, TaskEvent.APPROVED);
-        event.getLabels().put(APPROVER_ID, approver + "");
+        if (approver == null) {
+            event.getLabels().putIfNonNull(APPROVER_NAME, AUTO_APPROVAL_KEY);
+        } else {
+            event.getLabels().put(APPROVER_ID, approver + "");
+        }
         resolveLabels(event.getLabels(), task);
         return event;
     }
 
     public Event ofRejectedTask(TaskEntity task, Long approver) {
         Event event = ofTask(task, TaskEvent.APPROVAL_REJECTION);
-        event.getLabels().put(APPROVER_ID, approver + "");
+        if (approver == null) {
+            event.getLabels().putIfNonNull(APPROVER_NAME, AUTO_APPROVAL_KEY);
+        } else {
+            event.getLabels().put(APPROVER_ID, approver + "");
+        }
         resolveLabels(event.getLabels(), task);
         return event;
     }
@@ -188,6 +197,7 @@ public class EventBuilder {
         labels.putIfNonNull(CREATOR_ID, task.getCreatorId());
         labels.putIfNonNull(TRIGGER_TIME, LocalDateTime.now().format(DATE_FORMATTER));
         labels.putIfNonNull(REGION, OB_ARN_PARTITION);
+        labels.putIfNonNull(DESCRIPTION, task.getDescription());
 
         Long projectId;
         if (Objects.nonNull(task.getDatabaseId())) {
@@ -213,6 +223,10 @@ public class EventBuilder {
             MultipleDatabaseChangeParameters parameter =
                     JsonUtils.fromJson(task.getParametersJson(), MultipleDatabaseChangeParameters.class);
             projectId = parameter.getProjectId();
+            labels.putIfNonNull(DATABASE_NAME, parameter.getDatabases().stream()
+                    .map(database -> String.format("【%s】%s", database.getEnvironment() == null ? ""
+                            : database.getEnvironment().getName(), database.getName()))
+                    .collect(Collectors.joining(",")));
             labels.putIfNonNull(PROJECT_ID, projectId);
         } else {
             throw new UnexpectedException("task.databaseId should not be null");
@@ -233,6 +247,7 @@ public class EventBuilder {
         labels.putIfNonNull(TASK_STATUS, status.name());
         labels.putIfNonNull(TRIGGER_TIME, LocalDateTime.now().format(DATE_FORMATTER));
         labels.putIfNonNull(REGION, OB_ARN_PARTITION);
+        labels.putIfNonNull(DESCRIPTION, schedule.getDescription());
 
         switch (schedule.getJobType()) {
             case DATA_ARCHIVE:

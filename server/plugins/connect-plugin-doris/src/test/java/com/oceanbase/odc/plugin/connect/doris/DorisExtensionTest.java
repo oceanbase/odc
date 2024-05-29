@@ -20,6 +20,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 import java.util.UUID;
 
@@ -34,10 +35,8 @@ import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.constant.OdcConstants;
 import com.oceanbase.odc.core.shared.model.SqlExplain;
 import com.oceanbase.odc.plugin.connect.api.ConnectionExtensionPoint;
-import com.oceanbase.odc.plugin.connect.api.InformationExtensionPoint;
 import com.oceanbase.odc.plugin.connect.api.SessionExtensionPoint;
 import com.oceanbase.odc.plugin.connect.api.TestResult;
-import com.oceanbase.odc.plugin.connect.api.TraceExtensionPoint;
 import com.oceanbase.odc.plugin.connect.model.ConnectionPropertiesBuilder;
 import com.oceanbase.odc.plugin.connect.model.JdbcUrlProperty;
 import com.oceanbase.odc.test.database.TestDBConfiguration;
@@ -51,28 +50,25 @@ import com.oceanbase.odc.test.database.TestDBConfigurations;
  * @Version 1.0
  */
 public class DorisExtensionTest extends BaseExtensionPointTest {
+
     private static ConnectionExtensionPoint connectionExtensionPoint;
     private static SessionExtensionPoint sessionExtensionPoint;
-    private static InformationExtensionPoint informationExtensionPoint;
-    private static TraceExtensionPoint traceExtensionPoint;
     private static DorisDiagnoseExtensionPoint diagnoseExtensionPoint;
     private static TestDBConfiguration configuration;
-    private static HashMap parameter = new HashMap();
+    private static final Map<String, String> parameter = new HashMap<>();
 
     @BeforeClass
     public static void init() {
         configuration = TestDBConfigurations.getInstance().getTestDorisConfiguration();
         connectionExtensionPoint = getInstance(DorisConnectionExtension.class);
         sessionExtensionPoint = getInstance(DorisSessionExtension.class);
-        informationExtensionPoint = getInstance(DorisInformationExtension.class);
-        traceExtensionPoint = getInstance(DorisTraceExtension.class);
         diagnoseExtensionPoint = getInstance(DorisDiagnoseExtensionPoint.class);
         parameter.put("useSSL", "false");
     }
 
     private JdbcUrlProperty getJdbcProperties() {
-        return new JdbcUrlProperty(configuration.getHost(), configuration.getPort(), configuration.getDefaultDBName(),
-                parameter);
+        return new JdbcUrlProperty(configuration.getHost(), configuration.getPort(),
+                configuration.getDefaultDBName(), parameter);
     }
 
     private Properties getTestConnectionProperties() {
@@ -84,7 +80,7 @@ public class DorisExtensionTest extends BaseExtensionPointTest {
     @Test
     public void test_doris_url_is_valid() {
         String url = connectionExtensionPoint.generateJdbcUrl(getJdbcProperties());
-        TestResult result = connectionExtensionPoint.test(url, getTestConnectionProperties(), 30);
+        TestResult result = connectionExtensionPoint.test(url, getTestConnectionProperties(), 30, null);
         Assert.assertTrue(result.isActive());
         Assert.assertNull(result.getErrorCode());
     }
@@ -94,7 +90,7 @@ public class DorisExtensionTest extends BaseExtensionPointTest {
         String url = connectionExtensionPoint.generateJdbcUrl(getJdbcProperties());
         Properties testConnectionProperties = getTestConnectionProperties();
         testConnectionProperties.put(ConnectionPropertiesBuilder.PASSWORD, UUID.randomUUID().toString());
-        TestResult result = connectionExtensionPoint.test(url, testConnectionProperties, 30);
+        TestResult result = connectionExtensionPoint.test(url, testConnectionProperties, 30, null);
         Assert.assertFalse(result.isActive());
         Assert.assertEquals(ErrorCodes.ObAccessDenied, result.getErrorCode());
     }
@@ -105,7 +101,7 @@ public class DorisExtensionTest extends BaseExtensionPointTest {
         JdbcUrlProperty jdbcProperties = getJdbcProperties();
         jdbcProperties.setPort(configuration.getPort() + 100);
         String url = connectionExtensionPoint.generateJdbcUrl(jdbcProperties);
-        TestResult result = connectionExtensionPoint.test(url, getTestConnectionProperties(), 30);
+        TestResult result = connectionExtensionPoint.test(url, getTestConnectionProperties(), 30, null);
         Assert.assertFalse(result.isActive());
         Assert.assertEquals(ErrorCodes.ConnectionUnknownPort, result.getErrorCode());
     }
@@ -115,7 +111,7 @@ public class DorisExtensionTest extends BaseExtensionPointTest {
         JdbcUrlProperty jdbcProperties = getJdbcProperties();
         jdbcProperties.setHost(UUID.randomUUID().toString());
         String url = connectionExtensionPoint.generateJdbcUrl(jdbcProperties);
-        TestResult result = connectionExtensionPoint.test(url, getTestConnectionProperties(), 30);
+        TestResult result = connectionExtensionPoint.test(url, getTestConnectionProperties(), 30, null);
 
         Assert.assertFalse(result.isActive());
         Assert.assertEquals(ErrorCodes.ConnectionUnknownHost, result.getErrorCode());

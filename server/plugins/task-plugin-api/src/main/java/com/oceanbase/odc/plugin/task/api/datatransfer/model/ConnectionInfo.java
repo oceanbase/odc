@@ -16,6 +16,9 @@
 
 package com.oceanbase.odc.plugin.task.api.datatransfer.model;
 
+import java.util.List;
+import java.util.Map;
+
 import javax.validation.constraints.Max;
 import javax.validation.constraints.Min;
 import javax.validation.constraints.NotBlank;
@@ -76,6 +79,10 @@ public class ConnectionInfo {
     private String sid;
 
     private String userRole;
+
+    private Map<String, Object> jdbcUrlParameters;
+
+    private List<String> sessionInitScripts;
 
     public String getUserNameForConnect() {
         String username = ConnectionSessionUtil.getUserOrSchemaString(this.username, connectType.getDialectType());

@@ -50,7 +50,7 @@ import lombok.extern.slf4j.Slf4j;
  * @Description: 适用于的 OB 版本：[2270, 400)
  */
 @Slf4j
-public class OBOracleLessThan400SchemaAccessor extends OBOracleSchemaAccessor {
+public class OBOracleLessThan400SchemaAccessor extends OBOracleBetween4000And4100SchemaAccessor {
 
     public OBOracleLessThan400SchemaAccessor(JdbcOperations jdbcOperations,
             OracleDataDictTableNames dataDictTableNames) {
@@ -181,6 +181,16 @@ public class OBOracleLessThan400SchemaAccessor extends OBOracleSchemaAccessor {
     @Override
     public List<DBTableColumn> listBasicViewColumns(String schemaName, String viewName) {
         return fillViewColumnInfoByDesc(schemaName, viewName);
+    }
+
+    @Override
+    public Map<String, List<DBTableColumn>> listBasicColumnsInfo(String schemaName) {
+        String sql = sqlMapper.getSql(Statements.LIST_BASIC_SCHEMA_COLUMNS_INFO);
+        Map<String, List<DBTableColumn>> table2Columns =
+                jdbcOperations.query(sql, new Object[] {schemaName}, listBasicColumnsIdentityRowMapper()).stream()
+                        .collect(Collectors.groupingBy(DBTableColumn::getTableName));
+        table2Columns.putAll(listBasicViewColumns(schemaName));
+        return table2Columns;
     }
 
     protected List<DBTableColumn> fillViewColumnInfoByDesc(String schemaName, String viewName) {

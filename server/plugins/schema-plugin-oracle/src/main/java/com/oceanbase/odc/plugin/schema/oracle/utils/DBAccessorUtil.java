@@ -20,10 +20,10 @@ import java.sql.Connection;
 
 import com.oceanbase.odc.common.util.JdbcOperationsUtil;
 import com.oceanbase.odc.plugin.connect.oracle.OracleInformationExtension;
-import com.oceanbase.odc.plugin.schema.oracle.browser.DBSchemaAccessors;
 import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
+import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessorGenerator;
 import com.oceanbase.tools.dbbrowser.stats.DBStatsAccessor;
-import com.oceanbase.tools.dbbrowser.stats.oracle.OracleStatsAccessor;
+import com.oceanbase.tools.dbbrowser.stats.DBStatsAccessorGenerator;
 
 /**
  * @author jingtian
@@ -37,10 +37,11 @@ public class DBAccessorUtil {
     }
 
     public static DBSchemaAccessor getSchemaAccessor(Connection connection) {
-        return DBSchemaAccessors.create(JdbcOperationsUtil.getJdbcOperations(connection));
+        return DBSchemaAccessorGenerator.createForOracle(JdbcOperationsUtil.getJdbcOperations(connection));
     }
 
     public static DBStatsAccessor getStatsAccessor(Connection connection) {
-        return new OracleStatsAccessor(JdbcOperationsUtil.getJdbcOperations(connection));
+        return DBStatsAccessorGenerator.createForOracle(JdbcOperationsUtil.getJdbcOperations(connection),
+                getDbVersion(connection));
     }
 }
