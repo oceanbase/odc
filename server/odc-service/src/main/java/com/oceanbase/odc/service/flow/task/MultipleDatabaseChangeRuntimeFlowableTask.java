@@ -286,7 +286,7 @@ public class MultipleDatabaseChangeRuntimeFlowableTask extends BaseODCFlowTaskDe
                         Collectors.toMap(flowInstanceDetailResp -> flowInstanceDetailResp.getDatabase().getId(),
                                 flowInstanceDetailResp -> flowInstanceDetailResp));
         List<DatabaseChangeDatabase> databases = this.multipleDatabaseChangeParameters.getDatabases();
-        ArrayList<DatabaseChangingRecord> records = new ArrayList<>();
+        List<DatabaseChangingRecord> records = new ArrayList<>();
         for (DatabaseChangeDatabase database : databases) {
             FlowInstanceDetailResp resp = databaseId2FlowInstanceDetailResp.get(database.getId());
             DatabaseChangingRecord record = new DatabaseChangingRecord();
