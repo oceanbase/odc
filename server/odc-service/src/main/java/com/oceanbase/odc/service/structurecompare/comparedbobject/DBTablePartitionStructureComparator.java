@@ -35,12 +35,16 @@ public class DBTablePartitionStructureComparator implements DBObjectStructureCom
     private DBTablePartitionEditor tgtPartitionEditor;
     private String srcSchemaName;
     private String tgtSchemaName;
+    private String srcTableName;
+    private String tgtTableName;
 
     public DBTablePartitionStructureComparator(DBTablePartitionEditor tgtPartitionEditor, String srcSchemaName,
-            String tgtSchemaName) {
+            String tgtSchemaName, String srcTableName, String tgtTableName) {
         this.tgtPartitionEditor = tgtPartitionEditor;
         this.srcSchemaName = srcSchemaName;
         this.tgtSchemaName = tgtSchemaName;
+        this.srcTableName = srcTableName;
+        this.tgtTableName = tgtTableName;
     }
 
     @Override
@@ -61,7 +65,8 @@ public class DBTablePartitionStructureComparator implements DBObjectStructureCom
             result.setComparisonResult(ComparisonResult.CONSISTENT);
         } else {
             String ddl = this.tgtPartitionEditor.generateShadowTableUpdateObjectDDL(tgtPartition,
-                    copySrcPartitionWithTgtSchemaName(srcPartition, this.tgtSchemaName));
+                    copySrcPartitionWithTgtSchemaNameAndTgtTableName(srcPartition, this.tgtSchemaName,
+                            this.tgtTableName));
             if (ddl.isEmpty()) {
                 result.setComparisonResult(ComparisonResult.CONSISTENT);
             } else {
@@ -73,10 +78,12 @@ public class DBTablePartitionStructureComparator implements DBObjectStructureCom
         return result;
     }
 
-    private DBTablePartition copySrcPartitionWithTgtSchemaName(DBTablePartition srcPartition, String tgtSchemaName) {
+    private DBTablePartition copySrcPartitionWithTgtSchemaNameAndTgtTableName(DBTablePartition srcPartition,
+            String tgtSchemaName, String tgtTableName) {
         DBTablePartition copiedSrcPartition = new DBTablePartition();
         BeanUtils.copyProperties(srcPartition, copiedSrcPartition);
         copiedSrcPartition.setSchemaName(tgtSchemaName);
+        copiedSrcPartition.setTableName(tgtTableName);
         return copiedSrcPartition;
     }
 }

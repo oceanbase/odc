@@ -41,8 +41,8 @@ public class DBTableColumnStructureComparator extends AbstractDBObjectStructureC
     private DBTableColumnEditor tgtColumnEditor;
 
     public DBTableColumnStructureComparator(DBTableColumnEditor tgtColumnEditor, String srcSchemaName,
-            String tgtSchemaName) {
-        super(srcSchemaName, tgtSchemaName);
+            String tgtSchemaName, String srcTableName, String tgtTableName) {
+        super(srcSchemaName, tgtSchemaName, srcTableName, tgtTableName);
         this.tgtColumnEditor = tgtColumnEditor;
     }
 
@@ -51,8 +51,6 @@ public class DBTableColumnStructureComparator extends AbstractDBObjectStructureC
             @NotEmpty List<DBTableColumn> tgtTabCols) {
         List<DBObjectComparisonResult> returnVal = new ArrayList<>();
 
-        String srcSchemaName = srcTabCols.get(0).getSchemaName();
-        String tgtSchemaName = tgtTabCols.get(0).getSchemaName();
         List<String> srcColNames = srcTabCols.stream().map(DBTableColumn::getName).collect(Collectors.toList());
         List<String> tgtColNames = tgtTabCols.stream().map(DBTableColumn::getName).collect(Collectors.toList());
         Map<String, DBTableColumn> srcColumnName2Column =
@@ -63,7 +61,8 @@ public class DBTableColumnStructureComparator extends AbstractDBObjectStructureC
         tgtColNames.forEach(tarColName -> {
             if (!srcColNames.contains(tarColName)) {
                 // column to be dropped
-                returnVal.add(buildOnlyInTargetResult(tgtColumnName2Column.get(tarColName), srcSchemaName));
+                returnVal.add(
+                        buildOnlyInTargetResult(tgtColumnName2Column.get(tarColName), srcSchemaName, srcTableName));
             }
         });
 
@@ -73,7 +72,8 @@ public class DBTableColumnStructureComparator extends AbstractDBObjectStructureC
                 returnVal.add(compare(srcColumnName2Column.get(srcColName), tgtColumnName2Column.get(srcColName)));
             } else {
                 // column to be created
-                returnVal.add(buildOnlyInSourceResult(srcColumnName2Column.get(srcColName), tgtSchemaName));
+                returnVal.add(
+                        buildOnlyInSourceResult(srcColumnName2Column.get(srcColName), tgtSchemaName, tgtTableName));
             }
         });
 
@@ -81,7 +81,8 @@ public class DBTableColumnStructureComparator extends AbstractDBObjectStructureC
     }
 
     @Override
-    protected DBObjectComparisonResult buildOnlyInTargetResult(DBTableColumn tgtDbObject, String srcSchemaName) {
+    protected DBObjectComparisonResult buildOnlyInTargetResult(DBTableColumn tgtDbObject, String srcSchemaName,
+            String srcTableName) {
         DBObjectComparisonResult result = new DBObjectComparisonResult(DBObjectType.COLUMN, tgtDbObject.getName(),
                 srcSchemaName, tgtSchemaName);
         result.setComparisonResult(ComparisonResult.ONLY_IN_TARGET);
@@ -90,12 +91,14 @@ public class DBTableColumnStructureComparator extends AbstractDBObjectStructureC
     }
 
     @Override
-    protected DBObjectComparisonResult buildOnlyInSourceResult(DBTableColumn srcDbObject, String tgtSchemaName) {
+    protected DBObjectComparisonResult buildOnlyInSourceResult(DBTableColumn srcDbObject, String tgtSchemaName,
+            String tgtTableName) {
         DBObjectComparisonResult result = new DBObjectComparisonResult(DBObjectType.COLUMN, srcDbObject.getName(),
                 srcSchemaName, tgtSchemaName);
         result.setComparisonResult(ComparisonResult.ONLY_IN_SOURCE);
         result.setChangeScript(
-                tgtColumnEditor.generateCreateObjectDDL(copySrcColumnWithTgtSchemaName(srcDbObject, tgtSchemaName)));
+                tgtColumnEditor.generateCreateObjectDDL(
+                        copySrcColumnWithTgtSchemaName(srcDbObject, tgtSchemaName, tgtTableName)));
         return result;
     }
 
@@ -104,7 +107,8 @@ public class DBTableColumnStructureComparator extends AbstractDBObjectStructureC
         DBObjectComparisonResult result = new DBObjectComparisonResult(DBObjectType.COLUMN, srcTabCol.getName(),
                 srcTabCol.getSchemaName(), tgtTabCol.getSchemaName());
 
-        DBTableColumn copiedSrcCol = copySrcColumnWithTgtSchemaName(srcTabCol, tgtTabCol.getSchemaName());
+        DBTableColumn copiedSrcCol =
+                copySrcColumnWithTgtSchemaName(srcTabCol, tgtTabCol.getSchemaName(), tgtTabCol.getTableName());
 
         String ddl = this.tgtColumnEditor.generateUpdateObjectDDL(
                 tgtTabCol, copiedSrcCol);
@@ -118,10 +122,12 @@ public class DBTableColumnStructureComparator extends AbstractDBObjectStructureC
         return result;
     }
 
-    private DBTableColumn copySrcColumnWithTgtSchemaName(DBTableColumn srcCol, String tgtSchemaName) {
+    private DBTableColumn copySrcColumnWithTgtSchemaName(DBTableColumn srcCol, String tgtSchemaName,
+            String tgtTableName) {
         DBTableColumn copiedSrcCol = new DBTableColumn();
         BeanUtils.copyProperties(srcCol, copiedSrcCol);
         copiedSrcCol.setSchemaName(tgtSchemaName);
+        copiedSrcCol.setTableName(tgtTableName);
         return copiedSrcCol;
     }
 }
