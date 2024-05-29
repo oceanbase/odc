@@ -51,6 +51,7 @@ import com.oceanbase.odc.metadb.databasechange.DatabaseChangeChangingOrderTempla
 import com.oceanbase.odc.metadb.databasechange.DatabaseChangeChangingOrderTemplateRepository;
 import com.oceanbase.odc.metadb.databasechange.DatabaseChangeChangingOrderTemplateSpecs;
 import com.oceanbase.odc.service.connection.database.DatabaseService;
+import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.databasechange.model.CreateDatabaseChangeChangingOrderTemplateReq;
 import com.oceanbase.odc.service.databasechange.model.DatabaseChangeChangingOrderTemplateResp;
 import com.oceanbase.odc.service.databasechange.model.DatabaseChangeDatabase;
@@ -240,8 +241,14 @@ public class DatabaseChangeChangingOrderTemplateService {
         templateResp.setProjectId(templateEntity.getProjectId());
         templateResp
                 .setOrganizationId(templateEntity.getOrganizationId());
+        List<Long> databaseIds =
+                databaseSequences.stream().flatMap(Collection::stream).distinct().collect(Collectors.toList());
+        Map<Long, DatabaseChangeDatabase> id2DatabaseChangeDatabase =
+                databaseService.listDatabasesDetailsByIds(databaseIds).stream()
+                        .collect(Collectors.toMap(Database::getId, DatabaseChangeDatabase::new));
         List<List<DatabaseChangeDatabase>> databaseSequenceList = databaseSequences.stream()
-                .map(s -> s.stream().map(DatabaseChangeDatabase::new).collect(Collectors.toList()))
+                .map(s -> s.stream().map(id2DatabaseChangeDatabase::get)
+                        .collect(Collectors.toList()))
                 .collect(Collectors.toList());
         templateResp.setDatabaseSequenceList(databaseSequenceList);
         Map<Long, Boolean> templateId2Status = getChangingOrderTemplateId2EnableStatus(
@@ -268,6 +275,13 @@ public class DatabaseChangeChangingOrderTemplateService {
         Page<DatabaseChangeChangingOrderTemplateEntity> pageResult =
                 templateRepository.findAll(specification, pageable);
         List<DatabaseChangeChangingOrderTemplateEntity> entityList = pageResult.getContent();
+        List<Long> databaseIds = entityList.stream()
+                .flatMap(entity -> entity.getDatabaseSequences().stream())
+                .flatMap(Collection::stream)
+                .distinct().collect(Collectors.toList());
+        Map<Long, DatabaseChangeDatabase> id2DatabaseChangeDatabase =
+                databaseService.listDatabasesDetailsByIds(databaseIds).stream()
+                        .collect(Collectors.toMap(Database::getId, DatabaseChangeDatabase::new));
         List<DatabaseChangeChangingOrderTemplateResp> templateRespList = entityList.stream().map(entity -> {
             DatabaseChangeChangingOrderTemplateResp templateResp = new DatabaseChangeChangingOrderTemplateResp();
             templateResp.setId(entity.getId());
@@ -276,6 +290,11 @@ public class DatabaseChangeChangingOrderTemplateService {
             templateResp.setProjectId(entity.getProjectId());
             templateResp.setOrganizationId(entity.getOrganizationId());
             templateResp.setEnabled(entity.getEnabled());
+            List<List<DatabaseChangeDatabase>> databaseSequenceList = entity.getDatabaseSequences().stream()
+                    .map(s -> s.stream().map(id2DatabaseChangeDatabase::get)
+                            .collect(Collectors.toList()))
+                    .collect(Collectors.toList());
+            templateResp.setDatabaseSequenceList(databaseSequenceList);
             return templateResp;
         }).collect(Collectors.toList());
         return new PageImpl<>(templateRespList, pageable, pageResult.getTotalElements());
