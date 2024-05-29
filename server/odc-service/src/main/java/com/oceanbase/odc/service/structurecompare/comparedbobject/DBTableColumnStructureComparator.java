@@ -51,8 +51,6 @@ public class DBTableColumnStructureComparator extends AbstractDBObjectStructureC
             @NotEmpty List<DBTableColumn> tgtTabCols) {
         List<DBObjectComparisonResult> returnVal = new ArrayList<>();
 
-        String srcSchemaName = srcTabCols.get(0).getSchemaName();
-        String tgtSchemaName = tgtTabCols.get(0).getSchemaName();
         List<String> srcColNames = srcTabCols.stream().map(DBTableColumn::getName).collect(Collectors.toList());
         List<String> tgtColNames = tgtTabCols.stream().map(DBTableColumn::getName).collect(Collectors.toList());
         Map<String, DBTableColumn> srcColumnName2Column =
