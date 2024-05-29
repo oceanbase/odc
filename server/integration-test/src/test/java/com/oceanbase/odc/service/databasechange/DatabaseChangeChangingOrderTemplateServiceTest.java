@@ -24,6 +24,7 @@ import static org.mockito.Mockito.when;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -45,6 +46,8 @@ import com.oceanbase.odc.metadb.connection.DatabaseEntity;
 import com.oceanbase.odc.metadb.connection.DatabaseRepository;
 import com.oceanbase.odc.metadb.databasechange.DatabaseChangeChangingOrderTemplateEntity;
 import com.oceanbase.odc.metadb.databasechange.DatabaseChangeChangingOrderTemplateRepository;
+import com.oceanbase.odc.service.connection.database.DatabaseService;
+import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.databasechange.model.CreateDatabaseChangeChangingOrderTemplateReq;
 import com.oceanbase.odc.service.databasechange.model.DatabaseChangeChangingOrderTemplateResp;
 import com.oceanbase.odc.service.databasechange.model.DatabaseChangingOrderTemplateExists;
@@ -78,6 +81,8 @@ public class DatabaseChangeChangingOrderTemplateServiceTest extends ServiceTestE
     private ProjectRepository projectRepository;
     @MockBean
     private ProjectPermissionValidator projectPermissionValidator;
+    @MockBean
+    private DatabaseService databaseService;
 
     @Before
     public void setUp() {
@@ -102,6 +107,11 @@ public class DatabaseChangeChangingOrderTemplateServiceTest extends ServiceTestE
         orders.add(Arrays.asList(1L, 2L));
         orders.add(Arrays.asList(3L, 4L));
         req.setOrders(orders);
+        List<DatabaseEntity> databaseEntities = new ArrayList<>();
+        DatabaseEntity databaseEntity = new DatabaseEntity();
+        databaseEntity.setProjectId(PROJECT_ID);
+        orders.stream().flatMap(Collection::stream).forEach(x -> databaseEntities.add(databaseEntity));
+        when(databaseRepository.findByIdIn(any())).thenReturn(databaseEntities);
         DatabaseChangeChangingOrderTemplateResp templateResp = templateService.create(
                 req);
         int size = templateRepository.findAll().size();
@@ -159,6 +169,7 @@ public class DatabaseChangeChangingOrderTemplateServiceTest extends ServiceTestE
         List<List<Long>> orders = new ArrayList<>();
         orders.add(Arrays.asList(1L, 2L));
         orders.add(Arrays.asList(3L, 4L));
+        req.setOrders(orders);
         DatabaseChangeChangingOrderTemplateResp update = templateService
                 .update(byNameAndProjectId.getId(), req);
         assertEquals(TEMPLATE_RENAME, update.getName());
@@ -176,6 +187,7 @@ public class DatabaseChangeChangingOrderTemplateServiceTest extends ServiceTestE
         List<List<Long>> orders = new ArrayList<>();
         List<Long> list = Arrays.asList(1L, 2L);
         orders.add(list);
+        req.setOrders(orders);
         when(authenticationFacade.currentUserId()).thenReturn(1L);
         when(authenticationFacade.currentOrganizationId()).thenReturn(1L);
         templateService.update(1L, req);
@@ -189,6 +201,10 @@ public class DatabaseChangeChangingOrderTemplateServiceTest extends ServiceTestE
         UpdateDatabaseChangeChangingOrderReq req = new UpdateDatabaseChangeChangingOrderReq();
         req.setName(TEMPLATE_RENAME);
         req.setProjectId(2L);
+        List<List<Long>> orders = new ArrayList<>();
+        List<Long> list = Arrays.asList(1L, 2L);
+        orders.add(list);
+        req.setOrders(orders);
         when(projectRepository.existsById(2L)).thenReturn(false);
         assertThrows(NotFoundException.class, () -> {
             templateService.update(byNameAndProjectId.getId(),
@@ -198,12 +214,14 @@ public class DatabaseChangeChangingOrderTemplateServiceTest extends ServiceTestE
 
     @Test
     public void queryDatabaseChangingOrderTemplateById_findExistingTemplate_succeed() {
+        Database database = new Database();
+        when(databaseService.listDatabasesByIds(any())).thenReturn(Arrays.asList(database));
         createDatabaseChangingOrderTemplate_saveEntity_succeed();
         DatabaseChangeChangingOrderTemplateEntity byNameAndProjectId =
                 templateRepository.findByNameAndProjectId(TEMPLATE_NAME, PROJECT_ID).get();
-        DatabaseEntity database = new DatabaseEntity();
-        database.setProjectId(PROJECT_ID);
-        when(databaseRepository.findByIdIn(anyList())).thenReturn(Arrays.asList(database));
+        DatabaseEntity databaseEntity = new DatabaseEntity();
+        databaseEntity.setProjectId(PROJECT_ID);
+        when(databaseRepository.findByIdIn(anyList())).thenReturn(Arrays.asList(databaseEntity));
         DatabaseChangeChangingOrderTemplateResp databaseChangeChangingOrderTemplateResp =
                 templateService.detail(
                         byNameAndProjectId.getId());
@@ -215,6 +233,8 @@ public class DatabaseChangeChangingOrderTemplateServiceTest extends ServiceTestE
 
     @Test
     public void listDatabaseChangingOrderTemplates_useQueryCondition_succeed() {
+        Database database = new Database();
+        when(databaseService.listDatabasesByIds(any())).thenReturn(Arrays.asList(database));
         createDatabaseChangingOrderTemplate_saveEntity_succeed();
         Pageable pageable = Pageable.unpaged();
         QueryDatabaseChangeChangingOrderParams params = QueryDatabaseChangeChangingOrderParams.builder()

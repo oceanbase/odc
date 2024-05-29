@@ -50,6 +50,8 @@ public interface DatabaseRepository extends JpaRepository<DatabaseEntity, Long>,
 
     List<DatabaseEntity> findByNameIn(Collection<String> name);
 
+    long countByIdIn(List<Long> ids);
+
     @Modifying
     @Transactional
     @Query(value = "delete from connect_database t where t.connection_id in (:connectionIds)", nativeQuery = true)

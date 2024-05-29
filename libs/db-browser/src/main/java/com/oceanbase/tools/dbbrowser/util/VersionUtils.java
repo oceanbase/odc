@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.tools.dbbrowser;
+package com.oceanbase.tools.dbbrowser.util;
 
 import org.apache.commons.lang3.Validate;
 

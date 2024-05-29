@@ -66,8 +66,8 @@ public interface ConnectionExtensionPoint extends ExtensionPoint {
      * @param properties Properties required by test connection, such as USER, PASSWORD, see
      *        {@link ConnectionPropertiesBuilder}
      * @param queryTimeout query timeout.
-     *
+     * @param initializers
      * @return test connection result
      */
-    TestResult test(String jdbcUrl, Properties properties, int queryTimeout);
+    TestResult test(String jdbcUrl, Properties properties, int queryTimeout, List<ConnectionInitializer> initializers);
 }

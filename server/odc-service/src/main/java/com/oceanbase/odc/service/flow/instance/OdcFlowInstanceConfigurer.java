@@ -24,7 +24,6 @@ import com.oceanbase.odc.core.shared.constant.TaskType;
 import com.oceanbase.odc.service.flow.FlowableAdaptor;
 import com.oceanbase.odc.service.flow.listener.PreCheckServiceTaskFailedListener;
 import com.oceanbase.odc.service.flow.listener.ServiceTaskCancelledListener;
-import com.oceanbase.odc.service.flow.listener.ServiceTaskExecutingCompleteListener;
 import com.oceanbase.odc.service.flow.listener.ServiceTaskExpiredListener;
 import com.oceanbase.odc.service.flow.listener.ServiceTaskFailedListener;
 import com.oceanbase.odc.service.flow.listener.ServiceTaskPendingExpiredListener;
@@ -85,7 +84,6 @@ public class OdcFlowInstanceConfigurer extends FlowInstanceConfigurer {
             });
         }
         return next(nextNode, serviceTaskBuilder -> {
-            serviceTaskBuilder.addExecutionListener(ServiceTaskExecutingCompleteListener.class);
             serviceTaskBuilder.setAsynchronous(true);
             ErrorBoundaryEventBuilder cancelErrBuilder =
                     setHandleableError(nextNode, serviceTaskBuilder, ErrorCodes.FlowTaskInstanceCancelled);

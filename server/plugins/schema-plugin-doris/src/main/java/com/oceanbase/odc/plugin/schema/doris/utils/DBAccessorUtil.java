@@ -17,16 +17,12 @@ package com.oceanbase.odc.plugin.schema.doris.utils;
 
 import java.sql.Connection;
 
-import org.springframework.jdbc.core.JdbcOperations;
-
 import com.oceanbase.odc.common.util.JdbcOperationsUtil;
-import com.oceanbase.odc.common.util.VersionUtils;
-import com.oceanbase.odc.core.shared.exception.UnsupportedException;
 import com.oceanbase.odc.plugin.connect.doris.DorisInformationExtension;
 import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
-import com.oceanbase.tools.dbbrowser.schema.doris.DorisSchemaAccessor;
+import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessorGenerator;
 import com.oceanbase.tools.dbbrowser.stats.DBStatsAccessor;
-import com.oceanbase.tools.dbbrowser.stats.mysql.DorisStatsAccessor;
+import com.oceanbase.tools.dbbrowser.stats.DBStatsAccessorGenerator;
 
 /**
  * @author gaoda.xy
@@ -40,23 +36,13 @@ public class DBAccessorUtil {
     }
 
     public static DBSchemaAccessor getSchemaAccessor(Connection connection) {
-        String dbVersion = getDbVersion(connection);
-        JdbcOperations jdbcOperations = JdbcOperationsUtil.getJdbcOperations(connection);
-        if (VersionUtils.isGreaterThanOrEqualsTo(dbVersion, "5.7.0")) {
-            return new DorisSchemaAccessor(jdbcOperations);
-        } else {
-            throw new UnsupportedException(String.format("Doris version '%s' not supported", dbVersion));
-        }
+        return DBSchemaAccessorGenerator.createForDoris(JdbcOperationsUtil.getJdbcOperations(connection),
+                getDbVersion(connection));
     }
 
     public static DBStatsAccessor getStatsAccessor(Connection connection) {
-        String dbVersion = getDbVersion(connection);
-        JdbcOperations jdbcOperations = JdbcOperationsUtil.getJdbcOperations(connection);
-        if (VersionUtils.isGreaterThanOrEqualsTo(dbVersion, "5.7.0")) {
-            return new DorisStatsAccessor(jdbcOperations);
-        } else {
-            throw new UnsupportedException(String.format("Doris version '%s' not supported", dbVersion));
-        }
+        return DBStatsAccessorGenerator.createForDoris(JdbcOperationsUtil.getJdbcOperations(connection),
+                getDbVersion(connection));
     }
 
 }

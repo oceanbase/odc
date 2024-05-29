@@ -19,10 +19,7 @@ import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.core.shared.constant.ConnectType;
 import com.oceanbase.odc.core.shared.exception.UnsupportedException;
 import com.oceanbase.tools.dbbrowser.editor.DBTableIndexEditor;
-import com.oceanbase.tools.dbbrowser.editor.mysql.MySQLNoLessThan5700IndexEditor;
-import com.oceanbase.tools.dbbrowser.editor.mysql.OBMySQLIndexEditor;
-import com.oceanbase.tools.dbbrowser.editor.oracle.OBOracleIndexEditor;
-import com.oceanbase.tools.dbbrowser.editor.oracle.OracleIndexEditor;
+import com.oceanbase.tools.dbbrowser.editor.generator.DBTableIndexEditorGenerator;
 
 /**
  * @Author: Lebie
@@ -41,15 +38,18 @@ public class DBTableIndexEditorFactory extends DBObjectEditorFactory<DBTableInde
         switch (connectType) {
             case OB_MYSQL:
             case CLOUD_OB_MYSQL:
+                return DBTableIndexEditorGenerator.createForOBMySQL(dbVersion);
             case ODP_SHARDING_OB_MYSQL:
-                return new OBMySQLIndexEditor();
+                return DBTableIndexEditorGenerator.createForODPOBMySQL(dbVersion);
             case MYSQL:
-                return new MySQLNoLessThan5700IndexEditor();
+                return DBTableIndexEditorGenerator.createForMySQL(dbVersion);
             case ORACLE:
-                return new OracleIndexEditor();
+                return DBTableIndexEditorGenerator.createForOracle(dbVersion);
             case CLOUD_OB_ORACLE:
             case OB_ORACLE:
-                return new OBOracleIndexEditor();
+                return DBTableIndexEditorGenerator.createForOBOracle(dbVersion);
+            case DORIS:
+                return DBTableIndexEditorGenerator.createForDoris(dbVersion);
             default:
                 throw new UnsupportedException(String.format("ConnectType '%s' not supported", connectType));
         }
