@@ -42,8 +42,6 @@ public class DataArchiveRollbackJob extends AbstractDlmJob {
     @Override
     public void executeJob(JobExecutionContext context) {
 
-        jobThread = Thread.currentThread();
-
         ScheduleTaskEntity taskEntity = (ScheduleTaskEntity) context.getResult();
         DataArchiveRollbackParameters rollbackParameters = JsonUtils.fromJson(taskEntity.getParametersJson(),
                 DataArchiveRollbackParameters.class);

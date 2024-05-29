@@ -49,8 +49,6 @@ public class DataDeleteJob extends AbstractDlmJob {
     @Override
     public void executeJob(JobExecutionContext context) {
 
-        jobThread = Thread.currentThread();
-
         ScheduleTaskEntity taskEntity = (ScheduleTaskEntity) context.getResult();
 
         // execute in task framework.
@@ -93,6 +91,7 @@ public class DataDeleteJob extends AbstractDlmJob {
             DlmTableUnitParameters parameter = new DlmTableUnitParameters();
             parameter.setMigrateRule(condition);
             parameter.setCheckMode(CheckMode.MULTIPLE_GET);
+            parameter.setMigratePartitions(table.getPartitions());
             dlmTableUnit.setParameters(parameter);
             dlmTableUnit.setStatus(TaskStatus.PREPARING);
             JobType jobType = parameters.getNeedCheckBeforeDelete() ? JobType.DELETE : JobType.QUICK_DELETE;

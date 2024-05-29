@@ -84,8 +84,8 @@ public abstract class AbstractDlmJob implements OdcJob {
     public final TaskFrameworkEnabledProperties taskFrameworkProperties;
 
     public final TaskFrameworkService taskFrameworkService;
-    public Thread jobThread;
     private Job job;
+    private boolean isInterrupted = false;
 
 
     public AbstractDlmJob() {
@@ -106,7 +106,7 @@ public abstract class AbstractDlmJob implements OdcJob {
         scheduleTaskRepository.updateStatusById(taskId, TaskStatus.RUNNING);
         log.info("Task is ready,taskId={}", taskId);
         for (DlmTableUnit dlmTableUnit : dlmTableUnits) {
-            if (jobThread.isInterrupted()) {
+            if (isInterrupted) {
                 dlmService.updateStatusByDlmTableUnitId(dlmTableUnit.getDlmTableUnitId(), TaskStatus.CANCELED);
                 log.info("Task interrupted and will exit.TaskId={}", taskId);
                 continue;
@@ -160,7 +160,7 @@ public abstract class AbstractDlmJob implements OdcJob {
         if (collect.contains(TaskStatus.DONE) && collect.size() == 1) {
             return TaskStatus.DONE;
         }
-        if (jobThread.isInterrupted()) {
+        if (isInterrupted) {
             return TaskStatus.CANCELED;
         }
         if (collect.contains(TaskStatus.FAILED)) {
@@ -275,13 +275,10 @@ public abstract class AbstractDlmJob implements OdcJob {
 
     @Override
     public void interrupt() {
-        if (jobThread == null) {
-            throw new IllegalStateException("Task is not executing.");
-        }
+        isInterrupted = true;
         if (job != null) {
             job.stop();
             log.info("Job will be interrupted,jobId={}", job.getJobMeta().getJobId());
         }
-        jobThread.interrupt();
     }
 }
