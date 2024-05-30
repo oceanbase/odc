@@ -63,6 +63,7 @@ import com.oceanbase.odc.service.schedule.ScheduleService;
 import com.oceanbase.odc.service.schedule.ScheduleTaskService;
 import com.oceanbase.odc.service.schedule.model.JobType;
 import com.oceanbase.odc.service.session.factory.DefaultConnectSessionFactory;
+import com.oceanbase.odc.service.task.TaskService;
 
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
@@ -98,6 +99,8 @@ public class OscService {
     private ScheduleTaskService scheduleTaskService;
     @Autowired
     private ScheduleService scheduleService;
+    @Autowired
+    private TaskService taskService;
 
 
     @SkipAuthorize("internal authenticated")
@@ -170,7 +173,9 @@ public class OscService {
         TaskEntity task = flowInstanceService.getTaskByFlowInstanceId(req.getFlowInstanceId());
         PreConditions.notNull(task.getParametersJson(), "result json",
                 "Task result is empty, taskId=" + task.getId() + ",flowInstanceId=" + req.getFlowInstanceId());
-
+        PreConditions.validArgumentState(!task.getStatus().isTerminated(), ErrorCodes.Unsupported,
+                new Object[] {req.getFlowInstanceId()},
+                "modify task rate limiter is unsupported when task is terminated");
         OnlineSchemaChangeTaskResult taskResult =
                 JsonUtils.fromJson(task.getResultJson(), new TypeReference<OnlineSchemaChangeTaskResult>() {});
         Long scheduleId = Long.parseLong(taskResult.getTasks().get(0).getJobName());
@@ -182,9 +187,14 @@ public class OscService {
         rateLimiter.setRowLimit(req.getRateLimitConfig().getRowLimit());
         parameters.setRateLimitConfig(rateLimiter);
 
+        OnlineSchemaChangeParameters inputParameters =
+                JsonUtils.fromJson(task.getParametersJson(), OnlineSchemaChangeParameters.class);
+        inputParameters.setRateLimitConfig(rateLimiter);
+        task.setParametersJson(JsonUtils.toJson(inputParameters));
+        taskService.updateParametersJson(task);
         String parameterJson = JsonUtils.toJson(parameters);
         int rows = scheduleRepository.updateJobParametersById(scheduleEntity.getId(), parameterJson);
-        if (rows > 1) {
+        if (rows > 0) {
             log.info("Update rate limiter config in job parameters completed, scheduleId={}, parameterJson={}.",
                     scheduleEntity.getId(), parameterJson);
         }

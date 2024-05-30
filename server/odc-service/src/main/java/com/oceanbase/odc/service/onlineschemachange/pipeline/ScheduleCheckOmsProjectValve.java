@@ -136,11 +136,22 @@ public class ScheduleCheckOmsProjectValve extends BaseValve {
             controlRequest.setUid(taskParameters.getUid());
             log.info("Try to stop oms project, omsProjectId={}, scheduleTaskId={}.",
                     taskParameters.getOmsProjectId(), scheduleTaskId);
-            projectOpenApiService.stopProject(controlRequest);
-            log.info("Stop oms project completed, omsProjectId={}, scheduleTaskId={}.",
-                    taskParameters.getOmsProjectId(), scheduleTaskId);
+            try {
+                projectOpenApiService.stopProject(controlRequest);
+                log.info("Stop oms project completed, omsProjectId={}, scheduleTaskId={}.",
+                        taskParameters.getOmsProjectId(), scheduleTaskId);
+            } catch (Exception e) {
+                log.warn("Stop oms project failed, omsProjectId={}, scheduleTaskId={}.",
+                        taskParameters.getOmsProjectId(), scheduleTaskId, e);
+            }
+
         } else if (omsProjectStatus == OmsProjectStatusEnum.SUSPEND) {
-            doUpdateOmsProjectConfig(scheduleTaskId, taskParameters, inputParameters);
+            try {
+                doUpdateOmsProjectConfig(scheduleTaskId, taskParameters, inputParameters);
+            } catch (Exception e) {
+                log.warn("Update oms project config failed, omsProjectId={}, scheduleTaskId={}.",
+                        taskParameters.getOmsProjectId(), scheduleTaskId, e);
+            }
         }
     }
 
