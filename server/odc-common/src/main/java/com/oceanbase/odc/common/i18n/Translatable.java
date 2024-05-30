@@ -32,6 +32,15 @@ public interface Translatable {
     String code();
 
     /**
+     * get i18n key
+     * 
+     * @return i18n key
+     */
+    default String i18nKey() {
+        return I18N_KEY_PREFIX + this.getClass().getSimpleName() + "." + code();
+    }
+
+    /**
      * get translated message
      * 
      * @param args args referenced by i18n message template defined in i18n resource files
@@ -39,7 +48,8 @@ public interface Translatable {
      * @return translated message
      */
     default String translate(Object[] args, Locale locale) {
-        String key = I18N_KEY_PREFIX + this.getClass().getSimpleName() + "." + code();
+        String key = i18nKey();
         return I18n.translate(key, args, key, locale);
     }
+
 }

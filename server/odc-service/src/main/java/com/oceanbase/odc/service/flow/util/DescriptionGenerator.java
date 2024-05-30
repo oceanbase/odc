@@ -34,8 +34,7 @@ public class DescriptionGenerator {
 
     public static void generateDescription(CreateFlowInstanceReq req) {
         if (StringUtils.isEmpty(req.getDescription())) {
-            String descFormat = Symbols.LEFT_BRACKET.getLocalizedMessage()
-                    + "%s" + Symbols.RIGHT_BRACKET.getLocalizedMessage() + "%s.%s";
+            String descFormat = Symbols.LEFT_BRACKET.i18nKey() + "%s" + Symbols.RIGHT_BRACKET.i18nKey() + "%s.%s";
             if (req.getTaskType() == TaskType.MULTIPLE_ASYNC) {
                 MultipleDatabaseChangeParameters parameters = (MultipleDatabaseChangeParameters) req.getParameters();
                 List<DatabaseChangeDatabase> databases = parameters.getDatabases();
