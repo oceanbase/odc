@@ -21,22 +21,15 @@ package com.oceanbase.odc.service.queryprofile.model;
  */
 public class ProfileConstants {
 
-    public static final String DB_TIME = "DB Time";
-    public static final String CHANGE_TIME = "Change Time";
+    public static final String OUTPUT_ROWS = "Output rows";
     public static final String IO_READ_BYTES = "total io bytes read from disk";
     public static final String BYTES_IN_TOTAL = "total bytes processed by ssstore";
     public static final String SSSTORE_ROWS_IN_TOTAL = "total rows processed by ssstore";
     public static final String MEMSTORE_ROWS_IN_TOTAL = "total rows processed by memstore";
-    public static final String RESCAN_TIMES = "rescan times";
+    public static final String START_TIMES = "Start times";
+    public static final String WORKAREA_MAX_MEN = "Max memory";
+    public static final String WORKAREA_MAX_TEMPSEG = "Max disk";
 
-    public static final String REMOTE_IO_READ_BYTES = "remote io bytes";
-    public static final String REMOTE_BYTES_IN_TOTAL = "remote bytes processed";
-    public static final String REMOTE_ROWS_IN_TOTAL = "remote rows processed";
-
-    public static final String OTHER_STATS = "Other Stats";
-    public static final String STATUS = "Status";
-
-    public static final String PROFILE_NOT_SUPPORT = "${com.oceanbase.odc.ErrorCodes.ObQueryProfileNotSupported}";
-    public static final String SQL_TYPE_NOT_SUPPORT = "${com.oceanbase.odc.ErrorCodes.SqlTypeNotSupported}";
+    public static final String OTHER_STATS = "Other Statistics";
 
 }

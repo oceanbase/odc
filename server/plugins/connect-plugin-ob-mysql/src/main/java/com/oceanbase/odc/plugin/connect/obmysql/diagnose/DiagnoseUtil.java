@@ -89,7 +89,7 @@ public class DiagnoseUtil {
     public static SqlExecDetail toSQLExecDetail(ResultSet resultSet) throws SQLException {
         SqlExecDetail detail = new SqlExecDetail();
         if (!resultSet.next()) {
-            return detail;
+            throw new IllegalStateException("No result found in sql audit.");
         }
         detail.setTraceId(resultSet.getString(1));
         detail.setSqlId(resultSet.getString(2));

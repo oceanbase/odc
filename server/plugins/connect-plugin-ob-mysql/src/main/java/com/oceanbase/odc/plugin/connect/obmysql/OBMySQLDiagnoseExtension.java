@@ -259,7 +259,7 @@ public class OBMySQLDiagnoseExtension implements SqlDiagnoseExtensionPoint {
     @Override
     public SqlExecDetail getExecutionDetailById(Connection connection, @NonNull String id) throws SQLException {
         // v$sql_audit中对于分区表会有多条记录，需要过滤
-        String appendSql = "TRACE_ID = '" + id + "' AND LENGTH(QUERY_SQL) > 0;";
+        String appendSql = "TRACE_ID = '" + id + "' AND LENGTH(QUERY_SQL) > 0 AND IS_INNER_SQL = 0;";
         return innerGetExecutionDetail(connection, appendSql, id);
     }
 
@@ -294,7 +294,7 @@ public class OBMySQLDiagnoseExtension implements SqlDiagnoseExtensionPoint {
         PlanNode planTree = null;
         Table planTable = new Table(5, BorderStyle.HORIZONTAL_ONLY);
         for (int i = 0; i < 5; i++) {
-            planTable.setColumnWidth(i, 1, 30);
+            planTable.setColumnWidth(i, 1, Integer.MAX_VALUE);
         }
         CellStyle cs = new CellStyle(HorizontalAlign.LEFT, AbbreviationStyle.DOTS, NullStyle.EMPTY_STRING);
         setCell(planTable, PHISICAL_PLAN_HEADER, cs);

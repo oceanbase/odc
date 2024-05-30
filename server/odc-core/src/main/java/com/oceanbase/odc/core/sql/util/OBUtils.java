@@ -469,7 +469,8 @@ public class OBUtils {
                 .append("select plan_id from ")
                 .append(dialectType.isMysql() ? "oceanbase" : "sys")
                 .append(".v$ob_sql_audit where trace_id=")
-                .value(traceId);
+                .value(traceId)
+                .append(" and is_inner_sql=0");
         try (ResultSet rs = statement.executeQuery(sqlBuilder.toString())) {
             if (!rs.next()) {
                 throw new SQLException("No result found in sql_audit.");
@@ -519,8 +520,8 @@ public class OBUtils {
         DialectType dialectType = connectType.getDialectType();
         SqlBuilder sqlBuilder = getBuilder(connectType)
                 .append("select svr_ip,svr_port,first_refresh_time,last_refresh_time,first_change_time,")
-                .append("last_change_time,plan_line_id,starts,output_rows,db_time,user_io_wait_time,workarea_mem,")
-                .append("workarea_tempseg,");
+                .append("last_change_time,plan_line_id,starts,output_rows,db_time,user_io_wait_time,workarea_max_mem,")
+                .append("workarea_max_tempseg,process_name,");
         for (int i = 1; i <= 10; i++) {
             sqlBuilder.append("otherstat_").append(i).append("_id,");
             sqlBuilder.append("otherstat_").append(i).append("_value,");
@@ -535,11 +536,14 @@ public class OBUtils {
                 SqlPlanMonitor record = new SqlPlanMonitor();
                 record.setSvrIp(rs.getString("svr_ip"));
                 record.setSvrPort(rs.getString("svr_port"));
+                record.setProcessName(rs.getString("process_name"));
                 record.setFirstRefreshTime(rs.getTimestamp("first_refresh_time"));
                 record.setLastRefreshTime(rs.getTimestamp("last_refresh_time"));
                 record.setFirstChangeTime(rs.getTimestamp("first_change_time"));
                 record.setLastChangeTime(rs.getTimestamp("last_change_time"));
                 record.setCurrentTime(rs.getTimestamp("current_ts"));
+                record.setWorkareaMaxMem(rs.getLong("workarea_max_mem"));
+                record.setWorkareaMaxTempSeg(rs.getLong("workarea_max_tempseg"));
                 record.setPlanLineId(rs.getString("plan_line_id"));
                 record.setStarts(rs.getLong("starts"));
                 record.setOutputRows(rs.getLong("output_rows"));
@@ -558,6 +562,7 @@ public class OBUtils {
                 records.add(record);
             }
         }
+        Verify.notEmpty(records, "sql plan monitor");
         return records;
     }
 

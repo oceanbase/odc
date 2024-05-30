@@ -30,7 +30,6 @@ import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.shared.exception.UnexpectedException;
 import com.oceanbase.odc.core.shared.model.OBSqlPlan;
 import com.oceanbase.odc.core.shared.model.Operator;
-import com.oceanbase.odc.core.shared.model.PredicateKey;
 import com.oceanbase.odc.core.shared.model.QueryStatus;
 import com.oceanbase.odc.plugin.connect.model.diagnose.PlanGraph;
 
@@ -122,13 +121,13 @@ public class PlanGraphBuilder {
         if (StringUtils.isNotEmpty(record.getAccessPredicates())) {
             Map<String, List<String>> access = parsePredicates(record.getAccessPredicates(), parameters);
             operator.setAttribute("Access predicates",
-                    singletonList(String.join(",", access.get(PredicateKey.getLabel("access")))));
+                    singletonList(String.join(",", access.get("access"))));
         }
         // parse filter predicates
         if (StringUtils.isNotEmpty(record.getFilterPredicates())) {
             Map<String, List<String>> filter = parsePredicates(record.getFilterPredicates(), parameters);
             operator.setAttribute("Filter predicates",
-                    singletonList(String.join(" AND ", filter.get(PredicateKey.getLabel("filter")))));
+                    singletonList(String.join(" AND ", filter.get("filter"))));
         }
         // parse special predicates
         if (StringUtils.isNotEmpty(record.getSpecialPredicates())) {
@@ -158,10 +157,7 @@ public class PlanGraphBuilder {
                 } else if (c == ',' || c == ' ') {
                     if (keyBuilder.indexOf("=") != -1) {
                         String[] split = keyBuilder.toString().trim().split("=");
-                        String predicateKey = PredicateKey.getLabel(split[0]);
-                        if (predicateKey != null) {
-                            map.put(predicateKey, singletonList(split[1]));
-                        }
+                        map.put(split[0], singletonList(split[1]));
                     }
                     keyBuilder = new StringBuilder();
                 } else {
@@ -175,10 +171,7 @@ public class PlanGraphBuilder {
                 depth--;
                 if (depth == 0) {
                     try {
-                        String predicateKey = PredicateKey.getLabel(keyBuilder.toString().trim());
-                        if (predicateKey == null) {
-                            continue;
-                        }
+                        String predicateKey = keyBuilder.toString().trim();
                         String predicate = valueBuilder.toString();
                         if (predicate.isEmpty()) {
                             continue;

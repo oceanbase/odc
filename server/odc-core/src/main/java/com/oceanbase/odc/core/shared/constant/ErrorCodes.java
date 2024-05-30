@@ -250,6 +250,7 @@ public enum ErrorCodes implements ErrorCode {
     ObGetFullLinkTraceFailed,
     ObFullLinkTraceNotSupported,
     ObFullLinkTraceNotEnabled,
+    ObQueryProfileNotSupported,
 
     ObPreCheckDdlFailed,
     ObCopySchemaFailed,

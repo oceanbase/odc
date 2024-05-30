@@ -15,7 +15,7 @@
  */
 package com.oceanbase.odc.plugin.connect.model.diagnose;
 
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -44,10 +44,11 @@ public class PlanGraphOperator {
     private Map<String, String> overview;
     private List<PlanGraphEdge> inEdges;
     private List<PlanGraphEdge> outEdges;
+    private Map<String, PlanGraphOperator> subNodes;
 
     public void putAttribute(@NonNull String key, Object value) {
         if (attributes == null) {
-            attributes = new HashMap<>();
+            attributes = new LinkedHashMap<>();
         }
         if (value != null) {
             attributes.put(key, value);
@@ -56,7 +57,7 @@ public class PlanGraphOperator {
 
     public void putOverview(@NonNull String key, String value) {
         if (overview == null) {
-            overview = new HashMap<>();
+            overview = new LinkedHashMap<>();
         }
         if (StringUtils.isNotEmpty(value)) {
             overview.put(key, value);
@@ -65,7 +66,7 @@ public class PlanGraphOperator {
 
     public void putStatistics(@NonNull String key, String value) {
         if (statistics == null) {
-            statistics = new HashMap<>();
+            statistics = new LinkedHashMap<>();
         }
         if (StringUtils.isNotEmpty(value)) {
             statistics.put(key, value);

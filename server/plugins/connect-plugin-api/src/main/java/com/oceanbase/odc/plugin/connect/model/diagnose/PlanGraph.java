@@ -15,7 +15,9 @@
  */
 package com.oceanbase.odc.plugin.connect.model.diagnose;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -34,8 +36,9 @@ import lombok.Data;
 @Data
 public class PlanGraph {
     private String traceId;
+    private String planId;
     private Long duration;
-    private List<PlanGraphOperator> vertexes;
+    private List<PlanGraphOperator> vertexes = new ArrayList<>();
     private Map<String, String> statistics;
     private Map<String, String> overview;
     private Map<String, List<String>> topNodes;
@@ -53,7 +56,7 @@ public class PlanGraph {
             return;
         }
         if (statistics == null) {
-            statistics = new HashMap<>();
+            statistics = new LinkedHashMap<>();
         }
         if (StringUtils.isNumeric(value)) {
             long val = Long.parseLong(value) + Long.parseLong(statistics.getOrDefault(key, "0"));
@@ -66,7 +69,7 @@ public class PlanGraph {
     public void putOverview(String key, String value) {
         if (value != null) {
             if (overview == null) {
-                overview = new HashMap<>();
+                overview = new LinkedHashMap<>();
             }
             overview.put(key, value);
         }

@@ -29,14 +29,15 @@ public class SqlPlanMonitor {
 
     private String svrIp;
     private String svrPort;
+    private String processName;
     private Timestamp firstRefreshTime;
     private Timestamp lastRefreshTime;
     private Timestamp firstChangeTime;
     private Timestamp lastChangeTime;
     private Timestamp currentTime;
     private String planLineId;
-    private Long workAreaMem;
-    private Long workAreaTempSeg;
+    private Long workareaMaxMem;
+    private Long workareaMaxTempSeg;
     private Long starts;
     private Long outputRows;
     private Long dbTime;

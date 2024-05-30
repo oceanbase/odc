@@ -22,6 +22,7 @@ import java.util.Collections;
 import java.util.List;
 
 import org.apache.commons.collections4.CollectionUtils;
+import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.jdbc.core.StatementCallback;
 
 import com.oceanbase.odc.common.util.StringUtils;
@@ -59,11 +60,10 @@ public class OBExecutionListener implements SqlExecutionListener {
 
     @Override
     public void onExecutionEnd(SqlTuple sqlTuple, List<JdbcGeneralResult> results, AsyncExecuteContext context) {
-        results.forEach(result -> {
-            if (StringUtils.isNotEmpty(result.getTraceId()) && isSelect(sqlTuple)) {
-                profileManager.submit(session, result.getTraceId());
-            }
-        });
+        JdbcGeneralResult firstResult = results.get(0);
+        if (StringUtils.isNotEmpty(firstResult.getTraceId()) && isSelect(sqlTuple)) {
+            profileManager.submit(session, firstResult.getTraceId(), LocaleContextHolder.getLocale());
+        }
     }
 
     @Override
@@ -75,12 +75,8 @@ public class OBExecutionListener implements SqlExecutionListener {
         }
         String traceId = session.getSyncJdbcExecutor(BACKEND_DS_KEY).execute((StatementCallback<String>) stmt -> OBUtils
                 .queryTraceIdFromASH(stmt, sessionIds, session.getConnectType()));
-        if (StringUtils.isEmpty(traceId)) {
-            return;
-        }
-        context.setCurrentExecutingSqlTraceId(traceId);
-        if (isSelect(sqlTuple)) {
-            profileManager.submit(session, traceId);
+        if (StringUtils.isNotEmpty(traceId)) {
+            context.setCurrentExecutingSqlTraceId(traceId);
         }
     }
 

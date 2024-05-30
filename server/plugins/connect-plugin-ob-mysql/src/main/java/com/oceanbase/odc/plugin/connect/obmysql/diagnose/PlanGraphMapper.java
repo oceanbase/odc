@@ -15,12 +15,8 @@
  */
 package com.oceanbase.odc.plugin.connect.obmysql.diagnose;
 
-import java.util.Comparator;
-import java.util.List;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import com.google.common.collect.Comparators;
 import com.oceanbase.odc.common.graph.Graph;
 import com.oceanbase.odc.common.graph.GraphEdge;
 import com.oceanbase.odc.core.shared.model.Operator;
@@ -62,14 +58,6 @@ public class PlanGraphMapper {
         vo.setInEdges(vertex.getInEdges().stream().map(PlanGraphMapper::mapEdge).collect(Collectors.toList()));
         vo.setOutEdges(vertex.getOutEdges().stream().map(PlanGraphMapper::mapEdge).collect(Collectors.toList()));
         return vo;
-    }
-
-    private static <T> List<T> sort(int k, List<PlanGraphOperator> vertexes, Comparator<PlanGraphOperator> comparator,
-            Function<PlanGraphOperator, T> mapper) {
-        return vertexes.stream()
-                .collect(Comparators.greatest(k, comparator))
-                .stream().map(mapper)
-                .collect(Collectors.toList());
     }
 
 }
