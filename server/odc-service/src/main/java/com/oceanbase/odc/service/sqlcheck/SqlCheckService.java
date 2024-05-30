@@ -109,7 +109,7 @@ public class SqlCheckService {
         List<Long> databaseIds = req.getDatabaseIds();
         Map<Long, Database> id2Database = databaseService.listDatabasesDetailsByIds(databaseIds).stream().collect(
                 Collectors.toMap(Database::getId, Function.identity()));
-        ArrayList<MultipleSqlCheckResult> multipleSqlCheckResults = new ArrayList<>();
+        List<MultipleSqlCheckResult> multipleSqlCheckResults = new ArrayList<>();
         for (Long databaseId : databaseIds) {
             ConnectionSession session = null;
             try {
