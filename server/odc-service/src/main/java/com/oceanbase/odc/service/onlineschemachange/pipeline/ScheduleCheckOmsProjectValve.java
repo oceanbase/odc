@@ -163,13 +163,13 @@ public class ScheduleCheckOmsProjectValve extends BaseValve {
         log.info("Try to update oms project, omsProjectId={}, scheduleTaskId={},"
                 + " request={}.", taskParameters.getOmsProjectId(), scheduleTaskId, JsonUtils.toJson(request));
         projectOpenApiService.updateProjectConfig(request);
-        log.info("Update oms project completed, Try to start project, omsProjectId={},"
+        log.info("Update oms project completed, Try to resume project, omsProjectId={},"
                 + " scheduleTaskId={}", taskParameters.getOmsProjectId(), scheduleTaskId);
 
-        projectOpenApiService.startProject(controlRequest);
-        log.info("Start oms project completed,omsProjectId={}, scheduleTaskId={}",
+        projectOpenApiService.resumeProject(controlRequest);
+        log.info("Resume oms project completed, omsProjectId={}, scheduleTaskId={}",
                 taskParameters.getOmsProjectId(), scheduleTaskId);
-        // update task parameters
+        // update task parameters rate limit same as schedule
         taskParameters.setRateLimitConfig(oscParameters.getRateLimitConfig());
         int rows = scheduleTaskRepository.updateTaskParameters(scheduleTaskId, JsonUtils.toJson(taskParameters));
         if (rows > 0) {
