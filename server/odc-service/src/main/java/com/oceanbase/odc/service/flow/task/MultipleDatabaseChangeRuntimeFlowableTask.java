@@ -34,13 +34,11 @@ import com.oceanbase.odc.metadb.flow.FlowInstanceEntity;
 import com.oceanbase.odc.metadb.flow.FlowInstanceRepository;
 import com.oceanbase.odc.metadb.flow.ServiceTaskInstanceRepository;
 import com.oceanbase.odc.metadb.task.TaskEntity;
-import com.oceanbase.odc.service.connection.database.DatabaseService;
 import com.oceanbase.odc.service.databasechange.MultipleDatabaseChangeTraceContextHolder;
 import com.oceanbase.odc.service.databasechange.model.DatabaseChangeDatabase;
 import com.oceanbase.odc.service.databasechange.model.DatabaseChangeFlowInstanceDetailResp;
 import com.oceanbase.odc.service.databasechange.model.DatabaseChangingRecord;
 import com.oceanbase.odc.service.flow.FlowInstanceService;
-import com.oceanbase.odc.service.flow.FlowableAdaptor;
 import com.oceanbase.odc.service.flow.model.CreateFlowInstanceReq;
 import com.oceanbase.odc.service.flow.model.FlowInstanceDetailResp;
 import com.oceanbase.odc.service.flow.model.FlowNodeStatus;
@@ -49,6 +47,8 @@ import com.oceanbase.odc.service.flow.model.QueryFlowInstanceParams;
 import com.oceanbase.odc.service.flow.task.model.MultipleDatabaseChangeParameters;
 import com.oceanbase.odc.service.flow.task.model.MultipleDatabaseChangeTaskResult;
 import com.oceanbase.odc.service.flow.util.FlowTaskUtil;
+import com.oceanbase.odc.service.iam.model.User;
+import com.oceanbase.odc.service.iam.util.SecurityContextUtils;
 import com.oceanbase.odc.service.task.TaskService;
 
 import lombok.extern.slf4j.Slf4j;
@@ -63,6 +63,7 @@ public class MultipleDatabaseChangeRuntimeFlowableTask extends BaseODCFlowTaskDe
     private volatile boolean isSuccessful = false;
     private volatile boolean isFailure = false;
     private volatile boolean isFinished = false;
+    private User taskCreator;
     private Integer batchId;
     private Integer batchSum;
     private List<List<Long>> orderedDatabaseIds;
@@ -72,10 +73,6 @@ public class MultipleDatabaseChangeRuntimeFlowableTask extends BaseODCFlowTaskDe
     private FlowInstanceService flowInstanceService;
     @Autowired
     private FlowInstanceRepository flowInstanceRepository;
-    @Autowired
-    private DatabaseService databaseService;
-    @Autowired
-    private FlowableAdaptor flowableAdaptor;
     @Autowired
     private ServiceTaskInstanceRepository serviceTaskInstanceRepository;
 
@@ -138,6 +135,7 @@ public class MultipleDatabaseChangeRuntimeFlowableTask extends BaseODCFlowTaskDe
             List<Long> batchDatabaseIds =
                     multipleDatabaseChangeParameters.getOrderedDatabaseIds().get(this.batchId);
             List<Long> flowInstanceIds = new ArrayList<>();
+            this.taskCreator = FlowTaskUtil.getTaskCreator(execution);
             for (Long batchDatabaseId : batchDatabaseIds) {
                 CreateFlowInstanceReq createFlowInstanceReq = new CreateFlowInstanceReq();
                 createFlowInstanceReq.setDatabaseId(batchDatabaseId);
@@ -264,9 +262,19 @@ public class MultipleDatabaseChangeRuntimeFlowableTask extends BaseODCFlowTaskDe
 
     @Override
     protected void onProgressUpdate(Long taskId, TaskService taskService) {
-        MultipleDatabaseChangeTaskResult multipleDatabaseChangeTaskResult = generateResult();
-        if (multipleDatabaseChangeTaskResult != null) {
-            taskService.updateResult(taskId, multipleDatabaseChangeTaskResult);
+        if (this.taskCreator != null) {
+            try {
+                SecurityContextUtils.setCurrentUser(this.taskCreator);
+                MultipleDatabaseChangeTaskResult multipleDatabaseChangeTaskResult = generateResult();
+                if (multipleDatabaseChangeTaskResult != null) {
+                    taskService.updateResult(taskId, multipleDatabaseChangeTaskResult);
+                }
+            } catch (Exception e) {
+                log.warn("Failed to update multiple database task progress, taskId={}, batchId={}", taskId,
+                        this.batchId == null ? null : this.batchId + 1, e);
+            } finally {
+                SecurityContextUtils.clear();
+            }
         }
     }
 
