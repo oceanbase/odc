@@ -919,7 +919,7 @@ public class FlowInstanceService {
         MultipleDatabaseChangeParameters parameters =
                 (MultipleDatabaseChangeParameters) flowInstanceReq.getParameters();
         MultipleDatabaseChangeTaskResult result = new MultipleDatabaseChangeTaskResult();
-        ArrayList<DatabaseChangingRecord> databaseChangingRecords = new ArrayList<>();
+        List<DatabaseChangingRecord> databaseChangingRecords = new ArrayList<>();
         List<DatabaseChangeDatabase> databaseList = parameters.getDatabases();
         for (DatabaseChangeDatabase database : databaseList) {
             DatabaseChangingRecord databaseChangingRecord = new DatabaseChangingRecord();
