@@ -191,13 +191,13 @@ public class DatabaseChangeChangingOrderTemplateService {
                 () -> projectRepository.existsById(req.getProjectId()));
         projectPermissionValidator.checkProjectRole(req.getProjectId(), ResourceRoleName.all());
         DatabaseChangeChangingOrderTemplateEntity originEntity =
-                templateRepository.findById(id).orElseThrow(
+                templateRepository.findByIdAndProjectId(id, req.getProjectId()).orElseThrow(
                         () -> new NotFoundException(ResourceType.ODC_DATABASE_CHANGE_ORDER_TEMPLATE, "id", id));
-        Optional<DatabaseChangeChangingOrderTemplateEntity> byNameAndProjectId
-            = templateRepository.findByNameAndProjectId(req.getName(), req.getProjectId());
-        if(byNameAndProjectId.isPresent()){
+        Optional<DatabaseChangeChangingOrderTemplateEntity> byNameAndProjectId =
+                templateRepository.findByNameAndProjectId(req.getName(), req.getProjectId());
+        if (byNameAndProjectId.isPresent()) {
             PreConditions.validNoDuplicated(ResourceType.ODC_DATABASE_CHANGE_ORDER_TEMPLATE, "name", req.getName(),
-                () -> !Objects.equals(byNameAndProjectId.get().getId(), originEntity.getId()));
+                    () -> !Objects.equals(byNameAndProjectId.get().getId(), originEntity.getId()));
         }
         List<List<Long>> orders = req.getOrders();
         List<Long> databaseIds = orders.stream().flatMap(List::stream).collect(Collectors.toList());
