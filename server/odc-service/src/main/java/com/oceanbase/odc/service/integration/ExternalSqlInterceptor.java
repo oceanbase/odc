@@ -16,7 +16,6 @@
 package com.oceanbase.odc.service.integration;
 
 import java.util.List;
-import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Optional;
@@ -48,6 +47,7 @@ import com.oceanbase.odc.service.regulation.ruleset.model.Rule;
 import com.oceanbase.odc.service.regulation.ruleset.model.Rule.RuleViolation;
 import com.oceanbase.odc.service.regulation.ruleset.model.SqlConsoleRules;
 import com.oceanbase.odc.service.session.interceptor.BaseTimeConsumingInterceptor;
+import com.oceanbase.odc.service.session.model.AsyncExecuteContext;
 import com.oceanbase.odc.service.session.model.SqlAsyncExecuteReq;
 import com.oceanbase.odc.service.session.model.SqlAsyncExecuteResp;
 import com.oceanbase.odc.service.session.model.SqlExecuteResult;
@@ -81,7 +81,7 @@ public class ExternalSqlInterceptor extends BaseTimeConsumingInterceptor {
 
     @Override
     public boolean doPreHandle(@NonNull SqlAsyncExecuteReq request, @NonNull SqlAsyncExecuteResp response,
-            @NonNull ConnectionSession session, @NonNull Map<String, Object> context) {
+            @NonNull ConnectionSession session, @NonNull AsyncExecuteContext context) {
         Long ruleSetId = ConnectionSessionUtil.getRuleSetId(session);
         if (Objects.isNull(ruleSetId) || isIndividualTeam()) {
             return true;
@@ -147,7 +147,7 @@ public class ExternalSqlInterceptor extends BaseTimeConsumingInterceptor {
 
     @Override
     public void afterCompletion(@NonNull SqlExecuteResult response,
-            @NonNull ConnectionSession session, @NonNull Map<String, Object> context) {}
+            @NonNull ConnectionSession session, @NonNull AsyncExecuteContext context) {}
 
 
     @Override

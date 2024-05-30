@@ -180,6 +180,8 @@ public class DatabasePermissionService {
                 entity.setBuiltIn(false);
                 entity.setExpireTime(expireTime);
                 entity.setAuthorizationType(AuthorizationType.USER_AUTHORIZATION);
+                entity.setResourceType(ResourceType.ODC_DATABASE);
+                entity.setResourceId(databaseId);
                 permissionEntities.add(entity);
             }
         }

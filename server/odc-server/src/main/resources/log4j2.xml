@@ -358,6 +358,55 @@
             </Routes>
         </Routing>
 
+        <!-- 以下为申请数据表权限任务日志配置 -->
+        <Routing name="AllRoutingApplyTableAppender">
+            <Routes pattern="$${ctx:taskId}">
+                <Route>
+                    <RollingFile name="Rolling-${ctx:taskId}"
+                                 fileName="${LOG_DIRECTORY}/apply-table/${ctx:taskWorkSpace}/${ctx:taskId}/apply-table-task.all"
+                                 filePattern="${LOG_DIRECTORY}/apply-table/${ctx:taskWorkSpace}/${ctx:taskId}/${date:yyyy-MM}/apply-table-task-%d{yyyy-MM-dd}-%i.all.gz">
+                        <PatternLayout>
+                            <pattern>%d{yyyy-MM-dd HH:mm:ss} %p %c{1.} - %m%n</pattern>
+                        </PatternLayout>
+                        <Policies>
+                            <TimeBasedTriggeringPolicy/>
+                            <SizeBasedTriggeringPolicy size="30MB"/>
+                        </Policies>
+                        <Policies>
+                            <TimeBasedTriggeringPolicy interval="6" modulate="true"/>
+                            <SizeBasedTriggeringPolicy size="10 MB"/>
+                        </Policies>
+                    </RollingFile>
+                </Route>
+            </Routes>
+        </Routing>
+
+        <Routing name="WarnRoutingApplyTableAppender">
+            <Routes pattern="$${ctx:taskId}">
+                <Route>
+                    <RollingFile name="Rolling-${ctx:taskId}"
+                                 fileName="${LOG_DIRECTORY}/apply-database/${ctx:taskWorkSpace}/${ctx:taskId}/apply-table-task.warn"
+                                 filePattern="${LOG_DIRECTORY}/apply-database/${ctx:taskWorkSpace}/${ctx:taskId}/${date:yyyy-MM}/apply-table-task-%d{yyyy-MM-dd}-%i.warn.gz">
+                        <PatternLayout>
+                            <pattern>%d{yyyy-MM-dd HH:mm:ss} %p %c{1.} - %m%n</pattern>
+                        </PatternLayout>
+                        <Filters>
+                            <!-- TRACE < DEBUG < INFO < WARN < ERROR < FATAL -->
+                            <ThresholdFilter level="WARN" onMatch="ACCEPT" onMismatch="DENY"/>
+                        </Filters>
+                        <Policies>
+                            <TimeBasedTriggeringPolicy/>
+                            <SizeBasedTriggeringPolicy size="30MB"/>
+                        </Policies>
+                        <Policies>
+                            <TimeBasedTriggeringPolicy interval="6" modulate="true"/>
+                            <SizeBasedTriggeringPolicy size="10 MB"/>
+                        </Policies>
+                    </RollingFile>
+                </Route>
+            </Routes>
+        </Routing>
+
         <!-- 以下为影子表同步任务日志配置 -->
         <Routing name="AllRoutingShadowtableAppender">
             <Routes pattern="${ctx:taskId}">
@@ -728,6 +777,12 @@
         <Logger name="com.oceanbase.odc.service.permission.database.ApplyDatabaseFlowableTask" level="INFO" additivity="true">
             <AppenderRef ref="AllRoutingApplyDatabaseAppender"/>
             <AppenderRef ref="WarnRoutingApplyDatabaseAppender"/>
+        </Logger>
+
+        <!-- 申请数据表权限任务日志输出 -->
+        <Logger name="com.oceanbase.odc.service.permission.table.ApplyTableFlowableTask" level="INFO" additivity="true">
+            <AppenderRef ref="AllRoutingApplyTableAppender"/>
+            <AppenderRef ref="WarnRoutingApplyTableAppender"/>
         </Logger>
 
         <!-- 影子表同步任务日志输出 -->

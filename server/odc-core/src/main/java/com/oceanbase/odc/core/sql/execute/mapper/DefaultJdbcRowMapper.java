@@ -63,6 +63,7 @@ public class DefaultJdbcRowMapper extends BaseDialectBasedRowMapper {
                     ConnectionSessionUtil.getNlsTimestampFormat(session)));
             mapperList.add(new OracleNumberMapper());
             mapperList.add(new OracleBinaryNumberMapper());
+            mapperList.add(new OBOracleGeometryMapper());
         } else if (dialectType == DialectType.DORIS) {
             mapperList.add(new MySQLBitMapper());
             mapperList.add(new MySQLDatetimeMapper());

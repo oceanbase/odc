@@ -16,7 +16,6 @@
 package com.oceanbase.odc.service.session.interceptor;
 
 import java.util.Collections;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -25,8 +24,9 @@ import org.springframework.stereotype.Component;
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionUtil;
 import com.oceanbase.odc.core.sql.execute.model.SqlExecuteStatus;
+import com.oceanbase.odc.service.session.model.AsyncExecuteContext;
 import com.oceanbase.odc.service.session.model.SqlExecuteResult;
-import com.oceanbase.odc.service.session.util.SchemaExtractor;
+import com.oceanbase.odc.service.session.util.DBSchemaExtractor;
 
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
@@ -41,12 +41,12 @@ public class SwitchDatabaseInterceptor implements SqlExecuteInterceptor {
 
     @Override
     public void afterCompletion(@NonNull SqlExecuteResult response, @NonNull ConnectionSession session,
-            @NonNull Map<String, Object> context) throws Exception {
+            @NonNull AsyncExecuteContext context) throws Exception {
         if (response.getStatus() != SqlExecuteStatus.SUCCESS) {
             return;
         }
         String currentSchema = ConnectionSessionUtil.getCurrentSchema(session);
-        Optional<String> switchSchema = SchemaExtractor
+        Optional<String> switchSchema = DBSchemaExtractor
                 .extractSwitchedSchemaName(Collections.singletonList(response.getSqlTuple()), session.getDialectType());
         if (switchSchema.isPresent() && !Objects.equals(switchSchema.get(), currentSchema)) {
             ConnectionSessionUtil.setCurrentSchema(session, switchSchema.get());

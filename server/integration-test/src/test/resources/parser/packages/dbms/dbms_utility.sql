@@ -281,7 +281,7 @@ CREATE OR REPLACE PACKAGE dbms_utility AS
   --    2048 as the hash_size value.  Using a power of 2 for the hash_size
   --    parameter works best.
   --  Exceptions:
-  --    ORA-29261 will be raised if hash_size is 0 or if hash_size or
+  --    OBE-29261 will be raised if hash_size is 0 or if hash_size or
   --    base are null
   FUNCTION GET_HASH_VALUE(NAME VARCHAR2, BASE NUMBER, HASH_SIZE NUMBER) RETURN NUMBER;
   FUNCTION ICD_GET_TIME RETURN BINARY_INTEGER;

@@ -101,6 +101,7 @@ import com.oceanbase.odc.service.objectstorage.ObjectStorageFacade;
 import com.oceanbase.odc.service.objectstorage.cloud.CloudObjectStorageService;
 import com.oceanbase.odc.service.permission.database.model.ApplyDatabaseResult;
 import com.oceanbase.odc.service.permission.project.ApplyProjectResult;
+import com.oceanbase.odc.service.permission.table.model.ApplyTableResult;
 import com.oceanbase.odc.service.schedule.flowtask.AlterScheduleResult;
 import com.oceanbase.odc.service.session.model.SqlExecuteResult;
 import com.oceanbase.odc.service.task.TaskService;
@@ -259,6 +260,8 @@ public class FlowTaskInstanceService {
             results = getApplyProjectResult(taskEntity);
         } else if (taskEntity.getTaskType() == TaskType.APPLY_DATABASE_PERMISSION) {
             results = getApplyDatabaseResult(taskEntity);
+        } else if (taskEntity.getTaskType() == TaskType.APPLY_TABLE_PERMISSION) {
+            results = getApplyTableResult(taskEntity);
         } else if (taskEntity.getTaskType() == TaskType.STRUCTURE_COMPARISON) {
             results = getStructureComparisonResult(taskEntity);
         } else {
@@ -676,6 +679,10 @@ public class FlowTaskInstanceService {
         return innerGetResult(taskEntity, DBStructureComparisonTaskResult.class);
     }
 
+    private List<ApplyTableResult> getApplyTableResult(@NonNull TaskEntity taskEntity) {
+        return innerGetResult(taskEntity, ApplyTableResult.class);
+    }
+
     private <T extends FlowTaskResult> List<T> innerGetResult(@NonNull TaskEntity taskEntity,
             @NonNull Class<T> clazz) {
         String resultJson = taskEntity.getResultJson();
@@ -709,7 +716,8 @@ public class FlowTaskInstanceService {
                         && instance.getTaskType() != TaskType.PRE_CHECK
                         && instance.getTaskType() != TaskType.GENERATE_ROLLBACK
                         && instance.getTaskType() != TaskType.APPLY_PROJECT_PERMISSION
-                        && instance.getTaskType() != TaskType.APPLY_DATABASE_PERMISSION;
+                        && instance.getTaskType() != TaskType.APPLY_DATABASE_PERMISSION
+                        && instance.getTaskType() != TaskType.APPLY_TABLE_PERMISSION;
             }
         });
     }

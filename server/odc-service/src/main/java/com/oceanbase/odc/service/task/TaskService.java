@@ -94,6 +94,7 @@ public class TaskService {
     private static final String APPLY_DATABASE_LOG_PATH_PATTERN = "%s/apply-database/%d/%s/apply-database-task.%s";
     private static final String STRUCTURE_COMPARISON_LOG_PATH_PATTERN =
             "%s/structure-comparison/%d/%s/structure-comparison.%s";
+    private static final String APPLY_TABLE_LOG_PATH_PATTERN = "%s/apply-table/%d/%s/apply-table-task.%s";
 
     @Autowired
     public TaskService(@Value("${odc.log.directory:./log}") String baseTaskLogDir) {
@@ -249,6 +250,10 @@ public class TaskService {
                 break;
             case STRUCTURE_COMPARISON:
                 filePath = String.format(STRUCTURE_COMPARISON_LOG_PATH_PATTERN, logFilePrefix, userId, taskId,
+                        logLevel.name().toLowerCase());
+                break;
+            case APPLY_TABLE_PERMISSION:
+                filePath = String.format(APPLY_TABLE_LOG_PATH_PATTERN, logFilePrefix, userId, taskId,
                         logLevel.name().toLowerCase());
                 break;
             default:

@@ -117,6 +117,7 @@ public class RiskLevelService {
         return riskLevelRepository.findById(id).map(this::entityToModel);
     }
 
+
     @SkipAuthorize("internal usage")
     public boolean exists(@NonNull Long organizationId, @NonNull Long id) {
         RiskLevelEntity example = new RiskLevelEntity();

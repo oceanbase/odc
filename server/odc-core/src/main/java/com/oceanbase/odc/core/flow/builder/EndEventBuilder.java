@@ -17,7 +17,7 @@ package com.oceanbase.odc.core.flow.builder;
 
 import org.flowable.bpmn.model.EndEvent;
 
-import com.oceanbase.odc.core.flow.graph.GraphEdge;
+import com.oceanbase.odc.common.graph.GraphEdge;
 
 import lombok.NonNull;
 

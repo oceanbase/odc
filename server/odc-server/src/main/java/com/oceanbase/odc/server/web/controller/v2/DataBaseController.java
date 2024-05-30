@@ -15,6 +15,8 @@
  */
 package com.oceanbase.odc.server.web.controller.v2;
 
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort.Direction;
@@ -33,7 +35,9 @@ import com.oceanbase.odc.service.connection.database.DatabaseService;
 import com.oceanbase.odc.service.connection.database.DatabaseSyncManager;
 import com.oceanbase.odc.service.connection.database.model.CreateDatabaseReq;
 import com.oceanbase.odc.service.connection.database.model.Database;
+import com.oceanbase.odc.service.connection.database.model.DatabaseType;
 import com.oceanbase.odc.service.connection.database.model.DeleteDatabasesReq;
+import com.oceanbase.odc.service.connection.database.model.ModifyDatabaseOwnerReq;
 import com.oceanbase.odc.service.connection.database.model.QueryDatabaseParams;
 import com.oceanbase.odc.service.connection.database.model.TransferDatabasesReq;
 
@@ -64,6 +68,7 @@ public class DataBaseController {
     @RequestMapping(value = "/databases", method = RequestMethod.GET)
     public PaginatedResponse<Database> listDatabases(
             @RequestParam(required = false, name = "name") String name,
+            @RequestParam(required = false, name = "type") List<DatabaseType> types,
             @RequestParam(required = false, name = "existed") Boolean existed,
             @RequestParam(required = false, name = "dataSourceName") String dataSourceName,
             @RequestParam(required = false, name = "dataSourceId") Long dataSourceId,
@@ -77,6 +82,7 @@ public class DataBaseController {
             @PageableDefault(size = Integer.MAX_VALUE, sort = {"id"}, direction = Direction.DESC) Pageable pageable) {
         QueryDatabaseParams params = QueryDatabaseParams.builder()
                 .dataSourceId(dataSourceId)
+                .types(types)
                 .existed(existed)
                 .environmentId(environmentId)
                 .schemaName(name)
@@ -102,5 +108,12 @@ public class DataBaseController {
     @RequestMapping(value = "/databases", method = RequestMethod.DELETE)
     public SuccessResponse<Boolean> deleteDatabases(@RequestBody DeleteDatabasesReq req) {
         return Responses.success(databaseService.deleteDatabases(req));
+    }
+
+    @ApiOperation(value = "modifyDatabasesOwner", notes = "modify database owner")
+    @RequestMapping(value = "/databases/owner/{projectId:[\\d]+}", method = RequestMethod.PUT)
+    public SuccessResponse<Boolean> modifyDatabasesOwners(@PathVariable Long projectId,
+            @RequestBody ModifyDatabaseOwnerReq req) {
+        return Responses.success(databaseService.modifyDatabasesOwners(projectId, req));
     }
 }

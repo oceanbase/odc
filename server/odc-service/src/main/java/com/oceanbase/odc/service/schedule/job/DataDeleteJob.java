@@ -17,6 +17,7 @@ package com.oceanbase.odc.service.schedule.job;
 
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Objects;
 
 import org.quartz.JobExecutionContext;
 
@@ -24,7 +25,7 @@ import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.shared.constant.TaskStatus;
 import com.oceanbase.odc.metadb.schedule.ScheduleTaskEntity;
-import com.oceanbase.odc.service.dlm.DataSourceInfoBuilder;
+import com.oceanbase.odc.service.dlm.DataSourceInfoMapper;
 import com.oceanbase.odc.service.dlm.model.DataArchiveTableConfig;
 import com.oceanbase.odc.service.dlm.model.DataDeleteParameters;
 import com.oceanbase.odc.service.dlm.model.DlmTask;
@@ -82,9 +83,11 @@ public class DataDeleteJob extends AbstractDlmJob {
                     taskEntity.getId(),
                     dlmTasks.size()));
             dlmTask.setTableName(table.getTableName());
-            dlmTask.setTargetTableName(table.getTableName());
+            dlmTask.setTargetTableName(table.getTargetTableName());
             dlmTask.setSourceDatabaseId(parameters.getDatabaseId());
-            dlmTask.setTargetDatabaseId(parameters.getDatabaseId());
+            Long targetDatabaseId = Objects.isNull(parameters.getTargetDatabaseId()) ? parameters.getDatabaseId()
+                    : parameters.getTargetDatabaseId();
+            dlmTask.setTargetDatabaseId(targetDatabaseId);
             dlmTask.setFireTime(taskEntity.getFireTime());
 
             LogicTableConfig logicTableConfig = new LogicTableConfig();
@@ -92,7 +95,8 @@ public class DataDeleteJob extends AbstractDlmJob {
             logicTableConfig.setCheckMode(CheckMode.MULTIPLE_GET);
             dlmTask.setLogicTableConfig(logicTableConfig);
             dlmTask.setStatus(TaskStatus.PREPARING);
-            dlmTask.setJobType(parameters.getDeleteByUniqueKey() ? JobType.QUICK_DELETE : JobType.DEIRECT_DELETE);
+            JobType jobType = parameters.getNeedCheckBeforeDelete() ? JobType.DELETE : JobType.QUICK_DELETE;
+            dlmTask.setJobType(parameters.getDeleteByUniqueKey() ? jobType : JobType.DEIRECT_DELETE);
             dlmTasks.add(dlmTask);
         });
         return dlmTasks;
@@ -122,13 +126,13 @@ public class DataDeleteJob extends AbstractDlmJob {
         parameters.setReadThreadCount(dataDeleteParameters.getReadThreadCount());
         parameters.setScanBatchSize(dataDeleteParameters.getScanBatchSize());
         parameters
-                .setSourceDs(DataSourceInfoBuilder.build(
+                .setSourceDs(DataSourceInfoMapper.toDataSourceInfo(
                         databaseService.findDataSourceForConnectById(dataDeleteParameters.getDatabaseId())));
         parameters
-                .setTargetDs(DataSourceInfoBuilder.build(
-                        databaseService.findDataSourceForConnectById(dataDeleteParameters.getDatabaseId())));
+                .setTargetDs(DataSourceInfoMapper.toDataSourceInfo(
+                        databaseService.findDataSourceForConnectById(dataDeleteParameters.getTargetDatabaseId())));
         parameters.getSourceDs().setDatabaseName(dataDeleteParameters.getDatabaseName());
-        parameters.getTargetDs().setDatabaseName(dataDeleteParameters.getDatabaseName());
+        parameters.getTargetDs().setDatabaseName(dataDeleteParameters.getTargetDatabaseName());
         parameters.getSourceDs().setConnectionCount(2 * (parameters.getReadThreadCount()
                 + parameters.getWriteThreadCount()));
         parameters.getTargetDs().setConnectionCount(parameters.getSourceDs().getConnectionCount());

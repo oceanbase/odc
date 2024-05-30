@@ -30,6 +30,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.oceanbase.odc.common.jpa.InsertSqlTemplateBuilder;
 import com.oceanbase.odc.config.jpa.OdcJpaRepository;
 import com.oceanbase.odc.core.shared.constant.PermissionType;
+import com.oceanbase.odc.core.shared.constant.ResourceType;
 
 /**
  * Find all <code>PermissionEntity</code> for a specific <code>User</code>
@@ -82,6 +83,8 @@ public interface PermissionRepository
 
     List<PermissionEntity> findByOrganizationId(Long organizationId);
 
+    List<PermissionEntity> findByResourceTypeAndResourceIdIn(ResourceType resourceType, Collection<Long> resourceIds);
+
     List<PermissionEntity> findByOrganizationIdAndResourceIdentifier(Long organizationId, String resourceIdentifier);
 
     Optional<PermissionEntity> findByOrganizationIdAndActionAndResourceIdentifier(Long organizationId, String action,
@@ -115,6 +118,8 @@ public interface PermissionRepository
                 .field(PermissionEntity_.expireTime)
                 .field(PermissionEntity_.authorizationType)
                 .field(PermissionEntity_.ticketId)
+                .field(PermissionEntity_.resourceType)
+                .field(PermissionEntity_.resourceId)
                 .build();
         List<Function<PermissionEntity, Object>> getter = valueGetterBuilder()
                 .add(PermissionEntity::getAction)
@@ -126,7 +131,10 @@ public interface PermissionRepository
                 .add(PermissionEntity::getExpireTime)
                 .add((PermissionEntity e) -> e.getAuthorizationType().name())
                 .add(PermissionEntity::getTicketId)
+                .add((PermissionEntity e) -> e.getResourceType().name())
+                .add(PermissionEntity::getResourceId)
                 .build();
+
         return batchCreate(entities, sql, getter, PermissionEntity::setId);
     }
 

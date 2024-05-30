@@ -28,10 +28,10 @@ import org.junit.Test;
 import com.oceanbase.tools.sqlparser.adapter.oracle.OraclePartitionFactory;
 import com.oceanbase.tools.sqlparser.oboracle.OBLexer;
 import com.oceanbase.tools.sqlparser.oboracle.OBParser;
-import com.oceanbase.tools.sqlparser.oboracle.OBParser.Opt_partition_optionContext;
+import com.oceanbase.tools.sqlparser.oboracle.OBParser.Auto_partition_optionContext;
+import com.oceanbase.tools.sqlparser.oboracle.OBParser.Partition_optionContext;
 import com.oceanbase.tools.sqlparser.statement.Expression;
 import com.oceanbase.tools.sqlparser.statement.Operator;
-import com.oceanbase.tools.sqlparser.statement.createtable.ColumnPartition;
 import com.oceanbase.tools.sqlparser.statement.createtable.HashPartition;
 import com.oceanbase.tools.sqlparser.statement.createtable.HashPartitionElement;
 import com.oceanbase.tools.sqlparser.statement.createtable.ListPartition;
@@ -600,22 +600,8 @@ public class OraclePartitionFactoryTest {
     }
 
     @Test
-    public void generate_columnPartition_succeed() {
-        StatementFactory<Partition> factory = new OraclePartitionFactory(getPartitionContext(
-                "partition by column (a,(b,c), d)"));
-        Partition actual = factory.generate();
-
-        ColumnPartition expect = new ColumnPartition(Arrays.asList(
-                new ColumnReference(null, null, "a"),
-                new ColumnReference(null, null, "b"),
-                new ColumnReference(null, null, "c"),
-                new ColumnReference(null, null, "d")));
-        Assert.assertEquals(expect, actual);
-    }
-
-    @Test
     public void generate_autoPartition_succeed() {
-        StatementFactory<Partition> factory = new OraclePartitionFactory(getPartitionContext(
+        StatementFactory<Partition> factory = new OraclePartitionFactory(getAutoPartitionContext(
                 "partition by range(a,b) partition size 'auto' PARTITIONS AUTO"));
         Partition actual = factory.generate();
 
@@ -627,12 +613,21 @@ public class OraclePartitionFactoryTest {
         Assert.assertEquals(expect, actual);
     }
 
-    private Opt_partition_optionContext getPartitionContext(String part) {
+    private Partition_optionContext getPartitionContext(String part) {
         OBLexer lexer = new OBLexer(CharStreams.fromString(part));
         CommonTokenStream tokens = new CommonTokenStream(lexer);
         OBParser parser = new OBParser(tokens);
         parser.setErrorHandler(new BailErrorStrategy());
-        return parser.opt_partition_option();
+        return parser.partition_option();
+    }
+
+
+    private Auto_partition_optionContext getAutoPartitionContext(String part) {
+        OBLexer lexer = new OBLexer(CharStreams.fromString(part));
+        CommonTokenStream tokens = new CommonTokenStream(lexer);
+        OBParser parser = new OBParser(tokens);
+        parser.setErrorHandler(new BailErrorStrategy());
+        return parser.auto_partition_option();
     }
 
 }

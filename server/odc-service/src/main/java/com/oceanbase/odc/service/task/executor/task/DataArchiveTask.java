@@ -15,30 +15,17 @@
  */
 package com.oceanbase.odc.service.task.executor.task;
 
-import java.sql.Connection;
-import java.sql.ResultSet;
-
 import com.oceanbase.odc.common.json.JsonUtils;
-import com.oceanbase.odc.core.shared.constant.DialectType;
-import com.oceanbase.odc.core.sql.parser.AbstractSyntaxTreeFactories;
-import com.oceanbase.odc.core.sql.parser.AbstractSyntaxTreeFactory;
 import com.oceanbase.odc.service.dlm.DLMJobFactory;
 import com.oceanbase.odc.service.dlm.DLMJobStore;
+import com.oceanbase.odc.service.dlm.DLMTableStructureSynchronizer;
+import com.oceanbase.odc.service.dlm.DataSourceInfoMapper;
 import com.oceanbase.odc.service.schedule.job.DLMJobParameters;
 import com.oceanbase.odc.service.task.caller.JobContext;
 import com.oceanbase.odc.service.task.constants.JobParametersKeyConstants;
 import com.oceanbase.odc.service.task.util.JobUtils;
-import com.oceanbase.tools.dbbrowser.util.MySQLSqlBuilder;
-import com.oceanbase.tools.dbbrowser.util.OracleSqlBuilder;
-import com.oceanbase.tools.dbbrowser.util.SqlBuilder;
-import com.oceanbase.tools.migrator.common.enums.DataBaseType;
 import com.oceanbase.tools.migrator.common.enums.JobType;
-import com.oceanbase.tools.migrator.datasource.DataSourceAdapter;
-import com.oceanbase.tools.migrator.datasource.DataSourceFactory;
 import com.oceanbase.tools.migrator.job.Job;
-import com.oceanbase.tools.sqlparser.adapter.mysql.MySQLFromReferenceFactory;
-import com.oceanbase.tools.sqlparser.obmysql.OBParser.Create_table_stmtContext;
-import com.oceanbase.tools.sqlparser.statement.common.RelationFactor;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -76,8 +63,17 @@ public class DataArchiveTask extends BaseTask<Boolean> {
                 log.info("Job is terminated,jobIdentity={}", context.getJobIdentity());
                 break;
             }
-            if (parameters.getJobType() == JobType.MIGRATE) {
-                syncTable(tableIndex, parameters);
+            if (parameters.getJobType() == JobType.MIGRATE && !parameters.getSyncTableStructure().isEmpty()) {
+                try {
+                    DLMTableStructureSynchronizer.sync(
+                            DataSourceInfoMapper.toConnectionConfig(parameters.getSourceDs()),
+                            DataSourceInfoMapper.toConnectionConfig(parameters.getTargetDs()),
+                            parameters.getTables().get(tableIndex).getTableName(), parameters.getSyncTableStructure());
+                } catch (Exception e) {
+                    log.warn("Failed to sync target table structure,table will be ignored,tableName={}",
+                            parameters.getTables().get(tableIndex), e);
+                    continue;
+                }
             }
             try {
                 job = jobFactory.createJob(tableIndex, parameters);
@@ -95,88 +91,6 @@ public class DataArchiveTask extends BaseTask<Boolean> {
             progress = (tableIndex + 1.0) / parameters.getTables().size();
         }
         return isSuccess;
-    }
-
-    private void syncTable(int tableIndex, DLMJobParameters parameters) throws Exception {
-        DataSourceAdapter sourceDataSource = DataSourceFactory.getDataSource(parameters.getSourceDs());
-        if (sourceDataSource.getDataBaseType().isOracle()) {
-            log.info("Unsupported sync table construct for Oracle,databaseType={}", sourceDataSource.getDataBaseType());
-            return;
-        }
-        DataSourceAdapter targetDataSource = DataSourceFactory.getDataSource(parameters.getTargetDs());
-        if (parameters.getSourceDs().getDatabaseType() != parameters.getTargetDs().getDatabaseType()) {
-            log.info("Data sources of different types do not currently support automatic creation of target tables.");
-            return;
-        }
-        if (checkTargetTableExist(parameters.getTables().get(tableIndex).getTargetTableName(), targetDataSource)) {
-            log.info("Target table exists.");
-            // TODO sync the table structure if it exists.
-            return;
-        }
-        log.info("Target table does not exists,tableName={}",
-                parameters.getTables().get(tableIndex).getTargetTableName());
-        String createTableDDL;
-        try (Connection connection = sourceDataSource.getConnectionReadOnly()) {
-            ResultSet resultSet = connection.prepareStatement(getCreateTableDDL(sourceDataSource.getSchema(),
-                    parameters.getTables().get(tableIndex).getTableName(), sourceDataSource.getDataBaseType()))
-                    .executeQuery();
-            if (resultSet.next()) {
-                createTableDDL = resultSet.getString(2);
-            } else {
-                log.info("Get create target table ddl failed,resultSet is null.");
-                return;
-            }
-            log.info("Get Create table ddl finish, sql={}", createTableDDL);
-        } catch (Exception ex) {
-            log.warn("Get create target table ddl failed!", ex);
-            return;
-        }
-        try (Connection connection = targetDataSource.getConnectionForWrite()) {
-            createTableDDL = buildCreateTableDDL(createTableDDL,
-                    parameters.getTables().get(tableIndex).getTargetTableName());
-            log.info("Create target table begin, sql={}", createTableDDL);
-            boolean result = connection.prepareStatement(createTableDDL).execute();
-            log.info("Create target table finish, result={}", result);
-        } catch (Exception e) {
-            log.warn("Create target table failed.", e);
-        }
-    }
-
-    public static String buildCreateTableDDL(String createSql, String targetTableName) {
-        AbstractSyntaxTreeFactory factory = AbstractSyntaxTreeFactories.getAstFactory(DialectType.OB_MYSQL, 0);
-        Create_table_stmtContext context = (Create_table_stmtContext) factory.buildAst(createSql).getRoot();
-        RelationFactor factor = MySQLFromReferenceFactory.getRelationFactor(context.relation_factor());
-        StringBuilder sb = new StringBuilder();
-        sb.append(createSql, 0, factor.getStart());
-        sb.append("`").append(targetTableName).append("`");
-        sb.append(createSql, factor.getStop() + 1, createSql.length());
-        return sb.toString();
-    }
-
-    private boolean checkTargetTableExist(String tableName, DataSourceAdapter dataSourceAdapter) {
-        try (Connection connection = dataSourceAdapter.getConnectionReadOnly()) {
-            ResultSet resultSet = connection.prepareStatement(String.format(
-                    "SELECT table_name FROM information_schema.tables WHERE table_type='BASE TABLE' AND table_schema='%s'",
-                    dataSourceAdapter.getDataSourceInfo().getDatabaseName())).executeQuery();
-            while (resultSet.next()) {
-                if (resultSet.getString(1).equals(tableName)) {
-                    return true;
-                }
-            }
-            return false;
-        } catch (Exception ex) {
-            return false;
-        }
-    }
-
-    private static String getCreateTableDDL(String schemaName, String tableName, DataBaseType dbType) {
-        SqlBuilder sb = dbType == DataBaseType.OB_MYSQL || dbType == DataBaseType.MYSQL ? new MySQLSqlBuilder()
-                : new OracleSqlBuilder();
-        sb.append("SHOW CREATE TABLE ");
-        sb.identifier(schemaName);
-        sb.append(".");
-        sb.identifier(tableName);
-        return sb.toString();
     }
 
     @Override

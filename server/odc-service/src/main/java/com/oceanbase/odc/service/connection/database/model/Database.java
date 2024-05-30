@@ -17,9 +17,11 @@ package com.oceanbase.odc.service.connection.database.model;
 
 import java.io.Serializable;
 import java.util.Date;
+import java.util.List;
 import java.util.Set;
 
 import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.NotNull;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonProperty.Access;
@@ -28,7 +30,9 @@ import com.oceanbase.odc.core.shared.OrganizationIsolated;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.service.collaboration.environment.model.Environment;
 import com.oceanbase.odc.service.collaboration.project.model.Project;
+import com.oceanbase.odc.service.common.model.InnerUser;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
+import com.oceanbase.odc.service.db.schema.model.DBObjectSyncStatus;
 import com.oceanbase.odc.service.permission.database.model.DatabasePermissionType;
 
 import lombok.Data;
@@ -53,6 +57,9 @@ public class Database implements SecurityResource, OrganizationIsolated, Seriali
 
     @NotBlank
     private String name;
+
+    @NotNull
+    private DatabaseType type;
 
     private Project project;
 
@@ -84,6 +91,15 @@ public class Database implements SecurityResource, OrganizationIsolated, Seriali
 
     @JsonProperty(access = Access.READ_ONLY)
     private Set<DatabasePermissionType> authorizedPermissionTypes;
+
+
+    @JsonProperty(access = Access.READ_ONLY)
+    private DBObjectSyncStatus objectSyncStatus;
+
+    @JsonProperty(access = Access.READ_ONLY)
+    private Date objectLastSyncTime;
+
+    private List<InnerUser> owners;
 
     @Override
     public String resourceId() {

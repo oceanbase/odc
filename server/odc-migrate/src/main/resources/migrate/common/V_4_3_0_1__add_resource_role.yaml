@@ -1,0 +1,17 @@
+kind: resource
+version: v2
+templates:
+  - metadata:
+      allow_duplicate: false
+      table_name: iam_resource_role
+      unique_keys: [ "resource_type", "role_name" ]
+    specs:
+      - column_name: id
+        default_value: 6
+        data_type: java.lang.Long
+      - column_name: resource_type
+        value: "ODC_DATABASE"
+      - column_name: role_name
+        value: "OWNER"
+      - column_name: description
+        value: "built-in resource role, database owner"
