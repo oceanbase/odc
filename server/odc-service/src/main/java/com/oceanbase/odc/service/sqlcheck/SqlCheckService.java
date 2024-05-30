@@ -21,6 +21,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import javax.validation.Valid;
@@ -106,12 +107,13 @@ public class SqlCheckService {
 
     public List<MultipleSqlCheckResult> multipleCheck(@NotNull @Valid MultipleSqlCheckReq req) {
         List<Long> databaseIds = req.getDatabaseIds();
-        List<Database> databases = databaseService.listDatabasesDetailsByIds(databaseIds);
-        ArrayList<MultipleSqlCheckResult> multipleSqlCheckResults = new ArrayList<>();
-        for (int i = 0; i < databaseIds.size(); i++) {
+        Map<Long, Database> id2Database = databaseService.listDatabasesDetailsByIds(databaseIds).stream().collect(
+                Collectors.toMap(Database::getId, Function.identity()));
+        List<MultipleSqlCheckResult> multipleSqlCheckResults = new ArrayList<>();
+        for (Long databaseId : databaseIds) {
             ConnectionSession session = null;
             try {
-                session = sessionService.create(databases.get(i).getDataSource().getId(), databaseIds.get(i));
+                session = sessionService.create(id2Database.get(databaseId).getDataSource().getId(), databaseId);
                 SqlCheckReq sqlCheckReq = new SqlCheckReq();
                 sqlCheckReq.setDelimiter(req.getDelimiter());
                 sqlCheckReq.setScriptContent(req.getScriptContent());
@@ -121,7 +123,7 @@ public class SqlCheckService {
                     return Collections.emptyList();
                 }
                 multipleSqlCheckResult.setCheckResultList(check);
-                multipleSqlCheckResult.setDatabase(databases.get(i));
+                multipleSqlCheckResult.setDatabase(id2Database.get(databaseId));
                 multipleSqlCheckResults.add(multipleSqlCheckResult);
             } finally {
                 if (session != null) {
