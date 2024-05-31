@@ -98,6 +98,9 @@ public class ApprovalPermissionService {
 
     public List<UserTaskInstanceEntity> getApprovableApprovalInstances() {
         long userId = authenticationFacade.currentUserId();
+        if (!userService.nullSafeGet(userId).isEnabled()) {
+            return new ArrayList<>();
+        }
         Set<Long> roleIds = userService.getCurrentUserRoleIds();
         Set<String> resourceRoleIdentifiers = userService.getCurrentUserResourceRoleIdentifiers();
         Set<FlowNodeStatus> unViewableStatuses = Collections.singleton(FlowNodeStatus.CREATED);
