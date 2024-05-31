@@ -42,7 +42,6 @@ import com.oceanbase.odc.core.shared.exception.UnsupportedException;
 import com.oceanbase.odc.metadb.flow.ServiceTaskInstanceRepository;
 import com.oceanbase.odc.metadb.task.TaskEntity;
 import com.oceanbase.odc.service.common.model.HostProperties;
-import com.oceanbase.odc.service.connection.ConnectionService;
 import com.oceanbase.odc.service.flow.FlowTaskInstanceService;
 import com.oceanbase.odc.service.flow.exception.ServiceTaskCancelledException;
 import com.oceanbase.odc.service.flow.exception.ServiceTaskError;
@@ -94,8 +93,6 @@ public abstract class BaseODCFlowTaskDelegate<T> extends BaseRuntimeFlowableDele
     private Broker broker;
     @Autowired
     private NotificationProperties notificationProperties;
-    @Autowired
-    private ConnectionService connectionService;
     @Autowired
     private EventBuilder eventBuilder;
     @Autowired

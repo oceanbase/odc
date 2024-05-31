@@ -20,6 +20,8 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -108,7 +110,6 @@ public class DatabaseChangeChangingOrderTemplateService {
                 .findByProjectIdIn(nonArchivedProjectIds).stream()
                 .collect(Collectors.groupingBy(DatabaseEntity::getProjectId));
         disabledTemplateIds.addAll(projectId2TemplateEntityList.entrySet().stream()
-                // 留下未归档的projectId2TemplateEntityList
                 .filter(entry -> nonArchivedProjectIds.contains(entry.getKey()))
                 .flatMap(entry -> {
                     List<DatabaseEntity> databases = projectId2Databases.get(entry.getKey());
@@ -193,13 +194,15 @@ public class DatabaseChangeChangingOrderTemplateService {
         DatabaseChangeChangingOrderTemplateEntity originEntity =
                 templateRepository.findByIdAndProjectId(id, req.getProjectId()).orElseThrow(
                         () -> new NotFoundException(ResourceType.ODC_DATABASE_CHANGE_ORDER_TEMPLATE, "id", id));
-        PreConditions.validNoDuplicated(ResourceType.ODC_DATABASE_CHANGE_ORDER_TEMPLATE, "name", req.getName(),
-                () -> templateRepository.existsByNameAndProjectId(req.getName(), req.getProjectId()));
+        Optional<DatabaseChangeChangingOrderTemplateEntity> byNameAndProjectId =
+                templateRepository.findByNameAndProjectId(req.getName(), req.getProjectId());
+        if (byNameAndProjectId.isPresent()) {
+            PreConditions.validNoDuplicated(ResourceType.ODC_DATABASE_CHANGE_ORDER_TEMPLATE, "name", req.getName(),
+                    () -> !Objects.equals(byNameAndProjectId.get().getId(), originEntity.getId()));
+        }
         List<List<Long>> orders = req.getOrders();
         List<Long> databaseIds = orders.stream().flatMap(List::stream).collect(Collectors.toList());
         validateSizeAndNotDuplicated(databaseIds);
-        PreConditions.validNoDuplicated(ResourceType.ODC_DATABASE_CHANGE_ORDER_TEMPLATE, "name", req.getName(),
-                () -> templateRepository.existsByNameAndProjectId(req.getName(), req.getProjectId()));
         List<DatabaseEntity> databaseEntities = databaseRepository.findByIdIn(databaseIds);
         if (databaseEntities.size() < databaseIds.size()) {
             throw new BadArgumentException(ErrorCodes.BadArgument, "some of these databases do not exist");
