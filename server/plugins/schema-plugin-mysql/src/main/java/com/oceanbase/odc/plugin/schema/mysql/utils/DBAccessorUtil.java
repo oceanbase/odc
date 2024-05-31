@@ -18,11 +18,12 @@ package com.oceanbase.odc.plugin.schema.mysql.utils;
 import java.sql.Connection;
 
 import com.oceanbase.odc.common.util.JdbcOperationsUtil;
+import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.plugin.connect.mysql.MySQLInformationExtension;
+import com.oceanbase.tools.dbbrowser.DBBrowser;
+import com.oceanbase.tools.dbbrowser.editor.DBTableEditor;
 import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
-import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessorGenerator;
 import com.oceanbase.tools.dbbrowser.stats.DBStatsAccessor;
-import com.oceanbase.tools.dbbrowser.stats.DBStatsAccessorGenerator;
 
 /**
  * @author jingtian
@@ -30,18 +31,29 @@ import com.oceanbase.tools.dbbrowser.stats.DBStatsAccessorGenerator;
  * @since ODC_release_4.2.4
  */
 public class DBAccessorUtil {
+
     public static String getDbVersion(Connection connection) {
-        MySQLInformationExtension informationExtension = new MySQLInformationExtension();
-        return informationExtension.getDBVersion(connection);
+        return new MySQLInformationExtension().getDBVersion(connection);
     }
 
     public static DBSchemaAccessor getSchemaAccessor(Connection connection) {
-        return DBSchemaAccessorGenerator.createForMySQL(JdbcOperationsUtil.getJdbcOperations(connection),
-                getDbVersion(connection));
+        return DBBrowser.schemaAccessor()
+                .setDbVersion(getDbVersion(connection))
+                .setJdbcOperations(JdbcOperationsUtil.getJdbcOperations(connection))
+                .setType(DialectType.MYSQL.name()).create();
     }
 
     public static DBStatsAccessor getStatsAccessor(Connection connection) {
-        return DBStatsAccessorGenerator.createForMySQL(JdbcOperationsUtil.getJdbcOperations(connection),
-                getDbVersion(connection));
+        return DBBrowser.statsAccessor()
+                .setJdbcOperations(JdbcOperationsUtil.getJdbcOperations(connection))
+                .setDbVersion(getDbVersion(connection))
+                .setType(DialectType.MYSQL.name()).create();
     }
+
+    public static DBTableEditor getTableEditor(Connection connection) {
+        return DBBrowser.objectEditor().tableEditor()
+                .setDbVersion(DBAccessorUtil.getDbVersion(connection))
+                .setType(DialectType.MYSQL.name()).create();
+    }
+
 }

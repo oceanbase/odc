@@ -24,7 +24,6 @@ import com.oceanbase.odc.common.unit.BinarySizeUnit;
 import com.oceanbase.odc.plugin.schema.oboracle.OBOracleTableExtension;
 import com.oceanbase.odc.plugin.schema.oracle.utils.DBAccessorUtil;
 import com.oceanbase.tools.dbbrowser.editor.DBTableEditor;
-import com.oceanbase.tools.dbbrowser.editor.generator.DBTableEditorGenerator;
 import com.oceanbase.tools.dbbrowser.model.DBTable;
 import com.oceanbase.tools.dbbrowser.model.DBTableStats;
 import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
@@ -39,6 +38,7 @@ import lombok.NonNull;
  */
 @Extension
 public class OracleTableExtension extends OBOracleTableExtension {
+
     @Override
     public DBTable getDetail(@NonNull Connection connection, @NonNull String schemaName, @NonNull String tableName) {
         DBSchemaAccessor schemaAccessor = getSchemaAccessor(connection);
@@ -82,6 +82,7 @@ public class OracleTableExtension extends OBOracleTableExtension {
 
     @Override
     protected DBTableEditor getTableEditor(Connection connection) {
-        return DBTableEditorGenerator.createForOracle(DBAccessorUtil.getDbVersion(connection));
+        return DBAccessorUtil.getTableEditor(connection);
     }
+
 }

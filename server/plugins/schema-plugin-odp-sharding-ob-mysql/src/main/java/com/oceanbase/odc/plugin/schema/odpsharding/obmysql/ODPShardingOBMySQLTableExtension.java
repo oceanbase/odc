@@ -16,18 +16,20 @@
 package com.oceanbase.odc.plugin.schema.odpsharding.obmysql;
 
 import java.sql.Connection;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.pf4j.Extension;
 
 import com.oceanbase.odc.common.util.JdbcOperationsUtil;
+import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.plugin.schema.obmysql.OBMySQLTableExtension;
 import com.oceanbase.odc.plugin.schema.obmysql.utils.DBAccessorUtil;
+import com.oceanbase.tools.dbbrowser.DBBrowser;
 import com.oceanbase.tools.dbbrowser.editor.DBTableEditor;
-import com.oceanbase.tools.dbbrowser.editor.generator.DBTableEditorGenerator;
 import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
-import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessorGenerator;
 import com.oceanbase.tools.dbbrowser.stats.DBStatsAccessor;
-import com.oceanbase.tools.dbbrowser.stats.DBStatsAccessorGenerator;
+import com.oceanbase.tools.dbbrowser.stats.DBStatsAccessorFactory;
 
 /**
  * @author jingtian
@@ -39,18 +41,26 @@ public class ODPShardingOBMySQLTableExtension extends OBMySQLTableExtension {
 
     @Override
     protected DBSchemaAccessor getSchemaAccessor(Connection connection) {
-        return DBSchemaAccessorGenerator.createForODPOBMySQL(JdbcOperationsUtil.getJdbcOperations(connection));
+        return DBBrowser.schemaAccessor()
+                .setJdbcOperations(JdbcOperationsUtil.getJdbcOperations(connection))
+                .setType(DialectType.ODP_SHARDING_OB_MYSQL.name()).create();
     }
 
     @Override
     protected DBStatsAccessor getStatsAccessor(Connection consoleConnection) {
         // only use DBStatsAccessor.getTableStats() method in plugin, so we do not use connectionId
-        return DBStatsAccessorGenerator.createForODPOBMySQL(null);
+        Map<String, Object> properties = new HashMap<>();
+        properties.put(DBStatsAccessorFactory.CONNECTION_ID_KEY, "");
+        return DBBrowser.statsAccessor()
+                .setProperties(properties)
+                .setType(DialectType.ODP_SHARDING_OB_MYSQL.name()).create();
     }
 
     @Override
     protected DBTableEditor getTableEditor(Connection connection) {
-        String dbVersion = DBAccessorUtil.getDbVersion(connection);
-        return DBTableEditorGenerator.createForODPOBMySQL(dbVersion);
+        return DBBrowser.objectEditor().tableEditor()
+                .setDbVersion(DBAccessorUtil.getDbVersion(connection))
+                .setType(DialectType.ODP_SHARDING_OB_MYSQL.name()).create();
     }
+
 }

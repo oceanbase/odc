@@ -16,13 +16,17 @@
 package com.oceanbase.odc.plugin.schema.obmysql.utils;
 
 import java.sql.Connection;
+import java.util.HashMap;
+import java.util.Map;
 
 import com.oceanbase.odc.common.util.JdbcOperationsUtil;
+import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.plugin.connect.obmysql.OBMySQLInformationExtension;
+import com.oceanbase.tools.dbbrowser.DBBrowser;
+import com.oceanbase.tools.dbbrowser.editor.DBTableEditor;
 import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
-import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessorGenerator;
+import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessorFactory;
 import com.oceanbase.tools.dbbrowser.stats.DBStatsAccessor;
-import com.oceanbase.tools.dbbrowser.stats.DBStatsAccessorGenerator;
 
 /**
  * @author jingtian
@@ -35,17 +39,33 @@ public class DBAccessorUtil {
     }
 
     public static DBSchemaAccessor getSchemaAccessor(Connection connection) {
-        return DBSchemaAccessorGenerator.createForOBMySQL(JdbcOperationsUtil.getJdbcOperations(connection), null,
-                getDbVersion(connection), null);
+        return DBBrowser.schemaAccessor()
+                .setJdbcOperations(JdbcOperationsUtil.getJdbcOperations(connection))
+                .setDbVersion(getDbVersion(connection))
+                .setType(DialectType.OB_MYSQL.name()).create();
     }
 
     public static DBSchemaAccessor getSchemaAccessor(Connection connection, String tenantName) {
-        return DBSchemaAccessorGenerator.createForOBMySQL(JdbcOperationsUtil.getJdbcOperations(connection), null,
-                getDbVersion(connection), tenantName);
+        Map<String, Object> properties = new HashMap<>();
+        properties.put(DBSchemaAccessorFactory.TENANT_NAME_KEY, tenantName);
+        return DBBrowser.schemaAccessor()
+                .setJdbcOperations(JdbcOperationsUtil.getJdbcOperations(connection))
+                .setDbVersion(getDbVersion(connection))
+                .setProperties(properties)
+                .setType(DialectType.OB_MYSQL.name()).create();
     }
 
     public static DBStatsAccessor getStatsAccessor(Connection connection) {
-        return DBStatsAccessorGenerator.createForOBMySQL(JdbcOperationsUtil.getJdbcOperations(connection),
-                getDbVersion(connection));
+        return DBBrowser.statsAccessor()
+                .setDbVersion(getDbVersion(connection))
+                .setJdbcOperations(JdbcOperationsUtil.getJdbcOperations(connection))
+                .setType(DialectType.OB_MYSQL.name()).create();
     }
+
+    public static DBTableEditor getTableEditor(Connection connection) {
+        return DBBrowser.objectEditor().tableEditor()
+                .setDbVersion(getDbVersion(connection))
+                .setType(DialectType.OB_MYSQL.name()).create();
+    }
+
 }

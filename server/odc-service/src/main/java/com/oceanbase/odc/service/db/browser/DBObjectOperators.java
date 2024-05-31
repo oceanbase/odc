@@ -19,13 +19,12 @@ import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionConstants;
 import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.core.shared.constant.ConnectType;
-import com.oceanbase.odc.core.shared.exception.UnsupportedException;
 import com.oceanbase.odc.core.sql.execute.SyncJdbcExecutor;
+import com.oceanbase.tools.dbbrowser.DBBrowser;
 import com.oceanbase.tools.dbbrowser.editor.DBObjectOperator;
-import com.oceanbase.tools.dbbrowser.editor.mysql.MySQLObjectOperator;
-import com.oceanbase.tools.dbbrowser.editor.oracle.OracleObjectOperator;
 
 public class DBObjectOperators {
+
     public static DBObjectOperator create(ConnectionSession connectionSession) {
         PreConditions.notNull(connectionSession, "connectionSession");
         ConnectType connectType = connectionSession.getConnectType();
@@ -34,15 +33,10 @@ public class DBObjectOperators {
         PreConditions.notNull(connectType, "connectType");
         PreConditions.notNull(syncJdbcExecutor, "syncJdbcExecutor");
 
-        switch (connectType) {
-            case OB_MYSQL:
-            case CLOUD_OB_MYSQL:
-                return new MySQLObjectOperator(syncJdbcExecutor);
-            case CLOUD_OB_ORACLE:
-            case OB_ORACLE:
-                return new OracleObjectOperator(syncJdbcExecutor);
-            default:
-                throw new UnsupportedException(String.format("ConnectType '%s' not supported", connectType));
-        }
+        return DBBrowser.objectEditor().objectOperator()
+                .setJdbcOperations(syncJdbcExecutor)
+                .setType(connectType.getDialectType().name())
+                .create();
     }
+
 }

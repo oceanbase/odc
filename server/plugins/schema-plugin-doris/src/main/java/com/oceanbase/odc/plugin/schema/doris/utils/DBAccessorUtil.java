@@ -18,11 +18,12 @@ package com.oceanbase.odc.plugin.schema.doris.utils;
 import java.sql.Connection;
 
 import com.oceanbase.odc.common.util.JdbcOperationsUtil;
+import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.plugin.connect.doris.DorisInformationExtension;
+import com.oceanbase.tools.dbbrowser.DBBrowser;
+import com.oceanbase.tools.dbbrowser.editor.DBTableEditor;
 import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
-import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessorGenerator;
 import com.oceanbase.tools.dbbrowser.stats.DBStatsAccessor;
-import com.oceanbase.tools.dbbrowser.stats.DBStatsAccessorGenerator;
 
 /**
  * @author gaoda.xy
@@ -31,18 +32,27 @@ import com.oceanbase.tools.dbbrowser.stats.DBStatsAccessorGenerator;
 public class DBAccessorUtil {
 
     public static String getDbVersion(Connection connection) {
-        DorisInformationExtension extension = new DorisInformationExtension();
-        return extension.getDBVersion(connection);
+        return new DorisInformationExtension().getDBVersion(connection);
     }
 
     public static DBSchemaAccessor getSchemaAccessor(Connection connection) {
-        return DBSchemaAccessorGenerator.createForDoris(JdbcOperationsUtil.getJdbcOperations(connection),
-                getDbVersion(connection));
+        return DBBrowser.schemaAccessor()
+                .setJdbcOperations(JdbcOperationsUtil.getJdbcOperations(connection))
+                .setDbVersion(getDbVersion(connection))
+                .setType(DialectType.DORIS.name()).create();
     }
 
     public static DBStatsAccessor getStatsAccessor(Connection connection) {
-        return DBStatsAccessorGenerator.createForDoris(JdbcOperationsUtil.getJdbcOperations(connection),
-                getDbVersion(connection));
+        return DBBrowser.statsAccessor()
+                .setDbVersion(getDbVersion(connection))
+                .setJdbcOperations(JdbcOperationsUtil.getJdbcOperations(connection))
+                .setType(DialectType.DORIS.name()).create();
+    }
+
+    public static DBTableEditor getTableEditor(Connection connection) {
+        return DBBrowser.objectEditor().tableEditor()
+                .setDbVersion(DBAccessorUtil.getDbVersion(connection))
+                .setType(DialectType.DORIS.name()).create();
     }
 
 }
