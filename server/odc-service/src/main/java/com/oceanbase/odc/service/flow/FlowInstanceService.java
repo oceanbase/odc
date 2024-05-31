@@ -1080,37 +1080,26 @@ public class FlowInstanceService {
 
     private void initVariables(Map<String, Object> variables, TaskEntity taskEntity, TaskEntity preCheckTaskEntity,
             ConnectionConfig config, RiskLevelDescriber riskLevelDescriber) {
-        FlowTaskUtil.setTaskId(variables, taskEntity.getId());
-        if (Objects.nonNull(preCheckTaskEntity)) {
-            FlowTaskUtil.setPreCheckTaskId(variables, preCheckTaskEntity.getId());
-        }
         if (config != null) {
             FlowTaskUtil.setConnectionConfig(variables, config);
         }
-        FlowTaskUtil.setExecutionExpirationInterval(variables,
-                taskEntity.getExecutionExpirationIntervalSeconds(), TimeUnit.SECONDS);
-        FlowTaskUtil.setParameters(variables, taskEntity.getParametersJson());
-        if (taskEntity.getDatabaseName() != null) {
-            FlowTaskUtil.setSchemaName(variables, taskEntity.getDatabaseName());
-        }
-        if (taskEntity.getDatabaseId() != null) {
-            FlowTaskUtil.setSchemaName(variables, databaseService.detail(taskEntity.getDatabaseId()).getName());
-        }
-        FlowTaskUtil.setTaskCreator(variables, authenticationFacade.currentUser());
-        FlowTaskUtil.setOrganizationId(variables, authenticationFacade.currentOrganizationId());
-        FlowTaskUtil.setTaskSubmitter(variables, JsonUtils.fromJson(taskEntity.getSubmitter(), ExecutorInfo.class));
-        FlowTaskUtil.setRiskLevelDescriber(variables, riskLevelDescriber);
-        FlowTaskUtil.setCloudMainAccountId(variables, authenticationFacade.currentUser().getParentUid());
+        initCommonVariables(variables, taskEntity, preCheckTaskEntity, riskLevelDescriber);
     }
 
     private void initVariables(Map<String, Object> variables, TaskEntity taskEntity, TaskEntity preCheckTaskEntity,
             List<ConnectionConfig> configList, RiskLevelDescriber riskLevelDescriber) {
+        if (configList != null) {
+            FlowTaskUtil.setConnectionConfigList(variables, configList);
+        }
+        initCommonVariables(variables, taskEntity, preCheckTaskEntity, riskLevelDescriber);
+    }
+
+    private void initCommonVariables(Map<String, Object> variables, TaskEntity taskEntity,
+            TaskEntity preCheckTaskEntity,
+            RiskLevelDescriber riskLevelDescriber) {
         FlowTaskUtil.setTaskId(variables, taskEntity.getId());
         if (Objects.nonNull(preCheckTaskEntity)) {
             FlowTaskUtil.setPreCheckTaskId(variables, preCheckTaskEntity.getId());
-        }
-        if (configList != null) {
-            FlowTaskUtil.setConnectionConfigList(variables, configList);
         }
         FlowTaskUtil.setExecutionExpirationInterval(variables,
                 taskEntity.getExecutionExpirationIntervalSeconds(), TimeUnit.SECONDS);
