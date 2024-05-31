@@ -13,7 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.tools.dbbrowser.factory;
+package com.oceanbase.tools.dbbrowser;
+
+import org.apache.commons.lang3.Validate;
 
 import lombok.Setter;
 import lombok.experimental.Accessors;
@@ -22,21 +24,24 @@ import lombok.experimental.Accessors;
 @Accessors(chain = true)
 public abstract class AbstractDBBrowserFactory<T> implements DBBrowserFactory<T> {
 
-    private String type;
+    protected String type;
 
     @Override
     public T create() {
+        Validate.notNull(this.type, "Type can not be null");
         switch (type) {
             case ORACLE:
                 return buildForOracle();
             case MYSQL:
-                return buildForMysql();
+                return buildForMySQL();
             case DORIS:
                 return buildForDoris();
             case OB_ORACLE:
                 return buildForOBOracle();
             case OB_MYSQL:
-                return buildForOBMysql();
+                return buildForOBMySQL();
+            case ODP_SHARDING_OB_MYSQL:
+                return buildForOdpSharding();
             default:
                 throw new IllegalStateException("Not supported for the type, " + type);
         }
@@ -44,12 +49,14 @@ public abstract class AbstractDBBrowserFactory<T> implements DBBrowserFactory<T>
 
     public abstract T buildForDoris();
 
-    public abstract T buildForMysql();
+    public abstract T buildForMySQL();
 
-    public abstract T buildForOBMysql();
+    public abstract T buildForOBMySQL();
 
     public abstract T buildForOBOracle();
 
     public abstract T buildForOracle();
+
+    public abstract T buildForOdpSharding();
 
 }

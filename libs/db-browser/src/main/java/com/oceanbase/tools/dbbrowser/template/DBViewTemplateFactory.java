@@ -13,24 +13,43 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.tools.dbbrowser.template.generator;
+package com.oceanbase.tools.dbbrowser.template;
 
-import com.oceanbase.tools.dbbrowser.template.BaseViewTemplate;
+import com.oceanbase.tools.dbbrowser.AbstractDBBrowserFactory;
+import com.oceanbase.tools.dbbrowser.model.DBView;
 import com.oceanbase.tools.dbbrowser.template.mysql.MySQLViewTemplate;
 import com.oceanbase.tools.dbbrowser.template.oracle.OracleViewTemplate;
 
-/**
- * @author jingtian
- * @date 2024/5/22
- */
-public class DBViewTemplateGenerator extends DBObjectTemplateGenerator<BaseViewTemplate> {
+public class DBViewTemplateFactory extends AbstractDBBrowserFactory<DBObjectTemplate<DBView>> {
+
     @Override
-    public MySQLViewTemplate createForMySQL(String dbVersion) {
+    public DBObjectTemplate<DBView> buildForDoris() {
         return new MySQLViewTemplate();
     }
 
     @Override
-    public OracleViewTemplate createForOracle(String dbVersion) {
+    public DBObjectTemplate<DBView> buildForMySQL() {
+        return new MySQLViewTemplate();
+    }
+
+    @Override
+    public DBObjectTemplate<DBView> buildForOBMySQL() {
+        return new MySQLViewTemplate();
+    }
+
+    @Override
+    public DBObjectTemplate<DBView> buildForOBOracle() {
         return new OracleViewTemplate();
     }
+
+    @Override
+    public DBObjectTemplate<DBView> buildForOracle() {
+        return new OracleViewTemplate();
+    }
+
+    @Override
+    public DBObjectTemplate<DBView> buildForOdpSharding() {
+        return new MySQLViewTemplate();
+    }
+
 }

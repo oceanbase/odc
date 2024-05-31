@@ -13,19 +13,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.tools.dbbrowser.factory;
+package com.oceanbase.tools.dbbrowser;
 
-import com.oceanbase.tools.dbbrowser.factory.editor.DBObjectEditorFactories;
-import com.oceanbase.tools.dbbrowser.factory.schema.DBSchemaAccessorFactory;
+import com.oceanbase.tools.dbbrowser.editor.DBObjectEditorFactories;
+import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessorFactory;
+import com.oceanbase.tools.dbbrowser.stats.DBStatsAccessorFactory;
+import com.oceanbase.tools.dbbrowser.template.DBObjectTemplateFactories;
 
 public class DBBrowser {
 
-    public static DBSchemaAccessorFactory dbSchemaAccessor() {
+    public static DBSchemaAccessorFactory schemaAccessor() {
         return new DBSchemaAccessorFactory();
     }
 
-    public static DBObjectEditorFactories dbObjectEditor() {
+    public static DBObjectEditorFactories objectEditor() {
         return new DBObjectEditorFactories();
+    }
+
+    public static DBObjectTemplateFactories objectTemplate() {
+        return new DBObjectTemplateFactories();
+    }
+
+    public static DBStatsAccessorFactory statsAccessor() {
+        return new DBStatsAccessorFactory();
     }
 
 }

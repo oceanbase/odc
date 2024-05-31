@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.tools.dbbrowser.factory.editor;
+package com.oceanbase.tools.dbbrowser.editor;
 
 public class DBObjectEditorFactories {
 
@@ -25,20 +25,20 @@ public class DBObjectEditorFactories {
         return new DBTableIndexEditorFactory();
     }
 
-    public <Builders> Builders tableColumnEditor() {
-        return null;
+    public DBTableColumnEditorFactory tableColumnEditor() {
+        return new DBTableColumnEditorFactory();
     }
 
-    public <Builders> Builders tableConstraintEditor() {
-        return null;
+    public DBTableConstraintEditorFactory tableConstraintEditor() {
+        return new DBTableConstraintEditorFactory();
     }
 
-    public <Builders> Builders tablePartitionEditor() {
-        return null;
+    public DBTablePartitionEditorFactory tablePartitionEditor() {
+        return new DBTablePartitionEditorFactory();
     }
 
-    public <Builders> Builders objectOperator() {
-        return null;
+    public DBObjectOperatorFactory objectOperator() {
+        return new DBObjectOperatorFactory();
     }
 
 }
