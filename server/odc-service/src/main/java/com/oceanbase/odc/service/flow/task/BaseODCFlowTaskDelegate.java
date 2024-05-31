@@ -27,6 +27,7 @@ import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
+import org.apache.commons.collections4.CollectionUtils;
 import org.flowable.engine.delegate.DelegateExecution;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -41,7 +42,6 @@ import com.oceanbase.odc.core.shared.exception.UnsupportedException;
 import com.oceanbase.odc.metadb.flow.ServiceTaskInstanceRepository;
 import com.oceanbase.odc.metadb.task.TaskEntity;
 import com.oceanbase.odc.service.common.model.HostProperties;
-import com.oceanbase.odc.service.connection.ConnectionService;
 import com.oceanbase.odc.service.flow.FlowTaskInstanceService;
 import com.oceanbase.odc.service.flow.exception.ServiceTaskCancelledException;
 import com.oceanbase.odc.service.flow.exception.ServiceTaskError;
@@ -78,8 +78,6 @@ import lombok.extern.slf4j.Slf4j;
 public abstract class BaseODCFlowTaskDelegate<T> extends BaseRuntimeFlowableDelegate<T> {
 
     @Autowired
-    private TaskService taskService;
-    @Autowired
     protected HostProperties hostProperties;
     @Autowired
     protected ServiceTaskInstanceRepository serviceTaskRepository;
@@ -95,8 +93,6 @@ public abstract class BaseODCFlowTaskDelegate<T> extends BaseRuntimeFlowableDele
     private Broker broker;
     @Autowired
     private NotificationProperties notificationProperties;
-    @Autowired
-    private ConnectionService connectionService;
     @Autowired
     private EventBuilder eventBuilder;
     @Autowired
@@ -119,6 +115,7 @@ public abstract class BaseODCFlowTaskDelegate<T> extends BaseRuntimeFlowableDele
         int interval = RuntimeTaskConstants.DEFAULT_TASK_CHECK_INTERVAL_SECONDS;
         scheduleExecutor.scheduleAtFixedRate(() -> {
             try {
+                updateHeartbeatTime();
                 if (taskLatch.getCount() > 0) {
                     onProgressUpdate(taskId, taskService);
                 }
@@ -358,6 +355,9 @@ public abstract class BaseODCFlowTaskDelegate<T> extends BaseRuntimeFlowableDele
         }
         List<? extends FlowTaskResult> flowTaskResults =
                 flowTaskInstanceService.getTaskResultFromEntity(taskEntity, false);
+        if (CollectionUtils.isEmpty(flowTaskResults)) {
+            return;
+        }
         Verify.singleton(flowTaskResults, "flowTaskResults");
         if (flowTaskResults.get(0) instanceof AbstractFlowTaskResult) {
             FlowTaskResult flowTaskResult = flowTaskResults.get(0);

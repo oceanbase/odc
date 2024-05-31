@@ -233,9 +233,12 @@ public class ProjectService {
                     resourceRoleService.listByResourceTypeAndId(ResourceType.ODC_PROJECT, previous.getId()));
         }
 
+        checkNoDuplicateProject(project);
+
         previous.setLastModifierId(authenticationFacade.currentUserId());
         previous.setDescription(project.getDescription());
         previous.setName(project.getName());
+
 
         /**
          * save project

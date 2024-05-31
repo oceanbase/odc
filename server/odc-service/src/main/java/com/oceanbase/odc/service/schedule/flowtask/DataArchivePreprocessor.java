@@ -34,11 +34,9 @@ import com.oceanbase.odc.plugin.connect.api.InformationExtensionPoint;
 import com.oceanbase.odc.service.connection.database.DatabaseService;
 import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
-import com.oceanbase.odc.service.db.browser.DBSchemaAccessors;
 import com.oceanbase.odc.service.dlm.DLMConfiguration;
 import com.oceanbase.odc.service.dlm.DlmLimiterService;
 import com.oceanbase.odc.service.dlm.model.DataArchiveParameters;
-import com.oceanbase.odc.service.dlm.model.DataArchiveTableConfig;
 import com.oceanbase.odc.service.flow.model.CreateFlowInstanceReq;
 import com.oceanbase.odc.service.flow.processor.ScheduleTaskPreprocessor;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
@@ -48,7 +46,6 @@ import com.oceanbase.odc.service.schedule.ScheduleTaskService;
 import com.oceanbase.odc.service.schedule.model.JobType;
 import com.oceanbase.odc.service.schedule.model.ScheduleStatus;
 import com.oceanbase.odc.service.session.factory.DefaultConnectSessionFactory;
-import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -102,10 +99,6 @@ public class DataArchivePreprocessor extends AbstractDlmJobPreprocessor {
             ConnectionSession targetSession = targetSessionFactory.generateSession();
             try {
                 supportDataArchivingLink(sourceSession, targetSession);
-                if (sourceDs.getDialectType().isOracle() && !checkTargetTableExist(targetDb.getName(),
-                        dataArchiveParameters.getTables(), targetSession)) {
-                    throw new UnsupportedException("The target table does not exist.");
-                }
                 checkTableAndCondition(sourceSession, sourceDb, dataArchiveParameters.getTables(),
                         dataArchiveParameters.getVariables());
             } finally {
@@ -197,18 +190,4 @@ public class DataArchivePreprocessor extends AbstractDlmJobPreprocessor {
             }
         });
     }
-
-    private boolean checkTargetTableExist(String schemaName, List<DataArchiveTableConfig> tableConfigs,
-            ConnectionSession targetSession) {
-        DBSchemaAccessor dbSchemaAccessor = DBSchemaAccessors.create(targetSession);
-        List<String> strings = dbSchemaAccessor.showTables(schemaName);
-        for (DataArchiveTableConfig tableConfig : tableConfigs) {
-            if (!strings.contains(tableConfig.getTargetTableName())) {
-                log.info("Target table does not exist,tableName={}", tableConfig.getTargetTableName());
-                return false;
-            }
-        }
-        return true;
-    }
-
 }

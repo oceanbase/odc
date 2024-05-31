@@ -106,20 +106,6 @@ public class OBMySQLSchemaAccessor extends MySQLNoLessThan5700SchemaAccessor {
     }
 
     @Override
-    public List<DBDatabase> listDatabases() {
-        String sql =
-                "SELECT SCHEMA_NAME, DEFAULT_CHARACTER_SET_NAME, DEFAULT_COLLATION_NAME FROM information_schema.schemata;";
-        return jdbcOperations.query(sql, (rs, num) -> {
-            DBDatabase database = new DBDatabase();
-            database.setId(rs.getString("SCHEMA_NAME"));
-            database.setName(rs.getString("SCHEMA_NAME"));
-            database.setCharset(rs.getString("DEFAULT_CHARACTER_SET_NAME"));
-            database.setCollation(rs.getString("DEFAULT_COLLATION_NAME"));
-            return database;
-        }).stream().filter(database -> !ESCAPE_SCHEMA_SET.contains(database.getName())).collect(Collectors.toList());
-    }
-
-    @Override
     public List<DBObjectIdentity> listTables(String schemaName, String tableNameLike) {
         List<DBObjectIdentity> results = super.listTables(schemaName, tableNameLike);
 

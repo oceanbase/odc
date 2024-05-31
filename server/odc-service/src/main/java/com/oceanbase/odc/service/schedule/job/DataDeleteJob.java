@@ -99,6 +99,7 @@ public class DataDeleteJob extends AbstractDlmJob {
             dlmTableUnit.setType(parameters.getDeleteByUniqueKey() ? jobType : JobType.DEIRECT_DELETE);
             dlmTasks.add(dlmTableUnit);
         });
+        dlmService.createDlmTableUnits(dlmTasks);
         return dlmTasks;
     }
 

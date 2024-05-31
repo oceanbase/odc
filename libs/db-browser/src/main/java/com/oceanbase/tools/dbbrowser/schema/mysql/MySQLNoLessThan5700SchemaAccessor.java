@@ -145,9 +145,10 @@ public class MySQLNoLessThan5700SchemaAccessor implements DBSchemaAccessor {
 
     @Override
     public List<DBDatabase> listDatabases() {
+        Set<String> grantedDatabases = showDatabases().stream().collect(Collectors.toSet());
         String sql =
                 "SELECT SCHEMA_NAME, DEFAULT_CHARACTER_SET_NAME, DEFAULT_COLLATION_NAME FROM information_schema.schemata;";
-        return jdbcOperations.query(sql, (rs, num) -> {
+        List<DBDatabase> allDatabases = jdbcOperations.query(sql, (rs, num) -> {
             DBDatabase database = new DBDatabase();
             database.setId(rs.getString("SCHEMA_NAME"));
             database.setName(rs.getString("SCHEMA_NAME"));
@@ -155,6 +156,7 @@ public class MySQLNoLessThan5700SchemaAccessor implements DBSchemaAccessor {
             database.setCollation(rs.getString("DEFAULT_COLLATION_NAME"));
             return database;
         });
+        return allDatabases.stream().filter(db -> grantedDatabases.contains(db.getName())).collect(Collectors.toList());
     }
 
     @Override
@@ -447,6 +449,14 @@ public class MySQLNoLessThan5700SchemaAccessor implements DBSchemaAccessor {
         return jdbcOperations.query(sql, new Object[] {schemaName, viewName}, listBasicTableColumnRowMapper());
     }
 
+    @Override
+    public Map<String, List<DBTableColumn>> listBasicColumnsInfo(String schemaName) {
+        String sql = sqlMapper.getSql(Statements.LIST_BASIC_SCHEMA_COLUMNS_INFO);
+        List<DBTableColumn> tableColumns =
+                jdbcOperations.query(sql, new Object[] {schemaName}, listBasicTableColumnIdentityRowMapper());
+        return tableColumns.stream().collect(Collectors.groupingBy(DBTableColumn::getTableName));
+    }
+
     protected String getListTableColumnsSql(String schemaName) {
         MySQLSqlBuilder sb = new MySQLSqlBuilder();
         sb.append(
@@ -551,6 +561,16 @@ public class MySQLNoLessThan5700SchemaAccessor implements DBSchemaAccessor {
             tableColumn.setName(rs.getString(MySQLConstants.COL_COLUMN_NAME));
             tableColumn.setTypeName(rs.getString(MySQLConstants.COL_DATA_TYPE));
             tableColumn.setComment(rs.getString(MySQLConstants.COL_COLUMN_COMMENT));
+            return tableColumn;
+        };
+    }
+
+    protected RowMapper<DBTableColumn> listBasicTableColumnIdentityRowMapper() {
+        return (rs, romNum) -> {
+            DBTableColumn tableColumn = new DBTableColumn();
+            tableColumn.setSchemaName(rs.getString(MySQLConstants.COL_TABLE_SCHEMA));
+            tableColumn.setTableName(rs.getString(MySQLConstants.COL_TABLE_NAME));
+            tableColumn.setName(rs.getString(MySQLConstants.COL_COLUMN_NAME));
             return tableColumn;
         };
     }

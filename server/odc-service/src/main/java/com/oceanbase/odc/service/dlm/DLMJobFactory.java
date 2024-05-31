@@ -65,7 +65,9 @@ public class DLMJobFactory extends JobFactory {
         jobParameter.setWriterTaskCount(singleTaskThreadPoolSize - jobParameter.getReaderTaskCount());
         jobParameter.setGeneratorBatchSize(defaultScanBatchSize);
         jobParameter.setShardingStrategy(defaultShardingStrategy);
+        jobParameter.setMigrateRule(parameters.getParameters().getMigrateRule());
         jobParameter.setMigratePartitions(parameters.getParameters().getMigratePartitions());
+        historyJob.setJobParameter(jobParameter);
         parameters.getSourceDatasourceInfo().setConnectionCount(2 * (jobParameter.getReaderTaskCount()
                 + jobParameter.getWriterTaskCount()));
         parameters.getTargetDatasourceInfo().setConnectionCount(2 * (jobParameter.getReaderTaskCount()

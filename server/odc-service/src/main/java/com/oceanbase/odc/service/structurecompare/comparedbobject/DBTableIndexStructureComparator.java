@@ -37,13 +37,14 @@ public class DBTableIndexStructureComparator extends AbstractDBObjectStructureCo
     private DBTableIndexEditor targetTableIndexEditor;
 
     public DBTableIndexStructureComparator(DBTableIndexEditor targetTableIndexEditor, String srcSchemaName,
-            String tgtSchemaName) {
-        super(srcSchemaName, tgtSchemaName);
+            String tgtSchemaName, String srcTableName, String tgtTableName) {
+        super(srcSchemaName, tgtSchemaName, srcTableName, tgtTableName);
         this.targetTableIndexEditor = targetTableIndexEditor;
     }
 
     @Override
-    protected DBObjectComparisonResult buildOnlyInTargetResult(DBTableIndex tgtDbObject, String srcSchemaName) {
+    protected DBObjectComparisonResult buildOnlyInTargetResult(DBTableIndex tgtDbObject, String srcSchemaName,
+            String srcTableName) {
         DBObjectComparisonResult result = new DBObjectComparisonResult(DBObjectType.INDEX, tgtDbObject.getName(),
                 srcSchemaName, tgtDbObject.getSchemaName());
         result.setComparisonResult(ComparisonResult.ONLY_IN_TARGET);
@@ -52,12 +53,14 @@ public class DBTableIndexStructureComparator extends AbstractDBObjectStructureCo
     }
 
     @Override
-    protected DBObjectComparisonResult buildOnlyInSourceResult(DBTableIndex srcDbObject, String tgtSchemaName) {
+    protected DBObjectComparisonResult buildOnlyInSourceResult(DBTableIndex srcDbObject, String tgtSchemaName,
+            String tgtTableName) {
         DBObjectComparisonResult result = new DBObjectComparisonResult(DBObjectType.INDEX, srcDbObject.getName(),
                 srcDbObject.getSchemaName(), tgtSchemaName);
         result.setComparisonResult(ComparisonResult.ONLY_IN_SOURCE);
         result.setChangeScript(targetTableIndexEditor
-                .generateCreateObjectDDL(copySrcIndexWithTgtSchemaName(srcDbObject, tgtSchemaName)));
+                .generateCreateObjectDDL(
+                        copySrcIndexWithTgtSchemaNameAndTableName(srcDbObject, tgtSchemaName, tgtTableName)));
         return result;
     }
 
@@ -66,7 +69,8 @@ public class DBTableIndexStructureComparator extends AbstractDBObjectStructureCo
         DBObjectComparisonResult result = new DBObjectComparisonResult(DBObjectType.INDEX, srcIndex.getName(),
                 srcIndex.getSchemaName(), tgtIndex.getSchemaName());
 
-        DBTableIndex copiedSrcIdx = copySrcIndexWithTgtSchemaName(srcIndex, tgtIndex.getSchemaName());
+        DBTableIndex copiedSrcIdx =
+                copySrcIndexWithTgtSchemaNameAndTableName(srcIndex, tgtIndex.getSchemaName(), tgtIndex.getTableName());
         /**
          * sort column names in order to avoid unequal judgment index due to different column name orders
          */
@@ -85,10 +89,12 @@ public class DBTableIndexStructureComparator extends AbstractDBObjectStructureCo
         return result;
     }
 
-    private DBTableIndex copySrcIndexWithTgtSchemaName(DBTableIndex srcIndex, String tgtSchemaName) {
+    private DBTableIndex copySrcIndexWithTgtSchemaNameAndTableName(DBTableIndex srcIndex, String tgtSchemaName,
+            String tgtTableName) {
         DBTableIndex copiedSrcIdx = new DBTableIndex();
         BeanUtils.copyProperties(srcIndex, copiedSrcIdx);
         copiedSrcIdx.setSchemaName(tgtSchemaName);
+        copiedSrcIdx.setTableName(tgtTableName);
         return copiedSrcIdx;
     }
 }

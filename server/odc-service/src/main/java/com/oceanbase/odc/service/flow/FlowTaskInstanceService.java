@@ -232,7 +232,8 @@ public class FlowTaskInstanceService {
 
     public List<? extends FlowTaskResult> getResult(@NotNull Long id) throws IOException {
         TaskEntity task = flowInstanceService.getTaskByFlowInstanceId(id);
-        if (task.getTaskType() == TaskType.ONLINE_SCHEMA_CHANGE || task.getTaskType() == TaskType.EXPORT) {
+        if (task.getTaskType() == TaskType.ONLINE_SCHEMA_CHANGE || task.getTaskType() == TaskType.EXPORT
+                || task.getTaskType() == TaskType.MULTIPLE_ASYNC) {
             return getTaskResultFromEntity(task, true);
         }
         Optional<TaskEntity> taskEntityOptional = getCompleteTaskEntity(id);
@@ -778,19 +779,20 @@ public class FlowTaskInstanceService {
     }
 
     private void setDownloadUrlsIfNecessary(Long taskId, List<? extends FlowTaskResult> results) {
-        if (cloudObjectStorageService.supported()) {
-            for (FlowTaskResult result : results) {
-                TaskDownloadUrls urls = databaseChangeOssUrlCache.get(taskId);
-                if (result instanceof AbstractFlowTaskResult) {
-                    ((AbstractFlowTaskResult) result)
-                            .setFullLogDownloadUrl(urls.getLogDownloadUrl());
-                }
-                if (result instanceof DatabaseChangeResult) {
-                    ((DatabaseChangeResult) result).setZipFileDownloadUrl(urls.getDatabaseChangeZipFileDownloadUrl());
-                    if (Objects.nonNull(((DatabaseChangeResult) result).getRollbackPlanResult())) {
-                        ((DatabaseChangeResult) result).getRollbackPlanResult()
-                                .setResultFileDownloadUrl(urls.getRollBackPlanResultFileDownloadUrl());
-                    }
+        if (!cloudObjectStorageService.supported()) {
+            return;
+        }
+        for (FlowTaskResult result : results) {
+            TaskDownloadUrls urls = databaseChangeOssUrlCache.get(taskId);
+            if (result instanceof AbstractFlowTaskResult) {
+                ((AbstractFlowTaskResult) result)
+                        .setFullLogDownloadUrl(urls.getLogDownloadUrl());
+            }
+            if (result instanceof DatabaseChangeResult) {
+                ((DatabaseChangeResult) result).setZipFileDownloadUrl(urls.getDatabaseChangeZipFileDownloadUrl());
+                if (Objects.nonNull(((DatabaseChangeResult) result).getRollbackPlanResult())) {
+                    ((DatabaseChangeResult) result).getRollbackPlanResult()
+                            .setResultFileDownloadUrl(urls.getRollBackPlanResultFileDownloadUrl());
                 }
             }
         }

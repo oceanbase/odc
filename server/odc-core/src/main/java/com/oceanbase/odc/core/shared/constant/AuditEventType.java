@@ -44,6 +44,8 @@ public enum AuditEventType implements Translatable {
 
     ASYNC,
 
+    MULTIPLE_ASYNC,
+
     MOCKDATA,
 
     IMPORT,
@@ -91,6 +93,8 @@ public enum AuditEventType implements Translatable {
     NOTIFICATION_MANAGEMENT,
 
     SENSITIVE_COLUMN_MANAGEMENT,
+
+    DATABASE_CHANGE_CHANGING_ORDER_TEMPLATE_MANAGEMENT,
 
     ;
 

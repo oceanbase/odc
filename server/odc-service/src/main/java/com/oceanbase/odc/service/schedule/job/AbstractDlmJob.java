@@ -117,12 +117,15 @@ public abstract class AbstractDlmJob implements OdcJob {
                 continue;
             }
             try {
-                try {
-                    DLMTableStructureSynchronizer.sync(dlmTableUnit.getSourceDatasourceInfo(),
-                            dlmTableUnit.getTargetDatasourceInfo(), dlmTableUnit.getTableName(),
-                            dlmTableUnit.getParameters().getSyncDBObjectType());
-                } catch (SQLException e) {
-                    log.warn("Sync table structure failed,tableName={}", dlmTableUnit.getTableName(), e);
+                if (dlmTableUnit.getType() == JobType.MIGRATE) {
+                    try {
+                        DLMTableStructureSynchronizer.sync(dlmTableUnit.getSourceDatasourceInfo(),
+                                dlmTableUnit.getTargetDatasourceInfo(), dlmTableUnit.getTableName(),
+                                dlmTableUnit.getTargetTableName(),
+                                dlmTableUnit.getParameters().getSyncDBObjectType());
+                    } catch (SQLException e) {
+                        log.warn("Sync table structure failed,tableName={}", dlmTableUnit.getTableName(), e);
+                    }
                 }
                 job = jobFactory.createJob(dlmTableUnit);
                 log.info("Create dlm job succeed,taskId={},task parameters={}", taskId, dlmTableUnit);

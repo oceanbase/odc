@@ -13,25 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package com.oceanbase.tools.dbbrowser.template.generator;
 
-package com.oceanbase.odc.plugin.schema.oracle.browser;
-
-import org.springframework.jdbc.core.JdbcOperations;
-
-import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
-import com.oceanbase.tools.dbbrowser.schema.oracle.OracleSchemaAccessor;
-import com.oceanbase.tools.dbbrowser.util.ALLDataDictTableNames;
-
-import lombok.NonNull;
+import com.oceanbase.tools.dbbrowser.template.DBObjectTemplate;
+import com.oceanbase.tools.dbbrowser.template.oracle.OracleTypeTemplate;
 
 /**
  * @author jingtian
- * @date 2023/11/16
- * @since ODC_release_4.2.4
+ * @date 2024/5/22
  */
-public class DBSchemaAccessors {
+public class DBTypeTemplateGenerator extends DBObjectTemplateGenerator<DBObjectTemplate> {
+    @Override
+    public DBObjectTemplate createForMySQL(String dbVersion) {
+        throw new UnsupportedOperationException("Not supported yet");
+    }
 
-    public static DBSchemaAccessor create(@NonNull JdbcOperations jdbcOperations) {
-        return new OracleSchemaAccessor(jdbcOperations, new ALLDataDictTableNames());
+    @Override
+    public OracleTypeTemplate createForOracle(String dbVersion) {
+        return new OracleTypeTemplate();
     }
 }

@@ -68,7 +68,7 @@ public class DBColumnRepositoryTest extends ServiceTestEnv {
             entity.setName("table_for_test_" + i);
             entities.add(entity);
         }
-        List<DBColumnEntity> saved = dbColumnRepository.batchCreate(entities);
+        List<DBColumnEntity> saved = dbColumnRepository.batchCreate(entities, 200);
         Assert.assertEquals(entities.size(), saved.size());
     }
 

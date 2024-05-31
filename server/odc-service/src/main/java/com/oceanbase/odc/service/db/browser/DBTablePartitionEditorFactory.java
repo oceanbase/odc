@@ -15,17 +15,11 @@
  */
 package com.oceanbase.odc.service.db.browser;
 
-import com.oceanbase.odc.common.util.VersionUtils;
 import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.core.shared.constant.ConnectType;
 import com.oceanbase.odc.core.shared.exception.UnsupportedException;
 import com.oceanbase.tools.dbbrowser.editor.DBTablePartitionEditor;
-import com.oceanbase.tools.dbbrowser.editor.mysql.MySQLDBTablePartitionEditor;
-import com.oceanbase.tools.dbbrowser.editor.mysql.OBMySQLDBTablePartitionEditor;
-import com.oceanbase.tools.dbbrowser.editor.mysql.OBMySQLLessThan2277PartitionEditor;
-import com.oceanbase.tools.dbbrowser.editor.mysql.OBMySQLLessThan400DBTablePartitionEditor;
-import com.oceanbase.tools.dbbrowser.editor.oracle.OBOracleLessThan400DBTablePartitionEditor;
-import com.oceanbase.tools.dbbrowser.editor.oracle.OracleDBTablePartitionEditor;
+import com.oceanbase.tools.dbbrowser.editor.generator.DBTablePartitionEditorGenerator;
 
 /**
  * @Author: Lebie
@@ -42,22 +36,17 @@ public class DBTablePartitionEditorFactory extends DBObjectEditorFactory<DBTable
     public DBTablePartitionEditor create() {
         PreConditions.notNull(connectType, "connectType");
         if (connectType == ConnectType.OB_MYSQL || connectType == ConnectType.CLOUD_OB_MYSQL) {
-            if (VersionUtils.isLessThan(dbVersion, "2.2.77")) {
-                return new OBMySQLLessThan2277PartitionEditor();
-            } else if (VersionUtils.isLessThan(dbVersion, "4.0.0")) {
-                return new OBMySQLLessThan400DBTablePartitionEditor();
-            } else {
-                return new OBMySQLDBTablePartitionEditor();
-            }
-        } else if (connectType == ConnectType.MYSQL || connectType == ConnectType.ODP_SHARDING_OB_MYSQL) {
-            return new MySQLDBTablePartitionEditor();
+            return DBTablePartitionEditorGenerator.createForOBMySQL(dbVersion);
+        } else if (connectType == ConnectType.MYSQL) {
+            return DBTablePartitionEditorGenerator.createForMySQL(dbVersion);
+        } else if (connectType == ConnectType.ODP_SHARDING_OB_MYSQL) {
+            return DBTablePartitionEditorGenerator.createForODPOBMySQL(dbVersion);
         } else if (connectType == ConnectType.OB_ORACLE || connectType == ConnectType.CLOUD_OB_ORACLE) {
-            if (VersionUtils.isLessThan(dbVersion, "4.0.0")) {
-                return new OBOracleLessThan400DBTablePartitionEditor();
-            }
-            return new OracleDBTablePartitionEditor();
+            return DBTablePartitionEditorGenerator.createForOBOracle(dbVersion);
         } else if (connectType == ConnectType.ORACLE) {
-            return new OracleDBTablePartitionEditor();
+            return DBTablePartitionEditorGenerator.createForOracle(dbVersion);
+        } else if (connectType == ConnectType.DORIS) {
+            return DBTablePartitionEditorGenerator.createForDoris(dbVersion);
         } else {
             throw new UnsupportedException(String.format("ConnectType '%s' not supported", connectType));
         }

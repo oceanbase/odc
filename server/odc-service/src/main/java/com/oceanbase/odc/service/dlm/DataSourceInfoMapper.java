@@ -43,6 +43,22 @@ public class DataSourceInfoMapper {
         connectionConfig.setPort(dataSourceInfo.getPort());
         connectionConfig.setUsername(dataSourceInfo.getFullUserName());
         connectionConfig.setType(ConnectType.valueOf(dataSourceInfo.getDatabaseType().name()));
+        // convert full username to native user name
+        if (dataSourceInfo.getDatabaseType() == DataBaseType.OB_ORACLE) {
+            String userName = connectionConfig.getUsername();
+            if (userName.contains("#")) {
+                userName = userName.split("#")[0];
+            }
+            if (userName.contains("@")) {
+                userName = userName.split("@")[0];
+            }
+            if (userName.contains("\"")) {
+                userName = userName.replace("\"", "");
+            }
+            connectionConfig.setUsername(userName);
+            connectionConfig.setTenantName(dataSourceInfo.getTenantName());
+            connectionConfig.setClusterName(dataSourceInfo.getClusterName());
+        }
         return connectionConfig;
     }
 
