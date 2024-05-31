@@ -202,6 +202,7 @@ public enum ErrorCodes implements ErrorCode {
     ResourceCreating,
     ResourceModifying,
     ResourceSynchronizing,
+    CloudResourceSynchronizing,
 
     // Integration
     EnableSqlInterceptorNotAllowed,

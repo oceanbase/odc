@@ -30,6 +30,9 @@ public interface UserRepository extends OdcJpaRepository<UserEntity, Long> {
 
     List<UserEntity> findByIdIn(Collection<Long> ids);
 
+    @Query(value = "select u.* from iam_user u where u.account_name in (:accountNames)", nativeQuery = true)
+    List<UserEntity> findByAccountNameIn(@Param("accountNames") Collection<String> accountNames);
+
     boolean existsByIdAndOrganizationId(Long id, Long organizationId);
 
     default List<UserEntity> partitionFindById(Collection<Long> ids, int size) {
@@ -49,6 +52,10 @@ public interface UserRepository extends OdcJpaRepository<UserEntity, Long> {
     Optional<UserEntity> findByAccountName(String accountName);
 
     List<UserEntity> findByOrganizationId(Long organizationId);
+
+    @Query(value = "select iu.* from iam_user iu join iam_user_organization iuo on iu.id = iuo.user_id where iuo.organization_id=:organizationId",
+            nativeQuery = true)
+    List<UserEntity> findByBoundOrganization(@Param("organizationId") Long organizationId);
 
     Optional<UserEntity> findByOrganizationIdAndAccountName(Long organizationId, String accountName);
 

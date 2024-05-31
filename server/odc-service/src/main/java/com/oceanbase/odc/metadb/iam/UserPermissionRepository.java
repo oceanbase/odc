@@ -37,6 +37,9 @@ public interface UserPermissionRepository
 
     List<UserPermissionEntity> findByUserId(@Param("userId") Long userId);
 
+    List<UserPermissionEntity> findByUserIdAndOrganizationId(@Param("userId") Long userId,
+            @Param("organizationId") Long organizationId);
+
     List<UserPermissionEntity> findByPermissionId(@Param("permissionId") Long permissionId);
 
     List<UserPermissionEntity> findByUserIdIn(@Param("userIds") Collection<Long> userIds);
@@ -77,6 +80,9 @@ public interface UserPermissionRepository
     @Transactional
     @Query(value = "delete from iam_user_permission up where up.permission_id in (:permissionIds)", nativeQuery = true)
     int deleteByPermissionIds(@Param("permissionIds") Collection<Long> permissionIds);
+
+    @Transactional
+    int deleteByUserIdAndOrganizationId(Long userId, Long organizationId);
 
     default List<UserPermissionEntity> batchCreate(List<UserPermissionEntity> entities) {
         String sql = InsertSqlTemplateBuilder.from("iam_user_permission")
