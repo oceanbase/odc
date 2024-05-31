@@ -23,6 +23,7 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -35,6 +36,7 @@ import com.oceanbase.tools.loaddump.common.enums.DataFormat;
 import com.oceanbase.tools.loaddump.common.enums.ObjectType;
 import com.oceanbase.tools.loaddump.common.model.BaseParameter;
 import com.oceanbase.tools.loaddump.common.model.DumpParameter;
+import com.oceanbase.tools.loaddump.common.model.LoadParameter;
 import com.oceanbase.tools.loaddump.common.model.ObjectStatus;
 import com.oceanbase.tools.loaddump.common.model.TaskDetail;
 import com.oceanbase.tools.loaddump.context.TaskContext;
@@ -152,7 +154,7 @@ public abstract class BaseOceanBaseTransferJob<T extends BaseParameter> implemen
                 if (schemaContext == null) {
                     throw new NullPointerException("Data task context is null");
                 }
-                syncWaitFinished(schemaContext);
+                syncWaitFinished(schemaContext, true);
             }
 
             if (transferData) {
@@ -162,7 +164,7 @@ public abstract class BaseOceanBaseTransferJob<T extends BaseParameter> implemen
                 if (dataContext == null) {
                     throw new NullPointerException("Data task context is null");
                 }
-                syncWaitFinished(dataContext);
+                syncWaitFinished(dataContext, false);
             }
 
             LOGGER.info("Transfer task finished by ob-loader-dumper!");
@@ -182,7 +184,7 @@ public abstract class BaseOceanBaseTransferJob<T extends BaseParameter> implemen
     }
 
     @SuppressWarnings("all")
-    private void syncWaitFinished(@NonNull TaskContext context) throws InterruptedException {
+    private void syncWaitFinished(@NonNull TaskContext context, boolean isTransferSchema) throws InterruptedException {
         while (!Thread.currentThread().isInterrupted() && !status.isTerminated()) {
             if (context.isAllTasksSuccessed()) {
                 shutdownContext(context);
@@ -192,6 +194,18 @@ public abstract class BaseOceanBaseTransferJob<T extends BaseParameter> implemen
                 Collection<TaskDetail> failedTasks = context.getFailureTaskDetails();
                 if (CollectionUtils.isEmpty(failedTasks)) {
                     throw new IllegalStateException("No failed task details");
+                }
+                if (isTransferSchema && parameter instanceof LoadParameter) {
+                    if (((LoadParameter) parameter).getMaxErrors() == -1) {
+                        return;
+                    }
+                    if (!((LoadParameter) parameter).isReplaceObjectIfExists()) {
+                        failedTasks = failedTasks.stream()
+                                .filter(i -> !isCreateExistsObjectError(i.getError())).collect(Collectors.toList());
+                        if (failedTasks.isEmpty()) {
+                            return;
+                        }
+                    }
                 }
                 String errorMsg = failedTasks.stream()
                         .map(i -> i.getSchemaTable() + ": " + i.getError())
@@ -253,6 +267,11 @@ public abstract class BaseOceanBaseTransferJob<T extends BaseParameter> implemen
                 .filter(s -> s.getName() != null)
                 .map(ObjectResult::of)
                 .collect(Collectors.toList());
+    }
+
+    private boolean isCreateExistsObjectError(String error) {
+        return StringUtils.containsIgnoreCase(error, "already exist") ||
+                StringUtils.containsIgnoreCase(error, "already used by an existing object");
     }
 
 }
