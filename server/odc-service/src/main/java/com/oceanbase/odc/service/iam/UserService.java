@@ -49,8 +49,6 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.domain.Sort.Order;
 import org.springframework.data.jpa.domain.JpaSort;
 import org.springframework.data.jpa.domain.Specification;
-import org.springframework.security.core.session.SessionInformation;
-import org.springframework.security.core.session.SessionRegistry;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -175,9 +173,6 @@ public class UserService {
 
     @Autowired
     private UserOrganizationService userOrganizationService;
-
-    @Autowired
-    private SessionRegistry sessionRegistry;
 
     private final PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
     private final List<Consumer<PasswordChangeEvent>> postPasswordChangeHooks = new ArrayList<>();
@@ -681,7 +676,6 @@ public class UserService {
     @PreAuthenticate(actions = "update", resourceType = "ODC_USER", indexOfIdParam = 0)
     public User update(long id, UpdateUserReq updateUserReq) {
         UserEntity userEntity = nullSafeGet(id);
-        boolean before = userEntity.isEnabled();
         if (isBuiltin(userEntity)) {
             throw new UnsupportedException(ErrorCodes.IllegalOperation, new Object[] {"admin account"},
                     "Operation on admin account is not allowed");
@@ -731,9 +725,6 @@ public class UserService {
                 log.debug("User to role relation has been updated: {}", userRoleEntity);
             }
         }
-        if (before && !updateUserReq.isEnabled()) {
-            expireUserSessionsIfExisted(userEntity.getAccountName());
-        }
         return detail(id);
     }
 
@@ -743,7 +734,6 @@ public class UserService {
         PreConditions.validArgumentState(id != authenticationFacade.currentUserId(), ErrorCodes.BadRequest,
                 new Object[] {"Can not enable or disable yourself"}, "Can not enable or disable yourself");
         UserEntity userEntity = nullSafeGet(id);
-        boolean before = userEntity.isEnabled();
         if (isBuiltin(userEntity)) {
             throw new UnsupportedException(ErrorCodes.IllegalOperation, new Object[] {"admin account"},
                     "Operation on admin account is not allowed");
@@ -753,22 +743,7 @@ public class UserService {
         userRepository.update(userEntity);
         User user = new User(userEntity);
         publishTriggerEventAfterTx(user, TriggerEvent.USER_UPDATED);
-        if (before && !enabled) {
-            expireUserSessionsIfExisted(user.getAccountName());
-        }
         return user;
-    }
-
-    private void expireUserSessionsIfExisted(String accountName) {
-        for (Object principal : sessionRegistry.getAllPrincipals()) {
-            if (principal instanceof User) {
-                User user = (User) principal;
-                if (accountName.equals(user.getAccountName())) {
-                    sessionRegistry.getAllSessions(principal, false).forEach(SessionInformation::expireNow);
-                    break;
-                }
-            }
-        }
     }
 
     /**
