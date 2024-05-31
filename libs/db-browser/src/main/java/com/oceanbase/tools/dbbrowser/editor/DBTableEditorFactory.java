@@ -70,16 +70,12 @@ public class DBTableEditorFactory extends AbstractDBBrowserFactory<DBTableEditor
 
     @Override
     public DBTableEditor buildForOracle() {
-        return new OracleTableEditor(getTableIndexEditor(),
-                getTableColumnEditor(),
-                getTableConstraintEditor(),
-                getTablePartitionEditor());
+        return buildForOBOracle();
     }
 
     @Override
     public DBTableEditor buildForOdpSharding() {
-        Validate.notNull(this.dbVersion, "DBVersion can not be null");
-        return null;
+        return buildForOBMySQL();
     }
 
     private DBTableIndexEditor getTableIndexEditor() {
