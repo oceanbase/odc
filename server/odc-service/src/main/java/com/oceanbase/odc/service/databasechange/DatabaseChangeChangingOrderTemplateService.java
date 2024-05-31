@@ -327,6 +327,7 @@ public class DatabaseChangeChangingOrderTemplateService {
     }
 
     public DatabaseChangingOrderTemplateExists exists(String name, Long projectId) {
+        projectPermissionValidator.checkProjectRole(projectId, ResourceRoleName.all());
         if (templateRepository.existsByNameAndProjectId(name, projectId)) {
             return DatabaseChangingOrderTemplateExists
                     .builder().exists(true).errorMessage(ErrorCodes.DuplicatedExists.getLocalizedMessage(
