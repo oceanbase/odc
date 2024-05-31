@@ -15,6 +15,7 @@
  */
 package com.oceanbase.odc.service.flow.util;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -258,6 +259,17 @@ public class FlowTaskUtil {
 
     public static void setConnectionConfig(@NonNull Map<String, Object> variables, @NonNull ConnectionConfig config) {
         variables.put(RuntimeTaskConstants.CONNECTION_CONFIG, config);
+    }
+
+    public static void setConnectionConfigList(@NonNull Map<String, Object> variables,
+            @NonNull List<ConnectionConfig> configList) {
+        variables.put(RuntimeTaskConstants.CONNECTION_CONFIG_LIST, configList);
+    }
+
+    public static List<ConnectionConfig> getConnectionConfigList(@NonNull DelegateExecution execution) {
+        Object value = execution.getVariables().get(RuntimeTaskConstants.CONNECTION_CONFIG_LIST);
+        return internalGet(value, ArrayList.class)
+                .orElseThrow(() -> new VerifyException("ConnectionConfigList is absent"));
     }
 
     public static ConnectionConfig getConnectionConfig(@NonNull DelegateExecution execution) {
