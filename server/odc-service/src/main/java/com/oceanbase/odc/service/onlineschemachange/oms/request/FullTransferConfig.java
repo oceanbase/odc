@@ -15,8 +15,6 @@
  */
 package com.oceanbase.odc.service.onlineschemachange.oms.request;
 
-import com.oceanbase.odc.service.onlineschemachange.model.ThrottleConfig;
-
 import lombok.Data;
 
 /**

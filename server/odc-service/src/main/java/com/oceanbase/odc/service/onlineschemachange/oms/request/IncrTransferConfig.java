@@ -22,7 +22,6 @@ import javax.validation.constraints.Null;
 import org.hibernate.validator.constraints.Range;
 
 import com.google.common.collect.Lists;
-import com.oceanbase.odc.service.onlineschemachange.model.ThrottleConfig;
 
 import lombok.Data;
 

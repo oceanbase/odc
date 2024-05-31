@@ -58,7 +58,7 @@ public class OscController {
 
     @ApiOperation(value = "updateRateLimitConfig", notes = "update osc rate limit config")
     @RequestMapping(value = "/updateRateLimitConfig", method = RequestMethod.POST)
-    public SuccessResponse<Boolean> updateThrottleConfig(
+    public SuccessResponse<Boolean> updateRateLimitConfig(
             @RequestBody UpdateRateLimiterConfigRequest updateRateLimiterConfig) {
         return Responses.success(oscService.updateRateLimiterConfig(updateRateLimiterConfig));
     }
