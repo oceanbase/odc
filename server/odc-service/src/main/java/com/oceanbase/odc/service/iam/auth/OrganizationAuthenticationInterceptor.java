@@ -111,9 +111,6 @@ public class OrganizationAuthenticationInterceptor implements HandlerInterceptor
                     "please set currentOrganizationId parameter or header in request");
         }
         long actualOrganizationId = Long.valueOf(actual).longValue();
-        if (!authenticationFacade.currentUser().isEnabled()) {
-            throw new AccessDeniedException(ErrorCodes.AccessDenied, "Current user is disabled");
-        }
         if (authenticationFacade.currentOrganizationId() == actualOrganizationId
                 && authenticationFacade.currentOrganization().getType() == OrganizationType.TEAM) {
             return true;
