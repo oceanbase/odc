@@ -387,10 +387,7 @@ public class UserService {
     @SkipAuthorize("odc internal usage")
     public boolean removeFromOrganization(@NotNull Long id, @NotNull Long organizationId) {
         userRoleRepository.deleteByOrganizationIdAndUserId(organizationId, id);
-        List<UserPermissionEntity> userPermissionEntities =
-                userPermissionRepository.findByUserIdAndOrganizationId(id, organizationId);
-        userPermissionRepository.deleteByIds(userPermissionEntities.stream().map(UserPermissionEntity::getPermissionId)
-                .collect(Collectors.toList()));
+        userPermissionRepository.deleteByUserIdAndOrganizationId(id, organizationId);
         userOrganizationRepository.deleteByUserIdAndOrganizationId(id, organizationId);
         log.info("User removed from organization, userId={}, organizationId={}", id, organizationId);
         return true;

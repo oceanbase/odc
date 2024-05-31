@@ -81,6 +81,9 @@ public interface UserPermissionRepository
     @Query(value = "delete from iam_user_permission up where up.permission_id in (:permissionIds)", nativeQuery = true)
     int deleteByPermissionIds(@Param("permissionIds") Collection<Long> permissionIds);
 
+    @Transactional
+    int deleteByUserIdAndOrganizationId(Long userId, Long organizationId);
+
     default List<UserPermissionEntity> batchCreate(List<UserPermissionEntity> entities) {
         String sql = InsertSqlTemplateBuilder.from("iam_user_permission")
                 .field(UserPermissionEntity_.userId)
