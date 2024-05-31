@@ -832,6 +832,11 @@ public class DatabaseService {
                 throw new AccessDeniedException();
             }
         });
+        Set<Long> memberIds = resourceRoleService.listByResourceTypeAndId(ResourceType.ODC_PROJECT, projectId).stream()
+                .map(UserResourceRole::getUserId).collect(Collectors.toSet());
+        if (!memberIds.containsAll(req.getOwnerIds())) {
+            throw new AccessDeniedException();
+        }
         resourceRoleService.deleteByResourceTypeAndIdIn(ResourceType.ODC_DATABASE, req.getDatabaseIds());
         List<UserResourceRole> userResourceRoles = new ArrayList<>();
         req.getDatabaseIds().forEach(databaseId -> {
