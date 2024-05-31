@@ -37,5 +37,6 @@ public class CreateDatabaseChangeChangingOrderTemplateReq {
     private Long projectId;
 
     @NotEmpty(message = "The number of databases must be greater than 1 and not more than 100")
-    private List<@NotEmpty(message = "Each execution node must have at least one database") List<@NotNull(message = "Database cannot not be empty")  Long>> orders;
+    private List<@NotEmpty(message = "Each execution node must have at least one database") List<@NotNull(
+            message = "Database cannot not be empty") Long>> orders;
 }
