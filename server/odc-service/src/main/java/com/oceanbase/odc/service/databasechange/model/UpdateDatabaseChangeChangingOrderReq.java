@@ -17,7 +17,6 @@ package com.oceanbase.odc.service.databasechange.model;
 
 import java.util.List;
 
-import javax.validation.Valid;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
@@ -41,6 +40,7 @@ public class UpdateDatabaseChangeChangingOrderReq {
     @NotNull
     private Long projectId;
 
-    @NotEmpty
-    private List<@Valid @NotEmpty List<@NotNull Long>> orders;
+    @NotEmpty(message = "The number of databases must be greater than 1 and not more than 100")
+    private List<@NotEmpty(message = "Each execution node must have at least one database") List<@NotNull(
+            message = "Database cannot be empty") Long>> orders;
 }

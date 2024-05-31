@@ -17,7 +17,6 @@ package com.oceanbase.odc.service.databasechange.model;
 
 import java.util.List;
 
-import javax.validation.Valid;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
@@ -29,7 +28,6 @@ import lombok.Data;
 
 @Data
 public class CreateDatabaseChangeChangingOrderTemplateReq {
-
     @NotBlank
     @Size(max = 256, message = "name is out of range [0, 256]")
     @Name(message = "Template name cannot start or end with whitespaces")
@@ -38,6 +36,6 @@ public class CreateDatabaseChangeChangingOrderTemplateReq {
     @NotNull
     private Long projectId;
 
-    @NotEmpty
-    private List<@Valid @NotEmpty List<@NotNull Long>> orders;
+    @NotEmpty(message = "The number of databases must be greater than 1 and not more than 100")
+    private List<@NotEmpty(message = "Each execution node must have at least one database") List<@NotNull(message = "Database cannot not be empty")  Long>> orders;
 }
