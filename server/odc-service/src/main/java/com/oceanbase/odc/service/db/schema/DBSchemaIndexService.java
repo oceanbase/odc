@@ -220,7 +220,7 @@ public class DBSchemaIndexService {
             List<Database> dbs = databaseService.listDatabasesByIds(Collections.singleton(req.getResourceId()));
             if (authenticationFacade.currentUser().getOrganizationType() == OrganizationType.INDIVIDUAL) {
                 ConnectionConfig config =
-                        connectionService.getBasicWithoutPermissionCheck(dbs.get(0).getDataSource().getCreatorId());
+                        connectionService.getBasicWithoutPermissionCheck(dbs.get(0).getDataSource().getId());
                 if (!Objects.equals(authenticationFacade.currentUserId(), config.getCreatorId())) {
                     throw new NotFoundException(ResourceType.ODC_DATABASE, "id", req.getResourceId());
                 }
