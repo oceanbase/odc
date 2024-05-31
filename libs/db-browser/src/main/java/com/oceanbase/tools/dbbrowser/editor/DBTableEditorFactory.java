@@ -53,7 +53,7 @@ public class DBTableEditorFactory extends AbstractDBBrowserFactory<DBTableEditor
         DBTableColumnEditor columnEditor = getTableColumnEditor();
         DBTableConstraintEditor constraintEditor = getTableConstraintEditor();
         DBTablePartitionEditor partitionEditor = getTablePartitionEditor();
-        if (VersionUtils.isLessThan(dbVersion, "4.0.0")) {
+        if (VersionUtils.isLessThan(this.dbVersion, "4.0.0")) {
             return new OBMySQLLessThan400TableEditor(indexEditor,
                     columnEditor, constraintEditor, partitionEditor);
         }
