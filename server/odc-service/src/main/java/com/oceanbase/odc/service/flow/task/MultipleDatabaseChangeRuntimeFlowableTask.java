@@ -63,12 +63,12 @@ public class MultipleDatabaseChangeRuntimeFlowableTask extends BaseODCFlowTaskDe
     private volatile boolean isSuccessful = false;
     private volatile boolean isFailure = false;
     private volatile boolean isFinished = false;
-    private User taskCreator;
-    private Integer batchId;
+    private volatile User taskCreator;
+    private volatile MultipleDatabaseChangeParameters multipleDatabaseChangeParameters;
+    private volatile Integer batchId;
+    private volatile FlowTaskExecutionStrategy flowTaskExecutionStrategy;
     private Integer batchSum;
-    private List<List<Long>> orderedDatabaseIds;
-    private FlowTaskExecutionStrategy flowTaskExecutionStrategy;
-    private MultipleDatabaseChangeParameters multipleDatabaseChangeParameters;
+
     @Autowired
     private FlowInstanceService flowInstanceService;
     @Autowired
@@ -119,7 +119,6 @@ public class MultipleDatabaseChangeRuntimeFlowableTask extends BaseODCFlowTaskDe
             TaskEntity detail = taskService.detail(taskId);
             this.multipleDatabaseChangeParameters = JsonUtils.fromJson(
                     detail.getParametersJson(), MultipleDatabaseChangeParameters.class);
-            this.orderedDatabaseIds = multipleDatabaseChangeParameters.getOrderedDatabaseIds();
             Integer value = multipleDatabaseChangeParameters.getBatchId();
             if (value == null) {
                 this.batchId = 0;
@@ -288,6 +287,9 @@ public class MultipleDatabaseChangeRuntimeFlowableTask extends BaseODCFlowTaskDe
                 .build();
         Page<FlowInstanceDetailResp> page = flowInstanceService.list(Pageable.unpaged(), param);
         List<FlowInstanceDetailResp> flowInstanceDetailRespList = page.getContent();
+        if (flowInstanceDetailRespList.isEmpty()) {
+            return null;
+        }
         // todo At present multi-databases changes do not include databases with the same name
         Map<Long, FlowInstanceDetailResp> databaseId2FlowInstanceDetailResp =
                 flowInstanceDetailRespList.stream().collect(
