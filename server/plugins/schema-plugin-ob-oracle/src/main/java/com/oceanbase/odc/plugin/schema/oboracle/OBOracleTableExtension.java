@@ -50,6 +50,7 @@ import lombok.NonNull;
  */
 @Extension
 public class OBOracleTableExtension extends OBMySQLTableExtension {
+
     private static final String ORACLE_TABLE_COMMENT_DDL_TEMPLATE =
             "COMMENT ON TABLE ${schemaName}.${tableName} IS ${comment}";
     private static final String ORACLE_COLUMN_COMMENT_DDL_TEMPLATE =

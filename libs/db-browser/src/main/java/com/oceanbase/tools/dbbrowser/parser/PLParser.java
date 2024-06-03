@@ -15,12 +15,16 @@
  */
 package com.oceanbase.tools.dbbrowser.parser;
 
+import java.util.concurrent.TimeUnit;
+
 import org.antlr.v4.runtime.CharStream;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.ParseTreeWalker;
 
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
 import com.oceanbase.tools.dbbrowser.parser.listener.LogErrorListener;
 import com.oceanbase.tools.dbbrowser.parser.listener.MysqlModePLParserListener;
 import com.oceanbase.tools.dbbrowser.parser.listener.OracleModePLParserListener;
@@ -46,11 +50,38 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class PLParser {
 
+    private final static Cache<String, CacheElement<ParseMysqlPLResult>> OB_MYSQL_PARSE_CACHE =
+            Caffeine.newBuilder()
+                    .maximumSize(1000)
+                    .expireAfterWrite(10, TimeUnit.MINUTES)
+                    .build();
+    private final static Cache<String, CacheElement<ParseOraclePLResult>> OB_ORACLE_PARSE_CACHE =
+            Caffeine.newBuilder()
+                    .maximumSize(1000)
+                    .expireAfterWrite(10, TimeUnit.MINUTES)
+                    .build();
+    private final static Cache<String, CacheElement<ParseOraclePLResult>> ORACLE_PARSE_CACHE =
+            Caffeine.newBuilder()
+                    .maximumSize(1000)
+                    .expireAfterWrite(10, TimeUnit.MINUTES)
+                    .build();
+
     public static ParseMysqlPLResult parseObMysql(final String pl) {
         return parseObMysql(pl, 0);
     }
 
     public static ParseMysqlPLResult parseObMysql(final String pl, long timeoutMillis) {
+        CacheElement<ParseMysqlPLResult> value = OB_MYSQL_PARSE_CACHE.get(pl, s -> {
+            try {
+                return new CacheElement<>(doParseObMysql(pl, timeoutMillis));
+            } catch (Exception e) {
+                return new CacheElement<>(e);
+            }
+        });
+        return value == null ? null : value.get();
+    }
+
+    private static ParseMysqlPLResult doParseObMysql(final String pl, long timeoutMillis) {
         long startTime = System.currentTimeMillis();
         CharStream input = CharStreams.fromString(pl);
         // Lexer-Lexical analysis
@@ -89,6 +120,17 @@ public class PLParser {
     }
 
     public static ParseOraclePLResult parseObOracle(final String pl, long timeoutMillis) {
+        CacheElement<ParseOraclePLResult> value = OB_ORACLE_PARSE_CACHE.get(pl, s -> {
+            try {
+                return new CacheElement<>(doParseObOracle(pl, timeoutMillis));
+            } catch (Exception e) {
+                return new CacheElement<>(e);
+            }
+        });
+        return value == null ? null : value.get();
+    }
+
+    private static ParseOraclePLResult doParseObOracle(final String pl, long timeoutMillis) {
         long startTime = System.currentTimeMillis();
         ParseOraclePLResult result =
                 parseByRule(pl, com.oceanbase.tools.sqlparser.oboracle.PLParser.RULE_pl_entry_stmt_list, timeoutMillis);
@@ -137,6 +179,17 @@ public class PLParser {
     }
 
     public static ParseOraclePLResult parseOracle(final String pl, long timeoutMillis) {
+        CacheElement<ParseOraclePLResult> value = ORACLE_PARSE_CACHE.get(pl, s -> {
+            try {
+                return new CacheElement<>(doParseOracle(pl, timeoutMillis));
+            } catch (Exception e) {
+                return new CacheElement<>(e);
+            }
+        });
+        return value == null ? null : value.get();
+    }
+
+    private static ParseOraclePLResult doParseOracle(final String pl, long timeoutMillis) {
         CharStream input = CharStreams.fromString(pl);
         CaseChangingCharStream caseChangingCharStream = new CaseChangingCharStream(input, true);
         PlSqlLexer lexer = new PlSqlLexer(caseChangingCharStream);
