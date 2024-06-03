@@ -46,7 +46,6 @@ public class DataArchiveJob extends AbstractDlmJob {
             executeInTaskFramework(context);
             return;
         }
-        jobThread = Thread.currentThread();
 
         ScheduleTaskEntity taskEntity = (ScheduleTaskEntity) context.getResult();
 

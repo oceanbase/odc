@@ -42,8 +42,6 @@ public class DataArchiveRollbackJob extends AbstractDlmJob {
     @Override
     public void executeJob(JobExecutionContext context) {
 
-        jobThread = Thread.currentThread();
-
         ScheduleTaskEntity taskEntity = (ScheduleTaskEntity) context.getResult();
         DataArchiveRollbackParameters rollbackParameters = JsonUtils.fromJson(taskEntity.getParametersJson(),
                 DataArchiveRollbackParameters.class);
@@ -92,6 +90,9 @@ public class DataArchiveRollbackJob extends AbstractDlmJob {
                             i));
             dlmTableUnit.setSourceDatasourceInfo(dlmTableUnit.getTargetDatasourceInfo());
             dlmTableUnit.setTargetDatasourceInfo(temp);
+            String tmp = dlmTableUnit.getTableName();
+            dlmTableUnit.setTableName(dlmTableUnit.getTargetTableName());
+            dlmTableUnit.setTargetTableName(tmp);
             dlmTableUnit.setType(JobType.ROLLBACK);
             dlmTableUnit.setStatus(
                     dlmTableUnit.getStatus() == TaskStatus.PREPARING ? TaskStatus.DONE : TaskStatus.PREPARING);
