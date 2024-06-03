@@ -45,7 +45,6 @@ import lombok.ToString;
 @Immutable
 @Table(name = "flow_instance_approval_view")
 public class FlowInstanceApprovalViewEntity {
-
     @Id
     @Column(name = "id", nullable = false, updatable = false)
     @GeneratedValue(strategy = GenerationType.IDENTITY)

@@ -29,7 +29,6 @@ import org.flowable.engine.form.FormProperty;
 import org.flowable.engine.impl.form.BooleanFormType;
 
 import com.oceanbase.odc.common.event.EventPublisher;
-import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.flow.model.FlowableElementType;
 import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
@@ -72,7 +71,7 @@ public class FlowApprovalInstance extends BaseFlowUserTaskInstance {
     @Setter
     private String externalFlowInstanceId;
     @Setter
-    private String candidate;
+    private List<String> candidates;
     private final Long externalApprovalId;
     private boolean waitForConfirm;
 
@@ -171,7 +170,7 @@ public class FlowApprovalInstance extends BaseFlowUserTaskInstance {
             instances.get(i).updateTime = entities.get(i).getUpdateTime();
         }
         List<UserTaskInstanceCandidateEntity> entities1 = instances.stream()
-                .filter(instance -> StringUtils.isNotBlank(instance.getCandidate()))
+                .filter(instance -> CollectionUtils.isNotEmpty(instance.getCandidates()))
                 .map(FlowApprovalInstance::mapToCandidateEntities).flatMap(List::stream).collect(Collectors.toList());
         userTaskInstanceCandidateRepository.batchCreate(entities1);
         return instances;
@@ -188,7 +187,7 @@ public class FlowApprovalInstance extends BaseFlowUserTaskInstance {
         this.id = entity.getId();
         this.createTime = entity.getCreateTime();
         this.updateTime = entity.getUpdateTime();
-        if (this.candidate != null) {
+        if (CollectionUtils.isNotEmpty(this.candidates)) {
             List<UserTaskInstanceCandidateEntity> candidateEntities = mapToCandidateEntities(this);
             userTaskInstanceCandidateRepository.batchCreate(candidateEntities);
         }
@@ -293,10 +292,9 @@ public class FlowApprovalInstance extends BaseFlowUserTaskInstance {
 
     private static List<UserTaskInstanceCandidateEntity> mapToCandidateEntities(FlowApprovalInstance instance) {
         Verify.notNull(instance.getId(), "FlowApprovalInstanceId");
-        Verify.notNull(instance.getCandidate(), "FlowApprovalInstanceCandidate");
+        Verify.notEmpty(instance.getCandidates(), "FlowApprovalInstanceCandidate");
         List<UserTaskInstanceCandidateEntity> entities = new ArrayList<>();
-        String[] candidates = StringUtils.split(instance.getCandidate(), ",");
-        for (String candidate : candidates) {
+        for (String candidate : instance.getCandidates()) {
             UserTaskInstanceCandidateEntity entity = new UserTaskInstanceCandidateEntity();
             entity.setApprovalInstanceId(instance.getId());
             entity.setResourceRoleIdentifier(candidate);

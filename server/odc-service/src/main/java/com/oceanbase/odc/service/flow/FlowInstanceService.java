@@ -986,8 +986,8 @@ public class FlowInstanceService {
                 } else {
                     candidateResourceIds.add(flowInstanceReq.getProjectId());
                 }
-                approvalInstance.setCandidate(StringUtils.join(candidateResourceIds.stream().filter(Objects::nonNull)
-                        .map(e -> StringUtils.join(e, ":", resourceRoleId)).collect(Collectors.toList()), ","));
+                approvalInstance.setCandidates(candidateResourceIds.stream().filter(Objects::nonNull)
+                        .map(e -> StringUtils.join(e, ":", resourceRoleId)).collect(Collectors.toList()));
             }
             FlowGatewayInstance approvalGatewayInstance =
                     flowFactory.generateFlowGatewayInstance(flowInstance.getId(), false, true);
