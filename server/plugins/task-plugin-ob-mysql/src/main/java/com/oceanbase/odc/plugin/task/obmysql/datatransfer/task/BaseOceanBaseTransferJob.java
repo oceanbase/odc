@@ -183,6 +183,26 @@ public abstract class BaseOceanBaseTransferJob<T extends BaseParameter> implemen
         return new DataTransferTaskResult(getDataObjectsStatus(), getSchemaObjectsStatus());
     }
 
+    /**
+     * When user configured {@link DataTransferConfig#replaceSchemaWhenExists} is false, we would set
+     * {@link LoadParameter#replaceObjectIfExists} to false. But ob-loader would still report error if
+     * an object exists already. So we should eat these exceptions. Our strategy for handling exceptions
+     * is as follows:
+     * 
+     * <pre>
+     * +----------------+--------------------------+----------------------------+-----------------------------+
+     * | stopWhenError | replaceSchemaWhenExists | Error Message Contains "already exists" | Handling Behavior |
+     * +----------------+--------------------------+----------------------------+-----------------------------+
+     * | true          |          N/A            |            N/A             |   Always skip errors        |
+     * +----------------+--------------------------+----------------------------+-----------------------------+
+     * | false         |         true            |            N/A             |   Throw exception           |
+     * +----------------+--------------------------+----------------------------+-----------------------------+
+     * | false         |         false           |          Yes               |   Filter out, not throw     |
+     * +----------------+--------------------------+----------------------------+-----------------------------+
+     * | false         |         false           |           No               |   Throw exception           |
+     * +----------------+--------------------------+----------------------------+-----------------------------+
+     * </pre>
+     */
     @SuppressWarnings("all")
     private void syncWaitFinished(@NonNull TaskContext context, boolean isTransferSchema) throws InterruptedException {
         while (!Thread.currentThread().isInterrupted() && !status.isTerminated()) {
