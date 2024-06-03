@@ -36,7 +36,7 @@ public class ODPShardingOBMySQLColumnExtension extends OBMySQLColumnExtension {
     protected DBSchemaAccessor getSchemaAccessor(Connection connection) {
         return DBBrowser.schemaAccessor()
                 .setJdbcOperations(JdbcOperationsUtil.getJdbcOperations(connection))
-                .setType(DialectType.ODP_SHARDING_OB_MYSQL.name()).create();
+                .setType(DialectType.ODP_SHARDING_OB_MYSQL.getDBBrowserDialectTypeName()).create();
     }
 
 }

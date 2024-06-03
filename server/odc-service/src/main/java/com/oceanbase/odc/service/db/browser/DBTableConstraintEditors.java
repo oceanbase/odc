@@ -25,7 +25,7 @@ public class DBTableConstraintEditors {
     public static DBTableConstraintEditor create(ConnectionSession connectionSession) {
         return DBBrowser.objectEditor().tableConstraintEditor()
                 .setDbVersion(ConnectionSessionUtil.getVersion(connectionSession))
-                .setType(connectionSession.getDialectType().name())
+                .setType(connectionSession.getDialectType().getDBBrowserDialectTypeName())
                 .create();
     }
 

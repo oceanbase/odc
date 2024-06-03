@@ -76,7 +76,7 @@ public class DBSchemaAccessors {
                 .setProperties(properties)
                 .setDbVersion(dbVersion)
                 .setJdbcOperations(syncJdbcExecutor)
-                .setType(connectType.getDialectType().name())
+                .setType(connectType.getDialectType().getDBBrowserDialectTypeName())
                 .create();
     }
 

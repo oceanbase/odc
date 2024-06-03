@@ -39,20 +39,20 @@ public class DBAccessorUtil {
         return DBBrowser.schemaAccessor()
                 .setJdbcOperations(JdbcOperationsUtil.getJdbcOperations(connection))
                 .setDbVersion(getDbVersion(connection))
-                .setType(DialectType.OB_ORACLE.name()).create();
+                .setType(DialectType.OB_ORACLE.getDBBrowserDialectTypeName()).create();
     }
 
     public static DBStatsAccessor getStatsAccessor(Connection connection) {
         return DBBrowser.statsAccessor()
                 .setDbVersion(getDbVersion(connection))
                 .setJdbcOperations(JdbcOperationsUtil.getJdbcOperations(connection))
-                .setType(DialectType.OB_ORACLE.name()).create();
+                .setType(DialectType.OB_ORACLE.getDBBrowserDialectTypeName()).create();
     }
 
     public static DBTableEditor getTableEditor(Connection connection) {
         return DBBrowser.objectEditor().tableEditor()
                 .setDbVersion(getDbVersion(connection))
-                .setType(DialectType.OB_ORACLE.name()).create();
+                .setType(DialectType.OB_ORACLE.getDBBrowserDialectTypeName()).create();
     }
 
 }

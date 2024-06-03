@@ -24,7 +24,7 @@ public class DBTableColumnEditors {
     public static DBTableColumnEditor create(ConnectionSession connectionSession) {
         return DBBrowser.objectEditor()
                 .tableColumnEditor()
-                .setType(connectionSession.getDialectType().name())
+                .setType(connectionSession.getDialectType().getDBBrowserDialectTypeName())
                 .create();
     }
 

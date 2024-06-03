@@ -43,7 +43,7 @@ public class ODPShardingOBMySQLTableExtension extends OBMySQLTableExtension {
     protected DBSchemaAccessor getSchemaAccessor(Connection connection) {
         return DBBrowser.schemaAccessor()
                 .setJdbcOperations(JdbcOperationsUtil.getJdbcOperations(connection))
-                .setType(DialectType.ODP_SHARDING_OB_MYSQL.name()).create();
+                .setType(DialectType.ODP_SHARDING_OB_MYSQL.getDBBrowserDialectTypeName()).create();
     }
 
     @Override
@@ -53,14 +53,14 @@ public class ODPShardingOBMySQLTableExtension extends OBMySQLTableExtension {
         properties.put(DBStatsAccessorFactory.CONNECTION_ID_KEY, "");
         return DBBrowser.statsAccessor()
                 .setProperties(properties)
-                .setType(DialectType.ODP_SHARDING_OB_MYSQL.name()).create();
+                .setType(DialectType.ODP_SHARDING_OB_MYSQL.getDBBrowserDialectTypeName()).create();
     }
 
     @Override
     protected DBTableEditor getTableEditor(Connection connection) {
         return DBBrowser.objectEditor().tableEditor()
                 .setDbVersion(DBAccessorUtil.getDbVersion(connection))
-                .setType(DialectType.ODP_SHARDING_OB_MYSQL.name()).create();
+                .setType(DialectType.ODP_SHARDING_OB_MYSQL.getDBBrowserDialectTypeName()).create();
     }
 
 }

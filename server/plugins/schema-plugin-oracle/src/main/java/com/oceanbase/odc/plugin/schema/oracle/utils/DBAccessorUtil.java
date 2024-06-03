@@ -40,19 +40,19 @@ public class DBAccessorUtil {
     public static DBSchemaAccessor getSchemaAccessor(Connection connection) {
         return DBBrowser.schemaAccessor()
                 .setJdbcOperations(JdbcOperationsUtil.getJdbcOperations(connection))
-                .setType(DialectType.ORACLE.name()).create();
+                .setType(DialectType.ORACLE.getDBBrowserDialectTypeName()).create();
     }
 
     public static DBStatsAccessor getStatsAccessor(Connection connection) {
         return DBBrowser.statsAccessor()
                 .setJdbcOperations(JdbcOperationsUtil.getJdbcOperations(connection))
-                .setType(DialectType.ORACLE.name()).create();
+                .setType(DialectType.ORACLE.getDBBrowserDialectTypeName()).create();
     }
 
     public static DBTableEditor getTableEditor(Connection connection) {
         return DBBrowser.objectEditor().tableEditor()
                 .setDbVersion(getDbVersion(connection))
-                .setType(DialectType.ORACLE.name()).create();
+                .setType(DialectType.ORACLE.getDBBrowserDialectTypeName()).create();
     }
 
 }

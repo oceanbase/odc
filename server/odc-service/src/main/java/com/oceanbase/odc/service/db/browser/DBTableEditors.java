@@ -26,7 +26,7 @@ public class DBTableEditors {
     public static DBTableEditor create(ConnectType connectType, String dbVersion) {
         return DBBrowser.objectEditor().tableEditor()
                 .setDbVersion(dbVersion)
-                .setType(connectType.getDialectType().name())
+                .setType(connectType.getDialectType().getDBBrowserDialectTypeName())
                 .create();
     }
 

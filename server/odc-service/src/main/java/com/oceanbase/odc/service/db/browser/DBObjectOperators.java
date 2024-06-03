@@ -35,7 +35,7 @@ public class DBObjectOperators {
 
         return DBBrowser.objectEditor().objectOperator()
                 .setJdbcOperations(syncJdbcExecutor)
-                .setType(connectType.getDialectType().name())
+                .setType(connectType.getDialectType().getDBBrowserDialectTypeName())
                 .create();
     }
 

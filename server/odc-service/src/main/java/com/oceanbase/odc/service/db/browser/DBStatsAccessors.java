@@ -56,7 +56,7 @@ public class DBStatsAccessors {
                 .setProperties(properties)
                 .setJdbcOperations(syncJdbcExecutor)
                 .setDbVersion(dbVersion)
-                .setType(connectType.getDialectType().name())
+                .setType(connectType.getDialectType().getDBBrowserDialectTypeName())
                 .create();
     }
 

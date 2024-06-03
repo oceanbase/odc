@@ -23,7 +23,7 @@ public class DBTableIndexEditors {
 
     public static DBTableIndexEditor create(ConnectionSession connectionSession) {
         return DBBrowser.objectEditor().tableIndexEditor()
-                .setType(connectionSession.getDialectType().name())
+                .setType(connectionSession.getDialectType().getDBBrowserDialectTypeName())
                 .create();
     }
 

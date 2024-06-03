@@ -40,20 +40,20 @@ public class DBAccessorUtil {
         return DBBrowser.schemaAccessor()
                 .setDbVersion(getDbVersion(connection))
                 .setJdbcOperations(JdbcOperationsUtil.getJdbcOperations(connection))
-                .setType(DialectType.MYSQL.name()).create();
+                .setType(DialectType.MYSQL.getDBBrowserDialectTypeName()).create();
     }
 
     public static DBStatsAccessor getStatsAccessor(Connection connection) {
         return DBBrowser.statsAccessor()
                 .setJdbcOperations(JdbcOperationsUtil.getJdbcOperations(connection))
                 .setDbVersion(getDbVersion(connection))
-                .setType(DialectType.MYSQL.name()).create();
+                .setType(DialectType.MYSQL.getDBBrowserDialectTypeName()).create();
     }
 
     public static DBTableEditor getTableEditor(Connection connection) {
         return DBBrowser.objectEditor().tableEditor()
                 .setDbVersion(DBAccessorUtil.getDbVersion(connection))
-                .setType(DialectType.MYSQL.name()).create();
+                .setType(DialectType.MYSQL.getDBBrowserDialectTypeName()).create();
     }
 
 }
