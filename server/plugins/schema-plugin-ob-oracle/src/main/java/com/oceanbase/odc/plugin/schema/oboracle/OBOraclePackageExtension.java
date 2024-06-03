@@ -74,7 +74,6 @@ public class OBOraclePackageExtension implements PackageExtensionPoint {
         return DBBrowser.objectTemplate().packageTemplate()
                 .setJdbcOperations(JdbcOperationsUtil.getJdbcOperations(connection))
                 .setType(DialectType.OB_ORACLE.getDBBrowserDialectTypeName())
-                .setType(DialectType.OB_MYSQL.getDBBrowserDialectTypeName())
                 .create()
                 .generateCreateObjectTemplate(dbPackage);
     }
