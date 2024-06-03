@@ -29,7 +29,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import javax.persistence.EntityManager;
@@ -901,12 +900,11 @@ public class ConnectionService {
         List<ConnectionEntity> entities = getEntities(ids);
         List<ConnectionConfig> connectionConfigs = entitiesToModels(entities, entities.get(0).getOrganizationId(),
                 withEnvironment, withProject);
-        Map<Long, ConnectionAttributeEntity> id2ConnectionAttributeEntity =
+        Map<Long, List<ConnectionAttributeEntity>> ConnectionId2AttributeEntity =
                 this.attributeRepository.findByConnectionIdIn(ids).stream()
-                        .collect(
-                                Collectors.toMap(ConnectionAttributeEntity::getId, Function.identity()));
+                        .collect(Collectors.groupingBy(ConnectionAttributeEntity::getConnectionId));
         connectionConfigs.forEach(config -> config.setAttributes(attrEntitiesToMap(
-                Collections.singletonList(id2ConnectionAttributeEntity.get(config.getId())))));
+                ConnectionId2AttributeEntity.get(config.getId()))));
         return connectionConfigs;
     }
 
