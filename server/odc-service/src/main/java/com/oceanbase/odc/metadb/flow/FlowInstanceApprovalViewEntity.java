@@ -20,6 +20,9 @@ import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
 import javax.persistence.Table;
 
 import org.hibernate.annotations.Immutable;
@@ -43,7 +46,9 @@ import lombok.ToString;
 @Table(name = "flow_instance_approval_view")
 public class FlowInstanceApprovalViewEntity {
 
+    @Id
     @Column(name = "id", nullable = false, updatable = false)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     /**
      * Refer to {@link FlowInstanceEntity#getId()}
