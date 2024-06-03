@@ -82,14 +82,20 @@ public class DBSchemaAccessorFactory extends AbstractDBBrowserFactory<DBSchemaAc
             // OB version between (1.4.79, 2.2.60)
             return new OBMySQLBetween220And225XSchemaAccessor(this.jdbcOperations);
         } else {
-            Validate.notNull(this.properties, "Properties can not be null");
-            Object tenantName = this.properties.get(TENANT_NAME_KEY);
-            Validate.isTrue(tenantName instanceof String, "Tenant name can not be null");
-            Object sysJdbcOperations = this.properties.get(SYS_OPERATIONS_KEY);
-            Validate.isTrue(sysJdbcOperations instanceof JdbcOperations, "Sys operations can not be null");
             // OB version <= 1.4.79
-            return new OBMySQLNoGreaterThan1479SchemaAccessor(this.jdbcOperations,
-                    (JdbcOperations) sysJdbcOperations, (String) tenantName);
+            String tenantName = null;
+            JdbcOperations sysJdbcOperations = null;
+            if (this.properties != null) {
+                Object value = this.properties.get(TENANT_NAME_KEY);
+                if (value instanceof String) {
+                    tenantName = (String) value;
+                }
+                value = this.properties.get(SYS_OPERATIONS_KEY);
+                if (value instanceof JdbcOperations) {
+                    sysJdbcOperations = (JdbcOperations) value;
+                }
+            }
+            return new OBMySQLNoGreaterThan1479SchemaAccessor(this.jdbcOperations, sysJdbcOperations, tenantName);
         }
     }
 
