@@ -97,10 +97,14 @@ public class DBStatsAccessorFactory extends AbstractDBBrowserFactory<DBStatsAcce
 
     @Override
     public DBStatsAccessor buildForOdpSharding() {
-        Validate.notNull(this.properties, "Properties can not be null");
-        Object connectionId = this.properties.get(CONNECTION_ID_KEY);
-        Validate.isTrue(connectionId instanceof String, "ConnectionId can not be null");
-        return new ODPOBMySQLStatsAccessor((String) connectionId);
+        String connectionId = null;
+        if (this.properties != null) {
+            Object value = this.properties.get(CONNECTION_ID_KEY);
+            if (value instanceof String) {
+                connectionId = (String) value;
+            }
+        }
+        return new ODPOBMySQLStatsAccessor(connectionId);
     }
 
 }
