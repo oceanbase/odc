@@ -37,6 +37,14 @@ public class DBObjectEditorFactories {
         return new DBTablePartitionEditorFactory();
     }
 
+    public DBSynonymEditorFactory synonymEditor() {
+        return new DBSynonymEditorFactory();
+    }
+
+    public DBSequenceEditorFactory sequenceEditor() {
+        return new DBSequenceEditorFactory();
+    }
+
     public DBObjectOperatorFactory objectOperator() {
         return new DBObjectOperatorFactory();
     }

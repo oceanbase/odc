@@ -21,14 +21,15 @@ import java.util.List;
 import org.pf4j.Extension;
 
 import com.oceanbase.odc.common.util.JdbcOperationsUtil;
+import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.plugin.schema.api.PackageExtensionPoint;
 import com.oceanbase.odc.plugin.schema.oboracle.utils.DBAccessorUtil;
+import com.oceanbase.tools.dbbrowser.DBBrowser;
 import com.oceanbase.tools.dbbrowser.editor.oracle.OracleObjectOperator;
 import com.oceanbase.tools.dbbrowser.model.DBObjectType;
 import com.oceanbase.tools.dbbrowser.model.DBPLObjectIdentity;
 import com.oceanbase.tools.dbbrowser.model.DBPackage;
 import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
-import com.oceanbase.tools.dbbrowser.template.oracle.OraclePackageTemplate;
 
 import lombok.NonNull;
 
@@ -70,11 +71,16 @@ public class OBOraclePackageExtension implements PackageExtensionPoint {
 
     @Override
     public String generateCreateTemplate(@NonNull Connection connection, @NonNull DBPackage dbPackage) {
-        OraclePackageTemplate template = new OraclePackageTemplate(JdbcOperationsUtil.getJdbcOperations(connection));
-        return template.generateCreateObjectTemplate(dbPackage);
+        return DBBrowser.objectTemplate().packageTemplate()
+                .setJdbcOperations(JdbcOperationsUtil.getJdbcOperations(connection))
+                .setType(DialectType.OB_ORACLE.getDBBrowserDialectTypeName())
+                .setType(DialectType.OB_MYSQL.getDBBrowserDialectTypeName())
+                .create()
+                .generateCreateObjectTemplate(dbPackage);
     }
 
     protected DBSchemaAccessor getSchemaAccessor(Connection connection) {
         return DBAccessorUtil.getSchemaAccessor(connection);
     }
+
 }

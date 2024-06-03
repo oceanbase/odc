@@ -20,14 +20,15 @@ import java.sql.Connection;
 import org.pf4j.Extension;
 
 import com.oceanbase.odc.common.util.JdbcOperationsUtil;
+import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.plugin.schema.obmysql.OBMySQLFunctionExtension;
 import com.oceanbase.odc.plugin.schema.oboracle.utils.DBAccessorUtil;
+import com.oceanbase.tools.dbbrowser.DBBrowser;
 import com.oceanbase.tools.dbbrowser.editor.DBObjectOperator;
 import com.oceanbase.tools.dbbrowser.editor.oracle.OracleObjectOperator;
 import com.oceanbase.tools.dbbrowser.model.DBFunction;
 import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
 import com.oceanbase.tools.dbbrowser.template.DBObjectTemplate;
-import com.oceanbase.tools.dbbrowser.template.oracle.OracleFunctionTemplate;
 
 /**
  * @author jingtian
@@ -36,6 +37,7 @@ import com.oceanbase.tools.dbbrowser.template.oracle.OracleFunctionTemplate;
  */
 @Extension
 public class OBOracleFunctionExtension extends OBMySQLFunctionExtension {
+
     @Override
     protected DBSchemaAccessor getSchemaAccessor(Connection connection) {
         return DBAccessorUtil.getSchemaAccessor(connection);
@@ -48,6 +50,8 @@ public class OBOracleFunctionExtension extends OBMySQLFunctionExtension {
 
     @Override
     protected DBObjectTemplate<DBFunction> getTemplate() {
-        return new OracleFunctionTemplate();
+        return DBBrowser.objectTemplate().functionTemplate()
+                .setType(DialectType.OB_ORACLE.getDBBrowserDialectTypeName()).create();
     }
+
 }
