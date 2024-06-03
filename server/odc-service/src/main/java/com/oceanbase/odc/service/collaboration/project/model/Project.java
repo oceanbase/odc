@@ -123,6 +123,9 @@ public class Project implements SecurityResource, OrganizationIsolated, Serializ
         private String accountName;
 
         @JsonProperty(access = Access.READ_ONLY)
+        private Boolean userEnabled;
+
+        @JsonProperty(access = Access.READ_ONLY)
         private String name;
 
         private ResourceRoleName role;

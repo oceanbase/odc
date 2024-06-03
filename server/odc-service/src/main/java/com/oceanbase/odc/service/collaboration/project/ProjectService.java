@@ -514,6 +514,7 @@ public class ProjectService {
         member.setId(userResourceRole.getUserId());
         member.setName(user.getName());
         member.setAccountName(user.getAccountName());
+        member.setUserEnabled(user.isEnabled());
         return member;
     }
 
