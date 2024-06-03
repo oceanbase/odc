@@ -20,6 +20,7 @@ import java.net.URL;
 import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 import javax.sql.DataSource;
@@ -112,7 +113,11 @@ public class OracleTransferJobFactory extends BaseTransferJobFactory {
         MySQLWriterPluginParameter parameter = (MySQLWriterPluginParameter) writer.getParameter();
         parameter.setSession(getSessionOptions());
         parameter.setWriteMode(null);
-        parameter.setPreSql(null);
+        if (transferConfig.isTruncateTableBeforeImport()) {
+            parameter.setPreSql(Collections.singletonList("TRUNCATE TABLE " + object.getName()));
+        } else {
+            parameter.setPreSql(null);
+        }
         parameter.setPostSql(null);
         writer.setName("oraclewriter");
         return new DataXTransferJob(object, jobConfiguration, workingDir, logDir);
