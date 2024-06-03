@@ -17,14 +17,11 @@ package com.oceanbase.odc.service.dlm;
 
 import com.oceanbase.odc.service.dlm.model.DlmTableUnit;
 import com.oceanbase.tools.migrator.common.dto.HistoryJob;
-import com.oceanbase.tools.migrator.common.dto.JobParameter;
-import com.oceanbase.tools.migrator.common.enums.ShardingStrategy;
 import com.oceanbase.tools.migrator.core.IJobStore;
 import com.oceanbase.tools.migrator.core.JobFactory;
 import com.oceanbase.tools.migrator.core.JobReq;
 import com.oceanbase.tools.migrator.job.Job;
 
-import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -34,19 +31,6 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 public class DLMJobFactory extends JobFactory {
-
-    @Setter
-    private int singleTaskThreadPoolSize;
-
-    @Setter
-    private int taskConnectionQueryTimeout;
-    @Setter
-    private double readWriteRatio;
-    @Setter
-    private int defaultScanBatchSize;
-
-    @Setter
-    private ShardingStrategy defaultShardingStrategy;
 
     public DLMJobFactory(IJobStore jobStore) {
         super(jobStore);
@@ -60,22 +44,8 @@ public class DLMJobFactory extends JobFactory {
         historyJob.setPrintSqlTrace(false);
         historyJob.setSourceTable(parameters.getTableName());
         historyJob.setTargetTable(parameters.getTargetTableName());
-        JobParameter jobParameter = new JobParameter();
-        jobParameter.setReaderTaskCount((int) (singleTaskThreadPoolSize * readWriteRatio / (1 + readWriteRatio)));
-        jobParameter.setWriterTaskCount(singleTaskThreadPoolSize - jobParameter.getReaderTaskCount());
-        jobParameter.setGeneratorBatchSize(defaultScanBatchSize);
-        jobParameter.setShardingStrategy(defaultShardingStrategy);
-        jobParameter.setMigrateRule(parameters.getParameters().getMigrateRule());
-        jobParameter.setMigratePartitions(parameters.getParameters().getMigratePartitions());
-        historyJob.setJobParameter(jobParameter);
-        parameters.getSourceDatasourceInfo().setConnectionCount(2 * (jobParameter.getReaderTaskCount()
-                + jobParameter.getWriterTaskCount()));
-        parameters.getTargetDatasourceInfo().setConnectionCount(2 * (jobParameter.getReaderTaskCount()
-                + jobParameter.getWriterTaskCount()));
-        parameters.getSourceDatasourceInfo().setQueryTimeout(taskConnectionQueryTimeout);
-        parameters.getTargetDatasourceInfo().setQueryTimeout(taskConnectionQueryTimeout);
-        log.info("Begin to create dlm job,params={}", jobParameter);
-        // ClusterMeta and TenantMeta used to calculate min limit size.
+        historyJob.setJobParameter(parameters.getParameters());
+        log.info("Begin to create dlm job,params={}", historyJob);
         JobReq req = new JobReq();
         req.setHistoryJob(historyJob);
         req.setSourceDs(parameters.getSourceDatasourceInfo());

@@ -64,6 +64,8 @@ public class DataArchiveParameters implements TaskParameters {
 
     private int scanBatchSize;
 
+    private int timeoutMillis;
+
     private Set<DBObjectType> syncTableStructure = new HashSet<>();
 
     private MigrationInsertAction migrationInsertAction = MigrationInsertAction.INSERT_NORMAL;

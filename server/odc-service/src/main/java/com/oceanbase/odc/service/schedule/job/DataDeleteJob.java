@@ -91,6 +91,11 @@ public class DataDeleteJob extends AbstractDlmJob {
             DlmTableUnitParameters parameter = new DlmTableUnitParameters();
             parameter.setMigrateRule(condition);
             parameter.setCheckMode(CheckMode.MULTIPLE_GET);
+            parameter.setGeneratorBatchSize(parameters.getScanBatchSize());
+            parameter.setReaderTaskCount(parameters.getReadThreadCount());
+            parameter.setWriterTaskCount(parameters.getWriteThreadCount());
+            parameter.setReaderBatchSize(parameters.getRateLimit().getBatchSize());
+            parameter.setWriterBatchSize(parameters.getRateLimit().getBatchSize());
             parameter.setMigratePartitions(table.getPartitions());
             dlmTableUnit.setParameters(parameter);
             dlmTableUnit.setStatus(TaskStatus.PREPARING);
