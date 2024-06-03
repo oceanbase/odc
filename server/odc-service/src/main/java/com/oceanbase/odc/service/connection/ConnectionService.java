@@ -29,6 +29,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import javax.persistence.EntityManager;
@@ -711,6 +712,26 @@ public class ConnectionService {
         return connection;
     }
 
+    @SkipAuthorize("internal usage")
+    public List<ConnectionConfig> getForConnectionSkipPermissionCheck(@NotNull Collection<Long> ids) {
+        List<ConnectionConfig> connectionConfigs = internalGetSkipUserCheck(ids, false, false);
+        Integer minQueryTimeoutSeconds = connectProperties.getMinQueryTimeoutSeconds();
+        connectionConfigs.forEach(
+                connectionConfig -> {
+                    if (connectionConfig.queryTimeoutSeconds() < minQueryTimeoutSeconds) {
+                        connectionConfig.setQueryTimeoutSeconds(minQueryTimeoutSeconds);
+                        log.debug("queryTimeoutSeconds less than minQueryTimeoutSeconds, use {} instead",
+                                minQueryTimeoutSeconds);
+                    }
+                    connectionEncryption.decryptPasswords(connectionConfig);
+                    // Adapter should be called after decrypting passwords.
+                    environmentAdapter.adaptConfig(connectionConfig);
+                    connectionSSLAdaptor.adapt(connectionConfig);
+                });
+        return connectionConfigs;
+    }
+
+
     @Transactional(rollbackFor = Exception.class)
     @PreAuthenticate(actions = "update", resourceType = "ODC_CONNECTION", indexOfIdParam = 0)
     public ConnectionConfig getForConnect(@NotNull Long id) {
@@ -874,8 +895,27 @@ public class ConnectionService {
         return config;
     }
 
+    @SkipAuthorize("odc internal usage")
+    public List<ConnectionConfig> internalGetSkipUserCheck(Collection<Long> ids, boolean withEnvironment,
+            boolean withProject) {
+        List<ConnectionEntity> entities = getEntities(ids);
+        List<ConnectionConfig> connectionConfigs = entitiesToModels(entities, entities.get(0).getOrganizationId(),
+                withEnvironment, withProject);
+        Map<Long, ConnectionAttributeEntity> id2ConnectionAttributeEntity =
+                this.attributeRepository.findByConnectionIdIn(ids).stream()
+                        .collect(
+                                Collectors.toMap(ConnectionAttributeEntity::getId, Function.identity()));
+        connectionConfigs.forEach(config -> config.setAttributes(attrEntitiesToMap(
+                Collections.singletonList(id2ConnectionAttributeEntity.get(config.getId())))));
+        return connectionConfigs;
+    }
+
     private ConnectionEntity getEntity(@NonNull Long id) {
         return repository.findById(id).orElseThrow(() -> new NotFoundException(ResourceType.ODC_CONNECTION, "id", id));
+    }
+
+    private List<ConnectionEntity> getEntities(@NonNull Collection<Long> ids) {
+        return repository.findByIdIn(ids);
     }
 
     private List<ConnectionConfig> entitiesToModels(@NonNull List<ConnectionEntity> entities,

@@ -367,9 +367,10 @@ public class FlowInstanceService {
             MultipleDatabaseChangeParameters taskParameters =
                     (MultipleDatabaseChangeParameters) createReq.getParameters();
             // Gets the data source connection collection that contains the password
-            conns = taskParameters.getDatabases().stream().map(x -> x.getDataSource().getId()).distinct().map(
-                    id -> connectionService.getForConnectionSkipPermissionCheck(id))
-                    .collect(Collectors.toList());
+            List<Long> dataSourceIds =
+                    taskParameters.getDatabases().stream().map(x -> x.getDataSource().getId()).distinct()
+                            .collect(Collectors.toList());
+            conns = connectionService.getForConnectionSkipPermissionCheck(dataSourceIds);
             conns.forEach(con -> cloudMetadataClient.checkPermission(OBTenant.of(con.getClusterName(),
                     con.getTenantName()), con.getInstanceType(), false, CloudPermissionAction.READONLY));
         }
