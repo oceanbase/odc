@@ -82,6 +82,8 @@ public class DumpParameterFactory extends BaseParameterFactory<DumpParameter> {
             parameter.setMaxFileSize(transferConfig.getMaxDumpSizeBytes());
         }
         parameter.setSchemaless(true);
+        // ob-dumper would use `show create table` for dump schema ddl
+        parameter.setCompactSchema(true);
         setFetchSize(parameter);
         setTransferFormat(parameter, transferConfig);
         setDumpObjects(parameter, transferConfig);
