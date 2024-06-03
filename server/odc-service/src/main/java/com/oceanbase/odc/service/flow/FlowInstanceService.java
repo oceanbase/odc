@@ -974,14 +974,20 @@ public class FlowInstanceService {
                     nodeConfig.getAutoApproval(), approvalFlowConfig.getApprovalExpirationIntervalSeconds(),
                     nodeConfig.getExternalApprovalId());
             if (Objects.nonNull(resourceRoleId)) {
-                Long candidateResourceId;
+                Set<Long> candidateResourceIds = new HashSet<>();
                 Optional<ResourceRoleEntity> resourceRole = resourceRoleService.findResourceRoleById(resourceRoleId);
                 if (resourceRole.isPresent() && resourceRole.get().getResourceType() == ResourceType.ODC_DATABASE) {
-                    candidateResourceId = flowInstanceReq.getDatabaseId();
+                    candidateResourceIds.add(flowInstanceReq.getDatabaseId());
+                    if (taskType == TaskType.MULTIPLE_ASYNC) {
+                        candidateResourceIds
+                                .addAll(((MultipleDatabaseChangeParameters) parameters).getOrderedDatabaseIds().stream()
+                                        .flatMap(Collection::stream).collect(Collectors.toSet()));
+                    }
                 } else {
-                    candidateResourceId = flowInstanceReq.getProjectId();
+                    candidateResourceIds.add(flowInstanceReq.getProjectId());
                 }
-                approvalInstance.setCandidate(StringUtils.join(candidateResourceId, ":", resourceRoleId));
+                approvalInstance.setCandidate(StringUtils.join(candidateResourceIds.stream()
+                        .map(e -> StringUtils.join(e, ":", resourceRoleId)).collect(Collectors.toList()), ","));
             }
             FlowGatewayInstance approvalGatewayInstance =
                     flowFactory.generateFlowGatewayInstance(flowInstance.getId(), false, true);

@@ -15,6 +15,7 @@
  */
 package com.oceanbase.odc.service.flow.instance;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -171,7 +172,7 @@ public class FlowApprovalInstance extends BaseFlowUserTaskInstance {
         }
         List<UserTaskInstanceCandidateEntity> entities1 = instances.stream()
                 .filter(instance -> StringUtils.isNotBlank(instance.getCandidate()))
-                .map(FlowApprovalInstance::mapToCandidateEntity).collect(Collectors.toList());
+                .map(FlowApprovalInstance::mapToCandidateEntities).flatMap(List::stream).collect(Collectors.toList());
         userTaskInstanceCandidateRepository.batchCreate(entities1);
         return instances;
     }
@@ -188,8 +189,8 @@ public class FlowApprovalInstance extends BaseFlowUserTaskInstance {
         this.createTime = entity.getCreateTime();
         this.updateTime = entity.getUpdateTime();
         if (this.candidate != null) {
-            UserTaskInstanceCandidateEntity candidateEntity = mapToCandidateEntity(this);
-            userTaskInstanceCandidateRepository.save(candidateEntity);
+            List<UserTaskInstanceCandidateEntity> candidateEntities = mapToCandidateEntities(this);
+            userTaskInstanceCandidateRepository.batchCreate(candidateEntities);
         }
         log.info("Create approval task instance successfully, approvalTask={}", entity);
     }
@@ -290,13 +291,18 @@ public class FlowApprovalInstance extends BaseFlowUserTaskInstance {
         return entity;
     }
 
-    private static UserTaskInstanceCandidateEntity mapToCandidateEntity(FlowApprovalInstance instance) {
+    private static List<UserTaskInstanceCandidateEntity> mapToCandidateEntities(FlowApprovalInstance instance) {
         Verify.notNull(instance.getId(), "FlowApprovalInstanceId");
         Verify.notNull(instance.getCandidate(), "FlowApprovalInstanceCandidate");
-        UserTaskInstanceCandidateEntity entity = new UserTaskInstanceCandidateEntity();
-        entity.setApprovalInstanceId(instance.getId());
-        entity.setResourceRoleIdentifier(instance.getCandidate());
-        return entity;
+        List<UserTaskInstanceCandidateEntity> entities = new ArrayList<>();
+        String[] candidates = StringUtils.split(instance.getCandidate(), ",");
+        for (String candidate : candidates) {
+            UserTaskInstanceCandidateEntity entity = new UserTaskInstanceCandidateEntity();
+            entity.setApprovalInstanceId(instance.getId());
+            entity.setResourceRoleIdentifier(candidate);
+            entities.add(entity);
+        }
+        return entities;
     }
 
 }
