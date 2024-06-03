@@ -623,7 +623,9 @@ public class FlowInstanceService {
             }
             Long taskId = taskInstance.getTargetTaskId();
             if (taskId == null) {
-                throw new IllegalStateException("RollBack task can not be cancelled");
+                throw new UnsupportedException(ErrorCodes.FlowTaskNotSupportCancel,
+                        new Object[] {taskTypeHolder.getValue().getLocalizedMessage()},
+                        "The currently executing task does not support cancellation.");
             }
             TaskEntity taskEntity = taskService.detail(taskId);
             if (!dispatchChecker.isTaskEntityOnThisMachine(taskEntity)) {

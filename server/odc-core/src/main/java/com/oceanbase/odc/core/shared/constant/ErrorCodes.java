@@ -163,6 +163,7 @@ public enum ErrorCodes implements ErrorCode {
     FlowTaskInstanceFailed,
     FlowTaskInstanceCancelled,
     FlowCreateDeniedBySqlCheck,
+    FlowTaskNotSupportCancel,
 
     // Schedule
     AlterScheduleExists,
