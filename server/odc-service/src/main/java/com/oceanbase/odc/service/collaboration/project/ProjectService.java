@@ -67,6 +67,7 @@ import com.oceanbase.odc.metadb.iam.resourcerole.ResourceRoleEntity;
 import com.oceanbase.odc.metadb.iam.resourcerole.ResourceRoleRepository;
 import com.oceanbase.odc.metadb.iam.resourcerole.UserResourceRoleEntity;
 import com.oceanbase.odc.metadb.iam.resourcerole.UserResourceRoleRepository;
+import com.oceanbase.odc.metadb.schedule.ScheduleRepository;
 import com.oceanbase.odc.service.collaboration.project.model.Project;
 import com.oceanbase.odc.service.collaboration.project.model.Project.ProjectMember;
 import com.oceanbase.odc.service.collaboration.project.model.QueryProjectParams;
@@ -134,6 +135,9 @@ public class ProjectService {
 
     @Autowired
     private ConnectionService connectionService;
+
+    @Autowired
+    private ScheduleRepository scheduleRepository;
 
     @Value("${odc.integration.bastion.enabled:false}")
     private boolean bastionEnabled;
@@ -279,6 +283,9 @@ public class ProjectService {
                 .orElseThrow(() -> new NotFoundException(ResourceType.ODC_PROJECT, "id", id));
         if (!req.getArchived()) {
             throw new BadRequestException("currently not allowed to recover projects");
+        }
+        if (scheduleRepository.getEnabledScheduleCountByProjectId(id) > 0) {
+            throw new BadRequestException("Please disable all active tickets in the project first.");
         }
         previous.setArchived(true);
         ProjectEntity saved = repository.save(previous);

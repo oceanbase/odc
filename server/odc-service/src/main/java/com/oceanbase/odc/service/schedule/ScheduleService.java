@@ -238,27 +238,35 @@ public class ScheduleService {
      */
     public boolean terminateIfDatabaseNotExisted(Long scheduleId) {
         Optional<ScheduleEntity> scheduleEntityOptional = scheduleRepository.findById(scheduleId);
+        boolean needToTerminate = false;
         if (scheduleEntityOptional.isPresent()) {
-            Database database;
             try {
-                database = databaseService.getBasicSkipPermissionCheck(scheduleEntityOptional.get().getDatabaseId());
+                needToTerminate = projectService.detail(scheduleEntityOptional.get().getProjectId()).getArchived();
             } catch (NotFoundException e) {
-                database = null;
+                needToTerminate = true;
             }
-            if (database == null || !database.getExisted()) {
+            if (!needToTerminate) {
+                Database database;
                 try {
-                    log.info(
-                            "The database for scheduled task operation does not exist, and the schedule is being terminated, scheduleId={}",
-                            scheduleId);
-                    terminate(scheduleEntityOptional.get());
-                } catch (SchedulerException e) {
-                    log.warn("Terminate schedule failed,scheduleId={}", scheduleId);
+                    database =
+                            databaseService.getBasicSkipPermissionCheck(scheduleEntityOptional.get().getDatabaseId());
+                } catch (NotFoundException e) {
+                    database = null;
                 }
-                return true;
+                needToTerminate = (database == null || !database.getExisted());
             }
-            return false;
         }
-        return true;
+        if (needToTerminate) {
+            try {
+                log.info(
+                        "The project or database for scheduled task operation does not exist, and the schedule is being terminated, scheduleId={}",
+                        scheduleId);
+                terminate(scheduleEntityOptional.get());
+            } catch (SchedulerException e) {
+                log.warn("Terminate schedule failed,scheduleId={}", scheduleId);
+            }
+        }
+        return needToTerminate;
     }
 
     public ScheduleDetailResp triggerJob(Long scheduleId, String jobType) {
