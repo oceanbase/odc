@@ -15,9 +15,14 @@
  */
 package com.oceanbase.odc.metadb.flow;
 
+import java.util.List;
+
 /**
  * @author liuyizhuo.lyz
  * @date 2024/2/27
  */
 public interface FlowInstanceApprovalViewRepository extends ReadOnlyRepository<FlowInstanceApprovalViewEntity, Long> {
+
+    List<FlowInstanceApprovalViewEntity> findByIdIn(List<Long> ids);
+
 }
