@@ -436,10 +436,6 @@ public class ScheduleService {
         return scheduleTaskEntities.map(scheduleTaskMapper::entityToModel);
     }
 
-    public boolean hasEnabledScheduleInProject(Long projectId) {
-        return scheduleRepository.getEnabledScheduleCountByProjectId(projectId) == 0;
-    }
-
     public void updateStatusById(Long id, ScheduleStatus status) {
         scheduleRepository.updateStatusById(id, status);
     }
