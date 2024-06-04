@@ -17,8 +17,11 @@ package com.oceanbase.tools.dbbrowser.stats;
 
 import java.util.Map;
 
+import javax.sql.DataSource;
+
 import org.apache.commons.lang3.Validate;
 import org.springframework.jdbc.core.JdbcOperations;
+import org.springframework.jdbc.core.JdbcTemplate;
 
 import com.oceanbase.tools.dbbrowser.AbstractDBBrowserFactory;
 import com.oceanbase.tools.dbbrowser.stats.mysql.DorisStatsAccessor;
@@ -41,15 +44,15 @@ public class DBStatsAccessorFactory extends AbstractDBBrowserFactory<DBStatsAcce
 
     public static final String CONNECTION_ID_KEY = "connectionId";
     private String dbVersion;
+    private DataSource dataSource;
     private JdbcOperations jdbcOperations;
     private Map<String, Object> properties;
 
     @Override
     public DBStatsAccessor buildForDoris() {
-        Validate.notNull(this.jdbcOperations, "Datasource can not be null");
         Validate.notNull(this.dbVersion, "DBVersion can not be null");
         if (VersionUtils.isGreaterThanOrEqualsTo(this.dbVersion, "5.7.0")) {
-            return new DorisStatsAccessor(this.jdbcOperations);
+            return new DorisStatsAccessor(getJdbcOperations());
         } else {
             throw new UnsupportedOperationException(String.format("Doris version '%s' not supported", this.dbVersion));
         }
@@ -57,42 +60,38 @@ public class DBStatsAccessorFactory extends AbstractDBBrowserFactory<DBStatsAcce
 
     @Override
     public DBStatsAccessor buildForMySQL() {
-        Validate.notNull(this.jdbcOperations, "Datasource can not be null");
-        return new MySQLNoLessThan5700StatsAccessor(this.jdbcOperations);
+        return new MySQLNoLessThan5700StatsAccessor(getJdbcOperations());
     }
 
     @Override
     public DBStatsAccessor buildForOBMySQL() {
-        Validate.notNull(this.jdbcOperations, "Datasource can not be null");
         Validate.notNull(this.dbVersion, "DBVersion can not be null");
         if (VersionUtils.isGreaterThanOrEqualsTo(this.dbVersion, "4.0.0")) {
             // OB 版本 >= 4.0.0
-            return new OBMySQLNoLessThan400StatsAccessor(this.jdbcOperations);
+            return new OBMySQLNoLessThan400StatsAccessor(getJdbcOperations());
         } else {
-            return new OBMySQLStatsAccessor(this.jdbcOperations);
+            return new OBMySQLStatsAccessor(getJdbcOperations());
         }
     }
 
     @Override
     public DBStatsAccessor buildForOBOracle() {
-        Validate.notNull(this.jdbcOperations, "Datasource can not be null");
         Validate.notNull(this.dbVersion, "DBVersion can not be null");
         if (VersionUtils.isGreaterThanOrEqualsTo(this.dbVersion, "4.0.0")) {
             // OB version >= 4.0.0
-            return new OBOracleNoLessThan400StatsAccessor(this.jdbcOperations);
+            return new OBOracleNoLessThan400StatsAccessor(getJdbcOperations());
         } else if (VersionUtils.isGreaterThanOrEqualsTo(this.dbVersion, "2.2.70")) {
             // OB version between [2.2.70, 4.0.0)
-            return new OBOracleNoLessThan2270StatsAccessor(this.jdbcOperations);
+            return new OBOracleNoLessThan2270StatsAccessor(getJdbcOperations());
         } else {
             // OB version < 2.2.70
-            return new OBOracleLessThan2270StatsAccessor(this.jdbcOperations);
+            return new OBOracleLessThan2270StatsAccessor(getJdbcOperations());
         }
     }
 
     @Override
     public DBStatsAccessor buildForOracle() {
-        Validate.notNull(this.jdbcOperations, "Datasource can not be null");
-        return new OracleStatsAccessor(this.jdbcOperations);
+        return new OracleStatsAccessor(getJdbcOperations());
     }
 
     @Override
@@ -105,6 +104,15 @@ public class DBStatsAccessorFactory extends AbstractDBBrowserFactory<DBStatsAcce
             }
         }
         return new ODPOBMySQLStatsAccessor(connectionId);
+    }
+
+    private JdbcOperations getJdbcOperations() {
+        if (this.jdbcOperations != null) {
+            return this.jdbcOperations;
+        } else if (this.dataSource != null) {
+            return new JdbcTemplate(this.dataSource);
+        }
+        throw new IllegalArgumentException("Datasource can not be null");
     }
 
 }

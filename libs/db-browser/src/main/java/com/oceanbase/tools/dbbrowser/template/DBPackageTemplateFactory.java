@@ -15,8 +15,10 @@
  */
 package com.oceanbase.tools.dbbrowser.template;
 
-import org.apache.commons.lang3.Validate;
+import javax.sql.DataSource;
+
 import org.springframework.jdbc.core.JdbcOperations;
+import org.springframework.jdbc.core.JdbcTemplate;
 
 import com.oceanbase.tools.dbbrowser.AbstractDBBrowserFactory;
 import com.oceanbase.tools.dbbrowser.model.DBPackage;
@@ -29,6 +31,7 @@ import lombok.experimental.Accessors;
 @Accessors(chain = true)
 public class DBPackageTemplateFactory extends AbstractDBBrowserFactory<DBObjectTemplate<DBPackage>> {
 
+    private DataSource dataSource;
     private JdbcOperations jdbcOperations;
 
     @Override
@@ -48,19 +51,26 @@ public class DBPackageTemplateFactory extends AbstractDBBrowserFactory<DBObjectT
 
     @Override
     public DBObjectTemplate<DBPackage> buildForOBOracle() {
-        Validate.notNull(this.jdbcOperations, "Datasource can not be null");
-        return new OraclePackageTemplate(this.jdbcOperations);
+        return new OraclePackageTemplate(getJdbcOperations());
     }
 
     @Override
     public DBObjectTemplate<DBPackage> buildForOracle() {
-        Validate.notNull(this.jdbcOperations, "Datasource can not be null");
-        return new OraclePackageTemplate(this.jdbcOperations);
+        return new OraclePackageTemplate(getJdbcOperations());
     }
 
     @Override
     public DBObjectTemplate<DBPackage> buildForOdpSharding() {
         throw new UnsupportedOperationException("Not supported yet");
+    }
+
+    private JdbcOperations getJdbcOperations() {
+        if (this.jdbcOperations != null) {
+            return this.jdbcOperations;
+        } else if (this.dataSource != null) {
+            return new JdbcTemplate(this.dataSource);
+        }
+        throw new IllegalArgumentException("Datasource can not be null");
     }
 
 }

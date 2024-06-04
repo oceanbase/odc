@@ -15,8 +15,10 @@
  */
 package com.oceanbase.tools.dbbrowser.editor;
 
-import org.apache.commons.lang3.Validate;
+import javax.sql.DataSource;
+
 import org.springframework.jdbc.core.JdbcOperations;
+import org.springframework.jdbc.core.JdbcTemplate;
 
 import com.oceanbase.tools.dbbrowser.AbstractDBBrowserFactory;
 import com.oceanbase.tools.dbbrowser.editor.mysql.MySQLObjectOperator;
@@ -29,6 +31,7 @@ import lombok.experimental.Accessors;
 @Accessors(chain = true)
 public class DBObjectOperatorFactory extends AbstractDBBrowserFactory<DBObjectOperator> {
 
+    private DataSource dataSource;
     private JdbcOperations jdbcOperations;
 
     @Override
@@ -43,14 +46,12 @@ public class DBObjectOperatorFactory extends AbstractDBBrowserFactory<DBObjectOp
 
     @Override
     public DBObjectOperator buildForOBMySQL() {
-        Validate.notNull(this.jdbcOperations, "Datasource can not be null");
-        return new MySQLObjectOperator(this.jdbcOperations);
+        return new MySQLObjectOperator(getJdbcOperations());
     }
 
     @Override
     public DBObjectOperator buildForOBOracle() {
-        Validate.notNull(this.jdbcOperations, "Datasource can not be null");
-        return new OracleObjectOperator(this.jdbcOperations);
+        return new OracleObjectOperator(getJdbcOperations());
     }
 
     @Override
@@ -61,6 +62,15 @@ public class DBObjectOperatorFactory extends AbstractDBBrowserFactory<DBObjectOp
     @Override
     public DBObjectOperator buildForOdpSharding() {
         return buildForOBMySQL();
+    }
+
+    private JdbcOperations getJdbcOperations() {
+        if (this.jdbcOperations != null) {
+            return this.jdbcOperations;
+        } else if (this.dataSource != null) {
+            return new JdbcTemplate(this.dataSource);
+        }
+        throw new IllegalArgumentException("Datasource can not be null");
     }
 
 }
