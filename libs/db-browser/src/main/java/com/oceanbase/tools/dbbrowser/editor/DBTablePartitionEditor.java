@@ -76,13 +76,9 @@ public abstract class DBTablePartitionEditor implements DBObjectEditor<DBTablePa
         if (Objects.nonNull(partition.getSubpartitionTemplated()) && partition.getSubpartitionTemplated()) {
             generateCreateTemplateSubPartition(partition, sqlBuilder);
         }
-        if (Objects.nonNull(partition.getPartitionOption().getPartitionsNum())) {
-            sqlBuilder.append("\nPARTITIONS ")
-                    .append(String.valueOf(partition.getPartitionOption().getPartitionsNum()));
-            if (partition.getPartitionOption().getType() == DBTablePartitionType.HASH
-                    || partition.getPartitionOption().getType() == DBTablePartitionType.KEY) {
-                return sqlBuilder.toString();
-            }
+        if (partition.getPartitionOption().getType() == DBTablePartitionType.HASH
+                || partition.getPartitionOption().getType() == DBTablePartitionType.KEY) {
+            return sqlBuilder.toString();
         }
         appendDefinitions(partition, sqlBuilder);
         return sqlBuilder.toString();
