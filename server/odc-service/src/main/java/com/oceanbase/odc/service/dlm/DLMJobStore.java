@@ -74,7 +74,7 @@ public class DLMJobStore implements IJobStore {
 
     public List<DlmTableUnit> getDlmTableUnits(Long scheduleTaskId) throws SQLException {
         try (Connection conn = dataSource.getConnection()) {
-            PreparedStatement ps = conn.prepareStatement("select * from dlm_job where schedule_task_id = ?");
+            PreparedStatement ps = conn.prepareStatement("select * from dlm_table_unit where schedule_task_id = ?");
             ps.setLong(1, scheduleTaskId);
             ResultSet resultSet = ps.executeQuery();
             List<DlmTableUnit> dlmTableUnits = new LinkedList<>();
@@ -119,7 +119,7 @@ public class DLMJobStore implements IJobStore {
 
 
     public void storeDlmTableUnit(List<DlmTableUnit> dlmTableUnits) throws SQLException {
-        String sql = "INSERT INTO dlm_table_unit (schedule_task_id, dlm_job_id, table_name, fire_time, " +
+        String sql = "INSERT INTO dlm_table_unit (schedule_task_id, dlm_table_unit_id, table_name, fire_time, " +
                 "target_table_name, source_datasource_info, target_datasource_info, status, type, " +
                 "parameters, statistic) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
@@ -229,7 +229,7 @@ public class DLMJobStore implements IJobStore {
         statistic.setProcessedRowsPerSecond(jobMeta.getJobStat().getAvgRowCount());
         statistic.setReadRowCount(jobMeta.getJobStat().getReadRowCount());
         statistic.setReadRowsPerSecond(jobMeta.getJobStat().getAvgReadRowCount());
-        String updateSql = "UPDATE dlm_job SET statistic = ? WHERE dlm_job_id = ?";
+        String updateSql = "UPDATE dlm_table_unit SET statistic = ? WHERE dlm_table_unit_id = ?";
 
         try (Connection connection = dataSource.getConnection();
                 PreparedStatement preparedStatement = connection.prepareStatement(updateSql)) {

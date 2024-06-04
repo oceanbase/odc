@@ -191,11 +191,14 @@ public abstract class AbstractDlmJob implements OdcJob {
             DlmTableUnit dlmTableUnit = new DlmTableUnit();
             dlmTableUnit.setScheduleTaskId(taskEntity.getId());
             DlmTableUnitParameters jobParameter = new DlmTableUnitParameters();
-            jobParameter.setMigrateRule(condition);
             RateLimitConfiguration limiterConfig =
                     limiterService.getByOrderIdOrElseDefaultConfig(Long.parseLong(taskEntity.getJobName()));
             jobParameter.setMigrateRule(condition);
             jobParameter.setCheckMode(CheckMode.MULTIPLE_GET);
+            jobParameter.setGeneratorBatchSize(parameters.getScanBatchSize());
+            jobParameter.setShardingStrategy(parameters.getShardingStrategy());
+            jobParameter.setReaderTaskCount(parameters.getReadThreadCount());
+            jobParameter.setWriterTaskCount(parameters.getWriteThreadCount());
             jobParameter.setReaderBatchSize(limiterConfig.getBatchSize());
             jobParameter.setWriterBatchSize(limiterConfig.getBatchSize());
             jobParameter.setMigrationInsertAction(parameters.getMigrationInsertAction());
@@ -210,6 +213,8 @@ public abstract class AbstractDlmJob implements OdcJob {
             dlmTableUnit.setTargetTableName(table.getTargetTableName());
             dlmTableUnit.setSourceDatasourceInfo(getDataSourceInfo(parameters.getSourceDatabaseId()));
             dlmTableUnit.setTargetDatasourceInfo(getDataSourceInfo(parameters.getTargetDataBaseId()));
+            dlmTableUnit.getSourceDatasourceInfo().setQueryTimeout(parameters.getQueryTimeout());
+            dlmTableUnit.getTargetDatasourceInfo().setQueryTimeout(parameters.getQueryTimeout());
             dlmTableUnit.setFireTime(taskEntity.getFireTime());
             dlmTableUnit.setStatus(TaskStatus.PREPARING);
             dlmTableUnit.setType(JobType.MIGRATE);
