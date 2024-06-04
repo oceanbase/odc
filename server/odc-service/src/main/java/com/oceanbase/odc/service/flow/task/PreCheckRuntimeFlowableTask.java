@@ -135,12 +135,10 @@ public class PreCheckRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Void> {
             throw new ServiceTaskError(new RuntimeException("Can not find task entity by id " + preCheckTaskId));
         }
         this.creatorId = FlowTaskUtil.getTaskCreator(execution).getId();
-        if (taskEntity.getTaskType() != TaskType.MULTIPLE_ASYNC) {
-            try {
-                this.connectionConfig = FlowTaskUtil.getConnectionConfig(execution);
-            } catch (VerifyException e) {
-                log.info(e.getMessage());
-            }
+        try {
+            this.connectionConfig = FlowTaskUtil.getConnectionConfig(execution);
+        } catch (VerifyException e) {
+            log.info(e.getMessage());
         }
         RiskLevelDescriber riskLevelDescriber = null;
         Map<Long, RiskLevelDescriber> databaseId2RiskLevelDescriber = null;
@@ -153,7 +151,7 @@ public class PreCheckRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Void> {
             List<ConnectionConfig> connectionConfigList = FlowTaskUtil.getConnectionConfigList(execution);
             Map<Long, ConnectionConfig> id2ConnectConfig = connectionConfigList.stream().collect(
                     Collectors.toMap(ConnectionConfig::getId, Function.identity()));
-            this.databaseList.stream().forEach(x -> x.setDataSource(id2ConnectConfig.get(x.getDataSource().getId())));
+            this.databaseList.forEach(x -> x.setDataSource(id2ConnectConfig.get(x.getDataSource().getId())));
             databaseId2RiskLevelDescriber = buildDatabaseId2RiskLevelDescriber(this.databaseList);
         } else {
             riskLevelDescriber = FlowTaskUtil.getRiskLevelDescriber(execution);

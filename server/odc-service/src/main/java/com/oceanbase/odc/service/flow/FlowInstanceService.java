@@ -370,7 +370,7 @@ public class FlowInstanceService {
             List<Long> dataSourceIds =
                     taskParameters.getDatabases().stream().map(x -> x.getDataSource().getId()).distinct()
                             .collect(Collectors.toList());
-            conns = connectionService.getForConnectionSkipPermissionCheck(dataSourceIds);
+            conns = connectionService.listForConnectionSkipPermissionCheck(dataSourceIds);
             conns.forEach(con -> cloudMetadataClient.checkPermission(OBTenant.of(con.getClusterName(),
                     con.getTenantName()), con.getInstanceType(), false, CloudPermissionAction.READONLY));
         }
@@ -836,7 +836,8 @@ public class FlowInstanceService {
             Map<String, Object> variables = new HashMap<>();
             FlowTaskUtil.setTemplateVariables(variables, buildTemplateVariables(flowInstanceReq, connectionConfig));
             FlowTaskUtil.setFlowInstanceId(variables, flowInstance.getId());
-            initVariables(variables, taskEntity, null, connectionConfig, buildRiskLevelDescriber(flowInstanceReq));
+            initVariables(variables, taskEntity, null, Collections.singletonList(connectionConfig),
+                    buildRiskLevelDescriber(flowInstanceReq));
             flowInstance.start(variables);
             if (taskType == TaskType.SHADOWTABLE_SYNC) {
                 consumeShadowTableHook((ShadowTableSyncTaskParameter) flowInstanceReq.getParameters(),
@@ -902,13 +903,8 @@ public class FlowInstanceService {
         Map<String, Object> variables = new HashMap<>();
         FlowTaskUtil.setFlowInstanceId(variables, flowInstance.getId());
         FlowTaskUtil.setTemplateVariables(variables, buildTemplateVariables(flowInstanceReq, connectionConfigs.get(0)));
-        if (flowInstanceReq.getTaskType() == TaskType.MULTIPLE_ASYNC) {
-            initVariables(variables, taskEntity, preCheckTaskEntity, connectionConfigs,
-                    buildRiskLevelDescriber(flowInstanceReq));
-        } else {
-            initVariables(variables, taskEntity, preCheckTaskEntity, connectionConfigs.get(0),
-                    buildRiskLevelDescriber(flowInstanceReq));
-        }
+        initVariables(variables, taskEntity, preCheckTaskEntity, connectionConfigs,
+                buildRiskLevelDescriber(flowInstanceReq));
         flowInstance.start(variables);
         if (flowInstanceReq.getTaskType() == TaskType.SHADOWTABLE_SYNC) {
             consumeShadowTableHook((ShadowTableSyncTaskParameter) flowInstanceReq.getParameters(),
@@ -1080,27 +1076,14 @@ public class FlowInstanceService {
     }
 
     private void initVariables(Map<String, Object> variables, TaskEntity taskEntity, TaskEntity preCheckTaskEntity,
-            ConnectionConfig config, RiskLevelDescriber riskLevelDescriber) {
-        if (config != null) {
-            FlowTaskUtil.setConnectionConfig(variables, config);
-        }
-        initCommonVariables(variables, taskEntity, preCheckTaskEntity, riskLevelDescriber);
-    }
-
-    private void initVariables(Map<String, Object> variables, TaskEntity taskEntity, TaskEntity preCheckTaskEntity,
             List<ConnectionConfig> configList, RiskLevelDescriber riskLevelDescriber) {
-        if (configList != null) {
-            FlowTaskUtil.setConnectionConfigList(variables, configList);
-        }
-        initCommonVariables(variables, taskEntity, preCheckTaskEntity, riskLevelDescriber);
-    }
-
-    private void initCommonVariables(Map<String, Object> variables, TaskEntity taskEntity,
-            TaskEntity preCheckTaskEntity,
-            RiskLevelDescriber riskLevelDescriber) {
         FlowTaskUtil.setTaskId(variables, taskEntity.getId());
         if (Objects.nonNull(preCheckTaskEntity)) {
             FlowTaskUtil.setPreCheckTaskId(variables, preCheckTaskEntity.getId());
+        }
+        if (CollectionUtils.isNotEmpty(configList)) {
+            FlowTaskUtil.setConnectionConfigList(variables, configList);
+            FlowTaskUtil.setConnectionConfig(variables, configList.get(0));
         }
         FlowTaskUtil.setExecutionExpirationInterval(variables,
                 taskEntity.getExecutionExpirationIntervalSeconds(), TimeUnit.SECONDS);

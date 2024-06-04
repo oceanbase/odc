@@ -257,6 +257,8 @@ public class FlowTaskUtil {
         return internalGet(value, String.class).orElseThrow(() -> new VerifyException("Schema name is absent"));
     }
 
+    // use setConnectionConfigList instead
+    @Deprecated
     public static void setConnectionConfig(@NonNull Map<String, Object> variables, @NonNull ConnectionConfig config) {
         variables.put(RuntimeTaskConstants.CONNECTION_CONFIG, config);
     }
@@ -266,12 +268,15 @@ public class FlowTaskUtil {
         variables.put(RuntimeTaskConstants.CONNECTION_CONFIG_LIST, configList);
     }
 
+    @SuppressWarnings("all")
     public static List<ConnectionConfig> getConnectionConfigList(@NonNull DelegateExecution execution) {
         Object value = execution.getVariables().get(RuntimeTaskConstants.CONNECTION_CONFIG_LIST);
         return internalGet(value, ArrayList.class)
                 .orElseThrow(() -> new VerifyException("ConnectionConfigList is absent"));
     }
 
+    // use getConnectionConfigList instead
+    @Deprecated
     public static ConnectionConfig getConnectionConfig(@NonNull DelegateExecution execution) {
         Object value = execution.getVariables().get(RuntimeTaskConstants.CONNECTION_CONFIG);
         return internalGet(value, ConnectionConfig.class)
