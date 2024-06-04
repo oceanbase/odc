@@ -743,7 +743,7 @@ public class DatabaseService {
             return Collections.emptyList();
         }
         ConnectionConfig dataSource = connectionService.getBasicWithoutPermissionCheck(dataSourceId);
-        List<Database> databases = listDatabasesByConnectionIds(Collections.singleton(dataSourceId));
+        List<Database> databases = listExistDatabasesByConnectionId(dataSourceId);
         databases.forEach(d -> d.getDataSource().setName(dataSource.getName()));
         Map<String, Database> name2Database = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
         databases.forEach(d -> name2Database.put(d.getName(), d));
