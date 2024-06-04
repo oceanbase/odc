@@ -15,17 +15,28 @@
  */
 package com.oceanbase.odc.service.dml.converter;
 
+import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
+
+import com.oceanbase.odc.service.dml.DataValue;
+
+import lombok.NonNull;
 
 /**
  * @author jingtian
  * @date 2024/4/15
  * @since ODC_release_4.3.0
  */
-public class OBOracleGeometryConverter extends OracleStringConverter {
+public class OBOracleGeometryConverter extends BaseDataConverter {
+
+    @Override
+    protected String doConvert(@NonNull DataValue value) {
+        return value.getValue();
+    }
+
     @Override
     protected Collection<String> getSupportDataTypeNames() {
-        return Collections.singletonList("geometry");
+        return Arrays.asList("sdo_geometry", "geometry");
     }
+
 }
