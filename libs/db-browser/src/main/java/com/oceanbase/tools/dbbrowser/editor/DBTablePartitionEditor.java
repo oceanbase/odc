@@ -78,6 +78,10 @@ public abstract class DBTablePartitionEditor implements DBObjectEditor<DBTablePa
         }
         if (partition.getPartitionOption().getType() == DBTablePartitionType.HASH
                 || partition.getPartitionOption().getType() == DBTablePartitionType.KEY) {
+            if (Objects.nonNull(partition.getPartitionOption().getPartitionsNum())) {
+                sqlBuilder.append("\nPARTITIONS ")
+                        .append(String.valueOf(partition.getPartitionOption().getPartitionsNum()));
+            }
             return sqlBuilder.toString();
         }
         appendDefinitions(partition, sqlBuilder);
