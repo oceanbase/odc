@@ -29,8 +29,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
-import com.oceanbase.odc.metadb.config.SystemConfigDAO;
 import com.oceanbase.odc.metadb.config.SystemConfigEntity;
+import com.oceanbase.odc.metadb.config.SystemConfigRepository;
 import com.oceanbase.odc.service.config.model.Configuration;
 import com.oceanbase.odc.service.config.util.ConfigurationUtils;
 import com.oceanbase.odc.service.systemconfig.SystemConfigRefreshMatcher;
@@ -49,7 +49,7 @@ public class SystemConfigService {
     private static final String SENSITIVE_MASK_VALUE = "******";
 
     @Autowired
-    private SystemConfigDAO systemConfigDAO;
+    private SystemConfigRepository systemConfigRepository;
 
     @Autowired
     private ContextRefresher contextRefresher;
@@ -111,7 +111,7 @@ public class SystemConfigService {
 
     @SkipAuthorize("odc internal usage")
     public List<Configuration> queryByKeyPrefix(String keyPrefix) {
-        List<SystemConfigEntity> configEntities = systemConfigDAO.queryByKeyPrefix(keyPrefix);
+        List<SystemConfigEntity> configEntities = systemConfigRepository.queryByKeyPrefix(keyPrefix);
         return ConfigurationUtils.fromEntity(configEntities).stream().peek(config -> {
             for (Consumer<Configuration> consumer : getConfigurationConsumer()) {
                 consumer.accept(config);
@@ -121,7 +121,7 @@ public class SystemConfigService {
 
     @SkipAuthorize("odc internal usage")
     public Configuration queryByKey(String key) {
-        SystemConfigEntity systemConfigEntity = systemConfigDAO.queryByKey(key);
+        SystemConfigEntity systemConfigEntity = systemConfigRepository.queryByKey(key);
         Configuration config = ConfigurationUtils.fromEntity(systemConfigEntity);
         for (Consumer<Configuration> consumer : getConfigurationConsumer()) {
             consumer.accept(config);
@@ -142,7 +142,7 @@ public class SystemConfigService {
     @SkipAuthorize("public readonly resource")
     @Transactional(rollbackFor = Exception.class)
     public void insert(@NotNull List<SystemConfigEntity> entities) {
-        entities.forEach(entity -> systemConfigDAO.insert(entity));
+        entities.forEach(entity -> systemConfigRepository.insert(entity));
     }
 
     private boolean needRefresh() {
@@ -158,7 +158,7 @@ public class SystemConfigService {
     @SkipAuthorize("odc internal usage")
     @Transactional(rollbackFor = Exception.class)
     public void upsert(@NotNull List<SystemConfigEntity> entities) {
-        entities.forEach(entity -> systemConfigDAO.upsert(entity));
+        entities.forEach(entity -> systemConfigRepository.upsert(entity));
     }
 
 }
