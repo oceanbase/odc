@@ -13,47 +13,62 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.tools.dbbrowser.editor.generator;
+package com.oceanbase.tools.dbbrowser.editor;
 
-import com.oceanbase.tools.dbbrowser.editor.DBTableConstraintEditor;
+import org.apache.commons.lang3.Validate;
+
+import com.oceanbase.tools.dbbrowser.AbstractDBBrowserFactory;
 import com.oceanbase.tools.dbbrowser.editor.mysql.MySQLConstraintEditor;
 import com.oceanbase.tools.dbbrowser.editor.mysql.OBMySQLLessThan400ConstraintEditor;
 import com.oceanbase.tools.dbbrowser.editor.oracle.OBOracleLessThan400ConstraintEditor;
 import com.oceanbase.tools.dbbrowser.editor.oracle.OracleConstraintEditor;
 import com.oceanbase.tools.dbbrowser.util.VersionUtils;
 
-/**
- * @author jingtian
- * @date 2024/5/22
- */
-public class DBTableConstraintEditorGenerator {
-    public static DBTableConstraintEditor createForOBMySQL(String dbVersion) {
-        if (VersionUtils.isLessThan(dbVersion, "4.0.0")) {
+import lombok.Setter;
+import lombok.experimental.Accessors;
+
+@Setter
+@Accessors(chain = true)
+public class DBTableConstraintEditorFactory extends AbstractDBBrowserFactory<DBTableConstraintEditor> {
+
+    private String dbVersion;
+
+    @Override
+    public DBTableConstraintEditor buildForDoris() {
+        return buildForMySQL();
+    }
+
+    @Override
+    public DBTableConstraintEditor buildForMySQL() {
+        return new MySQLConstraintEditor();
+    }
+
+    @Override
+    public DBTableConstraintEditor buildForOBMySQL() {
+        Validate.notNull(this.dbVersion, "DBVersion can not be null");
+        if (VersionUtils.isLessThan(this.dbVersion, "4.0.0")) {
             return new OBMySQLLessThan400ConstraintEditor();
         }
         return new MySQLConstraintEditor();
     }
 
-    public static DBTableConstraintEditor createForOBOracle(String dbVersion) {
-        if (VersionUtils.isLessThan(dbVersion, "4.0.0")) {
+    @Override
+    public DBTableConstraintEditor buildForOBOracle() {
+        Validate.notNull(this.dbVersion, "DBVersion can not be null");
+        if (VersionUtils.isLessThan(this.dbVersion, "4.0.0")) {
             return new OBOracleLessThan400ConstraintEditor();
         }
         return new OracleConstraintEditor();
     }
 
-    public static DBTableConstraintEditor createForODPOBMySQL(String dbVersion) {
-        return createForOBMySQL(dbVersion);
-    }
-
-    public static DBTableConstraintEditor createForMySQL(String dbVersion) {
-        return new MySQLConstraintEditor();
-    }
-
-    public static DBTableConstraintEditor createForOracle(String dbVersion) {
+    @Override
+    public DBTableConstraintEditor buildForOracle() {
         return new OracleConstraintEditor();
     }
 
-    public static DBTableConstraintEditor createForDoris(String dbVersion) {
-        return createForMySQL(dbVersion);
+    @Override
+    public DBTableConstraintEditor buildForOdpSharding() {
+        return buildForOBMySQL();
     }
+
 }

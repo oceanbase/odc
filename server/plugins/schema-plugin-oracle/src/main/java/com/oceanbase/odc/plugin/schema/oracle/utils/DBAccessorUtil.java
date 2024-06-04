@@ -19,11 +19,12 @@ package com.oceanbase.odc.plugin.schema.oracle.utils;
 import java.sql.Connection;
 
 import com.oceanbase.odc.common.util.JdbcOperationsUtil;
+import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.plugin.connect.oracle.OracleInformationExtension;
+import com.oceanbase.tools.dbbrowser.DBBrowser;
+import com.oceanbase.tools.dbbrowser.editor.DBTableEditor;
 import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
-import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessorGenerator;
 import com.oceanbase.tools.dbbrowser.stats.DBStatsAccessor;
-import com.oceanbase.tools.dbbrowser.stats.DBStatsAccessorGenerator;
 
 /**
  * @author jingtian
@@ -31,17 +32,27 @@ import com.oceanbase.tools.dbbrowser.stats.DBStatsAccessorGenerator;
  * @since ODC_release_4.2.4
  */
 public class DBAccessorUtil {
+
     public static String getDbVersion(Connection connection) {
-        OracleInformationExtension informationExtension = new OracleInformationExtension();
-        return informationExtension.getDBVersion(connection);
+        return new OracleInformationExtension().getDBVersion(connection);
     }
 
     public static DBSchemaAccessor getSchemaAccessor(Connection connection) {
-        return DBSchemaAccessorGenerator.createForOracle(JdbcOperationsUtil.getJdbcOperations(connection));
+        return DBBrowser.schemaAccessor()
+                .setJdbcOperations(JdbcOperationsUtil.getJdbcOperations(connection))
+                .setType(DialectType.ORACLE.getDBBrowserDialectTypeName()).create();
     }
 
     public static DBStatsAccessor getStatsAccessor(Connection connection) {
-        return DBStatsAccessorGenerator.createForOracle(JdbcOperationsUtil.getJdbcOperations(connection),
-                getDbVersion(connection));
+        return DBBrowser.statsAccessor()
+                .setJdbcOperations(JdbcOperationsUtil.getJdbcOperations(connection))
+                .setType(DialectType.ORACLE.getDBBrowserDialectTypeName()).create();
     }
+
+    public static DBTableEditor getTableEditor(Connection connection) {
+        return DBBrowser.objectEditor().tableEditor()
+                .setDbVersion(getDbVersion(connection))
+                .setType(DialectType.ORACLE.getDBBrowserDialectTypeName()).create();
+    }
+
 }

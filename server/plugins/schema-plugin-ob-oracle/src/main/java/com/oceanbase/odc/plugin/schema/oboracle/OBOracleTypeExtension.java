@@ -21,15 +21,15 @@ import java.util.List;
 import org.pf4j.Extension;
 
 import com.oceanbase.odc.common.util.JdbcOperationsUtil;
+import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.plugin.schema.api.TypeExtensionPoint;
 import com.oceanbase.odc.plugin.schema.oboracle.utils.DBAccessorUtil;
+import com.oceanbase.tools.dbbrowser.DBBrowser;
 import com.oceanbase.tools.dbbrowser.editor.oracle.OracleObjectOperator;
 import com.oceanbase.tools.dbbrowser.model.DBObjectType;
 import com.oceanbase.tools.dbbrowser.model.DBPLObjectIdentity;
 import com.oceanbase.tools.dbbrowser.model.DBType;
 import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
-import com.oceanbase.tools.dbbrowser.template.DBObjectTemplate;
-import com.oceanbase.tools.dbbrowser.template.oracle.OracleTypeTemplate;
 
 import lombok.NonNull;
 
@@ -59,8 +59,10 @@ public class OBOracleTypeExtension implements TypeExtensionPoint {
 
     @Override
     public String generateCreateTemplate(@NonNull DBType type) {
-        DBObjectTemplate<DBType> template = new OracleTypeTemplate();
-        return template.generateCreateObjectTemplate(type);
+        return DBBrowser.objectTemplate().typeTemplate()
+                .setType(DialectType.OB_ORACLE.getDBBrowserDialectTypeName())
+                .create()
+                .generateCreateObjectTemplate(type);
     }
 
     protected DBSchemaAccessor getSchemaAccessor(Connection connection) {

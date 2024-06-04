@@ -15,6 +15,9 @@
  */
 package com.oceanbase.odc.service.db.browser;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import org.springframework.jdbc.core.JdbcOperations;
 
 import com.oceanbase.odc.common.util.VersionUtils;
@@ -23,10 +26,10 @@ import com.oceanbase.odc.core.session.ConnectionSessionConstants;
 import com.oceanbase.odc.core.session.ConnectionSessionUtil;
 import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.core.shared.constant.ConnectType;
-import com.oceanbase.odc.core.shared.exception.UnsupportedException;
 import com.oceanbase.odc.core.sql.execute.SyncJdbcExecutor;
+import com.oceanbase.tools.dbbrowser.DBBrowser;
 import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
-import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessorGenerator;
+import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessorFactory;
 
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
@@ -66,22 +69,15 @@ public class DBSchemaAccessors {
 
     public static DBSchemaAccessor create(@NonNull JdbcOperations syncJdbcExecutor, JdbcOperations sysJdbcExecutor,
             @NonNull ConnectType connectType, @NonNull String dbVersion, String tenantName) {
-        if (connectType == ConnectType.OB_MYSQL || connectType == ConnectType.CLOUD_OB_MYSQL) {
-            return DBSchemaAccessorGenerator.createForOBMySQL(syncJdbcExecutor,
-                    sysJdbcExecutor, dbVersion, tenantName);
-        } else if (connectType == ConnectType.OB_ORACLE || connectType == ConnectType.CLOUD_OB_ORACLE) {
-            return DBSchemaAccessorGenerator.createForOBOracle(syncJdbcExecutor, dbVersion);
-        } else if (connectType == ConnectType.ODP_SHARDING_OB_MYSQL) {
-            return DBSchemaAccessorGenerator.createForODPOBMySQL(syncJdbcExecutor);
-        } else if (connectType == ConnectType.MYSQL) {
-            return DBSchemaAccessorGenerator.createForMySQL(syncJdbcExecutor, dbVersion);
-        } else if (connectType == ConnectType.DORIS) {
-            return DBSchemaAccessorGenerator.createForDoris(syncJdbcExecutor, dbVersion);
-        } else if (connectType == ConnectType.ORACLE) {
-            return DBSchemaAccessorGenerator.createForOracle(syncJdbcExecutor);
-        } else {
-            throw new UnsupportedException(String.format("ConnectType '%s' not supported", connectType));
-        }
+        Map<String, Object> properties = new HashMap<>();
+        properties.put(DBSchemaAccessorFactory.TENANT_NAME_KEY, tenantName);
+        properties.put(DBSchemaAccessorFactory.SYS_OPERATIONS_KEY, sysJdbcExecutor);
+        return DBBrowser.schemaAccessor()
+                .setProperties(properties)
+                .setDbVersion(dbVersion)
+                .setJdbcOperations(syncJdbcExecutor)
+                .setType(connectType.getDialectType().getDBBrowserDialectTypeName())
+                .create();
     }
 
 }

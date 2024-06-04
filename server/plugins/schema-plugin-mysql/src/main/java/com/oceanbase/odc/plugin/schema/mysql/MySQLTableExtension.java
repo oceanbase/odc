@@ -22,7 +22,6 @@ import org.pf4j.Extension;
 import com.oceanbase.odc.plugin.schema.mysql.utils.DBAccessorUtil;
 import com.oceanbase.odc.plugin.schema.obmysql.OBMySQLTableExtension;
 import com.oceanbase.tools.dbbrowser.editor.DBTableEditor;
-import com.oceanbase.tools.dbbrowser.editor.generator.DBTableEditorGenerator;
 import com.oceanbase.tools.dbbrowser.model.DBTable;
 import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
 import com.oceanbase.tools.dbbrowser.stats.DBStatsAccessor;
@@ -36,6 +35,7 @@ import lombok.NonNull;
  */
 @Extension
 public class MySQLTableExtension extends OBMySQLTableExtension {
+
     @Override
     public DBTable getDetail(@NonNull Connection connection, @NonNull String schemaName, @NonNull String tableName) {
         DBSchemaAccessor schemaAccessor = getSchemaAccessor(connection);
@@ -55,7 +55,7 @@ public class MySQLTableExtension extends OBMySQLTableExtension {
 
     @Override
     protected DBTableEditor getTableEditor(@NonNull Connection connection) {
-        return DBTableEditorGenerator.createForMySQL(DBAccessorUtil.getDbVersion(connection));
+        return DBAccessorUtil.getTableEditor(connection);
     }
 
     @Override

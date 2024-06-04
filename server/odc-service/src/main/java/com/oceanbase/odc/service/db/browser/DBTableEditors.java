@@ -16,27 +16,22 @@
 package com.oceanbase.odc.service.db.browser;
 
 import com.oceanbase.odc.core.session.ConnectionSession;
-import com.oceanbase.odc.core.session.ConnectionSessionConstants;
-import com.oceanbase.odc.core.shared.PreConditions;
+import com.oceanbase.odc.core.session.ConnectionSessionUtil;
 import com.oceanbase.odc.core.shared.constant.ConnectType;
-import com.oceanbase.odc.core.sql.execute.SyncJdbcExecutor;
 import com.oceanbase.tools.dbbrowser.DBBrowser;
-import com.oceanbase.tools.dbbrowser.editor.DBObjectOperator;
+import com.oceanbase.tools.dbbrowser.editor.DBTableEditor;
 
-public class DBObjectOperators {
+public class DBTableEditors {
 
-    public static DBObjectOperator create(ConnectionSession connectionSession) {
-        PreConditions.notNull(connectionSession, "connectionSession");
-        ConnectType connectType = connectionSession.getConnectType();
-        SyncJdbcExecutor syncJdbcExecutor =
-                connectionSession.getSyncJdbcExecutor(ConnectionSessionConstants.CONSOLE_DS_KEY);
-        PreConditions.notNull(connectType, "connectType");
-        PreConditions.notNull(syncJdbcExecutor, "syncJdbcExecutor");
-
-        return DBBrowser.objectEditor().objectOperator()
-                .setJdbcOperations(syncJdbcExecutor)
+    public static DBTableEditor create(ConnectType connectType, String dbVersion) {
+        return DBBrowser.objectEditor().tableEditor()
+                .setDbVersion(dbVersion)
                 .setType(connectType.getDialectType().getDBBrowserDialectTypeName())
                 .create();
+    }
+
+    public static DBTableEditor create(ConnectionSession connectionSession) {
+        return create(connectionSession.getConnectType(), ConnectionSessionUtil.getVersion(connectionSession));
     }
 
 }
