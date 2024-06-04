@@ -87,6 +87,8 @@ public class DataDeleteJob extends AbstractDlmJob {
             dlmTableUnit.setTargetDatasourceInfo(
                     Objects.isNull(parameters.getTargetDatabaseId()) ? dlmTableUnit.getSourceDatasourceInfo()
                             : getDataSourceInfo(parameters.getTargetDatabaseId()));
+            dlmTableUnit.getSourceDatasourceInfo().setQueryTimeout(parameters.getQueryTimeout());
+            dlmTableUnit.getTargetDatasourceInfo().setQueryTimeout(parameters.getQueryTimeout());
             dlmTableUnit.setFireTime(taskEntity.getFireTime());
             DlmTableUnitParameters parameter = new DlmTableUnitParameters();
             parameter.setMigrateRule(condition);
@@ -136,11 +138,10 @@ public class DataDeleteJob extends AbstractDlmJob {
         parameters
                 .setTargetDs(DataSourceInfoMapper.toDataSourceInfo(
                         databaseService.findDataSourceForConnectById(dataDeleteParameters.getTargetDatabaseId())));
+        parameters.getSourceDs().setQueryTimeout(dataDeleteParameters.getQueryTimeout());
+        parameters.getTargetDs().setQueryTimeout(dataDeleteParameters.getQueryTimeout());
         parameters.getSourceDs().setDatabaseName(dataDeleteParameters.getDatabaseName());
         parameters.getTargetDs().setDatabaseName(dataDeleteParameters.getTargetDatabaseName());
-        parameters.getSourceDs().setConnectionCount(2 * (parameters.getReadThreadCount()
-                + parameters.getWriteThreadCount()));
-        parameters.getTargetDs().setConnectionCount(parameters.getSourceDs().getConnectionCount());
 
         Long jobId = publishJob(parameters);
         scheduleTaskRepository.updateJobIdById(taskEntity.getId(), jobId);

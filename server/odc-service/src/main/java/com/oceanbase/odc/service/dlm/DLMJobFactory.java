@@ -16,6 +16,7 @@
 package com.oceanbase.odc.service.dlm;
 
 import com.oceanbase.odc.service.dlm.model.DlmTableUnit;
+import com.oceanbase.odc.service.dlm.model.DlmTableUnitParameters;
 import com.oceanbase.tools.migrator.common.dto.HistoryJob;
 import com.oceanbase.tools.migrator.core.IJobStore;
 import com.oceanbase.tools.migrator.core.JobFactory;
@@ -45,6 +46,11 @@ public class DLMJobFactory extends JobFactory {
         historyJob.setSourceTable(parameters.getTableName());
         historyJob.setTargetTable(parameters.getTargetTableName());
         historyJob.setJobParameter(parameters.getParameters());
+        DlmTableUnitParameters jobParameter = parameters.getParameters();
+        parameters.getSourceDatasourceInfo().setConnectionCount(2 * (jobParameter.getReaderTaskCount()
+                + jobParameter.getWriterTaskCount()));
+        parameters.getTargetDatasourceInfo().setConnectionCount(2 * (jobParameter.getReaderTaskCount()
+                + jobParameter.getWriterTaskCount()));
         log.info("Begin to create dlm job,params={}", historyJob);
         JobReq req = new JobReq();
         req.setHistoryJob(historyJob);

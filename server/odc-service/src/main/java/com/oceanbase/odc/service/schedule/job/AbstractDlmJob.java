@@ -213,10 +213,8 @@ public abstract class AbstractDlmJob implements OdcJob {
             dlmTableUnit.setTargetTableName(table.getTargetTableName());
             dlmTableUnit.setSourceDatasourceInfo(getDataSourceInfo(parameters.getSourceDatabaseId()));
             dlmTableUnit.setTargetDatasourceInfo(getDataSourceInfo(parameters.getTargetDataBaseId()));
-            dlmTableUnit.getSourceDatasourceInfo().setConnectionCount(2 * (jobParameter.getReaderTaskCount()
-                    + jobParameter.getWriterTaskCount()));
-            dlmTableUnit.getTargetDatasourceInfo().setConnectionCount(2 * (jobParameter.getReaderTaskCount()
-                    + jobParameter.getWriterTaskCount()));
+            dlmTableUnit.getSourceDatasourceInfo().setQueryTimeout(parameters.getQueryTimeout());
+            dlmTableUnit.getTargetDatasourceInfo().setQueryTimeout(parameters.getQueryTimeout());
             dlmTableUnit.setFireTime(taskEntity.getFireTime());
             dlmTableUnit.setStatus(TaskStatus.PREPARING);
             dlmTableUnit.setType(JobType.MIGRATE);
