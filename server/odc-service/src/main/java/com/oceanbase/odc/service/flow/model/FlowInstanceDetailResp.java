@@ -63,6 +63,7 @@ import com.oceanbase.odc.service.resultset.ResultSetExportTaskParameter;
 import com.oceanbase.odc.service.schedule.flowtask.AlterScheduleParameters;
 
 import lombok.Data;
+import lombok.Getter;
 import lombok.NonNull;
 
 /**
@@ -96,6 +97,7 @@ public class FlowInstanceDetailResp {
     private Date completeTime;
     private List<FlowNodeInstanceDetailResp> nodeList;
 
+    @Getter
     public static class FlowInstanceMapper {
         private Predicate<Long> ifApprovable = null;
         private Predicate<Long> ifRollbackable = null;

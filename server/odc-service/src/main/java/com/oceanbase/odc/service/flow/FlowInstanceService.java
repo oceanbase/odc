@@ -380,7 +380,7 @@ public class FlowInstanceService {
         if (returnValue.isEmpty()) {
             return Page.empty();
         }
-        FlowInstanceMapper mapper = mapperFactory.generateMapperByEntities(returnValue.getContent());
+        FlowInstanceMapper mapper = mapperFactory.generateMapperByEntities(returnValue.getContent(), false);
         return returnValue.map(mapper::map);
     }
 
@@ -543,8 +543,8 @@ public class FlowInstanceService {
 
     public FlowInstanceDetailResp detail(@NotNull Long id) {
         return mapFlowInstance(id, flowInstance -> {
-            FlowInstanceMapper instanceMapper = mapperFactory.generateMapperByInstance(flowInstance);
-            FlowNodeInstanceMapper nodeInstanceMapper = mapperFactory.generateNodeMapperByInstance(flowInstance);
+            FlowInstanceMapper instanceMapper = mapperFactory.generateMapperByInstance(flowInstance, false);
+            FlowNodeInstanceMapper nodeInstanceMapper = mapperFactory.generateNodeMapperByInstance(flowInstance, false);
             return instanceMapper.map(flowInstance, nodeInstanceMapper);
         }, false);
     }

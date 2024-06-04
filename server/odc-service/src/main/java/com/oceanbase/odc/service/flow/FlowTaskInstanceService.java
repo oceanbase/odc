@@ -171,7 +171,7 @@ public class FlowTaskInstanceService {
 
     public FlowInstanceDetailResp executeTask(@NotNull Long id) throws IOException {
         List<FlowTaskInstance> instances =
-                filterTaskInstance(id, instance -> instance.getStatus() == FlowNodeStatus.PENDING);
+                filterTaskInstance(id, instance -> instance.getStatus() == FlowNodeStatus.PENDING, false);
         PreConditions.validExists(ResourceType.ODC_FLOW_TASK_INSTANCE, "flowInstanceId", id,
                 () -> instances.size() > 0);
         Verify.singleton(instances, "FlowTaskInstance");
@@ -230,13 +230,13 @@ public class FlowTaskInstanceService {
         }
     }
 
-    public List<? extends FlowTaskResult> getResult(@NotNull Long id) throws IOException {
+    public List<? extends FlowTaskResult> getResult(@NotNull Long id, boolean skipAuth) throws IOException {
         TaskEntity task = flowInstanceService.getTaskByFlowInstanceId(id);
         if (task.getTaskType() == TaskType.ONLINE_SCHEMA_CHANGE || task.getTaskType() == TaskType.EXPORT
                 || task.getTaskType() == TaskType.MULTIPLE_ASYNC) {
             return getTaskResultFromEntity(task, true);
         }
-        Optional<TaskEntity> taskEntityOptional = getCompleteTaskEntity(id);
+        Optional<TaskEntity> taskEntityOptional = getCompleteTaskEntity(id, skipAuth);
         if (!taskEntityOptional.isPresent()) {
             return Collections.emptyList();
         }
@@ -284,11 +284,11 @@ public class FlowTaskInstanceService {
     }
 
     public List<? extends FlowTaskResult> getResult(
-            @NotNull Long flowInstanceId, @NotNull Long nodeInstanceId) throws IOException {
+            @NotNull Long flowInstanceId, @NotNull Long nodeInstanceId, boolean skipAuth) throws IOException {
         List<FlowTaskInstance> taskInstances = this.flowInstanceService.mapFlowInstance(
                 flowInstanceId, i -> i.filterInstanceNode(f -> f instanceof FlowTaskInstance)
                         .stream().map(f -> (FlowTaskInstance) f).collect(Collectors.toList()),
-                false);
+                skipAuth);
         Optional<FlowTaskInstance> target = taskInstances.stream()
                 .filter(f -> f.getId().equals(nodeInstanceId)).findFirst();
         if (!target.isPresent()) {
@@ -363,7 +363,7 @@ public class FlowTaskInstanceService {
 
     public List<BinaryDataResult> downRollbackPlanResult(@NonNull Long flowInstanceId) throws IOException {
         Optional<TaskEntity> taskEntityOptional = getTaskEntity(flowInstanceId,
-                instance -> instance.getStatus().isFinalStatus() && instance.getTaskType() == TaskType.ASYNC);
+                instance -> instance.getStatus().isFinalStatus() && instance.getTaskType() == TaskType.ASYNC, false);
         PreConditions.validExists(ResourceType.ODC_FILE, "flowInstanceId", flowInstanceId,
                 taskEntityOptional::isPresent);
         TaskEntity taskEntity = taskEntityOptional.get();
@@ -559,7 +559,7 @@ public class FlowTaskInstanceService {
     }
 
     public List<SqlExecuteResult> getExecuteResult(Long flowInstanceId) throws IOException {
-        Optional<TaskEntity> taskEntityOptional = getCompleteTaskEntity(flowInstanceId);
+        Optional<TaskEntity> taskEntityOptional = getCompleteTaskEntity(flowInstanceId, false);
         if (!taskEntityOptional.isPresent()) {
             return Collections.emptyList();
         }
@@ -608,7 +608,7 @@ public class FlowTaskInstanceService {
     }
 
     private List<FlowTaskInstance> filterTaskInstance(@NonNull Long flowInstanceId,
-            @NonNull Predicate<FlowTaskInstance> predicate) {
+            @NonNull Predicate<FlowTaskInstance> predicate, boolean skipAuth) {
         return flowInstanceService.mapFlowInstance(flowInstanceId,
                 flowInstance -> flowInstance.filterInstanceNode(instance -> {
                     if (instance.getNodeType() != FlowNodeType.SERVICE_TASK) {
@@ -618,7 +618,7 @@ public class FlowTaskInstanceService {
                 }).stream().map(instance -> {
                     Verify.verify(instance instanceof FlowTaskInstance, "FlowTaskInstance's type is illegal");
                     return (FlowTaskInstance) instance;
-                }).collect(Collectors.toList()), false);
+                }).collect(Collectors.toList()), skipAuth);
     }
 
     private List<MultipleDatabaseChangeTaskResult> getMultipleAsyncResult(@NonNull TaskEntity taskEntity) {
@@ -721,11 +721,11 @@ public class FlowTaskInstanceService {
         return Collections.singletonList(detail);
     }
 
-    private Optional<TaskEntity> getCompleteTaskEntity(@NonNull Long flowInstanceId) {
+    private Optional<TaskEntity> getCompleteTaskEntity(@NonNull Long flowInstanceId, boolean skipAuth) {
         return getTaskEntity(flowInstanceId, i -> i.getStatus().isFinalStatus()
                 && i.getTaskType() != TaskType.SQL_CHECK
                 && i.getTaskType() != TaskType.PRE_CHECK
-                && i.getTaskType() != TaskType.GENERATE_ROLLBACK);
+                && i.getTaskType() != TaskType.GENERATE_ROLLBACK, skipAuth);
     }
 
     private Optional<TaskEntity> getDownloadableTaskEntity(@NonNull Long flowInstanceId) {
@@ -743,19 +743,20 @@ public class FlowTaskInstanceService {
                         && instance.getTaskType() != TaskType.APPLY_PROJECT_PERMISSION
                         && instance.getTaskType() != TaskType.APPLY_DATABASE_PERMISSION;
             }
-        });
+        }, false);
     }
 
     private Optional<TaskEntity> getLogDownloadableTaskEntity(@NotNull Long flowInstanceId) {
         return getTaskEntity(flowInstanceId,
                 instance -> (instance.getStatus().isFinalStatus() || instance.getStatus() == FlowNodeStatus.EXECUTING)
                         && instance.getTaskType() != TaskType.SQL_CHECK && instance.getTaskType() != TaskType.PRE_CHECK
-                        && instance.getTaskType() != TaskType.GENERATE_ROLLBACK);
+                        && instance.getTaskType() != TaskType.GENERATE_ROLLBACK,
+                false);
     }
 
     private Optional<TaskEntity> getTaskEntity(@NonNull Long flowInstanceId,
-            @NonNull Predicate<FlowTaskInstance> predicate) {
-        List<FlowTaskInstance> taskInstances = filterTaskInstance(flowInstanceId, predicate);
+            @NonNull Predicate<FlowTaskInstance> predicate, boolean skipAuth) {
+        List<FlowTaskInstance> taskInstances = filterTaskInstance(flowInstanceId, predicate, skipAuth);
         if (CollectionUtils.isEmpty(taskInstances)) {
             return Optional.empty();
         }
