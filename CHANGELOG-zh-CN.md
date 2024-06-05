@@ -1,5 +1,90 @@
 # OceanBase Developer Center (ODC) CHANGELOG
 
+## 4.3.0 （2024-06-07）
+
+### 功能变化
+
+数据源
+
+- OceanBase Oracle 模式支持 GIS 数据类型
+- 增加了对 OceanBase 4.3 列存的适配，支持在表对象管理的界面配置表和索引的存储模式
+
+多库变更
+
+- 新增多库变更功能
+
+导入导出
+
+- 支持将连接配置中的 jdbc 参数和脚本应用于数据传输任务
+
+数据归档/清理
+
+- 数据清理/归档提供常用的任务指标
+- 数据清理/归档支持分区条件
+- 数据清理/归档支持配置执行超时时间
+- 数据归档支持同构数据库的结构同步
+- 数据清理/归档增加了对 OceanBase 数据库字段类型的全量兼容
+- 数据清理支持联动历史库校验
+
+库级别访问权限控制
+
+- 支持配置数据库管理员
+
+工单
+
+- 工单支持手动触发执行
+
+### 易用性改进
+
+- 支持全局对象快速搜索
+- 归档项目时，将检查定时任务是否全部关闭 [#2562](https://github.com/oceanbase/odc/pull/2562)
+- 优化了查询表详情的请求时间 [#2626](https://github.com/oceanbase/odc/pull/2626)
+- 优化流程任务取消的错误提示 [#2624](https://github.com/oceanbase/odc/pull/2624)
+
+### 缺陷修复
+
+数据源
+
+- 修复了连接备集群查询表结构失败的问题 [#2648](https://github.com/oceanbase/odc/pull/2648)
+- 修复了重置连接时的并发异常 [#2528](https://github.com/oceanbase/odc/pull/2528)
+- 修复了存储过程和函数列表不按名称排序的问题 [#2636](https://github.com/oceanbase/odc/pull/2636)
+- 修复了OBOracle批量编译失败的问题 [#2606](https://github.com/oceanbase/odc/pull/2606)
+
+SQL 窗口
+
+- 修复了 SQL 窗口中数据库超 2000 时无法切换的问题 [#2520](https://github.com/oceanbase/odc/pull/2520)
+- 修复了 SQL 窗口设置执行失败时不继续执行不生效的问题 [#2259](https://github.com/oceanbase/odc/pull/2259)
+- 修复了使用 obclient 关闭连接后 SQL 窗口执行报错的问题 [#2528](https://github.com/oceanbase/odc/pull/2528)
+- 修复了 ORACLE 数据源无法在 SQL 窗口中设置 nls 参数的问题 [#2501](https://github.com/oceanbase/odc/pull/2501)
+
+数据归档/清理
+
+- 修复了关闭任务框架时，消息通知失效 [#2445](https://github.com/oceanbase/odc/pull/2445)
+
+项目和工单
+
+- 修复了项目编辑时报错项目已经存在的问题 [#2642](https://github.com/oceanbase/odc/pull/2642)
+- 修复了工单描述的国际化问题 [#2579](https://github.com/oceanbase/odc/pull/2579)
+- 修复了审批内容超长时审批失败的问题 [#2565](https://github.com/oceanbase/odc/pull/2565)
+
+结构比对
+
+- 修复了结构比对，目标表不存在时结果异常的问题 [#2638](https://github.com/oceanbase/odc/pull/2638)
+
+导入导出
+
+- 修复了导入表结构设置成跳过时不生效的问题 [#2587](https://github.com/oceanbase/odc/pull/2587)
+
+
+表对象
+
+- 修复了 OceanBase 租户配置 lower_case_table_names=2 时，表对象不存在的问题 [#2298](https://github.com/oceanbase/odc/pull/2298)
+- 修复了表对象信息中，分区表的唯一索引不可见的问题 [#2297](https://github.com/oceanbase/odc/pull/2297)
+
+其他
+
+- 修了 swagger-ui.html 访问失败的问题 [#2160](https://github.com/oceanbase/odc/pull/2160)
+
 ## 4.2.4_bp2（2024-05-14）
 
 ### 缺陷修复
