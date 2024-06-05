@@ -38,6 +38,7 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Component;
 
 import com.google.common.base.MoreObjects;
+import com.google.common.collect.Sets;
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
@@ -146,35 +147,38 @@ public class FlowResponseMapperFactory {
 
     private final RiskLevelMapper riskLevelMapper = RiskLevelMapper.INSTANCE;
 
-    public FlowNodeInstanceMapper generateNodeMapperByInstances(@NonNull Collection<FlowInstance> flowInstances) {
+    public FlowNodeInstanceMapper generateNodeMapperByInstances(@NonNull Collection<FlowInstance> flowInstances,
+            boolean skipAuth) {
         return generateNodeMapper(getLongSet(flowInstances, FlowInstance::getId),
-                getLongSet(flowInstances, FlowInstance::getCreatorId));
+                getLongSet(flowInstances, FlowInstance::getCreatorId), skipAuth);
     }
 
-    public FlowInstanceMapper generateMapperByInstances(@NonNull Collection<FlowInstance> flowInstances) {
+    public FlowInstanceMapper generateMapperByInstances(@NonNull Collection<FlowInstance> flowInstances,
+            boolean skipAuth) {
         return generateMapper(getLongSet(flowInstances, FlowInstance::getId),
-                getLongSet(flowInstances, FlowInstance::getCreatorId));
+                getLongSet(flowInstances, FlowInstance::getCreatorId), skipAuth);
     }
 
-    public FlowInstanceMapper generateMapperByEntities(@NonNull Collection<FlowInstanceEntity> entities) {
+    public FlowInstanceMapper generateMapperByEntities(@NonNull Collection<FlowInstanceEntity> entities,
+            boolean skipAuth) {
         return generateMapper(getLongSet(entities, FlowInstanceEntity::getId),
-                getLongSet(entities, FlowInstanceEntity::getCreatorId));
+                getLongSet(entities, FlowInstanceEntity::getCreatorId), skipAuth);
     }
 
-    public FlowNodeInstanceMapper generateNodeMapperByInstance(@NonNull FlowInstance flowInstance) {
-        return generateNodeMapperByInstances(Collections.singleton(flowInstance));
+    public FlowNodeInstanceMapper generateNodeMapperByInstance(@NonNull FlowInstance flowInstance, boolean skipAuth) {
+        return generateNodeMapperByInstances(Collections.singleton(flowInstance), skipAuth);
     }
 
-    public FlowInstanceMapper generateMapperByInstance(@NonNull FlowInstance flowInstance) {
-        return generateMapperByInstances(Collections.singleton(flowInstance));
+    public FlowInstanceMapper generateMapperByInstance(@NonNull FlowInstance flowInstance, boolean skipAuth) {
+        return generateMapperByInstances(Collections.singleton(flowInstance), skipAuth);
     }
 
     public FlowNodeInstanceMapper generateNodeMapperByInstanceIds(@NonNull Collection<Long> flowInstanceIds) {
-        return generateNodeMapper(flowInstanceIds, Collections.emptySet());
+        return generateNodeMapper(flowInstanceIds, Collections.emptySet(), false);
     }
 
     public FlowInstanceMapper generateMapperByInstanceIds(@NonNull Collection<Long> flowInstanceIds) {
-        return generateMapper(flowInstanceIds, Collections.emptySet());
+        return generateMapper(flowInstanceIds, Collections.emptySet(), false);
     }
 
     private <T> Set<Long> getLongSet(@NonNull Collection<T> values, @NonNull Function<T, Long> function) {
@@ -182,7 +186,7 @@ public class FlowResponseMapperFactory {
     }
 
     private FlowNodeInstanceMapper generateNodeMapper(@NonNull Collection<Long> flowInstanceIds,
-            @NonNull Set<Long> creatorIds) {
+            @NonNull Set<Long> creatorIds, boolean skipAuth) {
         if (flowInstanceIds.isEmpty()) {
             return FlowNodeInstanceDetailResp.mapper();
         }
@@ -240,7 +244,7 @@ public class FlowResponseMapperFactory {
                 .flatMap((Function<List<UserEntity>, Stream<UserEntity>>) Collection::stream)
                 .forEach(entity -> userId2User.putIfAbsent(entity.getId(), entity));
 
-        Map<Long, List<RoleEntity>> userId2Roles = getUserId2Roles(userId2User.keySet());
+        Map<Long, List<RoleEntity>> userId2Roles = getUserId2Roles(userId2User.keySet(), skipAuth);
 
         Specification<ServiceTaskInstanceEntity> serviceSpec =
                 Specification.where(ServiceTaskInstanceSpecs.flowInstanceIdIn(flowInstanceIds));
@@ -273,7 +277,7 @@ public class FlowResponseMapperFactory {
     }
 
     private FlowInstanceMapper generateMapper(@NonNull Collection<Long> flowInstanceIds,
-            @NonNull Set<Long> creatorIds) {
+            @NonNull Set<Long> creatorIds, boolean skipAuth) {
         if (flowInstanceIds.isEmpty()) {
             return FlowInstanceDetailResp.mapper();
         }
@@ -394,13 +398,14 @@ public class FlowResponseMapperFactory {
         Map<Long, UserEntity> userId2User = listUsersByUserIds(userIds)
                 .stream().collect(Collectors.toMap(UserEntity::getId, entity -> entity));
 
-        Map<Long, List<RoleEntity>> userId2Roles = getUserId2Roles(userId2User.keySet());
+        Map<Long, List<RoleEntity>> userId2Roles = getUserId2Roles(userId2User.keySet(), skipAuth);
 
-        Set<Long> approvableFlowInstanceIds = approvalPermissionService.getApprovableApprovalInstances()
-                .stream()
-                .filter(entity -> FlowNodeStatus.EXECUTING == entity.getStatus()
-                        || entity.getStatus() == FlowNodeStatus.WAIT_FOR_CONFIRM)
-                .map(UserTaskInstanceEntity::getFlowInstanceId).collect(Collectors.toSet());
+        Set<Long> approvableFlowInstanceIds = skipAuth ? Sets.newHashSet()
+                : approvalPermissionService.getApprovableApprovalInstances()
+                        .stream()
+                        .filter(entity -> FlowNodeStatus.EXECUTING == entity.getStatus()
+                                || entity.getStatus() == FlowNodeStatus.WAIT_FOR_CONFIRM)
+                        .map(UserTaskInstanceEntity::getFlowInstanceId).collect(Collectors.toSet());
         return FlowInstanceDetailResp.mapper()
                 .withRollbackable(flowInstanceId2Rollbackable::get)
                 .withApprovable(approvableFlowInstanceIds::contains)
@@ -415,9 +420,11 @@ public class FlowResponseMapperFactory {
                 .withGetDatabaseById(id2Database::get);
     }
 
-    public Map<Long, List<RoleEntity>> getUserId2Roles(@NonNull Collection<Long> userIds) {
-        Map<Long, Set<Long>> userId2RoleIds = userRoleRepository
-                .findByOrganizationIdAndUserIdIn(authenticationFacade.currentOrganizationId(), userIds).stream()
+    public Map<Long, List<RoleEntity>> getUserId2Roles(@NonNull Collection<Long> userIds, boolean skipAuth) {
+        List<UserRoleEntity> userRoleEntities = skipAuth ? userRoleRepository.findByRoleIdIn(userIds)
+                : userRoleRepository.findByOrganizationIdAndUserIdIn(authenticationFacade.currentOrganizationId(),
+                        userIds);
+        Map<Long, Set<Long>> userId2RoleIds = userRoleEntities.stream()
                 .collect(Collectors.groupingBy(UserRoleEntity::getUserId)).entrySet().stream()
                 .collect(Collectors.toMap(Entry::getKey,
                         entry -> entry.getValue().stream().map(UserRoleEntity::getRoleId).collect(Collectors.toSet())));

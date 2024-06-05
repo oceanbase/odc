@@ -21,8 +21,10 @@ import java.util.List;
 import org.pf4j.Extension;
 
 import com.oceanbase.odc.common.util.JdbcOperationsUtil;
+import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.plugin.schema.api.ProcedureExtensionPoint;
 import com.oceanbase.odc.plugin.schema.obmysql.utils.DBAccessorUtil;
+import com.oceanbase.tools.dbbrowser.DBBrowser;
 import com.oceanbase.tools.dbbrowser.editor.DBObjectOperator;
 import com.oceanbase.tools.dbbrowser.editor.mysql.MySQLObjectOperator;
 import com.oceanbase.tools.dbbrowser.model.DBObjectType;
@@ -30,7 +32,6 @@ import com.oceanbase.tools.dbbrowser.model.DBPLObjectIdentity;
 import com.oceanbase.tools.dbbrowser.model.DBProcedure;
 import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
 import com.oceanbase.tools.dbbrowser.template.DBObjectTemplate;
-import com.oceanbase.tools.dbbrowser.template.mysql.MySQLProcedureTemplate;
 
 import lombok.NonNull;
 
@@ -72,6 +73,8 @@ public class OBMySQLProcedureExtension implements ProcedureExtensionPoint {
     }
 
     protected DBObjectTemplate<DBProcedure> getTemplate() {
-        return new MySQLProcedureTemplate();
+        return DBBrowser.objectTemplate().procedureTemplate()
+                .setType(DialectType.OB_MYSQL.getDBBrowserDialectTypeName()).create();
     }
+
 }

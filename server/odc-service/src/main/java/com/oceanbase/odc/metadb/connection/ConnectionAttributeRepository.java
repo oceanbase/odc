@@ -16,6 +16,7 @@
 
 package com.oceanbase.odc.metadb.connection;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 
@@ -39,6 +40,8 @@ public interface ConnectionAttributeRepository extends JpaRepository<ConnectionA
         JpaSpecificationExecutor<ConnectionAttributeEntity> {
 
     List<ConnectionAttributeEntity> findByConnectionId(Long connectionId);
+
+    List<ConnectionAttributeEntity> findByConnectionIdIn(Collection<Long> ids);
 
     @Transactional
     @Modifying

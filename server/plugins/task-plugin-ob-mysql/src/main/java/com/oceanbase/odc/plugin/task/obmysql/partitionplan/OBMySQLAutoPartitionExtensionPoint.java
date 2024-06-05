@@ -32,6 +32,7 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.pf4j.Extension;
 
 import com.oceanbase.odc.common.util.StringUtils;
+import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.plugin.connect.api.InformationExtensionPoint;
 import com.oceanbase.odc.plugin.connect.obmysql.OBMySQLInformationExtension;
 import com.oceanbase.odc.plugin.schema.obmysql.utils.DBAccessorUtil;
@@ -50,7 +51,7 @@ import com.oceanbase.odc.plugin.task.obmysql.partitionplan.invoker.drop.OBMySQLK
 import com.oceanbase.odc.plugin.task.obmysql.partitionplan.invoker.partitionname.OBMySQLDateBasedPartitionNameGenerator;
 import com.oceanbase.odc.plugin.task.obmysql.partitionplan.invoker.partitionname.OBMySQLExprBasedPartitionNameGenerator;
 import com.oceanbase.odc.plugin.task.obmysql.partitionplan.invoker.partitionname.OBMySQLHistoricalPartitionNameGenerator;
-import com.oceanbase.odc.plugin.task.obmysql.partitionplan.util.DBTablePartitionEditors;
+import com.oceanbase.tools.dbbrowser.DBBrowser;
 import com.oceanbase.tools.dbbrowser.editor.DBTablePartitionEditor;
 import com.oceanbase.tools.dbbrowser.model.DBTable;
 import com.oceanbase.tools.dbbrowser.model.DBTableAbstractPartitionDefinition;
@@ -153,7 +154,9 @@ public class OBMySQLAutoPartitionExtensionPoint implements AutoPartitionExtensio
     public List<String> generateCreatePartitionDdls(@NonNull Connection connection,
             @NonNull DBTablePartition partition) {
         InformationExtensionPoint extensionPoint = new OBMySQLInformationExtension();
-        DBTablePartitionEditor editor = DBTablePartitionEditors.generate(extensionPoint.getDBVersion(connection));
+        DBTablePartitionEditor editor = DBBrowser.objectEditor().tablePartitionEditor()
+                .setDbVersion(extensionPoint.getDBVersion(connection))
+                .setType(DialectType.OB_MYSQL.getDBBrowserDialectTypeName()).create();
         return Collections.singletonList(editor.generateAddPartitionDefinitionDDL(partition.getSchemaName(),
                 partition.getTableName(), partition.getPartitionOption(), partition.getPartitionDefinitions()));
     }
@@ -162,7 +165,9 @@ public class OBMySQLAutoPartitionExtensionPoint implements AutoPartitionExtensio
     public List<String> generateDropPartitionDdls(@NonNull Connection connection,
             @NonNull DBTablePartition partition, boolean reloadIndexes) {
         InformationExtensionPoint extensionPoint = new OBMySQLInformationExtension();
-        DBTablePartitionEditor editor = DBTablePartitionEditors.generate(extensionPoint.getDBVersion(connection));
+        DBTablePartitionEditor editor = DBBrowser.objectEditor().tablePartitionEditor()
+                .setDbVersion(extensionPoint.getDBVersion(connection))
+                .setType(DialectType.OB_MYSQL.getDBBrowserDialectTypeName()).create();
         return Collections.singletonList(editor.generateDropPartitionDefinitionDDL(partition.getSchemaName(),
                 partition.getTableName(), partition.getPartitionDefinitions()));
     }

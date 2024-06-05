@@ -13,9 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.tools.dbbrowser.editor.generator;
+package com.oceanbase.tools.dbbrowser.editor;
 
-import com.oceanbase.tools.dbbrowser.editor.DBTablePartitionEditor;
+import org.apache.commons.lang3.Validate;
+
+import com.oceanbase.tools.dbbrowser.AbstractDBBrowserFactory;
 import com.oceanbase.tools.dbbrowser.editor.mysql.MySQLDBTablePartitionEditor;
 import com.oceanbase.tools.dbbrowser.editor.mysql.OBMySQLDBTablePartitionEditor;
 import com.oceanbase.tools.dbbrowser.editor.mysql.OBMySQLLessThan2277PartitionEditor;
@@ -24,42 +26,54 @@ import com.oceanbase.tools.dbbrowser.editor.oracle.OBOracleLessThan400DBTablePar
 import com.oceanbase.tools.dbbrowser.editor.oracle.OracleDBTablePartitionEditor;
 import com.oceanbase.tools.dbbrowser.util.VersionUtils;
 
-/**
- * @author jingtian
- * @date 2024/5/22
- * @since
- */
-public class DBTablePartitionEditorGenerator {
-    public static DBTablePartitionEditor createForOBMySQL(String dbVersion) {
-        if (VersionUtils.isLessThan(dbVersion, "2.2.77")) {
+import lombok.Setter;
+import lombok.experimental.Accessors;
+
+@Setter
+@Accessors(chain = true)
+public class DBTablePartitionEditorFactory extends AbstractDBBrowserFactory<DBTablePartitionEditor> {
+
+    private String dbVersion;
+
+    @Override
+    public DBTablePartitionEditor buildForDoris() {
+        return buildForMySQL();
+    }
+
+    @Override
+    public DBTablePartitionEditor buildForMySQL() {
+        return new MySQLDBTablePartitionEditor();
+    }
+
+    @Override
+    public DBTablePartitionEditor buildForOBMySQL() {
+        Validate.notNull(this.dbVersion, "DBVersion can not be null");
+        if (VersionUtils.isLessThan(this.dbVersion, "2.2.77")) {
             return new OBMySQLLessThan2277PartitionEditor();
-        } else if (VersionUtils.isLessThan(dbVersion, "4.0.0")) {
+        } else if (VersionUtils.isLessThan(this.dbVersion, "4.0.0")) {
             return new OBMySQLLessThan400DBTablePartitionEditor();
         } else {
             return new OBMySQLDBTablePartitionEditor();
         }
     }
 
-    public static DBTablePartitionEditor createForOBOracle(String dbVersion) {
-        if (VersionUtils.isLessThan(dbVersion, "4.0.0")) {
+    @Override
+    public DBTablePartitionEditor buildForOBOracle() {
+        Validate.notNull(this.dbVersion, "DBVersion can not be null");
+        if (VersionUtils.isLessThan(this.dbVersion, "4.0.0")) {
             return new OBOracleLessThan400DBTablePartitionEditor();
         }
         return new OracleDBTablePartitionEditor();
     }
 
-    public static DBTablePartitionEditor createForODPOBMySQL(String dbVersion) {
-        return new MySQLDBTablePartitionEditor();
-    }
-
-    public static DBTablePartitionEditor createForMySQL(String dbVersion) {
-        return new MySQLDBTablePartitionEditor();
-    }
-
-    public static DBTablePartitionEditor createForOracle(String dbVersion) {
+    @Override
+    public DBTablePartitionEditor buildForOracle() {
         return new OracleDBTablePartitionEditor();
     }
 
-    public static DBTablePartitionEditor createForDoris(String dbVersion) {
-        return createForMySQL(dbVersion);
+    @Override
+    public DBTablePartitionEditor buildForOdpSharding() {
+        return new MySQLDBTablePartitionEditor();
     }
+
 }

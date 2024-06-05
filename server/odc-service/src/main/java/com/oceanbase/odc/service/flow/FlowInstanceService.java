@@ -380,7 +380,7 @@ public class FlowInstanceService {
         if (returnValue.isEmpty()) {
             return Page.empty();
         }
-        FlowInstanceMapper mapper = mapperFactory.generateMapperByEntities(returnValue.getContent());
+        FlowInstanceMapper mapper = mapperFactory.generateMapperByEntities(returnValue.getContent(), false);
         return returnValue.map(mapper::map);
     }
 
@@ -543,8 +543,8 @@ public class FlowInstanceService {
 
     public FlowInstanceDetailResp detail(@NotNull Long id) {
         return mapFlowInstance(id, flowInstance -> {
-            FlowInstanceMapper instanceMapper = mapperFactory.generateMapperByInstance(flowInstance);
-            FlowNodeInstanceMapper nodeInstanceMapper = mapperFactory.generateNodeMapperByInstance(flowInstance);
+            FlowInstanceMapper instanceMapper = mapperFactory.generateMapperByInstance(flowInstance, false);
+            FlowNodeInstanceMapper nodeInstanceMapper = mapperFactory.generateNodeMapperByInstance(flowInstance, false);
             return instanceMapper.map(flowInstance, nodeInstanceMapper);
         }, false);
     }
@@ -623,7 +623,9 @@ public class FlowInstanceService {
             }
             Long taskId = taskInstance.getTargetTaskId();
             if (taskId == null) {
-                throw new IllegalStateException("RollBack task can not be cancelled");
+                throw new UnsupportedException(ErrorCodes.FlowTaskNotSupportCancel,
+                        new Object[] {taskTypeHolder.getValue().getLocalizedMessage()},
+                        "The currently executing task does not support cancellation.");
             }
             TaskEntity taskEntity = taskService.detail(taskId);
             if (!dispatchChecker.isTaskEntityOnThisMachine(taskEntity)) {
@@ -974,14 +976,20 @@ public class FlowInstanceService {
                     nodeConfig.getAutoApproval(), approvalFlowConfig.getApprovalExpirationIntervalSeconds(),
                     nodeConfig.getExternalApprovalId());
             if (Objects.nonNull(resourceRoleId)) {
-                Long candidateResourceId;
+                Set<Long> candidateResourceIds = new HashSet<>();
                 Optional<ResourceRoleEntity> resourceRole = resourceRoleService.findResourceRoleById(resourceRoleId);
                 if (resourceRole.isPresent() && resourceRole.get().getResourceType() == ResourceType.ODC_DATABASE) {
-                    candidateResourceId = flowInstanceReq.getDatabaseId();
+                    candidateResourceIds.add(flowInstanceReq.getDatabaseId());
+                    if (taskType == TaskType.MULTIPLE_ASYNC) {
+                        candidateResourceIds
+                                .addAll(((MultipleDatabaseChangeParameters) parameters).getOrderedDatabaseIds().stream()
+                                        .flatMap(Collection::stream).collect(Collectors.toSet()));
+                    }
                 } else {
-                    candidateResourceId = flowInstanceReq.getProjectId();
+                    candidateResourceIds.add(flowInstanceReq.getProjectId());
                 }
-                approvalInstance.setCandidate(StringUtils.join(candidateResourceId, ":", resourceRoleId));
+                approvalInstance.setCandidates(candidateResourceIds.stream().filter(Objects::nonNull)
+                        .map(e -> StringUtils.join(e, ":", resourceRoleId)).collect(Collectors.toList()));
             }
             FlowGatewayInstance approvalGatewayInstance =
                     flowFactory.generateFlowGatewayInstance(flowInstance.getId(), false, true);

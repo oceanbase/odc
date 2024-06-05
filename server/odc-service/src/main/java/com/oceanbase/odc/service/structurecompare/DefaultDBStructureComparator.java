@@ -29,7 +29,7 @@ import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.shared.constant.ConnectType;
 import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.service.db.browser.DBSchemaAccessors;
-import com.oceanbase.odc.service.db.browser.DBTableEditorFactory;
+import com.oceanbase.odc.service.db.browser.DBTableEditors;
 import com.oceanbase.odc.service.flow.task.model.DBStructureComparisonParameter.ComparisonScope;
 import com.oceanbase.odc.service.plugin.ConnectionPluginUtil;
 import com.oceanbase.odc.service.structurecompare.comparedbobject.DBTableStructureComparator;
@@ -138,7 +138,7 @@ public class DefaultDBStructureComparator implements DBStructureComparator {
     }
 
     private DBTableEditor getDBTableEditor(ConnectType connectType, String dbVersion) {
-        return new DBTableEditorFactory(connectType, dbVersion).create();
+        return DBTableEditors.create(connectType, dbVersion);
     }
 
     private String getDBVersion(ConnectType connectType, DataSource dataSource) throws SQLException {

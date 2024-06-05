@@ -13,16 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.tools.dbbrowser.template.generator;
+package com.oceanbase.tools.dbbrowser;
 
-import com.oceanbase.tools.dbbrowser.template.DBObjectTemplate;
+public interface DBBrowserFactory<T> {
 
-/**
- * @author jingtian
- * @date 2024/5/22
- */
-public abstract class DBObjectTemplateGenerator<T extends DBObjectTemplate> {
-    public abstract T createForMySQL(String dbVersion);
+    String MYSQL = "MYSQL";
+    String OB_MYSQL = "OB_MYSQL";
+    String OB_ORACLE = "OB_ORACLE";
+    String ORACLE = "ORACLE";
+    String DORIS = "DORIS";
+    String ODP_SHARDING_OB_MYSQL = "ODP_SHARDING_OB_MYSQL";
 
-    public abstract T createForOracle(String dbVersion);
+    T create();
+
 }

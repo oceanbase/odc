@@ -47,7 +47,7 @@ import com.oceanbase.odc.plugin.task.oboracle.partitionplan.invoker.create.OBOra
 import com.oceanbase.odc.plugin.task.oboracle.partitionplan.invoker.create.OBOracleTimeIncreasePartitionExprGenerator;
 import com.oceanbase.odc.plugin.task.oboracle.partitionplan.invoker.partitionname.OBOracleDateBasedPartitionNameGenerator;
 import com.oceanbase.odc.plugin.task.oboracle.partitionplan.invoker.partitionname.OBOracleExprBasedPartitionNameGenerator;
-import com.oceanbase.odc.plugin.task.oboracle.partitionplan.util.DBTablePartitionEditors;
+import com.oceanbase.tools.dbbrowser.DBBrowser;
 import com.oceanbase.tools.dbbrowser.editor.DBTablePartitionEditor;
 import com.oceanbase.tools.dbbrowser.model.DBTable;
 import com.oceanbase.tools.dbbrowser.model.DBTablePartition;
@@ -101,7 +101,9 @@ public class OBOracleAutoPartitionExtensionPoint extends OBMySQLAutoPartitionExt
     public List<String> generateCreatePartitionDdls(@NonNull Connection connection,
             @NonNull DBTablePartition partition) {
         InformationExtensionPoint extensionPoint = new OBOracleInformationExtension();
-        DBTablePartitionEditor editor = DBTablePartitionEditors.generate(extensionPoint.getDBVersion(connection));
+        DBTablePartitionEditor editor = DBBrowser.objectEditor().tablePartitionEditor()
+                .setDbVersion(extensionPoint.getDBVersion(connection))
+                .setType(DialectType.OB_ORACLE.getDBBrowserDialectTypeName()).create();
         return Collections.singletonList(editor.generateAddPartitionDefinitionDDL(partition.getSchemaName(),
                 partition.getTableName(), partition.getPartitionOption(), partition.getPartitionDefinitions()));
     }
@@ -110,7 +112,9 @@ public class OBOracleAutoPartitionExtensionPoint extends OBMySQLAutoPartitionExt
     public List<String> generateDropPartitionDdls(@NonNull Connection connection,
             @NonNull DBTablePartition partition, boolean reloadIndexes) {
         InformationExtensionPoint extensionPoint = new OBOracleInformationExtension();
-        DBTablePartitionEditor editor = DBTablePartitionEditors.generate(extensionPoint.getDBVersion(connection));
+        DBTablePartitionEditor editor = DBBrowser.objectEditor().tablePartitionEditor()
+                .setDbVersion(extensionPoint.getDBVersion(connection))
+                .setType(DialectType.OB_ORACLE.getDBBrowserDialectTypeName()).create();
         String ddl = editor.generateDropPartitionDefinitionDDL(partition.getSchemaName(),
                 partition.getTableName(), partition.getPartitionDefinitions());
         int index = ddl.indexOf(";");

@@ -278,6 +278,9 @@ public class DatabaseChangeChangingOrderTemplateService {
         Page<DatabaseChangeChangingOrderTemplateEntity> pageResult =
                 templateRepository.findAll(specification, pageable);
         List<DatabaseChangeChangingOrderTemplateEntity> entityList = pageResult.getContent();
+        if (CollectionUtils.isEmpty(entityList)) {
+            return Page.empty();
+        }
         List<Long> databaseIds = entityList.stream()
                 .flatMap(entity -> entity.getDatabaseSequences().stream())
                 .flatMap(Collection::stream)
