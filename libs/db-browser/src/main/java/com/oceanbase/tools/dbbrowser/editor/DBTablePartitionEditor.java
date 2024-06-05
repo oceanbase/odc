@@ -82,7 +82,6 @@ public abstract class DBTablePartitionEditor implements DBObjectEditor<DBTablePa
                 sqlBuilder.append("\nPARTITIONS ")
                         .append(String.valueOf(partition.getPartitionOption().getPartitionsNum()));
             }
-            return sqlBuilder.toString();
         }
         appendDefinitions(partition, sqlBuilder);
         return sqlBuilder.toString();
