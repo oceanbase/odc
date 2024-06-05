@@ -50,6 +50,7 @@ import com.oceanbase.odc.core.shared.constant.ResourceRoleName;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.core.shared.exception.BadRequestException;
 import com.oceanbase.odc.core.shared.exception.NotFoundException;
+import com.oceanbase.odc.core.shared.exception.UnsupportedException;
 import com.oceanbase.odc.metadb.collaboration.ProjectEntity;
 import com.oceanbase.odc.metadb.collaboration.ProjectRepository;
 import com.oceanbase.odc.metadb.collaboration.ProjectSpecs;
@@ -242,27 +243,18 @@ public class ProjectService {
     @PreAuthenticate(hasAnyResourceRole = {"OWNER"}, resourceType = "ODC_PROJECT", indexOfIdParam = 0)
     @Transactional(rollbackFor = Exception.class)
     public Project update(@NotNull Long id, @NotNull Project project) {
-
         ProjectEntity previous = repository.findByIdAndOrganizationId(id, currentOrganizationId())
                 .orElseThrow(() -> new NotFoundException(ResourceType.ODC_PROJECT, "id", id));
-        /**
-         * not allowed to update a built-in project or an archived project
-         */
         if (previous.getBuiltin() || previous.getArchived()) {
-            return entityToModel(previous,
-                    resourceRoleService.listByResourceTypeAndId(ResourceType.ODC_PROJECT, previous.getId()));
+            throw new UnsupportedException(ErrorCodes.IllegalOperation, new Object[] {"builtin or archived project"},
+                    "Operation on builtin or archived project is not allowed");
         }
-
-        checkNoDuplicateProject(project);
-
+        if (!Objects.equals(previous.getName(), project.getName())) {
+            checkNoDuplicateProject(project);
+        }
         previous.setLastModifierId(authenticationFacade.currentUserId());
         previous.setDescription(project.getDescription());
         previous.setName(project.getName());
-
-
-        /**
-         * save project
-         */
         ProjectEntity saved = repository.save(previous);
         return entityToModel(saved,
                 resourceRoleService.listByResourceTypeAndId(ResourceType.ODC_PROJECT, saved.getId()));

@@ -368,7 +368,7 @@ public class DorisSchemaAccessor implements DBSchemaAccessor {
         sb.append(
                 "select ROUTINE_NAME as name, ROUTINE_SCHEMA as schema_name, ROUTINE_TYPE as type from `information_schema`.`routines` where ROUTINE_SCHEMA=");
         sb.value(schemaName);
-        sb.append(" and ROUTINE_TYPE = 'FUNCTION';");
+        sb.append(" and ROUTINE_TYPE = 'FUNCTION' order by name asc;");
 
         return jdbcOperations.query(sb.toString(), new BeanPropertyRowMapper<>(DBPLObjectIdentity.class));
     }
@@ -379,7 +379,7 @@ public class DorisSchemaAccessor implements DBSchemaAccessor {
         sb.append(
                 "select ROUTINE_NAME as name, ROUTINE_SCHEMA as schema_name, ROUTINE_TYPE as type from `information_schema`.`routines` where ROUTINE_SCHEMA=");
         sb.value(schemaName);
-        sb.append(" and ROUTINE_TYPE = 'PROCEDURE';");
+        sb.append(" and ROUTINE_TYPE = 'PROCEDURE' order by name asc;");
 
         return jdbcOperations.query(sb.toString(), new BeanPropertyRowMapper<>(DBPLObjectIdentity.class));
     }

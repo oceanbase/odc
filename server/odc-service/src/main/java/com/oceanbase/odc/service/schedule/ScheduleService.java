@@ -241,7 +241,7 @@ public class ScheduleService {
         boolean needToTerminate = false;
         if (scheduleEntityOptional.isPresent()) {
             try {
-                needToTerminate = projectService.detail(scheduleEntityOptional.get().getProjectId()).getArchived();
+                needToTerminate = projectService.nullSafeGet(scheduleEntityOptional.get().getProjectId()).getArchived();
             } catch (NotFoundException e) {
                 needToTerminate = true;
             }
