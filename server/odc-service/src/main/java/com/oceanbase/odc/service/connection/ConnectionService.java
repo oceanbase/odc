@@ -883,11 +883,7 @@ public class ConnectionService {
         }
         List<ConnectionConfig> connectionConfigs = entitiesToModels(entities, organizationId,
                 withEnvironment, withProject);
-        Map<Long, List<ConnectionAttributeEntity>> map =
-                this.attributeRepository.findByConnectionIdIn(ids).stream()
-                        .collect(Collectors.groupingBy(ConnectionAttributeEntity::getConnectionId));
-        connectionConfigs.forEach(config -> config.setAttributes(attrEntitiesToMap(
-                map.get(config.getId()))));
+        fullFillAttributes(connectionConfigs);
         return connectionConfigs;
     }
 
