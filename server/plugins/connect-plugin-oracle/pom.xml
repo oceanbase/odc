@@ -44,6 +44,11 @@
             <scope>provided</scope>
         </dependency>
         <dependency>
+            <groupId>com.oracle.database.nls</groupId>
+            <artifactId>orai18n</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
             <groupId>com.oceanbase</groupId>
             <artifactId>connect-plugin-ob-oracle</artifactId>
         </dependency>
