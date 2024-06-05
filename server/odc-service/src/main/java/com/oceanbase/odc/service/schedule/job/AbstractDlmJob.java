@@ -86,6 +86,7 @@ public abstract class AbstractDlmJob implements OdcJob {
     public final TaskFrameworkService taskFrameworkService;
     private Job job;
     private boolean isInterrupted = false;
+    private Thread monitor;
 
 
     public AbstractDlmJob() {
@@ -102,7 +103,8 @@ public abstract class AbstractDlmJob implements OdcJob {
         }
     }
 
-    public void executeTask(Long taskId, List<DlmTableUnit> dlmTableUnits) {
+    public void executeTask(Long taskId, List<DlmTableUnit> dlmTableUnits, Long timeoutMillis) {
+        initMonitor(taskId, timeoutMillis);
         scheduleTaskRepository.updateStatusById(taskId, TaskStatus.RUNNING);
         log.info("Task is ready,taskId={}", taskId);
         for (DlmTableUnit dlmTableUnit : dlmTableUnits) {
@@ -233,10 +235,13 @@ public abstract class AbstractDlmJob implements OdcJob {
         return dataSourceInfo;
     }
 
-    public Long publishJob(DLMJobReq parameters) {
+    public Long publishJob(DLMJobReq parameters, Long timeoutMillis) {
         Map<String, String> jobData = new HashMap<>();
         jobData.put(JobParametersKeyConstants.META_TASK_PARAMETER_JSON,
                 JsonUtils.toJson(parameters));
+        if (timeoutMillis != null) {
+            jobData.put(JobParametersKeyConstants.TASK_EXECUTION_TIMEOUT_MILLIS, timeoutMillis.toString());
+        }
         SingleJobProperties singleJobProperties = new SingleJobProperties();
         singleJobProperties.setEnableRetryAfterHeartTimeout(true);
         singleJobProperties.setMaxRetryTimesAfterHeartTimeout(2);
@@ -285,5 +290,27 @@ public abstract class AbstractDlmJob implements OdcJob {
             job.stop();
             log.info("Job will be interrupted,jobId={}", job.getJobMeta().getJobId());
         }
+    }
+
+    private void initMonitor(Long scheduleTaskId, Long timeoutMillis) {
+        if (timeoutMillis == null) {
+            return;
+        }
+        monitor = new Thread(() -> {
+            long elapsedTime = 0L;
+            while (elapsedTime < timeoutMillis) {
+                try {
+                    Thread.sleep(10000);
+                    elapsedTime += 10000;
+                } catch (InterruptedException e) {
+                    return;
+                }
+            }
+            log.info("Job execution timed out,initiating job suspension.");
+            this.interrupt();
+        });
+        monitor.setName(String.format("%s-%s", "TimeoutMonitor", scheduleTaskId));
+        monitor.setDaemon(true);
+        monitor.start();
     }
 }

@@ -64,7 +64,7 @@ public class DataArchiveParameters implements TaskParameters {
 
     private int scanBatchSize;
 
-    private int timeoutMillis;
+    private Long timeoutMillis;
 
     private Set<DBObjectType> syncTableStructure = new HashSet<>();
 

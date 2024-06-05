@@ -87,6 +87,11 @@ public class DataArchivePreprocessor extends AbstractDlmJobPreprocessor {
             // permission to access it.
             Database sourceDb = databaseService.detail(dataArchiveParameters.getSourceDatabaseId());
             Database targetDb = databaseService.detail(dataArchiveParameters.getTargetDataBaseId());
+            if (!dataArchiveParameters.getSyncTableStructure().isEmpty()
+                    && sourceDb.getDataSource().getDialectType() != targetDb.getDataSource().getDialectType()) {
+                throw new UnsupportedException(
+                        "Different types of databases do not support structural synchronization.");
+            }
             dataArchiveParameters.setSourceDatabaseName(sourceDb.getName());
             dataArchiveParameters.setTargetDatabaseName(targetDb.getName());
             dataArchiveParameters.setSourceDataSourceName(sourceDb.getDataSource().getName());

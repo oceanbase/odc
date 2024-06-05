@@ -158,7 +158,7 @@ public class DataArchiveTask extends BaseTask<Boolean> {
 
     @Override
     protected void doStop() throws Exception {
-        job.getJobMeta().setToStop(true);
+        job.stop();
     }
 
     @Override

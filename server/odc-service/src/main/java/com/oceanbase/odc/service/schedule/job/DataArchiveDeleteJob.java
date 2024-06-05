@@ -23,6 +23,7 @@ import org.quartz.JobExecutionContext;
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.core.shared.constant.TaskStatus;
 import com.oceanbase.odc.metadb.schedule.ScheduleTaskEntity;
+import com.oceanbase.odc.service.dlm.model.DataArchiveParameters;
 import com.oceanbase.odc.service.dlm.model.DlmTableUnit;
 import com.oceanbase.odc.service.dlm.utils.DlmJobIdUtil;
 import com.oceanbase.odc.service.schedule.model.DataArchiveClearParameters;
@@ -56,6 +57,8 @@ public class DataArchiveDeleteJob extends AbstractDlmJob {
         }
 
         ScheduleTaskEntity dataArchiveTask = dataArchiveTaskOption.get();
+        DataArchiveParameters dataArchiveParameters = JsonUtils.fromJson(dataArchiveTask.getParametersJson(),
+                DataArchiveParameters.class);
 
         if (dataArchiveTask.getStatus() != TaskStatus.DONE) {
             log.warn("Data archive task do not finish,scheduleTaskId = {}", dataArchiveTask.getId());
@@ -68,7 +71,7 @@ public class DataArchiveDeleteJob extends AbstractDlmJob {
             DLMJobReq parameters = getDLMJobReq(dataArchiveTask.getJobId());
             parameters.setJobType(JobType.DELETE);
             parameters.setScheduleTaskId(taskEntity.getId());
-            Long jobId = publishJob(parameters);
+            Long jobId = publishJob(parameters, dataArchiveParameters.getTimeoutMillis());
             log.info("Publish DLM job to task framework succeed,scheduleTaskId={},jobIdentity={}", taskEntity.getId(),
                     jobId);
             scheduleTaskRepository.updateJobIdById(taskEntity.getId(), jobId);
@@ -90,7 +93,7 @@ public class DataArchiveDeleteJob extends AbstractDlmJob {
             }
             dlmService.createDlmTableUnits(dlmTableUnits);
         }
-        executeTask(taskEntity.getId(), dlmTableUnits);
+        executeTask(taskEntity.getId(), dlmTableUnits, dataArchiveParameters.getTimeoutMillis());
         TaskStatus taskStatus = getTaskStatus(taskEntity.getId());
         scheduleTaskRepository.updateStatusById(taskEntity.getId(), taskStatus);
     }
