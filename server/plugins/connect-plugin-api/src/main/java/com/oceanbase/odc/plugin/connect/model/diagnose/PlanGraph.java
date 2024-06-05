@@ -26,6 +26,7 @@ import com.fasterxml.jackson.annotation.JsonGetter;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.oceanbase.odc.common.unit.BinarySizeUnit;
 import com.oceanbase.odc.common.util.StringUtils;
+import com.oceanbase.odc.core.shared.model.QueryStatus;
 
 import lombok.Data;
 
@@ -38,9 +39,10 @@ public class PlanGraph {
     private String traceId;
     private String planId;
     private Long duration;
+    private QueryStatus status;
     private List<PlanGraphOperator> vertexes = new ArrayList<>();
+    private Map<String, Object> overview = new LinkedHashMap<>();
     private Map<String, String> statistics;
-    private Map<String, String> overview;
     private Map<String, List<String>> topNodes;
 
     @JsonIgnore
@@ -66,11 +68,8 @@ public class PlanGraph {
         }
     }
 
-    public void putOverview(String key, String value) {
+    public void putOverview(String key, Object value) {
         if (value != null) {
-            if (overview == null) {
-                overview = new LinkedHashMap<>();
-            }
             overview.put(key, value);
         }
     }

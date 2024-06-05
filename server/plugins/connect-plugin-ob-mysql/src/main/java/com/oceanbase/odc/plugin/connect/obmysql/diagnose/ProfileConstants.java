@@ -13,13 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.queryprofile.model;
+package com.oceanbase.odc.plugin.connect.obmysql.diagnose;
 
-/**
- * @author: liuyizhuo.lyz
- * @date: 2024/4/19
- */
 public class ProfileConstants {
+
+
+    public static final String DB_TIME = "DB time";
+    public static final String CHANGE_TIME = "Change time";
+    public static final String QUEUE_TIME = "Queue time";
+    public static final String PARALLEL = "Parallel";
+    public static final String PROCESS_NAME = "Process name";
+    public static final String SKEWNESS = "Skewness";
+    public static final String PLAN_TYPE = "Plan type";
+    public static final String IS_HIT_PLAN_CACHE = "Is hit plan cache";
+
+    public static final String CPU_TIME = "CPU time";
+    public static final String IO_WAIT_TIME = "I/O wait time";
 
     public static final String OUTPUT_ROWS = "Output rows";
     public static final String IO_READ_BYTES = "total io bytes read from disk";

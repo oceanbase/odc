@@ -34,7 +34,7 @@ public class Operator extends GraphVertex {
     private String title;
     private QueryStatus status;
     private Long duration;
-    private Map<String, String> overview = new LinkedHashMap<>();
+    private Map<String, Object> overview = new LinkedHashMap<>();
     private Map<String, String> statistics = new LinkedHashMap<>();
 
     public Operator(@NonNull String id, String name) {

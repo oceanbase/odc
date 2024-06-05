@@ -41,7 +41,7 @@ public class PlanGraphOperator {
     private Long duration;
     private Map<String, Object> attributes;
     private Map<String, String> statistics;
-    private Map<String, String> overview;
+    private Map<String, Object> overview;
     private List<PlanGraphEdge> inEdges;
     private List<PlanGraphEdge> outEdges;
     private Map<String, PlanGraphOperator> subNodes;
@@ -55,11 +55,11 @@ public class PlanGraphOperator {
         }
     }
 
-    public void putOverview(@NonNull String key, String value) {
+    public void putOverview(@NonNull String key, Object value) {
         if (overview == null) {
             overview = new LinkedHashMap<>();
         }
-        if (StringUtils.isNotEmpty(value)) {
+        if (value != null) {
             overview.put(key, value);
         }
     }

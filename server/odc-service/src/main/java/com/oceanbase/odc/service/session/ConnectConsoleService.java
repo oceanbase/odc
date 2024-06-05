@@ -339,7 +339,8 @@ public class ConnectConsoleService {
              * if a sql only contains delimiter setting(eg. delimiter $$), code will do this
              */
             SqlTuple sqlTuple = SqlTuple.newTuple(request.getSql());
-            AsyncExecuteContext executeContext = new AsyncExecuteContext(Collections.singletonList(sqlTuple), null);
+            AsyncExecuteContext executeContext =
+                    new AsyncExecuteContext(Collections.singletonList(sqlTuple), new HashMap<>());
             Future<List<JdbcGeneralResult>> successFuture = FutureResult.successResultList(
                     JdbcGeneralResult.successResult(sqlTuple));
             executeContext.setFuture(successFuture);

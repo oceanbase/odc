@@ -15,8 +15,6 @@
  */
 package com.oceanbase.odc.plugin.connect.model.diagnose;
 
-import com.oceanbase.odc.common.i18n.Internationalizable;
-
 import lombok.Data;
 
 /**
@@ -33,6 +31,4 @@ public class SqlExplain {
     private String originalText;
     private Boolean showFormatInfo;
     private PlanGraph graph;
-    @Internationalizable
-    private String warning;
 }

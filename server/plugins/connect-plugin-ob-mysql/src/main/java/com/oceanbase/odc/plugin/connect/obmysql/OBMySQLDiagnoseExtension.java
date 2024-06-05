@@ -15,43 +15,46 @@
  */
 package com.oceanbase.odc.plugin.connect.obmysql;
 
+import static com.oceanbase.odc.plugin.connect.obmysql.diagnose.ProfileConstants.DB_TIME;
+import static com.oceanbase.odc.plugin.connect.obmysql.diagnose.ProfileConstants.IS_HIT_PLAN_CACHE;
+import static com.oceanbase.odc.plugin.connect.obmysql.diagnose.ProfileConstants.PLAN_TYPE;
+import static com.oceanbase.odc.plugin.connect.obmysql.diagnose.ProfileConstants.QUEUE_TIME;
+
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.pf4j.Extension;
 
 import com.alibaba.fastjson.JSON;
 import com.oceanbase.odc.common.json.JsonUtils;
-import com.oceanbase.odc.common.util.StringUtils;
+import com.oceanbase.odc.common.util.TimespanFormatUtil;
 import com.oceanbase.odc.common.util.VersionUtils;
-import com.oceanbase.odc.common.util.tableformat.BorderStyle;
-import com.oceanbase.odc.common.util.tableformat.CellStyle;
-import com.oceanbase.odc.common.util.tableformat.CellStyle.AbbreviationStyle;
-import com.oceanbase.odc.common.util.tableformat.CellStyle.HorizontalAlign;
-import com.oceanbase.odc.common.util.tableformat.CellStyle.NullStyle;
-import com.oceanbase.odc.common.util.tableformat.Table;
 import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.core.shared.constant.ConnectType;
-import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.exception.OBException;
+import com.oceanbase.odc.core.shared.exception.UnexpectedException;
 import com.oceanbase.odc.core.shared.model.OBSqlPlan;
 import com.oceanbase.odc.core.shared.model.PlanNode;
 import com.oceanbase.odc.core.shared.model.SqlExecDetail;
+import com.oceanbase.odc.core.shared.model.SqlPlanMonitor;
 import com.oceanbase.odc.core.sql.util.OBUtils;
 import com.oceanbase.odc.plugin.connect.api.SqlDiagnoseExtensionPoint;
 import com.oceanbase.odc.plugin.connect.model.diagnose.PlanGraph;
 import com.oceanbase.odc.plugin.connect.model.diagnose.SqlExplain;
 import com.oceanbase.odc.plugin.connect.obmysql.diagnose.DiagnoseUtil;
 import com.oceanbase.odc.plugin.connect.obmysql.diagnose.PlanGraphBuilder;
+import com.oceanbase.odc.plugin.connect.obmysql.diagnose.QueryProfileHelper;
 
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
@@ -64,10 +67,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @Extension
 public class OBMySQLDiagnoseExtension implements SqlDiagnoseExtensionPoint {
-    private static final String PLAN_TEXT_HEAD_BLANK = "      ";
-    private static final String PLAN_OPERATOR_FILL_BLANCK = "  ";
-    private static final List<String> PHISICAL_PLAN_HEADER =
-            Arrays.asList("ID", "OPERATOR", "NAME", "EST.ROWS", "EST.TIME(us)");
+    private static final Pattern OPERATOR_PATTERN = Pattern.compile(".+\\|(OPERATOR +)\\|.+");
 
     @Override
     public SqlExplain getExplain(Statement statement, @NonNull String sql) throws SQLException {
@@ -272,97 +272,116 @@ public class OBMySQLDiagnoseExtension implements SqlDiagnoseExtensionPoint {
     @Override
     public SqlExplain getQueryProfileByTraceId(Connection connection, @NonNull String traceId) throws SQLException {
         try (Statement stmt = connection.createStatement()) {
-            ConnectType connectType = ConnectType.from(getDialectType());
-            String planId;
-            try {
-                planId = OBUtils.queryPlanIdByTraceIdFromASH(stmt, traceId, connectType);
-            } catch (SQLException e) {
-                planId = OBUtils.queryPlanIdByTraceIdFromAudit(stmt, traceId, connectType);
-            }
+            String planId = getPlanIdByTraceId(stmt, traceId);
             Verify.notEmpty(planId, "plan id");
-            List<OBSqlPlan> planRecords = OBUtils.queryOBSqlPlanByPlanId(stmt, planId, connectType);
-            SqlExplain explain = innerGetSqlExplainByOBPlanRecords(planRecords);
-            explain.getGraph().setTraceId(traceId);
+            PlanGraph graph = getPlanGraph(stmt, planId);
+            graph.setTraceId(traceId);
+            QueryProfileHelper.refreshGraph(graph, getSqlPlanMonitorRecords(stmt, traceId));
+
+            try {
+                SqlExecDetail execDetail = getExecutionDetailById(connection, traceId);
+                Verify.notNull(execDetail, "exec detail");
+                graph.putOverview(QUEUE_TIME,
+                        TimespanFormatUtil.formatTimespan(execDetail.getQueueTime(), TimeUnit.MICROSECONDS));
+                graph.putOverview(PLAN_TYPE, execDetail.getPlanType());
+                graph.putOverview(IS_HIT_PLAN_CACHE, execDetail.isHitPlanCache() + "");
+                if (graph.getDuration() == 0) {
+                    graph.setDuration(execDetail.getExecTime());
+                    graph.putOverview(DB_TIME,
+                            TimespanFormatUtil.formatTimespan(execDetail.getExecTime(), TimeUnit.MICROSECONDS));
+                }
+            } catch (Exception e) {
+                log.warn("Failed to query sql audit with OB trace_id={}.", traceId, e);
+            }
+            SqlExplain explain = innerGetSqlExplainByDbmsXplan(stmt, planId);
+            explain.setGraph(graph);
             return explain;
         }
     }
 
-    private SqlExplain innerGetSqlExplainByOBPlanRecords(List<OBSqlPlan> planRecords) {
-        SqlExplain profile = new SqlExplain();
-        PlanGraph graph = PlanGraphBuilder.buildPlanGraph(planRecords);
-        profile.setGraph(graph);
-        PlanNode planTree = null;
-        Table planTable = new Table(5, BorderStyle.HORIZONTAL_ONLY);
-        for (int i = 0; i < 5; i++) {
-            planTable.setColumnWidth(i, 1, Integer.MAX_VALUE);
+    protected String getPlanIdByTraceId(Statement stmt, String traceId) throws SQLException {
+        try {
+            return OBUtils.queryPlanIdByTraceIdFromASH(stmt, traceId, ConnectType.OB_MYSQL);
+        } catch (SQLException e) {
+            return OBUtils.queryPlanIdByTraceIdFromAudit(stmt, traceId, ConnectType.OB_MYSQL);
         }
-        CellStyle cs = new CellStyle(HorizontalAlign.LEFT, AbbreviationStyle.DOTS, NullStyle.EMPTY_STRING);
-        setCell(planTable, PHISICAL_PLAN_HEADER, cs);
-        String others = null;
-        StringBuilder outputBuilder = new StringBuilder();
-        for (OBSqlPlan plan : planRecords) {
+    }
+
+    protected String getPhysicalPlanByDbmsXplan(Statement stmt, String planId) throws SQLException {
+        try (ResultSet rs = stmt.executeQuery("select dbms_xplan.display_cursor(" + planId + ")")) {
+            if (!rs.next()) {
+                throw new SQLException("Failed to query plan by dbms_xplan.display_cursor");
+            }
+            return rs.getString(1);
+        }
+    }
+
+    protected PlanGraph getPlanGraph(Statement stmt, String planId) throws SQLException {
+        List<OBSqlPlan> planRecords = OBUtils.queryOBSqlPlanByPlanId(stmt, planId, ConnectType.OB_MYSQL);
+        return PlanGraphBuilder.buildPlanGraph(planRecords);
+    }
+
+    protected List<SqlPlanMonitor> getSqlPlanMonitorRecords(Statement stmt, String traceId) throws SQLException {
+        Map<String, String> statId2Name = OBUtils.querySPMStatNames(stmt, ConnectType.OB_MYSQL);
+        return OBUtils.querySqlPlanMonitorStats(
+                stmt, traceId, ConnectType.OB_MYSQL, statId2Name);
+    }
+
+    /**
+     * <pre>
+     *     ===========================================================================================================
+     *     |ID|OPERATOR              |NAME    |EST.ROWS|EST.TIME(us)|REAL.ROWS|REAL.TIME(us)|IO TIME(us)|CPU TIME(us)|
+     *     -----------------------------------------------------------------------------------------------------------
+     *     |0 |PX COORDINATOR MERGE  |        |697     |50767       |2        |545699       |509932     |546311      |
+     *     |1 |+-EXCHANGE OUT DISTR  |:EX10007|697     |50370       |2        |543539       |0          |59          |
+     *     |2 |  +-SORT              |        |697     |50259       |2        |543539       |0          |78          |
+     *     |9 |  | +-SHARED HASH JOIN|        |2570    |47498       |2549     |525890       |0          |7917        |
+     *     ===========================================================================================================
+     *     Outputs & filters:
+     *     -------------------------------------
+     *       0 - output...
+     * </pre>
+     */
+    private SqlExplain innerGetSqlExplainByDbmsXplan(Statement stmt, String planId) throws SQLException {
+        SqlExplain sqlExplain = new SqlExplain();
+        sqlExplain.setShowFormatInfo(true);
+
+        String planText = getPhysicalPlanByDbmsXplan(stmt, planId);
+        sqlExplain.setOriginalText(planText);
+        String[] segs = planText.split("Outputs & filters")[0].split("\n");
+        String headerLine = segs[1];
+        Matcher matcher = OPERATOR_PATTERN.matcher(headerLine);
+        if (!matcher.matches()) {
+            throw new UnexpectedException("Invalid explain:" + planText);
+        }
+        int operatorStartIndex = matcher.start(1);
+        int operatorStrLen = matcher.end(1) - operatorStartIndex;
+
+        PlanNode tree = null;
+        for (int i = 0; i < segs.length - 4; i++) {
             PlanNode node = new PlanNode();
-            node.setId(Integer.parseInt(plan.getId()));
-            node.setName(plan.getObjectName());
-            node.setCost(plan.getCost());
-            node.setDepth(Integer.parseInt(plan.getDepth()));
-            node.setOperator(plan.getOperator());
-            node.setRowCount(plan.getCardinality());
-            StringBuilder outputFilter = new StringBuilder();
-            if (StringUtils.isNotEmpty(plan.getProjection())) {
-                outputFilter.append(plan.getProjection()).append('\n');
-                insertIdAsHead(outputBuilder, plan.getId());
-                outputBuilder.append(plan.getProjection()).append('\n');
-            }
-            if (StringUtils.isNotEmpty(plan.getAccessPredicates())) {
-                outputFilter.append(plan.getAccessPredicates()).append('\n');
-                outputBuilder.append(PLAN_TEXT_HEAD_BLANK).append(plan.getAccessPredicates()).append('\n');
-            }
-            if (StringUtils.isNotEmpty(plan.getFilterPredicates())) {
-                outputFilter.append(plan.getFilterPredicates()).append('\n');
-                outputBuilder.append(PLAN_TEXT_HEAD_BLANK).append(plan.getFilterPredicates()).append('\n');
-            }
-            if (StringUtils.isNotEmpty(plan.getSpecialPredicates())) {
-                outputFilter.append(plan.getSpecialPredicates()).append('\n');
-                outputBuilder.append(PLAN_TEXT_HEAD_BLANK).append(plan.getSpecialPredicates()).append('\n');
-            }
-            node.setOutputFilter(outputFilter.toString());
-            if (StringUtils.isNotEmpty(plan.getOther())) {
-                others = plan.getOther();
-            }
-            PlanNode tmpPlanNode = DiagnoseUtil.buildPlanTree(planTree, node);
-            if (planTree == null) {
-                planTree = tmpPlanNode;
-            }
-            StringBuilder operator = new StringBuilder();
-            for (int i = 0; i < node.getDepth(); i++) {
-                operator.append(PLAN_OPERATOR_FILL_BLANCK);
-            }
-            operator.append(plan.getOperator());
-            setCell(planTable, Arrays.asList(plan.getId(), operator.toString(), plan.getObjectName(),
-                    plan.getCardinality(), plan.getCost()), cs);
-        }
-        String jsonStr = JSON.toJSONString(planTree);
-        profile.setExpTree(jsonStr);
-        profile.setShowFormatInfo(true);
-        profile.setOriginalText(planTable.render()
-                .append("\nOutputs & filters:\n")
-                .append(outputBuilder)
-                .append('\n')
-                .append(others).toString());
-        return profile;
-    }
+            node.setId(i);
 
-    private void setCell(Table table, List<String> rowContent, CellStyle cs) {
-        rowContent.forEach(h -> table.addCell(h, cs));
-    }
+            String line = segs[i + 3];
+            String temp = line.substring(operatorStartIndex);
+            String operatorStr = temp.substring(0, operatorStrLen);
+            DiagnoseUtil.recognizeNodeDepthAndOperator(node, operatorStr);
 
-    private void insertIdAsHead(StringBuilder builder, String id) {
-        int len = id.length();
-        for (int i = 0; i < 3 - len; i++) {
-            builder.append(' ');
+            String[] others = temp.substring(operatorStrLen).split("\\|");
+            node.setName(others[1]);
+            node.setRowCount(others[2]);
+            node.setCost(others[3]);
+            node.setRealRowCount(others[4]);
+            node.setRealCost(others[5]);
+
+            PlanNode tmpPlanNode = DiagnoseUtil.buildPlanTree(tree, node);
+            if (tree == null) {
+                tree = tmpPlanNode;
+            }
+
         }
-        builder.append(id).append(" - ");
+        sqlExplain.setExpTree(JsonUtils.toJson(tree));
+        return sqlExplain;
     }
 
     private PlanGraph getSqlPlanGraphBySql(Statement statement, @NonNull String sql) throws SQLException {
@@ -413,9 +432,4 @@ public class OBMySQLDiagnoseExtension implements SqlDiagnoseExtensionPoint {
                     String.format("Failed to get execution detail, traceId=%s, message=%s", traceId, e.getMessage()));
         }
     }
-
-    protected DialectType getDialectType() {
-        return DialectType.OB_MYSQL;
-    }
-
 }

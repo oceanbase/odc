@@ -22,7 +22,6 @@ import java.util.Collections;
 import java.util.List;
 
 import org.apache.commons.collections4.CollectionUtils;
-import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.jdbc.core.StatementCallback;
 
 import com.oceanbase.odc.common.util.StringUtils;
@@ -62,7 +61,7 @@ public class OBExecutionListener implements SqlExecutionListener {
     public void onExecutionEnd(SqlTuple sqlTuple, List<JdbcGeneralResult> results, AsyncExecuteContext context) {
         JdbcGeneralResult firstResult = results.get(0);
         if (StringUtils.isNotEmpty(firstResult.getTraceId()) && isSelect(sqlTuple)) {
-            profileManager.submit(session, firstResult.getTraceId(), LocaleContextHolder.getLocale());
+            profileManager.submit(session, firstResult.getTraceId());
         }
     }
 
