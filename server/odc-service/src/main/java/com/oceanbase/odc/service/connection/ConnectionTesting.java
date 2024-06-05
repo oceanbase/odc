@@ -175,7 +175,8 @@ public class ConnectionTesting {
                 }
                 if (result.getErrorCode() == ErrorCodes.ObWeakReadConsistencyRequired
                         && type.getDialectType().isOceanbase()) {
-                    return ConnectionTestResult.fail(ErrorCodes.ObWeakReadConsistencyRequired, null);
+                    return ConnectionTestResult.fail(
+                            ErrorCodes.ObWeakReadConsistencyRequired, new String[] {});
                 }
                 if (result.getErrorCode() == ErrorCodes.ConnectionInitScriptFailed) {
                     return ConnectionTestResult.initScriptFailed(result.getArgs());

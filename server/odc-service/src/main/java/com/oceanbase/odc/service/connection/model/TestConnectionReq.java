@@ -179,6 +179,8 @@ public class TestConnectionReq implements CloudConnectionConfig, SSLConnectionCo
         req.setSid(connection.getSid());
         req.setServiceName(connection.getServiceName());
         req.setUserRole(connection.getUserRole());
+        req.setSessionInitScript(connection.getSessionInitScript());
+        req.setJdbcUrlParameters(connection.getJdbcUrlParameters());
         return req;
     }
 
