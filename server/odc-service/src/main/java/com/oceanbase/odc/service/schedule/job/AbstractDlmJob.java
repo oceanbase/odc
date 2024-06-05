@@ -239,7 +239,9 @@ public abstract class AbstractDlmJob implements OdcJob {
         Map<String, String> jobData = new HashMap<>();
         jobData.put(JobParametersKeyConstants.META_TASK_PARAMETER_JSON,
                 JsonUtils.toJson(parameters));
-        jobData.put(JobParametersKeyConstants.TASK_EXECUTION_TIMEOUT_MILLIS, timeoutMillis.toString());
+        if (timeoutMillis != null) {
+            jobData.put(JobParametersKeyConstants.TASK_EXECUTION_TIMEOUT_MILLIS, timeoutMillis.toString());
+        }
         SingleJobProperties singleJobProperties = new SingleJobProperties();
         singleJobProperties.setEnableRetryAfterHeartTimeout(true);
         singleJobProperties.setMaxRetryTimesAfterHeartTimeout(2);
