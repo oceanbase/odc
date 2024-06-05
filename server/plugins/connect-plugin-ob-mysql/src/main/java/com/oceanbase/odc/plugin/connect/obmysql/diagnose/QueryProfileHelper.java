@@ -189,7 +189,10 @@ public class QueryProfileHelper {
                 child.setStatus(QueryStatus.FINISHED);
             } else {
                 allNodeFinished = false;
-                if (spm.getFirstChangeTime() == null) {
+                // If the operator is a calculating type like `SCALAR GROUP BY`, when it's running, the
+                // FIRST_CHANGE_TIME and LAST_CHANGE_TIME may be null. Then we can determine its status by db_time.
+                // And since there maybe some deviation, we set 100 us as the threshold for judging the status.
+                if (spm.getFirstChangeTime() == null && spm.getDbTime() < 100) {
                     child.setStatus(QueryStatus.PREPARING);
                 } else {
                     child.setStatus(QueryStatus.RUNNING);
@@ -316,7 +319,7 @@ public class QueryProfileHelper {
         } else if (stats.getLastRefreshTime() != null) {
             operator.setStatus(QueryStatus.FINISHED);
         } else {
-            if (stats.getFirstChangeTime() == null) {
+            if (stats.getFirstChangeTime() == null && stats.getDbTime() < 100) {
                 operator.setStatus(QueryStatus.PREPARING);
             } else {
                 operator.setStatus(QueryStatus.RUNNING);
