@@ -141,7 +141,9 @@ public class DataDeleteJob extends AbstractDlmJob {
                         databaseService.findDataSourceForConnectById(dataDeleteParameters.getDatabaseId())));
         parameters
                 .setTargetDs(DataSourceInfoMapper.toDataSourceInfo(
-                        databaseService.findDataSourceForConnectById(dataDeleteParameters.getTargetDatabaseId())));
+                        databaseService.findDataSourceForConnectById(dataDeleteParameters.getTargetDatabaseId() == null
+                                ? dataDeleteParameters.getDatabaseId()
+                                : dataDeleteParameters.getTargetDatabaseId())));
         parameters.getSourceDs().setQueryTimeout(dataDeleteParameters.getQueryTimeout());
         parameters.getTargetDs().setQueryTimeout(dataDeleteParameters.getQueryTimeout());
         parameters.getSourceDs().setDatabaseName(dataDeleteParameters.getDatabaseName());
