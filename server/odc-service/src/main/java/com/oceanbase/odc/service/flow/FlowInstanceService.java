@@ -106,7 +106,6 @@ import com.oceanbase.odc.service.connection.database.DatabaseService;
 import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.connection.model.OBTenant;
-import com.oceanbase.odc.service.databasechange.model.DatabaseChangeConnection;
 import com.oceanbase.odc.service.databasechange.model.DatabaseChangeDatabase;
 import com.oceanbase.odc.service.databasechange.model.DatabaseChangingRecord;
 import com.oceanbase.odc.service.dispatch.DispatchResponse;
@@ -359,20 +358,24 @@ public class FlowInstanceService {
         }
         List<RiskLevel> riskLevels = riskLevelService.list();
         Verify.notEmpty(riskLevels, "riskLevels");
-        ConnectionConfig conn = null;
+        List<ConnectionConfig> conns = new ArrayList<>();
         if (Objects.nonNull(createReq.getConnectionId())) {
-            conn = connectionService.getForConnectionSkipPermissionCheck(createReq.getConnectionId());
+            ConnectionConfig conn = connectionService.getForConnectionSkipPermissionCheck(createReq.getConnectionId());
             cloudMetadataClient.checkPermission(OBTenant.of(conn.getClusterName(),
                     conn.getTenantName()), conn.getInstanceType(), false, CloudPermissionAction.READONLY);
+            conns.add(conn);
         } else if (createReq.getTaskType() == TaskType.MULTIPLE_ASYNC) {
             MultipleDatabaseChangeParameters taskParameters =
                     (MultipleDatabaseChangeParameters) createReq.getParameters();
-            List<DatabaseChangeConnection> conns = taskParameters.getDatabases().stream().map(
-                    DatabaseChangeDatabase::getDataSource).distinct().collect(Collectors.toList());
+            // Gets the data source connection collection that contains the password
+            List<Long> dataSourceIds =
+                    taskParameters.getDatabases().stream().map(x -> x.getDataSource().getId()).distinct()
+                            .collect(Collectors.toList());
+            conns = connectionService.listForConnectionSkipPermissionCheck(dataSourceIds);
             conns.forEach(con -> cloudMetadataClient.checkPermission(OBTenant.of(con.getClusterName(),
                     con.getTenantName()), con.getInstanceType(), false, CloudPermissionAction.READONLY));
         }
-        return Collections.singletonList(buildFlowInstance(riskLevels, createReq, conn));
+        return Collections.singletonList(buildFlowInstance(riskLevels, createReq, conns));
     }
 
     public Page<FlowInstanceDetailResp> list(@NotNull Pageable pageable, @NotNull QueryFlowInstanceParams params) {
@@ -841,7 +844,8 @@ public class FlowInstanceService {
             Map<String, Object> variables = new HashMap<>();
             FlowTaskUtil.setTemplateVariables(variables, buildTemplateVariables(flowInstanceReq, connectionConfig));
             FlowTaskUtil.setFlowInstanceId(variables, flowInstance.getId());
-            initVariables(variables, taskEntity, null, connectionConfig, buildRiskLevelDescriber(flowInstanceReq));
+            initVariables(variables, taskEntity, null, Collections.singletonList(connectionConfig),
+                    buildRiskLevelDescriber(flowInstanceReq));
             flowInstance.start(variables);
             if (taskType == TaskType.SHADOWTABLE_SYNC) {
                 consumeShadowTableHook((ShadowTableSyncTaskParameter) flowInstanceReq.getParameters(),
@@ -861,7 +865,7 @@ public class FlowInstanceService {
     }
 
     private FlowInstanceDetailResp buildFlowInstance(List<RiskLevel> riskLevels,
-            CreateFlowInstanceReq flowInstanceReq, ConnectionConfig connectionConfig) {
+            CreateFlowInstanceReq flowInstanceReq, List<ConnectionConfig> connectionConfigs) {
         log.info("Start creating flow instance, flowInstanceReq={}", flowInstanceReq);
         CreateFlowInstanceReq preCheckReq = new CreateFlowInstanceReq();
         preCheckReq.setTaskType(TaskType.PRE_CHECK);
@@ -906,8 +910,8 @@ public class FlowInstanceService {
         }
         Map<String, Object> variables = new HashMap<>();
         FlowTaskUtil.setFlowInstanceId(variables, flowInstance.getId());
-        FlowTaskUtil.setTemplateVariables(variables, buildTemplateVariables(flowInstanceReq, connectionConfig));
-        initVariables(variables, taskEntity, preCheckTaskEntity, connectionConfig,
+        FlowTaskUtil.setTemplateVariables(variables, buildTemplateVariables(flowInstanceReq, connectionConfigs.get(0)));
+        initVariables(variables, taskEntity, preCheckTaskEntity, connectionConfigs,
                 buildRiskLevelDescriber(flowInstanceReq));
         flowInstance.start(variables);
         if (flowInstanceReq.getTaskType() == TaskType.SHADOWTABLE_SYNC) {
@@ -1086,13 +1090,14 @@ public class FlowInstanceService {
     }
 
     private void initVariables(Map<String, Object> variables, TaskEntity taskEntity, TaskEntity preCheckTaskEntity,
-            ConnectionConfig config, RiskLevelDescriber riskLevelDescriber) {
+            List<ConnectionConfig> configList, RiskLevelDescriber riskLevelDescriber) {
         FlowTaskUtil.setTaskId(variables, taskEntity.getId());
         if (Objects.nonNull(preCheckTaskEntity)) {
             FlowTaskUtil.setPreCheckTaskId(variables, preCheckTaskEntity.getId());
         }
-        if (config != null) {
-            FlowTaskUtil.setConnectionConfig(variables, config);
+        if (CollectionUtils.isNotEmpty(configList)) {
+            FlowTaskUtil.setConnectionConfigList(variables, configList);
+            FlowTaskUtil.setConnectionConfig(variables, configList.get(0));
         }
         FlowTaskUtil.setExecutionExpirationInterval(variables,
                 taskEntity.getExecutionExpirationIntervalSeconds(), TimeUnit.SECONDS);
@@ -1109,7 +1114,6 @@ public class FlowInstanceService {
         FlowTaskUtil.setRiskLevelDescriber(variables, riskLevelDescriber);
         FlowTaskUtil.setCloudMainAccountId(variables, authenticationFacade.currentUser().getParentUid());
     }
-
 
     private TemplateVariables buildTemplateVariables(CreateFlowInstanceReq flowInstanceReq, ConnectionConfig config) {
         TemplateVariables variables = new TemplateVariables();

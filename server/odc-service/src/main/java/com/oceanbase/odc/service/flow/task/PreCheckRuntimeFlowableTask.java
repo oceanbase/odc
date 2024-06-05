@@ -31,6 +31,7 @@ import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import org.apache.commons.collections4.CollectionUtils;
@@ -147,7 +148,10 @@ public class PreCheckRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Void> {
             List<Long> databaseIds = parameters.getOrderedDatabaseIds().stream()
                     .flatMap(List::stream).collect(Collectors.toList());
             this.databaseList = databaseService.listDatabasesDetailsByIds(databaseIds);
-            // 单独构建databaseId2RiskLevelDescriber
+            List<ConnectionConfig> connectionConfigList = FlowTaskUtil.getConnectionConfigList(execution);
+            Map<Long, ConnectionConfig> id2ConnectConfig = connectionConfigList.stream().collect(
+                    Collectors.toMap(ConnectionConfig::getId, Function.identity()));
+            this.databaseList.forEach(x -> x.setDataSource(id2ConnectConfig.get(x.getDataSource().getId())));
             databaseId2RiskLevelDescriber = buildDatabaseId2RiskLevelDescriber(this.databaseList);
         } else {
             riskLevelDescriber = FlowTaskUtil.getRiskLevelDescriber(execution);
