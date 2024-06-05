@@ -15,23 +15,18 @@
  */
 package com.oceanbase.odc.service.db.browser;
 
-import com.oceanbase.odc.core.shared.constant.ConnectType;
-import com.oceanbase.tools.dbbrowser.editor.DBObjectEditor;
+import com.oceanbase.odc.core.session.ConnectionSession;
+import com.oceanbase.odc.core.session.ConnectionSessionUtil;
+import com.oceanbase.tools.dbbrowser.DBBrowser;
+import com.oceanbase.tools.dbbrowser.editor.DBTableConstraintEditor;
 
-/**
- * @Author: Lebie
- * @Date: 2022/7/19 下午10:22
- * @Description: []
- */
-public abstract class DBObjectEditorFactory<T extends DBObjectEditor> {
-    protected ConnectType connectType;
+public class DBTableConstraintEditors {
 
-    protected String dbVersion;
-
-    public DBObjectEditorFactory(ConnectType connectType, String dbVersion) {
-        this.connectType = connectType;
-        this.dbVersion = dbVersion;
+    public static DBTableConstraintEditor create(ConnectionSession connectionSession) {
+        return DBBrowser.objectEditor().tableConstraintEditor()
+                .setDbVersion(ConnectionSessionUtil.getVersion(connectionSession))
+                .setType(connectionSession.getDialectType().getDBBrowserDialectTypeName())
+                .create();
     }
 
-    public abstract T create();
 }

@@ -71,6 +71,12 @@ public class ResourceRoleService {
     @SkipAuthorize("internal usage")
     @Transactional(rollbackFor = Exception.class)
     public List<UserResourceRole> saveAll(List<UserResourceRole> userResourceRoleList) {
+        return saveAll(userResourceRoleList, authenticationFacade.currentOrganizationId());
+    }
+
+    @SkipAuthorize("internal usage")
+    @Transactional(rollbackFor = Exception.class)
+    public List<UserResourceRole> saveAll(List<UserResourceRole> userResourceRoleList, @NonNull Long organizationId) {
         if (CollectionUtils.isEmpty(userResourceRoleList)) {
             return Collections.emptyList();
         }
@@ -91,7 +97,7 @@ public class ResourceRoleService {
             entity.setResourceId(e.getResourceId());
             entity.setUserId(e.getUserId());
             entity.setResourceRoleId(resourceRoleEntity.getId());
-            entity.setOrganizationId(authenticationFacade.currentOrganizationId());
+            entity.setOrganizationId(organizationId);
             userResourceRoleEntityList.add(entity);
         });
         userResourceRoleRepository.batchCreate(userResourceRoleEntityList);

@@ -441,9 +441,9 @@ public class ConnectionService {
                 .where(ConnectionSpecs.organizationIdEqual(currentOrganizationId()))
                 .and(ConnectionSpecs.idIn(connIds));
         Map<Long, ConnectionConfig> connMap =
-                entitiesToModels(repository.findAll(spec), currentOrganizationId(), false, false).stream()
-                        .collect(Collectors.toMap(ConnectionConfig::getId, c -> c));
-
+                entitiesToModels(repository.findAll(spec), currentOrganizationId(), false, false)
+                        .stream().collect(Collectors.toMap(ConnectionConfig::getId, c -> c));
+        fullFillAttributes(connMap.values());
         if (authenticationFacade.currentOrganization().getType() == OrganizationType.INDIVIDUAL) {
             return getIndividualSpaceStatus(ids, connMap);
         } else {
@@ -566,8 +566,7 @@ public class ConnectionService {
     }
 
     @PreAuthenticate(actions = "update", resourceType = "ODC_CONNECTION", indexOfIdParam = 0)
-    public ConnectionConfig update(@NotNull Long id, @NotNull @Valid ConnectionConfig connection)
-            throws InterruptedException {
+    public ConnectionConfig update(@NotNull Long id, @NotNull @Valid ConnectionConfig connection) {
         ConnectionConfig config = txTemplate.execute(status -> {
             try {
                 environmentAdapter.adaptConfig(connection);
@@ -774,6 +773,7 @@ public class ConnectionService {
                 : PageRequest.of(pageable.getPageNumber(), pageable.getPageSize());
         Page<ConnectionEntity> entities = this.repository.findAll(spec, page);
         List<ConnectionConfig> models = entitiesToModels(entities.getContent(), currentOrganizationId(), true, true);
+        fullFillAttributes(models);
         return new PageImpl<>(models, page, entities.getTotalElements());
     }
 
@@ -1005,6 +1005,13 @@ public class ConnectionService {
             return null;
         }
         return syncTimes.stream().min(Date::compareTo).orElse(null);
+    }
+
+    private void fullFillAttributes(Collection<ConnectionConfig> models) {
+        Map<Long, List<ConnectionAttributeEntity>> id2Attrs = this.attributeRepository
+                .findByConnectionIdIn(models.stream().map(ConnectionConfig::getId).collect(Collectors.toSet()))
+                .stream().collect(Collectors.groupingBy(ConnectionAttributeEntity::getConnectionId));
+        models.forEach(c -> c.setAttributes(attrEntitiesToMap(id2Attrs.getOrDefault(c.getId(), new ArrayList<>()))));
     }
 
     private void adaptConnectionConfig(ConnectionConfig connection) {

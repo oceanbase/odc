@@ -41,7 +41,7 @@ public interface ConnectionAttributeRepository extends JpaRepository<ConnectionA
 
     List<ConnectionAttributeEntity> findByConnectionId(Long connectionId);
 
-    List<ConnectionAttributeEntity> findByConnectionIdIn(Collection<Long> connectionIds);
+    List<ConnectionAttributeEntity> findByConnectionIdIn(Collection<Long> ids);
 
     @Transactional
     @Modifying

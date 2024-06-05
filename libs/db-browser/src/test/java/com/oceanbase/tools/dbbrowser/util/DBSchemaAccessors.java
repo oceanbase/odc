@@ -21,8 +21,9 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 import org.springframework.jdbc.core.JdbcTemplate;
 
+import com.oceanbase.tools.dbbrowser.DBBrowser;
+import com.oceanbase.tools.dbbrowser.DBBrowserFactory;
 import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
-import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessorGenerator;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -79,23 +80,36 @@ public class DBSchemaAccessors {
 
     public DBSchemaAccessor createOBMysql() {
         this.version = getOBVersion();
-        return DBSchemaAccessorGenerator.createForOBMySQL(this.jdbcTemplate, null,
-                this.version, null);
+        return DBBrowser.schemaAccessor()
+                .setDbVersion(this.version)
+                .setJdbcOperations(this.jdbcTemplate)
+                .setType(DBBrowserFactory.OB_MYSQL)
+                .create();
     }
 
     public DBSchemaAccessor createOBOracle() {
         this.version = getOBVersion();
-        return DBSchemaAccessorGenerator.createForOBOracle(this.jdbcTemplate,
-                this.version);
+        return DBBrowser.schemaAccessor()
+                .setDbVersion(this.version)
+                .setJdbcOperations(this.jdbcTemplate)
+                .setType(DBBrowserFactory.OB_ORACLE)
+                .create();
     }
 
     public DBSchemaAccessor createOracle() {
-        return DBSchemaAccessorGenerator.createForOracle(this.jdbcTemplate);
+        return DBBrowser.schemaAccessor()
+                .setJdbcOperations(this.jdbcTemplate)
+                .setType(DBBrowserFactory.ORACLE)
+                .create();
     }
 
     public DBSchemaAccessor createMysql() {
         this.version = getMySQLVersion();
-        return DBSchemaAccessorGenerator.createForMySQL(this.jdbcTemplate, this.version);
+        return DBBrowser.schemaAccessor()
+                .setDbVersion(this.version)
+                .setJdbcOperations(this.jdbcTemplate)
+                .setType(DBBrowserFactory.MYSQL)
+                .create();
     }
 
 }

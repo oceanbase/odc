@@ -49,8 +49,6 @@ public class DataDeleteJob extends AbstractDlmJob {
     @Override
     public void executeJob(JobExecutionContext context) {
 
-        jobThread = Thread.currentThread();
-
         ScheduleTaskEntity taskEntity = (ScheduleTaskEntity) context.getResult();
 
         // execute in task framework.
@@ -89,10 +87,18 @@ public class DataDeleteJob extends AbstractDlmJob {
             dlmTableUnit.setTargetDatasourceInfo(
                     Objects.isNull(parameters.getTargetDatabaseId()) ? dlmTableUnit.getSourceDatasourceInfo()
                             : getDataSourceInfo(parameters.getTargetDatabaseId()));
+            dlmTableUnit.getSourceDatasourceInfo().setQueryTimeout(parameters.getQueryTimeout());
+            dlmTableUnit.getTargetDatasourceInfo().setQueryTimeout(parameters.getQueryTimeout());
             dlmTableUnit.setFireTime(taskEntity.getFireTime());
             DlmTableUnitParameters parameter = new DlmTableUnitParameters();
             parameter.setMigrateRule(condition);
             parameter.setCheckMode(CheckMode.MULTIPLE_GET);
+            parameter.setGeneratorBatchSize(parameters.getScanBatchSize());
+            parameter.setReaderTaskCount(parameters.getReadThreadCount());
+            parameter.setWriterTaskCount(parameters.getWriteThreadCount());
+            parameter.setReaderBatchSize(parameters.getRateLimit().getBatchSize());
+            parameter.setWriterBatchSize(parameters.getRateLimit().getBatchSize());
+            parameter.setMigratePartitions(table.getPartitions());
             dlmTableUnit.setParameters(parameter);
             dlmTableUnit.setStatus(TaskStatus.PREPARING);
             JobType jobType = parameters.getNeedCheckBeforeDelete() ? JobType.DELETE : JobType.QUICK_DELETE;
@@ -132,11 +138,10 @@ public class DataDeleteJob extends AbstractDlmJob {
         parameters
                 .setTargetDs(DataSourceInfoMapper.toDataSourceInfo(
                         databaseService.findDataSourceForConnectById(dataDeleteParameters.getTargetDatabaseId())));
+        parameters.getSourceDs().setQueryTimeout(dataDeleteParameters.getQueryTimeout());
+        parameters.getTargetDs().setQueryTimeout(dataDeleteParameters.getQueryTimeout());
         parameters.getSourceDs().setDatabaseName(dataDeleteParameters.getDatabaseName());
         parameters.getTargetDs().setDatabaseName(dataDeleteParameters.getTargetDatabaseName());
-        parameters.getSourceDs().setConnectionCount(2 * (parameters.getReadThreadCount()
-                + parameters.getWriteThreadCount()));
-        parameters.getTargetDs().setConnectionCount(parameters.getSourceDs().getConnectionCount());
 
         Long jobId = publishJob(parameters);
         scheduleTaskRepository.updateJobIdById(taskEntity.getId(), jobId);

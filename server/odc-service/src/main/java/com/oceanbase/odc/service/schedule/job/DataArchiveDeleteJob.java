@@ -40,7 +40,6 @@ public class DataArchiveDeleteJob extends AbstractDlmJob {
     @Override
     public void executeJob(JobExecutionContext context) {
 
-        jobThread = Thread.currentThread();
         ScheduleTaskEntity taskEntity = (ScheduleTaskEntity) context.getResult();
         DataArchiveClearParameters dataArchiveClearParameters = JsonUtils.fromJson(taskEntity.getParametersJson(),
                 DataArchiveClearParameters.class);
@@ -76,20 +75,21 @@ public class DataArchiveDeleteJob extends AbstractDlmJob {
             scheduleTaskRepository.updateTaskResult(taskEntity.getId(), JsonUtils.toJson(parameters));
             return;
         }
-
-        // prepare tasks for clear
-        List<DlmTableUnit> dlmTableUnits = dlmService.findByScheduleTaskId(dataArchiveTask.getId());
-        for (int i = 0; i < dlmTableUnits.size(); i++) {
-            dlmTableUnits.get(i)
-                    .setDlmTableUnitId(
-                            DlmJobIdUtil.generateHistoryJobId(taskEntity.getJobName(), taskEntity.getJobGroup(),
-                                    taskEntity.getId(),
-                                    i));
-            dlmTableUnits.get(i).setType(JobType.DELETE);
-            dlmTableUnits.get(i).setStatus(TaskStatus.PREPARING);
-            dlmTableUnits.get(i).setScheduleTaskId(taskEntity.getId());
+        List<DlmTableUnit> dlmTableUnits = dlmService.findByScheduleTaskId(taskEntity.getId());
+        if (dlmTableUnits.isEmpty()) {
+            dlmTableUnits = dlmService.findByScheduleTaskId(dataArchiveTask.getId());
+            for (int i = 0; i < dlmTableUnits.size(); i++) {
+                dlmTableUnits.get(i)
+                        .setDlmTableUnitId(
+                                DlmJobIdUtil.generateHistoryJobId(taskEntity.getJobName(), taskEntity.getJobGroup(),
+                                        taskEntity.getId(),
+                                        i));
+                dlmTableUnits.get(i).setType(JobType.DELETE);
+                dlmTableUnits.get(i).setStatus(TaskStatus.PREPARING);
+                dlmTableUnits.get(i).setScheduleTaskId(taskEntity.getId());
+            }
+            dlmService.createDlmTableUnits(dlmTableUnits);
         }
-        dlmService.createDlmTableUnits(dlmTableUnits);
         executeTask(taskEntity.getId(), dlmTableUnits);
         TaskStatus taskStatus = getTaskStatus(taskEntity.getId());
         scheduleTaskRepository.updateStatusById(taskEntity.getId(), taskStatus);

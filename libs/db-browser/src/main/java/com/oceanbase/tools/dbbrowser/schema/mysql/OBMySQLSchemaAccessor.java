@@ -15,7 +15,6 @@
  */
 package com.oceanbase.tools.dbbrowser.schema.mysql;
 
-import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -46,8 +45,7 @@ import com.oceanbase.tools.dbbrowser.schema.constant.StatementsFiles;
 import com.oceanbase.tools.dbbrowser.util.DBSchemaAccessorUtil;
 import com.oceanbase.tools.dbbrowser.util.MySQLSqlBuilder;
 import com.oceanbase.tools.dbbrowser.util.StringUtils;
-import com.oceanbase.tools.sqlparser.OBMySQLParser;
-import com.oceanbase.tools.sqlparser.SQLParser;
+import com.oceanbase.tools.sqlparser.statement.Statement;
 import com.oceanbase.tools.sqlparser.statement.createtable.CreateTable;
 
 import lombok.NonNull;
@@ -245,11 +243,14 @@ public class OBMySQLSchemaAccessor extends MySQLNoLessThan5700SchemaAccessor {
     }
 
     private List<DBColumnGroupElement> listTableColumnGroups(String ddl) {
-        SQLParser sqlParser = new OBMySQLParser();
-        CreateTable stmt = (CreateTable) sqlParser.parse(new StringReader(ddl));
-        return stmt.getColumnGroupElements() == null ? Collections.emptyList()
-                : stmt.getColumnGroupElements().stream()
-                        .map(DBColumnGroupElement::ofColumnGroupElement).collect(Collectors.toList());
+        Statement statement = SqlParser.parseMysqlStatement(ddl);
+        if (statement instanceof CreateTable) {
+            CreateTable stmt = (CreateTable) statement;
+            return stmt.getColumnGroupElements() == null ? Collections.emptyList()
+                    : stmt.getColumnGroupElements().stream()
+                            .map(DBColumnGroupElement::ofColumnGroupElement).collect(Collectors.toList());
+        }
+        return Collections.emptyList();
     }
 
     @Override

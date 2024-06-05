@@ -84,8 +84,8 @@ public abstract class AbstractDlmJob implements OdcJob {
     public final TaskFrameworkEnabledProperties taskFrameworkProperties;
 
     public final TaskFrameworkService taskFrameworkService;
-    public Thread jobThread;
     private Job job;
+    private boolean isInterrupted = false;
 
 
     public AbstractDlmJob() {
@@ -106,7 +106,7 @@ public abstract class AbstractDlmJob implements OdcJob {
         scheduleTaskRepository.updateStatusById(taskId, TaskStatus.RUNNING);
         log.info("Task is ready,taskId={}", taskId);
         for (DlmTableUnit dlmTableUnit : dlmTableUnits) {
-            if (jobThread.isInterrupted()) {
+            if (isInterrupted) {
                 dlmService.updateStatusByDlmTableUnitId(dlmTableUnit.getDlmTableUnitId(), TaskStatus.CANCELED);
                 log.info("Task interrupted and will exit.TaskId={}", taskId);
                 continue;
@@ -160,7 +160,7 @@ public abstract class AbstractDlmJob implements OdcJob {
         if (collect.contains(TaskStatus.DONE) && collect.size() == 1) {
             return TaskStatus.DONE;
         }
-        if (jobThread.isInterrupted()) {
+        if (isInterrupted) {
             return TaskStatus.CANCELED;
         }
         if (collect.contains(TaskStatus.FAILED)) {
@@ -191,11 +191,14 @@ public abstract class AbstractDlmJob implements OdcJob {
             DlmTableUnit dlmTableUnit = new DlmTableUnit();
             dlmTableUnit.setScheduleTaskId(taskEntity.getId());
             DlmTableUnitParameters jobParameter = new DlmTableUnitParameters();
-            jobParameter.setMigrateRule(condition);
             RateLimitConfiguration limiterConfig =
                     limiterService.getByOrderIdOrElseDefaultConfig(Long.parseLong(taskEntity.getJobName()));
             jobParameter.setMigrateRule(condition);
             jobParameter.setCheckMode(CheckMode.MULTIPLE_GET);
+            jobParameter.setGeneratorBatchSize(parameters.getScanBatchSize());
+            jobParameter.setShardingStrategy(parameters.getShardingStrategy());
+            jobParameter.setReaderTaskCount(parameters.getReadThreadCount());
+            jobParameter.setWriterTaskCount(parameters.getWriteThreadCount());
             jobParameter.setReaderBatchSize(limiterConfig.getBatchSize());
             jobParameter.setWriterBatchSize(limiterConfig.getBatchSize());
             jobParameter.setMigrationInsertAction(parameters.getMigrationInsertAction());
@@ -210,6 +213,8 @@ public abstract class AbstractDlmJob implements OdcJob {
             dlmTableUnit.setTargetTableName(table.getTargetTableName());
             dlmTableUnit.setSourceDatasourceInfo(getDataSourceInfo(parameters.getSourceDatabaseId()));
             dlmTableUnit.setTargetDatasourceInfo(getDataSourceInfo(parameters.getTargetDataBaseId()));
+            dlmTableUnit.getSourceDatasourceInfo().setQueryTimeout(parameters.getQueryTimeout());
+            dlmTableUnit.getTargetDatasourceInfo().setQueryTimeout(parameters.getQueryTimeout());
             dlmTableUnit.setFireTime(taskEntity.getFireTime());
             dlmTableUnit.setStatus(TaskStatus.PREPARING);
             dlmTableUnit.setType(JobType.MIGRATE);
@@ -275,13 +280,10 @@ public abstract class AbstractDlmJob implements OdcJob {
 
     @Override
     public void interrupt() {
-        if (jobThread == null) {
-            throw new IllegalStateException("Task is not executing.");
-        }
+        isInterrupted = true;
         if (job != null) {
             job.stop();
             log.info("Job will be interrupted,jobId={}", job.getJobMeta().getJobId());
         }
-        jobThread.interrupt();
     }
 }

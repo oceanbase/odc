@@ -288,11 +288,11 @@ public class RoleServiceTest extends AuthorityTestEnv {
         userEntity.setCipher(Cipher.RAW);
         userEntity.setActive(true);
         UserEntity user = userRepository.saveAndFlush(userEntity);
-        UserRoleEntity userRoleEntity = roleService.bindUserRole(user.getId(), role.getId(), 1L);
+        UserRoleEntity userRoleEntity = roleService.bindUserRole(user.getId(), role.getId(), 1L, null);
         Assert.assertEquals(role.getId(), userRoleEntity.getRoleId());
         userEntity.setOrganizationId(2L);
         UserEntity user1 = userRepository.saveAndFlush(userEntity);
-        roleService.bindUserRole(user1.getId(), role.getId(), 1L);
+        roleService.bindUserRole(user1.getId(), role.getId(), 1L, null);
     }
 
     @Test

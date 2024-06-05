@@ -15,7 +15,6 @@
  */
 package com.oceanbase.tools.dbbrowser.schema.oracle;
 
-import java.io.StringReader;
 import java.sql.ResultSetMetaData;
 import java.sql.Timestamp;
 import java.util.ArrayList;
@@ -79,8 +78,7 @@ import com.oceanbase.tools.dbbrowser.util.OracleSqlBuilder;
 import com.oceanbase.tools.dbbrowser.util.PLObjectErrMsgUtils;
 import com.oceanbase.tools.dbbrowser.util.SqlBuilder;
 import com.oceanbase.tools.dbbrowser.util.StringUtils;
-import com.oceanbase.tools.sqlparser.OBOracleSQLParser;
-import com.oceanbase.tools.sqlparser.SQLParser;
+import com.oceanbase.tools.sqlparser.statement.Statement;
 import com.oceanbase.tools.sqlparser.statement.createtable.CreateTable;
 
 import lombok.NonNull;
@@ -446,11 +444,14 @@ public class OBOracleSchemaAccessor extends OracleSchemaAccessor {
     }
 
     private List<DBColumnGroupElement> listTableColumnGroups(String ddl) {
-        SQLParser sqlParser = new OBOracleSQLParser();
-        CreateTable stmt = (CreateTable) sqlParser.parse(new StringReader(ddl));
-        return stmt.getColumnGroupElements() == null ? Collections.emptyList()
-                : stmt.getColumnGroupElements().stream()
-                        .map(DBColumnGroupElement::ofColumnGroupElement).collect(Collectors.toList());
+        Statement statement = SqlParser.parseOracleStatement(ddl);
+        if (statement instanceof CreateTable) {
+            CreateTable stmt = (CreateTable) statement;
+            return stmt.getColumnGroupElements() == null ? Collections.emptyList()
+                    : stmt.getColumnGroupElements().stream()
+                            .map(DBColumnGroupElement::ofColumnGroupElement).collect(Collectors.toList());
+        }
+        return Collections.emptyList();
     }
 
     @Override

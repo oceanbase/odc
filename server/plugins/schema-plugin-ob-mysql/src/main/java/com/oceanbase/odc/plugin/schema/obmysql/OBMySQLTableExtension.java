@@ -28,7 +28,6 @@ import com.oceanbase.odc.plugin.schema.obmysql.parser.OBMySQLGetDBTableByParser;
 import com.oceanbase.odc.plugin.schema.obmysql.utils.DBAccessorUtil;
 import com.oceanbase.tools.dbbrowser.editor.DBObjectOperator;
 import com.oceanbase.tools.dbbrowser.editor.DBTableEditor;
-import com.oceanbase.tools.dbbrowser.editor.generator.DBTableEditorGenerator;
 import com.oceanbase.tools.dbbrowser.editor.mysql.MySQLObjectOperator;
 import com.oceanbase.tools.dbbrowser.model.DBObjectIdentity;
 import com.oceanbase.tools.dbbrowser.model.DBObjectType;
@@ -115,8 +114,7 @@ public class OBMySQLTableExtension implements TableExtensionPoint {
     }
 
     protected DBTableEditor getTableEditor(Connection connection) {
-        String dbVersion = DBAccessorUtil.getDbVersion(connection);
-        return DBTableEditorGenerator.createForOBMySQL(dbVersion);
+        return DBAccessorUtil.getTableEditor(connection);
     }
 
     protected DBSchemaAccessor getSchemaAccessor(Connection connection) {

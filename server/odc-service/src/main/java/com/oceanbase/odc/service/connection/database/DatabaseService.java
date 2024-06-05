@@ -743,7 +743,7 @@ public class DatabaseService {
             return Collections.emptyList();
         }
         ConnectionConfig dataSource = connectionService.getBasicWithoutPermissionCheck(dataSourceId);
-        List<Database> databases = listDatabasesByConnectionIds(Collections.singleton(dataSourceId));
+        List<Database> databases = listExistDatabasesByConnectionId(dataSourceId);
         databases.forEach(d -> d.getDataSource().setName(dataSource.getName()));
         Map<String, Database> name2Database = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
         databases.forEach(d -> name2Database.put(d.getName(), d));
@@ -832,6 +832,11 @@ public class DatabaseService {
                 throw new AccessDeniedException();
             }
         });
+        Set<Long> memberIds = resourceRoleService.listByResourceTypeAndId(ResourceType.ODC_PROJECT, projectId).stream()
+                .map(UserResourceRole::getUserId).collect(Collectors.toSet());
+        if (!memberIds.containsAll(req.getOwnerIds())) {
+            throw new AccessDeniedException();
+        }
         resourceRoleService.deleteByResourceTypeAndIdIn(ResourceType.ODC_DATABASE, req.getDatabaseIds());
         List<UserResourceRole> userResourceRoles = new ArrayList<>();
         req.getDatabaseIds().forEach(databaseId -> {

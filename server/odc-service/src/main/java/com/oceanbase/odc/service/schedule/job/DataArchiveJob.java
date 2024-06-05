@@ -46,7 +46,6 @@ public class DataArchiveJob extends AbstractDlmJob {
             executeInTaskFramework(context);
             return;
         }
-        jobThread = Thread.currentThread();
 
         ScheduleTaskEntity taskEntity = (ScheduleTaskEntity) context.getResult();
 
@@ -97,11 +96,10 @@ public class DataArchiveJob extends AbstractDlmJob {
         parameters
                 .setTargetDs(DataSourceInfoMapper.toDataSourceInfo(
                         databaseService.findDataSourceForConnectById(dataArchiveParameters.getTargetDataBaseId())));
+        parameters.getSourceDs().setQueryTimeout(dataArchiveParameters.getQueryTimeout());
+        parameters.getTargetDs().setQueryTimeout(dataArchiveParameters.getQueryTimeout());
         parameters.getSourceDs().setDatabaseName(dataArchiveParameters.getSourceDatabaseName());
         parameters.getTargetDs().setDatabaseName(dataArchiveParameters.getTargetDatabaseName());
-        parameters.getSourceDs().setConnectionCount(2 * (parameters.getReadThreadCount()
-                + parameters.getWriteThreadCount()));
-        parameters.getTargetDs().setConnectionCount(parameters.getSourceDs().getConnectionCount());
         parameters.setSyncTableStructure(dataArchiveParameters.getSyncTableStructure());
 
         Long jobId = publishJob(parameters);

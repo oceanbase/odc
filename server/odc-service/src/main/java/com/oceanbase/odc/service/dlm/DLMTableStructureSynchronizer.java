@@ -30,7 +30,7 @@ import com.oceanbase.odc.common.util.JdbcOperationsUtil;
 import com.oceanbase.odc.core.shared.constant.ConnectType;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.db.browser.DBSchemaAccessors;
-import com.oceanbase.odc.service.db.browser.DBTableEditorFactory;
+import com.oceanbase.odc.service.db.browser.DBTableEditors;
 import com.oceanbase.odc.service.plugin.ConnectionPluginUtil;
 import com.oceanbase.odc.service.session.factory.DruidDataSourceFactory;
 import com.oceanbase.odc.service.structurecompare.comparedbobject.DBTableStructureComparator;
@@ -115,7 +115,7 @@ public class DLMTableStructureSynchronizer {
     }
 
     private static DBTableEditor getDBTableEditor(ConnectType connectType, String dbVersion) {
-        return new DBTableEditorFactory(connectType, dbVersion).create();
+        return DBTableEditors.create(connectType, dbVersion);
     }
 
     private static DBSchemaAccessor getDBSchemaAccessor(ConnectType connectType, DataSource dataSource,

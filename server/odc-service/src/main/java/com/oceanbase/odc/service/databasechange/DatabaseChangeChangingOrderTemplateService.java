@@ -278,6 +278,9 @@ public class DatabaseChangeChangingOrderTemplateService {
         Page<DatabaseChangeChangingOrderTemplateEntity> pageResult =
                 templateRepository.findAll(specification, pageable);
         List<DatabaseChangeChangingOrderTemplateEntity> entityList = pageResult.getContent();
+        if (CollectionUtils.isEmpty(entityList)) {
+            return Page.empty();
+        }
         List<Long> databaseIds = entityList.stream()
                 .flatMap(entity -> entity.getDatabaseSequences().stream())
                 .flatMap(Collection::stream)
@@ -327,6 +330,7 @@ public class DatabaseChangeChangingOrderTemplateService {
     }
 
     public DatabaseChangingOrderTemplateExists exists(String name, Long projectId) {
+        projectPermissionValidator.checkProjectRole(projectId, ResourceRoleName.all());
         if (templateRepository.existsByNameAndProjectId(name, projectId)) {
             return DatabaseChangingOrderTemplateExists
                     .builder().exists(true).errorMessage(ErrorCodes.DuplicatedExists.getLocalizedMessage(

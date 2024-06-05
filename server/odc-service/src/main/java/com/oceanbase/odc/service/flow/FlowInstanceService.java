@@ -38,6 +38,7 @@ import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Size;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.flowable.engine.HistoryService;
@@ -382,7 +383,7 @@ public class FlowInstanceService {
         if (returnValue.isEmpty()) {
             return Page.empty();
         }
-        FlowInstanceMapper mapper = mapperFactory.generateMapperByEntities(returnValue.getContent());
+        FlowInstanceMapper mapper = mapperFactory.generateMapperByEntities(returnValue.getContent(), false);
         return returnValue.map(mapper::map);
     }
 
@@ -545,8 +546,8 @@ public class FlowInstanceService {
 
     public FlowInstanceDetailResp detail(@NotNull Long id) {
         return mapFlowInstance(id, flowInstance -> {
-            FlowInstanceMapper instanceMapper = mapperFactory.generateMapperByInstance(flowInstance);
-            FlowNodeInstanceMapper nodeInstanceMapper = mapperFactory.generateNodeMapperByInstance(flowInstance);
+            FlowInstanceMapper instanceMapper = mapperFactory.generateMapperByInstance(flowInstance, false);
+            FlowNodeInstanceMapper nodeInstanceMapper = mapperFactory.generateNodeMapperByInstance(flowInstance, false);
             return instanceMapper.map(flowInstance, nodeInstanceMapper);
         }, false);
     }
@@ -625,7 +626,9 @@ public class FlowInstanceService {
             }
             Long taskId = taskInstance.getTargetTaskId();
             if (taskId == null) {
-                throw new IllegalStateException("RollBack task can not be cancelled");
+                throw new UnsupportedException(ErrorCodes.FlowTaskNotSupportCancel,
+                        new Object[] {taskTypeHolder.getValue().getLocalizedMessage()},
+                        "The currently executing task does not support cancellation.");
             }
             TaskEntity taskEntity = taskService.detail(taskId);
             if (!dispatchChecker.isTaskEntityOnThisMachine(taskEntity)) {
@@ -661,7 +664,10 @@ public class FlowInstanceService {
         return FlowInstanceDetailResp.withIdAndType(id, taskTypeHolder.getValue());
     }
 
-    public FlowInstanceDetailResp approve(@NotNull Long id, String message, Boolean skipAuth) throws IOException {
+    @Transactional(rollbackFor = Exception.class)
+    public FlowInstanceDetailResp approve(@NotNull Long id,
+            @Size(max = 1024, message = "The approval comment is out of range [0,1024]") String message,
+            Boolean skipAuth) throws IOException {
         TaskEntity taskEntity = getTaskByFlowInstanceId(id);
         if (taskEntity.getTaskType() == TaskType.IMPORT && !dispatchChecker.isTaskEntityOnThisMachine(taskEntity)) {
             /**
@@ -686,7 +692,9 @@ public class FlowInstanceService {
     }
 
     @Transactional(rollbackFor = Exception.class)
-    public FlowInstanceDetailResp reject(@NotNull Long id, String message, Boolean skipAuth) {
+    public FlowInstanceDetailResp reject(@NotNull Long id,
+            @Size(max = 1024, message = "The approval comment is out of range [0,1024]") String message,
+            Boolean skipAuth) {
         if (notificationProperties.isEnabled()) {
             try {
                 Event event =
@@ -972,14 +980,20 @@ public class FlowInstanceService {
                     nodeConfig.getAutoApproval(), approvalFlowConfig.getApprovalExpirationIntervalSeconds(),
                     nodeConfig.getExternalApprovalId());
             if (Objects.nonNull(resourceRoleId)) {
-                Long candidateResourceId;
+                Set<Long> candidateResourceIds = new HashSet<>();
                 Optional<ResourceRoleEntity> resourceRole = resourceRoleService.findResourceRoleById(resourceRoleId);
                 if (resourceRole.isPresent() && resourceRole.get().getResourceType() == ResourceType.ODC_DATABASE) {
-                    candidateResourceId = flowInstanceReq.getDatabaseId();
+                    candidateResourceIds.add(flowInstanceReq.getDatabaseId());
+                    if (taskType == TaskType.MULTIPLE_ASYNC) {
+                        candidateResourceIds
+                                .addAll(((MultipleDatabaseChangeParameters) parameters).getOrderedDatabaseIds().stream()
+                                        .flatMap(Collection::stream).collect(Collectors.toSet()));
+                    }
                 } else {
-                    candidateResourceId = flowInstanceReq.getProjectId();
+                    candidateResourceIds.add(flowInstanceReq.getProjectId());
                 }
-                approvalInstance.setCandidate(StringUtils.join(candidateResourceId, ":", resourceRoleId));
+                approvalInstance.setCandidates(candidateResourceIds.stream().filter(Objects::nonNull)
+                        .map(e -> StringUtils.join(e, ":", resourceRoleId)).collect(Collectors.toList()));
             }
             FlowGatewayInstance approvalGatewayInstance =
                     flowFactory.generateFlowGatewayInstance(flowInstance.getId(), false, true);

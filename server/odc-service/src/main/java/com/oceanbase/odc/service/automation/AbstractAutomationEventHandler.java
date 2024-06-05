@@ -104,7 +104,7 @@ public abstract class AbstractAutomationEventHandler implements TriggerEventHand
 
     protected void bindRole(Long userId, AutomationAction action) {
         long roleId = ((Integer) action.getArguments().get("roleId")).longValue();
-        roleService.bindUserRole(userId, roleId, action.getCreatorId());
+        roleService.bindUserRole(userId, roleId, action.getCreatorId(), null);
         log.info("Successfully bind roleId {} to userId {}", roleId, userId);
     }
 

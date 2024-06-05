@@ -15,15 +15,18 @@
  */
 package com.oceanbase.odc.service.db.browser;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionConstants;
 import com.oceanbase.odc.core.session.ConnectionSessionUtil;
 import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.core.shared.constant.ConnectType;
-import com.oceanbase.odc.core.shared.exception.UnsupportedException;
 import com.oceanbase.odc.core.sql.execute.SyncJdbcExecutor;
+import com.oceanbase.tools.dbbrowser.DBBrowser;
 import com.oceanbase.tools.dbbrowser.stats.DBStatsAccessor;
-import com.oceanbase.tools.dbbrowser.stats.DBStatsAccessorGenerator;
+import com.oceanbase.tools.dbbrowser.stats.DBStatsAccessorFactory;
 
 /**
  * {@link DBStatsAccessors}
@@ -47,21 +50,14 @@ public class DBStatsAccessors {
         PreConditions.notNull(dbVersion, "obVersion");
         PreConditions.notNull(consoleConnectionId, "consoleConnectionId");
 
-        if (connectType == ConnectType.OB_MYSQL || connectType == ConnectType.CLOUD_OB_MYSQL) {
-            return DBStatsAccessorGenerator.createForOBMySQL(syncJdbcExecutor, dbVersion);
-        } else if (connectType == ConnectType.OB_ORACLE || connectType == ConnectType.CLOUD_OB_ORACLE) {
-            return DBStatsAccessorGenerator.createForOBOracle(syncJdbcExecutor, dbVersion);
-        } else if (connectType == ConnectType.MYSQL) {
-            return DBStatsAccessorGenerator.createForMySQL(syncJdbcExecutor, dbVersion);
-        } else if (connectType == ConnectType.DORIS) {
-            return DBStatsAccessorGenerator.createForDoris(syncJdbcExecutor, dbVersion);
-        } else if (connectType == ConnectType.ODP_SHARDING_OB_MYSQL) {
-            return DBStatsAccessorGenerator.createForODPOBMySQL(consoleConnectionId);
-        } else if (connectType == ConnectType.ORACLE) {
-            return DBStatsAccessorGenerator.createForOracle(syncJdbcExecutor, dbVersion);
-        } else {
-            throw new UnsupportedException(String.format("ConnectType '%s' not supported", connectType));
-        }
+        Map<String, Object> properties = new HashMap<>();
+        properties.put(DBStatsAccessorFactory.CONNECTION_ID_KEY, consoleConnectionId);
+        return DBBrowser.statsAccessor()
+                .setProperties(properties)
+                .setJdbcOperations(syncJdbcExecutor)
+                .setDbVersion(dbVersion)
+                .setType(connectType.getDialectType().getDBBrowserDialectTypeName())
+                .create();
     }
 
 }

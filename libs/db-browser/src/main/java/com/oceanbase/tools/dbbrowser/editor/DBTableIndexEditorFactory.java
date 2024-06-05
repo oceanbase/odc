@@ -13,41 +13,49 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.tools.dbbrowser.editor.generator;
+package com.oceanbase.tools.dbbrowser.editor;
 
-import com.oceanbase.tools.dbbrowser.editor.DBTableIndexEditor;
+import com.oceanbase.tools.dbbrowser.AbstractDBBrowserFactory;
 import com.oceanbase.tools.dbbrowser.editor.mysql.MySQLNoLessThan5700IndexEditor;
 import com.oceanbase.tools.dbbrowser.editor.mysql.OBMySQLIndexEditor;
 import com.oceanbase.tools.dbbrowser.editor.oracle.OBOracleIndexEditor;
 import com.oceanbase.tools.dbbrowser.editor.oracle.OracleIndexEditor;
 
-/**
- * @author jingtian
- * @date 2024/5/22
- * @since
- */
-public class DBTableIndexEditorGenerator {
-    public static DBTableIndexEditor createForOBMySQL(String dbVersion) {
-        return new OBMySQLIndexEditor();
+import lombok.Setter;
+import lombok.experimental.Accessors;
+
+@Setter
+@Accessors(chain = true)
+public class DBTableIndexEditorFactory extends AbstractDBBrowserFactory<DBTableIndexEditor> {
+
+    @Override
+    public DBTableIndexEditor buildForDoris() {
+        return buildForMySQL();
     }
 
-    public static DBTableIndexEditor createForOBOracle(String dbVersion) {
-        return new OBOracleIndexEditor();
-    }
-
-    public static DBTableIndexEditor createForODPOBMySQL(String dbVersion) {
-        return createForOBMySQL(dbVersion);
-    }
-
-    public static DBTableIndexEditor createForMySQL(String dbVersion) {
+    @Override
+    public DBTableIndexEditor buildForMySQL() {
         return new MySQLNoLessThan5700IndexEditor();
     }
 
-    public static DBTableIndexEditor createForOracle(String dbVersion) {
+    @Override
+    public DBTableIndexEditor buildForOBMySQL() {
+        return new OBMySQLIndexEditor();
+    }
+
+    @Override
+    public DBTableIndexEditor buildForOBOracle() {
+        return new OBOracleIndexEditor();
+    }
+
+    @Override
+    public DBTableIndexEditor buildForOracle() {
         return new OracleIndexEditor();
     }
 
-    public static DBTableIndexEditor createForDoris(String dbVersion) {
-        return createForMySQL(dbVersion);
+    @Override
+    public DBTableIndexEditor buildForOdpSharding() {
+        return buildForOBMySQL();
     }
+
 }
