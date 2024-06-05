@@ -108,7 +108,7 @@
 # SQL 窗口执行
 - type: "DATABASE_OPERATION"
   action: "OTHERS"
-  method_signature: "com.oceanbase.odc.server.web.controller.v2.ConnectSessionController.asyncSqlExecute"
+  method_signature: "com.oceanbase.odc.server.web.controller.v2.ConnectSessionController.streamExecute"
   sid_extract_expression: "{#sessionId}"
   in_connection: 1
   enabled: 1

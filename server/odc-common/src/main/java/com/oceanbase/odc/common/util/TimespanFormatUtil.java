@@ -21,7 +21,7 @@ import java.util.concurrent.TimeUnit;
 public class TimespanFormatUtil {
 
     public static String formatTimespan(Duration dValue) {
-        return formatTimespan(dValue, "");
+        return formatTimespan(dValue, " ");
     }
 
     public static String formatTimespan(Duration dValue, String delimiter) {
@@ -32,7 +32,7 @@ public class TimespanFormatUtil {
     }
 
     public static String formatTimespan(long time, TimeUnit timeUnit) {
-        return formatTimespan(time, timeUnit, "");
+        return formatTimespan(time, timeUnit, " ");
     }
 
     /**
@@ -62,7 +62,7 @@ public class TimespanFormatUtil {
             }
             converted /= amount;
         }
-        return String.format("%.3f%s%s", converted, delimiter, result.text);
+        return String.format("%.2f%s%s", converted, delimiter, result.text);
     }
 
     private enum TimespanUnit {
