@@ -285,6 +285,10 @@ public class ScheduleService {
 
     public ScheduleDetailResp interruptJob(Long scheduleId, Long taskId) {
         ScheduleEntity entity = nullSafeGetByIdWithCheckPermission(scheduleId, true);
+        return interruptJobWithoutPermission(scheduleId, taskId);
+    }
+
+    public ScheduleDetailResp interruptJobWithoutPermission(Long scheduleId, Long taskId) {
         ScheduleTaskEntity taskEntity = scheduleTaskService.nullSafeGetById(taskId);
         ExecutorInfo executorInfo = JsonUtils.fromJson(taskEntity.getExecutor(), ExecutorInfo.class);
         if (taskFrameworkEnabledProperties.isEnabled() && taskEntity.getJobId() != null) {
@@ -327,6 +331,10 @@ public class ScheduleService {
      */
     public ScheduleTaskResp startTask(Long scheduleId, Long taskId) {
         ScheduleEntity scheduleEntity = nullSafeGetByIdWithCheckPermission(scheduleId, true);
+        return startTaskWithoutPermission(scheduleId, taskId);
+    }
+
+    public ScheduleTaskResp startTaskWithoutPermission(Long scheduleId, Long taskId) {
         ScheduleTaskEntity taskEntity = scheduleTaskService.nullSafeGetById(taskId);
         JobKey jobKey = QuartzKeyGenerator.generateJobKey(scheduleId, JobType.valueOf(taskEntity.getJobGroup()));
         if (!taskEntity.getStatus().isRetryAllowed()) {
@@ -538,6 +546,10 @@ public class ScheduleService {
 
     public String getLog(Long scheduleId, Long taskId, OdcTaskLogLevel logLevel) {
         nullSafeGetByIdWithCheckPermission(scheduleId);
+        return getLogWithoutPermission(scheduleId, taskId, logLevel);
+    }
+
+    public String getLogWithoutPermission(Long scheduleId, Long taskId, OdcTaskLogLevel logLevel) {
         ScheduleTaskEntity taskEntity = scheduleTaskService.nullSafeGetById(taskId);
         if (taskFrameworkEnabledProperties.isEnabled() && taskEntity.getJobId() != null) {
             try {
