@@ -33,6 +33,7 @@ import com.oceanbase.odc.service.dlm.model.DlmTableUnitParameters;
 import com.oceanbase.odc.service.dlm.model.RateLimitConfiguration;
 import com.oceanbase.odc.service.dlm.utils.DataArchiveConditionUtil;
 import com.oceanbase.odc.service.dlm.utils.DlmJobIdUtil;
+import com.oceanbase.odc.service.schedule.model.DlmTableUnitStatistic;
 import com.oceanbase.tools.migrator.common.enums.JobType;
 import com.oceanbase.tools.migrator.task.CheckMode;
 
@@ -105,6 +106,7 @@ public class DataDeleteJob extends AbstractDlmJob {
             parameter.setMigratePartitions(table.getPartitions());
             dlmTableUnit.setParameters(parameter);
             dlmTableUnit.setStatus(TaskStatus.PREPARING);
+            dlmTableUnit.setStatistic(new DlmTableUnitStatistic());
             JobType jobType = parameters.getNeedCheckBeforeDelete() ? JobType.DELETE : JobType.QUICK_DELETE;
             dlmTableUnit.setType(parameters.getDeleteByUniqueKey() ? jobType : JobType.DEIRECT_DELETE);
             dlmTasks.add(dlmTableUnit);
