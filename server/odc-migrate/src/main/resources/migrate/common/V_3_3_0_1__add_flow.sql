@@ -79,7 +79,7 @@ create table if not exists `flow_instance_node_gateway` (
     `is_start_endpoint` tinyint NOT NULL COMMENT 'Describes whether this endpoint is the starting endpoint of the process',
     `is_end_endpoint` tinyint NOT NULL COMMENT 'Describes whether this endpoint is the end endpoint of the process',
     `flow_instance_id` bigint(20) NOT NULL COMMENT 'Process instance id, references flow_instance(id)',
-    constraint pk_flow_instance_node_gateway primary key (`id`)
+    constraint pk_flow_instance_node_gateway primary key (`id`),
     key `idx_flow_instance_node_gateway_instance_id` (`flow_instance_id`)
 );
 
@@ -168,7 +168,7 @@ CREATE TABLE IF NOT EXISTS `flow_instance_node_task` (
   `task_execution_strategy` varchar(16) NOT NULL COMMENT 'Task execution execution mode, optional values: AUTO, MANUAL, TIMER',
   `is_start_endpoint` tinyint NOT NULL COMMENT 'Describes whether this endpoint is the starting endpoint of the process',
   `is_end_endpoint` tinyint NOT NULL COMMENT 'Describes whether this endpoint is the end endpoint of the process',
-  CONSTRAINT pk_flow_instance_node_task_id PRIMARY KEY (`id`)
+  CONSTRAINT pk_flow_instance_node_task_id PRIMARY KEY (`id`),
   key `idx_flow_instance_node_task_instance_id` (`flow_instance_id`)
 ) COMMENT = '任务实例表';
 
