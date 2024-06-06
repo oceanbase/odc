@@ -84,7 +84,7 @@ public class DataArchiveTask extends BaseTask<Boolean> {
                 log.info("Job is terminated,jobIdentity={}", context.getJobIdentity());
                 break;
             }
-            if (parameters.getJobType() == JobType.MIGRATE && !parameters.getSyncTableStructure().isEmpty()) {
+            if (parameters.getJobType() == JobType.MIGRATE) {
                 try {
                     DLMTableStructureSynchronizer.sync(
                             DataSourceInfoMapper.toConnectionConfig(parameters.getSourceDs()),
@@ -94,6 +94,7 @@ public class DataArchiveTask extends BaseTask<Boolean> {
                 } catch (Exception e) {
                     log.warn("Failed to sync target table structure,table will be ignored,tableName={}",
                             dlmTableUnit.getTableName(), e);
+                    jobStore.updateDlmTableUnitStatus(dlmTableUnit.getDlmTableUnitId(), TaskStatus.FAILED);
                     continue;
                 }
             }
@@ -148,7 +149,7 @@ public class DataArchiveTask extends BaseTask<Boolean> {
             dlmTableUnit.setTargetDatasourceInfo(req.getTargetDs());
             dlmTableUnit.setFireTime(req.getFireTime());
             dlmTableUnit.setStatus(TaskStatus.PREPARING);
-            dlmTableUnit.setType(JobType.MIGRATE);
+            dlmTableUnit.setType(req.getJobType());
             dlmTableUnit.setStatistic(new DlmTableUnitStatistic());
             dlmTableUnits.add(dlmTableUnit);
         });

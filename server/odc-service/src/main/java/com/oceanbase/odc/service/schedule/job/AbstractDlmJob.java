@@ -109,7 +109,6 @@ public abstract class AbstractDlmJob implements OdcJob {
         log.info("Task is ready,taskId={}", taskId);
         for (DlmTableUnit dlmTableUnit : dlmTableUnits) {
             if (isInterrupted) {
-                dlmService.updateStatusByDlmTableUnitId(dlmTableUnit.getDlmTableUnitId(), TaskStatus.CANCELED);
                 log.info("Task interrupted and will exit.TaskId={}", taskId);
                 continue;
             }
@@ -118,17 +117,19 @@ public abstract class AbstractDlmJob implements OdcJob {
                         dlmTableUnit.getTableName());
                 continue;
             }
-            try {
-                if (dlmTableUnit.getType() == JobType.MIGRATE) {
-                    try {
-                        DLMTableStructureSynchronizer.sync(dlmTableUnit.getSourceDatasourceInfo(),
-                                dlmTableUnit.getTargetDatasourceInfo(), dlmTableUnit.getTableName(),
-                                dlmTableUnit.getTargetTableName(),
-                                dlmTableUnit.getParameters().getSyncDBObjectType());
-                    } catch (SQLException e) {
-                        log.warn("Sync table structure failed,tableName={}", dlmTableUnit.getTableName(), e);
-                    }
+            if (dlmTableUnit.getType() == JobType.MIGRATE) {
+                try {
+                    DLMTableStructureSynchronizer.sync(dlmTableUnit.getSourceDatasourceInfo(),
+                            dlmTableUnit.getTargetDatasourceInfo(), dlmTableUnit.getTableName(),
+                            dlmTableUnit.getTargetTableName(),
+                            dlmTableUnit.getParameters().getSyncDBObjectType());
+                } catch (SQLException e) {
+                    log.warn("Sync table structure failed,tableName={}", dlmTableUnit.getTableName(), e);
+                    dlmService.updateStatusByDlmTableUnitId(dlmTableUnit.getDlmTableUnitId(), TaskStatus.FAILED);
+                    continue;
                 }
+            }
+            try {
                 job = jobFactory.createJob(dlmTableUnit);
                 log.info("Create dlm job succeed,taskId={},task parameters={}", taskId, dlmTableUnit);
             } catch (Exception e) {
@@ -144,7 +145,7 @@ public abstract class AbstractDlmJob implements OdcJob {
                 log.info("DLM job succeed,taskId={},unitId={}", taskId, dlmTableUnit.getDlmTableUnitId());
             } catch (JobException e) {
                 // used to stop several sub-threads.
-                if (job.getJobMeta().isToStop()) {
+                if (isInterrupted) {
                     log.info("Data archive task is Interrupted,taskId={}", taskId);
                     dlmService.updateStatusByDlmTableUnitId(dlmTableUnit.getDlmTableUnitId(), TaskStatus.CANCELED);
                 } else {
