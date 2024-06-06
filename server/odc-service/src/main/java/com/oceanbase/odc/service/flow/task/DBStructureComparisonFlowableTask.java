@@ -34,8 +34,11 @@ import org.flowable.engine.delegate.DelegateExecution;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import com.oceanbase.odc.core.shared.constant.DialectType;
+import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.constant.FlowStatus;
 import com.oceanbase.odc.core.shared.constant.TaskStatus;
+import com.oceanbase.odc.core.shared.constant.TaskType;
+import com.oceanbase.odc.core.shared.exception.UnsupportedException;
 import com.oceanbase.odc.metadb.structurecompare.StructureComparisonTaskEntity;
 import com.oceanbase.odc.metadb.structurecompare.StructureComparisonTaskRepository;
 import com.oceanbase.odc.metadb.structurecompare.StructureComparisonTaskResultEntity;
@@ -234,7 +237,9 @@ public class DBStructureComparisonFlowableTask extends BaseODCFlowTaskDelegate<V
 
     @Override
     protected boolean cancel(boolean mayInterruptIfRunning, Long taskId, TaskService taskService) {
-        throw new UnsupportedOperationException("Structure comparison task can not be canceled");
+        throw new UnsupportedException(ErrorCodes.FlowTaskNotSupportCancel,
+                new Object[] {TaskType.STRUCTURE_COMPARISON.getLocalizedMessage()},
+                "The currently executing task does not support cancellation.");
     }
 
     @Override

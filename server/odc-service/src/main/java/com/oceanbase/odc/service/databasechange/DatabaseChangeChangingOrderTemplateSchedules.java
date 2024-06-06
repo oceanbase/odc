@@ -20,6 +20,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.stream.Collectors;
 
+import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -64,7 +65,9 @@ public class DatabaseChangeChangingOrderTemplateSchedules {
             List<Long> disabledTemplateIds = templateId2Status.entrySet().stream()
                     .filter(e -> Boolean.FALSE.equals(e.getValue()))
                     .map(Entry::getKey).collect(Collectors.toList());
-            templateRepository.updateEnabledByIds(disabledTemplateIds);
+            if (CollectionUtils.isNotEmpty(disabledTemplateIds)) {
+                templateRepository.updateEnabledByIds(disabledTemplateIds);
+            }
             page++;
         } while (pageResult.hasNext());
     }
