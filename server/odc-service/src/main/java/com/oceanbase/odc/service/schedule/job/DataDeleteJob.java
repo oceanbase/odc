@@ -25,7 +25,6 @@ import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.shared.constant.TaskStatus;
 import com.oceanbase.odc.metadb.schedule.ScheduleTaskEntity;
-import com.oceanbase.odc.service.dlm.DataSourceInfoMapper;
 import com.oceanbase.odc.service.dlm.model.DataArchiveTableConfig;
 import com.oceanbase.odc.service.dlm.model.DataDeleteParameters;
 import com.oceanbase.odc.service.dlm.model.DlmTableUnit;
@@ -138,18 +137,12 @@ public class DataDeleteJob extends AbstractDlmJob {
         parameters.setWriteThreadCount(dataDeleteParameters.getWriteThreadCount());
         parameters.setReadThreadCount(dataDeleteParameters.getReadThreadCount());
         parameters.setScanBatchSize(dataDeleteParameters.getScanBatchSize());
-        parameters
-                .setSourceDs(DataSourceInfoMapper.toDataSourceInfo(
-                        databaseService.findDataSourceForConnectById(dataDeleteParameters.getDatabaseId())));
-        parameters
-                .setTargetDs(DataSourceInfoMapper.toDataSourceInfo(
-                        databaseService.findDataSourceForConnectById(dataDeleteParameters.getTargetDatabaseId() == null
-                                ? dataDeleteParameters.getDatabaseId()
-                                : dataDeleteParameters.getTargetDatabaseId())));
+        parameters.setSourceDs(getDataSourceInfo(dataDeleteParameters.getDatabaseId()));
+        parameters.setTargetDs(getDataSourceInfo(dataDeleteParameters.getTargetDatabaseId() == null
+                ? dataDeleteParameters.getDatabaseId()
+                : dataDeleteParameters.getTargetDatabaseId()));
         parameters.getSourceDs().setQueryTimeout(dataDeleteParameters.getQueryTimeout());
         parameters.getTargetDs().setQueryTimeout(dataDeleteParameters.getQueryTimeout());
-        parameters.getSourceDs().setDatabaseName(dataDeleteParameters.getDatabaseName());
-        parameters.getTargetDs().setDatabaseName(dataDeleteParameters.getTargetDatabaseName());
 
         Long jobId = publishJob(parameters, dataDeleteParameters.getTimeoutMillis());
         scheduleTaskRepository.updateJobIdById(taskEntity.getId(), jobId);
