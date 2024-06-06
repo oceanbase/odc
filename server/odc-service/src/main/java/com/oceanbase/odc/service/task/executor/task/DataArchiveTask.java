@@ -160,6 +160,11 @@ public class DataArchiveTask extends BaseTask<Boolean> {
     @Override
     protected void doStop() throws Exception {
         job.stop();
+        try {
+            jobStore.updateDlmTableUnitStatus(job.getJobMeta().getJobId(), TaskStatus.CANCELED);
+        } catch (Exception e) {
+            log.warn("Update dlm table unit status failed,DlmTableUnitId={}", job.getJobMeta().getJobId());
+        }
     }
 
     @Override
