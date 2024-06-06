@@ -73,8 +73,9 @@ public class DLMJobStore implements IJobStore {
     }
 
     public List<DlmTableUnit> getDlmTableUnits(Long scheduleTaskId) throws SQLException {
-        try (Connection conn = dataSource.getConnection()) {
-            PreparedStatement ps = conn.prepareStatement("select * from dlm_table_unit where schedule_task_id = ?");
+        try (Connection conn = dataSource.getConnection();
+                PreparedStatement ps =
+                        conn.prepareStatement("select * from dlm_table_unit where schedule_task_id = ?")) {
             ps.setLong(1, scheduleTaskId);
             ResultSet resultSet = ps.executeQuery();
             List<DlmTableUnit> dlmTableUnits = new LinkedList<>();
@@ -152,9 +153,9 @@ public class DLMJobStore implements IJobStore {
     @Override
     public TaskGenerator getTaskGenerator(String generatorId, String jobId) throws SQLException {
         if (enableBreakpointRecovery) {
-            try (Connection conn = dataSource.getConnection()) {
-                PreparedStatement ps = conn.prepareStatement(
-                        "select * from dlm_task_generator where job_id = ?");
+            try (Connection conn = dataSource.getConnection();
+                    PreparedStatement ps = conn.prepareStatement(
+                            "select * from dlm_task_generator where job_id = ?")) {
                 ps.setString(1, jobId);
                 ResultSet resultSet = ps.executeQuery();
                 if (resultSet.next()) {
@@ -191,8 +192,8 @@ public class DLMJobStore implements IJobStore {
             sb.append(
                     "processed_row_count=values(processed_row_count),processed_data_size=values(processed_data_size),primary_key_save_point=values(primary_key_save_point)");
             log.info("start to store task generator:{}", taskGenerator);
-            try (Connection conn = dataSource.getConnection()) {
-                PreparedStatement ps = conn.prepareStatement(sb.toString());
+            try (Connection conn = dataSource.getConnection();
+                    PreparedStatement ps = conn.prepareStatement(sb.toString())) {
                 ps.setString(1, taskGenerator.getId());
                 ps.setString(2, taskGenerator.getJobId());
                 ps.setLong(3, taskGenerator.getProcessedDataSize());
@@ -247,9 +248,9 @@ public class DLMJobStore implements IJobStore {
     @Override
     public List<TaskMeta> getTaskMeta(JobMeta jobMeta) throws SQLException {
         if (enableBreakpointRecovery) {
-            try (Connection conn = dataSource.getConnection()) {
-                PreparedStatement ps = conn.prepareStatement(
-                        "select * from dlm_task_unit where generator_id = ? AND status !='SUCCESS'");
+            try (Connection conn = dataSource.getConnection();
+                    PreparedStatement ps = conn.prepareStatement(
+                            "select * from dlm_task_unit where generator_id = ? AND status !='SUCCESS'")) {
                 ps.setString(1, jobMeta.getGenerator().getId());
                 ResultSet resultSet = ps.executeQuery();
                 List<TaskMeta> taskMetas = new LinkedList<>();
@@ -286,8 +287,8 @@ public class DLMJobStore implements IJobStore {
                     "status=values(status),partition_name=values(partition_name),lower_bound_primary_key=values(lower_bound_primary_key),");
             sb.append(
                     "upper_bound_primary_key=values(upper_bound_primary_key),primary_key_cursor=values(primary_key_cursor)");
-            try (Connection conn = dataSource.getConnection()) {
-                PreparedStatement ps = conn.prepareStatement(sb.toString());
+            try (Connection conn = dataSource.getConnection();
+                    PreparedStatement ps = conn.prepareStatement(sb.toString())) {
                 ps.setLong(1, taskMeta.getTaskIndex());
                 ps.setString(2, taskMeta.getJobMeta().getJobId());
                 ps.setString(3, taskMeta.getGeneratorId());
@@ -308,13 +309,13 @@ public class DLMJobStore implements IJobStore {
 
     @Override
     public Long getAbnormalTaskIndex(String jobId) {
-        try (Connection conn = dataSource.getConnection()) {
-            PreparedStatement ps = conn.prepareStatement(
-                    "select count(1) from dlm_task_unit where job_id=? and (status != 'SUCCESS' or primary_key_cursor is null)");
+        try (Connection conn = dataSource.getConnection();
+                PreparedStatement ps = conn.prepareStatement(
+                        "select count(1) from dlm_task_unit where job_id=? and (status != 'SUCCESS' or primary_key_cursor is null)")) {
             ps.setString(1, jobId);
             ResultSet resultSet = ps.executeQuery();
-            while (resultSet.next()) {
-                Long count = resultSet.getLong(1);
+            if (resultSet.next()) {
+                long count = resultSet.getLong(1);
                 return count > 0 ? count : null;
             }
         } catch (Exception ignored) {
@@ -330,9 +331,9 @@ public class DLMJobStore implements IJobStore {
 
     @Override
     public void updateLimiter(JobMeta jobMeta) {
-        try (Connection conn = dataSource.getConnection()) {
-            PreparedStatement ps = conn.prepareStatement(
-                    "select * from dlm_config_limiter_configuration where order_id = ?");
+        try (Connection conn = dataSource.getConnection();
+                PreparedStatement ps = conn.prepareStatement(
+                        "select * from dlm_config_limiter_configuration where order_id = ?")) {
             ps.setString(1, DlmJobIdUtil.getJobName(jobMeta.getJobId()));
             ResultSet resultSet = ps.executeQuery();
             RateLimitConfiguration rateLimit;
@@ -381,10 +382,10 @@ public class DLMJobStore implements IJobStore {
     }
 
     private void initEnableBreakpointRecovery() {
-        try (Connection conn = dataSource.getConnection()) {
-            PreparedStatement preparedStatement = conn.prepareStatement(
-                    "select value from config_system_configuration where `key` = 'odc.task.dlm"
-                            + ".support-breakpoint-recovery'");
+        try (Connection conn = dataSource.getConnection();
+                PreparedStatement preparedStatement = conn.prepareStatement(
+                        "select value from config_system_configuration where `key` = 'odc.task.dlm"
+                                + ".support-breakpoint-recovery'")) {
             ResultSet resultSet = preparedStatement.executeQuery();
             if (resultSet.next()) {
                 this.enableBreakpointRecovery = resultSet.getBoolean(1);
