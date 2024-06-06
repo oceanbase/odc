@@ -23,7 +23,6 @@ import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.shared.constant.TaskStatus;
 import com.oceanbase.odc.metadb.schedule.ScheduleTaskEntity;
-import com.oceanbase.odc.service.dlm.DataSourceInfoMapper;
 import com.oceanbase.odc.service.dlm.model.DataArchiveParameters;
 import com.oceanbase.odc.service.dlm.model.DataArchiveTableConfig;
 import com.oceanbase.odc.service.dlm.model.DlmTableUnit;
@@ -91,12 +90,8 @@ public class DataArchiveJob extends AbstractDlmJob {
         parameters.setReadThreadCount(dataArchiveParameters.getReadThreadCount());
         parameters.setShardingStrategy(dataArchiveParameters.getShardingStrategy());
         parameters.setScanBatchSize(dataArchiveParameters.getScanBatchSize());
-        parameters
-                .setSourceDs(DataSourceInfoMapper.toDataSourceInfo(
-                        databaseService.findDataSourceForConnectById(dataArchiveParameters.getSourceDatabaseId())));
-        parameters
-                .setTargetDs(DataSourceInfoMapper.toDataSourceInfo(
-                        databaseService.findDataSourceForConnectById(dataArchiveParameters.getTargetDataBaseId())));
+        parameters.setSourceDs(getDataSourceInfo(dataArchiveParameters.getSourceDatabaseId()));
+        parameters.setTargetDs(getDataSourceInfo(dataArchiveParameters.getTargetDataBaseId()));
         parameters.getSourceDs().setQueryTimeout(dataArchiveParameters.getQueryTimeout());
         parameters.getTargetDs().setQueryTimeout(dataArchiveParameters.getQueryTimeout());
         parameters.getSourceDs().setDatabaseName(dataArchiveParameters.getSourceDatabaseName());
