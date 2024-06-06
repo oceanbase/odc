@@ -108,7 +108,7 @@ public class DLMJobStore implements IJobStore {
                 "end_time = CASE WHEN ? IN ('CANCELED', 'DONE', 'FAILED') THEN CURRENT_TIMESTAMP ELSE end_time END " +
                 "WHERE dlm_table_unit_id = ?";
 
-        try (PreparedStatement pstmt = dataSource.getConnection().prepareStatement(sql)) {
+        try (Connection conn = dataSource.getConnection(); PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setString(1, status.name());
             pstmt.setString(2, status.name());
             pstmt.setString(3, status.name());
