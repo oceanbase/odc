@@ -26,6 +26,7 @@ import org.apache.commons.collections4.CollectionUtils;
 import com.oceanbase.odc.core.migrate.resource.model.ResourceSpec;
 import com.oceanbase.odc.core.migrate.resource.model.TableSpec;
 import com.oceanbase.odc.core.migrate.resource.model.TableTemplate;
+import com.oceanbase.odc.service.common.migrate.IgnoreResourceIdHandle;
 import com.oceanbase.odc.service.common.util.SpringContextUtil;
 
 public class DesktopResourceHandle implements Function<ResourceSpec, ResourceSpec> {
@@ -34,10 +35,10 @@ public class DesktopResourceHandle implements Function<ResourceSpec, ResourceSpe
     public ResourceSpec apply(ResourceSpec entity) {
         Set<String> profiles = new HashSet<>(Arrays.asList(SpringContextUtil.getProfiles()));
         if (!profiles.contains("test")) {
-            return entity;
+            return new IgnoreResourceIdHandle().apply(entity);
         }
         /**
-         * test 模式下，所有列都允许为空，避免d单元测试中删除内置资源引发的引用错误
+         * test 模式下，所有列都允许为空，避免单元测试中删除内置资源而引发的引用错误
          */
         List<TableTemplate> templateEntities = entity.getTemplates();
         if (CollectionUtils.isEmpty(templateEntities)) {
