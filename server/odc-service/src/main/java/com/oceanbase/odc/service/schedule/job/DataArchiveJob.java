@@ -94,8 +94,6 @@ public class DataArchiveJob extends AbstractDlmJob {
         parameters.setTargetDs(getDataSourceInfo(dataArchiveParameters.getTargetDataBaseId()));
         parameters.getSourceDs().setQueryTimeout(dataArchiveParameters.getQueryTimeout());
         parameters.getTargetDs().setQueryTimeout(dataArchiveParameters.getQueryTimeout());
-        parameters.getSourceDs().setDatabaseName(dataArchiveParameters.getSourceDatabaseName());
-        parameters.getTargetDs().setDatabaseName(dataArchiveParameters.getTargetDatabaseName());
         parameters.setSyncTableStructure(dataArchiveParameters.getSyncTableStructure());
 
         Long jobId = publishJob(parameters, dataArchiveParameters.getTimeoutMillis());
