@@ -18,6 +18,7 @@ package com.oceanbase.odc.service.dlm;
 import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -104,6 +105,18 @@ public class DLMService {
                 .map(DlmTableUnitMapper::entityToModel)
                 .collect(
                         Collectors.toList());
+    }
+
+    public TaskStatus getTaskStatus(Long scheduleTaskId) {
+        Set<TaskStatus> collect = findByScheduleTaskId(scheduleTaskId).stream().map(DlmTableUnit::getStatus).collect(
+                Collectors.toSet());
+        if (collect.contains(TaskStatus.FAILED)) {
+            return TaskStatus.FAILED;
+        }
+        if (collect.contains(TaskStatus.DONE) && collect.size() == 1) {
+            return TaskStatus.DONE;
+        }
+        return TaskStatus.CANCELED;
     }
 
 }

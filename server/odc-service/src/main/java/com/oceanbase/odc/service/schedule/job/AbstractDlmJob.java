@@ -20,8 +20,6 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 import org.quartz.JobExecutionContext;
 
@@ -157,19 +155,7 @@ public abstract class AbstractDlmJob implements OdcJob {
     }
 
     public TaskStatus getTaskStatus(Long scheduleTaskId) {
-        Set<TaskStatus> collect =
-                dlmService.findByScheduleTaskId(scheduleTaskId).stream().map(DlmTableUnit::getStatus).collect(
-                        Collectors.toSet());
-        if (collect.contains(TaskStatus.DONE) && collect.size() == 1) {
-            return TaskStatus.DONE;
-        }
-        if (isInterrupted) {
-            return TaskStatus.CANCELED;
-        }
-        if (collect.contains(TaskStatus.FAILED)) {
-            return TaskStatus.FAILED;
-        }
-        return TaskStatus.CANCELED;
+        return dlmService.getTaskStatus(scheduleTaskId);
     }
 
     public List<DlmTableUnit> getTaskUnits(ScheduleTaskEntity taskEntity) {

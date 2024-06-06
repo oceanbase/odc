@@ -25,11 +25,12 @@ import org.springframework.stereotype.Component;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.oceanbase.odc.common.event.AbstractEventListener;
 import com.oceanbase.odc.common.json.JsonUtils;
+import com.oceanbase.odc.core.shared.constant.TaskStatus;
 import com.oceanbase.odc.metadb.schedule.ScheduleTaskRepository;
 import com.oceanbase.odc.metadb.task.JobEntity;
 import com.oceanbase.odc.metadb.task.TaskEntity;
 import com.oceanbase.odc.metadb.task.TaskRepository;
-import com.oceanbase.odc.service.common.util.SpringContextUtil;
+import com.oceanbase.odc.service.dlm.DLMService;
 import com.oceanbase.odc.service.schedule.ScheduleService;
 import com.oceanbase.odc.service.schedule.ScheduleTaskService;
 import com.oceanbase.odc.service.schedule.job.DLMJobReq;
@@ -57,16 +58,17 @@ public class DefaultJobTerminateListener extends AbstractEventListener<JobTermin
     private ScheduleTaskRepository scheduleTaskRepository;
     @Autowired
     private TaskRepository taskRepository;
+    @Autowired
+    private DLMService dlmService;
 
     @Override
     public void onEvent(JobTerminateEvent event) {
         JobEntity jobEntity = taskFrameworkService.find(event.getJi().getId());
         if ("DLM".equals(jobEntity.getJobType())) {
-            ScheduleTaskRepository taskRepository = SpringContextUtil.getBean(ScheduleTaskRepository.class);
-            ScheduleService scheduleService = SpringContextUtil.getBean(ScheduleService.class);
             scheduleTaskService.findByJobId(jobEntity.getId()).ifPresent(o -> {
-                taskRepository.updateStatusById(o.getId(), event.getStatus().convertTaskStatus());
-                log.info("Update schedule task status to {} succeed,scheduleTaskId={}", event.getStatus(), o.getId());
+                TaskStatus taskStatus = dlmService.getTaskStatus(o.getId());
+                scheduleTaskRepository.updateStatusById(o.getId(), taskStatus);
+                log.info("Update schedule task status to {} succeed,scheduleTaskId={}", taskStatus, o.getId());
                 DLMJobReq parameters = JsonUtils.fromJson(
                         JsonUtils
                                 .fromJson(jobEntity.getJobParametersJson(), new TypeReference<Map<String, String>>() {})
