@@ -346,11 +346,12 @@ public class PreCheckRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Void> {
         if (Objects.isNull(multipleSqlCheckTaskResult) && Objects.isNull(permissionCheckResult)) {
             return false;
         }
-        if (multipleSqlCheckTaskResult != null) {
-            return multipleSqlCheckTaskResult.getSqlCheckTaskResultList().stream()
-                    .flatMap(result -> result.getResults().stream())
-                    .flatMap(checkResult -> checkResult.getViolations().stream())
-                    .anyMatch(violation -> violation.getLevel() > 1);
+        if (multipleSqlCheckTaskResult != null && multipleSqlCheckTaskResult.getSqlCheckTaskResultList() != null
+                && multipleSqlCheckTaskResult.getSqlCheckTaskResultList().stream()
+                        .flatMap(result -> result.getResults().stream())
+                        .flatMap(checkResult -> checkResult.getViolations().stream())
+                        .anyMatch(violation -> violation.getLevel() > 1)) {
+            return true;
         }
         if (Objects.nonNull(permissionCheckResult)) {
             return CollectionUtils.isNotEmpty(permissionCheckResult.getUnauthorizedDatabases());
