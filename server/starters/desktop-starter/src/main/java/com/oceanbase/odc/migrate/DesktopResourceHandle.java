@@ -38,7 +38,7 @@ public class DesktopResourceHandle implements Function<ResourceSpec, ResourceSpe
             return new IgnoreResourceIdHandle().apply(entity);
         }
         /**
-         * test 模式下，所有列都允许为空，避免单元测试中删除内置资源引发的引用错误
+         * test 模式下，所有列都允许为空，避免单元测试中删除内置资源而引发的引用错误
          */
         List<TableTemplate> templateEntities = entity.getTemplates();
         if (CollectionUtils.isEmpty(templateEntities)) {
