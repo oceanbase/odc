@@ -816,6 +816,10 @@
             <AppenderRef ref="ScheduleTaskInfoRoutingAppender"/>
             <AppenderRef ref="ScheduleTaskWarnRoutingAppender"/>
         </Logger>
+        <Logger name="com.oceanbase.odc.service.schedule.job" level="INFO" additivity="true">
+            <AppenderRef ref="ScheduleTaskInfoRoutingAppender"/>
+            <AppenderRef ref="ScheduleTaskWarnRoutingAppender"/>
+        </Logger>
 
         <Logger name="com.oceanbase.odc.service.quartz" level="INFO" additivity="true">
             <AppenderRef ref="SchedulerFileAppender"/>

@@ -20,7 +20,6 @@ import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
 
-import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.common.util.VersionUtils;
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionConstants;
@@ -188,11 +187,5 @@ public class DataArchivePreprocessor extends AbstractDlmJobPreprocessor {
         parameters.setScanBatchSize(dlmConfiguration.getDefaultScanBatchSize());
         parameters.setQueryTimeout(dlmConfiguration.getTaskConnectionQueryTimeout());
         parameters.setShardingStrategy(dlmConfiguration.getShardingStrategy());
-        // set default target table name.
-        parameters.getTables().forEach(tableConfig -> {
-            if (StringUtils.isEmpty(tableConfig.getTargetTableName())) {
-                tableConfig.setTargetTableName(tableConfig.getTableName());
-            }
-        });
     }
 }
