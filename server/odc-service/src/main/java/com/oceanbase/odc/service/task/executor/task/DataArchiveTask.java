@@ -84,6 +84,10 @@ public class DataArchiveTask extends BaseTask<Boolean> {
                 log.info("Job is terminated,jobIdentity={}", context.getJobIdentity());
                 break;
             }
+            if (dlmTableUnit.getStatus() == TaskStatus.DONE) {
+                log.info("The table had been completed,tableName={}", dlmTableUnit.getTableName());
+                continue;
+            }
             if (parameters.getJobType() == JobType.MIGRATE) {
                 try {
                     DLMTableStructureSynchronizer.sync(
