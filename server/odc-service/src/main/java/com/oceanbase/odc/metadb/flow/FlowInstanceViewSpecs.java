@@ -111,7 +111,29 @@ public class FlowInstanceViewSpecs {
         return (root, query, builder) -> {
             Join<FlowInstanceViewEntity, FlowInstanceApprovalViewEntity> join =
                     root.join(FLOW_INSTANCE_VIEW_2_FLOW_INSTANCE_APPROVAL_VIEW, JoinType.LEFT);
-            query.distinct(true);
+            /**
+             * We must ensure that a ticket cannot contain two or more task types at the same time.
+             *
+             * These task types include (We can see these task types from the
+             * {@code FlowInstanceService#listAll}):
+             *
+             * <li>TaskType.MULTIPLE_ASYNC</li>
+             * <li>TaskType.EXPORT</li>
+             * <li>TaskType.IMPORT</li>
+             * <li>TaskType.MOCKDATA</li>
+             * <li>TaskType.ASYNC</li>
+             * <li>TaskType.SHADOWTABLE_SYNC</li>
+             * <li>TaskType.PARTITION_PLAN</li>
+             * <li>TaskType.ONLINE_SCHEMA_CHANGE</li>
+             * <li>TaskType.ALTER_SCHEDULE</li>
+             * <li>TaskType.EXPORT_RESULT_SET</li>
+             * <li>TaskType.APPLY_PROJECT_PERMISSION</li>
+             * <li>TaskType.APPLY_DATABASE_PERMISSION</li>
+             * <li>TaskType.STRUCTURE_COMPARISON</li>
+             *
+             * Otherwise, the filtered work orders may be duplicated
+             */
+            // query.distinct(true);
             Predicate rolePredicate = join.get(FLOW_INSTANCE_APPROVAL_VIEW_ROLE_IDENTIFIER).in(resourceRoleIdentifiers);
             Predicate statusPredicate = join.get(FLOW_INSTANCE_APPROVAL_VIEW_STATUS).in(statusList);
             if (Objects.isNull(creatorId)) {
