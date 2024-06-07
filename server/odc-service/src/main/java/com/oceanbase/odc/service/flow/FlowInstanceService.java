@@ -910,7 +910,8 @@ public class FlowInstanceService {
         }
         Map<String, Object> variables = new HashMap<>();
         FlowTaskUtil.setFlowInstanceId(variables, flowInstance.getId());
-        FlowTaskUtil.setTemplateVariables(variables, buildTemplateVariables(flowInstanceReq, connectionConfigs.get(0)));
+        FlowTaskUtil.setTemplateVariables(variables, buildTemplateVariables(flowInstanceReq,
+                CollectionUtils.isNotEmpty(connectionConfigs) ? connectionConfigs.get(0) : null));
         initVariables(variables, taskEntity, preCheckTaskEntity, connectionConfigs,
                 buildRiskLevelDescriber(flowInstanceReq));
         flowInstance.start(variables);

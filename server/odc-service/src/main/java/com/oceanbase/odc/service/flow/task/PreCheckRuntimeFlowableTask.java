@@ -315,7 +315,7 @@ public class PreCheckRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Void> {
         doMultipleSqlCheckAndDatabasePermissionCheck(preCheckTaskEntity, databaseId2RiskLevelDescriber, taskType);
         this.permissionCheckResult.setUnauthorizedDatabases(
                 this.permissionCheckResult.getUnauthorizedDatabases().stream().distinct().collect(Collectors.toList()));
-        if (isIntercepted(this.sqlCheckResult, this.permissionCheckResult)) {
+        if (isIntercepted(this.multipleSqlCheckTaskResult, this.permissionCheckResult)) {
             throw new ServiceTaskError(new RuntimeException());
         }
 
@@ -334,6 +334,24 @@ public class PreCheckRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Void> {
                     }
                 }
             }
+        }
+        if (Objects.nonNull(permissionCheckResult)) {
+            return CollectionUtils.isNotEmpty(permissionCheckResult.getUnauthorizedDatabases());
+        }
+        return false;
+    }
+
+    private boolean isIntercepted(MultipleSqlCheckTaskResult multipleSqlCheckTaskResult,
+            DatabasePermissionCheckResult permissionCheckResult) {
+        if (Objects.isNull(multipleSqlCheckTaskResult) && Objects.isNull(permissionCheckResult)) {
+            return false;
+        }
+        if (multipleSqlCheckTaskResult != null && multipleSqlCheckTaskResult.getSqlCheckTaskResultList() != null
+                && multipleSqlCheckTaskResult.getSqlCheckTaskResultList().stream()
+                        .flatMap(result -> result.getResults().stream())
+                        .flatMap(checkResult -> checkResult.getViolations().stream())
+                        .anyMatch(violation -> violation.getLevel() > 1)) {
+            return true;
         }
         if (Objects.nonNull(permissionCheckResult)) {
             return CollectionUtils.isNotEmpty(permissionCheckResult.getUnauthorizedDatabases());
@@ -411,7 +429,7 @@ public class PreCheckRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Void> {
             this.multipleSqlCheckTaskResult
                     .setIssueCount(this.multipleSqlCheckTaskResult.getSqlCheckTaskResultList().stream()
                             .map(SqlCheckTaskResult::getIssueCount)
-                            .reduce((sum, account) -> sum = sum + account).get());
+                            .reduce((sum, account) -> sum + account).get());
             this.multipleSqlCheckTaskResult.setMaxLevel(
                     Math.toIntExact(approvalFlowConfigSelector.selectForMultipleDatabase().getId()));
             this.multipleSqlCheckTaskResult.setError(null);

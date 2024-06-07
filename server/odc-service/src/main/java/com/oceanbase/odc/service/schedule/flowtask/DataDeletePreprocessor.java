@@ -113,13 +113,6 @@ public class DataDeletePreprocessor extends AbstractDlmJobPreprocessor {
                 .setWriteThreadCount(dlmConfiguration.getSingleTaskThreadPoolSize() - parameters.getReadThreadCount());
         parameters.setScanBatchSize(dlmConfiguration.getDefaultScanBatchSize());
         parameters.setQueryTimeout(dlmConfiguration.getTaskConnectionQueryTimeout());
-        // if no need check before delete, or target table name is null, set default target table name
-        parameters.getTables().forEach(tableConfig -> {
-            if (!parameters.getNeedCheckBeforeDelete() || Objects.isNull(tableConfig.getTargetTableName())) {
-                tableConfig.setTargetTableName(tableConfig.getTableName());
-            }
-        });
-
     }
 
 }

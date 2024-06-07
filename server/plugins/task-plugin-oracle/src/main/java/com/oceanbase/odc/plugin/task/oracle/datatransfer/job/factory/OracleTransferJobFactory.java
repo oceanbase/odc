@@ -19,12 +19,11 @@ import java.io.File;
 import java.net.URL;
 import java.sql.Connection;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 
 import javax.sql.DataSource;
 
+import com.google.common.collect.Lists;
 import com.oceanbase.odc.plugin.schema.oracle.OracleFunctionExtension;
 import com.oceanbase.odc.plugin.schema.oracle.OraclePackageExtension;
 import com.oceanbase.odc.plugin.schema.oracle.OracleProcedureExtension;
@@ -49,6 +48,7 @@ import com.oceanbase.odc.plugin.task.oracle.datatransfer.job.OracleSchemaExportJ
 import com.oceanbase.odc.plugin.task.oracle.datatransfer.job.OracleSqlScriptImportJob;
 import com.oceanbase.tools.dbbrowser.model.DBSynonymType;
 import com.oceanbase.tools.dbbrowser.model.DBTableColumn;
+import com.oceanbase.tools.dbbrowser.util.OracleSqlBuilder;
 import com.oceanbase.tools.loaddump.common.enums.ObjectType;
 
 /**
@@ -111,13 +111,9 @@ public class OracleTransferJobFactory extends BaseTransferJobFactory {
     protected AbstractJob generateDataXImportJob(ObjectResult object, JobConfiguration jobConfiguration) {
         Parameter writer = jobConfiguration.getContent()[0].getWriter();
         MySQLWriterPluginParameter parameter = (MySQLWriterPluginParameter) writer.getParameter();
-        parameter.setSession(getSessionOptions());
+        parameter.setSession(getSessionOptions(object));
         parameter.setWriteMode(null);
-        if (transferConfig.isTruncateTableBeforeImport()) {
-            parameter.setPreSql(Collections.singletonList("TRUNCATE TABLE " + object.getName()));
-        } else {
-            parameter.setPreSql(null);
-        }
+        parameter.setPreSql(null);
         parameter.setPostSql(null);
         writer.setName("oraclewriter");
         return new DataXTransferJob(object, jobConfiguration, workingDir, logDir);
@@ -127,7 +123,7 @@ public class OracleTransferJobFactory extends BaseTransferJobFactory {
     protected AbstractJob generateDataXExportJob(ObjectResult object, JobConfiguration jobConfiguration) {
         Parameter reader = jobConfiguration.getContent()[0].getReader();
         MySQLReaderPluginParameter readerParameter = (MySQLReaderPluginParameter) reader.getParameter();
-        readerParameter.setSession(getSessionOptions());
+        readerParameter.setSession(getSessionOptions(object));
         reader.setName("oraclereader");
         Parameter writer = jobConfiguration.getContent()[0].getWriter();
         TxtWriterPluginParameter writerParameter = (TxtWriterPluginParameter) writer.getParameter();
@@ -135,10 +131,16 @@ public class OracleTransferJobFactory extends BaseTransferJobFactory {
         return new DataXTransferJob(object, jobConfiguration, workingDir, logDir);
     }
 
-    private List<String> getSessionOptions() {
-        return Arrays.asList(
+    private List<String> getSessionOptions(ObjectResult object) {
+        ArrayList<String> sessionOptions = Lists.newArrayList(
                 "alter session set CURRENT_SCHEMA=" + transferConfig.getSchemaName(),
                 "alter session set nls_date_format='YYYY-MM-DD HH24:MI:SS'",
                 "alter session set nls_timestamp_format='YYYY-MM-DD HH24:MI:SS:FF9'");
+        if (transferConfig.isTruncateTableBeforeImport()) {
+            OracleSqlBuilder builder = new OracleSqlBuilder();
+            builder.append("TRUNCATE TABLE ").identifier(object.getName());
+            sessionOptions.add(builder.toString());
+        }
+        return sessionOptions;
     }
 }
