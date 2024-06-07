@@ -53,13 +53,13 @@ import lombok.extern.slf4j.Slf4j;
 public class DLMTableStructureSynchronizer {
 
     public static void sync(DataSourceInfo sourceInfo, DataSourceInfo targetInfo, String srcTableName,
-            String tgtTableName, Set<DBObjectType> targetType) throws SQLException {
+            String tgtTableName, Set<DBObjectType> targetType) throws Exception {
         sync(DataSourceInfoMapper.toConnectionConfig(sourceInfo), DataSourceInfoMapper.toConnectionConfig(targetInfo),
                 srcTableName, tgtTableName, targetType);
     }
 
     public static void sync(ConnectionConfig srcConfig, ConnectionConfig tgtConfig,
-            String srcTableName, String tgtTableName, Set<DBObjectType> targetType) throws SQLException {
+            String srcTableName, String tgtTableName, Set<DBObjectType> targetType) throws Exception {
         DataSource sourceDs = new DruidDataSourceFactory(srcConfig).getDataSource();
         DataSource targetDs = new DruidDataSourceFactory(tgtConfig).getDataSource();
         try {
@@ -97,11 +97,9 @@ public class DLMTableStructureSynchronizer {
                         statement.addBatch(sql);
                     }
                     statement.executeBatch();
-                    log.info("Sync table structure success.");
                 }
             }
-        } catch (Exception e) {
-            log.warn("Sync table structure failed!", e);
+            log.info("Sync table structure success,executed sql count={}", changeSqlScript.size());
         } finally {
             closeDataSource(sourceDs);
             closeDataSource(targetDs);
