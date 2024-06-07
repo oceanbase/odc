@@ -124,14 +124,14 @@ public class CommonSecurityProperties {
     private List<String> corsAllowedOrigins;
 
     @Getter
-    @Value("${odc.web.security.configurable-whitelists:''}")
+    @Value("${odc.web.security.configurable-whitelists:}")
     private List<String> configurableWhitelists;
 
     @PostConstruct
     public void init() {
         log.info("Common security properties initialized, "
-                + "csrfEnabled={}, corsEnabled={}, corsAllowedOrigins={}",
-                csrfEnabled, corsEnabled, corsAllowedOrigins);
+                + "csrfEnabled={}, corsEnabled={}, corsAllowedOrigins={}, configurableWhitelists={}",
+                csrfEnabled, corsEnabled, corsAllowedOrigins, configurableWhitelists);
     }
 
     public String[] getAuthWhitelist() {
