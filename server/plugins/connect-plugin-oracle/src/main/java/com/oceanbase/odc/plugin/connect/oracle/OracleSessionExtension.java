@@ -78,7 +78,7 @@ public class OracleSessionExtension extends OBOracleSessionExtension {
          * nls parameters maybe null in V$PARAMETER, we need to query from V$NLS_PARAMETERS
          */
         if (Objects.isNull(value) && variableName.toLowerCase().startsWith("nls_")) {
-            querySql = "SELECT VALUE FROM V$NLS_PARAMETERS WHERE PARAMETER = '" + variableName.toUpperCase() + "'";
+            querySql = "SELECT VALUE FROM V_$NLS_PARAMETERS WHERE PARAMETER = '" + variableName.toUpperCase() + "'";
             try {
                 value = JdbcOperationsUtil.getJdbcOperations(connection).queryForObject(querySql, String.class);
             } catch (Exception e) {

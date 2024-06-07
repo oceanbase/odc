@@ -130,11 +130,11 @@ public class OracleSchemaAccessor implements DBSchemaAccessor {
             database.setId(rs.getString(2));
             database.setName(rs.getString(1));
         });
-        sql = "select value from v$nls_parameters where PARAMETER = 'NLS_CHARACTERSET'";
+        sql = "select value from v_$nls_parameters where PARAMETER = 'NLS_CHARACTERSET'";
         jdbcOperations.query(sql, rs -> {
             database.setCharset(rs.getString(1));
         });
-        sql = "SELECT value from v$nls_parameters where parameter = 'NLS_SORT'";
+        sql = "SELECT value from v_$nls_parameters where parameter = 'NLS_SORT'";
         jdbcOperations.query(sql, rs -> {
             database.setCollation(rs.getString(1));
         });
@@ -151,12 +151,12 @@ public class OracleSchemaAccessor implements DBSchemaAccessor {
             database.setName(rs.getString(1));
             databases.add(database);
         });
-        sql = "select value from v$nls_parameters where PARAMETER = 'NLS_CHARACTERSET'";
+        sql = "select value from v_$nls_parameters where PARAMETER = 'NLS_CHARACTERSET'";
         AtomicReference<String> charset = new AtomicReference<>();
         this.jdbcOperations.query(sql, (rs) -> {
             charset.set(rs.getString(1));
         });
-        sql = "SELECT value from v$nls_parameters where parameter = 'NLS_SORT'";
+        sql = "SELECT value from v_$nls_parameters where parameter = 'NLS_SORT'";
         AtomicReference<String> collation = new AtomicReference<>();
         this.jdbcOperations.query(sql, (rs) -> {
             collation.set(rs.getString(1));
@@ -312,7 +312,7 @@ public class OracleSchemaAccessor implements DBSchemaAccessor {
     @Override
     public List<String> showCharset() {
         OracleSqlBuilder sb = new OracleSqlBuilder();
-        sb.append("SELECT DISTINCT VALUE FROM V$NLS_VALID_VALUES WHERE PARAMETER = 'CHARACTERSET' ORDER BY VALUE");
+        sb.append("SELECT DISTINCT VALUE FROM V_$NLS_VALID_VALUES WHERE PARAMETER = 'CHARACTERSET' ORDER BY VALUE");
 
         return jdbcOperations.queryForList(sb.toString(), String.class);
     }
@@ -320,7 +320,7 @@ public class OracleSchemaAccessor implements DBSchemaAccessor {
     @Override
     public List<String> showCollation() {
         OracleSqlBuilder sb = new OracleSqlBuilder();
-        sb.append("SELECT DISTINCT VALUE FROM V$NLS_VALID_VALUES WHERE PARAMETER = 'SORT' ORDER BY VALUE");
+        sb.append("SELECT DISTINCT VALUE FROM V_$NLS_VALID_VALUES WHERE PARAMETER = 'SORT' ORDER BY VALUE");
 
         return jdbcOperations.queryForList(sb.toString(), String.class);
     }
@@ -1222,7 +1222,7 @@ public class OracleSchemaAccessor implements DBSchemaAccessor {
     }
 
     protected void obtainTableCharset(List<DBTableOptions> tableOptions) {
-        String sql = "select value from v$nls_parameters where PARAMETER = 'NLS_CHARACTERSET'";
+        String sql = "select value from v_$nls_parameters where PARAMETER = 'NLS_CHARACTERSET'";
         String charset = jdbcOperations.queryForObject(sql, String.class);
         tableOptions.forEach(option -> {
             option.setCharsetName(charset);
@@ -1230,7 +1230,7 @@ public class OracleSchemaAccessor implements DBSchemaAccessor {
     }
 
     protected void obtainTableCollation(List<DBTableOptions> tableOptions) {
-        String sql = "SELECT value from v$nls_parameters where parameter = 'NLS_SORT'";
+        String sql = "SELECT value from v_$nls_parameters where parameter = 'NLS_SORT'";
         String collation = jdbcOperations.queryForObject(sql, String.class);
         tableOptions.forEach(option -> {
             option.setCollationName(collation);
