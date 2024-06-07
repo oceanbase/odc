@@ -21,6 +21,7 @@ import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 
+import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.core.shared.exception.UnexpectedException;
 import com.oceanbase.odc.service.connection.logicaldatabase.model.DataNode;
@@ -35,6 +36,7 @@ import com.oceanbase.tools.sqlparser.SyntaxErrorException;
 public class LogicalTableService {
     private final DefaultLogicalTableExpressionParser parser = new DefaultLogicalTableExpressionParser();
 
+    @SkipAuthorize("odc internal usage")
     public List<DataNode> resolve(String expression) {
         PreConditions.notEmpty(expression, "expression");
         LogicalTableExpressions logicalTableExpression;

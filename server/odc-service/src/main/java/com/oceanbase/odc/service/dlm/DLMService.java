@@ -62,6 +62,7 @@ public class DLMService {
         return returnValue;
     }
 
+    @SkipAuthorize("odc internal usage")
     public String getExecutionDetailByScheduleTaskId(Long scheduleTaskId) {
         List<DlmTableUnitExecutionDetail> details = dlmTableUnitRepository.findByScheduleTaskId(scheduleTaskId).stream()
                 .map(entity -> {
@@ -82,11 +83,13 @@ public class DLMService {
         return JsonUtils.toJson(details);
     }
 
+    @SkipAuthorize("odc internal usage")
     public List<DlmTableUnitEntity> createDlmTableUnits(List<DlmTableUnit> dlmTableUnits) {
         return dlmTableUnitRepository
                 .saveAll(dlmTableUnits.stream().map(DlmTableUnitMapper::modelToEntity).collect(Collectors.toList()));
     }
 
+    @SkipAuthorize("odc internal usage")
     @Transactional(rollbackFor = Exception.class)
     public void updateStatusByDlmTableUnitId(String dlmTableUnitId, TaskStatus status) {
         dlmTableUnitRepository.findByDlmTableUnitId(dlmTableUnitId).ifPresent(e -> {
@@ -100,6 +103,7 @@ public class DLMService {
         });
     }
 
+    @SkipAuthorize("odc internal usage")
     public List<DlmTableUnit> findByScheduleTaskId(Long scheduleTaskId) {
         return dlmTableUnitRepository.findByScheduleTaskId(scheduleTaskId).stream()
                 .map(DlmTableUnitMapper::entityToModel)
