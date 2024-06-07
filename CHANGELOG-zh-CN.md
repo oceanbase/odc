@@ -85,6 +85,10 @@ SQL 窗口
 
 - swagger-ui.html 访问失败的问题 [#2160](https://github.com/oceanbase/odc/pull/2160)
 
+### 安全加固
+
+- 升级 spring-security 组件到 5.7.12 版本 [#2690](https://github.com/oceanbase/odc/pull/2690)
+
 ## 4.2.4_bp2（2024-05-14）
 
 ### 缺陷修复
