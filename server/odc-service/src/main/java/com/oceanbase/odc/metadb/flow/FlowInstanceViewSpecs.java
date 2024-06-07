@@ -112,7 +112,7 @@ public class FlowInstanceViewSpecs {
             Join<FlowInstanceViewEntity, FlowInstanceApprovalViewEntity> join =
                     root.join(FLOW_INSTANCE_VIEW_2_FLOW_INSTANCE_APPROVAL_VIEW, JoinType.LEFT);
             /**
-             * We must ensure that a work order cannot contain two or more task types at the same time. These
+             * We must ensure that a ticket cannot contain two or more task types at the same time. These
              * task types include (We can see these task types from the {@code FlowInstanceService#listAll}):
              * <li>TaskType.MULTIPLE_ASYNC</li>
              * <li>TaskType.EXPORT</li>
