@@ -73,7 +73,6 @@ import com.oceanbase.odc.core.shared.constant.OrganizationType;
 import com.oceanbase.odc.core.shared.constant.ResourceRoleName;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.core.shared.constant.TaskType;
-import com.oceanbase.odc.core.shared.exception.AccessDeniedException;
 import com.oceanbase.odc.core.shared.exception.NotFoundException;
 import com.oceanbase.odc.core.shared.exception.OverLimitException;
 import com.oceanbase.odc.core.shared.exception.UnsupportedException;
@@ -555,15 +554,6 @@ public class FlowInstanceService {
     @Transactional(rollbackFor = Exception.class)
     public FlowInstanceDetailResp cancel(@NotNull Long id, Boolean skipAuth) {
         FlowInstance flowInstance = mapFlowInstance(id, flowInst -> flowInst, skipAuth);
-        if (!skipAuth) {
-            boolean isProjectOwner = flowInstance.getProjectId() != null && this.projectPermissionValidator
-                    .hasProjectRole(flowInstance.getProjectId(), Collections.singletonList(ResourceRoleName.OWNER));
-            long userId = authenticationFacade.currentUserId();
-            if (!Objects.equals(flowInstance.getCreatorId(), userId) && !isProjectOwner) {
-                throw new AccessDeniedException("No permission to abort ticket, "
-                        + "must be the project owner or ticket creator");
-            }
-        }
         scheduleService.updateStatusByFlowInstanceId(id, ScheduleStatus.TERMINATION);
         return cancel(flowInstance, skipAuth);
     }
