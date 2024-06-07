@@ -88,13 +88,11 @@ public class ScheduleResponseMapperFactory {
                         Collectors.toMap(RateLimitConfiguration::getOrderId, o -> o));
 
 
-        Map<Long, Long> approveInstanceIdMap = Collections.EMPTY_MAP;
-        Map<Long, Set<UserEntity>> scheduleId2Candidates = Collections.EMPTY_MAP;
         return new ScheduleResponseMapper()
                 .withGetUserById(userEntityMap::get)
-                .withGetApproveInstanceIdById(approveInstanceIdMap::get)
+                .withGetApproveInstanceIdById(t -> null)
                 .withGetDatabaseById(id2Database::get)
-                .withGetCandidatesById(scheduleId2Candidates::get)
+                .withGetCandidatesById(t -> null)
                 .withGetDLMRateLimitConfigurationById(scheduleId2RateLimitConfiguration::get);
     }
 
