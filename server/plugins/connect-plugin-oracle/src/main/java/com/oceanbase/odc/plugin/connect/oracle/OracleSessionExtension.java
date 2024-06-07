@@ -83,6 +83,8 @@ public class OracleSessionExtension extends OBOracleSessionExtension {
                 value = JdbcOperationsUtil.getJdbcOperations(connection).queryForObject(querySql, String.class);
             } catch (Exception e) {
                 log.warn("Failed to get variable {}, message={}", variableName, e.getMessage());
+                querySql = "SELECT VALUE FROM V_$NLS_PARAMETERS WHERE PARAMETER = '" + variableName.toUpperCase() + "'";
+                value = JdbcOperationsUtil.getJdbcOperations(connection).queryForObject(querySql, String.class);
             }
         }
         return value;
