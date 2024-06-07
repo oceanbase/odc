@@ -15,7 +15,6 @@
  */
 package com.oceanbase.odc.service.schedule.job;
 
-import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -121,7 +120,7 @@ public abstract class AbstractDlmJob implements OdcJob {
                             dlmTableUnit.getTargetDatasourceInfo(), dlmTableUnit.getTableName(),
                             dlmTableUnit.getTargetTableName(),
                             dlmTableUnit.getParameters().getSyncDBObjectType());
-                } catch (SQLException e) {
+                } catch (Exception e) {
                     log.warn("Sync table structure failed,tableName={}", dlmTableUnit.getTableName(), e);
                     dlmService.updateStatusByDlmTableUnitId(dlmTableUnit.getDlmTableUnitId(), TaskStatus.FAILED);
                     continue;
