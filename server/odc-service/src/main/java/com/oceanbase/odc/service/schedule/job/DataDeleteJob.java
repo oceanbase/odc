@@ -122,7 +122,8 @@ public class DataDeleteJob extends AbstractDlmJob {
         DLMJobReq parameters = new DLMJobReq();
         parameters.setJobName(taskEntity.getJobName());
         parameters.setScheduleTaskId(taskEntity.getId());
-        parameters.setJobType(JobType.DELETE);
+        JobType jobType = dataDeleteParameters.getNeedCheckBeforeDelete() ? JobType.DELETE : JobType.QUICK_DELETE;
+        parameters.setJobType(dataDeleteParameters.getDeleteByUniqueKey() ? jobType : JobType.DEIRECT_DELETE);
         parameters.setTables(dataDeleteParameters.getTables());
         for (DataArchiveTableConfig tableConfig : parameters.getTables()) {
             tableConfig.setConditionExpression(StringUtils.isNotEmpty(tableConfig.getConditionExpression())
