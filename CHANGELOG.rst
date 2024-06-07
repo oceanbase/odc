@@ -62,6 +62,23 @@ Changes
 
 Fix
 ~~~
+- Fix(security): add skip auth annotation (#2704) [guowl3]
+- Fix(dlm): alter execute task job type for data cleaning (#2706) [kiko]
+- Fix(multiple database): the return of method intercepted in multiple
+  database pre check node is incorrect  (#2702) [zijia.cj]
+- Fix(data-transfer): truncate will cause the import task to fail
+  (#2679) [LuckyLeo]
+- Fix(dlm): table structure synchronization failed (#2682) [guowl3]
+- Fix(apply database): failing to apply database permission deliver
+  (#2684) [zijia.cj]
+- Fix(dlm): target database id is null in task framework mode (#2676)
+  [guowl3]
+- Fix(multiple database): the method isIntercepted in multiple database
+  pre check node is error (#2677) [zijia.cj]
+- Fix(parser): failed to parse json_function for native oracle (#2664)
+  [IL MARE]
+- Fix(db-object): exception occurred when open oracle table in GBK
+  encoding (#2661) [LuckyLeo]
 - Fix(dlm): task timeout was not effective (#2651) [guowl3]
 - Fix(multiple database): pre sql check node failed (#2592) [zijia.cj]
 - Fix(structure-comparison): syntax error when executing structure
@@ -163,6 +180,11 @@ Fix
   MARE]
 - Fix(sql-execute): failed to kill query (#2259) [IL MARE]
 - Fix(web-framework): swagger-ui.html page 404 notfound (#2160) [yizhou]
+
+Security
+~~~~~~~~
+- Security: upgrade spring-security from 5.1.10 to 5.7.12, fix
+  CVE-2024-22257. [yizhouxw]
 
 
 v4.2.4_bp2 (2024-05-15)
