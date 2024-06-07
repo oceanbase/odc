@@ -19,7 +19,7 @@
 
 - 数据清理/归档提供常用的任务指标，包括：开始时间、结束时间、过滤条件、处理行数、扫描行数及实时性能
 - 数据清理/归档支持分区条件
-- 数据清理/归档支持配置执行超时时间
+- 数据清理/归档支持配置执行超时时间，执行耗时达到超时时间设定任务会退出，保障业务高峰数据库性能
 - 数据归档支持增量结构同步，当源表的结构发生变化时，任务会自动同步表结构，启用结构同步时可自定义是否同步分区和索引
 - 数据清理/归档实现了 OceanBase MySQL 模式字段类型兼容，新增支持等字段类型: bit、set、enum 以及空间数据类型
 - 数据清理/归档实现了 OceanBase Oracle 模式字段类型兼容，新增支持等字段类型: BINARY_FLOAT、BINARY_DOUBLE、TIMESTAMP WITH TIME ZONE、TIMESTAMP WITH LOCAL TIME ZONE、INTERVAL YEAR TO MONTH、INTERVAL DAY TO SECOND、ROW 、 ROWID、UROWID、BLOB
