@@ -191,8 +191,8 @@ public class FlowTaskInstanceService {
         return FlowInstanceDetailResp.withIdAndType(id, taskInstance.getTaskType());
     }
 
-    public String getLog(@NotNull Long flowInstanceId, OdcTaskLogLevel level) throws IOException {
-        Optional<TaskEntity> taskEntityOptional = getLogDownloadableTaskEntity(flowInstanceId);
+    public String getLog(@NotNull Long flowInstanceId, OdcTaskLogLevel level, boolean skipAuth) throws IOException {
+        Optional<TaskEntity> taskEntityOptional = getLogDownloadableTaskEntity(flowInstanceId, skipAuth);
         if (!taskEntityOptional.isPresent()) {
             return null;
         }
@@ -211,7 +211,7 @@ public class FlowTaskInstanceService {
     }
 
     public List<BinaryDataResult> downloadLog(@NotNull Long flowInstanceId) throws IOException {
-        Optional<TaskEntity> taskEntityOptional = getLogDownloadableTaskEntity(flowInstanceId);
+        Optional<TaskEntity> taskEntityOptional = getLogDownloadableTaskEntity(flowInstanceId, false);
         if (!taskEntityOptional.isPresent() || taskEntityOptional.get().getResultJson() == null) {
             return Collections.emptyList();
         }
@@ -746,12 +746,12 @@ public class FlowTaskInstanceService {
         }, false);
     }
 
-    private Optional<TaskEntity> getLogDownloadableTaskEntity(@NotNull Long flowInstanceId) {
+    private Optional<TaskEntity> getLogDownloadableTaskEntity(@NotNull Long flowInstanceId, boolean skipAuth) {
         return getTaskEntity(flowInstanceId,
                 instance -> (instance.getStatus().isFinalStatus() || instance.getStatus() == FlowNodeStatus.EXECUTING)
                         && instance.getTaskType() != TaskType.SQL_CHECK && instance.getTaskType() != TaskType.PRE_CHECK
                         && instance.getTaskType() != TaskType.GENERATE_ROLLBACK,
-                false);
+                skipAuth);
     }
 
     private Optional<TaskEntity> getTaskEntity(@NonNull Long flowInstanceId,
