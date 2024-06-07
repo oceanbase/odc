@@ -1,3 +1,4 @@
+## 4.3.0 (2024-06-07)
 
 
 Table Objects
@@ -22,6 +23,7 @@ Data Archiving/Cleaning
 - Data cleaning supports linkage historical library verification 
 
 Global Object Search
+
 - Added global object retrieval, supporting global search within the project scope, allowing instant access even with numerous library tables
 - Supports almost all objects, including libraries, tables, columns, views, functions, stored procedures, program packages, triggers, etc.
 - Supports the shortcut key Ctrl/Cmd+J for quick access to global object retrieval
@@ -33,6 +35,7 @@ Global Object Search
 - When archiving a project, it will check if all scheduled tasks are shut down [#2562](https://github.com/oceanbase/odc/pull/2562)
 - Optimized the request time for querying table details [#2626](https://github.com/oceanbase/odc/pull/2626)
 - Optimized the error message for canceling process tasks [#2624](https://github.com/oceanbase/odc/pull/2624)
+
 ### Bug Fixes
 
 Data Source
