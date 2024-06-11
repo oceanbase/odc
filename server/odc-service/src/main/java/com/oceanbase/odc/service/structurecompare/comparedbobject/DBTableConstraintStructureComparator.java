@@ -86,12 +86,6 @@ public class DBTableConstraintStructureComparator extends AbstractDBObjectStruct
         DBTableConstraint copiedSrcConstraint = copySrcConstraintWithTgtSchemaNameAndTgtTableName(srcConstraint,
                 this.tgtSchemaName, tgtConstraint.getTableName());
 
-        /**
-         * sort column names and reference column names in order to avoid unequal judgment constraint due to
-         * different column name orders
-         */
-        Collections.sort(tgtConstraint.getColumnNames());
-        Collections.sort(copiedSrcConstraint.getColumnNames());
         if (!tgtConstraint.getReferenceColumnNames().isEmpty()) {
             Collections.sort(tgtConstraint.getReferenceColumnNames());
         }

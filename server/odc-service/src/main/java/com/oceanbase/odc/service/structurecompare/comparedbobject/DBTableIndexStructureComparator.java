@@ -15,8 +15,6 @@
  */
 package com.oceanbase.odc.service.structurecompare.comparedbobject;
 
-import java.util.Collections;
-
 import org.springframework.beans.BeanUtils;
 
 import com.oceanbase.odc.service.structurecompare.model.ComparisonResult;
@@ -71,11 +69,6 @@ public class DBTableIndexStructureComparator extends AbstractDBObjectStructureCo
 
         DBTableIndex copiedSrcIdx =
                 copySrcIndexWithTgtSchemaNameAndTableName(srcIndex, tgtIndex.getSchemaName(), tgtIndex.getTableName());
-        /**
-         * sort column names in order to avoid unequal judgment index due to different column name orders
-         */
-        Collections.sort(srcIndex.getColumnNames());
-        Collections.sort(copiedSrcIdx.getColumnNames());
 
         String ddl = this.targetTableIndexEditor.generateUpdateObjectDDL(
                 tgtIndex, copiedSrcIdx);
