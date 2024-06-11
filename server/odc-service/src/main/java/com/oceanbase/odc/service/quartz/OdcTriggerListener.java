@@ -62,7 +62,7 @@ public class OdcTriggerListener extends TriggerListenerSupport {
     @Override
     public boolean vetoJobExecution(Trigger trigger, JobExecutionContext context) {
         return SpringContextUtil.getBean(ScheduleService.class)
-                .terminateIfDatabaseNotExisted(ScheduleTaskUtils.getScheduleId(context));
+                .terminateIfScheduleInvalid(ScheduleTaskUtils.getScheduleId(context));
     }
 
     @Override
