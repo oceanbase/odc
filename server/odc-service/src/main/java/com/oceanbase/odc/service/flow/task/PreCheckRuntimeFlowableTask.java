@@ -429,7 +429,7 @@ public class PreCheckRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Void> {
             this.multipleSqlCheckTaskResult
                     .setIssueCount(this.multipleSqlCheckTaskResult.getSqlCheckTaskResultList().stream()
                             .map(SqlCheckTaskResult::getIssueCount)
-                            .reduce((sum, account) -> sum + account).get());
+                            .reduce(Integer::sum).get());
             this.multipleSqlCheckTaskResult.setMaxLevel(
                     Math.toIntExact(approvalFlowConfigSelector.selectForMultipleDatabase().getId()));
             this.multipleSqlCheckTaskResult.setError(null);
