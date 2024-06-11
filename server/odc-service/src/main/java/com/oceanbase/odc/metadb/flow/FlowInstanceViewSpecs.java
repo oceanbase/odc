@@ -86,8 +86,8 @@ public class FlowInstanceViewSpecs {
         return SpecificationUtil.columnEqual(FLOW_INSTANCE_VIEW_PROJECT_ID, projectId);
     }
 
-    public static Specification<FlowInstanceViewEntity> projectIdNotEquals(Long projectId) {
-        return SpecificationUtil.columnNotEqual(FLOW_INSTANCE_VIEW_PROJECT_ID, projectId);
+    public static Specification<FlowInstanceViewEntity> parentInstanceIdIsNull() {
+        return SpecificationUtil.columnIsNull(FlowInstanceViewEntity_.PARENT_INSTANCE_ID);
     }
 
     public static Specification<FlowInstanceViewEntity> projectIdIn(Set<Long> projectIds) {

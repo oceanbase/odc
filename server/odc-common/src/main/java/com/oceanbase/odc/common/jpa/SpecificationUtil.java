@@ -54,15 +54,6 @@ public class SpecificationUtil {
         };
     }
 
-    public static <T> Specification<T> columnNotEqual(@NonNull String columnName, Object columnValue) {
-        return (root, query, builder) -> {
-            if (Objects.isNull(columnValue)) {
-                return builder.conjunction();
-            }
-            return builder.notEqual(root.get(columnName), columnValue);
-        };
-    }
-
     public static <T> Specification<T> columnBefore(@NonNull String columnName, Date time) {
         return (root, query, builder) -> {
             if (Objects.isNull(time)) {
