@@ -446,7 +446,8 @@ public class FlowInstanceService {
                 .and(FlowInstanceViewSpecs.createTimeLate(params.getStartTime()))
                 .and(FlowInstanceViewSpecs.createTimeBefore(params.getEndTime()))
                 .and(FlowInstanceViewSpecs.idEquals(targetId))
-                .and(FlowInstanceViewSpecs.groupByIdAndTaskType());
+                .and(FlowInstanceViewSpecs.groupByIdAndTaskType())
+                .and(FlowInstanceViewSpecs.projectIdNotEquals(-1L));
         if (params.getType() != null) {
             specification = specification.and(FlowInstanceViewSpecs.taskTypeEquals(params.getType()));
         } else {

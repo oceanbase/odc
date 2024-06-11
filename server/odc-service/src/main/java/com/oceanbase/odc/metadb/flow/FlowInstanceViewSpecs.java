@@ -42,6 +42,7 @@ import com.oceanbase.odc.service.flow.model.FlowNodeStatus;
  * @since ODC_release_4.2.0
  */
 public class FlowInstanceViewSpecs {
+
     private static final String FLOW_INSTANCE_VIEW_ID_NAME = "id";
     private static final String FLOW_INSTANCE_VIEW_CREATOR_ID_NAME = "creatorId";
     private static final String FLOW_INSTANCE_VIEW_ORGANIZATION_ID_NAME = "organizationId";
@@ -52,7 +53,6 @@ public class FlowInstanceViewSpecs {
     private static final String FLOW_INSTANCE_VIEW_2_FLOW_INSTANCE_APPROVAL_VIEW = "approvals";
     private static final String FLOW_INSTANCE_APPROVAL_VIEW_ROLE_IDENTIFIER = "resourceRoleIdentifier";
     private static final String FLOW_INSTANCE_APPROVAL_VIEW_STATUS = "status";
-
 
     public static Specification<FlowInstanceViewEntity> idEquals(Long id) {
         return SpecificationUtil.columnEqual(FLOW_INSTANCE_VIEW_ID_NAME, id);
@@ -86,10 +86,13 @@ public class FlowInstanceViewSpecs {
         return SpecificationUtil.columnEqual(FLOW_INSTANCE_VIEW_PROJECT_ID, projectId);
     }
 
+    public static Specification<FlowInstanceViewEntity> projectIdNotEquals(Long projectId) {
+        return SpecificationUtil.columnNotEqual(FLOW_INSTANCE_VIEW_PROJECT_ID, projectId);
+    }
+
     public static Specification<FlowInstanceViewEntity> projectIdIn(Set<Long> projectIds) {
         return SpecificationUtil.columnIn(FLOW_INSTANCE_VIEW_PROJECT_ID, projectIds);
     }
-
 
     public static Specification<FlowInstanceViewEntity> taskTypeEquals(TaskType taskType) {
         return SpecificationUtil.columnEqual(FLOW_INSTANCE_VIEW_TASK_TYPE, taskType);
