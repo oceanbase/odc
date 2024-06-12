@@ -20,6 +20,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import javax.persistence.EntityManager;
+
 import org.flowable.engine.delegate.DelegateExecution;
 import org.flowable.engine.delegate.ExecutionListener;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -63,6 +65,10 @@ public class MultipleDatabaseChangeRuntimeFlowableTask extends BaseODCFlowTaskDe
     private volatile boolean isSuccessful = false;
     private volatile boolean isFailure = false;
     private volatile boolean isFinished = false;
+    private volatile boolean isCancelled = false;
+    private volatile boolean isAbortedForStart = false;
+    private volatile boolean isContinuedForCancel = false;
+    private volatile List<Long> flowInstanceIds;
     private volatile User taskCreator;
     private volatile MultipleDatabaseChangeParameters multipleDatabaseChangeParameters;
     private volatile Integer batchId;
@@ -75,16 +81,42 @@ public class MultipleDatabaseChangeRuntimeFlowableTask extends BaseODCFlowTaskDe
     private FlowInstanceRepository flowInstanceRepository;
     @Autowired
     private ServiceTaskInstanceRepository serviceTaskInstanceRepository;
+    @Autowired
+    private EntityManager entityManager;
 
     @Override
     public boolean cancel(boolean mayInterruptIfRunning, Long taskId, TaskService taskService) {
-        // todo implement later
-        throw new UnsupportedOperationException();
+        // used to interrupt the start method
+        this.isAbortedForStart = true;
+        while (true) {
+            if (isContinuedForCancel) {
+                this.flowInstanceIds = listNeedCancelIds(this.flowInstanceIds);
+                if (this.flowInstanceIds == null || this.flowInstanceIds.isEmpty()) {
+                    break;
+                }
+                for (Long flowInstanceId : this.flowInstanceIds) {
+                    try {
+                        this.flowInstanceService.cancelSubFlowInstance(flowInstanceId);
+                    } catch (Exception e) {
+                        log.warn("Failed to cancel the subFlowInstance,flowInstanceId={}", flowInstanceId);
+                    }
+                }
+            }
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+        }
+        taskService.cancel(taskId, generateResult());
+        // cancel multiple database task
+        this.isCancelled = true;
+        return true;
     }
 
     @Override
     public boolean isCancelled() {
-        return false;
+        return this.isCancelled;
     }
 
     @Override
@@ -133,27 +165,39 @@ public class MultipleDatabaseChangeRuntimeFlowableTask extends BaseODCFlowTaskDe
             this.batchSum = multipleDatabaseChangeParameters.getOrderedDatabaseIds().size();
             List<Long> batchDatabaseIds =
                     multipleDatabaseChangeParameters.getOrderedDatabaseIds().get(this.batchId);
-            List<Long> flowInstanceIds = new ArrayList<>();
+            this.flowInstanceIds = new ArrayList<>();
             this.taskCreator = FlowTaskUtil.getTaskCreator(execution);
             for (Long batchDatabaseId : batchDatabaseIds) {
+                if (this.isAbortedForStart) {
+                    this.isContinuedForCancel = true;
+                    this.isSuccessful = false;
+                    this.isFailure = false;
+                    return null;
+                }
                 CreateFlowInstanceReq createFlowInstanceReq = new CreateFlowInstanceReq();
                 createFlowInstanceReq.setDatabaseId(batchDatabaseId);
                 createFlowInstanceReq.setTaskType(TaskType.ASYNC);
                 createFlowInstanceReq.setExecutionStrategy(FlowTaskExecutionStrategy.AUTO);
-                createFlowInstanceReq.setParentFlowInstanceId(FlowTaskUtil.getFlowInstanceId(execution));
+                createFlowInstanceReq.setParentFlowInstanceId(getFlowInstanceId());
                 createFlowInstanceReq.setParameters(multipleDatabaseChangeParameters
                         .convertIntoDatabaseChangeParameters(multipleDatabaseChangeParameters));
                 List<FlowInstanceDetailResp> individualFlowInstance = flowInstanceService.createWithoutApprovalNode(
                         createFlowInstanceReq);
-                flowInstanceIds.add(individualFlowInstance.get(0).getId());
+                this.flowInstanceIds.add(individualFlowInstance.get(0).getId());
             }
 
             long originalTime = System.currentTimeMillis();
             boolean flagForTaskSucceed = true;
             // todo 待优化，做成异步回调，减少阻塞和查数据库的次数。
             while (System.currentTimeMillis() - originalTime <= multipleDatabaseChangeParameters.getTimeoutMillis()) {
+                if (this.isAbortedForStart) {
+                    this.isContinuedForCancel = true;
+                    this.isSuccessful = false;
+                    this.isFailure = false;
+                    return null;
+                }
                 int numberForEndLoop = 0;
-                List<FlowInstanceEntity> flowInstanceEntityList = flowInstanceService.listByIds(flowInstanceIds);
+                List<FlowInstanceEntity> flowInstanceEntityList = flowInstanceService.listByIds(this.flowInstanceIds);
                 for (FlowInstanceEntity flowInstanceEntity : flowInstanceEntityList) {
                     if (flowInstanceEntity != null) {
                         switch (flowInstanceEntity.getStatus()) {
@@ -177,13 +221,15 @@ public class MultipleDatabaseChangeRuntimeFlowableTask extends BaseODCFlowTaskDe
                 }
                 Thread.sleep(1000);
             }
-            // Check whether the current batch database change is successfully initiated
+            // Verify that all databases of the current batch have been executed successfully
             if (flagForTaskSucceed) {
                 this.isFailure = false;
                 this.isSuccessful = true;
+                this.isFinished = true;
             } else {
                 this.isFailure = true;
                 this.isSuccessful = false;
+                this.isFinished = true;
             }
             return null;
         } catch (Exception e) {
@@ -191,9 +237,9 @@ public class MultipleDatabaseChangeRuntimeFlowableTask extends BaseODCFlowTaskDe
                     this.batchId == null ? null : this.batchId + 1, e);
             this.isFailure = true;
             this.isSuccessful = false;
+            this.isFinished = true;
             throw e;
         } finally {
-            this.isFinished = true;
             MultipleDatabaseChangeTraceContextHolder.clear();
         }
     }
@@ -325,4 +371,31 @@ public class MultipleDatabaseChangeRuntimeFlowableTask extends BaseODCFlowTaskDe
         return null;
     }
 
+    public List<Long> listNeedCancelIds(List<Long> instanceIds) {
+        // Clear the level 1 cache of JPA
+        entityManager.clear();
+        List<FlowInstanceEntity> flowInstanceEntityList = flowInstanceService.listByIds(instanceIds);
+        for (FlowInstanceEntity flowInstanceEntity : flowInstanceEntityList) {
+            if (flowInstanceEntity != null) {
+                switch (flowInstanceEntity.getStatus()) {
+                    case REJECTED:
+                    case APPROVAL_EXPIRED:
+                    case WAIT_FOR_EXECUTION_EXPIRED:
+                    case EXECUTION_SUCCEEDED:
+                    case EXECUTION_FAILED:
+                    case EXECUTION_EXPIRED:
+                    case ROLLBACK_FAILED:
+                    case ROLLBACK_SUCCEEDED:
+                    case CANCELLED:
+                    case COMPLETED:
+                    case PRE_CHECK_FAILED:
+                        instanceIds.remove(flowInstanceEntity.getId());
+                        break;
+                    default:
+                        break;
+                }
+            }
+        }
+        return instanceIds;
+    }
 }
