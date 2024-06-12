@@ -167,6 +167,8 @@ public enum AuditEventAction implements Translatable {
 
     CREATE_ASYNC_TASK,
 
+    CREATE_MULTIPLE_ASYNC_TASK,
+
     CREATE_MOCKDATA_TASK,
 
     CREATE_IMPORT_TASK,
@@ -192,6 +194,8 @@ public enum AuditEventAction implements Translatable {
     CREATE_ALTER_SCHEDULE_TASK,
 
     STOP_ASYNC_TASK,
+
+    STOP_MULTIPLE_ASYNC_TASK,
 
     CREATE_ONLINE_SCHEMA_CHANGE_TASK,
 
@@ -220,6 +224,8 @@ public enum AuditEventAction implements Translatable {
 
     EXECUTE_ASYNC_TASK,
 
+    EXECUTE_MULTIPLE_ASYNC_TASK,
+
     EXECUTE_MOCKDATA_TASK,
 
     EXECUTE_IMPORT_TASK,
@@ -239,6 +245,8 @@ public enum AuditEventAction implements Translatable {
     EXECUTE_ONLINE_SCHEMA_CHANGE_TASK,
 
     APPROVE_ASYNC_TASK,
+
+    APPROVE_MULTIPLE_ASYNC_TASK,
 
     APPROVE_MOCKDATA_TASK,
 
@@ -266,6 +274,8 @@ public enum AuditEventAction implements Translatable {
     APPROVE_APPLY_TABLE_PERMISSION_TASK,
 
     REJECT_ASYNC_TASK,
+
+    REJECT_MULTIPLE_ASYNC_TASK,
 
     REJECT_MOCKDATA_TASK,
 
@@ -398,6 +408,15 @@ public enum AuditEventAction implements Translatable {
     ENABLE_SENSITIVE_COLUMN,
 
     DISABLE_SENSITIVE_COLUMN,
+
+    /**
+     * Database change changing order template management
+     */
+    CREATE_DATABASE_CHANGE_CHANGING_ORDER_TEMPLATE,
+
+    UPDATE_DATABASE_CHANGE_CHANGING_ORDER_TEMPLATE,
+
+    DELETE_DATABASE_CHANGE_CHANGING_ORDER_TEMPLATE,
 
     ;
 

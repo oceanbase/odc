@@ -72,6 +72,18 @@ public class TestResult {
         return fail(ErrorCodes.ConnectionUnsupportedDBVersion, new String[] {version});
     }
 
+    public static TestResult obWeakReadConsistencyRequired() {
+        return fail(ErrorCodes.ObWeakReadConsistencyRequired, new String[] {});
+    }
+
+    public static TestResult initScriptFailed(Throwable throwable) {
+        String message = "Unknown error";
+        if (throwable != null) {
+            message = throwable.getLocalizedMessage();
+        }
+        return fail(ErrorCodes.ConnectionInitScriptFailed, new String[] {message});
+    }
+
     public static TestResult success() {
         TestResult result = new TestResult();
         result.setActive(true);

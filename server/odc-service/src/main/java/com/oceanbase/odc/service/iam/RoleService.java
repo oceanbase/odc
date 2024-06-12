@@ -134,6 +134,9 @@ public class RoleService {
     @Autowired
     private VerticalPermissionValidator verticalPermissionValidator;
 
+    @Autowired
+    private UserOrganizationService userOrganizationService;
+
     private RoleMapper roleMapper = RoleMapper.INSTANCE;
     private final List<Consumer<RoleDeleteEvent>> preRoleDeleteHooks = new ArrayList<>();
     private final List<Consumer<RoleEnableEvent>> preRoleDisableHooks = new ArrayList<>();
@@ -345,18 +348,22 @@ public class RoleService {
 
     @SkipAuthorize("odc internal usage")
     @Transactional(rollbackFor = Exception.class)
-    public UserRoleEntity bindUserRole(@NonNull Long userId, @NonNull Long roleId, @NonNull Long creatorId) {
+    public UserRoleEntity bindUserRole(@NonNull Long userId, @NonNull Long roleId, @NonNull Long creatorId,
+            Long organizationId) {
         Optional<UserEntity> userEntityOptional = userRepository.findById(userId);
         PreConditions.validExists(ResourceType.ODC_USER, "id", userId, userEntityOptional::isPresent);
         UserEntity userEntity = userEntityOptional.get();
         Optional<RoleEntity> roleEntityOptional = roleRepository.findById(roleId);
         PreConditions.validExists(ResourceType.ODC_ROLE, "id", roleId, roleEntityOptional::isPresent);
-        if (!Objects.equals(userEntity.getOrganizationId(), roleEntityOptional.get().getOrganizationId())) {
+        if (!userOrganizationService.userBelongsToOrganization(userId, roleEntityOptional.get().getOrganizationId())) {
             throw new UnsupportedOperationException(String.format(
                     "Can not bind user and role from different organization, userId=%s, roleId=%s", userId, roleId));
         }
+        if (Objects.isNull(organizationId)) {
+            organizationId = userEntity.getOrganizationId();
+        }
         List<UserRoleEntity> userRoleEntities = userRoleRepository.findByUserIdAndRoleIdAndOrganizationId(userId,
-                roleId, userEntity.getOrganizationId());
+                roleId, organizationId);
         if (CollectionUtils.isNotEmpty(userRoleEntities)) {
             log.warn("The association between user and role already exists, userId={}, roleId={}, userRoleEntity={}",
                     userId, roleId, userRoleEntities.get(0));
@@ -366,7 +373,7 @@ public class RoleService {
         userRoleEntity.setUserId(userId);
         userRoleEntity.setRoleId(roleId);
         userRoleEntity.setCreatorId(creatorId);
-        userRoleEntity.setOrganizationId(userEntity.getOrganizationId());
+        userRoleEntity.setOrganizationId(organizationId);
         return userRoleRepository.save(userRoleEntity);
     }
 

@@ -17,17 +17,13 @@ package com.oceanbase.odc.plugin.schema.mysql.utils;
 
 import java.sql.Connection;
 
-import org.springframework.jdbc.core.JdbcOperations;
-
 import com.oceanbase.odc.common.util.JdbcOperationsUtil;
-import com.oceanbase.odc.common.util.VersionUtils;
-import com.oceanbase.odc.core.shared.exception.UnsupportedException;
+import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.plugin.connect.mysql.MySQLInformationExtension;
+import com.oceanbase.tools.dbbrowser.DBBrowser;
+import com.oceanbase.tools.dbbrowser.editor.DBTableEditor;
 import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
-import com.oceanbase.tools.dbbrowser.schema.mysql.MySQLNoLessThan5600SchemaAccessor;
-import com.oceanbase.tools.dbbrowser.schema.mysql.MySQLNoLessThan5700SchemaAccessor;
 import com.oceanbase.tools.dbbrowser.stats.DBStatsAccessor;
-import com.oceanbase.tools.dbbrowser.stats.mysql.MySQLNoLessThan5700StatsAccessor;
 
 /**
  * @author jingtian
@@ -35,24 +31,29 @@ import com.oceanbase.tools.dbbrowser.stats.mysql.MySQLNoLessThan5700StatsAccesso
  * @since ODC_release_4.2.4
  */
 public class DBAccessorUtil {
+
     public static String getDbVersion(Connection connection) {
-        MySQLInformationExtension informationExtension = new MySQLInformationExtension();
-        return informationExtension.getDBVersion(connection);
+        return new MySQLInformationExtension().getDBVersion(connection);
     }
 
     public static DBSchemaAccessor getSchemaAccessor(Connection connection) {
-        String dbVersion = getDbVersion(connection);
-        JdbcOperations jdbcOperations = JdbcOperationsUtil.getJdbcOperations(connection);
-        if (VersionUtils.isGreaterThanOrEqualsTo(dbVersion, "5.7.0")) {
-            return new MySQLNoLessThan5700SchemaAccessor(jdbcOperations);
-        } else if (VersionUtils.isGreaterThanOrEqualsTo(dbVersion, "5.6.0")) {
-            return new MySQLNoLessThan5600SchemaAccessor(jdbcOperations);
-        } else {
-            throw new UnsupportedException(String.format("MySQL version '%s' not supported", dbVersion));
-        }
+        return DBBrowser.schemaAccessor()
+                .setDbVersion(getDbVersion(connection))
+                .setJdbcOperations(JdbcOperationsUtil.getJdbcOperations(connection))
+                .setType(DialectType.MYSQL.getDBBrowserDialectTypeName()).create();
     }
 
     public static DBStatsAccessor getStatsAccessor(Connection connection) {
-        return new MySQLNoLessThan5700StatsAccessor(JdbcOperationsUtil.getJdbcOperations(connection));
+        return DBBrowser.statsAccessor()
+                .setJdbcOperations(JdbcOperationsUtil.getJdbcOperations(connection))
+                .setDbVersion(getDbVersion(connection))
+                .setType(DialectType.MYSQL.getDBBrowserDialectTypeName()).create();
     }
+
+    public static DBTableEditor getTableEditor(Connection connection) {
+        return DBBrowser.objectEditor().tableEditor()
+                .setDbVersion(DBAccessorUtil.getDbVersion(connection))
+                .setType(DialectType.MYSQL.getDBBrowserDialectTypeName()).create();
+    }
+
 }

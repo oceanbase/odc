@@ -36,6 +36,7 @@ import com.oceanbase.odc.core.shared.constant.OrganizationType;
 import com.oceanbase.odc.core.shared.exception.AccessDeniedException;
 import com.oceanbase.odc.service.common.util.SpringContextUtil;
 import com.oceanbase.odc.service.iam.OrganizationService;
+import com.oceanbase.odc.service.iam.UserService;
 import com.oceanbase.odc.service.iam.VerticalPermissionValidator;
 import com.oceanbase.odc.service.iam.model.Organization;
 import com.oceanbase.odc.service.iam.model.User;
@@ -80,6 +81,8 @@ public class OrganizationAuthenticationInterceptor implements HandlerInterceptor
 
     @Autowired
     private VerticalPermissionValidator verticalPermissionValidator;
+    @Autowired
+    private UserService userService;
 
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler)
@@ -117,15 +120,17 @@ public class OrganizationAuthenticationInterceptor implements HandlerInterceptor
         }
         List<Organization> belongedToOrganizations =
                 userId2OrganizationsCache.get(authenticationFacade.currentUserId());
-        Organization team = belongedToOrganizations.stream()
-                .filter(organization -> organization.getType() == OrganizationType.TEAM)
-                .findFirst().orElseThrow(() -> new RuntimeException("User doesn't belong to any TEAM organization"));
+        Organization defaultTeam = belongedToOrganizations.stream().filter(
+                organization -> organization.getId()
+                        .equals(userService.nullSafeGet(authenticationFacade.currentUserId())
+                                .getOrganizationId()))
+                .findFirst().orElseThrow(() -> new RuntimeException("Default team organization not found"));
 
         belongedToOrganizations = belongedToOrganizations.stream().filter(o -> {
             if (o.getType() == OrganizationType.TEAM) {
                 return true;
             }
-            return verticalPermissionValidator.implies(o, Arrays.asList("read", "update"), team.getId());
+            return verticalPermissionValidator.implies(o, Arrays.asList("read", "update"), defaultTeam.getId());
         }).collect(Collectors.toList());
 
         if (Objects.isNull(belongedToOrganizations) || !(belongedToOrganizations.stream()

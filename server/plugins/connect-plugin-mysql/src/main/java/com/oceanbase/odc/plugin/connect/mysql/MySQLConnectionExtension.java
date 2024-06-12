@@ -69,13 +69,14 @@ public class MySQLConnectionExtension extends OBMySQLConnectionExtension {
     }
 
     @Override
-    public TestResult test(String jdbcUrl, Properties properties, int queryTimeout) {
+    public TestResult test(String jdbcUrl, Properties properties, int queryTimeout,
+            List<ConnectionInitializer> initializers) {
         // fix arbitrary file reading vulnerability
         properties.setProperty("allowLoadLocalInfile", "false");
         properties.setProperty("allowUrlInLocalInfile", "false");
         properties.setProperty("allowLoadLocalInfileInPath", "");
         properties.setProperty("autoDeserialize", "false");
-        TestResult testResult = super.internalTest(jdbcUrl, properties, queryTimeout);
+        TestResult testResult = super.internalTest(jdbcUrl, properties, queryTimeout, initializers);
         if (testResult.getErrorCode() != null) {
             return testResult;
         }

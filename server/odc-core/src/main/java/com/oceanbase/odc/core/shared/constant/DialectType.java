@@ -38,6 +38,10 @@ public enum DialectType {
         return valueOf(value);
     }
 
+    public String getDBBrowserDialectTypeName() {
+        return this.name();
+    }
+
     public boolean isMysql() {
         return OB_MYSQL == this || MYSQL == this || ODP_SHARDING_OB_MYSQL == this;
     }
@@ -57,4 +61,5 @@ public enum DialectType {
     public boolean isOceanbase() {
         return OB_MYSQL == this || OB_ORACLE == this || ODP_SHARDING_OB_MYSQL == this;
     }
+
 }

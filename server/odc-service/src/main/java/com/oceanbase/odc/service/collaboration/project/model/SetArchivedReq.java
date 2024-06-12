@@ -17,7 +17,9 @@ package com.oceanbase.odc.service.collaboration.project.model;
 
 import javax.validation.constraints.NotNull;
 
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 /**
  * @Author: Lebie
@@ -25,6 +27,8 @@ import lombok.Data;
  * @Description: []
  */
 @Data
+@AllArgsConstructor
+@NoArgsConstructor
 public class SetArchivedReq {
     @NotNull
     private Boolean archived;

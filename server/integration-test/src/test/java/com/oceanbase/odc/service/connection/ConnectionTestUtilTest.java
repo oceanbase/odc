@@ -16,6 +16,8 @@
 package com.oceanbase.odc.service.connection;
 
 import java.sql.SQLException;
+import java.util.Arrays;
+import java.util.List;
 
 import org.junit.Assert;
 import org.junit.Ignore;
@@ -23,6 +25,7 @@ import org.junit.Test;
 
 import com.oceanbase.odc.TestConnectionUtil;
 import com.oceanbase.odc.common.util.StringUtils;
+import com.oceanbase.odc.core.datasource.ConnectionInitializer;
 import com.oceanbase.odc.core.shared.constant.ConnectType;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.plugin.connect.api.TestResult;
@@ -30,6 +33,8 @@ import com.oceanbase.odc.plugin.connect.model.ConnectionPropertiesBuilder;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.connection.model.ConnectionTestResult;
 import com.oceanbase.odc.service.plugin.ConnectionPluginUtil;
+import com.oceanbase.odc.service.session.initializer.BackupInstanceInitializer;
+import com.oceanbase.odc.service.session.initializer.DataSourceInitScriptInitializer;
 
 /**
  * {@link ConnectionTestUtilTest}
@@ -132,10 +137,16 @@ public class ConnectionTestUtilTest {
         return TestConnectionUtil.getTestConnectionConfig(type);
     }
 
+    private List<ConnectionInitializer> getConnectionInitializers(ConnectType type) {
+        ConnectionConfig config = getConnectionConfig(type);
+        return Arrays.asList(new BackupInstanceInitializer(config), new DataSourceInitScriptInitializer(config, false));
+    }
+
     public ConnectionTestResult testConnectExtensionPoint(ConnectType type,
             String jdbcUrl, String username, String password) {
         TestResult result = ConnectionPluginUtil.getConnectionExtension(type.getDialectType())
-                .test(jdbcUrl, ConnectionPropertiesBuilder.getBuilder().user(username).password(password).build(), -1);
+                .test(jdbcUrl, ConnectionPropertiesBuilder.getBuilder().user(username).password(password).build(), -1,
+                        getConnectionInitializers(type));
         if (result.isActive()) {
             return ConnectionTestResult.success(type);
         } else {

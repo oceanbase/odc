@@ -34,6 +34,7 @@ import com.oceanbase.odc.core.shared.constant.TaskType;
 import com.oceanbase.odc.core.shared.exception.BadRequestException;
 import com.oceanbase.odc.metadb.schedule.ScheduleEntity;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferConfig;
+import com.oceanbase.odc.service.collaboration.project.ProjectService;
 import com.oceanbase.odc.service.connection.database.DatabaseService;
 import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.flow.model.CreateFlowInstanceReq;
@@ -66,6 +67,8 @@ public class CreateFlowInstanceProcessAspect implements InitializingBean {
     private ScheduleService scheduleService;
     @Autowired
     private List<Preprocessor> preprocessors;
+    @Autowired
+    private ProjectService projectService;
 
     private final Map<JobType, Preprocessor> scheduleTaskPreprocessors = new HashMap<>();
 
@@ -82,7 +85,7 @@ public class CreateFlowInstanceProcessAspect implements InitializingBean {
             DBStructureComparisonParameter parameters = (DBStructureComparisonParameter) req.getParameters();
             req.setDatabaseId(parameters.getSourceDatabaseId());
         }
-        if (Objects.nonNull(req.getDatabaseId())) {
+        if (Objects.nonNull(req.getDatabaseId()) && req.getTaskType() != TaskType.MULTIPLE_ASYNC) {
             adaptCreateFlowInstanceReq(req);
         }
         if (req.getTaskType() != TaskType.ALTER_SCHEDULE) {

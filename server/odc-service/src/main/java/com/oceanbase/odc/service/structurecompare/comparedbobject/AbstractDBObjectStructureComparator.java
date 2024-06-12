@@ -32,10 +32,15 @@ public abstract class AbstractDBObjectStructureComparator<T extends DBObject>
         implements DBObjectStructureComparator<T> {
     protected final String srcSchemaName;
     protected final String tgtSchemaName;
+    protected final String srcTableName;
+    protected final String tgtTableName;
 
-    public AbstractDBObjectStructureComparator(String srcSchemaName, String tgtSchemaName) {
+    public AbstractDBObjectStructureComparator(String srcSchemaName, String tgtSchemaName, String srcTableName,
+            String tgtTableName) {
         this.srcSchemaName = srcSchemaName;
         this.tgtSchemaName = tgtSchemaName;
+        this.srcTableName = srcTableName;
+        this.tgtTableName = tgtTableName;
     }
 
     @Override
@@ -46,13 +51,13 @@ public abstract class AbstractDBObjectStructureComparator<T extends DBObject>
         } else if (sourceObjects.isEmpty()) {
             // database objects to be dropped
             targetObjects.forEach(object -> {
-                returnVal.add(buildOnlyInTargetResult(object, this.srcSchemaName));
+                returnVal.add(buildOnlyInTargetResult(object, this.srcSchemaName, this.srcTableName));
             });
             return returnVal;
         } else if (targetObjects.isEmpty()) {
             // database objects to be created
             sourceObjects.forEach(object -> {
-                returnVal.add(buildOnlyInSourceResult(object, this.tgtSchemaName));
+                returnVal.add(buildOnlyInSourceResult(object, this.tgtSchemaName, this.tgtTableName));
             });
             return returnVal;
         }
@@ -67,7 +72,8 @@ public abstract class AbstractDBObjectStructureComparator<T extends DBObject>
         tgtObjectNames.forEach(tgtObjectName -> {
             if (!srcObjectNames.contains(tgtObjectName)) {
                 // database object to be dropped
-                returnVal.add(buildOnlyInTargetResult(tgtObjectName2Object.get(tgtObjectName), this.srcSchemaName));
+                returnVal.add(buildOnlyInTargetResult(tgtObjectName2Object.get(tgtObjectName), this.srcSchemaName,
+                        this.srcTableName));
             } else {
                 // database object to be compared
                 returnVal
@@ -78,14 +84,17 @@ public abstract class AbstractDBObjectStructureComparator<T extends DBObject>
         srcObjectNames.forEach(srcObjectName -> {
             if (!tgtObjectNames.contains(srcObjectName)) {
                 // database object to be created
-                returnVal.add(buildOnlyInSourceResult(srcObjectName2Object.get(srcObjectName), this.tgtSchemaName));
+                returnVal.add(buildOnlyInSourceResult(srcObjectName2Object.get(srcObjectName), this.tgtSchemaName,
+                        this.tgtTableName));
             }
         });
 
         return returnVal;
     }
 
-    protected abstract DBObjectComparisonResult buildOnlyInTargetResult(T tgtDbObject, String srcSchemaName);
+    protected abstract DBObjectComparisonResult buildOnlyInTargetResult(T tgtDbObject, String srcSchemaName,
+            String srcTableName);
 
-    protected abstract DBObjectComparisonResult buildOnlyInSourceResult(T srcDbObject, String tgtSchemaName);
+    protected abstract DBObjectComparisonResult buildOnlyInSourceResult(T srcDbObject, String tgtSchemaName,
+            String tgtTableName);
 }

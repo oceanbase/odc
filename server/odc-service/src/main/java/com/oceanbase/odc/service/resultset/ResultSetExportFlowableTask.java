@@ -24,6 +24,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import com.oceanbase.odc.core.shared.constant.FlowStatus;
 import com.oceanbase.odc.core.shared.constant.TaskStatus;
 import com.oceanbase.odc.metadb.task.TaskEntity;
+import com.oceanbase.odc.service.connection.ConnectionService;
 import com.oceanbase.odc.service.datasecurity.DataMaskingService;
 import com.oceanbase.odc.service.flow.task.BaseODCFlowTaskDelegate;
 import com.oceanbase.odc.service.flow.task.model.ResultSetExportResult;
@@ -43,6 +44,8 @@ public class ResultSetExportFlowableTask extends BaseODCFlowTaskDelegate<ResultS
     private AuthenticationFacade authenticationFacade;
     @Autowired
     private DataMaskingService maskingService;
+    @Autowired
+    private ConnectionService connectionService;
     private ResultSetExportTaskContext context;
     private volatile TaskStatus status;
 
@@ -57,7 +60,9 @@ public class ResultSetExportFlowableTask extends BaseODCFlowTaskDelegate<ResultS
         TaskEntity taskEntity = taskService.detail(taskId);
         parameter.setExecutionTimeoutSeconds(taskEntity.getExecutionExpirationIntervalSeconds());
 
-        context = taskManager.start(FlowTaskUtil.getConnectionConfig(execution), parameter, taskId.toString());
+        Long connectionId = FlowTaskUtil.getConnectionConfig(execution).id();
+        context = taskManager.start(
+                connectionService.getForConnectionSkipPermissionCheck(connectionId), parameter, taskId.toString());
 
         return null;
     }

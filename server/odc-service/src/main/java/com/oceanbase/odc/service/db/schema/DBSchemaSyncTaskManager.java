@@ -25,6 +25,7 @@ import java.util.stream.Collectors;
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Component;
@@ -61,8 +62,11 @@ public class DBSchemaSyncTaskManager {
     @Autowired
     private DBSchemaSyncProperties syncProperties;
 
+    @Value("${odc.database.schema.global-search.enabled:true}")
+    private boolean enableGlobalSearch;
+
     public void submitTaskByDatabases(@NonNull Collection<Database> databases) {
-        if (CollectionUtils.isEmpty(databases)) {
+        if (CollectionUtils.isEmpty(databases) || !enableGlobalSearch) {
             return;
         }
         Set<Long> databaseIds = databases.stream().map(Database::getId).collect(Collectors.toSet());

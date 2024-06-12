@@ -356,25 +356,49 @@
   match_expression: "taskType.equals('STRUCTURE_COMPARISON') && taskStatus.equals('APPROVAL_REJECTION')"
 - id: 90
   event_category: "TASK"
+  event_name: "${com.oceanbase.odc.TaskType.MULTIPLE_ASYNC}-${com.oceanbase.odc.event.TASK.EXECUTION_SUCCEEDED.name}"
+  match_expression: "taskType.equals('MULTIPLE_ASYNC') && taskStatus.equals('EXECUTION_SUCCEEDED')"
+- id: 91
+  event_category: "TASK"
+  event_name: "${com.oceanbase.odc.TaskType.MULTIPLE_ASYNC}-${com.oceanbase.odc.event.TASK.EXECUTION_FAILED.name}"
+  match_expression: "taskType.equals('MULTIPLE_ASYNC') && taskStatus.equals('EXECUTION_FAILED')"
+- id: 92
+  event_category: "TASK"
+  event_name: "${com.oceanbase.odc.TaskType.MULTIPLE_ASYNC}-${com.oceanbase.odc.event.TASK.EXECUTION_TIMEOUT.name}"
+  match_expression: "taskType.equals('MULTIPLE_ASYNC') && taskStatus.equals('EXECUTION_TIMEOUT')"
+- id: 93
+  event_category: "TASK"
+  event_name: "${com.oceanbase.odc.TaskType.MULTIPLE_ASYNC}-${com.oceanbase.odc.event.TASK.PENDING_APPROVAL.name}"
+  match_expression: "taskType.equals('MULTIPLE_ASYNC') && taskStatus.equals('PENDING_APPROVAL')"
+- id: 94
+  event_category: "TASK"
+  event_name: "${com.oceanbase.odc.TaskType.MULTIPLE_ASYNC}-${com.oceanbase.odc.event.TASK.APPROVED.name}"
+  match_expression: "taskType.equals('MULTIPLE_ASYNC') && taskStatus.equals('APPROVED')"
+- id: 95
+  event_category: "TASK"
+  event_name: "${com.oceanbase.odc.TaskType.MULTIPLE_ASYNC}-${com.oceanbase.odc.event.TASK.APPROVAL_REJECTION.name}"
+  match_expression: "taskType.equals('MULTIPLE_ASYNC') && taskStatus.equals('APPROVAL_REJECTION')"
+- id: 96
+  event_category: "TASK"
   event_name: "${com.oceanbase.odc.TaskType.APPLY_TABLE_PERMISSION}-${com.oceanbase.odc.event.TASK.EXECUTION_FAILED.name}"
   match_expression: "taskType.equals('APPLY_TABLE_PERMISSION') && taskStatus.equals('EXECUTION_FAILED')"
-- id: 91
+- id: 97
   event_category: "TASK"
   event_name: "${com.oceanbase.odc.TaskType.APPLY_TABLE_PERMISSION}-${com.oceanbase.odc.event.TASK.EXECUTION_TIMEOUT.name}"
   match_expression: "taskType.equals('APPLY_TABLE_PERMISSION') && taskStatus.equals('EXECUTION_TIMEOUT')"
-- id: 92
+- id: 98
   event_category: "TASK"
   event_name: "${com.oceanbase.odc.TaskType.APPLY_TABLE_PERMISSION}-${com.oceanbase.odc.event.TASK.PENDING_APPROVAL.name}"
   match_expression: "taskType.equals('APPLY_TABLE_PERMISSION') && taskStatus.equals('PENDING_APPROVAL')"
-- id: 93
+- id: 99
   event_category: "TASK"
   event_name: "${com.oceanbase.odc.TaskType.APPLY_TABLE_PERMISSION}-${com.oceanbase.odc.event.TASK.APPROVED.name}"
   match_expression: "taskType.equals('APPLY_TABLE_PERMISSION') && taskStatus.equals('APPROVED')"
-- id: 94
+- id: 100
   event_category: "TASK"
   event_name: "${com.oceanbase.odc.TaskType.APPLY_TABLE_PERMISSION}-${com.oceanbase.odc.event.TASK.APPROVAL_REJECTION.name}"
   match_expression: "taskType.equals('APPLY_TABLE_PERMISSION') && taskStatus.equals('APPROVAL_REJECTION')"
-- id: 95
+- id: 101
   event_category: "TASK"
   event_name: "${com.oceanbase.odc.TaskType.APPLY_TABLE_PERMISSION}-${com.oceanbase.odc.event.TASK.EXECUTION_SUCCEEDED.name}"
   match_expression: "taskType.equals('APPLY_TABLE_PERMISSION') && taskStatus.equals('EXECUTION_SUCCEEDED')"

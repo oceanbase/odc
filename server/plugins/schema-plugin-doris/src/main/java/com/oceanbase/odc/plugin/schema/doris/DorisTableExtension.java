@@ -21,8 +21,11 @@ import org.pf4j.Extension;
 
 import com.oceanbase.odc.plugin.schema.doris.utils.DBAccessorUtil;
 import com.oceanbase.odc.plugin.schema.mysql.MySQLTableExtension;
+import com.oceanbase.tools.dbbrowser.editor.DBTableEditor;
 import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
 import com.oceanbase.tools.dbbrowser.stats.DBStatsAccessor;
+
+import lombok.NonNull;
 
 /**
  * ClassName: DorisTableExtension Package: com.oceanbase.odc.plugin.schema.doris Description:
@@ -42,6 +45,11 @@ public class DorisTableExtension extends MySQLTableExtension {
     @Override
     protected DBStatsAccessor getStatsAccessor(Connection connection) {
         return DBAccessorUtil.getStatsAccessor(connection);
+    }
+
+    @Override
+    protected DBTableEditor getTableEditor(@NonNull Connection connection) {
+        return DBAccessorUtil.getTableEditor(connection);
     }
 
 }

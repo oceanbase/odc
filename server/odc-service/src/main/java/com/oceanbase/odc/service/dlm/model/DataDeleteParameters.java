@@ -61,4 +61,6 @@ public class DataDeleteParameters implements TaskParameters {
 
     private int scanBatchSize;
 
+    private Long timeoutMillis;
+
 }

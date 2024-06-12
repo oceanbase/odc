@@ -138,16 +138,17 @@ public class FlowResponseMapperFactoryTest extends ServiceTestEnv {
         FlowInstanceEntity instanceEntity = createFlowInstanceEntity();
         TaskEntity taskEntity = TestRandom.nextObject(TaskEntity.class);
         taskEntity.setTaskType(TaskType.ASYNC);
-        FlowInstanceMapper mapper = FlowInstanceDetailResp.mapper()
-                .withApprovable(id -> false)
-                .withGetTaskByFlowInstanceId(id -> Collections.singleton(taskEntity))
-                .withGetUserById(id -> TestRandom.nextObject(UserEntity.class))
-                .withGetExecutionStrategyByFlowInstanceId(
+        FlowInstanceMapper mapper = FlowInstanceMapper.builder()
+                .ifApprovable(id -> false)
+                .getTasksByFlowInstanceId(id -> Collections.singleton(taskEntity))
+                .getUserById(id -> TestRandom.nextObject(UserEntity.class))
+                .getExecutionStrategyByFlowInstanceId(
                         id -> Collections.singletonList(TestRandom.nextObject(FlowTaskExecutionStrategy.class)))
-                .withGetExecutionTimeByFlowInstanceId(
+                .getExecutionTimeByFlowInstanceId(
                         id -> Collections.singletonList(TestRandom.nextObject(Date.class)))
-                .withGetCandidatesByFlowInstanceId(
-                        id -> Collections.singleton(TestRandom.nextObject(UserEntity.class)));
+                .getCandidatesByFlowInstanceId(
+                        id -> Collections.singleton(TestRandom.nextObject(UserEntity.class)))
+                .build();
         FlowInstanceDetailResp detailResp = mapper.map(instanceEntity);
 
         Assert.assertEquals(instanceEntity.getId(), detailResp.getId());

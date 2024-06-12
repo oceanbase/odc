@@ -94,7 +94,7 @@ public class SecurityContextUtils {
 
     private static void setCloudUid(User user) {
         CloudMetadataClient cloudMetadataClient = SpringContextUtil.getBean(CloudMetadataClient.class);
-        if (cloudMetadataClient.supportsCloudMetadata() && StringUtils.isEmpty(user.getParentUid())) {
+        if (cloudMetadataClient.supportsCloudParentUid() && StringUtils.isEmpty(user.getParentUid())) {
             OrganizationRepository repository =
                     (OrganizationRepository) SpringContextUtil.getBean("organizationRepository");
             List<OrganizationEntity> organizationEntities = repository.findByTypeAndUserId(OrganizationType.TEAM,

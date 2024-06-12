@@ -21,11 +21,8 @@ import org.springframework.stereotype.Service;
 
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.session.ConnectionSession;
-import com.oceanbase.odc.core.session.ConnectionSessionUtil;
-import com.oceanbase.odc.service.db.browser.DBObjectEditorFactory;
 import com.oceanbase.odc.service.db.browser.DBSchemaAccessors;
-import com.oceanbase.odc.service.db.browser.DBTableConstraintEditorFactory;
-import com.oceanbase.tools.dbbrowser.editor.DBTableConstraintEditor;
+import com.oceanbase.odc.service.db.browser.DBTableConstraintEditors;
 import com.oceanbase.tools.dbbrowser.model.DBTableConstraint;
 import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
 
@@ -43,9 +40,7 @@ public class DBTableConstraintService {
 
     public String getDeleteSql(@NonNull ConnectionSession connectionSession,
             DBTableConstraint constraint) {
-        DBObjectEditorFactory<DBTableConstraintEditor> factory = new DBTableConstraintEditorFactory(
-                connectionSession.getConnectType(), ConnectionSessionUtil.getVersion(connectionSession));
-        return factory.create().generateDropObjectDDL(constraint);
+        return DBTableConstraintEditors.create(connectionSession).generateDropObjectDDL(constraint);
     }
 
 }

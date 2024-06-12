@@ -47,6 +47,7 @@ import com.oceanbase.tools.dbbrowser.model.DBTablePartitionType;
 import com.oceanbase.tools.dbbrowser.model.DBVariable;
 import com.oceanbase.tools.dbbrowser.model.DBView;
 import com.oceanbase.tools.dbbrowser.util.DBSchemaAccessorUtil;
+import com.oceanbase.tools.dbbrowser.util.DBSchemaAccessors;
 
 import lombok.Data;
 
@@ -133,6 +134,17 @@ public class OBMySQLSchemaAccessorTest extends BaseTestEnv {
     public void listBasicViewColumns_ViewColumns_Success() {
         List<DBTableColumn> columns = accessor.listBasicViewColumns(getOBMySQLDataBaseName(), "view_test1");
         Assert.assertEquals(2, columns.size());
+    }
+
+    @Test
+    public void listBasicColumnsInfo_Success() {
+        Map<String, List<DBTableColumn>> columns = accessor.listBasicColumnsInfo(getOBMySQLDataBaseName());
+        Assert.assertTrue(columns.containsKey("test_data_type"));
+        Assert.assertEquals(verifyDataTypes.size(), columns.get("test_data_type").size());
+        Assert.assertTrue(columns.containsKey("view_test1"));
+        Assert.assertTrue(columns.containsKey("view_test2"));
+        Assert.assertEquals(2, columns.get("view_test1").size());
+        Assert.assertEquals(1, columns.get("view_test2").size());
     }
 
     @Test

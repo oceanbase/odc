@@ -66,50 +66,14 @@ public class FlowNodeInstanceDetailResp {
     private List<UnauthorizedDBResource> unauthorizedDBResources;
     private Boolean preCheckOverLimit;
 
-    public static FlowNodeInstanceMapper mapper() {
-        return new FlowNodeInstanceMapper();
-    }
-
+    @Builder
     public static class FlowNodeInstanceMapper {
-        private Function<Long, UserEntity> getUserById = null;
-        private Function<Long, TaskEntity> getTaskById = null;
-        private Function<Long, List<RoleEntity>> getRolesByUserId = null;
-        private Function<Long, List<UserEntity>> getCandidatesByApprovalId = null;
-        private Function<ExternalApproval, String> getExternalUrlByExternalId = null;
-        private Function<Long, String> getExternalApprovalNameById = null;
-
-        public FlowNodeInstanceMapper withGetExternalApprovalNameById(
-                @NonNull Function<Long, String> getExternalApprovalNameById) {
-            this.getExternalApprovalNameById = getExternalApprovalNameById;
-            return this;
-        }
-
-        public FlowNodeInstanceMapper withGetExternalUrlByExternalId(
-                @NonNull Function<ExternalApproval, String> getExternalUrlByExternalId) {
-            this.getExternalUrlByExternalId = getExternalUrlByExternalId;
-            return this;
-        }
-
-        public FlowNodeInstanceMapper withGetUserById(@NonNull Function<Long, UserEntity> getUserById) {
-            this.getUserById = getUserById;
-            return this;
-        }
-
-        public FlowNodeInstanceMapper withGetRolesByUserId(@NonNull Function<Long, List<RoleEntity>> getRolesByUserId) {
-            this.getRolesByUserId = getRolesByUserId;
-            return this;
-        }
-
-        public FlowNodeInstanceMapper withGetCandidatesByApprovalId(
-                @NonNull Function<Long, List<UserEntity>> getCandidatesByApprovalId) {
-            this.getCandidatesByApprovalId = getCandidatesByApprovalId;
-            return this;
-        }
-
-        public FlowNodeInstanceMapper withGetTaskById(@NonNull Function<Long, TaskEntity> getTaskById) {
-            this.getTaskById = getTaskById;
-            return this;
-        }
+        private final Function<Long, UserEntity> getUserById;
+        private final Function<Long, TaskEntity> getTaskById;
+        private final Function<Long, List<RoleEntity>> getRolesByUserId;
+        private final Function<Long, List<UserEntity>> getCandidatesByApprovalId;
+        private final Function<ExternalApproval, String> getExternalUrlByExternalId;
+        private final Function<Long, String> getExternalApprovalNameById;
 
         public FlowNodeInstanceDetailResp map(@NonNull BaseFlowNodeInstance instance) {
             if (instance instanceof FlowApprovalInstance) {
@@ -147,12 +111,15 @@ public class FlowNodeInstanceDetailResp {
                 resp.setDeadlineTime(new Date(instance.getUpdateTime().getTime() + expireInterval));
             }
             if (taskEntity != null && taskEntity.getTaskType() == TaskType.PRE_CHECK) {
+                // Determine whether to perform a multiple database pre-check based on ParametersJson
                 PreCheckTaskResult result =
                         JsonUtils.fromJson(taskEntity.getResultJson(), PreCheckTaskResult.class);
                 if (result != null) {
                     resp.setPreCheckOverLimit(result.isOverLimit());
                     if (Objects.nonNull(result.getSqlCheckResult())) {
                         resp.setIssueCount(result.getSqlCheckResult().getIssueCount());
+                    } else if (Objects.nonNull(result.getMultipleSqlCheckTaskResult())) {
+                        resp.setIssueCount(result.getMultipleSqlCheckTaskResult().getIssueCount());
                     }
                     if (Objects.nonNull(result.getPermissionCheckResult())) {
                         resp.setUnauthorizedDBResources(result.getPermissionCheckResult().getUnauthorizedDBResources());
