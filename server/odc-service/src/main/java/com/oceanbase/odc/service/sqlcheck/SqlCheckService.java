@@ -21,6 +21,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import javax.validation.Valid;
@@ -42,6 +43,8 @@ import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.sql.split.OffsetString;
 import com.oceanbase.odc.service.collaboration.environment.EnvironmentService;
 import com.oceanbase.odc.service.collaboration.environment.model.Environment;
+import com.oceanbase.odc.service.connection.database.DatabaseService;
+import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.regulation.ruleset.RuleService;
 import com.oceanbase.odc.service.regulation.ruleset.model.QueryRuleMetadataParams;
@@ -49,9 +52,12 @@ import com.oceanbase.odc.service.regulation.ruleset.model.Rule;
 import com.oceanbase.odc.service.regulation.ruleset.model.Rule.RuleViolation;
 import com.oceanbase.odc.service.regulation.ruleset.model.RuleMetadata;
 import com.oceanbase.odc.service.regulation.ruleset.model.RuleType;
+import com.oceanbase.odc.service.session.ConnectSessionService;
 import com.oceanbase.odc.service.session.factory.OBConsoleDataSourceFactory;
 import com.oceanbase.odc.service.sqlcheck.model.CheckResult;
 import com.oceanbase.odc.service.sqlcheck.model.CheckViolation;
+import com.oceanbase.odc.service.sqlcheck.model.MultipleSqlCheckReq;
+import com.oceanbase.odc.service.sqlcheck.model.MultipleSqlCheckResult;
 import com.oceanbase.odc.service.sqlcheck.model.SqlCheckReq;
 import com.oceanbase.odc.service.sqlcheck.rule.SqlCheckRules;
 
@@ -76,6 +82,12 @@ public class SqlCheckService {
     @Autowired
     private EnvironmentService environmentService;
 
+    @Autowired
+    private ConnectSessionService sessionService;
+
+    @Autowired
+    private DatabaseService databaseService;
+
     public List<CheckResult> check(@NotNull ConnectionSession session,
             @NotNull @Valid SqlCheckReq req) {
         Long ruleSetId = ConnectionSessionUtil.getRuleSetId(session);
@@ -91,6 +103,35 @@ public class SqlCheckService {
         List<CheckViolation> checkViolations = sqlChecker.check(req.getScriptContent());
         fullFillRiskLevel(rules, checkViolations);
         return SqlCheckUtil.buildCheckResults(checkViolations);
+    }
+
+    public List<MultipleSqlCheckResult> multipleCheck(@NotNull @Valid MultipleSqlCheckReq req) {
+        List<Long> databaseIds = req.getDatabaseIds();
+        Map<Long, Database> id2Database = databaseService.listDatabasesDetailsByIds(databaseIds).stream().collect(
+                Collectors.toMap(Database::getId, Function.identity()));
+        List<MultipleSqlCheckResult> multipleSqlCheckResults = new ArrayList<>();
+        for (Long databaseId : databaseIds) {
+            ConnectionSession session = null;
+            try {
+                session = sessionService.create(id2Database.get(databaseId).getDataSource().getId(), databaseId);
+                SqlCheckReq sqlCheckReq = new SqlCheckReq();
+                sqlCheckReq.setDelimiter(req.getDelimiter());
+                sqlCheckReq.setScriptContent(req.getScriptContent());
+                List<CheckResult> check = check(session, sqlCheckReq);
+                MultipleSqlCheckResult multipleSqlCheckResult = new MultipleSqlCheckResult();
+                if (CollectionUtils.isEmpty(check)) {
+                    return Collections.emptyList();
+                }
+                multipleSqlCheckResult.setCheckResultList(check);
+                multipleSqlCheckResult.setDatabase(id2Database.get(databaseId));
+                multipleSqlCheckResults.add(multipleSqlCheckResult);
+            } finally {
+                if (session != null) {
+                    session.expire();
+                }
+            }
+        }
+        return multipleSqlCheckResults;
     }
 
     public List<CheckViolation> check(@NotNull Long environmentId, @NonNull String databaseName,

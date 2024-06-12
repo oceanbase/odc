@@ -55,7 +55,8 @@ public class FlowUtil {
     }
 
     @SuppressWarnings("all")
-    public static <T extends EventDefinition> List<T> getBoundaryEventDefinitions(@NonNull String processDefinitionId,
+    public static <T extends EventDefinition> List<FlowableBoundaryEvent<T>> getBoundaryEventDefinitions(
+            @NonNull String processDefinitionId,
             @NonNull String activityId, @NonNull Class<T> eventClass) {
         Process process = ProcessDefinitionUtil.getProcess(processDefinitionId);
         FlowElement element = process.getFlowElement(activityId);
@@ -66,12 +67,15 @@ public class FlowUtil {
         if (CollectionUtils.isEmpty(boundaryEvents)) {
             return Collections.emptyList();
         }
-        List<T> returnVal = new LinkedList<>();
+        List<FlowableBoundaryEvent<T>> returnVal = new LinkedList<>();
         for (BoundaryEvent boundaryEvent : boundaryEvents) {
             List<EventDefinition> eventDefinitions = boundaryEvent.getEventDefinitions();
             for (EventDefinition definition : eventDefinitions) {
                 if (eventClass.equals(definition.getClass())) {
-                    returnVal.add((T) definition);
+                    FlowableBoundaryEvent fbc = new FlowableBoundaryEvent();
+                    fbc.setEventDefinition(definition);
+                    fbc.setFlowableListeners(boundaryEvent.getExecutionListeners());
+                    returnVal.add(fbc);
                 }
             }
         }

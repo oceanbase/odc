@@ -15,6 +15,7 @@
  */
 package com.oceanbase.tools.sqlparser.adapter.mysql;
 
+import java.util.List;
 import java.util.stream.Collectors;
 
 import org.antlr.v4.runtime.ParserRuleContext;
@@ -22,7 +23,9 @@ import org.antlr.v4.runtime.ParserRuleContext;
 import com.oceanbase.tools.sqlparser.adapter.StatementFactory;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Create_table_like_stmtContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Create_table_stmtContext;
+import com.oceanbase.tools.sqlparser.obmysql.OBParser.Special_table_typeContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParserBaseVisitor;
+import com.oceanbase.tools.sqlparser.statement.common.ColumnGroupElement;
 import com.oceanbase.tools.sqlparser.statement.common.RelationFactor;
 import com.oceanbase.tools.sqlparser.statement.createtable.CreateTable;
 
@@ -33,8 +36,8 @@ import lombok.NonNull;
  *
  * @author yh263208
  * @date 2022-12-26 15:04
- * @since ODC_release_4.1.0
  * @see StatementFactory
+ * @since ODC_release_4.1.0
  */
 public class MySQLCreateTableFactory extends OBParserBaseVisitor<CreateTable> implements StatementFactory<CreateTable> {
 
@@ -57,9 +60,9 @@ public class MySQLCreateTableFactory extends OBParserBaseVisitor<CreateTable> im
     public CreateTable visitCreate_table_like_stmt(Create_table_like_stmtContext ctx) {
         RelationFactor factor = MySQLFromReferenceFactory.getRelationFactor(ctx.relation_factor(0));
         CreateTable createTable = new CreateTable(ctx, factor.getRelation());
-        if (ctx.temporary_option().TEMPORARY() != null) {
+        if (ctx.special_table_type().TEMPORARY() != null) {
             createTable.setTemporary(true);
-        } else if (ctx.temporary_option().EXTERNAL() != null) {
+        } else if (ctx.special_table_type().EXTERNAL() != null) {
             createTable.setExternal(true);
         }
         if (ctx.IF() != null && ctx.not() != null && ctx.EXISTS() != null) {
@@ -76,11 +79,15 @@ public class MySQLCreateTableFactory extends OBParserBaseVisitor<CreateTable> im
     public CreateTable visitCreate_table_stmt(Create_table_stmtContext ctx) {
         RelationFactor factor = MySQLFromReferenceFactory.getRelationFactor(ctx.relation_factor());
         CreateTable createTable = new CreateTable(ctx, factor.getRelation());
-        if (ctx.temporary_option().TEMPORARY() != null) {
-            createTable.setTemporary(true);
-        } else if (ctx.temporary_option().EXTERNAL() != null) {
-            createTable.setExternal(true);
+        if (ctx.special_table_type() != null) {
+            Special_table_typeContext specialTableTypeContext = ctx.special_table_type();
+            if (specialTableTypeContext.EXTERNAL() != null) {
+                createTable.setExternal(true);
+            } else if (specialTableTypeContext.TEMPORARY() != null) {
+                createTable.setTemporary(true);
+            }
         }
+
         if (ctx.IF() != null && ctx.not() != null && ctx.EXISTS() != null) {
             createTable.setIfNotExists(true);
         }
@@ -95,8 +102,17 @@ public class MySQLCreateTableFactory extends OBParserBaseVisitor<CreateTable> im
         if (ctx.table_option_list() != null) {
             createTable.setTableOptions(new MySQLTableOptionsFactory(ctx.table_option_list()).generate());
         }
-        if (ctx.opt_partition_option() != null) {
-            createTable.setPartition(new MySQLPartitionFactory(ctx.opt_partition_option()).generate());
+        if (ctx.partition_option() != null) {
+            createTable.setPartition(new MySQLPartitionFactory(ctx.partition_option()).generate());
+        }
+        if (ctx.auto_partition_option() != null) {
+            createTable.setPartition(new MySQLPartitionFactory(ctx.auto_partition_option()).generate());
+        }
+        if (ctx.with_column_group() != null) {
+            List<ColumnGroupElement> columnGroupElements = ctx.with_column_group()
+                    .column_group_list().column_group_element().stream()
+                    .map(c -> new MySQLColumnGroupElementFactory(c).generate()).collect(Collectors.toList());
+            createTable.setColumnGroupElements(columnGroupElements);
         }
         return createTable;
     }

@@ -29,13 +29,11 @@ import org.springframework.util.CollectionUtils;
 import com.oceanbase.odc.common.util.ObjectUtil;
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.session.ConnectionSession;
-import com.oceanbase.odc.core.session.ConnectionSessionUtil;
 import com.oceanbase.odc.core.shared.model.TableIdentity;
 import com.oceanbase.odc.metadb.shadowtable.TableComparingEntity;
 import com.oceanbase.odc.metadb.shadowtable.TableComparingRepository;
 import com.oceanbase.odc.service.db.DBTableService;
-import com.oceanbase.odc.service.db.browser.DBObjectEditorFactory;
-import com.oceanbase.odc.service.db.browser.DBTableEditorFactory;
+import com.oceanbase.odc.service.db.browser.DBTableEditors;
 import com.oceanbase.odc.service.db.model.GenerateTableDDLResp;
 import com.oceanbase.odc.service.db.model.GenerateUpdateTableDDLReq;
 import com.oceanbase.odc.service.session.factory.DefaultConnectSessionFactory;
@@ -202,10 +200,7 @@ public class ShadowTableComparingTask implements Callable<Void> {
 
     public GenerateTableDDLResp generateUpdateDDLWithoutRenaming(@NotNull ConnectionSession connectionSession,
             @NotNull GenerateUpdateTableDDLReq req) {
-        DBObjectEditorFactory<DBTableEditor> tableEditorFactory =
-                new DBTableEditorFactory(connectionSession.getConnectType(),
-                        ConnectionSessionUtil.getVersion(connectionSession));
-        DBTableEditor tableEditor = tableEditorFactory.create();
+        DBTableEditor tableEditor = DBTableEditors.create(connectionSession);
         String ddl = tableEditor.generateUpdateObjectDDLWithoutRenaming(req.getPrevious(), req.getCurrent());
         return GenerateTableDDLResp.builder()
                 .sql(ddl)

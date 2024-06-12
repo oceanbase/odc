@@ -35,14 +35,14 @@ import org.flowable.engine.repository.DeploymentBuilder;
 import org.flowable.engine.repository.ProcessDefinition;
 import org.flowable.engine.runtime.ProcessInstance;
 
+import com.oceanbase.odc.common.graph.Graph;
+import com.oceanbase.odc.common.graph.GraphEdge;
+import com.oceanbase.odc.common.graph.GraphVertex;
 import com.oceanbase.odc.common.lang.Pair;
 import com.oceanbase.odc.core.authority.model.SecurityResource;
 import com.oceanbase.odc.core.flow.BaseExecutionListener;
 import com.oceanbase.odc.core.flow.ExecutionConfigurer;
 import com.oceanbase.odc.core.flow.builder.FlowableProcessBuilder;
-import com.oceanbase.odc.core.flow.graph.Graph;
-import com.oceanbase.odc.core.flow.graph.GraphEdge;
-import com.oceanbase.odc.core.flow.graph.GraphVertex;
 import com.oceanbase.odc.core.flow.model.FlowableElement;
 import com.oceanbase.odc.core.flow.util.FlowUtil;
 import com.oceanbase.odc.core.shared.OrganizationIsolated;

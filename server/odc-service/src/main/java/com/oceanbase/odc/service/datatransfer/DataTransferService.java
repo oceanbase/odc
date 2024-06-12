@@ -49,6 +49,7 @@ import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.task.TaskRejectedException;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -65,6 +66,8 @@ import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.core.shared.constant.TaskType;
 import com.oceanbase.odc.core.shared.exception.AccessDeniedException;
 import com.oceanbase.odc.core.shared.exception.NotFoundException;
+import com.oceanbase.odc.core.sql.split.OffsetString;
+import com.oceanbase.odc.core.sql.split.SqlCommentProcessor;
 import com.oceanbase.odc.plugin.task.api.datatransfer.dumper.ExportOutput;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.ConnectionInfo;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.CsvColumnMapping;
@@ -181,6 +184,13 @@ public class DataTransferService {
                     new Object[] {"ConnectionId can not be null"}, "ConnectionId can not be null");
             ConnectionConfig connectionConfig = connectionService.getForConnectionSkipPermissionCheck(connectionId);
             ConnectionInfo connectionInfo = connectionConfig.toConnectionInfo();
+            String initScript = connectionConfig.getSessionInitScript();
+            if (StringUtils.isNotEmpty(initScript)) {
+                connectionInfo.setSessionInitScripts(SqlCommentProcessor
+                        .removeSqlComments(initScript, ";", connectionInfo.getConnectType().getDialectType(), false)
+                        .stream().map(OffsetString::getStr).collect(Collectors.toList()));
+            }
+
             connectionInfo.setSchema(transferConfig.getSchemaName());
             transferConfig.setConnectionInfo(connectionInfo);
             injectSysConfig(connectionConfig, transferConfig);
@@ -205,11 +215,14 @@ public class DataTransferService {
             Future<DataTransferTaskResult> future = executor.submit(task);
 
             return new DataTransferTaskContext(future, task);
-
+        } catch (TaskRejectedException e) {
+            LOGGER.warn("Exceeded the maximum concurrent task limit, please try again later.", e);
+            throw e;
         } catch (Exception e) {
             LOGGER.warn("Failed to init data transfer task.", e);
-            TraceContextHolder.clear();
             throw e;
+        } finally {
+            TraceContextHolder.clear();
         }
     }
 

@@ -5,12 +5,14 @@
     <parent>
         <groupId>com.oceanbase</groupId>
         <artifactId>odc-parent</artifactId>
-        <version>4.2.4-SNAPSHOT</version>
+        <version>4.3.0-SNAPSHOT</version>
         <relativePath>../../pom.xml</relativePath>
     </parent>
     <artifactId>odc-service</artifactId>
     <properties>
         <root-project.basedir>${project.parent.basedir}</root-project.basedir>
+        <antlr-output-base-path>target/generated-sources/antlr</antlr-output-base-path>
+        <antlr-source-base-path>src/main/resources/antlr</antlr-source-base-path>
     </properties>
     <dependencyManagement>
         <dependencies>
@@ -257,6 +259,10 @@
             <artifactId>ojdbc8</artifactId>
         </dependency>
         <dependency>
+            <groupId>com.oracle.database.nls</groupId>
+            <artifactId>orai18n</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.codehaus.groovy</groupId>
             <artifactId>groovy-all</artifactId>
         </dependency>
@@ -290,4 +296,26 @@
             <artifactId>jasypt-spring-boot-starter</artifactId>
         </dependency>
     </dependencies>
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.antlr</groupId>
+                <artifactId>antlr4-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>logicaldatabase</id>
+                        <goals>
+                            <goal>antlr4</goal>
+                        </goals>
+                        <configuration>
+                            <visitor>true</visitor>
+                            <listener>true</listener>
+                            <sourceDirectory>${antlr-source-base-path}/logicaldatabase</sourceDirectory>
+                            <outputDirectory>${antlr-output-base-path}/com/oceanbase/odc/service/connection/logicaldatabase</outputDirectory>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
 </project>

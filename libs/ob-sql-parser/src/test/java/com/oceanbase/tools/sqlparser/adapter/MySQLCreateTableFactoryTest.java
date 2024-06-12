@@ -19,6 +19,7 @@ import java.math.BigDecimal;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.antlr.v4.runtime.BailErrorStrategy;
@@ -35,8 +36,10 @@ import com.oceanbase.tools.sqlparser.obmysql.OBParser.Create_table_stmtContext;
 import com.oceanbase.tools.sqlparser.statement.Expression;
 import com.oceanbase.tools.sqlparser.statement.Operator;
 import com.oceanbase.tools.sqlparser.statement.common.CharacterType;
+import com.oceanbase.tools.sqlparser.statement.common.ColumnGroupElement;
 import com.oceanbase.tools.sqlparser.statement.common.DataType;
 import com.oceanbase.tools.sqlparser.statement.common.RelationFactor;
+import com.oceanbase.tools.sqlparser.statement.createtable.ColumnAttributes;
 import com.oceanbase.tools.sqlparser.statement.createtable.ColumnDefinition;
 import com.oceanbase.tools.sqlparser.statement.createtable.CreateTable;
 import com.oceanbase.tools.sqlparser.statement.createtable.HashPartition;
@@ -244,6 +247,23 @@ public class MySQLCreateTableFactoryTest {
     }
 
     @Test
+    public void generate_skipIndex_succeed() {
+        Create_table_stmtContext ctx = getCreateTableContext(
+                "create table skip_index_tbl (id varchar(64) SKIP_INDEX(MIN_MAX,SUM))");
+        MySQLCreateTableFactory factory = new MySQLCreateTableFactory(ctx);
+        CreateTable actual = factory.generate();
+
+        CreateTable expect = new CreateTable("skip_index_tbl");
+        DataType dataType = new CharacterType("varchar", new BigDecimal("64"));
+        ColumnAttributes attributes = new ColumnAttributes();
+        attributes.setSkipIndexTypes(Arrays.asList("MIN_MAX", "SUM"));
+        ColumnDefinition column = new ColumnDefinition(new ColumnReference(null, null, "id"), dataType);
+        column.setColumnAttributes(attributes);
+        expect.setTableElements(Collections.singletonList(column));
+        Assert.assertEquals(expect, actual);
+    }
+
+    @Test
     public void generate_Compression_succeed() {
         Create_table_stmtContext context =
                 getCreateTableContext("create table abcd (id varchar(64)) COMPRESSION 'aaa'");
@@ -333,7 +353,8 @@ public class MySQLCreateTableFactoryTest {
     @Test
     public void generate_formatTableOp_succeed() {
         Create_table_stmtContext context = getCreateTableContext(
-                "create table abcd (id varchar(64)) kv_attributes='12' format=(ENCODING='aaaa',LINE_DELIMITER=123,SKIP_HEADER=12,EMPTY_FIELD_AS_NULL=true,NULL_IF_EXETERNAL=(1,2,3))");
+                "create table abcd (id varchar(64)) kv_attributes='12' format=(ENCODING='aaaa',LINE_DELIMITER=123,SKIP_HEADER=12,"
+                        + "EMPTY_FIELD_AS_NULL=true,NULL_IF_EXETERNAL=(1,2,3))");
         StatementFactory<CreateTable> factory = new MySQLCreateTableFactory(context);
         CreateTable actual = factory.generate();
 
@@ -361,7 +382,9 @@ public class MySQLCreateTableFactoryTest {
     @Test
     public void generate_ob40NewTableOptions_succeed() {
         Create_table_stmtContext context = getCreateTableContext(
-                "create table abcd (id varchar(64)) delay_key_write=12 avg_row_length=13 checksum=15 auto_increment_mode='aaa' enable_extended_rowid=true ttl(12 + interval 12 year, 13 + interval 45 day)");
+                "create table abcd (id varchar(64)) delay_key_write=12 avg_row_length=13 checksum=15 auto_increment_mode='aaa' "
+                        + "enable_extended_rowid=true"
+                        + " TTL(col1 + interval 12 year, abcd.col2 + interval 45 day, db1.abcd.col3 + interval 45 day)");
         StatementFactory<CreateTable> factory = new MySQLCreateTableFactory(context);
         CreateTable actual = factory.generate();
 
@@ -376,9 +399,11 @@ public class MySQLCreateTableFactoryTest {
         tableOptions.setAutoIncrementMode("'aaa'");
         tableOptions.setEnableExtendedRowId(true);
         tableOptions.setTtls(Arrays.asList(
-                new CompoundExpression(new ConstExpression("12"),
+                new CompoundExpression(new ColumnReference(null, null, "col1"),
                         new IntervalExpression(new ConstExpression("12"), "year"), Operator.ADD),
-                new CompoundExpression(new ConstExpression("13"),
+                new CompoundExpression(new ColumnReference(null, "abcd", "col2"),
+                        new IntervalExpression(new ConstExpression("45"), "day"), Operator.ADD),
+                new CompoundExpression(new ColumnReference("db1", "abcd", "col3"),
                         new IntervalExpression(new ConstExpression("45"), "day"), Operator.ADD)));
         expect.setTableOptions(tableOptions);
         Assert.assertEquals(expect, actual);
@@ -406,6 +431,53 @@ public class MySQLCreateTableFactoryTest {
         e2.setPartitionOptions(o1);
         expect.setPartition(new HashPartition(Collections.singletonList(
                 new ColumnReference(null, null, "a")), Arrays.asList(e1, e2), null, 12));
+        Assert.assertEquals(expect, actual);
+    }
+
+    @Test
+    public void generate_withColumnGroup_allColumns_succeed() {
+        Create_table_stmtContext ctx = getCreateTableContext(
+                "create table column_group_tbl (id varchar(64)) with column group(all columns)");
+        MySQLCreateTableFactory factory = new MySQLCreateTableFactory(ctx);
+        CreateTable actual = factory.generate();
+
+        CreateTable expect = new CreateTable("column_group_tbl");
+        expect.setColumnGroupElements(Collections.singletonList(new ColumnGroupElement(true, false)));
+        DataType dataType = new CharacterType("varchar", new BigDecimal("64"));
+        expect.setTableElements(
+                Collections.singletonList(new ColumnDefinition(new ColumnReference(null, null, "id"), dataType)));
+        Assert.assertEquals(expect, actual);
+    }
+
+    @Test
+    public void generate_withColumnGroup_allColumns_eachColumn_succeed() {
+        Create_table_stmtContext ctx = getCreateTableContext(
+                "create table column_group_tbl (id varchar(64)) with column group(all columns, each column)");
+        MySQLCreateTableFactory factory = new MySQLCreateTableFactory(ctx);
+        CreateTable actual = factory.generate();
+
+        CreateTable expect = new CreateTable("column_group_tbl");
+        expect.setColumnGroupElements(
+                Arrays.asList(new ColumnGroupElement(true, false), new ColumnGroupElement(false, true)));
+        DataType dataType = new CharacterType("varchar", new BigDecimal("64"));
+        expect.setTableElements(
+                Collections.singletonList(new ColumnDefinition(new ColumnReference(null, null, "id"), dataType)));
+        Assert.assertEquals(expect, actual);
+    }
+
+    @Test
+    public void generate_withColumnGroup_customGroup_succeed() {
+        Create_table_stmtContext ctx = getCreateTableContext(
+                "create table column_group_tbl (id varchar(64)) with column group(g1(id))");
+        MySQLCreateTableFactory factory = new MySQLCreateTableFactory(ctx);
+        CreateTable actual = factory.generate();
+
+        CreateTable expect = new CreateTable("column_group_tbl");
+        List<String> columnNames = Collections.singletonList("id");
+        expect.setColumnGroupElements(Collections.singletonList(new ColumnGroupElement("g1", columnNames)));
+        DataType dataType = new CharacterType("varchar", new BigDecimal("64"));
+        expect.setTableElements(
+                Collections.singletonList(new ColumnDefinition(new ColumnReference(null, null, "id"), dataType)));
         Assert.assertEquals(expect, actual);
     }
 

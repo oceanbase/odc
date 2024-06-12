@@ -32,6 +32,15 @@ public interface Translatable {
     String code();
 
     /**
+     * get i18n key, eg. "${com.oceanbase.odc.ResourceType.ODC_CONNECTION}".
+     * 
+     * @return i18n key
+     */
+    default String i18nKey() {
+        return "${" + I18N_KEY_PREFIX + this.getClass().getSimpleName() + "." + code() + "}";
+    }
+
+    /**
      * get translated message
      * 
      * @param args args referenced by i18n message template defined in i18n resource files
@@ -42,4 +51,5 @@ public interface Translatable {
         String key = I18N_KEY_PREFIX + this.getClass().getSimpleName() + "." + code();
         return I18n.translate(key, args, key, locale);
     }
+
 }

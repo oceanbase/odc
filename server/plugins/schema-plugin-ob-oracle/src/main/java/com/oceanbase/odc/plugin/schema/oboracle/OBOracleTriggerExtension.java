@@ -21,15 +21,15 @@ import java.util.List;
 import org.pf4j.Extension;
 
 import com.oceanbase.odc.common.util.JdbcOperationsUtil;
+import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.plugin.schema.api.TriggerExtensionPoint;
 import com.oceanbase.odc.plugin.schema.oboracle.utils.DBAccessorUtil;
+import com.oceanbase.tools.dbbrowser.DBBrowser;
 import com.oceanbase.tools.dbbrowser.editor.oracle.OracleObjectOperator;
 import com.oceanbase.tools.dbbrowser.model.DBObjectType;
 import com.oceanbase.tools.dbbrowser.model.DBPLObjectIdentity;
 import com.oceanbase.tools.dbbrowser.model.DBTrigger;
 import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
-import com.oceanbase.tools.dbbrowser.template.DBObjectTemplate;
-import com.oceanbase.tools.dbbrowser.template.oracle.OracleTriggerTemplate;
 import com.oceanbase.tools.dbbrowser.util.OracleSqlBuilder;
 import com.oceanbase.tools.dbbrowser.util.SqlBuilder;
 
@@ -80,8 +80,10 @@ public class OBOracleTriggerExtension implements TriggerExtensionPoint {
 
     @Override
     public String generateCreateTemplate(@NonNull DBTrigger trigger) {
-        DBObjectTemplate<DBTrigger> template = new OracleTriggerTemplate();
-        return template.generateCreateObjectTemplate(trigger);
+        return DBBrowser.objectTemplate().triggerTemplate()
+                .setType(DialectType.OB_ORACLE.getDBBrowserDialectTypeName())
+                .create()
+                .generateCreateObjectTemplate(trigger);
     }
 
     protected DBSchemaAccessor getSchemaAccessor(Connection connection) {

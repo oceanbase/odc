@@ -368,7 +368,7 @@ public class OracleDateFormat extends DateFormat {
                  *
                  * <code>
                  *     obclient> set session nls_date_format='YYYY "asddsdd"';
-                 *     ORA-01821: date format not recognized
+                 *     OBE-01821: date format not recognized
                  * </code>
                  *
                  * 所以这里只考虑兼容 oracle 的行为就好

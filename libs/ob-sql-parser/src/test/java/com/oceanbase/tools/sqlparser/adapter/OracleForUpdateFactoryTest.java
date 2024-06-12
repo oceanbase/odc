@@ -77,6 +77,18 @@ public class OracleForUpdateFactoryTest {
     }
 
     @Test
+    public void generate_existsColumnListWaitDecimal_generateForUpdateSucceed() {
+        For_updateContext context = getForUpdateContext("select 1 from dual for update of tab.col1,tab.col2 wait 12.5");
+        StatementFactory<ForUpdate> factory = new OracleForUpdateFactory(context);
+        ForUpdate actual = factory.generate();
+
+        ColumnReference c1 = new ColumnReference(null, "tab", "col1");
+        ColumnReference c2 = new ColumnReference(null, "tab", "col2");
+        ForUpdate expect = new ForUpdate(Arrays.asList(c1, c2), WaitOption.WAIT, BigDecimal.valueOf(12.5));
+        Assert.assertEquals(expect, actual);
+    }
+
+    @Test
     public void generate_existsColumnListNoWait_generateForUpdateSucceed() {
         For_updateContext context = getForUpdateContext("select 1 from dual for update of tab.col1,tab.col2 nowait");
         StatementFactory<ForUpdate> factory = new OracleForUpdateFactory(context);

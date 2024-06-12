@@ -69,6 +69,18 @@ sqls:
     ORDER BY
       TABLE_NAME ASC,
       ORDINAL_POSITION ASC
+  list-basic-schema-columns-info: |-
+    SELECT
+      TABLE_SCHEMA,
+      TABLE_NAME,
+      COLUMN_NAME
+    FROM
+      information_schema.columns
+    WHERE
+      TABLE_SCHEMA = ?
+    ORDER BY
+      TABLE_NAME ASC,
+      ORDINAL_POSITION ASC
   list-table-columns: |-
     SELECT
       TABLE_NAME,
@@ -161,6 +173,8 @@ sqls:
       information_schema.partitions
     WHERE
       TABLE_SCHEMA = ? AND PARTITION_NAME is not null
+    ORDER BY
+      PARTITION_ORDINAL_POSITION ASC
   list-schema-index: |-
     SELECT 
       TABLE_SCHEMA, 

@@ -15,6 +15,9 @@
  */
 package com.oceanbase.odc.service.db.browser;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import org.springframework.jdbc.core.JdbcOperations;
 
 import com.oceanbase.odc.common.util.VersionUtils;
@@ -23,23 +26,10 @@ import com.oceanbase.odc.core.session.ConnectionSessionConstants;
 import com.oceanbase.odc.core.session.ConnectionSessionUtil;
 import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.core.shared.constant.ConnectType;
-import com.oceanbase.odc.core.shared.exception.UnsupportedException;
 import com.oceanbase.odc.core.sql.execute.SyncJdbcExecutor;
+import com.oceanbase.tools.dbbrowser.DBBrowser;
 import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
-import com.oceanbase.tools.dbbrowser.schema.doris.DorisSchemaAccessor;
-import com.oceanbase.tools.dbbrowser.schema.mysql.MySQLNoLessThan5600SchemaAccessor;
-import com.oceanbase.tools.dbbrowser.schema.mysql.MySQLNoLessThan5700SchemaAccessor;
-import com.oceanbase.tools.dbbrowser.schema.mysql.OBMySQLBetween220And225XSchemaAccessor;
-import com.oceanbase.tools.dbbrowser.schema.mysql.OBMySQLBetween2260And2276SchemaAccessor;
-import com.oceanbase.tools.dbbrowser.schema.mysql.OBMySQLBetween2277And3XSchemaAccessor;
-import com.oceanbase.tools.dbbrowser.schema.mysql.OBMySQLNoGreaterThan1479SchemaAccessor;
-import com.oceanbase.tools.dbbrowser.schema.mysql.OBMySQLSchemaAccessor;
-import com.oceanbase.tools.dbbrowser.schema.mysql.ODPOBMySQLSchemaAccessor;
-import com.oceanbase.tools.dbbrowser.schema.oracle.OBOracleLessThan2270SchemaAccessor;
-import com.oceanbase.tools.dbbrowser.schema.oracle.OBOracleLessThan400SchemaAccessor;
-import com.oceanbase.tools.dbbrowser.schema.oracle.OBOracleSchemaAccessor;
-import com.oceanbase.tools.dbbrowser.schema.oracle.OracleSchemaAccessor;
-import com.oceanbase.tools.dbbrowser.util.ALLDataDictTableNames;
+import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessorFactory;
 
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
@@ -79,51 +69,15 @@ public class DBSchemaAccessors {
 
     public static DBSchemaAccessor create(@NonNull JdbcOperations syncJdbcExecutor, JdbcOperations sysJdbcExecutor,
             @NonNull ConnectType connectType, @NonNull String dbVersion, String tenantName) {
-        if (connectType == ConnectType.OB_MYSQL || connectType == ConnectType.CLOUD_OB_MYSQL) {
-            if (VersionUtils.isGreaterThanOrEqualsTo(dbVersion, "4.0.0")) {
-                // OB 版本 >= 4.0.0
-                return new OBMySQLSchemaAccessor(syncJdbcExecutor);
-            } else if (VersionUtils.isGreaterThan(dbVersion, "2.2.76")) {
-                // OB 版本为 [2.2.77, 4.0.0)
-                return new OBMySQLBetween2277And3XSchemaAccessor(syncJdbcExecutor);
-            } else if (VersionUtils.isGreaterThan(dbVersion, "2.2.60")) {
-                // OB 版本为 [2.2.60, 2.2.77)
-                return new OBMySQLBetween2260And2276SchemaAccessor(syncJdbcExecutor);
-            } else if (VersionUtils.isGreaterThan(dbVersion, "1.4.79")) {
-                // OB 版本为 (1.4.79, 2.2.60)
-                return new OBMySQLBetween220And225XSchemaAccessor(syncJdbcExecutor);
-            } else {
-                // OB 版本 <= 1.4.79
-                return new OBMySQLNoGreaterThan1479SchemaAccessor(syncJdbcExecutor, sysJdbcExecutor, tenantName);
-            }
-        } else if (connectType == ConnectType.OB_ORACLE || connectType == ConnectType.CLOUD_OB_ORACLE) {
-            if (VersionUtils.isGreaterThanOrEqualsTo(dbVersion, "4.0.0")) {
-                // OB 版本 >= 4.0.0
-                return new OBOracleSchemaAccessor(syncJdbcExecutor, new ALLDataDictTableNames());
-            } else if (VersionUtils.isGreaterThanOrEqualsTo(dbVersion, "2.2.70")) {
-                // OB 版本为 [2.2.70, 4.0.0)
-                return new OBOracleLessThan400SchemaAccessor(syncJdbcExecutor, new ALLDataDictTableNames());
-            } else {
-                // OB 版本 < 2.2.70
-                return new OBOracleLessThan2270SchemaAccessor(syncJdbcExecutor, new ALLDataDictTableNames());
-            }
-        } else if (connectType == ConnectType.ODP_SHARDING_OB_MYSQL) {
-            return new ODPOBMySQLSchemaAccessor(syncJdbcExecutor);
-        } else if (connectType == ConnectType.MYSQL) {
-            if (VersionUtils.isGreaterThanOrEqualsTo(dbVersion, "5.7.0")) {
-                return new MySQLNoLessThan5700SchemaAccessor(syncJdbcExecutor);
-            } else if (VersionUtils.isGreaterThanOrEqualsTo(dbVersion, "5.6.0")) {
-                return new MySQLNoLessThan5600SchemaAccessor(syncJdbcExecutor);
-            } else {
-                throw new UnsupportedException(String.format("MySQL version '%s' not supported", dbVersion));
-            }
-        } else if (connectType == ConnectType.DORIS) {
-            return new DorisSchemaAccessor(syncJdbcExecutor);
-        } else if (connectType == ConnectType.ORACLE) {
-            return new OracleSchemaAccessor(syncJdbcExecutor, new ALLDataDictTableNames());
-        } else {
-            throw new UnsupportedException(String.format("ConnectType '%s' not supported", connectType));
-        }
+        Map<String, Object> properties = new HashMap<>();
+        properties.put(DBSchemaAccessorFactory.TENANT_NAME_KEY, tenantName);
+        properties.put(DBSchemaAccessorFactory.SYS_OPERATIONS_KEY, sysJdbcExecutor);
+        return DBBrowser.schemaAccessor()
+                .setProperties(properties)
+                .setDbVersion(dbVersion)
+                .setJdbcOperations(syncJdbcExecutor)
+                .setType(connectType.getDialectType().getDBBrowserDialectTypeName())
+                .create();
     }
 
 }

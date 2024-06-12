@@ -72,42 +72,12 @@ import com.oceanbase.tools.sqlparser.statement.select.SortKey;
 public class MySQLExpressionFactoryTest {
 
     @Test
-    public void generate_dotKeywordColumn_generateSucceed() {
-        ExprContext context = getExprContext(".BEFORE.col");
-        StatementFactory<Expression> factory = new MySQLExpressionFactory(context);
-        Expression actual = factory.generate();
-
-        ColumnReference expect = new ColumnReference(null, "BEFORE", "col");
-        Assert.assertEquals(expect, actual);
-    }
-
-    @Test
-    public void generate_keywordColumn_generateSucceed() {
-        ExprContext context = getExprContext("BEFORE.col");
-        StatementFactory<Expression> factory = new MySQLExpressionFactory(context);
-        Expression actual = factory.generate();
-
-        ColumnReference expect = new ColumnReference(null, "BEFORE", "col");
-        Assert.assertEquals(expect, actual);
-    }
-
-    @Test
     public void generate_dotKeywordKeyword_generateSucceed() {
         ExprContext context = getExprContext(".BEFORE.BEFORE");
         StatementFactory<Expression> factory = new MySQLExpressionFactory(context);
         Expression actual = factory.generate();
 
         ColumnReference expect = new ColumnReference(null, "BEFORE", "BEFORE");
-        Assert.assertEquals(expect, actual);
-    }
-
-    @Test
-    public void generate_dotKeywordStar_generateSucceed() {
-        ExprContext context = getExprContext(".BEFORE.*");
-        StatementFactory<Expression> factory = new MySQLExpressionFactory(context);
-        Expression actual = factory.generate();
-
-        ColumnReference expect = new ColumnReference(null, "BEFORE", "*");
         Assert.assertEquals(expect, actual);
     }
 
@@ -128,16 +98,6 @@ public class MySQLExpressionFactoryTest {
         Expression actual = factory.generate();
 
         ColumnReference expect = new ColumnReference(null, "tab", "BEFORE");
-        Assert.assertEquals(expect, actual);
-    }
-
-    @Test
-    public void generate_dotRelationStar_generateSucceed() {
-        ExprContext context = getExprContext(".tab.*");
-        StatementFactory<Expression> factory = new MySQLExpressionFactory(context);
-        Expression actual = factory.generate();
-
-        ColumnReference expect = new ColumnReference(null, "tab", "*");
         Assert.assertEquals(expect, actual);
     }
 
@@ -1244,7 +1204,8 @@ public class MySQLExpressionFactoryTest {
     @Test
     public void generate_uniqueGroupConcatExprListWithWinBody_generateSucceed() {
         Bit_exprContext context = getBitExprContext(
-                "GROUP_CONCAT(unique 5,6 order by col1 asc SEPARATOR 'mmm') over (name_ob partition by (1,2) order by col desc rows between current row and 123 PRECEDING)");
+                "GROUP_CONCAT(unique 5,6 order by col1 asc SEPARATOR 'mmm') over (name_ob partition by (1,2) order by col desc rows between "
+                        + "current row and 123 PRECEDING)");
         StatementFactory<Expression> factory = new MySQLExpressionFactory(context);
         Expression actual = factory.generate();
 
@@ -1278,7 +1239,8 @@ public class MySQLExpressionFactoryTest {
     @Test
     public void generate_uniqueListaggExprListWithWinBody_generateSucceed() {
         Bit_exprContext context = getBitExprContext(
-                "LISTAGG(unique 5,6 order by col1 asc SEPARATOR 'mmm') over (name_ob partition by (1,2) order by col desc rows between current row and interval 123 day FOLLOWING)");
+                "LISTAGG(unique 5,6 order by col1 asc SEPARATOR 'mmm') over (name_ob partition by (1,2) order by col desc rows between "
+                        + "current row and interval 123 day FOLLOWING)");
         StatementFactory<Expression> factory = new MySQLExpressionFactory(context);
         Expression actual = factory.generate();
 

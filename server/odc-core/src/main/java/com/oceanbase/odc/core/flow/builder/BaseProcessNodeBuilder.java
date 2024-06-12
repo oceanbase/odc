@@ -29,9 +29,9 @@ import org.flowable.bpmn.model.FlowNode;
 import org.flowable.bpmn.model.FlowableListener;
 import org.flowable.bpmn.model.FormProperty;
 
+import com.oceanbase.odc.common.graph.GraphVertex;
 import com.oceanbase.odc.core.flow.BaseExecutionListener;
 import com.oceanbase.odc.core.flow.ProcessElementBuilder;
-import com.oceanbase.odc.core.flow.graph.GraphVertex;
 import com.oceanbase.odc.core.flow.util.FlowConstants;
 import com.oceanbase.odc.core.flow.util.FlowIdGenerators;
 

@@ -21,9 +21,11 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 
+import javax.persistence.LockModeType;
 import javax.transaction.Transactional;
 
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -61,6 +63,18 @@ public interface ServiceTaskInstanceRepository extends OdcJpaRepository<ServiceT
     int deleteByFlowInstanceId(@Param("instanceId") Long instanceId);
 
     List<ServiceTaskInstanceEntity> findByFlowInstanceIdIn(Set<Long> flowInstanceIds);
+
+    @Transactional
+    @Lock(value = LockModeType.PESSIMISTIC_WRITE)
+    List<ServiceTaskInstanceEntity> findByIdInAndStatus(Collection<Long> ids, FlowNodeStatus status);
+
+    @Transactional
+    @Query(value = "update flow_instance_node_task set status=:#{#status.name()} where id in (:ids)",
+            nativeQuery = true)
+    @Modifying
+    int updateStatusByIdIn(@Param("ids") List<Long> ids, @Param("status") FlowNodeStatus status);
+
+    List<ServiceTaskInstanceEntity> findByStatus(FlowNodeStatus status);
 
     @Query(value = "select na.* from flow_instance_node_task as na inner join flow_instance_node as n on na.id=n.instance_id "
             + "where n.instance_type=:#{#instanceType.name()} and n.activity_id=:activityId and n.flow_instance_id=:flowInstanceId",

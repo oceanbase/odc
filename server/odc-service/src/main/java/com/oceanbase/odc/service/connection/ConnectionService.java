@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -47,11 +48,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.integration.jdbc.lock.JdbcLockRegistry;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.PlatformTransactionManager;
-import org.springframework.transaction.TransactionDefinition;
-import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.transaction.support.DefaultTransactionDefinition;
+import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.validation.annotation.Validated;
 
 import com.oceanbase.odc.common.json.JsonUtils;
@@ -73,6 +71,7 @@ import com.oceanbase.odc.core.shared.constant.OrganizationType;
 import com.oceanbase.odc.core.shared.constant.PermissionType;
 import com.oceanbase.odc.core.shared.constant.ResourceRoleName;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
+import com.oceanbase.odc.core.shared.exception.AccessDeniedException;
 import com.oceanbase.odc.core.shared.exception.BadRequestException;
 import com.oceanbase.odc.core.shared.exception.ConflictException;
 import com.oceanbase.odc.core.shared.exception.NotFoundException;
@@ -108,6 +107,7 @@ import com.oceanbase.odc.service.connection.model.QueryConnectionParams;
 import com.oceanbase.odc.service.connection.ssl.ConnectionSSLAdaptor;
 import com.oceanbase.odc.service.connection.util.ConnectionIdList;
 import com.oceanbase.odc.service.connection.util.ConnectionMapper;
+import com.oceanbase.odc.service.db.schema.syncer.DBSchemaSyncProperties;
 import com.oceanbase.odc.service.iam.HorizontalDataPermissionValidator;
 import com.oceanbase.odc.service.iam.PermissionService;
 import com.oceanbase.odc.service.iam.ProjectPermissionValidator;
@@ -194,9 +194,6 @@ public class ConnectionService {
     private ProjectPermissionValidator projectPermissionValidator;
 
     @Autowired
-    private PlatformTransactionManager transactionManager;
-
-    @Autowired
     private ConnectionAttributeRepository attributeRepository;
 
     @Autowired
@@ -210,6 +207,12 @@ public class ConnectionService {
 
     @Autowired
     private JdbcLockRegistry jdbcLockRegistry;
+
+    @Autowired
+    private DBSchemaSyncProperties dbSchemaSyncProperties;
+
+    @Autowired
+    private TransactionTemplate txTemplate;
 
     private final ConnectionMapper mapper = ConnectionMapper.INSTANCE;
 
@@ -225,92 +228,90 @@ public class ConnectionService {
     @SkipAuthorize("odc internal usage")
     public ConnectionConfig create(@NotNull @Valid ConnectionConfig connection, @NotNull Long creatorId,
             boolean skipPermissionCheck) {
-        TransactionDefinition transactionDefinition = new DefaultTransactionDefinition();
-        TransactionStatus transactionStatus = transactionManager.getTransaction(transactionDefinition);
-        ConnectionConfig saved;
-        try {
-            saved = innerCreate(connection, creatorId, skipPermissionCheck);
-            userPermissionService.bindUserAndDataSourcePermission(creatorId, currentOrganizationId(), saved.getId(),
-                    Arrays.asList("read", "update", "delete"));
-            transactionManager.commit(transactionStatus);
-        } catch (Exception e) {
-            transactionManager.rollback(transactionStatus);
-            throw e;
-        }
-        databaseSyncManager.submitSyncDataSourceTask(saved);
+        ConnectionConfig saved = txTemplate.execute(status -> {
+            try {
+                ConnectionConfig created = innerCreate(connection, creatorId, skipPermissionCheck);
+                userPermissionService.bindUserAndDataSourcePermission(creatorId, currentOrganizationId(),
+                        created.getId(), Arrays.asList("read", "update", "delete"));
+                return created;
+            } catch (Exception e) {
+                status.setRollbackOnly();
+                throw e;
+            }
+        });
+        databaseSyncManager.submitSyncDataSourceAndDBSchemaTask(saved);
         return saved;
     }
 
-    @Transactional(rollbackFor = Exception.class)
     @PreAuthenticate(actions = "create", resourceType = "ODC_CONNECTION", isForAll = true)
     public List<ConnectionConfig> batchCreate(@NotEmpty @Valid List<ConnectionConfig> connections) {
-        List<ConnectionConfig> connectionConfigs = new ArrayList<>();
-        for (ConnectionConfig connection : connections) {
-            ConnectionConfig saved = innerCreate(connection, currentUserId(), false);
-            databaseSyncManager.submitSyncDataSourceTask(saved);
-            userPermissionService.bindUserAndDataSourcePermission(currentUserId(), currentOrganizationId(),
-                    saved.getId(),
-                    Arrays.asList("read", "update", "delete"));
-            connectionConfigs.add(saved);
-        }
-        return connectionConfigs;
+        List<ConnectionConfig> saved = txTemplate.execute(status -> {
+            try {
+                List<ConnectionConfig> created = new ArrayList<>();
+                for (ConnectionConfig connection : connections) {
+                    ConnectionConfig config = innerCreate(connection, currentUserId(), false);
+                    userPermissionService.bindUserAndDataSourcePermission(currentUserId(), currentOrganizationId(),
+                            config.getId(), Arrays.asList("read", "update", "delete"));
+                    created.add(config);
+                }
+                return created;
+            } catch (Exception e) {
+                status.setRollbackOnly();
+                throw e;
+            }
+        });
+        saved.forEach(databaseSyncManager::submitSyncDataSourceAndDBSchemaTask);
+        return saved;
     }
 
     @SkipAuthorize("odc internal usage")
     public ConnectionConfig innerCreate(@NotNull @Valid ConnectionConfig connection, @NotNull Long creatorId,
             boolean skipPermissionCheck) {
-        TransactionDefinition transactionDefinition = new DefaultTransactionDefinition();
-        TransactionStatus transactionStatus = transactionManager.getTransaction(transactionDefinition);
-        ConnectionConfig created;
-        try {
-            environmentAdapter.adaptConfig(connection);
-            connectionSSLAdaptor.adapt(connection);
-
-            if (!connection.getType().isDefaultSchemaRequired()) {
-                connection.setDefaultSchema(null);
+        ConnectionConfig created = txTemplate.execute(status -> {
+            try {
+                environmentAdapter.adaptConfig(connection);
+                connectionSSLAdaptor.adapt(connection);
+                if (!connection.getType().isDefaultSchemaRequired()) {
+                    connection.setDefaultSchema(null);
+                }
+                connectionValidator.validateForUpsert(connection);
+                connectionValidator.validatePrivateConnectionTempOnly(connection.getTemp());
+                if (!skipPermissionCheck) {
+                    checkProjectOperable(connection.getProjectId());
+                }
+                connection.setOrganizationId(currentOrganizationId());
+                connection.setCreatorId(creatorId);
+                if (Objects.isNull(connection.getProperties())) {
+                    connection.setProperties(new HashMap<>());
+                }
+                if (Objects.isNull(connection.getTemp())) {
+                    connection.setTemp(false);
+                }
+                String name = connection.getName();
+                Long organizationId = currentOrganizationId();
+                PreConditions.validNoDuplicated(ResourceType.ODC_CONNECTION, "organizationId,name",
+                        org.apache.commons.lang3.StringUtils.joinWith(",", organizationId, name),
+                        () -> exists(organizationId, name));
+                if (connection.getPasswordSaved()) {
+                    PreConditions.notNull(connection.getPassword(), "connection.password");
+                } else {
+                    connection.setPassword(null);
+                    connection.setPasswordEncrypted(null);
+                }
+                connectionEncryption.encryptPasswords(connection);
+                ConnectionEntity entity = modelToEntity(connection);
+                ConnectionEntity savedEntity = repository.saveAndFlush(entity);
+                ConnectionConfig config = entityToModel(savedEntity, true, true);
+                config.setAttributes(connection.getAttributes());
+                List<ConnectionAttributeEntity> attrEntities = connToAttrEntities(config);
+                attrEntities = this.attributeRepository.saveAll(attrEntities);
+                config.setAttributes(attrEntitiesToMap(attrEntities));
+                return config;
+            } catch (Exception ex) {
+                status.setRollbackOnly();
+                throw ex;
             }
-            connectionValidator.validateForUpsert(connection);
-            connectionValidator.validatePrivateConnectionTempOnly(connection.getTemp());
-
-            if (!skipPermissionCheck) {
-                checkProjectOperable(connection.getProjectId());
-            }
-
-            connection.setOrganizationId(currentOrganizationId());
-            connection.setCreatorId(creatorId);
-            if (Objects.isNull(connection.getProperties())) {
-                connection.setProperties(new HashMap<>());
-            }
-
-            if (Objects.isNull(connection.getTemp())) {
-                connection.setTemp(false);
-            }
-
-            String name = connection.getName();
-            Long organizationId = currentOrganizationId();
-            PreConditions.validNoDuplicated(ResourceType.ODC_CONNECTION, "organizationId,name",
-                    org.apache.commons.lang3.StringUtils.joinWith(",", organizationId, name),
-                    () -> exists(organizationId, name));
-
-            if (connection.getPasswordSaved()) {
-                PreConditions.notNull(connection.getPassword(), "connection.password");
-            } else {
-                connection.setPassword(null);
-                connection.setPasswordEncrypted(null);
-            }
-            connectionEncryption.encryptPasswords(connection);
-
-            ConnectionEntity entity = modelToEntity(connection);
-            ConnectionEntity savedEntity = repository.saveAndFlush(entity);
-            created = entityToModel(savedEntity, true, true);
-            created.setAttributes(connection.getAttributes());
-            List<ConnectionAttributeEntity> attrEntities = connToAttrEntities(created);
-            attrEntities = this.attributeRepository.saveAll(attrEntities);
-            created.setAttributes(attrEntitiesToMap(attrEntities));
-        } catch (Exception ex) {
-            transactionManager.rollback(transactionStatus);
-            throw ex;
-        }
+        });
         log.info("Connection created, connection={}", created);
         return created;
     }
@@ -319,7 +320,7 @@ public class ConnectionService {
     @PreAuthenticate(actions = "delete", resourceType = "ODC_CONNECTION", indexOfIdParam = 0)
     public ConnectionConfig delete(@NotNull Long id) {
         ConnectionConfig connection = internalGet(id);
-        log.info("Delete related permission entity, id={}", id);
+        log.info("Delete related metadata entity, id={}", id);
         int affectRows = databaseService.deleteByDataSourceId(id);
         log.info("delete related databases successfully, affectRows={}, id={}", affectRows, id);
         affectRows = attributeRepository.deleteByConnectionId(id);
@@ -350,7 +351,7 @@ public class ConnectionService {
 
         List<PermissionEntity> permissionEntities = this.permissionService.deleteResourceRelatedPermissions(
                 ids, ResourceType.ODC_CONNECTION);
-        log.info("Delete datasource-related permission entity, affectEntities={}", permissionEntities.size());
+        log.info("Delete datasource-related metadata entity, affectEntities={}", permissionEntities.size());
         int affectRows = databaseService.deleteByDataSourceIds(ids);
         log.info("delete datasource-related databases successfully, affectRows={}", affectRows);
         affectRows = repository.deleteByIds(ids);
@@ -362,7 +363,9 @@ public class ConnectionService {
 
     @PreAuthenticate(actions = "read", resourceType = "ODC_CONNECTION", indexOfIdParam = 0)
     public ConnectionConfig detail(@NotNull Long id) {
-        return getWithoutPermissionCheck(id);
+        ConnectionConfig conn = getWithoutPermissionCheck(id);
+        conn.setDbObjectLastSyncTime(getEarliestObjectSyncTime(conn.getId()));
+        return conn;
     }
 
     @Transactional(rollbackFor = Exception.class)
@@ -393,6 +396,12 @@ public class ConnectionService {
     public List<ConnectionConfig> listByOrganizationIdAndEnvironmentId(@NonNull Long organizationId,
             @NonNull Long environmentId) {
         return repository.findByOrganizationIdAndEnvironmentId(organizationId, environmentId).stream()
+                .map(mapper::entityToModel).collect(Collectors.toList());
+    }
+
+    @SkipAuthorize("odc internal usage")
+    public List<ConnectionConfig> listByOrganizationIdIn(@NonNull Collection<Long> organizationIds) {
+        return repository.findByOrganizationIdIn(organizationIds).stream()
                 .map(mapper::entityToModel).collect(Collectors.toList());
     }
 
@@ -432,9 +441,9 @@ public class ConnectionService {
                 .where(ConnectionSpecs.organizationIdEqual(currentOrganizationId()))
                 .and(ConnectionSpecs.idIn(connIds));
         Map<Long, ConnectionConfig> connMap =
-                entitiesToModels(repository.findAll(spec), currentOrganizationId(), false, false).stream()
-                        .collect(Collectors.toMap(ConnectionConfig::getId, c -> c));
-
+                entitiesToModels(repository.findAll(spec), currentOrganizationId(), false, false)
+                        .stream().collect(Collectors.toMap(ConnectionConfig::getId, c -> c));
+        fullFillAttributes(connMap.values());
         if (authenticationFacade.currentOrganization().getType() == OrganizationType.INDIVIDUAL) {
             return getIndividualSpaceStatus(ids, connMap);
         } else {
@@ -557,74 +566,74 @@ public class ConnectionService {
     }
 
     @PreAuthenticate(actions = "update", resourceType = "ODC_CONNECTION", indexOfIdParam = 0)
-    public ConnectionConfig update(@NotNull Long id, @NotNull @Valid ConnectionConfig connection)
-            throws InterruptedException {
-        TransactionDefinition transactionDefinition = new DefaultTransactionDefinition();
-        TransactionStatus transactionStatus = transactionManager.getTransaction(transactionDefinition);
-        ConnectionConfig updated;
-        ConnectionConfig saved;
-        try {
-            environmentAdapter.adaptConfig(connection);
-            connectionSSLAdaptor.adapt(connection);
-            saved = internalGet(id);
-            connectionValidator.validateForUpdate(connection, saved);
-            checkProjectOperable(connection.getProjectId());
-            if (StringUtils.isBlank(connection.getSysTenantUsername())) {
-                // sys 用户没有设的情况下，相应地，密码要设置为空
-                connection.setSysTenantPassword("");
-            }
-            connection.setId(id);
-            connection.setCreatorId(saved.getCreatorId());
-            connection.setOrganizationId(saved.getOrganizationId());
-            connection.setType(saved.getType());
-            connection.setCipher(saved.getCipher());
-            connection.setSalt(saved.getSalt());
-            connection.setTemp(saved.getTemp());
-            connection.setPasswordEncrypted(null);
-            connection.setSysTenantPasswordEncrypted(null);
+    public ConnectionConfig update(@NotNull Long id, @NotNull @Valid ConnectionConfig connection) {
+        ConnectionConfig config = txTemplate.execute(status -> {
+            try {
+                environmentAdapter.adaptConfig(connection);
+                connectionSSLAdaptor.adapt(connection);
+                ConnectionConfig saved = internalGet(id);
+                connectionValidator.validateForUpdate(connection, saved);
+                checkProjectOperable(connection.getProjectId());
+                if (StringUtils.isBlank(connection.getSysTenantUsername())) {
+                    // sys 用户没有设的情况下，相应地，密码要设置为空
+                    connection.setSysTenantPassword("");
+                }
+                connection.setId(id);
+                connection.setCreatorId(saved.getCreatorId());
+                connection.setOrganizationId(saved.getOrganizationId());
+                connection.setType(saved.getType());
+                connection.setCipher(saved.getCipher());
+                connection.setSalt(saved.getSalt());
+                connection.setTemp(saved.getTemp());
+                connection.setPasswordEncrypted(null);
+                connection.setSysTenantPasswordEncrypted(null);
+                if (!connection.getType().isDefaultSchemaRequired()) {
+                    connection.setDefaultSchema(null);
+                }
+                connectionValidator.validateForUpsert(connection);
+                // validate same name while rename connection
+                repository.findByOrganizationIdAndName(connection.getOrganizationId(), connection.getName())
+                        .ifPresent(sameNameEntity -> {
+                            if (!id.equals(sameNameEntity.getId())) {
+                                throw new BadRequestException(ErrorCodes.ConnectionDuplicatedName,
+                                        new Object[] {connection.getName()}, "same datasource name exists");
+                            }
+                        });
+                if (Boolean.FALSE.equals(connection.getPasswordSaved())) {
+                    connection.setPassword(null);
+                }
+                connectionEncryption.encryptPasswords(connection);
+                connection.fillEncryptedPasswordFromSavedIfNull(saved);
 
-            if (!connection.getType().isDefaultSchemaRequired()) {
-                connection.setDefaultSchema(null);
-            }
-            connectionValidator.validateForUpsert(connection);
-            // validate same name while rename connection
-            repository.findByOrganizationIdAndName(connection.getOrganizationId(), connection.getName())
-                    .ifPresent(sameNameEntity -> {
-                        if (!id.equals(sameNameEntity.getId())) {
-                            throw new BadRequestException(ErrorCodes.ConnectionDuplicatedName,
-                                    new Object[] {connection.getName()}, "same datasource name exists");
-                        }
-                    });
-            if (Boolean.FALSE.equals(connection.getPasswordSaved())) {
-                connection.setPassword(null);
-            }
-            connectionEncryption.encryptPasswords(connection);
-            connection.fillEncryptedPasswordFromSavedIfNull(saved);
+                ConnectionEntity entity = modelToEntity(connection);
+                ConnectionEntity savedEntity = repository.saveAndFlush(entity);
 
-            ConnectionEntity entity = modelToEntity(connection);
-            ConnectionEntity savedEntity = repository.saveAndFlush(entity);
-
-            // for workaround createTime/updateTime not refresh in server mode,
-            // seems JPA bug, it works while UT
-            entityManager.refresh(savedEntity);
-            updated = entityToModel(savedEntity, true, true);
-            this.attributeRepository.deleteByConnectionId(updated.getId());
-            updated.setAttributes(connection.getAttributes());
-            List<ConnectionAttributeEntity> attrEntities = connToAttrEntities(updated);
-            attrEntities = this.attributeRepository.saveAll(attrEntities);
-            updated.setAttributes(attrEntitiesToMap(attrEntities));
-            log.info("Connection updated, connection={}", updated);
-            if (saved.getProjectId() != null && updated.getProjectId() == null) {
-                // Remove databases from project when unbind project from connection
-                updateDatabaseProjectId(savedEntity, null, false);
+                // for workaround createTime/updateTime not refresh in server mode,
+                // seems JPA bug, it works while UT
+                entityManager.refresh(savedEntity);
+                ConnectionConfig updated = entityToModel(savedEntity, true, true);
+                this.attributeRepository.deleteByConnectionId(updated.getId());
+                updated.setAttributes(connection.getAttributes());
+                List<ConnectionAttributeEntity> attrEntities = connToAttrEntities(updated);
+                attrEntities = this.attributeRepository.saveAll(attrEntities);
+                updated.setAttributes(attrEntitiesToMap(attrEntities));
+                log.info("Connection updated, connection={}", updated);
+                if (saved.getProjectId() != null && updated.getProjectId() == null) {
+                    // Remove databases from project when unbind project from connection
+                    try {
+                        updateDatabaseProjectId(savedEntity, null, false);
+                    } catch (InterruptedException e) {
+                        throw new UnexpectedException("Failed to update database project id", e);
+                    }
+                }
+                return updated;
+            } catch (Exception ex) {
+                status.setRollbackOnly();
+                throw ex;
             }
-            transactionManager.commit(transactionStatus);
-        } catch (Exception e) {
-            transactionManager.rollback(transactionStatus);
-            throw e;
-        }
-        databaseSyncManager.submitSyncDataSourceTask(updated);
-        return updated;
+        });
+        databaseSyncManager.submitSyncDataSourceAndDBSchemaTask(config);
+        return config;
     }
 
     @SkipAuthorize("odc internal usage")
@@ -646,7 +655,7 @@ public class ConnectionService {
         }
         try {
             List<DatabaseEntity> entities = databaseRepository.findByConnectionId(entity.getId());
-            List<String> blockDatabaseNames = databaseService.listBlockedDatabaseNames(entity.getDialectType());
+            List<String> blockDatabaseNames = dbSchemaSyncProperties.getExcludeSchemas(entity.getDialectType());
             entities.forEach(e -> {
                 if (!blockInternalDatabase || !blockDatabaseNames.contains(e.getName())) {
                     e.setProjectId(projectId);
@@ -688,19 +697,17 @@ public class ConnectionService {
     @SkipAuthorize("internal usage")
     public ConnectionConfig getForConnectionSkipPermissionCheck(@NotNull Long id) {
         ConnectionConfig connection = internalGetSkipUserCheck(id, false, false);
-
-        int queryTimeoutSeconds = connection.queryTimeoutSeconds();
-        Integer minQueryTimeoutSeconds = connectProperties.getMinQueryTimeoutSeconds();
-        if (queryTimeoutSeconds < minQueryTimeoutSeconds) {
-            connection.setQueryTimeoutSeconds(minQueryTimeoutSeconds);
-            log.debug("queryTimeoutSeconds less than minQueryTimeoutSeconds, use {} instead", minQueryTimeoutSeconds);
-        }
-        connectionEncryption.decryptPasswords(connection);
-        // Adapter should be called after decrypting passwords.
-        environmentAdapter.adaptConfig(connection);
-        connectionSSLAdaptor.adapt(connection);
+        adaptConnectionConfig(connection);
         return connection;
     }
+
+    @SkipAuthorize("internal usage")
+    public List<ConnectionConfig> listForConnectionSkipPermissionCheck(@NotNull Collection<Long> ids) {
+        List<ConnectionConfig> connectionConfigs = internalListSkipUserCheck(ids, false, false);
+        connectionConfigs.forEach(this::adaptConnectionConfig);
+        return connectionConfigs;
+    }
+
 
     @Transactional(rollbackFor = Exception.class)
     @PreAuthenticate(actions = "update", resourceType = "ODC_CONNECTION", indexOfIdParam = 0)
@@ -766,6 +773,7 @@ public class ConnectionService {
                 : PageRequest.of(pageable.getPageNumber(), pageable.getPageSize());
         Page<ConnectionEntity> entities = this.repository.findAll(spec, page);
         List<ConnectionConfig> models = entitiesToModels(entities.getContent(), currentOrganizationId(), true, true);
+        fullFillAttributes(models);
         return new PageImpl<>(models, page, entities.getTotalElements());
     }
 
@@ -865,8 +873,26 @@ public class ConnectionService {
         return config;
     }
 
+    @SkipAuthorize("odc internal usage")
+    public List<ConnectionConfig> internalListSkipUserCheck(Collection<Long> ids, boolean withEnvironment,
+            boolean withProject) {
+        List<ConnectionEntity> entities = getEntities(ids);
+        Long organizationId = currentOrganizationId();
+        if (!entities.stream().allMatch(e -> Objects.equals(e.getOrganizationId(), organizationId))) {
+            throw new AccessDeniedException("cannot access databases that don't belong the current organization");
+        }
+        List<ConnectionConfig> connectionConfigs = entitiesToModels(entities, organizationId,
+                withEnvironment, withProject);
+        fullFillAttributes(connectionConfigs);
+        return connectionConfigs;
+    }
+
     private ConnectionEntity getEntity(@NonNull Long id) {
         return repository.findById(id).orElseThrow(() -> new NotFoundException(ResourceType.ODC_CONNECTION, "id", id));
+    }
+
+    private List<ConnectionEntity> getEntities(@NonNull Collection<Long> ids) {
+        return repository.findByIdIn(ids);
     }
 
     private List<ConnectionConfig> entitiesToModels(@NonNull List<ConnectionEntity> entities,
@@ -963,6 +989,38 @@ public class ConnectionService {
         if (Objects.nonNull(properties) && StringUtils.equals(properties.get("maskHost"), "true")) {
             connection.setHost("trial_connection_host");
         }
+    }
+
+    private Date getEarliestObjectSyncTime(@NotNull Long connectionId) {
+        List<DatabaseEntity> entities = databaseRepository.findByConnectionIdAndExisted(connectionId, true);
+        if (CollectionUtils.isEmpty(entities)) {
+            return null;
+        }
+        Set<Date> syncTimes = entities.stream().map(DatabaseEntity::getObjectLastSyncTime).collect(Collectors.toSet());
+        if (syncTimes.contains(null)) {
+            return null;
+        }
+        return syncTimes.stream().min(Date::compareTo).orElse(null);
+    }
+
+    private void fullFillAttributes(Collection<ConnectionConfig> models) {
+        Map<Long, List<ConnectionAttributeEntity>> id2Attrs = this.attributeRepository
+                .findByConnectionIdIn(models.stream().map(ConnectionConfig::getId).collect(Collectors.toSet()))
+                .stream().collect(Collectors.groupingBy(ConnectionAttributeEntity::getConnectionId));
+        models.forEach(c -> c.setAttributes(attrEntitiesToMap(id2Attrs.getOrDefault(c.getId(), new ArrayList<>()))));
+    }
+
+    private void adaptConnectionConfig(ConnectionConfig connection) {
+        int queryTimeoutSeconds = connection.queryTimeoutSeconds();
+        Integer minQueryTimeoutSeconds = connectProperties.getMinQueryTimeoutSeconds();
+        if (queryTimeoutSeconds < minQueryTimeoutSeconds) {
+            connection.setQueryTimeoutSeconds(minQueryTimeoutSeconds);
+            log.debug("queryTimeoutSeconds less than minQueryTimeoutSeconds, use {} instead", minQueryTimeoutSeconds);
+        }
+        connectionEncryption.decryptPasswords(connection);
+        // Adapter should be called after decrypting passwords.
+        environmentAdapter.adaptConfig(connection);
+        connectionSSLAdaptor.adapt(connection);
     }
 
 }

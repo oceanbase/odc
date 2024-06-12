@@ -15,7 +15,7 @@
  */
 package com.oceanbase.odc.metadb.connection;
 
-import java.util.List;
+import java.util.Collection;
 import java.util.Objects;
 import java.util.Set;
 
@@ -30,7 +30,7 @@ import com.oceanbase.odc.common.util.StringUtils;
  * @Description: []
  */
 public class DatabaseSpecs {
-    public static Specification<DatabaseEntity> idIn(List<Long> ids) {
+    public static Specification<DatabaseEntity> idIn(Collection<Long> ids) {
         return (root, query, builder) -> CollectionUtils.isEmpty(ids) ? builder.disjunction()
                 : root.get("id").in(ids);
     }

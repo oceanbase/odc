@@ -108,7 +108,7 @@ public class OBMySQLParserTest {
         values.add(Arrays.asList(new ConstExpression("1"), new ConstExpression("default")));
         insertTable.setValues(values);
         Insert expect = new Insert(Collections.singletonList(insertTable), null);
-        Assert.assertEquals(acutal, expect);
+        Assert.assertEquals(expect, acutal);
     }
 
     @Test

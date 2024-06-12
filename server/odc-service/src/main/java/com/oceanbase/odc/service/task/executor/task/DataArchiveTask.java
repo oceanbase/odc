@@ -15,30 +15,28 @@
  */
 package com.oceanbase.odc.service.task.executor.task;
 
-import java.sql.Connection;
-import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.Date;
+import java.util.LinkedList;
+import java.util.List;
 
 import com.oceanbase.odc.common.json.JsonUtils;
-import com.oceanbase.odc.core.shared.constant.DialectType;
-import com.oceanbase.odc.core.sql.parser.AbstractSyntaxTreeFactories;
-import com.oceanbase.odc.core.sql.parser.AbstractSyntaxTreeFactory;
+import com.oceanbase.odc.core.shared.constant.TaskStatus;
 import com.oceanbase.odc.service.dlm.DLMJobFactory;
 import com.oceanbase.odc.service.dlm.DLMJobStore;
-import com.oceanbase.odc.service.schedule.job.DLMJobParameters;
+import com.oceanbase.odc.service.dlm.DLMTableStructureSynchronizer;
+import com.oceanbase.odc.service.dlm.DataSourceInfoMapper;
+import com.oceanbase.odc.service.dlm.model.DlmTableUnit;
+import com.oceanbase.odc.service.dlm.model.DlmTableUnitParameters;
+import com.oceanbase.odc.service.dlm.utils.DlmJobIdUtil;
+import com.oceanbase.odc.service.schedule.job.DLMJobReq;
+import com.oceanbase.odc.service.schedule.model.DlmTableUnitStatistic;
 import com.oceanbase.odc.service.task.caller.JobContext;
 import com.oceanbase.odc.service.task.constants.JobParametersKeyConstants;
 import com.oceanbase.odc.service.task.util.JobUtils;
-import com.oceanbase.tools.dbbrowser.util.MySQLSqlBuilder;
-import com.oceanbase.tools.dbbrowser.util.OracleSqlBuilder;
-import com.oceanbase.tools.dbbrowser.util.SqlBuilder;
-import com.oceanbase.tools.migrator.common.enums.DataBaseType;
 import com.oceanbase.tools.migrator.common.enums.JobType;
-import com.oceanbase.tools.migrator.datasource.DataSourceAdapter;
-import com.oceanbase.tools.migrator.datasource.DataSourceFactory;
 import com.oceanbase.tools.migrator.job.Job;
-import com.oceanbase.tools.sqlparser.adapter.mysql.MySQLFromReferenceFactory;
-import com.oceanbase.tools.sqlparser.obmysql.OBParser.Create_table_stmtContext;
-import com.oceanbase.tools.sqlparser.statement.common.RelationFactor;
+import com.oceanbase.tools.migrator.task.CheckMode;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -68,120 +66,109 @@ public class DataArchiveTask extends BaseTask<Boolean> {
     protected boolean doStart(JobContext context) throws Exception {
 
         String taskParameters = context.getJobParameters().get(JobParametersKeyConstants.META_TASK_PARAMETER_JSON);
-        DLMJobParameters parameters = JsonUtils.fromJson(taskParameters,
-                DLMJobParameters.class);
+        DLMJobReq parameters = JsonUtils.fromJson(taskParameters,
+                DLMJobReq.class);
+        if (parameters.getFireTime() == null) {
+            parameters.setFireTime(new Date());
+        }
+        List<DlmTableUnit> dlmTableUnits;
+        try {
+            dlmTableUnits = getDlmTableUnits(parameters);
+        } catch (Exception e) {
+            log.warn("Get dlm job failed!", e);
+            return false;
+        }
 
-        for (int tableIndex = 0; tableIndex < parameters.getTables().size(); tableIndex++) {
+        for (DlmTableUnit dlmTableUnit : dlmTableUnits) {
             if (getStatus().isTerminated()) {
                 log.info("Job is terminated,jobIdentity={}", context.getJobIdentity());
                 break;
             }
+            if (dlmTableUnit.getStatus() == TaskStatus.DONE) {
+                log.info("The table had been completed,tableName={}", dlmTableUnit.getTableName());
+                continue;
+            }
             if (parameters.getJobType() == JobType.MIGRATE) {
-                syncTable(tableIndex, parameters);
+                try {
+                    DLMTableStructureSynchronizer.sync(
+                            DataSourceInfoMapper.toConnectionConfig(parameters.getSourceDs()),
+                            DataSourceInfoMapper.toConnectionConfig(parameters.getTargetDs()),
+                            dlmTableUnit.getTableName(), dlmTableUnit.getTargetTableName(),
+                            parameters.getSyncTableStructure());
+                } catch (Exception e) {
+                    log.warn("Failed to sync target table structure,table will be ignored,tableName={}",
+                            dlmTableUnit.getTableName(), e);
+                    jobStore.updateDlmTableUnitStatus(dlmTableUnit.getDlmTableUnitId(), TaskStatus.FAILED);
+                    continue;
+                }
             }
             try {
-                job = jobFactory.createJob(tableIndex, parameters);
+                job = jobFactory.createJob(dlmTableUnit);
+                jobStore.updateDlmTableUnitStatus(dlmTableUnit.getDlmTableUnitId(), TaskStatus.RUNNING);
                 log.info("Init {} job succeed,DLMJobId={}", job.getJobMeta().getJobType(), job.getJobMeta().getJobId());
                 log.info("{} job start,DLMJobId={}", job.getJobMeta().getJobType(), job.getJobMeta().getJobId());
                 job.run();
                 log.info("{} job finished,DLMJobId={}", job.getJobMeta().getJobType(), job.getJobMeta().getJobId());
+                jobStore.updateDlmTableUnitStatus(dlmTableUnit.getDlmTableUnitId(), TaskStatus.DONE);
             } catch (Throwable e) {
                 log.error("{} job failed,DLMJobId={},errorMsg={}", job.getJobMeta().getJobType(),
                         job.getJobMeta().getJobId(),
                         e);
                 // set task status to failed if any job failed.
                 isSuccess = false;
+                if (job.getJobMeta().isToStop()) {
+                    jobStore.updateDlmTableUnitStatus(dlmTableUnit.getDlmTableUnitId(), TaskStatus.CANCELED);
+                } else {
+                    jobStore.updateDlmTableUnitStatus(dlmTableUnit.getDlmTableUnitId(), TaskStatus.FAILED);
+                }
             }
-            progress = (tableIndex + 1.0) / parameters.getTables().size();
         }
         return isSuccess;
     }
 
-    private void syncTable(int tableIndex, DLMJobParameters parameters) throws Exception {
-        DataSourceAdapter sourceDataSource = DataSourceFactory.getDataSource(parameters.getSourceDs());
-        if (sourceDataSource.getDataBaseType().isOracle()) {
-            log.info("Unsupported sync table construct for Oracle,databaseType={}", sourceDataSource.getDataBaseType());
-            return;
-        }
-        DataSourceAdapter targetDataSource = DataSourceFactory.getDataSource(parameters.getTargetDs());
-        if (parameters.getSourceDs().getDatabaseType() != parameters.getTargetDs().getDatabaseType()) {
-            log.info("Data sources of different types do not currently support automatic creation of target tables.");
-            return;
-        }
-        if (checkTargetTableExist(parameters.getTables().get(tableIndex).getTargetTableName(), targetDataSource)) {
-            log.info("Target table exists.");
-            // TODO sync the table structure if it exists.
-            return;
-        }
-        log.info("Target table does not exists,tableName={}",
-                parameters.getTables().get(tableIndex).getTargetTableName());
-        String createTableDDL;
-        try (Connection connection = sourceDataSource.getConnectionReadOnly()) {
-            ResultSet resultSet = connection.prepareStatement(getCreateTableDDL(sourceDataSource.getSchema(),
-                    parameters.getTables().get(tableIndex).getTableName(), sourceDataSource.getDataBaseType()))
-                    .executeQuery();
-            if (resultSet.next()) {
-                createTableDDL = resultSet.getString(2);
-            } else {
-                log.info("Get create target table ddl failed,resultSet is null.");
-                return;
-            }
-            log.info("Get Create table ddl finish, sql={}", createTableDDL);
-        } catch (Exception ex) {
-            log.warn("Get create target table ddl failed!", ex);
-            return;
-        }
-        try (Connection connection = targetDataSource.getConnectionForWrite()) {
-            createTableDDL = buildCreateTableDDL(createTableDDL,
-                    parameters.getTables().get(tableIndex).getTargetTableName());
-            log.info("Create target table begin, sql={}", createTableDDL);
-            boolean result = connection.prepareStatement(createTableDDL).execute();
-            log.info("Create target table finish, result={}", result);
-        } catch (Exception e) {
-            log.warn("Create target table failed.", e);
-        }
-    }
+    private List<DlmTableUnit> getDlmTableUnits(DLMJobReq req) throws SQLException {
 
-    public static String buildCreateTableDDL(String createSql, String targetTableName) {
-        AbstractSyntaxTreeFactory factory = AbstractSyntaxTreeFactories.getAstFactory(DialectType.OB_MYSQL, 0);
-        Create_table_stmtContext context = (Create_table_stmtContext) factory.buildAst(createSql).getRoot();
-        RelationFactor factor = MySQLFromReferenceFactory.getRelationFactor(context.relation_factor());
-        StringBuilder sb = new StringBuilder();
-        sb.append(createSql, 0, factor.getStart());
-        sb.append("`").append(targetTableName).append("`");
-        sb.append(createSql, factor.getStop() + 1, createSql.length());
-        return sb.toString();
-    }
-
-    private boolean checkTargetTableExist(String tableName, DataSourceAdapter dataSourceAdapter) {
-        try (Connection connection = dataSourceAdapter.getConnectionReadOnly()) {
-            ResultSet resultSet = connection.prepareStatement(String.format(
-                    "SELECT table_name FROM information_schema.tables WHERE table_type='BASE TABLE' AND table_schema='%s'",
-                    dataSourceAdapter.getDataSourceInfo().getDatabaseName())).executeQuery();
-            while (resultSet.next()) {
-                if (resultSet.getString(1).equals(tableName)) {
-                    return true;
-                }
-            }
-            return false;
-        } catch (Exception ex) {
-            return false;
+        List<DlmTableUnit> existsDlmJobs = jobStore.getDlmTableUnits(req.getScheduleTaskId());
+        if (!existsDlmJobs.isEmpty()) {
+            return existsDlmJobs;
         }
-    }
-
-    private static String getCreateTableDDL(String schemaName, String tableName, DataBaseType dbType) {
-        SqlBuilder sb = dbType == DataBaseType.OB_MYSQL || dbType == DataBaseType.MYSQL ? new MySQLSqlBuilder()
-                : new OracleSqlBuilder();
-        sb.append("SHOW CREATE TABLE ");
-        sb.identifier(schemaName);
-        sb.append(".");
-        sb.identifier(tableName);
-        return sb.toString();
+        List<DlmTableUnit> dlmTableUnits = new LinkedList<>();
+        req.getTables().forEach(table -> {
+            DlmTableUnit dlmTableUnit = new DlmTableUnit();
+            dlmTableUnit.setScheduleTaskId(req.getScheduleTaskId());
+            DlmTableUnitParameters jobParameter = new DlmTableUnitParameters();
+            jobParameter.setMigrateRule(table.getConditionExpression());
+            jobParameter.setCheckMode(CheckMode.MULTIPLE_GET);
+            jobParameter.setReaderBatchSize(req.getRateLimit().getBatchSize());
+            jobParameter.setWriterBatchSize(req.getRateLimit().getBatchSize());
+            jobParameter.setMigrationInsertAction(req.getMigrationInsertAction());
+            jobParameter.setMigratePartitions(table.getPartitions());
+            jobParameter.setSyncDBObjectType(req.getSyncTableStructure());
+            dlmTableUnit.setParameters(jobParameter);
+            dlmTableUnit.setDlmTableUnitId(DlmJobIdUtil.generateHistoryJobId(req.getJobName(), req.getJobType().name(),
+                    req.getScheduleTaskId(), dlmTableUnits.size()));
+            dlmTableUnit.setTableName(table.getTableName());
+            dlmTableUnit.setTargetTableName(table.getTargetTableName());
+            dlmTableUnit.setSourceDatasourceInfo(req.getSourceDs());
+            dlmTableUnit.setTargetDatasourceInfo(req.getTargetDs());
+            dlmTableUnit.setFireTime(req.getFireTime());
+            dlmTableUnit.setStatus(TaskStatus.PREPARING);
+            dlmTableUnit.setType(req.getJobType());
+            dlmTableUnit.setStatistic(new DlmTableUnitStatistic());
+            dlmTableUnits.add(dlmTableUnit);
+        });
+        jobStore.storeDlmTableUnit(dlmTableUnits);
+        return dlmTableUnits;
     }
 
     @Override
     protected void doStop() throws Exception {
-        job.getJobMeta().setToStop(true);
+        job.stop();
+        try {
+            jobStore.updateDlmTableUnitStatus(job.getJobMeta().getJobId(), TaskStatus.CANCELED);
+        } catch (Exception e) {
+            log.warn("Update dlm table unit status failed,DlmTableUnitId={}", job.getJobMeta().getJobId());
+        }
     }
 
     @Override

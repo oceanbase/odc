@@ -87,6 +87,7 @@ import com.oceanbase.odc.metadb.iam.RolePermissionEntity;
 import com.oceanbase.odc.metadb.iam.RolePermissionRepository;
 import com.oceanbase.odc.metadb.iam.RoleRepository;
 import com.oceanbase.odc.metadb.iam.UserEntity;
+import com.oceanbase.odc.metadb.iam.UserOrganizationRepository;
 import com.oceanbase.odc.metadb.iam.UserPermissionEntity;
 import com.oceanbase.odc.metadb.iam.UserPermissionRepository;
 import com.oceanbase.odc.metadb.iam.UserRepository;
@@ -173,6 +174,9 @@ public class UserService {
 
     @Autowired
     private UserOrganizationService userOrganizationService;
+
+    @Autowired
+    private UserOrganizationRepository userOrganizationRepository;
 
     private final PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
     private final List<Consumer<PasswordChangeEvent>> postPasswordChangeHooks = new ArrayList<>();
@@ -290,6 +294,8 @@ public class UserService {
         PreConditions.notBlank(createUserReq.getName(), "user.name");
         PreConditions.notBlank(createUserReq.getAccountName(), "user.accountName");
         PreConditions.notBlank(createUserReq.getPassword(), "user.password");
+        PreConditions.validPassword(createUserReq.getPassword());
+
         Optional<UserEntity> sameAccountNameUser = userRepository.findByAccountName(createUserReq.getAccountName());
         PreConditions.validNoDuplicated(ResourceType.ODC_USER, "accountName", createUserReq.getAccountName(),
                 sameAccountNameUser::isPresent);
@@ -375,6 +381,16 @@ public class UserService {
         }
         log.info("User deleted, id={}", id);
         return new User(userEntity);
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    @SkipAuthorize("odc internal usage")
+    public boolean removeFromOrganization(@NotNull Long id, @NotNull Long organizationId) {
+        userRoleRepository.deleteByOrganizationIdAndUserId(organizationId, id);
+        userPermissionRepository.deleteByUserIdAndOrganizationId(id, organizationId);
+        userOrganizationRepository.deleteByUserIdAndOrganizationId(id, organizationId);
+        log.info("User removed from organization, userId={}, organizationId={}", id, organizationId);
+        return true;
     }
 
     @PreAuthenticate(actions = "read", resourceType = "ODC_USER", indexOfIdParam = 0)
@@ -748,12 +764,13 @@ public class UserService {
      * change password only refer to current user
      */
     @Transactional(rollbackFor = Exception.class)
-    public User changePassword(ChangePasswordReq changePasswordReq) {
+    public User changePassword(ChangePasswordReq req) {
+        PreConditions.validPassword(req.getNewPassword());
         UserEntity userEntity;
-        if (changePasswordReq.getUsername() != null) {
-            userEntity = nullSafeGet(changePasswordReq.getUsername());
+        if (req.getUsername() != null) {
+            userEntity = nullSafeGet(req.getUsername());
             PreConditions.validRequestState(
-                    !passwordEncoder.matches(changePasswordReq.getNewPassword(), userEntity.getPassword()),
+                    !passwordEncoder.matches(req.getNewPassword(), userEntity.getPassword()),
                     ErrorCodes.UserIllegalNewPassword, new Object[] {},
                     "New password has to be different from old password");
             SecurityContextUtils.setCurrentUser(new User(userEntity));
@@ -765,12 +782,12 @@ public class UserService {
         FailedLoginAttemptLimiter attemptLimiter = userIdChangePasswordAttamptCache.get(userEntity.getId());
         Verify.notNull(attemptLimiter, "AttemptLimiter");
         Boolean validateResult = attemptLimiter.attempt(
-                () -> passwordEncoder.matches(changePasswordReq.getCurrentPassword(), userEntity.getPassword()));
+                () -> passwordEncoder.matches(req.getCurrentPassword(), userEntity.getPassword()));
         PreConditions.validRequestState(validateResult, ErrorCodes.UserWrongPasswordOrNotFound,
                 new Object[] {attemptLimiter.getRemainAttempt() < 0 ? "unlimited" : attemptLimiter.getRemainAttempt()},
                 "currentPassword is not correct");
 
-        userEntity.setPassword(encodePassword(changePasswordReq.getNewPassword()));
+        userEntity.setPassword(encodePassword(req.getNewPassword()));
         userEntity.setActive(true);
         userRepository.updatePassword(userEntity);
 
@@ -809,6 +826,7 @@ public class UserService {
         permissionValidator.checkCurrentOrganization(new User(userEntity));
         String previousPassword = userEntity.getPassword();
 
+        PreConditions.validPassword(password);
         userEntity.setPassword(encodePassword(password));
         userRepository.updatePassword(userEntity);
         userEntity.setActive(false);
@@ -1022,6 +1040,12 @@ public class UserService {
                 creatorNameSetter.accept(c, userEntity.getName());
             }
         });
+    }
+
+    @SkipAuthorize("odc internal usage")
+    public List<User> listByBoundOrganizationId(@NotNull Long organizationId) {
+        return userRepository.findByBoundOrganization(organizationId).stream().map(User::new)
+                .collect(Collectors.toList());
     }
 
 }

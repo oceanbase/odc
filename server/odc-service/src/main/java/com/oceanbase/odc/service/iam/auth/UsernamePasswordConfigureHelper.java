@@ -67,7 +67,8 @@ public class UsernamePasswordConfigureHelper {
         }
         if (commonSecurityProperties.isBasicAuthenticationEnabled()) {
             log.info("Basic authentication is enabled, it is not recommended in production environment.");
-            http.httpBasic();
+            http.addFilterAfter(new CustomBasicAuthenticationFilter(authenticationManager, successHandler),
+                    UsernamePasswordAuthenticationFilter.class);
         }
     }
 

@@ -71,9 +71,11 @@ import com.oceanbase.odc.service.dispatch.RequestDispatcher;
 import com.oceanbase.odc.service.dispatch.TaskDispatchChecker;
 import com.oceanbase.odc.service.flow.model.FlowNodeStatus;
 import com.oceanbase.odc.service.flow.task.model.DatabaseChangeParameters;
+import com.oceanbase.odc.service.iam.OrganizationService;
 import com.oceanbase.odc.service.iam.ProjectPermissionValidator;
 import com.oceanbase.odc.service.iam.UserService;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
+import com.oceanbase.odc.service.iam.model.Organization;
 import com.oceanbase.odc.service.iam.model.User;
 import com.oceanbase.odc.service.logger.LoggerService;
 import com.oceanbase.odc.service.objectstorage.ObjectStorageFacade;
@@ -165,6 +167,9 @@ public class ScheduleService {
     private TaskFrameworkEnabledProperties taskFrameworkEnabledProperties;
 
     @Autowired
+    private OrganizationService organizationService;
+
+    @Autowired
     private JobScheduler jobScheduler;
     private final ScheduleTaskMapper scheduleTaskMapper = ScheduleTaskMapper.INSTANCE;
 
@@ -236,29 +241,64 @@ public class ScheduleService {
      * true and terminates the scheduled task if the database does not exist. If the database exists, it
      * returns false.
      */
-    public boolean terminateIfDatabaseNotExisted(Long scheduleId) {
+    public boolean terminateIfScheduleInvalid(Long scheduleId) {
         Optional<ScheduleEntity> scheduleEntityOptional = scheduleRepository.findById(scheduleId);
         if (scheduleEntityOptional.isPresent()) {
-            Database database;
-            try {
-                database = databaseService.getBasicSkipPermissionCheck(scheduleEntityOptional.get().getDatabaseId());
-            } catch (NotFoundException e) {
-                database = null;
-            }
-            if (database == null || !database.getExisted()) {
+            ScheduleEntity entity = scheduleEntityOptional.get();
+            boolean isInvalid = isInvalidSchedule(entity);
+            if (isInvalid) {
                 try {
                     log.info(
-                            "The database for scheduled task operation does not exist, and the schedule is being terminated, scheduleId={}",
+                            "The project or database for scheduled task operation does not exist, and the schedule is being terminated, scheduleId={}",
                             scheduleId);
                     terminate(scheduleEntityOptional.get());
                 } catch (SchedulerException e) {
                     log.warn("Terminate schedule failed,scheduleId={}", scheduleId);
                 }
-                return true;
             }
+            return isInvalid;
+        }
+        // terminate if schedule not found or invalid.
+        return true;
+
+    }
+
+    private boolean isInvalidSchedule(ScheduleEntity schedule) {
+        Optional<Organization> organization = organizationService.get(schedule.getOrganizationId());
+        // ignore individual space
+        if (organization.isPresent() && organization.get().getType() == OrganizationType.INDIVIDUAL) {
             return false;
         }
-        return true;
+
+        try {
+            // project archived.
+            if (projectService.nullSafeGet(schedule.getProjectId()).getArchived()) {
+                return true;
+            }
+        } catch (NotFoundException e) {
+            // project not found.
+            return true;
+        }
+
+        try {
+            Database database = databaseService.getBasicSkipPermissionCheck(schedule.getDatabaseId());
+            // database is invalid.
+            if (!database.getExisted()) {
+                return true;
+            }
+            // database does not belong to any project, or the database and the schedule are not in the same
+            // project.
+            if (database.getProject() == null
+                    || !Objects.equals(database.getProject().getId(), schedule.getProjectId())) {
+                return true;
+            }
+        } catch (NotFoundException e) {
+            // database not found.
+            return true;
+        }
+
+        // schedule is valid.
+        return false;
     }
 
     public ScheduleDetailResp triggerJob(Long scheduleId, String jobType) {
@@ -277,6 +317,10 @@ public class ScheduleService {
 
     public ScheduleDetailResp interruptJob(Long scheduleId, Long taskId) {
         ScheduleEntity entity = nullSafeGetByIdWithCheckPermission(scheduleId, true);
+        return interruptJobWithoutPermission(scheduleId, taskId);
+    }
+
+    public ScheduleDetailResp interruptJobWithoutPermission(Long scheduleId, Long taskId) {
         ScheduleTaskEntity taskEntity = scheduleTaskService.nullSafeGetById(taskId);
         ExecutorInfo executorInfo = JsonUtils.fromJson(taskEntity.getExecutor(), ExecutorInfo.class);
         if (taskFrameworkEnabledProperties.isEnabled() && taskEntity.getJobId() != null) {
@@ -319,6 +363,10 @@ public class ScheduleService {
      */
     public ScheduleTaskResp startTask(Long scheduleId, Long taskId) {
         ScheduleEntity scheduleEntity = nullSafeGetByIdWithCheckPermission(scheduleId, true);
+        return startTaskWithoutPermission(scheduleId, taskId);
+    }
+
+    public ScheduleTaskResp startTaskWithoutPermission(Long scheduleId, Long taskId) {
         ScheduleTaskEntity taskEntity = scheduleTaskService.nullSafeGetById(taskId);
         JobKey jobKey = QuartzKeyGenerator.generateJobKey(scheduleId, JobType.valueOf(taskEntity.getJobGroup()));
         if (!taskEntity.getStatus().isRetryAllowed()) {
@@ -487,6 +535,16 @@ public class ScheduleService {
         return mapper.map(entity);
     }
 
+    public ScheduleTaskResp detailScheduleTask(Long scheduleId, Long scheduleTaskId) {
+        ScheduleEntity scheduleEntity = nullSafeGetByIdWithCheckPermission(scheduleId);
+        ScheduleTaskResp detail = scheduleTaskService.detail(scheduleTaskId);
+        // Throw a NotFoundException if the schedule task does not belong to the schedule.
+        if (!detail.getJobName().equals(scheduleEntity.getId().toString())) {
+            throw new NotFoundException(ResourceType.ODC_SCHEDULE_TASK, "scheduleTaskId", scheduleTaskId);
+        }
+        return detail;
+    }
+
     public Page<ScheduleDetailResp> list(@NotNull Pageable pageable, @NotNull QueryScheduleParams params) {
         if (StringUtils.isNotBlank(params.getCreator())) {
             params.setCreatorIds(userService.getUsersByFuzzyNameWithoutPermissionCheck(
@@ -520,6 +578,10 @@ public class ScheduleService {
 
     public String getLog(Long scheduleId, Long taskId, OdcTaskLogLevel logLevel) {
         nullSafeGetByIdWithCheckPermission(scheduleId);
+        return getLogWithoutPermission(scheduleId, taskId, logLevel);
+    }
+
+    public String getLogWithoutPermission(Long scheduleId, Long taskId, OdcTaskLogLevel logLevel) {
         ScheduleTaskEntity taskEntity = scheduleTaskService.nullSafeGetById(taskId);
         if (taskFrameworkEnabledProperties.isEnabled() && taskEntity.getJobId() != null) {
             try {

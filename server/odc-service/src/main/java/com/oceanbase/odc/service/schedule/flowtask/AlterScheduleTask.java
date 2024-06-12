@@ -22,7 +22,6 @@ import com.alibaba.fastjson.JSON;
 import com.oceanbase.odc.core.shared.constant.FlowStatus;
 import com.oceanbase.odc.core.shared.exception.UnsupportedException;
 import com.oceanbase.odc.metadb.schedule.ScheduleEntity;
-import com.oceanbase.odc.service.flow.model.FlowNodeStatus;
 import com.oceanbase.odc.service.flow.task.BaseODCFlowTaskDelegate;
 import com.oceanbase.odc.service.flow.util.FlowTaskUtil;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
@@ -130,14 +129,14 @@ public class AlterScheduleTask extends BaseODCFlowTaskDelegate<AlterScheduleResu
     @Override
     protected void onFailure(Long taskId, TaskService taskService) {
         log.warn("Alter schedule failed, taskId={}", taskId);
-        super.callback(getFlowInstanceId(), getTargetTaskInstanceId(), FlowNodeStatus.FAILED, null);
+        setDownloadLogUrl();
         AlterScheduleTraceContextHolder.clear();
     }
 
     @Override
     protected void onSuccessful(Long taskId, TaskService taskService) {
         log.info("Alter schedule succeed, taskId={}", taskId);
-        super.callback(getFlowInstanceId(), getTargetTaskInstanceId(), FlowNodeStatus.COMPLETED, null);
+        setDownloadLogUrl();
         updateFlowInstanceStatus(FlowStatus.EXECUTION_SUCCEEDED);
         AlterScheduleTraceContextHolder.clear();
     }
@@ -145,7 +144,7 @@ public class AlterScheduleTask extends BaseODCFlowTaskDelegate<AlterScheduleResu
     @Override
     protected void onTimeout(Long taskId, TaskService taskService) {
         log.warn("Alter schedule timeout, taskId={}", taskId);
-        super.callback(getFlowInstanceId(), getTargetTaskInstanceId(), FlowNodeStatus.EXPIRED, null);
+        setDownloadLogUrl();
         AlterScheduleTraceContextHolder.clear();
     }
 

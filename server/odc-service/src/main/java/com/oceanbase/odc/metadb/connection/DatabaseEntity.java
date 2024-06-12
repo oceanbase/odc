@@ -30,6 +30,7 @@ import org.hibernate.annotations.Generated;
 import org.hibernate.annotations.GenerationTime;
 
 import com.oceanbase.odc.service.connection.database.model.DatabaseSyncStatus;
+import com.oceanbase.odc.service.db.schema.model.DBObjectSyncStatus;
 
 import lombok.Data;
 
@@ -97,5 +98,12 @@ public class DatabaseEntity {
      */
     @Column(name = "is_existed", nullable = false)
     private Boolean existed;
+
+    @Enumerated(value = EnumType.STRING)
+    @Column(name = "object_sync_status", nullable = false)
+    private DBObjectSyncStatus objectSyncStatus;
+
+    @Column(name = "object_last_sync_time")
+    private Date objectLastSyncTime;
 
 }

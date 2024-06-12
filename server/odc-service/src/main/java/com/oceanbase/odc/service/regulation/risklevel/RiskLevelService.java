@@ -151,4 +151,5 @@ public class RiskLevelService {
         model.setApprovalFlowConfig(approvalFlowConfigService.findById(entity.getApprovalFlowConfigId()));
         return model;
     }
+
 }

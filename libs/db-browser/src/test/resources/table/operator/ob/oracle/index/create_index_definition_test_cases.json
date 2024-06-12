@@ -41,5 +41,32 @@
       }
     },
     "output": "INDEX \"a\" USING HASH (\"a\", \"b\") GLOBAL"
+  },
+  {
+    "id": 3,
+    "name": "case3",
+    "description": "普通索引，单列，列存",
+    "input": {
+      "current": {
+        "name": "a",
+        "schemaName": "schema",
+        "tableName": "table",
+        "type": "NORMAL",
+        "global": true,
+        "visible": true,
+        "columnNames": [
+          "a"
+        ],
+        "algorithm": "BTREE",
+        "ordinalPosition": null,
+        "columnGroups": [
+          {
+            "allColumns": false,
+            "eachColumn": true
+          }
+        ]
+      }
+    },
+    "output": "INDEX \"a\" USING BTREE (\"a\") GLOBAL  WITH COLUMN GROUP(each column)"
   }
 ]

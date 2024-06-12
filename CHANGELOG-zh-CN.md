@@ -1,5 +1,94 @@
 # OceanBase Developer Center (ODC) CHANGELOG
 
+## 4.3.0 （2024-06-07）
+
+### 功能变化
+
+表对象管理
+
+- 支持 OceanBase Oracle 模式 GIS 数据类型
+- 支持 OceanBase v4.3.0 列存，包括表的存储模式和索引的存储模式
+
+变更风险管控
+
+- 新增多库变更任务，相比数据库变更任务，多库变更支持在发起任务时配置变更流水线，流水线支持多个批次，每个批次支持多个库，流水线可以保存为变更顺序模板。
+- 新增数据库管理员，项目管理员可以为项目内的库配置库管理员，库管理员可以在工单审批节点中引用，库管理员信息也会包含在 WebHook 事件中用于外部审批集成。
+- 发起工单时支持配置为手动执行，避免审批通过任务自动执行发生在不符合预期的时间点。
+
+数据归档/清理
+
+- 数据清理/归档提供常用的任务指标，包括：开始时间、结束时间、过滤条件、处理行数、扫描行数及实时性能
+- 数据清理/归档支持分区条件
+- 数据清理/归档支持配置执行超时时间，执行耗时达到超时时间设定任务会退出，保障业务高峰数据库性能
+- 数据归档支持增量结构同步，当源表的结构发生变化时，任务会自动同步表结构，启用结构同步时可自定义是否同步分区和索引
+- 数据清理/归档实现了 OceanBase MySQL 模式字段类型兼容，新增支持等字段类型: bit、set、enum 以及空间数据类型
+- 数据清理/归档实现了 OceanBase Oracle 模式字段类型兼容，新增支持等字段类型: BINARY_FLOAT、BINARY_DOUBLE、TIMESTAMP WITH TIME ZONE、TIMESTAMP WITH LOCAL TIME ZONE、INTERVAL YEAR TO MONTH、INTERVAL DAY TO SECOND、ROW 、 ROWID、UROWID、BLOB
+- 数据清理支持联动历史库校验
+
+全局对象检索
+- 新增全局对象检索，支持在项目范围内全局检索，库表再多也能瞬间直达
+- 支持库、表、列、视图、函数、存储过程、程序包、触发器 等几乎全部对象
+- 支持快捷键 Ctrl/Cmd+J 快速唤起全局对象检索
+
+
+### 易用性改进
+
+- 数据源配置中的 JDBC 参数和初始化脚本也会应用于导入导出任务，给导入导出任务提供更多灵活性 [#2587](https://github.com/oceanbase/odc/pull/2587)
+- 归档项目时，将检查定时任务是否全部关闭 [#2562](https://github.com/oceanbase/odc/pull/2562)
+- 优化了查询表详情的请求时间 [#2626](https://github.com/oceanbase/odc/pull/2626)
+- 优化流程任务取消的错误提示 [#2624](https://github.com/oceanbase/odc/pull/2624)
+
+### 缺陷修复
+
+数据源
+
+- 连接备集群查询表结构失败 [#2648](https://github.com/oceanbase/odc/pull/2648)
+- 重置连接时的并发异常 [#2528](https://github.com/oceanbase/odc/pull/2528)
+
+PL 对象管理
+
+- 修存储过程和函数列表不按名称排序 [#2636](https://github.com/oceanbase/odc/pull/2636)
+- OceanBase Oracle 模式批量编译失败的问题 [#2606](https://github.com/oceanbase/odc/pull/2606)
+
+SQL 窗口
+
+- SQL 窗口中数据库超 2000 时无法切换 [#2520](https://github.com/oceanbase/odc/pull/2520)
+- SQL 窗口设置执行失败时不继续执行不生效 [#2259](https://github.com/oceanbase/odc/pull/2259)
+- 使用 obclient 关闭连接后 SQL 窗口执行报错 [#2528](https://github.com/oceanbase/odc/pull/2528)
+- ORACLE 数据源无法在 SQL 窗口中设置 nls 参数 [#2501](https://github.com/oceanbase/odc/pull/2501)
+
+数据归档/清理
+
+- 关闭任务框架时，消息通知失效 [#2445](https://github.com/oceanbase/odc/pull/2445)
+
+项目和工单
+
+- 项目编辑时报错项目已经存在 [#2642](https://github.com/oceanbase/odc/pull/2642)
+- 工单描述的国际化失效 [#2579](https://github.com/oceanbase/odc/pull/2579)
+- 审批内容超长时审批失败 [#2565](https://github.com/oceanbase/odc/pull/2565)
+
+结构比对
+
+- 结构比对，目标表不存在时结果异常 [#2638](https://github.com/oceanbase/odc/pull/2638)
+
+导入导出
+
+- 导入表结构设置成跳过时不生效 [#2587](https://github.com/oceanbase/odc/pull/2587)
+
+
+表对象管理
+
+- OceanBase 租户配置 lower_case_table_names=2 时，报错表对象不存在 [#2298](https://github.com/oceanbase/odc/pull/2298)
+- 表对象信息中，分区表的唯一索引不可见 [#2297](https://github.com/oceanbase/odc/pull/2297)
+
+其他
+
+- swagger-ui.html 访问失败的问题 [#2160](https://github.com/oceanbase/odc/pull/2160)
+
+### 安全加固
+
+- 升级 spring-security 组件到 5.7.12 版本 [#2690](https://github.com/oceanbase/odc/pull/2690)
+
 ## 4.2.4_bp2（2024-05-14）
 
 ### 缺陷修复

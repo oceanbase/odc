@@ -20,25 +20,16 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.Validate;
 import org.pf4j.Extension;
 
-import com.oceanbase.odc.common.util.VersionUtils;
 import com.oceanbase.odc.plugin.schema.obmysql.OBMySQLTableExtension;
 import com.oceanbase.odc.plugin.schema.oboracle.parser.OBOracleGetDBTableByParser;
 import com.oceanbase.odc.plugin.schema.oboracle.utils.DBAccessorUtil;
-import com.oceanbase.tools.dbbrowser.editor.DBTableConstraintEditor;
 import com.oceanbase.tools.dbbrowser.editor.DBTableEditor;
-import com.oceanbase.tools.dbbrowser.editor.DBTablePartitionEditor;
-import com.oceanbase.tools.dbbrowser.editor.oracle.OBOracleIndexEditor;
-import com.oceanbase.tools.dbbrowser.editor.oracle.OBOracleLessThan400ConstraintEditor;
-import com.oceanbase.tools.dbbrowser.editor.oracle.OBOracleLessThan400DBTablePartitionEditor;
-import com.oceanbase.tools.dbbrowser.editor.oracle.OracleColumnEditor;
-import com.oceanbase.tools.dbbrowser.editor.oracle.OracleConstraintEditor;
-import com.oceanbase.tools.dbbrowser.editor.oracle.OracleDBTablePartitionEditor;
-import com.oceanbase.tools.dbbrowser.editor.oracle.OracleTableEditor;
-import com.oceanbase.tools.dbbrowser.model.DBIndexType;
+import com.oceanbase.tools.dbbrowser.model.DBConstraintType;
 import com.oceanbase.tools.dbbrowser.model.DBTable;
 import com.oceanbase.tools.dbbrowser.model.DBTable.DBTableOptions;
 import com.oceanbase.tools.dbbrowser.model.DBTableColumn;
@@ -58,6 +49,7 @@ import lombok.NonNull;
  */
 @Extension
 public class OBOracleTableExtension extends OBMySQLTableExtension {
+
     private static final String ORACLE_TABLE_COMMENT_DDL_TEMPLATE =
             "COMMENT ON TABLE ${schemaName}.${tableName} IS ${comment}";
     private static final String ORACLE_COLUMN_COMMENT_DDL_TEMPLATE =
@@ -72,7 +64,7 @@ public class OBOracleTableExtension extends OBMySQLTableExtension {
         DBTable table = new DBTable();
         table.setSchemaName(schemaName);
         table.setOwner(schemaName);
-        table.setName(accessor.isLowerCaseTableName() ? tableName.toLowerCase() : tableName);
+        table.setName(tableName);
         table.setColumns(columns);
         /**
          * If the constraint name cannot be obtained through ddl of the table, then the constraint
@@ -88,6 +80,7 @@ public class OBOracleTableExtension extends OBMySQLTableExtension {
         table.setTableOptions(tableOptions);
         table.setDDL(getTableDDL(connection, schemaName, tableName, parser, columns, tableOptions));
         table.setStats(getTableStats(connection, schemaName, tableName));
+        table.setColumnGroups(accessor.listTableColumnGroups(schemaName, tableName));
         return table;
     }
 
@@ -122,11 +115,19 @@ public class OBOracleTableExtension extends OBMySQLTableExtension {
             }
         }
         List<DBTableIndex> indexes = parser.listIndexes();
+        List<String> constraintNames = parser.listConstraints().stream().map(DBTableConstraint::getName).filter(
+                Objects::nonNull).collect(Collectors.toList());
+        List<DBTableConstraint> constraintNameIsNull =
+                parser.listConstraints().stream().filter(cons -> Objects.isNull(cons.getName())).collect(
+                        Collectors.toList());
         for (DBTableIndex index : indexes) {
             /**
-             * 如果有唯一索引，则在表的 DDL 里已经包含了对应的唯一约束 这里就不需要再去获取索引的 DDL 了，否则会重复
+             * If it is a unique index and the corresponding unique constraint is already included in the DDL of
+             * the table, there is no need to obtain the DDL of the index, otherwise it will be repeated.
              */
-            if (index.getType() == DBIndexType.UNIQUE || index.getPrimary()) {
+            if (index.getPrimary() || constraintNames.contains(index.getName())
+                    || constraintNameIsNull.stream().anyMatch(con -> DBConstraintType.UNIQUE_KEY == con.getType()
+                            && con.getColumnNames().equals(index.getColumnNames()))) {
                 continue;
             }
             String indexDdl = parser.getIndexName2Ddl().get(index.getName());
@@ -149,25 +150,7 @@ public class OBOracleTableExtension extends OBMySQLTableExtension {
 
     @Override
     protected DBTableEditor getTableEditor(Connection connection) {
-        String dbVersion = DBAccessorUtil.getDbVersion(connection);
-        return new OracleTableEditor(new OBOracleIndexEditor(), new OracleColumnEditor(),
-                getDBTableConstraintEditor(connection, dbVersion), getDBTablePartitionEditor(connection, dbVersion));
+        return DBAccessorUtil.getTableEditor(connection);
     }
 
-    @Override
-    protected DBTablePartitionEditor getDBTablePartitionEditor(Connection connection, String dbVersion) {
-        if (VersionUtils.isLessThan(dbVersion, "4.0.0")) {
-            return new OBOracleLessThan400DBTablePartitionEditor();
-        } else {
-            return new OracleDBTablePartitionEditor();
-        }
-    }
-
-    @Override
-    protected DBTableConstraintEditor getDBTableConstraintEditor(Connection connection, String dbVersion) {
-        if (VersionUtils.isLessThan(dbVersion, "4.0.0")) {
-            return new OBOracleLessThan400ConstraintEditor();
-        }
-        return new OracleConstraintEditor();
-    }
 }

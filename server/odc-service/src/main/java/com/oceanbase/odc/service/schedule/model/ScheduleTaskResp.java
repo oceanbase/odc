@@ -41,6 +41,8 @@ public class ScheduleTaskResp {
 
     private double progressPercentage;
 
+    private String executionDetails;
+
     private String resultJson;
 
     private Date createTime;

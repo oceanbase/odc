@@ -21,8 +21,8 @@ import java.util.List;
 import org.flowable.bpmn.model.FormProperty;
 import org.flowable.bpmn.model.StartEvent;
 
-import com.oceanbase.odc.core.flow.graph.GraphEdge;
-import com.oceanbase.odc.core.flow.graph.GraphVertex;
+import com.oceanbase.odc.common.graph.GraphEdge;
+import com.oceanbase.odc.common.graph.GraphVertex;
 
 import lombok.NonNull;
 

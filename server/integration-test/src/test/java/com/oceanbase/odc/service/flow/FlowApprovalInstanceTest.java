@@ -34,7 +34,7 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 
 import com.oceanbase.odc.ServiceTestEnv;
 import com.oceanbase.odc.common.event.LocalEventPublisher;
-import com.oceanbase.odc.core.flow.graph.GraphEdge;
+import com.oceanbase.odc.common.graph.GraphEdge;
 import com.oceanbase.odc.metadb.flow.NodeInstanceEntity;
 import com.oceanbase.odc.metadb.flow.NodeInstanceEntityRepository;
 import com.oceanbase.odc.metadb.flow.SequenceInstanceEntity;

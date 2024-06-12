@@ -75,6 +75,7 @@ public class AuditEventMetaService {
             if (AuditEventType.UNKNOWN_TASK_TYPE == entity.getType()) {
                 actualEventMetas.addAll(AuditUtils.createEntitiesByTypes(entity, Arrays.asList(AuditEventType.MOCKDATA,
                         AuditEventType.ASYNC,
+                        AuditEventType.MULTIPLE_ASYNC,
                         AuditEventType.IMPORT,
                         AuditEventType.EXPORT,
                         AuditEventType.EXPORT_RESULT_SET,

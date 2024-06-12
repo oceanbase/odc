@@ -59,5 +59,4 @@ public class UserOrganizationService {
         entity.setOrganizationId(organizationId);
         return userOrganizationRepository.save(entity);
     }
-
 }

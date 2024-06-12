@@ -119,6 +119,8 @@
 /server/integration-test/    @smallsheeeep @yhilmare @yizhouxw
 /server/test-script/         @smallsheeeep @yhilmare @yizhouxw
 
+# i18n
+/server/odc-core/src/main/resources/i18n/     @Jane201510 @JessieWuJiexi @yizhouxw
 
 # docs
 /docs/                      @Jane201510 @yhilmare @yizhouxw
