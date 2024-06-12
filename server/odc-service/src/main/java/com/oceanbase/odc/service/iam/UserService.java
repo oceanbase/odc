@@ -87,6 +87,7 @@ import com.oceanbase.odc.metadb.iam.RolePermissionEntity;
 import com.oceanbase.odc.metadb.iam.RolePermissionRepository;
 import com.oceanbase.odc.metadb.iam.RoleRepository;
 import com.oceanbase.odc.metadb.iam.UserEntity;
+import com.oceanbase.odc.metadb.iam.UserOrganizationRepository;
 import com.oceanbase.odc.metadb.iam.UserPermissionEntity;
 import com.oceanbase.odc.metadb.iam.UserPermissionRepository;
 import com.oceanbase.odc.metadb.iam.UserRepository;
@@ -173,6 +174,9 @@ public class UserService {
 
     @Autowired
     private UserOrganizationService userOrganizationService;
+
+    @Autowired
+    private UserOrganizationRepository userOrganizationRepository;
 
     private final PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
     private final List<Consumer<PasswordChangeEvent>> postPasswordChangeHooks = new ArrayList<>();
@@ -377,6 +381,16 @@ public class UserService {
         }
         log.info("User deleted, id={}", id);
         return new User(userEntity);
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    @SkipAuthorize("odc internal usage")
+    public boolean removeFromOrganization(@NotNull Long id, @NotNull Long organizationId) {
+        userRoleRepository.deleteByOrganizationIdAndUserId(organizationId, id);
+        userPermissionRepository.deleteByUserIdAndOrganizationId(id, organizationId);
+        userOrganizationRepository.deleteByUserIdAndOrganizationId(id, organizationId);
+        log.info("User removed from organization, userId={}, organizationId={}", id, organizationId);
+        return true;
     }
 
     @PreAuthenticate(actions = "read", resourceType = "ODC_USER", indexOfIdParam = 0)
@@ -1026,6 +1040,12 @@ public class UserService {
                 creatorNameSetter.accept(c, userEntity.getName());
             }
         });
+    }
+
+    @SkipAuthorize("odc internal usage")
+    public List<User> listByBoundOrganizationId(@NotNull Long organizationId) {
+        return userRepository.findByBoundOrganization(organizationId).stream().map(User::new)
+                .collect(Collectors.toList());
     }
 
 }

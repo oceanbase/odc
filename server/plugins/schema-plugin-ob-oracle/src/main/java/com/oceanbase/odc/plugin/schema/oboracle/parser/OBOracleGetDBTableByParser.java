@@ -41,10 +41,12 @@ import com.oceanbase.tools.dbbrowser.model.DBTablePartition;
 import com.oceanbase.tools.dbbrowser.model.DBTablePartitionDefinition;
 import com.oceanbase.tools.dbbrowser.model.DBTablePartitionOption;
 import com.oceanbase.tools.dbbrowser.model.DBTablePartitionType;
+import com.oceanbase.tools.dbbrowser.parser.SqlParser;
 import com.oceanbase.tools.dbbrowser.util.OracleSqlBuilder;
 import com.oceanbase.tools.sqlparser.OBOracleSQLParser;
 import com.oceanbase.tools.sqlparser.SQLParser;
 import com.oceanbase.tools.sqlparser.statement.Expression;
+import com.oceanbase.tools.sqlparser.statement.Statement;
 import com.oceanbase.tools.sqlparser.statement.createindex.CreateIndex;
 import com.oceanbase.tools.sqlparser.statement.createtable.ColumnDefinition;
 import com.oceanbase.tools.sqlparser.statement.createtable.CreateTable;
@@ -95,17 +97,19 @@ public class OBOracleGetDBTableByParser implements GetDBTableByParser {
 
     private CreateTable parseTableDDL(@NonNull String schemaName, @NonNull String tableName) {
         CreateTable statement = null;
-        OracleSqlBuilder getTableDDLSql = new OracleSqlBuilder();
-        getTableDDLSql.append("SELECT dbms_metadata.get_ddl('TABLE', ");
-        getTableDDLSql.value(tableName);
-        getTableDDLSql.append(", ");
-        getTableDDLSql.value(schemaName);
-        getTableDDLSql.append(") as DDL from dual");
-        String ddl = JdbcOperationsUtil.getJdbcOperations(connection).queryForObject(getTableDDLSql.toString(),
-                String.class);
+        OracleSqlBuilder builder = new OracleSqlBuilder();
+        builder.append("SELECT dbms_metadata.get_ddl('TABLE', ");
+        builder.value(tableName);
+        builder.append(", ");
+        builder.value(schemaName);
+        builder.append(") as DDL from dual");
+        String ddl = JdbcOperationsUtil.getJdbcOperations(connection)
+                .queryForObject(builder.toString(), String.class);
         try {
-            SQLParser sqlParser = new OBOracleSQLParser();
-            statement = (CreateTable) sqlParser.parse(new StringReader(ddl));
+            Statement value = SqlParser.parseOracleStatement(ddl);
+            if (value instanceof CreateTable) {
+                statement = (CreateTable) value;
+            }
         } catch (Exception e) {
             log.warn("Failed to parse table ddl, error message={}", e.getMessage());
         }

@@ -30,6 +30,7 @@ public class EventLabelKeys {
     public static final String TASK_TYPE = "taskType";
     public static final String TASK_STATUS = "taskStatus";
     public static final String TRIGGER_TIME = "triggerTime";
+    public static final String DESCRIPTION = "description";
 
     /**
      * connection info

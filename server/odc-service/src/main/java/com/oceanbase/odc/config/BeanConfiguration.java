@@ -188,6 +188,11 @@ public class BeanConfiguration {
         public OBDatabaseUser getSysTenantUser(String instanceId) {
             throw new UnsupportedException("CloudMetadata not supported");
         }
+
+        @Override
+        public boolean supportsCloudParentUid() {
+            return false;
+        }
     }
 
     /**

@@ -795,8 +795,10 @@ INSERT INTO config_system_configuration(`key`, `value`, `description`) VALUES('o
 ---
 --- v4.3.0
 ---
+INSERT INTO config_system_configuration(`key`, `value`, `description`) VALUES('odc.database.schema.global-search.enabled',
+ 'true', 'enable global searching database schema or not, true by default') ON DUPLICATE KEY UPDATE `id`=`id`;
 INSERT INTO config_system_configuration(`key`, `value`, `description`) VALUES('odc.database.schema.sync.cron-expression',
- '0 0 2 * * ?', 'cron expression for synchronizing full database schema') ON DUPLICATE KEY UPDATE `id`=`id`;
+ '0 0 2 * * ?', 'cron expression for synchronizing global database schema') ON DUPLICATE KEY UPDATE `id`=`id`;
 INSERT INTO config_system_configuration(`key`, `value`, `description`) VALUES('odc.database.schema.sync.executor-thread-count',
  '8', 'thread count for synchronizing database schema') ON DUPLICATE KEY UPDATE `id`=`id`;
 INSERT INTO config_system_configuration(`key`, `value`, `description`) VALUES('odc.database.schema.sync.block-exclusions-when-sync-db-to-project',
@@ -813,3 +815,23 @@ INSERT INTO config_system_configuration(`key`, `value`, `description`) VALUES('o
  'mysql, information_schema, test', 'schema exclusions when synchronizing MySQL database schema') ON DUPLICATE KEY UPDATE `id`=`id`;
 INSERT INTO config_system_configuration(`key`, `value`, `description`) VALUES('odc.database.schema.sync.exclude-schemas.doris',
  'mysql, information_schema, test', 'schema exclusions when synchronizing MySQL database schema') ON DUPLICATE KEY UPDATE `id`=`id`;
+
+INSERT INTO config_system_configuration(`key`, `value`, `description`)
+VALUES ('odc.permission-check.whitelist.database.ob-mysql',
+        'DBMS_RESOURCE_MANAGER, DBMS_STATS, DBMS_UDR, DBMS_XPLAN, DBMS_WORKLOAD_REPOSITORY',
+        'Permission check whitelist for database in OB MySQL dialect type')
+ON DUPLICATE KEY UPDATE `id`=`id`;
+INSERT INTO config_system_configuration(`key`, `value`, `description`)
+VALUES ('odc.permission-check.whitelist.database.ob-oracle',
+        'DBMS_APPLICATION_INFO, DBMS_APPLICATION_INFO, DBMS_ASH_INTERNAL, DBMS_AUDIT_MGMT, DBMS_CRYPTO, DBMS_DEBUG, '
+            'DBMS_DESCRIBE, DBMS_ERRLOG, DBMS_IJOB, DBMS_ISCHEDULER, DBMS_JOB, DBMS_LOB, DBMS_LOCK, DBMS_METADATA, '
+            'DBMS_MONITOR, DBMS_MONITOR, DBMS_MVIEW, DBMS_MVIEW_STATS, DBMS_OUTPUT, DBMS_PLAN_CACHE, DBMS_PREPROCESSOR, '
+            'DBMS_RANDOM, DBMS_RESOURCE_MANAGER, DBMS_RLS, DBMS_SCHEDULER, DBMS_SESSION, DBMS_SESSION, DBMS_SPM, DBMS_SPM, '
+            'DBMS_SQL, DBMS_STATS, DBMS_SYS_ERROR, DBMS_TYPES, DBMS_UDR, DBMS_UDR, DBMS_UTILITY, DBMS_WARNING, '
+            'DBMS_WORKLOAD_REPOSITORY, DBMS_XA, DBMS_XMLGEN, DBMS_XPLAN, ODCICONST, SA_COMPONENTS, SA_LABEL_ADMIN, '
+            'SA_POLICY_ADMIN, SA_SESSION, SA_SYSDBA, SA_USER_ADMIN, STANDARD, UTL_ENCODE, UTL_FILE, UTL_I18N, UTL_INADDR, '
+            'UTL_RAW, __DBMS_UPGRADE, __DBMS_UPGRADE, dbms_ischeduler, dbms_mview, dbms_mview_stats, '
+            'dbms_ob_limit_calculator, dbms_resource_manager, dbms_scheduler, dbms_stats, '
+            'dbms_trusted_certificate_manager, dbms_workload_repository, dbms_xplan',
+        'Permission check whitelist for database in OB Oracle dialect type')
+ON DUPLICATE KEY UPDATE `id`=`id`;

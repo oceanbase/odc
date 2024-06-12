@@ -25,6 +25,7 @@ public class RuntimeTaskConstants {
     public static final String FLOW_INSTANCE_ID = "flowInstanceId";
     public static final String TIMEOUT_MILLI_SECONDS = "timeOutMilliSeconds";
     public static final String CONNECTION_CONFIG = "connectionConfig";
+    public static final String CONNECTION_CONFIG_LIST = "connectionConfigList";
     public static final String SCHEMA_NAME = "schemaName";
     public static final String PARAMETERS = "parameters";
     public static final String TASK_SUBMITTER = "taskSubmitter";

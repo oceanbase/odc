@@ -3,6 +3,195 @@
 
 New
 ~~~
+- Feat(config):add creator_id to config entity (#2485) [Ang]
+- Feat(dlm):upgrade dlm sdk version to 1.1.3 #2601. [guowl3]
+- Feat(projectService): adaption for organization、project、role service
+  (#2448) [zhangxiao]
+- Feat(multipledatabase): add audit events for multiple databases
+  (#2442) [zijia.cj]
+- Feat(data-transfer): apply jdbc parameters and scripts in connection
+  config to data transfer (#2455) [LuckyLeo]
+- Feat(notification): notification support multiple database change task
+  (#2469) [LuckyLeo]
+- Feat(object-search): individual space support global object search
+  (#2436) [XiaoYang]
+- Feat(databasechange): implement the new interface and flow of multiple
+  databases change (#2275) [Ang, Xiao Kang, zijia.cj]
+- Feat(dlm): supports viewing schedule task details (#2354) [guowl3]
+- Feat(dlm): data clearing tasks support data check before delete
+  (#2401) [kiko]
+- Feat(dlm): incremenntal table structure synchronization (#2189)
+  [guowl3]
+- Feat(migrate): migrate history uniqueIdentifier in
+  collaboration_project (#2377) [zhangxiao]
+- Feat(migrate): add unique identifier in collaboration project (#2372)
+  [zhangxiao]
+- Feat(object-management): add accessor and service support for column-
+  group (#2349) [LuckyLeo]
+- Feat(column-group): add support of column group into ob-sql-parser
+  (#2300) [LuckyLeo]
+- Feat(logicaldatabase): logical table expression parser (#2274)
+  [pynzzZ]
+- Feat(object-search): database schema synchronizing implementation
+  (#2222) [XiaoYang]
+- Feat(iam): password strength match oceanbase style (#2247) [yizhou]
+- Feat(multiple databases changes): add new feature for multiple
+  database changes (#1848) [jonas]
+- Feat(datatype): update odc_version_diff_config for ob oracle
+  SDO_GEOMETRY datatype (#2232) [zhangxiao]
+- Feat(resultset): supports gis datatype for ob oracle mode (#2216)
+  [zhangxiao]
+- Feat(query-profile): add DTO and VO models for query profile (#2212)
+  [LuckyLeo]
+- Feat(ob-sql-parser): upgrade antlr g4 for oceanbase v4.3.0 (#2124)
+  [yizhou]
+- Feat(object-search): persistence and service layer implementation
+  (#2155) [XiaoYang]
+- Feat(logicaldatabase): supports automatic recognition of logical
+  tables and logical table expression generation  (#2166) [pynzzZ]
+- Feat(collaboration): support for configuring database administrators
+  and participating in approvals (#2168) [XiaoYang, isadba]
+
+Changes
+~~~~~~~
+- Refactor(flow): add skip auth to flow mapper (#2538) [Ang]
+- Refactor(config): Add more fields to configEntity #2493. [Ang]
+- Chore: use OBE error code (#2413) [yizhou]
+- Refactor(sql-execute): refactor SQL async execute api into streaming
+  return  (#2246) [LuckyLeo]
+
+Fix
+~~~
+- Fix(security): add skip auth annotation (#2704) [guowl3]
+- Fix(dlm): alter execute task job type for data cleaning (#2706) [kiko]
+- Fix(multiple database): the return of method intercepted in multiple
+  database pre check node is incorrect  (#2702) [zijia.cj]
+- Fix(data-transfer): truncate will cause the import task to fail
+  (#2679) [LuckyLeo]
+- Fix(dlm): table structure synchronization failed (#2682) [guowl3]
+- Fix(apply database): failing to apply database permission deliver
+  (#2684) [zijia.cj]
+- Fix(dlm): target database id is null in task framework mode (#2676)
+  [guowl3]
+- Fix(multiple database): the method isIntercepted in multiple database
+  pre check node is error (#2677) [zijia.cj]
+- Fix(parser): failed to parse json_function for native oracle (#2664)
+  [IL MARE]
+- Fix(db-object): exception occurred when open oracle table in GBK
+  encoding (#2661) [LuckyLeo]
+- Fix(dlm): task timeout was not effective (#2651) [guowl3]
+- Fix(multiple database): pre sql check node failed (#2592) [zijia.cj]
+- Fix(structure-comparison): syntax error when executing structure
+  comparison (#2638) [IL MARE]
+- Fix(dml): failed to modify data which is geometry type (#2640) [IL
+  MARE]
+- Fix(schema): failed to query variables on native oracle (#2649) [IL
+  MARE]
+- Fix(collaboration): can not modify the description of project (#2642)
+  [XiaoYang]
+- Fix(connect): failed to connect to a standby cluster and view table
+  structure (#2648) [IL MARE]
+- Fix(database-permission): wrong to check DB permission when existing
+  Invalid DB with the same name (#2641) [XiaoYang]
+- Fix(multiple database): error occurs when viewing the list without
+  templates (#2639) [zijia.cj]
+- Fix(schema): function and procedure list is not ordered by their name
+  in ob-mysql (#2636) [IL MARE]
+- Fix(dlm): table not found in task framework mode (#2637) [guowl3]
+- Fix(schema): loading table detail costs too much time (#2626) [IL
+  MARE]
+- Fix(metadb): change systemConfigDao to systemConfigRepository. (#2467)
+  [Ang]
+- Fix(deserialization): failed to deserialize the page object (#2434)
+  [Ang]
+- Fix(flow-task): optimize error message of flow task cancelation
+  (#2624) [LuckyLeo]
+- Fix(stateful): batch compile failed with message 'stateId' (#2606)
+  [Ang]
+- Fix(flow): cannot find approvers for multiple database change task
+  when using database owner  (#2625) [XiaoYang]
+- Fix(data-transfer): exception occurs when object exists  and
+  configured continue when error (#2587) [LuckyLeo]
+- Fix(schedule): schedule cannot be disabled if project is archived
+  (#2562) [guowl3]
+- Fix(dlm): data delete retry failed (#2564) [guowl3]
+- Fix(ticket): failed to approve ticket when input over-sized comment
+  (#2565) [XiaoYang]
+- Fix(flow): the disabled user can still approving or rejecting a flow
+  (#2589) [XiaoYang]
+- Fix(multiple database): optimize error message when creating and
+  updating template (#2593) [zijia.cj]
+- Fix(collaboration): vertical unauthorizing exists when editing
+  database owners (#2590) [XiaoYang]
+- Fix(multiple database): add project permission verification to the
+  exist method (#2585) [zijia.cj]
+- Fix(object-search): failed to sync database metadata in individual
+  space (#2563) [XiaoYang]
+- Fix(multiple database): no execution record is generated before or
+  during a multi-database change task  (#2569) [zijia.cj]
+- Fix(ticket): wrong i18n description for task (#2579) [XiaoYang]
+- Fix(multiple database): the current database does not match the
+  corresponding sql check result (#2584) [zijia.cj]
+- Fix(dlm): table structure synchronization failure when table names are
+  inconsistent (#2497) [guowl3]
+- Fix(integration): basic auth miss authentication initialization
+  (#2549) [yizhou]
+- Fix(flow): failed to create a ticket which manual strategy in
+  individual space (#2534) [yiminpeng]
+- Fix(database): database sync involved no-privilege databases in
+  OBMySQL (#2523) [pynzzZ]
+- Fix(web): cannot return a page with more than 2000 records (#2520)
+  [pynzzZ]
+- Fix(multiple database): hover the template name does not show the
+  contained database (#2542) [zijia.cj]
+- Fix(dlm): set default value is source table name if data cleaning
+  target table name is null (#2533) [kiko]
+- Fix(connection): concurrent exception will be thrown when a connection
+  is reset (#2528) [IL MARE]
+- Fix(object-search): bad performance when syncing table or view columns
+  (#2486) [XiaoYang]
+- Fix(multiple databases): database changing order in template cannot be
+  edited  (#2511) [zijia.cj]
+- Fix(db-browser): adaption for ALL_TAB_COLS.USER_GENERATED in ob oracle
+  (#2231) [zhangxiao]
+- Fix(session): failed to set nls parameters for native oracle in sql-
+  console (#2501) [IL MARE]
+- Fix(dlm): optimize error message (#2498) [guowl3]
+- Fix(dlm): sync table structure failed #2489. [guowl3]
+- Fix(project): optimize error message when update a project name to an
+  existed project name (#2464) [pynzzZ]
+- Fix(dlm): archiving specified partition failed (#2474) [guowl3]
+- Fix(flow): optimize flow submitter about exception handler (#2431)
+  [krihy]
+- Fix(notification): DLM events were missed when task framework not
+  enabled (#2445) [LuckyLeo]
+- Fix(database-permission): could not call inside dbms package in SQL
+  console (#2417) [XiaoYang]
+- Fix(schema-plugin): remove the logic that automatically converts table
+  names to lowercase when getTable (#2298) [zhangxiao]
+- Fix(schema-plugin):fix table ddl do not show unique index when table
+  is partitioned (#2297) [zhangxiao]
+- Fix(ticket): failed to set download log file url (#2405) [XiaoYang]
+- Fix(data-transfer): fix incorrect task result update (#2403)
+  [LuckyLeo]
+- Fix(data-masking): unavailable when existing invalid database with
+  duplicated name (#2355) [XiaoYang]
+- Fix(db-browser): partition definitions is not ordered (#2328) [IL
+  MARE]
+- Fix(sql-execute): failed to kill query (#2259) [IL MARE]
+- Fix(web-framework): swagger-ui.html page 404 notfound (#2160) [yizhou]
+
+Security
+~~~~~~~~
+- Security: upgrade spring-security from 5.1.10 to 5.7.12, fix
+  CVE-2024-22257. [yizhouxw]
+
+
+v4.2.4_bp2 (2024-05-15)
+-----------------------
+
+New
+~~~
 - Feat(dlm): upgrade dlm sdk to 1.1.1 (#2281) [guowl3]
 - Feat(connect): supports connect backup instance (#2192) [pynzzZ]
 
@@ -12,6 +201,10 @@ Changes
 
 Fix
 ~~~
+- Fix(database): database sync failed after updated an invalid
+  datasource to a valid datasource (#2382) [pynzzZ, yh263208]
+- Fix(encryption): RSA decrypting failed if already decrypted a invalid
+  input string (#2389) [XiaoYang]
 - Fix(shadowtable): bad sql grammer when table column's default value is
   a string type in MySQL (#2388) [jingtian, pynzzZ]
 - Fix(data-masking): unavailable when existing invalid database with
@@ -101,7 +294,7 @@ Security
 ~~~~~~~~
 - Security: exclude dependency on snappy-java (#2317) [LuckyLeo]
 - Security: test masking using rounding algorithm may cause denial of
-  service (DoS) risk (##) [XiaoYang]
+  service (DoS) risk (#2271) [XiaoYang]
 
 
 v4.2.4_bp1 (2024-04-12)

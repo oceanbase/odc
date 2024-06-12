@@ -20,11 +20,11 @@ import java.util.Optional;
 
 import org.quartz.JobExecutionContext;
 
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.core.shared.constant.TaskStatus;
 import com.oceanbase.odc.metadb.schedule.ScheduleTaskEntity;
-import com.oceanbase.odc.service.dlm.model.DlmTask;
+import com.oceanbase.odc.service.dlm.model.DataArchiveParameters;
+import com.oceanbase.odc.service.dlm.model.DlmTableUnit;
 import com.oceanbase.odc.service.dlm.utils.DlmJobIdUtil;
 import com.oceanbase.odc.service.schedule.model.DataArchiveClearParameters;
 import com.oceanbase.tools.migrator.common.enums.JobType;
@@ -41,7 +41,6 @@ public class DataArchiveDeleteJob extends AbstractDlmJob {
     @Override
     public void executeJob(JobExecutionContext context) {
 
-        jobThread = Thread.currentThread();
         ScheduleTaskEntity taskEntity = (ScheduleTaskEntity) context.getResult();
         DataArchiveClearParameters dataArchiveClearParameters = JsonUtils.fromJson(taskEntity.getParametersJson(),
                 DataArchiveClearParameters.class);
@@ -58,6 +57,8 @@ public class DataArchiveDeleteJob extends AbstractDlmJob {
         }
 
         ScheduleTaskEntity dataArchiveTask = dataArchiveTaskOption.get();
+        DataArchiveParameters dataArchiveParameters = JsonUtils.fromJson(dataArchiveTask.getParametersJson(),
+                DataArchiveParameters.class);
 
         if (dataArchiveTask.getStatus() != TaskStatus.DONE) {
             log.warn("Data archive task do not finish,scheduleTaskId = {}", dataArchiveTask.getId());
@@ -67,28 +68,33 @@ public class DataArchiveDeleteJob extends AbstractDlmJob {
 
         // execute in task framework.
         if (taskFrameworkProperties.isEnabled()) {
-            DLMJobParameters parameters = getDLMJobParameters(dataArchiveTask.getJobId());
+            DLMJobReq parameters = getDLMJobReq(dataArchiveTask.getJobId());
             parameters.setJobType(JobType.DELETE);
-            Long jobId = publishJob(parameters);
+            parameters.setScheduleTaskId(taskEntity.getId());
+            Long jobId = publishJob(parameters, dataArchiveParameters.getTimeoutMillis());
             log.info("Publish DLM job to task framework succeed,scheduleTaskId={},jobIdentity={}", taskEntity.getId(),
                     jobId);
             scheduleTaskRepository.updateJobIdById(taskEntity.getId(), jobId);
             scheduleTaskRepository.updateTaskResult(taskEntity.getId(), JsonUtils.toJson(parameters));
             return;
         }
-
-        // prepare tasks for clear
-        List<DlmTask> taskUnits = JsonUtils.fromJson(dataArchiveTask.getResultJson(),
-                new TypeReference<List<DlmTask>>() {});
-        for (int i = 0; i < taskUnits.size(); i++) {
-            taskUnits.get(i).setId(DlmJobIdUtil.generateHistoryJobId(taskEntity.getJobName(), taskEntity.getJobGroup(),
-                    taskEntity.getId(),
-                    i));
-            taskUnits.get(i).setJobType(JobType.DELETE);
-            taskUnits.get(i).setStatus(TaskStatus.PREPARING);
+        List<DlmTableUnit> dlmTableUnits = dlmService.findByScheduleTaskId(taskEntity.getId());
+        if (dlmTableUnits.isEmpty()) {
+            dlmTableUnits = dlmService.findByScheduleTaskId(dataArchiveTask.getId());
+            for (int i = 0; i < dlmTableUnits.size(); i++) {
+                dlmTableUnits.get(i)
+                        .setDlmTableUnitId(
+                                DlmJobIdUtil.generateHistoryJobId(taskEntity.getJobName(), taskEntity.getJobGroup(),
+                                        taskEntity.getId(),
+                                        i));
+                dlmTableUnits.get(i).setType(JobType.DELETE);
+                dlmTableUnits.get(i).setStatus(TaskStatus.PREPARING);
+                dlmTableUnits.get(i).setScheduleTaskId(taskEntity.getId());
+            }
+            dlmService.createDlmTableUnits(dlmTableUnits);
         }
-        executeTask(taskEntity.getId(), taskUnits);
-        TaskStatus taskStatus = getTaskStatus(taskUnits);
+        executeTask(taskEntity.getId(), dlmTableUnits, dataArchiveParameters.getTimeoutMillis());
+        TaskStatus taskStatus = getTaskStatus(taskEntity.getId());
         scheduleTaskRepository.updateStatusById(taskEntity.getId(), taskStatus);
     }
 }

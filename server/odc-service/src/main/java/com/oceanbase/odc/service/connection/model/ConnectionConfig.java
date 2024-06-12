@@ -487,6 +487,7 @@ public class ConnectionConfig
         if (Objects.nonNull(userRole)) {
             target.setUserRole(userRole.name());
         }
+        target.setJdbcUrlParameters(getJdbcUrlParameters());
         return target;
     }
 

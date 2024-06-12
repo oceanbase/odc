@@ -28,14 +28,12 @@ import com.oceanbase.tools.dbbrowser.editor.DBObjectOperator;
 import com.oceanbase.tools.dbbrowser.editor.mysql.MySQLObjectOperator;
 import com.oceanbase.tools.dbbrowser.model.DBObjectIdentity;
 import com.oceanbase.tools.dbbrowser.model.DBObjectType;
-import com.oceanbase.tools.dbbrowser.model.DBProcedure;
 import com.oceanbase.tools.dbbrowser.model.DBSequence;
 import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
-import com.oceanbase.tools.dbbrowser.template.DBObjectTemplate;
-import com.oceanbase.tools.dbbrowser.template.mysql.MySQLProcedureTemplate;
 
 @Extension
 public class OBMySQLSequenceExtension implements SequenceExtensionPoint {
+
     @Override
     public List<DBObjectIdentity> list(Connection connection, String schemaName) {
         return getSchemaAccessor(connection).listSequences(schemaName);
@@ -64,8 +62,6 @@ public class OBMySQLSequenceExtension implements SequenceExtensionPoint {
         throw new UnsupportedOperationException();
     }
 
-
-
     protected DBSchemaAccessor getSchemaAccessor(Connection connection) {
         return DBAccessorUtil.getSchemaAccessor(connection);
     }
@@ -74,7 +70,4 @@ public class OBMySQLSequenceExtension implements SequenceExtensionPoint {
         return new MySQLObjectOperator(JdbcOperationsUtil.getJdbcOperations(connection));
     }
 
-    protected DBObjectTemplate<DBProcedure> getTemplate() {
-        return new MySQLProcedureTemplate();
-    }
 }

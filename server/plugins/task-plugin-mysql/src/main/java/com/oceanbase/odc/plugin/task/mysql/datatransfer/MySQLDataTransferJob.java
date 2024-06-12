@@ -38,6 +38,7 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.collections4.Predicate;
 import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
@@ -191,6 +192,10 @@ public class MySQLDataTransferJob implements DataTransferJob {
                 && Objects.nonNull(connectionInfo.getProxyPort())) {
             jdbcUrlParams.put("socksProxyHost", connectionInfo.getProxyHost());
             jdbcUrlParams.put("socksProxyPort", connectionInfo.getProxyPort() + "");
+        }
+        if (MapUtils.isNotEmpty(connectionInfo.getJdbcUrlParameters())) {
+            connectionInfo.getJdbcUrlParameters().forEach(
+                    (key, value) -> jdbcUrlParams.put(key, value.toString()));
         }
         HikariDataSource dataSource = new HikariDataSource();
         dataSource.setJdbcUrl(

@@ -15,18 +15,26 @@
  */
 package com.oceanbase.tools.dbbrowser.parser;
 
+import java.io.StringReader;
+import java.util.concurrent.TimeUnit;
+
 import org.antlr.v4.runtime.CharStream;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.ParseTreeWalker;
 
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
 import com.oceanbase.tools.dbbrowser.parser.listener.CustomErrorListener;
 import com.oceanbase.tools.dbbrowser.parser.listener.MysqlModeSqlParserListener;
 import com.oceanbase.tools.dbbrowser.parser.listener.OracleModeSqlParserListener;
 import com.oceanbase.tools.dbbrowser.parser.result.ParseSqlResult;
+import com.oceanbase.tools.sqlparser.OBMySQLParser;
+import com.oceanbase.tools.sqlparser.OBOracleSQLParser;
 import com.oceanbase.tools.sqlparser.obmysql.OBLexer;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser;
+import com.oceanbase.tools.sqlparser.statement.Statement;
 import com.oceanbase.tools.sqlparser.util.TimeoutTokenStream;
 
 import lombok.NonNull;
@@ -40,11 +48,65 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class SqlParser {
 
+    private final static Cache<String, CacheElement<ParseSqlResult>> OB_MYSQL_PARSE_CACHE =
+            Caffeine.newBuilder()
+                    .maximumSize(1000)
+                    .expireAfterWrite(10, TimeUnit.MINUTES)
+                    .build();
+    private final static Cache<String, CacheElement<ParseSqlResult>> OB_ORACLE_PARSE_CACHE =
+            Caffeine.newBuilder()
+                    .maximumSize(1000)
+                    .expireAfterWrite(10, TimeUnit.MINUTES)
+                    .build();
+    private final static Cache<String, CacheElement<Statement>> OB_MYSQL_STMT_PARSE_CACHE =
+            Caffeine.newBuilder()
+                    .maximumSize(1000)
+                    .expireAfterWrite(10, TimeUnit.MINUTES)
+                    .build();
+    private final static Cache<String, CacheElement<Statement>> OB_ORACLE_STMT_PARSE_CACHE =
+            Caffeine.newBuilder()
+                    .maximumSize(1000)
+                    .expireAfterWrite(10, TimeUnit.MINUTES)
+                    .build();
+
+    public static Statement parseMysqlStatement(@NonNull String sql) {
+        CacheElement<Statement> value = OB_MYSQL_STMT_PARSE_CACHE.get(sql, s -> {
+            try {
+                return new CacheElement<>(new OBMySQLParser().parse(new StringReader(sql)));
+            } catch (Exception e) {
+                return new CacheElement<>(e);
+            }
+        });
+        return value == null ? null : value.get();
+    }
+
+    public static Statement parseOracleStatement(@NonNull String sql) {
+        CacheElement<Statement> value = OB_ORACLE_STMT_PARSE_CACHE.get(sql, s -> {
+            try {
+                return new CacheElement<>(new OBOracleSQLParser().parse(new StringReader(sql)));
+            } catch (Exception e) {
+                return new CacheElement<>(e);
+            }
+        });
+        return value == null ? null : value.get();
+    }
+
     public static ParseSqlResult parseMysql(final String sql) {
         return parseMysql(sql, 0);
     }
 
     public static ParseSqlResult parseMysql(final String sql, long timeoutMillis) {
+        CacheElement<ParseSqlResult> value = OB_MYSQL_PARSE_CACHE.get(sql, s -> {
+            try {
+                return new CacheElement<>(doParseMysql(sql, timeoutMillis));
+            } catch (Exception e) {
+                return new CacheElement<>(e);
+            }
+        });
+        return value == null ? null : value.get();
+    }
+
+    private static ParseSqlResult doParseMysql(final String sql, long timeoutMillis) {
         long startTime = System.currentTimeMillis();
         CharStream input = CharStreams.fromString(sql);
         // Lexer-Lexical analysis
@@ -79,6 +141,17 @@ public class SqlParser {
     }
 
     public static ParseSqlResult parseOracle(final String sql, long timeoutMillis) {
+        CacheElement<ParseSqlResult> value = OB_ORACLE_PARSE_CACHE.get(sql, s -> {
+            try {
+                return new CacheElement<>(doParseOracle(sql, timeoutMillis));
+            } catch (Exception e) {
+                return new CacheElement<>(e);
+            }
+        });
+        return value == null ? null : value.get();
+    }
+
+    private static ParseSqlResult doParseOracle(final String sql, long timeoutMillis) {
         long startTime = System.currentTimeMillis();
         CharStream input = CharStreams.fromString(sql);
         // Lexer-Lexical analysis

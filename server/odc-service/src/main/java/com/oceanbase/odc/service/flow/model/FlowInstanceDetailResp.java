@@ -50,6 +50,7 @@ import com.oceanbase.odc.service.flow.instance.FlowTaskInstance;
 import com.oceanbase.odc.service.flow.model.FlowNodeInstanceDetailResp.FlowNodeInstanceMapper;
 import com.oceanbase.odc.service.flow.task.model.DBStructureComparisonParameter;
 import com.oceanbase.odc.service.flow.task.model.DatabaseChangeParameters;
+import com.oceanbase.odc.service.flow.task.model.MultipleDatabaseChangeParameters;
 import com.oceanbase.odc.service.flow.task.model.OdcMockTaskConfig;
 import com.oceanbase.odc.service.flow.task.model.ShadowTableSyncTaskParameter;
 import com.oceanbase.odc.service.flow.util.FlowInstanceUtil;
@@ -62,7 +63,9 @@ import com.oceanbase.odc.service.regulation.risklevel.model.RiskLevel;
 import com.oceanbase.odc.service.resultset.ResultSetExportTaskParameter;
 import com.oceanbase.odc.service.schedule.flowtask.AlterScheduleParameters;
 
+import lombok.Builder;
 import lombok.Data;
+import lombok.Getter;
 import lombok.NonNull;
 
 /**
@@ -96,79 +99,26 @@ public class FlowInstanceDetailResp {
     private Date completeTime;
     private List<FlowNodeInstanceDetailResp> nodeList;
 
+    @Getter
+    @Builder
     public static class FlowInstanceMapper {
-        private Predicate<Long> ifApprovable = null;
-        private Predicate<Long> ifRollbackable = null;
-        private Function<Long, Database> getDatabaseById = null;
-        private Function<Long, UserEntity> getUserById = null;
-        private Function<Long, Set<TaskEntity>> getTasksByFlowInstanceId = null;
-        private Function<Long, List<RoleEntity>> getRolesByUserId = null;
-        private Function<Long, List<Date>> getExecutionTimeByFlowInstanceId = null;
-        private Function<Long, List<FlowTaskExecutionStrategy>> getExecutionStrategyByFlowInstanceId = null;
-        private Function<Long, RiskLevel> getRiskLevelByRiskLevelId = null;
-        private Function<Long, Set<UserEntity>> getCandidatesByFlowInstanceId = null;
-
-
-        public FlowInstanceMapper withGetRolesByUserId(@NonNull Function<Long, List<RoleEntity>> getRolesByUserId) {
-            this.getRolesByUserId = getRolesByUserId;
-            return this;
-        }
-
-        public FlowInstanceMapper withApprovable(@NonNull Predicate<Long> ifApprovable) {
-            this.ifApprovable = ifApprovable;
-            return this;
-        }
-
-        public FlowInstanceMapper withRollbackable(@NonNull Predicate<Long> ifRollbackable) {
-            this.ifRollbackable = ifRollbackable;
-            return this;
-        }
-
-        public FlowInstanceMapper withGetTaskByFlowInstanceId(
-                @NonNull Function<Long, Set<TaskEntity>> getTasksByFlowInstanceId) {
-            this.getTasksByFlowInstanceId = getTasksByFlowInstanceId;
-            return this;
-        }
-
-        public FlowInstanceMapper withGetDatabaseById(@NonNull Function<Long, Database> getDatabaseById) {
-            this.getDatabaseById = getDatabaseById;
-            return this;
-        }
-
-        public FlowInstanceMapper withGetUserById(@NonNull Function<Long, UserEntity> getUserById) {
-            this.getUserById = getUserById;
-            return this;
-        }
-
-        public FlowInstanceMapper withGetExecutionTimeByFlowInstanceId(
-                @NonNull Function<Long, List<Date>> getExecutionTimeByFlowInstanceId) {
-            this.getExecutionTimeByFlowInstanceId = getExecutionTimeByFlowInstanceId;
-            return this;
-        }
-
-        public FlowInstanceMapper withGetExecutionStrategyByFlowInstanceId(
-                @NonNull Function<Long, List<FlowTaskExecutionStrategy>> getExecutionStrategyByFlowInstanceId) {
-            this.getExecutionStrategyByFlowInstanceId = getExecutionStrategyByFlowInstanceId;
-            return this;
-        }
-
-        public FlowInstanceMapper withGetRiskLevelByRiskLevelId(
-                @NonNull Function<Long, RiskLevel> getRiskLevelByRiskLevelId) {
-            this.getRiskLevelByRiskLevelId = getRiskLevelByRiskLevelId;
-            return this;
-        }
-
-        public FlowInstanceMapper withGetCandidatesByFlowInstanceId(
-                @NonNull Function<Long, Set<UserEntity>> getUsersByFlowInstanceId) {
-            this.getCandidatesByFlowInstanceId = getUsersByFlowInstanceId;
-            return this;
-        }
+        private final Predicate<Long> ifApprovable;
+        private final Predicate<Long> ifRollbackable;
+        private final Function<Long, Database> getDatabaseById;
+        private final Function<Long, UserEntity> getUserById;
+        private final Function<Long, Set<TaskEntity>> getTasksByFlowInstanceId;
+        private final Function<Long, List<RoleEntity>> getRolesByUserId;
+        private final Function<Long, List<Date>> getExecutionTimeByFlowInstanceId;
+        private final Function<Long, List<FlowTaskExecutionStrategy>> getExecutionStrategyByFlowInstanceId;
+        private final Function<Long, RiskLevel> getRiskLevelByRiskLevelId;
+        private final Function<Long, Set<UserEntity>> getCandidatesByFlowInstanceId;
 
         public FlowInstanceDetailResp map(@NonNull FlowInstanceEntity entity) {
             FlowInstanceDetailResp resp = FlowInstanceDetailResp.withId(entity.getId());
             resp.setDescription(entity.getDescription());
             resp.setCreateTime(entity.getCreateTime());
             resp.setStatus(entity.getStatus());
+            resp.setProjectId(entity.getProjectId());
             Set<UserEntity> candidates = getCandidatesByFlowInstanceId.apply(entity.getId());
             if (candidates != null) {
                 resp.setCandidateApprovers(candidates.stream().map(InnerUser::new).collect(Collectors.toSet()));
@@ -218,6 +168,7 @@ public class FlowInstanceDetailResp {
             resp.setCreateTime(flowInstance.getCreateTime());
             resp.setStatus(flowInstance.getStatus());
             resp.setDescription(flowInstance.getDescription());
+            resp.setProjectId(flowInstance.getProjectId());
 
             List<BaseFlowNodeInstance> instances =
                     flowInstance.filterInstanceNode(instance -> FlowNodeType.SERVICE_TASK == instance.getNodeType()
@@ -284,6 +235,9 @@ public class FlowInstanceDetailResp {
             resp.setRiskLevel(getRiskLevel(taskEntity));
             String parameterJson = taskEntity.getParametersJson();
             switch (taskEntity.getTaskType()) {
+                case MULTIPLE_ASYNC:
+                    resp.setParameters(JsonUtils.fromJson(parameterJson, MultipleDatabaseChangeParameters.class));
+                    break;
                 case ASYNC:
                     resp.setParameters(JsonUtils.fromJson(parameterJson, DatabaseChangeParameters.class));
                     break;
@@ -345,10 +299,6 @@ public class FlowInstanceDetailResp {
             }
             return getRiskLevelByRiskLevelId.apply(taskEntity.getRiskLevelId());
         }
-    }
-
-    public static FlowInstanceMapper mapper() {
-        return new FlowInstanceMapper();
     }
 
     public static FlowInstanceDetailResp withId(@NonNull Long id) {

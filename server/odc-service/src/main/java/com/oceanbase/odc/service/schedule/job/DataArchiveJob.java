@@ -15,7 +15,6 @@
  */
 package com.oceanbase.odc.service.schedule.job;
 
-import java.sql.SQLException;
 import java.util.List;
 
 import org.quartz.JobExecutionContext;
@@ -24,11 +23,9 @@ import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.shared.constant.TaskStatus;
 import com.oceanbase.odc.metadb.schedule.ScheduleTaskEntity;
-import com.oceanbase.odc.service.dlm.DLMTableStructureSynchronizer;
-import com.oceanbase.odc.service.dlm.DataSourceInfoMapper;
 import com.oceanbase.odc.service.dlm.model.DataArchiveParameters;
 import com.oceanbase.odc.service.dlm.model.DataArchiveTableConfig;
-import com.oceanbase.odc.service.dlm.model.DlmTask;
+import com.oceanbase.odc.service.dlm.model.DlmTableUnit;
 import com.oceanbase.odc.service.dlm.utils.DataArchiveConditionUtil;
 import com.oceanbase.tools.migrator.common.enums.JobType;
 
@@ -48,14 +45,14 @@ public class DataArchiveJob extends AbstractDlmJob {
             executeInTaskFramework(context);
             return;
         }
-        jobThread = Thread.currentThread();
 
         ScheduleTaskEntity taskEntity = (ScheduleTaskEntity) context.getResult();
 
-        List<DlmTask> taskUnits = getTaskUnits(taskEntity);
-
-        executeTask(taskEntity.getId(), taskUnits);
-        TaskStatus taskStatus = getTaskStatus(taskUnits);
+        List<DlmTableUnit> dlmTableUnits = getTaskUnits(taskEntity);
+        DataArchiveParameters dataArchiveParameters = JsonUtils.fromJson(taskEntity.getParametersJson(),
+                DataArchiveParameters.class);
+        executeTask(taskEntity.getId(), dlmTableUnits, dataArchiveParameters.getTimeoutMillis());
+        TaskStatus taskStatus = getTaskStatus(taskEntity.getId());
         scheduleTaskRepository.updateStatusById(taskEntity.getId(), taskStatus);
 
         DataArchiveParameters parameters = JsonUtils.fromJson(taskEntity.getParametersJson(),
@@ -68,22 +65,11 @@ public class DataArchiveJob extends AbstractDlmJob {
         }
     }
 
-    @Override
-    public void initTask(DlmTask taskUnit) {
-        super.initTask(taskUnit);
-        try {
-            DLMTableStructureSynchronizer.sync(taskUnit.getSourceDs(), taskUnit.getTargetDs(), taskUnit.getTableName(),
-                    taskUnit.getSyncDBObjectTypes());
-        } catch (SQLException e) {
-            log.warn("Sync table structure failed,tableName={}", taskUnit.getTableName(), e);
-        }
-    }
-
     private void executeInTaskFramework(JobExecutionContext context) {
         ScheduleTaskEntity taskEntity = (ScheduleTaskEntity) context.getResult();
         DataArchiveParameters dataArchiveParameters = JsonUtils.fromJson(taskEntity.getParametersJson(),
                 DataArchiveParameters.class);
-        DLMJobParameters parameters = new DLMJobParameters();
+        DLMJobReq parameters = new DLMJobReq();
         parameters.setJobName(taskEntity.getJobName());
         parameters.setScheduleTaskId(taskEntity.getId());
         parameters.setJobType(JobType.MIGRATE);
@@ -104,20 +90,13 @@ public class DataArchiveJob extends AbstractDlmJob {
         parameters.setReadThreadCount(dataArchiveParameters.getReadThreadCount());
         parameters.setShardingStrategy(dataArchiveParameters.getShardingStrategy());
         parameters.setScanBatchSize(dataArchiveParameters.getScanBatchSize());
-        parameters
-                .setSourceDs(DataSourceInfoMapper.toDataSourceInfo(
-                        databaseService.findDataSourceForConnectById(dataArchiveParameters.getSourceDatabaseId())));
-        parameters
-                .setTargetDs(DataSourceInfoMapper.toDataSourceInfo(
-                        databaseService.findDataSourceForConnectById(dataArchiveParameters.getTargetDataBaseId())));
-        parameters.getSourceDs().setDatabaseName(dataArchiveParameters.getSourceDatabaseName());
-        parameters.getTargetDs().setDatabaseName(dataArchiveParameters.getTargetDatabaseName());
-        parameters.getSourceDs().setConnectionCount(2 * (parameters.getReadThreadCount()
-                + parameters.getWriteThreadCount()));
-        parameters.getTargetDs().setConnectionCount(parameters.getSourceDs().getConnectionCount());
+        parameters.setSourceDs(getDataSourceInfo(dataArchiveParameters.getSourceDatabaseId()));
+        parameters.setTargetDs(getDataSourceInfo(dataArchiveParameters.getTargetDataBaseId()));
+        parameters.getSourceDs().setQueryTimeout(dataArchiveParameters.getQueryTimeout());
+        parameters.getTargetDs().setQueryTimeout(dataArchiveParameters.getQueryTimeout());
         parameters.setSyncTableStructure(dataArchiveParameters.getSyncTableStructure());
 
-        Long jobId = publishJob(parameters);
+        Long jobId = publishJob(parameters, dataArchiveParameters.getTimeoutMillis());
         scheduleTaskRepository.updateJobIdById(taskEntity.getId(), jobId);
         scheduleTaskRepository.updateTaskResult(taskEntity.getId(), JsonUtils.toJson(parameters));
         log.info("Publish data-archive job to task framework succeed,scheduleTaskId={},jobIdentity={}",
