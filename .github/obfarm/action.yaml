@@ -11,7 +11,11 @@ inputs:
   timeout:
     description: 'timeout'
     required: false
-    default: '3600'
+    default: '4800'
+  jobname:
+    description: 'jobname'
+    required: false
+    default: 'farm'
 outputs:
   success:
     description: 'the status for the task'
@@ -22,5 +26,5 @@ runs:
     - ${{ inputs.pipeline_id }}
     - ${{ inputs.project }}
     - ${{ inputs.timeout }}
-
+    - ${{ inputs.jobname }}
 

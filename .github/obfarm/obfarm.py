@@ -202,9 +202,13 @@ def get_task_stage_output(oss_proxy: OssProxy, github_pipeline_id, start):
         return ""
 
 
-def main(pipeline_id, project, timeout):
+def main(pipeline_id, project, timeout, jobname):
     print("create a new task")
     print("working....")
+    global RESULT_FILE_KEY 
+    RESULT_FILE_KEY = "{}/results/".format(jobname)
+    global TASK_QUEUE_FILE_KEY 
+    TASK_QUEUE_FILE_KEY = "{}/jobs/{{}}.json".format(jobname)
     oss_proxy = OssProxy("https://farm-ce.oss-cn-heyuan.aliyuncs.com")
     github_proxy = GithubProxy()
     job_info = github_proxy.get_job_by_id(project, pipeline_id)
@@ -226,8 +230,8 @@ def set_output(output):
 
 if __name__ == "__main__":
     print(sys.argv)
-    if len(sys.argv) < 4:
+    if len(sys.argv) < 5:
         print("缺失相关参数")
         OUTPUT.update({"success": -1})
         sys.exit(1)
-    main(sys.argv[1], sys.argv[2], sys.argv[3])
+    main(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4])
