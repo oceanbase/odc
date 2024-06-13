@@ -88,12 +88,15 @@ public class MultipleDatabaseChangeRuntimeFlowableTask extends BaseODCFlowTaskDe
     public boolean cancel(boolean mayInterruptIfRunning, Long taskId, TaskService taskService) {
         // used to interrupt the start method
         this.isAbortedForStart = true;
-        while (true) {
+        while (System.currentTimeMillis() - getStartTimeMilliSeconds() <= getTimeoutMillis()) {
+            if (isFinished) {
+                break;
+            }
             if (isContinuedForCancel) {
-                this.flowInstanceIds = listNeedCancelIds(this.flowInstanceIds);
                 if (this.flowInstanceIds == null || this.flowInstanceIds.isEmpty()) {
                     break;
                 }
+                this.flowInstanceIds = listNeedCancelIds(this.flowInstanceIds);
                 for (Long flowInstanceId : this.flowInstanceIds) {
                     try {
                         this.flowInstanceService.cancelSubFlowInstance(flowInstanceId);
@@ -108,6 +111,9 @@ public class MultipleDatabaseChangeRuntimeFlowableTask extends BaseODCFlowTaskDe
                 throw new RuntimeException(e);
             }
         }
+        // Even if the state of the subTicket is the final state, it can still change. For example,
+        // CANCELLED becomes EXECUTION_SUCCEEDED
+        entityManager.clear();
         taskService.cancel(taskId, generateResult());
         // cancel multiple database task
         this.isCancelled = true;
@@ -185,11 +191,9 @@ public class MultipleDatabaseChangeRuntimeFlowableTask extends BaseODCFlowTaskDe
                         createFlowInstanceReq);
                 this.flowInstanceIds.add(individualFlowInstance.get(0).getId());
             }
-
-            long originalTime = System.currentTimeMillis();
             boolean flagForTaskSucceed = true;
             // todo 待优化，做成异步回调，减少阻塞和查数据库的次数。
-            while (System.currentTimeMillis() - originalTime <= multipleDatabaseChangeParameters.getTimeoutMillis()) {
+            while (System.currentTimeMillis() - getStartTimeMilliSeconds() <= getTimeoutMillis()) {
                 if (this.isAbortedForStart) {
                     this.isContinuedForCancel = true;
                     this.isSuccessful = false;
@@ -204,9 +208,14 @@ public class MultipleDatabaseChangeRuntimeFlowableTask extends BaseODCFlowTaskDe
                             case EXECUTION_SUCCEEDED:
                                 numberForEndLoop++;
                                 break;
+                            case REJECTED:
+                            case APPROVAL_EXPIRED:
+                            case WAIT_FOR_EXECUTION_EXPIRED:
                             case EXECUTION_FAILED:
                             case EXECUTION_EXPIRED:
                             case CANCELLED:
+                            case COMPLETED:
+                            case PRE_CHECK_FAILED:
                                 flagForTaskSucceed = false;
                                 numberForEndLoop++;
                                 break;
@@ -384,8 +393,6 @@ public class MultipleDatabaseChangeRuntimeFlowableTask extends BaseODCFlowTaskDe
                     case EXECUTION_SUCCEEDED:
                     case EXECUTION_FAILED:
                     case EXECUTION_EXPIRED:
-                    case ROLLBACK_FAILED:
-                    case ROLLBACK_SUCCEEDED:
                     case CANCELLED:
                     case COMPLETED:
                     case PRE_CHECK_FAILED:
