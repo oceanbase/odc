@@ -82,6 +82,7 @@ public class AbstractDlmJobPreprocessor implements Preprocessor {
         checkDataArchiveSql(connectionSession, sqlMap);
     }
 
+
     private void checkShardKey(ConnectionSession connectionSession, String databaseName,
             List<DataArchiveTableConfig> tables) {
         SyncJdbcExecutor syncJdbcExecutor = connectionSession.getSyncJdbcExecutor(
@@ -103,7 +104,7 @@ public class AbstractDlmJobPreprocessor implements Preprocessor {
         tables.forEach(tableConfig -> {
             if (!tableNames.contains(tableConfig.getTableName())) {
                 throw new IllegalArgumentException(
-                        String.format("The table need to contain a primary key!tableName=%s",
+                        String.format("The table must contain a non-empty unique index,tableName=%s",
                                 tableConfig.getTableName()));
             }
         });

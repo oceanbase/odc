@@ -60,7 +60,7 @@ public class SingleConnectionDataSource extends BaseClassBasedDataSource impleme
     private EventPublisher eventPublisher;
     protected volatile Connection connection;
     private final List<ConnectionInitializer> initializerList = new LinkedList<>();
-    private Lock lock;
+    private volatile Lock lock;
     @Setter
     private long timeOutMillis = 10 * 1000;
 
@@ -76,13 +76,24 @@ public class SingleConnectionDataSource extends BaseClassBasedDataSource impleme
     public Connection getConnection() throws SQLException {
         if (Objects.isNull(this.connection)) {
             return innerCreateConnection();
-        } else if (this.connection.isClosed() || !this.connection.isValid(getLoginTimeout())) {
-            if (!autoReconnect) {
-                throw new SQLException("Connection was closed or not valid");
-            }
-            resetConnection();
         }
-        return getConnectionProxy(connection);
+        Lock thisLock = this.lock;
+        if (!tryLock(thisLock)) {
+            throw new ConflictException(ErrorCodes.ConnectionOccupied, new Object[] {},
+                    "Connection is occupied, waited " + this.timeOutMillis + " millis");
+        }
+        try {
+            if (this.connection.isClosed() || !this.connection.isValid(getLoginTimeout())) {
+                if (!this.autoReconnect) {
+                    throw new SQLException("Connection was closed or not valid");
+                }
+                resetConnection();
+            }
+            return getConnectionProxy(this.connection, this.lock);
+        } finally {
+            log.info("Get connection unlock, lock={}", thisLock.hashCode());
+            thisLock.unlock();
+        }
     }
 
     @Override
@@ -128,30 +139,30 @@ public class SingleConnectionDataSource extends BaseClassBasedDataSource impleme
         }
     }
 
-    private boolean tryLock() {
+    private boolean tryLock(Lock lock) {
         try {
-            boolean locked = this.lock.tryLock(timeOutMillis, TimeUnit.MILLISECONDS);
+            boolean locked = lock.tryLock(timeOutMillis, TimeUnit.MILLISECONDS);
             if (locked) {
-                log.info("Get connection lock success, lock={}", this.lock.hashCode());
+                log.info("Get connection lock success, lock={}", lock.hashCode());
             }
             return locked;
         } catch (InterruptedException e) {
-            throw new RuntimeException(e);
+            throw new IllegalStateException(e);
         }
     }
 
-    private Connection getConnectionProxy(@NonNull Connection connection) {
-        if (!tryLock()) {
+    private Connection getConnectionProxy(@NonNull Connection connection, @NonNull Lock thisLock) {
+        if (!tryLock(thisLock)) {
             throw new ConflictException(ErrorCodes.ConnectionOccupied, new Object[] {},
                     "Connection is occupied, waited " + this.timeOutMillis + " millis");
         }
         try {
             return (Connection) Proxy.newProxyInstance(Connection.class.getClassLoader(),
                     new Class[] {Connection.class},
-                    new CloseIgnoreInvocationHandler(connection, this.lock));
+                    new CloseIgnoreInvocationHandler(connection, thisLock));
         } catch (Exception e) {
-            log.warn("Get connection error unlock, hashcode=" + this.lock.hashCode());
-            this.lock.unlock();
+            log.warn("Get connection error unlock, lock={}", thisLock.hashCode());
+            thisLock.unlock();
             throw e;
         }
     }
@@ -191,11 +202,12 @@ public class SingleConnectionDataSource extends BaseClassBasedDataSource impleme
             throw new IllegalStateException("Connection is not null");
         }
         try {
-            this.connection = newConnectionFromDriver(getUsername(), getPassword());
+            Connection connection = newConnectionFromDriver(getUsername(), getPassword());
+            prepareConnection(connection);
+            this.connection = connection;
             this.lock = new ReentrantLock();
-            log.info("Established shared JDBC Connection,lock=" + this.lock.hashCode());
-            prepareConnection(this.connection);
-            return getConnectionProxy(this.connection);
+            log.info("Established shared JDBC Connection, lock={}", this.lock.hashCode());
+            return getConnectionProxy(this.connection, this.lock);
         } catch (Throwable e) {
             throw new SQLException(e);
         }
@@ -234,7 +246,7 @@ public class SingleConnectionDataSource extends BaseClassBasedDataSource impleme
                     return true;
                 }
             } else if ("close".equals(method.getName())) {
-                log.info("Get connection unlock, hashcode=" + this.lock.hashCode());
+                log.info("Get connection unlock, lock={}", this.lock.hashCode());
                 lock.unlock();
                 return null;
             } else if ("isClosed".equals(method.getName())) {

@@ -138,6 +138,9 @@ public class TestConnectionReq implements CloudConnectionConfig, SSLConnectionCo
 
     private Map<String, Object> jdbcUrlParameters;
 
+    @JsonIgnore
+    private OBInstanceRoleType instanceRoleType;
+
     public DialectType getDialectType() {
         if (Objects.nonNull(this.type)) {
             return this.type.getDialectType();
@@ -176,6 +179,8 @@ public class TestConnectionReq implements CloudConnectionConfig, SSLConnectionCo
         req.setSid(connection.getSid());
         req.setServiceName(connection.getServiceName());
         req.setUserRole(connection.getUserRole());
+        req.setSessionInitScript(connection.getSessionInitScript());
+        req.setJdbcUrlParameters(connection.getJdbcUrlParameters());
         return req;
     }
 

@@ -15,6 +15,8 @@
  */
 package com.oceanbase.odc.service.connection.database.model;
 
+import java.util.List;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -31,6 +33,8 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class QueryDatabaseParams {
     private String schemaName;
+
+    private List<DatabaseType> types;
 
     private Long projectId;
 

@@ -19,6 +19,7 @@ import java.io.StringReader;
 import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -29,14 +30,12 @@ import java.util.stream.Stream;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.apache.commons.collections4.CollectionUtils;
 import org.pf4j.Extension;
-import org.springframework.jdbc.core.JdbcOperations;
-import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.datasource.SingleConnectionDataSource;
 
 import com.oceanbase.odc.common.util.StringUtils;
+import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.plugin.connect.api.InformationExtensionPoint;
 import com.oceanbase.odc.plugin.connect.obmysql.OBMySQLInformationExtension;
-import com.oceanbase.odc.plugin.schema.obmysql.browser.DBSchemaAccessors;
+import com.oceanbase.odc.plugin.schema.obmysql.utils.DBAccessorUtil;
 import com.oceanbase.odc.plugin.task.api.partitionplan.AutoPartitionExtensionPoint;
 import com.oceanbase.odc.plugin.task.api.partitionplan.invoker.create.PartitionExprGenerator;
 import com.oceanbase.odc.plugin.task.api.partitionplan.invoker.drop.DropPartitionGenerator;
@@ -52,9 +51,10 @@ import com.oceanbase.odc.plugin.task.obmysql.partitionplan.invoker.drop.OBMySQLK
 import com.oceanbase.odc.plugin.task.obmysql.partitionplan.invoker.partitionname.OBMySQLDateBasedPartitionNameGenerator;
 import com.oceanbase.odc.plugin.task.obmysql.partitionplan.invoker.partitionname.OBMySQLExprBasedPartitionNameGenerator;
 import com.oceanbase.odc.plugin.task.obmysql.partitionplan.invoker.partitionname.OBMySQLHistoricalPartitionNameGenerator;
-import com.oceanbase.odc.plugin.task.obmysql.partitionplan.util.DBTablePartitionEditors;
+import com.oceanbase.tools.dbbrowser.DBBrowser;
 import com.oceanbase.tools.dbbrowser.editor.DBTablePartitionEditor;
 import com.oceanbase.tools.dbbrowser.model.DBTable;
+import com.oceanbase.tools.dbbrowser.model.DBTableAbstractPartitionDefinition;
 import com.oceanbase.tools.dbbrowser.model.DBTableColumn;
 import com.oceanbase.tools.dbbrowser.model.DBTablePartition;
 import com.oceanbase.tools.dbbrowser.model.DBTablePartitionOption;
@@ -82,12 +82,17 @@ public class OBMySQLAutoPartitionExtensionPoint implements AutoPartitionExtensio
 
     @Override
     public List<DBTable> listAllPartitionedTables(@NonNull Connection connection,
-            @NonNull String schemaName, List<String> tableNames) {
-        DBSchemaAccessor accessor = getDBSchemaAccessor(connection);
+            String tenantName, @NonNull String schemaName, List<String> tableNames) {
+        DBSchemaAccessor accessor = getDBSchemaAccessor(connection, tenantName);
         Map<String, DBTablePartition> tblName2Parti = accessor.listTablePartitions(schemaName, tableNames);
         tblName2Parti = tblName2Parti.entrySet().stream()
                 .filter(e -> supports(e.getValue()))
                 .collect(Collectors.toMap(Entry::getKey, Entry::getValue));
+        if (tblName2Parti.values().stream().anyMatch(p -> p.getPartitionDefinitions().stream()
+                .anyMatch(definition -> definition.getOrdinalPosition() != null))) {
+            tblName2Parti.values().forEach(p -> p.getPartitionDefinitions()
+                    .sort(Comparator.comparing(DBTableAbstractPartitionDefinition::getOrdinalPosition)));
+        }
         Map<String, List<DBTableColumn>> tblName2Cols = accessor.listTableColumns(
                 schemaName, new ArrayList<>(tblName2Parti.keySet()));
         return tblName2Parti.entrySet().stream().map(e -> {
@@ -149,7 +154,9 @@ public class OBMySQLAutoPartitionExtensionPoint implements AutoPartitionExtensio
     public List<String> generateCreatePartitionDdls(@NonNull Connection connection,
             @NonNull DBTablePartition partition) {
         InformationExtensionPoint extensionPoint = new OBMySQLInformationExtension();
-        DBTablePartitionEditor editor = DBTablePartitionEditors.generate(extensionPoint.getDBVersion(connection));
+        DBTablePartitionEditor editor = DBBrowser.objectEditor().tablePartitionEditor()
+                .setDbVersion(extensionPoint.getDBVersion(connection))
+                .setType(DialectType.OB_MYSQL.getDBBrowserDialectTypeName()).create();
         return Collections.singletonList(editor.generateAddPartitionDefinitionDDL(partition.getSchemaName(),
                 partition.getTableName(), partition.getPartitionOption(), partition.getPartitionDefinitions()));
     }
@@ -158,7 +165,9 @@ public class OBMySQLAutoPartitionExtensionPoint implements AutoPartitionExtensio
     public List<String> generateDropPartitionDdls(@NonNull Connection connection,
             @NonNull DBTablePartition partition, boolean reloadIndexes) {
         InformationExtensionPoint extensionPoint = new OBMySQLInformationExtension();
-        DBTablePartitionEditor editor = DBTablePartitionEditors.generate(extensionPoint.getDBVersion(connection));
+        DBTablePartitionEditor editor = DBBrowser.objectEditor().tablePartitionEditor()
+                .setDbVersion(extensionPoint.getDBVersion(connection))
+                .setType(DialectType.OB_MYSQL.getDBBrowserDialectTypeName()).create();
         return Collections.singletonList(editor.generateDropPartitionDefinitionDDL(partition.getSchemaName(),
                 partition.getTableName(), partition.getPartitionDefinitions()));
     }
@@ -214,9 +223,8 @@ public class OBMySQLAutoPartitionExtensionPoint implements AutoPartitionExtensio
         }
     }
 
-    protected DBSchemaAccessor getDBSchemaAccessor(@NonNull Connection connection) {
-        JdbcOperations jdbc = new JdbcTemplate(new SingleConnectionDataSource(connection, false));
-        return DBSchemaAccessors.create(jdbc, new OBMySQLInformationExtension().getDBVersion(connection));
+    protected DBSchemaAccessor getDBSchemaAccessor(@NonNull Connection connection, String tenantName) {
+        return DBAccessorUtil.getSchemaAccessor(connection, tenantName);
     }
 
     static private class RangePartiExprParser extends OBMySQLParser {

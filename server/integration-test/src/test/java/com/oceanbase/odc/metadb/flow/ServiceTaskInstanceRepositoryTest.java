@@ -66,6 +66,35 @@ public class ServiceTaskInstanceRepositoryTest extends ServiceTestEnv {
     }
 
     @Test
+    public void updateStatusByIdIn_entityExists_returnNotEmpty() {
+        ServiceTaskInstanceEntity entity = createEntity();
+        entity.setStatus(FlowNodeStatus.CANCELLED);
+        entity = this.repository.save(entity);
+        this.repository.updateStatusByIdIn(Collections.singletonList(entity.getId()), FlowNodeStatus.FAILED);
+        Optional<ServiceTaskInstanceEntity> optional = this.repository.findById(entity.getId());
+        entity.setStatus(FlowNodeStatus.FAILED);
+        Assert.assertEquals(entity, optional.get());
+    }
+
+    @Test
+    public void findByIdInAndStatus_entityExists_returnNotNull() {
+        ServiceTaskInstanceEntity entity = createEntity();
+        entity.setStatus(FlowNodeStatus.CANCELLED);
+        entity = this.repository.save(entity);
+        List<ServiceTaskInstanceEntity> actual = this.repository.findByIdInAndStatus(
+                Collections.singletonList(entity.getId()), FlowNodeStatus.CANCELLED);
+        Assert.assertEquals(Collections.singletonList(entity), actual);
+    }
+
+    @Test
+    public void findByStatus_entityExists_returnNotEmpty() {
+        ServiceTaskInstanceEntity entity = createEntity();
+        entity = this.repository.save(entity);
+        List<ServiceTaskInstanceEntity> actual = this.repository.findByStatus(entity.getStatus());
+        Assert.assertEquals(Collections.singletonList(entity), actual);
+    }
+
+    @Test
     public void testSaveSerivceTaskInstanceEntity() {
         ServiceTaskInstanceEntity entity = createEntity();
         repository.save(entity);

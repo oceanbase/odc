@@ -22,4 +22,5 @@ public class UserConfigKeys {
     public static final String DEFAULT_ORACLE_AUTO_COMMIT_MODE = "odc.sqlexecute.default.oracleAutoCommitMode";
     public static final String DEFAULT_FULL_LINK_TRACE_ENABLED = "odc.sqlexecute.default.fullLinkTraceEnabled";
     public static final String DEFAULT_CONTINUE_EXECUTION_ON_ERROR = "odc.sqlexecute.default.continueExecutionOnError";
+    public static final String DEFAULT_ENABLE_GLOBAL_OBJECT_SEARCH = "odc.database.default.enableGlobalObjectSearch";
 }

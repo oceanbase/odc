@@ -56,13 +56,7 @@ public class DLMConfiguration {
 
     @Bean
     public DLMJobFactory dlmJobFactory(IJobStore jobStore) {
-        DLMJobFactory dlmJobFactory = new DLMJobFactory(jobStore);
-        dlmJobFactory.setSingleTaskThreadPoolSize(singleTaskThreadPoolSize);
-        dlmJobFactory.setReadWriteRatio(readWriteRatio);
-        dlmJobFactory.setTaskConnectionQueryTimeout(taskConnectionQueryTimeout);
-        dlmJobFactory.setDefaultShardingStrategy(shardingStrategy);
-        dlmJobFactory.setDefaultScanBatchSize(defaultScanBatchSize);
-        return dlmJobFactory;
+        return new DLMJobFactory(jobStore);
     }
 
 }

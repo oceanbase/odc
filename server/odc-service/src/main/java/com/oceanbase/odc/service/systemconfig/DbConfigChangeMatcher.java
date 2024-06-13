@@ -32,8 +32,8 @@ import com.google.common.collect.Sets;
 import com.google.common.collect.Sets.SetView;
 import com.oceanbase.odc.core.alarm.AlarmUtils;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
-import com.oceanbase.odc.metadb.config.SystemConfigDAO;
 import com.oceanbase.odc.metadb.config.SystemConfigEntity;
+import com.oceanbase.odc.metadb.config.SystemConfigRepository;
 import com.oceanbase.odc.service.config.model.Configuration;
 import com.oceanbase.odc.service.config.util.ConfigurationUtils;
 
@@ -45,7 +45,7 @@ import lombok.extern.slf4j.Slf4j;
 public class DbConfigChangeMatcher extends SystemConfigRefreshMatcher implements InitializingBean {
 
     @Autowired
-    private SystemConfigDAO systemConfigDAO;
+    private SystemConfigRepository systemConfigRepository;
 
     private List<Configuration> lastVersion = new ArrayList<>();
 
@@ -58,7 +58,7 @@ public class DbConfigChangeMatcher extends SystemConfigRefreshMatcher implements
 
     @SkipAuthorize("odc internal usage")
     public List<Configuration> queryByKeyPrefix(String keyPrefix) {
-        List<SystemConfigEntity> configEntities = systemConfigDAO.queryByKeyPrefix(keyPrefix);
+        List<SystemConfigEntity> configEntities = systemConfigRepository.queryByKeyPrefix(keyPrefix);
         return ConfigurationUtils.fromEntity(configEntities);
     }
 

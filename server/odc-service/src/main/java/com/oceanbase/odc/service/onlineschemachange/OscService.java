@@ -24,6 +24,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.PathVariable;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.session.ConnectionSession;
@@ -34,26 +35,35 @@ import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.core.shared.constant.TaskType;
 import com.oceanbase.odc.core.shared.exception.NotFoundException;
-import com.oceanbase.odc.metadb.connection.DatabaseEntity;
 import com.oceanbase.odc.metadb.connection.DatabaseRepository;
 import com.oceanbase.odc.metadb.schedule.ScheduleEntity;
 import com.oceanbase.odc.metadb.schedule.ScheduleRepository;
 import com.oceanbase.odc.metadb.schedule.ScheduleTaskEntity;
 import com.oceanbase.odc.metadb.schedule.ScheduleTaskRepository;
+import com.oceanbase.odc.metadb.task.TaskEntity;
 import com.oceanbase.odc.service.connection.ConnectionService;
+import com.oceanbase.odc.service.connection.database.DatabaseService;
+import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
+import com.oceanbase.odc.service.flow.FlowInstanceService;
 import com.oceanbase.odc.service.flow.factory.FlowFactory;
 import com.oceanbase.odc.service.flow.instance.FlowInstance;
+import com.oceanbase.odc.service.flow.task.model.OnlineSchemaChangeTaskResult;
 import com.oceanbase.odc.service.iam.HorizontalDataPermissionValidator;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.onlineschemachange.model.OnlineSchemaChangeParameters;
 import com.oceanbase.odc.service.onlineschemachange.model.OnlineSchemaChangeScheduleTaskResult;
 import com.oceanbase.odc.service.onlineschemachange.model.OscLockDatabaseUserInfo;
 import com.oceanbase.odc.service.onlineschemachange.model.OscSwapTableVO;
+import com.oceanbase.odc.service.onlineschemachange.model.RateLimiterConfig;
 import com.oceanbase.odc.service.onlineschemachange.model.SwapTableType;
+import com.oceanbase.odc.service.onlineschemachange.model.UpdateRateLimiterConfigRequest;
 import com.oceanbase.odc.service.onlineschemachange.rename.OscDBUserUtil;
+import com.oceanbase.odc.service.schedule.ScheduleService;
+import com.oceanbase.odc.service.schedule.ScheduleTaskService;
 import com.oceanbase.odc.service.schedule.model.JobType;
 import com.oceanbase.odc.service.session.factory.DefaultConnectSessionFactory;
+import com.oceanbase.odc.service.task.TaskService;
 
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
@@ -81,18 +91,25 @@ public class OscService {
     private HorizontalDataPermissionValidator permissionValidator;
     @Autowired
     private FlowFactory flowFactory;
+    @Autowired
+    private DatabaseService databaseService;
+    @Autowired
+    private FlowInstanceService flowInstanceService;
+    @Autowired
+    private ScheduleTaskService scheduleTaskService;
+    @Autowired
+    private ScheduleService scheduleService;
+    @Autowired
+    private TaskService taskService;
 
 
     @SkipAuthorize("internal authenticated")
     public OscLockDatabaseUserInfo getOscDatabaseInfo(@NonNull Long id) {
-        Optional<DatabaseEntity> database = databaseRepository.findById(id);
+
+        Database database = databaseService.detail(id);
         OscLockDatabaseUserInfo oscDatabase = new OscLockDatabaseUserInfo();
-        if (!database.isPresent()) {
-            return oscDatabase;
-        }
-        DatabaseEntity databaseEntity = database.get();
-        oscDatabase.setDatabaseId(databaseEntity.getDatabaseId());
-        oscDatabase.setLockDatabaseUserRequired(getLockUserIsRequired(databaseEntity.getConnectionId()));
+        oscDatabase.setDatabaseId(database.getDatabaseId());
+        oscDatabase.setLockDatabaseUserRequired(getLockUserIsRequired(database.getDataSource().getId()));
         return oscDatabase;
     }
 
@@ -115,20 +132,7 @@ public class OscService {
         OnlineSchemaChangeParameters oscParameters = JsonUtils.fromJson(scheduleEntity.get().getJobParametersJson(),
                 OnlineSchemaChangeParameters.class);
 
-        Optional<FlowInstance> optional = flowFactory.getFlowInstance(oscParameters.getFlowInstanceId());
-        FlowInstance flowInstance = optional.orElseThrow(
-                () -> new NotFoundException(ResourceType.ODC_FLOW_INSTANCE, "id", oscParameters.getFlowInstanceId()));
-        try {
-            permissionValidator.checkCurrentOrganization(flowInstance);
-        } finally {
-            flowInstance.dealloc();
-        }
-
-        // check user permission, only creator can swap table manual
-        PreConditions.validHasPermission(
-                Objects.equals(authenticationFacade.currentUserId(), scheduleEntity.get().getCreatorId()),
-                ErrorCodes.AccessDenied,
-                "no permission swap table.");
+        checkPermission(oscParameters.getFlowInstanceId());
 
         OnlineSchemaChangeScheduleTaskResult result = JsonUtils.fromJson(scheduleTask.getResultJson(),
                 OnlineSchemaChangeScheduleTaskResult.class);
@@ -159,6 +163,59 @@ public class OscService {
         OscSwapTableVO oscSwapTable = new OscSwapTableVO();
         oscSwapTable.setScheduleTaskId(scheduleTaskId);
         return oscSwapTable;
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    @SkipAuthorize("internal authenticated")
+    public boolean updateRateLimiterConfig(UpdateRateLimiterConfigRequest req) {
+        log.info("Get updateRateLimiterConfig from request, req={}", JsonUtils.toJson(req));
+        checkPermission(req.getFlowInstanceId());
+        TaskEntity task = flowInstanceService.getTaskByFlowInstanceId(req.getFlowInstanceId());
+        PreConditions.notNull(task.getParametersJson(), "result json",
+                "Task result is empty, taskId=" + task.getId() + ",flowInstanceId=" + req.getFlowInstanceId());
+        PreConditions.validArgumentState(!task.getStatus().isTerminated(), ErrorCodes.Unsupported,
+                new Object[] {req.getFlowInstanceId()},
+                "modify task rate limiter is unsupported when task is terminated");
+        OnlineSchemaChangeTaskResult taskResult =
+                JsonUtils.fromJson(task.getResultJson(), new TypeReference<OnlineSchemaChangeTaskResult>() {});
+        Long scheduleId = Long.parseLong(taskResult.getTasks().get(0).getJobName());
+        ScheduleEntity scheduleEntity = scheduleService.nullSafeGetById(scheduleId);
+        OnlineSchemaChangeParameters parameters = JsonUtils.fromJson(
+                scheduleEntity.getJobParametersJson(), OnlineSchemaChangeParameters.class);
+        RateLimiterConfig rateLimiter = parameters.getRateLimitConfig();
+        rateLimiter.setDataSizeLimit(req.getRateLimitConfig().getDataSizeLimit());
+        rateLimiter.setRowLimit(req.getRateLimitConfig().getRowLimit());
+        parameters.setRateLimitConfig(rateLimiter);
+
+        OnlineSchemaChangeParameters inputParameters =
+                JsonUtils.fromJson(task.getParametersJson(), OnlineSchemaChangeParameters.class);
+        inputParameters.setRateLimitConfig(rateLimiter);
+        task.setParametersJson(JsonUtils.toJson(inputParameters));
+        taskService.updateParametersJson(task);
+        String parameterJson = JsonUtils.toJson(parameters);
+        int rows = scheduleRepository.updateJobParametersById(scheduleEntity.getId(), parameterJson);
+        if (rows > 0) {
+            log.info("Update rate limiter config in job parameters completed, scheduleId={}, parameterJson={}.",
+                    scheduleEntity.getId(), parameterJson);
+        }
+        return true;
+    }
+
+    private void checkPermission(Long flowInstanceId) {
+        Optional<FlowInstance> optional = flowFactory.getFlowInstance(flowInstanceId);
+        FlowInstance flowInstance = optional.orElseThrow(
+                () -> new NotFoundException(ResourceType.ODC_FLOW_INSTANCE, "id", flowInstanceId));
+        try {
+            permissionValidator.checkCurrentOrganization(flowInstance);
+        } finally {
+            flowInstance.dealloc();
+        }
+
+        // check user permission, only creator can swap table manual
+        PreConditions.validHasPermission(
+                Objects.equals(authenticationFacade.currentUserId(), optional.get().getCreatorId()),
+                ErrorCodes.AccessDenied,
+                "no permission swap table.");
     }
 
     private boolean getLockUserIsRequired(Long connectionId) {

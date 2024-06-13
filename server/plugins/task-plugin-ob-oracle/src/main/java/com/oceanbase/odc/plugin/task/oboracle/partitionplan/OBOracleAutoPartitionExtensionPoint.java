@@ -28,16 +28,13 @@ import java.util.stream.Stream;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.apache.commons.collections4.CollectionUtils;
 import org.pf4j.Extension;
-import org.springframework.jdbc.core.JdbcOperations;
-import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.datasource.SingleConnectionDataSource;
 
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.session.ConnectionSessionUtil;
 import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.plugin.connect.api.InformationExtensionPoint;
 import com.oceanbase.odc.plugin.connect.oboracle.OBOracleInformationExtension;
-import com.oceanbase.odc.plugin.schema.oboracle.browser.DBSchemaAccessors;
+import com.oceanbase.odc.plugin.schema.oboracle.utils.DBAccessorUtil;
 import com.oceanbase.odc.plugin.task.api.partitionplan.invoker.create.PartitionExprGenerator;
 import com.oceanbase.odc.plugin.task.api.partitionplan.invoker.drop.DropPartitionGenerator;
 import com.oceanbase.odc.plugin.task.api.partitionplan.invoker.partitionname.PartitionNameGenerator;
@@ -50,7 +47,7 @@ import com.oceanbase.odc.plugin.task.oboracle.partitionplan.invoker.create.OBOra
 import com.oceanbase.odc.plugin.task.oboracle.partitionplan.invoker.create.OBOracleTimeIncreasePartitionExprGenerator;
 import com.oceanbase.odc.plugin.task.oboracle.partitionplan.invoker.partitionname.OBOracleDateBasedPartitionNameGenerator;
 import com.oceanbase.odc.plugin.task.oboracle.partitionplan.invoker.partitionname.OBOracleExprBasedPartitionNameGenerator;
-import com.oceanbase.odc.plugin.task.oboracle.partitionplan.util.DBTablePartitionEditors;
+import com.oceanbase.tools.dbbrowser.DBBrowser;
 import com.oceanbase.tools.dbbrowser.editor.DBTablePartitionEditor;
 import com.oceanbase.tools.dbbrowser.model.DBTable;
 import com.oceanbase.tools.dbbrowser.model.DBTablePartition;
@@ -104,7 +101,9 @@ public class OBOracleAutoPartitionExtensionPoint extends OBMySQLAutoPartitionExt
     public List<String> generateCreatePartitionDdls(@NonNull Connection connection,
             @NonNull DBTablePartition partition) {
         InformationExtensionPoint extensionPoint = new OBOracleInformationExtension();
-        DBTablePartitionEditor editor = DBTablePartitionEditors.generate(extensionPoint.getDBVersion(connection));
+        DBTablePartitionEditor editor = DBBrowser.objectEditor().tablePartitionEditor()
+                .setDbVersion(extensionPoint.getDBVersion(connection))
+                .setType(DialectType.OB_ORACLE.getDBBrowserDialectTypeName()).create();
         return Collections.singletonList(editor.generateAddPartitionDefinitionDDL(partition.getSchemaName(),
                 partition.getTableName(), partition.getPartitionOption(), partition.getPartitionDefinitions()));
     }
@@ -113,7 +112,9 @@ public class OBOracleAutoPartitionExtensionPoint extends OBMySQLAutoPartitionExt
     public List<String> generateDropPartitionDdls(@NonNull Connection connection,
             @NonNull DBTablePartition partition, boolean reloadIndexes) {
         InformationExtensionPoint extensionPoint = new OBOracleInformationExtension();
-        DBTablePartitionEditor editor = DBTablePartitionEditors.generate(extensionPoint.getDBVersion(connection));
+        DBTablePartitionEditor editor = DBBrowser.objectEditor().tablePartitionEditor()
+                .setDbVersion(extensionPoint.getDBVersion(connection))
+                .setType(DialectType.OB_ORACLE.getDBBrowserDialectTypeName()).create();
         String ddl = editor.generateDropPartitionDefinitionDDL(partition.getSchemaName(),
                 partition.getTableName(), partition.getPartitionDefinitions());
         int index = ddl.indexOf(";");
@@ -174,9 +175,8 @@ public class OBOracleAutoPartitionExtensionPoint extends OBMySQLAutoPartitionExt
     }
 
     @Override
-    protected DBSchemaAccessor getDBSchemaAccessor(@NonNull Connection connection) {
-        JdbcOperations jdbc = new JdbcTemplate(new SingleConnectionDataSource(connection, false));
-        return DBSchemaAccessors.create(jdbc, new OBOracleInformationExtension().getDBVersion(connection));
+    protected DBSchemaAccessor getDBSchemaAccessor(@NonNull Connection connection, String tenantName) {
+        return DBAccessorUtil.getSchemaAccessor(connection);
     }
 
     static private class RangePartiExprParser extends OBOracleSQLParser {

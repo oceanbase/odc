@@ -581,6 +581,9 @@ VALUES ('odc.notification.dequeue-sending-notification-fixed-delay-millis', '120
 insert into `config_system_configuration` (`key`, `value`, `application`, `profile`, `label`, `description`)
 VALUES ('odc.notification.max-resend-times', '3', 'odc', 'default', 'master', '重新处理 SENT_FAILED 消息的最大重试次数，默认 3') ON DUPLICATE KEY
 update `id`=`id`;
+insert into `config_system_configuration` (`key`, `value`, `application`, `profile`, `label`, `description`)
+VALUES ('odc.notification.host-black-list', '', 'odc', 'default', 'master', 'The Hosts in this black list are NOT allowed to prevent SSRF security vulnerabilities. The black list is empty by default, allowing access to all Hosts.') ON DUPLICATE KEY update `id`=`id`;
+
 INSERT INTO config_system_configuration(`key`, `value`, `description`) VALUES('odc.lab.resource.mysql-init-script-template',
 'create user if not exists {{dbUsername}}@''%'' identified by {{password}};  create database if not exists {{dbName}};  grant all privileges on {{dbName}}.* to {{dbUsername}}@''%'';  grant select on oceanbase.gv$tenant to {{dbUsername}}@''%'';  grant select on oceanbase.gv$unit to {{dbUsername}}@''%'';  grant select on oceanbase.gv$table to {{dbUsername}}@''%'';  grant select on oceanbase.gv$sysstat to {{dbUsername}}@''%'';  grant select on oceanbase.gv$memory to {{dbUsername}}@''%'';  grant select on oceanbase.gv$memstore to {{dbUsername}}@''%'';  grant select on oceanbase.gv$sql_audit to {{dbUsername}}@''%'';  grant select on oceanbase.gv$plan_cache_plan_stat to {{dbUsername}}@''%'';  grant select on oceanbase.gv$plan_cache_plan_explain to {{dbUsername}}@''%'';'
 , '实验室体验资源创建脚本模板，MySQL 模式，包含 create database/create user/grant privilege 过程，支持的变量包括 {{dbName}}, {{dbUsername}}, {{password}}'
@@ -655,6 +658,9 @@ VALUES
   ( 'odc.rollback.query-data-batch-size', '1000', '生成备份回滚方案批量查询数据的数量' )
   ON DUPLICATE KEY UPDATE `id` = `id`;
 
+INSERT INTO config_system_configuration(`key`, `value`, `description`) VALUES('odc.osc.rate-limit.enabled','false', 'enable OSC rate limit')
+  ON DUPLICATE KEY UPDATE `id`=`id`;
+
 INSERT INTO config_system_configuration(`key`, `value`, `description`) VALUES('odc.osc.cloud.enabled-instance-ids',
   '', 'instances that enable OSC')
   ON DUPLICATE KEY UPDATE `id`=`id`;
@@ -685,6 +691,7 @@ INSERT INTO config_system_configuration(`key`, `value`, `description`) VALUES('o
 
 INSERT INTO config_system_configuration(`key`, `value`, `description`) VALUES('odc.features.task.osc.enabled', 'false',
 '是否开启无锁结构变更任务，默认不开启') ON DUPLICATE KEY UPDATE `id`=`id`;
+INSERT INTO config_system_configuration ( `key`, `value`, `description` ) VALUES( 'odc.task.max-concurrent-task-count', '30', '计划任务最大并发数' ) ON DUPLICATE KEY UPDATE `id` = `id`;
 
 INSERT INTO config_system_configuration ( `key`, `value`, `description` ) VALUES( 'odc.connect.database.sync.interval-millis', '180000', '同步数据源下所有数据库到 metadb 的间隔时间，默认 3 分钟，单位毫秒' ) ON DUPLICATE KEY UPDATE `id` = `id`;
 INSERT INTO config_system_configuration ( `key`, `value`, `description` ) VALUES( 'odc.task.dlm.default-single-task-row-limit', '20000', 'DLM 单个任务默认每秒行限制' ) ON DUPLICATE KEY UPDATE `id` = `id`;
@@ -756,6 +763,7 @@ INSERT INTO config_system_configuration ( `key`, `value`, `description` ) VALUES
 INSERT INTO config_system_configuration ( `key`, `value`, `description` ) VALUES( 'odc.task-framework.k8s-properties.mount-path', '', 'k8s pod mount path on host' ) ON DUPLICATE KEY UPDATE `id` = `id`;
 INSERT INTO config_system_configuration ( `key`, `value`, `description` ) VALUES( 'odc.task-framework.k8s-properties.mount-disk-size', '64', 'k8s pod mount disk size, unit is GB' ) ON DUPLICATE KEY UPDATE `id` = `id`;
 INSERT INTO config_system_configuration ( `key`, `value`, `description` ) VALUES( 'odc.task-framework.k8s-properties.pod-image-name', '', 'k8s pod image name' ) ON DUPLICATE KEY UPDATE `id` = `id`;
+INSERT INTO config_system_configuration ( `key`, `value`, `description` ) VALUES( 'odc.task-framework.k8s-properties.pod-pending-timeout-seconds', '3600', 'pod will be destroyed if pending exceed this time, default time is 1h' ) ON DUPLICATE KEY UPDATE `id` = `id`;
 INSERT INTO config_system_configuration ( `key`, `value`, `description` ) VALUES( 'odc.task.pre-check.execution-timeout-millis', '3600000', 'Pre-check task execution timeout, in milliseconds, default value: 3600000 i.e. 1 hour') ON DUPLICATE KEY UPDATE `id`=`id`;
 
 ---
@@ -787,8 +795,10 @@ INSERT INTO config_system_configuration(`key`, `value`, `description`) VALUES('o
 ---
 --- v4.3.0
 ---
+INSERT INTO config_system_configuration(`key`, `value`, `description`) VALUES('odc.database.schema.global-search.enabled',
+ 'true', 'enable global searching database schema or not, true by default') ON DUPLICATE KEY UPDATE `id`=`id`;
 INSERT INTO config_system_configuration(`key`, `value`, `description`) VALUES('odc.database.schema.sync.cron-expression',
- '0 0 2 * * ?', 'cron expression for synchronizing full database schema') ON DUPLICATE KEY UPDATE `id`=`id`;
+ '0 0 2 * * ?', 'cron expression for synchronizing global database schema') ON DUPLICATE KEY UPDATE `id`=`id`;
 INSERT INTO config_system_configuration(`key`, `value`, `description`) VALUES('odc.database.schema.sync.executor-thread-count',
  '8', 'thread count for synchronizing database schema') ON DUPLICATE KEY UPDATE `id`=`id`;
 INSERT INTO config_system_configuration(`key`, `value`, `description`) VALUES('odc.database.schema.sync.block-exclusions-when-sync-db-to-project',
@@ -805,3 +815,23 @@ INSERT INTO config_system_configuration(`key`, `value`, `description`) VALUES('o
  'mysql, information_schema, test', 'schema exclusions when synchronizing MySQL database schema') ON DUPLICATE KEY UPDATE `id`=`id`;
 INSERT INTO config_system_configuration(`key`, `value`, `description`) VALUES('odc.database.schema.sync.exclude-schemas.doris',
  'mysql, information_schema, test', 'schema exclusions when synchronizing MySQL database schema') ON DUPLICATE KEY UPDATE `id`=`id`;
+
+INSERT INTO config_system_configuration(`key`, `value`, `description`)
+VALUES ('odc.permission-check.whitelist.database.ob-mysql',
+        'DBMS_RESOURCE_MANAGER, DBMS_STATS, DBMS_UDR, DBMS_XPLAN, DBMS_WORKLOAD_REPOSITORY',
+        'Permission check whitelist for database in OB MySQL dialect type')
+ON DUPLICATE KEY UPDATE `id`=`id`;
+INSERT INTO config_system_configuration(`key`, `value`, `description`)
+VALUES ('odc.permission-check.whitelist.database.ob-oracle',
+        'DBMS_APPLICATION_INFO, DBMS_APPLICATION_INFO, DBMS_ASH_INTERNAL, DBMS_AUDIT_MGMT, DBMS_CRYPTO, DBMS_DEBUG, '
+            'DBMS_DESCRIBE, DBMS_ERRLOG, DBMS_IJOB, DBMS_ISCHEDULER, DBMS_JOB, DBMS_LOB, DBMS_LOCK, DBMS_METADATA, '
+            'DBMS_MONITOR, DBMS_MONITOR, DBMS_MVIEW, DBMS_MVIEW_STATS, DBMS_OUTPUT, DBMS_PLAN_CACHE, DBMS_PREPROCESSOR, '
+            'DBMS_RANDOM, DBMS_RESOURCE_MANAGER, DBMS_RLS, DBMS_SCHEDULER, DBMS_SESSION, DBMS_SESSION, DBMS_SPM, DBMS_SPM, '
+            'DBMS_SQL, DBMS_STATS, DBMS_SYS_ERROR, DBMS_TYPES, DBMS_UDR, DBMS_UDR, DBMS_UTILITY, DBMS_WARNING, '
+            'DBMS_WORKLOAD_REPOSITORY, DBMS_XA, DBMS_XMLGEN, DBMS_XPLAN, ODCICONST, SA_COMPONENTS, SA_LABEL_ADMIN, '
+            'SA_POLICY_ADMIN, SA_SESSION, SA_SYSDBA, SA_USER_ADMIN, STANDARD, UTL_ENCODE, UTL_FILE, UTL_I18N, UTL_INADDR, '
+            'UTL_RAW, __DBMS_UPGRADE, __DBMS_UPGRADE, dbms_ischeduler, dbms_mview, dbms_mview_stats, '
+            'dbms_ob_limit_calculator, dbms_resource_manager, dbms_scheduler, dbms_stats, '
+            'dbms_trusted_certificate_manager, dbms_workload_repository, dbms_xplan',
+        'Permission check whitelist for database in OB Oracle dialect type')
+ON DUPLICATE KEY UPDATE `id`=`id`;

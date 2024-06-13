@@ -19,15 +19,15 @@ import java.util.List;
 
 import com.oceanbase.odc.core.shared.constant.AuthorizationType;
 
-import lombok.Builder;
 import lombok.Data;
+import lombok.experimental.SuperBuilder;
 
 /**
  * @author gaoda.xy
  * @date 2024/1/4 13:59
  */
 @Data
-@Builder
+@SuperBuilder
 public class QueryDatabasePermissionParams {
 
     private Long userId;

@@ -167,6 +167,8 @@ public enum AuditEventAction implements Translatable {
 
     CREATE_ASYNC_TASK,
 
+    CREATE_MULTIPLE_ASYNC_TASK,
+
     CREATE_MOCKDATA_TASK,
 
     CREATE_IMPORT_TASK,
@@ -181,6 +183,8 @@ public enum AuditEventAction implements Translatable {
 
     CREATE_APPLY_DATABASE_PERMISSION_TASK,
 
+    CREATE_APPLY_TABLE_PERMISSION_TASK,
+
     CREATE_SHADOWTABLE_SYNC_TASK,
 
     CREATE_STRUCTURE_COMPARISON_TASK,
@@ -190,6 +194,8 @@ public enum AuditEventAction implements Translatable {
     CREATE_ALTER_SCHEDULE_TASK,
 
     STOP_ASYNC_TASK,
+
+    STOP_MULTIPLE_ASYNC_TASK,
 
     CREATE_ONLINE_SCHEMA_CHANGE_TASK,
 
@@ -214,7 +220,11 @@ public enum AuditEventAction implements Translatable {
 
     STOP_APPLY_DATABASE_PERMISSION_TASK,
 
+    STOP_APPLY_TABLE_PERMISSION_TASK,
+
     EXECUTE_ASYNC_TASK,
+
+    EXECUTE_MULTIPLE_ASYNC_TASK,
 
     EXECUTE_MOCKDATA_TASK,
 
@@ -235,6 +245,8 @@ public enum AuditEventAction implements Translatable {
     EXECUTE_ONLINE_SCHEMA_CHANGE_TASK,
 
     APPROVE_ASYNC_TASK,
+
+    APPROVE_MULTIPLE_ASYNC_TASK,
 
     APPROVE_MOCKDATA_TASK,
 
@@ -259,7 +271,11 @@ public enum AuditEventAction implements Translatable {
 
     APPROVE_APPLY_DATABASE_PERMISSION_TASK,
 
+    APPROVE_APPLY_TABLE_PERMISSION_TASK,
+
     REJECT_ASYNC_TASK,
+
+    REJECT_MULTIPLE_ASYNC_TASK,
 
     REJECT_MOCKDATA_TASK,
 
@@ -283,6 +299,8 @@ public enum AuditEventAction implements Translatable {
     REJECT_APPLY_PROJECT_PERMISSION_TASK,
 
     REJECT_APPLY_DATABASE_PERMISSION_TASK,
+
+    REJECT_APPLY_TABLE_PERMISSION_TASK,
 
     /**
      * 数据脱敏规则
@@ -350,6 +368,10 @@ public enum AuditEventAction implements Translatable {
 
     REVOKE_DATABASE_PERMISSION,
 
+    GRANT_TABLE_PERMISSION,
+
+    REVOKE_TABLE_PERMISSION,
+
     /**
      * Automation rule management
      */
@@ -386,6 +408,15 @@ public enum AuditEventAction implements Translatable {
     ENABLE_SENSITIVE_COLUMN,
 
     DISABLE_SENSITIVE_COLUMN,
+
+    /**
+     * Database change changing order template management
+     */
+    CREATE_DATABASE_CHANGE_CHANGING_ORDER_TEMPLATE,
+
+    UPDATE_DATABASE_CHANGE_CHANGING_ORDER_TEMPLATE,
+
+    DELETE_DATABASE_CHANGE_CHANGING_ORDER_TEMPLATE,
 
     ;
 

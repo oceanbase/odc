@@ -163,12 +163,15 @@ public enum ErrorCodes implements ErrorCode {
     FlowTaskInstanceFailed,
     FlowTaskInstanceCancelled,
     FlowCreateDeniedBySqlCheck,
+    FlowTaskNotSupportCancel,
 
     // Schedule
     AlterScheduleExists,
     InvalidCronExpression,
 
     // Partition plan
+    PartitionPlanNoDropPreviewSqlGenerated,
+    PartitionPlanNoCreatePreviewSqlGenerated,
     InvalidSqlExpression,
     PartitionKeyDataTypeMismatch,
     TimeDataTypePrecisionMismatch,
@@ -200,6 +203,7 @@ public enum ErrorCodes implements ErrorCode {
     ResourceCreating,
     ResourceModifying,
     ResourceSynchronizing,
+    CloudResourceSynchronizing,
 
     // Integration
     EnableSqlInterceptorNotAllowed,
@@ -236,6 +240,7 @@ public enum ErrorCodes implements ErrorCode {
     ObProcedureExecuteRequireValueForInParam,
     ObAccessDenied,
     ObMysqlAccessDenied,
+    ObWeakReadConsistencyRequired,
     ObCommandDenied,
     ObGlobalVariableSetSessionScopeNotSupported,
 

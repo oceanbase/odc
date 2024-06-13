@@ -26,6 +26,18 @@ sqls:
     ORDER BY
       TABLE_NAME ASC,
       ORDINAL_POSITION ASC
+  list-basic-schema-columns-info: |-
+    SELECT
+      TABLE_SCHEMA,
+      TABLE_NAME,
+      COLUMN_NAME
+    FROM
+      information_schema.columns
+    WHERE
+      TABLE_SCHEMA = ?
+    ORDER BY
+      TABLE_NAME ASC,
+      ORDINAL_POSITION ASC
   list-table-columns: |-
     SELECT
       TABLE_NAME,
@@ -37,7 +49,6 @@ sqls:
       NUMERIC_SCALE,
       NUMERIC_PRECISION,
       DATETIME_PRECISION,
-      NUMERIC_SCALE,
       CHARACTER_MAXIMUM_LENGTH,
       EXTRA,
       CHARACTER_SET_NAME,

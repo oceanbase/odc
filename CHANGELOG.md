@@ -1,4 +1,179 @@
-## 4.2.4 (2024-04-02)
+## 4.3.0 (2024-06-07)
+
+
+Table Objects
+
+- Added support for OceanBase Oracle mode GIS data type
+- Added support for OceanBase v4.3.0 columnar storage, including table storage mode and index storage mode 
+
+Change Risk Control
+
+- Added multi-database change tasks, which, compared to database change tasks, support configuring change pipelines when initiating tasks. The pipeline supports multiple batches, with each batch supporting multiple databases, and the pipeline can be saved as a change order template.
+- Added database administrators. Project administrators can configure database administrators for the libraries within the project. Database administrators can be referenced in the ticket approval process and their information will also be included in WebHook events for external approval integration.
+- Added support for configuring manual execution when initiating tickets, to prevent tasks approved for automatic execution from occurring at unexpected times. 
+
+Data Archiving/Cleaning
+
+- Data cleaning/archiving provides commonly used task metrics, including start time, end time, filtering conditions, processed rows, scanned rows, and real-time performance
+- Data cleaning/archiving supports partition conditions
+- Data cleaning/archiving supports configuring execution timeout. If the execution time exceeds the set timeout, the task will abort to ensure high-performance database during peak business periods.
+- Data archiving supports incremental structural synchronization. When the structure of the source table changes, the task will automatically synchronize the table structure. When enabling structural synchronization, customized synchronization of partitions and indexes can be defined
+- Data cleaning/archiving has implemented compatibility with OceanBase MySQL mode field types, adding support for additional field types: bit, set, enum, and spatial data types
+- Data cleaning/archiving has implemented compatibility with OceanBase Oracle mode field types, adding support for additional field types: BINARY_FLOAT, BINARY_DOUBLE, TIMESTAMP WITH TIME ZONE, TIMESTAMP WITH LOCAL TIME ZONE, INTERVAL YEAR TO MONTH, INTERVAL DAY TO SECOND, ROW, ROWID, UROWID, and BLOB
+- Data cleaning supports linkage historical library verification 
+
+Global Object Search
+
+- Added global object retrieval, supporting global search within the project scope, allowing instant access even with numerous library tables
+- Supports almost all objects, including libraries, tables, columns, views, functions, stored procedures, program packages, triggers, etc.
+- Supports the shortcut key Ctrl/Cmd+J for quick access to global object retrieval
+
+
+### Usability Improvements
+
+- JDBC parameters and initialization scripts in the data source configuration are also applied to import and export tasks, providing more flexibility for import and export tasks [#2587](https://github.com/oceanbase/odc/pull/2587)
+- When archiving a project, it will check if all scheduled tasks are shut down [#2562](https://github.com/oceanbase/odc/pull/2562)
+- Optimized the request time for querying table details [#2626](https://github.com/oceanbase/odc/pull/2626)
+- Optimized the error message for canceling process tasks [#2624](https://github.com/oceanbase/odc/pull/2624)
+
+### Bug Fixes
+
+Data Source
+
+- Failed to query table structure when connecting to a backup cluster [#2648](https://github.com/oceanbase/odc/pull/2648)
+- Concurrency exception when resetting connections [#2528](https://github.com/oceanbase/odc/pull/2528)
+
+PL Object Management
+
+- Fixed stored procedures and functions list not sorted by name [#2636](https://github.com/oceanbase/odc/pull/2636)
+- Issue with batch compilation failure in OceanBase Oracle mode [#2606](https://github.com/oceanbase/odc/pull/2606)
+
+SQL Window
+
+- Unable to switch databases when there are more than 2000 in the SQL window [#2520](https://github.com/oceanbase/odc/pull/2520)
+- The setting to not continue execution upon execution failure in SQL window does not take effect [#2259](https://github.com/oceanbase/odc/pull/2259)
+- Error in SQL window execution after closing the connection with obclient [#2528](https://github.com/oceanbase/odc/pull/2528)
+- Unable to set NLS parameters in SQL window for ORACLE data sources [#2501](https://github.com/oceanbase/odc/pull/2501)
+
+Data Archiving/Cleanup
+
+- Message notification becomes ineffective when the task framework is closed [#2445](https://github.com/oceanbase/odc/pull/2445)
+
+Projects and Tickets
+
+- Error reported when editing a project that already exists [#2642](https://github.com/oceanbase/odc/pull/2642)
+- Internationalization of ticket descriptions becomes ineffective [#2579](https://github.com/oceanbase/odc/pull/2579)
+- Approval failure when the approval content is too long #2565 [#2565](https://github.com/oceanbase/odc/pull/2565)
+
+Structure Comparison
+
+- Anomalies in structure comparison results when the target table does not exist [#2638](https://github.com/oceanbase/odc/pull/2638)
+
+Import/Export
+
+- The setting to skip when importing table structures does not take effect [#2587](https://github.com/oceanbase/odc/pull/2587)
+
+Table Object Management
+
+- Error reporting table object does not exist when OceanBase tenant configures lower_case_table_names=2 [#2298](https://github.com/oceanbase/odc/pull/2298)
+- Unique indexes of partitioned tables are not visible in table object information [#2297](https://github.com/oceanbase/odc/pull/2297)
+
+Other
+
+Issue with accessing swagger-ui.html [#2160](https://github.com/oceanbase/odc/pull/2160)
+
+### Security
+
+- Upgraded spring-security component to version 5.7.12 [#2690](https://github.com/oceanbase/odc/pull/2690)
+
+
+
+## 4.2.4_bp2 (2024-05-14)
+
+### Bug fixes
+
+Data source
+
+- Unable to connect to ODP-Sharding data source [#2339](https://github.com/oceanbase/odc/pull/2339)
+
+User management
+
+- Unable to delete OWNER or DBA user of archived project [#2359](https://github.com/oceanbase/odc/pull/2359)
+
+Shadow table synchronization
+
+- Syntax errors may occur in statements generated when a column has a default value [#2388](https://github.com/oceanbase/odc/pull/2388)
+
+Data security
+
+- When there is an invalid database with the same name, desensitization fails [#2385](https://github.com/oceanbase/odc/pull/2385)
+
+Command line window
+
+- When entering a long SQL statement, the statement cannot be fully echoed [#2353](https://github.com/oceanbase/odc/pull/2353)
+
+Database archiving/cleaning
+
+- The status may be incorrectly set to success when a task is terminated [#2340](https://github.com/oceanbase/odc/pull/2340)
+- If the table names are different between the source and target when configuring data archiving tasks, an error occurs stating that the table does not exist [#2313](https://github.com/oceanbase/odc/pull/2313)
+
+Result set export
+
+- When database access is slow, exporting the result set fails due to timeout [#2315](https://github.com/oceanbase/odc/pull/2315)
+
+Notification
+
+- Editing the notification channel will cause the signing key to be lost [#2314](https://github.com/oceanbase/odc/pull/2314)
+
+Partitioning plan
+
+- Partitions are missing and partitions are not created in OceanBase 4.x version [#2327](https://github.com/oceanbase/odc/pull/2327)
+- Unable to initiate partitioning plan tasks in versions below OceanBase 3.x [#2323](https://github.com/oceanbase/odc/pull/2323)
+- Partition intervals are not shown in partitioning plan details
+
+System integration
+
+- In third-party user integration, users who modify extra_properties will no longer be able to log in to ODC [#2336](https://github.com/oceanbase/odc/pull/2336)
+- SQL console cannot be opened when using OAuth and bastion host integration at the same time [#2253](https://github.com/oceanbase/odc/pull/2253)
+
+Other
+
+- Tickets whose life cycle spans the release process cannot be promoted normally [#2065](https://github.com/oceanbase/odc/pull/2065)
+- Unable to execute or terminate tasks manually [#2272](https://github.com/oceanbase/odc/pull/2272)
+- After running for a period of time, you cannot use the account password to log in and you need to restart ODC Server to recover [#2389](https://github.com/oceanbase/odc/pull/2389)
+- Conflicts occur between Basic Authentication and CSRF prevention [#2370](https://github.com/oceanbase/odc/pull/2370)
+
+### Usability improvements
+
+- Prompts are added for partitioning plans when no partition creation/deletion statements are generated [#2351](https://github.com/oceanbase/odc/pull/2351)
+- OceanBase versions before 4.2 disable end-to-end trace diagnostics [#2219](https://github.com/oceanbase/odc/pull/2219)
+
+### Dependency library upgrade
+
+- Upgrade data-lifecycle-manager version to 1.1.1 [#2281](https://github.com/oceanbase/odc/pull/2281)
+
+### Security
+
+- Remove snappy-java dependency [#2317](https://github.com/oceanbase/odc/pull/2317)
+- Data desensitization increases verification to avoid DDoS risks caused by BigDecimal [#2271](https://github.com/oceanbase/odc/pull/2271)
+
+## 4.2.4_bp1 (2024-04-12)
+
+### Bug fixes
+
+PL debugging
+
+- PL debugging timeout parameter cannot be set via connection initialization script [#2179](https://github.com/oceanbase/odc/pull/2179)
+
+Other
+
+- ODC Server fails to start when there is a historical task of partitioning plan [#2158](https://github.com/oceanbase/odc/pull/2158)
+
+### Security
+
+- Upgrade okio-jvm version to 3.4.0 [#2200](https://github.com/oceanbase/odc/pull/2200)
+
+## 4.2.4 (2024-04-03)
 
 ### Feature Changes
 

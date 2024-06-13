@@ -513,3 +513,45 @@
   in_connection: 0
   enabled: 1
   id: 95
+
+# DATABASE_CHANGE_CHANGING_ORDER_TEMPLATE_MANAGEMENT
+- type: "DATABASE_CHANGE_CHANGING_ORDER_TEMPLATE_MANAGEMENT"
+  action: "CREATE_DATABASE_CHANGE_CHANGING_ORDER_TEMPLATE"
+  method_signature: "com.oceanbase.odc.server.web.controller.v2.DatabaseChangeController.create"
+  sid_extract_expression: ""
+  in_connection: 0
+  enabled: 1
+  id: 96
+
+- type: "DATABASE_CHANGE_CHANGING_ORDER_TEMPLATE_MANAGEMENT"
+  action: "UPDATE_DATABASE_CHANGE_CHANGING_ORDER_TEMPLATE"
+  method_signature: "com.oceanbase.odc.server.web.controller.v2.DatabaseChangeController.update"
+  sid_extract_expression: ""
+  in_connection: 0
+  enabled: 1
+  id: 97
+
+- type: "DATABASE_CHANGE_CHANGING_ORDER_TEMPLATE_MANAGEMENT"
+  action: "DELETE_DATABASE_CHANGE_CHANGING_ORDER_TEMPLATE"
+  method_signature: "com.oceanbase.odc.server.web.controller.v2.DatabaseChangeController.delete"
+  sid_extract_expression: ""
+  in_connection: 0
+  enabled: 1
+  id: 98
+
+# TABLE_PERMISSION_MANAGEMENT
+- type: "TABLE_PERMISSION_MANAGEMENT"
+  action: "GRANT_TABLE_PERMISSION"
+  method_signature: "com.oceanbase.odc.server.web.controller.v2.TablePermissionController.batchCreate"
+  sid_extract_expression: ""
+  in_connection: 0
+  enabled: 1
+  id: 99
+
+- type: "TABLE_PERMISSION_MANAGEMENT"
+  action: "REVOKE_TABLE_PERMISSION"
+  method_signature: "com.oceanbase.odc.server.web.controller.v2.TablePermissionController.batchRevoke"
+  sid_extract_expression: ""
+  in_connection: 0
+  enabled: 1
+  id: 100

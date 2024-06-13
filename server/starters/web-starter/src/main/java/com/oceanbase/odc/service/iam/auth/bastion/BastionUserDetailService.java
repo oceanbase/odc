@@ -25,6 +25,7 @@ import com.oceanbase.odc.common.trace.TraceContextHolder;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.core.shared.constant.OdcConstants;
+import com.oceanbase.odc.metadb.iam.UserEntity;
 import com.oceanbase.odc.service.bastion.BastionAccountService;
 import com.oceanbase.odc.service.bastion.model.BastionAccount;
 import com.oceanbase.odc.service.collaboration.project.ProjectService;
@@ -54,13 +55,13 @@ public class BastionUserDetailService implements AuthenticationUserDetailsServic
         String apiToken = (String) token.getCredentials();
         BastionAccount bastionAccount = bastionAccountService.query(apiToken);
         String username = bastionAccount.getUsername();
+        String nickName = bastionAccount.getNickName();
         TraceContextHolder.setAccountName(username);
-        User user = userService.createUserIfNotExists(OdcConstants.DEFAULT_ORGANIZATION_ID,
-                username, bastionAccount.getNickName(),
-                null);
+        UserEntity entity = UserEntity.autoCreatedEntity(username, nickName, OdcConstants.DEFAULT_ORGANIZATION_ID);
+        entity.setDescription("Auto generated user for bastion integration");
+        User user = userService.upsert(entity, null);
         TraceContextHolder.setUserId(user.getId());
         TraceContextHolder.setOrganizationId(user.getOrganizationId());
-        projectService.createProjectIfNotExists(user);
         return user;
     }
 }

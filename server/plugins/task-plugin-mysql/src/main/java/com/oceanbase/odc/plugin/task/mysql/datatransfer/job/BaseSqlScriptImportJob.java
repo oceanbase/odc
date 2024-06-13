@@ -93,6 +93,7 @@ public abstract class BaseSqlScriptImportJob extends AbstractJob {
     private void runExternalSqlScript() throws Exception {
         executeWithoutResult(getPreSqlsForExternal());
         try (Connection conn = dataSource.getConnection(); Statement stmt = conn.createStatement()) {
+            executeSessionInitScripts(stmt);
             SqlStatementIterator iterator = getStmtIterator();
             while (!isCanceled() && !Thread.currentThread().isInterrupted() && iterator.hasNext()) {
                 String sql = iterator.next().getStr();
@@ -135,6 +136,7 @@ public abstract class BaseSqlScriptImportJob extends AbstractJob {
 
         boolean firstLine = true;
         try (Connection conn = dataSource.getConnection(); Statement stmt = conn.createStatement()) {
+            executeSessionInitScripts(stmt);
             SqlStatementIterator iterator = getStmtIterator();
             while (!Thread.currentThread().isInterrupted() && iterator.hasNext() && !isCanceled()) {
                 String sql = iterator.next().getStr();
@@ -167,6 +169,9 @@ public abstract class BaseSqlScriptImportJob extends AbstractJob {
         executeWithoutResult(getPreSqlsForData());
 
         try (Connection conn = dataSource.getConnection()) {
+            try (Statement stmt = conn.createStatement()) {
+                executeSessionInitScripts(stmt);
+            }
             SqlStatementIterator iterator = getStmtIterator();
             List<String> insertionBuffer = new LinkedList<>();
             while (!Thread.currentThread().isInterrupted() && !isCanceled()) {
@@ -197,6 +202,14 @@ public abstract class BaseSqlScriptImportJob extends AbstractJob {
         }
         try (Connection conn = dataSource.getConnection(); Statement stmt = conn.createStatement()) {
             for (String sql : sqls) {
+                stmt.execute(sql);
+            }
+        }
+    }
+
+    private void executeSessionInitScripts(Statement stmt) throws SQLException {
+        if (CollectionUtils.isNotEmpty(transferConfig.getConnectionInfo().getSessionInitScripts())) {
+            for (String sql : transferConfig.getConnectionInfo().getSessionInitScripts()) {
                 stmt.execute(sql);
             }
         }

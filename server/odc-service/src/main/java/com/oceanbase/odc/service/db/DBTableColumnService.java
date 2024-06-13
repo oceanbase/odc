@@ -22,9 +22,8 @@ import org.springframework.stereotype.Service;
 
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.session.ConnectionSession;
-import com.oceanbase.odc.core.session.ConnectionSessionUtil;
 import com.oceanbase.odc.service.db.browser.DBSchemaAccessors;
-import com.oceanbase.odc.service.db.browser.DBTableColumnEditorFactory;
+import com.oceanbase.odc.service.db.browser.DBTableColumnEditors;
 import com.oceanbase.odc.service.db.model.OdcDBTableColumn;
 import com.oceanbase.tools.dbbrowser.model.DBTableColumn;
 import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
@@ -41,15 +40,11 @@ public class DBTableColumnService {
     }
 
     public String getCreateSql(ConnectionSession session, OdcDBTableColumn column) {
-        DBTableColumnEditorFactory factory = new DBTableColumnEditorFactory(
-                session.getConnectType(), ConnectionSessionUtil.getVersion(session));
-        return factory.create().generateCreateObjectDDL(column);
+        return DBTableColumnEditors.create(session).generateCreateObjectDDL(column);
     }
 
     public String getDeleteSql(ConnectionSession session, OdcDBTableColumn column) {
-        DBTableColumnEditorFactory factory = new DBTableColumnEditorFactory(
-                session.getConnectType(), ConnectionSessionUtil.getVersion(session));
-        return factory.create().generateDropObjectDDL(column);
+        return DBTableColumnEditors.create(session).generateDropObjectDDL(column);
     }
 
 }

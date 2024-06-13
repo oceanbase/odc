@@ -44,6 +44,9 @@ public class AuditUtils {
                 case ASYNC:
                     type = AuditEventType.ASYNC;
                     break;
+                case MULTIPLE_ASYNC:
+                    type = AuditEventType.MULTIPLE_ASYNC;
+                    break;
                 case EXPORT:
                     type = AuditEventType.EXPORT;
                     break;
@@ -76,6 +79,9 @@ public class AuditUtils {
                     break;
                 case APPLY_DATABASE_PERMISSION:
                     type = AuditEventType.APPLY_DATABASE_PERMISSION;
+                    break;
+                case APPLY_TABLE_PERMISSION:
+                    type = AuditEventType.APPLY_TABLE_PERMISSION;
                     break;
                 case STRUCTURE_COMPARISON:
                     type = AuditEventType.STRUCTURE_COMPARISON;
@@ -165,6 +171,8 @@ public class AuditUtils {
                     return AuditEventAction.CREATE_EXPORT_RESULT_SET_TASK;
                 case ASYNC:
                     return AuditEventAction.CREATE_ASYNC_TASK;
+                case MULTIPLE_ASYNC:
+                    return AuditEventAction.CREATE_MULTIPLE_ASYNC_TASK;
                 case PERMISSION_APPLY:
                     return AuditEventAction.CREATE_PERMISSION_APPLY_TASK;
                 case SHADOWTABLE_SYNC:
@@ -181,6 +189,8 @@ public class AuditUtils {
                     return AuditEventAction.CREATE_APPLY_PROJECT_PERMISSION_TASK;
                 case APPLY_DATABASE_PERMISSION:
                     return AuditEventAction.CREATE_APPLY_DATABASE_PERMISSION_TASK;
+                case APPLY_TABLE_PERMISSION:
+                    return AuditEventAction.CREATE_APPLY_TABLE_PERMISSION_TASK;
             }
         }
         if (action == AuditEventAction.STOP_TASK) {
@@ -195,6 +205,8 @@ public class AuditUtils {
                     return AuditEventAction.STOP_EXPORT_RESULT_SET_TASK;
                 case ASYNC:
                     return AuditEventAction.STOP_ASYNC_TASK;
+                case MULTIPLE_ASYNC:
+                    return AuditEventAction.STOP_MULTIPLE_ASYNC_TASK;
                 case SHADOWTABLE_SYNC:
                     return AuditEventAction.STOP_SHADOWTABLE_SYNC_TASK;
                 case STRUCTURE_COMPARISON:
@@ -209,6 +221,8 @@ public class AuditUtils {
                     return AuditEventAction.STOP_APPLY_PROJECT_PERMISSION_TASK;
                 case APPLY_DATABASE_PERMISSION:
                     return AuditEventAction.STOP_APPLY_DATABASE_PERMISSION_TASK;
+                case APPLY_TABLE_PERMISSION:
+                    return AuditEventAction.STOP_APPLY_TABLE_PERMISSION_TASK;
             }
         }
         if (action == AuditEventAction.EXECUTE_TASK) {
@@ -223,6 +237,8 @@ public class AuditUtils {
                     return AuditEventAction.EXECUTE_EXPORT_RESULT_SET_TASK;
                 case ASYNC:
                     return AuditEventAction.EXECUTE_ASYNC_TASK;
+                case MULTIPLE_ASYNC:
+                    return AuditEventAction.EXECUTE_MULTIPLE_ASYNC_TASK;
                 case SHADOWTABLE_SYNC:
                     return AuditEventAction.EXECUTE_SHADOWTABLE_SYNC_TASK;
                 case STRUCTURE_COMPARISON:
@@ -247,6 +263,8 @@ public class AuditUtils {
                     return AuditEventAction.APPROVE_EXPORT_RESULT_SET_TASK;
                 case ASYNC:
                     return AuditEventAction.APPROVE_ASYNC_TASK;
+                case MULTIPLE_ASYNC:
+                    return AuditEventAction.APPROVE_MULTIPLE_ASYNC_TASK;
                 case PERMISSION_APPLY:
                     return AuditEventAction.APPROVE_PERMISSION_APPLY_TASK;
                 case SHADOWTABLE_SYNC:
@@ -263,6 +281,8 @@ public class AuditUtils {
                     return AuditEventAction.APPROVE_APPLY_PROJECT_PERMISSION_TASK;
                 case APPLY_DATABASE_PERMISSION:
                     return AuditEventAction.APPROVE_APPLY_DATABASE_PERMISSION_TASK;
+                case APPLY_TABLE_PERMISSION:
+                    return AuditEventAction.APPROVE_APPLY_TABLE_PERMISSION_TASK;
             }
         }
         if (action == AuditEventAction.REJECT) {
@@ -277,6 +297,8 @@ public class AuditUtils {
                     return AuditEventAction.REJECT_EXPORT_RESULT_SET_TASK;
                 case ASYNC:
                     return AuditEventAction.REJECT_ASYNC_TASK;
+                case MULTIPLE_ASYNC:
+                    return AuditEventAction.REJECT_MULTIPLE_ASYNC_TASK;
                 case PERMISSION_APPLY:
                     return AuditEventAction.REJECT_PERMISSION_APPLY_TASK;
                 case SHADOWTABLE_SYNC:
@@ -293,6 +315,8 @@ public class AuditUtils {
                     return AuditEventAction.REJECT_APPLY_PROJECT_PERMISSION_TASK;
                 case APPLY_DATABASE_PERMISSION:
                     return AuditEventAction.REJECT_APPLY_DATABASE_PERMISSION_TASK;
+                case APPLY_TABLE_PERMISSION:
+                    return AuditEventAction.REJECT_APPLY_TABLE_PERMISSION_TASK;
             }
         }
         // 如果不是流程相关的 action，则返回原值

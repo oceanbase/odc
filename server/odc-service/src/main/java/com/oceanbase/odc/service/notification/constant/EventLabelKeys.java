@@ -30,6 +30,7 @@ public class EventLabelKeys {
     public static final String TASK_TYPE = "taskType";
     public static final String TASK_STATUS = "taskStatus";
     public static final String TRIGGER_TIME = "triggerTime";
+    public static final String DESCRIPTION = "description";
 
     /**
      * connection info
@@ -40,6 +41,7 @@ public class EventLabelKeys {
     public static final String TENANT_NAME = "tenantName";
     public static final String DATABASE_ID = "databaseId";
     public static final String DATABASE_NAME = "databaseName";
+    public static final String TABLE_NAME = "tableName";
 
     /**
      * collaboration info

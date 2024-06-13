@@ -18,16 +18,30 @@ package com.oceanbase.odc.common.util;
 import org.apache.commons.lang3.ArrayUtils;
 
 public class ExceptionUtils extends org.apache.commons.lang3.exception.ExceptionUtils {
+    private static final int CAUSE_DEPTH = 3;
     private static final int ROOT_CAUSE_DEPTH = 5;
+
+    public static String getSimpleReason(final Throwable throwable) {
+        return getCauseReason(throwable) + " ... " + getRootCauseReason(throwable);
+    }
+
+    public static String getCauseReason(final Throwable throwable) {
+        String[] stackTrace = getStackTrace(throwable).split("\n\t");
+        return getTraceWithMaxDepth(stackTrace, CAUSE_DEPTH);
+    }
 
     public static String getRootCauseReason(final Throwable throwable) {
         String[] rootCauseStackTrace = getRootCauseStackTrace(throwable);
+        return getTraceWithMaxDepth(rootCauseStackTrace, ROOT_CAUSE_DEPTH);
+    }
+
+    private static String getTraceWithMaxDepth(String[] stackTrace, int maxDepth) {
         StringBuilder rootReason = new StringBuilder();
-        if (ArrayUtils.isNotEmpty(rootCauseStackTrace)) {
-            int depth = ROOT_CAUSE_DEPTH;
+        if (ArrayUtils.isNotEmpty(stackTrace)) {
+            int depth = maxDepth;
             while (depth-- > 0) {
-                if (rootCauseStackTrace.length > depth) {
-                    rootReason.append(" ").append(rootCauseStackTrace[depth]);
+                if (stackTrace.length > depth) {
+                    rootReason.append(" ").append(stackTrace[depth]);
                 }
             }
         }

@@ -15,6 +15,7 @@
  */
 package com.oceanbase.odc.service.flow;
 
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.when;
 
@@ -70,6 +71,7 @@ import com.oceanbase.odc.metadb.flow.SequenceInstanceRepository;
 import com.oceanbase.odc.metadb.flow.ServiceTaskInstanceRepository;
 import com.oceanbase.odc.metadb.flow.UserTaskInstanceCandidateRepository;
 import com.oceanbase.odc.metadb.flow.UserTaskInstanceRepository;
+import com.oceanbase.odc.metadb.iam.UserEntity;
 import com.oceanbase.odc.metadb.task.TaskEntity;
 import com.oceanbase.odc.metadb.task.TaskRepository;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferConfig;
@@ -98,7 +100,7 @@ import com.oceanbase.odc.service.iam.ResourceRoleService;
 import com.oceanbase.odc.service.iam.UserService;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.iam.model.User;
-import com.oceanbase.odc.service.permission.database.DatabasePermissionHelper;
+import com.oceanbase.odc.service.permission.DBResourcePermissionHelper;
 import com.oceanbase.odc.service.regulation.approval.ApprovalFlowConfigSelector;
 import com.oceanbase.odc.service.regulation.approval.model.ApprovalFlowConfig;
 import com.oceanbase.odc.service.regulation.approval.model.ApprovalNodeConfig;
@@ -176,7 +178,7 @@ public class FlowInstanceServiceTest extends ServiceTestEnv {
     @Autowired
     private UserTaskInstanceCandidateRepository userTaskInstanceCandidateRepository;
     @MockBean
-    private DatabasePermissionHelper databasePermissionHelper;
+    private DBResourcePermissionHelper permissionHelper;
 
     @Before
     public void setUp() {
@@ -200,7 +202,10 @@ public class FlowInstanceServiceTest extends ServiceTestEnv {
         when(databaseService.detail(Mockito.anyLong())).thenReturn(database);
         when(riskLevelService.findDefaultRiskLevel()).thenReturn(getRiskLevel());
         when(riskLevelService.list()).thenReturn(Arrays.asList(getRiskLevel(), getRiskLevel()));
-        doNothing().when(databasePermissionHelper).checkPermissions(Mockito.anyCollection(), Mockito.anyCollection());
+        doNothing().when(permissionHelper).checkDBPermissions(Mockito.anyCollection(), Mockito.anyCollection());
+        UserEntity user = new UserEntity();
+        user.setEnabled(true);
+        when(userService.nullSafeGet(anyLong())).thenReturn(user);
     }
 
     @Test

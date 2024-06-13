@@ -21,10 +21,11 @@ import java.util.List;
 import org.pf4j.Extension;
 
 import com.oceanbase.odc.common.util.JdbcOperationsUtil;
+import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.plugin.schema.api.SequenceExtensionPoint;
 import com.oceanbase.odc.plugin.schema.oboracle.utils.DBAccessorUtil;
+import com.oceanbase.tools.dbbrowser.DBBrowser;
 import com.oceanbase.tools.dbbrowser.editor.oracle.OracleObjectOperator;
-import com.oceanbase.tools.dbbrowser.editor.oracle.OracleSequenceEditor;
 import com.oceanbase.tools.dbbrowser.model.DBObjectIdentity;
 import com.oceanbase.tools.dbbrowser.model.DBObjectType;
 import com.oceanbase.tools.dbbrowser.model.DBSequence;
@@ -59,14 +60,18 @@ public class OBOracleSequenceExtension implements SequenceExtensionPoint {
 
     @Override
     public String generateCreateDDL(@NonNull DBSequence sequence) {
-        OracleSequenceEditor editor = new OracleSequenceEditor();
-        return editor.generateCreateDefinitionDDL(sequence);
+        return DBBrowser.objectEditor().sequenceEditor()
+                .setType(DialectType.OB_ORACLE.getDBBrowserDialectTypeName())
+                .create()
+                .generateCreateDefinitionDDL(sequence);
     }
 
     @Override
     public String generateUpdateDDL(@NonNull DBSequence oldSequence, @NonNull DBSequence newSequence) {
-        OracleSequenceEditor editor = new OracleSequenceEditor();
-        return editor.generateUpdateObjectDDL(oldSequence, newSequence);
+        return DBBrowser.objectEditor().sequenceEditor()
+                .setType(DialectType.OB_ORACLE.getDBBrowserDialectTypeName())
+                .create()
+                .generateUpdateObjectDDL(oldSequence, newSequence);
     }
 
     protected DBSchemaAccessor getSchemaAccessor(Connection connection) {

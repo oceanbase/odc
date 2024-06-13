@@ -26,6 +26,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Properties;
 
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.Validate;
 import org.pf4j.Extension;
 
@@ -92,11 +93,21 @@ public class OracleConnectionExtension extends OBMySQLConnectionExtension {
     }
 
     @Override
-    public TestResult test(@NonNull String jdbcUrl, @NonNull Properties properties, int queryTimeout) {
+    public TestResult test(@NonNull String jdbcUrl, @NonNull Properties properties, int queryTimeout,
+            List<ConnectionInitializer> initializers) {
         try (Connection connection = DriverManager.getConnection(jdbcUrl, properties)) {
             try (Statement statement = connection.createStatement()) {
                 if (queryTimeout >= 0) {
                     statement.setQueryTimeout(queryTimeout);
+                }
+                if (CollectionUtils.isNotEmpty(initializers)) {
+                    try {
+                        for (ConnectionInitializer initializer : initializers) {
+                            initializer.init(connection);
+                        }
+                    } catch (Exception e) {
+                        return TestResult.initScriptFailed(e);
+                    }
                 }
                 return TestResult.success();
             }

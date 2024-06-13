@@ -59,6 +59,7 @@ import com.oceanbase.tools.dbbrowser.model.DBTypeCode;
 import com.oceanbase.tools.dbbrowser.model.DBVariable;
 import com.oceanbase.tools.dbbrowser.model.DBView;
 import com.oceanbase.tools.dbbrowser.schema.OBMySQLSchemaAccessorTest.DataType;
+import com.oceanbase.tools.dbbrowser.util.DBSchemaAccessors;
 import com.oceanbase.tools.dbbrowser.util.StringUtils;
 
 import lombok.Data;
@@ -162,6 +163,17 @@ public class OBOracleSchemaAccessorTest extends BaseTestEnv {
     public void listBasicViewColumns_ViewColumns_Success() {
         List<DBTableColumn> columns = accessor.listBasicViewColumns(getOBOracleSchema(), "VIEW_TEST1");
         Assert.assertEquals(2, columns.size());
+    }
+
+    @Test
+    public void listBasicColumnsInfo_Success() {
+        Map<String, List<DBTableColumn>> columns = accessor.listBasicColumnsInfo(getOBOracleSchema());
+        Assert.assertTrue(columns.containsKey("TEST_DATA_TYPE"));
+        Assert.assertEquals(verifyDataTypes.size(), columns.get("TEST_DATA_TYPE").size());
+        Assert.assertTrue(columns.containsKey("VIEW_TEST1"));
+        Assert.assertTrue(columns.containsKey("VIEW_TEST2"));
+        Assert.assertEquals(2, columns.get("VIEW_TEST1").size());
+        Assert.assertEquals(1, columns.get("VIEW_TEST2").size());
     }
 
     @Test

@@ -71,6 +71,7 @@ import com.oceanbase.odc.core.shared.constant.OrganizationType;
 import com.oceanbase.odc.core.shared.constant.PermissionType;
 import com.oceanbase.odc.core.shared.constant.ResourceRoleName;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
+import com.oceanbase.odc.core.shared.exception.AccessDeniedException;
 import com.oceanbase.odc.core.shared.exception.BadRequestException;
 import com.oceanbase.odc.core.shared.exception.ConflictException;
 import com.oceanbase.odc.core.shared.exception.NotFoundException;
@@ -270,6 +271,9 @@ public class ConnectionService {
             try {
                 environmentAdapter.adaptConfig(connection);
                 connectionSSLAdaptor.adapt(connection);
+                if (!connection.getType().isDefaultSchemaRequired()) {
+                    connection.setDefaultSchema(null);
+                }
                 connectionValidator.validateForUpsert(connection);
                 connectionValidator.validatePrivateConnectionTempOnly(connection.getTemp());
                 if (!skipPermissionCheck) {
@@ -437,9 +441,9 @@ public class ConnectionService {
                 .where(ConnectionSpecs.organizationIdEqual(currentOrganizationId()))
                 .and(ConnectionSpecs.idIn(connIds));
         Map<Long, ConnectionConfig> connMap =
-                entitiesToModels(repository.findAll(spec), currentOrganizationId(), false, false).stream()
-                        .collect(Collectors.toMap(ConnectionConfig::getId, c -> c));
-
+                entitiesToModels(repository.findAll(spec), currentOrganizationId(), false, false)
+                        .stream().collect(Collectors.toMap(ConnectionConfig::getId, c -> c));
+        fullFillAttributes(connMap.values());
         if (authenticationFacade.currentOrganization().getType() == OrganizationType.INDIVIDUAL) {
             return getIndividualSpaceStatus(ids, connMap);
         } else {
@@ -562,8 +566,7 @@ public class ConnectionService {
     }
 
     @PreAuthenticate(actions = "update", resourceType = "ODC_CONNECTION", indexOfIdParam = 0)
-    public ConnectionConfig update(@NotNull Long id, @NotNull @Valid ConnectionConfig connection)
-            throws InterruptedException {
+    public ConnectionConfig update(@NotNull Long id, @NotNull @Valid ConnectionConfig connection) {
         ConnectionConfig config = txTemplate.execute(status -> {
             try {
                 environmentAdapter.adaptConfig(connection);
@@ -584,6 +587,9 @@ public class ConnectionService {
                 connection.setTemp(saved.getTemp());
                 connection.setPasswordEncrypted(null);
                 connection.setSysTenantPasswordEncrypted(null);
+                if (!connection.getType().isDefaultSchemaRequired()) {
+                    connection.setDefaultSchema(null);
+                }
                 connectionValidator.validateForUpsert(connection);
                 // validate same name while rename connection
                 repository.findByOrganizationIdAndName(connection.getOrganizationId(), connection.getName())
@@ -691,19 +697,17 @@ public class ConnectionService {
     @SkipAuthorize("internal usage")
     public ConnectionConfig getForConnectionSkipPermissionCheck(@NotNull Long id) {
         ConnectionConfig connection = internalGetSkipUserCheck(id, false, false);
-
-        int queryTimeoutSeconds = connection.queryTimeoutSeconds();
-        Integer minQueryTimeoutSeconds = connectProperties.getMinQueryTimeoutSeconds();
-        if (queryTimeoutSeconds < minQueryTimeoutSeconds) {
-            connection.setQueryTimeoutSeconds(minQueryTimeoutSeconds);
-            log.debug("queryTimeoutSeconds less than minQueryTimeoutSeconds, use {} instead", minQueryTimeoutSeconds);
-        }
-        connectionEncryption.decryptPasswords(connection);
-        // Adapter should be called after decrypting passwords.
-        environmentAdapter.adaptConfig(connection);
-        connectionSSLAdaptor.adapt(connection);
+        adaptConnectionConfig(connection);
         return connection;
     }
+
+    @SkipAuthorize("internal usage")
+    public List<ConnectionConfig> listForConnectionSkipPermissionCheck(@NotNull Collection<Long> ids) {
+        List<ConnectionConfig> connectionConfigs = internalListSkipUserCheck(ids, false, false);
+        connectionConfigs.forEach(this::adaptConnectionConfig);
+        return connectionConfigs;
+    }
+
 
     @Transactional(rollbackFor = Exception.class)
     @PreAuthenticate(actions = "update", resourceType = "ODC_CONNECTION", indexOfIdParam = 0)
@@ -769,6 +773,7 @@ public class ConnectionService {
                 : PageRequest.of(pageable.getPageNumber(), pageable.getPageSize());
         Page<ConnectionEntity> entities = this.repository.findAll(spec, page);
         List<ConnectionConfig> models = entitiesToModels(entities.getContent(), currentOrganizationId(), true, true);
+        fullFillAttributes(models);
         return new PageImpl<>(models, page, entities.getTotalElements());
     }
 
@@ -868,8 +873,26 @@ public class ConnectionService {
         return config;
     }
 
+    @SkipAuthorize("odc internal usage")
+    public List<ConnectionConfig> internalListSkipUserCheck(Collection<Long> ids, boolean withEnvironment,
+            boolean withProject) {
+        List<ConnectionEntity> entities = getEntities(ids);
+        Long organizationId = currentOrganizationId();
+        if (!entities.stream().allMatch(e -> Objects.equals(e.getOrganizationId(), organizationId))) {
+            throw new AccessDeniedException("cannot access databases that don't belong the current organization");
+        }
+        List<ConnectionConfig> connectionConfigs = entitiesToModels(entities, organizationId,
+                withEnvironment, withProject);
+        fullFillAttributes(connectionConfigs);
+        return connectionConfigs;
+    }
+
     private ConnectionEntity getEntity(@NonNull Long id) {
         return repository.findById(id).orElseThrow(() -> new NotFoundException(ResourceType.ODC_CONNECTION, "id", id));
+    }
+
+    private List<ConnectionEntity> getEntities(@NonNull Collection<Long> ids) {
+        return repository.findByIdIn(ids);
     }
 
     private List<ConnectionConfig> entitiesToModels(@NonNull List<ConnectionEntity> entities,
@@ -978,6 +1001,26 @@ public class ConnectionService {
             return null;
         }
         return syncTimes.stream().min(Date::compareTo).orElse(null);
+    }
+
+    private void fullFillAttributes(Collection<ConnectionConfig> models) {
+        Map<Long, List<ConnectionAttributeEntity>> id2Attrs = this.attributeRepository
+                .findByConnectionIdIn(models.stream().map(ConnectionConfig::getId).collect(Collectors.toSet()))
+                .stream().collect(Collectors.groupingBy(ConnectionAttributeEntity::getConnectionId));
+        models.forEach(c -> c.setAttributes(attrEntitiesToMap(id2Attrs.getOrDefault(c.getId(), new ArrayList<>()))));
+    }
+
+    private void adaptConnectionConfig(ConnectionConfig connection) {
+        int queryTimeoutSeconds = connection.queryTimeoutSeconds();
+        Integer minQueryTimeoutSeconds = connectProperties.getMinQueryTimeoutSeconds();
+        if (queryTimeoutSeconds < minQueryTimeoutSeconds) {
+            connection.setQueryTimeoutSeconds(minQueryTimeoutSeconds);
+            log.debug("queryTimeoutSeconds less than minQueryTimeoutSeconds, use {} instead", minQueryTimeoutSeconds);
+        }
+        connectionEncryption.decryptPasswords(connection);
+        // Adapter should be called after decrypting passwords.
+        environmentAdapter.adaptConfig(connection);
+        connectionSSLAdaptor.adapt(connection);
     }
 
 }

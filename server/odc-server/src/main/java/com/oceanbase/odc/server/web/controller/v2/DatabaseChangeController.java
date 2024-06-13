@@ -26,14 +26,19 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.oceanbase.odc.service.common.response.PaginatedResponse;
 import com.oceanbase.odc.service.common.response.Responses;
 import com.oceanbase.odc.service.common.response.SuccessResponse;
 import com.oceanbase.odc.service.databasechange.DatabaseChangeChangingOrderTemplateService;
-import com.oceanbase.odc.service.databasechange.model.CreateDatabaseChangeChangingOrderReq;
-import com.oceanbase.odc.service.databasechange.model.QueryDatabaseChangeChangingOrderResp;
+import com.oceanbase.odc.service.databasechange.model.CreateDatabaseChangeChangingOrderTemplateReq;
+import com.oceanbase.odc.service.databasechange.model.DatabaseChangeChangingOrderTemplateResp;
+import com.oceanbase.odc.service.databasechange.model.DatabaseChangingOrderTemplateExists;
+import com.oceanbase.odc.service.databasechange.model.QueryDatabaseChangeChangingOrderParams;
+import com.oceanbase.odc.service.databasechange.model.UpdateDatabaseChangeChangingOrderReq;
 
 import io.swagger.annotations.ApiOperation;
 import lombok.extern.slf4j.Slf4j;
@@ -47,46 +52,65 @@ import lombok.extern.slf4j.Slf4j;
 @RequestMapping("/api/v2/databasechange")
 public class DatabaseChangeController {
     @Autowired
-    private DatabaseChangeChangingOrderTemplateService databaseChangeChangingOrderTemplateService;
+    private DatabaseChangeChangingOrderTemplateService templateService;
 
     @ApiOperation(value = "createDatabaseChangingOrderTemplate", notes = "create database changing order template")
     @PostMapping("/changingorder/templates")
-    public SuccessResponse<Boolean> createDatabaseChangingOrderTemplate(
-            @RequestBody CreateDatabaseChangeChangingOrderReq req) {
-        return Responses.success(databaseChangeChangingOrderTemplateService.createDatabaseChangingOrderTemplate(req));
+    public SuccessResponse<DatabaseChangeChangingOrderTemplateResp> create(
+            @RequestBody CreateDatabaseChangeChangingOrderTemplateReq req) {
+        return Responses.success(templateService.create(req));
     }
 
-    @ApiOperation(value = "modifyDatabaseChangingOrderTemplate/{id:[\\d]+}",
+    @ApiOperation(value = "modifyDatabaseChangingOrderTemplate",
             notes = "modify database changing order template")
     @PutMapping("/changingorder/templates/{id:[\\d]+}")
-    public SuccessResponse<Boolean> modifyDatabaseChangingOrderTemplate(@PathVariable Long id,
-            @RequestBody CreateDatabaseChangeChangingOrderReq req) {
-        return Responses.success(databaseChangeChangingOrderTemplateService.modifyDatabaseChangingOrderTemplate(req));
+    public SuccessResponse<DatabaseChangeChangingOrderTemplateResp> update(@PathVariable Long id,
+            @RequestBody UpdateDatabaseChangeChangingOrderReq req) {
+        return Responses
+                .success(templateService.update(id, req));
     }
 
     @ApiOperation(value = "queryDatabaseChangingOrderTemplateById",
             notes = "query database changing order template's detail by id")
     @GetMapping("/changingorder/templates/{id:[\\d]+}")
-    public SuccessResponse<QueryDatabaseChangeChangingOrderResp> queryDatabaseChangingOrderTemplateById(
+    public SuccessResponse<DatabaseChangeChangingOrderTemplateResp> detail(
             @PathVariable Long id) {
-        return Responses.success(databaseChangeChangingOrderTemplateService.queryDatabaseChangingOrderTemplateById(id));
+        return Responses.success(templateService.detail(id));
     }
 
     @ApiOperation(value = "listDatabaseChangingOrderTemplates",
             notes = "get a list of database changing order templates")
     @GetMapping("/changingorder/templates")
-    public PaginatedResponse<QueryDatabaseChangeChangingOrderResp> listDatabaseChangingOrderTemplates(
-            @PageableDefault(size = Integer.MAX_VALUE, sort = {"id"}, direction = Direction.DESC) Pageable pageable) {
+    public PaginatedResponse<DatabaseChangeChangingOrderTemplateResp> list(
+            @PageableDefault(size = Integer.MAX_VALUE, sort = {"id"}, direction = Direction.DESC) Pageable pageable,
+            @RequestParam(required = false, name = "name") String name,
+            @RequestParam(required = false, name = "creatorId") Long creatorId,
+            @RequestParam(required = true, name = "projectId") Long projectId) {
+        QueryDatabaseChangeChangingOrderParams queryDatabaseChangeChangingOrderParams =
+                QueryDatabaseChangeChangingOrderParams.builder()
+                        .name(name)
+                        .creatorId(creatorId)
+                        .projectId(projectId)
+                        .build();
         return Responses
-                .paginated(databaseChangeChangingOrderTemplateService.listDatabaseChangingOrderTemplates(pageable));
+                .paginated(templateService.listTemplates(pageable,
+                        queryDatabaseChangeChangingOrderParams));
     }
 
     @ApiOperation(value = "deleteDatabaseChangingOrderTemplateById",
             notes = "delete database changing order template by id")
     @DeleteMapping("/changingorder/templates/{id:[\\d]+}")
-    public SuccessResponse<Boolean> deleteDatabaseChangingOrderTemplateById(@PathVariable Long id) {
+    public SuccessResponse<DatabaseChangeChangingOrderTemplateResp> delete(
+            @PathVariable Long id) {
         return Responses
-                .success(databaseChangeChangingOrderTemplateService.deleteDatabaseChangingOrderTemplateById(id));
+                .success(templateService.delete(id));
+    }
+
+    @ApiOperation(value = "exists", notes = "Returns whether an database changing order template exists")
+    @RequestMapping(value = "/changingorder/templates/exists", method = RequestMethod.GET)
+    public SuccessResponse<DatabaseChangingOrderTemplateExists> exists(@RequestParam String name,
+            @RequestParam Long projectId) {
+        return Responses.success(templateService.exists(name, projectId));
     }
 }
 

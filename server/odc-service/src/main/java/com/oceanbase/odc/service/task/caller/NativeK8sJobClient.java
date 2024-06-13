@@ -111,28 +111,37 @@ public class NativeK8sJobClient implements K8sJobClient {
     }
 
     @Override
-    public Optional<String> get(@NonNull String namespace, @NonNull String name) throws JobException {
+    public Optional<K8sJobResponse> get(@NonNull String namespace, @NonNull String arn) throws JobException {
         validK8sProperties();
         CoreV1Api api = new CoreV1Api();
         V1PodList job = null;
         try {
             job = api.listNamespacedPod(namespace, null, null, null,
-                    FIELD_SELECTOR_METADATA_NAME + "=" + name,
+                    FIELD_SELECTOR_METADATA_NAME + "=" + arn,
                     null, null, null, null, null, null, false);
         } catch (ApiException e) {
             throw new JobException(e.getResponseBody(), e);
         }
-        Optional<V1Pod> v1Job = job.getItems().stream().findAny();
-        return v1Job.map(value -> value.getMetadata().getName());
+        Optional<V1Pod> v1PodOptional = job.getItems().stream().findAny();
+        if (!v1PodOptional.isPresent()) {
+            return Optional.empty();
+        }
+        V1Pod v1Pod = v1PodOptional.get();
+        DefaultK8sJobResponse response = new DefaultK8sJobResponse();
+        response.setArn(arn);
+        response.setName(arn);
+        response.setRegion(k8sProperties.getRegion());
+        response.setResourceStatus(v1Pod.getStatus().getPhase());
+        return Optional.of(response);
     }
 
     @Override
-    public String delete(@NonNull String namespace, @NonNull String name) throws JobException {
+    public String delete(@NonNull String namespace, @NonNull String arn) throws JobException {
         validK8sProperties();
         CoreV1Api api = new CoreV1Api();
         V1Pod pod = null;
         try {
-            pod = api.deleteNamespacedPod(name, namespace, null, null,
+            pod = api.deleteNamespacedPod(arn, namespace, null, null,
                     null, null, null, null);
         } catch (ApiException e) {
             throw new JobException(e.getResponseBody(), e);

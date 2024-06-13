@@ -15,8 +15,11 @@
  */
 package com.oceanbase.odc.service.notification.helper;
 
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.Map;
 
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.MapUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -27,6 +30,7 @@ import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.core.shared.exception.NotImplementedException;
 import com.oceanbase.odc.service.integration.HttpOperationService.IntegrationConfigProperties;
+import com.oceanbase.odc.service.notification.NotificationProperties;
 import com.oceanbase.odc.service.notification.model.BaseChannelConfig;
 import com.oceanbase.odc.service.notification.model.ChannelType;
 import com.oceanbase.odc.service.notification.model.DingTalkChannelConfig;
@@ -47,6 +51,8 @@ public class ChannelConfigValidator {
 
     @Autowired
     private IntegrationConfigProperties integrationConfigProperties;
+    @Autowired
+    private NotificationProperties notificationProperties;
 
     public void validate(@NonNull ChannelType type, BaseChannelConfig channelConfig) {
         switch (type) {
@@ -90,10 +96,19 @@ public class ChannelConfigValidator {
         Verify.verify(
                 channelConfig.getWebhook().startsWith("http://") || channelConfig.getWebhook().startsWith("https://"),
                 "Webhook should start with 'http://' or 'https://'");
-        Verify.verify(SSRFChecker.checkUrlInWhiteList(channelConfig.getWebhook(),
-                integrationConfigProperties.getUrlWhiteList()),
-                "The webhook is not in white list, please add it into system configuration with the key 'odc.integration.url-white-list'");
-
+        try {
+            if (CollectionUtils.isNotEmpty(integrationConfigProperties.getUrlWhiteList())) {
+                Verify.verify(SSRFChecker.checkUrlInWhiteList(channelConfig.getWebhook(),
+                        integrationConfigProperties.getUrlWhiteList()),
+                        "The webhook is forbidden due to SSRF protection");
+            } else {
+                Verify.verify(SSRFChecker.checkHostNotInBlackList(new URL(channelConfig.getWebhook()).getHost(),
+                        notificationProperties.getHostBlackList()),
+                        "The webhook is forbidden due to SSRF protection");
+            }
+        } catch (MalformedURLException e) {
+            throw new RuntimeException(e);
+        }
         String httpProxy = channelConfig.getHttpProxy();
         Verify.verify(StringUtils.isEmpty(httpProxy) || httpProxy.split(":").length == 3,
                 "Illegal http proxy, it should be like 'http(s)://host:port'");

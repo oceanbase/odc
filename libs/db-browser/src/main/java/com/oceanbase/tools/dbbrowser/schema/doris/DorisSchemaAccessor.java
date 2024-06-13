@@ -15,14 +15,28 @@
  */
 package com.oceanbase.tools.dbbrowser.schema.doris;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.Reader;
+import java.io.StringWriter;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.charset.UnsupportedCharsetException;
 import java.sql.Blob;
 import java.sql.SQLException;
 import java.sql.Timestamp;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
@@ -36,8 +50,37 @@ import org.springframework.jdbc.core.JdbcOperations;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.lang.NonNull;
 
-import com.oceanbase.tools.dbbrowser.model.*;
+import com.oceanbase.tools.dbbrowser.model.DBColumnGroupElement;
+import com.oceanbase.tools.dbbrowser.model.DBColumnTypeDisplay;
+import com.oceanbase.tools.dbbrowser.model.DBConstraintType;
+import com.oceanbase.tools.dbbrowser.model.DBDatabase;
+import com.oceanbase.tools.dbbrowser.model.DBFunction;
+import com.oceanbase.tools.dbbrowser.model.DBIndexAlgorithm;
+import com.oceanbase.tools.dbbrowser.model.DBIndexType;
+import com.oceanbase.tools.dbbrowser.model.DBObjectIdentity;
+import com.oceanbase.tools.dbbrowser.model.DBObjectType;
+import com.oceanbase.tools.dbbrowser.model.DBPLObjectIdentity;
+import com.oceanbase.tools.dbbrowser.model.DBPackage;
+import com.oceanbase.tools.dbbrowser.model.DBProcedure;
+import com.oceanbase.tools.dbbrowser.model.DBSequence;
+import com.oceanbase.tools.dbbrowser.model.DBSynonym;
+import com.oceanbase.tools.dbbrowser.model.DBSynonymType;
+import com.oceanbase.tools.dbbrowser.model.DBTable;
+import com.oceanbase.tools.dbbrowser.model.DBTableColumn;
+import com.oceanbase.tools.dbbrowser.model.DBTableConstraint;
+import com.oceanbase.tools.dbbrowser.model.DBTableIndex;
+import com.oceanbase.tools.dbbrowser.model.DBTablePartition;
+import com.oceanbase.tools.dbbrowser.model.DBTablePartitionDefinition;
+import com.oceanbase.tools.dbbrowser.model.DBTablePartitionOption;
+import com.oceanbase.tools.dbbrowser.model.DBTablePartitionType;
+import com.oceanbase.tools.dbbrowser.model.DBTableSubpartitionDefinition;
+import com.oceanbase.tools.dbbrowser.model.DBTrigger;
+import com.oceanbase.tools.dbbrowser.model.DBType;
+import com.oceanbase.tools.dbbrowser.model.DBVariable;
+import com.oceanbase.tools.dbbrowser.model.DBView;
+import com.oceanbase.tools.dbbrowser.model.MySQLConstants;
 import com.oceanbase.tools.dbbrowser.parser.PLParser;
+import com.oceanbase.tools.dbbrowser.parser.SqlParser;
 import com.oceanbase.tools.dbbrowser.parser.result.ParseMysqlPLResult;
 import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
 import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessorSqlMapper;
@@ -48,8 +91,7 @@ import com.oceanbase.tools.dbbrowser.util.DBSchemaAccessorUtil;
 import com.oceanbase.tools.dbbrowser.util.MySQLSqlBuilder;
 import com.oceanbase.tools.dbbrowser.util.SqlBuilder;
 import com.oceanbase.tools.dbbrowser.util.StringUtils;
-import com.oceanbase.tools.sqlparser.OBMySQLParser;
-import com.oceanbase.tools.sqlparser.SQLParser;
+import com.oceanbase.tools.sqlparser.statement.Statement;
 import com.oceanbase.tools.sqlparser.statement.createtable.CreateTable;
 import com.oceanbase.tools.sqlparser.statement.createtable.TableOptions;
 
@@ -326,7 +368,7 @@ public class DorisSchemaAccessor implements DBSchemaAccessor {
         sb.append(
                 "select ROUTINE_NAME as name, ROUTINE_SCHEMA as schema_name, ROUTINE_TYPE as type from `information_schema`.`routines` where ROUTINE_SCHEMA=");
         sb.value(schemaName);
-        sb.append(" and ROUTINE_TYPE = 'FUNCTION';");
+        sb.append(" and ROUTINE_TYPE = 'FUNCTION' order by name asc;");
 
         return jdbcOperations.query(sb.toString(), new BeanPropertyRowMapper<>(DBPLObjectIdentity.class));
     }
@@ -337,7 +379,7 @@ public class DorisSchemaAccessor implements DBSchemaAccessor {
         sb.append(
                 "select ROUTINE_NAME as name, ROUTINE_SCHEMA as schema_name, ROUTINE_TYPE as type from `information_schema`.`routines` where ROUTINE_SCHEMA=");
         sb.value(schemaName);
-        sb.append(" and ROUTINE_TYPE = 'PROCEDURE';");
+        sb.append(" and ROUTINE_TYPE = 'PROCEDURE' order by name asc;");
 
         return jdbcOperations.query(sb.toString(), new BeanPropertyRowMapper<>(DBPLObjectIdentity.class));
     }
@@ -410,12 +452,20 @@ public class DorisSchemaAccessor implements DBSchemaAccessor {
         return jdbcOperations.query(sql, new Object[] {schemaName, viewName}, listBasicTableColumnRowMapper());
     }
 
+    @Override
+    public Map<String, List<DBTableColumn>> listBasicColumnsInfo(String schemaName) {
+        String sql = sqlMapper.getSql(Statements.LIST_BASIC_SCHEMA_COLUMNS_INFO);
+        List<DBTableColumn> tableColumns =
+                jdbcOperations.query(sql, new Object[] {schemaName}, listBasicTableColumnIdentityRowMapper());
+        return tableColumns.stream().collect(Collectors.groupingBy(DBTableColumn::getTableName));
+    }
+
     protected String getListTableColumnsSql(String schemaName) {
         MySQLSqlBuilder sb = new MySQLSqlBuilder();
         sb.append(
                 "select TABLE_NAME, TABLE_SCHEMA, ORDINAL_POSITION, COLUMN_NAME, DATA_TYPE, COLUMN_TYPE, NUMERIC_SCALE, "
                         + "NUMERIC_PRECISION, "
-                        + "DATETIME_PRECISION, NUMERIC_SCALE, CHARACTER_MAXIMUM_LENGTH, EXTRA, CHARACTER_SET_NAME, "
+                        + "DATETIME_PRECISION, CHARACTER_MAXIMUM_LENGTH, EXTRA, CHARACTER_SET_NAME, "
                         + "COLLATION_NAME, COLUMN_COMMENT, COLUMN_DEFAULT, IS_NULLABLE, GENERATION_EXPRESSION, "
                         + "COLUMN_KEY from information_schema.columns where TABLE_SCHEMA = ");
         sb.value(schemaName);
@@ -508,6 +558,16 @@ public class DorisSchemaAccessor implements DBSchemaAccessor {
             tableColumn.setName(rs.getString(MySQLConstants.COL_COLUMN_NAME));
             tableColumn.setTypeName(rs.getString(MySQLConstants.COL_DATA_TYPE));
             tableColumn.setComment(rs.getString(MySQLConstants.COL_COLUMN_COMMENT));
+            return tableColumn;
+        };
+    }
+
+    protected RowMapper<DBTableColumn> listBasicTableColumnIdentityRowMapper() {
+        return (rs, romNum) -> {
+            DBTableColumn tableColumn = new DBTableColumn();
+            tableColumn.setSchemaName(rs.getString(MySQLConstants.COL_TABLE_SCHEMA));
+            tableColumn.setTableName(rs.getString(MySQLConstants.COL_TABLE_NAME));
+            tableColumn.setName(rs.getString(MySQLConstants.COL_COLUMN_NAME));
             return tableColumn;
         };
     }
@@ -962,6 +1022,11 @@ public class DorisSchemaAccessor implements DBSchemaAccessor {
         return dbTableOptions;
     }
 
+    @Override
+    public List<DBColumnGroupElement> listTableColumnGroups(String schemaName, String tableName) {
+        throw new UnsupportedOperationException("Not supported yet");
+    }
+
     private void obtainOptionsByQuery(String schemaName, String tableName, DBTable.DBTableOptions dbTableOptions) {
         String sql = this.sqlMapper.getSql(Statements.GET_TABLE_OPTION);
         jdbcOperations.query(sql, new Object[] {schemaName, tableName}, t -> {
@@ -974,19 +1039,20 @@ public class DorisSchemaAccessor implements DBSchemaAccessor {
     }
 
     private void obtainOptionsByParser(DBTable.DBTableOptions dbTableOptions, String ddl) {
-        SQLParser sqlParser = new OBMySQLParser();
-        CreateTable stmt = (CreateTable) sqlParser.parse(new StringReader(ddl));
-        TableOptions options = stmt.getTableOptions();
-        if (Objects.nonNull(options)) {
-            dbTableOptions.setCharsetName(options.getCharset());
-            dbTableOptions.setRowFormat(options.getRowFormat());
-            dbTableOptions.setCompressionOption(options.getCompression());
-            dbTableOptions.setReplicaNum(options.getReplicaNum());
-            dbTableOptions.setBlockSize(options.getBlockSize());
-            dbTableOptions.setUseBloomFilter(options.getUseBloomFilter());
-            dbTableOptions
-                    .setTabletSize(
-                            Objects.nonNull(options.getTabletSize()) ? options.getTabletSize().longValue() : null);
+        Statement statement = SqlParser.parseMysqlStatement(ddl);
+        if (statement instanceof CreateTable) {
+            CreateTable stmt = (CreateTable) statement;
+            TableOptions options = stmt.getTableOptions();
+            if (Objects.nonNull(options)) {
+                dbTableOptions.setCharsetName(options.getCharset());
+                dbTableOptions.setRowFormat(options.getRowFormat());
+                dbTableOptions.setCompressionOption(options.getCompression());
+                dbTableOptions.setReplicaNum(options.getReplicaNum());
+                dbTableOptions.setBlockSize(options.getBlockSize());
+                dbTableOptions.setUseBloomFilter(options.getUseBloomFilter());
+                dbTableOptions.setTabletSize(
+                        Objects.nonNull(options.getTabletSize()) ? options.getTabletSize().longValue() : null);
+            }
         }
     }
 

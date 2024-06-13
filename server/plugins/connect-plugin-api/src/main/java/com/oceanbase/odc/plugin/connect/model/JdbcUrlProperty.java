@@ -37,9 +37,7 @@ public class JdbcUrlProperty {
     private String serviceName;
 
     public JdbcUrlProperty(@NonNull String host, @NonNull Integer port, String defaultSchema,
-            Map<String, String> jdbcParameters,
-            String sid,
-            String serviceName) {
+            Map<String, String> jdbcParameters, String sid, String serviceName) {
         this.host = host;
         this.port = port;
         this.defaultSchema = defaultSchema;

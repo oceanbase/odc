@@ -46,6 +46,7 @@ import com.oceanbase.odc.service.flow.task.model.DatabaseChangeResult;
 import com.oceanbase.odc.service.flow.task.model.DatabaseChangeSqlContent;
 import com.oceanbase.odc.service.flow.task.model.RollbackPlanTaskResult;
 import com.oceanbase.odc.service.flow.task.util.DatabaseChangeFileReader;
+import com.oceanbase.odc.service.flow.task.util.TaskDownloadUrlsProvider;
 import com.oceanbase.odc.service.flow.util.FlowTaskUtil;
 import com.oceanbase.odc.service.iam.model.User;
 import com.oceanbase.odc.service.objectstorage.ObjectStorageFacade;
@@ -210,7 +211,8 @@ public class RollbackPlanRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Rol
                     File tempFile = new File(filePath);
                     try {
                         String objectName = cloudObjectStorageService.uploadTemp(resultFileId + ".sql", tempFile);
-                        resultFileDownloadUrl = cloudObjectStorageService.getBucketName() + "/" + objectName;
+                        resultFileDownloadUrl = TaskDownloadUrlsProvider
+                                .concatBucketAndObjectName(cloudObjectStorageService.getBucketName(), objectName);
                         log.info("Upload generated rollback plan task result file to OSS, file name={}", resultFileId);
                     } finally {
                         OdcFileUtil.deleteFiles(tempFile);
@@ -244,7 +246,7 @@ public class RollbackPlanRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Rol
     protected void onFailure(Long taskId, TaskService taskService) {
         log.warn("Generate rollback plan task failed, taskId={}", taskId);
         // flow continue if rollback task failed
-        super.callback(getFlowInstanceId(), getTargetTaskInstanceId(), FlowNodeStatus.COMPLETED, null);
+        setDownloadLogUrl();
     }
 
     @Override
@@ -266,14 +268,14 @@ public class RollbackPlanRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Rol
         } catch (Exception e) {
             log.warn("Failed to store generate rollback plan task result", e);
         }
-        super.callback(getFlowInstanceId(), getTargetTaskInstanceId(), FlowNodeStatus.COMPLETED, null);
+        setDownloadLogUrl();
 
     }
 
     @Override
     protected void onTimeout(Long taskId, TaskService taskService) {
         // flow continue if rollback task timeout
-        super.callback(getFlowInstanceId(), getTargetTaskInstanceId(), FlowNodeStatus.COMPLETED, null);
+        setDownloadLogUrl();
     }
 
     @Override

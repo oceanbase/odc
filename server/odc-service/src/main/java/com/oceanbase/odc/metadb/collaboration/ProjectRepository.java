@@ -31,4 +31,7 @@ public interface ProjectRepository extends JpaRepository<ProjectEntity, Long>, J
 
     List<ProjectEntity> findAllByOrganizationId(Long organizationId);
 
+    Optional<ProjectEntity> findByUniqueIdentifier(String uniqueIdentifier);
+
+    List<ProjectEntity> findByUniqueIdentifierIn(Collection<String> uniqueIdentifiers);
 }

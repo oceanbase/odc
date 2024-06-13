@@ -15,6 +15,7 @@
  */
 package com.oceanbase.odc.service.flow.instance;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -28,7 +29,6 @@ import org.flowable.engine.form.FormProperty;
 import org.flowable.engine.impl.form.BooleanFormType;
 
 import com.oceanbase.odc.common.event.EventPublisher;
-import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.flow.model.FlowableElementType;
 import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
@@ -71,7 +71,7 @@ public class FlowApprovalInstance extends BaseFlowUserTaskInstance {
     @Setter
     private String externalFlowInstanceId;
     @Setter
-    private String candidate;
+    private List<String> candidates;
     private final Long externalApprovalId;
     private boolean waitForConfirm;
 
@@ -170,8 +170,8 @@ public class FlowApprovalInstance extends BaseFlowUserTaskInstance {
             instances.get(i).updateTime = entities.get(i).getUpdateTime();
         }
         List<UserTaskInstanceCandidateEntity> entities1 = instances.stream()
-                .filter(instance -> StringUtils.isNotBlank(instance.getCandidate()))
-                .map(FlowApprovalInstance::mapToCandidateEntity).collect(Collectors.toList());
+                .filter(instance -> CollectionUtils.isNotEmpty(instance.getCandidates()))
+                .map(FlowApprovalInstance::mapToCandidateEntities).flatMap(List::stream).collect(Collectors.toList());
         userTaskInstanceCandidateRepository.batchCreate(entities1);
         return instances;
     }
@@ -187,9 +187,9 @@ public class FlowApprovalInstance extends BaseFlowUserTaskInstance {
         this.id = entity.getId();
         this.createTime = entity.getCreateTime();
         this.updateTime = entity.getUpdateTime();
-        if (this.candidate != null) {
-            UserTaskInstanceCandidateEntity candidateEntity = mapToCandidateEntity(this);
-            userTaskInstanceCandidateRepository.save(candidateEntity);
+        if (CollectionUtils.isNotEmpty(this.candidates)) {
+            List<UserTaskInstanceCandidateEntity> candidateEntities = mapToCandidateEntities(this);
+            userTaskInstanceCandidateRepository.batchCreate(candidateEntities);
         }
         log.info("Create approval task instance successfully, approvalTask={}", entity);
     }
@@ -290,13 +290,17 @@ public class FlowApprovalInstance extends BaseFlowUserTaskInstance {
         return entity;
     }
 
-    private static UserTaskInstanceCandidateEntity mapToCandidateEntity(FlowApprovalInstance instance) {
+    private static List<UserTaskInstanceCandidateEntity> mapToCandidateEntities(FlowApprovalInstance instance) {
         Verify.notNull(instance.getId(), "FlowApprovalInstanceId");
-        Verify.notNull(instance.getCandidate(), "FlowApprovalInstanceCandidate");
-        UserTaskInstanceCandidateEntity entity = new UserTaskInstanceCandidateEntity();
-        entity.setApprovalInstanceId(instance.getId());
-        entity.setResourceRoleIdentifier(instance.getCandidate());
-        return entity;
+        Verify.notEmpty(instance.getCandidates(), "FlowApprovalInstanceCandidate");
+        List<UserTaskInstanceCandidateEntity> entities = new ArrayList<>();
+        for (String candidate : instance.getCandidates()) {
+            UserTaskInstanceCandidateEntity entity = new UserTaskInstanceCandidateEntity();
+            entity.setApprovalInstanceId(instance.getId());
+            entity.setResourceRoleIdentifier(candidate);
+            entities.add(entity);
+        }
+        return entities;
     }
 
 }

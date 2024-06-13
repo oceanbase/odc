@@ -20,14 +20,15 @@ import java.sql.Connection;
 import org.pf4j.Extension;
 
 import com.oceanbase.odc.common.util.JdbcOperationsUtil;
+import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.plugin.schema.obmysql.OBMySQLViewExtension;
 import com.oceanbase.odc.plugin.schema.oboracle.utils.DBAccessorUtil;
+import com.oceanbase.tools.dbbrowser.DBBrowser;
 import com.oceanbase.tools.dbbrowser.editor.DBObjectOperator;
 import com.oceanbase.tools.dbbrowser.editor.oracle.OracleObjectOperator;
 import com.oceanbase.tools.dbbrowser.model.DBView;
 import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
 import com.oceanbase.tools.dbbrowser.template.DBObjectTemplate;
-import com.oceanbase.tools.dbbrowser.template.oracle.OracleViewTemplate;
 
 /**
  * @author jingtian
@@ -49,6 +50,8 @@ public class OBOracleViewExtension extends OBMySQLViewExtension {
 
     @Override
     protected DBObjectTemplate<DBView> getTemplate() {
-        return new OracleViewTemplate();
+        return DBBrowser.objectTemplate().viewTemplate()
+                .setType(DialectType.OB_ORACLE.getDBBrowserDialectTypeName()).create();
     }
+
 }

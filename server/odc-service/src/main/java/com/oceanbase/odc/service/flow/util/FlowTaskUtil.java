@@ -15,6 +15,7 @@
  */
 package com.oceanbase.odc.service.flow.util;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -43,6 +44,7 @@ import com.oceanbase.odc.service.db.browser.DBSchemaAccessors;
 import com.oceanbase.odc.service.flow.task.model.DBStructureComparisonParameter;
 import com.oceanbase.odc.service.flow.task.model.DatabaseChangeParameters;
 import com.oceanbase.odc.service.flow.task.model.MockProperties;
+import com.oceanbase.odc.service.flow.task.model.MultipleDatabaseChangeParameters;
 import com.oceanbase.odc.service.flow.task.model.OdcMockTaskConfig;
 import com.oceanbase.odc.service.flow.task.model.RuntimeTaskConstants;
 import com.oceanbase.odc.service.flow.task.model.ShadowTableSyncTaskParameter;
@@ -53,6 +55,7 @@ import com.oceanbase.odc.service.onlineschemachange.model.OnlineSchemaChangePara
 import com.oceanbase.odc.service.partitionplan.model.PartitionPlanConfig;
 import com.oceanbase.odc.service.permission.database.model.ApplyDatabaseParameter;
 import com.oceanbase.odc.service.permission.project.ApplyProjectParameter;
+import com.oceanbase.odc.service.permission.table.model.ApplyTableParameter;
 import com.oceanbase.odc.service.plugin.ConnectionPluginUtil;
 import com.oceanbase.odc.service.regulation.risklevel.model.RiskLevelDescriber;
 import com.oceanbase.odc.service.resultset.ResultSetExportTaskParameter;
@@ -86,6 +89,11 @@ public class FlowTaskUtil {
                 () -> new VerifyException("ApplyDatabaseParameter is absent"));
     }
 
+    public static ApplyTableParameter getApplyTableParameter(@NonNull DelegateExecution execution) {
+        return internalGetParameter(execution, ApplyTableParameter.class).orElseThrow(
+                () -> new VerifyException("ApplyTableParameter is absent"));
+    }
+
     public static ApplyProjectParameter getApplyProjectParameter(@NonNull DelegateExecution execution) {
         return internalGetParameter(execution, ApplyProjectParameter.class).orElseThrow(
                 () -> new VerifyException("ApplyProjectParameter is absent"));
@@ -94,6 +102,11 @@ public class FlowTaskUtil {
     public static DatabaseChangeParameters getAsyncParameter(@NonNull DelegateExecution execution) {
         return internalGetParameter(execution, DatabaseChangeParameters.class).orElseThrow(
                 () -> new VerifyException("OdcAsyncTaskParameters is absent"));
+    }
+
+    public static MultipleDatabaseChangeParameters getMultipleAsyncParameter(@NonNull DelegateExecution execution) {
+        return internalGetParameter(execution, MultipleDatabaseChangeParameters.class).orElseThrow(
+                () -> new VerifyException("OdcMultipleAsyncTaskParameters is absent"));
     }
 
     public static DataTransferConfig getDataTransferParameter(@NonNull DelegateExecution execution) {
@@ -252,6 +265,18 @@ public class FlowTaskUtil {
 
     public static void setConnectionConfig(@NonNull Map<String, Object> variables, @NonNull ConnectionConfig config) {
         variables.put(RuntimeTaskConstants.CONNECTION_CONFIG, config);
+    }
+
+    public static void setConnectionConfigList(@NonNull Map<String, Object> variables,
+            @NonNull List<ConnectionConfig> configList) {
+        variables.put(RuntimeTaskConstants.CONNECTION_CONFIG_LIST, configList);
+    }
+
+    @SuppressWarnings("all")
+    public static List<ConnectionConfig> getConnectionConfigList(@NonNull DelegateExecution execution) {
+        Object value = execution.getVariables().get(RuntimeTaskConstants.CONNECTION_CONFIG_LIST);
+        return internalGet(value, ArrayList.class)
+                .orElseThrow(() -> new VerifyException("ConnectionConfigList is absent"));
     }
 
     public static ConnectionConfig getConnectionConfig(@NonNull DelegateExecution execution) {

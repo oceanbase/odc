@@ -16,9 +16,7 @@
 package com.oceanbase.odc.service.connection;
 
 import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.SQLException;
-import java.sql.Statement;
+import java.util.Arrays;
 import java.util.Objects;
 import java.util.Properties;
 
@@ -31,7 +29,6 @@ import org.springframework.stereotype.Component;
 import org.springframework.validation.annotation.Validated;
 
 import com.oceanbase.odc.common.util.StringUtils;
-import com.oceanbase.odc.core.datasource.ConnectionInitializer;
 import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.core.shared.constant.ConnectType;
 import com.oceanbase.odc.core.shared.constant.ConnectionAccountType;
@@ -53,7 +50,8 @@ import com.oceanbase.odc.service.connection.ssl.ConnectionSSLAdaptor;
 import com.oceanbase.odc.service.connection.util.ConnectTypeUtil;
 import com.oceanbase.odc.service.plugin.ConnectionPluginUtil;
 import com.oceanbase.odc.service.session.factory.OBConsoleDataSourceFactory;
-import com.oceanbase.odc.service.session.initializer.SessionCreatedInitializer;
+import com.oceanbase.odc.service.session.initializer.BackupInstanceInitializer;
+import com.oceanbase.odc.service.session.initializer.DataSourceInitScriptInitializer;
 
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
@@ -153,7 +151,6 @@ public class ConnectionTesting {
             } else {
                 throw new UnsupportedOperationException("Unsupported type, " + type);
             }
-            config.setType(null);
 
             ConnectionExtensionPoint connectionExtensionPoint = ConnectionPluginUtil.getConnectionExtension(
                     (type != null) ? type.getDialectType() : DialectType.OB_MYSQL);
@@ -163,17 +160,26 @@ public class ConnectionTesting {
 
             TestResult result = connectionExtensionPoint.test(
                     connectionExtensionPoint.generateJdbcUrl(jdbcUrlProperties),
-                    testConnectionProperties, queryTimeoutSeconds);
+                    testConnectionProperties, queryTimeoutSeconds, Arrays.asList(
+                            new BackupInstanceInitializer(config),
+                            new DataSourceInitScriptInitializer(config, false)));
             log.info("Test connection completed, result: {}", result);
             if (result.getErrorCode() != null) {
                 if (type != null && !type.isCloud()
-
                         && StringUtils.endsWithAny(config.getHost(), ConnectTypeUtil.CLOUD_SUFFIX)) {
                     return ConnectionTestResult.connectTypeMismatch();
                 }
                 if (result.getErrorCode() == ErrorCodes.ObAccessDenied && type == ConnectType.OB_MYSQL) {
                     return ConnectionTestResult.fail(ErrorCodes.ObMysqlAccessDenied,
                             new String[] {schema, result.getArgs()[0]});
+                }
+                if (result.getErrorCode() == ErrorCodes.ObWeakReadConsistencyRequired
+                        && type.getDialectType().isOceanbase()) {
+                    return ConnectionTestResult.fail(
+                            ErrorCodes.ObWeakReadConsistencyRequired, new String[] {});
+                }
+                if (result.getErrorCode() == ErrorCodes.ConnectionInitScriptFailed) {
+                    return ConnectionTestResult.initScriptFailed(result.getArgs());
                 }
                 return new ConnectionTestResult(result, null);
             }
@@ -183,11 +189,6 @@ public class ConnectionTesting {
             ConnectionTestResult testResult = new ConnectionTestResult(result, connectType);
             if (type != null && connectType != null && !Objects.equals(connectType, type)) {
                 return ConnectionTestResult.connectTypeMismatch(connectType);
-            }
-            try {
-                testInitScript(connectionExtensionPoint, schema, config);
-            } catch (Exception e) {
-                return ConnectionTestResult.initScriptFailed(e);
             }
             return testResult;
         } catch (Exception e) {
@@ -240,27 +241,4 @@ public class ConnectionTesting {
         config.setSslConfig(req.getSslConfig());
         return config;
     }
-
-    private void testInitScript(ConnectionExtensionPoint extensionPoint,
-            String schema, ConnectionConfig config) throws SQLException {
-        if (StringUtils.isEmpty(config.getSessionInitScript())) {
-            return;
-        }
-        String jdbcUrl =
-                extensionPoint.generateJdbcUrl(getJdbcUrlProperties(config, schema));
-
-        Properties properties = getTestConnectionProperties(config);
-        properties.setProperty("socketTimeout", ConnectTypeUtil.REACHABLE_TIMEOUT_MILLIS + "");
-        properties.setProperty("connectTimeout", ConnectTypeUtil.REACHABLE_TIMEOUT_MILLIS + "");
-
-        ConnectionInitializer initializer = new SessionCreatedInitializer(config, false);
-        try (Connection connection = DriverManager.getConnection(jdbcUrl, properties);
-                Statement statement = connection.createStatement()) {
-            if (queryTimeoutSeconds >= 0) {
-                statement.setQueryTimeout(queryTimeoutSeconds);
-            }
-            initializer.init(connection);
-        }
-    }
-
 }

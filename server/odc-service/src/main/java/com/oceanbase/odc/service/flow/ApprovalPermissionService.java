@@ -22,6 +22,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -97,6 +98,9 @@ public class ApprovalPermissionService {
 
     public List<UserTaskInstanceEntity> getApprovableApprovalInstances() {
         long userId = authenticationFacade.currentUserId();
+        if (!userService.nullSafeGet(userId).isEnabled()) {
+            return new ArrayList<>();
+        }
         Set<Long> roleIds = userService.getCurrentUserRoleIds();
         Set<String> resourceRoleIdentifiers = userService.getCurrentUserResourceRoleIdentifiers();
         Set<FlowNodeStatus> unViewableStatuses = Collections.singleton(FlowNodeStatus.CREATED);
@@ -180,12 +184,12 @@ public class ApprovalPermissionService {
         if (approvalUserIds.isEmpty()) {
             return new HashMap<>();
         }
-        Map<Long, UserEntity> userId2User = userRepository.findByUserIds(approvalUserIds).stream()
+        Map<Long, UserEntity> userId2User = userRepository.findByUserIdsAndEnabled(approvalUserIds, true).stream()
                 .collect(Collectors.toMap(UserEntity::getId, userEntity -> userEntity));
 
         Map<Long, Set<UserEntity>> instanceId2Candidates = instanceId2UserIds.entrySet().stream().collect(
-                Collectors.toMap(Entry::getKey, entry -> entry.getValue().stream().map(userId2User::get).collect(
-                        Collectors.toSet())));
+                Collectors.toMap(Entry::getKey, entry -> entry.getValue().stream().map(userId2User::get)
+                        .filter(Objects::nonNull).collect(Collectors.toSet())));
         // map flow instance ids to users entity
         return instanceId2UserIds.entrySet().stream().collect(
                 Collectors.toMap(entry -> approvalInstanceId2FlowInstanceId.get(entry.getKey()),

@@ -25,6 +25,7 @@ public class RuntimeTaskConstants {
     public static final String FLOW_INSTANCE_ID = "flowInstanceId";
     public static final String TIMEOUT_MILLI_SECONDS = "timeOutMilliSeconds";
     public static final String CONNECTION_CONFIG = "connectionConfig";
+    public static final String CONNECTION_CONFIG_LIST = "connectionConfigList";
     public static final String SCHEMA_NAME = "schemaName";
     public static final String PARAMETERS = "parameters";
     public static final String TASK_SUBMITTER = "taskSubmitter";
@@ -38,5 +39,5 @@ public class RuntimeTaskConstants {
     public static final String RISKLEVEL = "riskLevel";
     public static final String SUCCESS_CREATE_EXT_INS = "successCreateExternalApprovalInstance";
     public static final String CLOUD_MAIN_ACCOUNT_ID = "cloudMainAccountId";
-
+    public static final String CALLBACK_TASK = "_callback_task_";
 }

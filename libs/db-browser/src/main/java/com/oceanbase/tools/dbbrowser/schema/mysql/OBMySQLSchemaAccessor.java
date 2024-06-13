@@ -27,6 +27,7 @@ import java.util.stream.Collectors;
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.jdbc.core.JdbcOperations;
 
+import com.oceanbase.tools.dbbrowser.model.DBColumnGroupElement;
 import com.oceanbase.tools.dbbrowser.model.DBDatabase;
 import com.oceanbase.tools.dbbrowser.model.DBIndexAlgorithm;
 import com.oceanbase.tools.dbbrowser.model.DBObjectIdentity;
@@ -44,6 +45,8 @@ import com.oceanbase.tools.dbbrowser.schema.constant.StatementsFiles;
 import com.oceanbase.tools.dbbrowser.util.DBSchemaAccessorUtil;
 import com.oceanbase.tools.dbbrowser.util.MySQLSqlBuilder;
 import com.oceanbase.tools.dbbrowser.util.StringUtils;
+import com.oceanbase.tools.sqlparser.statement.Statement;
+import com.oceanbase.tools.sqlparser.statement.createtable.CreateTable;
 
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
@@ -98,20 +101,6 @@ public class OBMySQLSchemaAccessor extends MySQLNoLessThan5700SchemaAccessor {
             database.setCollation(rs.getString("DEFAULT_COLLATION_NAME"));
         });
         return database;
-    }
-
-    @Override
-    public List<DBDatabase> listDatabases() {
-        String sql =
-                "SELECT SCHEMA_NAME, DEFAULT_CHARACTER_SET_NAME, DEFAULT_COLLATION_NAME FROM information_schema.schemata;";
-        return jdbcOperations.query(sql, (rs, num) -> {
-            DBDatabase database = new DBDatabase();
-            database.setId(rs.getString("SCHEMA_NAME"));
-            database.setName(rs.getString("SCHEMA_NAME"));
-            database.setCharset(rs.getString("DEFAULT_CHARACTER_SET_NAME"));
-            database.setCollation(rs.getString("DEFAULT_COLLATION_NAME"));
-            return database;
-        }).stream().filter(database -> !ESCAPE_SCHEMA_SET.contains(database.getName())).collect(Collectors.toList());
     }
 
     @Override
@@ -204,7 +193,7 @@ public class OBMySQLSchemaAccessor extends MySQLNoLessThan5700SchemaAccessor {
     @Override
     public List<DBTableIndex> listTableIndexes(String schemaName, String tableName) {
         List<DBTableIndex> indexList = super.listTableIndexes(schemaName, tableName);
-        fillIndexRange(indexList, schemaName, tableName);
+        fillIndexInfo(indexList, schemaName, tableName);
         for (DBTableIndex index : indexList) {
             if (index.getAlgorithm() == DBIndexAlgorithm.UNKNOWN) {
                 index.setAlgorithm(DBIndexAlgorithm.BTREE);
@@ -226,7 +215,7 @@ public class OBMySQLSchemaAccessor extends MySQLNoLessThan5700SchemaAccessor {
     public Map<String, List<DBTableIndex>> listTableIndexes(String schemaName) {
         Map<String, List<DBTableIndex>> tableName2Indexes = super.listTableIndexes(schemaName);
         for (Map.Entry<String, List<DBTableIndex>> entry : tableName2Indexes.entrySet()) {
-            fillIndexRange(entry.getValue(), schemaName, entry.getKey());
+            fillIndexInfo(entry.getValue(), schemaName, entry.getKey());
             for (DBTableIndex index : entry.getValue()) {
                 if (index.getAlgorithm() == DBIndexAlgorithm.UNKNOWN) {
                     index.setAlgorithm(DBIndexAlgorithm.BTREE);
@@ -240,12 +229,28 @@ public class OBMySQLSchemaAccessor extends MySQLNoLessThan5700SchemaAccessor {
         Map<String, List<DBTableIndex>> tableName2Indexes = super.listTableIndexes(schemaName);
         tableName2Indexes.keySet().forEach(tableName -> {
             if (tableName2Ddl.containsKey(tableName)) {
-                parseDdlToSetIndexRange(tableName2Ddl.get(tableName), tableName2Indexes.get(tableName));
+                parseDdlToSetIndexInfo(tableName2Ddl.get(tableName), tableName2Indexes.get(tableName));
             } else {
-                fillIndexRange(tableName2Indexes.get(tableName), schemaName, tableName);
+                fillIndexInfo(tableName2Indexes.get(tableName), schemaName, tableName);
             }
         });
         return tableName2Indexes;
+    }
+
+    @Override
+    public List<DBColumnGroupElement> listTableColumnGroups(String schemaName, String tableName) {
+        return listTableColumnGroups(getTableDDL(schemaName, tableName));
+    }
+
+    private List<DBColumnGroupElement> listTableColumnGroups(String ddl) {
+        Statement statement = SqlParser.parseMysqlStatement(ddl);
+        if (statement instanceof CreateTable) {
+            CreateTable stmt = (CreateTable) statement;
+            return stmt.getColumnGroupElements() == null ? Collections.emptyList()
+                    : stmt.getColumnGroupElements().stream()
+                            .map(DBColumnGroupElement::ofColumnGroupElement).collect(Collectors.toList());
+        }
+        return Collections.emptyList();
     }
 
     @Override
@@ -253,12 +258,12 @@ public class OBMySQLSchemaAccessor extends MySQLNoLessThan5700SchemaAccessor {
         return true;
     }
 
-    protected void fillIndexRange(List<DBTableIndex> indexList, String schemaName,
+    protected void fillIndexInfo(List<DBTableIndex> indexList, String schemaName,
             String tableName) {
-        setIndexRangeByDDL(indexList, schemaName, tableName);
+        setIndexInfoByDDL(indexList, schemaName, tableName);
     }
 
-    protected void setIndexRangeByDDL(List<DBTableIndex> indexList, String schemaName, String tableName) {
+    protected void setIndexInfoByDDL(List<DBTableIndex> indexList, String schemaName, String tableName) {
         try {
             MySQLSqlBuilder sb = new MySQLSqlBuilder();
             sb.append("show create table ");
@@ -269,7 +274,7 @@ public class OBMySQLSchemaAccessor extends MySQLNoLessThan5700SchemaAccessor {
             if (CollectionUtils.isEmpty(ddl) || StringUtils.isBlank(ddl.get(0))) {
                 fillWarning(indexList, DBObjectType.INDEX, "get index DDL failed");
             } else {
-                parseDdlToSetIndexRange(ddl.get(0), indexList);
+                parseDdlToSetIndexInfo(ddl.get(0), indexList);
             }
         } catch (Exception e) {
             fillWarning(indexList, DBObjectType.INDEX, "query index ddl failed");
@@ -277,7 +282,7 @@ public class OBMySQLSchemaAccessor extends MySQLNoLessThan5700SchemaAccessor {
         }
     }
 
-    private void parseDdlToSetIndexRange(String ddl, List<DBTableIndex> indexList) {
+    private void parseDdlToSetIndexInfo(String ddl, List<DBTableIndex> indexList) {
         if (StringUtils.isBlank(ddl)) {
             fillWarning(indexList, DBObjectType.INDEX, "table ddl is blank, can not set index range by parse ddl");
             return;
@@ -289,6 +294,7 @@ public class OBMySQLSchemaAccessor extends MySQLNoLessThan5700SchemaAccessor {
             indexList.forEach(index -> result.getIndexes().forEach(dbIndex -> {
                 if (StringUtils.equals(index.getName(), dbIndex.getName())) {
                     index.setGlobal("GLOBAL".equalsIgnoreCase(dbIndex.getRange().name()));
+                    index.setColumnGroups(dbIndex.getColumnGroups());
                 }
             }));
         }
@@ -343,6 +349,7 @@ public class OBMySQLSchemaAccessor extends MySQLNoLessThan5700SchemaAccessor {
             table.setIndexes(tableName2Indexes.getOrDefault(tableName, new ArrayList<>()));
             table.setConstraints(tableName2Constraints.getOrDefault(tableName, new ArrayList<>()));
             table.setTableOptions(tableName2Options.getOrDefault(tableName, new DBTableOptions()));
+            table.setColumnGroups(listTableColumnGroups(tableName2Ddl.get(tableName)));
             try {
                 table.setPartition(getPartition(schemaName, tableName));
             } catch (Exception e) {

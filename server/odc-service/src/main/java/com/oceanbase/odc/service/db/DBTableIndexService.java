@@ -22,12 +22,9 @@ import org.springframework.stereotype.Service;
 
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.session.ConnectionSession;
-import com.oceanbase.odc.core.session.ConnectionSessionUtil;
-import com.oceanbase.odc.service.db.browser.DBObjectEditorFactory;
 import com.oceanbase.odc.service.db.browser.DBSchemaAccessors;
-import com.oceanbase.odc.service.db.browser.DBTableIndexEditorFactory;
+import com.oceanbase.odc.service.db.browser.DBTableIndexEditors;
 import com.oceanbase.odc.service.db.model.OdcDBTableIndex;
-import com.oceanbase.tools.dbbrowser.editor.DBTableIndexEditor;
 import com.oceanbase.tools.dbbrowser.model.DBTableIndex;
 import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
 
@@ -44,11 +41,8 @@ public class DBTableIndexService {
         return indices.stream().map(OdcDBTableIndex::new).collect(Collectors.toList());
     }
 
-    public String getDeleteSql(@NonNull ConnectionSession connectionSession,
-            OdcDBTableIndex index) {
-        DBObjectEditorFactory<DBTableIndexEditor> factory = new DBTableIndexEditorFactory(
-                connectionSession.getConnectType(), ConnectionSessionUtil.getVersion(connectionSession));
-        return factory.create().generateDropObjectDDL(index);
+    public String getDeleteSql(@NonNull ConnectionSession connectionSession, OdcDBTableIndex index) {
+        return DBTableIndexEditors.create(connectionSession).generateDropObjectDDL(index);
     }
 
 }
