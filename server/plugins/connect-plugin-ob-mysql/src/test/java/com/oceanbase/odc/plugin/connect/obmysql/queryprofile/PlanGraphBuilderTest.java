@@ -27,7 +27,6 @@ import org.junit.Test;
 import com.google.common.collect.ImmutableMap;
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.core.shared.model.OBSqlPlan;
-import com.oceanbase.odc.core.shared.model.PredicateKey;
 import com.oceanbase.odc.plugin.connect.model.diagnose.PlanGraph;
 import com.oceanbase.odc.plugin.connect.model.diagnose.PlanGraphOperator;
 import com.oceanbase.odc.plugin.connect.obmysql.diagnose.PlanGraphBuilder;
@@ -59,7 +58,7 @@ public class PlanGraphBuilderTest {
     public void test_ParseAccessPredicates() {
         String accessPredicates = "access([ORDERS.O_ORDERKEY], [ORDERS.O_CUSTKEY])";
         Map<String, List<String>> access = PlanGraphBuilder.parsePredicates(accessPredicates, PARAMS);
-        List<String> columns = access.get(PredicateKey.getLabel("access"));
+        List<String> columns = access.get("access");
         Assert.assertEquals(Arrays.asList("ORDERS.O_ORDERKEY", "ORDERS.O_CUSTKEY"), columns);
     }
 
@@ -67,7 +66,7 @@ public class PlanGraphBuilderTest {
     public void test_ParseFilterPredicates() {
         String filterPredicates = "filter([ORDERS.O_ORDERDATE >= :3], [ORDERS.O_ORDERDATE <= :4])";
         Map<String, List<String>> filter = PlanGraphBuilder.parsePredicates(filterPredicates, PARAMS);
-        List<String> colums = filter.get(PredicateKey.getLabel("filter"));
+        List<String> colums = filter.get("filter");
         Assert.assertEquals(Arrays.asList(
                 "ORDERS.O_ORDERDATE >= '1995-01-01 00:00:00'", "ORDERS.O_ORDERDATE <= '1996-12-30 00:00:00'"),
                 colums);

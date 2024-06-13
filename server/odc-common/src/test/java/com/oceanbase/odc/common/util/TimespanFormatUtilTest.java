@@ -51,16 +51,16 @@ public class TimespanFormatUtilTest {
     @Parameters(name = "{index}: var[{0}]={1}")
     public static Collection<Object[]> data() {
         return Arrays.asList(new Object[][] {
-                {1000, TimeUnit.MICROSECONDS, ChronoUnit.MICROS, "", "1.000ms"},
-                {1550000, TimeUnit.MICROSECONDS, ChronoUnit.MICROS, "", "1.550s"},
-                {180, TimeUnit.SECONDS, ChronoUnit.SECONDS, "", "3.000min"},
-                {5400, TimeUnit.SECONDS, ChronoUnit.SECONDS, "", "1.500h"},
-                {86400, TimeUnit.SECONDS, ChronoUnit.SECONDS, " ", "1.000 d"},
-                {123000, TimeUnit.MICROSECONDS, ChronoUnit.MICROS, " ", "123.000 ms"},
-                {6780000, TimeUnit.MILLISECONDS, ChronoUnit.MILLIS, " ", "1.883 h"},
-                {4000, TimeUnit.SECONDS, ChronoUnit.SECONDS, "-", "1.111-h"},
-                {1440, TimeUnit.MINUTES, ChronoUnit.MINUTES, "-", "1.000-d"},
-                {1000000, TimeUnit.MICROSECONDS, ChronoUnit.MICROS, "-", "1.000-s"}
+                {1000, TimeUnit.MICROSECONDS, ChronoUnit.MICROS, "", "1.00ms"},
+                {1550000, TimeUnit.MICROSECONDS, ChronoUnit.MICROS, "", "1.55s"},
+                {180, TimeUnit.SECONDS, ChronoUnit.SECONDS, "", "3.00min"},
+                {5400, TimeUnit.SECONDS, ChronoUnit.SECONDS, "", "1.50h"},
+                {86400, TimeUnit.SECONDS, ChronoUnit.SECONDS, " ", "1.00 d"},
+                {123000, TimeUnit.MICROSECONDS, ChronoUnit.MICROS, " ", "123.00 ms"},
+                {6780000, TimeUnit.MILLISECONDS, ChronoUnit.MILLIS, " ", "1.88 h"},
+                {4000, TimeUnit.SECONDS, ChronoUnit.SECONDS, "-", "1.11-h"},
+                {1440, TimeUnit.MINUTES, ChronoUnit.MINUTES, "-", "1.00-d"},
+                {1000000, TimeUnit.MICROSECONDS, ChronoUnit.MICROS, "-", "1.00-s"}
         });
     }
 
