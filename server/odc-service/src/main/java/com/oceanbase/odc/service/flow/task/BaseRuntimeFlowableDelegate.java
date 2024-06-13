@@ -15,6 +15,8 @@
  */
 package com.oceanbase.odc.service.flow.task;
 
+import java.util.Collections;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.Callable;
@@ -27,6 +29,7 @@ import java.util.concurrent.TimeoutException;
 import javax.annotation.PostConstruct;
 
 import org.flowable.engine.delegate.DelegateExecution;
+import org.flowable.engine.delegate.ExecutionListener;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import com.oceanbase.odc.common.event.EventPublisher;
@@ -44,7 +47,9 @@ import com.oceanbase.odc.service.flow.event.TaskInstanceCreatedListener;
 import com.oceanbase.odc.service.flow.exception.ServiceTaskError;
 import com.oceanbase.odc.service.flow.instance.FlowTaskInstance;
 import com.oceanbase.odc.service.flow.listener.ActiveTaskStatisticsListener;
+import com.oceanbase.odc.service.flow.listener.ServiceTaskExecutingCompleteListener;
 import com.oceanbase.odc.service.flow.model.ExecutionStrategyConfig;
+import com.oceanbase.odc.service.task.TaskService;
 
 import lombok.Getter;
 import lombok.NonNull;
@@ -66,6 +71,8 @@ public abstract class BaseRuntimeFlowableDelegate<T> extends BaseFlowableDelegat
     @Getter
     private Long targetTaskInstanceId;
     @Getter
+    private Long targetTaskId;
+    @Getter
     private TaskType taskType;
     @Getter
     private Long flowInstanceId;
@@ -75,6 +82,8 @@ public abstract class BaseRuntimeFlowableDelegate<T> extends BaseFlowableDelegat
     private FlowableAdaptor flowableAdaptor;
     @Autowired
     private EventPublisher eventPublisher;
+    @Autowired
+    protected TaskService taskService;
     @Autowired
     private FlowInstanceRepository flowInstanceRepository;
     private volatile T returnObject = null;
@@ -181,6 +190,7 @@ public abstract class BaseRuntimeFlowableDelegate<T> extends BaseFlowableDelegat
 
         this.targetTaskInstanceId = flowTaskInstance.getId();
         this.taskType = flowTaskInstance.getTaskType();
+        this.targetTaskId = flowTaskInstance.getTargetTaskId();
         this.strategyConfig = flowTaskInstance.getStrategyConfig();
         flowTaskInstance.dealloc();
     }
@@ -192,6 +202,19 @@ public abstract class BaseRuntimeFlowableDelegate<T> extends BaseFlowableDelegat
             log.info("Monitor task instance creation and bind tasks, taskInstanceId={}, activityId={}",
                     taskInstance.getId(), activityId);
         }
+    }
+
+    public void updateHeartbeatTime() {
+        try {
+            this.taskService.updateHeartbeatTime(getTargetTaskId());
+        } catch (Exception e) {
+            log.warn("Failed to update heartbeat time, taskId={}", getTargetTaskId(), e);
+        }
+    }
+
+    @Override
+    public List<Class<? extends ExecutionListener>> getExecutionListenerClasses() {
+        return Collections.singletonList(ServiceTaskExecutingCompleteListener.class);
     }
 
     protected void updateFlowInstanceStatus(@NonNull FlowStatus flowStatus) {

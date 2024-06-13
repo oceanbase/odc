@@ -15,6 +15,10 @@
  */
 package com.oceanbase.odc.metadb.config;
 
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.Table;
+
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -25,16 +29,32 @@ import lombok.EqualsAndHashCode;
  */
 @Data
 @EqualsAndHashCode(callSuper = true)
+@Entity
+@Table(name = "config_system_configuration")
 public class SystemConfigEntity extends ConfigEntity {
+
+    @Column(name = "creator_id")
+    private Long creatorId;
+
+    @Column(name = "last_modifier_id")
+    private Long lastModifierId;
+
+
+    @Column(name = "`value_deprecated`")
+    private String valueDeprecated;
 
     /**
      * application name
      */
+    @Column(updatable = false)
     private String application;
-
     /**
      * profile for Spring Cloud Config
      */
+    @Column(updatable = false)
     private String profile;
+
+    @Column(updatable = false)
+    private String label;
 
 }

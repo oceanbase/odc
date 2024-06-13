@@ -98,7 +98,7 @@ public class OBOracleExtensionTest extends BaseExtensionPointTest {
     @Test
     public void test_ob_oracle_url_is_valid() {
         String url = connectionExtensionPoint.generateJdbcUrl(getJdbcProperties());
-        TestResult result = connectionExtensionPoint.test(url, getTestConnectionProperties(), 30);
+        TestResult result = connectionExtensionPoint.test(url, getTestConnectionProperties(), 30, null);
         Assert.assertTrue(result.isActive());
         Assert.assertNull(result.getErrorCode());
     }
@@ -108,7 +108,7 @@ public class OBOracleExtensionTest extends BaseExtensionPointTest {
         String url = connectionExtensionPoint.generateJdbcUrl(getJdbcProperties());
         Properties testConnectionProperties = getTestConnectionProperties();
         testConnectionProperties.put(ConnectionPropertiesBuilder.PASSWORD, UUID.randomUUID().toString());
-        TestResult result = connectionExtensionPoint.test(url, testConnectionProperties, 30);
+        TestResult result = connectionExtensionPoint.test(url, testConnectionProperties, 30, null);
         Assert.assertFalse(result.isActive());
         Assert.assertEquals(ErrorCodes.ObAccessDenied, result.getErrorCode());
     }
@@ -119,7 +119,7 @@ public class OBOracleExtensionTest extends BaseExtensionPointTest {
         JdbcUrlProperty jdbcProperties = getJdbcProperties();
         jdbcProperties.setPort(configuration.getPort() + 100);
         String url = connectionExtensionPoint.generateJdbcUrl(jdbcProperties);
-        TestResult result = connectionExtensionPoint.test(url, getTestConnectionProperties(), 30);
+        TestResult result = connectionExtensionPoint.test(url, getTestConnectionProperties(), 30, null);
 
         Assert.assertFalse(result.isActive());
         Assert.assertEquals(ErrorCodes.ConnectionUnknownPort, result.getErrorCode());
@@ -130,7 +130,7 @@ public class OBOracleExtensionTest extends BaseExtensionPointTest {
         JdbcUrlProperty jdbcProperties = getJdbcProperties();
         jdbcProperties.setHost(UUID.randomUUID().toString());
         String url = connectionExtensionPoint.generateJdbcUrl(jdbcProperties);
-        TestResult result = connectionExtensionPoint.test(url, getTestConnectionProperties(), 30);
+        TestResult result = connectionExtensionPoint.test(url, getTestConnectionProperties(), 30, null);
 
         Assert.assertFalse(result.isActive());
         Assert.assertEquals(ErrorCodes.ConnectionUnknownHost, result.getErrorCode());

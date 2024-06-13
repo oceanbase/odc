@@ -31,6 +31,7 @@ import java.util.Objects;
 import java.util.Properties;
 import java.util.stream.Collectors;
 
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.Validate;
 import org.pf4j.Extension;
 
@@ -94,7 +95,8 @@ public class OBMySQLConnectionExtension implements ConnectionExtensionPoint {
     }
 
     @Override
-    public TestResult test(String jdbcUrl, Properties properties, int queryTimeout) {
+    public TestResult test(String jdbcUrl, Properties properties, int queryTimeout,
+            List<ConnectionInitializer> initializers) {
         /**
          * 查看 driver 代码可知：driver 建立连接时使用的 socket 超时实际是 connectTimeout 的值，因此要让超时设置生效必须设置 connectTimeout，
          * 为了保险起见 socketTimeout 也一并设置。 且在 driver 的实现中，如果 properties 中设置某个参数，这个参数如果在 url 中再次出现，则会以 properties
@@ -102,7 +104,7 @@ public class OBMySQLConnectionExtension implements ConnectionExtensionPoint {
          */
         properties.setProperty("socketTimeout", REACHABLE_TIMEOUT_MILLIS + "");
         properties.setProperty("connectTimeout", REACHABLE_TIMEOUT_MILLIS + "");
-        return internalTest(jdbcUrl, properties, queryTimeout);
+        return internalTest(jdbcUrl, properties, queryTimeout, initializers);
     }
 
     @Override
@@ -126,7 +128,8 @@ public class OBMySQLConnectionExtension implements ConnectionExtensionPoint {
         return jdbcUrlParams;
     }
 
-    protected TestResult internalTest(String jdbcUrl, Properties properties, int queryTimeout) {
+    protected TestResult internalTest(String jdbcUrl, Properties properties, int queryTimeout,
+            List<ConnectionInitializer> initializers) {
         HostAddress hostAddress;
         try {
             hostAddress = getConnectionInfo(jdbcUrl, null).getHostAddresses().get(0);
@@ -138,6 +141,16 @@ public class OBMySQLConnectionExtension implements ConnectionExtensionPoint {
                 if (queryTimeout >= 0) {
                     statement.setQueryTimeout(queryTimeout);
                 }
+                if (CollectionUtils.isNotEmpty(initializers)) {
+                    try {
+                        for (ConnectionInitializer initializer : initializers) {
+                            initializer.init(connection);
+                        }
+                    } catch (Exception e) {
+                        return TestResult.initScriptFailed(e);
+                    }
+                }
+                executeTestSqls(statement);
                 return TestResult.success();
             }
         } catch (Exception e) {
@@ -172,9 +185,13 @@ public class OBMySQLConnectionExtension implements ConnectionExtensionPoint {
                 return TestResult.unknownHost(host);
             } else if (StringUtils.containsIgnoreCase(rootCause.getMessage(), "Access denied")) {
                 return TestResult.accessDenied(rootCause.getLocalizedMessage());
+            } else if (StringUtils.containsIgnoreCase(rootCause.getMessage(),
+                    "standby cluster support weak read only")) {
+                return TestResult.obWeakReadConsistencyRequired();
             }
             return TestResult.unknownError(rootCause);
         }
     }
 
+    protected void executeTestSqls(Statement statement) throws SQLException {}
 }

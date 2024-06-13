@@ -188,4 +188,18 @@ public class DataConvertUtilTest {
                         "GEOMETRYCOLLECTION (POINT (0 0), LINESTRING (1 1, 2 2)) | 4326")
         });
     }
+
+    @Test
+    public void testGeometryForOBOracle() {
+        Assert.assertArrayEquals(new Object[] {
+                "SDO_GEOMETRY(2001, NULL, SDO_POINT_TYPE(12, 34, NULL)",
+                "SDO_GEOMETRY(2001, NULL, SDO_POINT_TYPE(12, 34, NULL)"
+        }, new Object[] {
+                DataConvertUtil.convertToSqlString(DialectType.OB_ORACLE, "geometry",
+                        "SDO_GEOMETRY(2001, NULL, SDO_POINT_TYPE(12, 34, NULL)"),
+                DataConvertUtil.convertToSqlString(DialectType.OB_ORACLE, "sdo_geometry",
+                        "SDO_GEOMETRY(2001, NULL, SDO_POINT_TYPE(12, 34, NULL)")
+        });
+    }
+
 }

@@ -78,9 +78,10 @@ public abstract class BaseStatusModifyListener<T extends BaseFlowNodeInstance> e
         }
         T target = targetOptional.get();
         try {
-            Optional<FlowNodeStatus> optional = this.retryExecutor.run(() -> {
+            Optional<String> optional = this.retryExecutor.run(() -> {
                 try {
-                    return function.apply(target);
+                    FlowNodeStatus status = function.apply(target);
+                    return status != null ? status.name() : "NULL";
                 } catch (Exception e) {
                     return null;
                 }

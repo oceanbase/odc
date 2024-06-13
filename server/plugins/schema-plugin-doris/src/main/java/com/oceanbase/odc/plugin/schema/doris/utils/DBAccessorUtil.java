@@ -17,16 +17,13 @@ package com.oceanbase.odc.plugin.schema.doris.utils;
 
 import java.sql.Connection;
 
-import org.springframework.jdbc.core.JdbcOperations;
-
 import com.oceanbase.odc.common.util.JdbcOperationsUtil;
-import com.oceanbase.odc.common.util.VersionUtils;
-import com.oceanbase.odc.core.shared.exception.UnsupportedException;
+import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.plugin.connect.doris.DorisInformationExtension;
+import com.oceanbase.tools.dbbrowser.DBBrowser;
+import com.oceanbase.tools.dbbrowser.editor.DBTableEditor;
 import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
-import com.oceanbase.tools.dbbrowser.schema.doris.DorisSchemaAccessor;
 import com.oceanbase.tools.dbbrowser.stats.DBStatsAccessor;
-import com.oceanbase.tools.dbbrowser.stats.mysql.DorisStatsAccessor;
 
 /**
  * @author gaoda.xy
@@ -35,28 +32,27 @@ import com.oceanbase.tools.dbbrowser.stats.mysql.DorisStatsAccessor;
 public class DBAccessorUtil {
 
     public static String getDbVersion(Connection connection) {
-        DorisInformationExtension extension = new DorisInformationExtension();
-        return extension.getDBVersion(connection);
+        return new DorisInformationExtension().getDBVersion(connection);
     }
 
     public static DBSchemaAccessor getSchemaAccessor(Connection connection) {
-        String dbVersion = getDbVersion(connection);
-        JdbcOperations jdbcOperations = JdbcOperationsUtil.getJdbcOperations(connection);
-        if (VersionUtils.isGreaterThanOrEqualsTo(dbVersion, "5.7.0")) {
-            return new DorisSchemaAccessor(jdbcOperations);
-        } else {
-            throw new UnsupportedException(String.format("Doris version '%s' not supported", dbVersion));
-        }
+        return DBBrowser.schemaAccessor()
+                .setJdbcOperations(JdbcOperationsUtil.getJdbcOperations(connection))
+                .setDbVersion(getDbVersion(connection))
+                .setType(DialectType.DORIS.getDBBrowserDialectTypeName()).create();
     }
 
     public static DBStatsAccessor getStatsAccessor(Connection connection) {
-        String dbVersion = getDbVersion(connection);
-        JdbcOperations jdbcOperations = JdbcOperationsUtil.getJdbcOperations(connection);
-        if (VersionUtils.isGreaterThanOrEqualsTo(dbVersion, "5.7.0")) {
-            return new DorisStatsAccessor(jdbcOperations);
-        } else {
-            throw new UnsupportedException(String.format("Doris version '%s' not supported", dbVersion));
-        }
+        return DBBrowser.statsAccessor()
+                .setDbVersion(getDbVersion(connection))
+                .setJdbcOperations(JdbcOperationsUtil.getJdbcOperations(connection))
+                .setType(DialectType.DORIS.getDBBrowserDialectTypeName()).create();
+    }
+
+    public static DBTableEditor getTableEditor(Connection connection) {
+        return DBBrowser.objectEditor().tableEditor()
+                .setDbVersion(DBAccessorUtil.getDbVersion(connection))
+                .setType(DialectType.DORIS.getDBBrowserDialectTypeName()).create();
     }
 
 }

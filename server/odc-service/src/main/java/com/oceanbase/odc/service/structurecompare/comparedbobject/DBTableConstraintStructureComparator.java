@@ -15,8 +15,6 @@
  */
 package com.oceanbase.odc.service.structurecompare.comparedbobject;
 
-import java.util.Collections;
-
 import org.springframework.beans.BeanUtils;
 
 import com.oceanbase.odc.service.structurecompare.model.ComparisonResult;
@@ -37,13 +35,14 @@ public class DBTableConstraintStructureComparator extends AbstractDBObjectStruct
     private DBTableConstraintEditor tgtConstraintEditor;
 
     public DBTableConstraintStructureComparator(DBTableConstraintEditor tgtConstraintEditor, String srcSchemaName,
-            String tgtSchemaName) {
-        super(srcSchemaName, tgtSchemaName);
+            String tgtSchemaName, String srcTableName, String tgtTableName) {
+        super(srcSchemaName, tgtSchemaName, srcTableName, tgtTableName);
         this.tgtConstraintEditor = tgtConstraintEditor;
     }
 
     @Override
-    protected DBObjectComparisonResult buildOnlyInTargetResult(DBTableConstraint tgtDbObject, String srcSchemaName) {
+    protected DBObjectComparisonResult buildOnlyInTargetResult(DBTableConstraint tgtDbObject, String srcSchemaName,
+            String srcTableName) {
         DBObjectComparisonResult result = new DBObjectComparisonResult(DBObjectType.CONSTRAINT, tgtDbObject.getName(),
                 srcSchemaName, tgtDbObject.getSchemaName());
         result.setComparisonResult(ComparisonResult.ONLY_IN_TARGET);
@@ -52,12 +51,14 @@ public class DBTableConstraintStructureComparator extends AbstractDBObjectStruct
     }
 
     @Override
-    protected DBObjectComparisonResult buildOnlyInSourceResult(DBTableConstraint srcDbObject, String tgtSchemaName) {
+    protected DBObjectComparisonResult buildOnlyInSourceResult(DBTableConstraint srcDbObject, String tgtSchemaName,
+            String tgtTableName) {
         DBObjectComparisonResult result = new DBObjectComparisonResult(DBObjectType.CONSTRAINT, srcDbObject.getName(),
                 srcDbObject.getSchemaName(), tgtSchemaName);
         result.setComparisonResult(ComparisonResult.ONLY_IN_SOURCE);
 
-        DBTableConstraint copiedSrcCons = copySrcConstraintWithTgtSchemaName(srcDbObject, tgtSchemaName);
+        DBTableConstraint copiedSrcCons =
+                copySrcConstraintWithTgtSchemaNameAndTgtTableName(srcDbObject, tgtSchemaName, tgtTableName);
         if (copiedSrcCons.getType().equals(DBConstraintType.FOREIGN_KEY)) {
             copiedSrcCons.setReferenceSchemaName(tgtSchemaName);
         }
@@ -65,11 +66,12 @@ public class DBTableConstraintStructureComparator extends AbstractDBObjectStruct
         return result;
     }
 
-    private DBTableConstraint copySrcConstraintWithTgtSchemaName(DBTableConstraint srcConstraint,
-            String tgtSchemaName) {
+    private DBTableConstraint copySrcConstraintWithTgtSchemaNameAndTgtTableName(DBTableConstraint srcConstraint,
+            String tgtSchemaName, String tgtTableName) {
         DBTableConstraint copiedSrcConstraint = new DBTableConstraint();
         BeanUtils.copyProperties(srcConstraint, copiedSrcConstraint);
         copiedSrcConstraint.setSchemaName(tgtSchemaName);
+        copiedSrcConstraint.setTableName(tgtTableName);
         return copiedSrcConstraint;
     }
 
@@ -79,20 +81,8 @@ public class DBTableConstraintStructureComparator extends AbstractDBObjectStruct
         DBObjectComparisonResult result = new DBObjectComparisonResult(DBObjectType.CONSTRAINT, srcConstraint.getName(),
                 this.srcSchemaName, this.tgtSchemaName);
 
-        DBTableConstraint copiedSrcConstraint = copySrcConstraintWithTgtSchemaName(srcConstraint, this.tgtSchemaName);
-
-        /**
-         * sort column names and reference column names in order to avoid unequal judgment constraint due to
-         * different column name orders
-         */
-        Collections.sort(tgtConstraint.getColumnNames());
-        Collections.sort(copiedSrcConstraint.getColumnNames());
-        if (!tgtConstraint.getReferenceColumnNames().isEmpty()) {
-            Collections.sort(tgtConstraint.getReferenceColumnNames());
-        }
-        if (!copiedSrcConstraint.getReferenceColumnNames().isEmpty()) {
-            Collections.sort(copiedSrcConstraint.getReferenceColumnNames());
-        }
+        DBTableConstraint copiedSrcConstraint = copySrcConstraintWithTgtSchemaNameAndTgtTableName(srcConstraint,
+                this.tgtSchemaName, tgtConstraint.getTableName());
 
         String ddl = this.tgtConstraintEditor.generateUpdateObjectDDL(
                 tgtConstraint, copiedSrcConstraint);
@@ -105,4 +95,5 @@ public class DBTableConstraintStructureComparator extends AbstractDBObjectStruct
         }
         return result;
     }
+
 }

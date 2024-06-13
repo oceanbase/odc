@@ -15,9 +15,15 @@
  */
 package com.oceanbase.odc.service.flow.util;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.shared.constant.Symbols;
+import com.oceanbase.odc.core.shared.constant.TaskType;
+import com.oceanbase.odc.service.databasechange.model.DatabaseChangeDatabase;
 import com.oceanbase.odc.service.flow.model.CreateFlowInstanceReq;
+import com.oceanbase.odc.service.flow.task.model.MultipleDatabaseChangeParameters;
 
 /**
  * @Author：tinker
@@ -28,10 +34,19 @@ public class DescriptionGenerator {
 
     public static void generateDescription(CreateFlowInstanceReq req) {
         if (StringUtils.isEmpty(req.getDescription())) {
-            String descFormat = Symbols.LEFT_BRACKET.getLocalizedMessage()
-                    + "%s" + Symbols.RIGHT_BRACKET.getLocalizedMessage() + "%s.%s";
-            req.setDescription(String.format(descFormat,
-                    req.getEnvironmentName(), req.getConnectionName(), req.getDatabaseName()));
+            String descFormat = Symbols.LEFT_BRACKET.i18nKey() + "%s" + Symbols.RIGHT_BRACKET.i18nKey() + "%s.%s";
+            if (req.getTaskType() == TaskType.MULTIPLE_ASYNC) {
+                MultipleDatabaseChangeParameters parameters = (MultipleDatabaseChangeParameters) req.getParameters();
+                List<DatabaseChangeDatabase> databases = parameters.getDatabases();
+                String description = databases.stream()
+                        .map(db -> String.format(descFormat, db.getEnvironment().getName(),
+                                db.getDataSource().getName(), db.getName()))
+                        .collect(Collectors.joining(","));
+                req.setDescription(description);
+            } else {
+                req.setDescription(String.format(descFormat,
+                        req.getEnvironmentName(), req.getConnectionName(), req.getDatabaseName()));
+            }
         }
     }
 

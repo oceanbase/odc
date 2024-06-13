@@ -18,6 +18,7 @@ package com.oceanbase.odc.service.flow.model;
 
 import com.oceanbase.odc.core.flow.model.FlowTaskResult;
 import com.oceanbase.odc.service.flow.task.model.DatabasePermissionCheckResult;
+import com.oceanbase.odc.service.flow.task.model.MultipleSqlCheckTaskResult;
 import com.oceanbase.odc.service.flow.task.model.SqlCheckTaskResult;
 import com.oceanbase.odc.service.task.model.ExecutorInfo;
 
@@ -36,6 +37,8 @@ public class PreCheckTaskResult implements FlowTaskResult {
     private ExecutorInfo executorInfo;
 
     private SqlCheckTaskResult sqlCheckResult;
+
+    private MultipleSqlCheckTaskResult multipleSqlCheckTaskResult;
 
     private DatabasePermissionCheckResult permissionCheckResult;
 

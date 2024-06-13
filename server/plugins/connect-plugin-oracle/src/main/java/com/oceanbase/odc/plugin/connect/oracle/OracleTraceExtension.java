@@ -41,14 +41,14 @@ public class OracleTraceExtension implements TraceExtensionPoint {
         SqlExecTime sqlExecTime = new SqlExecTime();
         try {
             String sql =
-                    "SELECT PREV_SQL_ID FROM SYS.V$SESSION WHERE SID = SYS_CONTEXT('USERENV', 'SID') and AUDSID=SYS_CONTEXT('USERENV', 'SESSIONID')";
+                    "SELECT PREV_SQL_ID FROM V$SESSION WHERE SID = SYS_CONTEXT('USERENV', 'SID') and AUDSID=SYS_CONTEXT('USERENV', 'SESSIONID')";
             String preSqlId = null;
             ResultSet rs = statement.executeQuery(sql);
             while (rs.next()) {
                 preSqlId = rs.getString("PREV_SQL_ID");
             }
             Validate.notNull(preSqlId, "PREV_SQL_ID can not be null");
-            sql = "select SQL_TEXT, ELAPSED_TIME, LAST_ACTIVE_TIME FROM SYS.V$SQL WHERE SQL_ID='" + preSqlId
+            sql = "select SQL_TEXT, ELAPSED_TIME, LAST_ACTIVE_TIME FROM V$SQL WHERE SQL_ID='" + preSqlId
                     + "' ORDER BY LAST_ACTIVE_TIME DESC";
             ResultSet resultSet = statement.executeQuery(sql);
             if (resultSet.next()) {

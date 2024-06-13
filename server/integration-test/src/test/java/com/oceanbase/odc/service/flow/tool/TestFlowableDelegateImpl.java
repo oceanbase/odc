@@ -15,9 +15,14 @@
  */
 package com.oceanbase.odc.service.flow.tool;
 
+import java.util.Collections;
+import java.util.List;
+
 import org.flowable.engine.delegate.DelegateExecution;
+import org.flowable.engine.delegate.ExecutionListener;
 
 import com.oceanbase.odc.core.flow.BaseFlowableDelegate;
+import com.oceanbase.odc.service.flow.listener.ServiceTaskExecutingCompleteListener;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -28,5 +33,10 @@ public class TestFlowableDelegateImpl extends BaseFlowableDelegate {
     protected void run(DelegateExecution execution) {
         log.info("Service task run, currentActivityId={}, processInstanceId={}", execution.getCurrentActivityId(),
                 execution.getProcessInstanceId());
+    }
+
+    @Override
+    protected List<Class<? extends ExecutionListener>> getExecutionListenerClasses() {
+        return Collections.singletonList(ServiceTaskExecutingCompleteListener.class);
     }
 }

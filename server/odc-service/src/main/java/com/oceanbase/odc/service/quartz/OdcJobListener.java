@@ -18,6 +18,7 @@ package com.oceanbase.odc.service.quartz;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
@@ -104,11 +105,17 @@ public class OdcJobListener implements JobListener {
         // For tasks that do not allow concurrent execution, if they can be successfully scheduled, it
         // indicates that the existing tasks have exited. If there are still tasks in the processing state,
         // then it is necessary to correct their status.
-        if (!taskFrameworkEnabledProperties.isEnabled() && context.getJobDetail().isConcurrentExectionDisallowed()
-                && scheduleEntity.getJobType().isSync()) {
-            List<ScheduleTaskEntity> processingTask = taskRepository.findByJobNameAndStatusIn(
+        if (context.getJobDetail().isConcurrentExectionDisallowed() && scheduleEntity.getJobType().isSync()) {
+            List<ScheduleTaskEntity> toBeCorrectedList = taskRepository.findByJobNameAndStatusIn(
                     scheduleId.toString(), TaskStatus.getProcessingStatus());
-            processingTask.forEach(task -> {
+            // For the scenario where the task framework is switched from closed to open, it is necessary to
+            // correct
+            // the status of tasks that were not completed while in the closed state.
+            if (taskFrameworkEnabledProperties.isEnabled()) {
+                toBeCorrectedList =
+                        toBeCorrectedList.stream().filter(o -> o.getJobId() == null).collect(Collectors.toList());
+            }
+            toBeCorrectedList.forEach(task -> {
                 taskRepository.updateStatusById(task.getId(), TaskStatus.CANCELED);
                 log.info("Task status correction successful,scheduleTaskId={}", task.getId());
             });
@@ -165,14 +172,18 @@ public class OdcJobListener implements JobListener {
         ScheduleTaskContextHolder.clear();
         Optional<ScheduleEntity> scheduleEntityOptional =
                 scheduleRepository.findById(ScheduleTaskUtils.getScheduleId(context));
-        if (scheduleEntityOptional.isPresent()) {
-            ScheduleEntity scheduleEntity = scheduleEntityOptional.get();
-            if (jobException != null && notificationProperties.isEnabled()) {
-                try {
+        if (notificationProperties.isEnabled() && scheduleEntityOptional.isPresent()) {
+            try {
+                ScheduleEntity scheduleEntity = scheduleEntityOptional.get();
+                if (jobException != null) {
                     broker.enqueueEvent(eventBuilder.ofFailedTask(scheduleEntity));
-                } catch (Exception e) {
-                    log.warn("Failed to enqueue event.", e);
+                } else if (!taskFrameworkEnabledProperties.isEnabled()
+                        && scheduleEntity.getJobType().executeInTaskFramework()) {
+                    // only create event for DLM jobs when task framework not enabled to avoid duplicate events
+                    broker.enqueueEvent(eventBuilder.ofSucceededTask(scheduleEntity));
                 }
+            } catch (Exception e) {
+                log.warn("Failed to enqueue event.", e);
             }
         }
     }

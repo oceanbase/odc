@@ -15,7 +15,6 @@
  */
 package com.oceanbase.tools.dbbrowser.schema.mysql;
 
-import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -46,8 +45,7 @@ import com.oceanbase.tools.dbbrowser.schema.constant.StatementsFiles;
 import com.oceanbase.tools.dbbrowser.util.DBSchemaAccessorUtil;
 import com.oceanbase.tools.dbbrowser.util.MySQLSqlBuilder;
 import com.oceanbase.tools.dbbrowser.util.StringUtils;
-import com.oceanbase.tools.sqlparser.OBMySQLParser;
-import com.oceanbase.tools.sqlparser.SQLParser;
+import com.oceanbase.tools.sqlparser.statement.Statement;
 import com.oceanbase.tools.sqlparser.statement.createtable.CreateTable;
 
 import lombok.NonNull;
@@ -103,20 +101,6 @@ public class OBMySQLSchemaAccessor extends MySQLNoLessThan5700SchemaAccessor {
             database.setCollation(rs.getString("DEFAULT_COLLATION_NAME"));
         });
         return database;
-    }
-
-    @Override
-    public List<DBDatabase> listDatabases() {
-        String sql =
-                "SELECT SCHEMA_NAME, DEFAULT_CHARACTER_SET_NAME, DEFAULT_COLLATION_NAME FROM information_schema.schemata;";
-        return jdbcOperations.query(sql, (rs, num) -> {
-            DBDatabase database = new DBDatabase();
-            database.setId(rs.getString("SCHEMA_NAME"));
-            database.setName(rs.getString("SCHEMA_NAME"));
-            database.setCharset(rs.getString("DEFAULT_CHARACTER_SET_NAME"));
-            database.setCollation(rs.getString("DEFAULT_COLLATION_NAME"));
-            return database;
-        }).stream().filter(database -> !ESCAPE_SCHEMA_SET.contains(database.getName())).collect(Collectors.toList());
     }
 
     @Override
@@ -259,11 +243,14 @@ public class OBMySQLSchemaAccessor extends MySQLNoLessThan5700SchemaAccessor {
     }
 
     private List<DBColumnGroupElement> listTableColumnGroups(String ddl) {
-        SQLParser sqlParser = new OBMySQLParser();
-        CreateTable stmt = (CreateTable) sqlParser.parse(new StringReader(ddl));
-        return stmt.getColumnGroupElements() == null ? Collections.emptyList()
-                : stmt.getColumnGroupElements().stream()
-                        .map(DBColumnGroupElement::ofColumnGroupElement).collect(Collectors.toList());
+        Statement statement = SqlParser.parseMysqlStatement(ddl);
+        if (statement instanceof CreateTable) {
+            CreateTable stmt = (CreateTable) statement;
+            return stmt.getColumnGroupElements() == null ? Collections.emptyList()
+                    : stmt.getColumnGroupElements().stream()
+                            .map(DBColumnGroupElement::ofColumnGroupElement).collect(Collectors.toList());
+        }
+        return Collections.emptyList();
     }
 
     @Override

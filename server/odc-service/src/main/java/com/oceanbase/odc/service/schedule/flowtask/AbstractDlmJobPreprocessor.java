@@ -104,7 +104,7 @@ public class AbstractDlmJobPreprocessor implements Preprocessor {
         tables.forEach(tableConfig -> {
             if (!tableNames.contains(tableConfig.getTableName())) {
                 throw new IllegalArgumentException(
-                        String.format("The table need to contain a primary key!tableName=%s",
+                        String.format("The table must contain a non-empty unique index,tableName=%s",
                                 tableConfig.getTableName()));
             }
         });

@@ -78,6 +78,7 @@ public class TaskService {
     private HostProperties properties;
 
     private static String logFilePrefix;
+    private static final String MULTIPLE_ASYNC_LOG_PATH_PATTERN = "%s/multiple-async/%s/multiple-async.%s";
     private static final String ASYNC_LOG_PATH_PATTERN = "%s/async/%d/%s/asynctask.%s";
     private static final String MOCKDATA_LOG_PATH_PATTERN = "%s/data-mocker/%s/ob-mocker.%s";
     private static final String DATATRANSFER_LOG_PATH_PATTERN = "%s/data-transfer/%s/ob-loader-dumper.%s";
@@ -94,6 +95,7 @@ public class TaskService {
     private static final String APPLY_DATABASE_LOG_PATH_PATTERN = "%s/apply-database/%d/%s/apply-database-task.%s";
     private static final String STRUCTURE_COMPARISON_LOG_PATH_PATTERN =
             "%s/structure-comparison/%d/%s/structure-comparison.%s";
+    private static final String APPLY_TABLE_LOG_PATH_PATTERN = "%s/apply-table/%d/%s/apply-table-task.%s";
 
     @Autowired
     public TaskService(@Value("${odc.log.directory:./log}") String baseTaskLogDir) {
@@ -110,9 +112,9 @@ public class TaskService {
         TaskType taskType = req.getTaskType();
         taskEntity.setTaskType(taskType);
         taskEntity.setConnectionId(req.getConnectionId());
-        taskEntity.setExecutionExpirationIntervalSeconds(executionExpirationIntervalSeconds);
         taskEntity.setDatabaseName(req.getDatabaseName());
         taskEntity.setDatabaseId(req.getDatabaseId());
+        taskEntity.setExecutionExpirationIntervalSeconds(executionExpirationIntervalSeconds);
         taskEntity.setDescription(req.getDescription());
         taskEntity.setParametersJson(JsonUtils.toJson(req.getParameters()));
 
@@ -206,6 +208,10 @@ public class TaskService {
             throws NotFoundException {
         String filePath;
         switch (type) {
+            case MULTIPLE_ASYNC:
+                filePath = String.format(MULTIPLE_ASYNC_LOG_PATH_PATTERN, logFilePrefix, taskId,
+                        logLevel.name().toLowerCase());
+                break;
             case ASYNC:
                 filePath = String.format(ASYNC_LOG_PATH_PATTERN, logFilePrefix, userId, taskId,
                         logLevel.name().toLowerCase());
@@ -249,6 +255,10 @@ public class TaskService {
                 break;
             case STRUCTURE_COMPARISON:
                 filePath = String.format(STRUCTURE_COMPARISON_LOG_PATH_PATTERN, logFilePrefix, userId, taskId,
+                        logLevel.name().toLowerCase());
+                break;
+            case APPLY_TABLE_PERMISSION:
+                filePath = String.format(APPLY_TABLE_LOG_PATH_PATTERN, logFilePrefix, userId, taskId,
                         logLevel.name().toLowerCase());
                 break;
             default:
@@ -339,6 +349,10 @@ public class TaskService {
         taskRepository.updateJobId(id, jobId);
     }
 
+    @Transactional(rollbackFor = Exception.class)
+    public void updateHeartbeatTime(Long id) {
+        taskRepository.updateLastHeartbeatTimeById(id);
+    }
 
     private TaskEntity nullSafeFindById(Long id) {
         return taskRepository.findById(id)

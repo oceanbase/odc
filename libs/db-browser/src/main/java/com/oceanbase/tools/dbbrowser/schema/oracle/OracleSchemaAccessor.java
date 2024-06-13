@@ -130,14 +130,26 @@ public class OracleSchemaAccessor implements DBSchemaAccessor {
             database.setId(rs.getString(2));
             database.setName(rs.getString(1));
         });
-        sql = "select value from v$nls_parameters where PARAMETER = 'NLS_CHARACTERSET'";
-        jdbcOperations.query(sql, rs -> {
-            database.setCharset(rs.getString(1));
-        });
-        sql = "SELECT value from v$nls_parameters where parameter = 'NLS_SORT'";
-        jdbcOperations.query(sql, rs -> {
-            database.setCollation(rs.getString(1));
-        });
+        try {
+            sql = "select value from v$nls_parameters where PARAMETER = 'NLS_CHARACTERSET'";
+            jdbcOperations.query(sql, rs -> {
+                database.setCharset(rs.getString(1));
+            });
+            sql = "SELECT value from v$nls_parameters where parameter = 'NLS_SORT'";
+            jdbcOperations.query(sql, rs -> {
+                database.setCollation(rs.getString(1));
+            });
+        } catch (Exception e) {
+            log.warn("Failed to get oracle charset and collation, error message:{}", e.getMessage());
+            sql = "select value from v_$nls_parameters where PARAMETER = 'NLS_CHARACTERSET'";
+            jdbcOperations.query(sql, rs -> {
+                database.setCharset(rs.getString(1));
+            });
+            sql = "SELECT value from v_$nls_parameters where parameter = 'NLS_SORT'";
+            jdbcOperations.query(sql, rs -> {
+                database.setCollation(rs.getString(1));
+            });
+        }
         return database;
     }
 
@@ -151,16 +163,27 @@ public class OracleSchemaAccessor implements DBSchemaAccessor {
             database.setName(rs.getString(1));
             databases.add(database);
         });
-        sql = "select value from v$nls_parameters where PARAMETER = 'NLS_CHARACTERSET'";
         AtomicReference<String> charset = new AtomicReference<>();
-        this.jdbcOperations.query(sql, (rs) -> {
-            charset.set(rs.getString(1));
-        });
-        sql = "SELECT value from v$nls_parameters where parameter = 'NLS_SORT'";
         AtomicReference<String> collation = new AtomicReference<>();
-        this.jdbcOperations.query(sql, (rs) -> {
-            collation.set(rs.getString(1));
-        });
+        try {
+            sql = "select value from v$nls_parameters where PARAMETER = 'NLS_CHARACTERSET'";
+            this.jdbcOperations.query(sql, (rs) -> {
+                charset.set(rs.getString(1));
+            });
+            sql = "SELECT value from v$nls_parameters where parameter = 'NLS_SORT'";
+            this.jdbcOperations.query(sql, (rs) -> {
+                collation.set(rs.getString(1));
+            });
+        } catch (Exception e) {
+            sql = "select value from v_$nls_parameters where PARAMETER = 'NLS_CHARACTERSET'";
+            this.jdbcOperations.query(sql, (rs) -> {
+                charset.set(rs.getString(1));
+            });
+            sql = "SELECT value from v_$nls_parameters where parameter = 'NLS_SORT'";
+            this.jdbcOperations.query(sql, (rs) -> {
+                collation.set(rs.getString(1));
+            });
+        }
         databases.forEach((item) -> {
             item.setCharset(charset.get());
             item.setCollation(collation.get());
@@ -311,18 +334,28 @@ public class OracleSchemaAccessor implements DBSchemaAccessor {
 
     @Override
     public List<String> showCharset() {
-        OracleSqlBuilder sb = new OracleSqlBuilder();
-        sb.append("SELECT DISTINCT VALUE FROM V$NLS_VALID_VALUES WHERE PARAMETER = 'CHARACTERSET' ORDER BY VALUE");
-
-        return jdbcOperations.queryForList(sb.toString(), String.class);
+        try {
+            String sql =
+                    "SELECT DISTINCT VALUE FROM V$NLS_VALID_VALUES WHERE PARAMETER = 'CHARACTERSET' ORDER BY VALUE";
+            return jdbcOperations.queryForList(sql, String.class);
+        } catch (Exception e) {
+            log.warn("Failed to get oracle charset, error message:{}", e.getMessage());
+            String sql =
+                    "SELECT DISTINCT VALUE FROM V_$NLS_VALID_VALUES WHERE PARAMETER = 'CHARACTERSET' ORDER BY VALUE";
+            return jdbcOperations.queryForList(sql, String.class);
+        }
     }
 
     @Override
     public List<String> showCollation() {
-        OracleSqlBuilder sb = new OracleSqlBuilder();
-        sb.append("SELECT DISTINCT VALUE FROM V$NLS_VALID_VALUES WHERE PARAMETER = 'SORT' ORDER BY VALUE");
-
-        return jdbcOperations.queryForList(sb.toString(), String.class);
+        try {
+            String sql = "SELECT DISTINCT VALUE FROM V$NLS_VALID_VALUES WHERE PARAMETER = 'SORT' ORDER BY VALUE";
+            return jdbcOperations.queryForList(sql, String.class);
+        } catch (Exception e) {
+            log.warn("Failed to get oracle collation, error message:{}", e.getMessage());
+            String sql = "SELECT DISTINCT VALUE FROM V_$NLS_VALID_VALUES WHERE PARAMETER = 'SORT' ORDER BY VALUE";
+            return jdbcOperations.queryForList(sql, String.class);
+        }
     }
 
     @Override
@@ -592,6 +625,14 @@ public class OracleSchemaAccessor implements DBSchemaAccessor {
     }
 
     @Override
+    public Map<String, List<DBTableColumn>> listBasicColumnsInfo(String schemaName) {
+        String sql = sqlMapper.getSql(Statements.LIST_BASIC_SCHEMA_COLUMNS_INFO);
+        List<DBTableColumn> tableColumns =
+                jdbcOperations.query(sql, new Object[] {schemaName}, listBasicColumnsIdentityRowMapper());
+        return tableColumns.stream().collect(Collectors.groupingBy(DBTableColumn::getTableName));
+    }
+
+    @Override
     public Map<String, List<DBTableIndex>> listTableIndexes(String schemaName) {
         Map<String, List<DBTableIndex>> tableName2Indexes = new LinkedHashMap<>();
         String sql = sqlMapper.getSql(Statements.LIST_SCHEMA_INDEX);
@@ -815,7 +856,16 @@ public class OracleSchemaAccessor implements DBSchemaAccessor {
                     .setTypeName(DBSchemaAccessorUtil.normalizeTypeName(rs.getString(OracleConstants.COL_DATA_TYPE)));
             return tableColumn;
         };
+    }
 
+    protected RowMapper<DBTableColumn> listBasicColumnsIdentityRowMapper() {
+        return (rs, rowNum) -> {
+            DBTableColumn tableColumn = new DBTableColumn();
+            tableColumn.setSchemaName(rs.getString(OracleConstants.CONS_OWNER));
+            tableColumn.setTableName(rs.getString(OracleConstants.COL_TABLE_NAME));
+            tableColumn.setName(rs.getString(OracleConstants.COL_COLUMN_NAME));
+            return tableColumn;
+        };
     }
 
     @Override
@@ -1205,19 +1255,35 @@ public class OracleSchemaAccessor implements DBSchemaAccessor {
     }
 
     protected void obtainTableCharset(List<DBTableOptions> tableOptions) {
-        String sql = "select value from v$nls_parameters where PARAMETER = 'NLS_CHARACTERSET'";
-        String charset = jdbcOperations.queryForObject(sql, String.class);
-        tableOptions.forEach(option -> {
+        String sql;
+        String charset;
+        try {
+            sql = "select value from v$nls_parameters where PARAMETER = 'NLS_CHARACTERSET'";
+            charset = jdbcOperations.queryForObject(sql, String.class);
+        } catch (Exception e) {
+            log.warn("Failed to get oracle charset, errMessage={}", e.getMessage());
+            sql = "select value from v_$nls_parameters where PARAMETER = 'NLS_CHARACTERSET'";
+            charset = jdbcOperations.queryForObject(sql, String.class);
+        }
+        for (DBTableOptions option : tableOptions) {
             option.setCharsetName(charset);
-        });
+        }
     }
 
     protected void obtainTableCollation(List<DBTableOptions> tableOptions) {
-        String sql = "SELECT value from v$nls_parameters where parameter = 'NLS_SORT'";
-        String collation = jdbcOperations.queryForObject(sql, String.class);
-        tableOptions.forEach(option -> {
+        String sql;
+        String collation;
+        try {
+            sql = "SELECT value from v$nls_parameters where parameter = 'NLS_SORT'";
+            collation = jdbcOperations.queryForObject(sql, String.class);
+        } catch (Exception e) {
+            log.warn("Failed to get oracle collation, errMessage={}", e.getMessage());
+            sql = "SELECT value from v_$nls_parameters where parameter = 'NLS_SORT'";
+            collation = jdbcOperations.queryForObject(sql, String.class);
+        }
+        for (DBTableOptions option : tableOptions) {
             option.setCollationName(collation);
-        });
+        }
     }
 
     private void obtainTableComment(String schemaName, String tableName, DBTableOptions tableOptions) {

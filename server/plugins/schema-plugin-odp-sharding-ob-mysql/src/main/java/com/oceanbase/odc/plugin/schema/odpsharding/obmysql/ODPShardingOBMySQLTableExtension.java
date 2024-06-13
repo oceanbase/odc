@@ -16,18 +16,20 @@
 package com.oceanbase.odc.plugin.schema.odpsharding.obmysql;
 
 import java.sql.Connection;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.pf4j.Extension;
 
 import com.oceanbase.odc.common.util.JdbcOperationsUtil;
+import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.plugin.schema.obmysql.OBMySQLTableExtension;
-import com.oceanbase.tools.dbbrowser.model.DBTable;
+import com.oceanbase.odc.plugin.schema.obmysql.utils.DBAccessorUtil;
+import com.oceanbase.tools.dbbrowser.DBBrowser;
+import com.oceanbase.tools.dbbrowser.editor.DBTableEditor;
 import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
-import com.oceanbase.tools.dbbrowser.schema.mysql.ODPOBMySQLSchemaAccessor;
 import com.oceanbase.tools.dbbrowser.stats.DBStatsAccessor;
-import com.oceanbase.tools.dbbrowser.stats.mysql.ODPOBMySQLStatsAccessor;
-
-import lombok.NonNull;
+import com.oceanbase.tools.dbbrowser.stats.DBStatsAccessorFactory;
 
 /**
  * @author jingtian
@@ -38,25 +40,27 @@ import lombok.NonNull;
 public class ODPShardingOBMySQLTableExtension extends OBMySQLTableExtension {
 
     @Override
-    public DBTable getDetail(@NonNull Connection connection, @NonNull String schemaName, @NonNull String tableName) {
-        DBTable table = super.getDetail(connection, schemaName, tableName);
-        /**
-         * In ODP sharding mysql mode, when variable lower_case_table_names = 1 or 2, the table name will be
-         * stored in uppercase letters. There is no automatic lowercase conversion of table names here.
-         */
-        table.setName(tableName);
-        return table;
-    }
-
-    @Override
     protected DBSchemaAccessor getSchemaAccessor(Connection connection) {
-        return new ODPOBMySQLSchemaAccessor(JdbcOperationsUtil.getJdbcOperations(connection));
+        return DBBrowser.schemaAccessor()
+                .setJdbcOperations(JdbcOperationsUtil.getJdbcOperations(connection))
+                .setType(DialectType.ODP_SHARDING_OB_MYSQL.getDBBrowserDialectTypeName()).create();
     }
 
     @Override
     protected DBStatsAccessor getStatsAccessor(Connection consoleConnection) {
         // only use DBStatsAccessor.getTableStats() method in plugin, so we do not use connectionId
-        return new ODPOBMySQLStatsAccessor("");
+        Map<String, Object> properties = new HashMap<>();
+        properties.put(DBStatsAccessorFactory.CONNECTION_ID_KEY, "");
+        return DBBrowser.statsAccessor()
+                .setProperties(properties)
+                .setType(DialectType.ODP_SHARDING_OB_MYSQL.getDBBrowserDialectTypeName()).create();
+    }
+
+    @Override
+    protected DBTableEditor getTableEditor(Connection connection) {
+        return DBBrowser.objectEditor().tableEditor()
+                .setDbVersion(DBAccessorUtil.getDbVersion(connection))
+                .setType(DialectType.ODP_SHARDING_OB_MYSQL.getDBBrowserDialectTypeName()).create();
     }
 
 }

@@ -17,6 +17,7 @@ package com.oceanbase.odc.server.web.controller.v2;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
@@ -26,6 +27,7 @@ import com.oceanbase.odc.service.common.response.SuccessResponse;
 import com.oceanbase.odc.service.onlineschemachange.OscService;
 import com.oceanbase.odc.service.onlineschemachange.model.OscLockDatabaseUserInfo;
 import com.oceanbase.odc.service.onlineschemachange.model.OscSwapTableVO;
+import com.oceanbase.odc.service.onlineschemachange.model.UpdateRateLimiterConfigRequest;
 
 import io.swagger.annotations.ApiOperation;
 
@@ -52,6 +54,13 @@ public class OscController {
     @RequestMapping(value = "/swapTable/{scheduleTaskId:[\\d]+}", method = RequestMethod.POST)
     public SuccessResponse<OscSwapTableVO> swapTable(@PathVariable Long scheduleTaskId) {
         return Responses.success(oscService.swapTable(scheduleTaskId));
+    }
+
+    @ApiOperation(value = "updateRateLimitConfig", notes = "update osc rate limit config")
+    @RequestMapping(value = "/updateRateLimitConfig", method = RequestMethod.POST)
+    public SuccessResponse<Boolean> updateRateLimitConfig(
+            @RequestBody UpdateRateLimiterConfigRequest updateRateLimiterConfig) {
+        return Responses.success(oscService.updateRateLimiterConfig(updateRateLimiterConfig));
     }
 
 }

@@ -34,6 +34,7 @@ import com.oceanbase.odc.core.sql.split.SqlStatementIterator;
 import com.oceanbase.odc.service.common.util.SqlUtils;
 import com.oceanbase.odc.service.flow.task.model.DatabaseChangeParameters;
 import com.oceanbase.odc.service.flow.task.model.DatabaseChangeSqlContent;
+import com.oceanbase.odc.service.flow.task.model.MultipleDatabaseChangeParameters;
 import com.oceanbase.odc.service.flow.task.model.SizeAwareInputStream;
 import com.oceanbase.odc.service.objectstorage.ObjectStorageFacade;
 import com.oceanbase.odc.service.objectstorage.model.StorageObject;
@@ -47,6 +48,20 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 public class DatabaseChangeFileReader {
+    public static InputStream readInputStreamFromSqlObjects(@NotNull ObjectStorageFacade storageFacade,
+            MultipleDatabaseChangeParameters params, String bucketName,
+            long maxSizeBytes) {
+        List<String> objectIds = params.getSqlObjectIds();
+        if (CollectionUtils.isEmpty(objectIds)) {
+            return null;
+        }
+        try {
+            return readSqlFilesStream(storageFacade, bucketName, objectIds, maxSizeBytes).getInputStream();
+        } catch (Exception e) {
+            log.warn("Failed to read sql files from object storage", e);
+            throw new IllegalStateException("Failed to read sql files from object storage");
+        }
+    }
 
     public static InputStream readInputStreamFromSqlObjects(@NotNull ObjectStorageFacade storageFacade,
             DatabaseChangeParameters params, String bucketName,

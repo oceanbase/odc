@@ -69,7 +69,7 @@ public class ScheduleResponseMapperFactory {
         return generate(Collections.singletonList(entity));
     }
 
-    public ScheduleResponseMapper generate(@NonNull Collection<ScheduleEntity> entities) {
+    public ScheduleResponseMapper generateInternalWithoutPermission(@NonNull Collection<ScheduleEntity> entities) {
         if (entities.isEmpty()) {
             return new ScheduleResponseMapper();
         }
@@ -82,6 +82,27 @@ public class ScheduleResponseMapperFactory {
         Map<Long, Database> id2Database = databaseService.listDatabasesByIds(databaseIds).stream().collect(
                 Collectors.toMap(Database::getId, o -> o));
 
+
+        Map<Long, RateLimitConfiguration> scheduleId2RateLimitConfiguration =
+                dlmLimiterService.findByOrderIds(scheduleIds).stream().collect(
+                        Collectors.toMap(RateLimitConfiguration::getOrderId, o -> o));
+
+
+        return new ScheduleResponseMapper()
+                .withGetUserById(userEntityMap::get)
+                .withGetApproveInstanceIdById(t -> null)
+                .withGetDatabaseById(id2Database::get)
+                .withGetCandidatesById(t -> null)
+                .withGetDLMRateLimitConfigurationById(scheduleId2RateLimitConfiguration::get);
+    }
+
+
+    public ScheduleResponseMapper generate(@NonNull Collection<ScheduleEntity> entities) {
+        if (entities.isEmpty()) {
+            return new ScheduleResponseMapper();
+        }
+        ScheduleResponseMapper scheduleResponseMapper = generateInternalWithoutPermission(entities);
+        Set<Long> scheduleIds = entities.stream().map(ScheduleEntity::getId).collect(Collectors.toSet());
         Set<Long> approvableFlowInstanceIds = approvalPermissionService.getApprovableApprovalInstances()
                 .stream()
                 .filter(entity -> FlowNodeStatus.EXECUTING == entity.getStatus())
@@ -110,10 +131,8 @@ public class ScheduleResponseMapperFactory {
                 dlmLimiterService.findByOrderIds(scheduleIds).stream().collect(
                         Collectors.toMap(RateLimitConfiguration::getOrderId, o -> o));
 
-        return new ScheduleResponseMapper()
-                .withGetUserById(userEntityMap::get)
+        return scheduleResponseMapper
                 .withGetApproveInstanceIdById(approveInstanceIdMap::get)
-                .withGetDatabaseById(id2Database::get)
                 .withGetCandidatesById(scheduleId2Candidates::get)
                 .withGetDLMRateLimitConfigurationById(scheduleId2RateLimitConfiguration::get);
     }

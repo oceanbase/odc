@@ -33,7 +33,7 @@ import lombok.Data;
  * @since 4.2.0
  */
 @Data
-public class IncrTransferConfig {
+public class IncrTransferConfig implements ThrottleConfig {
 
     /**
      * 勾选了增量且没勾选全量时，允许设置增量起始位点，秒级时间戳 最多30天内，实际根据store情况
@@ -73,4 +73,7 @@ public class IncrTransferConfig {
      */
     private Boolean enableIncrSyncStatistics = Boolean.FALSE;
 
+    private Integer throttleRps;
+
+    private Integer throttleIOPS;
 }

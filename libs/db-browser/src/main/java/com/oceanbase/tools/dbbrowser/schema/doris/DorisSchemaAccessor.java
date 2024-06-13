@@ -19,7 +19,6 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
-import java.io.StringReader;
 import java.io.StringWriter;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
@@ -81,6 +80,7 @@ import com.oceanbase.tools.dbbrowser.model.DBVariable;
 import com.oceanbase.tools.dbbrowser.model.DBView;
 import com.oceanbase.tools.dbbrowser.model.MySQLConstants;
 import com.oceanbase.tools.dbbrowser.parser.PLParser;
+import com.oceanbase.tools.dbbrowser.parser.SqlParser;
 import com.oceanbase.tools.dbbrowser.parser.result.ParseMysqlPLResult;
 import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
 import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessorSqlMapper;
@@ -91,8 +91,7 @@ import com.oceanbase.tools.dbbrowser.util.DBSchemaAccessorUtil;
 import com.oceanbase.tools.dbbrowser.util.MySQLSqlBuilder;
 import com.oceanbase.tools.dbbrowser.util.SqlBuilder;
 import com.oceanbase.tools.dbbrowser.util.StringUtils;
-import com.oceanbase.tools.sqlparser.OBMySQLParser;
-import com.oceanbase.tools.sqlparser.SQLParser;
+import com.oceanbase.tools.sqlparser.statement.Statement;
 import com.oceanbase.tools.sqlparser.statement.createtable.CreateTable;
 import com.oceanbase.tools.sqlparser.statement.createtable.TableOptions;
 
@@ -369,7 +368,7 @@ public class DorisSchemaAccessor implements DBSchemaAccessor {
         sb.append(
                 "select ROUTINE_NAME as name, ROUTINE_SCHEMA as schema_name, ROUTINE_TYPE as type from `information_schema`.`routines` where ROUTINE_SCHEMA=");
         sb.value(schemaName);
-        sb.append(" and ROUTINE_TYPE = 'FUNCTION';");
+        sb.append(" and ROUTINE_TYPE = 'FUNCTION' order by name asc;");
 
         return jdbcOperations.query(sb.toString(), new BeanPropertyRowMapper<>(DBPLObjectIdentity.class));
     }
@@ -380,7 +379,7 @@ public class DorisSchemaAccessor implements DBSchemaAccessor {
         sb.append(
                 "select ROUTINE_NAME as name, ROUTINE_SCHEMA as schema_name, ROUTINE_TYPE as type from `information_schema`.`routines` where ROUTINE_SCHEMA=");
         sb.value(schemaName);
-        sb.append(" and ROUTINE_TYPE = 'PROCEDURE';");
+        sb.append(" and ROUTINE_TYPE = 'PROCEDURE' order by name asc;");
 
         return jdbcOperations.query(sb.toString(), new BeanPropertyRowMapper<>(DBPLObjectIdentity.class));
     }
@@ -451,6 +450,14 @@ public class DorisSchemaAccessor implements DBSchemaAccessor {
     public List<DBTableColumn> listBasicViewColumns(String schemaName, String viewName) {
         String sql = sqlMapper.getSql(Statements.LIST_BASIC_VIEW_COLUMNS);
         return jdbcOperations.query(sql, new Object[] {schemaName, viewName}, listBasicTableColumnRowMapper());
+    }
+
+    @Override
+    public Map<String, List<DBTableColumn>> listBasicColumnsInfo(String schemaName) {
+        String sql = sqlMapper.getSql(Statements.LIST_BASIC_SCHEMA_COLUMNS_INFO);
+        List<DBTableColumn> tableColumns =
+                jdbcOperations.query(sql, new Object[] {schemaName}, listBasicTableColumnIdentityRowMapper());
+        return tableColumns.stream().collect(Collectors.groupingBy(DBTableColumn::getTableName));
     }
 
     protected String getListTableColumnsSql(String schemaName) {
@@ -551,6 +558,16 @@ public class DorisSchemaAccessor implements DBSchemaAccessor {
             tableColumn.setName(rs.getString(MySQLConstants.COL_COLUMN_NAME));
             tableColumn.setTypeName(rs.getString(MySQLConstants.COL_DATA_TYPE));
             tableColumn.setComment(rs.getString(MySQLConstants.COL_COLUMN_COMMENT));
+            return tableColumn;
+        };
+    }
+
+    protected RowMapper<DBTableColumn> listBasicTableColumnIdentityRowMapper() {
+        return (rs, romNum) -> {
+            DBTableColumn tableColumn = new DBTableColumn();
+            tableColumn.setSchemaName(rs.getString(MySQLConstants.COL_TABLE_SCHEMA));
+            tableColumn.setTableName(rs.getString(MySQLConstants.COL_TABLE_NAME));
+            tableColumn.setName(rs.getString(MySQLConstants.COL_COLUMN_NAME));
             return tableColumn;
         };
     }
@@ -1022,19 +1039,20 @@ public class DorisSchemaAccessor implements DBSchemaAccessor {
     }
 
     private void obtainOptionsByParser(DBTable.DBTableOptions dbTableOptions, String ddl) {
-        SQLParser sqlParser = new OBMySQLParser();
-        CreateTable stmt = (CreateTable) sqlParser.parse(new StringReader(ddl));
-        TableOptions options = stmt.getTableOptions();
-        if (Objects.nonNull(options)) {
-            dbTableOptions.setCharsetName(options.getCharset());
-            dbTableOptions.setRowFormat(options.getRowFormat());
-            dbTableOptions.setCompressionOption(options.getCompression());
-            dbTableOptions.setReplicaNum(options.getReplicaNum());
-            dbTableOptions.setBlockSize(options.getBlockSize());
-            dbTableOptions.setUseBloomFilter(options.getUseBloomFilter());
-            dbTableOptions
-                    .setTabletSize(
-                            Objects.nonNull(options.getTabletSize()) ? options.getTabletSize().longValue() : null);
+        Statement statement = SqlParser.parseMysqlStatement(ddl);
+        if (statement instanceof CreateTable) {
+            CreateTable stmt = (CreateTable) statement;
+            TableOptions options = stmt.getTableOptions();
+            if (Objects.nonNull(options)) {
+                dbTableOptions.setCharsetName(options.getCharset());
+                dbTableOptions.setRowFormat(options.getRowFormat());
+                dbTableOptions.setCompressionOption(options.getCompression());
+                dbTableOptions.setReplicaNum(options.getReplicaNum());
+                dbTableOptions.setBlockSize(options.getBlockSize());
+                dbTableOptions.setUseBloomFilter(options.getUseBloomFilter());
+                dbTableOptions.setTabletSize(
+                        Objects.nonNull(options.getTabletSize()) ? options.getTabletSize().longValue() : null);
+            }
         }
     }
 

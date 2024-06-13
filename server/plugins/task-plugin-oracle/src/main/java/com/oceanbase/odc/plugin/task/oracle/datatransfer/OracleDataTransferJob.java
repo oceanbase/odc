@@ -20,6 +20,8 @@ import java.net.URL;
 import java.util.HashMap;
 import java.util.List;
 
+import org.apache.commons.collections4.MapUtils;
+
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.plugin.connect.model.JdbcUrlProperty;
 import com.oceanbase.odc.plugin.connect.oracle.OracleConnectionExtension;
@@ -60,6 +62,10 @@ public class OracleDataTransferJob extends MySQLDataTransferJob {
                 new HashMap<>(),
                 connectionInfo.getSid(),
                 connectionInfo.getServiceName());
+        if (MapUtils.isNotEmpty(connectionInfo.getJdbcUrlParameters())) {
+            connectionInfo.getJdbcUrlParameters().forEach(
+                    (key, value) -> properties.getJdbcParameters().put(key, value.toString()));
+        }
         dataSource.setJdbcUrl(new OracleConnectionExtension().generateJdbcUrl(properties));
         if (StringUtils.isNotEmpty(connectionInfo.getUserRole())) {
             dataSource.addDataSourceProperty("internal_logon", connectionInfo.getUserRole());

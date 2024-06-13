@@ -75,6 +75,7 @@ public class AuditEventMetaService {
             if (AuditEventType.UNKNOWN_TASK_TYPE == entity.getType()) {
                 actualEventMetas.addAll(AuditUtils.createEntitiesByTypes(entity, Arrays.asList(AuditEventType.MOCKDATA,
                         AuditEventType.ASYNC,
+                        AuditEventType.MULTIPLE_ASYNC,
                         AuditEventType.IMPORT,
                         AuditEventType.EXPORT,
                         AuditEventType.EXPORT_RESULT_SET,
@@ -84,7 +85,8 @@ public class AuditEventMetaService {
                         AuditEventType.PARTITION_PLAN,
                         AuditEventType.ALTER_SCHEDULE,
                         AuditEventType.APPLY_PROJECT_PERMISSION,
-                        AuditEventType.APPLY_DATABASE_PERMISSION)));
+                        AuditEventType.APPLY_DATABASE_PERMISSION,
+                        AuditEventType.APPLY_TABLE_PERMISSION)));
                 continue;
             }
             if (AuditEventAction.OTHERS == entity.getAction()) {

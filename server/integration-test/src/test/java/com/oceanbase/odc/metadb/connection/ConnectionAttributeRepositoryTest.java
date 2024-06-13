@@ -17,6 +17,7 @@
 package com.oceanbase.odc.metadb.connection;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -98,6 +99,22 @@ public class ConnectionAttributeRepositoryTest extends ServiceTestEnv {
         entities = this.repository.saveAll(entities);
 
         List<ConnectionAttributeEntity> results = this.repository.findByConnectionId(connectionId);
+        Set<ConnectionAttributeEntity> actual = new HashSet<>(results);
+        Set<ConnectionAttributeEntity> expect = new HashSet<>(entities);
+        Assert.assertEquals(actual, expect);
+    }
+
+    @Test
+    public void find_findByConnectionIdIn_findSucceed() {
+        List<ConnectionAttributeEntity> entities = new ArrayList<>();
+        entities.add(TestRandom.nextObject(ConnectionAttributeEntity.class));
+        entities.add(TestRandom.nextObject(ConnectionAttributeEntity.class));
+        Long connectionId = 100L;
+        entities.forEach(e -> e.setConnectionId(connectionId));
+        entities = this.repository.saveAll(entities);
+
+        List<ConnectionAttributeEntity> results = this.repository
+                .findByConnectionIdIn(Collections.singletonList(connectionId));
         Set<ConnectionAttributeEntity> actual = new HashSet<>(results);
         Set<ConnectionAttributeEntity> expect = new HashSet<>(entities);
         Assert.assertEquals(actual, expect);

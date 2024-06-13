@@ -21,10 +21,11 @@ import java.util.List;
 import org.pf4j.Extension;
 
 import com.oceanbase.odc.common.util.JdbcOperationsUtil;
+import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.plugin.schema.api.SynonymExtensionPoint;
 import com.oceanbase.odc.plugin.schema.oboracle.utils.DBAccessorUtil;
+import com.oceanbase.tools.dbbrowser.DBBrowser;
 import com.oceanbase.tools.dbbrowser.editor.oracle.OracleObjectOperator;
-import com.oceanbase.tools.dbbrowser.editor.oracle.OracleSynonymEditor;
 import com.oceanbase.tools.dbbrowser.model.DBObjectIdentity;
 import com.oceanbase.tools.dbbrowser.model.DBObjectType;
 import com.oceanbase.tools.dbbrowser.model.DBSynonym;
@@ -67,8 +68,10 @@ public class OBOracleSynonymExtension implements SynonymExtensionPoint {
 
     @Override
     public String generateCreateDDL(@NonNull DBSynonym synonym) {
-        OracleSynonymEditor editor = new OracleSynonymEditor();
-        return editor.generateCreateDefinitionDDL(synonym);
+        return DBBrowser.objectEditor().synonymEditor()
+                .setType(DialectType.OB_ORACLE.getDBBrowserDialectTypeName())
+                .create()
+                .generateCreateDefinitionDDL(synonym);
     }
 
     protected DBSchemaAccessor getSchemaAccessor(Connection connection) {

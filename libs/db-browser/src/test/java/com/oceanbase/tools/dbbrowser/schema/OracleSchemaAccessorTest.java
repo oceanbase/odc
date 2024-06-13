@@ -54,6 +54,7 @@ import com.oceanbase.tools.dbbrowser.model.DBType;
 import com.oceanbase.tools.dbbrowser.model.DBTypeCode;
 import com.oceanbase.tools.dbbrowser.model.DBVariable;
 import com.oceanbase.tools.dbbrowser.model.DBView;
+import com.oceanbase.tools.dbbrowser.util.DBSchemaAccessors;
 import com.oceanbase.tools.dbbrowser.util.StringUtils;
 
 /**

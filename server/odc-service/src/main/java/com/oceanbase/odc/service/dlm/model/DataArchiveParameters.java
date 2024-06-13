@@ -15,6 +15,7 @@
  */
 package com.oceanbase.odc.service.dlm.model;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -63,7 +64,9 @@ public class DataArchiveParameters implements TaskParameters {
 
     private int scanBatchSize;
 
-    private Set<DBObjectType> syncTableStructure;
+    private Long timeoutMillis;
+
+    private Set<DBObjectType> syncTableStructure = new HashSet<>();
 
     private MigrationInsertAction migrationInsertAction = MigrationInsertAction.INSERT_NORMAL;
 

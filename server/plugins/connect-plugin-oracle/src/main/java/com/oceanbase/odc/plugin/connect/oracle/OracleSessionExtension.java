@@ -67,7 +67,7 @@ public class OracleSessionExtension extends OBOracleSessionExtension {
 
     @Override
     public String getVariable(@NonNull Connection connection, @NonNull String variableName) {
-        String querySql = "SELECT VALUE FROM SYS.V$PARAMETER WHERE NAME = '" + variableName.toLowerCase() + "'";
+        String querySql = "SELECT VALUE FROM V$PARAMETER WHERE NAME = '" + variableName.toLowerCase() + "'";
         String value = null;
         try {
             value = JdbcOperationsUtil.getJdbcOperations(connection).queryForObject(querySql, String.class);
@@ -78,11 +78,13 @@ public class OracleSessionExtension extends OBOracleSessionExtension {
          * nls parameters maybe null in V$PARAMETER, we need to query from V$NLS_PARAMETERS
          */
         if (Objects.isNull(value) && variableName.toLowerCase().startsWith("nls_")) {
-            querySql = "SELECT VALUE FROM SYS.V$NLS_PARAMETERS WHERE PARAMETER = '" + variableName.toUpperCase() + "'";
+            querySql = "SELECT VALUE FROM V$NLS_PARAMETERS WHERE PARAMETER = '" + variableName.toUpperCase() + "'";
             try {
                 value = JdbcOperationsUtil.getJdbcOperations(connection).queryForObject(querySql, String.class);
             } catch (Exception e) {
                 log.warn("Failed to get variable {}, message={}", variableName, e.getMessage());
+                querySql = "SELECT VALUE FROM V_$NLS_PARAMETERS WHERE PARAMETER = '" + variableName.toUpperCase() + "'";
+                value = JdbcOperationsUtil.getJdbcOperations(connection).queryForObject(querySql, String.class);
             }
         }
         return value;

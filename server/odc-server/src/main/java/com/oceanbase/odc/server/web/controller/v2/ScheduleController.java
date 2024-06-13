@@ -88,8 +88,15 @@ public class ScheduleController {
     }
 
     @RequestMapping(value = "/scheduleConfigs/{id:[\\d]+}", method = RequestMethod.GET)
-    public SuccessResponse<ScheduleDetailResp> detail(@PathVariable Long id) {
+    public SuccessResponse<ScheduleDetailResp> detailSchedule(@PathVariable Long id) {
         return Responses.single(scheduleService.getById(id));
+    }
+
+    @RequestMapping(value = "/scheduleConfigs/{scheduleId:[\\d]+}/scheduleTask/{scheduleTaskId:[\\d]+}",
+            method = RequestMethod.GET)
+    public SuccessResponse<ScheduleTaskResp> detailScheduleTask(@PathVariable Long scheduleId,
+            @PathVariable Long scheduleTaskId) {
+        return Responses.single(scheduleService.detailScheduleTask(scheduleId, scheduleTaskId));
     }
 
     @RequestMapping(value = "/{id:[\\d]+}/jobs/async/batchGetDownloadUrl", method = RequestMethod.POST)

@@ -42,10 +42,12 @@ import lombok.NonNull;
 public abstract class AbstractDBObjectSyncer<T extends ExtensionPoint> implements DBSchemaSyncer {
 
     @Autowired
-    private DBObjectRepository dbObjectRepository;
+    protected DBObjectRepository dbObjectRepository;
 
     @Autowired
-    private DBColumnRepository dbColumnRepository;
+    protected DBColumnRepository dbColumnRepository;
+
+    private static final int BATCH_SIZE = 1000;
 
     @Override
     public void sync(@NonNull Connection connection, @NonNull Database database, @NonNull DialectType dialectType) {
@@ -69,7 +71,7 @@ public abstract class AbstractDBObjectSyncer<T extends ExtensionPoint> implement
                     return entity;
                 }).collect(Collectors.toList());
         if (CollectionUtils.isNotEmpty(toBeInserted)) {
-            dbObjectRepository.batchCreate(toBeInserted);
+            dbObjectRepository.batchCreate(toBeInserted, BATCH_SIZE);
         }
         // Delete objects that are not in the latest object list
         List<DBObjectEntity> toBeDeleted = existingObjects.stream()
@@ -77,6 +79,7 @@ public abstract class AbstractDBObjectSyncer<T extends ExtensionPoint> implement
         if (CollectionUtils.isNotEmpty(toBeDeleted)) {
             Set<Long> toBeDeletedIds = toBeDeleted.stream().map(DBObjectEntity::getId).collect(Collectors.toSet());
             dbObjectRepository.deleteByIds(toBeDeletedIds);
+            preDelete(toBeDeletedIds);
             dbColumnRepository.deleteByDatabaseIdAndObjectIdIn(database.getId(), toBeDeletedIds);
         }
     }
@@ -91,10 +94,12 @@ public abstract class AbstractDBObjectSyncer<T extends ExtensionPoint> implement
         return Ordered.HIGHEST_PRECEDENCE;
     }
 
-    private T getExtensionPoint(@NonNull DialectType dialectType) {
+    protected T getExtensionPoint(@NonNull DialectType dialectType) {
         List<T> points = SchemaPluginUtil.getExtensions(dialectType, getExtensionPointClass());
         return CollectionUtils.isEmpty(points) ? null : points.get(0);
     }
+
+    void preDelete(@NonNull Set<Long> toBeDeletedIds) {}
 
     abstract Set<String> getLatestObjectNames(@NonNull T extensionPoint, @NonNull Connection connection,
             @NonNull Database database);

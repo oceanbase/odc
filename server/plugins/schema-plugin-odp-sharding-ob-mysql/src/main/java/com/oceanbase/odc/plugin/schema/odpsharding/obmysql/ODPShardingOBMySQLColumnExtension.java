@@ -20,9 +20,10 @@ import java.sql.Connection;
 import org.pf4j.Extension;
 
 import com.oceanbase.odc.common.util.JdbcOperationsUtil;
+import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.plugin.schema.obmysql.OBMySQLColumnExtension;
+import com.oceanbase.tools.dbbrowser.DBBrowser;
 import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
-import com.oceanbase.tools.dbbrowser.schema.mysql.ODPOBMySQLSchemaAccessor;
 
 /**
  * @author gaoda.xy
@@ -33,7 +34,9 @@ public class ODPShardingOBMySQLColumnExtension extends OBMySQLColumnExtension {
 
     @Override
     protected DBSchemaAccessor getSchemaAccessor(Connection connection) {
-        return new ODPOBMySQLSchemaAccessor(JdbcOperationsUtil.getJdbcOperations(connection));
+        return DBBrowser.schemaAccessor()
+                .setJdbcOperations(JdbcOperationsUtil.getJdbcOperations(connection))
+                .setType(DialectType.ODP_SHARDING_OB_MYSQL.getDBBrowserDialectTypeName()).create();
     }
 
 }

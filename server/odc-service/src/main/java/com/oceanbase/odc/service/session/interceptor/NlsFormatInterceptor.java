@@ -75,7 +75,7 @@ public class NlsFormatInterceptor extends BaseTimeConsumingInterceptor {
     public void doAfterCompletion(@NonNull SqlExecuteResult response,
             @NonNull ConnectionSession session, @NonNull AsyncExecuteContext context) {
         DialectType dialect = session.getDialectType();
-        if (response.getStatus() != SqlExecuteStatus.SUCCESS || dialect != DialectType.OB_ORACLE) {
+        if (response.getStatus() != SqlExecuteStatus.SUCCESS || !dialect.isOracle()) {
             return;
         }
         List<String> sqls =

@@ -24,6 +24,7 @@ public enum DBObjectType {
      */
     SCHEMA("SCHEMA"),
     TABLE("TABLE"),
+    LOGICAL_TABLE("LOGICAL TABLE"),
     COLUMN("COLUMN"),
     INDEX("INDEX"),
     CONSTRAINT("CONSTRAINT"),

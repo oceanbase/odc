@@ -35,6 +35,8 @@ public final class StatementsFiles {
 
     public static final String MYSQL_5_6_x = "schema/sql/mysql/mysql_5_6_x.yaml";
 
+    public static final String OBORACLE_4_1_x = "schema/sql/oboracle/oboracle_4_1_x.yaml";
+
     public static final String OBORACLE_4_0_x = "schema/sql/oboracle/oboracle_4_0_x.yaml";
 
     public static final String OBORACLE_3_x = "schema/sql/oboracle/oboracle_3_x.yaml";

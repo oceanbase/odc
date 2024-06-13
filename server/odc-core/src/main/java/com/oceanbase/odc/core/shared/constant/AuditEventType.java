@@ -44,6 +44,8 @@ public enum AuditEventType implements Translatable {
 
     ASYNC,
 
+    MULTIPLE_ASYNC,
+
     MOCKDATA,
 
     IMPORT,
@@ -63,6 +65,8 @@ public enum AuditEventType implements Translatable {
     APPLY_PROJECT_PERMISSION,
 
     APPLY_DATABASE_PERMISSION,
+
+    APPLY_TABLE_PERMISSION,
 
     STRUCTURE_COMPARISON,
 
@@ -84,6 +88,8 @@ public enum AuditEventType implements Translatable {
 
     DATABASE_PERMISSION_MANAGEMENT,
 
+    TABLE_PERMISSION_MANAGEMENT,
+
     ENVIRONMENT_MANAGEMENT,
 
     AUTOMATION_RULE_MANAGEMENT,
@@ -91,6 +97,8 @@ public enum AuditEventType implements Translatable {
     NOTIFICATION_MANAGEMENT,
 
     SENSITIVE_COLUMN_MANAGEMENT,
+
+    DATABASE_CHANGE_CHANGING_ORDER_TEMPLATE_MANAGEMENT,
 
     ;
 
