@@ -74,33 +74,52 @@ public class ResourceRoleService {
         return saveAll(userResourceRoleList, authenticationFacade.currentOrganizationId());
     }
 
+    /**
+     * 保存用户资源角色列表
+     *
+     * @param userResourceRoleList 用户资源角色列表
+     * @param organizationId       组织ID
+     * @return 保存后的用户资源角色列表
+     */
     @SkipAuthorize("internal usage")
     @Transactional(rollbackFor = Exception.class)
     public List<UserResourceRole> saveAll(List<UserResourceRole> userResourceRoleList, @NonNull Long organizationId) {
+        // 如果用户资源角色列表为空，则返回空列表
         if (CollectionUtils.isEmpty(userResourceRoleList)) {
             return Collections.emptyList();
         }
+        // 创建用户资源角色实体列表
         List<UserResourceRoleEntity> userResourceRoleEntityList = new ArrayList<>();
+        // 获取所有资源角色实体，并按照资源类型和角色名称进行分组
         Map<ResourceType, Map<ResourceRoleName, ResourceRoleEntity>> resourceRoleMap = resourceRoleRepository.findAll()
-                .stream().collect(Collectors.groupingBy(ResourceRoleEntity::getResourceType,
-                        Collectors.toMap(ResourceRoleEntity::getRoleName, v -> v, (v1, v2) -> v2)));
+            .stream().collect(Collectors.groupingBy(ResourceRoleEntity::getResourceType,
+                Collectors.toMap(ResourceRoleEntity::getRoleName, v -> v, (v1, v2) -> v2)));
+        // 遍历用户资源角色列表
         userResourceRoleList.forEach(e -> {
+            // 获取指定资源类型的资源角色实体映射
             Map<ResourceRoleName, ResourceRoleEntity> resourceRoleEntityMap = resourceRoleMap.get(e.getResourceType());
+            // 如果资源类型没有对应的角色，则抛出异常
             if (Objects.isNull(resourceRoleEntityMap)) {
                 throw new UnexpectedException("resource type has no role, type=" + e.getResourceType());
             }
+            // 获取指定角色名称的资源角色实体
             ResourceRoleEntity resourceRoleEntity = resourceRoleEntityMap.get(e.getResourceRole());
+            // 如果角色名称不存在，则抛出异常
             if (Objects.isNull(resourceRoleEntity)) {
                 throw new UnexpectedException("resource role not found, role=" + e.getResourceRole());
             }
+            // 创建用户资源角色实体
             UserResourceRoleEntity entity = new UserResourceRoleEntity();
             entity.setResourceId(e.getResourceId());
             entity.setUserId(e.getUserId());
             entity.setResourceRoleId(resourceRoleEntity.getId());
             entity.setOrganizationId(organizationId);
+            // 将用户资源角色实体添加到列表中
             userResourceRoleEntityList.add(entity);
         });
+        // 批量创建用户资源角色实体
         userResourceRoleRepository.batchCreate(userResourceRoleEntityList);
+        // 返回保存后的用户资源角色列表
         return userResourceRoleList;
     }
 

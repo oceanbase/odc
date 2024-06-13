@@ -346,22 +346,34 @@ public class ProjectService {
         return entityToModel(project, userResourceRoles);
     }
 
+    /**
+     * 创建项目成员并跳过权限检查
+     *
+     * @param projectId      项目ID
+     * @param organizationId 组织ID
+     * @param members        项目成员列表
+     * @return 创建后的项目实体
+     */
     @SkipAuthorize("permission check inside")
     @Transactional(rollbackFor = Exception.class)
     public Project createMembersSkipPermissionCheck(@NonNull Long projectId, @NonNull Long organizationId,
-            @NotEmpty List<ProjectMember> members) {
+        @NotEmpty List<ProjectMember> members) {
+        // 根据项目ID和组织ID查找项目实体，如果不存在则抛出NotFoundException异常
         ProjectEntity project = repository.findByIdAndOrganizationId(projectId, organizationId)
-                .orElseThrow(() -> new NotFoundException(ResourceType.ODC_PROJECT, "id", projectId));
+            .orElseThrow(() -> new NotFoundException(ResourceType.ODC_PROJECT, "id", projectId));
 
+        // 遍历项目成员列表，检查每个成员是否属于指定组织，如果不属于则抛出UnauthorizedDataAccess异常
         members.forEach(m -> PreConditions.validArgumentState(
-                userOrganizationService.userBelongsToOrganization(m.getId(), organizationId),
-                ErrorCodes.UnauthorizedDataAccess, null, null));
+            userOrganizationService.userBelongsToOrganization(m.getId(), organizationId),
+            ErrorCodes.UnauthorizedDataAccess, null, null));
 
+        // 将项目成员转换为用户资源角色，并保存到数据库中
         List<UserResourceRole> userResourceRoles = resourceRoleService.saveAll(
-                members.stream()
-                        .map(member -> member2UserResourceRole(member, projectId))
-                        .collect(Collectors.toList()),
-                organizationId);
+            members.stream()
+                .map(member -> member2UserResourceRole(member, projectId))
+                .collect(Collectors.toList()),
+            organizationId);
+        // 将项目实体和用户资源角色列表转换为项目模型，并返回
         return entityToModelWithoutCurrentUser(project, userResourceRoles);
     }
 

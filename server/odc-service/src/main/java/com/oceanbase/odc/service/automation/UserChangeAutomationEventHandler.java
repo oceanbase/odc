@@ -49,20 +49,35 @@ public class UserChangeAutomationEventHandler extends AbstractAutomationEventHan
                 || LOGIN_SUCCESS.equals(triggerEvent.getEventName());
     }
 
+    /**
+     * 重写match方法，用于判断自动化条件是否匹配触发事件
+     *
+     * @param condition    自动化条件
+     * @param triggerEvent 触发事件
+     * @return 匹配结果，true表示匹配，false表示不匹配
+     */
     @Override
     protected boolean match(AutomationCondition condition, TriggerEvent triggerEvent) {
+        // 获取触发事件源用户
         User user = (User) triggerEvent.getSource();
         try {
+            // 获取条件表达式
             String filed = condition.getExpression();
+            // 判断条件表达式是否以EXTRA_INFO_PREFIX开头
             if (condition.getExpression().startsWith(EXTRA_INFO_PREFIX)) {
+                // 如果是，则去掉前缀后获取实际字段名
                 filed = condition.getExpression().substring(EXTRA_INFO_PREFIX.length());
+                // 从用户的额外属性中读取JSON节点
                 JsonNode jsonNode = objectMapper.readTree(user.getExtraProperties());
+                // 调用条件的validate方法进行校验
                 return condition.validate(jsonNode.get(filed));
             } else {
+                // 如果不是，则直接从用户对象中获取字段值
                 String root = BeanUtils.getProperty(user, filed);
                 return condition.validate(root);
             }
         } catch (Exception e) {
+            // 如果出现异常，则返回false
             return false;
         }
     }

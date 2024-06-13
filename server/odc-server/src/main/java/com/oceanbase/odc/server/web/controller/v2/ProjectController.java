@@ -71,15 +71,26 @@ public class ProjectController {
         return Responses.success(projectService.detail(id));
     }
 
+    /**
+     * 列出项目列表
+     *
+     * @param name     项目名称
+     * @param archived 是否已归档
+     * @param builtin  是否为内置项目
+     * @param pageable 分页信息
+     * @return 项目列表分页响应
+     */
     @ApiOperation(value = "listProjects", notes = "List all projects")
     @RequestMapping(value = "/projects", method = RequestMethod.GET)
     public PaginatedResponse<Project> listProjects(
-            @RequestParam(required = false, name = "name") String name,
-            @RequestParam(required = false, name = "archived") Boolean archived,
-            @RequestParam(required = false, name = "builtin", defaultValue = "false") Boolean builtin,
-            @PageableDefault(size = Integer.MAX_VALUE, sort = {"id"}, direction = Direction.DESC) Pageable pageable) {
+        @RequestParam(required = false, name = "name") String name,
+        @RequestParam(required = false, name = "archived") Boolean archived,
+        @RequestParam(required = false, name = "builtin", defaultValue = "false") Boolean builtin,
+        @PageableDefault(size = Integer.MAX_VALUE, sort = {"id"}, direction = Direction.DESC) Pageable pageable) {
+        // 构建查询项目参数
         QueryProjectParams params =
-                QueryProjectParams.builder().name(name).archived(archived).builtin(builtin).build();
+            QueryProjectParams.builder().name(name).archived(archived).builtin(builtin).build();
+        // 调用项目服务的列表方法，并将结果封装到分页响应中返回
         return Responses.paginated(projectService.list(params, pageable));
     }
 

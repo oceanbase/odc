@@ -126,19 +126,28 @@ public abstract class AbstractAutomationEventHandler implements TriggerEventHand
         }
     }
 
+    /**
+     * 绑定项目角色
+     *
+     * @param userId 用户ID
+     * @param action 自动化操作
+     */
     protected void bindProjectRole(Long userId, AutomationAction action) {
+        // 获取项目ID和成员角色ID列表
         Long projectId = ((Integer) action.getArguments().get("projectId")).longValue();
         List<Integer> roleIds = (List<Integer>) action.getArguments().get("roles");
+        // 根据成员角色ID列表过滤出对应的资源角色，并将其转换为项目成员列表
         List<ProjectMember> members =
-                resourceRoleService.listResourceRoles(Collections.singletonList(ResourceType.ODC_PROJECT)).stream()
-                        .filter(resourceRole -> roleIds.contains(resourceRole.getId().intValue()))
-                        .map(resourceRole -> {
-                            ProjectMember member = new ProjectMember();
-                            member.setRole(resourceRole.getRoleName());
-                            member.setId(userId);
-                            return member;
-                        })
-                        .collect(Collectors.toList());
+            resourceRoleService.listResourceRoles(Collections.singletonList(ResourceType.ODC_PROJECT)).stream()
+                .filter(resourceRole -> roleIds.contains(resourceRole.getId().intValue()))
+                .map(resourceRole -> {
+                    ProjectMember member = new ProjectMember();
+                    member.setRole(resourceRole.getRoleName());
+                    member.setId(userId);
+                    return member;
+                })
+                .collect(Collectors.toList());
+        // 创建项目成员，跳过权限检查
         projectService.createMembersSkipPermissionCheck(projectId, action.getOrganizationId(), members);
     }
 

@@ -108,19 +108,28 @@ public interface UserResourceRoleRepository extends OdcJpaRepository<UserResourc
     List<UserResourceRoleEntity> findByUserIdAndResourceType(@Param("userId") Long userId,
             @Param("resourceType") ResourceType resourceType);
 
+    /**
+     * 批量创建用户资源角色实体
+     *
+     * @param entities 用户资源角色实体列表
+     * @return 创建成功的用户资源角色实体列表
+     */
     default List<UserResourceRoleEntity> batchCreate(List<UserResourceRoleEntity> entities) {
+        // 构建插入SQL语句
         String sql = InsertSqlTemplateBuilder.from("iam_user_resource_role")
-                .field(UserResourceRoleEntity_.userId)
-                .field(UserResourceRoleEntity_.resourceId)
-                .field(UserResourceRoleEntity_.resourceRoleId)
-                .field(UserResourceRoleEntity_.organizationId)
-                .build();
+            .field(UserResourceRoleEntity_.userId)
+            .field(UserResourceRoleEntity_.resourceId)
+            .field(UserResourceRoleEntity_.resourceRoleId)
+            .field(UserResourceRoleEntity_.organizationId)
+            .build();
+        // 构建获取实体属性值的函数列表
         List<Function<UserResourceRoleEntity, Object>> getter = valueGetterBuilder()
-                .add(UserResourceRoleEntity::getUserId)
-                .add(UserResourceRoleEntity::getResourceId)
-                .add(UserResourceRoleEntity::getResourceRoleId)
-                .add(UserResourceRoleEntity::getOrganizationId)
-                .build();
+            .add(UserResourceRoleEntity::getUserId)
+            .add(UserResourceRoleEntity::getResourceId)
+            .add(UserResourceRoleEntity::getResourceRoleId)
+            .add(UserResourceRoleEntity::getOrganizationId)
+            .build();
+        // 调用通用的批量创建方法
         return batchCreate(entities, sql, getter, UserResourceRoleEntity::setId);
     }
 }
