@@ -101,7 +101,7 @@ public class K8sJobCaller extends BaseJobCaller {
                 if ((System.currentTimeMillis() - jobEntity.getStartedTime().getTime()) / 1000 <= podConfig
                         .getPodPendingTimeoutSeconds()) {
                     // Pod cannot be deleted when pod pending is not timeout,
-                    // so throw exception representative delete failed
+                    // so throw exception representative cannot delete
                     log.warn("Cannot destroy pod, pending is not timeout, jodId={0}, identifier={1}, podStatus={2}",
                             ji.getId(), ei.getExecutorName(), k8sJobResponse.get().getResourceStatus());
                     return false;
