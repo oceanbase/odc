@@ -60,4 +60,6 @@ public interface JobCaller {
      * @throws JobException throws JobException when stop job failed
      */
     void destroy(JobIdentity ji) throws JobException;
+
+    boolean canBeDestroy(JobIdentity ji);
 }
