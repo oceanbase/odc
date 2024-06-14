@@ -91,7 +91,7 @@ public class K8sJobCaller extends BaseJobCaller {
         try {
             k8sJobResponse = client.get(ei.getNamespace(), ei.getExecutorName());
         } catch (JobException e) {
-            log.warn("Get k8s pod occur error", e);
+            log.warn("Get k8s pod occur error, jobId={}", ji.getId(), e);
             return false;
         }
         if (k8sJobResponse.isPresent()) {
