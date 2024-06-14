@@ -86,6 +86,32 @@ public class K8sJobCaller extends BaseJobCaller {
     }
 
     @Override
+    protected boolean canBeDestroy(JobIdentity ji, ExecutorIdentifier ei) {
+        Optional<K8sJobResponse> k8sJobResponse = null;
+        try {
+            k8sJobResponse = client.get(ei.getNamespace(), ei.getExecutorName());
+        } catch (JobException e) {
+            log.warn("Get k8s pod occur error", e);
+            return false;
+        }
+        if (k8sJobResponse.isPresent()) {
+            if (PodStatus.PENDING == PodStatus.of(k8sJobResponse.get().getResourceStatus())) {
+                JobConfiguration jobConfiguration = JobConfigurationHolder.getJobConfiguration();
+                JobEntity jobEntity = jobConfiguration.getTaskFrameworkService().find(ji.getId());
+                if ((System.currentTimeMillis() - jobEntity.getStartedTime().getTime()) / 1000 <= podConfig
+                        .getPodPendingTimeoutSeconds()) {
+                    // Pod cannot be deleted when pod pending is not timeout,
+                    // so throw exception representative delete failed
+                    log.warn("Cannot destroy pod, pending is not timeout, jodId={0}, identifier={1}, podStatus={2}",
+                            ji.getId(), ei.getExecutorName(), k8sJobResponse.get().getResourceStatus());
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    @Override
     protected void doDestroyInternal(ExecutorIdentifier identifier) throws JobException {
         client.delete(podConfig.getNamespace(), identifier.getExecutorName());
     }

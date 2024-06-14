@@ -91,6 +91,7 @@ public class ProcessJobCaller extends BaseJobCaller {
 
     @Override
     protected void doDestroy(JobIdentity ji, ExecutorIdentifier ei) throws JobException {
+
         if (isExecutorExist(ei)) {
             long pid = Long.parseLong(ei.getNamespace());
             log.info("Found process, try kill it, pid={}.", pid);
@@ -127,6 +128,26 @@ public class ProcessJobCaller extends BaseJobCaller {
         throw new JobException(ODC_EXECUTOR_CANNOT_BE_DESTROYED +
                 "Connect to target odc server succeed, but cannot destroy process,"
                 + " may not on this machine, jodId={0}, identifier={1}", ji.getId(), ei);
+    }
+
+    @Override
+    public boolean canBeDestroy(JobIdentity ji, ExecutorIdentifier ei) {
+        if (isExecutorExist(ei)) {
+            log.info("Executor be found, jobId={}, identifier={}", ji.getId(), ei);
+            return true;
+        }
+        String portString = Optional.ofNullable(
+                JobConfigurationHolder.getJobConfiguration().getHostProperties().getPort())
+                .orElse(DefaultExecutorIdentifier.DEFAULT_PORT + "");
+        if (SystemUtils.getLocalIpAddress().equals(ei.getHost()) && Objects.equals(portString, ei.getPort() + "")) {
+            return true;
+        }
+        if (!HttpUtil.isOdcHealthy(ei.getHost(), ei.getPort())) {
+            log.info("Cannot connect to target odc server, executor can be destroyed,jobId={}, identifier={}",
+                    ji.getId(), ei);
+            return true;
+        }
+        return false;
     }
 
     @Override
