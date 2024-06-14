@@ -139,6 +139,7 @@
 
         <mysql.jdbc.version>8.0.30</mysql.jdbc.version>
         <oracle.jdbc.version>21.1.0.0</oracle.jdbc.version>
+        <postgres.jdbc.version>42.7.3</postgres.jdbc.version>
 
         <micrometer-core.version>1.8.0</micrometer-core.version>
         <mariadb-java-client.version>2.7.11</mariadb-java-client.version>
@@ -1126,6 +1127,11 @@
                 <groupId>com.oracle.database.jdbc</groupId>
                 <artifactId>ojdbc8</artifactId>
                 <version>${oracle.jdbc.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.postgresql</groupId>
+                <artifactId>postgresql</artifactId>
+                <version>${postgres.jdbc.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.oracle.database.nls</groupId>

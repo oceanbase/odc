@@ -148,6 +148,8 @@ public class ConnectionTesting {
                 schema = OBConsoleDataSourceFactory.getDefaultSchema(config);
             } else if (type.getDialectType().isDoris()) {
                 schema = OBConsoleDataSourceFactory.getDefaultSchema(config);
+            } else if (type.getDialectType().isPostgreSql()) {
+                schema = null;
             } else {
                 throw new UnsupportedOperationException("Unsupported type, " + type);
             }

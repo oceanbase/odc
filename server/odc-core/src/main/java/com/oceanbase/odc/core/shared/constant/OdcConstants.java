@@ -84,6 +84,11 @@ public class OdcConstants {
      * Oracle driver class name
      */
     public static final String ORACLE_DRIVER_CLASS_NAME = "oracle.jdbc.driver.OracleDriver";
+    /**
+     * postgreSql driver class name
+     */
+    public static final String POSTGRES_DRIVER_CLASS_NAME = "org.postgresql.Driver";
+
 
     /**
      * Parameters name

@@ -30,6 +30,7 @@ public enum ConnectType {
     ODP_SHARDING_OB_MYSQL(DialectType.ODP_SHARDING_OB_MYSQL),
     MYSQL(DialectType.MYSQL),
     DORIS(DialectType.DORIS),
+    POSTGRE_SQL(DialectType.POSTGRE_SQL),
 
     // reserved for future version
     ODP_SHARDING_OB_ORACLE(DialectType.OB_ORACLE),
