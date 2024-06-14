@@ -30,12 +30,14 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.SchedulingConfigurer;
 import org.springframework.scheduling.config.ScheduledTaskRegistrar;
 
+import com.oceanbase.odc.service.common.ConditionOnServer;
 import com.oceanbase.odc.service.notification.model.EventStatus;
 import com.oceanbase.odc.service.notification.model.MessageSendingStatus;
 
 @EnableScheduling
 @Configuration
 @Profile({"!clientMode"})
+@ConditionOnServer
 public class NotificationScheduleConfiguration implements SchedulingConfigurer {
     @Autowired
     private NotificationProperties notificationProperties;

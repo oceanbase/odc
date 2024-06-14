@@ -16,8 +16,14 @@
 
 package com.oceanbase.odc.service.task.config;
 
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
+
+import javax.sql.DataSource;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -25,10 +31,15 @@ import org.springframework.context.annotation.Lazy;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.scheduling.quartz.SchedulerFactoryBean;
 
+import com.oceanbase.odc.common.event.EventPublisher;
+import com.oceanbase.odc.service.common.ConditionOnServer;
 import com.oceanbase.odc.service.task.caller.K8sJobClient;
 import com.oceanbase.odc.service.task.caller.NativeK8sJobClient;
+import com.oceanbase.odc.service.task.exception.JobException;
 import com.oceanbase.odc.service.task.jasypt.DefaultJasyptEncryptorConfigProperties;
 import com.oceanbase.odc.service.task.jasypt.JasyptEncryptorConfigProperties;
+import com.oceanbase.odc.service.task.schedule.JobDefinition;
+import com.oceanbase.odc.service.task.schedule.JobScheduler;
 import com.oceanbase.odc.service.task.schedule.MonitorProcessRateLimiter;
 import com.oceanbase.odc.service.task.schedule.StartJobRateLimiter;
 import com.oceanbase.odc.service.task.service.TaskFrameworkService;
@@ -48,7 +59,7 @@ public class TaskFrameworkConfiguration {
 
     @Lazy
     @Bean
-    @ConditionalOnMissingBean(K8sJobClient.class)
+    @ConditionalOnMissingBean({K8sJobClient.class, TaskFrameworkProperties.class})
     public K8sJobClient k8sJobClient(@Autowired TaskFrameworkProperties taskFrameworkProperties) {
         try {
             log.info("k8s url is {}", taskFrameworkProperties.getK8sProperties().getKubeUrl());
@@ -61,6 +72,7 @@ public class TaskFrameworkConfiguration {
     }
 
     @Bean
+    @ConditionalOnBean(TaskFrameworkService.class)
     public StartJobRateLimiter monitorProcessRateLimiter(@Autowired TaskFrameworkService taskFrameworkService) {
         return new MonitorProcessRateLimiter(TaskFrameworkPropertiesSupplier.getSupplier(), taskFrameworkService);
     }
@@ -73,6 +85,8 @@ public class TaskFrameworkConfiguration {
 
     @Lazy
     @Bean("taskFrameworkSchedulerFactoryBean")
+    @ConditionalOnBean(TaskFrameworkProperties.class)
+    @ConditionOnServer
     public SchedulerFactoryBean taskFrameworkSchedulerFactoryBean(
             TaskFrameworkProperties taskFrameworkProperties,
             @Qualifier("taskFrameworkMonitorExecutor") ThreadPoolTaskExecutor executor) {
@@ -85,6 +99,7 @@ public class TaskFrameworkConfiguration {
     }
 
     @Bean
+    @ConditionalOnBean(TaskFrameworkProperties.class)
     public TaskFrameworkEnabledProperties taskFrameworkEnabledProperties(
             @Autowired TaskFrameworkProperties taskFrameworkProperties) {
         TaskFrameworkEnabledProperties properties = new TaskFrameworkEnabledProperties();
@@ -95,15 +110,48 @@ public class TaskFrameworkConfiguration {
     }
 
     @Bean
+    @ConditionOnServer
     public JobConfiguration jobConfiguration() {
         return new DefaultSpringJobConfiguration();
     }
 
     @Bean
+    @ConditionalOnBean(JobConfiguration.class)
     public JobSchedulerFactoryBean jobSchedulerFactoryBean(@Autowired JobConfiguration jobConfiguration) {
         JobSchedulerFactoryBean factoryBean = new JobSchedulerFactoryBean();
         factoryBean.setJobConfiguration(jobConfiguration);
         return factoryBean;
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    public JobScheduler jobScheduler() {
+        return new JobScheduler() {
+            @Override
+            public Long scheduleJobNow(JobDefinition jd) {
+                throw new UnsupportedOperationException();
+            }
+
+            @Override
+            public void cancelJob(Long jobId) throws JobException {
+                throw new UnsupportedOperationException();
+            }
+
+            @Override
+            public void modifyJobParameters(Long jobId, Map<String, String> jobParameters) throws JobException {
+                throw new UnsupportedOperationException();
+            }
+
+            @Override
+            public void await(Long jobId, Integer timeout, TimeUnit timeUnit) throws InterruptedException {
+                throw new UnsupportedOperationException();
+            }
+
+            @Override
+            public EventPublisher getEventPublisher() {
+                throw new UnsupportedOperationException();
+            }
+        };
     }
 
 }
