@@ -71,8 +71,12 @@ public class AsyncExecuteContext {
     /**
      * only return the incremental results
      */
-    public List<JdbcGeneralResult> getMoreSqlExecutionResults() {
+    public List<JdbcGeneralResult> getMoreSqlExecutionResults(long timeoutMillis) {
         List<JdbcGeneralResult> copiedResults = new ArrayList<>();
+
+        long expect = System.currentTimeMillis() + timeoutMillis;
+        while (System.currentTimeMillis() <= expect && results.isEmpty()) {
+        }
         while (!results.isEmpty()) {
             copiedResults.add(results.poll());
         }

@@ -403,8 +403,8 @@ public class OBMySQLDiagnoseExtension implements SqlDiagnoseExtensionPoint {
         String[] segs = planText.split("Outputs & filters");
         String[] outputSegs = segs[1].split("Used Hint")[0].split("[0-9]+ - output");
         Map<String, String> outputFilters = new HashMap<>();
-        for (int i = 0; i < outputSegs.length; i++) {
-            outputFilters.put(i + "", outputSegs[i]);
+        for (int i = 1; i < outputSegs.length; i++) {
+            outputFilters.put(i - 1 + "", "output" + outputSegs[i]);
         }
         return PlanGraphBuilder.buildPlanGraph(
                 JsonUtils.fromJsonMap(planJson.toString(), String.class, Object.class), outputFilters);

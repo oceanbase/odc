@@ -339,10 +339,9 @@ public class ConnectConsoleService {
         AsyncExecuteContext context =
                 (AsyncExecuteContext) ConnectionSessionUtil.getExecuteContext(connectionSession, requestId);
         int timeout = Objects.isNull(timeoutSeconds) ? DEFAULT_GET_RESULT_TIMEOUT_SECONDS : timeoutSeconds;
-        boolean shouldRemoveContext = false;
+        boolean shouldRemoveContext = context.isFinished();
         try {
-            shouldRemoveContext = await(context, timeout, TimeUnit.SECONDS);
-            List<JdbcGeneralResult> resultList = context.getMoreSqlExecutionResults();
+            List<JdbcGeneralResult> resultList = context.getMoreSqlExecutionResults(timeout);
             List<SqlExecuteResult> results = resultList.stream().map(jdbcGeneralResult -> {
                 SqlExecuteResult result = generateResult(connectionSession, jdbcGeneralResult, context.getContextMap());
                 try (TraceStage stage = result.getSqlTuple().getSqlWatch().start(SqlExecuteStages.SQL_AFTER_CHECK)) {
@@ -602,20 +601,6 @@ public class ConnectConsoleService {
             return Math.min(queryLimit, (int) sessionProperties.getResultSetMaxRows());
         }
         return queryLimit;
-    }
-
-    private boolean await(@NotNull AsyncExecuteContext context, long timeout, TimeUnit unit) {
-        if (context.getFuture() == null) {
-            return false;
-        }
-        try {
-            context.getFuture().get(timeout, unit);
-            return true;
-        } catch (TimeoutException e) {
-            return false;
-        } catch (Exception e) {
-            throw new IllegalStateException(e);
-        }
     }
 
 }

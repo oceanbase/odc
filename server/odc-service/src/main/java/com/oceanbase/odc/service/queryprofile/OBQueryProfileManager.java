@@ -21,11 +21,12 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.jdbc.core.ConnectionCallback;
 import org.springframework.jdbc.core.StatementCallback;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StreamUtils;
 
@@ -52,9 +53,11 @@ import lombok.extern.slf4j.Slf4j;
 @Component
 public class OBQueryProfileManager {
     private static final String PROFILE_KEY_PREFIX = "query-profile-";
+    private static final String ENABLE_QUERY_PROFILE_VERSION = "4.2.4";
 
-    private final ExecutorService executor =
-            Executors.newFixedThreadPool(5, r -> new Thread(r, "query-profile-" + r.hashCode()));
+    @Autowired
+    @Qualifier("queryProfileMonitorExecutor")
+    private ThreadPoolTaskExecutor executor;
 
     public void submit(ConnectionSession session, @NonNull String traceId) {
         executor.execute(() -> {
@@ -79,13 +82,11 @@ public class OBQueryProfileManager {
     }
 
     public SqlExplain getProfile(@NonNull String traceId, ConnectionSession session) {
-        if (session.isExpired()) {
-            throw new BadRequestException(ErrorCodes.ConnectionReset, null,
-                    ErrorCodes.ConnectionReset.getLocalizedMessage(null));
-        }
-        if (VersionUtils.isLessThan(ConnectionSessionUtil.getVersion(session), "4.2.0")) {
-            throw new BadRequestException(ErrorCodes.ObQueryProfileNotSupported, null,
-                    ErrorCodes.ObQueryProfileNotSupported.getLocalizedMessage(null));
+        if (VersionUtils.isLessThan(ConnectionSessionUtil.getVersion(session), ENABLE_QUERY_PROFILE_VERSION)) {
+            throw new BadRequestException(ErrorCodes.ObQueryProfileNotSupported,
+                    new Object[] {ENABLE_QUERY_PROFILE_VERSION},
+                    ErrorCodes.ObQueryProfileNotSupported
+                            .getLocalizedMessage(new Object[] {ENABLE_QUERY_PROFILE_VERSION}));
         }
         try {
             BinaryContentMetaData metadata =

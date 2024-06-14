@@ -148,13 +148,10 @@ public class PlanGraphBuilder {
         StringBuilder keyBuilder = new StringBuilder();
         StringBuilder valueBuilder = new StringBuilder();
         for (char c : cs) {
-            if (c == '\n') {
-                continue;
-            }
             if (depth == 0) {
                 if (c == '(' || c == '[') {
                     depth++;
-                } else if (c == ',' || c == ' ') {
+                } else if (c == ',' || c == ' ' || c == '\n') {
                     if (keyBuilder.indexOf("=") != -1) {
                         String[] split = keyBuilder.toString().trim().split("=");
                         map.put(split[0], singletonList(split[1]));
@@ -163,6 +160,9 @@ public class PlanGraphBuilder {
                 } else {
                     keyBuilder.append(c);
                 }
+                continue;
+            }
+            if (c == '\n') {
                 continue;
             }
             if (c == '(' || c == '[') {

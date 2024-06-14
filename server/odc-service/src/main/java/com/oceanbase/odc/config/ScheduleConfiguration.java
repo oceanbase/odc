@@ -283,6 +283,21 @@ public class ScheduleConfiguration {
         return executor;
     }
 
+    @Bean(name = "queryProfileMonitorExecutor")
+    public ThreadPoolTaskExecutor queryProfileMonitorExecutor() {
+        ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
+        int poolSize = Math.max(SystemUtils.availableProcessors() * 2, 8);
+        executor.setCorePoolSize(poolSize);
+        executor.setMaxPoolSize(poolSize);
+        executor.setThreadNamePrefix("query-profile-monitor-");
+        executor.setWaitForTasksToCompleteOnShutdown(false);
+        executor.setAwaitTerminationSeconds(5);
+        executor.setTaskDecorator(new TraceDecorator<>());
+        executor.setRejectedExecutionHandler(new ThreadPoolExecutor.DiscardPolicy());
+        executor.initialize();
+        log.info("queryProfileMonitorExecutor initialized");
+        return executor;
+    }
 
     @Scheduled(fixedDelay = REFRESH_CONFIG_RATE_MILLIS)
     public void refreshSysConfig() {
