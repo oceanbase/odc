@@ -18,6 +18,7 @@ package com.oceanbase.odc.service.flow.task;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import org.flowable.engine.delegate.DelegateExecution;
@@ -27,7 +28,9 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 import com.oceanbase.odc.common.json.JsonUtils;
+import com.oceanbase.odc.core.shared.constant.DatabaseChangeTranslate;
 import com.oceanbase.odc.core.shared.constant.FlowStatus;
+import com.oceanbase.odc.core.shared.constant.Symbols;
 import com.oceanbase.odc.core.shared.constant.TaskErrorStrategy;
 import com.oceanbase.odc.core.shared.constant.TaskType;
 import com.oceanbase.odc.metadb.flow.FlowInstanceEntity;
@@ -135,6 +138,8 @@ public class MultipleDatabaseChangeRuntimeFlowableTask extends BaseODCFlowTaskDe
                     multipleDatabaseChangeParameters.getOrderedDatabaseIds().get(this.batchId);
             List<Long> flowInstanceIds = new ArrayList<>();
             this.taskCreator = FlowTaskUtil.getTaskCreator(execution);
+            Map<Long, DatabaseChangeDatabase> map = multipleDatabaseChangeParameters.getDatabases().stream()
+                    .collect(Collectors.toMap(DatabaseChangeDatabase::getId, Function.identity()));
             for (Long batchDatabaseId : batchDatabaseIds) {
                 CreateFlowInstanceReq createFlowInstanceReq = new CreateFlowInstanceReq();
                 createFlowInstanceReq.setDatabaseId(batchDatabaseId);
@@ -143,6 +148,8 @@ public class MultipleDatabaseChangeRuntimeFlowableTask extends BaseODCFlowTaskDe
                 createFlowInstanceReq.setParentFlowInstanceId(FlowTaskUtil.getFlowInstanceId(execution));
                 createFlowInstanceReq.setParameters(multipleDatabaseChangeParameters
                         .convertIntoDatabaseChangeParameters(multipleDatabaseChangeParameters));
+                createFlowInstanceReq.setDescription(
+                        generateDescription(map.get(batchDatabaseId), getFlowInstanceId(), this.batchId));
                 List<FlowInstanceDetailResp> individualFlowInstance = flowInstanceService.createWithoutApprovalNode(
                         createFlowInstanceReq);
                 flowInstanceIds.add(individualFlowInstance.get(0).getId());
@@ -325,4 +332,13 @@ public class MultipleDatabaseChangeRuntimeFlowableTask extends BaseODCFlowTaskDe
         return null;
     }
 
+    public String generateDescription(DatabaseChangeDatabase database, Long flowInstanceId, Integer batchId) {
+        String descFormat =
+                Symbols.LEFT_BRACKET.i18nKey() + "%s" + Symbols.RIGHT_BRACKET.i18nKey()
+                        + TaskType.MULTIPLE_ASYNC.i18nKey() + " %s "
+                        + DatabaseChangeTranslate.BATCH_NUMBER.i18nKey() + "%s %s.%s";
+        return String.format(descFormat,
+                database.getEnvironment().getName(), flowInstanceId, batchId + 1, database.getDataSource().getName(),
+                database.getName());
+    }
 }
