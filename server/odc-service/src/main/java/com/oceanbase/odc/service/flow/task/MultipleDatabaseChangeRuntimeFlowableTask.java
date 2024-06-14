@@ -186,7 +186,7 @@ public class MultipleDatabaseChangeRuntimeFlowableTask extends BaseODCFlowTaskDe
                 createFlowInstanceReq.setExecutionStrategy(FlowTaskExecutionStrategy.AUTO);
                 createFlowInstanceReq.setParentFlowInstanceId(getFlowInstanceId());
                 createFlowInstanceReq.setParameters(multipleDatabaseChangeParameters
-                        .convertIntoDatabaseChangeParameters(multipleDatabaseChangeParameters));
+                        .convertIntoDatabaseChangeParameters());
                 List<FlowInstanceDetailResp> individualFlowInstance = flowInstanceService.createWithoutApprovalNode(
                         createFlowInstanceReq);
                 this.flowInstanceIds.add(individualFlowInstance.get(0).getId());

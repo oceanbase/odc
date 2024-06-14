@@ -53,19 +53,19 @@ public class MultipleDatabaseChangeParameters extends DatabaseChangeParameters {
      */
     private Long manualTimeoutMillis = 1000 * 60 * 60 * 24 * 2L;// 2d for default
 
-    public DatabaseChangeParameters convertIntoDatabaseChangeParameters(MultipleDatabaseChangeParameters parameter) {
+    public DatabaseChangeParameters convertIntoDatabaseChangeParameters() {
         DatabaseChangeParameters databaseChangeParameters = new DatabaseChangeParameters();
-        databaseChangeParameters.setSqlContent(parameter.getSqlContent());
-        databaseChangeParameters.setSqlObjectNames(parameter.getSqlObjectNames());
-        databaseChangeParameters.setSqlObjectIds(parameter.getSqlObjectIds());
+        databaseChangeParameters.setSqlContent(getSqlContent());
+        databaseChangeParameters.setSqlObjectNames(getSqlObjectNames());
+        databaseChangeParameters.setSqlObjectIds(getSqlObjectIds());
         databaseChangeParameters
-                .setRollbackSqlObjectNames(parameter.getRollbackSqlObjectNames());
-        databaseChangeParameters.setRollbackSqlContent(parameter.getRollbackSqlContent());
-        databaseChangeParameters.setRollbackSqlObjectIds(parameter.getRollbackSqlObjectIds());
+                .setRollbackSqlObjectNames(getRollbackSqlObjectNames());
+        databaseChangeParameters.setRollbackSqlContent(getRollbackSqlContent());
+        databaseChangeParameters.setRollbackSqlObjectIds(getRollbackSqlObjectIds());
         // Error strategy for sql changes in a single database
-        databaseChangeParameters.setErrorStrategy(parameter.getErrorStrategy().toString());
-        databaseChangeParameters.setDelimiter(parameter.getDelimiter());
-        databaseChangeParameters.setGenerateRollbackPlan(parameter.getGenerateRollbackPlan());
+        databaseChangeParameters.setErrorStrategy(getErrorStrategy().toString());
+        databaseChangeParameters.setDelimiter(getDelimiter());
+        databaseChangeParameters.setGenerateRollbackPlan(getGenerateRollbackPlan());
         return databaseChangeParameters;
     }
 
