@@ -53,7 +53,7 @@ import lombok.extern.slf4j.Slf4j;
 @Component
 public class OBQueryProfileManager {
     private static final String PROFILE_KEY_PREFIX = "query-profile-";
-    private static final String ENABLE_QUERY_PROFILE_VERSION = "4.2.4";
+    public static final String ENABLE_QUERY_PROFILE_VERSION = "4.2.4";
 
     @Autowired
     @Qualifier("queryProfileMonitorExecutor")

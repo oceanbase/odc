@@ -17,6 +17,7 @@ package com.oceanbase.odc.service.session;
 
 import static com.oceanbase.odc.core.session.ConnectionSessionConstants.BACKEND_DS_KEY;
 import static com.oceanbase.odc.core.session.ConnectionSessionConstants.CONSOLE_DS_KEY;
+import static com.oceanbase.odc.service.queryprofile.OBQueryProfileManager.ENABLE_QUERY_PROFILE_VERSION;
 
 import java.util.Collections;
 import java.util.List;
@@ -42,7 +43,6 @@ import com.oceanbase.tools.dbbrowser.parser.constant.SqlType;
  */
 public class OBExecutionListener implements SqlExecutionListener {
     private static final Long DEFAULT_QUERY_TRACE_ID_WAIT_MILLIS = 1100L;
-    private static final String ENABLE_QUERY_PROFILE_VERSION = "4.2.4";
 
     private final ConnectionSession session;
     private final List<String> sessionIds;
