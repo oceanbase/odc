@@ -41,7 +41,7 @@ public class DescriptionGenerator {
                 String description = databases.stream()
                         .map(db -> String.format(descFormat, db.getEnvironment().getName(),
                                 db.getDataSource().getName(), db.getName()))
-                        .collect(Collectors.joining(","));
+                        .collect(Collectors.joining(Symbols.COMMA.i18nKey()));
                 req.setDescription(description);
             } else {
                 req.setDescription(String.format(descFormat,

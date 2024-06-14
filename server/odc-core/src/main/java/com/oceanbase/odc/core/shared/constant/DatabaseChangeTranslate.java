@@ -15,31 +15,18 @@
  */
 package com.oceanbase.odc.core.shared.constant;
 
+import java.util.Locale;
+
 import org.springframework.context.i18n.LocaleContextHolder;
 
 import com.oceanbase.odc.common.i18n.Translatable;
 
 /**
- * {@link Symbols}
- *
- * @author yh263208
- * @date 2024-05-09 21:54
- * @since ODC_release_4.2.4
+ * @author: zijia.cj
+ * @date: 2024/5/22
  */
-public enum Symbols implements Translatable {
-
-    /**
-     * [
-     */
-    LEFT_BRACKET,
-    /**
-     * ]
-     */
-    RIGHT_BRACKET,
-    /**
-     * ,
-     */
-    COMMA;
+public enum DatabaseChangeTranslate implements Translatable {
+    BATCH_NUMBER;
 
     @Override
     public String code() {
@@ -47,7 +34,7 @@ public enum Symbols implements Translatable {
     }
 
     public String getLocalizedMessage() {
-        return translate(null, LocaleContextHolder.getLocale());
+        Locale locale = LocaleContextHolder.getLocale();
+        return translate(null, locale);
     }
-
 }
