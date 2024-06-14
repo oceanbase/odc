@@ -106,8 +106,8 @@ public class CheckRunningJob implements Job {
             }
         }
         if (!getConfiguration().getJobDispatcher().canBeDestroy(JobIdentity.of(a.getId()))) {
-            log.info("Cannot destroy pod, jobId={}.", a.getId());
-            throw new TaskRuntimeException("Cannot destroy pod, jobId={}" + jobEntity.getId());
+            log.info("Cannot destroy executor, jobId={}.", a.getId());
+            throw new TaskRuntimeException("Cannot destroy executor, jobId={}" + jobEntity.getId());
         }
 
         // First try to stop remote job

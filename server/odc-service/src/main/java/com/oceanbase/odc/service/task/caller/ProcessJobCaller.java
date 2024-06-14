@@ -89,7 +89,6 @@ public class ProcessJobCaller extends BaseJobCaller {
 
     @Override
     protected void doDestroy(JobIdentity ji, ExecutorIdentifier ei) throws JobException {
-
         if (isExecutorExist(ei)) {
             long pid = Long.parseLong(ei.getNamespace());
             log.info("Found process, try kill it, pid={}.", pid);
