@@ -18,7 +18,6 @@ package com.oceanbase.odc.service.queryprofile;
 import static com.oceanbase.odc.core.session.ConnectionSessionConstants.BACKEND_DS_KEY;
 
 import java.io.ByteArrayInputStream;
-import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 
