@@ -75,7 +75,7 @@ public class OBQueryProfileManager {
                         new ByteArrayInputStream(JsonUtils.toJson(profile).getBytes()));
                 String key = PROFILE_KEY_PREFIX + traceId;
                 ConnectionSessionUtil.setBinaryContentMetadata(session, key, metaData);
-            } catch (IOException e) {
+            } catch (Exception e) {
                 log.warn("Failed to cache profile.", e);
             }
         });
