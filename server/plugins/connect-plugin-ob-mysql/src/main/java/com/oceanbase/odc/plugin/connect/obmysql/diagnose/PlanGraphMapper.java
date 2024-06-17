@@ -15,6 +15,7 @@
  */
 package com.oceanbase.odc.plugin.connect.obmysql.diagnose;
 
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import com.oceanbase.odc.common.graph.Graph;
@@ -52,7 +53,7 @@ public class PlanGraphMapper {
         vo.setTitle(vertex.getTitle());
         vo.setStatus(vertex.getStatus());
         vo.setDuration(vertex.getDuration());
-        vo.setAttributes(vertex.getAttributes());
+        vo.setAttributes((Map) vertex.getAttributes());
         vo.setOverview(vertex.getOverview());
         vo.setStatistics(vertex.getStatistics());
         vo.setInEdges(vertex.getInEdges().stream().map(PlanGraphMapper::mapEdge).collect(Collectors.toList()));
