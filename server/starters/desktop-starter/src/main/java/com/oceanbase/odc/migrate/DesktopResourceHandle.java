@@ -30,11 +30,20 @@ import com.oceanbase.odc.service.common.migrate.IgnoreResourceIdHandle;
 import com.oceanbase.odc.service.common.util.SpringContextUtil;
 
 public class DesktopResourceHandle implements Function<ResourceSpec, ResourceSpec> {
+    private static final Set<String> RESERVE_RESOURCE_ID_TABLES = new HashSet<>();
+
+    static {
+        RESERVE_RESOURCE_ID_TABLES.add("iam_organization");
+    }
 
     @Override
     public ResourceSpec apply(ResourceSpec entity) {
         Set<String> profiles = new HashSet<>(Arrays.asList(SpringContextUtil.getProfiles()));
         if (!profiles.contains("test")) {
+            if (entity.getTemplates().stream()
+                    .anyMatch(t -> RESERVE_RESOURCE_ID_TABLES.contains(t.getMetadata().getTable()))) {
+                return entity;
+            }
             return new IgnoreResourceIdHandle().apply(entity);
         }
         /**
