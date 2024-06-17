@@ -19,6 +19,7 @@ package com.oceanbase.odc.service.task.caller;
 import static com.oceanbase.odc.service.task.constants.JobConstants.ODC_EXECUTOR_CANNOT_BE_DESTROYED;
 
 import java.text.MessageFormat;
+import java.util.Objects;
 import java.util.Optional;
 
 import com.oceanbase.odc.common.util.SystemUtils;
