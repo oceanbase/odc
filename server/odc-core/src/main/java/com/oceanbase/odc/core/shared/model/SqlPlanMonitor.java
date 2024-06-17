@@ -13,25 +13,35 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.queryprofile.display;
+package com.oceanbase.odc.core.shared.model;
 
+import java.sql.Timestamp;
 import java.util.Map;
-
-import com.oceanbase.odc.service.queryprofile.model.SqlProfile.Status;
 
 import lombok.Data;
 
 /**
  * @author liuyizhuo.lyz
- * @date 2024/4/11
+ * @date 2024/4/14
  */
 @Data
-public class PlanGraphOperator {
-    private String graphId;
-    private String name;
-    private String title;
-    private Status status;
-    private Map<String, Object> attributes;
-    private Map<String, String> statistics;
-    private Map<String, String> overview;
+public class SqlPlanMonitor {
+
+    private String svrIp;
+    private String svrPort;
+    private String processName;
+    private Timestamp firstRefreshTime;
+    private Timestamp lastRefreshTime;
+    private Timestamp firstChangeTime;
+    private Timestamp lastChangeTime;
+    private Timestamp currentTime;
+    private String planLineId;
+    private Long workareaMaxMem;
+    private Long workareaMaxTempSeg;
+    private Long starts;
+    private Long outputRows;
+    private Long dbTime;
+    private Long userIOWaitTime;
+    private Map<String, String> otherstats;
+
 }

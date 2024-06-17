@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.queryprofile;
+package com.oceanbase.odc.plugin.connect.obmysql.queryprofile;
 
 import java.util.Arrays;
 import java.util.LinkedHashMap;
@@ -24,11 +24,12 @@ import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import com.oceanbase.odc.common.graph.GraphVertex;
-import com.oceanbase.odc.service.queryprofile.helper.PlanGraphBuilder;
-import com.oceanbase.odc.service.queryprofile.model.OBSqlPlan;
-import com.oceanbase.odc.service.queryprofile.model.PredicateKey;
-import com.oceanbase.odc.service.queryprofile.model.SqlPlanGraph;
+import com.google.common.collect.ImmutableMap;
+import com.oceanbase.odc.common.json.JsonUtils;
+import com.oceanbase.odc.core.shared.model.OBSqlPlan;
+import com.oceanbase.odc.plugin.connect.model.diagnose.PlanGraph;
+import com.oceanbase.odc.plugin.connect.model.diagnose.PlanGraphOperator;
+import com.oceanbase.odc.plugin.connect.obmysql.diagnose.PlanGraphBuilder;
 
 /**
  * @author liuyizhuo.lyz
@@ -48,8 +49,8 @@ public class PlanGraphBuilderTest {
     @Test
     public void test_BuildPlanGraph_BuildSuccess() {
         List<OBSqlPlan> records = getPlanRecords();
-        SqlPlanGraph graph = PlanGraphBuilder.buildPlanGraph(records);
-        List<GraphVertex> vertices = graph.getTopoOrderedVertices();
+        PlanGraph graph = PlanGraphBuilder.buildPlanGraph(records);
+        List<PlanGraphOperator> vertices = graph.getVertexes();
         Assert.assertEquals(vertices.size(), records.size());
     }
 
@@ -57,7 +58,7 @@ public class PlanGraphBuilderTest {
     public void test_ParseAccessPredicates() {
         String accessPredicates = "access([ORDERS.O_ORDERKEY], [ORDERS.O_CUSTKEY])";
         Map<String, List<String>> access = PlanGraphBuilder.parsePredicates(accessPredicates, PARAMS);
-        List<String> columns = access.get(PredicateKey.getLabel("access"));
+        List<String> columns = access.get("access");
         Assert.assertEquals(Arrays.asList("ORDERS.O_ORDERKEY", "ORDERS.O_CUSTKEY"), columns);
     }
 
@@ -65,10 +66,45 @@ public class PlanGraphBuilderTest {
     public void test_ParseFilterPredicates() {
         String filterPredicates = "filter([ORDERS.O_ORDERDATE >= :3], [ORDERS.O_ORDERDATE <= :4])";
         Map<String, List<String>> filter = PlanGraphBuilder.parsePredicates(filterPredicates, PARAMS);
-        List<String> colums = filter.get(PredicateKey.getLabel("filter"));
+        List<String> colums = filter.get("filter");
         Assert.assertEquals(Arrays.asList(
                 "ORDERS.O_ORDERDATE >= '1995-01-01 00:00:00'", "ORDERS.O_ORDERDATE <= '1996-12-30 00:00:00'"),
                 colums);
+    }
+
+    @Test
+    public void test_BuildPlanGraphByJsonMap() {
+        String json = "{\n"
+                + "  \"ID\": 0,\n"
+                + "  \"OPERATOR\": \"SORT\",\n"
+                + "  \"NAME\": \"\",\n"
+                + "  \"EST.ROWS\": 697,\n"
+                + "  \"EST.TIME(us)\": 817249,\n"
+                + "  \"CHILD_1\": {\n"
+                + "    \"ID\": 1,\n"
+                + "    \"OPERATOR\": \"HASH GROUP BY\",\n"
+                + "    \"NAME\": \"\",\n"
+                + "    \"EST.ROWS\": 697,\n"
+                + "    \"EST.TIME(us)\": 817050\n"
+                + "  },\n"
+                + "  \"CHILD_2\": {\n"
+                + "    \"ID\": 2,\n"
+                + "    \"OPERATOR\": \"MATERIAL\",\n"
+                + "    \"NAME\": \"\",\n"
+                + "    \"EST.ROWS\": 25,\n"
+                + "    \"EST.TIME(us)\": 5,\n"
+                + "    \"output\": \"output([N2.N_NAME])\"\n"
+                + "  }\n"
+                + "}";
+        Map<String, String> outputFilters = ImmutableMap.of("0",
+                "output([ORDERS.O_ORDERKEY], [ORDERS.O_ORDERDATE], [ORDERS.O_CUSTKEY]), filter([ORDERS.O_ORDERDATE >= '1995-01-01 00:00:00'], [ORDERS.O_ORDERDATE <= \n"
+                        + "      '1996-12-30 00:00:00']), rowset=256\n"
+                        + "      access([ORDERS.O_ORDERKEY], [ORDERS.O_ORDERDATE], [ORDERS.O_CUSTKEY]), partitions(p0)\n"
+                        + "      is_index_back=false, is_global_index=false, filter_before_indexback[false,false], \n"
+                        + "      range_key([ORDERS.O_ORDERKEY], [ORDERS.O_ORDERDATE], [ORDERS.O_CUSTKEY]), range(MIN,MIN,MIN ; MAX,MAX,MAX)always true");
+        PlanGraph graph = PlanGraphBuilder.buildPlanGraph(
+                JsonUtils.fromJsonMap(json, String.class, Object.class), outputFilters);
+        Assert.assertEquals(3, graph.getVertexes().size());
     }
 
     private List<OBSqlPlan> getPlanRecords() {

@@ -13,39 +13,30 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.queryprofile.model;
-
-import java.util.Date;
-
-import com.oceanbase.odc.core.session.ConnectionSession;
+package com.oceanbase.odc.core.shared.model;
 
 import lombok.Data;
 
 /**
  * @author liuyizhuo.lyz
- * @date 2024/4/10
+ * @date 2024/4/12
  */
 @Data
-public class SqlProfile {
-    private Date startTime;
-    private Date endTime;
-    private Status status;
-    private Long duration;
-    private String traceId;
-    private String planId;
-    private String sqlText;
-    private SqlPlanGraph graph;
+public class OBSqlPlan {
 
-    private Long creatorId;
-    private Long organizationId;
-    private Long projectId;
+    private String id;
+    private String parentId;
+    private String depth;
+    private String cost;
+    private String cardinality;
+    private String operator;
+    private String objectOwner;
+    private String objectName;
+    private String objectAlias;
+    private String other;
+    private String accessPredicates;
+    private String filterPredicates;
+    private String projection;
+    private String specialPredicates;
 
-    ConnectionSession session;
-
-    public enum Status {
-        PREPARING,
-        RUNNING,
-        FINISHED,
-        FAILED,
-    }
 }

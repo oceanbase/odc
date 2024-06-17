@@ -13,24 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.queryprofile.display;
+package com.oceanbase.odc.core.shared.model;
 
-import java.util.Date;
-
-import com.oceanbase.odc.service.queryprofile.model.SqlProfile.Status;
-
-import lombok.Data;
-
-/**
- * @author liuyizhuo.lyz
- * @date 2024/4/11
- */
-@Data
-public class SqlProfile {
-    private Date startTime;
-    private Date endTime;
-    private Status status;
-    private Long duration;
-    private String traceId;
-    private String sqlText;
+public enum QueryStatus {
+    PREPARING,
+    RUNNING,
+    FINISHED,
+    FAILED,
+    ;
 }

@@ -86,10 +86,27 @@ public class DiagnoseUtil {
         return depth;
     }
 
+    public static void recognizeNodeDepthAndOperator(PlanNode node, String operator) {
+        int index = operator.indexOf("+-");
+        if (index != -1) {
+            node.setDepth(index / 2);
+            node.setOperator(operator.substring(index + 2).trim());
+            return;
+        }
+        index = operator.indexOf("|-");
+        if (index != -1) {
+            node.setDepth(index / 2);
+            node.setOperator(operator.substring(index + 2).trim());
+            return;
+        }
+        node.setDepth(-1);
+        node.setOperator(operator.trim());
+    }
+
     public static SqlExecDetail toSQLExecDetail(ResultSet resultSet) throws SQLException {
         SqlExecDetail detail = new SqlExecDetail();
         if (!resultSet.next()) {
-            return detail;
+            throw new IllegalStateException("No result found in sql audit.");
         }
         detail.setTraceId(resultSet.getString(1));
         detail.setSqlId(resultSet.getString(2));

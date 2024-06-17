@@ -13,29 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.queryprofile.model;
-
-import java.util.Date;
+package com.oceanbase.odc.plugin.connect.model.diagnose;
 
 import lombok.Data;
 
 /**
- * @author liuyizhuo.lyz
- * @date 2024/4/14
+ * {@link SqlExplain}
+ *
+ * @author yh263208
+ * @date 2023-03-10 14:22
+ * @since ODC_release_4.2.0
  */
 @Data
-public class SqlPlanMonitor {
-
-    private String svrIp;
-    private String svrPort;
-    private Date firstRefreshTime;
-    private Date lastRefreshTime;
-    private Date firstChangeTime;
-    private Date lastChangeTime;
-    private String planLineId;
-    private Long starts;
-    private Long outputRows;
-    private Long dbTime;
-    private Long userIOWaitTime;
-
+public class SqlExplain {
+    private String expTree;
+    private String outline;
+    private String originalText;
+    private Boolean showFormatInfo;
+    private PlanGraph graph;
 }

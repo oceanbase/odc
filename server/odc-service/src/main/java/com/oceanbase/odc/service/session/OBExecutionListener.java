@@ -17,6 +17,7 @@ package com.oceanbase.odc.service.session;
 
 import static com.oceanbase.odc.core.session.ConnectionSessionConstants.BACKEND_DS_KEY;
 import static com.oceanbase.odc.core.session.ConnectionSessionConstants.CONSOLE_DS_KEY;
+import static com.oceanbase.odc.service.queryprofile.OBQueryProfileManager.ENABLE_QUERY_PROFILE_VERSION;
 
 import java.util.Collections;
 import java.util.List;
@@ -30,8 +31,11 @@ import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionUtil;
 import com.oceanbase.odc.core.sql.execute.model.JdbcGeneralResult;
 import com.oceanbase.odc.core.sql.execute.model.SqlTuple;
+import com.oceanbase.odc.core.sql.parser.AbstractSyntaxTree;
 import com.oceanbase.odc.core.sql.util.OBUtils;
+import com.oceanbase.odc.service.queryprofile.OBQueryProfileManager;
 import com.oceanbase.odc.service.session.model.AsyncExecuteContext;
+import com.oceanbase.tools.dbbrowser.parser.constant.SqlType;
 
 /**
  * @author: liuyizhuo.lyz
@@ -39,13 +43,14 @@ import com.oceanbase.odc.service.session.model.AsyncExecuteContext;
  */
 public class OBExecutionListener implements SqlExecutionListener {
     private static final Long DEFAULT_QUERY_TRACE_ID_WAIT_MILLIS = 1100L;
-    private static final String ENABLE_QUERY_PROFILE_VERSION = "4.2";
 
     private final ConnectionSession session;
     private final List<String> sessionIds;
+    private final OBQueryProfileManager profileManager;
 
-    public OBExecutionListener(ConnectionSession session) {
+    public OBExecutionListener(ConnectionSession session, OBQueryProfileManager profileManager) {
         this.session = session;
+        this.profileManager = profileManager;
         sessionIds = getSessionIds();
     }
 
@@ -53,7 +58,12 @@ public class OBExecutionListener implements SqlExecutionListener {
     public void onExecutionStart(SqlTuple sqlTuple, AsyncExecuteContext context) {}
 
     @Override
-    public void onExecutionEnd(SqlTuple sqlTuple, List<JdbcGeneralResult> results, AsyncExecuteContext context) {}
+    public void onExecutionEnd(SqlTuple sqlTuple, List<JdbcGeneralResult> results, AsyncExecuteContext context) {
+        JdbcGeneralResult firstResult = results.get(0);
+        if (StringUtils.isNotEmpty(firstResult.getTraceId()) && isSelect(sqlTuple)) {
+            profileManager.submit(session, firstResult.getTraceId());
+        }
+    }
 
     @Override
     public void onExecutionCancelled(SqlTuple sqlTuple, List<JdbcGeneralResult> results, AsyncExecuteContext context) {}
@@ -64,7 +74,7 @@ public class OBExecutionListener implements SqlExecutionListener {
         }
         String traceId = session.getSyncJdbcExecutor(BACKEND_DS_KEY).execute((StatementCallback<String>) stmt -> OBUtils
                 .queryTraceIdFromASH(stmt, sessionIds, session.getConnectType()));
-        if (traceId != null) {
+        if (StringUtils.isNotEmpty(traceId)) {
             context.setCurrentExecutingSqlTraceId(traceId);
         }
     }
@@ -84,5 +94,15 @@ public class OBExecutionListener implements SqlExecutionListener {
         }
         return session.getSyncJdbcExecutor(CONSOLE_DS_KEY).execute((StatementCallback<List<String>>) stmt -> OBUtils
                 .querySessionIdsByProxySessId(stmt, proxySessId, session.getConnectType()));
+    }
+
+    private boolean isSelect(SqlTuple sqlTuple) {
+        try {
+            AbstractSyntaxTree ast = sqlTuple.getAst();
+            return ast.getParseResult().getSqlType() == SqlType.SELECT;
+        } catch (Exception e) {
+            // eat exception
+            return false;
+        }
     }
 }

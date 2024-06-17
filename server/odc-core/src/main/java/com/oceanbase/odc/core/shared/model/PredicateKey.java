@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.queryprofile.model;
+package com.oceanbase.odc.core.shared.model;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -29,6 +29,11 @@ public class PredicateKey {
         MAP.put("range", "Range");
         MAP.put("range_cond", "Range condition");
         MAP.put("partitions", "Scan partitions");
+        MAP.put("is_index_back", "Index look up back");
+        MAP.put("is_global_index", "Is global index");
+        MAP.put("filter_before_indexback", "Filter before index look up");
+        MAP.put("prefix_columns_cnt", "Prefix columns count");
+        MAP.put("skip_scan_range", "Skip scan range");
         // join
         MAP.put("nl_params_", "Nested loop params");
         MAP.put("conds", "Join conditions");

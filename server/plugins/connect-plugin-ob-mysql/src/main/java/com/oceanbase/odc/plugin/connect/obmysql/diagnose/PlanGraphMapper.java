@@ -13,16 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.queryprofile.helper;
+package com.oceanbase.odc.plugin.connect.obmysql.diagnose;
 
+import java.util.Map;
 import java.util.stream.Collectors;
 
+import com.oceanbase.odc.common.graph.Graph;
 import com.oceanbase.odc.common.graph.GraphEdge;
-import com.oceanbase.odc.service.queryprofile.display.PlanGraph;
-import com.oceanbase.odc.service.queryprofile.display.PlanGraphEdge;
-import com.oceanbase.odc.service.queryprofile.display.PlanGraphOperator;
-import com.oceanbase.odc.service.queryprofile.model.Operator;
-import com.oceanbase.odc.service.queryprofile.model.SqlPlanGraph;
+import com.oceanbase.odc.core.shared.model.Operator;
+import com.oceanbase.odc.plugin.connect.model.diagnose.PlanGraph;
+import com.oceanbase.odc.plugin.connect.model.diagnose.PlanGraphEdge;
+import com.oceanbase.odc.plugin.connect.model.diagnose.PlanGraphOperator;
 
 /**
  * @author liuyizhuo.lyz
@@ -30,14 +31,10 @@ import com.oceanbase.odc.service.queryprofile.model.SqlPlanGraph;
  */
 public class PlanGraphMapper {
 
-    public static PlanGraph toVO(SqlPlanGraph graph) {
+    public static PlanGraph toVO(Graph graph) {
         PlanGraph vo = new PlanGraph();
-        vo.setOverview(graph.getOverview());
-        vo.setStatistics(graph.getStatistics());
         vo.setVertexes(graph.getVertexList().stream()
                 .map(vertex -> mapVertex((Operator) vertex)).collect(Collectors.toList()));
-        vo.setEdges(graph.getEdgeList().stream()
-                .map(PlanGraphMapper::mapEdge).collect(Collectors.toList()));
         return vo;
     }
 
@@ -55,9 +52,12 @@ public class PlanGraphMapper {
         vo.setName(vertex.getName());
         vo.setTitle(vertex.getTitle());
         vo.setStatus(vertex.getStatus());
-        vo.setAttributes(vertex.getAttributes());
+        vo.setDuration(vertex.getDuration());
+        vo.setAttributes((Map) vertex.getAttributes());
         vo.setOverview(vertex.getOverview());
         vo.setStatistics(vertex.getStatistics());
+        vo.setInEdges(vertex.getInEdges().stream().map(PlanGraphMapper::mapEdge).collect(Collectors.toList()));
+        vo.setOutEdges(vertex.getOutEdges().stream().map(PlanGraphMapper::mapEdge).collect(Collectors.toList()));
         return vo;
     }
 
