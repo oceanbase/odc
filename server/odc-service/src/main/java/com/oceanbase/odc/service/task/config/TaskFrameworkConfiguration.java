@@ -19,8 +19,6 @@ package com.oceanbase.odc.service.task.config;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
-import javax.sql.DataSource;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
