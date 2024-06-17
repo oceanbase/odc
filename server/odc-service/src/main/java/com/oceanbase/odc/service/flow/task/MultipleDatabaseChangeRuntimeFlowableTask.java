@@ -150,7 +150,7 @@ public class MultipleDatabaseChangeRuntimeFlowableTask extends BaseODCFlowTaskDe
                 createFlowInstanceReq.setParameters(multipleDatabaseChangeParameters
                         .convertIntoDatabaseChangeParameters(multipleDatabaseChangeParameters));
                 createFlowInstanceReq.setDescription(
-                        generateDescription(locale,map.get(batchDatabaseId), getFlowInstanceId(), this.batchId));
+                        generateDescription(locale, map.get(batchDatabaseId), getFlowInstanceId(), this.batchId));
                 List<FlowInstanceDetailResp> individualFlowInstance = flowInstanceService.createWithoutApprovalNode(
                         createFlowInstanceReq);
                 flowInstanceIds.add(individualFlowInstance.get(0).getId());
@@ -333,14 +333,16 @@ public class MultipleDatabaseChangeRuntimeFlowableTask extends BaseODCFlowTaskDe
         return null;
     }
 
-    public String generateDescription(Locale locale, DatabaseChangeDatabase database, Long flowInstanceId, Integer batchId) {
+    public String generateDescription(Locale locale, DatabaseChangeDatabase database, Long flowInstanceId,
+            Integer batchId) {
         String i18nKey = "com.oceanbase.odc.builtin-resource.multiple-async.sub-ticket.description";
         String envName = database.getEnvironment().getName();
         String envKey = envName.substring(2, envName.length() - 1);
         String description = I18n.translate(
-            i18nKey,
-            new Object[] {I18n.translate(envKey,null,envKey,locale) , flowInstanceId, batchId + 1,
-                          database.getDataSource().getName(), database.getName()}, locale);
+                i18nKey,
+                new Object[] {I18n.translate(envKey, null, envKey, locale), flowInstanceId, batchId + 1,
+                        database.getDataSource().getName(), database.getName()},
+                locale);
         return description;
     }
 }

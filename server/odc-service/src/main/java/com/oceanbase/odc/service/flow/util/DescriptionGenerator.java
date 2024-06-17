@@ -42,25 +42,27 @@ public class DescriptionGenerator {
         Locale locale = LocaleContextHolder.getLocale();
         if (StringUtils.isEmpty(req.getDescription())) {
             // descriptions is recommended for localization.Facilitate fuzzy query
-            String descFormat = Symbols.LEFT_BRACKET.getLocalizedMessage() + "%s" + Symbols.RIGHT_BRACKET.getLocalizedMessage() + "%s.%s";
+            String descFormat = Symbols.LEFT_BRACKET.getLocalizedMessage() + "%s"
+                    + Symbols.RIGHT_BRACKET.getLocalizedMessage() + "%s.%s";
             if (req.getTaskType() == TaskType.MULTIPLE_ASYNC) {
                 MultipleDatabaseChangeParameters parameters = (MultipleDatabaseChangeParameters) req.getParameters();
                 List<DatabaseChangeDatabase> databases = parameters.getDatabases();
                 String description = databases.stream()
-                        .map(db -> String.format(descFormat, localEnvName(db.getEnvironment().getName(),locale) ,
+                        .map(db -> String.format(descFormat, localEnvName(db.getEnvironment().getName(), locale),
                                 db.getDataSource().getName(), db.getName()))
                         .collect(Collectors.joining(Symbols.COMMA.getLocalizedMessage()));
                 req.setDescription(description);
             } else {
                 req.setDescription(String.format(descFormat,
-                    localEnvName(req.getEnvironmentName(), locale), req.getConnectionName(), req.getDatabaseName()));
+                        localEnvName(req.getEnvironmentName(), locale), req.getConnectionName(),
+                        req.getDatabaseName()));
             }
         }
     }
 
     private static String localEnvName(@NotNull String envName, @NotNull Locale locale) {
         String envKey = envName.substring(2, envName.length() - 1);
-        return I18n.translate(envKey,null,envKey, locale);
+        return I18n.translate(envKey, null, envKey, locale);
     }
 
 }
