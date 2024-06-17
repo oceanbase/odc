@@ -39,14 +39,19 @@ public class PlanGraphOperator {
     private String title;
     private QueryStatus status;
     private Long duration;
-    private Map<String, Object> attributes;
+    private Map<String, List<String>> attributes;
     private Map<String, String> statistics;
+    /**
+     * Represents information of the execution overview. The reason for using {@link Object} as the
+     * parameter type here is that value may be a number or a String. Only when key="CPU time" or "I/O
+     * wait time", value is of numerical type.
+     */
     private Map<String, Object> overview;
     private List<PlanGraphEdge> inEdges;
     private List<PlanGraphEdge> outEdges;
     private Map<String, PlanGraphOperator> subNodes;
 
-    public void putAttribute(@NonNull String key, Object value) {
+    public void putAttribute(@NonNull String key, List<String> value) {
         if (attributes == null) {
             attributes = new LinkedHashMap<>();
         }

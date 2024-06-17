@@ -41,6 +41,11 @@ public class PlanGraph {
     private Long duration;
     private QueryStatus status;
     private List<PlanGraphOperator> vertexes = new ArrayList<>();
+    /**
+     * Represents information of the execution overview. The reason for using {@link Object} as the
+     * parameter type here is that value may be a number or a String. Only when key="CPU time" or "I/O
+     * wait time", value is of numerical type.
+     */
     private Map<String, Object> overview = new LinkedHashMap<>();
     private Map<String, String> statistics;
     private Map<String, List<String>> topNodes;
