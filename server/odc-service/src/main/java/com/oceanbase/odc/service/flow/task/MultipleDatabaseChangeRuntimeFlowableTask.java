@@ -49,6 +49,7 @@ import com.oceanbase.odc.service.flow.model.FlowTaskExecutionStrategy;
 import com.oceanbase.odc.service.flow.model.QueryFlowInstanceParams;
 import com.oceanbase.odc.service.flow.task.model.MultipleDatabaseChangeParameters;
 import com.oceanbase.odc.service.flow.task.model.MultipleDatabaseChangeTaskResult;
+import com.oceanbase.odc.service.flow.util.DescriptionGenerator;
 import com.oceanbase.odc.service.flow.util.FlowTaskUtil;
 import com.oceanbase.odc.service.iam.model.User;
 import com.oceanbase.odc.service.iam.util.SecurityContextUtils;
@@ -333,14 +334,13 @@ public class MultipleDatabaseChangeRuntimeFlowableTask extends BaseODCFlowTaskDe
         return null;
     }
 
-    public String generateDescription(Locale locale, DatabaseChangeDatabase database, Long flowInstanceId,
+    private String generateDescription(Locale locale, DatabaseChangeDatabase database, Long flowInstanceId,
             Integer batchId) {
         String i18nKey = "com.oceanbase.odc.builtin-resource.multiple-async.sub-ticket.description";
-        String envName = database.getEnvironment().getName();
-        String envKey = envName.substring(2, envName.length() - 1);
         String description = I18n.translate(
                 i18nKey,
-                new Object[] {I18n.translate(envKey, null, envKey, locale), flowInstanceId, batchId + 1,
+                new Object[] {DescriptionGenerator.localEnvName(database.getEnvironment().getName(), locale),
+                        flowInstanceId, batchId + 1,
                         database.getDataSource().getName(), database.getName()},
                 locale);
         return description;

@@ -60,7 +60,7 @@ public class DescriptionGenerator {
         }
     }
 
-    private static String localEnvName(@NotNull String envName, @NotNull Locale locale) {
+    public static String localEnvName(@NotNull String envName, @NotNull Locale locale) {
         String envKey = envName.substring(2, envName.length() - 1);
         return I18n.translate(envKey, null, envKey, locale);
     }
