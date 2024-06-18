@@ -69,7 +69,7 @@ public class TaskMonitor {
         this.reportScheduledExecutor = Executors.newSingleThreadScheduledExecutor(threadFactory);
         reportScheduledExecutor.scheduleAtFixedRate(() -> {
             if (isTimeout() && !getTask().getStatus().isTerminated()) {
-                getTask().stop();
+                getTask().stopAndFailed();
             }
             try {
                 if (JobUtils.getExecutorPort().isPresent()) {

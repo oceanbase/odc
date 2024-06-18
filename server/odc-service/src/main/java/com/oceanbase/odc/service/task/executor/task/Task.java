@@ -21,6 +21,7 @@ import java.util.Map;
 import com.oceanbase.odc.service.task.caller.JobContext;
 import com.oceanbase.odc.service.task.enums.JobStatus;
 import com.oceanbase.odc.service.task.executor.server.TaskExecutor;
+import com.oceanbase.odc.service.task.executor.server.TaskMonitor;
 
 /**
  * Task interface. Each task should implement this interface
@@ -39,6 +40,13 @@ public interface Task<RESULT> {
      * Stop current task. This method will be called by {@link TaskExecutor} for stop a task
      */
     boolean stop();
+
+
+    /**
+     * Stop current task and set status to failed.
+     * This method will be called by {@link TaskMonitor} for stop a timeout task
+     */
+    boolean stopAndFailed();
 
     /**
      * Modify current task parameters
