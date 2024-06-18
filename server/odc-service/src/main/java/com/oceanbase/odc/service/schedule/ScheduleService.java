@@ -640,7 +640,7 @@ public class ScheduleService {
             if (resourceRoleNames.isEmpty()) {
                 resourceRoleNames = ResourceRoleName.all();
             }
-            if ((Objects.nonNull(projectId)
+            if (authenticationFacade.currentUserId() != scheduleEntity.getCreatorId() && (Objects.nonNull(projectId)
                     && !projectPermissionValidator.hasProjectRole(projectId, resourceRoleNames))) {
                 throw new AccessDeniedException();
             }
