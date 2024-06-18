@@ -58,7 +58,7 @@ public class TaskFrameworkConfiguration {
     @Lazy
     @Bean
     @ConditionalOnMissingBean({K8sJobClient.class})
-    @ConditionalOnBean(TaskFrameworkService.class)
+    @ConditionalOnBean(TaskFrameworkProperties.class)
     public K8sJobClient k8sJobClient(@Autowired TaskFrameworkProperties taskFrameworkProperties) {
         try {
             log.info("k8s url is {}", taskFrameworkProperties.getK8sProperties().getKubeUrl());
