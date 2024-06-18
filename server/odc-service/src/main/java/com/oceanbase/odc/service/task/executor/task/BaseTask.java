@@ -75,11 +75,11 @@ public abstract class BaseTask<RESULT> implements Task<RESULT> {
     }
 
     @Override
-    public boolean stopAndFailed() {
+    public boolean abort() {
         return stop(JobStatus.FAILED);
     }
 
-    private boolean stop(JobStatus status) {
+    private synchronized boolean stop(JobStatus status) {
         try {
             if (getStatus().isTerminated()) {
                 log.warn("Task is already finished and cannot be stopped, id={}, status={}.", getJobId(), getStatus());

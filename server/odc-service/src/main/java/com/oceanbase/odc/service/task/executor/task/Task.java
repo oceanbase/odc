@@ -46,7 +46,7 @@ public interface Task<RESULT> {
      * Stop current task and set status to failed. This method will be called by {@link TaskMonitor} for
      * stop a timeout task
      */
-    boolean stopAndFailed();
+    boolean abort();
 
     /**
      * Modify current task parameters
