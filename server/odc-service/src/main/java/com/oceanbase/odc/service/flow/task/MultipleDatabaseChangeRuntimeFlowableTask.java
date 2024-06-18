@@ -49,10 +49,10 @@ import com.oceanbase.odc.service.flow.model.FlowTaskExecutionStrategy;
 import com.oceanbase.odc.service.flow.model.QueryFlowInstanceParams;
 import com.oceanbase.odc.service.flow.task.model.MultipleDatabaseChangeParameters;
 import com.oceanbase.odc.service.flow.task.model.MultipleDatabaseChangeTaskResult;
-import com.oceanbase.odc.service.flow.util.DescriptionGenerator;
 import com.oceanbase.odc.service.flow.util.FlowTaskUtil;
 import com.oceanbase.odc.service.iam.model.User;
 import com.oceanbase.odc.service.iam.util.SecurityContextUtils;
+import com.oceanbase.odc.service.notification.helper.MessageTemplateProcessor;
 import com.oceanbase.odc.service.task.TaskService;
 
 import lombok.extern.slf4j.Slf4j;
@@ -339,10 +339,10 @@ public class MultipleDatabaseChangeRuntimeFlowableTask extends BaseODCFlowTaskDe
         String i18nKey = "com.oceanbase.odc.builtin-resource.multiple-async.sub-ticket.description";
         String description = I18n.translate(
                 i18nKey,
-                new Object[] {DescriptionGenerator.localEnvName(database.getEnvironment().getName(), locale),
+                new Object[] {database.getEnvironment().getName(),
                         flowInstanceId, batchId + 1,
                         database.getDataSource().getName(), database.getName()},
                 locale);
-        return description;
+        return MessageTemplateProcessor.getLocalMessage(locale, description);
     }
 }
