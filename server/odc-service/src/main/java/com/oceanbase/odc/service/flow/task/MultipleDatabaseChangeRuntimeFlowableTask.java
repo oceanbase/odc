@@ -114,11 +114,10 @@ public class MultipleDatabaseChangeRuntimeFlowableTask extends BaseODCFlowTaskDe
         try {
             this.flowInstanceRepository.updateStatusById(getFlowInstanceId(), FlowStatus.EXECUTING);
             this.serviceTaskInstanceRepository.updateStatusById(getTargetTaskInstanceId(), FlowNodeStatus.EXECUTING);
-            FlowInstanceDetailResp flowInstanceDetailResp = flowInstanceService.detail(getFlowInstanceId());
-            this.flowTaskExecutionStrategy = flowInstanceDetailResp.getExecutionStrategy();
             TaskEntity detail = taskService.detail(taskId);
             this.multipleDatabaseChangeParameters = JsonUtils.fromJson(
                     detail.getParametersJson(), MultipleDatabaseChangeParameters.class);
+            this.flowTaskExecutionStrategy = this.multipleDatabaseChangeParameters.getFlowTaskExecutionStrategy();
             Integer value = multipleDatabaseChangeParameters.getBatchId();
             if (value == null) {
                 this.batchId = 0;
