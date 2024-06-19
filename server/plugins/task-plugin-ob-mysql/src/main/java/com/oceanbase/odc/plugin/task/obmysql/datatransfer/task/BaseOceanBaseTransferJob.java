@@ -19,6 +19,7 @@ package com.oceanbase.odc.plugin.task.obmysql.datatransfer.task;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
@@ -27,6 +28,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.oceanbase.odc.common.util.ExceptionUtils;
 import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.core.shared.constant.TaskStatus;
 import com.oceanbase.odc.plugin.task.api.datatransfer.DataTransferJob;
@@ -34,6 +36,7 @@ import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferTaskResu
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.ObjectResult;
 import com.oceanbase.tools.loaddump.common.enums.DataFormat;
 import com.oceanbase.tools.loaddump.common.enums.ObjectType;
+import com.oceanbase.tools.loaddump.common.enums.ServerMode;
 import com.oceanbase.tools.loaddump.common.model.BaseParameter;
 import com.oceanbase.tools.loaddump.common.model.DumpParameter;
 import com.oceanbase.tools.loaddump.common.model.LoadParameter;
@@ -175,7 +178,12 @@ public abstract class BaseOceanBaseTransferJob<T extends BaseParameter> implemen
             if (dataContext != null) {
                 dataContext.shutdownNow();
             }
-            throw e;
+            String rootMessage = Optional.ofNullable(ExceptionUtils.getRootCause(e)).orElseThrow(() -> e).getMessage();
+            if (shouldEatException(rootMessage)) {
+                LOGGER.warn(rootMessage);
+            } else {
+                throw e;
+            }
         }
 
         validAllTasksSuccessed();
@@ -240,6 +248,35 @@ public abstract class BaseOceanBaseTransferJob<T extends BaseParameter> implemen
             }
         }
         throw new InterruptedException("loop interrupted");
+    }
+
+    /**
+     * @return a bool value. If it's true, the exception should be eaten.
+     */
+    private boolean shouldEatException(String errorMessage) {
+        if (StringUtils.isEmpty(errorMessage)) {
+            return false;
+        }
+        if (errorMessage.contains("No subfiles are generated from path")) {
+            return true;
+        }
+        if (errorMessage.contains("table or view does not exist")) {
+            ServerMode serverMode = parameter.getConnectionKey().getServerMode();
+            if (serverMode.isMysqlMode()) {
+                LOGGER.warn(
+                        "The current user may lack access to the oceanbase database. "
+                                + "You can execute the following SQL and retry the transfer task:\n"
+                                + "grant select on oceanbase.* to {}",
+                        parameter.getUser());
+            } else {
+                LOGGER.warn(
+                        "The current user may lack access to the oceanbase database. "
+                                + "You can execute the following SQL and retry the transfer task:\n"
+                                + "grant select any dictionary to {}",
+                        parameter.getUser());
+            }
+        }
+        return false;
     }
 
     private void shutdownContext(TaskContext context) {
