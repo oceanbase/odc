@@ -83,6 +83,7 @@ public class MultipleDatabaseChangePreprocessor implements Preprocessor {
         parameters.setBatchId(null);
         parameters.setProject(new DatabaseChangeProject(project));
         parameters.setDatabases(databases.stream().map(DatabaseChangeDatabase::new).collect(Collectors.toList()));
+        parameters.setFlowTaskExecutionStrategy(req.getExecutionStrategy());
         req.setProjectId(parameters.getProjectId());
         req.setProjectName(project.getName());
         DescriptionGenerator.generateDescription(req);
