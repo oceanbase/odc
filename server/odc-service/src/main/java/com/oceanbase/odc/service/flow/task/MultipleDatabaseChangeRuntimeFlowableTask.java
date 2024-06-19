@@ -17,7 +17,9 @@ package com.oceanbase.odc.service.flow.task;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import org.flowable.engine.delegate.DelegateExecution;
@@ -26,6 +28,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
+import com.oceanbase.odc.common.i18n.I18n;
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.core.shared.constant.FlowStatus;
 import com.oceanbase.odc.core.shared.constant.TaskErrorStrategy;
@@ -49,6 +52,7 @@ import com.oceanbase.odc.service.flow.task.model.MultipleDatabaseChangeTaskResul
 import com.oceanbase.odc.service.flow.util.FlowTaskUtil;
 import com.oceanbase.odc.service.iam.model.User;
 import com.oceanbase.odc.service.iam.util.SecurityContextUtils;
+import com.oceanbase.odc.service.notification.helper.MessageTemplateProcessor;
 import com.oceanbase.odc.service.task.TaskService;
 
 import lombok.extern.slf4j.Slf4j;
@@ -134,6 +138,9 @@ public class MultipleDatabaseChangeRuntimeFlowableTask extends BaseODCFlowTaskDe
                     multipleDatabaseChangeParameters.getOrderedDatabaseIds().get(this.batchId);
             List<Long> flowInstanceIds = new ArrayList<>();
             this.taskCreator = FlowTaskUtil.getTaskCreator(execution);
+            Map<Long, DatabaseChangeDatabase> map = multipleDatabaseChangeParameters.getDatabases().stream()
+                    .collect(Collectors.toMap(DatabaseChangeDatabase::getId, Function.identity()));
+            Locale locale = multipleDatabaseChangeParameters.getLocale();
             for (Long batchDatabaseId : batchDatabaseIds) {
                 CreateFlowInstanceReq createFlowInstanceReq = new CreateFlowInstanceReq();
                 createFlowInstanceReq.setDatabaseId(batchDatabaseId);
@@ -142,6 +149,8 @@ public class MultipleDatabaseChangeRuntimeFlowableTask extends BaseODCFlowTaskDe
                 createFlowInstanceReq.setParentFlowInstanceId(FlowTaskUtil.getFlowInstanceId(execution));
                 createFlowInstanceReq.setParameters(multipleDatabaseChangeParameters
                         .convertIntoDatabaseChangeParameters(multipleDatabaseChangeParameters));
+                createFlowInstanceReq.setDescription(
+                        generateDescription(locale, map.get(batchDatabaseId), getFlowInstanceId(), this.batchId));
                 List<FlowInstanceDetailResp> individualFlowInstance = flowInstanceService.createWithoutApprovalNode(
                         createFlowInstanceReq);
                 flowInstanceIds.add(individualFlowInstance.get(0).getId());
@@ -324,4 +333,15 @@ public class MultipleDatabaseChangeRuntimeFlowableTask extends BaseODCFlowTaskDe
         return null;
     }
 
+    private String generateDescription(Locale locale, DatabaseChangeDatabase database, Long flowInstanceId,
+            Integer batchId) {
+        String i18nKey = "com.oceanbase.odc.builtin-resource.multiple-async.sub-ticket.description";
+        String description = I18n.translate(
+                i18nKey,
+                new Object[] {database.getEnvironment().getName(),
+                        flowInstanceId, batchId + 1,
+                        database.getDataSource().getName(), database.getName()},
+                locale);
+        return MessageTemplateProcessor.getLocalMessage(locale, description);
+    }
 }
