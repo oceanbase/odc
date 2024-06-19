@@ -270,7 +270,7 @@ public abstract class BaseOceanBaseTransferJob<T extends BaseParameter> implemen
                         parameter.getUser());
             } else {
                 LOGGER.warn(
-                        "The current user may lack access to the oceanbase database. "
+                        "The current user may lack of DBA permission. "
                                 + "You can execute the following SQL and retry the transfer task:\n"
                                 + "grant select any dictionary to {}",
                         parameter.getUser());
