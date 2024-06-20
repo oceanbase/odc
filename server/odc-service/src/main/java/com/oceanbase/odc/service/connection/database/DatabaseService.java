@@ -115,7 +115,6 @@ import com.oceanbase.odc.service.onlineschemachange.ddl.OscDBAccessor;
 import com.oceanbase.odc.service.onlineschemachange.ddl.OscDBAccessorFactory;
 import com.oceanbase.odc.service.onlineschemachange.rename.OscDBUserUtil;
 import com.oceanbase.odc.service.permission.DBResourcePermissionHelper;
-import com.oceanbase.odc.service.permission.common.PermissionCheckWhitelist;
 import com.oceanbase.odc.service.permission.database.model.DatabasePermissionType;
 import com.oceanbase.odc.service.plugin.SchemaPluginUtil;
 import com.oceanbase.odc.service.session.factory.DefaultConnectSessionFactory;
@@ -208,9 +207,6 @@ public class DatabaseService {
 
     @Autowired
     private DBSchemaSyncProperties dbSchemaSyncProperties;
-
-    @Autowired
-    private PermissionCheckWhitelist permissionCheckWhitelist;
 
     @Transactional(rollbackFor = Exception.class)
     @SkipAuthorize("internal authenticated")
