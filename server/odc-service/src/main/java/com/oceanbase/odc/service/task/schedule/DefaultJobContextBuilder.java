@@ -16,6 +16,7 @@
 
 package com.oceanbase.odc.service.task.schedule;
 
+import java.util.Collections;
 import java.util.Map;
 
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -53,5 +54,10 @@ public class DefaultJobContextBuilder implements JobContextBuilder {
                 new TypeReference<Map<String, String>>() {}));
         jobContext.setHostUrls(hostUrlProvider.hostUrl());
         return jobContext;
+    }
+
+    @Override
+    public JobContext build(JobEntity jobEntity) {
+        return build(jobEntity, Collections::emptyList);
     }
 }

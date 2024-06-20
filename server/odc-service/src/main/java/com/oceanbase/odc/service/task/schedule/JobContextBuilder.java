@@ -30,4 +30,10 @@ public interface JobContextBuilder {
     JobContext build(JobIdentity ji, JobDefinition jd);
 
     JobContext build(JobEntity jobEntity, HostUrlProvider hostUrlProvider);
+
+    /**
+     * build job context from job entity, for stop/modify/destroy scenario
+     */
+    JobContext build(JobEntity jobEntity);
+
 }

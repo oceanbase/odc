@@ -16,11 +16,15 @@
 
 package com.oceanbase.odc.service.task.dispatch;
 
+import java.util.Objects;
+
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.common.util.SystemUtils;
+import com.oceanbase.odc.metadb.task.JobEntity;
 import com.oceanbase.odc.service.task.caller.JobCaller;
 import com.oceanbase.odc.service.task.caller.JobCallerBuilder;
 import com.oceanbase.odc.service.task.caller.JobContext;
+import com.oceanbase.odc.service.task.caller.K8sJobClient;
 import com.oceanbase.odc.service.task.caller.PodConfig;
 import com.oceanbase.odc.service.task.config.JobConfiguration;
 import com.oceanbase.odc.service.task.config.JobConfigurationHolder;
@@ -31,6 +35,7 @@ import com.oceanbase.odc.service.task.constants.JobConstants;
 import com.oceanbase.odc.service.task.constants.JobEnvKeyConstants;
 import com.oceanbase.odc.service.task.enums.TaskRunMode;
 import com.oceanbase.odc.service.task.exception.JobException;
+import com.oceanbase.odc.service.task.schedule.DefaultJobContextBuilder;
 import com.oceanbase.odc.service.task.schedule.JobIdentity;
 import com.oceanbase.odc.service.task.schedule.provider.JobImageNameProvider;
 import com.oceanbase.odc.service.task.service.TaskFrameworkService;
@@ -46,46 +51,44 @@ public class ImmediateJobDispatcher implements JobDispatcher {
 
     @Override
     public void start(JobContext context) throws JobException {
-        JobCaller jobCaller = getJobCallerWithContext(getJobRunMode(context.getJobIdentity()), context);
+        JobCaller jobCaller = getJobCaller(context.getJobIdentity(), context);
         jobCaller.start(context);
     }
 
     @Override
     public void stop(JobIdentity ji) throws JobException {
-        JobCaller jobCaller = getJobCaller(getJobRunMode(ji));
+        JobCaller jobCaller = getJobCaller(ji, null);
         jobCaller.stop(ji);
     }
 
     @Override
     public void modify(JobIdentity ji, String jobParametersJson) throws JobException {
-        JobCaller jobCaller = getJobCaller(getJobRunMode(ji));
+        JobCaller jobCaller = getJobCaller(ji, null);
         jobCaller.modify(ji, jobParametersJson);
     }
 
     @Override
     public void destroy(JobIdentity ji) throws JobException {
-        JobCaller jobCaller = getJobCaller(getJobRunMode(ji));
+        JobCaller jobCaller = getJobCaller(ji, null);
         jobCaller.destroy(ji);
     }
 
-    private JobCaller getJobCaller(TaskRunMode taskRunMode) {
-        return getJobCallerWithContext(taskRunMode, null);
-    }
-
-    private JobCaller getJobCallerWithContext(TaskRunMode taskRunMode, JobContext context) {
-        JobConfiguration config = JobConfigurationHolder.getJobConfiguration();
-        if (taskRunMode == TaskRunMode.K8S) {
-            return JobCallerBuilder.buildK8sJobCaller(config.getK8sJobClientSelector().select(context),
-                    createDefaultPodConfig(config.getTaskFrameworkProperties()), context);
-        }
-        return JobCallerBuilder.buildProcessCaller(context);
-    }
-
-    private TaskRunMode getJobRunMode(JobIdentity ji) {
+    private JobCaller getJobCaller(JobIdentity ji, JobContext context) {
         JobConfigurationValidator.validComponent();
         TaskFrameworkService taskFrameworkService =
                 JobConfigurationHolder.getJobConfiguration().getTaskFrameworkService();
-        return taskFrameworkService.find(ji.getId()).getRunMode();
+        JobConfiguration config = JobConfigurationHolder.getJobConfiguration();
+
+        JobEntity jobEntity = taskFrameworkService.find(ji.getId());
+        if (Objects.isNull(context)) {
+            context = new DefaultJobContextBuilder().build(jobEntity);
+        }
+        if (jobEntity.getRunMode() == TaskRunMode.K8S) {
+            K8sJobClient k8sJobClient = config.getK8sJobClientSelector().select(context);
+            PodConfig podConfig = createDefaultPodConfig(config.getTaskFrameworkProperties());
+            return JobCallerBuilder.buildK8sJobCaller(k8sJobClient, podConfig, context);
+        }
+        return JobCallerBuilder.buildProcessCaller(context);
     }
 
     private PodConfig createDefaultPodConfig(TaskFrameworkProperties taskFrameworkProperties) {
