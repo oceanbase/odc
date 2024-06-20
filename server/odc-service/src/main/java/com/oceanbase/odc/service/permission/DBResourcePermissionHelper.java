@@ -50,6 +50,7 @@ import com.oceanbase.odc.service.collaboration.project.ProjectService;
 import com.oceanbase.odc.service.connection.database.model.DBResource;
 import com.oceanbase.odc.service.connection.database.model.UnauthorizedDBResource;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
+import com.oceanbase.odc.service.permission.common.PermissionCheckWhitelist;
 import com.oceanbase.odc.service.permission.database.model.DatabasePermissionType;
 import com.oceanbase.tools.dbbrowser.model.DBObjectType;
 
@@ -78,6 +79,9 @@ public class DBResourcePermissionHelper {
 
     @Autowired
     private DBObjectRepository dbObjectRepository;
+
+    @Autowired
+    private PermissionCheckWhitelist permissionCheckWhitelist;
 
     private static final Set<String> ORACLE_DATA_DICTIONARY = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
 
@@ -108,9 +112,11 @@ public class DBResourcePermissionHelper {
             if (e.getProjectId() == null) {
                 throw new AccessDeniedException("Database is not belong to any project");
             }
-            if (!projectIds.contains(e.getProjectId())) {
-                toCheckDatabaseIds.add(e.getId());
+            if (permissionCheckWhitelist.containsDatabase(e.getName(), e.getDialectType())
+                    || projectIds.contains(e.getProjectId())) {
+                continue;
             }
+            toCheckDatabaseIds.add(e.getId());
         }
         Map<Long, Set<DatabasePermissionType>> id2PermissionTypes = getInnerDBPermissionTypes(databaseIds);
         for (Long databaseId : toCheckDatabaseIds) {
@@ -293,7 +299,8 @@ public class DBResourcePermissionHelper {
         for (Map.Entry<DBResource, Set<DatabasePermissionType>> entry : resource2Types.entrySet()) {
             DBResource resource = entry.getKey();
             Set<DatabasePermissionType> needs = entry.getValue();
-            if (CollectionUtils.isEmpty(needs)) {
+            if (CollectionUtils.isEmpty(needs) || permissionCheckWhitelist.containsDatabase(resource.getDatabaseName(),
+                    resource.getDialectType())) {
                 continue;
             }
             if (resource.getType() == ResourceType.ODC_DATABASE) {
