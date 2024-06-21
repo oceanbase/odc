@@ -102,7 +102,7 @@ public abstract class BaseODCFlowTaskDelegate<T> extends BaseRuntimeFlowableDele
 
     private void init(DelegateExecution execution) {
         this.taskId = FlowTaskUtil.getTaskId(execution);
-        this.timeoutMillis = FlowTaskUtil.getExecutionExpirationIntervalMillis(execution);
+        this.timeoutMillis = getTimeoutMillis(execution);
         this.taskService.updateExecutorInfo(taskId, new ExecutorInfo(hostProperties));
         SecurityContextUtils.setCurrentUser(FlowTaskUtil.getTaskCreator(execution));
     }
@@ -124,6 +124,13 @@ public abstract class BaseODCFlowTaskDelegate<T> extends BaseRuntimeFlowableDele
             }
             try {
                 if (isCompleted() || isTimeout()) {
+                    if (isTimeout()) {
+                        try {
+                            cancel(true);
+                        } catch (Exception e) {
+                            log.warn("Task is timeout, failed to cancel it", e);
+                        }
+                    }
                     taskLatch.countDown();
                 }
             } catch (Exception e) {
@@ -310,6 +317,10 @@ public abstract class BaseODCFlowTaskDelegate<T> extends BaseRuntimeFlowableDele
                 log.warn("Failed to enqueue event.", e);
             }
         }
+    }
+
+    protected long getTimeoutMillis(DelegateExecution execution) {
+        return FlowTaskUtil.getExecutionExpirationIntervalMillis(execution);
     }
 
     /**
