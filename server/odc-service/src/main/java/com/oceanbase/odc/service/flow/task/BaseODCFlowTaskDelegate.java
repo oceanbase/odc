@@ -128,7 +128,7 @@ public abstract class BaseODCFlowTaskDelegate<T> extends BaseRuntimeFlowableDele
                         try {
                             cancel(true);
                         } catch (Exception e) {
-                            log.warn("Task is timeout, failed to cancel it", e);
+                            log.warn("Task is timeout, failed to cancel it, errorMessage={}", e.getMessage());
                         }
                     }
                     taskLatch.countDown();
