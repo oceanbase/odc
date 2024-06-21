@@ -34,6 +34,8 @@ public class DesktopResourceHandle implements Function<ResourceSpec, ResourceSpe
 
     static {
         RESERVE_RESOURCE_ID_TABLES.add("iam_organization");
+        RESERVE_RESOURCE_ID_TABLES.add("iam_user");
+        RESERVE_RESOURCE_ID_TABLES.add("iam_role");
     }
 
     @Override

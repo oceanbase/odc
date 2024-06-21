@@ -307,7 +307,6 @@ public abstract class BaseOceanBaseTransferJob<T extends BaseParameter> implemen
 
     private void validContext(Predicate<TaskContext> schemaPredicate,
             Predicate<TaskContext> dataContextPredicate) {
-        Verify.verify(dataContext != null || schemaContext != null, "No context available");
         if (schemaContext != null) {
             Verify.verify(schemaPredicate.test(schemaContext), "Schema context verify failed");
         }
