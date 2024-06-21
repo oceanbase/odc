@@ -195,7 +195,7 @@ public abstract class BaseODCFlowTaskDelegate<T> extends BaseRuntimeFlowableDele
                 } catch (Exception e) {
                     log.warn("Task timeout callback method execution failed, taskId={}", taskId, e);
                 }
-                throw new InterruptedException();
+                throw new ServiceTaskCancelledException();
             }
             if (!isSuccessful()) {
                 // 监控线程出错导致闭锁失效，此种情况任务必须终止
