@@ -26,6 +26,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.flowable.engine.delegate.DelegateExecution;
@@ -113,6 +114,7 @@ public abstract class BaseODCFlowTaskDelegate<T> extends BaseRuntimeFlowableDele
                 .build();
         scheduleExecutor = new ScheduledThreadPoolExecutor(1, threadFactory);
         int interval = RuntimeTaskConstants.DEFAULT_TASK_CHECK_INTERVAL_SECONDS;
+        AtomicBoolean isCancelled = new AtomicBoolean(false);
         scheduleExecutor.scheduleAtFixedRate(() -> {
             try {
                 updateHeartbeatTime();
@@ -124,7 +126,7 @@ public abstract class BaseODCFlowTaskDelegate<T> extends BaseRuntimeFlowableDele
             }
             try {
                 if (isCompleted() || isTimeout()) {
-                    if (isTimeout()) {
+                    if (isTimeout() && isCancelled.getAndSet(true)) {
                         try {
                             cancel(true);
                         } catch (Exception e) {
