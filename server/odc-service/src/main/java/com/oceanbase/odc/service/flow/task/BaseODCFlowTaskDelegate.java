@@ -126,7 +126,7 @@ public abstract class BaseODCFlowTaskDelegate<T> extends BaseRuntimeFlowableDele
             }
             try {
                 if (isCompleted() || isTimeout()) {
-                    if (isTimeout() && isCancelled.getAndSet(true)) {
+                    if (isTimeout() && !isCancelled.getAndSet(true)) {
                         try {
                             cancel(true);
                         } catch (Exception e) {
