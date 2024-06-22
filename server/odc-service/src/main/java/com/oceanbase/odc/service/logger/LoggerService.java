@@ -42,7 +42,7 @@ import com.oceanbase.odc.service.task.constants.JobExecutorUrls;
 import com.oceanbase.odc.service.task.executor.logger.LogUtils;
 import com.oceanbase.odc.service.task.model.OdcTaskLogLevel;
 import com.oceanbase.odc.service.task.service.TaskFrameworkService;
-import com.oceanbase.odc.service.task.util.HttpUtil;
+import com.oceanbase.odc.service.task.util.HttpClientUtils;
 import com.oceanbase.odc.service.task.util.JobUtils;
 
 import lombok.extern.slf4j.Slf4j;
@@ -115,7 +115,8 @@ public class LoggerService {
                         jobEntity.getId()) + "?logType=" + level.getName();
                 try {
                     SuccessResponse<String> response =
-                            HttpUtil.request(hostWithUrl, new TypeReference<SuccessResponse<String>>() {});
+                            HttpClientUtils.request("POST", hostWithUrl,
+                                    new TypeReference<SuccessResponse<String>>() {});
                     return response.getData();
                 } catch (IOException e) {
                     // Occur io timeout when pod deleted manual

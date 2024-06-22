@@ -96,7 +96,7 @@ import com.oceanbase.odc.service.task.constants.JobParametersKeyConstants;
 import com.oceanbase.odc.service.task.constants.JobServerUrls;
 import com.oceanbase.odc.service.task.exception.JobException;
 import com.oceanbase.odc.service.task.executor.task.BaseTask;
-import com.oceanbase.odc.service.task.util.HttpUtil;
+import com.oceanbase.odc.service.task.util.HttpClientUtils;
 import com.oceanbase.odc.service.task.util.JobUtils;
 import com.oceanbase.tools.dbbrowser.parser.ParserUtil;
 import com.oceanbase.tools.dbbrowser.parser.constant.GeneralSqlType;
@@ -559,7 +559,7 @@ public class DatabaseChangeTask extends BaseTask<FlowTaskResult> {
         for (String host : hostUrls) {
             try {
                 String hostWithUrl = host + JobServerUrls.TASK_QUERY_SENSITIVE_COLUMN;
-                SuccessResponse<QuerySensitiveColumnResp> response = HttpUtil.request(hostWithUrl,
+                SuccessResponse<QuerySensitiveColumnResp> response = HttpClientUtils.request("POST", hostWithUrl,
                         JsonUtils.toJson(req), new TypeReference<SuccessResponse<QuerySensitiveColumnResp>>() {});
                 if (response != null && response.getSuccessful()) {
                     return response.getData();

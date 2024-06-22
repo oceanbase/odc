@@ -32,7 +32,7 @@ import com.oceanbase.odc.service.task.exception.JobException;
 import com.oceanbase.odc.service.task.listener.JobCallerEvent;
 import com.oceanbase.odc.service.task.schedule.JobIdentity;
 import com.oceanbase.odc.service.task.service.TaskFrameworkService;
-import com.oceanbase.odc.service.task.util.HttpUtil;
+import com.oceanbase.odc.service.task.util.HttpClientUtils;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -114,7 +114,7 @@ public abstract class BaseJobCaller implements JobCaller {
         String url = executorEndpoint + String.format(JobExecutorUrls.STOP_TASK, ji.getId());
         log.info("Try stop job {} in executor {}.", ji.getId(), url);
         SuccessResponse<Boolean> response =
-                HttpUtil.request(url, new TypeReference<SuccessResponse<Boolean>>() {});
+                HttpClientUtils.request("POST", url, new TypeReference<SuccessResponse<Boolean>>() {});
         if (response != null && response.getSuccessful() && response.getData()) {
             log.info("Stop job {} in executor succeed, response is {}.", ji.getId(), JsonUtils.toJson(response));
         } else {
@@ -144,7 +144,8 @@ public abstract class BaseJobCaller implements JobCaller {
         log.info("Try to modify job parameters, jobId={}.", ji.getId());
         try {
             SuccessResponse<Boolean> response =
-                    HttpUtil.request(url, jobParametersJson, new TypeReference<SuccessResponse<Boolean>>() {});
+                    HttpClientUtils.request("POST", url, jobParametersJson,
+                            new TypeReference<SuccessResponse<Boolean>>() {});
             if (response != null && response.getSuccessful() && response.getData()) {
                 log.info("Modify job parameters success, jobId={}, response={}.", ji.getId(),
                         JsonUtils.toJson(response));
