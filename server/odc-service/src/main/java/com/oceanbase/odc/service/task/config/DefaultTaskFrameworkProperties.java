@@ -51,6 +51,8 @@ public class DefaultTaskFrameworkProperties implements TaskFrameworkProperties {
     // job will be timeout when last report time more than this duration
     private int jobHeartTimeoutSeconds = 300;
 
+    private int jobPullResultIntervalSeconds = 60;
+
     // TODO: remove unused property executorWaitingToRunThresholdSeconds
     private int executorWaitingToRunThresholdSeconds = 3;
     // TODO: remove unused property executorWaitingToRunThresholdCount

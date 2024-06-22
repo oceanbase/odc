@@ -299,7 +299,9 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
         return jobRepository.updateJobStatusAndExecutionTimesById(jobEntity);
     }
 
-
+    /**
+     * TODO: why use taskResultPublisherExecutor here?
+     */
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void handleResult(TaskResult taskResult) {
@@ -312,13 +314,15 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
             log.warn("Job identity is not exists by id {}", taskResult.getJobIdentity().getId());
             return;
         }
+        // TODO: save log metadata only when getExecutorEndpoint changed
         saveOrUpdateLogMetadata(taskResult, je.getId(), je.getStatus());
 
         if (je.getStatus().isTerminated() || je.getStatus() == JobStatus.CANCELING) {
             log.warn("Job is finished, ignore result, jobId={}, currentStatus={}", je.getId(), je.getStatus());
             return;
         }
-        int rows = updateJobScheduleEntity(taskResult, je);
+        // TODO: update task entity only when progress changed
+        int rows = updateJobEntity(taskResult, je);
         if (rows > 0) {
             taskResultPublisherExecutor
                     .execute(() -> publisher.publishEvent(new DefaultJobProcessUpdateEvent(taskResult)));
@@ -334,7 +338,6 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
                 }
             }
         }
-
     }
 
     @Transactional(rollbackFor = Exception.class)
@@ -361,7 +364,7 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
         }
     }
 
-    private int updateJobScheduleEntity(TaskResult taskResult, JobEntity currentJob) {
+    private int updateJobEntity(TaskResult taskResult, JobEntity currentJob) {
         JobEntity jse = new JobEntity();
         jse.setResultJson(taskResult.getResultJson());
         jse.setStatus(taskResult.getStatus());
