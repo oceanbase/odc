@@ -13,22 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.task.executor.server;
-
-import com.oceanbase.odc.service.task.schedule.JobIdentity;
-
-import lombok.Data;
+package com.oceanbase.odc.service.task.constants;
 
 /**
+ * task executor call odc server
+ * 
  * @author yaobin
- * @date 2023-11-29
+ * @date 2024-01-12
  * @since 4.2.4
  */
-@Data
-public class HeartRequest {
+public class JobServerUrls {
 
-    private JobIdentity jobIdentity;
+    public static final String TASK_UPLOAD_RESULT = "/api/v2/task/result";
 
-    private String executorEndpoint;
+    public static final String TASK_HEARTBEAT = "/api/v2/task/heart";
+
+    public static final String TASK_QUERY_SENSITIVE_COLUMN = "/api/v2/task/querySensitiveColumn";
 
 }

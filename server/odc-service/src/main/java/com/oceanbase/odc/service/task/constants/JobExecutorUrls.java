@@ -16,22 +16,22 @@
 package com.oceanbase.odc.service.task.constants;
 
 /**
- * @author yaobin
- * @date 2024-01-12
- * @since 4.2.4
+ * odc server call task executor
  */
-public class JobUrlConstants {
+public class JobExecutorUrls {
 
-    public static final String TASK_RESULT_UPLOAD = "/api/v2/task/result";
-
-    public static final String TASK_HEART = "/api/v2/task/heart";
-
-    public static final String TASK_QUERY_SENSITIVE_COLUMN = "/api/v2/task/querySensitiveColumn";
-
-    public static final String LOG_QUERY = "/api/v2/task/%s/log";
-
+    public static final String QUERY_LOG = "/api/v2/task/%s/log";
     public static final String STOP_TASK = "/api/v2/task/%s/stop";
 
+    /**
+     * for odc server monitor task use pull mode
+     */
+    public static final String HEARTBEAT = "/api/v2/task/%s/heartbeat";
+    public static final String GET_RESULT = "/api/v2/task/%s/result";
+
+    /**
+     * TODO: seem like modifyJobParameters method is not used
+     */
     public static final String MODIFY_JOB_PARAMETERS = "/api/v2/task/%s/modifyJobParameters";
 
 }

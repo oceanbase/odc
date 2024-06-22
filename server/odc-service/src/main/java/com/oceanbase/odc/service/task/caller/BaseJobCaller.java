@@ -26,7 +26,7 @@ import com.oceanbase.odc.service.common.response.SuccessResponse;
 import com.oceanbase.odc.service.task.config.JobConfiguration;
 import com.oceanbase.odc.service.task.config.JobConfigurationHolder;
 import com.oceanbase.odc.service.task.config.JobConfigurationValidator;
-import com.oceanbase.odc.service.task.constants.JobUrlConstants;
+import com.oceanbase.odc.service.task.constants.JobExecutorUrls;
 import com.oceanbase.odc.service.task.enums.JobCallerAction;
 import com.oceanbase.odc.service.task.exception.JobException;
 import com.oceanbase.odc.service.task.listener.JobCallerEvent;
@@ -111,7 +111,7 @@ public abstract class BaseJobCaller implements JobCaller {
     private void tryStop(JobIdentity ji, String executorEndpoint)
             throws IOException, JobException {
 
-        String url = executorEndpoint + String.format(JobUrlConstants.STOP_TASK, ji.getId());
+        String url = executorEndpoint + String.format(JobExecutorUrls.STOP_TASK, ji.getId());
         log.info("Try stop job {} in executor {}.", ji.getId(), url);
         SuccessResponse<Boolean> response =
                 HttpUtil.request(url, new TypeReference<SuccessResponse<Boolean>>() {});
@@ -140,7 +140,7 @@ public abstract class BaseJobCaller implements JobCaller {
         TaskFrameworkService taskFrameworkService = jobConfiguration.getTaskFrameworkService();
         JobEntity jobEntity = taskFrameworkService.find(ji.getId());
         String executorEndpoint = getExecutorPoint(jobEntity);
-        String url = executorEndpoint + String.format(JobUrlConstants.MODIFY_JOB_PARAMETERS, ji.getId());
+        String url = executorEndpoint + String.format(JobExecutorUrls.MODIFY_JOB_PARAMETERS, ji.getId());
         log.info("Try to modify job parameters, jobId={}.", ji.getId());
         try {
             SuccessResponse<Boolean> response =

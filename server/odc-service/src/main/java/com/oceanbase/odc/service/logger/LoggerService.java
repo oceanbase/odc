@@ -38,7 +38,7 @@ import com.oceanbase.odc.service.task.caller.ExecutorIdentifier;
 import com.oceanbase.odc.service.task.caller.ExecutorIdentifierParser;
 import com.oceanbase.odc.service.task.config.TaskFrameworkProperties;
 import com.oceanbase.odc.service.task.constants.JobAttributeKeyConstants;
-import com.oceanbase.odc.service.task.constants.JobUrlConstants;
+import com.oceanbase.odc.service.task.constants.JobExecutorUrls;
 import com.oceanbase.odc.service.task.executor.logger.LogUtils;
 import com.oceanbase.odc.service.task.model.OdcTaskLogLevel;
 import com.oceanbase.odc.service.task.service.TaskFrameworkService;
@@ -111,7 +111,7 @@ public class LoggerService {
                 if (log.isDebugEnabled()) {
                     log.debug("job: {} is not finished, try to get log from remote pod.", jobEntity.getId());
                 }
-                String hostWithUrl = jobEntity.getExecutorEndpoint() + String.format(JobUrlConstants.LOG_QUERY,
+                String hostWithUrl = jobEntity.getExecutorEndpoint() + String.format(JobExecutorUrls.QUERY_LOG,
                         jobEntity.getId()) + "?logType=" + level.getName();
                 try {
                     SuccessResponse<String> response =

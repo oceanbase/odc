@@ -15,17 +15,21 @@
  */
 package com.oceanbase.odc.service.task.executor.server;
 
+import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import com.oceanbase.odc.common.util.ExceptionUtils;
+import com.oceanbase.odc.common.util.ObjectUtil;
 import com.oceanbase.odc.service.common.response.Responses;
 import com.oceanbase.odc.service.common.response.SuccessResponse;
 import com.oceanbase.odc.service.common.util.UrlUtils;
-import com.oceanbase.odc.service.task.constants.JobUrlConstants;
+import com.oceanbase.odc.service.task.constants.JobExecutorUrls;
 import com.oceanbase.odc.service.task.executor.logger.LogBiz;
 import com.oceanbase.odc.service.task.executor.logger.LogBizImpl;
 import com.oceanbase.odc.service.task.executor.logger.LogUtils;
+import com.oceanbase.odc.service.task.executor.task.DefaultTaskResult;
+import com.oceanbase.odc.service.task.executor.task.DefaultTaskResultBuilder;
 import com.oceanbase.odc.service.task.executor.task.Task;
 import com.oceanbase.odc.service.task.schedule.JobIdentity;
 import com.oceanbase.odc.service.task.util.JobUtils;
@@ -41,10 +45,13 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class RequestHandler {
 
-    private final Pattern logUrlPattern = Pattern.compile(String.format(JobUrlConstants.LOG_QUERY, "([0-9]+)"));
-    private final Pattern stopTaskPattern = Pattern.compile(String.format(JobUrlConstants.STOP_TASK, "([0-9]+)"));
+    private final Pattern queryLogUrlPattern = Pattern.compile(String.format(JobExecutorUrls.QUERY_LOG, "([0-9]+)"));
+    private final Pattern stopTaskPattern = Pattern.compile(String.format(JobExecutorUrls.STOP_TASK, "([0-9]+)"));
+    private final Pattern heartbeatPattern = Pattern.compile(String.format(JobExecutorUrls.HEARTBEAT, "([0-9]+)"));
+    private final Pattern getResultPattern = Pattern.compile(String.format(JobExecutorUrls.GET_RESULT, "([0-9]+)"));
     private final Pattern modifyParametersPattern =
-            Pattern.compile(String.format(JobUrlConstants.MODIFY_JOB_PARAMETERS, "([0-9]+)"));
+            Pattern.compile(String.format(JobExecutorUrls.MODIFY_JOB_PARAMETERS, "([0-9]+)"));
+
     private final LogBiz executorBiz;
 
     public RequestHandler() {
@@ -52,7 +59,6 @@ public class RequestHandler {
     }
 
     public SuccessResponse<Object> process(HttpMethod httpMethod, String uri, String requestData) {
-
         if (uri == null || uri.trim().length() == 0) {
             return Responses.single("request error: uri is empty.");
         }
@@ -60,27 +66,46 @@ public class RequestHandler {
         try {
             // services mapping
             String path = UrlUtils.getPath(uri);
-            Matcher matcher = logUrlPattern.matcher(path);
+            Matcher matcher = queryLogUrlPattern.matcher(path);
             if (matcher.find()) {
                 String maxLine = UrlUtils.getQueryParameterFirst(uri, "fetchMaxLine");
                 String maxSize = UrlUtils.getQueryParameterFirst(uri, "fetchMaxByteSize");
-
-                return Responses.single(executorBiz.getLog(Long.parseLong(matcher.group(1)),
+                Long jobId = Long.parseLong(matcher.group(1));
+                String logContent = executorBiz.getLog(jobId,
                         UrlUtils.getQueryParameterFirst(uri, "logType"),
                         (maxLine == null ? LogUtils.MAX_LOG_LINE_COUNT : Long.parseLong(maxLine)),
-                        (maxSize == null ? LogUtils.MAX_LOG_BYTE_COUNT : Long.parseLong(maxSize))));
+                        (maxSize == null ? LogUtils.MAX_LOG_BYTE_COUNT : Long.parseLong(maxSize)));
+                return Responses.single(logContent);
             }
             matcher = stopTaskPattern.matcher(path);
             if (matcher.find()) {
-                JobIdentity ji = JobIdentity.of(Long.parseLong(matcher.group(1)));
-                return Responses.ok(ThreadPoolTaskExecutor.getInstance().cancel(ji));
+                JobIdentity ji = getJobIdentity(matcher);
+                boolean result = ThreadPoolTaskExecutor.getInstance().cancel(ji);
+                return Responses.ok(result);
             }
 
             matcher = modifyParametersPattern.matcher(path);
             if (matcher.find()) {
-                JobIdentity ji = JobIdentity.of(Long.parseLong(matcher.group(1)));
+                JobIdentity ji = getJobIdentity(matcher);
                 Task<?> task = ThreadPoolTaskExecutor.getInstance().getTask(ji);
-                task.modify(JobUtils.fromJsonToMap(requestData));
+                boolean result = task.modify(JobUtils.fromJsonToMap(requestData));
+                return Responses.ok(result);
+            }
+
+            matcher = heartbeatPattern.matcher(path);
+            if (matcher.find()) {
+                JobIdentity ji = getJobIdentity(matcher);
+                Task<?> task = ThreadPoolTaskExecutor.getInstance().getTask(ji);
+                return Responses.ok(Objects.nonNull(task));
+            }
+
+            matcher = getResultPattern.matcher(path);
+            if (matcher.find()) {
+                JobIdentity ji = getJobIdentity(matcher);
+                Task<?> task = ThreadPoolTaskExecutor.getInstance().getTask(ji);
+                DefaultTaskResult result = DefaultTaskResultBuilder.build(task);
+                DefaultTaskResult copiedResult = ObjectUtil.deepCopy(result, DefaultTaskResult.class);
+                return Responses.ok(copiedResult);
             }
 
             return Responses.single("invalid request, uri-mapping(" + uri + ") not found.");
@@ -88,6 +113,10 @@ public class RequestHandler {
             log.error(e.getMessage(), e);
             return Responses.single("request error:" + ExceptionUtils.getRootCauseReason(e));
         }
+    }
+
+    private static JobIdentity getJobIdentity(Matcher matcher) {
+        return JobIdentity.of(Long.parseLong(matcher.group(1)));
     }
 
 }

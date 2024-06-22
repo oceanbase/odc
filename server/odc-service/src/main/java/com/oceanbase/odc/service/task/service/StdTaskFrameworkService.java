@@ -65,7 +65,7 @@ import com.oceanbase.odc.service.task.constants.JobEntityColumn;
 import com.oceanbase.odc.service.task.enums.JobStatus;
 import com.oceanbase.odc.service.task.enums.TaskRunMode;
 import com.oceanbase.odc.service.task.exception.TaskRuntimeException;
-import com.oceanbase.odc.service.task.executor.server.HeartRequest;
+import com.oceanbase.odc.service.task.executor.server.HeartbeatRequest;
 import com.oceanbase.odc.service.task.executor.task.Task;
 import com.oceanbase.odc.service.task.executor.task.TaskResult;
 import com.oceanbase.odc.service.task.listener.DefaultJobProcessUpdateEvent;
@@ -320,9 +320,11 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
         if (rows > 0) {
             taskResultPublisherExecutor
                     .execute(() -> publisher.publishEvent(new DefaultJobProcessUpdateEvent(taskResult)));
+
             if (publisher != null && taskResult.getStatus() != null && taskResult.getStatus().isTerminated()) {
                 taskResultPublisherExecutor.execute(() -> publisher
                         .publishEvent(new JobTerminateEvent(taskResult.getJobIdentity(), taskResult.getStatus())));
+
                 if (taskResult.getStatus() == JobStatus.FAILED) {
                     AlarmUtils.alarm(AlarmEventNames.TASK_EXECUTION_FAILED,
                             MessageFormat.format("Job execution failed, jobId={0}",
@@ -335,7 +337,7 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
 
     @Transactional(rollbackFor = Exception.class)
     @Override
-    public void handleHeart(HeartRequest heart) {
+    public void handleHeart(HeartbeatRequest heart) {
         if (heart.getJobIdentity() == null || heart.getJobIdentity().getId() == null ||
                 heart.getExecutorEndpoint() == null) {
             return;

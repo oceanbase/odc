@@ -24,7 +24,7 @@ import org.springframework.data.domain.Page;
 import com.oceanbase.odc.metadb.task.JobEntity;
 import com.oceanbase.odc.service.task.enums.JobStatus;
 import com.oceanbase.odc.service.task.enums.TaskRunMode;
-import com.oceanbase.odc.service.task.executor.server.HeartRequest;
+import com.oceanbase.odc.service.task.executor.server.HeartbeatRequest;
 import com.oceanbase.odc.service.task.executor.task.TaskResult;
 import com.oceanbase.odc.service.task.schedule.JobDefinition;
 
@@ -39,7 +39,7 @@ public interface TaskFrameworkService {
 
     void handleResult(TaskResult taskResult);
 
-    void handleHeart(HeartRequest heart);
+    void handleHeart(HeartbeatRequest heart);
 
     JobEntity find(Long id);
 
