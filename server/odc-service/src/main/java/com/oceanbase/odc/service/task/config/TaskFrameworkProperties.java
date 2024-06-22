@@ -15,6 +15,7 @@
  */
 package com.oceanbase.odc.service.task.config;
 
+import com.oceanbase.odc.service.task.enums.TaskMonitorMode;
 import com.oceanbase.odc.service.task.enums.TaskRunMode;
 
 /**
@@ -26,6 +27,8 @@ public interface TaskFrameworkProperties {
     boolean isEnabled();
 
     TaskRunMode getRunMode();
+
+    TaskMonitorMode getMonitorMode();
 
     String getOdcUrl();
 

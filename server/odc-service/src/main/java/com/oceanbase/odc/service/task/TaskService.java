@@ -75,7 +75,7 @@ public class TaskService {
     private AuthenticationFacade authenticationFacade;
 
     @Autowired
-    private HostProperties properties;
+    private HostProperties hostProperties;
 
     private static String logFilePrefix;
     private static final String MULTIPLE_ASYNC_LOG_PATH_PATTERN = "%s/multiple-async/%s/multiple-async.%s";
@@ -117,7 +117,7 @@ public class TaskService {
         taskEntity.setDescription(req.getDescription());
         taskEntity.setParametersJson(JsonUtils.toJson(req.getParameters()));
 
-        String currentExecutor = JsonUtils.toJson(new ExecutorInfo(properties));
+        String currentExecutor = JsonUtils.toJson(new ExecutorInfo(hostProperties));
         taskEntity.setSubmitter(currentExecutor);
         taskEntity.setExecutor(currentExecutor);
         taskEntity.setStatus(TaskStatus.PREPARING);

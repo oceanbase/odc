@@ -53,6 +53,7 @@ import com.oceanbase.odc.common.util.SystemUtils;
 import com.oceanbase.odc.core.alarm.AlarmEventNames;
 import com.oceanbase.odc.core.alarm.AlarmUtils;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
+import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.core.shared.exception.NotFoundException;
 import com.oceanbase.odc.metadb.task.JobAttributeEntity;
@@ -74,6 +75,7 @@ import com.oceanbase.odc.service.task.schedule.DefaultJobDefinition;
 import com.oceanbase.odc.service.task.schedule.JobDefinition;
 import com.oceanbase.odc.service.task.util.JobDateUtils;
 
+import lombok.NonNull;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
@@ -337,11 +339,10 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
 
     @Transactional(rollbackFor = Exception.class)
     @Override
-    public void handleHeart(HeartbeatRequest heart) {
-        if (heart.getJobIdentity() == null || heart.getJobIdentity().getId() == null ||
-                heart.getExecutorEndpoint() == null) {
-            return;
-        }
+    public void handleHeart(@NonNull HeartbeatRequest heart) {
+        PreConditions.notNull(heart.getJobIdentity(), "jobIdentity");
+        PreConditions.notNull(heart.getJobIdentity().getId(), "jobIdentity.id");
+        PreConditions.notBlank(heart.getExecutorEndpoint(), "executorEndpoint");
 
         CriteriaBuilder cb = entityManager.getCriteriaBuilder();
         CriteriaUpdate<JobEntity> update = cb.createCriteriaUpdate(JobEntity.class);
@@ -350,8 +351,14 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
         update.where(cb.equal(e.get(JobEntityColumn.ID), heart.getJobIdentity().getId()),
                 cb.equal(e.get(JobEntityColumn.EXECUTOR_ENDPOINT), heart.getExecutorEndpoint()));
 
-        entityManager.createQuery(update).executeUpdate();
-
+        int affectedRows = entityManager.createQuery(update).executeUpdate();
+        if (affectedRows == 0) {
+            log.warn("Heartbeat update failed, jobIdentity={}, executorEndpoint={}",
+                    heart.getJobIdentity(), heart.getExecutorEndpoint());
+        } else {
+            log.info("Heartbeat update success, jobIdentity={}, executorEndpoint={}",
+                    heart.getJobIdentity(), heart.getExecutorEndpoint());
+        }
     }
 
     private int updateJobScheduleEntity(TaskResult taskResult, JobEntity currentJob) {
