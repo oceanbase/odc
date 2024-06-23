@@ -15,7 +15,6 @@
  */
 package com.oceanbase.odc.service.task.executor.server;
 
-import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -43,18 +42,17 @@ import lombok.extern.slf4j.Slf4j;
  * @since 4.2.4
  */
 @Slf4j
-public class RequestHandler {
+public class ExecutorRequestHandler {
 
     private final Pattern queryLogUrlPattern = Pattern.compile(String.format(JobExecutorUrls.QUERY_LOG, "([0-9]+)"));
     private final Pattern stopTaskPattern = Pattern.compile(String.format(JobExecutorUrls.STOP_TASK, "([0-9]+)"));
-    private final Pattern heartbeatPattern = Pattern.compile(String.format(JobExecutorUrls.HEARTBEAT, "([0-9]+)"));
     private final Pattern getResultPattern = Pattern.compile(String.format(JobExecutorUrls.GET_RESULT, "([0-9]+)"));
     private final Pattern modifyParametersPattern =
             Pattern.compile(String.format(JobExecutorUrls.MODIFY_JOB_PARAMETERS, "([0-9]+)"));
 
     private final LogBiz executorBiz;
 
-    public RequestHandler() {
+    public ExecutorRequestHandler() {
         this.executorBiz = new LogBizImpl();
     }
 
@@ -90,13 +88,6 @@ public class RequestHandler {
                 Task<?> task = ThreadPoolTaskExecutor.getInstance().getTask(ji);
                 boolean result = task.modify(JobUtils.fromJsonToMap(requestData));
                 return Responses.ok(result);
-            }
-
-            matcher = heartbeatPattern.matcher(path);
-            if (matcher.find()) {
-                JobIdentity ji = getJobIdentity(matcher);
-                Task<?> task = ThreadPoolTaskExecutor.getInstance().getTask(ji);
-                return Responses.ok(Objects.nonNull(task));
             }
 
             matcher = getResultPattern.matcher(path);

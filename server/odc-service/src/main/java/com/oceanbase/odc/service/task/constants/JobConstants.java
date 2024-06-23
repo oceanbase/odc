@@ -47,6 +47,9 @@ public class JobConstants {
 
     public static final int REPORT_TASK_INFO_DELAY_SECONDS = 1;
 
+    /**
+     * TODO: too frequent, need to be optimized, may 10s
+     */
     public static final int REPORT_TASK_HEART_INTERVAL_SECONDS = 3;
 
     public static final int REPORT_TASK_HEART_DELAY_SECONDS = 1;

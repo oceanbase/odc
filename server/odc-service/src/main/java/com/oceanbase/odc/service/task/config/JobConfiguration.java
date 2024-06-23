@@ -32,6 +32,7 @@ import com.oceanbase.odc.service.task.schedule.provider.HostUrlProvider;
 import com.oceanbase.odc.service.task.schedule.provider.JobImageNameProvider;
 import com.oceanbase.odc.service.task.service.TaskFrameworkService;
 import com.oceanbase.odc.service.task.service.TransactionManager;
+import com.oceanbase.odc.service.task.util.TaskExecutorClient;
 
 /**
  * @author yaobin
@@ -60,6 +61,8 @@ public interface JobConfiguration {
     HostUrlProvider getHostUrlProvider();
 
     TaskFrameworkService getTaskFrameworkService();
+
+    TaskExecutorClient getTaskExecutorClient();
 
     EventPublisher getEventPublisher();
 

@@ -52,6 +52,8 @@ public interface TaskFrameworkProperties {
 
     int getSingleFetchCheckHeartTimeoutJobRows();
 
+    int getSinglePullResultJobRows();
+
     int getMaxHeartTimeoutRetryTimes();
 
     int getQuartzStartDelaySeconds();

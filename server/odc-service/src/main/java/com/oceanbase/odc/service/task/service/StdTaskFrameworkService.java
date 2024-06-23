@@ -168,6 +168,13 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
     }
 
     @Override
+    public Page<JobEntity> findRunningJobs(int page, int size) {
+        Specification<JobEntity> condition = Specification.where(getRecentDaySpec(RECENT_DAY))
+                .and(SpecificationUtil.columnEqual(JobEntityColumn.STATUS, JobStatus.RUNNING));
+        return page(condition, page, size);
+    }
+
+    @Override
     public long countRunningNeverHeartJobs(int neverHeartSeconds) {
         CriteriaBuilder cb = entityManager.getCriteriaBuilder();
         CriteriaQuery<Long> query = cb.createQuery(Long.class);

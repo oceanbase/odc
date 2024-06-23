@@ -19,6 +19,7 @@ import org.quartz.DisallowConcurrentExecution;
 import org.quartz.Job;
 import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
+import org.springframework.data.domain.Page;
 
 import com.oceanbase.odc.common.util.SilentExecutor;
 import com.oceanbase.odc.metadb.task.JobEntity;
@@ -33,7 +34,8 @@ import com.oceanbase.odc.service.task.service.TransactionManager;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * pull task result, update heartbeatTime and taskResult
+ * pull task result, update heartbeatTime and taskResult. <br>
+ * as pull task result means the task is active, we also update heartbeatTime here.
  */
 @Slf4j
 @DisallowConcurrentExecution
@@ -56,6 +58,9 @@ public class PullTaskResultJob implements Job {
         // TODO: list all running jobs, and pull task result, then update heartbeatTime and taskResult for
         // each running job
 
+        int singlePullResultJobRows = taskFrameworkProperties.getSinglePullResultJobRows();
+        Page<JobEntity> runningJobs = taskFrameworkService.findRunningJobs(0, singlePullResultJobRows);
+        runningJobs.forEach(this::pullJobResult);
     }
 
     private void pullJobResult(JobEntity jobEntity) {

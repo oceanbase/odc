@@ -71,6 +71,9 @@ public class DefaultTaskFrameworkProperties implements TaskFrameworkProperties {
     // single fetch job rows to check report timeout or not
     private int singleFetchCheckHeartTimeoutJobRows = 30;
 
+    // single fetch job rows to pull task result
+    private int singlePullResultJobRows = 200;
+
     // max retry times after heart timeout
     private int maxHeartTimeoutRetryTimes = 3;
 

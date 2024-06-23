@@ -40,6 +40,7 @@ import com.oceanbase.odc.service.task.schedule.provider.DefaultJobImageNameProvi
 import com.oceanbase.odc.service.task.service.SpringTransactionManager;
 import com.oceanbase.odc.service.task.service.StdTaskFrameworkService;
 import com.oceanbase.odc.service.task.service.TaskFrameworkService;
+import com.oceanbase.odc.service.task.util.TaskExecutorClient;
 
 /**
  * @author yaobin
@@ -70,6 +71,8 @@ public class DefaultSpringJobConfiguration extends DefaultJobConfiguration
         }
         setTaskFrameworkService(tfs);
         setEventPublisher(publisher);
+
+        setTaskExecutorClient(new TaskExecutorClient());
         setTransactionManager(new SpringTransactionManager(ctx.getBean(TransactionTemplate.class)));
         initJobRateLimiter();
         setTaskFrameworkDisabledHandler(new DefaultTaskFrameworkDisabledHandler());

@@ -26,7 +26,7 @@ public class JobExecutorUrls {
     /**
      * for odc server monitor task use pull mode
      */
-    public static final String HEARTBEAT = "/api/v2/task/%s/heartbeat";
+    // public static final String HEARTBEAT = "/api/v2/task/%s/heartbeat";
     public static final String GET_RESULT = "/api/v2/task/%s/result";
 
     /**

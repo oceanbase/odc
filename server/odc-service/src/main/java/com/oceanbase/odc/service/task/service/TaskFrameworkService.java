@@ -57,6 +57,8 @@ public interface TaskFrameworkService {
 
     Page<JobEntity> findIncompleteJobs(int page, int size);
 
+    Page<JobEntity> findRunningJobs(int page, int size);
+
     /**
      * count the jobs started time before neverHeartSeconds which status is running and no heart
      *

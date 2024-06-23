@@ -32,6 +32,7 @@ import com.oceanbase.odc.service.task.schedule.provider.HostUrlProvider;
 import com.oceanbase.odc.service.task.schedule.provider.JobImageNameProvider;
 import com.oceanbase.odc.service.task.service.TaskFrameworkService;
 import com.oceanbase.odc.service.task.service.TransactionManager;
+import com.oceanbase.odc.service.task.util.TaskExecutorClient;
 
 import lombok.Getter;
 import lombok.Setter;
@@ -66,6 +67,8 @@ public abstract class DefaultJobConfiguration implements JobConfiguration {
     protected HostUrlProvider hostUrlProvider;
 
     protected TaskFrameworkService taskFrameworkService;
+
+    protected TaskExecutorClient taskExecutorClient;
 
     protected EventPublisher eventPublisher;
 
