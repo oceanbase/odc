@@ -46,6 +46,7 @@ import com.oceanbase.odc.service.task.listener.DefaultJobCallerListener;
 import com.oceanbase.odc.service.task.schedule.daemon.CheckRunningJob;
 import com.oceanbase.odc.service.task.schedule.daemon.DestroyExecutorJob;
 import com.oceanbase.odc.service.task.schedule.daemon.DoCancelingJob;
+import com.oceanbase.odc.service.task.schedule.daemon.PullTaskResultJob;
 import com.oceanbase.odc.service.task.schedule.daemon.StartPreparingJob;
 import com.oceanbase.odc.service.task.service.JobRunnable;
 import com.oceanbase.odc.service.task.util.JobUtils;
@@ -160,6 +161,7 @@ public class StdJobScheduler implements JobScheduler {
 
     private void initDaemonJob() {
         initCheckRunningJob();
+        initPullTaskResultJob();
         initStartPreparingJob();
         initDoCancelingJob();
         initDestroyExecutorJob();
@@ -170,6 +172,13 @@ public class StdJobScheduler implements JobScheduler {
         initCronJob(key,
                 configuration.getTaskFrameworkProperties().getCheckRunningJobCronExpression(),
                 CheckRunningJob.class);
+    }
+
+    private void initPullTaskResultJob() {
+        String key = "pullTaskResultJob";
+        initCronJob(key,
+                configuration.getTaskFrameworkProperties().getPullTaskResultJobCronExpression(),
+                PullTaskResultJob.class);
     }
 
     private void initStartPreparingJob() {

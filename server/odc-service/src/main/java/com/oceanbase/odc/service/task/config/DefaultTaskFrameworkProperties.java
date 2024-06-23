@@ -96,4 +96,6 @@ public class DefaultTaskFrameworkProperties implements TaskFrameworkProperties {
     private String doCancelingJobCronExpression;
 
     private String destroyExecutorJobCronExpression;
+
+    private String pullTaskResultJobCronExpression;
 }

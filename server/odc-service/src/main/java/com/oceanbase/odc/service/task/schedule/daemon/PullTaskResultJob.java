@@ -21,13 +21,11 @@ import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
 import org.springframework.data.domain.Page;
 
-import com.oceanbase.odc.common.util.SilentExecutor;
 import com.oceanbase.odc.metadb.task.JobEntity;
 import com.oceanbase.odc.service.task.config.JobConfiguration;
 import com.oceanbase.odc.service.task.config.JobConfigurationHolder;
 import com.oceanbase.odc.service.task.config.JobConfigurationValidator;
 import com.oceanbase.odc.service.task.config.TaskFrameworkProperties;
-import com.oceanbase.odc.service.task.enums.JobStatus;
 import com.oceanbase.odc.service.task.service.TaskFrameworkService;
 import com.oceanbase.odc.service.task.service.TransactionManager;
 
@@ -54,28 +52,8 @@ public class PullTaskResultJob implements Job {
 
         JobConfigurationValidator.validComponent();
 
-        int jobPullResultIntervalSeconds = taskFrameworkProperties.getJobPullResultIntervalSeconds();
-        // TODO: list all running jobs, and pull task result, then update heartbeatTime and taskResult for
-        // each running job
-
         int singlePullResultJobRows = taskFrameworkProperties.getSinglePullResultJobRows();
         Page<JobEntity> runningJobs = taskFrameworkService.findRunningJobs(0, singlePullResultJobRows);
-        runningJobs.forEach(this::pullJobResult);
+        runningJobs.forEach(job -> taskFrameworkService.refreshResult(job.getId()));
     }
-
-    private void pullJobResult(JobEntity jobEntity) {
-        SilentExecutor.executeSafely(() -> this.transactionManager.doInTransactionWithoutResult(
-                () -> doPullJobResult(jobEntity)));
-    }
-
-    private void doPullJobResult(JobEntity jobEntity) {
-        JobEntity a = this.taskFrameworkService.findWithPessimisticLock(jobEntity.getId());
-        if (a.getStatus() != JobStatus.RUNNING) {
-            log.info("Current job is not RUNNING, abort continue, jobId={}.", a.getId());
-            return;
-        }
-        // do pull job result
-
-    }
-
 }

@@ -67,13 +67,16 @@ import com.oceanbase.odc.service.task.enums.JobStatus;
 import com.oceanbase.odc.service.task.enums.TaskRunMode;
 import com.oceanbase.odc.service.task.exception.TaskRuntimeException;
 import com.oceanbase.odc.service.task.executor.server.HeartbeatRequest;
+import com.oceanbase.odc.service.task.executor.task.DefaultTaskResult;
 import com.oceanbase.odc.service.task.executor.task.Task;
 import com.oceanbase.odc.service.task.executor.task.TaskResult;
 import com.oceanbase.odc.service.task.listener.DefaultJobProcessUpdateEvent;
 import com.oceanbase.odc.service.task.listener.JobTerminateEvent;
 import com.oceanbase.odc.service.task.schedule.DefaultJobDefinition;
 import com.oceanbase.odc.service.task.schedule.JobDefinition;
+import com.oceanbase.odc.service.task.schedule.JobIdentity;
 import com.oceanbase.odc.service.task.util.JobDateUtils;
+import com.oceanbase.odc.service.task.util.TaskExecutorClient;
 
 import lombok.NonNull;
 import lombok.Setter;
@@ -96,7 +99,6 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
     private JobRepository jobRepository;
     @Autowired
     private JobAttributeRepository jobAttributeRepository;
-
     @Setter
     private EventPublisher publisher;
 
@@ -105,10 +107,16 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
     private ThreadPoolTaskExecutor taskResultPublisherExecutor;
 
     @Autowired
+    @Qualifier(value = "taskResultPullerExecutor")
+    private ThreadPoolTaskExecutor taskResultPullerExecutor;
+
+    @Autowired
     private TaskFrameworkProperties taskFrameworkProperties;
 
     @Autowired
     private EntityManager entityManager;
+    @Autowired
+    private TaskExecutorClient taskExecutorClient;
 
     @Override
     public JobEntity find(Long id) {
@@ -321,7 +329,6 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
             log.warn("Job identity is not exists by id {}", taskResult.getJobIdentity().getId());
             return;
         }
-        // TODO: save log metadata only when getExecutorEndpoint changed
         saveOrUpdateLogMetadata(taskResult, je.getId(), je.getStatus());
 
         if (je.getStatus().isTerminated() || je.getStatus() == JobStatus.CANCELING) {
@@ -342,6 +349,57 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
                     AlarmUtils.alarm(AlarmEventNames.TASK_EXECUTION_FAILED,
                             MessageFormat.format("Job execution failed, jobId={0}",
                                     taskResult.getJobIdentity().getId()));
+                }
+            }
+        }
+    }
+
+    @Override
+    public void refreshResult(Long id) {
+        taskResultPullerExecutor.execute(() -> {
+            try {
+                doRefreshResult(id);
+            } catch (Exception e) {
+                log.error("Refresh job result failed, jobId={}", id, e);
+            }
+        });
+    }
+
+    private void doRefreshResult(Long id) {
+        JobEntity je = find(id);
+        if (JobStatus.RUNNING != je.getStatus()) {
+            log.info("Job is not running, ignore refresh, jobId={}, currentStatus={}", id, je.getStatus());
+            return;
+        }
+        DefaultTaskResult result = taskExecutorClient.getResult(je.getExecutorEndpoint(), JobIdentity.of(id));
+        DefaultTaskResult previous = JsonUtils.fromJson(je.getResultJson(), DefaultTaskResult.class);
+
+        if (!result.progressChanged(previous)) {
+            JobEntity jse = new JobEntity();
+            jse.setLastHeartTime(JobDateUtils.getCurrentDate());
+            jse.setLastReportTime(JobDateUtils.getCurrentDate());
+            int rows = jobRepository.updateHeartbeatTime(je, id, JobStatus.RUNNING);
+            if (rows > 0) {
+                log.info("Update lastHeartbeatTime success, jobId={}, currentProgress={}", id, result.getProgress());
+            } else {
+                log.warn("Update lastHeartbeatTime failed, jobId={}", id);
+            }
+        }
+        // here progress changed
+        saveOrUpdateLogMetadata(result, je.getId(), je.getStatus());
+        int rows = updateJobEntity(result, je);
+        if (rows > 0) {
+            taskResultPublisherExecutor
+                    .execute(() -> publisher.publishEvent(new DefaultJobProcessUpdateEvent(result)));
+
+            if (publisher != null && result.getStatus() != null && result.getStatus().isTerminated()) {
+                taskResultPublisherExecutor.execute(() -> publisher
+                        .publishEvent(new JobTerminateEvent(result.getJobIdentity(), result.getStatus())));
+
+                if (result.getStatus() == JobStatus.FAILED) {
+                    AlarmUtils.alarm(AlarmEventNames.TASK_EXECUTION_FAILED,
+                            MessageFormat.format("Job execution failed, jobId={0}",
+                                    result.getJobIdentity().getId()));
                 }
             }
         }

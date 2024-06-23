@@ -39,6 +39,8 @@ public interface TaskFrameworkService {
 
     void handleResult(TaskResult taskResult);
 
+    void refreshResult(Long id);
+
     void handleHeart(HeartbeatRequest heart);
 
     JobEntity find(Long id);

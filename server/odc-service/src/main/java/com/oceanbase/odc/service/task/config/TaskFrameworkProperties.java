@@ -68,6 +68,8 @@ public interface TaskFrameworkProperties {
 
     String getCheckRunningJobCronExpression();
 
+    String getPullTaskResultJobCronExpression();
+
     String getDoCancelingJobCronExpression();
 
     String getDestroyExecutorJobCronExpression();
