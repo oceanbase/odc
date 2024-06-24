@@ -38,8 +38,10 @@ import com.oceanbase.odc.service.schedule.model.TriggerConfig;
 import com.oceanbase.odc.service.schedule.model.TriggerStrategy;
 import com.oceanbase.odc.service.task.config.JobConfiguration;
 import com.oceanbase.odc.service.task.config.JobConfigurationHolder;
+import com.oceanbase.odc.service.task.config.TaskFrameworkProperties;
 import com.oceanbase.odc.service.task.constants.JobConstants;
 import com.oceanbase.odc.service.task.enums.JobStatus;
+import com.oceanbase.odc.service.task.enums.TaskMonitorMode;
 import com.oceanbase.odc.service.task.exception.JobException;
 import com.oceanbase.odc.service.task.exception.TaskRuntimeException;
 import com.oceanbase.odc.service.task.listener.DefaultJobCallerListener;
@@ -63,10 +65,12 @@ import lombok.extern.slf4j.Slf4j;
 public class StdJobScheduler implements JobScheduler {
     private final Scheduler scheduler;
     private final JobConfiguration configuration;
+    private final TaskFrameworkProperties taskFrameworkProperties;
 
     public StdJobScheduler(JobConfiguration configuration) {
         this.configuration = configuration;
         this.scheduler = configuration.getDaemonScheduler();
+        this.taskFrameworkProperties = configuration.getTaskFrameworkProperties();
         validConfiguration(configuration);
         JobConfigurationHolder.setJobConfiguration(configuration);
 
@@ -175,6 +179,10 @@ public class StdJobScheduler implements JobScheduler {
     }
 
     private void initPullTaskResultJob() {
+        TaskMonitorMode monitorMode = taskFrameworkProperties.getMonitorMode();
+        if (monitorMode == TaskMonitorMode.PUSH) {
+            return;
+        }
         String key = "pullTaskResultJob";
         initCronJob(key,
                 configuration.getTaskFrameworkProperties().getPullTaskResultJobCronExpression(),
