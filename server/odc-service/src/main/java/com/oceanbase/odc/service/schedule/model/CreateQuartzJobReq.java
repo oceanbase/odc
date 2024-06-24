@@ -16,6 +16,7 @@
 package com.oceanbase.odc.service.schedule.model;
 
 import org.quartz.JobDataMap;
+import org.quartz.JobKey;
 
 import com.oceanbase.odc.service.quartz.model.MisfireStrategy;
 
@@ -30,10 +31,7 @@ import lombok.Data;
 @Data
 public class CreateQuartzJobReq {
 
-    // It represents the owner of the job.
-    private Long scheduleId;
-
-    private JobType type;
+    private JobKey jobKey;
 
     private Boolean allowConcurrent = false;
 

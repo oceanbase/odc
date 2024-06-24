@@ -26,8 +26,6 @@ import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.common.util.tableformat.Table;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.constant.TaskStatus;
-import com.oceanbase.odc.metadb.schedule.ScheduleTaskEntity;
-import com.oceanbase.odc.metadb.schedule.ScheduleTaskRepository;
 import com.oceanbase.odc.service.onlineschemachange.configuration.OnlineSchemaChangeProperties;
 import com.oceanbase.odc.service.onlineschemachange.exception.OscException;
 import com.oceanbase.odc.service.onlineschemachange.logger.DefaultTableFactory;
@@ -51,6 +49,8 @@ import com.oceanbase.odc.service.onlineschemachange.oms.response.OmsProjectStepV
 import com.oceanbase.odc.service.onlineschemachange.pipeline.ProjectStepResultChecker.ProjectStepResult;
 import com.oceanbase.odc.service.onlineschemachange.rename.SwapTableUtil;
 import com.oceanbase.odc.service.onlineschemachange.subtask.OscTaskCompleteHandler;
+import com.oceanbase.odc.service.schedule.ScheduleTaskService;
+import com.oceanbase.odc.service.schedule.model.ScheduleTask;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -67,7 +67,7 @@ public class ScheduleCheckOmsProjectValve extends BaseValve {
     @Autowired
     private OscTaskCompleteHandler completeHandler;
     @Autowired
-    private ScheduleTaskRepository scheduleTaskRepository;
+    private ScheduleTaskService scheduleTaskService;
 
     @Autowired
     private OnlineSchemaChangeProperties onlineSchemaChangeProperties;
@@ -75,7 +75,7 @@ public class ScheduleCheckOmsProjectValve extends BaseValve {
     @Override
     public void invoke(ValveContext valveContext) {
         OscValveContext context = (OscValveContext) valveContext;
-        ScheduleTaskEntity scheduleTask = context.getScheduleTask();
+        ScheduleTask scheduleTask = context.getScheduleTask();
         log.debug("Start execute {}, schedule task id {}", getClass().getSimpleName(), scheduleTask.getId());
 
         OnlineSchemaChangeScheduleTaskParameters taskParameter = context.getTaskParameter();
@@ -113,7 +113,7 @@ public class ScheduleCheckOmsProjectValve extends BaseValve {
         adaptResult(result, projectStepResult);
         scheduleTask.setResultJson(JsonUtils.toJson(result));
         scheduleTask.setProgressPercentage(projectStepResult.getTaskPercentage());
-        scheduleTaskRepository.update(scheduleTask);
+        scheduleTaskService.update(scheduleTask);
         recordCurrentProgress(taskParameter.getOmsProjectId(), result);
         handleOmsProjectStepResult(valveContext, projectStepResult, result,
                 context.getParameter().getSwapTableType(), scheduleTask);
@@ -182,14 +182,14 @@ public class ScheduleCheckOmsProjectValve extends BaseValve {
                 taskParameters.getOmsProjectId(), scheduleTaskId);
         // update task parameters rate limit same as schedule
         taskParameters.setRateLimitConfig(oscParameters.getRateLimitConfig());
-        int rows = scheduleTaskRepository.updateTaskParameters(scheduleTaskId, JsonUtils.toJson(taskParameters));
+        int rows = scheduleTaskService.updateParameters(scheduleTaskId, JsonUtils.toJson(taskParameters));
         if (rows > 0) {
             log.info("Update throttle completed, scheduleTaskId={}", scheduleTaskId);
         }
     }
 
     private void handleOmsProjectStepResult(ValveContext valveContext, ProjectStepResult projectStepResult,
-            OnlineSchemaChangeScheduleTaskResult result, SwapTableType swapTableType, ScheduleTaskEntity scheduleTask) {
+            OnlineSchemaChangeScheduleTaskResult result, SwapTableType swapTableType, ScheduleTask scheduleTask) {
 
         if (projectStepResult.getTaskStatus() == TaskStatus.DONE
                 && (projectStepResult.getFullVerificationResult() == FullVerificationResult.CONSISTENT ||
@@ -203,11 +203,11 @@ public class ScheduleCheckOmsProjectValve extends BaseValve {
                     // open manual swap table
                     result.setManualSwapTableEnabled(true);
                     scheduleTask.setResultJson(JsonUtils.toJson(result));
-                    scheduleTaskRepository.update(scheduleTask);
+                    scheduleTaskService.update(scheduleTask);
                 }
             } else {
                 scheduleTask.setResultJson(JsonUtils.toJson(result));
-                scheduleTaskRepository.update(scheduleTask);
+                scheduleTaskService.update(scheduleTask);
                 getNext().invoke(valveContext);
             }
 

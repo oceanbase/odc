@@ -28,7 +28,6 @@ import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.shared.constant.TaskErrorStrategy;
 import com.oceanbase.odc.core.shared.constant.TaskType;
-import com.oceanbase.odc.metadb.schedule.ScheduleEntity;
 import com.oceanbase.odc.service.common.util.SpringContextUtil;
 import com.oceanbase.odc.service.connection.database.DatabaseService;
 import com.oceanbase.odc.service.connection.database.model.Database;
@@ -46,7 +45,8 @@ import com.oceanbase.odc.service.partitionplan.model.PartitionPlanPreViewResp;
 import com.oceanbase.odc.service.partitionplan.model.PartitionPlanTableConfig;
 import com.oceanbase.odc.service.quartz.util.ScheduleTaskUtils;
 import com.oceanbase.odc.service.schedule.ScheduleService;
-import com.oceanbase.odc.service.schedule.model.JobType;
+import com.oceanbase.odc.service.schedule.model.Schedule;
+import com.oceanbase.odc.service.schedule.model.ScheduleType;
 import com.oceanbase.odc.service.session.factory.DefaultConnectSessionFactory;
 
 import lombok.extern.slf4j.Slf4j;
@@ -87,14 +87,14 @@ public class PartitionPlanJob implements OdcJob {
 
     @Override
     public void execute(JobExecutionContext context) {
-        ScheduleEntity scheduleEntity;
+        Schedule schedule;
         try {
-            scheduleEntity = this.scheduleService.nullSafeGetById(ScheduleTaskUtils.getScheduleId(context));
+            schedule = this.scheduleService.nullSafeGetById(ScheduleTaskUtils.getScheduleId(context));
         } catch (Exception e) {
             return;
         }
         PartitionPlanConfig paramemters = JsonUtils.fromJson(
-                scheduleEntity.getJobParametersJson(), PartitionPlanConfig.class);
+                schedule.getParameters(), PartitionPlanConfig.class);
         Long partitionPlanId = paramemters.getId();
         ConnectionSession connectionSession = null;
         PartitionPlanTaskTraceContextHolder.trace(paramemters.getTaskId());
@@ -155,7 +155,7 @@ public class PartitionPlanJob implements OdcJob {
         }
         taskParameters.setSqlContent(sqlContent.toString());
         taskParameters.setTimeoutMillis(timeoutMillis);
-        taskParameters.setParentJobType(JobType.PARTITION_PLAN);
+        taskParameters.setParentScheduleType(ScheduleType.PARTITION_PLAN);
         CreateFlowInstanceReq flowInstanceReq = new CreateFlowInstanceReq();
         flowInstanceReq.setParameters(taskParameters);
         flowInstanceReq.setTaskType(TaskType.ASYNC);

@@ -33,6 +33,8 @@ import com.oceanbase.odc.service.onlineschemachange.model.OnlineSchemaChangeSqlT
 import com.oceanbase.odc.service.onlineschemachange.model.OriginTableCleanStrategy;
 import com.oceanbase.odc.service.onlineschemachange.pipeline.OscValveContext;
 import com.oceanbase.odc.service.onlineschemachange.pipeline.SwapTableNameValve;
+import com.oceanbase.odc.service.schedule.model.ScheduleMapper;
+import com.oceanbase.odc.service.schedule.model.ScheduleTaskMapper;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -46,6 +48,9 @@ public class OnlineSchemaChangeOBMysqlSwapTableTest extends OBMySqlOscTestEnv {
 
     @Autowired
     private SwapTableNameValve swapTableNameValve;
+
+    private ScheduleTaskMapper scheduleTaskMapper = ScheduleTaskMapper.INSTANCE;
+    private ScheduleMapper scheduleMapper = ScheduleMapper.INSTANCE;
 
     @Test
     public void test_osc_swap_table_origin_table_reserved_successful() {
@@ -86,8 +91,8 @@ public class OnlineSchemaChangeOBMysqlSwapTableTest extends OBMySqlOscTestEnv {
             jdbcTemplate.execute(taskParameters.getNewTableCreateDdl());
 
             OscValveContext context = new OscValveContext();
-            context.setSchedule(scheduleEntity);
-            context.setScheduleTask(scheduleTaskEntity);
+            context.setSchedule(scheduleMapper.entityToModel(scheduleEntity));
+            context.setScheduleTask(scheduleTaskMapper.entityToModel(scheduleTaskEntity));
             context.setTaskParameter(taskParameters);
             context.setParameter(changeParameters);
             context.setConnectionConfig(config);

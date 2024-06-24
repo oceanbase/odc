@@ -16,21 +16,26 @@
 package com.oceanbase.odc.service.schedule;
 
 import java.io.File;
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import org.apache.commons.io.input.ReversedLinesFileReader;
 import org.quartz.JobKey;
 import org.quartz.SchedulerException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cglib.beans.BeanMap;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
@@ -38,16 +43,35 @@ import com.oceanbase.odc.core.shared.constant.TaskStatus;
 import com.oceanbase.odc.core.shared.exception.InternalServerError;
 import com.oceanbase.odc.core.shared.exception.NotFoundException;
 import com.oceanbase.odc.core.shared.exception.UnexpectedException;
+import com.oceanbase.odc.core.shared.exception.UnsupportedException;
 import com.oceanbase.odc.metadb.schedule.ScheduleTaskEntity;
 import com.oceanbase.odc.metadb.schedule.ScheduleTaskRepository;
 import com.oceanbase.odc.metadb.schedule.ScheduleTaskSpecs;
+import com.oceanbase.odc.service.common.response.SuccessResponse;
+import com.oceanbase.odc.service.dispatch.DispatchResponse;
+import com.oceanbase.odc.service.dispatch.RequestDispatcher;
+import com.oceanbase.odc.service.dispatch.TaskDispatchChecker;
 import com.oceanbase.odc.service.dlm.DLMService;
+import com.oceanbase.odc.service.logger.LoggerService;
 import com.oceanbase.odc.service.quartz.QuartzJobService;
 import com.oceanbase.odc.service.quartz.util.ScheduleTaskUtils;
-import com.oceanbase.odc.service.schedule.model.JobType;
+import com.oceanbase.odc.service.schedule.model.CreateQuartzJobReq;
+import com.oceanbase.odc.service.schedule.model.DataArchiveClearParameters;
+import com.oceanbase.odc.service.schedule.model.DataArchiveRollbackParameters;
+import com.oceanbase.odc.service.schedule.model.QuartzKeyGenerator;
+import com.oceanbase.odc.service.schedule.model.ScheduleTask;
+import com.oceanbase.odc.service.schedule.model.ScheduleTaskDetailResp;
+import com.oceanbase.odc.service.schedule.model.ScheduleTaskListResp;
+import com.oceanbase.odc.service.schedule.model.ScheduleTaskListRespMapper;
 import com.oceanbase.odc.service.schedule.model.ScheduleTaskMapper;
-import com.oceanbase.odc.service.schedule.model.ScheduleTaskResp;
+import com.oceanbase.odc.service.schedule.model.ScheduleTaskType;
+import com.oceanbase.odc.service.schedule.model.TriggerConfig;
+import com.oceanbase.odc.service.schedule.model.TriggerStrategy;
+import com.oceanbase.odc.service.task.config.TaskFrameworkEnabledProperties;
+import com.oceanbase.odc.service.task.exception.JobException;
+import com.oceanbase.odc.service.task.model.ExecutorInfo;
 import com.oceanbase.odc.service.task.model.OdcTaskLogLevel;
+import com.oceanbase.odc.service.task.schedule.JobScheduler;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -71,6 +95,22 @@ public class ScheduleTaskService {
     @Autowired
     private DLMService dlmService;
 
+    @Autowired
+    private TaskFrameworkEnabledProperties taskFrameworkEnabledProperties;
+
+    @Autowired
+    private JobScheduler jobScheduler;
+
+    @Autowired
+    private TaskDispatchChecker dispatchChecker;
+
+    @Autowired
+    private RequestDispatcher requestDispatcher;
+
+    @Autowired
+    private LoggerService loggerService;
+
+
     private final ScheduleTaskMapper scheduleTaskMapper = ScheduleTaskMapper.INSTANCE;
 
     @Value("${odc.log.directory:./log}")
@@ -78,20 +118,26 @@ public class ScheduleTaskService {
 
     private static final String LOG_PATH_PATTERN = "%s/scheduleTask/%s-%s/%s/log.%s";
 
-    public ScheduleTaskResp detail(Long id) {
-        ScheduleTaskEntity entity = nullSafeGetById(id);
-        ScheduleTaskResp scheduleTaskResp = scheduleTaskMapper.entityToModel(entity);
-        switch (JobType.valueOf(entity.getJobGroup())) {
+    public ScheduleTaskDetailResp getScheduleTaskDetailResp(Long id, Long scheduleId) {
+        ScheduleTask scheduleTask = nullSafeGetByIdAndScheduleId(id, scheduleId);
+        ScheduleTaskDetailResp res = new ScheduleTaskDetailResp();
+        res.setId(scheduleTask.getId());
+        res.setType(ScheduleTaskType.valueOf(scheduleTask.getJobGroup()));
+        res.setStatus(scheduleTask.getStatus());
+        res.setFireTime(scheduleTask.getFireTime());
+        res.setCreateTime(scheduleTask.getCreateTime());
+        res.setUpdateTime(scheduleTask.getUpdateTime());
+        switch (res.getType()) {
             case DATA_ARCHIVE:
             case DATA_ARCHIVE_ROLLBACK:
             case DATA_ARCHIVE_DELETE:
             case DATA_DELETE: {
-                scheduleTaskResp.setExecutionDetails(dlmService.getExecutionDetailByScheduleTaskId(id));
+                res.setExecutionDetails(dlmService.getExecutionDetailByScheduleTaskId(scheduleTask.getId()));
             }
             default:
                 break;
         }
-        return scheduleTaskResp;
+        return res;
     }
 
     public ScheduleTaskEntity create(ScheduleTaskEntity taskEntity) {
@@ -101,27 +147,84 @@ public class ScheduleTaskService {
     /**
      * Trigger an existing task to retry or resume a terminated task.
      */
-    public ScheduleTaskResp start(Long taskId) {
-        ScheduleTaskEntity taskEntity = nullSafeGetById(taskId);
-        if (taskEntity.getStatus() == TaskStatus.RUNNING || taskEntity.getStatus() == TaskStatus.DONE) {
-            throw new IllegalStateException();
+    public void start(Long id) {
+        ScheduleTask scheduleTask = nullSafeGetById(id);
+        if (!scheduleTask.getStatus().isRetryAllowed()) {
+            log.warn(
+                    "The task cannot be restarted because it is currently in progress or has already completed,scheduleTaskId={}",
+                    id);
+            throw new IllegalStateException(
+                    "The task cannot be restarted because it is currently in progress or has already completed.");
         }
         try {
-            quartzJobService.triggerJob(new JobKey(taskEntity.getJobName(), taskEntity.getJobGroup()),
-                    ScheduleTaskUtils.buildTriggerDataMap(taskId));
+            quartzJobService.triggerJob(new JobKey(scheduleTask.getJobName(), scheduleTask.getJobGroup()),
+                    ScheduleTaskUtils.buildTriggerDataMap(id));
         } catch (SchedulerException e) {
-            log.warn("Start task failed,taskId={}", taskId);
+            log.warn("Trigger schedule task failed,scheduleTaskId={}", id);
             throw new InternalServerError(e.getMessage());
         }
-        return ScheduleTaskResp.withId(taskId);
+    }
+
+    public void stop(Long id) {
+        ScheduleTask scheduleTask = nullSafeGetById(id);
+        ExecutorInfo executorInfo = JsonUtils.fromJson(scheduleTask.getExecutor(), ExecutorInfo.class);
+        if (taskFrameworkEnabledProperties.isEnabled() && scheduleTask.getJobId() != null) {
+            try {
+                jobScheduler.cancelJob(scheduleTask.getJobId());
+                return;
+            } catch (JobException e) {
+                log.warn("Cancel job failed,jobId={}", scheduleTask.getJobId(), e);
+                throw new UnexpectedException("Cancel job failed!", e);
+            }
+        }
+        // Local interrupt task.
+        if (dispatchChecker.isThisMachine(executorInfo)) {
+            JobKey jobKey = QuartzKeyGenerator.generateJobKey(scheduleTask.getJobName(), scheduleTask.getJobGroup());
+            try {
+                quartzJobService.interruptJob(jobKey);
+                log.info("Local interrupt task succeed,taskId={}", id);
+            } catch (Exception e) {
+                log.warn("Interrupt job failed,error={}", e.getMessage());
+                throw new UnexpectedException("Interrupt job failed,please try again.");
+            }
+        }
+        // Remote interrupt task.
+        try {
+            DispatchResponse response =
+                    requestDispatcher.forward(executorInfo.getHost(), executorInfo.getPort());
+            log.info("Remote interrupt task succeed,taskId={}", id);
+        } catch (Exception e) {
+            log.warn("Remote interrupt task failed, taskId={}", id, e);
+            throw new UnexpectedException(String.format("Remote interrupt task failed, taskId=%s", id));
+        }
     }
 
 
 
-    public Page<ScheduleTaskEntity> listTask(Pageable pageable, Long scheduleId) {
+    public void updateStatusById(Long id, TaskStatus status) {
+        scheduleTaskRepository.updateStatusById(id, status);
+    }
+
+    public void update(ScheduleTask scheduleTask) {
+        ScheduleTaskEntity entity = scheduleTaskMapper.modelToEntity(scheduleTask);
+        scheduleTaskRepository.update(entity);
+    }
+
+    public int updateParameters(Long id, String parameters) {
+        return scheduleTaskRepository.updateTaskParameters(id, parameters);
+    }
+
+
+
+    public Page<ScheduleTask> list(Pageable pageable, Long scheduleId) {
         Specification<ScheduleTaskEntity> specification =
                 Specification.where(ScheduleTaskSpecs.jobNameEquals(scheduleId.toString()));
-        return scheduleTaskRepository.findAll(specification, pageable);
+        return scheduleTaskRepository.findAll(specification, pageable).map(scheduleTaskMapper::entityToModel);
+    }
+
+    public Page<ScheduleTaskListResp> getScheduleTaskListResp(Pageable pageable, Long scheduleId) {
+        return list(pageable, scheduleId).map(ScheduleTaskListRespMapper::map);
+
     }
 
     public List<ScheduleTaskEntity> listTaskByJobNameAndStatus(String jobName, List<TaskStatus> statuses) {
@@ -129,29 +232,59 @@ public class ScheduleTaskService {
     }
 
 
-    public Optional<ScheduleTaskEntity> findByJobId(Long jobId) {
+    public Optional<ScheduleTask> findByJobId(Long jobId) {
         List<ScheduleTaskEntity> scheduleTasks = scheduleTaskRepository.findByJobId(jobId);
         if (scheduleTasks != null) {
             if (scheduleTasks.size() > 1) {
                 throw new IllegalStateException("Query scheduleTask by jobId occur error, except 1 but found "
                         + scheduleTasks.size() + ",jobId=" + jobId);
             } else if (scheduleTasks.size() == 1) {
-                return Optional.of(scheduleTasks.get(0));
+                return Optional.of(scheduleTaskMapper.entityToModel(scheduleTasks.get(0)));
             }
         }
         return Optional.empty();
     }
 
-    public ScheduleTaskEntity nullSafeGetById(Long id) {
+    public ScheduleTask nullSafeGetById(Long id) {
         Optional<ScheduleTaskEntity> scheduleEntityOptional = scheduleTaskRepository.findById(id);
-        return scheduleEntityOptional
-                .orElseThrow(() -> new NotFoundException(ResourceType.ODC_SCHEDULE_TASK, "id", id));
+        return scheduleTaskMapper.entityToModel(scheduleEntityOptional
+                .orElseThrow(() -> new NotFoundException(ResourceType.ODC_SCHEDULE_TASK, "id", id)));
+    }
+
+    public ScheduleTask nullSafeGetByIdAndScheduleId(Long id, Long scheduleId) {
+        Optional<ScheduleTaskEntity> scheduleEntityOptional = scheduleTaskRepository.findByIdAndJobName(id, scheduleId);
+        return scheduleTaskMapper.entityToModel(scheduleEntityOptional
+                .orElseThrow(() -> new NotFoundException(ResourceType.ODC_SCHEDULE_TASK, "id", id)));
     }
 
     public String getScheduleTaskLog(Long id, OdcTaskLogLevel logLevel) {
-        ScheduleTaskEntity taskEntity = nullSafeGetById(id);
+        ScheduleTask scheduleTask = nullSafeGetById(id);
+
+        if (taskFrameworkEnabledProperties.isEnabled() && scheduleTask.getJobId() != null) {
+            try {
+                return loggerService.getLogByTaskFramework(logLevel, scheduleTask.getJobId());
+            } catch (IOException e) {
+                log.warn("Copy input stream to file failed.", e);
+                throw new UnexpectedException("Copy input stream to file failed.");
+            }
+        }
+        ExecutorInfo executorInfo = JsonUtils.fromJson(scheduleTask.getExecutor(), ExecutorInfo.class);
+        if (!dispatchChecker.isThisMachine(executorInfo)) {
+            try {
+                DispatchResponse response =
+                        requestDispatcher.forward(executorInfo.getHost(), executorInfo.getPort());
+                log.info("Remote get task log succeed,taskId={}", id);
+                return response.getContentByType(
+                        new TypeReference<SuccessResponse<String>>() {}).getData();
+            } catch (Exception e) {
+                log.warn("Remote get task log failed, taskId={}", id, e);
+                throw new UnexpectedException(String.format("Remote interrupt task failed, taskId=%s", id));
+            }
+        }
+
+
         String filePath = String.format(LOG_PATH_PATTERN, logDirectory,
-                taskEntity.getJobName(), taskEntity.getJobGroup(), taskEntity.getId(),
+                scheduleTask.getJobName(), scheduleTask.getJobGroup(), id,
                 logLevel.name().toLowerCase());
         File logFile = new File(filePath);
         if (!logFile.exists()) {
@@ -181,4 +314,91 @@ public class ScheduleTaskService {
             throw new UnexpectedException("Read task log file failed, details: " + ex.getMessage(), ex);
         }
     }
+
+    public void correctScheduleTaskStatus(Long scheduleId) {
+        List<ScheduleTaskEntity> toBeCorrectedList = listTaskByJobNameAndStatus(
+                scheduleId.toString(), TaskStatus.getProcessingStatus());
+        // For the scenario where the task framework is switched from closed to open, it is necessary to
+        // correct
+        // the status of tasks that were not completed while in the closed state.
+        if (taskFrameworkEnabledProperties.isEnabled()) {
+            toBeCorrectedList =
+                    toBeCorrectedList.stream().filter(o -> o.getJobId() == null).collect(Collectors.toList());
+        }
+        toBeCorrectedList.forEach(task -> {
+            updateStatusById(task.getId(), TaskStatus.CANCELED);
+            log.info("Task status correction successful,scheduleTaskId={}", task.getId());
+        });
+    }
+
+
+    @SkipAuthorize("odc internal usage")
+    public void triggerDataArchiveDelete(Long scheduleTaskId) {
+
+        ScheduleTask dataArchiveTask = nullSafeGetById(scheduleTaskId);
+
+
+        JobKey jobKey = QuartzKeyGenerator.generateJobKey(dataArchiveTask.getJobName(),
+                ScheduleTaskType.DATA_ARCHIVE_DELETE.name());
+
+        if (dataArchiveTask.getStatus() != TaskStatus.DONE) {
+            log.warn("Delete is not allowed because the data archive job has not succeeded.JobKey={}", jobKey);
+            throw new IllegalStateException("Delete is not allowed because the data archive job has not succeeded.");
+        }
+
+        try {
+            if (quartzJobService.checkExists(jobKey)) {
+                log.info("Data archive delete job exists and start delete job,jobKey={}", jobKey);
+                quartzJobService.deleteJob(jobKey);
+            }
+            CreateQuartzJobReq req = new CreateQuartzJobReq();
+            req.setJobKey(jobKey);
+            DataArchiveClearParameters parameters = new DataArchiveClearParameters();
+            parameters.setDataArchiveTaskId(scheduleTaskId);
+            TriggerConfig triggerConfig = new TriggerConfig();
+            triggerConfig.setTriggerStrategy(TriggerStrategy.START_NOW);
+            req.getJobDataMap().putAll(BeanMap.create(parameters));
+            req.setTriggerConfig(triggerConfig);
+            quartzJobService.createJob(req);
+        } catch (SchedulerException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+
+    public void rollbackTask(Long scheduleTaskId) {
+        ScheduleTask scheduleTask = nullSafeGetById(scheduleTaskId);
+        if (ScheduleTaskType.DATA_ARCHIVE_DELETE.name().equals(scheduleTask.getJobGroup())) {
+            log.warn("Rollback is not allowed for taskType={}", scheduleTask.getJobGroup());
+            throw new UnsupportedException("Rollback is not allowed.");
+        }
+        JobKey jobKey = QuartzKeyGenerator.generateJobKey(scheduleTask.getJobName(),
+                ScheduleTaskType.DATA_ARCHIVE_ROLLBACK.name());
+        if (!scheduleTask.getStatus().isTerminated()) {
+            log.warn("Rollback is not allowed because the data archive job is running.JobKey={}", jobKey);
+            throw new IllegalStateException("Rollback is not allowed because the data archive job is running.");
+        }
+
+
+        try {
+            if (quartzJobService.checkExists(jobKey)) {
+                log.info("Data archive rollback job exists and start delete job,jobKey={}", jobKey);
+                quartzJobService.deleteJob(jobKey);
+            }
+            CreateQuartzJobReq req = new CreateQuartzJobReq();
+            req.setJobKey(jobKey);
+            DataArchiveRollbackParameters parameters = new DataArchiveRollbackParameters();
+            parameters.setDataArchiveTaskId(scheduleTaskId);
+            req.getJobDataMap().putAll(BeanMap.create(parameters));
+            TriggerConfig triggerConfig = new TriggerConfig();
+            triggerConfig.setTriggerStrategy(TriggerStrategy.START_NOW);
+            req.setTriggerConfig(triggerConfig);
+            quartzJobService.createJob(req);
+        } catch (SchedulerException e) {
+            throw new UnsupportedException(e.getMessage());
+        }
+    }
+
+
+
 }

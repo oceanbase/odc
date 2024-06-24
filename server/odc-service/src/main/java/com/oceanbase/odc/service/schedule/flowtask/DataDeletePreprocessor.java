@@ -21,7 +21,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionFactory;
-import com.oceanbase.odc.metadb.schedule.ScheduleEntity;
 import com.oceanbase.odc.service.connection.database.DatabaseService;
 import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
@@ -31,8 +30,7 @@ import com.oceanbase.odc.service.dlm.model.DataDeleteParameters;
 import com.oceanbase.odc.service.flow.model.CreateFlowInstanceReq;
 import com.oceanbase.odc.service.flow.processor.ScheduleTaskPreprocessor;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
-import com.oceanbase.odc.service.schedule.ScheduleService;
-import com.oceanbase.odc.service.schedule.model.JobType;
+import com.oceanbase.odc.service.schedule.model.ScheduleType;
 import com.oceanbase.odc.service.session.factory.DefaultConnectSessionFactory;
 
 import lombok.extern.slf4j.Slf4j;
@@ -43,14 +41,11 @@ import lombok.extern.slf4j.Slf4j;
  * @Descripition:
  */
 @Slf4j
-@ScheduleTaskPreprocessor(type = JobType.DATA_DELETE)
+@ScheduleTaskPreprocessor(type = ScheduleType.DATA_DELETE)
 public class DataDeletePreprocessor extends AbstractDlmJobPreprocessor {
 
     @Autowired
     private AuthenticationFacade authenticationFacade;
-
-    @Autowired
-    private ScheduleService scheduleService;
 
     @Autowired
     private DatabaseService databaseService;
@@ -76,12 +71,8 @@ public class DataDeletePreprocessor extends AbstractDlmJobPreprocessor {
                     throw new IllegalArgumentException("target database id can not be null");
                 }
                 Database targetDb = databaseService.detail(dataDeleteParameters.getTargetDatabaseId());
-                dataDeleteParameters.setTargetDatabaseName(targetDb.getName());
-                dataDeleteParameters.setTargetDataSourceName(targetDb.getDataSource().getName());
             }
             Database sourceDb = databaseService.detail(dataDeleteParameters.getDatabaseId());
-            dataDeleteParameters.setDatabaseName(sourceDb.getName());
-            dataDeleteParameters.setSourceDataSourceName(sourceDb.getDataSource().getName());
             ConnectionConfig dataSource = sourceDb.getDataSource();
             dataSource.setDefaultSchema(sourceDb.getName());
             ConnectionSessionFactory connectionSessionFactory = new DefaultConnectSessionFactory(dataSource);
@@ -93,16 +84,8 @@ public class DataDeletePreprocessor extends AbstractDlmJobPreprocessor {
                 connectionSession.expire();
             }
             log.info("QUICK-DELETE job preprocessing has been completed.");
-            // pre create
-            ScheduleEntity scheduleEntity = buildScheduleEntity(req);
-            scheduleEntity.setCreatorId(authenticationFacade.currentUser().id());
-            scheduleEntity.setModifierId(scheduleEntity.getCreatorId());
-            scheduleEntity.setOrganizationId(authenticationFacade.currentOrganizationId());
-            scheduleEntity = scheduleService.create(scheduleEntity);
-            parameters.setTaskId(scheduleEntity.getId());
-            initLimiterConfig(scheduleEntity.getId(), dataDeleteParameters.getRateLimit(), limiterService);
         }
-        req.setParentFlowInstanceId(parameters.getTaskId());
+        req.setParentFlowInstanceId(parameters.getScheduleId());
     }
 
     private void initDefaultConfig(DataDeleteParameters parameters) {

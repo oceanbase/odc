@@ -80,7 +80,7 @@ import com.oceanbase.odc.service.regulation.risklevel.model.RiskLevel;
 import com.oceanbase.odc.service.regulation.risklevel.model.RiskLevelDescriber;
 import com.oceanbase.odc.service.resultset.ResultSetExportTaskParameter;
 import com.oceanbase.odc.service.schedule.flowtask.AlterScheduleParameters;
-import com.oceanbase.odc.service.schedule.model.JobType;
+import com.oceanbase.odc.service.schedule.model.ScheduleType;
 import com.oceanbase.odc.service.session.util.DBSchemaExtractor;
 import com.oceanbase.odc.service.session.util.DBSchemaExtractor.DBSchemaIdentity;
 import com.oceanbase.odc.service.sqlcheck.SqlCheckService;
@@ -307,7 +307,7 @@ public class PreCheckRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Void> {
             if (taskType == TaskType.ALTER_SCHEDULE) {
                 AlterScheduleParameters parameters =
                         JsonUtils.fromJson(taskEntity.getParametersJson(), AlterScheduleParameters.class);
-                if (parameters.getType() != JobType.SQL_PLAN) {
+                if (parameters.getType() != ScheduleType.SQL_PLAN) {
                     return;
                 }
             }
@@ -508,7 +508,7 @@ public class PreCheckRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Void> {
             sqlContent = params.getSql();
         } else if (taskType == TaskType.ALTER_SCHEDULE) {
             AlterScheduleParameters params = JsonUtils.fromJson(parameter, AlterScheduleParameters.class);
-            if (params.getType() != JobType.SQL_PLAN) {
+            if (params.getType() != ScheduleType.SQL_PLAN) {
                 return;
             }
             DatabaseChangeParameters dcParams = (DatabaseChangeParameters) params.getScheduleTaskParameters();
@@ -535,7 +535,7 @@ public class PreCheckRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Void> {
             multipleParams = JsonUtils.fromJson(parametersJson, MultipleDatabaseChangeParameters.class);
         } else if (taskType == TaskType.ALTER_SCHEDULE) {
             AlterScheduleParameters asParams = JsonUtils.fromJson(parametersJson, AlterScheduleParameters.class);
-            if (asParams.getType() != JobType.SQL_PLAN) {
+            if (asParams.getType() != ScheduleType.SQL_PLAN) {
                 return;
             }
             params = (DatabaseChangeParameters) asParams.getScheduleTaskParameters();

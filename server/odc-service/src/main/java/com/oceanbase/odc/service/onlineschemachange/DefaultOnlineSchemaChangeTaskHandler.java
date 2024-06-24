@@ -54,7 +54,6 @@ import com.oceanbase.odc.core.shared.constant.TaskStatus;
 import com.oceanbase.odc.core.shared.exception.OdcException;
 import com.oceanbase.odc.core.shared.exception.UnsupportedException;
 import com.oceanbase.odc.core.sql.execute.SyncJdbcExecutor;
-import com.oceanbase.odc.metadb.schedule.ScheduleEntity;
 import com.oceanbase.odc.metadb.schedule.ScheduleTaskEntity;
 import com.oceanbase.odc.metadb.schedule.ScheduleTaskRepository;
 import com.oceanbase.odc.metadb.schedule.ScheduleTaskSpecs;
@@ -82,8 +81,10 @@ import com.oceanbase.odc.service.onlineschemachange.subtask.OscTaskCompleteHandl
 import com.oceanbase.odc.service.quartz.QuartzJobService;
 import com.oceanbase.odc.service.schedule.ScheduleService;
 import com.oceanbase.odc.service.schedule.ScheduleTaskService;
-import com.oceanbase.odc.service.schedule.model.JobType;
 import com.oceanbase.odc.service.schedule.model.QuartzKeyGenerator;
+import com.oceanbase.odc.service.schedule.model.Schedule;
+import com.oceanbase.odc.service.schedule.model.ScheduleTask;
+import com.oceanbase.odc.service.schedule.model.ScheduleType;
 import com.oceanbase.odc.service.session.factory.DefaultConnectSessionFactory;
 import com.oceanbase.tools.dbbrowser.model.DBConstraintType;
 import com.oceanbase.tools.dbbrowser.model.DBObjectType;
@@ -194,7 +195,7 @@ public class DefaultOnlineSchemaChangeTaskHandler implements OnlineSchemaChangeT
 
     @Override
     public void complete(@NonNull Long scheduleId, @NonNull Long scheduleTaskId) {
-        ScheduleTaskEntity scheduleTask = scheduleTaskService.nullSafeGetById(scheduleTaskId);
+        ScheduleTask scheduleTask = scheduleTaskService.nullSafeGetById(scheduleTaskId);
         OnlineSchemaChangeScheduleTaskParameters parameters = JsonUtils.fromJson(scheduleTask.getParametersJson(),
                 OnlineSchemaChangeScheduleTaskParameters.class);
         // check task is expired
@@ -215,14 +216,14 @@ public class DefaultOnlineSchemaChangeTaskHandler implements OnlineSchemaChangeT
 
     @Override
     public void terminate(@NonNull Long scheduleId, @NonNull Long scheduleTaskId) {
-        ScheduleTaskEntity scheduleTask = scheduleTaskService.nullSafeGetById(scheduleTaskId);
+        ScheduleTask scheduleTask = scheduleTaskService.nullSafeGetById(scheduleTaskId);
         OnlineSchemaChangeScheduleTaskParameters parameters = JsonUtils.fromJson(scheduleTask.getParametersJson(),
                 OnlineSchemaChangeScheduleTaskParameters.class);
         completeHandler.onOscScheduleTaskCancel(parameters.getOmsProjectId(),
                 parameters.getUid(), scheduleId, scheduleTaskId);
     }
 
-    private void doComplete(Long scheduleId, Long scheduleTaskId, ScheduleTaskEntity scheduleTask,
+    private void doComplete(Long scheduleId, Long scheduleTaskId, ScheduleTask scheduleTask,
             OnlineSchemaChangeScheduleTaskParameters parameters) {
         PreConditions.validArgumentState(expectedTaskStatus.contains(scheduleTask.getStatus()), ErrorCodes.Unexpected,
                 new Object[] {scheduleTask.getStatus()}, "schedule task is not excepted status");
@@ -245,9 +246,9 @@ public class DefaultOnlineSchemaChangeTaskHandler implements OnlineSchemaChangeT
             return;
         }
 
-        ScheduleEntity scheduleEntity = scheduleService.nullSafeGetById(scheduleId);
+        Schedule scheduleEntity = scheduleService.nullSafeGetById(scheduleId);
         OnlineSchemaChangeParameters onlineSchemaChangeParameters = JsonUtils.fromJson(
-                scheduleEntity.getJobParametersJson(), OnlineSchemaChangeParameters.class);
+                scheduleEntity.getParameters(), OnlineSchemaChangeParameters.class);
         if (onlineSchemaChangeParameters.getErrorStrategy() == TaskErrorStrategy.CONTINUE) {
             log.info("Because error strategy is continue, so schedule next task");
             // schedule next task
@@ -296,7 +297,8 @@ public class DefaultOnlineSchemaChangeTaskHandler implements OnlineSchemaChangeT
     }
 
     private void deleteQuartzJob(Long scheduleId) {
-        JobKey jobKey = QuartzKeyGenerator.generateJobKey(scheduleId, JobType.ONLINE_SCHEMA_CHANGE_COMPLETE);
+        JobKey jobKey = QuartzKeyGenerator.generateJobKey(scheduleId.toString(),
+                ScheduleType.ONLINE_SCHEMA_CHANGE_COMPLETE.name());
         try {
             quartzJobService.deleteJob(jobKey);
             log.info("Successfully delete job with jobKey {}", jobKey);
@@ -371,10 +373,10 @@ public class DefaultOnlineSchemaChangeTaskHandler implements OnlineSchemaChangeT
     }
 
     private OscValveContext createValveContext(Long scheduleId, Long scheduleTaskId) {
-        ScheduleEntity scheduleEntity = scheduleService.nullSafeGetById(scheduleId);
+        Schedule scheduleEntity = scheduleService.nullSafeGetById(scheduleId);
         OnlineSchemaChangeParameters onlineSchemaChangeParameters = JsonUtils.fromJson(
-                scheduleEntity.getJobParametersJson(), OnlineSchemaChangeParameters.class);
-        ScheduleTaskEntity scheduleTaskEntity = scheduleTaskService.nullSafeGetById(scheduleTaskId);
+                scheduleEntity.getParameters(), OnlineSchemaChangeParameters.class);
+        ScheduleTask scheduleTaskEntity = scheduleTaskService.nullSafeGetById(scheduleTaskId);
         OnlineSchemaChangeScheduleTaskParameters oscScheduleTaskParameters = JsonUtils.fromJson(
                 scheduleTaskEntity.getParametersJson(), OnlineSchemaChangeScheduleTaskParameters.class);
 

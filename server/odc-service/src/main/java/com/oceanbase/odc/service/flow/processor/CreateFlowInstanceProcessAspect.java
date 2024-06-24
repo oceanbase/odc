@@ -28,11 +28,9 @@ import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.core.shared.constant.OrganizationType;
 import com.oceanbase.odc.core.shared.constant.TaskType;
 import com.oceanbase.odc.core.shared.exception.BadRequestException;
-import com.oceanbase.odc.metadb.schedule.ScheduleEntity;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferConfig;
 import com.oceanbase.odc.service.collaboration.project.ProjectService;
 import com.oceanbase.odc.service.connection.database.DatabaseService;
@@ -41,10 +39,6 @@ import com.oceanbase.odc.service.flow.model.CreateFlowInstanceReq;
 import com.oceanbase.odc.service.flow.task.model.DBStructureComparisonParameter;
 import com.oceanbase.odc.service.flow.util.DescriptionGenerator;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
-import com.oceanbase.odc.service.schedule.ScheduleService;
-import com.oceanbase.odc.service.schedule.flowtask.AlterScheduleParameters;
-import com.oceanbase.odc.service.schedule.flowtask.OperationType;
-import com.oceanbase.odc.service.schedule.model.JobType;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -64,13 +58,9 @@ public class CreateFlowInstanceProcessAspect implements InitializingBean {
     @Autowired
     private AuthenticationFacade authenticationFacade;
     @Autowired
-    private ScheduleService scheduleService;
-    @Autowired
     private List<Preprocessor> preprocessors;
     @Autowired
     private ProjectService projectService;
-
-    private final Map<JobType, Preprocessor> scheduleTaskPreprocessors = new HashMap<>();
 
     private final Map<TaskType, Preprocessor> flowTaskPreprocessors = new HashMap<>();
 
@@ -92,12 +82,6 @@ public class CreateFlowInstanceProcessAspect implements InitializingBean {
             if (flowTaskPreprocessors.containsKey(req.getTaskType())) {
                 flowTaskPreprocessors.get(req.getTaskType()).process(req);
             }
-        } else {
-            AlterScheduleParameters parameters = (AlterScheduleParameters) req.getParameters();
-            authenticateOperation(parameters);
-            if (scheduleTaskPreprocessors.containsKey(parameters.getType())) {
-                scheduleTaskPreprocessors.get(parameters.getType()).process(req);
-            }
         }
 
     }
@@ -116,29 +100,7 @@ public class CreateFlowInstanceProcessAspect implements InitializingBean {
                     flowTaskPreprocessors.put(annotation.type(), preprocessor);
                 }
             }
-            // Init schedule task processor.
-            if (preprocessor.getClass().isAnnotationPresent(ScheduleTaskPreprocessor.class)) {
-                ScheduleTaskPreprocessor annotation =
-                        preprocessor.getClass().getAnnotation(ScheduleTaskPreprocessor.class);
-                if (annotation.isEnabled()) {
-                    if (scheduleTaskPreprocessors.containsKey(annotation.type())) {
-                        throw new RuntimeException(
-                                String.format("The processor has already been defined,type=%s", annotation.type()));
-                    }
-                    scheduleTaskPreprocessors.put(annotation.type(), preprocessor);
-                }
-            }
         });
-    }
-
-    private void authenticateOperation(AlterScheduleParameters parameters) {
-        if (parameters.getOperationType() == OperationType.CREATE) {
-            return;
-        }
-        PreConditions.notNull(parameters.getTaskId(), "scheduleId");
-        ScheduleEntity scheduleEntity =
-                scheduleService.nullSafeGetByIdWithCheckPermission(parameters.getTaskId(), true);
-        parameters.setType(scheduleEntity.getJobType());
     }
 
     /**

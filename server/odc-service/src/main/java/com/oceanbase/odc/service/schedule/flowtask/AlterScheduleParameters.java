@@ -17,16 +17,10 @@ package com.oceanbase.odc.service.schedule.flowtask;
 
 import java.io.Serializable;
 
-import com.fasterxml.jackson.annotation.JsonSubTypes;
-import com.fasterxml.jackson.annotation.JsonTypeInfo;
-import com.fasterxml.jackson.annotation.JsonTypeInfo.As;
-import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
 import com.oceanbase.odc.core.flow.model.TaskParameters;
-import com.oceanbase.odc.service.dlm.model.DataArchiveParameters;
-import com.oceanbase.odc.service.dlm.model.DataDeleteParameters;
-import com.oceanbase.odc.service.flow.task.model.DatabaseChangeParameters;
 import com.oceanbase.odc.service.quartz.model.MisfireStrategy;
-import com.oceanbase.odc.service.schedule.model.JobType;
+import com.oceanbase.odc.service.schedule.model.ScheduleTaskParameters;
+import com.oceanbase.odc.service.schedule.model.ScheduleType;
 import com.oceanbase.odc.service.schedule.model.TriggerConfig;
 
 import lombok.Data;
@@ -41,19 +35,13 @@ public class AlterScheduleParameters implements Serializable, TaskParameters {
 
     private static final long serialVersionUID = -5159606799885558548L;
 
-    private Long taskId;
+    private Long scheduleId;
 
-    private JobType type;
+    private ScheduleType type;
 
     private OperationType operationType;
 
-    @JsonTypeInfo(use = Id.NAME, include = As.EXTERNAL_PROPERTY, property = "type")
-    @JsonSubTypes(value = {
-            @JsonSubTypes.Type(value = DatabaseChangeParameters.class, name = "SQL_PLAN"),
-            @JsonSubTypes.Type(value = DataArchiveParameters.class, name = "DATA_ARCHIVE"),
-            @JsonSubTypes.Type(value = DataDeleteParameters.class, name = "DATA_DELETE")
-    })
-    private TaskParameters scheduleTaskParameters;
+    private ScheduleTaskParameters scheduleTaskParameters;
 
     private TriggerConfig triggerConfig;
 

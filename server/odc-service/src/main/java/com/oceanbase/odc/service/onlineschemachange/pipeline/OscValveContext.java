@@ -16,12 +16,12 @@
 package com.oceanbase.odc.service.onlineschemachange.pipeline;
 
 import com.oceanbase.odc.core.session.ConnectionSession;
-import com.oceanbase.odc.metadb.schedule.ScheduleEntity;
-import com.oceanbase.odc.metadb.schedule.ScheduleTaskEntity;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.onlineschemachange.model.LinkType;
 import com.oceanbase.odc.service.onlineschemachange.model.OnlineSchemaChangeParameters;
 import com.oceanbase.odc.service.onlineschemachange.model.OnlineSchemaChangeScheduleTaskParameters;
+import com.oceanbase.odc.service.schedule.model.Schedule;
+import com.oceanbase.odc.service.schedule.model.ScheduleTask;
 
 import lombok.Data;
 
@@ -34,8 +34,8 @@ import lombok.Data;
 public class OscValveContext implements ValveContext {
 
     private Long projectId;
-    private ScheduleEntity schedule;
-    private ScheduleTaskEntity scheduleTask;
+    private Schedule schedule;
+    private ScheduleTask scheduleTask;
     private LinkType linkType;
 
     private ConnectionSession connectionSession;

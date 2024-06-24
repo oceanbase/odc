@@ -22,7 +22,7 @@ import java.lang.annotation.Target;
 
 import org.springframework.stereotype.Component;
 
-import com.oceanbase.odc.service.schedule.model.JobType;
+import com.oceanbase.odc.service.schedule.model.ScheduleType;
 
 /**
  * @Author：tinker
@@ -36,6 +36,6 @@ public @interface ScheduleTaskPreprocessor {
 
     boolean isEnabled() default true;
 
-    JobType type();
+    ScheduleType type();
 
 }

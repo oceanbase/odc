@@ -26,20 +26,20 @@ import org.quartz.TriggerKey;
  */
 public class QuartzKeyGenerator {
 
-    public static TriggerKey generateTriggerKey(Long scheduleId, JobType jobType) {
-        return new TriggerKey(scheduleId + "", jobType.name());
+    public static TriggerKey generateTriggerKey(Schedule schedule) {
+        return new TriggerKey(schedule.getId().toString(), schedule.getScheduleType().name());
     }
 
-    public static JobKey generateJobKey(Long scheduleId, JobType jobType) {
-        return new JobKey(scheduleId + "", jobType.name());
+    public static JobKey generateJobKey(Schedule schedule) {
+        return new JobKey(schedule.getId().toString(), schedule.getScheduleType().name());
     }
 
-    public static TriggerKey generateTriggerKey(Long jobId) {
-        return new TriggerKey(jobId + "");
+    public static TriggerKey generateTriggerKey(String name, String group) {
+        return new TriggerKey(name, group);
     }
 
-    public static JobKey generateJobKey(Long jobId) {
-        return new JobKey(jobId + "");
+    public static JobKey generateJobKey(String jobName, String jobGroup) {
+        return new JobKey(jobName, jobGroup);
     }
 
 }

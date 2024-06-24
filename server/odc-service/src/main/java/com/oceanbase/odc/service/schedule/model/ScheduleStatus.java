@@ -21,6 +21,8 @@ package com.oceanbase.odc.service.schedule.model;
  * @Descripition:
  */
 public enum ScheduleStatus {
+
+    CREATING,
     APPROVING,
 
     APPROVAL_EXPIRED,
@@ -28,9 +30,9 @@ public enum ScheduleStatus {
     REJECTED,
     PAUSE,
     ENABLED,
-    TERMINATION,
+    TERMINATED,
 
     COMPLETED,
-    EXECUTION_FAILED;
+    EXECUTION_FAILED
 
 }

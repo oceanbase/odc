@@ -61,7 +61,8 @@ import com.oceanbase.odc.service.onlineschemachange.model.UpdateRateLimiterConfi
 import com.oceanbase.odc.service.onlineschemachange.rename.OscDBUserUtil;
 import com.oceanbase.odc.service.schedule.ScheduleService;
 import com.oceanbase.odc.service.schedule.ScheduleTaskService;
-import com.oceanbase.odc.service.schedule.model.JobType;
+import com.oceanbase.odc.service.schedule.model.Schedule;
+import com.oceanbase.odc.service.schedule.model.ScheduleType;
 import com.oceanbase.odc.service.session.factory.DefaultConnectSessionFactory;
 import com.oceanbase.odc.service.task.TaskService;
 
@@ -138,8 +139,8 @@ public class OscService {
                 OnlineSchemaChangeScheduleTaskResult.class);
 
         PreConditions.validArgumentState(
-                scheduleEntity.get().getJobType() == JobType.ONLINE_SCHEMA_CHANGE_COMPLETE,
-                ErrorCodes.BadArgument, new Object[] {scheduleEntity.get().getJobType()},
+                scheduleEntity.get().getScheduleType() == ScheduleType.ONLINE_SCHEMA_CHANGE_COMPLETE,
+                ErrorCodes.BadArgument, new Object[] {scheduleEntity.get().getScheduleType()},
                 "Task type is not " + TaskType.ONLINE_SCHEMA_CHANGE.name());
 
         SwapTableType swapTableType = oscParameters.getSwapTableType();
@@ -179,9 +180,9 @@ public class OscService {
         OnlineSchemaChangeTaskResult taskResult =
                 JsonUtils.fromJson(task.getResultJson(), new TypeReference<OnlineSchemaChangeTaskResult>() {});
         Long scheduleId = Long.parseLong(taskResult.getTasks().get(0).getJobName());
-        ScheduleEntity scheduleEntity = scheduleService.nullSafeGetById(scheduleId);
+        Schedule scheduleEntity = scheduleService.nullSafeGetById(scheduleId);
         OnlineSchemaChangeParameters parameters = JsonUtils.fromJson(
-                scheduleEntity.getJobParametersJson(), OnlineSchemaChangeParameters.class);
+                scheduleEntity.getParameters(), OnlineSchemaChangeParameters.class);
         RateLimiterConfig rateLimiter = parameters.getRateLimitConfig();
         rateLimiter.setDataSizeLimit(req.getRateLimitConfig().getDataSizeLimit());
         rateLimiter.setRowLimit(req.getRateLimitConfig().getRowLimit());

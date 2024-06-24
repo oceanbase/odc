@@ -41,7 +41,6 @@ import com.oceanbase.odc.metadb.partitionplan.PartitionPlanTableEntity;
 import com.oceanbase.odc.metadb.partitionplan.PartitionPlanTablePartitionKeyEntity;
 import com.oceanbase.odc.metadb.partitionplan.PartitionPlanTablePartitionKeyRepository;
 import com.oceanbase.odc.metadb.partitionplan.PartitionPlanTableRepository;
-import com.oceanbase.odc.metadb.schedule.ScheduleEntity;
 import com.oceanbase.odc.plugin.task.api.partitionplan.datatype.TimeDataType;
 import com.oceanbase.odc.plugin.task.api.partitionplan.invoker.partitionname.PartitionNameGenerator;
 import com.oceanbase.odc.plugin.task.api.partitionplan.model.PartitionPlanVariableKey;
@@ -56,6 +55,7 @@ import com.oceanbase.odc.service.partitionplan.model.PartitionPlanKeyConfig;
 import com.oceanbase.odc.service.partitionplan.model.PartitionPlanStrategy;
 import com.oceanbase.odc.service.partitionplan.model.PartitionPlanTableConfig;
 import com.oceanbase.odc.service.schedule.ScheduleService;
+import com.oceanbase.odc.service.schedule.model.Schedule;
 import com.oceanbase.odc.service.schedule.model.TriggerConfig;
 import com.oceanbase.odc.test.tool.TestRandom;
 
@@ -110,8 +110,8 @@ public class PartitionPlanScheduleServiceTest extends ServiceTestEnv {
         pptk2.setPartitionplanTableId(ppt.getId());
         pptk2 = this.partitionPlanTablePartitionKeyRepository.save(pptk2);
         Mockito.when(this.scheduleService.nullSafeGetById(Mockito.anyLong()))
-                .thenReturn(TestRandom.nextObject(ScheduleEntity.class));
-        Mockito.doNothing().when(this.scheduleService).terminate(Mockito.isA(ScheduleEntity.class));
+                .thenReturn(TestRandom.nextObject(Schedule.class));
+        Mockito.doNothing().when(this.scheduleService).terminate(Mockito.isA(Schedule.class).getId());
         this.partitionPlanScheduleService.disablePartitionPlanTables(Collections.singletonList(ppt.getId()));
         List<PartitionPlanTablePartitionKeyEntity> expect1 = this.partitionPlanTablePartitionKeyRepository
                 .findByIdIn(Arrays.asList(pptk1.getId(), pptk2.getId()));
@@ -142,8 +142,8 @@ public class PartitionPlanScheduleServiceTest extends ServiceTestEnv {
         pptk2.setPartitionplanTableId(ppt.getId());
         pptk2 = this.partitionPlanTablePartitionKeyRepository.save(pptk2);
         Mockito.when(this.scheduleService.nullSafeGetById(Mockito.anyLong()))
-                .thenReturn(TestRandom.nextObject(ScheduleEntity.class));
-        Mockito.doNothing().when(this.scheduleService).terminate(Mockito.isA(ScheduleEntity.class));
+                .thenReturn(TestRandom.nextObject(Schedule.class));
+        Mockito.doNothing().when(this.scheduleService).terminate(Mockito.isA(Schedule.class).getId());
         this.partitionPlanScheduleService.disablePartitionPlan(pp.getDatabaseId());
         List<PartitionPlanTablePartitionKeyEntity> expect1 = this.partitionPlanTablePartitionKeyRepository
                 .findByIdIn(Arrays.asList(pptk1.getId(), pptk2.getId()));
@@ -180,8 +180,8 @@ public class PartitionPlanScheduleServiceTest extends ServiceTestEnv {
         database.setId(1L);
         Mockito.when(this.databaseService.detail(1L)).thenReturn(database);
         Mockito.when(this.scheduleService.create(Mockito.any()))
-                .thenReturn(TestRandom.nextObject(ScheduleEntity.class));
-        Mockito.doNothing().when(this.scheduleService).enable(Mockito.isA(ScheduleEntity.class));
+                .thenReturn(TestRandom.nextObject(Schedule.class));
+        Mockito.doNothing().when(this.scheduleService).enable(Mockito.isA(Schedule.class));
         this.partitionPlanScheduleService.submit(partitionPlanConfig);
         List<PartitionPlanTableEntity> actuals = this.partitionPlanTableRepository.findAll();
         Set<Long> scheduleIds = actuals.stream()
@@ -230,15 +230,15 @@ public class PartitionPlanScheduleServiceTest extends ServiceTestEnv {
             }
             TriggerConfig config1 = JsonUtils.fromJson(s.getTriggerConfigJson(), TriggerConfig.class);
             return config1.getStartAt().getTime() == t1;
-        }))).thenReturn(TestRandom.nextObject(ScheduleEntity.class));
+        }))).thenReturn(TestRandom.nextObject(Schedule.class));
         Mockito.when(this.scheduleService.create(Mockito.argThat(s -> {
             if (s == null) {
                 return true;
             }
             TriggerConfig config1 = JsonUtils.fromJson(s.getTriggerConfigJson(), TriggerConfig.class);
             return config1.getStartAt().getTime() == t2;
-        }))).thenReturn(TestRandom.nextObject(ScheduleEntity.class));
-        Mockito.doNothing().when(this.scheduleService).enable(Mockito.isA(ScheduleEntity.class));
+        }))).thenReturn(TestRandom.nextObject(Schedule.class));
+        Mockito.doNothing().when(this.scheduleService).enable(Mockito.isA(Schedule.class));
         this.partitionPlanScheduleService.submit(partitionPlanConfig);
         List<PartitionPlanTableEntity> actuals = this.partitionPlanTableRepository.findAll();
         Set<Long> scheduleIds = actuals.stream()
@@ -274,8 +274,8 @@ public class PartitionPlanScheduleServiceTest extends ServiceTestEnv {
         database.setId(1L);
         Mockito.when(this.databaseService.detail(1L)).thenReturn(database);
         Mockito.when(this.scheduleService.create(Mockito.any()))
-                .thenReturn(TestRandom.nextObject(ScheduleEntity.class));
-        Mockito.doNothing().when(this.scheduleService).enable(Mockito.isA(ScheduleEntity.class));
+                .thenReturn(TestRandom.nextObject(Schedule.class));
+        Mockito.doNothing().when(this.scheduleService).enable(Mockito.isA(Schedule.class));
         this.partitionPlanScheduleService.submit(partitionPlanConfig);
         FlowInstanceDetailResp resp = new FlowInstanceDetailResp();
         resp.setId(partitionPlanConfig.getFlowInstanceId());
@@ -313,8 +313,8 @@ public class PartitionPlanScheduleServiceTest extends ServiceTestEnv {
         database.setId(1L);
         Mockito.when(this.databaseService.detail(1L)).thenReturn(database);
         Mockito.when(this.scheduleService.create(Mockito.any()))
-                .thenReturn(TestRandom.nextObject(ScheduleEntity.class));
-        Mockito.doNothing().when(this.scheduleService).enable(Mockito.isA(ScheduleEntity.class));
+                .thenReturn(TestRandom.nextObject(Schedule.class));
+        Mockito.doNothing().when(this.scheduleService).enable(Mockito.isA(Schedule.class));
         this.partitionPlanScheduleService.submit(partitionPlanConfig);
         Mockito.when(this.flowInstanceService.mapFlowInstance(Mockito.any(), Mockito.any(), Mockito.any()))
                 .thenReturn(partitionPlanConfig.getFlowInstanceId());
@@ -351,8 +351,8 @@ public class PartitionPlanScheduleServiceTest extends ServiceTestEnv {
         database.setId(1L);
         Mockito.when(this.databaseService.detail(1L)).thenReturn(database);
         Mockito.when(this.scheduleService.create(Mockito.any()))
-                .thenReturn(TestRandom.nextObject(ScheduleEntity.class));
-        Mockito.doNothing().when(this.scheduleService).enable(Mockito.isA(ScheduleEntity.class));
+                .thenReturn(TestRandom.nextObject(Schedule.class));
+        Mockito.doNothing().when(this.scheduleService).enable(Mockito.isA(Schedule.class));
         this.partitionPlanScheduleService.submit(partitionPlanConfig);
         FlowInstanceDetailResp resp = new FlowInstanceDetailResp();
         resp.setId(partitionPlanConfig.getFlowInstanceId());

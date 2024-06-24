@@ -24,13 +24,13 @@ import org.springframework.stereotype.Component;
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionUtil;
 import com.oceanbase.odc.core.shared.PreConditions;
-import com.oceanbase.odc.metadb.schedule.ScheduleTaskEntity;
 import com.oceanbase.odc.service.connection.ConnectionService;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.onlineschemachange.model.OnlineSchemaChangeParameters;
 import com.oceanbase.odc.service.onlineschemachange.model.OnlineSchemaChangeScheduleTaskParameters;
 import com.oceanbase.odc.service.onlineschemachange.monitor.DBUserMonitorExecutor;
 import com.oceanbase.odc.service.onlineschemachange.rename.DefaultRenameTableInvoker;
+import com.oceanbase.odc.service.schedule.model.ScheduleTask;
 import com.oceanbase.odc.service.session.DBSessionManageFacade;
 import com.oceanbase.odc.service.session.factory.DefaultConnectSessionFactory;
 
@@ -53,7 +53,7 @@ public class SwapTableNameValve extends BaseValve {
     @Override
     public void invoke(ValveContext valveContext) {
         OscValveContext context = (OscValveContext) valveContext;
-        ScheduleTaskEntity scheduleTask = context.getScheduleTask();
+        ScheduleTask scheduleTask = context.getScheduleTask();
         log.info("Start execute {}, schedule task id {}", getClass().getSimpleName(), scheduleTask.getId());
 
         OnlineSchemaChangeScheduleTaskParameters taskParameters = context.getTaskParameter();

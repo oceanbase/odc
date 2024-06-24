@@ -32,7 +32,6 @@ import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.core.shared.constant.OdcConstants;
-import com.oceanbase.odc.metadb.schedule.ScheduleEntity;
 import com.oceanbase.odc.metadb.schedule.ScheduleTaskRepository;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.onlineschemachange.configuration.OnlineSchemaChangeProperties;
@@ -54,8 +53,9 @@ import com.oceanbase.odc.service.onlineschemachange.oms.request.SpecificTransfer
 import com.oceanbase.odc.service.onlineschemachange.oms.request.TableTransferObject;
 import com.oceanbase.odc.service.quartz.QuartzJobService;
 import com.oceanbase.odc.service.schedule.ScheduleService;
-import com.oceanbase.odc.service.schedule.model.JobType;
 import com.oceanbase.odc.service.schedule.model.QuartzKeyGenerator;
+import com.oceanbase.odc.service.schedule.model.Schedule;
+import com.oceanbase.odc.service.schedule.model.ScheduleType;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -124,9 +124,10 @@ public abstract class BaseCreateOmsProjectValve extends BaseValve {
         }
     }
 
-    private void scheduleCheckOmsProject(ScheduleEntity scheduleEntity, Long scheduleTaskId) {
+    private void scheduleCheckOmsProject(Schedule scheduleEntity, Long scheduleTaskId) {
         Long scheduleId = scheduleEntity.getId();
-        JobKey jobKey = QuartzKeyGenerator.generateJobKey(scheduleId, JobType.ONLINE_SCHEMA_CHANGE_COMPLETE);
+        JobKey jobKey = QuartzKeyGenerator.generateJobKey(scheduleId.toString(),
+                ScheduleType.ONLINE_SCHEMA_CHANGE_COMPLETE.name());
         Map<String, Object> triggerData = getStringObjectMap(scheduleTaskId);
         try {
             if (quartzJobService.checkExists(jobKey)) {
@@ -140,11 +141,11 @@ public abstract class BaseCreateOmsProjectValve extends BaseValve {
         try {
             scheduleService.innerEnable(scheduleId, triggerData);
             log.info("Start check oms project status by quartz job, jobParameters={}",
-                    JsonUtils.toJson(scheduleEntity.getJobParametersJson()));
+                    JsonUtils.toJson(scheduleEntity.getParameters()));
         } catch (SchedulerException e) {
             throw new IllegalArgumentException(MessageFormat.format(
                     "Create a quartz job check oms project occur error, jobParameters ={0}",
-                    JsonUtils.toJson(scheduleEntity.getJobParametersJson())), e);
+                    JsonUtils.toJson(scheduleEntity.getParameters())), e);
         }
     }
 

@@ -35,7 +35,7 @@ public class QueryScheduleParams {
     private List<Long> connectionIds;
     private Long id;
     private List<ScheduleStatus> statuses;
-    private JobType type;
+    private ScheduleType type;
     private Date startTime;
     private Date endTime;
     private String creator;
