@@ -38,12 +38,11 @@ import com.oceanbase.odc.service.task.caller.ExecutorIdentifier;
 import com.oceanbase.odc.service.task.caller.ExecutorIdentifierParser;
 import com.oceanbase.odc.service.task.config.TaskFrameworkProperties;
 import com.oceanbase.odc.service.task.constants.JobAttributeKeyConstants;
-import com.oceanbase.odc.service.task.constants.JobUrlConstants;
 import com.oceanbase.odc.service.task.executor.logger.LogUtils;
 import com.oceanbase.odc.service.task.model.OdcTaskLogLevel;
 import com.oceanbase.odc.service.task.service.TaskFrameworkService;
-import com.oceanbase.odc.service.task.util.HttpUtil;
 import com.oceanbase.odc.service.task.util.JobUtils;
+import com.oceanbase.odc.service.task.util.TaskExecutorClient;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -71,6 +70,8 @@ public class LoggerService {
     @Autowired
     private RequestDispatcher requestDispatcher;
 
+    @Autowired
+    private TaskExecutorClient taskExecutorClient;
 
     @SkipAuthorize("odc internal usage")
     public String getLogByTaskFramework(OdcTaskLogLevel level, Long jobId) throws IOException {
@@ -111,18 +112,7 @@ public class LoggerService {
                 if (log.isDebugEnabled()) {
                     log.debug("job: {} is not finished, try to get log from remote pod.", jobEntity.getId());
                 }
-                String hostWithUrl = jobEntity.getExecutorEndpoint() + String.format(JobUrlConstants.LOG_QUERY,
-                        jobEntity.getId()) + "?logType=" + level.getName();
-                try {
-                    SuccessResponse<String> response =
-                            HttpUtil.request(hostWithUrl, new TypeReference<SuccessResponse<String>>() {});
-                    return response.getData();
-                } catch (IOException e) {
-                    // Occur io timeout when pod deleted manual
-                    log.warn("Query log from executor occur error, executorEndpoint={}, jobId={}",
-                            jobEntity.getExecutorEndpoint(), jobEntity.getId(), e);
-                    return ErrorCodes.TaskLogNotFound.getLocalizedMessage(new Object[] {"Id", jobEntity.getId()});
-                }
+                return taskExecutorClient.getLogContent(jobEntity.getExecutorEndpoint(), jobEntity.getId(), level);
             }
         } else {
             // process mode when executor is not current host, forward to target

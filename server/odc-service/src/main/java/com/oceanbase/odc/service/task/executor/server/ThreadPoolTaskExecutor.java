@@ -26,6 +26,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 import com.oceanbase.odc.common.concurrent.ExecutorUtils;
+import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.core.task.TaskThreadFactory;
 import com.oceanbase.odc.service.task.caller.JobContext;
 import com.oceanbase.odc.service.task.executor.task.Task;
@@ -57,15 +58,19 @@ public class ThreadPoolTaskExecutor implements TaskExecutor {
     }
 
     @Override
-    public void execute(Task<?> task, JobContext jc) {
+    synchronized public void execute(Task<?> task, JobContext jc) {
+        JobIdentity jobIdentity = jc.getJobIdentity();
+        if (tasks.containsKey(jobIdentity)) {
+            throw new IllegalArgumentException("Task already exists, jobIdentity=" + jobIdentity.getId());
+        }
         Future<?> future = executor.submit(() -> task.start(jc));
-        futures.put(jc.getJobIdentity(), future);
-        tasks.put(jc.getJobIdentity(), task);
+        futures.put(jobIdentity, future);
+        tasks.put(jobIdentity, task);
     }
 
     @Override
     public boolean cancel(JobIdentity ji) {
-        Task<?> task = tasks.get(ji);
+        Task<?> task = getTask(ji);
         Future<Boolean> stopFuture = executor.submit(task::stop);
         boolean result = false;
         try {
@@ -81,16 +86,18 @@ public class ThreadPoolTaskExecutor implements TaskExecutor {
         if (!result) {
             // if task is terminated, this method should return true,
             // current status is CANCELING must push to CANCELED
-            result = getTask(ji).getStatus().isTerminated();
+            result = task.getStatus().isTerminated();
         }
         ExecutorUtils.gracefulShutdown(executor, "Task-Executor", result ? 1 : 5);
         log.info("Task be canceled succeed, taskId={}, status={}, result={}.",
-                ji.getId(), getTask(ji).getStatus(), result);
+                ji.getId(), task.getStatus(), result);
         return true;
     }
 
     @Override
     public Task<?> getTask(JobIdentity ji) {
-        return tasks.get(ji);
+        Task<?> task = tasks.get(ji);
+        PreConditions.notNull(task, "task", "Task not found, jobIdentity=" + ji.getId());
+        return task;
     }
 }

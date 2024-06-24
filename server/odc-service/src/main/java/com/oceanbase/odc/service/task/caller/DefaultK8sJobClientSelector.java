@@ -13,27 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package com.oceanbase.odc.service.task.caller;
 
-package com.oceanbase.odc.service.task.schedule;
+public class DefaultK8sJobClientSelector implements K8sJobClientSelector {
 
-import com.oceanbase.odc.metadb.task.JobEntity;
-import com.oceanbase.odc.service.task.caller.JobContext;
-import com.oceanbase.odc.service.task.schedule.provider.HostUrlProvider;
+    private final K8sJobClient k8sJobClient;
 
-/**
- * @author yaobin
- * @date 2023-11-30
- * @since 4.2.4
- */
-public interface JobContextBuilder {
+    public DefaultK8sJobClientSelector(K8sJobClient k8sJobClient) {
+        this.k8sJobClient = k8sJobClient;
+    }
 
-    JobContext build(JobIdentity ji, JobDefinition jd);
-
-    JobContext build(JobEntity jobEntity, HostUrlProvider hostUrlProvider);
-
-    /**
-     * build job context from job entity, for stop/modify/destroy scenario
-     */
-    JobContext build(JobEntity jobEntity);
-
+    @Override
+    public K8sJobClient select(JobContext jobContext) {
+        return k8sJobClient;
+    }
 }

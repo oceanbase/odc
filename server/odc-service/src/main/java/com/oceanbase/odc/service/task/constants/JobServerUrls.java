@@ -13,27 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-package com.oceanbase.odc.service.task.schedule;
-
-import com.oceanbase.odc.metadb.task.JobEntity;
-import com.oceanbase.odc.service.task.caller.JobContext;
-import com.oceanbase.odc.service.task.schedule.provider.HostUrlProvider;
+package com.oceanbase.odc.service.task.constants;
 
 /**
+ * task executor call odc server
+ * 
  * @author yaobin
- * @date 2023-11-30
+ * @date 2024-01-12
  * @since 4.2.4
  */
-public interface JobContextBuilder {
+public class JobServerUrls {
 
-    JobContext build(JobIdentity ji, JobDefinition jd);
+    public static final String TASK_UPLOAD_RESULT = "/api/v2/task/result";
 
-    JobContext build(JobEntity jobEntity, HostUrlProvider hostUrlProvider);
+    public static final String TASK_HEARTBEAT = "/api/v2/task/heartbeat";
 
-    /**
-     * build job context from job entity, for stop/modify/destroy scenario
-     */
-    JobContext build(JobEntity jobEntity);
+    public static final String TASK_QUERY_SENSITIVE_COLUMN = "/api/v2/task/querySensitiveColumn";
 
 }

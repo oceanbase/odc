@@ -13,27 +13,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-package com.oceanbase.odc.service.task.schedule;
-
-import com.oceanbase.odc.metadb.task.JobEntity;
-import com.oceanbase.odc.service.task.caller.JobContext;
-import com.oceanbase.odc.service.task.schedule.provider.HostUrlProvider;
+package com.oceanbase.odc.service.task.constants;
 
 /**
- * @author yaobin
- * @date 2023-11-30
- * @since 4.2.4
+ * odc server call task executor
  */
-public interface JobContextBuilder {
+public class JobExecutorUrls {
 
-    JobContext build(JobIdentity ji, JobDefinition jd);
-
-    JobContext build(JobEntity jobEntity, HostUrlProvider hostUrlProvider);
+    public static final String QUERY_LOG = "/api/v2/task/%s/log";
+    public static final String STOP_TASK = "/api/v2/task/%s/stop";
 
     /**
-     * build job context from job entity, for stop/modify/destroy scenario
+     * for odc server monitor task use pull mode
      */
-    JobContext build(JobEntity jobEntity);
+    // public static final String HEARTBEAT = "/api/v2/task/%s/heartbeat";
+    public static final String GET_RESULT = "/api/v2/task/%s/result";
+
+    /**
+     * TODO: seem like modifyJobParameters method is not used
+     */
+    public static final String MODIFY_JOB_PARAMETERS = "/api/v2/task/%s/modifyJobParameters";
 
 }

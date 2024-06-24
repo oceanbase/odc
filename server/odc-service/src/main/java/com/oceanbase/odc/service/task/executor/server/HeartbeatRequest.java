@@ -13,27 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package com.oceanbase.odc.service.task.executor.server;
 
-package com.oceanbase.odc.service.task.schedule;
+import com.oceanbase.odc.service.task.schedule.JobIdentity;
 
-import com.oceanbase.odc.metadb.task.JobEntity;
-import com.oceanbase.odc.service.task.caller.JobContext;
-import com.oceanbase.odc.service.task.schedule.provider.HostUrlProvider;
+import lombok.Data;
 
 /**
  * @author yaobin
- * @date 2023-11-30
+ * @date 2023-11-29
  * @since 4.2.4
  */
-public interface JobContextBuilder {
+@Data
+public class HeartbeatRequest {
 
-    JobContext build(JobIdentity ji, JobDefinition jd);
+    private JobIdentity jobIdentity;
 
-    JobContext build(JobEntity jobEntity, HostUrlProvider hostUrlProvider);
-
-    /**
-     * build job context from job entity, for stop/modify/destroy scenario
-     */
-    JobContext build(JobEntity jobEntity);
+    private String executorEndpoint;
 
 }

@@ -33,7 +33,6 @@ import org.apache.http.impl.client.HttpClientBuilder;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.oceanbase.odc.common.json.JsonUtils;
-import com.oceanbase.odc.service.common.response.OdcResult;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -42,12 +41,10 @@ import lombok.extern.slf4j.Slf4j;
  * @date 2023/11/30 17:25
  */
 @Slf4j
-public class HttpUtil {
+public class HttpClientUtils {
 
     private static final int CONNECT_TIMEOUT_SECONDS = 3;
     private static final int SOCKET_TIMEOUT_SECONDS = 30;
-    private static final String DEFAULT_METHOD = "POST";
-    private static final String METHOD_GET = "GET";
     private static final Charset DEFAULT_CHARSET = StandardCharsets.UTF_8;
     private static final Map<String, String> DEFAULT_HEADERS = new HashMap<String, String>() {
         {
@@ -59,16 +56,25 @@ public class HttpUtil {
             .setConnectTimeout(CONNECT_TIMEOUT_SECONDS * 1000)
             .setSocketTimeout(SOCKET_TIMEOUT_SECONDS * 1000)
             .build();
-    private static final HttpClient DEFAULT_HTTP_CLIENT = HttpClientBuilder.create()
+
+    private static HttpClient httpClient = HttpClientBuilder.create()
             .setDefaultRequestConfig(DEFAULT_REQUEST_CONFIG)
             .build();
 
-    public static <T> T request(String uri, TypeReference<T> responseTypeRef) throws IOException {
-        return request(DEFAULT_METHOD, uri, DEFAULT_HEADERS, null, null, responseTypeRef);
+    /**
+     * set HttpClient for custom configuration
+     */
+    public static void setHttpClient(HttpClient httpClient) {
+        HttpClientUtils.httpClient = httpClient;
     }
 
-    public static <T> T request(String uri, String jsonBody, TypeReference<T> responseTypeRef) throws IOException {
-        return request(DEFAULT_METHOD, uri, DEFAULT_HEADERS, null, jsonBody, responseTypeRef);
+    public static <T> T request(String method, String uri, TypeReference<T> responseTypeRef) throws IOException {
+        return request(method, uri, DEFAULT_HEADERS, null, null, responseTypeRef);
+    }
+
+    public static <T> T request(String method, String uri, String jsonBody, TypeReference<T> responseTypeRef)
+            throws IOException {
+        return request(method, uri, DEFAULT_HEADERS, null, jsonBody, responseTypeRef);
     }
 
     public static <T> T request(String method, String uri, Map<String, String> headers,
@@ -93,19 +99,8 @@ public class HttpUtil {
             builder.setEntity(eb.build());
         }
 
-        String response = DEFAULT_HTTP_CLIENT.execute(builder.build(), new BasicResponseHandler());
+        String response = httpClient.execute(builder.build(), new BasicResponseHandler());
         return JsonUtils.fromJson(response, responseTypeRef);
     }
 
-    public static boolean isOdcHealthy(String server, int servPort) {
-        String url = String.format("http://%s:%d/api/v1/heartbeat/isHealthy", server, servPort);
-        try {
-            OdcResult<Boolean> result = request(METHOD_GET, url, DEFAULT_HEADERS, null, null,
-                    new TypeReference<OdcResult<Boolean>>() {});
-            return result.getData();
-        } catch (IOException e) {
-            log.warn("Check odc server health failed, url={}", url);
-            return false;
-        }
-    }
 }

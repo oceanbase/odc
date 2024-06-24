@@ -13,27 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package com.oceanbase.odc.service.task.enums;
 
-package com.oceanbase.odc.service.task.schedule;
-
-import com.oceanbase.odc.metadb.task.JobEntity;
-import com.oceanbase.odc.service.task.caller.JobContext;
-import com.oceanbase.odc.service.task.schedule.provider.HostUrlProvider;
-
-/**
- * @author yaobin
- * @date 2023-11-30
- * @since 4.2.4
- */
-public interface JobContextBuilder {
-
-    JobContext build(JobIdentity ji, JobDefinition jd);
-
-    JobContext build(JobEntity jobEntity, HostUrlProvider hostUrlProvider);
+public enum TaskMonitorMode {
+    /**
+     * task-executor push heartbeat to task-manager
+     */
+    PUSH,
 
     /**
-     * build job context from job entity, for stop/modify/destroy scenario
+     * task-manager pull heartbeat from task-executor
      */
-    JobContext build(JobEntity jobEntity);
-
+    PULL
 }
