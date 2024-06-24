@@ -26,7 +26,7 @@ public class JobServerUrls {
 
     public static final String TASK_UPLOAD_RESULT = "/api/v2/task/result";
 
-    public static final String TASK_HEARTBEAT = "/api/v2/task/heart";
+    public static final String TASK_HEARTBEAT = "/api/v2/task/heartbeat";
 
     public static final String TASK_QUERY_SENSITIVE_COLUMN = "/api/v2/task/querySensitiveColumn";
 
