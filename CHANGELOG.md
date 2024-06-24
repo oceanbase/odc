@@ -22,7 +22,12 @@ Database object management
 
 SQL development
 
-A formatting error will occur when backslashes are included in the `like` and `replace` clauses of the SQL statement.
+- A formatting error will occur when backslashes are included in the `like` and `replace` clauses of the SQL statement
+- The SQL confirmation interface button does not take effect
+
+Data Source
+
+- When importing data sources in batches, all data sources to be imported cannot be displayed
 
 ## 4.3.0 (2024-06-07)
 
