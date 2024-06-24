@@ -13,25 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.task.constants;
+package com.oceanbase.odc.service.task.caller;
 
 /**
- * @author yaobin
- * @date 2024-01-12
- * @since 4.2.4
+ * select the matched K8sJobClient by JobContext. <br>
+ * in some deployment scenario, there may exist multiple k8s cluster for job execution.
  */
-public class JobUrlConstants {
+public interface K8sJobClientSelector {
 
-    public static final String TASK_RESULT_UPLOAD = "/api/v2/task/result";
-
-    public static final String TASK_HEART = "/api/v2/task/heart";
-
-    public static final String TASK_QUERY_SENSITIVE_COLUMN = "/api/v2/task/querySensitiveColumn";
-
-    public static final String LOG_QUERY = "/api/v2/task/%s/log";
-
-    public static final String STOP_TASK = "/api/v2/task/%s/stop";
-
-    public static final String MODIFY_JOB_PARAMETERS = "/api/v2/task/%s/modifyJobParameters";
+    K8sJobClient select(JobContext jobContext);
 
 }

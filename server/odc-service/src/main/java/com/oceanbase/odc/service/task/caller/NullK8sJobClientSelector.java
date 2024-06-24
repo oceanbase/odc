@@ -13,22 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.task.executor.server;
+package com.oceanbase.odc.service.task.caller;
 
-import com.oceanbase.odc.service.task.schedule.JobIdentity;
-
-import lombok.Data;
-
-/**
- * @author yaobin
- * @date 2023-11-29
- * @since 4.2.4
- */
-@Data
-public class HeartRequest {
-
-    private JobIdentity jobIdentity;
-
-    private String executorEndpoint;
-
+public class NullK8sJobClientSelector implements K8sJobClientSelector {
+    @Override
+    public K8sJobClient select(JobContext jobContext) {
+        throw new UnsupportedOperationException("K8sJobClientSelector is not configured.");
+    }
 }

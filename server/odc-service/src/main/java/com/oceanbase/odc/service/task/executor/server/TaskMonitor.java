@@ -27,7 +27,7 @@ import com.oceanbase.odc.core.task.TaskThreadFactory;
 import com.oceanbase.odc.service.objectstorage.cloud.CloudObjectStorageService;
 import com.oceanbase.odc.service.task.constants.JobConstants;
 import com.oceanbase.odc.service.task.constants.JobParametersKeyConstants;
-import com.oceanbase.odc.service.task.constants.JobUrlConstants;
+import com.oceanbase.odc.service.task.constants.JobServerUrls;
 import com.oceanbase.odc.service.task.enums.JobStatus;
 import com.oceanbase.odc.service.task.executor.logger.LogBiz;
 import com.oceanbase.odc.service.task.executor.logger.LogBizImpl;
@@ -89,7 +89,7 @@ public class TaskMonitor {
         heartScheduledExecutor.scheduleAtFixedRate(() -> {
             try {
                 if (JobUtils.getExecutorPort().isPresent() && JobUtils.isReportEnabled()) {
-                    getReporter().report(JobUrlConstants.TASK_HEART, buildHeartRequest());
+                    getReporter().report(JobServerUrls.TASK_HEARTBEAT, buildHeartRequest());
                 }
             } catch (Throwable e) {
                 log.warn("Update heart info failed, id: {}", getJobId(), e);
@@ -131,7 +131,7 @@ public class TaskMonitor {
             return;
         }
 
-        getReporter().report(JobUrlConstants.TASK_RESULT_UPLOAD, copiedResult);
+        getReporter().report(JobServerUrls.TASK_UPLOAD_RESULT, copiedResult);
         log.info("Report task info, id: {}, status: {}, progress: {}%, result: {}", getJobId(),
                 copiedResult.getStatus(), String.format("%.2f", copiedResult.getProgress()), getTask().getTaskResult());
     }
@@ -190,7 +190,7 @@ public class TaskMonitor {
         int retryTimes = 0;
         while (retryTimes++ < retries) {
             try {
-                boolean success = reporter.report(JobUrlConstants.TASK_RESULT_UPLOAD, result);
+                boolean success = reporter.report(JobServerUrls.TASK_UPLOAD_RESULT, result);
                 if (success) {
                     log.info("Report task result successfully");
                     break;
@@ -205,8 +205,8 @@ public class TaskMonitor {
         }
     }
 
-    private HeartRequest buildHeartRequest() {
-        HeartRequest request = new HeartRequest();
+    private HeartbeatRequest buildHeartRequest() {
+        HeartbeatRequest request = new HeartbeatRequest();
         request.setJobIdentity(getTask().getJobContext().getJobIdentity());
         request.setExecutorEndpoint(JobUtils.getExecutorPoint());
         return request;

@@ -16,6 +16,8 @@
 
 package com.oceanbase.odc.service.task.config;
 
+import java.io.IOException;
+
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
@@ -28,12 +30,15 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.scheduling.quartz.SchedulerFactoryBean;
-
-import com.oceanbase.odc.common.event.EventPublisher;
 import com.oceanbase.odc.service.common.ConditionOnServer;
-import com.oceanbase.odc.service.task.caller.K8sJobClient;
-import com.oceanbase.odc.service.task.caller.NativeK8sJobClient;
+import com.oceanbase.odc.common.event.EventPublisher;
 import com.oceanbase.odc.service.task.exception.JobException;
+
+import com.oceanbase.odc.common.util.StringUtils;
+import com.oceanbase.odc.service.task.caller.DefaultK8sJobClientSelector;
+import com.oceanbase.odc.service.task.caller.K8sJobClientSelector;
+import com.oceanbase.odc.service.task.caller.NativeK8sJobClient;
+import com.oceanbase.odc.service.task.caller.NullK8sJobClientSelector;
 import com.oceanbase.odc.service.task.jasypt.DefaultJasyptEncryptorConfigProperties;
 import com.oceanbase.odc.service.task.jasypt.JasyptEncryptorConfigProperties;
 import com.oceanbase.odc.service.task.schedule.JobDefinition;
@@ -57,17 +62,18 @@ public class TaskFrameworkConfiguration {
 
     @Lazy
     @Bean
-    @ConditionalOnMissingBean({K8sJobClient.class})
-    @ConditionalOnBean(TaskFrameworkProperties.class)
-    public K8sJobClient k8sJobClient(@Autowired TaskFrameworkProperties taskFrameworkProperties) {
-        try {
-            log.info("k8s url is {}", taskFrameworkProperties.getK8sProperties().getKubeUrl());
-            log.info("k8s namespace is {}", taskFrameworkProperties.getK8sProperties().getNamespace());
-            return new NativeK8sJobClient(taskFrameworkProperties.getK8sProperties());
-        } catch (Exception e) {
-            log.warn("Create NativeK8sJobClient occur error:", e);
-            return null;
+    @ConditionalOnMissingBean(K8sJobClientSelector.class)
+    public K8sJobClientSelector k8sJobClientSelector(@Autowired TaskFrameworkProperties taskFrameworkProperties)
+            throws IOException {
+        K8sProperties k8sProperties = taskFrameworkProperties.getK8sProperties();
+        if (StringUtils.isBlank(k8sProperties.getKubeUrl())) {
+            log.info("local task k8s cluster is not enabled.");
+            return new NullK8sJobClientSelector();
         }
+        log.info("build k8sJobClientSelector, kubeUrl={}, namespace={}",
+                k8sProperties.getKubeUrl(), k8sProperties.getNamespace());
+        NativeK8sJobClient nativeK8sJobClient = new NativeK8sJobClient(k8sProperties);
+        return new DefaultK8sJobClientSelector(nativeK8sJobClient);
     }
 
     @Bean

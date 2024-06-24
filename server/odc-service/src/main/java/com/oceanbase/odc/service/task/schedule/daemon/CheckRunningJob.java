@@ -42,6 +42,8 @@ import com.oceanbase.odc.service.task.schedule.SingleJobProperties;
 import lombok.extern.slf4j.Slf4j;
 
 /**
+ * find heartbeat timeout running job, and set to retrying or failed
+ * 
  * @author yaobin
  * @date 2024-01-04
  * @since 4.2.4
