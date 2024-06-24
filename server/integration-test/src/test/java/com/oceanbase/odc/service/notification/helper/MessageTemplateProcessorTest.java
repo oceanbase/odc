@@ -61,4 +61,36 @@ public class MessageTemplateProcessorTest {
 
         Assert.assertEquals(expected, actual);
     }
+
+    @Test
+    public void testGetLocalMessage_NullLocale_ReturnTemplate() {
+        String template = "fake template";
+        String message = MessageTemplateProcessor.getLocalMessage(null, template);
+        Assert.assertEquals(template, message);
+    }
+
+    @Test
+    public void testGetLocalMessage_VariousLocale_Success() {
+        Locale locale1 = new Locale("en", "US");
+        String template1 = "${com.oceanbase.odc.builtin-resource.collaboration.environment.dev.name}";
+        String message1 = MessageTemplateProcessor.getLocalMessage(locale1, template1);
+        Assert.assertEquals("dev", message1);
+        Locale locale2 = new Locale("zh", "TW");
+        String template2 = "${com.oceanbase.odc.builtin-resource.collaboration.environment.dev.name}";
+        String message2 = MessageTemplateProcessor.getLocalMessage(locale2, template2);
+        Assert.assertEquals("開發", message2);
+        Locale locale3 = new Locale("zh", "CN");
+        String template3 = "${com.oceanbase.odc.builtin-resource.collaboration.environment.dev.name}";
+        String message3 = MessageTemplateProcessor.getLocalMessage(locale3, template3);
+        Assert.assertEquals("开发", message3);
+    }
+
+    @Test
+    public void testGetLocalMessage_NullTemplate_ReturnNull() {
+        Locale locale = new Locale("zh", "CN");
+        String template = null;
+        String message = MessageTemplateProcessor.getLocalMessage(locale, template);
+        Assert.assertEquals(null, message);
+    }
+
 }

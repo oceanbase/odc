@@ -1,6 +1,32 @@
 (unreleased)
 ------------
 
+Fix
+~~~
+- Fix(sql-check): remove the word 'id' from the reserved words (#2796)
+  [IL MARE]
+- Fix(clientMode): fail to migrate metadb in client mode (#2797)
+  [LuckyLeo]
+- Fix(data-transfer): avoid task failure by processing exception
+  messages (#2779) [LuckyLeo]
+- Fix(table-object): there would be an NPE if fail to parse index ddl
+  (#2776) [LuckyLeo]
+- Fix(multiple database): added exclusive description of the subticket
+  (#2762) [zijia.cj]
+- Fix(taskframework): running task be canceled incorrect due to
+  heartbeat timeout  (#2763) [krihy]
+- Fix(schedule): creator is not allowed to alter schedule (#2772)
+  [guowl3]
+- Fix(multiple database): frequently printing logs (#2765) [zijia.cj]
+- Fix(taskframework): cannot rollback stop when destroy executor failed
+  (#2755) [krihy]
+- Fix(client-mode): odc failed to start in client mode (#2761)
+  [LuckyLeo]
+
+
+v4.3.0 (2024-06-11)
+-------------------
+
 New
 ~~~
 - Feat(config):add creator_id to config entity (#2485) [Ang]
@@ -54,6 +80,8 @@ New
 
 Changes
 ~~~~~~~
+- Refactor(schedule): add without permission method (#2670) [Ang]
+- Refactor(security): add configurable security whitelists (#2714) [Ang]
 - Refactor(flow): add skip auth to flow mapper (#2538) [Ang]
 - Refactor(config): Add more fields to configEntity #2493. [Ang]
 - Chore: use OBE error code (#2413) [yizhou]
@@ -62,6 +90,18 @@ Changes
 
 Fix
 ~~~
+- Fix(schedule): terminate if schedule is invalid (#2725) [guowl3]
+- Fix(structure-comparison): get a wrong result when comparing two same
+  tables (#2720) [IL MARE]
+- Fix(multiple database): change the method when initiating child
+  tickets (#2719) [zijia.cj]
+- Fix(ticket): failed to view all tickets (#2716) [IL MARE]
+- Fix(dlm): upgrade dlm sdk to 1.1.4 (#2697) [guowl3]
+- Fix(dlm): the task status does not update properly when structural
+  synchronization fails (#2712) [guowl3]
+- Fix(ticket): project owners failed to abort a ticket (#2709) [IL MARE]
+- Fix(db-browser): failed to open SYS console when user without query
+  sys permissions (#2708) [zhangxiao]
 - Fix(security): add skip auth annotation (#2704) [guowl3]
 - Fix(dlm): alter execute task job type for data cleaning (#2706) [kiko]
 - Fix(multiple database): the return of method intercepted in multiple

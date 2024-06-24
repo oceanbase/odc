@@ -105,6 +105,10 @@ public class CheckRunningJob implements Job {
                 throw new TaskRuntimeException("Set job status to FAILED failed, jobId=" + jobEntity.getId());
             }
         }
+        if (!getConfiguration().getJobDispatcher().canBeDestroy(JobIdentity.of(a.getId()))) {
+            log.info("Cannot destroy executor, jobId={}.", a.getId());
+            throw new TaskRuntimeException("Cannot destroy executor, jobId={}" + jobEntity.getId());
+        }
 
         // First try to stop remote job
         try {

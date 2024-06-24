@@ -1118,13 +1118,12 @@ public class MySQLCheckerTest {
 
         SqlCheckRuleType type = SqlCheckRuleType.OBJECT_NAME_USING_RESERVED_WORDS;
         CheckViolation c1 = new CheckViolation(sqls[0], 1, 0, 0, 89, type, new Object[] {"analyse"});
-        CheckViolation c2 = new CheckViolation(sqls[0], 1, 22, 22, 23, type, new Object[] {"id"});
         CheckViolation c3 = new CheckViolation(sqls[0], 1, 30, 30, 88, type, new Object[] {"`analyse`"});
         CheckViolation c4 = new CheckViolation(sqls[2], 1, 93, 93, 146, type, new Object[] {"`analyse`"});
         CheckViolation c5 = new CheckViolation(sqls[3], 1, 13, 13, 21, type, new Object[] {"`analyse`"});
         CheckViolation c6 = new CheckViolation(sqls[4], 1, 16, 16, 24, type, new Object[] {"`analyse`"});
 
-        List<CheckViolation> expect = Arrays.asList(c1, c2, c3, c4, c5, c6);
+        List<CheckViolation> expect = Arrays.asList(c1, c3, c4, c5, c6);
         Assert.assertEquals(expect, actual);
     }
 
