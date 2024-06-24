@@ -48,7 +48,11 @@ public class TaskExecutorClient {
             SuccessResponse<String> response =
                     HttpClientUtils.request("POST", url,
                             new TypeReference<SuccessResponse<String>>() {});
-            return response.getData();
+            if (response != null && response.getSuccessful()) {
+                return response.getData();
+            } else {
+                return String.format("Get log content failed, jobId=%s, response=%s", jobId, response);
+            }
         } catch (IOException e) {
             // Occur io timeout when pod deleted manual
             log.warn("Query log from executor occur error, executorEndpoint={}, jobId={}",
@@ -87,28 +91,30 @@ public class TaskExecutorClient {
                 log.info("Modify job parameters success, jobId={}, response={}.", ji.getId(),
                         JsonUtils.toJson(response));
             } else {
-                throw new JobException("Modify job parameters not succeed, jobId={0}, response={1}", ji.getId(),
-                        response);
+                throw new JobException("Modify job parameters failed, jobId={0}, response={1}",
+                        ji.getId(), response);
             }
         } catch (IOException e) {
-            throw new JobException("Modify job parameters not succeed, jobId={0}, response={1}", ji.getId(),
+            throw new JobException("Modify job parameters occur error, jobId={0}, response={1}", ji.getId(),
                     JsonUtils.toJson(e.getMessage()));
         }
     }
 
-    public DefaultTaskResult getResult(String executorEndpoint, JobIdentity ji) {
+    public DefaultTaskResult getResult(String executorEndpoint, JobIdentity ji) throws JobException {
         String url = executorEndpoint + String.format(JobExecutorUrls.GET_RESULT, ji.getId());
-        log.info("Try query result from executor, ji={}, url={}", ji.getId(), url);
+        log.info("Try query job result from executor, ji={}, url={}", ji.getId(), url);
         try {
             SuccessResponse<DefaultTaskResult> response =
                     HttpClientUtils.request("POST", url, new TypeReference<SuccessResponse<DefaultTaskResult>>() {});
             if (response != null && response.getSuccessful()) {
                 return response.getData();
+            } else {
+                throw new JobException("Get job result failed, jobId={0}, response={1}", ji.getId(), response);
             }
         } catch (IOException e) {
-            log.warn("Query result from executor occur error, ji={}, url={}", ji.getId(), url, e);
+            throw new JobException("Get job result occur error, jobId={0}, response={1}", ji.getId(),
+                    JsonUtils.toJson(e.getMessage()));
         }
-        return null;
     }
 
 }

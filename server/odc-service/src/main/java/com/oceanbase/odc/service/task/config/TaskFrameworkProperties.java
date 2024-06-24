@@ -36,8 +36,6 @@ public interface TaskFrameworkProperties {
 
     int getJobHeartTimeoutSeconds();
 
-    int getJobPullResultIntervalSeconds();
-
     int getExecutorWaitingToRunThresholdSeconds();
 
     int getExecutorWaitingToRunThresholdCount();

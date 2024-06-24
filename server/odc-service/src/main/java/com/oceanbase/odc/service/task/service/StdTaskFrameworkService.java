@@ -65,6 +65,7 @@ import com.oceanbase.odc.service.task.constants.JobAttributeEntityColumn;
 import com.oceanbase.odc.service.task.constants.JobEntityColumn;
 import com.oceanbase.odc.service.task.enums.JobStatus;
 import com.oceanbase.odc.service.task.enums.TaskRunMode;
+import com.oceanbase.odc.service.task.exception.JobException;
 import com.oceanbase.odc.service.task.exception.TaskRuntimeException;
 import com.oceanbase.odc.service.task.executor.server.HeartbeatRequest;
 import com.oceanbase.odc.service.task.executor.task.DefaultTaskResult;
@@ -365,7 +366,7 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
         });
     }
 
-    private void doRefreshResult(Long id) {
+    private void doRefreshResult(Long id) throws JobException {
         JobEntity je = find(id);
         if (JobStatus.RUNNING != je.getStatus()) {
             log.info("Job is not running, ignore refresh, jobId={}, currentStatus={}", id, je.getStatus());
