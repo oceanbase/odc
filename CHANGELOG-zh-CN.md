@@ -1,5 +1,30 @@
 # OceanBase Developer Center (ODC) CHANGELOG
 
+## 4.3.0_bp1（2024-06-24）
+
+### 易用性改进
+
+- 优化多库变更产生的子任务的描述信息，突出批次号及所属的多库变更任务 [#2762](https://github.com/oceanbase/odc/pull/2762)
+- 允许计划任务的创建者修改计划任务 [#2772](https://github.com/oceanbase/odc/pull/2772)
+
+### 缺陷修复
+
+SQL 检查
+
+- 禁止将"id"作为列名 [#2796](https://github.com/oceanbase/odc/pull/2796)
+
+导入导出
+
+- 导入空数据文件将会导致导数任务失败 [#2779](https://github.com/oceanbase/odc/pull/2779)
+
+数据库对象管理
+
+- 使用非 4.3.0 版本的 ODC 打开 4.3.x 版本的 OceanBase 的表对象可能会引发空指针异常 [#2776](https://github.com/oceanbase/odc/pull/2776)
+
+SQL 开发
+
+- 当 SQL 中包含反斜杠时将会引发格式化错误
+
 ## 4.3.0 （2024-06-07）
 
 ### 功能变化
