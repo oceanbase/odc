@@ -6,6 +6,7 @@
 
 - 优化多库变更产生的子任务的描述信息，突出批次号及所属的多库变更任务 [#2762](https://github.com/oceanbase/odc/pull/2762)
 - 允许计划任务的创建者修改计划任务 [#2772](https://github.com/oceanbase/odc/pull/2772)
+- 消息通知支持配置网络超时 [#2782](https://github.com/oceanbase/odc/pull/2782)
 
 ### 缺陷修复
 
