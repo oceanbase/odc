@@ -33,6 +33,7 @@ import org.springframework.stereotype.Component;
 import com.oceanbase.odc.core.shared.constant.OrganizationType;
 import com.oceanbase.odc.metadb.iam.OrganizationEntity;
 import com.oceanbase.odc.metadb.iam.OrganizationRepository;
+import com.oceanbase.odc.service.common.ConditionOnServer;
 import com.oceanbase.odc.service.config.UserConfigKeys;
 import com.oceanbase.odc.service.config.UserConfigService;
 import com.oceanbase.odc.service.config.model.Configuration;
@@ -47,6 +48,7 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 @Component
+@ConditionOnServer
 public class DBSchemaSyncScheduler {
 
     @Autowired

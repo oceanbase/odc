@@ -31,7 +31,6 @@ import com.oceanbase.odc.core.shared.exception.NotFoundException;
 import com.oceanbase.odc.metadb.dlm.DlmLimiterConfigEntity;
 import com.oceanbase.odc.metadb.dlm.DlmLimiterConfigRepository;
 import com.oceanbase.odc.service.dlm.model.RateLimitConfiguration;
-import com.oceanbase.odc.service.schedule.ScheduleService;
 
 /**
  * @Author：tinker
@@ -61,9 +60,6 @@ public class DlmLimiterService {
 
     @Autowired
     private DlmLimiterConfigRepository limiterConfigRepository;
-
-    @Autowired
-    private ScheduleService scheduleService;
 
     public DlmLimiterConfigEntity create(RateLimitConfiguration config) {
         checkLimiterConfig(config);
