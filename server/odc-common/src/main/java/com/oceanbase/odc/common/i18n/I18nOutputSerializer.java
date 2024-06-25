@@ -16,9 +16,9 @@
 package com.oceanbase.odc.common.i18n;
 
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -31,7 +31,7 @@ import com.fasterxml.jackson.databind.SerializerProvider;
 
 public class I18nOutputSerializer extends JsonSerializer<String> {
     private static final Pattern I18N_RESOURCE_PATTERN = Pattern.compile("\\$\\{([^{^}]*)\\}");
-    private static final Map<Locale, Map<String, String>> MESSAGES_MAP = new HashMap<>();
+    private static final Map<Locale, Map<String, String>> MESSAGES_MAP = new ConcurrentHashMap<>();
 
     @Override
     public void serialize(String value, JsonGenerator gen, SerializerProvider serializers) throws IOException {
@@ -49,9 +49,8 @@ public class I18nOutputSerializer extends JsonSerializer<String> {
         if (!matcher.find()) {
             return resource;
         }
-
         Locale currentLocale = LocaleContextHolder.getLocale();
-        MESSAGES_MAP.putIfAbsent(currentLocale, new HashMap<>());
+        MESSAGES_MAP.putIfAbsent(currentLocale, new ConcurrentHashMap<>());
         int cursor = 0;
         while (matcher.find(cursor)) {
             String key = matcher.group();
