@@ -54,6 +54,8 @@ public class DataArchiveParameters implements TaskParameters {
 
     private boolean deleteAfterMigration = false;
 
+    private boolean dropPartition = false;
+
     private boolean needPrintSqlTrace = false;
 
     private int readThreadCount;
