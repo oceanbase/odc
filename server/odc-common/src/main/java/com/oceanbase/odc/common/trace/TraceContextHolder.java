@@ -42,6 +42,7 @@ public final class TraceContextHolder {
     public static final String ORGANIZATION_ID = "organizationId";
     public static final String RESPONSE_TIME = "rt";
     public static final String ODC_CODE = "odcCode";
+    public static final String PROJECT_ID = "projectId";
 
     private TraceContextHolder() {}
 
@@ -88,6 +89,7 @@ public final class TraceContextHolder {
         MDC.remove(ORGANIZATION_ID);
         MDC.remove(RESPONSE_TIME);
         MDC.remove(ODC_CODE);
+        MDC.remove(PROJECT_ID);
     }
 
     public static long getStartEpochMilli() {
@@ -184,6 +186,14 @@ public final class TraceContextHolder {
 
     public static void setOrganizationId(Long organizationId) {
         put(ORGANIZATION_ID, organizationId.toString());
+    }
+
+    public static String getProjectId() {
+        return get(PROJECT_ID);
+    }
+
+    public static void setProjectId(String projectId) {
+        put(PROJECT_ID, projectId);
     }
 
     public static String get(String key) {
