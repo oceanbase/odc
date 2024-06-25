@@ -18,6 +18,8 @@ package com.oceanbase.odc.service.schedule.model;
 import org.quartz.JobKey;
 import org.quartz.TriggerKey;
 
+import com.oceanbase.odc.metadb.schedule.ScheduleEntity;
+
 /**
  * @author yaobin
  * @date 2023-06-13
@@ -25,6 +27,14 @@ import org.quartz.TriggerKey;
  * @Descripition: Defines the key generation rules to ensure global uniqueness in this class.
  */
 public class QuartzKeyGenerator {
+
+    public static TriggerKey generateTriggerKey(ScheduleEntity schedule) {
+        return new TriggerKey(schedule.getId().toString(), schedule.getScheduleType().name());
+    }
+
+    public static JobKey generateJobKey(ScheduleEntity schedule) {
+        return new JobKey(schedule.getId().toString(), schedule.getScheduleType().name());
+    }
 
     public static TriggerKey generateTriggerKey(Long scheduleId, JobType jobType) {
         return new TriggerKey(scheduleId + "", jobType.name());
@@ -34,12 +44,12 @@ public class QuartzKeyGenerator {
         return new JobKey(scheduleId + "", jobType.name());
     }
 
-    public static TriggerKey generateTriggerKey(Long jobId) {
-        return new TriggerKey(jobId + "");
+    public static TriggerKey generateTriggerKey(String name, String group) {
+        return new TriggerKey(name, group);
     }
 
-    public static JobKey generateJobKey(Long jobId) {
-        return new JobKey(jobId + "");
+    public static JobKey generateJobKey(String jobName, String jobGroup) {
+        return new JobKey(jobName, jobGroup);
     }
 
 }

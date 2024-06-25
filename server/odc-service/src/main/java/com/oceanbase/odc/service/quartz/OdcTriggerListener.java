@@ -31,7 +31,6 @@ import com.oceanbase.odc.service.notification.Broker;
 import com.oceanbase.odc.service.notification.NotificationProperties;
 import com.oceanbase.odc.service.notification.helper.EventBuilder;
 import com.oceanbase.odc.service.notification.model.Event;
-import com.oceanbase.odc.service.quartz.util.ScheduleTaskUtils;
 import com.oceanbase.odc.service.schedule.ScheduleService;
 
 import lombok.extern.slf4j.Slf4j;
@@ -62,7 +61,7 @@ public class OdcTriggerListener extends TriggerListenerSupport {
     @Override
     public boolean vetoJobExecution(Trigger trigger, JobExecutionContext context) {
         return SpringContextUtil.getBean(ScheduleService.class)
-                .terminateIfScheduleInvalid(ScheduleTaskUtils.getScheduleId(context));
+                .terminateIfScheduleInvalid(Long.parseLong(context.getTrigger().getJobKey().getName()));
     }
 
     @Override

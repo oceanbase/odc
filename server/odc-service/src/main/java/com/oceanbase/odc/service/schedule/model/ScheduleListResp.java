@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 OceanBase.
+ * Copyright (c) 2024 OceanBase.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.oceanbase.odc.service.schedule.model;
 
 import java.util.Date;
@@ -20,39 +21,26 @@ import java.util.Date;
 import com.oceanbase.odc.core.shared.constant.TaskStatus;
 
 import lombok.Data;
-import lombok.NonNull;
 
 /**
  * @Author：tinker
- * @Date: 2023/5/24 15:35
+ * @Date: 2024/6/8 13:30
  * @Descripition:
  */
 
+
+
 @Data
-public class ScheduleTaskResp {
+public class ScheduleListResp {
 
-    private Long id;
+    private Long scheduleId;
 
-    private String jobName;
+    private ScheduleListAttributes attributes;
 
-    private String jobGroup;
+    private ScheduleStatus status;
 
-    private TaskStatus status;
+    private Date latestFireTime;
 
-    private double progressPercentage;
-
-    private String executionDetails;
-
-    private String resultJson;
-
-    private Date createTime;
-
-    private Date updateTime;
-
-    public static ScheduleTaskResp withId(@NonNull Long id) {
-        ScheduleTaskResp resp = new ScheduleTaskResp();
-        resp.setId(id);
-        return resp;
-    }
+    private TaskStatus latestExecutionStatus;
 
 }

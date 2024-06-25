@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 OceanBase.
+ * Copyright (c) 2024 OceanBase.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,29 +13,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.flow.processor;
+package com.oceanbase.odc.service.schedule.model;
 
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+import org.mapstruct.Mapper;
+import org.mapstruct.factory.Mappers;
 
-import org.springframework.stereotype.Component;
-
-import com.oceanbase.odc.service.schedule.model.JobType;
+import com.oceanbase.odc.metadb.schedule.ScheduleEntity;
 
 /**
  * @Author：tinker
- * @Date: 2023/3/14 20:57
+ * @Date: 2023/6/6 20:13
  * @Descripition:
  */
-@Target(value = {ElementType.TYPE})
-@Retention(RetentionPolicy.RUNTIME)
-@Component
-public @interface ScheduleTaskPreprocessor {
 
-    boolean isEnabled() default true;
+@Mapper
+public interface ScheduleMapper {
 
-    JobType type();
+    ScheduleMapper INSTANCE = Mappers.getMapper(ScheduleMapper.class);
 
+    Schedule entityToModel(ScheduleEntity entity);
+
+    ScheduleEntity modelToEntity(Schedule model);
 }

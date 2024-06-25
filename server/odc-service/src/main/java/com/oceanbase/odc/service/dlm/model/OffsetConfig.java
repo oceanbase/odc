@@ -30,4 +30,17 @@ public class OffsetConfig {
 
     private String pattern;
 
+    private String dateFormatPattern;
+
+    private Operator operator;
+
+    private String unit;
+
+    private String value;
+}
+
+
+enum Operator {
+    PLUS,
+    MINUS
 }

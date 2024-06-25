@@ -27,6 +27,7 @@ import com.oceanbase.odc.service.dlm.model.DataDeleteParameters;
 import com.oceanbase.odc.service.flow.task.model.DatabaseChangeParameters;
 import com.oceanbase.odc.service.quartz.model.MisfireStrategy;
 import com.oceanbase.odc.service.schedule.model.JobType;
+import com.oceanbase.odc.service.schedule.model.OperationType;
 import com.oceanbase.odc.service.schedule.model.TriggerConfig;
 
 import lombok.Data;
