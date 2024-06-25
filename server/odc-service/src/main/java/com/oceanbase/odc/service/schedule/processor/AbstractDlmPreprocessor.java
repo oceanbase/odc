@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 OceanBase.
+ * Copyright (c) 2024 OceanBase.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.schedule.flowtask;
+package com.oceanbase.odc.service.schedule.processor;
 
 import java.util.Date;
 import java.util.HashMap;
@@ -21,23 +21,19 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
-import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionConstants;
 import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.shared.exception.UnsupportedException;
 import com.oceanbase.odc.core.sql.execute.SyncJdbcExecutor;
-import com.oceanbase.odc.metadb.schedule.ScheduleEntity;
 import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.dlm.DlmLimiterService;
 import com.oceanbase.odc.service.dlm.model.DataArchiveTableConfig;
 import com.oceanbase.odc.service.dlm.model.OffsetConfig;
 import com.oceanbase.odc.service.dlm.model.RateLimitConfiguration;
 import com.oceanbase.odc.service.dlm.utils.DataArchiveConditionUtil;
-import com.oceanbase.odc.service.flow.model.CreateFlowInstanceReq;
-import com.oceanbase.odc.service.flow.processor.Preprocessor;
-import com.oceanbase.odc.service.schedule.model.ScheduleStatus;
+import com.oceanbase.odc.service.schedule.model.ScheduleChangeReq;
 import com.oceanbase.tools.dbbrowser.util.MySQLSqlBuilder;
 import com.oceanbase.tools.dbbrowser.util.OracleSqlBuilder;
 import com.oceanbase.tools.dbbrowser.util.SqlBuilder;
@@ -51,28 +47,10 @@ import lombok.extern.slf4j.Slf4j;
  */
 
 @Slf4j
-public class AbstractDlmJobPreprocessor implements Preprocessor {
+public class AbstractDlmPreprocessor implements Preprocessor {
 
     @Override
-    public void process(CreateFlowInstanceReq req) {}
-
-    public ScheduleEntity buildScheduleEntity(CreateFlowInstanceReq req) {
-        AlterScheduleParameters parameters = (AlterScheduleParameters) req.getParameters();
-        ScheduleEntity scheduleEntity = new ScheduleEntity();
-        scheduleEntity.setConnectionId(req.getConnectionId());
-        scheduleEntity.setDatabaseName(req.getDatabaseName());
-        scheduleEntity.setDatabaseId(req.getDatabaseId());
-        scheduleEntity.setProjectId(req.getProjectId());
-        scheduleEntity.setJobType(parameters.getType());
-        scheduleEntity.setStatus(ScheduleStatus.APPROVING);
-        scheduleEntity.setAllowConcurrent(parameters.getAllowConcurrent());
-        scheduleEntity.setMisfireStrategy(parameters.getMisfireStrategy());
-        scheduleEntity.setJobParametersJson(JsonUtils.toJson(parameters.getScheduleTaskParameters()));
-        scheduleEntity.setTriggerConfigJson(JsonUtils.toJson(parameters.getTriggerConfig()));
-        scheduleEntity.setModifierId(scheduleEntity.getCreatorId());
-        scheduleEntity.setDescription(req.getDescription());
-        return scheduleEntity;
-    }
+    public void process(ScheduleChangeReq req) {}
 
     public void checkTableAndCondition(ConnectionSession connectionSession, Database sourceDb,
             List<DataArchiveTableConfig> tables,

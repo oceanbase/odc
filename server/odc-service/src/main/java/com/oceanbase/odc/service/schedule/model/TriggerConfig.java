@@ -55,7 +55,4 @@ public class TriggerConfig implements Serializable {
         }
     }
 
-    public boolean isSingleTrigger() {
-        return triggerStrategy == TriggerStrategy.START_AT || triggerStrategy == TriggerStrategy.START_NOW;
-    }
 }

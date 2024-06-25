@@ -35,7 +35,10 @@ public class QueryScheduleParams {
     private List<Long> connectionIds;
     private Long id;
     private List<ScheduleStatus> statuses;
-    private JobType type;
+    private String databaseName;
+    private String clusterId;
+    private String tenantId;
+    private ScheduleType type;
     private Date startTime;
     private Date endTime;
     private String creator;
