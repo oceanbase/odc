@@ -20,16 +20,15 @@ import java.util.Date;
 import com.oceanbase.odc.core.shared.constant.TaskStatus;
 
 import lombok.Data;
-import lombok.NonNull;
 
 /**
  * @Author：tinker
- * @Date: 2023/5/24 15:35
+ * @Date: 2024/6/18 10:55
  * @Descripition:
  */
 
 @Data
-public class ScheduleTaskResp {
+public class ScheduleTask {
 
     private Long id;
 
@@ -37,22 +36,22 @@ public class ScheduleTaskResp {
 
     private String jobGroup;
 
+    private String parametersJson;
+
     private TaskStatus status;
+
+    private Date fireTime;
 
     private double progressPercentage;
 
-    private String executionDetails;
-
     private String resultJson;
+
+    private String executor;
 
     private Date createTime;
 
     private Date updateTime;
 
-    public static ScheduleTaskResp withId(@NonNull Long id) {
-        ScheduleTaskResp resp = new ScheduleTaskResp();
-        resp.setId(id);
-        return resp;
-    }
+    private Long jobId;
 
 }

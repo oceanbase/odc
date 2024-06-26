@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 OceanBase.
+ * Copyright (c) 2024 OceanBase.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,34 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.dlm.model;
-
-import lombok.Data;
+package com.oceanbase.odc.service.schedule.model;
 
 /**
  * @Author：tinker
- * @Date: 2023/5/10 20:24
+ * @Date: 2022/11/18 16:27
  * @Descripition:
  */
+public enum OperationType {
 
-@Data
-public class OffsetConfig {
+    CREATE,
 
-    private String name;
+    UPDATE,
+    PAUSE,
+    TERMINATE,
+    RESUME,
+    DELETE
 
-    private String pattern;
-
-    private String dateFormatPattern;
-
-    private Operator operator;
-
-    private String unit;
-
-    private String value;
-}
-
-
-enum Operator {
-    PLUS,
-    MINUS
 }

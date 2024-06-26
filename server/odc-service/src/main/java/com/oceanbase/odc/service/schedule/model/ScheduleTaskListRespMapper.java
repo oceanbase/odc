@@ -13,34 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.dlm.model;
-
-import lombok.Data;
+package com.oceanbase.odc.service.schedule.model;
 
 /**
  * @Author：tinker
- * @Date: 2023/5/10 20:24
+ * @Date: 2024/6/19 15:35
  * @Descripition:
  */
+public class ScheduleTaskListRespMapper {
 
-@Data
-public class OffsetConfig {
+    public static ScheduleTaskListResp map(ScheduleTask scheduleTask) {
+        ScheduleTaskListResp t = new ScheduleTaskListResp();
+        t.setId(scheduleTask.getId());
+        t.setStatus(scheduleTask.getStatus());
+        t.setType(ScheduleTaskType.valueOf(scheduleTask.getJobGroup()));
+        t.setCreateTime(scheduleTask.getCreateTime());
+        t.setUpdateTime(scheduleTask.getUpdateTime());
+        return t;
+    }
 
-    private String name;
-
-    private String pattern;
-
-    private String dateFormatPattern;
-
-    private Operator operator;
-
-    private String unit;
-
-    private String value;
-}
-
-
-enum Operator {
-    PLUS,
-    MINUS
 }

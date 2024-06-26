@@ -13,34 +13,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.dlm.model;
+package com.oceanbase.odc.service.schedule.model;
 
-import lombok.Data;
+import org.mapstruct.Mapper;
+import org.mapstruct.factory.Mappers;
+
+import com.oceanbase.odc.metadb.schedule.ScheduleEntity;
 
 /**
  * @Author：tinker
- * @Date: 2023/5/10 20:24
+ * @Date: 2023/6/6 20:13
  * @Descripition:
  */
 
-@Data
-public class OffsetConfig {
+@Mapper
+public interface ScheduleMapper {
 
-    private String name;
+    ScheduleMapper INSTANCE = Mappers.getMapper(ScheduleMapper.class);
 
-    private String pattern;
+    Schedule entityToModel(ScheduleEntity entity);
 
-    private String dateFormatPattern;
-
-    private Operator operator;
-
-    private String unit;
-
-    private String value;
-}
-
-
-enum Operator {
-    PLUS,
-    MINUS
+    ScheduleEntity modelToEntity(Schedule model);
 }

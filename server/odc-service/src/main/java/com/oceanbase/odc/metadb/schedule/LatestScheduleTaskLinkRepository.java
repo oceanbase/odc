@@ -13,34 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.dlm.model;
+package com.oceanbase.odc.metadb.schedule;
 
-import lombok.Data;
+import java.util.List;
+import java.util.Set;
+
+import com.oceanbase.odc.config.jpa.OdcJpaRepository;
 
 /**
  * @Author：tinker
- * @Date: 2023/5/10 20:24
+ * @Date: 2024/6/10 18:58
  * @Descripition:
  */
+public interface LatestScheduleTaskLinkRepository extends OdcJpaRepository<LatestScheduleTaskLinkEntity, Long> {
 
-@Data
-public class OffsetConfig {
+    Long getScheduleTaskIdByScheduleId(Long scheduleId);
 
-    private String name;
-
-    private String pattern;
-
-    private String dateFormatPattern;
-
-    private Operator operator;
-
-    private String unit;
-
-    private String value;
-}
-
-
-enum Operator {
-    PLUS,
-    MINUS
+    List<LatestScheduleTaskLinkEntity> findByScheduleIdIn(Set<Long> scheduleIds);
 }

@@ -13,20 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.schedule.flowtask;
+package com.oceanbase.odc.service.schedule.model;
 
 /**
  * @Author：tinker
- * @Date: 2022/11/18 16:27
+ * @Date: 2024/6/10 17:28
  * @Descripition:
  */
-public enum OperationType {
+public interface ScheduleListAttributes {
 
-    CREATE,
-
-    UPDATE,
-    PAUSE,
-    TERMINATION,
-    RESUME
 
 }

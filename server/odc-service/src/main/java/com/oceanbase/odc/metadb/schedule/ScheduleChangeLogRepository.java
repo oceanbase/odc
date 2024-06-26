@@ -13,34 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.dlm.model;
+package com.oceanbase.odc.metadb.schedule;
 
-import lombok.Data;
+import java.util.List;
+import java.util.Optional;
+
+import com.oceanbase.odc.config.jpa.OdcJpaRepository;
 
 /**
  * @Author：tinker
- * @Date: 2023/5/10 20:24
+ * @Date: 2024/6/8 15:27
  * @Descripition:
  */
+public interface ScheduleChangeLogRepository extends OdcJpaRepository<ScheduleChangeLogEntity, Long> {
 
-@Data
-public class OffsetConfig {
+    List<ScheduleChangeLogEntity> findByScheduleId(Long scheduleId);
 
-    private String name;
+    Optional<ScheduleChangeLogEntity> findByIdAndScheduleId(Long id, Long scheduleId);
 
-    private String pattern;
-
-    private String dateFormatPattern;
-
-    private Operator operator;
-
-    private String unit;
-
-    private String value;
-}
-
-
-enum Operator {
-    PLUS,
-    MINUS
 }
