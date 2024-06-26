@@ -49,7 +49,7 @@ public class ScheduleChangeLogService {
     public ScheduleChangeLog getByIdAndScheduleId(Long id, Long scheduleId) {
         return scheduleChangeLogRepository.findByIdAndScheduleId(id, scheduleId).map(mapper::entityToModel)
                 .orElseThrow(() -> new NotFoundException(
-                        ResourceType.ODC_SCHEDULE_CHANGE_LOG, "id", id));
+                        ResourceType.ODC_SCHEDULE_CHANGELOG, "id", id));
     }
 
     public List<ScheduleChangeLog> listByScheduleId(Long scheduleId) {

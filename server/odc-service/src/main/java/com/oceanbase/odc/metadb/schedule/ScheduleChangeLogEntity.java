@@ -38,7 +38,7 @@ import lombok.Data;
  */
 @Entity
 @Data
-@Table(name = "schedule_change_log")
+@Table(name = "schedule_changelog")
 public class ScheduleChangeLogEntity {
 
     @Id

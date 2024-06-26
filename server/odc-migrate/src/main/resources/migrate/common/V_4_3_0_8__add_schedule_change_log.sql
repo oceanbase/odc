@@ -1,4 +1,4 @@
-CREATE TABLE IF NOT EXISTS `schedule_change_log` (
+CREATE TABLE IF NOT EXISTS `schedule_changelog` (
 `id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT 'ID of the change log',
 `schedule_id` bigint NOT NULL COMMENT 'ID of the related schedule, refer to schedule_schedule.id',
 `flow_instance_id` bigint NULL COMMENT 'ID of the related flow, refer to flow_instance.id',

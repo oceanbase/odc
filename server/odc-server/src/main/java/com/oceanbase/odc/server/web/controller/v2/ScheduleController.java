@@ -69,12 +69,12 @@ public class ScheduleController {
 
     // change log
 
-    @RequestMapping("/schedules/{id:[\\d]+}/changes")
+    @RequestMapping(value = "/schedules/{id:[\\d]+}/changes", method = RequestMethod.GET)
     public ListResponse<ScheduleChangeLog> listChangeLog(@PathVariable Long id) {
         throw new UnsupportedException();
     }
 
-    @RequestMapping("/schedules/{id:[\\d]+}/changes/{scheduleChangeLogId:[\\d]+}")
+    @RequestMapping(value = "/schedules/{id:[\\d]+}/changes/{scheduleChangeLogId:[\\d]+}", method = RequestMethod.GET)
     public SuccessResponse<ScheduleChangeLog> getChangeLog(@PathVariable Long id,
             @PathVariable Long scheduleChangeLogId) {
         throw new UnsupportedException();
@@ -164,7 +164,7 @@ public class ScheduleController {
     }
 
 
-    @RequestMapping("/schedules")
+    @RequestMapping(value = "/schedules", method = RequestMethod.GET)
     public PaginatedResponse<ScheduleListResp> list(
             @PageableDefault(size = Integer.MAX_VALUE, sort = {"id"}, direction = Direction.DESC) Pageable pageable,
             @RequestParam(required = false, name = "connectionId") List<Long> connectionIds,
