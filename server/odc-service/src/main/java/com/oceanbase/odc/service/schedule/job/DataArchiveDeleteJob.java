@@ -71,6 +71,7 @@ public class DataArchiveDeleteJob extends AbstractDlmJob {
             DLMJobReq parameters = getDLMJobReq(dataArchiveTask.getJobId());
             parameters.setJobType(JobType.DELETE);
             parameters.setScheduleTaskId(taskEntity.getId());
+            parameters.setDropPartition(dataArchiveParameters.isDropPartition());
             Long jobId = publishJob(parameters, dataArchiveParameters.getTimeoutMillis());
             log.info("Publish DLM job to task framework succeed,scheduleTaskId={},jobIdentity={}", taskEntity.getId(),
                     jobId);
