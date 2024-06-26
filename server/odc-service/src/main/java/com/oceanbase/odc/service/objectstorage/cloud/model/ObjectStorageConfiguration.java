@@ -78,8 +78,12 @@ public class ObjectStorageConfiguration {
         NONE("NONE"),
         ALIBABA_CLOUD("ALIBABA_CLOUD", "ALIYUN"),
         AWS("AWS", "AMAZON_WEB_SERVICE"),
+        AWSCN("AWSCN", "AMAZON_WEB_SERVICE_CN"),
         AZURE("AZURE"),
-        GOOGLE_CLOUD("GOOGLE_CLOUD", "GCE"),
+        GOOGLE_CLOUD("GOOGLE_CLOUD", "GCP"),
+        HUAWEI_CLOUD("HUAWEI_CLOUD", "HUAWEI"),
+        TENCENT_CLOUD("TENCENT_CLOUD", "QCLOUD", "TENCENT"),
+        UNKNOWN("UNKNOWN"),
         ;
 
         private final String[] values;
@@ -97,7 +101,7 @@ public class ObjectStorageConfiguration {
                     }
                 }
             }
-            throw new IllegalArgumentException("CloudProvider value not supported, given value '" + value + "'");
+            return UNKNOWN;
         }
 
         @JsonValue
