@@ -26,7 +26,7 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
-import com.oceanbase.odc.service.schedule.model.OperationType;
+import com.oceanbase.odc.service.schedule.flowtask.OperationType;
 import com.oceanbase.odc.service.schedule.model.ScheduleChangeStatus;
 
 import lombok.Data;

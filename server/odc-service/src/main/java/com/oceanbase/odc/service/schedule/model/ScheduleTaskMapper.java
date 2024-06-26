@@ -31,7 +31,7 @@ public interface ScheduleTaskMapper {
 
     ScheduleTaskMapper INSTANCE = Mappers.getMapper(ScheduleTaskMapper.class);
 
-    ScheduleTask entityToModel(ScheduleTaskEntity entity);
+    ScheduleTaskResp entityToModel(ScheduleTaskEntity entity);
 
-    ScheduleTaskEntity modelToEntity(ScheduleTask model);
+    ScheduleTaskEntity modelToEntity(ScheduleTaskResp model);
 }

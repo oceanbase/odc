@@ -15,25 +15,44 @@
  */
 package com.oceanbase.odc.service.schedule.model;
 
+import java.util.Date;
+
+import com.oceanbase.odc.core.shared.constant.TaskStatus;
+
+import lombok.Data;
+import lombok.NonNull;
+
 /**
  * @Author：tinker
- * @Date: 2022/11/16 15:36
+ * @Date: 2023/5/24 15:35
  * @Descripition:
  */
-public enum ScheduleStatus {
 
-    CREATING,
-    APPROVING,
+@Data
+public class ScheduleTaskResp {
 
-    APPROVAL_EXPIRED,
+    private Long id;
 
-    REJECTED,
-    PAUSE,
-    ENABLED,
-    TERMINATION,
-    TERMINATED,
+    private String jobName;
 
-    COMPLETED,
-    EXECUTION_FAILED
+    private String jobGroup;
+
+    private TaskStatus status;
+
+    private double progressPercentage;
+
+    private String executionDetails;
+
+    private String resultJson;
+
+    private Date createTime;
+
+    private Date updateTime;
+
+    public static ScheduleTaskResp withId(@NonNull Long id) {
+        ScheduleTaskResp resp = new ScheduleTaskResp();
+        resp.setId(id);
+        return resp;
+    }
 
 }

@@ -470,12 +470,6 @@ public class ScheduleService {
         return ScheduleTaskResp.withId(taskId);
     }
 
-    public Page<ScheduleTaskResp> listTask(Pageable pageable, Long scheduleId) {
-        ScheduleEntity entity = nullSafeGetByIdWithCheckPermission(scheduleId);
-        Page<ScheduleTaskEntity> scheduleTaskEntities = scheduleTaskService.listTask(pageable, entity.getId());
-        return scheduleTaskEntities.map(scheduleTaskMapper::entityToModel);
-    }
-
     public void updateStatusById(Long id, ScheduleStatus status) {
         scheduleRepository.updateStatusById(id, status);
     }
