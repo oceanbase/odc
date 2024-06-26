@@ -77,6 +77,7 @@ import lombok.NonNull;
 public class FlowInstanceDetailResp {
 
     private Long id;
+    private Long organizationId;
     private TaskType type;
     private List<FlowSubType> subTypes;
     private Integer maxRiskLevel;
@@ -119,6 +120,7 @@ public class FlowInstanceDetailResp {
             resp.setCreateTime(entity.getCreateTime());
             resp.setStatus(entity.getStatus());
             resp.setProjectId(entity.getProjectId());
+            resp.setOrganizationId(entity.getOrganizationId());
             Set<UserEntity> candidates = getCandidatesByFlowInstanceId.apply(entity.getId());
             if (candidates != null) {
                 resp.setCandidateApprovers(candidates.stream().map(InnerUser::new).collect(Collectors.toSet()));
@@ -163,6 +165,7 @@ public class FlowInstanceDetailResp {
             if (this.ifRollbackable != null) {
                 resp.setRollbackable(ifRollbackable.test(flowInstance.getId()));
             }
+            resp.setOrganizationId(flowInstance.getOrganizationId());
             resp.setCreator(InnerUser.of(flowInstance.getCreatorId(), getUserById, getRolesByUserId));
             resp.setCompleteTime(flowInstance.getUpdateTime());
             resp.setCreateTime(flowInstance.getCreateTime());
