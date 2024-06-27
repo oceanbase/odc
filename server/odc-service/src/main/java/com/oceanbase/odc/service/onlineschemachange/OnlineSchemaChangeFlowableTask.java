@@ -272,7 +272,7 @@ public class OnlineSchemaChangeFlowableTask extends BaseODCFlowTaskDelegate<Void
         ScheduleEntity scheduleEntity = new ScheduleEntity();
         scheduleEntity.setDataSourceId(connectionConfig.id());
         scheduleEntity.setDatabaseName(schema);
-        scheduleEntity.setScheduleType(ScheduleType.ONLINE_SCHEMA_CHANGE_COMPLETE);
+        scheduleEntity.setType(ScheduleType.ONLINE_SCHEMA_CHANGE_COMPLETE);
         scheduleEntity.setStatus(ScheduleStatus.ENABLED);
         scheduleEntity.setAllowConcurrent(false);
         scheduleEntity.setCreatorId(creatorId);

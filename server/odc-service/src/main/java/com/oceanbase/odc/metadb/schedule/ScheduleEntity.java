@@ -74,7 +74,7 @@ public class ScheduleEntity implements Serializable {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "job_type", nullable = false)
-    private ScheduleType scheduleType;
+    private ScheduleType type;
     @Column(name = "job_parameters_json", nullable = false)
     private String jobParametersJson;
     @Column(name = "trigger_config_json", nullable = false)

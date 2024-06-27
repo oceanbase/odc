@@ -50,6 +50,7 @@ import com.oceanbase.odc.metadb.schedule.ScheduleEntity;
 import com.oceanbase.odc.metadb.schedule.ScheduleRepository;
 import com.oceanbase.odc.service.collaboration.project.ProjectService;
 import com.oceanbase.odc.service.connection.database.DatabaseService;
+import com.oceanbase.odc.service.flow.processor.EnablePreprocess;
 import com.oceanbase.odc.service.iam.OrganizationService;
 import com.oceanbase.odc.service.iam.ProjectPermissionValidator;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
@@ -60,23 +61,21 @@ import com.oceanbase.odc.service.quartz.model.MisfireStrategy;
 import com.oceanbase.odc.service.regulation.approval.ApprovalFlowConfigSelector;
 import com.oceanbase.odc.service.schedule.factory.ScheduleResponseMapperFactory;
 import com.oceanbase.odc.service.schedule.model.CreateQuartzJobReq;
-import com.oceanbase.odc.service.schedule.model.CreateScheduleReq;
 import com.oceanbase.odc.service.schedule.model.OperationType;
 import com.oceanbase.odc.service.schedule.model.QuartzJobChangeReq;
 import com.oceanbase.odc.service.schedule.model.QuartzKeyGenerator;
 import com.oceanbase.odc.service.schedule.model.QueryScheduleParams;
 import com.oceanbase.odc.service.schedule.model.Schedule;
 import com.oceanbase.odc.service.schedule.model.ScheduleChangeLog;
-import com.oceanbase.odc.service.schedule.model.ScheduleChangeReq;
+import com.oceanbase.odc.service.schedule.model.ScheduleChangeParams;
 import com.oceanbase.odc.service.schedule.model.ScheduleDetailResp;
-import com.oceanbase.odc.service.schedule.model.ScheduleListResp;
 import com.oceanbase.odc.service.schedule.model.ScheduleMapper;
+import com.oceanbase.odc.service.schedule.model.ScheduleOverview;
 import com.oceanbase.odc.service.schedule.model.ScheduleStatus;
 import com.oceanbase.odc.service.schedule.model.ScheduleTaskDetailResp;
-import com.oceanbase.odc.service.schedule.model.ScheduleTaskListResp;
+import com.oceanbase.odc.service.schedule.model.ScheduleTaskOverview;
 import com.oceanbase.odc.service.schedule.model.ScheduleType;
 import com.oceanbase.odc.service.schedule.model.TriggerConfig;
-import com.oceanbase.odc.service.schedule.model.UpdateScheduleReq;
 import com.oceanbase.odc.service.task.model.OdcTaskLogLevel;
 
 import lombok.extern.slf4j.Slf4j;
@@ -134,8 +133,9 @@ public class ScheduleService {
     private final ScheduleMapper scheduleMapper = ScheduleMapper.INSTANCE;
 
 
+    @EnablePreprocess
     @Transactional(rollbackFor = Exception.class)
-    public void changeSchedule(ScheduleChangeReq req) {
+    public void changeSchedule(ScheduleChangeParams req) {
 
         Schedule targetSchedule;
 
@@ -147,7 +147,7 @@ public class ScheduleService {
             entity.setDescription(req.getCreateScheduleReq().getDescription());
             entity.setJobParametersJson(JsonUtils.toJson(req.getCreateScheduleReq().getParameters()));
             entity.setTriggerConfigJson(JsonUtils.toJson(req.getCreateScheduleReq().getTriggerConfig()));
-            entity.setScheduleType(req.getCreateScheduleReq().getType());
+            entity.setType(req.getCreateScheduleReq().getType());
 
             entity.setMisfireStrategy(MisfireStrategy.MISFIRE_INSTRUCTION_DO_NOTHING);
             entity.setStatus(ScheduleStatus.CREATING);
@@ -157,7 +157,7 @@ public class ScheduleService {
             entity.setModifierId(authenticationFacade.currentUserId());
             entity.setDatabaseId(req.getCreateScheduleReq().getDatabaseId());
             entity.setDatabaseName(req.getCreateScheduleReq().getDatabaseName());
-            entity.setConnectionId(req.getCreateScheduleReq().getConnectionId());
+            entity.setDataSourceId(req.getCreateScheduleReq().getConnectionId());
 
             targetSchedule = scheduleMapper.entityToModel(scheduleRepository.save(entity));
             req.setScheduleId(targetSchedule.getId());
@@ -178,16 +178,17 @@ public class ScheduleService {
 
         // create change log for this request
         ScheduleChangeLog changeLog = scheduleChangeLogService.createChangeLog(
-                ScheduleChangeLog.build(targetSchedule.getId(), req.getOperationType(), targetSchedule.getParameters(),
+                ScheduleChangeLog.build(targetSchedule.getId(), req.getOperationType(),
+                        JsonUtils.toJson(targetSchedule.getParameters()),
                         req.getOperationType() == OperationType.UPDATE
                                 ? JsonUtils.toJson(req.getUpdateScheduleReq().getParameters())
-                                : targetSchedule.getParameters(),
+                                : null,
                         approvalFlowInstanceId));
         log.info("Create change log success,changLog={}", changeLog);
 
     }
 
-    public void executeChangeSchedule(ScheduleChangeReq req) {
+    public void executeChangeSchedule(ScheduleChangeParams req) {
         Schedule targetSchedule = nullSafeGetModelById(req.getScheduleId());
         // start to change schedule
         switch (req.getOperationType()) {
@@ -218,8 +219,8 @@ public class ScheduleService {
         QuartzJobChangeReq quartzJobReq = new QuartzJobChangeReq();
         quartzJobReq.setOperationType(req.getOperationType());
         quartzJobReq.setJobName(targetSchedule.getId().toString());
-        quartzJobReq.setJobGroup(targetSchedule.getScheduleType().name());
-        quartzJobReq.setTriggerConfig(JsonUtils.fromJson(targetSchedule.getTriggerConfigJson(), TriggerConfig.class));
+        quartzJobReq.setJobGroup(targetSchedule.getType().name());
+        quartzJobReq.setTriggerConfig(targetSchedule.getTriggerConfig());
         quartzJobService.changeQuartzJob(quartzJobReq);
 
     }
@@ -241,12 +242,14 @@ public class ScheduleService {
         quartzJobService.rescheduleJob(scheduleTrigger.getKey(), scheduleTrigger);
     }
 
+    @Deprecated
     @Transactional(rollbackFor = Exception.class)
     public void enable(ScheduleEntity scheduleConfig) throws SchedulerException, ClassNotFoundException {
         quartzJobService.createJob(buildCreateJobReq(scheduleConfig));
         scheduleRepository.updateStatusById(scheduleConfig.getId(), ScheduleStatus.ENABLED);
     }
 
+    @Deprecated
     @Transactional(rollbackFor = Exception.class)
     public void innerEnable(Long scheduleId, Map<String, Object> triggerDataMap)
             throws SchedulerException {
@@ -255,6 +258,7 @@ public class ScheduleService {
         scheduleRepository.updateStatusById(scheduleConfig.getId(), ScheduleStatus.ENABLED);
     }
 
+    @Deprecated
     @Transactional(rollbackFor = Exception.class)
     public void pause(ScheduleEntity scheduleConfig) throws SchedulerException {
         Trigger scheduleTrigger = nullSafeGetScheduleTrigger(scheduleConfig);
@@ -262,6 +266,7 @@ public class ScheduleService {
         scheduleRepository.updateStatusById(scheduleConfig.getId(), ScheduleStatus.PAUSE);
     }
 
+    @Deprecated
     @Transactional(rollbackFor = Exception.class)
     public void resume(ScheduleEntity scheduleConfig) throws SchedulerException {
         Trigger scheduleTrigger = getScheduleTrigger(scheduleConfig);
@@ -273,33 +278,13 @@ public class ScheduleService {
         scheduleRepository.updateStatusById(scheduleConfig.getId(), ScheduleStatus.ENABLED);
     }
 
+    @Deprecated
     @Transactional(rollbackFor = Exception.class)
     public void terminate(ScheduleEntity scheduleConfig) throws SchedulerException {
         JobKey jobKey = QuartzKeyGenerator.generateJobKey(scheduleConfig);
         quartzJobService.deleteJob(jobKey);
         scheduleRepository.updateStatusById(scheduleConfig.getId(), ScheduleStatus.TERMINATED);
     }
-
-    public void create(CreateScheduleReq req) {
-        changeSchedule(ScheduleChangeReq.with(req));
-    }
-
-    public void pause(Long scheduleId) {
-        changeSchedule(ScheduleChangeReq.with(scheduleId, OperationType.TERMINATE));
-    }
-
-    public void update(Long scheduleId, UpdateScheduleReq req) {
-        changeSchedule(ScheduleChangeReq.with(scheduleId, req));
-    }
-
-    public void resume(Long scheduleId) {
-        changeSchedule(ScheduleChangeReq.with(scheduleId, OperationType.TERMINATE));
-    }
-
-    public void terminate(Long scheduleId) {
-        changeSchedule(ScheduleChangeReq.with(scheduleId, OperationType.TERMINATE));
-    }
-
 
     /**
      * The method detects whether the database required for scheduled task operation exists. It returns
@@ -316,7 +301,7 @@ public class ScheduleService {
                     log.info(
                             "The project or database for scheduled task operation does not exist, and the schedule is being terminated, scheduleId={}",
                             scheduleId);
-                    terminate(scheduleId);
+                    terminate(entity);
                 } catch (Exception e) {
                     log.warn("Terminate schedule failed,scheduleId={}", scheduleId);
                 }
@@ -362,18 +347,9 @@ public class ScheduleService {
         scheduleTaskService.start(scheduleTaskId);
     }
 
-    public void dataArchiveDelete(Long scheduleId, Long taskId) {
-        ScheduleEntity scheduleEntity = nullSafeGetById(scheduleId);
-        if (scheduleEntity.getScheduleType() != ScheduleType.DATA_ARCHIVE) {
-            throw new UnsupportedException();
-        }
-
-
-    }
-
     public void rollbackTask(Long scheduleId, Long scheduleTaskId) {
         Schedule schedule = nullSafeGetByIdWithCheckPermission(scheduleId, true);
-        if (schedule.getScheduleType() != ScheduleType.DATA_ARCHIVE) {
+        if (schedule.getType() != ScheduleType.DATA_ARCHIVE) {
             throw new UnsupportedException();
         }
         scheduleTaskService.rollbackTask(scheduleTaskId);
@@ -443,7 +419,8 @@ public class ScheduleService {
         return scheduleResponseMapperFactory.generateScheduleDetailResp(schedule);
     }
 
-    public Page<ScheduleListResp> getScheduleListResp(@NotNull Pageable pageable, @NotNull QueryScheduleParams params) {
+    public Page<ScheduleOverview> listScheduleOverview(@NotNull Pageable pageable,
+            @NotNull QueryScheduleParams params) {
 
         if (authenticationFacade.currentOrganization().getType() == OrganizationType.TEAM) {
             Set<Long> projectIds = params.getProjectId() == null
@@ -457,13 +434,14 @@ public class ScheduleService {
 
         params.setOrganizationId(authenticationFacade.currentOrganizationId());
         Page<ScheduleEntity> returnValue = scheduleRepository.find(pageable, params);
-        List<ScheduleListResp> res = scheduleResponseMapperFactory.generateListResponse(returnValue.getContent());
+        List<ScheduleOverview> res =
+                scheduleResponseMapperFactory.generateScheduleOverviewList(returnValue.getContent());
 
         return returnValue.isEmpty() ? Page.empty()
                 : new PageImpl<>(res, returnValue.getPageable(), returnValue.getTotalPages());
     }
 
-    public Page<ScheduleTaskListResp> listScheduleTask(@NotNull Pageable pageable, @NotNull Long scheduleId) {
+    public Page<ScheduleTaskOverview> listScheduleTaskOverview(@NotNull Pageable pageable, @NotNull Long scheduleId) {
         nullSafeGetByIdWithCheckPermission(scheduleId, false);
         return scheduleTaskService.getScheduleTaskListResp(pageable, scheduleId);
     }
@@ -532,7 +510,7 @@ public class ScheduleService {
         CreateQuartzJobReq createQuartzJobReq = new CreateQuartzJobReq();
         createQuartzJobReq.setJobKey(QuartzKeyGenerator.generateJobKey(schedule));
         createQuartzJobReq.setTriggerConfig(JsonUtils.fromJson(schedule.getTriggerConfigJson(), TriggerConfig.class));
-        if (schedule.getScheduleType() == ScheduleType.ONLINE_SCHEMA_CHANGE_COMPLETE) {
+        if (schedule.getType() == ScheduleType.ONLINE_SCHEMA_CHANGE_COMPLETE) {
             createQuartzJobReq.getJobDataMap().putAll(JsonUtils.fromJson(schedule.getJobParametersJson(), Map.class));
         } else {
             createQuartzJobReq.getJobDataMap().putAll(BeanMap.create(schedule));

@@ -259,7 +259,7 @@ public class PartitionPlanScheduleService {
         scheduleEntity.setStatus(ScheduleStatus.ENABLED);
         scheduleEntity.setAllowConcurrent(false);
         scheduleEntity.setMisfireStrategy(MisfireStrategy.MISFIRE_INSTRUCTION_DO_NOTHING);
-        scheduleEntity.setScheduleType(ScheduleType.PARTITION_PLAN);
+        scheduleEntity.setType(ScheduleType.PARTITION_PLAN);
         scheduleEntity.setTriggerConfigJson(JsonUtils.toJson(triggerConfig));
         scheduleEntity.setProjectId(database.getProject().getId());
         scheduleEntity.setDataSourceId(database.getDataSource().getId());

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 OceanBase.
+ * Copyright (c) 2023 OceanBase.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.oceanbase.odc.service.schedule.processor;
 
 import java.util.HashMap;
@@ -21,58 +20,60 @@ import java.util.List;
 import java.util.Map;
 
 import org.aspectj.lang.JoinPoint;
+import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.annotation.Before;
 import org.aspectj.lang.annotation.Pointcut;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
 import com.oceanbase.odc.core.shared.exception.UnsupportedException;
-import com.oceanbase.odc.service.collaboration.project.ProjectService;
 import com.oceanbase.odc.service.connection.database.DatabaseService;
 import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.dlm.model.DataArchiveParameters;
 import com.oceanbase.odc.service.dlm.model.DataDeleteParameters;
-import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.schedule.ScheduleService;
 import com.oceanbase.odc.service.schedule.model.CreateScheduleReq;
 import com.oceanbase.odc.service.schedule.model.OperationType;
-import com.oceanbase.odc.service.schedule.model.ScheduleChangeReq;
+import com.oceanbase.odc.service.schedule.model.ScheduleChangeParams;
 import com.oceanbase.odc.service.schedule.model.ScheduleType;
+
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * @Author：tinker
  * @Date: 2024/6/25 17:01
  * @Descripition:
  */
+
+@Slf4j
+@Aspect
+@Component
 public class CreateScheduleAspect implements InitializingBean {
     @Autowired
     private DatabaseService databaseService;
     @Autowired
-    private AuthenticationFacade authenticationFacade;
-    @Autowired
     private ScheduleService scheduleService;
     @Autowired
     private List<Preprocessor> preprocessors;
-    @Autowired
-    private ProjectService projectService;
 
     private final Map<ScheduleType, Preprocessor> type2Processor = new HashMap<>();
 
 
-    @Pointcut("@annotation(com.oceanbase.odc.service.flow.processor.EnablePreprocess) && args(com.oceanbase.odc.service.schedule.model.ScheduleChangeReq)")
+    @Pointcut("@annotation(com.oceanbase.odc.service.flow.processor.EnablePreprocess) && args(com.oceanbase.odc.service.schedule.model.ScheduleChangeParams)")
     public void processBeforeChangeSchedule() {}
 
 
     @Before("processBeforeChangeSchedule()")
     public void createPreprocess(JoinPoint point) throws Throwable {
-        ScheduleChangeReq req = (ScheduleChangeReq) point.getArgs()[0];
+        ScheduleChangeParams req = (ScheduleChangeParams) point.getArgs()[0];
 
         ScheduleType type;
         if (req.getOperationType() == OperationType.CREATE) {
             type = req.getCreateScheduleReq().getType();
             adaptCreateScheduleReq(req.getCreateScheduleReq());
         } else {
-            type = scheduleService.nullSafeGetModelById(req.getScheduleId()).getScheduleType();
+            type = scheduleService.nullSafeGetModelById(req.getScheduleId()).getType();
         }
         if (type2Processor.containsKey(type)) {
             type2Processor.get(type).process(req);

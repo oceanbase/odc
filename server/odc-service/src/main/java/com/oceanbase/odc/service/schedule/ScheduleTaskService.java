@@ -61,9 +61,9 @@ import com.oceanbase.odc.service.schedule.model.DataArchiveRollbackParameters;
 import com.oceanbase.odc.service.schedule.model.QuartzKeyGenerator;
 import com.oceanbase.odc.service.schedule.model.ScheduleTask;
 import com.oceanbase.odc.service.schedule.model.ScheduleTaskDetailResp;
-import com.oceanbase.odc.service.schedule.model.ScheduleTaskListResp;
-import com.oceanbase.odc.service.schedule.model.ScheduleTaskListRespMapper;
 import com.oceanbase.odc.service.schedule.model.ScheduleTaskMapper;
+import com.oceanbase.odc.service.schedule.model.ScheduleTaskOverview;
+import com.oceanbase.odc.service.schedule.model.ScheduleTaskOverviewMapper;
 import com.oceanbase.odc.service.schedule.model.ScheduleTaskType;
 import com.oceanbase.odc.service.schedule.model.TriggerConfig;
 import com.oceanbase.odc.service.schedule.model.TriggerStrategy;
@@ -222,8 +222,8 @@ public class ScheduleTaskService {
         return scheduleTaskRepository.findAll(specification, pageable).map(scheduleTaskMapper::entityToModel);
     }
 
-    public Page<ScheduleTaskListResp> getScheduleTaskListResp(Pageable pageable, Long scheduleId) {
-        return list(pageable, scheduleId).map(ScheduleTaskListRespMapper::map);
+    public Page<ScheduleTaskOverview> getScheduleTaskListResp(Pageable pageable, Long scheduleId) {
+        return list(pageable, scheduleId).map(ScheduleTaskOverviewMapper::map);
 
     }
 

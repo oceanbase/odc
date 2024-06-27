@@ -17,7 +17,6 @@ package com.oceanbase.odc.service.dlm.model;
 
 import java.util.List;
 
-import com.oceanbase.odc.service.schedule.model.ScheduleTaskParameters;
 import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.schedule.model.ScheduleTaskParameters;
 

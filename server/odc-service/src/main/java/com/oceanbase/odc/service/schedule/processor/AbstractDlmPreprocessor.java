@@ -33,7 +33,7 @@ import com.oceanbase.odc.service.dlm.model.DataArchiveTableConfig;
 import com.oceanbase.odc.service.dlm.model.OffsetConfig;
 import com.oceanbase.odc.service.dlm.model.RateLimitConfiguration;
 import com.oceanbase.odc.service.dlm.utils.DataArchiveConditionUtil;
-import com.oceanbase.odc.service.schedule.model.ScheduleChangeReq;
+import com.oceanbase.odc.service.schedule.model.ScheduleChangeParams;
 import com.oceanbase.tools.dbbrowser.util.MySQLSqlBuilder;
 import com.oceanbase.tools.dbbrowser.util.OracleSqlBuilder;
 import com.oceanbase.tools.dbbrowser.util.SqlBuilder;
@@ -50,7 +50,7 @@ import lombok.extern.slf4j.Slf4j;
 public class AbstractDlmPreprocessor implements Preprocessor {
 
     @Override
-    public void process(ScheduleChangeReq req) {}
+    public void process(ScheduleChangeParams req) {}
 
     public void checkTableAndCondition(ConnectionSession connectionSession, Database sourceDb,
             List<DataArchiveTableConfig> tables,

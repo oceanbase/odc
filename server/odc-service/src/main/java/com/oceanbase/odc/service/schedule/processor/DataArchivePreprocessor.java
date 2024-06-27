@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 OceanBase.
+ * Copyright (c) 2023 OceanBase.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,7 +33,7 @@ import com.oceanbase.odc.service.dlm.model.DataArchiveParameters;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.plugin.ConnectionPluginUtil;
 import com.oceanbase.odc.service.schedule.model.OperationType;
-import com.oceanbase.odc.service.schedule.model.ScheduleChangeReq;
+import com.oceanbase.odc.service.schedule.model.ScheduleChangeParams;
 import com.oceanbase.odc.service.schedule.model.ScheduleType;
 import com.oceanbase.odc.service.session.factory.DefaultConnectSessionFactory;
 
@@ -60,7 +60,7 @@ public class DataArchivePreprocessor extends AbstractDlmPreprocessor {
     private DLMConfiguration dlmConfiguration;
 
     @Override
-    public void process(ScheduleChangeReq req) {
+    public void process(ScheduleChangeParams req) {
         if (req.getOperationType() == OperationType.CREATE || req.getOperationType() == OperationType.UPDATE) {
             DataArchiveParameters parameters = req.getOperationType() == OperationType.CREATE
                     ? (DataArchiveParameters) req.getCreateScheduleReq().getParameters()

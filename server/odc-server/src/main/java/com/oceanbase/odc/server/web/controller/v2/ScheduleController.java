@@ -38,8 +38,10 @@ import com.oceanbase.odc.service.dlm.DlmLimiterService;
 import com.oceanbase.odc.service.dlm.model.RateLimitConfiguration;
 import com.oceanbase.odc.service.schedule.ScheduleService;
 import com.oceanbase.odc.service.schedule.model.CreateScheduleReq;
+import com.oceanbase.odc.service.schedule.model.OperationType;
 import com.oceanbase.odc.service.schedule.model.QueryScheduleParams;
 import com.oceanbase.odc.service.schedule.model.ScheduleChangeLog;
+import com.oceanbase.odc.service.schedule.model.ScheduleChangeParams;
 import com.oceanbase.odc.service.schedule.model.ScheduleDetailResp;
 import com.oceanbase.odc.service.schedule.model.ScheduleOverview;
 import com.oceanbase.odc.service.schedule.model.ScheduleStatus;
@@ -77,7 +79,7 @@ public class ScheduleController {
     @RequestMapping(value = "/schedules/{id:[\\d]+}/changes/{scheduleChangeLogId:[\\d]+}", method = RequestMethod.GET)
     public SuccessResponse<ScheduleChangeLog> getChangeLog(@PathVariable Long id,
             @PathVariable Long scheduleChangeLogId) {
-        throw new UnsupportedException();
+        return Responses.success(scheduleService.getChangeLog(id, scheduleChangeLogId));
     }
 
     // schedule task
@@ -91,22 +93,23 @@ public class ScheduleController {
     @RequestMapping(value = "/schedules/{scheduleId:[\\d]+}/tasks/{taskId:[\\d]+}/executions/latest/stop",
             method = RequestMethod.POST)
     public SuccessResponse<Boolean> stopTask(@PathVariable Long scheduleId, @PathVariable Long taskId) {
-        throw new UnsupportedException();
-
+        scheduleService.stopTask(scheduleId, taskId);
+        return Responses.success(Boolean.TRUE);
     }
 
     @ApiOperation(value = "StartTask", notes = "启动任务")
     @RequestMapping(value = "/schedules/{scheduleId:[\\d]+}/tasks/{taskId:[\\d]+}/start",
             method = RequestMethod.POST)
     public SuccessResponse<Boolean> startTask(@PathVariable Long scheduleId, @PathVariable Long taskId) {
-        throw new UnsupportedException();
-
+        scheduleService.startTask(scheduleId, taskId);
+        return Responses.success(Boolean.TRUE);
     }
 
     @RequestMapping(value = "/schedules/{scheduleId:[\\d]+}/tasks/{taskId:[\\d]+}/rollback",
             method = RequestMethod.POST)
     public SuccessResponse<Boolean> rollbackTask(@PathVariable Long scheduleId, @PathVariable Long taskId) {
-        throw new UnsupportedException();
+        scheduleService.rollbackTask(scheduleId, taskId);
+        return Responses.success(Boolean.TRUE);
 
     }
 
@@ -114,53 +117,53 @@ public class ScheduleController {
             method = RequestMethod.GET)
     public SuccessResponse<String> getTaskLog(@PathVariable Long scheduleId, @PathVariable Long taskId,
             @RequestParam OdcTaskLogLevel logType) {
-        throw new UnsupportedException();
+        return Responses.success(scheduleService.getLog(scheduleId, taskId, logType));
     }
 
 
     @RequestMapping(value = "/schedules/{scheduleId:[\\d]+}/tasks/{taskId:[\\d]+}/", method = RequestMethod.GET)
     public SuccessResponse<ScheduleTaskDetailResp> detailScheduleTask(@PathVariable Long scheduleId,
             @PathVariable Long taskId) {
-        throw new UnsupportedException();
+        return Responses.success(scheduleService.detailScheduleTask(scheduleId, taskId));
     }
 
     @RequestMapping(value = "/schedules/{scheduleId:[\\d]+}/tasks", method = RequestMethod.GET)
     public PaginatedResponse<ScheduleTaskOverview> listTask(
             @PageableDefault(size = Integer.MAX_VALUE, sort = {"id"}, direction = Direction.DESC) Pageable pageable,
             @PathVariable Long scheduleId) {
-        throw new UnsupportedException();
+        return Responses.paginated(scheduleService.listScheduleTaskOverview(pageable, scheduleId));
     }
 
     // schedule
 
     @RequestMapping(value = "/schedules/{id:[\\d]+}/terminate", method = RequestMethod.POST)
     public SuccessResponse<Boolean> terminateSchedule(@PathVariable("id") Long id) {
-        throw new UnsupportedException();
-
+        scheduleService.changeSchedule(ScheduleChangeParams.with(id, OperationType.TERMINATE));
+        return Responses.success(Boolean.TRUE);
     }
 
     @RequestMapping(value = "/schedules/{id:[\\d]+}/pause", method = RequestMethod.POST)
     public SuccessResponse<Boolean> pauseSchedule(@PathVariable Long id) {
-        throw new UnsupportedException();
-
+        scheduleService.changeSchedule(ScheduleChangeParams.with(id, OperationType.PAUSE));
+        return Responses.success(Boolean.TRUE);
     }
 
     @RequestMapping(value = "/schedules/{id:[\\d]+}/resume", method = RequestMethod.POST)
     public SuccessResponse<Boolean> resumeSchedule(@PathVariable Long id) {
-        throw new UnsupportedException();
-
+        scheduleService.changeSchedule(ScheduleChangeParams.with(id, OperationType.RESUME));
+        return Responses.success(Boolean.TRUE);
     }
 
     @RequestMapping(value = "/schedules/{id:[\\d]+}", method = RequestMethod.PUT)
     public SuccessResponse<Boolean> updateSchedule(@PathVariable Long id, @RequestBody UpdateScheduleReq req) {
-        throw new UnsupportedException();
-
+        scheduleService.changeSchedule(ScheduleChangeParams.with(id, req));
+        return Responses.success(Boolean.TRUE);
     }
 
     @RequestMapping(value = "/schedules", method = RequestMethod.POST)
     public SuccessResponse<Boolean> createSchedule(@RequestBody CreateScheduleReq req) {
-        throw new UnsupportedException();
-
+        scheduleService.changeSchedule(ScheduleChangeParams.with(req));
+        return Responses.success(Boolean.TRUE);
     }
 
 
@@ -192,7 +195,8 @@ public class ScheduleController {
                 .creator(creator)
                 .projectId(projectId)
                 .build();
-        throw new UnsupportedException();
+
+        return Responses.paginated(scheduleService.listScheduleOverview(pageable, req));
 
     }
 

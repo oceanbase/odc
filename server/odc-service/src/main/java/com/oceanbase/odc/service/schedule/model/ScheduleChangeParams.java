@@ -15,8 +15,6 @@
  */
 package com.oceanbase.odc.service.schedule.model;
 
-import com.oceanbase.odc.service.schedule.flowtask.OperationType;
-
 import lombok.Data;
 
 /**

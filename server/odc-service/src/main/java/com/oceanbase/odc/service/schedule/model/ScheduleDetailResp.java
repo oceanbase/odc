@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 OceanBase.
+ * Copyright (c) 2023 OceanBase.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,6 @@ package com.oceanbase.odc.service.schedule.model;
 import java.util.Date;
 import java.util.List;
 
-import com.fasterxml.jackson.annotation.JsonRawValue;
 import com.oceanbase.odc.common.i18n.Internationalizable;
 import com.oceanbase.odc.service.common.model.InnerUser;
 import com.oceanbase.odc.service.quartz.model.MisfireStrategy;
@@ -57,9 +56,8 @@ public class ScheduleDetailResp {
 
     private List<Date> nextFireTimes;
 
-    @JsonRawValue
-    private String parameters;
-    @JsonRawValue
-    private String triggerConfig;
+    private ScheduleTaskParameters parameters;
+
+    private TriggerConfig triggerConfig;
 
 }

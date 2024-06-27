@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 OceanBase.
+ * Copyright (c) 2023 OceanBase.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,7 +15,7 @@
  */
 package com.oceanbase.odc.service.schedule.processor;
 
-import com.oceanbase.odc.service.schedule.model.ScheduleChangeReq;
+import com.oceanbase.odc.service.schedule.model.ScheduleChangeParams;
 
 /**
  * @Author：tinker
@@ -24,6 +24,6 @@ import com.oceanbase.odc.service.schedule.model.ScheduleChangeReq;
  */
 public interface Preprocessor {
 
-    void process(ScheduleChangeReq req);
+    void process(ScheduleChangeParams req);
 
 }

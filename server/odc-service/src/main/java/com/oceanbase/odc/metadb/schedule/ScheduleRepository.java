@@ -55,7 +55,7 @@ public interface ScheduleRepository extends OdcJpaRepository<ScheduleEntity, Lon
     default Page<ScheduleEntity> find(@NotNull Pageable pageable, @NotNull QueryScheduleParams params) {
         Specification<ScheduleEntity> specification = Specification
                 .where(OdcJpaRepository.between(ScheduleEntity_.createTime, params.getStartTime(), params.getEndTime()))
-                .and(OdcJpaRepository.eq(ScheduleEntity_.scheduleType, params.getType()))
+                .and(OdcJpaRepository.eq(ScheduleEntity_.type, params.getType()))
                 .and(OdcJpaRepository.in(ScheduleEntity_.projectId, params.getProjectIds()))
                 .and(OdcJpaRepository.eq(ScheduleEntity_.id, params.getId()))
                 .and(OdcJpaRepository.in(ScheduleEntity_.status, params.getStatuses()))

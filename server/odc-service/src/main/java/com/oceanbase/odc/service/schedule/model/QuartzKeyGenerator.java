@@ -29,11 +29,11 @@ import com.oceanbase.odc.metadb.schedule.ScheduleEntity;
 public class QuartzKeyGenerator {
 
     public static TriggerKey generateTriggerKey(ScheduleEntity schedule) {
-        return new TriggerKey(schedule.getId().toString(), schedule.getScheduleType().name());
+        return new TriggerKey(schedule.getId().toString(), schedule.getType().name());
     }
 
     public static JobKey generateJobKey(ScheduleEntity schedule) {
-        return new JobKey(schedule.getId().toString(), schedule.getScheduleType().name());
+        return new JobKey(schedule.getId().toString(), schedule.getType().name());
     }
 
     public static TriggerKey generateTriggerKey(Long scheduleId, JobType jobType) {

@@ -134,8 +134,8 @@ public class OscService {
                 OnlineSchemaChangeScheduleTaskResult.class);
 
         PreConditions.validArgumentState(
-                scheduleEntity.get().getScheduleType() == ScheduleType.ONLINE_SCHEMA_CHANGE_COMPLETE,
-                ErrorCodes.BadArgument, new Object[] {scheduleEntity.get().getScheduleType()},
+                scheduleEntity.get().getType() == ScheduleType.ONLINE_SCHEMA_CHANGE_COMPLETE,
+                ErrorCodes.BadArgument, new Object[] {scheduleEntity.get().getType()},
                 "Task type is not " + TaskType.ONLINE_SCHEMA_CHANGE.name());
 
         SwapTableType swapTableType = oscParameters.getSwapTableType();
