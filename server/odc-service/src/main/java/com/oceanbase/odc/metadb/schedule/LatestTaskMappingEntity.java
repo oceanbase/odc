@@ -15,31 +15,25 @@
  */
 package com.oceanbase.odc.metadb.schedule;
 
-import java.util.Date;
-
 import javax.persistence.Column;
 import javax.persistence.Entity;
-import javax.persistence.EnumType;
-import javax.persistence.Enumerated;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
-import com.oceanbase.odc.service.schedule.flowtask.OperationType;
-import com.oceanbase.odc.service.schedule.model.ScheduleChangeStatus;
-
 import lombok.Data;
 
 /**
  * @Author：tinker
- * @Date: 2024/5/28 15:10
+ * @Date: 2024/6/10 17:51
  * @Descripition:
  */
+
 @Entity
 @Data
-@Table(name = "schedule_changelog")
-public class ScheduleChangeLogEntity {
+@Table(name = "schedule_latest_task_mapping")
+public class LatestTaskMappingEntity {
 
     @Id
     @Column(name = "id", nullable = false)
@@ -49,27 +43,6 @@ public class ScheduleChangeLogEntity {
     @Column(name = "schedule_id", nullable = false)
     private Long scheduleId;
 
-    @Column(name = "flow_instance_id")
-    private Long flowInstanceId;
-
-    @Column(name = "previous_parameters")
-    private String previousParameters;
-
-    @Column(name = "new_parameters")
-    private String newParameter;
-
-    @Enumerated(EnumType.STRING)
-    @Column(name = "status", nullable = false)
-    private ScheduleChangeStatus status;
-
-    @Enumerated(EnumType.STRING)
-    @Column(name = "type", nullable = false)
-    private OperationType type;
-
-    @Column(name = "create_time", insertable = false, updatable = false)
-    private Date createTime;
-
-    @Column(name = "update_time", insertable = false, updatable = false)
-    private Date updateTime;
-
+    @Column(name = "latest_schedule_task_id", nullable = false)
+    private Long latestScheduleTaskId;
 }

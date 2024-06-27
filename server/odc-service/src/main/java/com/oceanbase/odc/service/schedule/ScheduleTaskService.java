@@ -44,7 +44,7 @@ import com.oceanbase.odc.metadb.schedule.ScheduleTaskSpecs;
 import com.oceanbase.odc.service.dlm.DLMService;
 import com.oceanbase.odc.service.quartz.QuartzJobService;
 import com.oceanbase.odc.service.quartz.util.ScheduleTaskUtils;
-import com.oceanbase.odc.service.schedule.model.JobType;
+import com.oceanbase.odc.service.schedule.model.ScheduleTask;
 import com.oceanbase.odc.service.schedule.model.ScheduleTaskMapper;
 import com.oceanbase.odc.service.schedule.model.ScheduleTaskResp;
 import com.oceanbase.odc.service.task.model.OdcTaskLogLevel;
@@ -78,20 +78,8 @@ public class ScheduleTaskService {
 
     private static final String LOG_PATH_PATTERN = "%s/scheduleTask/%s-%s/%s/log.%s";
 
-    public ScheduleTaskResp detail(Long id) {
-        ScheduleTaskEntity entity = nullSafeGetById(id);
-        ScheduleTaskResp scheduleTaskResp = scheduleTaskMapper.entityToModel(entity);
-        switch (JobType.valueOf(entity.getJobGroup())) {
-            case DATA_ARCHIVE:
-            case DATA_ARCHIVE_ROLLBACK:
-            case DATA_ARCHIVE_DELETE:
-            case DATA_DELETE: {
-                scheduleTaskResp.setExecutionDetails(dlmService.getExecutionDetailByScheduleTaskId(id));
-            }
-            default:
-                break;
-        }
-        return scheduleTaskResp;
+    public ScheduleTask detail(Long id) {
+        return scheduleTaskMapper.entityToModel(nullSafeGetById(id));
     }
 
     public ScheduleTaskEntity create(ScheduleTaskEntity taskEntity) {

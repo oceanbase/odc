@@ -32,7 +32,7 @@ public class Schedule {
 
     private Long id;
 
-    private Long connectionId;
+    private Long dataSourceId;
 
     private Long databaseId;
 
@@ -48,11 +48,11 @@ public class Schedule {
 
     private MisfireStrategy misfireStrategy = MisfireStrategy.MISFIRE_INSTRUCTION_DO_NOTHING;
 
-    private ScheduleType scheduleType;
+    private ScheduleType type;
 
-    private String parameters;
+    private ScheduleTaskParameters parameters;
 
-    private String triggerConfigJson;
+    private TriggerConfig triggerConfig;
 
     private Long creatorId;
 

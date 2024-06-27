@@ -13,21 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.metadb.schedule;
-
-import java.util.List;
-import java.util.Set;
-
-import com.oceanbase.odc.config.jpa.OdcJpaRepository;
+package com.oceanbase.odc.service.schedule.model;
 
 /**
  * @Author：tinker
- * @Date: 2024/6/10 18:58
+ * @Date: 2024/6/10 17:28
  * @Descripition:
  */
-public interface LatestScheduleTaskLinkRepository extends OdcJpaRepository<LatestScheduleTaskLinkEntity, Long> {
+public interface ScheduleOverviewAttributes {
 
-    Long getScheduleTaskIdByScheduleId(Long scheduleId);
 
-    List<LatestScheduleTaskLinkEntity> findByScheduleIdIn(Set<Long> scheduleIds);
 }

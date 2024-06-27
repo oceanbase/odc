@@ -41,10 +41,10 @@ import com.oceanbase.odc.service.schedule.model.CreateScheduleReq;
 import com.oceanbase.odc.service.schedule.model.QueryScheduleParams;
 import com.oceanbase.odc.service.schedule.model.ScheduleChangeLog;
 import com.oceanbase.odc.service.schedule.model.ScheduleDetailResp;
-import com.oceanbase.odc.service.schedule.model.ScheduleListResp;
+import com.oceanbase.odc.service.schedule.model.ScheduleOverview;
 import com.oceanbase.odc.service.schedule.model.ScheduleStatus;
 import com.oceanbase.odc.service.schedule.model.ScheduleTaskDetailResp;
-import com.oceanbase.odc.service.schedule.model.ScheduleTaskListResp;
+import com.oceanbase.odc.service.schedule.model.ScheduleTaskOverview;
 import com.oceanbase.odc.service.schedule.model.ScheduleType;
 import com.oceanbase.odc.service.schedule.model.UpdateScheduleReq;
 import com.oceanbase.odc.service.task.model.OdcTaskLogLevel;
@@ -96,14 +96,14 @@ public class ScheduleController {
     }
 
     @ApiOperation(value = "StartTask", notes = "启动任务")
-    @RequestMapping(value = "/schedules/{scheduleId:[\\d]+}/tasks/{taskId:[\\d]+}/executions/latest/start",
+    @RequestMapping(value = "/schedules/{scheduleId:[\\d]+}/tasks/{taskId:[\\d]+}/start",
             method = RequestMethod.POST)
     public SuccessResponse<Boolean> startTask(@PathVariable Long scheduleId, @PathVariable Long taskId) {
         throw new UnsupportedException();
 
     }
 
-    @RequestMapping(value = "/schedules/{scheduleId:[\\d]+}/tasks/{taskId:[\\d]+}/executions/latest/rollback",
+    @RequestMapping(value = "/schedules/{scheduleId:[\\d]+}/tasks/{taskId:[\\d]+}/rollback",
             method = RequestMethod.POST)
     public SuccessResponse<Boolean> rollbackTask(@PathVariable Long scheduleId, @PathVariable Long taskId) {
         throw new UnsupportedException();
@@ -125,7 +125,7 @@ public class ScheduleController {
     }
 
     @RequestMapping(value = "/schedules/{scheduleId:[\\d]+}/tasks", method = RequestMethod.GET)
-    public PaginatedResponse<ScheduleTaskListResp> listTask(
+    public PaginatedResponse<ScheduleTaskOverview> listTask(
             @PageableDefault(size = Integer.MAX_VALUE, sort = {"id"}, direction = Direction.DESC) Pageable pageable,
             @PathVariable Long scheduleId) {
         throw new UnsupportedException();
@@ -165,9 +165,9 @@ public class ScheduleController {
 
 
     @RequestMapping(value = "/schedules", method = RequestMethod.GET)
-    public PaginatedResponse<ScheduleListResp> list(
+    public PaginatedResponse<ScheduleOverview> list(
             @PageableDefault(size = Integer.MAX_VALUE, sort = {"id"}, direction = Direction.DESC) Pageable pageable,
-            @RequestParam(required = false, name = "connectionId") List<Long> connectionIds,
+            @RequestParam(required = false, name = "dataSourceId") List<Long> datasourceIds,
             @RequestParam(required = false, name = "databaseName") String databaseName,
             @RequestParam(required = false, name = "tenantId") String tenantId,
             @RequestParam(required = false, name = "clusterId") String clusterId,
@@ -181,7 +181,7 @@ public class ScheduleController {
 
         QueryScheduleParams req = QueryScheduleParams.builder()
                 .id(id)
-                .connectionIds(connectionIds)
+                .dataSourceIds(datasourceIds)
                 .databaseName(databaseName)
                 .tenantId(tenantId)
                 .clusterId(clusterId)

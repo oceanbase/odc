@@ -26,7 +26,7 @@ import lombok.Data;
  */
 
 @Data
-public class ScheduleChangeReq {
+public class ScheduleChangeParams {
 
     private Long scheduleId;
 
@@ -36,22 +36,22 @@ public class ScheduleChangeReq {
 
     private UpdateScheduleReq updateScheduleReq;
 
-    public static ScheduleChangeReq with(Long id, OperationType type) {
-        ScheduleChangeReq req = new ScheduleChangeReq();
+    public static ScheduleChangeParams with(Long id, OperationType type) {
+        ScheduleChangeParams req = new ScheduleChangeParams();
         req.setScheduleId(id);
         req.setOperationType(type);
         return req;
     }
 
-    public static ScheduleChangeReq with(CreateScheduleReq createScheduleReq) {
-        ScheduleChangeReq req = new ScheduleChangeReq();
+    public static ScheduleChangeParams with(CreateScheduleReq createScheduleReq) {
+        ScheduleChangeParams req = new ScheduleChangeParams();
         req.setOperationType(OperationType.CREATE);
         req.setCreateScheduleReq(createScheduleReq);
         return req;
     }
 
-    public static ScheduleChangeReq with(Long id, UpdateScheduleReq updateScheduleReq) {
-        ScheduleChangeReq req = new ScheduleChangeReq();
+    public static ScheduleChangeParams with(Long id, UpdateScheduleReq updateScheduleReq) {
+        ScheduleChangeParams req = new ScheduleChangeParams();
         req.setScheduleId(id);
         req.setOperationType(OperationType.UPDATE);
         req.setUpdateScheduleReq(updateScheduleReq);

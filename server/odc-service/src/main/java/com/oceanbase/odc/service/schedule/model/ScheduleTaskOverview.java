@@ -15,12 +15,30 @@
  */
 package com.oceanbase.odc.service.schedule.model;
 
+import java.util.Date;
+
+import com.oceanbase.odc.core.shared.constant.TaskStatus;
+
+import lombok.Data;
+
 /**
  * @Author：tinker
- * @Date: 2024/6/10 17:28
+ * @Date: 2024/6/19 14:31
  * @Descripition:
  */
-public interface ScheduleListAttributes {
 
+
+@Data
+public class ScheduleTaskOverview {
+
+    private Long id;
+
+    private ScheduleTaskType type;
+
+    private TaskStatus status;
+
+    private Date createTime;
+
+    private Date updateTime;
 
 }

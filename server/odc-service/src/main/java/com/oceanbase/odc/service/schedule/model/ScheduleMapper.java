@@ -16,9 +16,15 @@
 package com.oceanbase.odc.service.schedule.model;
 
 import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
+import org.mapstruct.Named;
 import org.mapstruct.factory.Mappers;
 
+import com.oceanbase.odc.common.json.JsonUtils;
+import com.oceanbase.odc.core.shared.exception.UnsupportedException;
 import com.oceanbase.odc.metadb.schedule.ScheduleEntity;
+import com.oceanbase.odc.service.dlm.model.DataArchiveParameters;
+import com.oceanbase.odc.service.dlm.model.DataDeleteParameters;
 
 /**
  * @Author：tinker
@@ -31,7 +37,26 @@ public interface ScheduleMapper {
 
     ScheduleMapper INSTANCE = Mappers.getMapper(ScheduleMapper.class);
 
+    @Mapping(target = "parameters", source = "entity", qualifiedByName = "entityToParameters")
+    @Mapping(target = "triggerConfig", source = "triggerConfigJson", qualifiedByName = "jsonToTriggerConfig")
     Schedule entityToModel(ScheduleEntity entity);
 
     ScheduleEntity modelToEntity(Schedule model);
+
+    @Named("entityToParameters")
+    default ScheduleTaskParameters entityToParameters(ScheduleEntity entity) {
+        switch (entity.getJobType()) {
+            case DATA_ARCHIVE:
+                return JsonUtils.fromJson(entity.getJobParametersJson(), DataArchiveParameters.class);
+            case DATA_DELETE:
+                return JsonUtils.fromJson(entity.getJobParametersJson(), DataDeleteParameters.class);
+            default:
+                throw new UnsupportedException();
+        }
+    }
+
+    @Named("jsonToTriggerConfig")
+    default TriggerConfig jsonStringToTriggerConfig(String json) {
+        return JsonUtils.fromJson(json, TriggerConfig.class);
+    }
 }

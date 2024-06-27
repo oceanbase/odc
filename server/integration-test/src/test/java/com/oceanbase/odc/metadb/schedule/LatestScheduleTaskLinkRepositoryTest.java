@@ -32,25 +32,25 @@ import com.oceanbase.odc.ServiceTestEnv;
 public class LatestScheduleTaskLinkRepositoryTest extends ServiceTestEnv {
 
     @Autowired
-    private LatestScheduleTaskLinkRepository repository;
+    private LatestTaskMappingRepository repository;
 
     @Test
     public void listByScheduleIds() {
-        LatestScheduleTaskLinkEntity entity = create();
-        List<LatestScheduleTaskLinkEntity> entities = repository.findByScheduleIdIn(Collections.singleton(1L));
+        LatestTaskMappingEntity entity = create();
+        List<LatestTaskMappingEntity> entities = repository.findByScheduleIdIn(Collections.singleton(1L));
         Assert.equals(1, entities.size());
         Assert.equals(entity, entities.get(0));
         delete(entity);
     }
 
-    private LatestScheduleTaskLinkEntity create() {
-        LatestScheduleTaskLinkEntity entity = new LatestScheduleTaskLinkEntity();
+    private LatestTaskMappingEntity create() {
+        LatestTaskMappingEntity entity = new LatestTaskMappingEntity();
         entity.setScheduleId(1L);
-        entity.setScheduleTaskId(99L);
+        entity.setLatestScheduleTaskId(99L);
         return repository.save(entity);
     }
 
-    private void delete(LatestScheduleTaskLinkEntity entity) {
+    private void delete(LatestTaskMappingEntity entity) {
         repository.delete(entity);
     }
 }

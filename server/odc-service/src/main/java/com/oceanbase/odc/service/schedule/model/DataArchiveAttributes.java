@@ -26,7 +26,7 @@ import lombok.Data;
  */
 
 @Data
-public class DataArchiveAttributes implements ScheduleListAttributes {
+public class DataArchiveAttributes implements ScheduleOverviewAttributes {
 
     private Database sourceDataBaseInfo;
 

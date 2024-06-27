@@ -15,34 +15,19 @@
  */
 package com.oceanbase.odc.metadb.schedule;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
-import javax.persistence.Table;
+import java.util.List;
+import java.util.Set;
 
-import lombok.Data;
+import com.oceanbase.odc.config.jpa.OdcJpaRepository;
 
 /**
  * @Author：tinker
- * @Date: 2024/6/10 17:51
+ * @Date: 2024/6/10 18:58
  * @Descripition:
  */
+public interface LatestTaskMappingRepository extends OdcJpaRepository<LatestTaskMappingEntity, Long> {
 
-@Entity
-@Data
-@Table(name = "schedule_latest_schedule_task_link")
-public class LatestScheduleTaskLinkEntity {
+    Long getScheduleTaskIdByScheduleId(Long scheduleId);
 
-    @Id
-    @Column(name = "id", nullable = false)
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
-
-    @Column(name = "schedule_id", nullable = false)
-    private Long scheduleId;
-
-    @Column(name = "schedule_task_id", nullable = false)
-    private Long scheduleTaskId;
+    List<LatestTaskMappingEntity> findByScheduleIdIn(Set<Long> scheduleIds);
 }

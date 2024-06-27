@@ -59,7 +59,7 @@ public class AbstractDlmJobPreprocessor implements Preprocessor {
     public ScheduleEntity buildScheduleEntity(CreateFlowInstanceReq req) {
         AlterScheduleParameters parameters = (AlterScheduleParameters) req.getParameters();
         ScheduleEntity scheduleEntity = new ScheduleEntity();
-        scheduleEntity.setConnectionId(req.getConnectionId());
+        scheduleEntity.setDataSourceId(req.getConnectionId());
         scheduleEntity.setDatabaseName(req.getDatabaseName());
         scheduleEntity.setDatabaseId(req.getDatabaseId());
         scheduleEntity.setProjectId(req.getProjectId());

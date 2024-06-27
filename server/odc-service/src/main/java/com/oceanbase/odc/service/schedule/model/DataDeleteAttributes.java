@@ -28,7 +28,7 @@ import lombok.Data;
  */
 
 @Data
-public class DataDeleteAttributes implements ScheduleListAttributes {
+public class DataDeleteAttributes implements ScheduleOverviewAttributes {
 
     private Database sourceDataBaseInfo;
 

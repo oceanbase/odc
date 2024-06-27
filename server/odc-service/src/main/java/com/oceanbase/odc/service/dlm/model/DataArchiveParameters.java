@@ -19,7 +19,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import com.oceanbase.odc.core.flow.model.TaskParameters;
+import com.oceanbase.odc.service.schedule.model.ScheduleTaskParameters;
 import com.oceanbase.tools.dbbrowser.model.DBObjectType;
 import com.oceanbase.tools.migrator.common.enums.MigrationInsertAction;
 import com.oceanbase.tools.migrator.common.enums.ShardingStrategy;
@@ -32,7 +32,7 @@ import lombok.Data;
  * @Descripition:
  */
 @Data
-public class DataArchiveParameters implements TaskParameters {
+public class DataArchiveParameters implements ScheduleTaskParameters {
 
     private String name;
 

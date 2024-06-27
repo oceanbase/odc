@@ -36,7 +36,7 @@ public class ScheduleTask {
 
     private String jobGroup;
 
-    private String parametersJson;
+    private ScheduleTaskParameters parameters;
 
     private TaskStatus status;
 
