@@ -30,8 +30,8 @@ import org.springframework.stereotype.Component;
 import com.alibaba.fastjson.JSON;
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.metadb.iam.UserRepository;
-import com.oceanbase.odc.metadb.schedule.LatestScheduleTaskLinkEntity;
-import com.oceanbase.odc.metadb.schedule.LatestScheduleTaskLinkRepository;
+import com.oceanbase.odc.metadb.schedule.LatestTaskMappingEntity;
+import com.oceanbase.odc.metadb.schedule.LatestTaskMappingRepository;
 import com.oceanbase.odc.metadb.schedule.ScheduleEntity;
 import com.oceanbase.odc.metadb.schedule.ScheduleTaskEntity;
 import com.oceanbase.odc.metadb.schedule.ScheduleTaskRepository;
@@ -76,7 +76,7 @@ public class ScheduleResponseMapperFactory {
     private ScheduleTaskRepository scheduleTaskRepository;
 
     @Autowired
-    private LatestScheduleTaskLinkRepository latestScheduleTaskLinkRepository;
+    private LatestTaskMappingRepository latestTaskMappingRepository;
 
 
 
@@ -115,9 +115,9 @@ public class ScheduleResponseMapperFactory {
         Set<Long> scheduleIds = schedules.stream().map(ScheduleEntity::getId).collect(Collectors.toSet());
 
         Map<Long, Long> scheduleId2ScheduleTaskId =
-                latestScheduleTaskLinkRepository.findByScheduleIdIn(scheduleIds).stream().collect(
-                        Collectors.toMap(LatestScheduleTaskLinkEntity::getScheduleId,
-                                LatestScheduleTaskLinkEntity::getScheduleTaskId));
+                latestTaskMappingRepository.findByScheduleIdIn(scheduleIds).stream().collect(
+                        Collectors.toMap(LatestTaskMappingEntity::getScheduleId,
+                                LatestTaskMappingEntity::getLatestScheduleTaskId));
 
         Map<Long, ScheduleTaskEntity> scheduleId2ScheduleTask =
                 scheduleId2ScheduleTaskId.isEmpty() ? Collections.EMPTY_MAP
