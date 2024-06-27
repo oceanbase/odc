@@ -107,7 +107,7 @@ public class CreateScheduleAspect implements InitializingBean {
         req.setEnvironmentId(srcDb.getEnvironment().getId());
         req.setEnvironmentName(srcDb.getEnvironment().getName());
         req.setDatabaseName(srcDb.getName());
-        req.setDatabaseId(req.getDatabaseId());
+        req.setDatabaseId(srcDb.getId());
     }
 
     private Long getTargetDatabaseId(CreateScheduleReq req) {
