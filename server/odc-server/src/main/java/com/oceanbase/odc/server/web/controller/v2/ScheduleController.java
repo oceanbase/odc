@@ -40,6 +40,7 @@ import com.oceanbase.odc.service.schedule.ScheduleService;
 import com.oceanbase.odc.service.schedule.model.CreateScheduleReq;
 import com.oceanbase.odc.service.schedule.model.OperationType;
 import com.oceanbase.odc.service.schedule.model.QueryScheduleParams;
+import com.oceanbase.odc.service.schedule.model.Schedule;
 import com.oceanbase.odc.service.schedule.model.ScheduleChangeLog;
 import com.oceanbase.odc.service.schedule.model.ScheduleChangeParams;
 import com.oceanbase.odc.service.schedule.model.ScheduleDetailResp;
@@ -161,9 +162,8 @@ public class ScheduleController {
     }
 
     @RequestMapping(value = "/schedules", method = RequestMethod.POST)
-    public SuccessResponse<Boolean> createSchedule(@RequestBody CreateScheduleReq req) {
-        scheduleService.changeSchedule(ScheduleChangeParams.with(req));
-        return Responses.success(Boolean.TRUE);
+    public SuccessResponse<Schedule> createSchedule(@RequestBody CreateScheduleReq req) {
+        return Responses.success(scheduleService.changeSchedule(ScheduleChangeParams.with(req)));
     }
 
 

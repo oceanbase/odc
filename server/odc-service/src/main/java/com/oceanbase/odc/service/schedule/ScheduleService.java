@@ -135,7 +135,7 @@ public class ScheduleService {
 
     @EnablePreprocess
     @Transactional(rollbackFor = Exception.class)
-    public void changeSchedule(ScheduleChangeParams req) {
+    public Schedule changeSchedule(ScheduleChangeParams req) {
 
         Schedule targetSchedule;
 
@@ -185,7 +185,7 @@ public class ScheduleService {
                                 : null,
                         approvalFlowInstanceId));
         log.info("Create change log success,changLog={}", changeLog);
-
+        return targetSchedule;
     }
 
     public void executeChangeSchedule(ScheduleChangeParams req) {
