@@ -262,7 +262,7 @@ public class PartitionPlanScheduleService {
         scheduleEntity.setJobType(JobType.PARTITION_PLAN);
         scheduleEntity.setTriggerConfigJson(JsonUtils.toJson(triggerConfig));
         scheduleEntity.setProjectId(database.getProject().getId());
-        scheduleEntity.setConnectionId(database.getDataSource().getId());
+        scheduleEntity.setDataSourceId(database.getDataSource().getId());
         scheduleEntity.setDatabaseName(database.getName());
         scheduleEntity.setCreatorId(this.authenticationFacade.currentUserId());
         scheduleEntity.setModifierId(this.authenticationFacade.currentUserId());

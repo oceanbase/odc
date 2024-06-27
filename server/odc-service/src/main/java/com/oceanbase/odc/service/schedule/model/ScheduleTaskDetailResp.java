@@ -13,34 +13,36 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.dlm.model;
+package com.oceanbase.odc.service.schedule.model;
+
+import java.util.Date;
+
+import com.oceanbase.odc.core.shared.constant.TaskStatus;
 
 import lombok.Data;
 
 /**
  * @Author：tinker
- * @Date: 2023/5/10 20:24
+ * @Date: 2024/6/25 15:20
  * @Descripition:
  */
 
 @Data
-public class OffsetConfig {
+public class ScheduleTaskDetailResp {
 
-    private String name;
+    private Long id;
 
-    private String pattern;
+    private ScheduleTaskType type;
 
-    private String dateFormatPattern;
+    private TaskStatus status;
 
-    private Operator operator;
+    private String parameters;
 
-    private String unit;
+    private String executionDetails;
 
-    private String value;
-}
+    private Date fireTime;
 
+    private Date createTime;
 
-enum Operator {
-    PLUS,
-    MINUS
+    private Date updateTime;
 }

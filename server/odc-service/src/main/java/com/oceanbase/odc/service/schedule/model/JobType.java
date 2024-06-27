@@ -20,6 +20,7 @@ package com.oceanbase.odc.service.schedule.model;
  * @Date: 2022/11/18 17:18
  * @Descripition:
  */
+@Deprecated
 public enum JobType {
 
     SQL_PLAN,

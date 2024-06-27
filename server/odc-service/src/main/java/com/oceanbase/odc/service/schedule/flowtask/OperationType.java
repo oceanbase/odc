@@ -27,6 +27,8 @@ public enum OperationType {
     UPDATE,
     PAUSE,
     TERMINATION,
-    RESUME
+    TERMINATE,
+    RESUME,
+    DELETE
 
 }

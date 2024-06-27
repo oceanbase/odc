@@ -22,7 +22,7 @@ import org.mapstruct.factory.Mappers;
 
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.core.shared.exception.UnsupportedException;
-import com.oceanbase.odc.metadb.schedule.ScheduleTaskEntity;
+import com.oceanbase.odc.metadb.schedule.ScheduleEntity;
 import com.oceanbase.odc.service.dlm.model.DataArchiveParameters;
 import com.oceanbase.odc.service.dlm.model.DataDeleteParameters;
 
@@ -33,28 +33,30 @@ import com.oceanbase.odc.service.dlm.model.DataDeleteParameters;
  */
 
 @Mapper
-public interface ScheduleTaskMapper {
+public interface ScheduleMapper {
 
-    ScheduleTaskMapper INSTANCE = Mappers.getMapper(ScheduleTaskMapper.class);
+    ScheduleMapper INSTANCE = Mappers.getMapper(ScheduleMapper.class);
 
     @Mapping(target = "parameters", source = "entity", qualifiedByName = "entityToParameters")
-    ScheduleTask entityToModel(ScheduleTaskEntity entity);
+    @Mapping(target = "triggerConfig", source = "triggerConfigJson", qualifiedByName = "jsonToTriggerConfig")
+    Schedule entityToModel(ScheduleEntity entity);
 
-    ScheduleTaskEntity modelToEntity(ScheduleTask model);
+    ScheduleEntity modelToEntity(Schedule model);
 
     @Named("entityToParameters")
-    default ScheduleTaskParameters entityToParameters(ScheduleTaskEntity entity) {
-        switch (ScheduleTaskType.valueOf(entity.getJobGroup())) {
+    default ScheduleTaskParameters entityToParameters(ScheduleEntity entity) {
+        switch (entity.getJobType()) {
             case DATA_ARCHIVE:
-                return JsonUtils.fromJson(entity.getParametersJson(), DataArchiveParameters.class);
+                return JsonUtils.fromJson(entity.getJobParametersJson(), DataArchiveParameters.class);
             case DATA_DELETE:
-                return JsonUtils.fromJson(entity.getParametersJson(), DataDeleteParameters.class);
-            case DATA_ARCHIVE_DELETE:
-                return JsonUtils.fromJson(entity.getParametersJson(), DataArchiveClearParameters.class);
-            case DATA_ARCHIVE_ROLLBACK:
-                return JsonUtils.fromJson(entity.getParametersJson(), DataArchiveRollbackParameters.class);
+                return JsonUtils.fromJson(entity.getJobParametersJson(), DataDeleteParameters.class);
             default:
                 throw new UnsupportedException();
         }
+    }
+
+    @Named("jsonToTriggerConfig")
+    default TriggerConfig jsonStringToTriggerConfig(String json) {
+        return JsonUtils.fromJson(json, TriggerConfig.class);
     }
 }

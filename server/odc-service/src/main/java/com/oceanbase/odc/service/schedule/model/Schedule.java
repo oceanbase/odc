@@ -16,35 +16,50 @@
 package com.oceanbase.odc.service.schedule.model;
 
 import java.util.Date;
-import java.util.List;
-import java.util.Set;
 
-import lombok.Builder;
+import com.oceanbase.odc.service.quartz.model.MisfireStrategy;
+
 import lombok.Data;
 
 /**
  * @Author：tinker
- * @Date: 2022/11/22 15:04
+ * @Date: 2024/6/8 17:40
  * @Descripition:
  */
 
 @Data
-@Builder
-public class QueryScheduleParams {
+public class Schedule {
 
-    private List<Long> dataSourceIds;
     private Long id;
-    private List<ScheduleStatus> statuses;
-    private ScheduleType type;
-    private Date startTime;
-    private Date endTime;
-    private String creator;
-    private Set<Long> creatorIds;
-    private Long projectId;
-    private Set<Long> projectIds;
-    private Long organizationId;
+
+    private Long dataSourceId;
+
+    private Long databaseId;
+
     private String databaseName;
-    private String tenantId;
-    private String clusterId;
+
+    private Long organizationId;
+
+    private Long projectId;
+
+    private ScheduleStatus status;
+
+    private Boolean allowConcurrent = false;
+
+    private MisfireStrategy misfireStrategy = MisfireStrategy.MISFIRE_INSTRUCTION_DO_NOTHING;
+
+    private ScheduleType type;
+
+    private ScheduleTaskParameters parameters;
+
+    private TriggerConfig triggerConfig;
+
+    private Long creatorId;
+
+    private String description;
+
+    private Date createTime;
+
+    private Date updateTime;
 
 }

@@ -13,38 +13,36 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.schedule.model;
+package com.oceanbase.odc.metadb.schedule;
 
-import java.util.Date;
-import java.util.List;
-import java.util.Set;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.Table;
 
-import lombok.Builder;
 import lombok.Data;
 
 /**
  * @Author：tinker
- * @Date: 2022/11/22 15:04
+ * @Date: 2024/6/10 17:51
  * @Descripition:
  */
 
+@Entity
 @Data
-@Builder
-public class QueryScheduleParams {
+@Table(name = "schedule_latest_task_mapping")
+public class LatestTaskMappingEntity {
 
-    private List<Long> dataSourceIds;
+    @Id
+    @Column(name = "id", nullable = false)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    private List<ScheduleStatus> statuses;
-    private ScheduleType type;
-    private Date startTime;
-    private Date endTime;
-    private String creator;
-    private Set<Long> creatorIds;
-    private Long projectId;
-    private Set<Long> projectIds;
-    private Long organizationId;
-    private String databaseName;
-    private String tenantId;
-    private String clusterId;
 
+    @Column(name = "schedule_id", nullable = false)
+    private Long scheduleId;
+
+    @Column(name = "latest_schedule_task_id", nullable = false)
+    private Long latestScheduleTaskId;
 }

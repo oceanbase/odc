@@ -17,7 +17,7 @@ package com.oceanbase.odc.service.dlm.model;
 
 import java.util.List;
 
-import com.oceanbase.odc.core.flow.model.TaskParameters;
+import com.oceanbase.odc.service.schedule.model.ScheduleTaskParameters;
 
 import lombok.Data;
 
@@ -27,7 +27,7 @@ import lombok.Data;
  * @Descripition:
  */
 @Data
-public class DataDeleteParameters implements TaskParameters {
+public class DataDeleteParameters implements ScheduleTaskParameters {
 
     private Long databaseId;
 
