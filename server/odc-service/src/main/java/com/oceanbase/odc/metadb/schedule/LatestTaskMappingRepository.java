@@ -27,7 +27,5 @@ import com.oceanbase.odc.config.jpa.OdcJpaRepository;
  */
 public interface LatestTaskMappingRepository extends OdcJpaRepository<LatestTaskMappingEntity, Long> {
 
-    Long getScheduleTaskIdByScheduleId(Long scheduleId);
-
     List<LatestTaskMappingEntity> findByScheduleIdIn(Set<Long> scheduleIds);
 }
