@@ -29,7 +29,7 @@ import com.oceanbase.odc.ServiceTestEnv;
  * @Date: 2024/6/20 15:44
  * @Descripition:
  */
-public class LatestScheduleTaskLinkRepositoryTest extends ServiceTestEnv {
+public class LatestTaskMappingRepositoryTest extends ServiceTestEnv {
 
     @Autowired
     private LatestTaskMappingRepository repository;
