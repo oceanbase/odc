@@ -16,6 +16,7 @@
 package com.oceanbase.odc.service.schedule.model;
 
 import java.util.Date;
+import java.util.Map;
 
 import com.oceanbase.odc.core.shared.constant.TaskStatus;
 
@@ -23,35 +24,23 @@ import lombok.Data;
 
 /**
  * @Author：tinker
- * @Date: 2024/6/18 10:55
+ * @Date: 2024/6/8 13:30
  * @Descripition:
  */
 
+
+
 @Data
-public class ScheduleTask {
+public class ScheduleOverview {
 
-    private Long id;
+    private Long scheduleId;
 
-    private String jobName;
+    private Map<String, String> attributes;
 
-    private String jobGroup;
+    private ScheduleStatus status;
 
-    private ScheduleTaskParameters parameters;
+    private Date latestFireTime;
 
-    private TaskStatus status;
-
-    private Date fireTime;
-
-    private double progressPercentage;
-
-    private String resultJson;
-
-    private String executor;
-
-    private Date createTime;
-
-    private Date updateTime;
-
-    private Long jobId;
+    private TaskStatus latestExecutionStatus;
 
 }

@@ -30,6 +30,7 @@ public enum ScheduleStatus {
     REJECTED,
     PAUSE,
     ENABLED,
+    TERMINATION,
     TERMINATED,
 
     COMPLETED,

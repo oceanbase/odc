@@ -282,7 +282,7 @@ public class EventBuilder {
 
         labels.putIfNonNull(TASK_TYPE, schedule.getScheduleType());
         labels.putIfNonNull(TASK_ID, schedule.getId());
-        labels.putIfNonNull(CONNECTION_ID, schedule.getConnectionId());
+        labels.putIfNonNull(CONNECTION_ID, schedule.getDataSourceId());
         labels.putIfNonNull(CREATOR_ID, schedule.getCreatorId());
         labels.putIfNonNull(PROJECT_ID, schedule.getProjectId());
         labels.putIfNonNull(DATABASE_ID, schedule.getDatabaseId());

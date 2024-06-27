@@ -41,10 +41,10 @@ import com.oceanbase.odc.service.schedule.model.CreateScheduleReq;
 import com.oceanbase.odc.service.schedule.model.QueryScheduleParams;
 import com.oceanbase.odc.service.schedule.model.ScheduleChangeLog;
 import com.oceanbase.odc.service.schedule.model.ScheduleDetailResp;
-import com.oceanbase.odc.service.schedule.model.ScheduleListResp;
+import com.oceanbase.odc.service.schedule.model.ScheduleOverview;
 import com.oceanbase.odc.service.schedule.model.ScheduleStatus;
 import com.oceanbase.odc.service.schedule.model.ScheduleTaskDetailResp;
-import com.oceanbase.odc.service.schedule.model.ScheduleTaskListResp;
+import com.oceanbase.odc.service.schedule.model.ScheduleTaskOverview;
 import com.oceanbase.odc.service.schedule.model.ScheduleType;
 import com.oceanbase.odc.service.schedule.model.UpdateScheduleReq;
 import com.oceanbase.odc.service.task.model.OdcTaskLogLevel;
@@ -69,16 +69,15 @@ public class ScheduleController {
 
     // change log
 
-    @RequestMapping("/schedules/{id:[\\d]+}/changes")
+    @RequestMapping(value = "/schedules/{id:[\\d]+}/changes", method = RequestMethod.GET)
     public ListResponse<ScheduleChangeLog> listChangeLog(@PathVariable Long id) {
-        List<ScheduleChangeLog> scheduleChangeLogs = scheduleService.listScheduleChangeLog(id);
-        return Responses.list(scheduleChangeLogs);
+        throw new UnsupportedException();
     }
 
-    @RequestMapping("/schedules/{id:[\\d]+}/changes/{scheduleChangeLogId:[\\d]+}")
+    @RequestMapping(value = "/schedules/{id:[\\d]+}/changes/{scheduleChangeLogId:[\\d]+}", method = RequestMethod.GET)
     public SuccessResponse<ScheduleChangeLog> getChangeLog(@PathVariable Long id,
             @PathVariable Long scheduleChangeLogId) {
-        return Responses.single(scheduleService.getChangeLog(id, scheduleChangeLogId));
+        throw new UnsupportedException();
     }
 
     // schedule task
@@ -92,78 +91,83 @@ public class ScheduleController {
     @RequestMapping(value = "/schedules/{scheduleId:[\\d]+}/tasks/{taskId:[\\d]+}/executions/latest/stop",
             method = RequestMethod.POST)
     public SuccessResponse<Boolean> stopTask(@PathVariable Long scheduleId, @PathVariable Long taskId) {
-        scheduleService.stopTask(scheduleId, taskId);
-        return Responses.ok(Boolean.TRUE);
+        throw new UnsupportedException();
+
     }
 
     @ApiOperation(value = "StartTask", notes = "启动任务")
-    @RequestMapping(value = "/schedules/{scheduleId:[\\d]+}/tasks/{taskId:[\\d]+}/executions/latest/start",
+    @RequestMapping(value = "/schedules/{scheduleId:[\\d]+}/tasks/{taskId:[\\d]+}/start",
             method = RequestMethod.POST)
     public SuccessResponse<Boolean> startTask(@PathVariable Long scheduleId, @PathVariable Long taskId) {
-        scheduleService.startTask(scheduleId, taskId);
-        return Responses.ok(Boolean.TRUE);
+        throw new UnsupportedException();
+
     }
 
-    @RequestMapping(value = "/schedules/{scheduleId:[\\d]+}/tasks/{taskId:[\\d]+}/executions/latest/rollback",
+    @RequestMapping(value = "/schedules/{scheduleId:[\\d]+}/tasks/{taskId:[\\d]+}/rollback",
             method = RequestMethod.POST)
     public SuccessResponse<Boolean> rollbackTask(@PathVariable Long scheduleId, @PathVariable Long taskId) {
-        scheduleService.rollbackTask(scheduleId, taskId);
-        return Responses.ok(Boolean.TRUE);
+        throw new UnsupportedException();
+
     }
 
     @RequestMapping(value = "/schedules/{scheduleId:[\\d]+}/tasks/{taskId:[\\d]+}/executions/latest/log",
             method = RequestMethod.GET)
     public SuccessResponse<String> getTaskLog(@PathVariable Long scheduleId, @PathVariable Long taskId,
             @RequestParam OdcTaskLogLevel logType) {
-        return Responses.single(scheduleService.getLog(scheduleId, taskId, logType));
+        throw new UnsupportedException();
     }
 
 
     @RequestMapping(value = "/schedules/{scheduleId:[\\d]+}/tasks/{taskId:[\\d]+}/", method = RequestMethod.GET)
     public SuccessResponse<ScheduleTaskDetailResp> detailScheduleTask(@PathVariable Long scheduleId,
             @PathVariable Long taskId) {
-        return Responses.single(scheduleService.detailScheduleTask(scheduleId, taskId));
+        throw new UnsupportedException();
     }
 
     @RequestMapping(value = "/schedules/{scheduleId:[\\d]+}/tasks", method = RequestMethod.GET)
-    public PaginatedResponse<ScheduleTaskListResp> listTask(
+    public PaginatedResponse<ScheduleTaskOverview> listTask(
             @PageableDefault(size = Integer.MAX_VALUE, sort = {"id"}, direction = Direction.DESC) Pageable pageable,
             @PathVariable Long scheduleId) {
-        return Responses.paginated(scheduleService.listScheduleTask(pageable, scheduleId));
+        throw new UnsupportedException();
     }
 
     // schedule
 
     @RequestMapping(value = "/schedules/{id:[\\d]+}/terminate", method = RequestMethod.POST)
-    public void terminateSchedule(@PathVariable("id") Long id) {
-        scheduleService.terminate(id);
+    public SuccessResponse<Boolean> terminateSchedule(@PathVariable("id") Long id) {
+        throw new UnsupportedException();
+
     }
 
     @RequestMapping(value = "/schedules/{id:[\\d]+}/pause", method = RequestMethod.POST)
-    public void pauseSchedule(@PathVariable Long id) {
-        scheduleService.pause(id);
+    public SuccessResponse<Boolean> pauseSchedule(@PathVariable Long id) {
+        throw new UnsupportedException();
+
     }
 
     @RequestMapping(value = "/schedules/{id:[\\d]+}/resume", method = RequestMethod.POST)
-    public void resumeSchedule(@PathVariable Long id) {
-        scheduleService.resume(id);
+    public SuccessResponse<Boolean> resumeSchedule(@PathVariable Long id) {
+        throw new UnsupportedException();
+
     }
 
     @RequestMapping(value = "/schedules/{id:[\\d]+}", method = RequestMethod.PUT)
-    public void updateSchedule(@PathVariable Long id, @RequestBody UpdateScheduleReq req) {
-        scheduleService.update(id, req);
+    public SuccessResponse<Boolean> updateSchedule(@PathVariable Long id, @RequestBody UpdateScheduleReq req) {
+        throw new UnsupportedException();
+
     }
 
     @RequestMapping(value = "/schedules", method = RequestMethod.POST)
-    public void createSchedule(@RequestBody CreateScheduleReq req) {
-        scheduleService.create(req);
+    public SuccessResponse<Boolean> createSchedule(@RequestBody CreateScheduleReq req) {
+        throw new UnsupportedException();
+
     }
 
 
-    @RequestMapping("/schedules")
-    public PaginatedResponse<ScheduleListResp> list(
+    @RequestMapping(value = "/schedules", method = RequestMethod.GET)
+    public PaginatedResponse<ScheduleOverview> list(
             @PageableDefault(size = Integer.MAX_VALUE, sort = {"id"}, direction = Direction.DESC) Pageable pageable,
-            @RequestParam(required = false, name = "connectionId") List<Long> connectionIds,
+            @RequestParam(required = false, name = "dataSourceId") List<Long> datasourceIds,
             @RequestParam(required = false, name = "databaseName") String databaseName,
             @RequestParam(required = false, name = "tenantId") String tenantId,
             @RequestParam(required = false, name = "clusterId") String clusterId,
@@ -177,7 +181,7 @@ public class ScheduleController {
 
         QueryScheduleParams req = QueryScheduleParams.builder()
                 .id(id)
-                .connectionIds(connectionIds)
+                .dataSourceIds(datasourceIds)
                 .databaseName(databaseName)
                 .tenantId(tenantId)
                 .clusterId(clusterId)
@@ -188,13 +192,13 @@ public class ScheduleController {
                 .creator(creator)
                 .projectId(projectId)
                 .build();
-        return Responses.paginated(scheduleService.getScheduleListResp(pageable, req));
+        throw new UnsupportedException();
 
     }
 
     @RequestMapping(value = "/schedules/{id:[\\d]+}", method = RequestMethod.GET)
     public SuccessResponse<ScheduleDetailResp> detailSchedule(@PathVariable Long id) {
-        return Responses.single(scheduleService.detailSchedule(id));
+        throw new UnsupportedException();
     }
 
     @RequestMapping(value = "/schedules/{id:[\\d]+}/dlmRateLimitConfiguration", method = RequestMethod.PUT)

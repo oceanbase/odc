@@ -23,35 +23,22 @@ import lombok.Data;
 
 /**
  * @Author：tinker
- * @Date: 2024/6/18 10:55
+ * @Date: 2024/6/19 14:31
  * @Descripition:
  */
 
+
 @Data
-public class ScheduleTask {
+public class ScheduleTaskOverview {
 
     private Long id;
 
-    private String jobName;
-
-    private String jobGroup;
-
-    private ScheduleTaskParameters parameters;
+    private ScheduleTaskType type;
 
     private TaskStatus status;
-
-    private Date fireTime;
-
-    private double progressPercentage;
-
-    private String resultJson;
-
-    private String executor;
 
     private Date createTime;
 
     private Date updateTime;
-
-    private Long jobId;
 
 }

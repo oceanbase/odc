@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 OceanBase.
+ * Copyright (c) 2023 OceanBase.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.oceanbase.odc.service.schedule.model;
 
 import java.util.Date;
@@ -33,7 +32,7 @@ public class Schedule {
 
     private Long id;
 
-    private Long connectionId;
+    private Long dataSourceId;
 
     private Long databaseId;
 
@@ -49,11 +48,11 @@ public class Schedule {
 
     private MisfireStrategy misfireStrategy = MisfireStrategy.MISFIRE_INSTRUCTION_DO_NOTHING;
 
-    private ScheduleType scheduleType;
+    private ScheduleType type;
 
-    private String parameters;
+    private ScheduleTaskParameters parameters;
 
-    private String triggerConfigJson;
+    private TriggerConfig triggerConfig;
 
     private Long creatorId;
 

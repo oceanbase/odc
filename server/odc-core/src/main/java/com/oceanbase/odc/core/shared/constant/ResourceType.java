@@ -67,7 +67,7 @@ public enum ResourceType implements Translatable {
 
     ODC_SCHEDULE_TRIGGER,
     ODC_SCHEDULE_TASK,
-    ODC_SCHEDULE_CHANGE_LOG,
+    ODC_SCHEDULE_CHANGELOG,
 
     ODC_DLM_LIMITER_CONFIG,
 

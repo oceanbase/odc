@@ -15,43 +15,21 @@
  */
 package com.oceanbase.odc.service.schedule.model;
 
-import java.util.Date;
-
-import com.oceanbase.odc.core.shared.constant.TaskStatus;
-
-import lombok.Data;
-
 /**
  * @Author：tinker
- * @Date: 2024/6/18 10:55
+ * @Date: 2024/6/19 15:35
  * @Descripition:
  */
+public class ScheduleTaskOverviewMapper {
 
-@Data
-public class ScheduleTask {
-
-    private Long id;
-
-    private String jobName;
-
-    private String jobGroup;
-
-    private ScheduleTaskParameters parameters;
-
-    private TaskStatus status;
-
-    private Date fireTime;
-
-    private double progressPercentage;
-
-    private String resultJson;
-
-    private String executor;
-
-    private Date createTime;
-
-    private Date updateTime;
-
-    private Long jobId;
+    public static ScheduleTaskOverview map(ScheduleTask scheduleTask) {
+        ScheduleTaskOverview t = new ScheduleTaskOverview();
+        t.setId(scheduleTask.getId());
+        t.setStatus(scheduleTask.getStatus());
+        t.setType(ScheduleTaskType.valueOf(scheduleTask.getJobGroup()));
+        t.setCreateTime(scheduleTask.getCreateTime());
+        t.setUpdateTime(scheduleTask.getUpdateTime());
+        return t;
+    }
 
 }
