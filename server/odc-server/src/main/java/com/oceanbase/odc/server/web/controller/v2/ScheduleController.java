@@ -74,7 +74,8 @@ public class ScheduleController {
 
     @RequestMapping(value = "/schedules/{id:[\\d]+}/changes", method = RequestMethod.GET)
     public ListResponse<ScheduleChangeLog> listChangeLog(@PathVariable Long id) {
-        throw new UnsupportedException();
+        return Responses.list(scheduleService.listScheduleChangeLog(id));
+
     }
 
     @RequestMapping(value = "/schedules/{id:[\\d]+}/changes/{scheduleChangeLogId:[\\d]+}", method = RequestMethod.GET)
@@ -202,7 +203,7 @@ public class ScheduleController {
 
     @RequestMapping(value = "/schedules/{id:[\\d]+}", method = RequestMethod.GET)
     public SuccessResponse<ScheduleDetailResp> detailSchedule(@PathVariable Long id) {
-        throw new UnsupportedException();
+        return Responses.success(scheduleService.detailSchedule(id));
     }
 
     @RequestMapping(value = "/schedules/{id:[\\d]+}/dlmRateLimitConfiguration", method = RequestMethod.PUT)
