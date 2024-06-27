@@ -16,6 +16,7 @@
 package com.oceanbase.odc.service.schedule.model;
 
 import java.util.Date;
+import java.util.Map;
 
 import com.oceanbase.odc.core.shared.constant.TaskStatus;
 
@@ -34,7 +35,7 @@ public class ScheduleOverview {
 
     private Long scheduleId;
 
-    private ScheduleOverviewAttributes attributes;
+    private Map<String, String> attributes;
 
     private ScheduleStatus status;
 
