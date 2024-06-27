@@ -74,7 +74,7 @@ public class SqlPlanPreprocessor implements Preprocessor {
                 checkSqlContent(parameters);
                 checkCronExpression(triggerConfig.getCronExpression());
                 ScheduleEntity scheduleEntity = new ScheduleEntity();
-                scheduleEntity.setConnectionId(req.getConnectionId());
+                scheduleEntity.setDataSourceId(req.getConnectionId());
                 scheduleEntity.setDatabaseName(req.getDatabaseName());
                 scheduleEntity.setProjectId(req.getProjectId());
                 scheduleEntity.setDatabaseId(req.getDatabaseId());

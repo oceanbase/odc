@@ -13,34 +13,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.dlm.model;
+package com.oceanbase.odc.service.schedule.model;
+
+import java.util.List;
+
+import com.oceanbase.odc.service.connection.database.model.Database;
 
 import lombok.Data;
 
 /**
  * @Author：tinker
- * @Date: 2023/5/10 20:24
+ * @Date: 2024/6/19 17:02
  * @Descripition:
  */
 
 @Data
-public class OffsetConfig {
+public class DataDeleteAttributes implements ScheduleOverviewAttributes {
 
-    private String name;
+    private Database sourceDataBaseInfo;
 
-    private String pattern;
+    private List<String> tableNames;
 
-    private String dateFormatPattern;
-
-    private Operator operator;
-
-    private String unit;
-
-    private String value;
-}
-
-
-enum Operator {
-    PLUS,
-    MINUS
 }

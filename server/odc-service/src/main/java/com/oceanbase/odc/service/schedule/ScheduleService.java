@@ -94,6 +94,7 @@ import com.oceanbase.odc.service.schedule.model.QueryScheduleParams;
 import com.oceanbase.odc.service.schedule.model.ScheduleDetailResp;
 import com.oceanbase.odc.service.schedule.model.ScheduleDetailResp.ScheduleResponseMapper;
 import com.oceanbase.odc.service.schedule.model.ScheduleStatus;
+import com.oceanbase.odc.service.schedule.model.ScheduleTask;
 import com.oceanbase.odc.service.schedule.model.ScheduleTaskMapper;
 import com.oceanbase.odc.service.schedule.model.ScheduleTaskResp;
 import com.oceanbase.odc.service.schedule.model.TriggerConfig;
@@ -470,12 +471,6 @@ public class ScheduleService {
         return ScheduleTaskResp.withId(taskId);
     }
 
-    public Page<ScheduleTaskResp> listTask(Pageable pageable, Long scheduleId) {
-        ScheduleEntity entity = nullSafeGetByIdWithCheckPermission(scheduleId);
-        Page<ScheduleTaskEntity> scheduleTaskEntities = scheduleTaskService.listTask(pageable, entity.getId());
-        return scheduleTaskEntities.map(scheduleTaskMapper::entityToModel);
-    }
-
     public void updateStatusById(Long id, ScheduleStatus status) {
         scheduleRepository.updateStatusById(id, status);
     }
@@ -535,9 +530,9 @@ public class ScheduleService {
         return mapper.map(entity);
     }
 
-    public ScheduleTaskResp detailScheduleTask(Long scheduleId, Long scheduleTaskId) {
+    public ScheduleTask detailScheduleTask(Long scheduleId, Long scheduleTaskId) {
         ScheduleEntity scheduleEntity = nullSafeGetByIdWithCheckPermission(scheduleId);
-        ScheduleTaskResp detail = scheduleTaskService.detail(scheduleTaskId);
+        ScheduleTask detail = scheduleTaskService.detail(scheduleTaskId);
         // Throw a NotFoundException if the schedule task does not belong to the schedule.
         if (!detail.getJobName().equals(scheduleEntity.getId().toString())) {
             throw new NotFoundException(ResourceType.ODC_SCHEDULE_TASK, "scheduleTaskId", scheduleTaskId);

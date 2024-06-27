@@ -385,7 +385,7 @@ public class DefaultOnlineSchemaChangeTaskHandler implements OnlineSchemaChangeT
         valveContext.setTaskParameter(oscScheduleTaskParameters);
 
         ConnectionConfig config =
-                connectionService.getForConnectionSkipPermissionCheck(scheduleEntity.getConnectionId());
+                connectionService.getForConnectionSkipPermissionCheck(scheduleEntity.getDataSourceId());
         config.setDefaultSchema(valveContext.getTaskParameter().getDatabaseName());
         valveContext.setConnectionConfig(config);
         return valveContext;

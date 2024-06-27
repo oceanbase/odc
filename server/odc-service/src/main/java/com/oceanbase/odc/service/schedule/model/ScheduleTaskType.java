@@ -13,34 +13,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.dlm.model;
-
-import lombok.Data;
+package com.oceanbase.odc.service.schedule.model;
 
 /**
  * @Author：tinker
- * @Date: 2023/5/10 20:24
+ * @Date: 2024/6/18 16:56
  * @Descripition:
  */
+public enum ScheduleTaskType {
 
-@Data
-public class OffsetConfig {
+    SQL_PLAN,
 
-    private String name;
+    PARTITION_PLAN,
 
-    private String pattern;
+    DATA_ARCHIVE,
 
-    private String dateFormatPattern;
+    DATA_ARCHIVE_DELETE,
 
-    private Operator operator;
+    DATA_DELETE,
 
-    private String unit;
+    DATA_ARCHIVE_ROLLBACK,
 
-    private String value;
-}
+    ONLINE_SCHEMA_CHANGE_COMPLETE
 
-
-enum Operator {
-    PLUS,
-    MINUS
 }

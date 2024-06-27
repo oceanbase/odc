@@ -170,7 +170,7 @@ public abstract class BaseOscTestEnv extends ServiceTestEnv {
     protected ScheduleEntity getScheduleEntity(ConnectionConfig config, OnlineSchemaChangeParameters changeParameters) {
         ScheduleEntity scheduleEntity = new ScheduleEntity();
         scheduleEntity.setStatus(ScheduleStatus.ENABLED);
-        scheduleEntity.setConnectionId(config.getId());
+        scheduleEntity.setDataSourceId(config.getId());
         scheduleEntity.setDatabaseName(config.getDefaultSchema());
         scheduleEntity.setDatabaseId(1L);
         scheduleEntity.setProjectId(1L);
