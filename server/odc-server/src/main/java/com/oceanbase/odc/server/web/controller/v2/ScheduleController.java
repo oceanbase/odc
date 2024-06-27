@@ -123,7 +123,7 @@ public class ScheduleController {
     }
 
 
-    @RequestMapping(value = "/schedules/{scheduleId:[\\d]+}/tasks/{taskId:[\\d]+}/", method = RequestMethod.GET)
+    @RequestMapping(value = "/schedules/{scheduleId:[\\d]+}/tasks/{taskId:[\\d]+}", method = RequestMethod.GET)
     public SuccessResponse<ScheduleTaskDetailResp> detailScheduleTask(@PathVariable Long scheduleId,
             @PathVariable Long taskId) {
         return Responses.success(scheduleService.detailScheduleTask(scheduleId, taskId));

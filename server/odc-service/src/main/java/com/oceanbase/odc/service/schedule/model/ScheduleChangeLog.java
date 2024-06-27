@@ -56,7 +56,7 @@ public class ScheduleChangeLog {
             String newParameters, Long flowInstanceId) {
         ScheduleChangeLog log = new ScheduleChangeLog();
         log.setScheduleId(scheduleId);
-        log.setStatus(ScheduleChangeStatus.PREPARING);
+        log.setStatus(ScheduleChangeStatus.SUCCESS);
         log.setType(type);
         log.setOldScheduleParameterJson(oldParameters);
         log.setNewScheduleParameterJson(newParameters);
