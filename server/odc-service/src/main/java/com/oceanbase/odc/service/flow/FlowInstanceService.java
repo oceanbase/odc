@@ -582,6 +582,13 @@ public class FlowInstanceService {
         return cancel(flowInstance, skipAuth);
     }
 
+    // avoid throwing UnexpectedRollbackException in multi-database cancellation
+    @Transactional(rollbackFor = Exception.class, propagation = Propagation.REQUIRES_NEW)
+    public void cancelSubFlowInstance(@NotNull Long id) {
+        this.cancel(id, false);
+
+    }
+
     public FlowInstanceDetailResp cancelNotCheckPermission(@NotNull Long id) {
         FlowInstance flowInstance = mapFlowInstance(id, flowInst -> flowInst, false);
         return cancel(flowInstance, false);
