@@ -336,8 +336,16 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
             log.warn("Job is finished, ignore result, jobId={}, currentStatus={}", je.getId(), je.getStatus());
             return;
         }
+        if (!StringUtils.equals(je.getExecutorEndpoint(), taskResult.getExecutorEndpoint())) {
+            log.info("Update executor endpoint, jobId={}, old={}, new={}", je.getId(), je.getExecutorEndpoint(),
+                    taskResult.getExecutorEndpoint());
+            int ret = updateExecutorEndpoint(je.getId(), taskResult.getExecutorEndpoint(), je);
+            if (ret == 0) {
+                log.warn("Update executor endpoint failed, jobId={}", je.getId());
+            }
+        }
         // TODO: update task entity only when progress changed
-        int rows = updateJobEntity(taskResult, je);
+        int rows = updateTaskResult(taskResult, je);
         if (rows > 0) {
             taskResultPublisherExecutor
                     .execute(() -> publisher.publishEvent(new DefaultJobProcessUpdateEvent(taskResult)));
@@ -388,7 +396,7 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
         }
         // here progress changed
         saveOrUpdateLogMetadata(result, je.getId(), je.getStatus());
-        int rows = updateJobEntity(result, je);
+        int rows = updateTaskResult(result, je);
         if (rows > 0) {
             taskResultPublisherExecutor
                     .execute(() -> publisher.publishEvent(new DefaultJobProcessUpdateEvent(result)));
@@ -430,12 +438,15 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
         }
     }
 
-    private int updateJobEntity(TaskResult taskResult, JobEntity currentJob) {
+    private int updateExecutorEndpoint(Long id, String executorEndpoint, JobEntity currentJob) {
+        return jobRepository.updateExecutorEndpoint(id, executorEndpoint, currentJob.getStatus());
+    }
+
+    private int updateTaskResult(TaskResult taskResult, JobEntity currentJob) {
         JobEntity jse = new JobEntity();
         jse.setResultJson(taskResult.getResultJson());
         jse.setStatus(taskResult.getStatus());
         jse.setProgressPercentage(taskResult.getProgress());
-        jse.setExecutorEndpoint(taskResult.getExecutorEndpoint());
         jse.setLastReportTime(JobDateUtils.getCurrentDate());
         if (taskResult.getStatus() != null && taskResult.getStatus().isTerminated()) {
             jse.setFinishedTime(JobDateUtils.getCurrentDate());
