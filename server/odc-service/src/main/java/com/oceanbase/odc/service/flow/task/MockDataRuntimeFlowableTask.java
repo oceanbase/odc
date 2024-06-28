@@ -61,7 +61,7 @@ public class MockDataRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Void> {
 
     @Override
     public boolean cancel(boolean mayInterruptIfRunning, Long taskId, TaskService taskService) {
-        Verify.notNull(context, "MockContext is null");
+        Verify.notNull(context, "MockContext");
         Map<String, String> variables = new HashMap<>();
         variables.putIfAbsent("mocktask.workspace", taskId + "");
         TraceContextHolder.span(variables);
