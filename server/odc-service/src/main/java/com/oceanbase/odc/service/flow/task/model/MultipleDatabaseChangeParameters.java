@@ -16,10 +16,12 @@
 package com.oceanbase.odc.service.flow.task.model;
 
 import java.util.List;
+import java.util.Locale;
 
 import com.oceanbase.odc.core.shared.constant.TaskErrorStrategy;
 import com.oceanbase.odc.service.databasechange.model.DatabaseChangeDatabase;
 import com.oceanbase.odc.service.databasechange.model.DatabaseChangeProject;
+import com.oceanbase.odc.service.flow.model.FlowTaskExecutionStrategy;
 
 import lombok.Data;
 
@@ -52,6 +54,12 @@ public class MultipleDatabaseChangeParameters extends DatabaseChangeParameters {
      * TimeoutMillis in multiple databases manual execution mode
      */
     private Long manualTimeoutMillis = 1000 * 60 * 60 * 24 * 2L;// 2d for default
+    /**
+     * Use the same locale to localize parent and child ticket‘s description
+     */
+    private Locale locale;
+
+    private FlowTaskExecutionStrategy flowTaskExecutionStrategy;
 
     public DatabaseChangeParameters convertIntoDatabaseChangeParameters(MultipleDatabaseChangeParameters parameter) {
         DatabaseChangeParameters databaseChangeParameters = new DatabaseChangeParameters();

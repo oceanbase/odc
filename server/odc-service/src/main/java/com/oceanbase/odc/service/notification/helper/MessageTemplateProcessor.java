@@ -19,6 +19,7 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.commons.text.StringSubstitutor;
 import org.springframework.util.CollectionUtils;
@@ -32,7 +33,7 @@ import com.oceanbase.odc.common.util.StringUtils;
  * @Description: []
  */
 public class MessageTemplateProcessor {
-    private static final Map<Locale, StringSubstitutor> LOCALE2SUBSTITUTOR = new HashMap<>();
+    private static final Map<Locale, StringSubstitutor> LOCALE2SUBSTITUTOR = new ConcurrentHashMap<>();
 
     public static String replaceVariables(final String template, Locale locale, final Map<String, String> variables) {
         if (StringUtils.isEmpty(template)) {
@@ -55,7 +56,18 @@ public class MessageTemplateProcessor {
                 .setDisableSubstitutionInValues(true)
                 .setVariableResolver(key -> copiedVariables.getOrDefault(key, ""));
         String message = sub.replace(template);
+        message = getLocalMessage(locale, message);
+        return message;
+    }
 
+    /**
+     * Localise the string containing '${key}'
+     * 
+     * @param locale
+     * @param message
+     * @return
+     */
+    public static String getLocalMessage(Locale locale, String message) {
         if (Objects.nonNull(locale)) {
             StringSubstitutor i18n =
                     LOCALE2SUBSTITUTOR.computeIfAbsent(locale, l -> new StringSubstitutor(I18n.getAllMessages(l)));

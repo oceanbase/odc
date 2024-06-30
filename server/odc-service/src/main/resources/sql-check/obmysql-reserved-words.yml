@@ -313,7 +313,6 @@ reserved-key-words:
   - 'hour_second'
   - 'hidden'
   - 'hybrid_hist'
-  - 'id'
   - 'idc'
   - 'identified'
   - 'if'
