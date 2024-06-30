@@ -61,7 +61,7 @@ public class TaskExecutorClient {
         }
     }
 
-    public void stop(String executorEndpoint, JobIdentity ji) throws JobException {
+    public void stop(@NonNull String executorEndpoint, @NonNull JobIdentity ji) throws JobException {
         String url = executorEndpoint + String.format(JobExecutorUrls.STOP_TASK, ji.getId());
         log.info("Try stop job in executor, ji={}, url={}", ji.getId(), url);
         try {
@@ -79,8 +79,8 @@ public class TaskExecutorClient {
         }
     }
 
-    public void modifyJobParameters(String executorEndpoint, JobIdentity ji, String jobParametersJson)
-            throws JobException {
+    public void modifyJobParameters(@NonNull String executorEndpoint, @NonNull JobIdentity ji,
+            @NonNull String jobParametersJson) throws JobException {
         String url = executorEndpoint + String.format(JobExecutorUrls.MODIFY_JOB_PARAMETERS, ji.getId());
         log.info("Try to modify job parameters, jobId={}, url={}", ji.getId(), url);
         try {
@@ -100,7 +100,7 @@ public class TaskExecutorClient {
         }
     }
 
-    public DefaultTaskResult getResult(String executorEndpoint, JobIdentity ji) throws JobException {
+    public DefaultTaskResult getResult(@NonNull String executorEndpoint, @NonNull JobIdentity ji) throws JobException {
         String url = executorEndpoint + String.format(JobExecutorUrls.GET_RESULT, ji.getId());
         log.info("Try query job result from executor, ji={}, url={}", ji.getId(), url);
         try {

@@ -121,17 +121,7 @@ public abstract class BaseJobCaller implements JobCaller {
         TaskFrameworkService taskFrameworkService = jobConfiguration.getTaskFrameworkService();
         TaskExecutorClient taskExecutorClient = jobConfiguration.getTaskExecutorClient();
         JobEntity jobEntity = taskFrameworkService.find(ji.getId());
-        String executorEndpoint = getExecutorPoint(jobEntity);
-        taskExecutorClient.modifyJobParameters(executorEndpoint, ji, jobParametersJson);
-    }
-
-    private String getExecutorPoint(JobEntity jobEntity)
-            throws JobException {
-        String executorEndpoint = jobEntity.getExecutorEndpoint();
-        if (executorEndpoint == null) {
-            throw new JobException("Executor point is null, cannot modify executor point, jobId={}", jobEntity.getId());
-        }
-        return executorEndpoint;
+        taskExecutorClient.modifyJobParameters(jobEntity.getExecutorEndpoint(), ji, jobParametersJson);
     }
 
     @Override

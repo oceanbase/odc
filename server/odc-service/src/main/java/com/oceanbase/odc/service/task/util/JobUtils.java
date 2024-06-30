@@ -32,6 +32,7 @@ import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.core.shared.constant.ConnectType;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.objectstorage.cloud.model.ObjectStorageConfiguration;
+import com.oceanbase.odc.service.task.caller.JobEnvironmentEncryptor;
 import com.oceanbase.odc.service.task.constants.JobConstants;
 import com.oceanbase.odc.service.task.constants.JobEnvKeyConstants;
 import com.oceanbase.odc.service.task.enums.TaskRunMode;
@@ -171,5 +172,9 @@ public class JobUtils {
         if (System.getenv(environmentKey) != null) {
             System.setProperty(environmentKey, System.getenv(environmentKey));
         }
+    }
+
+    public static void encryptEnvironments(Map<String, String> environments) {
+        new JobEnvironmentEncryptor().encrypt(environments);
     }
 }

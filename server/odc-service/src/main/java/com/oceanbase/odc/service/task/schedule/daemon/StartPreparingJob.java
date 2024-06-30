@@ -25,7 +25,6 @@ import org.quartz.JobExecutionException;
 import org.springframework.data.domain.Page;
 
 import com.google.common.collect.Lists;
-import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.common.trace.TraceContextHolder;
 import com.oceanbase.odc.core.alarm.AlarmEventNames;
 import com.oceanbase.odc.core.alarm.AlarmUtils;
@@ -108,7 +107,7 @@ public class StartPreparingJob implements Job {
                 log.info("Prepare start job, jobId={}, currentStatus={}.",
                         lockedEntity.getId(), lockedEntity.getStatus());
                 JobContext jc =
-                        new DefaultJobContextBuilder().build(lockedEntity, getConfiguration().getHostUrlProvider());
+                        new DefaultJobContextBuilder().build(lockedEntity);
                 try {
                     getConfiguration().getJobDispatcher().start(jc);
                 } catch (JobException e) {
@@ -123,14 +122,13 @@ public class StartPreparingJob implements Job {
         });
     }
 
-    private boolean checkJobIsExpired(JobEntity a) {
-
-        SingleJobProperties jobProperties = JsonUtils.fromJson(a.getJobPropertiesJson(), SingleJobProperties.class);
+    private boolean checkJobIsExpired(JobEntity je) {
+        SingleJobProperties jobProperties = SingleJobProperties.fromJobProperties(je.getJobProperties());
         if (jobProperties == null || jobProperties.getJobExpiredIfNotRunningAfterSeconds() == null) {
             return false;
         }
 
-        long baseTimeMills = a.getCreateTime().getTime();
+        long baseTimeMills = je.getCreateTime().getTime();
         return JobDateUtils.getCurrentDate().getTime() - baseTimeMills > TimeUnit.MILLISECONDS.convert(
                 jobProperties.getJobExpiredIfNotRunningAfterSeconds(), TimeUnit.SECONDS);
 

@@ -40,7 +40,7 @@ public class JobEnvironmentFactory {
 
     private final Map<String, String> environments = new HashMap<>();
 
-    public Map<String, String> getEnvironments(JobContext context, TaskRunMode runMode) {
+    public Map<String, String> build(JobContext context, TaskRunMode runMode) {
         putEnv(JobEnvKeyConstants.ODC_BOOT_MODE, () -> JobConstants.ODC_BOOT_MODE_EXECUTOR);
         putEnv(JobEnvKeyConstants.ODC_TASK_RUN_MODE, runMode::name);
         putEnv(JobEnvKeyConstants.ODC_JOB_CONTEXT, () -> JobUtils.toJson(context));
@@ -56,7 +56,6 @@ public class JobEnvironmentFactory {
         long userId = TraceContextHolder.getUserId() != null ? TraceContextHolder.getUserId() : -1;
         putEnv(JobEnvKeyConstants.ODC_EXECUTOR_USER_ID, () -> userId + "");
         return environments;
-
     }
 
     private void setDatabaseEnv() {

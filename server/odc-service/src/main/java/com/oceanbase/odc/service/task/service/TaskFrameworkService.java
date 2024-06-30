@@ -62,38 +62,25 @@ public interface TaskFrameworkService {
     Page<JobEntity> findRunningJobs(int page, int size);
 
     /**
-     * count the jobs started time before neverHeartSeconds which status is running and no heart
-     *
-     * @param neverHeartSeconds job start seconds
-     * @return count
-     */
-    long countRunningNeverHeartJobs(int neverHeartSeconds);
-
-    /**
      * count jobs which process is running
      */
     long countRunningJobs(TaskRunMode runMode);
-
-    JobDefinition getJobDefinition(Long id);
 
     int startSuccess(Long id, String executorIdentifier);
 
     int beforeStart(Long id);
 
-    void updateDescription(Long id, String description);
-
     int updateJobToCanceling(Long id, JobStatus oldStatus);
 
     int updateJobParameters(Long id, String jobParametersJson);
+
+    int updateExecutorEndpoint(Long id, String executorEndpoint);
 
     int updateExecutorToDestroyed(Long id);
 
     int updateStatusDescriptionByIdOldStatus(Long id, JobStatus oldStatus, JobStatus newStatus, String description);
 
     int updateStatusToFailedWhenHeartTimeout(Long id, int heartTimeoutSeconds, String description);
-
-    int updateStatusDescriptionByIdOldStatusAndExecutorDestroyed(Long id, JobStatus oldStatus, JobStatus newStatus,
-            String description);
 
     Optional<String> findByJobIdAndAttributeKey(Long jobId, String attributeKey);
 
