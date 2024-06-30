@@ -18,16 +18,16 @@
 
 # core
 /server/odc-core/                   @yhilmare @yizhouxw
-/server/odc-core/**/alarm/          @LuckyPickleZZ
-/server/odc-core/**/authority/      @yhilmare
-/server/odc-core/**/datamasking/    @smallsheeeep
-/server/odc-core/**/datasource/     @yhilmare
-/server/odc-core/**/flow/           @yhilmare
+/server/odc-core/**/alarm/          @LuckyPickleZZ  @yizhouxw
+/server/odc-core/**/authority/      @yhilmare @yizhouxw
+/server/odc-core/**/datamasking/    @LuckyPickleZZ @yhilmare
+/server/odc-core/**/datasource/     @yhilmare @yizhouxw
+/server/odc-core/**/flow/           @yhilmare @yizhouxw
 /server/odc-core/**/migrate/        @yhilmare @yizhouxw
-/server/odc-core/**/session/        @yhilmare
+/server/odc-core/**/session/        @yhilmare @yizhouxw
 /server/odc-core/**/shared/         @yhilmare @yizhouxw
 /server/odc-core/**/sql/            @yhilmare @LuckyPickleZZ
-/server/odc-core/**/task/           @yhilmare @krihy
+/server/odc-core/**/task/           @yhilmare @guowl3 @yizhouxw
 
 # service common
 /server/odc-service/                                  @yhilmare @yizhouxw
@@ -38,35 +38,35 @@
 # service business
 /server/odc-service/**/service/audit/                 @MarkPotato777 @yizhouxw
 /server/odc-service/**/service/automation/            @LuckyPickleZZ @ungreat
-/server/odc-service/**/service/captcha/               @MarkPotato777 @smallsheeeep
-/server/odc-service/**/service/collaboration/         @MarkPotato777 @smallsheeeep
+/server/odc-service/**/service/captcha/               @MarkPotato777 @yhilmare
+/server/odc-service/**/service/collaboration/         @MarkPotato777 @yhilmare
 /server/odc-service/**/service/config/                @MarkPotato777 @yizhouxw
-/server/odc-service/**/service/datasecurity/          @smallsheeeep @yhilmare
+/server/odc-service/**/service/datasecurity/          @LuckyPickleZZ @yhilmare
 /server/odc-service/**/service/datatransfer/          @LuckyPickleZZ @yhilmare
 /server/odc-service/**/service/db/                    @PeachThinking @yhilmare
 /server/odc-service/**/service/diagnose/              @LuckyPickleZZ @yizhouxw
 /server/odc-service/**/service/dispatch/              @yhilmare  @yizhouxw
-/server/odc-service/**/service/dlm/                   @guowl3 @smallsheeeep
+/server/odc-service/**/service/dlm/                   @guowl3 @yizhouxw
 /server/odc-service/**/service/dml/                   @LuckyPickleZZ @PeachThinking
-/server/odc-service/**/service/encryption/            @smallsheeeep @yizhouxw
+/server/odc-service/**/service/encryption/            @MarkPotato777 @yizhouxw
 /server/odc-service/**/service/feature/               @MarkPotato777 @yizhouxw
 /server/odc-service/**/service/flow/                  @yhilmare @krihy
 /server/odc-service/**/service/i18n/                  @LuckyPickleZZ
-/server/odc-service/**/service/iam/                   @MarkPotato777 @smallsheeeep
+/server/odc-service/**/service/iam/                   @MarkPotato777 @yhilmare
 /server/odc-service/**/service/info/                  @yhilmare @yizhouxw
-/server/odc-service/**/service/integration/           @smallsheeeep @ungreat
+/server/odc-service/**/service/integration/           @yizhouxw @ungreat
 /server/odc-service/**/service/lab/                   @LuckyPickleZZ @ungreat
 /server/odc-service/**/service/monitor/               @ungreat @yizhouxw
 /server/odc-service/**/service/notification/          @LuckyPickleZZ @MarkPotato777
 /server/odc-service/**/service/objectstorage/         @MarkPotato777 @yizhouxw
 /server/odc-service/**/service/onlineschemachange/    @krihy @LuckyPickleZZ
 /server/odc-service/**/service/partitionplan/         @guowl3 @yhilmare
-/server/odc-service/**/service/permission/            @smallsheeeep @yhilmare
+/server/odc-service/**/service/permission/            @MarkPotato777 @yhilmare
 /server/odc-service/**/service/pldebug/               @yhilmare @krihy
 /server/odc-service/**/service/plugin/                @yhilmare @krihy
 /server/odc-service/**/service/quartz/                @guowl3 @yhilmare
-/server/odc-service/**/service/requlation/            @MarkPotato777 @smallsheeeep
-/server/odc-service/**/service/resourcegroup/         @MarkPotato777 @smallsheeeep
+/server/odc-service/**/service/requlation/            @MarkPotato777 @yhilmare
+/server/odc-service/**/service/resourcegroup/         @MarkPotato777 @yhilmare
 /server/odc-service/**/service/resultset/             @LuckyPickleZZ @PeachThinking
 /server/odc-service/**/service/rollbackplan/          @PeachThinking @MarkPotato777
 /server/odc-service/**/service/schedule/              @guowl3 @yhilmare
@@ -77,7 +77,7 @@
 /server/odc-service/**/service/sqlcheck/              @yhilmare @PeachThinking
 /server/odc-service/**/service/structurecompare/      @PeachThinking @yhilmare
 /server/odc-service/**/service/systemconfig/          @MarkPotato777  @yizhouxw
-/server/odc-service/**/service/task/                  @yhilmare @krihy @yizhouxw
+/server/odc-service/**/service/task/                  @yhilmare @guowl3 @yizhouxw
 /server/odc-service/**/service/websocket/             @LuckyPickleZZ  @yizhouxw
 
 # plugins
@@ -111,13 +111,13 @@
 
 
 # CI/CD
-/.github/                    @smallsheeeep @yhilmare @yizhouxw
-/builds/                     @smallsheeeep @yhilmare @yizhouxw
-/script/                     @smallsheeeep @yhilmare @yizhouxw
-/distribution/               @smallsheeeep @yhilmare @yizhouxw
-/server/odc-test/            @smallsheeeep @yhilmare @yizhouxw
-/server/integration-test/    @smallsheeeep @yhilmare @yizhouxw
-/server/test-script/         @smallsheeeep @yhilmare @yizhouxw
+/.github/                    @yhilmare @yizhouxw
+/builds/                     @yhilmare @yizhouxw
+/script/                     @yhilmare @yizhouxw
+/distribution/               @yhilmare @yizhouxw
+/server/odc-test/            @yhilmare @yizhouxw
+/server/integration-test/    @yhilmare @yizhouxw
+/server/test-script/         @yhilmare @yizhouxw
 
 # i18n
 /server/odc-core/src/main/resources/i18n/     @Jane201510 @JessieWuJiexi @yizhouxw
