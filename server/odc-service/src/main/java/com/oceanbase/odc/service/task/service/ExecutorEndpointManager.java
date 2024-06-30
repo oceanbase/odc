@@ -15,6 +15,8 @@
  */
 package com.oceanbase.odc.service.task.service;
 
+import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,6 +24,7 @@ import org.springframework.stereotype.Service;
 
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.metadb.task.JobEntity;
+import com.oceanbase.odc.service.cloud.model.CloudProvider;
 import com.oceanbase.odc.service.task.caller.ExecutorIdentifier;
 import com.oceanbase.odc.service.task.caller.ExecutorIdentifierParser;
 import com.oceanbase.odc.service.task.caller.JobContext;
@@ -31,6 +34,7 @@ import com.oceanbase.odc.service.task.caller.K8sJobResponse;
 import com.oceanbase.odc.service.task.enums.JobStatus;
 import com.oceanbase.odc.service.task.enums.TaskRunMode;
 import com.oceanbase.odc.service.task.schedule.DefaultJobContextBuilder;
+import com.oceanbase.odc.service.task.util.JobPropertiesUtils;
 
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
@@ -42,6 +46,12 @@ public class ExecutorEndpointManager {
     private K8sJobClientSelector k8sJobClientSelector;
     @Autowired
     private TaskFrameworkService taskFrameworkService;
+
+    private ExecutorHostAdapter hostAdapter = null;
+
+    public void setHostAdapter(ExecutorHostAdapter hostAdapter) {
+        this.hostAdapter = hostAdapter;
+    }
 
     public String getExecutorEndpoint(@NonNull JobEntity je) {
         Long jobId = je.getId();
@@ -61,6 +71,12 @@ public class ExecutorEndpointManager {
         JobContext jobContext = new DefaultJobContextBuilder().build(je);
         ExecutorIdentifier executorIdentifier = ExecutorIdentifierParser.parser(je.getExecutorIdentifier());
         K8sJobClient k8sJobClient = k8sJobClientSelector.select(jobContext);
+        Map<String, String> jobProperties = jobContext.getJobProperties();
+        int executorListenPort = JobPropertiesUtils.getExecutorListenPort(jobProperties);
+        if (executorListenPort <= 0) {
+            throw new RuntimeException("Failed to get executor listen port, jobId=" + jobId
+                    + ", executorListenPort=" + executorListenPort);
+        }
         try {
             Optional<K8sJobResponse> responseOptional = k8sJobClient.get(executorIdentifier.getNamespace(),
                     executorIdentifier.getExecutorName());
@@ -68,7 +84,8 @@ public class ExecutorEndpointManager {
                 K8sJobResponse response = responseOptional.get();
                 String podIpAddress = response.getPodIpAddress();
                 if (StringUtils.isNotBlank(podIpAddress)) {
-                    executorEndpoint = "http://" + podIpAddress + ":8080";
+                    String adaptedHost = adaptHost(podIpAddress, jobProperties);
+                    executorEndpoint = "http://" + adaptedHost + ":" + executorListenPort;
                     taskFrameworkService.updateExecutorEndpoint(jobId, executorEndpoint);
                     return executorEndpoint;
                 } else {
@@ -81,6 +98,18 @@ public class ExecutorEndpointManager {
         } catch (Exception e) {
             throw new RuntimeException("Failed to get executor endpoint, " + e.getMessage());
         }
+    }
+
+    private String adaptHost(String host, Map<String, String> jobProperties) {
+        if (hostAdapter == null) {
+            return host;
+        }
+        CloudProvider cloudProvider = JobPropertiesUtils.getCloudProvider(jobProperties);
+        String regionName = JobPropertiesUtils.getRegionName(jobProperties);
+        if (Objects.isNull(cloudProvider) || StringUtils.isBlank(regionName)) {
+            throw new RuntimeException("Failed to get cloud provider or region name");
+        }
+        return hostAdapter.adapt(host, cloudProvider, regionName);
     }
 
 }
