@@ -17,18 +17,19 @@ package com.oceanbase.odc.service.task.caller;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Optional;
+import java.util.Objects;
 import java.util.function.Supplier;
 
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.common.trace.TraceContextHolder;
-import com.oceanbase.odc.common.util.SystemUtils;
-import com.oceanbase.odc.service.objectstorage.cloud.model.CloudEnvConfigurations;
+import com.oceanbase.odc.service.objectstorage.cloud.model.ObjectStorageConfiguration;
 import com.oceanbase.odc.service.task.config.JobConfigurationHolder;
 import com.oceanbase.odc.service.task.constants.JobConstants;
 import com.oceanbase.odc.service.task.constants.JobEnvKeyConstants;
 import com.oceanbase.odc.service.task.enums.TaskRunMode;
 import com.oceanbase.odc.service.task.executor.logger.LogUtils;
+import com.oceanbase.odc.service.task.model.ExecutorMetadbCredential;
+import com.oceanbase.odc.service.task.schedule.JobCredentialProvider;
 import com.oceanbase.odc.service.task.util.JobUtils;
 
 /**
@@ -44,31 +45,31 @@ public class JobEnvironmentFactory {
         putEnv(JobEnvKeyConstants.ODC_BOOT_MODE, () -> JobConstants.ODC_BOOT_MODE_EXECUTOR);
         putEnv(JobEnvKeyConstants.ODC_TASK_RUN_MODE, runMode::name);
         putEnv(JobEnvKeyConstants.ODC_JOB_CONTEXT, () -> JobUtils.toJson(context));
-        CloudEnvConfigurations cloudEnvConfigurations = JobConfigurationHolder.getJobConfiguration()
-                .getCloudEnvConfigurations();
-        if (cloudEnvConfigurations != null) {
+
+        JobCredentialProvider jobCredentialProvider = JobConfigurationHolder.getJobConfiguration()
+                .getJobCredentialProvider();
+
+        ObjectStorageConfiguration cloudObjectStorageCredential = jobCredentialProvider
+                .getCloudObjectStorageCredential(context);
+        if (Objects.nonNull(cloudObjectStorageCredential)) {
             putEnv(JobEnvKeyConstants.ODC_OBJECT_STORAGE_CONFIGURATION,
-                    () -> JsonUtils.toJson(cloudEnvConfigurations.getObjectStorageConfiguration()));
+                    () -> JsonUtils.toJson(cloudObjectStorageCredential));
+        }
+
+        ExecutorMetadbCredential executorMetadbCredential = jobCredentialProvider.getExecutorMetadbCredential(context);
+        if (Objects.nonNull(executorMetadbCredential)) {
+            putEnv(JobEnvKeyConstants.ODC_EXECUTOR_DATABASE_HOST, executorMetadbCredential::getHost);
+            putEnv(JobEnvKeyConstants.ODC_EXECUTOR_DATABASE_PORT, () -> executorMetadbCredential.getPort() + "");
+            putEnv(JobEnvKeyConstants.ODC_EXECUTOR_DATABASE_NAME, executorMetadbCredential::getDatabase);
+            putEnv(JobEnvKeyConstants.ODC_EXECUTOR_DATABASE_USERNAME, executorMetadbCredential::getUsername);
+            putEnv(JobEnvKeyConstants.ODC_EXECUTOR_DATABASE_PASSWORD, executorMetadbCredential::getPassword);
         }
 
         putEnv(JobEnvKeyConstants.ODC_LOG_DIRECTORY, LogUtils::getBaseLogPath);
-        setDatabaseEnv();
+
         long userId = TraceContextHolder.getUserId() != null ? TraceContextHolder.getUserId() : -1;
         putEnv(JobEnvKeyConstants.ODC_EXECUTOR_USER_ID, () -> userId + "");
         return environments;
-    }
-
-    private void setDatabaseEnv() {
-        putFromEnv(JobEnvKeyConstants.ODC_EXECUTOR_DATABASE_HOST, "ODC_DATABASE_HOST", "DATABASE_HOST");
-        putFromEnv(JobEnvKeyConstants.ODC_EXECUTOR_DATABASE_PORT, "ODC_DATABASE_PORT", "DATABASE_PORT");
-        putFromEnv(JobEnvKeyConstants.ODC_EXECUTOR_DATABASE_NAME, "ODC_DATABASE_NAME", "DATABASE_NAME");
-        putFromEnv(JobEnvKeyConstants.ODC_EXECUTOR_DATABASE_USERNAME, "ODC_DATABASE_USERNAME", "DATABASE_USERNAME");
-        putFromEnv(JobEnvKeyConstants.ODC_EXECUTOR_DATABASE_PASSWORD, "ODC_DATABASE_PASSWORD", "DATABASE_PASSWORD");
-    }
-
-    private void putFromEnv(String newEnv, String fromEnv, String otherEnv) {
-        putEnv(newEnv, () -> Optional.ofNullable(SystemUtils.getEnvOrProperty(fromEnv))
-                .orElse(SystemUtils.getEnvOrProperty(otherEnv)));
     }
 
     private void putEnv(String envName, Supplier<String> envSupplier) {

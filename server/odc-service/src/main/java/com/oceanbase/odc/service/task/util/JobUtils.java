@@ -133,14 +133,15 @@ public class JobUtils {
     public static ConnectionConfig getMetaDBConnectionConfig() {
         ConnectionConfig config = new ConnectionConfig();
         config.setHost(System.getProperty(JobEnvKeyConstants.ODC_EXECUTOR_DATABASE_HOST));
-        String port = System.getProperty(JobEnvKeyConstants.ODC_EXECUTOR_DATABASE_PORT);
-        config.setPort(port != null ? Integer.parseInt(port) : 8989);
+        config.setPort(Integer.parseInt(System.getProperty(JobEnvKeyConstants.ODC_EXECUTOR_DATABASE_PORT)));
         config.setDefaultSchema(System.getProperty(JobEnvKeyConstants.ODC_EXECUTOR_DATABASE_NAME));
         config.setUsername(System.getProperty(JobEnvKeyConstants.ODC_EXECUTOR_DATABASE_USERNAME));
         JasyptEncryptorConfigProperties properties = new AccessEnvironmentJasyptEncryptorConfigProperties();
         config.setPassword(new DefaultJasyptEncryptor(properties)
                 .decrypt(System.getProperty(JobEnvKeyConstants.ODC_EXECUTOR_DATABASE_PASSWORD)));
         config.setType(ConnectType.OB_MYSQL);
+
+        // TODO: avoid hardcode here
         config.setId(1L);
         return config;
     }

@@ -58,21 +58,4 @@ public enum CloudProvider {
         return this.values;
     }
 
-    public CloudResourceType objectStorageResourceType() {
-        switch (this) {
-            case ALIBABA_CLOUD:
-                return CloudResourceType.OSS;
-            case AWS:
-            case AWSCN:
-                return CloudResourceType.S3;
-            case HUAWEI_CLOUD:
-                return CloudResourceType.OBS;
-            case TENCENT_CLOUD:
-                return CloudResourceType.COS;
-            case GOOGLE_CLOUD:
-                return CloudResourceType.GCS;
-            default:
-                return CloudResourceType.NONE;
-        }
-    }
 }

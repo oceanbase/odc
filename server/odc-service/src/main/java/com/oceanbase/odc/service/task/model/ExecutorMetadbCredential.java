@@ -13,37 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.cloud.model;
+package com.oceanbase.odc.service.task.model;
 
+import lombok.Data;
 
-public enum CloudResourceType {
-    /**
-     * 不支持
-     */
-    NONE,
-
-    /**
-     * 阿里云对象存储 OSS
-     */
-    OSS,
-
-    /**
-     * AWS 对象存储 S3
-     */
-    S3,
-
-    /**
-     * 华为云对象存储 OBS
-     */
-    OBS,
-
-    /**
-     * 腾讯云对象存储 COS
-     */
-    COS,
-
-    /**
-     * Google Cloud Storage
-     */
-    GCS
+@Data
+public class ExecutorMetadbCredential {
+    private String host;
+    private Integer port;
+    private String database;
+    private String username;
+    private String password;
 }
