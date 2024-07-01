@@ -24,7 +24,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import com.oceanbase.odc.core.shared.jdbc.HostAddress;
-import com.oceanbase.odc.core.shared.jdbc.JdbcUrlParser;
+import com.oceanbase.odc.plugin.connect.api.JdbcUrlParser;
 
 import lombok.NonNull;
 

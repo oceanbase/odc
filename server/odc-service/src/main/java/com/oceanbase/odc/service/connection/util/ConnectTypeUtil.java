@@ -30,7 +30,7 @@ import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.core.shared.constant.ConnectType;
 import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.shared.jdbc.HostAddress;
-import com.oceanbase.odc.core.shared.jdbc.JdbcUrlParser;
+import com.oceanbase.odc.plugin.connect.api.JdbcUrlParser;
 import com.oceanbase.odc.service.plugin.ConnectionPluginUtil;
 
 import lombok.NonNull;

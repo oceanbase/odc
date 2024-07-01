@@ -27,7 +27,7 @@ import org.mariadb.jdbc.UrlParser;
 import org.mariadb.jdbc.util.Options;
 
 import com.oceanbase.odc.core.shared.jdbc.HostAddress;
-import com.oceanbase.odc.core.shared.jdbc.JdbcUrlParser;
+import com.oceanbase.odc.plugin.connect.api.JdbcUrlParser;
 
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;

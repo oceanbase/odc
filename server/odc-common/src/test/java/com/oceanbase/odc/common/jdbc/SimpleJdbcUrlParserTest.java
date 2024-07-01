@@ -24,7 +24,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
 @RunWith(Parameterized.class)
-public class JdbcUrlParserTest {
+public class SimpleJdbcUrlParserTest {
 
     private final String jdbcUrl;
     private final String expectedType;
@@ -32,7 +32,7 @@ public class JdbcUrlParserTest {
     private final Integer expectedPort;
     private final String expectedDatabase;
 
-    public JdbcUrlParserTest(String jdbcUrl, String expectedType, String expectedHost, Integer expectedPort,
+    public SimpleJdbcUrlParserTest(String jdbcUrl, String expectedType, String expectedHost, Integer expectedPort,
             String expectedDatabase) {
         this.jdbcUrl = jdbcUrl;
         this.expectedType = expectedType;
@@ -62,7 +62,7 @@ public class JdbcUrlParserTest {
 
     @Test
     public void parser_validJdbcUrl_returnConnectionInfo() {
-        JdbcUrlParser.ConnectionInfo connectionInfo = JdbcUrlParser.parse(jdbcUrl);
+        SimpleJdbcUrlParser.ConnectionInfo connectionInfo = SimpleJdbcUrlParser.parse(jdbcUrl);
 
         Assert.assertEquals(expectedType, connectionInfo.getType());
         Assert.assertEquals(expectedHost, connectionInfo.getHost());

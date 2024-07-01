@@ -23,7 +23,7 @@ import com.oceanbase.odc.common.util.StringUtils;
 import lombok.Data;
 import lombok.NonNull;
 
-public class JdbcUrlParser {
+public class SimpleJdbcUrlParser {
     private static final String REGEX =
             "jdbc:(mysql|oracle|oceanbase|postgresql|sqlserver)://([^/:]+)(?::([0-9]+))?/([^?;]*)";
     private static final Pattern PATTERN = Pattern.compile(REGEX);
