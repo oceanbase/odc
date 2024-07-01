@@ -68,6 +68,12 @@ public class ImmediateJobDispatcher implements JobDispatcher {
         jobCaller.destroy(ji);
     }
 
+    @Override
+    public boolean canBeDestroy(JobIdentity ji) {
+        JobCaller jobCaller = getJobCaller(getJobRunMode(ji));
+        return jobCaller.canBeDestroy(ji);
+    }
+
     private JobCaller getJobCaller(TaskRunMode taskRunMode) {
         return getJobCallerWithContext(taskRunMode, null);
     }

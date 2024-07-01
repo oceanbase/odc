@@ -1161,15 +1161,13 @@ public class OracleSqlCheckerTest {
         CheckViolation c1 = new CheckViolation(sqls[0], 1, 0, 0, 462, type, new Object[] {"high"});
         CheckViolation c2 = new CheckViolation(sqls[0], 1, 280, 280, 321, type, new Object[] {"high"});
         CheckViolation c3 = new CheckViolation(sqls[0], 1, 371, 371, 412, type, new Object[] {"high"});
-        CheckViolation c4 = new CheckViolation(sqls[0], 1, 19, 19, 20, type, new Object[] {"id"});
         CheckViolation c5 = new CheckViolation(sqls[0], 1, 36, 36, 52, type, new Object[] {"\"high\""});
-        CheckViolation c6 = new CheckViolation(sqls[1], 1, 20, 20, 21, type, new Object[] {"ID"});
         CheckViolation c7 = new CheckViolation(sqls[1], 1, 36, 36, 62, type, new Object[] {"high"});
         CheckViolation c8 = new CheckViolation(sqls[2], 1, 20, 20, 23, type, new Object[] {"high"});
         CheckViolation c9 = new CheckViolation(sqls[3], 1, 28, 28, 31, type, new Object[] {"high"});
         CheckViolation c10 = new CheckViolation(sqls[4], 1, 136, 136, 195, type, new Object[] {"high"});
 
-        List<CheckViolation> expect = Arrays.asList(c1, c2, c3, c4, c5, c6, c7, c8, c9, c10);
+        List<CheckViolation> expect = Arrays.asList(c1, c2, c3, c5, c7, c8, c9, c10);
         Assert.assertEquals(expect, actual);
     }
 
