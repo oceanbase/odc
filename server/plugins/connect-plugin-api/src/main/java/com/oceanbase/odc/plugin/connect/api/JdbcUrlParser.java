@@ -18,8 +18,6 @@ package com.oceanbase.odc.plugin.connect.api;
 import java.util.List;
 import java.util.Map;
 
-import com.oceanbase.odc.core.shared.jdbc.HostAddress;
-
 /**
  * {@link JdbcUrlParser}
  *

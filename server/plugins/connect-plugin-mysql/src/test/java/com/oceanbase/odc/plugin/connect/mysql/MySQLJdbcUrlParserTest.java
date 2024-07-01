@@ -25,7 +25,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
-import com.oceanbase.odc.core.shared.jdbc.HostAddress;
+import com.oceanbase.odc.plugin.connect.api.HostAddress;
 import com.oceanbase.odc.plugin.connect.api.JdbcUrlParser;
 
 /**
