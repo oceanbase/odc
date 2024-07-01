@@ -45,6 +45,8 @@ import lombok.ToString;
 @Data
 @ToString(exclude = {"password"})
 public class TestConnectionReq implements CloudConnectionConfig, SSLConnectionConfig {
+
+    private String name;
     /**
      * Connection ID，用于编辑连接页面未传密码参数时从已保存的连接信息中获取对应密码字段
      */
@@ -160,6 +162,7 @@ public class TestConnectionReq implements CloudConnectionConfig, SSLConnectionCo
         req.setPort(connection.getPort());
         req.setClusterName(connection.getClusterName());
         req.setDefaultSchema(connection.getDefaultSchema());
+        req.setName(connection.getName());
         if (accountType == ConnectionAccountType.MAIN) {
             req.setTenantName(connection.getTenantName());
             req.setUsername(connection.getUsername());
