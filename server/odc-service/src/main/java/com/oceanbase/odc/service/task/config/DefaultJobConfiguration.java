@@ -81,4 +81,5 @@ public abstract class DefaultJobConfiguration implements JobConfiguration {
     protected JasyptEncryptorConfigProperties jasyptEncryptorConfigProperties;
 
     protected HostProperties hostProperties;
+
 }

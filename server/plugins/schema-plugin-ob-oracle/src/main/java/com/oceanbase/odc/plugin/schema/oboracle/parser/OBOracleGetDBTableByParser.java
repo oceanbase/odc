@@ -322,6 +322,9 @@ public class OBOracleGetDBTableByParser implements GetDBTableByParser {
                     String idxDDL = rs.getString("DDL");
                     this.indexName2Ddl.put(idx.getName(), idxDDL);
                     CreateIndex createIndexStmt = parseIndexDDL(idxDDL);
+                    if (createIndexStmt == null) {
+                        return;
+                    }
                     idx.setGlobal(
                             Objects.nonNull(createIndexStmt.getIndexOptions()) ? createIndexStmt.getIndexOptions()
                                     .getGlobal()
