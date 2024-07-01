@@ -16,11 +16,6 @@
 package com.oceanbase.odc.service.connection.model;
 
 public interface CloudConnectionConfig {
-
-    String getName();
-
-    String getUsername();
-
     String getClusterName();
 
     String getTenantName();
