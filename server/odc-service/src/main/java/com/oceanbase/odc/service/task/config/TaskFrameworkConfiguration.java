@@ -35,12 +35,15 @@ import com.oceanbase.odc.common.event.EventPublisher;
 import com.oceanbase.odc.service.task.exception.JobException;
 
 import com.oceanbase.odc.common.util.StringUtils;
+import com.oceanbase.odc.service.objectstorage.cloud.model.CloudEnvConfigurations;
 import com.oceanbase.odc.service.task.caller.DefaultK8sJobClientSelector;
 import com.oceanbase.odc.service.task.caller.K8sJobClientSelector;
 import com.oceanbase.odc.service.task.caller.NativeK8sJobClient;
 import com.oceanbase.odc.service.task.caller.NullK8sJobClientSelector;
 import com.oceanbase.odc.service.task.jasypt.DefaultJasyptEncryptorConfigProperties;
 import com.oceanbase.odc.service.task.jasypt.JasyptEncryptorConfigProperties;
+import com.oceanbase.odc.service.task.schedule.DefaultJobCredentialProvider;
+import com.oceanbase.odc.service.task.schedule.JobCredentialProvider;
 import com.oceanbase.odc.service.task.schedule.JobDefinition;
 import com.oceanbase.odc.service.task.schedule.JobScheduler;
 import com.oceanbase.odc.service.task.schedule.MonitorProcessRateLimiter;
@@ -59,6 +62,13 @@ import lombok.extern.slf4j.Slf4j;
 @Configuration
 @Slf4j
 public class TaskFrameworkConfiguration {
+
+    @Lazy
+    @Bean
+    @ConditionalOnMissingBean(JobCredentialProvider.class)
+    public JobCredentialProvider jobCredentialProvider(CloudEnvConfigurations cloudEnvConfigurations) {
+        return new DefaultJobCredentialProvider(cloudEnvConfigurations);
+    }
 
     @Lazy
     @Bean

@@ -13,24 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package com.oceanbase.odc.service.task.service;
 
-package com.oceanbase.odc.service.task.schedule;
-
-import com.oceanbase.odc.metadb.task.JobEntity;
-import com.oceanbase.odc.service.task.caller.JobContext;
+import com.oceanbase.odc.service.cloud.model.CloudProvider;
 
 /**
- * @author yaobin
- * @date 2023-11-30
- * @since 4.2.4
+ * convert executor host to a virtual host, for network extension
  */
-public interface JobContextBuilder {
-
-    JobContext build(JobIdentity ji, JobDefinition jd);
-
-    /**
-     * build job context from job entity, for stop/modify/destroy scenario
-     */
-    JobContext build(JobEntity jobEntity);
-
+@FunctionalInterface
+public interface ExecutorHostAdapter {
+    String adapt(String host, CloudProvider cloudProvider, String regionName);
 }

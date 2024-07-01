@@ -18,15 +18,21 @@
 
 # core
 /server/odc-core/                   @yhilmare @yizhouxw
+/server/odc-core/**/alarm/          @LuckyPickleZZ  @yizhouxw
+/server/odc-core/**/authority/      @yhilmare @yizhouxw
+/server/odc-core/**/datamasking/    @LuckyPickleZZ @yhilmare
+/server/odc-core/**/datasource/     @yhilmare @yizhouxw
+/server/odc-core/**/flow/           @yhilmare @yizhouxw
 /server/odc-core/**/alarm/          @LuckyPickleZZ
 /server/odc-core/**/authority/      @yhilmare
 /server/odc-core/**/datamasking/    @LuckyPickleZZ
 /server/odc-core/**/datasource/     @yhilmare
 /server/odc-core/**/flow/           @yhilmare
 /server/odc-core/**/migrate/        @yhilmare @yizhouxw
-/server/odc-core/**/session/        @yhilmare
+/server/odc-core/**/session/        @yhilmare @yizhouxw
 /server/odc-core/**/shared/         @yhilmare @yizhouxw
 /server/odc-core/**/sql/            @yhilmare @LuckyPickleZZ
+/server/odc-core/**/task/           @yhilmare @guowl3 @yizhouxw
 /server/odc-core/**/task/           @yhilmare @yizhouxw
 
 # service common

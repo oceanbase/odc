@@ -27,6 +27,7 @@ import com.oceanbase.odc.service.task.TaskService;
 import com.oceanbase.odc.service.task.caller.K8sJobClientSelector;
 import com.oceanbase.odc.service.task.dispatch.JobDispatcher;
 import com.oceanbase.odc.service.task.jasypt.JasyptEncryptorConfigProperties;
+import com.oceanbase.odc.service.task.schedule.JobCredentialProvider;
 import com.oceanbase.odc.service.task.schedule.StartJobRateLimiter;
 import com.oceanbase.odc.service.task.schedule.TaskFrameworkDisabledHandler;
 import com.oceanbase.odc.service.task.schedule.provider.HostUrlProvider;
@@ -85,4 +86,5 @@ public abstract class DefaultJobConfiguration implements JobConfiguration {
 
     protected HostProperties hostProperties;
 
+    protected JobCredentialProvider jobCredentialProvider;
 }

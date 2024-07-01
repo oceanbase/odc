@@ -23,7 +23,6 @@ import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
 import org.springframework.data.domain.Page;
 
-import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.common.util.SilentExecutor;
 import com.oceanbase.odc.core.alarm.AlarmEventNames;
 import com.oceanbase.odc.core.alarm.AlarmUtils;
@@ -135,7 +134,7 @@ public class CheckRunningJob implements Job {
     }
 
     private boolean checkJobIfRetryNecessary(JobEntity je) {
-        SingleJobProperties jobProperties = JsonUtils.fromJson(je.getJobPropertiesJson(), SingleJobProperties.class);
+        SingleJobProperties jobProperties = SingleJobProperties.fromJobProperties(je.getJobProperties());
         if (jobProperties == null || !jobProperties.isEnableRetryAfterHeartTimeout()) {
             return false;
         }

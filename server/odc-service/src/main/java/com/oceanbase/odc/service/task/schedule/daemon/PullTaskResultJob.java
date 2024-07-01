@@ -27,7 +27,6 @@ import com.oceanbase.odc.service.task.config.JobConfigurationHolder;
 import com.oceanbase.odc.service.task.config.JobConfigurationValidator;
 import com.oceanbase.odc.service.task.config.TaskFrameworkProperties;
 import com.oceanbase.odc.service.task.service.TaskFrameworkService;
-import com.oceanbase.odc.service.task.service.TransactionManager;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -41,14 +40,12 @@ public class PullTaskResultJob implements Job {
 
     private TaskFrameworkProperties taskFrameworkProperties;
     private TaskFrameworkService taskFrameworkService;
-    private TransactionManager transactionManager;
 
     @Override
     public void execute(JobExecutionContext context) throws JobExecutionException {
         JobConfiguration configuration = JobConfigurationHolder.getJobConfiguration();
         this.taskFrameworkProperties = configuration.getTaskFrameworkProperties();
         this.taskFrameworkService = configuration.getTaskFrameworkService();
-        this.transactionManager = configuration.getTransactionManager();
 
         JobConfigurationValidator.validComponent();
 

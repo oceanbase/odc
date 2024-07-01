@@ -85,11 +85,11 @@ public class ImmediateJobDispatcher implements JobDispatcher {
                 JobConfigurationHolder.getJobConfiguration().getTaskFrameworkService();
         JobConfiguration config = JobConfigurationHolder.getJobConfiguration();
 
-        JobEntity jobEntity = taskFrameworkService.find(ji.getId());
+        JobEntity je = taskFrameworkService.find(ji.getId());
         if (Objects.isNull(context)) {
-            context = new DefaultJobContextBuilder().build(jobEntity);
+            context = new DefaultJobContextBuilder().build(je);
         }
-        if (jobEntity.getRunMode() == TaskRunMode.K8S) {
+        if (je.getRunMode() == TaskRunMode.K8S) {
             K8sJobClient k8sJobClient = config.getK8sJobClientSelector().select(context);
             PodConfig podConfig = createDefaultPodConfig(config.getTaskFrameworkProperties());
             return JobCallerBuilder.buildK8sJobCaller(k8sJobClient, podConfig, context);

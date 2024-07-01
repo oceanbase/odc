@@ -33,6 +33,7 @@ import com.oceanbase.odc.service.task.caller.K8sJobClientSelector;
 import com.oceanbase.odc.service.task.dispatch.ImmediateJobDispatcher;
 import com.oceanbase.odc.service.task.jasypt.JasyptEncryptorConfigProperties;
 import com.oceanbase.odc.service.task.schedule.DefaultTaskFrameworkDisabledHandler;
+import com.oceanbase.odc.service.task.schedule.JobCredentialProvider;
 import com.oceanbase.odc.service.task.schedule.StartJobRateLimiter;
 import com.oceanbase.odc.service.task.schedule.StartJobRateLimiterSupport;
 import com.oceanbase.odc.service.task.schedule.provider.DefaultHostUrlProvider;
@@ -78,6 +79,7 @@ public class DefaultSpringJobConfiguration extends DefaultJobConfiguration
         setTaskFrameworkDisabledHandler(new DefaultTaskFrameworkDisabledHandler());
         setJasyptEncryptorConfigProperties(ctx.getBean(JasyptEncryptorConfigProperties.class));
         setHostProperties(ctx.getBean(HostProperties.class));
+        setJobCredentialProvider(ctx.getBean(JobCredentialProvider.class));
     }
 
     @Override
