@@ -48,6 +48,7 @@ import com.oceanbase.odc.common.unit.BinarySizeUnit;
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.shared.Verify;
+import com.oceanbase.odc.service.cloud.model.CloudProvider;
 import com.oceanbase.odc.service.objectstorage.cloud.model.CloudEnvConfigurations;
 import com.oceanbase.odc.service.objectstorage.cloud.model.CloudObjectStorageConstants;
 import com.oceanbase.odc.service.objectstorage.cloud.model.CompleteMultipartUploadRequest;
@@ -59,7 +60,6 @@ import com.oceanbase.odc.service.objectstorage.cloud.model.InitiateMultipartUplo
 import com.oceanbase.odc.service.objectstorage.cloud.model.InitiateMultipartUploadResult;
 import com.oceanbase.odc.service.objectstorage.cloud.model.ObjectMetadata;
 import com.oceanbase.odc.service.objectstorage.cloud.model.ObjectStorageConfiguration;
-import com.oceanbase.odc.service.objectstorage.cloud.model.ObjectStorageConfiguration.CloudProvider;
 import com.oceanbase.odc.service.objectstorage.cloud.model.PartETag;
 import com.oceanbase.odc.service.objectstorage.cloud.model.PutObjectResult;
 import com.oceanbase.odc.service.objectstorage.cloud.model.UploadPartRequest;

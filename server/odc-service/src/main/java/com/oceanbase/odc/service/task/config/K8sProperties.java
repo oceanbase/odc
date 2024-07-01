@@ -15,6 +15,8 @@
  */
 package com.oceanbase.odc.service.task.config;
 
+import com.oceanbase.odc.service.task.constants.JobConstants;
+
 import lombok.Data;
 
 /**
@@ -86,5 +88,10 @@ public class K8sProperties {
      * node memory
      */
     private Long nodeMemInMB;
+
+    /**
+     * executor listen port, will use random port if not set or 0
+     */
+    private Integer executorListenPort = JobConstants.JOB_POD_DEFAULT_LISTEN_PORT;
 
 }

@@ -13,24 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.oceanbase.odc.service.task.schedule;
 
-import com.oceanbase.odc.metadb.task.JobEntity;
+import com.oceanbase.odc.service.objectstorage.cloud.model.ObjectStorageConfiguration;
 import com.oceanbase.odc.service.task.caller.JobContext;
+import com.oceanbase.odc.service.task.model.ExecutorMetadbCredential;
 
 /**
- * @author yaobin
- * @date 2023-11-30
- * @since 4.2.4
+ * Job credential provider for job execution
  */
-public interface JobContextBuilder {
+public interface JobCredentialProvider {
+    ObjectStorageConfiguration getCloudObjectStorageCredential(JobContext jobContext);
 
-    JobContext build(JobIdentity ji, JobDefinition jd);
-
-    /**
-     * build job context from job entity, for stop/modify/destroy scenario
-     */
-    JobContext build(JobEntity jobEntity);
-
+    ExecutorMetadbCredential getExecutorMetadbCredential(JobContext jobContext);
 }

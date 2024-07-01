@@ -13,24 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package com.oceanbase.odc.service.task.model;
 
-package com.oceanbase.odc.service.task.schedule;
+import lombok.Data;
 
-import com.oceanbase.odc.metadb.task.JobEntity;
-import com.oceanbase.odc.service.task.caller.JobContext;
-
-/**
- * @author yaobin
- * @date 2023-11-30
- * @since 4.2.4
- */
-public interface JobContextBuilder {
-
-    JobContext build(JobIdentity ji, JobDefinition jd);
-
-    /**
-     * build job context from job entity, for stop/modify/destroy scenario
-     */
-    JobContext build(JobEntity jobEntity);
-
+@Data
+public class ExecutorMetadbCredential {
+    private String host;
+    private Integer port;
+    private String database;
+    private String username;
+    private String password;
 }

@@ -37,6 +37,6 @@ public class DefaultJobDefinition implements JobDefinition {
 
     private Map<String, String> jobParameters;
 
-    private SingleJobProperties jobProperties;
+    private Map<String, String> jobProperties;
 
 }

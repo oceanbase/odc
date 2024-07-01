@@ -15,28 +15,49 @@
  */
 package com.oceanbase.odc.service.task.schedule;
 
+import java.util.Map;
+import java.util.Objects;
+
+import com.oceanbase.odc.common.json.JsonUtils;
+
 import lombok.Data;
 
 /**
  * @author yaobin
  * @date 2024-01-05
  * @since 4.2.4
+ * @todo remove this class, use Map and JobPropertiesUtils instead
+ * @see {@link com.oceanbase.odc.service.task.util.JobPropertiesUtils}
  */
 @Data
+@Deprecated
 public class SingleJobProperties {
 
     /**
      * job enable retry when task is expired
      */
-    private boolean enableRetryAfterHeartTimeout;
+    private boolean enableRetryAfterHeartTimeout = false;
 
     /**
      * job retry max times
      */
-    private Integer maxRetryTimesAfterHeartTimeout;
+    private Integer maxRetryTimesAfterHeartTimeout = 2;
 
     /**
      * job expired after seconds when job status is preparing and no resources to schedule job
      */
-    private Integer jobExpiredIfNotRunningAfterSeconds;
+    private Integer jobExpiredIfNotRunningAfterSeconds = null;
+
+    public static SingleJobProperties fromJobProperties(Map<String, String> jobProperties) {
+        if (Objects.isNull(jobProperties)) {
+            return new SingleJobProperties();
+        }
+        String json = JsonUtils.toJson(jobProperties);
+        return JsonUtils.fromJson(json, SingleJobProperties.class);
+    }
+
+    public Map<String, String> toJobProperties() {
+        String json = JsonUtils.toJson(this);
+        return JsonUtils.fromJsonMap(json, String.class, String.class);
+    }
 }

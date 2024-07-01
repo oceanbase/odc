@@ -20,10 +20,9 @@ import com.aliyuncs.endpoint.LocalConfigRegionalEndpointResolver;
 import com.aliyuncs.endpoint.ResolveEndpointRequest;
 import com.aliyuncs.exceptions.ClientException;
 import com.amazonaws.regions.RegionUtils;
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonValue;
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.shared.exception.UnexpectedException;
+import com.oceanbase.odc.service.cloud.model.CloudProvider;
 
 import lombok.Data;
 
@@ -74,39 +73,4 @@ public class ObjectStorageConfiguration {
         return this.internalEndpoint;
     }
 
-    public enum CloudProvider {
-        NONE("NONE"),
-        ALIBABA_CLOUD("ALIBABA_CLOUD", "ALIYUN"),
-        AWS("AWS", "AMAZON_WEB_SERVICE"),
-        AZURE("AZURE"),
-        GOOGLE_CLOUD("GOOGLE_CLOUD", "GCE"),
-        ;
-
-        private final String[] values;
-
-        CloudProvider(String... values) {
-            this.values = values;
-        }
-
-        @JsonCreator
-        public static CloudProvider fromValue(String value) {
-            for (CloudProvider cloudProvider : CloudProvider.values()) {
-                for (String optionalValue : cloudProvider.getValues()) {
-                    if (StringUtils.equalsIgnoreCase(optionalValue, value)) {
-                        return cloudProvider;
-                    }
-                }
-            }
-            throw new IllegalArgumentException("CloudProvider value not supported, given value '" + value + "'");
-        }
-
-        @JsonValue
-        public String getValue() {
-            return this.values[0];
-        }
-
-        public String[] getValues() {
-            return this.values;
-        }
-    }
 }

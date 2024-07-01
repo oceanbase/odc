@@ -18,8 +18,8 @@ package com.oceanbase.odc.service.cloud.config;
 import org.junit.Assert;
 import org.junit.Test;
 
+import com.oceanbase.odc.service.cloud.model.CloudProvider;
 import com.oceanbase.odc.service.objectstorage.cloud.model.ObjectStorageConfiguration;
-import com.oceanbase.odc.service.objectstorage.cloud.model.ObjectStorageConfiguration.CloudProvider;
 
 public class ObjectStorageConfigurationTest {
 
