@@ -52,4 +52,3 @@ lib/odc-*.jar
 maven/
 venv/
 **/local-unit-test.properties
-/.github/hooks/pre-push
