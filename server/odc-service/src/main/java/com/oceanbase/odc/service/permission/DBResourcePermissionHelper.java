@@ -22,6 +22,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
@@ -32,12 +33,15 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
+import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.constant.OrganizationType;
 import com.oceanbase.odc.core.shared.constant.ResourceRoleName;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.core.shared.exception.AccessDeniedException;
 import com.oceanbase.odc.core.shared.exception.BadRequestException;
+import com.oceanbase.odc.metadb.connection.ConnectionConfigRepository;
+import com.oceanbase.odc.metadb.connection.ConnectionEntity;
 import com.oceanbase.odc.metadb.connection.DatabaseEntity;
 import com.oceanbase.odc.metadb.connection.DatabaseRepository;
 import com.oceanbase.odc.metadb.dbobject.DBObjectEntity;
@@ -83,6 +87,9 @@ public class DBResourcePermissionHelper {
     @Autowired
     private PermissionCheckWhitelist permissionCheckWhitelist;
 
+    @Autowired
+    private ConnectionConfigRepository connectionConfigRepository;
+
     private static final Set<String> ORACLE_DATA_DICTIONARY = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
 
     private static final Set<String> MYSQL_DATA_DICTIONARY = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
@@ -106,13 +113,19 @@ public class DBResourcePermissionHelper {
             return;
         }
         List<DatabaseEntity> entities = databaseRepository.findByIdIn(databaseIds);
+        Set<Long> connectionIds = entities.stream()
+                .map(DatabaseEntity::getConnectionId)
+                .filter(Objects::nonNull).collect(Collectors.toSet());
+        Map<Long, ConnectionEntity> id2Entity = this.connectionConfigRepository.findByIdIn(connectionIds)
+                .stream().collect(Collectors.toMap(ConnectionEntity::getId, e -> e));
         List<Long> toCheckDatabaseIds = new ArrayList<>();
         Set<Long> projectIds = getPermittedProjectIds();
         for (DatabaseEntity e : entities) {
             if (e.getProjectId() == null) {
                 throw new AccessDeniedException("Database is not belong to any project");
             }
-            if (permissionCheckWhitelist.containsDatabase(e.getName(), e.getDialectType())
+            DialectType dialectType = id2Entity.get(e.getConnectionId()).getDialectType();
+            if (permissionCheckWhitelist.containsDatabase(e.getName(), dialectType)
                     || projectIds.contains(e.getProjectId())) {
                 continue;
             }

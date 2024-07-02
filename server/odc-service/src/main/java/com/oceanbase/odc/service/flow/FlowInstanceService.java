@@ -263,8 +263,6 @@ public class FlowInstanceService {
     @Autowired
     private EnvironmentRepository environmentRepository;
     @Autowired
-    private DBResourcePermissionHelper dbResourcePermissionHelper;
-    @Autowired
     private EnvironmentService environmentService;
 
     private final List<Consumer<DataTransferTaskInitEvent>> dataTransferTaskInitHooks = new ArrayList<>();
@@ -790,8 +788,8 @@ public class FlowInstanceService {
                     }
                 });
             }
-            List<UnauthorizedDBResource> unauthorizedDBResources =
-                    dbResourcePermissionHelper.filterUnauthorizedDBResources(resource2Types, false);
+            List<UnauthorizedDBResource> unauthorizedDBResources = this.permissionHelper
+                    .filterUnauthorizedDBResources(resource2Types, false);
             if (CollectionUtils.isNotEmpty(unauthorizedDBResources)) {
                 throw new BadRequestException(ErrorCodes.DatabaseAccessDenied,
                         new Object[] {unauthorizedDBResources.stream()
