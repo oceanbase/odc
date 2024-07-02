@@ -294,7 +294,7 @@ public class AuditEventAspect {
                 .type(auditEventMeta.getType())
                 .startTime(new Date())
                 .serverIpAddress(SystemUtils.getLocalIpAddress())
-                .clientIpAddress(WebRequestUtils.getClientAddress(servletRequest))
+                .clientIpAddress(WebRequestUtils.getTrulyClientIp(servletRequest))
                 .organizationId(authenticationFacade.currentOrganizationId())
                 .userId(authenticationFacade.currentUserId())
                 .username(authenticationFacade.currentUsername())
