@@ -27,6 +27,7 @@ import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionConstants;
+import com.oceanbase.odc.core.shared.constant.ConnectType;
 import com.oceanbase.odc.core.shared.constant.OdcConstants;
 import com.oceanbase.odc.core.sql.execute.model.SqlTuple;
 import com.oceanbase.odc.service.db.browser.DBSchemaAccessors;
@@ -139,7 +140,7 @@ public class DBVariablesService {
     }
 
     public boolean update(@NonNull ConnectionSession session, @NonNull OdcDBVariable resource) {
-        String dml = getUpdateDml(resource.getVariableScope(), resource);
+        String dml = getUpdateDml(resource.getVariableScope(), resource, session.getConnectType());
         if (StringUtils.isEmpty(dml)) {
             return false;
         }
@@ -148,10 +149,14 @@ public class DBVariablesService {
         return true;
     }
 
-    private String getUpdateDml(@NonNull String variableScope, @NonNull OdcDBVariable resource) {
+    private String getUpdateDml(@NonNull String variableScope, @NonNull OdcDBVariable resource,
+            @NonNull ConnectType connectType) {
         String value = resource.getValue();
         if (!DataTypeUtil.isNumericValue(value)) {
             value = "'" + value + "'";
+        }
+        if (ConnectType.ORACLE == connectType) {
+            return String.format("alter %s set %s=%s", variableScope, resource.getKey(), value);
         }
         return String.format("set %s %s=%s", variableScope, resource.getKey(), value);
     }
