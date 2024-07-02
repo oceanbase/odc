@@ -97,6 +97,8 @@ public class CloudResourceConfigurations {
                         throw new RuntimeException("Create Alibaba Cloud Client failed", e);
                     }
                 case AWS:
+                case TENCENT_CLOUD:
+                case HUAWEI_CLOUD:
                     return createAmazonCloudClient(objectStorageConfiguration);
                 default:
                     return new NullCloudClient();
