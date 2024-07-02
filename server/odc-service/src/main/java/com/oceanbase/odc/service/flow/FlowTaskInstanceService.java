@@ -100,13 +100,13 @@ import com.oceanbase.odc.service.flow.task.model.SqlCheckTaskResult;
 import com.oceanbase.odc.service.flow.task.util.TaskDownloadUrlsProvider;
 import com.oceanbase.odc.service.flow.task.util.TaskDownloadUrlsProvider.TaskDownloadUrls;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
-import com.oceanbase.odc.service.logger.LoggerService;
 import com.oceanbase.odc.service.objectstorage.ObjectStorageFacade;
 import com.oceanbase.odc.service.objectstorage.cloud.CloudObjectStorageService;
 import com.oceanbase.odc.service.permission.database.model.ApplyDatabaseResult;
 import com.oceanbase.odc.service.permission.project.ApplyProjectResult;
 import com.oceanbase.odc.service.schedule.flowtask.AlterScheduleResult;
 import com.oceanbase.odc.service.session.model.SqlExecuteResult;
+import com.oceanbase.odc.service.task.TaskLoggerService;
 import com.oceanbase.odc.service.task.TaskService;
 import com.oceanbase.odc.service.task.config.TaskFrameworkEnabledProperties;
 import com.oceanbase.odc.service.task.model.ExecutorInfo;
@@ -158,7 +158,7 @@ public class FlowTaskInstanceService {
     @Autowired
     private TaskFrameworkEnabledProperties taskFrameworkProperties;
     @Autowired
-    private LoggerService loggerService;
+    private TaskLoggerService taskLoggerService;
     @Autowired
     private EnvironmentRepository environmentRepository;
     @Autowired
@@ -199,7 +199,7 @@ public class FlowTaskInstanceService {
         TaskEntity taskEntity = taskEntityOptional.get();
         if (taskFrameworkProperties.isEnabled() && taskEntity.getJobId() != null) {
             // TODO: get the latest part of log when task framework is enabled @krihy
-            return loggerService.getLogByTaskFramework(level, taskEntity.getJobId());
+            return taskLoggerService.getLogByTaskFramework(level, taskEntity.getJobId());
         }
         if (!dispatchChecker.isTaskEntityOnThisMachine(taskEntity)) {
             // The task is not executing on current machine, need to forward the request

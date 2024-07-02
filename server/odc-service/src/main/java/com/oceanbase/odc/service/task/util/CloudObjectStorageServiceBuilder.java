@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.task.executor.task;
+package com.oceanbase.odc.service.task.util;
 
 import com.oceanbase.odc.service.objectstorage.cloud.CloudObjectStorageService;
 import com.oceanbase.odc.service.objectstorage.cloud.CloudResourceConfigurations;
@@ -25,7 +25,7 @@ import com.oceanbase.odc.service.objectstorage.cloud.model.ObjectStorageConfigur
  * @date 2023-12-19
  * @since 4.2.4
  */
-class CloudObjectStorageServiceBuilder {
+public class CloudObjectStorageServiceBuilder {
 
     public static CloudObjectStorageService build(ObjectStorageConfiguration storageConfig) {
         CloudClient cloudClient =
