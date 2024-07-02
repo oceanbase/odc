@@ -15,11 +15,6 @@
  */
 package com.oceanbase.odc.metadb.notification;
 
-/**
- * @Author: Lebie
- * @Date: 2023/3/20 21:36
- * @Description: []
- */
 import java.util.Date;
 
 import javax.persistence.Column;
@@ -34,6 +29,11 @@ import org.hibernate.annotations.GenerationTime;
 
 import lombok.Data;
 
+/**
+ * @Author: Lebie
+ * @Date: 2023/3/20 21:36
+ * @Description: []
+ */
 @Data
 @Entity
 @Table(name = "notification_policy_channel_relation")
