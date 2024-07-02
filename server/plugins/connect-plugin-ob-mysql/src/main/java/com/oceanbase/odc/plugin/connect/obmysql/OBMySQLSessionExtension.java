@@ -92,4 +92,9 @@ public class OBMySQLSessionExtension implements SessionExtensionPoint {
         }
         return null;
     }
+
+    @Override
+    public String getAlterSessionVariableStatement(String variableScope, String variableName, String variableValue) {
+        return String.format("set %s %s=%s", variableScope, variableName, variableValue);
+    }
 }

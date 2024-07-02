@@ -89,4 +89,9 @@ public class OracleSessionExtension extends OBOracleSessionExtension {
         }
         return value;
     }
+
+    @Override
+    public String getAlterSessionVariableStatement(String variableScope, String variableName, String variableValue) {
+        return String.format("alter %s set %s=%s", variableScope, variableName, variableValue);
+    }
 }
