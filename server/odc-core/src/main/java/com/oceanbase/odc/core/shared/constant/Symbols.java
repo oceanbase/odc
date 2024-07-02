@@ -35,7 +35,11 @@ public enum Symbols implements Translatable {
     /**
      * ]
      */
-    RIGHT_BRACKET;
+    RIGHT_BRACKET,
+    /**
+     * ,
+     */
+    COMMA;
 
     @Override
     public String code() {

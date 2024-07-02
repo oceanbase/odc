@@ -16,10 +16,12 @@
 package com.oceanbase.odc.service.databasechange;
 
 import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.i18n.LocaleContextHolder;
 
 import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
@@ -83,9 +85,13 @@ public class MultipleDatabaseChangePreprocessor implements Preprocessor {
         parameters.setBatchId(null);
         parameters.setProject(new DatabaseChangeProject(project));
         parameters.setDatabases(databases.stream().map(DatabaseChangeDatabase::new).collect(Collectors.toList()));
+        parameters.setFlowTaskExecutionStrategy(req.getExecutionStrategy());
         req.setProjectId(parameters.getProjectId());
         req.setProjectName(project.getName());
         DescriptionGenerator.generateDescription(req);
+        // Localization of father-son ticket is consistent
+        Locale locale = LocaleContextHolder.getLocale();
+        parameters.setLocale(locale);
     }
 
 }

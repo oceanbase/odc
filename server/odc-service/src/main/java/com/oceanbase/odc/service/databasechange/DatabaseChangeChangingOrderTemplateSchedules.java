@@ -32,6 +32,7 @@ import org.springframework.stereotype.Component;
 import com.oceanbase.odc.metadb.databasechange.DatabaseChangeChangingOrderTemplateEntity;
 import com.oceanbase.odc.metadb.databasechange.DatabaseChangeChangingOrderTemplateRepository;
 import com.oceanbase.odc.metadb.databasechange.DatabaseChangeChangingOrderTemplateSpecs;
+import com.oceanbase.odc.service.common.ConditionOnServer;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -41,6 +42,7 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 @Component
+@ConditionOnServer
 public class DatabaseChangeChangingOrderTemplateSchedules {
 
     private static final int PAGE_SIZE = 100;
