@@ -339,7 +339,7 @@ public class ConnectConsoleService {
         int timeout = Objects.isNull(timeoutSeconds) ? DEFAULT_GET_RESULT_TIMEOUT_SECONDS : timeoutSeconds;
         boolean shouldRemoveContext = context.isFinished();
         try {
-            List<JdbcGeneralResult> resultList = context.getMoreSqlExecutionResults(timeout);
+            List<JdbcGeneralResult> resultList = context.getMoreSqlExecutionResults(timeout * 1000);
             List<SqlExecuteResult> results = resultList.stream().map(jdbcGeneralResult -> {
                 SqlExecuteResult result = generateResult(connectionSession, jdbcGeneralResult, context.getContextMap());
                 try (TraceStage stage = result.getSqlTuple().getSqlWatch().start(SqlExecuteStages.SQL_AFTER_CHECK)) {
