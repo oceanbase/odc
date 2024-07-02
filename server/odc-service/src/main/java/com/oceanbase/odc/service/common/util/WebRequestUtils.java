@@ -118,37 +118,6 @@ public class WebRequestUtils {
         return request.getRemoteAddr();
     }
 
-    public static String getTrulyClientIp(HttpServletRequest request) {
-        return getTrulyClientIp(getClientAddress(request));
-    }
-
-    /**
-     * <pre>
-     * Find truly ip of client.
-     * The X-Forwarded-For header may contain multiple IP addresses, separated
-     * by commas, and typically, the first non-unknown IP is considered to be the client's IP address.
-     * </pre>
-     * 
-     * @author keyang.lk
-     * @date 2024-07-02
-     * @param remoteAddress
-     * @return The truly ip of remoteAddress
-     */
-    public static String getTrulyClientIp(String remoteAddress) {
-        if (remoteAddress == null || remoteAddress.isEmpty() || "unknown".equalsIgnoreCase(remoteAddress)) {
-            return "N/A";
-        }
-        // 处理X-Forwarded-For可能包含多个IP地址的情况（由逗号分隔），通常第一个非unknown的IP是客户端的IP
-        String[] ips = remoteAddress.split(",");
-        for (String ip : ips) {
-            if (ip != null && !ip.isEmpty() &&
-                    !"unknown".equalsIgnoreCase(ip.trim())) {
-                return ip.trim();
-            }
-        }
-        return remoteAddress;
-    }
-
     public static String getUserAgent(HttpServletRequest request) {
         if (Objects.isNull(request)) {
             return "N/A";

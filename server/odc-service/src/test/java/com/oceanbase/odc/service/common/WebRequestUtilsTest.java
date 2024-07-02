@@ -15,9 +15,6 @@
  */
 package com.oceanbase.odc.service.common;
 
-import java.util.HashMap;
-import java.util.Map;
-
 import org.junit.Assert;
 import org.junit.Test;
 import org.springframework.mock.web.MockHttpServletRequest;
@@ -51,29 +48,5 @@ public class WebRequestUtilsTest {
         boolean redirectUrlValid = WebRequestUtils.isRedirectUrlValid(request, "http://another:8989/hello");
 
         Assert.assertFalse(redirectUrlValid);
-    }
-
-    @Test
-    public void testGetTrulyClientIp() {
-        Map<String, String> tables = new HashMap<String, String>() {
-            {
-                put("", "N/A");
-                put(null, "N/A");
-                put("unknown", "N/A");
-                put("UNKNOWN", "N/A");
-                put("123", "123");
-                put("192.168.1.1", "192.168.1.1");
-                put(",192.168.1.1", "192.168.1.1");
-                put("192.168.1.1,122.122.1.1,127.0.0.1", "192.168.1.1");
-                put("unknown,192.168.1.1,122.122.1.1,127.0.0.1", "192.168.1.1");
-            }
-        };
-
-        for (Map.Entry<String, String> entry : tables.entrySet()) {
-            String input = entry.getKey();
-            String except = entry.getValue();
-            String trulyClientIp = WebRequestUtils.getTrulyClientIp(input);
-            Assert.assertEquals(except, trulyClientIp);
-        }
     }
 }

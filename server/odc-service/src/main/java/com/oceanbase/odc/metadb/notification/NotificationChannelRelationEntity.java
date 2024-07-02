@@ -20,11 +20,6 @@ package com.oceanbase.odc.metadb.notification;
  * @Date: 2023/3/20 21:36
  * @Description: []
  */
-/**
- * @Author: Lebie
- * @Date: 2023/3/20 21:36
- * @Description: []
- */
 import java.util.Date;
 
 import javax.persistence.Column;
