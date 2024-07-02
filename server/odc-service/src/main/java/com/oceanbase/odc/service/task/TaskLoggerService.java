@@ -13,12 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.logger;
+package com.oceanbase.odc.service.task;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.commons.io.FileUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -34,13 +36,18 @@ import com.oceanbase.odc.service.dispatch.DispatchResponse;
 import com.oceanbase.odc.service.dispatch.JobDispatchChecker;
 import com.oceanbase.odc.service.dispatch.RequestDispatcher;
 import com.oceanbase.odc.service.objectstorage.cloud.CloudObjectStorageService;
+import com.oceanbase.odc.service.objectstorage.cloud.model.ObjectStorageConfiguration;
 import com.oceanbase.odc.service.task.caller.ExecutorIdentifier;
 import com.oceanbase.odc.service.task.caller.ExecutorIdentifierParser;
+import com.oceanbase.odc.service.task.caller.JobContext;
 import com.oceanbase.odc.service.task.config.TaskFrameworkProperties;
 import com.oceanbase.odc.service.task.constants.JobAttributeKeyConstants;
 import com.oceanbase.odc.service.task.executor.logger.LogUtils;
 import com.oceanbase.odc.service.task.model.OdcTaskLogLevel;
+import com.oceanbase.odc.service.task.schedule.DefaultJobContextBuilder;
+import com.oceanbase.odc.service.task.schedule.JobCredentialProvider;
 import com.oceanbase.odc.service.task.service.TaskFrameworkService;
+import com.oceanbase.odc.service.task.util.CloudObjectStorageServiceBuilder;
 import com.oceanbase.odc.service.task.util.JobUtils;
 import com.oceanbase.odc.service.task.util.TaskExecutorClient;
 
@@ -53,11 +60,7 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 @Service
-public class LoggerService {
-
-    @Autowired
-    private CloudObjectStorageService cloudObjectStorageService;
-
+public class TaskLoggerService {
     @Autowired
     private TaskFrameworkProperties taskFrameworkProperties;
 
@@ -73,13 +76,23 @@ public class LoggerService {
     @Autowired
     private TaskExecutorClient taskExecutorClient;
 
+    @Autowired
+    private JobCredentialProvider jobCredentialProvider;
+
+    private final Map<ObjectStorageConfiguration, CloudObjectStorageService> cloudObjectStorageServiceMap =
+            new ConcurrentHashMap<>();
+
     @SkipAuthorize("odc internal usage")
     public String getLogByTaskFramework(OdcTaskLogLevel level, Long jobId) throws IOException {
         // forward to target host when task is not be executed on this machine or running in k8s pod
         JobEntity jobEntity = taskFrameworkService.find(jobId);
         PreConditions.notNull(jobEntity, "job not found by id " + jobId);
 
-        if (JobUtils.isK8sRunMode(jobEntity.getRunMode()) && cloudObjectStorageService.supported()) {
+        if (JobUtils.isK8sRunMode(jobEntity.getRunMode())) {
+            CloudObjectStorageService cloudObjectStorageService = getCloudObjectStorageService(jobEntity);
+            if (!cloudObjectStorageService.supported()) {
+                throw new RuntimeException("CloudObjectStorageService is not supported.");
+            }
 
             String logIdKey = level == OdcTaskLogLevel.ALL ? JobAttributeKeyConstants.LOG_STORAGE_ALL_OBJECT_ID
                     : JobAttributeKeyConstants.LOG_STORAGE_WARN_OBJECT_ID;
@@ -133,4 +146,12 @@ public class LoggerService {
         }
         return ErrorCodes.TaskLogNotFound.getLocalizedMessage(new Object[] {"Id", jobEntity.getId()});
     }
+
+    private CloudObjectStorageService getCloudObjectStorageService(JobEntity jobEntity) {
+        JobContext jobContext = new DefaultJobContextBuilder().build(jobEntity);
+        ObjectStorageConfiguration configuration = jobCredentialProvider.getCloudObjectStorageCredential(jobContext);
+        return cloudObjectStorageServiceMap.computeIfAbsent(configuration,
+                k -> CloudObjectStorageServiceBuilder.build(configuration));
+    }
+
 }

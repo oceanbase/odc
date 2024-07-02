@@ -77,7 +77,6 @@ import com.oceanbase.odc.service.iam.UserService;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.iam.model.Organization;
 import com.oceanbase.odc.service.iam.model.User;
-import com.oceanbase.odc.service.logger.LoggerService;
 import com.oceanbase.odc.service.objectstorage.ObjectStorageFacade;
 import com.oceanbase.odc.service.quartz.QuartzJobService;
 import com.oceanbase.odc.service.quartz.util.ScheduleTaskUtils;
@@ -99,6 +98,7 @@ import com.oceanbase.odc.service.schedule.model.ScheduleTaskMapper;
 import com.oceanbase.odc.service.schedule.model.ScheduleTaskResp;
 import com.oceanbase.odc.service.schedule.model.TriggerConfig;
 import com.oceanbase.odc.service.schedule.model.TriggerStrategy;
+import com.oceanbase.odc.service.task.TaskLoggerService;
 import com.oceanbase.odc.service.task.config.TaskFrameworkEnabledProperties;
 import com.oceanbase.odc.service.task.exception.JobException;
 import com.oceanbase.odc.service.task.model.ExecutorInfo;
@@ -129,7 +129,7 @@ public class ScheduleService {
     private ObjectStorageFacade objectStorageFacade;
 
     @Autowired
-    private LoggerService loggerService;
+    private TaskLoggerService taskLoggerService;
 
     @Autowired
     private TaskRepository taskRepository;
@@ -580,7 +580,7 @@ public class ScheduleService {
         ScheduleTaskEntity taskEntity = scheduleTaskService.nullSafeGetById(taskId);
         if (taskFrameworkEnabledProperties.isEnabled() && taskEntity.getJobId() != null) {
             try {
-                return loggerService.getLogByTaskFramework(logLevel, taskEntity.getJobId());
+                return taskLoggerService.getLogByTaskFramework(logLevel, taskEntity.getJobId());
             } catch (IOException e) {
                 log.warn("Copy input stream to file failed.", e);
                 throw new UnexpectedException("Copy input stream to file failed.");
