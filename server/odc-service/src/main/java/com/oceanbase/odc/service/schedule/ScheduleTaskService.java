@@ -52,7 +52,6 @@ import com.oceanbase.odc.service.dispatch.DispatchResponse;
 import com.oceanbase.odc.service.dispatch.RequestDispatcher;
 import com.oceanbase.odc.service.dispatch.TaskDispatchChecker;
 import com.oceanbase.odc.service.dlm.DLMService;
-import com.oceanbase.odc.service.logger.LoggerService;
 import com.oceanbase.odc.service.quartz.QuartzJobService;
 import com.oceanbase.odc.service.quartz.util.ScheduleTaskUtils;
 import com.oceanbase.odc.service.schedule.model.CreateQuartzJobReq;
@@ -67,6 +66,7 @@ import com.oceanbase.odc.service.schedule.model.ScheduleTaskOverviewMapper;
 import com.oceanbase.odc.service.schedule.model.ScheduleTaskType;
 import com.oceanbase.odc.service.schedule.model.TriggerConfig;
 import com.oceanbase.odc.service.schedule.model.TriggerStrategy;
+import com.oceanbase.odc.service.task.TaskLoggerService;
 import com.oceanbase.odc.service.task.config.TaskFrameworkEnabledProperties;
 import com.oceanbase.odc.service.task.exception.JobException;
 import com.oceanbase.odc.service.task.model.ExecutorInfo;
@@ -108,7 +108,7 @@ public class ScheduleTaskService {
     private RequestDispatcher requestDispatcher;
 
     @Autowired
-    private LoggerService loggerService;
+    private TaskLoggerService taskLoggerService;
 
 
     private final ScheduleTaskMapper scheduleTaskMapper = ScheduleTaskMapper.INSTANCE;
@@ -262,32 +262,35 @@ public class ScheduleTaskService {
                 .orElseThrow(() -> new NotFoundException(ResourceType.ODC_SCHEDULE_TASK, "id", id)));
     }
 
-    public String getScheduleTaskLog(Long id, OdcTaskLogLevel logLevel) {
-        ScheduleTask scheduleTask = nullSafeGetModelById(id);
-
-        if (taskFrameworkEnabledProperties.isEnabled() && scheduleTask.getJobId() != null) {
+    public String getLogWithoutPermission(Long taskId, OdcTaskLogLevel logLevel) {
+        ScheduleTaskEntity taskEntity = nullSafeGetById(taskId);
+        if (taskFrameworkEnabledProperties.isEnabled() && taskEntity.getJobId() != null) {
             try {
-                return loggerService.getLogByTaskFramework(logLevel, scheduleTask.getJobId());
+                return taskLoggerService.getLogByTaskFramework(logLevel, taskEntity.getJobId());
             } catch (IOException e) {
                 log.warn("Copy input stream to file failed.", e);
                 throw new UnexpectedException("Copy input stream to file failed.");
             }
         }
-        ExecutorInfo executorInfo = JsonUtils.fromJson(scheduleTask.getExecutor(), ExecutorInfo.class);
+        ExecutorInfo executorInfo = JsonUtils.fromJson(taskEntity.getExecutor(), ExecutorInfo.class);
         if (!dispatchChecker.isThisMachine(executorInfo)) {
             try {
                 DispatchResponse response =
                         requestDispatcher.forward(executorInfo.getHost(), executorInfo.getPort());
-                log.info("Remote get task log succeed,taskId={}", id);
+                log.info("Remote get task log succeed,taskId={}", taskId);
                 return response.getContentByType(
                         new TypeReference<SuccessResponse<String>>() {}).getData();
             } catch (Exception e) {
-                log.warn("Remote get task log failed, taskId={}", id, e);
-                throw new UnexpectedException(String.format("Remote interrupt task failed, taskId=%s", id));
+                log.warn("Remote get task log failed, taskId={}", taskId, e);
+                throw new UnexpectedException(String.format("Remote interrupt task failed, taskId=%s", taskId));
             }
         }
+        return getScheduleTaskLog(taskId, logLevel);
+    }
 
 
+    public String getScheduleTaskLog(Long id, OdcTaskLogLevel logLevel) {
+        ScheduleTask scheduleTask = nullSafeGetModelById(id);
         String filePath = String.format(LOG_PATH_PATTERN, logDirectory,
                 scheduleTask.getJobName(), scheduleTask.getJobGroup(), id,
                 logLevel.name().toLowerCase());

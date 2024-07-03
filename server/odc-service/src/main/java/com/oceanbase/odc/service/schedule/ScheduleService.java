@@ -19,6 +19,7 @@ import java.io.File;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 
@@ -40,8 +41,10 @@ import org.springframework.transaction.annotation.Transactional;
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.shared.constant.OrganizationType;
+import com.oceanbase.odc.core.shared.constant.ResourceRoleName;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.core.shared.constant.TaskStatus;
+import com.oceanbase.odc.core.shared.exception.AccessDeniedException;
 import com.oceanbase.odc.core.shared.exception.NotFoundException;
 import com.oceanbase.odc.core.shared.exception.UnsupportedException;
 import com.oceanbase.odc.metadb.collaboration.EnvironmentRepository;
@@ -459,7 +462,7 @@ public class ScheduleService {
 
     public String getLog(Long scheduleId, Long taskId, OdcTaskLogLevel logLevel) {
         nullSafeGetByIdWithCheckPermission(scheduleId);
-        return scheduleTaskService.getScheduleTaskLog(taskId, logLevel);
+        return scheduleTaskService.getLogWithoutPermission(taskId, logLevel);
     }
 
     public Schedule nullSafeGetByIdWithCheckPermission(Long id) {
@@ -468,23 +471,11 @@ public class ScheduleService {
 
     public Schedule nullSafeGetByIdWithCheckPermission(Long id, boolean isWrite) {
         Schedule schedule = nullSafeGetModelById(id);
-        // Long projectId = schedule.getProjectId();
-        // if (isWrite) {
-        // List<ResourceRoleName> resourceRoleNames = getApproverRoleNames(Schedule);
-        // if (resourceRoleNames.isEmpty()) {
-        // resourceRoleNames = ResourceRoleName.all();
-        // }
-        // if ((Objects.nonNull(projectId)
-        // && !projectPermissionValidator.hasProjectRole(projectId, resourceRoleNames))) {
-        // throw new AccessDeniedException();
-        // }
-        // } else {
-        //
-        // if (Objects.nonNull(projectId)
-        // && !projectPermissionValidator.hasProjectRole(projectId, ResourceRoleName.all())) {
-        // throw new AccessDeniedException();
-        // }
-        // }
+        Long projectId = schedule.getProjectId();
+        if ((Objects.nonNull(projectId)
+                && !projectPermissionValidator.hasProjectRole(projectId, ResourceRoleName.all()))) {
+            throw new AccessDeniedException();
+        }
         return schedule;
     }
 

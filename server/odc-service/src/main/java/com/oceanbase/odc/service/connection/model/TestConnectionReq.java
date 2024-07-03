@@ -141,6 +141,8 @@ public class TestConnectionReq implements CloudConnectionConfig, SSLConnectionCo
     @JsonIgnore
     private OBInstanceRoleType instanceRoleType;
 
+    private Map<String, String> properties;
+
     public DialectType getDialectType() {
         if (Objects.nonNull(this.type)) {
             return this.type.getDialectType();
@@ -160,6 +162,7 @@ public class TestConnectionReq implements CloudConnectionConfig, SSLConnectionCo
         req.setPort(connection.getPort());
         req.setClusterName(connection.getClusterName());
         req.setDefaultSchema(connection.getDefaultSchema());
+        req.setProperties(connection.getProperties());
         if (accountType == ConnectionAccountType.MAIN) {
             req.setTenantName(connection.getTenantName());
             req.setUsername(connection.getUsername());
