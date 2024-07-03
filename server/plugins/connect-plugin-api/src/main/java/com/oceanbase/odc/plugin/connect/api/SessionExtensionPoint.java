@@ -35,5 +35,5 @@ public interface SessionExtensionPoint extends ExtensionPoint, SessionOperations
 
     String getVariable(Connection connection, String variableName);
 
-    String getAlterSessionVariableStatement(String variableScope, String variableName, String variableValue);
+    String getAlterVariableStatement(String variableScope, String variableName, String variableValue);
 }

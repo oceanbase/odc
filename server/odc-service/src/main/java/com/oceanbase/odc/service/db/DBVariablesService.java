@@ -158,6 +158,6 @@ public class DBVariablesService {
             value = "'" + value + "'";
         }
         SessionExtensionPoint extensionPoint = ConnectionPluginUtil.getSessionExtension(dialectType);
-        return extensionPoint.getAlterSessionVariableStatement(variableScope, resource.getKey(), value);
+        return extensionPoint.getAlterVariableStatement(variableScope, resource.getKey(), value);
     }
 }

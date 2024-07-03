@@ -104,7 +104,7 @@ public class OBOracleSessionExtension implements SessionExtensionPoint {
     }
 
     @Override
-    public String getAlterSessionVariableStatement(String variableScope, String variableName, String variableValue) {
+    public String getAlterVariableStatement(String variableScope, String variableName, String variableValue) {
         return String.format("set %s %s=%s", variableScope, variableName, variableValue);
     }
 }
