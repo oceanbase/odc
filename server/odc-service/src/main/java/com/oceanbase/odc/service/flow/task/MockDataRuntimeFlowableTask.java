@@ -64,7 +64,7 @@ public class MockDataRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Void> {
     @Override
     public boolean cancel(boolean mayInterruptIfRunning, Long taskId, TaskService taskService) {
         if (context == null) {
-            throw new BadRequestException(ErrorCodes.TaskNotReadyForCancel, new Object[] {"MockContext"},
+            throw new BadRequestException(ErrorCodes.TaskCannotCancelNow, new Object[] {"MockContext"},
                     "cannot acquire MockContext,task has not started or completed.");
         }
         Map<String, String> variables = new HashMap<>();
