@@ -92,6 +92,9 @@ public class OracleSessionExtension extends OBOracleSessionExtension {
 
     @Override
     public String getAlterVariableStatement(String variableScope, String variableName, String variableValue) {
+        if ("system".equals(variableScope) || "global".equals(variableScope)) {
+            throw new UnsupportedOperationException();
+        }
         return String.format("alter %s set %s=%s", variableScope, variableName, variableValue);
     }
 }
