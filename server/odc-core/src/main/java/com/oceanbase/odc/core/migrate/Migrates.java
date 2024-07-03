@@ -24,6 +24,7 @@ import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
@@ -161,17 +162,32 @@ public class Migrates {
     }
 
     private void validate(List<Migrator> allMigrators) {
-        long distinctCount = allMigrators.stream().map(migrator -> migrator.version() + migrator.script())
-                .distinct().count();
-        Validate.isTrue(distinctCount == allMigrators.size(),
-                String.format("duplicated version.script exists, total=%d, distinct=%d",
-                        allMigrators.size(), distinctCount));
+        List<Entry<String, Long>> duplicatedMigrator = allMigrators.stream()
+                .map(m -> m.version() + m.script())
+                .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()))
+                .entrySet().stream().filter(e -> e.getValue() > 1)
+                .collect(Collectors.toList());
+        duplicatedMigrator.forEach(e -> {
+            log.error("duplicated migrator exists, migrator={}, count={}", e.getKey(), e.getValue());
+        });
+        Validate.isTrue(duplicatedMigrator.isEmpty(),
+                String.format("duplicated migrator exists, total=%d, duplicated=%d",
+                        allMigrators.size(), duplicatedMigrator.size()));
+
         List<Migrator> versionedMigrators = allMigrators.stream()
-                .filter(migratable -> migratable.behavior() == Behavior.VERSIONED).collect(Collectors.toList());
-        long distinctVersionCount = versionedMigrators.stream().map(Migrator::version).distinct().count();
-        Validate.isTrue(distinctVersionCount == versionedMigrators.size(),
-                String.format("duplicated versioned script exists, total=%d, distinct=%d",
-                        versionedMigrators.size(), distinctVersionCount));
+                .filter(m -> m.behavior() == Behavior.VERSIONED).collect(Collectors.toList());
+        List<Entry<String, List<Migrator>>> duplicatedVersionedMigrator = versionedMigrators.stream()
+                .collect(Collectors.groupingBy(Migrator::version, Collectors.toList()))
+                .entrySet().stream().filter(e -> e.getValue().size() > 1)
+                .collect(Collectors.toList());
+        duplicatedVersionedMigrator.forEach(e -> {
+            List<String> scripts = e.getValue().stream().map(Migrator::script).collect(Collectors.toList());
+            log.error("duplicated versioned script exists, migrator={}, scripts={}", e.getKey(),
+                    StringUtils.join(scripts, ","));
+        });
+        Validate.isTrue(duplicatedVersionedMigrator.isEmpty(),
+                String.format("duplicated versioned script exists, total=%d, duplicated=%d",
+                        versionedMigrators.size(), duplicatedVersionedMigrator.size()));
     }
 
     private Optional<SchemaHistory> getHistory(Migrator migratable) {
