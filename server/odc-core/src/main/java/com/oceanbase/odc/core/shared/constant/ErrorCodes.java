@@ -131,7 +131,6 @@ public enum ErrorCodes implements ErrorCode {
     TaskNotReadyForDownload,
     TaskSqlExecuteFailed,
     TaskLogNotFound,
-    TaskFailedCancelledNow,
 
     // Debug
     DebugDBMSNotSupported,

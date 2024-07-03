@@ -24,9 +24,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 import com.oceanbase.odc.common.trace.TraceContextHolder;
 import com.oceanbase.odc.core.shared.Verify;
-import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.constant.FlowStatus;
-import com.oceanbase.odc.core.shared.exception.BadRequestException;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.flow.task.model.MockDataTaskResult;
 import com.oceanbase.odc.service.flow.task.model.MockProperties;
@@ -62,11 +60,7 @@ public class MockDataRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Void> {
     private volatile ConnectionConfig connectionConfig;
 
     @Override
-    public boolean cancel(boolean mayInterruptIfRunning, Long taskId, TaskService taskService) {
-        if (context == null) {
-            throw new BadRequestException(ErrorCodes.TaskFailedCancelledNow, null,
-                    "Failed to cancel the task.");
-        }
+    public synchronized boolean cancel(boolean mayInterruptIfRunning, Long taskId, TaskService taskService) {
         Map<String, String> variables = new HashMap<>();
         variables.putIfAbsent("mocktask.workspace", taskId + "");
         TraceContextHolder.span(variables);
@@ -96,7 +90,7 @@ public class MockDataRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Void> {
     }
 
     @Override
-    protected Void start(Long taskId, TaskService taskService, DelegateExecution execution) {
+    protected synchronized Void start(Long taskId, TaskService taskService, DelegateExecution execution) {
         try {
             Map<String, String> variables = new HashMap<>();
             variables.putIfAbsent("mocktask.workspace", taskId + "");
