@@ -133,7 +133,9 @@ public class StdJobScheduler implements JobScheduler {
             return;
         }
         // send new parameters to executor
-        configuration.getJobDispatcher().modify(JobIdentity.of(jobId), newJobParametersJson);
+        if (jobEntity.getStatus() == JobStatus.RUNNING) {
+            configuration.getJobDispatcher().modify(JobIdentity.of(jobId), newJobParametersJson);
+        }
     }
 
     @Override
