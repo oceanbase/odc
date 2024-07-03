@@ -15,11 +15,8 @@
  */
 package com.oceanbase.odc.service.collaboration.project;
 
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -55,7 +52,6 @@ import com.oceanbase.odc.core.shared.constant.ResourceRoleName;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.core.shared.exception.BadRequestException;
 import com.oceanbase.odc.core.shared.exception.NotFoundException;
-import com.oceanbase.odc.core.shared.exception.UnexpectedException;
 import com.oceanbase.odc.core.shared.exception.UnsupportedException;
 import com.oceanbase.odc.metadb.collaboration.ProjectEntity;
 import com.oceanbase.odc.metadb.collaboration.ProjectRepository;
@@ -65,7 +61,6 @@ import com.oceanbase.odc.metadb.connection.ConnectionEntity;
 import com.oceanbase.odc.metadb.connection.DatabaseEntity;
 import com.oceanbase.odc.metadb.connection.DatabaseRepository;
 import com.oceanbase.odc.metadb.iam.PermissionRepository;
-import com.oceanbase.odc.metadb.iam.RoleEntity;
 import com.oceanbase.odc.metadb.iam.RoleRepository;
 import com.oceanbase.odc.metadb.iam.UserDatabasePermissionEntity;
 import com.oceanbase.odc.metadb.iam.UserDatabasePermissionRepository;
@@ -242,84 +237,78 @@ public class ProjectService {
 
     private void migratePublicReadonlyConnect(ProjectEntity project) {
         roleRepository.findByNameAndOrganizationId(
-            CustomRoleType.PUBLIC_READONLY_CONNECT_.toString(), project.getOrganizationId()
-            ).ifPresent(
-                roleEntity -> {
-                List<UserRoleEntity> userRoleEntities = userRoleRepository.findByRoleId(roleEntity.getId());
-                List<UserResourceRole> userResourceRoles = userRoleEntities.stream().map(
-                    userRoleEntity -> {
-                        UserResourceRole publicConnect2Participant = new UserResourceRole();
-                        publicConnect2Participant.setUserId(userRoleEntity.getUserId());
-                        publicConnect2Participant.setResourceId(project.getId());
-                        publicConnect2Participant.setResourceType(ResourceType.ODC_PROJECT);
-                        publicConnect2Participant.setResourceRole(ResourceRoleName.PARTICIPANT);
-                        return publicConnect2Participant;
-                    }).collect(Collectors.toList());
-                resourceRoleService.saveAll(userResourceRoles);
-            }
-        );
+                CustomRoleType.PUBLIC_READONLY_CONNECT_.toString(), project.getOrganizationId()).ifPresent(
+                        roleEntity -> {
+                            List<UserRoleEntity> userRoleEntities = userRoleRepository.findByRoleId(roleEntity.getId());
+                            List<UserResourceRole> userResourceRoles = userRoleEntities.stream().map(
+                                    userRoleEntity -> {
+                                        UserResourceRole publicConnect2Participant = new UserResourceRole();
+                                        publicConnect2Participant.setUserId(userRoleEntity.getUserId());
+                                        publicConnect2Participant.setResourceId(project.getId());
+                                        publicConnect2Participant.setResourceType(ResourceType.ODC_PROJECT);
+                                        publicConnect2Participant.setResourceRole(ResourceRoleName.PARTICIPANT);
+                                        return publicConnect2Participant;
+                                    }).collect(Collectors.toList());
+                            resourceRoleService.saveAll(userResourceRoles);
+                        });
     }
 
     private void migratePublicConnect(ProjectEntity project) {
         roleRepository.findByNameAndOrganizationId(
-            CustomRoleType.PUBLIC_CONNECT_.toString(), project.getOrganizationId()
-        ).ifPresent(
-            roleEntity -> {
-                // get user id list where role == "PRC"
-                List<UserRoleEntity> userRoleEntities = userRoleRepository.findByRoleId(roleEntity.getId());
-                // based on user id list create a List<userResourceRole>
-                List<UserResourceRole> userResourceRoles = userRoleEntities.stream().flatMap(
-                    userRoleEntity -> {
-                        UserResourceRole publicConnect2Owner = new UserResourceRole();
-                        publicConnect2Owner.setUserId(userRoleEntity.getUserId());
-                        publicConnect2Owner.setResourceId(project.getId());
-                        publicConnect2Owner.setResourceType(ResourceType.ODC_PROJECT);
-                        publicConnect2Owner.setResourceRole(ResourceRoleName.OWNER);
+                CustomRoleType.PUBLIC_CONNECT_.toString(), project.getOrganizationId()).ifPresent(
+                        roleEntity -> {
+                            // get user id list where role == "PRC"
+                            List<UserRoleEntity> userRoleEntities = userRoleRepository.findByRoleId(roleEntity.getId());
+                            // based on user id list create a List<userResourceRole>
+                            List<UserResourceRole> userResourceRoles = userRoleEntities.stream().flatMap(
+                                    userRoleEntity -> {
+                                        UserResourceRole publicConnect2Owner = new UserResourceRole();
+                                        publicConnect2Owner.setUserId(userRoleEntity.getUserId());
+                                        publicConnect2Owner.setResourceId(project.getId());
+                                        publicConnect2Owner.setResourceType(ResourceType.ODC_PROJECT);
+                                        publicConnect2Owner.setResourceRole(ResourceRoleName.OWNER);
 
-                        UserResourceRole publicConnect2DBA = new UserResourceRole();
-                        publicConnect2DBA.setUserId(userRoleEntity.getUserId());
-                        publicConnect2DBA.setResourceId(project.getId());
-                        publicConnect2DBA.setResourceType(ResourceType.ODC_PROJECT);
-                        publicConnect2DBA.setResourceRole(ResourceRoleName.DBA);
-                        return Stream.of(publicConnect2Owner, publicConnect2DBA);
-                    }).collect(Collectors.toList());
-                resourceRoleService.saveAll(userResourceRoles);
-            }
-        );
+                                        UserResourceRole publicConnect2DBA = new UserResourceRole();
+                                        publicConnect2DBA.setUserId(userRoleEntity.getUserId());
+                                        publicConnect2DBA.setResourceId(project.getId());
+                                        publicConnect2DBA.setResourceType(ResourceType.ODC_PROJECT);
+                                        publicConnect2DBA.setResourceRole(ResourceRoleName.DBA);
+                                        return Stream.of(publicConnect2Owner, publicConnect2DBA);
+                                    }).collect(Collectors.toList());
+                            resourceRoleService.saveAll(userResourceRoles);
+                        });
     }
 
     private void migrateApsaraAdmin(ProjectEntity project) {
         roleRepository.findByNameAndOrganizationId(
-            CustomRoleType.APSARA_ADMIN_.toString(), project.getOrganizationId()
-        ).ifPresent(
-            roleEntity -> {
-                // get user id list where role == "PRC"
-                List<UserRoleEntity> userRoleEntities = userRoleRepository.findByRoleId(roleEntity.getId());
-                // based on user id list create a List<userResourceRole>
-                List<UserResourceRole> userResourceRoles = userRoleEntities.stream().flatMap(
-                    userRoleEntity -> {
-                        UserResourceRole publicConnect2Owner = new UserResourceRole();
-                        publicConnect2Owner.setUserId(userRoleEntity.getUserId());
-                        publicConnect2Owner.setResourceId(project.getId());
-                        publicConnect2Owner.setResourceType(ResourceType.ODC_PROJECT);
-                        publicConnect2Owner.setResourceRole(ResourceRoleName.OWNER);
+                CustomRoleType.APSARA_ADMIN_.toString(), project.getOrganizationId()).ifPresent(
+                        roleEntity -> {
+                            // get user id list where role == "PRC"
+                            List<UserRoleEntity> userRoleEntities = userRoleRepository.findByRoleId(roleEntity.getId());
+                            // based on user id list create a List<userResourceRole>
+                            List<UserResourceRole> userResourceRoles = userRoleEntities.stream().flatMap(
+                                    userRoleEntity -> {
+                                        UserResourceRole publicConnect2Owner = new UserResourceRole();
+                                        publicConnect2Owner.setUserId(userRoleEntity.getUserId());
+                                        publicConnect2Owner.setResourceId(project.getId());
+                                        publicConnect2Owner.setResourceType(ResourceType.ODC_PROJECT);
+                                        publicConnect2Owner.setResourceRole(ResourceRoleName.OWNER);
 
-                        UserResourceRole publicConnect2DBA = new UserResourceRole();
-                        publicConnect2DBA.setUserId(userRoleEntity.getUserId());
-                        publicConnect2DBA.setResourceId(project.getId());
-                        publicConnect2DBA.setResourceType(ResourceType.ODC_PROJECT);
-                        publicConnect2DBA.setResourceRole(ResourceRoleName.DBA);
+                                        UserResourceRole publicConnect2DBA = new UserResourceRole();
+                                        publicConnect2DBA.setUserId(userRoleEntity.getUserId());
+                                        publicConnect2DBA.setResourceId(project.getId());
+                                        publicConnect2DBA.setResourceType(ResourceType.ODC_PROJECT);
+                                        publicConnect2DBA.setResourceRole(ResourceRoleName.DBA);
 
-                        UserResourceRole publicConnect2Admin = new UserResourceRole();
-                        publicConnect2DBA.setUserId(userRoleEntity.getUserId());
-                        publicConnect2DBA.setResourceId(project.getId());
-                        publicConnect2DBA.setResourceType(ResourceType.ODC_PROJECT);
-                        publicConnect2DBA.setResourceRole(ResourceRoleName.SECURITY_ADMINISTRATOR);
-                        return Stream.of(publicConnect2Owner, publicConnect2DBA, publicConnect2Admin);
-                    }).collect(Collectors.toList());
-                resourceRoleService.saveAll(userResourceRoles);
-            }
-        );
+                                        UserResourceRole publicConnect2Admin = new UserResourceRole();
+                                        publicConnect2DBA.setUserId(userRoleEntity.getUserId());
+                                        publicConnect2DBA.setResourceId(project.getId());
+                                        publicConnect2DBA.setResourceType(ResourceType.ODC_PROJECT);
+                                        publicConnect2DBA.setResourceRole(ResourceRoleName.SECURITY_ADMINISTRATOR);
+                                        return Stream.of(publicConnect2Owner, publicConnect2DBA, publicConnect2Admin);
+                                    }).collect(Collectors.toList());
+                            resourceRoleService.saveAll(userResourceRoles);
+                        });
     }
 
     @PreAuthenticate(actions = "create", resourceType = "ODC_PROJECT", isForAll = true)
