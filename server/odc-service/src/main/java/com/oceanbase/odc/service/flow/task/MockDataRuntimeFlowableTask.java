@@ -98,8 +98,7 @@ public class MockDataRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Void> {
     private MockTaskConfig getMockTaskConfig(Long taskId, DelegateExecution execution) {
         OdcMockTaskConfig config = FlowTaskUtil.getMockParameter(execution);
         this.connectionConfig = FlowTaskUtil.getConnectionConfig(execution);
-        return FlowTaskUtil.generateMockConfig(taskId, execution, getTimeoutMillis(),
-                config, mockProperties);
+        return FlowTaskUtil.generateMockConfig(taskId, execution, getTimeoutMillis(), config, mockProperties);
     }
 
     @Override

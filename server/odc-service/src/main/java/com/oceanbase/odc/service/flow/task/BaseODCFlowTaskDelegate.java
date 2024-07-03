@@ -26,6 +26,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.flowable.engine.delegate.DelegateExecution;
@@ -102,7 +103,7 @@ public abstract class BaseODCFlowTaskDelegate<T> extends BaseRuntimeFlowableDele
 
     private void init(DelegateExecution execution) {
         this.taskId = FlowTaskUtil.getTaskId(execution);
-        this.timeoutMillis = FlowTaskUtil.getExecutionExpirationIntervalMillis(execution);
+        this.timeoutMillis = getTimeoutMillis(execution);
         this.taskService.updateExecutorInfo(taskId, new ExecutorInfo(hostProperties));
         SecurityContextUtils.setCurrentUser(FlowTaskUtil.getTaskCreator(execution));
     }
@@ -113,6 +114,7 @@ public abstract class BaseODCFlowTaskDelegate<T> extends BaseRuntimeFlowableDele
                 .build();
         scheduleExecutor = new ScheduledThreadPoolExecutor(1, threadFactory);
         int interval = RuntimeTaskConstants.DEFAULT_TASK_CHECK_INTERVAL_SECONDS;
+        AtomicBoolean isCancelled = new AtomicBoolean(false);
         scheduleExecutor.scheduleAtFixedRate(() -> {
             try {
                 updateHeartbeatTime();
@@ -124,6 +126,13 @@ public abstract class BaseODCFlowTaskDelegate<T> extends BaseRuntimeFlowableDele
             }
             try {
                 if (isCompleted() || isTimeout()) {
+                    if (isTimeout() && !isCancelled.getAndSet(true)) {
+                        try {
+                            cancel(true);
+                        } catch (Exception e) {
+                            log.warn("Task is timeout, failed to cancel it, errorMessage={}", e.getMessage());
+                        }
+                    }
                     taskLatch.countDown();
                 }
             } catch (Exception e) {
@@ -188,7 +197,7 @@ public abstract class BaseODCFlowTaskDelegate<T> extends BaseRuntimeFlowableDele
                 } catch (Exception e) {
                     log.warn("Task timeout callback method execution failed, taskId={}", taskId, e);
                 }
-                throw new InterruptedException();
+                throw new ServiceTaskCancelledException();
             }
             if (!isSuccessful()) {
                 // 监控线程出错导致闭锁失效，此种情况任务必须终止
@@ -310,6 +319,10 @@ public abstract class BaseODCFlowTaskDelegate<T> extends BaseRuntimeFlowableDele
                 log.warn("Failed to enqueue event.", e);
             }
         }
+    }
+
+    protected long getTimeoutMillis(DelegateExecution execution) {
+        return FlowTaskUtil.getExecutionExpirationIntervalMillis(execution);
     }
 
     /**
