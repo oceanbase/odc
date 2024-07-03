@@ -16,19 +16,17 @@
 package com.oceanbase.odc.service.flow.task;
 
 import java.util.HashMap;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 
 import org.flowable.engine.delegate.DelegateExecution;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.i18n.LocaleContextHolder;
 
-import com.oceanbase.odc.common.i18n.I18n;
 import com.oceanbase.odc.common.trace.TraceContextHolder;
 import com.oceanbase.odc.core.shared.Verify;
+import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.constant.FlowStatus;
-import com.oceanbase.odc.core.shared.exception.VerifyException;
+import com.oceanbase.odc.core.shared.exception.BadRequestException;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.flow.task.model.MockDataTaskResult;
 import com.oceanbase.odc.service.flow.task.model.MockProperties;
@@ -66,12 +64,8 @@ public class MockDataRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Void> {
     @Override
     public boolean cancel(boolean mayInterruptIfRunning, Long taskId, TaskService taskService) {
         if (context == null) {
-            Locale locale = LocaleContextHolder.getLocale();
-            String i18nKey = "com.oceanbase.odc.MockData.null.message";
-            throw new VerifyException(I18n.translate(
-                    i18nKey,
-                    new Object[] {"MockContext"},
-                    locale));
+            throw new BadRequestException(ErrorCodes.TaskNotReadyForCancel, new Object[] {"MockContext"},
+                    "cannot acquire MockContext,task has not started or completed.");
         }
         Map<String, String> variables = new HashMap<>();
         variables.putIfAbsent("mocktask.workspace", taskId + "");
