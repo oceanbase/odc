@@ -27,10 +27,13 @@ import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionConstants;
+import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.shared.constant.OdcConstants;
 import com.oceanbase.odc.core.sql.execute.model.SqlTuple;
+import com.oceanbase.odc.plugin.connect.api.SessionExtensionPoint;
 import com.oceanbase.odc.service.db.browser.DBSchemaAccessors;
 import com.oceanbase.odc.service.db.model.OdcDBVariable;
+import com.oceanbase.odc.service.plugin.ConnectionPluginUtil;
 import com.oceanbase.odc.service.session.interceptor.NlsFormatInterceptor;
 import com.oceanbase.tools.dbbrowser.model.DBVariable;
 import com.oceanbase.tools.dbbrowser.model.datatype.DataTypeUtil;
@@ -139,7 +142,7 @@ public class DBVariablesService {
     }
 
     public boolean update(@NonNull ConnectionSession session, @NonNull OdcDBVariable resource) {
-        String dml = getUpdateDml(resource.getVariableScope(), resource);
+        String dml = getUpdateDml(resource.getVariableScope(), resource, session.getDialectType());
         if (StringUtils.isEmpty(dml)) {
             return false;
         }
@@ -148,12 +151,13 @@ public class DBVariablesService {
         return true;
     }
 
-    private String getUpdateDml(@NonNull String variableScope, @NonNull OdcDBVariable resource) {
+    private String getUpdateDml(@NonNull String variableScope, @NonNull OdcDBVariable resource,
+            @NonNull DialectType dialectType) {
         String value = resource.getValue();
         if (!DataTypeUtil.isNumericValue(value)) {
             value = "'" + value + "'";
         }
-        return String.format("set %s %s=%s", variableScope, resource.getKey(), value);
+        SessionExtensionPoint extensionPoint = ConnectionPluginUtil.getSessionExtension(dialectType);
+        return extensionPoint.getAlterVariableStatement(variableScope, resource.getKey(), value);
     }
-
 }
