@@ -180,7 +180,7 @@ public abstract class BaseOscTestEnv extends ServiceTestEnv {
         scheduleEntity.setStatus(ScheduleStatus.ENABLED);
         scheduleEntity.setAllowConcurrent(false);
         scheduleEntity.setMisfireStrategy(MisfireStrategy.MISFIRE_INSTRUCTION_DO_NOTHING);
-        scheduleEntity.setScheduleType(ScheduleType.ONLINE_SCHEMA_CHANGE_COMPLETE);
+        scheduleEntity.setType(ScheduleType.ONLINE_SCHEMA_CHANGE_COMPLETE);
         scheduleEntity.setJobParametersJson(JsonUtils.toJson(changeParameters));
         TriggerConfig triggerConfig = new TriggerConfig();
         triggerConfig.setTriggerStrategy(TriggerStrategy.CRON);
