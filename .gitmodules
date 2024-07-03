@@ -1,6 +1,6 @@
 [submodule "client"]
 	path = client
-	url = https://code.alipay.com/oceanbase/oceanbase-developer-center.git
+	url = https://github.com/oceanbase/odc-client.git
 	branch = feat/dev-4.3.0-dlm-dropPartition
 [submodule "build-resource"]
 	path = build-resource
