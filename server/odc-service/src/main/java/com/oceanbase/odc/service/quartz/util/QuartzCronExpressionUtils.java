@@ -110,7 +110,7 @@ public class QuartzCronExpressionUtils {
     }
 
     public static List<Date> getNextFiveFireTimes(TriggerConfig triggerConfig) {
-        if (triggerConfig.getTriggerStrategy() == TriggerStrategy.CRON
+        if (triggerConfig.getTriggerStrategy() == TriggerStrategy.START_NOW
                 || triggerConfig.getTriggerStrategy() == TriggerStrategy.START_AT) {
             return Collections.emptyList();
         }
