@@ -62,16 +62,21 @@ public class MockDataTaskResult extends AbstractFlowTaskResult {
     @Deprecated
     private List<String> tableTaskIds;
 
-    public MockDataTaskResult(@NonNull ConnectionConfig connectionConfig, @NonNull MockContext context) {
-        List<TableTaskContext> tableTaskContexts = context.getTables();
-        if (CollectionUtils.isNotEmpty(tableTaskContexts)) {
-            TableTaskContext tableTaskContext = tableTaskContexts.get(0);
-            this.taskStatus = tableTaskContext.getStatus();
-            this.writeCount = tableTaskContext.getTotalWriteCount();
-            this.totalGen = tableTaskContext.getTotalGenerateCount();
+    public MockDataTaskResult(ConnectionConfig connectionConfig, MockContext context) {
+        if (context != null) {
+            List<TableTaskContext> tableTaskContexts = context.getTables();
+            if (CollectionUtils.isNotEmpty(tableTaskContexts)) {
+                TableTaskContext tableTaskContext = tableTaskContexts.get(0);
+                this.taskStatus = tableTaskContext.getStatus();
+                this.writeCount = tableTaskContext.getTotalWriteCount();
+                this.totalGen = tableTaskContext.getTotalGenerateCount();
+            }
         }
-        this.sessionName = connectionConfig.getName();
-        this.dbMode = connectionConfig.getDialectType();
+        if (context != null) {
+            this.sessionName = connectionConfig.getName();
+            this.dbMode = connectionConfig.getDialectType();
+        }
+
     }
 
     public MockDataTaskResult(@NonNull ConnectionConfig connectionConfig) {
