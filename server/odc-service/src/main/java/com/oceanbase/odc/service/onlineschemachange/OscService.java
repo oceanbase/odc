@@ -19,6 +19,7 @@ package com.oceanbase.odc.service.onlineschemachange;
 import java.util.Objects;
 import java.util.Optional;
 
+import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -178,6 +179,10 @@ public class OscService {
                 "modify task rate limiter is unsupported when task is terminated");
         OnlineSchemaChangeTaskResult taskResult =
                 JsonUtils.fromJson(task.getResultJson(), new TypeReference<OnlineSchemaChangeTaskResult>() {});
+        // Task result may be empty cause task may hasn't been scheduled. Remind user raise this request latter.
+        PreConditions.validArgumentState(null != taskResult && CollectionUtils.isNotEmpty(taskResult.getTasks()),
+            ErrorCodes.BadRequest, new Object[] {req.getFlowInstanceId()},
+            "Task has not been scheduled, please retry update rate limiter latter");
         Long scheduleId = Long.parseLong(taskResult.getTasks().get(0).getJobName());
         ScheduleEntity scheduleEntity = scheduleService.nullSafeGetById(scheduleId);
         OnlineSchemaChangeParameters parameters = JsonUtils.fromJson(
