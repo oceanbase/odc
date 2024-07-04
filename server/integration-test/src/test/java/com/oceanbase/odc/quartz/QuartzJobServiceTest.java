@@ -27,7 +27,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 import com.oceanbase.odc.ServiceTestEnv;
 import com.oceanbase.odc.service.quartz.QuartzJobService;
-import com.oceanbase.odc.service.schedule.model.CreateQuartzJobReq;
+import com.oceanbase.odc.service.schedule.model.CreateQuartzJobParam;
 import com.oceanbase.odc.service.schedule.model.QuartzKeyGenerator;
 import com.oceanbase.odc.service.schedule.model.ScheduleType;
 import com.oceanbase.odc.service.schedule.model.TriggerConfig;
@@ -45,7 +45,7 @@ public class QuartzJobServiceTest extends ServiceTestEnv {
 
     @Test
     public void create() throws SchedulerException, ParseException {
-        CreateQuartzJobReq req = new CreateQuartzJobReq();
+        CreateQuartzJobParam req = new CreateQuartzJobParam();
         req.setJobKey(QuartzKeyGenerator.generateJobKey("1", ScheduleType.SQL_PLAN.name()));
         TriggerConfig config = new TriggerConfig();
         config.setTriggerStrategy(TriggerStrategy.START_AT);

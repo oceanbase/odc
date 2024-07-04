@@ -96,7 +96,7 @@ public class ScheduleResponseMapperFactory {
         scheduleDetailResp.setDescription(schedule.getDescription());
 
         scheduleDetailResp.setNextFireTimes(
-                QuartzCronExpressionUtils.getNextFiveFireTimes(schedule.getTriggerConfig().getCronExpression()));
+                QuartzCronExpressionUtils.getNextFiveFireTimes(schedule.getTriggerConfig()));
         userRepository.findById(schedule.getCreatorId())
                 .ifPresent(o -> scheduleDetailResp.setCreator(new InnerUser(o, null)));
 

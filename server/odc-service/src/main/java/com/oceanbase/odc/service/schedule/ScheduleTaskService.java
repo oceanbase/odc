@@ -54,7 +54,7 @@ import com.oceanbase.odc.service.dispatch.TaskDispatchChecker;
 import com.oceanbase.odc.service.dlm.DLMService;
 import com.oceanbase.odc.service.quartz.QuartzJobService;
 import com.oceanbase.odc.service.quartz.util.ScheduleTaskUtils;
-import com.oceanbase.odc.service.schedule.model.CreateQuartzJobReq;
+import com.oceanbase.odc.service.schedule.model.CreateQuartzJobParam;
 import com.oceanbase.odc.service.schedule.model.DataArchiveClearParameters;
 import com.oceanbase.odc.service.schedule.model.DataArchiveRollbackParameters;
 import com.oceanbase.odc.service.schedule.model.QuartzKeyGenerator;
@@ -359,7 +359,7 @@ public class ScheduleTaskService {
                 log.info("Data archive delete job exists and start delete job,jobKey={}", jobKey);
                 quartzJobService.deleteJob(jobKey);
             }
-            CreateQuartzJobReq req = new CreateQuartzJobReq();
+            CreateQuartzJobParam req = new CreateQuartzJobParam();
             req.setJobKey(jobKey);
             DataArchiveClearParameters parameters = new DataArchiveClearParameters();
             parameters.setDataArchiveTaskId(scheduleTaskId);
@@ -393,7 +393,7 @@ public class ScheduleTaskService {
                 log.info("Data archive rollback job exists and start delete job,jobKey={}", jobKey);
                 quartzJobService.deleteJob(jobKey);
             }
-            CreateQuartzJobReq req = new CreateQuartzJobReq();
+            CreateQuartzJobParam req = new CreateQuartzJobParam();
             req.setJobKey(jobKey);
             DataArchiveRollbackParameters parameters = new DataArchiveRollbackParameters();
             parameters.setDataArchiveTaskId(scheduleTaskId);

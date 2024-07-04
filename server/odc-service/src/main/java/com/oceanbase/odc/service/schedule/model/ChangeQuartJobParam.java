@@ -16,7 +16,6 @@
 package com.oceanbase.odc.service.schedule.model;
 
 import org.quartz.JobDataMap;
-import org.quartz.JobKey;
 
 import com.oceanbase.odc.service.quartz.model.MisfireStrategy;
 
@@ -24,14 +23,16 @@ import lombok.Data;
 
 /**
  * @Author：tinker
- * @Date: 2023/6/27 15:34
+ * @Date: 2024/6/9 22:19
  * @Descripition:
  */
 
 @Data
-public class CreateQuartzJobReq {
+public class ChangeQuartJobParam {
 
-    private JobKey jobKey;
+    private String jobName;
+
+    private String jobGroup;
 
     private Boolean allowConcurrent = false;
 
@@ -42,4 +43,5 @@ public class CreateQuartzJobReq {
     // To store task parameters.
     private JobDataMap jobDataMap = new JobDataMap();
 
+    private OperationType operationType;
 }

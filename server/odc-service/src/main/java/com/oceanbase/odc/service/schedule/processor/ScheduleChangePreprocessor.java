@@ -19,10 +19,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.aspectj.lang.JoinPoint;
 import org.aspectj.lang.annotation.Aspect;
-import org.aspectj.lang.annotation.Before;
-import org.aspectj.lang.annotation.Pointcut;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -49,7 +46,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @Aspect
 @Component
-public class CreateScheduleAspect implements InitializingBean {
+public class ScheduleChangePreprocessor implements InitializingBean {
     @Autowired
     private DatabaseService databaseService;
     @Autowired
@@ -59,24 +56,17 @@ public class CreateScheduleAspect implements InitializingBean {
 
     private final Map<ScheduleType, Preprocessor> type2Processor = new HashMap<>();
 
-
-    @Pointcut("@annotation(com.oceanbase.odc.service.flow.processor.EnablePreprocess) && args(com.oceanbase.odc.service.schedule.model.ScheduleChangeParams)")
-    public void processBeforeChangeSchedule() {}
-
-
-    @Before("processBeforeChangeSchedule()")
-    public void createPreprocess(JoinPoint point) throws Throwable {
-        ScheduleChangeParams req = (ScheduleChangeParams) point.getArgs()[0];
+    public void process(ScheduleChangeParams params) {
 
         ScheduleType type;
-        if (req.getOperationType() == OperationType.CREATE) {
-            type = req.getCreateScheduleReq().getType();
-            adaptCreateScheduleReq(req.getCreateScheduleReq());
+        if (params.getOperationType() == OperationType.CREATE) {
+            type = params.getCreateScheduleReq().getType();
+            adaptCreateScheduleReq(params.getCreateScheduleReq());
         } else {
-            type = scheduleService.nullSafeGetModelById(req.getScheduleId()).getType();
+            type = scheduleService.nullSafeGetModelById(params.getScheduleId()).getType();
         }
         if (type2Processor.containsKey(type)) {
-            type2Processor.get(type).process(req);
+            type2Processor.get(type).process(params);
         }
     }
 

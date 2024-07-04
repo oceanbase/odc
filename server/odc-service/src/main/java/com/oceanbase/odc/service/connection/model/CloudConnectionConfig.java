@@ -24,7 +24,7 @@ public interface CloudConnectionConfig {
 
     String getOBTenantName();
 
-    Map<String, String> getProperties();
+    Map<String, Object> getAttributes();
 
     OBInstanceType getInstanceType();
 

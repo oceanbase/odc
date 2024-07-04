@@ -53,7 +53,6 @@ import com.oceanbase.odc.metadb.schedule.ScheduleEntity;
 import com.oceanbase.odc.metadb.schedule.ScheduleRepository;
 import com.oceanbase.odc.service.collaboration.project.ProjectService;
 import com.oceanbase.odc.service.connection.database.DatabaseService;
-import com.oceanbase.odc.service.flow.processor.EnablePreprocess;
 import com.oceanbase.odc.service.iam.OrganizationService;
 import com.oceanbase.odc.service.iam.ProjectPermissionValidator;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
@@ -63,14 +62,15 @@ import com.oceanbase.odc.service.quartz.QuartzJobService;
 import com.oceanbase.odc.service.quartz.model.MisfireStrategy;
 import com.oceanbase.odc.service.regulation.approval.ApprovalFlowConfigSelector;
 import com.oceanbase.odc.service.schedule.factory.ScheduleResponseMapperFactory;
-import com.oceanbase.odc.service.schedule.model.CreateQuartzJobReq;
+import com.oceanbase.odc.service.schedule.model.ChangeQuartJobParam;
+import com.oceanbase.odc.service.schedule.model.CreateQuartzJobParam;
 import com.oceanbase.odc.service.schedule.model.OperationType;
-import com.oceanbase.odc.service.schedule.model.QuartzJobChangeReq;
 import com.oceanbase.odc.service.schedule.model.QuartzKeyGenerator;
 import com.oceanbase.odc.service.schedule.model.QueryScheduleParams;
 import com.oceanbase.odc.service.schedule.model.Schedule;
 import com.oceanbase.odc.service.schedule.model.ScheduleChangeLog;
 import com.oceanbase.odc.service.schedule.model.ScheduleChangeParams;
+import com.oceanbase.odc.service.schedule.model.ScheduleChangeStatus;
 import com.oceanbase.odc.service.schedule.model.ScheduleDetailResp;
 import com.oceanbase.odc.service.schedule.model.ScheduleMapper;
 import com.oceanbase.odc.service.schedule.model.ScheduleOverview;
@@ -79,6 +79,7 @@ import com.oceanbase.odc.service.schedule.model.ScheduleTaskDetailResp;
 import com.oceanbase.odc.service.schedule.model.ScheduleTaskOverview;
 import com.oceanbase.odc.service.schedule.model.ScheduleType;
 import com.oceanbase.odc.service.schedule.model.TriggerConfig;
+import com.oceanbase.odc.service.schedule.processor.ScheduleChangePreprocessor;
 import com.oceanbase.odc.service.task.model.OdcTaskLogLevel;
 
 import lombok.extern.slf4j.Slf4j;
@@ -133,20 +134,23 @@ public class ScheduleService {
     @Autowired
     private OrganizationService organizationService;
 
+    @Autowired
+    private ScheduleChangePreprocessor preprocessor;
+
     private final ScheduleMapper scheduleMapper = ScheduleMapper.INSTANCE;
 
 
-    @EnablePreprocess
     @Transactional(rollbackFor = Exception.class)
     public Schedule changeSchedule(ScheduleChangeParams req) {
 
+        preprocessor.process(req);
         Schedule targetSchedule;
 
         // create or load target schedule
         if (req.getOperationType() == OperationType.CREATE) {
             ScheduleEntity entity = new ScheduleEntity();
 
-            entity.setProjectId(1L);
+            entity.setProjectId(req.getCreateScheduleReq().getProjectId());
             entity.setDescription(req.getCreateScheduleReq().getDescription());
             entity.setJobParametersJson(JsonUtils.toJson(req.getCreateScheduleReq().getParameters()));
             entity.setTriggerConfigJson(JsonUtils.toJson(req.getCreateScheduleReq().getTriggerConfig()));
@@ -186,7 +190,8 @@ public class ScheduleService {
                         req.getOperationType() == OperationType.UPDATE
                                 ? JsonUtils.toJson(req.getUpdateScheduleReq().getParameters())
                                 : null,
-                        approvalFlowInstanceId));
+                        approvalFlowInstanceId, approvalFlowInstanceId == null ? ScheduleChangeStatus.SUCCESS
+                                : ScheduleChangeStatus.APPROVING));
         log.info("Create change log success,changLog={}", changeLog);
         return targetSchedule;
     }
@@ -219,7 +224,7 @@ public class ScheduleService {
         }
 
         // start change quartzJob
-        QuartzJobChangeReq quartzJobReq = new QuartzJobChangeReq();
+        ChangeQuartJobParam quartzJobReq = new ChangeQuartJobParam();
         quartzJobReq.setOperationType(req.getOperationType());
         quartzJobReq.setJobName(targetSchedule.getId().toString());
         quartzJobReq.setJobGroup(targetSchedule.getType().name());
@@ -497,8 +502,8 @@ public class ScheduleService {
         return trigger;
     }
 
-    private CreateQuartzJobReq buildCreateJobReq(ScheduleEntity schedule) {
-        CreateQuartzJobReq createQuartzJobReq = new CreateQuartzJobReq();
+    private CreateQuartzJobParam buildCreateJobReq(ScheduleEntity schedule) {
+        CreateQuartzJobParam createQuartzJobReq = new CreateQuartzJobParam();
         createQuartzJobReq.setJobKey(QuartzKeyGenerator.generateJobKey(schedule));
         createQuartzJobReq.setTriggerConfig(JsonUtils.fromJson(schedule.getTriggerConfigJson(), TriggerConfig.class));
         if (schedule.getType() == ScheduleType.ONLINE_SCHEMA_CHANGE_COMPLETE) {

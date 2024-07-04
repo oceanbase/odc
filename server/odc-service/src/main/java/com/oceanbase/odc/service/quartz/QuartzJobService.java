@@ -42,8 +42,8 @@ import com.oceanbase.odc.core.shared.exception.UnsupportedException;
 import com.oceanbase.odc.service.quartz.executor.QuartzJob;
 import com.oceanbase.odc.service.quartz.model.MisfireStrategy;
 import com.oceanbase.odc.service.quartz.util.QuartzCronExpressionUtils;
-import com.oceanbase.odc.service.schedule.model.CreateQuartzJobReq;
-import com.oceanbase.odc.service.schedule.model.QuartzJobChangeReq;
+import com.oceanbase.odc.service.schedule.model.ChangeQuartJobParam;
+import com.oceanbase.odc.service.schedule.model.CreateQuartzJobParam;
 import com.oceanbase.odc.service.schedule.model.QuartzKeyGenerator;
 import com.oceanbase.odc.service.schedule.model.TriggerConfig;
 
@@ -61,13 +61,13 @@ public class QuartzJobService {
     @Qualifier(value = ("defaultScheduler"))
     private Scheduler scheduler;
 
-    public void changeQuartzJob(QuartzJobChangeReq req) {
+    public void changeQuartzJob(ChangeQuartJobParam req) {
 
         JobKey jobKey = QuartzKeyGenerator.generateJobKey(req.getJobName(), req.getJobGroup());
         try {
             switch (req.getOperationType()) {
                 case CREATE: {
-                    CreateQuartzJobReq createQuartzJobReq = new CreateQuartzJobReq();
+                    CreateQuartzJobParam createQuartzJobReq = new CreateQuartzJobParam();
                     createQuartzJobReq.setJobKey(jobKey);
                     createQuartzJobReq.setAllowConcurrent(req.getAllowConcurrent());
                     createQuartzJobReq.setMisfireStrategy(req.getMisfireStrategy());
@@ -100,12 +100,12 @@ public class QuartzJobService {
     }
 
 
-    public void createJob(CreateQuartzJobReq req) throws SchedulerException {
+    public void createJob(CreateQuartzJobParam req) throws SchedulerException {
         createJob(req, null);
     }
 
     // TODO how can we recognize multi trigger for job. maybe we can use jobName as trigger group.
-    public void createJob(CreateQuartzJobReq req, JobDataMap triggerDataMap) throws SchedulerException {
+    public void createJob(CreateQuartzJobParam req, JobDataMap triggerDataMap) throws SchedulerException {
 
         Class<? extends Job> clazz = QuartzJob.class;
 
