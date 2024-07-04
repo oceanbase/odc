@@ -267,8 +267,8 @@ public class PartitionPlanScheduleService {
         scheduleEntity.setCreatorId(this.authenticationFacade.currentUserId());
         scheduleEntity.setModifierId(this.authenticationFacade.currentUserId());
         scheduleEntity.setOrganizationId(this.authenticationFacade.currentOrganizationId());
-        // scheduleEntity = this.scheduleService.create(scheduleEntity);
-        // this.scheduleService.enable(scheduleEntity);
+        scheduleEntity = this.scheduleService.create(scheduleEntity);
+        this.scheduleService.enable(scheduleEntity);
         return scheduleEntity;
     }
 
