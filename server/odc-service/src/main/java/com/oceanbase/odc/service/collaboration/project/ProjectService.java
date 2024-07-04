@@ -46,7 +46,6 @@ import com.oceanbase.odc.core.authority.util.Authenticated;
 import com.oceanbase.odc.core.authority.util.PreAuthenticate;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.shared.PreConditions;
-import com.oceanbase.odc.core.shared.constant.CustomRoleType;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.constant.ResourceRoleName;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
@@ -67,7 +66,6 @@ import com.oceanbase.odc.metadb.iam.UserDatabasePermissionRepository;
 import com.oceanbase.odc.metadb.iam.UserEntity;
 import com.oceanbase.odc.metadb.iam.UserPermissionRepository;
 import com.oceanbase.odc.metadb.iam.UserRepository;
-import com.oceanbase.odc.metadb.iam.UserRoleEntity;
 import com.oceanbase.odc.metadb.iam.UserRoleRepository;
 import com.oceanbase.odc.metadb.iam.UserTablePermissionEntity;
 import com.oceanbase.odc.metadb.iam.UserTablePermissionRepository;
@@ -107,13 +105,6 @@ public class ProjectService {
 
     @Autowired
     private UserRepository userRepository;
-
-    @Autowired
-    private RoleRepository roleRepository;
-
-    @Autowired
-    private UserRoleRepository userRoleRepository;
-
     @Autowired
     private AuthenticationFacade authenticationFacade;
 
@@ -211,12 +202,12 @@ public class ProjectService {
      */
     @SkipAuthorize("odc migrate usage")
     @Transactional(rollbackFor = Exception.class)
-    public void createProjectAndMigrateRole(@NotNull User user) {
+    public ProjectEntity createProject4Migrate(@NotNull User user) {
         // default name
         String projectName = BUILTIN_PROJECT_PREFIX + "INNER";
         // if project exist
         if (repository.findByNameAndOrganizationId(projectName, user.getOrganizationId()).isPresent()) {
-            return;
+            return null;
         }
         // project property set
         ProjectEntity builtInProject = new ProjectEntity();
@@ -228,87 +219,8 @@ public class ProjectService {
         builtInProject.setOrganizationId(user.getOrganizationId());
         builtInProject.setDescription("Built-in project for user " + user.getCreatorName());
         builtInProject.setUniqueIdentifier(generateProjectUniqueIdentifier());
-        ProjectEntity saved = repository.saveAndFlush(builtInProject);
-        // custom role migrate
-        migratePublicReadonlyConnect(saved);
-        migratePublicConnect(saved);
-        migrateApsaraAdmin(saved);
-    }
 
-    private void migratePublicReadonlyConnect(ProjectEntity project) {
-        roleRepository.findByNameAndOrganizationId(
-                CustomRoleType.PUBLIC_READONLY_CONNECT_.toString(), project.getOrganizationId()).ifPresent(
-                        roleEntity -> {
-                            List<UserRoleEntity> userRoleEntities = userRoleRepository.findByRoleId(roleEntity.getId());
-                            List<UserResourceRole> userResourceRoles = userRoleEntities.stream().map(
-                                    userRoleEntity -> {
-                                        UserResourceRole publicConnect2Participant = new UserResourceRole();
-                                        publicConnect2Participant.setUserId(userRoleEntity.getUserId());
-                                        publicConnect2Participant.setResourceId(project.getId());
-                                        publicConnect2Participant.setResourceType(ResourceType.ODC_PROJECT);
-                                        publicConnect2Participant.setResourceRole(ResourceRoleName.PARTICIPANT);
-                                        return publicConnect2Participant;
-                                    }).collect(Collectors.toList());
-                            resourceRoleService.saveAll(userResourceRoles);
-                        });
-    }
-
-    private void migratePublicConnect(ProjectEntity project) {
-        roleRepository.findByNameAndOrganizationId(
-                CustomRoleType.PUBLIC_CONNECT_.toString(), project.getOrganizationId()).ifPresent(
-                        roleEntity -> {
-                            // get user id list where role == "PRC"
-                            List<UserRoleEntity> userRoleEntities = userRoleRepository.findByRoleId(roleEntity.getId());
-                            // based on user id list create a List<userResourceRole>
-                            List<UserResourceRole> userResourceRoles = userRoleEntities.stream().flatMap(
-                                    userRoleEntity -> {
-                                        UserResourceRole publicConnect2Owner = new UserResourceRole();
-                                        publicConnect2Owner.setUserId(userRoleEntity.getUserId());
-                                        publicConnect2Owner.setResourceId(project.getId());
-                                        publicConnect2Owner.setResourceType(ResourceType.ODC_PROJECT);
-                                        publicConnect2Owner.setResourceRole(ResourceRoleName.OWNER);
-
-                                        UserResourceRole publicConnect2DBA = new UserResourceRole();
-                                        publicConnect2DBA.setUserId(userRoleEntity.getUserId());
-                                        publicConnect2DBA.setResourceId(project.getId());
-                                        publicConnect2DBA.setResourceType(ResourceType.ODC_PROJECT);
-                                        publicConnect2DBA.setResourceRole(ResourceRoleName.DBA);
-                                        return Stream.of(publicConnect2Owner, publicConnect2DBA);
-                                    }).collect(Collectors.toList());
-                            resourceRoleService.saveAll(userResourceRoles);
-                        });
-    }
-
-    private void migrateApsaraAdmin(ProjectEntity project) {
-        roleRepository.findByNameAndOrganizationId(
-                CustomRoleType.APSARA_ADMIN_.toString(), project.getOrganizationId()).ifPresent(
-                        roleEntity -> {
-                            // get user id list where role == "PRC"
-                            List<UserRoleEntity> userRoleEntities = userRoleRepository.findByRoleId(roleEntity.getId());
-                            // based on user id list create a List<userResourceRole>
-                            List<UserResourceRole> userResourceRoles = userRoleEntities.stream().flatMap(
-                                    userRoleEntity -> {
-                                        UserResourceRole publicConnect2Owner = new UserResourceRole();
-                                        publicConnect2Owner.setUserId(userRoleEntity.getUserId());
-                                        publicConnect2Owner.setResourceId(project.getId());
-                                        publicConnect2Owner.setResourceType(ResourceType.ODC_PROJECT);
-                                        publicConnect2Owner.setResourceRole(ResourceRoleName.OWNER);
-
-                                        UserResourceRole publicConnect2DBA = new UserResourceRole();
-                                        publicConnect2DBA.setUserId(userRoleEntity.getUserId());
-                                        publicConnect2DBA.setResourceId(project.getId());
-                                        publicConnect2DBA.setResourceType(ResourceType.ODC_PROJECT);
-                                        publicConnect2DBA.setResourceRole(ResourceRoleName.DBA);
-
-                                        UserResourceRole publicConnect2Admin = new UserResourceRole();
-                                        publicConnect2DBA.setUserId(userRoleEntity.getUserId());
-                                        publicConnect2DBA.setResourceId(project.getId());
-                                        publicConnect2DBA.setResourceType(ResourceType.ODC_PROJECT);
-                                        publicConnect2DBA.setResourceRole(ResourceRoleName.SECURITY_ADMINISTRATOR);
-                                        return Stream.of(publicConnect2Owner, publicConnect2DBA, publicConnect2Admin);
-                                    }).collect(Collectors.toList());
-                            resourceRoleService.saveAll(userResourceRoles);
-                        });
+        return repository.saveAndFlush(builtInProject);
     }
 
     @PreAuthenticate(actions = "create", resourceType = "ODC_PROJECT", isForAll = true)
