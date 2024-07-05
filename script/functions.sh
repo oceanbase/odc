@@ -370,7 +370,7 @@ function maven_build_rpm() {
     pushd "${ODC_DIR}" || return 2
 
     func_echo "maven build rpm package starting..."
-    if ! mvn ${maven_extra_args[@]} --file server/odc-server/pom.xml rpm:rpm \
+    if ! mvn ${mvn_extra_args[@]} --file server/odc-server/pom.xml rpm:rpm \
         -Drpm.prefix=${RPM_DEFAULT_INSTALL_PREFIX} \
         -Drpm.release=${rpm_release}; then
         func_echo "maven build rpm failed"

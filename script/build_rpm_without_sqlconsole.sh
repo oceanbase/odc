@@ -3,7 +3,11 @@
 # Usage: build_rpm_without_sqlconsole.sh <rpm_release:1>
 
 # read parameters
-rpm_release=${1:-"1"}
+rpm_release=${1:-""}
+if [ -z "$rpm_release" ]; then
+    rpm_release="$(date +%Y%m%d)"
+    echo "rpm release number not set in command line, use current date as default, rpm_release=${rpm_release}"
+fi
 shift
 mvn_extra_args=$@
 
